@@ -448,7 +448,9 @@ object WeededAst {
       * @param elms the elements of the tuple.
       * @param loc  the source location.
       */
-    case class Tuple(elms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
+    case class Tuple(elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
+
+    case class List(hd: WeededAst.Pattern, tl: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
 
   }
 

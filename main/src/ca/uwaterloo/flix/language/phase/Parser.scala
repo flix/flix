@@ -366,13 +366,18 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Patterns                                                                //
   /////////////////////////////////////////////////////////////////////////////
+  // NB: List must be parsed before everything.
   // NB: Literal must be parsed before Variable.
   // NB: Tag must be before Literal and Variable.
   def Pattern: Rule1[ParsedAst.Pattern] = rule {
-    Patterns.Tag | Patterns.Literal | Patterns.Tuple | Patterns.Wildcard | Patterns.Variable
+    Patterns.List
   }
 
   object Patterns {
+
+    def Simple: Rule1[ParsedAst.Pattern] = rule {
+      Patterns.Tag | Patterns.Literal | Patterns.Tuple | Patterns.Wildcard | Patterns.Variable
+    }
 
     def Wildcard: Rule1[ParsedAst.Pattern.Wildcard] = rule {
       SP ~ atomic("_") ~ SP ~> ParsedAst.Pattern.Wildcard
@@ -394,8 +399,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
         })
     }
 
-    def Tuple: Rule1[ParsedAst.Pattern] = rule {
+    def Tuple: Rule1[ParsedAst.Pattern.Tuple] = rule {
       SP ~ "(" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Pattern.Tuple
+    }
+
+    def List: Rule1[ParsedAst.Pattern] = rule {
+      Simple ~ optional(SP ~ optWS ~ atomic("::") ~ optWS ~ Pattern ~ SP ~> ParsedAst.Pattern.List)
     }
 
   }

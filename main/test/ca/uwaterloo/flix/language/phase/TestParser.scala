@@ -597,12 +597,12 @@ class TestParser extends FunSuite {
 
   test("Expression.LetMatch01") {
     val input = "let x = 42 in x"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.LetMatch]
+    new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.LetMatch]
   }
 
   test("Expression.LetMatch02") {
     val input = "let x' = f(1, 2, 3) in g(4, 5, 6)"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.LetMatch]
+    new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.LetMatch]
   }
 
   test("Expression.LetMatch03") {
@@ -1068,7 +1068,146 @@ class TestParser extends FunSuite {
   test("Pattern.Tuple01") {
     val input = "(x, y, true)"
     val result = new Parser(SourceInput.Str(input)).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Tuple]
-    assertResult(3)(result.elms.size)
+    assertResult(3)(result.pats.size)
+  }
+
+  test("Pattern.List01") {
+    val input =
+      """def f(xs: List[Int]): Int = match xs with {
+        |  case Nil => 0
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.List02") {
+    val input =
+      """def f(xs: List[Int]): Int = match xs with {
+        |  case 1 :: Nil => 0
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.List03") {
+    val input =
+      """def f(xs: List[Int]): Int = match xs with {
+        |  case 1 :: 2 :: Nil => 0
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.List04") {
+    val input =
+      """def f(xs: List[Int]): Int = match xs with {
+        |  case 1 :: 2 :: 3 :: Nil => 0
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.List05") {
+    val input =
+      """def f(xs: List[Int]): Int = match xs with {
+        |  case x :: Nil => x
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.List06") {
+    val input =
+      """def f(xs: List[Int]): Int = match xs with {
+        |  case x :: y :: Nil => x + y
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.List07") {
+    val input =
+      """def f(xs: List[Int]): Int = match xs with {
+        |  case Nil => 0
+        |  case x :: rs => 1 + f(rs)
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.List08") {
+    val input =
+      """def f(xs: List[Int]): Bool = match xs with {
+        |  case Nil => true
+        |  case x :: y :: rs => f(rs)
+        |  case _ => false
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.List09") {
+    val input =
+      """def f(xs: List[Int]): Int = match xs with {
+        |  case Nil => 0
+        |  case x :: Nil => x
+        |  case x :: y :: Nil => x + y
+        |  case xs => 42
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.List10") {
+    val input =
+      """def f(xs: List[(Char, Int)]): Int = match xs with {
+        |  case Nil => 0
+        |  case (c, i) :: Nil => i
+        |  case (c1, i1) :: (c2, i2) :: Nil => i1 + i2
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.List11") {
+    val input =
+      """def f(xs: List[(Char, Int)]): Int = match xs with {
+        |  case Nil => 0
+        |  case (c, 42) :: Nil => 1
+        |  case ('a', i1) :: (c2, 21) :: Nil => 2
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.ListList01") {
+    val input =
+      """def f(xs: List[List[Int]]): Int = match xs with {
+        |  case Nil => 0
+        |  case (x :: Nil) :: (y :: Nil) :: Nil => x + y
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.ListList02") {
+    val input =
+      """def f(xs: List[List[Int]]): Int = match xs with {
+        |  case Nil => 0
+        |  case (x :: y :: Nil) :: (z :: w :: Nil) :: Nil => x + y + z + w
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.ListList03") {
+    val input =
+      """def f(xs: List[List[Int]]): Int = match xs with {
+        |  case Nil => 0
+        |  case (x :: xs) :: (y :: ys) :: (z :: zs) :: Nil => x + y + z
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
   /////////////////////////////////////////////////////////////////////////////

@@ -29,10 +29,6 @@ import scala.collection.immutable.Seq
 //      case #Set{42} => singleton with literao 42
 //      case #Set{x, 42, y, rest...} => // set with two elements x and y, and 42, and rest...
 //    }
-// TODO: Introduce type classes.
-// TODO: Introduce type bounds.
-// TODO: Introduce extern.
-// TODO: Why have literals?
 
 //index SUAfter(
 //Index({location, object}, BTREE) with FilterF(f),
@@ -722,13 +718,13 @@ object ParsedAst {
     /**
       * An AST node that represents a tagged pattern.
       *
-      * @param sp1      the position of the first character in the pattern.
-      * @param enumName the enum name.
-      * @param tagName  the tag name.
-      * @param p        the nested pattern.
-      * @param sp2      the position of the last character in the pattern.
+      * @param sp1  the position of the first character in the pattern.
+      * @param enum the enum name.
+      * @param tag  the tag name.
+      * @param p    the nested pattern.
+      * @param sp2  the position of the last character in the pattern.
       */
-    case class Tag(sp1: SourcePosition, enumName: Name.QName, tagName: Name.Ident, p: ParsedAst.Pattern, sp2: SourcePosition) extends ParsedAst.Pattern {
+    case class Tag(sp1: SourcePosition, enum: Name.QName, tag: Name.Ident, p: ParsedAst.Pattern, sp2: SourcePosition) extends ParsedAst.Pattern {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -736,10 +732,22 @@ object ParsedAst {
       * An AST node that represents a tuple pattern.
       *
       * @param sp1  the position of the first character in the pattern.
-      * @param elms the elements of the tuple.
+      * @param pats the nested patterns of the tuple.
       * @param sp2  the position of the last character in the pattern.
       */
-    case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern {
+    case class Tuple(sp1: SourcePosition, pats: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+      * An AST node that represents a list pattern.
+      *
+      * @param hd  the head pattern.
+      * @param sp1 the position of the first character in the pattern.
+      * @param tl  the tail pattern.
+      * @param sp2 the position of the last character in the pattern.
+      */
+    case class List(hd: ParsedAst.Pattern, sp1: SourcePosition, tl: ParsedAst.Pattern, sp2: SourcePosition) extends ParsedAst.Pattern {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 

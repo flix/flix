@@ -780,13 +780,17 @@ object Weeder {
           case lit => WeededAst.Pattern.Lit(lit, pat.loc)
         }
         case ppat: ParsedAst.Pattern.Tag => visit(ppat.p) map {
-          case pat => WeededAst.Pattern.Tag(ppat.enumName, ppat.tagName, pat, ppat.loc)
+          case pat => WeededAst.Pattern.Tag(ppat.enum, ppat.tag, pat, ppat.loc)
         }
-        case pat: ParsedAst.Pattern.Tuple => @@(pat.elms map visit) map {
+        case pat: ParsedAst.Pattern.Tuple => @@(pat.pats map visit) map {
           case Nil => WeededAst.Pattern.Lit(WeededAst.Literal.Unit(pat.loc), pat.loc)
           case x :: Nil => x
           case xs => WeededAst.Pattern.Tuple(xs, pat.loc)
         }
+        case ParsedAst.Pattern.List(p1, sp1, p2, sp2) =>
+          @@(compile(p1), compile(p2)) map {
+            case (hd, tl) => WeededAst.Pattern.List(hd, tl, past.loc)
+          }
       }
 
       visit(past)
