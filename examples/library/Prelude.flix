@@ -1,3 +1,5 @@
+// TODO: Split into several files.
+
 /**
  * A partial order is a type E equipped with a partial order.
  *

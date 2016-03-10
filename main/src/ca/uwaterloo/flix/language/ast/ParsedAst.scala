@@ -2,31 +2,57 @@ package ca.uwaterloo.flix.language.ast
 
 import scala.collection.immutable.Seq
 
-// TODO: New syntax:
+// TODO: Tasks
 
-// 2. lambda-fn
-// fn sum(..): = ...
+// 0. Introduce CompilationUnit or the like
+//
+// 1. Introduce imports:
+// import foo.bar.baz/myFunction
+// import foo.bar._ (imports everything in bar)
+// import foo.bar (now you can write bar/myFunc)
+// Imports are only allowed at the top of a compilation unit, before any namespaces. Does this even make sense?
+// Decide: How should the components of a namespace be named: list or List?
+
+// 2. Fat arrows
 //   let f = (x, y) => x + y in
-//   List/foldLeft(f, 0, xs)
-
-// TODO: Allow syntax for: variableName.length() --> length(variableName). "postfix call"
-// aSet.has(athing) --> has(aSet, athing).
-// aSet.getOrElse(xyz) --> getOrElse(aSet, xyz).
-
-// TODO use/import
-// use List, etc.
-//index SUAfter(
-//Index({location, object}, BTREE) with FilterF(f),
+//   list/foldLeft(f, 0, xs)
 //
-//)
+//   list/foldLeft((x, y) => x + y, 0, 1 :: 2 :: Nil)
 //
-//CREATE INDEX ON films ((lower(title)));
+
+// 3. Post fix calls:
+// length(xs) or xs.length() or even xs.length
+// toList(xs) or xs.toList() or even xs.toList
+// or even better:
+// map(x => x + 1, xs) or (x => x + 1) map xs (?) or (x => x + 1) `map` xs is already possible?
+// NB: Does not work with namespaces, e.g. foo/length(xs) cannot be written as xs.foo/length
+// more examples:
 //
-//index SUBefore({location, object}, Tree, location == "foo")
+// null(xs) or xs.null (maybe bad?)
+// head(xs) or xs.head
+// tail(xs) or xs.tail
+// at(24, xs) or 24.at(xs) (woot?) (alternatively 42 `at` xs`)
+// indexOf(42, xs) or 42 `indexOf` xs.
 
+// 4. Cleanup declarations and definitions.
 
-// TODO: Why split into declaration and definition?
-// TODO: Consider to remove .loc for source location.
+// 5. Cleanup relations/lattices.
+
+// 6. Indexes:
+// index SUAfter(
+//  Index({location, object}, BTREE) with FilterF(f),
+//
+//  CREATE INDEX ON films ((lower(title)));
+//
+//  index SUBefore({location, object}, Tree, location == "foo")
+
+// 7. Remove .loc from ast nodes.
+
+// 8. Improve UTF8 support.
+
+// 9. Improve parsing of characters (and escapes!)
+
+// 10. Re-order all items in here.
 
 /**
   * A common-super type for parsed AST nodes.
