@@ -35,6 +35,9 @@ class TestInterpreter extends FunSuite {
 
   object HookUnsafeHelpers {
     type JBool = java.lang.Boolean
+    type JChar = java.lang.Character
+    type JFloat = java.lang.Float
+    type JDouble = java.lang.Double
     type JByte = java.lang.Byte
     type JShort = java.lang.Short
     type JInt = java.lang.Integer
@@ -756,6 +759,36 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkSet(Set(Value.mkInt32(24), Value.mkInt32(53), Value.mkInt32(24))))(result)
   }
 
+  test("Expression.Lambda.17") {
+    val input =
+      """fn f(a: Char, b: Char): Bool = a == b
+        |fn g: Bool = f('a', 'b')
+      """.stripMargin
+    val model = getModel(input)
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.False)(result)
+  }
+
+  test("Expression.Lambda.18") {
+    val input =
+      """fn f(a: Float32, b: Float32): Float32 = a + b
+        |fn g: Float32 = f(1.2f32, 2.1f32)
+      """.stripMargin
+    val model = getModel(input)
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkFloat32(3.3f))(result)
+  }
+
+  test("Expression.Lambda.19") {
+    val input =
+      """fn f(a: Float64, b: Float64): Float64 = a + b
+        |fn g: Float64 = f(1.2f64, 2.1f64)
+      """.stripMargin
+    val model = getModel(input)
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkFloat64(3.3d))(result)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Expression.{Hook,Apply} - Hook.Safe                                     //
   // Re-implements Expression.Lambda tests but using (safe) hooks instead.   //
@@ -1083,6 +1116,54 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
+  test("Expression.Hook - Hook.Safe.17") {
+    import HookSafeHelpers._
+    val input = "fn g: Bool = f('a', 'b')"
+    var executed = false
+    val flix = createFlix()
+    val tpe = flix.mkFunctionType(Array(flix.mkCharType, flix.mkCharType), flix.mkBoolType)
+    def nativeF(a: IValue, b: IValue): IValue = { executed = true; flix.mkBool(a.getChar == b.getChar) }
+    val model = flix
+      .addStr(input)
+      .addHook("f", tpe, nativeF _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.False)(result)
+    assert(executed)
+  }
+
+  test("Expression.Hook - Hook.Safe.18") {
+    import HookSafeHelpers._
+    val input = "fn g: Float32 = f(1.2f32, 2.1f32)"
+    var executed = false
+    val flix = createFlix()
+    val tpe = flix.mkFunctionType(Array(flix.mkFloat32Type, flix.mkFloat32Type), flix.mkFloat32Type)
+    def nativeF(a: IValue, b: IValue): IValue = { executed = true; flix.mkFloat32(a.getFloat32 + b.getFloat32) }
+    val model = flix
+      .addStr(input)
+      .addHook("f", tpe, nativeF _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkFloat32(3.3f))(result)
+    assert(executed)
+  }
+
+  test("Expression.Hook - Hook.Safe.19") {
+    import HookSafeHelpers._
+    val input = "fn g: Float64 = f(1.2f64, 2.1f64)"
+    var executed = false
+    val flix = createFlix()
+    val tpe = flix.mkFunctionType(Array(flix.mkFloat64Type, flix.mkFloat64Type), flix.mkFloat64Type)
+    def nativeF(a: IValue, b: IValue): IValue = { executed = true; flix.mkFloat64(a.getFloat64 + b.getFloat64) }
+    val model = flix
+      .addStr(input)
+      .addHook("f", tpe, nativeF _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkFloat64(3.3d))(result)
+    assert(executed)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Expression.{Hook,Apply} - Hook.Unsafe                                   //
   // Re-implements Expression.Lambda tests but using (unsafe) hooks instead. //
@@ -1398,6 +1479,54 @@ class TestInterpreter extends FunSuite {
       .solve().get
     val result = model.constants(Name.Resolved.mk("h"))
     assertResult(MyObject(1000))(result)
+    assert(executed)
+  }
+
+  test("Expression.Hook - Hook.Unsafe.17") {
+    import HookUnsafeHelpers._
+    val input = "fn g: Bool = f('a', 'b')"
+    var executed = false
+    val flix = createFlix()
+    val tpe = flix.mkFunctionType(Array(flix.mkCharType, flix.mkCharType), flix.mkBoolType)
+    def nativeF(a: JChar, b: JChar): JBool = { executed = true; a == b }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.False)(result)
+    assert(executed)
+  }
+
+  test("Expression.Hook - Hook.Unsafe.18") {
+    import HookUnsafeHelpers._
+    val input = "fn g: Float32 = f(1.2f32, 2.1f32)"
+    var executed = false
+    val flix = createFlix()
+    val tpe = flix.mkFunctionType(Array(flix.mkFloat32Type, flix.mkFloat32Type), flix.mkFloat32Type)
+    def nativeF(a: JFloat, b: JFloat): JFloat = { executed = true; a + b }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkFloat32(3.3f))(result)
+    assert(executed)
+  }
+
+  test("Expression.Hook - Hook.Unsafe.19") {
+    import HookUnsafeHelpers._
+    val input = "fn g: Float64 = f(1.2f64, 2.1f64)"
+    var executed = false
+    val flix = createFlix()
+    val tpe = flix.mkFunctionType(Array(flix.mkFloat64Type, flix.mkFloat64Type), flix.mkFloat64Type)
+    def nativeF(a: JDouble, b: JDouble): JDouble = { executed = true; a + b }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val result = model.constants(Name.Resolved.mk("g"))
+    assertResult(Value.mkFloat64(3.3d))(result)
     assert(executed)
   }
 
@@ -5053,6 +5182,42 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkSet(Set(9, 99, 999).map(Value.mkInt32)))(result)
   }
 
+  test("Expression.Let.22") {
+    val input =
+      """fn f: Char =
+        |  let x = 'a' in
+        |    let y = 'b' in
+        |      y
+      """.stripMargin
+    val model = getModel(input)
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkChar('b'))(result)
+  }
+
+  test("Expression.Let.23") {
+    val input =
+      """fn f: Float32 =
+        |  let x = 1.2f32 in
+        |    let y = 3.4f32 in
+        |      y
+      """.stripMargin
+    val model = getModel(input)
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkFloat32(3.4f))(result)
+  }
+
+  test("Expression.Let.24") {
+    val input =
+      """fn f: Float64 =
+        |  let x = 1.2f64 in
+        |    let y = 3.4f64 in
+        |      y
+      """.stripMargin
+    val model = getModel(input)
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkFloat64(3.4d))(result)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Expression.{CheckTag,GetTagValue}                                       //
   // Tested indirectly by pattern matching.                                  //
@@ -5186,6 +5351,36 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkInt64(320000000000L)))(result)
   }
 
+  test("Expression.Tag.13") {
+    val input =
+      """enum Val { case Val(Char) }
+        |fn f: Val = Val.Val('a')
+      """.stripMargin
+    val model = getModel(input)
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkChar('a')))(result)
+  }
+
+  test("Expression.Tag.14") {
+    val input =
+      """enum Val { case Val(Float32) }
+        |fn f: Val = Val.Val(4.2f32)
+      """.stripMargin
+    val model = getModel(input)
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkFloat32(4.2f)))(result)
+  }
+
+  test("Expression.Tag.15") {
+    val input =
+      """enum Val { case Val(Float64) }
+        |fn f: Val = Val.Val(4.2f64)
+      """.stripMargin
+    val model = getModel(input)
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkFloat64(4.2d)))(result)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Expression.GetTupleIndex                                                //
   // Tested indirectly by pattern matching.                                  //
@@ -5247,6 +5442,13 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.Tuple(Array(Value.mkInt32(42), Value.False, Value.mkStr("hi"))))(result)
   }
 
+  test("Expression.Tuple.08") {
+    val input = "fn f: (Char, Float32, Float64) = ('a', 1.2f32, 3.4f64)"
+    val model = getModel(input)
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.Tuple(Array(Value.mkChar('a'), Value.mkFloat32(1.2f), Value.mkFloat64(3.4d))))(result)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Expression.{CheckNil,CheckCons}                                         //
   // Tested indirectly by pattern matching.                                  //
@@ -5286,6 +5488,27 @@ class TestInterpreter extends FunSuite {
     val model = getModel(input)
     val result = model.constants(Name.Resolved.mk("f"))
     assertResult(Value.mkSet(Set(Value.mkInt64(10000000000L))))(result)
+  }
+
+  test("Expression.Set.05") {
+    val input = "fn f: Set[Char] = #{'a', 'b', 'c'}"
+    val model = getModel(input)
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkSet(Set(Value.mkChar('a'), Value.mkChar('b'), Value.mkChar('c'))))(result)
+  }
+
+  test("Expression.Set.06") {
+    val input = "fn f: Set[Float32] = #{0.0f32, -0.0f32}"
+    val model = getModel(input)
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkSet(Set(Value.mkFloat32(0.0f), Value.mkFloat32(-0.0f))))(result)
+  }
+
+  test("Expression.Set.07") {
+    val input = "fn f: Set[Float64] = #{0.0f64, -0.0f64}"
+    val model = getModel(input)
+    val result = model.constants(Name.Resolved.mk("f"))
+    assertResult(Value.mkSet(Set(Value.mkFloat64(0.0d), Value.mkFloat64(-0.0d))))(result)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -6268,6 +6491,45 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set(List(Value.Tuple(Array(1, 2).map(Value.mkInt32)))))
   }
 
+  test("Term.Head.Exp.11") {
+    val input =
+      """rel A(x: Char);
+        |
+        |A('a').
+        |A('b').
+        |A('c').
+      """.stripMargin
+    val model = getModel(input)
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set('a', 'b', 'c').map(x => List(Value.mkChar(x))))
+  }
+
+  test("Term.Head.Exp.12") {
+    val input =
+      """rel A(x: Float32);
+        |
+        |A(1.0f32).
+        |A(2.0f32).
+        |A(3.0f32).
+      """.stripMargin
+    val model = getModel(input)
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1.0f, 2.0f, 3.0f).map(x => List(Value.mkFloat32(x))))
+  }
+
+  test("Term.Head.Exp.13") {
+    val input =
+      """rel A(x: Float64);
+        |
+        |A(1.0f64).
+        |A(2.0f64).
+        |A(3.0f64).
+      """.stripMargin
+    val model = getModel(input)
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1.0d, 2.0d, 3.0d).map(x => List(Value.mkFloat64(x))))
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Term.Head.Apply                                                         //
   // These tests simply re-implement the Term.Head.Exp tests using Apply.    //
@@ -6403,6 +6665,48 @@ class TestInterpreter extends FunSuite {
     val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
     assertResult(A)(Set(List(Value.Tuple(Array(1, 2).map(Value.mkInt32)))))
+  }
+
+  test("Term.Head.Apply.11") {
+    val input =
+      """rel A(x: Char);
+        |fn f(x: Char): Char = x
+        |
+        |A(f('a')).
+        |A(f('b')).
+        |A(f('c')).
+      """.stripMargin
+    val model = getModel(input)
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set('a', 'b', 'c').map(x => List(Value.mkChar(x))))
+  }
+
+  test("Term.Head.Apply.12") {
+    val input =
+      """rel A(x: Float32);
+        |fn f(x: Float32): Float32 = x
+        |
+        |A(f(1.0f32)).
+        |A(f(2.0f32)).
+        |A(f(3.0f32)).
+      """.stripMargin
+    val model = getModel(input)
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1.0f, 2.0f, 3.0f).map(x => List(Value.mkFloat32(x))))
+  }
+
+  test("Term.Head.Apply.13") {
+    val input =
+      """rel A(x: Float64);
+        |fn f(x: Float64): Float64 = x
+        |
+        |A(f(1.0f64)).
+        |A(f(2.0f64)).
+        |A(f(3.0f64)).
+      """.stripMargin
+    val model = getModel(input)
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1.0d, 2.0d, 3.0d).map(x => List(Value.mkFloat64(x))))
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -6630,6 +6934,72 @@ class TestInterpreter extends FunSuite {
   }
 
   test("Term.Head.ApplyHook - Hook.Safe.11") {
+    import HookSafeHelpers._
+    val input =
+      """rel A(x: Char);
+        |
+        |A(f('a')).
+        |A(f('b')).
+        |A(f('c')).
+      """.stripMargin
+    var executed = false
+    val flix = createFlix()
+    val tpe = flix.mkFunctionType(Array(flix.mkCharType), flix.mkCharType)
+    def nativeF(x: IValue): IValue = { executed = true; x }
+    val model = flix
+      .addStr(input)
+      .addHook("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set('a', 'b', 'c').map(x => List(Value.mkChar(x))))
+    assert(executed)
+  }
+
+  test("Term.Head.ApplyHook - Hook.Safe.12") {
+    import HookSafeHelpers._
+    val input =
+      """rel A(x: Float32);
+        |
+        |A(f(1.0f32)).
+        |A(f(2.0f32)).
+        |A(f(3.0f32)).
+      """.stripMargin
+    var executed = false
+    val flix = createFlix()
+    val tpe = flix.mkFunctionType(Array(flix.mkFloat32Type), flix.mkFloat32Type)
+    def nativeF(x: IValue): IValue = { executed = true; x }
+    val model = flix
+      .addStr(input)
+      .addHook("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1.0f, 2.0f, 3.0f).map(x => List(Value.mkFloat32(x))))
+    assert(executed)
+  }
+
+  test("Term.Head.ApplyHook - Hook.Safe.13") {
+    import HookSafeHelpers._
+    val input =
+      """rel A(x: Float64);
+        |
+        |A(f(1.0f64)).
+        |A(f(2.0f64)).
+        |A(f(3.0f64)).
+      """.stripMargin
+    var executed = false
+    val flix = createFlix()
+    val tpe = flix.mkFunctionType(Array(flix.mkFloat64Type), flix.mkFloat64Type)
+    def nativeF(x: IValue): IValue = { executed = true; x }
+    val model = flix
+      .addStr(input)
+      .addHook("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1.0d, 2.0d, 3.0d).map(x => List(Value.mkFloat64(x))))
+    assert(executed)
+  }
+
+  test("Term.Head.ApplyHook - Hook.Safe.14") {
     import HookSafeHelpers._
     val input =
       """rel A(x: Native);
@@ -6880,6 +7250,72 @@ class TestInterpreter extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Unsafe.11") {
     import HookUnsafeHelpers._
     val input =
+      """rel A(x: Char);
+        |
+        |A(f('a')).
+        |A(f('b')).
+        |A(f('c')).
+      """.stripMargin
+    var executed = false
+    val flix = createFlix()
+    val tpe = flix.mkFunctionType(Array(flix.mkCharType), flix.mkCharType)
+    def nativeF(x: JChar): JChar = { executed = true; x }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set('a', 'b', 'c').map(x => List(Value.mkChar(x))))
+    assert(executed)
+  }
+
+  test("Term.Head.ApplyHook - Hook.Unsafe.12") {
+    import HookUnsafeHelpers._
+    val input =
+      """rel A(x: Float32);
+        |
+        |A(f(1.0f32)).
+        |A(f(2.0f32)).
+        |A(f(3.0f32)).
+      """.stripMargin
+    var executed = false
+    val flix = createFlix()
+    val tpe = flix.mkFunctionType(Array(flix.mkFloat32Type), flix.mkFloat32Type)
+    def nativeF(x: JFloat): JFloat = { executed = true; x }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1.0f, 2.0f, 3.0f).map(x => List(Value.mkFloat32(x))))
+    assert(executed)
+  }
+
+  test("Term.Head.ApplyHook - Hook.Unsafe.13") {
+    import HookUnsafeHelpers._
+    val input =
+      """rel A(x: Float64);
+        |
+        |A(f(1.0f64)).
+        |A(f(2.0f64)).
+        |A(f(3.0f64)).
+      """.stripMargin
+    var executed = false
+    val flix = createFlix()
+    val tpe = flix.mkFunctionType(Array(flix.mkFloat64Type), flix.mkFloat64Type)
+    def nativeF(x: JDouble): JDouble = { executed = true; x }
+    val model = flix
+      .addStr(input)
+      .addHookUnsafe("f", tpe, nativeF _)
+      .solve().get
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1.0d, 2.0d, 3.0d).map(x => List(Value.mkFloat64(x))))
+    assert(executed)
+  }
+
+  test("Term.Head.ApplyHook - Hook.Unsafe.14") {
+    import HookUnsafeHelpers._
+    val input =
       """rel A(x: Native);
         |
         |A(f(1)).
@@ -7070,6 +7506,51 @@ class TestInterpreter extends FunSuite {
         |A(3) :- f(Val.Val(0)).
         |A(4) :- f(Val.Val(-1)).
         |A(5) :- f(Val.Top).
+      """.stripMargin
+    val model = getModel(input)
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
+  }
+
+  test("Term.Body.Exp.09") {
+    val input =
+      """rel A(x: Int);
+        |fn f(x: Char): Bool = x >= 'b'
+        |
+        |A(1) :- f('b').
+        |A(2) :- f('b').
+        |A(3) :- f('b').
+        |A(4) :- f('a').
+      """.stripMargin
+    val model = getModel(input)
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
+  }
+
+  test("Term.Body.Exp.10") {
+    val input =
+      """rel A(x: Int);
+        |fn f(x: Float32): Bool = x >= 0.0f32
+        |
+        |A(1) :- f(0.0f32).
+        |A(2) :- f(0.0f32).
+        |A(3) :- f(0.0f32).
+        |A(4) :- f(-1.0f32).
+      """.stripMargin
+    val model = getModel(input)
+    val A = model.relations(Name.Resolved.mk("A")).toSet
+    assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
+  }
+
+  test("Term.Body.Exp.11") {
+    val input =
+      """rel A(x: Int);
+        |fn f(x: Float64): Bool = x >= 0.0f64
+        |
+        |A(1) :- f(0.0f64).
+        |A(2) :- f(0.0f64).
+        |A(3) :- f(0.0f64).
+        |A(4) :- f(-1.0f64).
       """.stripMargin
     val model = getModel(input)
     val A = model.relations(Name.Resolved.mk("A")).toSet
