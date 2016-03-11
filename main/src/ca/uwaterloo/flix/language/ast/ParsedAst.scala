@@ -1,11 +1,11 @@
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.Name.QName
+
 import scala.collection.immutable.Seq
 
 // TODO: Tasks
 
-// 0. Introduce CompilationUnit or the like
-//
 // 1. Introduce imports:
 // import foo.bar.baz/myFunction
 // import foo.bar._ (imports everything in bar)
@@ -62,12 +62,19 @@ sealed trait ParsedAst
 object ParsedAst {
 
   /**
-    * The AST root node.
+    * Program. A collection of abstract syntax trees.
     *
-    * @param declarations the declarations in the AST.
-    * @param time         the time spent in each compiler phase.
+    * @param roots the roots of the abstract syntax trees in the program.
+    * @param time  the time spent in each compiler phase.
     */
-  case class Root(declarations: Seq[ParsedAst.Declaration], time: Time) extends ParsedAst
+  case class Program(roots: List[ParsedAst.Root], time: Time) extends ParsedAst
+
+  /**
+    * Root. A collection of declarations.
+    *
+    * @param declarations the declarations in the compilation unit.
+    */
+  case class Root(declarations: Seq[ParsedAst.Declaration]) extends ParsedAst
 
   /**
     * A common super-type for AST nodes that represent declarations.
@@ -282,6 +289,40 @@ object ParsedAst {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
+  }
+
+  /**
+    * A common super-type for AST nodes that represent imports.
+    */
+  sealed trait Import extends ParsedAst {
+
+    /**
+      * An AST node that imports every definition from a namespace (import foo.bar.baz._).
+      *
+      * @param sp1 the position of the first character in the import.
+      * @param ns  the namespace.
+      * @param sp2 the position of the last character in the import.
+      */
+    case class Wildcard(sp1: SourcePosition, ns: QName, sp2: SourcePosition) extends ParsedAst.Import
+
+    /**
+      * An AST node that imports a definition from a namespace (import foo.bar.baz/qux).
+      *
+      * @param sp1  the position of the first character in the import.
+      * @param ns   the namespace.
+      * @param name the name of the definition.
+      * @param sp2  the position of the last character in the import.
+      */
+    case class Definition(sp1: SourcePosition, ns: QName, name: Name.Ident, sp2: SourcePosition) extends ParsedAst.Import
+
+    /**
+      * An AST node that imports a namespace (import foo.bar.baz).
+      *
+      * @param sp1 the position of the first character in the import.
+      * @param ns  the namespace.
+      * @param sp2 the position of the last character in the import.
+      */
+    case class Namespace(sp1: SourcePosition, ns: QName, sp2: SourcePosition) extends ParsedAst.Import
 
   }
 

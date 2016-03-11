@@ -66,14 +66,15 @@ object Compiler {
     * Returns the typed AST corresponding to the given `inputs`.
     */
   def compile(inputs: List[SourceInput], hooks: Map[Symbol.Resolved, Ast.Hook]): Validation[TypedAst.Root, CompilationError] = {
-    val result = @@(inputs.map(parse)) map {
-      case (asts) => asts.reduce[ParsedAst.Root] {
-        // TODO: Change the definition of Root to allow multiple compilation units.
-        case (ast1, ast2) => ParsedAst.Root(ast1.declarations ++ ast2.declarations, ast1.time)
-      }
+    val t = System.nanoTime()
+    val pasts = @@(inputs.map(parse))
+    val e = System.nanoTime() - t
+
+    val root = pasts map {
+      case asts => ParsedAst.Program(asts, Time(e, 0, 0, 0, 0))
     }
 
-    result flatMap {
+    root flatMap {
       case past => Weeder.weed(past, hooks) flatMap {
         case wast => Resolver.resolve(wast) flatMap {
           case rast => Typer.typecheck(rast)

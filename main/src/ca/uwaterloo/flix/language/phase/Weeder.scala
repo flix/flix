@@ -351,9 +351,10 @@ object Weeder {
   /**
     * Compiles the given parsed `past` to a weeded ast.
     */
-  def weed(past: ParsedAst.Root, hooks: Map[Symbol.Resolved, Ast.Hook]): Validation[WeededAst.Root, WeederError] = {
+  def weed(past: ParsedAst.Program, hooks: Map[Symbol.Resolved, Ast.Hook]): Validation[WeededAst.Root, WeederError] = {
     val b = System.nanoTime()
-    @@(past.declarations.map(Declaration.compile)) map {
+    val declarations = past.roots.flatMap(_.declarations)
+    @@(declarations.map(Declaration.compile)) map {
       case decls =>
         val e = System.nanoTime()
         WeededAst.Root(decls, hooks, past.time.copy(weeder = e - b))
