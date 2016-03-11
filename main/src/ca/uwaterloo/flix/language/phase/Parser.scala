@@ -214,6 +214,29 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Imports                                                                 //
+  /////////////////////////////////////////////////////////////////////////////
+  def Import: Rule1[ParsedAst.Import] = rule {
+    Imports.Wildcard | Imports.Definition | Imports.Namespace
+  }
+
+  object Imports {
+
+    def Wildcard: Rule1[ParsedAst.Import.Wildcard] = rule {
+      SP ~ atomic("import") ~ WS ~ NName ~ "." ~ "_" ~ SP ~> ParsedAst.Import.Wildcard
+    }
+
+    def Definition: Rule1[ParsedAst.Import.Definition] = rule {
+      SP ~ atomic("import") ~ WS ~ QName ~ SP ~> ParsedAst.Import.Definition
+    }
+
+    def Namespace: Rule1[ParsedAst.Import.Namespace] = rule {
+      SP ~ atomic("import") ~ WS ~ NName ~ SP ~> ParsedAst.Import.Namespace
+    }
+
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
   def Expression: Rule1[ParsedAst.Expression] = rule {

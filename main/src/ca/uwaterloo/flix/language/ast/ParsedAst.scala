@@ -1,7 +1,5 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.Name.QName
-
 import scala.collection.immutable.Seq
 
 // TODO: Tasks
@@ -294,7 +292,9 @@ object ParsedAst {
   /**
     * A common super-type for AST nodes that represent imports.
     */
-  sealed trait Import extends ParsedAst {
+  sealed trait Import extends ParsedAst
+
+  object Import {
 
     /**
       * An AST node that imports every definition from a namespace (import foo.bar.baz._).
@@ -303,17 +303,16 @@ object ParsedAst {
       * @param ns  the namespace.
       * @param sp2 the position of the last character in the import.
       */
-    case class Wildcard(sp1: SourcePosition, ns: QName, sp2: SourcePosition) extends ParsedAst.Import
+    case class Wildcard(sp1: SourcePosition, ns: Name.NName, sp2: SourcePosition) extends ParsedAst.Import
 
     /**
       * An AST node that imports a definition from a namespace (import foo.bar.baz/qux).
       *
       * @param sp1  the position of the first character in the import.
-      * @param ns   the namespace.
-      * @param name the name of the definition.
+      * @param name the qualified name.
       * @param sp2  the position of the last character in the import.
       */
-    case class Definition(sp1: SourcePosition, ns: QName, name: Name.Ident, sp2: SourcePosition) extends ParsedAst.Import
+    case class Definition(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Import
 
     /**
       * An AST node that imports a namespace (import foo.bar.baz).
@@ -322,7 +321,7 @@ object ParsedAst {
       * @param ns  the namespace.
       * @param sp2 the position of the last character in the import.
       */
-    case class Namespace(sp1: SourcePosition, ns: QName, sp2: SourcePosition) extends ParsedAst.Import
+    case class Namespace(sp1: SourcePosition, ns: Name.NName, sp2: SourcePosition) extends ParsedAst.Import
 
   }
 
