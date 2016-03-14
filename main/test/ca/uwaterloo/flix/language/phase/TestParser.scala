@@ -258,12 +258,6 @@ class TestParser extends FunSuite {
     assert(result.isInstanceOf[ParsedAst.Definition.BoundedLattice])
   }
 
-  test("Definition.BoundedLattice03") {
-    val input = "let a<> = (Tag.Bot, Tag.Top, fn (x: Int, y: Int): Bool = true, bar/lub, baz.qux/glb)"
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.BoundedLattice])
-  }
-
   test("Definition.Relation01") {
     val input = "rel A(b: B)"
     val result = new Parser(SourceInput.Str(input)).Definition.run().get
@@ -1043,18 +1037,6 @@ class TestParser extends FunSuite {
     assert(result.get.isInstanceOf[ParsedAst.Expression.Var])
   }
 
-  test("Expression.Lambda01") {
-    val input = "fn(x: Int): Int = 42"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lambda]
-    assert(result.body.isInstanceOf[ParsedAst.Expression.Lit])
-  }
-
-  test("Expression.Lambda02") {
-    val input = "fn(x: Bool, y: Int, z: Str): Str = x + y + z"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lambda]
-    assert(result.body.isInstanceOf[ParsedAst.Expression.Binary])
-  }
-
   // TODO: issues with arrows
   test("Expression.FatArrow01") {
     val input =
@@ -1100,7 +1082,7 @@ class TestParser extends FunSuite {
     val result = new Parser(SourceInput.Str(input)).Expression.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Expression.ExtendedBinary])
-    assertResult(ExtendedBinaryOperator.Leq)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
+    assertResult(ExtBinaryOperator.Leq)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
   }
 
   test("Expression.Lub01") {
@@ -1108,7 +1090,7 @@ class TestParser extends FunSuite {
     val result = new Parser(SourceInput.Str(input)).Expression.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Expression.ExtendedBinary])
-    assertResult(ExtendedBinaryOperator.Lub)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
+    assertResult(ExtBinaryOperator.Lub)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
   }
 
   test("Expression.Glb1") {
@@ -1116,7 +1098,7 @@ class TestParser extends FunSuite {
     val result = new Parser(SourceInput.Str(input)).Expression.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Expression.ExtendedBinary])
-    assertResult(ExtendedBinaryOperator.Glb)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
+    assertResult(ExtBinaryOperator.Glb)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
   }
 
   test("Expression.Widen01") {
@@ -1124,7 +1106,7 @@ class TestParser extends FunSuite {
     val result = new Parser(SourceInput.Str(input)).Expression.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Expression.ExtendedBinary])
-    assertResult(ExtendedBinaryOperator.Widen)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
+    assertResult(ExtBinaryOperator.Widen)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
   }
 
   test("Expression.Narrow01") {
@@ -1132,7 +1114,7 @@ class TestParser extends FunSuite {
     val result = new Parser(SourceInput.Str(input)).Expression.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Expression.ExtendedBinary])
-    assertResult(ExtendedBinaryOperator.Narrow)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
+    assertResult(ExtBinaryOperator.Narrow)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
   }
 
   test("Expression.BotLeqTop") {
@@ -1140,7 +1122,7 @@ class TestParser extends FunSuite {
     val result = new Parser(SourceInput.Str(input)).Expression.run()
     assert(result.isSuccess)
     assert(result.get.isInstanceOf[ParsedAst.Expression.ExtendedBinary])
-    assertResult(ExtendedBinaryOperator.Leq)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
+    assertResult(ExtBinaryOperator.Leq)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
   }
 
   test("Expression.Existential01") {
@@ -2482,36 +2464,36 @@ class TestParser extends FunSuite {
   test("Operator.ExtendedBinary.Leq ⊑") {
     val input = "⊑"
     val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.ExtendedBinaryOp).get
-    assertResult(ExtendedBinaryOperator.Leq)(result)
+    val result = parser.__run(parser.Operators.ExtBinaryOpt).get
+    assertResult(ExtBinaryOperator.Leq)(result)
   }
 
   test("Operator.ExtendedBinary.Lub ⊔") {
     val input = "⊔"
     val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.ExtendedBinaryOp).get
-    assertResult(ExtendedBinaryOperator.Lub)(result)
+    val result = parser.__run(parser.Operators.ExtBinaryOpt).get
+    assertResult(ExtBinaryOperator.Lub)(result)
   }
 
   test("Operator.ExtendedBinary.Glb ⊓") {
     val input = "⊓"
     val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.ExtendedBinaryOp).get
-    assertResult(ExtendedBinaryOperator.Glb)(result)
+    val result = parser.__run(parser.Operators.ExtBinaryOpt).get
+    assertResult(ExtBinaryOperator.Glb)(result)
   }
 
   test("Operator.ExtendedBinary.Widen ▽") {
     val input = "▽"
     val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.ExtendedBinaryOp).get
-    assertResult(ExtendedBinaryOperator.Widen)(result)
+    val result = parser.__run(parser.Operators.ExtBinaryOpt).get
+    assertResult(ExtBinaryOperator.Widen)(result)
   }
 
   test("Operator.ExtendedBinary.Narrow △") {
     val input = "△"
     val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.ExtendedBinaryOp).get
-    assertResult(ExtendedBinaryOperator.Narrow)(result)
+    val result = parser.__run(parser.Operators.ExtBinaryOpt).get
+    assertResult(ExtBinaryOperator.Narrow)(result)
   }
 
   /////////////////////////////////////////////////////////////////////////////

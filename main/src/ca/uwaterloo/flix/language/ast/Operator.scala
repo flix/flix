@@ -171,33 +171,33 @@ object BinaryOperator {
 /**
   * A common super-type for extended binary operators.
   */
-sealed trait ExtendedBinaryOperator
+sealed trait ExtBinaryOperator
 
-object ExtendedBinaryOperator {
+object ExtBinaryOperator {
 
   /**
     * The partial order operator ⊑.
     */
-  case object Leq extends ExtendedBinaryOperator
+  case object Leq extends ExtBinaryOperator
 
   /**
     * The least upper bound operator ⊔.
     */
-  case object Lub extends ExtendedBinaryOperator
+  case object Lub extends ExtBinaryOperator
 
   /**
     * The greatest lower bound operator ⊓.
     */
-  case object Glb extends ExtendedBinaryOperator
+  case object Glb extends ExtBinaryOperator
 
   /**
     * The widening operator ▽.
     */
-  case object Widen extends ExtendedBinaryOperator
+  case object Widen extends ExtBinaryOperator
 
   /**
     * The narrowing operator △.
     */
-  case object Narrow extends ExtendedBinaryOperator
+  case object Narrow extends ExtBinaryOperator
 
 }

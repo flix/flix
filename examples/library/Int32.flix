@@ -1,6 +1,4 @@
-// TODO: What kind of overloading can we allow for minValue, what about min??
-
-namespace Int {
+namespace Int32 {
 
     /**
      * Returns the minimum number representable by an `Int32` equivalent to `-2^16`.

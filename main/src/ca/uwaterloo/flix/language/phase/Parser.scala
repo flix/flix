@@ -15,6 +15,13 @@ import scala.io.Source
 // TODO: Improve support for characters.
 // TODO: Move components into objects.
 
+// 2. Fat arrows
+//   let f = (x, y) => x + y in
+//   list/foldLeft((x, y) => x + y, 0, 1 :: 2 :: Nil)
+
+
+// 8. Improve UTF8 support.
+
 /**
   * A parser for the Flix language.
   */
@@ -279,7 +286,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Extended: Rule1[ParsedAst.Expression] = rule {
-      Unary ~ optional(optWS ~ Operators.ExtendedBinaryOp ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.ExtendedBinary)
+      Unary ~ optional(optWS ~ Operators.ExtBinaryOpt ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.ExtendedBinary)
     }
 
     def Unary: Rule1[ParsedAst.Expression] = rule {
@@ -297,7 +304,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     def Simple: Rule1[ParsedAst.Expression] = rule {
       LetMatch | IfThenElse | Switch | Match |
         Tag | FatArrow | Tuple | FNil | FNone | FSome | FSet | FMap |
-        Literal | Lambda | Existential | Universal | Bot | Top | Var | UserError
+        Literal | Existential | Universal | Bot | Top | Var | UserError
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -406,11 +413,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Var: Rule1[ParsedAst.Expression.Var] = rule {
       SP ~ QName ~ SP ~> ParsedAst.Expression.Var
-    }
-
-    // TODO: Remove?
-    def Lambda: Rule1[ParsedAst.Expression.Lambda] = rule {
-      SP ~ atomic("fn") ~ optWS ~ "(" ~ ArgumentList ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Lambda
     }
 
     def FatArrow: Rule1[ParsedAst.Expression.FatArrow] = {
@@ -826,12 +828,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     /**
       * Parses an extended binary operator.
       */
-    def ExtendedBinaryOp: Rule1[ExtendedBinaryOperator] = rule {
-      atomic("⊑") ~> (() => ExtendedBinaryOperator.Leq) |
-        atomic("⊔") ~> (() => ExtendedBinaryOperator.Lub) |
-        atomic("⊓") ~> (() => ExtendedBinaryOperator.Glb) |
-        atomic("▽") ~> (() => ExtendedBinaryOperator.Widen) |
-        atomic("△") ~> (() => ExtendedBinaryOperator.Narrow)
+    def ExtBinaryOpt: Rule1[ExtBinaryOperator] = rule {
+      atomic("⊑") ~> (() => ExtBinaryOperator.Leq) |
+        atomic("⊔") ~> (() => ExtBinaryOperator.Lub) |
+        atomic("⊓") ~> (() => ExtBinaryOperator.Glb) |
+        atomic("▽") ~> (() => ExtBinaryOperator.Widen) |
+        atomic("△") ~> (() => ExtBinaryOperator.Narrow)
     }
 
   }

@@ -544,14 +544,6 @@ object Weeder {
           case (lambda, args) => WeededAst.Expression.Apply(lambda, args, exp.loc)
         }
 
-      case exp: ParsedAst.Expression.Lambda =>
-        val args = exp.formals map {
-          case ParsedAst.FormalArg(ident, annotations, tpe) => WeededAst.FormalArg(ident, tpe)
-        }
-        compile(exp.body) map {
-          case body => WeededAst.Expression.Lambda(Ast.Annotations(List.empty), args.toList, body, exp.tpe, exp.loc)
-        }
-
       case exp: ParsedAst.Expression.Unary => compile(exp.e) map {
         case e => WeededAst.Expression.Unary(exp.op, e, exp.loc)
       }
@@ -565,35 +557,35 @@ object Weeder {
         @@(compile(exp.e1), compile(exp.e2)) map {
           case (e1, e2) =>
             exp.op match {
-              case ExtendedBinaryOperator.Leq =>
+              case ExtBinaryOperator.Leq =>
                 val ident = Name.Ident(exp.leftMostSourcePosition, "⊑", exp.sp2)
                 val namespace = Name.NName(exp.leftMostSourcePosition, List.empty, exp.sp2)
                 val name = Name.QName(exp.leftMostSourcePosition, namespace, ident, exp.sp2)
                 val lambda = WeededAst.Expression.Var(name, exp.loc)
                 WeededAst.Expression.Apply(lambda, List(e1, e2), exp.loc)
 
-              case ExtendedBinaryOperator.Lub =>
+              case ExtBinaryOperator.Lub =>
                 val ident = Name.Ident(exp.leftMostSourcePosition, "⊔", exp.sp2)
                 val namespace = Name.NName(exp.leftMostSourcePosition, List.empty, exp.sp2)
                 val name = Name.QName(exp.leftMostSourcePosition, namespace, ident, exp.sp2)
                 val lambda = WeededAst.Expression.Var(name, exp.loc)
                 WeededAst.Expression.Apply(lambda, List(e1, e2), exp.loc)
 
-              case ExtendedBinaryOperator.Glb =>
+              case ExtBinaryOperator.Glb =>
                 val ident = Name.Ident(exp.leftMostSourcePosition, "⊓", exp.sp2)
                 val namespace = Name.NName(exp.leftMostSourcePosition, List.empty, exp.sp2)
                 val name = Name.QName(exp.leftMostSourcePosition, namespace, ident, exp.sp2)
                 val lambda = WeededAst.Expression.Var(name, exp.loc)
                 WeededAst.Expression.Apply(lambda, List(e1, e2), exp.loc)
 
-              case ExtendedBinaryOperator.Widen =>
+              case ExtBinaryOperator.Widen =>
                 val ident = Name.Ident(exp.leftMostSourcePosition, "▽", exp.sp2)
                 val namespace = Name.NName(exp.leftMostSourcePosition, List.empty, exp.sp2)
                 val name = Name.QName(exp.leftMostSourcePosition, namespace, ident, exp.sp2)
                 val lambda = WeededAst.Expression.Var(name, exp.loc)
                 WeededAst.Expression.Apply(lambda, List(e1, e2), exp.loc)
 
-              case ExtendedBinaryOperator.Narrow =>
+              case ExtBinaryOperator.Narrow =>
                 val ident = Name.Ident(exp.leftMostSourcePosition, "△", exp.sp2)
                 val namespace = Name.NName(exp.leftMostSourcePosition, List.empty, exp.sp2)
                 val name = Name.QName(exp.leftMostSourcePosition, namespace, ident, exp.sp2)

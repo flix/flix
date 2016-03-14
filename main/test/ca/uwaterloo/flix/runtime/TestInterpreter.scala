@@ -510,16 +510,6 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(6))(result)
   }
 
-  test("Expression.Lambda.12") {
-    val input =
-      """fn f(x: (Int) -> Int, y: Int): Int = x(y)
-        |fn g: Int = f(fn (x: Int): Int = x + 1, 5)
-      """.stripMargin
-    val model = getModel(input)
-    val result = model.constants(Symbol.Resolved.mk("g"))
-    assertResult(Value.mkInt32(6))(result)
-  }
-
   test("Expression.Lambda.13") {
     val input =
       """fn f(x: (Int) -> Int): (Int) -> Int = x

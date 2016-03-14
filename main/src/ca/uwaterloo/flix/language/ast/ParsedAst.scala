@@ -4,27 +4,6 @@ import scala.collection.immutable.Seq
 
 // TODO: Tasks
 
-// 2. Fat arrows
-//   let f = (x, y) => x + y in
-//   list/foldLeft(f, 0, xs)
-//
-//   list/foldLeft((x, y) => x + y, 0, 1 :: 2 :: Nil)
-//
-
-// 3. Post fix calls:
-// length(xs) or xs.length() or even xs.length
-// toList(xs) or xs.toList() or even xs.toList
-// or even better:
-// map(x => x + 1, xs) or (x => x + 1) map xs (?) or (x => x + 1) `map` xs is already possible?
-// NB: Does not work with namespaces, e.g. foo/length(xs) cannot be written as xs.foo/length
-// more examples:
-//
-// null(xs) or xs.null (maybe bad?)
-// head(xs) or xs.head
-// tail(xs) or xs.tail
-// at(24, xs) or 24.at(xs) (woot?) (alternatively 42 `at` xs`)
-// indexOf(42, xs) or 42 `indexOf` xs.
-
 // 4. Cleanup declarations and definitions.
 
 // 6. Indexes:
@@ -37,12 +16,8 @@ import scala.collection.immutable.Seq
 
 // 7. Remove .loc from ast nodes.
 
-// 8. Improve UTF8 support.
-
-// 9. Improve parsing of characters (and escapes!)
 
 // 10. Re-order all items in here.
-
 
 // TODO: Probably merge fact and rule.
 
@@ -465,7 +440,6 @@ object ParsedAst {
       case Expression.Lit(sp1, _, _) => sp1
       case Expression.Var(sp1, _, _) => sp1
       case Expression.Apply(sp1, _, _, _) => sp1
-      case Expression.Lambda(sp1, _, _, _, _) => sp1
       case Expression.FatArrow(sp1, _, _, _) => sp1
       case Expression.Unary(sp1, _, _, _) => sp1
       case Expression.Binary(e1, _, _, _) => e1.leftMostSourcePosition
@@ -534,20 +508,6 @@ object ParsedAst {
     }
 
     /**
-      * An AST node that represents a lambda expression.
-      *
-      * @param sp1     the position of the first character in the expression.
-      * @param formals the formals (i.e. parameters and their types).
-      * @param tpe     the return type.
-      * @param body    the body expression of the lambda.
-      * @param sp2     the position of the last character in the expression.
-      */
-    // TODO: is this used?
-    case class Lambda(sp1: SourcePosition, formals: Seq[FormalArg], tpe: Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
       * An AST node that represents fat arrow (lambda) expressions.
       *
       * @param sp1     the position of the first character in the expression.
@@ -591,7 +551,7 @@ object ParsedAst {
       * @param e2  the right expression.
       * @param sp2 the position of the last character in the expression.
       */
-    case class ExtendedBinary(e1: ParsedAst.Expression, op: ExtendedBinaryOperator, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+    case class ExtendedBinary(e1: ParsedAst.Expression, op: ExtBinaryOperator, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(e1.leftMostSourcePosition, sp2)
     }
 
@@ -773,6 +733,7 @@ object ParsedAst {
       * @param sp1 the position of the first character in the expression.
       * @param sp2 the position of the last character in the expression.
       */
+    // TODO: Remove
     case class Bot(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
@@ -783,6 +744,7 @@ object ParsedAst {
       * @param sp1 the position of the first character in the expression.
       * @param sp2 the position of the last character in the expression.
       */
+    // TODO: Remove
     case class Top(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
