@@ -315,7 +315,7 @@ object Weeder {
       case d: ParsedAst.Declaration.Namespace => Declaration.compile(d)
       case d: ParsedAst.Declaration.Fact => Declaration.compile(d)
       case d: ParsedAst.Declaration.Rule => Declaration.compile(d)
-      case d: ParsedAst.Declaration.Function => Declaration.compile(d)
+      case d: ParsedAst.Declaration.Definition => Declaration.compile(d)
       case d: ParsedAst.Declaration.Enum => Declaration.compile(d)
       case d: ParsedAst.Declaration.BoundedLattice => Declaration.compile(d)
       case d: ParsedAst.Declaration.Relation => Declaration.compile(d)
@@ -328,7 +328,7 @@ object Weeder {
       */
     def compile(past: ParsedAst.Declaration.Namespace): Validation[WeededAst.Declaration.Namespace, WeederError] =
       @@(past.body.map(compile)) map {
-        case decls => WeededAst.Declaration.Namespace(past.name, decls, past.loc)
+        case decls => WeededAst.Declaration.Namespace(past.name, decls, mkSL(past.sp1, past.sp2))
       }
 
     /**
@@ -336,7 +336,7 @@ object Weeder {
       */
     def compile(past: ParsedAst.Declaration.Fact): Validation[WeededAst.Declaration.Fact, WeederError] =
       Predicate.Head.compile(past.head) map {
-        case p => WeededAst.Declaration.Fact(p, past.loc)
+        case p => WeededAst.Declaration.Fact(p, mkSL(past.sp1, past.sp2))
       }
 
     /**
@@ -344,10 +344,13 @@ object Weeder {
       */
     def compile(past: ParsedAst.Declaration.Rule): Validation[WeededAst.Declaration.Rule, WeederError] = {
       // compute an map from variable names to alias predicates.
-      val aliasesVal = Validation.fold[ParsedAst.Predicate.Alias, Map[String, ParsedAst.Predicate.Alias], WeederError](past.aliases, Map.empty) {
+      val aliases = past.body collect {
+        case p: ParsedAst.Predicate.Alias => p
+      }
+      val aliasesVal = Validation.fold[ParsedAst.Predicate.Alias, Map[String, ParsedAst.Predicate.Alias], WeederError](aliases, Map.empty) {
         case (m, p) => m.get(p.ident.name) match {
           case None => (m + (p.ident.name -> p)).toSuccess
-          case Some(otherAlias) => DuplicateAlias(p.ident.name, otherAlias.loc, p.loc).toFailure
+          case Some(otherAlias) => DuplicateAlias(p.ident.name, mkSL(otherAlias.sp1, otherAlias.sp2), mkSL(p.sp1, p.sp2)).toFailure
         }
       }
 
@@ -357,7 +360,7 @@ object Weeder {
           val bodyVal = @@(past.body.filterNot(_.isInstanceOf[ParsedAst.Predicate.Alias]).map(Predicate.Body.compile))
 
           @@(headVal, bodyVal) map {
-            case (head, body) => WeededAst.Declaration.Rule(head, body, past.loc)
+            case (head, body) => WeededAst.Declaration.Rule(head, body, mkSL(past.sp1, past.sp2))
           }
       }
     }
@@ -365,7 +368,7 @@ object Weeder {
     /**
       * Compiles the given parsed function declaration `past` to a weeded definition.
       */
-    def compile(past: ParsedAst.Declaration.Function): Validation[WeededAst.Definition.Constant, WeederError] = {
+    def compile(past: ParsedAst.Declaration.Definition): Validation[WeededAst.Definition.Constant, WeederError] = {
       val annotationsVal = Annotations.compile(past.annotations)
 
       // TODO: Need to move certain annotations to each lattice valued argument...?
@@ -386,7 +389,7 @@ object Weeder {
         case (anns, args, body) =>
           val exp = WeededAst.Expression.Lambda(anns, args, body, past.tpe, past.body.loc)
           val tpe = Type.Lambda(args map (_.tpe), past.tpe)
-          WeededAst.Definition.Constant(past.ident, exp, tpe, past.loc)
+          WeededAst.Definition.Constant(past.ident, exp, tpe, mkSL(past.sp1, past.sp2))
       }
     }
 
@@ -402,10 +405,10 @@ object Weeder {
           val tagName = caze.ident.name
           macc.get(tagName) match {
             case None => (macc + (tagName -> Type.UnresolvedTag(past.ident, caze.ident, caze.tpe))).toSuccess
-            case Some(otherTag) => DuplicateTag(tagName, otherTag.tag.loc, caze.loc).toFailure
+            case Some(otherTag) => DuplicateTag(tagName, otherTag.tag.loc, mkSL(caze.sp1, caze.sp2)).toFailure
           }
       } map {
-        case m => WeededAst.Definition.Enum(past.ident, m, past.loc)
+        case m => WeededAst.Definition.Enum(past.ident, m, mkSL(past.sp1, past.sp2))
       }
     }
 
@@ -416,8 +419,8 @@ object Weeder {
       // check lattice definition.
       val elmsVal = @@(past.elms.toList.map(Expression.compile))
       elmsVal flatMap {
-        case List(bot, top, leq, lub, glb) => WeededAst.Definition.BoundedLattice(past.tpe, bot, top, leq, lub, glb, past.loc).toSuccess
-        case _ => IllegalLattice(past.loc).toFailure
+        case List(bot, top, leq, lub, glb) => WeededAst.Definition.BoundedLattice(past.tpe, bot, top, leq, lub, glb, mkSL(past.sp1, past.sp2)).toSuccess
+        case _ => IllegalLattice(mkSL(past.sp1, past.sp2)).toFailure
       }
     }
 
@@ -438,7 +441,7 @@ object Weeder {
       }
 
       @@(attributesVal) map {
-        case attributes => WeededAst.Table.Relation(past.ident, attributes, past.loc)
+        case attributes => WeededAst.Table.Relation(past.ident, attributes, mkSL(past.sp1, past.sp2))
       }
     }
 
@@ -459,7 +462,7 @@ object Weeder {
       }
 
       @@(attributesVal) flatMap {
-        case attributes => WeededAst.Table.Lattice(past.ident, attributes.init, attributes.last, past.loc).toSuccess
+        case attributes => WeededAst.Table.Lattice(past.ident, attributes.init, attributes.last, mkSL(past.sp1, past.sp2)).toSuccess
       }
     }
 
@@ -468,13 +471,13 @@ object Weeder {
       */
     def compile(past: ParsedAst.Declaration.Index): Validation[WeededAst.Definition.Index, WeederError] = {
       if (past.indexes.isEmpty)
-        return MissingIndex(past.loc).toFailure
+        return MissingIndex(mkSL(past.sp1, past.sp2)).toFailure
 
       if (past.indexes.exists(_.isEmpty)) {
-        return IllegalIndex(past.loc).toFailure
+        return IllegalIndex(mkSL(past.sp1, past.sp2)).toFailure
       }
 
-      WeededAst.Definition.Index(past.ident, past.indexes, past.loc).toSuccess
+      WeededAst.Definition.Index(past.ident, past.indexes, mkSL(past.sp1, past.sp2)).toSuccess
     }
 
   }
@@ -747,12 +750,12 @@ object Weeder {
       def compile(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Alias] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
         case p: ParsedAst.Predicate.Ambiguous =>
           @@(p.terms.map(t => Term.Head.compile(t, aliases))) map {
-            case terms => WeededAst.Predicate.Head.Relation(p.name, terms, p.loc)
+            case terms => WeededAst.Predicate.Head.Relation(p.name, terms, mkSL(p.sp1, p.sp2))
           }
 
-        case p: ParsedAst.Predicate.Alias => IllegalHeadPredicate(p.loc).toFailure
-        case p: ParsedAst.Predicate.Loop => IllegalHeadPredicate(p.loc).toFailure
-        case p: ParsedAst.Predicate.NotEqual => IllegalHeadPredicate(p.loc).toFailure
+        case ParsedAst.Predicate.Alias(sp1, ident, term, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
+        case ParsedAst.Predicate.Loop(sp1, ident, term, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
+        case ParsedAst.Predicate.NotEqual(sp1, ident1, ident2, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
       }
 
     }
@@ -765,14 +768,14 @@ object Weeder {
       def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] = past match {
         case p: ParsedAst.Predicate.Ambiguous =>
           @@(p.terms.map(Term.Body.compile)) map {
-            case terms => WeededAst.Predicate.Body.Ambiguous(p.name, terms, past.loc)
+            case terms => WeededAst.Predicate.Body.Ambiguous(p.name, terms, mkSL(p.sp1, p.sp2))
           }
 
         case p: ParsedAst.Predicate.NotEqual =>
-          WeededAst.Predicate.Body.NotEqual(p.ident1, p.ident2, p.loc).toSuccess
+          WeededAst.Predicate.Body.NotEqual(p.ident1, p.ident2, mkSL(p.sp1, p.sp2)).toSuccess
 
         case p: ParsedAst.Predicate.Loop => Term.Head.compile(p.term, Map.empty) map {
-          case term => WeededAst.Predicate.Body.Loop(p.ident, term, p.loc)
+          case term => WeededAst.Predicate.Body.Loop(p.ident, term, mkSL(p.sp1, p.sp2))
         }
 
         case p: ParsedAst.Predicate.Alias => throw Compiler.InternalCompilerError("Alias predicate should already have been eliminated.")
@@ -789,32 +792,40 @@ object Weeder {
         * Compiles the given parsed head term `past` to a weeded term.
         */
       def compile(past: ParsedAst.Term, aliases: Map[String, ParsedAst.Predicate.Alias]): Validation[WeededAst.Term.Head, WeederError] = past match {
-        case term: ParsedAst.Term.Wildcard => IllegalHeadTerm("Wildcards may not occur in head predicates.", term.loc).toFailure
-        case term: ParsedAst.Term.Var => aliases.get(term.ident.name) match {
-          case None => WeededAst.Term.Head.Var(term.ident, term.loc).toSuccess
+        case ParsedAst.Term.Wildcard(sp1, sp2) => IllegalHeadTerm("Wildcards may not occur in head predicates.", mkSL(sp1, sp2)).toFailure
+
+        case ParsedAst.Term.Var(sp1, ident, sp2) => aliases.get(ident.name) match {
+          case None => WeededAst.Term.Head.Var(ident, mkSL(sp1, sp2)).toSuccess
           case Some(alias) => compile(alias.term, aliases)
         }
-        case term: ParsedAst.Term.Lit => Literals.compile(term.lit) map {
-          case lit => WeededAst.Term.Head.Lit(lit, term.loc)
+
+        case ParsedAst.Term.Lit(sp1, lit, sp2) => Literals.compile(lit) map {
+          case lit => WeededAst.Term.Head.Lit(lit, mkSL(sp1, sp2))
         }
-        case term: ParsedAst.Term.Tag => term.t match {
+
+        case ParsedAst.Term.Tag(sp1, enum, tag, t, sp2) => t match {
           case None =>
-            val unit = WeededAst.Term.Head.Lit(WeededAst.Literal.Unit(term.loc), term.loc)
-            WeededAst.Term.Head.Tag(term.enumName, term.tagName, unit, term.loc).toSuccess
+            val loc = mkSL(sp1, sp2)
+            val unit = WeededAst.Term.Head.Lit(WeededAst.Literal.Unit(loc), loc)
+            WeededAst.Term.Head.Tag(enum, tag, unit, loc).toSuccess
           case Some(t) => compile(t, aliases) map {
-            case inner => WeededAst.Term.Head.Tag(term.enumName, term.tagName, inner, term.loc)
+            case inner => WeededAst.Term.Head.Tag(enum, tag, inner, mkSL(sp1, sp2))
           }
         }
-        case term: ParsedAst.Term.Tuple => term.elms.toList match {
-          case Nil => WeededAst.Term.Head.Lit(WeededAst.Literal.Unit(term.loc), term.loc).toSuccess
+
+        case ParsedAst.Term.Tuple(sp1, elms, sp2) => elms.toList match {
+          case Nil =>
+            val loc = mkSL(sp1, sp2)
+            WeededAst.Term.Head.Lit(WeededAst.Literal.Unit(loc), loc).toSuccess
           case x :: Nil => compile(x, aliases)
           case xs => @@(xs map (x => compile(x, aliases))) map {
-            case elms => WeededAst.Term.Head.Tuple(elms, term.loc)
+            case elms => WeededAst.Term.Head.Tuple(elms, mkSL(sp1, sp2))
           }
         }
-        case term: ParsedAst.Term.Apply =>
-          @@(term.args map (t => compile(t, aliases))) map {
-            case args => WeededAst.Term.Head.Apply(term.name, args, term.loc)
+
+        case ParsedAst.Term.Apply(sp1, name, args, sp2) =>
+          @@(args map (t => compile(t, aliases))) map {
+            case args => WeededAst.Term.Head.Apply(name, args, mkSL(sp1, sp2))
           }
       }
     }
@@ -824,14 +835,14 @@ object Weeder {
         * Compiles the given parsed body term `past` to a weeded term.
         */
       def compile(past: ParsedAst.Term): Validation[WeededAst.Term.Body, WeederError] = past match {
-        case term: ParsedAst.Term.Wildcard => WeededAst.Term.Body.Wildcard(term.loc).toSuccess
-        case term: ParsedAst.Term.Var => WeededAst.Term.Body.Var(term.ident, term.loc).toSuccess
-        case term: ParsedAst.Term.Lit => Literals.compile(term.lit) map {
-          case lit => WeededAst.Term.Body.Lit(lit, term.loc)
+        case ParsedAst.Term.Wildcard(sp1, sp2) => WeededAst.Term.Body.Wildcard(mkSL(sp1, sp2)).toSuccess
+        case ParsedAst.Term.Var(sp1, ident, sp2) => WeededAst.Term.Body.Var(ident, mkSL(sp1, sp2)).toSuccess
+        case ParsedAst.Term.Lit(sp1, lit, sp2) => Literals.compile(lit) map {
+          case lit => WeededAst.Term.Body.Lit(lit, mkSL(sp1, sp2))
         }
-        case term: ParsedAst.Term.Tag => IllegalBodyTerm("Tags calls may not occur in body predicates.", term.loc).toFailure
-        case term: ParsedAst.Term.Tuple => IllegalBodyTerm("Tuples may not occur in body predicates.", term.loc).toFailure
-        case term: ParsedAst.Term.Apply => IllegalBodyTerm("Function calls may not occur in body predicates.", term.loc).toFailure
+        case ParsedAst.Term.Tag(sp1, enum, tag, t, sp2) => IllegalBodyTerm("Tags may not occur in body predicates.", mkSL(sp1, sp2)).toFailure
+        case ParsedAst.Term.Tuple(sp1, elms, sp2) => IllegalBodyTerm("Tuples may not occur in body predicates.", mkSL(sp1, sp2)).toFailure
+        case ParsedAst.Term.Apply(sp1, name, args, sp2) => IllegalBodyTerm("Function calls may not occur in body predicates.", mkSL(sp1, sp2)).toFailure
       }
     }
 
@@ -852,7 +863,7 @@ object Weeder {
             seen += (x.name -> x)
             Annotations.compile(x)
           case Some(otherAnn) =>
-            DuplicateAnnotation(x.name, otherAnn.loc, x.loc).toFailure
+            DuplicateAnnotation(x.name, mkSL(otherAnn.sp1, otherAnn.sp2), mkSL(x.sp1, x.sp2)).toFailure
         }
       }
       @@(result) map Ast.Annotations
@@ -861,14 +872,17 @@ object Weeder {
     /**
       * Weeds the given parsed annotation `past`.
       */
-    def compile(past: ParsedAst.Annotation): Validation[Ast.Annotation, WeederError] = past.name match {
-      case "associative" => Ast.Annotation.Associative(past.loc).toSuccess
-      case "commutative" => Ast.Annotation.Commutative(past.loc).toSuccess
-      case "monotone" => Ast.Annotation.Monotone(past.loc).toSuccess
-      case "strict" => Ast.Annotation.Strict(past.loc).toSuccess
-      case "unchecked" => Ast.Annotation.Unchecked(past.loc).toSuccess
-      case "unsafe" => Ast.Annotation.Unsafe(past.loc).toSuccess
-      case _ => IllegalAnnotation(past.name, past.loc).toFailure
+    def compile(past: ParsedAst.Annotation): Validation[Ast.Annotation, WeederError] = {
+      val loc = mkSL(past.sp1, past.sp2)
+      past.name match {
+        case "associative" => Ast.Annotation.Associative(loc).toSuccess
+        case "commutative" => Ast.Annotation.Commutative(loc).toSuccess
+        case "monotone" => Ast.Annotation.Monotone(loc).toSuccess
+        case "strict" => Ast.Annotation.Strict(loc).toSuccess
+        case "unchecked" => Ast.Annotation.Unchecked(loc).toSuccess
+        case "unsafe" => Ast.Annotation.Unsafe(loc).toSuccess
+        case _ => IllegalAnnotation(past.name, loc).toFailure
+      }
     }
   }
 

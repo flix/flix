@@ -112,13 +112,13 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ atomic("namespace") ~ WS ~ NName ~ optWS ~ '{' ~ optWS ~ zeroOrMore(Declaration).separatedBy(optWS) ~ optWS ~ '}' ~ SP ~ optSC ~> ParsedAst.Declaration.Namespace
     }
 
-    def Function: Rule1[ParsedAst.Declaration.Function] = {
+    def Function: Rule1[ParsedAst.Declaration.Definition] = {
       def Annotations: Rule1[Seq[ParsedAst.Annotation]] = rule {
         zeroOrMore(Annotation).separatedBy(WS)
       }
 
       rule {
-        SP ~ Annotations ~ optWS ~ (atomic("def") | atomic("fn")) ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Declaration.Function
+        SP ~ Annotations ~ optWS ~ (atomic("def") | atomic("fn")) ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Declaration.Definition
       }
     }
 
@@ -233,7 +233,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
           })
       }
 
-      def ImplBody: Rule1[Seq[ParsedAst.Declaration.Function]] = rule {
+      def ImplBody: Rule1[Seq[ParsedAst.Declaration.Definition]] = rule {
         "{" ~ optWS ~ zeroOrMore(Function).separatedBy(WS) ~ optWS ~ "}"
       }
 

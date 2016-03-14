@@ -4,8 +4,6 @@ import scala.collection.immutable.Seq
 
 // TODO: Tasks
 
-// 4. Cleanup declarations and definitions.
-
 // 6. Indexes:
 // index SUAfter(
 //  Index({location, object}, BTREE) with FilterF(f),
@@ -85,12 +83,7 @@ object ParsedAst {
   /**
     * A common super-type for AST nodes that represent declarations.
     */
-  sealed trait Declaration extends ParsedAst {
-    /**
-      * Returns the source location of `this` declaration.
-      */
-    def loc: SourceLocation
-  }
+  sealed trait Declaration extends ParsedAst
 
   object Declaration {
 
@@ -102,39 +95,7 @@ object ParsedAst {
       * @param body the nested declarations.
       * @param sp2  the position of the last character in the namespace.
       */
-    case class Namespace(sp1: SourcePosition, name: Name.NName, body: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
-      * An AST node that represents a fact declaration.
-      *
-      * @param sp1  the position of the first character in the fact.
-      * @param head the head predicate.
-      * @param sp2  the position of the last character in the fact.
-      */
-    case class Fact(sp1: SourcePosition, head: ParsedAst.Predicate, sp2: SourcePosition) extends ParsedAst.Declaration {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
-      * An AST node that represent a rule declaration.
-      *
-      * @param sp1  the position of the first character in the rule.
-      * @param head the head predicate.
-      * @param body the body predicates.
-      * @param sp2  the position of the last character in the rule.
-      */
-    case class Rule(sp1: SourcePosition, head: ParsedAst.Predicate, body: Seq[ParsedAst.Predicate], sp2: SourcePosition) extends ParsedAst.Declaration {
-      /**
-        * Returns the list of alias predicates occurring the body of the rule.
-        */
-      val aliases: Seq[ParsedAst.Predicate.Alias] = body collect {
-        case p: ParsedAst.Predicate.Alias => p
-      }
-
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Namespace(sp1: SourcePosition, name: Name.NName, body: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * An AST node that represents a function declaration.
@@ -147,9 +108,29 @@ object ParsedAst {
       * @param body        the body expression of the function.
       * @param sp2         the position of the last character in the declaration.
       */
-    case class Function(sp1: SourcePosition, annotations: Seq[ParsedAst.Annotation], ident: Name.Ident, formals: Seq[FormalArg], tpe: Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Definition(sp1: SourcePosition, annotations: Seq[ParsedAst.Annotation], ident: Name.Ident, formals: Seq[FormalArg], tpe: Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+
+    /**
+      * An AST node that represents a signature of a function.
+      *
+      * @param sp1     the position of the first character in the declaration.
+      * @param ident   the name of the function.
+      * @param formals the formals (i.e. parameters and their types).
+      * @param tpe     the return type.
+      * @param sp2     the position of the last character in the declaration.
+      */
+    case class Signature(sp1: SourcePosition, ident: Name.Ident, formals: Seq[FormalArg], tpe: Type, sp2: SourcePosition) extends ParsedAst.Declaration
+
+    /**
+      * An AST node that represents an external function.
+      *
+      * @param sp1     the position of the first character in the declaration.
+      * @param ident   the name of the function.
+      * @param formals the formals (i.e. parameters and their types).
+      * @param tpe     the return type.
+      * @param sp2     the position of the last character in the declaration.
+      */
+    case class External(sp1: SourcePosition, ident: Name.Ident, formals: Seq[FormalArg], tpe: Type, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * An AST node that represents a law declaration.
@@ -162,35 +143,7 @@ object ParsedAst {
       * @param body    the body expression of the function.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class Law(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], params: Seq[FormalArg], tpe: Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
-      * An AST node that represents a signature of a function.
-      *
-      * @param sp1     the position of the first character in the declaration.
-      * @param ident   the name of the function.
-      * @param formals the formals (i.e. parameters and their types).
-      * @param tpe     the return type.
-      * @param sp2     the position of the last character in the declaration.
-      */
-    case class Signature(sp1: SourcePosition, ident: Name.Ident, formals: Seq[FormalArg], tpe: Type, sp2: SourcePosition) extends ParsedAst.Declaration {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
-      * An AST node that represents an external function.
-      *
-      * @param sp1     the position of the first character in the declaration.
-      * @param ident   the name of the function.
-      * @param formals the formals (i.e. parameters and their types).
-      * @param tpe     the return type.
-      * @param sp2     the position of the last character in the declaration.
-      */
-    case class External(sp1: SourcePosition, ident: Name.Ident, formals: Seq[FormalArg], tpe: Type, sp2: SourcePosition) extends ParsedAst.Declaration {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Law(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], params: Seq[FormalArg], tpe: Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * An AST node that represents a enum declaration.
@@ -200,51 +153,7 @@ object ParsedAst {
       * @param cases the variants of the enum.
       * @param sp2   the position of the last character in the declaration.
       */
-    case class Enum(sp1: SourcePosition, ident: Name.Ident, cases: Seq[ParsedAst.Case], sp2: SourcePosition) extends ParsedAst.Declaration {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-    
-    /**
-      * An AST node that represent a relation declaration.
-      *
-      * @param sp1        the position of the first character in the declaration.
-      * @param ident      the name of the relation.
-      * @param attributes the name and type of the attributes.
-      * @param sp2        the position of the last character in the declaration.
-      */
-    case class Relation(sp1: SourcePosition, ident: Name.Ident, attributes: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration {
-      /**
-        * Returns the source location of `this` declaration.
-        */
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
-      * An AST node that represents a lattice declaration.
-      *
-      * @param sp1        the position of the first character in the declaration.
-      * @param ident      the name of the relation.
-      * @param attributes the name and type of the attributes.
-      * @param sp2        the position of the last character in the declaration.
-      */
-    case class Lattice(sp1: SourcePosition, ident: Name.Ident, attributes: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration {
-      /**
-        * Returns the source location of `this` declaration.
-        */
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
-
-    /**
-      * An AST node that represents an index declaration.
-      *
-      * @param sp1     the position of the first character in the declaration.
-      * @param ident   the name of the relation or lattice.
-      * @param indexes the sequence of indexes.
-      * @param sp2     the position of the last character in the declaration.
-      */
-    case class Index(sp1: SourcePosition, ident: Name.Ident, indexes: Seq[Seq[Name.Ident]], sp2: SourcePosition) extends ParsedAst.Declaration {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Enum(sp1: SourcePosition, ident: Name.Ident, cases: Seq[ParsedAst.Case], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * An AST node that represents a type class declaration.
@@ -255,9 +164,7 @@ object ParsedAst {
       * @param bounds  the context bounds (i.e. type parameter constraints).
       * @param sp2     the position of the last character in the declaration.
       */
-    case class Class(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Type], bounds: Seq[ContextBound], body: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Class(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Type], bounds: Seq[ContextBound], body: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * An AST node that represents a type class implementation.
@@ -268,9 +175,56 @@ object ParsedAst {
       * @param bounds  the context bounds (i.e. type parameter constraints).
       * @param sp2     the position of the last character in the declaration.
       */
-    case class Impl(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Type], bounds: Seq[ContextBound], body: Seq[ParsedAst.Declaration.Function], sp2: SourcePosition) extends ParsedAst.Declaration {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Impl(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Type], bounds: Seq[ContextBound], body: Seq[ParsedAst.Declaration.Definition], sp2: SourcePosition) extends ParsedAst.Declaration
+
+    /**
+      * An AST node that represent a relation declaration.
+      *
+      * @param sp1        the position of the first character in the declaration.
+      * @param ident      the name of the relation.
+      * @param attributes the name and type of the attributes.
+      * @param sp2        the position of the last character in the declaration.
+      */
+    case class Relation(sp1: SourcePosition, ident: Name.Ident, attributes: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
+
+    /**
+      * An AST node that represents a lattice declaration.
+      *
+      * @param sp1        the position of the first character in the declaration.
+      * @param ident      the name of the relation.
+      * @param attributes the name and type of the attributes.
+      * @param sp2        the position of the last character in the declaration.
+      */
+    case class Lattice(sp1: SourcePosition, ident: Name.Ident, attributes: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
+
+    /**
+      * An AST node that represents an index declaration.
+      *
+      * @param sp1     the position of the first character in the declaration.
+      * @param ident   the name of the relation or lattice.
+      * @param indexes the sequence of indexes.
+      * @param sp2     the position of the last character in the declaration.
+      */
+    case class Index(sp1: SourcePosition, ident: Name.Ident, indexes: Seq[Seq[Name.Ident]], sp2: SourcePosition) extends ParsedAst.Declaration
+
+    /**
+      * An AST node that represents a fact declaration.
+      *
+      * @param sp1  the position of the first character in the fact.
+      * @param head the head predicate.
+      * @param sp2  the position of the last character in the fact.
+      */
+    case class Fact(sp1: SourcePosition, head: ParsedAst.Predicate, sp2: SourcePosition) extends ParsedAst.Declaration
+
+    /**
+      * An AST node that represent a rule declaration.
+      *
+      * @param sp1  the position of the first character in the rule.
+      * @param head the head predicate.
+      * @param body the body predicates.
+      * @param sp2  the position of the last character in the rule.
+      */
+    case class Rule(sp1: SourcePosition, head: ParsedAst.Predicate, body: Seq[ParsedAst.Predicate], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * An AST node that represents bounded lattice declaration.
@@ -281,9 +235,7 @@ object ParsedAst {
       * @param sp2  the position of the last character in the declaration.
       */
     @deprecated("Will be replaced by type classes", "0.1.0")
-    case class BoundedLattice(sp1: SourcePosition, tpe: Type, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class BoundedLattice(sp1: SourcePosition, tpe: Type, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration
 
   }
 
@@ -873,12 +825,7 @@ object ParsedAst {
   /**
     * A common super-type for predicates.
     */
-  sealed trait Predicate extends ParsedAst {
-    /**
-      * Returns the source location of `this` predicate.
-      */
-    def loc: SourceLocation
-  }
+  sealed trait Predicate extends ParsedAst
 
   object Predicate {
 
@@ -890,16 +837,12 @@ object ParsedAst {
       * @param terms the terms of the predicate.
       * @param sp2   the position of the last character in the predicate.
       */
-    case class Ambiguous(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Ambiguous(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate
 
     /**
       * An AST node that represents the special not equal predicate.
       */
-    case class NotEqual(sp1: SourcePosition, ident1: Name.Ident, ident2: Name.Ident, sp2: SourcePosition) extends ParsedAst.Predicate {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class NotEqual(sp1: SourcePosition, ident1: Name.Ident, ident2: Name.Ident, sp2: SourcePosition) extends ParsedAst.Predicate
 
     /**
       * An AST node that represents the special alias predicate.
@@ -909,9 +852,7 @@ object ParsedAst {
       * @param term  the term.
       * @param sp2   the position of the last character in the predicate.
       */
-    case class Alias(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Term, sp2: SourcePosition) extends ParsedAst.Predicate {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Alias(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Term, sp2: SourcePosition) extends ParsedAst.Predicate
 
     /**
       * An AST node that represents the special loop predicate.
@@ -921,21 +862,14 @@ object ParsedAst {
       * @param term  the set term.
       * @param sp2   the position of the last character in the predicate.
       */
-    case class Loop(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Term, sp2: SourcePosition) extends ParsedAst.Predicate {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Loop(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Term, sp2: SourcePosition) extends ParsedAst.Predicate
 
   }
 
   /**
     * AST nodes for Terms.
     */
-  sealed trait Term extends ParsedAst {
-    /**
-      * Returns the source location of `this` term.
-      */
-    def loc: SourceLocation
-  }
+  sealed trait Term extends ParsedAst
 
   object Term {
 
@@ -945,9 +879,7 @@ object ParsedAst {
       * @param sp1 the position of the first character in the term.
       * @param sp2 the position of the last character in the term.
       */
-    case class Wildcard(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Term {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Wildcard(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Term
 
     /**
       * An AST node that represent a variable term.
@@ -956,9 +888,7 @@ object ParsedAst {
       * @param ident the variable identifier.
       * @param sp2   the position of the last character in the term.
       */
-    case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Term {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Term
 
     /**
       * An AST node that represent a literal term.
@@ -967,9 +897,7 @@ object ParsedAst {
       * @param lit the literal.
       * @param sp2 the position of the last character in the term.
       */
-    case class Lit(sp1: SourcePosition, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Term {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Lit(sp1: SourcePosition, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Term
 
     /**
       * An AST node that represents a tag term.
@@ -980,9 +908,7 @@ object ParsedAst {
       * @param t        the (optional) nested term.
       * @param sp2      the position of the last character in the term.
       */
-    case class Tag(sp1: SourcePosition, enumName: Name.QName, tagName: Name.Ident, t: Option[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Tag(sp1: SourcePosition, enumName: Name.QName, tagName: Name.Ident, t: Option[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term
 
     /**
       * An AST node that represents a tuple term.
@@ -991,9 +917,7 @@ object ParsedAst {
       * @param elms the elements of the tuple.
       * @param sp2  the position of the last character in the term.
       */
-    case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term
 
     /**
       * An AST node that represent a function application term
@@ -1003,9 +927,7 @@ object ParsedAst {
       * @param args the arguments to the function.
       * @param sp2  the position of the last character in the term.
       */
-    case class Apply(sp1: SourcePosition, name: Name.QName, args: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Apply(sp1: SourcePosition, name: Name.QName, args: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term
 
   }
 
@@ -1024,9 +946,7 @@ object ParsedAst {
     * @param name the name of the annotation.
     * @param sp2  the position of the last character in the annotation.
     */
-  case class Annotation(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst {
-    def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-  }
+  case class Annotation(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst
 
   /**
     * An AST node representing a case declaration.
@@ -1036,9 +956,7 @@ object ParsedAst {
     * @param tpe   the type of the declared tag
     * @param sp2   the position of the last character in the case declaration.
     */
-  case class Case(sp1: SourcePosition, ident: Name.Ident, tpe: Type, sp2: SourcePosition) extends ParsedAst {
-    def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-  }
+  case class Case(sp1: SourcePosition, ident: Name.Ident, tpe: Type, sp2: SourcePosition) extends ParsedAst
 
   /**
     * An AST node representing a formal argument of a function.
