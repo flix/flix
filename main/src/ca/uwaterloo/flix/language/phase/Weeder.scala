@@ -247,63 +247,6 @@ object Weeder {
     }
 
     /**
-      * An error raised to indicate an illegal lattice attribute occurring in a relation.
-      *
-      * @param loc the location where the illegal definition occurs.
-      */
-    case class IllegalLatticeAttributeInRelation(loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-            |${consoleCtx.red(s">> Illegal lattice attribute in relation.")}
-           |
-            |${loc.underline}
-           |A relation must not contain any lattice interpreted attributes.
-           |
-            |Tip: Remove the lattice interpretation (<>) or change the relation to a lattice (replace rel by lat).
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that the last attribute of a lattice definition does not have a lattice interpretation.
-      *
-      * @param loc the location where the illegal definition occurs.
-      */
-    case class IllegalNonLatticeAttribute(loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-            |${consoleCtx.red(s">> Illegal non-lattice attribute.")}
-           |
-            |${loc.underline}
-           |The last attribute of lattice must have a lattice interpretation.
-           |
-            |Tip: Change the interpretation of the last attribute (adding <>) or change the lattice to a relation (replace lat by rel).
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that a lattice attribute is followed by a non-lattice attribute.
-      *
-      * @param loc1 the location where the first lattice attribute occurs.
-      * @param loc2 the location where a following non-lattice attribute occurs.
-      */
-    case class IllegalMixedAttributes(loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
-           |
-            |${consoleCtx.red(s">> Illegal non-lattice attribute follows lattice attribute.")}
-           |
-           |The first lattice attribute was here:
-           |${loc1.underline}
-           |The illegal non-lattice attribute was here:
-           |${loc2.underline}
-           |
-            |Tip: Rearrange the attributes or possibly their interpretations.
-         """.stripMargin
-    }
-
-    /**
       * An error raised to indicate that the variable `name` occurs multiple times in the same pattern.
       *
       * @param name the name of the variable.
@@ -492,18 +435,13 @@ object Weeder {
       * Compiles the given parsed relation `past` to a weeded relation definition.
       */
     def compile(past: ParsedAst.Definition.Relation): Validation[WeededAst.Table.Relation, WeederError] = {
-      // check duplicate attributes.
+      // check for duplicate attributes.
       val seen = mutable.Map.empty[String, Name.Ident]
       val attributesVal = past.attributes.map {
-        case ParsedAst.Attribute(ident, interp) => seen.get(ident.name) match {
+        case ParsedAst.Attribute(ident, tpe) => seen.get(ident.name) match {
           case None =>
             seen += (ident.name -> ident)
-            interp match {
-              case i: ParsedAst.Interpretation.Set =>
-                WeededAst.Attribute(ident, interp.tpe, WeededAst.Interpretation.Set).toSuccess
-              case i: ParsedAst.Interpretation.Lattice =>
-                IllegalLatticeAttributeInRelation(ident.loc).toFailure
-            }
+            WeededAst.Attribute(ident, tpe).toSuccess
           case Some(otherIdent) =>
             DuplicateAttribute(ident.name, otherIdent.loc, ident.loc).toFailure
         }
@@ -518,42 +456,20 @@ object Weeder {
       * Compiles the given parsed relation `past` to a weeded lattice definition.
       */
     def compile(past: ParsedAst.Definition.Lattice): Validation[WeededAst.Table.Lattice, WeederError] = {
-      // TODO: Rewrite so we can get rid of WeededAst.Interpretation.
-
-      // check duplicate attributes.
+      // check for duplicate attributes.
       val seen = mutable.Map.empty[String, Name.Ident]
       val attributesVal = past.attributes.map {
-        case ParsedAst.Attribute(ident, interp) => seen.get(ident.name) match {
+        case ParsedAst.Attribute(ident, tpe) => seen.get(ident.name) match {
           case None =>
             seen += (ident.name -> ident)
-            interp match {
-              case i: ParsedAst.Interpretation.Set =>
-                WeededAst.Attribute(ident, interp.tpe, WeededAst.Interpretation.Set).toSuccess
-              case i: ParsedAst.Interpretation.Lattice =>
-                WeededAst.Attribute(ident, interp.tpe, WeededAst.Interpretation.Lattice).toSuccess
-            }
+            WeededAst.Attribute(ident, tpe).toSuccess
           case Some(otherIdent) =>
             DuplicateAttribute(ident.name, otherIdent.loc, ident.loc).toFailure
         }
       }
 
       @@(attributesVal) flatMap {
-        case attributes =>
-          // the last attribute of a lattice definition must have a lattice interpretation.
-          attributes.last.interp match {
-            case WeededAst.Interpretation.Set =>
-              IllegalNonLatticeAttribute(attributes.last.ident.loc).toFailure
-            case WeededAst.Interpretation.Lattice =>
-
-              val index = attributes.indexWhere(_.interp == WeededAst.Interpretation.Lattice)
-              val (keys, values) = attributes.splitAt(index)
-
-              // ensure that no non-lattice attribute occurs after `index`.
-              values.find(_.interp == WeededAst.Interpretation.Set) match {
-                case None => WeededAst.Table.Lattice(past.ident, keys, values, past.loc).toSuccess
-                case Some(attr) => IllegalMixedAttributes(values.head.ident.loc, attr.ident.loc).toFailure
-              }
-          }
+        case attributes => WeededAst.Table.Lattice(past.ident, attributes.init, attributes.last, past.loc).toSuccess
       }
     }
 

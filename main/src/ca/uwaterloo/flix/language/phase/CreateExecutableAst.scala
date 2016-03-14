@@ -10,6 +10,7 @@ import scala.collection.mutable
   *
   * - Lists are copied to arrays
   */
+// TODO: Better name
 object CreateExecutableAst {
 
   def toExecutable(sast: SimplifiedAst.Root): ExecutableAst.Root = {
@@ -72,9 +73,9 @@ object CreateExecutableAst {
       case SimplifiedAst.Table.Relation(symbol, attributes, loc) =>
         val attributesArray = attributes.map(CreateExecutableAst.toExecutable).toArray
         ExecutableAst.Table.Relation(symbol, attributesArray, loc)
-      case SimplifiedAst.Table.Lattice(symbol, keys, values, loc) =>
+      case SimplifiedAst.Table.Lattice(symbol, keys, value, loc) =>
         val keysArray = keys.map(CreateExecutableAst.toExecutable).toArray
-        val valuesArray = values.map(CreateExecutableAst.toExecutable).toArray
+        val valuesArray = Array(CreateExecutableAst.toExecutable(value))
         ExecutableAst.Table.Lattice(symbol, keysArray, valuesArray, loc)
     }
   }

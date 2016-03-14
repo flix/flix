@@ -14,7 +14,7 @@ class TestExamples extends FunSuite {
     val input =
       """namespace Belnap {
         |    let Belnap<> = (Belnap.Bot, Belnap.Top, leq, lub, glb);
-        |    lat A(k: Int, v: Belnap<>);
+        |    lat A(k: Int, v: Belnap);
         |
         |    A(1, Belnap.True).
         |    A(2, Belnap.False).
@@ -62,7 +62,7 @@ class TestExamples extends FunSuite {
     val input =
       """namespace Parity {
         |    let Parity<> = (Parity.Bot, Parity.Top, leq, lub, glb);
-        |    lat A(k: Int, v: Parity<>);
+        |    lat A(k: Int, v: Parity);
         |
         |    A(1, Parity.Odd).
         |    A(2, Parity.Even).
@@ -111,7 +111,7 @@ class TestExamples extends FunSuite {
     val input =
       """namespace Sign {
         |    let Sign<> = (Sign.Bot, Sign.Top, leq, lub, glb);
-        |    lat A(k: Int, v: Sign<>);
+        |    lat A(k: Int, v: Sign);
         |
         |    A(1, Sign.Neg).
         |    A(2, Sign.Zer).
@@ -162,7 +162,7 @@ class TestExamples extends FunSuite {
     val input =
       """namespace Constant {
         |    let Constant<> = (Constant.Bot, Constant.Top, leq, lub, glb);
-        |    lat A(k: Int, v: Constant<>);
+        |    lat A(k: Int, v: Constant);
         |
         |    A(0, Constant.Cst(0)).
         |    A(1, Constant.Cst(1)).
@@ -208,7 +208,7 @@ class TestExamples extends FunSuite {
     val input =
       """namespace ConstantSign {
         |    let ConstSign<> = (ConstSign.Bot, ConstSign.Top, leq, lub, glb);
-        |    lat A(k: Int, v: ConstSign<>);
+        |    lat A(k: Int, v: ConstSign);
         |
         |    A(1, ConstSign.Cst(-1)).
         |    A(2, ConstSign.Cst(0)).

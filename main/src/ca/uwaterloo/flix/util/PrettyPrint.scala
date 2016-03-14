@@ -40,7 +40,7 @@ object PrettyPrint {
       case None => // nop
       case Some(xs) =>
         val l = model.root.tables(sym).asInstanceOf[TypedAst.Table.Lattice]
-        val cols = l.keys.map(_.ident.name) ::: l.values.map(_.ident.name + "<>")
+        val cols = l.keys.map(_.ident.name) ::: l.value.ident.name :: Nil
         val ascii = new AsciiTable().withCols(cols: _*)
         for ((keys, elms) <- xs.toSeq.sortBy(_._1.head.toString)) {
           ascii.mkRow((keys map Value.pretty) ++ (elms map Value.pretty))

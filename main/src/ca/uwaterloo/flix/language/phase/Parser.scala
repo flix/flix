@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
+import java.nio.charset.Charset
 import java.nio.file.Files
 import java.util.zip.ZipFile
 
@@ -20,16 +21,22 @@ import scala.io.Source
 class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   /*
+    * Implicitely assumed default charset.
+    */
+  val DefaultCharset = Charset.forName("UTF-8")
+
+  /*
    * Initialize parser input.
    */
   override val input: ParserInput = source match {
     case SourceInput.Str(str) => str
-    case SourceInput.TxtFile(path) => Files.readAllBytes(path)
+    case SourceInput.TxtFile(path) =>
+      new String(Files.readAllBytes(path), DefaultCharset)
     case SourceInput.ZipFile(path) =>
       val file = new ZipFile(path.toFile)
       val entry = file.entries().nextElement()
       val inputStream = file.getInputStream(entry)
-      StreamOps.readAllBytes(inputStream)
+      new String(StreamOps.readAllBytes(inputStream), DefaultCharset)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -224,12 +231,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
   }
 
-  def Interpretation: Rule1[ParsedAst.Interpretation] = rule {
-    Type ~ "<>" ~> ParsedAst.Interpretation.Lattice | Type ~> ParsedAst.Interpretation.Set
-  }
-
   def Attribute: Rule1[ParsedAst.Attribute] = rule {
-    Ident ~ optWS ~ ":" ~ optWS ~ Interpretation ~> ParsedAst.Attribute
+    Ident ~ optWS ~ ":" ~ optWS ~ Type ~> ParsedAst.Attribute
   }
 
   def Attributes: Rule1[Seq[ParsedAst.Attribute]] = rule {

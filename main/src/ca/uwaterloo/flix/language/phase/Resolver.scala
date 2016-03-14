@@ -24,11 +24,11 @@ object Resolver {
     /**
       * An error raised to indicate that the given `name` is used for multiple definitions.
       *
-      * @param sym the symbol.
+      * @param sym  the symbol.
       * @param loc1 the location of the first definition.
       * @param loc2 the location of the second definition.
       */
-    case class DuplicateDefinition(sym: Any /* TODO: Type */, loc1: SourceLocation, loc2: SourceLocation) extends ResolverError {
+    case class DuplicateDefinition(sym: Any /* TODO: Type */ , loc1: SourceLocation, loc2: SourceLocation) extends ResolverError {
       val message =
         s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc1.source.format}")}
            |
@@ -505,7 +505,7 @@ object Resolver {
       val symVal = syms.lookupTable(wast.ident, namespace)
 
       val attributesVal = wast.attributes.map {
-        case WeededAst.Attribute(ident, tpe, _) =>
+        case WeededAst.Attribute(ident, tpe) =>
           Types.resolve(tpe, namespace, syms) map (t => ResolvedAst.Attribute(ident, t))
       }
 
@@ -518,24 +518,22 @@ object Resolver {
       val symVal = syms.lookupTable(wast.ident, namespace)
 
       val keysVal = wast.keys.map {
-        case WeededAst.Attribute(ident, tpe, _) => Types.resolve(tpe, namespace: List[String], syms) map (t => ResolvedAst.Attribute(ident, t))
+        case WeededAst.Attribute(ident, tpe) => Types.resolve(tpe, namespace: List[String], syms) map (t => ResolvedAst.Attribute(ident, t))
       }
 
-      val valuesVal = wast.values.map {
-        case WeededAst.Attribute(ident, tpe, _) => Types.resolve(tpe, namespace: List[String], syms) map {
-          case t => ResolvedAst.Attribute(ident, t)
-        }
+      val valueVal = Types.resolve(wast.value.tpe, namespace: List[String], syms) map {
+        case t => ResolvedAst.Attribute(wast.value.ident, t)
       }
 
-      @@(symVal, @@(keysVal), @@(valuesVal)) map {
-        case ((sym, table), keys, values) => ResolvedAst.Table.Lattice(sym, keys, values, wast.loc)
+      @@(symVal, @@(keysVal), valueVal) map {
+        case ((sym, table), keys, value) => ResolvedAst.Table.Lattice(sym, keys, value, wast.loc)
       }
     }
   }
 
   object Indexes {
 
-    def resolve(wast: WeededAst.Definition.Index,  namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Index, ResolverError] = {
+    def resolve(wast: WeededAst.Definition.Index, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Index, ResolverError] = {
       syms.lookupTable(wast.ident, namespace) map {
         case (sym, table) => ResolvedAst.Definition.Index(sym, wast.indexes, wast.loc)
       }

@@ -277,13 +277,7 @@ class TestParser extends FunSuite {
   }
 
   test("Definition.Lattice01") {
-    val input = "lat A(b: B<>)"
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
-  }
-
-  test("Definition.Lattice02") {
-    val input = "lat A(b: B, c: C<>, d: D<>)"
+    val input = "lat A(b: B)"
     val result = new Parser(SourceInput.Str(input)).Definition.run().get
     assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
   }

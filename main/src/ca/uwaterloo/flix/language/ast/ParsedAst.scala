@@ -27,8 +27,6 @@ import scala.collection.immutable.Seq
 
 // 4. Cleanup declarations and definitions.
 
-// 5. Cleanup relations/lattices.
-
 // 6. Indexes:
 // index SUAfter(
 //  Index({location, object}, BTREE) with FilterF(f),
@@ -44,6 +42,10 @@ import scala.collection.immutable.Seq
 // 9. Improve parsing of characters (and escapes!)
 
 // 10. Re-order all items in here.
+
+
+// TODO: Probably merge fact and rule.
+
 
 /**
   * A common-super type for parsed AST nodes.
@@ -128,8 +130,6 @@ object ParsedAst {
     case class Namespace(sp1: SourcePosition, name: Name.NName, body: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
-
-    // TODO: Probably merge fact and rule.
 
     /**
       * An AST node that represents a fact declaration.
@@ -321,7 +321,6 @@ object ParsedAst {
     }
 
   }
-
 
   /**
     * A common super-type for AST nodes that represents literals.
@@ -1072,38 +1071,10 @@ object ParsedAst {
   /**
     * An AST node that represents an attribute.
     *
-    * @param ident  the name of the attribute.
-    * @param interp the interpretation of the attribute.
+    * @param ident the name of the attribute.
+    * @param tpe   the type of the attribute.
     */
-  case class Attribute(ident: Name.Ident, interp: Interpretation) extends ParsedAst
-
-  /**
-    * A common super-type for attribute interpretations.
-    */
-  sealed trait Interpretation {
-    /**
-      * The type of elements in `this` interpretation.
-      */
-    def tpe: Type
-  }
-
-  object Interpretation {
-
-    /**
-      * An AST node representing the standard set-based interpretation of an attribute in a relation.
-      *
-      * @param tpe the type of the attribute.
-      */
-    case class Set(tpe: Type) extends ParsedAst.Interpretation
-
-    /**
-      * An AST node representing a lattice-based interpretation of an attribute in a relation.
-      *
-      * @param tpe the type of the attribute.
-      */
-    case class Lattice(tpe: Type) extends ParsedAst.Interpretation
-
-  }
+  case class Attribute(ident: Name.Ident, tpe: Type) extends ParsedAst
 
   /**
     * An AST node representing an annotation.

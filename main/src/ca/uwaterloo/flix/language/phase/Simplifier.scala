@@ -28,8 +28,8 @@ object Simplifier {
     def simplify(tast: TypedAst.Table)(implicit genSym: GenSym): SimplifiedAst.Table = tast match {
       case TypedAst.Table.Relation(symbol, attributes, loc) =>
         SimplifiedAst.Table.Relation(symbol, attributes.map(Simplifier.simplify), loc)
-      case TypedAst.Table.Lattice(name, keys, values, loc) =>
-        SimplifiedAst.Table.Lattice(name, keys.map(Simplifier.simplify), values.map(Simplifier.simplify), loc)
+      case TypedAst.Table.Lattice(name, keys, value, loc) =>
+        SimplifiedAst.Table.Lattice(name, keys.map(Simplifier.simplify), Simplifier.simplify(value), loc)
     }
   }
 

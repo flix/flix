@@ -10,14 +10,14 @@ object TypedAst {
   /**
     * A typed AST node representing the root of the entire AST.
     *
-    * @param constants   a map from names to constant definitions.
-    * @param lattices    a map from types to user-specified bounded lattice definitions.
-    * @param tables      a map from names to lattice or relation definitions.
-    * @param indexes     a map from table symbols to indexes.
-    * @param facts       a list of facts.
-    * @param rules       a list of rules.
-    * @param hooks       a map from names to hooks.
-    * @param time        the time spent in each compiler phase.
+    * @param constants a map from names to constant definitions.
+    * @param lattices  a map from types to user-specified bounded lattice definitions.
+    * @param tables    a map from names to lattice or relation definitions.
+    * @param indexes   a map from table symbols to indexes.
+    * @param facts     a list of facts.
+    * @param rules     a list of rules.
+    * @param hooks     a map from names to hooks.
+    * @param time      the time spent in each compiler phase.
     */
   case class Root(constants: Map[Symbol.Resolved, TypedAst.Definition.Constant],
                   lattices: Map[Type, TypedAst.Definition.BoundedLattice],
@@ -94,12 +94,12 @@ object TypedAst {
     /**
       * A typed AST node representing a lattice definition.
       *
-      * @param sym    the symbol of the relation.
-      * @param keys   the keys of the lattice.
-      * @param values the keys of the lattice.
-      * @param loc    the source location.
+      * @param sym   the symbol of the relation.
+      * @param keys  the keys of the lattice.
+      * @param value the value of the lattice.
+      * @param loc   the source location.
       */
-    case class Lattice(sym: Symbol.TableSym, keys: List[TypedAst.Attribute], values: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Table
+    case class Lattice(sym: Symbol.TableSym, keys: List[TypedAst.Attribute], value: TypedAst.Attribute, loc: SourceLocation) extends TypedAst.Table
 
   }
 
@@ -532,7 +532,7 @@ object TypedAst {
       /**
         * A typed relational predicate that occurs in the head of a fact/rule.
         *
-        * @param sym  the symbol of the predicate.
+        * @param sym   the symbol of the predicate.
         * @param terms the terms of the predicate.
         * @param tpe   the type of the predicate.
         * @param loc   the source location.

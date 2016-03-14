@@ -211,16 +211,14 @@ object Typer {
         case ResolvedAst.Attribute(ident, tpe) => TypedAst.Attribute(ident, tpe)
       }
 
-      val valuesVal = rast.values map {
-        case a: ResolvedAst.Attribute =>
-          (root.lattices.get(a.tpe) match {
-            case None => NoSuchLattice(a.tpe, a.ident.loc).toFailure
-            case Some(_) => TypedAst.Attribute(a.ident, a.tpe).toSuccess
-          }): Validation[TypedAst.Attribute, TypeError]
+      val a = rast.value
+      val valueVal = root.lattices.get(a.tpe) match {
+        case None => NoSuchLattice(a.tpe, a.ident.loc).toFailure
+        case Some(_) => TypedAst.Attribute(a.ident, a.tpe).toSuccess
       }
 
-      @@(valuesVal) map {
-        case values => TypedAst.Table.Lattice(rast.sym, keys, values, rast.loc)
+      valueVal map {
+        case value => TypedAst.Table.Lattice(rast.sym, keys, value, rast.loc)
       }
     }
 
@@ -595,10 +593,10 @@ object Typer {
                   TypedAst.Predicate.Head.Table(name, terms, Type.Predicate(terms map (_.tpe)), loc)
               }
 
-            case ResolvedAst.Table.Lattice(_, keys, values, _) =>
+            case ResolvedAst.Table.Lattice(_, keys, value, _) =>
               // type check the terms against the keys and values.
               // TODO: More checks?
-              val termsVal = (rterms zip (keys ::: values)) map {
+              val termsVal = (rterms zip (keys ::: value :: Nil)) map {
                 case (term, ResolvedAst.Attribute(_, tpe)) => Term.typer(term, tpe, root)
               }
 
@@ -628,10 +626,10 @@ object Typer {
               @@(termsVal) map {
                 case terms => TypedAst.Predicate.Body.Table(sym, terms, Type.Predicate(terms map (_.tpe)), loc)
               }
-            case ResolvedAst.Table.Lattice(_, keys, values, _) =>
+            case ResolvedAst.Table.Lattice(_, keys, value, _) =>
               // type check the terms against the attributes.
               // TODO: more checks?
-              val termsVal = (rterms zip (keys ::: values)) map {
+              val termsVal = (rterms zip (keys ::: value :: Nil)) map {
                 case (term, ResolvedAst.Attribute(_, tpe)) => Term.typer(term, tpe, root)
               }
 

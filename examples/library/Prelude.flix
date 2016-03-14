@@ -386,9 +386,9 @@ impl PartialOrder[E] <= LeastUpperBound[E] {
 
 // TODO: Further research ideas:
 
-class Functor[M[A]] {
-    def map[B](f: (A) -> B, x: M[A]): M[B]
-}
+//class Functor[M[A]] {
+//    def map[B](f: (A) -> B, x: M[A]): M[B]
+//}
 
 // class Monoid
 

@@ -71,12 +71,12 @@ object ResolvedAst {
     /**
       * A resolved AST node representing a lattice definition.
       *
-      * @param sym    the symbol of the lattice.
-      * @param keys   the keys of the lattice.
-      * @param values the values of the lattice.
-      * @param loc    the location.
+      * @param sym   the symbol of the lattice.
+      * @param keys  the keys of the lattice.
+      * @param value the value of the lattice.
+      * @param loc   the location.
       */
-    case class Lattice(sym: Symbol.TableSym, keys: List[ResolvedAst.Attribute], values: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Table
+    case class Lattice(sym: Symbol.TableSym, keys: List[ResolvedAst.Attribute], value: ResolvedAst.Attribute, loc: SourceLocation) extends ResolvedAst.Table
 
   }
 

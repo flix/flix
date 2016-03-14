@@ -345,7 +345,7 @@ class TestSolver extends FunSuite {
 
   test("Lattice01") {
     val s =
-      """lat A(x: Int, v: Parity<>);
+      """lat A(x: Int, v: Parity);
         |
         |A(1, Parity.Odd).
         |A(2, Parity.Even).
@@ -362,7 +362,7 @@ class TestSolver extends FunSuite {
 
   test("Lattice02") {
     val s =
-      """lat A(x: Int, v: Parity<>);
+      """lat A(x: Int, v: Parity);
         |
         |A(1, Parity.Odd).
         |A(1, Parity.Even).
@@ -376,7 +376,7 @@ class TestSolver extends FunSuite {
 
   test("Lattice03") {
     val s =
-      """lat A(x: Int, v: Parity<>);
+      """lat A(x: Int, v: Parity);
         |
         |A(1, Parity.Odd).
         |A(2, Parity.Even).

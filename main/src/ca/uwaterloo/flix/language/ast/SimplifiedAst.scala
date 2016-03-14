@@ -62,7 +62,7 @@ object SimplifiedAst {
 
     case class Lattice(sym: Symbol.TableSym,
                        keys: List[SimplifiedAst.Attribute],
-                       values: List[SimplifiedAst.Attribute],
+                       value: SimplifiedAst.Attribute,
                        loc: SourceLocation) extends SimplifiedAst.Table
 
   }

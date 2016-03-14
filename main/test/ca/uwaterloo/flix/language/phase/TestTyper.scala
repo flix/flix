@@ -1025,7 +1025,7 @@ class TestTyper extends FunSuite {
   test("NoSuchLattice01") {
     val input =
       s"""namespace A {
-          |  lat A(x: Int, y: Int<>);
+          |  lat A(x: Int, y: Int);
           |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -1039,7 +1039,7 @@ class TestTyper extends FunSuite {
           |    case Foo
           |  }
           |
-         |  lat A(x: Int, y: Elm<>);
+         |  lat A(x: Int, y: Elm);
           |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()

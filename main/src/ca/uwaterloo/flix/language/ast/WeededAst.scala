@@ -132,12 +132,12 @@ object WeededAst {
     /**
       * An AST node that represents a lattice definition.
       *
-      * @param ident  the name of the lattice.
-      * @param keys   the key attributes of the lattice.
-      * @param values the values attributes of the lattice.
-      * @param loc    the source location of the lattice.
+      * @param ident the name of the lattice.
+      * @param keys  the key attributes of the lattice.
+      * @param value the value attributes of the lattice.
+      * @param loc   the source location of the lattice.
       */
-    case class Lattice(ident: Name.Ident, keys: List[WeededAst.Attribute], values: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Table
+    case class Lattice(ident: Name.Ident, keys: List[WeededAst.Attribute], value: WeededAst.Attribute, loc: SourceLocation) extends WeededAst.Table
 
   }
 
@@ -613,30 +613,10 @@ object WeededAst {
   /**
     * An AST node that represents an attribute in a relation.
     *
-    * @param ident  the name of the attribute.
-    * @param tpe    the declared type of the attribute.
-    * @param interp the interpretation of the attribute.
+    * @param ident the name of the attribute.
+    * @param tpe   the declared type of the attribute.
     */
-  case class Attribute(ident: Name.Ident, tpe: Type, interp: WeededAst.Interpretation) extends WeededAst
-
-  /**
-    * An AST node that represents an attribute interpretation.
-    */
-  sealed trait Interpretation extends WeededAst
-
-  object Interpretation {
-
-    /**
-      * An AST node that represents a set-based interpretation.
-      */
-    case object Set extends WeededAst.Interpretation
-
-    /**
-      * An AST node that represents a lattice-based interpretation.
-      */
-    case object Lattice extends WeededAst.Interpretation
-
-  }
+  case class Attribute(ident: Name.Ident, tpe: Type) extends WeededAst
 
   /**
     * An AST node representing a formal argument of a function.
