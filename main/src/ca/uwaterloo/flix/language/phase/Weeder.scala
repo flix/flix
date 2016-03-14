@@ -353,7 +353,7 @@ object Weeder {
     */
   def weed(past: ParsedAst.Program, hooks: Map[Symbol.Resolved, Ast.Hook]): Validation[WeededAst.Root, WeederError] = {
     val b = System.nanoTime()
-    val declarations = past.roots.flatMap(_.declarations)
+    val declarations = past.roots.flatMap(_.decls)
     @@(declarations.map(Declaration.compile)) map {
       case decls =>
         val e = System.nanoTime()

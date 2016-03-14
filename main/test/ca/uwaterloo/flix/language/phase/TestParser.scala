@@ -152,6 +152,48 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Imports                                                                 //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Import.Wildcard01") {
+    val input1 =
+      """namespace a.b.c {
+        |  def f: Int = 42
+        |}
+      """.stripMargin
+    val input2 =
+      """import a.b.c/_
+        |def g: Int = f() + 42
+      """.stripMargin
+    new Flix().addStr(input1).addStr(input2).compile().get
+  }
+
+  test("Import.Definition01") {
+    val input1 =
+      """namespace a.b.c {
+        |  def f: Int = 42
+        |}
+      """.stripMargin
+    val input2 =
+      """import a.b.c/f
+        |def g: Int = f() + 42
+      """.stripMargin
+    new Flix().addStr(input1).addStr(input2).compile().get
+  }
+
+  test("Import.Namespace01") {
+    val input1 =
+      """namespace a.b.c {
+        |  def f: Int = 42
+        |}
+      """.stripMargin
+    val input2 =
+      """import a.b.c
+        |def g: Int = c/f() + 42
+      """.stripMargin
+    new Flix().addStr(input1).addStr(input2).compile().get
+  }
+
   test("Definition.Function01") {
     val input = "def foo(): Int = 42"
     val result = new Parser(SourceInput.Str(input)).Definition.run().get

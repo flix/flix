@@ -4,13 +4,6 @@ import scala.collection.immutable.Seq
 
 // TODO: Tasks
 
-// 1. Introduce imports:
-// import foo.bar.baz/myFunction
-// import foo.bar._ (imports everything in bar)
-// import foo.bar (now you can write bar/myFunc)
-// Imports are only allowed at the top of a compilation unit, before any namespaces. Does this even make sense?
-// Decide: How should the components of a namespace be named: list or List?
-
 // 2. Fat arrows
 //   let f = (x, y) => x + y in
 //   list/foldLeft(f, 0, xs)
@@ -68,11 +61,49 @@ object ParsedAst {
   case class Program(roots: List[ParsedAst.Root], time: Time) extends ParsedAst
 
   /**
-    * Root. A collection of declarations.
+    * Root. A collection of imports and declarations.
     *
-    * @param declarations the declarations in the compilation unit.
+    * @param imports the imports declared in the abstract syntax tree.
+    * @param decls   the declarations in the abstract syntax tree.
     */
-  case class Root(declarations: Seq[ParsedAst.Declaration]) extends ParsedAst
+  case class Root(imports: Seq[ParsedAst.Import], decls: Seq[ParsedAst.Declaration]) extends ParsedAst
+
+  /**
+    * A common super-type for AST nodes that represent imports.
+    */
+  sealed trait Import extends ParsedAst
+
+  object Import {
+
+    /**
+      * An AST node that imports every definition in a namespace (import foo.bar.baz/_).
+      *
+      * @param sp1 the position of the first character in the import.
+      * @param ns  the name of the namespace.
+      * @param sp2 the position of the last character in the import.
+      */
+    case class Wildcard(sp1: SourcePosition, ns: Name.NName, sp2: SourcePosition) extends ParsedAst.Import
+
+    /**
+      * An AST node that imports a specific definition from a namespace (import foo.bar.baz/qux).
+      *
+      * @param sp1  the position of the first character in the import.
+      * @param ns   the name of the namespace.
+      * @param name the name of the definition.
+      * @param sp2  the position of the last character in the import.
+      */
+    case class Definition(sp1: SourcePosition, ns: Name.NName, name: Name.Ident, sp2: SourcePosition) extends ParsedAst.Import
+
+    /**
+      * An AST node that imports a namespace (import foo.bar.baz).
+      *
+      * @param sp1 the position of the first character in the import.
+      * @param ns  the name of the namespace.
+      * @param sp2 the position of the last character in the import.
+      */
+    case class Namespace(sp1: SourcePosition, ns: Name.NName, sp2: SourcePosition) extends ParsedAst.Import
+
+  }
 
   /**
     * A common super-type for AST nodes that represent declarations.
@@ -207,17 +238,6 @@ object ParsedAst {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
-    /**
-      * An AST node that represents bounded lattice definition.
-      *
-      * @param sp1  the position of the first character in the definition.
-      * @param tpe  the type of the lattice elements.
-      * @param elms the components of the lattice.
-      * @param sp2  the position of the last character in the definition.
-      */
-    case class BoundedLattice(sp1: SourcePosition, tpe: Type, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Definition {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
 
     /**
       * An AST node that represent a relation definition.
@@ -287,43 +307,21 @@ object ParsedAst {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
+    /**
+      * An AST node that represents bounded lattice definition.
+      *
+      * @param sp1  the position of the first character in the definition.
+      * @param tpe  the type of the lattice elements.
+      * @param elms the components of the lattice.
+      * @param sp2  the position of the last character in the definition.
+      */
+    @deprecated("Will be replaced by type classes", "0.1.0")
+    case class BoundedLattice(sp1: SourcePosition, tpe: Type, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Definition {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
   }
 
-  /**
-    * A common super-type for AST nodes that represent imports.
-    */
-  sealed trait Import extends ParsedAst
-
-  object Import {
-
-    /**
-      * An AST node that imports every definition from a namespace (import foo.bar.baz._).
-      *
-      * @param sp1 the position of the first character in the import.
-      * @param ns  the namespace.
-      * @param sp2 the position of the last character in the import.
-      */
-    case class Wildcard(sp1: SourcePosition, ns: Name.NName, sp2: SourcePosition) extends ParsedAst.Import
-
-    /**
-      * An AST node that imports a definition from a namespace (import foo.bar.baz/qux).
-      *
-      * @param sp1  the position of the first character in the import.
-      * @param name the qualified name.
-      * @param sp2  the position of the last character in the import.
-      */
-    case class Definition(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Import
-
-    /**
-      * An AST node that imports a namespace (import foo.bar.baz).
-      *
-      * @param sp1 the position of the first character in the import.
-      * @param ns  the namespace.
-      * @param sp2 the position of the last character in the import.
-      */
-    case class Namespace(sp1: SourcePosition, ns: Name.NName, sp2: SourcePosition) extends ParsedAst.Import
-
-  }
 
   /**
     * A common super-type for AST nodes that represents literals.
