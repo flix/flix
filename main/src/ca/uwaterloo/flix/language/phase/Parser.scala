@@ -87,155 +87,179 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Declarations and Definition                                             //
+  // Declarations                                                            //
   /////////////////////////////////////////////////////////////////////////////
   // NB: RuleDeclaration must be parsed before FactDeclaration.
   def Declaration: Rule1[ParsedAst.Declaration] = rule {
-    NamespaceDeclaration | RuleDeclaration | FactDeclaration | Definition
+    Declarations.Namespace |
+      Declarations.Rule |
+      Declarations.Fact |
+      Declarations.Function |
+      Declarations.Extern |
+      Declarations.Enum |
+      Declarations.LetLattice |
+      Declarations.Relation |
+      Declarations.Lattice |
+      Declarations.Index |
+      Declarations.Law |
+      Declarations.Class |
+      Declarations.Impl
   }
 
-  def NamespaceDeclaration: Rule1[ParsedAst.Declaration.Namespace] = rule {
-    SP ~ atomic("namespace") ~ WS ~ NName ~ optWS ~ '{' ~ optWS ~ zeroOrMore(Declaration).separatedBy(optWS) ~ optWS ~ '}' ~ SP ~ optSC ~> ParsedAst.Declaration.Namespace
-  }
+  object Declarations {
 
-  def Definition: Rule1[ParsedAst.Definition] = rule {
-    FunctionDefinition | ExternDefinition | EnumDefinition | BoundedLatticeDefinition | RelationDefinition | LatticeDefinition | IndexDefinition | LawDefinition | ClassDefinition | ImplDefinition
-  }
-
-  def FunctionDefinition: Rule1[ParsedAst.Definition.Function] = {
-    def Annotations: Rule1[Seq[ParsedAst.Annotation]] = rule {
-      zeroOrMore(Annotation).separatedBy(WS)
+    def Namespace: Rule1[ParsedAst.Declaration.Namespace] = rule {
+      SP ~ atomic("namespace") ~ WS ~ NName ~ optWS ~ '{' ~ optWS ~ zeroOrMore(Declaration).separatedBy(optWS) ~ optWS ~ '}' ~ SP ~ optSC ~> ParsedAst.Declaration.Namespace
     }
 
-    rule {
-      SP ~ Annotations ~ optWS ~ (atomic("def") | atomic("fn")) ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Definition.Function
-    }
-  }
+    def Function: Rule1[ParsedAst.Declaration.Function] = {
+      def Annotations: Rule1[Seq[ParsedAst.Annotation]] = rule {
+        zeroOrMore(Annotation).separatedBy(WS)
+      }
 
-  def SignatureDefinition: Rule1[ParsedAst.Definition.Signature] = rule {
-    SP ~ atomic("fn") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC ~> ParsedAst.Definition.Signature
-  }
-
-  def ExternDefinition: Rule1[ParsedAst.Definition.External] = rule {
-    SP ~ atomic("external") ~ optWS ~ atomic("def") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC ~> ParsedAst.Definition.External
-  }
-
-  def LawDefinition: Rule1[ParsedAst.Definition.Law] = rule {
-    SP ~ atomic("law") ~ WS ~ Ident ~ optWS ~ TypeParams ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Definition.Law
-  }
-
-  def FormalParams: Rule1[Seq[ParsedAst.FormalArg]] = rule {
-    optional("(" ~ optWS ~ ArgumentList ~ optWS ~ ")") ~> ((o: Option[Seq[ParsedAst.FormalArg]]) => o match {
-      case None => Seq.empty
-      case Some(xs) => xs
-    })
-  }
-
-  def TypeParams: Rule1[Seq[ParsedAst.ContextBound]] = {
-    def ContextBound: Rule1[ParsedAst.ContextBound] = rule {
-      SP ~ Ident ~ optional(optWS ~ ":" ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, bound: Option[PType], sp2: SourcePosition) => bound match {
-        case None => ParsedAst.ContextBound(sp1, ident, Seq.empty, sp2)
-        case Some(tpe) => ParsedAst.ContextBound(sp1, ident, Seq(tpe), sp2)
-      })
+      rule {
+        SP ~ Annotations ~ optWS ~ (atomic("def") | atomic("fn")) ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Declaration.Function
+      }
     }
 
-    rule {
-      optional("[" ~ optWS ~ oneOrMore(ContextBound).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]") ~> ((o: Option[Seq[ParsedAst.ContextBound]]) => o match {
-        case None => Seq.empty
-        case Some(xs) => xs
-      })
-    }
-  }
-
-  def EnumDefinition: Rule1[ParsedAst.Definition.Enum] = {
-    def UnitCase: Rule1[ParsedAst.Case] = rule {
-      SP ~ atomic("case") ~ WS ~ Ident ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) => ParsedAst.Case(sp1, ident, PType.Unit, sp2))
+    def Signature: Rule1[ParsedAst.Declaration.Signature] = rule {
+      SP ~ atomic("fn") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC ~> ParsedAst.Declaration.Signature
     }
 
-    def NestedCase: Rule1[ParsedAst.Case] = rule {
-      SP ~ atomic("case") ~ WS ~ Ident ~ Type ~ SP ~> ParsedAst.Case
+    def Extern: Rule1[ParsedAst.Declaration.External] = rule {
+      SP ~ atomic("external") ~ optWS ~ atomic("def") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC ~> ParsedAst.Declaration.External
     }
 
-    def Cases: Rule1[Seq[ParsedAst.Case]] = rule {
-      // NB: NestedCase must be parsed before UnitCase.
-      oneOrMore(NestedCase | UnitCase).separatedBy(optWS ~ "," ~ optWS)
+    def Law: Rule1[ParsedAst.Declaration.Law] = rule {
+      SP ~ atomic("law") ~ WS ~ Ident ~ optWS ~ TypeParams ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Declaration.Law
     }
 
-    rule {
-      SP ~ atomic("enum") ~ WS ~ Ident ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~ optSC ~> ParsedAst.Definition.Enum
-    }
-  }
 
-  def BoundedLatticeDefinition: Rule1[ParsedAst.Definition] = {
-    def Elms: Rule1[Seq[ParsedAst.Expression]] = rule {
-      oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
-    }
+    def TypeParams: Rule1[Seq[ParsedAst.ContextBound]] = {
+      def ContextBound: Rule1[ParsedAst.ContextBound] = rule {
+        SP ~ Ident ~ optional(optWS ~ ":" ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, bound: Option[PType], sp2: SourcePosition) => bound match {
+          case None => ParsedAst.ContextBound(sp1, ident, Seq.empty, sp2)
+          case Some(tpe) => ParsedAst.ContextBound(sp1, ident, Seq(tpe), sp2)
+        })
+      }
 
-    rule {
-      SP ~ atomic("let") ~ optWS ~ Type ~ atomic("<>") ~ optWS ~ "=" ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Definition.BoundedLattice
-    }
-  }
-
-  def RelationDefinition: Rule1[ParsedAst.Definition.Relation] = rule {
-    SP ~ atomic("rel") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Definition.Relation
-  }
-
-  def LatticeDefinition: Rule1[ParsedAst.Definition.Lattice] = rule {
-    SP ~ atomic("lat") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Definition.Lattice
-  }
-
-  def ClassDefinition: Rule1[ParsedAst.Definition.Class] = {
-
-    def TypeParams: Rule1[Seq[Type]] = rule {
-      "[" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ "]"
-    }
-
-    def ContextBound: Rule1[ParsedAst.ContextBound] = rule {
-      SP ~ Ident ~ TypeParams ~ SP ~> ParsedAst.ContextBound
-    }
-
-    def ContextBounds: Rule1[Seq[ParsedAst.ContextBound]] = rule {
-      optional(optWS ~ atomic("=>") ~ optWS ~ oneOrMore(ContextBound).separatedBy(optWS ~ "," ~ optWS) ~ optWS) ~>
-        ((o: Option[Seq[ParsedAst.ContextBound]]) => o match {
+      rule {
+        optional("[" ~ optWS ~ oneOrMore(ContextBound).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]") ~> ((o: Option[Seq[ParsedAst.ContextBound]]) => o match {
           case None => Seq.empty
           case Some(xs) => xs
         })
+      }
     }
 
-    def ClassBody: Rule1[Seq[ParsedAst.Definition]] = rule {
-      "{" ~ optWS ~ zeroOrMore(FunctionDefinition | SignatureDefinition | LawDefinition).separatedBy(WS) ~ optWS ~ "}"
+    def Enum: Rule1[ParsedAst.Declaration.Enum] = {
+      def UnitCase: Rule1[ParsedAst.Case] = rule {
+        SP ~ atomic("case") ~ WS ~ Ident ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) => ParsedAst.Case(sp1, ident, PType.Unit, sp2))
+      }
+
+      def NestedCase: Rule1[ParsedAst.Case] = rule {
+        SP ~ atomic("case") ~ WS ~ Ident ~ Type ~ SP ~> ParsedAst.Case
+      }
+
+      def Cases: Rule1[Seq[ParsedAst.Case]] = rule {
+        // NB: NestedCase must be parsed before UnitCase.
+        oneOrMore(NestedCase | UnitCase).separatedBy(optWS ~ "," ~ optWS)
+      }
+
+      rule {
+        SP ~ atomic("enum") ~ WS ~ Ident ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~ optSC ~> ParsedAst.Declaration.Enum
+      }
     }
 
-    rule {
-      SP ~ atomic("class") ~ WS ~ Ident ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ClassBody ~ SP ~> ParsedAst.Definition.Class
-    }
-  }
+    def LetLattice: Rule1[ParsedAst.Declaration] = {
+      def Elms: Rule1[Seq[ParsedAst.Expression]] = rule {
+        oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
+      }
 
-  def ImplDefinition: Rule1[ParsedAst.Definition.Impl] = {
-
-    def TypeParams: Rule1[Seq[Type]] = rule {
-      "[" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ "]"
-    }
-
-    def ContextBound: Rule1[ParsedAst.ContextBound] = rule {
-      SP ~ Ident ~ TypeParams ~ SP ~> ParsedAst.ContextBound
+      rule {
+        SP ~ atomic("let") ~ optWS ~ Type ~ atomic("<>") ~ optWS ~ "=" ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.BoundedLattice
+      }
     }
 
-    def ContextBounds: Rule1[Seq[ParsedAst.ContextBound]] = rule {
-      optional(optWS ~ atomic("<=") ~ optWS ~ oneOrMore(ContextBound).separatedBy(optWS ~ "," ~ optWS) ~ optWS) ~>
-        ((o: Option[Seq[ParsedAst.ContextBound]]) => o match {
-          case None => Seq.empty
-          case Some(xs) => xs
-        })
+    def Relation: Rule1[ParsedAst.Declaration.Relation] = rule {
+      SP ~ atomic("rel") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Relation
     }
 
-    def ImplBody: Rule1[Seq[ParsedAst.Definition.Function]] = rule {
-      "{" ~ optWS ~ zeroOrMore(FunctionDefinition).separatedBy(WS) ~ optWS ~ "}"
+    def Lattice: Rule1[ParsedAst.Declaration.Lattice] = rule {
+      SP ~ atomic("lat") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Lattice
     }
 
-    rule {
-      SP ~ atomic("impl") ~ WS ~ Ident ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ImplBody ~ SP ~> ParsedAst.Definition.Impl
+    def Class: Rule1[ParsedAst.Declaration.Class] = {
+
+      def TypeParams: Rule1[Seq[Type]] = rule {
+        "[" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ "]"
+      }
+
+      def ContextBound: Rule1[ParsedAst.ContextBound] = rule {
+        SP ~ Ident ~ TypeParams ~ SP ~> ParsedAst.ContextBound
+      }
+
+      def ContextBounds: Rule1[Seq[ParsedAst.ContextBound]] = rule {
+        optional(optWS ~ atomic("=>") ~ optWS ~ oneOrMore(ContextBound).separatedBy(optWS ~ "," ~ optWS) ~ optWS) ~>
+          ((o: Option[Seq[ParsedAst.ContextBound]]) => o match {
+            case None => Seq.empty
+            case Some(xs) => xs
+          })
+      }
+
+      def ClassBody: Rule1[Seq[ParsedAst.Declaration]] = rule {
+        "{" ~ optWS ~ zeroOrMore(Function | Signature | Law).separatedBy(WS) ~ optWS ~ "}"
+      }
+
+      rule {
+        SP ~ atomic("class") ~ WS ~ Ident ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ClassBody ~ SP ~> ParsedAst.Declaration.Class
+      }
     }
+
+    def Impl: Rule1[ParsedAst.Declaration.Impl] = {
+
+      def TypeParams: Rule1[Seq[Type]] = rule {
+        "[" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ "]"
+      }
+
+      def ContextBound: Rule1[ParsedAst.ContextBound] = rule {
+        SP ~ Ident ~ TypeParams ~ SP ~> ParsedAst.ContextBound
+      }
+
+      def ContextBounds: Rule1[Seq[ParsedAst.ContextBound]] = rule {
+        optional(optWS ~ atomic("<=") ~ optWS ~ oneOrMore(ContextBound).separatedBy(optWS ~ "," ~ optWS) ~ optWS) ~>
+          ((o: Option[Seq[ParsedAst.ContextBound]]) => o match {
+            case None => Seq.empty
+            case Some(xs) => xs
+          })
+      }
+
+      def ImplBody: Rule1[Seq[ParsedAst.Declaration.Function]] = rule {
+        "{" ~ optWS ~ zeroOrMore(Function).separatedBy(WS) ~ optWS ~ "}"
+      }
+
+      rule {
+        SP ~ atomic("impl") ~ WS ~ Ident ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ImplBody ~ SP ~> ParsedAst.Declaration.Impl
+      }
+    }
+
+    def Index: Rule1[ParsedAst.Declaration.Index] = {
+      def Indexes: Rule1[Seq[Name.Ident]] = rule {
+        "{" ~ optWS ~ zeroOrMore(Ident).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}"
+      }
+
+      rule {
+        SP ~ atomic("index") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Indexes).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Index
+      }
+    }
+
+    def Fact: Rule1[ParsedAst.Declaration.Fact] = rule {
+      SP ~ Predicate ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Fact
+    }
+
+    def Rule: Rule1[ParsedAst.Declaration.Rule] = rule {
+      SP ~ Predicate ~ optWS ~ ":-" ~ optWS ~ oneOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Rule
+    }
+
   }
 
   def Attribute: Rule1[ParsedAst.Attribute] = rule {
@@ -246,14 +270,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     oneOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS)
   }
 
-  def IndexDefinition: Rule1[ParsedAst.Definition.Index] = {
-    def Indexes: Rule1[Seq[Name.Ident]] = rule {
-      "{" ~ optWS ~ zeroOrMore(Ident).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}"
-    }
-
-    rule {
-      SP ~ atomic("index") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Indexes).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Definition.Index
-    }
+  def FormalParams: Rule1[Seq[ParsedAst.FormalArg]] = rule {
+    optional("(" ~ optWS ~ ArgumentList ~ optWS ~ ")") ~> ((o: Option[Seq[ParsedAst.FormalArg]]) => o match {
+      case None => Seq.empty
+      case Some(xs) => xs
+    })
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -534,16 +555,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Facts and Rules                                                         //
-  /////////////////////////////////////////////////////////////////////////////
-  def FactDeclaration: Rule1[ParsedAst.Declaration.Fact] = rule {
-    SP ~ Predicate ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Fact
-  }
-
-  def RuleDeclaration: Rule1[ParsedAst.Declaration.Rule] = rule {
-    SP ~ Predicate ~ optWS ~ ":-" ~ optWS ~ oneOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Rule
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Predicates                                                              //

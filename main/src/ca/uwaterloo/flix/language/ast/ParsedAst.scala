@@ -136,162 +136,152 @@ object ParsedAst {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
-  }
-
-  /**
-    * A common super-type for AST nodes that represent definitions.
-    */
-  sealed trait Definition extends Declaration
-
-  object Definition {
-
     /**
-      * An AST node that represents a function definition.
+      * An AST node that represents a function declaration.
       *
-      * @param sp1         the position of the first character in the definition.
+      * @param sp1         the position of the first character in the declaration.
       * @param annotations the annotations associated with the function.
       * @param ident       the name of the function.
       * @param formals     the formals (i.e. parameters and their types).
       * @param tpe         the return type.
       * @param body        the body expression of the function.
-      * @param sp2         the position of the last character in the definition.
+      * @param sp2         the position of the last character in the declaration.
       */
-    case class Function(sp1: SourcePosition, annotations: Seq[ParsedAst.Annotation], ident: Name.Ident, formals: Seq[FormalArg], tpe: Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Definition {
+    case class Function(sp1: SourcePosition, annotations: Seq[ParsedAst.Annotation], ident: Name.Ident, formals: Seq[FormalArg], tpe: Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
     /**
-      * An AST node that represents a law definition.
+      * An AST node that represents a law declaration.
       *
-      * @param sp1     the position of the first character in the definition.
+      * @param sp1     the position of the first character in the declaration.
       * @param ident   the name of the function.
       * @param tparams the type parameters.
       * @param params  the value parameters.
       * @param tpe     the return type.
       * @param body    the body expression of the function.
-      * @param sp2     the position of the last character in the definition.
+      * @param sp2     the position of the last character in the declaration.
       */
-    case class Law(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], params: Seq[FormalArg], tpe: Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Definition {
+    case class Law(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], params: Seq[FormalArg], tpe: Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
     /**
       * An AST node that represents a signature of a function.
       *
-      * @param sp1     the position of the first character in the definition.
+      * @param sp1     the position of the first character in the declaration.
       * @param ident   the name of the function.
       * @param formals the formals (i.e. parameters and their types).
       * @param tpe     the return type.
-      * @param sp2     the position of the last character in the definition.
+      * @param sp2     the position of the last character in the declaration.
       */
-    case class Signature(sp1: SourcePosition, ident: Name.Ident, formals: Seq[FormalArg], tpe: Type, sp2: SourcePosition) extends ParsedAst.Definition {
+    case class Signature(sp1: SourcePosition, ident: Name.Ident, formals: Seq[FormalArg], tpe: Type, sp2: SourcePosition) extends ParsedAst.Declaration {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
     /**
       * An AST node that represents an external function.
       *
-      * @param sp1     the position of the first character in the definition.
+      * @param sp1     the position of the first character in the declaration.
       * @param ident   the name of the function.
       * @param formals the formals (i.e. parameters and their types).
       * @param tpe     the return type.
-      * @param sp2     the position of the last character in the definition.
+      * @param sp2     the position of the last character in the declaration.
       */
-    case class External(sp1: SourcePosition, ident: Name.Ident, formals: Seq[FormalArg], tpe: Type, sp2: SourcePosition) extends ParsedAst.Definition {
+    case class External(sp1: SourcePosition, ident: Name.Ident, formals: Seq[FormalArg], tpe: Type, sp2: SourcePosition) extends ParsedAst.Declaration {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
     /**
-      * An AST node that represents a enum definition.
+      * An AST node that represents a enum declaration.
       *
-      * @param sp1   the position of the first character in the definition.
+      * @param sp1   the position of the first character in the declaration.
       * @param ident the name of the enum.
       * @param cases the variants of the enum.
-      * @param sp2   the position of the last character in the definition.
+      * @param sp2   the position of the last character in the declaration.
       */
-    case class Enum(sp1: SourcePosition, ident: Name.Ident, cases: Seq[ParsedAst.Case], sp2: SourcePosition) extends ParsedAst.Definition {
+    case class Enum(sp1: SourcePosition, ident: Name.Ident, cases: Seq[ParsedAst.Case], sp2: SourcePosition) extends ParsedAst.Declaration {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
-
-
+    
     /**
-      * An AST node that represent a relation definition.
+      * An AST node that represent a relation declaration.
       *
-      * @param sp1        the position of the first character in the definition.
+      * @param sp1        the position of the first character in the declaration.
       * @param ident      the name of the relation.
       * @param attributes the name and type of the attributes.
-      * @param sp2        the position of the last character in the definition.
+      * @param sp2        the position of the last character in the declaration.
       */
-    case class Relation(sp1: SourcePosition, ident: Name.Ident, attributes: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Definition {
+    case class Relation(sp1: SourcePosition, ident: Name.Ident, attributes: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration {
       /**
-        * Returns the source location of `this` definition.
+        * Returns the source location of `this` declaration.
         */
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
     /**
-      * An AST node that represents a lattice definition.
+      * An AST node that represents a lattice declaration.
       *
-      * @param sp1        the position of the first character in the definition.
+      * @param sp1        the position of the first character in the declaration.
       * @param ident      the name of the relation.
       * @param attributes the name and type of the attributes.
-      * @param sp2        the position of the last character in the definition.
+      * @param sp2        the position of the last character in the declaration.
       */
-    case class Lattice(sp1: SourcePosition, ident: Name.Ident, attributes: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Definition {
+    case class Lattice(sp1: SourcePosition, ident: Name.Ident, attributes: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration {
       /**
-        * Returns the source location of `this` definition.
+        * Returns the source location of `this` declaration.
         */
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
     /**
-      * An AST node that represents an index definition.
+      * An AST node that represents an index declaration.
       *
-      * @param sp1     the position of the first character in the definition.
+      * @param sp1     the position of the first character in the declaration.
       * @param ident   the name of the relation or lattice.
       * @param indexes the sequence of indexes.
-      * @param sp2     the position of the last character in the definition.
+      * @param sp2     the position of the last character in the declaration.
       */
-    case class Index(sp1: SourcePosition, ident: Name.Ident, indexes: Seq[Seq[Name.Ident]], sp2: SourcePosition) extends ParsedAst.Definition {
+    case class Index(sp1: SourcePosition, ident: Name.Ident, indexes: Seq[Seq[Name.Ident]], sp2: SourcePosition) extends ParsedAst.Declaration {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
     /**
-      * An AST node that represents a type class definition.
+      * An AST node that represents a type class declaration.
       *
-      * @param sp1     the position of the first character in the definition.
+      * @param sp1     the position of the first character in the declaration.
       * @param ident   the name of the type class.
       * @param tparams the type parameters of the type class.
       * @param bounds  the context bounds (i.e. type parameter constraints).
-      * @param sp2     the position of the last character in the definition.
+      * @param sp2     the position of the last character in the declaration.
       */
-    case class Class(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Type], bounds: Seq[ContextBound], body: Seq[ParsedAst.Definition], sp2: SourcePosition) extends ParsedAst.Definition {
+    case class Class(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Type], bounds: Seq[ContextBound], body: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
     /**
       * An AST node that represents a type class implementation.
       *
-      * @param sp1     the position of the first character in the definition.
+      * @param sp1     the position of the first character in the declaration.
       * @param ident   the name of the type class.
       * @param tparams the type parameters of the type class.
       * @param bounds  the context bounds (i.e. type parameter constraints).
-      * @param sp2     the position of the last character in the definition.
+      * @param sp2     the position of the last character in the declaration.
       */
-    case class Impl(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Type], bounds: Seq[ContextBound], body: Seq[ParsedAst.Definition.Function], sp2: SourcePosition) extends ParsedAst.Definition {
+    case class Impl(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Type], bounds: Seq[ContextBound], body: Seq[ParsedAst.Declaration.Function], sp2: SourcePosition) extends ParsedAst.Declaration {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
     /**
-      * An AST node that represents bounded lattice definition.
+      * An AST node that represents bounded lattice declaration.
       *
-      * @param sp1  the position of the first character in the definition.
+      * @param sp1  the position of the first character in the declaration.
       * @param tpe  the type of the lattice elements.
       * @param elms the components of the lattice.
-      * @param sp2  the position of the last character in the definition.
+      * @param sp2  the position of the last character in the declaration.
       */
     @deprecated("Will be replaced by type classes", "0.1.0")
-    case class BoundedLattice(sp1: SourcePosition, tpe: Type, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Definition {
+    case class BoundedLattice(sp1: SourcePosition, tpe: Type, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 
@@ -300,12 +290,7 @@ object ParsedAst {
   /**
     * A common super-type for AST nodes that represents literals.
     */
-  sealed trait Literal {
-    /**
-      * Returns the source location of `this` literal.
-      */
-    def loc: SourceLocation
-  }
+  sealed trait Literal
 
   object Literal {
 
@@ -315,9 +300,7 @@ object ParsedAst {
       * @param sp1 the position of the first character in the literal.
       * @param sp2 the position of the last character in the literal.
       */
-    case class Unit(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Literal {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Unit(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * An AST node that represents a boolean literal.
@@ -326,9 +309,7 @@ object ParsedAst {
       * @param lit the boolean literal.
       * @param sp2 the position of the last character in the literal.
       */
-    case class Bool(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Bool(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * An AST node that represents a char literal.
@@ -337,9 +318,7 @@ object ParsedAst {
       * @param lit the char literal.
       * @param sp2 the position of the last character in the literal.
       */
-    case class Char(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Char(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * An AST node that represents a float32 literal.
@@ -350,9 +329,7 @@ object ParsedAst {
       * @param after  the digits after the decimal point.
       * @param sp2    the position of the last character in the literal.
       */
-    case class Float32(sp1: SourcePosition, sign: Boolean, before: String, after: String, sp2: SourcePosition) extends ParsedAst.Literal {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Float32(sp1: SourcePosition, sign: Boolean, before: String, after: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * An AST node that represents a float64 literal.
@@ -363,9 +340,7 @@ object ParsedAst {
       * @param after  the digits after the decimal point.
       * @param sp2    the position of the last character in the literal.
       */
-    case class Float64(sp1: SourcePosition, sign: Boolean, before: String, after: String, sp2: SourcePosition) extends ParsedAst.Literal {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Float64(sp1: SourcePosition, sign: Boolean, before: String, after: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * An AST node that represents an int8 literal.
@@ -375,9 +350,7 @@ object ParsedAst {
       * @param lit  the int8 literal.
       * @param sp2  the position of the last character in the literal.
       */
-    case class Int8(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Int8(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * An AST node that represents an int16 literal.
@@ -387,9 +360,7 @@ object ParsedAst {
       * @param lit  the int16 literal.
       * @param sp2  the position of the last character in the literal.
       */
-    case class Int16(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Int16(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * An AST node that represents an int32 literal.
@@ -399,9 +370,7 @@ object ParsedAst {
       * @param lit  the int32 literal.
       * @param sp2  the position of the last character in the literal.
       */
-    case class Int32(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Int32(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * An AST node that represents an int64 literal.
@@ -411,9 +380,7 @@ object ParsedAst {
       * @param lit  the int64 literal.
       * @param sp2  the position of the last character in the literal.
       */
-    case class Int64(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Int64(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * An AST node that represents a string literal.
@@ -422,9 +389,7 @@ object ParsedAst {
       * @param lit the string literal.
       * @param sp2 the position of the last character in the literal.
       */
-    case class Str(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal {
-      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-    }
+    case class Str(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
   }
 

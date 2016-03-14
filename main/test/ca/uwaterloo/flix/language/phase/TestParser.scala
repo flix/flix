@@ -18,7 +18,49 @@ class TestParser extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Declarations and Definitions                                            //
+  // Imports                                                                 //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Import.Wildcard01") {
+    val input1 =
+      """namespace a.b.c {
+        |  def f: Int = 42
+        |}
+      """.stripMargin
+    val input2 =
+      """import a.b.c/_
+        |def g: Int = f() + 42
+      """.stripMargin
+    new Flix().addStr(input1).addStr(input2).compile().get
+  }
+
+  test("Import.Definition01") {
+    val input1 =
+      """namespace a.b.c {
+        |  def f: Int = 42
+        |}
+      """.stripMargin
+    val input2 =
+      """import a.b.c/f
+        |def g: Int = f() + 42
+      """.stripMargin
+    new Flix().addStr(input1).addStr(input2).compile().get
+  }
+
+  test("Import.Namespace01") {
+    val input1 =
+      """namespace a.b.c {
+        |  def f: Int = 42
+        |}
+      """.stripMargin
+    val input2 =
+      """import a.b.c
+        |def g: Int = c/f() + 42
+      """.stripMargin
+    new Flix().addStr(input1).addStr(input2).compile().get
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Declarations                                                            //
   /////////////////////////////////////////////////////////////////////////////
   test("Declaration.Namespace01") {
     val input =
@@ -152,87 +194,40 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Imports                                                                 //
-  /////////////////////////////////////////////////////////////////////////////
-  test("Import.Wildcard01") {
-    val input1 =
-      """namespace a.b.c {
-        |  def f: Int = 42
-        |}
-      """.stripMargin
-    val input2 =
-      """import a.b.c/_
-        |def g: Int = f() + 42
-      """.stripMargin
-    new Flix().addStr(input1).addStr(input2).compile().get
+  test("Declaration.Function01") {
+    val input = "def f: Int = 42"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Import.Definition01") {
-    val input1 =
-      """namespace a.b.c {
-        |  def f: Int = 42
-        |}
-      """.stripMargin
-    val input2 =
-      """import a.b.c/f
-        |def g: Int = f() + 42
-      """.stripMargin
-    new Flix().addStr(input1).addStr(input2).compile().get
+  test("Declaration.Function02") {
+    val input = "def f(x: Int): Int = x + 42"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Import.Namespace01") {
-    val input1 =
-      """namespace a.b.c {
-        |  def f: Int = 42
-        |}
-      """.stripMargin
-    val input2 =
-      """import a.b.c
-        |def g: Int = c/f() + 42
-      """.stripMargin
-    new Flix().addStr(input1).addStr(input2).compile().get
+  test("Declaration.Function03") {
+    val input = "def f(x: Int, y: Int, z: Int): Int = x + y + z + 42"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Definition.Function01") {
-    val input = "def foo(): Int = 42"
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Function])
-  }
-
-  test("Definition.Function02") {
-    val input = "def foo(x: Int): Int = 42"
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Function])
-  }
-
-  test("Definition.Function03") {
-    val input = "def foo(x: Int, y: Int, z: Int): Int = x + y + z"
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Function])
-  }
-
-  test("Definition.Enum01") {
+  test("Declaration.Enum01") {
     val input =
       """enum A {
         |  case B
         |}
       """.stripMargin
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Enum])
+    new Flix().addStr(input).compile().get
   }
 
-  test("Definition.Enum02") {
+  test("Declaration.Enum02") {
     val input =
       """enum A {
         |  case B(Int)
         |}
       """.stripMargin
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Enum])
+    new Flix().addStr(input).compile().get
   }
 
-  test("Definition.Enum03") {
+  test("Declaration.Enum03") {
     val input =
       """enum A {
         |  case B,
@@ -240,157 +235,144 @@ class TestParser extends FunSuite {
         |  case D(Bool, Int, Str)
         |}
       """.stripMargin
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Enum])
+    new Flix().addStr(input).compile().get
   }
 
-  // TODO: Allow naming of the enum attributes.
-
-  test("Definition.BoundedLattice01") {
-    val input = "let a<> = (Tag.Bot, Tag.Top, leq, lub, glb)"
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.BoundedLattice])
+  test("Declaration.Relation01") {
+    val input = "rel R(a: Int)"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Definition.BoundedLattice02") {
-    val input = "let a<> = (Tag.Bot, Tag.Top, foo/leq, bar/lub, baz.qux/glb)"
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.BoundedLattice])
+  test("Declaration.Relation02") {
+    val input = "rel R(a: Char, b: Int, c: Str)"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Definition.Relation01") {
-    val input = "rel A(b: B)"
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Relation])
+  test("Declaration.Relation03") {
+    val input = "rel R(a: Int8, b: Int16, c: Int32, d: Int64)"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Definition.Relation02") {
-    val input = "rel A(b: B, c: C, d: D)"
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Relation])
+  test("Lattice01") {
+    val input = "lat L(a: A)"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Definition.Lattice01") {
-    val input = "lat A(b: B)"
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Lattice])
+  test("Lattice02") {
+    val input = "lat L(a: A, b: B, c: C)"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Definition.Index01") {
-    val input = "index A({x});"
-    val result = new Parser(SourceInput.Str(input)).IndexDefinition.run()
-    assert(result.isSuccess)
+  test("Declaration.Index01") {
+    val input =
+      """rel R(a: Int)
+        |index R({a});
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
-  test("Definition.Index02") {
-    val input = "index A({x}, {x, y});"
-    val result = new Parser(SourceInput.Str(input)).IndexDefinition.run()
-    assert(result.isSuccess)
+  test("Declaration.Index02") {
+    val input =
+      """rel R(a: Char, b: Int)
+        |index R({a}, {b});
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
-  test("Definition.Index03") {
-    val input = "index A({x}, {y}, {x, w}, {x, y, z, w});"
-    val result = new Parser(SourceInput.Str(input)).IndexDefinition.run()
-    assert(result.isSuccess)
+  test("Declaration.Index03") {
+    val input =
+      """rel R(a: Int8, b: Int16, c: Int32, d: Int64)
+        |index R({a}, {a, b}, {a, c}, {a, d}, {b, c}, {b, d}, {c, d}, {a, b, c}, {a, b, c, d});
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
-  test("Definition.Class01") {
+  test("Declaration.Class01") {
     val input =
       """class Eq[A] {
         |  fn eq(x: A, y: B): Bool
         |}
       """.stripMargin
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Class])
+    new Flix().addStr(input).compile().get
   }
 
-  test("Definition.Class02") {
+  test("Declaration.Class02") {
     val input =
       """class Coerce[A, B] {
         |  fn coerce(a: A): B
         |}
       """.stripMargin
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Class])
+    new Flix().addStr(input).compile().get
   }
 
-  test("Definition.Class03") {
+  test("Declaration.Class03") {
     val input =
       """class Ord[A] => Eq[A] {
         |  fn eq(x: A, y: A): Bool
         |  fn lessEq(x: A, y: A): Bool
         |}
       """.stripMargin
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Class])
+    new Flix().addStr(input).compile().get
   }
 
-  test("Definition.Class04") {
+  test("Declaration.Class04") {
     val input =
       """class Eq[A] => PartialOrd[A], PreOrd[A] {
         |  /* ... */
         |}
       """.stripMargin
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Class])
+    new Flix().addStr(input).compile().get
   }
 
-  test("Definition.Law01") {
+  test("Declaration.Law01") {
     val input = "law f(): Bool = true"
-    val result = new Parser(SourceInput.Str(input)).LawDefinition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Law])
+    new Flix().addStr(input).compile().get
   }
 
-  test("Definition.Law02") {
+  test("Declaration.Law02") {
     val input = "law f(x: Int): Bool = x % 2 == 0"
-    val result = new Parser(SourceInput.Str(input)).LawDefinition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Law])
+    new Flix().addStr(input).compile().get
   }
 
-  test("Definition.Law03") {
+  test("Declaration.Law03") {
     val input = "law f(x: Int, y: Int): Bool = x > y"
-    val result = new Parser(SourceInput.Str(input)).LawDefinition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Law])
+    new Flix().addStr(input).compile().get
   }
 
-  test("Definition.Impl01") {
+  test("Declaration.Impl01") {
     val input =
       """impl Eq[Int] {
         |  /* ... */
         |}
       """.stripMargin
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Impl])
+    new Flix().addStr(input).compile().get
   }
 
-  test("Definition.Impl02") {
+  test("Declaration.Impl02") {
     val input =
       """impl Eq[(Int, Int)] {
         |  /* ... */
         |}
       """.stripMargin
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Impl])
+    new Flix().addStr(input).compile().get
   }
 
-  test("Definition.Impl03") {
+  test("Declaration.Impl03") {
     val input =
       """impl Ord[Int] <= Eq[Int] {
         |  /* ... */
         |}
       """.stripMargin
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Impl])
+    new Flix().addStr(input).compile().get
   }
 
-  test("Definition.Impl04") {
+  test("Declaration.Impl04") {
     val input =
       """impl A[Int, Int] <= B[Int], C[Int] {
         |  /* ... */
         |}
       """.stripMargin
-    val result = new Parser(SourceInput.Str(input)).Definition.run().get
-    assert(result.isInstanceOf[ParsedAst.Definition.Impl])
+    new Flix().addStr(input).compile().get
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1617,49 +1599,55 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Facts and Rules                                                         //
   /////////////////////////////////////////////////////////////////////////////
-  test("FactDeclaration01") {
-    val input = "P(42)."
-    val result = new Parser(SourceInput.Str(input)).FactDeclaration.run()
-    assert(result.isSuccess)
+  test("Declaration.Fact01") {
+    val input =
+      """rel R(a: Int)
+        |R(42).
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
-  test("FactDeclaration02") {
-    val input = "P(\"foo\")."
-    val result = new Parser(SourceInput.Str(input)).FactDeclaration.run()
-    assert(result.isSuccess)
+  test("Declaration.Fact02") {
+    val input =
+      """rel R(a: Char, b: Int)
+        |R('a', 42).
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
-  test("FactDeclaration03") {
-    val input = "P(f(1, 2, 3))."
-    val result = new Parser(SourceInput.Str(input)).FactDeclaration.run()
-    assert(result.isSuccess)
+  test("Declaration.Fact03") {
+    val input =
+      """rel R(a: Int8, b: Int16, c: Int32, d: Int64)
+        |R(1i8, 2i16, 3i32, 4i64).
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
-  test("RuleDeclaration01") {
-    val input = "P(x) :- A(x)."
-    val result = new Parser(SourceInput.Str(input)).RuleDeclaration.run()
-    assert(result.isSuccess)
-    assertResult(1)(result.get.body.size)
+  test("Declaration.Rule01") {
+    val input =
+      """rel R(a: Int)
+        |
+        |R(x) :- R(x).
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
-  test("RuleDeclaration02") {
-    val input = "P(x, y, z) :- A(x), B(y), C(z)."
-    val result = new Parser(SourceInput.Str(input)).RuleDeclaration.run()
-    assert(result.isSuccess)
-    assertResult(3)(result.get.body.size)
+  test("Declaration.Rule02") {
+    val input =
+      """rel R(a: Int)
+        |
+        |R(x) :- R(x), R(x), R(x).
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
-  test("RuleDeclaration03") {
-    val input = "P(f(x), g(y, z)) :- isFoo(x, y), isBar(y, z), A(x), B(y), C(z)."
-    val result = new Parser(SourceInput.Str(input)).RuleDeclaration.run()
-    assert(result.isSuccess)
-    assertResult(5)(result.get.body.size)
-  }
-
-  test("Rule.Loop01") {
-    val input = "P(x, z) :- A(x, y), z <- f(y)."
-    val result = new Parser(SourceInput.Str(input)).RuleDeclaration.run()
-    assert(result.isSuccess)
+  test("Declaration.Rule03") {
+    val input =
+      """rel R(a: Int, b: Int)
+        |
+        |R(x, y) :- R(x, y), R(y, x).
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
   test("Predicate.Alias01") {
@@ -2544,94 +2532,50 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Annotations                                                             //
   /////////////////////////////////////////////////////////////////////////////
-  test("Annotation @strict") {
+  test("Annotation.@strict") {
     val input = "@strict"
     val parser = mkParser(input)
     val result = parser.__run(parser.Annotation).get
     assert(result.isInstanceOf[ParsedAst.Annotation])
   }
 
-  test("Annotation @monotone") {
+  test("Annotation.@monotone") {
     val input = "@monotone"
     val parser = mkParser(input)
     val result = parser.__run(parser.Annotation).get
     assert(result.isInstanceOf[ParsedAst.Annotation])
   }
 
-  test("Annotation.AnnotatedFunction01") {
+  test("Annotation01") {
     val input =
       """@strict
         |fn f(x: Int): Int = x
       """.stripMargin
-    val parser = mkParser(input)
-    val result = parser.__run(parser.FunctionDefinition)
-    assert(result.get.isInstanceOf[ParsedAst.Definition.Function])
+    new Flix().addStr(input).compile().get
   }
 
-  test("Annotation.AnnotatedFunction02") {
+  test("Annotation02") {
     val input =
       """@monotone
         |fn f(x: Int): Int = x
       """.stripMargin
-    val parser = mkParser(input)
-    val result = parser.__run(parser.FunctionDefinition).get
-    assert(result.isInstanceOf[ParsedAst.Definition.Function])
+    new Flix().addStr(input).compile().get
   }
 
-  test("Annotation.AnnotatedFunction03") {
+  test("Annotation03") {
     val input =
       """@strict @monotone
         |fn f(x: Int): Int = x
       """.stripMargin
-    val parser = mkParser(input)
-    val result = parser.__run(parser.FunctionDefinition).get
-    assert(result.isInstanceOf[ParsedAst.Definition.Function])
+    new Flix().addStr(input).compile().get
   }
 
-  test("Annotation.AnnotatedFunction04") {
+  test("Annotation04") {
     val input =
       """@strict @monotone @commutative @associative @unsafe @unchecked
         |fn f(x: Int): Int = x
       """.stripMargin
-    val parser = mkParser(input)
-    val result = parser.__run(parser.FunctionDefinition).get
-    assert(result.isInstanceOf[ParsedAst.Definition.Function])
-  }
-
-  test("Annotation.AnnotatedParameter01") {
-    val input =
-      """fn f(x: @strict Int): Int = x
-      """.stripMargin
-    val parser = mkParser(input)
-    val result = parser.__run(parser.FunctionDefinition).get
-    assert(result.isInstanceOf[ParsedAst.Definition.Function])
-  }
-
-  test("Annotation.AnnotatedParameter02") {
-    val input =
-      """fn f(x: @monotone Int): Int = x
-      """.stripMargin
-    val parser = mkParser(input)
-    val result = parser.__run(parser.FunctionDefinition).get
-    assert(result.isInstanceOf[ParsedAst.Definition.Function])
-  }
-
-  test("Annotation.AnnotatedParameter03") {
-    val input =
-      """fn f(x: @strict @monotone Int): Int = x
-      """.stripMargin
-    val parser = mkParser(input)
-    val result = parser.__run(parser.FunctionDefinition).get
-    assert(result.isInstanceOf[ParsedAst.Definition.Function])
-  }
-
-  test("Annotation.AnnotatedParameter04") {
-    val input =
-      """fn f(x: @strict Int, y: Int, z: @monotone Int): Int = x
-      """.stripMargin
-    val parser = mkParser(input)
-    val result = parser.__run(parser.FunctionDefinition).get
-    assert(result.isInstanceOf[ParsedAst.Definition.Function])
+    new Flix().addStr(input).compile().get
   }
 
   /////////////////////////////////////////////////////////////////////////////

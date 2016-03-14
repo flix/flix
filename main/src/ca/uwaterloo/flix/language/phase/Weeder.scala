@@ -309,11 +309,18 @@ object Weeder {
     /**
       * Compiles the given parsed declaration `past` to a weeded declaration.
       */
+    // TODO: Inline
+
     def compile(past: ParsedAst.Declaration): Validation[WeededAst.Declaration, WeederError] = past match {
       case d: ParsedAst.Declaration.Namespace => Declaration.compile(d)
       case d: ParsedAst.Declaration.Fact => Declaration.compile(d)
       case d: ParsedAst.Declaration.Rule => Declaration.compile(d)
-      case d: ParsedAst.Definition => Definition.compile(d)
+      case d: ParsedAst.Declaration.Function => Declaration.compile(d)
+      case d: ParsedAst.Declaration.Enum => Declaration.compile(d)
+      case d: ParsedAst.Declaration.BoundedLattice => Declaration.compile(d)
+      case d: ParsedAst.Declaration.Relation => Declaration.compile(d)
+      case d: ParsedAst.Declaration.Lattice => Declaration.compile(d)
+      case d: ParsedAst.Declaration.Index => Declaration.compile(d)
     }
 
     /**
@@ -355,27 +362,10 @@ object Weeder {
       }
     }
 
-  }
-
-  object Definition {
-
-    /**
-      * Compiles the given parsed definition `past` to a weeded definition.
-      */
-    // TODO: Inline all calls into this function...
-    def compile(past: ParsedAst.Definition): Validation[WeededAst.Declaration, WeederError] = past match {
-      case d: ParsedAst.Definition.Function => Definition.compile(d)
-      case d: ParsedAst.Definition.Enum => Definition.compile(d)
-      case d: ParsedAst.Definition.BoundedLattice => Definition.compile(d)
-      case d: ParsedAst.Definition.Relation => Definition.compile(d)
-      case d: ParsedAst.Definition.Lattice => Definition.compile(d)
-      case d: ParsedAst.Definition.Index => Definition.compile(d)
-    }
-
     /**
       * Compiles the given parsed function declaration `past` to a weeded definition.
       */
-    def compile(past: ParsedAst.Definition.Function): Validation[WeededAst.Definition.Constant, WeederError] = {
+    def compile(past: ParsedAst.Declaration.Function): Validation[WeededAst.Definition.Constant, WeederError] = {
       val annotationsVal = Annotations.compile(past.annotations)
 
       // TODO: Need to move certain annotations to each lattice valued argument...?
@@ -405,7 +395,7 @@ object Weeder {
       *
       * Returns [[Failure]] if the same tag name occurs twice.
       */
-    def compile(past: ParsedAst.Definition.Enum): Validation[WeededAst.Definition.Enum, WeederError] = {
+    def compile(past: ParsedAst.Declaration.Enum): Validation[WeededAst.Definition.Enum, WeederError] = {
       // check duplicate tags.
       Validation.fold[ParsedAst.Case, Map[String, Type.UnresolvedTag], WeederError](past.cases, Map.empty) {
         case (macc, caze: ParsedAst.Case) =>
@@ -422,7 +412,7 @@ object Weeder {
     /**
       * Compiles the given parsed lattice `past` to a weeded lattice definition.
       */
-    def compile(past: ParsedAst.Definition.BoundedLattice): Validation[WeededAst.Definition.BoundedLattice, WeederError] = {
+    def compile(past: ParsedAst.Declaration.BoundedLattice): Validation[WeededAst.Definition.BoundedLattice, WeederError] = {
       // check lattice definition.
       val elmsVal = @@(past.elms.toList.map(Expression.compile))
       elmsVal flatMap {
@@ -434,7 +424,7 @@ object Weeder {
     /**
       * Compiles the given parsed relation `past` to a weeded relation definition.
       */
-    def compile(past: ParsedAst.Definition.Relation): Validation[WeededAst.Table.Relation, WeederError] = {
+    def compile(past: ParsedAst.Declaration.Relation): Validation[WeededAst.Table.Relation, WeederError] = {
       // check for duplicate attributes.
       val seen = mutable.Map.empty[String, Name.Ident]
       val attributesVal = past.attributes.map {
@@ -455,7 +445,7 @@ object Weeder {
     /**
       * Compiles the given parsed relation `past` to a weeded lattice definition.
       */
-    def compile(past: ParsedAst.Definition.Lattice): Validation[WeededAst.Table.Lattice, WeederError] = {
+    def compile(past: ParsedAst.Declaration.Lattice): Validation[WeededAst.Table.Lattice, WeederError] = {
       // check for duplicate attributes.
       val seen = mutable.Map.empty[String, Name.Ident]
       val attributesVal = past.attributes.map {
@@ -476,7 +466,7 @@ object Weeder {
     /**
       * Compiles the given parsed index definition `past` to a weeded index definition.
       */
-    def compile(past: ParsedAst.Definition.Index): Validation[WeededAst.Definition.Index, WeederError] = {
+    def compile(past: ParsedAst.Declaration.Index): Validation[WeededAst.Definition.Index, WeederError] = {
       if (past.indexes.isEmpty)
         return MissingIndex(past.loc).toFailure
 
@@ -495,34 +485,44 @@ object Weeder {
       */
     // TODO: check bounds etc
     def compile(past: ParsedAst.Literal): Validation[WeededAst.Literal, WeederError] = past match {
-      case plit: ParsedAst.Literal.Unit => WeededAst.Literal.Unit(plit.loc).toSuccess
-      case plit: ParsedAst.Literal.Bool => plit.lit match {
-        case "true" => WeededAst.Literal.Bool(lit = true, plit.loc).toSuccess
-        case "false" => WeededAst.Literal.Bool(lit = false, plit.loc).toSuccess
-        case _ => throw Compiler.InternalCompilerError("Impossible non-boolean value.")
+      case ParsedAst.Literal.Unit(sp1, sp2) =>
+        WeededAst.Literal.Unit(mkSL(sp1, sp2)).toSuccess
+
+      case ParsedAst.Literal.Bool(sp1, lit, sp2) => lit match {
+        case "true" => WeededAst.Literal.Bool(lit = true, mkSL(sp1, sp2)).toSuccess
+        case "false" => WeededAst.Literal.Bool(lit = false, mkSL(sp1, sp2)).toSuccess
+        case _ => throw Compiler.InternalCompilerError("Non-true/false boolean.")
       }
-      case plit: ParsedAst.Literal.Char => WeededAst.Literal.Char(plit.lit(0), plit.loc).toSuccess
+
+      case ParsedAst.Literal.Char(sp1, lit, sp2) =>
+        WeededAst.Literal.Char(lit(0), mkSL(sp1, sp2)).toSuccess
 
       case ParsedAst.Literal.Float32(sp1, sign, before, after, sp2) =>
         val s = if (sign) s"-$before.$after" else s"$before.$after"
-        WeededAst.Literal.Float32(s.toFloat, past.loc).toSuccess
+        WeededAst.Literal.Float32(s.toFloat, mkSL(sp1, sp2)).toSuccess
+
       case ParsedAst.Literal.Float64(sp1, sign, before, after, sp2) =>
         val s = if (sign) s"-$before.$after" else s"$before.$after"
-        WeededAst.Literal.Float64(s.toDouble, past.loc).toSuccess
+        WeededAst.Literal.Float64(s.toDouble, mkSL(sp1, sp2)).toSuccess
 
-      case plit: ParsedAst.Literal.Int8 =>
-        val s = if (plit.sign) "-" + plit.lit else plit.lit
-        WeededAst.Literal.Int8(s.toByte, plit.loc).toSuccess
-      case plit: ParsedAst.Literal.Int16 =>
-        val s = if (plit.sign) "-" + plit.lit else plit.lit
-        WeededAst.Literal.Int16(s.toShort, plit.loc).toSuccess
-      case plit: ParsedAst.Literal.Int32 =>
-        val s = if (plit.sign) "-" + plit.lit else plit.lit
-        WeededAst.Literal.Int32(s.toInt, plit.loc).toSuccess
-      case plit: ParsedAst.Literal.Int64 =>
-        val s = if (plit.sign) "-" + plit.lit else plit.lit
-        WeededAst.Literal.Int64(s.toLong, plit.loc).toSuccess
-      case plit: ParsedAst.Literal.Str => WeededAst.Literal.Str(plit.lit, plit.loc).toSuccess
+      case ParsedAst.Literal.Int8(sp1, sign, lit, sp2) =>
+        val s = if (sign) "-" + lit else lit
+        WeededAst.Literal.Int8(s.toByte, mkSL(sp1, sp2)).toSuccess
+
+      case ParsedAst.Literal.Int16(sp1, sign, lit, sp2) =>
+        val s = if (sign) "-" + lit else lit
+        WeededAst.Literal.Int16(s.toShort, mkSL(sp1, sp2)).toSuccess
+
+      case ParsedAst.Literal.Int32(sp1, sign, lit, sp2) =>
+        val s = if (sign) "-" + lit else lit
+        WeededAst.Literal.Int32(s.toInt, mkSL(sp1, sp2)).toSuccess
+
+      case ParsedAst.Literal.Int64(sp1, sign, lit, sp2) =>
+        val s = if (sign) "-" + lit else lit
+        WeededAst.Literal.Int64(s.toLong, mkSL(sp1, sp2)).toSuccess
+
+      case ParsedAst.Literal.Str(sp1, lit, sp2) =>
+        WeededAst.Literal.Str(lit, mkSL(sp1, sp2)).toSuccess
     }
   }
 
