@@ -296,7 +296,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Simple: Rule1[ParsedAst.Expression] = rule {
       LetMatch | IfThenElse | Switch | Match |
-        Tag | Tuple | FNil | FNone | FSome | FSet | FMap |
+        Tag | FatArrow | Tuple | FNil | FNone | FSome | FSet | FMap |
         Literal | Lambda | Existential | Universal | Bot | Top | Var | UserError
     }
 
@@ -408,8 +408,24 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ QName ~ SP ~> ParsedAst.Expression.Var
     }
 
+    // TODO: Remove?
     def Lambda: Rule1[ParsedAst.Expression.Lambda] = rule {
       SP ~ atomic("fn") ~ optWS ~ "(" ~ ArgumentList ~ ")" ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Lambda
+    }
+
+    def FatArrow: Rule1[ParsedAst.Expression.FatArrow] = {
+      def OneArg: Rule1[ParsedAst.Expression.FatArrow] = rule {
+        SP ~ Ident ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ((sp1: SourcePosition, arg: Name.Ident, body: ParsedAst.Expression, sp2: SourcePosition) =>
+          ParsedAst.Expression.FatArrow(sp1, Seq(arg), body, sp2))
+      }
+
+      def MultipleArgs: Rule1[ParsedAst.Expression.FatArrow] = rule {
+        SP ~ "(" ~ optWS ~ oneOrMore(Ident).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.FatArrow
+      }
+
+      rule {
+        OneArg | MultipleArgs
+      }
     }
 
     def Existential: Rule1[ParsedAst.Expression.Existential] = rule {

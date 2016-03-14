@@ -466,6 +466,7 @@ object ParsedAst {
       case Expression.Var(sp1, _, _) => sp1
       case Expression.Apply(sp1, _, _, _) => sp1
       case Expression.Lambda(sp1, _, _, _, _) => sp1
+      case Expression.FatArrow(sp1, _, _, _) => sp1
       case Expression.Unary(sp1, _, _, _) => sp1
       case Expression.Binary(e1, _, _, _) => e1.leftMostSourcePosition
       case Expression.ExtendedBinary(e1, _, _, _) => e1.leftMostSourcePosition
@@ -541,7 +542,20 @@ object ParsedAst {
       * @param body    the body expression of the lambda.
       * @param sp2     the position of the last character in the expression.
       */
+    // TODO: is this used?
     case class Lambda(sp1: SourcePosition, formals: Seq[FormalArg], tpe: Type, body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
+      def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+    }
+
+    /**
+      * An AST node that represents fat arrow (lambda) expressions.
+      *
+      * @param sp1     the position of the first character in the expression.
+      * @param formals the formal arguments.
+      * @param body    the body expression of the lambda.
+      * @param sp2     the position of the last character in the expression.
+      */
+    case class FatArrow(sp1: SourcePosition, formals: Seq[Name.Ident], body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression {
       def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
     }
 

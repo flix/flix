@@ -1055,6 +1055,25 @@ class TestParser extends FunSuite {
     assert(result.body.isInstanceOf[ParsedAst.Expression.Binary])
   }
 
+  // TODO: issues with arrows
+  test("Expression.FatArrow01") {
+    val input =
+      """def f: Int =
+        |  let g = x -> x + 1 in
+        |    g(42)
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.FatArrow02") {
+    val input =
+      """def f: Int =
+        |  let g = (x, y) -> x + y in
+        |    g(42, 21)
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
   test("Expression.ErrorExp01") {
     val input = "??? : Int"
     val result = new Parser(SourceInput.Str(input)).Expression.run()
