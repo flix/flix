@@ -57,10 +57,10 @@
   }
   let SULattice<> = (SULattice.Bottom, SULattice.Top, leq, lub, glb);
 
-  lat SU(location: Str, object: Str, target: SULattice<>)
+  lat SU(location: Str, object: Str, target: SULattice)
 
   rel PtH(object: Str, target: Str)
-  lat Kill(location: Str, kill: SULattice<>)
+  lat Kill(location: Str, kill: SULattice)
 
 //// Rules
 //// =========
