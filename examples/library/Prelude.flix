@@ -347,27 +347,13 @@ impl PartialOrder[(A, B)] <= PartialOrder[A], PartialOrder[B] {
 ///////////////////////////////////////////////////////////////////////////////
 
 // TODO: Add NatInc, NatDec
-enum NatInc {
-    case NatInc(Int)
-}
+
 
 enum NatDec {
     case NatDec(Int)
 }
 
-impl PartialOrder[NatInc] {
-    def leq(x: NatInc, y: NatInc): Bool =
-        let NatInc.NatInc(i1) = x in
-        let NatInc.NatInc(i2) = y in
-          x < y
-}
 
-impl JoinSemiLattice[NatInc] {
-    def lub(x: NatInc, y: NatInc): NatInc =
-        let NatInc.NatInc(i1) = x in
-        let NatInc.NatInc(i2) = y in
-          Math/max(i1, i2)
-}
 
 /**
  * We can define a class of types that are equipped with a least upper bound.
@@ -386,9 +372,6 @@ impl PartialOrder[E] <= LeastUpperBound[E] {
 
 // TODO: Further research ideas:
 
-//class Functor[M[A]] {
-//    def map[B](f: (A) -> B, x: M[A]): M[B]
-//}
 
 // class Monoid
 

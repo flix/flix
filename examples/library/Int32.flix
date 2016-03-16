@@ -1,23 +1,23 @@
 namespace Int32 {
 
     /**
-     * Returns the minimum number representable by an `Int32` equivalent to `-2^16`.
+     * Returns the minimum number representable by an `Int32`.
      */
-    external def minValue: Int32
+    def minValue: Int32 = - 2 ** 31
 
     /**
-     * Returns the maximum number representable by an `Int32` equivalent to `2^16 - 1`.
+     * Returns the maximum number representable by an `Int32`.
      */
-    external def maxValue: Int32
+    def maxValue: Int32 = 2 ** 31 - 1
 
     /**
      * Returns the smaller of `x` and `y`.
      */
-    external def min(x: Int32, y: Int32): Int32
+    def min(x: Int32, y: Int32): Int32 = if (x <= y) x else y
 
     /**
      * Returns the larger of `x` and `y`.
      */
-    external def max(x: Int32, y: Int32): Int32
+    def max(x: Int32, y: Int32): Int32 = if (x <= y) x else y
 
 }

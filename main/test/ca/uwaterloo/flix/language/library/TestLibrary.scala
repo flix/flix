@@ -7,9 +7,65 @@ import org.scalatest.FunSuite
 class TestLibrary extends FunSuite {
 
   test("Library.Prelude") {
+    new Flix().addPath("examples/library/Prelude.flix")
+      .compile()
+      .get
+  }
+
+
+  test("Library.Bounded") {
     new Flix()
-      .addPath("examples/library/Prelude.flix")
-      .compile().get
+      .addPath("library/Bounded.flix")
+      .addPath("library/Float32.flix")
+      .addPath("library/Float64.flix")
+      .addPath("library/Int8.flix")
+      .addPath("library/Int16.flix")
+      .addPath("library/Int32.flix")
+      .addPath("library/Int64.flix")
+      .compile()
+      .get
+  }
+
+  test("Library.Char") {
+    new Flix().addPath("library/Char.flix")
+      .compile()
+      .get
+  }
+
+  test("Library.Float32") {
+    new Flix().addPath("library/Float32.flix")
+      .compile()
+      .get
+  }
+
+  test("Library.Float64") {
+    new Flix().addPath("library/Float64.flix")
+      .compile()
+      .get
+  }
+
+  test("Library.Int8") {
+    new Flix().addPath("library/Int8.flix")
+      .compile()
+      .get
+  }
+
+  test("Library.Int16") {
+    new Flix().addPath("library/Int16.flix")
+      .compile()
+      .get
+  }
+
+  test("Library.Int32") {
+    new Flix().addPath("library/Int32.flix")
+      .compile()
+      .get
+  }
+
+  test("Library.Int64") {
+    new Flix().addPath("library/Int64.flix")
+      .compile()
+      .get
   }
 
 }
