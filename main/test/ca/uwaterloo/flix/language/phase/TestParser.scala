@@ -2655,76 +2655,83 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Whitespace                                                              //
   /////////////////////////////////////////////////////////////////////////////
-  test("WhiteSpace (1)") {
+  test("WhiteSpace01") {
     val input = " "
-    val result = new Parser(SourceInput.Str(input)).WS.run()
-    assert(result.isSuccess)
+    new Flix().addStr(input).compile().get
   }
 
-  test("WhiteSpace (2)") {
+  test("WhiteSpace02") {
     val input = "    "
-    val result = new Parser(SourceInput.Str(input)).WS.run()
-    assert(result.isSuccess)
+    new Flix().addStr(input).compile().get
   }
 
-  test("WhiteSpace (3)") {
+  test("WhiteSpace03") {
     val input = "\t"
-    val result = new Parser(SourceInput.Str(input)).WS.run()
-    assert(result.isSuccess)
+    new Flix().addStr(input).compile().get
   }
 
-  test("WhiteSpace (4)") {
+  test("WhiteSpace04") {
     val input = "\n\r"
-    val result = new Parser(SourceInput.Str(input)).WS.run()
-    assert(result.isSuccess)
-  }
-
-  test("WhiteSpace (5)") {
-    val input = " // comments are also whitespace "
-    val result = new Parser(SourceInput.Str(input)).WS.run()
-    assert(result.isSuccess)
-  }
-
-  test("WhiteSpace (6)") {
-    val input = " /* comments are also whitespace */ "
-    val result = new Parser(SourceInput.Str(input)).WS.run()
-    assert(result.isSuccess)
+    new Flix().addStr(input).compile().get
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Comments                                                                //
   /////////////////////////////////////////////////////////////////////////////
-  test("SingleLineComment (1)") {
+  test("SingleLineComment01") {
     val input = "// a comment"
-    val result = new Parser(SourceInput.Str(input)).Comment.run()
-    assert(result.isSuccess)
+    new Flix().addStr(input).compile().get
   }
 
-  test("SingleLineComment (2)") {
+  test("SingleLineComment02") {
     val input =
       """// a comment
         |// another comment
         |// and yet another
       """.stripMargin
-    val result = new Parser(SourceInput.Str(input)).Comment.run()
-    assert(result.isSuccess)
+    new Flix().addStr(input).compile().get
   }
 
-  test("MultiLineComment (1)") {
+  test("MultiLineComment01") {
     val input = "/* a comment */"
-    val result = new Parser(SourceInput.Str(input)).Comment.run()
-    assert(result.isSuccess)
+    new Flix().addStr(input).compile().get
   }
 
-  test("MultiLineComment (2)") {
+  test("MultiLineComment02") {
     val input =
       """/*
         |a comment
-        |*/""".stripMargin
-    val result = new Parser(SourceInput.Str(input)).Comment.run()
-    assert(result.isSuccess)
+        |*/
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
+  test("Comment01") {
+    val input =
+      """
+        |
+        |   /* hello */ def
+        |   /* world */
+        |   foo(/* a nice arg */ a: Int): /* lets return something */ Bool = true
+        |
+        |
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Comment02") {
+    val input =
+      """
+        |
+        |   def f: Bool =
+        |     if (/* oh a comment */ true) /* another */ true else
+        |     // now what?
+        |     false
+        |
+        |
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
 
   /**
     * Returns a parser for the given string `s`.
