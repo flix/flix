@@ -92,6 +92,11 @@ object BinaryOperator {
   case object Modulo extends ArithmeticOperator
 
   /**
+    * Exponentiate.
+    */
+  case object Exponentiate extends ArithmeticOperator
+
+  /**
     * Strictly less-than.
     */
   case object Less extends ComparisonOperator

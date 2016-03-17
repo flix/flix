@@ -636,7 +636,7 @@ class TestParser extends FunSuite {
   }
 
   test("Expression.LetMatch02") {
-    val input = "let x' = f(1, 2, 3) in g(4, 5, 6)"
+    val input = "let x = f(1, 2, 3) in g(4, 5, 6)"
     new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.LetMatch]
   }
 
@@ -1255,12 +1255,6 @@ class TestParser extends FunSuite {
     val input = "x"
     val result = new Parser(SourceInput.Str(input)).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Var]
     assertResult("x")(result.ident.name)
-  }
-
-  test("Pattern.Var02") {
-    val input = "foo_Bar'"
-    val result = new Parser(SourceInput.Str(input)).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Var]
-    assertResult("foo_Bar'")(result.ident.name)
   }
 
   test("Pattern.Literal01") {
@@ -2324,12 +2318,6 @@ class TestParser extends FunSuite {
     assertResult("x0")(result.name)
   }
 
-  test("Ident04") {
-    val input = "x'"
-    val result = new Parser(SourceInput.Str(input)).Ident.run().get
-    assertResult("x'")(result.name)
-  }
-
   test("Ident05") {
     val input = "foobar"
     val result = new Parser(SourceInput.Str(input)).Ident.run().get
@@ -2346,12 +2334,6 @@ class TestParser extends FunSuite {
     val input = "foo_bar"
     val result = new Parser(SourceInput.Str(input)).Ident.run().get
     assertResult("foo_bar")(result.name)
-  }
-
-  test("Ident08") {
-    val input = "f00_BAR'''"
-    val result = new Parser(SourceInput.Str(input)).Ident.run().get
-    assertResult("f00_BAR'''")(result.name)
   }
 
   test("Ident09") {
@@ -2584,6 +2566,13 @@ class TestParser extends FunSuite {
     val parser = mkParser(input)
     val result = parser.__run(parser.Operators.MultiplicativeOp).get
     assertResult(BinaryOperator.Modulo)(result)
+  }
+
+  test("Operator.Binary.MultiplicativeOp **") {
+    val input = "**"
+    val parser = mkParser(input)
+    val result = parser.__run(parser.Operators.MultiplicativeOp).get
+    assertResult(BinaryOperator.Exponentiate)(result)
   }
 
   test("Operator.Binary.AdditiveOp +") {

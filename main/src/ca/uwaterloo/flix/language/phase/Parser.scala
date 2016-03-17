@@ -790,7 +790,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       * Parses a multiplicative operator.
       */
     def MultiplicativeOp: Rule1[BinaryOperator] = rule {
-      atomic("*") ~> (() => BinaryOperator.Times) |
+      atomic("**") ~> (() => BinaryOperator.Exponentiate) |
+        atomic("*") ~> (() => BinaryOperator.Times) |
         atomic("/") ~> (() => BinaryOperator.Divide) |
         atomic("%") ~> (() => BinaryOperator.Modulo)
     }
