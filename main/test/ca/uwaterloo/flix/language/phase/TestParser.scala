@@ -2377,178 +2377,128 @@ class TestParser extends FunSuite {
   // Operators                                                               //
   /////////////////////////////////////////////////////////////////////////////
   test("Operator.Unary !") {
-    val input = "!"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.UnaryOp).get
-    assertResult(UnaryOperator.LogicalNot)(result)
+    val input = "def f(b: Bool): Bool = !b"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Unary +") {
-    val input = "+"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.UnaryOp).get
-    assertResult(UnaryOperator.Plus)(result)
+    val input = "def f(i: Int): Int = +i"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Unary -") {
-    val input = "-"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.UnaryOp).get
-    assertResult(UnaryOperator.Minus)(result)
+    val input = "def f(i: Int): Int = -i"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Unary ~") {
-    val input = "~"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.UnaryOp).get
-    assertResult(UnaryOperator.BitwiseNegate)(result)
+    val input = "def f(i: Int): Int = ~i"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.LogicalOp &&") {
-    val input = "&&"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.LogicalOp).get
-    assertResult(BinaryOperator.LogicalAnd)(result)
+    val input = "def f(x: Bool, y: Bool): Bool = x && y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.LogicalOp ||") {
-    val input = "||"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.LogicalOp).get
-    assertResult(BinaryOperator.LogicalOr)(result)
+    val input = "def f(x: Bool, y: Bool): Bool = x || y"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Operator.Binary.LogicalOp ->") {
-    val input = "==>"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.LogicalOp).get
-    assertResult(BinaryOperator.Implication)(result)
+  test("Operator.Binary.LogicalOp ==>") {
+    val input = "def f(x: Bool, y: Bool): Bool = x ==> y"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Operator.Binary.LogicalOp <->") {
-    val input = "<==>"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.LogicalOp).get
-    assertResult(BinaryOperator.Biconditional)(result)
+  test("Operator.Binary.LogicalOp <==>") {
+    val input = "def f(x: Bool, y: Bool): Bool = x <==> y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.Bitwise &") {
-    val input = "&"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.LogicalOp).get
-    assertResult(BinaryOperator.BitwiseAnd)(result)
+    val input = "def f(x: Int, y: Int): Int = x & y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.Bitwise |") {
-    val input = "|"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.LogicalOp).get
-    assertResult(BinaryOperator.BitwiseOr)(result)
+    val input = "def f(x: Int, y: Int): Int = x | y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.Bitwise ^") {
-    val input = "^"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.LogicalOp).get
-    assertResult(BinaryOperator.BitwiseXor)(result)
+    val input = "def f(x: Int, y: Int): Int = x ^ y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.Bitwise <<") {
-    val input = "<<"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.LogicalOp).get
-    assertResult(BinaryOperator.BitwiseLeftShift)(result)
+    val input = "def f(x: Int, y: Int): Int = x << y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.Bitwise >>") {
-    val input = ">>"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.LogicalOp).get
-    assertResult(BinaryOperator.BitwiseRightShift)(result)
+    val input = "def f(x: Int, y: Int): Int = x >> y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.ComparisonOp <") {
-    val input = "<"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.ComparisonOp).get
-    assertResult(BinaryOperator.Less)(result)
+    val input = "def f(x: Int, y: Int): Bool = x < y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.ComparisonOp <=") {
-    val input = "<="
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.ComparisonOp).get
-    assertResult(BinaryOperator.LessEqual)(result)
+    val input = "def f(x: Int, y: Int): Bool = x <= y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.ComparisonOp >") {
-    val input = ">"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.ComparisonOp).get
-    assertResult(BinaryOperator.Greater)(result)
+    val input = "def f(x: Int, y: Int): Bool = x > y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.ComparisonOp >=") {
-    val input = ">="
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.ComparisonOp).get
-    assertResult(BinaryOperator.GreaterEqual)(result)
+    val input = "def f(x: Int, y: Int): Bool = x >= y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.ComparisonOp ==") {
-    val input = "=="
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.ComparisonOp).get
-    assertResult(BinaryOperator.Equal)(result)
+    val input = "def f(x: Int, y: Int): Bool = x == y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.ComparisonOp !=") {
-    val input = "!="
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.ComparisonOp).get
-    assertResult(BinaryOperator.NotEqual)(result)
+    val input = "def f(x: Int, y: Int): Bool = x != y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.MultiplicativeOp *") {
-    val input = "*"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.MultiplicativeOp).get
-    assertResult(BinaryOperator.Times)(result)
+    val input = "def f(x: Int, y: Int): Int = x * y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.MultiplicativeOp /") {
-    val input = "/"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.MultiplicativeOp).get
-    assertResult(BinaryOperator.Divide)(result)
+    val input = "def f(x: Int, y: Int): Int = x / y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.MultiplicativeOp %") {
-    val input = "%"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.MultiplicativeOp).get
-    assertResult(BinaryOperator.Modulo)(result)
+    val input = "def f(x: Int, y: Int): Int = x % y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.MultiplicativeOp **") {
-    val input = "**"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.MultiplicativeOp).get
-    assertResult(BinaryOperator.Exponentiate)(result)
+    val input = "def f(x: Int, y: Int): Int = x ** y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.AdditiveOp +") {
-    val input = "+"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.AdditiveOp).get
-    assertResult(BinaryOperator.Plus)(result)
+    val input = "def f(x: Int, y: Int): Int = x + y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.AdditiveOp -") {
-    val input = "-"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.AdditiveOp).get
-    assertResult(BinaryOperator.Minus)(result)
+    val input = "def f(x: Int, y: Int): Int = x - y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.ExtendedBinary.Leq ⊑") {
@@ -2590,45 +2540,33 @@ class TestParser extends FunSuite {
   // UTF8 Operators                                                          //
   /////////////////////////////////////////////////////////////////////////////
   test("Operator.Unary.UTF8-Negation") {
-    val input = "¬"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.UnaryOp).get
-    assertResult(UnaryOperator.LogicalNot)(result)
+    val input = "def f(b: Bool): Bool = ¬b"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.UTF8-Equal") {
-    val input = "≡"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.ComparisonOp).get
-    assertResult(BinaryOperator.Equal)(result)
+    val input = "def f(x: Int, y: Int): Bool = x ≡ y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.UTF8-Conjunction") {
-    val input = "∧"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.LogicalOp).get
-    assertResult(BinaryOperator.LogicalAnd)(result)
+    val input = "def f(x: Bool, y: Bool): Bool = x ∧ y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.UTF8-Disjunction") {
-    val input = "∨"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.LogicalOp).get
-    assertResult(BinaryOperator.LogicalOr)(result)
+    val input = "def f(x: Bool, y: Bool): Bool = x ∨ y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.UTF8-Implication") {
-    val input = "→"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.LogicalOp).get
-    assertResult(BinaryOperator.Implication)(result)
+    val input = "def f(x: Bool, y: Bool): Bool = x → y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.Binary.UTF8-Biconditional") {
-    val input = "↔"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.LogicalOp).get
-    assertResult(BinaryOperator.Biconditional)(result)
+    val input = "def f(x: Bool, y: Bool): Bool = x ↔ y"
+    new Flix().addStr(input).compile().get
   }
 
   /////////////////////////////////////////////////////////////////////////////
