@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ParsedAst.Literal
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
+import ca.uwaterloo.flix.language.phase.Resolver.ResolverError
 import org.scalatest.FunSuite
 
 // TODO: Cleanup names. Numbering and remove the Parser. prefix.
@@ -30,7 +31,7 @@ class TestParser extends FunSuite {
       """import a.b.c/_
         |def g: Int = f() + 42
       """.stripMargin
-    new Flix().addStr(input1).addStr(input2).compile().get
+    new Flix().addStr(input1).addStr(input2).compile().errors.head.isInstanceOf[ResolverError]
   }
 
   test("Import.Definition01") {
@@ -43,7 +44,7 @@ class TestParser extends FunSuite {
       """import a.b.c/f
         |def g: Int = f() + 42
       """.stripMargin
-    new Flix().addStr(input1).addStr(input2).compile().get
+    new Flix().addStr(input1).addStr(input2).compile().errors.head.isInstanceOf[ResolverError]
   }
 
   test("Import.Namespace01") {
@@ -56,7 +57,7 @@ class TestParser extends FunSuite {
       """import a.b.c
         |def g: Int = c/f() + 42
       """.stripMargin
-    new Flix().addStr(input1).addStr(input2).compile().get
+    new Flix().addStr(input1).addStr(input2).compile().errors.head.isInstanceOf[ResolverError]
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -255,12 +256,12 @@ class TestParser extends FunSuite {
 
   test("Lattice01") {
     val input = "lat L(a: A)"
-    new Flix().addStr(input).compile().get
+    new Flix().addStr(input).compile().errors.head.isInstanceOf[ResolverError]
   }
 
   test("Lattice02") {
     val input = "lat L(a: A, b: B, c: C)"
-    new Flix().addStr(input).compile().get
+    new Flix().addStr(input).compile().errors.head.isInstanceOf[ResolverError]
   }
 
   test("Declaration.Index01") {
@@ -293,7 +294,9 @@ class TestParser extends FunSuite {
         |  fn eq(x: A, y: B): Bool
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Declaration.Class02") {
@@ -302,7 +305,9 @@ class TestParser extends FunSuite {
         |  fn coerce(a: A): B
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Declaration.Class03") {
@@ -312,7 +317,9 @@ class TestParser extends FunSuite {
         |  fn lessEq(x: A, y: A): Bool
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Declaration.Class04") {
@@ -321,22 +328,30 @@ class TestParser extends FunSuite {
         |  /* ... */
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Declaration.Law01") {
     val input = "law f(): Bool = true"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Declaration.Law02") {
     val input = "law f(x: Int): Bool = x % 2 == 0"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Declaration.Law03") {
     val input = "law f(x: Int, y: Int): Bool = x > y"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Declaration.Impl01") {
@@ -345,7 +360,9 @@ class TestParser extends FunSuite {
         |  /* ... */
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Declaration.Impl02") {
@@ -354,7 +371,9 @@ class TestParser extends FunSuite {
         |  /* ... */
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Declaration.Impl03") {
@@ -363,7 +382,9 @@ class TestParser extends FunSuite {
         |  /* ... */
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Declaration.Impl04") {
@@ -372,7 +393,9 @@ class TestParser extends FunSuite {
         |  /* ... */
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -829,72 +852,100 @@ class TestParser extends FunSuite {
 
   test("Expression.Opt01") {
     val input = "def f: Opt[Char] = None"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.Opt02") {
     val input = "def f: Opt[Int] = None"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.Opt03") {
     val input = "def f: Opt[Char] = Some('a')"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.Opt04") {
     val input = "def f: Opt[Int] = Some(42)"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.Opt05") {
     val input = "def f: Opt[(Char, Int)] = None"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.Opt06") {
     val input = "def f: Opt[(Char, Int)] = Some(('a', 42))"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.List01") {
     val input = "def f: List[Int] = Nil"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.List02") {
     val input = "def f: List[Int] = 1 :: Nil"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.List03") {
     val input = "def f: List[Int] = 1 :: 2 :: Nil"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.List04") {
     val input = "def f: List[(Int, Int)] = Nil"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.List05") {
     val input = "def f: List[(Int, Int)] = (1, 2) :: (3, 4) :: Nil"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.ListList01") {
     val input = "def f: List[List[Int]] = Nil"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.ListList02") {
     val input = "def f: List[List[Int]] = (1 :: Nil) :: Nil"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.ListList03") {
     val input = "def f: List[List[Int]] = (Nil) :: (1 :: Nil) :: (2 :: 3 :: 4 :: Nil) :: Nil"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.Set01") {
@@ -949,67 +1000,93 @@ class TestParser extends FunSuite {
 
   test("Expression.Map01") {
     val input = "def f: Map[Char, Int] = @{}"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.Map02") {
     val input = "def f: Map[Char, Int] = @{'a' -> 1}"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.Map03") {
     val input = "def f: Map[Char, Int] = @{'a' -> 1, 'b' -> 2}"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.Map04") {
     val input = "def f: Map[Char, Int] = @{'a' -> 1, 'b' -> 2, 'c' -> 3}"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.Map05") {
     val input = "def f: Map[(Int8, Int16), (Int32, Int64)] = @{}"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.Map06") {
     val input = "def f: Map[(Int8, Int16), (Int32, Int64)] = @{(1i8, 2i16) -> (3i32, 4i64)}"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.MapMap01") {
     val input = "def f: Map[Int, Map[Int, Char]] = @{}"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.MapMap02") {
     val input = "def f: Map[Int, Map[Int, Char]] = @{1 -> @{}}"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.MapMap03") {
     val input = "def f: Map[Int, Map[Int, Char]] = @{1 -> @{}, 2 -> @{3 -> 'a', 4 -> 'b'}}"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.MapList01") {
     val input = "def f: Map[Int, List[Int]] = @{1 -> 2 :: 3 :: Nil, 4 -> 5 :: 6 :: Nil}"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.MapListSet01") {
     val input = "def f: Map[Int, List[Set[Int]]] = @{}"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.MapListSet02") {
     val input = "def f: Map[Int, List[Set[Int]]] = @{1 -> Nil}"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.MapListSet04") {
     val input = "def f: Map[Int, List[Set[Int]]] = @{1 -> #{1, 2, 3} :: #{4, 5, 6} :: Nil}"
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.Var01") {
@@ -1245,7 +1322,9 @@ class TestParser extends FunSuite {
         |  case Some(x) => x
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.Opt02") {
@@ -1257,7 +1336,9 @@ class TestParser extends FunSuite {
         |  case Some(x) => x + x
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.Opt03") {
@@ -1269,7 +1350,9 @@ class TestParser extends FunSuite {
         |  case Some(c)   => 3
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.List01") {
@@ -1278,7 +1361,9 @@ class TestParser extends FunSuite {
         |  case Nil => 0
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.List02") {
@@ -1287,7 +1372,9 @@ class TestParser extends FunSuite {
         |  case 1 :: Nil => 0
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.List03") {
@@ -1296,7 +1383,9 @@ class TestParser extends FunSuite {
         |  case 1 :: 2 :: Nil => 0
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.List04") {
@@ -1305,7 +1394,9 @@ class TestParser extends FunSuite {
         |  case 1 :: 2 :: 3 :: Nil => 0
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.List05") {
@@ -1314,7 +1405,9 @@ class TestParser extends FunSuite {
         |  case x :: Nil => x
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.List06") {
@@ -1323,7 +1416,9 @@ class TestParser extends FunSuite {
         |  case x :: y :: Nil => x + y
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.List07") {
@@ -1333,7 +1428,9 @@ class TestParser extends FunSuite {
         |  case x :: rs => 1 + f(rs)
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.List08") {
@@ -1344,7 +1441,9 @@ class TestParser extends FunSuite {
         |  case _ => false
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.List09") {
@@ -1356,7 +1455,9 @@ class TestParser extends FunSuite {
         |  case xs => 42
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.List10") {
@@ -1367,7 +1468,9 @@ class TestParser extends FunSuite {
         |  case (c1, i1) :: (c2, i2) :: Nil => i1 + i2
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.List11") {
@@ -1378,7 +1481,9 @@ class TestParser extends FunSuite {
         |  case ('a', i1) :: (c2, 21) :: Nil => 2
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.ListList01") {
@@ -1388,7 +1493,9 @@ class TestParser extends FunSuite {
         |  case (x :: Nil) :: (y :: Nil) :: Nil => x + y
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.ListList02") {
@@ -1398,7 +1505,9 @@ class TestParser extends FunSuite {
         |  case (x :: y :: Nil) :: (z :: w :: Nil) :: Nil => x + y + z + w
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.ListList03") {
@@ -1408,7 +1517,9 @@ class TestParser extends FunSuite {
         |  case (x :: xs) :: (y :: ys) :: (z :: zs) :: Nil => x + y + z
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.Set01") {
@@ -1417,7 +1528,9 @@ class TestParser extends FunSuite {
         |  case #{} => 0
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.Set02") {
@@ -1426,7 +1539,9 @@ class TestParser extends FunSuite {
         |  case #{1} => 0
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.Set03") {
@@ -1435,7 +1550,9 @@ class TestParser extends FunSuite {
         |  case #{1, 2, 3} => 0
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.Set04") {
@@ -1444,7 +1561,9 @@ class TestParser extends FunSuite {
         |  case #{1, 2, 3, rs...} => 0
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.Set05") {
@@ -1453,7 +1572,9 @@ class TestParser extends FunSuite {
         |  case #{x} => x
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.Set06") {
@@ -1462,7 +1583,9 @@ class TestParser extends FunSuite {
         |  case #{x, y} => x + y
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.Set07") {
@@ -1471,7 +1594,9 @@ class TestParser extends FunSuite {
         |  case #{x, y, z} => x + y + z
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.Set08") {
@@ -1481,7 +1606,9 @@ class TestParser extends FunSuite {
         |  case #{x, y, z, rs...} => f(rs)
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.Set09") {
@@ -1492,7 +1619,9 @@ class TestParser extends FunSuite {
         |  case #{x, rs...} => x + fs(rs)
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.SetSet01") {
@@ -1501,7 +1630,9 @@ class TestParser extends FunSuite {
         |  case #{} => 0
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.SetSet02") {
@@ -1510,7 +1641,9 @@ class TestParser extends FunSuite {
         |  case #{#{x}, #{y}, rs...} => x + y
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.SetSet03") {
@@ -1519,7 +1652,9 @@ class TestParser extends FunSuite {
         |  case #{#{x, y, as...}, #{z, w, bs...}, rs...} => x + y + z + w
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.Map01") {
@@ -1528,7 +1663,9 @@ class TestParser extends FunSuite {
         |  case @{} => 0
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.Map02") {
@@ -1537,7 +1674,9 @@ class TestParser extends FunSuite {
         |  case @{'a' -> 42} => 0
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.Map03") {
@@ -1546,7 +1685,9 @@ class TestParser extends FunSuite {
         |  case @{'a' -> 42, 'b' -> 21} => 0
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.Map04") {
@@ -1555,7 +1696,9 @@ class TestParser extends FunSuite {
         |  case @{'a' -> 42, 'b' -> 21, c -> 11} => 0
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.Map05") {
@@ -1564,7 +1707,9 @@ class TestParser extends FunSuite {
         |  case @{'a' -> x} => x
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.Map06") {
@@ -1573,7 +1718,9 @@ class TestParser extends FunSuite {
         |  case @{'a' -> x, 'b' -> y} => x + y
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.Map07") {
@@ -1582,7 +1729,9 @@ class TestParser extends FunSuite {
         |  case @{'a' -> x, 'b' -> y, rs...} => x + y
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Pattern.Map08") {
@@ -1593,7 +1742,9 @@ class TestParser extends FunSuite {
         |  case @{'a' -> x, rs...} => f(rs)
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////

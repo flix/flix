@@ -425,13 +425,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ Simple ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Apply
     }
 
-    // TODO: Cleanup
     def Tag: Rule1[ParsedAst.Expression.Tag] = rule {
-      SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ Tuple) ~ SP ~>
-        ((sp1: SourcePosition, name: Name.QName, ident: Name.Ident, exp: Option[ParsedAst.Expression], sp2: SourcePosition) => exp match {
-          case None => ParsedAst.Expression.Tag(sp1, name, ident, ParsedAst.Expression.Lit(sp1, ParsedAst.Literal.Unit(sp1, sp2), sp2), sp2)
-          case Some(e) => ParsedAst.Expression.Tag(sp1, name, ident, e, sp2)
-        })
+      SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ Tuple) ~ SP ~> ParsedAst.Expression.Tag
     }
 
     def Tuple: Rule1[ParsedAst.Expression] = rule {
@@ -540,11 +535,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Tag: Rule1[ParsedAst.Pattern.Tag] = rule {
-      SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ Pattern) ~ SP ~>
-        ((sp1: SourcePosition, name: Name.QName, ident: Name.Ident, pattern: Option[ParsedAst.Pattern], sp2: SourcePosition) => pattern match {
-          case None => ParsedAst.Pattern.Tag(sp1, name, ident, ParsedAst.Pattern.Lit(sp1, ParsedAst.Literal.Unit(sp1, sp2), sp2), sp2)
-          case Some(p) => ParsedAst.Pattern.Tag(sp1, name, ident, p, sp2)
-        })
+      SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ Pattern) ~ SP ~> ParsedAst.Pattern.Tag
     }
 
     def Tuple: Rule1[ParsedAst.Pattern.Tuple] = rule {
@@ -606,7 +597,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Predicates                                                              //
   /////////////////////////////////////////////////////////////////////////////
   def Predicate: Rule1[ParsedAst.Predicate] = rule {
-    Predicates.Ambiguous | Predicates.NotEqual | Predicates.Alias | Predicates.Loop
+    Predicates.Ambiguous | Predicates.NotEqual | Predicates.Equal | Predicates.Loop
   }
 
   object Predicates {
@@ -614,13 +605,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Ambiguous
     }
 
-    def NotEqual: Rule1[ParsedAst.Predicate.NotEqual] = rule {
-      SP ~ Ident ~ optWS ~ atomic("!=") ~ optWS ~ Ident ~ SP ~> ParsedAst.Predicate.NotEqual
+    def Equal: Rule1[ParsedAst.Predicate.Equal] = rule {
+      SP ~ Ident ~ optWS ~ atomic(":=") ~ optWS ~ Term ~ SP ~> ParsedAst.Predicate.Equal
     }
 
-    // TODO: rename.
-    def Alias: Rule1[ParsedAst.Predicate.Equal] = rule {
-      SP ~ Ident ~ optWS ~ atomic(":=") ~ optWS ~ Term ~ SP ~> ParsedAst.Predicate.Equal
+    def NotEqual: Rule1[ParsedAst.Predicate.NotEqual] = rule {
+      SP ~ Ident ~ optWS ~ atomic("!=") ~ optWS ~ Ident ~ SP ~> ParsedAst.Predicate.NotEqual
     }
 
     def Loop: Rule1[ParsedAst.Predicate.Loop] = rule {
@@ -669,18 +659,17 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   def Type: Rule1[PType] = rule {
-    // TODO: Names
-    Types.LambdaType | Types.TupleType | Types.ParametricType | Types.NamedType
+    Types.Lambda | Types.Tuple | Types.Parametric | Types.Name
   }
 
   object Types {
 
-    def NamedType: Rule1[PType] = rule {
+    def Name: Rule1[PType] = rule {
       QName ~> PType.Unresolved
     }
 
-// TODO: Simplify?
-    def TupleType: Rule1[PType] = {
+    // TODO: Simplify
+    def Tuple: Rule1[PType] = {
       def Unit: Rule1[PType] = rule {
         atomic("()") ~ optWS ~> (() => PType.Unit)
       }
@@ -698,11 +687,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
     }
 
-    def LambdaType: Rule1[PType] = rule {
+    def Lambda: Rule1[PType] = rule {
       "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Type ~> ((xs: Seq[PType], r: PType) => PType.Lambda(xs.toList, r))
     }
 
-    def ParametricType: Rule1[PType] = rule {
+    def Parametric: Rule1[PType] = rule {
       QName ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ optWS ~> PType.Parametric
     }
   }

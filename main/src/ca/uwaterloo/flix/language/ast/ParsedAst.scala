@@ -493,10 +493,10 @@ object ParsedAst {
       * @param sp1  the position of the first character in the expression.
       * @param enum the namespace of the enum.
       * @param tag  the tag name.
-      * @param e    the nested expression.
+      * @param e    the optional nested expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Tag(sp1: SourcePosition, enum: Name.QName, tag: Name.Ident, e: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Tag(sp1: SourcePosition, enum: Name.QName, tag: Name.Ident, e: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * An AST node that represents a tuple expression.
@@ -676,10 +676,10 @@ object ParsedAst {
       * @param sp1  the position of the first character in the pattern.
       * @param enum the enum name.
       * @param tag  the tag name.
-      * @param p    the nested pattern.
+      * @param p    the optional nested pattern.
       * @param sp2  the position of the last character in the pattern.
       */
-    case class Tag(sp1: SourcePosition, enum: Name.QName, tag: Name.Ident, p: ParsedAst.Pattern, sp2: SourcePosition) extends ParsedAst.Pattern
+    case class Tag(sp1: SourcePosition, enum: Name.QName, tag: Name.Ident, p: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * An AST node that represents a tuple pattern.

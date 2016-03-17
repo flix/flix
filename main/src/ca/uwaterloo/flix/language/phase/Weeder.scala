@@ -313,13 +313,17 @@ object Weeder {
 
     def compile(past: ParsedAst.Declaration): Validation[WeededAst.Declaration, WeederError] = past match {
       case d: ParsedAst.Declaration.Namespace => Declaration.compile(d)
-      case d: ParsedAst.Declaration.Fact => Declaration.compile(d)
-      case d: ParsedAst.Declaration.Rule => Declaration.compile(d)
       case d: ParsedAst.Declaration.Definition => Declaration.compile(d)
+      case ParsedAst.Declaration.External(sp1, ident, formals, tpe, sp2) => ???
+      case ParsedAst.Declaration.Law(sp1, ident, tparams, params, tpe, body, sp2) => ???
       case d: ParsedAst.Declaration.Enum => Declaration.compile(d)
+      case ParsedAst.Declaration.Class(sp1, ident, tparams, bounds, body, sp2) => ???
+      case ParsedAst.Declaration.Impl(sp1, ident, tparams, bounds, body, sp2) => ???
       case d: ParsedAst.Declaration.BoundedLattice => Declaration.compile(d)
       case d: ParsedAst.Declaration.Relation => Declaration.compile(d)
       case d: ParsedAst.Declaration.Lattice => Declaration.compile(d)
+      case d: ParsedAst.Declaration.Fact => Declaration.compile(d)
+      case d: ParsedAst.Declaration.Rule => Declaration.compile(d)
       case d: ParsedAst.Declaration.Index => Declaration.compile(d)
     }
 
@@ -645,8 +649,15 @@ object Weeder {
             WeededAst.Expression.Apply(WeededAst.Expression.Var(name, loc), List(e1, e2), loc)
         }
 
-      case ParsedAst.Expression.Tag(sp1, enum, tag, exp, sp2) => compile(exp) map {
-        case e => WeededAst.Expression.Tag(enum, tag, e, mkSL(sp1, sp2))
+      case ParsedAst.Expression.Tag(sp1, enum, tag, o, sp2) => o match {
+        case None =>
+          val loc = mkSL(sp1, sp2)
+          val lit = WeededAst.Literal.Unit(loc)
+          val exp = WeededAst.Expression.Lit(lit, loc)
+          WeededAst.Expression.Tag(enum, tag, exp, loc).toSuccess
+        case Some(exp) => compile(exp) map {
+          case e => WeededAst.Expression.Tag(enum, tag, e, mkSL(sp1, sp2))
+        }
       }
 
       case ParsedAst.Expression.Tuple(sp1, elms, sp2) =>
@@ -726,8 +737,15 @@ object Weeder {
           case lit => WeededAst.Pattern.Lit(lit, mkSL(sp1, sp2))
         }
 
-        case ParsedAst.Pattern.Tag(sp1, enum, tag, ppat, sp2) => visit(ppat) map {
-          case pat => WeededAst.Pattern.Tag(enum, tag, pat, mkSL(sp1, sp2))
+        case ParsedAst.Pattern.Tag(sp1, enum, tag, o, sp2) => o match {
+          case None =>
+            val loc = mkSL(sp1, sp2)
+            val lit = WeededAst.Literal.Unit(loc)
+            val pat = WeededAst.Pattern.Lit(lit, loc)
+            WeededAst.Pattern.Tag(enum, tag, pat, loc).toSuccess
+          case Some(ppat) => visit(ppat) map {
+            case pat => WeededAst.Pattern.Tag(enum, tag, pat, mkSL(sp1, sp2))
+          }
         }
 
         case ParsedAst.Pattern.Tuple(sp1, pats, sp2) => @@(pats map visit) map {

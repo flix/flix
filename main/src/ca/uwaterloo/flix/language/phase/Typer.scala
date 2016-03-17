@@ -807,6 +807,8 @@ object Typer {
     case Type.Unit => s"()"
     case Type.Bool => s"Bool"
     case Type.Char => s"Char"
+    case Type.Float32 => s"Float32"
+    case Type.Float64 => s"Float64"
     case Type.Int8 => s"Int8"
     case Type.Int16 => s"Int16"
     case Type.Int32 => s"Int32"
