@@ -1729,19 +1729,19 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
-  test("Predicate.Alias01") {
+  test("Predicate.Equal01") {
     val input = "r := 42"
     val result = new Parser(SourceInput.Str(input)).Predicate.run().get
     assert(result.isInstanceOf[ParsedAst.Predicate.Equal])
   }
 
-  ignore("Predicate.Alias02") {
+  ignore("Predicate.Equal02") {
     val input = "r := (true, 42, \"foo\")"
     val result = new Parser(SourceInput.Str(input)).Predicate.run().get
     assert(result.isInstanceOf[ParsedAst.Predicate.Equal])
   }
 
-  test("Predicate.Alias03") {
+  test("Predicate.Equal03") {
     val input = "r := f(x, g(y, z))"
     val result = new Parser(SourceInput.Str(input)).Predicate.run().get
     assert(result.isInstanceOf[ParsedAst.Predicate.Equal])
