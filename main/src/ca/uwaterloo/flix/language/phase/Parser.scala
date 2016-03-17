@@ -463,12 +463,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
     }
 
-    // TODO: can we get rid of this
     def Bot: Rule1[ParsedAst.Expression.Bot] = rule {
       SP ~ "⊥" ~ SP ~> ParsedAst.Expression.Bot
     }
 
-    // TODO: can we get rid of this
     def Top: Rule1[ParsedAst.Expression.Top] = rule {
       SP ~ "⊤" ~ SP ~> ParsedAst.Expression.Top
     }
@@ -668,7 +666,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       QName ~> PType.Unresolved
     }
 
-    // TODO: Simplify
     def Tuple: Rule1[PType] = {
       def Unit: Rule1[PType] = rule {
         atomic("()") ~ optWS ~> (() => PType.Unit)
@@ -712,7 +709,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   def LegalIdent: Rule1[String] = {
     rule {
-      // TODO: Cleanup
       capture((CharPredicate.Alpha | "⊥" | "⊤" | "⊑" | "⊔" | "⊓" | "▽" | "△" | "⊡") ~ zeroOrMore(CharPredicate.AlphaNum | "_" | "$" | "⊥" | "⊑"))
     }
   }

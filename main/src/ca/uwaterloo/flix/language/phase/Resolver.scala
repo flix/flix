@@ -873,6 +873,7 @@ object Resolver {
       def visit(wast: Type): Validation[Type, ResolverError] = wast match {
         case Type.Unit => Type.Unit.toSuccess
         case Type.Unresolved(name) => name.ident.name match {
+          case "Unit" => Type.Unit.toSuccess
           case "Bool" => Type.Bool.toSuccess
           case "Char" => Type.Char.toSuccess
           case "Float" => Type.Float32.toSuccess

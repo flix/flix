@@ -1,12 +1,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ParsedAst.Literal
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.language.phase.Resolver.ResolverError
 import org.scalatest.FunSuite
-
-// TODO: Cleanup names. Numbering and remove the Parser. prefix.
 
 class TestParser extends FunSuite {
 
@@ -403,15 +400,13 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
 
   test("Expression.Char01") {
-    val input = "'a'"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    assert(result.lit.isInstanceOf[ParsedAst.Literal.Char])
+    val input = "def f: Char = 'a'"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Char02") {
-    val input = "'x'"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    assert(result.lit.isInstanceOf[ParsedAst.Literal.Char])
+    val input = "def f: Char = 'x'"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Float32.01") {
@@ -820,34 +815,28 @@ class TestParser extends FunSuite {
   }
 
   test("Expression.Tuple01") {
-    val input = "()"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    assert(result.lit.isInstanceOf[ParsedAst.Literal.Unit])
+    val input = "fn f: Unit = ()"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Tuple02") {
-    val input = "(1)"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    val literal = result.lit.asInstanceOf[Literal.Int32]
-    assertResult("1")(literal.lit)
+    val input = "fn f: Int = (42)"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Tuple03") {
-    val input = "(1, x)"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Tuple]
-    assertResult(2)(result.elms.size)
+    val input = "fn f: (Int, Int) = (42, 21)"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Tuple04") {
-    val input = "(1, 2, x, 4, 5, 6)"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Tuple]
-    assertResult(6)(result.elms.size)
+    val input = "fn f(x: Int): (Int, Int, Int) = (42, x, 21)"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Tuple05") {
-    val input = "((1, 2), (x, (4, 5)))"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Tuple]
-    assertResult(2)(result.elms.size)
+    val input = "fn f(x: Int): (Int, (Int, Int), Int) = (42, (x, x), 21)"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Opt01") {
