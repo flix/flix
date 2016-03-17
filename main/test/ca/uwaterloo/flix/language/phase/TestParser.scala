@@ -636,57 +636,45 @@ class TestParser extends FunSuite {
 
   test("Expression.MatchExp01") {
     val input =
-      """match 1 with {
+      """def f: Int = match 1 with {
         |  case 2 => 3
         |}
       """.stripMargin
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.Match])
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.MatchExp02") {
     val input =
-      """match 1 with {
+      """def f: Int = match 1 with {
         |  case 2 => 3
         |  case 4 => 5
         |}
       """.stripMargin
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.Match])
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.MatchExp03") {
     val input =
-      """match 1 with {
+      """def f: Int = match 1 with {
         |  case 2 => match 3 with {
         |    case 4 => 5
         |  }
         |  case 6 => 7
         |}
       """.stripMargin
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get
-    val m1 = result.asInstanceOf[ParsedAst.Expression.Match]
-    val m2 = m1.rules.head._2.asInstanceOf[ParsedAst.Expression.Match]
-    val l = m2.rules.head._2.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult("5")(l.lit.asInstanceOf[ParsedAst.Literal.Int32].lit)
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.MatchExp04") {
     val input =
-      """match
+      """def f: Int = match
         |  match 1 with {
         |    case 2 => 3
         |  } with {
         |    case 4 => 5
         |}
       """.stripMargin
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get
-    val m1 = result.asInstanceOf[ParsedAst.Expression.Match]
-    val m2 = m1.e.asInstanceOf[ParsedAst.Expression.Match]
-    val l = m2.rules.head._2.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult("3")(l.lit.asInstanceOf[ParsedAst.Literal.Int32].lit)
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.CallExp01") {
@@ -2223,81 +2211,53 @@ class TestParser extends FunSuite {
   // Identifiers & Names                                                     //
   /////////////////////////////////////////////////////////////////////////////
   test("Ident01") {
-    val input = "x"
-    val result = new Parser(SourceInput.Str(input)).Ident.run().get
-    assertResult("x")(result.name)
+    val input = "def x: Int = 42"
+    new Flix().addStr(input).compile().get
   }
 
   test("Ident02") {
-    val input = "y"
-    val result = new Parser(SourceInput.Str(input)).Ident.run().get
-    assertResult("y")(result.name)
+    val input = "def xx: Int = 42"
+    new Flix().addStr(input).compile().get
   }
 
   test("Ident03") {
-    val input = "x0"
-    val result = new Parser(SourceInput.Str(input)).Ident.run().get
-    assertResult("x0")(result.name)
+    val input = "def xxx: Int = 42"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Ident04") {
+    val input = "def xY: Int = 42"
+    new Flix().addStr(input).compile().get
   }
 
   test("Ident05") {
-    val input = "foobar"
-    val result = new Parser(SourceInput.Str(input)).Ident.run().get
-    assertResult("foobar")(result.name)
+    val input = "def xxxYyy: Int = 42"
+    new Flix().addStr(input).compile().get
   }
 
   test("Ident06") {
-    val input = "fooBar"
-    val result = new Parser(SourceInput.Str(input)).Ident.run().get
-    assertResult("fooBar")(result.name)
+    val input = "def xxxYyyZzz: Int = 42"
+    new Flix().addStr(input).compile().get
   }
 
   test("Ident07") {
-    val input = "foo_bar"
-    val result = new Parser(SourceInput.Str(input)).Ident.run().get
-    assertResult("foo_bar")(result.name)
+    val input = "def x0: Int = 42"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Ident08") {
+    val input = "def x0123: Int = 42"
+    new Flix().addStr(input).compile().get
   }
 
   test("Ident09") {
-    val input = "1"
-    val result = new Parser(SourceInput.Str(input)).Ident.run()
-    assert(result.isFailure)
+    val input = "def x_y_z: Int = 42"
+    new Flix().addStr(input).compile().get
   }
 
   test("Ident10") {
-    val input = "'"
-    val result = new Parser(SourceInput.Str(input)).Ident.run()
-    assert(result.isFailure)
-  }
-
-  test("Ident11") {
-    val input = "_"
-    val result = new Parser(SourceInput.Str(input)).Ident.run()
-    assert(result.isFailure)
-  }
-
-  test("QName01") {
-    val input = "x"
-    val result = new Parser(SourceInput.Str(input)).QName.run().get
-    //assertResult(Seq("x"))(result.parts)
-  }
-
-  test("QName02") {
-    val input = "x::y"
-    val result = new Parser(SourceInput.Str(input)).QName.run().get
-    //assertResult(Seq("x", "y"))(result.parts)
-  }
-
-  test("QName03") {
-    val input = "x::y::z"
-    val result = new Parser(SourceInput.Str(input)).QName.run().get
-    //assertResult(Seq("x", "y", "z"))(result.parts)
-  }
-
-  test("QName04") {
-    val input = "abc::def::hij"
-    val result = new Parser(SourceInput.Str(input)).QName.run().get
-    //assertResult(Seq("abc", "def", "hij"))(result.parts)
+    val input = "def x_Y32Y_15zz: Int = 42"
+    new Flix().addStr(input).compile().get
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -2674,20 +2634,6 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Annotations                                                             //
   /////////////////////////////////////////////////////////////////////////////
-  test("Annotation.@strict") {
-    val input = "@strict"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Annotation).get
-    assert(result.isInstanceOf[ParsedAst.Annotation])
-  }
-
-  test("Annotation.@monotone") {
-    val input = "@monotone"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Annotation).get
-    assert(result.isInstanceOf[ParsedAst.Annotation])
-  }
-
   test("Annotation01") {
     val input =
       """@strict
