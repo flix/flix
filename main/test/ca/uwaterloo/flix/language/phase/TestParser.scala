@@ -2303,34 +2303,114 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
-  test("Literal (true)") {
-    val input = "true"
-    val result = new Parser(SourceInput.Str(input)).Literal.run().get.asInstanceOf[ParsedAst.Literal.Bool]
-    assertResult("true")(result.lit)
+  test("Literal.Unit") {
+    val input = "def f: Unit = ()"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Literal (false)") {
-    val input = "false"
-    val result = new Parser(SourceInput.Str(input)).Literal.run().get.asInstanceOf[ParsedAst.Literal.Bool]
-    assertResult("false")(result.lit)
+  test("Literal.True") {
+    val input = "def f: Bool = true"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Literal (123)") {
-    val input = "123"
-    val result = new Parser(SourceInput.Str(input)).Literal.run().get.asInstanceOf[ParsedAst.Literal.Int32]
-    assertResult("123")(result.lit)
+  test("Literal.False") {
+    val input = "def f: Bool = false"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Literal (\"\")") {
-    val input = "\"\""
-    val result = new Parser(SourceInput.Str(input)).Literal.run().get.asInstanceOf[ParsedAst.Literal.Str]
-    assertResult("")(result.lit)
+  test("Literal.Char") {
+    val input = "def f: Char = 'a'"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Literal (\"foo\")") {
-    val input = "\"foo\""
-    val result = new Parser(SourceInput.Str(input)).Literal.run().get.asInstanceOf[ParsedAst.Literal.Str]
-    assertResult("foo")(result.lit)
+  test("Literal.Float32.01") {
+    val input = "def f: Float32 = 123.456f32"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Literal.Float32.02") {
+    val input = "def f: Float32 = +123.456f32"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Literal.Float32.03") {
+    val input = "def f: Float32 = -123.456f32"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Literal.Float64.01") {
+    val input = "def f: Float64 = 123.456f64"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Literal.Float64.02") {
+    val input = "def f: Float64 = +123.456f64"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Literal.Float64.03") {
+    val input = "def f: Float64 = -123.456f64"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Literal.Int8.01") {
+    val input = "def f: Int8 = 123i8"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Literal.Int8.02") {
+    val input = "def f: Int8 = +123i8"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Literal.Int8.03") {
+    val input = "def f: Int8 = -123i8"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Literal.Int16.01") {
+    val input = "def f: Int16 = 123i16"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Literal.Int16.02") {
+    val input = "def f: Int16 = +123i16"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Literal.Int16.03") {
+    val input = "def f: Int16 = -123i16"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Literal.Int32.01") {
+    val input = "def f: Int32 = 123i32"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Literal.Int32.02") {
+    val input = "def f: Int32 = +123i32"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Literal.Int32.03") {
+    val input = "def f: Int32 = -123i32"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Literal.Int64.01") {
+    val input = "def f: Int64 = 123i64"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Literal.Int64.02") {
+    val input = "def f: Int64 = +123i64"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Literal.Int64.03") {
+    val input = "def f: Int64 = -123i64"
+    new Flix().addStr(input).compile().get
   }
 
   /////////////////////////////////////////////////////////////////////////////
