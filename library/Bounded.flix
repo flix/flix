@@ -46,3 +46,11 @@ impl Bounded[Int64] {
     def maxValue: Int64 = Int64/maxValue
 }
 
+/**
+ * Any lattice is bounded by its bottom and top element.
+ */
+impl Bounded[A] <= Lattice[A] {
+    def minValue: A = bot
+    def maxValue: B = top
+}
+

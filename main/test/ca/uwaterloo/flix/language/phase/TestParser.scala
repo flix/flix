@@ -569,49 +569,40 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
-
   test("Expression.LetMatch01") {
-    val input = "let x = 42 in x"
-    new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.LetMatch]
+    val input = "def f: Int = let x = 42 in x"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.LetMatch02") {
-    val input = "let x = f(1, 2, 3) in g(4, 5, 6)"
-    new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.LetMatch]
+    val input = "def f: Int = let (x, y) = (42, 21) in x + y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.LetMatch03") {
     val input =
-      """let x = 1 in
-        |let y = 2 in
-        |let z = 3 in
-        |  42""".stripMargin
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    val l1 = result.get.asInstanceOf[ParsedAst.Expression.LetMatch]
-    val l2 = l1.body.asInstanceOf[ParsedAst.Expression.LetMatch]
-    val l3 = l2.body.asInstanceOf[ParsedAst.Expression.LetMatch]
+      """def f: Int =
+        |  let x = 1 in
+        |  let y = 2 in
+        |  let z = 3 in
+        |    42
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.IfThenElseExp01") {
-    val input = "if (1) 2 else 3"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.IfThenElse])
+    val input = "def f: Int = if (true) 42 else 21"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.IfThenElseExp02") {
-    val input = "if (f(1, 2, 3)) g(4, 5, 6) else h(7, 8, 9)"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.IfThenElse])
+    val input = "def f: Int = if ((true)) (1) else (2)"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.IfThenElseExp03") {
-    val input = "if ((1)) (2) else (3)"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.IfThenElse])
+    val input = "def f: (Int, Int) = if (true || false) (1, 2) else (3, 4)"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Switch01") {
@@ -620,8 +611,7 @@ class TestParser extends FunSuite {
         |  case true  => 1
         |}
       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    assert(result.isSuccess)
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Switch02") {
@@ -630,8 +620,7 @@ class TestParser extends FunSuite {
         |  case x < 0  => 1
         |}
       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    assert(result.isSuccess)
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Switch03") {
@@ -642,8 +631,7 @@ class TestParser extends FunSuite {
         |  case x == 0 => 3
         |}
       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    assert(result.isSuccess)
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.MatchExp01") {
