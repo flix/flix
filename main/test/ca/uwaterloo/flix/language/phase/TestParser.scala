@@ -430,200 +430,145 @@ class TestParser extends FunSuite {
   }
 
   test("Expression.Int8") {
-    val input = "123i8"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    assert(result.lit.isInstanceOf[ParsedAst.Literal.Int8])
+    val input = "def f: Int8 = 123i8"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Int16") {
-    val input = "123i16"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    assert(result.lit.isInstanceOf[ParsedAst.Literal.Int16])
+    val input = "def f: Int16 = 123i16"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Int32") {
-    val input = "123i32"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    assert(result.lit.isInstanceOf[ParsedAst.Literal.Int32])
+    val input = "def f: Int32 = 123i32"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Int64") {
-    val input = "123i64"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    assert(result.lit.isInstanceOf[ParsedAst.Literal.Int64])
+    val input = "def f: Int64 = 123i64"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.LogicalExp01") {
-    val input = "true && false"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
-    assertResult(BinaryOperator.LogicalAnd)(result.op)
+    val input = "def f: Bool = true && false"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.LogicalExp02") {
-    val input = "true || false"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
-    assertResult(BinaryOperator.LogicalOr)(result.op)
+    val input = "def f: Bool = true || false"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.LogicalExp03") {
-    val input = "1 < 2 && 3 < 4"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
-    assertResult(BinaryOperator.LogicalAnd)(result.op)
+    val input = "def f: Bool = 1 < 2 && 3 < 4"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.ComparisonExp01") {
-    val input = "1 < 2"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
-    assertResult(BinaryOperator.Less)(result.op)
+    val input = "def f: Bool = 1 < 2"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.ComparisonExp02") {
-    val input = "1 + 2 > 3"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
-    assertResult(BinaryOperator.Greater)(result.op)
+    val input = "def f: Bool = 1 + 2 > 3"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.ComparisonExp03") {
-    val input = "1 + 2 > 3 + 4"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
-    assertResult(BinaryOperator.Greater)(result.op)
+    val input = "def f: Bool = 1 + 2 > 3 + 4"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.MultiplicativeExp01") {
-    val input = "1 * 2"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
-    assertResult(BinaryOperator.Times)(result.op)
-    assert(result.e1.isInstanceOf[ParsedAst.Expression.Lit])
-    assert(result.e2.isInstanceOf[ParsedAst.Expression.Lit])
+    val input = "def f: Int = 1 * 2"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.MultiplicativeExp02") {
-    val input = "1 * 2 * 3"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
-    assertResult(BinaryOperator.Times)(result.op)
+    val input = "def f: Int = 1 * 2 * 3"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.MultiplicativeExp03") {
-    val input = "1 * 2 + 3"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
-    assertResult(BinaryOperator.Plus)(result.op)
+    val input = "def f: Int = 1 * 2 + 3"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.MultiplicativeExp04") {
-    val input = "1 + 2 * 3"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
-    assertResult(BinaryOperator.Plus)(result.op)
+    val input = "def f: Int = 1 + 2 * 3"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.AdditiveExp01") {
-    val input = "1 + 2"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
-    assertResult(BinaryOperator.Plus)(result.op)
-    assert(result.e1.isInstanceOf[ParsedAst.Expression.Lit])
-    assert(result.e2.isInstanceOf[ParsedAst.Expression.Lit])
+    val input = "def f: Int = 1 + 2"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.AdditiveExp02") {
-    val input = "1 + 2 + 3"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
-    assertResult(BinaryOperator.Plus)(result.op)
+    val input = "def f: Int = 1 + 2 + 3"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.AdditiveExp03") {
-    val input = "1 - 2"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
-    assertResult(BinaryOperator.Minus)(result.op)
-    assert(result.e1.isInstanceOf[ParsedAst.Expression.Lit])
-    assert(result.e2.isInstanceOf[ParsedAst.Expression.Lit])
+    val input = "def f: Int = 1 - 2"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.AdditiveExp04") {
-    val input = "1 - 2 - 3"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Binary]
-    assertResult(BinaryOperator.Minus)(result.op)
-    val e1 = result.e1.asInstanceOf[ParsedAst.Expression.Binary]
-    assertResult(BinaryOperator.Minus)(e1.op)
-    assert(e1.e1.isInstanceOf[ParsedAst.Expression.Lit])
-    assert(e1.e2.isInstanceOf[ParsedAst.Expression.Lit])
-    assert(result.e2.isInstanceOf[ParsedAst.Expression.Lit])
+    val input = "def f: Int = 1 - 2 - 3"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.AdditiveExp05") {
-    val input = "1 + 2 - 3 + 4 - 5 + 6"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
+    val input = "def f: Int = 1 + 2 - 3 + 4 - 5 + 6"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Infix01") {
-    val input = "1 `plus` 2"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Infix]
-    assert(result.e1.isInstanceOf[ParsedAst.Expression.Lit])
-    assert(result.e2.isInstanceOf[ParsedAst.Expression.Lit])
-    //assertResult(Seq("plus"))(result.name.parts)
+    val input =
+      """def plus(x: Int, y: Int): Int =  x + y
+        |
+        |def f: Int = 1 `plus` 2
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Infix02") {
-    val input = "1 `foo.bar.baz/plus` 2"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Infix]
-    assert(result.e1.isInstanceOf[ParsedAst.Expression.Lit])
-    assert(result.e2.isInstanceOf[ParsedAst.Expression.Lit])
-    //assertResult(Seq("foo", "bar", "baz", "plus"))(result.name.parts)
-  }
-
-  ignore("Expression.Infix03") {
-    val input = "+1 `plus` -1"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Infix]
-    assert(result.e1.isInstanceOf[ParsedAst.Expression.Unary])
-    assert(result.e2.isInstanceOf[ParsedAst.Expression.Unary])
+    val input =
+      """namespace a.b.c {
+        |  def plus(x: Int, y: Int): Int =  x + y
+        |}
+        |
+        |def f: Int = 1 `a.b.c/plus` 2
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.UnaryExp01") {
-    val input = "+ 1"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Unary]
-    assertResult(UnaryOperator.Plus)(result.op)
+    val input = "def f: Int = +1"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.UnaryExp02") {
-    val input = "- 1"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Unary]
-    assertResult(UnaryOperator.Minus)(result.op)
+    val input = "def f: Int = -1"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.UnaryExp03") {
-    val input = "!! true"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Unary]
-    assertResult(UnaryOperator.LogicalNot)(result.op)
+    val input = "def f: Int = ~1"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.UnaryExp04") {
+    val input = "def f: Bool = !!true"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Ascribe01") {
-    val input = "true: Bool"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get
-    assert(result.isInstanceOf[ParsedAst.Expression.Ascribe])
+    val input = "def f: Bool = true: Bool"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Ascribe02") {
-    val input = "x: Bool -> Int"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get
-    assert(result.isInstanceOf[ParsedAst.Expression.Ascribe])
-  }
-
-  test("Expression.LiteralExp01") {
-    val input = "true"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult("true")(result.lit.asInstanceOf[ParsedAst.Literal.Bool].lit)
-  }
-
-  test("Expression.LiteralExp02") {
-    val input = "42"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult("42")(result.lit.asInstanceOf[ParsedAst.Literal.Int32].lit)
-  }
-
-  test("Expression.LiteralExp03") {
-    val input = "\"foo\""
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get.asInstanceOf[ParsedAst.Expression.Lit]
-    assertResult("foo")(result.lit.asInstanceOf[ParsedAst.Literal.Str].lit)
-  }
 
   test("Expression.LetMatch01") {
     val input = "let x = 42 in x"
