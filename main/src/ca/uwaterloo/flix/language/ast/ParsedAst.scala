@@ -2,21 +2,6 @@ package ca.uwaterloo.flix.language.ast
 
 import scala.collection.immutable.Seq
 
-// TODO: Tasks
-
-// 6. Indexes:
-// index SUAfter(
-//  Index({location, object}, BTREE) with FilterF(f),
-//
-//  CREATE INDEX ON films ((lower(title)));
-//
-//  index SUBefore({location, object}, Tree, location == "foo")
-
-// 10. Re-order all items in here.
-
-// TODO: Probably merge fact and rule.
-
-
 /**
   * A common-super type for parsed AST nodes.
   */
@@ -354,6 +339,7 @@ object ParsedAst {
       case Expression.Lit(sp1, _, _) => sp1
       case Expression.Var(sp1, _, _) => sp1
       case Expression.Apply(sp1, _, _, _) => sp1
+      case Expression.Infix(e1, _, _, _) => e1.leftMostSourcePosition
       case Expression.FatArrow(sp1, _, _, _) => sp1
       case Expression.Unary(sp1, _, _, _) => sp1
       case Expression.Binary(e1, _, _, _) => e1.leftMostSourcePosition
@@ -362,7 +348,6 @@ object ParsedAst {
       case Expression.LetMatch(sp1, _, _, _, _) => sp1
       case Expression.Match(sp1, _, _, _) => sp1
       case Expression.Switch(sp1, _, _) => sp1
-      case Expression.Infix(e1, _, _, _) => e1.leftMostSourcePosition
       case Expression.Tag(sp1, _, _, _, _) => sp1
       case Expression.Tuple(sp1, _, _) => sp1
       case Expression.FNil(sp1, _) => sp1
@@ -410,6 +395,16 @@ object ParsedAst {
       * @param sp2     the position of the last character in the expression.
       */
     case class Apply(sp1: SourcePosition, lambda: ParsedAst.Expression, actuals: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * An AST node that represents an infix function call.
+      *
+      * @param e1   the first argument expression.
+      * @param name the ambiguous name of the function.
+      * @param e2   the second argument expression.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Infix(e1: ParsedAst.Expression, name: Name.QName, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * An AST node that represents fat arrow (lambda) expressions.
@@ -491,16 +486,6 @@ object ParsedAst {
       * @param sp2   the position of the last character in the expression.
       */
     case class Switch(sp1: SourcePosition, rules: Seq[(ParsedAst.Expression, ParsedAst.Expression)], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * An AST node that represents an infix function call.
-      *
-      * @param e1   the first argument expression.
-      * @param name the ambiguous name of the function.
-      * @param e2   the second argument expression.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class Infix(e1: ParsedAst.Expression, name: Name.QName, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * An AST node that represents a tagged expression.
@@ -599,7 +584,6 @@ object ParsedAst {
       * @param sp1 the position of the first character in the expression.
       * @param sp2 the position of the last character in the expression.
       */
-    // TODO: Remove
     case class Bot(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
@@ -608,7 +592,6 @@ object ParsedAst {
       * @param sp1 the position of the first character in the expression.
       * @param sp2 the position of the last character in the expression.
       */
-    // TODO: Remove
     case class Top(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
@@ -781,11 +764,6 @@ object ParsedAst {
     case class Ambiguous(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate
 
     /**
-      * An AST node that represents the special not equal predicate.
-      */
-    case class NotEqual(sp1: SourcePosition, ident1: Name.Ident, ident2: Name.Ident, sp2: SourcePosition) extends ParsedAst.Predicate
-
-    /**
       * An AST node that represents the special alias predicate.
       *
       * @param sp1   the position of the first character in the predicate.
@@ -793,7 +771,17 @@ object ParsedAst {
       * @param term  the term.
       * @param sp2   the position of the last character in the predicate.
       */
-    case class Alias(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Term, sp2: SourcePosition) extends ParsedAst.Predicate
+    case class Equal(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Term, sp2: SourcePosition) extends ParsedAst.Predicate
+
+    /**
+      * An AST node that represents the special not equal predicate.
+      *
+      * @param sp1    the position of the first character in the predicate.
+      * @param ident1 the name of the first identifier.
+      * @param ident2 the name of the second identifier.
+      * @param sp2    the position of the last character in the predicate.
+      */
+    case class NotEqual(sp1: SourcePosition, ident1: Name.Ident, ident2: Name.Ident, sp2: SourcePosition) extends ParsedAst.Predicate
 
     /**
       * An AST node that represents the special loop predicate.
@@ -900,15 +888,6 @@ object ParsedAst {
   case class Case(sp1: SourcePosition, ident: Name.Ident, tpe: Type, sp2: SourcePosition) extends ParsedAst
 
   /**
-    * An AST node representing a formal argument of a function.
-    *
-    * @param ident       the name of the argument.
-    * @param annotations a sequence of annotations associated with the formal argument.
-    * @param tpe         the type of the argument.
-    */
-  case class FormalArg(ident: Name.Ident, annotations: Seq[ParsedAst.Annotation], tpe: Type) extends ParsedAst
-
-  /**
     * A context bound is a type class constraint on one more type parameters.
     *
     * @param sp1     the position of the first character in the context bound.
@@ -917,5 +896,14 @@ object ParsedAst {
     * @param sp2     the position of the last character in the context bound.
     */
   case class ContextBound(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Type], sp2: SourcePosition) extends ParsedAst
+
+  /**
+    * An AST node representing a formal argument of a function.
+    *
+    * @param ident       the name of the argument.
+    * @param annotations a sequence of annotations associated with the formal argument.
+    * @param tpe         the type of the argument.
+    */
+  case class FormalArg(ident: Name.Ident, annotations: Seq[ParsedAst.Annotation], tpe: Type) extends ParsedAst
 
 }

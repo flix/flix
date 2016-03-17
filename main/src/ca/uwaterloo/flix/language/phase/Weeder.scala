@@ -345,9 +345,9 @@ object Weeder {
     def compile(past: ParsedAst.Declaration.Rule): Validation[WeededAst.Declaration.Rule, WeederError] = {
       // compute an map from variable names to alias predicates.
       val aliases = past.body collect {
-        case p: ParsedAst.Predicate.Alias => p
+        case p: ParsedAst.Predicate.Equal => p
       }
-      val aliasesVal = Validation.fold[ParsedAst.Predicate.Alias, Map[String, ParsedAst.Predicate.Alias], WeederError](aliases, Map.empty) {
+      val aliasesVal = Validation.fold[ParsedAst.Predicate.Equal, Map[String, ParsedAst.Predicate.Equal], WeederError](aliases, Map.empty) {
         case (m, p) => m.get(p.ident.name) match {
           case None => (m + (p.ident.name -> p)).toSuccess
           case Some(otherAlias) => DuplicateAlias(p.ident.name, mkSL(otherAlias.sp1, otherAlias.sp2), mkSL(p.sp1, p.sp2)).toFailure
@@ -357,7 +357,7 @@ object Weeder {
       aliasesVal flatMap {
         case aliases =>
           val headVal = Predicate.Head.compile(past.head, aliases)
-          val bodyVal = @@(past.body.filterNot(_.isInstanceOf[ParsedAst.Predicate.Alias]).map(Predicate.Body.compile))
+          val bodyVal = @@(past.body.filterNot(_.isInstanceOf[ParsedAst.Predicate.Equal]).map(Predicate.Body.compile))
 
           @@(headVal, bodyVal) map {
             case (head, body) => WeededAst.Declaration.Rule(head, body, mkSL(past.sp1, past.sp2))
@@ -651,7 +651,12 @@ object Weeder {
 
       case ParsedAst.Expression.Tuple(sp1, elms, sp2) =>
         @@(elms map compile) map {
-          case es => WeededAst.Expression.Tuple(es, mkSL(sp1, sp2))
+          case Nil =>
+            val loc = mkSL(sp1, sp2)
+            val lit = WeededAst.Literal.Unit(loc)
+            WeededAst.Expression.Lit(lit, loc)
+          case x :: Nil => x
+          case xs => WeededAst.Expression.Tuple(xs, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Expression.FNone(sp1, sp2) => ???
@@ -759,13 +764,13 @@ object Weeder {
       /**
         * Compiles the given parsed predicate `p` to a weeded head predicate.
         */
-      def compile(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Alias] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
+      def compile(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Equal] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
         case p: ParsedAst.Predicate.Ambiguous =>
           @@(p.terms.map(t => Term.Head.compile(t, aliases))) map {
             case terms => WeededAst.Predicate.Head.Relation(p.name, terms, mkSL(p.sp1, p.sp2))
           }
 
-        case ParsedAst.Predicate.Alias(sp1, ident, term, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
+        case ParsedAst.Predicate.Equal(sp1, ident, term, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
         case ParsedAst.Predicate.Loop(sp1, ident, term, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
         case ParsedAst.Predicate.NotEqual(sp1, ident1, ident2, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
       }
@@ -790,7 +795,7 @@ object Weeder {
           case term => WeededAst.Predicate.Body.Loop(p.ident, term, mkSL(p.sp1, p.sp2))
         }
 
-        case p: ParsedAst.Predicate.Alias => throw Compiler.InternalCompilerError("Alias predicate should already have been eliminated.")
+        case p: ParsedAst.Predicate.Equal => throw Compiler.InternalCompilerError("Alias predicate should already have been eliminated.")
       }
     }
 
@@ -803,7 +808,7 @@ object Weeder {
       /**
         * Compiles the given parsed head term `past` to a weeded term.
         */
-      def compile(past: ParsedAst.Term, aliases: Map[String, ParsedAst.Predicate.Alias]): Validation[WeededAst.Term.Head, WeederError] = past match {
+      def compile(past: ParsedAst.Term, aliases: Map[String, ParsedAst.Predicate.Equal]): Validation[WeededAst.Term.Head, WeederError] = past match {
         case ParsedAst.Term.Wildcard(sp1, sp2) => IllegalHeadTerm("Wildcards may not occur in head predicates.", mkSL(sp1, sp2)).toFailure
 
         case ParsedAst.Term.Var(sp1, ident, sp2) => aliases.get(ident.name) match {
