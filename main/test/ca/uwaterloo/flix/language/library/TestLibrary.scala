@@ -15,7 +15,7 @@ class TestLibrary extends FunSuite {
   }
 
 
-  test("Library.Bounded") {
+  ignore("Library.Bounded") {
     new Flix()
       .addPath("library/Bounded.flix")
       .addPath("library/Float32.flix")
@@ -36,25 +36,25 @@ class TestLibrary extends FunSuite {
     }
   }
 
-  test("Library.Float32") {
+  ignore("Library.Float32") {
     new Flix().addPath("library/Float32.flix")
       .compile()
       .get
   }
 
-  test("Library.Float64") {
+  ignore("Library.Float64") {
     new Flix().addPath("library/Float64.flix")
       .compile()
       .get
   }
 
-  test("Library.Int8") {
+  ignore("Library.Int8") {
     new Flix().addPath("library/Int8.flix")
       .compile()
       .get
   }
 
-  test("Library.Int16") {
+  ignore("Library.Int16") {
     new Flix().addPath("library/Int16.flix")
       .compile()
       .get
@@ -66,7 +66,7 @@ class TestLibrary extends FunSuite {
       .get
   }
 
-  test("Library.Int64") {
+  ignore("Library.Int64") {
     new Flix().addPath("library/Int64.flix")
       .compile()
       .get
