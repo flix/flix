@@ -1,9 +1,15 @@
 namespace Opt {
-//
-//- **null(o: Opt[A]): Bool**
-//    - Returns true iff o is None.
-//- **get(o: Opt[A]): A**
-//    - Returns v if o is Some(v). Otherwise the semantics is undefined.
+
+    /**
+     * Returns `true` iff `o` is `None`.
+     */
+    external def null(o: Opt[A]): Bool
+
+    /**
+     * Returns `v` if `o` is `Some(v)`. Undefined semantics if `o` is `None`.
+     */
+    external def get(o: Opt[A]): A
+
 //- **getWithDefault(o: Opt[A], a: A): A**
 //    - Returns v if o is Some(v). Otherwise returns a.
 //- **exists(f: A => Bool, o: Opt[A]): Bool**

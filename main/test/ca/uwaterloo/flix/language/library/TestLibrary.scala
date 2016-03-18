@@ -6,6 +6,8 @@ import org.scalatest.FunSuite
 
 class TestLibrary extends FunSuite {
 
+  // TODO: Ensure that this includes the entire library.
+
   test("Library.Prelude") {
     intercept[scala.NotImplementedError] {
       new Flix().addPath("library/Prelude.flix")
@@ -68,6 +70,12 @@ class TestLibrary extends FunSuite {
 
   ignore("Library.Int64") {
     new Flix().addPath("library/Int64.flix")
+      .compile()
+      .get
+  }
+
+  test("Library.Opt") {
+    new Flix().addPath("library/Opt.flix")
       .compile()
       .get
   }

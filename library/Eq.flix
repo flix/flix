@@ -1,5 +1,5 @@
 /**
- * A type equipped with equality.
+ * Types equipped with an equality relation.
  */
 class Eq[E] {
 
