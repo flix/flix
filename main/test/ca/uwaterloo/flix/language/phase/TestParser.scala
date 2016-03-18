@@ -677,62 +677,62 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.CallExp01") {
-    val input = "f()"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.Apply])
+  test("Expression.Apply01") {
+    val input =
+      """def f: Int = 42
+        |def g: Int = f()
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
-  test("Expression.CallExp02") {
-    val input = "f(1, 2, 3)"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.Apply])
+  test("Expression.Apply02") {
+    val input =
+      """def f(x: Int, y: Int): Int = x + y
+        |def g: Int = f(1, 2)
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
-  test("Expression.CallExp03") {
-    val input = "f(f(1), f(f(2)))"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.Apply])
+  test("Expression.Apply03") {
+    val input =
+      """def f(x: Int, y: Int): Int = x + y
+        |def g: Int = f(1, f(2, 3))
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
-  test("Expression.CallExp04") {
-    val input = "foo.bar.baz/f(1, 2, 3)"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.Apply])
+  test("Expression.Apply04") {
+    val input =
+      """def f(x: Int, y: Int): Int = x + y
+        |def g: Int = f(f(1, 2), f(3, 4))
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Tag01") {
-    val input = "Foo.Bar"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get
-    assert(result.isInstanceOf[ParsedAst.Expression.Tag])
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Green,
+        |  case Blue
+        |}
+        |
+        |def f: Color = Color.Red
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Tag02") {
-    val input = "Foo.Bar ()"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get
-    assert(result.isInstanceOf[ParsedAst.Expression.Tag])
-  }
-
-  test("Expression.Tag03") {
-    val input = "Foo.Bar Baz.Qux"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get
-    assert(result.isInstanceOf[ParsedAst.Expression.Tag])
-  }
-
-  test("Expression.Tag04") {
-    val input = "Foo.Bar (x, y)"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get
-    assert(result.isInstanceOf[ParsedAst.Expression.Tag])
-  }
-
-  test("Expression.Tag05") {
-    val input = "foo.bar/Baz.Qux (42, x, (3, 4))"
-    val result = new Parser(SourceInput.Str(input)).Expression.run().get
-    assert(result.isInstanceOf[ParsedAst.Expression.Tag])
+    val input =
+      """enum Shape {
+        |  case Circle(Int),
+        |  case Square(Int, Int)
+        |}
+        |
+        |def f: Shape = Shape.Circle(42)
+        |def g: Shape = Shape.Square(21, 42)
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Tuple01") {
@@ -1000,10 +1000,8 @@ class TestParser extends FunSuite {
   }
 
   test("Expression.Var01") {
-    val input = "x"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.Var])
+    val input = "def f(x: Int): Int = x"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Lambda01") {
@@ -1091,11 +1089,9 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.ErrorExp01") {
-    val input = "??? : Int"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.UserError])
+  test("Expression.UserError01") {
+    val input = "def f: Int = ??? : Int"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Bot01") {
