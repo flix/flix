@@ -1,19 +1,32 @@
 namespace Opt {
 
+    // TODO: List[A] vs List[Color] ...
+
     /**
-     * Returns `true` iff `o` is `None`.
+     *  Returns `true` iff `o` is `None`.
      */
     external def null(o: Opt[A]): Bool
 
     /**
-     * Returns `v` if `o` is `Some(v)`. Undefined semantics if `o` is `None`.
+     *  Returns `v` if `o` is `Some(v)`. Undefined semantics if `o` is `None`.
      */
     external def get(o: Opt[A]): A
 
-//- **getWithDefault(o: Opt[A], a: A): A**
-//    - Returns v if o is Some(v). Otherwise returns a.
-//- **exists(f: A => Bool, o: Opt[A]): Bool**
-//    - Returns the value of f(v) if o is Some(v). Otherwise false.
+    /**
+     *  Returns `v` if `o` is `Some(v).` Otherwise returns `a`.
+     */
+    external def getWithDefault(o: Opt[A], a: A): A
+
+    /**
+     *  Returns the value of `f(v)` if `o` is `Some(v)`. Otherwise returns `false`.
+     */
+    external def exists(f: A => Bool, o: Opt[A]): Bool
+
+    /**
+     *  Returns the value of `f(v)` if `o` is `Some(v)`. Otherwise returns `true`.
+     */
+    external def forall(f: A => Bool, o: Opt[A]): Bool
+
 //- **forall(f: A => Bool, o: Opt[A]): Bool**
 //    - Returns the value of f(v) if o is Some(v). Otherwise true.
 //- **filter(f: A => Bool, o: Opt[A]): Opt[A]**
