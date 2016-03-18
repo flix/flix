@@ -383,10 +383,9 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       Apply | FList
     }
 
-    def Simple: Rule1[ParsedAst.Expression] = rule {
-      LetMatch | IfThenElse | Switch | Match |
-        Tag | FatArrow | Tuple | FNil | FNone | FSome | FSet | FMap |
-        Literal | Existential | Universal | Bot | Top | Var | UserError
+    def Primary: Rule1[ParsedAst.Expression] = rule {
+      LetMatch | IfThenElse | Match | Switch | Tag | Lambda | Tuple | FNil | FNone | FSome | FSet | FMap | Literal |
+        Existential | Universal | Bot | Top | UnaryLambda | Var | UserError
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -394,35 +393,35 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def IfThenElse: Rule1[ParsedAst.Expression.IfThenElse] = rule {
-      SP ~ atomic("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ optWS ~ atomic("else") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.IfThenElse
+      SP ~ atomic("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ WS ~ atomic("else") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.IfThenElse
     }
 
     def LetMatch: Rule1[ParsedAst.Expression.LetMatch] = rule {
-      SP ~ atomic("let") ~ optWS ~ Pattern ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ atomic("in") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.LetMatch
+      SP ~ atomic("let") ~ WS ~ Pattern ~ optWS ~ "=" ~ optWS ~ Expression ~ WS ~ atomic("in") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.LetMatch
     }
 
     def Match: Rule1[ParsedAst.Expression.Match] = {
       def Rule: Rule1[(ParsedAst.Pattern, ParsedAst.Expression)] = rule {
-        atomic("case") ~ optWS ~ Pattern ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~ optSC ~> ((p: ParsedAst.Pattern, e: ParsedAst.Expression) => (p, e))
+        atomic("case") ~ WS ~ Pattern ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~ optSC ~> ((p: ParsedAst.Pattern, e: ParsedAst.Expression) => (p, e))
       }
 
       rule {
-        SP ~ atomic("match") ~ optWS ~ Expression ~ optWS ~ atomic("with") ~ optWS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Match
+        SP ~ atomic("match") ~ WS ~ Expression ~ WS ~ atomic("with") ~ WS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Match
       }
     }
 
     def Switch: Rule1[ParsedAst.Expression.Switch] = {
       def Rule: Rule1[(ParsedAst.Expression, ParsedAst.Expression)] = rule {
-        atomic("case") ~ optWS ~ Expression ~ optWS ~ "=>" ~ optWS ~ Expression ~> ((e1: ParsedAst.Expression, e2: ParsedAst.Expression) => (e1, e2))
+        atomic("case") ~ WS ~ Expression ~ optWS ~ "=>" ~ optWS ~ Expression ~> ((e1: ParsedAst.Expression, e2: ParsedAst.Expression) => (e1, e2))
       }
 
       rule {
-        SP ~ atomic("switch") ~ optWS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Switch
+        SP ~ atomic("switch") ~ WS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Switch
       }
     }
 
     def Apply: Rule1[ParsedAst.Expression.Apply] = rule {
-      SP ~ Simple ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Apply
+      SP ~ Primary ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Apply
     }
 
     def Tag: Rule1[ParsedAst.Expression.Tag] = rule {
@@ -446,7 +445,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def FList: Rule1[ParsedAst.Expression] = rule {
-      Simple ~ optional(optWS ~ atomic("::") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.FList)
+      Primary ~ optional(optWS ~ atomic("::") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.FList)
     }
 
     def FSet: Rule1[ParsedAst.Expression.FSet] = rule {
@@ -475,19 +474,13 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ QName ~ SP ~> ParsedAst.Expression.Var
     }
 
-    def FatArrow: Rule1[ParsedAst.Expression.FatArrow] = {
-      def OneArg: Rule1[ParsedAst.Expression.FatArrow] = rule {
-        SP ~ Ident ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ((sp1: SourcePosition, arg: Name.Ident, body: ParsedAst.Expression, sp2: SourcePosition) =>
-          ParsedAst.Expression.FatArrow(sp1, Seq(arg), body, sp2))
-      }
+    def UnaryLambda: Rule1[ParsedAst.Expression.Lambda] = rule {
+      SP ~ Ident ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ((sp1: SourcePosition, arg: Name.Ident, body: ParsedAst.Expression, sp2: SourcePosition) =>
+        ParsedAst.Expression.Lambda(sp1, Seq(arg), body, sp2))
+    }
 
-      def MultipleArgs: Rule1[ParsedAst.Expression.FatArrow] = rule {
-        SP ~ "(" ~ optWS ~ oneOrMore(Ident).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.FatArrow
-      }
-
-      rule {
-        OneArg | MultipleArgs
-      }
+    def Lambda: Rule1[ParsedAst.Expression.Lambda] = rule {
+      SP ~ "(" ~ optWS ~ oneOrMore(Ident).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Lambda
     }
 
     def Existential: Rule1[ParsedAst.Expression.Existential] = rule {
@@ -657,10 +650,14 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   def Type: Rule1[PType] = rule {
-    Types.Lambda | Types.Tuple | Types.Parametric | Types.Name
+    Types.UnaryLambda
   }
 
   object Types {
+
+    def Primary: Rule1[PType] = rule {
+      Lambda | Tuple | Parametric | Name
+    }
 
     def Name: Rule1[PType] = rule {
       QName ~> PType.Unresolved
@@ -682,6 +679,13 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       rule {
         Unit | Singleton | Tuple
       }
+    }
+
+    def UnaryLambda: Rule1[PType] = rule {
+      Primary ~ optional(optWS ~ atomic("->") ~ optWS ~ Type) ~> ((t: PType, o: Option[PType]) => o match {
+        case None => t
+        case Some(r) => PType.Lambda(List(t), r) // TODO: Maybe need to reverse order???
+      })
     }
 
     def Lambda: Rule1[PType] = rule {

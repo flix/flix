@@ -340,7 +340,7 @@ object ParsedAst {
       case Expression.Var(sp1, _, _) => sp1
       case Expression.Apply(sp1, _, _, _) => sp1
       case Expression.Infix(e1, _, _, _) => e1.leftMostSourcePosition
-      case Expression.FatArrow(sp1, _, _, _) => sp1
+      case Expression.Lambda(sp1, _, _, _) => sp1
       case Expression.Unary(sp1, _, _, _) => sp1
       case Expression.Binary(e1, _, _, _) => e1.leftMostSourcePosition
       case Expression.ExtendedBinary(e1, _, _, _) => e1.leftMostSourcePosition
@@ -414,7 +414,7 @@ object ParsedAst {
       * @param body    the body expression of the lambda.
       * @param sp2     the position of the last character in the expression.
       */
-    case class FatArrow(sp1: SourcePosition, formals: Seq[Name.Ident], body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Lambda(sp1: SourcePosition, formals: Seq[Name.Ident], body: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * An AST node that represents unary expressions.

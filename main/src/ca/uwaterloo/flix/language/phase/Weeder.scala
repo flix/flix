@@ -551,6 +551,15 @@ object Weeder {
           case (lambda, args) => WeededAst.Expression.Apply(lambda, args, mkSL(sp1, sp2))
         }
 
+      case ParsedAst.Expression.Infix(exp1, name, exp2, sp2) =>
+        @@(compile(exp1), compile(exp2)) map {
+          case (e1, e2) =>
+            val loc = mkSL(exp1.leftMostSourcePosition, sp2)
+            WeededAst.Expression.Apply(WeededAst.Expression.Var(name, loc), List(e1, e2), loc)
+        }
+
+      case ParsedAst.Expression.Lambda(sp1, formals, body, sp2) => ??? // TODO
+
       case ParsedAst.Expression.Unary(sp1, op, exp, sp2) => compile(exp) map {
         case e => WeededAst.Expression.Unary(op, e, mkSL(sp1, sp2))
       }
@@ -640,13 +649,6 @@ object Weeder {
         }
         @@(compile(exp), @@(rulesVal)) map {
           case (e, rs) => WeededAst.Expression.Match(e, rs, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Expression.Infix(exp1, name, exp2, sp2) =>
-        @@(compile(exp1), compile(exp2)) map {
-          case (e1, e2) =>
-            val loc = mkSL(exp1.leftMostSourcePosition, sp2)
-            WeededAst.Expression.Apply(WeededAst.Expression.Var(name, loc), List(e1, e2), loc)
         }
 
       case ParsedAst.Expression.Tag(sp1, enum, tag, o, sp2) => o match {

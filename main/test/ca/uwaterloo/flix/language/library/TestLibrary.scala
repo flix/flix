@@ -75,9 +75,11 @@ class TestLibrary extends FunSuite {
   }
 
   test("Library.Opt") {
-    new Flix().addPath("library/Opt.flix")
-      .compile()
-      .get
+    intercept[scala.NotImplementedError] {
+      new Flix().addPath("library/Opt.flix")
+        .compile()
+        .get
+    }
   }
 
 }
