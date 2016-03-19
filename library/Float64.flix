@@ -3,12 +3,12 @@ namespace Float64 {
     /**
      * Returns the minimum number representable by a `Float64`.
      */
-    def minValue: Float64 = ??? : Float64
+    def minValue: Float64 = ??? : Float64 // TODO
 
     /**
      * Returns the maximum number representable by a `Float64`.
      */
-    def maxValue: Float64 = ??? : Float64
+    def maxValue: Float64 = ??? : Float64 // TODO
 
     /**
      * Returns the smaller of `x` and `y`.
