@@ -90,16 +90,35 @@ namespace List {
         }
         in visit(0, xs)
 
+    /**
+     *  Alias for findLeft.
+     */
+    def find(f: A -> Bool, xs: List[A]): Opt[A] = findLeft(f, xs)
 
-//- **find(f: A => Bool, xs: List[A]): Opt[A]**
-//    - Alias for findLeft.
-//- **findLeft(f: A => Bool, xs: List[A]): Opt[A]**
-//    - Optionally returns the first element that satisfies the predicate f.
-//- **findRight(f: A => Bool, xs: List[A]): Opt[A]**
-//    - Similar to findLeft but searches from right to left.
-//
+    /**
+     *  Optionally returns the first element that satisfies the predicate f
+     */
+    def findLeft(f: A -> Bool, xs: List[A]): Opt[A] = match xs with {
+        case Nil => None
+        case x :: rs => if (f(x)) Some(x) else findLeft(f, rs)
+    }
 
-//## List Building
+    /**
+     *  Similar to findLeft but searches from right to left.
+     */
+    def findRight(f: A -> Bool, xs: List[A]): Opt[A] = match xs with {
+        case Nil => None
+        case x :: rs => match findRight(f, xs) with {
+            case None => if (f(x)) Some(x) else None
+            case Some(v) => Some(v)
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // List Building                                                        ///
+    ///////////////////////////////////////////////////////////////////////////
+
+//##
 //- **range(b: Int, e: Int): List[Int]**
 //    - Returns a list of all integers between b (inclusive) and e (exclusive).
 //- **repeat(x: A, n: Int): List[A]**
@@ -116,16 +135,6 @@ namespace List {
     ///////////////////////////////////////////////////////////////////////////
     // List Transformation                                                  ///
     ///////////////////////////////////////////////////////////////////////////
-
-    external def map(f: (A) -> B, xs: List[A]): List[B]
-
-
-    ///////////////////////////////////////////////////////////////////////////
-    // List Predicates                                                      ///
-    ///////////////////////////////////////////////////////////////////////////
-
-    external def isPrefixOf(xs: List[A], ys: List[B]): Bool
-
 
 
 //
@@ -159,35 +168,61 @@ namespace List {
 //    - Returns the transpose of the list.
 //    - If the dimensions of the lists are mismatched the semantics are undefined.
 //
-//## List Predicates
-//- **isPrefixOf(xs: List[A], ys: List[B]): Bool**
-//    - Returns true if the list xs is a prefix of the list ys.
-//- **isInfixOf(xs: List[A], ys: List[B]): Bool**
-//    - Returns true if the list xs is an infix of the list ys.
-//- **isSuffixOf(xs: List[A], ys: List[B]): Bool**
-//    - Returns true if the list xs is a suffix of the list ys.
-//
-//## Fold And Reduce
-//- **fold(f: (B, A) => B, b: B, xs: List[A]): B**
-//    - Alias of foldLeft.
-//- **foldLeft(f: (B, A) => B, b: B, xs: List[A]): B**
-//    - Left-associative fold of the list xs.
-//- **foldRight(f: (A, B) => B, b: B, xs: List[A]): B**
-//    - Right-associative fold of the list xs.
-//- **reduce(f: (A, A) => A, xs: List[A]): A**
-//    - Alias for reduceLeft.
-//- **reduceLeft(f: (A, A) => A, xs: List[A]): A**
-//    - Left-associative reduce of the list xs.
-//    - If the list is empty the semantics are undefined.
-//- **reduceOpt(f: (A, A) => A, xs: List[A]): Opt[A]**
-//    - Alias for reduceLeftOpt.
-//- **reduceLeftOpt(f: (A, A) => A, xs: List[A]): Opt[A]**
-//    - Safe variant of reduceLeft that returns None if the list is empty.
-//- **reduceRight(f: (A, A) => A, xs: List[A]): A**
-//    - Right-associative reduce of the list xs.
-//    - If the list is empty the semantics are undefined.
-//- **reduceRightOpt(f: (A, A) => A, xs: List[A]): Opt[A]**
-//    - Safe variant of reduceRight that returns None if the list is empty.
+    external def map(f: (A) -> B, xs: List[A]): List[B]
+
+    ///////////////////////////////////////////////////////////////////////////
+    // List Predicates                                                      ///
+    ///////////////////////////////////////////////////////////////////////////
+
+    /**
+     *  Returns `true` if the list `xs` is a prefix of the list `ys`.
+     */
+    def isPrefixOf(xs: List[A], ys: List[B]): Bool = match (xs, ys) with {
+        case (Nil, _) => true
+        case (_, Nil) => false
+        case (x :: xs1, y :: ys1) => if (x == y) isPrefixOf(xs1, ys1) else false
+    }
+
+    /**
+     *  Returns `true` if the list `xs` is an infix of the list `ys`.
+     */
+    def isInfixOf(xs: List[A], ys: List[B]): Bool = ??? : Bool // TODO
+
+    /**
+     *  Returns `true` if the list `xs` is a suffix of the list `ys`.
+     */
+    def isSuffixOf(xs: List[A], ys: List[B]): Bool = isPrefixOf(reverse(xs), reverse(ys))
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Fold And Reduce                                                      ///
+    ///////////////////////////////////////////////////////////////////////////
+
+    /**
+     *  Alias of foldLeft.
+     */
+    def fold(f: (B, A) -> B, b: B, xs: List[A]): B = foldLeft(f, b, xs)
+
+    /**
+     *  Left-associative fold of the list xs.
+     */
+    def foldLeft(f: (B, A) -> B, b: B, xs: List[A]): B = ??? : B
+
+    //- **foldRight(f: (A, B) => B, b: B, xs: List[A]): B**
+    //    - Right-associative fold of the list xs.
+    //- **reduce(f: (A, A) => A, xs: List[A]): A**
+    //    - Alias for reduceLeft.
+    //- **reduceLeft(f: (A, A) => A, xs: List[A]): A**
+    //    - Left-associative reduce of the list xs.
+    //    - If the list is empty the semantics are undefined.
+    //- **reduceOpt(f: (A, A) => A, xs: List[A]): Opt[A]**
+    //    - Alias for reduceLeftOpt.
+    //- **reduceLeftOpt(f: (A, A) => A, xs: List[A]): Opt[A]**
+    //    - Safe variant of reduceLeft that returns None if the list is empty.
+    //- **reduceRight(f: (A, A) => A, xs: List[A]): A**
+    //    - Right-associative reduce of the list xs.
+    //    - If the list is empty the semantics are undefined.
+    //- **reduceRightOpt(f: (A, A) => A, xs: List[A]): Opt[A]**
+    //    - Safe variant of reduceRight that returns None if the list is empty.
 //
 //## Special Folds
 //- **count(f: A => Bool, xs: List[A]): Int**
