@@ -70,12 +70,27 @@ namespace List {
         case (i, x :: rs) => at(i - 1, rs)
     }
 
+    /**
+     *  Returns true if the list contains the element `x`.
+     */
+    def memberOf(x: A, xs: List[A]): Bool = match xs with {
+        case Nil => false
+        case y :: rs => if (x == y) true else memberOf(x, rs)
+    }
 
-//- **memberOf(x: A, xs: List[A]): Bool**
-//    - Returns true if the list xs contains the element x.
-//- **indexOf(x: A, xs: List[A]): Int**
-//    - Returns the position of the element x in the list xs.
-//    - If the element does not exist in the list the semantics are undefined.
+    /**
+     *  Returns the position of the element x in the list xs.
+     *  If the element does not exist in the list the semantics are undefined.
+     */
+    // TODO
+    def indexOf(x: A, xs: List[A]): Int =
+        let visit = (pos, xs) -> match xs with {
+            case Nil => -1
+            case y :: rs => 42
+        }
+        in visit(0, xs)
+
+
 //- **find(f: A => Bool, xs: List[A]): Opt[A]**
 //    - Alias for findLeft.
 //- **findLeft(f: A => Bool, xs: List[A]): Opt[A]**

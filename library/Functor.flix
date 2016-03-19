@@ -1,7 +1,7 @@
 /**
  * A constructor class for types that support the map operation.
  */
-class Mappable[M[A]] {
+class Functor[M[A]] {
 
     /**
      * Applies the function `f` to the value inside the container `x`.

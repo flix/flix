@@ -397,14 +397,6 @@ impl PartialOrder[E] <= LeastUpperBound[E] {
 // Haskell typeclassopedia
 // https://wiki.haskell.org/Typeclassopedia
 //
-//// I have ALWAYS wanted these
-//object +: {
-//  def unapply[A](vec: Vector[A]): Option[(A, Vector[A])] = ???
-//}
-//
-//object :+ {
-//  def unapply[A](vec: Vector[A]): Option[(Vector[A], A)] = ???
-//}
 
 
 // TODO: Implement flat lattic,e chains, lift, lift2 using type classes?

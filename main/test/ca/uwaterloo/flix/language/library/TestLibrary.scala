@@ -16,8 +16,7 @@ class TestLibrary extends FunSuite {
     }
   }
 
-
-  ignore("Library.Bounded") {
+  test("Library.Bounded") {
     new Flix()
       .addPath("library/Bounded.flix")
       .addPath("library/Float32.flix")
@@ -38,25 +37,39 @@ class TestLibrary extends FunSuite {
     }
   }
 
-  ignore("Library.Float32") {
+  test("Library.Eq") {
+    intercept[scala.NotImplementedError] {
+      new Flix().addPath("library/Eq.flix")
+        .compile()
+        .get
+    }
+  }
+
+  test("Library.Float32") {
     new Flix().addPath("library/Float32.flix")
       .compile()
       .get
   }
 
-  ignore("Library.Float64") {
+  test("Library.Float64") {
     new Flix().addPath("library/Float64.flix")
       .compile()
       .get
   }
 
-  ignore("Library.Int8") {
+  test("Library.Functor") {
+    new Flix().addPath("library/Functor.flix")
+      .compile()
+      .get
+  }
+
+  test("Library.Int8") {
     new Flix().addPath("library/Int8.flix")
       .compile()
       .get
   }
 
-  ignore("Library.Int16") {
+  test("Library.Int16") {
     new Flix().addPath("library/Int16.flix")
       .compile()
       .get
@@ -68,15 +81,39 @@ class TestLibrary extends FunSuite {
       .get
   }
 
-  ignore("Library.Int64") {
+  test("Library.Int64") {
     new Flix().addPath("library/Int64.flix")
       .compile()
       .get
   }
 
+  test("Library.List") {
+    intercept[scala.NotImplementedError] {
+      new Flix().addPath("library/List.flix")
+        .compile()
+        .get
+    }
+  }
+
+  test("Library.Map") {
+    intercept[scala.NotImplementedError] {
+      new Flix().addPath("library/Map.flix")
+        .compile()
+        .get
+    }
+  }
+
   test("Library.Opt") {
     intercept[scala.NotImplementedError] {
       new Flix().addPath("library/Opt.flix")
+        .compile()
+        .get
+    }
+  }
+
+  test("Library.Ord") {
+    intercept[scala.NotImplementedError] {
+      new Flix().addPath("library/Ord.flix")
         .compile()
         .get
     }
