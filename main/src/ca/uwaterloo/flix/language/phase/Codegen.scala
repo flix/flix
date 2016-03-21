@@ -38,7 +38,7 @@ object Codegen {
     case Type.Float64 => asm.Type.DOUBLE_TYPE.getDescriptor
     case Type.Int8 => asm.Type.BYTE_TYPE.getDescriptor
     case Type.Int16 => asm.Type.SHORT_TYPE.getDescriptor
-    case Type.Int32 | Type.Int32 => asm.Type.INT_TYPE.getDescriptor
+    case Type.Int32 => asm.Type.INT_TYPE.getDescriptor
     case Type.Int64 => asm.Type.LONG_TYPE.getDescriptor
     case Type.Str => asm.Type.getDescriptor(classOf[java.lang.String])
     case Type.Enum(_, _) => asm.Type.getDescriptor(classOf[Value.Tag])
@@ -93,7 +93,7 @@ object Codegen {
     compileExpression(context, mv)(function.body)
 
     function.tpe.retTpe match {
-      case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int32 => mv.visitInsn(IRETURN)
+      case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => mv.visitInsn(IRETURN)
       case Type.Int64 => mv.visitInsn(LRETURN)
       case Type.Float32 => mv.visitInsn(FRETURN)
       case Type.Float64 => mv.visitInsn(DRETURN)
@@ -136,7 +136,7 @@ object Codegen {
     case store: StoreExpression => compileStoreExpr(context, visitor)(store)
 
     case Expression.Var(ident, offset, tpe, _) => tpe match {
-      case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int32 =>
+      case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 =>
         visitor.visitVarInsn(ILOAD, offset)
       case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
       case Type.Float32 => visitor.visitVarInsn(FLOAD, offset)
@@ -178,7 +178,7 @@ object Codegen {
     case Expression.Let(ident, offset, exp1, exp2, _, _) =>
       compileExpression(context, visitor)(exp1)
       exp1.tpe match {
-        case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int32 =>
+        case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 =>
           visitor.visitVarInsn(ISTORE, offset)
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
         case Type.Float32 => visitor.visitVarInsn(FSTORE, offset)
@@ -345,7 +345,7 @@ object Codegen {
       compileExpression(context, visitor)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkInt16",
         "(I)Ljava/lang/Object;", false)
-    case Type.Int32 | Type.Int32 =>
+    case Type.Int32 =>
       visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$",
         "Lca/uwaterloo/flix/runtime/Value$;")
       compileExpression(context, visitor)(exp)
@@ -393,7 +393,7 @@ object Codegen {
     case Type.Int16 =>
       visitor.visitTypeInsn(CHECKCAST, "java/lang/Short")
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Short", "shortValue", "()S", false)
-    case Type.Int32 | Type.Int32 =>
+    case Type.Int32 =>
       visitor.visitTypeInsn(CHECKCAST, "java/lang/Integer")
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false)
     case Type.Int64 =>
@@ -555,7 +555,7 @@ object Codegen {
     case Type.Int16 =>
       visitor.visitInsn(INEG)
       visitor.visitInsn(I2S)
-    case Type.Int32 | Type.Int32 => visitor.visitInsn(INEG)
+    case Type.Int32 => visitor.visitInsn(INEG)
     case Type.Int64 => visitor.visitInsn(LNEG)
     case _ => throw new InternalCompilerError(s"Can't apply UnaryOperator.Minus to type $tpe.")
   }
@@ -578,7 +578,7 @@ object Codegen {
   private def compileUnaryNegateExpr(context: Context, visitor: MethodVisitor)(tpe: Type): Unit = {
     visitor.visitInsn(ICONST_M1)
     tpe match {
-      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int32 =>
+      case Type.Int8 | Type.Int16 | Type.Int32 =>
         visitor.visitInsn(IXOR)
       case Type.Int64 =>
         visitor.visitInsn(I2L)
@@ -606,30 +606,57 @@ object Codegen {
    *     00000000 00000000 00000000 10000000 =  128
    * We want the value to be an Int8 (byte), so we use I2B to truncate and sign extend:
    *     11111111 11111111 11111111 10000000 = -128
+   *
+   * Exponentiation takes a separate codepath. Values must be cast to doubles (F2D, I2D, L2D; note that bytes and shorts
+   * are represented as ints and so we use I2D), then we invoke the static method `math.pow`, and then we have to cast
+   * back to the original type (D2F, D2I, D2L; note that bytes and shorts need to be cast again with I2B and I2S).
    */
   private def compileArithmeticExpr(context: Context, visitor: MethodVisitor)
                                    (o: ArithmeticOperator, e1: Expression, e2: Expression): Unit = {
-    compileExpression(context, visitor)(e1)
-    compileExpression(context, visitor)(e2)
-    val (intOp, longOp, floatOp, doubleOp) = o match {
-      case BinaryOperator.Plus => (IADD, LADD, FADD, DADD)
-      case BinaryOperator.Minus => (ISUB, LSUB, FSUB, DSUB)
-      case BinaryOperator.Times => (IMUL, LMUL, FMUL, DMUL)
-      case BinaryOperator.Divide => (IDIV, LDIV, FDIV, DDIV)
-      case BinaryOperator.Modulo => (IREM, LREM, FREM, DREM)
-    }
-    e1.tpe match {
-      case Type.Float32 => visitor.visitInsn(floatOp)
-      case Type.Float64 => visitor.visitInsn(doubleOp)
-      case Type.Int8 =>
-        visitor.visitInsn(intOp)
-        visitor.visitInsn(I2B)
-      case Type.Int16 =>
-        visitor.visitInsn(intOp)
-        visitor.visitInsn(I2S)
-      case Type.Int32 | Type.Int32 => visitor.visitInsn(intOp)
-      case Type.Int64 => visitor.visitInsn(longOp)
-      case _ => throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
+    if (o == BinaryOperator.Exponentiate) {
+      val (castToDouble, castFromDouble) = e1.tpe match {
+        case Type.Float32 => (F2D, D2F)
+        case Type.Float64 => (NOP, NOP) // already a double
+        case Type.Int8 | Type.Int16 | Type.Int32 => (I2D, D2I)
+        case Type.Int64 => (L2D, D2L)
+        case _ => throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
+      }
+      visitor.visitFieldInsn(GETSTATIC, "scala/math/package$", "MODULE$", "Lscala/math/package$;")
+      compileExpression(context, visitor)(e1)
+      visitor.visitInsn(castToDouble)
+      compileExpression(context, visitor)(e2)
+      visitor.visitInsn(castToDouble)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "scala/math/package$", "pow", "(DD)D", false)
+      visitor.visitInsn(castFromDouble)
+      (e1.tpe: @unchecked) match {
+        case Type.Int8 => visitor.visitInsn(I2B)
+        case Type.Int16 => visitor.visitInsn(I2S)
+      }
+    } else {
+      compileExpression(context, visitor)(e1)
+      compileExpression(context, visitor)(e2)
+      val (intOp, longOp, floatOp, doubleOp) = o match {
+        case BinaryOperator.Plus => (IADD, LADD, FADD, DADD)
+        case BinaryOperator.Minus => (ISUB, LSUB, FSUB, DSUB)
+        case BinaryOperator.Times => (IMUL, LMUL, FMUL, DMUL)
+        case BinaryOperator.Divide => (IDIV, LDIV, FDIV, DDIV)
+        case BinaryOperator.Modulo => (IREM, LREM, FREM, DREM)
+        case BinaryOperator.Exponentiate =>
+          throw new InternalCompilerError("BinaryOperator.Exponentiate already handled.")
+      }
+      e1.tpe match {
+        case Type.Float32 => visitor.visitInsn(floatOp)
+        case Type.Float64 => visitor.visitInsn(doubleOp)
+        case Type.Int8 =>
+          visitor.visitInsn(intOp)
+          visitor.visitInsn(I2B)
+        case Type.Int16 =>
+          visitor.visitInsn(intOp)
+          visitor.visitInsn(I2S)
+        case Type.Int32 => visitor.visitInsn(intOp)
+        case Type.Int64 => visitor.visitInsn(longOp)
+        case _ => throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
+      }
     }
   }
 
@@ -693,7 +720,7 @@ object Codegen {
       case Type.Float64 =>
         visitor.visitInsn(doubleOp)
         visitor.visitJumpInsn(cmp, condElse)
-      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int32 => visitor.visitJumpInsn(intOp, condElse)
+      case Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitJumpInsn(intOp, condElse)
       case Type.Int64 =>
         visitor.visitInsn(LCMP)
         visitor.visitJumpInsn(cmp, condElse)
@@ -808,7 +835,7 @@ object Codegen {
       case Type.Int16 =>
         visitor.visitInsn(intOp)
         if (intOp == ISHL) visitor.visitInsn(I2S)
-      case Type.Int32 | Type.Int32 => visitor.visitInsn(intOp)
+      case Type.Int32 => visitor.visitInsn(intOp)
       case Type.Int64 => visitor.visitInsn(longOp)
       case _ => throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
     }

@@ -1833,6 +1833,7 @@ class TestCodegen extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
 
   // TODO: BinaryOperator arithmetic tests for Float32, Float64.
+  // TODO: BinaryOperator.Exponentiate tests for Int8, Int16, Int32, Int64, Float32, Float64.
 
   test("Codegen - Binary.Plus01") {
     // Binary plus operator applied to Int8
