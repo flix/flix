@@ -281,7 +281,9 @@ object Simplifier {
       case TypedAst.Literal.Unit(loc) => SimplifiedAst.Expression.Unit
       case TypedAst.Literal.Bool(b, loc) =>
         if (b) SimplifiedAst.Expression.True else SimplifiedAst.Expression.False
-      case TypedAst.Literal.Char(c, loc) => ??? // TODO
+      case TypedAst.Literal.Char(c, loc) => SimplifiedAst.Expression.Char(c)
+      case TypedAst.Literal.Float32(f, loc) => SimplifiedAst.Expression.Float32(f)
+      case TypedAst.Literal.Float64(f, loc) => SimplifiedAst.Expression.Float64(f)
       case TypedAst.Literal.Int8(i, loc) => SimplifiedAst.Expression.Int8(i)
       case TypedAst.Literal.Int16(i, loc) => SimplifiedAst.Expression.Int16(i)
       case TypedAst.Literal.Int32(i, loc) => SimplifiedAst.Expression.Int32(i)

@@ -33,17 +33,19 @@ object Codegen {
   def descriptor(tpe: Type): String = tpe match {
     case Type.Unit => "Lca/uwaterloo/flix/runtime/Value$Unit$;"
     case Type.Bool => asm.Type.BOOLEAN_TYPE.getDescriptor
+    case Type.Char => asm.Type.CHAR_TYPE.getDescriptor
+    case Type.Float32 => asm.Type.FLOAT_TYPE.getDescriptor
+    case Type.Float64 => asm.Type.DOUBLE_TYPE.getDescriptor
     case Type.Int8 => asm.Type.BYTE_TYPE.getDescriptor
     case Type.Int16 => asm.Type.SHORT_TYPE.getDescriptor
-    case Type.Int32 | Type.Int32 => asm.Type.INT_TYPE.getDescriptor
+    case Type.Int32 => asm.Type.INT_TYPE.getDescriptor
     case Type.Int64 => asm.Type.LONG_TYPE.getDescriptor
     case Type.Str => asm.Type.getDescriptor(classOf[java.lang.String])
     case Type.Enum(_, _) => asm.Type.getDescriptor(classOf[Value.Tag])
     case Type.Tuple(elms) => asm.Type.getDescriptor(classOf[Value.Tuple])
     case Type.Lambda(args, retTpe) => s"""(${ args.map(descriptor).mkString })${descriptor(retTpe)}"""
     case Type.Tag(_, _, _) => throw new InternalCompilerError(s"No corresponding JVM type for $tpe.")
-    case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Predicate(_) | Type.Native |
-         Type.Char | Type.Abs(_, _) | Type.Any => ???
+    case _ => ???
   }
 
   /*
@@ -91,13 +93,13 @@ object Codegen {
     compileExpression(context, mv)(function.body)
 
     function.tpe.retTpe match {
-      case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int32 => mv.visitInsn(IRETURN)
+      case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => mv.visitInsn(IRETURN)
       case Type.Int64 => mv.visitInsn(LRETURN)
+      case Type.Float32 => mv.visitInsn(FRETURN)
+      case Type.Float64 => mv.visitInsn(DRETURN)
       case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) => mv.visitInsn(ARETURN)
-      case Type.Tag(_, _, _) =>
-        throw new InternalCompilerError(s"Functions can't return type ${function.tpe.retTpe}.")
-      case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
-           Type.Predicate(_) | Type.Native | Type.Char | Type.Abs(_, _) | Type.Any => ???
+      case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Functions can't return type ${function.tpe.retTpe}.")
+      case _ => ???
     }
 
     // Dummy large numbers so the bytecode checker can run. Afterwards, the ASM library calculates the proper maxes.
@@ -112,6 +114,18 @@ object Codegen {
 
     case Expression.True => visitor.visitInsn(ICONST_1)
     case Expression.False => visitor.visitInsn(ICONST_0)
+    case Expression.Char(c) => compileInt(visitor)(c)
+    case Expression.Float32(f) => f match {
+      case 0f => visitor.visitInsn(FCONST_0)
+      case 1f => visitor.visitInsn(FCONST_1)
+      case 2f => visitor.visitInsn(FCONST_2)
+      case _ => visitor.visitLdcInsn(f)
+    }
+    case Expression.Float64(d) => d match {
+      case 0d => visitor.visitInsn(DCONST_0)
+      case 1d => visitor.visitInsn(DCONST_1)
+      case _ => visitor.visitLdcInsn(d)
+    }
     case Expression.Int8(b) => compileInt(visitor)(b)
     case Expression.Int16(s) => compileInt(visitor)(s)
     case Expression.Int32(i) => compileInt(visitor)(i)
@@ -121,18 +135,20 @@ object Codegen {
     case load: LoadExpression => compileLoadExpr(context, visitor)(load)
     case store: StoreExpression => compileStoreExpr(context, visitor)(store)
 
-    case Expression.Var(ident, offset, tpe, loc) => tpe match {
-      case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int32 => visitor.visitVarInsn(ILOAD, offset)
+    case Expression.Var(ident, offset, tpe, _) => tpe match {
+      case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 =>
+        visitor.visitVarInsn(ILOAD, offset)
       case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
-      case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) =>
-        visitor.visitVarInsn(ALOAD, offset)
+      case Type.Float32 => visitor.visitVarInsn(FLOAD, offset)
+      case Type.Float64 => visitor.visitVarInsn(DLOAD, offset)
+      case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) => visitor.visitVarInsn(ALOAD, offset)
       case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Can't have a value of type $tpe.")
-      case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
-           Type.Predicate(_) | Type.Native | Type.Char | Type.Abs(_, _) | Type.Any => ???
+      case _ => ???
     }
 
     case Expression.Ref(name, tpe, loc) => ???
     case Expression.Lambda(annotations, args, body, tpe, loc) => ???
+    case Expression.Hook(hook, tpe, loc) => ???
 
     case Expression.Apply(name, args, _, _) =>
       args.foreach(compileExpression(context, visitor))
@@ -162,13 +178,15 @@ object Codegen {
     case Expression.Let(ident, offset, exp1, exp2, _, _) =>
       compileExpression(context, visitor)(exp1)
       exp1.tpe match {
-        case Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int32 => visitor.visitVarInsn(ISTORE, offset)
+        case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 =>
+          visitor.visitVarInsn(ISTORE, offset)
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
+        case Type.Float32 => visitor.visitVarInsn(FSTORE, offset)
+        case Type.Float64 => visitor.visitVarInsn(DSTORE, offset)
         case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) =>
           visitor.visitVarInsn(ASTORE, offset)
         case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Can't have a value of type ${exp1.tpe}.")
-        case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
-             Type.Predicate(_) | Type.Native | Type.Char | Type.Abs(_, _) | Type.Any => ???
+        case _ => ???
       }
       compileExpression(context, visitor)(exp2)
 
@@ -243,10 +261,38 @@ object Codegen {
       visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/Value$Tuple", "<init>",
         "([Ljava/lang/Object;)V", false)
 
+    case Expression.CheckNil(exp, loc) => ???
+    case Expression.CheckCons(exp, loc) => ???
+
     case Expression.Set(elms, tpe, loc) => ???
 
-    case Expression.UserError(_, loc) => compileThrow(context, visitor)(s"Runtime error at ${loc.format}")
-    case Expression.MatchError(_, loc) => compileThrow(context, visitor)(s"Match error at ${loc.format}")
+    case Expression.UserError(_, loc) =>
+      visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/api/UserException")
+      visitor.visitInsn(DUP)
+      visitor.visitLdcInsn(s"User exception: ${loc.format}.")
+      // TODO: Load actual source location or change UserException
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "MODULE$", "Lca/uwaterloo/flix/language/ast/package$SourceLocation$;")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "Unknown", "()Lca/uwaterloo/flix/language/ast/package$SourceLocation;", false)
+      visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/api/UserException", "<init>", "(Ljava/lang/String;Lca/uwaterloo/flix/language/ast/package$SourceLocation;)V", false)
+      visitor.visitInsn(ATHROW)
+    case Expression.MatchError(_, loc) =>
+      visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/api/MatchException")
+      visitor.visitInsn(DUP)
+      visitor.visitLdcInsn(s"Non-exhaustive match expression: ${loc.format}.")
+      // TODO: Load actual source location or change MatchException
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "MODULE$", "Lca/uwaterloo/flix/language/ast/package$SourceLocation$;")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "Unknown", "()Lca/uwaterloo/flix/language/ast/package$SourceLocation;", false)
+      visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/api/MatchException", "<init>", "(Ljava/lang/String;Lca/uwaterloo/flix/language/ast/package$SourceLocation;)V", false)
+      visitor.visitInsn(ATHROW)
+    case Expression.SwitchError(_, loc) =>
+      visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/api/SwitchException")
+      visitor.visitInsn(DUP)
+      visitor.visitLdcInsn(s"Non-exhaustive switch expression: ${loc.format}.")
+      // TODO: Load actual source location or change SwitchException
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "MODULE$", "Lca/uwaterloo/flix/language/ast/package$SourceLocation$;")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "Unknown", "()Lca/uwaterloo/flix/language/ast/package$SourceLocation;", false)
+      visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/api/SwitchException", "<init>", "(Ljava/lang/String;Lca/uwaterloo/flix/language/ast/package$SourceLocation;)V", false)
+      visitor.visitInsn(ATHROW)
   }
 
   /*
@@ -269,6 +315,24 @@ object Codegen {
           visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkBool",
             "(Z)Ljava/lang/Object;", false)
       }
+    case Type.Char =>
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$",
+        "Lca/uwaterloo/flix/runtime/Value$;")
+      compileExpression(context, visitor)(exp)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkChar",
+        "(I)Ljava/lang/Object;", false)
+    case Type.Float32 =>
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$",
+        "Lca/uwaterloo/flix/runtime/Value$;")
+      compileExpression(context, visitor)(exp)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkFloat",
+        "(F)Ljava/lang/Object;", false)
+    case Type.Float64 =>
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$",
+        "Lca/uwaterloo/flix/runtime/Value$;")
+      compileExpression(context, visitor)(exp)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkFloat64",
+        "(D)Ljava/lang/Object;", false)
     case Type.Int8 =>
       visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$",
         "Lca/uwaterloo/flix/runtime/Value$;")
@@ -281,7 +345,7 @@ object Codegen {
       compileExpression(context, visitor)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkInt16",
         "(I)Ljava/lang/Object;", false)
-    case Type.Int32 | Type.Int32 =>
+    case Type.Int32 =>
       visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$",
         "Lca/uwaterloo/flix/runtime/Value$;")
       compileExpression(context, visitor)(exp)
@@ -302,8 +366,7 @@ object Codegen {
     case Type.Unit | Type.Enum(_, _) | Type.Tuple(_) =>
       compileExpression(context, visitor)(exp)
     case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Can't have a value of type ${exp.tpe}.")
-    case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
-         Type.Predicate(_) | Type.Native | Type.Char | Type.Abs(_, _) | Type.Any => ???
+    case _ => ???
   }
 
   /*
@@ -315,13 +378,22 @@ object Codegen {
     case Type.Bool =>
       visitor.visitTypeInsn(CHECKCAST, "java/lang/Boolean")
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false)
+    case Type.Char =>
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Character")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false)
+    case Type.Float32 =>
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Float")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Float", "floatValue", "()F", false)
+    case Type.Float64 =>
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Double")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Double", "doubleValue", "()D", false)
     case Type.Int8 =>
       visitor.visitTypeInsn(CHECKCAST, "java/lang/Byte")
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Byte", "byteValue", "()B", false)
     case Type.Int16 =>
       visitor.visitTypeInsn(CHECKCAST, "java/lang/Short")
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Short", "shortValue", "()S", false)
-    case Type.Int32 | Type.Int32 =>
+    case Type.Int32 =>
       visitor.visitTypeInsn(CHECKCAST, "java/lang/Integer")
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false)
     case Type.Int64 =>
@@ -331,8 +403,7 @@ object Codegen {
     case Type.Enum(_, _) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tag")
     case Type.Tuple(_) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tuple")
     case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Can't have a value of type $tpe.")
-    case Type.Var(_) | Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
-         Type.Predicate(_) | Type.Native | Type.Char | Type.Abs(_, _) | Type.Any => ???
+    case _ => ???
   }
 
   /*
@@ -476,18 +547,17 @@ object Codegen {
    * cast to an Int8 (byte).
    */
   private def compileUnaryMinusExpr(context: Context, visitor: MethodVisitor)(tpe: Type): Unit = tpe match {
+    case Type.Float32 => visitor.visitInsn(FNEG)
+    case Type.Float64 => visitor.visitInsn(DNEG)
     case Type.Int8 =>
       visitor.visitInsn(INEG)
       visitor.visitInsn(I2B)
     case Type.Int16 =>
       visitor.visitInsn(INEG)
       visitor.visitInsn(I2S)
-    case Type.Int32 | Type.Int32 => visitor.visitInsn(INEG)
+    case Type.Int32 => visitor.visitInsn(INEG)
     case Type.Int64 => visitor.visitInsn(LNEG)
-    case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |
-         Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
-         Type.Predicate(_) | Type.Native | Type.Char | Type.Abs(_, _) | Type.Any =>
-      throw new InternalCompilerError(s"Can't apply UnaryOperator.Minus to type $tpe.")
+    case _ => throw new InternalCompilerError(s"Can't apply UnaryOperator.Minus to type $tpe.")
   }
 
   /*
@@ -508,15 +578,12 @@ object Codegen {
   private def compileUnaryNegateExpr(context: Context, visitor: MethodVisitor)(tpe: Type): Unit = {
     visitor.visitInsn(ICONST_M1)
     tpe match {
-      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int32 =>
+      case Type.Int8 | Type.Int16 | Type.Int32 =>
         visitor.visitInsn(IXOR)
       case Type.Int64 =>
         visitor.visitInsn(I2L)
         visitor.visitInsn(LXOR)
-      case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |
-           Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
-           Type.Predicate(_) | Type.Native | Type.Char | Type.Abs(_, _) | Type.Any =>
-        throw new InternalCompilerError(s"Can't apply UnaryOperator.Negate to type $tpe.")
+      case _ => throw new InternalCompilerError(s"Can't apply UnaryOperator.Negate to type $tpe.")
     }
   }
 
@@ -539,60 +606,125 @@ object Codegen {
    *     00000000 00000000 00000000 10000000 =  128
    * We want the value to be an Int8 (byte), so we use I2B to truncate and sign extend:
    *     11111111 11111111 11111111 10000000 = -128
+   *
+   * Exponentiation takes a separate codepath. Values must be cast to doubles (F2D, I2D, L2D; note that bytes and shorts
+   * are represented as ints and so we use I2D), then we invoke the static method `math.pow`, and then we have to cast
+   * back to the original type (D2F, D2I, D2L; note that bytes and shorts need to be cast again with I2B and I2S).
    */
   private def compileArithmeticExpr(context: Context, visitor: MethodVisitor)
                                    (o: ArithmeticOperator, e1: Expression, e2: Expression): Unit = {
-    compileExpression(context, visitor)(e1)
-    compileExpression(context, visitor)(e2)
-    val (intOp, longOp) = o match {
-      case BinaryOperator.Plus => (IADD, LADD)
-      case BinaryOperator.Minus => (ISUB, LSUB)
-      case BinaryOperator.Times => (IMUL, LMUL)
-      case BinaryOperator.Divide => (IDIV, LDIV)
-      case BinaryOperator.Modulo => (IREM, LREM)
-    }
-    e1.tpe match {
-      case Type.Int8 =>
-        visitor.visitInsn(intOp)
-        visitor.visitInsn(I2B)
-      case Type.Int16 =>
-        visitor.visitInsn(intOp)
-        visitor.visitInsn(I2S)
-      case Type.Int32 | Type.Int32 => visitor.visitInsn(intOp)
-      case Type.Int64 => visitor.visitInsn(longOp)
-      case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |
-           Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
-           Type.Predicate(_) | Type.Native | Type.Char | Type.Abs(_, _) | Type.Any =>
-        throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
+    if (o == BinaryOperator.Exponentiate) {
+      val (castToDouble, castFromDouble) = e1.tpe match {
+        case Type.Float32 => (F2D, D2F)
+        case Type.Float64 => (NOP, NOP) // already a double
+        case Type.Int8 | Type.Int16 | Type.Int32 => (I2D, D2I)
+        case Type.Int64 => (L2D, D2L)
+        case _ => throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
+      }
+      visitor.visitFieldInsn(GETSTATIC, "scala/math/package$", "MODULE$", "Lscala/math/package$;")
+      compileExpression(context, visitor)(e1)
+      visitor.visitInsn(castToDouble)
+      compileExpression(context, visitor)(e2)
+      visitor.visitInsn(castToDouble)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "scala/math/package$", "pow", "(DD)D", false)
+      visitor.visitInsn(castFromDouble)
+      (e1.tpe: @unchecked) match {
+        case Type.Int8 => visitor.visitInsn(I2B)
+        case Type.Int16 => visitor.visitInsn(I2S)
+      }
+    } else {
+      compileExpression(context, visitor)(e1)
+      compileExpression(context, visitor)(e2)
+      val (intOp, longOp, floatOp, doubleOp) = o match {
+        case BinaryOperator.Plus => (IADD, LADD, FADD, DADD)
+        case BinaryOperator.Minus => (ISUB, LSUB, FSUB, DSUB)
+        case BinaryOperator.Times => (IMUL, LMUL, FMUL, DMUL)
+        case BinaryOperator.Divide => (IDIV, LDIV, FDIV, DDIV)
+        case BinaryOperator.Modulo => (IREM, LREM, FREM, DREM)
+        case BinaryOperator.Exponentiate =>
+          throw new InternalCompilerError("BinaryOperator.Exponentiate already handled.")
+      }
+      e1.tpe match {
+        case Type.Float32 => visitor.visitInsn(floatOp)
+        case Type.Float64 => visitor.visitInsn(doubleOp)
+        case Type.Int8 =>
+          visitor.visitInsn(intOp)
+          visitor.visitInsn(I2B)
+        case Type.Int16 =>
+          visitor.visitInsn(intOp)
+          visitor.visitInsn(I2S)
+        case Type.Int32 => visitor.visitInsn(intOp)
+        case Type.Int64 => visitor.visitInsn(longOp)
+        case _ => throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
+      }
     }
   }
 
+  /*
+   * Ints and Floats support all six comparison operations (LE, LT, GE, GT, EQ, NE), but Bools and Chars only support
+   * EQ and NE. Note that the generated code uses the negated condition, i.e. branch if the (source) condition is false.
+   *
+   * Int8/16/32 comparisons only need a single instruction (IF_ICMPyy, where yy is one of {LE, LT, GE, GT, EQ, NE}),
+   * which jumps if the yy condition is true, i.e. the (source) condition is false. All other types do a comparison
+   * first (LCMP, {F,D}CMP{G,L}), and then a branch (IFyy).
+   *
+   * Specifically, LCMP can be represented in pseudocode as:
+   *
+   *     if (v1 > v2)        1
+   *     else if (v1 == v2)  0
+   *     else if (v1 < v2)  -1
+   *
+   * Then the result is used in the IFyy comparison to determine which branch to take. So the pair of instructions
+   * for comparing longs (LCMP, IFyy) is similar to the single instruction for comparing ints (IF_ICMPyy).
+   *
+   * Float32/64 is similar, using xCMPz instead of LCMP, where x is one of {F,D} and z is one of {G,L}. z is necessary
+   * to handle the fact that a float can be NaN (which is unordered), and any comparison involving NaN must fail.
+   * xCMPG and xCMPL are the same, except for how they handle NaN. If either operand is NaN, xCMPG will push 1 onto the
+   * stack, while xCMPL will push -1. In pseudocode:
+   *
+   *     if (v1 > v2)        1
+   *     else if (v1 == v2)  0
+   *     else if (v1 < v2)  -1
+   *     else if (v1 is NaN || v2 is NaN)
+   *       if (xCMPG)       1
+   *       else if (xCMPL) -1
+   *
+   * For more information, see the following:
+   * http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-3.html#jvms-3.5
+   * http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.if_icmp_cond
+   * http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.lcmp
+   * http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.fcmp_op
+   * http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.if_cond
+   */
   private def compileComparisonExpr(context: Context, visitor: MethodVisitor)
                                    (o: ComparisonOperator, e1: Expression, e2: Expression): Unit = {
     compileExpression(context, visitor)(e1)
     compileExpression(context, visitor)(e2)
     val condElse = new Label()
     val condEnd = new Label()
-    val (intOp, longOp) = o match {
-      case BinaryOperator.Less => (IF_ICMPGE, IFGE)
-      case BinaryOperator.LessEqual => (IF_ICMPGT, IFGT)
-      case BinaryOperator.Greater => (IF_ICMPLE, IFLE)
-      case BinaryOperator.GreaterEqual => (IF_ICMPLT, IFLT)
-      case BinaryOperator.Equal => (IF_ICMPNE, IFNE)
-      case BinaryOperator.NotEqual => (IF_ICMPEQ, IFEQ)
+    val (intOp, floatOp, doubleOp, cmp) = o match {
+      case BinaryOperator.Less => (IF_ICMPGE, FCMPG, DCMPG, IFGE)
+      case BinaryOperator.LessEqual => (IF_ICMPGT, FCMPG, DCMPG, IFGT)
+      case BinaryOperator.Greater => (IF_ICMPLE, FCMPL, DCMPL, IFLE)
+      case BinaryOperator.GreaterEqual => (IF_ICMPLT, FCMPL, DCMPL, IFLT)
+      case BinaryOperator.Equal => (IF_ICMPNE, FCMPG, DCMPG, IFNE)
+      case BinaryOperator.NotEqual => (IF_ICMPEQ, FCMPG, DCMPG, IFEQ)
     }
     e1.tpe match {
-      case Type.Bool if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
-        // Booleans can be compared for equality.
+      case Type.Bool | Type.Char if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
+        // Bools and Chars can be compared for equality.
         visitor.visitJumpInsn(intOp, condElse)
-      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int32 => visitor.visitJumpInsn(intOp, condElse)
+      case Type.Float32 =>
+        visitor.visitInsn(floatOp)
+        visitor.visitJumpInsn(cmp, condElse)
+      case Type.Float64 =>
+        visitor.visitInsn(doubleOp)
+        visitor.visitJumpInsn(cmp, condElse)
+      case Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitJumpInsn(intOp, condElse)
       case Type.Int64 =>
         visitor.visitInsn(LCMP)
-        visitor.visitJumpInsn(longOp, condElse)
-      case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |
-           Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
-           Type.Predicate(_) | Type.Native | Type.Char | Type.Abs(_, _) | Type.Any =>
-        throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
+        visitor.visitJumpInsn(cmp, condElse)
+      case _=> throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
     }
     visitor.visitInsn(ICONST_1)
     visitor.visitJumpInsn(GOTO, condEnd)
@@ -703,22 +835,10 @@ object Codegen {
       case Type.Int16 =>
         visitor.visitInsn(intOp)
         if (intOp == ISHL) visitor.visitInsn(I2S)
-      case Type.Int32 | Type.Int32 => visitor.visitInsn(intOp)
+      case Type.Int32 => visitor.visitInsn(intOp)
       case Type.Int64 => visitor.visitInsn(longOp)
-      case Type.Var(_) | Type.Unit | Type.Bool | Type.Str | Type.Tag(_, _, _) | Type.Enum(_, _) | Type.Tuple(_) |
-           Type.Opt(_) | Type.Lst(_) | Type.Set(_) | Type.Map(_, _) | Type.Lambda(_, _) |
-           Type.Predicate(_) | Type.Native | Type.Char | Type.Abs(_, _) | Type.Any =>
-        throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
+      case _ => throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
     }
-  }
-
-  // TODO: A better exception to throw?
-  private def compileThrow(context: Context, visitor: MethodVisitor)(message: String): Unit = {
-    visitor.visitTypeInsn(NEW, "java/lang/RuntimeException")
-    visitor.visitInsn(DUP)
-    visitor.visitLdcInsn(message)
-    visitor.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V", false)
-    visitor.visitInsn(ATHROW)
   }
 
 }

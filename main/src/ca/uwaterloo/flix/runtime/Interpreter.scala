@@ -1,11 +1,10 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.{IValue, WrappedValue}
+import ca.uwaterloo.flix.api.{IValue, MatchException, SwitchException, UserException, WrappedValue}
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
-import scala.annotation.tailrec
 import scala.collection.mutable
 
 object Interpreter {
@@ -17,6 +16,9 @@ object Interpreter {
     case Expression.Unit => Value.Unit
     case Expression.True => Value.True
     case Expression.False => Value.False
+    case Expression.Char(lit) => Value.mkChar(lit)
+    case Expression.Float32(lit) => Value.mkFloat32(lit)
+    case Expression.Float64(lit) => Value.mkFloat64(lit)
     case Expression.Int8(lit) => Value.mkInt8(lit)
     case Expression.Int16(lit) => Value.mkInt16(lit)
     case Expression.Int32(lit) => Value.mkInt32(lit)
@@ -84,9 +86,9 @@ object Interpreter {
     case Expression.CheckNil(exp, _) => ???
     case Expression.CheckCons(exp, _) => ???
     case Expression.Set(elms, _, _) => Value.mkSet(elms.map(e => eval(e, root, env)).toSet)
-    case Expression.Error(tpe, loc) => throw new RuntimeException(s"Runtime error at ${loc.format}.")
-    case Expression.MatchError(tpe, loc) => throw new RuntimeException(s"Match error at ${loc.format}.")
-    case Expression.SwitchError(tpe, loc) => throw new RuntimeException(s"Switch error at ${loc.format}.")
+    case Expression.Error(_, loc) => throw UserException("User exception.", loc)
+    case Expression.MatchError(_, loc) => throw MatchException("Non-exhaustive match expression.", loc)
+    case Expression.SwitchError(_, loc) => throw SwitchException("Non-exhaustive switch expression.", loc)
   }
 
   private def evalUnary(op: UnaryOperator, e: Expression, root: Root, env: mutable.Map[String, AnyRef]): AnyRef = {
@@ -95,6 +97,8 @@ object Interpreter {
       case UnaryOperator.LogicalNot => Value.mkBool(!Value.cast2bool(v))
       case UnaryOperator.Plus => v // nop
       case UnaryOperator.Minus => e.tpe match {
+        case Type.Float32 => Value.mkFloat32(-Value.cast2float32(v))
+        case Type.Float64 => Value.mkFloat64(-Value.cast2float64(v))
         case Type.Int8 => Value.mkInt8(-Value.cast2int8(v))
         case Type.Int16 => Value.mkInt16(-Value.cast2int16(v))
         case Type.Int32 => Value.mkInt32(-Value.cast2int32(v))
@@ -116,6 +120,8 @@ object Interpreter {
     val v2 = eval(e2, root, env)
     o match {
       case BinaryOperator.Plus => e1.tpe match {
+        case Type.Float32 => Value.mkFloat32(Value.cast2float32(v1) + Value.cast2float32(v2))
+        case Type.Float64 => Value.mkFloat64(Value.cast2float64(v1) + Value.cast2float64(v2))
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) + Value.cast2int8(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) + Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) + Value.cast2int32(v2))
@@ -123,6 +129,8 @@ object Interpreter {
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.Minus => e1.tpe match {
+        case Type.Float32 => Value.mkFloat32(Value.cast2float32(v1) - Value.cast2float32(v2))
+        case Type.Float64 => Value.mkFloat64(Value.cast2float64(v1) - Value.cast2float64(v2))
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) - Value.cast2int8(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) - Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) - Value.cast2int32(v2))
@@ -130,6 +138,8 @@ object Interpreter {
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.Times => e1.tpe match {
+        case Type.Float32 => Value.mkFloat32(Value.cast2float32(v1) * Value.cast2float32(v2))
+        case Type.Float64 => Value.mkFloat64(Value.cast2float64(v1) * Value.cast2float64(v2))
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) * Value.cast2int8(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) * Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) * Value.cast2int32(v2))
@@ -137,6 +147,8 @@ object Interpreter {
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.Divide => e1.tpe match {
+        case Type.Float32 => Value.mkFloat32(Value.cast2float32(v1) / Value.cast2float32(v2))
+        case Type.Float64 => Value.mkFloat64(Value.cast2float64(v1) / Value.cast2float64(v2))
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) / Value.cast2int8(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) / Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) / Value.cast2int32(v2))
@@ -144,6 +156,8 @@ object Interpreter {
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.Modulo => e1.tpe match {
+        case Type.Float32 => Value.mkFloat32(Value.cast2float32(v1) % Value.cast2float32(v2))
+        case Type.Float64 => Value.mkFloat64(Value.cast2float64(v1) % Value.cast2float64(v2))
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) % Value.cast2int8(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) % Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) % Value.cast2int32(v2))
@@ -151,10 +165,12 @@ object Interpreter {
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.Exponentiate => e1.tpe match {
-        case Type.Int8 => Value.mkInt8(Math.pow(Value.cast2int8(v1), Value.cast2int8(v2)).asInstanceOf[Byte])
-        case Type.Int16 => Value.mkInt16(Math.pow(Value.cast2int16(v1), Value.cast2int16(v2)).asInstanceOf[Short])
-        case Type.Int32 => Value.mkInt32(Math.pow(Value.cast2int32(v1), Value.cast2int32(v2)).asInstanceOf[Int])
-        case Type.Int64 => Value.mkInt64(Math.pow(Value.cast2int64(v1), Value.cast2int64(v2)).asInstanceOf[Long])
+        case Type.Float32 => Value.mkFloat32(math.pow(Value.cast2float32(v1), Value.cast2float32(v2)).toFloat)
+        case Type.Float64 => Value.mkFloat64(math.pow(Value.cast2float64(v1), Value.cast2float64(v2)).toDouble)
+        case Type.Int8 => Value.mkInt8(math.pow(Value.cast2int8(v1), Value.cast2int8(v2)).toByte)
+        case Type.Int16 => Value.mkInt16(math.pow(Value.cast2int16(v1), Value.cast2int16(v2)).toShort)
+        case Type.Int32 => Value.mkInt32(math.pow(Value.cast2int32(v1), Value.cast2int32(v2)).toInt)
+        case Type.Int64 => Value.mkInt64(math.pow(Value.cast2int64(v1), Value.cast2int64(v2)).toLong)
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
     }
@@ -165,6 +181,9 @@ object Interpreter {
     val v2 = eval(e2, root, env)
     o match {
       case BinaryOperator.Less => e1.tpe match {
+        case Type.Char => Value.mkBool(Value.cast2char(v1) < Value.cast2char(v2))
+        case Type.Float32 => Value.mkBool(Value.cast2float32(v1) < Value.cast2float32(v2))
+        case Type.Float64 => Value.mkBool(Value.cast2float64(v1) < Value.cast2float64(v2))
         case Type.Int8 => Value.mkBool(Value.cast2int8(v1) < Value.cast2int8(v2))
         case Type.Int16 => Value.mkBool(Value.cast2int16(v1) < Value.cast2int16(v2))
         case Type.Int32 => Value.mkBool(Value.cast2int32(v1) < Value.cast2int32(v2))
@@ -172,6 +191,9 @@ object Interpreter {
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.LessEqual => e1.tpe match {
+        case Type.Char => Value.mkBool(Value.cast2char(v1) <= Value.cast2char(v2))
+        case Type.Float32 => Value.mkBool(Value.cast2float32(v1) <= Value.cast2float32(v2))
+        case Type.Float64 => Value.mkBool(Value.cast2float64(v1) <= Value.cast2float64(v2))
         case Type.Int8 => Value.mkBool(Value.cast2int8(v1) <= Value.cast2int8(v2))
         case Type.Int16 => Value.mkBool(Value.cast2int16(v1) <= Value.cast2int16(v2))
         case Type.Int32 => Value.mkBool(Value.cast2int32(v1) <= Value.cast2int32(v2))
@@ -179,6 +201,9 @@ object Interpreter {
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.Greater => e1.tpe match {
+        case Type.Char => Value.mkBool(Value.cast2char(v1) > Value.cast2char(v2))
+        case Type.Float32 => Value.mkBool(Value.cast2float32(v1) > Value.cast2float32(v2))
+        case Type.Float64 => Value.mkBool(Value.cast2float64(v1) > Value.cast2float64(v2))
         case Type.Int8 => Value.mkBool(Value.cast2int8(v1) > Value.cast2int8(v2))
         case Type.Int16 => Value.mkBool(Value.cast2int16(v1) > Value.cast2int16(v2))
         case Type.Int32 => Value.mkBool(Value.cast2int32(v1) > Value.cast2int32(v2))
@@ -186,6 +211,9 @@ object Interpreter {
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.GreaterEqual => e1.tpe match {
+        case Type.Char => Value.mkBool(Value.cast2char(v1) >= Value.cast2char(v2))
+        case Type.Float32 => Value.mkBool(Value.cast2float32(v1) >= Value.cast2float32(v2))
+        case Type.Float64 => Value.mkBool(Value.cast2float64(v1) >= Value.cast2float64(v2))
         case Type.Int8 => Value.mkBool(Value.cast2int8(v1) >= Value.cast2int8(v2))
         case Type.Int16 => Value.mkBool(Value.cast2int16(v1) >= Value.cast2int16(v2))
         case Type.Int32 => Value.mkBool(Value.cast2int32(v1) >= Value.cast2int32(v2))

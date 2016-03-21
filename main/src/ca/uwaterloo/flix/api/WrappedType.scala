@@ -13,6 +13,12 @@ final class WrappedType(val tpe: Type) extends IType {
   def isChar: Boolean =
     tpe == Type.Char
 
+  def isFloat32: Boolean =
+    tpe == Type.Float32
+
+  def isFloat64: Boolean =
+    tpe == Type.Float64
+
   def isInt8: Boolean =
     tpe == Type.Int8
 

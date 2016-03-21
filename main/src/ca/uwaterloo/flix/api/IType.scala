@@ -25,6 +25,16 @@ trait IType {
   def isChar: Boolean
 
   /**
+    * Returns `true` if `this` type is the float32 type.
+    */
+  def isFloat32: Boolean
+
+  /**
+    * Returns `true` if `this` type is the float64 type.
+    */
+  def isFloat64: Boolean
+
+  /**
     * Returns `true` if `this` type is the int8 type.
     */
   def isInt8: Boolean

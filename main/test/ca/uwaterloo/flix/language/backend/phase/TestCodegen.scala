@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.backend.phase
 import java.lang.reflect.InvocationTargetException
 import java.nio.file.{Files, Paths}
 
+import ca.uwaterloo.flix.api.{MatchException, SwitchException, UserException}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Definition
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Definition.Function
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
@@ -713,6 +714,102 @@ class TestCodegen extends FunSuite {
     assertResult(123456789123456789L)(result)
   }
 
+  test("Codegen - Const13") {
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+
+    val def01 = Function(name01, args = List(),
+      body = Char('a'),
+      Type.Lambda(List(), Type.Char), loc)
+    val def02 = Function(name02, args = List(),
+      body = Char('\u0000'),
+      Type.Lambda(List(), Type.Char), loc)
+    val def03 = Function(name03, args = List(),
+      body = Char('\uffff'),
+      Type.Lambda(List(), Type.Char), loc)
+    val def04 = Function(name04, args = List(),
+      body = Char('十'),
+      Type.Lambda(List(), Type.Char), loc)
+
+    val code = new CompiledCode(List(def01, def02, def03, def04))
+
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+
+    assertResult('a')(result01)
+    assertResult('\u0000')(result02)
+    assertResult('\uffff')(result03)
+    assertResult('十')(result04)
+  }
+
+  test("Codegen - Const14") {
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+
+    val def01 = Function(name01, args = List(),
+      body = Float32(0.0f),
+      Type.Lambda(List(), Type.Float32), loc)
+    val def02 = Function(name02, args = List(),
+      body = Float32(-4.2f),
+      Type.Lambda(List(), Type.Float32), loc)
+    val def03 = Function(name03, args = List(),
+      body = Float32(999999999999999999999999999999.0f),
+      Type.Lambda(List(), Type.Float32), loc)
+    val def04 = Function(name04, args = List(),
+      body = Float32(-0.0000000000000000000000000000001f),
+      Type.Lambda(List(), Type.Float32), loc)
+
+    val code = new CompiledCode(List(def01, def02, def03, def04))
+
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+
+    assertResult(0.0f)(result01)
+    assertResult(-4.2f)(result02)
+    assertResult(999999999999999999999999999999.0f)(result03)
+    assertResult(-0.0000000000000000000000000000001f)(result04)
+  }
+
+  test("Codegen - Const15") {
+    val name01 = Symbol.Resolved.mk(List("foo", "bar", "f01"))
+    val name02 = Symbol.Resolved.mk(List("foo", "bar", "f02"))
+    val name03 = Symbol.Resolved.mk(List("foo", "bar", "f03"))
+    val name04 = Symbol.Resolved.mk(List("foo", "bar", "f04"))
+
+    val def01 = Function(name01, args = List(),
+      body = Float64(0.0d),
+      Type.Lambda(List(), Type.Float64), loc)
+    val def02 = Function(name02, args = List(),
+      body = Float64(-4.2d),
+      Type.Lambda(List(), Type.Float64), loc)
+    val def03 = Function(name03, args = List(),
+      body = Float64(99999999999999999999999999999999999999999999999999999999999999999999999999999999.0d),
+      Type.Lambda(List(), Type.Float64), loc)
+    val def04 = Function(name04, args = List(),
+      body = Float64(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001d),
+      Type.Lambda(List(), Type.Float64), loc)
+
+    val code = new CompiledCode(List(def01, def02, def03, def04))
+
+    val result01 = code.call(name01)
+    val result02 = code.call(name02)
+    val result03 = code.call(name03)
+    val result04 = code.call(name04)
+
+    assertResult(0.0d)(result01)
+    assertResult(-4.2d)(result02)
+    assertResult(99999999999999999999999999999999999999999999999999999999999999999999999999999999.0d)(result03)
+    assertResult(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001d)(result04)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Strings                                                                 //
   /////////////////////////////////////////////////////////////////////////////
@@ -1332,7 +1429,7 @@ class TestCodegen extends FunSuite {
     assertResult(false)(result)
   }
 
-  // TODO: UnaryOperator.Plus tests applied to Int8, Int16, Int32, and Int64
+  // TODO: UnaryOperator.Plus tests for Int8, Int16, Int32, Int64, Float32, Float64.
 
   test("Codegen - Unary.Plus01") {
     val definition = Function(name, args = List(),
@@ -1395,7 +1492,6 @@ class TestCodegen extends FunSuite {
     assertResult(42)(result04)
     assertResult(scala.Byte.MinValue)(result05)
   }
-
 
   test("Codegen - Unary.Minus02") {
     // Unary minus operator applied to Int16
@@ -1516,6 +1612,8 @@ class TestCodegen extends FunSuite {
     assertResult(10000000000L)(result04)
     assertResult(scala.Long.MinValue)(result05)
   }
+
+  // TODO: UnaryOperator.Minus tests for Float32, Float64.
 
   test("Codegen - Unary.Negate01") {
     // Unary negation operator applied to Int8
@@ -1733,6 +1831,9 @@ class TestCodegen extends FunSuite {
   // an Int8 or an Int16 (short). This can hide potential bugs -- we return  //
   // an Int32 so we can inspect the higher-order bits.                       //
   /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: BinaryOperator arithmetic tests for Float32, Float64.
+  // TODO: BinaryOperator.Exponentiate tests for Int8, Int16, Int32, Int64, Float32, Float64.
 
   test("Codegen - Binary.Plus01") {
     // Binary plus operator applied to Int8
@@ -2837,6 +2938,8 @@ class TestCodegen extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Binary operators -- comparison                                          //
   /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: BinaryOperator comparison tests for Float32, Float64.
 
   test("Codegen - Binary.Less01") {
     // < operator applied to Int8
@@ -4457,7 +4560,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    intercept[RuntimeException] { code.call(name) }
+    intercept[UserException] { code.call(name) }
   }
 
   test("Codegen - Binary.Or01") {
@@ -4539,7 +4642,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    intercept[RuntimeException] { code.call(name) }
+    intercept[UserException] { code.call(name) }
   }
 
   test("Codegen - Binary.Implication01") {
@@ -4621,7 +4724,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Bool), loc)
 
     val code = new CompiledCode(List(definition))
-    intercept[RuntimeException] { code.call(name) }
+    intercept[UserException] { code.call(name) }
   }
 
   test("Codegen - Binary.Biconditional01") {
@@ -6135,11 +6238,10 @@ class TestCodegen extends FunSuite {
     assertResult(Value.Unit)(result)
   }
 
-  // TODO
-  ignore("Codegen - GetTagValue03") {
+  test("Codegen - GetTagValue03") {
     val tagName = Symbol.Resolved.mk("abc")
     val ident = toIdent("def")
-    val enum = Type.Enum(Symbol.Resolved.mk("abc"), Map("abc.bar" -> Type.Tag(tagName, ident, Type.Tuple(List(Type.Int32, Type.Str)))))
+    val enum = Type.Enum(Symbol.Resolved.mk("abc"), Map("def" -> Type.Tag(tagName, ident, Type.Tuple(List(Type.Int32, Type.Str)))))
 
     val definition = Function(name, args = List(),
       body = Let(toIdent("x"), 0,
@@ -6317,7 +6419,7 @@ class TestCodegen extends FunSuite {
       body = Let(toIdent("x"), 0,
         exp1 = Tuple(List(Tag(constPropName, identV, Int32(111), enumTpe, loc), Tag(constPropName, identB, Unit, enumTpe, loc)),
           Type.Tuple(List(enumTpe, enumTpe)), loc),
-        exp2 = GetTupleIndex(Var(toIdent("x"), 0, enumTpe, loc), 1, enumTpe, loc),
+        exp2 = GetTupleIndex(Var(toIdent("x"), 0, Type.Tuple(List(enumTpe, enumTpe)), loc), 1, enumTpe, loc),
         enumTpe, loc),
       Type.Lambda(List(), enumTpe), loc)
 
@@ -6349,7 +6451,7 @@ class TestCodegen extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Error and MatchError                                                    //
+  // Error, MatchError, and SwitchError                                      //
   /////////////////////////////////////////////////////////////////////////////
 
   test("Codegen - Error01") {
@@ -6358,7 +6460,7 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int8), loc)
 
     val code = new CompiledCode(List(definition))
-    intercept[RuntimeException] { code.call(name) }
+    intercept[UserException] { code.call(name) }
   }
 
   test("Codegen - MatchError01") {
@@ -6367,7 +6469,16 @@ class TestCodegen extends FunSuite {
       Type.Lambda(List(), Type.Int8), loc)
 
     val code = new CompiledCode(List(definition))
-    intercept[RuntimeException] { code.call(name) }
+    intercept[MatchException] { code.call(name) }
+  }
+
+  test("Codegen - SwitchError01") {
+    val definition = Function(name, args = List(),
+      body = SwitchError(Type.Int8, loc),
+      Type.Lambda(List(), Type.Int8), loc)
+
+    val code = new CompiledCode(List(definition))
+    intercept[SwitchException] { code.call(name) }
   }
 
 }
