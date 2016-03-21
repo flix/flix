@@ -2053,7 +2053,7 @@ class TestInterpreter extends FunSuite {
 
   /////////////////////////////////////////////////////////////////////////////
   // Expression.Binary (Arithmetic)                                          //
-  // BinaryOperator.{Plus,Minus,Times,Divide,Modulo}                         //
+  // BinaryOperator.{Plus,Minus,Times,Divide,Modulo,Exponentiate}            //
   /////////////////////////////////////////////////////////////////////////////
 
   test("Expression.Binary - BinaryOperator.Plus.01") {
@@ -2894,6 +2894,150 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkFloat64(-88.53722751835619d))(result03)
     assertResult(Value.mkFloat64(9.87654321E-41d))(result04)
     assertResult(Value.mkFloat64(-9.87654321E-41d))(result05)
+  }
+
+  test("Expression.Binary - BinaryOperator.Exponentiate.01") {
+    val input =
+      s"""fn f01: Int = 2 ** 0
+         |fn f02: Int = -2 ** 1
+         |fn f03: Int = 2 ** 2
+         |fn f04: Int = -2 ** 31
+       """.stripMargin
+    val model = getModel(input)
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    assertResult(Value.mkInt32(1))(result01)
+    assertResult(Value.mkInt32(-2))(result02)
+    assertResult(Value.mkInt32(4))(result03)
+    assertResult(Value.mkInt32(-2147483648))(result04)
+  }
+
+  test("Expression.Binary - BinaryOperator.Exponentiate.02") {
+    val input =
+      s"""fn f01: Int8 = 2i8 ** 0i8
+         |fn f02: Int8 = -2i8 ** 1i8
+         |fn f03: Int8 = 2i8 ** 2i8
+         |fn f04: Int8 = -2i8 ** 7i8
+       """.stripMargin
+    val model = getModel(input)
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    assertResult(Value.mkInt8(1))(result01)
+    assertResult(Value.mkInt8(-2))(result02)
+    assertResult(Value.mkInt8(4))(result03)
+    assertResult(Value.mkInt8(-128))(result04)
+  }
+
+  test("Expression.Binary - BinaryOperator.Exponentiate.03") {
+    val input =
+      s"""fn f01: Int16 = 2i16 ** 0i16
+         |fn f02: Int16 = -2i16 ** 1i16
+         |fn f03: Int16 = 2i16 ** 2i16
+         |fn f04: Int16 = -2i16 ** 15i16
+       """.stripMargin
+    val model = getModel(input)
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    assertResult(Value.mkInt16(1))(result01)
+    assertResult(Value.mkInt16(-2))(result02)
+    assertResult(Value.mkInt16(4))(result03)
+    assertResult(Value.mkInt16(-32768))(result04)
+  }
+
+  test("Expression.Binary - BinaryOperator.Exponentiate.04") {
+    val input =
+      s"""fn f01: Int32 = 2i32 ** 0i32
+         |fn f02: Int32 = -2i32 ** 1i32
+         |fn f03: Int32 = 2i32 ** 2i32
+         |fn f04: Int32 = -2i32 ** 31i32
+       """.stripMargin
+    val model = getModel(input)
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    assertResult(Value.mkInt32(1))(result01)
+    assertResult(Value.mkInt32(-2))(result02)
+    assertResult(Value.mkInt32(4))(result03)
+    assertResult(Value.mkInt32(-2147483648))(result04)
+  }
+
+  test("Expression.Binary - BinaryOperator.Exponentiate.05") {
+    val input =
+      s"""fn f01: Int64 = 2i64 ** 0i64
+         |fn f02: Int64 = -2i64 ** 1i64
+         |fn f03: Int64 = 2i64 ** 2i64
+         |fn f04: Int64 = -2i64 ** 63i64
+       """.stripMargin
+    val model = getModel(input)
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    assertResult(Value.mkInt64(1L))(result01)
+    assertResult(Value.mkInt64(-2L))(result02)
+    assertResult(Value.mkInt64(4L))(result03)
+    assertResult(Value.mkInt64(-9223372036854775808L))(result04)
+  }
+
+  test("Expression.Binary - BinaryOperator.Exponentiate.06") {
+    val input =
+      s"""fn f01: Float = 2.0 ** 0.0
+         |fn f02: Float = -2.0 ** -1.0
+         |fn f03: Float = 0.01 ** 0.5
+         |fn f04: Float = -2.0 ** 100.0
+       """.stripMargin
+    val model = getModel(input)
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    assertResult(Value.mkFloat64(1.0d))(result01)
+    assertResult(Value.mkFloat64(-0.5d))(result02)
+    assertResult(Value.mkFloat64(0.1d))(result03)
+    assertResult(Value.mkFloat64(1.2676506002282294E30d))(result04)
+  }
+
+  test("Expression.Binary - BinaryOperator.Exponentiate.07") {
+    val input =
+      s"""fn f01: Float32 = 2.0f32 ** 0.0f32
+         |fn f02: Float32 = -2.0f32 ** -1.0f32
+         |fn f03: Float32 = 0.01f32 ** 0.5f32
+         |fn f04: Float32 = -2.0f32 ** 100.0f32
+       """.stripMargin
+    val model = getModel(input)
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    assertResult(Value.mkFloat32(1.0f))(result01)
+    assertResult(Value.mkFloat32(-0.5f))(result02)
+    assertResult(Value.mkFloat32(0.1f))(result03)
+    assertResult(Value.mkFloat32(1.2676506E30f))(result04)
+  }
+
+  test("Expression.Binary - BinaryOperator.Exponentiate.08") {
+    val input =
+      s"""fn f01: Float64 = 2.0f64 ** 0.0f64
+         |fn f02: Float64 = -2.0f64 ** -1.0f64
+         |fn f03: Float64 = 0.01f64 ** 0.5f64
+         |fn f04: Float64 = -2.0f64 ** 100.0f64
+       """.stripMargin
+    val model = getModel(input)
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    assertResult(Value.mkFloat64(1.0d))(result01)
+    assertResult(Value.mkFloat64(-0.5d))(result02)
+    assertResult(Value.mkFloat64(0.1d))(result03)
+    assertResult(Value.mkFloat64(1.2676506002282294E30d))(result04)
   }
 
   /////////////////////////////////////////////////////////////////////////////

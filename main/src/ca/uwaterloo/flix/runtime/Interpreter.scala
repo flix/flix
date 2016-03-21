@@ -165,10 +165,12 @@ object Interpreter {
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.Exponentiate => e1.tpe match {
-        case Type.Int8 => Value.mkInt8(Math.pow(Value.cast2int8(v1), Value.cast2int8(v2)).asInstanceOf[Byte])
-        case Type.Int16 => Value.mkInt16(Math.pow(Value.cast2int16(v1), Value.cast2int16(v2)).asInstanceOf[Short])
-        case Type.Int32 => Value.mkInt32(Math.pow(Value.cast2int32(v1), Value.cast2int32(v2)).asInstanceOf[Int])
-        case Type.Int64 => Value.mkInt64(Math.pow(Value.cast2int64(v1), Value.cast2int64(v2)).asInstanceOf[Long])
+        case Type.Float32 => Value.mkFloat32(math.pow(Value.cast2float32(v1), Value.cast2float32(v2)).toFloat)
+        case Type.Float64 => Value.mkFloat64(math.pow(Value.cast2float64(v1), Value.cast2float64(v2)).toDouble)
+        case Type.Int8 => Value.mkInt8(math.pow(Value.cast2int8(v1), Value.cast2int8(v2)).toByte)
+        case Type.Int16 => Value.mkInt16(math.pow(Value.cast2int16(v1), Value.cast2int16(v2)).toShort)
+        case Type.Int32 => Value.mkInt32(math.pow(Value.cast2int32(v1), Value.cast2int32(v2)).toInt)
+        case Type.Int64 => Value.mkInt64(math.pow(Value.cast2int64(v1), Value.cast2int64(v2)).toLong)
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
     }
