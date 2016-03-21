@@ -17,7 +17,7 @@ object LambdaLift {
   }
 
 
-  def lift(defn: SimplifiedAst.Definition.Constant)(implicit genSym: GenSym): Map[Symbol.Resolved, SimplifiedAst.Definition.Constant] = {
+  def lift(decl: SimplifiedAst.Definition.Constant)(implicit genSym: GenSym): Map[Symbol.Resolved, SimplifiedAst.Definition.Constant] = {
 
     // Map to hold all newly generated definitions.
     val m = mutable.Map.empty[Symbol.Resolved, SimplifiedAst.Definition.Constant]
@@ -43,7 +43,8 @@ object LambdaLift {
       case SimplifiedAst.Expression.Ref(name, tpe, loc) => e
       case SimplifiedAst.Expression.Lambda(ann, args, body, tpe, loc) =>
         val exp = visit(body)
-        val name = genSym.freshDefinition()
+        val ns = decl.name.parts
+        val name = genSym.freshDefn(ns)
         val defn = SimplifiedAst.Definition.Constant(name, exp, tpe, loc)
         m += (name -> defn)
         SimplifiedAst.Expression.Ref(name, tpe, loc)
@@ -110,16 +111,26 @@ object LambdaLift {
       case SimplifiedAst.Expression.UserError(tpe, loc) => e
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => e
+
+      case SimplifiedAst.Expression.MkClosure(exp, envVar, freeVars, tpe, loc) =>
+        val e = visit(exp)
+        SimplifiedAst.Expression.MkClosure(e, envVar, freeVars, tpe, loc)
+
+      case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) => e
+
+      case SimplifiedAst.Expression.ApplyClosure(exp, args, tpe, loc) =>
+        val e = visit(exp)
+        SimplifiedAst.Expression.ApplyClosure(e, args, tpe, loc)
     }
 
     // Closure convert the expression.
-    val e = ClosureConversion.Expressions.convert(defn.exp)
+    val e = ClosureConversion.Expressions.convert(decl.exp)
 
     // Perform lambda lifting. Returns the expression of the top-level function.
     val lam = visit(e)
 
     // Add the top-level function to the map of generated functions.
-    m += (defn.name -> SimplifiedAst.Definition.Constant(defn.name, lam, defn.tpe, defn.loc))
+    m += (decl.name -> SimplifiedAst.Definition.Constant(decl.name, lam, decl.tpe, decl.loc))
 
     // Return the generated definitions.
     m.toMap

@@ -10,6 +10,24 @@ object ClosureConversion {
       * Performs closure conversion on the given expression `e`.
       */
     def convert(e: SimplifiedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Expression = e match {
+      case SimplifiedAst.Expression.Unit => e
+      case SimplifiedAst.Expression.True => e
+      case SimplifiedAst.Expression.False => e
+      case SimplifiedAst.Expression.Int8(lit) => e
+      case SimplifiedAst.Expression.Int16(lit) => e
+      case SimplifiedAst.Expression.Int32(lit) => e
+      case SimplifiedAst.Expression.Int64(lit) => e
+      case SimplifiedAst.Expression.Str(lit) => e
+      case SimplifiedAst.Expression.LoadBool(n, o) => e
+      case SimplifiedAst.Expression.LoadInt8(b, o) => e
+      case SimplifiedAst.Expression.LoadInt16(b, o) => e
+      case SimplifiedAst.Expression.LoadInt32(b, o) => e
+      case SimplifiedAst.Expression.StoreBool(b, o, v) => e
+      case SimplifiedAst.Expression.StoreInt8(b, o, v) => e
+      case SimplifiedAst.Expression.StoreInt16(b, o, v) => e
+      case SimplifiedAst.Expression.StoreInt32(b, o, v) => e
+      case SimplifiedAst.Expression.Var(ident, o, tpe, loc) => e
+
       case SimplifiedAst.Expression.Apply3(lambda, args, tpe, loc) =>
         // Replace Apply by ApplyClosure.
         SimplifiedAst.Expression.ApplyClosure(lambda, args, tpe, loc)
@@ -33,6 +51,8 @@ object ClosureConversion {
 
         // Return the closure which consists of the (substituted) lambda expression and environment variable.
         SimplifiedAst.Expression.MkClosure(exp, envVar, freeVars, tpe, loc)
+
+
     }
 
     /**
@@ -139,6 +159,10 @@ object ClosureConversion {
       case SimplifiedAst.Expression.UserError(tpe, loc) => e
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => e
+
+      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) => ??? // TODO
+      case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) => ??? // TODO
+      case SimplifiedAst.Expression.ApplyClosure(clo, args, tpe, loc) => ??? // TODO
     }
 
     /**
@@ -192,6 +216,10 @@ object ClosureConversion {
       case SimplifiedAst.Expression.UserError(tpe, loc) => Set.empty
       case SimplifiedAst.Expression.MatchError(tpe, loc) => Set.empty
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => Set.empty
+
+      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) => ??? // TODO
+      case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) => ??? // TODO
+      case SimplifiedAst.Expression.ApplyClosure(clo, args, tpe, loc) => ??? // TODO
     }
 
   }

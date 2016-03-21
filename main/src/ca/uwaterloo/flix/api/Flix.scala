@@ -5,7 +5,7 @@ import java.nio.file.{Files, Path, Paths}
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.language.ast.Type.Lambda
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.phase.{CreateExecutableAst, GenSym, Simplifier, Verifier}
+import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.runtime.{Model, Solver, Value}
 import ca.uwaterloo.flix.util.{Options, Validation, Verify}
 
@@ -166,6 +166,7 @@ class Flix {
     compile() map {
       case ast =>
         val sast = Simplifier.simplify(ast)
+        val lifted = LambdaLift.lift(sast)
         val east = CreateExecutableAst.toExecutable(sast)
         if (options.verify == Verify.Enabled) {
           for (r <- Verifier.checkAll(sast)) {
