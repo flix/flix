@@ -1,8 +1,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.{Name, SimplifiedAst, Type}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
-object ClosureConversion {
+object ClosureConv {
 
   object Expressions {
 
@@ -27,6 +28,9 @@ object ClosureConversion {
       case SimplifiedAst.Expression.StoreInt16(b, o, v) => e
       case SimplifiedAst.Expression.StoreInt32(b, o, v) => e
       case SimplifiedAst.Expression.Var(ident, o, tpe, loc) => e
+      case SimplifiedAst.Expression.Ref(name, tpe, loc) => e
+
+      case SimplifiedAst.Expression.Apply(name, args, tpe, loc) => ??? // TODO: deprecated
 
       case SimplifiedAst.Expression.Apply3(lambda, args, tpe, loc) =>
         // Replace Apply by ApplyClosure.
@@ -52,6 +56,70 @@ object ClosureConversion {
         // Return the closure which consists of the (substituted) lambda expression and environment variable.
         SimplifiedAst.Expression.MkClosure(exp, envVar, freeVars, tpe, loc)
 
+      case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
+
+      case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) =>
+        val e1 = convert(exp)
+        SimplifiedAst.Expression.Unary(op, e1, tpe, loc)
+
+      case SimplifiedAst.Expression.Binary(op, exp1, exp2, tpe, loc) =>
+        val e1 = convert(exp1)
+        val e2 = convert(exp2)
+        SimplifiedAst.Expression.Binary(op, e1, e2, tpe, loc)
+
+      case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+        val e1 = convert(exp1)
+        val e2 = convert(exp2)
+        val e3 = convert(exp3)
+        SimplifiedAst.Expression.IfThenElse(e1, e2, e3, tpe, loc)
+
+      case SimplifiedAst.Expression.Let(ident, offset, exp1, exp2, tpe, loc) =>
+        val e1 = convert(exp1)
+        val e2 = convert(exp2)
+        SimplifiedAst.Expression.Let(ident, offset, e1, e2, tpe, loc)
+
+      case SimplifiedAst.Expression.CheckTag(tag, exp, loc) =>
+        val e = convert(exp)
+        SimplifiedAst.Expression.CheckTag(tag, e, loc)
+
+      case SimplifiedAst.Expression.GetTagValue(tag, exp, tpe, loc) =>
+        val e = convert(exp)
+        SimplifiedAst.Expression.GetTagValue(tag, e, tpe, loc)
+
+      case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) =>
+        val e = convert(exp)
+        SimplifiedAst.Expression.Tag(enum, tag, e, tpe, loc)
+
+      case SimplifiedAst.Expression.GetTupleIndex(exp, offset, tpe, loc) =>
+        val e = convert(exp)
+        SimplifiedAst.Expression.GetTupleIndex(e, offset, tpe, loc)
+
+      case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
+        val es = elms map convert
+        SimplifiedAst.Expression.Tuple(es, tpe, loc)
+
+      case SimplifiedAst.Expression.CheckNil(exp, loc) =>
+        val e = convert(exp)
+        SimplifiedAst.Expression.CheckNil(e, loc)
+
+      case SimplifiedAst.Expression.CheckCons(exp, loc) =>
+        val e = convert(exp)
+        SimplifiedAst.Expression.CheckCons(e, loc)
+
+      case SimplifiedAst.Expression.FSet(elms, tpe, loc) =>
+        val es = elms map convert
+        SimplifiedAst.Expression.FSet(es, tpe, loc)
+
+      case SimplifiedAst.Expression.UserError(tpe, loc) => e
+      case SimplifiedAst.Expression.MatchError(tpe, loc) => e
+      case SimplifiedAst.Expression.SwitchError(tpe, loc) => e
+
+      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
+        throw new InternalCompilerException(s"Illegal expression during closure conversion: '$e'.")
+      case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) =>
+        throw new InternalCompilerException(s"Illegal expression during closure conversion: '$e'.")
+      case SimplifiedAst.Expression.ApplyClosure(clo, args, tpe, loc) =>
+        throw new InternalCompilerException(s"Illegal expression during closure conversion: '$e'.")
 
     }
 
@@ -99,6 +167,7 @@ object ClosureConversion {
         val e = substitute(m, lambda)
         val es = args.map(e => substitute(m, e))
         SimplifiedAst.Expression.Apply3(e, es, tpe, loc)
+
       case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) =>
         val e1 = substitute(m, exp)
         SimplifiedAst.Expression.Unary(op, e1, tpe, loc)
@@ -107,6 +176,7 @@ object ClosureConversion {
         val e1 = substitute(m, exp1)
         val e2 = substitute(m, exp1)
         SimplifiedAst.Expression.Binary(op, e1, e2, tpe, loc)
+
       case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         val e1 = substitute(m, exp1)
         val e2 = substitute(m, exp1)

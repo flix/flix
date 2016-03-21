@@ -124,7 +124,7 @@ object LambdaLift {
     }
 
     // Closure convert the expression.
-    val e = ClosureConversion.Expressions.convert(decl.exp)
+    val e = ClosureConv.Expressions.convert(decl.exp)
 
     // Perform lambda lifting. Returns the expression of the top-level function.
     val lam = visit(e)

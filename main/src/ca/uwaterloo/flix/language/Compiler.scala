@@ -38,15 +38,6 @@ object Compiler {
   }
 
   /**
-    * An exception thrown to indicate an internal compiler error.
-    *
-    * This exception should never be thrown if the compiler is implemented correctly.
-    *
-    * @param message the error message.
-    */
-  case class InternalCompilerError(message: String) extends RuntimeException(message)
-
-  /**
     * The console context used to format error messages.
     */
   implicit val ConsoleCtx = new AnsiConsole()
