@@ -3,12 +3,15 @@ package ca.uwaterloo.flix.language
 import ca.uwaterloo.flix.language.ast.{SourcePosition, SimplifiedAst, Name}
 
 import scala.util.Random
+import ca.uwaterloo.flix.language.ast.Symbol
 
 package object phase {
 
   // TODO: Cleanup
 
   class GenSym() {
+    def freshDefinition(): Symbol.Resolved = ???
+
     private var number: Int = 0
 
     // TODO: Consider allowing a "seed" variable.

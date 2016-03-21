@@ -243,7 +243,7 @@ object Codegen {
       visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/Value$Tuple", "<init>",
         "([Ljava/lang/Object;)V", false)
 
-    case Expression.Set(elms, tpe, loc) => ???
+    case Expression.FSet(elms, tpe, loc) => ???
 
     case Expression.UserError(_, loc) => compileThrow(context, visitor)(s"Runtime error at ${loc.format}")
     case Expression.MatchError(_, loc) => compileThrow(context, visitor)(s"Match error at ${loc.format}")

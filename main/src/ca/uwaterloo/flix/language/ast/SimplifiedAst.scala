@@ -345,7 +345,7 @@ object SimplifiedAst {
                           exp3: SimplifiedAst.Expression,
                           tpe: Type,
                           loc: SourceLocation) extends SimplifiedAst.Expression {
-        // TODO: Built infrastructure for this.
+      // TODO: Built infrastructure for this.
       // type invariants.
       assert(exp1.tpe == Type.Bool, s"Expected Type.Bool but got '${exp1.tpe}'.")
       assert(exp2.tpe == exp3.tpe, s"Expected equal types, but got '${exp1.tpe}' and '${exp2.tpe}'.")
@@ -479,10 +479,16 @@ object SimplifiedAst {
       final val tpe: Type = Type.Bool
     }
 
-    case class Set(elms: List[SimplifiedAst.Expression],
-                   tpe: Type.Set,
-                   loc: SourceLocation) extends SimplifiedAst.Expression
+    case class FSet(elms: List[SimplifiedAst.Expression],
+                    tpe: Type.Set,
+                    loc: SourceLocation) extends SimplifiedAst.Expression
 
+
+    case class MkClosure(lambda: SimplifiedAst.Expression.Lambda, envVar: Name.Ident, freeVars: Set[Name.Ident], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class ClosureVar(env: Name.Ident, name: Name.Ident, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class ApplyClosure(clo: SimplifiedAst.Expression, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
       * A typed AST node representing an error.

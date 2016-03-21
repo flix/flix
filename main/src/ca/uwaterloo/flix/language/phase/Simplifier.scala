@@ -180,7 +180,7 @@ object Simplifier {
       case TypedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
       case TypedAst.Expression.Set(elms, tpe, loc) =>
-        SimplifiedAst.Expression.Set(elms map simplify, tpe, loc)
+        SimplifiedAst.Expression.FSet(elms map simplify, tpe, loc)
       case TypedAst.Expression.Error(tpe, loc) =>
         SimplifiedAst.Expression.UserError(tpe, loc)
     }

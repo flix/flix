@@ -686,7 +686,7 @@ object PartialEvaluator {
         */
       case SwitchError(tpe, loc) => k(SwitchError(tpe, loc))
 
-      case Set(elms, tpe, loc) => throw new InternalCompilerError("Not Yet Supported. Sorry.")
+      case FSet(elms, tpe, loc) => throw new InternalCompilerError("Not Yet Supported. Sorry.")
       case o: CheckNil => throw new InternalCompilerError("Not Yet Supported. Sorry.")
       case o: CheckCons => throw new InternalCompilerError("Not Yet Supported. Sorry.")
       case Apply(_, _, _, _) => throw new InternalCompilerError("Deprecated.")
@@ -847,7 +847,7 @@ object PartialEvaluator {
     case UserError(tpe, loc) => UserError(tpe, loc)
     case MatchError(tpe, loc) => MatchError(tpe, loc)
     case SwitchError(tpe, loc) => SwitchError(tpe, loc)
-    case Set(elms, tpe, loc) => throw new InternalCompilerError("Unsupported.")
+    case FSet(elms, tpe, loc) => throw new InternalCompilerError("Unsupported.")
     case CheckNil(e, loc) => throw new InternalCompilerError("Unsupported.")
     case CheckCons(e, loc) => throw new InternalCompilerError("Unsupported.")
     case Apply(name, args, tpe, loc) => throw new InternalCompilerError("Deprecated feature.")
@@ -941,7 +941,7 @@ object PartialEvaluator {
       case UserError(tpe, loc) => UserError(tpe, loc)
       case MatchError(tpe, loc) => MatchError(tpe, loc)
       case SwitchError(tpe, loc) => SwitchError(tpe, loc)
-      case Set(elms, tpe, loc) => throw new InternalCompilerError("Unsupported.")
+      case FSet(elms, tpe, loc) => throw new InternalCompilerError("Unsupported.")
       case CheckNil(e, loc) => throw new InternalCompilerError("Unsupported.")
       case CheckCons(e, loc) => throw new InternalCompilerError("Unsupported.")
       case Apply(name, args, tpe, loc) => throw new InternalCompilerError("Deprecated feature.")
