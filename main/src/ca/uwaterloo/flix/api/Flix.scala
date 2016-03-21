@@ -30,7 +30,7 @@ class Flix {
   /**
     * A map of hooks to JVM invokable methods.
     */
-  private val hooks = mutable.Map.empty[Name.Resolved, Ast.Hook]
+  private val hooks = mutable.Map.empty[Symbol.Resolved, Ast.Hook]
 
   /**
     * The current Flix options.
@@ -96,7 +96,7 @@ class Flix {
     if (!tpe.isFunction)
       throw new IllegalArgumentException("'tpe' must be a function type.")
 
-    val rname = Name.Resolved.mk(name)
+    val rname = Symbol.Resolved.mk(name)
     hooks.get(rname) match {
       case None =>
         val typ = tpe.asInstanceOf[WrappedType].tpe.asInstanceOf[Lambda]
@@ -124,7 +124,7 @@ class Flix {
     if (!tpe.isFunction)
       throw new IllegalArgumentException("'tpe' must be a function type.")
 
-    val rname = Name.Resolved.mk(name)
+    val rname = Symbol.Resolved.mk(name)
     hooks.get(rname) match {
       case None =>
         val typ = tpe.asInstanceOf[WrappedType].tpe.asInstanceOf[Lambda]
@@ -259,7 +259,7 @@ class Flix {
     if (tpe == null)
       throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
 
-    val enum = Name.Resolved.mk(enumName)
+    val enum = Symbol.Resolved.mk(enumName)
     val tag = Name.Ident(SourcePosition.Unknown, tagName, SourcePosition.Unknown)
     new WrappedType(new Type.Tag(enum, tag, tpe.asInstanceOf[WrappedType].tpe))
   }
@@ -280,7 +280,7 @@ class Flix {
         macc + (tagName -> tag)
     }
 
-    new WrappedType(new Type.Enum(Name.Resolved.mk(enumName), cases))
+    new WrappedType(new Type.Enum(Symbol.Resolved.mk(enumName), cases))
   }
 
   /**
@@ -449,7 +449,7 @@ class Flix {
     * Returns the tag with the given `enumName`, `tagName` and `tagValue`.
     */
   def mkTag(enumName: String, tagName: String, tagValue: IValue): IValue = {
-    val enum = Name.Resolved.mk(enumName)
+    val enum = Symbol.Resolved.mk(enumName)
     new WrappedValue(Value.mkTag(enum, tagName, tagValue.getUnsafeRef))
   }
 

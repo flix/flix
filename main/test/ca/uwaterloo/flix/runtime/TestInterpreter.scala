@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.{Ast, Name, Type}
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.{Debugger, Options, Verbosity, Verify}
 import org.scalatest.FunSuite
 
@@ -115,35 +116,35 @@ class TestInterpreter extends FunSuite {
   test("Expression.Unit") {
     val input = "fn f: () = ()"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.Unit)(result)
   }
 
   test("Expression.Bool.01") {
     val input = "fn f: Bool = true"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Bool.02") {
     val input = "fn f: Bool = false"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.False)(result)
   }
 
   test("Expression.Char.01") {
     val input = "fn f: Char = 'a'"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkChar('a'))(result)
   }
 
   test("Expression.Char.02") {
     val input = "fn f: Char = '0'"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkChar('0'))(result)
   }
 
@@ -151,7 +152,7 @@ class TestInterpreter extends FunSuite {
     // Minimum character value (NUL)
     val input = s"fn f: Char = '${'\u0000'}'"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkChar('\u0000'))(result)
   }
 
@@ -159,7 +160,7 @@ class TestInterpreter extends FunSuite {
     // Non-printable ASCII character DEL
     val input = s"fn f: Char = '${'\u007f'}'"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkChar('\u007f'))(result)
   }
 
@@ -167,7 +168,7 @@ class TestInterpreter extends FunSuite {
     // Maximum character value
     val input = s"fn f: Char = '${'\uffff'}'"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkChar('\uffff'))(result)
   }
 
@@ -175,7 +176,7 @@ class TestInterpreter extends FunSuite {
     // Chinese character for the number "ten"
     val input = s"fn f: Char = '${'十'}'"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkChar('十'))(result)
   }
 
@@ -183,322 +184,322 @@ class TestInterpreter extends FunSuite {
     // Zero-width space
     val input = s"fn f: Char = '${'\u200b'}'"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkChar('\u200b'))(result)
   }
 
   test("Expression.Float.01") {
     val input = "fn f: Float = 0.0"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat64(0.0))(result)
   }
 
   test("Expression.Float.02") {
     val input = "fn f: Float = -0.0"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat64(-0.0))(result)
   }
 
   test("Expression.Float.03") {
     val input = "fn f: Float = 4.2"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat64(4.2))(result)
   }
 
   test("Expression.Float.04") {
     val input = "fn f: Float = 99999999999999999999999999999999999999999999999999999999999999999999999999999999.0"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat64(99999999999999999999999999999999999999999999999999999999999999999999999999999999.0))(result)
   }
 
   test("Expression.Float.05") {
     val input = "fn f: Float = 0.000000000000000000000000000000000000000000000000000000000000000000000000000000001"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat64(0.000000000000000000000000000000000000000000000000000000000000000000000000000000001))(result)
   }
 
   test("Expression.Float.06") {
     val input = "fn f: Float = -99999999999999999999999999999999999999999999999999999999999999999999999999999999.0"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat64(-99999999999999999999999999999999999999999999999999999999999999999999999999999999.0))(result)
   }
 
   test("Expression.Float.07") {
     val input = "fn f: Float = -0.000000000000000000000000000000000000000000000000000000000000000000000000000000001"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat64(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001))(result)
   }
 
   test("Expression.Float32.01") {
     val input = "fn f: Float32 = 0.0f32"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat32(0.0f))(result)
   }
 
   test("Expression.Float32.02") {
     val input = "fn f: Float32 = -0.0f32"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat32(-0.0f))(result)
   }
 
   test("Expression.Float32.03") {
     val input = "fn f: Float32 = 4.2f32"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat32(4.2f))(result)
   }
 
   test("Expression.Float32.04") {
     val input = "fn f: Float32 = 999999999999999999999999999999.0f32"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat32(999999999999999999999999999999.0f))(result)
   }
 
   test("Expression.Float32.05") {
     val input = "fn f: Float32 = 0.0000000000000000000000000000001f32"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat32(0.0000000000000000000000000000001f))(result)
   }
 
   test("Expression.Float32.06") {
     val input = "fn f: Float32 = -999999999999999999999999999999.0f32"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat32(-999999999999999999999999999999.0f))(result)
   }
 
   test("Expression.Float32.07") {
     val input = "fn f: Float32 = -0.0000000000000000000000000000001f32"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat32(-0.0000000000000000000000000000001f))(result)
   }
 
   test("Expression.Float64.01") {
     val input = "fn f: Float64 = 0.0f64"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat64(0.0d))(result)
   }
 
   test("Expression.Float64.02") {
     val input = "fn f: Float64 = -0.0f64"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat64(-0.0d))(result)
   }
 
   test("Expression.Float64.03") {
     val input = "fn f: Float64 = 4.2f64"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat64(4.2d))(result)
   }
 
   test("Expression.Float64.04") {
     val input = "fn f: Float64 = 99999999999999999999999999999999999999999999999999999999999999999999999999999999.0f64"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat64(99999999999999999999999999999999999999999999999999999999999999999999999999999999.0d))(result)
   }
 
   test("Expression.Float64.05") {
     val input = "fn f: Float64 = 0.000000000000000000000000000000000000000000000000000000000000000000000000000000001f64"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat64(0.000000000000000000000000000000000000000000000000000000000000000000000000000000001d))(result)
   }
 
   test("Expression.Float64.06") {
     val input = "fn f: Float64 = -99999999999999999999999999999999999999999999999999999999999999999999999999999999.0f64"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat64(-99999999999999999999999999999999999999999999999999999999999999999999999999999999.0d))(result)
   }
 
   test("Expression.Float64.07") {
     val input = "fn f: Float64 = -0.000000000000000000000000000000000000000000000000000000000000000000000000000000001f64"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat64(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001d))(result)
   }
 
   test("Expression.Int.01") {
     val input = "fn f: Int = 0"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt32(0))(result)
   }
 
   test("Expression.Int.02") {
     val input = "fn f: Int = -254542"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt32(-254542))(result)
   }
 
   test("Expression.Int.03") {
     val input = "fn f: Int = 45649878"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt32(45649878))(result)
   }
 
   test("Expression.Int.04") {
     val input = s"fn f: Int = ${Int.MaxValue}"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt32(Int.MaxValue))(result)
   }
 
   test("Expression.Int.05") {
     val input = s"fn f: Int = ${Int.MinValue}"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt32(Int.MinValue))(result)
   }
 
   test("Expression.Int8.01") {
     val input = "fn f: Int8 = -105i8"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt8(-105))(result)
   }
 
   test("Expression.Int8.02") {
     val input = "fn f: Int8 = 121i8"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt8(121))(result)
   }
 
   test("Expression.Int8.03") {
     val input = s"fn f: Int8 = ${Byte.MaxValue}i8"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt8(Byte.MaxValue))(result)
   }
 
   test("Expression.Int8.04") {
     val input = s"fn f: Int8 = ${Byte.MinValue}i8"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt8(Byte.MinValue))(result)
   }
 
   test("Expression.Int16.01") {
     val input = "fn f: Int16 = -5320i16"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt16(-5320))(result)
   }
 
   test("Expression.Int16.02") {
     val input = "fn f: Int16 = 4568i16"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt16(4568))(result)
   }
 
   test("Expression.Int16.03") {
     val input = s"fn f: Int16 = ${Short.MaxValue}i16"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt16(Short.MaxValue))(result)
   }
 
   test("Expression.Int16.04") {
     val input = s"fn f: Int16 = ${Short.MinValue}i16"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt16(Short.MinValue))(result)
   }
 
   test("Expression.Int32.01") {
     val input = "fn f: Int32 = -254542i32"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt32(-254542))(result)
   }
 
   test("Expression.Int32.02") {
     val input = "fn f: Int32 = 45649878i32"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt32(45649878))(result)
   }
 
   test("Expression.Int32.03") {
     val input = s"fn f: Int32 = ${Int.MaxValue}i32"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt32(Int.MaxValue))(result)
   }
 
   test("Expression.Int32.04") {
     val input = s"fn f: Int32 = ${Int.MinValue}i32"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt32(Int.MinValue))(result)
   }
 
   test("Expression.Int64.01") {
     val input = "fn f: Int64 = -254454121542i64"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt64(-254454121542L))(result)
   }
 
   test("Expression.Int64.02") {
     val input = "fn f: Int64 = 45641198784545i64"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt64(45641198784545L))(result)
   }
 
   test("Expression.Int64.03") {
     val input = s"fn f: Int64 = ${Long.MaxValue}i64"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt64(Long.MaxValue))(result)
   }
 
   test("Expression.Int64.04") {
     val input = s"fn f: Int64 = ${Long.MinValue}i64"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt64(Long.MinValue))(result)
   }
 
   test("Expression.Str.01") {
     val input = """fn f: Str = """""
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkStr(""))(result)
   }
 
   test("Expression.Str.02") {
     val input = """fn f: Str = "Hello World!""""
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkStr("Hello World!"))(result)
   }
 
   test("Expression.Str.03") {
     val input = """fn f: Str = "asdf""""
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkStr("asdf"))(result)
   }
 
@@ -520,13 +521,13 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Ref.01") {
     val input =
-      """namespace Foo::Bar {
+      """namespace Foo.Bar {
         |  fn x: Bool = false
         |  fn f: Str = "foo"
         |}
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("Foo::Bar::f"))
+    val result = model.constants(Symbol.Resolved.mk("Foo.Bar/f"))
     assertResult(Value.mkStr("foo"))(result)
   }
 
@@ -538,7 +539,7 @@ class TestInterpreter extends FunSuite {
         |}
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("Foo::f"))
+    val result = model.constants(Symbol.Resolved.mk("Foo/f"))
     assertResult(Value.mkInt32(5))(result)
   }
 
@@ -551,7 +552,7 @@ class TestInterpreter extends FunSuite {
         |}
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("Foo::f"))
+    val result = model.constants(Symbol.Resolved.mk("Foo/f"))
     assertResult(Value.False)(result)
   }
 
@@ -561,11 +562,11 @@ class TestInterpreter extends FunSuite {
         |  fn x: Str = "hello"
         |}
         |namespace Bar {
-        |  fn x: Str = Foo::x()
+        |  fn x: Str = Foo/x()
         |}
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("Bar::x"))
+    val result = model.constants(Symbol.Resolved.mk("Bar/x"))
     assertResult(Value.mkStr("hello"))(result)
   }
 
@@ -575,21 +576,25 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Lambda.01") {
     val input =
-      """namespace A::B { fn f: Bool = false }
-        |namespace A { fn g: Bool = A::B::f() }
+      """namespace A.B {
+        |  fn f: Bool = false
+        |}
+        |namespace A {
+        |  fn g: Bool = A.B/f()
+        |}
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("A::g"))
+    val result = model.constants(Symbol.Resolved.mk("A/g"))
     assertResult(Value.False)(result)
   }
 
   test("Expression.Lambda.02") {
     val input =
       """namespace A { fn f(x: Int): Int = 24 }
-        |fn g: Int = A::f(3)
+        |fn g: Int = A/f(3)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkInt32(24))(result)
   }
 
@@ -599,7 +604,7 @@ class TestInterpreter extends FunSuite {
         |namespace A { fn g: Int = f(3) }
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("A::g"))
+    val result = model.constants(Symbol.Resolved.mk("A/g"))
     assertResult(Value.mkInt32(3))(result)
   }
 
@@ -609,18 +614,18 @@ class TestInterpreter extends FunSuite {
         |fn g: Int64 = f(3i64, 42i64)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkInt32(120))(result)
   }
 
   test("Expression.Lambda.05") {
     val input =
-      """namespace A { fn f(x: Int32): Int32 = let y = B::g(x + 1i32) in y * y }
+      """namespace A { fn f(x: Int32): Int32 = let y = B/g(x + 1i32) in y * y }
         |namespace B { fn g(x: Int32): Int32 = x - 4i32 }
-        |namespace C { fn h: Int32 = A::f(5i32) + B::g(0i32) }
+        |namespace C { fn h: Int32 = A/f(5i32) + B/g(0i32) }
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("C::h"))
+    val result = model.constants(Symbol.Resolved.mk("C/h"))
     assertResult(Value.mkInt32(0))(result)
   }
 
@@ -632,7 +637,7 @@ class TestInterpreter extends FunSuite {
         |fn x: Int16 = f(3i16)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("x"))
+    val result = model.constants(Symbol.Resolved.mk("x"))
     assertResult(Value.mkInt32(196))(result)
   }
 
@@ -644,7 +649,7 @@ class TestInterpreter extends FunSuite {
         |fn x: Int8 = let x = 7i8 in f(g(3i8), h(h(x)))
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("x"))
+    val result = model.constants(Symbol.Resolved.mk("x"))
     assertResult(Value.mkInt32(-42))(result)
   }
 
@@ -657,10 +662,10 @@ class TestInterpreter extends FunSuite {
         |fn g04: Bool = f(false, true)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
     assertResult(Value.True)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
@@ -676,10 +681,10 @@ class TestInterpreter extends FunSuite {
         |fn g04: Bool = f(false, true)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
     assertResult(Value.True)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.False)(result03)
@@ -692,7 +697,7 @@ class TestInterpreter extends FunSuite {
         |fn g: Int = f(2, 42, 5)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkInt32(49))(result)
   }
 
@@ -703,17 +708,7 @@ class TestInterpreter extends FunSuite {
         |fn h: Int = f(g, 5)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("h"))
-    assertResult(Value.mkInt32(6))(result)
-  }
-
-  test("Expression.Lambda.12") {
-    val input =
-      """fn f(x: (Int) -> Int, y: Int): Int = x(y)
-        |fn g: Int = f(fn (x: Int): Int = x + 1, 5)
-      """.stripMargin
-    val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("h"))
     assertResult(Value.mkInt32(6))(result)
   }
 
@@ -724,7 +719,7 @@ class TestInterpreter extends FunSuite {
         |fn h: Int = (f(g))(40)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("h"))
+    val result = model.constants(Symbol.Resolved.mk("h"))
     assertResult(Value.mkInt32(45))(result)
   }
 
@@ -735,8 +730,8 @@ class TestInterpreter extends FunSuite {
         |fn g: Val = f(111)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("g"))
-    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkInt32(111)))(result)
+    val result = model.constants(Symbol.Resolved.mk("g"))
+    assertResult(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkInt32(111)))(result)
   }
 
   test("Expression.Lambda.15") {
@@ -745,7 +740,7 @@ class TestInterpreter extends FunSuite {
         |fn g: (Int, Int, Str, Int, Bool, ()) = f(24, 53, "qwertyuiop", 9978, false, ())
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.Tuple(Array(Value.mkInt32(24), Value.mkInt32(53), Value.mkStr("qwertyuiop"), Value.mkInt32(9978), Value.False, Value.Unit)))(result)
   }
 
@@ -755,7 +750,7 @@ class TestInterpreter extends FunSuite {
         |fn g: Set[Int] = f(24, 53, 24)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkSet(Set(Value.mkInt32(24), Value.mkInt32(53), Value.mkInt32(24))))(result)
   }
 
@@ -765,7 +760,7 @@ class TestInterpreter extends FunSuite {
         |fn g: Bool = f('a', 'b')
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.False)(result)
   }
 
@@ -775,7 +770,7 @@ class TestInterpreter extends FunSuite {
         |fn g: Float32 = f(1.2f32, 2.1f32)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkFloat32(3.3f))(result)
   }
 
@@ -785,7 +780,7 @@ class TestInterpreter extends FunSuite {
         |fn g: Float64 = f(1.2f64, 2.1f64)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkFloat64(3.3d))(result)
   }
 
@@ -796,32 +791,32 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Hook - Hook.Safe.01") {
     import HookSafeHelpers._
-    val input = "namespace A { fn g: Bool = A::B::f() }"
+    val input = "namespace A { fn g: Bool = A.B/f() }"
     var executed = false
     val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(), flix.mkBoolType)
     def nativeF(): IValue = { executed = true; flix.mkFalse }
     val model = flix
       .addStr(input)
-      .addHook("A::B::f", tpe, nativeF _)
+      .addHook("A.B/f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("A::g"))
+    val result = model.constants(Symbol.Resolved.mk("A/g"))
     assertResult(Value.False)(result)
     assert(executed)
   }
 
   test("Expression.Hook - Hook.Safe.02") {
     import HookSafeHelpers._
-    val input = "fn g: Int = A::f(3)"
+    val input = "fn g: Int = A/f(3)"
     var executed = false
     val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
     def nativeF(x: IValue): IValue = { executed = true; flix.mkInt32(24) }
     val model = flix
       .addStr(input)
-      .addHook("A::f", tpe, nativeF _)
+      .addHook("A/f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkInt32(24))(result)
     assert(executed)
   }
@@ -835,9 +830,9 @@ class TestInterpreter extends FunSuite {
     def nativeF(x: IValue): IValue = { executed = true; x }
     val model = flix
       .addStr(input)
-      .addHook("A::f", tpe, nativeF _)
+      .addHook("A/f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("A::g"))
+    val result = model.constants(Symbol.Resolved.mk("A/g"))
     assertResult(Value.mkInt32(3))(result)
     assert(executed)
   }
@@ -853,14 +848,14 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkInt64(120))(result)
     assert(executed)
   }
 
   test("Expression.Hook - Hook.Safe.05") {
     import HookSafeHelpers._
-    val input = "namespace C { fn h: Int32 = A::f(5i32) + B::g(0i32) }"
+    val input = "namespace C { fn h: Int32 = A/f(5i32) + B/g(0i32) }"
     var executed = false
     val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
@@ -871,10 +866,10 @@ class TestInterpreter extends FunSuite {
     def nativeG(x: IValue): IValue = { executed = true; flix.mkInt32(x.getInt32 - 4) }
     val model = flix
       .addStr(input)
-      .addHook("A::f", tpe, nativeF _)
-      .addHook("B::g", tpe, nativeG _)
+      .addHook("A/f", tpe, nativeF _)
+      .addHook("B/g", tpe, nativeG _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("C::h"))
+    val result = model.constants(Symbol.Resolved.mk("C/h"))
     assertResult(Value.mkInt32(0))(result)
     assert(executed)
   }
@@ -894,7 +889,7 @@ class TestInterpreter extends FunSuite {
       .addHook("g", tpe, nativeG _)
       .addHook("h", tpe, nativeH _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("x"))
+    val result = model.constants(Symbol.Resolved.mk("x"))
     assertResult(Value.mkInt16(196))(result)
     assert(executed)
   }
@@ -915,7 +910,7 @@ class TestInterpreter extends FunSuite {
       .addHook("g", tpe1, nativeG _)
       .addHook("h", tpe1, nativeH _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("x"))
+    val result = model.constants(Symbol.Resolved.mk("x"))
     assertResult(Value.mkInt8(-42))(result)
     assert(executed)
   }
@@ -936,10 +931,10 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
     assertResult(Value.True)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
@@ -963,10 +958,10 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
     assertResult(Value.True)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.False)(result03)
@@ -988,7 +983,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkInt32(49))(result)
     assert(executed)
   }
@@ -1011,7 +1006,7 @@ class TestInterpreter extends FunSuite {
       .addHook("f", tpeF, nativeF _)
       .addHook("g", tpeG, nativeG _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("h"))
+    val result = model.constants(Symbol.Resolved.mk("h"))
     assertResult(Value.mkInt32(6))(result)
     assert(executed)
   }
@@ -1030,7 +1025,7 @@ class TestInterpreter extends FunSuite {
       .addHook("f", tpeF, nativeF _)
       .addHook("g", tpeG, nativeG _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("h"))
+    val result = model.constants(Symbol.Resolved.mk("h"))
     assertResult(Value.mkInt32(45))(result)
     assert(executed)
   }
@@ -1052,8 +1047,8 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("g"))
-    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkInt32(111)))(result)
+    val result = model.constants(Symbol.Resolved.mk("g"))
+    assertResult(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkInt32(111)))(result)
     assert(executed)
   }
 
@@ -1072,7 +1067,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
     .solve().get
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.Tuple(Array(Value.mkInt32(24), Value.mkInt32(53), Value.mkStr("qwertyuiop"), Value.mkInt32(9978), Value.False, Value.Unit)))(result)
     assert(executed)
   }
@@ -1088,7 +1083,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkSet(Set(Value.mkInt32(24), Value.mkInt32(53), Value.mkInt32(24))))(result)
     assert(executed)
   }
@@ -1111,7 +1106,7 @@ class TestInterpreter extends FunSuite {
       .addHook("f", tpeF, nativeF _)
       .addHook("g", tpeG, nativeG _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("h"))
+    val result = model.constants(Symbol.Resolved.mk("h"))
     assertResult(MyObject(1000))(result)
     assert(executed)
   }
@@ -1127,7 +1122,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.False)(result)
     assert(executed)
   }
@@ -1143,7 +1138,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkFloat32(3.3f))(result)
     assert(executed)
   }
@@ -1159,7 +1154,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkFloat64(3.3d))(result)
     assert(executed)
   }
@@ -1173,32 +1168,32 @@ class TestInterpreter extends FunSuite {
 
   test("Expression.Hook - Hook.Unsafe.01") {
     import HookUnsafeHelpers._
-    val input = "namespace A { fn g: Bool = A::B::f() }"
+    val input = "namespace A { fn g: Bool = A.B/f() }"
     var executed = false
     val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(), flix.mkBoolType)
     def nativeF(): JBool = { executed = true; false }
     val model = flix
       .addStr(input)
-      .addHookUnsafe("A::B::f", tpe, nativeF _)
+      .addHookUnsafe("A.B/f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("A::g"))
+    val result = model.constants(Symbol.Resolved.mk("A/g"))
     assertResult(Value.False)(result)
     assert(executed)
   }
 
   test("Expression.Hook - Hook.Unsafe.02") {
     import HookUnsafeHelpers._
-    val input = "fn g: Int = A::f(3)"
+    val input = "fn g: Int = A/f(3)"
     var executed = false
     val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
     def nativeF(x: JInt): JInt = { executed = true; 24 }
     val model = flix
       .addStr(input)
-      .addHookUnsafe("A::f", tpe, nativeF _)
+      .addHookUnsafe("A/f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkInt32(24))(result)
     assert(executed)
   }
@@ -1212,9 +1207,9 @@ class TestInterpreter extends FunSuite {
     def nativeF(x: JInt): JInt = { executed = true; x }
     val model = flix
       .addStr(input)
-      .addHookUnsafe("A::f", tpe, nativeF _)
+      .addHookUnsafe("A/f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("A::g"))
+    val result = model.constants(Symbol.Resolved.mk("A/g"))
     assertResult(Value.mkInt32(3))(result)
     assert(executed)
   }
@@ -1230,14 +1225,14 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkInt64(120))(result)
     assert(executed)
   }
 
   test("Expression.Hook - Hook.Unsafe.05") {
     import HookUnsafeHelpers._
-    val input = "namespace C { fn h: Int32 = A::f(5i32) + B::g(0i32) }"
+    val input = "namespace C { fn h: Int32 = A/f(5i32) + B/g(0i32) }"
     var executed = false
     val flix = createFlix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
@@ -1245,10 +1240,10 @@ class TestInterpreter extends FunSuite {
     def nativeG(x: JInt): JInt = { executed = true; x - 4 }
     val model = flix
       .addStr(input)
-      .addHookUnsafe("A::f", tpe, nativeF _)
-      .addHookUnsafe("B::g", tpe, nativeG _)
+      .addHookUnsafe("A/f", tpe, nativeF _)
+      .addHookUnsafe("B/g", tpe, nativeG _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("C::h"))
+    val result = model.constants(Symbol.Resolved.mk("C/h"))
     assertResult(Value.mkInt32(0))(result)
     assert(executed)
   }
@@ -1268,7 +1263,7 @@ class TestInterpreter extends FunSuite {
       .addHookUnsafe("g", tpe, nativeG _)
       .addHookUnsafe("h", tpe, nativeH _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("x"))
+    val result = model.constants(Symbol.Resolved.mk("x"))
     assertResult(Value.mkInt16(196))(result)
     assert(executed)
   }
@@ -1289,7 +1284,7 @@ class TestInterpreter extends FunSuite {
       .addHookUnsafe("g", tpe1, nativeG _)
       .addHookUnsafe("h", tpe1, nativeH _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("x"))
+    val result = model.constants(Symbol.Resolved.mk("x"))
     assertResult(Value.mkInt8(-42))(result)
     assert(executed)
   }
@@ -1310,10 +1305,10 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
     assertResult(Value.True)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
@@ -1337,10 +1332,10 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
     assertResult(Value.True)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.False)(result03)
@@ -1359,7 +1354,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkInt32(49))(result)
     assert(executed)
   }
@@ -1378,7 +1373,7 @@ class TestInterpreter extends FunSuite {
       .addHookUnsafe("f", tpeF, nativeF _)
       .addHookUnsafe("g", tpeG, nativeG _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("h"))
+    val result = model.constants(Symbol.Resolved.mk("h"))
     assertResult(Value.mkInt32(6))(result)
     assert(executed)
   }
@@ -1397,7 +1392,7 @@ class TestInterpreter extends FunSuite {
       .addHookUnsafe("f", tpeF, nativeF _)
       .addHookUnsafe("g", tpeG, nativeG _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("h"))
+    val result = model.constants(Symbol.Resolved.mk("h"))
     assertResult(Value.mkInt32(45))(result)
     assert(executed)
   }
@@ -1414,13 +1409,13 @@ class TestInterpreter extends FunSuite {
     val flix = createFlix()
     val tagTpe = flix.mkTagType("Val", "Val", flix.mkInt32Type)
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkEnumType("Val", Array(tagTpe)))
-    def nativeF(x: JInt): Value.Tag = { executed = true; Value.mkTag(Name.Resolved.mk("Val"), "Val", x) }
+    def nativeF(x: JInt): Value.Tag = { executed = true; Value.mkTag(Symbol.Resolved.mk("Val"), "Val", x) }
     val model = flix
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("g"))
-    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkInt32(111)))(result)
+    val result = model.constants(Symbol.Resolved.mk("g"))
+    assertResult(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkInt32(111)))(result)
     assert(executed)
   }
 
@@ -1439,7 +1434,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
     .solve().get
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.Tuple(Array(Value.mkInt32(24), Value.mkInt32(53), Value.mkStr("qwertyuiop"), Value.mkInt32(9978), Value.False, Value.Unit)))(result)
     assert(executed)
   }
@@ -1455,7 +1450,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkSet(Set(Value.mkInt32(24), Value.mkInt32(53), Value.mkInt32(24))))(result)
     assert(executed)
   }
@@ -1477,7 +1472,7 @@ class TestInterpreter extends FunSuite {
       .addHookUnsafe("f", tpeF, nativeF _)
       .addHookUnsafe("g", tpeG, nativeG _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("h"))
+    val result = model.constants(Symbol.Resolved.mk("h"))
     assertResult(MyObject(1000))(result)
     assert(executed)
   }
@@ -1493,7 +1488,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.False)(result)
     assert(executed)
   }
@@ -1509,7 +1504,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkFloat32(3.3f))(result)
     assert(executed)
   }
@@ -1525,7 +1520,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkFloat64(3.3d))(result)
     assert(executed)
   }
@@ -1538,14 +1533,14 @@ class TestInterpreter extends FunSuite {
   test("Expression.Unary - UnaryOperator.LogicalNot.01") {
     val input = "fn f: Bool = !true"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.False)(result)
   }
 
   test("Expression.Unary - UnaryOperator.LogicalNot.02") {
     val input = "fn f: Bool = !false"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
@@ -1558,11 +1553,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int = +${Int.MinValue}
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt32(0))(result01)
     assertResult(Value.mkInt32(36000))(result02)
     assertResult(Value.mkInt32(-36000))(result03)
@@ -1579,11 +1574,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int8 = +${Byte.MinValue}i8
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt8(0))(result01)
     assertResult(Value.mkInt8(36))(result02)
     assertResult(Value.mkInt8(-36))(result03)
@@ -1600,11 +1595,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int16 = +${Short.MinValue}i16
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt16(0))(result01)
     assertResult(Value.mkInt16(3600))(result02)
     assertResult(Value.mkInt16(-3600))(result03)
@@ -1621,11 +1616,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int32 = +${Int.MinValue}i32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt32(0))(result01)
     assertResult(Value.mkInt32(36000))(result02)
     assertResult(Value.mkInt32(-36000))(result03)
@@ -1642,11 +1637,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int64 = +${Long.MinValue}i64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt64(0))(result01)
     assertResult(Value.mkInt64(3600000000L))(result02)
     assertResult(Value.mkInt64(-3600000000L))(result03)
@@ -1665,13 +1660,13 @@ class TestInterpreter extends FunSuite {
          |fn f07: Float = +(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001)
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
-    val result07 = model.constants(Name.Resolved.mk("f07"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
+    val result07 = model.constants(Symbol.Resolved.mk("f07"))
     assertResult(Value.mkFloat64(0.0))(result01)
     assertResult(Value.mkFloat64(0.0))(result02)
     assertResult(Value.mkFloat64(4.2))(result03)
@@ -1692,13 +1687,13 @@ class TestInterpreter extends FunSuite {
          |fn f07: Float32 = +(-0.0000000000000000000000000000001f32)
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
-    val result07 = model.constants(Name.Resolved.mk("f07"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
+    val result07 = model.constants(Symbol.Resolved.mk("f07"))
     assertResult(Value.mkFloat32(0.0f))(result01)
     assertResult(Value.mkFloat32(-0.0f))(result02)
     assertResult(Value.mkFloat32(4.2f))(result03)
@@ -1719,13 +1714,13 @@ class TestInterpreter extends FunSuite {
          |fn f07: Float64 = +(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001f64)
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
-    val result07 = model.constants(Name.Resolved.mk("f07"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
+    val result07 = model.constants(Symbol.Resolved.mk("f07"))
     assertResult(Value.mkFloat64(0.0d))(result01)
     assertResult(Value.mkFloat64(-0.0d))(result02)
     assertResult(Value.mkFloat64(4.2d))(result03)
@@ -1744,11 +1739,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int = -${Int.MinValue}
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt32(0))(result01)
     assertResult(Value.mkInt32(-36000))(result02)
     assertResult(Value.mkInt32(36000))(result03)
@@ -1765,11 +1760,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int8 = -${Byte.MinValue}i8
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt8(0))(result01)
     assertResult(Value.mkInt8(-36))(result02)
     assertResult(Value.mkInt8(36))(result03)
@@ -1786,11 +1781,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int16 = -${Short.MinValue}i16
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt16(0))(result01)
     assertResult(Value.mkInt16(-3600))(result02)
     assertResult(Value.mkInt16(3600))(result03)
@@ -1807,11 +1802,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int32 = -${Int.MinValue}i32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt32(0))(result01)
     assertResult(Value.mkInt32(-36000))(result02)
     assertResult(Value.mkInt32(36000))(result03)
@@ -1828,11 +1823,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int64 = -${Long.MinValue}i64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt64(0))(result01)
     assertResult(Value.mkInt64(-3600000000L))(result02)
     assertResult(Value.mkInt64(3600000000L))(result03)
@@ -1851,13 +1846,13 @@ class TestInterpreter extends FunSuite {
          |fn f07: Float = -(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001)
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
-    val result07 = model.constants(Name.Resolved.mk("f07"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
+    val result07 = model.constants(Symbol.Resolved.mk("f07"))
     assertResult(Value.mkFloat64(-0.0))(result01)
     assertResult(Value.mkFloat64(0.0))(result02)
     assertResult(Value.mkFloat64(-4.2))(result03)
@@ -1878,13 +1873,13 @@ class TestInterpreter extends FunSuite {
          |fn f07: Float32 = -(-0.0000000000000000000000000000001f32)
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
-    val result07 = model.constants(Name.Resolved.mk("f07"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
+    val result07 = model.constants(Symbol.Resolved.mk("f07"))
     assertResult(Value.mkFloat32(-0.0f))(result01)
     assertResult(Value.mkFloat32(0.0f))(result02)
     assertResult(Value.mkFloat32(-4.2f))(result03)
@@ -1905,13 +1900,13 @@ class TestInterpreter extends FunSuite {
          |fn f07: Float64 = -(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001f64)
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
-    val result07 = model.constants(Name.Resolved.mk("f07"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
+    val result07 = model.constants(Symbol.Resolved.mk("f07"))
     assertResult(Value.mkFloat64(-0.0d))(result01)
     assertResult(Value.mkFloat64(0.0d))(result02)
     assertResult(Value.mkFloat64(-4.2d))(result03)
@@ -1932,13 +1927,13 @@ class TestInterpreter extends FunSuite {
          |fn f07: Int = ~${Int.MinValue}
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
-    val result07 = model.constants(Name.Resolved.mk("f07"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
+    val result07 = model.constants(Symbol.Resolved.mk("f07"))
     assertResult(Value.mkInt32(-1))(result01)
     assertResult(Value.mkInt32(-2))(result02)
     assertResult(Value.mkInt32(0))(result03)
@@ -1959,13 +1954,13 @@ class TestInterpreter extends FunSuite {
          |fn f07: Int8 = ~${Byte.MinValue}i8
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
-    val result07 = model.constants(Name.Resolved.mk("f07"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
+    val result07 = model.constants(Symbol.Resolved.mk("f07"))
     assertResult(Value.mkInt8(-1))(result01)
     assertResult(Value.mkInt8(-2))(result02)
     assertResult(Value.mkInt8(0))(result03)
@@ -1986,13 +1981,13 @@ class TestInterpreter extends FunSuite {
          |fn f07: Int16 = ~${Short.MinValue}i16
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
-    val result07 = model.constants(Name.Resolved.mk("f07"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
+    val result07 = model.constants(Symbol.Resolved.mk("f07"))
     assertResult(Value.mkInt16(-1))(result01)
     assertResult(Value.mkInt16(-2))(result02)
     assertResult(Value.mkInt16(0))(result03)
@@ -2013,13 +2008,13 @@ class TestInterpreter extends FunSuite {
          |fn f07: Int32 = ~${Int.MinValue}i32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
-    val result07 = model.constants(Name.Resolved.mk("f07"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
+    val result07 = model.constants(Symbol.Resolved.mk("f07"))
     assertResult(Value.mkInt32(-1))(result01)
     assertResult(Value.mkInt32(-2))(result02)
     assertResult(Value.mkInt32(0))(result03)
@@ -2040,13 +2035,13 @@ class TestInterpreter extends FunSuite {
          |fn f07: Int64 = ~${Long.MinValue}i64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
-    val result07 = model.constants(Name.Resolved.mk("f07"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
+    val result07 = model.constants(Symbol.Resolved.mk("f07"))
     assertResult(Value.mkInt64(-1))(result01)
     assertResult(Value.mkInt64(-2))(result02)
     assertResult(Value.mkInt64(0))(result03)
@@ -2070,11 +2065,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int = ${Int.MinValue} + -1
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt32(Int.MinValue))(result01)
     assertResult(Value.mkInt32(500000))(result02)
     assertResult(Value.mkInt32(-300000))(result03)
@@ -2091,11 +2086,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int8 = ${Byte.MinValue}i8 + -1i8
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt8(Byte.MinValue))(result01)
     assertResult(Value.mkInt8(50))(result02)
     assertResult(Value.mkInt8(-30))(result03)
@@ -2112,11 +2107,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int16 = ${Short.MinValue}i16 + -1i16
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt16(Short.MinValue))(result01)
     assertResult(Value.mkInt16(5000))(result02)
     assertResult(Value.mkInt16(-3000))(result03)
@@ -2133,11 +2128,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int32 = ${Int.MinValue}i32 + -1i32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt32(Int.MinValue))(result01)
     assertResult(Value.mkInt32(500000))(result02)
     assertResult(Value.mkInt32(-300000))(result03)
@@ -2154,11 +2149,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int64 = ${Long.MinValue}i64 + -1i64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt64(Long.MinValue))(result01)
     assertResult(Value.mkInt64(50000000000L))(result02)
     assertResult(Value.mkInt64(-30000000000L))(result03)
@@ -2175,11 +2170,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Float = -0.0000000000000000000000000000000000000000987654321 + 0.222
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkFloat64(69.12))(result01)
     assertResult(Value.mkFloat64(1.23456789E48))(result02)
     assertResult(Value.mkFloat64(-1.23456789E48))(result03)
@@ -2196,11 +2191,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Float32 = -0.000000000000000000000000000000987654321f32 + 0.222f32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkFloat32(69.119995f))(result01)
     assertResult(Value.mkFloat32(1.23456789E38f))(result02)
     assertResult(Value.mkFloat32(-1.23456789E38f))(result03)
@@ -2217,11 +2212,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Float64 = -0.0000000000000000000000000000000000000000987654321f64 + 0.222f64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkFloat64(69.12d))(result01)
     assertResult(Value.mkFloat64(1.23456789E48d))(result02)
     assertResult(Value.mkFloat64(-1.23456789E48d))(result03)
@@ -2238,11 +2233,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int = ${Int.MaxValue} - -1
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt32(Int.MaxValue))(result01)
     assertResult(Value.mkInt32(300000))(result02)
     assertResult(Value.mkInt32(-500000))(result03)
@@ -2259,11 +2254,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int8 = ${Byte.MaxValue}i8 - -1i8
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt8(Byte.MaxValue))(result01)
     assertResult(Value.mkInt8(30))(result02)
     assertResult(Value.mkInt8(-50))(result03)
@@ -2280,11 +2275,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int16 = ${Short.MaxValue}i16 - -1i16
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt16(Short.MaxValue))(result01)
     assertResult(Value.mkInt16(3000))(result02)
     assertResult(Value.mkInt16(-5000))(result03)
@@ -2301,11 +2296,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int32 = ${Int.MaxValue}i32 - -1i32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt32(Int.MaxValue))(result01)
     assertResult(Value.mkInt32(300000))(result02)
     assertResult(Value.mkInt32(-500000))(result03)
@@ -2322,11 +2317,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int64 = ${Long.MaxValue}i64 - -1i64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt64(Long.MaxValue))(result01)
     assertResult(Value.mkInt64(30000000000L))(result02)
     assertResult(Value.mkInt64(-50000000000L))(result03)
@@ -2343,11 +2338,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Float = -0.0000000000000000000000000000000000000000987654321 - 0.222
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkFloat64(-44.44))(result01)
     assertResult(Value.mkFloat64(1.23456789E48))(result02)
     assertResult(Value.mkFloat64(-1.23456789E48))(result03)
@@ -2364,11 +2359,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Float32 = -0.000000000000000000000000000000987654321f32 - 0.222f32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkFloat32(-44.44f))(result01)
     assertResult(Value.mkFloat32(1.23456789E38f))(result02)
     assertResult(Value.mkFloat32(-1.23456789E38f))(result03)
@@ -2385,11 +2380,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Float64 = -0.0000000000000000000000000000000000000000987654321f64 - 0.222f64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkFloat64(-44.44d))(result01)
     assertResult(Value.mkFloat64(1.23456789E48d))(result02)
     assertResult(Value.mkFloat64(-1.23456789E48d))(result03)
@@ -2406,11 +2401,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int = ${Int.MinValue} * -1
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt32(-2))(result01)
     assertResult(Value.mkInt32(60000))(result02)
     assertResult(Value.mkInt32(-60000))(result03)
@@ -2427,11 +2422,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int8 = ${Byte.MinValue}i8 * -1i8
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt8(-2))(result01)
     assertResult(Value.mkInt8(6))(result02)
     assertResult(Value.mkInt8(-6))(result03)
@@ -2448,11 +2443,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int16 = ${Short.MinValue}i16 * -1i16
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt16(-2))(result01)
     assertResult(Value.mkInt16(600))(result02)
     assertResult(Value.mkInt16(-600))(result03)
@@ -2469,11 +2464,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int32 = ${Int.MinValue}i32 * -1i32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt32(-2))(result01)
     assertResult(Value.mkInt32(60000))(result02)
     assertResult(Value.mkInt32(-60000))(result03)
@@ -2490,11 +2485,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int64 = ${Long.MinValue}i64 * -1i64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt64(-2))(result01)
     assertResult(Value.mkInt64(60000000000L))(result02)
     assertResult(Value.mkInt64(-60000000000L))(result03)
@@ -2511,11 +2506,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Float = -0.0000000000000000000000000000000000000000987654321 * 0.222
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkFloat64(700.6652))(result01)
     assertResult(Value.mkFloat64(2.7434814565158003E50))(result02)
     assertResult(Value.mkFloat64(-2.7434814565158003E50))(result03)
@@ -2532,11 +2527,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Float32 = -0.000000000000000000000000000000987654321f32 * 222.222f32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkFloat32(700.6652f))(result01)
     assertResult(Value.mkFloat32(2.7407407E37f))(result02)
     assertResult(Value.mkFloat32(-2.7407407E37f))(result03)
@@ -2553,11 +2548,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Float64 = -0.0000000000000000000000000000000000000000987654321f64 * 0.222f64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkFloat64(700.6652d))(result01)
     assertResult(Value.mkFloat64(2.7434814565158003E50d))(result02)
     assertResult(Value.mkFloat64(-2.7434814565158003E50d))(result03)
@@ -2574,11 +2569,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int = ${Int.MinValue} / -1
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt32(Int.MaxValue))(result01)
     assertResult(Value.mkInt32(400000))(result02)
     assertResult(Value.mkInt32(-400000))(result03)
@@ -2595,11 +2590,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int8 = ${Byte.MinValue}i8 / -1i8
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt8(Byte.MaxValue))(result01)
     assertResult(Value.mkInt8(4))(result02)
     assertResult(Value.mkInt8(-4))(result03)
@@ -2616,11 +2611,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int16 = ${Short.MinValue}i16 / -1i16
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt16(Short.MaxValue))(result01)
     assertResult(Value.mkInt16(4000))(result02)
     assertResult(Value.mkInt16(-4000))(result03)
@@ -2637,11 +2632,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int32 = ${Int.MinValue}i32 / -1i32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt32(Int.MaxValue))(result01)
     assertResult(Value.mkInt32(400000))(result02)
     assertResult(Value.mkInt32(-400000))(result03)
@@ -2658,11 +2653,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int64 = ${Long.MinValue}i64 / -1i64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt64(Long.MaxValue))(result01)
     assertResult(Value.mkInt64(40000000000L))(result02)
     assertResult(Value.mkInt64(-40000000000L))(result03)
@@ -2679,11 +2674,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Float = -0.0000000000000000000000000000000000000000987654321 / 0.222
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkFloat64(0.2173300457907714))(result01)
     assertResult(Value.mkFloat64(5.5555610605610604E45))(result02)
     assertResult(Value.mkFloat64(-5.5555610605610604E45))(result03)
@@ -2700,11 +2695,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Float32 = -0.000000000000000000000000000000987654321f32 / 0.222f32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkFloat32(0.21733005f))(result01)
     assertResult(Value.mkFloat32(5.5555608E35f))(result02)
     assertResult(Value.mkFloat32(-5.5555608E35f))(result03)
@@ -2721,11 +2716,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Float64 = -0.0000000000000000000000000000000000000000987654321f64 / 0.222f64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkFloat64(0.2173300457907714d))(result01)
     assertResult(Value.mkFloat64(5.5555610605610604E45d))(result02)
     assertResult(Value.mkFloat64(-5.5555610605610604E45d))(result03)
@@ -2742,11 +2737,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int = -1200000 % -500000
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt32(0))(result01)
     assertResult(Value.mkInt32(200000))(result02)
     assertResult(Value.mkInt32(-200000))(result03)
@@ -2763,11 +2758,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int8 = -12i8 % -5i8
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt8(0))(result01)
     assertResult(Value.mkInt8(2))(result02)
     assertResult(Value.mkInt8(-2))(result03)
@@ -2784,11 +2779,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int16 = -12000i16 % -5000i16
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt16(0))(result01)
     assertResult(Value.mkInt16(2000))(result02)
     assertResult(Value.mkInt16(-2000))(result03)
@@ -2805,11 +2800,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int32 = -1200000i32 % -500000i32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt32(0))(result01)
     assertResult(Value.mkInt32(200000))(result02)
     assertResult(Value.mkInt32(-200000))(result03)
@@ -2826,11 +2821,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int64 = -120000000000i64 % -50000000000i64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt64(0))(result01)
     assertResult(Value.mkInt64(20000000000L))(result02)
     assertResult(Value.mkInt64(-20000000000L))(result03)
@@ -2847,11 +2842,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Float = -0.0000000000000000000000000000000000000000987654321 % 0.222
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkFloat64(12.34))(result01)
     assertResult(Value.mkFloat64(88.53722751835619))(result02)
     assertResult(Value.mkFloat64(-88.53722751835619))(result03)
@@ -2868,11 +2863,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Float32 = -0.000000000000000000000000000000987654321f32 % 0.222f32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkFloat32(12.34f))(result01)
     assertResult(Value.mkFloat32(29.297333f))(result02)
     assertResult(Value.mkFloat32(-29.297333f))(result03)
@@ -2889,11 +2884,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Float64 = -0.0000000000000000000000000000000000000000987654321f64 % 0.222f64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkFloat64(12.34d))(result01)
     assertResult(Value.mkFloat64(88.53722751835619d))(result02)
     assertResult(Value.mkFloat64(-88.53722751835619d))(result03)
@@ -2917,12 +2912,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000 < -30000
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
@@ -2941,12 +2936,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -3i8 < -3i8
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
@@ -2965,12 +2960,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -300i16 < -300i16
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
@@ -2989,12 +2984,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000i32 < -30000i32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
@@ -3013,12 +3008,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -3000000000i64 < -3000000000i64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
@@ -3037,12 +3032,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000000000000000000000000000000000000000.0 < -30000000000000000000000000000000000000000.0
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
@@ -3061,12 +3056,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -300000000000000000000.0f32 < -300000000000000000000.0f32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
@@ -3085,12 +3080,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000000000000000000000000000000000000000.0f64 < -30000000000000000000000000000000000000000.0f64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
@@ -3106,9 +3101,9 @@ class TestInterpreter extends FunSuite {
          |fn f03: Bool = '${'\u0000'}' < '${'\u0000'}'
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
     assertResult(Value.False)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
@@ -3124,12 +3119,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000 <= -30000
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.True)(result03)
@@ -3148,12 +3143,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -3i8 <= -3i8
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.True)(result03)
@@ -3172,12 +3167,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -300i16 <= -300i16
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.True)(result03)
@@ -3196,12 +3191,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000i32 <= -30000i32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.True)(result03)
@@ -3220,12 +3215,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -3000000000i64 <= -3000000000i64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.True)(result03)
@@ -3244,12 +3239,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000000000000000000000000000000000000000.0 <= -30000000000000000000000000000000000000000.0
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.True)(result03)
@@ -3268,12 +3263,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -300000000000000000000.0f32 <= -300000000000000000000.0f32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.True)(result03)
@@ -3292,12 +3287,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000000000000000000000000000000000000000.0f64 <= -30000000000000000000000000000000000000000.0f64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.True)(result03)
@@ -3313,9 +3308,9 @@ class TestInterpreter extends FunSuite {
          |fn f03: Bool = '${'\u0000'}' <= '${'\u0000'}'
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
     assertResult(Value.False)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.True)(result03)
@@ -3331,12 +3326,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000 > -30000
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.False)(result03)
@@ -3355,12 +3350,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -3i8 > -3i8
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.False)(result03)
@@ -3379,12 +3374,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -300i16 > -300i16
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.False)(result03)
@@ -3403,12 +3398,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000i32 > -30000i32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.False)(result03)
@@ -3427,12 +3422,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -3000000000i64 > -3000000000i64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.False)(result03)
@@ -3451,12 +3446,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000000000000000000000000000000000000000.0 > -30000000000000000000000000000000000000000.0
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.False)(result03)
@@ -3475,12 +3470,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -300000000000000000000.0f32 > -300000000000000000000.0f32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.False)(result03)
@@ -3499,12 +3494,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000000000000000000000000000000000000000.0f64 > -30000000000000000000000000000000000000000.0f64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.False)(result03)
@@ -3520,9 +3515,9 @@ class TestInterpreter extends FunSuite {
          |fn f03: Bool = '${'\u0000'}' > '${'\u0000'}'
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
     assertResult(Value.True)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.False)(result03)
@@ -3538,12 +3533,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000 >= -30000
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.True)(result03)
@@ -3562,12 +3557,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -3i8 >= -3i8
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.True)(result03)
@@ -3586,12 +3581,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -300i16 >= -300i16
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.True)(result03)
@@ -3610,12 +3605,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000i32 >= -30000i32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.True)(result03)
@@ -3634,12 +3629,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -3000000000i64 >= -3000000000i64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.True)(result03)
@@ -3658,12 +3653,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000000000000000000000000000000000000000.0 >= -30000000000000000000000000000000000000000.0
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.True)(result03)
@@ -3682,12 +3677,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -300000000000000000000.0f32 >= -300000000000000000000.0f32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.True)(result03)
@@ -3706,12 +3701,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000000000000000000000000000000000000000.0f64 >= -30000000000000000000000000000000000000000.0f64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.True)(result03)
@@ -3727,9 +3722,9 @@ class TestInterpreter extends FunSuite {
          |fn f03: Bool = '${'\u0000'}' >= '${'\u0000'}'
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
     assertResult(Value.True)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.True)(result03)
@@ -3745,12 +3740,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000 == -30000
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.True)(result03)
@@ -3769,12 +3764,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -3i8 == -3i8
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.True)(result03)
@@ -3793,12 +3788,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -300i16 == -300i16
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.True)(result03)
@@ -3817,12 +3812,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000i32 == -30000i32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.True)(result03)
@@ -3841,12 +3836,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -3000000000i64 == -3000000000i64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.True)(result03)
@@ -3865,12 +3860,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000000000000000000000000000000000000000.0 == -30000000000000000000000000000000000000000.0
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.True)(result03)
@@ -3889,12 +3884,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -300000000000000000000.0f32 == -300000000000000000000.0f32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.True)(result03)
@@ -3913,12 +3908,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000000000000000000000000000000000000000.0f64 == -30000000000000000000000000000000000000000.0f64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.False)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.True)(result03)
@@ -3934,9 +3929,9 @@ class TestInterpreter extends FunSuite {
          |fn f03: Bool = '${'\u0000'}' == '${'\u0000'}'
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
     assertResult(Value.False)(result01)
     assertResult(Value.False)(result02)
     assertResult(Value.True)(result03)
@@ -3952,12 +3947,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000 != -30000
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
@@ -3976,12 +3971,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -3i8 != -3i8
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
@@ -4000,12 +3995,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -300i16 != -300i16
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
@@ -4024,12 +4019,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000i32 != -30000i32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
@@ -4048,12 +4043,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -3000000000i64 != -3000000000i64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
@@ -4072,12 +4067,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000000000000000000000000000000000000000.0 != -30000000000000000000000000000000000000000.0
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
@@ -4096,12 +4091,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -300000000000000000000.0f32 != -300000000000000000000.0f32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
@@ -4120,12 +4115,12 @@ class TestInterpreter extends FunSuite {
          |fn f06: Bool = -30000000000000000000000000000000000000000.0f64 != -30000000000000000000000000000000000000000.0f64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
-    val result06 = model.constants(Name.Resolved.mk("f06"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
+    val result06 = model.constants(Symbol.Resolved.mk("f06"))
     assertResult(Value.True)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
@@ -4141,9 +4136,9 @@ class TestInterpreter extends FunSuite {
          |fn f03: Bool = '${'\u0000'}' != '${'\u0000'}'
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
     assertResult(Value.True)(result01)
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
@@ -4157,35 +4152,35 @@ class TestInterpreter extends FunSuite {
   test("Expression.Binary - BinaryOperator.LogicalAnd.01") {
     val input = "fn f: Bool = true && true"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Binary - BinaryOperator.LogicalAnd.02") {
     val input = "fn f: Bool = true && false"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.False)(result)
   }
 
   test("Expression.Binary - BinaryOperator.LogicalAnd.03") {
     val input = "fn f: Bool = false && false"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.False)(result)
   }
 
   test("Expression.Binary - BinaryOperator.LogicalAnd.04") {
     val input = "fn f: Bool = false && true"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.False)(result)
   }
 
   test("Expression.Binary - BinaryOperator.LogicalAnd.05") {
     val input = "fn f: Bool = false && ???: Bool"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.False)(result)
   }
 
@@ -4197,35 +4192,35 @@ class TestInterpreter extends FunSuite {
   test("Expression.Binary - BinaryOperator.LogicalOr.01") {
     val input = "fn f: Bool = true || true"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Binary - BinaryOperator.LogicalOr.02") {
     val input = "fn f: Bool = true || false"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Binary - BinaryOperator.LogicalOr.03") {
     val input = "fn f: Bool = false || false"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.False)(result)
   }
 
   test("Expression.Binary - BinaryOperator.LogicalOr.04") {
     val input = "fn f: Bool = false || true"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Binary - BinaryOperator.LogicalOr.05") {
     val input = "fn f: Bool = true || ???: Bool"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
@@ -4237,35 +4232,35 @@ class TestInterpreter extends FunSuite {
   test("Expression.Binary - BinaryOperator.Implication.01") {
     val input = "fn f: Bool = true ==> true"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Binary - BinaryOperator.Implication.02") {
     val input = "fn f: Bool = true ==> false"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.False)(result)
   }
 
   test("Expression.Binary - BinaryOperator.Implication.03") {
     val input = "fn f: Bool = false ==> false"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Binary - BinaryOperator.Implication.04") {
     val input = "fn f: Bool = false ==> true"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Binary - BinaryOperator.Implication.05") {
     val input = "fn f: Bool = false ==> ???: Bool"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
@@ -4277,28 +4272,28 @@ class TestInterpreter extends FunSuite {
   test("Expression.Binary - BinaryOperator.Biconditional.01") {
     val input = "fn f: Bool = true <==> true"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Binary - BinaryOperator.Biconditional.02") {
     val input = "fn f: Bool = true <==> false"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.False)(result)
   }
 
   test("Expression.Binary - BinaryOperator.Biconditional.03") {
     val input = "fn f: Bool = false <==> false"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.True)(result)
   }
 
   test("Expression.Binary - BinaryOperator.Biconditional.04") {
     val input = "fn f: Bool = false <==> true"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.False)(result)
   }
 
@@ -4317,11 +4312,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int = -1 & -1
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt32(40000))(result01)
     assertResult(Value.mkInt32(40000))(result02)
     assertResult(Value.mkInt32(0))(result03)
@@ -4338,11 +4333,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int8 = -1i8 & -1i8
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt8(40))(result01)
     assertResult(Value.mkInt8(40))(result02)
     assertResult(Value.mkInt8(0))(result03)
@@ -4359,11 +4354,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int16 = -1i16 & -1i16
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt16(400))(result01)
     assertResult(Value.mkInt16(400))(result02)
     assertResult(Value.mkInt16(0))(result03)
@@ -4380,11 +4375,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int32 = -1i32 & -1i32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt32(40000))(result01)
     assertResult(Value.mkInt32(40000))(result02)
     assertResult(Value.mkInt32(0))(result03)
@@ -4401,11 +4396,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int64 = -1i64 & -1i64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt64(40000000000L))(result01)
     assertResult(Value.mkInt64(40000000000L))(result02)
     assertResult(Value.mkInt64(0))(result03)
@@ -4422,11 +4417,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int = -1 | -1
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt32(0xFFFFFFFF))(result01)
     assertResult(Value.mkInt32(40000))(result02)
     assertResult(Value.mkInt32(40000))(result03)
@@ -4443,11 +4438,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int8 = -1i8 | -1i8
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt8(0xFF.toByte))(result01)
     assertResult(Value.mkInt8(40))(result02)
     assertResult(Value.mkInt8(40))(result03)
@@ -4464,11 +4459,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int16 = -1i16 | -1i16
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt16(0xFFFF.toShort))(result01)
     assertResult(Value.mkInt16(400))(result02)
     assertResult(Value.mkInt16(400))(result03)
@@ -4485,11 +4480,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int32 = -1i32 | -1i32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt32(0xFFFFFFFF))(result01)
     assertResult(Value.mkInt32(40000))(result02)
     assertResult(Value.mkInt32(40000))(result03)
@@ -4506,11 +4501,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int64 = -1i64 | -1i64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt64(0xFFFFFFFFFFFFFFFFL))(result01)
     assertResult(Value.mkInt64(40000000000L))(result02)
     assertResult(Value.mkInt64(40000000000L))(result03)
@@ -4527,11 +4522,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int = -1 ^ -1
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt32(-40001))(result01)
     assertResult(Value.mkInt32(0))(result02)
     assertResult(Value.mkInt32(40000))(result03)
@@ -4548,11 +4543,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int8 = -1i8 ^ -1i8
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt8(-41))(result01)
     assertResult(Value.mkInt8(0))(result02)
     assertResult(Value.mkInt8(40))(result03)
@@ -4569,11 +4564,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int16 = -1i16 ^ -1i16
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt16(-401))(result01)
     assertResult(Value.mkInt16(0))(result02)
     assertResult(Value.mkInt16(400))(result03)
@@ -4590,11 +4585,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int32 = -1i32 ^ -1i32
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt32(-40001))(result01)
     assertResult(Value.mkInt32(0))(result02)
     assertResult(Value.mkInt32(40000))(result03)
@@ -4611,11 +4606,11 @@ class TestInterpreter extends FunSuite {
          |fn f05: Int64 = -1i64 ^ -1i64
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
-    val result05 = model.constants(Name.Resolved.mk("f05"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
+    val result05 = model.constants(Symbol.Resolved.mk("f05"))
     assertResult(Value.mkInt64(-40000000001L))(result01)
     assertResult(Value.mkInt64(0))(result02)
     assertResult(Value.mkInt64(40000000000L))(result03)
@@ -4631,10 +4626,10 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int = ${0x08} << 29
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
     assertResult(Value.mkInt32(0x08))(result01)
     assertResult(Value.mkInt32(0x00080000))(result02)
     assertResult(Value.mkInt32(Int.MinValue))(result03)
@@ -4649,10 +4644,10 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int8 = ${0x08}i8 << 5
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
     assertResult(Value.mkInt8(0x08))(result01)
     assertResult(Value.mkInt8(0x20))(result02)
     assertResult(Value.mkInt8(Byte.MinValue))(result03)
@@ -4667,10 +4662,10 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int16 = ${0x08}i16 << 13
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
     assertResult(Value.mkInt16(0x08))(result01)
     assertResult(Value.mkInt16(0x0800))(result02)
     assertResult(Value.mkInt16(Short.MinValue))(result03)
@@ -4685,10 +4680,10 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int32 = ${0x08}i32 << 29
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
     assertResult(Value.mkInt32(0x08))(result01)
     assertResult(Value.mkInt32(0x00080000))(result02)
     assertResult(Value.mkInt32(Int.MinValue))(result03)
@@ -4703,10 +4698,10 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int64 = ${0x08}i64 << 61
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
     assertResult(Value.mkInt64(0x08))(result01)
     assertResult(Value.mkInt64(0x0000000800000000L))(result02)
     assertResult(Value.mkInt64(Long.MinValue))(result03)
@@ -4721,10 +4716,10 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int = -120000 >> 2
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
     assertResult(Value.mkInt32(120000))(result01)
     assertResult(Value.mkInt32(30000))(result02)
     assertResult(Value.mkInt32(0))(result03)
@@ -4739,10 +4734,10 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int8 = -120i8 >> 2
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
     assertResult(Value.mkInt8(120))(result01)
     assertResult(Value.mkInt8(30))(result02)
     assertResult(Value.mkInt8(0))(result03)
@@ -4757,10 +4752,10 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int16 = -12000i16 >> 2
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
     assertResult(Value.mkInt16(12000))(result01)
     assertResult(Value.mkInt16(3000))(result02)
     assertResult(Value.mkInt16(0))(result03)
@@ -4775,10 +4770,10 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int32 = -120000i32 >> 2
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
     assertResult(Value.mkInt32(120000))(result01)
     assertResult(Value.mkInt32(30000))(result02)
     assertResult(Value.mkInt32(0))(result03)
@@ -4793,10 +4788,10 @@ class TestInterpreter extends FunSuite {
          |fn f04: Int64 = -12000000000i64 >> 2
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("f01"))
-    val result02 = model.constants(Name.Resolved.mk("f02"))
-    val result03 = model.constants(Name.Resolved.mk("f03"))
-    val result04 = model.constants(Name.Resolved.mk("f04"))
+    val result01 = model.constants(Symbol.Resolved.mk("f01"))
+    val result02 = model.constants(Symbol.Resolved.mk("f02"))
+    val result03 = model.constants(Symbol.Resolved.mk("f03"))
+    val result04 = model.constants(Symbol.Resolved.mk("f04"))
     assertResult(Value.mkInt64(12000000000L))(result01)
     assertResult(Value.mkInt64(3000000000L))(result02)
     assertResult(Value.mkInt64(0))(result03)
@@ -4810,14 +4805,14 @@ class TestInterpreter extends FunSuite {
   test("Expression.IfThenElse.01") {
     val input = "fn f: Int = if (false) 42 + 10 else 42 - 10"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt32(32))(result)
   }
 
   test("Expression.IfThenElse.02") {
     val input = "fn f: Int = if (true) 42 + 10 else 42 - 10"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt32(52))(result)
   }
 
@@ -4828,8 +4823,8 @@ class TestInterpreter extends FunSuite {
         |fn g02: Int = f(false)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
     assertResult(Value.mkInt32(2))(result01)
     assertResult(Value.mkInt32(3))(result02)
   }
@@ -4841,8 +4836,8 @@ class TestInterpreter extends FunSuite {
         |fn g02: Int = f(false)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
     assertResult(Value.mkInt32(5678))(result01)
     assertResult(Value.mkInt32(1234))(result02)
   }
@@ -4856,10 +4851,10 @@ class TestInterpreter extends FunSuite {
         |fn g04: Int = f(false, false)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
     assertResult(Value.mkInt32(1234))(result01)
     assertResult(Value.mkInt32(5678))(result02)
     assertResult(Value.mkInt32(5678))(result03)
@@ -4875,10 +4870,10 @@ class TestInterpreter extends FunSuite {
         |fn g04: Int = f(false, false)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
     assertResult(Value.mkInt32(1234))(result01)
     assertResult(Value.mkInt32(1234))(result02)
     assertResult(Value.mkInt32(1234))(result03)
@@ -4892,8 +4887,8 @@ class TestInterpreter extends FunSuite {
         |fn g02: Int8 = f(5i8, 5i8)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
     assertResult(Value.mkInt8(12))(result01)
     assertResult(Value.mkInt8(56))(result02)
   }
@@ -4905,8 +4900,8 @@ class TestInterpreter extends FunSuite {
         |fn g02: Int16 = f(500i16, 200i16)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
     assertResult(Value.mkInt16(1234))(result01)
     assertResult(Value.mkInt16(5678))(result02)
   }
@@ -4918,8 +4913,8 @@ class TestInterpreter extends FunSuite {
         |fn g02: Int32 = f(500000i32, 500000i32)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
     assertResult(Value.mkInt32(12341234))(result01)
     assertResult(Value.mkInt32(56785678))(result02)
   }
@@ -4931,8 +4926,8 @@ class TestInterpreter extends FunSuite {
         |fn g02: Int64 = f(20000000000i64, 50000000000i64)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
     assertResult(Value.mkInt64(123412341234L))(result01)
     assertResult(Value.mkInt64(567856785678L))(result02)
   }
@@ -4944,8 +4939,8 @@ class TestInterpreter extends FunSuite {
         |fn g02: Int = f(2, 5)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
     assertResult(Value.mkInt32(1234))(result01)
     assertResult(Value.mkInt32(5678))(result02)
   }
@@ -4957,8 +4952,8 @@ class TestInterpreter extends FunSuite {
         |fn g02: Int = f(5, 5)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
     assertResult(Value.mkInt32(1234))(result01)
     assertResult(Value.mkInt32(5678))(result02)
   }
@@ -4970,35 +4965,35 @@ class TestInterpreter extends FunSuite {
   test("Expression.Let.01") {
     val input = "fn f: Int = let x = true in 42"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt32(42))(result)
   }
 
   test("Expression.Let.02") {
     val input = "fn f: Int8 = let x = 42i8 in x"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt32(42))(result)
   }
 
   test("Expression.Let.03") {
     val input = "fn f: Int16 = let x = 1i16 in x + 2i16"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt32(3))(result)
   }
 
   test("Expression.Let.04") {
     val input = """fn f: Str = let x = false in if (x) "abz" else "xyz""""
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkStr("xyz"))(result)
   }
 
   test("Expression.Let.05") {
     val input = "fn f: Int = let x = 14 - 3 in x + 2"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt32(13))(result)
   }
 
@@ -5010,7 +5005,7 @@ class TestInterpreter extends FunSuite {
         |      x + y
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt32(19))(result)
   }
 
@@ -5023,7 +5018,7 @@ class TestInterpreter extends FunSuite {
         |        z
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt32(6))(result)
   }
 
@@ -5037,7 +5032,7 @@ class TestInterpreter extends FunSuite {
         |fn g: Int = f(-1337, 101010, -42)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkInt32(-101010))(result)
   }
 
@@ -5051,14 +5046,14 @@ class TestInterpreter extends FunSuite {
         |fn g: Int = f(-1337, 101010, -42)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkInt32(101010))(result)
   }
 
   test("Expression.Let.10") {
     val input = "fn f: Int64 = let x = 0i64 in x"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt64(0))(result)
   }
 
@@ -5071,7 +5066,7 @@ class TestInterpreter extends FunSuite {
         |        y
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt64(-101010))(result)
   }
 
@@ -5084,7 +5079,7 @@ class TestInterpreter extends FunSuite {
         |        y
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt64(-101010))(result)
   }
 
@@ -5098,7 +5093,7 @@ class TestInterpreter extends FunSuite {
         |fn g: Int64 = f(-1337i64, 101010i64, -42i64)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkInt64(-101010))(result)
   }
 
@@ -5112,7 +5107,7 @@ class TestInterpreter extends FunSuite {
         |fn g: Int64 = f(-1337i32, 101010i64, -42i64)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkInt64(-101010))(result)
   }
 
@@ -5126,7 +5121,7 @@ class TestInterpreter extends FunSuite {
         |fn g: Int64 = f(-1337i64, 101010i64, -42i64)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkInt64(101010))(result)
   }
 
@@ -5140,7 +5135,7 @@ class TestInterpreter extends FunSuite {
         |fn g: Int64 = f(-1337i32, 101010i64, -42i64)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkInt64(101010))(result)
   }
 
@@ -5150,35 +5145,35 @@ class TestInterpreter extends FunSuite {
         |fn f: ConstProp = let x = ConstProp.Val(42) in x
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
-    assertResult(Value.mkTag(Name.Resolved.mk("ConstProp"), "Val", Value.mkInt32(42)))(result)
+    val result = model.constants(Symbol.Resolved.mk("f"))
+    assertResult(Value.mkTag(Symbol.Resolved.mk("ConstProp"), "Val", Value.mkInt32(42)))(result)
   }
 
   test("Expression.Let.18") {
     val input = "fn f: () = let x = () in x"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.Unit)(result)
   }
 
   test("Expression.Let.19") {
     val input = """fn f: Str = let x = "helloworld" in x"""
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkStr("helloworld"))(result)
   }
 
   test("Expression.Let.20") {
     val input = """fn f: (Int, Int) = let x = (123, 456) in x"""
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.Tuple(Array(123, 456).map(Value.mkInt32)))(result)
   }
 
   test("Expression.Let.21") {
     val input = """fn f: Set[Int] = let x = #{9, 99, 999} in x"""
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkSet(Set(9, 99, 999).map(Value.mkInt32)))(result)
   }
 
@@ -5190,7 +5185,7 @@ class TestInterpreter extends FunSuite {
         |      y
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkChar('b'))(result)
   }
 
@@ -5202,7 +5197,7 @@ class TestInterpreter extends FunSuite {
         |      y
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat32(3.4f))(result)
   }
 
@@ -5214,7 +5209,7 @@ class TestInterpreter extends FunSuite {
         |      y
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkFloat64(3.4d))(result)
   }
 
@@ -5233,8 +5228,8 @@ class TestInterpreter extends FunSuite {
         |fn f: ConstProp = ConstProp.Top
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
-    assertResult(Value.mkTag(Name.Resolved.mk("ConstProp"), "Top", Value.Unit))(result)
+    val result = model.constants(Symbol.Resolved.mk("f"))
+    assertResult(Value.mkTag(Symbol.Resolved.mk("ConstProp"), "Top", Value.Unit))(result)
   }
 
   test("Expression.Tag.02") {
@@ -5243,8 +5238,8 @@ class TestInterpreter extends FunSuite {
         |fn f: ConstProp = ConstProp.Val(42)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
-    assertResult(Value.mkTag(Name.Resolved.mk("ConstProp"), "Val", Value.mkInt32(42)))(result)
+    val result = model.constants(Symbol.Resolved.mk("f"))
+    assertResult(Value.mkTag(Symbol.Resolved.mk("ConstProp"), "Val", Value.mkInt32(42)))(result)
   }
 
   test("Expression.Tag.03") {
@@ -5253,8 +5248,8 @@ class TestInterpreter extends FunSuite {
         |fn f: ConstProp = ConstProp.Bot
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
-    assertResult(Value.mkTag(Name.Resolved.mk("ConstProp"), "Bot", Value.Unit))(result)
+    val result = model.constants(Symbol.Resolved.mk("f"))
+    assertResult(Value.mkTag(Symbol.Resolved.mk("ConstProp"), "Bot", Value.Unit))(result)
   }
 
   test("Expression.Tag.04") {
@@ -5263,8 +5258,8 @@ class TestInterpreter extends FunSuite {
         |fn f: Val = Val.Val(true)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
-    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.True))(result)
+    val result = model.constants(Symbol.Resolved.mk("f"))
+    assertResult(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.True))(result)
   }
 
   test("Expression.Tag.05") {
@@ -5275,10 +5270,10 @@ class TestInterpreter extends FunSuite {
         |fn g02: Val = f(false)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.True))(result01)
-    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.False))(result02)
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    assertResult(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.True))(result01)
+    assertResult(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.False))(result02)
   }
 
   test("Expression.Tag.06") {
@@ -5287,8 +5282,8 @@ class TestInterpreter extends FunSuite {
         |fn f: Val = Val.Val("hi")
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
-    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkStr("hi")))(result)
+    val result = model.constants(Symbol.Resolved.mk("f"))
+    assertResult(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkStr("hi")))(result)
   }
 
   test("Expression.Tag.07") {
@@ -5297,8 +5292,8 @@ class TestInterpreter extends FunSuite {
         |fn f: Val = Val.Val(1, "one")
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
-    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.Tuple(Array(Value.mkInt32(1), "one"))))(result)
+    val result = model.constants(Symbol.Resolved.mk("f"))
+    assertResult(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.Tuple(Array(Value.mkInt32(1), "one"))))(result)
   }
 
   test("Expression.Tag.08") {
@@ -5307,8 +5302,8 @@ class TestInterpreter extends FunSuite {
         |fn f: Val = Val.Val(if (!(4 != 4)) "foo" else "bar")
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
-    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkStr("foo")))(result)
+    val result = model.constants(Symbol.Resolved.mk("f"))
+    assertResult(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkStr("foo")))(result)
   }
 
   test("Expression.Tag.09") {
@@ -5317,8 +5312,8 @@ class TestInterpreter extends FunSuite {
         |fn f: Val = Val.Val("ABC", 20 + 22)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
-    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.Tuple(Array("ABC", Value.mkInt32(42)))))(result)
+    val result = model.constants(Symbol.Resolved.mk("f"))
+    assertResult(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.Tuple(Array("ABC", Value.mkInt32(42)))))(result)
   }
 
   test("Expression.Tag.10") {
@@ -5327,8 +5322,8 @@ class TestInterpreter extends FunSuite {
         |fn f: Val = Val.Val(32i8)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
-    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkInt8(32)))(result)
+    val result = model.constants(Symbol.Resolved.mk("f"))
+    assertResult(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkInt8(32)))(result)
   }
 
   test("Expression.Tag.11") {
@@ -5337,8 +5332,8 @@ class TestInterpreter extends FunSuite {
         |fn f: Val = Val.Val(3200i16)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
-    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkInt16(3200)))(result)
+    val result = model.constants(Symbol.Resolved.mk("f"))
+    assertResult(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkInt16(3200)))(result)
   }
 
   test("Expression.Tag.12") {
@@ -5347,8 +5342,8 @@ class TestInterpreter extends FunSuite {
         |fn f: Val = Val.Val(320000000000i64)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
-    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkInt64(320000000000L)))(result)
+    val result = model.constants(Symbol.Resolved.mk("f"))
+    assertResult(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkInt64(320000000000L)))(result)
   }
 
   test("Expression.Tag.13") {
@@ -5357,8 +5352,8 @@ class TestInterpreter extends FunSuite {
         |fn f: Val = Val.Val('a')
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
-    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkChar('a')))(result)
+    val result = model.constants(Symbol.Resolved.mk("f"))
+    assertResult(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkChar('a')))(result)
   }
 
   test("Expression.Tag.14") {
@@ -5367,8 +5362,8 @@ class TestInterpreter extends FunSuite {
         |fn f: Val = Val.Val(4.2f32)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
-    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkFloat32(4.2f)))(result)
+    val result = model.constants(Symbol.Resolved.mk("f"))
+    assertResult(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkFloat32(4.2f)))(result)
   }
 
   test("Expression.Tag.15") {
@@ -5377,8 +5372,8 @@ class TestInterpreter extends FunSuite {
         |fn f: Val = Val.Val(4.2f64)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
-    assertResult(Value.mkTag(Name.Resolved.mk("Val"), "Val", Value.mkFloat64(4.2d)))(result)
+    val result = model.constants(Symbol.Resolved.mk("f"))
+    assertResult(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkFloat64(4.2d)))(result)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -5393,28 +5388,28 @@ class TestInterpreter extends FunSuite {
   test("Expression.Tuple.01") {
     val input = "fn f: (Int16, Int32) = (321i16, 5i32)"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.Tuple(Array(Value.mkInt16(321), Value.mkInt32(5))))(result)
   }
 
   test("Expression.Tuple.02") {
     val input = "fn f: (Bool, Bool, Bool) = (true, true, false)"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.Tuple(Array(true, true, false).map(Value.mkBool)))(result)
   }
 
   test("Expression.Tuple.03") {
     val input = """fn f: (Str, Str, Str, Str) = ("un", "deux", "trois", "quatre")"""
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.Tuple(Array("un", "deux", "trois", "quatre").map(Value.mkStr)))(result)
   }
 
   test("Expression.Tuple.04") {
     val input = """fn f: (Str, Bool, Int64, (), Int8) = ("un", false, 12345i64, (), -2i8)"""
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.Tuple(Array(Value.mkStr("un"), Value.False, Value.mkInt64(12345), Value.Unit, Value.mkInt8(-2))))(result)
   }
 
@@ -5424,28 +5419,28 @@ class TestInterpreter extends FunSuite {
         |fn f: (ConstProp, ConstProp) = (ConstProp.Val(111), ConstProp.Bot)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
-    assertResult(Value.Tuple(Array(Value.mkTag(Name.Resolved.mk("ConstProp"), "Val", Value.mkInt32(111)), Value.mkTag(Name.Resolved.mk("ConstProp"), "Bot", Value.Unit))))(result)
+    val result = model.constants(Symbol.Resolved.mk("f"))
+    assertResult(Value.Tuple(Array(Value.mkTag(Symbol.Resolved.mk("ConstProp"), "Val", Value.mkInt32(111)), Value.mkTag(Symbol.Resolved.mk("ConstProp"), "Bot", Value.Unit))))(result)
   }
 
   test("Expression.Tuple.06") {
     val input = """fn f: ((Int, Int), (Str, Str)) = ((123, 456), ("654", "321"))"""
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.Tuple(Array(Value.Tuple(Array(123, 456).map(Value.mkInt32)), Value.Tuple(Array("654", "321").map(Value.mkStr)))))(result)
   }
 
   test("Expression.Tuple.07") {
     val input = """fn f: (Int, Bool, Str) = (40 + 2, !(-12 < 22), if (true) "hi" else "hello")"""
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.Tuple(Array(Value.mkInt32(42), Value.False, Value.mkStr("hi"))))(result)
   }
 
   test("Expression.Tuple.08") {
     val input = "fn f: (Char, Float32, Float64) = ('a', 1.2f32, 3.4f64)"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.Tuple(Array(Value.mkChar('a'), Value.mkFloat32(1.2f), Value.mkFloat64(3.4d))))(result)
   }
 
@@ -5461,21 +5456,21 @@ class TestInterpreter extends FunSuite {
   test("Expression.Set.01") {
     val input = "fn f: Set[Int] = #{1, 4, 2}"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkSet(Set(1, 4, 2).map(Value.mkInt32)))(result)
   }
 
   test("Expression.Set.02") {
     val input = "fn f: Set[Int8] = #{1i8 + 2i8, 3i8 * 4i8, 5i8 - 6i8}"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkSet(Set(3, 12, -1).map(Value.mkInt8)))(result)
   }
 
   test("Expression.Set.03") {
     val input = "fn f: Set[(Int16, Bool)] = #{(1i16 + 2i16, true), (2i16 + 1i16, !false), (4i16 * 7i16, true), (5i16, true && false)}"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkSet(Set(
       Value.Tuple(Array(Value.mkInt16(3), Value.True)),
       Value.Tuple(Array(Value.mkInt16(28), Value.True)),
@@ -5486,28 +5481,28 @@ class TestInterpreter extends FunSuite {
   test("Expression.Set.04") {
     val input = "fn f: Set[Int64] = #{10000000000i64}"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkSet(Set(Value.mkInt64(10000000000L))))(result)
   }
 
   test("Expression.Set.05") {
     val input = "fn f: Set[Char] = #{'a', 'b', 'c'}"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkSet(Set(Value.mkChar('a'), Value.mkChar('b'), Value.mkChar('c'))))(result)
   }
 
   test("Expression.Set.06") {
     val input = "fn f: Set[Float32] = #{0.0f32, -0.0f32}"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkSet(Set(Value.mkFloat32(0.0f), Value.mkFloat32(-0.0f))))(result)
   }
 
   test("Expression.Set.07") {
     val input = "fn f: Set[Float64] = #{0.0f64, -0.0f64}"
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkSet(Set(Value.mkFloat64(0.0d), Value.mkFloat64(-0.0d))))(result)
   }
 
@@ -5541,8 +5536,8 @@ class TestInterpreter extends FunSuite {
         |fn g02: Int = f(false)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
     assertResult(Value.mkInt32(1))(result01)
     assertResult(Value.mkInt32(0))(result02)
   }
@@ -5557,8 +5552,8 @@ class TestInterpreter extends FunSuite {
         |fn g02: Int = f(false)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
     assertResult(Value.mkInt32(100))(result01)
     assertResult(Value.mkInt32(20))(result02)
   }
@@ -5574,8 +5569,8 @@ class TestInterpreter extends FunSuite {
         |fn g02: Int = f(false)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
     assertResult(Value.mkInt32(1))(result01)
     assertResult(Value.mkInt32(0))(result02)
   }
@@ -5598,13 +5593,13 @@ class TestInterpreter extends FunSuite {
         |fn g07: Str = f(4)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
-    val result05 = model.constants(Name.Resolved.mk("g05"))
-    val result06 = model.constants(Name.Resolved.mk("g06"))
-    val result07 = model.constants(Name.Resolved.mk("g07"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
+    val result05 = model.constants(Symbol.Resolved.mk("g05"))
+    val result06 = model.constants(Symbol.Resolved.mk("g06"))
+    val result07 = model.constants(Symbol.Resolved.mk("g07"))
     assertResult(Value.mkStr("negative"))(result01)
     assertResult(Value.mkStr("negative"))(result02)
     assertResult(Value.mkStr("zero"))(result03)
@@ -5622,7 +5617,7 @@ class TestInterpreter extends FunSuite {
         |fn g01: Int = f(true)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("g01"))
+    val result = model.constants(Symbol.Resolved.mk("g01"))
     assertResult(Value.mkInt32(1))(result)
   }
 
@@ -5649,7 +5644,7 @@ class TestInterpreter extends FunSuite {
         |}
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt32(11))(result)
   }
 
@@ -5660,7 +5655,7 @@ class TestInterpreter extends FunSuite {
         |}
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("f"))
+    val result = model.constants(Symbol.Resolved.mk("f"))
     assertResult(Value.mkInt32(11))(result)
   }
 
@@ -5675,10 +5670,10 @@ class TestInterpreter extends FunSuite {
         |fn g04: Int = f(99999)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
     assertResult(Value.mkInt32(11))(result01)
     assertResult(Value.mkInt32(11))(result02)
     assertResult(Value.mkInt32(11))(result03)
@@ -5693,7 +5688,7 @@ class TestInterpreter extends FunSuite {
         |fn g: Int = f(3)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkInt32(1))(result)
   }
 
@@ -5705,7 +5700,7 @@ class TestInterpreter extends FunSuite {
         |fn g: Int = f(3)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkInt32(3))(result)
   }
 
@@ -5717,7 +5712,7 @@ class TestInterpreter extends FunSuite {
         |fn g: Int = f(3)
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.mkInt32(14))(result)
   }
 
@@ -5729,7 +5724,7 @@ class TestInterpreter extends FunSuite {
         |fn g: Bool = f(())
       """.stripMargin
     val model = getModel(input)
-    val result = model.constants(Name.Resolved.mk("g"))
+    val result = model.constants(Symbol.Resolved.mk("g"))
     assertResult(Value.True)(result)
   }
 
@@ -5743,8 +5738,8 @@ class TestInterpreter extends FunSuite {
         |fn g02: Int = f(false)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
     assertResult(Value.mkInt32(30))(result01)
     assertResult(Value.mkInt32(81))(result02)
   }
@@ -5759,8 +5754,8 @@ class TestInterpreter extends FunSuite {
         |fn g02: Int = f(false)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
     assertResult(Value.mkInt32(30))(result01)
     assertResult(Value.mkInt32(81))(result02)
   }
@@ -5780,11 +5775,11 @@ class TestInterpreter extends FunSuite {
         |fn g05: Str = f(3)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
-    val result05 = model.constants(Name.Resolved.mk("g05"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
+    val result05 = model.constants(Symbol.Resolved.mk("g05"))
     assertResult(Value.mkStr("minus one"))(result01)
     assertResult(Value.mkStr("zero"))(result02)
     assertResult(Value.mkStr("one"))(result03)
@@ -5808,11 +5803,11 @@ class TestInterpreter extends FunSuite {
          |fn g05: Str = f(0i8)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
-    val result05 = model.constants(Name.Resolved.mk("g05"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
+    val result05 = model.constants(Symbol.Resolved.mk("g05"))
     assertResult(Value.mkStr("min"))(result01)
     assertResult(Value.mkStr("a"))(result02)
     assertResult(Value.mkStr("b"))(result03)
@@ -5836,11 +5831,11 @@ class TestInterpreter extends FunSuite {
          |fn g05: Str = f(0i16)
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
-    val result05 = model.constants(Name.Resolved.mk("g05"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
+    val result05 = model.constants(Symbol.Resolved.mk("g05"))
     assertResult(Value.mkStr("min"))(result01)
     assertResult(Value.mkStr("a"))(result02)
     assertResult(Value.mkStr("b"))(result03)
@@ -5864,11 +5859,11 @@ class TestInterpreter extends FunSuite {
          |fn g05: Str = f(0i32)
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
-    val result05 = model.constants(Name.Resolved.mk("g05"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
+    val result05 = model.constants(Symbol.Resolved.mk("g05"))
     assertResult(Value.mkStr("min"))(result01)
     assertResult(Value.mkStr("a"))(result02)
     assertResult(Value.mkStr("b"))(result03)
@@ -5892,11 +5887,11 @@ class TestInterpreter extends FunSuite {
          |fn g05: Str = f(0i64)
        """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
-    val result05 = model.constants(Name.Resolved.mk("g05"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
+    val result05 = model.constants(Symbol.Resolved.mk("g05"))
     assertResult(Value.mkStr("min"))(result01)
     assertResult(Value.mkStr("a"))(result02)
     assertResult(Value.mkStr("b"))(result03)
@@ -5918,10 +5913,10 @@ class TestInterpreter extends FunSuite {
         |fn g04: Str = f("four")
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
     assertResult(Value.mkStr("un"))(result01)
     assertResult(Value.mkStr("deux"))(result02)
     assertResult(Value.mkStr("trois"))(result03)
@@ -5946,13 +5941,13 @@ class TestInterpreter extends FunSuite {
         |fn g07: Int = f(Foo.Xyz)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
-    val result05 = model.constants(Name.Resolved.mk("g05"))
-    val result06 = model.constants(Name.Resolved.mk("g06"))
-    val result07 = model.constants(Name.Resolved.mk("g07"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
+    val result05 = model.constants(Symbol.Resolved.mk("g05"))
+    val result06 = model.constants(Symbol.Resolved.mk("g06"))
+    val result07 = model.constants(Symbol.Resolved.mk("g07"))
     assertResult(Value.mkInt32(1))(result01)
     assertResult(Value.mkInt32(2))(result02)
     assertResult(Value.mkInt32(3))(result03)
@@ -5974,10 +5969,10 @@ class TestInterpreter extends FunSuite {
         |fn g04: Int = f("abc", false)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
     assertResult(Value.mkInt32(2))(result01)
     assertResult(Value.mkInt32(1))(result02)
     assertResult(Value.mkInt32(2))(result03)
@@ -5998,10 +5993,10 @@ class TestInterpreter extends FunSuite {
         |fn g04: Int = f((1, (12, 0)))
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
     assertResult(Value.mkInt32(1))(result01)
     assertResult(Value.mkInt32(2))(result02)
     assertResult(Value.mkInt32(3))(result03)
@@ -6020,10 +6015,10 @@ class TestInterpreter extends FunSuite {
         |fn g04: Int = f(NameAndAge.T("Mary", 33))
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
     assertResult(Value.mkInt32(42))(result01)
     assertResult(Value.mkInt32(21))(result02)
     assertResult(Value.mkInt32(5))(result03)
@@ -6043,10 +6038,10 @@ class TestInterpreter extends FunSuite {
         |fn g04: Int = f(NameAndAge.T("Mary", 33))
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
     assertResult(Value.mkInt32(42))(result01)
     assertResult(Value.mkInt32(-1))(result02)
     assertResult(Value.mkInt32(5))(result03)
@@ -6067,10 +6062,10 @@ class TestInterpreter extends FunSuite {
         |fn g04: Int = f(ConstProp.Bot)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
     assertResult(Value.mkInt32(-1))(result01)
     assertResult(Value.mkInt32(42))(result02)
     assertResult(Value.mkInt32(-24))(result03)
@@ -6091,10 +6086,10 @@ class TestInterpreter extends FunSuite {
         |fn g04: Int = f(BoolTag.Bot)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
     assertResult(Value.mkInt32(0))(result01)
     assertResult(Value.mkInt32(1))(result02)
     assertResult(Value.mkInt32(-1))(result03)
@@ -6111,9 +6106,9 @@ class TestInterpreter extends FunSuite {
         |fn g03: Int = f(100, 23)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
     assertResult(Value.mkInt32(11))(result01)
     assertResult(Value.mkInt32(11))(result02)
     assertResult(Value.mkInt32(123))(result03)
@@ -6133,10 +6128,10 @@ class TestInterpreter extends FunSuite {
         |fn g04: Str = f(0, false)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
     assertResult(Value.mkStr("abc"))(result01)
     assertResult(Value.mkStr("def"))(result02)
     assertResult(Value.mkStr("ghi"))(result03)
@@ -6160,12 +6155,12 @@ class TestInterpreter extends FunSuite {
         |fn g06: Int = f(2, 10, 20)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
-    val result05 = model.constants(Name.Resolved.mk("g05"))
-    val result06 = model.constants(Name.Resolved.mk("g06"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
+    val result05 = model.constants(Symbol.Resolved.mk("g05"))
+    val result06 = model.constants(Symbol.Resolved.mk("g06"))
     assertResult(Value.mkInt32(-1))(result01)
     assertResult(Value.mkInt32(-2))(result02)
     assertResult(Value.mkInt32(-3))(result03)
@@ -6191,12 +6186,12 @@ class TestInterpreter extends FunSuite {
         |fn g06: Int = f(ConstProp.Top, ConstProp.Bot)
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
-    val result05 = model.constants(Name.Resolved.mk("g05"))
-    val result06 = model.constants(Name.Resolved.mk("g06"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
+    val result05 = model.constants(Symbol.Resolved.mk("g05"))
+    val result06 = model.constants(Symbol.Resolved.mk("g06"))
     assertResult(Value.mkInt32(1))(result01)
     assertResult(Value.mkInt32(2))(result02)
     assertResult(Value.mkInt32(3))(result03)
@@ -6223,13 +6218,13 @@ class TestInterpreter extends FunSuite {
         |fn g07: Int = f(4, NameAndAge.T("Charles", 64))
       """.stripMargin
     val model = getModel(input)
-    val result01 = model.constants(Name.Resolved.mk("g01"))
-    val result02 = model.constants(Name.Resolved.mk("g02"))
-    val result03 = model.constants(Name.Resolved.mk("g03"))
-    val result04 = model.constants(Name.Resolved.mk("g04"))
-    val result05 = model.constants(Name.Resolved.mk("g05"))
-    val result06 = model.constants(Name.Resolved.mk("g06"))
-    val result07 = model.constants(Name.Resolved.mk("g07"))
+    val result01 = model.constants(Symbol.Resolved.mk("g01"))
+    val result02 = model.constants(Symbol.Resolved.mk("g02"))
+    val result03 = model.constants(Symbol.Resolved.mk("g03"))
+    val result04 = model.constants(Symbol.Resolved.mk("g04"))
+    val result05 = model.constants(Symbol.Resolved.mk("g05"))
+    val result06 = model.constants(Symbol.Resolved.mk("g06"))
+    val result07 = model.constants(Symbol.Resolved.mk("g07"))
     assertResult(Value.mkInt32(1))(result01)
     assertResult(Value.mkInt32(-1))(result02)
     assertResult(Value.mkInt32(22))(result03)
@@ -6256,7 +6251,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("h"))
+    val result = model.constants(Symbol.Resolved.mk("h"))
     assertResult(MyObject(12))(result)
     assert(executed)
   }
@@ -6278,7 +6273,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("h"))
+    val result = model.constants(Symbol.Resolved.mk("h"))
     assertResult(Value.mkInt32(12))(result)
     assert(executed)
   }
@@ -6300,7 +6295,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val result = model.constants(Name.Resolved.mk("h"))
+    val result = model.constants(Symbol.Resolved.mk("h"))
     assertResult(Value.mkInt32(12))(result)
     assert(executed)
   }
@@ -6329,7 +6324,7 @@ class TestInterpreter extends FunSuite {
         |B(x) :- A(x).
       """.stripMargin
     val model = getModel(input)
-    val B = model.relations(Name.Resolved.mk("B")).toSet
+    val B = model.getRelation("B").toSet
     assertResult(B)(Set(List(Value.True)))
   }
 
@@ -6345,7 +6340,7 @@ class TestInterpreter extends FunSuite {
         |B(x) :- A(x).
       """.stripMargin
     val model = getModel(input)
-    val B = model.relations(Name.Resolved.mk("B")).toSet
+    val B = model.getRelation("B").toSet
     assertResult(B)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -6361,7 +6356,7 @@ class TestInterpreter extends FunSuite {
         |B(x) :- A(x).
       """.stripMargin
     val model = getModel(input)
-    val B = model.relations(Name.Resolved.mk("B")).toSet
+    val B = model.getRelation("B").toSet
     assertResult(B)(Set("one", "two", "three").map(x => List(Value.mkStr(x))))
   }
 
@@ -6376,7 +6371,7 @@ class TestInterpreter extends FunSuite {
         |A(()).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Unit)))
   }
 
@@ -6388,7 +6383,7 @@ class TestInterpreter extends FunSuite {
         |A(false).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(true, false).map(x => List(Value.mkBool(x))))
   }
 
@@ -6401,7 +6396,7 @@ class TestInterpreter extends FunSuite {
         |A(3i8).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt8(x))))
   }
 
@@ -6414,7 +6409,7 @@ class TestInterpreter extends FunSuite {
         |A(3i16).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt16(x))))
   }
 
@@ -6427,7 +6422,7 @@ class TestInterpreter extends FunSuite {
         |A(3i32).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -6440,7 +6435,7 @@ class TestInterpreter extends FunSuite {
         |A(3i64).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt64(x))))
   }
 
@@ -6453,7 +6448,7 @@ class TestInterpreter extends FunSuite {
         |A("three").
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set("one", "two", "three").map(x => List(Value.mkStr(x))))
   }
 
@@ -6464,7 +6459,7 @@ class TestInterpreter extends FunSuite {
         |A((1, "one")).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one"))))))
   }
 
@@ -6476,8 +6471,8 @@ class TestInterpreter extends FunSuite {
         |A(Foo.Foo(1, "one")).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
-    assertResult(A)(Set(List(Value.mkTag(Name.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))))
+    val A = model.getRelation("A").toSet
+    assertResult(A)(Set(List(Value.mkTag(Symbol.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))))
   }
 
   ignore("Term.Head.Exp.10") {
@@ -6487,7 +6482,7 @@ class TestInterpreter extends FunSuite {
         |A((1, 2)).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Tuple(Array(1, 2).map(Value.mkInt32)))))
   }
 
@@ -6500,7 +6495,7 @@ class TestInterpreter extends FunSuite {
         |A('c').
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set('a', 'b', 'c').map(x => List(Value.mkChar(x))))
   }
 
@@ -6513,7 +6508,7 @@ class TestInterpreter extends FunSuite {
         |A(3.0f32).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1.0f, 2.0f, 3.0f).map(x => List(Value.mkFloat32(x))))
   }
 
@@ -6526,7 +6521,7 @@ class TestInterpreter extends FunSuite {
         |A(3.0f64).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1.0d, 2.0d, 3.0d).map(x => List(Value.mkFloat64(x))))
   }
 
@@ -6543,7 +6538,7 @@ class TestInterpreter extends FunSuite {
         |A(f(0)).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Unit)))
   }
 
@@ -6556,7 +6551,7 @@ class TestInterpreter extends FunSuite {
         |A(f(1)).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(true, false).map(x => List(Value.mkBool(x))))
   }
 
@@ -6570,7 +6565,7 @@ class TestInterpreter extends FunSuite {
         |A(f(2i8)).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt8(x))))
   }
 
@@ -6584,7 +6579,7 @@ class TestInterpreter extends FunSuite {
         |A(f(2i16)).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt16(x))))
   }
 
@@ -6598,7 +6593,7 @@ class TestInterpreter extends FunSuite {
         |A(f(2i32)).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -6612,7 +6607,7 @@ class TestInterpreter extends FunSuite {
         |A(f(2i64)).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt64(x))))
   }
 
@@ -6626,7 +6621,7 @@ class TestInterpreter extends FunSuite {
         |A(f("three")).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set("one", "two", "three").map(x => List(Value.mkStr(x))))
   }
 
@@ -6638,7 +6633,7 @@ class TestInterpreter extends FunSuite {
         |A(f(1)).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one"))))))
   }
 
@@ -6651,8 +6646,8 @@ class TestInterpreter extends FunSuite {
         |A(f("one")).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
-    assertResult(A)(Set(List(Value.mkTag(Name.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))))
+    val A = model.getRelation("A").toSet
+    assertResult(A)(Set(List(Value.mkTag(Symbol.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))))
   }
 
   test("Term.Head.Apply.10") {
@@ -6663,7 +6658,7 @@ class TestInterpreter extends FunSuite {
         |A(f(1, 2)).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Tuple(Array(1, 2).map(Value.mkInt32)))))
   }
 
@@ -6677,7 +6672,7 @@ class TestInterpreter extends FunSuite {
         |A(f('c')).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set('a', 'b', 'c').map(x => List(Value.mkChar(x))))
   }
 
@@ -6691,7 +6686,7 @@ class TestInterpreter extends FunSuite {
         |A(f(3.0f32)).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1.0f, 2.0f, 3.0f).map(x => List(Value.mkFloat32(x))))
   }
 
@@ -6705,7 +6700,7 @@ class TestInterpreter extends FunSuite {
         |A(f(3.0f64)).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1.0d, 2.0d, 3.0d).map(x => List(Value.mkFloat64(x))))
   }
 
@@ -6729,7 +6724,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Unit)))
     assert(executed)
   }
@@ -6750,7 +6745,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(true, false).map(x => List(Value.mkBool(x))))
     assert(executed)
   }
@@ -6772,7 +6767,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt8(x))))
     assert(executed)
   }
@@ -6794,7 +6789,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt16(x))))
     assert(executed)
   }
@@ -6816,7 +6811,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
     assert(executed)
   }
@@ -6838,7 +6833,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt64(x))))
     assert(executed)
   }
@@ -6860,7 +6855,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set("one", "two", "three").map(x => List(Value.mkStr(x))))
     assert(executed)
   }
@@ -6880,7 +6875,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one"))))))
     assert(executed)
   }
@@ -6908,8 +6903,8 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
-    assertResult(A)(Set(List(Value.mkTag(Name.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))))
+    val A = model.getRelation("A").toSet
+    assertResult(A)(Set(List(Value.mkTag(Symbol.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))))
     assert(executed)
   }
 
@@ -6928,7 +6923,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Tuple(Array(1, 2).map(Value.mkInt32)))))
     assert(executed)
   }
@@ -6950,7 +6945,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set('a', 'b', 'c').map(x => List(Value.mkChar(x))))
     assert(executed)
   }
@@ -6972,7 +6967,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1.0f, 2.0f, 3.0f).map(x => List(Value.mkFloat32(x))))
     assert(executed)
   }
@@ -6994,7 +6989,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1.0d, 2.0d, 3.0d).map(x => List(Value.mkFloat64(x))))
     assert(executed)
   }
@@ -7016,7 +7011,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHook("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(MyObject(x))))
     assert(executed)
   }
@@ -7043,7 +7038,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Unit)))
     assert(executed)
   }
@@ -7064,7 +7059,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(true, false).map(x => List(Value.mkBool(x))))
     assert(executed)
   }
@@ -7086,7 +7081,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt8(x))))
     assert(executed)
   }
@@ -7108,7 +7103,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt16(x))))
     assert(executed)
   }
@@ -7130,7 +7125,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
     assert(executed)
   }
@@ -7152,7 +7147,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt64(x))))
     assert(executed)
   }
@@ -7174,7 +7169,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set("one", "two", "three").map(x => List(Value.mkStr(x))))
     assert(executed)
   }
@@ -7194,7 +7189,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one"))))))
     assert(executed)
   }
@@ -7216,14 +7211,14 @@ class TestInterpreter extends FunSuite {
     val tpe = flix.mkFunctionType(Array(flix.mkStrType), flix.mkEnumType("Foo", Array(tagTpe)))
     def nativeF(x: String): Value.Tag = {
       executed = true
-      Value.mkTag(Name.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), x)))
+      Value.mkTag(Symbol.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), x)))
     }
     val model = flix
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
-    assertResult(A)(Set(List(Value.mkTag(Name.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))))
+    val A = model.getRelation("A").toSet
+    assertResult(A)(Set(List(Value.mkTag(Symbol.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))))
     assert(executed)
   }
 
@@ -7242,7 +7237,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(List(Value.Tuple(Array(1, 2).map(Value.mkInt32)))))
     assert(executed)
   }
@@ -7264,7 +7259,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set('a', 'b', 'c').map(x => List(Value.mkChar(x))))
     assert(executed)
   }
@@ -7286,7 +7281,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1.0f, 2.0f, 3.0f).map(x => List(Value.mkFloat32(x))))
     assert(executed)
   }
@@ -7308,7 +7303,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1.0d, 2.0d, 3.0d).map(x => List(Value.mkFloat64(x))))
     assert(executed)
   }
@@ -7330,7 +7325,7 @@ class TestInterpreter extends FunSuite {
       .addStr(input)
       .addHookUnsafe("f", tpe, nativeF _)
       .solve().get
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(MyObject(x))))
     assert(executed)
   }
@@ -7357,7 +7352,7 @@ class TestInterpreter extends FunSuite {
         |B(y) :- f(x), A(x, y).
       """.stripMargin
     val model = getModel(input)
-    val B = model.relations(Name.Resolved.mk("B")).toSet
+    val B = model.getRelation("B").toSet
     assertResult(B)(Set(List(Value.True)))
   }
 
@@ -7375,7 +7370,7 @@ class TestInterpreter extends FunSuite {
         |B(x) :- f(x), A(x).
       """.stripMargin
     val model = getModel(input)
-    val B = model.relations(Name.Resolved.mk("B")).toSet
+    val B = model.getRelation("B").toSet
     assertResult(B)(Set(0, 2).map(x => List(Value.mkInt32(x))))
   }
 
@@ -7395,7 +7390,7 @@ class TestInterpreter extends FunSuite {
         |A(5) :- f(false).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -7410,7 +7405,7 @@ class TestInterpreter extends FunSuite {
         |A(4) :- f(-1i8).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -7425,7 +7420,7 @@ class TestInterpreter extends FunSuite {
         |A(4) :- f(-200i16).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -7440,7 +7435,7 @@ class TestInterpreter extends FunSuite {
         |A(4) :- f(-200000i32).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -7455,7 +7450,7 @@ class TestInterpreter extends FunSuite {
         |A(4) :- f(-20000000000i64).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -7469,7 +7464,7 @@ class TestInterpreter extends FunSuite {
         |A(3) :- f("baz").
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -7488,7 +7483,7 @@ class TestInterpreter extends FunSuite {
         |A(5) :- f((0, "xyz")).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -7508,7 +7503,7 @@ class TestInterpreter extends FunSuite {
         |A(5) :- f(Val.Top).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -7523,7 +7518,7 @@ class TestInterpreter extends FunSuite {
         |A(4) :- f('a').
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -7538,7 +7533,7 @@ class TestInterpreter extends FunSuite {
         |A(4) :- f(-1.0f32).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
@@ -7553,7 +7548,7 @@ class TestInterpreter extends FunSuite {
         |A(4) :- f(-1.0f64).
       """.stripMargin
     val model = getModel(input)
-    val A = model.relations(Name.Resolved.mk("A")).toSet
+    val A = model.getRelation("A").toSet
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 

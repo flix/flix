@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.runtime
 
 import java.util
 
-import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Name}
+import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Symbol}
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
 import scala.collection.{immutable, mutable}
@@ -255,7 +255,7 @@ object Value {
     * Flix internal representation of tags.
     */
   // TODO: Technically we don't need to store the enum name with the tag.
-  final class Tag private[Value](val enum: Name.Resolved, val tag: java.lang.String, val value: AnyRef) {
+  final class Tag private[Value](val enum: Symbol.Resolved, val tag: java.lang.String, val value: AnyRef) {
     override val toString: java.lang.String = s"Value.Tag($enum, $tag, $value)"
 
     override def equals(other: Any): scala.Boolean = other match {
@@ -269,13 +269,13 @@ object Value {
   /**
     * A cache for every tag ever created.
     */
-  private val tagCache = mutable.HashMap[(Name.Resolved, java.lang.String, AnyRef), Value.Tag]()
+  private val tagCache = mutable.HashMap[(Symbol.Resolved, java.lang.String, AnyRef), Value.Tag]()
 
   /**
     * Constructs the tag for the given enum name `e`, tag name `t` and tag value `v`.
     */
   @inline
-  def mkTag(e: Name.Resolved, t: java.lang.String, v: AnyRef): Value.Tag = {
+  def mkTag(e: Symbol.Resolved, t: java.lang.String, v: AnyRef): Value.Tag = {
     val triple = (e, t, v)
     if (tagCache.contains(triple)) {
       tagCache(triple)

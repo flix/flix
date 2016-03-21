@@ -122,7 +122,7 @@ object Type {
     * @param tpe  the type of the nested value.
     */
   @deprecated("to be removed", "0.1.0")
-  case class Tag(enum: Name.Resolved, tag: Name.Ident, tpe: Type) extends Type
+  case class Tag(enum: Symbol.Resolved, tag: Name.Ident, tpe: Type) extends Type
 
   /**
     * An AST node that represents the unresolved type of a tag.
@@ -140,7 +140,7 @@ object Type {
     * @param name  the fully qualified name of the enum.
     * @param cases a map from tag names to tag types.
     */
-  case class Enum(name: Name.Resolved, cases: immutable.Map[String, Type.Tag]) extends Type
+  case class Enum(name: Symbol.Resolved, cases: immutable.Map[String, Type.Tag]) extends Type
 
   /**
     * An AST node that represents a tuple type.
@@ -164,7 +164,7 @@ object Type {
     * @param elms the type of the type parameters.
     */
   // TODO: check with pierce book and see how this should be represented.
-  case class Parametric(name: Name.Unresolved, elms: Seq[Type]) extends Type
+  case class Parametric(name: Name.QName, elms: Seq[Type]) extends Type
 
   /**
     * An AST node that represents an Opt type.
@@ -208,7 +208,7 @@ object Type {
     * @param name the name of the unresolved type.
     */
   @deprecated("to be removed", "0.1.0")
-  case class Unresolved(name: Name.Unresolved) extends Type
+  case class Unresolved(name: Name.QName) extends Type
 
   // TODO: check with pierce book and see how this should be represented.
   @deprecated("to be removed", "0.1.0")

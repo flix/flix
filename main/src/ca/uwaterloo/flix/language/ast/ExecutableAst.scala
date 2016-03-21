@@ -6,20 +6,20 @@ sealed trait ExecutableAst
 
 object ExecutableAst {
 
-  case class Root(constants: Map[Name.Resolved, ExecutableAst.Definition.Constant],
+  case class Root(constants: Map[Symbol.Resolved, ExecutableAst.Definition.Constant],
                   lattices: Map[Type, ExecutableAst.Definition.Lattice],
-                  collections: Map[Name.Resolved, ExecutableAst.Collection],
-                  indexes: Map[Name.Resolved, ExecutableAst.Definition.Index],
+                  tables: Map[Symbol.TableSym, ExecutableAst.Table],
+                  indexes: Map[Symbol.TableSym, ExecutableAst.Definition.Index],
                   facts: Array[ExecutableAst.Constraint.Fact],
                   rules: Array[ExecutableAst.Constraint.Rule],
                   time: Time,
-                  dependenciesOf: Map[Name.Resolved, mutable.Set[(Constraint.Rule, ExecutableAst.Predicate.Body.Collection)]]) extends ExecutableAst
+                  dependenciesOf: Map[Symbol.TableSym, mutable.Set[(Constraint.Rule, ExecutableAst.Predicate.Body.Table)]]) extends ExecutableAst // TODO: Why mutable?
 
   sealed trait Definition
 
   object Definition {
 
-    case class Constant(name: Name.Resolved,
+    case class Constant(name: Symbol.Resolved,
                         exp: ExecutableAst.Expression,
                         tpe: Type,
                         loc: SourceLocation) extends ExecutableAst.Definition
@@ -32,24 +32,24 @@ object ExecutableAst {
                        glb: ExecutableAst.Expression,
                        loc: SourceLocation) extends ExecutableAst.Definition
 
-    case class Index(name: Name.Resolved,
+    case class Index(name: Symbol.TableSym,
                      indexes: Seq[Seq[Name.Ident]],
                      loc: SourceLocation) extends ExecutableAst.Definition
 
   }
 
-  sealed trait Collection
+  sealed trait Table extends ExecutableAst
 
-  object Collection {
+  object Table {
 
-    case class Relation(name: Name.Resolved,
+    case class Relation(sym: Symbol.TableSym,
                         attributes: Array[ExecutableAst.Attribute],
-                        loc: SourceLocation) extends ExecutableAst.Collection
+                        loc: SourceLocation) extends ExecutableAst.Table
 
-    case class Lattice(name: Name.Resolved,
+    case class Lattice(sym: Symbol.TableSym,
                        keys: Array[ExecutableAst.Attribute],
                        values: Array[ExecutableAst.Attribute],
-                       loc: SourceLocation) extends ExecutableAst.Collection
+                       loc: SourceLocation) extends ExecutableAst.Table
 
   }
 
@@ -62,7 +62,7 @@ object ExecutableAst {
     // TODO(magnus): Change lists to arrays
     case class Rule(head: ExecutableAst.Predicate.Head,
                     body: List[ExecutableAst.Predicate.Body],
-                    collections: List[ExecutableAst.Predicate.Body.Collection],
+                    tables: List[ExecutableAst.Predicate.Body.Table],
                     filters: List[ExecutableAst.Predicate.Body.ApplyFilter],
                     filterHooks: List[ExecutableAst.Predicate.Body.ApplyHookFilter],
                     disjoint: List[ExecutableAst.Predicate.Body.NotEqual],
@@ -266,7 +266,7 @@ object ExecutableAst {
                    tpe: Type,
                    loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class Ref(name: Name.Resolved, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression {
+    case class Ref(name: Symbol.Resolved, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression {
       override def toString: String = "Ref(" + name.fqn + ")"
     }
 
@@ -281,15 +281,6 @@ object ExecutableAst {
 
     case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    // TODO: Eliminate once we have lambda lifting
-    case class Closure(args: Array[ExecutableAst.FormalArg],
-                       body: ExecutableAst.Expression,
-                       env: Map[String, ExecutableAst.Expression],
-                       tpe: Type,
-                       loc: SourceLocation) extends ExecutableAst.Expression {
-      override def toString: String = "Closure(<>)"
-    }
-
     /**
       * A typed AST node representing a function call.
       *
@@ -298,7 +289,7 @@ object ExecutableAst {
       * @param tpe  the return type of the function.
       * @param loc  the source location of the expression.
       */
-    case class Apply(name: Name.Resolved,
+    case class Apply(name: Symbol.Resolved,
                      args: Array[ExecutableAst.Expression],
                      tpe: Type,
                      loc: SourceLocation) extends ExecutableAst.Expression
@@ -415,7 +406,7 @@ object ExecutableAst {
       * @param tpe  the type of the expression.
       * @param loc  The source location of the tag.
       */
-    case class Tag(enum: Name.Resolved,
+    case class Tag(enum: Symbol.Resolved,
                    tag: Name.Ident,
                    exp: ExecutableAst.Expression,
                    tpe: Type.Enum,
@@ -506,10 +497,10 @@ object ExecutableAst {
 
     object Head {
 
-      case class Relation(name: Name.Resolved,
-                          terms: Array[ExecutableAst.Term.Head],
-                          tpe: Type.Predicate,
-                          loc: SourceLocation) extends ExecutableAst.Predicate.Head {
+      case class Table(sym: Symbol.TableSym,
+                       terms: Array[ExecutableAst.Term.Head],
+                       tpe: Type.Predicate,
+                       loc: SourceLocation) extends ExecutableAst.Predicate.Head {
         /**
           * Returns the arity of the predicate.
           */
@@ -527,19 +518,19 @@ object ExecutableAst {
 
     object Body {
 
-      case class Collection(name: Name.Resolved,
-                            terms: Array[ExecutableAst.Term.Body],
-                            index2var: Array[String],
-                            freeVars: Set[String],
-                            tpe: Type.Predicate,
-                            loc: SourceLocation) extends ExecutableAst.Predicate.Body {
+      case class Table(sym: Symbol.TableSym,
+                       terms: Array[ExecutableAst.Term.Body],
+                       index2var: Array[String],
+                       freeVars: Set[String],
+                       tpe: Type.Predicate,
+                       loc: SourceLocation) extends ExecutableAst.Predicate.Body {
         /**
-          * Returns the arity of this collection predicate.
+          * Returns the arity of this table predicate.
           */
         val arity: Int = terms.length
       }
 
-      case class ApplyFilter(name: Name.Resolved,
+      case class ApplyFilter(name: Symbol.Resolved,
                              terms: Array[ExecutableAst.Term.Body],
                              freeVars: Set[String],
                              tpe: Type.Lambda,
@@ -581,7 +572,7 @@ object ExecutableAst {
 
       case class Exp(e: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
-      case class Apply(name: Name.Resolved,
+      case class Apply(name: Symbol.Resolved,
                        args: Array[ExecutableAst.Term.Head],
                        tpe: Type,
                        loc: SourceLocation) extends ExecutableAst.Term.Head

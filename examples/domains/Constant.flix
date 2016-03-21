@@ -175,36 +175,35 @@ namespace Constant {
       * Over-approximates `equal`.
       */
     @strict @monotone @commutative
-    fn eq(e1: Constant, e2: Constant): Belnap::Belnap = match (e1, e2) with {
-        case (Constant.Bot, _)                      => Belnap::Belnap.Bot
-        case (_, Constant.Bot)                      => Belnap::Belnap.Bot
-        case (Constant.Cst(n1), Constant.Cst(n2))   => Belnap::alpha(n1 == n2)
-        case _                                      => Belnap::Belnap.Top
+    fn eq(e1: Constant, e2: Constant): Belnap/Belnap = match (e1, e2) with {
+        case (Constant.Bot, _)                      => Belnap/Belnap.Bot
+        case (_, Constant.Bot)                      => Belnap/Belnap.Bot
+        case (Constant.Cst(n1), Constant.Cst(n2))   => Belnap/alpha(n1 == n2)
+        case _                                      => Belnap/Belnap.Top
     }
 
     /**
       * Over-approximates `not equal`.
       */
     @strict @monotone @commutative
-    fn neq(e1: Constant, e2: Constant): Belnap::Belnap = Belnap::not(eq(e1, e2))
+    fn neq(e1: Constant, e2: Constant): Belnap/Belnap = Belnap/not(eq(e1, e2))
 
     /**
       * Over-approximates `less than`.
       */
     @strict @monotone
-    fn less(e1: Constant, e2: Constant): Belnap::Belnap = match (e1, e2) with {
-        case (Constant.Bot, _)                      => Belnap::Belnap.Bot
-        case (_, Constant.Bot)                      => Belnap::Belnap.Bot
-        case (Constant.Cst(n1), Constant.Cst(n2))   => Belnap::alpha(n1 < n2)
-        case _                                      => Belnap::Belnap.Top
+    fn less(e1: Constant, e2: Constant): Belnap/Belnap = match (e1, e2) with {
+        case (Constant.Bot, _)                      => Belnap/Belnap.Bot
+        case (_, Constant.Bot)                      => Belnap/Belnap.Bot
+        case (Constant.Cst(n1), Constant.Cst(n2))   => Belnap/alpha(n1 < n2)
+        case _                                      => Belnap/Belnap.Top
     }
 
     /**
       * Over-approximates `less than or equal`.
       */
-    // TODO: This triggers a stackoverflow error:
-    //@strict @monotone
-    //fn lessEqual(e1: Constant, e2: Constant): Belnap::Belnap = Belnap::or(e1 `less` e2, e1 `eq` e2)
+    @strict @monotone
+    fn lessEqual(e1: Constant, e2: Constant): Belnap/Belnap = Belnap/or(e1 `less` e2, e1 `eq` e2)
 
     let Constant<> = (Constant.Bot, Constant.Top, leq, lub, glb)
 

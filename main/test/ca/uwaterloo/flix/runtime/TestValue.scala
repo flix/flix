@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.ast.Name
+import ca.uwaterloo.flix.language.ast.{Symbol, Name}
 
 import scala.collection.mutable
 import org.scalatest.FunSuite
@@ -61,8 +61,8 @@ class TestValue extends FunSuite {
   }
 
   test("Value.Tag equality") {
-    val name1 = Name.Resolved.mk(List("foo", "bar"))
-    val name2 = Name.Resolved.mk(List("abc", "def"))
+    val name1 = Symbol.Resolved.mk(List("foo", "bar"))
+    val name2 = Symbol.Resolved.mk(List("abc", "def"))
     val t1 = Value.mkTag(name1, "aaa", Value.mkInt32(42))
     val t2 = Value.mkTag(name1, "aaa", Value.mkInt32(10))
     val t3 = Value.mkTag(name1, "zzz", Value.mkInt32(42))
@@ -111,8 +111,8 @@ class TestValue extends FunSuite {
 
   test("Value.Tag hashing") {
     val set: mutable.Set[Value.Tag] = mutable.Set()
-    val name1 = Name.Resolved.mk(List("foo", "bar"))
-    val name2 = Name.Resolved.mk(List("abc", "def"))
+    val name1 = Symbol.Resolved.mk(List("foo", "bar"))
+    val name2 = Symbol.Resolved.mk(List("abc", "def"))
     val t1 = Value.mkTag(name1, "aaa", Value.mkInt32(42))
     val t2 = Value.mkTag(name1, "aaa", Value.mkInt32(10))
     val t3 = Value.mkTag(name1, "zzz", Value.mkInt32(42))
@@ -144,13 +144,13 @@ class TestValue extends FunSuite {
   }
 
   test("Value.Tag pattern matching") {
-    val v = Value.mkTag(Name.Resolved.mk(List("foo", "bar")), "aaa", Value.mkInt32(42))
+    val v = Value.mkTag(Symbol.Resolved.mk(List("foo", "bar")), "aaa", Value.mkInt32(42))
 
     val r1 = v match {
       case v: Value.Tag => v.enum
-      case _ => Name.Resolved.mk(List("hi"))
+      case _ => Symbol.Resolved.mk(List("hi"))
     }
-    assert(r1 == Name.Resolved.mk(List("foo", "bar")))
+    assert(r1 == Symbol.Resolved.mk(List("foo", "bar")))
 
     val r2 = v match {
       case v: Value.Tag => v.tag

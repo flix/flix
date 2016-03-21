@@ -7,87 +7,77 @@ import scala.collection.mutable
 object Name {
 
   /**
-    * Represents an identifier.
+    * Identifier.
     *
-    * @param sp1  the position of the first character in the literal.
-    * @param name the identifier.
-    * @param sp2  the position of the last character in the literal.
+    * @param sp1  the position of the first character in the identifier.
+    * @param name the identifier string.
+    * @param sp2  the position of the last character in the identifier.
     */
   case class Ident(sp1: SourcePosition, name: String, sp2: SourcePosition) extends SmartHash {
     /**
-      * The source location of `this` unresolved name.
+      * The source location of the identifier.
       */
     val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
 
     /**
-      * Returns a human readable string representation of the identifier.
+      * Human readable representation.
       */
     override val toString: String = name
   }
 
   /**
-    * Represents an unresolved name.
+    * Namespace.
     *
-    * @param sp1   the position of the first character in the literal.
-    * @param parts the name parts.
-    * @param sp2   the position of the last character in the literal.
+    * @param sp1    the position of the first character in the namespace.
+    * @param idents the identifiers of the namespace.
+    * @param sp2    the position of the last character in the namespace.
     */
-  case class Unresolved(sp1: SourcePosition, parts: List[String], sp2: SourcePosition) extends SmartHash {
+  case class NName(sp1: SourcePosition, idents: List[Ident], sp2: SourcePosition) extends SmartHash {
     /**
-      * The source location of `this` unresolved name.
+      * Returns `true` if this is the root namespace.
+      */
+    val isRoot: Boolean = idents.isEmpty
+
+    /**
+      * The source location of the namespace.
       */
     val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
 
     /**
-      * Returns a human readable string representation of the resolved name.
+      * Human readable representation.
       */
-    override val toString: String = "?" + parts.mkString("::")
-  }
-
-
-  /**
-    * Companion object for the [[Resolved]] class.
-    */
-  object Resolved {
-
-    private val cache = mutable.HashMap.empty[List[String], Resolved]
-
-    def mk(name: String): Resolved = mk(name.split("::").toList)
-
-    def mk(parts: List[String]): Resolved = {
-      cache.getOrElseUpdate(parts, new Resolved(parts))
-    }
+    override val toString: String = idents.mkString(".")
   }
 
   /**
-    * Represents a resolved name.
+    * Qualified Name.
     *
-    * @param parts the parts of the name.
+    * @param sp1       the position of the first character in the qualified name.
+    * @param namespace the namespace
+    * @param ident     the identifier.
+    * @param sp2       the position of the last character in the qualified name.
     */
-  final class Resolved private(val parts: List[String]) {
+  case class QName(sp1: SourcePosition, namespace: NName, ident: Ident, sp2: SourcePosition) extends SmartHash {
+    /**
+      * Returns `true` if this name is qualified by a namespace.
+      */
+    val isQualified: Boolean = !namespace.isRoot
 
     /**
-      * Returns the fully qualified name of `this` as a string.
+      * Returns `true` if this name is unqualified (i.e. has no namespace).
       */
-    def fqn: String = parts.mkString("::")
+    val isUnqualified: Boolean = !isQualified
 
     /**
-      * Returns `true` if this resolved name is equal to `obj` resolved name.
+      * The source location of the name.
       */
-    override def equals(obj: scala.Any): Boolean = obj match {
-      case that: Resolved => this eq that
-      case _ => false
-    }
+    val loc: SourceLocation = SourceLocation.mk(sp1, sp2)
 
     /**
-      * Returns the hash code of this resolved name.
+      * Human readable representation.
       */
-    override val hashCode: Int = parts.hashCode()
-
-    /**
-      * Returns a human readable string representation of the resolved name.
-      */
-    override val toString: String = parts.mkString("::")
+    override val toString: String =
+      if (isUnqualified) ident.toString else namespace.toString + "/" + ident
   }
 
 }

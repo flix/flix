@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.library
 
-import ca.uwaterloo.flix.language.ast.Name
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.ast.Type._
 
@@ -16,7 +16,7 @@ object FList {
   /**
     * All list operations.
     */
-  val Ops: immutable.Map[Name.Resolved, ListOperator] = List(
+  val Ops: immutable.Map[Symbol.Resolved, ListOperator] = List(
 
     // Basic Operations.
     "List/nil" -> nil,
@@ -134,7 +134,7 @@ object FList {
     "List/zipWithJoin" -> zipWithJoin,
     "List/zipWithMeet" -> zipWithMeet
   ).map {
-    case (name, op) => Name.Resolved.mk(name) -> op
+    case (name, op) => Symbol.Resolved.mk(name) -> op
   }.toMap
 
   /**

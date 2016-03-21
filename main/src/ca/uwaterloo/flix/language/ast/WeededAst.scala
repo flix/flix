@@ -14,7 +14,7 @@ object WeededAst {
     * @param hooks        a map from names to hooks.
     * @param time         the time spent in each compiler phase.
     */
-  case class Root(declarations: List[WeededAst.Declaration], hooks: Map[Name.Resolved, Ast.Hook], time: Time) extends WeededAst
+  case class Root(declarations: List[WeededAst.Declaration], hooks: Map[Symbol.Resolved, Ast.Hook], time: Time) extends WeededAst
 
   /**
     * A common super-type for AST nodes that represents declarations.
@@ -31,11 +31,11 @@ object WeededAst {
     /**
       * An AST node that represents a namespace declaration.
       *
-      * @param name the name of the namespace.
+      * @param name the the namespace.
       * @param body the nested declarations.
       * @param loc  the source location.
       */
-    case class Namespace(name: Name.Unresolved, body: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
+    case class Namespace(name: Name.NName, body: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
     /**
       * An AST node that a fact declaration.
@@ -109,16 +109,16 @@ object WeededAst {
   }
 
   /**
-    * A common super-type for collections that are either relations or lattices.
+    * A common super-type for tables that are either relations or lattices.
     */
-  sealed trait Collection extends WeededAst.Definition {
+  sealed trait Table extends WeededAst.Definition {
     /**
       * The name of `this` collection.
       */
     def ident: Name.Ident
   }
 
-  object Collection {
+  object Table {
 
     /**
       * An AST node that represents a relation definition.
@@ -127,17 +127,17 @@ object WeededAst {
       * @param attributes the attributes of the relation.
       * @param loc        the source location of the relation.
       */
-    case class Relation(ident: Name.Ident, attributes: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Collection
+    case class Relation(ident: Name.Ident, attributes: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Table
 
     /**
       * An AST node that represents a lattice definition.
       *
-      * @param ident  the name of the lattice.
-      * @param keys   the key attributes of the lattice.
-      * @param values the values attributes of the lattice.
-      * @param loc    the source location of the lattice.
+      * @param ident the name of the lattice.
+      * @param keys  the key attributes of the lattice.
+      * @param value the value attributes of the lattice.
+      * @param loc   the source location of the lattice.
       */
-    case class Lattice(ident: Name.Ident, keys: List[WeededAst.Attribute], values: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Collection
+    case class Lattice(ident: Name.Ident, keys: List[WeededAst.Attribute], value: WeededAst.Attribute, loc: SourceLocation) extends WeededAst.Table
 
   }
 
@@ -261,7 +261,7 @@ object WeededAst {
       * @param name the unresolved name.
       * @param loc  the source location.
       */
-    case class Var(name: Name.Unresolved, loc: SourceLocation) extends WeededAst.Expression
+    case class Var(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
     /**
       * An AST node that represents a lambda expressions.
@@ -347,7 +347,7 @@ object WeededAst {
       * @param e    the tagged expression.
       * @param loc  the source location.
       */
-    case class Tag(enum: Name.Unresolved, tag: Name.Ident, e: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class Tag(enum: Name.QName, tag: Name.Ident, e: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     /**
       * An AST node that represents a tuple expression.
@@ -440,7 +440,7 @@ object WeededAst {
       * @param pat  the nested pattern.
       * @param loc  the source location.
       */
-    case class Tag(enum: Name.Unresolved, tag: Name.Ident, pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
+    case class Tag(enum: Name.QName, tag: Name.Ident, pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
 
     /**
       * An AST node that represents a tuple pattern.
@@ -448,7 +448,9 @@ object WeededAst {
       * @param elms the elements of the tuple.
       * @param loc  the source location.
       */
-    case class Tuple(elms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
+    case class Tuple(elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
+
+    case class List(hd: WeededAst.Pattern, tl: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
 
   }
 
@@ -473,7 +475,7 @@ object WeededAst {
         * @param terms the terms of the predicate.
         * @param loc   the source location.
         */
-      case class Relation(name: Name.Unresolved, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
+      case class Relation(name: Name.QName, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 
     }
 
@@ -491,7 +493,7 @@ object WeededAst {
         * @param terms the terms of the predicate.
         * @param loc   the source location.
         */
-      case class Ambiguous(name: Name.Unresolved, terms: List[WeededAst.Term.Body], loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Ambiguous(name: Name.QName, terms: List[WeededAst.Term.Body], loc: SourceLocation) extends WeededAst.Predicate.Body
 
       /**
         * An AST node that represents the special not equal predicate.
@@ -550,7 +552,7 @@ object WeededAst {
         */
       case class Lit(lit: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Term.Head
 
-      case class Tag(enumName: Name.Unresolved, tagName: Name.Ident, t: WeededAst.Term.Head, loc: SourceLocation) extends WeededAst.Term.Head
+      case class Tag(enumName: Name.QName, tagName: Name.Ident, t: WeededAst.Term.Head, loc: SourceLocation) extends WeededAst.Term.Head
 
       case class Tuple(elms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Term.Head
 
@@ -561,7 +563,7 @@ object WeededAst {
         * @param args the arguments to the function. 
         * @param loc  the source location.
         */
-      case class Apply(name: Name.Unresolved, args: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Term.Head
+      case class Apply(name: Name.QName, args: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Term.Head
 
     }
 
@@ -611,30 +613,10 @@ object WeededAst {
   /**
     * An AST node that represents an attribute in a relation.
     *
-    * @param ident  the name of the attribute.
-    * @param tpe    the declared type of the attribute.
-    * @param interp the interpretation of the attribute.
+    * @param ident the name of the attribute.
+    * @param tpe   the declared type of the attribute.
     */
-  case class Attribute(ident: Name.Ident, tpe: Type, interp: WeededAst.Interpretation) extends WeededAst
-
-  /**
-    * An AST node that represents an attribute interpretation.
-    */
-  sealed trait Interpretation extends WeededAst
-
-  object Interpretation {
-
-    /**
-      * An AST node that represents a set-based interpretation.
-      */
-    case object Set extends WeededAst.Interpretation
-
-    /**
-      * An AST node that represents a lattice-based interpretation.
-      */
-    case object Lattice extends WeededAst.Interpretation
-
-  }
+  case class Attribute(ident: Name.Ident, tpe: Type) extends WeededAst
 
   /**
     * An AST node representing a formal argument of a function.

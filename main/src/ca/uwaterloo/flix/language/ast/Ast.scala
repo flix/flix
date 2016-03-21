@@ -138,7 +138,7 @@ object Ast {
     /**
       * Returns the fully qualified name of the hook.
       */
-    def name: Name.Resolved
+    def name: Symbol.Resolved
 
     /**
       * Returns the type of the hook.
@@ -155,7 +155,7 @@ object Ast {
       * @param inv  the functional object.
       * @param tpe  the type of the function.
       */
-    case class Safe(name: Name.Resolved, inv: Invokable, tpe: Type.Lambda) extends Hook
+    case class Safe(name: Symbol.Resolved, inv: Invokable, tpe: Type.Lambda) extends Hook
 
     /**
       * A reference to an implementation of the [[InvokableUnsafe]] interface.
@@ -164,7 +164,7 @@ object Ast {
       * @param inv  the functional object.
       * @param tpe  the type of the function.
       */
-    case class Unsafe(name: Name.Resolved, inv: InvokableUnsafe, tpe: Type.Lambda) extends Hook
+    case class Unsafe(name: Symbol.Resolved, inv: InvokableUnsafe, tpe: Type.Lambda) extends Hook
 
   }
 

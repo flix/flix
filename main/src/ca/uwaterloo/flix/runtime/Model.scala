@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, Name}
+import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
 
 /**
   * A case class representing the minimal model.
@@ -10,8 +10,13 @@ import ca.uwaterloo.flix.language.ast.{ExecutableAst, Name}
   * @param lattices  the lattice facts in the model.
   */
 case class Model(root: ExecutableAst.Root, // TODO: remove
-                 constants: Map[Name.Resolved, AnyRef],
-                 relations: Map[Name.Resolved, Iterable[List[AnyRef]]],
-                 lattices: Map[Name.Resolved, Iterable[(List[AnyRef], List[AnyRef])]]) {
+                 constants: Map[Symbol.Resolved, AnyRef],
+                 relations: Map[Symbol.TableSym, Iterable[List[AnyRef]]],
+                 lattices: Map[Symbol.TableSym, Iterable[(List[AnyRef], List[AnyRef])]]) {
+
+  def getRelation(name: String): Iterable[List[AnyRef]] = relations(Symbol.mkTableSym(name))
+
+  def getLattice(name: String): Iterable[(List[AnyRef], List[AnyRef])] = lattices(Symbol.mkTableSym(name))
+
 
 }

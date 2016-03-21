@@ -6,10 +6,10 @@ object SimplifiedAst {
 
   // TODO: Order of elements.
 
-  case class Root(constants: Map[Name.Resolved, SimplifiedAst.Definition.Constant],
+  case class Root(constants: Map[Symbol.Resolved, SimplifiedAst.Definition.Constant],
                   lattices: Map[Type, SimplifiedAst.Definition.Lattice],
-                  collections: Map[Name.Resolved, SimplifiedAst.Collection],
-                  indexes: Map[Name.Resolved, SimplifiedAst.Definition.Index],
+                  tables: Map[Symbol.TableSym, SimplifiedAst.Table],
+                  indexes: Map[Symbol.TableSym, SimplifiedAst.Definition.Index],
                   facts: List[SimplifiedAst.Constraint.Fact],
                   rules: List[SimplifiedAst.Constraint.Rule],
                   time: Time) extends SimplifiedAst
@@ -18,7 +18,7 @@ object SimplifiedAst {
 
   object Definition {
 
-    case class Constant(name: Name.Resolved,
+    case class Constant(name: Symbol.Resolved,
                         exp: SimplifiedAst.Expression,
                         tpe: Type,
                         loc: SourceLocation) extends SimplifiedAst.Definition
@@ -31,7 +31,7 @@ object SimplifiedAst {
                        glb: SimplifiedAst.Expression,
                        loc: SourceLocation) extends SimplifiedAst.Definition
 
-    case class Index(name: Name.Resolved,
+    case class Index(sym: Symbol.TableSym,
                      indexes: Seq[Seq[Name.Ident]],
                      loc: SourceLocation) extends SimplifiedAst.Definition
 
@@ -44,7 +44,7 @@ object SimplifiedAst {
       * @param tpe  the (lambda) type of the function.
       * @param loc  the source location of the function definition.
       */
-    case class Function(name: Name.Resolved,
+    case class Function(name: Symbol.Resolved,
                         args: List[String],
                         body: SimplifiedAst.Expression,
                         tpe: Type.Lambda,
@@ -52,18 +52,18 @@ object SimplifiedAst {
 
   }
 
-  sealed trait Collection
+  sealed trait Table extends SimplifiedAst
 
-  object Collection {
+  object Table {
 
-    case class Relation(name: Name.Resolved,
+    case class Relation(sym: Symbol.TableSym,
                         attributes: List[SimplifiedAst.Attribute],
-                        loc: SourceLocation) extends SimplifiedAst.Collection
+                        loc: SourceLocation) extends SimplifiedAst.Table
 
-    case class Lattice(name: Name.Resolved,
+    case class Lattice(sym: Symbol.TableSym,
                        keys: List[SimplifiedAst.Attribute],
-                       values: List[SimplifiedAst.Attribute],
-                       loc: SourceLocation) extends SimplifiedAst.Collection
+                       value: SimplifiedAst.Attribute,
+                       loc: SourceLocation) extends SimplifiedAst.Table
 
   }
 
@@ -276,7 +276,7 @@ object SimplifiedAst {
       override def toString: String = ident.name
     }
 
-    case class Ref(name: Name.Resolved, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
+    case class Ref(name: Symbol.Resolved, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
       override def toString: String = "Ref(" + name.fqn + ")"
     }
 
@@ -300,7 +300,7 @@ object SimplifiedAst {
       * @param loc  the source location of the expression.
       */
     @deprecated("to be removed", "0.1.0")
-    case class Apply(name: Name.Resolved,
+    case class Apply(name: Symbol.Resolved,
                      args: List[SimplifiedAst.Expression],
                      tpe: Type,
                      loc: SourceLocation) extends SimplifiedAst.Expression
@@ -441,7 +441,7 @@ object SimplifiedAst {
       * @param tpe  the type of the expression.
       * @param loc  The source location of the tag.
       */
-    case class Tag(enum: Name.Resolved,
+    case class Tag(enum: Symbol.Resolved,
                    tag: Name.Ident,
                    exp: SimplifiedAst.Expression,
                    tpe: Type.Enum,
@@ -543,10 +543,10 @@ object SimplifiedAst {
 
     object Head {
 
-      case class Relation(name: Name.Resolved,
-                          terms: List[SimplifiedAst.Term.Head],
-                          tpe: Type.Predicate,
-                          loc: SourceLocation) extends SimplifiedAst.Predicate.Head
+      case class Table(sym: Symbol.TableSym,
+                       terms: List[SimplifiedAst.Term.Head],
+                       tpe: Type.Predicate,
+                       loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
     }
 
@@ -554,12 +554,12 @@ object SimplifiedAst {
 
     object Body {
 
-      case class Collection(name: Name.Resolved,
-                            terms: List[SimplifiedAst.Term.Body],
-                            tpe: Type.Predicate,
-                            loc: SourceLocation) extends SimplifiedAst.Predicate.Body
+      case class Table(sym: Symbol.TableSym,
+                       terms: List[SimplifiedAst.Term.Body],
+                       tpe: Type.Predicate,
+                       loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
-      case class ApplyFilter(name: Name.Resolved,
+      case class ApplyFilter(name: Symbol.Resolved,
                              terms: List[SimplifiedAst.Term.Body],
                              tpe: Type.Lambda,
                              loc: SourceLocation) extends SimplifiedAst.Predicate.Body
@@ -599,7 +599,7 @@ object SimplifiedAst {
       case class Exp(literal: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head
 
       // TODO: Can we get rid of this?
-      case class Apply(name: Name.Resolved,
+      case class Apply(name: Symbol.Resolved,
                        args: List[SimplifiedAst.Term.Head],
                        tpe: Type,
                        loc: SourceLocation) extends SimplifiedAst.Term.Head {

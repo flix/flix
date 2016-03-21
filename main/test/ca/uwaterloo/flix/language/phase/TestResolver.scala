@@ -66,7 +66,7 @@ class TestResolver extends FunSuite {
   test("DuplicateDefinition06") {
     val input =
       s"""
-         |namespace A::B::C {
+         |namespace A.B.C {
          |  fn f: Int = 42
          |}
          |
@@ -191,7 +191,7 @@ class TestResolver extends FunSuite {
     val input =
       s"""
          |namespace A {
-         |  fn f: Int = Foo::Bar.Qux(true)
+         |  fn f: Int = Foo/Bar.Qux(true)
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -294,11 +294,10 @@ class TestResolver extends FunSuite {
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType)
     flix
       .addStr(input)
-      .addHook("A::g", tpe, new Invokable {
+      .addHook("A/g", tpe, new Invokable {
         def apply(args: Array[IValue]) = flix.mkTrue
       })
-    val result = flix.compile()
-    assert(result.isSuccess)
+    flix.compile().get
   }
 
   test("Expression.Hook02") {
@@ -311,11 +310,10 @@ class TestResolver extends FunSuite {
     val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkInt32Type, flix.mkStrType), flix.mkBoolType)
     flix
       .addStr(input)
-      .addHook("A::g", tpe, new Invokable {
+      .addHook("A/g", tpe, new Invokable {
         def apply(args: Array[IValue]) = flix.mkTrue
       })
-    val result = flix.compile()
-    assert(result.isSuccess)
+    flix.compile().get
   }
 
   test("Expression.HookFilter01") {
@@ -330,7 +328,7 @@ class TestResolver extends FunSuite {
     val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkInt32Type, flix.mkStrType), flix.mkBoolType)
     flix
       .addStr(input)
-      .addHook("A::f", tpe, new Invokable {
+      .addHook("A/f", tpe, new Invokable {
         def apply(args: Array[IValue]) = flix.mkTrue
       })
     val result = flix.compile()
@@ -349,7 +347,7 @@ class TestResolver extends FunSuite {
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkStrType), flix.mkStrType)
     flix
       .addStr(input)
-      .addHook("A::f", tpe, new Invokable {
+      .addHook("A/f", tpe, new Invokable {
         def apply(args: Array[IValue]) = flix.mkStr("foo")
       })
     val result = flix.compile()

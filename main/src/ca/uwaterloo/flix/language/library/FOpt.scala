@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.library
 
-import ca.uwaterloo.flix.language.ast.Name
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.ast.Type._
 
@@ -16,7 +16,7 @@ object FOpt {
   /**
     * All opt operations.
     */
-  val Ops: immutable.Map[Name.Resolved, OptOperator] = List(
+  val Ops: immutable.Map[Symbol.Resolved, OptOperator] = List(
     "Opt/null" -> nul,
     "Opt/get" -> get,
     "Opt/getWithDefault" -> getWithDefault,
@@ -30,7 +30,7 @@ object FOpt {
     "Opt/toSet" -> toSet,
     "Opt/withDefault" -> withDefault
   ).map {
-    case (name, op) => Name.Resolved.mk(name) -> op
+    case (name, op) => Symbol.Resolved.mk(name) -> op
   }.toMap
 
   /**

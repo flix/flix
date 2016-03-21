@@ -7,14 +7,14 @@ trait ResolvedAst
 object ResolvedAst {
 
   // TODO: Add directives.
-  case class Root(constants: Map[Name.Resolved, ResolvedAst.Definition.Constant],
-                  enums: Map[Name.Resolved, ResolvedAst.Definition.Enum],
+  case class Root(constants: Map[Symbol.Resolved, ResolvedAst.Definition.Constant],
+                  enums: Map[Symbol.Resolved, ResolvedAst.Definition.Enum],
                   lattices: Map[Type, ResolvedAst.Definition.BoundedLattice],
-                  collections: Map[Name.Resolved, ResolvedAst.Collection],
-                  indexes: Map[Name.Resolved, ResolvedAst.Definition.Index],
+                  tables: Map[Symbol.TableSym, ResolvedAst.Table],
+                  indexes: Map[Symbol.TableSym, ResolvedAst.Definition.Index],
                   facts: List[ResolvedAst.Constraint.Fact],
                   rules: List[ResolvedAst.Constraint.Rule],
-                  hooks: Map[Name.Resolved, Ast.Hook],
+                  hooks: Map[Symbol.Resolved, Ast.Hook],
                   time: Time) extends ResolvedAst
 
   sealed trait Definition
@@ -29,10 +29,10 @@ object ResolvedAst {
       * @param tpe  the (declared) type of the constant.
       * @param loc  the location.
       */
-    case class Constant(name: Name.Resolved, exp: ResolvedAst.Expression, tpe: Type, loc: SourceLocation) extends ResolvedAst.Definition
+    case class Constant(name: Symbol.Resolved, exp: ResolvedAst.Expression, tpe: Type, loc: SourceLocation) extends ResolvedAst.Definition
 
     //  TODO: DOC
-    case class Enum(name: Name.Resolved, cases: Map[String, Type.Tag], loc: SourceLocation) extends ResolvedAst.Definition
+    case class Enum(name: Symbol.Resolved, cases: Map[String, Type.Tag], loc: SourceLocation) extends ResolvedAst.Definition
 
     /**
       * A resolved AST node that represents a bounded lattice definition.
@@ -48,36 +48,35 @@ object ResolvedAst {
     case class BoundedLattice(tpe: Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, leq: ResolvedAst.Expression,
                               lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Definition
 
-    // TODO: DOC
-    case class Index(name: Name.Resolved, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends ResolvedAst.Definition
+    case class Index(sym: Symbol.TableSym, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends ResolvedAst.Definition
 
   }
 
   /**
-    * A common super-type for collections that are either relations or lattices.
+    * A common super-type for tables that are either relations or lattices.
     */
-  sealed trait Collection extends ResolvedAst.Definition
+  sealed trait Table extends ResolvedAst.Definition
 
-  object Collection {
+  object Table {
 
     /**
       * A resolved AST node representing a relation definition.
       *
-      * @param name       the name of the relation.
+      * @param sym        the symbol of the relation.
       * @param attributes the attributes of the relation.
       * @param loc        the location.
       */
-    case class Relation(name: Name.Resolved, attributes: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Collection
+    case class Relation(sym: Symbol.TableSym, attributes: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Table
 
     /**
       * A resolved AST node representing a lattice definition.
       *
-      * @param name   the name of the relation.
-      * @param keys   the keys of the lattice.
-      * @param values the values of the lattice.
-      * @param loc    the location.
+      * @param sym   the symbol of the lattice.
+      * @param keys  the keys of the lattice.
+      * @param value the value of the lattice.
+      * @param loc   the location.
       */
-    case class Lattice(name: Name.Resolved, keys: List[ResolvedAst.Attribute], values: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Collection
+    case class Lattice(sym: Symbol.TableSym, keys: List[ResolvedAst.Attribute], value: ResolvedAst.Attribute, loc: SourceLocation) extends ResolvedAst.Table
 
   }
 
@@ -136,7 +135,7 @@ object ResolvedAst {
 
     case class Var(ident: Name.Ident, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Ref(name: Name.Resolved, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Ref(name: Symbol.Resolved, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class HookRef(hook: Ast.Hook, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -158,7 +157,7 @@ object ResolvedAst {
 
     case class Match(e: ResolvedAst.Expression, rules: List[(ResolvedAst.Pattern, ResolvedAst.Expression)], loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Tag(name: Name.Resolved, ident: Name.Ident, e: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Tag(name: Symbol.Resolved, ident: Name.Ident, e: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Tuple(elms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -210,7 +209,7 @@ object ResolvedAst {
       * @param pat   the nested pattern.
       * @param loc   the location.
       */
-    case class Tag(name: Name.Resolved, ident: Name.Ident, pat: ResolvedAst.Pattern, loc: SourceLocation) extends ResolvedAst.Pattern
+    case class Tag(name: Symbol.Resolved, ident: Name.Ident, pat: ResolvedAst.Pattern, loc: SourceLocation) extends ResolvedAst.Pattern
 
     /**
       * An AST node representing a tuple pattern.
@@ -236,11 +235,11 @@ object ResolvedAst {
       /**
         * A relational predicate that occurs in the head of a fact/rule.
         *
-        * @param name  the name of the relation.
+        * @param sym   the symbol of the relation.
         * @param terms the terms of the predicate.
         * @param loc   the source location.
         */
-      case class Relation(name: Name.Resolved, terms: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Predicate.Head
+      case class Table(sym: Symbol.TableSym, terms: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
     }
 
@@ -254,11 +253,11 @@ object ResolvedAst {
       /**
         * A relational predicate that occurs in the body of a rule.
         *
-        * @param name  the name of the relation.
+        * @param sym   the symbol of the table.
         * @param terms the terms of the predicate.
         * @param loc   the source location.
         */
-      case class Relation(name: Name.Resolved, terms: List[ResolvedAst.Term.Body], loc: SourceLocation) extends ResolvedAst.Predicate.Body
+      case class Table(sym: Symbol.TableSym, terms: List[ResolvedAst.Term.Body], loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
       /**
         * A filter predicate that occurs in the body of a rule.
@@ -267,7 +266,7 @@ object ResolvedAst {
         * @param terms the terms of the predicate.
         * @param loc   the source location.
         */
-      case class ApplyFilter(name: Name.Resolved, terms: List[ResolvedAst.Term.Body], loc: SourceLocation) extends ResolvedAst.Predicate.Body
+      case class ApplyFilter(name: Symbol.Resolved, terms: List[ResolvedAst.Term.Body], loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
       /**
         * A hook filter predicate that occurs in the body of a rule.
@@ -325,7 +324,7 @@ object ResolvedAst {
         */
       case class Lit(literal: ResolvedAst.Literal, loc: SourceLocation) extends ResolvedAst.Term.Head
 
-      case class Tag(enumName: Name.Resolved, tagName: Name.Ident, t: ResolvedAst.Term.Head, loc: SourceLocation) extends ResolvedAst.Term.Head
+      case class Tag(enumName: Symbol.Resolved, tagName: Name.Ident, t: ResolvedAst.Term.Head, loc: SourceLocation) extends ResolvedAst.Term.Head
 
       case class Tuple(elms: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Term.Head
 
@@ -336,7 +335,7 @@ object ResolvedAst {
         * @param args the arguments to the function.
         * @param loc  the location.
         */
-      case class Apply(name: Name.Resolved, args: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Term.Head
+      case class Apply(name: Symbol.Resolved, args: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Term.Head
 
       /**
         * An AST node representing a hook function call term.
@@ -346,6 +345,7 @@ object ResolvedAst {
         * @param loc  the location.
         */
       case class ApplyHook(hook: Ast.Hook, args: List[ResolvedAst.Term.Head], loc: SourceLocation) extends ResolvedAst.Term.Head
+
     }
 
     /**

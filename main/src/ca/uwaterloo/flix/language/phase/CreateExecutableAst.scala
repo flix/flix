@@ -10,23 +10,24 @@ import scala.collection.mutable
   *
   * - Lists are copied to arrays
   */
+// TODO: Better name
 object CreateExecutableAst {
 
   def toExecutable(sast: SimplifiedAst.Root): ExecutableAst.Root = {
     val constants = sast.constants.map { case (k, v) => k -> Definition.toExecutable(v) }
     val lattices = sast.lattices.map { case (k, v) => k -> Definition.toExecutable(v) }
-    val collections = sast.collections.map { case (k, v) => k -> Collection.toExecutable(v) }
+    val tables = sast.tables.map { case (k, v) => k -> Table.toExecutable(v) }
     val indexes = sast.indexes.map { case (k, v) => k -> Definition.toExecutable(v) }
     val facts = sast.facts.map(Constraint.toExecutable).toArray
     val rules = sast.rules.map(Constraint.toExecutable).toArray
     val time = sast.time
 
-    val dependenciesOf: Map[Name.Resolved, mutable.Set[(ExecutableAst.Constraint.Rule, ExecutableAst.Predicate.Body.Collection)]] = {
-      val result = mutable.Map.empty[Name.Resolved, mutable.Set[(ExecutableAst.Constraint.Rule, ExecutableAst.Predicate.Body.Collection)]]
+    val dependenciesOf: Map[Symbol.TableSym, mutable.Set[(ExecutableAst.Constraint.Rule, ExecutableAst.Predicate.Body.Table)]] = {
+      val result = mutable.Map.empty[Symbol.TableSym, mutable.Set[(ExecutableAst.Constraint.Rule, ExecutableAst.Predicate.Body.Table)]]
 
       for (rule <- rules) {
         rule.head match {
-          case ExecutableAst.Predicate.Head.Relation(name, _, _, _) => result.update(name, mutable.Set.empty)
+          case ExecutableAst.Predicate.Head.Table(sym, _, _, _) => result.update(sym, mutable.Set.empty)
           case _ => // nop
         }
       }
@@ -35,9 +36,9 @@ object CreateExecutableAst {
         for (innerRule <- rules) {
           for (body <- innerRule.body) {
             (outerRule.head, body) match {
-              case (outer: ExecutableAst.Predicate.Head.Relation, inner: ExecutableAst.Predicate.Body.Collection) =>
-                if (outer.name == inner.name) {
-                  val deps = result(outer.name)
+              case (outer: ExecutableAst.Predicate.Head.Table, inner: ExecutableAst.Predicate.Body.Table) =>
+                if (outer.sym == inner.sym) {
+                  val deps = result(outer.sym)
                   deps += ((innerRule, inner))
                 }
               case _ => // nop
@@ -48,7 +49,7 @@ object CreateExecutableAst {
       result.toMap
     }
 
-    ExecutableAst.Root(constants, lattices, collections, indexes, facts, rules, time, dependenciesOf)
+    ExecutableAst.Root(constants, lattices, tables, indexes, facts, rules, time, dependenciesOf)
   }
 
   object Definition {
@@ -62,20 +63,20 @@ object CreateExecutableAst {
     }
 
     def toExecutable(sast: SimplifiedAst.Definition.Index): ExecutableAst.Definition.Index =
-      ExecutableAst.Definition.Index(sast.name, sast.indexes, sast.loc)
+      ExecutableAst.Definition.Index(sast.sym, sast.indexes, sast.loc)
 
     // TODO: Compile SimplifiedAst.Definition.Function?
   }
 
-  object Collection {
-    def toExecutable(sast: SimplifiedAst.Collection): ExecutableAst.Collection = sast match {
-      case SimplifiedAst.Collection.Relation(name, attributes, loc) =>
+  object Table {
+    def toExecutable(sast: SimplifiedAst.Table): ExecutableAst.Table = sast match {
+      case SimplifiedAst.Table.Relation(symbol, attributes, loc) =>
         val attributesArray = attributes.map(CreateExecutableAst.toExecutable).toArray
-        ExecutableAst.Collection.Relation(name, attributesArray, loc)
-      case SimplifiedAst.Collection.Lattice(name, keys, values, loc) =>
+        ExecutableAst.Table.Relation(symbol, attributesArray, loc)
+      case SimplifiedAst.Table.Lattice(symbol, keys, value, loc) =>
         val keysArray = keys.map(CreateExecutableAst.toExecutable).toArray
-        val valuesArray = values.map(CreateExecutableAst.toExecutable).toArray
-        ExecutableAst.Collection.Lattice(name, keysArray, valuesArray, loc)
+        val valuesArray = Array(CreateExecutableAst.toExecutable(value))
+        ExecutableAst.Table.Lattice(symbol, keysArray, valuesArray, loc)
     }
   }
 
@@ -87,7 +88,7 @@ object CreateExecutableAst {
       val head = Predicate.Head.toExecutable(sast.head)
       // TODO(magnus): Convert lists to arrays (and refactor Solver)
       val body = sast.body.map(Predicate.Body.toExecutable)
-      val collections = body.collect { case p: ExecutableAst.Predicate.Body.Collection => p }
+      val collections = body.collect { case p: ExecutableAst.Predicate.Body.Table => p }
       val filters = body.collect { case p: ExecutableAst.Predicate.Body.ApplyFilter => p }
       val hookFilters = body.collect { case p: ExecutableAst.Predicate.Body.ApplyHookFilter => p }
       val disjoint = body.collect { case p: ExecutableAst.Predicate.Body.NotEqual => p }
@@ -168,8 +169,8 @@ object CreateExecutableAst {
 
     object Head {
       def toExecutable(sast: SimplifiedAst.Predicate.Head): ExecutableAst.Predicate.Head = sast match {
-        case SimplifiedAst.Predicate.Head.Relation(name, terms, tpe, loc) =>
-          ExecutableAst.Predicate.Head.Relation(name, terms.map(Term.toExecutable).toArray, tpe, loc)
+        case SimplifiedAst.Predicate.Head.Table(name, terms, tpe, loc) =>
+          ExecutableAst.Predicate.Head.Table(name, terms.map(Term.toExecutable).toArray, tpe, loc)
       }
     }
 
@@ -183,7 +184,7 @@ object CreateExecutableAst {
       }
 
       def toExecutable(sast: SimplifiedAst.Predicate.Body): ExecutableAst.Predicate.Body = sast match {
-        case SimplifiedAst.Predicate.Body.Collection(name, terms, tpe, loc) =>
+        case SimplifiedAst.Predicate.Body.Table(sym, terms, tpe, loc) =>
           val termsArray = terms.map(Term.toExecutable).toArray
           val index2var: Array[String] = {
             val r = new Array[String](termsArray.length)
@@ -198,7 +199,7 @@ object CreateExecutableAst {
             }
             r
           }
-          ExecutableAst.Predicate.Body.Collection(name, termsArray, index2var, freeVars(terms), tpe, loc)
+          ExecutableAst.Predicate.Body.Table(sym, termsArray, index2var, freeVars(terms), tpe, loc)
         case SimplifiedAst.Predicate.Body.ApplyFilter(name, terms, tpe, loc) =>
           val termsArray = terms.map(Term.toExecutable).toArray
           ExecutableAst.Predicate.Body.ApplyFilter(name, termsArray, freeVars(terms), tpe, loc)
