@@ -858,7 +858,7 @@ class TestParser extends FunSuite {
     }
   }
 
-  test("Expression.Set01") {
+  ignore("Expression.Set01") {
     val input = "def f: Set[Int] = #{}"
     new Flix().addStr(input).compile().get
   }
@@ -893,12 +893,12 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.SetSet01") {
+  ignore("Expression.SetSet01") {
     val input = "def f: Set[Set[Int]] = #{}"
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.SetSet02") {
+  ignore("Expression.SetSet02") {
     val input = "def f: Set[Set[Int]] = #{#{}}"
     new Flix().addStr(input).compile().get
   }
@@ -1004,87 +1004,87 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Lambda01") {
+  ignore("Expression.Lambda01") {
     val input = "def f: Int -> Int = x -> x"
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Lambda02") {
+  ignore("Expression.Lambda02") {
     val input = "def f: Int -> Int = (x) -> x"
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Lambda03") {
+  ignore("Expression.Lambda03") {
     val input = "def f: (Bool, Char) -> Int = (x, y) -> 42"
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Lambda04") {
+  ignore("Expression.Lambda04") {
     val input = "def f: (Bool, Char, Int) -> Int = (x, y, z) -> 42"
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Lambda05") {
+  ignore("Expression.Lambda05") {
     val input = "def f: (Int8, Int16, Int32, Int64) -> Int32 = (x, y, z, w) -> z"
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Lambda06") {
+  ignore("Expression.Lambda06") {
     val input = "def f: Int -> (Bool, Char) = x -> (true, 'a')"
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Lambda07") {
+  ignore("Expression.Lambda07") {
     val input = "def f: Int -> (Bool, Char, Int) = x -> (true, 'a', 42)"
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Lambda08") {
+  ignore("Expression.Lambda08") {
     val input = "def f: (Bool, Char) -> (Char, Bool) = (x, y) -> (y, x)"
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Lambda09") {
+  ignore("Expression.Lambda09") {
     val input = "def f: (Bool, Char, Int) -> (Int, Char, Bool) = (x, y, z) -> (z, y, x)"
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Lambda10") {
+  ignore("Expression.Lambda10") {
     val input = "def f: ((Bool, Char), Int) -> (Bool, Char) = (x, y) -> x"
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Lambda11") {
+  ignore("Expression.Lambda11") {
     val input = "def f: (Bool, (Char, Int)) -> (Char, Int) = (x, y) -> y"
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Lambda12") {
+  ignore("Expression.Lambda12") {
     val input = "def f: (Int, Int) -> ((Int, Int), (Int, Int)) = x -> (x, x)"
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Lambda13") {
+  ignore("Expression.Lambda13") {
     val input = "def f: Bool -> Char -> Int = x -> (y -> 42)"
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Lambda14") {
+  ignore("Expression.Lambda14") {
     val input = "def f: (Bool, Bool) -> Char -> Int = (x1, x2) -> (y -> 42)"
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Lambda15") {
+  ignore("Expression.Lambda15") {
     val input = "def f: Bool -> (Char, Char) -> Int = x -> ((y1, y2) -> 42)"
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Lambda16") {
+  ignore("Expression.Lambda16") {
     val input = "def f: Bool -> Char -> (Int, Int) = x -> (y -> (21, 42))"
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Lambda17") {
+  ignore("Expression.Lambda17") {
     val input = "def f: (Bool, Bool) -> (Char, Char) -> (Int, Int) = (x1, x2) -> ((y1, y2) -> (21, 42))"
     new Flix().addStr(input).compile().get
   }
