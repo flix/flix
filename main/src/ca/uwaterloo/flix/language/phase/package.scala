@@ -14,7 +14,7 @@ package object phase {
 
     def freshDefn(ns: List[String]): Symbol.Resolved = {
       number = number + 1
-      Symbol.Resolved.mk(ns ::: "$" + number :: Nil)
+      Symbol.Resolved.mk(ns.init ::: ns.last + "$" + number :: Nil)
     }
 
     def fresh2(): Name.Ident = fresh2("tmp")

@@ -456,9 +456,9 @@ object ExecutableAst {
       final val tpe: Type = Type.Bool
     }
 
-    case class Set(elms: Array[ExecutableAst.Expression],
-                   tpe: Type.Set,
-                   loc: SourceLocation) extends ExecutableAst.Expression
+    case class FSet(elms: Array[ExecutableAst.Expression],
+                    tpe: Type.Set,
+                    loc: SourceLocation) extends ExecutableAst.Expression
 
     /**
       * A typed AST node representing an error.
@@ -483,6 +483,12 @@ object ExecutableAst {
       * @param loc the source location of the error.
       */
     case class SwitchError(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class MkClosure(lambda: ExecutableAst.Expression, envVar: Name.Ident, freeVars: Set[Name.Ident], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class ClosureVar(env: Name.Ident, name: Name.Ident, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class ApplyClosure(exp: ExecutableAst.Expression, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
   }
 
   sealed trait Predicate extends ExecutableAst {

@@ -38,7 +38,10 @@ object Interpreter {
       val v = Value.cast2int64(eval(store.v, root, env))
       val result = (e & store.targetMask) | ((v & store.mask) << store.offset)
       Value.mkInt64(result)
-    case Expression.Var(ident, _, _, loc) => env(ident.name)
+    case Expression.Var(ident, _, _, loc) => env.get(ident.name) match {
+      case None => throw InternalRuntimeException(s"Key '${ident.name}' not found in environment: '${env.mkString(",")}'.")
+      case Some(v) => v
+    }
     case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env)
     case Expression.Lambda(annotations, args, body, _, _) =>
       val formals = new Array[String](args.length)
@@ -85,7 +88,7 @@ object Interpreter {
       Value.Tuple(evalElms)
     case Expression.CheckNil(exp, _) => ???
     case Expression.CheckCons(exp, _) => ???
-    case Expression.Set(elms, _, _) => Value.mkSet(elms.map(e => eval(e, root, env)).toSet)
+    case Expression.FSet(elms, _, _) => Value.mkSet(elms.map(e => eval(e, root, env)).toSet)
     case Expression.Error(_, loc) => throw UserException("User exception.", loc)
     case Expression.MatchError(_, loc) => throw MatchException("Non-exhaustive match expression.", loc)
     case Expression.SwitchError(_, loc) => throw SwitchException("Non-exhaustive switch expression.", loc)

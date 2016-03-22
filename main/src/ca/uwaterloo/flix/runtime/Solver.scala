@@ -96,6 +96,9 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
         case e: ExecutableAst.Expression.Lambda if e.args.length == 0 =>
           val v = Interpreter.eval(e.body, sCtx.root)
           macc + (name -> v)
+        case ExecutableAst.Expression.MkClosure(exp, _, _, _, _) =>
+          val v = Interpreter.eval(exp, sCtx.root)
+          macc + (name -> v)
         case _ => macc
       }
     }

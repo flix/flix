@@ -6,7 +6,12 @@ import scala.collection.mutable
 
 object LambdaLift {
 
+  /**
+    * Performs lambda lifting on all definitions in the AST.
+    */
   def lift(root: SimplifiedAst.Root)(implicit genSym: GenSym): SimplifiedAst.Root = {
+
+    // TODO: This may lift top-level definitions into new names. which is not really required...
 
     // Lambda lift every function definition.
     val defs = root.constants.foldLeft(Map.empty[Symbol.Resolved, SimplifiedAst.Definition.Constant]) {
@@ -16,7 +21,11 @@ object LambdaLift {
     root.copy(constants = defs)
   }
 
-
+  /**
+    * Returns a map of definitions where each nested lambda inside the given declaration has been lifted out.
+    *
+    * The original definition is contained in the map.
+    */
   def lift(decl: SimplifiedAst.Definition.Constant)(implicit genSym: GenSym): Map[Symbol.Resolved, SimplifiedAst.Definition.Constant] = {
 
     // Map to hold all newly generated definitions.
@@ -53,7 +62,6 @@ object LambdaLift {
         SimplifiedAst.Expression.Ref(name, tpe, loc)
 
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
-      case SimplifiedAst.Expression.Apply(name, args, tpe, loc) => ??? // TODO: Deprecated
       case SimplifiedAst.Expression.Apply3(lambda, args, tpe, loc) =>
         val e = visit(lambda)
         val as = args map visit

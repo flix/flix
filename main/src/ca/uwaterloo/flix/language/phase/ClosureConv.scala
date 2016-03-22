@@ -33,8 +33,6 @@ object ClosureConv {
       case SimplifiedAst.Expression.Var(ident, o, tpe, loc) => e
       case SimplifiedAst.Expression.Ref(name, tpe, loc) => e
 
-      case SimplifiedAst.Expression.Apply(name, args, tpe, loc) => ??? // TODO: deprecated
-
       case SimplifiedAst.Expression.Apply3(lambda, args, tpe, loc) =>
         // Replace Apply by ApplyClosure.
         SimplifiedAst.Expression.ApplyClosure(lambda, args, tpe, loc)
@@ -168,7 +166,6 @@ object ClosureConv {
         }
 
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
-      case SimplifiedAst.Expression.Apply(name, args, tpe, loc) => ??? // TODO: Deprecated
       case SimplifiedAst.Expression.Apply3(lambda, args, tpe, loc) =>
         val e = substitute(m, lambda)
         val es = args.map(e => substitute(m, e))
@@ -180,13 +177,13 @@ object ClosureConv {
 
       case SimplifiedAst.Expression.Binary(op, exp1, exp2, tpe, loc) =>
         val e1 = substitute(m, exp1)
-        val e2 = substitute(m, exp1)
+        val e2 = substitute(m, exp2)
         SimplifiedAst.Expression.Binary(op, e1, e2, tpe, loc)
 
       case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         val e1 = substitute(m, exp1)
-        val e2 = substitute(m, exp1)
-        val e3 = substitute(m, exp1)
+        val e2 = substitute(m, exp2)
+        val e3 = substitute(m, exp3)
         SimplifiedAst.Expression.IfThenElse(e1, e2, e3, tpe, loc)
 
       case SimplifiedAst.Expression.Let(ident, offset, exp1, exp2, tpe, loc) =>
@@ -196,7 +193,7 @@ object ClosureConv {
           SimplifiedAst.Expression.Let(ident, offset, e1, exp2, tpe, loc)
         } else {
           val e1 = substitute(m, exp1)
-          val e2 = substitute(m, exp1)
+          val e2 = substitute(m, exp2)
           SimplifiedAst.Expression.Let(ident, offset, e1, e2, tpe, loc)
         }
 
@@ -236,9 +233,15 @@ object ClosureConv {
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => e
 
-      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) => ??? // TODO
-      case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) => ??? // TODO
-      case SimplifiedAst.Expression.ApplyClosure(clo, args, tpe, loc) => ??? // TODO
+      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: '$e'.")
+
+      case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: '$e'.")
+
+      case SimplifiedAst.Expression.ApplyClosure(clo, args, tpe, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: '$e'.")
+
     }
 
     /**
@@ -273,7 +276,6 @@ object ClosureConv {
         freeVariables(body) filter (v => !bound.contains(v.name))
 
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => Set.empty
-      case SimplifiedAst.Expression.Apply(name, args, tpe, loc) => ??? // TODO: Deprecated
       case SimplifiedAst.Expression.Apply3(lambda, args, tpe, loc) =>
         freeVariables(lambda) ++ args.flatMap(freeVariables)
 
@@ -296,9 +298,14 @@ object ClosureConv {
       case SimplifiedAst.Expression.MatchError(tpe, loc) => Set.empty
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => Set.empty
 
-      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) => ??? // TODO
-      case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) => ??? // TODO
-      case SimplifiedAst.Expression.ApplyClosure(clo, args, tpe, loc) => ??? // TODO
+      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: '$e'.")
+
+      case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: '$e'.")
+
+      case SimplifiedAst.Expression.ApplyClosure(clo, args, tpe, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: '$e'.")
     }
 
   }

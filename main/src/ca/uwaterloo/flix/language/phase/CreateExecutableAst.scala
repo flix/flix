@@ -158,10 +158,23 @@ object CreateExecutableAst {
       case SimplifiedAst.Expression.CheckCons(exp, loc) => ExecutableAst.Expression.CheckCons(toExecutable(exp), loc)
       case SimplifiedAst.Expression.FSet(elms, tpe, loc) =>
         val elmsArray = elms.map(toExecutable).toArray
-        ExecutableAst.Expression.Set(elmsArray, tpe, loc)
+        ExecutableAst.Expression.FSet(elmsArray, tpe, loc)
       case SimplifiedAst.Expression.UserError(tpe, loc) => ExecutableAst.Expression.Error(tpe, loc)
       case SimplifiedAst.Expression.MatchError(tpe, loc) => ExecutableAst.Expression.MatchError(tpe, loc)
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => ExecutableAst.Expression.SwitchError(tpe, loc)
+
+      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
+        val e = toExecutable(lambda)
+        ExecutableAst.Expression.MkClosure(e, envVar, freeVars, tpe, loc)
+
+      case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) =>
+        ExecutableAst.Expression.ClosureVar(env, name, tpe, loc)
+
+      case SimplifiedAst.Expression.ApplyClosure(exp, args, tpe, loc) =>
+        val e = toExecutable(exp)
+        val es = args map toExecutable
+        ExecutableAst.Expression.ApplyClosure(e, es, tpe, loc)
+
     }
   }
 

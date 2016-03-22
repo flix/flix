@@ -498,12 +498,12 @@ object SimplifiedAst {
                     tpe: Type.Set,
                     loc: SourceLocation) extends SimplifiedAst.Expression
 
-
+    // TODO: Move somewhere
     case class MkClosure(lambda: SimplifiedAst.Expression, envVar: Name.Ident, freeVars: Set[Name.Ident], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class ClosureVar(env: Name.Ident, name: Name.Ident, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class ApplyClosure(clo: SimplifiedAst.Expression, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class ApplyClosure(exp: SimplifiedAst.Expression, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
       * A typed AST node representing an error.
