@@ -51,8 +51,12 @@ object Simplifier {
         SimplifiedAst.Definition.Lattice(tpe, s(bot), s(top), s(leq), s(lub), s(glb), loc)
     }
 
-    def simplify(tast: TypedAst.Definition.Constant)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant =
-      SimplifiedAst.Definition.Constant(tast.name, Expression.simplify(tast.exp), tast.tpe, tast.loc)
+    def simplify(tast: TypedAst.Definition.Constant)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant = {
+      val formals = tast.formals.map {
+        case TypedAst.FormalArg(ident, tpe) => SimplifiedAst.FormalArg(ident, tpe)
+      }
+      SimplifiedAst.Definition.Constant(tast.name, formals, Expression.simplify(tast.exp), tast.tpe, tast.loc)
+    }
 
     def simplify(tast: TypedAst.Definition.Index)(implicit genSym: GenSym): SimplifiedAst.Definition.Index =
       SimplifiedAst.Definition.Index(tast.sym, tast.indexes, tast.loc)

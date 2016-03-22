@@ -19,6 +19,7 @@ object SimplifiedAst {
   object Definition {
 
     case class Constant(name: Symbol.Resolved,
+                        formals: List[SimplifiedAst.FormalArg],
                         exp: SimplifiedAst.Expression,
                         tpe: Type,
                         loc: SourceLocation) extends SimplifiedAst.Definition

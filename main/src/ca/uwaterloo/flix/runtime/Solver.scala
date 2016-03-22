@@ -92,15 +92,21 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     }
 
     val constants = sCtx.root.constants.foldLeft(Map.empty[Symbol.Resolved, AnyRef]) {
-      case (macc, (name, constant)) => constant.exp match {
-        case e: ExecutableAst.Expression.Lambda if e.args.length == 0 =>
-          val v = Interpreter.eval(e.body, sCtx.root)
-          macc + (name -> v)
-        case ExecutableAst.Expression.MkClosure(exp, _, _, _, _) =>
-          val v = Interpreter.eval(exp, sCtx.root)
-          macc + (name -> v)
-        case _ => macc
-      }
+      case (macc, (name, defn)) if defn.formals.isEmpty =>
+        val v = Interpreter.eval(defn.exp, sCtx.root)
+        macc + (name -> v)
+      case (macc, _) => macc
+      //        constant.exp match {
+      //        case e: ExecutableAst.Expression.Lambda if e.args.length == 0 =>
+      //          val v = Interpreter.eval(e.body, sCtx.root)
+      //          macc + (name -> v)
+      //        case ExecutableAst.Expression.MkClosure(exp, _, _, _, _) =>
+      //          val v = Interpreter.eval(exp, sCtx.root)
+      //          macc + (name -> v)
+      //        case _ => macc
+      //      }
+
+
     }
 
     // measure the time elapsed.
@@ -279,14 +285,14 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       // filter with hook functions
       filterHook(rule, rule.filterHooks, row)
     case (pred: Predicate.Body.ApplyFilter) :: xs =>
-      val lambda = sCtx.root.constants(pred.name)
+      val defn = sCtx.root.constants(pred.name)
       val args = new Array[AnyRef](pred.terms.length)
       var i = 0
       while (i < args.length) {
         args(i) = Interpreter.evalBodyTerm(pred.terms(i), sCtx.root, row)
         i = i + 1
       }
-      val result = Interpreter.evalCall(lambda.exp, args, sCtx.root, row)
+      val result = Interpreter.evalCall(defn, args, sCtx.root, row)
       if (Value.cast2bool(result))
         filter(rule, xs, row)
   }

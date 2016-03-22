@@ -53,8 +53,13 @@ object CreateExecutableAst {
   }
 
   object Definition {
-    def toExecutable(sast: SimplifiedAst.Definition.Constant): ExecutableAst.Definition.Constant =
-      ExecutableAst.Definition.Constant(sast.name, Expression.toExecutable(sast.exp), sast.tpe, sast.loc)
+    def toExecutable(sast: SimplifiedAst.Definition.Constant): ExecutableAst.Definition.Constant = {
+      val formals = sast.formals.map {
+        case SimplifiedAst.FormalArg(ident, tpe) => ExecutableAst.FormalArg(ident, tpe)
+      }
+
+      ExecutableAst.Definition.Constant(sast.name, formals, Expression.toExecutable(sast.exp), sast.tpe, sast.loc)
+    }
 
     def toExecutable(sast: SimplifiedAst.Definition.Lattice): ExecutableAst.Definition.Lattice = sast match {
       case SimplifiedAst.Definition.Lattice(tpe, bot, top, leq, lub, glb, loc) =>

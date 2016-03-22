@@ -363,7 +363,7 @@ object Resolver {
       * Constructs the symbol for the given definition `wast`.
       */
     def symbolsOf(wast: WeededAst.Definition, namespace: List[String], syms: SymbolTable): Validation[SymbolTable, ResolverError] = wast match {
-      case defn@WeededAst.Definition.Constant(ident, tpe, e, loc) =>
+      case defn@WeededAst.Definition.Constant(ident, formals, tpe, e, loc) =>
         val rname = toRName(ident, namespace)
         syms.constants.get(rname) match {
           case None =>
@@ -457,9 +457,18 @@ object Resolver {
     def resolve(wast: WeededAst.Definition.Constant, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Constant, ResolverError] = {
       val name = Symbol.Resolved.mk(namespace ::: wast.ident.name :: Nil)
 
-      @@(Expression.resolve(wast.e, namespace, syms), Types.resolve(wast.tpe, namespace, syms)) map {
+      val locals = wast.formals.map(_.ident.name).toSet
+
+      @@(Expression.resolve(wast.e, namespace, syms, locals), Types.resolve(wast.tpe, namespace, syms)) flatMap {
         case (e, tpe) =>
-          ResolvedAst.Definition.Constant(name, e, tpe, wast.loc)
+          val formalsVal = wast.formals.map {
+            case WeededAst.FormalArg(ident, tpe) => Types.resolve(tpe, namespace, syms) map {
+              case t => ResolvedAst.FormalArg(ident, t)
+            }
+          }
+          @@(formalsVal) map {
+            case formals => ResolvedAst.Definition.Constant(name, formals, e, tpe, wast.loc)
+          }
       }
     }
 
@@ -583,7 +592,7 @@ object Resolver {
     /**
       * Performs symbol resolution in the given expression `wast` under the given `namespace`.
       */
-    def resolve(wast: WeededAst.Expression, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Expression, ResolverError] = {
+    def resolve(wast: WeededAst.Expression, namespace: List[String], syms: SymbolTable, locals: Set[String] = Set.empty): Validation[ResolvedAst.Expression, ResolverError] = {
       def visit(wast: WeededAst.Expression, locals: Set[String]): Validation[ResolvedAst.Expression, ResolverError] = wast match {
         case WeededAst.Expression.Lit(wlit, loc) => Literal.resolve(wlit, namespace, syms) map {
           case lit => ResolvedAst.Expression.Lit(lit, loc)
@@ -707,7 +716,7 @@ object Resolver {
           }
       }
 
-      visit(wast, Set.empty)
+      visit(wast, locals)
     }
 
   }

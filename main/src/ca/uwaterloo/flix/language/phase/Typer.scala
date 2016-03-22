@@ -147,9 +147,19 @@ object Typer {
       * Types the given constant definition `rast` under the given AST `root`.
       */
     def typer(rast: ResolvedAst.Definition.Constant, root: ResolvedAst.Root): Validation[TypedAst.Definition.Constant, TypeError] = {
-      Expression.typer(rast.exp, root) flatMap {
-        case e => expect(rast.tpe, e.tpe, rast.loc) map {
-          case tpe => TypedAst.Definition.Constant(rast.name, e, tpe, rast.loc)
+      val formals = rast.formals.map {
+        case ResolvedAst.FormalArg(ident, tpe) => TypedAst.FormalArg(ident, tpe)
+      }
+
+      val env = rast.formals.foldLeft(Map.empty[String, Type]) {
+        case (macc, ResolvedAst.FormalArg(ident, tpe)) => macc + (ident.name -> tpe)
+      }
+
+      Expression.typer(rast.exp, root, env) flatMap {
+        case e =>
+          val lambdaTpe = Type.Lambda(rast.formals.map(_.tpe), e.tpe)
+          expect(rast.tpe, lambdaTpe, rast.loc) map {
+          case tpe => TypedAst.Definition.Constant(rast.name, formals, e, tpe, rast.loc)
         }
       }
     }
@@ -719,17 +729,13 @@ object Typer {
         // TODO: This might actually be slightly problematic, since not every constant may be a fully evalauted lambda.
         // Instead we should focus on the type of the constant, which should be Function.
 
-        constant.exp match {
-          case ResolvedAst.Expression.Lambda(annotations, formals, retTpe, _, loc2) =>
-            // type arguments with the declared formals.
-            val argsVal = (actuals zip formals) map {
-              case (term, ResolvedAst.FormalArg(_, termType)) => Term.typer(term, termType, root)
-            }
-            // put everything together and check the return type.
-            @@(@@(argsVal), expect(tpe, retTpe, loc2)) map {
-              case (args, returnType) => TypedAst.Term.Head.Apply(name, args, returnType, loc2)
-            }
-          case _ => IllegalApply(constant.tpe, loc).toFailure
+        // type arguments with the declared formals.
+        val argsVal = (actuals zip constant.formals) map {
+          case (term, ResolvedAst.FormalArg(_, termType)) => Term.typer(term, termType, root)
+        }
+        // put everything together and check the return type.
+        @@(@@(argsVal), expect(tpe, tpe, constant.exp.loc)) map { // TODO: Hack
+          case (args, returnType) => TypedAst.Term.Head.Apply(name, args, returnType, constant.exp.loc)
         }
 
       case ResolvedAst.Term.Head.ApplyHook(hook, actuals, loc) =>

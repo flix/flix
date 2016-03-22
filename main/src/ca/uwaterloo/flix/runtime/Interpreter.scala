@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.{IValue, MatchException, SwitchException, UserException, WrappedValue}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Definition.Constant
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalRuntimeException
@@ -313,14 +314,14 @@ object Interpreter {
     case Term.Head.Var(x, _, _) => env(x.name)
     case Term.Head.Exp(e, _, _) => eval(e, root, env)
     case Term.Head.Apply(name, args, _, _) =>
-      val function = root.constants(name).exp
+      val defn = root.constants(name)
       val evalArgs = new Array[AnyRef](args.length)
       var i = 0
       while (i < evalArgs.length) {
         evalArgs(i) = evalHeadTerm(args(i), root, env)
         i = i + 1
       }
-      evalCall(function, evalArgs, root, env)
+      evalCall(defn, evalArgs, root, env)
     case Term.Head.ApplyHook(hook, args, _, _) =>
       val evalArgs = new Array[AnyRef](args.length)
       var i = 0
@@ -343,31 +344,39 @@ object Interpreter {
     case Term.Body.Exp(e, _, _) => eval(e, root, env)
   }
 
-  def evalCall(function: Expression, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef =
-    eval(function, root, env) match {
-      case Value.Closure(formals, body, closureEnv) =>
-        var i = 0
-        while (i < formals.length) {
-          closureEnv.update(formals(i), args(i))
-          i = i + 1
+  def evalCall(function: Expression, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef = function match {
+    case Expression.Ref(name, tpe, loc) => evalCall(root.constants(name), args, root, env)
+    case _ =>
+      eval(function, root, env) match {
+        case Value.Closure(formals, body, closureEnv) =>
+          var i = 0
+          while (i < formals.length) {
+            closureEnv.update(formals(i), args(i))
+            i = i + 1
+          }
+          eval(body, root, closureEnv)
+        case Value.HookClosure(hook) => hook match {
+          case Ast.Hook.Safe(name, inv, _) =>
+            val wargs: Array[IValue] = args.map(new WrappedValue(_))
+            inv(wargs).getUnsafeRef
+          case Ast.Hook.Unsafe(name, inv, _) =>
+            inv(args)
         }
-        eval(body, root, closureEnv)
-      case Value.HookClosure(hook) => hook match {
-        case Ast.Hook.Safe(name, inv, _) =>
-          val wargs: Array[IValue] = args.map(new WrappedValue(_))
-          inv(wargs).getUnsafeRef
-        case Ast.Hook.Unsafe(name, inv, _) =>
-          inv(args)
+        case _ => throw new InternalRuntimeException(s"Trying to call a non-function: $function.")
       }
-      case _ => throw new InternalRuntimeException(s"Trying to call a non-function: $function.")
-    }
+  }
 
-  def eval2(closure: AnyRef, arg1: AnyRef, arg2: AnyRef, root: Root): AnyRef = {
-    val clo = Value.cast2closure(closure)
-    val env = clo.env
-    env.update(clo.formals(0), arg1)
-    env.update(clo.formals(1), arg2)
-    eval(closure.asInstanceOf[Value.Closure].body, root, env)
+  def evalCall(defn: Constant, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef]): AnyRef = {
+    var i = 0
+    while (i < defn.formals.length) {
+      env.update(defn.formals(i).ident.name, args(i))
+      i = i + 1
+    }
+    eval(defn.exp, root, env)
+  }
+
+  def eval2(exp: Expression, arg1: AnyRef, arg2: AnyRef, root: Root): AnyRef = {
+   evalCall(exp, Array(arg1, arg2), root, mutable.Map.empty[String, AnyRef])
   }
 
 }

@@ -47,34 +47,34 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   /**
     * The Leq operator(s). Must be defined as Flix functions.
     */
-  private val Leq: Array[ValueType] = {
-    val a = new Array[AnyRef](latticeOps.length)
+  private val Leq: Array[ExecutableAst.Expression] = {
+    val a = new Array[ExecutableAst.Expression](latticeOps.length)
     for ((l, i) <- latticeOps.zipWithIndex) {
-      a(i) = Interpreter.eval(l.leq, sCtx.root)
+      a(i) = l.leq
     }
-    a.asInstanceOf[Array[ValueType]]
+    a.asInstanceOf[Array[ExecutableAst.Expression]]
   }
 
   /**
     * The Lub operator(s). Must be defined as Flix functions.
     */
-  private val Lub: Array[ValueType] = {
-    val a = new Array[AnyRef](latticeOps.length)
+  private val Lub: Array[ExecutableAst.Expression] = {
+    val a = new Array[ExecutableAst.Expression](latticeOps.length)
     for ((l, i) <- latticeOps.zipWithIndex) {
-      a(i) = Interpreter.eval(l.lub, sCtx.root)
+      a(i) = l.lub
     }
-    a.asInstanceOf[Array[ValueType]]
+    a.asInstanceOf[Array[ExecutableAst.Expression]]
   }
 
   /**
     * The Glb operator(s). Must be defined as Flix functions.
     */
-  private val Glb: Array[ValueType] = {
-    val a = new Array[AnyRef](latticeOps.length)
+  private val Glb: Array[ExecutableAst.Expression] = {
+    val a = new Array[ExecutableAst.Expression](latticeOps.length)
     for ((l, i) <- latticeOps.zipWithIndex) {
-      a(i) = Interpreter.eval(l.glb, sCtx.root)
+      a(i) = l.glb
     }
-    a.asInstanceOf[Array[ValueType]]
+    a.asInstanceOf[Array[ExecutableAst.Expression]]
   }
 
   /**

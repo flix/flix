@@ -43,7 +43,7 @@ object TypedAst {
       * @param tpe  the type of the constant.
       * @param loc  the source location.
       */
-    case class Constant(name: Symbol.Resolved, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Definition
+    case class Constant(name: Symbol.Resolved, formals: List[TypedAst.FormalArg], exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Definition
 
     /**
       * A typed AST node representing a bounded lattice definition.

@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
+import scala.collection.immutable.Seq
+
 /**
   * A common super-type for weeded AST nodes.
   */
@@ -71,7 +73,7 @@ object WeededAst {
       * @param tpe   the declared type of the expression.
       * @param loc   the source location.
       */
-    case class Constant(ident: Name.Ident, e: WeededAst.Expression, tpe: Type, loc: SourceLocation) extends WeededAst.Definition
+    case class Constant(ident: Name.Ident, formals: List[WeededAst.FormalArg], e: WeededAst.Expression, tpe: Type, loc: SourceLocation) extends WeededAst.Definition
 
     /**
       * An AST node that represents an enum definition.

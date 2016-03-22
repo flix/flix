@@ -20,6 +20,7 @@ object ExecutableAst {
   object Definition {
 
     case class Constant(name: Symbol.Resolved,
+                        formals: List[ExecutableAst.FormalArg],
                         exp: ExecutableAst.Expression,
                         tpe: Type,
                         loc: SourceLocation) extends ExecutableAst.Definition

@@ -389,11 +389,10 @@ object Weeder {
         }
       })
 
-      @@(annotationsVal, formalsVal, Expression.compile(past.body)) map {
-        case (anns, args, body) =>
-          val exp = WeededAst.Expression.Lambda(anns, args, body, past.tpe, mkSL(past.sp1, past.sp2))
+      @@(annotationsVal, formalsVal, Expression.compile(past.exp)) map {
+        case (anns, args, exp) =>
           val tpe = Type.Lambda(args map (_.tpe), past.tpe)
-          WeededAst.Definition.Constant(past.ident, exp, tpe, mkSL(past.sp1, past.sp2))
+          WeededAst.Definition.Constant(past.ident, args, exp, tpe, mkSL(past.sp1, past.sp2))
       }
     }
 

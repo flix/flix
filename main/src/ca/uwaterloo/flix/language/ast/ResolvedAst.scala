@@ -29,7 +29,7 @@ object ResolvedAst {
       * @param tpe  the (declared) type of the constant.
       * @param loc  the location.
       */
-    case class Constant(name: Symbol.Resolved, exp: ResolvedAst.Expression, tpe: Type, loc: SourceLocation) extends ResolvedAst.Definition
+    case class Constant(name: Symbol.Resolved, formals: List[ResolvedAst.FormalArg], exp: ResolvedAst.Expression, tpe: Type, loc: SourceLocation) extends ResolvedAst.Definition
 
     //  TODO: DOC
     case class Enum(name: Symbol.Resolved, cases: Map[String, Type.Tag], loc: SourceLocation) extends ResolvedAst.Definition
