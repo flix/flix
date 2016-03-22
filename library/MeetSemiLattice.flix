@@ -6,23 +6,23 @@ class MeetSemiLattice[E] => PartialOrder[E] {
     /**
      * Returns the greatest element of the lattice.
      */
-    fn top: E
+    def top: E
 
     /**
      * Returns the greatest lower bound of the two elements `x` and `y`.
      */
-    fn glb(x: E, y: E): E
+    def glb(x: E, y: E): E
 
 
     /**
      * Alias for the greatest element of the lattice.
      */
-    fn ⊤: E
+    def ⊤: E
 
     /**
      * Alias for the greatest lower bound operator.
      */
-    fn ⊓(x: E, y: E): E = glb(x, y)
+    def ⊓(x: E, y: E): E = glb(x, y)
 
     /**
      * The greatest element law asserts that every element of the lattice is
@@ -43,3 +43,44 @@ class MeetSemiLattice[E] => PartialOrder[E] {
     law GreatestLowerBound: Prop = ∀(x: E, y: E, z: E). ((z ⊑ x) ∧ (z ⊑ y)) → (z ⊑ (x ⊓ y))
 
 }
+
+/*
+ * ## Implementations of [[MeetSemiLattice]] for tuples.
+ */
+
+/**
+ * Tuple (A, B)
+ */
+impl MeetSemiLattice[(A, B)] <= MeetSemiLattice[A], MeetSemiLattice[B] {
+    def top: (A, B) = (⊤, ⊤)
+
+    def glb(x: (A, B), y: (A, B)): Bool =
+        let (a1, b1) = x in
+        let (a2, b2) = y in
+            (a1 ⊓ a2, b1 ⊓ b2)
+}
+
+/**
+ * Tuple (A, B, D)
+ */
+impl MeetSemiLattice[(A, B, C)] <= MeetSemiLattice[A], MeetSemiLattice[B], MeetSemiLattice[C] {
+    def top: (A, B, C) = (⊤, ⊤, ⊤)
+
+    def glb(x: (A, B, C), y: (A, B, C)): Bool =
+        let (a1, b1, c1) = x in
+        let (a2, b2, c2) = y in
+            (a1 ⊓ a2, b1 ⊓ b2, c1 ⊓ c2)
+}
+
+/**
+ * Tuple (A, B, D, E)
+ */
+impl MeetSemiLattice[(A, B, C, D)] <= MeetSemiLattice[A], MeetSemiLattice[B], MeetSemiLattice[C], MeetSemiLattice[D] {
+    def top: (A, B, C, D) = (⊤, ⊤, ⊤, ⊤)
+
+    def glb(x: (A, B, C), y: (A, B, C)): Bool =
+        let (a1, b1, c1) = x in
+        let (a2, b2, c2) = y in
+            (a1 ⊓ a2, b1 ⊓ b2, c1 ⊓ c2)
+}
+

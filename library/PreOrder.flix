@@ -6,7 +6,7 @@ class PreOrder[E] {
     /**
      * Returns `true` iff the element `x` is less than or equal to the element `y`.
      */
-    fn leq2(x: E, y: E): Bool
+    def leq2(x: E, y: E): Bool
 
     /**
      * The reflexivity law asserts that any element is less than or equal to itself.

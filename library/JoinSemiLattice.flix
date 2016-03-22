@@ -6,22 +6,22 @@ class JoinSemiLattice[E] => PartialOrder[E] {
     /**
      * Returns the least element of the lattice.
      */
-    fn bot: E
+    def bot: E
 
     /**
      * Returns the least upper bound of the two elements `x` and `y`.
      */
-    fn lub(x: E, y: E): E
+    def lub(x: E, y: E): E
 
     /**
      * Alias for the least element of the lattice.
      */
-    fn ⊥: E = bot
+    def ⊥: E = bot
 
     /**
      * Alias for the least upper bound operator.
      */
-    fn ⊑(x: E, y: E): E = lub(x, y)
+    def ⊑(x: E, y: E): E = lub(x, y)
 
     /**
      * The least element law asserts that every element of the lattice is
@@ -41,4 +41,56 @@ class JoinSemiLattice[E] => PartialOrder[E] {
      */
     law LeastUpperBound: Prop = ∀(x: E, y: E, z: E). ((x ⊑ z) ∧ (y ⊑ z)) → (x ⊔ y) ⊑ z
 
+}
+
+/*
+ * ## Implementations of [[JoinSemiLattice]] for tuples.
+ */
+
+/**
+ * Tuple (A, B)
+ */
+impl JoinSemiLattice[(A, B)] <= JoinSemiLattice[A], JoinSemiLattice[B] {
+    def bot: (A, B) = (⊥, ⊥)
+
+    def lub(x: (A, B), y: (A, B)): Bool =
+        let (a1, b1) = x in
+        let (a2, b2) = y in
+            (a1 ⊔ a2, b1 ⊔ b2)
+}
+
+/**
+ * Tuple (A, B, C)
+ */
+impl JoinSemiLattice[(A, B, C)] <= JoinSemiLattice[A], JoinSemiLattice[B], JoinSemiLattice[C] {
+    def bot: (A, B, C) = (⊥, ⊥, ⊥)
+
+    def lub(x: (A, B, C), y: (A, B, C)): Bool =
+        let (a1, b1, c1) = x in
+        let (a2, b2, c2) = y in
+            (a1 ⊔ a2, b1 ⊔ b2, c1 ⊔ c2)
+}
+
+/**
+ * Tuple (A, B, C, D)
+ */
+impl JoinSemiLattice[(A, B, C, D)] <= JoinSemiLattice[A], JoinSemiLattice[B], JoinSemiLattice[C], JoinSemiLattice[D] {
+    def bot: (A, B, C, D) = (⊥, ⊥, ⊥, ⊥)
+
+    def lub(x: (A, B, C, D), y: (A, B, C, D)): Bool =
+        let (a1, b1, c1, d1) = x in
+        let (a2, b2, c2, d2) = y in
+            (a1 ⊔ a2, b1 ⊔ b2, c1 ⊔ c2, d1 ⊔ d2)
+}
+
+/**
+ * Tuple (A, B, C, D, E)
+ */
+impl JoinSemiLattice[(A, B, C, D, E)] <= JoinSemiLattice[A], JoinSemiLattice[B], JoinSemiLattice[C], JoinSemiLattice[D], JoinSemiLattice[E] {
+    def bot: (A, B, C, D, E) = (⊥, ⊥, ⊥, ⊥, ⊥)
+
+    def lub(x: (A, B, C, D, E), y: (A, B, C, D, E)): Bool =
+        let (a1, b1, c1, d1, e1) = x in
+        let (a2, b2, c2, d2, e2) = y in
+            (a1 ⊔ a2, b1 ⊔ b2, c1 ⊔ c2, d1 ⊔ d2, e1 ⊔ e2)
 }

@@ -12,12 +12,12 @@ class PartialOrder[E] {
     /**
      * Returns `true` iff the element `x` is less than or equal to the element `y`.
      */
-    fn leq(x: E, y: E): Bool
+    def leq(x: E, y: E): Bool
 
     /**
      * Alias for `leq`.
      */
-    fn ⊑(x: E, y: E): Bool = leq(x, y)
+    def ⊑(x: E, y: E): Bool = leq(x, y)
 
     /**
      * The reflexivity law asserts that any element is less than or equal to itself.
@@ -37,4 +37,48 @@ class PartialOrder[E] {
      */
     law Transitivity: Prop = ∀(x: E, y: E, z: E). (x ⊑ y ∧ y ⊑ z) → (x ⊑ z)
 
+}
+
+/*
+ * ## Implementations of [[PartialOrder]] for tuples.
+ */
+
+/**
+ * Tuple (A, B)
+ */
+impl PartialOrder[(A, B)] <= PartialOrder[A], PartialOrder[B] {
+    def leq(x: (A, B), y: (A, B)): Bool =
+        let (a1, b1) = x in
+        let (a2, b2) = y in
+            leq(a1, a2) && leq(b1, b2)
+}
+
+/**
+ * Tuple (A, B, C)
+ */
+impl PartialOrder[(A, B, C)] <= PartialOrder[A], PartialOrder[B], PartialOrder[C] {
+    def leq(x: (A, B, C), y: (A, B, C)): Bool =
+        let (a1, b1, c1) = x in
+        let (a2, b2, c2) = y in
+            leq(a1, a2) && leq(b1, b2) && leq(c1, c2)
+}
+
+/**
+ * Tuple (A, B, C, D)
+ */
+impl PartialOrder[(A, B, C, D)] <= PartialOrder[A], PartialOrder[B], PartialOrder[C], PartialOrder[D] {
+    def leq(x: (A, B, C, D), y: (A, B, C, D)): Bool =
+        let (a1, b1, c1, d1) = x in
+        let (a2, b2, c2, d2) = y in
+            leq(a1, a2) && leq(b1, b2) && leq(c1, c2) && leq(d1, d2)
+}
+
+/**
+ * Tuple (A, B, C, D, E)
+ */
+impl PartialOrder[(A, B, C, D, E)] <= PartialOrder[A], PartialOrder[B], PartialOrder[C], PartialOrder[D], PartialOrder[E] {
+    def leq(x: (A, B, C, D, E), y: (A, B, C, D, E)): Bool =
+        let (a1, b1, c1, d1, e1) = x in
+        let (a2, b2, c2, d2, e2) = y in
+            leq(a1, a2) && leq(b1, b2) && leq(c1, c2) && leq(d1, d2) && leq(e1, e2)
 }

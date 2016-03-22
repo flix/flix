@@ -288,7 +288,7 @@ class TestParser extends FunSuite {
   test("Declaration.Class01") {
     val input =
       """class Eq[A] {
-        |  fn eq(x: A, y: B): Bool
+        |  def eq(x: A, y: B): Bool
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
@@ -299,7 +299,7 @@ class TestParser extends FunSuite {
   test("Declaration.Class02") {
     val input =
       """class Coerce[A, B] {
-        |  fn coerce(a: A): B
+        |  def coerce(a: A): B
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
@@ -310,8 +310,8 @@ class TestParser extends FunSuite {
   test("Declaration.Class03") {
     val input =
       """class Ord[A] => Eq[A] {
-        |  fn eq(x: A, y: A): Bool
-        |  fn lessEq(x: A, y: A): Bool
+        |  def eq(x: A, y: A): Bool
+        |  def lessEq(x: A, y: A): Bool
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {

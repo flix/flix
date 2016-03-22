@@ -113,7 +113,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Signature: Rule1[ParsedAst.Declaration.Signature] = rule {
-      SP ~ atomic("fn") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC ~> ParsedAst.Declaration.Signature
+      SP ~ atomic("def") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC ~> ParsedAst.Declaration.Signature
     }
 
     def External: Rule1[ParsedAst.Declaration.External] = rule {
