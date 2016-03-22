@@ -876,7 +876,7 @@ object Resolver {
           case "Unit" => Type.Unit.toSuccess
           case "Bool" => Type.Bool.toSuccess
           case "Char" => Type.Char.toSuccess
-          case "Float" => Type.Float32.toSuccess
+          case "Float" => Type.Float64.toSuccess
           case "Float32" => Type.Float32.toSuccess
           case "Float64" => Type.Float64.toSuccess
           case "Int" => Type.Int32.toSuccess

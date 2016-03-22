@@ -349,6 +349,8 @@ object Typer {
           case UnaryOperator.Plus | UnaryOperator.Minus =>
             visit(re, env) flatMap {
               case e => e.tpe match {
+                case Type.Float32 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
+                case Type.Float64 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
                 case Type.Int8 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
                 case Type.Int16 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
                 case Type.Int32 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
@@ -373,6 +375,8 @@ object Typer {
           case _: ArithmeticOperator =>
             @@(visit(re1, env), visit(re2, env)) flatMap {
               case (e1, e2) => (e1.tpe, e2.tpe) match {
+                case (Type.Float32, Type.Float32) => TypedAst.Expression.Binary(op, e1, e2, Type.Float32, loc).toSuccess
+                case (Type.Float64, Type.Float64) => TypedAst.Expression.Binary(op, e1, e2, Type.Float64, loc).toSuccess
                 case (Type.Int8, Type.Int8) => TypedAst.Expression.Binary(op, e1, e2, Type.Int8, loc).toSuccess
                 case (Type.Int16, Type.Int16) => TypedAst.Expression.Binary(op, e1, e2, Type.Int16, loc).toSuccess
                 case (Type.Int32, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Int32, loc).toSuccess
@@ -389,6 +393,9 @@ object Typer {
           case _: ComparisonOperator =>
             @@(visit(re1, env), visit(re2, env)) flatMap {
               case (e1, e2) => (e1.tpe, e2.tpe) match {
+                case (Type.Char, Type.Char) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess
+                case (Type.Float32, Type.Float32) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess
+                case (Type.Float64, Type.Float64) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess
                 case (Type.Int8, Type.Int8) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess
                 case (Type.Int16, Type.Int16) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess
                 case (Type.Int32, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess

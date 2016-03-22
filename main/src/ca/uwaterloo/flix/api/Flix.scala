@@ -215,6 +215,16 @@ class Flix {
   def mkCharType: IType = new WrappedType(Type.Char)
 
   /**
+    * Returns the float32 type.
+    */
+  def mkFloat32Type: IType = new WrappedType(Type.Float32)
+
+  /**
+    * Returns the float64 type.
+    */
+  def mkFloat64Type: IType = new WrappedType(Type.Float64)
+
+  /**
     * Returns the int8 type.
     */
   def mkInt8Type: IType = new WrappedType(Type.Int8)
@@ -375,6 +385,21 @@ class Flix {
     * Returns the char value corresponding to the given character.
     */
   def mkChar(c: Char): IValue = new WrappedValue(Value.mkChar(c))
+
+  /**
+    * Returns the float32 value corresponding to the given float.
+    */
+  def mkFloat32(f: Float): IValue = new WrappedValue(Value.mkFloat32(f))
+
+  /**
+    * Returns the float32 value corresponding to the given double.
+    */
+  def mkFloat32(d: Double): IValue = new WrappedValue(Value.mkFloat32(d))
+
+  /**
+    * Returns the float64 value corresponding to the given double.
+    */
+  def mkFloat64(d: Double): IValue = new WrappedValue(Value.mkFloat64(d))
 
   /**
     * Returns the int8 value corresponding to the given byte.

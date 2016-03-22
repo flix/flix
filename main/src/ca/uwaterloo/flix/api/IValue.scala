@@ -54,6 +54,23 @@ trait IValue {
   def getChar: Char
 
   /////////////////////////////////////////////////////////////////////////////
+  // Floats                                                                  //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Returns the float32 represented by `this` value.
+    *
+    * @throws UnsupportedOperationException if `this` value is not of float32 type.
+    */
+  def getFloat32: Float
+
+  /**
+    * Returns the float32 represented by `this` value.
+    *
+    * @throws UnsupportedOperationException if `this` value is not of float64 type.
+    */
+  def getFloat64: Double
+
+  /////////////////////////////////////////////////////////////////////////////
   // Ints                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   /**

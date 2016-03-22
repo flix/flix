@@ -23,6 +23,10 @@ final class WrappedValue(val ref: AnyRef) extends IValue {
 
   def getChar: Char = Value.cast2char(ref)
 
+  def getFloat32: Float = Value.cast2float32(ref)
+
+  def getFloat64: Double = Value.cast2float64(ref)
+
   def getInt8: Byte = Value.cast2int8(ref)
 
   def getInt16: Short = Value.cast2int16(ref)

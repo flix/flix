@@ -102,6 +102,9 @@ object CreateExecutableAst {
       case SimplifiedAst.Expression.Unit => ExecutableAst.Expression.Unit
       case SimplifiedAst.Expression.True => ExecutableAst.Expression.True
       case SimplifiedAst.Expression.False => ExecutableAst.Expression.False
+      case SimplifiedAst.Expression.Char(lit) => ExecutableAst.Expression.Char(lit)
+      case SimplifiedAst.Expression.Float32(lit) => ExecutableAst.Expression.Float32(lit)
+      case SimplifiedAst.Expression.Float64(lit) => ExecutableAst.Expression.Float64(lit)
       case SimplifiedAst.Expression.Int8(lit) => ExecutableAst.Expression.Int8(lit)
       case SimplifiedAst.Expression.Int16(lit) => ExecutableAst.Expression.Int16(lit)
       case SimplifiedAst.Expression.Int32(lit) => ExecutableAst.Expression.Int32(lit)
