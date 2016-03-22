@@ -14,6 +14,9 @@ object ClosureConv {
       case SimplifiedAst.Expression.Unit => e
       case SimplifiedAst.Expression.True => e
       case SimplifiedAst.Expression.False => e
+      case SimplifiedAst.Expression.Char(lit) => e
+      case SimplifiedAst.Expression.Float32(lit) => e
+      case SimplifiedAst.Expression.Float64(lit) => e
       case SimplifiedAst.Expression.Int8(lit) => e
       case SimplifiedAst.Expression.Int16(lit) => e
       case SimplifiedAst.Expression.Int32(lit) => e
@@ -132,6 +135,9 @@ object ClosureConv {
       case SimplifiedAst.Expression.Unit => e
       case SimplifiedAst.Expression.True => e
       case SimplifiedAst.Expression.False => e
+      case SimplifiedAst.Expression.Char(lit) => e
+      case SimplifiedAst.Expression.Float32(lit) => e
+      case SimplifiedAst.Expression.Float64(lit) => e
       case SimplifiedAst.Expression.Int8(lit) => e
       case SimplifiedAst.Expression.Int16(lit) => e
       case SimplifiedAst.Expression.Int32(lit) => e
@@ -244,6 +250,9 @@ object ClosureConv {
       case SimplifiedAst.Expression.Unit => Set.empty
       case SimplifiedAst.Expression.True => Set.empty
       case SimplifiedAst.Expression.False => Set.empty
+      case SimplifiedAst.Expression.Char(lit) => Set.empty
+      case SimplifiedAst.Expression.Float32(lit) => Set.empty
+      case SimplifiedAst.Expression.Float64(lit) => Set.empty
       case SimplifiedAst.Expression.Int8(lit) => Set.empty
       case SimplifiedAst.Expression.Int16(lit) => Set.empty
       case SimplifiedAst.Expression.Int32(lit) => Set.empty
