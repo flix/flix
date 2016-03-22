@@ -11,8 +11,6 @@ object LambdaLift {
     */
   def lift(root: SimplifiedAst.Root)(implicit genSym: GenSym): SimplifiedAst.Root = {
 
-    // TODO: This may lift top-level definitions into new names. which is not really required...
-
     // Lambda lift every function definition.
     val defs = root.constants.foldLeft(Map.empty[Symbol.Resolved, SimplifiedAst.Definition.Constant]) {
       case (macc, (name, defn)) => macc ++ lift(defn)
@@ -134,14 +132,28 @@ object LambdaLift {
         SimplifiedAst.Expression.ApplyClosure(e, args, tpe, loc)
     }
 
-    // Closure convert the expression.
-    val e = ClosureConv.Expressions.convert(decl.exp)
+    decl.exp match {
+      case SimplifiedAst.Expression.Lambda(ann, args, body, tpe, loc) =>
+        // TODO: We can simplify this by treating top-level lambdas differently.
 
-    // Perform lambda lifting. Returns the expression of the top-level function.
-    val lam = visit(e)
+        // Closure convert the expression.
+        val e = ClosureConv.Expressions.convert(body)
 
-    // Add the top-level function to the map of generated functions.
-    m += (decl.name -> SimplifiedAst.Definition.Constant(decl.name, lam, decl.tpe, decl.loc))
+        // Perform lambda lifting. Returns the expression of the top-level function.
+        val lam = SimplifiedAst.Expression.Lambda(ann, args, visit(e), tpe, loc)
+
+        // Add the top-level function to the map of generated functions.
+        m += (decl.name -> SimplifiedAst.Definition.Constant(decl.name, lam, decl.tpe, decl.loc))
+      case exp =>
+        // Closure convert the expression.
+        val e = ClosureConv.Expressions.convert(decl.exp)
+
+        // Perform lambda lifting. Returns the expression of the top-level function.
+        val lam = visit(e)
+
+        // Add the top-level function to the map of generated functions.
+        m += (decl.name -> SimplifiedAst.Definition.Constant(decl.name, lam, decl.tpe, decl.loc))
+    }
 
     // Return the generated definitions.
     m.toMap

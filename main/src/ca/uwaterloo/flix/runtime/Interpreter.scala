@@ -52,7 +52,6 @@ object Interpreter {
       }
       Value.Closure(formals, body, env.clone())
     case Expression.Hook(hook, _, _) => Value.HookClosure(hook)
-    case Expression.Apply(name, args, _, _) => ???
     case Expression.Apply3(exp, args, _, _) =>
       val evalArgs = new Array[AnyRef](args.length)
       var i = 0
@@ -61,6 +60,15 @@ object Interpreter {
         i = i + 1
       }
       evalCall(exp, evalArgs, root, env)
+    case Expression.ApplyClosure(exp, args, tpe, loc) =>
+      val evalArgs = new Array[AnyRef](args.length)
+      var i = 0
+      while (i < evalArgs.length) {
+        evalArgs(i) = eval(args(i), root, env)
+        i = i + 1
+      }
+      evalCall(exp, evalArgs, root, env)
+
     case Expression.Unary(op, exp, _, _) => evalUnary(op, exp, root, env)
     case Expression.Binary(op, exp1, exp2, _, _) => op match {
       case o: ArithmeticOperator => evalArithmetic(o, exp1, exp2, root, env)
