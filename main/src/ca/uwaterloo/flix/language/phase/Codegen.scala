@@ -1,9 +1,9 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Definition, Expression, LoadExpression, StoreExpression}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.Value
+import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.util.CheckClassAdapter
@@ -44,7 +44,7 @@ object Codegen {
     case Type.Enum(_, _) => asm.Type.getDescriptor(classOf[Value.Tag])
     case Type.Tuple(elms) => asm.Type.getDescriptor(classOf[Value.Tuple])
     case Type.Lambda(args, retTpe) => s"""(${ args.map(descriptor).mkString })${descriptor(retTpe)}"""
-    case Type.Tag(_, _, _) => throw new InternalCompilerError(s"No corresponding JVM type for $tpe.")
+    case Type.Tag(_, _, _) => throw InternalCompilerException(s"No corresponding JVM type for $tpe.")
     case _ => ???
   }
 
@@ -98,7 +98,7 @@ object Codegen {
       case Type.Float32 => mv.visitInsn(FRETURN)
       case Type.Float64 => mv.visitInsn(DRETURN)
       case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) => mv.visitInsn(ARETURN)
-      case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Functions can't return type ${function.tpe.retTpe}.")
+      case Type.Tag(_, _, _) => throw InternalCompilerException(s"Functions can't return type ${function.tpe.retTpe}.")
       case _ => ???
     }
 
@@ -142,7 +142,7 @@ object Codegen {
       case Type.Float32 => visitor.visitVarInsn(FLOAD, offset)
       case Type.Float64 => visitor.visitVarInsn(DLOAD, offset)
       case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) => visitor.visitVarInsn(ALOAD, offset)
-      case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Can't have a value of type $tpe.")
+      case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type $tpe.")
       case _ => ???
     }
 
@@ -185,7 +185,7 @@ object Codegen {
         case Type.Float64 => visitor.visitVarInsn(DSTORE, offset)
         case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) =>
           visitor.visitVarInsn(ASTORE, offset)
-        case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Can't have a value of type ${exp1.tpe}.")
+        case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type ${exp1.tpe}.")
         case _ => ???
       }
       compileExpression(context, visitor)(exp2)
@@ -264,7 +264,7 @@ object Codegen {
     case Expression.CheckNil(exp, loc) => ???
     case Expression.CheckCons(exp, loc) => ???
 
-    case Expression.Set(elms, tpe, loc) => ???
+    case Expression.FSet(elms, tpe, loc) => ???
 
     case Expression.UserError(_, loc) =>
       visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/api/UserException")
@@ -365,7 +365,7 @@ object Codegen {
         "(Ljava/lang/String;)Ljava/lang/Object;", false)
     case Type.Unit | Type.Enum(_, _) | Type.Tuple(_) =>
       compileExpression(context, visitor)(exp)
-    case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Can't have a value of type ${exp.tpe}.")
+    case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type ${exp.tpe}.")
     case _ => ???
   }
 
@@ -402,7 +402,7 @@ object Codegen {
     case Type.Str => visitor.visitTypeInsn(CHECKCAST, "java/lang/String")
     case Type.Enum(_, _) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tag")
     case Type.Tuple(_) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tuple")
-    case Type.Tag(_, _, _) => throw new InternalCompilerError(s"Can't have a value of type $tpe.")
+    case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type $tpe.")
     case _ => ???
   }
 
@@ -557,7 +557,7 @@ object Codegen {
       visitor.visitInsn(I2S)
     case Type.Int32 => visitor.visitInsn(INEG)
     case Type.Int64 => visitor.visitInsn(LNEG)
-    case _ => throw new InternalCompilerError(s"Can't apply UnaryOperator.Minus to type $tpe.")
+    case _ => throw InternalCompilerException(s"Can't apply UnaryOperator.Minus to type $tpe.")
   }
 
   /*
@@ -583,7 +583,7 @@ object Codegen {
       case Type.Int64 =>
         visitor.visitInsn(I2L)
         visitor.visitInsn(LXOR)
-      case _ => throw new InternalCompilerError(s"Can't apply UnaryOperator.Negate to type $tpe.")
+      case _ => throw InternalCompilerException(s"Can't apply UnaryOperator.Negate to type $tpe.")
     }
   }
 
@@ -619,7 +619,7 @@ object Codegen {
         case Type.Float64 => (NOP, NOP) // already a double
         case Type.Int8 | Type.Int16 | Type.Int32 => (I2D, D2I)
         case Type.Int64 => (L2D, D2L)
-        case _ => throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
+        case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
       }
       visitor.visitFieldInsn(GETSTATIC, "scala/math/package$", "MODULE$", "Lscala/math/package$;")
       compileExpression(context, visitor)(e1)
@@ -642,7 +642,7 @@ object Codegen {
         case BinaryOperator.Divide => (IDIV, LDIV, FDIV, DDIV)
         case BinaryOperator.Modulo => (IREM, LREM, FREM, DREM)
         case BinaryOperator.Exponentiate =>
-          throw new InternalCompilerError("BinaryOperator.Exponentiate already handled.")
+          throw InternalCompilerException("BinaryOperator.Exponentiate already handled.")
       }
       e1.tpe match {
         case Type.Float32 => visitor.visitInsn(floatOp)
@@ -655,7 +655,7 @@ object Codegen {
           visitor.visitInsn(I2S)
         case Type.Int32 => visitor.visitInsn(intOp)
         case Type.Int64 => visitor.visitInsn(longOp)
-        case _ => throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
+        case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
       }
     }
   }
@@ -724,7 +724,7 @@ object Codegen {
       case Type.Int64 =>
         visitor.visitInsn(LCMP)
         visitor.visitJumpInsn(cmp, condElse)
-      case _=> throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
+      case _=> throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
     }
     visitor.visitInsn(ICONST_1)
     visitor.visitJumpInsn(GOTO, condEnd)
@@ -837,7 +837,7 @@ object Codegen {
         if (intOp == ISHL) visitor.visitInsn(I2S)
       case Type.Int32 => visitor.visitInsn(intOp)
       case Type.Int64 => visitor.visitInsn(longOp)
-      case _ => throw new InternalCompilerError(s"Can't apply $o to type ${e1.tpe}.")
+      case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
     }
   }
 

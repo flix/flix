@@ -26,6 +26,9 @@ object LambdaLift {
       case SimplifiedAst.Expression.Unit => e
       case SimplifiedAst.Expression.True => e
       case SimplifiedAst.Expression.False => e
+      case SimplifiedAst.Expression.Char(lit) => e
+      case SimplifiedAst.Expression.Float32(lit) => e
+      case SimplifiedAst.Expression.Float64(lit) => e
       case SimplifiedAst.Expression.Int8(lit) => e
       case SimplifiedAst.Expression.Int16(lit) => e
       case SimplifiedAst.Expression.Int32(lit) => e

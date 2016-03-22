@@ -1,7 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
-import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.Ast.Annotation
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Definition._
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
@@ -9,6 +8,7 @@ import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Type, _}
 import ca.uwaterloo.flix.language.phase.Verifier.VerifierError._
 import ca.uwaterloo.flix.runtime.PartialEvaluator
+import ca.uwaterloo.flix.util.InternalCompilerException
 import com.microsoft.z3._
 
 // TODO: have some help verify this class.
@@ -1027,7 +1027,7 @@ object Verifier {
     case Var(ident, offset, tpe, loc) => ctx.mkBoolConst(ident.name)
     case Unary(op, e1, tpe, loc) => op match {
       case UnaryOperator.LogicalNot => ctx.mkNot(visitBoolExpr(e1, ctx))
-      case _ => throw new InternalCompilerError(s"Illegal unary operator: $op.")
+      case _ => throw InternalCompilerException(s"Illegal unary operator: $op.")
     }
     case Binary(op, e1, e2, tpe, loc) => op match {
       case BinaryOperator.Less => ctx.mkBVSLT(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
@@ -1038,7 +1038,7 @@ object Verifier {
         val (f1, f2) = (e1.tpe, e2.tpe) match {
           case (Type.Bool, Type.Bool) => (visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
           case (Type.Int32, Type.Int32) => (visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-          case _ => throw new InternalCompilerError(s"Illegal type: ${(e1.tpe, e2.tpe)}.")
+          case _ => throw InternalCompilerException(s"Illegal type: ${(e1.tpe, e2.tpe)}.")
         }
         if (op == BinaryOperator.Equal)
           ctx.mkEq(f1, f2)
@@ -1046,7 +1046,7 @@ object Verifier {
           ctx.mkNot(ctx.mkEq(f1, f2))
       case BinaryOperator.LogicalAnd => ctx.mkAnd(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
       case BinaryOperator.LogicalOr => ctx.mkOr(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
-      case _ => throw new InternalCompilerError(s"Illegal binary operator: $op.")
+      case _ => throw InternalCompilerException(s"Illegal binary operator: $op.")
     }
     case IfThenElse(e1, e2, e3, tpe, loc) =>
       val f1 = visitBoolExpr(e1, ctx)
@@ -1056,7 +1056,7 @@ object Verifier {
         ctx.mkAnd(f1, f2),
         ctx.mkAnd(ctx.mkNot(f1), f3)
       )
-    case _ => throw new InternalCompilerError(s"Unexpected expression: $e0.")
+    case _ => throw InternalCompilerException(s"Unexpected expression: $e0.")
   }
 
   /**
@@ -1070,7 +1070,7 @@ object Verifier {
     case Int32(i) => ctx.mkBV(i, 32)
     case Unary(op, e1, tpe, loc) => op match {
       case UnaryOperator.BitwiseNegate => ctx.mkBVNot(visitBitVecExpr(e1, ctx))
-      case _ => throw new InternalCompilerError(s"Illegal unary operator: $op.")
+      case _ => throw InternalCompilerException(s"Illegal unary operator: $op.")
     }
     case Binary(op, e1, e2, tpe, loc) => op match {
       case BinaryOperator.Plus => ctx.mkBVAdd(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
@@ -1083,9 +1083,9 @@ object Verifier {
       case BinaryOperator.BitwiseXor => ctx.mkBVXOR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
       case BinaryOperator.BitwiseLeftShift => ctx.mkBVSHL(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
       case BinaryOperator.BitwiseRightShift => ctx.mkBVLSHR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-      case _ => throw new InternalCompilerError(s"Illegal binary operator: $op.")
+      case _ => throw InternalCompilerException(s"Illegal binary operator: $op.")
     }
-    case _ => throw new InternalCompilerError(s"Unexpected expression: $e0.")
+    case _ => throw InternalCompilerException(s"Unexpected expression: $e0.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1187,7 +1187,7 @@ object Verifier {
     def visit(exp: Expr): Expression = exp match {
       case e: BoolExpr => if (e.isTrue) True else False
       case e: BitVecNum => Int32(e.getLong.toInt) // TODO: Size
-      case _ => throw new InternalCompilerError(s"Unexpected Z3 expression: $exp.")
+      case _ => throw InternalCompilerException(s"Unexpected Z3 expression: $exp.")
     }
 
     model.getConstDecls.foldLeft(Map.empty[String, Expression]) {

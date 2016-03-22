@@ -1,10 +1,10 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.Compiler.InternalCompilerError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.GenSym
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 // TODO: Use coverage to determine which of these are redundant.
 
@@ -75,7 +75,7 @@ object PartialEvaluator {
         * Ref Expressions.
         */
       case Ref(name, tpe, loc) => root.constants.get(name) match {
-        case None => throw new InternalCompilerError(s"Unresolved reference: '$name'.")
+        case None => throw InternalCompilerException(s"Unresolved reference: '$name'.")
         case Some(defn) => k(defn.exp)
       }
 
@@ -686,10 +686,10 @@ object PartialEvaluator {
         */
       case SwitchError(tpe, loc) => k(SwitchError(tpe, loc))
 
-      case FSet(elms, tpe, loc) => throw new InternalCompilerError("Not Yet Supported. Sorry.")
-      case o: CheckNil => throw new InternalCompilerError("Not Yet Supported. Sorry.")
-      case o: CheckCons => throw new InternalCompilerError("Not Yet Supported. Sorry.")
-      case Apply(_, _, _, _) => throw new InternalCompilerError("Deprecated.")
+      case FSet(elms, tpe, loc) => throw InternalCompilerException("Not Yet Supported. Sorry.")
+      case o: CheckNil => throw InternalCompilerException("Not Yet Supported. Sorry.")
+      case o: CheckCons => throw InternalCompilerException("Not Yet Supported. Sorry.")
+      case Apply(_, _, _, _) => throw InternalCompilerException("Deprecated.")
     }
 
     /**
@@ -774,7 +774,7 @@ object PartialEvaluator {
       (elms1 zip elms2) forall {
         case (e1, e2) => isEq(e1, e2)
       }
-    case _ => throw new InternalCompilerError(s"The arguments 'exp1' and 'exp2' must be values, but got: '$exp1' and '$exp2'.")
+    case _ => throw InternalCompilerException(s"The arguments 'exp1' and 'exp2' must be values, but got: '$exp1' and '$exp2'.")
   }
 
   /**
@@ -847,10 +847,10 @@ object PartialEvaluator {
     case UserError(tpe, loc) => UserError(tpe, loc)
     case MatchError(tpe, loc) => MatchError(tpe, loc)
     case SwitchError(tpe, loc) => SwitchError(tpe, loc)
-    case FSet(elms, tpe, loc) => throw new InternalCompilerError("Unsupported.")
-    case CheckNil(e, loc) => throw new InternalCompilerError("Unsupported.")
-    case CheckCons(e, loc) => throw new InternalCompilerError("Unsupported.")
-    case Apply(name, args, tpe, loc) => throw new InternalCompilerError("Deprecated feature.")
+    case FSet(elms, tpe, loc) => throw InternalCompilerException("Unsupported.")
+    case CheckNil(e, loc) => throw InternalCompilerException("Unsupported.")
+    case CheckCons(e, loc) => throw InternalCompilerException("Unsupported.")
+    case Apply(name, args, tpe, loc) => throw InternalCompilerException("Deprecated feature.")
   }
 
   /**
@@ -941,10 +941,10 @@ object PartialEvaluator {
       case UserError(tpe, loc) => UserError(tpe, loc)
       case MatchError(tpe, loc) => MatchError(tpe, loc)
       case SwitchError(tpe, loc) => SwitchError(tpe, loc)
-      case FSet(elms, tpe, loc) => throw new InternalCompilerError("Unsupported.")
-      case CheckNil(e, loc) => throw new InternalCompilerError("Unsupported.")
-      case CheckCons(e, loc) => throw new InternalCompilerError("Unsupported.")
-      case Apply(name, args, tpe, loc) => throw new InternalCompilerError("Deprecated feature.")
+      case FSet(elms, tpe, loc) => throw InternalCompilerException("Unsupported.")
+      case CheckNil(e, loc) => throw InternalCompilerException("Unsupported.")
+      case CheckCons(e, loc) => throw InternalCompilerException("Unsupported.")
+      case Apply(name, args, tpe, loc) => throw InternalCompilerException("Deprecated feature.")
     }
 
     visit(exp)

@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
@@ -498,7 +498,7 @@ object Weeder {
       case ParsedAst.Literal.Bool(sp1, lit, sp2) => lit match {
         case "true" => WeededAst.Literal.Bool(lit = true, mkSL(sp1, sp2)).toSuccess
         case "false" => WeededAst.Literal.Bool(lit = false, mkSL(sp1, sp2)).toSuccess
-        case _ => throw Compiler.InternalCompilerError("Non-true/false boolean.")
+        case _ => throw InternalCompilerException("Non-true/false boolean.")
       }
 
       case ParsedAst.Literal.Char(sp1, lit, sp2) =>
@@ -815,7 +815,7 @@ object Weeder {
           case term => WeededAst.Predicate.Body.Loop(p.ident, term, mkSL(p.sp1, p.sp2))
         }
 
-        case p: ParsedAst.Predicate.Equal => throw Compiler.InternalCompilerError("Alias predicate should already have been eliminated.")
+        case p: ParsedAst.Predicate.Equal => throw InternalCompilerException("Alias predicate should already have been eliminated.")
       }
     }
 

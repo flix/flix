@@ -115,11 +115,11 @@ object ClosureConv {
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => e
 
       case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
-        throw new InternalCompilerException(s"Illegal expression during closure conversion: '$e'.")
+        throw InternalCompilerException(s"Illegal expression during closure conversion: '$e'.")
       case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) =>
-        throw new InternalCompilerException(s"Illegal expression during closure conversion: '$e'.")
+        throw InternalCompilerException(s"Illegal expression during closure conversion: '$e'.")
       case SimplifiedAst.Expression.ApplyClosure(clo, args, tpe, loc) =>
-        throw new InternalCompilerException(s"Illegal expression during closure conversion: '$e'.")
+        throw InternalCompilerException(s"Illegal expression during closure conversion: '$e'.")
 
     }
 
