@@ -28,3 +28,19 @@ impl Applicative[Opt[A]] {
     def ap(f: Opt[A -> B], x: Opt[A]): Opt[B] = ???
 }
 
+//
+// ## Lists.
+//
+
+/**
+ * Implementation of `Applicative[M[A]]` for `List[A]`.
+ */
+impl Applicative[List[A]] {
+    def lift(x: A): List[A] = x :: Nil
+
+    def ap(f: List[A -> B], x: List[A]): List[B] = match x with {
+        case Nil => Nil
+        case ff :: rs => list/append(list/map(ff, x), ap(f, rs))
+    }
+}
+

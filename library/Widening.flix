@@ -24,3 +24,5 @@ class Widening[E] => PartialOrder[E] {
     // TODO: AscendingChain law here?
 
 }
+
+// TODO: This is easily expressed by introducing an extra type.

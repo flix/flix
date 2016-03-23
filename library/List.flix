@@ -1,11 +1,11 @@
 namespace List {
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Basic Operations                                                     ///
-    ///////////////////////////////////////////////////////////////////////////
+    //
+    // ## Basic Operations
+    //
 
     /**
-     *  Returns true iff `xs` is the empty list, i.e. `Nil`.
+     * Returns true iff `xs` is the empty list, i.e. `Nil`.
      */
     def null(xs: List[A]): Bool = match xs with {
         case Nil => true
@@ -13,23 +13,23 @@ namespace List {
     }
 
     /**
-     *  Returns the first element of the list. If the list is empty the semantics are undefined.
+     * Returns the first element of the list. If the list is empty the semantics are undefined.
      */
     def head(xs: List[A]): A = match xs with {
         case x :: _ => x
     }
 
     /**
-     *  Returns the list consisting of everything but the first element of the list.
-     *  If the list is empty the semantics are undefined.
+     * Returns the list consisting of everything but the first element of the list.
+     * If the list is empty the semantics are undefined.
      */
     def tail(xs: List[A]): List[A] = match xs with {
         case _ :: rs => rs
     }
 
     /**
-     *  Returns the list with all the elements except the last.
-     *  If the list is empty the semantics are undefined.
+     * Returns the list with all the elements except the last.
+     * If the list is empty the semantics are undefined.
      */
     def init(xs: List[A]): List[A] = match xs with {
         case Nil => Nil
@@ -38,8 +38,8 @@ namespace List {
     }
 
     /**
-     *  Returns the last element of the list.
-     *  If the list is empty the semantics are undefined.
+     * Returns the last element of the list.
+     * If the list is empty the semantics are undefined.
      */
     def last(xs: List[A]): A = match xs with {
         case x :: Nil => x
@@ -47,7 +47,7 @@ namespace List {
     }
 
     /**
-     *  Returns the length of the list.
+     * Returns the length of the list.
      */
     def length(xs: List[A]): Int = match xs with {
         case Nil => 0
@@ -55,7 +55,7 @@ namespace List {
     }
 
     /**
-     *  Appends the second list to the first.
+     * Appends the second list to the first.
      */
     def append(xs: List[A], ys: List[A]): List[A] = match xs with {
         case Nil => ys
@@ -63,7 +63,7 @@ namespace List {
     }
 
     /**
-     *  Returns the element at the given position in the list.
+     * Returns the element at the given position in the list.
      */
     def at(pos: Int, xs: List[A]): A = match (pos, xs) with {
         case (0, x :: _) => x
@@ -71,7 +71,7 @@ namespace List {
     }
 
     /**
-     *  Returns true if the list contains the element `x`.
+     * Returns true if the list contains the element `x`.
      */
     def memberOf(x: A, xs: List[A]): Bool = match xs with {
         case Nil => false
@@ -79,24 +79,23 @@ namespace List {
     }
 
     /**
-     *  Returns the position of the element x in the list xs.
-     *  If the element does not exist in the list the semantics are undefined.
+     * Returns the position of the element `x` in the list `xs`.
+     * If the element does not exist in the list the semantics are undefined.
      */
-    // TODO
     def indexOf(x: A, xs: List[A]): Int =
-        let visit = (pos, xs) -> match xs with {
-            case Nil => -1
-            case y :: rs => 42
+        letrec visit = (i, ys) -> match ys with {
+            case Nil => ???
+            case y :: rs => if (x == y) i else visit(i + 1, rs)
         }
         in visit(0, xs)
 
     /**
-     *  Alias for findLeft.
+     * Alias for `findLeft`.
      */
     def find(f: A -> Bool, xs: List[A]): Opt[A] = findLeft(f, xs)
 
     /**
-     *  Optionally returns the first element that satisfies the predicate f
+     * Optionally returns the first element that satisfies the predicate `f`.
      */
     def findLeft(f: A -> Bool, xs: List[A]): Opt[A] = match xs with {
         case Nil => None
@@ -104,7 +103,7 @@ namespace List {
     }
 
     /**
-     *  Similar to findLeft but searches from right to left.
+     *  Similar to `findLeft` but searches from right to left.
      */
     def findRight(f: A -> Bool, xs: List[A]): Opt[A] = match xs with {
         case Nil => None
@@ -114,35 +113,68 @@ namespace List {
         }
     }
 
-    ///////////////////////////////////////////////////////////////////////////
-    // List Building                                                        ///
-    ///////////////////////////////////////////////////////////////////////////
+    //
+    // ## List Building
+    //
 
-//##
-//- **range(b: Int, e: Int): List[Int]**
-//    - Returns a list of all integers between b (inclusive) and e (exclusive).
-//- **repeat(x: A, n: Int): List[A]**
-//    - Returns a list with the element x repeated n times.
-//- **scan(f: (B, A) => B, b: B, xs: List[A]): List[B]**
-//    - Alias for scanLeft.
-//- **scanLeft(f: (B, A) => B, b: B, xs: List[A]): List[B]**
-//    - Accumulates the result of applying the function f going left to right.
-//    - That is, the result is of the form:
-//    - b :: f(b, x1) :: f(f(b, x1), x2)  ...
-//- **scanRight(f: (A, B) => B, b: B, xs: List[A]): List[B]**
-//    - Similar to scanLeft but going right to left.
+    /**
+     *  Returns a list of all integers between `b` (inclusive) and `e` (exclusive).
+     */
+    def range(b: Int, e: Int): List[Int] =
+        if (b == e)
+            Nil
+        else
+            b :: range(b + 1, e)
 
-    ///////////////////////////////////////////////////////////////////////////
-    // List Transformation                                                  ///
-    ///////////////////////////////////////////////////////////////////////////
+    /**
+     * Returns a list with the element `x` repeated `n` times.
+     */
+    def repeat(x: A, n: Int): List[A] =
+        if (n == 0)
+            Nil
+        else
+            x :: repeat(x, n - 1)
 
+    /**
+     *  Alias for `scanLeft`.
+     */
+    def scan(f: (B, A) -> B, b: B, xs: List[A]): List[B] = scanLeft(f, b, xs)
 
-//
-//## List Transformations
-//- **map(f: A => B, xs: List[A]): List[B]**
-//    - Returns the result of applying the function f to every element in the list.
-//- **mapWithIndex(f: (A, Int) => B, xs: List[A]): List[B]**
-//    - Similar to map but additionally passes the index of every element to f.
+    /**
+     * Accumulates the result of applying the function `f` to the list going left to right.
+     *
+     * That is, the result is of the form:
+     * `b :: f(b, x1) :: f(f(b, x1), x2)  ...`
+     */
+    def scanLeft(f: (B, A) -> B, b: B, xs: List[A]): List[B] = ??? // TODO
+
+    /**
+     * Similar to `scanLeft` but going right to left.
+     */
+    def scanRight(f: (A, B) -> B, b: B, xs: List[A]): List[B] = ??? // TODO
+
+    //
+    // ## List Transformation
+    //
+
+    /**
+     * Returns the result of applying the function `f` to every element in the list.
+     */
+    def map(f: A -> B, xs: List[A]): List[B] = match xs with {
+        case Nil => Nil
+        case y :: rs => f(y) :: map(f, rs)
+    }
+
+    /**
+     * Similar to `map` but additionally passes the index of every element to `f`.
+     */
+    def mapWithIndex(f: (A, Int) -> B, xs: List[A]): List[B] =
+        letrec visit = (i, ys) = match ys with {
+            case Nil => Nil
+            case y :: rs => f(y, i) :: visit(i + 1, rs)
+        }
+        in visit(0, xs)
+
 //- **flatMap(f: A => List[B], xs: List[A]): List[B]**
 //    - Returns the result of applying the function f to every element in the list and concatenating the result. Aliased as concatMap.
 //- **reverse(xs: List[A]): List[A]**
@@ -168,11 +200,10 @@ namespace List {
 //    - Returns the transpose of the list.
 //    - If the dimensions of the lists are mismatched the semantics are undefined.
 //
-    external def map(f: (A) -> B, xs: List[A]): List[B]
 
-    ///////////////////////////////////////////////////////////////////////////
-    // List Predicates                                                      ///
-    ///////////////////////////////////////////////////////////////////////////
+    //
+    // ## List Predicates
+    //
 
     /**
      *  Returns `true` if the list `xs` is a prefix of the list `ys`.
@@ -193,9 +224,9 @@ namespace List {
      */
     def isSuffixOf(xs: List[A], ys: List[B]): Bool = isPrefixOf(reverse(xs), reverse(ys))
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Fold And Reduce                                                      ///
-    ///////////////////////////////////////////////////////////////////////////
+    //
+    // ## Fold And Reduce
+    //
 
     /**
      *  Alias of foldLeft.

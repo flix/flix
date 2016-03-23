@@ -23,3 +23,18 @@ impl Functor[Opt[A]] {
         case Some(v) => Some(f(v))
     }
 }
+
+//
+// ## Lists.
+//
+
+/**
+ * Implementation of `Functor[M[A]]` for `List[A]`.
+ */
+impl Functor[List[A]] {
+    def map[B](f: A -> B, x: List[A]): List[B] = match x with {
+        case Nil => Nil
+        case y :: rs => f(y) :: map(f, rs)
+    }
+}
+
