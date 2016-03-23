@@ -87,7 +87,7 @@ object ParsedAst {
       * @param ident       the name of the function.
       * @param formals     the formals (i.e. parameters and their types).
       * @param tpe         the return type.
-      * @param exp        the body expression of the function.
+      * @param exp         the body expression of the function.
       * @param sp2         the position of the last character in the declaration.
       */
     case class Definition(sp1: SourcePosition, annotations: Seq[ParsedAst.Annotation], ident: Name.Ident, formals: Seq[FormalArg], tpe: Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
@@ -357,6 +357,8 @@ object ParsedAst {
       case Expression.FVec(sp1, _, _) => sp1
       case Expression.FSet(sp1, _, _) => sp1
       case Expression.FMap(sp1, _, _) => sp1
+      case Expression.GetIndex(sp1, _, _, _) => sp1
+      case Expression.PutIndex(sp1, _, _, _, _) => sp1
       case Expression.Ascribe(sp1, _, _, _) => sp1
       case Expression.UserError(sp1, _, _) => sp1
       case Expression.Bot(sp1, sp2) => sp1
@@ -570,6 +572,27 @@ object ParsedAst {
     case class FMap(sp1: SourcePosition, elms: Seq[(ParsedAst.Expression, ParsedAst.Expression)], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * An AST node that gets an index from a vector.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param e1  the vector expression.
+      * @param e2  the index expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class GetIndex(sp1: SourcePosition, e1: ParsedAst.Expression, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * An AST node that puts an index and value into a vector.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param e1  the vector expression.
+      * @param e2  the index expression.
+      * @param e3  the value expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class PutIndex(sp1: SourcePosition, e1: ParsedAst.Expression, e2: ParsedAst.Expression, e3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * An AST node that ascribes a type to an expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -646,6 +669,7 @@ object ParsedAst {
       case Pattern.FSome(sp1, _, _) => sp1
       case Pattern.FNil(sp1, sp2) => sp1
       case Pattern.FList(hd, _, _) => hd.leftMostSourcePosition
+      case Pattern.FVec(sp1, _, _, _) => sp1
       case Pattern.FSet(sp1, _, _, _) => sp1
       case Pattern.FMap(sp1, _, _, _) => sp1
     }
