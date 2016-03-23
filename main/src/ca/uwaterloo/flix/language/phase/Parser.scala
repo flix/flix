@@ -251,11 +251,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   }
 
-  def Attribute: Rule1[ParsedAst.Attribute] = rule {
-    Ident ~ optWS ~ ":" ~ optWS ~ Type ~> ParsedAst.Attribute
+  def Attribute: Rule1[Ast.Attribute] = rule {
+    Ident ~ optWS ~ ":" ~ optWS ~ Type ~> Ast.Attribute
   }
 
-  def Attributes: Rule1[Seq[ParsedAst.Attribute]] = rule {
+  def Attributes: Rule1[Seq[Ast.Attribute]] = rule {
     oneOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS)
   }
 

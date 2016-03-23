@@ -434,7 +434,7 @@ object Weeder {
       // check for duplicate attributes.
       val seen = mutable.Map.empty[String, Name.Ident]
       val attributesVal = past.attr.map {
-        case ParsedAst.Attribute(ident, tpe) => seen.get(ident.name) match {
+        case Ast.Attribute(ident, tpe) => seen.get(ident.name) match {
           case None =>
             seen += (ident.name -> ident)
             WeededAst.Attribute(ident, tpe).toSuccess
@@ -455,7 +455,7 @@ object Weeder {
       // check for duplicate attributes.
       val seen = mutable.Map.empty[String, Name.Ident]
       val attributesVal = past.attr.map {
-        case ParsedAst.Attribute(ident, tpe) => seen.get(ident.name) match {
+        case Ast.Attribute(ident, tpe) => seen.get(ident.name) match {
           case None =>
             seen += (ident.name -> ident)
             WeededAst.Attribute(ident, tpe).toSuccess
@@ -694,7 +694,7 @@ object Weeder {
         }
 
       case ParsedAst.Expression.UserError(sp1, sp2) =>
-        WeededAst.Expression.Error(??? /* TODO */, mkSL(sp1, sp2)).toSuccess
+        WeededAst.Expression.Error(Type.Bool /* TODO */, mkSL(sp1, sp2)).toSuccess
 
       case ParsedAst.Expression.Bot(sp1, sp2) =>
         val ident = Name.Ident(sp1, "⊥", sp2)

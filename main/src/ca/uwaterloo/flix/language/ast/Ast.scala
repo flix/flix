@@ -130,6 +130,14 @@ object Ast {
   }
 
   /**
+    * Attribute (column of a relation or lattice).
+    *
+    * @param ident the name of the attribute.
+    * @param tpe   the type of the attribute.
+    */
+  case class Attribute(ident: Name.Ident, tpe: Type)
+
+  /**
     * Formal Parameter.
     *
     * @param ident the name of the argument.

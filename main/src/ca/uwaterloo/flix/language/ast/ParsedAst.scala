@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.ast
 import scala.collection.immutable.Seq
 
 /**
-  * A common-super type for any AST node in the ParsedAst.
+  * ParsedAst super-type.
   */
 sealed trait ParsedAst
 
@@ -173,7 +173,7 @@ object ParsedAst {
       * @param attr  the attributes (columns) of the relation.
       * @param sp2   the position of the last character in the declaration.
       */
-    case class Relation(sp1: SourcePosition, ident: Name.Ident, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Relation(sp1: SourcePosition, ident: Name.Ident, attr: Seq[Ast.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Lattice Declaration.
@@ -183,7 +183,7 @@ object ParsedAst {
       * @param attr  the attributes (columns) of the relation.
       * @param sp2   the position of the last character in the declaration.
       */
-    case class Lattice(sp1: SourcePosition, ident: Name.Ident, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Lattice(sp1: SourcePosition, ident: Name.Ident, attr: Seq[Ast.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Index Declaration.
@@ -906,14 +906,6 @@ object ParsedAst {
     case class Apply(sp1: SourcePosition, name: Name.QName, params: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term
 
   }
-
-  /**
-    * Attribute (column of a relation or lattice).
-    *
-    * @param ident the name of the attribute.
-    * @param tpe   the type of the attribute.
-    */
-  case class Attribute(ident: Name.Ident, tpe: Type) extends ParsedAst
 
   /**
     * Annotation.

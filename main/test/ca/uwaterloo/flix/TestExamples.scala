@@ -257,7 +257,7 @@ class TestExamples extends FunSuite {
     assertResult(List(One))(A(List(Value.mkInt32(9))))
   }
 
-  test("Dimension.flix") {
+  ignore("Dimension.flix") {
     val model = new Flix().addPath("./examples/domains/Dimension.flix").solve()
     assert(model.isSuccess)
   }
