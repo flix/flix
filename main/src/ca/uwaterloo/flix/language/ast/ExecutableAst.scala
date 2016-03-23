@@ -458,7 +458,7 @@ object ExecutableAst {
     }
 
     case class FSet(elms: Array[ExecutableAst.Expression],
-                    tpe: Type.Set,
+                    tpe: Type.FSet,
                     loc: SourceLocation) extends ExecutableAst.Expression
 
     /**

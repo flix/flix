@@ -496,7 +496,7 @@ object SimplifiedAst {
     }
 
     case class FSet(elms: List[SimplifiedAst.Expression],
-                    tpe: Type.Set,
+                    tpe: Type.FSet,
                     loc: SourceLocation) extends SimplifiedAst.Expression
 
     // TODO: Move somewhere

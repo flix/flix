@@ -858,6 +858,104 @@ class TestParser extends FunSuite {
     }
   }
 
+  test("Expression.Vec01") {
+    val input = "def f: Vec[Int] = #[]"
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Expression.Vec02") {
+    val input = "def f: Vec[Int] = #[1]"
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Expression.Vec03") {
+    val input = "def f: Vec[Int] = #[1, 2]"
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Expression.Vec04") {
+    val input = "def f: Vec[Int] = #[1, 2, 3]"
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Expression.Vec05") {
+    val input = "def f: Vec[(Char, Int)] = #[]"
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Expression.Vec06") {
+    val input = "def f: Vec[(Char, Int)] = #[('a', 21), ('b', 42)]"
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Expression.VecVec01") {
+    val input = "def f: Vec[Vec[Int]] = #[]"
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Expression.VecVec03") {
+    val input = "def f: Vec[Vec[Int]] = #[#[], #[1], #[1, 2, 3]]"
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Expression.GetIndex01") {
+    val input = "def f(v: Vec[Int]): Int = v[0]"
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Expression.GetIndex02") {
+    val input = "def f(v: Vec[Int]): Int = v[0] + v[1] + v[2]"
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Expression.GetIndex03") {
+    val input = "def f(v: Vec[Int], x: Int): Int = v[x]"
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Expression.PutIndex01") {
+    val input = "def f(v: Vec[Int]): Int = v[0 -> 42]"
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Expression.PutIndex02") {
+    val input = "def f(v: Vec[Int]): Int = v[0 -> 21][1 -> 42]"
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Expression.PutIndex03") {
+    val input = "def f(v: Vec[Int], x: Int): Int = v[x -> 0, (x + 1) -> 1]"
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
   ignore("Expression.Set01") {
     val input = "def f: Set[Int] = #{}"
     new Flix().addStr(input).compile().get
@@ -1090,7 +1188,7 @@ class TestParser extends FunSuite {
   }
 
   test("Expression.UserError01") {
-    val input = "def f: Int = ??? : Int"
+    val input = "def f: Int = ???"
     new Flix().addStr(input).compile().get
   }
 
@@ -1488,6 +1586,127 @@ class TestParser extends FunSuite {
     }
   }
 
+  test("Pattern.Vec01") {
+    val input =
+      """def f(xs: Vec[Int]): Int = match xs with {
+        |  case #[] => 0
+        |}
+      """.stripMargin
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Pattern.Vec02") {
+    val input =
+      """def f(xs: Vec[Int]): Int = match xs with {
+        |  case #[1] => 0
+        |}
+      """.stripMargin
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Pattern.Vec03") {
+    val input =
+      """def f(xs: Vec[Int]): Int = match xs with {
+        |  case #[1, 2] => 0
+        |}
+      """.stripMargin
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Pattern.Vec04") {
+    val input =
+      """def f(xs: Vec[Int]): Int = match xs with {
+        |  case #[1, 2, 3] => 0
+        |}
+      """.stripMargin
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Pattern.Vec05") {
+    val input =
+      """def f(xs: Vec[Int]): Int = match xs with {
+        |  case #[x] => x
+        |}
+      """.stripMargin
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Pattern.Vec06") {
+    val input =
+      """def f(xs: Vec[Int]): Int = match xs with {
+        |  case #[x, y] => x + y
+        |}
+      """.stripMargin
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Pattern.Vec07") {
+    val input =
+      """def f(xs: Vec[Int]): Int = match xs with {
+        |  case #[x, y, z] => x + y + z
+        |}
+      """.stripMargin
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Pattern.Vec08") {
+    val input =
+      """def f(xs: Vec[Int]): Int = match xs with {
+        |  case #[x, y, z, rs...] => x + y + z + f(rs)
+        |}
+      """.stripMargin
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Pattern.VecVec01") {
+    val input =
+      """def f(xs: Vec[Vec[Int]]): Int = match xs with {
+        |  case #[#[]] => 0
+        |}
+      """.stripMargin
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Pattern.VecVec02") {
+    val input =
+      """def f(xs: Vec[Vec[Int]]): Int = match xs with {
+        |  case #[#[1, 2, 3], #[4, 5, 6]] => 0
+        |}
+      """.stripMargin
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
+  test("Pattern.VecVec03") {
+    val input =
+      """def f(xs: Vec[Vec[Int]]): Int = match xs with {
+        |  case #[#[], #[1], #[1, 2, 3], #[x, y, z], rs...] => x + y + z + f(rs)
+        |}
+      """.stripMargin
+    intercept[scala.NotImplementedError] {
+      new Flix().addStr(input).compile().get
+    }
+  }
+
   test("Pattern.Set01") {
     val input =
       """def f(xs: Set[Int]): Int = match xs with {
@@ -1837,55 +2056,133 @@ class TestParser extends FunSuite {
     //assertResult(Seq("x", "y", "z"))(result.args.map(_.asInstanceOf[ParsedAst.Term.Var].ident.name))
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Types                                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Type.Unit") {
+    val input = "def f: Unit = ()"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Type.Bool01") {
+    val input = "def f: Bool = true"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Type.Bool02") {
+    val input = "def f: Bool = false"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Type.Char") {
+    val input = "def f: Char = 'a'"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Type.Float32") {
+    val input = "def f: Float32 = 0.0f32"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Type.Float64") {
+    val input = "def f: Float64 = 0.0f64"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Type.Int8") {
+    val input = "def f: Int8 = 0i8"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Type.Int16") {
+    val input = "def f: Int16 = 0i16"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Type.Int32") {
+    val input = "def f: Int32 = 0i32"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Type.Int64") {
+    val input = "def f: Int64 = 0i64"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Type.Str") {
+    val input = "def f: Str = \"foobar\'"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Type.Prop") {
+    val input = "def f: Prop = true"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Type.Enum") {
+    val input =
+      """enum Color {
+        |  case Red
+        |}
+        |
+        |def f: Color = Color.Red
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
   test("Type.Tuple01") {
-    val input = "()"
-    val result = new Parser(SourceInput.Str(input)).Type.run()
-    assert(result.isSuccess)
-    assertResult(result.get)(Type.Unit)
+    val input = "def f: (Int, Int) = (1, 2)"
+    new Flix().addStr(input).compile().get
   }
 
   test("Type.Tuple02") {
-    val input = "(A)"
-    val result = new Parser(SourceInput.Str(input)).Type.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[Type.Unresolved])
+    val input = "def f: (Unit, Bool, Char, Int) = ((), true, 'a', 42)"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Type.Tuple03") {
-    val input = "(A, B)"
-    val result = new Parser(SourceInput.Str(input)).Type.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[Type.Tuple])
-    assertResult(2)(result.get.asInstanceOf[Type.Tuple].elms.length)
+  test("Type.Lambda01") {
+    val input = "def f: Int = (x -> x + 1)(42)"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Type.Tuple04") {
-    val input = "(A, B, C)"
-    val result = new Parser(SourceInput.Str(input)).Type.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[Type.Tuple])
-    assertResult(3)(result.get.asInstanceOf[Type.Tuple].elms.length)
+  test("Type.Lambda02") {
+    val input = "def f: Int = ((x, y) -> x + y)(21, 42)"
+    new Flix().addStr(input).compile().get
   }
 
   test("Type.Parametric01") {
-    val input = "A[B]"
-    val result = new Parser(SourceInput.Str(input)).Type.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[Type.Parametric])
+    val input = "def f(x: A): A = x"
+    new Flix().addStr(input).compile().get
   }
 
   test("Type.Parametric02") {
-    val input = "A[B, C]"
-    val result = new Parser(SourceInput.Str(input)).Type.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[Type.Parametric])
+    val input = "def f(x: A, y: B): A = x"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Type.Parametric03") {
-    val input = "A[B, C[D, E]]"
-    val result = new Parser(SourceInput.Str(input)).Type.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[Type.Parametric])
+  test("Type.Opt") {
+    val input = "def f: Opt[Int] = None"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Type.List") {
+    val input = "def f: List[Int] = Nil"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Type.Vec") {
+    val input = "def f: Vec[Int] = #[]"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Type.Set") {
+    val input = "def f: Set[Int] = #{}"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Type.Map") {
+    val input = "def f: Map[Int, Int] = @{}"
+    new Flix().addStr(input).compile().get
   }
 
   /////////////////////////////////////////////////////////////////////////////

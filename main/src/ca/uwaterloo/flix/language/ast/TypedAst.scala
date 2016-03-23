@@ -406,7 +406,7 @@ object TypedAst {
       * @param tpe  the type of the set.
       * @param loc  the source location.
       */
-    case class Set(elms: List[TypedAst.Expression], tpe: Type.Set, loc: SourceLocation) extends TypedAst.Expression
+    case class Set(elms: List[TypedAst.Expression], tpe: Type.FSet, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing an error expression.

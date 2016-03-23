@@ -99,196 +99,196 @@ object FMap {
   // Map Construction                                                        //
   /////////////////////////////////////////////////////////////////////////////
   object empty extends MapOperator {
-    val tpe = () ~> Map(K, V)
+    val tpe = () ~> Type.FMap(K, V)
   }
 
   object singleton extends MapOperator {
-    val tpe = (K, V) ~> Map(K, V)
+    val tpe = (K, V) ~> Type.FMap(K, V)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Basic Operations                                                        //
   /////////////////////////////////////////////////////////////////////////////
   object nul extends MapOperator {
-    val tpe = Map(K, V) ~> Bool
+    val tpe = Type.FMap(K, V) ~> Bool
   }
 
   object get extends MapOperator {
-    val tpe = (K, Map(K, V)) ~> Opt(V)
+    val tpe = (K, Type.FMap(K, V)) ~> Type.FOpt(V)
   }
 
   object getWithDefault extends MapOperator {
-    val tpe = (K, V, Map(K, V)) ~> V
+    val tpe = (K, V, Type.FMap(K, V)) ~> V
   }
 
   object memberOf extends MapOperator {
-    val tpe = (K, Map(K, V)) ~> Bool
+    val tpe = (K, Type.FMap(K, V)) ~> Bool
   }
 
   object keysOf extends MapOperator {
-    val tpe = Map(K, V) ~> Set(K)
+    val tpe = Type.FMap(K, V) ~> Type.FSet(K)
   }
 
   object valuesOf extends MapOperator {
-    val tpe = Map(K, V) ~> Lst(V)
+    val tpe = Type.FMap(K, V) ~> Type.FList(V)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Insert                                                                  //
   /////////////////////////////////////////////////////////////////////////////
   object insert extends MapOperator {
-    val tpe = (K, V, Map(K, V)) ~> Map(K, V)
+    val tpe = (K, V, Type.FMap(K, V)) ~> Type.FMap(K, V)
   }
 
   object insertWith extends MapOperator {
-    val tpe = ((V, V) ~> V, K, V, Map(K, V)) ~> Map(K, V)
+    val tpe = ((V, V) ~> V, K, V, Type.FMap(K, V)) ~> Type.FMap(K, V)
   }
 
   object insertWithKey extends MapOperator {
-    val tpe = ((K, V, V) ~> V, K, V, Map(K, V)) ~> Map(K, V)
+    val tpe = ((K, V, V) ~> V, K, V, Type.FMap(K, V)) ~> Type.FMap(K, V)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Adjust                                                                  //
   /////////////////////////////////////////////////////////////////////////////
   object adjust extends MapOperator {
-    val tpe = (V ~> V, K, Map(K, V)) ~> Map(K, V)
+    val tpe = (V ~> V, K, Type.FMap(K, V)) ~> Type.FMap(K, V)
   }
 
   object adjustWithKey extends MapOperator {
-    val tpe = ((K, V) ~> V, K, Map(K, V)) ~> Map(K, V)
+    val tpe = ((K, V) ~> V, K, Type.FMap(K, V)) ~> Type.FMap(K, V)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Update                                                                  //
   /////////////////////////////////////////////////////////////////////////////
   object update extends MapOperator {
-    val tpe = (V ~> Opt(V), K, Map(K, V)) ~> Map(K, V)
+    val tpe = (V ~> Type.FOpt(V), K, Type.FMap(K, V)) ~> Type.FMap(K, V)
   }
 
   object updateWithKey extends MapOperator {
-    val tpe = ((K, V) ~> Opt(V), K, Map(K, V)) ~> Map(K, V)
+    val tpe = ((K, V) ~> Type.FOpt(V), K, Type.FMap(K, V)) ~> Type.FMap(K, V)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Delete                                                                  //
   /////////////////////////////////////////////////////////////////////////////
   object delete extends MapOperator {
-    val tpe = (K, Map(K, V)) ~> Map(K, V)
+    val tpe = (K, Type.FMap(K, V)) ~> Type.FMap(K, V)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Map Predicates                                                          //
   /////////////////////////////////////////////////////////////////////////////
   object isSubmapOf extends MapOperator {
-    val tpe = (Map(K, V), Map(K, V)) ~> Bool
+    val tpe = (Type.FMap(K, V), Type.FMap(K, V)) ~> Bool
   }
 
   object isProperSubmapOf extends MapOperator {
-    val tpe = (Map(K, V), Map(K, V)) ~> Bool
+    val tpe = (Type.FMap(K, V), Type.FMap(K, V)) ~> Bool
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Map Transformations                                                     //
   /////////////////////////////////////////////////////////////////////////////
   object filter extends MapOperator {
-    val tpe = (V ~> Bool, Map(K, V)) ~> Map(K, V)
+    val tpe = (V ~> Bool, Type.FMap(K, V)) ~> Type.FMap(K, V)
   }
 
   object filterWithKey extends MapOperator {
-    val tpe = ((K, V) ~> Bool, Map(K, V)) ~> Map(K, V)
+    val tpe = ((K, V) ~> Bool, Type.FMap(K, V)) ~> Type.FMap(K, V)
   }
 
   object map extends MapOperator {
-    val tpe = (A ~> B, Map(K, A)) ~> Map(K, B)
+    val tpe = (A ~> B, Type.FMap(K, A)) ~> Type.FMap(K, B)
   }
 
   object mapWithKey extends MapOperator {
-    val tpe = ((K, A) ~> B, Map(K, A)) ~> Map(K, B)
+    val tpe = ((K, A) ~> B, Type.FMap(K, A)) ~> Type.FMap(K, B)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Combine Operations                                                      //
   /////////////////////////////////////////////////////////////////////////////
   object union extends MapOperator {
-    val tpe = (Map(K, V), Map(K, V)) ~> Map(K, V)
+    val tpe = (Type.FMap(K, V), Type.FMap(K, V)) ~> Type.FMap(K, V)
   }
 
   object unionWith extends MapOperator {
-    val tpe = ((V, V) ~> V, Map(K, V), Map(K, V)) ~> Map(K, V)
+    val tpe = ((V, V) ~> V, Type.FMap(K, V), Type.FMap(K, V)) ~> Type.FMap(K, V)
   }
 
   object unionWithKey extends MapOperator {
-    val tpe = ((K, V, V) ~> V, Map(K, V), Map(K, V)) ~> Map(K, V)
+    val tpe = ((K, V, V) ~> V, Type.FMap(K, V), Type.FMap(K, V)) ~> Type.FMap(K, V)
   }
 
   object intersection extends MapOperator {
-    val tpe = (Map(K, V), Map(K, V)) ~> Map(K, V)
+    val tpe = (Type.FMap(K, V), Type.FMap(K, V)) ~> Type.FMap(K, V)
   }
 
   object intersectionWith extends MapOperator {
-    val tpe = ((V, V) ~> V, Map(K, V), Map(K, V)) ~> Map(K, V)
+    val tpe = ((V, V) ~> V, Type.FMap(K, V), Type.FMap(K, V)) ~> Type.FMap(K, V)
   }
 
   object intersectionWithKey extends MapOperator {
-    val tpe = ((K, V, V) ~> V, Map(K, V), Map(K, V)) ~> Map(K, V)
+    val tpe = ((K, V, V) ~> V, Type.FMap(K, V), Type.FMap(K, V)) ~> Type.FMap(K, V)
   }
 
   object difference extends MapOperator {
-    val tpe = (Map(K, V), Map(K, V)) ~> Map(K, V)
+    val tpe = (Type.FMap(K, V), Type.FMap(K, V)) ~> Type.FMap(K, V)
   }
 
   object differenceWith extends MapOperator {
-    val tpe = ((V, V) ~> V, Map(K, V), Map(K, V)) ~> Map(K, V)
+    val tpe = ((V, V) ~> V, Type.FMap(K, V), Type.FMap(K, V)) ~> Type.FMap(K, V)
   }
 
   object differenceWithKey extends MapOperator {
-    val tpe = ((K, V, V) ~> V, Map(K, V), Map(K, V)) ~> Map(K, V)
+    val tpe = ((K, V, V) ~> V, Type.FMap(K, V), Type.FMap(K, V)) ~> Type.FMap(K, V)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Map                                                                     //
   /////////////////////////////////////////////////////////////////////////////
   object foldLeft extends MapOperator {
-    val tpe = ((B, A) ~> B, B, Map(K, A)) ~> B
+    val tpe = ((B, A) ~> B, B, Type.FMap(K, A)) ~> B
   }
 
   object foldLeftWithKey extends MapOperator {
-    val tpe = ((B, K, A) ~> B, B, Map(K, A)) ~> B
+    val tpe = ((B, K, A) ~> B, B, Type.FMap(K, A)) ~> B
   }
 
   object foldRight extends MapOperator {
-    val tpe = ((A, B) ~> B, B, Map(K, A)) ~> B
+    val tpe = ((A, B) ~> B, B, Type.FMap(K, A)) ~> B
   }
 
   object foldRightWithKey extends MapOperator {
-    val tpe = ((K, A, B) ~> B, B, Map(K, A)) ~> B
+    val tpe = ((K, A, B) ~> B, B, Type.FMap(K, A)) ~> B
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Conversions                                                             //
   /////////////////////////////////////////////////////////////////////////////
   object toAscList extends MapOperator {
-    val tpe = Map(K, V) ~> Lst((K, V))
+    val tpe = Type.FMap(K, V) ~> Type.FList((K, V))
   }
 
   object toDescList extends MapOperator {
-    val tpe = Map(K, V) ~> Lst((K, V))
+    val tpe = Type.FMap(K, V) ~> Type.FList((K, V))
   }
 
   object toSet extends MapOperator {
-    val tpe = Map(K, V) ~> Set((K, V))
+    val tpe = Type.FMap(K, V) ~> Type.FSet((K, V))
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Order and Lattice Operations                                            //
   /////////////////////////////////////////////////////////////////////////////
   object join extends MapOperator {
-    val tpe = (Map(K, V), Map(K, V)) ~> Map(K, V)
+    val tpe = (Type.FMap(K, V), Type.FMap(K, V)) ~> Type.FMap(K, V)
   }
 
   object meet extends MapOperator {
-    val tpe = (Map(K, V), Map(K, V)) ~> Map(K, V)
+    val tpe = (Type.FMap(K, V), Type.FMap(K, V)) ~> Type.FMap(K, V)
   }
 
 }

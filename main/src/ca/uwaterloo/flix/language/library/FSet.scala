@@ -74,79 +74,79 @@ object FSet {
   }
 
   object insert extends SetOperator {
-    val tpe = (A, Set(A)) ~> Set(A)
+    val tpe = (A, Type.FSet(A)) ~> Type.FSet(A)
   }
 
   object delete extends SetOperator {
-    val tpe = (A, Set(A)) ~> Set(A)
+    val tpe = (A, Type.FSet(A)) ~> Type.FSet(A)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Set Predicates                                                          //
   /////////////////////////////////////////////////////////////////////////////
   object nul extends SetOperator {
-    val tpe = Set(A) ~> Bool
+    val tpe = Type.FSet(A) ~> Bool
   }
 
   object memberOf extends SetOperator {
-    val tpe = (A, Set(A)) ~> Bool
+    val tpe = (A, Type.FSet(A)) ~> Bool
   }
 
   object isSubsetOf extends SetOperator {
-    val tpe = (Set(A), Set(A)) ~> Bool
+    val tpe = (Type.FSet(A), Type.FSet(A)) ~> Bool
   }
 
   object isProperSubsetOf extends SetOperator {
-    val tpe = (Set(A), Set(A)) ~> Bool
+    val tpe = (Type.FSet(A), Type.FSet(A)) ~> Bool
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Two Set Operations                                                      //
   /////////////////////////////////////////////////////////////////////////////
   object union extends SetOperator {
-    val tpe = (Set(A), Set(A)) ~> Set(A)
+    val tpe = (Type.FSet(A), Type.FSet(A)) ~> Type.FSet(A)
   }
 
   object intersection extends SetOperator {
-    val tpe = (Set(A), Set(A)) ~> Set(A)
+    val tpe = (Type.FSet(A), Type.FSet(A)) ~> Type.FSet(A)
   }
 
   object difference extends SetOperator {
-    val tpe = (Set(A), Set(A)) ~> Set(A)
+    val tpe = (Type.FSet(A), Type.FSet(A)) ~> Type.FSet(A)
   }
 
   object subsets extends SetOperator {
-    val tpe = Set(A) ~> Set(Set(A))
+    val tpe = Type.FSet(A) ~> Type.FSet(Type.FSet(A))
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Set Transformation                                                      //
   /////////////////////////////////////////////////////////////////////////////
   object filter extends SetOperator {
-    val tpe = (A ~> Bool, Set(A)) ~> Set(A)
+    val tpe = (A ~> Bool, Type.FSet(A)) ~> Type.FSet(A)
   }
 
   object map extends SetOperator {
-    val tpe = (A ~> B, Set(A)) ~> Set(B)
+    val tpe = (A ~> B, Type.FSet(A)) ~> Type.FSet(B)
   }
 
   object flatMap extends SetOperator {
-    val tpe = (A ~> Set(B), Set(A)) ~> Set(B)
+    val tpe = (A ~> Type.FSet(B), Type.FSet(A)) ~> Type.FSet(B)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Set Conversions                                                         //
   /////////////////////////////////////////////////////////////////////////////
   object toAscList extends SetOperator {
-    val tpe = Set(A) ~> Lst(A)
+    val tpe = Type.FSet(A) ~> Type.FList(A)
   }
 
   object toDescList extends SetOperator {
-    val tpe = Set(A) ~> Lst(A)
+    val tpe = Type.FSet(A) ~> Type.FList(A)
   }
 
   object toMap extends SetOperator {
-    val tpe = Set((A, B)) ~> Type.Map(A, B)
+    val tpe = Type.FSet((A, B)) ~> Type.FMap(A, B)
   }
 
 
@@ -154,23 +154,23 @@ object FSet {
   // Order and Lattice Operations                                            //
   /////////////////////////////////////////////////////////////////////////////
   object isAntiChain extends SetOperator {
-    val tpe = Lst(A) ~> Bool
+    val tpe = Type.FList(A) ~> Bool
   }
 
   object join extends SetOperator {
-    val tpe = Lst(A) ~> A
+    val tpe = Type.FList(A) ~> A
   }
 
   object meet extends SetOperator {
-    val tpe = Lst(A) ~> A
+    val tpe = Type.FList(A) ~> A
   }
 
   object widen extends SetOperator {
-    val tpe = Lst(A) ~> A
+    val tpe = Type.FList(A) ~> A
   }
 
   object narrow extends SetOperator {
-    val tpe = Lst(A) ~> A
+    val tpe = Type.FList(A) ~> A
   }
 
 }

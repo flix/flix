@@ -20,7 +20,6 @@ sealed trait Type {
     case Type.Int16 => "Int16"
     case Type.Int32 => "Int32"
     case Type.Int64 => "Int64"
-    case Type.BigInt => "BigInt"
     case Type.Str => "Str"
     case Type.Native => "Native"
     case Type.Prop => "Prop"
@@ -30,10 +29,10 @@ sealed trait Type {
     case Type.Tuple(elms) => "(" + elms.mkString(". ") + ")"
     case Type.Lambda(args, r) => "λ(" + args.mkString(", ") + ") -> " + r
     case Type.Parametric(name, elms) => "Parametric(" + name + ", " + elms.mkString(", ") + ")"
-    case Type.Opt(tpe) => "Opt[" + tpe + "]"
-    case Type.Lst(tpe) => "Lst[" + tpe + "]"
-    case Type.Set(tpe) => "Set[" + tpe + "]"
-    case Type.Map(key, value) => "Map[" + key + ", " + value + "]"
+    case Type.FOpt(tpe) => "Opt[" + tpe + "]"
+    case Type.FList(tpe) => "Lst[" + tpe + "]"
+    case Type.FSet(tpe) => "Set[" + tpe + "]"
+    case Type.FMap(key, value) => "Map[" + key + ", " + value + "]"
     case Type.Unresolved(name) => "?" + name
     case Type.Abs(name, tpe) => ??? // TODO
     case Type.Any => "Any"
@@ -95,11 +94,6 @@ object Type {
   case object Int64 extends Type
 
   /**
-    * An AST node that represents the arbitrary sized integer type.
-    */
-  case object BigInt extends Type // TODO: Name
-
-  /**
     * An AST node that represents the Str type.
     */
   case object Str extends Type
@@ -113,26 +107,6 @@ object Type {
     * An AST node that represents the proposition type.
     */
   case object Prop extends Type
-
-  /**
-    * An AST node that represents the type of a tag.
-    *
-    * @param enum the fully qualified name of the enum.
-    * @param tag  the name of the tag.
-    * @param tpe  the type of the nested value.
-    */
-  @deprecated("to be removed", "0.1.0")
-  case class Tag(enum: Symbol.Resolved, tag: Name.Ident, tpe: Type) extends Type
-
-  /**
-    * An AST node that represents the unresolved type of a tag.
-    *
-    * @param enum the unresolved enum name.
-    * @param tag  the name of the tag.
-    * @param tpe  the type of the nested value.
-    */
-  @deprecated("to be removed", "0.1.0")
-  case class UnresolvedTag(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends Type
 
   /**
     * An AST node that represents an enum type.
@@ -171,21 +145,21 @@ object Type {
     *
     * @param tpe the type of the wrapped value.
     */
-  case class Opt(tpe: Type) extends Type
+  case class FOpt(tpe: Type) extends Type
 
   /**
     * An AST node that represents a List type.
     *
     * @param tpe the type of the list elements.
     */
-  case class Lst(tpe: Type) extends Type
+  case class FList(tpe: Type) extends Type
 
   /**
     * An AST node that represents a Set type.
     *
     * @param tpe the type of the set elements.
     */
-  case class Set(tpe: Type) extends Type
+  case class FSet(tpe: Type) extends Type
 
   /**
     * An AST node that represents a Map type.
@@ -193,7 +167,7 @@ object Type {
     * @param key   the type of the keys.
     * @param value the type of the values.
     */
-  case class Map(key: Type, value: Type) extends Type
+  case class FMap(key: Type, value: Type) extends Type
 
   /**
     * An AST node that represents a predicate type.
@@ -216,5 +190,25 @@ object Type {
 
   @deprecated("to be removed", "0.1.0")
   case object Any extends Type
+
+  /**
+    * An AST node that represents the type of a tag.
+    *
+    * @param enum the fully qualified name of the enum.
+    * @param tag  the name of the tag.
+    * @param tpe  the type of the nested value.
+    */
+  @deprecated("to be removed", "0.1.0")
+  case class Tag(enum: Symbol.Resolved, tag: Name.Ident, tpe: Type) extends Type
+
+  /**
+    * An AST node that represents the unresolved type of a tag.
+    *
+    * @param enum the unresolved enum name.
+    * @param tag  the name of the tag.
+    * @param tpe  the type of the nested value.
+    */
+  @deprecated("to be removed", "0.1.0")
+  case class UnresolvedTag(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends Type
 
 }

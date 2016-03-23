@@ -148,378 +148,378 @@ object FList {
   // Construction                                                            //
   /////////////////////////////////////////////////////////////////////////////
   object nil extends ListOperator {
-    val tpe = () ~> Lst(A)
+    val tpe = () ~> Type.FList(A)
   }
 
   object cons extends ListOperator {
-    val tpe = (A, Lst(A)) ~> Lst(A)
+    val tpe = (A, Type.FList(A)) ~> Type.FList(A)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Basic List Operations                                                   //
   /////////////////////////////////////////////////////////////////////////////
   object nul extends ListOperator {
-    val tpe = Lst(A) ~> Bool
+    val tpe = Type.FList(A) ~> Bool
   }
 
   object head extends ListOperator {
-    val tpe = Lst(A) ~> A
+    val tpe = Type.FList(A) ~> A
   }
 
   object tail extends ListOperator {
-    val tpe = Lst(A) ~> Lst(A)
+    val tpe = Type.FList(A) ~> Type.FList(A)
   }
 
   object init extends ListOperator {
-    val tpe = Lst(A) ~> Lst(A)
+    val tpe = Type.FList(A) ~> Type.FList(A)
   }
 
   object last extends ListOperator {
-    val tpe = Lst(A) ~> A
+    val tpe = Type.FList(A) ~> A
   }
 
   object length extends ListOperator {
-    val tpe = Lst(A) ~> Int32
+    val tpe = Type.FList(A) ~> Int32
   }
 
   object append extends ListOperator {
-    val tpe = (Lst(A), Lst(A)) ~> Lst(A)
+    val tpe = (Type.FList(A), Type.FList(A)) ~> Type.FList(A)
   }
 
   object at extends ListOperator {
-    val tpe = (Int32, Lst(A)) ~> A
+    val tpe = (Int32, Type.FList(A)) ~> A
   }
 
   object memberOf extends ListOperator {
-    val tpe = (A, Lst(A)) ~> Bool
+    val tpe = (A, Type.FList(A)) ~> Bool
   }
 
   object indexOf extends ListOperator {
-    val tpe = (A, Lst(A)) ~> Int32
+    val tpe = (A, Type.FList(A)) ~> Int32
   }
 
   object findLeft extends ListOperator {
-    val tpe = (A ~> Bool, Lst(A)) ~> Opt(A)
+    val tpe = (A ~> Bool, Type.FList(A)) ~> Type.FOpt(A)
   }
 
   object findRight extends ListOperator {
-    val tpe = (A ~> Bool, Lst(A)) ~> Opt(A)
+    val tpe = (A ~> Bool, Type.FList(A)) ~> Type.FOpt(A)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // List Building                                                           //
   /////////////////////////////////////////////////////////////////////////////
   object range extends ListOperator {
-    val tpe = (Int32, Int32) ~> Lst(Int32)
+    val tpe = (Int32, Int32) ~> Type.FList(Int32)
   }
 
   object repeat extends ListOperator {
-    val tpe = (A, Int32) ~> Lst(A)
+    val tpe = (A, Int32) ~> Type.FList(A)
   }
 
   object scanLeft extends ListOperator {
-    val tpe = ((B, A) ~> B, B, Lst(A)) ~> Lst(B)
+    val tpe = ((B, A) ~> B, B, Type.FList(A)) ~> Type.FList(B)
   }
 
   object scanRight extends ListOperator {
-    val tpe = ((B, A) ~> B, B, Lst(A)) ~> Lst(B)
+    val tpe = ((B, A) ~> B, B, Type.FList(A)) ~> Type.FList(B)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // List Transformations                                                    //
   /////////////////////////////////////////////////////////////////////////////
   object map extends ListOperator {
-    val tpe = (A ~> B, Lst(A)) ~> Lst(B)
+    val tpe = (A ~> B, Type.FList(A)) ~> Type.FList(B)
   }
 
   object mapWithIndex extends ListOperator {
-    val tpe = ((A, Int32) ~> B, Lst(A)) ~> Lst(B)
+    val tpe = ((A, Int32) ~> B, Type.FList(A)) ~> Type.FList(B)
   }
 
   object flatMap extends ListOperator {
-    val tpe = (A ~> Lst(B), Lst(A)) ~> Lst(B)
+    val tpe = (A ~> Type.FList(B), Type.FList(A)) ~> Type.FList(B)
   }
 
   object reverse extends ListOperator {
-    val tpe = Lst(A) ~> Lst(A)
+    val tpe = Type.FList(A) ~> Type.FList(A)
   }
 
   object rotateLeft extends ListOperator {
-    val tpe = (Int32, Lst(A)) ~> Lst(A)
+    val tpe = (Int32, Type.FList(A)) ~> Type.FList(A)
   }
 
   object rotateRight extends ListOperator {
-    val tpe = (Int32, Lst(A)) ~> Lst(A)
+    val tpe = (Int32, Type.FList(A)) ~> Type.FList(A)
   }
 
   object replace extends ListOperator {
-    val tpe = (Int32, A, Lst(A)) ~> Lst(A)
+    val tpe = (Int32, A, Type.FList(A)) ~> Type.FList(A)
   }
 
   object patch extends ListOperator {
-    val tpe = (Int32, Int32, Lst(A), Lst(A)) ~> Lst(A)
+    val tpe = (Int32, Int32, Type.FList(A), Type.FList(A)) ~> Type.FList(A)
   }
 
   object permutations extends ListOperator {
-    val tpe = Lst(A) ~> Lst(Lst(A))
+    val tpe = Type.FList(A) ~> Type.FList(Type.FList(A))
   }
 
   object subsequences extends ListOperator {
-    val tpe = Lst(A) ~> Lst(Lst(A))
+    val tpe = Type.FList(A) ~> Type.FList(Type.FList(A))
   }
 
   object intersperse extends ListOperator {
-    val tpe = (A, Lst(A)) ~> Lst(A)
+    val tpe = (A, Type.FList(A)) ~> Type.FList(A)
   }
 
   object intercalate extends ListOperator {
-    val tpe = (Lst(A), Lst(Lst(A))) ~> Lst(A)
+    val tpe = (Type.FList(A), Type.FList(Type.FList(A))) ~> Type.FList(A)
   }
 
   object transpose extends ListOperator {
-    val tpe = Lst(Lst(A)) ~> Lst(Lst(A))
+    val tpe = Type.FList(Type.FList(A)) ~> Type.FList(Type.FList(A))
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // List Predicates                                                         //
   /////////////////////////////////////////////////////////////////////////////
   object isPrefixOf extends ListOperator {
-    val tpe = (Lst(A), Lst(A)) ~> Bool
+    val tpe = (Type.FList(A), Type.FList(A)) ~> Bool
   }
 
   object isInfixOf extends ListOperator {
-    val tpe = (Lst(A), Lst(A)) ~> Bool
+    val tpe = (Type.FList(A), Type.FList(A)) ~> Bool
   }
 
   object isSuffixOf extends ListOperator {
-    val tpe = (Lst(A), Lst(A)) ~> Bool
+    val tpe = (Type.FList(A), Type.FList(A)) ~> Bool
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Fold and Reduce                                                         //
   /////////////////////////////////////////////////////////////////////////////
   object foldLeft extends ListOperator {
-    val tpe = ((B, A) ~> B, B, Lst(A)) ~> B
+    val tpe = ((B, A) ~> B, B, Type.FList(A)) ~> B
   }
 
   object foldRight extends ListOperator {
-    val tpe = ((A, B) ~> B, B, Lst(A)) ~> B
+    val tpe = ((A, B) ~> B, B, Type.FList(A)) ~> B
   }
 
   object reduceLeft extends ListOperator {
-    val tpe = ((A, A) ~> A, Lst(A)) ~> A
+    val tpe = ((A, A) ~> A, Type.FList(A)) ~> A
   }
 
   object reduceLeftOpt extends ListOperator {
-    val tpe = ((A, A) ~> A, Lst(A)) ~> Opt(A)
+    val tpe = ((A, A) ~> A, Type.FList(A)) ~> Type.FOpt(A)
   }
 
   object reduceRight extends ListOperator {
-    val tpe = ((A, A) ~> A, Lst(A)) ~> A
+    val tpe = ((A, A) ~> A, Type.FList(A)) ~> A
   }
 
   object reduceRightOpt extends ListOperator {
-    val tpe = ((A, A) ~> A, Lst(A)) ~> Opt(A)
+    val tpe = ((A, A) ~> A, Type.FList(A)) ~> Type.FOpt(A)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Special Folds                                                           //
   /////////////////////////////////////////////////////////////////////////////
   object count extends ListOperator {
-    val tpe = (A ~> Bool, Lst(A)) ~> Int32
+    val tpe = (A ~> Bool, Type.FList(A)) ~> Int32
   }
 
   object concat extends ListOperator {
-    val tpe = Lst(Lst(A)) ~> Lst(A)
+    val tpe = Type.FList(Type.FList(A)) ~> Type.FList(A)
   }
 
   object exists extends ListOperator {
-    val tpe = (A ~> Bool, Lst(A)) ~> Bool
+    val tpe = (A ~> Bool, Type.FList(A)) ~> Bool
   }
 
   object forall extends ListOperator {
-    val tpe = (A ~> Bool, Lst(A)) ~> Bool
+    val tpe = (A ~> Bool, Type.FList(A)) ~> Bool
   }
 
   object and extends ListOperator {
-    val tpe = Lst(Bool) ~> Bool
+    val tpe = Type.FList(Bool) ~> Bool
   }
 
   object or extends ListOperator {
-    val tpe = Lst(Bool) ~> Bool
+    val tpe = Type.FList(Bool) ~> Bool
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Sub Lists                                                               //
   /////////////////////////////////////////////////////////////////////////////
   object filter extends ListOperator {
-    val tpe = (A ~> Bool, Lst(A)) ~> Lst(A)
+    val tpe = (A ~> Bool, Type.FList(A)) ~> Type.FList(A)
   }
 
   object slice extends ListOperator {
-    val tpe = (Int32, Int32, Lst(A)) ~> Lst(A)
+    val tpe = (Int32, Int32, Type.FList(A)) ~> Type.FList(A)
   }
 
   object partition extends ListOperator {
-    val tpe = (A ~> Bool, Lst(A), Lst(B)) ~>(Lst(A), Lst(A))
+    val tpe = (A ~> Bool, Type.FList(A), Type.FList(B)) ~>(Type.FList(A), Type.FList(A))
   }
 
   object span extends ListOperator {
-    val tpe = (A ~> Bool, Lst(A), Lst(B)) ~>(Lst(A), Lst(A))
+    val tpe = (A ~> Bool, Type.FList(A), Type.FList(B)) ~>(Type.FList(A), Type.FList(A))
   }
 
   object drop extends ListOperator {
-    val tpe = (Int32, Lst(A)) ~> Lst(A)
+    val tpe = (Int32, Type.FList(A)) ~> Type.FList(A)
   }
 
   object dropWhile extends ListOperator {
-    val tpe = (A ~> Bool, Lst(A)) ~> Lst(A)
+    val tpe = (A ~> Bool, Type.FList(A)) ~> Type.FList(A)
   }
 
   object take extends ListOperator {
-    val tpe = (Int32, Lst(A)) ~> Lst(A)
+    val tpe = (Int32, Type.FList(A)) ~> Type.FList(A)
   }
 
   object takeWhile extends ListOperator {
-    val tpe = (A ~> Bool, Lst(A)) ~> Lst(A)
+    val tpe = (A ~> Bool, Type.FList(A)) ~> Type.FList(A)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Aggregation and Sorting                                                 //
   /////////////////////////////////////////////////////////////////////////////
   object sum extends ListOperator {
-    val tpe = Lst(Int32) ~> Int32
+    val tpe = Type.FList(Int32) ~> Int32
   }
 
   object product extends ListOperator {
-    val tpe = Lst(Int32) ~> Int32
+    val tpe = Type.FList(Int32) ~> Int32
   }
 
   object min extends ListOperator {
-    val tpe = Lst(Int32) ~> Int32
+    val tpe = Type.FList(Int32) ~> Int32
   }
 
   object max extends ListOperator {
-    val tpe = Lst(Int32) ~> Int32
+    val tpe = Type.FList(Int32) ~> Int32
   }
 
   object minBy extends ListOperator {
-    val tpe = ((A, A) ~> Bool, Lst(A)) ~> A
+    val tpe = ((A, A) ~> Bool, Type.FList(A)) ~> A
   }
 
   object maxBy extends ListOperator {
-    val tpe = ((A, A) ~> Bool, Lst(A)) ~> A
+    val tpe = ((A, A) ~> Bool, Type.FList(A)) ~> A
   }
 
   object sort extends ListOperator {
-    val tpe = Lst(A) ~> Lst(A)
+    val tpe = Type.FList(A) ~> Type.FList(A)
   }
 
   object sortBy extends ListOperator {
-    val tpe = ((A, A) ~> Bool, Lst(A)) ~> Lst(A)
+    val tpe = ((A, A) ~> Bool, Type.FList(A)) ~> Type.FList(A)
   }
 
   object groupBy extends ListOperator {
-    val tpe = ((A, A) ~> Bool, Lst(A)) ~> Lst(Lst(A))
+    val tpe = ((A, A) ~> Bool, Type.FList(A)) ~> Type.FList(Type.FList(A))
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Zipping and Unzipping                                                   //
   /////////////////////////////////////////////////////////////////////////////
   object zip extends ListOperator {
-    val tpe = (Lst(A), Lst(B)) ~> Lst((A, B))
+    val tpe = (Type.FList(A), Type.FList(B)) ~> Type.FList((A, B))
   }
 
   object zipWith extends ListOperator {
-    val tpe = ((A, B) ~> C, Lst(A), Lst(B)) ~> Lst(C)
+    val tpe = ((A, B) ~> C, Type.FList(A), Type.FList(B)) ~> Type.FList(C)
   }
 
   object unzip extends ListOperator {
-    val tpe = Lst((A, B)) ~>(Lst(A), Lst(B))
+    val tpe = Type.FList((A, B)) ~>(Type.FList(A), Type.FList(B))
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Combined Operations                                                     //
   /////////////////////////////////////////////////////////////////////////////
   object concatMap extends ListOperator {
-    val tpe = (A ~> Lst(B), Lst(A)) ~> Lst(B)
+    val tpe = (A ~> Type.FList(B), Type.FList(A)) ~> Type.FList(B)
   }
 
   object filterMap extends ListOperator {
-    val tpe = (A ~> Opt(B), Lst(A)) ~> Lst(B)
+    val tpe = (A ~> Type.FOpt(B), Type.FList(A)) ~> Type.FList(B)
   }
 
   object findMap extends ListOperator {
-    val tpe = (A ~> Opt(B), Lst(A)) ~> B
+    val tpe = (A ~> Type.FOpt(B), Type.FList(A)) ~> B
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Two List Operations                                                     //
   /////////////////////////////////////////////////////////////////////////////
   object map2 extends ListOperator {
-    val tpe = ((A, B) ~> C, Lst(A), Lst(B)) ~> Lst(C)
+    val tpe = ((A, B) ~> C, Type.FList(A), Type.FList(B)) ~> Type.FList(C)
   }
 
   object flatMap2 extends ListOperator {
-    val tpe = ((A, B) ~> Lst(C), Lst(A), Lst(B)) ~> Lst(C)
+    val tpe = ((A, B) ~> Type.FList(C), Type.FList(A), Type.FList(B)) ~> Type.FList(C)
   }
 
   object foldLeft2 extends ListOperator {
-    val tpe = ((C, A, B) ~> C, C, Lst(A), Lst(B)) ~> C
+    val tpe = ((C, A, B) ~> C, C, Type.FList(A), Type.FList(B)) ~> C
   }
 
   object foldRight2 extends ListOperator {
-    val tpe = ((A, B, C) ~> C, C, Lst(A), Lst(B)) ~> C
+    val tpe = ((A, B, C) ~> C, C, Type.FList(A), Type.FList(B)) ~> C
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // List Conversions                                                        //
   /////////////////////////////////////////////////////////////////////////////
   object toMap extends ListOperator {
-    val tpe = Lst((A, B)) ~> Type.Map(A, B)
+    val tpe = Type.FList((A, B)) ~> Type.FMap(A, B)
   }
 
   object toSet extends ListOperator {
-    val tpe = Lst(A) ~> Set(A)
+    val tpe = Type.FList(A) ~> Type.FSet(A)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Order and Lattice Operations                                            //
   /////////////////////////////////////////////////////////////////////////////
   object leq extends ListOperator {
-    val tpe = (Lst(A), Lst(A)) ~> Bool
+    val tpe = (Type.FList(A), Type.FList(A)) ~> Bool
   }
 
   object isAscChain extends ListOperator {
-    val tpe = Lst(A) ~> Bool
+    val tpe = Type.FList(A) ~> Bool
   }
 
   object isDescChain extends ListOperator {
-    val tpe = Lst(A) ~> Bool
+    val tpe = Type.FList(A) ~> Bool
   }
 
   object join extends ListOperator {
-    val tpe = Lst(A) ~> A
+    val tpe = Type.FList(A) ~> A
   }
 
   object meet extends ListOperator {
-    val tpe = Lst(A) ~> A
+    val tpe = Type.FList(A) ~> A
   }
 
   object widen extends ListOperator {
-    val tpe = Lst(A) ~> A
+    val tpe = Type.FList(A) ~> A
   }
 
   object narrow extends ListOperator {
-    val tpe = Lst(A) ~> A
+    val tpe = Type.FList(A) ~> A
   }
 
   object zipWithJoin extends ListOperator {
-    val tpe = (Lst(A), Lst(A)) ~> Lst(A)
+    val tpe = (Type.FList(A), Type.FList(A)) ~> Type.FList(A)
   }
 
   object zipWithMeet extends ListOperator {
-    val tpe = (Lst(A), Lst(A)) ~> Lst(A)
+    val tpe = (Type.FList(A), Type.FList(A)) ~> Type.FList(A)
   }
 
 }

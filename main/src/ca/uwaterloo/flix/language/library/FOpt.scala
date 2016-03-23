@@ -44,55 +44,55 @@ object FOpt {
   // Basic Operations                                                        //
   /////////////////////////////////////////////////////////////////////////////
   object nul extends OptOperator {
-    val tpe = Type.Abs(A, Opt(A) ~> Bool)
+    val tpe = Type.Abs(A, Type.FOpt(A) ~> Bool)
   }
 
   object get extends OptOperator {
-    val tpe = Opt(A) ~> A
+    val tpe = Type.FOpt(A) ~> A
   }
 
   object getWithDefault extends OptOperator {
-    val tpe = (Opt(A), A) ~> A
+    val tpe = (Type.FOpt(A), A) ~> A
   }
 
   object exists extends OptOperator {
-    val tpe = (A ~> Bool, Opt(A)) ~> Bool
+    val tpe = (A ~> Bool, Type.FOpt(A)) ~> Bool
   }
 
   object forall extends OptOperator {
-    val tpe = (A ~> Bool, Opt(A)) ~> Bool
+    val tpe = (A ~> Bool, Type.FOpt(A)) ~> Bool
   }
 
   object filter extends OptOperator {
-    val tpe = (A ~> Bool, Opt(A)) ~> Opt(A)
+    val tpe = (A ~> Bool, Type.FOpt(A)) ~> Type.FOpt(A)
   }
 
   object map extends OptOperator {
-    val tpe = (A ~> B, Opt(A)) ~> Opt(B)
+    val tpe = (A ~> B, Type.FOpt(A)) ~> Type.FOpt(B)
   }
 
   object map2 extends OptOperator {
-    val tpe = ((A, B) ~> C, Opt(A), Opt(B)) ~> Opt(C)
+    val tpe = ((A, B) ~> C, Type.FOpt(A), Type.FOpt(B)) ~> Type.FOpt(C)
   }
 
   object flatMap extends OptOperator {
-    val tpe = (A ~> Opt(B), Opt(A)) ~> Opt(B)
+    val tpe = (A ~> Type.FOpt(B), Type.FOpt(A)) ~> Type.FOpt(B)
   }
 
   object flatMap2 extends OptOperator {
-    val tpe = ((A, B) ~> Opt(C), Opt(A), Opt(B)) ~> Opt(C)
+    val tpe = ((A, B) ~> Type.FOpt(C), Type.FOpt(A), Type.FOpt(B)) ~> Type.FOpt(C)
   }
 
   object withDefault extends OptOperator {
-    val tpe = (Opt(A), Opt(A)) ~> Opt(A)
+    val tpe = (Type.FOpt(A), Type.FOpt(A)) ~> Type.FOpt(A)
   }
 
   object toList extends OptOperator {
-    val tpe = Opt(A) ~> Lst(A)
+    val tpe = Type.FOpt(A) ~> Type.FList(A)
   }
 
   object toSet extends OptOperator {
-    val tpe = Opt(A) ~> Set(A)
+    val tpe = Type.FOpt(A) ~> Type.FSet(A)
   }
 
 }

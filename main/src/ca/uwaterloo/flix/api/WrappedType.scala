@@ -50,22 +50,22 @@ final class WrappedType(val tpe: Type) extends IType {
   }
 
   def isOpt: Boolean = tpe match {
-    case Type.Opt(elm) => true
+    case Type.FOpt(elm) => true
     case _ => false
   }
 
   def isList: Boolean = tpe match {
-    case Type.Lst(elm) => true
+    case Type.FList(elm) => true
     case _ => false
   }
 
   def isSet: Boolean = tpe match {
-    case Type.Set(elm) => true
+    case Type.FSet(elm) => true
     case _ => false
   }
 
   def isMap: Boolean = tpe match {
-    case Type.Map(keys, values) => true
+    case Type.FMap(keys, values) => true
     case _ => false
   }
 
@@ -80,27 +80,27 @@ final class WrappedType(val tpe: Type) extends IType {
   }
 
   def getOptParam: IType = tpe match {
-    case Type.Opt(elm) => new WrappedType(elm)
+    case Type.FOpt(elm) => new WrappedType(elm)
     case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 
   def getListParam: IType = tpe match {
-    case Type.Lst(elm) => new WrappedType(elm)
+    case Type.FList(elm) => new WrappedType(elm)
     case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 
   def getSetParam: IType = tpe match {
-    case Type.Set(elm) => new WrappedType(elm)
+    case Type.FSet(elm) => new WrappedType(elm)
     case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 
   def getMapKeyParam: IType = tpe match {
-    case Type.Map(k, v) => new WrappedType(k)
+    case Type.FMap(k, v) => new WrappedType(k)
     case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 
   def getMapValueParam: IType = tpe match {
-    case Type.Map(k, v) => new WrappedType(v)
+    case Type.FMap(k, v) => new WrappedType(v)
     case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 

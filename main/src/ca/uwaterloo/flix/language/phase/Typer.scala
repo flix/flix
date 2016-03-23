@@ -527,7 +527,7 @@ object Typer {
             case elms =>
               val tpes = elms.map(e => (e.tpe, e.loc))
               expectEqual(tpes) map {
-                case tpe => TypedAst.Expression.Set(elms, Type.Set(tpe), loc)
+                case tpe => TypedAst.Expression.Set(elms, Type.FSet(tpe), loc)
               }
           }
 
@@ -834,7 +834,7 @@ object Typer {
     case Type.Enum(name, cases) =>
       s"Enum(${cases.head._2.enum})"
     case Type.Tuple(elms) => "(" + elms.map(prettyPrint).mkString(", ") + ")"
-    case Type.Set(elms) => "Set(" + prettyPrint(elms) + ")"
+    case Type.FSet(elms) => "Set(" + prettyPrint(elms) + ")"
     case Type.Lambda(args, retTpe) =>
       "(" + args.map(prettyPrint).mkString(", ") + ") -> " + prettyPrint(retTpe)
     case Type.Predicate(terms) => s"Predicate(${terms map prettyPrint})"
