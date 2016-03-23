@@ -8,6 +8,10 @@ import ca.uwaterloo.flix.util.InternalRuntimeException
 
 import scala.collection.mutable
 
+// TODO: Reduce the number of implementations for function calls (if possible).
+// TODO: Rewrite parts of the interpreter (mainly function calls) to be clearer.
+// This might degrade performance, but the goal of the interpreter is clarity, not speed. Codegen is for performance.
+
 object Interpreter {
 
   /*
@@ -321,7 +325,7 @@ object Interpreter {
         evalArgs(i) = evalHeadTerm(args(i), root, env)
         i = i + 1
       }
-      evalCall(defn, evalArgs, root, env)
+      evalCall(defn, evalArgs, root, env.clone())
     case Term.Head.ApplyHook(hook, args, _, _) =>
       val evalArgs = new Array[AnyRef](args.length)
       var i = 0
@@ -345,7 +349,7 @@ object Interpreter {
   }
 
   def evalCall(function: Expression, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef = function match {
-    case Expression.Ref(name, tpe, loc) => evalCall(root.constants(name), args, root, env)
+    case Expression.Ref(name, tpe, loc) => evalCall(root.constants(name), args, root, env.clone())
     case _ =>
       eval(function, root, env) match {
         case Value.Closure(formals, body, closureEnv) =>
