@@ -1192,191 +1192,208 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Bot01") {
-    val input = "⊥"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.Bot])
+  test("Expression.Bot.01") {
+    val input = "def f[E: JoinSemiLattice]: E = ⊥"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Top01") {
-    val input = "⊤"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.Top])
+  test("Expression.Top.01") {
+    val input = "def f[E: JoinSemiLattice]: E = ⊤"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Leq01") {
-    val input = "x ⊑ y"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.ExtendedBinary])
-    assertResult(ExtBinaryOperator.Leq)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
+  test("Expression.Leq.01") {
+    val input = "def f[E: JoinSemiLattice](x: E, y: E): Bool = x ⊑ y"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Lub01") {
-    val input = "x ⊔ y"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.ExtendedBinary])
-    assertResult(ExtBinaryOperator.Lub)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
+  test("Expression.Lub.01") {
+    val input = "def f[E: JoinSemiLattice](x: E, y: E): E = x ⊔ y"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Glb1") {
-    val input = "x ⊓ y"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.ExtendedBinary])
-    assertResult(ExtBinaryOperator.Glb)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
+  test("Expression.Glb.01") {
+    val input = "def f[E: JoinSemiLattice](x: E, y: E): E = x ⊓ y"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Widen01") {
-    val input = "x ▽ y"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.ExtendedBinary])
-    assertResult(ExtBinaryOperator.Widen)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
+  test("Expression.Widen.01") {
+    val input = "def f[E: Widen](x: E, y: E): E = x ▽ y"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Narrow01") {
-    val input = "x △ y"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.ExtendedBinary])
-    assertResult(ExtBinaryOperator.Narrow)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
+  test("Expression.Narrow.01") {
+    val input = "def f[E: Narrow](x: E, y: E): E = x △ y"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Expression.BotLeqTop") {
-    val input = "⊥ ⊑ ⊤"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.ExtendedBinary])
-    assertResult(ExtBinaryOperator.Leq)(result.get.asInstanceOf[ParsedAst.Expression.ExtendedBinary].op)
+  test("Expression.BotLeqTop.01") {
+    val input = "def f[E: Lattice](x: E, y: E): Bool = ⊥ ⊑ ⊤"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Existential01") {
-    val input = "∃(x: Bool). true"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.Existential])
+  test("Expression.Existential.01") {
+    val input = "def f: Prop = ∃(x: Bool). true"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Existential02") {
-    val input = "∃(x: Int, y: Int). x == y"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.Existential])
+  test("Expression.Existential.02") {
+    val input = "def f: Prop = ∃(x: Int, y: Int). x == y"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Existential03") {
-    val input = "\\exists(x: Bool). true"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.Existential])
+  test("Expression.Existential.03") {
+    val input = "def f: Prop = \\exists(x: Bool). true"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Existential04") {
-    val input = "\\exists(x: Int, y: Int). x == y"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.Existential])
+  test("Expression.Existential.04") {
+    val input = "def f: Prop = \\exists(x: Int, y: Int). x == y"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Universal01") {
-    val input = "∀(x: Bool). true"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.Universal])
+  test("Expression.Universal.01") {
+    val input = "def f: Prop = ∀(x: Bool). true"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Universal02") {
-    val input = "∀(x: Int, y: Int). x == y"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.Universal])
+  test("Expression.Universal.02") {
+    val input = "def f: Prop = ∀(x: Int, y: Int). x == y"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Universal03") {
-    val input = "\\forall(x: Bool). true"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.Universal])
+  test("Expression.Universal.03") {
+    val input = "def f: Prop = \\forall(x: Bool). true"
+    new Flix().addStr(input).compile().get
   }
 
-  test("Expression.Universal04") {
-    val input = "\\forall(x: Int, y: Int). x == y"
-    val result = new Parser(SourceInput.Str(input)).Expression.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Expression.Universal])
+  test("Expression.Universal.04") {
+    val input = "def f: Prop = \\forall(x: Int, y: Int). x == y"
+    new Flix().addStr(input).compile().get
   }
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Patterns                                                                //
   /////////////////////////////////////////////////////////////////////////////
-  test("Pattern.Wildcard") {
-    val input = "_"
-    val result = new Parser(SourceInput.Str(input)).Pattern.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Pattern.Wildcard])
+  test("Pattern.Wildcard.01") {
+    val input =
+      """def f(x: Int): Int = match x with {
+        |  case _ => 42
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
   test("Pattern.Var01") {
-    val input = "x"
-    val result = new Parser(SourceInput.Str(input)).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Var]
-    assertResult("x")(result.ident.name)
+    val input =
+      """def f(x: Int): Int = match x with {
+        |  case x => x
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
-  test("Pattern.Literal01") {
-    val input = "true"
-    val result = new Parser(SourceInput.Str(input)).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
-    assertResult("true")(result.lit.asInstanceOf[ParsedAst.Literal.Bool].lit)
+  test("Pattern.Literal.Unit.01") {
+    val input =
+      """def f(x: Unit): Int = match x with {
+        |  case () => 42
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
-  test("Pattern.Literal02") {
-    val input = "42"
-    val result = new Parser(SourceInput.Str(input)).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
-    assertResult("42")(result.lit.asInstanceOf[ParsedAst.Literal.Int32].lit)
+  test("Pattern.Literal.Bool.01") {
+    val input =
+      """def f(x: Bool): Int = match x with {
+        |  case true => 42
+        |  case false => 21
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
-  test("Pattern.Literal03") {
-    val input = "\"foo\""
-    val result = new Parser(SourceInput.Str(input)).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Lit]
-    assertResult("foo")(result.lit.asInstanceOf[ParsedAst.Literal.Str].lit)
+  test("Pattern.Literal.Char.01") {
+    val input =
+      """def f(x: Char): Int = match x with {
+        |  case 'a' => 1
+        |  case 'b' => 2
+        |  case 'c' => 3
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
-  test("Pattern.Tag01") {
-    val input = "Const.Bot"
-    val result = new Parser(SourceInput.Str(input)).Pattern.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Pattern.Tag])
+  test("Pattern.Literal.Int.01") {
+    val input =
+      """def f(x: Int): Int = match x with {
+        |  case 1 => 1
+        |  case 2 => 2
+        |  case 3 => 3
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
-  test("Pattern.Tag02") {
-    val input = "Const.Cst(5)"
-    val result = new Parser(SourceInput.Str(input)).Pattern.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Pattern.Tag])
+  test("Pattern.Literal.Int.02") {
+    val input =
+      """def f(x: Int16): Int = match x with {
+        |  case 1i16 => 1
+        |  case 2i16 => 2
+        |  case 3i16 => 3
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
-  test("Pattern.Tag03") {
-    val input = "Foo.Bar (x, _, z)"
-    val result = new Parser(SourceInput.Str(input)).Pattern.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Pattern.Tag])
+  test("Pattern.Literal.Str.01") {
+    val input =
+      """def f(x: Str): Int = match x with {
+        |  case "foo" => 1
+        |  case "bar" => 2
+        |  case "baz" => 3
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
-  test("Pattern.Tag04") {
-    val input = "foo.bar/baz.Foo(x, y, z)"
-    val result = new Parser(SourceInput.Str(input)).Pattern.run()
-    assert(result.isSuccess)
-    assert(result.get.isInstanceOf[ParsedAst.Pattern.Tag])
+  test("Pattern.Enum.01") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Blu
+        |}
+        |
+        |def f(x: Color): Int = match x with {
+        |  case Color.Red => 1
+        |  case Color.Blu => 2
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
-  test("Pattern.Tuple01") {
-    val input = "(x, y, true)"
-    val result = new Parser(SourceInput.Str(input)).Pattern.run().get.asInstanceOf[ParsedAst.Pattern.Tuple]
-    assertResult(3)(result.pats.size)
+  test("Pattern.Enum.02") {
+    val input =
+      """enum Shape {
+        |  case Circle(Int),
+        |  case Rectangle(Int, Int)
+        |}
+        |
+        |def f(x: Shape): Int = match x with {
+        |  case Shape.Circle(r) => r
+        |  case Shape.Rectangle(h, w) => h * w
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Pattern.Tuple.01") {
+    val input =
+      """def f(x: (Bool, Char, Int)): Int = match x with {
+        |  case (true, 'a', 42) => 1
+        |  case (false, 'b', 21) => 2
+        |}
+      """.stripMargin
+    new Flix().addStr(input).compile().get
   }
 
   test("Pattern.Opt01") {
@@ -2059,67 +2076,67 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
-  test("Type.Unit") {
+  test("Type.Unit.01") {
     val input = "def f: Unit = ()"
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Bool01") {
+  test("Type.Bool.01") {
     val input = "def f: Bool = true"
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Bool02") {
+  test("Type.Bool.02") {
     val input = "def f: Bool = false"
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Char") {
+  test("Type.Char.01") {
     val input = "def f: Char = 'a'"
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Float32") {
+  test("Type.Float32.01") {
     val input = "def f: Float32 = 0.0f32"
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Float64") {
+  test("Type.Float64.01") {
     val input = "def f: Float64 = 0.0f64"
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Int8") {
+  test("Type.Int8.01") {
     val input = "def f: Int8 = 0i8"
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Int16") {
+  test("Type.Int16.01") {
     val input = "def f: Int16 = 0i16"
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Int32") {
+  test("Type.Int32.01") {
     val input = "def f: Int32 = 0i32"
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Int64") {
+  test("Type.Int64.01") {
     val input = "def f: Int64 = 0i64"
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Str") {
-    val input = "def f: Str = \"foobar\'"
+  test("Type.Str.01") {
+    val input = "def f: Str = \"foobar\""
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Prop") {
+  test("Type.Prop.01") {
     val input = "def f: Prop = true"
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Enum") {
+  test("Type.Enum.01") {
     val input =
       """enum Color {
         |  case Red
@@ -2130,57 +2147,57 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Tuple01") {
+  test("Type.Tuple.01") {
     val input = "def f: (Int, Int) = (1, 2)"
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Tuple02") {
+  test("Type.Tuple.02") {
     val input = "def f: (Unit, Bool, Char, Int) = ((), true, 'a', 42)"
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Lambda01") {
+  test("Type.Lambda.01") {
     val input = "def f: Int = (x -> x + 1)(42)"
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Lambda02") {
+  test("Type.Lambda.02") {
     val input = "def f: Int = ((x, y) -> x + y)(21, 42)"
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Parametric01") {
+  test("Type.Parametric.01") {
     val input = "def f(x: A): A = x"
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Parametric02") {
+  test("Type.Parametric.02") {
     val input = "def f(x: A, y: B): A = x"
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Opt") {
+  test("Type.Opt.01") {
     val input = "def f: Opt[Int] = None"
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.List") {
+  test("Type.List.01") {
     val input = "def f: List[Int] = Nil"
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Vec") {
+  test("Type.Vec.01") {
     val input = "def f: Vec[Int] = #[]"
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Set") {
+  test("Type.Set.01") {
     val input = "def f: Set[Int] = #{}"
     new Flix().addStr(input).compile().get
   }
 
-  test("Type.Map") {
+  test("Type.Map.01") {
     val input = "def f: Map[Int, Int] = @{}"
     new Flix().addStr(input).compile().get
   }
@@ -2480,38 +2497,28 @@ class TestParser extends FunSuite {
   }
 
   test("Operator.ExtendedBinary.Leq ⊑") {
-    val input = "⊑"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.ExtBinaryOpt).get
-    assertResult(ExtBinaryOperator.Leq)(result)
+    val input = "def f[E: JoinSemiLattice](x: E, y: E): Bool = x ⊑ y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.ExtendedBinary.Lub ⊔") {
-    val input = "⊔"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.ExtBinaryOpt).get
-    assertResult(ExtBinaryOperator.Lub)(result)
+    val input = "def f[E: JoinSemiLattice](x: E, y: E): E = x ⊔ y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.ExtendedBinary.Glb ⊓") {
-    val input = "⊓"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.ExtBinaryOpt).get
-    assertResult(ExtBinaryOperator.Glb)(result)
+    val input = "def f[E: JoinSemiLattice](x: E, y: E): E = x ⊓ y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.ExtendedBinary.Widen ▽") {
-    val input = "▽"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.ExtBinaryOpt).get
-    assertResult(ExtBinaryOperator.Widen)(result)
+    val input = "def f[E: Widen](x: E, y: E): E = x ▽ y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Operator.ExtendedBinary.Narrow △") {
-    val input = "△"
-    val parser = mkParser(input)
-    val result = parser.__run(parser.Operators.ExtBinaryOpt).get
-    assertResult(ExtBinaryOperator.Narrow)(result)
+    val input = "def f[E: Narrow](x: E, y: E): E = x △ y"
+    new Flix().addStr(input).compile().get
   }
 
   /////////////////////////////////////////////////////////////////////////////

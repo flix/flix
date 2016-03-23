@@ -14,3 +14,5 @@ class Eq[E] {
     def neq(x: E, y: E): Bool = !eq(x, y)
 
 }
+
+// NB: Float, Lambda, etc do NOT implement eq!
