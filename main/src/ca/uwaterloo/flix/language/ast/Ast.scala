@@ -7,8 +7,6 @@ import ca.uwaterloo.flix.api.{InvokableUnsafe, Invokable}
   */
 object Ast {
 
-  // TODO: When to use this, and when to use the package object?
-
   /**
     * A common super type for AST nodes that represent annotations.
     */
@@ -130,6 +128,14 @@ object Ast {
       */
     def isUnsafe: Boolean = annotations exists (_.isInstanceOf[Annotation.Unsafe])
   }
+
+  /**
+    * Formal Parameter.
+    *
+    * @param ident the name of the argument.
+    * @param tpe   the type of the argument.
+    */
+  case class FormalParam(ident: Name.Ident, tpe: Type)
 
   /**
     * A common super-type for hooks.

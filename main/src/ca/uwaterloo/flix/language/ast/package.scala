@@ -6,6 +6,8 @@ import ca.uwaterloo.flix.util.ConsoleCtx
 
 package object ast {
 
+  // TODO: Move into Ast.
+
   /**
     * A common super-type for sources.
     */

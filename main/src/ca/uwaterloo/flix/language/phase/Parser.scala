@@ -259,8 +259,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     oneOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS)
   }
 
-  def FormalParams: Rule1[Seq[ParsedAst.FormalArg]] = rule {
-    optional("(" ~ optWS ~ ArgumentList ~ optWS ~ ")") ~> ((o: Option[Seq[ParsedAst.FormalArg]]) => o match {
+  def FormalParams: Rule1[Seq[Ast.FormalParam]] = rule {
+    optional("(" ~ optWS ~ ArgumentList ~ optWS ~ ")") ~> ((o: Option[Seq[Ast.FormalParam]]) => o match {
       case None => Seq.empty
       case Some(xs) => xs
     })
@@ -474,8 +474,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ "⊤" ~ SP ~> ParsedAst.Expression.Top
     }
 
-    def Var: Rule1[ParsedAst.Expression.Var] = rule {
-      SP ~ QName ~ SP ~> ParsedAst.Expression.Var
+    def Var: Rule1[ParsedAst.Expression.VarOrRef] = rule {
+      SP ~ QName ~ SP ~> ParsedAst.Expression.VarOrRef
     }
 
     def UnaryLambda: Rule1[ParsedAst.Expression.Lambda] = rule {
@@ -487,6 +487,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ "(" ~ optWS ~ oneOrMore(Ident).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Lambda
     }
 
+    def UserError: Rule1[ParsedAst.Expression] = rule {
+      SP ~ atomic("???") ~ SP ~> ParsedAst.Expression.UserError
+    }
+
     def Existential: Rule1[ParsedAst.Expression.Existential] = rule {
       SP ~ atomic("∃" | "\\exists") ~ optWS ~ FormalParams ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Existential
     }
@@ -495,9 +499,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ atomic("∀" | "\\forall") ~ optWS ~ FormalParams ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Universal
     }
 
-    def UserError: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("???") ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Expression.UserError
-    }
   }
 
 
@@ -718,12 +719,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Helpers                                                                 //
   /////////////////////////////////////////////////////////////////////////////
-  def ArgumentList: Rule1[Seq[ParsedAst.FormalArg]] = rule {
+  def ArgumentList: Rule1[Seq[Ast.FormalParam]] = rule {
     zeroOrMore(Argument).separatedBy(optWS ~ "," ~ optWS)
   }
 
-  def Argument: Rule1[ParsedAst.FormalArg] = rule {
-    Ident ~ ":" ~ optWS ~ zeroOrMore(Annotation).separatedBy(WS) ~ optWS ~ Type ~> ParsedAst.FormalArg
+  def Argument: Rule1[Ast.FormalParam] = rule {
+    Ident ~ ":" ~ optWS ~ Type ~> Ast.FormalParam
   }
 
   /////////////////////////////////////////////////////////////////////////////

@@ -331,7 +331,7 @@ object Weeder {
       * Compiles the given parsed namespace declaration `past` to a weeded namespace declaration.
       */
     def compile(past: ParsedAst.Declaration.Namespace): Validation[WeededAst.Declaration.Namespace, WeederError] =
-      @@(past.body.map(compile)) map {
+      @@(past.decls.map(compile)) map {
         case decls => WeededAst.Declaration.Namespace(past.name, decls, mkSL(past.sp1, past.sp2))
       }
 
@@ -373,14 +373,14 @@ object Weeder {
       * Compiles the given parsed function declaration `past` to a weeded definition.
       */
     def compile(past: ParsedAst.Declaration.Definition): Validation[WeededAst.Definition.Constant, WeederError] = {
-      val annotationsVal = Annotations.compile(past.annotations)
+      val annotationsVal = Annotations.compile(past.ann)
 
       // TODO: Need to move certain annotations to each lattice valued argument...?
 
       // check duplicate formals.
       val seen = mutable.Map.empty[String, Name.Ident]
-      val formalsVal = @@(past.formals.map {
-        case ParsedAst.FormalArg(ident, annotations, tpe) => seen.get(ident.name) match {
+      val formalsVal = @@(past.params.map {
+        case Ast.FormalParam(ident, tpe) => seen.get(ident.name) match {
           case None =>
             seen += (ident.name -> ident)
             WeededAst.FormalArg(ident, tpe).toSuccess
@@ -433,7 +433,7 @@ object Weeder {
     def compile(past: ParsedAst.Declaration.Relation): Validation[WeededAst.Table.Relation, WeederError] = {
       // check for duplicate attributes.
       val seen = mutable.Map.empty[String, Name.Ident]
-      val attributesVal = past.attributes.map {
+      val attributesVal = past.attr.map {
         case ParsedAst.Attribute(ident, tpe) => seen.get(ident.name) match {
           case None =>
             seen += (ident.name -> ident)
@@ -454,7 +454,7 @@ object Weeder {
     def compile(past: ParsedAst.Declaration.Lattice): Validation[WeededAst.Table.Lattice, WeederError] = {
       // check for duplicate attributes.
       val seen = mutable.Map.empty[String, Name.Ident]
-      val attributesVal = past.attributes.map {
+      val attributesVal = past.attr.map {
         case ParsedAst.Attribute(ident, tpe) => seen.get(ident.name) match {
           case None =>
             seen += (ident.name -> ident)
@@ -542,7 +542,7 @@ object Weeder {
           case lit => WeededAst.Expression.Lit(lit, mkSL(sp1, sp2))
         }
 
-      case ParsedAst.Expression.Var(sp1, name, sp2) =>
+      case ParsedAst.Expression.VarOrRef(sp1, name, sp2) =>
         WeededAst.Expression.Var(name, mkSL(sp1, sp2)).toSuccess
 
       case ParsedAst.Expression.Apply(sp1, lambda, actuals, sp2) =>
@@ -693,8 +693,8 @@ object Weeder {
           case e => WeededAst.Expression.Ascribe(e, tpe, mkSL(sp1, sp2))
         }
 
-      case ParsedAst.Expression.UserError(sp1, tpe, sp2) =>
-        WeededAst.Expression.Error(tpe, mkSL(sp1, sp2)).toSuccess
+      case ParsedAst.Expression.UserError(sp1, sp2) =>
+        WeededAst.Expression.Error(??? /* TODO */, mkSL(sp1, sp2)).toSuccess
 
       case ParsedAst.Expression.Bot(sp1, sp2) =>
         val ident = Name.Ident(sp1, "⊥", sp2)
