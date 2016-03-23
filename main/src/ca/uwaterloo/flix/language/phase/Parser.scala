@@ -385,7 +385,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetMatch | IfThenElse | Match | Switch | Tag | Lambda | Tuple | FNil | FNone | FSome | FVec | FSet | FMap | Literal |
-        Existential | Universal | Bot | Top | UnaryLambda | Var | UserError
+        Existential | Universal | Bot | Top | UnaryLambda | Wild | Var | UserError
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -474,8 +474,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ "⊤" ~ SP ~> ParsedAst.Expression.Top
     }
 
-    def Var: Rule1[ParsedAst.Expression.VarOrRef] = rule {
-      SP ~ QName ~ SP ~> ParsedAst.Expression.VarOrRef
+    def Wild: Rule1[ParsedAst.Expression.Wild] = rule {
+      SP ~ atomic("_") ~ SP ~> ParsedAst.Expression.Wild
+    }
+
+    def Var: Rule1[ParsedAst.Expression.Var] = rule {
+      SP ~ QName ~ SP ~> ParsedAst.Expression.Var
     }
 
     def UnaryLambda: Rule1[ParsedAst.Expression.Lambda] = rule {

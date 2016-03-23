@@ -234,6 +234,27 @@ class TestWeeder extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Illegal Wildcard Expression                                             //
+  /////////////////////////////////////////////////////////////////////////////
+  test("IllegalWildcard.01") {
+    val input = "def f: Int = _"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalWildcard])
+  }
+
+  test("IllegalWildcard.02") {
+    val input = "def f: Int = 42 + _"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalWildcard])
+  }
+
+  test("IllegalWildcard.03") {
+    val input = "def f: Set[Int] = #{1, 2, _}"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalWildcard])
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Non Linear Pattern                                                      //
   /////////////////////////////////////////////////////////////////////////////
   test("NonLinearPattern01") {

@@ -336,8 +336,9 @@ object ParsedAst {
       * Returns the left most source position in the sub-tree of `this` expression.
       */
     def leftMostSourcePosition: SourcePosition = this match {
+      case Expression.Wild(sp1, _) => sp1
+      case Expression.Var(sp1, _, _) => sp1
       case Expression.Lit(sp1, _, _) => sp1
-      case Expression.VarOrRef(sp1, _, _) => sp1
       case Expression.Apply(sp1, _, _, _) => sp1
       case Expression.Infix(e1, _, _, _) => e1.leftMostSourcePosition
       case Expression.Lambda(sp1, _, _, _) => sp1
@@ -372,6 +373,25 @@ object ParsedAst {
   object Expression {
 
     /**
+      * Wildcard Expression.
+      *
+      * Illegal in proper expressions, but allowed in terms.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Wild(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Variable Expression.
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param name the ambiguous name.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Var(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Literal Expression.
       *
       * Inlined by the Weeder.
@@ -381,15 +401,6 @@ object ParsedAst {
       * @param sp2 the position of the last character in the expression.
       */
     case class Lit(sp1: SourcePosition, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Variable or Reference Expression.
-      *
-      * @param sp1  the position of the first character in the expression.
-      * @param name the ambiguous name.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class VarOrRef(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Apply Expression (function call).

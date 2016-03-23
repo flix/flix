@@ -247,6 +247,21 @@ object Weeder {
     }
 
     /**
+      * An error raised to indicate an illegal wildcard in an expression.
+      *
+      * @param loc the location where the illegal definition occurs.
+      */
+    case class IllegalWildcard(loc: SourceLocation) extends WeederError {
+      val message =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> Illegal wildcard in expression.")}
+           |
+           |${loc.underline}
+         """.stripMargin
+    }
+
+    /**
       * An error raised to indicate that the variable `name` occurs multiple times in the same pattern.
       *
       * @param name the name of the variable.
@@ -537,13 +552,16 @@ object Weeder {
       * Compiles the parsed expression `past` to a weeded expression.
       */
     def compile(past: ParsedAst.Expression): Validation[WeededAst.Expression, WeederError] = past match {
+      case ParsedAst.Expression.Wild(sp1, sp2) =>
+        IllegalWildcard(mkSL(sp1, sp2)).toFailure
+
+      case ParsedAst.Expression.Var(sp1, name, sp2) =>
+        WeededAst.Expression.Var(name, mkSL(sp1, sp2)).toSuccess
+
       case ParsedAst.Expression.Lit(sp1, lit, sp2) =>
         Literals.compile(lit) map {
           case lit => WeededAst.Expression.Lit(lit, mkSL(sp1, sp2))
         }
-
-      case ParsedAst.Expression.VarOrRef(sp1, name, sp2) =>
-        WeededAst.Expression.Var(name, mkSL(sp1, sp2)).toSuccess
 
       case ParsedAst.Expression.Apply(sp1, lambda, actuals, sp2) =>
         @@(compile(lambda), @@(actuals map compile)) map {
@@ -694,7 +712,7 @@ object Weeder {
         }
 
       case ParsedAst.Expression.UserError(sp1, sp2) =>
-        WeededAst.Expression.Error(Type.Bool /* TODO */, mkSL(sp1, sp2)).toSuccess
+        WeededAst.Expression.Error(Type.Bool /* TODO */ , mkSL(sp1, sp2)).toSuccess
 
       case ParsedAst.Expression.Bot(sp1, sp2) =>
         val ident = Name.Ident(sp1, "⊥", sp2)
