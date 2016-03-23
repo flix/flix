@@ -107,9 +107,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
         zeroOrMore(Annotation).separatedBy(WS)
       }
 
-      // TODO: Consider whether SP should be moved after annotations?
       rule {
-        SP ~ Annotations ~ optWS ~ (atomic("def") | atomic("fn")) ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Declaration.Definition
+        Annotations ~ optWS ~ SP ~ (atomic("def") | atomic("fn")) ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Declaration.Definition
       }
     }
 

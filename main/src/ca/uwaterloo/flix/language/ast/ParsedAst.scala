@@ -82,15 +82,15 @@ object ParsedAst {
     /**
       * An AST node that represents a function declaration.
       *
-      * @param sp1         the position of the first character in the declaration.
       * @param annotations the annotations associated with the function.
+      * @param sp1         the position of the first character in the declaration.
       * @param ident       the name of the function.
       * @param formals     the formals (i.e. parameters and their types).
       * @param tpe         the return type.
       * @param exp         the body expression of the function.
       * @param sp2         the position of the last character in the declaration.
       */
-    case class Definition(sp1: SourcePosition, annotations: Seq[ParsedAst.Annotation], ident: Name.Ident, formals: Seq[FormalArg], tpe: Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Definition(annotations: Seq[ParsedAst.Annotation], sp1: SourcePosition, ident: Name.Ident, formals: Seq[FormalArg], tpe: Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * An AST node that represents a signature of a function.
