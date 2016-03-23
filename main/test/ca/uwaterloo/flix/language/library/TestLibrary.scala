@@ -258,19 +258,15 @@ class TestLibrary extends FunSuite {
   }
 
   test("Library.PartialOrder") {
-    intercept[scala.NotImplementedError] {
-      new Flix().addPath("library/PartialOrder.flix")
-        .compile()
-        .get
-    }
+    new Flix().addPath("library/PartialOrder.flix")
+      .compile()
+      .get
   }
 
   test("Library.Prelude") {
-    intercept[scala.NotImplementedError] {
-      new Flix().addPath("library/Prelude.flix")
-        .compile()
-        .get
-    }
+    new Flix().addPath("library/Prelude.flix")
+      .compile()
+      .get
   }
 
   test("Library.PreOrder") {

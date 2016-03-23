@@ -43,12 +43,12 @@ class JoinSemiLattice[E] => PartialOrder[E] {
 
 }
 
-/*
- * ## Implementations of [[JoinSemiLattice]] for tuples.
- */
+//
+// ## Tuples.
+//
 
 /**
- * Tuple (A, B)
+ * Implementation of `JoinSemiLattice` for `(A, B)`.
  */
 impl JoinSemiLattice[(A, B)] <= JoinSemiLattice[A], JoinSemiLattice[B] {
     def bot: (A, B) = (⊥, ⊥)
@@ -60,7 +60,7 @@ impl JoinSemiLattice[(A, B)] <= JoinSemiLattice[A], JoinSemiLattice[B] {
 }
 
 /**
- * Tuple (A, B, C)
+ * Implementation of `JoinSemiLattice` for `(A, B, C)`.
  */
 impl JoinSemiLattice[(A, B, C)] <= JoinSemiLattice[A], JoinSemiLattice[B], JoinSemiLattice[C] {
     def bot: (A, B, C) = (⊥, ⊥, ⊥)
@@ -72,7 +72,7 @@ impl JoinSemiLattice[(A, B, C)] <= JoinSemiLattice[A], JoinSemiLattice[B], JoinS
 }
 
 /**
- * Tuple (A, B, C, D)
+ * Implementation of `JoinSemiLattice` for `(A, B, C, D)`.
  */
 impl JoinSemiLattice[(A, B, C, D)] <= JoinSemiLattice[A], JoinSemiLattice[B], JoinSemiLattice[C], JoinSemiLattice[D] {
     def bot: (A, B, C, D) = (⊥, ⊥, ⊥, ⊥)
@@ -84,7 +84,7 @@ impl JoinSemiLattice[(A, B, C, D)] <= JoinSemiLattice[A], JoinSemiLattice[B], Jo
 }
 
 /**
- * Tuple (A, B, C, D, E)
+ * Implementation of `JoinSemiLattice` for `(A, B, C, D, E)`.
  */
 impl JoinSemiLattice[(A, B, C, D, E)] <= JoinSemiLattice[A], JoinSemiLattice[B], JoinSemiLattice[C], JoinSemiLattice[D], JoinSemiLattice[E] {
     def bot: (A, B, C, D, E) = (⊥, ⊥, ⊥, ⊥, ⊥)
@@ -93,4 +93,70 @@ impl JoinSemiLattice[(A, B, C, D, E)] <= JoinSemiLattice[A], JoinSemiLattice[B],
         let (a1, b1, c1, d1, e1) = x in
         let (a2, b2, c2, d2, e2) = y in
             (a1 ⊔ a2, b1 ⊔ b2, c1 ⊔ c2, d1 ⊔ d2, e1 ⊔ e2)
+}
+
+//
+// ## Options.
+//
+
+/**
+ * Implementation of `JoinSemiLattice` for `Opt[A]`.
+ *
+ * Here `None` is considered as the smallest element.
+ */
+impl JoinSemiLattice[Opt[A]] <= JoinSemiLattice[A] {
+    def bot: Opt[A] = None
+
+    def lub(x: Opt[A], y: Opt[A]): Opt[A] = match (x, y) with {
+        case (None, _) => y
+        case (_, None) => x
+        case (Some(v1), Some(v2)) => Some(v1 ⊔ v2)
+    }
+}
+
+//
+// ## Lists.
+//
+
+/**
+ * Implementation of `JoinSemiLattice` for `List[A]`.
+ */
+impl JoinSemiLattice[List[A]] <= JoinSemiLattice[A] {
+    def bot: List[A] = Nil
+
+    def lub(x: List[A], y: List[A]): List[A] = ??? // TODO: Need a way to zip over the longest list.
+}
+
+//
+// ## Sets.
+//
+
+// See `IncSet` and `DecSet`.
+
+//
+// ## Maps.
+//
+
+/**
+ * Implementation of `JoinSemiLattice` for `Map[A, B]`.
+ */
+impl JoinSemiLattice[Map[A, B]] <= JoinSemiLattice[B] {
+    def bot: Map[A, B] = @{}
+
+    def lub(x: Map[A, B], y: Map[A, B]): Bool =
+        map/unionWith(lub, x, y)
+}
+
+//
+// ## Vectors.
+//
+
+/**
+ * Implementation of `PartialOrder` for `Vector[A]`.
+ */
+impl JoinSemiLattice[Vector[A]] <= JoinSemiLattice[A] {
+    def bot: Vector[A] = #[]
+
+    def lub(x: Vector[A], y: Vector[A]): Vector[A] =
+        vector/zipWith(lub, x, y)
 }
