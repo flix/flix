@@ -10,6 +10,7 @@ object ClosureConv {
     /**
       * Performs closure conversion on the given expression `e`.
       */
+    // TODO: Add environment map from String to Expr.Ref
     def convert(e: SimplifiedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Expression = e match {
       case SimplifiedAst.Expression.Unit => e
       case SimplifiedAst.Expression.True => e
@@ -34,6 +35,7 @@ object ClosureConv {
       case SimplifiedAst.Expression.Ref(name, tpe, loc) => e
 
       case SimplifiedAst.Expression.Apply3(lambda, args, tpe, loc) =>
+        // TODO: Recurse on lambda. Then pattern match: Two cases: (1) Ref -> Apply (2) otherwise -> ApplyClosure
         // Replace Apply by ApplyClosure.
         SimplifiedAst.Expression.ApplyClosure(lambda, args, tpe, loc)
 
