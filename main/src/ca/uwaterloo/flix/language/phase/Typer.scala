@@ -826,6 +826,7 @@ object Typer {
     case Type.Int16 => s"Int16"
     case Type.Int32 => s"Int32"
     case Type.Int64 => s"Int64"
+    case Type.Prop => s"Prop"
     case Type.Str => s"Str"
     case Type.Tag(enumName, tagName, t) =>
       val enumAndTag = enumName.fqn + "." + tagName.name

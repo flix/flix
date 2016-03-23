@@ -671,13 +671,15 @@ object Weeder {
           case xs => WeededAst.Expression.Tuple(xs, mkSL(sp1, sp2))
         }
 
+      case ParsedAst.Expression.FNil(sp1, sp2) => ???
+
+      case ParsedAst.Expression.FList(hd, tl, sp2) => ???
+
       case ParsedAst.Expression.FNone(sp1, sp2) => ???
 
       case ParsedAst.Expression.FSome(sp1, elm, sp2) => ???
 
-      case ParsedAst.Expression.FNil(sp1, sp2) => ???
-
-      case ParsedAst.Expression.FList(hd, tl, sp2) => ???
+      case ParsedAst.Expression.FVec(sp1, elms, sp2) => ???
 
       case ParsedAst.Expression.FSet(sp1, elms, sp2) =>
         @@(elms map compile) map {
@@ -755,6 +757,10 @@ object Weeder {
           case xs => WeededAst.Pattern.Tuple(xs, mkSL(sp1, sp2))
         }
 
+        case ParsedAst.Pattern.FNone(sp1, sp2) => ???
+
+        case ParsedAst.Pattern.FSome(sp1, pat, sp2) => ???
+
         case ParsedAst.Pattern.FNil(sp1, sp2) => ???
 
         case ParsedAst.Pattern.FList(p1, p2, sp2) =>
@@ -762,9 +768,7 @@ object Weeder {
             case (hd, tl) => WeededAst.Pattern.List(hd, tl, mkSL(p1.leftMostSourcePosition, sp2))
           }
 
-        case ParsedAst.Pattern.FNone(sp1, sp2) => ???
-
-        case ParsedAst.Pattern.FSome(sp1, pat, sp2) => ???
+        case ParsedAst.Pattern.FVec(sp1, elms, rest, sp2) => ???
 
         case ParsedAst.Pattern.FSet(sp1, elms, rest, sp2) => ???
 
