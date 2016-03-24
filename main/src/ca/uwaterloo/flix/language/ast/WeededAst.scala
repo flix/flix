@@ -2,21 +2,13 @@ package ca.uwaterloo.flix.language.ast
 
 import scala.collection.immutable.Seq
 
-/**
-  * A common super-type for weeded AST nodes.
-  */
 trait WeededAst
 
 object WeededAst {
 
-  /**
-    * The AST root node.
-    *
-    * @param declarations the declarations in the AST.
-    * @param hooks        a map from names to hooks.
-    * @param time         the time spent in each compiler phase.
-    */
-  case class Root(declarations: List[WeededAst.Declaration], hooks: Map[Symbol.Resolved, Ast.Hook], time: Time) extends WeededAst
+  case class Program(roots: List[WeededAst.Root], hooks: Map[Symbol.Resolved, Ast.Hook], time: Time) extends WeededAst
+
+  case class Root(decls: List[WeededAst.Declaration]) extends WeededAst
 
   /**
     * A common super-type for AST nodes that represents declarations.

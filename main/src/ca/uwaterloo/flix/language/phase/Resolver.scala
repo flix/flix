@@ -298,13 +298,15 @@ object Resolver {
   /**
     * Resolves all symbols in the given AST `wast`.
     */
-  def resolve(wast: WeededAst.Root): Validation[ResolvedAst.Root, ResolverError] = {
+  def resolve(wast: WeededAst.Program): Validation[ResolvedAst.Root, ResolverError] = {
     val b = System.nanoTime()
 
     // TODO: Check that hooks do not overlap with any names in the program.
 
+    val decls = wast.roots.flatMap(_.decls)
+
     // TODO: Can anyone actually understand this: ??
-    val symsVal = Validation.fold[WeededAst.Declaration, SymbolTable, ResolverError](wast.declarations, SymbolTable.empty(wast.hooks)) {
+    val symsVal = Validation.fold[WeededAst.Declaration, SymbolTable, ResolverError](decls, SymbolTable.empty(wast.hooks)) {
       case (msyms, d) => Declaration.symbolsOf(d, List.empty, msyms)
     }
 
@@ -333,13 +335,13 @@ object Resolver {
           case (k, v) => Indexes.resolve(v, k.namespace, syms) map (d => k -> d)
         }
 
-        val collectedFacts = Declaration.collectFacts(wast, syms)
-        val collectedRules = Declaration.collectRules(wast, syms)
+        val collectedFacts = @@(wast.roots.map(wast => Declaration.collectFacts(wast, syms)))
+        val collectedRules = @@(wast.roots.map(wast => Declaration.collectRules(wast, syms)))
 
         @@(collectedConstants, collectedEnums, collectedLattices, collectionsVal, collectedIndexes, collectedFacts, collectedRules) map {
           case (constants, enums, lattices, collections, indexes, facts, rules) =>
             val e = System.nanoTime()
-            ResolvedAst.Root(constants, enums, lattices, collections, indexes, facts, rules, wast.hooks, wast.time.copy(resolver = e - b))
+            ResolvedAst.Root(constants, enums, lattices, collections, indexes, facts.flatten, rules.flatten, wast.hooks, wast.time.copy(resolver = e - b))
         }
     }
   }
@@ -433,7 +435,7 @@ object Resolver {
         case _ => List.empty[ResolvedAst.Constraint.Fact].toSuccess
       }
 
-      @@(wast.declarations map (d => visit(d, List.empty))) map (xs => xs.flatten)
+      @@(wast.decls map (d => visit(d, List.empty))) map (xs => xs.flatten)
     }
 
     def collectRules(wast: WeededAst.Root, syms: SymbolTable): Validation[List[ResolvedAst.Constraint.Rule], ResolverError] = {
@@ -444,7 +446,7 @@ object Resolver {
         case _ => List.empty[ResolvedAst.Constraint.Rule].toSuccess
       }
 
-      @@(wast.declarations map (d => visit(d, List.empty))) map (xs => xs.flatten)
+      @@(wast.decls map (d => visit(d, List.empty))) map (xs => xs.flatten)
     }
   }
 
