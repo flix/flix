@@ -276,8 +276,19 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   object Literals {
 
-    def Bool: Rule1[ParsedAst.Literal.Bool] = rule {
-      SP ~ capture(atomic("true") | atomic("false")) ~ SP ~> ParsedAst.Literal.Bool
+    def Bool: Rule1[ParsedAst.Literal] = {
+
+      def True: Rule1[ParsedAst.Literal.True] = rule {
+        SP ~ atomic("true") ~ SP ~> ParsedAst.Literal.True
+      }
+
+      def False: Rule1[ParsedAst.Literal.False] = rule {
+        SP ~ atomic("false") ~ SP ~> ParsedAst.Literal.False
+      }
+
+      rule {
+        True | False
+      }
     }
 
     def Char: Rule1[ParsedAst.Literal.Char] = rule {

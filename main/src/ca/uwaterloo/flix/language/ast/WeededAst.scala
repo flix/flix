@@ -49,244 +49,71 @@ object WeededAst {
 
   }
 
-  /**
-    * A common super-type for AST node that represents literals.
-    */
+  // TODO: To be eliminated.
   sealed trait Literal extends WeededAst {
-    /**
-      * Returns the source location of `this` literal.
-      */
     def loc: SourceLocation
   }
 
   object Literal {
 
-    /**
-      * An AST node that represents a unit literal
-      *
-      * @param loc the source location of the literal.
-      */
     case class Unit(loc: SourceLocation) extends WeededAst.Literal
 
-    /**
-      * An AST node that represents a boolean literal.
-      *
-      * @param lit the boolean literal.
-      * @param loc the source location of the literal.
-      */
-    case class Bool(lit: scala.Boolean, loc: SourceLocation) extends WeededAst.Literal
+    case class True(loc: SourceLocation) extends WeededAst.Literal
 
-    /**
-      * An AST node that represents an char literal.
-      *
-      * @param lit the char literal.
-      * @param loc the source location of the literal.
-      */
+    case class False(loc: SourceLocation) extends WeededAst.Literal
+
     case class Char(lit: scala.Char, loc: SourceLocation) extends WeededAst.Literal
 
-    /**
-      * An AST node that represents a float32 literal.
-      *
-      * @param lit the float32 literal.
-      * @param loc the source location of the literal.
-      */
     case class Float32(lit: scala.Float, loc: SourceLocation) extends WeededAst.Literal
 
-    /**
-      * An AST node that represents a float64 literal.
-      *
-      * @param lit the float64 literal.
-      * @param loc the source location of the literal.
-      */
     case class Float64(lit: scala.Double, loc: SourceLocation) extends WeededAst.Literal
 
-    /**
-      * An AST node that represents an int8 literal.
-      *
-      * @param lit the int8 literal.
-      * @param loc the source location of the literal
-      */
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends WeededAst.Literal
 
-    /**
-      * An AST node that represents an int16 literal.
-      *
-      * @param lit the int16 literal.
-      * @param loc the source location of the literal
-      */
     case class Int16(lit: scala.Short, loc: SourceLocation) extends WeededAst.Literal
 
-    /**
-      * An AST node that represents an int32 literal.
-      *
-      * @param lit the int32 literal.
-      * @param loc the source location of the literal
-      */
     case class Int32(lit: scala.Int, loc: SourceLocation) extends WeededAst.Literal
 
-    /**
-      * An AST node that represents an int64 literal.
-      *
-      * @param lit the int64 literal.
-      * @param loc the source location of the literal
-      */
     case class Int64(lit: scala.Long, loc: SourceLocation) extends WeededAst.Literal
 
-    /**
-      * An AST node that represents a string literal.
-      *
-      * @param lit the string literal.
-      * @param loc the source location of the literal.
-      */
     case class Str(lit: java.lang.String, loc: SourceLocation) extends WeededAst.Literal
 
   }
 
-  /**
-    * A common super-type for AST nodes representing expressions.
-    */
   sealed trait Expression extends WeededAst {
-    /**
-      * Returns the source location of `this` expression.
-      */
     def loc: SourceLocation
   }
 
   object Expression {
 
-    /**
-      * An AST node that represents a literal expressions.
-      *
-      * @param lit the literal.
-      * @param loc the source location.
-      */
     case class Lit(lit: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Expression
 
-    /**
-      * An AST node that represents a variable or unresolved reference.
-      *
-      * @param name the unresolved name.
-      * @param loc  the source location.
-      */
     case class Var(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
-    /**
-      * An AST node that represents a lambda expressions.
-      *
-      * @param annotations the annotations.
-      * @param formals     the formal arguments.
-      * @param body        the body expression.
-      * @param retTpe      the declared return type.
-      * @param loc         the source location.
-      */
     case class Lambda(annotations: Ast.Annotations, formals: List[WeededAst.FormalArg], body: WeededAst.Expression, retTpe: Type, loc: SourceLocation) extends WeededAst.Expression
 
-    /**
-      * An AST node that represents a call expression.
-      *
-      * @param lambda the lambda expression.
-      * @param args   the argument expressions.
-      * @param loc    the source location.
-      */
     case class Apply(lambda: WeededAst.Expression, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    /**
-      * An AST node that represents a unary expression.
-      *
-      * @param op  the unary operator.
-      * @param e   the nested expression.
-      * @param loc the source location.
-      */
     case class Unary(op: UnaryOperator, e: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    /**
-      * An AST node that represents a binary expression.
-      *
-      * @param op  the binary operator.
-      * @param e1  the lhs expression.
-      * @param e2  the rhs expression.
-      * @param loc the source location.
-      */
     case class Binary(op: BinaryOperator, e1: WeededAst.Expression, e2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    /**
-      * An AST node that represents an if-then-else expression.
-      *
-      * @param e1  the conditional expression.
-      * @param e2  the consequent expression.
-      * @param e3  the alternate expression.
-      * @param loc the source location.
-      */
     case class IfThenElse(e1: WeededAst.Expression, e2: WeededAst.Expression, e3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    /**
-      * An AST node that represents a switch expression.
-      *
-      * @param rules the rules of the switch.
-      * @param loc   the source location.
-      */
     case class Switch(rules: List[(WeededAst.Expression, WeededAst.Expression)], loc: SourceLocation) extends WeededAst.Expression
 
-    /**
-      * An AST node that represents a let expression.
-      *
-      * @param ident the name of the bound variable.
-      * @param value the value expression.
-      * @param body  the body expression in which the let-bound variable occurs.
-      * @param loc   the source location.
-      */
     case class Let(ident: Name.Ident, value: WeededAst.Expression, body: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    /**
-      * An AST node that represents a match expression.
-      *
-      * @param e   the match value expression.
-      * @param rs  the match rules.
-      * @param loc the source location.
-      */
     case class Match(e: WeededAst.Expression, rs: List[(WeededAst.Pattern, WeededAst.Expression)], loc: SourceLocation) extends WeededAst.Expression
 
-    /**
-      * An AST node that represents a tagged expression.
-      *
-      * @param enum the enum name.
-      * @param tag  the tag name.
-      * @param e    the tagged expression.
-      * @param loc  the source location.
-      */
     case class Tag(enum: Name.QName, tag: Name.Ident, e: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    /**
-      * An AST node that represents a tuple expression.
-      *
-      * @param elms the elements of the tuple.
-      * @param loc  the source location.
-      */
     case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    /**
-      * An AST node that represents a set expression.
-      *
-      * @param elms the elements of the set.
-      * @param loc  the source location.
-      */
     case class Set(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    /**
-      * An AST node that represents an ascribe expression.
-      *
-      * @param e   the ascribed expression.
-      * @param tpe the ascribed type.
-      * @param loc the source location.
-      */
     case class Ascribe(e: WeededAst.Expression, tpe: Type, loc: SourceLocation) extends WeededAst.Expression
 
-    /**
-      * An AST node that represents an error expression.
-      *
-      * @param tpe the type of the expression.
-      * @param loc the source location.
-      */
     case class Error(tpe: Type, loc: SourceLocation) extends WeededAst.Expression
 
   }

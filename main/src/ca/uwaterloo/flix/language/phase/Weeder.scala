@@ -517,11 +517,11 @@ object Weeder {
       case ParsedAst.Literal.Unit(sp1, sp2) =>
         WeededAst.Literal.Unit(mkSL(sp1, sp2)).toSuccess
 
-      case ParsedAst.Literal.Bool(sp1, lit, sp2) => lit match {
-        case "true" => WeededAst.Literal.Bool(lit = true, mkSL(sp1, sp2)).toSuccess
-        case "false" => WeededAst.Literal.Bool(lit = false, mkSL(sp1, sp2)).toSuccess
-        case _ => throw InternalCompilerException("Non-true/false boolean.")
-      }
+      case ParsedAst.Literal.True(sp1, sp2) =>
+        WeededAst.Literal.True(mkSL(sp1, sp2)).toSuccess
+
+      case ParsedAst.Literal.False(sp1, sp2) =>
+        WeededAst.Literal.False(mkSL(sp1, sp2)).toSuccess
 
       case ParsedAst.Literal.Char(sp1, lit, sp2) =>
         WeededAst.Literal.Char(lit(0), mkSL(sp1, sp2)).toSuccess
@@ -556,6 +556,9 @@ object Weeder {
   }
 
   object Expression {
+
+
+
     /**
       * Compiles the parsed expression `past` to a weeded expression.
       */

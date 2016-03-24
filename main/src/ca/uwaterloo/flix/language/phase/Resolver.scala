@@ -570,7 +570,8 @@ object Resolver {
     def resolve(wast: WeededAst.Literal, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Literal, ResolverError] = {
       def visit(wast: WeededAst.Literal): Validation[ResolvedAst.Literal, ResolverError] = wast match {
         case WeededAst.Literal.Unit(loc) => ResolvedAst.Literal.Unit(loc).toSuccess
-        case WeededAst.Literal.Bool(b, loc) => ResolvedAst.Literal.Bool(b, loc).toSuccess
+        case WeededAst.Literal.True(loc) => ResolvedAst.Literal.Bool(true, loc).toSuccess
+        case WeededAst.Literal.False(loc) => ResolvedAst.Literal.Bool(false, loc).toSuccess
         case WeededAst.Literal.Char(c, loc) => ResolvedAst.Literal.Char(c, loc).toSuccess
         case WeededAst.Literal.Float32(f, loc) => ResolvedAst.Literal.Float32(f, loc).toSuccess
         case WeededAst.Literal.Float64(f, loc) => ResolvedAst.Literal.Float64(f, loc).toSuccess

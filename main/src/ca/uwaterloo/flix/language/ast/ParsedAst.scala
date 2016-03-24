@@ -236,13 +236,20 @@ object ParsedAst {
     case class Unit(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
-      * Boolean Literal.
+      * True Literal.
       *
       * @param sp1 the position of the first character in the literal.
-      * @param lit the boolean literal.
       * @param sp2 the position of the last character in the literal.
       */
-    case class Bool(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class True(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Literal
+
+    /**
+      * False Literal.
+      *
+      * @param sp1 the position of the first character in the literal.
+      * @param sp2 the position of the last character in the literal.
+      */
+    case class False(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Char Literal.
