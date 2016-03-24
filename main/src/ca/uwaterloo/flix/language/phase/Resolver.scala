@@ -593,9 +593,18 @@ object Resolver {
       */
     def resolve(wast: WeededAst.Expression, namespace: List[String], syms: SymbolTable, locals: Set[String] = Set.empty): Validation[ResolvedAst.Expression, ResolverError] = {
       def visit(wast: WeededAst.Expression, locals: Set[String]): Validation[ResolvedAst.Expression, ResolverError] = wast match {
-        case WeededAst.Expression.Lit(wlit, loc) => Literal.resolve(wlit, namespace, syms) map {
-          case lit => ResolvedAst.Expression.Lit(lit, loc)
-        }
+
+        case WeededAst.Expression.Unit(loc) => ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit(loc), loc).toSuccess
+        case WeededAst.Expression.True(loc) => ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, loc), loc).toSuccess
+        case WeededAst.Expression.False(loc) => ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(false, loc), loc).toSuccess
+        case WeededAst.Expression.Char(c, loc) => ResolvedAst.Expression.Lit(ResolvedAst.Literal.Char(c, loc), loc).toSuccess
+        case WeededAst.Expression.Float32(f, loc) => ResolvedAst.Expression.Lit(ResolvedAst.Literal.Float32(f, loc), loc).toSuccess
+        case WeededAst.Expression.Float64(f, loc) => ResolvedAst.Expression.Lit(ResolvedAst.Literal.Float64(f, loc), loc).toSuccess
+        case WeededAst.Expression.Int8(i, loc) => ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int8(i, loc), loc).toSuccess
+        case WeededAst.Expression.Int16(i, loc) => ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int16(i, loc), loc).toSuccess
+        case WeededAst.Expression.Int32(i, loc) => ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int32(i, loc), loc).toSuccess
+        case WeededAst.Expression.Int64(i, loc) => ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int64(i, loc), loc).toSuccess
+        case WeededAst.Expression.Str(s, loc) => ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str(s, loc), loc).toSuccess
 
         case WeededAst.Expression.Var(name, loc) =>
           if (!name.isQualified && locals.contains(name.ident.name))

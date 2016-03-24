@@ -86,7 +86,31 @@ object WeededAst {
 
   object Expression {
 
-    case class Lit(lit: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Expression
+    case class Unit(loc: SourceLocation) extends WeededAst.Expression
+
+    case class True(loc: SourceLocation) extends WeededAst.Expression
+
+    case class False(loc: SourceLocation) extends WeededAst.Expression
+
+    case class Char(lit: scala.Char, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Float32(lit: scala.Float, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Float64(lit: scala.Double, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Int8(lit: scala.Byte, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Int16(lit: scala.Short, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Int32(lit: scala.Int, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Int64(lit: scala.Long, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Str(lit: java.lang.String, loc: SourceLocation) extends WeededAst.Expression
+
+
+
+
 
     case class Var(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 

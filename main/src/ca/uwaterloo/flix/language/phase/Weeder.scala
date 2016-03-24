@@ -512,7 +512,6 @@ object Weeder {
     /**
       * Compiles the parsed literal `past` to a weeded literal.
       */
-    // TODO: check bounds etc
     def compile(past: ParsedAst.Literal): Validation[WeededAst.Literal, WeederError] = past match {
       case ParsedAst.Literal.Unit(sp1, sp2) =>
         WeededAst.Literal.Unit(mkSL(sp1, sp2)).toSuccess
@@ -527,37 +526,92 @@ object Weeder {
         WeededAst.Literal.Char(lit(0), mkSL(sp1, sp2)).toSuccess
 
       case ParsedAst.Literal.Float32(sp1, sign, before, after, sp2) =>
-        val s = if (sign) s"-$before.$after" else s"$before.$after"
-        WeededAst.Literal.Float32(s.toFloat, mkSL(sp1, sp2)).toSuccess
+        toFloat32(sign, before, after) map {
+          case lit => WeededAst.Literal.Float32(lit, mkSL(sp1, sp2))
+        }
 
       case ParsedAst.Literal.Float64(sp1, sign, before, after, sp2) =>
-        val s = if (sign) s"-$before.$after" else s"$before.$after"
-        WeededAst.Literal.Float64(s.toDouble, mkSL(sp1, sp2)).toSuccess
+        toFloat64(sign, before, after) map {
+          case lit => WeededAst.Literal.Float64(lit, mkSL(sp1, sp2))
+        }
 
-      case ParsedAst.Literal.Int8(sp1, sign, lit, sp2) =>
-        val s = if (sign) "-" + lit else lit
-        WeededAst.Literal.Int8(s.toByte, mkSL(sp1, sp2)).toSuccess
+      case ParsedAst.Literal.Int8(sp1, sign, digits, sp2) =>
+        toInt8(sign, digits) map {
+          case lit => WeededAst.Literal.Int8(lit, mkSL(sp1, sp2))
+        }
 
-      case ParsedAst.Literal.Int16(sp1, sign, lit, sp2) =>
-        val s = if (sign) "-" + lit else lit
-        WeededAst.Literal.Int16(s.toShort, mkSL(sp1, sp2)).toSuccess
+      case ParsedAst.Literal.Int16(sp1, sign, digits, sp2) =>
+        toInt16(sign, digits) map {
+          case lit => WeededAst.Literal.Int16(lit, mkSL(sp1, sp2))
+        }
 
-      case ParsedAst.Literal.Int32(sp1, sign, lit, sp2) =>
-        val s = if (sign) "-" + lit else lit
-        WeededAst.Literal.Int32(s.toInt, mkSL(sp1, sp2)).toSuccess
+      case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) =>
+        toInt32(sign, digits) map {
+          case lit => WeededAst.Literal.Int32(lit, mkSL(sp1, sp2))
+        }
 
-      case ParsedAst.Literal.Int64(sp1, sign, lit, sp2) =>
-        val s = if (sign) "-" + lit else lit
-        WeededAst.Literal.Int64(s.toLong, mkSL(sp1, sp2)).toSuccess
+      case ParsedAst.Literal.Int64(sp1, sign, digits, sp2) =>
+        toInt64(sign, digits) map {
+          case lit => WeededAst.Literal.Int64(lit, mkSL(sp1, sp2))
+        }
 
       case ParsedAst.Literal.Str(sp1, lit, sp2) =>
         WeededAst.Literal.Str(lit, mkSL(sp1, sp2)).toSuccess
     }
   }
 
+
   object Expression {
 
+    /**
+      * Compiles the parsed literal `lit` to a weeded expression.
+      */
+    def toExpression(past: ParsedAst.Literal): Validation[WeededAst.Expression, WeederError] = past match {
+      case ParsedAst.Literal.Unit(sp1, sp2) =>
+        WeededAst.Expression.Unit(mkSL(sp1, sp2)).toSuccess
 
+      case ParsedAst.Literal.True(sp1, sp2) =>
+        WeededAst.Expression.True(mkSL(sp1, sp2)).toSuccess
+
+      case ParsedAst.Literal.False(sp1, sp2) =>
+        WeededAst.Expression.False(mkSL(sp1, sp2)).toSuccess
+
+      case ParsedAst.Literal.Char(sp1, lit, sp2) =>
+        WeededAst.Expression.Char(lit(0), mkSL(sp1, sp2)).toSuccess
+
+      case ParsedAst.Literal.Float32(sp1, sign, before, after, sp2) =>
+        toFloat32(sign, before, after) map {
+          case lit => WeededAst.Expression.Float32(lit, mkSL(sp1, sp2))
+        }
+
+      case ParsedAst.Literal.Float64(sp1, sign, before, after, sp2) =>
+        toFloat64(sign, before, after) map {
+          case lit => WeededAst.Expression.Float64(lit, mkSL(sp1, sp2))
+        }
+
+      case ParsedAst.Literal.Int8(sp1, sign, digits, sp2) =>
+        toInt8(sign, digits) map {
+          case lit => WeededAst.Expression.Int8(lit, mkSL(sp1, sp2))
+        }
+
+      case ParsedAst.Literal.Int16(sp1, sign, digits, sp2) =>
+        toInt16(sign, digits) map {
+          case lit => WeededAst.Expression.Int16(lit, mkSL(sp1, sp2))
+        }
+
+      case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) =>
+        toInt32(sign, digits) map {
+          case lit => WeededAst.Expression.Int32(lit, mkSL(sp1, sp2))
+        }
+
+      case ParsedAst.Literal.Int64(sp1, sign, digits, sp2) =>
+        toInt64(sign, digits) map {
+          case lit => WeededAst.Expression.Int64(lit, mkSL(sp1, sp2))
+        }
+
+      case ParsedAst.Literal.Str(sp1, lit, sp2) =>
+        WeededAst.Expression.Str(lit, mkSL(sp1, sp2)).toSuccess
+    }
 
     /**
       * Compiles the parsed expression `past` to a weeded expression.
@@ -569,10 +623,7 @@ object Weeder {
       case ParsedAst.Expression.Var(sp1, name, sp2) =>
         WeededAst.Expression.Var(name, mkSL(sp1, sp2)).toSuccess
 
-      case ParsedAst.Expression.Lit(sp1, lit, sp2) =>
-        Literals.compile(lit) map {
-          case lit => WeededAst.Expression.Lit(lit, mkSL(sp1, sp2))
-        }
+      case ParsedAst.Expression.Lit(sp1, lit, sp2) => toExpression(lit)
 
       case ParsedAst.Expression.Apply(sp1, lambda, actuals, sp2) =>
         @@(compile(lambda), @@(actuals map compile)) map {
@@ -682,8 +733,7 @@ object Weeder {
       case ParsedAst.Expression.Tag(sp1, enum, tag, o, sp2) => o match {
         case None =>
           val loc = mkSL(sp1, sp2)
-          val lit = WeededAst.Literal.Unit(loc)
-          val exp = WeededAst.Expression.Lit(lit, loc)
+          val exp = WeededAst.Expression.Unit(loc)
           WeededAst.Expression.Tag(enum, tag, exp, loc).toSuccess
         case Some(exp) => compile(exp) map {
           case e => WeededAst.Expression.Tag(enum, tag, e, mkSL(sp1, sp2))
@@ -694,8 +744,7 @@ object Weeder {
         @@(elms map compile) map {
           case Nil =>
             val loc = mkSL(sp1, sp2)
-            val lit = WeededAst.Literal.Unit(loc)
-            WeededAst.Expression.Lit(lit, loc)
+            WeededAst.Expression.Unit(loc)
           case x :: Nil => x
           case xs => WeededAst.Expression.Tuple(xs, mkSL(sp1, sp2))
         }
@@ -953,6 +1002,38 @@ object Weeder {
         case _ => IllegalAnnotation(past.name, loc).toFailure
       }
     }
+  }
+
+
+  // TODO: Bounds
+  def toFloat32(sign: Boolean, before: String, after: String): Validation[Float, WeederError] = {
+    val s = if (sign) s"-$before.$after" else s"$before.$after"
+    s.toFloat.toSuccess
+  }
+
+  def toFloat64(sign: Boolean, before: String, after: String): Validation[Double, WeederError] = {
+    val s = if (sign) s"-$before.$after" else s"$before.$after"
+    s.toDouble.toSuccess
+  }
+
+  def toInt8(sign: Boolean, digits: String): Validation[Byte, WeederError] = {
+    val s = if (sign) "-" + digits else digits
+    s.toByte.toSuccess
+  }
+
+  def toInt16(sign: Boolean, digits: String): Validation[Short, WeederError] = {
+    val s = if (sign) "-" + digits else digits
+    s.toShort.toSuccess
+  }
+
+  def toInt32(sign: Boolean, digits: String): Validation[Int, WeederError] = {
+    val s = if (sign) "-" + digits else digits
+    s.toInt.toSuccess
+  }
+
+  def toInt64(sign: Boolean, digits: String): Validation[Long, WeederError] = {
+    val s = if (sign) "-" + digits else digits
+    s.toLong.toSuccess
   }
 
   /**
