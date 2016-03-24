@@ -412,12 +412,12 @@ object ParsedAst {
     /**
       * Apply Expression (function call).
       *
-      * @param sp1     the position of the first character in the expression.
-      * @param lambda  the lambda expression.
-      * @param actuals the actual arguments.
-      * @param sp2     the position of the last character in the expression.
+      * @param sp1    the position of the first character in the expression.
+      * @param lambda the lambda expression.
+      * @param args   the arguments.
+      * @param sp2    the position of the last character in the expression.
       */
-    case class Apply(sp1: SourcePosition, lambda: ParsedAst.Expression, actuals: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Apply(sp1: SourcePosition, lambda: ParsedAst.Expression, args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Infix Expression (function call).
@@ -633,22 +633,6 @@ object ParsedAst {
     case class UserError(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Bot Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Bot(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Top Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Top(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Existentially Quantified Expression.
       *
       * @param sp1    the position of the first character in the expression.
@@ -668,6 +652,21 @@ object ParsedAst {
       */
     case class Universal(sp1: SourcePosition, params: Seq[Ast.FormalParam], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
+    /**
+      * Bot Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Bot(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Top Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Top(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
   }
 
   /**
@@ -916,12 +915,12 @@ object ParsedAst {
     /**
       * Apply Term.
       *
-      * @param sp1    the position of the first character in the term.
-      * @param name   the name of the function.
-      * @param params the arguments to the function.
-      * @param sp2    the position of the last character in the term.
+      * @param sp1  the position of the first character in the term.
+      * @param name the name of the function.
+      * @param args the arguments to the function.
+      * @param sp2  the position of the last character in the term.
       */
-    case class Apply(sp1: SourcePosition, name: Name.QName, params: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term
+    case class Apply(sp1: SourcePosition, name: Name.QName, args: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term
 
   }
 

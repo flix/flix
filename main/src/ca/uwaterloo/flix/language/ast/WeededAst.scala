@@ -20,7 +20,7 @@ object WeededAst {
 
     case class Namespace(name: Name.NName, decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Definition(ident: Name.Ident, params: List[WeededAst.FormalArg], exp: WeededAst.Expression, tpe: Type, loc: SourceLocation) extends WeededAst.Declaration
+    case class Definition(ident: Name.Ident, params: List[Ast.FormalParam], exp: WeededAst.Expression, tpe: Type, loc: SourceLocation) extends WeededAst.Declaration
 
     case class Enum(ident: Name.Ident, cases: Map[String, Type.UnresolvedTag], loc: SourceLocation) extends WeededAst.Declaration
 
@@ -43,9 +43,9 @@ object WeededAst {
 
   object Table {
 
-    case class Relation(ident: Name.Ident, attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Table
+    case class Relation(ident: Name.Ident, attr: List[Ast.Attribute], loc: SourceLocation) extends WeededAst.Table
 
-    case class Lattice(ident: Name.Ident, keys: List[WeededAst.Attribute], value: WeededAst.Attribute, loc: SourceLocation) extends WeededAst.Table
+    case class Lattice(ident: Name.Ident, keys: List[Ast.Attribute], value: Ast.Attribute, loc: SourceLocation) extends WeededAst.Table
 
   }
 
@@ -86,6 +86,10 @@ object WeededAst {
 
   object Expression {
 
+    case class Wild(loc: SourceLocation) extends WeededAst.Expression
+
+    case class Var(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
+
     case class Unit(loc: SourceLocation) extends WeededAst.Expression
 
     case class True(loc: SourceLocation) extends WeededAst.Expression
@@ -108,37 +112,33 @@ object WeededAst {
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends WeededAst.Expression
 
-
-
-
-
-    case class Var(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Lambda(annotations: Ast.Annotations, formals: List[WeededAst.FormalArg], body: WeededAst.Expression, retTpe: Type, loc: SourceLocation) extends WeededAst.Expression
-
     case class Apply(lambda: WeededAst.Expression, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Unary(op: UnaryOperator, e: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class Lambda(annotations: Ast.Annotations, params: List[Ast.FormalParam], exp: WeededAst.Expression, retTpe: Type, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Binary(op: BinaryOperator, e1: WeededAst.Expression, e2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class Unary(op: UnaryOperator, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class IfThenElse(e1: WeededAst.Expression, e2: WeededAst.Expression, e3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class Binary(op: BinaryOperator, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class IfThenElse(exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Let(ident: Name.Ident, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Match(exp: WeededAst.Expression, rules: List[(WeededAst.Pattern, WeededAst.Expression)], loc: SourceLocation) extends WeededAst.Expression
 
     case class Switch(rules: List[(WeededAst.Expression, WeededAst.Expression)], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Let(ident: Name.Ident, value: WeededAst.Expression, body: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Match(e: WeededAst.Expression, rs: List[(WeededAst.Pattern, WeededAst.Expression)], loc: SourceLocation) extends WeededAst.Expression
-
-    case class Tag(enum: Name.QName, tag: Name.Ident, e: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class Tag(enum: Name.QName, tag: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+
+    // TODO: Add remaining exprs.
 
     case class Set(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class Ascribe(e: WeededAst.Expression, tpe: Type, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Error(tpe: Type, loc: SourceLocation) extends WeededAst.Expression
+    case class UserError(tpe: Type, loc: SourceLocation) extends WeededAst.Expression
 
   }
 
@@ -367,21 +367,5 @@ object WeededAst {
     }
 
   }
-
-  /**
-    * An AST node that represents an attribute in a relation.
-    *
-    * @param ident the name of the attribute.
-    * @param tpe   the declared type of the attribute.
-    */
-  case class Attribute(ident: Name.Ident, tpe: Type) extends WeededAst
-
-  /**
-    * An AST node representing a formal argument of a function.
-    *
-    * @param ident the name of the argument.
-    * @param tpe   the type of the argument.
-    */
-  case class FormalArg(ident: Name.Ident, tpe: Type) extends WeededAst
 
 }

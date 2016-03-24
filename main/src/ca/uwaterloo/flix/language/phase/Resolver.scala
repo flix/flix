@@ -460,7 +460,7 @@ object Resolver {
       @@(Expression.resolve(wast.exp, namespace, syms, locals), Types.resolve(wast.tpe, namespace, syms)) flatMap {
         case (e, tpe) =>
           val formalsVal = wast.params.map {
-            case WeededAst.FormalArg(ident, tpe) => Types.resolve(tpe, namespace, syms) map {
+            case Ast.FormalParam(ident, tpe) => Types.resolve(tpe, namespace, syms) map {
               case t => ResolvedAst.FormalArg(ident, t)
             }
           }
@@ -512,7 +512,7 @@ object Resolver {
       val symVal = syms.lookupTable(wast.ident, namespace)
 
       val attributesVal = wast.attr.map {
-        case WeededAst.Attribute(ident, tpe) =>
+        case Ast.Attribute(ident, tpe) =>
           Types.resolve(tpe, namespace, syms) map (t => ResolvedAst.Attribute(ident, t))
       }
 
@@ -525,7 +525,7 @@ object Resolver {
       val symVal = syms.lookupTable(wast.ident, namespace)
 
       val keysVal = wast.keys.map {
-        case WeededAst.Attribute(ident, tpe) => Types.resolve(tpe, namespace: List[String], syms) map (t => ResolvedAst.Attribute(ident, t))
+        case Ast.Attribute(ident, tpe) => Types.resolve(tpe, namespace: List[String], syms) map (t => ResolvedAst.Attribute(ident, t))
       }
 
       val valueVal = Types.resolve(wast.value.tpe, namespace: List[String], syms) map {
@@ -627,7 +627,7 @@ object Resolver {
 
         case WeededAst.Expression.Lambda(annotations, wformals, wbody, wtype, loc) =>
           val formalsVal = @@(wformals map {
-            case WeededAst.FormalArg(ident, tpe) => Types.resolve(tpe, namespace, syms) flatMap {
+            case Ast.FormalParam(ident, tpe) => Types.resolve(tpe, namespace, syms) flatMap {
               case t =>
                 if (ident.name.head.isLower)
                   ResolvedAst.FormalArg(ident, t).toSuccess
@@ -718,7 +718,7 @@ object Resolver {
             case (e, tpe) => ResolvedAst.Expression.Ascribe(e, tpe, loc)
           }
 
-        case WeededAst.Expression.Error(wtype, loc) =>
+        case WeededAst.Expression.UserError(wtype, loc) =>
           Types.resolve(wtype, namespace, syms) map {
             case tpe => ResolvedAst.Expression.Error(tpe, loc)
           }

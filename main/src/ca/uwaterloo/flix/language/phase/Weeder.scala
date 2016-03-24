@@ -429,14 +429,15 @@ object Weeder {
       val annotationsVal = Annotations.compile(past.ann)
 
       // TODO: Need to move certain annotations to each lattice valued argument...?
+        // TODO: Can avoid map?
 
       // check duplicate formals.
       val seen = mutable.Map.empty[String, Name.Ident]
       val formalsVal = @@(past.params.map {
-        case Ast.FormalParam(ident, tpe) => seen.get(ident.name) match {
+        case formal@Ast.FormalParam(ident, tpe) => seen.get(ident.name) match {
           case None =>
             seen += (ident.name -> ident)
-            WeededAst.FormalArg(ident, tpe).toSuccess
+            formal.toSuccess
           case Some(otherIdent) =>
             DuplicateFormal(ident.name, otherIdent.loc, ident.loc).toFailure
         }
@@ -485,12 +486,13 @@ object Weeder {
       */
     def compile(past: ParsedAst.Declaration.Relation): Validation[WeededAst.Table.Relation, WeederError] = {
       // check for duplicate attributes.
+      // TODO: Cleanup, can void the map?
       val seen = mutable.Map.empty[String, Name.Ident]
       val attributesVal = past.attr.map {
-        case Ast.Attribute(ident, tpe) => seen.get(ident.name) match {
+        case attr@Ast.Attribute(ident, tpe) => seen.get(ident.name) match {
           case None =>
             seen += (ident.name -> ident)
-            WeededAst.Attribute(ident, tpe).toSuccess
+            attr.toSuccess
           case Some(otherIdent) =>
             DuplicateAttribute(ident.name, otherIdent.loc, ident.loc).toFailure
         }
@@ -507,11 +509,12 @@ object Weeder {
     def compile(past: ParsedAst.Declaration.Lattice): Validation[WeededAst.Table.Lattice, WeederError] = {
       // check for duplicate attributes.
       val seen = mutable.Map.empty[String, Name.Ident]
+      // TODO: Cleanup, can void the map?
       val attributesVal = past.attr.map {
-        case Ast.Attribute(ident, tpe) => seen.get(ident.name) match {
+        case attr@Ast.Attribute(ident, tpe) => seen.get(ident.name) match {
           case None =>
             seen += (ident.name -> ident)
-            WeededAst.Attribute(ident, tpe).toSuccess
+            attr.toSuccess
           case Some(otherIdent) =>
             DuplicateAttribute(ident.name, otherIdent.loc, ident.loc).toFailure
         }
@@ -802,7 +805,7 @@ object Weeder {
         }
 
       case ParsedAst.Expression.UserError(sp1, sp2) =>
-        WeededAst.Expression.Error(Type.Bool /* TODO */ , mkSL(sp1, sp2)).toSuccess
+        WeededAst.Expression.UserError(Type.Bool /* TODO */ , mkSL(sp1, sp2)).toSuccess
 
       case ParsedAst.Expression.Bot(sp1, sp2) =>
         val ident = Name.Ident(sp1, "⊥", sp2)
