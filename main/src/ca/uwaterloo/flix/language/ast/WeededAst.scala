@@ -248,157 +248,63 @@ object WeededAst {
 
   }
 
-  /**
-    * A common super-type for AST nodes that represent predicates.
-    */
   sealed trait Predicate extends WeededAst
 
   object Predicate {
 
-    /**
-      * A common super-type for AST nodes that represents head predicates.
-      */
     sealed trait Head extends WeededAst.Predicate
 
     object Head {
 
-      /**
-        * An AST node that represents a relational predicate.
-        *
-        * @param name  the name of the relation.
-        * @param terms the terms of the predicate.
-        * @param loc   the source location.
-        */
       case class Relation(name: Name.QName, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 
     }
 
-    /**
-      * A common super-type for AST nodes that represents body predicates.
-      */
     sealed trait Body extends WeededAst.Predicate
 
     object Body {
 
-      /**
-        * An AST node that represent an ambiguous predicate.
-        *
-        * @param name  the name of the function or relation.
-        * @param terms the terms of the predicate.
-        * @param loc   the source location.
-        */
       case class Ambiguous(name: Name.QName, terms: List[WeededAst.Term.Body], loc: SourceLocation) extends WeededAst.Predicate.Body
 
-      /**
-        * An AST node that represents the special not equal predicate.
-        *
-        * @param ident1 the name of the first variable.
-        * @param ident2 the name of the second variable.
-        * @param loc    the source location.
-        */
       case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, loc: SourceLocation) extends WeededAst.Predicate.Body
 
-      /**
-        * An AST node that represents the special loop predicate.
-        *
-        * @param ident the loop variable.
-        * @param term  the set term.
-        * @param loc   the source location.
-        */
       case class Loop(ident: Name.Ident, term: WeededAst.Term.Head, loc: SourceLocation) extends WeededAst.Predicate.Body
 
     }
 
   }
 
-  /**
-    * A common super-type for AST nodes that represent terms.
-    */
   sealed trait Term extends WeededAst {
-    /**
-      * The source location of `this` term.
-      */
     def loc: SourceLocation
   }
 
   object Term {
 
-    /**
-      * A common super-type for AST nodes that represents head terms.
-      */
     sealed trait Head extends WeededAst.Term
 
     object Head {
 
-      /**
-        * A variable term.
-        *
-        * @param ident the name of the variable.
-        * @param loc   the source location.
-        */
       case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Term.Head
 
-      /**
-        * A literal term
-        *
-        * @param lit the literal.
-        * @param loc the source location.
-        */
       case class Lit(lit: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Term.Head
 
       case class Tag(enumName: Name.QName, tagName: Name.Ident, t: WeededAst.Term.Head, loc: SourceLocation) extends WeededAst.Term.Head
 
       case class Tuple(elms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Term.Head
 
-      /**
-        * An apply term (function call).
-        *
-        * @param name the name of the function.
-        * @param args the arguments to the function. 
-        * @param loc  the source location.
-        */
       case class Apply(name: Name.QName, args: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Term.Head
 
     }
 
-    /**
-      * A common super-type for AST nodes that represents body terms.
-      */
     sealed trait Body extends WeededAst.Term
 
     object Body {
 
-      /**
-        * A wildcard variable.
-        *
-        * @param loc the source location.
-        */
       case class Wildcard(loc: SourceLocation) extends WeededAst.Term.Body
 
-      /**
-        * A variable term.
-        *
-        * @param ident the name of the variable.
-        * @param loc   the source location.
-        */
       case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Term.Body
 
-      /**
-        * A literal term
-        *
-        * @param lit the literal.
-        * @param loc the source location.
-        */
       case class Lit(lit: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Term.Body
-
-      /**
-        * An ascribe term.
-        *
-        * @param term the ascribed term.
-        * @param tpe  the typed of the ascribed term.
-        * @param loc  the source location.
-        */
-      case class Ascribe(term: Body, tpe: Type, loc: SourceLocation) extends WeededAst.Term.Body
 
     }
 

@@ -875,10 +875,6 @@ object Resolver {
         case WeededAst.Term.Body.Lit(wlit, loc) => Literal.resolve(wlit, namespace, syms) map {
           case lit => ResolvedAst.Term.Body.Lit(lit, loc)
         }
-        case WeededAst.Term.Body.Ascribe(wterm, wtpe, loc) =>
-          @@(resolve(wterm, namespace, syms), Types.resolve(wtpe, namespace, syms)) map {
-            case (term, tpe) => ResolvedAst.Term.Body.Ascribe(term, tpe, loc)
-          }
       }
     }
 
