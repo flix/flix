@@ -395,7 +395,7 @@ object Weeder {
     /**
       * Compiles the given parsed function declaration `past` to a weeded definition.
       */
-    def compile(past: ParsedAst.Declaration.Definition): Validation[WeededAst.Definition.Constant, WeederError] = {
+    def compile(past: ParsedAst.Declaration.Definition): Validation[WeededAst.Declaration.Definition, WeederError] = {
       val annotationsVal = Annotations.compile(past.ann)
 
       // TODO: Need to move certain annotations to each lattice valued argument...?
@@ -415,7 +415,7 @@ object Weeder {
       @@(annotationsVal, formalsVal, Expression.compile(past.exp)) map {
         case (anns, args, exp) =>
           val tpe = Type.Lambda(args map (_.tpe), past.tpe)
-          WeededAst.Definition.Constant(past.ident, args, exp, tpe, mkSL(past.sp1, past.sp2))
+          WeededAst.Declaration.Definition(past.ident, args, exp, tpe, mkSL(past.sp1, past.sp2))
       }
     }
 
@@ -424,7 +424,7 @@ object Weeder {
       *
       * Returns [[Failure]] if the same tag name occurs twice.
       */
-    def compile(past: ParsedAst.Declaration.Enum): Validation[WeededAst.Definition.Enum, WeederError] = {
+    def compile(past: ParsedAst.Declaration.Enum): Validation[WeededAst.Declaration.Enum, WeederError] = {
       // check duplicate tags.
       Validation.fold[ParsedAst.Case, Map[String, Type.UnresolvedTag], WeederError](past.cases, Map.empty) {
         case (macc, caze: ParsedAst.Case) =>
@@ -434,18 +434,18 @@ object Weeder {
             case Some(otherTag) => DuplicateTag(tagName, otherTag.tag.loc, mkSL(caze.sp1, caze.sp2)).toFailure
           }
       } map {
-        case m => WeededAst.Definition.Enum(past.ident, m, mkSL(past.sp1, past.sp2))
+        case m => WeededAst.Declaration.Enum(past.ident, m, mkSL(past.sp1, past.sp2))
       }
     }
 
     /**
       * Compiles the given parsed lattice `past` to a weeded lattice definition.
       */
-    def compile(past: ParsedAst.Declaration.BoundedLattice): Validation[WeededAst.Definition.BoundedLattice, WeederError] = {
+    def compile(past: ParsedAst.Declaration.BoundedLattice): Validation[WeededAst.Declaration.BoundedLattice, WeederError] = {
       // check lattice definition.
       val elmsVal = @@(past.elms.toList.map(Expression.compile))
       elmsVal flatMap {
-        case List(bot, top, leq, lub, glb) => WeededAst.Definition.BoundedLattice(past.tpe, bot, top, leq, lub, glb, mkSL(past.sp1, past.sp2)).toSuccess
+        case List(bot, top, leq, lub, glb) => WeededAst.Declaration.BoundedLattice(past.tpe, bot, top, leq, lub, glb, mkSL(past.sp1, past.sp2)).toSuccess
         case _ => IllegalLattice(mkSL(past.sp1, past.sp2)).toFailure
       }
     }
@@ -495,7 +495,7 @@ object Weeder {
     /**
       * Compiles the given parsed index definition `past` to a weeded index definition.
       */
-    def compile(past: ParsedAst.Declaration.Index): Validation[WeededAst.Definition.Index, WeederError] = {
+    def compile(past: ParsedAst.Declaration.Index): Validation[WeededAst.Declaration.Index, WeederError] = {
       if (past.indexes.isEmpty)
         return MissingIndex(mkSL(past.sp1, past.sp2)).toFailure
 
@@ -503,7 +503,7 @@ object Weeder {
         return IllegalIndex(mkSL(past.sp1, past.sp2)).toFailure
       }
 
-      WeededAst.Definition.Index(past.ident, past.indexes, mkSL(past.sp1, past.sp2)).toSuccess
+      WeededAst.Declaration.Index(past.ident, past.indexes, mkSL(past.sp1, past.sp2)).toSuccess
     }
 
   }

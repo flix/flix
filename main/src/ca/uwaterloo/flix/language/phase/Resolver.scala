@@ -147,7 +147,7 @@ object Resolver {
       * @param tag  the tag name.
       * @param loc  the source location of the reference.
       */
-    case class UnresolvedTagReference(enum: WeededAst.Definition.Enum, tag: String, loc: SourceLocation) extends ResolverError {
+    case class UnresolvedTagReference(enum: WeededAst.Declaration.Enum, tag: String, loc: SourceLocation) extends ResolverError {
       val message = {
         val tags = enum.cases.keySet
         val formattedTags = tags.map(t => "'" + t + "'").mkString(", ")
@@ -210,16 +210,16 @@ object Resolver {
   // TODO: Come up with a SymbolTable that can give the set of definitions in each namespace.
 
 
-  case class SymbolTable(enums: Map[Symbol.Resolved, WeededAst.Definition.Enum],
-                         constants: Map[Symbol.Resolved, WeededAst.Definition.Constant],
-                         lattices: Map[Type, (List[String], WeededAst.Definition.BoundedLattice)],
+  case class SymbolTable(enums: Map[Symbol.Resolved, WeededAst.Declaration.Enum],
+                         constants: Map[Symbol.Resolved, WeededAst.Declaration.Definition],
+                         lattices: Map[Type, (List[String], WeededAst.Declaration.BoundedLattice)],
                          tables: Map[Symbol.TableSym, WeededAst.Table],
-                         indexes: Map[Symbol.TableSym, WeededAst.Definition.Index],
+                         indexes: Map[Symbol.TableSym, WeededAst.Declaration.Index],
                          types: Map[Symbol.Resolved, Type],
                          hooks: Map[Symbol.Resolved, Ast.Hook]) {
 
     // TODO: Cleanup
-    def lookupConstant(name: Name.QName, namespace: List[String]): Validation[(Symbol.Resolved, Either[WeededAst.Definition.Constant, Ast.Hook]), ResolverError] = {
+    def lookupConstant(name: Name.QName, namespace: List[String]): Validation[(Symbol.Resolved, Either[WeededAst.Declaration.Definition, Ast.Hook]), ResolverError] = {
       val rname = Symbol.Resolved.mk(
         if (!name.isQualified)
           namespace ::: name.ident.name :: Nil
@@ -240,7 +240,7 @@ object Resolver {
 
     // TODO: Cleanup
     @deprecated
-    def lookupEnum(name: Name.QName, namespace: List[String]): Validation[(Symbol.Resolved, WeededAst.Definition.Enum), ResolverError] = {
+    def lookupEnum(name: Name.QName, namespace: List[String]): Validation[(Symbol.Resolved, WeededAst.Declaration.Enum), ResolverError] = {
       val rname = Symbol.Resolved.mk(
         if (!name.isQualified)
           namespace ::: name.ident.name :: Nil
@@ -313,15 +313,15 @@ object Resolver {
     symsVal flatMap {
       case syms =>
 
-        val collectedConstants = Validation.fold[Symbol.Resolved, WeededAst.Definition.Constant, Symbol.Resolved, ResolvedAst.Definition.Constant, ResolverError](syms.constants) {
+        val collectedConstants = Validation.fold[Symbol.Resolved, WeededAst.Declaration.Definition, Symbol.Resolved, ResolvedAst.Definition.Constant, ResolverError](syms.constants) {
           case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
         }
 
-        val collectedEnums = Validation.fold[Symbol.Resolved, WeededAst.Definition.Enum, Symbol.Resolved, ResolvedAst.Definition.Enum, ResolverError](syms.enums) {
+        val collectedEnums = Validation.fold[Symbol.Resolved, WeededAst.Declaration.Enum, Symbol.Resolved, ResolvedAst.Definition.Enum, ResolverError](syms.enums) {
           case (k, v) => Definition.resolve(v, k.parts.dropRight(1), syms) map (d => k -> d)
         }
 
-        val collectedLattices = Validation.fold[Type, (List[String], WeededAst.Definition.BoundedLattice), Type, ResolvedAst.Definition.BoundedLattice, ResolverError](syms.lattices) {
+        val collectedLattices = Validation.fold[Type, (List[String], WeededAst.Declaration.BoundedLattice), Type, ResolvedAst.Definition.BoundedLattice, ResolverError](syms.lattices) {
           case (k, (namespace, v)) => Types.resolve(k, namespace, syms) flatMap {
             case tpe => Definition.resolve(v, namespace, syms) map (d => tpe -> d)
           }
@@ -331,7 +331,7 @@ object Resolver {
           case (k, v) => Tables.resolve2(v, k.namespace, syms) map (d => k -> d)
         }
 
-        val collectedIndexes = Validation.fold[Symbol.TableSym, WeededAst.Definition.Index, Symbol.TableSym, ResolvedAst.Definition.Index, ResolverError](syms.indexes) {
+        val collectedIndexes = Validation.fold[Symbol.TableSym, WeededAst.Declaration.Index, Symbol.TableSym, ResolvedAst.Definition.Index, ResolverError](syms.indexes) {
           case (k, v) => Indexes.resolve(v, k.namespace, syms) map (d => k -> d)
         }
 
@@ -358,14 +358,8 @@ object Resolver {
         }
       case WeededAst.Declaration.Fact(head, loc) => syms.toSuccess
       case WeededAst.Declaration.Rule(head, body, loc) => syms.toSuccess
-      case defn: WeededAst.Definition => symbolsOf(defn, namespace, syms)
-    }
 
-    /**
-      * Constructs the symbol for the given definition `wast`.
-      */
-    def symbolsOf(wast: WeededAst.Definition, namespace: List[String], syms: SymbolTable): Validation[SymbolTable, ResolverError] = wast match {
-      case defn@WeededAst.Definition.Constant(ident, formals, tpe, e, loc) =>
+      case defn@WeededAst.Declaration.Definition(ident, formals, tpe, e, loc) =>
         val rname = toRName(ident, namespace)
         syms.constants.get(rname) match {
           case None =>
@@ -376,7 +370,7 @@ object Resolver {
           case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.loc, ident.loc).toFailure
         }
 
-      case defn@WeededAst.Definition.Enum(ident, cases, loc) =>
+      case defn@WeededAst.Declaration.Enum(ident, cases, loc) =>
         val rname = toRName(ident, namespace)
         val cases = defn.cases.map { case (k, Type.UnresolvedTag(_, tag, tpe)) => k -> Type.Tag(rname, tag, tpe) }
         syms.enums.get(rname) match {
@@ -387,9 +381,25 @@ object Resolver {
           case Some(otherDefn) => DuplicateDefinition(rname, otherDefn.ident.loc, ident.loc).toFailure
         }
 
-      case defn@WeededAst.Definition.BoundedLattice(tpe, bot, top, leq, lub, glb, loc) =>
+      case defn@WeededAst.Declaration.BoundedLattice(tpe, bot, top, leq, lub, glb, loc) =>
         syms.copy(lattices = syms.lattices + (tpe ->(namespace, defn))).toSuccess
 
+      case defn@WeededAst.Declaration.Index(ident, indexes, loc) =>
+        val sym = new Symbol.TableSym(namespace, ident.name, loc)
+
+        syms.indexes.get(sym) match {
+          case None =>
+            if (ident.name.head.isLower)
+              IllegalRelationName(ident.name, ident.loc).toFailure // TODO: Rename error
+            else
+              syms.copy(indexes = syms.indexes + (sym -> defn)).toSuccess
+          case Some(otherDefn) => throw new RuntimeException() // TODO
+        }
+
+      case t: WeededAst.Table => symbolsOf2(t, namespace, syms)
+    }
+
+    def symbolsOf2(wast: WeededAst.Table, namespace: List[String], syms: SymbolTable): Validation[SymbolTable, ResolverError] = wast match {
       case defn@WeededAst.Table.Relation(ident, attributes, loc) =>
         val sym = new Symbol.TableSym(namespace, ident.name, loc)
         syms.tables.get(sym) match {
@@ -411,20 +421,6 @@ object Resolver {
               syms.copy(tables = syms.tables + (sym -> defn)).toSuccess
           case Some(otherDefn) => DuplicateDefinition(sym, otherDefn.ident.loc, ident.loc).toFailure
         }
-
-      case defn@WeededAst.Definition.Index(ident, indexes, loc) =>
-        val sym = new Symbol.TableSym(namespace, ident.name, loc)
-
-        syms.indexes.get(sym) match {
-          case None =>
-            if (ident.name.head.isLower)
-              IllegalRelationName(ident.name, ident.loc).toFailure // TODO: Rename error
-            else
-              syms.copy(indexes = syms.indexes + (sym -> defn)).toSuccess
-          case Some(otherDefn) => throw new RuntimeException() // TODO
-        }
-
-
     }
 
     def collectFacts(wast: WeededAst.Root, syms: SymbolTable): Validation[List[ResolvedAst.Constraint.Fact], ResolverError] = {
@@ -456,14 +452,14 @@ object Resolver {
       * Performs symbol resolution for the given value definition `wast`.
       */
     // TODO: Pattern match on wast?
-    def resolve(wast: WeededAst.Definition.Constant, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Constant, ResolverError] = {
+    def resolve(wast: WeededAst.Declaration.Definition, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Constant, ResolverError] = {
       val name = Symbol.Resolved.mk(namespace ::: wast.ident.name :: Nil)
 
-      val locals = wast.formals.map(_.ident.name).toSet
+      val locals = wast.params.map(_.ident.name).toSet
 
-      @@(Expression.resolve(wast.e, namespace, syms, locals), Types.resolve(wast.tpe, namespace, syms)) flatMap {
+      @@(Expression.resolve(wast.exp, namespace, syms, locals), Types.resolve(wast.tpe, namespace, syms)) flatMap {
         case (e, tpe) =>
-          val formalsVal = wast.formals.map {
+          val formalsVal = wast.params.map {
             case WeededAst.FormalArg(ident, tpe) => Types.resolve(tpe, namespace, syms) map {
               case t => ResolvedAst.FormalArg(ident, t)
             }
@@ -475,7 +471,7 @@ object Resolver {
     }
 
     // TODO: Pattern match on wast?
-    def resolve(wast: WeededAst.Definition.Enum, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Enum, ResolverError] = {
+    def resolve(wast: WeededAst.Declaration.Enum, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Enum, ResolverError] = {
       val name = Symbol.Resolved.mk(namespace ::: wast.ident.name :: Nil)
 
       val casesVal = Validation.fold[String, Type.UnresolvedTag, String, Type.Tag, ResolverError](wast.cases) {
@@ -489,7 +485,7 @@ object Resolver {
       }
     }
 
-    def resolve(wast: WeededAst.Definition.BoundedLattice, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.BoundedLattice, ResolverError] = {
+    def resolve(wast: WeededAst.Declaration.BoundedLattice, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.BoundedLattice, ResolverError] = {
       val tpeVal = Types.resolve(wast.tpe, namespace, syms)
       val botVal = Expression.resolve(wast.bot, namespace, syms)
       val topVal = Expression.resolve(wast.top, namespace, syms)
@@ -515,7 +511,7 @@ object Resolver {
     def resolve2(wast: WeededAst.Table.Relation, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Table.Relation, ResolverError] = {
       val symVal = syms.lookupTable(wast.ident, namespace)
 
-      val attributesVal = wast.attributes.map {
+      val attributesVal = wast.attr.map {
         case WeededAst.Attribute(ident, tpe) =>
           Types.resolve(tpe, namespace, syms) map (t => ResolvedAst.Attribute(ident, t))
       }
@@ -544,7 +540,7 @@ object Resolver {
 
   object Indexes {
 
-    def resolve(wast: WeededAst.Definition.Index, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Index, ResolverError] = {
+    def resolve(wast: WeededAst.Declaration.Index, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Index, ResolverError] = {
       syms.lookupTable(wast.ident, namespace) map {
         case (sym, table) => ResolvedAst.Definition.Index(sym, wast.indexes, wast.loc)
       }

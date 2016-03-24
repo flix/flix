@@ -10,131 +10,44 @@ object WeededAst {
 
   case class Root(decls: List[WeededAst.Declaration]) extends WeededAst
 
-  /**
-    * A common super-type for AST nodes that represents declarations.
-    */
   sealed trait Declaration extends WeededAst {
-    /**
-      * Returns the source location of `this` declaration.
-      */
     def loc: SourceLocation
   }
 
   object Declaration {
 
-    /**
-      * An AST node that represents a namespace declaration.
-      *
-      * @param name the the namespace.
-      * @param body the nested declarations.
-      * @param loc  the source location.
-      */
-    case class Namespace(name: Name.NName, body: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
+    // TODO: Add missing declarations.
 
-    /**
-      * An AST node that a fact declaration.
-      *
-      * @param head the head predicate.
-      * @param loc  the source location.
-      */
+    case class Namespace(name: Name.NName, decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
+
+    case class Definition(ident: Name.Ident, params: List[WeededAst.FormalArg], exp: WeededAst.Expression, tpe: Type, loc: SourceLocation) extends WeededAst.Declaration
+
+    case class Enum(ident: Name.Ident, cases: Map[String, Type.UnresolvedTag], loc: SourceLocation) extends WeededAst.Declaration
+
+    case class Index(ident: Name.Ident, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends WeededAst.Declaration
+
     case class Fact(head: WeededAst.Predicate.Head, loc: SourceLocation) extends WeededAst.Declaration
 
-    /**
-      * An AST node that represents a rule declaration.
-      *
-      * @param head the head predicate.
-      * @param body the body predicate.
-      * @param loc  the source location.
-      */
     case class Rule(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation) extends WeededAst.Declaration
 
-  }
-
-  /**
-    * A common super-type for AST nodes that represents definitions.
-    */
-  sealed trait Definition extends WeededAst.Declaration
-
-  object Definition {
-
-    /**
-      * An AST node that represent a constant definition.
-      *
-      * @param ident the name of the constant.
-      * @param e     the named expression.
-      * @param tpe   the declared type of the expression.
-      * @param loc   the source location.
-      */
-    case class Constant(ident: Name.Ident, formals: List[WeededAst.FormalArg], e: WeededAst.Expression, tpe: Type, loc: SourceLocation) extends WeededAst.Definition
-
-    /**
-      * An AST node that represents an enum definition.
-      *
-      * @param ident the name of the enum.
-      * @param cases the cases of the enum.
-      * @param loc   the source location.
-      */
-    case class Enum(ident: Name.Ident, cases: Map[String, Type.UnresolvedTag], loc: SourceLocation) extends WeededAst.Definition
-
-    /**
-      * An AST node that represents a bounded lattice definition.
-      *
-      * @param tpe the type of the lattice elements.
-      * @param bot the bot element.
-      * @param top the top element.
-      * @param leq the partial order.
-      * @param lub the least upper bound.
-      * @param glb the greatest lower bound.
-      * @param loc the source location.
-      */
-    case class BoundedLattice(tpe: Type, bot: WeededAst.Expression, top: WeededAst.Expression, leq: WeededAst.Expression,
-                              lub: WeededAst.Expression, glb: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Definition
-
-
-    /**
-      * An AST node that represents an index definition.
-      *
-      * @param ident   the name of the relation or lattice.
-      * @param indexes the sequence of indexes.
-      * @param loc     the source location.
-      */
-    case class Index(ident: Name.Ident, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends WeededAst.Definition
+    @deprecated("Will be replaced by type classes", "0.1.0")
+    case class BoundedLattice(tpe: Type, bot: WeededAst.Expression, top: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, glb: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
   }
 
-  /**
-    * A common super-type for tables that are either relations or lattices.
-    */
-  sealed trait Table extends WeededAst.Definition {
-    /**
-      * The name of `this` collection.
-      */
+  sealed trait Table extends WeededAst.Declaration {
     def ident: Name.Ident
+
+    def loc: SourceLocation
   }
 
   object Table {
 
-    /**
-      * An AST node that represents a relation definition.
-      *
-      * @param ident      the name of the relation.
-      * @param attributes the attributes of the relation.
-      * @param loc        the source location of the relation.
-      */
-    case class Relation(ident: Name.Ident, attributes: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Table
+    case class Relation(ident: Name.Ident, attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Table
 
-    /**
-      * An AST node that represents a lattice definition.
-      *
-      * @param ident the name of the lattice.
-      * @param keys  the key attributes of the lattice.
-      * @param value the value attributes of the lattice.
-      * @param loc   the source location of the lattice.
-      */
     case class Lattice(ident: Name.Ident, keys: List[WeededAst.Attribute], value: WeededAst.Attribute, loc: SourceLocation) extends WeededAst.Table
 
   }
-
 
   /**
     * A common super-type for AST node that represents literals.
