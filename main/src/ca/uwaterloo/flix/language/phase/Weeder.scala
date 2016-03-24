@@ -131,6 +131,21 @@ object Weeder {
     }
 
     /**
+      * An error raised to indicate that an float is out of bounds.
+      *
+      * @param loc the location where the illegal float occurs.
+      */
+    case class IllegalFloat(loc: SourceLocation) extends WeederError {
+      val message =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> Illegal float.")}
+           |
+           |${loc.underline}
+         """.stripMargin
+    }
+
+    /**
       * An error raised to indicate that an index declaration defines no indexes.
       *
       * @param loc the location where the index declaration occurs.
@@ -223,6 +238,21 @@ object Weeder {
            |
             |${loc.underline}
            |$msg
+         """.stripMargin
+    }
+
+    /**
+      * An error raised to indicate that an int is out of bounds.
+      *
+      * @param loc the location where the illegal int occurs.
+      */
+    case class IllegalInt(loc: SourceLocation) extends WeederError {
+      val message =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> Illegal int.")}
+           |
+           |${loc.underline}
          """.stripMargin
     }
 
@@ -526,32 +556,32 @@ object Weeder {
         WeededAst.Literal.Char(lit(0), mkSL(sp1, sp2)).toSuccess
 
       case ParsedAst.Literal.Float32(sp1, sign, before, after, sp2) =>
-        toFloat32(sign, before, after) map {
+        toFloat32(sign, before, after, mkSL(sp1, sp2)) map {
           case lit => WeededAst.Literal.Float32(lit, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Literal.Float64(sp1, sign, before, after, sp2) =>
-        toFloat64(sign, before, after) map {
+        toFloat64(sign, before, after, mkSL(sp1, sp2)) map {
           case lit => WeededAst.Literal.Float64(lit, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Literal.Int8(sp1, sign, digits, sp2) =>
-        toInt8(sign, digits) map {
+        toInt8(sign, digits, mkSL(sp1, sp2)) map {
           case lit => WeededAst.Literal.Int8(lit, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Literal.Int16(sp1, sign, digits, sp2) =>
-        toInt16(sign, digits) map {
+        toInt16(sign, digits, mkSL(sp1, sp2)) map {
           case lit => WeededAst.Literal.Int16(lit, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) =>
-        toInt32(sign, digits) map {
+        toInt32(sign, digits, mkSL(sp1, sp2)) map {
           case lit => WeededAst.Literal.Int32(lit, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Literal.Int64(sp1, sign, digits, sp2) =>
-        toInt64(sign, digits) map {
+        toInt64(sign, digits, mkSL(sp1, sp2)) map {
           case lit => WeededAst.Literal.Int64(lit, mkSL(sp1, sp2))
         }
 
@@ -580,32 +610,32 @@ object Weeder {
         WeededAst.Expression.Char(lit(0), mkSL(sp1, sp2)).toSuccess
 
       case ParsedAst.Literal.Float32(sp1, sign, before, after, sp2) =>
-        toFloat32(sign, before, after) map {
+        toFloat32(sign, before, after, mkSL(sp1, sp2)) map {
           case lit => WeededAst.Expression.Float32(lit, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Literal.Float64(sp1, sign, before, after, sp2) =>
-        toFloat64(sign, before, after) map {
+        toFloat64(sign, before, after, mkSL(sp1, sp2)) map {
           case lit => WeededAst.Expression.Float64(lit, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Literal.Int8(sp1, sign, digits, sp2) =>
-        toInt8(sign, digits) map {
+        toInt8(sign, digits, mkSL(sp1, sp2)) map {
           case lit => WeededAst.Expression.Int8(lit, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Literal.Int16(sp1, sign, digits, sp2) =>
-        toInt16(sign, digits) map {
+        toInt16(sign, digits, mkSL(sp1, sp2)) map {
           case lit => WeededAst.Expression.Int16(lit, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) =>
-        toInt32(sign, digits) map {
+        toInt32(sign, digits, mkSL(sp1, sp2)) map {
           case lit => WeededAst.Expression.Int32(lit, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Literal.Int64(sp1, sign, digits, sp2) =>
-        toInt64(sign, digits) map {
+        toInt64(sign, digits, mkSL(sp1, sp2)) map {
           case lit => WeededAst.Expression.Int64(lit, mkSL(sp1, sp2))
         }
 
@@ -1005,35 +1035,64 @@ object Weeder {
   }
 
 
-  // TODO: Bounds
-  def toFloat32(sign: Boolean, before: String, after: String): Validation[Float, WeederError] = {
+  /**
+    * Attempts to parse the given float32 with `sign` digits `before` and `after` the comma.
+    */
+  def toFloat32(sign: Boolean, before: String, after: String, loc: SourceLocation): Validation[Float, WeederError] = try {
     val s = if (sign) s"-$before.$after" else s"$before.$after"
     s.toFloat.toSuccess
+  } catch {
+    case e: NumberFormatException => IllegalFloat(loc).toFailure
   }
 
-  def toFloat64(sign: Boolean, before: String, after: String): Validation[Double, WeederError] = {
+  /**
+    * Attempts to parse the given float64 with `sign` digits `before` and `after` the comma.
+    */
+  def toFloat64(sign: Boolean, before: String, after: String, loc: SourceLocation): Validation[Double, WeederError] = try {
     val s = if (sign) s"-$before.$after" else s"$before.$after"
     s.toDouble.toSuccess
+  } catch {
+    case e: NumberFormatException => IllegalFloat(loc).toFailure
   }
 
-  def toInt8(sign: Boolean, digits: String): Validation[Byte, WeederError] = {
+  /**
+    * Attempts to parse the given int8 with `sign` and `digits`.
+    */
+  def toInt8(sign: Boolean, digits: String, loc: SourceLocation): Validation[Byte, WeederError] = try {
     val s = if (sign) "-" + digits else digits
     s.toByte.toSuccess
+  } catch {
+    case ex: NumberFormatException => IllegalInt(loc).toFailure
   }
 
-  def toInt16(sign: Boolean, digits: String): Validation[Short, WeederError] = {
+  /**
+    * Attempts to parse the given int16 with `sign` and `digits`.
+    */
+  def toInt16(sign: Boolean, digits: String, loc: SourceLocation): Validation[Short, WeederError] = try {
     val s = if (sign) "-" + digits else digits
     s.toShort.toSuccess
+  } catch {
+    case ex: NumberFormatException => IllegalInt(loc).toFailure
   }
 
-  def toInt32(sign: Boolean, digits: String): Validation[Int, WeederError] = {
+  /**
+    * Attempts to parse the given int32 with `sign` and `digits`.
+    */
+  def toInt32(sign: Boolean, digits: String, loc: SourceLocation): Validation[Int, WeederError] = try {
     val s = if (sign) "-" + digits else digits
     s.toInt.toSuccess
+  } catch {
+    case ex: NumberFormatException => IllegalInt(loc).toFailure
   }
 
-  def toInt64(sign: Boolean, digits: String): Validation[Long, WeederError] = {
+  /**
+    * Attempts to parse the given int64 with `sign` and `digits`.
+    */
+  def toInt64(sign: Boolean, digits: String, loc: SourceLocation): Validation[Long, WeederError] = try {
     val s = if (sign) "-" + digits else digits
     s.toLong.toSuccess
+  } catch {
+    case ex: NumberFormatException => IllegalInt(loc).toFailure
   }
 
   /**
