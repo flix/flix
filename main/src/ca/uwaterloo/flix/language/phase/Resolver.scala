@@ -625,24 +625,7 @@ object Resolver {
             case (lambda, args) => ResolvedAst.Expression.Apply(lambda, args, loc)
           }
 
-        case WeededAst.Expression.Lambda(annotations, wformals, wbody, wtype, loc) =>
-          val formalsVal = @@(wformals map {
-            case Ast.FormalParam(ident, tpe) => Types.resolve(tpe, namespace, syms) flatMap {
-              case t =>
-                if (ident.name.head.isLower)
-                  ResolvedAst.FormalArg(ident, t).toSuccess
-                else
-                  IllegalVariableName(ident.name, ident.loc).toFailure
-            }
-          })
-
-          formalsVal flatMap {
-            case formals =>
-              val bindings = formals map (_.ident.name)
-              @@(Types.resolve(wtype, namespace, syms), visit(wbody, locals ++ bindings)) map {
-                case (tpe, body) => ResolvedAst.Expression.Lambda(annotations, formals, tpe, body, loc)
-              }
-          }
+        case WeededAst.Expression.Lambda(wformals, wbody, loc) => ???
 
         case WeededAst.Expression.Unary(op, we, loc) =>
           visit(we, locals) map (e => ResolvedAst.Expression.Unary(op, e, loc))
@@ -709,7 +692,7 @@ object Resolver {
           case elms => ResolvedAst.Expression.Tuple(elms, loc)
         }
 
-        case WeededAst.Expression.Set(welms, loc) => @@(welms map (e => visit(e, locals))) map {
+        case WeededAst.Expression.FSet(welms, loc) => @@(welms map (e => visit(e, locals))) map {
           case elms => ResolvedAst.Expression.Set(elms, loc)
         }
 
@@ -718,10 +701,17 @@ object Resolver {
             case (e, tpe) => ResolvedAst.Expression.Ascribe(e, tpe, loc)
           }
 
-        case WeededAst.Expression.UserError(wtype, loc) =>
-          Types.resolve(wtype, namespace, syms) map {
-            case tpe => ResolvedAst.Expression.Error(tpe, loc)
-          }
+        case WeededAst.Expression.UserError(loc) => ResolvedAst.Expression.Error(Type.Any, loc).toSuccess // TODO: type
+
+        case _: WeededAst.Expression.FNone => ???
+        case _: WeededAst.Expression.FSome => ???
+        case _: WeededAst.Expression.FNil => ???
+        case _: WeededAst.Expression.FList => ???
+        case _: WeededAst.Expression.FVec => ???
+        case _: WeededAst.Expression.FMap => ???
+        case _: WeededAst.Expression.Existential => ???
+        case _: WeededAst.Expression.Universal => ???
+
       }
 
       visit(wast, locals)
@@ -736,15 +726,25 @@ object Resolver {
       */
     def resolve(wast: WeededAst.Pattern, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Pattern, ResolverError] = {
       def visit(wast: WeededAst.Pattern): Validation[ResolvedAst.Pattern, ResolverError] = wast match {
-        case WeededAst.Pattern.Wildcard(location) => ResolvedAst.Pattern.Wildcard(location).toSuccess
+        case WeededAst.Pattern.Wild(location) => ResolvedAst.Pattern.Wildcard(location).toSuccess
         case WeededAst.Pattern.Var(ident, loc) =>
           if (ident.name.head.isLower)
             ResolvedAst.Pattern.Var(ident, loc).toSuccess
           else
             IllegalVariableName(ident.name, loc).toFailure
-        case WeededAst.Pattern.Lit(literal, loc) => Literal.resolve(literal, namespace, syms) map {
-          case lit => ResolvedAst.Pattern.Lit(lit, loc)
-        }
+
+        case WeededAst.Pattern.Unit(loc) => ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Unit(loc), loc).toSuccess
+        case WeededAst.Pattern.True(loc) => ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Bool(true, loc), loc).toSuccess
+        case WeededAst.Pattern.False(loc) => ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Bool(false, loc), loc).toSuccess
+        case WeededAst.Pattern.Char(lit, loc) => ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Char(lit, loc), loc).toSuccess
+        case WeededAst.Pattern.Float32(lit, loc) => ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Float32(lit, loc), loc).toSuccess
+        case WeededAst.Pattern.Float64(lit, loc) => ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Float64(lit, loc), loc).toSuccess
+        case WeededAst.Pattern.Int8(lit, loc) => ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Int8(lit, loc), loc).toSuccess
+        case WeededAst.Pattern.Int16(lit, loc) => ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Int16(lit, loc), loc).toSuccess
+        case WeededAst.Pattern.Int32(lit, loc) => ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Int32(lit, loc), loc).toSuccess
+        case WeededAst.Pattern.Int64(lit, loc) => ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Int64(lit, loc), loc).toSuccess
+        case WeededAst.Pattern.Str(lit, loc) => ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Str(lit, loc), loc).toSuccess
+
         case WeededAst.Pattern.Tag(enum, tag, wpat, loc) => syms.lookupEnum(enum, namespace) flatMap {
           case (rname, defn) => visit(wpat) flatMap {
             case pat =>

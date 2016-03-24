@@ -114,7 +114,7 @@ object WeededAst {
 
     case class Apply(lambda: WeededAst.Expression, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Lambda(annotations: Ast.Annotations, params: List[Ast.FormalParam], exp: WeededAst.Expression, retTpe: Type, loc: SourceLocation) extends WeededAst.Expression
+    case class Lambda(params: List[Name.Ident], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Unary(op: UnaryOperator, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
@@ -132,83 +132,117 @@ object WeededAst {
 
     case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    // TODO: Add remaining exprs.
+    case class FNone(loc: SourceLocation) extends WeededAst.Expression
 
-    case class Set(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+    case class FSome(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Ascribe(e: WeededAst.Expression, tpe: Type, loc: SourceLocation) extends WeededAst.Expression
+    case class FNil(loc: SourceLocation) extends WeededAst.Expression
 
-    case class UserError(tpe: Type, loc: SourceLocation) extends WeededAst.Expression
+    case class FList(hd: WeededAst.Expression, tl: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class FVec(elms: Seq[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+
+    case class FSet(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+
+    case class FMap(elms: Seq[(WeededAst.Expression, WeededAst.Expression)], loc: SourceLocation) extends WeededAst.Expression
+
+    case class GetIndex(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class PutIndex(exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Existential(params: Seq[Ast.FormalParam], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Universal(params: Seq[Ast.FormalParam], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Ascribe(exp: WeededAst.Expression, tpe: Type, loc: SourceLocation) extends WeededAst.Expression
+
+    case class UserError(loc: SourceLocation) extends WeededAst.Expression
 
   }
 
-  /**
-    * A common super-type for AST nodes that represent patterns.
-    */
   sealed trait Pattern extends WeededAst {
     /**
       * Returns the set of free variables in `this` pattern.
       */
+    // TODO: Move?
     def freeVars: Set[String] = this match {
-      case WeededAst.Pattern.Wildcard(_) => Set.empty
-      case WeededAst.Pattern.Var(ident, loc) => Set(ident.name)
-      case WeededAst.Pattern.Lit(lit, loc) => Set.empty
-      case WeededAst.Pattern.Tag(_name, ident, p, loc) => p.freeVars
-      case WeededAst.Pattern.Tuple(elms, loc) => elms.foldLeft(Set.empty[String]) {
+      case WeededAst.Pattern.Wild(_) => Set.empty
+      case WeededAst.Pattern.Var(ident, _) => Set(ident.name)
+      case WeededAst.Pattern.Unit(_) => Set.empty
+      case WeededAst.Pattern.True(_) => Set.empty
+      case WeededAst.Pattern.False(_) => Set.empty
+      case WeededAst.Pattern.Char(_, _) => Set.empty
+      case WeededAst.Pattern.Float32(_, _) => Set.empty
+      case WeededAst.Pattern.Float64(_, _) => Set.empty
+      case WeededAst.Pattern.Int8(_, _) => Set.empty
+      case WeededAst.Pattern.Int16(_, _) => Set.empty
+      case WeededAst.Pattern.Int32(_, _) => Set.empty
+      case WeededAst.Pattern.Int64(_, _) => Set.empty
+      case WeededAst.Pattern.Str(_, _) => Set.empty
+      case WeededAst.Pattern.Tag(_, _, p, _) => p.freeVars
+      case WeededAst.Pattern.Tuple(elms, _) => elms.foldLeft(Set.empty[String]) {
         case (acc, pat) => acc ++ pat.freeVars
       }
+      case WeededAst.Pattern.FNone(_) => Set.empty
+      case WeededAst.Pattern.FSome(p, _) => p.freeVars
+      case WeededAst.Pattern.FNil(_) => Set.empty
+      case WeededAst.Pattern.FList(hd, tl, _) => hd.freeVars ++ tl.freeVars
+      case WeededAst.Pattern.FVec(elms, rest, _) =>
+        elms.flatMap(_.freeVars).toSet ++ rest.map(_.freeVars).getOrElse(Set.empty)
+      case WeededAst.Pattern.FSet(elms, rest, _) =>
+        elms.flatMap(_.freeVars).toSet ++ rest.map(_.freeVars).getOrElse(Set.empty)
+      case WeededAst.Pattern.FMap(elms, rest, _) =>
+        ??? // TODO
     }
 
-    /**
-      * The source location of `this` pattern.
-      */
     def loc: SourceLocation
   }
 
   object Pattern {
 
-    /**
-      * An AST node that represents a wildcard pattern.
-      *
-      * @param loc the source location.
-      */
-    case class Wildcard(loc: SourceLocation) extends WeededAst.Pattern
+    case class Wild(loc: SourceLocation) extends WeededAst.Pattern
 
-    /**
-      * An AST node that represents a variable pattern.
-      *
-      * @param ident the name of the variable.
-      * @param loc   the source location.
-      */
     case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Pattern
 
-    /**
-      * An AST node that represents a literal pattern.
-      *
-      * @param lit the literal.
-      * @param loc the source location.
-      */
-    case class Lit(lit: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Pattern
+    case class Unit(loc: SourceLocation) extends WeededAst.Pattern
 
-    /**
-      * An AST node that represents a tagged pattern.
-      *
-      * @param enum the enum name.
-      * @param tag  the tag name.
-      * @param pat  the nested pattern.
-      * @param loc  the source location.
-      */
+    case class True(loc: SourceLocation) extends WeededAst.Pattern
+
+    case class False(loc: SourceLocation) extends WeededAst.Pattern
+
+    case class Char(lit: scala.Char, loc: SourceLocation) extends WeededAst.Pattern
+
+    case class Float32(lit: scala.Float, loc: SourceLocation) extends WeededAst.Pattern
+
+    case class Float64(lit: scala.Double, loc: SourceLocation) extends WeededAst.Pattern
+
+    case class Int8(lit: scala.Byte, loc: SourceLocation) extends WeededAst.Pattern
+
+    case class Int16(lit: scala.Short, loc: SourceLocation) extends WeededAst.Pattern
+
+    case class Int32(lit: scala.Int, loc: SourceLocation) extends WeededAst.Pattern
+
+    case class Int64(lit: scala.Long, loc: SourceLocation) extends WeededAst.Pattern
+
+    case class Str(lit: java.lang.String, loc: SourceLocation) extends WeededAst.Pattern
+
     case class Tag(enum: Name.QName, tag: Name.Ident, pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
 
-    /**
-      * An AST node that represents a tuple pattern.
-      *
-      * @param elms the elements of the tuple.
-      * @param loc  the source location.
-      */
     case class Tuple(elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
 
-    case class List(hd: WeededAst.Pattern, tl: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
+    case class FNone(loc: SourceLocation) extends WeededAst.Pattern
+
+    case class FSome(pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
+
+    case class FNil(loc: SourceLocation) extends WeededAst.Pattern
+
+    case class FList(hd: WeededAst.Pattern, tl: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
+
+    case class FVec(elms: List[WeededAst.Pattern], rest: Option[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
+
+    case class FSet(elms: List[WeededAst.Pattern], rest: Option[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
+
+    case class FMap(elms: List[(ParsedAst.Pattern, ParsedAst.Pattern)], rest: Option[ParsedAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
 
   }
 

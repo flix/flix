@@ -342,6 +342,7 @@ object ParsedAst {
     /**
       * Returns the left most source position in the sub-tree of `this` expression.
       */
+    // TODO: Move?
     def leftMostSourcePosition: SourcePosition = this match {
       case Expression.Wild(sp1, _) => sp1
       case Expression.Var(sp1, _, _) => sp1
@@ -367,12 +368,12 @@ object ParsedAst {
       case Expression.FMap(sp1, _, _) => sp1
       case Expression.GetIndex(sp1, _, _, _) => sp1
       case Expression.PutIndex(sp1, _, _, _, _) => sp1
+      case Expression.Existential(sp1, _, _, _) => sp1
+      case Expression.Universal(sp1, _, _, _) => sp1
       case Expression.Ascribe(sp1, _, _, _) => sp1
       case Expression.UserError(sp1, _) => sp1
       case Expression.Bot(sp1, sp2) => sp1
       case Expression.Top(sp1, sp2) => sp1
-      case Expression.Existential(sp1, _, _, _) => sp1
-      case Expression.Universal(sp1, _, _, _) => sp1
     }
 
   }
@@ -615,24 +616,6 @@ object ParsedAst {
     case class PutIndex(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Ascribe Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the expression.
-      * @param tpe the ascribed type.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Ascribe(sp1: SourcePosition, exp: ParsedAst.Expression, tpe: Type, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * User Error Expression (an expression that immediately aborts execution).
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class UserError(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Existentially Quantified Expression.
       *
       * @param sp1    the position of the first character in the expression.
@@ -651,6 +634,24 @@ object ParsedAst {
       * @param sp2    the position of the last character in the expression.
       */
     case class Universal(sp1: SourcePosition, params: Seq[Ast.FormalParam], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Ascribe Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression.
+      * @param tpe the ascribed type.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Ascribe(sp1: SourcePosition, exp: ParsedAst.Expression, tpe: Type, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * User Error Expression (an expression that immediately aborts execution).
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class UserError(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Bot Expression.
@@ -678,7 +679,7 @@ object ParsedAst {
       * Returns the left most source position in sub-tree of `this` pattern.
       */
     def leftMostSourcePosition: SourcePosition = this match {
-      case Pattern.Wildcard(sp1, _) => sp1
+      case Pattern.Wild(sp1, _) => sp1
       case Pattern.Var(sp1, _, _) => sp1
       case Pattern.Lit(sp1, _, _) => sp1
       case Pattern.Tag(sp1, _, _, _, _) => sp1
@@ -697,23 +698,6 @@ object ParsedAst {
   object Pattern {
 
     /**
-      * Wildcard Pattern.
-      *
-      * @param sp1 the position of the first character in the pattern.
-      * @param sp2 the position of the last character in the pattern.
-      */
-    case class Wildcard(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Pattern
-
-    /**
-      * Variable Pattern.
-      *
-      * @param sp1   the position of the first character in the pattern.
-      * @param ident the variable name.
-      * @param sp2   the position of the last character in the pattern.
-      */
-    case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Pattern
-
-    /**
       * Literal Pattern.
       *
       * Inlined by the Weeder.
@@ -723,6 +707,23 @@ object ParsedAst {
       * @param sp2 the position of the last character in the pattern.
       */
     case class Lit(sp1: SourcePosition, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Pattern
+
+    /**
+      * Wildcard Pattern.
+      *
+      * @param sp1 the position of the first character in the pattern.
+      * @param sp2 the position of the last character in the pattern.
+      */
+    case class Wild(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Pattern
+
+    /**
+      * Variable Pattern.
+      *
+      * @param sp1   the position of the first character in the pattern.
+      * @param ident the variable name.
+      * @param sp2   the position of the last character in the pattern.
+      */
+    case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * Tag Pattern.

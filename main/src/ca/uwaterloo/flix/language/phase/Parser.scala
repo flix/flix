@@ -533,8 +533,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       FNil | FNone | FSome | Tag | Literal | Tuple | FVec | FSet | FMap | Wildcard | Variable
     }
 
-    def Wildcard: Rule1[ParsedAst.Pattern.Wildcard] = rule {
-      SP ~ atomic("_") ~ SP ~> ParsedAst.Pattern.Wildcard
+    def Wildcard: Rule1[ParsedAst.Pattern.Wild] = rule {
+      SP ~ atomic("_") ~ SP ~> ParsedAst.Pattern.Wild
     }
 
     def Variable: Rule1[ParsedAst.Pattern.Var] = rule {
