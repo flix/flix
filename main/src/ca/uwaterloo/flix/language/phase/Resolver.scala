@@ -625,24 +625,7 @@ object Resolver {
             case (lambda, args) => ResolvedAst.Expression.Apply(lambda, args, loc)
           }
 
-        case WeededAst.Expression.Lambda(annotations, wformals, wbody, wtype, loc) =>
-          val formalsVal = @@(wformals map {
-            case Ast.FormalParam(ident, tpe) => Types.resolve(tpe, namespace, syms) flatMap {
-              case t =>
-                if (ident.name.head.isLower)
-                  ResolvedAst.FormalArg(ident, t).toSuccess
-                else
-                  IllegalVariableName(ident.name, ident.loc).toFailure
-            }
-          })
-
-          formalsVal flatMap {
-            case formals =>
-              val bindings = formals map (_.ident.name)
-              @@(Types.resolve(wtype, namespace, syms), visit(wbody, locals ++ bindings)) map {
-                case (tpe, body) => ResolvedAst.Expression.Lambda(annotations, formals, tpe, body, loc)
-              }
-          }
+        case WeededAst.Expression.Lambda(wformals, wbody, loc) => ???
 
         case WeededAst.Expression.Unary(op, we, loc) =>
           visit(we, locals) map (e => ResolvedAst.Expression.Unary(op, e, loc))
@@ -709,7 +692,7 @@ object Resolver {
           case elms => ResolvedAst.Expression.Tuple(elms, loc)
         }
 
-        case WeededAst.Expression.Set(welms, loc) => @@(welms map (e => visit(e, locals))) map {
+        case WeededAst.Expression.FSet(welms, loc) => @@(welms map (e => visit(e, locals))) map {
           case elms => ResolvedAst.Expression.Set(elms, loc)
         }
 
@@ -718,10 +701,17 @@ object Resolver {
             case (e, tpe) => ResolvedAst.Expression.Ascribe(e, tpe, loc)
           }
 
-        case WeededAst.Expression.UserError(wtype, loc) =>
-          Types.resolve(wtype, namespace, syms) map {
-            case tpe => ResolvedAst.Expression.Error(tpe, loc)
-          }
+        case WeededAst.Expression.UserError(loc) => ResolvedAst.Expression.Error(Type.Any, loc).toSuccess // TODO: type
+
+        case _: WeededAst.Expression.FNone => ???
+        case _: WeededAst.Expression.FSome => ???
+        case _: WeededAst.Expression.FNil => ???
+        case _: WeededAst.Expression.FList => ???
+        case _: WeededAst.Expression.FVec => ???
+        case _: WeededAst.Expression.FMap => ???
+        case _: WeededAst.Expression.Existential => ???
+        case _: WeededAst.Expression.Universal => ???
+
       }
 
       visit(wast, locals)

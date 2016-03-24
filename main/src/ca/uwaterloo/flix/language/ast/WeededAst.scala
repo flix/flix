@@ -114,7 +114,7 @@ object WeededAst {
 
     case class Apply(lambda: WeededAst.Expression, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Lambda(annotations: Ast.Annotations, params: List[Ast.FormalParam], exp: WeededAst.Expression, retTpe: Type, loc: SourceLocation) extends WeededAst.Expression
+    case class Lambda(params: List[Name.Ident], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Unary(op: UnaryOperator, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
@@ -132,13 +132,31 @@ object WeededAst {
 
     case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    // TODO: Add remaining exprs.
+    case class FNone(loc: SourceLocation) extends WeededAst.Expression
 
-    case class Set(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+    case class FSome(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Ascribe(e: WeededAst.Expression, tpe: Type, loc: SourceLocation) extends WeededAst.Expression
+    case class FNil(loc: SourceLocation) extends WeededAst.Expression
 
-    case class UserError(tpe: Type, loc: SourceLocation) extends WeededAst.Expression
+    case class FList(hd: WeededAst.Expression, tl: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class FVec(elms: Seq[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+
+    case class FSet(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+
+    case class FMap(elms: Seq[(WeededAst.Expression, WeededAst.Expression)], loc: SourceLocation) extends WeededAst.Expression
+
+    case class GetIndex(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class PutIndex(exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Existential(params: Seq[Ast.FormalParam], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Universal(params: Seq[Ast.FormalParam], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Ascribe(exp: WeededAst.Expression, tpe: Type, loc: SourceLocation) extends WeededAst.Expression
+
+    case class UserError(loc: SourceLocation) extends WeededAst.Expression
 
   }
 

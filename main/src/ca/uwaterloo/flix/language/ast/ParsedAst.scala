@@ -367,12 +367,12 @@ object ParsedAst {
       case Expression.FMap(sp1, _, _) => sp1
       case Expression.GetIndex(sp1, _, _, _) => sp1
       case Expression.PutIndex(sp1, _, _, _, _) => sp1
+      case Expression.Existential(sp1, _, _, _) => sp1
+      case Expression.Universal(sp1, _, _, _) => sp1
       case Expression.Ascribe(sp1, _, _, _) => sp1
       case Expression.UserError(sp1, _) => sp1
       case Expression.Bot(sp1, sp2) => sp1
       case Expression.Top(sp1, sp2) => sp1
-      case Expression.Existential(sp1, _, _, _) => sp1
-      case Expression.Universal(sp1, _, _, _) => sp1
     }
 
   }
@@ -615,24 +615,6 @@ object ParsedAst {
     case class PutIndex(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Ascribe Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the expression.
-      * @param tpe the ascribed type.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Ascribe(sp1: SourcePosition, exp: ParsedAst.Expression, tpe: Type, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * User Error Expression (an expression that immediately aborts execution).
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class UserError(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Existentially Quantified Expression.
       *
       * @param sp1    the position of the first character in the expression.
@@ -651,6 +633,24 @@ object ParsedAst {
       * @param sp2    the position of the last character in the expression.
       */
     case class Universal(sp1: SourcePosition, params: Seq[Ast.FormalParam], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Ascribe Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression.
+      * @param tpe the ascribed type.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Ascribe(sp1: SourcePosition, exp: ParsedAst.Expression, tpe: Type, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * User Error Expression (an expression that immediately aborts execution).
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class UserError(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Bot Expression.

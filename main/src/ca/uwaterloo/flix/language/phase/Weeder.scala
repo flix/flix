@@ -429,7 +429,7 @@ object Weeder {
       val annotationsVal = Annotations.compile(past.ann)
 
       // TODO: Need to move certain annotations to each lattice valued argument...?
-        // TODO: Can avoid map?
+      // TODO: Can avoid map?
 
       // check duplicate formals.
       val seen = mutable.Map.empty[String, Name.Ident]
@@ -597,7 +597,7 @@ object Weeder {
   object Expression {
 
     /**
-      * Compiles the parsed literal `lit` to a weeded expression.
+      * Compiles the parsed literal to a weeded expression.
       */
     def toExpression(past: ParsedAst.Literal): Validation[WeededAst.Expression, WeederError] = past match {
       case ParsedAst.Literal.Unit(sp1, sp2) =>
@@ -647,9 +647,9 @@ object Weeder {
     }
 
     /**
-      * Compiles the parsed expression `past` to a weeded expression.
+      * Compiles the parsed expression to a weeded expression.
       */
-    def compile(past: ParsedAst.Expression): Validation[WeededAst.Expression, WeederError] = past match {
+    def compile(expr: ParsedAst.Expression): Validation[WeededAst.Expression, WeederError] = expr match {
       case ParsedAst.Expression.Wild(sp1, sp2) =>
         IllegalWildcard(mkSL(sp1, sp2)).toFailure
 
@@ -658,19 +658,23 @@ object Weeder {
 
       case ParsedAst.Expression.Lit(sp1, lit, sp2) => toExpression(lit)
 
-      case ParsedAst.Expression.Apply(sp1, lambda, actuals, sp2) =>
-        @@(compile(lambda), @@(actuals map compile)) map {
-          case (lambda, args) => WeededAst.Expression.Apply(lambda, args, mkSL(sp1, sp2))
+      case ParsedAst.Expression.Apply(sp1, lambda, args, sp2) =>
+        @@(compile(lambda), @@(args map compile)) map {
+          case (e, as) => WeededAst.Expression.Apply(e, as, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Expression.Infix(exp1, name, exp2, sp2) =>
         @@(compile(exp1), compile(exp2)) map {
           case (e1, e2) =>
             val loc = mkSL(exp1.leftMostSourcePosition, sp2)
-            WeededAst.Expression.Apply(WeededAst.Expression.Var(name, loc), List(e1, e2), loc)
+            val e3 = WeededAst.Expression.Var(name, loc)
+            WeededAst.Expression.Apply(e3, List(e1, e2), loc)
         }
 
-      case ParsedAst.Expression.Lambda(sp1, formals, body, sp2) => ??? // TODO
+      case ParsedAst.Expression.Lambda(sp1, params, exp, sp2) =>
+        compile(exp) map {
+          case e => WeededAst.Expression.Lambda(params.toList, e, mkSL(sp1, sp2))
+        }
 
       case ParsedAst.Expression.Unary(sp1, op, exp, sp2) => compile(exp) map {
         case e => WeededAst.Expression.Unary(op, e, mkSL(sp1, sp2))
@@ -732,27 +736,19 @@ object Weeder {
             }
         }
 
-      case ParsedAst.Expression.LetMatch(sp1, pat, value, body, sp2) =>
-        // Compiles a let-match to either a regular let-binding or a pattern match.
-        @@(Patterns.compile(pat), compile(value), compile(body)) map {
-          case (WeededAst.Pattern.Var(ident, loc), value, body) =>
-            WeededAst.Expression.Let(ident, value, body, mkSL(sp1, sp2))
-          case (pattern, value, body) =>
-            val rules = List(pattern -> body)
-            WeededAst.Expression.Match(value, rules, mkSL(sp1, sp2))
-        }
-
       case ParsedAst.Expression.IfThenElse(sp1, exp1, exp2, exp3, sp2) =>
         @@(compile(exp1), compile(exp2), compile(exp3)) map {
           case (e1, e2, e3) => WeededAst.Expression.IfThenElse(e1, e2, e3, mkSL(sp1, sp2))
         }
 
-      case ParsedAst.Expression.Switch(sp1, rules, sp2) =>
-        val rulesVal = rules map {
-          case (cond, body) => @@(Expression.compile(cond), Expression.compile(body))
-        }
-        @@(rulesVal) map {
-          case rules => WeededAst.Expression.Switch(rules, mkSL(sp1, sp2))
+      case ParsedAst.Expression.LetMatch(sp1, pat, exp1, exp2, sp2) =>
+        // Compiles a let-match to a regular let-binding or a full-blown pattern match.
+        @@(Patterns.compile(pat), compile(exp1), compile(exp2)) map {
+          case (WeededAst.Pattern.Var(ident, loc), value, body) =>
+            WeededAst.Expression.Let(ident, value, body, mkSL(sp1, sp2))
+          case (pattern, value, body) =>
+            val rules = List(pattern -> body)
+            WeededAst.Expression.Match(value, rules, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Expression.Match(sp1, exp, rules, sp2) =>
@@ -761,6 +757,14 @@ object Weeder {
         }
         @@(compile(exp), @@(rulesVal)) map {
           case (e, rs) => WeededAst.Expression.Match(e, rs, mkSL(sp1, sp2))
+        }
+
+      case ParsedAst.Expression.Switch(sp1, rules, sp2) =>
+        val rulesVal = rules map {
+          case (cond, body) => @@(Expression.compile(cond), Expression.compile(body))
+        }
+        @@(rulesVal) map {
+          case rs => WeededAst.Expression.Switch(rs, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Expression.Tag(sp1, enum, tag, o, sp2) => o match {
@@ -782,22 +786,61 @@ object Weeder {
           case xs => WeededAst.Expression.Tuple(xs, mkSL(sp1, sp2))
         }
 
-      case ParsedAst.Expression.FNil(sp1, sp2) => ???
+      case ParsedAst.Expression.FNone(sp1, sp2) =>
+        WeededAst.Expression.FNone(mkSL(sp1, sp2)).toSuccess
 
-      case ParsedAst.Expression.FList(hd, tl, sp2) => ???
+      case ParsedAst.Expression.FSome(sp1, exp, sp2) =>
+        compile(exp) map {
+          case e => WeededAst.Expression.FSome(e, mkSL(sp1, sp2))
+        }
 
-      case ParsedAst.Expression.FNone(sp1, sp2) => ???
+      case ParsedAst.Expression.FNil(sp1, sp2) =>
+        WeededAst.Expression.FNil(mkSL(sp1, sp2)).toSuccess
 
-      case ParsedAst.Expression.FSome(sp1, elm, sp2) => ???
+      case ParsedAst.Expression.FList(hd, tl, sp2) =>
+        val sp1 = hd.leftMostSourcePosition
+        @@(compile(hd), compile(tl)) map {
+          case (e1, e2) => WeededAst.Expression.FList(e1, e2, mkSL(sp1, sp2))
+        }
 
-      case ParsedAst.Expression.FVec(sp1, elms, sp2) => ???
+      case ParsedAst.Expression.FVec(sp1, elms, sp2) =>
+        @@(elms map compile) map {
+          case es => WeededAst.Expression.FVec(es, mkSL(sp1, sp2))
+        }
 
       case ParsedAst.Expression.FSet(sp1, elms, sp2) =>
         @@(elms map compile) map {
-          case elms => WeededAst.Expression.Set(elms, mkSL(sp1, sp2))
+          case es => WeededAst.Expression.FSet(es, mkSL(sp1, sp2))
         }
 
-      case ParsedAst.Expression.FMap(sp1, elms, sp2) => ???
+      case ParsedAst.Expression.FMap(sp1, elms, sp2) =>
+        val elmsVal = elms map {
+          case (key, value) => @@(compile(key), compile(value))
+        }
+
+        @@(elmsVal) map {
+          case es => WeededAst.Expression.FMap(es, mkSL(sp1, sp2))
+        }
+
+      case ParsedAst.Expression.GetIndex(sp1, exp1, exp2, sp2) =>
+        @@(compile(exp1), compile(exp2)) map {
+          case (e1, e2) => WeededAst.Expression.GetIndex(e1, e2, mkSL(sp1, sp2))
+        }
+
+      case ParsedAst.Expression.PutIndex(sp1, exp1, exp2, exp3, sp2) =>
+        @@(compile(exp1), compile(exp2), compile(exp3)) map {
+          case (e1, e2, e3) => WeededAst.Expression.PutIndex(e1, e2, e3, mkSL(sp1, sp2))
+        }
+
+      case ParsedAst.Expression.Existential(sp1, params, exp, sp2) =>
+        compile(exp) map {
+          case e => WeededAst.Expression.Existential(params, e, mkSL(sp1, sp2))
+        }
+
+      case ParsedAst.Expression.Universal(sp1, params, exp, sp2) =>
+        compile(exp) map {
+          case e => WeededAst.Expression.Universal(params, e, mkSL(sp1, sp2))
+        }
 
       case ParsedAst.Expression.Ascribe(sp1, exp, tpe, sp2) =>
         compile(exp) map {
@@ -805,7 +848,7 @@ object Weeder {
         }
 
       case ParsedAst.Expression.UserError(sp1, sp2) =>
-        WeededAst.Expression.UserError(Type.Bool /* TODO */ , mkSL(sp1, sp2)).toSuccess
+        WeededAst.Expression.UserError(mkSL(sp1, sp2)).toSuccess
 
       case ParsedAst.Expression.Bot(sp1, sp2) =>
         val ident = Name.Ident(sp1, "⊥", sp2)
@@ -820,10 +863,6 @@ object Weeder {
         val name = Name.QName(sp1, namespace, ident, sp2)
         val lambda = WeededAst.Expression.Var(name, mkSL(sp1, sp2))
         WeededAst.Expression.Apply(lambda, List(), mkSL(sp1, sp2)).toSuccess
-
-      case ParsedAst.Expression.Existential(sp1, params, body, sp2) => ???
-
-      case ParsedAst.Expression.Universal(sp1, params, body, sp2) => ???
 
     }
   }
