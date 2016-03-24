@@ -11,10 +11,10 @@ sealed trait Validation[+Value, +Error] {
   import Validation._
 
   /**
-   * Returns a [[Success]] containing the result of applying `f` to the value in this validation (if it exists).
-   *
-   * Preserves the errors.
-   */
+    * Returns a [[Success]] containing the result of applying `f` to the value in this validation (if it exists).
+    *
+    * Preserves the errors.
+    */
   @inline
   final def map[Output](f: Value => Output): Validation[Output, Error] = this match {
     case Success(value, errors) => Success(f(value), errors)
@@ -22,10 +22,10 @@ sealed trait Validation[+Value, +Error] {
   }
 
   /**
-   * Similar to `map` but does not wrap the result in a [[Success]].
-   *
-   * Preserves the errors.
-   */
+    * Similar to `map` but does not wrap the result in a [[Success]].
+    *
+    * Preserves the errors.
+    */
   @inline
   final def flatMap[Output, A >: Error](f: Value => Validation[Output, A]): Validation[Output, A] = this match {
     case Success(input, errors) => f(input) match {
@@ -36,28 +36,28 @@ sealed trait Validation[+Value, +Error] {
   }
 
   /**
-   * Returns the errors in this [[Success]] or [[Failure]] object.
-   */
+    * Returns the errors in this [[Success]] or [[Failure]] object.
+    */
   def errors: Vector[Error]
 
   /**
-   * Returns `true` iff this is a [[Success]] object.
-   */
+    * Returns `true` iff this is a [[Success]] object.
+    */
   def isSuccess: Boolean = this match {
     case v: Success[Value, Error] => true
     case _ => false
   }
 
   /**
-   * Returns `true` iff this is a [[Failure]] object.
-   */
+    * Returns `true` iff this is a [[Failure]] object.
+    */
   def isFailure: Boolean = !isSuccess
 
   /**
-   * Returns the value inside `this` [[Success]] object.
-   *
-   * Throws an exception if `this` is a [[Failure]] object.
-   */
+    * Returns the value inside `this` [[Success]] object.
+    *
+    * Throws an exception if `this` is a [[Failure]] object.
+    */
   def get: Value = this match {
     case Success(value, errors) => value
     case Failure(errors) => throw new RuntimeException(s"Attempt to retrieve value from Failure. The errors are: ${errors.mkString(", ")}")
@@ -69,10 +69,10 @@ sealed trait Validation[+Value, +Error] {
 object Validation {
 
   /**
-   * Folds the given function `f` over all elements `xs`.
-   *
-   * Returns a sequence of successful elements wrapped in [[Success]].
-   */
+    * Folds the given function `f` over all elements `xs`.
+    *
+    * Returns a sequence of successful elements wrapped in [[Success]].
+    */
   @inline
   def fold[In, Out, Error](xs: Seq[In], zero: Out)(f: (Out, In) => Validation[Out, Error]): Validation[Out, Error] = {
     xs.foldLeft(Success(zero, Vector.empty[Error]): Validation[Out, Error]) {
@@ -83,8 +83,8 @@ object Validation {
   }
 
   /**
-   * TODO: DOC
-   */
+    * TODO: DOC
+    */
   // TODO: need foldMap, foldMapKeys, foldMapValues
   @inline
   def fold[K, V, K2, V2, Error](m: Map[K, V])(f: (K, V) => Validation[(K2, V2), Error]): Validation[Map[K2, V2], Error] =
@@ -97,10 +97,20 @@ object Validation {
     }
 
   /**
-   * Flattens a sequence of validations into one validation. Errors are concatenated.
-   *
-   * Returns [[Success]] if every element in `xs` is a [[Success]].
-   */
+    * TODO: DOC
+    */
+  @inline
+  def @@[Value, Error](o: Option[Validation[Value, Error]]): Validation[Option[Value], Error] = o match {
+    case None => Success(None, Vector.empty)
+    case Some(Success(v, errors)) => Success(Some(v), errors)
+    case Some(Failure(errors)) => Failure(errors)
+  }
+
+  /**
+    * Flattens a sequence of validations into one validation. Errors are concatenated.
+    *
+    * Returns [[Success]] if every element in `xs` is a [[Success]].
+    */
   @inline
   def @@[Value, Error](xs: Traversable[Validation[Value, Error]]): Validation[List[Value], Error] = {
     val zero = Success(List.empty[Value], Vector.empty[Error]): Validation[List[Value], Error]
@@ -117,8 +127,8 @@ object Validation {
   }
 
   /**
-   * Returns a sequence of values wrapped in a [[Success]] for every [[Success]] in `xs`. Errors are concatenated.
-   */
+    * Returns a sequence of values wrapped in a [[Success]] for every [[Success]] in `xs`. Errors are concatenated.
+    */
   @inline
   def collect[Value, Error](xs: Seq[Validation[Value, Error]]): Validation[Seq[Value], Error] = {
     val zero = Success(List.empty[Value], Vector.empty[Error]): Validation[List[Value], Error]
@@ -136,8 +146,8 @@ object Validation {
 
 
   /**
-   * Merges 2 validations.
-   */
+    * Merges 2 validations.
+    */
   @inline
   def @@[A, B, X](a: Validation[A, X], b: Validation[B, X]): Validation[(A, B), X] =
     (a, b) match {
@@ -147,8 +157,8 @@ object Validation {
     }
 
   /**
-   * Merges 3 validations.
-   */
+    * Merges 3 validations.
+    */
   @inline
   def @@[A, B, C, X](a: Validation[A, X], b: Validation[B, X], c: Validation[C, X]): Validation[(A, B, C), X] =
     (@@(a, b), c) match {
@@ -158,8 +168,8 @@ object Validation {
     }
 
   /**
-   * Merges 4 validations.
-   */
+    * Merges 4 validations.
+    */
   @inline
   def @@[A, B, C, D, X](a: Validation[A, X], b: Validation[B, X], c: Validation[C, X],
                         d: Validation[D, X]): Validation[(A, B, C, D), X] =
@@ -170,8 +180,8 @@ object Validation {
     }
 
   /**
-   * Merges 5 validations.
-   */
+    * Merges 5 validations.
+    */
   @inline
   def @@[A, B, C, D, E, X](a: Validation[A, X], b: Validation[B, X], c: Validation[C, X],
                            d: Validation[D, X], e: Validation[E, X]): Validation[(A, B, C, D, E), X] =
@@ -182,8 +192,8 @@ object Validation {
     }
 
   /**
-   * Merges 6 validations.
-   */
+    * Merges 6 validations.
+    */
   @inline
   def @@[A, B, C, D, E, F, X](a: Validation[A, X], b: Validation[B, X], c: Validation[C, X],
                               d: Validation[D, X], e: Validation[E, X], f: Validation[F, X]): Validation[(A, B, C, D, E, F), X] =
@@ -194,8 +204,8 @@ object Validation {
     }
 
   /**
-   * Merges 7 validations.
-   */
+    * Merges 7 validations.
+    */
   @inline
   def @@[A, B, C, D, E, F, G, X](a: Validation[A, X], b: Validation[B, X], c: Validation[C, X],
                                  d: Validation[D, X], e: Validation[E, X], f: Validation[F, X],
@@ -207,8 +217,8 @@ object Validation {
     }
 
   /**
-   * Merges 8 validations.
-   */
+    * Merges 8 validations.
+    */
   @inline
   def @@[A, B, C, D, E, F, G, H, X](a: Validation[A, X], b: Validation[B, X], c: Validation[C, X],
                                     d: Validation[D, X], e: Validation[E, X], f: Validation[F, X],
@@ -220,8 +230,8 @@ object Validation {
     }
 
   /**
-   * Merges two validations discarding the first value.
-   */
+    * Merges two validations discarding the first value.
+    */
   @inline
   def #@[A, B, X](a: Validation[A, X], b: Validation[B, X]): Validation[B, X] =
     (a, b) match {
@@ -231,27 +241,27 @@ object Validation {
     }
 
   /**
-   * Add implicit `toSuccess` method.
-   */
+    * Add implicit `toSuccess` method.
+    */
   implicit class ToSuccess[+Value](val value: Value) {
     def toSuccess[V >: Value, Error]: Validation[V, Error] = Success(value, Vector.empty)
   }
 
   /**
-   * Add implicit `toFailure` method.
-   */
+    * Add implicit `toFailure` method.
+    */
   implicit class ToFailure[+Error](val failure: Error) {
     def toFailure[Value, E >: Error]: Validation[Value, E] = Failure(Vector(failure))
   }
 
   /**
-   * Represents a success `value` and `errors`.
-   */
+    * Represents a success `value` and `errors`.
+    */
   case class Success[Value, Error](value: Value, errors: Vector[Error]) extends Validation[Value, Error]
 
   /**
-   * Represents a failure with no value and `errors`.
-   */
+    * Represents a failure with no value and `errors`.
+    */
   case class Failure[Value, Error](errors: Vector[Error]) extends Validation[Value, Error]
 
 }

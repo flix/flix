@@ -758,6 +758,9 @@ object Resolver {
         case WeededAst.Pattern.Tuple(welms, loc) => @@(welms map (e => resolve(e, namespace, syms))) map {
           case elms => ResolvedAst.Pattern.Tuple(elms, loc)
         }
+
+        case _ => ??? // TODO
+
       }
       visit(wast)
     }

@@ -545,7 +545,8 @@ object Weeder {
     /**
       * Compiles the parsed literal `past` to a weeded literal.
       */
-    def compile(past: ParsedAst.Literal): Validation[WeededAst.Literal, WeederError] = past match {
+    // TODO: To be removed
+    def compile(literal: ParsedAst.Literal): Validation[WeededAst.Literal, WeederError] = literal match {
       case ParsedAst.Literal.Unit(sp1, sp2) =>
         WeededAst.Literal.Unit(mkSL(sp1, sp2)).toSuccess
 
@@ -599,7 +600,7 @@ object Weeder {
     /**
       * Compiles a parsed literal to a weeded expression.
       */
-    def toExpression(past: ParsedAst.Literal): Validation[WeededAst.Expression, WeederError] = past match {
+    def toExpression(literal: ParsedAst.Literal): Validation[WeededAst.Expression, WeederError] = literal match {
       case ParsedAst.Literal.Unit(sp1, sp2) =>
         WeededAst.Expression.Unit(mkSL(sp1, sp2)).toSuccess
 
@@ -649,7 +650,7 @@ object Weeder {
     /**
       * Compiles a parsed expression to a weeded expression.
       */
-    def compile(expr: ParsedAst.Expression): Validation[WeededAst.Expression, WeederError] = expr match {
+    def compile(expression: ParsedAst.Expression): Validation[WeededAst.Expression, WeederError] = expression match {
       case ParsedAst.Expression.Wild(sp1, sp2) =>
         IllegalWildcard(mkSL(sp1, sp2)).toFailure
 
@@ -872,7 +873,7 @@ object Weeder {
     /**
       * Compiles a parsed literal to a weeded pattern.
       */
-    def compile(pat: ParsedAst.Literal): Validation[WeededAst.Pattern, WeederError] = pat match {
+    def compile(pattern: ParsedAst.Literal): Validation[WeededAst.Pattern, WeederError] = pattern match {
       case ParsedAst.Literal.Unit(sp1, sp2) => WeededAst.Pattern.Unit(mkSL(sp1, sp2)).toSuccess
       case ParsedAst.Literal.True(sp1, sp2) => WeededAst.Pattern.True(mkSL(sp1, sp2)).toSuccess
       case ParsedAst.Literal.False(sp1, sp2) => WeededAst.Pattern.False(mkSL(sp1, sp2)).toSuccess
@@ -908,7 +909,7 @@ object Weeder {
     /**
       * Compiles a parsed pattern into a weeded pattern.
       */
-    def compile(pat: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = {
+    def compile(pattern: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = {
       /*
        *  Check for non-linear pattern, i.e. if a variable occurs multiple times.
        */
@@ -917,7 +918,7 @@ object Weeder {
       /*
        * Local visitor.
        */
-      def visit(p: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = p match {
+      def visit(pattern: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = pattern match {
         case ParsedAst.Pattern.Wild(sp1, sp2) => WeededAst.Pattern.Wild(mkSL(sp1, sp2)).toSuccess
 
         case ParsedAst.Pattern.Var(sp1, ident, sp2) => seen.get(ident.name) match {
@@ -935,8 +936,8 @@ object Weeder {
             val loc = mkSL(sp1, sp2)
             val lit = WeededAst.Pattern.Unit(loc)
             WeededAst.Pattern.Tag(enum, tag, lit, loc).toSuccess
-          case Some(ppat) => visit(ppat) map {
-            case pat => WeededAst.Pattern.Tag(enum, tag, pat, mkSL(sp1, sp2))
+          case Some(pat) => visit(pat) map {
+            case p => WeededAst.Pattern.Tag(enum, tag, p, mkSL(sp1, sp2))
           }
         }
 
@@ -946,25 +947,50 @@ object Weeder {
           case xs => WeededAst.Pattern.Tuple(xs, mkSL(sp1, sp2))
         }
 
-        case ParsedAst.Pattern.FNone(sp1, sp2) => ???
+        case ParsedAst.Pattern.FNone(sp1, sp2) =>
+          WeededAst.Pattern.FNone(mkSL(sp1, sp2)).toSuccess
 
-        case ParsedAst.Pattern.FSome(sp1, pat, sp2) => ???
-
-        case ParsedAst.Pattern.FNil(sp1, sp2) => ???
-
-        case ParsedAst.Pattern.FList(p1, p2, sp2) =>
-          @@(compile(p1), compile(p2)) map {
-            case (hd, tl) => WeededAst.Pattern.FList(hd, tl, mkSL(p1.leftMostSourcePosition, sp2))
+        case ParsedAst.Pattern.FSome(sp1, pat, sp2) =>
+          visit(pat) map {
+            case p => WeededAst.Pattern.FSome(p, mkSL(sp1, sp2))
           }
 
-        case ParsedAst.Pattern.FVec(sp1, elms, rest, sp2) => ???
+        case ParsedAst.Pattern.FNil(sp1, sp2) =>
+          WeededAst.Pattern.FNil(mkSL(sp1, sp2)).toSuccess
 
-        case ParsedAst.Pattern.FSet(sp1, elms, rest, sp2) => ???
+        case ParsedAst.Pattern.FList(pat1, pat2, sp2) =>
+          @@(compile(pat1), compile(pat2)) map {
+            case (hd, tl) => WeededAst.Pattern.FList(hd, tl, mkSL(pat1.leftMostSourcePosition, sp2))
+          }
 
-        case ParsedAst.Pattern.FMap(sp1, elms, rest, sp2) => ???
+        case ParsedAst.Pattern.FVec(sp1, elms, rest, sp2) =>
+          val elmsVal = @@(elms.map(visit))
+          val restVal = @@(rest.map(visit))
+
+          @@(elmsVal, restVal) map {
+            case (es, r) => WeededAst.Pattern.FVec(es, r, mkSL(sp1, sp2))
+          }
+
+        case ParsedAst.Pattern.FSet(sp1, elms, rest, sp2) =>
+          val elmsVal = @@(elms.map(visit))
+          val restVal = @@(rest.map(visit))
+
+          @@(elmsVal, restVal) map {
+            case (es, r) => WeededAst.Pattern.FSet(es, r, mkSL(sp1, sp2))
+          }
+
+        case ParsedAst.Pattern.FMap(sp1, elms, rest, sp2) =>
+          val elmsVal = @@(elms.map {
+            case (key, value) => @@(visit(key), visit(value))
+          })
+          val restVal = @@(rest.map(visit))
+
+          @@(elmsVal, restVal) map {
+            case (es, r) => WeededAst.Pattern.FMap(es, r, mkSL(sp1, sp2))
+          }
       }
 
-      visit(pat)
+      visit(pattern)
     }
   }
 
@@ -1029,7 +1055,7 @@ object Weeder {
         }
 
         case ParsedAst.Term.Lit(sp1, lit, sp2) => Literals.compile(lit) map {
-          case lit => WeededAst.Term.Head.Lit(lit, mkSL(sp1, sp2))
+          case l => WeededAst.Term.Head.Lit(l, mkSL(sp1, sp2))
         }
 
         case ParsedAst.Term.Tag(sp1, enum, tag, t, sp2) => t match {
@@ -1037,7 +1063,7 @@ object Weeder {
             val loc = mkSL(sp1, sp2)
             val unit = WeededAst.Term.Head.Lit(WeededAst.Literal.Unit(loc), loc)
             WeededAst.Term.Head.Tag(enum, tag, unit, loc).toSuccess
-          case Some(t) => compile(t, aliases) map {
+          case Some(t2) => compile(t2, aliases) map {
             case inner => WeededAst.Term.Head.Tag(enum, tag, inner, mkSL(sp1, sp2))
           }
         }
@@ -1048,13 +1074,13 @@ object Weeder {
             WeededAst.Term.Head.Lit(WeededAst.Literal.Unit(loc), loc).toSuccess
           case x :: Nil => compile(x, aliases)
           case xs => @@(xs map (x => compile(x, aliases))) map {
-            case elms => WeededAst.Term.Head.Tuple(elms, mkSL(sp1, sp2))
+            case es => WeededAst.Term.Head.Tuple(es, mkSL(sp1, sp2))
           }
         }
 
         case ParsedAst.Term.Apply(sp1, name, args, sp2) =>
           @@(args map (t => compile(t, aliases))) map {
-            case args => WeededAst.Term.Head.Apply(name, args, mkSL(sp1, sp2))
+            case as => WeededAst.Term.Head.Apply(name, as, mkSL(sp1, sp2))
           }
       }
     }
@@ -1067,7 +1093,7 @@ object Weeder {
         case ParsedAst.Term.Wildcard(sp1, sp2) => WeededAst.Term.Body.Wildcard(mkSL(sp1, sp2)).toSuccess
         case ParsedAst.Term.Var(sp1, ident, sp2) => WeededAst.Term.Body.Var(ident, mkSL(sp1, sp2)).toSuccess
         case ParsedAst.Term.Lit(sp1, lit, sp2) => Literals.compile(lit) map {
-          case lit => WeededAst.Term.Body.Lit(lit, mkSL(sp1, sp2))
+          case l => WeededAst.Term.Body.Lit(l, mkSL(sp1, sp2))
         }
         case ParsedAst.Term.Tag(sp1, enum, tag, t, sp2) => IllegalBodyTerm("Tags may not occur in body predicates.", mkSL(sp1, sp2)).toFailure
         case ParsedAst.Term.Tuple(sp1, elms, sp2) => IllegalBodyTerm("Tuples may not occur in body predicates.", mkSL(sp1, sp2)).toFailure
@@ -1180,4 +1206,5 @@ object Weeder {
     * Alias for SourceLocation.mk
     */
   private def mkSL(sp1: SourcePosition, sp2: SourcePosition): SourceLocation = SourceLocation.mk(sp1, sp2)
+
 }

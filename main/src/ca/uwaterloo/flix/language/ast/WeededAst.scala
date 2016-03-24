@@ -192,7 +192,9 @@ object WeededAst {
       case WeededAst.Pattern.FSet(elms, rest, _) =>
         elms.flatMap(_.freeVars).toSet ++ rest.map(_.freeVars).getOrElse(Set.empty)
       case WeededAst.Pattern.FMap(elms, rest, _) =>
-        ??? // TODO
+        elms.flatMap {
+          case (key, value) => key.freeVars ++ value.freeVars
+        }.toSet
     }
 
     def loc: SourceLocation
@@ -242,7 +244,7 @@ object WeededAst {
 
     case class FSet(elms: List[WeededAst.Pattern], rest: Option[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
 
-    case class FMap(elms: List[(ParsedAst.Pattern, ParsedAst.Pattern)], rest: Option[ParsedAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
+    case class FMap(elms: List[(WeededAst.Pattern, WeededAst.Pattern)], rest: Option[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
 
   }
 
