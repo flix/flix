@@ -41,7 +41,7 @@ object ParsedAst {
       * @param ns  the name of the namespace.
       * @param sp2 the position of the last character in the import.
       */
-    case class Wildcard(sp1: SourcePosition, ns: Name.NName, sp2: SourcePosition) extends ParsedAst.Import
+    case class Wild(sp1: SourcePosition, ns: Name.NName, sp2: SourcePosition) extends ParsedAst.Import
 
     /**
       * Import Definition.
@@ -873,7 +873,7 @@ object ParsedAst {
       * @param sp1 the position of the first character in the term.
       * @param sp2 the position of the last character in the term.
       */
-    case class Wildcard(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Term
+    case class Wild(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Term
 
     /**
       * Variable Term.

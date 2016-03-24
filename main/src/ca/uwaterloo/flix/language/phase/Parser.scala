@@ -62,8 +62,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   object Imports {
 
-    def Wildcard: Rule1[ParsedAst.Import.Wildcard] = rule {
-      SP ~ atomic("import") ~ WS ~ NName ~ "/" ~ "_" ~ optSC ~ SP ~> ParsedAst.Import.Wildcard
+    def Wildcard: Rule1[ParsedAst.Import.Wild] = rule {
+      SP ~ atomic("import") ~ WS ~ NName ~ "/" ~ "_" ~ optSC ~ SP ~> ParsedAst.Import.Wild
     }
 
     def Definition: Rule1[ParsedAst.Import.Definition] = rule {
@@ -256,7 +256,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Attributes: Rule1[Seq[Ast.Attribute]] = rule {
-    oneOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS)
+    zeroOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS)
   }
 
   def FormalParams: Rule1[Seq[Ast.FormalParam]] = rule {
@@ -654,8 +654,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   object Terms {
 
-    def Wildcard: Rule1[ParsedAst.Term.Wildcard] = rule {
-      SP ~ atomic("_") ~ SP ~> ParsedAst.Term.Wildcard
+    def Wildcard: Rule1[ParsedAst.Term.Wild] = rule {
+      SP ~ atomic("_") ~ SP ~> ParsedAst.Term.Wild
     }
 
     def Variable: Rule1[ParsedAst.Term.Var] = rule {

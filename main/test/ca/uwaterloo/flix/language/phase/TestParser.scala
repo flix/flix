@@ -2072,7 +2072,7 @@ class TestParser extends FunSuite {
   test("Term.01") {
     val input = "_"
     val result = new Parser(SourceInput.Str(input)).Term.run().get
-    assert(result.isInstanceOf[ParsedAst.Term.Wildcard])
+    assert(result.isInstanceOf[ParsedAst.Term.Wild])
   }
 
   // TODO: Deprecated direct use of parser
