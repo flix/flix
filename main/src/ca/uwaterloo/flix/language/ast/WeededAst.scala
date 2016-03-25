@@ -24,11 +24,15 @@ object WeededAst {
 
     case class Enum(ident: Name.Ident, cases: Map[String, Type.UnresolvedTag], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Index(ident: Name.Ident, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends WeededAst.Declaration
+    case class Class(ident: Name.Ident, tparams: Seq[Type], /* bounds: Seq[ContextBound],*/ decls: Seq[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
+
+    case class Impl(ident: Name.Ident, tparams: Seq[Type], /*bounds: Seq[ContextBound],*/ decls: Seq[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
     case class Fact(head: WeededAst.Predicate.Head, loc: SourceLocation) extends WeededAst.Declaration
 
     case class Rule(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation) extends WeededAst.Declaration
+
+    case class Index(ident: Name.Ident, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends WeededAst.Declaration
 
     @deprecated("Will be replaced by type classes", "0.1.0")
     case class BoundedLattice(tpe: Type, bot: WeededAst.Expression, top: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, glb: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration

@@ -75,8 +75,7 @@ object Symbol {
   /**
     * Companion object for the [[Resolved]] class.
     */
-  // TODO: remove and replace by better symbols
-  @deprecated("to be removed", "0.1.0")
+  // TODO: deprecated
   object Resolved {
 
     private val cache = mutable.HashMap.empty[List[String], Resolved]
@@ -100,7 +99,7 @@ object Symbol {
     *
     * @param parts the parts of the name.
     */
-  @deprecated("to be removed", "0.1.0")
+  // TODO: deprecated
   final class Resolved private(val parts: List[String]) {
 
     /**

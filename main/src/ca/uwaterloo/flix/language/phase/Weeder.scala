@@ -132,6 +132,21 @@ object Weeder {
     }
 
     /**
+      * An error raised to indicate that an index declaration declares no indexes.
+      *
+      * @param loc the location where the declaration occurs.
+      */
+    case class EmptyIndex(loc: SourceLocation) extends WeederError {
+      val message =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> An index must declare at least one group of attributes.")}
+           |
+           |${loc.underline}
+         """.stripMargin
+    }
+
+    /**
       * An error raised to indicate that a relation declares no attributes.
       *
       * @param loc the location of the declaration.
@@ -188,21 +203,6 @@ object Weeder {
         s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> Illegal float.")}
-           |
-           |${loc.underline}
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that an index declaration defines no indexes.
-      *
-      * @param loc the location where the index declaration occurs.
-      */
-    case class MissingIndex(loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> Missing index. Must declare at least one index.")}
            |
            |${loc.underline}
          """.stripMargin
@@ -365,8 +365,6 @@ object Weeder {
          """.stripMargin
     }
 
-    // TODO: Relation/Lattice with zero attributes.
-
   }
 
   /**
@@ -442,9 +440,15 @@ object Weeder {
           case m => WeededAst.Declaration.Enum(ident, m, mkSL(sp1, sp2))
         }
 
-      case ParsedAst.Declaration.Class(sp1, ident, tparams, bounds, body, sp2) => ???
+      case ParsedAst.Declaration.Class(sp1, ident, tparams, bounds, decls, sp2) =>
+        @@(decls.map(compile)) map {
+          case ds => WeededAst.Declaration.Class(ident, tparams, ds, mkSL(sp1, sp2))
+        }
 
-      case ParsedAst.Declaration.Impl(sp1, ident, tparams, bounds, body, sp2) => ???
+      case ParsedAst.Declaration.Impl(sp1, ident, tparams, bounds, decls, sp2) =>
+        @@(decls.map(compile)) map {
+          case ds => WeededAst.Declaration.Impl(ident, tparams, ds, mkSL(sp1, sp2))
+        }
 
       case ParsedAst.Declaration.Relation(sp1, ident, attr, sp2) =>
         /*
@@ -525,7 +529,7 @@ object Weeder {
       case ParsedAst.Declaration.Index(sp1, ident, indexes, sp2) =>
         val sl = mkSL(sp1, sp2)
         if (indexes.isEmpty)
-          MissingIndex(sl).toFailure
+          EmptyIndex(sl).toFailure
         else if (indexes.exists(_.isEmpty))
           IllegalIndex(sl).toFailure
         else
