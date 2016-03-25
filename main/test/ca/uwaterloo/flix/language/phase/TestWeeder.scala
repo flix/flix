@@ -111,6 +111,24 @@ class TestWeeder extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Empty Relation                                                          //
+  /////////////////////////////////////////////////////////////////////////////
+  test("EmptyRelation.01") {
+    val input = "rel R()"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.EmptyRelation])
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Empty Lattice                                                           //
+  /////////////////////////////////////////////////////////////////////////////
+  test("EmptyLattice.01") {
+    val input = "lat L()"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.EmptyLattice])
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Illegal Annotation                                                      //
   /////////////////////////////////////////////////////////////////////////////
   test("IllegalAnnotation01") {

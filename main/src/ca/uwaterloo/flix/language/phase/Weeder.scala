@@ -132,6 +132,36 @@ object Weeder {
     }
 
     /**
+      * An error raised to indicate that a relation declares no attributes.
+      *
+      * @param loc the location of the declaration.
+      */
+    case class EmptyRelation(loc: SourceLocation) extends WeederError {
+      val message =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> A relation must have at least one attribute (column).")}
+           |
+           |${loc.underline}
+         """.stripMargin
+    }
+
+    /**
+      * An error raised to indicate that a lattice declares no attributes.
+      *
+      * @param loc the location of the declaration.
+      */
+    case class EmptyLattice(loc: SourceLocation) extends WeederError {
+      val message =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> A lattice must have at least one attribute (column).")}
+           |
+           |${loc.underline}
+         """.stripMargin
+    }
+
+    /**
       * An error raised to indicate the presence of an illegal annotation.
       *
       * @param name the name of the illegal annotation.
@@ -365,20 +395,52 @@ object Weeder {
     /**
       * Compiles the given parsed declaration `past` to a weeded declaration.
       */
-    // TODO: Inline
     def compile(decl: ParsedAst.Declaration): Validation[WeededAst.Declaration, WeederError] = decl match {
       case ParsedAst.Declaration.Namespace(sp1, name, decls, sp2) =>
         @@(decls.map(compile)) map {
           case ds => WeededAst.Declaration.Namespace(name, ds, mkSL(sp1, sp2))
         }
 
-      case d: ParsedAst.Declaration.Definition => Declarations.compile(d)
+      case ParsedAst.Declaration.Definition(ann, sp1, ident, params, tpe, exp, sp2) =>
+        val annotationsVal = Annotations.compile(ann)
+        /*
+         * Check duplicate parameters.
+         */
+        val seen = mutable.Map.empty[String, Name.Ident]
+        val formalsVal = @@(params.map {
+          case formal@Ast.FormalParam(id, t) => seen.get(id.name) match {
+            case None =>
+              seen += (id.name -> id)
+              formal.toSuccess
+            case Some(otherIdent) =>
+              DuplicateFormal(id.name, otherIdent.loc, id.loc).toFailure
+          }
+        })
+
+        @@(annotationsVal, formalsVal, Expressions.compile(exp)) map {
+          case (anns, args, body) =>
+            val t = Type.Lambda(args map (_.tpe), tpe)
+            WeededAst.Declaration.Definition(ident, args, body, t, mkSL(sp1, sp2))
+        }
 
       case ParsedAst.Declaration.External(sp1, ident, formals, tpe, sp2) => ???
 
       case ParsedAst.Declaration.Law(sp1, ident, tparams, params, tpe, body, sp2) => ???
 
-      case d: ParsedAst.Declaration.Enum => Declarations.compile(d)
+      case ParsedAst.Declaration.Enum(sp1, ident, cases, sp2) =>
+        /*
+         * Check duplicate tags.
+         */
+        Validation.fold[ParsedAst.Case, Map[String, Type.UnresolvedTag], WeederError](cases, Map.empty) {
+          case (macc, caze: ParsedAst.Case) =>
+            val tag = caze.ident.name
+            macc.get(tag) match {
+              case None => (macc + (tag -> Type.UnresolvedTag(ident, caze.ident, caze.tpe))).toSuccess
+              case Some(otherTag) => DuplicateTag(tag, otherTag.tag.loc, mkSL(caze.sp1, caze.sp2)).toFailure
+            }
+        } map {
+          case m => WeededAst.Declaration.Enum(ident, m, mkSL(sp1, sp2))
+        }
 
       case ParsedAst.Declaration.Class(sp1, ident, tparams, bounds, body, sp2) => ???
 
@@ -386,7 +448,13 @@ object Weeder {
 
       case ParsedAst.Declaration.Relation(sp1, ident, attr, sp2) =>
         /*
-         *  Check for duplicate attributes.
+         * Check that the relation declares at least one attribute.
+         */
+        if (attr.isEmpty)
+          return EmptyRelation(mkSL(sp1, sp2)).toFailure
+
+        /*
+         * Check that the relation does not declare the same attribute twice.
          */
         val seen = mutable.Map.empty[String, Name.Ident]
         val attributesVal = attr.map {
@@ -405,7 +473,13 @@ object Weeder {
 
       case ParsedAst.Declaration.Lattice(sp1, ident, attr, sp2) =>
         /*
-         *  Check for duplicate attributes.
+         * Check that the lattice declares at least one attribute.
+         */
+        if (attr.isEmpty)
+          return EmptyLattice(mkSL(sp1, sp2)).toFailure
+
+        /*
+         * Check that the lattice does not declare the same attribute twice.
          */
         val seen = mutable.Map.empty[String, Name.Ident]
         val attributesVal = attr.map {
@@ -466,62 +540,13 @@ object Weeder {
 
     }
 
-    /**
-      * Compiles the given parsed function declaration `past` to a weeded definition.
-      */
-    // TODO: Inline
-    def compile(past: ParsedAst.Declaration.Definition): Validation[WeededAst.Declaration.Definition, WeederError] = {
-      val annotationsVal = Annotations.compile(past.ann)
-
-      // TODO: Need to move certain annotations to each lattice valued argument...?
-      // TODO: Can avoid map?
-
-      // check duplicate formals.
-      val seen = mutable.Map.empty[String, Name.Ident]
-      val formalsVal = @@(past.params.map {
-        case formal@Ast.FormalParam(ident, tpe) => seen.get(ident.name) match {
-          case None =>
-            seen += (ident.name -> ident)
-            formal.toSuccess
-          case Some(otherIdent) =>
-            DuplicateFormal(ident.name, otherIdent.loc, ident.loc).toFailure
-        }
-      })
-
-      @@(annotationsVal, formalsVal, Expressions.compile(past.exp)) map {
-        case (anns, args, exp) =>
-          val tpe = Type.Lambda(args map (_.tpe), past.tpe)
-          WeededAst.Declaration.Definition(past.ident, args, exp, tpe, mkSL(past.sp1, past.sp2))
-      }
-    }
-
-    /**
-      * Compiles the given parsed enum declaration `past` to a weeded enum definition.
-      *
-      * Returns [[Failure]] if the same tag name occurs twice.
-      */
-    // TODO: Inline
-    def compile(past: ParsedAst.Declaration.Enum): Validation[WeededAst.Declaration.Enum, WeederError] = {
-      // check duplicate tags.
-      Validation.fold[ParsedAst.Case, Map[String, Type.UnresolvedTag], WeederError](past.cases, Map.empty) {
-        case (macc, caze: ParsedAst.Case) =>
-          val tagName = caze.ident.name
-          macc.get(tagName) match {
-            case None => (macc + (tagName -> Type.UnresolvedTag(past.ident, caze.ident, caze.tpe))).toSuccess
-            case Some(otherTag) => DuplicateTag(tagName, otherTag.tag.loc, mkSL(caze.sp1, caze.sp2)).toFailure
-          }
-      } map {
-        case m => WeededAst.Declaration.Enum(past.ident, m, mkSL(past.sp1, past.sp2))
-      }
-    }
-
   }
 
   object Literals {
     /**
       * Compiles the parsed literal `past` to a weeded literal.
       */
-    // TODO: To be removed
+    // TODO: Remove once terms have been unified with expressions.
     def compile(literal: ParsedAst.Literal): Validation[WeededAst.Literal, WeederError] = literal match {
       case ParsedAst.Literal.Unit(sp1, sp2) =>
         WeededAst.Literal.Unit(mkSL(sp1, sp2)).toSuccess
@@ -1093,7 +1118,7 @@ object Weeder {
       * Weeds the given sequence of parsed annotation `xs`.
       */
     def compile(xs: Seq[ParsedAst.Annotation]): Validation[Ast.Annotations, WeederError] = {
-      // track seen annotations.
+      // collect seen annotations.
       val seen = mutable.Map.empty[String, ParsedAst.Annotation]
 
       // loop through each annotation.
