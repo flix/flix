@@ -7,7 +7,7 @@ object Options {
   val Default = Options(
     debugger = Debugger.Disabled,
     Nil,
-    verbosity = Verbosity.Normal,
+    verbosity = Verbosity.Silent,
     verify = Verify.Disabled
   )
 }

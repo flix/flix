@@ -27,7 +27,7 @@ object Main {
     }
 
     // parse command line arguments.
-    val options = parseArgs(args.toList)
+    val options = parseArgs(args)
 
     // configure Flix and add the paths.
     val builder = new Flix()
@@ -85,6 +85,6 @@ object Main {
         ???
     }
 
-    visit(args, Options.Default)
+    visit(args, Options.Default.copy(verbosity = Verbosity.Normal))
   }
 }
