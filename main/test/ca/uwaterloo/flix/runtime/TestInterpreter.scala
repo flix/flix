@@ -641,7 +641,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(196))(result)
   }
 
-  test("Expression.Lambda.07") {
+  ignore("Expression.Lambda.07") {
     val input =
       """fn f(x: Int8, y: Int8): Int8 = x - y
         |fn g(x: Int8): Int8 = x * 3i8
@@ -701,7 +701,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(49))(result)
   }
 
-  test("Expression.Lambda.11") {
+  ignore("Expression.Lambda.11") {
     val input =
       """fn f(x: (Int) -> Int, y: Int): Int = x(y)
         |fn g(x: Int): Int = x + 1
@@ -712,7 +712,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(6))(result)
   }
 
-  test("Expression.Lambda.13") {
+  ignore("Expression.Lambda.13") {
     val input =
       """fn f(x: (Int) -> Int): (Int) -> Int = x
         |fn g(x: Int): Int = x + 5
