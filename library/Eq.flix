@@ -3,16 +3,15 @@
  */
 class Eq[E] {
 
-    /**
-     *  Returns `true` if `x` is equal to `y`.
-     */
-    def eq(x: E, y: E): Bool
-
-    /**
-     *  Returns `true` if `x` is *not* equal to `y`.
-     */
-    def neq(x: E, y: E): Bool = !eq(x, y)
+  /*
+   * The Eq type class has no members.
+   * Equality is intrinsic in Flix and cannot be overwritten.
+   *
+   * Most types automatically implement Eq (by structural equality), but a few do not:
+   *
+   * - Floats
+   * - Functions
+   *
+   */
 
 }
-
-// NB: Float, Lambda, etc do NOT implement eq!
