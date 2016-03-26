@@ -57,7 +57,7 @@ object WeededAst {
 
   }
 
-  // TODO: To be eliminated.
+  // TODO: Deprecated to be removed once terms are removed.
   sealed trait Literal extends WeededAst {
     def loc: SourceLocation
   }
@@ -169,42 +169,6 @@ object WeededAst {
   }
 
   sealed trait Pattern extends WeededAst {
-    /**
-      * Returns the set of free variables in `this` pattern.
-      */
-    // TODO: Move?
-    def freeVars: Set[String] = this match {
-      case WeededAst.Pattern.Wild(_) => Set.empty
-      case WeededAst.Pattern.Var(ident, _) => Set(ident.name)
-      case WeededAst.Pattern.Unit(_) => Set.empty
-      case WeededAst.Pattern.True(_) => Set.empty
-      case WeededAst.Pattern.False(_) => Set.empty
-      case WeededAst.Pattern.Char(_, _) => Set.empty
-      case WeededAst.Pattern.Float32(_, _) => Set.empty
-      case WeededAst.Pattern.Float64(_, _) => Set.empty
-      case WeededAst.Pattern.Int8(_, _) => Set.empty
-      case WeededAst.Pattern.Int16(_, _) => Set.empty
-      case WeededAst.Pattern.Int32(_, _) => Set.empty
-      case WeededAst.Pattern.Int64(_, _) => Set.empty
-      case WeededAst.Pattern.Str(_, _) => Set.empty
-      case WeededAst.Pattern.Tag(_, _, p, _) => p.freeVars
-      case WeededAst.Pattern.Tuple(elms, _) => elms.foldLeft(Set.empty[String]) {
-        case (acc, pat) => acc ++ pat.freeVars
-      }
-      case WeededAst.Pattern.FNone(_) => Set.empty
-      case WeededAst.Pattern.FSome(p, _) => p.freeVars
-      case WeededAst.Pattern.FNil(_) => Set.empty
-      case WeededAst.Pattern.FList(hd, tl, _) => hd.freeVars ++ tl.freeVars
-      case WeededAst.Pattern.FVec(elms, rest, _) =>
-        elms.flatMap(_.freeVars).toSet ++ rest.map(_.freeVars).getOrElse(Set.empty)
-      case WeededAst.Pattern.FSet(elms, rest, _) =>
-        elms.flatMap(_.freeVars).toSet ++ rest.map(_.freeVars).getOrElse(Set.empty)
-      case WeededAst.Pattern.FMap(elms, rest, _) =>
-        elms.flatMap {
-          case (key, value) => key.freeVars ++ value.freeVars
-        }.toSet
-    }
-
     def loc: SourceLocation
   }
 
@@ -264,7 +228,7 @@ object WeededAst {
 
     object Head {
 
-      case class Relation(name: Name.QName, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
+      case class Table(name: Name.QName, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 
     }
 
@@ -272,18 +236,16 @@ object WeededAst {
 
     object Body {
 
-      case class Ambiguous(name: Name.QName, terms: List[WeededAst.Term.Body], loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Table(name: Name.QName, terms: List[WeededAst.Term.Body], loc: SourceLocation) extends WeededAst.Predicate.Body
 
       case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, loc: SourceLocation) extends WeededAst.Predicate.Body
 
       case class Loop(ident: Name.Ident, term: WeededAst.Term.Head, loc: SourceLocation) extends WeededAst.Predicate.Body
-
     }
 
   }
 
-  // TODO: Cleanup
-
+  // TODO: Deprecated and to be replaced by expressions.
   sealed trait Term extends WeededAst {
     def loc: SourceLocation
   }
@@ -310,7 +272,7 @@ object WeededAst {
 
     object Body {
 
-      case class Wildcard(loc: SourceLocation) extends WeededAst.Term.Body
+      case class Wild(loc: SourceLocation) extends WeededAst.Term.Body
 
       case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Term.Body
 

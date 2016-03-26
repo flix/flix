@@ -670,7 +670,7 @@ object Resolver {
           val e2 = visit(we, locals)
           val rules2 = wrules map {
             case (rulePat, ruleBody) =>
-              val bound = locals ++ rulePat.freeVars
+              val bound = locals ++ freeVars(rulePat)
               @@(Pattern.resolve(rulePat, namespace, syms), visit(ruleBody, bound))
           }
           @@(e2, @@(rules2)) map {
@@ -775,7 +775,7 @@ object Resolver {
         */
       def resolve(wast: WeededAst.Predicate.Head, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Head, ResolverError] = wast match {
         // TODO: What if a function symbol occurs in the head?
-        case WeededAst.Predicate.Head.Relation(name, wterms, loc) =>
+        case WeededAst.Predicate.Head.Table(name, wterms, loc) =>
           syms.lookupTable(name, namespace) flatMap {
             case (rname, defn) => @@(wterms map (t => Term.Head.resolve(t, namespace, syms))) map {
               case terms => ResolvedAst.Predicate.Head.Table(rname, terms, loc)
@@ -789,7 +789,7 @@ object Resolver {
         * Performs symbol resolution in the given body predicate `wast` in the given `namespace` with the given symbol table `syms`.
         */
       def resolve(wast: WeededAst.Predicate.Body, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Body, ResolverError] = wast match {
-        case WeededAst.Predicate.Body.Ambiguous(name, wterms, loc) =>
+        case WeededAst.Predicate.Body.Table(name, wterms, loc) =>
           val termsVal = @@(wterms map (t => Term.Body.resolve(t, namespace, syms)))
 
           if (name.ident.name.head.isUpper) {
@@ -867,7 +867,7 @@ object Resolver {
         * Performs symbol resolution in the given body term `wast` under the given `namespace`.
         */
       def resolve(wast: WeededAst.Term.Body, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Term.Body, ResolverError] = wast match {
-        case WeededAst.Term.Body.Wildcard(loc) => ResolvedAst.Term.Body.Wildcard(loc).toSuccess
+        case WeededAst.Term.Body.Wild(loc) => ResolvedAst.Term.Body.Wildcard(loc).toSuccess
         case WeededAst.Term.Body.Var(ident, loc) =>
           if (ident.name.head.isLower)
             ResolvedAst.Term.Body.Var(ident, loc).toSuccess
@@ -950,4 +950,38 @@ object Resolver {
   def toRName(ident: Name.Ident, namespace: List[String]): Symbol.Resolved =
     Symbol.Resolved.mk(namespace ::: ident.name :: Nil)
 
+  /**
+    * Returns the set of free variables in the pattern `pat`.
+    */
+  def freeVars(pat: WeededAst.Pattern): Set[String] = pat match {
+    case WeededAst.Pattern.Wild(_) => Set.empty
+    case WeededAst.Pattern.Var(ident, _) => Set(ident.name)
+    case WeededAst.Pattern.Unit(_) => Set.empty
+    case WeededAst.Pattern.True(_) => Set.empty
+    case WeededAst.Pattern.False(_) => Set.empty
+    case WeededAst.Pattern.Char(_, _) => Set.empty
+    case WeededAst.Pattern.Float32(_, _) => Set.empty
+    case WeededAst.Pattern.Float64(_, _) => Set.empty
+    case WeededAst.Pattern.Int8(_, _) => Set.empty
+    case WeededAst.Pattern.Int16(_, _) => Set.empty
+    case WeededAst.Pattern.Int32(_, _) => Set.empty
+    case WeededAst.Pattern.Int64(_, _) => Set.empty
+    case WeededAst.Pattern.Str(_, _) => Set.empty
+    case WeededAst.Pattern.Tag(_, _, p, _) => freeVars(p)
+    case WeededAst.Pattern.Tuple(elms, _) => elms.foldLeft(Set.empty[String]) {
+      case (acc, pat) => acc ++ freeVars(pat)
+    }
+    case WeededAst.Pattern.FNone(_) => Set.empty
+    case WeededAst.Pattern.FSome(p, _) => freeVars(p)
+    case WeededAst.Pattern.FNil(_) => Set.empty
+    case WeededAst.Pattern.FList(hd, tl, _) => freeVars(hd) ++ freeVars(tl)
+    case WeededAst.Pattern.FVec(elms, rest, _) =>
+      elms.flatMap(freeVars).toSet ++ rest.map(freeVars).getOrElse(Set.empty)
+    case WeededAst.Pattern.FSet(elms, rest, _) =>
+      elms.flatMap(freeVars).toSet ++ rest.map(freeVars).getOrElse(Set.empty)
+    case WeededAst.Pattern.FMap(elms, rest, _) =>
+      elms.flatMap {
+        case (key, value) => freeVars(key) ++ freeVars(value)
+      }.toSet
+  }
 }

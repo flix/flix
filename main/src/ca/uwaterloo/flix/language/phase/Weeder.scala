@@ -1023,7 +1023,7 @@ object Weeder {
       def compile(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Equal] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
         case p: ParsedAst.Predicate.Ambiguous =>
           @@(p.terms.map(t => Term.Head.compile(t, aliases))) map {
-            case terms => WeededAst.Predicate.Head.Relation(p.name, terms, mkSL(p.sp1, p.sp2))
+            case terms => WeededAst.Predicate.Head.Table(p.name, terms, mkSL(p.sp1, p.sp2))
           }
 
         case ParsedAst.Predicate.Equal(sp1, ident, term, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
@@ -1041,7 +1041,7 @@ object Weeder {
       def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] = past match {
         case p: ParsedAst.Predicate.Ambiguous =>
           @@(p.terms.map(Term.Body.compile)) map {
-            case terms => WeededAst.Predicate.Body.Ambiguous(p.name, terms, mkSL(p.sp1, p.sp2))
+            case terms => WeededAst.Predicate.Body.Table(p.name, terms, mkSL(p.sp1, p.sp2))
           }
 
         case p: ParsedAst.Predicate.NotEqual =>
@@ -1108,7 +1108,7 @@ object Weeder {
         * Compiles the given parsed body term `past` to a weeded term.
         */
       def compile(past: ParsedAst.Term): Validation[WeededAst.Term.Body, WeederError] = past match {
-        case ParsedAst.Term.Wild(sp1, sp2) => WeededAst.Term.Body.Wildcard(mkSL(sp1, sp2)).toSuccess
+        case ParsedAst.Term.Wild(sp1, sp2) => WeededAst.Term.Body.Wild(mkSL(sp1, sp2)).toSuccess
         case ParsedAst.Term.Var(sp1, ident, sp2) => WeededAst.Term.Body.Var(ident, mkSL(sp1, sp2)).toSuccess
         case ParsedAst.Term.Lit(sp1, lit, sp2) => Literals.compile(lit) map {
           case l => WeededAst.Term.Body.Lit(l, mkSL(sp1, sp2))
@@ -1226,7 +1226,7 @@ object Weeder {
   private def mkSL(sp1: SourcePosition, sp2: SourcePosition): SourceLocation = SourceLocation.mk(sp1, sp2)
 
   /**
-    * Returns the left most source position in the sub-tree of `this` expression.
+    * Returns the left most source position in the sub-tree of the expression `e`.
     */
   def leftMostSourcePosition(e: ParsedAst.Expression): SourcePosition = e match {
     case ParsedAst.Expression.Wild(sp1, _) => sp1
