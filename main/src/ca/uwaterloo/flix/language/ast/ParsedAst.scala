@@ -337,46 +337,7 @@ object ParsedAst {
   /**
     * Expressions.
     */
-  sealed trait Expression extends ParsedAst {
-
-    /**
-      * Returns the left most source position in the sub-tree of `this` expression.
-      */
-    // TODO: Move?
-    def leftMostSourcePosition: SourcePosition = this match {
-      case Expression.Wild(sp1, _) => sp1
-      case Expression.Var(sp1, _, _) => sp1
-      case Expression.Lit(sp1, _, _) => sp1
-      case Expression.Apply(sp1, _, _, _) => sp1
-      case Expression.Infix(e1, _, _, _) => e1.leftMostSourcePosition
-      case Expression.Lambda(sp1, _, _, _) => sp1
-      case Expression.Unary(sp1, _, _, _) => sp1
-      case Expression.Binary(e1, _, _, _) => e1.leftMostSourcePosition
-      case Expression.ExtendedBinary(e1, _, _, _) => e1.leftMostSourcePosition
-      case Expression.IfThenElse(sp1, _, _, _, _) => sp1
-      case Expression.LetMatch(sp1, _, _, _, _) => sp1
-      case Expression.Match(sp1, _, _, _) => sp1
-      case Expression.Switch(sp1, _, _) => sp1
-      case Expression.Tag(sp1, _, _, _, _) => sp1
-      case Expression.Tuple(sp1, _, _) => sp1
-      case Expression.FNone(sp1, _) => sp1
-      case Expression.FSome(sp1, _, _) => sp1
-      case Expression.FNil(sp1, _) => sp1
-      case Expression.FList(hd, _, _) => hd.leftMostSourcePosition
-      case Expression.FVec(sp1, _, _) => sp1
-      case Expression.FSet(sp1, _, _) => sp1
-      case Expression.FMap(sp1, _, _) => sp1
-      case Expression.GetIndex(sp1, _, _, _) => sp1
-      case Expression.PutIndex(sp1, _, _, _, _) => sp1
-      case Expression.Existential(sp1, _, _, _) => sp1
-      case Expression.Universal(sp1, _, _, _) => sp1
-      case Expression.Ascribe(sp1, _, _, _) => sp1
-      case Expression.UserError(sp1, _) => sp1
-      case Expression.Bot(sp1, sp2) => sp1
-      case Expression.Top(sp1, sp2) => sp1
-    }
-
-  }
+  sealed trait Expression extends ParsedAst
 
   object Expression {
 

@@ -397,6 +397,7 @@ object Resolver {
         }
 
       case t: WeededAst.Table => symbolsOf2(t, namespace, syms)
+      case _ => ???
     }
 
     def symbolsOf2(wast: WeededAst.Table, namespace: List[String], syms: SymbolTable): Validation[SymbolTable, ResolverError] = wast match {
