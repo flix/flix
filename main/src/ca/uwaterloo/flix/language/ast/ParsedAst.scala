@@ -811,6 +811,8 @@ object ParsedAst {
 
   }
 
+  // TODO: Cleanup
+
   /**
     * Predicates.
     */
@@ -859,6 +861,8 @@ object ParsedAst {
     case class Loop(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Term, sp2: SourcePosition) extends ParsedAst.Predicate
 
   }
+
+  // TODO: Cleanup
 
   /**
     * Terms

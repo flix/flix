@@ -16,11 +16,15 @@ object WeededAst {
 
   object Declaration {
 
-    // TODO: Add missing declarations.
-
     case class Namespace(name: Name.NName, decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
     case class Definition(ident: Name.Ident, params: List[Ast.FormalParam], exp: WeededAst.Expression, tpe: Type, loc: SourceLocation) extends WeededAst.Declaration
+
+    case class Signature(ident: Name.Ident, params: Seq[Ast.FormalParam], tpe: Type, loc: SourceLocation) extends WeededAst.Declaration
+
+    case class External(ident: Name.Ident, params: Seq[Ast.FormalParam], tpe: Type, loc: SourceLocation) extends WeededAst.Declaration
+
+    case class Law(ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], params: Seq[Ast.FormalParam], tpe: Type, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
     case class Enum(ident: Name.Ident, cases: Map[String, Type.UnresolvedTag], loc: SourceLocation) extends WeededAst.Declaration
 
@@ -277,6 +281,8 @@ object WeededAst {
     }
 
   }
+
+  // TODO: Cleanup
 
   sealed trait Term extends WeededAst {
     def loc: SourceLocation

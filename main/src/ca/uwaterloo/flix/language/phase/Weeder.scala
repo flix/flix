@@ -12,9 +12,6 @@ import scala.collection.mutable
   */
 object Weeder {
 
-  // TODO: The parser can be made more lenient to accept "zeroOrmore"
-  // instead of oneOrMore and then this can be caught in the weeder.
-
   import WeederError._
 
   /**
@@ -421,9 +418,16 @@ object Weeder {
             WeededAst.Declaration.Definition(ident, args, body, t, mkSL(sp1, sp2))
         }
 
-      case ParsedAst.Declaration.External(sp1, ident, formals, tpe, sp2) => ???
+      case ParsedAst.Declaration.Signature(sp1, ident, params, tpe, sp2) =>
+        WeededAst.Declaration.Signature(ident, params, tpe, mkSL(sp1, sp2)).toSuccess
 
-      case ParsedAst.Declaration.Law(sp1, ident, tparams, params, tpe, body, sp2) => ???
+      case ParsedAst.Declaration.External(sp1, ident, params, tpe, sp2) =>
+        WeededAst.Declaration.External(ident, params, tpe, mkSL(sp1, sp2)).toSuccess
+
+      case ParsedAst.Declaration.Law(sp1, ident, tparams, params, tpe, exp, sp2) =>
+        Expressions.compile(exp) map {
+          case e => WeededAst.Declaration.Law(ident, tparams, params, tpe, e, mkSL(sp1, sp2))
+        }
 
       case ParsedAst.Declaration.Enum(sp1, ident, cases, sp2) =>
         /*
