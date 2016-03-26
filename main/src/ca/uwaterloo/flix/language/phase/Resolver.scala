@@ -789,7 +789,7 @@ object Resolver {
         * Performs symbol resolution in the given body predicate `wast` in the given `namespace` with the given symbol table `syms`.
         */
       def resolve(wast: WeededAst.Predicate.Body, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Body, ResolverError] = wast match {
-        case WeededAst.Predicate.Body.Table(name, wterms, loc) =>
+        case WeededAst.Predicate.Body.Ambiguous(name, wterms, loc) =>
           val termsVal = @@(wterms map (t => Term.Body.resolve(t, namespace, syms)))
 
           if (name.ident.name.head.isUpper) {

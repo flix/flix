@@ -1041,7 +1041,7 @@ object Weeder {
       def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] = past match {
         case p: ParsedAst.Predicate.Ambiguous =>
           @@(p.terms.map(Term.Body.compile)) map {
-            case terms => WeededAst.Predicate.Body.Table(p.name, terms, mkSL(p.sp1, p.sp2))
+            case terms => WeededAst.Predicate.Body.Ambiguous(p.name, terms, mkSL(p.sp1, p.sp2))
           }
 
         case p: ParsedAst.Predicate.NotEqual =>

@@ -358,6 +358,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   object Expressions {
 
+    // TODO: Improve parsing of operator precedence.
+
     def Logical: Rule1[ParsedAst.Expression] = rule {
       Comparison ~ optional(optWS ~ Operators.LogicalOp ~ optWS ~ Comparison ~ SP ~> ParsedAst.Expression.Binary)
     }
