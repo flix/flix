@@ -41,7 +41,7 @@ object ParsedAst {
       * @param ns  the name of the namespace.
       * @param sp2 the position of the last character in the import.
       */
-    case class Wildcard(sp1: SourcePosition, ns: Name.NName, sp2: SourcePosition) extends ParsedAst.Import
+    case class Wild(sp1: SourcePosition, ns: Name.NName, sp2: SourcePosition) extends ParsedAst.Import
 
     /**
       * Import Definition.
@@ -236,13 +236,20 @@ object ParsedAst {
     case class Unit(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
-      * Boolean Literal.
+      * True Literal.
       *
       * @param sp1 the position of the first character in the literal.
-      * @param lit the boolean literal.
       * @param sp2 the position of the last character in the literal.
       */
-    case class Bool(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class True(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Literal
+
+    /**
+      * False Literal.
+      *
+      * @param sp1 the position of the first character in the literal.
+      * @param sp2 the position of the last character in the literal.
+      */
+    case class False(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Char Literal.
@@ -330,46 +337,28 @@ object ParsedAst {
   /**
     * Expressions.
     */
-  sealed trait Expression extends ParsedAst {
-
-    /**
-      * Returns the left most source position in the sub-tree of `this` expression.
-      */
-    def leftMostSourcePosition: SourcePosition = this match {
-      case Expression.Lit(sp1, _, _) => sp1
-      case Expression.VarOrRef(sp1, _, _) => sp1
-      case Expression.Apply(sp1, _, _, _) => sp1
-      case Expression.Infix(e1, _, _, _) => e1.leftMostSourcePosition
-      case Expression.Lambda(sp1, _, _, _) => sp1
-      case Expression.Unary(sp1, _, _, _) => sp1
-      case Expression.Binary(e1, _, _, _) => e1.leftMostSourcePosition
-      case Expression.ExtendedBinary(e1, _, _, _) => e1.leftMostSourcePosition
-      case Expression.IfThenElse(sp1, _, _, _, _) => sp1
-      case Expression.LetMatch(sp1, _, _, _, _) => sp1
-      case Expression.Match(sp1, _, _, _) => sp1
-      case Expression.Switch(sp1, _, _) => sp1
-      case Expression.Tag(sp1, _, _, _, _) => sp1
-      case Expression.Tuple(sp1, _, _) => sp1
-      case Expression.FNone(sp1, _) => sp1
-      case Expression.FSome(sp1, _, _) => sp1
-      case Expression.FNil(sp1, _) => sp1
-      case Expression.FList(hd, _, _) => hd.leftMostSourcePosition
-      case Expression.FVec(sp1, _, _) => sp1
-      case Expression.FSet(sp1, _, _) => sp1
-      case Expression.FMap(sp1, _, _) => sp1
-      case Expression.GetIndex(sp1, _, _, _) => sp1
-      case Expression.PutIndex(sp1, _, _, _, _) => sp1
-      case Expression.Ascribe(sp1, _, _, _) => sp1
-      case Expression.UserError(sp1, _) => sp1
-      case Expression.Bot(sp1, sp2) => sp1
-      case Expression.Top(sp1, sp2) => sp1
-      case Expression.Existential(sp1, _, _, _) => sp1
-      case Expression.Universal(sp1, _, _, _) => sp1
-    }
-
-  }
+  sealed trait Expression extends ParsedAst
 
   object Expression {
+
+    /**
+      * Wildcard Expression.
+      *
+      * Illegal in proper expressions, but allowed in predicates.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Wild(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Variable Expression.
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param name the ambiguous name.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Var(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Literal Expression.
@@ -383,23 +372,14 @@ object ParsedAst {
     case class Lit(sp1: SourcePosition, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Variable or Reference Expression.
-      *
-      * @param sp1  the position of the first character in the expression.
-      * @param name the ambiguous name.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class VarOrRef(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Apply Expression (function call).
       *
-      * @param sp1     the position of the first character in the expression.
-      * @param lambda  the lambda expression.
-      * @param actuals the actual arguments.
-      * @param sp2     the position of the last character in the expression.
+      * @param sp1    the position of the first character in the expression.
+      * @param lambda the lambda expression.
+      * @param args   the arguments.
+      * @param sp2    the position of the last character in the expression.
       */
-    case class Apply(sp1: SourcePosition, lambda: ParsedAst.Expression, actuals: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Apply(sp1: SourcePosition, lambda: ParsedAst.Expression, args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Infix Expression (function call).
@@ -597,6 +577,26 @@ object ParsedAst {
     case class PutIndex(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Existentially Quantified Expression.
+      *
+      * @param sp1    the position of the first character in the expression.
+      * @param params the existentially quantified variables.
+      * @param exp    the existentially quantified expression.
+      * @param sp2    the position of the last character in the expression.
+      */
+    case class Existential(sp1: SourcePosition, params: Seq[Ast.FormalParam], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Universally Quantified Expression.
+      *
+      * @param sp1    the position of the first character in the expression.
+      * @param params the universally quantified variables.
+      * @param exp    the universally quantified expression.
+      * @param sp2    the position of the last character in the expression.
+      */
+    case class Universal(sp1: SourcePosition, params: Seq[Ast.FormalParam], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Ascribe Expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -629,27 +629,6 @@ object ParsedAst {
       * @param sp2 the position of the last character in the expression.
       */
     case class Top(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Existentially Quantified Expression.
-      *
-      * @param sp1    the position of the first character in the expression.
-      * @param params the existentially quantified variables.
-      * @param exp    the existentially quantified expression.
-      * @param sp2    the position of the last character in the expression.
-      */
-    case class Existential(sp1: SourcePosition, params: Seq[Ast.FormalParam], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Universally Quantified Expression.
-      *
-      * @param sp1    the position of the first character in the expression.
-      * @param params the universally quantified variables.
-      * @param exp    the universally quantified expression.
-      * @param sp2    the position of the last character in the expression.
-      */
-    case class Universal(sp1: SourcePosition, params: Seq[Ast.FormalParam], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
   }
 
   /**
@@ -661,7 +640,7 @@ object ParsedAst {
       * Returns the left most source position in sub-tree of `this` pattern.
       */
     def leftMostSourcePosition: SourcePosition = this match {
-      case Pattern.Wildcard(sp1, _) => sp1
+      case Pattern.Wild(sp1, _) => sp1
       case Pattern.Var(sp1, _, _) => sp1
       case Pattern.Lit(sp1, _, _) => sp1
       case Pattern.Tag(sp1, _, _, _, _) => sp1
@@ -680,23 +659,6 @@ object ParsedAst {
   object Pattern {
 
     /**
-      * Wildcard Pattern.
-      *
-      * @param sp1 the position of the first character in the pattern.
-      * @param sp2 the position of the last character in the pattern.
-      */
-    case class Wildcard(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Pattern
-
-    /**
-      * Variable Pattern.
-      *
-      * @param sp1   the position of the first character in the pattern.
-      * @param ident the variable name.
-      * @param sp2   the position of the last character in the pattern.
-      */
-    case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Pattern
-
-    /**
       * Literal Pattern.
       *
       * Inlined by the Weeder.
@@ -706,6 +668,23 @@ object ParsedAst {
       * @param sp2 the position of the last character in the pattern.
       */
     case class Lit(sp1: SourcePosition, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Pattern
+
+    /**
+      * Wildcard Pattern.
+      *
+      * @param sp1 the position of the first character in the pattern.
+      * @param sp2 the position of the last character in the pattern.
+      */
+    case class Wild(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Pattern
+
+    /**
+      * Variable Pattern.
+      *
+      * @param sp1   the position of the first character in the pattern.
+      * @param ident the variable name.
+      * @param sp2   the position of the last character in the pattern.
+      */
+    case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * Tag Pattern.
@@ -808,7 +787,7 @@ object ParsedAst {
       * @param terms the terms of the predicate.
       * @param sp2   the position of the last character in the predicate.
       */
-    case class Ambiguous(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate
+    case class Ambiguous(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate
 
     /**
       * Equal Predicate.
@@ -818,7 +797,7 @@ object ParsedAst {
       * @param term  the term.
       * @param sp2   the position of the last character in the predicate.
       */
-    case class Equal(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Term, sp2: SourcePosition) extends ParsedAst.Predicate
+    case class Equal(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate
 
     /**
       * NotEqual Predicate.
@@ -838,72 +817,7 @@ object ParsedAst {
       * @param term  the set term.
       * @param sp2   the position of the last character in the predicate.
       */
-    case class Loop(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Term, sp2: SourcePosition) extends ParsedAst.Predicate
-
-  }
-
-  /**
-    * Terms
-    */
-  sealed trait Term extends ParsedAst
-
-  object Term {
-
-    /**
-      * Wildcard Term.
-      *
-      * @param sp1 the position of the first character in the term.
-      * @param sp2 the position of the last character in the term.
-      */
-    case class Wildcard(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Term
-
-    /**
-      * Variable Term.
-      *
-      * @param sp1   the position of the first character in the term.
-      * @param ident the variable name.
-      * @param sp2   the position of the last character in the term.
-      */
-    case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Term
-
-    /**
-      * Literal Term.
-      *
-      * @param sp1 the position of the first character in the term.
-      * @param lit the literal.
-      * @param sp2 the position of the last character in the term.
-      */
-    case class Lit(sp1: SourcePosition, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Term
-
-    /**
-      * Tag Term.
-      *
-      * @param sp1  the position of the first character in the term.
-      * @param enum the namespace of the enum.
-      * @param tag  the tag name.
-      * @param term the (optional) value term.
-      * @param sp2  the position of the last character in the term.
-      */
-    case class Tag(sp1: SourcePosition, enum: Name.QName, tag: Name.Ident, term: Option[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term
-
-    /**
-      * Tuple Term.
-      *
-      * @param sp1  the position of the first character in the term.
-      * @param elms the elements of the tuple.
-      * @param sp2  the position of the last character in the term.
-      */
-    case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term
-
-    /**
-      * Apply Term.
-      *
-      * @param sp1    the position of the first character in the term.
-      * @param name   the name of the function.
-      * @param params the arguments to the function.
-      * @param sp2    the position of the last character in the term.
-      */
-    case class Apply(sp1: SourcePosition, name: Name.QName, params: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term
+    case class Loop(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate
 
   }
 

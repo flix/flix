@@ -62,8 +62,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   object Imports {
 
-    def Wildcard: Rule1[ParsedAst.Import.Wildcard] = rule {
-      SP ~ atomic("import") ~ WS ~ NName ~ "/" ~ "_" ~ optSC ~ SP ~> ParsedAst.Import.Wildcard
+    def Wildcard: Rule1[ParsedAst.Import.Wild] = rule {
+      SP ~ atomic("import") ~ WS ~ NName ~ "/" ~ "_" ~ optSC ~ SP ~> ParsedAst.Import.Wild
     }
 
     def Definition: Rule1[ParsedAst.Import.Definition] = rule {
@@ -256,7 +256,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Attributes: Rule1[Seq[Ast.Attribute]] = rule {
-    oneOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS)
+    zeroOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS)
   }
 
   def FormalParams: Rule1[Seq[Ast.FormalParam]] = rule {
@@ -276,8 +276,19 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   object Literals {
 
-    def Bool: Rule1[ParsedAst.Literal.Bool] = rule {
-      SP ~ capture(atomic("true") | atomic("false")) ~ SP ~> ParsedAst.Literal.Bool
+    def Bool: Rule1[ParsedAst.Literal] = {
+
+      def True: Rule1[ParsedAst.Literal.True] = rule {
+        SP ~ atomic("true") ~ SP ~> ParsedAst.Literal.True
+      }
+
+      def False: Rule1[ParsedAst.Literal.False] = rule {
+        SP ~ atomic("false") ~ SP ~> ParsedAst.Literal.False
+      }
+
+      rule {
+        True | False
+      }
     }
 
     def Char: Rule1[ParsedAst.Literal.Char] = rule {
@@ -347,6 +358,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   object Expressions {
 
+    // TODO: Improve parsing of operator precedence.
+
     def Logical: Rule1[ParsedAst.Expression] = rule {
       Comparison ~ optional(optWS ~ Operators.LogicalOp ~ optWS ~ Comparison ~ SP ~> ParsedAst.Expression.Binary)
     }
@@ -385,7 +398,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetMatch | IfThenElse | Match | Switch | Tag | Lambda | Tuple | FNil | FNone | FSome | FVec | FSet | FMap | Literal |
-        Existential | Universal | Bot | Top | UnaryLambda | Var | UserError
+        Existential | Universal | Bot | Top | UnaryLambda | Wild | Var | UserError
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -474,8 +487,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ "⊤" ~ SP ~> ParsedAst.Expression.Top
     }
 
-    def Var: Rule1[ParsedAst.Expression.VarOrRef] = rule {
-      SP ~ QName ~ SP ~> ParsedAst.Expression.VarOrRef
+    def Wild: Rule1[ParsedAst.Expression.Wild] = rule {
+      SP ~ atomic("_") ~ SP ~> ParsedAst.Expression.Wild
+    }
+
+    def Var: Rule1[ParsedAst.Expression.Var] = rule {
+      SP ~ QName ~ SP ~> ParsedAst.Expression.Var
     }
 
     def UnaryLambda: Rule1[ParsedAst.Expression.Lambda] = rule {
@@ -518,8 +535,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       FNil | FNone | FSome | Tag | Literal | Tuple | FVec | FSet | FMap | Wildcard | Variable
     }
 
-    def Wildcard: Rule1[ParsedAst.Pattern.Wildcard] = rule {
-      SP ~ atomic("_") ~ SP ~> ParsedAst.Pattern.Wildcard
+    def Wildcard: Rule1[ParsedAst.Pattern.Wild] = rule {
+      SP ~ atomic("_") ~ SP ~> ParsedAst.Pattern.Wild
     }
 
     def Variable: Rule1[ParsedAst.Pattern.Var] = rule {
@@ -612,11 +629,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   object Predicates {
     def Ambiguous: Rule1[ParsedAst.Predicate.Ambiguous] = rule {
-      SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Ambiguous
+      SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Ambiguous
     }
 
     def Equal: Rule1[ParsedAst.Predicate.Equal] = rule {
-      SP ~ Ident ~ optWS ~ atomic(":=") ~ optWS ~ Term ~ SP ~> ParsedAst.Predicate.Equal
+      SP ~ Ident ~ optWS ~ atomic(":=") ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Equal
     }
 
     def NotEqual: Rule1[ParsedAst.Predicate.NotEqual] = rule {
@@ -624,46 +641,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Loop: Rule1[ParsedAst.Predicate.Loop] = rule {
-      SP ~ Ident ~ optWS ~ atomic("<-") ~ optWS ~ Term ~ SP ~> ParsedAst.Predicate.Loop
+      SP ~ Ident ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Loop
     }
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Terms                                                                   //
-  /////////////////////////////////////////////////////////////////////////////
-  // NB: InfixTerm must be parsed before SimpleTerm.
-  def Term: Rule1[ParsedAst.Term] = rule {
-    Terms.Apply | Terms.Tag | Terms.Tuple | Terms.Literal | Terms.Wildcard | Terms.Variable
-  }
-
-  object Terms {
-
-    def Wildcard: Rule1[ParsedAst.Term.Wildcard] = rule {
-      SP ~ atomic("_") ~ SP ~> ParsedAst.Term.Wildcard
-    }
-
-    def Variable: Rule1[ParsedAst.Term.Var] = rule {
-      SP ~ Ident ~ SP ~> ParsedAst.Term.Var
-    }
-
-    def Literal: Rule1[ParsedAst.Term.Lit] = rule {
-      SP ~ Parser.this.Literal ~ SP ~> ParsedAst.Term.Lit
-    }
-
-    def Tag: Rule1[ParsedAst.Term.Tag] = rule {
-      SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ Tuple) ~ SP ~> ParsedAst.Term.Tag
-    }
-
-    def Tuple: Rule1[ParsedAst.Term.Tuple] = rule {
-      SP ~ "(" ~ optWS ~ zeroOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Term.Tuple
-    }
-
-    def Apply: Rule1[ParsedAst.Term.Apply] = rule {
-      SP ~ QName ~ optWS ~ "(" ~ zeroOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Term.Apply
-    }
-
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //

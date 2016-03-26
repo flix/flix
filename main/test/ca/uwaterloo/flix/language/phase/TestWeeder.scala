@@ -111,6 +111,36 @@ class TestWeeder extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Empty Index                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+  test("EmptyIndex.01") {
+    val input =
+      """rel A(x: Int, y: Int, z: Int)
+        |index A()
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.EmptyIndex])
+  }
+  
+  /////////////////////////////////////////////////////////////////////////////
+  // Empty Relation                                                          //
+  /////////////////////////////////////////////////////////////////////////////
+  test("EmptyRelation.01") {
+    val input = "rel R()"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.EmptyRelation])
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Empty Lattice                                                           //
+  /////////////////////////////////////////////////////////////////////////////
+  test("EmptyLattice.01") {
+    val input = "lat L()"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.EmptyLattice])
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Illegal Annotation                                                      //
   /////////////////////////////////////////////////////////////////////////////
   test("IllegalAnnotation01") {
@@ -149,15 +179,6 @@ class TestWeeder extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Illegal Index                                                           //
   /////////////////////////////////////////////////////////////////////////////
-  test("IllegalNoIndex01") {
-    val input =
-      """rel A(x: Int, y: Int, z: Int)
-        |index A()
-      """.stripMargin
-    val result = new Flix().addStr(input).solve()
-    assert(result.errors.head.isInstanceOf[Weeder.WeederError.MissingIndex])
-  }
-
   test("IllegalIndex01") {
     val input =
       """rel A(x: Int, y: Int, z: Int)
@@ -219,6 +240,57 @@ class TestWeeder extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Illegal Int                                                            //
+  /////////////////////////////////////////////////////////////////////////////
+  test("IllegalInt8.01") {
+    val input = "def f: Int8 = -1000i8"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalInt])
+  }
+
+  test("IllegalInt8.02") {
+    val input = "def f: Int8 = 1000i8"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalInt])
+  }
+
+  test("IllegalInt16.01") {
+    val input = "def f: Int16 = -100000i16"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalInt])
+  }
+
+  test("IllegalInt16.02") {
+    val input = "def f: Int16 = 100000i16"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalInt])
+  }
+
+  test("IllegalInt32.01") {
+    val input = "def f: Int32 = -10000000000i32"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalInt])
+  }
+
+  test("IllegalInt32.02") {
+    val input = "def f: Int32 = 10000000000i32"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalInt])
+  }
+
+  test("IllegalInt64.01") {
+    val input = "def f: Int64 = -100000000000000000000i64"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalInt])
+  }
+
+  test("IllegalInt64.02") {
+    val input = "def f: Int64 = 100000000000000000000i64"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalInt])
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Illegal Lattice                                                         //
   /////////////////////////////////////////////////////////////////////////////
   test("IllegalLattice01") {
@@ -231,6 +303,27 @@ class TestWeeder extends FunSuite {
     val input = "let Foo<> = (1, 2, 3, 4, 5, 6, 7, 8, 9)"
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalLattice])
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Illegal Wildcard Expression                                             //
+  /////////////////////////////////////////////////////////////////////////////
+  test("IllegalWildcard.01") {
+    val input = "def f: Int = _"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalWildcard])
+  }
+
+  test("IllegalWildcard.02") {
+    val input = "def f: Int = 42 + _"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalWildcard])
+  }
+
+  test("IllegalWildcard.03") {
+    val input = "def f: Set[Int] = #{1, 2, _}"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalWildcard])
   }
 
   /////////////////////////////////////////////////////////////////////////////

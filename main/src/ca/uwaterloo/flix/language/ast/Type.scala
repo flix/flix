@@ -24,7 +24,6 @@ sealed trait Type {
     case Type.Native => "Native"
     case Type.Prop => "Prop"
     case Type.Tag(enum, tag, tpe) => tag.name + "(" + tpe + ")"
-    case Type.UnresolvedTag(enum, tag, tpe) => "?" + tag.name + "(" + tpe + ")"
     case Type.Enum(enum, cases) => enum.fqn
     case Type.Tuple(elms) => "(" + elms.mkString(". ") + ")"
     case Type.Lambda(args, r) => "λ(" + args.mkString(", ") + ") -> " + r
@@ -200,15 +199,5 @@ object Type {
     */
   @deprecated("to be removed", "0.1.0")
   case class Tag(enum: Symbol.Resolved, tag: Name.Ident, tpe: Type) extends Type
-
-  /**
-    * An AST node that represents the unresolved type of a tag.
-    *
-    * @param enum the unresolved enum name.
-    * @param tag  the name of the tag.
-    * @param tpe  the type of the nested value.
-    */
-  @deprecated("to be removed", "0.1.0")
-  case class UnresolvedTag(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends Type
 
 }
