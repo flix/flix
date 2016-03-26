@@ -2066,45 +2066,6 @@ class TestParser extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Terms                                                                   //
-  /////////////////////////////////////////////////////////////////////////////
-  // TODO: Deprecated direct use of parser
-  test("Term.01") {
-    val input = "_"
-    val result = new Parser(SourceInput.Str(input)).Term.run().get
-    assert(result.isInstanceOf[ParsedAst.Term.Wild])
-  }
-
-  // TODO: Deprecated direct use of parser
-  test("Term.02") {
-    val input = "x"
-    val result = new Parser(SourceInput.Str(input)).Term.run().get.asInstanceOf[ParsedAst.Term.Var]
-    assertResult("x")(result.ident.name)
-  }
-
-  // TODO: Deprecated direct use of parser
-  test("Term.03") {
-    val input = "42"
-    val result = new Parser(SourceInput.Str(input)).Term.run().get.asInstanceOf[ParsedAst.Term.Lit]
-    assertResult("42")(result.lit.asInstanceOf[ParsedAst.Literal.Int32].lit)
-  }
-
-  // TODO: Deprecated direct use of parser
-  test("Term.04") {
-    val input = "foo(x)"
-    val result = new Parser(SourceInput.Str(input)).Term.run().get.asInstanceOf[ParsedAst.Term.Apply]
-    // assertResult(Seq("foo"))(result.name.parts)
-  }
-
-  // TODO: Deprecated direct use of parser
-  test("Term0.5") {
-    val input = "foo/bar(x, y, z)"
-    val result = new Parser(SourceInput.Str(input)).Term.run().get.asInstanceOf[ParsedAst.Term.Apply]
-    //assertResult(Seq("foo", "bar"))(result.name.parts)
-    //assertResult(Seq("x", "y", "z"))(result.args.map(_.asInstanceOf[ParsedAst.Term.Var].ident.name))
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   test("Type.Unit.01") {

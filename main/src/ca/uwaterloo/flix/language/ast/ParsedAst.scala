@@ -344,7 +344,7 @@ object ParsedAst {
     /**
       * Wildcard Expression.
       *
-      * Illegal in proper expressions, but allowed in terms.
+      * Illegal in proper expressions, but allowed in predicates.
       *
       * @param sp1 the position of the first character in the expression.
       * @param sp2 the position of the last character in the expression.
@@ -772,8 +772,6 @@ object ParsedAst {
 
   }
 
-  // TODO: Cleanup
-
   /**
     * Predicates.
     */
@@ -799,7 +797,7 @@ object ParsedAst {
       * @param term  the term.
       * @param sp2   the position of the last character in the predicate.
       */
-    case class Equal(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Term, sp2: SourcePosition) extends ParsedAst.Predicate
+    case class Equal(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate
 
     /**
       * NotEqual Predicate.
@@ -819,74 +817,7 @@ object ParsedAst {
       * @param term  the set term.
       * @param sp2   the position of the last character in the predicate.
       */
-    case class Loop(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Term, sp2: SourcePosition) extends ParsedAst.Predicate
-
-  }
-
-  // TODO: Cleanup
-
-  /**
-    * Terms
-    */
-  sealed trait Term extends ParsedAst
-
-  object Term {
-
-    /**
-      * Wildcard Term.
-      *
-      * @param sp1 the position of the first character in the term.
-      * @param sp2 the position of the last character in the term.
-      */
-    case class Wild(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Term
-
-    /**
-      * Variable Term.
-      *
-      * @param sp1   the position of the first character in the term.
-      * @param ident the variable name.
-      * @param sp2   the position of the last character in the term.
-      */
-    case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Term
-
-    /**
-      * Literal Term.
-      *
-      * @param sp1 the position of the first character in the term.
-      * @param lit the literal.
-      * @param sp2 the position of the last character in the term.
-      */
-    case class Lit(sp1: SourcePosition, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Term
-
-    /**
-      * Tag Term.
-      *
-      * @param sp1  the position of the first character in the term.
-      * @param enum the namespace of the enum.
-      * @param tag  the tag name.
-      * @param term the (optional) value term.
-      * @param sp2  the position of the last character in the term.
-      */
-    case class Tag(sp1: SourcePosition, enum: Name.QName, tag: Name.Ident, term: Option[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term
-
-    /**
-      * Tuple Term.
-      *
-      * @param sp1  the position of the first character in the term.
-      * @param elms the elements of the tuple.
-      * @param sp2  the position of the last character in the term.
-      */
-    case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term
-
-    /**
-      * Apply Term.
-      *
-      * @param sp1  the position of the first character in the term.
-      * @param name the name of the function.
-      * @param args the arguments to the function.
-      * @param sp2  the position of the last character in the term.
-      */
-    case class Apply(sp1: SourcePosition, name: Name.QName, args: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Term
+    case class Loop(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate
 
   }
 

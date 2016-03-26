@@ -1040,14 +1040,14 @@ object Weeder {
         */
       def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] = past match {
         case p: ParsedAst.Predicate.Ambiguous =>
-          @@(p.terms.map(Term.Body.compile)) map {
+          @@(p.terms.map(Term.Body.toTerm)) map {
             case terms => WeededAst.Predicate.Body.Ambiguous(p.name, terms, mkSL(p.sp1, p.sp2))
           }
 
         case p: ParsedAst.Predicate.NotEqual =>
           WeededAst.Predicate.Body.NotEqual(p.ident1, p.ident2, mkSL(p.sp1, p.sp2)).toSuccess
 
-        case p: ParsedAst.Predicate.Loop => Term.Head.compile(p.term, Map.empty) map {
+        case p: ParsedAst.Predicate.Loop => Term.Head.toTerm(p.term, Map.empty) map {
           case term => WeededAst.Predicate.Body.Loop(p.ident, term, mkSL(p.sp1, p.sp2))
         }
 
@@ -1099,46 +1099,7 @@ object Weeder {
         case _ => throw InternalCompilerException("Illegal head term. But proper error messages not yet implemented.")
       }
 
-      /**
-        * Compiles the given parsed head term `past` to a weeded term.
-        */
-      def compile(past: ParsedAst.Term, aliases: Map[String, ParsedAst.Predicate.Equal]): Validation[WeededAst.Term.Head, WeederError] = past match {
-        case ParsedAst.Term.Wild(sp1, sp2) => IllegalHeadTerm("Wildcards may not occur in head predicates.", mkSL(sp1, sp2)).toFailure
 
-        case ParsedAst.Term.Var(sp1, ident, sp2) => aliases.get(ident.name) match {
-          case None => WeededAst.Term.Head.Var(ident, mkSL(sp1, sp2)).toSuccess
-          case Some(alias) => compile(alias.term, aliases)
-        }
-
-        case ParsedAst.Term.Lit(sp1, lit, sp2) => Literals.compile(lit) map {
-          case l => WeededAst.Term.Head.Lit(l, mkSL(sp1, sp2))
-        }
-
-        case ParsedAst.Term.Tag(sp1, enum, tag, t, sp2) => t match {
-          case None =>
-            val loc = mkSL(sp1, sp2)
-            val unit = WeededAst.Term.Head.Lit(WeededAst.Literal.Unit(loc), loc)
-            WeededAst.Term.Head.Tag(enum, tag, unit, loc).toSuccess
-          case Some(t2) => compile(t2, aliases) map {
-            case inner => WeededAst.Term.Head.Tag(enum, tag, inner, mkSL(sp1, sp2))
-          }
-        }
-
-        case ParsedAst.Term.Tuple(sp1, elms, sp2) => elms.toList match {
-          case Nil =>
-            val loc = mkSL(sp1, sp2)
-            WeededAst.Term.Head.Lit(WeededAst.Literal.Unit(loc), loc).toSuccess
-          case x :: Nil => compile(x, aliases)
-          case xs => @@(xs map (x => compile(x, aliases))) map {
-            case es => WeededAst.Term.Head.Tuple(es, mkSL(sp1, sp2))
-          }
-        }
-
-        case ParsedAst.Term.Apply(sp1, name, args, sp2) =>
-          @@(args map (t => compile(t, aliases))) map {
-            case as => WeededAst.Term.Head.Apply(name, as, mkSL(sp1, sp2))
-          }
-      }
     }
 
     object Body {
@@ -1147,7 +1108,7 @@ object Weeder {
         * Compiles the parsed expression `exp` into a weeded body term.
         *
         */
-      def compile(exp: ParsedAst.Expression): Validation[WeededAst.Term.Body, WeederError] = exp match {
+      def toTerm(exp: ParsedAst.Expression): Validation[WeededAst.Term.Body, WeederError] = exp match {
         case ParsedAst.Expression.Wild(sp1, sp2) => WeededAst.Term.Body.Wild(mkSL(sp1, sp2)).toSuccess
         case ParsedAst.Expression.Var(sp1, name, sp2) if name.isUnqualified => WeededAst.Term.Body.Var(name.ident, mkSL(sp1, sp2)).toSuccess
         case ParsedAst.Expression.Var(sp1, name, sp2) => IllegalBodyTerm("Qualified variable may not occur here.", mkSL(sp1, sp2)).toFailure
@@ -1156,20 +1117,6 @@ object Weeder {
         }
         case ParsedAst.Expression.Apply(sp1, lambda, args, sp2) => IllegalBodyTerm("Functions call may not occur here.", mkSL(sp1, sp2)).toFailure
         case _ => throw InternalCompilerException("Illegal body term. But proper error messages not yet implemented.")
-      }
-
-      /**
-        * Compiles the given parsed body term `past` to a weeded term.
-        */
-      def compile(past: ParsedAst.Term): Validation[WeededAst.Term.Body, WeederError] = past match {
-        case ParsedAst.Term.Wild(sp1, sp2) => WeededAst.Term.Body.Wild(mkSL(sp1, sp2)).toSuccess
-        case ParsedAst.Term.Var(sp1, ident, sp2) => WeededAst.Term.Body.Var(ident, mkSL(sp1, sp2)).toSuccess
-        case ParsedAst.Term.Lit(sp1, lit, sp2) => Literals.compile(lit) map {
-          case l => WeededAst.Term.Body.Lit(l, mkSL(sp1, sp2))
-        }
-        case ParsedAst.Term.Tag(sp1, enum, tag, t, sp2) => IllegalBodyTerm("Tags may not occur in body predicates.", mkSL(sp1, sp2)).toFailure
-        case ParsedAst.Term.Tuple(sp1, elms, sp2) => IllegalBodyTerm("Tuples may not occur in body predicates.", mkSL(sp1, sp2)).toFailure
-        case ParsedAst.Term.Apply(sp1, name, args, sp2) => IllegalBodyTerm("Function calls may not occur in body predicates.", mkSL(sp1, sp2)).toFailure
       }
     }
 

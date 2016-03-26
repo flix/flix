@@ -633,7 +633,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Equal: Rule1[ParsedAst.Predicate.Equal] = rule {
-      SP ~ Ident ~ optWS ~ atomic(":=") ~ optWS ~ Term ~ SP ~> ParsedAst.Predicate.Equal
+      SP ~ Ident ~ optWS ~ atomic(":=") ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Equal
     }
 
     def NotEqual: Rule1[ParsedAst.Predicate.NotEqual] = rule {
@@ -641,46 +641,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Loop: Rule1[ParsedAst.Predicate.Loop] = rule {
-      SP ~ Ident ~ optWS ~ atomic("<-") ~ optWS ~ Term ~ SP ~> ParsedAst.Predicate.Loop
+      SP ~ Ident ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Loop
     }
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Terms                                                                   //
-  /////////////////////////////////////////////////////////////////////////////
-  // NB: InfixTerm must be parsed before SimpleTerm.
-  def Term: Rule1[ParsedAst.Term] = rule {
-    Terms.Apply | Terms.Tag | Terms.Tuple | Terms.Literal | Terms.Wildcard | Terms.Variable
-  }
-
-  object Terms {
-
-    def Wildcard: Rule1[ParsedAst.Term.Wild] = rule {
-      SP ~ atomic("_") ~ SP ~> ParsedAst.Term.Wild
-    }
-
-    def Variable: Rule1[ParsedAst.Term.Var] = rule {
-      SP ~ Ident ~ SP ~> ParsedAst.Term.Var
-    }
-
-    def Literal: Rule1[ParsedAst.Term.Lit] = rule {
-      SP ~ Parser.this.Literal ~ SP ~> ParsedAst.Term.Lit
-    }
-
-    def Tag: Rule1[ParsedAst.Term.Tag] = rule {
-      SP ~ QName ~ "." ~ Ident ~ optional(optWS ~ Tuple) ~ SP ~> ParsedAst.Term.Tag
-    }
-
-    def Tuple: Rule1[ParsedAst.Term.Tuple] = rule {
-      SP ~ "(" ~ optWS ~ zeroOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Term.Tuple
-    }
-
-    def Apply: Rule1[ParsedAst.Term.Apply] = rule {
-      SP ~ QName ~ optWS ~ "(" ~ zeroOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Term.Apply
-    }
-
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
