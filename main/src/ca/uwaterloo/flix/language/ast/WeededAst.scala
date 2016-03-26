@@ -26,7 +26,7 @@ object WeededAst {
 
     case class Law(ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], params: Seq[Ast.FormalParam], tpe: Type, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Enum(ident: Name.Ident, cases: Map[String, Type.UnresolvedTag], loc: SourceLocation) extends WeededAst.Declaration
+    case class Enum(ident: Name.Ident, cases: Map[String, WeededAst.Case], loc: SourceLocation) extends WeededAst.Declaration
 
     case class Class(ident: Name.Ident, tparams: Seq[Type], /* bounds: Seq[ContextBound],*/ decls: Seq[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
@@ -319,5 +319,8 @@ object WeededAst {
     }
 
   }
+
+  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type)
+
 
 }

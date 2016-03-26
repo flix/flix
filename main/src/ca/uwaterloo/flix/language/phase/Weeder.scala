@@ -433,11 +433,11 @@ object Weeder {
         /*
          * Check duplicate tags.
          */
-        Validation.fold[ParsedAst.Case, Map[String, Type.UnresolvedTag], WeederError](cases, Map.empty) {
+        Validation.fold[ParsedAst.Case, Map[String, WeededAst.Case], WeederError](cases, Map.empty) {
           case (macc, caze: ParsedAst.Case) =>
             val tag = caze.ident.name
             macc.get(tag) match {
-              case None => (macc + (tag -> Type.UnresolvedTag(ident, caze.ident, caze.tpe))).toSuccess
+              case None => (macc + (tag -> WeededAst.Case(ident, caze.ident, caze.tpe))).toSuccess
               case Some(otherTag) => DuplicateTag(tag, otherTag.tag.loc, mkSL(caze.sp1, caze.sp2)).toFailure
             }
         } map {
