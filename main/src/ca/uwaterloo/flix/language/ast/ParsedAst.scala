@@ -789,7 +789,7 @@ object ParsedAst {
       * @param terms the terms of the predicate.
       * @param sp2   the position of the last character in the predicate.
       */
-    case class Ambiguous(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Term], sp2: SourcePosition) extends ParsedAst.Predicate
+    case class Ambiguous(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate
 
     /**
       * Equal Predicate.

@@ -1022,7 +1022,7 @@ object Weeder {
         */
       def compile(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Equal] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
         case p: ParsedAst.Predicate.Ambiguous =>
-          @@(p.terms.map(t => Term.Head.compile(t, aliases))) map {
+          @@(p.terms.map(t => Term.Head.toTerm(t, aliases))) map {
             case terms => WeededAst.Predicate.Head.Table(p.name, terms, mkSL(p.sp1, p.sp2))
           }
 
@@ -1060,6 +1060,44 @@ object Weeder {
   object Term {
 
     object Head {
+
+      /**
+        * Compiles the parsed expression `exp` into a weeded head term.
+        *
+        */
+      def toTerm(exp: ParsedAst.Expression, aliases: Map[String, ParsedAst.Predicate.Equal]): Validation[WeededAst.Term.Head, WeederError] = exp match {
+        case ParsedAst.Expression.Wild(sp1, sp2) =>  IllegalHeadTerm("Wildcards may not occur here.", mkSL(sp1, sp2)).toFailure
+        case ParsedAst.Expression.Var(sp1, name, sp2) if name.isUnqualified => WeededAst.Term.Head.Var(name.ident, mkSL(sp1, sp2)).toSuccess
+        case ParsedAst.Expression.Var(sp1, name, sp2) =>
+          IllegalHeadTerm("Qualified variable may not occur here.", mkSL(sp1, sp2)).toFailure
+        case ParsedAst.Expression.Lit(sp1, lit, sp2) => Literals.compile(lit) map {
+          case l => WeededAst.Term.Head.Lit(l, mkSL(sp1, sp2))
+        }
+        case ParsedAst.Expression.Apply(sp1, lambda, args, sp2) => lambda match {
+          case ParsedAst.Expression.Var(_, name, _) =>
+            @@(args map (a => toTerm(a, aliases))) map {
+              case as => WeededAst.Term.Head.Apply(name, as, mkSL(sp1, sp2))
+            }
+          case _ => throw InternalCompilerException("Illegal head term. But proper error messages not yet implemented.")
+        }
+        case ParsedAst.Expression.Tag(sp1, enum, tag, o, sp2) => o match {
+          case None =>
+            val loc = mkSL(sp1, sp2)
+            val lit = WeededAst.Literal.Unit(loc)
+            val term = WeededAst.Term.Head.Lit(lit, loc)
+            WeededAst.Term.Head.Tag(enum, tag, term, mkSL(sp1, sp2)).toSuccess
+          case Some(e) => toTerm(e, aliases) map {
+            case t => WeededAst.Term.Head.Tag(enum, tag, t, mkSL(sp1, sp2))
+          }
+        }
+        case ParsedAst.Expression.Tuple(sp1, elms, sp2) =>
+          @@(elms.map(e => toTerm(e, aliases))) map {
+            case Nil => WeededAst.Term.Head.Lit(WeededAst.Literal.Unit(mkSL(sp1, sp2)), mkSL(sp1, sp2))
+            case t :: Nil => t
+            case es => WeededAst.Term.Head.Tuple(es, mkSL(sp1, sp2))
+          }
+        case _ => throw InternalCompilerException("Illegal head term. But proper error messages not yet implemented.")
+      }
 
       /**
         * Compiles the given parsed head term `past` to a weeded term.
@@ -1104,6 +1142,22 @@ object Weeder {
     }
 
     object Body {
+
+      /**
+        * Compiles the parsed expression `exp` into a weeded body term.
+        *
+        */
+      def compile(exp: ParsedAst.Expression): Validation[WeededAst.Term.Body, WeederError] = exp match {
+        case ParsedAst.Expression.Wild(sp1, sp2) => WeededAst.Term.Body.Wild(mkSL(sp1, sp2)).toSuccess
+        case ParsedAst.Expression.Var(sp1, name, sp2) if name.isUnqualified => WeededAst.Term.Body.Var(name.ident, mkSL(sp1, sp2)).toSuccess
+        case ParsedAst.Expression.Var(sp1, name, sp2) => IllegalBodyTerm("Qualified variable may not occur here.", mkSL(sp1, sp2)).toFailure
+        case ParsedAst.Expression.Lit(sp1, lit, sp2) => Literals.compile(lit) map {
+          case l => WeededAst.Term.Body.Lit(l, mkSL(sp1, sp2))
+        }
+        case ParsedAst.Expression.Apply(sp1, lambda, args, sp2) => IllegalBodyTerm("Functions call may not occur here.", mkSL(sp1, sp2)).toFailure
+        case _ => throw InternalCompilerException("Illegal body term. But proper error messages not yet implemented.")
+      }
+
       /**
         * Compiles the given parsed body term `past` to a weeded term.
         */

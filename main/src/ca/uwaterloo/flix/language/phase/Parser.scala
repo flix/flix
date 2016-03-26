@@ -629,7 +629,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   object Predicates {
     def Ambiguous: Rule1[ParsedAst.Predicate.Ambiguous] = rule {
-      SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Term).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Ambiguous
+      SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Ambiguous
     }
 
     def Equal: Rule1[ParsedAst.Predicate.Equal] = rule {
