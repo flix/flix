@@ -48,8 +48,8 @@ impl MeetLattice[Widen[E: MeetLattice]] {
     def top: Widen[E] = Widen.Widen(top)
 
     def glb(x: Widen[E], y: Widen[E]): Bool =
-        let x1 = Widen.Widen(x) in
-        let y1 = Widen.Widen(y) in
+        let Widen.Widen(x1) = x in
+        let Widen.Widen(y1) = y in
             x1 ⊓ y1
 }
 
