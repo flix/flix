@@ -21,6 +21,8 @@ enum Lifted[A, B] {
     case LiftB(b: B)
 }
 
+// TODO: see page 23. How can we express sums? Products seem easy (tuples).
+// Maybe a sum as a list or even hlist?
 
 impl PartialOrder[Lifted[A: PartialOrder, B: PartialOrder]] {
     def leq(x: Lifted, y: Lifted): Bool =

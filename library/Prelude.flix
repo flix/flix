@@ -50,9 +50,14 @@ law Monotone1[A: PartialOrder, R: PartialOrder](f: (A) -> R): Prop =
 law Monotone2[A: PartialOrder, B: PartialOrder, R: PartialOrder](f: (A, B) -> R): Prop =
     ∀(x1: A, y1: A, x2: B, y2: B). ((x1 ⊑ y1) ∧ (x2 ⊑ y2)) → (f(x) ⊑ f(y))
 
+// TODO: Join and Meet Presevering, see page 43
+
+law JoinPreseving[A: Lattice, B: Lattice](f: A -> B): Prop = \\forall ... // TODO
+
+law Homomorphism[A: Lattice, B: Lattice](f: A -> B): Prop = JoinPreseving(f) and MeetPreseving(f)
+
 
 // TODOs:
-// - Rename Join and MeetLattices, removing semi
 // - Implement basic markdown.
 // DJSpiwak
 // https://gist.github.com/djspiewak/2ae2570c8856037a7738
