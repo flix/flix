@@ -1,7 +1,7 @@
 /**
  * A join semi lattice is a partial order equipped with a bottom element and a least upper bound.
  */
-class JoinSemiLattice[E] => PartialOrder[E] {
+class JoinLattice[E] => PartialOrder[E] {
 
     /**
      * Returns the least element of the lattice.
@@ -48,9 +48,9 @@ class JoinSemiLattice[E] => PartialOrder[E] {
 //
 
 /**
- * Implementation of `JoinSemiLattice` for `(A, B)`.
+ * Implementation of `JoinLattice` for `(A, B)`.
  */
-impl JoinSemiLattice[(A, B)] <= JoinSemiLattice[A], JoinSemiLattice[B] {
+impl JoinLattice[(A, B)] <= JoinLattice[A], JoinLattice[B] {
     def bot: (A, B) = (⊥, ⊥)
 
     def lub(x: (A, B), y: (A, B)): Bool =
@@ -60,9 +60,9 @@ impl JoinSemiLattice[(A, B)] <= JoinSemiLattice[A], JoinSemiLattice[B] {
 }
 
 /**
- * Implementation of `JoinSemiLattice` for `(A, B, C)`.
+ * Implementation of `JoinLattice` for `(A, B, C)`.
  */
-impl JoinSemiLattice[(A, B, C)] <= JoinSemiLattice[A], JoinSemiLattice[B], JoinSemiLattice[C] {
+impl JoinLattice[(A, B, C)] <= JoinLattice[A], JoinLattice[B], JoinLattice[C] {
     def bot: (A, B, C) = (⊥, ⊥, ⊥)
 
     def lub(x: (A, B, C), y: (A, B, C)): Bool =
@@ -72,9 +72,9 @@ impl JoinSemiLattice[(A, B, C)] <= JoinSemiLattice[A], JoinSemiLattice[B], JoinS
 }
 
 /**
- * Implementation of `JoinSemiLattice` for `(A, B, C, D)`.
+ * Implementation of `JoinLattice` for `(A, B, C, D)`.
  */
-impl JoinSemiLattice[(A, B, C, D)] <= JoinSemiLattice[A], JoinSemiLattice[B], JoinSemiLattice[C], JoinSemiLattice[D] {
+impl JoinLattice[(A, B, C, D)] <= JoinLattice[A], JoinLattice[B], JoinLattice[C], JoinLattice[D] {
     def bot: (A, B, C, D) = (⊥, ⊥, ⊥, ⊥)
 
     def lub(x: (A, B, C, D), y: (A, B, C, D)): Bool =
@@ -84,9 +84,9 @@ impl JoinSemiLattice[(A, B, C, D)] <= JoinSemiLattice[A], JoinSemiLattice[B], Jo
 }
 
 /**
- * Implementation of `JoinSemiLattice` for `(A, B, C, D, E)`.
+ * Implementation of `JoinLattice` for `(A, B, C, D, E)`.
  */
-impl JoinSemiLattice[(A, B, C, D, E)] <= JoinSemiLattice[A], JoinSemiLattice[B], JoinSemiLattice[C], JoinSemiLattice[D], JoinSemiLattice[E] {
+impl JoinLattice[(A, B, C, D, E)] <= JoinLattice[A], JoinLattice[B], JoinLattice[C], JoinLattice[D], JoinLattice[E] {
     def bot: (A, B, C, D, E) = (⊥, ⊥, ⊥, ⊥, ⊥)
 
     def lub(x: (A, B, C, D, E), y: (A, B, C, D, E)): Bool =
@@ -100,11 +100,11 @@ impl JoinSemiLattice[(A, B, C, D, E)] <= JoinSemiLattice[A], JoinSemiLattice[B],
 //
 
 /**
- * Implementation of `JoinSemiLattice` for `Opt[A]`.
+ * Implementation of `JoinLattice` for `Opt[A]`.
  *
  * Here `None` is considered as the smallest element.
  */
-impl JoinSemiLattice[Opt[A]] <= JoinSemiLattice[A] {
+impl JoinLattice[Opt[A]] <= JoinLattice[A] {
     def bot: Opt[A] = None
 
     def lub(x: Opt[A], y: Opt[A]): Opt[A] = match (x, y) with {
@@ -119,9 +119,9 @@ impl JoinSemiLattice[Opt[A]] <= JoinSemiLattice[A] {
 //
 
 /**
- * Implementation of `JoinSemiLattice` for `List[A]`.
+ * Implementation of `JoinLattice` for `List[A]`.
  */
-impl JoinSemiLattice[List[A]] <= JoinSemiLattice[A] {
+impl JoinLattice[List[A]] <= JoinLattice[A] {
     def bot: List[A] = Nil
 
     def lub(x: List[A], y: List[A]): List[A] = ??? // TODO: Need a way to zip over the longest list.
@@ -138,9 +138,9 @@ impl JoinSemiLattice[List[A]] <= JoinSemiLattice[A] {
 //
 
 /**
- * Implementation of `JoinSemiLattice` for `Map[A, B]`.
+ * Implementation of `JoinLattice` for `Map[A, B]`.
  */
-impl JoinSemiLattice[Map[A, B]] <= JoinSemiLattice[B] {
+impl JoinLattice[Map[A, B]] <= JoinLattice[B] {
     def bot: Map[A, B] = @{}
 
     def lub(x: Map[A, B], y: Map[A, B]): Bool =
@@ -154,7 +154,7 @@ impl JoinSemiLattice[Map[A, B]] <= JoinSemiLattice[B] {
 /**
  * Implementation of `PartialOrder` for `Vector[A]`.
  */
-impl JoinSemiLattice[Vector[A]] <= JoinSemiLattice[A] {
+impl JoinLattice[Vector[A]] <= JoinLattice[A] {
     def bot: Vector[A] = #[]
 
     def lub(x: Vector[A], y: Vector[A]): Vector[A] =

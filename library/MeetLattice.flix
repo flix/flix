@@ -1,7 +1,7 @@
 /**
  * A meet semi lattice is a partial order equipped with a top element and a greatest lower bound.
  */
-class MeetSemiLattice[E] => PartialOrder[E] {
+class MeetLattice[E] => PartialOrder[E] {
 
     /**
      * Returns the greatest element of the lattice.
@@ -48,9 +48,9 @@ class MeetSemiLattice[E] => PartialOrder[E] {
 //
 
 /**
- * Implementation of `MeetSemiLattice` for `(A, B)`.
+ * Implementation of `MeetLattice` for `(A, B)`.
  */
-impl MeetSemiLattice[(A, B)] <= MeetSemiLattice[A], MeetSemiLattice[B] {
+impl MeetLattice[(A, B)] <= MeetLattice[A], MeetLattice[B] {
     def top: (A, B) = (⊤, ⊤)
 
     def glb(x: (A, B), y: (A, B)): Bool =
@@ -60,9 +60,9 @@ impl MeetSemiLattice[(A, B)] <= MeetSemiLattice[A], MeetSemiLattice[B] {
 }
 
 /**
- * Implementation of `MeetSemiLattice` for `(A, B, C)`.
+ * Implementation of `MeetLattice` for `(A, B, C)`.
  */
-impl MeetSemiLattice[(A, B, C)] <= MeetSemiLattice[A], MeetSemiLattice[B], MeetSemiLattice[C] {
+impl MeetLattice[(A, B, C)] <= MeetLattice[A], MeetLattice[B], MeetLattice[C] {
     def top: (A, B, C) = (⊤, ⊤, ⊤)
 
     def glb(x: (A, B, C), y: (A, B, C)): Bool =
@@ -72,9 +72,9 @@ impl MeetSemiLattice[(A, B, C)] <= MeetSemiLattice[A], MeetSemiLattice[B], MeetS
 }
 
 /**
- * Implementation of `MeetSemiLattice` for `(A, B, C, D)`.
+ * Implementation of `MeetLattice` for `(A, B, C, D)`.
  */
-impl MeetSemiLattice[(A, B, C, D)] <= MeetSemiLattice[A], MeetSemiLattice[B], MeetSemiLattice[C], MeetSemiLattice[D] {
+impl MeetLattice[(A, B, C, D)] <= MeetLattice[A], MeetLattice[B], MeetLattice[C], MeetLattice[D] {
     def top: (A, B, C, D) = (⊤, ⊤, ⊤, ⊤)
 
     def glb(x: (A, B, C, D), y: (A, B, C, D)): Bool =
@@ -84,9 +84,9 @@ impl MeetSemiLattice[(A, B, C, D)] <= MeetSemiLattice[A], MeetSemiLattice[B], Me
 }
 
 /**
- * Implementation of `MeetSemiLattice` for `(A, B, C, D, E)`.
+ * Implementation of `MeetLattice` for `(A, B, C, D, E)`.
  */
-impl MeetSemiLattice[(A, B, C, D, E)] <= MeetSemiLattice[A], MeetSemiLattice[B], MeetSemiLattice[C], MeetSemiLattice[D], MeetSemiLattice[E] {
+impl MeetLattice[(A, B, C, D, E)] <= MeetLattice[A], MeetLattice[B], MeetLattice[C], MeetLattice[D], MeetLattice[E] {
     def top: (A, B, C, D, E) = (⊤, ⊤, ⊤, ⊤, ⊤)
 
     def glb(x: (A, B, C, D, E), y: (A, B, C, D, E)): Bool =
@@ -100,11 +100,11 @@ impl MeetSemiLattice[(A, B, C, D, E)] <= MeetSemiLattice[A], MeetSemiLattice[B],
 //
 
 /**
- * Implementation of `MeetSemiLattice` for `Opt[A]`.
+ * Implementation of `MeetLattice` for `Opt[A]`.
  *
  * Here `None` is considered as the smallest element.
  */
-impl MeetSemiLattice[Opt[A]] <= MeetSemiLattice[A] {
+impl MeetLattice[Opt[A]] <= MeetLattice[A] {
     def glb(x: Opt[A], y: Opt[A]): Bool = match (x, y) with {
         case (None, _) => None
         case (_, None) => None
@@ -117,9 +117,9 @@ impl MeetSemiLattice[Opt[A]] <= MeetSemiLattice[A] {
 //
 
 /**
- * Implementation of `JoinSemiLattice` for `List[A]`.
+ * Implementation of `MeetLattice` for `List[A]`.
  */
-impl MeetSemiLattice[List[A]] <= MeetSemiLattice[A] {
+impl MeetLattice[List[A]] <= MeetLattice[A] {
     def top: List[A] = ??? // TODO: how
 
     def glb(x: List[A], y: List[A]): List[A] = ??? // TODO: Need a way to zip over the longest list.
@@ -136,9 +136,9 @@ impl MeetSemiLattice[List[A]] <= MeetSemiLattice[A] {
 //
 
 /**
- * Implementation of `JoinSemiLattice` for `Map[A, B]`.
+ * Implementation of `MeetLattice` for `Map[A, B]`.
  */
-impl MeetSemiLattice[Map[A, B]] <= MeetSemiLattice[B] {
+impl MeetLattice[Map[A, B]] <= MeetLattice[B] {
     def top: Map[A, B] = ??? // TODO: How?
 
     def glb(x: Map[A, B], y: Map[A, B]): Bool =
@@ -150,10 +150,10 @@ impl MeetSemiLattice[Map[A, B]] <= MeetSemiLattice[B] {
 //
 
 /**
- * Implementation of `PartialOrder` for `Vector[A]`.
+ * Implementation of `MeetLattice` for `Vector[A]`.
  */
-impl MeetSemiLattice[Vector[A]] <= MeetSemiLattice[A] {
-    def bot: Vector[A] = ??? // TODO: How?
+impl MeetLattice[Vector[A]] <= MeetLattice[A] {
+    def top: Vector[A] = ??? // TODO: How?
 
     def glb(x: Vector[A], y: Vector[A]): Vector[A] =
         vector/zipWith(glb, x, y)

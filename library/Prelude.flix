@@ -5,12 +5,12 @@
 /**
  * Returns the least upper bound of all elements in the foldable `m`.
  */
-def joinAll[M: Foldable[E], JoinSemiLattice[E]](m: M[E]): E = foldRight(lub, bot, m)
+def joinAll[M: Foldable[E], JoinLattice[E]](m: M[E]): E = foldRight(lub, bot, m)
 
 /**
  * Returns the greatest lower bound of all elements in the foldable `m`.
  */
-def meetAll[M: Foldable[E], JoinSemiLattice[E]](m: M[E]): E = foldRight(glb, top, m)
+def meetAll[M: Foldable[E], JoinLattice[E]](m: M[E]): E = foldRight(glb, top, m)
 
 //
 // ## General Laws.
@@ -52,7 +52,7 @@ law Monotone2[A: PartialOrder, B: PartialOrder, R: PartialOrder](f: (A, B) -> R)
 
 
 // TODOs:
-// - Rename Join and MeetSemilattices, removing semi
+// - Rename Join and MeetLattices, removing semi
 // - Implement basic markdown.
 // DJSpiwak
 // https://gist.github.com/djspiewak/2ae2570c8856037a7738

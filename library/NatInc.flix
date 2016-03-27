@@ -9,7 +9,7 @@ impl PartialOrder[NatInc] {
           x <= y
 }
 
-impl JoinSemiLattice[NatInc] {
+impl JoinLattice[NatInc] {
     def bot: NatInc = NatInc.NatInc(0)
 
     def lub(x: NatInc, y: NatInc): NatInc =
@@ -18,7 +18,7 @@ impl JoinSemiLattice[NatInc] {
           Int32/max(i1, i2)
 }
 
-impl MeetSemiLattice[NatInc] {
+impl MeetLattice[NatInc] {
     def top: NatInc = NatInc.NatInc(Int32/maxValue)
 
     def glb(x: NatInc, y: NatInc): NatInc =

@@ -1,10 +1,10 @@
 /**
- * A norm equips a pre order with an operator turning it into a partial order.
+ * Types equipped with an operator that turns a pre order into a partial order.
  */
 class Norm[E] => PreOrder[E] {
 
     /**
-     * Returns the "representative" element of the element `x`.
+     * Returns the representative element of the element `x`.
      */
     def norm(x: E): E
 
@@ -21,7 +21,7 @@ class Norm[E] => PreOrder[E] {
         ∀(x: E, y: E).
             let x1 = ⊡(x) in
             let y1 = ⊡(y) in
-                (x1 ⊑ y1 ∧ y1 ⊑ x1) → (x1 ≡ y1)
+                (x1 ≼ y1 ∧ y1 ≼ x1) → (x1 ≡ y1)
 
 }
 
@@ -33,6 +33,6 @@ impl PartialOrder[E] <= PreOrder[E], Norm[E] {
     /**
      * Returns `true` iff the element `x` is less than or equal to the element `y`.
      */
-    def leq(x: E, y: E): Bool = ⊡(x) ⊑ ⊡(y) // TODO: Need name for leq.
+    def leq(x: E, y: E): Bool = ⊡(x) ⊑ ⊡(y)
 
 }

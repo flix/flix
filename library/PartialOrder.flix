@@ -1,11 +1,5 @@
 /**
  * Types equipped with a partial order.
- *
- * Informally,
- *
- *  - If `leq(x, y)` then `x` is less than or equal to `y`.
- *  - If both `leq(x, y)` and `leq(y, x)` hold then `x == y`.
- *  - If neither `leq(x, y)` and `leq(y, x)` are true then `x` and `y` are incomparable.
  */
 class PartialOrder[E] {
 
@@ -44,7 +38,7 @@ class PartialOrder[E] {
 //
 
 /**
- * Implementation of `PartialOrder` for `Ord[A]`.
+ * Implementation of `PartialOrder` for `TotalOrder[A]`.
  */
 impl PartialOrder[A] <= Ord[A] {
     def leq(x: A, y: B): Bool = leq(x, y)
