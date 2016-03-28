@@ -35,6 +35,7 @@ enum Widen[E: Widening] {
 impl JoinLattice[Widen[E]] {
     def bot: Widen[E] = Widen.Widen(bot)
 
+// TODO: Actually, this does not make too much sense, since the widen operator is not a *LEAST* operator.
     def lub(x: Widen[E], y: Widen[E]): Bool =
         let x1 = Widen.Widen(x) in
         let y1 = Widen.Widen(y) in
@@ -47,6 +48,7 @@ impl JoinLattice[Widen[E]] {
 impl MeetLattice[Widen[E: MeetLattice]] {
     def top: Widen[E] = Widen.Widen(top)
 
+// TODO: same issue as above.
     def glb(x: Widen[E], y: Widen[E]): Bool =
         let Widen.Widen(x1) = x in
         let Widen.Widen(y1) = y in

@@ -34,18 +34,7 @@ class PartialOrder[E] {
 }
 
 //
-// ## Total Orders.
-//
-
-/**
- * Implementation of `PartialOrder` for `TotalOrder[A]`.
- */
-impl PartialOrder[A] <= Ord[A] {
-    def leq(x: A, y: B): Bool = leq(x, y)
-}
-
-//
-// ## Tuples.
+// ## Tuples
 //
 
 /**
@@ -89,7 +78,7 @@ impl PartialOrder[(A, B, C, D, E)] <= PartialOrder[A], PartialOrder[B], PartialO
 }
 
 //
-// ## Options.
+// ## Options
 //
 
 /**
@@ -106,7 +95,7 @@ impl PartialOrder[Opt[A]] <= PartialOrder[A] {
 }
 
 //
-// ## Lists.
+// ## Lists
 //
 
 /**
@@ -121,13 +110,18 @@ impl PartialOrder[List[A]] <= PartialOrder[A] {
 }
 
 //
-// ## Sets.
+// ## Sets
 //
 
-// See `IncSet` and `DecSet`.
+/**
+ * Implementation of `PartialOrder` for `Set[A]`.
+ */
+impl PartialOrder[Set[A]] {
+    def leq(x: Set[A], y: Set[A]): Bool = x `subsetOf` y
+}
 
 //
-// ## Maps.
+// ## Maps
 //
 
 /**
@@ -143,7 +137,7 @@ impl PartialOrder[Map[A, B]] <= PartialOrder[B] {
 }
 
 //
-// ## Vectors.
+// ## Vectors
 //
 
 /**

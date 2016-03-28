@@ -9,6 +9,8 @@ class TotalOrder[E] => PartialOrder[E] {
     /*
      * No defs. `TotalOrder` is a marker interface.
      */
+    // TODO: minimum(x, y) ?
+    // TODO: maximum(x, y) ?
 
     /**
      * The totality law asserts that either `x` is less than or equal to `y`
@@ -70,3 +72,13 @@ impl TotalOrder[(A, B, C, D)] <= TotalOrder[A], TotalOrder[B], TotalOrder[C], To
 impl TotalOrder[(A, B, C, D, E)] <= TotalOrder[A], TotalOrder[B], TotalOrder[C], TotalOrder[D], TotalOrder[E] {
     /* no defs */
 
+//
+// ## Sets
+//
+
+/**
+ * Implementation of `TotalOrder` for `Set[A]`.
+ */
+impl TotalOrder[Set[A]] {
+    /* no defs */
+}
