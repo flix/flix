@@ -359,7 +359,7 @@ object Resolver {
       case WeededAst.Declaration.Fact(head, loc) => syms.toSuccess
       case WeededAst.Declaration.Rule(head, body, loc) => syms.toSuccess
 
-      case defn@WeededAst.Declaration.Definition(ident, formals, tpe, e, loc) =>
+      case defn@WeededAst.Declaration.Definition(ann, ident, formals, tpe, e, loc) =>
         val rname = toRName(ident, namespace)
         syms.constants.get(rname) match {
           case None =>
@@ -466,7 +466,7 @@ object Resolver {
             }
           }
           @@(formalsVal) map {
-            case formals => ResolvedAst.Definition.Constant(name, formals, e, tpe, wast.loc)
+            case formals => ResolvedAst.Definition.Constant(wast.ann, name, formals, e, tpe, wast.loc)
           }
       }
     }

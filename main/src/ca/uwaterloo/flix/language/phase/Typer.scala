@@ -159,12 +159,12 @@ object Typer {
         case e =>
           if (rast.formals.isEmpty) {
             expect(rast.tpe, e.tpe, rast.loc) map {
-              case tpe => TypedAst.Definition.Constant(rast.name, formals, e, tpe, rast.loc)
+              case tpe => TypedAst.Definition.Constant(rast.ann, rast.name, formals, e, tpe, rast.loc)
             }
           } else {
             val lambdaTpe = Type.Lambda(rast.formals.map(_.tpe), e.tpe)
             expect(rast.tpe, lambdaTpe, rast.loc) map {
-              case tpe => TypedAst.Definition.Constant(rast.name, formals, e, tpe, rast.loc)
+              case tpe => TypedAst.Definition.Constant(rast.ann, rast.name, formals, e, tpe, rast.loc)
             }
           }
       }
@@ -318,7 +318,7 @@ object Typer {
           TypedAst.Expression.Lit(lit, lit.tpe, loc).toSuccess
 
         // TODO: Peer review
-        case ResolvedAst.Expression.Lambda(annotations, rargs, rtpe, rbody, loc) =>
+        case ResolvedAst.Expression.Lambda(rargs, rtpe, rbody, loc) =>
           // compile formal arguments
           val args = rargs map {
             case ResolvedAst.FormalArg(ident, t) => TypedAst.FormalArg(ident, t)
@@ -332,7 +332,7 @@ object Typer {
           // type body
           visit(rbody, env1) flatMap {
             case body => expect(rtpe, body.tpe, loc) map {
-              case _ => TypedAst.Expression.Lambda(annotations, args, body, Type.Lambda(args map (_.tpe), rtpe), loc)
+              case _ => TypedAst.Expression.Lambda(args, body, Type.Lambda(args map (_.tpe), rtpe), loc)
             }
           }
 

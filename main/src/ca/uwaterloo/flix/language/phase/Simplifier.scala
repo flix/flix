@@ -55,7 +55,7 @@ object Simplifier {
       val formals = tast.formals.map {
         case TypedAst.FormalArg(ident, tpe) => SimplifiedAst.FormalArg(ident, tpe)
       }
-      SimplifiedAst.Definition.Constant(tast.name, formals, Expression.simplify(tast.exp), tast.tpe, tast.loc)
+      SimplifiedAst.Definition.Constant(tast.ann, tast.name, formals, Expression.simplify(tast.exp), tast.tpe, tast.loc)
     }
 
     def simplify(tast: TypedAst.Definition.Index)(implicit genSym: GenSym): SimplifiedAst.Definition.Index =
@@ -70,8 +70,8 @@ object Simplifier {
         SimplifiedAst.Expression.Var(ident, -1, tpe, loc)
       case TypedAst.Expression.Ref(name, tpe, loc) => SimplifiedAst.Expression.Ref(name, tpe, loc)
       case TypedAst.Expression.Hook(hook, tpe, loc) => SimplifiedAst.Expression.Hook(hook, tpe, loc)
-      case TypedAst.Expression.Lambda(annotations, args, body, tpe, loc) =>
-        SimplifiedAst.Expression.Lambda(annotations, args map Simplifier.simplify, simplify(body), tpe, loc)
+      case TypedAst.Expression.Lambda(args, body, tpe, loc) =>
+        SimplifiedAst.Expression.Lambda(args map Simplifier.simplify, simplify(body), tpe, loc)
       case TypedAst.Expression.Apply(e, args, tpe, loc) =>
         SimplifiedAst.Expression.Apply3(simplify(e), args map simplify, tpe, loc)
       case TypedAst.Expression.Unary(op, e, tpe, loc) =>
@@ -149,7 +149,6 @@ object Simplifier {
             // Construct the lambda that represents the current case:
             //   fn() = if `matchVar` matches `pat`, return `body`, else call `next()`
             val lambda = SExp.Lambda(
-              Ast.Annotations(List()),
               args = List(),
               body = Pattern.simplify(
                 xs = List(pat),
@@ -171,7 +170,7 @@ object Simplifier {
           * Fourth, we generate the match error and bind it to the `fallthrough` name. Note that the match error must
           * be wrapped in a function call, to defer its evaluation.
           */
-        val error = SExp.Lambda(Ast.Annotations(List()), List(), SExp.MatchError(tpe, loc), Type.Lambda(List(), tpe), loc)
+        val error = SExp.Lambda(List(), SExp.MatchError(tpe, loc), Type.Lambda(List(), tpe), loc)
         val inner = SExp.Let(fallthrough, -1, error, patterns, tpe, loc)
 
         /**

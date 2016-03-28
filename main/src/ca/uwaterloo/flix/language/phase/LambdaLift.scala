@@ -1,7 +1,9 @@
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.ast.Ast.Annotations
 import ca.uwaterloo.flix.language.ast.SimplifiedAst
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol}
+
 import scala.collection.mutable
 
 object LambdaLift {
@@ -51,11 +53,12 @@ object LambdaLift {
       case SimplifiedAst.Expression.StoreInt32(b, o, v) => e
       case SimplifiedAst.Expression.Var(ident, o, tpe, loc) => e
       case SimplifiedAst.Expression.Ref(name, tpe, loc) => e
-      case SimplifiedAst.Expression.Lambda(ann, args, body, tpe, loc) =>
+      case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
+        val ann = Ast.Annotations(Nil)
         val exp = visit(body)
         val ns = decl.name.parts
         val name = genSym.freshDefn(ns)
-        val defn = SimplifiedAst.Definition.Constant(name, args, exp, tpe, loc)
+        val defn = SimplifiedAst.Definition.Constant(ann, name, args, exp, tpe, loc)
         m += (name -> defn)
         SimplifiedAst.Expression.Ref(name, tpe, loc)
 
@@ -139,7 +142,7 @@ object LambdaLift {
     val exp2 = visit(exp1)
 
     // Add the top-level function to the map of generated functions.
-    m += (decl.name -> SimplifiedAst.Definition.Constant(decl.name, decl.formals, exp2, decl.tpe, decl.loc))
+    m += (decl.name -> SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), decl.name, decl.formals, exp2, decl.tpe, decl.loc))
 
     // Return the generated definitions.
     m.toMap

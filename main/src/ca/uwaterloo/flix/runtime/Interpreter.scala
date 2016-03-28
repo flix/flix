@@ -44,7 +44,7 @@ object Interpreter {
       case Some(v) => v
     }
     case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env)
-    case Expression.Lambda(annotations, args, body, _, _) =>
+    case Expression.Lambda(args, body, _, _) =>
       val formals = new Array[String](args.length)
       var i = 0
       while (i < formals.length) {

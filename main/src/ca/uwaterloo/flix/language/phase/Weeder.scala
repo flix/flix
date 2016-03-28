@@ -467,12 +467,12 @@ object Weeder {
         }
 
       case ParsedAst.Declaration.Definition(ann, sp1, ident, paramsOpt, tpe, exp, sp2) =>
-        val annotationsVal = Annotations.compile(ann)
-        val body = Expressions.compile(exp)
+        val annVal = Annotations.compile(ann)
+        val expVal = Expressions.compile(exp)
 
         paramsOpt match {
-          case None => body flatMap {
-            case e => WeededAst.Declaration.Definition(ident, Nil, e, tpe, mkSL(sp1, sp2)).toSuccess
+          case None => @@(annVal, expVal) flatMap {
+            case (ann, e) => WeededAst.Declaration.Definition(ann, ident, Nil, e, tpe, mkSL(sp1, sp2)).toSuccess
           }
           case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
           case Some(params) =>
@@ -490,10 +490,10 @@ object Weeder {
               }
             })
 
-            @@(annotationsVal, formalsVal, body) map {
-              case (anns, fs, e) =>
+            @@(annVal, formalsVal, expVal) map {
+              case (ann, fs, e) =>
                 val t = Type.Lambda(fs map (_.tpe), tpe)
-                WeededAst.Declaration.Definition(ident, fs, e, t, mkSL(sp1, sp2))
+                WeededAst.Declaration.Definition(ann, ident, fs, e, t, mkSL(sp1, sp2))
             }
         }
 

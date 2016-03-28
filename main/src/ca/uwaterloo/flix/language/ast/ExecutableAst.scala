@@ -272,8 +272,7 @@ object ExecutableAst {
     }
 
     // TODO: Lambda lift?
-    case class Lambda(annotations: Ast.Annotations,
-                      args: Array[ExecutableAst.FormalArg],
+    case class Lambda(args: Array[ExecutableAst.FormalArg],
                       body: ExecutableAst.Expression,
                       tpe: Type.Lambda,
                       loc: SourceLocation) extends ExecutableAst.Expression {

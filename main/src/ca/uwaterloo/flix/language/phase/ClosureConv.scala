@@ -39,7 +39,7 @@ object ClosureConv {
         // Replace Apply by ApplyClosure.
         SimplifiedAst.Expression.ApplyClosure(lambda, args, tpe, loc)
 
-      case SimplifiedAst.Expression.Lambda(ann, args, body, tpe, loc) =>
+      case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
         // Generate a fresh variable to hold the environment variable.
         val envVar = genSym.fresh2("env")
 
@@ -54,7 +54,7 @@ object ClosureConv {
         }
 
         // Apply the substitution to body expression of the lambda.
-        val exp = SimplifiedAst.Expression.Lambda(ann, args, substitute(m, body), tpe, loc)
+        val exp = SimplifiedAst.Expression.Lambda(args, substitute(m, body), tpe, loc)
 
         // Return the closure which consists of the (substituted) lambda expression and environment variable.
         SimplifiedAst.Expression.MkClosure(exp, envVar, freeVars.map(_._1), tpe, loc)
@@ -157,14 +157,14 @@ object ClosureConv {
       }
 
       case SimplifiedAst.Expression.Ref(name, tpe, loc) => e
-      case SimplifiedAst.Expression.Lambda(ann, args, body, tpe, loc) =>
+      case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
         val keys = m.keySet
         val bound = args.exists(a => keys.contains(a.ident.name))
         if (bound) {
-          SimplifiedAst.Expression.Lambda(ann, args, body, tpe, loc)
+          SimplifiedAst.Expression.Lambda(args, body, tpe, loc)
         } else {
           val e = substitute(m, body)
-          SimplifiedAst.Expression.Lambda(ann, args, e, tpe, loc)
+          SimplifiedAst.Expression.Lambda(args, e, tpe, loc)
         }
 
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
@@ -273,7 +273,7 @@ object ClosureConv {
       case SimplifiedAst.Expression.StoreInt32(b, o, v) => Set.empty
       case SimplifiedAst.Expression.Var(ident, o, tpe, loc) => Set((ident, tpe))
       case SimplifiedAst.Expression.Ref(name, tpe, loc) => Set.empty
-      case SimplifiedAst.Expression.Lambda(ann, args, body, tpe, loc) =>
+      case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
         val bound = args.map(_.ident.name)
         freeVariables(body) filter (v => !bound.contains(v._1.name))
 

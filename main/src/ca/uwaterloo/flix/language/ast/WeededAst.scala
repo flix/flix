@@ -18,7 +18,7 @@ object WeededAst {
 
     case class Namespace(name: Name.NName, decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Definition(ident: Name.Ident, params: List[Ast.FormalParam], exp: WeededAst.Expression, tpe: Type, loc: SourceLocation) extends WeededAst.Declaration
+    case class Definition(ann: Ast.Annotations, ident: Name.Ident, params: List[Ast.FormalParam], exp: WeededAst.Expression, tpe: Type, loc: SourceLocation) extends WeededAst.Declaration
 
     case class Signature(ident: Name.Ident, params: Seq[Ast.FormalParam], tpe: Type, loc: SourceLocation) extends WeededAst.Declaration
 

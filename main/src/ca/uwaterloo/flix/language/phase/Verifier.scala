@@ -35,9 +35,9 @@ object Verifier {
     /**
       * Associativity.
       */
-    case class Associativity(f: SimplifiedAst.Expression.Lambda) extends Property {
+    case class Associativity(f: SimplifiedAst.Definition.Constant) extends Property {
       val formula = {
-        val tpe = f.args.head.tpe
+        val tpe = f.formals.head.tpe
         val (x, y, z) = (mkVar2("x", tpe), mkVar2("y", tpe), mkVar2("z", tpe))
 
         ∀(x, y, z)(≡(f(x, f(y, z)), f(f(x, y), z)))
@@ -56,9 +56,9 @@ object Verifier {
     /**
       * Commutativity.
       */
-    case class Commutativity(f: SimplifiedAst.Expression.Lambda) extends Property {
+    case class Commutativity(f: SimplifiedAst.Definition.Constant) extends Property {
       val formula = {
-        val tpe = f.args.head.tpe
+        val tpe = f.formals.head.tpe
         val (x, y) = (mkVar2("x", tpe), mkVar2("y", tpe))
 
         ∀(x, y)(≡(f(x, y), f(y, x)))
@@ -309,10 +309,10 @@ object Verifier {
     /**
       * The function `f` must be strict in all its arguments.
       */
-    case class Strict1(f: Expression.Lambda, root: SimplifiedAst.Root) extends Property {
+    case class Strict1(f: SimplifiedAst.Definition.Constant, root: SimplifiedAst.Root) extends Property {
       val formula = {
-        val (tpe :: Nil) = f.tpe.args
-        val retTpe = f.tpe.retTpe
+        val (tpe :: Nil) = f.tpe.asInstanceOf[Type.Lambda].args
+        val retTpe = f.tpe.asInstanceOf[Type.Lambda].retTpe
         val argLat = root.lattices(tpe)
         val retLat = root.lattices(retTpe)
         ∀()(≡(f(argLat.bot), retLat.bot))
@@ -328,10 +328,10 @@ object Verifier {
     /**
       * The function `f` must be strict in all its arguments.
       */
-    case class Strict2(f: Expression.Lambda, root: SimplifiedAst.Root) extends Property {
+    case class Strict2(f: SimplifiedAst.Definition.Constant, root: SimplifiedAst.Root) extends Property {
       val formula = {
-        val (tpe1 :: tpe2 :: Nil) = f.tpe.args
-        val retTpe = f.tpe.retTpe
+        val (tpe1 :: tpe2 :: Nil) = f.tpe.asInstanceOf[Type.Lambda].args
+        val retTpe = f.tpe.asInstanceOf[Type.Lambda].retTpe
         val (arg1Lat, arg2Lat) = (root.lattices(tpe1), root.lattices(tpe2))
         val retLat = root.lattices(retTpe)
 
@@ -352,10 +352,10 @@ object Verifier {
     /**
       * The function `f` must be monotone in all its arguments.
       */
-    case class Monotone1(f: Expression.Lambda, root: SimplifiedAst.Root) extends Property {
+    case class Monotone1(f: SimplifiedAst.Definition.Constant, root: SimplifiedAst.Root) extends Property {
       val formula = {
-        val lat1 = latticeOps(root.lattices(f.args.head.tpe))
-        val lat2 = latticeOps(root.lattices(f.tpe.retTpe))
+        val lat1 = latticeOps(root.lattices(f.formals.head.tpe))
+        val lat2 = latticeOps(root.lattices(f.tpe.asInstanceOf[Type.Lambda].retTpe))
 
         val (x, y) = (lat1.mkVar("x"), lat1.mkVar("y"))
 
@@ -372,11 +372,11 @@ object Verifier {
     /**
       * The function `f` must be monotone in all its arguments.
       */
-    case class Monotone2(f: Expression.Lambda, root: SimplifiedAst.Root) extends Property {
+    case class Monotone2(f: SimplifiedAst.Definition.Constant, root: SimplifiedAst.Root) extends Property {
       val formula = {
-        val (tpe1 :: tpe2 :: Nil) = f.args.map(_.tpe)
+        val (tpe1 :: tpe2 :: Nil) = f.formals.map(_.tpe)
         val (lat1, lat2) = (latticeOps(root.lattices(tpe1)), latticeOps(root.lattices(tpe2)))
-        val lat3 = latticeOps(root.lattices(f.tpe.retTpe))
+        val lat3 = latticeOps(root.lattices(f.tpe.asInstanceOf[Type.Lambda].retTpe))
 
         val (x1, y1, x2, y2) = (lat1.mkVar("x1"), lat1.mkVar("y1"), lat2.mkVar("x2"), lat2.mkVar("y2"))
 
@@ -848,18 +848,18 @@ object Verifier {
     }
 
     // Collect function properties.
-    val functionProperties = lambdas(root) flatMap {
-      case f if f.annotations.isUnchecked => Nil
-      case f => f.annotations.annotations.flatMap {
+    val functionProperties = root.constants.values flatMap {
+      case f if f.ann.isUnchecked => Nil
+      case f => f.ann.annotations.flatMap {
         case Annotation.Associative(loc) => Some(Property.Associativity(f))
         case Annotation.Commutative(loc) => Some(Property.Commutativity(f))
-        case Annotation.Strict(loc) => f.args match {
+        case Annotation.Strict(loc) => f.formals match {
           case Nil => None // A constant function is always strict.
           case a :: Nil => Some(Property.Strict1(f, root))
           case a1 :: a2 :: Nil => Some(Property.Strict2(f, root))
           case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
         }
-        case Annotation.Monotone(loc) => f.args match {
+        case Annotation.Monotone(loc) => f.formals match {
           case Nil => None // A constant function is always monotone.
           case a :: Nil => Some(Property.Monotone1(f, root))
           case a1 :: a2 :: Nil => Some(Property.Monotone2(f, root))
@@ -926,12 +926,18 @@ object Verifier {
   def ≡(e1: Expression, e2: Expression): Expression =
     Binary(BinaryOperator.Equal, e1, e2, Type.Bool, SourceLocation.Unknown)
 
-  implicit class RichLambda(val f: Expression.Lambda) {
-    def apply(e1: Expression): Expression =
-      Expression.Apply3(f, List(e1), f.tpe.retTpe, SourceLocation.Unknown)
+  implicit class RichLambda(val f: SimplifiedAst.Definition.Constant) {
+    def apply(e1: Expression): Expression = {
+      val t = f.tpe.asInstanceOf[Type.Lambda]
+      val l = Expression.Lambda(f.formals, f.exp, t, f.loc)
+      Expression.Apply3(l, List(e1), t.retTpe, SourceLocation.Unknown)
+    }
 
-    def apply(e1: Expression, e2: Expression): Expression =
-      Expression.Apply3(f, List(e1, e2), f.tpe.retTpe, SourceLocation.Unknown)
+    def apply(e1: Expression, e2: Expression): Expression = {
+      val t = f.tpe.asInstanceOf[Type.Lambda]
+      val l = Expression.Lambda(f.formals, f.exp, t, f.loc)
+      Expression.Apply3(l, List(e1, e2), t.retTpe, SourceLocation.Unknown)
+    }
   }
 
   /**
@@ -997,14 +1003,6 @@ object Verifier {
     */
   def lattices(root: SimplifiedAst.Root): List[Lattice] =
     root.lattices.values.toList
-
-  /**
-    * Returns all lambdas in the program.
-    */
-  // TODO: Should also find inner lambdas.
-  // TODO: Avoid cast
-  def lambdas(root: SimplifiedAst.Root): List[Expression.Lambda] =
-    root.constants.values.map(_.exp.asInstanceOf[Expression.Lambda]).toList
 
   /////////////////////////////////////////////////////////////////////////////
   // Translation to Z3 Formulae                                              //

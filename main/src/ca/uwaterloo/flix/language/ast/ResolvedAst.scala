@@ -29,7 +29,7 @@ object ResolvedAst {
       * @param tpe  the (declared) type of the constant.
       * @param loc  the location.
       */
-    case class Constant(name: Symbol.Resolved, formals: List[ResolvedAst.FormalArg], exp: ResolvedAst.Expression, tpe: Type, loc: SourceLocation) extends ResolvedAst.Definition
+    case class Constant(ann: Ast.Annotations, name: Symbol.Resolved, formals: List[ResolvedAst.FormalArg], exp: ResolvedAst.Expression, tpe: Type, loc: SourceLocation) extends ResolvedAst.Definition
 
     //  TODO: DOC
     case class Enum(name: Symbol.Resolved, cases: Map[String, Type.Tag], loc: SourceLocation) extends ResolvedAst.Definition
@@ -141,7 +141,7 @@ object ResolvedAst {
 
     case class Lit(literal: ResolvedAst.Literal, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Lambda(annotations: Ast.Annotations, formals: List[FormalArg], retTpe: Type, body: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Lambda(formals: List[FormalArg], retTpe: Type, body: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Apply(lambda: ResolvedAst.Expression, args: Seq[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Expression
 

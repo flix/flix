@@ -18,7 +18,8 @@ object SimplifiedAst {
 
   object Definition {
 
-    case class Constant(name: Symbol.Resolved,
+    case class Constant(ann: Ast.Annotations,
+                        name: Symbol.Resolved,
                         formals: List[SimplifiedAst.FormalArg],
                         exp: SimplifiedAst.Expression,
                         tpe: Type,
@@ -282,8 +283,7 @@ object SimplifiedAst {
     }
 
     // TODO: Lambda lift?
-    case class Lambda(annotations: Ast.Annotations,
-                      args: List[SimplifiedAst.FormalArg],
+    case class Lambda(args: List[SimplifiedAst.FormalArg],
                       body: SimplifiedAst.Expression,
                       tpe: Type.Lambda,
                       loc: SourceLocation) extends SimplifiedAst.Expression {

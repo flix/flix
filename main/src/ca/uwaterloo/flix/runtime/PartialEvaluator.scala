@@ -572,7 +572,7 @@ object PartialEvaluator {
           case actuals =>
             // Partially evaluate the lambda expression.
             eval(lambda, {
-              case Lambda(_, formals, body, _, _) =>
+              case Lambda(formals, body, _, _) =>
                 // Substitute actuals for formals.
                 val result = (formals zip actuals).foldLeft(body) {
                   case (acc, (formal, actual)) =>
@@ -590,8 +590,8 @@ object PartialEvaluator {
       /**
         * Lambda Expressions.
         */
-      case Lambda(ann, args, body, tpe, loc) =>
-        k(Lambda(ann, args, body, tpe, loc))
+      case Lambda(args, body, tpe, loc) =>
+        k(Lambda(args, body, tpe, loc))
 
       /**
         * Hook Expressions.
@@ -797,7 +797,7 @@ object PartialEvaluator {
       else
         Var(ident, offset, tpe, loc)
     case Ref(name, tpe, loc) => Ref(name, tpe, loc)
-    case Lambda(ann, args, body, tpe, loc) =>
+    case Lambda(args, body, tpe, loc) =>
       assert(args.forall(_.ident.name != dst.name), s"The variable name ${dst.name} occurs in the given expression!")
 
       // Check if the variable `src` is bound by a formal argument.
@@ -805,11 +805,11 @@ object PartialEvaluator {
       if (bound) {
         // Case 1: The variable `src` is bound by the lambda.
         // Nothing more to be done, so return the original lambda.
-        Lambda(ann, args, body, tpe, loc)
+        Lambda(args, body, tpe, loc)
       } else {
         // Case 2: The variable `src` is *NOT* bound by the lambda.
         // Continue renaming in the body expression.
-        Lambda(ann, args, rename(src, dst, body), tpe, loc)
+        Lambda(args, rename(src, dst, body), tpe, loc)
       }
     case Hook(hook, tpe, loc) => Hook(hook, tpe, loc)
     case Apply3(lambda, args, tpe, loc) =>
@@ -875,13 +875,13 @@ object PartialEvaluator {
         else
           Var(ident, offset, tpe, loc)
       case Ref(name, tpe, loc) => Ref(name, tpe, loc)
-      case Lambda(ann, args, body, tpe, loc) =>
+      case Lambda(args, body, tpe, loc) =>
         // Check if the variable `src` is bound by a formal argument.
         val bound = args.exists(a => a.ident.name == src.name)
         if (bound) {
           // Case 1: The variable `src` is bound by a formal argument.
           // Nothing more to be done, so return the original lambda.
-          Lambda(ann, args, body, tpe, loc)
+          Lambda(args, body, tpe, loc)
         } else {
           // Case 2: The variable `src` is *NOT* bound by a formal argument.
           // Generate a fresh variable for the formal argument to avoid capture,
@@ -902,7 +902,7 @@ object PartialEvaluator {
               rename(argVar, freshVar, acc)
           }
 
-          Lambda(ann, args2, visit(body2), tpe, loc)
+          Lambda(args2, visit(body2), tpe, loc)
         }
       case Hook(hook, tpe, loc) => Hook(hook, tpe, loc)
       case Apply3(lambda, args, tpe, loc) =>

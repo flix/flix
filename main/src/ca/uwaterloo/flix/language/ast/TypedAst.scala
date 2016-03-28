@@ -43,7 +43,7 @@ object TypedAst {
       * @param tpe  the type of the constant.
       * @param loc  the source location.
       */
-    case class Constant(name: Symbol.Resolved, formals: List[TypedAst.FormalArg], exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Definition
+    case class Constant(ann: Ast.Annotations, name: Symbol.Resolved, formals: List[TypedAst.FormalArg], exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Definition
 
     /**
       * A typed AST node representing a bounded lattice definition.
@@ -305,7 +305,7 @@ object TypedAst {
       * @param tpe         the type of the entire function.
       * @param loc         the source location.
       */
-    case class Lambda(annotations: Ast.Annotations, args: List[TypedAst.FormalArg], body: TypedAst.Expression, tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Expression
+    case class Lambda(args: List[TypedAst.FormalArg], body: TypedAst.Expression, tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing a function call.

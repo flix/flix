@@ -130,9 +130,9 @@ object CreateExecutableAst {
       case SimplifiedAst.Expression.Var(ident, offset, tpe, loc) =>
         ExecutableAst.Expression.Var(ident, offset, tpe, loc)
       case SimplifiedAst.Expression.Ref(name, tpe, loc) => ExecutableAst.Expression.Ref(name, tpe, loc)
-      case SimplifiedAst.Expression.Lambda(annotations, args, body, tpe, loc) =>
+      case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
         val argsArray = args.map(CreateExecutableAst.toExecutable).toArray
-        ExecutableAst.Expression.Lambda(annotations, argsArray, toExecutable(body), tpe, loc)
+        ExecutableAst.Expression.Lambda(argsArray, toExecutable(body), tpe, loc)
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => ExecutableAst.Expression.Hook(hook, tpe, loc)
       case SimplifiedAst.Expression.Apply(name, args, tpe, loc) =>
         val argsArray = args.map(toExecutable).toArray

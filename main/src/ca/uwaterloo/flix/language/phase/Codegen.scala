@@ -147,7 +147,7 @@ object Codegen {
     }
 
     case Expression.Ref(name, tpe, loc) => ???
-    case Expression.Lambda(annotations, args, body, tpe, loc) => ???
+    case Expression.Lambda(args, body, tpe, loc) => ???
     case Expression.Hook(hook, tpe, loc) => ???
 
     case Expression.Apply(name, args, _, _) =>
