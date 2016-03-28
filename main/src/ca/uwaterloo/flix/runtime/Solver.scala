@@ -5,7 +5,7 @@ import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Symbol}
 import ca.uwaterloo.flix.runtime.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
-import ca.uwaterloo.flix.util.{Debugger, Options, Verbosity}
+import ca.uwaterloo.flix.util.{Debugger, InternalRuntimeException, Options, Verbosity}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -91,24 +91,6 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       shell.start()
     }
 
-    val constants = sCtx.root.constants.foldLeft(Map.empty[Symbol.Resolved, AnyRef]) {
-      case (macc, (name, defn)) if defn.formals.isEmpty =>
-        val v = Interpreter.eval(defn.exp, sCtx.root)
-        macc + (name -> v)
-      case (macc, _) => macc
-      //        constant.exp match {
-      //        case e: ExecutableAst.Expression.Lambda if e.args.length == 0 =>
-      //          val v = Interpreter.eval(e.body, sCtx.root)
-      //          macc + (name -> v)
-      //        case ExecutableAst.Expression.MkClosure(exp, _, _, _, _) =>
-      //          val v = Interpreter.eval(exp, sCtx.root)
-      //          macc + (name -> v)
-      //        case _ => macc
-      //      }
-
-
-    }
-
     // measure the time elapsed.
     val t = System.nanoTime()
 
@@ -152,6 +134,14 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     }
 
     // construct the model.
+    val definitions = sCtx.root.constants.foldLeft(Map.empty[Symbol.Resolved, () => AnyRef]) {
+      case (macc, (sym, defn)) =>
+        if (defn.formals.isEmpty)
+          macc + (sym -> (() => Interpreter.eval(defn.exp, sCtx.root)))
+        else
+          macc + (sym -> (() => throw new InternalRuntimeException("Unable to evalaute non-constant top-level definition.")))
+    }
+
     val relations = dataStore.relations.foldLeft(Map.empty[Symbol.TableSym, Iterable[List[AnyRef]]]) {
       case (macc, (sym, relation)) =>
         val table = relation.scan.toIterable.map(_.toList)
@@ -164,7 +154,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
         }
         macc + ((sym, table))
     }
-    model = Model(sCtx.root, constants, relations, lattices)
+    model = new Model(sCtx.root, definitions, relations, lattices)
     model
   }
 

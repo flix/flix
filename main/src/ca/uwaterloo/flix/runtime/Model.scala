@@ -3,20 +3,34 @@ package ca.uwaterloo.flix.runtime
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
 
 /**
-  * A case class representing the minimal model.
+  * A class representing the minimal model.
   *
-  * @param constants the constant functions in the model.
-  * @param relations the relational facts in the model.
-  * @param lattices  the lattice facts in the model.
+  * @param root        the abstract syntax tree of the program.
+  * @param definitions the definitions in the program.
+  * @param relations   the relational facts in the model.
+  * @param lattices    the lattice facts in the model.
   */
-case class Model(root: ExecutableAst.Root, // TODO: remove
-                 constants: Map[Symbol.Resolved, AnyRef],
-                 relations: Map[Symbol.TableSym, Iterable[List[AnyRef]]],
-                 lattices: Map[Symbol.TableSym, Iterable[(List[AnyRef], List[AnyRef])]]) {
+class Model(root: ExecutableAst.Root,
+            definitions: Map[Symbol.Resolved, () => AnyRef],
+            relations: Map[Symbol.TableSym, Iterable[List[AnyRef]]],
+            lattices: Map[Symbol.TableSym, Iterable[(List[AnyRef], List[AnyRef])]]) {
 
-  def getRelation(name: String): Iterable[List[AnyRef]] = relations(Symbol.mkTableSym(name))
+  def getRoot: ExecutableAst.Root = root
 
-  def getLattice(name: String): Iterable[(List[AnyRef], List[AnyRef])] = lattices(Symbol.mkTableSym(name))
+  def getConstant(sym: Symbol.Resolved): AnyRef = definitions(sym)()
 
+  def getConstant(name: String): AnyRef = getConstant(Symbol.Resolved.mk(name))
+
+  def getRelation(name: String): Iterable[List[AnyRef]] =
+    getRelationOpt(name).get
+
+  def getRelationOpt(name: String): Option[Iterable[List[AnyRef]]] =
+    relations.get(Symbol.mkTableSym(name))
+
+  def getLattice(name: String): Iterable[(List[AnyRef], List[AnyRef])] =
+    getLatticeOpt(name).get
+
+  def getLatticeOpt(name: String): Option[Iterable[(List[AnyRef], List[AnyRef])]] =
+    lattices.get(Symbol.mkTableSym(name))
 
 }
