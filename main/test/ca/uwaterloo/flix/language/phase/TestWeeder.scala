@@ -6,25 +6,19 @@ import org.scalatest.FunSuite
 
 class TestWeeder extends FunSuite {
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Duplicate Alias                                                         //
-  /////////////////////////////////////////////////////////////////////////////
-  test("DuplicateAlias01") {
+  test("DuplicateAlias.01") {
     val input = "P(x, y) :- A(x), y := 21, y := 42. "
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAlias])
   }
 
-  test("DuplicateAlias02") {
+  test("DuplicateAlias.02") {
     val input = "P(x, y) :- A(x), y := 21, z := 84, y := 42."
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAlias])
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Duplicate Annotation                                                    //
-  /////////////////////////////////////////////////////////////////////////////
-  test("DuplicateAnnotation01") {
+  test("DuplicateAnnotation.01") {
     val input =
       """@strict @strict
         |fn foo(x: Int): Int = 42
@@ -33,7 +27,7 @@ class TestWeeder extends FunSuite {
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAnnotation])
   }
 
-  test("DuplicateAnnotation02") {
+  test("DuplicateAnnotation.02") {
     val input =
       """@strict @monotone @strict @monotone
         |fn foo(x: Int): Int = 42
@@ -42,52 +36,43 @@ class TestWeeder extends FunSuite {
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAnnotation])
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Duplicate Attribute                                                     //
-  /////////////////////////////////////////////////////////////////////////////
-  test("DuplicateAttribute01") {
+  test("DuplicateAttribute.01") {
     val input = "rel A(x: Int, x: Int)"
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAttribute])
   }
 
-  test("DuplicateAttribute02") {
+  test("DuplicateAttribute.02") {
     val input = "rel A(x: Int, y: Int, x: Int)   "
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAttribute])
   }
 
-  test("DuplicateAttribute03") {
+  test("DuplicateAttribute.03") {
     val input = "rel A(x: Bool, x: Int, x: Str)"
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAttribute])
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Duplicate Formal                                                        //
-  /////////////////////////////////////////////////////////////////////////////
-  test("DuplicateFormal01") {
+  test("DuplicateFormal.01") {
     val input = "fn f(x: Int, x: Int): Int = 42"
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateFormal])
   }
 
-  test("DuplicateFormal02") {
+  test("DuplicateFormal.02") {
     val input = "fn f(x: Int, y: Int, x: Int): Int = 42"
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateFormal])
   }
 
-  test("DuplicateFormal03") {
+  test("DuplicateFormal.03") {
     val input = "fn f(x: Bool, x: Int, x: Str): Int = 42"
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateFormal])
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Duplicate Tag                                                           //
-  /////////////////////////////////////////////////////////////////////////////
-  test("DuplicateTag01") {
+  test("DuplicateTag.01") {
     val input =
       """enum Color {
         |  case Red,
@@ -98,7 +83,7 @@ class TestWeeder extends FunSuite {
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateTag])
   }
 
-  test("DuplicateTag02") {
+  test("DuplicateTag.02") {
     val input =
       """enum Color {
         |  case Red,
@@ -110,9 +95,6 @@ class TestWeeder extends FunSuite {
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateTag])
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Empty Index                                                             //
-  /////////////////////////////////////////////////////////////////////////////
   test("EmptyIndex.01") {
     val input =
       """rel A(x: Int, y: Int, z: Int)
@@ -121,29 +103,20 @@ class TestWeeder extends FunSuite {
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.EmptyIndex])
   }
-  
-  /////////////////////////////////////////////////////////////////////////////
-  // Empty Relation                                                          //
-  /////////////////////////////////////////////////////////////////////////////
+
   test("EmptyRelation.01") {
     val input = "rel R()"
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.EmptyRelation])
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Empty Lattice                                                           //
-  /////////////////////////////////////////////////////////////////////////////
   test("EmptyLattice.01") {
     val input = "lat L()"
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.EmptyLattice])
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Illegal Annotation                                                      //
-  /////////////////////////////////////////////////////////////////////////////
-  test("IllegalAnnotation01") {
+  test("IllegalAnnotation.01") {
     val input =
       """@abc
         |fn foo(x: Int): Int = 42
@@ -152,7 +125,7 @@ class TestWeeder extends FunSuite {
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalAnnotation])
   }
 
-  test("IllegalAnnotation02") {
+  test("IllegalAnnotation.02") {
     val input =
       """@foobarbaz
         |fn foo(x: Int): Int = 42
@@ -161,25 +134,37 @@ class TestWeeder extends FunSuite {
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalAnnotation])
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Illegal Body Term                                                       //
-  /////////////////////////////////////////////////////////////////////////////
-  test("IllegalBodyTerm01") {
+  test("IllegalApply.01") {
+    val input = "def f: Int = g()"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalApply])
+  }
+
+  test("IllegalBodyTerm.01") {
     val input = "P(x) :- A(f(x))."
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalBodyTerm])
   }
 
-  test("IllegalBodyTerm02") {
+  test("IllegalBodyTerm.02") {
     val input = "P(x) :- A(x), B(f(x)), C(x)."
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalBodyTerm])
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Illegal Index                                                           //
-  /////////////////////////////////////////////////////////////////////////////
-  test("IllegalIndex01") {
+  test("IllegalExistential.01") {
+    val input = "def f: Prop = ∃. true"
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalExistential])
+  }
+
+  test("IllegalExistential.02") {
+    val input = "def f: Prop = ∃(). true"
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalExistential])
+  }
+
+  test("IllegalIndex.01") {
     val input =
       """rel A(x: Int, y: Int, z: Int)
         |index A({})
@@ -188,7 +173,7 @@ class TestWeeder extends FunSuite {
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalIndex])
   }
 
-  test("IllegalIndex02") {
+  test("IllegalIndex.02") {
     val input =
       """rel A(x: Int, y: Int, z: Int)
         |index A({x}, {}, {z})
@@ -197,51 +182,42 @@ class TestWeeder extends FunSuite {
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalIndex])
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // IllegalHeadPredicate                                                    //
-  /////////////////////////////////////////////////////////////////////////////
-  test("IllegalHeadPredicate.Alias01") {
+  test("IllegalHeadPredicate.Alias.01") {
     val input = "x := y."
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalHeadPredicate])
   }
 
-  test("IllegalHeadPredicate.Alias02") {
+  test("IllegalHeadPredicate.Alias.02") {
     val input = "x := y :- A(x, y)."
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalHeadPredicate])
   }
 
-  test("IllegalHeadPredicate.NotEqual01") {
+  test("IllegalHeadPredicate.NotEqual.01") {
     val input = "x != y."
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalHeadPredicate])
   }
 
-  test("IllegalHeadPredicate.NotEqual02") {
+  test("IllegalHeadPredicate.NotEqual.02") {
     val input = "x != y :- A(x, y)."
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalHeadPredicate])
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Illegal Head Term                                                       //
-  /////////////////////////////////////////////////////////////////////////////
-  test("IllegalHeadTerm01") {
+  test("IllegalHeadTerm.01") {
     val input = "P(_)."
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalHeadTerm])
   }
 
-  test("IllegalHeadTerm02") {
+  test("IllegalHeadTerm.02") {
     val input = "P(x, _, z) :- A(x, z)."
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalHeadTerm])
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Illegal Int                                                            //
-  /////////////////////////////////////////////////////////////////////////////
   test("IllegalInt8.01") {
     val input = "def f: Int8 = -1000i8"
     val result = new Flix().addStr(input).solve()
@@ -290,24 +266,36 @@ class TestWeeder extends FunSuite {
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalInt])
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Illegal Lattice                                                         //
-  /////////////////////////////////////////////////////////////////////////////
-  test("IllegalLattice01") {
+  test("IllegalLattice.01") {
     val input = "let Foo<> = (1, 2)"
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalLattice])
   }
 
-  test("IllegalLattice02") {
+  test("IllegalLattice.02") {
     val input = "let Foo<> = (1, 2, 3, 4, 5, 6, 7, 8, 9)"
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalLattice])
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Illegal Wildcard Expression                                             //
-  /////////////////////////////////////////////////////////////////////////////
+  test("IllegalParameterList.01") {
+    val input = "def f(): Int = 42"
+    val result = new Flix().addStr(input).solve()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalParameterList])
+  }
+
+  test("IllegalUniversal.01") {
+    val input = "def f: Prop = ∀. true"
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalUniversal])
+  }
+
+  test("IllegalUniversal.02") {
+    val input = "def f: Prop = ∀(). true"
+    val result = new Flix().addStr(input).compile()
+    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalUniversal])
+  }
+
   test("IllegalWildcard.01") {
     val input = "def f: Int = _"
     val result = new Flix().addStr(input).solve()
@@ -326,12 +314,9 @@ class TestWeeder extends FunSuite {
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalWildcard])
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Non Linear Pattern                                                      //
-  /////////////////////////////////////////////////////////////////////////////
-  test("NonLinearPattern01") {
+  test("NonLinearPattern.01") {
     val input =
-      """fn f(): Bool = match (21, 42) with {
+      """fn f: Bool = match (21, 42) with {
         |  case (x, x) => true
         |}
       """.stripMargin
@@ -339,9 +324,9 @@ class TestWeeder extends FunSuite {
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.NonLinearPattern])
   }
 
-  test("NonLinearPattern02") {
+  test("NonLinearPattern.02") {
     val input =
-      """fn f(): Bool = match (21, 42, 84) with {
+      """def f: Bool = match (21, 42, 84) with {
         |  case (x, x, x) => true
         |}
       """.stripMargin
@@ -349,9 +334,9 @@ class TestWeeder extends FunSuite {
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.NonLinearPattern])
   }
 
-  test("NonLinearPattern03") {
+  test("NonLinearPattern.03") {
     val input =
-      """fn f(): Bool = match (1, (2, (3, 4))) with {
+      """def f: Bool = match (1, (2, (3, 4))) with {
         |  case (x, (y, (z, x))) => true
         |}
       """.stripMargin

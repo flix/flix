@@ -27,13 +27,13 @@ class TestTyper extends FunSuite {
   // Definitions (Positive)                                                  //
   /////////////////////////////////////////////////////////////////////////////
   ignore("Definition.Constant01") {
-    val input = "fn f(): Unit = ()"
+    val input = "fn f: Unit = ()"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Definition.Constant02") {
-    val input = "fn f(): Bool = true"
+    val input = "fn f: Bool = true"
     val result = new Flix().addStr(input).compile()
     result.get
   }
@@ -89,31 +89,31 @@ class TestTyper extends FunSuite {
   // TODO: Sort
 
   ignore("Expression.Unit") {
-    val input = "fn f(): Unit = ()"
+    val input = "def f: Unit = ()"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Bool.True") {
-    val input = "fn f(): Bool = true"
+    val input = "def f: Bool = true"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Bool.False") {
-    val input = "fn f(): Bool = false"
+    val input = "def f: Bool = false"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Int") {
-    val input = "fn f(): Int = 42"
+    val input = "def f: Int = 42"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Str") {
-    val input = "fn f(): Str = \"foo\""
+    val input = "def f: Str = \"foo\""
     val result = new Flix().addStr(input).compile()
     result.get
   }
@@ -126,23 +126,23 @@ class TestTyper extends FunSuite {
         |  case Blue
         |}
         |
-        |fn f(): Color = Color.Red
+        |def f: Color = Color.Red
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Tuple") {
-    val input = "fn f(): (Bool, Int, Str) = (true, 42, \"foo\")"
+    val input = "def f: (Bool, Int, Str) = (true, 42, \"foo\")"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Ref01") {
     val input =
-      """fn f(): Int = 1
-        |fn g(): Int = 2
-        |fn h(): Int = f() + g()
+      """def f: Int = 1
+        |def g: Int = 2
+        |def h: Int = f + g
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get
@@ -151,13 +151,13 @@ class TestTyper extends FunSuite {
   test("Expression.Ref02") {
     val input =
       """namespace A {
-        |  fn f(): Int = 1
+        |  def f: Int = 1
         |}
         |namespace B {
-        |  fn g(): Int = 2
+        |  def g: Int = 2
         |}
         |
-        |fn h(): Int = A/f() + B/g()
+        |def h: Int = A/f + B/g
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get
@@ -257,49 +257,49 @@ class TestTyper extends FunSuite {
   // Unary (Positive)                                                        //
   /////////////////////////////////////////////////////////////////////////////
   test("Expression.Unary.Not") {
-    val input = "fn f(x: Bool): Bool = !x"
+    val input = "def f(x: Bool): Bool = !x"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Unary.NotNot") {
-    val input = "fn f(x: Bool): Bool = !!x"
+    val input = "def f(x: Bool): Bool = !!x"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Unary.Plus01") {
-    val input = "fn f(): Int = +42"
+    val input = "def f: Int = +42"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Unary.Plus02") {
-    val input = "fn f(x: Int): Int = +x"
+    val input = "def f(x: Int): Int = +x"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Unary.Minus01") {
-    val input = "fn f(): Int = -42"
+    val input = "def f: Int = -42"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Unary.Minus02") {
-    val input = "fn f(x: Int): Int = -x"
+    val input = "def f(x: Int): Int = -x"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Unary.BitwiseNegate01") {
-    val input = "fn f(): Int = ~42"
+    val input = "def f: Int = ~42"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Unary.BitwiseNegate02") {
-    val input = "fn f(x: Int): Int = ~x"
+    val input = "def f(x: Int): Int = ~x"
     val result = new Flix().addStr(input).compile()
     result.get
   }
@@ -428,43 +428,43 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Binary.LogicalAnd01") {
-    val input = "fn f(): Bool = true && false"
+    val input = "def f: Bool = true && false"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Binary.LogicalAnd02") {
-    val input = "fn f(x: Bool, y: Bool): Bool = x && y"
+    val input = "def f(x: Bool, y: Bool): Bool = x && y"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Binary.LogicalOr01") {
-    val input = "fn f(): Bool = true || false"
+    val input = "def f: Bool = true || false"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Binary.LogicalOr02") {
-    val input = "fn f(x: Bool, y: Bool): Bool = x || y"
+    val input = "def f(x: Bool, y: Bool): Bool = x || y"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Binary.Implication01") {
-    val input = "fn f(): Bool = true ==> false"
+    val input = "def f: Bool = true ==> false"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Binary.Implication02") {
-    val input = "fn f(x: Bool, y: Bool): Bool = x ==> y"
+    val input = "def f(x: Bool, y: Bool): Bool = x ==> y"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Binary.Biconditional01") {
-    val input = "fn f(): Bool = true <==> false"
+    val input = "def f: Bool = true <==> false"
     val result = new Flix().addStr(input).compile()
     result.get
   }
@@ -476,7 +476,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Binary.BitwiseAnd01") {
-    val input = "fn f(): Int = 1 & 2"
+    val input = "def f: Int = 1 & 2"
     val result = new Flix().addStr(input).compile()
     result.get
   }
@@ -488,19 +488,19 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Binary.BitwiseOr01") {
-    val input = "fn f(): Int = 1 | 2"
+    val input = "def f: Int = 1 | 2"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Binary.BitwiseOr02") {
-    val input = "fn f(x: Int, y: Int): Int = x | y"
+    val input = "def f(x: Int, y: Int): Int = x | y"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Binary.BitwiseXor01") {
-    val input = "fn f(): Int = 1 ^ 2"
+    val input = "def f: Int = 1 ^ 2"
     val result = new Flix().addStr(input).compile()
     result.get
   }
@@ -527,19 +527,19 @@ class TestTyper extends FunSuite {
   // If Then Else (Positive)                                                 //
   /////////////////////////////////////////////////////////////////////////////
   test("Expression.IfThenElse01") {
-    val input = "fn f(): Int = if (true) 1 else 2"
+    val input = "def f: Int = if (true) 1 else 2"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.IfThenElse02") {
-    val input = "fn f(x: Bool, y: Int, z: Int): Int = if (x) y else z"
+    val input = "def f(x: Bool, y: Int, z: Int): Int = if (x) y else z"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.IfThenElse03") {
-    val input = "fn f(x: Int, y: Int, z: Int): Int = if (x != y) y else z"
+    val input = "def f(x: Int, y: Int, z: Int): Int = if (x != y) y else z"
     val result = new Flix().addStr(input).compile()
     result.get
   }
@@ -548,19 +548,19 @@ class TestTyper extends FunSuite {
   // Let (Positive)                                                          //
   /////////////////////////////////////////////////////////////////////////////
   test("Expression.Let01") {
-    val input = "fn f(): Int = let x = 42 in x"
+    val input = "def f: Int = let x = 42 in x"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Let02") {
-    val input = "fn f(x: Int): Int = let y = 42 in x + y"
+    val input = "def f(x: Int): Int = let y = 42 in x + y"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Let03") {
-    val input = "fn f(x: Bool): Int = let x = 42 in x"
+    val input = "def f(x: Bool): Int = let x = 42 in x"
     val result = new Flix().addStr(input).compile()
     result.get
   }
@@ -613,7 +613,7 @@ class TestTyper extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   test("Expression.Match.Wildcard") {
     val input =
-      """fn f(): Int = match true with {
+      """def f: Int = match true with {
         |  case _ => 42
         |}
       """.stripMargin
@@ -623,7 +623,7 @@ class TestTyper extends FunSuite {
 
   test("Expression.Match.Literal01") {
     val input =
-      """fn f(): Int = match true with {
+      """def f: Int = match true with {
         |  case true => 42
         |  case false => 21
         |}
@@ -634,7 +634,7 @@ class TestTyper extends FunSuite {
 
   test("Expression.Match.Literal02") {
     val input =
-      """fn f(): Bool = match 1 with {
+      """def f: Bool = match 1 with {
         |  case 1 => true
         |  case 2 => true
         |  case 3 => true
@@ -646,7 +646,7 @@ class TestTyper extends FunSuite {
 
   test("Expression.Match.Var01") {
     val input =
-      """fn f(): Int = match 42 with {
+      """def f: Int = match 42 with {
         |  case x => x
         |}
       """.stripMargin
@@ -656,7 +656,7 @@ class TestTyper extends FunSuite {
 
   test("Expression.Match.Var02") {
     val input =
-      """fn f(): Int = match (21, 42) with {
+      """def f: Int = match (21, 42) with {
         |  case (x, y) => x + y
         |}
       """.stripMargin
@@ -666,7 +666,7 @@ class TestTyper extends FunSuite {
 
   test("Expression.Match.Mixed") {
     val input =
-      """fn f(): Bool = match (true, 42, "foo") with {
+      """def f: Bool = match (true, 42, "foo") with {
         |  case (false, 21, "bar") => true
         |  case (x, y, z) => x
         |}
@@ -677,7 +677,7 @@ class TestTyper extends FunSuite {
 
   test("Expression.Match.Tuple01") {
     val input =
-      """fn f(): Int = match (true, 42, "foo") with {
+      """def f: Int = match (true, 42, "foo") with {
         |  case (false, 21, "bar") => 42
         |}
       """.stripMargin
@@ -712,7 +712,7 @@ class TestTyper extends FunSuite {
         |  case Red
         |}
         |
-        |fn f(c: Color): Color = c
+        |def f(c: Color): Color = c
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get
@@ -726,9 +726,9 @@ class TestTyper extends FunSuite {
         |  case Blue
         |}
         |
-        |fn f(): Color = Color.Red
-        |fn g(): Color = Color.Green
-        |fn h(): Color = Color.Blue
+        |def f: Color = Color.Red
+        |def g: Color = Color.Green
+        |def h: Color = Color.Blue
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get
@@ -742,9 +742,9 @@ class TestTyper extends FunSuite {
         |  case Blue(Str)
         |}
         |
-        |fn f(x: Bool): Color = Color.Red(x)
-        |fn g(x: Int): Color = Color.Green(x)
-        |fn h(x: Str): Color = Color.Blue(x)
+        |def f(x: Bool): Color = Color.Red(x)
+        |def g(x: Int): Color = Color.Green(x)
+        |def h(x: Str): Color = Color.Blue(x)
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get
@@ -773,31 +773,31 @@ class TestTyper extends FunSuite {
   // Tuple (Positive)                                                        //
   /////////////////////////////////////////////////////////////////////////////
   test("Expression.Tuple01") {
-    val input = "fn f(): (Int, Int, Int) = (1, 2, 3)"
+    val input = "def f: (Int, Int, Int) = (1, 2, 3)"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Tuple02") {
-    val input = "fn f(x: Int8, y: Int16, z: Int32, w: Int64): (Int64, Int32, Int16, Int8) = (w, z, y, x)"
+    val input = "def f(x: Int8, y: Int16, z: Int32, w: Int64): (Int64, Int32, Int16, Int8) = (w, z, y, x)"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Tuple03") {
-    val input = "fn f(): (Int, (Int, (Int, Int))) = (1, (2, (3, 4)))"
+    val input = "def f: (Int, (Int, (Int, Int))) = (1, (2, (3, 4)))"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Tuple04") {
-    val input = "fn f(): (((Int, Int), Int), Int) = (((1, 2), 3), 4)"
+    val input = "def f: (((Int, Int), Int), Int) = (((1, 2), 3), 4)"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Tuple05") {
-    val input = "fn f(): (Bool, Int, Str) = (true, 42, \"foo\")"
+    val input = "def f: (Bool, Int, Str) = (true, 42, \"foo\")"
     val result = new Flix().addStr(input).compile()
     result.get
   }
@@ -806,19 +806,19 @@ class TestTyper extends FunSuite {
   // Ascribe (Positive)                                                      //
   /////////////////////////////////////////////////////////////////////////////
   test("Expression.Ascribe01") {
-    val input = "fn f(): Bool = true : Bool"
+    val input = "def f: Bool = true : Bool"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Ascribe02") {
-    val input = "fn f(): Int = 42 : Int"
+    val input = "def f: Int = 42 : Int"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Ascribe03") {
-    val input = "fn f(x: Int8, y: Int16, z: Int32): (Int32, Int16, Int8) = (z, y, x) : (Int32, Int16, Int8)"
+    val input = "def f(x: Int8, y: Int16, z: Int32): (Int32, Int16, Int8) = (z, y, x) : (Int32, Int16, Int8)"
     val result = new Flix().addStr(input).compile()
     result.get
   }
@@ -1074,7 +1074,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Type.Int32.Ascribe") {
-    val input = "fn f(): Int32 = 42 : Int32"
+    val input = "def f: Int32 = 42 : Int32"
     val result = new Flix().addStr(input).compile()
     result.get
   }
@@ -1188,25 +1188,25 @@ class TestTyper extends FunSuite {
   // Unary (Negative)                                                        //
   /////////////////////////////////////////////////////////////////////////////
   test("Expression.Unary.LogicalNot.TypeError") {
-    val input = "fn f(): Bool = !42"
+    val input = "def f: Bool = !42"
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Typer.TypeError])
   }
 
   test("Expression.Unary.Plus.TypeError") {
-    val input = "fn f(): Int = +true"
+    val input = "def f: Int = +true"
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Typer.TypeError])
   }
 
   test("Expression.Unary.Minus.TypeError") {
-    val input = "fn f(): Int = -true"
+    val input = "def f: Int = -true"
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Typer.TypeError])
   }
 
   test("Expression.Unary.BitwiseNegate.TypeError") {
-    val input = "fn f(): Int = ~true"
+    val input = "def f: Int = ~true"
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Typer.TypeError])
   }
@@ -1215,13 +1215,13 @@ class TestTyper extends FunSuite {
   // If Then Else (Negative)                                                 //
   /////////////////////////////////////////////////////////////////////////////
   test("Expression.IfThenElse.TypeError.NonBooleanCondition") {
-    val input = "fn f(): Int = if (42) 1 else 2"
+    val input = "def f: Int = if (42) 1 else 2"
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Typer.TypeError])
   }
 
   test("Expression.IfThenElse.TypeError.MismatchedBranches") {
-    val input = "fn f(): Int = if (true) true else 1234"
+    val input = "def f: Int = if (true) true else 1234"
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Typer.TypeError])
   }

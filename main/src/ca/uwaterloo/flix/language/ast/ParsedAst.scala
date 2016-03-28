@@ -88,50 +88,50 @@ object ParsedAst {
     /**
       * Definition Declaration (top-level function or expression).
       *
-      * @param ann    the associated annotations.
-      * @param sp1    the position of the first character in the declaration.
-      * @param ident  the name of the definition.
-      * @param params the formal parameters.
-      * @param tpe    the declared type.
-      * @param exp    the expression.
-      * @param sp2    the position of the last character in the declaration.
+      * @param ann       the associated annotations.
+      * @param sp1       the position of the first character in the declaration.
+      * @param ident     the name of the definition.
+      * @param paramsOpt the formal parameters.
+      * @param tpe       the declared type.
+      * @param exp       the expression.
+      * @param sp2       the position of the last character in the declaration.
       */
-    case class Definition(ann: Seq[ParsedAst.Annotation], sp1: SourcePosition, ident: Name.Ident, params: Seq[Ast.FormalParam], tpe: Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Definition(ann: Seq[ParsedAst.Annotation], sp1: SourcePosition, ident: Name.Ident, paramsOpt: Option[Seq[Ast.FormalParam]], tpe: Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Signature Declaration (top-level function or expression signature).
       *
-      * @param sp1    the position of the first character in the declaration.
-      * @param ident  the name of the signature.
-      * @param params the formal parameters.
-      * @param tpe    the declared type.
-      * @param sp2    the position of the last character in the declaration.
+      * @param sp1       the position of the first character in the declaration.
+      * @param ident     the name of the signature.
+      * @param paramsOpt the formal parameters.
+      * @param tpe       the declared type.
+      * @param sp2       the position of the last character in the declaration.
       */
-    case class Signature(sp1: SourcePosition, ident: Name.Ident, params: Seq[Ast.FormalParam], tpe: Type, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Signature(sp1: SourcePosition, ident: Name.Ident, paramsOpt: Option[Seq[Ast.FormalParam]], tpe: Type, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * External Declaration (external top-level function or expression)
       *
-      * @param sp1    the position of the first character in the declaration.
-      * @param ident  the name of the external.
-      * @param params the formal parameters.
-      * @param tpe    the declared type.
-      * @param sp2    the position of the last character in the declaration.
+      * @param sp1       the position of the first character in the declaration.
+      * @param ident     the name of the external.
+      * @param paramsOpt the formal parameters.
+      * @param tpe       the declared type.
+      * @param sp2       the position of the last character in the declaration.
       */
-    case class External(sp1: SourcePosition, ident: Name.Ident, params: Seq[Ast.FormalParam], tpe: Type, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class External(sp1: SourcePosition, ident: Name.Ident, paramsOpt: Option[Seq[Ast.FormalParam]], tpe: Type, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Law Declaration.
       *
-      * @param sp1     the position of the first character in the declaration.
-      * @param ident   the name of the law.
-      * @param tparams the type parameters.
-      * @param params  the value parameters.
-      * @param tpe     the declared type.
-      * @param exp     the expression.
-      * @param sp2     the position of the last character in the declaration.
+      * @param sp1       the position of the first character in the declaration.
+      * @param ident     the name of the law.
+      * @param tparams   the type parameters.
+      * @param paramsOpt the value parameters.
+      * @param tpe       the declared type.
+      * @param exp       the expression.
+      * @param sp2       the position of the last character in the declaration.
       */
-    case class Law(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], params: Seq[Ast.FormalParam], tpe: Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Law(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], paramsOpt: Option[Seq[Ast.FormalParam]], tpe: Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Enum Declaration.
@@ -579,22 +579,22 @@ object ParsedAst {
     /**
       * Existentially Quantified Expression.
       *
-      * @param sp1    the position of the first character in the expression.
-      * @param params the existentially quantified variables.
-      * @param exp    the existentially quantified expression.
-      * @param sp2    the position of the last character in the expression.
+      * @param sp1       the position of the first character in the expression.
+      * @param paramsOpt the existentially quantified variables.
+      * @param exp       the existentially quantified expression.
+      * @param sp2       the position of the last character in the expression.
       */
-    case class Existential(sp1: SourcePosition, params: Seq[Ast.FormalParam], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Existential(sp1: SourcePosition, paramsOpt: Option[Seq[Ast.FormalParam]], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Universally Quantified Expression.
       *
-      * @param sp1    the position of the first character in the expression.
-      * @param params the universally quantified variables.
-      * @param exp    the universally quantified expression.
-      * @param sp2    the position of the last character in the expression.
+      * @param sp1       the position of the first character in the expression.
+      * @param paramsOpt the universally quantified variables.
+      * @param exp       the universally quantified expression.
+      * @param sp2       the position of the last character in the expression.
       */
-    case class Universal(sp1: SourcePosition, params: Seq[Ast.FormalParam], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Universal(sp1: SourcePosition, paramsOpt: Option[Seq[Ast.FormalParam]], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Ascribe Expression.
@@ -629,6 +629,7 @@ object ParsedAst {
       * @param sp2 the position of the last character in the expression.
       */
     case class Top(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
+
   }
 
   /**

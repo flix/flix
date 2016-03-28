@@ -331,7 +331,7 @@ class TestParser extends FunSuite {
   }
 
   test("Declaration.Law.01") {
-    val input = "law f(): Bool = true"
+    val input = "law f: Bool = true"
     intercept[scala.NotImplementedError] {
       new Flix().addStr(input).compile().get
     }
@@ -683,8 +683,8 @@ class TestParser extends FunSuite {
 
   test("Expression.Apply.01") {
     val input =
-      """def f: Int = 42
-        |def g: Int = f()
+      """def f(x: Int): Int = x
+        |def g: Int = f(42)
       """.stripMargin
     new Flix().addStr(input).compile().get
   }

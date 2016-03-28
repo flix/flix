@@ -191,6 +191,41 @@ object Weeder {
     }
 
     /**
+      * An error raised to indicate an illegal apply (function call).
+      *
+      * @param msg the error message.
+      * @param loc the location where the illegal expression occurs.
+      */
+    case class IllegalApply(msg: String, loc: SourceLocation) extends WeederError {
+      val message =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> Illegal call.")}
+           |
+           |${loc.underline}
+           |$msg
+         """.stripMargin
+    }
+
+    /**
+      * An error raised to indicate an illegal existential quantification expression.
+      *
+      * @param msg the error message.
+      * @param loc the location where the illegal expression occurs.
+      */
+    case class IllegalExistential(msg: String, loc: SourceLocation) extends WeederError {
+      val message =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> Illegal existential quantification.")}
+           |
+           |${loc.underline}
+           |$msg
+         """.stripMargin
+    }
+
+
+    /**
       * An error raised to indicate that an float is out of bounds.
       *
       * @param loc the location where the illegal float occurs.
@@ -305,6 +340,41 @@ object Weeder {
     }
 
     /**
+      * An error raised to indicate an illegal parameter list.
+      *
+      * @param loc the location where the illegal parameter list occurs.
+      */
+    case class IllegalParameterList(loc: SourceLocation) extends WeederError {
+      val message =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> Illegal parameter list.")}
+           |
+           |${loc.underline}
+           |A parameter list must contain at least one parameter or be omitted.
+           |
+           |Hint: Remove the unnecessary parenthesis.
+         """.stripMargin
+    }
+
+    /**
+      * An error raised to indicate an illegal universal quantification expression.
+      *
+      * @param msg the error message.
+      * @param loc the location where the illegal expression occurs.
+      */
+    case class IllegalUniversal(msg: String, loc: SourceLocation) extends WeederError {
+      val message =
+        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
+           |
+           |${consoleCtx.red(s">> Illegal universal quantification.")}
+           |
+           |${loc.underline}
+           |$msg
+         """.stripMargin
+    }
+
+    /**
       * An error raised to indicate an illegal wildcard in an expression.
       *
       * @param loc the location where the illegal definition occurs.
@@ -396,37 +466,56 @@ object Weeder {
           case ds => WeededAst.Declaration.Namespace(name, ds, mkSL(sp1, sp2))
         }
 
-      case ParsedAst.Declaration.Definition(ann, sp1, ident, params, tpe, exp, sp2) =>
+      case ParsedAst.Declaration.Definition(ann, sp1, ident, paramsOpt, tpe, exp, sp2) =>
         val annotationsVal = Annotations.compile(ann)
-        /*
-         * Check duplicate parameters.
-         */
-        val seen = mutable.Map.empty[String, Name.Ident]
-        val formalsVal = @@(params.map {
-          case formal@Ast.FormalParam(id, t) => seen.get(id.name) match {
-            case None =>
-              seen += (id.name -> id)
-              formal.toSuccess
-            case Some(otherIdent) =>
-              DuplicateFormal(id.name, otherIdent.loc, id.loc).toFailure
-          }
-        })
+        val body = Expressions.compile(exp)
 
-        @@(annotationsVal, formalsVal, Expressions.compile(exp)) map {
-          case (anns, args, body) =>
-            val t = Type.Lambda(args map (_.tpe), tpe)
-            WeededAst.Declaration.Definition(ident, args, body, t, mkSL(sp1, sp2))
+        paramsOpt match {
+          case None => body flatMap {
+            case e => WeededAst.Declaration.Definition(ident, Nil, e, tpe, mkSL(sp1, sp2)).toSuccess
+          }
+          case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
+          case Some(params) =>
+            /*
+             * Check duplicate parameters.
+             */
+            val seen = mutable.Map.empty[String, Name.Ident]
+            val formalsVal = @@(params.map {
+              case formal@Ast.FormalParam(id, t) => seen.get(id.name) match {
+                case None =>
+                  seen += (id.name -> id)
+                  formal.toSuccess
+                case Some(otherIdent) =>
+                  DuplicateFormal(id.name, otherIdent.loc, id.loc).toFailure
+              }
+            })
+
+            @@(annotationsVal, formalsVal, body) map {
+              case (anns, fs, e) =>
+                val t = Type.Lambda(fs map (_.tpe), tpe)
+                WeededAst.Declaration.Definition(ident, fs, e, t, mkSL(sp1, sp2))
+            }
         }
 
-      case ParsedAst.Declaration.Signature(sp1, ident, params, tpe, sp2) =>
-        WeededAst.Declaration.Signature(ident, params, tpe, mkSL(sp1, sp2)).toSuccess
+      case ParsedAst.Declaration.Signature(sp1, ident, paramsOpt, tpe, sp2) => paramsOpt match {
+        case None => WeededAst.Declaration.Signature(ident, Nil, tpe, mkSL(sp1, sp2)).toSuccess
+        case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
+        case Some(params) => WeededAst.Declaration.Signature(ident, params, tpe, mkSL(sp1, sp2)).toSuccess
+      }
 
-      case ParsedAst.Declaration.External(sp1, ident, params, tpe, sp2) =>
-        WeededAst.Declaration.External(ident, params, tpe, mkSL(sp1, sp2)).toSuccess
+      case ParsedAst.Declaration.External(sp1, ident, paramsOpt, tpe, sp2) => paramsOpt match {
+        case None => WeededAst.Declaration.External(ident, Nil, tpe, mkSL(sp1, sp2)).toSuccess
+        case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
+        case Some(params) => WeededAst.Declaration.External(ident, params, tpe, mkSL(sp1, sp2)).toSuccess
+      }
 
-      case ParsedAst.Declaration.Law(sp1, ident, tparams, params, tpe, exp, sp2) =>
-        Expressions.compile(exp) map {
-          case e => WeededAst.Declaration.Law(ident, tparams, params, tpe, e, mkSL(sp1, sp2))
+      case ParsedAst.Declaration.Law(sp1, ident, tparams, paramsOpt, tpe, exp, sp2) =>
+        Expressions.compile(exp) flatMap {
+          case e => paramsOpt match {
+            case None => WeededAst.Declaration.Law(ident, tparams, Nil, tpe, e, mkSL(sp1, sp2)).toSuccess
+            case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
+            case Some(params) => WeededAst.Declaration.Law(ident, tparams, params, tpe, e, mkSL(sp1, sp2)).toSuccess
+          }
         }
 
       case ParsedAst.Declaration.Enum(sp1, ident, cases, sp2) =>
@@ -669,8 +758,9 @@ object Weeder {
       case ParsedAst.Expression.Lit(sp1, lit, sp2) => toExpression(lit)
 
       case ParsedAst.Expression.Apply(sp1, lambda, args, sp2) =>
-        @@(compile(lambda), @@(args map compile)) map {
-          case (e, as) => WeededAst.Expression.Apply(e, as, mkSL(sp1, sp2))
+        @@(compile(lambda), @@(args map compile)) flatMap {
+          case (_, Nil) => IllegalApply("A parameter list must contain at least one parameter or be omitted.", mkSL(sp1, sp2)).toFailure
+          case (e, as) => WeededAst.Expression.Apply(e, as, mkSL(sp1, sp2)).toSuccess
         }
 
       case ParsedAst.Expression.Infix(exp1, name, exp2, sp2) =>
@@ -847,14 +937,22 @@ object Weeder {
           case (e1, e2, e3) => WeededAst.Expression.PutIndex(e1, e2, e3, mkSL(sp1, sp2))
         }
 
-      case ParsedAst.Expression.Existential(sp1, params, exp, sp2) =>
-        compile(exp) map {
-          case e => WeededAst.Expression.Existential(params, e, mkSL(sp1, sp2))
+      case ParsedAst.Expression.Existential(sp1, paramsOpt, exp, sp2) =>
+        compile(exp) flatMap {
+          case e => paramsOpt match {
+            case None => IllegalExistential("An existential quantifier must have at least one parameter.", mkSL(sp1, sp2)).toFailure
+            case Some(Nil) => IllegalExistential("An existential quantifier must have at least one parameter.", mkSL(sp1, sp2)).toFailure
+            case Some(params) => WeededAst.Expression.Existential(params, e, mkSL(sp1, sp2)).toSuccess
+          }
         }
 
-      case ParsedAst.Expression.Universal(sp1, params, exp, sp2) =>
-        compile(exp) map {
-          case e => WeededAst.Expression.Universal(params, e, mkSL(sp1, sp2))
+      case ParsedAst.Expression.Universal(sp1, paramsOpt, exp, sp2) =>
+        compile(exp) flatMap {
+          case e => paramsOpt match {
+            case None => IllegalUniversal("A universal quantifier must have at least one parameter.", mkSL(sp1, sp2)).toFailure
+            case Some(Nil) => IllegalUniversal("An universal quantifier must have at least one parameter.", mkSL(sp1, sp2)).toFailure
+            case Some(params) => WeededAst.Expression.Universal(params, e, mkSL(sp1, sp2)).toSuccess
+          }
         }
 
       case ParsedAst.Expression.Ascribe(sp1, exp, tpe, sp2) =>
@@ -1066,7 +1164,7 @@ object Weeder {
         *
         */
       def toTerm(exp: ParsedAst.Expression, aliases: Map[String, ParsedAst.Predicate.Equal]): Validation[WeededAst.Term.Head, WeederError] = exp match {
-        case ParsedAst.Expression.Wild(sp1, sp2) =>  IllegalHeadTerm("Wildcards may not occur here.", mkSL(sp1, sp2)).toFailure
+        case ParsedAst.Expression.Wild(sp1, sp2) => IllegalHeadTerm("Wildcards may not occur here.", mkSL(sp1, sp2)).toFailure
         case ParsedAst.Expression.Var(sp1, name, sp2) if name.isUnqualified => WeededAst.Term.Head.Var(name.ident, mkSL(sp1, sp2)).toSuccess
         case ParsedAst.Expression.Var(sp1, name, sp2) =>
           IllegalHeadTerm("Qualified variable may not occur here.", mkSL(sp1, sp2)).toFailure
@@ -1075,8 +1173,9 @@ object Weeder {
         }
         case ParsedAst.Expression.Apply(sp1, lambda, args, sp2) => lambda match {
           case ParsedAst.Expression.Var(_, name, _) =>
-            @@(args map (a => toTerm(a, aliases))) map {
-              case as => WeededAst.Term.Head.Apply(name, as, mkSL(sp1, sp2))
+            @@(args map (a => toTerm(a, aliases))) flatMap {
+              case Nil => IllegalApply("A parameter list must contain at least one parameter or be omitted.", mkSL(sp1, sp2)).toFailure
+              case as => WeededAst.Term.Head.Apply(name, as, mkSL(sp1, sp2)).toSuccess
             }
           case _ => throw InternalCompilerException("Illegal head term. But proper error messages not yet implemented.")
         }

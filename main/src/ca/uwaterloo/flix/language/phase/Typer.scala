@@ -157,10 +157,16 @@ object Typer {
 
       Expression.typer(rast.exp, root, env) flatMap {
         case e =>
-          val lambdaTpe = Type.Lambda(rast.formals.map(_.tpe), e.tpe)
-          expect(rast.tpe, lambdaTpe, rast.loc) map {
-          case tpe => TypedAst.Definition.Constant(rast.name, formals, e, tpe, rast.loc)
-        }
+          if (rast.formals.isEmpty) {
+            expect(rast.tpe, e.tpe, rast.loc) map {
+              case tpe => TypedAst.Definition.Constant(rast.name, formals, e, tpe, rast.loc)
+            }
+          } else {
+            val lambdaTpe = Type.Lambda(rast.formals.map(_.tpe), e.tpe)
+            expect(rast.tpe, lambdaTpe, rast.loc) map {
+              case tpe => TypedAst.Definition.Constant(rast.name, formals, e, tpe, rast.loc)
+            }
+          }
       }
     }
 
@@ -734,7 +740,8 @@ object Typer {
           case (term, ResolvedAst.FormalArg(_, termType)) => Term.typer(term, termType, root)
         }
         // put everything together and check the return type.
-        @@(@@(argsVal), expect(tpe, tpe, constant.exp.loc)) map { // TODO: Hack
+        @@(@@(argsVal), expect(tpe, tpe, constant.exp.loc)) map {
+          // TODO: Hack
           case (args, returnType) => TypedAst.Term.Head.Apply(name, args, returnType, constant.exp.loc)
         }
 

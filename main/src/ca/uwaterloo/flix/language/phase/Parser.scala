@@ -259,13 +259,9 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     zeroOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS)
   }
 
-  def FormalParams: Rule1[Seq[Ast.FormalParam]] = rule {
-    optional("(" ~ optWS ~ ArgumentList ~ optWS ~ ")") ~> ((o: Option[Seq[Ast.FormalParam]]) => o match {
-      case None => Seq.empty
-      case Some(xs) => xs
-    })
+  def FormalParams: Rule1[Option[Seq[Ast.FormalParam]]] = rule {
+    optional("(" ~ optWS ~ ArgumentList ~ optWS ~ ")")
   }
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Literals                                                                //
