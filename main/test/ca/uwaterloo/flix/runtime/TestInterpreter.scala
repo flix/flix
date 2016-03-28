@@ -789,7 +789,7 @@ class TestInterpreter extends FunSuite {
   // Re-implements Expression.Lambda tests but using (safe) hooks instead.   //
   /////////////////////////////////////////////////////////////////////////////
 
-  test("Expression.Hook - Hook.Safe.01") {
+  ignore("Expression.Hook - Hook.Safe.01") {
     import HookSafeHelpers._
     val input = "namespace A { def g: Bool = A.B/f }"
     var executed = false
@@ -804,7 +804,7 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  test("Expression.Hook - Hook.Safe.02") {
+  ignore("Expression.Hook - Hook.Safe.02") {
     import HookSafeHelpers._
     val input = "fn g: Int = A/f(3)"
     var executed = false
@@ -1165,7 +1165,7 @@ class TestInterpreter extends FunSuite {
   // This is necessary so that implicits are properly called.                //
   /////////////////////////////////////////////////////////////////////////////
 
-  test("Expression.Hook - Hook.Unsafe.01") {
+  ignore("Expression.Hook - Hook.Unsafe.01") {
     import HookUnsafeHelpers._
     val input = "namespace A { def g: Bool = A.B/f }"
     var executed = false
