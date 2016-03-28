@@ -63,9 +63,12 @@ object LambdaLift {
         SimplifiedAst.Expression.Ref(name, tpe, loc)
 
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
+      case SimplifiedAst.Expression.Apply(name, args, tpe, loc) =>
+        val as = args.map(visit)
+        SimplifiedAst.Expression.Apply(name, as, tpe, loc)
       case SimplifiedAst.Expression.Apply3(lambda, args, tpe, loc) =>
         val e = visit(lambda)
-        val as = args map visit
+        val as = args.map(visit)
         SimplifiedAst.Expression.Apply3(e, as, tpe, loc)
 
       case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) =>
@@ -105,7 +108,7 @@ object LambdaLift {
         SimplifiedAst.Expression.GetTupleIndex(e, offset, tpe, loc)
 
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
-        val es = elms map visit
+        val es = elms.map(visit)
         SimplifiedAst.Expression.Tuple(es, tpe, loc)
 
       case SimplifiedAst.Expression.CheckNil(exp, loc) =>
@@ -117,7 +120,7 @@ object LambdaLift {
         SimplifiedAst.Expression.CheckCons(e, loc)
 
       case SimplifiedAst.Expression.FSet(elms, tpe, loc) =>
-        val es = elms map visit
+        val es = elms.map(visit)
         SimplifiedAst.Expression.FSet(es, tpe, loc)
 
       case SimplifiedAst.Expression.UserError(tpe, loc) => e

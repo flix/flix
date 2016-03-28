@@ -56,6 +56,7 @@ object Interpreter {
         i = i + 1
       }
       Value.Closure(formals, body, env.clone())
+    case Expression.ClosureVar(_, _, _, _) => ???
     case Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
       // TODO: This seems incorrect.....
       val exp = eval(lambda, root, env).asInstanceOf[ExecutableAst.Expression.Lambda]
@@ -68,6 +69,7 @@ object Interpreter {
       val args = exp.args.map(_.ident.name)
       Value.Closure(args, exp.body, closureEnv)
     case Expression.Hook(hook, _, _) => Value.HookClosure(hook)
+    case Expression.Apply(_, _, _, _) => ???
     case Expression.Apply3(exp, args, _, _) =>
       val evalArgs = new Array[AnyRef](args.length)
       var i = 0
