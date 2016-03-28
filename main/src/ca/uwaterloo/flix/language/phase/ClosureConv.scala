@@ -157,16 +157,11 @@ object ClosureConv {
 
       case SimplifiedAst.Expression.Ref(name, tpe, loc) => e
       case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
-        // TODO: This doesn't seem quite correct.
-        // We don't substitute if any of the arguments exists in the substitution map? What about other vars?
-        val keys = m.keySet
-        val bound = args.exists(a => keys.contains(a.ident.name))
-        if (bound) {
-          SimplifiedAst.Expression.Lambda(args, body, tpe, loc)
-        } else {
-          val e = substitute(m, body)
-          SimplifiedAst.Expression.Lambda(args, e, tpe, loc)
-        }
+        // Don't substitute bound variables. We handle this by temporarily modifying the substitution map.
+        val bound = args.map(_.ident.name)
+        val tempMap = m.filterNot { case (k, _) => bound.contains(k) }
+        val e = substitute(tempMap, body)
+        SimplifiedAst.Expression.Lambda(args, e, tpe, loc)
 
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
       case SimplifiedAst.Expression.Apply(name, args, tpe, loc) =>
@@ -193,17 +188,11 @@ object ClosureConv {
         SimplifiedAst.Expression.IfThenElse(e1, e2, e3, tpe, loc)
 
       case SimplifiedAst.Expression.Let(ident, offset, exp1, exp2, tpe, loc) =>
-        // TODO: This doesn't seem quite correct.
-        // We don't substitute if the let-var exists in the substitution map? What about other vars?
-        val bound = m.keySet.contains(ident.name)
-        if (bound) {
-          val e1 = substitute(m, exp1)
-          SimplifiedAst.Expression.Let(ident, offset, e1, exp2, tpe, loc)
-        } else {
-          val e1 = substitute(m, exp1)
-          val e2 = substitute(m, exp2)
-          SimplifiedAst.Expression.Let(ident, offset, e1, e2, tpe, loc)
-        }
+        // Don't substitute bound variables. We handle this by temporarily modifying the substitution map.
+        val tempMap = m.filterNot { case (k, _) => k == ident.name }
+        val e1 = substitute(m, exp1)
+        val e2 = substitute(tempMap, exp2)
+        SimplifiedAst.Expression.Let(ident, offset, e1, e2, tpe, loc)
 
       case SimplifiedAst.Expression.CheckTag(tag, exp, loc) =>
         val e = substitute(m, exp)
