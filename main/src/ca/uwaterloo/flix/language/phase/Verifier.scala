@@ -7,7 +7,7 @@ import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Type, _}
 import ca.uwaterloo.flix.language.phase.Verifier.VerifierError._
-import ca.uwaterloo.flix.runtime.PartialEvaluator
+import ca.uwaterloo.flix.runtime.{PartialEvaluator, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import com.microsoft.z3._
 
@@ -733,7 +733,11 @@ object Verifier {
 
     // attempt to verify that the property holds under each environment.
     val violations = envs flatMap {
-      case env0 => PartialEvaluator.eval(exp0, env0, root) match {
+      case env0 =>
+        val root2 = LambdaLift.lift(root)
+        SymbolicEvaluator.eval(exp0, env0, root2)
+
+        PartialEvaluator.eval(exp0, env0, root) match {
         case Expression.True =>
           // Case 1: The partial evaluator proved the property.
           Nil
