@@ -44,48 +44,67 @@ object Interpreter {
       val result = (e & store.targetMask) | ((v & store.mask) << store.offset)
       Value.mkInt64(result)
     case Expression.Var(ident, _, _, loc) => env.get(ident.name) match {
-      case None => throw InternalRuntimeException(s"Key '${ident.name}' not found in environment: '${env.mkString(",")}'.")
+      case None =>
+        throw InternalRuntimeException(s"Key '${ident.name}' not found in environment: '${env.mkString(",")}'.")
       case Some(v) => v
     }
     case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env)
-    case Expression.Lambda(args, body, _, _) =>
-      val formals = new Array[String](args.length)
-      var i = 0
-      while (i < formals.length) {
-        formals(i) = args(i).ident.name
-        i = i + 1
+    case Expression.Lambda(_, _, _, _) =>
+      throw InternalRuntimeException("Lambdas should have been converted to closures and lifted.")
+    case Expression.ClosureVar(envVar, ident, _, _) =>
+      // TODO: Clean up this implementation
+      val clEnv = env.get(envVar.name) match {
+        case None => throw InternalRuntimeException(s"Key '${ident.name}' not found in environment: '${env.mkString(",")}'.")
+        case Some(v) => v.asInstanceOf[mutable.Map[String, AnyRef]]
       }
-      Value.Closure(formals, body, env.clone())
-    case Expression.ClosureVar(_, _, _, _) => ???
-    case Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
-      // TODO: This seems incorrect.....
-      val exp = eval(lambda, root, env).asInstanceOf[ExecutableAst.Expression.Lambda]
+      clEnv.get(ident.name) match {
+        case None => throw InternalRuntimeException(s"Key '${ident.name}' not found in closure environment: '${clEnv.mkString(",")}'.")
+        case Some(v) => v
+      }
+    case Expression.MkClosure(lambda, envVar, freeVars, _, _) =>
+      // TODO: Clean up this implementation
       val closureEnv = mutable.Map.empty[String, AnyRef]
       for (freeVar <- freeVars) {
         val name = freeVar.name
         closureEnv(name) = env(name)
       }
-
-      val args = exp.args.map(_.ident.name)
-      Value.Closure(args, exp.body, closureEnv)
+      Value.Closure(lambda.asInstanceOf[Expression.Ref], envVar, closureEnv)
     case Expression.Hook(hook, _, _) => Value.HookClosure(hook)
-    case Expression.Apply(_, _, _, _) => ???
+    case Expression.Apply(name, args, _, _) =>
+      // TODO: Clean up this implementation
+      val constant = root.constants(name)
+      val closureEnv = mutable.Map.empty[String, AnyRef]
+      var i = 0
+      while (i < args.length) {
+        closureEnv(constant.formals(i).ident.name) = eval(args(i), root, env)
+        i = i + 1
+      }
+      eval(constant.exp, root, closureEnv)
     case Expression.Apply3(exp, args, _, _) =>
-      val evalArgs = new Array[AnyRef](args.length)
-      var i = 0
-      while (i < evalArgs.length) {
-        evalArgs(i) = eval(args(i), root, env)
-        i = i + 1
-      }
-      evalCall(exp, evalArgs, root, env)
+      throw InternalRuntimeException("Apply3 should have been converted to Apply or ApplyClosure.")
     case Expression.ApplyClosure(exp, args, tpe, loc) =>
-      val evalArgs = new Array[AnyRef](args.length)
-      var i = 0
-      while (i < evalArgs.length) {
-        evalArgs(i) = eval(args(i), root, env)
-        i = i + 1
+      // TODO: Clean up this implementation
+      eval(exp, root, env) match {
+        case Value.Closure(ref, envVar, clEnv) =>
+          val constant = root.constants(ref.name)
+          val closureEnv = mutable.Map.empty[String, AnyRef]
+          var i = 0
+          while (i < args.length) {
+            closureEnv(constant.formals(i).ident.name) = eval(args(i), root, env)
+            i = i + 1
+          }
+          closureEnv(envVar.name) = clEnv
+          eval(constant.exp, root, closureEnv)
+        case Value.HookClosure(hook) =>
+          val evalArgs = args.map(eval(_, root, env))
+          hook match {
+          case Ast.Hook.Safe(name, inv, _) =>
+            val wargs: Array[IValue] = evalArgs.map(new WrappedValue(_)).toArray
+            inv(wargs).getUnsafeRef
+          case Ast.Hook.Unsafe(name, inv, _) =>
+            inv(evalArgs.toArray)
+        }
       }
-      evalCall(exp, evalArgs, root, env)
 
     case Expression.Unary(op, exp, _, _) => evalUnary(op, exp, root, env)
     case Expression.Binary(op, exp1, exp2, _, _) => op match {
@@ -350,17 +369,18 @@ object Interpreter {
     case Term.Body.Exp(e, _, _) => eval(e, root, env)
   }
 
+  // TODO: closure conversion
   def evalCall(function: Expression, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef = function match {
     case Expression.Ref(name, tpe, loc) => evalCall(root.constants(name), args, root, env.clone())
     case _ =>
       eval(function, root, env) match {
-        case Value.Closure(formals, body, closureEnv) =>
-          var i = 0
-          while (i < formals.length) {
-            closureEnv.update(formals(i), args(i))
-            i = i + 1
-          }
-          eval(body, root, closureEnv)
+//        case Value.Closure(formals, body, closureEnv) =>
+//          var i = 0
+//          while (i < formals.length) {
+//            closureEnv.update(formals(i), args(i))
+//            i = i + 1
+//          }
+//          eval(body, root, closureEnv)
         case Value.HookClosure(hook) => hook match {
           case Ast.Hook.Safe(name, inv, _) =>
             val wargs: Array[IValue] = args.map(new WrappedValue(_))
@@ -372,6 +392,7 @@ object Interpreter {
       }
   }
 
+  // TODO: closure conversion
   def evalCall(defn: Constant, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef]): AnyRef = {
     var i = 0
     while (i < defn.formals.length) {

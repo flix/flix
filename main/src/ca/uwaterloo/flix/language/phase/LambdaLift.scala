@@ -53,6 +53,7 @@ object LambdaLift {
       case SimplifiedAst.Expression.StoreInt32(b, o, v) => e
       case SimplifiedAst.Expression.Var(ident, o, tpe, loc) => e
       case SimplifiedAst.Expression.Ref(name, tpe, loc) => e
+
       case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
         val ann = Ast.Annotations(Nil)
         val exp = visit(body)
@@ -63,9 +64,11 @@ object LambdaLift {
         SimplifiedAst.Expression.Ref(name, tpe, loc)
 
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
+
       case SimplifiedAst.Expression.Apply(name, args, tpe, loc) =>
         val as = args.map(visit)
         SimplifiedAst.Expression.Apply(name, as, tpe, loc)
+
       case SimplifiedAst.Expression.Apply3(lambda, args, tpe, loc) =>
         val e = visit(lambda)
         val as = args.map(visit)
