@@ -24,7 +24,7 @@ object SymbolicEvaluator {
 
     case class Environment(m: Map[String, SymVal]) extends SymVal
 
-    case class Closure(exp: Expression, cloVar: String, env: Environment) extends SymVal
+    case class Closure(exp: Expression.Ref, cloVar: String, env: Environment) extends SymVal
 
     case class Tag(tag: String, value: SymVal) extends SymVal
 
@@ -62,12 +62,7 @@ object SymbolicEvaluator {
       case Expression.ApplyClosure(Expression.Ref(name, _, _), args, _, _) =>
         val defn = root.constants(name)
         val SymVal.Closure(cloExp, cloVar, cloEnv) = eval(defn.exp, env0, pc)
-        env0 += (cloVar -> cloEnv)
-        eval(cloExp, env0, pc)
-
-      case Expression.ApplyClosure(exp, args, _, _) =>
-        val SymVal.Closure(cloExp, cloVar, cloEnv) = eval(exp, env0, pc)
-        val newEnv = env0.clone()
+        val newEnv = mutable.Map.empty[String, SymVal]
         newEnv += (cloVar -> cloEnv)
         eval(cloExp, newEnv, pc)
 
@@ -86,7 +81,7 @@ object SymbolicEvaluator {
         for (freeVar <- freeVars) {
           closureEnv += (freeVar.name -> env0(freeVar.name))
         }
-        SymVal.Closure(lambda, cloVar.name, SymVal.Environment(closureEnv.toMap))
+        SymVal.Closure(lambda.asInstanceOf[Expression.Ref], cloVar.name, SymVal.Environment(closureEnv.toMap))
 
       case Expression.Unary(op, exp, _, _) =>
         val v = eval(exp, env0, pc)
