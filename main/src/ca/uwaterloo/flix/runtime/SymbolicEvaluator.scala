@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, SimplifiedAst}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, SimplifiedAst, UnaryOperator}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.phase.GenSym
 
@@ -36,7 +36,7 @@ object SymbolicEvaluator {
   case class Context(value: SymVal, env: Map[String, SymVal])
 
 
-  def eval(exp0: Expression, env0: Map[String, Expression], root: SimplifiedAst.Root)(implicit genSym: GenSym): Boolean = {
+  def eval(exp0: Expression, env0: Map[String, Expression], root: SimplifiedAst.Root)(implicit genSym: GenSym): SymVal = {
 
     def eval(exp0: Expression, env0: mutable.Map[String, SymVal], pc: List[Constraint])(implicit genSym: GenSym): SymVal = exp0 match {
       case Expression.Unit => SymVal.Unit
@@ -51,8 +51,9 @@ object SymbolicEvaluator {
 
       case Expression.Let(ident, _, exp1, exp2, _, _) =>
         val v1 = eval(exp1, env0, pc)
-        env0 += (ident.name -> v1)
-        eval(exp2, env0, pc)
+        val newEnv = env0.clone()
+        newEnv += (ident.name -> v1)
+        eval(exp2, newEnv, pc)
 
       case Expression.Ref(name, tpe, loc) => // TODO: Seem fishy
         val defn = root.constants(name)
@@ -66,17 +67,19 @@ object SymbolicEvaluator {
 
       case Expression.ApplyClosure(exp, args, _, _) =>
         val SymVal.Closure(cloExp, cloVar, cloEnv) = eval(exp, env0, pc)
-        env0 += (cloVar -> cloEnv)
-        eval(cloExp, env0, pc)
+        val newEnv = env0.clone()
+        newEnv += (cloVar -> cloEnv)
+        eval(cloExp, newEnv, pc)
 
       case Expression.Apply3(Expression.Ref(name, _, _), args, _, _) =>
         val defn = root.constants(name)
         val as = args.map(a => eval(a, env0, pc))
+        val newEnv = mutable.Map.empty[String, SymVal]
 
         for ((formal, actual) <- defn.formals zip as) {
-          env0 += (formal.ident.name -> actual)
+          newEnv += (formal.ident.name -> actual)
         }
-        eval(defn.exp, env0, pc)
+        eval(defn.exp, newEnv, pc)
 
       case Expression.MkClosure(lambda, cloVar, freeVars, _, _) =>
         val closureEnv = mutable.Map.empty[String, SymVal]
@@ -85,11 +88,36 @@ object SymbolicEvaluator {
         }
         SymVal.Closure(lambda, cloVar.name, SymVal.Environment(closureEnv.toMap))
 
+      case Expression.Unary(op, exp, _, _) =>
+        val v = eval(exp, env0, pc)
+        op match {
+          case UnaryOperator.LogicalNot => v match {
+            case SymVal.True => SymVal.False
+            case SymVal.False => SymVal.True
+            case _ => ???
+          }
+        }
+
       case Expression.Binary(op, exp1, exp2, _, _) =>
         val v1 = eval(exp1, env0, pc)
         val v2 = eval(exp2, env0, pc)
         op match {
-          case BinaryOperator.Equal => if (v1 == v2) SymVal.True else SymVal.False
+          case BinaryOperator.LogicalAnd => (v1, v2) match {
+            case (SymVal.True, SymVal.True) => SymVal.True
+            case (SymVal.False, SymVal.True) => SymVal.False
+            case (SymVal.True, SymVal.False) => SymVal.False
+            case (SymVal.False, SymVal.False) => SymVal.False
+          }
+
+          case BinaryOperator.LogicalOr => (v1, v2) match {
+            case (SymVal.True, SymVal.True) => SymVal.True
+            case (SymVal.False, SymVal.True) => SymVal.True
+            case (SymVal.True, SymVal.False) => SymVal.True
+            case (SymVal.False, SymVal.False) => SymVal.False
+          }
+
+          case BinaryOperator.Equal =>
+            if (v1 == v2) SymVal.True else SymVal.False
         }
 
       case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
@@ -108,7 +136,7 @@ object SymbolicEvaluator {
         SymVal.Tuple(es)
 
       case Expression.CheckTag(tag, exp, _) =>
-        val SymVal.Tag(tag2, e) = eval(exp, env0, pc)
+        val SymVal.Tag(tag2, _) = eval(exp, env0, pc)
         if (tag.name == tag2)
           SymVal.True
         else
@@ -129,13 +157,9 @@ object SymbolicEvaluator {
       initEnv += (name -> toSymVal(exp))
     }
 
-    val result = eval(exp0, initEnv, Nil)
-
-    result match {
-      case SymVal.True => true
-      case SymVal.False => false
-      case _ => ???
-    }
+    val r = eval(exp0, initEnv, Nil)
+    println(r)
+    r
   }
 
   def toSymVal(exp0: Expression): SymVal = exp0 match {
