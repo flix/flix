@@ -701,9 +701,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(49))(result)
   }
 
-  // TODO: The next two tests fail because the ref g is being evaluated (as x + 1 or x + 5,
-  // in which case 'x' is unbound) instead of being turned into a closure.
-  ignore("Expression.Lambda.11") {
+  test("Expression.Lambda.11") {
     val input =
       """fn f(x: (Int) -> Int, y: Int): Int = x(y)
         |fn g(x: Int): Int = x + 1
@@ -714,7 +712,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(6))(result)
   }
 
-  ignore("Expression.Lambda.12") {
+  test("Expression.Lambda.12") {
     val input =
       """fn f(x: (Int) -> Int): (Int) -> Int = x
         |fn g(x: Int): Int = x + 5

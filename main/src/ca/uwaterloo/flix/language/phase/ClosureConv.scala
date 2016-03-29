@@ -31,13 +31,21 @@ object ClosureConv {
       case SimplifiedAst.Expression.StoreInt16(b, o, v) => e
       case SimplifiedAst.Expression.StoreInt32(b, o, v) => e
       case SimplifiedAst.Expression.Var(ident, o, tpe, loc) => e
-      case SimplifiedAst.Expression.Ref(name, tpe, loc) => e
+
+      case SimplifiedAst.Expression.Ref(name, tpe, loc) => tpe match {
+        case Type.Lambda(_, _) => SimplifiedAst.Expression.MkClosure(e, genSym.fresh2("env"), Set(), tpe, loc)
+        case _ => e
+      }
       case SimplifiedAst.Expression.Apply(name, args, tpe, loc) => e
 
-      case SimplifiedAst.Expression.Apply3(lambda, args, tpe, loc) =>
-        // TODO: Recurse on lambda. Then pattern match: Two cases: (1) Ref -> Apply (2) otherwise -> ApplyClosure
-        // Replace Apply by ApplyClosure.
-        SimplifiedAst.Expression.ApplyClosure(lambda, args, tpe, loc)
+      case SimplifiedAst.Expression.Apply3(exp, args, tpe, loc) => exp match {
+        case SimplifiedAst.Expression.Ref(name, _, _) =>
+          // Top-level function, so directly call it with Apply
+          SimplifiedAst.Expression.Apply(name, args.map(convert), tpe, loc)
+        case _ =>
+          // Expression evaluates to a closure, so call with ApplyClosure.
+          SimplifiedAst.Expression.ApplyClosure(convert(exp), args.map(convert), tpe, loc)
+      }
 
       case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
         // Generate a fresh variable to hold the environment variable.
@@ -52,8 +60,8 @@ object ClosureConv {
           ident.name -> SimplifiedAst.Expression.ClosureVar(envVar, ident, t, ident.loc)
         }.toMap
 
-        // Apply the substitution to body expression of the lambda.
-        val exp = SimplifiedAst.Expression.Lambda(args, substitute(m, body), tpe, loc)
+        // Apply the substitution to body expression of the lambda, then recursively convert the body of the lambda.
+        val exp = SimplifiedAst.Expression.Lambda(args, convert(substitute(m, body)), tpe, loc)
 
         // Return the closure which consists of the (substituted) lambda expression and environment variable.
         SimplifiedAst.Expression.MkClosure(exp, envVar, freeVars.map(_._1), tpe, loc)
@@ -116,12 +124,10 @@ object ClosureConv {
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => e
 
-      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
-        throw InternalCompilerException(s"Illegal expression during closure conversion: '$e'.")
-      case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) =>
-        throw InternalCompilerException(s"Illegal expression during closure conversion: '$e'.")
+      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) => e
+      case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) => e
       case SimplifiedAst.Expression.ApplyClosure(clo, args, tpe, loc) =>
-        throw InternalCompilerException(s"Illegal expression during closure conversion: '$e'.")
+        SimplifiedAst.Expression.ApplyClosure(convert(clo), args.map(convert), tpe, loc)
 
     }
 
@@ -150,6 +156,7 @@ object ClosureConv {
       case SimplifiedAst.Expression.StoreInt8(b, o, v) => e
       case SimplifiedAst.Expression.StoreInt16(b, o, v) => e
       case SimplifiedAst.Expression.StoreInt32(b, o, v) => e
+
       case SimplifiedAst.Expression.Var(ident, o, tpe, loc) => m.get(ident.name) match {
         case None => e
         case Some(r) => r
@@ -164,9 +171,11 @@ object ClosureConv {
         SimplifiedAst.Expression.Lambda(args, e, tpe, loc)
 
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
+
       case SimplifiedAst.Expression.Apply(name, args, tpe, loc) =>
         val es = args.map(substitute(m, _))
         SimplifiedAst.Expression.Apply(name, es, tpe, loc)
+
       case SimplifiedAst.Expression.Apply3(lambda, args, tpe, loc) =>
         val e = substitute(m, lambda)
         val es = args.map(substitute(m, _))
@@ -266,18 +275,26 @@ object ClosureConv {
       case SimplifiedAst.Expression.StoreInt32(b, o, v) => Set.empty
       case SimplifiedAst.Expression.Var(ident, o, tpe, loc) => Set((ident, tpe))
       case SimplifiedAst.Expression.Ref(name, tpe, loc) => Set.empty
+
       case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
         val bound = args.map(_.ident.name)
         freeVariables(body).filterNot { v => bound.contains(v._1.name) }
 
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => Set.empty
+
       case SimplifiedAst.Expression.Apply(name, args, tpe, loc) => args.flatMap(freeVariables).toSet
+
       case SimplifiedAst.Expression.Apply3(lambda, args, tpe, loc) =>
         freeVariables(lambda) ++ args.flatMap(freeVariables)
 
       case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) => freeVariables(exp)
-      case SimplifiedAst.Expression.Binary(op, exp1, exp2, tpe, loc) => freeVariables(exp1) ++ freeVariables(exp2)
-      case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => freeVariables(exp1) ++ freeVariables(exp2) ++ freeVariables(exp3)
+
+      case SimplifiedAst.Expression.Binary(op, exp1, exp2, tpe, loc) =>
+        freeVariables(exp1) ++ freeVariables(exp2)
+
+      case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+        freeVariables(exp1) ++ freeVariables(exp2) ++ freeVariables(exp3)
+
       case SimplifiedAst.Expression.Let(ident, offset, exp1, exp2, tpe, loc) =>
         val bound = ident.name
         freeVariables(exp1) ++ freeVariables(exp2).filterNot { v => bound == v._1.name }

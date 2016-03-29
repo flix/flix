@@ -484,11 +484,20 @@ object ExecutableAst {
       */
     case class SwitchError(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class MkClosure(lambda: ExecutableAst.Expression, envVar: Name.Ident, freeVars: Set[Name.Ident], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class MkClosure(lambda: ExecutableAst.Expression,
+                         envVar: Name.Ident,
+                         freeVars: Set[Name.Ident],
+                         tpe: Type,
+                         loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class ClosureVar(env: Name.Ident, name: Name.Ident, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class ClosureVar(env: Name.Ident,
+                          name: Name.Ident,
+                          tpe: Type,
+                          loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class ApplyClosure(exp: ExecutableAst.Expression, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class ApplyClosure(exp: ExecutableAst.Expression,
+                            args: List[ExecutableAst.Expression],
+                            tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
   }
 
   sealed trait Predicate extends ExecutableAst {
