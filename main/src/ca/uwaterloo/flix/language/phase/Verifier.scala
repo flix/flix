@@ -735,49 +735,40 @@ object Verifier {
     val violations = envs flatMap {
       case env0 =>
         val root2 = LambdaLift.lift(root)
+        SymbolicEvaluator.eval(exp0, env0, root2)
 
-        SymbolicEvaluator.eval(exp0, env0, root2) match {
-          case SymbolicEvaluator.SymVal.True => Nil
-          case SymbolicEvaluator.SymVal.False =>
-            val err = property.fail(env0)
-            println(err.message)
-            List(err)
-          case v => throw InternalCompilerException(s"Unexpected SymVal: $v.")
-        }
-
-      //        PartialEvaluator.eval(exp0, env0, root) match {
-      //        case Expression.True =>
-      //          // Case 1: The partial evaluator proved the property.
-      //          Nil
-      //        case Expression.False =>
-      //          // Case 2: The partial evaluator disproved the property.
-      //          List(property.fail(env0))
-      //        case _: Expression.MatchError | _: Expression.SwitchError | _: Expression.UserError =>
-      //          // Case 3: The partial evaluator failed with a user error.
-      //          List(property.fail(env0))
-      //        case residual =>
-      //          // Case 4: The partial evaluator reduced the expression, but it is still residual.
-      //          // Must translate the expression into an SMT formula and attempt to prove it.
-      //          //println("Residual Expression: " + residual)
-      //          smt = smt + 1
-      //          mkContext(ctx => {
-      //            // Check if the negation of the expression has a model.
-      //            // If so, the property does not hold.
-      //            val q = ctx.mkNot(visitBoolExpr(residual, ctx))
-      //            checkSat(q, ctx) match {
-      //              case Result.Unsatisfiable =>
-      //                // Case 3.1: The formula is UNSAT, i.e. the property HOLDS.
-      //                Nil
-      //              case Result.Satisfiable(model) =>
-      //                // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.
-      //                List(property.fail(model2env(model)))
-      //              case Result.Unknown =>
-      //                // Case 3.3: It is unknown whether the formula has a model.
-      //                List(property.fail(Map.empty))
-      //            }
-      //          })
-      //      }
-
+        PartialEvaluator.eval(exp0, env0, root) match {
+        case Expression.True =>
+          // Case 1: The partial evaluator proved the property.
+          Nil
+        case Expression.False =>
+          // Case 2: The partial evaluator disproved the property.
+          List(property.fail(env0))
+        case _: Expression.MatchError | _: Expression.SwitchError | _: Expression.UserError =>
+          // Case 3: The partial evaluator failed with a user error.
+          List(property.fail(env0))
+        case residual =>
+          // Case 4: The partial evaluator reduced the expression, but it is still residual.
+          // Must translate the expression into an SMT formula and attempt to prove it.
+          //println("Residual Expression: " + residual)
+          smt = smt + 1
+          mkContext(ctx => {
+            // Check if the negation of the expression has a model.
+            // If so, the property does not hold.
+            val q = ctx.mkNot(visitBoolExpr(residual, ctx))
+            checkSat(q, ctx) match {
+              case Result.Unsatisfiable =>
+                // Case 3.1: The formula is UNSAT, i.e. the property HOLDS.
+                Nil
+              case Result.Satisfiable(model) =>
+                // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.
+                List(property.fail(model2env(model)))
+              case Result.Unknown =>
+                // Case 3.3: It is unknown whether the formula has a model.
+                List(property.fail(Map.empty))
+            }
+          })
+      }
     }
 
     implicit val consoleCtx = Compiler.ConsoleCtx
