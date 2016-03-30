@@ -278,11 +278,39 @@ object SimplifiedAst {
       override def toString: String = ident.name
     }
 
+    /**
+      * A typed AST node representing a closure variable expression that must be looked up from the closure environment.
+      *
+      * @param env  the name of the closure environment variable.
+      * @param name the name of the closure variable.
+      * @param tpe  the type of the variable.
+      * @param loc  the source location of the variable.
+      */
+    case class ClosureVar(env: Name.Ident,
+                          name: Name.Ident,
+                          tpe: Type,
+                          loc: SourceLocation) extends SimplifiedAst.Expression
+
+    /**
+      * A typed AST node representing a reference to a top-level definition.
+      *
+      * @param name the name of the reference.
+      * @param tpe  the type of the reference.
+      * @param loc  the source location of the reference.
+      */
     case class Ref(name: Symbol.Resolved, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
       override def toString: String = "Ref(" + name.fqn + ")"
     }
 
-    // TODO: Lambda lift?
+    /**
+      * A typed AST node representing a lambda function. A later phase/pass lifts these lambda functions to top-level
+      * definitions.
+      *
+      * @param args the formal arguments to the lambda.
+      * @param body the body expression of the lambda.
+      * @param tpe  the type of the lambda.
+      * @param loc  the source location of the lambda.
+      */
     case class Lambda(args: List[SimplifiedAst.FormalArg],
                       body: SimplifiedAst.Expression,
                       tpe: Type.Lambda,
@@ -293,6 +321,38 @@ object SimplifiedAst {
     case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
+      * A typed AST node representing the creation of a closure. At compile time, a unique `envVar` is created and
+      * `freeVars` is computed. The free variables are bound at run time.
+      *
+      * @param lambda   the lambda associated with the closure.
+      * @param envVar   the name of the closure environment variable.
+      * @param freeVars the cached set of free variables occurring within the lambda expression.
+      * @param tpe      the type of the closure.
+      * @param loc      the source location of the lambda.
+      */
+    case class MkClosure(lambda: SimplifiedAst.Expression.Lambda,
+                         envVar: Name.Ident,
+                         freeVars: Set[Name.Ident],
+                         tpe: Type.Lambda,
+                         loc: SourceLocation) extends SimplifiedAst.Expression
+
+    /**
+      * A typed AST node representing the creation of a closure, with the lambda lifted and replaced by a ref. At
+      * compile time, a unique `envVar` is created and `freeVars` is computed. The free variables are bound at run time.
+      *
+      * @param name     the reference to the lambda associated with the closure.
+      * @param envVar   the name of the closure environment variable.
+      * @param freeVars the cached set of free variables occurring within the lambda expression.
+      * @param tpe      the type of the closure.
+      * @param loc      the source location of the lambda.
+      */
+    case class MkClosureRef(name: SimplifiedAst.Expression.Ref,
+                            envVar: Name.Ident,
+                            freeVars: Set[Name.Ident],
+                            tpe: Type.Lambda,
+                            loc: SourceLocation) extends SimplifiedAst.Expression
+
+    /**
       * A typed AST node representing a function call.
       *
       * @param name the name of the function being called.
@@ -300,20 +360,25 @@ object SimplifiedAst {
       * @param tpe  the return type of the function.
       * @param loc  the source location of the expression.
       */
-    @deprecated("to be removed", "0.1.0")
-    case class Apply(name: Symbol.Resolved,
+    case class ApplyRef(name: Symbol.Resolved,
+                        args: List[SimplifiedAst.Expression],
+                        tpe: Type,
+                        loc: SourceLocation) extends SimplifiedAst.Expression
+
+    /**
+      * A typed AST node representing a function call.
+      *
+      * @param exp  the function being called.
+      * @param args the function arguments.
+      * @param tpe  the return type of the function.
+      * @param loc  the source location of the expression.
+      */
+    case class Apply(exp: SimplifiedAst.Expression,
                      args: List[SimplifiedAst.Expression],
                      tpe: Type,
-                     loc: SourceLocation) extends SimplifiedAst.Expression
-
-    // TODO:
-    case class Apply3(lambda: SimplifiedAst.Expression,
-                      args: List[SimplifiedAst.Expression],
-                      tpe: Type,
-                      loc: SourceLocation) extends SimplifiedAst.Expression {
-      override def toString: String = "Apply(" + lambda + ", [" + args.mkString(",") + "])"
+                     loc: SourceLocation) extends SimplifiedAst.Expression {
+      override def toString: String = "Apply(" + exp + ", [" + args.mkString(",") + "])"
     }
-
 
     /**
       * A typed AST node representing a unary expression.
@@ -498,23 +563,6 @@ object SimplifiedAst {
     case class FSet(elms: List[SimplifiedAst.Expression],
                     tpe: Type.FSet,
                     loc: SourceLocation) extends SimplifiedAst.Expression
-
-    // TODO: Move somewhere
-    case class MkClosure(lambda: SimplifiedAst.Expression,
-                         envVar: Name.Ident,
-                         freeVars: Set[Name.Ident],
-                         tpe: Type,
-                         loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class ClosureVar(env: Name.Ident,
-                          name: Name.Ident,
-                          tpe: Type,
-                          loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class ApplyClosure(exp: SimplifiedAst.Expression,
-                            args: List[SimplifiedAst.Expression],
-                            tpe: Type,
-                            loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
       * A typed AST node representing an error.

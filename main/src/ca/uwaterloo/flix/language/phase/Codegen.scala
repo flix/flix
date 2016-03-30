@@ -150,11 +150,11 @@ object Codegen {
     case Expression.Lambda(args, body, tpe, loc) => ???
     case Expression.Hook(hook, tpe, loc) => ???
 
-    case Expression.Apply(name, args, _, _) =>
+    case Expression.ApplyRef(name, args, _, _) =>
       args.foreach(compileExpression(context, visitor))
       visitor.visitMethodInsn(INVOKESTATIC, context.clazz, decorate(name),
         descriptor(context.getFunction(name).tpe), false)
-    case Expression.Apply3(lambda, args, tpe, loc) => ???
+    case Expression.Apply(lambda, args, tpe, loc) => ???
 
     case Expression.Unary(op, exp, _, _) => compileUnaryExpr(context, visitor)(op, exp)
     case Expression.Binary(op, exp1, exp2, _, _) => op match {

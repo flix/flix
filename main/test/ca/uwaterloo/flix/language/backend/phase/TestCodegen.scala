@@ -1228,7 +1228,7 @@ class TestCodegen extends FunSuite {
     // def main(): scala.Int = f()
     // def f(): scala.Int = 24
     val main = Function(name, args = List(),
-      body = Apply(name01, List(), Type.Int32, loc),
+      body = ApplyRef(name01, List(), Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val f = Function(name01, args = List(),
       body = Int32(24),
@@ -1244,7 +1244,7 @@ class TestCodegen extends FunSuite {
     // def main(): scala.Int = f(3)
     // def f(x: scala.Int): scala.Int = 24
     val main = Function(name, args = List(),
-      body = Apply(name01, List(Int32(3)), Type.Int32, loc),
+      body = ApplyRef(name01, List(Int32(3)), Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val f = Function(name01, args = List("x"),
       body = Int32(24),
@@ -1260,7 +1260,7 @@ class TestCodegen extends FunSuite {
     // def main(): scala.Int = f(3)
     // def f(x: scala.Int): scala.Int = x
     val main = Function(name, args = List(),
-      body = Apply(name01, List(Int32(3)), Type.Int32, loc),
+      body = ApplyRef(name01, List(Int32(3)), Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val f = Function(name01, args = List("x"),
       body = Var(toIdent("x"), 0, Type.Int32, loc),
@@ -1276,7 +1276,7 @@ class TestCodegen extends FunSuite {
     // def main(): scala.Int = f(3, 42)
     // def f(x: scala.Int, y: scala.Int): scala.Int = x * y - 6
     val main = Function(name, args = List(),
-      body = Apply(name01, List(Int32(3), Int32(42)), Type.Int32, loc),
+      body = ApplyRef(name01, List(Int32(3), Int32(42)), Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val f = Function(name01, args = List("x", "y"),
       body = Binary(BinaryOperator.Minus,
@@ -1299,10 +1299,10 @@ class TestCodegen extends FunSuite {
     // def f(x: scala.Int): scala.Int = let y = g(x + 1) in y * y
     // def g(x: scala.Int): scala.Int = x - 4
     val main = Function(name, args = List(),
-      body = Apply(name01, List(Int32(5)), Type.Int32, loc),
+      body = ApplyRef(name01, List(Int32(5)), Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val f = Function(name01, args = List("x"),
-      body = Let(toIdent("y"), 1, Apply(name02,
+      body = Let(toIdent("y"), 1, ApplyRef(name02,
         List(Binary(BinaryOperator.Plus,
           Var(toIdent("x"), 0, Type.Int32, loc),
           Int32(1), Type.Int32, loc)), Type.Int32, loc),
@@ -1331,10 +1331,10 @@ class TestCodegen extends FunSuite {
     // def g(x: scala.Int): scala.Int = h(x + 10)
     // def h(x: scala.Int): scala.Int = x * x
     val main = Function(name, args = List(),
-      body = Apply(name01, List(Int32(3)), Type.Int32, loc),
+      body = ApplyRef(name01, List(Int32(3)), Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
     val f = Function(name01, args = List("x"),
-      body = Apply(name02, List(
+      body = ApplyRef(name02, List(
         Binary(BinaryOperator.Plus,
           Var(toIdent("x"), 0, Type.Int32, loc),
           Int32(1),
@@ -1342,7 +1342,7 @@ class TestCodegen extends FunSuite {
         Type.Int32, loc),
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
     val g = Function(name02, args = List("x"),
-      body = Apply(name03, List(
+      body = ApplyRef(name03, List(
         Binary(BinaryOperator.Plus,
           Var(toIdent("x"), 0, Type.Int32, loc),
           Int32(10),
@@ -1369,10 +1369,10 @@ class TestCodegen extends FunSuite {
     // def h(x: scala.Int): scala.Int = g(x - 1)
     val main = Function(name, args = List(),
       body = Let(toIdent("x"), 0, Int32(7),
-        Apply(name01, List(
-          Apply(name02, List(Int32(3)), Type.Int32, loc),
-          Apply(name03, List(
-            Apply(name03, List(Var(toIdent("x"), 0, Type.Int32, loc)),
+        ApplyRef(name01, List(
+          ApplyRef(name02, List(Int32(3)), Type.Int32, loc),
+          ApplyRef(name03, List(
+            ApplyRef(name03, List(Var(toIdent("x"), 0, Type.Int32, loc)),
               Type.Int32, loc)), Type.Int32, loc)),
           Type.Int32, loc), Type.Int32, loc),
       Type.Lambda(List(), Type.Int32), loc)
@@ -1389,7 +1389,7 @@ class TestCodegen extends FunSuite {
           Type.Int32, loc),
       Type.Lambda(List(Type.Int32), Type.Int32), loc)
     val h = Function(name03, args = List("x"),
-      body = Apply(name02, List(
+      body = ApplyRef(name02, List(
         Binary(BinaryOperator.Minus,
           Var(toIdent("x"), 0, Type.Int32, loc),
           Int32(1),

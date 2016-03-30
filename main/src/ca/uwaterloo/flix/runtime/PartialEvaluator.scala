@@ -566,7 +566,7 @@ object PartialEvaluator {
       /**
         * Apply Expressions.
         */
-      case Apply3(lambda, args, tpe, loc) =>
+      case Apply(lambda, args, tpe, loc) =>
         // Partially evaluate the argument expressions.
         evaln(args, {
           case actuals =>
@@ -583,7 +583,7 @@ object PartialEvaluator {
                 // Evaluate the result body.
                 eval(result, k)
               case r =>
-                k(Apply3(r, actuals, tpe, loc))
+                k(Apply(r, actuals, tpe, loc))
             })
         })
 
@@ -689,7 +689,7 @@ object PartialEvaluator {
       case FSet(elms, tpe, loc) => throw InternalCompilerException("Not Yet Supported. Sorry.")
       case o: CheckNil => throw InternalCompilerException("Not Yet Supported. Sorry.")
       case o: CheckCons => throw InternalCompilerException("Not Yet Supported. Sorry.")
-      case Apply(_, _, _, _) => throw InternalCompilerException("Deprecated.")
+      case ApplyRef(_, _, _, _) => throw InternalCompilerException("Deprecated.")
     }
 
     /**
@@ -812,8 +812,8 @@ object PartialEvaluator {
         Lambda(args, rename(src, dst, body), tpe, loc)
       }
     case Hook(hook, tpe, loc) => Hook(hook, tpe, loc)
-    case Apply3(lambda, args, tpe, loc) =>
-      Apply3(rename(src, dst, lambda), args.map(a => rename(src, dst, a)), tpe, loc)
+    case Apply(lambda, args, tpe, loc) =>
+      Apply(rename(src, dst, lambda), args.map(a => rename(src, dst, a)), tpe, loc)
     case Unary(op, e, tpe, loc) =>
       Unary(op, rename(src, dst, e), tpe, loc)
     case Binary(op, e1, e2, tpe, loc) =>
@@ -850,7 +850,7 @@ object PartialEvaluator {
     case FSet(elms, tpe, loc) => throw InternalCompilerException("Unsupported.")
     case CheckNil(e, loc) => throw InternalCompilerException("Unsupported.")
     case CheckCons(e, loc) => throw InternalCompilerException("Unsupported.")
-    case Apply(name, args, tpe, loc) => throw InternalCompilerException("Deprecated feature.")
+    case ApplyRef(name, args, tpe, loc) => throw InternalCompilerException("Deprecated feature.")
   }
 
   /**
@@ -905,8 +905,8 @@ object PartialEvaluator {
           Lambda(args2, visit(body2), tpe, loc)
         }
       case Hook(hook, tpe, loc) => Hook(hook, tpe, loc)
-      case Apply3(lambda, args, tpe, loc) =>
-        Apply3(visit(lambda), args.map(a => visit(a)), tpe, loc)
+      case Apply(lambda, args, tpe, loc) =>
+        Apply(visit(lambda), args.map(a => visit(a)), tpe, loc)
       case Unary(op, e, tpe, loc) =>
         Unary(op, visit(e), tpe, loc)
       case Binary(op, e1, e2, tpe, loc) =>
@@ -944,7 +944,7 @@ object PartialEvaluator {
       case FSet(elms, tpe, loc) => throw InternalCompilerException("Unsupported.")
       case CheckNil(e, loc) => throw InternalCompilerException("Unsupported.")
       case CheckCons(e, loc) => throw InternalCompilerException("Unsupported.")
-      case Apply(name, args, tpe, loc) => throw InternalCompilerException("Deprecated feature.")
+      case ApplyRef(name, args, tpe, loc) => throw InternalCompilerException("Deprecated feature.")
     }
 
     visit(exp)

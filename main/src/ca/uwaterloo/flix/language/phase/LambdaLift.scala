@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.language.ast.Ast.Annotations
 import ca.uwaterloo.flix.language.ast.SimplifiedAst
 import ca.uwaterloo.flix.language.ast.{Ast, Symbol}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
 
@@ -65,14 +66,14 @@ object LambdaLift {
 
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
 
-      case SimplifiedAst.Expression.Apply(name, args, tpe, loc) =>
+      case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
         val as = args.map(visit)
-        SimplifiedAst.Expression.Apply(name, as, tpe, loc)
+        SimplifiedAst.Expression.ApplyRef(name, as, tpe, loc)
 
-      case SimplifiedAst.Expression.Apply3(lambda, args, tpe, loc) =>
+      case SimplifiedAst.Expression.Apply(lambda, args, tpe, loc) =>
         val e = visit(lambda)
         val as = args.map(visit)
-        SimplifiedAst.Expression.Apply3(e, as, tpe, loc)
+        SimplifiedAst.Expression.Apply(e, as, tpe, loc)
 
       case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) =>
         val e1 = visit(exp)
@@ -130,15 +131,17 @@ object LambdaLift {
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => e
 
+      case SimplifiedAst.Expression.MkClosureRef(exp, envVar, freeVars, tpe, loc) => e
+
       case SimplifiedAst.Expression.MkClosure(exp, envVar, freeVars, tpe, loc) =>
-        val e = visit(exp)
-        SimplifiedAst.Expression.MkClosure(e, envVar, freeVars, tpe, loc)
+        val e = visit(exp) match {
+          case e: SimplifiedAst.Expression.Ref => e
+          case _ => throw InternalCompilerException(s"Unexpected expression: '$exp'.")
+        }
+        SimplifiedAst.Expression.MkClosureRef(e, envVar, freeVars, tpe, loc)
 
       case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) => e
 
-      case SimplifiedAst.Expression.ApplyClosure(exp, args, tpe, loc) =>
-        val e = visit(exp)
-        SimplifiedAst.Expression.ApplyClosure(e, args, tpe, loc)
     }
 
     // Closure convert the expression.
