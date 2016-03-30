@@ -943,13 +943,13 @@ object Verifier {
     def apply(e1: Expression): Expression = {
       val t = f.tpe.asInstanceOf[Type.Lambda]
       val l = Expression.Lambda(f.formals, f.exp, t, f.loc)
-      Expression.Apply3(l, List(e1), t.retTpe, SourceLocation.Unknown)
+      Expression.Apply(l, List(e1), t.retTpe, SourceLocation.Unknown)
     }
 
     def apply(e1: Expression, e2: Expression): Expression = {
       val t = f.tpe.asInstanceOf[Type.Lambda]
       val l = Expression.Lambda(f.formals, f.exp, t, f.loc)
-      Expression.Apply3(l, List(e1, e2), t.retTpe, SourceLocation.Unknown)
+      Expression.Apply(l, List(e1, e2), t.retTpe, SourceLocation.Unknown)
     }
   }
 
@@ -982,21 +982,21 @@ object Verifier {
       */
     // TODO: Function needs to be a name, not an arbitrary expression
     def ⊑(e1: Expression, e2: Expression): Expression =
-      Apply3(lattice.leq, List(e1, e2), e1.tpe, SourceLocation.Unknown)
+      Apply(lattice.leq, List(e1, e2), e1.tpe, SourceLocation.Unknown)
 
     /**
       * Returns the least upper bound of the two expressions `e1` and `e2`.
       */
     // TODO: Function needs to be a name, not an arbitrary expression
     def ⊔(e1: Expression, e2: Expression): Expression =
-      Apply3(lattice.lub, List(e1, e2), e1.tpe, SourceLocation.Unknown)
+      Apply(lattice.lub, List(e1, e2), e1.tpe, SourceLocation.Unknown)
 
     /**
       * Returns the greatest lower bound of the two expressions `e1` and `e2`.
       */
     // TODO: Function needs to be a name, not an arbitrary expression
     def ⊓(e1: Expression, e2: Expression): Expression =
-      Apply3(lattice.glb, List(e1, e2), e1.tpe, SourceLocation.Unknown)
+      Apply(lattice.glb, List(e1, e2), e1.tpe, SourceLocation.Unknown)
 
     /**
       * Returns the widening of the two expressions `e1` and `e2`.

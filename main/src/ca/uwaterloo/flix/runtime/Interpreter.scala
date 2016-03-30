@@ -49,8 +49,6 @@ object Interpreter {
       case Some(v) => v
     }
     case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env)
-    case Expression.Lambda(_, _, _, _) =>
-      throw InternalRuntimeException("Lambdas should have been converted to closures and lifted.")
     case Expression.ClosureVar(envVar, ident, _, _) =>
       // TODO: Clean up this implementation
       val clEnv = env.get(envVar.name) match {
@@ -61,16 +59,16 @@ object Interpreter {
         case None => throw InternalRuntimeException(s"Key '${ident.name}' not found in closure environment: '${clEnv.mkString(",")}'.")
         case Some(v) => v
       }
-    case Expression.MkClosure(lambda, envVar, freeVars, _, _) =>
+    case Expression.MkClosure(ref, envVar, freeVars, _, _) =>
       // TODO: Clean up this implementation
       val closureEnv = mutable.Map.empty[String, AnyRef]
       for (freeVar <- freeVars) {
         val name = freeVar.name
         closureEnv(name) = env(name)
       }
-      Value.Closure(lambda.asInstanceOf[Expression.Ref], envVar, closureEnv)
+      Value.Closure(ref.asInstanceOf[Expression.Ref], envVar, closureEnv)
     case Expression.Hook(hook, _, _) => Value.HookClosure(hook)
-    case Expression.Apply(name, args, _, _) =>
+    case Expression.ApplyRef(name, args, _, _) =>
       // TODO: Clean up this implementation
       val constant = root.constants(name)
       val closureEnv = mutable.Map.empty[String, AnyRef]
@@ -80,8 +78,6 @@ object Interpreter {
         i = i + 1
       }
       eval(constant.exp, root, closureEnv)
-    case Expression.Apply3(exp, args, _, _) =>
-      throw InternalRuntimeException("Apply3 should have been converted to Apply or ApplyClosure.")
     case Expression.ApplyClosure(exp, args, tpe, loc) =>
       // TODO: Clean up this implementation
       eval(exp, root, env) match {

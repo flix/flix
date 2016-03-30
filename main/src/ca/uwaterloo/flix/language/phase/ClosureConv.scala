@@ -32,19 +32,19 @@ object ClosureConv {
       case SimplifiedAst.Expression.StoreInt32(b, o, v) => e
       case SimplifiedAst.Expression.Var(ident, o, tpe, loc) => e
 
-      case SimplifiedAst.Expression.Ref(name, tpe, loc) => tpe match {
-        case Type.Lambda(_, _) => SimplifiedAst.Expression.MkClosure(e, genSym.fresh2("env"), Set(), tpe, loc)
+      case e: SimplifiedAst.Expression.Ref => e.tpe match {
+        case t: Type.Lambda => SimplifiedAst.Expression.MkClosureRef(e, genSym.fresh2("env"), Set(), t, e.loc)
         case _ => e
       }
-      case SimplifiedAst.Expression.Apply(name, args, tpe, loc) => e
+      case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) => e
 
-      case SimplifiedAst.Expression.Apply3(exp, args, tpe, loc) => exp match {
+      case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) => exp match {
         case SimplifiedAst.Expression.Ref(name, _, _) =>
-          // Top-level function, so directly call it with Apply
-          SimplifiedAst.Expression.Apply(name, args.map(convert), tpe, loc)
+          // Top-level function, so directly call it with ApplyRef
+          SimplifiedAst.Expression.ApplyRef(name, args.map(convert), tpe, loc)
         case _ =>
-          // Expression evaluates to a closure, so call with ApplyClosure.
-          SimplifiedAst.Expression.ApplyClosure(convert(exp), args.map(convert), tpe, loc)
+          // Expression evaluates to a closure, so call with Apply.
+          SimplifiedAst.Expression.Apply(convert(exp), args.map(convert), tpe, loc)
       }
 
       case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
@@ -124,10 +124,9 @@ object ClosureConv {
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => e
 
-      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) => e
+      case SimplifiedAst.Expression.MkClosure(exp, envVar, freeVars, tpe, loc) => e
+      case SimplifiedAst.Expression.MkClosureRef(exp, envVar, freeVars, tpe, loc) => e
       case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) => e
-      case SimplifiedAst.Expression.ApplyClosure(clo, args, tpe, loc) =>
-        SimplifiedAst.Expression.ApplyClosure(convert(clo), args.map(convert), tpe, loc)
 
     }
 
@@ -172,14 +171,14 @@ object ClosureConv {
 
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
 
-      case SimplifiedAst.Expression.Apply(name, args, tpe, loc) =>
+      case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
         val es = args.map(substitute(m, _))
-        SimplifiedAst.Expression.Apply(name, es, tpe, loc)
+        SimplifiedAst.Expression.ApplyRef(name, es, tpe, loc)
 
-      case SimplifiedAst.Expression.Apply3(lambda, args, tpe, loc) =>
+      case SimplifiedAst.Expression.Apply(lambda, args, tpe, loc) =>
         val e = substitute(m, lambda)
         val es = args.map(substitute(m, _))
-        SimplifiedAst.Expression.Apply3(e, es, tpe, loc)
+        SimplifiedAst.Expression.Apply(e, es, tpe, loc)
 
       case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) =>
         val e1 = substitute(m, exp)
@@ -239,13 +238,13 @@ object ClosureConv {
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => e
 
-      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
+      case SimplifiedAst.Expression.MkClosure(exp, envVar, freeVars, tpe, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: '$e'.")
+
+      case SimplifiedAst.Expression.MkClosureRef(exp, envVar, freeVars, tpe, loc) =>
         throw InternalCompilerException(s"Unexpected expression: '$e'.")
 
       case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) =>
-        throw InternalCompilerException(s"Unexpected expression: '$e'.")
-
-      case SimplifiedAst.Expression.ApplyClosure(clo, args, tpe, loc) =>
         throw InternalCompilerException(s"Unexpected expression: '$e'.")
 
     }
@@ -282,9 +281,9 @@ object ClosureConv {
 
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => Set.empty
 
-      case SimplifiedAst.Expression.Apply(name, args, tpe, loc) => args.flatMap(freeVariables).toSet
+      case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) => args.flatMap(freeVariables).toSet
 
-      case SimplifiedAst.Expression.Apply3(lambda, args, tpe, loc) =>
+      case SimplifiedAst.Expression.Apply(lambda, args, tpe, loc) =>
         freeVariables(lambda) ++ args.flatMap(freeVariables)
 
       case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) => freeVariables(exp)
@@ -311,14 +310,15 @@ object ClosureConv {
       case SimplifiedAst.Expression.MatchError(tpe, loc) => Set.empty
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => Set.empty
 
-      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
+      case SimplifiedAst.Expression.MkClosure(exp, envVar, freeVars, tpe, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: '$e'.")
+
+      case SimplifiedAst.Expression.MkClosureRef(exp, envVar, freeVars, tpe, loc) =>
         throw InternalCompilerException(s"Unexpected expression: '$e'.")
 
       case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) =>
         throw InternalCompilerException(s"Unexpected expression: '$e'.")
 
-      case SimplifiedAst.Expression.ApplyClosure(clo, args, tpe, loc) =>
-        throw InternalCompilerException(s"Unexpected expression: '$e'.")
     }
 
   }
