@@ -20,7 +20,7 @@ object ExecutableAst {
   object Definition {
 
     case class Constant(name: Symbol.Resolved,
-                        formals: List[ExecutableAst.FormalArg],
+                        formals: Array[ExecutableAst.FormalArg],
                         exp: ExecutableAst.Expression,
                         tpe: Type,
                         loc: SourceLocation) extends ExecutableAst.Definition
@@ -127,7 +127,7 @@ object ExecutableAst {
       final val loc = SourceLocation.Unknown
     }
 
-    case class Float64(list: scala.Double) extends ExecutableAst.Expression {
+    case class Float64(lit: scala.Double) extends ExecutableAst.Expression {
       final val tpe = Type.Float64
       final val loc = SourceLocation.Unknown
     }
