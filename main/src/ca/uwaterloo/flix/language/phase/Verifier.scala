@@ -735,8 +735,9 @@ object Verifier {
     val violations = envs flatMap {
       case env0 =>
         val root2 = LambdaLift.lift(root)
+        val exp = ClosureConv.convert(exp0) // TODO: Really need to make properties a part of the AST.
 
-        SymbolicEvaluator.eval(exp0, env0, root2) match {
+        SymbolicEvaluator.eval(exp, env0, root2) match {
           case SymbolicEvaluator.SymVal.True => Nil
           case SymbolicEvaluator.SymVal.False =>
             val err = property.fail(env0)

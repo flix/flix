@@ -55,18 +55,17 @@ object SymbolicEvaluator {
         newEnv += (ident.name -> v1)
         eval(exp2, newEnv, pc)
 
-      case Expression.Ref(name, tpe, loc) => // TODO: Seem fishy
+      case Expression.Ref(name, tpe, loc) =>
         val defn = root.constants(name)
         eval(defn.exp, env0, pc)
 
-      case Expression.ApplyClosure(Expression.Ref(name, _, _), args, _, _) =>
-        val defn = root.constants(name)
-        val SymVal.Closure(cloExp, cloVar, cloEnv) = eval(defn.exp, env0, pc)
+      case Expression.Apply(exp, args, _, _) =>
+        val SymVal.Closure(cloExp, cloVar, cloEnv) = eval(exp, env0, pc)
         val newEnv = mutable.Map.empty[String, SymVal]
         newEnv += (cloVar -> cloEnv)
         eval(cloExp, newEnv, pc)
 
-      case Expression.Apply3(Expression.Ref(name, _, _), args, _, _) =>
+      case Expression.ApplyRef(name, args, _, _) =>
         val defn = root.constants(name)
         val as = args.map(a => eval(a, env0, pc))
         val newEnv = mutable.Map.empty[String, SymVal]
@@ -82,6 +81,14 @@ object SymbolicEvaluator {
           closureEnv += (freeVar.name -> env0(freeVar.name))
         }
         SymVal.Closure(lambda.asInstanceOf[Expression.Ref], cloVar.name, SymVal.Environment(closureEnv.toMap))
+
+      case Expression.MkClosureRef(ref, cloVar, freeVars, tpe, loc) =>
+        // TODO: Why are there two?
+        val closureEnv = mutable.Map.empty[String, SymVal]
+        for (freeVar <- freeVars) {
+          closureEnv += (freeVar.name -> env0(freeVar.name))
+        }
+        SymVal.Closure(ref, cloVar.name, SymVal.Environment(closureEnv.toMap))
 
       case Expression.Unary(op, exp, _, _) =>
         val v = eval(exp, env0, pc)
@@ -120,7 +127,7 @@ object SymbolicEvaluator {
 
         cond match {
           case SymVal.True => eval(exp2, env0, pc)
-          case SymVal.False => eval(exp2, env0, pc)
+          case SymVal.False => eval(exp3, env0, pc)
           case _ =>
             println(cond)
             ???
@@ -153,7 +160,6 @@ object SymbolicEvaluator {
     }
 
     val r = eval(exp0, initEnv, Nil)
-    println(r)
     r
   }
 
