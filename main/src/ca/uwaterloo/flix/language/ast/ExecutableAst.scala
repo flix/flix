@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.phase.Verifier.VerifierError
+
 import scala.collection.mutable
 
 sealed trait ExecutableAst
@@ -12,6 +14,7 @@ object ExecutableAst {
                   indexes: Map[Symbol.TableSym, ExecutableAst.Definition.Index],
                   facts: Array[ExecutableAst.Constraint.Fact],
                   rules: Array[ExecutableAst.Constraint.Rule],
+                  properties: List[ExecutableAst.Property],
                   time: Time,
                   dependenciesOf: Map[Symbol.TableSym, mutable.Set[(Constraint.Rule, ExecutableAst.Predicate.Body.Table)]]) extends ExecutableAst // TODO: Why mutable?
 
@@ -641,5 +644,13 @@ object ExecutableAst {
   case class Attribute(ident: Name.Ident, tpe: Type) extends ExecutableAst
 
   case class FormalArg(ident: Name.Ident, tpe: Type) extends ExecutableAst
+
+  trait Property {
+    val formula: ExecutableAst.Expression
+
+    def name: String
+
+    def fail(env0: Map[String, String]): VerifierError
+  }
 
 }

@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.phase.Verifier.VerifierError
+
 /**
   * A common super-type for typed AST nodes.
   */
@@ -26,6 +28,7 @@ object TypedAst {
                   facts: List[TypedAst.Constraint.Fact],
                   rules: List[TypedAst.Constraint.Rule],
                   hooks: Map[Symbol.Resolved, Ast.Hook],
+                  properties: List[TypedAst.Property],
                   time: Time) extends TypedAst
 
   /**
@@ -299,7 +302,6 @@ object TypedAst {
     /**
       * A typed AST node representing a lambda abstraction.
       *
-      * @param annotations the annotations.
       * @param args        the formal arguments.
       * @param body        the body expression of the lambda.
       * @param tpe         the type of the entire function.
@@ -727,5 +729,18 @@ object TypedAst {
     * @param tpe   the type of the argument.
     */
   case class FormalArg(ident: Name.Ident, tpe: Type) extends TypedAst
+
+  /**
+    * A common super-type for properties of partial orders, lattices and functions.
+    */
+  trait Property {
+
+    def name: String
+
+    val formula: TypedAst.Expression
+
+    def fail(env0: Map[String, String]): VerifierError
+  }
+
 
 }

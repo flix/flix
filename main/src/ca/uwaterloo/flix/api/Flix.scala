@@ -164,14 +164,14 @@ class Flix {
     implicit val _ = genSym
 
     compile() map {
-      case ast =>
+      case tast =>
+        val ast = PropertyGen.collectProperties(tast)
         val sast = Simplifier.simplify(ast)
         val lifted = LambdaLift.lift(sast)
         val east = CreateExecutableAst.toExecutable(lifted)
         if (options.verify == Verify.Enabled) {
-          for (r <- VerificationConditions.checkAll(sast)) {
-            Console.println(r.message)
-          }
+          for (error <- Verifier.verify(east))
+            Console.println(error.message)
         }
 
         new Solver()(Solver.SolverContext(east, options)).solve()

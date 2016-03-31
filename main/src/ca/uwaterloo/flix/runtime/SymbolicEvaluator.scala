@@ -1,7 +1,8 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, Name, SimplifiedAst, UnaryOperator}
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
+import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.ExecutableAst
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.phase.GenSym
 
 import scala.collection.mutable
@@ -34,13 +35,11 @@ object SymbolicEvaluator {
 
     case class Tuple(elms: List[SymVal]) extends SymVal
 
-
   }
 
   case class Context(value: SymVal, env: Map[String, SymVal])
 
-
-  def eval(exp0: Expression, env0: Map[String, Expression], root: SimplifiedAst.Root)(implicit genSym: GenSym): SymVal = {
+  def eval(exp0: Expression, env0: Map[String, Expression], root: ExecutableAst.Root)(implicit genSym: GenSym): SymVal = {
 
     def eval(exp0: Expression, env0: mutable.Map[String, SymVal], pc: List[Constraint])(implicit genSym: GenSym): SymVal = exp0 match {
       case Expression.Unit => SymVal.Unit
@@ -65,7 +64,7 @@ object SymbolicEvaluator {
         val defn = root.constants(name)
         eval(defn.exp, env0, pc)
 
-      case Expression.Apply(exp, args, _, _) =>
+      case Expression.ApplyClosure(exp, args, _, _) =>
         val SymVal.Closure(cloExp, cloVar, cloEnv) = eval(exp, env0, pc)
         val newEnv = mutable.Map.empty[String, SymVal]
         newEnv += (cloVar -> cloEnv)
@@ -88,7 +87,7 @@ object SymbolicEvaluator {
         }
         SymVal.Closure(lambda.asInstanceOf[Expression.Ref], cloVar.name, SymVal.Environment(closureEnv.toMap))
 
-      case Expression.MkClosureRef(ref, cloVar, freeVars, tpe, loc) =>
+      case Expression.MkClosure(ref, cloVar, freeVars, tpe, loc) =>
         // TODO: Why are there two?
         val closureEnv = mutable.Map.empty[String, SymVal]
         for (freeVar <- freeVars) {
@@ -150,7 +149,7 @@ object SymbolicEvaluator {
         SymVal.Tag(tag.name, v)
 
       case Expression.Tuple(elms, _, _) =>
-        val es = elms map (e => eval(e, env0, pc))
+        val es = elms.toList map (e => eval(e, env0, pc))
         SymVal.Tuple(es)
 
       case Expression.CheckTag(tag, exp, _) =>
