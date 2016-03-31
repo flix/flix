@@ -57,7 +57,7 @@ object CreateExecutableAst {
     def toExecutable(sast: SimplifiedAst.Definition.Constant): ExecutableAst.Definition.Constant = {
       val formals = sast.formals.map {
         case SimplifiedAst.FormalArg(ident, tpe) => ExecutableAst.FormalArg(ident, tpe)
-      }
+      }.toArray
 
       ExecutableAst.Definition.Constant(sast.name, formals, Expression.toExecutable(sast.exp), sast.tpe, sast.loc)
     }
