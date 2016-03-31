@@ -154,7 +154,7 @@ object Codegen {
       args.foreach(compileExpression(context, visitor))
       visitor.visitMethodInsn(INVOKESTATIC, context.clazz, decorate(name),
         descriptor(context.getFunction(name).tpe), false)
-    case Expression.Apply(lambda, args, tpe, loc) => ???
+    case Expression.Apply(exp, args, tpe, loc) => ???
 
     case Expression.Unary(op, exp, _, _) => compileUnaryExpr(context, visitor)(op, exp)
     case Expression.Binary(op, exp1, exp2, _, _) => op match {
