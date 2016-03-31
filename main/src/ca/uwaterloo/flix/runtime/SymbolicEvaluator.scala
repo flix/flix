@@ -133,6 +133,10 @@ object SymbolicEvaluator {
             ???
         }
 
+      case Expression.Tag(enum, tag, exp, _, _) =>
+        val v = eval(exp, env0, pc)
+        SymVal.Tag(tag.name, v)
+
       case Expression.Tuple(elms, _, _) =>
         val es = elms map (e => eval(e, env0, pc))
         SymVal.Tuple(es)

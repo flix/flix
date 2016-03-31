@@ -734,6 +734,7 @@ object Verifier {
     // attempt to verify that the property holds under each environment.
     val violations = envs flatMap {
       case env0 =>
+        // TODO: need to make properties part of the AST and lift them appropiately.
         val root2 = LambdaLift.lift(root)
         val exp = ClosureConv.convert(exp0) // TODO: Really need to make properties a part of the AST.
 
@@ -865,20 +866,21 @@ object Verifier {
     val functionProperties = root.constants.values flatMap {
       case f if f.ann.isUnchecked => Nil
       case f => f.ann.annotations.flatMap {
-        case Annotation.Associative(loc) => Some(Property.Associativity(f))
-        case Annotation.Commutative(loc) => Some(Property.Commutativity(f))
-        case Annotation.Strict(loc) => f.formals match {
-          case Nil => None // A constant function is always strict.
-          case a :: Nil => Some(Property.Strict1(f, root))
-          case a1 :: a2 :: Nil => Some(Property.Strict2(f, root))
-          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
-        }
-        case Annotation.Monotone(loc) => f.formals match {
-          case Nil => None // A constant function is always monotone.
-          case a :: Nil => Some(Property.Monotone1(f, root))
-          case a1 :: a2 :: Nil => Some(Property.Monotone2(f, root))
-          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
-        }
+        // TODO: Broken until we can make sure that properties are part of the ast and lifted appropiately.
+       // case Annotation.Associative(loc) => Some(Property.Associativity(f))
+       // case Annotation.Commutative(loc) => Some(Property.Commutativity(f))
+//        case Annotation.Strict(loc) => f.formals match {
+//          case Nil => None // A constant function is always strict.
+//          case a :: Nil => Some(Property.Strict1(f, root))
+//          case a1 :: a2 :: Nil => Some(Property.Strict2(f, root))
+//          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+//        }
+//        case Annotation.Monotone(loc) => f.formals match {
+//          case Nil => None // A constant function is always monotone.
+//          case a :: Nil => Some(Property.Monotone1(f, root))
+//          case a1 :: a2 :: Nil => Some(Property.Monotone2(f, root))
+//          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+//        }
         case _ => Nil
       }
     }
