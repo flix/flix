@@ -6,15 +6,17 @@ import ca.uwaterloo.flix.language.ast.SimplifiedAst.Definition._
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Type, _}
-import ca.uwaterloo.flix.language.phase.Verifier.VerifierError._
+import ca.uwaterloo.flix.language.phase.VerificationConditions.VerifierError._
 import ca.uwaterloo.flix.runtime.{PartialEvaluator, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import com.microsoft.z3._
 
-// TODO: have some help verify this class.
-// TODO: Can we use un-interpreted functions for anything?
-
-object Verifier {
+/**
+  * This class is responsible for generating the necessary verification conditions.
+  *
+  * In the future it will be replaced by writing the necessary laws directly in Flix.
+  */
+object VerificationConditions {
 
   /**
     * A common super-type for properties of partial orders, lattices and functions.
@@ -702,18 +704,7 @@ object Verifier {
 
   }
 
-  /**
-    * Attempts to verify all properties of every function in the given AST `root`.
-    *
-    * Returns a list of errors. If the list is empty, all properties were successfully verified.
-    */
-  def checkAll(root: SimplifiedAst.Root)(implicit genSym: GenSym): List[VerifierError] = {
-    // find all properties to verify.
-    val properties = collectProperties(root)
 
-    // attempt to verify each property.
-    properties flatMap (p => checkProperty(p, root))
-  }
 
   /**
     * Attempts to verify the given `property`.
@@ -793,6 +784,19 @@ object Verifier {
   }
 
   /**
+    * Attempts to verify all properties of every function in the given AST `root`.
+    *
+    * Returns a list of errors. If the list is empty, all properties were successfully verified.
+    */
+  def checkAll(root: SimplifiedAst.Root)(implicit genSym: GenSym): List[VerifierError] = {
+    // find all properties to verify.
+    val properties = collectProperties(root)
+
+    // attempt to verify each property.
+    properties flatMap (p => checkProperty(p, root))
+  }
+
+  /**
     * Enumerates all possible environments of the given universally quantified variables.
     */
   // TODO: replace string by name?
@@ -839,8 +843,10 @@ object Verifier {
     * Returns all the verification conditions required to ensure the safety of the given AST `root`.
     */
   def collectProperties(root: SimplifiedAst.Root): List[Property] = {
+    val lattices = root.lattices.values.toList
+
     // Collect partial order properties.
-    val partialOrderProperties = lattices(root) flatMap {
+    val partialOrderProperties = lattices flatMap {
       case l => List(
         Property.PartialOrder.Reflexivity(l),
         Property.PartialOrder.AntiSymmetry(l),
@@ -849,7 +855,7 @@ object Verifier {
     }
 
     // Collect lattice properties.
-    val latticeProperties = lattices(root) flatMap {
+    val latticeProperties = lattices flatMap {
       case l => List(
         Property.JoinSemiLattice.LeastElement(l),
         Property.JoinSemiLattice.UpperBound(l),
@@ -867,20 +873,20 @@ object Verifier {
       case f if f.ann.isUnchecked => Nil
       case f => f.ann.annotations.flatMap {
         // TODO: Broken until we can make sure that properties are part of the ast and lifted appropiately.
-       // case Annotation.Associative(loc) => Some(Property.Associativity(f))
-       // case Annotation.Commutative(loc) => Some(Property.Commutativity(f))
-//        case Annotation.Strict(loc) => f.formals match {
-//          case Nil => None // A constant function is always strict.
-//          case a :: Nil => Some(Property.Strict1(f, root))
-//          case a1 :: a2 :: Nil => Some(Property.Strict2(f, root))
-//          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
-//        }
-//        case Annotation.Monotone(loc) => f.formals match {
-//          case Nil => None // A constant function is always monotone.
-//          case a :: Nil => Some(Property.Monotone1(f, root))
-//          case a1 :: a2 :: Nil => Some(Property.Monotone2(f, root))
-//          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
-//        }
+        // case Annotation.Associative(loc) => Some(Property.Associativity(f))
+        // case Annotation.Commutative(loc) => Some(Property.Commutativity(f))
+        //        case Annotation.Strict(loc) => f.formals match {
+        //          case Nil => None // A constant function is always strict.
+        //          case a :: Nil => Some(Property.Strict1(f, root))
+        //          case a1 :: a2 :: Nil => Some(Property.Strict2(f, root))
+        //          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+        //        }
+        //        case Annotation.Monotone(loc) => f.formals match {
+        //          case Nil => None // A constant function is always monotone.
+        //          case a :: Nil => Some(Property.Monotone1(f, root))
+        //          case a1 :: a2 :: Nil => Some(Property.Monotone2(f, root))
+        //          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+        //        }
         case _ => Nil
       }
     }
@@ -983,21 +989,18 @@ object Verifier {
     /**
       * Returns the `true` if `e1` is less than or equal to `e2` according to the partial order.
       */
-    // TODO: Function needs to be a name, not an arbitrary expression
     def ⊑(e1: Expression, e2: Expression): Expression =
       Apply(lattice.leq, List(e1, e2), e1.tpe, SourceLocation.Unknown)
 
     /**
       * Returns the least upper bound of the two expressions `e1` and `e2`.
       */
-    // TODO: Function needs to be a name, not an arbitrary expression
     def ⊔(e1: Expression, e2: Expression): Expression =
       Apply(lattice.lub, List(e1, e2), e1.tpe, SourceLocation.Unknown)
 
     /**
       * Returns the greatest lower bound of the two expressions `e1` and `e2`.
       */
-    // TODO: Function needs to be a name, not an arbitrary expression
     def ⊓(e1: Expression, e2: Expression): Expression =
       Apply(lattice.glb, List(e1, e2), e1.tpe, SourceLocation.Unknown)
 
@@ -1013,12 +1016,6 @@ object Verifier {
     def △(e1: Expression, e2: Expression): Expression =
       throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
   }
-
-  /**
-    * Returns all lattice definitions in the given AST `root`.
-    */
-  def lattices(root: SimplifiedAst.Root): List[Lattice] =
-    root.lattices.values.toList
 
   /////////////////////////////////////////////////////////////////////////////
   // Translation to Z3 Formulae                                              //

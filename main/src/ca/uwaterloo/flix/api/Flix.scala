@@ -169,7 +169,7 @@ class Flix {
         val lifted = LambdaLift.lift(sast)
         val east = CreateExecutableAst.toExecutable(lifted)
         if (options.verify == Verify.Enabled) {
-          for (r <- Verifier.checkAll(sast)) {
+          for (r <- VerificationConditions.checkAll(sast)) {
             Console.println(r.message)
           }
         }
