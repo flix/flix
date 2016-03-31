@@ -72,7 +72,7 @@ object LambdaLift {
         case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
           // Replace the MkClosure node with a MkClosureRef node, since the Lambda has been replaced by a Ref.
           visit(m, lambda) match {
-            case name: SimplifiedAst.Expression.Ref =>
+            case ref: SimplifiedAst.Expression.Ref =>
               SimplifiedAst.Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc)
             case _ => throw InternalCompilerException(s"Unexpected expression: '$lambda'.")
           }
