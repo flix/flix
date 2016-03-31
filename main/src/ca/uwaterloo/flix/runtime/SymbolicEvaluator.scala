@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, SimplifiedAst, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, Name, SimplifiedAst, UnaryOperator}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.phase.GenSym
 
@@ -19,6 +19,10 @@ object SymbolicEvaluator {
     case object True extends SymVal
 
     case object False extends SymVal
+
+    case class Int32(lit: Int) extends SymVal
+
+    case class AtomicVar(ident: Name.Ident) extends SymVal
 
     case class Lambda(args: List[String], exp: Expression) extends SymVal
 
@@ -42,6 +46,8 @@ object SymbolicEvaluator {
       case Expression.Unit => SymVal.Unit
       case Expression.True => SymVal.True
       case Expression.False => SymVal.False
+
+      case Expression.Int32(i) => SymVal.Int32(i)
 
       case Expression.Var(ident, offset, tpe, loc) => env0(ident.name)
 
@@ -118,8 +124,14 @@ object SymbolicEvaluator {
             case (SymVal.False, SymVal.False) => SymVal.False
           }
 
+          case BinaryOperator.LessEqual =>
+
+            ???
+
           case BinaryOperator.Equal =>
             if (v1 == v2) SymVal.True else SymVal.False
+
+
         }
 
       case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
@@ -169,6 +181,7 @@ object SymbolicEvaluator {
 
   def toSymVal(exp0: Expression): SymVal = exp0 match {
     case Expression.Unit => SymVal.Unit
+    case Expression.Var(ident, _, _, _) => SymVal.AtomicVar(ident)
     case Expression.Tag(enum, tag, exp, tpe, loc) =>
       SymVal.Tag(tag.name, toSymVal(exp))
   }
