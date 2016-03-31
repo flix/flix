@@ -134,7 +134,7 @@ object CreateExecutableAst {
         ExecutableAst.Expression.ClosureVar(env, name, tpe, loc)
       case SimplifiedAst.Expression.Ref(name, tpe, loc) => ExecutableAst.Expression.Ref(name, tpe, loc)
       case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
-        throw InternalRuntimeException("Lambdas should have been converted to closures and lifted.")
+        throw InternalCompilerException("Lambdas should have been converted to closures and lifted.")
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => ExecutableAst.Expression.Hook(hook, tpe, loc)
       case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
         throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
