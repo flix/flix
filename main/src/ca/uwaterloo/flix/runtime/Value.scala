@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.runtime
 
 import java.util
 
-import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Name, Symbol}
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
 import scala.collection.{immutable, mutable}
@@ -197,18 +197,7 @@ object Value {
   /**
     * Flix internal representation of closures.
     */
-  final case class Closure(formals: Array[String], body: ExecutableAst.Expression, env: mutable.Map[String, AnyRef]) {
-    // We override `equals` since otherwise the `formals` Array is compared using reference equality.
-    override def equals(obj: scala.Any): Boolean = obj match {
-      case that: Value.Closure =>
-        util.Arrays.equals(this.formals.asInstanceOf[Array[AnyRef]], that.formals.asInstanceOf[Array[AnyRef]]) &&
-          this.body == that.body && this.env == that.env
-      case _ => false
-    }
-
-    override def hashCode: Int =
-      41 * (41 * (41 + util.Arrays.hashCode(formals.asInstanceOf[Array[AnyRef]])) + body.hashCode) + env.hashCode
-  }
+  final case class Closure(ref: ExecutableAst.Expression.Ref, envVar: Name.Ident, env: mutable.Map[String, AnyRef])
 
   // TODO: Introduce make function and make Closure constructor private.
 

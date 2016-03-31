@@ -73,7 +73,7 @@ object Simplifier {
       case TypedAst.Expression.Lambda(args, body, tpe, loc) =>
         SimplifiedAst.Expression.Lambda(args map Simplifier.simplify, simplify(body), tpe, loc)
       case TypedAst.Expression.Apply(e, args, tpe, loc) =>
-        SimplifiedAst.Expression.Apply3(simplify(e), args map simplify, tpe, loc)
+        SimplifiedAst.Expression.Apply(simplify(e), args map simplify, tpe, loc)
       case TypedAst.Expression.Unary(op, e, tpe, loc) =>
         SimplifiedAst.Expression.Unary(op, simplify(e), tpe, loc)
       case TypedAst.Expression.Binary(op, e1, e2, tpe, loc) =>
@@ -144,7 +144,7 @@ object Simplifier {
                   next: Name.Ident): SExp = ((names, cases): @unchecked) match {
           case (Nil, Nil) =>
             // Base case: simply call the function representing the first case, to start the pattern match.
-            SExp.Apply3(SExp.Var(vars.head, -1, Type.Lambda(List(), tpe), loc), List(), tpe, loc)
+            SExp.Apply(SExp.Var(vars.head, -1, Type.Lambda(List(), tpe), loc), List(), tpe, loc)
           case (n :: ns, (pat, body) :: cs) =>
             // Construct the lambda that represents the current case:
             //   fn() = if `matchVar` matches `pat`, return `body`, else call `next()`
@@ -154,7 +154,7 @@ object Simplifier {
                 xs = List(pat),
                 ys = List(matchVar),
                 succ = simplify(body),
-                fail = SExp.Apply3(SExp.Var(next, -1, Type.Lambda(List(), tpe), loc), List(), tpe, loc)
+                fail = SExp.Apply(SExp.Var(next, -1, Type.Lambda(List(), tpe), loc), List(), tpe, loc)
               ),
               Type.Lambda(List(), tpe), loc)
 

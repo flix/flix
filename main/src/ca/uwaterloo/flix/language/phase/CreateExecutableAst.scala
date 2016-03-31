@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException}
 
 import scala.collection.mutable
 
@@ -56,7 +57,7 @@ object CreateExecutableAst {
     def toExecutable(sast: SimplifiedAst.Definition.Constant): ExecutableAst.Definition.Constant = {
       val formals = sast.formals.map {
         case SimplifiedAst.FormalArg(ident, tpe) => ExecutableAst.FormalArg(ident, tpe)
-      }
+      }.toArray
 
       ExecutableAst.Definition.Constant(sast.name, formals, Expression.toExecutable(sast.exp), sast.tpe, sast.loc)
     }
@@ -129,17 +130,23 @@ object CreateExecutableAst {
         ExecutableAst.Expression.StoreInt32(toExecutable(e), offset, toExecutable(v))
       case SimplifiedAst.Expression.Var(ident, offset, tpe, loc) =>
         ExecutableAst.Expression.Var(ident, offset, tpe, loc)
+      case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) =>
+        ExecutableAst.Expression.ClosureVar(env, name, tpe, loc)
       case SimplifiedAst.Expression.Ref(name, tpe, loc) => ExecutableAst.Expression.Ref(name, tpe, loc)
       case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
-        val argsArray = args.map(CreateExecutableAst.toExecutable).toArray
-        ExecutableAst.Expression.Lambda(argsArray, toExecutable(body), tpe, loc)
+        throw InternalRuntimeException("Lambdas should have been converted to closures and lifted.")
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => ExecutableAst.Expression.Hook(hook, tpe, loc)
-      case SimplifiedAst.Expression.Apply(name, args, tpe, loc) =>
+      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
+        throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
+      case SimplifiedAst.Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc) =>
+        val e = toExecutable(ref)
+        ExecutableAst.Expression.MkClosure(e.asInstanceOf[ExecutableAst.Expression.Ref], envVar, freeVars, tpe, loc)
+      case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
         val argsArray = args.map(toExecutable).toArray
-        ExecutableAst.Expression.Apply(name, argsArray, tpe, loc)
-      case SimplifiedAst.Expression.Apply3(lambda, args, tpe, loc) =>
+        ExecutableAst.Expression.ApplyRef(name, argsArray, tpe, loc)
+      case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
         val argsArray = args.map(toExecutable).toArray
-        ExecutableAst.Expression.Apply3(toExecutable(lambda), argsArray, tpe, loc)
+        ExecutableAst.Expression.ApplyClosure(toExecutable(exp), argsArray, tpe, loc)
       case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) =>
         ExecutableAst.Expression.Unary(op, toExecutable(exp), tpe, loc)
       case SimplifiedAst.Expression.Binary(op, exp1, exp2, tpe, loc) =>
@@ -167,19 +174,6 @@ object CreateExecutableAst {
       case SimplifiedAst.Expression.UserError(tpe, loc) => ExecutableAst.Expression.Error(tpe, loc)
       case SimplifiedAst.Expression.MatchError(tpe, loc) => ExecutableAst.Expression.MatchError(tpe, loc)
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => ExecutableAst.Expression.SwitchError(tpe, loc)
-
-      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
-        val e = toExecutable(lambda)
-        ExecutableAst.Expression.MkClosure(e, envVar, freeVars, tpe, loc)
-
-      case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) =>
-        ExecutableAst.Expression.ClosureVar(env, name, tpe, loc)
-
-      case SimplifiedAst.Expression.ApplyClosure(exp, args, tpe, loc) =>
-        val e = toExecutable(exp)
-        val es = args map toExecutable
-        ExecutableAst.Expression.ApplyClosure(e, es, tpe, loc)
-
     }
   }
 

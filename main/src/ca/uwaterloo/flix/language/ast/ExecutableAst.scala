@@ -20,7 +20,7 @@ object ExecutableAst {
   object Definition {
 
     case class Constant(name: Symbol.Resolved,
-                        formals: List[ExecutableAst.FormalArg],
+                        formals: Array[ExecutableAst.FormalArg],
                         exp: ExecutableAst.Expression,
                         tpe: Type,
                         loc: SourceLocation) extends ExecutableAst.Definition
@@ -127,7 +127,7 @@ object ExecutableAst {
       final val loc = SourceLocation.Unknown
     }
 
-    case class Float64(list: scala.Double) extends ExecutableAst.Expression {
+    case class Float64(lit: scala.Double) extends ExecutableAst.Expression {
       final val tpe = Type.Float64
       final val loc = SourceLocation.Unknown
     }
@@ -267,19 +267,47 @@ object ExecutableAst {
                    tpe: Type,
                    loc: SourceLocation) extends ExecutableAst.Expression
 
+    /**
+      * A typed AST node representing a closure variable expression that must be looked up from the closure environment.
+      *
+      * @param env  the name of the closure environment variable.
+      * @param name the name of the closure variable.
+      * @param tpe  the type of the variable.
+      * @param loc  the source location of the variable.
+      */
+    case class ClosureVar(env: Name.Ident,
+                          name: Name.Ident,
+                          tpe: Type,
+                          loc: SourceLocation) extends ExecutableAst.Expression
+
+    /**
+      * A typed AST node representing a reference to a top-level definition.
+      *
+      * @param name the name of the reference.
+      * @param tpe  the type of the reference.
+      * @param loc  the source location of the reference.
+      */
     case class Ref(name: Symbol.Resolved, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression {
       override def toString: String = "Ref(" + name.fqn + ")"
     }
 
-    // TODO: Lambda lift?
-    case class Lambda(args: Array[ExecutableAst.FormalArg],
-                      body: ExecutableAst.Expression,
-                      tpe: Type.Lambda,
-                      loc: SourceLocation) extends ExecutableAst.Expression {
-      override def toString: String = "λ(" + args.map(_.tpe).mkString(", ") + ") " + body
-    }
-
     case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    /**
+      * A typed AST node representing the creation of a closure. At compile time, a unique `envVar` is created and
+      * `freeVars` is computed. The free variables are bound at run time.
+      *
+      * @param ref      the reference to the lambda associated with the closure.
+      * @param envVar   the name of the closure environment variable.
+      * @param freeVars the cached set of free variables occurring within the lambda expression.
+      * @param tpe      the type of the closure.
+      * @param loc      the source location of the lambda.
+      */
+    case class MkClosure(ref: ExecutableAst.Expression.Ref,
+                         envVar: Name.Ident,
+                         freeVars: Set[Name.Ident],
+                         tpe: Type.Lambda,
+                         loc: SourceLocation) extends ExecutableAst.Expression
 
     /**
       * A typed AST node representing a function call.
@@ -289,15 +317,23 @@ object ExecutableAst {
       * @param tpe  the return type of the function.
       * @param loc  the source location of the expression.
       */
-    case class Apply(name: Symbol.Resolved,
-                     args: Array[ExecutableAst.Expression],
-                     tpe: Type,
-                     loc: SourceLocation) extends ExecutableAst.Expression
+    case class ApplyRef(name: Symbol.Resolved,
+                        args: Array[ExecutableAst.Expression],
+                        tpe: Type,
+                        loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class Apply3(exp: ExecutableAst.Expression,
-                      args: Array[ExecutableAst.Expression],
-                      tpe: Type,
-                      loc: SourceLocation) extends ExecutableAst.Expression
+    /**
+      * A typed AST node representing a function call.
+      *
+      * @param exp  the function being called.
+      * @param args the function arguments.
+      * @param tpe  the return type of the function.
+      * @param loc  the source location of the expression.
+      */
+    case class ApplyClosure(exp: ExecutableAst.Expression,
+                            args: Array[ExecutableAst.Expression],
+                            tpe: Type,
+                            loc: SourceLocation) extends ExecutableAst.Expression
 
     /**
       * A typed AST node representing a unary expression.
@@ -484,11 +520,6 @@ object ExecutableAst {
       */
     case class SwitchError(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class MkClosure(lambda: ExecutableAst.Expression, envVar: Name.Ident, freeVars: Set[Name.Ident], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
-
-    case class ClosureVar(env: Name.Ident, name: Name.Ident, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
-
-    case class ApplyClosure(exp: ExecutableAst.Expression, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
   }
 
   sealed trait Predicate extends ExecutableAst {

@@ -641,7 +641,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(196))(result)
   }
 
-  ignore("Expression.Lambda.07") {
+  test("Expression.Lambda.07") {
     val input =
       """fn f(x: Int8, y: Int8): Int8 = x - y
         |fn g(x: Int8): Int8 = x * 3i8
@@ -701,7 +701,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(49))(result)
   }
 
-  ignore("Expression.Lambda.11") {
+  test("Expression.Lambda.11") {
     val input =
       """fn f(x: (Int) -> Int, y: Int): Int = x(y)
         |fn g(x: Int): Int = x + 1
@@ -712,7 +712,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(6))(result)
   }
 
-  ignore("Expression.Lambda.13") {
+  test("Expression.Lambda.12") {
     val input =
       """fn f(x: (Int) -> Int): (Int) -> Int = x
         |fn g(x: Int): Int = x + 5
@@ -723,7 +723,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(45))(result)
   }
 
-  test("Expression.Lambda.14") {
+  test("Expression.Lambda.13") {
     val input =
       """enum Val { case Val(Int) }
         |fn f(x: Int): Val = Val.Val(x)
@@ -734,7 +734,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkInt32(111)))(result)
   }
 
-  test("Expression.Lambda.15") {
+  test("Expression.Lambda.14") {
     val input =
       """fn f(a: Int, b: Int, c: Str, d: Int, e: Bool, f: ()): (Int, Int, Str, Int, Bool, ()) = (a, b, c, d, e, f)
         |fn g: (Int, Int, Str, Int, Bool, ()) = f(24, 53, "qwertyuiop", 9978, false, ())
@@ -744,7 +744,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.Tuple(Array(Value.mkInt32(24), Value.mkInt32(53), Value.mkStr("qwertyuiop"), Value.mkInt32(9978), Value.False, Value.Unit)))(result)
   }
 
-  test("Expression.Lambda.16") {
+  test("Expression.Lambda.15") {
     val input =
       """fn f(a: Int, b: Int, c: Int): Set[Int] = #{a, b, c}
         |fn g: Set[Int] = f(24, 53, 24)
