@@ -73,7 +73,7 @@ object ClosureConv {
     case SimplifiedAst.Expression.Hook(hook, tpe, loc) => exp
     case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
       throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp'.")
-    case SimplifiedAst.Expression.MkClosureRef(name, envVar, freeVars, tpe, loc) =>
+    case SimplifiedAst.Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc) =>
       throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp'.")
     case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
       throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp'.")
@@ -161,7 +161,7 @@ object ClosureConv {
 
     case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
       throw InternalCompilerException(s"Illegal expression during closure conversion (substitution): '$e'.")
-    case SimplifiedAst.Expression.MkClosureRef(name, envVar, freeVars, tpe, loc) =>
+    case SimplifiedAst.Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc) =>
       throw InternalCompilerException(s"Illegal expression during closure conversion (substitution): '$e'.")
     case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
       SimplifiedAst.Expression.ApplyRef(name, args.map(substitute(m, _)), tpe, loc)
@@ -234,7 +234,7 @@ object ClosureConv {
     case SimplifiedAst.Expression.Hook(hook, tpe, loc) => Set.empty
     case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$e'.")
-    case SimplifiedAst.Expression.MkClosureRef(name, envVar, freeVars, tpe, loc) =>
+    case SimplifiedAst.Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$e'.")
     case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) => args.flatMap(freeVariables).toSet
     case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>

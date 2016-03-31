@@ -297,13 +297,13 @@ object ExecutableAst {
       * A typed AST node representing the creation of a closure. At compile time, a unique `envVar` is created and
       * `freeVars` is computed. The free variables are bound at run time.
       *
-      * @param name     the reference to the lambda associated with the closure.
+      * @param ref      the reference to the lambda associated with the closure.
       * @param envVar   the name of the closure environment variable.
       * @param freeVars the cached set of free variables occurring within the lambda expression.
       * @param tpe      the type of the closure.
       * @param loc      the source location of the lambda.
       */
-    case class MkClosure(name: ExecutableAst.Expression.Ref,
+    case class MkClosure(ref: ExecutableAst.Expression.Ref,
                          envVar: Name.Ident,
                          freeVars: Set[Name.Ident],
                          tpe: Type.Lambda,

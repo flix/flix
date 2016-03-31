@@ -340,13 +340,13 @@ object SimplifiedAst {
       * A typed AST node representing the creation of a closure, with the lambda lifted and replaced by a ref. At
       * compile time, a unique `envVar` is created and `freeVars` is computed. The free variables are bound at run time.
       *
-      * @param name     the reference to the lambda associated with the closure.
+      * @param ref      the reference to the lambda associated with the closure.
       * @param envVar   the name of the closure environment variable.
       * @param freeVars the cached set of free variables occurring within the lambda expression.
       * @param tpe      the type of the closure.
       * @param loc      the source location of the lambda.
       */
-    case class MkClosureRef(name: SimplifiedAst.Expression.Ref,
+    case class MkClosureRef(ref: SimplifiedAst.Expression.Ref,
                             envVar: Name.Ident,
                             freeVars: Set[Name.Ident],
                             tpe: Type.Lambda,
