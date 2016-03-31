@@ -303,8 +303,10 @@ object SimplifiedAst {
     }
 
     /**
-      * A typed AST node representing a lambda function. A later phase/pass lifts these lambda functions to top-level
-      * definitions.
+      * A typed AST node representing a lambda function.
+      *
+      * A later phase/pass lifts these lambda functions to top-level definitions,
+      * thus they no longer exist after lambda lifting.
       *
       * @param args the formal arguments to the lambda.
       * @param body the body expression of the lambda.
@@ -321,8 +323,10 @@ object SimplifiedAst {
     case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
-      * A typed AST node representing the creation of a closure. At compile time, a unique `envVar` is created and
-      * `freeVars` is computed. The free variables are bound at run time.
+      * A typed AST node representing the creation of a closure.
+      *
+      * MkClosure nodes are created during closure conversion, replacing Lambda nodes. Then, during lambda lifting,
+      * MkClosure is replaced with MkClosureRef
       *
       * @param lambda   the lambda associated with the closure.
       * @param envVar   the name of the closure environment variable.
@@ -337,8 +341,13 @@ object SimplifiedAst {
                          loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
-      * A typed AST node representing the creation of a closure, with the lambda lifted and replaced by a ref. At
-      * compile time, a unique `envVar` is created and `freeVars` is computed. The free variables are bound at run time.
+      * A typed AST node representing the creation of a closure, with the lambda lifted and replaced by a ref.
+      *
+      * At compile time, a unique `envVar` is created and `freeVars` is computed.
+      * The free variables are bound at run time.
+      *
+      * MkClosureRef nodes may be created during closure conversion, but most of them are created during lambda lifting,
+      * to replace MkClosure nodes.
       *
       * @param ref      the reference to the lambda associated with the closure.
       * @param envVar   the name of the closure environment variable.

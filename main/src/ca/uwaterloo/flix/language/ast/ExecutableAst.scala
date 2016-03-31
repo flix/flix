@@ -303,11 +303,11 @@ object ExecutableAst {
       * @param tpe      the type of the closure.
       * @param loc      the source location of the lambda.
       */
-    case class MkClosure(ref: ExecutableAst.Expression.Ref,
-                         envVar: Name.Ident,
-                         freeVars: Set[Name.Ident],
-                         tpe: Type.Lambda,
-                         loc: SourceLocation) extends ExecutableAst.Expression
+    case class MkClosureRef(ref: ExecutableAst.Expression.Ref,
+                            envVar: Name.Ident,
+                            freeVars: Set[Name.Ident],
+                            tpe: Type.Lambda,
+                            loc: SourceLocation) extends ExecutableAst.Expression
 
     /**
       * A typed AST node representing a function call.

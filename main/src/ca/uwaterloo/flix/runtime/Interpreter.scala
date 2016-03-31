@@ -56,7 +56,7 @@ object Interpreter {
       }
     case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env)
     case Expression.Hook(hook, _, _) => Value.HookClosure(hook)
-    case Expression.MkClosure(ref, envVar, freeVars, _, _) =>
+    case Expression.MkClosureRef(ref, envVar, freeVars, _, _) =>
       // Create the closure environment, by binding values from the current environment to the free variables.
       val closureEnv = mutable.Map.empty[String, AnyRef]
       for (freeVar <- freeVars) {
