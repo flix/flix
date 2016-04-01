@@ -370,18 +370,19 @@ object PropertyGen {
       case f => f.ann.annotations.flatMap {
         case Annotation.Associative(loc) => Some(Property.mkAssociativity(f))
         case Annotation.Commutative(loc) => Some(Property.mkCommutativity(f))
-        case Annotation.Strict(loc) => f.formals match {
-          case Nil => None // A constant function is always strict.
-          case a :: Nil => Some(Property.mkStrict1(f, root))
-          case a1 :: a2 :: Nil => Some(Property.mkStrict2(f, root))
-          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
-        }
-        case Annotation.Monotone(loc) => f.formals match {
-          case Nil => None // A constant function is always monotone.
-          case a :: Nil => Some(Property.mkMonotone1(f, root))
-          case a1 :: a2 :: Nil => Some(Property.mkMonotone2(f, root))
-          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
-        }
+          // TODO
+//        case Annotation.Strict(loc) => f.formals match {
+//          case Nil => None // A constant function is always strict.
+//          case a :: Nil => Some(Property.mkStrict1(f, root))
+//          case a1 :: a2 :: Nil => Some(Property.mkStrict2(f, root))
+//          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
+//        }
+//        case Annotation.Monotone(loc) => f.formals match {
+//          case Nil => None // A constant function is always monotone.
+//          case a :: Nil => Some(Property.mkMonotone1(f, root))
+//          case a1 :: a2 :: Nil => Some(Property.mkMonotone2(f, root))
+//          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
+//        }
         case _ => Nil
       }
     }
@@ -447,17 +448,17 @@ object PropertyGen {
   def ≡(e1: Expression, e2: Expression): Expression =
     Binary(BinaryOperator.Equal, e1, e2, Type.Bool, SourceLocation.Unknown)
 
-  implicit class RichLambda(val f: TypedAst.Definition.Constant) {
+  implicit class RichLambda(val defn: TypedAst.Definition.Constant) {
     def apply(e1: Expression): Expression = {
-      val t = f.tpe.asInstanceOf[Type.Lambda]
-      val l = Expression.Lambda(f.formals, f.exp, t, f.loc)
-      Expression.Apply(l, List(e1), t.retTpe, SourceLocation.Unknown)
+      val t = defn.tpe.asInstanceOf[Type.Lambda]
+      val r = Expression.Ref(defn.name, t, SourceLocation.Unknown)
+      Expression.Apply(r, List(e1), t.retTpe, SourceLocation.Unknown)
     }
 
     def apply(e1: Expression, e2: Expression): Expression = {
-      val t = f.tpe.asInstanceOf[Type.Lambda]
-      val l = Expression.Lambda(f.formals, f.exp, t, f.loc)
-      Expression.Apply(l, List(e1, e2), t.retTpe, SourceLocation.Unknown)
+      val t = defn.tpe.asInstanceOf[Type.Lambda]
+      val r = Expression.Ref(defn.name, t, SourceLocation.Unknown)
+      Expression.Apply(r, List(e1, e2), t.retTpe, SourceLocation.Unknown)
     }
   }
 
