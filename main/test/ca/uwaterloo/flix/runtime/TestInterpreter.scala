@@ -5319,6 +5319,33 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkFloat64(3.4d))(result)
   }
 
+  test("Expression.Let.25") {
+    val input =
+      """fn f(x: Int): Int32 =
+        |  let x = x + 1 in
+        |    let x = x + 2 in
+        |      x + 3
+        |fn x: Int = f(0)
+      """.stripMargin
+    val model = getModel(input)
+    val result = model.getConstant("x")
+    assertResult(Value.mkInt32(6))(result)
+  }
+
+  test("Expression.Let.26") {
+    val input =
+      """fn f(x: Int): Int64 =
+        |  let x = x + 1 in
+        |    let x = 40i64 in
+        |      let x = x + 2i64 in
+        |        x
+        |fn x: Int64 = f(0)
+      """.stripMargin
+    val model = getModel(input)
+    val result = model.getConstant("x")
+    assertResult(Value.mkInt64(42))(result)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Expression.{CheckTag,GetTagValue}                                       //
   // Tested indirectly by pattern matching.                                  //
