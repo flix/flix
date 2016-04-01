@@ -19,9 +19,10 @@ object Simplifier {
     val indexes = tast.indexes.map { case (k, v) => k -> Definition.simplify(v) }
     val facts = tast.facts.map(Constraint.simplify)
     val rules = tast.rules.map(Constraint.simplify)
+    val properties = tast.properties.map { p => simplify(p) }
     val time = tast.time
 
-    SimplifiedAst.Root(constants, lattices, collections, indexes, facts, rules, time)
+    SimplifiedAst.Root(constants, lattices, collections, indexes, facts, rules, properties, time)
   }
 
   object Table {
@@ -184,6 +185,10 @@ object Simplifier {
         SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
       case TypedAst.Expression.Set(elms, tpe, loc) =>
         SimplifiedAst.Expression.FSet(elms map simplify, tpe, loc)
+      case TypedAst.Expression.Existential(params, exp, loc) =>
+        SimplifiedAst.Expression.Existential(params, simplify(exp), loc)
+      case TypedAst.Expression.Universal(params, exp, loc) =>
+        SimplifiedAst.Expression.Universal(params, simplify(exp), loc)
       case TypedAst.Expression.Error(tpe, loc) =>
         SimplifiedAst.Expression.UserError(tpe, loc)
     }
@@ -344,9 +349,13 @@ object Simplifier {
     }
   }
 
-  def simplify(tast: TypedAst.Attribute): SimplifiedAst.Attribute =
+  def simplify(tast: TypedAst.Attribute)(implicit genSym: GenSym): SimplifiedAst.Attribute =
     SimplifiedAst.Attribute(tast.ident, tast.tpe)
 
-  def simplify(tast: TypedAst.FormalArg): SimplifiedAst.FormalArg =
+  def simplify(tast: TypedAst.FormalArg)(implicit genSym: GenSym): SimplifiedAst.FormalArg =
     SimplifiedAst.FormalArg(tast.ident, tast.tpe)
+
+  def simplify(tast: TypedAst.Property)(implicit genSym: GenSym): SimplifiedAst.Property =
+    SimplifiedAst.Property(tast.name, Expression.simplify(tast.exp))
+
 }

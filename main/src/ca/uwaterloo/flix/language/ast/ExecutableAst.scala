@@ -1,7 +1,5 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.phase.Verifier.VerifierError
-
 import scala.collection.mutable
 
 sealed trait ExecutableAst
@@ -495,6 +493,14 @@ object ExecutableAst {
       final val tpe: Type = Type.Bool
     }
 
+    case class Existential(params: List[Ast.FormalParam], exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
+      def tpe: Type = Type.Bool
+    }
+
+    case class Universal(params: List[Ast.FormalParam], exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
+      def tpe: Type = Type.Bool
+    }
+
     case class FSet(elms: Array[ExecutableAst.Expression],
                     tpe: Type.FSet,
                     loc: SourceLocation) extends ExecutableAst.Expression
@@ -645,12 +651,6 @@ object ExecutableAst {
 
   case class FormalArg(ident: Name.Ident, tpe: Type) extends ExecutableAst
 
-  trait Property {
-    val formula: ExecutableAst.Expression
-
-    def name: String
-
-    def fail(env0: Map[String, String]): VerifierError
-  }
+  case class Property(name: String, exp: ExecutableAst.Expression) extends ExecutableAst
 
 }

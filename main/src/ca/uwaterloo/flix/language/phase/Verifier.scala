@@ -275,7 +275,7 @@ object Verifier {
     */
   def checkProperty(property: ExecutableAst.Property, root: ExecutableAst.Root)(implicit genSym: GenSym): Option[VerifierError] = {
     // the base expression
-    val exp0 = property.formula
+    val exp0 = property.exp
 
     // a sequence of environments under which the base expression must hold.
     val envs = enumerate(getVars(exp0))
@@ -289,9 +289,11 @@ object Verifier {
         SymbolicEvaluator.eval(exp0, env0, root) match {
           case SymbolicEvaluator.SymVal.True => Nil
           case SymbolicEvaluator.SymVal.False =>
-            val err = property.fail(env0.mapValues(_.toString))
-            println(err.message)
-            List(err)
+            // TODO
+            //val err = property.fail(env0.mapValues(_.toString))
+            println("Failure)")
+            println(property)
+            List.empty
           case v => throw InternalCompilerException(s"Unexpected SymVal: $v.")
         }
 
@@ -383,6 +385,10 @@ object Verifier {
       case quantifier => quantifier.ident.name -> visit(quantifier.tpe)
     }
     expand(result)
+  }
+
+  def fail(p: ExecutableAst.Property): VerifierError = p match {
+    case _ => ???
   }
 
   /////////////////////////////////////////////////////////////////////////////

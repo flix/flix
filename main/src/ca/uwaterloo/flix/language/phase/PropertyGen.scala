@@ -19,42 +19,29 @@ object PropertyGen {
     /**
       * Associativity.
       */
-    case class Associativity(f: TypedAst.Definition.Constant) extends TypedAst.Property {
-      val formula = {
+    def mkAssociativity(f: TypedAst.Definition.Constant): TypedAst.Property = {
+      val exp = {
         val tpe = f.formals.head.tpe
         val (x, y, z) = (mkVar2("x", tpe), mkVar2("y", tpe), mkVar2("z", tpe))
 
         ∀(x, y, z)(≡(f(x, f(y, z)), f(f(x, y), z)))
       }
 
-      val name = "Associativity(" + f.loc.format + ")"
-
-      def fail(env0: Map[String, String]): VerifierError = {
-        val x = env0.get("x")
-        val y = env0.get("y")
-        val z = env0.get("z")
-        AssociativityError(x, y, z, f.loc)
-      }
+      TypedAst.Property("Associativity(" + f.loc.format + ")", exp)
     }
 
     /**
       * Commutativity.
       */
-    case class Commutativity(f: TypedAst.Definition.Constant) extends TypedAst.Property {
-      val formula = {
+    def mkCommutativity(f: TypedAst.Definition.Constant): TypedAst.Property = {
+      val exp = {
         val tpe = f.formals.head.tpe
         val (x, y) = (mkVar2("x", tpe), mkVar2("y", tpe))
 
         ∀(x, y)(≡(f(x, y), f(y, x)))
       }
 
-      val name = "Commutativity(" + f.loc.format + ")"
-
-      def fail(env0: Map[String, String]): VerifierError = {
-        val x = env0.get("x")
-        val y = env0.get("y")
-        CommutativityError(x, y, f.loc)
-      }
+      TypedAst.Property("Commutativity(" + f.loc.format + ")", exp)
     }
 
     /**
@@ -65,71 +52,52 @@ object PropertyGen {
       /**
         * Reflexivity.
         */
-      case class Reflexivity(lattice: BoundedLattice) extends TypedAst.Property {
+      def mkReflexivity(lattice: BoundedLattice): TypedAst.Property = {
         val ops = latticeOps(lattice)
 
         import ops._
 
-        val formula = {
+        val exp = {
           val x = mkVar("x")
 
           ∀(x)(⊑(x, x))
         }
 
-        val name = "Reflexivity(" + lattice.tpe + ")"
-
-        override def fail(env0: Map[String, String]): VerifierError = {
-          val x = env0.get("x")
-          ReflexivityError(x, lattice.leq.loc)
-        }
-
+        TypedAst.Property("Reflexivity(" + lattice.tpe + ")", exp)
       }
 
       /**
         * Anti-symmetry.
         */
-      case class AntiSymmetry(lattice: BoundedLattice) extends TypedAst.Property {
+      def mkAntiSymmetry(lattice: BoundedLattice): TypedAst.Property = {
         val ops = latticeOps(lattice)
 
         import ops._
 
-        val formula = {
+        val exp = {
           val (x, y) = (mkVar("x"), mkVar("y"))
 
           ∀(x, y)(→(∧(⊑(x, y), ⊑(y, x)), ≡(x, y)))
         }
 
-        val name = "AntiSymmetry(" + lattice.tpe + ")"
-
-        def fail(env0: Map[String, String]): VerifierError = {
-          val x = env0.get("x")
-          val y = env0.get("y")
-          AntiSymmetryError(x, y, lattice.leq.loc)
-        }
+        TypedAst.Property("AntiSymmetry(" + lattice.tpe + ")", exp)
       }
 
       /**
         * Transitivity.
         */
-      case class Transitivity(lattice: BoundedLattice) extends TypedAst.Property {
+      def mkTransitivity(lattice: BoundedLattice): TypedAst.Property = {
         val ops = latticeOps(lattice)
 
         import ops._
 
-        val formula = {
+        val exp = {
           val (x, y, z) = (mkVar("x"), mkVar("y"), mkVar("z"))
 
           ∀(x, y, z)(→(∧(⊑(x, y), ⊑(y, z)), ⊑(x, z)))
         }
 
-        val name = "Transitivity(" + lattice.tpe + ")"
-
-        def fail(env0: Map[String, String]): VerifierError = {
-          val x = env0.get("x")
-          val y = env0.get("y")
-          val z = env0.get("z")
-          TransitivityError(x, y, z, lattice.leq.loc)
-        }
+        TypedAst.Property("Transitivity(" + lattice.tpe + ")", exp)
       }
 
     }
@@ -142,72 +110,54 @@ object PropertyGen {
       /**
         * The bottom element must be the least element.
         */
-      case class LeastElement(lattice: BoundedLattice) extends TypedAst.Property {
+      def mkLeastElement(lattice: BoundedLattice): TypedAst.Property = {
         val ops = latticeOps(lattice)
 
         import ops._
 
-        val formula = {
+        val exp = {
           val x = mkVar("x")
 
           ∀(x)(⊑(⊥(), x))
         }
 
-        val name = "LeastElement(" + lattice.tpe + ")"
-
-        def fail(env0: Map[String, String]): VerifierError = {
-          val x = env0.get("x")
-          LeastElementError(x, lattice.leq.loc)
-        }
+        TypedAst.Property("LeastElement(" + lattice.tpe + ")", exp)
       }
 
       /**
         * The lub must be an upper bound.
         */
-      case class UpperBound(lattice: BoundedLattice) extends TypedAst.Property {
+      def mkUpperBound(lattice: BoundedLattice): TypedAst.Property = {
 
         val ops = latticeOps(lattice)
 
         import ops._
 
-        val formula = {
+        val exp = {
           val (x, y) = (mkVar("x"), mkVar("y"))
 
           ∀(x, y)(∧(⊑(x, ⊔(x, y)), ⊑(y, ⊔(x, y))))
         }
 
-        val name = "UpperBound(" + lattice.tpe + ")"
-
-        def fail(env0: Map[String, String]): VerifierError = {
-          val x = env0.get("x")
-          val y = env0.get("y")
-          UpperBoundError(x, y, lattice.lub.loc)
-        }
+        TypedAst.Property("UpperBound(" + lattice.tpe + ")", exp)
       }
 
       /**
         * The lub must be the least upper bound.
         */
-      case class LeastUpperBound(lattice: BoundedLattice) extends TypedAst.Property {
+      def mkLeastUpperBound(lattice: BoundedLattice): TypedAst.Property = {
 
         val ops = latticeOps(lattice)
 
         import ops._
 
-        val formula = {
+        val exp = {
           val (x, y, z) = (mkVar("x"), mkVar("y"), mkVar("z"))
 
           ∀(x, y, z)(→(∧(⊑(x, z), ⊑(y, z)), ⊑(⊔(x, y), z)))
         }
 
-        val name = "LeastUpperBound(" + lattice.tpe + ")"
-
-        def fail(env0: Map[String, String]): VerifierError = {
-          val x = env0.get("x")
-          val y = env0.get("y")
-          val z = env0.get("z")
-          LeastUpperBoundError(x, y, z, lattice.lub.loc)
-        }
+        TypedAst.Property("LeastUpperBound(" + lattice.tpe + ")", exp)
       }
 
     }
@@ -220,72 +170,55 @@ object PropertyGen {
       /**
         * The top element must be the greatest element.
         */
-      case class GreatestElement(lattice: BoundedLattice) extends TypedAst.Property {
+      def mkGreatestElement(lattice: BoundedLattice): TypedAst.Property = {
+
         val ops = latticeOps(lattice)
 
         import ops._
 
-        val formula = {
+        val exp = {
           val x = mkVar("x")
 
           ∀(x)(⊑(x, ⊤()))
         }
 
-        val name = "GreatestElement(" + lattice.tpe + ")"
-
-        def fail(env0: Map[String, String]): VerifierError = {
-          val x = env0.get("x")
-          GreatestElementError(x, lattice.leq.loc)
-        }
+        TypedAst.Property("GreatestElement(" + lattice.tpe + ")", exp)
       }
 
       /**
         * The glb must be a lower bound.
         */
-      case class LowerBound(lattice: BoundedLattice) extends TypedAst.Property {
+      def mkLowerBound(lattice: BoundedLattice): TypedAst.Property = {
 
         val ops = latticeOps(lattice)
 
         import ops._
 
-        val formula = {
+        val exp = {
           val (x, y) = (mkVar("x"), mkVar("y"))
 
           ∀(x, y)(∧(⊑(⊓(x, y), x), ⊑(⊓(x, y), y)))
         }
 
-        val name = "LowerBound(" + lattice.tpe + ")"
-
-        def fail(env0: Map[String, String]): VerifierError = {
-          val x = env0.get("x")
-          val y = env0.get("y")
-          LowerBoundError(x, y, lattice.glb.loc)
-        }
+        TypedAst.Property("LowerBound(" + lattice.tpe + ")", exp)
       }
 
       /**
         * The glb must be the greatest lower bound.
         */
-      case class GreatestLowerBound(lattice: BoundedLattice) extends TypedAst.Property {
+      def mkGreatestLowerBound(lattice: BoundedLattice): TypedAst.Property = {
 
         val ops = latticeOps(lattice)
 
         import ops._
 
-        val formula = {
+        val exp = {
           val (x, y, z) = (mkVar("x"), mkVar("y"), mkVar("z"))
 
           ∀(x, y, z)(→(∧(⊑(z, x), ⊑(z, y)), ⊑(z, ⊓(x, y))))
         }
 
-        val name = "GreatestLowerBound(" + lattice.tpe + ")"
-
-        def fail(env0: Map[String, String]): VerifierError = {
-          val x = env0.get("x")
-          val y = env0.get("y")
-          val z = env0.get("z")
-          GreatestLowerBoundError(x, y, z, lattice.glb.loc)
-        }
+        TypedAst.Property("GreatestLowerBound(" + lattice.tpe + ")", exp)
       }
 
     }
@@ -293,8 +226,8 @@ object PropertyGen {
     /**
       * The function `f` must be strict in all its arguments.
       */
-    case class Strict1(f: TypedAst.Definition.Constant, root: TypedAst.Root) extends TypedAst.Property {
-      val formula = {
+    def mkStrict1(f: TypedAst.Definition.Constant, root: TypedAst.Root): TypedAst.Property = {
+      val exp = {
         val (tpe :: Nil) = f.tpe.asInstanceOf[Type.Lambda].args
         val retTpe = f.tpe.asInstanceOf[Type.Lambda].retTpe
         val argLat = root.lattices(tpe)
@@ -302,18 +235,14 @@ object PropertyGen {
         ∀()(≡(f(argLat.bot), retLat.bot))
       }
 
-      val name = "Strict1(" + f.loc.format + ")"
-
-      def fail(env0: Map[String, String]): VerifierError = {
-        StrictError(f.loc)
-      }
+      TypedAst.Property("Strict1(" + f.loc.format + ")", exp)
     }
 
     /**
       * The function `f` must be strict in all its arguments.
       */
-    case class Strict2(f: TypedAst.Definition.Constant, root: TypedAst.Root) extends TypedAst.Property {
-      val formula = {
+    def mkStrict2(f: TypedAst.Definition.Constant, root: TypedAst.Root): TypedAst.Property = {
+      val exp = {
         val (tpe1 :: tpe2 :: Nil) = f.tpe.asInstanceOf[Type.Lambda].args
         val retTpe = f.tpe.asInstanceOf[Type.Lambda].retTpe
         val (arg1Lat, arg2Lat) = (root.lattices(tpe1), root.lattices(tpe2))
@@ -326,18 +255,14 @@ object PropertyGen {
 
       }
 
-      val name = "Strict2(" + f.loc.format + ")"
-
-      def fail(env0: Map[String, String]): VerifierError = {
-        StrictError(f.loc)
-      }
+      TypedAst.Property("Strict2(" + f.loc.format + ")", exp)
     }
 
     /**
       * The function `f` must be monotone in all its arguments.
       */
-    case class Monotone1(f: TypedAst.Definition.Constant, root: TypedAst.Root) extends TypedAst.Property {
-      val formula = {
+    def mkMonotone1(f: TypedAst.Definition.Constant, root: TypedAst.Root): TypedAst.Property = {
+      val exp = {
         val lat1 = latticeOps(root.lattices(f.formals.head.tpe))
         val lat2 = latticeOps(root.lattices(f.tpe.asInstanceOf[Type.Lambda].retTpe))
 
@@ -346,18 +271,14 @@ object PropertyGen {
         ∀(x, y)(→(lat1.⊑(x, y), lat2.⊑(f(x), f(y))))
       }
 
-      val name = "Monotone1(" + f.loc.format + ")"
-
-      def fail(env0: Map[String, String]): VerifierError = {
-        MonotoneError(f.loc)
-      }
+      TypedAst.Property("Monotone1(" + f.loc.format + ")", exp)
     }
 
     /**
       * The function `f` must be monotone in all its arguments.
       */
-    case class Monotone2(f: TypedAst.Definition.Constant, root: TypedAst.Root) extends TypedAst.Property {
-      val formula = {
+    def mkMonotone2(f: TypedAst.Definition.Constant, root: TypedAst.Root): TypedAst.Property = {
+      val exp = {
         val (tpe1 :: tpe2 :: Nil) = f.formals.map(_.tpe)
         val (lat1, lat2) = (latticeOps(root.lattices(tpe1)), latticeOps(root.lattices(tpe2)))
         val lat3 = latticeOps(root.lattices(f.tpe.asInstanceOf[Type.Lambda].retTpe))
@@ -367,11 +288,7 @@ object PropertyGen {
         ∀(x1, y1, x2, y2)(→(∧(lat1.⊑(x1, x2), lat2.⊑(y1, y2)), lat3.⊑(f(x1, y1), f(x2, y2))))
       }
 
-      val name = "Monotone2(" + f.loc.format + ")"
-
-      def fail(env0: Map[String, String]): VerifierError = {
-        MonotoneError(f.loc)
-      }
+      TypedAst.Property("Monotone2(" + f.loc.format + ")", exp)
     }
 
     object AscendingChainCondition {
@@ -379,34 +296,29 @@ object PropertyGen {
       /**
         * Height function must be non-negative.
         */
-      case class HeightNonNegative(lattice: BoundedLattice) extends TypedAst.Property {
+      def mkHeightNonNegative(lattice: BoundedLattice): TypedAst.Property = {
         val ops = latticeOps(lattice)
 
         import ops._
 
-        val formula = {
+        val exp = {
           val x = mkVar("x")
 
           ∀(x)(Expression.Binary(BinaryOperator.GreaterEqual, ???, ???, Type.Bool, SourceLocation.Unknown))
         }
 
-        val name = "HeightNonNegative(" + lattice.tpe + ")"
-
-        def fail(env0: Map[String, String]): VerifierError = {
-          val x = env0.get("x")
-          HeightNonNegativeError(x, ???)
-        }
+        TypedAst.Property("HeightNonNegative(" + lattice.tpe + ")", exp)
       }
 
       /**
         * Height function must be decreasing.
         */
-      case class HeightStrictlyDecreasing(lattice: BoundedLattice) extends TypedAst.Property {
+      def mkHeightStrictlyDecreasing(lattice: BoundedLattice): TypedAst.Property = {
         val ops = latticeOps(lattice)
 
         import ops._
 
-        val formula = {
+        val exp = {
           val (x, y) = (mkVar("x"), mkVar("y"))
 
           ∀(x, y)(
@@ -416,13 +328,7 @@ object PropertyGen {
             ))
         }
 
-        val name = "HeightStrictlyDecreasing(" + lattice.tpe + ")"
-
-        def fail(env0: Map[String, String]): VerifierError = {
-          val x = env0.get("x")
-          val y = env0.get("y")
-          HeightStrictlyDecreasingError(x, y, ???)
-        }
+        TypedAst.Property("HeightStrictlyDecreasing(" + lattice.tpe + ")", exp)
       }
 
     }
@@ -438,21 +344,21 @@ object PropertyGen {
     // Collect partial order properties.
     val partialOrderProperties = lattices flatMap {
       case l => List(
-        Property.PartialOrder.Reflexivity(l),
-        Property.PartialOrder.AntiSymmetry(l),
-        Property.PartialOrder.Transitivity(l)
+        Property.PartialOrder.mkReflexivity(l),
+        Property.PartialOrder.mkAntiSymmetry(l),
+        Property.PartialOrder.mkTransitivity(l)
       )
     }
 
     // Collect lattice properties.
     val latticeProperties = lattices flatMap {
       case l => List(
-        Property.JoinSemiLattice.LeastElement(l),
-        Property.JoinSemiLattice.UpperBound(l),
-        Property.JoinSemiLattice.LeastUpperBound(l),
-        Property.MeetSemiLattice.GreatestElement(l),
-        Property.MeetSemiLattice.LowerBound(l),
-        Property.MeetSemiLattice.GreatestLowerBound(l)
+        Property.JoinSemiLattice.mkLeastElement(l),
+        Property.JoinSemiLattice.mkUpperBound(l),
+        Property.JoinSemiLattice.mkLeastUpperBound(l),
+        Property.MeetSemiLattice.mkGreatestElement(l),
+        Property.MeetSemiLattice.mkLowerBound(l),
+        Property.MeetSemiLattice.mkGreatestLowerBound(l)
         //        TypedAst.Property.AscendingChainCondition.HeightNonNegative(l), // TODO
         //        TypedAst.Property.AscendingChainCondition.HeightStrictlyDecreasing(l) // TODO
       )
@@ -462,19 +368,19 @@ object PropertyGen {
     val functionProperties = root.constants.values flatMap {
       case f if f.ann.isUnchecked => Nil
       case f => f.ann.annotations.flatMap {
-        case Annotation.Associative(loc) => Some(Property.Associativity(f))
-        case Annotation.Commutative(loc) => Some(Property.Commutativity(f))
+        case Annotation.Associative(loc) => Some(Property.mkAssociativity(f))
+        case Annotation.Commutative(loc) => Some(Property.mkCommutativity(f))
         case Annotation.Strict(loc) => f.formals match {
           case Nil => None // A constant function is always strict.
-          case a :: Nil => Some(Property.Strict1(f, root))
-          case a1 :: a2 :: Nil => Some(Property.Strict2(f, root))
-          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+          case a :: Nil => Some(Property.mkStrict1(f, root))
+          case a1 :: a2 :: Nil => Some(Property.mkStrict2(f, root))
+          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
         }
         case Annotation.Monotone(loc) => f.formals match {
           case Nil => None // A constant function is always monotone.
-          case a :: Nil => Some(Property.Monotone1(f, root))
-          case a1 :: a2 :: Nil => Some(Property.Monotone2(f, root))
-          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+          case a :: Nil => Some(Property.mkMonotone1(f, root))
+          case a1 :: a2 :: Nil => Some(Property.mkMonotone2(f, root))
+          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
         }
         case _ => Nil
       }
@@ -500,8 +406,10 @@ object PropertyGen {
   /**
     * Returns an expression universally quantified by the given variables.
     */
-  def ∀(q: Expression.Var*)(e: Expression): TypedAst.Expression =
-    ??? // TODO
+  def ∀(q: Expression.Var*)(e: Expression): TypedAst.Expression = {
+    val params = q.toList.map(e => Ast.FormalParam(e.ident, e.tpe))
+    TypedAst.Expression.Universal(params, e, SourceLocation.Unknown)
+  }
 
   /**
     * Returns the logical negation of the expression `e`.

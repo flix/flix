@@ -12,6 +12,7 @@ object SimplifiedAst {
                   indexes: Map[Symbol.TableSym, SimplifiedAst.Definition.Index],
                   facts: List[SimplifiedAst.Constraint.Fact],
                   rules: List[SimplifiedAst.Constraint.Rule],
+                  properties: List[SimplifiedAst.Property],
                   time: Time) extends SimplifiedAst
 
   sealed trait Definition
@@ -564,6 +565,14 @@ object SimplifiedAst {
                     tpe: Type.FSet,
                     loc: SourceLocation) extends SimplifiedAst.Expression
 
+    case class Existential(params: List[Ast.FormalParam], exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
+      def tpe: Type = Type.Bool
+    }
+
+    case class Universal(params: List[Ast.FormalParam], exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
+      def tpe: Type = Type.Bool
+    }
+
     /**
       * A typed AST node representing an error.
       *
@@ -700,5 +709,7 @@ object SimplifiedAst {
   case class Attribute(ident: Name.Ident, tpe: Type) extends SimplifiedAst
 
   case class FormalArg(ident: Name.Ident, tpe: Type) extends SimplifiedAst
+
+  case class Property(name: String, exp: SimplifiedAst.Expression) extends SimplifiedAst
 
 }
