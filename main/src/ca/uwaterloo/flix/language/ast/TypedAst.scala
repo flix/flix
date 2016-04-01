@@ -736,6 +736,6 @@ object TypedAst {
     */
   case class FormalArg(ident: Name.Ident, tpe: Type) extends TypedAst
 
-  case class Property(name: String, exp: TypedAst.Expression) extends TypedAst
+  case class Property(law: Law, exp: TypedAst.Expression) extends TypedAst
 
 }

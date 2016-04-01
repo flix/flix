@@ -6,331 +6,325 @@ import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.ast.TypedAst.Definition.BoundedLattice
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression._
-import ca.uwaterloo.flix.language.phase.Verifier.VerifierError
-import ca.uwaterloo.flix.language.phase.Verifier.VerifierError._
 
 /**
   * Generates verification conditions. In future these properties will be directly in the Flix source code.
   */
 object PropertyGen {
 
-  object Property {
+  /**
+    * Associativity.
+    */
+  def mkAssociativity(f: TypedAst.Definition.Constant): TypedAst.Property = {
+    val exp = {
+      val tpe = f.formals.head.tpe
+      val (x, y, z) = (mkVar2("x", tpe), mkVar2("y", tpe), mkVar2("z", tpe))
+
+      ∀(x, y, z)(≡(f(x, f(y, z)), f(f(x, y), z)))
+    }
+
+    TypedAst.Property(Law.Associativity, exp)
+  }
+
+  /**
+    * Commutativity.
+    */
+  def mkCommutativity(f: TypedAst.Definition.Constant): TypedAst.Property = {
+    val exp = {
+      val tpe = f.formals.head.tpe
+      val (x, y) = (mkVar2("x", tpe), mkVar2("y", tpe))
+
+      ∀(x, y)(≡(f(x, y), f(y, x)))
+    }
+
+    TypedAst.Property(Law.Commutativity, exp)
+  }
+
+  /**
+    * Properties of Partial Orders.
+    */
+  object PartialOrder {
 
     /**
-      * Associativity.
+      * Reflexivity.
       */
-    def mkAssociativity(f: TypedAst.Definition.Constant): TypedAst.Property = {
+    def mkReflexivity(lattice: BoundedLattice): TypedAst.Property = {
+      val ops = latticeOps(lattice)
+
+      import ops._
+
       val exp = {
-        val tpe = f.formals.head.tpe
-        val (x, y, z) = (mkVar2("x", tpe), mkVar2("y", tpe), mkVar2("z", tpe))
+        val x = mkVar("x")
 
-        ∀(x, y, z)(≡(f(x, f(y, z)), f(f(x, y), z)))
+        ∀(x)(⊑(x, x))
       }
 
-      TypedAst.Property("Associativity(" + f.loc.format + ")", exp)
+      TypedAst.Property(Law.Reflexivity, exp)
     }
 
     /**
-      * Commutativity.
+      * Anti-symmetry.
       */
-    def mkCommutativity(f: TypedAst.Definition.Constant): TypedAst.Property = {
+    def mkAntiSymmetry(lattice: BoundedLattice): TypedAst.Property = {
+      val ops = latticeOps(lattice)
+
+      import ops._
+
       val exp = {
-        val tpe = f.formals.head.tpe
-        val (x, y) = (mkVar2("x", tpe), mkVar2("y", tpe))
+        val (x, y) = (mkVar("x"), mkVar("y"))
 
-        ∀(x, y)(≡(f(x, y), f(y, x)))
+        ∀(x, y)(→(∧(⊑(x, y), ⊑(y, x)), ≡(x, y)))
       }
 
-      TypedAst.Property("Commutativity(" + f.loc.format + ")", exp)
+      TypedAst.Property(Law.AntiSymmetry, exp)
     }
 
     /**
-      * Properties of Partial Orders.
+      * Transitivity.
       */
-    object PartialOrder {
+    def mkTransitivity(lattice: BoundedLattice): TypedAst.Property = {
+      val ops = latticeOps(lattice)
 
-      /**
-        * Reflexivity.
-        */
-      def mkReflexivity(lattice: BoundedLattice): TypedAst.Property = {
-        val ops = latticeOps(lattice)
+      import ops._
 
-        import ops._
-
-        val exp = {
-          val x = mkVar("x")
-
-          ∀(x)(⊑(x, x))
-        }
-
-        TypedAst.Property("Reflexivity(" + lattice.tpe + ")", exp)
-      }
-
-      /**
-        * Anti-symmetry.
-        */
-      def mkAntiSymmetry(lattice: BoundedLattice): TypedAst.Property = {
-        val ops = latticeOps(lattice)
-
-        import ops._
-
-        val exp = {
-          val (x, y) = (mkVar("x"), mkVar("y"))
-
-          ∀(x, y)(→(∧(⊑(x, y), ⊑(y, x)), ≡(x, y)))
-        }
-
-        TypedAst.Property("AntiSymmetry(" + lattice.tpe + ")", exp)
-      }
-
-      /**
-        * Transitivity.
-        */
-      def mkTransitivity(lattice: BoundedLattice): TypedAst.Property = {
-        val ops = latticeOps(lattice)
-
-        import ops._
-
-        val exp = {
-          val (x, y, z) = (mkVar("x"), mkVar("y"), mkVar("z"))
-
-          ∀(x, y, z)(→(∧(⊑(x, y), ⊑(y, z)), ⊑(x, z)))
-        }
-
-        TypedAst.Property("Transitivity(" + lattice.tpe + ")", exp)
-      }
-
-    }
-
-    /**
-      * Properties of Join Semi Lattices.
-      */
-    object JoinSemiLattice {
-
-      /**
-        * The bottom element must be the least element.
-        */
-      def mkLeastElement(lattice: BoundedLattice): TypedAst.Property = {
-        val ops = latticeOps(lattice)
-
-        import ops._
-
-        val exp = {
-          val x = mkVar("x")
-
-          ∀(x)(⊑(⊥(), x))
-        }
-
-        TypedAst.Property("LeastElement(" + lattice.tpe + ")", exp)
-      }
-
-      /**
-        * The lub must be an upper bound.
-        */
-      def mkUpperBound(lattice: BoundedLattice): TypedAst.Property = {
-
-        val ops = latticeOps(lattice)
-
-        import ops._
-
-        val exp = {
-          val (x, y) = (mkVar("x"), mkVar("y"))
-
-          ∀(x, y)(∧(⊑(x, ⊔(x, y)), ⊑(y, ⊔(x, y))))
-        }
-
-        TypedAst.Property("UpperBound(" + lattice.tpe + ")", exp)
-      }
-
-      /**
-        * The lub must be the least upper bound.
-        */
-      def mkLeastUpperBound(lattice: BoundedLattice): TypedAst.Property = {
-
-        val ops = latticeOps(lattice)
-
-        import ops._
-
-        val exp = {
-          val (x, y, z) = (mkVar("x"), mkVar("y"), mkVar("z"))
-
-          ∀(x, y, z)(→(∧(⊑(x, z), ⊑(y, z)), ⊑(⊔(x, y), z)))
-        }
-
-        TypedAst.Property("LeastUpperBound(" + lattice.tpe + ")", exp)
-      }
-
-    }
-
-    /**
-      * Properties of Meet Semi Lattices.
-      */
-    object MeetSemiLattice {
-
-      /**
-        * The top element must be the greatest element.
-        */
-      def mkGreatestElement(lattice: BoundedLattice): TypedAst.Property = {
-
-        val ops = latticeOps(lattice)
-
-        import ops._
-
-        val exp = {
-          val x = mkVar("x")
-
-          ∀(x)(⊑(x, ⊤()))
-        }
-
-        TypedAst.Property("GreatestElement(" + lattice.tpe + ")", exp)
-      }
-
-      /**
-        * The glb must be a lower bound.
-        */
-      def mkLowerBound(lattice: BoundedLattice): TypedAst.Property = {
-
-        val ops = latticeOps(lattice)
-
-        import ops._
-
-        val exp = {
-          val (x, y) = (mkVar("x"), mkVar("y"))
-
-          ∀(x, y)(∧(⊑(⊓(x, y), x), ⊑(⊓(x, y), y)))
-        }
-
-        TypedAst.Property("LowerBound(" + lattice.tpe + ")", exp)
-      }
-
-      /**
-        * The glb must be the greatest lower bound.
-        */
-      def mkGreatestLowerBound(lattice: BoundedLattice): TypedAst.Property = {
-
-        val ops = latticeOps(lattice)
-
-        import ops._
-
-        val exp = {
-          val (x, y, z) = (mkVar("x"), mkVar("y"), mkVar("z"))
-
-          ∀(x, y, z)(→(∧(⊑(z, x), ⊑(z, y)), ⊑(z, ⊓(x, y))))
-        }
-
-        TypedAst.Property("GreatestLowerBound(" + lattice.tpe + ")", exp)
-      }
-
-    }
-
-    /**
-      * The function `f` must be strict in all its arguments.
-      */
-    def mkStrict1(f: TypedAst.Definition.Constant, root: TypedAst.Root): TypedAst.Property = {
       val exp = {
-        val (tpe :: Nil) = f.tpe.asInstanceOf[Type.Lambda].args
-        val retTpe = f.tpe.asInstanceOf[Type.Lambda].retTpe
-        val argLat = root.lattices(tpe)
-        val retLat = root.lattices(retTpe)
-        ∀()(≡(f(argLat.bot), retLat.bot))
+        val (x, y, z) = (mkVar("x"), mkVar("y"), mkVar("z"))
+
+        ∀(x, y, z)(→(∧(⊑(x, y), ⊑(y, z)), ⊑(x, z)))
       }
 
-      TypedAst.Property("Strict1(" + f.loc.format + ")", exp)
+      TypedAst.Property(Law.Transitivity, exp)
+    }
+
+  }
+
+  /**
+    * Properties of Join Semi Lattices.
+    */
+  object JoinSemiLattice {
+
+    /**
+      * The bottom element must be the least element.
+      */
+    def mkLeastElement(lattice: BoundedLattice): TypedAst.Property = {
+      val ops = latticeOps(lattice)
+
+      import ops._
+
+      val exp = {
+        val x = mkVar("x")
+
+        ∀(x)(⊑(⊥(), x))
+      }
+
+      TypedAst.Property(Law.LeastElement, exp)
     }
 
     /**
-      * The function `f` must be strict in all its arguments.
+      * The lub must be an upper bound.
       */
-    def mkStrict2(f: TypedAst.Definition.Constant, root: TypedAst.Root): TypedAst.Property = {
+    def mkUpperBound(lattice: BoundedLattice): TypedAst.Property = {
+
+      val ops = latticeOps(lattice)
+
+      import ops._
+
       val exp = {
-        val (tpe1 :: tpe2 :: Nil) = f.tpe.asInstanceOf[Type.Lambda].args
-        val retTpe = f.tpe.asInstanceOf[Type.Lambda].retTpe
-        val (arg1Lat, arg2Lat) = (root.lattices(tpe1), root.lattices(tpe2))
-        val retLat = root.lattices(retTpe)
+        val (x, y) = (mkVar("x"), mkVar("y"))
 
-        val (x, y) = (mkVar2("x", tpe1), mkVar2("y", tpe2))
-
-        // TODO: This doesnt seem right. It would seem that bottom is when both args are bottom?
-        ∀(x, y)(∧(≡(f(arg1Lat.bot, y), retLat.bot), ≡(f(x, arg2Lat.bot), retLat.bot)))
-
+        ∀(x, y)(∧(⊑(x, ⊔(x, y)), ⊑(y, ⊔(x, y))))
       }
 
-      TypedAst.Property("Strict2(" + f.loc.format + ")", exp)
+      TypedAst.Property(Law.UpperBound, exp)
     }
 
     /**
-      * The function `f` must be monotone in all its arguments.
+      * The lub must be the least upper bound.
       */
-    def mkMonotone1(f: TypedAst.Definition.Constant, root: TypedAst.Root): TypedAst.Property = {
+    def mkLeastUpperBound(lattice: BoundedLattice): TypedAst.Property = {
+
+      val ops = latticeOps(lattice)
+
+      import ops._
+
       val exp = {
-        val lat1 = latticeOps(root.lattices(f.formals.head.tpe))
-        val lat2 = latticeOps(root.lattices(f.tpe.asInstanceOf[Type.Lambda].retTpe))
+        val (x, y, z) = (mkVar("x"), mkVar("y"), mkVar("z"))
 
-        val (x, y) = (lat1.mkVar("x"), lat1.mkVar("y"))
-
-        ∀(x, y)(→(lat1.⊑(x, y), lat2.⊑(f(x), f(y))))
+        ∀(x, y, z)(→(∧(⊑(x, z), ⊑(y, z)), ⊑(⊔(x, y), z)))
       }
 
-      TypedAst.Property("Monotone1(" + f.loc.format + ")", exp)
+      TypedAst.Property(Law.LeastUpperBound, exp)
+    }
+
+  }
+
+  /**
+    * Properties of Meet Semi Lattices.
+    */
+  object MeetSemiLattice {
+
+    /**
+      * The top element must be the greatest element.
+      */
+    def mkGreatestElement(lattice: BoundedLattice): TypedAst.Property = {
+
+      val ops = latticeOps(lattice)
+
+      import ops._
+
+      val exp = {
+        val x = mkVar("x")
+
+        ∀(x)(⊑(x, ⊤()))
+      }
+
+      TypedAst.Property(Law.GreatestElement, exp)
     }
 
     /**
-      * The function `f` must be monotone in all its arguments.
+      * The glb must be a lower bound.
       */
-    def mkMonotone2(f: TypedAst.Definition.Constant, root: TypedAst.Root): TypedAst.Property = {
+    def mkLowerBound(lattice: BoundedLattice): TypedAst.Property = {
+
+      val ops = latticeOps(lattice)
+
+      import ops._
+
       val exp = {
-        val (tpe1 :: tpe2 :: Nil) = f.formals.map(_.tpe)
-        val (lat1, lat2) = (latticeOps(root.lattices(tpe1)), latticeOps(root.lattices(tpe2)))
-        val lat3 = latticeOps(root.lattices(f.tpe.asInstanceOf[Type.Lambda].retTpe))
+        val (x, y) = (mkVar("x"), mkVar("y"))
 
-        val (x1, y1, x2, y2) = (lat1.mkVar("x1"), lat1.mkVar("y1"), lat2.mkVar("x2"), lat2.mkVar("y2"))
-
-        ∀(x1, y1, x2, y2)(→(∧(lat1.⊑(x1, x2), lat2.⊑(y1, y2)), lat3.⊑(f(x1, y1), f(x2, y2))))
+        ∀(x, y)(∧(⊑(⊓(x, y), x), ⊑(⊓(x, y), y)))
       }
 
-      TypedAst.Property("Monotone2(" + f.loc.format + ")", exp)
+      TypedAst.Property(Law.LowerBound, exp)
     }
 
-    object AscendingChainCondition {
+    /**
+      * The glb must be the greatest lower bound.
+      */
+    def mkGreatestLowerBound(lattice: BoundedLattice): TypedAst.Property = {
 
-      /**
-        * Height function must be non-negative.
-        */
-      def mkHeightNonNegative(lattice: BoundedLattice): TypedAst.Property = {
-        val ops = latticeOps(lattice)
+      val ops = latticeOps(lattice)
 
-        import ops._
+      import ops._
 
-        val exp = {
-          val x = mkVar("x")
+      val exp = {
+        val (x, y, z) = (mkVar("x"), mkVar("y"), mkVar("z"))
 
-          ∀(x)(Expression.Binary(BinaryOperator.GreaterEqual, ???, ???, Type.Bool, SourceLocation.Unknown))
-        }
-
-        TypedAst.Property("HeightNonNegative(" + lattice.tpe + ")", exp)
+        ∀(x, y, z)(→(∧(⊑(z, x), ⊑(z, y)), ⊑(z, ⊓(x, y))))
       }
 
-      /**
-        * Height function must be decreasing.
-        */
-      def mkHeightStrictlyDecreasing(lattice: BoundedLattice): TypedAst.Property = {
-        val ops = latticeOps(lattice)
+      TypedAst.Property(Law.GreatestLowerBound, exp)
+    }
 
-        import ops._
+  }
 
-        val exp = {
-          val (x, y) = (mkVar("x"), mkVar("y"))
+  /**
+    * The function `f` must be strict in all its arguments.
+    */
+  def mkStrict1(f: TypedAst.Definition.Constant, root: TypedAst.Root): TypedAst.Property = {
+    val exp = {
+      val (tpe :: Nil) = f.tpe.asInstanceOf[Type.Lambda].args
+      val retTpe = f.tpe.asInstanceOf[Type.Lambda].retTpe
+      val argLat = root.lattices(tpe)
+      val retLat = root.lattices(retTpe)
+      ∀()(≡(f(argLat.bot), retLat.bot))
+    }
 
-          ∀(x, y)(
-            →(
-              ∧(⊑(x, y), ¬(≡(x, y))),
-              Expression.Binary(BinaryOperator.Greater, ???, ???, Type.Bool, SourceLocation.Unknown)
-            ))
-        }
+    TypedAst.Property(Law.Strict, exp)
+  }
 
-        TypedAst.Property("HeightStrictlyDecreasing(" + lattice.tpe + ")", exp)
+  /**
+    * The function `f` must be strict in all its arguments.
+    */
+  def mkStrict2(f: TypedAst.Definition.Constant, root: TypedAst.Root): TypedAst.Property = {
+    val exp = {
+      val (tpe1 :: tpe2 :: Nil) = f.tpe.asInstanceOf[Type.Lambda].args
+      val retTpe = f.tpe.asInstanceOf[Type.Lambda].retTpe
+      val (arg1Lat, arg2Lat) = (root.lattices(tpe1), root.lattices(tpe2))
+      val retLat = root.lattices(retTpe)
+
+      val (x, y) = (mkVar2("x", tpe1), mkVar2("y", tpe2))
+
+      // TODO: This doesnt seem right. It would seem that bottom is when both args are bottom?
+      ∀(x, y)(∧(≡(f(arg1Lat.bot, y), retLat.bot), ≡(f(x, arg2Lat.bot), retLat.bot)))
+
+    }
+
+    TypedAst.Property(Law.Strict, exp)
+  }
+
+  /**
+    * The function `f` must be monotone in all its arguments.
+    */
+  def mkMonotone1(f: TypedAst.Definition.Constant, root: TypedAst.Root): TypedAst.Property = {
+    val exp = {
+      val lat1 = latticeOps(root.lattices(f.formals.head.tpe))
+      val lat2 = latticeOps(root.lattices(f.tpe.asInstanceOf[Type.Lambda].retTpe))
+
+      val (x, y) = (lat1.mkVar("x"), lat1.mkVar("y"))
+
+      ∀(x, y)(→(lat1.⊑(x, y), lat2.⊑(f(x), f(y))))
+    }
+
+    TypedAst.Property(Law.Monotone, exp)
+  }
+
+  /**
+    * The function `f` must be monotone in all its arguments.
+    */
+  def mkMonotone2(f: TypedAst.Definition.Constant, root: TypedAst.Root): TypedAst.Property = {
+    val exp = {
+      val (tpe1 :: tpe2 :: Nil) = f.formals.map(_.tpe)
+      val (lat1, lat2) = (latticeOps(root.lattices(tpe1)), latticeOps(root.lattices(tpe2)))
+      val lat3 = latticeOps(root.lattices(f.tpe.asInstanceOf[Type.Lambda].retTpe))
+
+      val (x1, y1, x2, y2) = (lat1.mkVar("x1"), lat1.mkVar("y1"), lat2.mkVar("x2"), lat2.mkVar("y2"))
+
+      ∀(x1, y1, x2, y2)(→(∧(lat1.⊑(x1, x2), lat2.⊑(y1, y2)), lat3.⊑(f(x1, y1), f(x2, y2))))
+    }
+
+    TypedAst.Property(Law.Monotone, exp)
+  }
+
+  object AscendingChainCondition {
+
+    /**
+      * Height function must be non-negative.
+      */
+    def mkHeightNonNegative(lattice: BoundedLattice): TypedAst.Property = {
+      val ops = latticeOps(lattice)
+
+      import ops._
+
+      val exp = {
+        val x = mkVar("x")
+
+        ∀(x)(Expression.Binary(BinaryOperator.GreaterEqual, ???, ???, Type.Bool, SourceLocation.Unknown))
       }
 
+      TypedAst.Property(Law.HeightNonNegative, exp)
+    }
+
+    /**
+      * Height function must be decreasing.
+      */
+    def mkHeightStrictlyDecreasing(lattice: BoundedLattice): TypedAst.Property = {
+      val ops = latticeOps(lattice)
+
+      import ops._
+
+      val exp = {
+        val (x, y) = (mkVar("x"), mkVar("y"))
+
+        ∀(x, y)(
+          →(
+            ∧(⊑(x, y), ¬(≡(x, y))),
+            Expression.Binary(BinaryOperator.Greater, ???, ???, Type.Bool, SourceLocation.Unknown)
+          ))
+      }
+
+      TypedAst.Property(Law.HeightStrictlyDecreasing, exp)
     }
 
   }
@@ -344,21 +338,21 @@ object PropertyGen {
     // Collect partial order properties.
     val partialOrderProperties = lattices flatMap {
       case l => List(
-        Property.PartialOrder.mkReflexivity(l),
-        Property.PartialOrder.mkAntiSymmetry(l),
-        Property.PartialOrder.mkTransitivity(l)
+        PartialOrder.mkReflexivity(l),
+        PartialOrder.mkAntiSymmetry(l),
+        PartialOrder.mkTransitivity(l)
       )
     }
 
     // Collect lattice properties.
     val latticeProperties = lattices flatMap {
       case l => List(
-        Property.JoinSemiLattice.mkLeastElement(l),
-        Property.JoinSemiLattice.mkUpperBound(l),
-        Property.JoinSemiLattice.mkLeastUpperBound(l),
-        Property.MeetSemiLattice.mkGreatestElement(l),
-        Property.MeetSemiLattice.mkLowerBound(l),
-        Property.MeetSemiLattice.mkGreatestLowerBound(l)
+        JoinSemiLattice.mkLeastElement(l),
+        JoinSemiLattice.mkUpperBound(l),
+        JoinSemiLattice.mkLeastUpperBound(l),
+        MeetSemiLattice.mkGreatestElement(l),
+        MeetSemiLattice.mkLowerBound(l),
+        MeetSemiLattice.mkGreatestLowerBound(l)
         //        TypedAst.Property.AscendingChainCondition.HeightNonNegative(l), // TODO
         //        TypedAst.Property.AscendingChainCondition.HeightStrictlyDecreasing(l) // TODO
       )
@@ -368,21 +362,21 @@ object PropertyGen {
     val functionProperties = root.constants.values flatMap {
       case f if f.ann.isUnchecked => Nil
       case f => f.ann.annotations.flatMap {
-        case Annotation.Associative(loc) => Some(Property.mkAssociativity(f))
-        case Annotation.Commutative(loc) => Some(Property.mkCommutativity(f))
-          // TODO
-//        case Annotation.Strict(loc) => f.formals match {
-//          case Nil => None // A constant function is always strict.
-//          case a :: Nil => Some(Property.mkStrict1(f, root))
-//          case a1 :: a2 :: Nil => Some(Property.mkStrict2(f, root))
-//          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
-//        }
-//        case Annotation.Monotone(loc) => f.formals match {
-//          case Nil => None // A constant function is always monotone.
-//          case a :: Nil => Some(Property.mkMonotone1(f, root))
-//          case a1 :: a2 :: Nil => Some(Property.mkMonotone2(f, root))
-//          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
-//        }
+        case Annotation.Associative(loc) => Some(mkAssociativity(f))
+        case Annotation.Commutative(loc) => Some(mkCommutativity(f))
+        // TODO
+        //        case Annotation.Strict(loc) => f.formals match {
+        //          case Nil => None // A constant function is always strict.
+        //          case a :: Nil => Some(Property.mkStrict1(f, root))
+        //          case a1 :: a2 :: Nil => Some(Property.mkStrict2(f, root))
+        //          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
+        //        }
+        //        case Annotation.Monotone(loc) => f.formals match {
+        //          case Nil => None // A constant function is always monotone.
+        //          case a :: Nil => Some(Property.mkMonotone1(f, root))
+        //          case a1 :: a2 :: Nil => Some(Property.mkMonotone2(f, root))
+        //          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
+        //        }
         case _ => Nil
       }
     }

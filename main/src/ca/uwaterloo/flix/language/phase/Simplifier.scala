@@ -356,6 +356,6 @@ object Simplifier {
     SimplifiedAst.FormalArg(tast.ident, tast.tpe)
 
   def simplify(tast: TypedAst.Property)(implicit genSym: GenSym): SimplifiedAst.Property =
-    SimplifiedAst.Property(tast.name, Expression.simplify(tast.exp))
+    SimplifiedAst.Property(tast.law, Expression.simplify(tast.exp))
 
 }

@@ -32,7 +32,7 @@ namespace Belnap {
     fn lub(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, x)                => x
         case (x, Belnap.Bot)                => x
-        case (Belnap.True, Belnap.True)     => Belnap.True
+        case (Belnap.True, Belnap.True)     => Belnap.False
         case (Belnap.False, Belnap.False)   => Belnap.False
         case _                              => Belnap.Top
     }

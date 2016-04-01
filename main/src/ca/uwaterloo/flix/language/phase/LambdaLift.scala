@@ -81,7 +81,7 @@ object LambdaLift {
      *
      * This causes side-effects on the map `m` updating it with new top-level definitions.
      */
-    val liftExp = lift(convExp, List(prop.name), m)
+    val liftExp = lift(convExp, List(prop.law.toString), m)
 
     /*
      * Return the updated definition.

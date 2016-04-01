@@ -261,6 +261,6 @@ object CreateExecutableAst {
     ExecutableAst.FormalArg(sast.ident, sast.tpe)
 
   def toExecutable(sast: SimplifiedAst.Property): ExecutableAst.Property =
-    ExecutableAst.Property(sast.name, Expression.toExecutable(sast.exp))
+    ExecutableAst.Property(sast.law, Expression.toExecutable(sast.exp))
 
 }

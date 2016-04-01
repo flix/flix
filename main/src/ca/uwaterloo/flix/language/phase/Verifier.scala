@@ -6,8 +6,6 @@ import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression._
 import ca.uwaterloo.flix.runtime.SymbolicEvaluator
 import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.Validation
-import ca.uwaterloo.flix.util.Validation._
 import com.microsoft.z3.{BitVecNum, Expr, _}
 
 object Verifier {
@@ -24,13 +22,13 @@ object Verifier {
     /**
       * An error raised to indicate that a function is not associative.
       */
-    case class AssociativityError(x: Option[String], y: Option[String], z: Option[String], loc: SourceLocation) extends VerifierError {
+    case class AssociativityError(loc: SourceLocation) extends VerifierError {
       val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The function is not associative.")}
            |
-           |Counter-example: ($x, $y, $z)
+           |Counter-example: ???
            |
            |The partial order was defined here:
            |${loc.underline}
@@ -40,13 +38,13 @@ object Verifier {
     /**
       * An error raised to indicate that a function is not commutative.
       */
-    case class CommutativityError(x: Option[String], y: Option[String], loc: SourceLocation) extends VerifierError {
+    case class CommutativityError(loc: SourceLocation) extends VerifierError {
       val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The function is not commutative.")}
            |
-           |Counter-example: ($x, $y)
+           |Counter-example: ???
            |
            |The partial order was defined here:
            |${loc.underline}
@@ -56,13 +54,13 @@ object Verifier {
     /**
       * An error raised to indicate that a partial order is not reflexive.
       */
-    case class ReflexivityError(x: Option[String], loc: SourceLocation) extends VerifierError {
+    case class ReflexivityError(loc: SourceLocation) extends VerifierError {
       val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The partial order is not reflexive.")}
            |
-           |Counter-example: ($x)
+           |Counter-example: ???
            |
            |The partial order was defined here:
            |${loc.underline}
@@ -72,13 +70,13 @@ object Verifier {
     /**
       * An error raised to indicate that a partial order is not anti-symmetric.
       */
-    case class AntiSymmetryError(x: Option[String], y: Option[String], loc: SourceLocation) extends VerifierError {
+    case class AntiSymmetryError(loc: SourceLocation) extends VerifierError {
       val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The partial order is not anti-symmetric.")}
            |
-           |Counter-example: ($x, $y)
+           |Counter-example: ???
            |
            |The partial order was defined here:
            |${loc.underline}
@@ -88,13 +86,13 @@ object Verifier {
     /**
       * An error raised to indicate that a partial order is not transitive.
       */
-    case class TransitivityError(x: Option[String], y: Option[String], z: Option[String], loc: SourceLocation) extends VerifierError {
+    case class TransitivityError(loc: SourceLocation) extends VerifierError {
       val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The partial order is not transitive.")}
            |
-           |Counter-example: ($x, $y, $z)
+           |Counter-example: ???
            |
            |The partial order was defined here:
            |${loc.underline}
@@ -104,13 +102,13 @@ object Verifier {
     /**
       * An error raised to indicate that the least element is not smallest.
       */
-    case class LeastElementError(x: Option[String], loc: SourceLocation) extends VerifierError {
+    case class LeastElementError(loc: SourceLocation) extends VerifierError {
       val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The least element is not the smallest.")}
            |
-           |Counter-example: ($x)
+           |Counter-example: ???
            |
            |The partial order was defined here:
            |${loc.underline}
@@ -120,13 +118,13 @@ object Verifier {
     /**
       * An error raised to indicate that the lub is not an upper bound.
       */
-    case class UpperBoundError(x: Option[String], y: Option[String], loc: SourceLocation) extends VerifierError {
+    case class UpperBoundError(loc: SourceLocation) extends VerifierError {
       val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The lub is not an upper bound.")}
            |
-           |Counter-example: ($x, $y)
+           |Counter-example: ???
            |
            |The lub was defined here:
            |${loc.underline}
@@ -136,13 +134,13 @@ object Verifier {
     /**
       * An error raised to indicate that the lub is not a least upper bound.
       */
-    case class LeastUpperBoundError(x: Option[String], y: Option[String], z: Option[String], loc: SourceLocation) extends VerifierError {
+    case class LeastUpperBoundError(loc: SourceLocation) extends VerifierError {
       val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The lub is not a least upper bound.")}
            |
-           |Counter-example: ($x, $y, $z)
+           |Counter-example: ????
            |
            |The lub was defined here:
            |${loc.underline}
@@ -152,13 +150,13 @@ object Verifier {
     /**
       * An error raised to indicate that the greatest element is not the largest.
       */
-    case class GreatestElementError(x: Option[String], loc: SourceLocation) extends VerifierError {
+    case class GreatestElementError(loc: SourceLocation) extends VerifierError {
       val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The greatest element is not the largest.")}
            |
-           |Counter-example: ($x)
+           |Counter-example: ???
            |
            |The partial order was defined here:
            |${loc.underline}
@@ -168,13 +166,13 @@ object Verifier {
     /**
       * An error raised to indicate that the glb is not a lower bound.
       */
-    case class LowerBoundError(x: Option[String], y: Option[String], loc: SourceLocation) extends VerifierError {
+    case class LowerBoundError(loc: SourceLocation) extends VerifierError {
       val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The glb is not a lower bound.")}
            |
-           |Counter-example: ($x, $y)
+           |Counter-example: ???
            |
            |The glb was defined here:
            |${loc.underline}
@@ -184,13 +182,13 @@ object Verifier {
     /**
       * An error raised to indicate that the glb is not the greatest lower bound.
       */
-    case class GreatestLowerBoundError(x: Option[String], y: Option[String], z: Option[String], loc: SourceLocation) extends VerifierError {
+    case class GreatestLowerBoundError(loc: SourceLocation) extends VerifierError {
       val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The glb is not a greatest lower bound.")}
            |
-           |Counter-example: ($x, $y, $z)
+           |Counter-example: ???
            |
            |The glb was defined here:
            |${loc.underline}
@@ -229,13 +227,13 @@ object Verifier {
     /**
       * An error raised to indicate that the height function may be negative.
       */
-    case class HeightNonNegativeError(x: Option[String], loc: SourceLocation) extends VerifierError {
+    case class HeightNonNegativeError(loc: SourceLocation) extends VerifierError {
       val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The height function is not non-negative.")}
            |
-           |Counter-example: ($x)
+           |Counter-example: ???
            |
            |The height function was defined here:
            |${loc.underline}
@@ -245,13 +243,13 @@ object Verifier {
     /**
       * An error raised to indicate that the height function is not strictly decreasing.
       */
-    case class HeightStrictlyDecreasingError(x: Option[String], y: Option[String], loc: SourceLocation) extends VerifierError {
+    case class HeightStrictlyDecreasingError(loc: SourceLocation) extends VerifierError {
       val message =
         s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
            |
            |${consoleCtx.red(s">> The height function is not strictly decreasing.")}
            |
-           |Counter-example: ($x)
+           |Counter-example: ???
            |
            |The height function was defined here:
            |${loc.underline}
@@ -283,17 +281,15 @@ object Verifier {
     // the number of issued SMT queries.
     var smt = 0
 
+    // TODO: Count failures etc.
+
     // attempt to verify that the property holds under each environment.
     val violations = envs flatMap {
       case env0 =>
         SymbolicEvaluator.eval(peelQuantifiers(exp0), env0, root) match {
           case SymbolicEvaluator.SymVal.True => Nil
           case SymbolicEvaluator.SymVal.False =>
-            // TODO
-            //val err = property.fail(env0.mapValues(_.toString))
-            println("Failure)")
-            println(property)
-            List.empty
+            List(fail(property, env0))
           case v => throw InternalCompilerException(s"Unexpected SymVal: $v.")
         }
 
@@ -335,9 +331,9 @@ object Verifier {
     implicit val consoleCtx = Compiler.ConsoleCtx
 
     if (violations.isEmpty)
-      Console.println(consoleCtx.cyan("✓ ") + property.name + " (" + smt + " SMT queries)")
+      Console.println(consoleCtx.cyan("✓ ") + property.law + " (" + smt + " SMT queries)")
     else
-      Console.println(consoleCtx.red("✗ ") + property.name + " (" + smt + " SMT queries)")
+      Console.println(consoleCtx.red("✗ ") + property.law + " (" + smt + " SMT queries)")
 
     violations.headOption
   }
@@ -398,8 +394,22 @@ object Verifier {
     expand(result)
   }
 
-  def fail(p: ExecutableAst.Property): VerifierError = p match {
-    case _ => ???
+  // TODO: Fix signature of map
+  def fail(p: ExecutableAst.Property, m: Map[String, ExecutableAst.Expression]): VerifierError = p.law match {
+    case Law.Associativity => VerifierError.AssociativityError(p.exp.loc)
+    case Law.Commutativity => VerifierError.CommutativityError(p.exp.loc)
+    case Law.Reflexivity => VerifierError.ReflexivityError(p.exp.loc)
+    case Law.AntiSymmetry => VerifierError.AntiSymmetryError(p.exp.loc)
+    case Law.Transitivity => VerifierError.TransitivityError(p.exp.loc)
+    case Law.LeastElement => VerifierError.LeastElementError(p.exp.loc)
+    case Law.UpperBound => VerifierError.UpperBoundError(p.exp.loc)
+    case Law.LeastUpperBound => VerifierError.LeastUpperBoundError(p.exp.loc)
+    case Law.GreatestElement => VerifierError.GreatestElementError(p.exp.loc)
+    case Law.LowerBound => VerifierError.LowerBoundError(p.exp.loc)
+    case Law.GreatestLowerBound => VerifierError.GreatestLowerBoundError(p.exp.loc)
+    case Law.Strict => VerifierError.StrictError(p.exp.loc)
+    case Law.HeightNonNegative => VerifierError.HeightNonNegativeError(p.exp.loc)
+    case Law.HeightStrictlyDecreasing => VerifierError.HeightStrictlyDecreasingError(p.exp.loc)
   }
 
   /////////////////////////////////////////////////////////////////////////////
