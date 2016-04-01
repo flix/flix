@@ -87,14 +87,6 @@ object SymbolicEvaluator {
         }
         SymVal.Closure(lambda.asInstanceOf[Expression.Ref], cloVar.name, SymVal.Environment(closureEnv.toMap))
 
-      case Expression.MkClosure(ref, cloVar, freeVars, tpe, loc) =>
-        // TODO: Why are there two?
-        val closureEnv = mutable.Map.empty[String, SymVal]
-        for (freeVar <- freeVars) {
-          closureEnv += (freeVar.name -> env0(freeVar.name))
-        }
-        SymVal.Closure(ref, cloVar.name, SymVal.Environment(closureEnv.toMap))
-
       case Expression.Unary(op, exp, _, _) =>
         val v = eval(exp, env0, pc)
         op match {

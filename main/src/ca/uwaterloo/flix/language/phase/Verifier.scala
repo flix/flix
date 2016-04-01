@@ -286,7 +286,7 @@ object Verifier {
     // attempt to verify that the property holds under each environment.
     val violations = envs flatMap {
       case env0 =>
-        SymbolicEvaluator.eval(exp0, env0, root) match {
+        SymbolicEvaluator.eval(peelQuantifiers(exp0), env0, root) match {
           case SymbolicEvaluator.SymVal.True => Nil
           case SymbolicEvaluator.SymVal.False =>
             // TODO
@@ -342,7 +342,18 @@ object Verifier {
     violations.headOption
   }
 
-  def getVars(exp0: Expression): List[Var] = ???
+  def getVars(exp0: Expression): List[Var] = exp0 match {
+    case Expression.Universal(params, _, _) => params.map {
+      case Ast.FormalParam(ident, tpe) => Var(ident, -1, tpe, SourceLocation.Unknown)
+    }
+    case _ => Nil
+  }
+
+  def peelQuantifiers(exp0: Expression): Expression = exp0 match {
+    case Expression.Existential(params, exp, loc) => peelQuantifiers(exp)
+    case Expression.Universal(params, exp, loc) => peelQuantifiers(exp)
+    case _ => exp0
+  }
 
   /**
     * Enumerates all possible environments of the given universally quantified variables.
