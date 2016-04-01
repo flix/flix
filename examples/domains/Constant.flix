@@ -62,6 +62,7 @@ namespace Constant {
         case _                                      => Constant.Top
     }
 
+// TODO: Comment this in again.
 //    /**
 //     * Over-approximates integer `subtraction`.
 //     */

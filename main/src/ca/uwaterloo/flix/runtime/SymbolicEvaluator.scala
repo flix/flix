@@ -13,6 +13,16 @@ object SymbolicEvaluator {
 
   sealed trait Constraint
 
+  object Constraint {
+
+    case class Plus(id1: Name.Ident, id2: Name.Ident) extends Constraint
+
+    case class Eq(id1: Name.Ident, id2: Name.Ident) extends Constraint
+
+    case class Neq(id1: Name.Ident, id2: Name.Ident) extends Constraint
+
+  }
+
   sealed trait SymVal
 
   object SymVal {
@@ -27,10 +37,6 @@ object SymbolicEvaluator {
 
     case class AtomicVar(ident: Name.Ident) extends SymVal
 
-    case class Binary(op: BinaryOperator, v1: SymVal, v2: SymVal) extends SymVal
-
-    case class Lambda(args: List[String], exp: Expression) extends SymVal
-
     case class Environment(m: Map[String, SymVal]) extends SymVal
 
     case class Closure(exp: Expression.Ref, cloVar: String, env: Environment) extends SymVal
@@ -41,17 +47,20 @@ object SymbolicEvaluator {
 
   }
 
-  // TODO: PathConstraint
-  // TODO: Env
-
+  /**
+    * The type of path constraints.
+    */
   type PathConstraint = List[Constraint]
 
-  type R = List[(PathConstraint, SymVal)]
+  /**
+    * The type of environments.
+    */
+  type Environment = mutable.Map[String, SymVal]
 
   def eval(exp0: Expression, env0: Map[String, Expression], root: ExecutableAst.Root)(implicit genSym: GenSym): SymVal = {
 
     // TODO: make pc first arg
-    def eval(exp0: Expression, env0: mutable.Map[String, SymVal], pc0: PathConstraint)(implicit genSym: GenSym): R = exp0 match {
+    def eval(exp0: Expression, env0: Environment, pc0: PathConstraint)(implicit genSym: GenSym): List[(PathConstraint, SymVal)] = exp0 match {
       case Expression.Unit => lift(pc0, SymVal.Unit)
       case Expression.True => lift(pc0, SymVal.True)
       case Expression.False => lift(pc0, SymVal.False)
@@ -118,6 +127,15 @@ object SymbolicEvaluator {
         eval2(pc0, exp1, exp2, env0) flatMap {
           case (pc, (v1, v2)) => op match {
 
+//            case BinaryOperator.Plus => (v1, v2) match {
+//              case (SymVal.AtomicVar(id1), SymVal.AtomicVar(id2)) =>
+//                val newVar = genSym.fresh2()
+//                val newPC = Constraint.Eq(newVar, Constraint.Plus(id1, id2)) :: pc
+//                lift(newPC, SymVal.AtomicVar(newVar))
+//
+//              case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 + i2))
+//            }
+
             case BinaryOperator.LogicalAnd => (v1, v2) match {
               case (SymVal.True, SymVal.True) => lift(pc, SymVal.True)
               case (SymVal.False, SymVal.True) => lift(pc, SymVal.False)
@@ -178,25 +196,30 @@ object SymbolicEvaluator {
 
     }
 
-    def lift(pc: PathConstraint, v: SymVal): R = List(pc -> v)
+    def lift(pc: PathConstraint, v: SymVal): List[(PathConstraint, SymVal)] = List(pc -> v)
 
     def eq(pc0: PathConstraint, x: SymVal, y: SymVal): List[(PathConstraint, SymVal)] = (x, y) match {
+      case (SymVal.AtomicVar(ident1), SymVal.AtomicVar(ident2)) => List(
+        (Constraint.Eq(ident1, ident2) :: pc0, SymVal.True),
+        (Constraint.Neq(ident1, ident2) :: pc0, SymVal.False)
+      )
+
       case (SymVal.Unit, SymVal.Unit) => lift(pc0, SymVal.True)
       case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) => if (tag1 == tag2) eq(pc0, v1, v2) else lift(pc0, SymVal.False)
     }
 
-    def eval2(pc0: PathConstraint, x: Expression, y: Expression, env0: mutable.Map[String, SymVal]): List[(PathConstraint, (SymVal, SymVal))] =
+    def eval2(pc0: PathConstraint, x: Expression, y: Expression, env0: Environment): List[(PathConstraint, (SymVal, SymVal))] =
       eval(x, env0, pc0) flatMap {
         case (pcx, vx) => eval(y, env0, pcx) map {
           case (pcy, vy) => pcy -> ((vx, vy))
         }
       }
 
-    def evaln(pc0: PathConstraint, xs: Traversable[Expression], env0: mutable.Map[String, SymVal]): List[(PathConstraint, List[SymVal])] = {
+    def evaln(pc0: PathConstraint, xs: Traversable[Expression], env0: Environment): List[(PathConstraint, List[SymVal])] = {
       /*
        * Local visitor.
        */
-      def visit(pc: PathConstraint, xs: List[Expression], env: mutable.Map[String, SymVal]): List[(PathConstraint, List[SymVal])] = xs match {
+      def visit(pc: PathConstraint, xs: List[Expression], env: Environment): List[(PathConstraint, List[SymVal])] = xs match {
         case Nil => List((pc, Nil))
         case r :: rs => eval(r, env, pc) flatMap {
           case (pc1, v) => visit(pc1, rs, env) map {
