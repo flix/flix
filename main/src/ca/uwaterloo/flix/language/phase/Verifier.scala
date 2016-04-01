@@ -30,7 +30,7 @@ object Verifier {
            |
            |Counter-example: ???
            |
-           |The partial order was defined here:
+           |The function was defined here:
            |${loc.underline}
            """.stripMargin
     }
@@ -46,7 +46,7 @@ object Verifier {
            |
            |Counter-example: ???
            |
-           |The partial order was defined here:
+           |The function was defined here:
            |${loc.underline}
            """.stripMargin
     }
@@ -394,22 +394,23 @@ object Verifier {
     expand(result)
   }
 
-  // TODO: Fix signature of map
+
   def fail(p: ExecutableAst.Property, m: Map[String, ExecutableAst.Expression]): VerifierError = p.law match {
-    case Law.Associativity => VerifierError.AssociativityError(p.exp.loc)
-    case Law.Commutativity => VerifierError.CommutativityError(p.exp.loc)
-    case Law.Reflexivity => VerifierError.ReflexivityError(p.exp.loc)
-    case Law.AntiSymmetry => VerifierError.AntiSymmetryError(p.exp.loc)
-    case Law.Transitivity => VerifierError.TransitivityError(p.exp.loc)
-    case Law.LeastElement => VerifierError.LeastElementError(p.exp.loc)
-    case Law.UpperBound => VerifierError.UpperBoundError(p.exp.loc)
-    case Law.LeastUpperBound => VerifierError.LeastUpperBoundError(p.exp.loc)
-    case Law.GreatestElement => VerifierError.GreatestElementError(p.exp.loc)
-    case Law.LowerBound => VerifierError.LowerBoundError(p.exp.loc)
-    case Law.GreatestLowerBound => VerifierError.GreatestLowerBoundError(p.exp.loc)
-    case Law.Strict => VerifierError.StrictError(p.exp.loc)
-    case Law.HeightNonNegative => VerifierError.HeightNonNegativeError(p.exp.loc)
-    case Law.HeightStrictlyDecreasing => VerifierError.HeightStrictlyDecreasingError(p.exp.loc)
+    case Law.Associativity => VerifierError.AssociativityError(p.loc)
+    case Law.Commutativity => VerifierError.CommutativityError(p.loc)
+    case Law.Reflexivity => VerifierError.ReflexivityError(p.loc)
+    case Law.AntiSymmetry => VerifierError.AntiSymmetryError(p.loc)
+    case Law.Transitivity => VerifierError.TransitivityError(p.loc)
+    case Law.LeastElement => VerifierError.LeastElementError(p.loc)
+    case Law.UpperBound => VerifierError.UpperBoundError(p.loc)
+    case Law.LeastUpperBound => VerifierError.LeastUpperBoundError(p.loc)
+    case Law.GreatestElement => VerifierError.GreatestElementError(p.loc)
+    case Law.LowerBound => VerifierError.LowerBoundError(p.loc)
+    case Law.GreatestLowerBound => VerifierError.GreatestLowerBoundError(p.loc)
+    case Law.Strict => VerifierError.StrictError(p.loc)
+    case Law.Monotone => VerifierError.MonotoneError(p.loc)
+    case Law.HeightNonNegative => VerifierError.HeightNonNegativeError(p.loc)
+    case Law.HeightStrictlyDecreasing => VerifierError.HeightStrictlyDecreasingError(p.loc)
   }
 
   /////////////////////////////////////////////////////////////////////////////

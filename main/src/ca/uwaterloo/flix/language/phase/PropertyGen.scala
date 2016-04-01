@@ -23,7 +23,7 @@ object PropertyGen {
       ∀(x, y, z)(≡(f(x, f(y, z)), f(f(x, y), z)))
     }
 
-    TypedAst.Property(Law.Associativity, exp)
+    TypedAst.Property(Law.Associativity, exp, f.loc)
   }
 
   /**
@@ -37,7 +37,7 @@ object PropertyGen {
       ∀(x, y)(≡(f(x, y), f(y, x)))
     }
 
-    TypedAst.Property(Law.Commutativity, exp)
+    TypedAst.Property(Law.Commutativity, exp, f.loc)
   }
 
   /**
@@ -59,7 +59,7 @@ object PropertyGen {
         ∀(x)(⊑(x, x))
       }
 
-      TypedAst.Property(Law.Reflexivity, exp)
+      TypedAst.Property(Law.Reflexivity, exp, lattice.loc)
     }
 
     /**
@@ -76,7 +76,7 @@ object PropertyGen {
         ∀(x, y)(→(∧(⊑(x, y), ⊑(y, x)), ≡(x, y)))
       }
 
-      TypedAst.Property(Law.AntiSymmetry, exp)
+      TypedAst.Property(Law.AntiSymmetry, exp, lattice.loc)
     }
 
     /**
@@ -93,7 +93,7 @@ object PropertyGen {
         ∀(x, y, z)(→(∧(⊑(x, y), ⊑(y, z)), ⊑(x, z)))
       }
 
-      TypedAst.Property(Law.Transitivity, exp)
+      TypedAst.Property(Law.Transitivity, exp, lattice.loc)
     }
 
   }
@@ -117,7 +117,7 @@ object PropertyGen {
         ∀(x)(⊑(⊥(), x))
       }
 
-      TypedAst.Property(Law.LeastElement, exp)
+      TypedAst.Property(Law.LeastElement, exp, lattice.loc)
     }
 
     /**
@@ -135,7 +135,7 @@ object PropertyGen {
         ∀(x, y)(∧(⊑(x, ⊔(x, y)), ⊑(y, ⊔(x, y))))
       }
 
-      TypedAst.Property(Law.UpperBound, exp)
+      TypedAst.Property(Law.UpperBound, exp, lattice.loc)
     }
 
     /**
@@ -153,7 +153,7 @@ object PropertyGen {
         ∀(x, y, z)(→(∧(⊑(x, z), ⊑(y, z)), ⊑(⊔(x, y), z)))
       }
 
-      TypedAst.Property(Law.LeastUpperBound, exp)
+      TypedAst.Property(Law.LeastUpperBound, exp, lattice.loc)
     }
 
   }
@@ -178,7 +178,7 @@ object PropertyGen {
         ∀(x)(⊑(x, ⊤()))
       }
 
-      TypedAst.Property(Law.GreatestElement, exp)
+      TypedAst.Property(Law.GreatestElement, exp, lattice.loc)
     }
 
     /**
@@ -196,7 +196,7 @@ object PropertyGen {
         ∀(x, y)(∧(⊑(⊓(x, y), x), ⊑(⊓(x, y), y)))
       }
 
-      TypedAst.Property(Law.LowerBound, exp)
+      TypedAst.Property(Law.LowerBound, exp, lattice.loc)
     }
 
     /**
@@ -214,7 +214,7 @@ object PropertyGen {
         ∀(x, y, z)(→(∧(⊑(z, x), ⊑(z, y)), ⊑(z, ⊓(x, y))))
       }
 
-      TypedAst.Property(Law.GreatestLowerBound, exp)
+      TypedAst.Property(Law.GreatestLowerBound, exp, lattice.loc)
     }
 
   }
@@ -231,7 +231,7 @@ object PropertyGen {
       ∀()(≡(f(argLat.bot), retLat.bot))
     }
 
-    TypedAst.Property(Law.Strict, exp)
+    TypedAst.Property(Law.Strict, exp, f.loc)
   }
 
   /**
@@ -251,7 +251,7 @@ object PropertyGen {
 
     }
 
-    TypedAst.Property(Law.Strict, exp)
+    TypedAst.Property(Law.Strict, exp, f.loc)
   }
 
   /**
@@ -267,7 +267,7 @@ object PropertyGen {
       ∀(x, y)(→(lat1.⊑(x, y), lat2.⊑(f(x), f(y))))
     }
 
-    TypedAst.Property(Law.Monotone, exp)
+    TypedAst.Property(Law.Monotone, exp, f.loc)
   }
 
   /**
@@ -284,7 +284,7 @@ object PropertyGen {
       ∀(x1, y1, x2, y2)(→(∧(lat1.⊑(x1, x2), lat2.⊑(y1, y2)), lat3.⊑(f(x1, y1), f(x2, y2))))
     }
 
-    TypedAst.Property(Law.Monotone, exp)
+    TypedAst.Property(Law.Monotone, exp, f.loc)
   }
 
   object AscendingChainCondition {
@@ -303,7 +303,7 @@ object PropertyGen {
         ∀(x)(Expression.Binary(BinaryOperator.GreaterEqual, ???, ???, Type.Bool, SourceLocation.Unknown))
       }
 
-      TypedAst.Property(Law.HeightNonNegative, exp)
+      TypedAst.Property(Law.HeightNonNegative, exp, lattice.loc)
     }
 
     /**
@@ -324,7 +324,7 @@ object PropertyGen {
           ))
       }
 
-      TypedAst.Property(Law.HeightStrictlyDecreasing, exp)
+      TypedAst.Property(Law.HeightStrictlyDecreasing, exp, lattice.loc)
     }
 
   }

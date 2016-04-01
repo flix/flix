@@ -710,6 +710,6 @@ object SimplifiedAst {
 
   case class FormalArg(ident: Name.Ident, tpe: Type) extends SimplifiedAst
 
-  case class Property(law: Law, exp: SimplifiedAst.Expression) extends SimplifiedAst
+  case class Property(law: Law, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst
 
 }

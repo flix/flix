@@ -651,6 +651,6 @@ object ExecutableAst {
 
   case class FormalArg(ident: Name.Ident, tpe: Type) extends ExecutableAst
 
-  case class Property(law: Law, exp: ExecutableAst.Expression) extends ExecutableAst
+  case class Property(law: Law, exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst
 
 }
