@@ -4,8 +4,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.{Options, Verify}
 import org.scalatest.FunSuite
 
-// NB: This class may require additional stack space: -Xss16m
-
 class TestVerifier extends FunSuite {
 
   test("Belnap.flix") {

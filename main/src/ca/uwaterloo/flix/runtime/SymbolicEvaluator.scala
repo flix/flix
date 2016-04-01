@@ -25,6 +25,8 @@ object SymbolicEvaluator {
 
     case class AtomicVar(ident: Name.Ident) extends SymVal
 
+    case class Binary(op: BinaryOperator, v1: SymVal, v2: SymVal) extends SymVal
+
     case class Lambda(args: List[String], exp: Expression) extends SymVal
 
     case class Environment(m: Map[String, SymVal]) extends SymVal
@@ -115,12 +117,17 @@ object SymbolicEvaluator {
             case (SymVal.False, SymVal.False) => SymVal.False
           }
 
-          case BinaryOperator.LessEqual =>
+          case BinaryOperator.BitwiseAnd => (v1, v2) match {
+            case (SymVal.Int32(i1), SymVal.Int32(i2)) => SymVal.Int32(i1 & i2)
+            case _ => SymVal.Binary(BinaryOperator.BitwiseAnd, v1, v2)
+          }
 
+
+          case BinaryOperator.LessEqual =>
             ???
 
           case BinaryOperator.Equal =>
-            if (v1 == v2) SymVal.True else SymVal.False
+            if (eq(v1, v2)) SymVal.True else SymVal.False
 
 
         }
@@ -168,6 +175,12 @@ object SymbolicEvaluator {
 
     val r = eval(exp0, initEnv, Nil)
     r
+  }
+
+  def eq(sv1: SymVal, sv2: SymVal): Boolean = (sv1, sv2) match {
+    case (SymVal.Unit, SymVal.Unit) => true
+    case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) => tag1 == tag2 && eq(v1, v2)
+    case (SymVal.Int32(i1), SymVal.Int32(i2)) => i1 == i2
   }
 
   def toSymVal(exp0: Expression): SymVal = exp0 match {
