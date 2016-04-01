@@ -3,7 +3,9 @@ package ca.uwaterloo.flix.runtime
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ExecutableAst
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression.Ref
 import ca.uwaterloo.flix.language.phase.GenSym
+import ca.uwaterloo.flix.runtime.SymbolicEvaluator.SymVal.Closure
 
 import scala.collection.mutable
 
@@ -39,152 +41,191 @@ object SymbolicEvaluator {
 
   }
 
+  // TODO: PathConstraint
+  // TODO: Env
+
+  type PathConstraint = List[Constraint]
+
+  type R = List[(PathConstraint, SymVal)]
+
   def eval(exp0: Expression, env0: Map[String, Expression], root: ExecutableAst.Root)(implicit genSym: GenSym): SymVal = {
 
-    def eval(exp0: Expression, env0: mutable.Map[String, SymVal], pc: List[Constraint])(implicit genSym: GenSym): SymVal = exp0 match {
-      case Expression.Unit => SymVal.Unit
-      case Expression.True => SymVal.True
-      case Expression.False => SymVal.False
+    // TODO: make pc first arg
+    def eval(exp0: Expression, env0: mutable.Map[String, SymVal], pc0: PathConstraint)(implicit genSym: GenSym): R = exp0 match {
+      case Expression.Unit => lift(pc0, SymVal.Unit)
+      case Expression.True => lift(pc0, SymVal.True)
+      case Expression.False => lift(pc0, SymVal.False)
 
-      case Expression.Int32(i) => SymVal.Int32(i)
+      case Expression.Int32(i) => lift(pc0, SymVal.Int32(i))
 
-      case Expression.Var(ident, offset, tpe, loc) => env0(ident.name)
+      case Expression.Var(ident, offset, tpe, loc) => lift(pc0, env0(ident.name))
 
       case Expression.ClosureVar(env, name, _, _) =>
         val SymVal.Environment(m) = env0(env.name)
-        m(name.name)
+        lift(pc0, m(name.name))
 
       case Expression.Let(ident, _, exp1, exp2, _, _) =>
-        val v1 = eval(exp1, env0, pc)
-        val newEnv = env0.clone()
-        newEnv += (ident.name -> v1)
-        eval(exp2, newEnv, pc)
+        eval(exp1, env0, pc0) flatMap {
+          case (pc, v1) =>
+            val newEnv = env0.clone()
+            newEnv += (ident.name -> v1)
+            eval(exp2, newEnv, pc)
+        }
 
       case Expression.Ref(name, tpe, loc) =>
         val defn = root.constants(name)
-        eval(defn.exp, env0, pc)
+        eval(defn.exp, env0, pc0)
 
       case Expression.ApplyClosure(exp, args, _, _) =>
-        val SymVal.Closure(cloExp, cloVar, cloEnv) = eval(exp, env0, pc)
-        val newEnv = mutable.Map.empty[String, SymVal]
-        newEnv += (cloVar -> cloEnv)
-        eval(cloExp, newEnv, pc)
+        eval(exp, env0, pc0) flatMap {
+          case (pc, SymVal.Closure(cloExp, cloVar, cloEnv)) =>
+            val newEnv = mutable.Map.empty[String, SymVal]
+            newEnv += (cloVar -> cloEnv)
+            eval(cloExp, newEnv, pc)
+        }
 
       case Expression.ApplyRef(name, args, _, _) =>
         val defn = root.constants(name)
-        val as = args.map(a => eval(a, env0, pc))
-        val newEnv = mutable.Map.empty[String, SymVal]
-
-        for ((formal, actual) <- defn.formals zip as) {
-          newEnv += (formal.ident.name -> actual)
+        evaln(pc0, args, env0) flatMap {
+          case (pc, as) =>
+            val newEnv = mutable.Map.empty[String, SymVal]
+            for ((formal, actual) <- defn.formals zip as) {
+              newEnv += (formal.ident.name -> actual)
+            }
+            eval(defn.exp, newEnv, pc)
         }
-        eval(defn.exp, newEnv, pc)
 
       case Expression.MkClosure(lambda, cloVar, freeVars, _, _) =>
         val closureEnv = mutable.Map.empty[String, SymVal]
         for (freeVar <- freeVars) {
           closureEnv += (freeVar.name -> env0(freeVar.name))
         }
-        SymVal.Closure(lambda.asInstanceOf[Expression.Ref], cloVar.name, SymVal.Environment(closureEnv.toMap))
+        val cloVal = SymVal.Closure(lambda.asInstanceOf[Ref], cloVar.name, SymVal.Environment(closureEnv.toMap))
+        lift(pc0, cloVal)
 
       case Expression.Unary(op, exp, _, _) =>
-        val v = eval(exp, env0, pc)
-        op match {
-          case UnaryOperator.LogicalNot => v match {
-            case SymVal.True => SymVal.False
-            case SymVal.False => SymVal.True
-            case _ => ???
+        eval(exp, env0, pc0) flatMap {
+          case (pc, v) => op match {
+            case UnaryOperator.LogicalNot => v match {
+              case SymVal.True => lift(pc, SymVal.False)
+              case SymVal.False => lift(pc, SymVal.True)
+              case _ => ??? // TODO
+            }
           }
         }
 
       case Expression.Binary(op, exp1, exp2, _, _) =>
-        val v1 = eval(exp1, env0, pc)
-        val v2 = eval(exp2, env0, pc)
-        op match {
-          case BinaryOperator.LogicalAnd => (v1, v2) match {
-            case (SymVal.True, SymVal.True) => SymVal.True
-            case (SymVal.False, SymVal.True) => SymVal.False
-            case (SymVal.True, SymVal.False) => SymVal.False
-            case (SymVal.False, SymVal.False) => SymVal.False
+        eval2(pc0, exp1, exp2, env0) flatMap {
+          case (pc, (v1, v2)) => op match {
+
+            case BinaryOperator.LogicalAnd => (v1, v2) match {
+              case (SymVal.True, SymVal.True) => lift(pc, SymVal.True)
+              case (SymVal.False, SymVal.True) => lift(pc, SymVal.False)
+              case (SymVal.True, SymVal.False) => lift(pc, SymVal.False)
+              case (SymVal.False, SymVal.False) => lift(pc, SymVal.False)
+            }
+
+            case BinaryOperator.LogicalOr => (v1, v2) match {
+              case (SymVal.True, SymVal.True) => lift(pc, SymVal.True)
+              case (SymVal.False, SymVal.True) => lift(pc, SymVal.True)
+              case (SymVal.True, SymVal.False) => lift(pc, SymVal.True)
+              case (SymVal.False, SymVal.False) => lift(pc, SymVal.False)
+            }
+
+            case BinaryOperator.Equal => eq(pc, v1, v2)
           }
-
-          case BinaryOperator.LogicalOr => (v1, v2) match {
-            case (SymVal.True, SymVal.True) => SymVal.True
-            case (SymVal.False, SymVal.True) => SymVal.True
-            case (SymVal.True, SymVal.False) => SymVal.True
-            case (SymVal.False, SymVal.False) => SymVal.False
-          }
-
-          case BinaryOperator.BitwiseAnd => (v1, v2) match {
-            case (SymVal.Int32(i1), SymVal.Int32(i2)) => SymVal.Int32(i1 & i2)
-            case _ => SymVal.Binary(BinaryOperator.BitwiseAnd, v1, v2)
-          }
-
-
-          case BinaryOperator.LessEqual =>
-            ???
-
-          case BinaryOperator.Equal => eq(v1, v2)
-
         }
 
       case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
-        val cond = eval(exp1, env0, pc)
-
-        cond match {
-          case SymVal.True => eval(exp2, env0, pc)
-          case SymVal.False => eval(exp3, env0, pc)
-          case _ =>
-            println(cond)
-            ???
+        eval(exp1, env0, pc0) flatMap {
+          case (pc, c) => c match {
+            case SymVal.True => eval(exp2, env0, pc)
+            case SymVal.False => eval(exp3, env0, pc)
+            case _ =>
+              println(c)
+              ???
+          }
         }
 
       case Expression.Tag(enum, tag, exp, _, _) =>
-        val v = eval(exp, env0, pc)
-        SymVal.Tag(tag.name, v)
+        eval(exp, env0, pc0) flatMap {
+          case (pc, v) => lift(pc, SymVal.Tag(tag.name, v))
+        }
 
       case Expression.Tuple(elms, _, _) =>
-        val es = elms.toList map (e => eval(e, env0, pc))
-        SymVal.Tuple(es)
+        evaln(pc0, elms, env0) flatMap {
+          case (pc, es) => lift(pc, SymVal.Tuple(es))
+        }
 
       case Expression.CheckTag(tag, exp, _) =>
-        val SymVal.Tag(tag2, _) = eval(exp, env0, pc)
-        if (tag.name == tag2)
-          SymVal.True
-        else
-          SymVal.False
+        eval(exp, env0, pc0) flatMap {
+          case (pc, SymVal.Tag(tag2, _)) =>
+            if (tag.name == tag2)
+              lift(pc, SymVal.True)
+            else
+              lift(pc, SymVal.False)
+        }
 
       case Expression.GetTagValue(tag, exp, _, _) =>
-        val SymVal.Tag(_, v) = eval(exp, env0, pc)
-        v
+        eval(exp, env0, pc0) flatMap {
+          case (pc, SymVal.Tag(_, v)) => lift(pc, v)
+        }
 
       case Expression.GetTupleIndex(base, offset, _, _) =>
-        val SymVal.Tuple(elms) = eval(base, env0, pc)
-        elms(offset)
+        eval(base, env0, pc0) flatMap {
+          case (pc, SymVal.Tuple(elms)) => lift(pc, elms(offset))
+        }
 
     }
+
+    def lift(pc: PathConstraint, v: SymVal): R = List(pc -> v)
+
+    def eq(pc0: PathConstraint, x: SymVal, y: SymVal): List[(PathConstraint, SymVal)] = (x, y) match {
+      case (SymVal.Unit, SymVal.Unit) => lift(pc0, SymVal.True)
+      case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) => if (tag1 == tag2) eq(pc0, v1, v2) else lift(pc0, SymVal.False)
+    }
+
+    def eval2(pc0: PathConstraint, x: Expression, y: Expression, env0: mutable.Map[String, SymVal]): List[(PathConstraint, (SymVal, SymVal))] =
+      eval(x, env0, pc0) flatMap {
+        case (pcx, vx) => eval(y, env0, pcx) map {
+          case (pcy, vy) => pcy -> ((vx, vy))
+        }
+      }
+
+    def evaln(pc0: PathConstraint, xs: Traversable[Expression], env0: mutable.Map[String, SymVal]): List[(PathConstraint, List[SymVal])] = {
+      /*
+       * Local visitor.
+       */
+      def visit(pc: PathConstraint, xs: List[Expression], env: mutable.Map[String, SymVal]): List[(PathConstraint, List[SymVal])] = xs match {
+        case Nil => List((pc, Nil))
+        case r :: rs => eval(r, env, pc) flatMap {
+          case (pc1, v) => visit(pc1, rs, env) map {
+            case (pc2, vs) => (pc2, v :: vs)
+          }
+        }
+      }
+
+      visit(pc0, xs.toList, env0)
+    }
+
+
+    def toSymVal(exp0: Expression): SymVal = exp0 match {
+      case Expression.Unit => SymVal.Unit
+      case Expression.Var(ident, _, _, _) => SymVal.AtomicVar(ident)
+      case Expression.Tag(enum, tag, exp, tpe, loc) =>
+        SymVal.Tag(tag.name, toSymVal(exp))
+    }
+
+
 
     val initEnv = mutable.Map.empty[String, SymVal]
     for ((name, exp) <- env0) {
       initEnv += (name -> toSymVal(exp))
     }
 
-    val r = eval(exp0, initEnv, Nil)
-    r
+    val res = eval(exp0, initEnv, Nil)
+    res.head._2 // TODO:
   }
 
-  def eq(sv1: SymVal, sv2: SymVal): SymVal = (sv1, sv2) match {
-    case (SymVal.Unit, SymVal.Unit) => SymVal.True
-    case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) => if (tag1 == tag2) eq(v1, v2) else SymVal.False
-    case (SymVal.Int32(i1), SymVal.Int32(i2)) => if (i1 == i2) SymVal.True else SymVal.False
-    case _ => SymVal.Binary(BinaryOperator.Equal, sv1, sv2)
-  }
-
-  def toSymVal(exp0: Expression): SymVal = exp0 match {
-    case Expression.Unit => SymVal.Unit
-    case Expression.Var(ident, _, _, _) => SymVal.AtomicVar(ident)
-    case Expression.Tag(enum, tag, exp, tpe, loc) =>
-      SymVal.Tag(tag.name, toSymVal(exp))
-  }
 
 }
