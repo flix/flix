@@ -39,8 +39,6 @@ object SymbolicEvaluator {
 
   }
 
-  case class Context(value: SymVal, env: Map[String, SymVal])
-
   def eval(exp0: Expression, env0: Map[String, Expression], root: ExecutableAst.Root)(implicit genSym: GenSym): SymVal = {
 
     def eval(exp0: Expression, env0: mutable.Map[String, SymVal], pc: List[Constraint])(implicit genSym: GenSym): SymVal = exp0 match {
@@ -126,9 +124,7 @@ object SymbolicEvaluator {
           case BinaryOperator.LessEqual =>
             ???
 
-          case BinaryOperator.Equal =>
-            if (eq(v1, v2)) SymVal.True else SymVal.False
-
+          case BinaryOperator.Equal => eq(v1, v2)
 
         }
 
@@ -177,10 +173,11 @@ object SymbolicEvaluator {
     r
   }
 
-  def eq(sv1: SymVal, sv2: SymVal): Boolean = (sv1, sv2) match {
-    case (SymVal.Unit, SymVal.Unit) => true
-    case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) => tag1 == tag2 && eq(v1, v2)
-    case (SymVal.Int32(i1), SymVal.Int32(i2)) => i1 == i2
+  def eq(sv1: SymVal, sv2: SymVal): SymVal = (sv1, sv2) match {
+    case (SymVal.Unit, SymVal.Unit) => SymVal.True
+    case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) => if (tag1 == tag2) eq(v1, v2) else SymVal.False
+    case (SymVal.Int32(i1), SymVal.Int32(i2)) => if (i1 == i2) SymVal.True else SymVal.False
+    case _ => SymVal.Binary(BinaryOperator.Equal, sv1, sv2)
   }
 
   def toSymVal(exp0: Expression): SymVal = exp0 match {
