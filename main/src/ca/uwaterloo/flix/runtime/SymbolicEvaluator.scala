@@ -11,15 +11,17 @@ import scala.collection.mutable
 
 object SymbolicEvaluator {
 
-  sealed trait Constraint
+  sealed trait Expr
 
-  object Constraint {
+  object Expr {
 
-    case class Plus(id1: Name.Ident, id2: Name.Ident) extends Constraint
+    case class Var(ident: Name.Ident) extends Expr
 
-    case class Eq(id1: Name.Ident, id2: Name.Ident) extends Constraint
+    case class Plus(e1: Expr, e2: Expr) extends Expr
 
-    case class Neq(id1: Name.Ident, id2: Name.Ident) extends Constraint
+    case class Eq(e1: Expr, e2: Expr) extends Expr
+
+    case class Neq(e1: Expr, e2: Expr) extends Expr
 
   }
 
@@ -50,7 +52,7 @@ object SymbolicEvaluator {
   /**
     * The type of path constraints.
     */
-  type PathConstraint = List[Constraint]
+  type PathConstraint = List[Expr]
 
   /**
     * The type of environments.
@@ -127,14 +129,14 @@ object SymbolicEvaluator {
         eval2(pc0, exp1, exp2, env0) flatMap {
           case (pc, (v1, v2)) => op match {
 
-//            case BinaryOperator.Plus => (v1, v2) match {
-//              case (SymVal.AtomicVar(id1), SymVal.AtomicVar(id2)) =>
-//                val newVar = genSym.fresh2()
-//                val newPC = Constraint.Eq(newVar, Constraint.Plus(id1, id2)) :: pc
-//                lift(newPC, SymVal.AtomicVar(newVar))
-//
-//              case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 + i2))
-//            }
+            case BinaryOperator.Plus => (v1, v2) match {
+              case (SymVal.AtomicVar(id1), SymVal.AtomicVar(id2)) =>
+                val newVar = genSym.fresh2()
+                val newPC = Expr.Eq(Expr.Var(newVar), Expr.Plus(Expr.Var(id1), Expr.Var(id2))) :: pc
+                lift(newPC, SymVal.AtomicVar(newVar))
+
+              case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 + i2))
+            }
 
             case BinaryOperator.LogicalAnd => (v1, v2) match {
               case (SymVal.True, SymVal.True) => lift(pc, SymVal.True)
@@ -200,8 +202,8 @@ object SymbolicEvaluator {
 
     def eq(pc0: PathConstraint, x: SymVal, y: SymVal): List[(PathConstraint, SymVal)] = (x, y) match {
       case (SymVal.AtomicVar(ident1), SymVal.AtomicVar(ident2)) => List(
-        (Constraint.Eq(ident1, ident2) :: pc0, SymVal.True),
-        (Constraint.Neq(ident1, ident2) :: pc0, SymVal.False)
+        (Expr.Eq(Expr.Var(ident1), Expr.Var(ident2)) :: pc0, SymVal.True),
+        (Expr.Neq(Expr.Var(ident1), Expr.Var(ident2)) :: pc0, SymVal.False)
       )
 
       case (SymVal.Unit, SymVal.Unit) => lift(pc0, SymVal.True)
@@ -247,6 +249,7 @@ object SymbolicEvaluator {
     }
 
     val res = eval(exp0, initEnv, Nil)
+    println("PCs: " + res.head._1)
     res.head._2 // TODO:
   }
 
