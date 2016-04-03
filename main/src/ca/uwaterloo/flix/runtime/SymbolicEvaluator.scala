@@ -6,6 +6,7 @@ import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression.Ref
 import ca.uwaterloo.flix.language.phase.GenSym
 import ca.uwaterloo.flix.runtime.SymbolicEvaluator.SymVal.Closure
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
 
@@ -29,23 +30,40 @@ object SymbolicEvaluator {
 
   object SymVal {
 
+    /**
+      * An atomic symbolic variable.
+      */
+    case class AtomicVar(ident: Name.Ident) extends SymVal
+
+    /**
+      * The `Unit` value.
+      */
     case object Unit extends SymVal
 
+    /**
+      * The `True` value.
+      */
     case object True extends SymVal
 
+    /**
+      * The `False` value.
+      */
     case object False extends SymVal
 
+    /**
+      * An Int32 value.
+      */
     case class Int32(lit: Int) extends SymVal
 
-    case class AtomicVar(ident: Name.Ident) extends SymVal
+
+    case class Tag(tag: String, value: SymVal) extends SymVal
+
+    case class Tuple(elms: List[SymVal]) extends SymVal
 
     case class Environment(m: Map[String, SymVal]) extends SymVal
 
     case class Closure(exp: Expression.Ref, cloVar: String, env: Environment) extends SymVal
 
-    case class Tag(tag: String, value: SymVal) extends SymVal
-
-    case class Tuple(elms: List[SymVal]) extends SymVal
 
   }
 
@@ -92,6 +110,7 @@ object SymbolicEvaluator {
             val newEnv = mutable.Map.empty[String, SymVal]
             newEnv += (cloVar -> cloEnv)
             eval(pc, cloExp, newEnv)
+          case (_, e) => throw InternalCompilerException(s"Type Error: Unexpected expression: '$e'.")
         }
 
       case Expression.ApplyRef(name, args, _, _) =>
@@ -121,6 +140,8 @@ object SymbolicEvaluator {
               case SymVal.False => lift(pc, SymVal.True)
               case _ => ??? // TODO
             }
+            case UnaryOperator.Plus => ???
+
           }
         }
 
@@ -188,11 +209,13 @@ object SymbolicEvaluator {
       case Expression.GetTagValue(tag, exp, _, _) =>
         eval(pc0, exp, env0) flatMap {
           case (pc, SymVal.Tag(_, v)) => lift(pc, v)
+          case e => throw InternalCompilerException(s"Type Error: Unexpected expression: '$e'.")
         }
 
       case Expression.GetTupleIndex(base, offset, _, _) =>
         eval(pc0, base, env0) flatMap {
           case (pc, SymVal.Tuple(elms)) => lift(pc, elms(offset))
+          case e => throw InternalCompilerException(s"Type Error: Unexpected expression: '$e'.")
         }
 
     }
