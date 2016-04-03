@@ -296,64 +296,33 @@ object Verifier {
             }
             List(fail(property, env1))
           case (pc, v) =>
-            println(pc -> v)
-
             // Case 3: The property holds/does not hold under a certain path condition.
+            smt += 1
             mkContext(ctx => {
               // Check if the negation of the expression has a model.
               // If so, the property does not hold.
-              val q = ctx.mkNot(visitPathConstraint(pc, ctx))
-              // TODO: Must take into account whether v is true or false.
+              val q = v match {
+                case SymVal.True =>
+                  //  The law is `true` if the path constraint is a tautology.
+                  ctx.mkNot(visitPathConstraint(pc, ctx))
+                case SymVal.False =>
+                  // The law is `true` if the path constraint is unsatisfiable.
+                  visitPathConstraint(pc, ctx)
+              }
               checkSat(q, ctx) match {
                 case Result.Unsatisfiable =>
                   // Case 3.1: The formula is UNSAT, i.e. the property HOLDS.
                   Nil
                 case Result.Satisfiable(model) =>
                   // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.
-                  println("SAT!")
-                  ???
+                  println(pc -> v)
+                  List(fail(property, model2env(model))) // TODO MAp
                 case Result.Unknown =>
                   // Case 3.3: It is unknown whether the formula has a model.
-                  println("UNSAT!")
                   ???
               }
             })
-
-            throw InternalCompilerException(s"TODO")
         }
-
-      //        PartialEvaluator.eval(exp0, env0, root) match {
-      //        case Expression.True =>
-      //          // Case 1: The partial evaluator proved the property.
-      //          Nil
-      //        case Expression.False =>
-      //          // Case 2: The partial evaluator disproved the property.
-      //          List(property.fail(env0))
-      //        case _: Expression.MatchError | _: Expression.SwitchError | _: Expression.UserError =>
-      //          // Case 3: The partial evaluator failed with a user error.
-      //          List(property.fail(env0))
-      //        case residual =>
-      //          // Case 4: The partial evaluator reduced the expression, but it is still residual.
-      //          // Must translate the expression into an SMT formula and attempt to prove it.
-      //          //println("Residual Expression: " + residual)
-      //          smt = smt + 1
-      //          mkContext(ctx => {
-      //            // Check if the negation of the expression has a model.
-      //            // If so, the property does not hold.
-      //            val q = ctx.mkNot(visitBoolExpr(residual, ctx))
-      //            checkSat(q, ctx) match {
-      //              case Result.Unsatisfiable =>
-      //                // Case 3.1: The formula is UNSAT, i.e. the property HOLDS.
-      //                Nil
-      //              case Result.Satisfiable(model) =>
-      //                // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.
-      //                List(property.fail(model2env(model)))
-      //              case Result.Unknown =>
-      //                // Case 3.3: It is unknown whether the formula has a model.
-      //                List(property.fail(Map.empty))
-      //            }
-      //          })
-      //      }
 
     }
 
@@ -458,13 +427,14 @@ object Verifier {
   }
 
   def visitBoolExpr(e0: SymbolicEvaluator.Expr, ctx: Context): BoolExpr = e0 match {
-
     case SymbolicEvaluator.Expr.Eq(e1, e2) => ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+    case SymbolicEvaluator.Expr.Neq(e1, e2) => ctx.mkNot(ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx)))
   }
 
 
   def visitBitVecExpr(e0: SymbolicEvaluator.Expr, ctx: Context): BitVecExpr = e0 match {
     case SymbolicEvaluator.Expr.Var(id) => ctx.mkBVConst(id.name, 32) // TODO: Width
+    case SymbolicEvaluator.Expr.Plus(e1, e2) => ctx.mkBVAdd(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
   }
 
   // TODO: Below here is old ... ---------------------
@@ -637,14 +607,14 @@ object Verifier {
   /**
     * Returns a Z3 model as a map from string variables to expressions.
     */
-  def model2env(model: Model): Map[String, Expression] = {
-    def visit(exp: Expr): Expression = exp match {
-      case e: BoolExpr => if (e.isTrue) True else False
-      case e: BitVecNum => Int32(e.getLong.toInt) // TODO: Size
+  def model2env(model: Model): Map[String, String] = {
+    def visit(exp: Expr): String = exp match {
+      case e: BoolExpr => if (e.isTrue) "true" else "false"
+      case e: BitVecNum => e.getLong.toString
       case _ => throw InternalCompilerException(s"Unexpected Z3 expression: $exp.")
     }
 
-    model.getConstDecls.foldLeft(Map.empty[String, Expression]) {
+    model.getConstDecls.foldLeft(Map.empty[String, String]) {
       case (macc, decl) => macc + (decl.getName.toString -> visit(model.getConstInterp(decl)))
     }
   }
