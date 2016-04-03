@@ -299,9 +299,8 @@ object Verifier {
             // Case 3: The property holds/does not hold under a certain path condition.
             smt += 1
             mkContext(ctx => {
-              // Check if the negation of the expression has a model.
-              // If so, the property does not hold.
               val q = v match {
+                // Check whether the returned value is `true` or `false`.
                 case SymVal.True =>
                   //  The law is `true` if the path constraint is a tautology.
                   ctx.mkNot(visitPathConstraint(pc, ctx))
@@ -315,8 +314,7 @@ object Verifier {
                   Nil
                 case Result.Satisfiable(model) =>
                   // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.
-                  println(pc -> v)
-                  List(fail(property, model2env(model))) // TODO MAp
+                  List(fail(property, mkModel(env0, model))) // TODO MAp
                 case Result.Unknown =>
                   // Case 3.3: It is unknown whether the formula has a model.
                   ???
@@ -602,6 +600,24 @@ object Verifier {
       */
     case object Unknown extends Result
 
+  }
+
+
+  // TODO: This really should not be expression.
+  def mkModel(env: Map[String, Expression], model: Model): Map[String, String] = {
+    val m = model2env(model)
+    def visit(e0: Expression): String = e0 match {
+      case Expression.Var(id, _, _, _) => m.get(id.name) match {
+        case None => "Not found (?)" // TODO
+        case Some(v) => v
+      }
+      case Expression.Unit => "#U"
+      case Expression.Tag(_, tag, e, _, _) => tag + "(" + visit(e) + ")"
+    }
+
+    env.foldLeft(Map.empty[String, String]) {
+      case (macc, (k, v)) => macc + (k -> visit(v))
+    }
   }
 
   /**
