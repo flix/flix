@@ -5,6 +5,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression._
 import ca.uwaterloo.flix.runtime.SymbolicEvaluator
+import ca.uwaterloo.flix.runtime.SymbolicEvaluator.SymVal
 import ca.uwaterloo.flix.util.InternalCompilerException
 import com.microsoft.z3.{BitVecNum, Expr, _}
 
@@ -284,15 +285,30 @@ object Verifier {
     // attempt to verify that the property holds under each environment.
     val violations = envs flatMap {
       case env0 =>
-        SymbolicEvaluator.eval(peelQuantifiers(exp0), env0, root) match {
-          case SymbolicEvaluator.SymVal.True => Nil
-          case SymbolicEvaluator.SymVal.False =>
+        SymbolicEvaluator.eval(peelQuantifiers(exp0), env0, root) flatMap {
+          case (Nil, SymVal.True) => Nil
+          case (Nil, SymVal.False) =>
             val env1 = env0.foldLeft(Map.empty[String, String]) {
               case (macc, (k, e)) => macc + (k -> e.toString)
             }
             List(fail(property, env1))
-          case v => throw InternalCompilerException(s"Unexpected SymVal: $v.")
+          case (pc, SymVal.True) =>
+            println(pc -> SymVal.True)
+            throw InternalCompilerException(s"TODO")
+          case (pc, SymVal.False) =>
+            println(pc -> SymVal.False)
+            throw InternalCompilerException(s"TODO")
         }
+
+      //        match {
+      //          case SymbolicEvaluator.SymVal.True => Nil
+      //          case SymbolicEvaluator.SymVal.False =>
+      //            val env1 = env0.foldLeft(Map.empty[String, String]) {
+      //              case (macc, (k, e)) => macc + (k -> e.toString)
+      //            }
+      //            List(fail(property, env1))
+      //          case v => throw InternalCompilerException(s"Unexpected SymVal: $v.")
+      //        }
 
       //        PartialEvaluator.eval(exp0, env0, root) match {
       //        case Expression.True =>
