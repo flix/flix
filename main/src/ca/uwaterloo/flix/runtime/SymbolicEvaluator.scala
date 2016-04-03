@@ -18,6 +18,10 @@ object SymbolicEvaluator {
 
     case class Var(ident: Name.Ident) extends Expr
 
+    case class Not(e: Expr) extends Expr
+
+    case class UnaryMinus(e: Expr) extends Expr
+
     case class Plus(e1: Expr, e2: Expr) extends Expr
 
     case class Eq(e1: Expr, e2: Expr) extends Expr
@@ -110,7 +114,7 @@ object SymbolicEvaluator {
             val newEnv = mutable.Map.empty[String, SymVal]
             newEnv += (cloVar -> cloEnv)
             eval(pc, cloExp, newEnv)
-          case (_, e) => throw InternalCompilerException(s"Type Error: Unexpected expression: '$e'.")
+          case (_, v) => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
         }
 
       case Expression.ApplyRef(name, args, _, _) =>
@@ -132,15 +136,45 @@ object SymbolicEvaluator {
         val cloVal = SymVal.Closure(lambda.asInstanceOf[Ref], cloVar.name, SymVal.Environment(closureEnv.toMap))
         lift(pc0, cloVal)
 
+      /**
+        * Unary Expressions.
+        */
       case Expression.Unary(op, exp, _, _) =>
         eval(pc0, exp, env0) flatMap {
           case (pc, v) => op match {
+            /**
+              * Not.
+              */
             case UnaryOperator.LogicalNot => v match {
               case SymVal.True => lift(pc, SymVal.False)
               case SymVal.False => lift(pc, SymVal.True)
-              case _ => ??? // TODO
+              case SymVal.AtomicVar(id) => List(
+                (Expr.Var(id) :: pc, SymVal.False),
+                (Expr.Not(Expr.Var(id)) :: pc, SymVal.True)
+              )
+              case _ => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
             }
-            case UnaryOperator.Plus => ???
+
+            /**
+              * Plus.
+              */
+            case UnaryOperator.Plus => lift(pc, v)
+
+            /**
+              * Minus.
+              */
+            case UnaryOperator.Minus => v match {
+              case SymVal.Int32(i) => lift(pc, SymVal.Int32(-i))
+              case SymVal.AtomicVar(id) =>
+                val newVar = genSym.fresh2()
+                val newPC = Expr.Eq(Expr.Var(newVar), Expr.UnaryMinus(Expr.Var(id))) :: pc
+                lift(newPC, SymVal.AtomicVar(newVar))
+            }
+
+            /**
+              * Bitwise Negate.
+              */
+            case UnaryOperator.BitwiseNegate => ??? // TODO
 
           }
         }
@@ -150,12 +184,11 @@ object SymbolicEvaluator {
           case (pc, (v1, v2)) => op match {
 
             case BinaryOperator.Plus => (v1, v2) match {
+              case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 + i2))
               case (SymVal.AtomicVar(id1), SymVal.AtomicVar(id2)) =>
                 val newVar = genSym.fresh2()
                 val newPC = Expr.Eq(Expr.Var(newVar), Expr.Plus(Expr.Var(id1), Expr.Var(id2))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
-
-              case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 + i2))
             }
 
             case BinaryOperator.LogicalAnd => (v1, v2) match {
@@ -209,13 +242,13 @@ object SymbolicEvaluator {
       case Expression.GetTagValue(tag, exp, _, _) =>
         eval(pc0, exp, env0) flatMap {
           case (pc, SymVal.Tag(_, v)) => lift(pc, v)
-          case e => throw InternalCompilerException(s"Type Error: Unexpected expression: '$e'.")
+          case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
         }
 
       case Expression.GetTupleIndex(base, offset, _, _) =>
         eval(pc0, base, env0) flatMap {
           case (pc, SymVal.Tuple(elms)) => lift(pc, elms(offset))
-          case e => throw InternalCompilerException(s"Type Error: Unexpected expression: '$e'.")
+          case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
         }
 
     }
