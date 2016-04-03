@@ -5,7 +5,6 @@ import ca.uwaterloo.flix.language.ast.ExecutableAst
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression.Ref
 import ca.uwaterloo.flix.language.phase.GenSym
-import ca.uwaterloo.flix.runtime.SymbolicEvaluator.SymVal.Closure
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
@@ -143,7 +142,7 @@ object SymbolicEvaluator {
         eval(pc0, exp, env0) flatMap {
           case (pc, v) => op match {
             /**
-              * Not.
+              * Unary Not.
               */
             case UnaryOperator.LogicalNot => v match {
               case SymVal.True => lift(pc, SymVal.False)
@@ -156,12 +155,12 @@ object SymbolicEvaluator {
             }
 
             /**
-              * Plus.
+              * Unary Plus.
               */
             case UnaryOperator.Plus => lift(pc, v)
 
             /**
-              * Minus.
+              * Unary Minus.
               */
             case UnaryOperator.Minus => v match {
               case SymVal.Int32(i) => lift(pc, SymVal.Int32(-i))
@@ -169,26 +168,34 @@ object SymbolicEvaluator {
                 val newVar = genSym.fresh2()
                 val newPC = Expr.Eq(Expr.Var(newVar), Expr.UnaryMinus(Expr.Var(id))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
+              case _ => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
             }
 
             /**
-              * Bitwise Negate.
+              * Unary Bitwise Negate.
               */
             case UnaryOperator.BitwiseNegate => ??? // TODO
 
           }
         }
 
+      /**
+        * Binary Expressions.
+        */
       case Expression.Binary(op, exp1, exp2, _, _) =>
         eval2(pc0, exp1, exp2, env0) flatMap {
           case (pc, (v1, v2)) => op match {
 
+            /**
+              * Binary Plus.
+              */
             case BinaryOperator.Plus => (v1, v2) match {
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 + i2))
               case (SymVal.AtomicVar(id1), SymVal.AtomicVar(id2)) =>
                 val newVar = genSym.fresh2()
                 val newPC = Expr.Eq(Expr.Var(newVar), Expr.Plus(Expr.Var(id1), Expr.Var(id2))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
+                // TODO: Could one of these be a var and the other not? I guess so
             }
 
             case BinaryOperator.LogicalAnd => (v1, v2) match {

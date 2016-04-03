@@ -286,29 +286,41 @@ object Verifier {
     val violations = envs flatMap {
       case env0 =>
         SymbolicEvaluator.eval(peelQuantifiers(exp0), env0, root) flatMap {
-          case (Nil, SymVal.True) => Nil
+          case (Nil, SymVal.True) =>
+            // Case 1: The symbolic evaluator proved the property.
+            Nil
           case (Nil, SymVal.False) =>
+            // Case 2: The symbolic evaluator disproved the property.
             val env1 = env0.foldLeft(Map.empty[String, String]) {
               case (macc, (k, e)) => macc + (k -> e.toString)
             }
             List(fail(property, env1))
-          case (pc, SymVal.True) =>
-            println(pc -> SymVal.True)
-            throw InternalCompilerException(s"TODO")
-          case (pc, SymVal.False) =>
-            println(pc -> SymVal.False)
+          case (pc, v) =>
+            println(pc -> v)
+
+            // Case 3: The property holds/does not hold under a certain path condition.
+            mkContext(ctx => {
+              // Check if the negation of the expression has a model.
+              // If so, the property does not hold.
+              val q = ctx.mkNot(visitPathConstraint(pc, ctx))
+              // TODO: Must take into account whether v is true or false.
+              checkSat(q, ctx) match {
+                case Result.Unsatisfiable =>
+                  // Case 3.1: The formula is UNSAT, i.e. the property HOLDS.
+                  Nil
+                case Result.Satisfiable(model) =>
+                  // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.
+                  println("SAT!")
+                  ???
+                case Result.Unknown =>
+                  // Case 3.3: It is unknown whether the formula has a model.
+                  println("UNSAT!")
+                  ???
+              }
+            })
+
             throw InternalCompilerException(s"TODO")
         }
-
-      //        match {
-      //          case SymbolicEvaluator.SymVal.True => Nil
-      //          case SymbolicEvaluator.SymVal.False =>
-      //            val env1 = env0.foldLeft(Map.empty[String, String]) {
-      //              case (macc, (k, e)) => macc + (k -> e.toString)
-      //            }
-      //            List(fail(property, env1))
-      //          case v => throw InternalCompilerException(s"Unexpected SymVal: $v.")
-      //        }
 
       //        PartialEvaluator.eval(exp0, env0, root) match {
       //        case Expression.True =>
@@ -438,6 +450,24 @@ object Verifier {
     *
     * http://z3prover.github.io/api/html/classcom_1_1microsoft_1_1z3_1_1_context.html
     */
+
+  // TODO: Avoid prefix with SymbolicEvaluator.Expr
+
+  def visitPathConstraint(pc: List[SymbolicEvaluator.Expr], ctx: Context): BoolExpr = pc.foldLeft(ctx.mkBool(true)) {
+    case (f, e) => ctx.mkAnd(f, visitBoolExpr(e, ctx))
+  }
+
+  def visitBoolExpr(e0: SymbolicEvaluator.Expr, ctx: Context): BoolExpr = e0 match {
+
+    case SymbolicEvaluator.Expr.Eq(e1, e2) => ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+  }
+
+
+  def visitBitVecExpr(e0: SymbolicEvaluator.Expr, ctx: Context): BitVecExpr = e0 match {
+    case SymbolicEvaluator.Expr.Var(id) => ctx.mkBVConst(id.name, 32) // TODO: Width
+  }
+
+  // TODO: Below here is old ... ---------------------
 
   /**
     * Translates the given expression `e0` into a Z3 boolean expression.
