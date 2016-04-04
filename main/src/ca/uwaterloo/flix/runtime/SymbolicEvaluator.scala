@@ -19,6 +19,12 @@ object SymbolicEvaluator {
 
     case class Not(e: Expr) extends Expr
 
+    case class And(e1: Expr, e2: Expr) extends Expr
+
+    case class Or(e1: Expr, e2: Expr) extends Expr
+
+    case class Implication(e1: Expr, e2: Expr) extends Expr
+
     case class UnaryMinus(e: Expr) extends Expr
 
     case class Plus(e1: Expr, e2: Expr) extends Expr
@@ -432,6 +438,9 @@ object SymbolicEvaluator {
               case (SymVal.AtomicVar(id), SymVal.True) => lift(pc, SymVal.AtomicVar(id))
               case (_, SymVal.False) => lift(pc, SymVal.False)
               case (SymVal.False, _) => lift(pc, SymVal.False)
+
+              // TODO: Both vars
+
               case _ => throw InternalCompilerException(s"Type Error: Unexpected expression: '$v1 && $v2'.")
             }
 
@@ -439,13 +448,62 @@ object SymbolicEvaluator {
               * Logical Or.
               */
             case BinaryOperator.LogicalOr => (v1, v2) match {
+              // Concrete semantics.
+              case (SymVal.True, SymVal.True) => lift(pc, SymVal.True)
+              case (SymVal.False, SymVal.True) => lift(pc, SymVal.True)
+              case (SymVal.True, SymVal.False) => lift(pc, SymVal.True)
               case (SymVal.False, SymVal.False) => lift(pc, SymVal.False)
-              case (SymVal.False, SymVal.AtomicVar(id)) => lift(pc, SymVal.AtomicVar(id))
-              case (SymVal.AtomicVar(id), SymVal.False) => lift(pc, SymVal.AtomicVar(id))
-              case (SymVal.True, _) => lift(pc, SymVal.True)
-              case (_, SymVal.True) => lift(pc, SymVal.True)
+
+              // Symbolic semantics.
+              case (SymVal.True, SymVal.AtomicVar(id)) => lift(pc, SymVal.True)
+              case (SymVal.AtomicVar(id), SymVal.True) => lift(pc, SymVal.True)
+
+              case (SymVal.False, SymVal.AtomicVar(id)) => List(
+                (Expr.Var(id) :: pc, SymVal.True),
+                (Expr.Not(Expr.Var(id)) :: pc, SymVal.False)
+              )
+              case (SymVal.AtomicVar(id), SymVal.False) => List(
+                (Expr.Var(id) :: pc, SymVal.True),
+                (Expr.Not(Expr.Var(id)) :: pc, SymVal.False)
+              )
+
+              case (SymVal.AtomicVar(id1), SymVal.AtomicVar(id2)) => List(
+                (Expr.Or(Expr.Var(id1), Expr.Var(id2)) :: pc, SymVal.True),
+                (Expr.Not(Expr.Or(Expr.Var(id1), Expr.Var(id2))) :: pc, SymVal.False)
+              )
+
               case _ => throw InternalCompilerException(s"Type Error: Unexpected expression: '$v1 || $v2'.")
             }
+
+            /**
+              * Logical Implication.
+              */
+            case BinaryOperator.Implication => (v1, v2) match {
+              // Concrete semantics.
+              case (SymVal.True, SymVal.True) => lift(pc, SymVal.True)
+              case (SymVal.True, SymVal.False) => lift(pc, SymVal.False)
+              case (SymVal.False, SymVal.True) => lift(pc, SymVal.True)
+              case (SymVal.False, SymVal.False) => lift(pc, SymVal.True)
+
+              // Symbolic semantics.
+              case (SymVal.True, SymVal.AtomicVar(id)) => List(
+                (Expr.Var(id) :: pc, SymVal.True),
+                (Expr.Not(Expr.Var(id)) :: pc, SymVal.False)
+              )
+              case (SymVal.False, SymVal.AtomicVar(id)) => lift(pc, SymVal.True)
+
+              case (SymVal.AtomicVar(id), SymVal.False) => List(
+                (Expr.Var(id) :: pc, SymVal.False),
+                (Expr.Not(Expr.Var(id)) :: pc, SymVal.True)
+              )
+              case (SymVal.AtomicVar(id), SymVal.True) => lift(pc, SymVal.True)
+
+              case (SymVal.AtomicVar(id1), SymVal.AtomicVar(id2)) => List(
+                (Expr.Implication(Expr.Var(id1), Expr.Var(id2)) :: pc, SymVal.True),
+                (Expr.Not(Expr.Implication(Expr.Var(id1), Expr.Var(id2))) :: pc, SymVal.True)
+              )
+            }
+
 
             /**
               * Equal.
