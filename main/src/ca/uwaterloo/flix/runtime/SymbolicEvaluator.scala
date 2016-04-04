@@ -23,6 +23,12 @@ object SymbolicEvaluator {
 
     case class Plus(e1: Expr, e2: Expr) extends Expr
 
+    case class Minus(e1: Expr, e2: Expr) extends Expr
+
+    case class Times(e1: Expr, e2: Expr) extends Expr
+
+    case class Divide(e1: Expr, e2: Expr) extends Expr
+
     case class Eq(e1: Expr, e2: Expr) extends Expr
 
     case class Neq(e1: Expr, e2: Expr) extends Expr
@@ -369,22 +375,87 @@ object SymbolicEvaluator {
               case _ => throw InternalCompilerException(s"Type Error: Unexpected expression: '$v1 + $v2'.")
             }
 
+            /**
+              * Binary Minus.
+              */
+            case BinaryOperator.Minus => (v1, v2) match {
+              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 - i2).asInstanceOf[Byte]))
+              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 - i2).asInstanceOf[Short]))
+              case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 - i2))
+              case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 - i2))
 
+              case (SymVal.AtomicVar(id), v) if isVarOrInt(v) =>
+                // Constructs a path constraint: `newVar = id - i` and returns `newVar`.
+                val newVar = genSym.fresh2()
+                val newPC = Expr.Eq(Expr.Var(newVar), Expr.Minus(Expr.Var(id), toExpr(v))) :: pc
+                lift(newPC, SymVal.AtomicVar(newVar))
+
+              case (v, SymVal.AtomicVar(id)) if isVarOrInt(v) =>
+                // Constructs a path constraint: `newVar = id - i` and returns `newVar`.
+                val newVar = genSym.fresh2()
+                val newPC = Expr.Eq(Expr.Var(newVar), Expr.Minus(toExpr(v), Expr.Var(id))) :: pc
+                lift(newPC, SymVal.AtomicVar(newVar))
+
+              case _ => throw InternalCompilerException(s"Type Error: Unexpected expression: '$v1 - $v2'.")
+            }
+
+            /**
+              * Binary Times.
+              */
+            case BinaryOperator.Times => (v1, v2) match {
+              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 * i2).asInstanceOf[Byte]))
+              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 * i2).asInstanceOf[Short]))
+              case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 * i2))
+              case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 * i2))
+
+              case (SymVal.AtomicVar(id), v) if isVarOrInt(v) =>
+                // Constructs a path constraint: `newVar = id * i` and returns `newVar`.
+                val newVar = genSym.fresh2()
+                val newPC = Expr.Eq(Expr.Var(newVar), Expr.Times(Expr.Var(id), toExpr(v))) :: pc
+                lift(newPC, SymVal.AtomicVar(newVar))
+
+              case (v, SymVal.AtomicVar(id)) if isVarOrInt(v) =>
+                // Constructs a path constraint: `newVar = id * i` and returns `newVar`.
+                val newVar = genSym.fresh2()
+                val newPC = Expr.Eq(Expr.Var(newVar), Expr.Times(toExpr(v), Expr.Var(id))) :: pc
+                lift(newPC, SymVal.AtomicVar(newVar))
+
+              case _ => throw InternalCompilerException(s"Type Error: Unexpected expression: '$v1 * $v2'.")
+            }
+
+            /**
+              * Logical And.
+              */
             case BinaryOperator.LogicalAnd => (v1, v2) match {
               case (SymVal.True, SymVal.True) => lift(pc, SymVal.True)
-              case (SymVal.False, SymVal.True) => lift(pc, SymVal.False)
-              case (SymVal.True, SymVal.False) => lift(pc, SymVal.False)
-              case (SymVal.False, SymVal.False) => lift(pc, SymVal.False)
+              case (SymVal.True, SymVal.AtomicVar(id)) => lift(pc, SymVal.AtomicVar(id))
+              case (SymVal.AtomicVar(id), SymVal.True) => lift(pc, SymVal.AtomicVar(id))
+              case (_, SymVal.False) => lift(pc, SymVal.False)
+              case (SymVal.False, _) => lift(pc, SymVal.False)
+              case _ => throw InternalCompilerException(s"Type Error: Unexpected expression: '$v1 && $v2'.")
             }
 
+            /**
+              * Logical Or.
+              */
             case BinaryOperator.LogicalOr => (v1, v2) match {
-              case (SymVal.True, SymVal.True) => lift(pc, SymVal.True)
-              case (SymVal.False, SymVal.True) => lift(pc, SymVal.True)
-              case (SymVal.True, SymVal.False) => lift(pc, SymVal.True)
               case (SymVal.False, SymVal.False) => lift(pc, SymVal.False)
+              case (SymVal.False, SymVal.AtomicVar(id)) => lift(pc, SymVal.AtomicVar(id))
+              case (SymVal.AtomicVar(id), SymVal.False) => lift(pc, SymVal.AtomicVar(id))
+              case (SymVal.True, _) => lift(pc, SymVal.True)
+              case (_, SymVal.True) => lift(pc, SymVal.True)
+              case _ => throw InternalCompilerException(s"Type Error: Unexpected expression: '$v1 || $v2'.")
             }
 
+            /**
+              * Equal.
+              */
             case BinaryOperator.Equal => eq(pc, v1, v2)
+
+            /**
+              * Not Equal.
+              */
+
           }
         }
 
@@ -509,13 +580,16 @@ object SymbolicEvaluator {
 
 
     def eq(pc0: PathConstraint, x: SymVal, y: SymVal): List[(PathConstraint, SymVal)] = (x, y) match {
-      case (SymVal.AtomicVar(ident1), SymVal.AtomicVar(ident2)) => List(
-        (Expr.Eq(Expr.Var(ident1), Expr.Var(ident2)) :: pc0, SymVal.True),
-        (Expr.Neq(Expr.Var(ident1), Expr.Var(ident2)) :: pc0, SymVal.False)
-      )
-
+      case (SymVal.AtomicVar(ident1), SymVal.AtomicVar(ident2)) =>
+        // Two identifiers are either equal to each other or they are not.
+        // We can encode this using two path constraints.
+        List(
+          (Expr.Eq(Expr.Var(ident1), Expr.Var(ident2)) :: pc0, SymVal.True),
+          (Expr.Neq(Expr.Var(ident1), Expr.Var(ident2)) :: pc0, SymVal.False)
+        )
       case (SymVal.Unit, SymVal.Unit) => lift(pc0, SymVal.True)
       case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) => if (tag1 == tag2) eq(pc0, v1, v2) else lift(pc0, SymVal.False)
+      // TODO: Rest
     }
 
 
