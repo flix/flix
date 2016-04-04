@@ -483,7 +483,7 @@ object PropertyGen {
       * Returns the `true` if `e1` is less than or equal to `e2` according to the partial order.
       */
     def ⊑(e1: Expression, e2: Expression): Expression =
-      Apply(lattice.leq, List(e1, e2), e1.tpe, SourceLocation.Unknown)
+      Apply(lattice.leq, List(e1, e2), Type.Bool, SourceLocation.Unknown)
 
     /**
       * Returns the least upper bound of the two expressions `e1` and `e2`.

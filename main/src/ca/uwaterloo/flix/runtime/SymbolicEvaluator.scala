@@ -27,6 +27,14 @@ object SymbolicEvaluator {
 
     case class Neq(e1: Expr, e2: Expr) extends Expr
 
+    case class Int8(lit: Byte) extends Expr
+
+    case class Int16(lit: Short) extends Expr
+
+    case class Int32(lit: Int) extends Expr
+
+    case class Int64(lit: Long) extends Expr
+
   }
 
   /**
@@ -166,7 +174,9 @@ object SymbolicEvaluator {
   /**
     * The type of environments.
     */
-  type Environment = mutable.Map[String, SymVal]
+  type Environment = mutable.Map[String, SymVal] // TODO: Consider immutable map
+
+  // TODO: Consider ContextType
 
   /**
     * Evaluates the given expression `exp0` under the given environment `env0`.
@@ -339,13 +349,24 @@ object SymbolicEvaluator {
               * Binary Plus.
               */
             case BinaryOperator.Plus => (v1, v2) match {
+              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 + i2).asInstanceOf[Byte]))
+              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 + i2).asInstanceOf[Short]))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 + i2))
-              case (SymVal.AtomicVar(id1), SymVal.AtomicVar(id2)) =>
+              case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 + i2))
+              case (SymVal.AtomicVar(id), v) if isVarOrInt(v) =>
+                // Constructs a path constraint: `newVar = id + i` and returns `newVar`.
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar), Expr.Plus(Expr.Var(id1), Expr.Var(id2))) :: pc
+                val newPC = Expr.Eq(Expr.Var(newVar), Expr.Plus(Expr.Var(id), toExpr(v))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
-              // TODO: Could one of these be a var and the other not? I guess so
+              case (v, SymVal.AtomicVar(id)) if isVarOrInt(v) =>
+                // Constructs a path constraint: `newVar = id + i` and returns `newVar`.
+                val newVar = genSym.fresh2()
+                val newPC = Expr.Eq(Expr.Var(newVar), Expr.Plus(toExpr(v), Expr.Var(id))) :: pc
+                lift(newPC, SymVal.AtomicVar(newVar))
+              case _ => throw InternalCompilerException(s"Type Error: Unexpected expression: '$v1 + $v2'.")
             }
+
+
 
             case BinaryOperator.LogicalAnd => (v1, v2) match {
               case (SymVal.True, SymVal.True) => lift(pc, SymVal.True)
@@ -365,6 +386,9 @@ object SymbolicEvaluator {
           }
         }
 
+      /**
+        * If-then-else.
+        */
       case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
         eval(pc0, exp1, env0) flatMap {
           case (pc, c) => c match {
@@ -372,18 +396,21 @@ object SymbolicEvaluator {
             case SymVal.False => eval(pc, exp3, env0)
             case _ =>
               println(c)
-              ???
+              ??? // TODO
           }
         }
 
+      /**
+        * Let-binding.
+        */
       case Expression.Let(ident, _, exp1, exp2, _, _) =>
         eval(pc0, exp1, env0) flatMap {
           case (pc, v1) =>
+            // Bind the variable to the value of `exp1` which is `v1`.
             val newEnv = env0.clone()
             newEnv += (ident.name -> v1)
             eval(pc, exp2, newEnv)
         }
-
 
       /**
         * Tags.
@@ -401,6 +428,9 @@ object SymbolicEvaluator {
           case (pc, es) => lift(pc, SymVal.Tuple(es))
         }
 
+      /**
+        * Check Tag Value.
+        */
       case Expression.CheckTag(tag, exp, _) =>
         eval(pc0, exp, env0) flatMap {
           case (pc, SymVal.Tag(tag2, _)) =>
@@ -408,10 +438,11 @@ object SymbolicEvaluator {
               lift(pc, SymVal.True)
             else
               lift(pc, SymVal.False)
+          case (_, v) => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
         }
 
       /**
-        *
+        * Get Tag Value.
         */
       case Expression.GetTagValue(tag, exp, _, _) =>
         eval(pc0, exp, env0) flatMap {
@@ -419,6 +450,9 @@ object SymbolicEvaluator {
           case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
         }
 
+      /**
+        * Get Tuple Index.
+        */
       case Expression.GetTupleIndex(base, offset, _, _) =>
         eval(pc0, base, env0) flatMap {
           case (pc, SymVal.Tuple(elms)) => lift(pc, elms(offset))
@@ -463,7 +497,11 @@ object SymbolicEvaluator {
 
     }
 
+    /**
+      * Returns a context with the value `v` guarded by the path constraint `pc`.
+      */
     def lift(pc: PathConstraint, v: SymVal): List[(PathConstraint, SymVal)] = List(pc -> v)
+
 
     def eq(pc0: PathConstraint, x: SymVal, y: SymVal): List[(PathConstraint, SymVal)] = (x, y) match {
       case (SymVal.AtomicVar(ident1), SymVal.AtomicVar(ident2)) => List(
@@ -475,12 +513,14 @@ object SymbolicEvaluator {
       case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) => if (tag1 == tag2) eq(pc0, v1, v2) else lift(pc0, SymVal.False)
     }
 
+
     def eval2(pc0: PathConstraint, x: Expression, y: Expression, env0: Environment): List[(PathConstraint, (SymVal, SymVal))] =
       eval(pc0, x, env0) flatMap {
         case (pcx, vx) => eval(pcx, y, env0) map {
           case (pcy, vy) => pcy -> ((vx, vy))
         }
       }
+
 
     def evaln(pc0: PathConstraint, xs: Traversable[Expression], env0: Environment): List[(PathConstraint, List[SymVal])] = {
       /*
@@ -498,6 +538,30 @@ object SymbolicEvaluator {
       visit(pc0, xs.toList, env0)
     }
 
+    /**
+      * Returns `true` if `v` is a int value.
+      */
+    def isVarOrInt(v: SymVal): Boolean = v match {
+      case SymVal.AtomicVar(id) => true
+      case SymVal.Int8(i) => true
+      case SymVal.Int16(i) => true
+      case SymVal.Int32(i) => true
+      case SymVal.Int64(i) => true
+      case _ => false
+    }
+
+    /**
+      * Converts the given value `v` to an expression.
+      */
+    def toExpr(v: SymVal): Expr = v match {
+      case SymVal.AtomicVar(id) => Expr.Var(id)
+      case SymVal.Int8(i) => Expr.Int8(i)
+      case SymVal.Int16(i) => Expr.Int16(i)
+      case SymVal.Int32(i) => Expr.Int32(i)
+      case SymVal.Int64(i) => Expr.Int64(i)
+      case _ => throw InternalCompilerException(s"Unexpected value: '$v'.")
+    }
+
     //  TODO: Replace this by a different enumeration.
     def toSymVal(exp0: Expression): SymVal = exp0 match {
       case Expression.Unit => SymVal.Unit
@@ -507,7 +571,9 @@ object SymbolicEvaluator {
       case _ => ???
     }
 
-
+    /**
+      * Construct the initial environment.
+      */
     val initEnv = mutable.Map.empty[String, SymVal]
     for ((name, exp) <- env0) {
       initEnv += (name -> toSymVal(exp))
@@ -515,6 +581,5 @@ object SymbolicEvaluator {
 
     eval(Nil, exp0, initEnv)
   }
-
 
 }
