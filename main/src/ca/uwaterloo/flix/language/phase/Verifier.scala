@@ -295,31 +295,30 @@ object Verifier {
               case (macc, (k, e)) => macc + (k -> e.toString)
             }
             List(fail(property, env1))
-          case (pc, v) =>
-            // Case 3: The property holds/does not hold under a certain path condition.
-            smt += 1
-            mkContext(ctx => {
-              val q = v match {
-                // Check whether the returned value is `true` or `false`.
-                case SymVal.True =>
-                  //  The law is `true` if the path constraint is a tautology.
-                  ctx.mkNot(visitPathConstraint(pc, ctx))
-                case SymVal.False =>
-                  // The law is `true` if the path constraint is unsatisfiable.
-                  visitPathConstraint(pc, ctx)
-              }
-              checkSat(q, ctx) match {
-                case Result.Unsatisfiable =>
-                  // Case 3.1: The formula is UNSAT, i.e. the property HOLDS.
-                  Nil
-                case Result.Satisfiable(model) =>
-                  // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.
-                  List(fail(property, mkModel(env0, model))) // TODO MAp
-                case Result.Unknown =>
-                  // Case 3.3: It is unknown whether the formula has a model.
-                  ???
-              }
-            })
+          case (pc, v) => v match {
+            case SymVal.True =>
+              // Case 3.1: The property holds under some path condition.
+              // The property holds regardless of whether the path condition is satisfiable.
+              Nil
+            case SymVal.False =>
+              // Case 3.2: The property *does not* hold under some path condition.
+              // If the path condition is satisfiable then the property *does not* hold.
+              smt += 1
+              mkContext(ctx => {
+                val q = visitPathConstraint(pc, ctx)
+                checkSat(q, ctx) match {
+                  case Result.Unsatisfiable =>
+                    // Case 3.1: The formula is UNSAT, i.e. the property HOLDS.
+                    Nil
+                  case Result.Satisfiable(model) =>
+                    // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.
+                    List(fail(property, mkModel(env0, model))) // TODO MAp
+                  case Result.Unknown =>
+                    // Case 3.3: It is unknown whether the formula has a model.
+                    ???
+                }
+              })
+          }
         }
 
     }
