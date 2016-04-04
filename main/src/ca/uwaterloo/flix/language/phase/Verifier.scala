@@ -280,8 +280,6 @@ object Verifier {
     // the number of issued SMT queries.
     var smt = 0
 
-    // TODO: Count failures etc.
-
     // attempt to verify that the property holds under each environment.
     val violations = envs flatMap {
       case env0 =>
@@ -326,9 +324,9 @@ object Verifier {
     implicit val consoleCtx = Compiler.ConsoleCtx
 
     if (violations.isEmpty)
-      Console.println(consoleCtx.cyan("✓ ") + property.law + " (" + smt + " SMT queries)")
+      Console.println(consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ")" + " (" + smt + " SMT queries)")
     else
-      Console.println(consoleCtx.red("✗ ") + property.law + " (" + smt + " SMT queries)")
+      Console.println(consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ")" + " (" + smt + " SMT queries)")
 
     violations.headOption
   }

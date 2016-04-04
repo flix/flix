@@ -263,6 +263,7 @@ object ExecutableAst {
       * @param tpe    the type of the variable.
       * @param loc    the source location of the variable.
       */
+    // TODO: Rename to LocalVar
     case class Var(ident: Name.Ident,
                    offset: scala.Int,
                    tpe: Type,

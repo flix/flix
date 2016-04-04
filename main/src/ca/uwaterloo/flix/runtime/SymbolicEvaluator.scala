@@ -29,12 +29,19 @@ object SymbolicEvaluator {
 
   }
 
+  /**
+    * Symbolic Values.
+    *
+    * A symbolic value is like a regular value but allows atomic variables.
+    */
   sealed trait SymVal
 
   object SymVal {
 
     /**
       * An atomic symbolic variable.
+      *
+      * @param ident the identifier.
       */
     case class AtomicVar(ident: Name.Ident) extends SymVal
 
@@ -55,18 +62,29 @@ object SymbolicEvaluator {
 
     /**
       * An Int32 value.
+      *
+      * @param lit the int literal.
       */
     case class Int32(lit: Int) extends SymVal
 
-
+    /**
+      * A tag value.
+      *
+      * @param tag   the tag name.
+      * @param value the tagged value.
+      */
     case class Tag(tag: String, value: SymVal) extends SymVal
 
+    /**
+      * A tuple value.
+      *
+      * @param elms the elements of the tuple.
+      */
     case class Tuple(elms: List[SymVal]) extends SymVal
 
     case class Environment(m: Map[String, SymVal]) extends SymVal
 
     case class Closure(exp: Expression.Ref, cloVar: String, env: Environment) extends SymVal
-
 
   }
 
@@ -80,17 +98,44 @@ object SymbolicEvaluator {
     */
   type Environment = mutable.Map[String, SymVal]
 
+  /**
+    * Evaluates the given expression `exp0` under the given environment `env0`.
+    */
   def eval(exp0: Expression, env0: Map[String, Expression], root: ExecutableAst.Root)(implicit genSym: GenSym): List[(PathConstraint, SymVal)] = {
-
+    /*
+      * Local visitor.
+      */
     def eval(pc0: PathConstraint, exp0: Expression, env0: Environment)(implicit genSym: GenSym): List[(PathConstraint, SymVal)] = exp0 match {
+      /**
+        * Unit.
+        */
       case Expression.Unit => lift(pc0, SymVal.Unit)
+
+      /**
+        * True.
+        */
       case Expression.True => lift(pc0, SymVal.True)
+
+      /**
+        * False.
+        */
       case Expression.False => lift(pc0, SymVal.False)
+
+      /**
+        * Char.
+        */
+
 
       case Expression.Int32(i) => lift(pc0, SymVal.Int32(i))
 
-      case Expression.Var(ident, offset, tpe, loc) => lift(pc0, env0(ident.name))
+      /**
+        * Local Variable.
+        */
+      case Expression.Var(ident, _, tpe, loc) => lift(pc0, env0(ident.name))
 
+      /**
+        * Closure Variable.
+        */
       case Expression.ClosureVar(env, name, _, _) =>
         val SymVal.Environment(m) = env0(env.name)
         lift(pc0, m(name.name))
@@ -136,7 +181,7 @@ object SymbolicEvaluator {
         lift(pc0, cloVal)
 
       /**
-        * Unary Expressions.
+        * Unary.
         */
       case Expression.Unary(op, exp, _, _) =>
         eval(pc0, exp, env0) flatMap {
@@ -180,7 +225,7 @@ object SymbolicEvaluator {
         }
 
       /**
-        * Binary Expressions.
+        * Binary.
         */
       case Expression.Binary(op, exp1, exp2, _, _) =>
         eval2(pc0, exp1, exp2, env0) flatMap {
@@ -195,7 +240,7 @@ object SymbolicEvaluator {
                 val newVar = genSym.fresh2()
                 val newPC = Expr.Eq(Expr.Var(newVar), Expr.Plus(Expr.Var(id1), Expr.Var(id2))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
-                // TODO: Could one of these be a var and the other not? I guess so
+              // TODO: Could one of these be a var and the other not? I guess so
             }
 
             case BinaryOperator.LogicalAnd => (v1, v2) match {
