@@ -76,11 +76,39 @@ object SymbolicEvaluator {
     case class Float64(lit: Double) extends SymVal
 
     /**
+      * An Int8 value.
+      *
+      * @param lit the int literal.
+      */
+    case class Int8(lit: Byte) extends SymVal
+
+    /**
+      * An Int16 value.
+      *
+      * @param lit the int literal.
+      */
+    case class Int16(lit: Short) extends SymVal
+
+    /**
       * An Int32 value.
       *
       * @param lit the int literal.
       */
     case class Int32(lit: Int) extends SymVal
+
+    /**
+      * An Int64 value.
+      *
+      * @param lit the int literal.
+      */
+    case class Int64(lit: Long) extends SymVal
+
+    /**
+      * A String value.
+      *
+      * @param lit the int literal.
+      */
+    case class Str(lit: Long) extends SymVal
 
     /**
       * A tag value.
@@ -97,9 +125,20 @@ object SymbolicEvaluator {
       */
     case class Tuple(elms: List[SymVal]) extends SymVal
 
+    /**
+      * A closure value.
+      *
+      * @param exp    the nexpression of the closure.
+      * @param cloVar the name of the closure variable.
+      * @param env    the closure environment.
+      */
+    case class Closure(exp: Expression, cloVar: String, env: Environment) extends SymVal
 
-    case class Closure(exp: Expression.Ref, cloVar: String, env: Environment) extends SymVal
-
+    /**
+      * An environment for closure variables.
+      *
+      * @param m the map from closure variables to symbolic values.
+      */
     case class Environment(m: Map[String, SymVal]) extends SymVal
 
   }
@@ -153,9 +192,24 @@ object SymbolicEvaluator {
       case Expression.Float64(lit) => lift(pc0, SymVal.Float64(lit))
 
       /**
+        * Int8.
+        */
+      case Expression.Int8(lit) => lift(pc0, SymVal.Int8(lit))
+
+      /**
+        * Int16.
+        */
+      case Expression.Int16(lit) => lift(pc0, SymVal.Int16(lit))
+
+      /**
         * Int32.
         */
       case Expression.Int32(lit) => lift(pc0, SymVal.Int32(lit))
+
+      /**
+        * Int64.
+        */
+      case Expression.Int64(lit) => lift(pc0, SymVal.Int64(lit))
 
       /**
         * Local Variable.
@@ -166,8 +220,11 @@ object SymbolicEvaluator {
         * Closure Variable.
         */
       case Expression.ClosureVar(env, name, _, _) =>
+        // Lookup the closure environment.
         val SymVal.Environment(m) = env0(env.name)
+        // Lookup the variable in the closure environment.
         lift(pc0, m(name.name))
+
 
       case Expression.Let(ident, _, exp1, exp2, _, _) =>
         eval(pc0, exp1, env0) flatMap {
@@ -176,6 +233,7 @@ object SymbolicEvaluator {
             newEnv += (ident.name -> v1)
             eval(pc, exp2, newEnv)
         }
+
 
       case Expression.Ref(name, tpe, loc) =>
         val defn = root.constants(name)
@@ -337,6 +395,19 @@ object SymbolicEvaluator {
           case (pc, SymVal.Tuple(elms)) => lift(pc, elms(offset))
           case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
         }
+
+      /**
+        * Unsupported expressions.
+        */
+      case e: Expression.Hook => throw InternalCompilerException(s"Unsupported expression: '$e'.")
+      case e: Expression.LoadBool => throw InternalCompilerException(s"Unsupported expression: '$e'.")
+      case e: Expression.LoadInt8 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
+      case e: Expression.LoadInt16 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
+      case e: Expression.LoadInt32 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
+      case e: Expression.StoreBool => throw InternalCompilerException(s"Unsupported expression: '$e'.")
+      case e: Expression.StoreInt8 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
+      case e: Expression.StoreInt16 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
+      case e: Expression.StoreInt32 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
 
     }
 
