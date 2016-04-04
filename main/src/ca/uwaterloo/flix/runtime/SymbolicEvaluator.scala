@@ -97,9 +97,10 @@ object SymbolicEvaluator {
       */
     case class Tuple(elms: List[SymVal]) extends SymVal
 
-    case class Environment(m: Map[String, SymVal]) extends SymVal
 
     case class Closure(exp: Expression.Ref, cloVar: String, env: Environment) extends SymVal
+
+    case class Environment(m: Map[String, SymVal]) extends SymVal
 
   }
 
@@ -300,11 +301,17 @@ object SymbolicEvaluator {
           }
         }
 
+      /**
+        * Tags.
+        */
       case Expression.Tag(enum, tag, exp, _, _) =>
         eval(pc0, exp, env0) flatMap {
           case (pc, v) => lift(pc, SymVal.Tag(tag.name, v))
         }
 
+      /**
+        * Tuples.
+        */
       case Expression.Tuple(elms, _, _) =>
         evaln(pc0, elms, env0) flatMap {
           case (pc, es) => lift(pc, SymVal.Tuple(es))
