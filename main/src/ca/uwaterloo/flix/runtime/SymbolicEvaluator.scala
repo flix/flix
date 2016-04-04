@@ -61,6 +61,21 @@ object SymbolicEvaluator {
     case object False extends SymVal
 
     /**
+      * A Char value.
+      */
+    case class Char(lit: Int) extends SymVal
+
+    /**
+      * A Float32 value.
+      */
+    case class Float32(lit: Float) extends SymVal
+
+    /**
+      * A Float64 value.
+      */
+    case class Float64(lit: Double) extends SymVal
+
+    /**
       * An Int32 value.
       *
       * @param lit the int literal.
@@ -124,9 +139,22 @@ object SymbolicEvaluator {
       /**
         * Char.
         */
+      case Expression.Char(lit) => lift(pc0, SymVal.Char(lit))
 
+      /**
+        * Float32.
+        */
+      case Expression.Float32(lit) => lift(pc0, SymVal.Float32(lit))
 
-      case Expression.Int32(i) => lift(pc0, SymVal.Int32(i))
+      /**
+        * Float64.
+        */
+      case Expression.Float64(lit) => lift(pc0, SymVal.Float64(lit))
+
+      /**
+        * Int32.
+        */
+      case Expression.Int32(lit) => lift(pc0, SymVal.Int32(lit))
 
       /**
         * Local Variable.
