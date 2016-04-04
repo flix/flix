@@ -353,19 +353,21 @@ object SymbolicEvaluator {
               case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 + i2).asInstanceOf[Short]))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 + i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 + i2))
+
               case (SymVal.AtomicVar(id), v) if isVarOrInt(v) =>
                 // Constructs a path constraint: `newVar = id + i` and returns `newVar`.
                 val newVar = genSym.fresh2()
                 val newPC = Expr.Eq(Expr.Var(newVar), Expr.Plus(Expr.Var(id), toExpr(v))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
+
               case (v, SymVal.AtomicVar(id)) if isVarOrInt(v) =>
                 // Constructs a path constraint: `newVar = id + i` and returns `newVar`.
                 val newVar = genSym.fresh2()
                 val newPC = Expr.Eq(Expr.Var(newVar), Expr.Plus(toExpr(v), Expr.Var(id))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
+
               case _ => throw InternalCompilerException(s"Type Error: Unexpected expression: '$v1 + $v2'.")
             }
-
 
 
             case BinaryOperator.LogicalAnd => (v1, v2) match {
@@ -394,9 +396,12 @@ object SymbolicEvaluator {
           case (pc, c) => c match {
             case SymVal.True => eval(pc, exp2, env0)
             case SymVal.False => eval(pc, exp3, env0)
-            case _ =>
-              println(c)
-              ??? // TODO
+            case SymVal.AtomicVar(id) =>
+              // Evaluate both branches under different path constraints.
+              val consequent = eval(Expr.Var(id) :: pc, exp2, env0.clone())
+              val alternative = eval(Expr.Not(Expr.Var(id)) :: pc, exp3, env0.clone())
+              consequent ++ alternative
+            case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
           }
         }
 

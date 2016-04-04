@@ -62,150 +62,149 @@ namespace Constant {
         case _                                      => Constant.Top
     }
 
-// TODO: Comment this in again.
-//    /**
-//     * Over-approximates integer `subtraction`.
-//     */
-//    @strict @monotone
-//    fn minus(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
-//        case (Constant.Bot, _)                      => Constant.Bot
-//        case (_, Constant.Bot)                      => Constant.Bot
-//        case (Constant.Cst(n1), Constant.Cst(n2))   => Constant.Cst(n1 - n2)
-//        case _                                      => Constant.Top
-//    }
-//
-//    /**
-//     * Over-approximates integer `multiplication`.
-//     */
-//    @strict @monotone @commutative @associative
-//    fn times(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
-//        case (Constant.Bot, _)                      => Constant.Bot
-//        case (_, Constant.Bot)                      => Constant.Bot
-//        case (Constant.Cst(n1), Constant.Cst(n2))   => Constant.Cst(n1 * n2)
-//        case _                                      => Constant.Top
-//    }
-//
-//    /**
-//     * Over-approximates integer `division`.
-//     */
-//    @strict @monotone
-//    fn divide(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
-//        case (Constant.Bot, _)                      => Constant.Bot
-//        case (_, Constant.Bot)                      => Constant.Bot
-//        case (Constant.Cst(n1), Constant.Cst(n2))   => Constant.Cst(n1 / n2)
-//        case _                                      => Constant.Top
-//    }
-//
-//    /**
-//     * Over-approximates integer `modulus`.
-//     */
-//    @strict @monotone
-//    fn modulo(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
-//        case (Constant.Bot, _)                      => Constant.Bot
-//        case (_, Constant.Bot)                      => Constant.Bot
-//        case (Constant.Cst(n1), Constant.Cst(n2))   => Constant.Cst(n1 % n2)
-//        case _                                      => Constant.Top
-//    }
-//
-//    /**
-//     * Over-approximates `bitwise negation`.
-//     */
-//    @strict @monotone
-//    fn negate(e: Constant): Constant = match e with {
-//        case Constant.Bot       => Constant.Bot
-//        case Constant.Cst(n)    => Constant.Cst(~ n)
-//        case Constant.Top       => Constant.Top
-//    }
-//
-//    /**
-//      * Over-approximates `bitwise or`.
-//      */
-//    @strict @monotone @commutative @associative
-//    fn or(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
-//        case (Constant.Bot, _)                      => Constant.Bot
-//        case (_, Constant.Bot)                      => Constant.Bot
-//        case (Constant.Cst(n1), Constant.Cst(n2))   => Constant.Cst(n1 | n2)
-//        case _                                      => Constant.Top
-//    }
-//
-//    /**
-//      * Over-approximates `bitwise and`.
-//      */
-//    @strict @monotone @commutative @associative
-//    fn and(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
-//        case (Constant.Bot, _)                      => Constant.Bot
-//        case (_, Constant.Bot)                      => Constant.Bot
-//        case (Constant.Cst(n1), Constant.Cst(n2))   => Constant.Cst(n1 & n2)
-//        case _                                      => Constant.Top
-//    }
-//
-//    /**
-//      * Over-approximates `bitwise xor`.
-//      */
-//    @strict @monotone @commutative @associative
-//    fn xor(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
-//        case (Constant.Bot, _)                      => Constant.Bot
-//        case (_, Constant.Bot)                      => Constant.Bot
-//        case (Constant.Cst(n1), Constant.Cst(n2))   => Constant.Cst(n1 ^ n2)
-//        case _                                      => Constant.Top
-//    }
-//
-//    /**
-//      * Over-approximates `bitwise left shift`.
-//      */
-//    @strict @monotone
-//    fn leftShift(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
-//        case (Constant.Bot, _)                      => Constant.Bot
-//        case (_, Constant.Bot)                      => Constant.Bot
-//        case (Constant.Cst(n1), Constant.Cst(n2))   => Constant.Cst(n1 << n2)
-//        case _                                      => Constant.Top
-//    }
-//
-//    /**
-//      * Over-approximates `bitwise right shift`.
-//      */
-//    @strict @monotone
-//    fn rightShift(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
-//        case (Constant.Bot, _)                      => Constant.Bot
-//        case (_, Constant.Bot)                      => Constant.Bot
-//        case (Constant.Cst(n1), Constant.Cst(n2))   => Constant.Cst(n1 >> n2)
-//        case _                                      => Constant.Top
-//    }
-//
-//    /**
-//      * Over-approximates `equal`.
-//      */
-//    @strict @monotone @commutative
-//    fn eq(e1: Constant, e2: Constant): Belnap/Belnap = match (e1, e2) with {
-//        case (Constant.Bot, _)                      => Belnap/Belnap.Bot
-//        case (_, Constant.Bot)                      => Belnap/Belnap.Bot
-//        case (Constant.Cst(n1), Constant.Cst(n2))   => Belnap/alpha(n1 == n2)
-//        case _                                      => Belnap/Belnap.Top
-//    }
-//
-//    /**
-//      * Over-approximates `not equal`.
-//      */
-//    @strict @monotone @commutative
-//    fn neq(e1: Constant, e2: Constant): Belnap/Belnap = Belnap/not(eq(e1, e2))
-//
-//    /**
-//      * Over-approximates `less than`.
-//      */
-//    @strict @monotone
-//    fn less(e1: Constant, e2: Constant): Belnap/Belnap = match (e1, e2) with {
-//        case (Constant.Bot, _)                      => Belnap/Belnap.Bot
-//        case (_, Constant.Bot)                      => Belnap/Belnap.Bot
-//        case (Constant.Cst(n1), Constant.Cst(n2))   => Belnap/alpha(n1 < n2)
-//        case _                                      => Belnap/Belnap.Top
-//    }
-//
-//    /**
-//      * Over-approximates `less than or equal`.
-//      */
-//    @strict @monotone
-//    fn lessEqual(e1: Constant, e2: Constant): Belnap/Belnap = Belnap/or(e1 `less` e2, e1 `eq` e2)
-//
-//    let Constant<> = (Constant.Bot, Constant.Top, leq, lub, glb)
+    /**
+     * Over-approximates integer `subtraction`.
+     */
+    @strict @monotone
+    fn minus(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+        case (Constant.Bot, _)                      => Constant.Bot
+        case (_, Constant.Bot)                      => Constant.Bot
+        case (Constant.Cst(n1), Constant.Cst(n2))   => Constant.Cst(n1 - n2)
+        case _                                      => Constant.Top
+    }
+
+    /**
+     * Over-approximates integer `multiplication`.
+     */
+    @strict @monotone @commutative @associative
+    fn times(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+        case (Constant.Bot, _)                      => Constant.Bot
+        case (_, Constant.Bot)                      => Constant.Bot
+        case (Constant.Cst(n1), Constant.Cst(n2))   => Constant.Cst(n1 * n2)
+        case _                                      => Constant.Top
+    }
+
+    /**
+     * Over-approximates integer `division`.
+     */
+    @strict @monotone
+    fn divide(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+        case (Constant.Bot, _)                      => Constant.Bot
+        case (_, Constant.Bot)                      => Constant.Bot
+        case (Constant.Cst(n1), Constant.Cst(n2))   => Constant.Cst(n1 / n2)
+        case _                                      => Constant.Top
+    }
+
+    /**
+     * Over-approximates integer `modulus`.
+     */
+    @strict @monotone
+    fn modulo(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+        case (Constant.Bot, _)                      => Constant.Bot
+        case (_, Constant.Bot)                      => Constant.Bot
+        case (Constant.Cst(n1), Constant.Cst(n2))   => Constant.Cst(n1 % n2)
+        case _                                      => Constant.Top
+    }
+
+    /**
+     * Over-approximates `bitwise negation`.
+     */
+    @strict @monotone
+    fn negate(e: Constant): Constant = match e with {
+        case Constant.Bot       => Constant.Bot
+        case Constant.Cst(n)    => Constant.Cst(~ n)
+        case Constant.Top       => Constant.Top
+    }
+
+    /**
+      * Over-approximates `bitwise or`.
+      */
+    @strict @monotone @commutative @associative
+    fn or(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+        case (Constant.Bot, _)                      => Constant.Bot
+        case (_, Constant.Bot)                      => Constant.Bot
+        case (Constant.Cst(n1), Constant.Cst(n2))   => Constant.Cst(n1 | n2)
+        case _                                      => Constant.Top
+    }
+
+    /**
+      * Over-approximates `bitwise and`.
+      */
+    @strict @monotone @commutative @associative
+    fn and(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+        case (Constant.Bot, _)                      => Constant.Bot
+        case (_, Constant.Bot)                      => Constant.Bot
+        case (Constant.Cst(n1), Constant.Cst(n2))   => Constant.Cst(n1 & n2)
+        case _                                      => Constant.Top
+    }
+
+    /**
+      * Over-approximates `bitwise xor`.
+      */
+    @strict @monotone @commutative @associative
+    fn xor(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+        case (Constant.Bot, _)                      => Constant.Bot
+        case (_, Constant.Bot)                      => Constant.Bot
+        case (Constant.Cst(n1), Constant.Cst(n2))   => Constant.Cst(n1 ^ n2)
+        case _                                      => Constant.Top
+    }
+
+    /**
+      * Over-approximates `bitwise left shift`.
+      */
+    @strict @monotone
+    fn leftShift(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+        case (Constant.Bot, _)                      => Constant.Bot
+        case (_, Constant.Bot)                      => Constant.Bot
+        case (Constant.Cst(n1), Constant.Cst(n2))   => Constant.Cst(n1 << n2)
+        case _                                      => Constant.Top
+    }
+
+    /**
+      * Over-approximates `bitwise right shift`.
+      */
+    @strict @monotone
+    fn rightShift(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+        case (Constant.Bot, _)                      => Constant.Bot
+        case (_, Constant.Bot)                      => Constant.Bot
+        case (Constant.Cst(n1), Constant.Cst(n2))   => Constant.Cst(n1 >> n2)
+        case _                                      => Constant.Top
+    }
+
+    /**
+      * Over-approximates `equal`.
+      */
+    @strict @monotone @commutative
+    fn eq(e1: Constant, e2: Constant): Belnap/Belnap = match (e1, e2) with {
+        case (Constant.Bot, _)                      => Belnap/Belnap.Bot
+        case (_, Constant.Bot)                      => Belnap/Belnap.Bot
+        case (Constant.Cst(n1), Constant.Cst(n2))   => Belnap/alpha(n1 == n2)
+        case _                                      => Belnap/Belnap.Top
+    }
+
+    /**
+      * Over-approximates `not equal`.
+      */
+    @strict @monotone @commutative
+    fn neq(e1: Constant, e2: Constant): Belnap/Belnap = Belnap/not(eq(e1, e2))
+
+    /**
+      * Over-approximates `less than`.
+      */
+    @strict @monotone
+    fn less(e1: Constant, e2: Constant): Belnap/Belnap = match (e1, e2) with {
+        case (Constant.Bot, _)                      => Belnap/Belnap.Bot
+        case (_, Constant.Bot)                      => Belnap/Belnap.Bot
+        case (Constant.Cst(n1), Constant.Cst(n2))   => Belnap/alpha(n1 < n2)
+        case _                                      => Belnap/Belnap.Top
+    }
+
+    /**
+      * Over-approximates `less than or equal`.
+      */
+    @strict @monotone
+    fn lessEqual(e1: Constant, e2: Constant): Belnap/Belnap = Belnap/or(e1 `less` e2, e1 `eq` e2)
+
+    let Constant<> = (Constant.Bot, Constant.Top, leq, lub, glb)
 
 }
