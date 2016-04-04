@@ -308,6 +308,10 @@ object SimplifiedAst {
       * A later phase/pass lifts these lambda functions to top-level definitions,
       * thus they no longer exist after lambda lifting.
       *
+      * During closure conversion, we determine if the lambda contains free variables. If it does, we set the lambda's
+      * `envVar`, which will be added as an additional parameter during lambda lifting. Then, during run time, the
+      * values of the free variables can be obtained via lookup through `envVar`.
+      *
       * @param args the formal arguments to the lambda.
       * @param body the body expression of the lambda.
       * @param tpe  the type of the lambda.
@@ -317,6 +321,7 @@ object SimplifiedAst {
                       body: SimplifiedAst.Expression,
                       tpe: Type.Lambda,
                       loc: SourceLocation) extends SimplifiedAst.Expression {
+      var envVar: Option[Name.Ident] = None
       override def toString: String = "λ(" + args.map(_.tpe).mkString(", ") + ") " + body
     }
 

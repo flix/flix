@@ -61,6 +61,11 @@ object ClosureConv {
       // Then we recurse on the result, to apply closure conversion on any lambdas within the body.
       val lambda = SimplifiedAst.Expression.Lambda(args, convert(substitute(m, body)), tpe, loc)
 
+      // If the lambda contains free variables, then we save the name of the closure environment
+      if (freeVars.nonEmpty) {
+        lambda.envVar = Some(envVar)
+      }
+
       // At this point, `e` is the original lambda expression, but with all free variables replaced with lookups in the
       // closure environment. Additionally, any lambdas within the body have also been closure converted.
 
