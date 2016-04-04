@@ -108,7 +108,7 @@ object SymbolicEvaluator {
       *
       * @param lit the int literal.
       */
-    case class Str(lit: Long) extends SymVal
+    case class Str(lit: String) extends SymVal
 
     /**
       * A tag value.
@@ -140,6 +140,21 @@ object SymbolicEvaluator {
       * @param m the map from closure variables to symbolic values.
       */
     case class Environment(m: Map[String, SymVal]) extends SymVal
+
+    /**
+      * A user error value.
+      */
+    case class UserError(loc: SourceLocation) extends SymVal
+
+    /**
+      * A match error value.
+      */
+    case class MatchError(loc: SourceLocation) extends SymVal
+
+    /**
+      * A switch error value.
+      */
+    case class SwitchError(loc: SourceLocation) extends SymVal
 
   }
 
@@ -212,6 +227,11 @@ object SymbolicEvaluator {
       case Expression.Int64(lit) => lift(pc0, SymVal.Int64(lit))
 
       /**
+        * Str.
+        */
+      case Expression.Str(lit) => lift(pc0, SymVal.Str(lit))
+
+      /**
         * Local Variable.
         */
       case Expression.Var(ident, _, tpe, loc) => lift(pc0, env0(ident.name))
@@ -225,27 +245,14 @@ object SymbolicEvaluator {
         // Lookup the variable in the closure environment.
         lift(pc0, m(name.name))
 
-
-      case Expression.Let(ident, _, exp1, exp2, _, _) =>
-        eval(pc0, exp1, env0) flatMap {
-          case (pc, v1) =>
-            val newEnv = env0.clone()
-            newEnv += (ident.name -> v1)
-            eval(pc, exp2, newEnv)
-        }
-
-
+      /**
+        * Reference.
+        */
       case Expression.Ref(name, tpe, loc) =>
-        val defn = root.constants(name)
-        eval(pc0, defn.exp, env0)
-
-      case Expression.ApplyClosure(exp, args, _, _) =>
-        eval(pc0, exp, env0) flatMap {
-          case (pc, SymVal.Closure(cloExp, cloVar, cloEnv)) =>
-            val newEnv = mutable.Map.empty[String, SymVal]
-            newEnv += (cloVar -> cloEnv)
-            eval(pc, cloExp, newEnv)
-          case (_, v) => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
+        // Lookup and evaluate the definition.
+        root.constants.get(name) match {
+          case None => throw InternalCompilerException(s"Type Error: Unresolved reference '$name'.")
+          case Some(defn) => eval(pc0, defn.exp, env0)
         }
 
       case Expression.ApplyRef(name, args, _, _) =>
@@ -258,6 +265,16 @@ object SymbolicEvaluator {
             }
             eval(pc, defn.exp, newEnv)
         }
+
+      case Expression.ApplyClosure(exp, args, _, _) =>
+        eval(pc0, exp, env0) flatMap {
+          case (pc, SymVal.Closure(cloExp, cloVar, cloEnv)) =>
+            val newEnv = mutable.Map.empty[String, SymVal]
+            newEnv += (cloVar -> cloEnv)
+            eval(pc, cloExp, newEnv)
+          case (_, v) => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
+        }
+
 
       case Expression.MkClosure(lambda, cloVar, freeVars, _, _) =>
         val closureEnv = mutable.Map.empty[String, SymVal]
@@ -359,6 +376,15 @@ object SymbolicEvaluator {
           }
         }
 
+      case Expression.Let(ident, _, exp1, exp2, _, _) =>
+        eval(pc0, exp1, env0) flatMap {
+          case (pc, v1) =>
+            val newEnv = env0.clone()
+            newEnv += (ident.name -> v1)
+            eval(pc, exp2, newEnv)
+        }
+
+
       /**
         * Tags.
         */
@@ -384,6 +410,9 @@ object SymbolicEvaluator {
               lift(pc, SymVal.False)
         }
 
+      /**
+        *
+        */
       case Expression.GetTagValue(tag, exp, _, _) =>
         eval(pc0, exp, env0) flatMap {
           case (pc, SymVal.Tag(_, v)) => lift(pc, v)
@@ -397,9 +426,32 @@ object SymbolicEvaluator {
         }
 
       /**
+        * User Error.
+        */
+      case Expression.UserError(tpe, loc) => lift(pc0, SymVal.UserError(loc))
+
+      /**
+        * Match Error.
+        */
+      case Expression.MatchError(tpe, loc) => lift(pc0, SymVal.MatchError(loc))
+
+      /**
+        * Switch Error
+        */
+      case Expression.SwitchError(tpe, loc) => lift(pc0, SymVal.SwitchError(loc))
+
+      // TODO: These need to be harmonized.
+      case e: Expression.FSet => throw InternalCompilerException(s"Unsupported expression: '$e'.")
+      case e: Expression.CheckNil => throw InternalCompilerException(s"Unsupported expression: '$e'.")
+      case e: Expression.CheckCons => throw InternalCompilerException(s"Unsupported expression: '$e'.")
+
+
+      /**
         * Unsupported expressions.
         */
       case e: Expression.Hook => throw InternalCompilerException(s"Unsupported expression: '$e'.")
+      case e: Expression.Universal => throw InternalCompilerException(s"Unsupported expression: '$e'.")
+      case e: Expression.Existential => throw InternalCompilerException(s"Unsupported expression: '$e'.")
       case e: Expression.LoadBool => throw InternalCompilerException(s"Unsupported expression: '$e'.")
       case e: Expression.LoadInt8 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
       case e: Expression.LoadInt16 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
@@ -446,11 +498,13 @@ object SymbolicEvaluator {
       visit(pc0, xs.toList, env0)
     }
 
+    //  TODO: Replace this by a different enumeration.
     def toSymVal(exp0: Expression): SymVal = exp0 match {
       case Expression.Unit => SymVal.Unit
       case Expression.Var(ident, _, _, _) => SymVal.AtomicVar(ident)
       case Expression.Tag(enum, tag, exp, tpe, loc) =>
         SymVal.Tag(tag.name, toSymVal(exp))
+      case _ => ???
     }
 
 

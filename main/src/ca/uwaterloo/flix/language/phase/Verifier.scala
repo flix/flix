@@ -349,6 +349,7 @@ object Verifier {
     */
   // TODO: replace string by name?
   // TODO: Cleanup
+  // TODO: Return SymVal.
   def enumerate(q: List[Var])(implicit genSym: GenSym): List[Map[String, Expression]] = {
     // Unqualified formula. Used the empty environment.
     if (q.isEmpty)
