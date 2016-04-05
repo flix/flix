@@ -129,13 +129,13 @@ object SymbolicEvaluator {
       def tpe: Type = Type.Bool
     }
 
-    case class Conj(e1: Expr, e2: Expr) extends Expr {
+    case class LogicalAnd(e1: Expr, e2: Expr) extends Expr {
       assert(e1.tpe == Type.Bool && e2.tpe == Type.Bool)
 
       def tpe: Type = Type.Bool
     }
 
-    case class Disj(e1: Expr, e2: Expr) extends Expr {
+    case class LogicalOr(e1: Expr, e2: Expr) extends Expr {
       assert(e1.tpe == Type.Bool && e2.tpe == Type.Bool)
 
       def tpe: Type = Type.Bool
@@ -733,8 +733,8 @@ object SymbolicEvaluator {
               case (SymVal.AtomicVar(id), SymVal.False) => lift(pc, SymVal.False)
 
               case (SymVal.AtomicVar(id1), SymVal.AtomicVar(id2)) => List(
-                (Expr.Conj(Expr.Var(id1, Type.Bool), Expr.Var(id2, Type.Bool)) :: pc, SymVal.True),
-                (Expr.Not(Expr.Conj(Expr.Var(id1, Type.Bool), Expr.Var(id2, Type.Bool))) :: pc, SymVal.False)
+                (Expr.LogicalAnd(Expr.Var(id1, Type.Bool), Expr.Var(id2, Type.Bool)) :: pc, SymVal.True),
+                (Expr.Not(Expr.LogicalAnd(Expr.Var(id1, Type.Bool), Expr.Var(id2, Type.Bool))) :: pc, SymVal.False)
               )
 
               case _ => throw InternalCompilerException(s"Type Error: Unexpected expression: '$v1 && $v2'.")
@@ -764,8 +764,8 @@ object SymbolicEvaluator {
               )
 
               case (SymVal.AtomicVar(id1), SymVal.AtomicVar(id2)) => List(
-                (Expr.Disj(Expr.Var(id1, Type.Bool), Expr.Var(id2, Type.Bool)) :: pc, SymVal.True),
-                (Expr.Not(Expr.Disj(Expr.Var(id1, Type.Bool), Expr.Var(id2, Type.Bool))) :: pc, SymVal.False)
+                (Expr.LogicalOr(Expr.Var(id1, Type.Bool), Expr.Var(id2, Type.Bool)) :: pc, SymVal.True),
+                (Expr.Not(Expr.LogicalOr(Expr.Var(id1, Type.Bool), Expr.Var(id2, Type.Bool))) :: pc, SymVal.False)
               )
 
               case _ => throw InternalCompilerException(s"Type Error: Unexpected expression: '$v1 || $v2'.")
