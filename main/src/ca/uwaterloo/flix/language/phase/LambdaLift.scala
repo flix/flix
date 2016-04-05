@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.SimplifiedAst
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
@@ -48,7 +48,7 @@ object LambdaLift {
         case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) => e
         case SimplifiedAst.Expression.Ref(name, tpe, loc) => e
 
-        case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
+        case lam @ SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
           // Lift the lambda to a top-level definition, and replacing the Lambda expression with a Ref.
 
           // First, recursively visit the lambda body, lifting any inner lambdas.
@@ -57,8 +57,18 @@ object LambdaLift {
           // Then, generate a fresh name for the lifted lambda.
           val name = genSym.freshDefn(decl.name.parts)
 
+          // If the lambda term has an envVar, then it has free variables. So rewrite the arguments and type to take an
+          // additional parameter: the closure environment
+          val (args2, tpe2) = lam.envVar match {
+            case Some(envVar) =>
+              val newArgs = args :+ SimplifiedAst.FormalArg(envVar, Type.ClosureEnv)
+              val newTpe = Type.Lambda(tpe.args :+ Type.ClosureEnv, tpe.retTpe)
+              (newArgs, newTpe)
+            case None => (args, tpe)
+          }
+
           // Create a new top-level definition, using the fresh name and lifted body.
-          val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), name, args, exp, tpe, loc)
+          val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), name, args2, exp, tpe2, loc)
 
           // Update the map that holds newly-generated definitions
           m += (name -> defn)

@@ -167,7 +167,8 @@ class Flix {
       case ast =>
         val sast = Simplifier.simplify(ast)
         val lifted = LambdaLift.lift(sast)
-        val east = CreateExecutableAst.toExecutable(lifted)
+        val numbered = VarNumbering.number(lifted)
+        val east = CreateExecutableAst.toExecutable(numbered)
         if (options.verify == Verify.Enabled) {
           for (r <- Verifier.checkAll(sast)) {
             Console.println(r.message)
