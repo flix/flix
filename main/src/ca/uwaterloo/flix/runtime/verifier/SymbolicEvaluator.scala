@@ -6,8 +6,9 @@ import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression._
 import ca.uwaterloo.flix.language.phase.GenSym
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-import scala.collection.mutable
-
+/**
+  * Symbolic evaluator that supports symbolic values and collects path constraints.
+  */
 object SymbolicEvaluator {
 
   /**
@@ -18,7 +19,7 @@ object SymbolicEvaluator {
   /**
     * The type of environments.
     */
-  type Environment = mutable.Map[String, SymVal] // TODO: Consider immutable map
+  type Environment = Map[String, SymVal]
 
   // TODO: Consider ContextType
 
@@ -109,35 +110,51 @@ object SymbolicEvaluator {
           case Some(defn) => eval(pc0, defn.exp, env0)
         }
 
-      // TODO: Document
+      /**
+        * Closure.
+        */
+      case Expression.MkClosure(lambda, cloVar, freeVars, _, _) =>
+        // The reference to the code component.
+        val ref = lambda.asInstanceOf[Ref]
+        // Build the closure environment where all the
+        // free variables are bound to their current values.
+        val env = freeVars.foldLeft(Map.empty[String, SymVal]) {
+          case (macc, freeVar) => macc + (freeVar.name -> env0(freeVar.name))
+        }
+        // Construct the closure.
+        val clo = SymVal.Closure(ref, cloVar.name, SymVal.Environment(env))
+        lift(pc0, clo)
+
+      /**
+        * Apply Reference.
+        */
       case Expression.ApplyRef(name, args, _, _) =>
+        // Lookup the reference.
         val defn = root.constants(name)
+        // Evaluate all the arguments.
         evaln(pc0, args, env0) flatMap {
           case (pc, as) =>
-            val newEnv = mutable.Map.empty[String, SymVal]
-            for ((formal, actual) <- defn.formals zip as) {
-              newEnv += (formal.ident.name -> actual)
+            // Bind the actual arguments to the formal variables.
+            val newEnv = (defn.formals zip as).foldLeft(Map.empty[String, SymVal]) {
+              case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
             }
+            // Evaluate the body under the new environment.
             eval(pc, defn.exp, newEnv)
         }
-      // TODO: Document
+
+      /**
+        * Apply Closure.
+        */
+      // TODO: Something seems to be missing with the regular arguments.
       case Expression.ApplyClosure(exp, args, _, _) =>
+        // Evaluate the closure.
         eval(pc0, exp, env0) flatMap {
           case (pc, SymVal.Closure(cloExp, cloVar, cloEnv)) =>
-            val newEnv = mutable.Map.empty[String, SymVal]
-            newEnv += (cloVar -> cloEnv)
+            // Construct the environment.
+            val newEnv = Map(cloVar -> cloEnv)
             eval(pc, cloExp, newEnv)
           case (_, v) => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
         }
-
-      // TODO: Document
-      case Expression.MkClosure(lambda, cloVar, freeVars, _, _) =>
-        val closureEnv = mutable.Map.empty[String, SymVal]
-        for (freeVar <- freeVars) {
-          closureEnv += (freeVar.name -> env0(freeVar.name))
-        }
-        val cloVal = SymVal.Closure(lambda.asInstanceOf[Ref], cloVar.name, SymVal.Environment(closureEnv.toMap))
-        lift(pc0, cloVal)
 
       /**
         * Unary.
@@ -626,8 +643,8 @@ object SymbolicEvaluator {
             case SymVal.False => eval(pc, exp3, env0)
             case SymVal.AtomicVar(id) =>
               // Evaluate both branches under different path constraints.
-              val consequent = eval(SmtExpr.Var(id, Type.Bool) :: pc, exp2, env0.clone())
-              val alternative = eval(SmtExpr.Not(SmtExpr.Var(id, Type.Bool)) :: pc, exp3, env0.clone())
+              val consequent = eval(SmtExpr.Var(id, Type.Bool) :: pc, exp2, env0)
+              val alternative = eval(SmtExpr.Not(SmtExpr.Var(id, Type.Bool)) :: pc, exp3, env0)
               consequent ++ alternative
             case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
           }
@@ -640,8 +657,7 @@ object SymbolicEvaluator {
         eval(pc0, exp1, env0) flatMap {
           case (pc, v1) =>
             // Bind the variable to the value of `exp1` which is `v1`.
-            val newEnv = env0.clone()
-            newEnv += (ident.name -> v1)
+            val newEnv = env0 + (ident.name -> v1)
             eval(pc, exp2, newEnv)
         }
 
@@ -803,9 +819,8 @@ object SymbolicEvaluator {
     /**
       * Construct the initial environment.
       */
-    val initEnv = mutable.Map.empty[String, SymVal]
-    for ((name, exp) <- env0) {
-      initEnv += (name -> toSymVal(exp))
+    val initEnv = env0.foldLeft(Map.empty[String, SymVal]) {
+      case (macc, (name, exp)) => macc + (name -> toSymVal(exp))
     }
 
     eval(Nil, exp0, initEnv)
