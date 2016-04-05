@@ -48,33 +48,33 @@ object LambdaLift {
         case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) => e
         case SimplifiedAst.Expression.Ref(name, tpe, loc) => e
 
-        case lam: SimplifiedAst.Expression.Lambda =>
+        case lam @ SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
           // Lift the lambda to a top-level definition, and replacing the Lambda expression with a Ref.
 
           // First, recursively visit the lambda body, lifting any inner lambdas.
-          val exp = visit(m, lam.body)
+          val exp = visit(m, body)
 
           // Then, generate a fresh name for the lifted lambda.
           val name = genSym.freshDefn(decl.name.parts)
 
           // If the lambda term has an envVar, then it has free variables. So rewrite the arguments and type to take an
           // additional parameter: the closure environment
-          val (args, tpe) = lam.envVar match {
+          val (args2, tpe2) = lam.envVar match {
             case Some(envVar) =>
-              val newArgs = lam.args :+ SimplifiedAst.FormalArg(envVar, Type.ClosureEnv)
-              val newTpe = Type.Lambda(lam.tpe.args :+ Type.ClosureEnv, lam.tpe.retTpe)
+              val newArgs = args :+ SimplifiedAst.FormalArg(envVar, Type.ClosureEnv)
+              val newTpe = Type.Lambda(tpe.args :+ Type.ClosureEnv, tpe.retTpe)
               (newArgs, newTpe)
-            case None => (lam.args, lam.tpe)
+            case None => (args, tpe)
           }
 
           // Create a new top-level definition, using the fresh name and lifted body.
-          val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), name, args, exp, tpe, lam.loc)
+          val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), name, args2, exp, tpe2, loc)
 
           // Update the map that holds newly-generated definitions
           m += (name -> defn)
 
           // Finally, replace this current Lambda node with a Ref to the newly-generated name.
-          SimplifiedAst.Expression.Ref(name, lam.tpe, lam.loc)
+          SimplifiedAst.Expression.Ref(name, tpe, loc)
 
         case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
         case SimplifiedAst.Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc) => e
