@@ -153,6 +153,12 @@ object SymbolicEvaluator {
       def tpe: Type = Type.Bool
     }
 
+    case class BitwiseNegate(e: Expr) extends Expr {
+      assert(numeric(e.tpe))
+
+      def tpe: Type = e.tpe
+    }
+
     case class BitwiseAnd(e1: Expr, e2: Expr) extends Expr {
       assert(numeric(common(e1.tpe, e2.tpe)))
 
@@ -181,19 +187,6 @@ object SymbolicEvaluator {
       assert(numeric(common(e1.tpe, e2.tpe)))
 
       def tpe: Type = common(e1.tpe, e2.tpe)
-    }
-
-    // TODO: What about these?:
-    case class UnaryMinus(e: Expr) extends Expr {
-      assert(numeric(e.tpe))
-
-      def tpe: Type = e.tpe
-    }
-
-    case class BitwiseNegate(e: Expr) extends Expr {
-      assert(numeric(e.tpe))
-
-      def tpe: Type = e.tpe
     }
 
   }
@@ -497,7 +490,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case SymVal.AtomicVar(id) =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Equal(Expr.Var(newVar, exp0.tpe), Expr.UnaryMinus(Expr.Var(id, exp.tpe))) :: pc
+                val newPC = Expr.Equal(Expr.Var(newVar, exp0.tpe), Expr.Minus(zeroOf(exp.tpe), Expr.Var(id, exp.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
 
               case _ => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
@@ -1133,6 +1126,16 @@ object SymbolicEvaluator {
     */
   private def toBool(b: Boolean): SymVal =
     if (b) SymVal.True else SymVal.False
+
+
+  // TODO: Doc
+  private def zeroOf(tpe: Type): Expr = tpe match {
+    case Type.Int8 => Expr.Int8(0)
+    case Type.Int16 => Expr.Int16(0)
+    case Type.Int32 => Expr.Int32(0)
+    case Type.Int64 => Expr.Int64(0)
+    case _ => throw InternalCompilerException(s"Unexpected type '$tpe'.")
+  }
 
   // TODO: DOC
   private def common(tpe1: Type, tpe2: Type): Type =
