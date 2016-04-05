@@ -4,8 +4,7 @@ import ca.uwaterloo.flix.language._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression._
-import ca.uwaterloo.flix.runtime.verifier.{SmtExpr, SymbolicEvaluator}
-import ca.uwaterloo.flix.runtime.verifier.SymbolicEvaluator.SymVal
+import ca.uwaterloo.flix.runtime.verifier.{SmtExpr, SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import com.microsoft.z3.{BitVecNum, Expr, _}
 
@@ -305,13 +304,13 @@ object Verifier {
               mkContext(ctx => {
                 val q = visitPathConstraint(pc, ctx)
                 checkSat(q, ctx) match {
-                  case Result.Unsatisfiable =>
+                  case SmtResult.Unsatisfiable =>
                     // Case 3.1: The formula is UNSAT, i.e. the property HOLDS.
                     Nil
-                  case Result.Satisfiable(model) =>
+                  case SmtResult.Satisfiable(model) =>
                     // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.
                     List(fail(property, mkModel(env0, model))) // TODO MAp
-                  case Result.Unknown =>
+                  case SmtResult.Unknown =>
                     // Case 3.3: It is unknown whether the formula has a model.
                     ???
                 }
@@ -422,91 +421,110 @@ object Verifier {
     case (f, e) => ctx.mkAnd(f, visitBoolExpr(e, ctx))
   }
 
-  def visitBoolExpr(e0: SmtExpr, ctx: Context): BoolExpr = e0 match {
+  /**
+    * Translates the given SMT expression `exp0` into a Z3 boolean expression.
+    */
+  def visitBoolExpr(exp0: SmtExpr, ctx: Context): BoolExpr = exp0 match {
     case SmtExpr.Equal(e1, e2) => ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
     case SmtExpr.NotEqual(e1, e2) => ctx.mkNot(ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx)))
   }
 
-
+  /**
+    * Translates the given SMT expression `exp0` into a Z3 bit vector expression.
+    */
   def visitBitVecExpr(e0: SmtExpr, ctx: Context): BitVecExpr = e0 match {
-    case SmtExpr.Var(id, tpe) => ctx.mkBVConst(id.name, 32) // TODO: Width
+    case SmtExpr.Int8(i) => ctx.mkBV(i, 8)
+    case SmtExpr.Int16(i) => ctx.mkBV(i, 16)
+    case SmtExpr.Int32(i) => ctx.mkBV(i, 32)
+    case SmtExpr.Int64(i) => ctx.mkBV(i, 64)
+    case SmtExpr.Var(id, tpe) => tpe match {
+      case Type.Int8 => ctx.mkBVConst(id.name, 8)
+      case Type.Int16 => ctx.mkBVConst(id.name, 16)
+      case Type.Int32 => ctx.mkBVConst(id.name, 32)
+      case Type.Int64 => ctx.mkBVConst(id.name, 64)
+      case _ => throw InternalCompilerException(s"Unexpected non-int type: '$tpe'.")
+    }
+
     case SmtExpr.Plus(e1, e2) => ctx.mkBVAdd(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
   }
 
-  // TODO: Below here is old ... ---------------------
+  //
+  //  // TODO: Below here is old ... ---------------------
+  //
+  //  /**
+  //    * Translates the given expression `e0` into a Z3 boolean expression.
+  //    *
+  //    * Assumes that all lambdas, calls and let bindings have been removed.
+  //    * (In addition to all tags, tuples, sets, maps, etc.)
+  //    */
+  //  def visitBoolExpr(e0: Expression, ctx: Context): BoolExpr = e0 match {
+  //    case True => ctx.mkBool(true)
+  //    case False => ctx.mkBool(false)
+  //    case Var(ident, offset, tpe, loc) => ctx.mkBoolConst(ident.name)
+  //    case Unary(op, e1, tpe, loc) => op match {
+  //      case UnaryOperator.LogicalNot => ctx.mkNot(visitBoolExpr(e1, ctx))
+  //      case _ => throw InternalCompilerException(s"Illegal unary operator: $op.")
+  //    }
+  //    case Binary(op, e1, e2, tpe, loc) => op match {
+  //      case BinaryOperator.Less => ctx.mkBVSLT(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+  //      case BinaryOperator.LessEqual => ctx.mkBVSLE(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+  //      case BinaryOperator.Greater => ctx.mkBVSGT(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+  //      case BinaryOperator.GreaterEqual => ctx.mkBVSGE(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+  //      case BinaryOperator.Equal | BinaryOperator.NotEqual =>
+  //        val (f1, f2) = (e1.tpe, e2.tpe) match {
+  //          case (Type.Bool, Type.Bool) => (visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
+  //          case (Type.Int32, Type.Int32) => (visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+  //          case _ => throw InternalCompilerException(s"Illegal type: ${(e1.tpe, e2.tpe)}.")
+  //        }
+  //        if (op == BinaryOperator.Equal)
+  //          ctx.mkEq(f1, f2)
+  //        else
+  //          ctx.mkNot(ctx.mkEq(f1, f2))
+  //      case BinaryOperator.LogicalAnd => ctx.mkAnd(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
+  //      case BinaryOperator.LogicalOr => ctx.mkOr(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
+  //      case _ => throw InternalCompilerException(s"Illegal binary operator: $op.")
+  //    }
+  //    case IfThenElse(e1, e2, e3, tpe, loc) =>
+  //      val f1 = visitBoolExpr(e1, ctx)
+  //      val f2 = visitBoolExpr(e2, ctx)
+  //      val f3 = visitBoolExpr(e3, ctx)
+  //      ctx.mkOr(
+  //        ctx.mkAnd(f1, f2),
+  //        ctx.mkAnd(ctx.mkNot(f1), f3)
+  //      )
+  //    case _ => throw InternalCompilerException(s"Unexpected expression: $e0.")
+  //  }
+  //
+  //  /**
+  //    * Translates the given expression `e` into a Z3 bit vector expression.
+  //    *
+  //    * Assumes that all lambdas, calls and let bindings have been removed.
+  //    * (In addition to all tags, tuples, sets, maps, etc.)
+  //    */
+  //  def visitBitVecExpr(e0: Expression, ctx: Context): BitVecExpr = e0 match {
+  //    case Var(ident, offset, tpe, loc) => ctx.mkBVConst(ident.name, 32)
+  //    case Int32(i) => ctx.mkBV(i, 32)
+  //    case Unary(op, e1, tpe, loc) => op match {
+  //      case UnaryOperator.BitwiseNegate => ctx.mkBVNot(visitBitVecExpr(e1, ctx))
+  //      case _ => throw InternalCompilerException(s"Illegal unary operator: $op.")
+  //    }
+  //    case Binary(op, e1, e2, tpe, loc) => op match {
+  //      case BinaryOperator.Plus => ctx.mkBVAdd(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+  //      case BinaryOperator.Minus => ctx.mkBVSub(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+  //      case BinaryOperator.Times => ctx.mkBVMul(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+  //      case BinaryOperator.Divide => ctx.mkBVSDiv(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+  //      case BinaryOperator.Modulo => ctx.mkBVSMod(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+  //      case BinaryOperator.BitwiseAnd => ctx.mkBVAND(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+  //      case BinaryOperator.BitwiseOr => ctx.mkBVOR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+  //      case BinaryOperator.BitwiseXor => ctx.mkBVXOR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+  //      case BinaryOperator.BitwiseLeftShift => ctx.mkBVSHL(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+  //      case BinaryOperator.BitwiseRightShift => ctx.mkBVLSHR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+  //      case _ => throw InternalCompilerException(s"Illegal binary operator: $op.")
+  //    }
+  //    case _ => throw InternalCompilerException(s"Unexpected expression: $e0.")
+  //  }
 
-  /**
-    * Translates the given expression `e0` into a Z3 boolean expression.
-    *
-    * Assumes that all lambdas, calls and let bindings have been removed.
-    * (In addition to all tags, tuples, sets, maps, etc.)
-    */
-  def visitBoolExpr(e0: Expression, ctx: Context): BoolExpr = e0 match {
-    case True => ctx.mkBool(true)
-    case False => ctx.mkBool(false)
-    case Var(ident, offset, tpe, loc) => ctx.mkBoolConst(ident.name)
-    case Unary(op, e1, tpe, loc) => op match {
-      case UnaryOperator.LogicalNot => ctx.mkNot(visitBoolExpr(e1, ctx))
-      case _ => throw InternalCompilerException(s"Illegal unary operator: $op.")
-    }
-    case Binary(op, e1, e2, tpe, loc) => op match {
-      case BinaryOperator.Less => ctx.mkBVSLT(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-      case BinaryOperator.LessEqual => ctx.mkBVSLE(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-      case BinaryOperator.Greater => ctx.mkBVSGT(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-      case BinaryOperator.GreaterEqual => ctx.mkBVSGE(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-      case BinaryOperator.Equal | BinaryOperator.NotEqual =>
-        val (f1, f2) = (e1.tpe, e2.tpe) match {
-          case (Type.Bool, Type.Bool) => (visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
-          case (Type.Int32, Type.Int32) => (visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-          case _ => throw InternalCompilerException(s"Illegal type: ${(e1.tpe, e2.tpe)}.")
-        }
-        if (op == BinaryOperator.Equal)
-          ctx.mkEq(f1, f2)
-        else
-          ctx.mkNot(ctx.mkEq(f1, f2))
-      case BinaryOperator.LogicalAnd => ctx.mkAnd(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
-      case BinaryOperator.LogicalOr => ctx.mkOr(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
-      case _ => throw InternalCompilerException(s"Illegal binary operator: $op.")
-    }
-    case IfThenElse(e1, e2, e3, tpe, loc) =>
-      val f1 = visitBoolExpr(e1, ctx)
-      val f2 = visitBoolExpr(e2, ctx)
-      val f3 = visitBoolExpr(e3, ctx)
-      ctx.mkOr(
-        ctx.mkAnd(f1, f2),
-        ctx.mkAnd(ctx.mkNot(f1), f3)
-      )
-    case _ => throw InternalCompilerException(s"Unexpected expression: $e0.")
-  }
-
-  /**
-    * Translates the given expression `e` into a Z3 bit vector expression.
-    *
-    * Assumes that all lambdas, calls and let bindings have been removed.
-    * (In addition to all tags, tuples, sets, maps, etc.)
-    */
-  def visitBitVecExpr(e0: Expression, ctx: Context): BitVecExpr = e0 match {
-    case Var(ident, offset, tpe, loc) => ctx.mkBVConst(ident.name, 32)
-    case Int32(i) => ctx.mkBV(i, 32)
-    case Unary(op, e1, tpe, loc) => op match {
-      case UnaryOperator.BitwiseNegate => ctx.mkBVNot(visitBitVecExpr(e1, ctx))
-      case _ => throw InternalCompilerException(s"Illegal unary operator: $op.")
-    }
-    case Binary(op, e1, e2, tpe, loc) => op match {
-      case BinaryOperator.Plus => ctx.mkBVAdd(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-      case BinaryOperator.Minus => ctx.mkBVSub(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-      case BinaryOperator.Times => ctx.mkBVMul(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-      case BinaryOperator.Divide => ctx.mkBVSDiv(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-      case BinaryOperator.Modulo => ctx.mkBVSMod(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-      case BinaryOperator.BitwiseAnd => ctx.mkBVAND(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-      case BinaryOperator.BitwiseOr => ctx.mkBVOR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-      case BinaryOperator.BitwiseXor => ctx.mkBVXOR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-      case BinaryOperator.BitwiseLeftShift => ctx.mkBVSHL(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-      case BinaryOperator.BitwiseRightShift => ctx.mkBVLSHR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-      case _ => throw InternalCompilerException(s"Illegal binary operator: $op.")
-    }
-    case _ => throw InternalCompilerException(s"Unexpected expression: $e0.")
-  }
+  // TODO: Move into seperate classes.
 
   /////////////////////////////////////////////////////////////////////////////
   // Interface to Z3                                                         //
@@ -564,39 +582,39 @@ object Verifier {
   /**
     * Checks the satisfiability of the given boolean formula `f`.
     */
-  def checkSat(f: BoolExpr, ctx: Context): Result = {
+  def checkSat(f: BoolExpr, ctx: Context): SmtResult = {
     val solver = ctx.mkSolver()
     solver.add(f)
     solver.check() match {
-      case Status.SATISFIABLE => Result.Satisfiable(solver.getModel)
-      case Status.UNSATISFIABLE => Result.Unsatisfiable
-      case Status.UNKNOWN => Result.Unknown
+      case Status.SATISFIABLE => SmtResult.Satisfiable(solver.getModel)
+      case Status.UNSATISFIABLE => SmtResult.Unsatisfiable
+      case Status.UNKNOWN => SmtResult.Unknown
     }
   }
 
   /**
     * A common super-type that represents the result of an SMT query.
     */
-  sealed trait Result
+  sealed trait SmtResult
 
-  object Result {
+  object SmtResult {
 
     /**
       * The SMT query is satisfiable, i.e. it has at least one model.
       *
       * @param model a model that satisfies the SMT query.
       */
-    case class Satisfiable(model: Model) extends Result
+    case class Satisfiable(model: Model) extends SmtResult
 
     /**
       * The SMT query is unsatisfiable, i.e. it has no model.
       */
-    case object Unsatisfiable extends Result
+    case object Unsatisfiable extends SmtResult
 
     /**
       * The SMT query may or may not be satisfiable, i.e. it is unknown if there is a model.
       */
-    case object Unknown extends Result
+    case object Unknown extends SmtResult
 
   }
 
