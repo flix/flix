@@ -44,6 +44,8 @@ object SymbolicEvaluator {
 
     case class UnaryMinus(e: Expr) extends Expr
 
+    case class BitwiseNegate(e: Expr) extends Expr
+
     case class Plus(e1: Expr, e2: Expr) extends Expr
 
     case class Minus(e1: Expr, e2: Expr) extends Expr
@@ -348,14 +350,17 @@ object SymbolicEvaluator {
             /**
               * Unary Not.
               */
-            // TODO: Document
             case UnaryOperator.LogicalNot => v match {
+              // Concrete semantics.
               case SymVal.True => lift(pc, SymVal.False)
               case SymVal.False => lift(pc, SymVal.True)
+
+              // Symbolic Semantics.
               case SymVal.AtomicVar(id) => List(
                 (Expr.Var(id) :: pc, SymVal.False),
                 (Expr.Not(Expr.Var(id)) :: pc, SymVal.True)
               )
+
               case _ => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
             }
 
@@ -368,19 +373,39 @@ object SymbolicEvaluator {
               * Unary Minus.
               */
             case UnaryOperator.Minus => v match {
-              // TODO: Other ints
+              // Concrete semantics.
+              case SymVal.Int8(i) => lift(pc, SymVal.Int8((-i).toByte))
+              case SymVal.Int16(i) => lift(pc, SymVal.Int16((-i).toShort))
               case SymVal.Int32(i) => lift(pc, SymVal.Int32(-i))
+              case SymVal.Int64(i) => lift(pc, SymVal.Int64(-i))
+
+              // Symbolic semantics.
               case SymVal.AtomicVar(id) =>
                 val newVar = genSym.fresh2()
                 val newPC = Expr.Eq(Expr.Var(newVar), Expr.UnaryMinus(Expr.Var(id))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
+
               case _ => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
             }
 
-            //            /**
-            //              * Unary Bitwise Negate.
-            //              */
-            //            case UnaryOperator.BitwiseNegate => ??? // TODO
+            /**
+              * Unary Bitwise Negate.
+              */
+            case UnaryOperator.BitwiseNegate => v match {
+              // Concrete semantics
+              case SymVal.Int8(i) => lift(pc, SymVal.Int8((~i).toByte))
+              case SymVal.Int16(i) => lift(pc, SymVal.Int16((~i).toShort))
+              case SymVal.Int32(i) => lift(pc, SymVal.Int32(~i))
+              case SymVal.Int64(i) => lift(pc, SymVal.Int64(~i))
+
+              // Symbolic semantics
+              case SymVal.AtomicVar(id) =>
+                val newVar = genSym.fresh2()
+                val newPC = Expr.Eq(Expr.Var(newVar), Expr.BitwiseNegate(Expr.Var(id))) :: pc
+                lift(newPC, SymVal.AtomicVar(newVar))
+
+              case _ => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
+            }
 
           }
         }
@@ -397,8 +422,8 @@ object SymbolicEvaluator {
               */
             case BinaryOperator.Plus => (v1, v2) match {
               // Concrete semantics.
-              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 + i2).asInstanceOf[Byte]))
-              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 + i2).asInstanceOf[Short]))
+              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 + i2).toByte))
+              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 + i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 + i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 + i2))
 
@@ -421,8 +446,8 @@ object SymbolicEvaluator {
               */
             case BinaryOperator.Minus => (v1, v2) match {
               // Concrete semantics.
-              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 - i2).asInstanceOf[Byte]))
-              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 - i2).asInstanceOf[Short]))
+              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 - i2).toByte))
+              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 - i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 - i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 - i2))
 
@@ -445,8 +470,8 @@ object SymbolicEvaluator {
               */
             case BinaryOperator.Times => (v1, v2) match {
               // Concrete semantics.
-              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 * i2).asInstanceOf[Byte]))
-              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 * i2).asInstanceOf[Short]))
+              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 * i2).toByte))
+              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 * i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 * i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 * i2))
 
@@ -469,8 +494,8 @@ object SymbolicEvaluator {
               */
             case BinaryOperator.Divide => (v1, v2) match {
               // Concrete semantics.
-              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 / i2).asInstanceOf[Byte]))
-              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 / i2).asInstanceOf[Short]))
+              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 / i2).toByte))
+              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 / i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 / i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 / i2))
 
@@ -494,8 +519,8 @@ object SymbolicEvaluator {
               */
             case BinaryOperator.Modulo => (v1, v2) match {
               // Concrete semantics.
-              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 % i2).asInstanceOf[Byte]))
-              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 % i2).asInstanceOf[Short]))
+              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 % i2).toByte))
+              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 % i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 % i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 % i2))
 
@@ -518,10 +543,10 @@ object SymbolicEvaluator {
               */
             case BinaryOperator.Exponentiate => (v1, v2) match {
               // Concrete semantics.
-              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((Math.pow(i1, i2)).asInstanceOf[Byte]))
-              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((Math.pow(i1, i2)).asInstanceOf[Short]))
-              case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(Math.pow(i1, i2).asInstanceOf[Int]))
-              case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(Math.pow(i1, i2).asInstanceOf[Long]))
+              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8(Math.pow(i1, i2).toByte))
+              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16(Math.pow(i1, i2).toShort))
+              case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(Math.pow(i1, i2).toInt))
+              case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(Math.pow(i1, i2).toLong))
 
               // Symbolic semantics.
               case (SymVal.AtomicVar(id), v) if isVarOrInt(v) =>
@@ -754,8 +779,8 @@ object SymbolicEvaluator {
               */
             case BinaryOperator.BitwiseAnd => (v1, v2) match {
               // Concrete semantics.
-              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 & i2).asInstanceOf[Byte]))
-              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 & i2).asInstanceOf[Short]))
+              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 & i2).toByte))
+              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 & i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 & i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 & i2))
 
@@ -778,8 +803,8 @@ object SymbolicEvaluator {
               */
             case BinaryOperator.BitwiseOr => (v1, v2) match {
               // Concrete semantics.
-              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 | i2).asInstanceOf[Byte]))
-              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 | i2).asInstanceOf[Short]))
+              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 | i2).toByte))
+              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 | i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 | i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 | i2))
 
@@ -802,8 +827,8 @@ object SymbolicEvaluator {
               */
             case BinaryOperator.BitwiseXor => (v1, v2) match {
               // Concrete semantics.
-              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 ^ i2).asInstanceOf[Byte]))
-              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 ^ i2).asInstanceOf[Short]))
+              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 ^ i2).toByte))
+              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 ^ i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 ^ i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 ^ i2))
 
@@ -826,8 +851,8 @@ object SymbolicEvaluator {
               */
             case BinaryOperator.BitwiseLeftShift => (v1, v2) match {
               // Concrete semantics.
-              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 << i2).asInstanceOf[Byte]))
-              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 << i2).asInstanceOf[Short]))
+              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 << i2).toByte))
+              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 << i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 << i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 << i2))
 
@@ -850,8 +875,8 @@ object SymbolicEvaluator {
               */
             case BinaryOperator.BitwiseRightShift => (v1, v2) match {
               // Concrete semantics.
-              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 >> i2).asInstanceOf[Byte]))
-              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 >> i2).asInstanceOf[Short]))
+              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 >> i2).toByte))
+              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 >> i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 >> i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 >> i2))
 
@@ -868,8 +893,6 @@ object SymbolicEvaluator {
 
               case _ => throw InternalCompilerException(s"Type Error: Unexpected expression: '$v1 ^ $v2'.")
             }
-
-
           }
         }
 
@@ -964,11 +987,10 @@ object SymbolicEvaluator {
         */
       case Expression.SwitchError(tpe, loc) => lift(pc0, SymVal.SwitchError(loc))
 
-      // TODO: These need to be harmonized.
+      // NB: Not yet fully implemented in the backend.
       case e: Expression.FSet => throw InternalCompilerException(s"Unsupported expression: '$e'.")
       case e: Expression.CheckNil => throw InternalCompilerException(s"Unsupported expression: '$e'.")
       case e: Expression.CheckCons => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-
 
       /**
         * Unsupported expressions.
@@ -1080,16 +1102,5 @@ object SymbolicEvaluator {
     */
   private def toBool(b: Boolean): SymVal =
     if (b) SymVal.True else SymVal.False
-
-  /**
-    * Short-hand for casting an Int to a Byte.
-    */
-  private def toByte(i: Int): Byte = i.asInstanceOf[Byte]
-
-  /**
-    * Short-hand for casting an Int to a Short.
-    */
-  private def toShort(i: Int): Short = i.asInstanceOf[Short]
-
 
 }
