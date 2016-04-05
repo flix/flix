@@ -15,7 +15,11 @@ object SymbolicEvaluator {
 
   object Expr {
 
-    case class Int8(lit: Byte) extends Expr
+    // TODO: Sort
+
+    case class Int8(lit: Byte) extends Expr {
+      def tpe: Type = Type.Int8
+    }
 
     case class Int16(lit: Short) extends Expr
 
@@ -25,7 +29,10 @@ object SymbolicEvaluator {
 
     case class Var(ident: Name.Ident) extends Expr
 
-    case class Not(e: Expr) extends Expr
+    case class Not(e: Expr) extends Expr {
+      //assert(e.tpe == Type.Bool)
+      def tpe: Type = Type.Bool
+    }
 
     case class Conj(e1: Expr, e2: Expr) extends Expr
 
@@ -46,6 +53,16 @@ object SymbolicEvaluator {
     case class Divide(e1: Expr, e2: Expr) extends Expr
 
     case class Modulo(e1: Expr, e2: Expr) extends Expr
+
+    case class Exponentiate(e1: Expr, e2: Expr) extends Expr
+
+    case class Less(e1: Expr, e2: Expr) extends Expr
+
+    case class LessEqual(e1: Expr, e2: Expr) extends Expr
+
+    case class Greater(e1: Expr, e2: Expr) extends Expr
+
+    case class GreaterEqual(e1: Expr, e2: Expr) extends Expr
 
     case class BitwiseAnd(e1: Expr, e2: Expr) extends Expr
 
@@ -373,7 +390,7 @@ object SymbolicEvaluator {
           case (pc, (v1, v2)) => op match {
 
             /**
-              * Binary Plus.
+              * Plus.
               */
             case BinaryOperator.Plus => (v1, v2) match {
               // Concrete semantics.
@@ -397,7 +414,7 @@ object SymbolicEvaluator {
             }
 
             /**
-              * Binary Minus.
+              * Minus.
               */
             case BinaryOperator.Minus => (v1, v2) match {
               // Concrete semantics.
@@ -421,7 +438,7 @@ object SymbolicEvaluator {
             }
 
             /**
-              * Binary Times.
+              * Times.
               */
             case BinaryOperator.Times => (v1, v2) match {
               // Concrete semantics.
@@ -445,7 +462,7 @@ object SymbolicEvaluator {
             }
 
             /**
-              * Binary Divide.
+              * Divide.
               */
             case BinaryOperator.Divide => (v1, v2) match {
               // Concrete semantics.
@@ -455,7 +472,7 @@ object SymbolicEvaluator {
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 / i2))
 
               // Symbolic semantics.
-                // TODO: So we could simplify this down to just one case? Just call toExpr on each v1 and v2.
+              // TODO: So we could simplify this down to just one case? Just call toExpr on each v1 and v2.
               case (SymVal.AtomicVar(id), v) if isVarOrInt(v) =>
                 val newVar = genSym.fresh2()
                 val newPC = Expr.Eq(Expr.Var(newVar), Expr.Divide(Expr.Var(id), toExpr(v))) :: pc
@@ -470,7 +487,7 @@ object SymbolicEvaluator {
             }
 
             /**
-              * Binary Modulo.
+              * Modulo.
               */
             case BinaryOperator.Modulo => (v1, v2) match {
               // Concrete semantics.
@@ -491,6 +508,100 @@ object SymbolicEvaluator {
                 lift(newPC, SymVal.AtomicVar(newVar))
 
               case _ => throw InternalCompilerException(s"Type Error: Unexpected expression: '$v1 * $v2'.")
+            }
+
+            /**
+              * Exponentiate.
+              */
+            case BinaryOperator.Exponentiate => (v1, v2) match {
+              // Concrete semantics.
+              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((Math.pow(i1, i2)).asInstanceOf[Byte]))
+              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((Math.pow(i1, i2)).asInstanceOf[Short]))
+              case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(Math.pow(i1, i2).asInstanceOf[Int]))
+              case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(Math.pow(i1, i2).asInstanceOf[Long]))
+
+              // Symbolic semantics.
+              case (SymVal.AtomicVar(id), v) if isVarOrInt(v) =>
+                val newVar = genSym.fresh2()
+                val newPC = Expr.Eq(Expr.Var(newVar), Expr.Exponentiate(Expr.Var(id), toExpr(v))) :: pc
+                lift(newPC, SymVal.AtomicVar(newVar))
+
+              case (v, SymVal.AtomicVar(id)) if isVarOrInt(v) =>
+                val newVar = genSym.fresh2()
+                val newPC = Expr.Eq(Expr.Var(newVar), Expr.Exponentiate(toExpr(v), Expr.Var(id))) :: pc
+                lift(newPC, SymVal.AtomicVar(newVar))
+
+              case _ => throw InternalCompilerException(s"Type Error: Unexpected expression: '$v1 * $v2'.")
+            }
+
+            /**
+              * Less.
+              */
+            case BinaryOperator.Less => (v1, v2) match {
+              // Concrete semantics.
+              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, toBool(i1 < i2))
+              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, toBool(i1 < i2))
+              case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, toBool(i1 < i2))
+              case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, toBool(i1 < i2))
+
+              // Symbolic semantics.
+              // TODO
+            }
+
+            /**
+              * LessEqual.
+              */
+            case BinaryOperator.LessEqual => (v1, v2) match {
+              // Concrete semantics.
+              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, toBool(i1 <= i2))
+              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, toBool(i1 <= i2))
+              case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, toBool(i1 <= i2))
+              case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, toBool(i1 <= i2))
+
+              // Symbolic semantics.
+              // TODO
+            }
+
+            /**
+              * Greater.
+              */
+            case BinaryOperator.Greater => (v1, v2) match {
+              // Concrete semantics.
+              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, toBool(i1 > i2))
+              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, toBool(i1 > i2))
+              case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, toBool(i1 > i2))
+              case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, toBool(i1 > i2))
+
+              // Symbolic semantics.
+              // TODO
+            }
+
+            /**
+              * GreaterEqual.
+              */
+            case BinaryOperator.GreaterEqual => (v1, v2) match {
+              // Concrete semantics.
+              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, toBool(i1 >= i2))
+              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, toBool(i1 >= i2))
+              case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, toBool(i1 >= i2))
+              case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, toBool(i1 >= i2))
+
+              // Symbolic semantics.
+              // TODO
+            }
+
+            /**
+              * Equal.
+              */
+            case BinaryOperator.Equal => eq(pc, v1, v2)
+
+            /**
+              * Not Equal.
+              */
+            case BinaryOperator.NotEqual => eq(pc, v1, v2).flatMap {
+              case (pc1, SymVal.True) => lift(pc1, SymVal.False)
+              case (pc1, SymVal.False) => lift(pc1, SymVal.True)
+              case (_, v) => throw InternalCompilerException(s"Type Error: Unexpected value:'$v'.")
             }
 
             /**
@@ -743,14 +854,6 @@ object SymbolicEvaluator {
               case _ => throw InternalCompilerException(s"Type Error: Unexpected expression: '$v1 ^ $v2'.")
             }
 
-            /**
-              * Equal.
-              */
-            case BinaryOperator.Equal => eq(pc, v1, v2)
-
-            /**
-              * Not Equal.
-              */
 
           }
         }
@@ -957,6 +1060,11 @@ object SymbolicEvaluator {
     eval(Nil, exp0, initEnv)
   }
 
+  /**
+    * Returns the symbolic value corresponding to the given boolean `b`.
+    */
+  def toBool(b: Boolean): SymVal =
+    if (b) SymVal.True else SymVal.False
 
   // TODO: toByte, toShort?
 
