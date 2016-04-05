@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
+import java.lang.reflect.{InvocationTargetException, Method}
+
 import scala.collection.mutable
 
 sealed trait ExecutableAst
@@ -24,7 +26,19 @@ object ExecutableAst {
                         formals: Array[ExecutableAst.FormalArg],
                         exp: ExecutableAst.Expression,
                         tpe: Type,
-                        loc: SourceLocation) extends ExecutableAst.Definition
+                        loc: SourceLocation) extends ExecutableAst.Definition {
+
+      var method: Method = null
+
+      def apply(args: Array[Object] = Array()) = {
+        try {
+          method.invoke(null, args)
+        } catch {
+          // Rethrow the real exception
+          case e: InvocationTargetException => throw e.getTargetException
+        }
+      }
+    }
 
     case class Lattice(tpe: Type,
                        bot: ExecutableAst.Expression,

@@ -8,7 +8,8 @@ object Options {
     debugger = Debugger.Disabled,
     Nil,
     verbosity = Verbosity.Silent,
-    verify = Verify.Disabled
+    verify = Verify.Disabled,
+    codegen = CodeGeneration.Disabled
   )
 }
 
@@ -19,8 +20,9 @@ object Options {
   * @param print     a list of things to print.
   * @param verbosity the level of verbosity.
   * @param verify    enable or disable the built-in verifier.
+  * @param codegen   enable or disable JVM code generation
   */
-case class Options(debugger: Debugger, print: List[String], verbosity: Verbosity, verify: Verify)
+case class Options(debugger: Debugger, print: List[String], verbosity: Verbosity, verify: Verify, codegen: CodeGeneration)
 
 
 /**
@@ -85,4 +87,19 @@ object Verify {
     */
   case object Disabled extends Verify
 
+}
+
+sealed trait CodeGeneration
+
+object CodeGeneration {
+
+  /**
+    * Enables JVM code generation of Flix functions.
+    */
+  case object Enabled extends CodeGeneration
+
+  /**
+    * Disables JVM code generation of Flix functions.
+    */
+  case object Disabled extends CodeGeneration
 }

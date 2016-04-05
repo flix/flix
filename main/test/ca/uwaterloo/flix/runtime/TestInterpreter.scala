@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.runtime
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.{Ast, Name, Type}
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.util.{Debugger, Options, Verbosity, Verify}
+import ca.uwaterloo.flix.util._
 import org.scalatest.FunSuite
 
 class TestInterpreter extends FunSuite {
@@ -102,7 +102,8 @@ class TestInterpreter extends FunSuite {
       debugger = Debugger.Disabled,
       print = Nil,
       verbosity = Verbosity.Silent,
-      verify = Verify.Disabled
+      verify = Verify.Disabled,
+      codegen = CodeGeneration.Disabled
     )
     new Flix().setOptions(options)
   }
