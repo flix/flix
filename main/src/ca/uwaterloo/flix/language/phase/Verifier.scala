@@ -423,13 +423,13 @@ object Verifier {
   }
 
   def visitBoolExpr(e0: SymbolicEvaluator.Expr, ctx: Context): BoolExpr = e0 match {
-    case SymbolicEvaluator.Expr.Eq(e1, e2) => ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-    case SymbolicEvaluator.Expr.Neq(e1, e2) => ctx.mkNot(ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx)))
+    case SymbolicEvaluator.Expr.Equal(e1, e2) => ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+    case SymbolicEvaluator.Expr.NotEqual(e1, e2) => ctx.mkNot(ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx)))
   }
 
 
   def visitBitVecExpr(e0: SymbolicEvaluator.Expr, ctx: Context): BitVecExpr = e0 match {
-    case SymbolicEvaluator.Expr.Var(id) => ctx.mkBVConst(id.name, 32) // TODO: Width
+    case SymbolicEvaluator.Expr.Var(id, tpe) => ctx.mkBVConst(id.name, 32) // TODO: Width
     case SymbolicEvaluator.Expr.Plus(e1, e2) => ctx.mkBVAdd(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
   }
 

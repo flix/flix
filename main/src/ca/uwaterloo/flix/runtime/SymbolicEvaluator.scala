@@ -12,100 +12,189 @@ import scala.collection.mutable
 object SymbolicEvaluator {
 
   sealed trait Expr {
-    // def tpe: Type
+    def tpe: Type
   }
 
   object Expr {
 
-    // TODO: Sort
-
+    /**
+      * Int8 expression.
+      */
     case class Int8(lit: Byte) extends Expr {
       def tpe: Type = Type.Int8
     }
 
+    /**
+      * Int16 expression.
+      */
     case class Int16(lit: Short) extends Expr {
       def tpe: Type = Type.Int16
     }
 
+    /**
+      * Int32 expression.
+      */
     case class Int32(lit: Int) extends Expr {
       def tpe: Type = Type.Int32
     }
 
+    /**
+      * Int64 expression.
+      */
     case class Int64(lit: Long) extends Expr {
       def tpe: Type = Type.Int64
     }
 
-    // TODO: types
+    /**
+      * Variables expression.
+      */
     case class Var(ident: Name.Ident, tpe: Type) extends Expr
 
+
+    case class Plus(e1: Expr, e2: Expr) extends Expr {
+      assert(numeric(common(e1.tpe, e2.tpe)))
+
+      def tpe: Type = common(e1.tpe, e2.tpe)
+    }
+
+    case class Minus(e1: Expr, e2: Expr) extends Expr {
+      assert(numeric(common(e1.tpe, e2.tpe)))
+
+      def tpe: Type = common(e1.tpe, e2.tpe)
+    }
+
+    case class Times(e1: Expr, e2: Expr) extends Expr {
+      assert(numeric(common(e1.tpe, e2.tpe)))
+
+      def tpe: Type = common(e1.tpe, e2.tpe)
+    }
+
+    case class Divide(e1: Expr, e2: Expr) extends Expr {
+      assert(numeric(common(e1.tpe, e2.tpe)))
+
+      def tpe: Type = common(e1.tpe, e2.tpe)
+    }
+
+    case class Modulo(e1: Expr, e2: Expr) extends Expr {
+      assert(numeric(common(e1.tpe, e2.tpe)))
+
+      def tpe: Type = common(e1.tpe, e2.tpe)
+    }
+
+    case class Exponentiate(e1: Expr, e2: Expr) extends Expr {
+      assert(numeric(common(e1.tpe, e2.tpe)))
+
+      def tpe: Type = common(e1.tpe, e2.tpe)
+    }
+
+    case class Less(e1: Expr, e2: Expr) extends Expr {
+      assert(numeric(common(e1.tpe, e2.tpe)))
+
+      def tpe: Type = Type.Bool
+    }
+
+    case class LessEqual(e1: Expr, e2: Expr) extends Expr {
+      assert(numeric(common(e1.tpe, e2.tpe)))
+
+      def tpe: Type = Type.Bool
+    }
+
+    case class Greater(e1: Expr, e2: Expr) extends Expr {
+      assert(numeric(common(e1.tpe, e2.tpe)))
+
+      def tpe: Type = Type.Bool
+    }
+
+    case class GreaterEqual(e1: Expr, e2: Expr) extends Expr {
+      assert(numeric(common(e1.tpe, e2.tpe)))
+
+      def tpe: Type = Type.Bool
+    }
+
+    case class Equal(e1: Expr, e2: Expr) extends Expr {
+      assert(e1.tpe == e2.tpe)
+
+      def tpe: Type = Type.Bool
+    }
+
+    case class NotEqual(e1: Expr, e2: Expr) extends Expr {
+      assert(e1.tpe == e2.tpe)
+
+      def tpe: Type = Type.Bool
+    }
+
     case class Not(e: Expr) extends Expr {
-      //      assert(e.tpe == Type.Bool)
-      //
-      //      def tpe: Type = Type.Bool
+      assert(e.tpe == Type.Bool)
+
+      def tpe: Type = Type.Bool
     }
 
     case class Conj(e1: Expr, e2: Expr) extends Expr {
-      //   assert(e1.tpe == Type.Bool && e2.tpe == Type.Bool)
+      assert(e1.tpe == Type.Bool && e2.tpe == Type.Bool)
 
       def tpe: Type = Type.Bool
     }
 
     case class Disj(e1: Expr, e2: Expr) extends Expr {
-      // assert(e1.tpe == Type.Bool && e2.tpe == Type.Bool)
+      assert(e1.tpe == Type.Bool && e2.tpe == Type.Bool)
 
       def tpe: Type = Type.Bool
     }
 
     case class Implication(e1: Expr, e2: Expr) extends Expr {
-      // assert(e1.tpe == Type.Bool && e2.tpe == Type.Bool)
+      assert(e1.tpe == Type.Bool && e2.tpe == Type.Bool)
 
       def tpe: Type = Type.Bool
     }
 
     case class Bicondition(e1: Expr, e2: Expr) extends Expr {
-      //  assert(e1.tpe == Type.Bool && e2.tpe == Type.Bool)
+      assert(e1.tpe == Type.Bool && e2.tpe == Type.Bool)
 
       def tpe: Type = Type.Bool
     }
 
-    case class UnaryMinus(e: Expr) extends Expr
+    case class BitwiseAnd(e1: Expr, e2: Expr) extends Expr {
+      assert(numeric(common(e1.tpe, e2.tpe)))
 
-    case class BitwiseNegate(e: Expr) extends Expr
+      def tpe: Type = common(e1.tpe, e2.tpe)
+    }
 
-    case class Plus(e1: Expr, e2: Expr) extends Expr
+    case class BitwiseOr(e1: Expr, e2: Expr) extends Expr {
+      assert(numeric(common(e1.tpe, e2.tpe)))
 
-    case class Minus(e1: Expr, e2: Expr) extends Expr
+      def tpe: Type = common(e1.tpe, e2.tpe)
+    }
 
-    case class Times(e1: Expr, e2: Expr) extends Expr
+    case class BitwiseXor(e1: Expr, e2: Expr) extends Expr {
+      assert(numeric(common(e1.tpe, e2.tpe)))
 
-    case class Divide(e1: Expr, e2: Expr) extends Expr
+      def tpe: Type = common(e1.tpe, e2.tpe)
+    }
 
-    case class Modulo(e1: Expr, e2: Expr) extends Expr
+    case class BitwiseLeftShift(e1: Expr, e2: Expr) extends Expr {
+      assert(numeric(common(e1.tpe, e2.tpe)))
 
-    case class Exponentiate(e1: Expr, e2: Expr) extends Expr
+      def tpe: Type = common(e1.tpe, e2.tpe)
+    }
 
-    case class Less(e1: Expr, e2: Expr) extends Expr
+    case class BitwiseRightShift(e1: Expr, e2: Expr) extends Expr {
+      assert(numeric(common(e1.tpe, e2.tpe)))
 
-    case class LessEqual(e1: Expr, e2: Expr) extends Expr
+      def tpe: Type = common(e1.tpe, e2.tpe)
+    }
 
-    case class Greater(e1: Expr, e2: Expr) extends Expr
+    // TODO: What about these?:
+    case class UnaryMinus(e: Expr) extends Expr {
+      assert(numeric(e.tpe))
 
-    case class GreaterEqual(e1: Expr, e2: Expr) extends Expr
+      def tpe: Type = e.tpe
+    }
 
-    case class BitwiseAnd(e1: Expr, e2: Expr) extends Expr
+    case class BitwiseNegate(e: Expr) extends Expr {
+      assert(numeric(e.tpe))
 
-    case class BitwiseOr(e1: Expr, e2: Expr) extends Expr
-
-    case class BitwiseXor(e1: Expr, e2: Expr) extends Expr
-
-    case class BitwiseLeftShift(e1: Expr, e2: Expr) extends Expr
-
-    case class BitwiseRightShift(e1: Expr, e2: Expr) extends Expr
-
-    case class Eq(e1: Expr, e2: Expr) extends Expr
-
-    case class Neq(e1: Expr, e2: Expr) extends Expr
-
+      def tpe: Type = e.tpe
+    }
 
   }
 
@@ -408,7 +497,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case SymVal.AtomicVar(id) =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.UnaryMinus(Expr.Var(id, exp.tpe))) :: pc
+                val newPC = Expr.Equal(Expr.Var(newVar, exp0.tpe), Expr.UnaryMinus(Expr.Var(id, exp.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
 
               case _ => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
@@ -427,7 +516,7 @@ object SymbolicEvaluator {
               // Symbolic semantics
               case SymVal.AtomicVar(id) =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.BitwiseNegate(Expr.Var(id, exp.tpe))) :: pc
+                val newPC = Expr.Equal(Expr.Var(newVar, exp0.tpe), Expr.BitwiseNegate(Expr.Var(id, exp.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
 
               case _ => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
@@ -456,7 +545,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.Plus(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
+                val newPC = Expr.Equal(Expr.Var(newVar, exp0.tpe), Expr.Plus(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -473,7 +562,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.Minus(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
+                val newPC = Expr.Equal(Expr.Var(newVar, exp0.tpe), Expr.Minus(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -490,7 +579,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.Times(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
+                val newPC = Expr.Equal(Expr.Var(newVar, exp0.tpe), Expr.Times(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -507,7 +596,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.Divide(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
+                val newPC = Expr.Equal(Expr.Var(newVar, exp0.tpe), Expr.Divide(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -524,7 +613,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.Modulo(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
+                val newPC = Expr.Equal(Expr.Var(newVar, exp0.tpe), Expr.Modulo(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -541,7 +630,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.Exponentiate(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
+                val newPC = Expr.Equal(Expr.Var(newVar, exp0.tpe), Expr.Exponentiate(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -558,7 +647,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar, Type.Bool), Expr.Less(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
+                val newPC = Expr.Equal(Expr.Var(newVar, Type.Bool), Expr.Less(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -575,7 +664,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar, Type.Bool), Expr.LessEqual(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
+                val newPC = Expr.Equal(Expr.Var(newVar, Type.Bool), Expr.LessEqual(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -592,7 +681,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar, Type.Bool), Expr.Greater(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
+                val newPC = Expr.Equal(Expr.Var(newVar, Type.Bool), Expr.Greater(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -609,7 +698,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar, Type.Bool), Expr.GreaterEqual(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
+                val newPC = Expr.Equal(Expr.Var(newVar, Type.Bool), Expr.GreaterEqual(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -770,7 +859,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.BitwiseAnd(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
+                val newPC = Expr.Equal(Expr.Var(newVar, exp0.tpe), Expr.BitwiseAnd(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -787,7 +876,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.BitwiseOr(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
+                val newPC = Expr.Equal(Expr.Var(newVar, exp0.tpe), Expr.BitwiseOr(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -804,7 +893,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.BitwiseXor(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
+                val newPC = Expr.Equal(Expr.Var(newVar, exp0.tpe), Expr.BitwiseXor(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -821,7 +910,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.BitwiseLeftShift(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
+                val newPC = Expr.Equal(Expr.Var(newVar, exp0.tpe), Expr.BitwiseLeftShift(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -838,7 +927,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.BitwiseRightShift(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
+                val newPC = Expr.Equal(Expr.Var(newVar, exp0.tpe), Expr.BitwiseRightShift(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
           }
@@ -969,14 +1058,14 @@ object SymbolicEvaluator {
         // Two identifiers are either equal to each other or they are not.
         // We can encode this using two path constraints.
         List(
-          (Expr.Eq(Expr.Var(ident1, tpe), Expr.Var(ident2, tpe)) :: pc0, SymVal.True),
-          (Expr.Neq(Expr.Var(ident1, tpe), Expr.Var(ident2, tpe)) :: pc0, SymVal.False)
+          (Expr.Equal(Expr.Var(ident1, tpe), Expr.Var(ident2, tpe)) :: pc0, SymVal.True),
+          (Expr.NotEqual(Expr.Var(ident1, tpe), Expr.Var(ident2, tpe)) :: pc0, SymVal.False)
         )
       case (SymVal.Unit, SymVal.Unit) => lift(pc0, SymVal.True)
-      case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) if (tag1 == tag2) =>
+      case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) if tag1 == tag2 =>
         val innerTpe = tpe.asInstanceOf[Type.Enum]
         eq(pc0, v1, v2, innerTpe.cases(tag1))
-      case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) if (tag1 != tag2) =>
+      case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) if tag1 != tag2 =>
         lift(pc0, SymVal.False)
 
       // TODO: Rest
@@ -1010,14 +1099,13 @@ object SymbolicEvaluator {
     /**
       * Converts the given value `v` to an expression.
       */
-    def toIntExpr(v: SymVal, tpe: Type): Expr = v match {
-      // TODO: Use type
-      case SymVal.AtomicVar(id) => Expr.Var(id, tpe)
-      case SymVal.Int8(i) => Expr.Int8(i)
-      case SymVal.Int16(i) => Expr.Int16(i)
-      case SymVal.Int32(i) => Expr.Int32(i)
-      case SymVal.Int64(i) => Expr.Int64(i)
-      case _ => throw InternalCompilerException(s"Unexpected value: '$v'.")
+    def toIntExpr(v: SymVal, tpe: Type): Expr = (v, tpe) match {
+      case (SymVal.AtomicVar(id), _) => Expr.Var(id, tpe)
+      case (SymVal.Int8(i), Type.Int8) => Expr.Int8(i)
+      case (SymVal.Int16(i), Type.Int16) => Expr.Int16(i)
+      case (SymVal.Int32(i), Type.Int32) => Expr.Int32(i)
+      case (SymVal.Int64(i), Type.Int64) => Expr.Int64(i)
+      case _ => throw InternalCompilerException(s"Unexpected value: '$v' of type '$tpe'.")
     }
 
     //  TODO: Replace this by a different enumeration.
@@ -1045,5 +1133,15 @@ object SymbolicEvaluator {
     */
   private def toBool(b: Boolean): SymVal =
     if (b) SymVal.True else SymVal.False
+
+  // TODO: DOC
+  private def common(tpe1: Type, tpe2: Type): Type =
+    if (tpe1 == tpe2)
+      tpe1
+    else
+      throw InternalCompilerException(s"Unexpected non-equal types: '$tpe1' and '$tpe2'.")
+
+  // TODO: DOC
+  private def numeric(tpe: Type): Boolean = ???
 
 }
