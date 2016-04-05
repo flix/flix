@@ -13,24 +13,35 @@ object SymbolicEvaluator {
 
   /**
     * The type of path constraints.
+    *
+    * A path constraint is a disjunction of SMT expressions.
+    * Path constraints are collected during execution of the program.
     */
   type PathConstraint = List[SmtExpr]
 
   /**
     * The type of environments.
+    *
+    * An environment is map from variables names to symbolic values.
     */
   type Environment = Map[String, SymVal]
 
-  // TODO: Consider ContextType
+  /**
+    * The type of contexts.
+    *
+    * A context is a list of (path constraint, symbolic value) pairs.
+    * Each pair corresponds to one execution path through the program.
+    */
+  type Context = List[(PathConstraint, SymVal)]
 
   /**
     * Evaluates the given expression `exp0` under the given environment `env0`.
     */
-  def eval(exp0: Expression, env0: Map[String, Expression], root: ExecutableAst.Root)(implicit genSym: GenSym): List[(PathConstraint, SymVal)] = {
+  def eval(exp0: Expression, env0: Map[String, SymVal], root: ExecutableAst.Root)(implicit genSym: GenSym): Context = {
     /*
       * Local visitor.
       */
-    def eval(pc0: PathConstraint, exp0: Expression, env0: Environment)(implicit genSym: GenSym): List[(PathConstraint, SymVal)] = exp0 match {
+    def eval(pc0: PathConstraint, exp0: Expression, env0: Environment)(implicit genSym: GenSym): Context = exp0 match {
       /**
         * Unit.
         */
@@ -748,14 +759,14 @@ object SymbolicEvaluator {
     /**
       * Returns a context with the value `v` guarded by the path constraint `pc`.
       */
-    def lift(pc: PathConstraint, v: SymVal): List[(PathConstraint, SymVal)] = List(pc -> v)
+    def lift(pc0: PathConstraint, v: SymVal): Context = List(pc0 -> v)
 
-    // TODO: DOC
-    def eq(pc0: PathConstraint, x: SymVal, y: SymVal, tpe: Type): List[(PathConstraint, SymVal)] = (x, y) match {
-      // TODO: Use type
+    /**
+      * Test equality of `x` and `y` (of type `tpe`) under the path constraint `pc0`.
+      */
+    def eq(pc0: PathConstraint, x: SymVal, y: SymVal, tpe: Type): Context = (x, y) match {
       case (SymVal.AtomicVar(ident1), SymVal.AtomicVar(ident2)) =>
-        // Two identifiers are either equal to each other or they are not.
-        // We can encode this using two path constraints.
+        // Equality of two atomic variables is encoded using two path constraints.
         List(
           (SmtExpr.Equal(SmtExpr.Var(ident1, tpe), SmtExpr.Var(ident2, tpe)) :: pc0, SymVal.True),
           (SmtExpr.NotEqual(SmtExpr.Var(ident1, tpe), SmtExpr.Var(ident2, tpe)) :: pc0, SymVal.False)
@@ -770,7 +781,11 @@ object SymbolicEvaluator {
       // TODO: Rest
     }
 
-    // TODO: DOC
+    /**
+      * Evaluates the expressions `x` and `y` under the path constraint `pc` and environment `env0`.
+      *
+      * Evaluates `x` first and then `y` second.
+      */
     def eval2(pc0: PathConstraint, x: Expression, y: Expression, env0: Environment): List[(PathConstraint, (SymVal, SymVal))] =
       eval(pc0, x, env0) flatMap {
         case (pcx, vx) => eval(pcx, y, env0) map {
@@ -778,7 +793,11 @@ object SymbolicEvaluator {
         }
       }
 
-    // TODO: DOC
+    /**
+      * Evaluates the list of expressions `xs` under the path constraint `pc` and environment `env0`.
+      *
+      * Evaluates from left to right.
+      */
     def evaln(pc0: PathConstraint, xs: Traversable[Expression], env0: Environment): List[(PathConstraint, List[SymVal])] = {
       /*
        * Local visitor.
@@ -795,35 +814,7 @@ object SymbolicEvaluator {
       visit(pc0, xs.toList, env0)
     }
 
-    /**
-      * Converts the given value `v` to an expression.
-      */
-    def toIntExpr(v: SymVal, tpe: Type): SmtExpr = (v, tpe) match {
-      case (SymVal.AtomicVar(id), _) => SmtExpr.Var(id, tpe)
-      case (SymVal.Int8(i), Type.Int8) => SmtExpr.Int8(i)
-      case (SymVal.Int16(i), Type.Int16) => SmtExpr.Int16(i)
-      case (SymVal.Int32(i), Type.Int32) => SmtExpr.Int32(i)
-      case (SymVal.Int64(i), Type.Int64) => SmtExpr.Int64(i)
-      case _ => throw InternalCompilerException(s"Unexpected value: '$v' of type '$tpe'.")
-    }
-
-    //  TODO: Replace this by a different enumeration.
-    def toSymVal(exp0: Expression): SymVal = exp0 match {
-      case Expression.Unit => SymVal.Unit
-      case Expression.Var(ident, _, _, _) => SymVal.AtomicVar(ident)
-      case Expression.Tag(enum, tag, exp, tpe, loc) =>
-        SymVal.Tag(tag.name, toSymVal(exp))
-      case _ => ???
-    }
-
-    /**
-      * Construct the initial environment.
-      */
-    val initEnv = env0.foldLeft(Map.empty[String, SymVal]) {
-      case (macc, (name, exp)) => macc + (name -> toSymVal(exp))
-    }
-
-    eval(Nil, exp0, initEnv)
+    eval(Nil, exp0, env0)
   }
 
   /**
@@ -831,6 +822,18 @@ object SymbolicEvaluator {
     */
   private def toBool(b: Boolean): SymVal =
     if (b) SymVal.True else SymVal.False
+
+  /**
+    * Converts the given value `v` to an expression.
+    */
+  def toIntExpr(v: SymVal, tpe: Type): SmtExpr = (v, tpe) match {
+    case (SymVal.AtomicVar(id), _) => SmtExpr.Var(id, tpe)
+    case (SymVal.Int8(i), Type.Int8) => SmtExpr.Int8(i)
+    case (SymVal.Int16(i), Type.Int16) => SmtExpr.Int16(i)
+    case (SymVal.Int32(i), Type.Int32) => SmtExpr.Int32(i)
+    case (SymVal.Int64(i), Type.Int64) => SmtExpr.Int64(i)
+    case _ => throw InternalCompilerException(s"Unexpected value: '$v' of type '$tpe'.")
+  }
 
   /**
     * Returns the zero number corresponding to the given type `tpe`.

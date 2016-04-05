@@ -282,7 +282,20 @@ object Verifier {
     // attempt to verify that the property holds under each environment.
     val violations = envs flatMap {
       case env0 =>
-        SymbolicEvaluator.eval(peelQuantifiers(exp0), env0, root) flatMap {
+
+        //  TODO: Replace this by a different enumeration.
+        def toSymVal(exp0: Expression): SymVal = exp0 match {
+          case Expression.Unit => SymVal.Unit
+          case Expression.Var(ident, _, _, _) => SymVal.AtomicVar(ident)
+          case Expression.Tag(enum, tag, exp, tpe, loc) =>
+            SymVal.Tag(tag.name, toSymVal(exp))
+          case _ => ???
+        }
+        val initEnv = env0.foldLeft(Map.empty[String, SymVal]) {
+          case (macc, (name, exp)) => macc + (name -> toSymVal(exp))
+        }
+
+        SymbolicEvaluator.eval(peelQuantifiers(exp0), initEnv, root) flatMap {
           case (Nil, SymVal.True) =>
             // Case 1: The symbolic evaluator proved the property.
             Nil
