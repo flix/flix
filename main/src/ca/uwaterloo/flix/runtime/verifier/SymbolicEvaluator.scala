@@ -747,7 +747,7 @@ object SymbolicEvaluator {
       case (SymVal.Unit, SymVal.Unit) => lift(pc0, SymVal.True)
       case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) if tag1 == tag2 =>
         val innerTpe = tpe.asInstanceOf[Type.Enum]
-        eq(pc0, v1, v2, innerTpe.cases(tag1))
+        eq(pc0, v1, v2, innerTpe.cases(tag1).tpe)
       case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) if tag1 != tag2 =>
         lift(pc0, SymVal.False)
 

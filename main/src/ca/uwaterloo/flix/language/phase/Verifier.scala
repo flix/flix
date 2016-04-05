@@ -432,7 +432,7 @@ object Verifier {
   /**
     * Translates the given SMT expression `exp0` into a Z3 bit vector expression.
     */
-  def visitBitVecExpr(e0: SmtExpr, ctx: Context): BitVecExpr = e0 match {
+  def visitBitVecExpr(exp0: SmtExpr, ctx: Context): BitVecExpr = exp0 match {
     case SmtExpr.Int8(i) => ctx.mkBV(i, 8)
     case SmtExpr.Int16(i) => ctx.mkBV(i, 16)
     case SmtExpr.Int32(i) => ctx.mkBV(i, 32)
@@ -444,8 +444,19 @@ object Verifier {
       case Type.Int64 => ctx.mkBVConst(id.name, 64)
       case _ => throw InternalCompilerException(s"Unexpected non-int type: '$tpe'.")
     }
-
     case SmtExpr.Plus(e1, e2) => ctx.mkBVAdd(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+    case SmtExpr.Minus(e1, e2) => ctx.mkBVSub(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+    case SmtExpr.Times(e1, e2) => ctx.mkBVMul(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+    case SmtExpr.Divide(e1, e2) => ctx.mkBVSDiv(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+    case SmtExpr.Modulo(e1, e2) => ctx.mkBVSMod(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+    case SmtExpr.Exponentiate(e1, e2) => ??? // TODO
+    case SmtExpr.BitwiseNegate(e) => ctx.mkBVNeg(visitBitVecExpr(e, ctx))
+    case SmtExpr.BitwiseAnd(e1, e2) => ctx.mkBVAND(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+    case SmtExpr.BitwiseOr(e1, e2) => ctx.mkBVOR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+    case SmtExpr.BitwiseXor(e1, e2) => ctx.mkBVXOR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+    case SmtExpr.BitwiseLeftShift(e1, e2) => ctx.mkBVSHL(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+    case SmtExpr.BitwiseRightShift(e1, e2) => ctx.mkBVLSHR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+    case _ => throw InternalCompilerException(s"Unexpected SMT expression: '$exp0'.")
   }
 
   //
@@ -495,34 +506,7 @@ object Verifier {
   //    case _ => throw InternalCompilerException(s"Unexpected expression: $e0.")
   //  }
   //
-  //  /**
-  //    * Translates the given expression `e` into a Z3 bit vector expression.
-  //    *
-  //    * Assumes that all lambdas, calls and let bindings have been removed.
-  //    * (In addition to all tags, tuples, sets, maps, etc.)
-  //    */
-  //  def visitBitVecExpr(e0: Expression, ctx: Context): BitVecExpr = e0 match {
-  //    case Var(ident, offset, tpe, loc) => ctx.mkBVConst(ident.name, 32)
-  //    case Int32(i) => ctx.mkBV(i, 32)
-  //    case Unary(op, e1, tpe, loc) => op match {
-  //      case UnaryOperator.BitwiseNegate => ctx.mkBVNot(visitBitVecExpr(e1, ctx))
-  //      case _ => throw InternalCompilerException(s"Illegal unary operator: $op.")
-  //    }
-  //    case Binary(op, e1, e2, tpe, loc) => op match {
-  //      case BinaryOperator.Plus => ctx.mkBVAdd(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-  //      case BinaryOperator.Minus => ctx.mkBVSub(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-  //      case BinaryOperator.Times => ctx.mkBVMul(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-  //      case BinaryOperator.Divide => ctx.mkBVSDiv(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-  //      case BinaryOperator.Modulo => ctx.mkBVSMod(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-  //      case BinaryOperator.BitwiseAnd => ctx.mkBVAND(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-  //      case BinaryOperator.BitwiseOr => ctx.mkBVOR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-  //      case BinaryOperator.BitwiseXor => ctx.mkBVXOR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-  //      case BinaryOperator.BitwiseLeftShift => ctx.mkBVSHL(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-  //      case BinaryOperator.BitwiseRightShift => ctx.mkBVLSHR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-  //      case _ => throw InternalCompilerException(s"Illegal binary operator: $op.")
-  //    }
-  //    case _ => throw InternalCompilerException(s"Unexpected expression: $e0.")
-  //  }
+
 
   // TODO: Move into seperate classes.
 
