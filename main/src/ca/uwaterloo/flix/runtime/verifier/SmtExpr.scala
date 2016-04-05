@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.language.ast.{Name, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
-  * Super-type for SMT expressions.
+  * SMT expressions.
   */
 sealed trait SmtExpr {
   def tpe: Type

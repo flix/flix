@@ -817,15 +817,15 @@ object SymbolicEvaluator {
   private def toBool(b: Boolean): SymVal =
     if (b) SymVal.True else SymVal.False
 
-
-  // TODO: Doc
+  /**
+    * Returns the zero number corresponding to the given type `tpe`.
+    */
   private def zeroOf(tpe: Type): SmtExpr = tpe match {
     case Type.Int8 => SmtExpr.Int8(0)
     case Type.Int16 => SmtExpr.Int16(0)
     case Type.Int32 => SmtExpr.Int32(0)
     case Type.Int64 => SmtExpr.Int64(0)
-    case _ => throw InternalCompilerException(s"Unexpected type '$tpe'.")
+    case _ => throw InternalCompilerException(s"Unexpected non-numeric type '$tpe'.")
   }
-
 
 }

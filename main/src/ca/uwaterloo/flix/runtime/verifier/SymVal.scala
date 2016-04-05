@@ -5,8 +5,6 @@ import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
 
 /**
   * Symbolic Values.
-  *
-  * A symbolic value is like a regular value but allows atomic variables.
   */
 sealed trait SymVal
 
@@ -87,10 +85,10 @@ object SymVal {
   /**
     * A tag value.
     *
-    * @param tag   the tag name.
-    * @param value the tagged value.
+    * @param tag the tag name.
+    * @param elm the tagged value.
     */
-  case class Tag(tag: String, value: SymVal) extends SymVal
+  case class Tag(tag: String, elm: SymVal) extends SymVal
 
   /**
     * A tuple value.
@@ -102,11 +100,11 @@ object SymVal {
   /**
     * A closure value.
     *
-    * @param exp    the expression of the closure.
-    * @param cloVar the name of the closure variable.
-    * @param env    the closure environment.
+    * @param exp the expression of the closure.
+    * @param clo the name of the closure variable.
+    * @param env the closure environment.
     */
-  case class Closure(exp: Expression, cloVar: String, env: Environment) extends SymVal
+  case class Closure(exp: Expression, clo: String, env: Environment) extends SymVal
 
   /**
     * An environment for closure variables.
