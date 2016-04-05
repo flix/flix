@@ -36,7 +36,7 @@ object SymbolicEvaluator {
     }
 
     // TODO: types
-    case class Var(ident: Name.Ident) extends Expr
+    case class Var(ident: Name.Ident, tpe: Type) extends Expr
 
     case class Not(e: Expr) extends Expr {
       //      assert(e.tpe == Type.Bool)
@@ -383,8 +383,8 @@ object SymbolicEvaluator {
 
               // Symbolic Semantics.
               case SymVal.AtomicVar(id) => List(
-                (Expr.Var(id) :: pc, SymVal.False),
-                (Expr.Not(Expr.Var(id)) :: pc, SymVal.True)
+                (Expr.Var(id, Type.Bool) :: pc, SymVal.False),
+                (Expr.Not(Expr.Var(id, Type.Bool)) :: pc, SymVal.True)
               )
 
               case _ => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
@@ -408,7 +408,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case SymVal.AtomicVar(id) =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar), Expr.UnaryMinus(Expr.Var(id))) :: pc
+                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.UnaryMinus(Expr.Var(id, exp.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
 
               case _ => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
@@ -427,7 +427,7 @@ object SymbolicEvaluator {
               // Symbolic semantics
               case SymVal.AtomicVar(id) =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar), Expr.BitwiseNegate(Expr.Var(id))) :: pc
+                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.BitwiseNegate(Expr.Var(id, exp.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
 
               case _ => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
@@ -456,7 +456,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar), Expr.Plus(toIntExpr(v1), toIntExpr(v2))) :: pc
+                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.Plus(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -473,7 +473,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar), Expr.Minus(toIntExpr(v1), toIntExpr(v2))) :: pc
+                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.Minus(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -490,7 +490,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar), Expr.Times(toIntExpr(v1), toIntExpr(v2))) :: pc
+                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.Times(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -507,7 +507,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar), Expr.Divide(toIntExpr(v1), toIntExpr(v2))) :: pc
+                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.Divide(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -524,7 +524,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar), Expr.Modulo(toIntExpr(v1), toIntExpr(v2))) :: pc
+                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.Modulo(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -541,7 +541,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar), Expr.Exponentiate(toIntExpr(v1), toIntExpr(v2))) :: pc
+                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.Exponentiate(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -558,7 +558,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar), Expr.Less(toIntExpr(v1), toIntExpr(v2))) :: pc
+                val newPC = Expr.Eq(Expr.Var(newVar, Type.Bool), Expr.Less(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -575,7 +575,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar), Expr.LessEqual(toIntExpr(v1), toIntExpr(v2))) :: pc
+                val newPC = Expr.Eq(Expr.Var(newVar, Type.Bool), Expr.LessEqual(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -592,7 +592,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar), Expr.Greater(toIntExpr(v1), toIntExpr(v2))) :: pc
+                val newPC = Expr.Eq(Expr.Var(newVar, Type.Bool), Expr.Greater(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -609,19 +609,19 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar), Expr.GreaterEqual(toIntExpr(v1), toIntExpr(v2))) :: pc
+                val newPC = Expr.Eq(Expr.Var(newVar, Type.Bool), Expr.GreaterEqual(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
             /**
               * Equal.
               */
-            case BinaryOperator.Equal => eq(pc, v1, v2)
+            case BinaryOperator.Equal => eq(pc, v1, v2, exp1.tpe)
 
             /**
               * Not Equal.
               */
-            case BinaryOperator.NotEqual => eq(pc, v1, v2).flatMap {
+            case BinaryOperator.NotEqual => eq(pc, v1, v2, exp1.tpe).flatMap {
               case (pc1, SymVal.True) => lift(pc1, SymVal.False)
               case (pc1, SymVal.False) => lift(pc1, SymVal.True)
               case (_, v) => throw InternalCompilerException(s"Type Error: Unexpected value:'$v'.")
@@ -639,20 +639,20 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case (SymVal.True, SymVal.AtomicVar(id)) => List(
-                (Expr.Var(id) :: pc, SymVal.True),
-                (Expr.Not(Expr.Var(id)) :: pc, SymVal.False)
+                (Expr.Var(id, Type.Bool) :: pc, SymVal.True),
+                (Expr.Not(Expr.Var(id, Type.Bool)) :: pc, SymVal.False)
               )
               case (SymVal.AtomicVar(id), SymVal.True) => List(
-                (Expr.Var(id) :: pc, SymVal.True),
-                (Expr.Not(Expr.Var(id)) :: pc, SymVal.False)
+                (Expr.Var(id, Type.Bool) :: pc, SymVal.True),
+                (Expr.Not(Expr.Var(id, Type.Bool)) :: pc, SymVal.False)
               )
 
               case (SymVal.False, SymVal.AtomicVar(id)) => lift(pc, SymVal.False)
               case (SymVal.AtomicVar(id), SymVal.False) => lift(pc, SymVal.False)
 
               case (SymVal.AtomicVar(id1), SymVal.AtomicVar(id2)) => List(
-                (Expr.Conj(Expr.Var(id1), Expr.Var(id2)) :: pc, SymVal.True),
-                (Expr.Not(Expr.Conj(Expr.Var(id1), Expr.Var(id2))) :: pc, SymVal.False)
+                (Expr.Conj(Expr.Var(id1, Type.Bool), Expr.Var(id2, Type.Bool)) :: pc, SymVal.True),
+                (Expr.Not(Expr.Conj(Expr.Var(id1, Type.Bool), Expr.Var(id2, Type.Bool))) :: pc, SymVal.False)
               )
 
               case _ => throw InternalCompilerException(s"Type Error: Unexpected expression: '$v1 && $v2'.")
@@ -673,17 +673,17 @@ object SymbolicEvaluator {
               case (SymVal.AtomicVar(id), SymVal.True) => lift(pc, SymVal.True)
 
               case (SymVal.False, SymVal.AtomicVar(id)) => List(
-                (Expr.Var(id) :: pc, SymVal.True),
-                (Expr.Not(Expr.Var(id)) :: pc, SymVal.False)
+                (Expr.Var(id, Type.Bool) :: pc, SymVal.True),
+                (Expr.Not(Expr.Var(id, Type.Bool)) :: pc, SymVal.False)
               )
               case (SymVal.AtomicVar(id), SymVal.False) => List(
-                (Expr.Var(id) :: pc, SymVal.True),
-                (Expr.Not(Expr.Var(id)) :: pc, SymVal.False)
+                (Expr.Var(id, Type.Bool) :: pc, SymVal.True),
+                (Expr.Not(Expr.Var(id, Type.Bool)) :: pc, SymVal.False)
               )
 
               case (SymVal.AtomicVar(id1), SymVal.AtomicVar(id2)) => List(
-                (Expr.Disj(Expr.Var(id1), Expr.Var(id2)) :: pc, SymVal.True),
-                (Expr.Not(Expr.Disj(Expr.Var(id1), Expr.Var(id2))) :: pc, SymVal.False)
+                (Expr.Disj(Expr.Var(id1, Type.Bool), Expr.Var(id2, Type.Bool)) :: pc, SymVal.True),
+                (Expr.Not(Expr.Disj(Expr.Var(id1, Type.Bool), Expr.Var(id2, Type.Bool))) :: pc, SymVal.False)
               )
 
               case _ => throw InternalCompilerException(s"Type Error: Unexpected expression: '$v1 || $v2'.")
@@ -701,20 +701,20 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case (SymVal.True, SymVal.AtomicVar(id)) => List(
-                (Expr.Var(id) :: pc, SymVal.True),
-                (Expr.Not(Expr.Var(id)) :: pc, SymVal.False)
+                (Expr.Var(id, Type.Bool) :: pc, SymVal.True),
+                (Expr.Not(Expr.Var(id, Type.Bool)) :: pc, SymVal.False)
               )
               case (SymVal.False, SymVal.AtomicVar(id)) => lift(pc, SymVal.True)
 
               case (SymVal.AtomicVar(id), SymVal.False) => List(
-                (Expr.Var(id) :: pc, SymVal.False),
-                (Expr.Not(Expr.Var(id)) :: pc, SymVal.True)
+                (Expr.Var(id, Type.Bool) :: pc, SymVal.False),
+                (Expr.Not(Expr.Var(id, Type.Bool)) :: pc, SymVal.True)
               )
               case (SymVal.AtomicVar(id), SymVal.True) => lift(pc, SymVal.True)
 
               case (SymVal.AtomicVar(id1), SymVal.AtomicVar(id2)) => List(
-                (Expr.Implication(Expr.Var(id1), Expr.Var(id2)) :: pc, SymVal.True),
-                (Expr.Not(Expr.Implication(Expr.Var(id1), Expr.Var(id2))) :: pc, SymVal.True)
+                (Expr.Implication(Expr.Var(id1, Type.Bool), Expr.Var(id2, Type.Bool)) :: pc, SymVal.True),
+                (Expr.Not(Expr.Implication(Expr.Var(id1, Type.Bool), Expr.Var(id2, Type.Bool))) :: pc, SymVal.True)
               )
 
               case _ => throw InternalCompilerException(s"Type Error: Unexpected expression: '$v1 => $v2'.")
@@ -732,26 +732,26 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case (SymVal.True, SymVal.AtomicVar(id)) => List(
-                (Expr.Var(id) :: pc, SymVal.True),
-                (Expr.Not(Expr.Var(id)) :: pc, SymVal.False)
+                (Expr.Var(id, Type.Bool) :: pc, SymVal.True),
+                (Expr.Not(Expr.Var(id, Type.Bool)) :: pc, SymVal.False)
               )
               case (SymVal.AtomicVar(id), SymVal.True) => List(
-                (Expr.Var(id) :: pc, SymVal.True),
-                (Expr.Not(Expr.Var(id)) :: pc, SymVal.False)
+                (Expr.Var(id, Type.Bool) :: pc, SymVal.True),
+                (Expr.Not(Expr.Var(id, Type.Bool)) :: pc, SymVal.False)
               )
 
               case (SymVal.False, SymVal.AtomicVar(id)) => List(
-                (Expr.Not(Expr.Var(id)) :: pc, SymVal.True),
-                (Expr.Var(id) :: pc, SymVal.False)
+                (Expr.Not(Expr.Var(id, Type.Bool)) :: pc, SymVal.True),
+                (Expr.Var(id, Type.Bool) :: pc, SymVal.False)
               )
               case (SymVal.AtomicVar(id), SymVal.False) => List(
-                (Expr.Not(Expr.Var(id)) :: pc, SymVal.True),
-                (Expr.Var(id) :: pc, SymVal.False)
+                (Expr.Not(Expr.Var(id, Type.Bool)) :: pc, SymVal.True),
+                (Expr.Var(id, Type.Bool) :: pc, SymVal.False)
               )
 
               case (SymVal.AtomicVar(id1), SymVal.AtomicVar(id2)) => List(
-                (Expr.Bicondition(Expr.Var(id1), Expr.Var(id2)) :: pc, SymVal.True),
-                (Expr.Not(Expr.Bicondition(Expr.Var(id1), Expr.Var(id2))) :: pc, SymVal.False)
+                (Expr.Bicondition(Expr.Var(id1, Type.Bool), Expr.Var(id2, Type.Bool)) :: pc, SymVal.True),
+                (Expr.Not(Expr.Bicondition(Expr.Var(id1, Type.Bool), Expr.Var(id2, Type.Bool))) :: pc, SymVal.False)
               )
 
               case _ => throw InternalCompilerException(s"Type Error: Unexpected expression: '$v1 <==> $v2'.")
@@ -770,7 +770,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar), Expr.BitwiseAnd(toIntExpr(v1), toIntExpr(v2))) :: pc
+                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.BitwiseAnd(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -787,7 +787,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar), Expr.BitwiseOr(toIntExpr(v1), toIntExpr(v2))) :: pc
+                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.BitwiseOr(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -804,7 +804,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar), Expr.BitwiseXor(toIntExpr(v1), toIntExpr(v2))) :: pc
+                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.BitwiseXor(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -821,7 +821,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar), Expr.BitwiseLeftShift(toIntExpr(v1), toIntExpr(v2))) :: pc
+                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.BitwiseLeftShift(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
 
@@ -838,7 +838,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = genSym.fresh2()
-                val newPC = Expr.Eq(Expr.Var(newVar), Expr.BitwiseRightShift(toIntExpr(v1), toIntExpr(v2))) :: pc
+                val newPC = Expr.Eq(Expr.Var(newVar, exp0.tpe), Expr.BitwiseRightShift(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar))
             }
           }
@@ -854,8 +854,8 @@ object SymbolicEvaluator {
             case SymVal.False => eval(pc, exp3, env0)
             case SymVal.AtomicVar(id) =>
               // Evaluate both branches under different path constraints.
-              val consequent = eval(Expr.Var(id) :: pc, exp2, env0.clone())
-              val alternative = eval(Expr.Not(Expr.Var(id)) :: pc, exp3, env0.clone())
+              val consequent = eval(Expr.Var(id, Type.Bool) :: pc, exp2, env0.clone())
+              val alternative = eval(Expr.Not(Expr.Var(id, Type.Bool)) :: pc, exp3, env0.clone())
               consequent ++ alternative
             case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
           }
@@ -962,21 +962,27 @@ object SymbolicEvaluator {
       */
     def lift(pc: PathConstraint, v: SymVal): List[(PathConstraint, SymVal)] = List(pc -> v)
 
-
-    def eq(pc0: PathConstraint, x: SymVal, y: SymVal): List[(PathConstraint, SymVal)] = (x, y) match {
+    // TODO: DOC
+    def eq(pc0: PathConstraint, x: SymVal, y: SymVal, tpe: Type): List[(PathConstraint, SymVal)] = (x, y) match {
+      // TODO: Use type
       case (SymVal.AtomicVar(ident1), SymVal.AtomicVar(ident2)) =>
         // Two identifiers are either equal to each other or they are not.
         // We can encode this using two path constraints.
         List(
-          (Expr.Eq(Expr.Var(ident1), Expr.Var(ident2)) :: pc0, SymVal.True),
-          (Expr.Neq(Expr.Var(ident1), Expr.Var(ident2)) :: pc0, SymVal.False)
+          (Expr.Eq(Expr.Var(ident1, tpe), Expr.Var(ident2, tpe)) :: pc0, SymVal.True),
+          (Expr.Neq(Expr.Var(ident1, tpe), Expr.Var(ident2, tpe)) :: pc0, SymVal.False)
         )
       case (SymVal.Unit, SymVal.Unit) => lift(pc0, SymVal.True)
-      case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) => if (tag1 == tag2) eq(pc0, v1, v2) else lift(pc0, SymVal.False)
+      case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) if (tag1 == tag2) =>
+        val innerTpe = tpe.asInstanceOf[Type.Enum]
+        eq(pc0, v1, v2, innerTpe.cases(tag1))
+      case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) if (tag1 != tag2) =>
+        lift(pc0, SymVal.False)
+
       // TODO: Rest
     }
 
-
+    // TODO: DOC
     def eval2(pc0: PathConstraint, x: Expression, y: Expression, env0: Environment): List[(PathConstraint, (SymVal, SymVal))] =
       eval(pc0, x, env0) flatMap {
         case (pcx, vx) => eval(pcx, y, env0) map {
@@ -984,7 +990,7 @@ object SymbolicEvaluator {
         }
       }
 
-
+    // TODO: DOC
     def evaln(pc0: PathConstraint, xs: Traversable[Expression], env0: Environment): List[(PathConstraint, List[SymVal])] = {
       /*
        * Local visitor.
@@ -1004,8 +1010,9 @@ object SymbolicEvaluator {
     /**
       * Converts the given value `v` to an expression.
       */
-    def toIntExpr(v: SymVal): Expr = v match {
-      case SymVal.AtomicVar(id) => Expr.Var(id)
+    def toIntExpr(v: SymVal, tpe: Type): Expr = v match {
+      // TODO: Use type
+      case SymVal.AtomicVar(id) => Expr.Var(id, tpe)
       case SymVal.Int8(i) => Expr.Int8(i)
       case SymVal.Int16(i) => Expr.Int16(i)
       case SymVal.Int32(i) => Expr.Int32(i)
