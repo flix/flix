@@ -4,8 +4,8 @@ import ca.uwaterloo.flix.language._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression._
-import ca.uwaterloo.flix.runtime.SymbolicEvaluator
-import ca.uwaterloo.flix.runtime.SymbolicEvaluator.SymVal
+import ca.uwaterloo.flix.runtime.verifier.{SmtExpr, SymbolicEvaluator}
+import ca.uwaterloo.flix.runtime.verifier.SymbolicEvaluator.SymVal
 import ca.uwaterloo.flix.util.InternalCompilerException
 import com.microsoft.z3.{BitVecNum, Expr, _}
 
@@ -418,19 +418,19 @@ object Verifier {
 
   // TODO: Avoid prefix with SymbolicEvaluator.Expr
 
-  def visitPathConstraint(pc: List[SymbolicEvaluator.Expr], ctx: Context): BoolExpr = pc.foldLeft(ctx.mkBool(true)) {
+  def visitPathConstraint(pc: List[SmtExpr], ctx: Context): BoolExpr = pc.foldLeft(ctx.mkBool(true)) {
     case (f, e) => ctx.mkAnd(f, visitBoolExpr(e, ctx))
   }
 
-  def visitBoolExpr(e0: SymbolicEvaluator.Expr, ctx: Context): BoolExpr = e0 match {
-    case SymbolicEvaluator.Expr.Equal(e1, e2) => ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-    case SymbolicEvaluator.Expr.NotEqual(e1, e2) => ctx.mkNot(ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx)))
+  def visitBoolExpr(e0: SmtExpr, ctx: Context): BoolExpr = e0 match {
+    case SmtExpr.Equal(e1, e2) => ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+    case SmtExpr.NotEqual(e1, e2) => ctx.mkNot(ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx)))
   }
 
 
-  def visitBitVecExpr(e0: SymbolicEvaluator.Expr, ctx: Context): BitVecExpr = e0 match {
-    case SymbolicEvaluator.Expr.Var(id, tpe) => ctx.mkBVConst(id.name, 32) // TODO: Width
-    case SymbolicEvaluator.Expr.Plus(e1, e2) => ctx.mkBVAdd(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+  def visitBitVecExpr(e0: SmtExpr, ctx: Context): BitVecExpr = e0 match {
+    case SmtExpr.Var(id, tpe) => ctx.mkBVConst(id.name, 32) // TODO: Width
+    case SmtExpr.Plus(e1, e2) => ctx.mkBVAdd(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
   }
 
   // TODO: Below here is old ... ---------------------
