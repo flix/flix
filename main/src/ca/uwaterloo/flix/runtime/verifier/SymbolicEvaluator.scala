@@ -765,13 +765,24 @@ object SymbolicEvaluator {
       * Test equality of `x` and `y` (of type `tpe`) under the path constraint `pc0`.
       */
     def eq(pc0: PathConstraint, x: SymVal, y: SymVal, tpe: Type): Context = (x, y) match {
+      /**
+        * Variable.
+        */
       case (SymVal.AtomicVar(ident1), SymVal.AtomicVar(ident2)) =>
         // Equality of two atomic variables is encoded using two path constraints.
         List(
           (SmtExpr.Equal(SmtExpr.Var(ident1, tpe), SmtExpr.Var(ident2, tpe)) :: pc0, SymVal.True),
           (SmtExpr.NotEqual(SmtExpr.Var(ident1, tpe), SmtExpr.Var(ident2, tpe)) :: pc0, SymVal.False)
         )
+
+      /**
+        * Unit.
+        */
       case (SymVal.Unit, SymVal.Unit) => lift(pc0, SymVal.True)
+
+      /**
+        * Tag.
+        */
       case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) if tag1 == tag2 =>
         val innerTpe = tpe.asInstanceOf[Type.Enum]
         eq(pc0, v1, v2, innerTpe.cases(tag1).tpe)
