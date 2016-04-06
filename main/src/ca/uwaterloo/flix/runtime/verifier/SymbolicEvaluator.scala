@@ -803,22 +803,62 @@ object SymbolicEvaluator {
       /**
         * Int8.
         */
+      // Concrete semantics.
       case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc0, toBool(i1 == i2))
+      // Symbolic semantics.  
+      case (SymVal.AtomicVar(id), SymVal.Int8(i2)) => List(
+        (SmtExpr.Equal(SmtExpr.Var(id, Type.Int8), SmtExpr.Int8(i2)) :: pc0, SymVal.True),
+        (SmtExpr.NotEqual(SmtExpr.Var(id, Type.Int8), SmtExpr.Int8(i2)) :: pc0, SymVal.False)
+      )
+      case (SymVal.Int8(i2), SymVal.AtomicVar(id)) => List(
+        (SmtExpr.Equal(SmtExpr.Var(id, Type.Int8), SmtExpr.Int8(i2)) :: pc0, SymVal.True),
+        (SmtExpr.NotEqual(SmtExpr.Int8(i2), SmtExpr.Var(id, Type.Int8)) :: pc0, SymVal.False)
+      )
 
       /**
         * Int16.
         */
+      // Concrete semantics.
       case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc0, toBool(i1 == i2))
+      // Symbolic semantics.
+      case (SymVal.AtomicVar(id), SymVal.Int16(i2)) => List(
+        (SmtExpr.Equal(SmtExpr.Var(id, Type.Int16), SmtExpr.Int16(i2)) :: pc0, SymVal.True),
+        (SmtExpr.NotEqual(SmtExpr.Var(id, Type.Int16), SmtExpr.Int16(i2)) :: pc0, SymVal.False)
+      )
+      case (SymVal.Int16(i2), SymVal.AtomicVar(id)) => List(
+        (SmtExpr.Equal(SmtExpr.Var(id, Type.Int16), SmtExpr.Int16(i2)) :: pc0, SymVal.True),
+        (SmtExpr.NotEqual(SmtExpr.Int16(i2), SmtExpr.Var(id, Type.Int16)) :: pc0, SymVal.False)
+      )
 
       /**
         * Int32.
         */
+      // Concrete semantics.
       case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc0, toBool(i1 == i2))
+      // Symbolic semantics.
+      case (SymVal.AtomicVar(id), SymVal.Int32(i2)) => List(
+        (SmtExpr.Equal(SmtExpr.Var(id, Type.Int32), SmtExpr.Int32(i2)) :: pc0, SymVal.True),
+        (SmtExpr.NotEqual(SmtExpr.Var(id, Type.Int32), SmtExpr.Int32(i2)) :: pc0, SymVal.False)
+      )
+      case (SymVal.Int32(i2), SymVal.AtomicVar(id)) => List(
+        (SmtExpr.Equal(SmtExpr.Var(id, Type.Int32), SmtExpr.Int32(i2)) :: pc0, SymVal.True),
+        (SmtExpr.NotEqual(SmtExpr.Int32(i2), SmtExpr.Var(id, Type.Int32)) :: pc0, SymVal.False)
+      )
 
       /**
         * Int64.
         */
+      // Concrete semantics.
       case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc0, toBool(i1 == i2))
+      // Symbolic semantics.
+      case (SymVal.AtomicVar(id), SymVal.Int64(i2)) => List(
+        (SmtExpr.Equal(SmtExpr.Var(id, Type.Int64), SmtExpr.Int64(i2)) :: pc0, SymVal.True),
+        (SmtExpr.NotEqual(SmtExpr.Var(id, Type.Int64), SmtExpr.Int64(i2)) :: pc0, SymVal.False)
+      )
+      case (SymVal.Int64(i2), SymVal.AtomicVar(id)) => List(
+        (SmtExpr.Equal(SmtExpr.Var(id, Type.Int64), SmtExpr.Int64(i2)) :: pc0, SymVal.True),
+        (SmtExpr.NotEqual(SmtExpr.Int64(i2), SmtExpr.Var(id, Type.Int64)) :: pc0, SymVal.False)
+      )
 
       /**
         * Str.
