@@ -634,13 +634,13 @@ object Verifier {
     for (result <- results) {
       result match {
         case PropertyResult.Success(property, paths, queries, elapsed) =>
-          Console.println(consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ")" + " (" + queries + " queries)")
+          Console.println(consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries)")
 
         case PropertyResult.Failure(property, paths, queries, elapsed, error) =>
-          Console.println(consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ")" + " (" + queries + " queries)")
+          Console.println(consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries)")
 
         case PropertyResult.Unknown(property, paths, queries, elapsed, error) =>
-          Console.println(consoleCtx.red("? ") + property.law + " (" + property.loc.format + ")" + " (" + queries + " queries)")
+          Console.println(consoleCtx.red("? ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries)")
       }
     }
     val timeInMiliseconds = f"${totalElapsed(results).toDouble / 1000000000.0}%3.1f"

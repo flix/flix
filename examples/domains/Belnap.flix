@@ -124,7 +124,7 @@ namespace Belnap {
     /**
      * Over-approximates the logical `bicondition` operator.
      */
-    @strict @monotone
+    @strict @monotone @commutative @associative
     fn bicondition(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, _)                => Belnap.Bot
         case (_, Belnap.Bot)                => Belnap.Bot

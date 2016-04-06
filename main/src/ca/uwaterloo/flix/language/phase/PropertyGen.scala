@@ -7,6 +7,7 @@ import ca.uwaterloo.flix.language.ast.Type.Lambda
 import ca.uwaterloo.flix.language.ast.TypedAst.Definition.BoundedLattice
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression._
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
   * Generates verification conditions. In future these properties will be directly in the Flix source code.
@@ -366,14 +367,14 @@ object PropertyGen {
           case Nil => None // A constant function is always strict.
           case a :: Nil => Some(mkStrict1(f, root))
           case a1 :: a2 :: Nil => Some(mkStrict2(f, root))
-          case _ => Nil // TODO
+          case _ => throw new InternalCompilerException("Strictness currently not supported for functions of arity 3+.")
         }
-        //        case Annotation.Monotone(loc) => f.formals match {
-        //          case Nil => None // A constant function is always monotone.
-        //          case a :: Nil => Some(Property.mkMonotone1(f, root))
-        //          case a1 :: a2 :: Nil => Some(Property.mkMonotone2(f, root))
-        //          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
-        //        }
+        case Annotation.Monotone(loc) => f.formals match {
+          case Nil => None // A constant function is always monotone.
+          case a :: Nil => Some(mkMonotone1(f, root))
+          case a1 :: a2 :: Nil => Some(mkMonotone2(f, root))
+          case _ => throw new InternalCompilerException("Monotonicity currently not supported for functions of arity 3+.")
+        }
         case _ => Nil
       }
     }
