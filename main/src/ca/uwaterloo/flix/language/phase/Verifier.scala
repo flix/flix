@@ -5,7 +5,8 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression._
 import ca.uwaterloo.flix.runtime.verifier._
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, Options, Validation, Verify}
+import ca.uwaterloo.flix.util.Validation._
 import com.microsoft.z3.{BitVecNum, Expr, _}
 
 object Verifier {
@@ -259,8 +260,37 @@ object Verifier {
   /**
     * Attempts to verify all properties in the given AST.
     */
-  def verify(root: ExecutableAst.Root)(implicit genSym: GenSym): List[VerifierError] = {
-    root.properties flatMap (p => checkProperty(p, root))
+  def verify(root: ExecutableAst.Root, options: Options)(implicit genSym: GenSym): Validation[ExecutableAst.Root, VerifierError] = {
+    // Check if verification is enabled.
+    if (options.verify != Verify.Enabled) {
+      return root.toSuccess
+    }
+
+    // Verify each property.
+    val results = root.properties.map(p => checkProperty(p, root))
+
+    val e = totalElapsed(results)
+
+    // TODO: If verbose
+    implicit val consoleCtx = Compiler.ConsoleCtx
+    for (result <- results) {
+      result match {
+        case PropertyResult.Success(property, paths, queries, elapsed) =>
+          Console.println(consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ")" + " (" + queries + " queries)")
+
+        case PropertyResult.Failure(property, paths, queries, elapsed, error) =>
+          Console.println(consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ")" + " (" + queries + " queries)")
+
+        case PropertyResult.Failure(property, paths, queries, elapsed, error) =>
+          Console.println(consoleCtx.red("? ") + property.law + " (" + property.loc.format + ")" + " (" + queries + " queries)")
+      }
+    }
+
+    if (isSuccess(results)) {
+      root.toSuccess
+    } else {
+      ???
+    }
   }
 
   /**
@@ -269,15 +299,20 @@ object Verifier {
     * Returns `None` if the property is satisfied.
     * Otherwise returns `Some` containing the verification error.
     */
-  def checkProperty(property: ExecutableAst.Property, root: ExecutableAst.Root)(implicit genSym: GenSym): Option[VerifierError] = {
+  def checkProperty(property: ExecutableAst.Property, root: ExecutableAst.Root)(implicit genSym: GenSym): PropertyResult = {
+    val t = System.nanoTime()
+
     // the base expression
     val exp0 = property.exp
 
     // a sequence of environments under which the base expression must hold.
     val envs = enumerate(getVars(exp0))
 
+    // the number of paths.
+    var paths = 0
+
     // the number of issued SMT queries.
-    var smt = 0
+    var queries = 0
 
     // attempt to verify that the property holds under each environment.
     val violations = envs flatMap {
@@ -294,6 +329,8 @@ object Verifier {
         val initEnv = env0.foldLeft(Map.empty[String, SymVal]) {
           case (macc, (name, exp)) => macc + (name -> toSymVal(exp))
         }
+
+        paths += 1
 
         SymbolicEvaluator.eval(peelQuantifiers(exp0), initEnv, root) flatMap {
           case (Nil, SymVal.True) =>
@@ -313,7 +350,7 @@ object Verifier {
             case SymVal.False =>
               // Case 3.2: The property *does not* hold under some path condition.
               // If the path condition is satisfiable then the property *does not* hold.
-              smt += 1
+              queries += 1
               SmtSolver.mkContext(ctx => {
                 val q = visitPathConstraint(pc, ctx)
                 SmtSolver.checkSat(q, ctx) match {
@@ -333,14 +370,14 @@ object Verifier {
 
     }
 
-    implicit val consoleCtx = Compiler.ConsoleCtx
+    val e = System.nanoTime() - t
 
-    if (violations.isEmpty)
-      Console.println(consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ")" + " (" + smt + " SMT queries)")
-    else
-      Console.println(consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ")" + " (" + smt + " SMT queries)")
+    if (violations.isEmpty) {
+      PropertyResult.Success(property, paths, queries, e)
+    } else {
+      PropertyResult.Failure(property, paths, queries, e, violations.head)
+    }
 
-    violations.headOption
   }
 
   def getVars(exp0: Expression): List[Var] = exp0 match {
@@ -400,9 +437,6 @@ object Verifier {
     expand(result)
   }
 
-
-
-  // TODO: This really should not be expression.
   private def mkModel(env: Map[String, Expression], model: Model): Map[String, String] = {
     val m = model2env(model)
     def visit(e0: Expression): String = e0 match {
@@ -419,9 +453,6 @@ object Verifier {
     }
   }
 
-  /**
-    * Returns a Z3 model as a map from string variables to expressions.
-    */
   private def model2env(model: Model): Map[String, String] = {
     def visit(exp: Expr): String = exp match {
       case e: BoolExpr => if (e.isTrue) "true" else "false"
@@ -516,5 +547,20 @@ object Verifier {
     case _ => throw InternalCompilerException(s"Unexpected SMT expression: '$exp0'.")
   }
 
+  /**
+    * Returns `true` if all the given property results `rs` are successful
+    */
+  private def isSuccess(rs: List[PropertyResult]): Boolean = rs forall {
+    case p: PropertyResult.Success => true
+    case p: PropertyResult.Failure => false
+    case p: PropertyResult.Unknown => false
+  }
+
+  /**
+    * Returns the total elapsed time of the property results `rs`.
+    */
+  private def totalElapsed(rs: List[PropertyResult]): Long = rs.foldLeft(0L) {
+    case (acc, res) => acc + res.elapsed
+  }
 
 }
