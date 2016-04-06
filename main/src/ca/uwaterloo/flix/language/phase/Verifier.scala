@@ -431,40 +431,25 @@ object Verifier {
     * Translates the given SMT expression `exp0` into a Z3 boolean expression.
     */
   def visitBoolExpr(exp0: SmtExpr, ctx: Context): BoolExpr = exp0 match {
+    case SmtExpr.Var(id, tpe) => ctx.mkBoolConst(id.name)
     case SmtExpr.Not(e) => ctx.mkNot(visitBoolExpr(e, ctx))
-
+    case SmtExpr.LogicalAnd(e1, e2) => ctx.mkAnd(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
+    case SmtExpr.LogicalOr(e1, e2) => ctx.mkOr(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
+    case SmtExpr.Implication(e1, e2) => ctx.mkImplies(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
+    case SmtExpr.Bicondition(e1, e2) => ctx.mkIff(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
     case SmtExpr.Less(e1, e2) => ctx.mkBVSLT(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
     case SmtExpr.LessEqual(e1, e2) => ctx.mkBVSLE(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
     case SmtExpr.Greater(e1, e2) => ctx.mkBVSGT(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
     case SmtExpr.GreaterEqual(e1, e2) => ctx.mkBVSGE(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-    case SmtExpr.Equal(e1, e2) => ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-    case SmtExpr.NotEqual(e1, e2) => ctx.mkNot(ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx)))
+    case SmtExpr.Equal(e1, e2) => e1.tpe match {
+      case Type.Bool => ctx.mkIff(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
+      case _ => ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+    }
+    case SmtExpr.NotEqual(e1, e2) => e1.tpe match {
+      case Type.Bool => ctx.mkXor(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
+      case _ => ctx.mkNot(ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx)))
+    }
   }
-
-  //
-  //  // TODO: Below here is old ... ---------------------
-  //
-  //  def visitBoolExpr(e0: Expression, ctx: Context): BoolExpr = e0 match {
-  //    case Unary(op, e1, tpe, loc) => op match {
-  //      case UnaryOperator.LogicalNot => ctx.mkNot(visitBoolExpr(e1, ctx))
-  //      case _ => throw InternalCompilerException(s"Illegal unary operator: $op.")
-  //    }
-
-  //      case BinaryOperator.LogicalAnd => ctx.mkAnd(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
-  //      case BinaryOperator.LogicalOr => ctx.mkOr(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
-  //      case _ => throw InternalCompilerException(s"Illegal binary operator: $op.")
-  //    }
-  //    case IfThenElse(e1, e2, e3, tpe, loc) =>
-  //      val f1 = visitBoolExpr(e1, ctx)
-  //      val f2 = visitBoolExpr(e2, ctx)
-  //      val f3 = visitBoolExpr(e3, ctx)
-  //      ctx.mkOr(
-  //        ctx.mkAnd(f1, f2),
-  //        ctx.mkAnd(ctx.mkNot(f1), f3)
-  //      )
-  //    case _ => throw InternalCompilerException(s"Unexpected expression: $e0.")
-  //  }
-  //
 
   /**
     * Translates the given SMT expression `exp0` into a Z3 bit vector expression.
