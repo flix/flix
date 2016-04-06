@@ -73,8 +73,8 @@ namespace Belnap {
         case (Belnap.Bot, _)                => Belnap.Bot
         case (_, Belnap.Bot)                => Belnap.Bot
         case (Belnap.True, Belnap.True)     => Belnap.True
-        case (Belnap.False, Belnap.True)    => Belnap.False
         case (Belnap.True, Belnap.False)    => Belnap.False
+        case (Belnap.False, Belnap.True)    => Belnap.False
         case (Belnap.False, Belnap.False)   => Belnap.False
         case _                              => Belnap.Top
     }
@@ -100,10 +100,38 @@ namespace Belnap {
     fn xor(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, _)                => Belnap.Bot
         case (_, Belnap.Bot)                => Belnap.Bot
+        case (Belnap.True, Belnap.True)     => Belnap.False
         case (Belnap.True, Belnap.False)    => Belnap.True
         case (Belnap.False, Belnap.True)    => Belnap.True
-        case (Belnap.True, Belnap.True)     => Belnap.False
         case (Belnap.False, Belnap.False)   => Belnap.False
+        case _                              => Belnap.Top
+    }
+
+    /**
+     * Over-approximates the logical `implies` operator.
+     */
+    @strict @monotone
+    fn implies(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+        case (Belnap.Bot, _)                => Belnap.Bot
+        case (_, Belnap.Bot)                => Belnap.Bot
+        case (Belnap.True, Belnap.True)     => Belnap.True
+        case (Belnap.True, Belnap.False)    => Belnap.False
+        case (Belnap.False, Belnap.True)    => Belnap.True
+        case (Belnap.False, Belnap.False)   => Belnap.True
+        case _                              => Belnap.Top
+    }
+
+    /**
+     * Over-approximates the logical `bicondition` operator.
+     */
+    @strict @monotone
+    fn bicondition(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+        case (Belnap.Bot, _)                => Belnap.Bot
+        case (_, Belnap.Bot)                => Belnap.Bot
+        case (Belnap.True, Belnap.True)     => Belnap.True
+        case (Belnap.True, Belnap.False)    => Belnap.False
+        case (Belnap.False, Belnap.True)    => Belnap.False
+        case (Belnap.False, Belnap.False)   => Belnap.True
         case _                              => Belnap.Top
     }
 

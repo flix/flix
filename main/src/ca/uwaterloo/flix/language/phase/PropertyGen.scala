@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.Ast.Annotation
 import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.Type.Lambda
 import ca.uwaterloo.flix.language.ast.TypedAst.Definition.BoundedLattice
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression._
@@ -224,8 +225,9 @@ object PropertyGen {
     */
   def mkStrict1(f: TypedAst.Definition.Constant, root: TypedAst.Root): TypedAst.Property = {
     val exp = {
-      val (tpe :: Nil) = f.tpe.asInstanceOf[Type.Lambda].args
-      val retTpe = f.tpe.asInstanceOf[Type.Lambda].retTpe
+      val lambda = f.tpe.asInstanceOf[Lambda]
+      val (tpe :: Nil) = lambda.args
+      val retTpe = lambda.retTpe
       val argLat = root.lattices(tpe)
       val retLat = root.lattices(retTpe)
       ∀()(≡(f(argLat.bot), retLat.bot))
@@ -244,11 +246,7 @@ object PropertyGen {
       val (arg1Lat, arg2Lat) = (root.lattices(tpe1), root.lattices(tpe2))
       val retLat = root.lattices(retTpe)
 
-      val (x, y) = (mkVar2("x", tpe1), mkVar2("y", tpe2))
-
-      // TODO: This doesnt seem right. It would seem that bottom is when both args are bottom?
-      ∀(x, y)(∧(≡(f(arg1Lat.bot, y), retLat.bot), ≡(f(x, arg2Lat.bot), retLat.bot)))
-
+      ∀()(≡(f(arg1Lat.bot, arg2Lat.bot), retLat.bot))
     }
 
     TypedAst.Property(Law.Strict, exp, f.loc)
@@ -364,13 +362,12 @@ object PropertyGen {
       case f => f.ann.annotations.flatMap {
         case Annotation.Associative(loc) => Some(mkAssociativity(f))
         case Annotation.Commutative(loc) => Some(mkCommutativity(f))
-        // TODO
-        //        case Annotation.Strict(loc) => f.formals match {
-        //          case Nil => None // A constant function is always strict.
-        //          case a :: Nil => Some(Property.mkStrict1(f, root))
-        //          case a1 :: a2 :: Nil => Some(Property.mkStrict2(f, root))
-        //          case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.") // TODO
-        //        }
+        case Annotation.Strict(loc) => f.formals match {
+          case Nil => None // A constant function is always strict.
+          case a :: Nil => Some(mkStrict1(f, root))
+          case a1 :: a2 :: Nil => Some(mkStrict2(f, root))
+          case _ => Nil // TODO
+        }
         //        case Annotation.Monotone(loc) => f.formals match {
         //          case Nil => None // A constant function is always monotone.
         //          case a :: Nil => Some(Property.mkMonotone1(f, root))
