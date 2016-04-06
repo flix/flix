@@ -54,6 +54,10 @@ namespace Parity {
      */
     def alpha(i: Int): Parity = if (i % 2 != 0) Parity.Odd else Parity.Even
 
+    /**
+     * Over-approximates integer `increment`.
+     */
+
     // TODO: inc/dec
 
     /**
@@ -127,10 +131,10 @@ namespace Parity {
      */
     @strict @monotone
     fn negate(e: Parity): Parity = match e with {
-        case Parity.Bot     =>  Parity.Bot
-        case Parity.Odd     =>  Parity.Even
-        case Parity.Even    =>  Parity.Odd
-        case Parity.Top     =>  Parity.Top
+        case Parity.Bot                 => Parity.Bot
+        case Parity.Odd                 => Parity.Even
+        case Parity.Even                => Parity.Odd
+        case Parity.Top                 => Parity.Top
     }
 
     /**

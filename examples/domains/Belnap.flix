@@ -17,7 +17,7 @@ namespace Belnap {
     /**
      * Returns `true` iff `e1` is less than or equal to `e2`.
      */
-    fn leq(e1: Belnap, e2: Belnap): Bool = match (e1, e2) with {
+    def leq(e1: Belnap, e2: Belnap): Bool = match (e1, e2) with {
         case (Belnap.Bot, _)                => true
         case (Belnap.True, Belnap.True)     => true
         case (Belnap.False, Belnap.False)   => true
@@ -29,7 +29,7 @@ namespace Belnap {
      * Returns the least upper bound of `e1` and `e2`.
      */
     @commutative @associative
-    fn lub(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    def lub(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, x)                => x
         case (x, Belnap.Bot)                => x
         case (Belnap.True, Belnap.True)     => Belnap.True
@@ -41,7 +41,7 @@ namespace Belnap {
      * Returns the greatest lower bound of `e1` and `e2`.
      */
     @commutative @associative
-    fn glb(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    def glb(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Top, x)                => x
         case (x, Belnap.Top)                => x
         case (Belnap.True, Belnap.True)     => Belnap.True
@@ -52,13 +52,13 @@ namespace Belnap {
     /**
      * Abstracts a concrete boolean into the Belnap domain.
      */
-    fn alpha(b: Bool): Belnap = if (b) Belnap.True else Belnap.False
+    def alpha(b: Bool): Belnap = if (b) Belnap.True else Belnap.False
 
     /**
      * Over-approximates the logical `not` operator.
      */
     @strict @monotone
-    fn not(e: Belnap): Belnap = match e with {
+    def not(e: Belnap): Belnap = match e with {
         case Belnap.Bot     => Belnap.Bot
         case Belnap.True    => Belnap.False
         case Belnap.False   => Belnap.True
@@ -69,7 +69,7 @@ namespace Belnap {
      * Over-approximates the logical `and` operator.
      */
     @strict @monotone @commutative @associative
-    fn and(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    def and(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, _)                => Belnap.Bot
         case (_, Belnap.Bot)                => Belnap.Bot
         case (Belnap.True, Belnap.True)     => Belnap.True
@@ -83,7 +83,7 @@ namespace Belnap {
      * Over-approximates the logical `or` operator.
      */
     @strict @monotone @commutative @associative
-    fn or(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    def or(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, _)                => Belnap.Bot
         case (_, Belnap.Bot)                => Belnap.Bot
         case (Belnap.True, Belnap.True)     => Belnap.True
@@ -97,7 +97,7 @@ namespace Belnap {
      * Over-approximates the logical `xor` operator.
      */
     @strict @monotone @commutative @associative
-    fn xor(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    def xor(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, _)                => Belnap.Bot
         case (_, Belnap.Bot)                => Belnap.Bot
         case (Belnap.True, Belnap.True)     => Belnap.False
@@ -111,7 +111,7 @@ namespace Belnap {
      * Over-approximates the logical `implies` operator.
      */
     @strict @monotone
-    fn implies(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    def implies(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, _)                => Belnap.Bot
         case (_, Belnap.Bot)                => Belnap.Bot
         case (Belnap.True, Belnap.True)     => Belnap.True
@@ -125,7 +125,7 @@ namespace Belnap {
      * Over-approximates the logical `bicondition` operator.
      */
     @strict @monotone @commutative @associative
-    fn bicondition(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    def bicondition(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, _)                => Belnap.Bot
         case (_, Belnap.Bot)                => Belnap.Bot
         case (Belnap.True, Belnap.True)     => Belnap.True
@@ -141,7 +141,7 @@ namespace Belnap {
      * NB: Commutative, but not associative!
      */
     @strict @monotone @commutative
-    fn nand(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    def nand(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, _)                => Belnap.Bot
         case (_, Belnap.Bot)                => Belnap.Bot
         case (Belnap.True, Belnap.True)     => Belnap.False
