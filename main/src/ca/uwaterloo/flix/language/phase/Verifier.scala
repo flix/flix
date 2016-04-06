@@ -417,10 +417,11 @@ object Verifier {
         }
         r.toList
       case Type.Tuple(elms) =>
+        // TODO: Verify
         def visitn(xs: List[Type]): List[List[SymVal]] = xs match {
           case Nil => Nil
-          case t :: ts => visit(t) map {
-            case l => visitn(ts) flatMap {
+          case t :: ts => visit(t) flatMap {
+            case l => visitn(ts) map {
               case ls => l :: ls
             }
           }
