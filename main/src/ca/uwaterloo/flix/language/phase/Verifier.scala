@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.language._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression._
-import ca.uwaterloo.flix.runtime.verifier.{SmtExpr, SmtResult, SymVal, SymbolicEvaluator}
+import ca.uwaterloo.flix.runtime.verifier._
 import ca.uwaterloo.flix.util.InternalCompilerException
 import com.microsoft.z3.{BitVecNum, Expr, _}
 
@@ -304,7 +304,7 @@ object Verifier {
             val env1 = env0.foldLeft(Map.empty[String, String]) {
               case (macc, (k, e)) => macc + (k -> e.toString)
             }
-            List(fail(property, env1))
+            List(toVerifierError(property, env1))
           case (pc, v) => v match {
             case SymVal.True =>
               // Case 3.1: The property holds under some path condition.
@@ -314,15 +314,15 @@ object Verifier {
               // Case 3.2: The property *does not* hold under some path condition.
               // If the path condition is satisfiable then the property *does not* hold.
               smt += 1
-              mkContext(ctx => {
+              SmtSolver.mkContext(ctx => {
                 val q = visitPathConstraint(pc, ctx)
-                checkSat(q, ctx) match {
+                SmtSolver.checkSat(q, ctx) match {
                   case SmtResult.Unsatisfiable =>
                     // Case 3.1: The formula is UNSAT, i.e. the property HOLDS.
                     Nil
                   case SmtResult.Satisfiable(model) =>
                     // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.
-                    List(fail(property, mkModel(env0, model))) // TODO MAp
+                    List(toVerifierError(property, mkModel(env0, model))) // TODO MAp
                   case SmtResult.Unknown =>
                     // Case 3.3: It is unknown whether the formula has a model.
                     ???
@@ -401,36 +401,71 @@ object Verifier {
   }
 
 
-  def fail(p: ExecutableAst.Property, m: Map[String, String]): VerifierError = p.law match {
-    case Law.Associativity => VerifierError.AssociativityError(m, p.loc)
-    case Law.Commutativity => VerifierError.CommutativityError(m, p.loc)
-    case Law.Reflexivity => VerifierError.ReflexivityError(m, p.loc)
-    case Law.AntiSymmetry => VerifierError.AntiSymmetryError(m, p.loc)
-    case Law.Transitivity => VerifierError.TransitivityError(m, p.loc)
-    case Law.LeastElement => VerifierError.LeastElementError(p.loc)
-    case Law.UpperBound => VerifierError.UpperBoundError(m, p.loc)
-    case Law.LeastUpperBound => VerifierError.LeastUpperBoundError(m, p.loc)
-    case Law.GreatestElement => VerifierError.GreatestElementError(p.loc)
-    case Law.LowerBound => VerifierError.LowerBoundError(m, p.loc)
-    case Law.GreatestLowerBound => VerifierError.GreatestLowerBoundError(m, p.loc)
-    case Law.Strict => VerifierError.StrictError(p.loc)
-    case Law.Monotone => VerifierError.MonotoneError(m, p.loc)
-    case Law.HeightNonNegative => VerifierError.HeightNonNegativeError(m, p.loc)
-    case Law.HeightStrictlyDecreasing => VerifierError.HeightStrictlyDecreasingError(m, p.loc)
+
+  // TODO: This really should not be expression.
+  private def mkModel(env: Map[String, Expression], model: Model): Map[String, String] = {
+    val m = model2env(model)
+    def visit(e0: Expression): String = e0 match {
+      case Expression.Var(id, _, _, _) => m.get(id.name) match {
+        case None => "Not found (?)" // TODO
+        case Some(v) => v
+      }
+      case Expression.Unit => "#U"
+      case Expression.Tag(_, tag, e, _, _) => tag + "(" + visit(e) + ")"
+    }
+
+    env.foldLeft(Map.empty[String, String]) {
+      case (macc, (k, v)) => macc + (k -> visit(v))
+    }
   }
 
+  /**
+    * Returns a Z3 model as a map from string variables to expressions.
+    */
+  private def model2env(model: Model): Map[String, String] = {
+    def visit(exp: Expr): String = exp match {
+      case e: BoolExpr => if (e.isTrue) "true" else "false"
+      case e: BitVecNum => e.getLong.toString
+      case _ => throw InternalCompilerException(s"Unexpected Z3 expression: $exp.")
+    }
+
+    model.getConstDecls.foldLeft(Map.empty[String, String]) {
+      case (macc, decl) => macc + (decl.getName.toString -> visit(model.getConstInterp(decl)))
+    }
+  }
+
+  /**
+    * Returns a verifier error for the given property `prop` under the given environment `env`.
+    */
+  private def toVerifierError(prop: ExecutableAst.Property, env: Map[String, String]): VerifierError = prop.law match {
+    case Law.Associativity => VerifierError.AssociativityError(env, prop.loc)
+    case Law.Commutativity => VerifierError.CommutativityError(env, prop.loc)
+    case Law.Reflexivity => VerifierError.ReflexivityError(env, prop.loc)
+    case Law.AntiSymmetry => VerifierError.AntiSymmetryError(env, prop.loc)
+    case Law.Transitivity => VerifierError.TransitivityError(env, prop.loc)
+    case Law.LeastElement => VerifierError.LeastElementError(prop.loc)
+    case Law.UpperBound => VerifierError.UpperBoundError(env, prop.loc)
+    case Law.LeastUpperBound => VerifierError.LeastUpperBoundError(env, prop.loc)
+    case Law.GreatestElement => VerifierError.GreatestElementError(prop.loc)
+    case Law.LowerBound => VerifierError.LowerBoundError(env, prop.loc)
+    case Law.GreatestLowerBound => VerifierError.GreatestLowerBoundError(env, prop.loc)
+    case Law.Strict => VerifierError.StrictError(prop.loc)
+    case Law.Monotone => VerifierError.MonotoneError(env, prop.loc)
+    case Law.HeightNonNegative => VerifierError.HeightNonNegativeError(env, prop.loc)
+    case Law.HeightStrictlyDecreasing => VerifierError.HeightStrictlyDecreasingError(env, prop.loc)
+  }
 
   /**
     * Translates the given path constraint `pc` into a boolean Z3 expression.
     */
-  def visitPathConstraint(pc: List[SmtExpr], ctx: Context): BoolExpr = pc.foldLeft(ctx.mkBool(true)) {
+  private def visitPathConstraint(pc: List[SmtExpr], ctx: Context): BoolExpr = pc.foldLeft(ctx.mkBool(true)) {
     case (f, e) => ctx.mkAnd(f, visitBoolExpr(e, ctx))
   }
 
   /**
     * Translates the given SMT expression `exp0` into a Z3 boolean expression.
     */
-  def visitBoolExpr(exp0: SmtExpr, ctx: Context): BoolExpr = exp0 match {
+  private def visitBoolExpr(exp0: SmtExpr, ctx: Context): BoolExpr = exp0 match {
     case SmtExpr.Var(id, tpe) => ctx.mkBoolConst(id.name)
     case SmtExpr.Not(e) => ctx.mkNot(visitBoolExpr(e, ctx))
     case SmtExpr.LogicalAnd(e1, e2) => ctx.mkAnd(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
@@ -454,7 +489,7 @@ object Verifier {
   /**
     * Translates the given SMT expression `exp0` into a Z3 bit vector expression.
     */
-  def visitBitVecExpr(exp0: SmtExpr, ctx: Context): BitVecExpr = exp0 match {
+  private def visitBitVecExpr(exp0: SmtExpr, ctx: Context): BitVecExpr = exp0 match {
     case SmtExpr.Int8(i) => ctx.mkBV(i, 8)
     case SmtExpr.Int16(i) => ctx.mkBV(i, 16)
     case SmtExpr.Int32(i) => ctx.mkBV(i, 32)
@@ -481,105 +516,5 @@ object Verifier {
     case _ => throw InternalCompilerException(s"Unexpected SMT expression: '$exp0'.")
   }
 
-
-  // TODO: Move into seperate classes.
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Interface to Z3                                                         //
-  /////////////////////////////////////////////////////////////////////////////
-  def mkContext[A](f: Context => A): A = {
-    // check that the path property is set.
-    val prop = System.getProperty("java.library.path")
-    if (prop == null) {
-      Console.println(errorMessage)
-      Console.println()
-      Console.println("> java.library.path not set.")
-      System.exit(1)
-    }
-
-    // attempt to load the native library.
-    try {
-      System.loadLibrary("libz3")
-    } catch {
-      case e: UnsatisfiedLinkError =>
-        Console.println(errorMessage)
-        Console.println()
-        Console.println("> Unable to load the library. Stack Trace reproduced below: ")
-        e.printStackTrace()
-        System.exit(1)
-    }
-
-    val ctx = new Context()
-    val r = f(ctx)
-    ctx.dispose()
-    r
-  }
-
-  /**
-    * Returns an error message explaining how to configure Microsoft Z3.
-    */
-  private def errorMessage: String =
-    """###############################################################################
-      |###                                                                         ###
-      |### You are running Flix with verification enabled (--verify).              ###
-      |### Flix uses the Microsoft Z3 SMT solver to verify correctness.            ###
-      |### For this to work, you must have the correct Z3 libraries installed.     ###
-      |###                                                                         ###
-      |### On Windows:                                                             ###
-      |###   1. Unpack the z3 bundle.                                              ###
-      |###   2. Ensure that java.library.path points to that path, i.e. run        ###
-      |###      java -Djava.library.path=... -jar flix.jar                         ###
-      |###   3. Ensure that you have the                                           ###
-      |###      'Microsoft Visual Studio Redistributable 2012 Package' installed.  ###
-      |###                                                                         ###
-      |### NB: You must have the 64 bit version of Java, Z3 and the VS package.    ###
-      |###                                                                         ###
-      |###############################################################################
-    """.stripMargin
-
-  /**
-    * Checks the satisfiability of the given boolean formula `f`.
-    */
-  def checkSat(f: BoolExpr, ctx: Context): SmtResult = {
-    val solver = ctx.mkSolver()
-    solver.add(f)
-    solver.check() match {
-      case Status.SATISFIABLE => SmtResult.Satisfiable(solver.getModel)
-      case Status.UNSATISFIABLE => SmtResult.Unsatisfiable
-      case Status.UNKNOWN => SmtResult.Unknown
-    }
-  }
-
-  // TODO: This really should not be expression.
-  def mkModel(env: Map[String, Expression], model: Model): Map[String, String] = {
-    val m = model2env(model)
-    def visit(e0: Expression): String = e0 match {
-      case Expression.Var(id, _, _, _) => m.get(id.name) match {
-        case None => "Not found (?)" // TODO
-        case Some(v) => v
-      }
-      case Expression.Unit => "#U"
-      case Expression.Tag(_, tag, e, _, _) => tag + "(" + visit(e) + ")"
-    }
-
-    env.foldLeft(Map.empty[String, String]) {
-      case (macc, (k, v)) => macc + (k -> visit(v))
-    }
-  }
-
-  /**
-    * Returns a Z3 model as a map from string variables to expressions.
-    */
-  def model2env(model: Model): Map[String, String] = {
-    def visit(exp: Expr): String = exp match {
-      case e: BoolExpr => if (e.isTrue) "true" else "false"
-      case e: BitVecNum => e.getLong.toString
-      case _ => throw InternalCompilerException(s"Unexpected Z3 expression: $exp.")
-    }
-
-    model.getConstDecls.foldLeft(Map.empty[String, String]) {
-      case (macc, decl) => macc + (decl.getName.toString -> visit(model.getConstInterp(decl)))
-    }
-  }
 
 }
