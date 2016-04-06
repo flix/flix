@@ -467,14 +467,15 @@ object Weeder {
         }
 
       case ParsedAst.Declaration.Definition(ann, sp1, ident, paramsOpt, tpe, exp, sp2) =>
+        val sl = mkSL(ident.sp1, ident.sp2)
         val annVal = Annotations.compile(ann)
         val expVal = Expressions.compile(exp)
 
         paramsOpt match {
           case None => @@(annVal, expVal) flatMap {
-            case (ann, e) => WeededAst.Declaration.Definition(ann, ident, Nil, e, tpe, mkSL(sp1, sp2)).toSuccess
+            case (ann, e) => WeededAst.Declaration.Definition(ann, ident, Nil, e, tpe, sl).toSuccess
           }
-          case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
+          case Some(Nil) => IllegalParameterList(sl).toFailure
           case Some(params) =>
             /*
              * Check duplicate parameters.
@@ -493,7 +494,7 @@ object Weeder {
             @@(annVal, formalsVal, expVal) map {
               case (ann, fs, e) =>
                 val t = Type.Lambda(fs map (_.tpe), tpe)
-                WeededAst.Declaration.Definition(ann, ident, fs, e, t, mkSL(sp1, sp2))
+                WeededAst.Declaration.Definition(ann, ident, fs, e, t, sl)
             }
         }
 

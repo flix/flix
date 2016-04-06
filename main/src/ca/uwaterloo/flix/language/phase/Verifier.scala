@@ -9,6 +9,8 @@ import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.Validation._
 import com.microsoft.z3._
 
+import scala.collection.immutable.SortedMap
+
 object Verifier {
 
   /**
@@ -326,11 +328,8 @@ object Verifier {
             Nil
           case (Nil, SymVal.False) =>
             // Case 2: The symbolic evaluator disproved the property.
-            val env1 = env0.foldLeft(Map.empty[String, String]) {
-              case (macc, (k, e)) => macc + (k -> e.toString)
-            }
             paths += 1
-            List(toVerifierError(property, env1))
+            List(toVerifierError(property, mkModel(env0, null)))
           case (pc, v) => v match {
             case SymVal.True =>
               // Case 3.1: The property holds under some path condition.
@@ -394,9 +393,6 @@ object Verifier {
   /**
     * Enumerates all possible environments of the given universally quantified variables.
     */
-  // TODO: replace string by name?
-  // TODO: Cleanup
-  // TODO: Return SymVal.
   def enumerate(q: List[Var])(implicit genSym: GenSym): List[Map[String, SymVal]] = {
     // Unqualified formula. Used the empty environment.
     if (q.isEmpty)
@@ -442,10 +438,12 @@ object Verifier {
   /**
     * Returns a stringified model of `env` where all free variables have been
     * replaced by their corresponding values from the Z3 model `model`.
+    *
+    * The argument `model` may be `null` if `env` contains no free variables.
     */
   private def mkModel(env: Map[String, SymVal], model: Model): Map[String, String] = {
     def visit(e0: SymVal): String = e0 match {
-      case SymVal.AtomicVar(id) => getConstant(id, model)
+      case SymVal.AtomicVar(id) => if (model == null) id.name else getConstant(id, model)
       case SymVal.Unit => "#U"
       case SymVal.True => "true"
       case SymVal.False => "false"
@@ -467,7 +465,7 @@ object Verifier {
       case SymVal.SwitchError(loc) => "SwitchError(" + loc.format + ")"
     }
 
-    env.foldLeft(Map.empty[String, String]) {
+    env.foldLeft(SortedMap.empty[String, String]) {
       case (macc, (key, value)) => macc + (key -> visit(value))
     }
   }
