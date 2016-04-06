@@ -796,15 +796,66 @@ object SymbolicEvaluator {
       case (SymVal.Float32(f1), SymVal.Float64(f2)) => lift(pc0, toBool(f1 == f2))
 
       /**
+        * Float64
+        */
+      case (SymVal.Float64(f1), SymVal.Float64(f2)) => lift(pc0, toBool(f1 == f2))
+
+      /**
+        * Int8.
+        */
+      case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc0, toBool(i1 == i2))
+
+      /**
+        * Int16.
+        */
+      case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc0, toBool(i1 == i2))
+
+      /**
+        * Int32.
+        */
+      case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc0, toBool(i1 == i2))
+
+      /**
+        * Int64.
+        */
+      case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc0, toBool(i1 == i2))
+
+      /**
+        * Str.
+        */
+      case (SymVal.Str(s1), SymVal.Str(s2)) => lift(pc0, toBool(s1 == s2))
+
+      /**
         * Tag.
         */
-      case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) if tag1 == tag2 =>
-        val innerTpe = tpe.asInstanceOf[Type.Enum]
-        eq(pc0, v1, v2, innerTpe.cases(tag1).tpe)
-      case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) if tag1 != tag2 =>
-        lift(pc0, SymVal.False)
+      case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) =>
+        if (tag1 == tag2) {
+          val innerTpe = tpe.asInstanceOf[Type.Enum]
+          eq(pc0, v1, v2, innerTpe.cases(tag1).tpe)
+        } else {
+          lift(pc0, SymVal.False)
+        }
 
-      // TODO: Rest
+      /**
+        * Tuple.
+        */
+      case (SymVal.Tuple(elms1), SymVal.Tuple(elms2)) =>
+        def visit(pc: PathConstraint, elms: List[(SymVal, SymVal)], types: List[Type]): List[(PathConstraint, SymVal)] = (elms, types) match {
+          case (Nil, Nil) => lift(pc0, SymVal.True)
+          case (Nil, _) => throw InternalCompilerException(s"Type Error: Mismatched tuple.")
+          case (_, Nil) => throw InternalCompilerException(s"Type Error: Mismatched tuple.")
+          case ((e1, e2) :: es, t :: ts) => eq(pc, e1, e2, t) flatMap {
+            case (pc1, SymVal.AtomicVar(id)) => visit(SmtExpr.Var(id, t) :: pc1, es, ts)
+            case (pc1, SymVal.True) => visit(pc1, es, ts)
+            case (pc1, SymVal.False) => lift(pc1, SymVal.False)
+            case (_, v) => throw InternalCompilerException(s"Type Error: Unexpected value '$v'.")
+          }
+        }
+        val elms = elms1 zip elms2
+        val types = tpe.asInstanceOf[Type.Tuple].elms
+        visit(pc0, elms, types)
+
+      case _ => throw InternalCompilerException(s"Unexpected values: '$x' and '$y'.")
     }
 
     /**
