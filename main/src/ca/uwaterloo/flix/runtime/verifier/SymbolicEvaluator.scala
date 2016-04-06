@@ -2,7 +2,6 @@ package ca.uwaterloo.flix.runtime.verifier
 
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression._
 import ca.uwaterloo.flix.language.phase.GenSym
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -777,6 +776,24 @@ object SymbolicEvaluator {
         * Unit.
         */
       case (SymVal.Unit, SymVal.Unit) => lift(pc0, SymVal.True)
+
+      /**
+        * True & False.
+        */
+      case (SymVal.True, SymVal.True) => lift(pc0, SymVal.True)
+      case (SymVal.True, SymVal.False) => lift(pc0, SymVal.False)
+      case (SymVal.False, SymVal.True) => lift(pc0, SymVal.False)
+      case (SymVal.False, SymVal.False) => lift(pc0, SymVal.True)
+
+      /**
+        * Char.
+        */
+      case (SymVal.Char(c1), SymVal.Char(c2)) => lift(pc0, toBool(c1 == c2))
+
+      /**
+        * Float32
+        */
+      case (SymVal.Float32(f1), SymVal.Float64(f2)) => lift(pc0, toBool(f1 == f2))
 
       /**
         * Tag.
