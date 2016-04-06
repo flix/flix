@@ -181,16 +181,13 @@ object CreateExecutableAst {
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => ExecutableAst.Expression.SwitchError(tpe, loc)
 
       case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
-        val e = toExecutable(lambda)
-        ExecutableAst.Expression.MkClosure(e, envVar, freeVars, tpe, loc)
+        throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
+      case SimplifiedAst.Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc) =>
+        val e = toExecutable(ref)
+        ExecutableAst.Expression.MkClosureRef(e.asInstanceOf[ExecutableAst.Expression.Ref], envVar, freeVars, tpe, loc)
 
       case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) =>
         ExecutableAst.Expression.ClosureVar(env, name, tpe, loc)
-
-      case SimplifiedAst.Expression.ApplyClosure(exp, args, tpe, loc) =>
-        val e = toExecutable(exp)
-        val es = args map toExecutable
-        ExecutableAst.Expression.ApplyClosure(e, es, tpe, loc)
 
     }
   }

@@ -124,9 +124,7 @@ object SymbolicEvaluator {
       /**
         * Closure.
         */
-      case Expression.MkClosure(lambda, cloVar, freeVars, _, _) =>
-        // The reference to the code component.
-        val ref = lambda.asInstanceOf[Ref]
+      case Expression.MkClosureRef(ref, cloVar, freeVars, _, _) =>
         // Build the closure environment where all the
         // free variables are bound to their current values.
         val env = freeVars.foldLeft(Map.empty[String, SymVal]) {
