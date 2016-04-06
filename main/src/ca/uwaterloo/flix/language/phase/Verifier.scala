@@ -303,12 +303,12 @@ object Verifier {
     val exp0 = property.exp
 
     // a sequence of environments under which the base expression must hold.
-    val envs = enumerate(getVars(exp0))
+    val envs = enumerate(getUniversallyQuantifiedVariables(exp0))
 
-    // the number of paths.
+    // the number of paths explored by the symbolic evaluator.
     var paths = 0
 
-    // the number of issued SMT queries.
+    // the number of queries issued to the SMT solver.
     var queries = 0
 
     // attempt to verify that the property holds under each environment.
@@ -329,7 +329,7 @@ object Verifier {
 
         paths += 1
 
-        SymbolicEvaluator.eval(peelQuantifiers(exp0), initEnv, root) flatMap {
+        SymbolicEvaluator.eval(peelUniversallyQuantifiers(exp0), initEnv, root) flatMap {
           case (Nil, SymVal.True) =>
             // Case 1: The symbolic evaluator proved the property.
             Nil
@@ -356,7 +356,7 @@ object Verifier {
                     Nil
                   case SmtResult.Satisfiable(model) =>
                     // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.
-                    List(toVerifierError(property, mkModel(env0, model))) // TODO MAp
+                    List(toVerifierError(property, mkModel(env0, model)))
                   case SmtResult.Unknown =>
                     // Case 3.3: It is unknown whether the formula has a model.
                     ???
@@ -377,16 +377,22 @@ object Verifier {
 
   }
 
-  def getVars(exp0: Expression): List[Var] = exp0 match {
+  /**
+    * Returns a list of all the universally quantified variables in the given expression `exp0`.
+    */
+  def getUniversallyQuantifiedVariables(exp0: Expression): List[Var] = exp0 match {
     case Expression.Universal(params, _, _) => params.map {
       case Ast.FormalParam(ident, tpe) => Var(ident, -1, tpe, SourceLocation.Unknown)
     }
     case _ => Nil
   }
 
-  def peelQuantifiers(exp0: Expression): Expression = exp0 match {
-    case Expression.Existential(params, exp, loc) => peelQuantifiers(exp)
-    case Expression.Universal(params, exp, loc) => peelQuantifiers(exp)
+  /**
+    * Returns the expression `exp0` with all universal quantifiers stripped.
+    */
+  def peelUniversallyQuantifiers(exp0: Expression): Expression = exp0 match {
+    case Expression.Existential(params, exp, loc) => peelUniversallyQuantifiers(exp)
+    case Expression.Universal(params, exp, loc) => peelUniversallyQuantifiers(exp)
     case _ => exp0
   }
 
