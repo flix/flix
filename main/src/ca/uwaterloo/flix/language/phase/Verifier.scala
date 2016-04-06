@@ -7,7 +7,7 @@ import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression._
 import ca.uwaterloo.flix.runtime.verifier._
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.Validation._
-import com.microsoft.z3.{BitVecNum, Expr, _}
+import com.microsoft.z3._
 
 object Verifier {
 
@@ -284,9 +284,13 @@ object Verifier {
      * Returns the original AST root if all properties verified successfully.
      */
     if (isSuccess(results)) {
-      root.toSuccess
+      val time = root.time.copy(verifier = totalElapsed(results))
+      root.copy(time = time).toSuccess
     } else {
-      ???
+      val errors = results.collect {
+        case PropertyResult.Failure(_, _, _, _, error) => error
+      }
+      Validation.Failure(errors.toVector)
     }
   }
 
@@ -297,9 +301,10 @@ object Verifier {
     * Otherwise returns `Some` containing the verification error.
     */
   def verifyProperty(property: ExecutableAst.Property, root: ExecutableAst.Root)(implicit genSym: GenSym): PropertyResult = {
+    // begin time measurement.
     val t = System.nanoTime()
 
-    // the base expression
+    // the base expression.
     val exp0 = property.exp
 
     // a sequence of environments under which the base expression must hold.
@@ -314,39 +319,28 @@ object Verifier {
     // attempt to verify that the property holds under each environment.
     val violations = envs flatMap {
       case env0 =>
-
-        //  TODO: Replace this by a different enumeration.
-        def toSymVal(exp0: Expression): SymVal = exp0 match {
-          case Expression.Unit => SymVal.Unit
-          case Expression.Var(ident, _, _, _) => SymVal.AtomicVar(ident)
-          case Expression.Tag(enum, tag, exp, tpe, loc) =>
-            SymVal.Tag(tag.name, toSymVal(exp))
-          case _ => ???
-        }
-        val initEnv = env0.foldLeft(Map.empty[String, SymVal]) {
-          case (macc, (name, exp)) => macc + (name -> toSymVal(exp))
-        }
-
-        paths += 1
-
-        SymbolicEvaluator.eval(peelUniversallyQuantifiers(exp0), initEnv, root) flatMap {
+        SymbolicEvaluator.eval(peelUniversallyQuantifiers(exp0), env0, root) flatMap {
           case (Nil, SymVal.True) =>
             // Case 1: The symbolic evaluator proved the property.
+            paths += 1
             Nil
           case (Nil, SymVal.False) =>
             // Case 2: The symbolic evaluator disproved the property.
             val env1 = env0.foldLeft(Map.empty[String, String]) {
               case (macc, (k, e)) => macc + (k -> e.toString)
             }
+            paths += 1
             List(toVerifierError(property, env1))
           case (pc, v) => v match {
             case SymVal.True =>
               // Case 3.1: The property holds under some path condition.
               // The property holds regardless of whether the path condition is satisfiable.
+              paths += 1
               Nil
             case SymVal.False =>
               // Case 3.2: The property *does not* hold under some path condition.
               // If the path condition is satisfiable then the property *does not* hold.
+              paths += 1
               queries += 1
               SmtSolver.mkContext(ctx => {
                 val q = visitPathConstraint(pc, ctx)
@@ -367,6 +361,7 @@ object Verifier {
 
     }
 
+    // end time measurement.
     val e = System.nanoTime() - t
 
     if (violations.isEmpty) {
@@ -402,30 +397,34 @@ object Verifier {
   // TODO: replace string by name?
   // TODO: Cleanup
   // TODO: Return SymVal.
-  def enumerate(q: List[Var])(implicit genSym: GenSym): List[Map[String, Expression]] = {
+  def enumerate(q: List[Var])(implicit genSym: GenSym): List[Map[String, SymVal]] = {
     // Unqualified formula. Used the empty environment.
     if (q.isEmpty)
       return List(Map.empty)
 
-    def visit(tpe: Type): List[Expression] = tpe match {
-      case Type.Unit => List(Expression.Unit)
-      case Type.Bool => List(Expression.True, Expression.False)
-      case Type.Int32 => List(Expression.Var(genSym.fresh2(), -1, Type.Int32, SourceLocation.Unknown))
-      case Type.Tuple(elms) => ???
-      case t@Type.Enum(name, cases) =>
-        val enum = cases.head._2.enum
+    def visit(tpe: Type): List[SymVal] = tpe match {
+      case Type.Unit => List(SymVal.Unit)
+      case Type.Bool => List(SymVal.True, SymVal.False)
+      case Type.Char => List(SymVal.AtomicVar(genSym.fresh2()))
+      case Type.Float32 => List(SymVal.AtomicVar(genSym.fresh2()))
+      case Type.Float64 => List(SymVal.AtomicVar(genSym.fresh2()))
+      case Type.Int8 => List(SymVal.AtomicVar(genSym.fresh2()))
+      case Type.Int16 => List(SymVal.AtomicVar(genSym.fresh2()))
+      case Type.Int32 => List(SymVal.AtomicVar(genSym.fresh2()))
+      case Type.Int64 => List(SymVal.AtomicVar(genSym.fresh2()))
+      case Type.Str => List(SymVal.AtomicVar(genSym.fresh2()))
+      case Type.Enum(name, cases) =>
         val r = cases flatMap {
-          case (tagName, tagType) =>
-            val tag = Name.Ident(SourcePosition.Unknown, tagName, SourcePosition.Unknown)
+          case (tag, tagType) =>
             visit(tagType.tpe) map {
-              case e => Expression.Tag(enum, tag, e, t, SourceLocation.Unknown)
+              case e => SymVal.Tag(tag, e)
             }
         }
         r.toList
-      case _ => throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+      case Type.Tuple(elms) => ???
     }
 
-    def expand(rs: List[(String, List[Expression])]): List[Map[String, Expression]] = rs match {
+    def expand(rs: List[(String, List[SymVal])]): List[Map[String, SymVal]] = rs match {
       case Nil => List(Map.empty)
       case (quantifier, expressions) :: xs => expressions flatMap {
         case expression => expand(xs) map {
@@ -440,32 +439,49 @@ object Verifier {
     expand(result)
   }
 
-  private def mkModel(env: Map[String, Expression], model: Model): Map[String, String] = {
-    val m = model2env(model)
-    def visit(e0: Expression): String = e0 match {
-      case Expression.Var(id, _, _, _) => m.get(id.name) match {
-        case None => "Not found (?)" // TODO
-        case Some(v) => v
-      }
-      case Expression.Unit => "#U"
-      case Expression.Tag(_, tag, e, _, _) => tag + "(" + visit(e) + ")"
+  /**
+    * Returns a stringified model of `env` where all free variables have been
+    * replaced by their corresponding values from the Z3 model `model`.
+    */
+  private def mkModel(env: Map[String, SymVal], model: Model): Map[String, String] = {
+    def visit(e0: SymVal): String = e0 match {
+      case SymVal.AtomicVar(id) => getConstant(id, model)
+      case SymVal.Unit => "#U"
+      case SymVal.True => "true"
+      case SymVal.False => "false"
+      case SymVal.Char(c) => c.toString
+      case SymVal.Float32(f) => f.toString
+      case SymVal.Float64(f) => f.toString
+      case SymVal.Int8(i) => i.toString
+      case SymVal.Int16(i) => i.toString
+      case SymVal.Int32(i) => i.toString
+      case SymVal.Int64(i) => i.toString
+      case SymVal.Str(s) => s
+      case SymVal.Tag(tag, SymVal.Unit) => tag
+      case SymVal.Tag(tag, elm) => tag + "(" + visit(elm) + ")"
+      case SymVal.Tuple(elms) => "(" + elms.map(visit).mkString(", ") + ")"
+      case SymVal.Closure(_, _, _) => "<<closure>>"
+      case SymVal.Environment(_) => "<<environment>>"
+      case SymVal.UserError(loc) => "UserError(" + loc.format + ")"
+      case SymVal.MatchError(loc) => "MatchError(" + loc.format + ")"
+      case SymVal.SwitchError(loc) => "SwitchError(" + loc.format + ")"
     }
 
     env.foldLeft(Map.empty[String, String]) {
-      case (macc, (k, v)) => macc + (k -> visit(v))
+      case (macc, (key, value)) => macc + (key -> visit(value))
     }
   }
 
-  private def model2env(model: Model): Map[String, String] = {
-    def visit(exp: Expr): String = exp match {
-      case e: BoolExpr => if (e.isTrue) "true" else "false"
-      case e: BitVecNum => e.getLong.toString
-      case _ => throw InternalCompilerException(s"Unexpected Z3 expression: $exp.")
+  /**
+    * Returns a string representation of the given constant `id` in the Z3 model `m`.
+    */
+  private def getConstant(id: Name.Ident, m: Model): String = {
+    for (decl <- m.getConstDecls) {
+      if (id.name == decl.getName.toString) {
+        return m.getConstInterp(decl).toString // TODO: Improve formatting.
+      }
     }
-
-    model.getConstDecls.foldLeft(Map.empty[String, String]) {
-      case (macc, decl) => macc + (decl.getName.toString -> visit(model.getConstInterp(decl)))
-    }
+    "???"
   }
 
   /**
@@ -604,7 +620,7 @@ object Verifier {
         case PropertyResult.Failure(property, paths, queries, elapsed, error) =>
           Console.println(consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ")" + " (" + queries + " queries)")
 
-        case PropertyResult.Failure(property, paths, queries, elapsed, error) =>
+        case PropertyResult.Unknown(property, paths, queries, elapsed, error) =>
           Console.println(consoleCtx.red("? ") + property.law + " (" + property.loc.format + ")" + " (" + queries + " queries)")
       }
     }
