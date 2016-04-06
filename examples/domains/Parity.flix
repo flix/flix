@@ -54,6 +54,8 @@ namespace Parity {
      */
     def alpha(i: Int): Parity = if (i % 2 != 0) Parity.Odd else Parity.Even
 
+    // TODO: inc/dec
+
     /**
      * Over-approximates integer `addition`.
      */

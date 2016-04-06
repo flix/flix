@@ -380,6 +380,7 @@ object PropertyGen {
     }
 
     // return all the collected properties.
+   // TODO: Sort
     val properties = partialOrderProperties ++ latticeProperties ++ functionProperties
 
     root.copy(properties = properties)

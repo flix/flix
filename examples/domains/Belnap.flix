@@ -135,6 +135,22 @@ namespace Belnap {
         case _                              => Belnap.Top
     }
 
+    /**
+     * Over-approximates the logical `nand` operator.
+     *
+     * NB: Commutative, but not associative!
+     */
+    @strict @monotone @commutative
+    fn nand(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+        case (Belnap.Bot, _)                => Belnap.Bot
+        case (_, Belnap.Bot)                => Belnap.Bot
+        case (Belnap.True, Belnap.True)     => Belnap.False
+        case (Belnap.True, Belnap.False)    => Belnap.True
+        case (Belnap.False, Belnap.True)    => Belnap.True
+        case (Belnap.False, Belnap.False)   => Belnap.True
+        case _                              => Belnap.Top
+    }
+
     let Belnap<> = (Belnap.Bot, Belnap.Top, leq, lub, glb)
 
 }
