@@ -56,7 +56,7 @@ object Interpreter {
       }
     case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env)
     case Expression.Hook(hook, _, _) => Value.HookClosure(hook)
-    case Expression.MkClosure(ref, envVar, freeVars, _, _) =>
+    case Expression.MkClosureRef(ref, envVar, freeVars, _, _) =>
       // Create the closure environment, by binding values from the current environment to the free variables.
       val closureEnv = mutable.Map.empty[String, AnyRef]
       for (freeVar <- freeVars) {
@@ -108,7 +108,7 @@ object Interpreter {
     case Expression.CheckNil(exp, _) => ???
     case Expression.CheckCons(exp, _) => ???
     case Expression.FSet(elms, _, _) => Value.mkSet(elms.map(e => eval(e, root, env)).toSet)
-    case Expression.UserError(_, loc) => throw UserException("User exception.", loc)
+    case Expression.Error(_, loc) => throw UserException("User exception.", loc)
     case Expression.MatchError(_, loc) => throw MatchException("Non-exhaustive match expression.", loc)
     case Expression.SwitchError(_, loc) => throw SwitchException("Non-exhaustive switch expression.", loc)
   }

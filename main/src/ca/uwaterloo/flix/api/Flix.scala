@@ -168,7 +168,8 @@ class Flix {
         val ast = PropertyGen.collectProperties(tast)
         val sast = Simplifier.simplify(ast)
         val lifted = LambdaLift.lift(sast)
-        val east = CreateExecutableAst.toExecutable(lifted)
+        val numbered = VarNumbering.number(lifted)
+        val east = CreateExecutableAst.toExecutable(numbered)
         if (options.verify == Verify.Enabled) {
           for (error <- Verifier.verify(east))
             Console.println(error.message)
