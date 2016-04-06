@@ -37,7 +37,7 @@ namespace Interval {
         case (Interval.Bot, _)                                  => Interval.Bot
         case (_, Interval.Bot)                                  => Interval.Bot
         case (Interval.Range(b1, e1), Interval.Range(b2, e2))   =>
-            Interval.Range(Math::min(b1, b2), Math::max(e1, e2))
+            Interval.Range(Math/min(b1, b2), Math/max(e1, e2))
         case _                                                  => Interval.Top
     }
 
@@ -52,8 +52,8 @@ namespace Interval {
         case (Interval.Top, x)                                  => x
         case (x, Interval.Top)                                  => x
         case (Interval.Range(b1, e1), Interval.Range(b2, e2))   =>
-            let b = Math::max(b1, b2) in
-            let e = Math::min(e1, e2) in
+            let b = Math/max(b1, b2) in
+            let e = Math/min(e1, e2) in
                 if (b <= e)
                     Interval.Range(b, e)
                 else
@@ -118,22 +118,16 @@ namespace Interval {
         case _                                                  => Interval.Top
     }
 
-    /**
-     * Over-approximates integer `modulus`.
-     */
-    @strict @monotone
-    fn modulo(e1: Interval, e2: Interval): Interval = ???: Interval // TODO: Hard
-
-    /**
-     * Over-approximates `bitwise negation`.
-     */
-    @strict @monotone
-    fn negate(e: Interval): Interval = match e with {
-        case Interval.Bot           => Interval.Bot
-        case Interval.Range(b, e)   =>
-            ???: Interval // TODO
-        case Interval.Top           => Interval.Top
-    }
+//    /**
+//     * Over-approximates `bitwise negation`.
+//     */
+//    @strict @monotone
+//    fn negate(e: Interval): Interval = match e with {
+//        case Interval.Bot           => Interval.Bot
+//        case Interval.Range(b, e)   =>
+//            ???: Interval // TODO
+//        case Interval.Top           => Interval.Top
+//    }
 
     // TODO, or, and, xor, leftShift, rightShift.
 
