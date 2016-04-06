@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.language._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression._
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Property
 import ca.uwaterloo.flix.runtime.verifier._
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.Validation._
@@ -302,8 +303,8 @@ object Verifier {
     * Returns `None` if the property is satisfied.
     * Otherwise returns `Some` containing the verification error.
     */
-  def verifyProperty(property: ExecutableAst.Property, root: ExecutableAst.Root)(implicit genSym: GenSym): PropertyResult = {
-    // begin time measurement.
+  def verifyProperty(property: Property, root: ExecutableAst.Root)(implicit genSym: GenSym): PropertyResult = {
+    // start the clock.
     val t = System.nanoTime()
 
     // the base expression.
@@ -321,46 +322,34 @@ object Verifier {
     // attempt to verify that the property holds under each environment.
     val violations = envs flatMap {
       case env0 =>
+        paths += 1
         SymbolicEvaluator.eval(peelUniversallyQuantifiers(exp0), env0, root) flatMap {
           case (Nil, SymVal.True) =>
             // Case 1: The symbolic evaluator proved the property.
-            paths += 1
             Nil
           case (Nil, SymVal.False) =>
             // Case 2: The symbolic evaluator disproved the property.
-            paths += 1
             List(toVerifierError(property, mkModel(env0, null)))
           case (pc, v) => v match {
             case SymVal.True =>
               // Case 3.1: The property holds under some path condition.
               // The property holds regardless of whether the path condition is satisfiable.
-              paths += 1
               Nil
             case SymVal.False =>
               // Case 3.2: The property *does not* hold under some path condition.
               // If the path condition is satisfiable then the property *does not* hold.
-              paths += 1
               queries += 1
-              SmtSolver.mkContext(ctx => {
-                val q = visitPathConstraint(pc, ctx)
-                SmtSolver.checkSat(q, ctx) match {
-                  case SmtResult.Unsatisfiable =>
-                    // Case 3.1: The formula is UNSAT, i.e. the property HOLDS.
-                    Nil
-                  case SmtResult.Satisfiable(model) =>
-                    // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.
-                    List(toVerifierError(property, mkModel(env0, model)))
-                  case SmtResult.Unknown =>
-                    // Case 3.3: It is unknown whether the formula has a model.
-                    ???
-                }
-              })
+              assertUnsatisfiable(property, and(pc), env0)
+            case SymVal.AtomicVar(id) =>
+              // Case 3.3: The property holds iff the atomic variable is never `false`.
+              queries += 1
+              assertUnsatisfiable(property, SmtExpr.Not(and(pc)), env0)
+            case _ => throw InternalCompilerException(s"Unexpected value: '$v'.")
           }
         }
-
     }
 
-    // end time measurement.
+    // stop the clock.
     val e = System.nanoTime() - t
 
     if (violations.isEmpty) {
@@ -446,6 +435,27 @@ object Verifier {
   }
 
   /**
+    * Optionally returns a verifier error if the given path constraint `pc` is satisfiable.
+    */
+  private def assertUnsatisfiable(p: Property, expr: SmtExpr, env0: Map[String, SymVal]): Option[VerifierError] = {
+    SmtSolver.mkContext(ctx => {
+      val query = visitBoolExpr(expr, ctx)
+      SmtSolver.checkSat(query, ctx) match {
+        case SmtResult.Unsatisfiable =>
+          // Case 3.1: The formula is UNSAT, i.e. the property HOLDS.
+          None
+        case SmtResult.Satisfiable(model) =>
+          // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.
+          Some(toVerifierError(p, mkModel(env0, model)))
+        case SmtResult.Unknown =>
+          // Case 3.3: It is unknown whether the formula has a model.
+          // Soundness require us to assume that there is a model.
+          Some(toVerifierError(p, Map.empty))
+      }
+    })
+  }
+
+  /**
     * Returns a stringified model of `env` where all free variables have been
     * replaced by their corresponding values from the Z3 model `model`.
     *
@@ -495,7 +505,7 @@ object Verifier {
   /**
     * Returns a verifier error for the given property `prop` under the given environment `env`.
     */
-  private def toVerifierError(prop: ExecutableAst.Property, env: Map[String, String]): VerifierError = prop.law match {
+  private def toVerifierError(prop: Property, env: Map[String, String]): VerifierError = prop.law match {
     case Law.Associativity => VerifierError.AssociativityError(env, prop.loc)
     case Law.Commutativity => VerifierError.CommutativityError(env, prop.loc)
     case Law.Reflexivity => VerifierError.ReflexivityError(env, prop.loc)
@@ -514,10 +524,10 @@ object Verifier {
   }
 
   /**
-    * Translates the given path constraint `pc` into a boolean Z3 expression.
+    * Translates the given path constraint `pc` into a single smt expression.
     */
-  private def visitPathConstraint(pc: List[SmtExpr], ctx: Context): BoolExpr = pc.foldLeft(ctx.mkBool(true)) {
-    case (f, e) => ctx.mkAnd(f, visitBoolExpr(e, ctx))
+  private def and(pc: List[SmtExpr]): SmtExpr = pc.reduceLeft[SmtExpr] {
+    case (acc, e) => SmtExpr.LogicalAnd(acc, e)
   }
 
   /**
