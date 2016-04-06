@@ -394,10 +394,9 @@ object Verifier {
     * Enumerates all possible environments of the given universally quantified variables.
     */
   def enumerate(q: List[Var])(implicit genSym: GenSym): List[Map[String, SymVal]] = {
-    // Unqualified formula. Used the empty environment.
-    if (q.isEmpty)
-      return List(Map.empty)
-
+    /*
+     * Local visitor. Enumerates the symbolic values of a type.
+     */
     def visit(tpe: Type): List[SymVal] = tpe match {
       case Type.Unit => List(SymVal.Unit)
       case Type.Bool => List(SymVal.True, SymVal.False)
@@ -417,7 +416,17 @@ object Verifier {
             }
         }
         r.toList
-      case Type.Tuple(elms) => ???
+      case Type.Tuple(elms) =>
+        def visitn(xs: List[Type]): List[List[SymVal]] = xs match {
+          case Nil => Nil
+          case t :: ts => visit(t) map {
+            case l => visitn(ts) flatMap {
+              case ls => l :: ls
+            }
+          }
+        }
+        visitn(elms).map(es => SymVal.Tuple(es))
+      case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
 
     def expand(rs: List[(String, List[SymVal])]): List[Map[String, SymVal]] = rs match {
@@ -476,10 +485,10 @@ object Verifier {
   private def getConstant(id: Name.Ident, m: Model): String = {
     for (decl <- m.getConstDecls) {
       if (id.name == decl.getName.toString) {
-        return m.getConstInterp(decl).toString // TODO: Improve formatting.
+        return m.getConstInterp(decl).toString
       }
     }
-    "???"
+    throw InternalCompilerException(s"Interpretation not found in Z3 model: '${id.name}'.")
   }
 
   /**
@@ -532,6 +541,7 @@ object Verifier {
       case Type.Bool => ctx.mkXor(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
       case _ => ctx.mkNot(ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx)))
     }
+    case _ => throw InternalCompilerException(s"Unexpected SMT expression: '$exp0'.")
   }
 
   /**
@@ -554,13 +564,13 @@ object Verifier {
     case SmtExpr.Times(e1, e2) => ctx.mkBVMul(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
     case SmtExpr.Divide(e1, e2) => ctx.mkBVSDiv(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
     case SmtExpr.Modulo(e1, e2) => ctx.mkBVSMod(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-    case SmtExpr.Exponentiate(e1, e2) => ??? // TODO
     case SmtExpr.BitwiseNegate(e) => ctx.mkBVNeg(visitBitVecExpr(e, ctx))
     case SmtExpr.BitwiseAnd(e1, e2) => ctx.mkBVAND(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
     case SmtExpr.BitwiseOr(e1, e2) => ctx.mkBVOR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
     case SmtExpr.BitwiseXor(e1, e2) => ctx.mkBVXOR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
     case SmtExpr.BitwiseLeftShift(e1, e2) => ctx.mkBVSHL(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
     case SmtExpr.BitwiseRightShift(e1, e2) => ctx.mkBVLSHR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+    case SmtExpr.Exponentiate(e1, e2) => throw InternalCompilerException(s"Exponentiation is not supported.")
     case _ => throw InternalCompilerException(s"Unexpected SMT expression: '$exp0'.")
   }
 
