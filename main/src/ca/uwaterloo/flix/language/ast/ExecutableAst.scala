@@ -12,6 +12,7 @@ object ExecutableAst {
                   indexes: Map[Symbol.TableSym, ExecutableAst.Definition.Index],
                   facts: Array[ExecutableAst.Constraint.Fact],
                   rules: Array[ExecutableAst.Constraint.Rule],
+                  properties: List[ExecutableAst.Property],
                   time: Time,
                   dependenciesOf: Map[Symbol.TableSym, mutable.Set[(Constraint.Rule, ExecutableAst.Predicate.Body.Table)]]) extends ExecutableAst // TODO: Why mutable?
 
@@ -262,6 +263,7 @@ object ExecutableAst {
       * @param tpe    the type of the variable.
       * @param loc    the source location of the variable.
       */
+    // TODO: Rename to LocalVar
     case class Var(ident: Name.Ident,
                    offset: scala.Int,
                    tpe: Type,
@@ -492,6 +494,14 @@ object ExecutableAst {
       final val tpe: Type = Type.Bool
     }
 
+    case class Existential(params: List[Ast.FormalParam], exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
+      def tpe: Type = Type.Bool
+    }
+
+    case class Universal(params: List[Ast.FormalParam], exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
+      def tpe: Type = Type.Bool
+    }
+
     case class FSet(elms: Array[ExecutableAst.Expression],
                     tpe: Type.FSet,
                     loc: SourceLocation) extends ExecutableAst.Expression
@@ -502,7 +512,7 @@ object ExecutableAst {
       * @param tpe the type of the error.
       * @param loc the source location of the error.
       */
-    case class Error(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class UserError(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     /**
       * A typed AST node representing a match error.
@@ -641,5 +651,7 @@ object ExecutableAst {
   case class Attribute(ident: Name.Ident, tpe: Type) extends ExecutableAst
 
   case class FormalArg(ident: Name.Ident, tpe: Type) extends ExecutableAst
+
+  case class Property(law: Law, exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst
 
 }

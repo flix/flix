@@ -115,6 +115,10 @@ object ClosureConv {
       SimplifiedAst.Expression.CheckCons(convert(e), loc)
     case SimplifiedAst.Expression.FSet(elms, tpe, loc) =>
       SimplifiedAst.Expression.FSet(elms.map(convert), tpe, loc)
+    case SimplifiedAst.Expression.Existential(params, e, loc) =>
+      SimplifiedAst.Expression.Existential(params, convert(e), loc)
+    case SimplifiedAst.Expression.Universal(params, e, loc) =>
+      SimplifiedAst.Expression.Universal(params, convert(e), loc)
     case SimplifiedAst.Expression.UserError(tpe, loc) => exp
     case SimplifiedAst.Expression.MatchError(tpe, loc) => exp
     case SimplifiedAst.Expression.SwitchError(tpe, loc) => exp

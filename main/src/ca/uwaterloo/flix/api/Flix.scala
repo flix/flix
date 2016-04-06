@@ -152,6 +152,7 @@ class Flix {
     if (strings.isEmpty && paths.isEmpty)
       throw new IllegalStateException("No input specified. Please add at least one string or path input.")
 
+    // TODO: Cleanup
     Compiler.compile(getSourceInputs, hooks.toMap)
   }
 
@@ -163,19 +164,18 @@ class Flix {
   def solve(): Validation[Model, CompilationError] = {
     implicit val _ = genSym
 
-    compile() map {
-      case ast =>
+    // TODO: Cleanup
+    compile() flatMap {
+      case tast =>
+        val ast = PropertyGen.collectProperties(tast)
         val sast = Simplifier.simplify(ast)
         val lifted = LambdaLift.lift(sast)
         val numbered = VarNumbering.number(lifted)
         val east = CreateExecutableAst.toExecutable(numbered)
-        if (options.verify == Verify.Enabled) {
-          for (r <- Verifier.checkAll(sast)) {
-            Console.println(r.message)
-          }
-        }
 
-        new Solver()(Solver.SolverContext(east, options)).solve()
+        Verifier.verify(east, options) map {
+          case ast => new Solver()(Solver.SolverContext(ast, options)).solve()
+        }
     }
   }
 

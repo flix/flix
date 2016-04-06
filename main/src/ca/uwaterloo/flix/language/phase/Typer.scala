@@ -138,7 +138,7 @@ object Typer {
     @@(constantsVal, latticesVal, relationsVal, indexesVal, factsVal, rulesVal) map {
       case (constants, lattices, relations, indexes, facts, rules) =>
         val e = System.nanoTime()
-        TypedAst.Root(constants, lattices, relations, indexes, facts, rules, root.hooks, root.time.copy(typer = e - b))
+        TypedAst.Root(constants, lattices, relations, indexes, facts, rules, root.hooks, Nil, root.time.copy(typer = e - b))
     }
   }
 

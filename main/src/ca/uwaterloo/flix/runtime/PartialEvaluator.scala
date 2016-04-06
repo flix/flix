@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.GenSym
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-// TODO: Use coverage to determine which of these are redundant.
+// TODO: To be removed.
 
 object PartialEvaluator {
 

@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.SimplifiedAst
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, SimplifiedAst, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
@@ -9,130 +9,196 @@ import scala.collection.mutable
 object LambdaLift {
 
   /**
+    * Mutable map of top level definitions.
+    */
+  type TopLevel = mutable.Map[Symbol.Resolved, SimplifiedAst.Definition.Constant]
+
+  /**
     * Performs lambda lifting on all definitions in the AST.
     */
   def lift(root: SimplifiedAst.Root)(implicit genSym: GenSym): SimplifiedAst.Root = {
-    val defs = root.constants.flatMap { case (_, defn) => lift(defn) }
-    root.copy(constants = defs)
+    /*
+     * A mutable map to hold lambdas that are lifted to the top level.
+     */
+    val m: TopLevel = mutable.Map.empty[Symbol.Resolved, SimplifiedAst.Definition.Constant]
+
+    /*
+     * Lift definitions.
+     */
+    val definitions = root.constants.map {
+      case (name, decl) => name -> lift(decl, m)
+    }
+
+    /*
+     * Lift properties.
+     */
+    val properties = root.properties.map(p => lift(p, m))
+
+    /*
+     * Return the updated AST root.
+     */
+    root.copy(constants = definitions ++ m, properties = properties)
   }
 
   /**
-    * Returns a map of definitions where each nested lambda inside the given declaration has been lifted out.
+    * Performs lambda lifting on the given declaration `decl`.
     *
-    * The original definition is contained in the map.
+    * Lifted definitions are added to the mutable map `m`.
     */
-  def lift(decl: SimplifiedAst.Definition.Constant)(implicit genSym: GenSym): Map[Symbol.Resolved, SimplifiedAst.Definition.Constant] = {
+  def lift(decl: SimplifiedAst.Definition.Constant, m: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant = {
+    /*
+     * Closure convert the expression in the definition.
+     */
+    val convExp = ClosureConv.convert(decl.exp)
 
-    def visit(m: mutable.Map[Symbol.Resolved, SimplifiedAst.Definition.Constant], e: SimplifiedAst.Expression): SimplifiedAst.Expression =
-      e match {
-        case SimplifiedAst.Expression.Unit => e
-        case SimplifiedAst.Expression.True => e
-        case SimplifiedAst.Expression.False => e
-        case SimplifiedAst.Expression.Char(lit) => e
-        case SimplifiedAst.Expression.Float32(lit) => e
-        case SimplifiedAst.Expression.Float64(lit) => e
-        case SimplifiedAst.Expression.Int8(lit) => e
-        case SimplifiedAst.Expression.Int16(lit) => e
-        case SimplifiedAst.Expression.Int32(lit) => e
-        case SimplifiedAst.Expression.Int64(lit) => e
-        case SimplifiedAst.Expression.Str(lit) => e
-        case SimplifiedAst.Expression.LoadBool(n, o) => e
-        case SimplifiedAst.Expression.LoadInt8(b, o) => e
-        case SimplifiedAst.Expression.LoadInt16(b, o) => e
-        case SimplifiedAst.Expression.LoadInt32(b, o) => e
-        case SimplifiedAst.Expression.StoreBool(b, o, v) => e
-        case SimplifiedAst.Expression.StoreInt8(b, o, v) => e
-        case SimplifiedAst.Expression.StoreInt16(b, o, v) => e
-        case SimplifiedAst.Expression.StoreInt32(b, o, v) => e
-        case SimplifiedAst.Expression.Var(ident, o, tpe, loc) => e
-        case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) => e
-        case SimplifiedAst.Expression.Ref(name, tpe, loc) => e
+    /*
+     * Lambda lift the closure converted expression.
+     *
+     * This causes side-effects on the map `m` updating it with new top-level definitions.
+     */
+    val liftExp = lift(convExp, decl.name.parts, m)
 
-        case lam @ SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
-          // Lift the lambda to a top-level definition, and replacing the Lambda expression with a Ref.
+    /*
+     * Return the updated definition.
+     */
+    decl.copy(exp = liftExp)
+  }
 
-          // First, recursively visit the lambda body, lifting any inner lambdas.
-          val exp = visit(m, body)
+  /**
+    * Performs lambda lifting on the given property `prop`.
+    *
+    * Lifted definitions are added to the mutable map `m`.
+    */
+  def lift(prop: SimplifiedAst.Property, m: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Property = {
+    /*
+     * Closure convert the expression in the property.
+     */
+    val convExp = ClosureConv.convert(prop.exp)
 
-          // Then, generate a fresh name for the lifted lambda.
-          val name = genSym.freshDefn(decl.name.parts)
+    /*
+     * Lambda lift the closure converted expression.
+     *
+     * This causes side-effects on the map `m` updating it with new top-level definitions.
+     */
+    val liftExp = lift(convExp, List(prop.law.toString), m)
 
-          // If the lambda term has an envVar, then it has free variables. So rewrite the arguments and type to take an
-          // additional parameter: the closure environment
-          val (args2, tpe2) = lam.envVar match {
-            case Some(envVar) =>
-              val newArgs = args :+ SimplifiedAst.FormalArg(envVar, Type.ClosureEnv)
-              val newTpe = Type.Lambda(tpe.args :+ Type.ClosureEnv, tpe.retTpe)
-              (newArgs, newTpe)
-            case None => (args, tpe)
-          }
+    /*
+     * Return the updated definition.
+     */
+    prop.copy(exp = liftExp)
+  }
 
-          // Create a new top-level definition, using the fresh name and lifted body.
-          val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), name, args2, exp, tpe2, loc)
+  /**
+    * Performs lambda lifting on the given expression `exp0`.
+    *
+    * Adds new top-level definitions to the mutable map `m`.
+    */
+  def lift(exp0: Expression, nameHint: List[String], m: TopLevel)(implicit genSym: GenSym): Expression = {
 
-          // Update the map that holds newly-generated definitions
-          m += (name -> defn)
+    /**
+      * Inner visitor.
+      */
+    def visit(e: Expression): Expression = e match {
+      case Expression.Unit => e
+      case Expression.True => e
+      case Expression.False => e
+      case Expression.Char(lit) => e
+      case Expression.Float32(lit) => e
+      case Expression.Float64(lit) => e
+      case Expression.Int8(lit) => e
+      case Expression.Int16(lit) => e
+      case Expression.Int32(lit) => e
+      case Expression.Int64(lit) => e
+      case Expression.Str(lit) => e
+      case Expression.LoadBool(n, o) => e
+      case Expression.LoadInt8(b, o) => e
+      case Expression.LoadInt16(b, o) => e
+      case Expression.LoadInt32(b, o) => e
+      case Expression.StoreBool(b, o, v) => e
+      case Expression.StoreInt8(b, o, v) => e
+      case Expression.StoreInt16(b, o, v) => e
+      case Expression.StoreInt32(b, o, v) => e
+      case Expression.Var(ident, o, tpe, loc) => e
+      case Expression.ClosureVar(env, name, tpe, loc) => e
+      case Expression.Ref(name, tpe, loc) => e
 
-          // Finally, replace this current Lambda node with a Ref to the newly-generated name.
-          SimplifiedAst.Expression.Ref(name, tpe, loc)
+      case lam @ Expression.Lambda(args, body, tpe, loc) =>
+        // Lift the lambda to a top-level definition, and replacing the Lambda expression with a Ref.
 
-        case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
-        case SimplifiedAst.Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc) => e
+        // First, recursively visit the lambda body, lifting any inner lambdas.
+        val exp = visit(body)
 
-        case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
-          // Replace the MkClosure node with a MkClosureRef node, since the Lambda has been replaced by a Ref.
-          visit(m, lambda) match {
-            case ref: SimplifiedAst.Expression.Ref =>
-              SimplifiedAst.Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc)
-            case _ => throw InternalCompilerException(s"Unexpected expression: '$lambda'.")
-          }
+        // Then, generate a fresh name for the lifted lambda.
+        val name = genSym.freshDefn(nameHint)
 
-        case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
-          SimplifiedAst.Expression.ApplyRef(name, args.map(visit(m, _)), tpe, loc)
-        case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
-          SimplifiedAst.Expression.Apply(visit(m, exp), args.map(visit(m, _)), tpe, loc)
-        case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) =>
-          SimplifiedAst.Expression.Unary(op, visit(m, exp), tpe, loc)
-        case SimplifiedAst.Expression.Binary(op, exp1, exp2, tpe, loc) =>
-          SimplifiedAst.Expression.Binary(op, visit(m, exp1), visit(m, exp2), tpe, loc)
-        case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-          SimplifiedAst.Expression.IfThenElse(visit(m, exp1), visit(m, exp2), visit(m, exp3), tpe, loc)
-        case SimplifiedAst.Expression.Let(ident, offset, exp1, exp2, tpe, loc) =>
-          SimplifiedAst.Expression.Let(ident, offset, visit(m, exp1), visit(m, exp2), tpe, loc)
-        case SimplifiedAst.Expression.CheckTag(tag, exp, loc) =>
-          SimplifiedAst.Expression.CheckTag(tag, visit(m, exp), loc)
-        case SimplifiedAst.Expression.GetTagValue(tag, exp, tpe, loc) =>
-          SimplifiedAst.Expression.GetTagValue(tag, visit(m, exp), tpe, loc)
-        case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) =>
-          SimplifiedAst.Expression.Tag(enum, tag, visit(m, exp), tpe, loc)
-        case SimplifiedAst.Expression.GetTupleIndex(exp, offset, tpe, loc) =>
-          SimplifiedAst.Expression.GetTupleIndex(visit(m, exp), offset, tpe, loc)
-        case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
-          SimplifiedAst.Expression.Tuple(elms.map(visit(m, _)), tpe, loc)
-        case SimplifiedAst.Expression.CheckNil(exp, loc) =>
-          SimplifiedAst.Expression.CheckNil(visit(m, exp), loc)
-        case SimplifiedAst.Expression.CheckCons(exp, loc) =>
-          SimplifiedAst.Expression.CheckCons(visit(m, exp), loc)
-        case SimplifiedAst.Expression.FSet(elms, tpe, loc) =>
-          SimplifiedAst.Expression.FSet(elms.map(visit(m, _)), tpe, loc)
-        case SimplifiedAst.Expression.UserError(tpe, loc) => e
-        case SimplifiedAst.Expression.MatchError(tpe, loc) => e
-        case SimplifiedAst.Expression.SwitchError(tpe, loc) => e
-      }
+        // If the lambda term has an envVar, then it has free variables. So rewrite the arguments and type to take an
+        // additional parameter: the closure environment
+        val (args2, tpe2) = lam.envVar match {
+          case Some(envVar) =>
+            val newArgs = args :+ SimplifiedAst.FormalArg(envVar, Type.ClosureEnv)
+            val newTpe = Type.Lambda(tpe.args :+ Type.ClosureEnv, tpe.retTpe)
+            (newArgs, newTpe)
+          case None => (args, tpe)
+        }
 
-    // Map to hold all newly generated definitions.
-    val m = mutable.Map.empty[Symbol.Resolved, SimplifiedAst.Definition.Constant]
+        // Create a new top-level definition, using the fresh name and lifted body.
+        val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), name, args2, exp, tpe2, loc)
 
-    // Closure convert the expression.
-    val converted = ClosureConv.convert(decl.exp)
+        // Update the map that holds newly-generated definitions
+        m += (name -> defn)
 
-    // Perform lambda lifting. Returns the expression of the top-level function.
-    val lifted = visit(m, converted)
+        // Finally, replace this current Lambda node with a Ref to the newly-generated name.
+        SimplifiedAst.Expression.Ref(name, tpe, loc)
 
-    // Add the top-level function to the map of generated functions.
-    val newConstant = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), decl.name, decl.formals, lifted, decl.tpe, decl.loc)
-    m += (decl.name -> newConstant)
-    m.toMap
+      case Expression.Hook(hook, tpe, loc) => e
+      case Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc) => e
+
+      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
+        // Replace the MkClosure node with a MkClosureRef node, since the Lambda has been replaced by a Ref.
+        visit(lambda) match {
+          case ref: SimplifiedAst.Expression.Ref =>
+            SimplifiedAst.Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc)
+          case _ => throw InternalCompilerException(s"Unexpected expression: '$lambda'.")
+        }
+
+      case Expression.ApplyRef(name, args, tpe, loc) =>
+        Expression.ApplyRef(name, args.map(visit(_)), tpe, loc)
+      case Expression.Apply(exp, args, tpe, loc) =>
+        Expression.Apply(visit(exp), args.map(visit(_)), tpe, loc)
+      case Expression.Unary(op, exp, tpe, loc) =>
+        Expression.Unary(op, visit(exp), tpe, loc)
+      case Expression.Binary(op, exp1, exp2, tpe, loc) =>
+        Expression.Binary(op, visit(exp1), visit(exp2), tpe, loc)
+      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+        Expression.IfThenElse(visit(exp1), visit(exp2), visit(exp3), tpe, loc)
+      case Expression.Let(ident, offset, exp1, exp2, tpe, loc) =>
+        Expression.Let(ident, offset, visit(exp1), visit(exp2), tpe, loc)
+      case Expression.CheckTag(tag, exp, loc) =>
+        Expression.CheckTag(tag, visit(exp), loc)
+      case Expression.GetTagValue(tag, exp, tpe, loc) =>
+        Expression.GetTagValue(tag, visit(exp), tpe, loc)
+      case Expression.Tag(enum, tag, exp, tpe, loc) =>
+        Expression.Tag(enum, tag, visit(exp), tpe, loc)
+      case Expression.GetTupleIndex(exp, offset, tpe, loc) =>
+        Expression.GetTupleIndex(visit(exp), offset, tpe, loc)
+      case Expression.Tuple(elms, tpe, loc) =>
+        Expression.Tuple(elms.map(visit(_)), tpe, loc)
+      case Expression.CheckNil(exp, loc) =>
+        Expression.CheckNil(visit(exp), loc)
+      case Expression.CheckCons(exp, loc) =>
+        Expression.CheckCons(visit(exp), loc)
+      case Expression.FSet(elms, tpe, loc) =>
+        Expression.FSet(elms.map(visit(_)), tpe, loc)
+      case Expression.Existential(params, exp, loc) =>
+        Expression.Existential(params, visit(exp), loc)
+      case Expression.Universal(params, exp, loc) =>
+        Expression.Universal(params, visit(exp), loc)
+      case Expression.UserError(tpe, loc) => e
+      case Expression.MatchError(tpe, loc) => e
+      case Expression.SwitchError(tpe, loc) => e
+    }
+
+    visit(exp0)
   }
 
 }

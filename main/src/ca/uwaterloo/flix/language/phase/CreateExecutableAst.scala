@@ -21,6 +21,7 @@ object CreateExecutableAst {
     val indexes = sast.indexes.map { case (k, v) => k -> Definition.toExecutable(v) }
     val facts = sast.facts.map(Constraint.toExecutable).toArray
     val rules = sast.rules.map(Constraint.toExecutable).toArray
+    val properties = sast.properties.map(p => toExecutable(p))
     val time = sast.time
 
     val dependenciesOf: Map[Symbol.TableSym, mutable.Set[(ExecutableAst.Constraint.Rule, ExecutableAst.Predicate.Body.Table)]] = {
@@ -50,7 +51,7 @@ object CreateExecutableAst {
       result.toMap
     }
 
-    ExecutableAst.Root(constants, lattices, tables, indexes, facts, rules, time, dependenciesOf)
+    ExecutableAst.Root(constants, lattices, tables, indexes, facts, rules, properties, time, dependenciesOf)
   }
 
   object Definition {
@@ -171,9 +172,23 @@ object CreateExecutableAst {
       case SimplifiedAst.Expression.FSet(elms, tpe, loc) =>
         val elmsArray = elms.map(toExecutable).toArray
         ExecutableAst.Expression.FSet(elmsArray, tpe, loc)
-      case SimplifiedAst.Expression.UserError(tpe, loc) => ExecutableAst.Expression.Error(tpe, loc)
+      case SimplifiedAst.Expression.Existential(params, exp, loc) =>
+        ExecutableAst.Expression.Existential(params, toExecutable(exp), loc)
+      case SimplifiedAst.Expression.Universal(params, exp, loc) =>
+        ExecutableAst.Expression.Universal(params, toExecutable(exp), loc)
+      case SimplifiedAst.Expression.UserError(tpe, loc) => ExecutableAst.Expression.UserError(tpe, loc)
       case SimplifiedAst.Expression.MatchError(tpe, loc) => ExecutableAst.Expression.MatchError(tpe, loc)
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => ExecutableAst.Expression.SwitchError(tpe, loc)
+
+      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
+        throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
+      case SimplifiedAst.Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc) =>
+        val e = toExecutable(ref)
+        ExecutableAst.Expression.MkClosureRef(e.asInstanceOf[ExecutableAst.Expression.Ref], envVar, freeVars, tpe, loc)
+
+      case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) =>
+        ExecutableAst.Expression.ClosureVar(env, name, tpe, loc)
+
     }
   }
 
@@ -254,4 +269,8 @@ object CreateExecutableAst {
 
   def toExecutable(sast: SimplifiedAst.FormalArg): ExecutableAst.FormalArg =
     ExecutableAst.FormalArg(sast.ident, sast.tpe)
+
+  def toExecutable(sast: SimplifiedAst.Property): ExecutableAst.Property =
+    ExecutableAst.Property(sast.law, Expression.toExecutable(sast.exp), sast.loc)
+
 }

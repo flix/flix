@@ -26,6 +26,7 @@ object TypedAst {
                   facts: List[TypedAst.Constraint.Fact],
                   rules: List[TypedAst.Constraint.Rule],
                   hooks: Map[Symbol.Resolved, Ast.Hook],
+                  properties: List[TypedAst.Property],
                   time: Time) extends TypedAst
 
   /**
@@ -299,11 +300,10 @@ object TypedAst {
     /**
       * A typed AST node representing a lambda abstraction.
       *
-      * @param annotations the annotations.
-      * @param args        the formal arguments.
-      * @param body        the body expression of the lambda.
-      * @param tpe         the type of the entire function.
-      * @param loc         the source location.
+      * @param args the formal arguments.
+      * @param body the body expression of the lambda.
+      * @param tpe  the type of the entire function.
+      * @param loc  the source location.
       */
     case class Lambda(args: List[TypedAst.FormalArg], body: TypedAst.Expression, tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Expression
 
@@ -407,6 +407,14 @@ object TypedAst {
       * @param loc  the source location.
       */
     case class Set(elms: List[TypedAst.Expression], tpe: Type.FSet, loc: SourceLocation) extends TypedAst.Expression
+
+    case class Existential(params: List[Ast.FormalParam], exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
+      def tpe: Type = Type.Bool
+    }
+
+    case class Universal(params: List[Ast.FormalParam], exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
+      def tpe: Type = Type.Bool
+    }
 
     /**
       * A typed AST node representing an error expression.
@@ -727,5 +735,7 @@ object TypedAst {
     * @param tpe   the type of the argument.
     */
   case class FormalArg(ident: Name.Ident, tpe: Type) extends TypedAst
+
+  case class Property(law: Law, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst
 
 }
