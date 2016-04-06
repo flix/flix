@@ -5,7 +5,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression._
 import ca.uwaterloo.flix.runtime.verifier._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Options, Validation, Verify}
+import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.Validation._
 import com.microsoft.z3.{BitVecNum, Expr, _}
 
@@ -261,31 +261,28 @@ object Verifier {
     * Attempts to verify all properties in the given AST.
     */
   def verify(root: ExecutableAst.Root, options: Options)(implicit genSym: GenSym): Validation[ExecutableAst.Root, VerifierError] = {
-    // Check if verification is enabled.
+    /*
+     * Check if verification is enabled. Otherwise return success immediately.
+     */
     if (options.verify != Verify.Enabled) {
       return root.toSuccess
     }
 
-    // Verify each property.
-    val results = root.properties.map(p => checkProperty(p, root))
+    /*
+     * Verify each property.
+     */
+    val results = root.properties.map(p => verifyProperty(p, root))
 
-    val e = totalElapsed(results)
-
-    // TODO: If verbose
-    implicit val consoleCtx = Compiler.ConsoleCtx
-    for (result <- results) {
-      result match {
-        case PropertyResult.Success(property, paths, queries, elapsed) =>
-          Console.println(consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ")" + " (" + queries + " queries)")
-
-        case PropertyResult.Failure(property, paths, queries, elapsed, error) =>
-          Console.println(consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ")" + " (" + queries + " queries)")
-
-        case PropertyResult.Failure(property, paths, queries, elapsed, error) =>
-          Console.println(consoleCtx.red("? ") + property.law + " (" + property.loc.format + ")" + " (" + queries + " queries)")
-      }
+    /*
+     * Print verbose information (if enabled).
+     */
+    if (options.verbosity == Verbosity.Verbose) {
+      printVerbose(results)
     }
 
+    /*
+     * Returns the original AST root if all properties verified successfully.
+     */
     if (isSuccess(results)) {
       root.toSuccess
     } else {
@@ -299,7 +296,7 @@ object Verifier {
     * Returns `None` if the property is satisfied.
     * Otherwise returns `Some` containing the verification error.
     */
-  def checkProperty(property: ExecutableAst.Property, root: ExecutableAst.Root)(implicit genSym: GenSym): PropertyResult = {
+  def verifyProperty(property: ExecutableAst.Property, root: ExecutableAst.Root)(implicit genSym: GenSym): PropertyResult = {
     val t = System.nanoTime()
 
     // the base expression
@@ -550,10 +547,33 @@ object Verifier {
   /**
     * Returns `true` if all the given property results `rs` are successful
     */
-  private def isSuccess(rs: List[PropertyResult]): Boolean = rs forall {
+  private def isSuccess(rs: List[PropertyResult]): Boolean = rs.forall {
     case p: PropertyResult.Success => true
     case p: PropertyResult.Failure => false
     case p: PropertyResult.Unknown => false
+  }
+
+  /**
+    * Returns the number of successes of the given property results `rs`.
+    */
+  private def numberOfSuccess(rs: List[PropertyResult]): Int = rs.count {
+    case p: PropertyResult.Success => true
+    case p: PropertyResult.Failure => false
+    case p: PropertyResult.Unknown => false
+  }
+
+  /**
+    * Returns the total number of paths of the given property results `rs`.
+    */
+  private def totalPaths(rs: List[PropertyResult]): Int = rs.foldLeft(0) {
+    case (acc, res) => acc + res.paths
+  }
+
+  /**
+    * Returns the total number of queries of the given property results `rs`.
+    **/
+  private def totalQueries(rs: List[PropertyResult]): Int = rs.foldLeft(0) {
+    case (acc, res) => acc + res.queries
   }
 
   /**
@@ -561,6 +581,31 @@ object Verifier {
     */
   private def totalElapsed(rs: List[PropertyResult]): Long = rs.foldLeft(0L) {
     case (acc, res) => acc + res.elapsed
+  }
+
+  /**
+    * Prints verbose results.
+    */
+  def printVerbose(results: List[PropertyResult]): Unit = {
+    implicit val consoleCtx = Compiler.ConsoleCtx
+    Console.println(consoleCtx.blue(s"-- VERIFIER RESULTS --------------------------------------------------"))
+
+    for (result <- results) {
+      result match {
+        case PropertyResult.Success(property, paths, queries, elapsed) =>
+          Console.println(consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ")" + " (" + queries + " queries)")
+
+        case PropertyResult.Failure(property, paths, queries, elapsed, error) =>
+          Console.println(consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ")" + " (" + queries + " queries)")
+
+        case PropertyResult.Failure(property, paths, queries, elapsed, error) =>
+          Console.println(consoleCtx.red("? ") + property.law + " (" + property.loc.format + ")" + " (" + queries + " queries)")
+      }
+    }
+    val timeInMiliseconds = f"${totalElapsed(results).toDouble / 1000000000.0}%3.1f"
+    Console.println()
+    Console.println(s"Result: ${numberOfSuccess(results)} / ${results.length} properties proven in $timeInMiliseconds second. (${totalPaths(results)} paths, ${totalQueries(results)} queries) ")
+    Console.println()
   }
 
 }
