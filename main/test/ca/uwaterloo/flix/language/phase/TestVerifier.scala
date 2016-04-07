@@ -93,4 +93,12 @@ class TestVerifier extends FunSuite {
       .get
   }
 
+  test("M2M3.flix") {
+    new Flix()
+      .addPath("./examples/domains/ilo/M2M3.flix")
+      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .solve()
+      .get
+  }
+
 }

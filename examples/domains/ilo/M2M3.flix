@@ -127,8 +127,66 @@ namespace M2M3 {
      */
     @commutative @associative
     def glb(e1: L, e2: L): L = match (e1, e2) with {
+        case (L.Top, x) => x
+        case (x, L.Top) => x
 
-        case _              => L.Bot
+        case (L.X1, L.X1) => L.X1
+        case (L.X1, L.X2) => L.Bot
+        case (L.X1, L.T1) => L.X1
+        case (L.X1, L.B1) => L.X1
+        case (L.X1, L.Y1) => L.X1
+        case (L.X1, L.Y2) => L.X1
+        case (L.X1, L.Y3) => L.X1
+
+        case (L.X2, L.X2) => L.X2
+        case (L.X2, L.X1) => L.Bot
+        case (L.X2, L.T1) => L.X2
+        case (L.X2, L.B1) => L.X2
+        case (L.X2, L.Y1) => L.X2
+        case (L.X2, L.Y2) => L.X2
+        case (L.X2, L.Y3) => L.X2
+
+        case (L.T1, L.T1) => L.T1
+        case (L.T1, L.X1) => L.X1
+        case (L.T1, L.X2) => L.X2
+        case (L.T1, L.B1) => L.T1
+        case (L.T1, L.Y1) => L.T1
+        case (L.T1, L.Y2) => L.T1
+        case (L.T1, L.Y3) => L.T1
+
+        case (L.B1, L.B1) => L.B1
+        case (L.B1, L.X1) => L.X1
+        case (L.B1, L.X2) => L.X2
+        case (L.B1, L.T1) => L.T1
+        case (L.B1, L.Y1) => L.B1
+        case (L.B1, L.Y2) => L.B1
+        case (L.B1, L.Y3) => L.B1
+
+        case (L.Y1, L.Y1) => L.Y1
+        case (L.Y1, L.X1) => L.X1
+        case (L.Y1, L.X2) => L.X2
+        case (L.Y1, L.T1) => L.T1
+        case (L.Y1, L.B1) => L.B1
+        case (L.Y1, L.Y2) => L.B1
+        case (L.Y1, L.Y3) => L.B1
+
+        case (L.Y2, L.Y2) => L.Y2
+        case (L.Y2, L.X1) => L.X1
+        case (L.Y2, L.X2) => L.X2
+        case (L.Y2, L.T1) => L.T1
+        case (L.Y2, L.B1) => L.B1
+        case (L.Y2, L.Y1) => L.B1
+        case (L.Y2, L.Y3) => L.B1
+
+        case (L.Y3, L.Y3) => L.Y3
+        case (L.Y3, L.X1) => L.X1
+        case (L.Y3, L.X2) => L.X2
+        case (L.Y3, L.T1) => L.T1
+        case (L.Y3, L.B1) => L.B1
+        case (L.Y3, L.Y1) => L.B1
+        case (L.Y3, L.Y2) => L.B1
+
+        case _            => L.Bot
     }
 
     let L<> = (L.Bot, L.Top, leq, lub, glb)
