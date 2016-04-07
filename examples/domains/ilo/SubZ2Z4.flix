@@ -46,6 +46,33 @@ namespace SubZ2Z4 {
         case (L.Bot, x)   => x
         case (x, L.Bot)   => x
 
+        case (L.X1, L.X1) => L.X1
+        case (L.X1, L.X2) => L.Y1
+        case (L.X1, L.X3) => L.Y1
+        case (L.X1, L.Y1) => L.Y1
+
+        case (L.X2, L.X2) => L.X2
+        case (L.X2, L.X1) => L.Y1
+        case (L.X2, L.X3) => L.Y1
+        case (L.X2, L.Y1) => L.Y1
+
+        case (L.X3, L.X3) => L.X3
+        case (L.X3, L.X1) => L.Y1
+        case (L.X3, L.X2) => L.Y1
+        case (L.X3, L.Y1) => L.Y1
+        case (L.X3, L.Y2) => L.Y2
+        case (L.X3, L.Y3) => L.Y3
+
+        case (L.Y1, L.Y1) => L.Y1
+        case (L.Y1, L.X1) => L.Y1
+        case (L.Y1, L.X2) => L.Y1
+        case (L.Y1, L.X3) => L.Y1
+
+        case (L.Y2, L.Y2) => L.Y2
+        case (L.Y2, L.X3) => L.Y2
+
+        case (L.Y3, L.Y3) => L.Y3
+        case (L.Y3, L.X3) => L.Y3
 
         case _            => L.Top
     }
@@ -58,6 +85,33 @@ namespace SubZ2Z4 {
         case (L.Top, x)   => x
         case (x, L.Top)   => x
 
+        case (L.X1, L.X1) => L.X1
+        case (L.X1, L.Y1) => L.X1
+
+        case (L.X2, L.X2) => L.X2
+        case (L.X2, L.Y1) => L.X2
+
+        case (L.X3, L.X3) => L.X3
+        case (L.X3, L.Y1) => L.X3
+        case (L.X3, L.Y2) => L.X3
+        case (L.X3, L.Y3) => L.X3
+
+        case (L.Y1, L.Y1) => L.Y1
+        case (L.Y1, L.Y2) => L.X3
+        case (L.Y1, L.Y3) => L.X3
+        case (L.Y1, L.X1) => L.X1
+        case (L.Y1, L.X2) => L.X2
+        case (L.Y1, L.X3) => L.X3
+
+        case (L.Y2, L.Y2) => L.Y2
+        case (L.Y2, L.Y1) => L.X3
+        case (L.Y2, L.Y3) => L.X3
+        case (L.Y2, L.X3) => L.X3
+
+        case (L.Y3, L.Y3) => L.Y3
+        case (L.Y3, L.Y1) => L.X3
+        case (L.Y3, L.Y2) => L.X3
+        case (L.Y3, L.X3) => L.X3
 
         case _            => L.Bot
     }
