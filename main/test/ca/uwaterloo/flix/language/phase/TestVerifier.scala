@@ -77,7 +77,7 @@ class TestVerifier extends FunSuite {
 //  }
 
 
-  test("M2.flix") {
+  test("ilo/M2.flix") {
     new Flix()
       .addPath("./examples/domains/ilo/M2.flix")
       .setOptions(Options.Default.copy(verify = Verify.Enabled))
@@ -85,7 +85,7 @@ class TestVerifier extends FunSuite {
       .get
   }
 
-  test("M3.flix") {
+  test("ilo/M3.flix") {
     new Flix()
       .addPath("./examples/domains/ilo/M3.flix")
       .setOptions(Options.Default.copy(verify = Verify.Enabled))
@@ -93,7 +93,7 @@ class TestVerifier extends FunSuite {
       .get
   }
 
-  test("M2M3.flix") {
+  test("ilo/M2M3.flix") {
     new Flix()
       .addPath("./examples/domains/ilo/M2M3.flix")
       .setOptions(Options.Default.copy(verify = Verify.Enabled))
