@@ -1,51 +1,51 @@
 namespace M3 {
 
-    enum L {
-                  case Top,
+    enum M3 {
+                 case Top,
              
         case C1, case C2, case C3,
         
-                  case Bot
+                 case Bot
     }
     
     /**
      * Returns `true` iff `e1` is less than or equal to `e2`.
      */
-    def leq(e1: L, e2: L): Bool = match (e1, e2) with {
-        case (L.Bot, _)   => true
-        case (L.C1, L.C1) => true
-        case (L.C2, L.C2) => true
-        case (L.C3, L.C3) => true
-        case (_, L.Top)   => true
-        case _            => false
+    def leq(e1: M3, e2: M3): Bool = match (e1, e2) with {
+        case (M3.Bot, _)    => true
+        case (M3.C1, M3.C1) => true
+        case (M3.C2, M3.C2) => true
+        case (M3.C3, M3.C3) => true
+        case (_, M3.Top)    => true
+        case _              => false
     }
 
     /**
      * Returns the least upper bound of `e1` and `e2`.
      */
     @commutative @associative
-    def lub(e1: L, e2: L): L = match (e1, e2) with {
-        case (L.Bot, x)   => x
-        case (x, L.Bot)   => x
-        case (L.C1, L.C1) => L.C1
-        case (L.C2, L.C2) => L.C2
-        case (L.C3, L.C3) => L.C3
-        case _            => L.Top
+    def lub(e1: M3, e2: M3): M3 = match (e1, e2) with {
+        case (M3.Bot, x)    => x
+        case (x, M3.Bot)    => x
+        case (M3.C1, M3.C1) => M3.C1
+        case (M3.C2, M3.C2) => M3.C2
+        case (M3.C3, M3.C3) => M3.C3
+        case _              => M3.Top
     }
 
     /**
      * Returns the greatest lower bound of `e1` and `e2`.
      */
     @commutative @associative
-    def glb(e1: L, e2: L): L = match (e1, e2) with {
-        case (L.Top, x)   => x
-        case (x, L.Top)   => x
-        case (L.C1, L.C1) => L.C1
-        case (L.C2, L.C2) => L.C2
-        case (L.C3, L.C3) => L.C3
-        case _            => L.Bot
+    def glb(e1: M3, e2: M3): M3 = match (e1, e2) with {
+        case (M3.Top, x)    => x
+        case (x, M3.Top)    => x
+        case (M3.C1, M3.C1) => M3.C1
+        case (M3.C2, M3.C2) => M3.C2
+        case (M3.C3, M3.C3) => M3.C3
+        case _              => M3.Bot
     }
     
-    let L<> = (L.Bot, L.Top, leq, lub, glb)
+    let M3<> = (M3.Bot, M3.Top, leq, lub, glb)
 
 }
