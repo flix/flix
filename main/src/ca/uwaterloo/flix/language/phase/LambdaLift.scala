@@ -11,80 +11,45 @@ object LambdaLift {
   /**
     * Mutable map of top level definitions.
     */
-  type TopLevel = mutable.Map[Symbol.Resolved, SimplifiedAst.Definition.Constant]
+  private type TopLevel = mutable.Map[Symbol.Resolved, SimplifiedAst.Definition.Constant]
 
   /**
     * Performs lambda lifting on all definitions in the AST.
     */
   def lift(root: SimplifiedAst.Root)(implicit genSym: GenSym): SimplifiedAst.Root = {
-    /*
-     * A mutable map to hold lambdas that are lifted to the top level.
-     */
-    val m: TopLevel = mutable.Map.empty[Symbol.Resolved, SimplifiedAst.Definition.Constant]
+    // A mutable map to hold lambdas that are lifted to the top level.
+    val m: TopLevel = mutable.Map.empty
 
-    /*
-     * Lift definitions.
-     */
     val definitions = root.constants.map {
       case (name, decl) => name -> lift(decl, m)
     }
-
-    /*
-     * Lift properties.
-     */
     val properties = root.properties.map(p => lift(p, m))
 
-    /*
-     * Return the updated AST root.
-     */
+    // Return the updated AST root.
     root.copy(constants = definitions ++ m, properties = properties)
   }
 
   /**
     * Performs lambda lifting on the given declaration `decl`.
     *
-    * Lifted definitions are added to the mutable map `m`.
+    * The definition's expression is closure converted, and then lifted definitions are added to the mutable map `m`.
+    * The updated definition is then returned.
     */
-  def lift(decl: SimplifiedAst.Definition.Constant, m: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant = {
-    /*
-     * Closure convert the expression in the definition.
-     */
+  private def lift(decl: SimplifiedAst.Definition.Constant, m: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant = {
     val convExp = ClosureConv.convert(decl.exp)
-
-    /*
-     * Lambda lift the closure converted expression.
-     *
-     * This causes side-effects on the map `m` updating it with new top-level definitions.
-     */
     val liftExp = lift(convExp, decl.name.parts, m)
-
-    /*
-     * Return the updated definition.
-     */
     decl.copy(exp = liftExp)
   }
 
   /**
     * Performs lambda lifting on the given property `prop`.
     *
-    * Lifted definitions are added to the mutable map `m`.
+    * The property's expression is closure converted, and then the lifted definitions are added to the mutable map `m`.
+    * The updated definition is then returned.
     */
-  def lift(prop: SimplifiedAst.Property, m: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Property = {
-    /*
-     * Closure convert the expression in the property.
-     */
+  private def lift(prop: SimplifiedAst.Property, m: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Property = {
     val convExp = ClosureConv.convert(prop.exp)
-
-    /*
-     * Lambda lift the closure converted expression.
-     *
-     * This causes side-effects on the map `m` updating it with new top-level definitions.
-     */
     val liftExp = lift(convExp, List(prop.law.toString), m)
-
-    /*
-     * Return the updated definition.
-     */
     prop.copy(exp = liftExp)
   }
 
@@ -93,11 +58,7 @@ object LambdaLift {
     *
     * Adds new top-level definitions to the mutable map `m`.
     */
-  def lift(exp0: Expression, nameHint: List[String], m: TopLevel)(implicit genSym: GenSym): Expression = {
-
-    /**
-      * Inner visitor.
-      */
+  private def lift(exp0: Expression, nameHint: List[String], m: TopLevel)(implicit genSym: GenSym): Expression = {
     def visit(e: Expression): Expression = e match {
       case Expression.Unit => e
       case Expression.True => e
@@ -162,9 +123,9 @@ object LambdaLift {
         }
 
       case Expression.ApplyRef(name, args, tpe, loc) =>
-        Expression.ApplyRef(name, args.map(visit(_)), tpe, loc)
+        Expression.ApplyRef(name, args.map(visit), tpe, loc)
       case Expression.Apply(exp, args, tpe, loc) =>
-        Expression.Apply(visit(exp), args.map(visit(_)), tpe, loc)
+        Expression.Apply(visit(exp), args.map(visit), tpe, loc)
       case Expression.Unary(op, exp, tpe, loc) =>
         Expression.Unary(op, visit(exp), tpe, loc)
       case Expression.Binary(op, exp1, exp2, tpe, loc) =>
@@ -182,13 +143,13 @@ object LambdaLift {
       case Expression.GetTupleIndex(exp, offset, tpe, loc) =>
         Expression.GetTupleIndex(visit(exp), offset, tpe, loc)
       case Expression.Tuple(elms, tpe, loc) =>
-        Expression.Tuple(elms.map(visit(_)), tpe, loc)
+        Expression.Tuple(elms.map(visit), tpe, loc)
       case Expression.CheckNil(exp, loc) =>
         Expression.CheckNil(visit(exp), loc)
       case Expression.CheckCons(exp, loc) =>
         Expression.CheckCons(visit(exp), loc)
       case Expression.FSet(elms, tpe, loc) =>
-        Expression.FSet(elms.map(visit(_)), tpe, loc)
+        Expression.FSet(elms.map(visit), tpe, loc)
       case Expression.Existential(params, exp, loc) =>
         Expression.Existential(params, visit(exp), loc)
       case Expression.Universal(params, exp, loc) =>

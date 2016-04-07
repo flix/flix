@@ -66,11 +66,11 @@ object ClosureConv {
         lambda.envVar = Some(envVar)
       }
 
-      // At this point, `e` is the original lambda expression, but with all free variables replaced with lookups in the
-      // closure environment. Additionally, any lambdas within the body have also been closure converted.
+      // At this point, `lambda` is the original lambda expression, but with all free variables replaced with lookups in
+      // the closure environment. Additionally, any lambdas within the body have also been closure converted.
 
-      // We return a MkClosure node, which contains the code/lambda `e` and the closure environment name `envVar`. We
-      // also cache `freeVars`. The closure will actually be created at run time, where the closure environment will be
+      // We return a MkClosure node, which contains the code `lambda` and the closure environment name `envVar`. We also
+      // cache `freeVars`. The closure will actually be created at run time, where the closure environment will be
       // created with bindings for the variables, and then passed as an extra argument to the lambda. Thus, all free
       // variables have been eliminated, and in a later phase, we can lift the lambda to a top-level definition.
       SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars.map(_._1), tpe, loc)
