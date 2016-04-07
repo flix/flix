@@ -41,11 +41,11 @@ object ExecutableAst {
     }
 
     case class Lattice(tpe: Type,
-                       bot: ExecutableAst.Expression,
-                       top: ExecutableAst.Expression,
-                       leq: ExecutableAst.Expression,
-                       lub: ExecutableAst.Expression,
-                       glb: ExecutableAst.Expression,
+                       bot: Symbol.Resolved,
+                       top: Symbol.Resolved,
+                       leq: Symbol.Resolved,
+                       lub: Symbol.Resolved,
+                       glb: Symbol.Resolved,
                        loc: SourceLocation) extends ExecutableAst.Definition
 
     case class Index(name: Symbol.TableSym,

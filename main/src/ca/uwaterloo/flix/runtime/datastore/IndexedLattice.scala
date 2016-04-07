@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime.datastore
 
-import ca.uwaterloo.flix.language.ast.ExecutableAst
+import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
 import ca.uwaterloo.flix.runtime.{Value, Interpreter, Solver}
 
 import scala.annotation.switch
@@ -39,7 +39,8 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   private val Bot: Array[ValueType] = {
     val a = new Array[AnyRef](latticeOps.length)
     for ((l, i) <- latticeOps.zipWithIndex) {
-      a(i) = Interpreter.eval(l.bot, sCtx.root)
+      val bot = sCtx.root.constants(l.bot)
+      a(i) = Interpreter.eval(bot.exp, sCtx.root)
     }
     a.asInstanceOf[Array[ValueType]]
   }
@@ -47,34 +48,34 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   /**
     * The Leq operator(s). Must be defined as Flix functions.
     */
-  private val Leq: Array[ExecutableAst.Expression] = {
-    val a = new Array[ExecutableAst.Expression](latticeOps.length)
+  private val Leq: Array[ExecutableAst.Definition.Constant] = {
+    val a = new Array[ExecutableAst.Definition.Constant](latticeOps.length)
     for ((l, i) <- latticeOps.zipWithIndex) {
-      a(i) = l.leq
+      a(i) = sCtx.root.constants(l.leq)
     }
-    a.asInstanceOf[Array[ExecutableAst.Expression]]
+    a.asInstanceOf[Array[ExecutableAst.Definition.Constant]]
   }
 
   /**
     * The Lub operator(s). Must be defined as Flix functions.
     */
-  private val Lub: Array[ExecutableAst.Expression] = {
-    val a = new Array[ExecutableAst.Expression](latticeOps.length)
+  private val Lub: Array[ExecutableAst.Definition.Constant] = {
+    val a = new Array[ExecutableAst.Definition.Constant](latticeOps.length)
     for ((l, i) <- latticeOps.zipWithIndex) {
-      a(i) = l.lub
+      a(i) = sCtx.root.constants(l.lub)
     }
-    a.asInstanceOf[Array[ExecutableAst.Expression]]
+    a.asInstanceOf[Array[ExecutableAst.Definition.Constant]]
   }
 
   /**
     * The Glb operator(s). Must be defined as Flix functions.
     */
-  private val Glb: Array[ExecutableAst.Expression] = {
-    val a = new Array[ExecutableAst.Expression](latticeOps.length)
+  private val Glb: Array[ExecutableAst.Definition.Constant] = {
+    val a = new Array[ExecutableAst.Definition.Constant](latticeOps.length)
     for ((l, i) <- latticeOps.zipWithIndex) {
-      a(i) = l.glb
+      a(i) = sCtx.root.constants(l.glb)
     }
-    a.asInstanceOf[Array[ExecutableAst.Expression]]
+    a.asInstanceOf[Array[ExecutableAst.Definition.Constant]]
   }
 
   /**
@@ -235,7 +236,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
 
         if (rv != pv) {
           val bot = Bot(i)
-          val glb = Interpreter.eval2(Glb(i), pv, rv, sCtx.root).asInstanceOf[ValueType]
+          val glb = Interpreter.evalCall(Glb(i), Array(pv, rv).asInstanceOf[Array[AnyRef]], sCtx.root).asInstanceOf[ValueType]
 
           if (bot == glb)
             return false
@@ -260,7 +261,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
       // if v1 and v2 are equal we do not need to compute leq.
       if (v1 != v2) { // TODO: use neq
         // v1 and v2 are different, must compute leq.
-        val result = Interpreter.eval2(Leq(i), v1, v2, sCtx.root)
+        val result = Interpreter.evalCall(Leq(i), Array(v1, v2).asInstanceOf[Array[AnyRef]], sCtx.root)
         if (!Value.cast2bool(result)) {
           return false
         }
@@ -285,7 +286,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
       else if (v2 == Bot(i)) // TODO: use eq
         result(i) = v1
       else
-        result(i) = Interpreter.eval2(Lub(i), v1, v2, sCtx.root).asInstanceOf[ValueType]
+        result(i) = Interpreter.evalCall(Lub(i), Array(v1, v2).asInstanceOf[Array[AnyRef]], sCtx.root).asInstanceOf[ValueType]
 
       i = i + 1
     }
