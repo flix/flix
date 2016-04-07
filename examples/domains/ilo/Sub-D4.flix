@@ -49,9 +49,52 @@ namespace SubD4 {
      */
     @commutative @associative
     def lub(e1: L, e2: L): L = match (e1, e2) with {
-    //    case (M2.Bot, x)     => x
-    //    case (x, M2.Bot)     => x
-        case _               => L.Top
+        case (L.Bot, x)   => x
+        case (x, L.Bot)   => x
+
+        case (L.X1, L.X1) => L.X1
+        case (L.X1, L.X2) => L.Y1
+        case (L.X1, L.X3) => L.Y1
+        case (L.X1, L.Y1) => L.Y1
+
+        case (L.X2, L.X2) => L.X2
+        case (L.X2, L.X1) => L.Y1
+        case (L.X2, L.X3) => L.Y1
+        case (L.X2, L.Y1) => L.Y1
+
+        case (L.X3, L.X3) => L.X3
+        case (L.X3, L.X1) => L.Y1
+        case (L.X3, L.X2) => L.Y1
+        case (L.X3, L.X4) => L.Y3
+        case (L.X3, L.X5) => L.Y3
+        case (L.X3, L.Y1) => L.Y1
+        case (L.X3, L.Y2) => L.Y2
+        case (L.X3, L.Y3) => L.Y3
+
+        case (L.X4, L.X4) => L.X4
+        case (L.X4, L.X3) => L.Y3
+        case (L.X4, L.X5) => L.Y3
+        case (L.X4, L.Y3) => L.Y3
+
+        case (L.X5, L.X5) => L.X5
+        case (L.X5, L.X3) => L.Y3
+        case (L.X5, L.X4) => L.Y3
+        case (L.X5, L.Y3) => L.Y3
+
+        case (L.Y1, L.Y1) => L.Y1
+        case (L.Y1, L.X1) => L.Y1
+        case (L.Y1, L.X2) => L.Y1
+        case (L.Y1, L.X3) => L.Y1
+
+        case (L.Y2, L.Y2) => L.Y2
+        case (L.Y2, L.X3) => L.Y2
+
+        case (L.Y3, L.Y3) => L.Y3
+        case (L.Y3, L.X3) => L.Y3
+        case (L.Y3, L.X4) => L.Y3
+        case (L.Y3, L.X5) => L.Y3
+
+        case _            => L.Top
     }
 
     /**
