@@ -76,6 +76,13 @@ class TestVerifier extends FunSuite {
 //      .get
 //  }
 
+  test("ilo/Cube.flix") {
+    new Flix()
+      .addPath("./examples/domains/ilo/Cube.flix")
+      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .solve()
+      .get
+  }
 
   test("ilo/M2.flix") {
     new Flix()
@@ -104,6 +111,14 @@ class TestVerifier extends FunSuite {
   test("ilo/SubD4.flix") {
     new Flix()
       .addPath("./examples/domains/ilo/SubD4.flix")
+      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .solve()
+      .get
+  }
+
+  test("ilo/SubZ2Z4.flix") {
+    new Flix()
+      .addPath("./examples/domains/ilo/SubZ2Z4.flix")
       .setOptions(Options.Default.copy(verify = Verify.Enabled))
       .solve()
       .get
