@@ -15,7 +15,6 @@ namespace M2M3 {
     }
 
 
-
     /**
      * Returns `true` iff `e1` is less than or equal to `e2`.
      */
@@ -51,9 +50,9 @@ namespace M2M3 {
         case (L.Y2, L.Y2)   => true
         case (L.Y3, L.Y3)   => true
 
-        case (L.Top, L.Top) => true
+        case (_, L.Top)     => true
 
-        case _            => false
+        case _              => false
     }
 
     /**
