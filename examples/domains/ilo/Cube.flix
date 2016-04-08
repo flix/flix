@@ -85,10 +85,40 @@ namespace Cube {
      */
     @commutative @associative
     def glb(e1: Cube, e2: Cube): Cube = match (e1, e2) with {
-        case (Cube.Top, x)    => x
-        case (x, Cube.Top)    => x
+        case (Cube.Top, x)      => x
+        case (x, Cube.Top)      => x
 
-        case _                => Cube.Bot
+        case (Cube.X1, Cube.X1) => Cube.X1
+        case (Cube.X1, Cube.Y1) => Cube.X1
+        case (Cube.X1, Cube.Y2) => Cube.X1
+
+        case (Cube.X2, Cube.X2) => Cube.X2
+        case (Cube.X2, Cube.Y1) => Cube.X2
+        case (Cube.X2, Cube.Y3) => Cube.X2
+
+        case (Cube.X3, Cube.X3) => Cube.X3
+        case (Cube.X3, Cube.Y2) => Cube.X3
+        case (Cube.X3, Cube.Y3) => Cube.X3
+
+        case (Cube.Y1, Cube.Y1) => Cube.Y1
+        case (Cube.Y1, Cube.X1) => Cube.X1
+        case (Cube.Y1, Cube.X2) => Cube.X2
+        case (Cube.Y1, Cube.Y2) => Cube.X1
+        case (Cube.Y1, Cube.Y3) => Cube.X2
+
+        case (Cube.Y2, Cube.Y2) => Cube.Y2
+        case (Cube.Y2, Cube.X1) => Cube.X1
+        case (Cube.Y2, Cube.X3) => Cube.X3
+        case (Cube.Y2, Cube.Y1) => Cube.X1
+        case (Cube.Y2, Cube.Y3) => Cube.X3
+
+        case (Cube.Y3, Cube.Y3) => Cube.Y3
+        case (Cube.Y3, Cube.X2) => Cube.X2
+        case (Cube.Y3, Cube.X3) => Cube.X3
+        case (Cube.Y3, Cube.Y1) => Cube.X2
+        case (Cube.Y3, Cube.Y2) => Cube.X3
+
+        case _                  => Cube.Bot
     }
     
     let Cube<> = (Cube.Bot, Cube.Top, leq, lub, glb)
