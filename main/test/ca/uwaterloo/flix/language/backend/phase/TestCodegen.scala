@@ -26,6 +26,13 @@ class TestCodegen extends FunSuite {
   def getModel(input: String) = createFlix().addStr(input).solve().get
 
   test("Codegen.01") {
+    val input = "def x: Int = 42"
+    val model = getModel(input)
+    val result = model.getConstant("x")
+    assertResult(Value.mkInt32(42))(result)
+  }
+
+  test("Codegen.02") {
     val input =
       """namespace A.B {
         |  def a: Bool = false

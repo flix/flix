@@ -9,7 +9,7 @@ import scala.collection.mutable
 
 object LoadBytecode {
 
-  object Loader extends ClassLoader {
+  class Loader extends ClassLoader {
     def apply(name: String, bytes: Array[Byte]): Class[_] = defineClass(name, bytes, 0, bytes.length)
   }
 
@@ -44,6 +44,9 @@ object LoadBytecode {
       return root
     }
 
+    // Create a new classloader for each root we compile.
+    val loader = new Loader
+
     // First, we group all the constants by their prefixes (i.e. classes)
     val constants: Map[List[String], List[ExecutableAst.Definition.Constant]] =
       root.constants.values.toList.groupBy { c => prefixOf(c.name) }
@@ -52,7 +55,7 @@ object LoadBytecode {
     val classes = mutable.Map.empty[List[String], Class[_]]
     for ((prefix, consts) <- constants) {
       val bytecode = Codegen.compile(new Codegen.Context(consts, prefix.mkString("/")))
-      classes(prefix) = Loader(prefix.mkString("."), bytecode)
+      classes(prefix) = loader(prefix.mkString("."), bytecode)
       if (options.debugBytecode == DebugBytecode.Enabled) {
         dump(prefix.mkString("", "$", ".class"), bytecode)
       }
