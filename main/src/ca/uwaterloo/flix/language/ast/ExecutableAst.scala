@@ -2,6 +2,8 @@ package ca.uwaterloo.flix.language.ast
 
 import java.lang.reflect.{InvocationTargetException, Method}
 
+import ca.uwaterloo.flix.runtime.Interpreter
+
 import scala.collection.mutable
 
 sealed trait ExecutableAst
@@ -16,7 +18,9 @@ object ExecutableAst {
                   rules: Array[ExecutableAst.Constraint.Rule],
                   properties: List[ExecutableAst.Property],
                   time: Time,
-                  dependenciesOf: Map[Symbol.TableSym, mutable.Set[(Constraint.Rule, ExecutableAst.Predicate.Body.Table)]]) extends ExecutableAst // TODO: Why mutable?
+                  dependenciesOf: Map[Symbol.TableSym, mutable.Set[(Constraint.Rule, ExecutableAst.Predicate.Body.Table)]]) extends ExecutableAst
+
+  // TODO: Why mutable?
 
   sealed trait Definition
 
@@ -30,12 +34,17 @@ object ExecutableAst {
 
       var method: Method = null
 
-      def apply(args: Array[Object] = Array()) = {
-        try {
-          method.invoke(null, args)
-        } catch {
-          // Rethrow the real exception
-          case e: InvocationTargetException => throw e.getTargetException
+      def apply(args: Array[Object], root: ExecutableAst.Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty) = {
+        // TODO: Move this code somewhere appropriate.
+        if (method == null) {
+          Interpreter.evalCall(this, args, root, env)
+        } else {
+          try {
+            method.invoke(null, args)
+          } catch {
+            // Rethrow the real exception
+            case e: InvocationTargetException => throw e.getTargetException
+          }
         }
       }
     }
@@ -117,18 +126,21 @@ object ExecutableAst {
     case object Unit extends ExecutableAst.Expression {
       final val tpe = Type.Unit
       final val loc = SourceLocation.Unknown
+
       override def toString: String = "#U"
     }
 
     case object True extends ExecutableAst.Expression {
       final val tpe = Type.Bool
       final val loc = SourceLocation.Unknown
+
       override def toString: String = "#t"
     }
 
     case object False extends ExecutableAst.Expression {
       final val tpe = Type.Bool
       final val loc = SourceLocation.Unknown
+
       override def toString: String = "#f"
     }
 
@@ -379,7 +391,7 @@ object ExecutableAst {
                       exp1: ExecutableAst.Expression,
                       exp2: ExecutableAst.Expression,
                       tpe: Type,
-                      loc: SourceLocation) extends ExecutableAst.Expression  {
+                      loc: SourceLocation) extends ExecutableAst.Expression {
       override def toString: String = "Binary(" + op + ", " + exp1 + ", " + exp2 + ")"
     }
 
@@ -431,6 +443,7 @@ object ExecutableAst {
                         exp: ExecutableAst.Expression,
                         loc: SourceLocation) extends ExecutableAst.Expression {
       final val tpe: Type = Type.Bool
+
       override def toString: String = "CheckTag(" + tag.name + ", " + exp + ")"
     }
 
@@ -658,6 +671,7 @@ object ExecutableAst {
       case class Var(ident: Name.Ident, v: scala.Int, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
       case class Exp(e: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
+
     }
 
   }
