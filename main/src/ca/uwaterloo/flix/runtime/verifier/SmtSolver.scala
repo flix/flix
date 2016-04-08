@@ -32,7 +32,7 @@ object SmtSolver {
 
     // attempt to load the native library.
     try {
-      System.loadLibrary("libz3")
+      System.loadLibrary("z3")
     } catch {
       case e: UnsatisfiedLinkError =>
         Console.println(errorMessage)
