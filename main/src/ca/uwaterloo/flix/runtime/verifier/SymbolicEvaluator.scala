@@ -155,6 +155,7 @@ object SymbolicEvaluator {
         */
       // TODO: Something seems to be missing with the regular arguments.
       case Expression.ApplyClosure(exp, args, _, _) =>
+        // TODO: Exp will a be ref, which can be looked up and the arguments found.
         // Evaluate the closure.
         eval(pc0, exp, env0) flatMap {
           case (pc, SymVal.Closure(cloExp, cloVar, cloEnv)) =>

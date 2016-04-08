@@ -104,6 +104,7 @@ object SymVal {
     * @param clo the name of the closure variable.
     * @param env the closure environment.
     */
+  // TODO: Exp should be a ref
   case class Closure(exp: Expression, clo: String, env: Environment) extends SymVal
 
   /**
