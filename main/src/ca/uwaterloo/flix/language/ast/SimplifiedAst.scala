@@ -332,7 +332,7 @@ object SimplifiedAst {
       * A typed AST node representing the creation of a closure.
       *
       * MkClosure nodes are created during closure conversion, replacing Lambda nodes. Then, during lambda lifting,
-      * MkClosure is replaced with MkClosureRef
+      * MkClosure is replaced with MkClosureRef.
       *
       * @param lambda   the lambda associated with the closure.
       * @param envVar   the name of the closure environment variable.

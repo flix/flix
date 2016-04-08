@@ -345,9 +345,8 @@ object Interpreter {
     case Term.Body.Exp(e, _, _) => eval(e, root, env)
   }
 
-  def evalCall(function: Expression, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef]): AnyRef = function match {
-    case Expression.Ref(name, tpe, loc) => evalCall(root.constants(name), args, root, env)
-    case _ => eval(function, root, env) match {
+  def evalCall(function: Expression, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef]): AnyRef =
+    eval(function, root, env) match {
       case Value.Closure(ref, envVar, clEnv) =>
         val constant = root.constants(ref.name)
         val newEnv = mutable.Map.empty[String, AnyRef]
@@ -368,7 +367,6 @@ object Interpreter {
       }
       case _ => throw new InternalRuntimeException(s"Trying to call a non-function: $function.")
     }
-  }
 
   def evalCall(defn: Constant, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef = {
     if (defn.method == null) {
