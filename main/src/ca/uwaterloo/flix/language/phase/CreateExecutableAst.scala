@@ -34,12 +34,12 @@ object CreateExecutableAst {
     val properties = sast.properties.map(p => toExecutable(p))
     val time = sast.time
 
-    val dependenciesOf: Map[Symbol.TableSym, mutable.Set[(ExecutableAst.Constraint.Rule, ExecutableAst.Predicate.Body.Table)]] = {
-      val result = mutable.Map.empty[Symbol.TableSym, mutable.Set[(ExecutableAst.Constraint.Rule, ExecutableAst.Predicate.Body.Table)]]
+    val dependenciesOf: Map[Symbol.TableSym, Set[(ExecutableAst.Constraint.Rule, ExecutableAst.Predicate.Body.Table)]] = {
+      val result = mutable.Map.empty[Symbol.TableSym, Set[(ExecutableAst.Constraint.Rule, ExecutableAst.Predicate.Body.Table)]]
 
       for (rule <- rules) {
         rule.head match {
-          case ExecutableAst.Predicate.Head.Table(sym, _, _, _) => result.update(sym, mutable.Set.empty)
+          case ExecutableAst.Predicate.Head.Table(sym, _, _, _) => result.update(sym, Set.empty)
           case _ => // nop
         }
       }
@@ -51,7 +51,7 @@ object CreateExecutableAst {
               case (outer: ExecutableAst.Predicate.Head.Table, inner: ExecutableAst.Predicate.Body.Table) =>
                 if (outer.sym == inner.sym) {
                   val deps = result(outer.sym)
-                  deps += ((innerRule, inner))
+                  result(outer.sym) = deps + ((innerRule, inner))
                 }
               case _ => // nop
             }

@@ -18,9 +18,7 @@ object ExecutableAst {
                   rules: Array[ExecutableAst.Constraint.Rule],
                   properties: List[ExecutableAst.Property],
                   time: Time,
-                  dependenciesOf: Map[Symbol.TableSym, mutable.Set[(Constraint.Rule, ExecutableAst.Predicate.Body.Table)]]) extends ExecutableAst
-
-  // TODO: Why mutable?
+                  dependenciesOf: Map[Symbol.TableSym, Set[(Constraint.Rule, ExecutableAst.Predicate.Body.Table)]]) extends ExecutableAst
 
   sealed trait Definition
 
