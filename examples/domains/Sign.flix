@@ -7,7 +7,7 @@
 namespace SignAlt {
 
     /**
-     * The elements of the (alternative) sign lattice.
+     * The elements of the sign lattice.
      *
      * Notice that Neg and Pos implicitly includes zero.
      */
@@ -66,6 +66,10 @@ namespace SignAlt {
         case (Sign.Neg, Sign.Zer)   => Sign.Zer
         case (Sign.Zer, Sign.Pos)   => Sign.Zer
         case (Sign.Pos, Sign.Zer)   => Sign.Zer
+        case (Sign.Neg, Sign.Pos)   => Sign.Zer
+        case (Sign.Pos, Sign.Neg)   => Sign.Zer
+        case (x, Sign.Top)          => x
+        case (Sign.Top, x)          => x
         case _                      => Sign.Bot
     }
 
@@ -77,6 +81,8 @@ namespace SignAlt {
         case i > 0  => Sign.Pos
         case true   => Sign.Zer
     }
+
+    // TODO: Inc/dec
 
     /**
      * Over-approximates integer `addition`.
