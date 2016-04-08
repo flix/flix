@@ -379,7 +379,7 @@ object Interpreter {
     } else {
       // TODO: Should the reflection call be here, or moved elsewhere?
       try {
-        defn.method.invoke(null, args)
+        defn.method.invoke(null, args: _*)
       } catch {
         // Rethrow the real exception
         case e: InvocationTargetException => throw e.getTargetException

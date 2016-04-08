@@ -37,7 +37,7 @@ object Codegen {
    * Returns the internal name of the JVM type that `tpe` maps to.
    */
   def descriptor(tpe: Type): String = tpe match {
-    case Type.Unit => "Lca/uwaterloo/flix/runtime/Value$Unit$;"
+    case Type.Unit => asm.Type.getDescriptor(Value.Unit.getClass)
     case Type.Bool => asm.Type.BOOLEAN_TYPE.getDescriptor
     case Type.Char => asm.Type.CHAR_TYPE.getDescriptor
     case Type.Float32 => asm.Type.FLOAT_TYPE.getDescriptor
@@ -50,6 +50,29 @@ object Codegen {
     case Type.Enum(_, _) => asm.Type.getDescriptor(classOf[Value.Tag])
     case Type.Tuple(elms) => asm.Type.getDescriptor(classOf[Value.Tuple])
     case Type.Lambda(args, retTpe) => s"""(${ args.map(descriptor).mkString })${descriptor(retTpe)}"""
+    case Type.Tag(_, _, _) => throw InternalCompilerException(s"No corresponding JVM type for $tpe.")
+    case _ => ???
+  }
+
+  /**
+    * Convert a Flix type `tpe` into a representation of a Java type, i.e. an instance of `Class[_]`.
+    *
+    * Used for reflection.
+    */
+  def toJavaClass(tpe: Type): Class[_] = tpe match {
+    case Type.Unit => Value.Unit.getClass
+    case Type.Bool => classOf[Boolean]
+    case Type.Char => classOf[Char]
+    case Type.Float32 => classOf[Float]
+    case Type.Float64 => classOf[Double]
+    case Type.Int8 => classOf[Byte]
+    case Type.Int16 => classOf[Short]
+    case Type.Int32 => classOf[Int]
+    case Type.Int64 => classOf[Long]
+    case Type.Str => classOf[java.lang.String]
+    case Type.Enum(_, _) => classOf[Value.Tag]
+    case Type.Tuple(elms) => classOf[Value.Tuple]
+    case Type.Lambda(_, _) => ???
     case Type.Tag(_, _, _) => throw InternalCompilerException(s"No corresponding JVM type for $tpe.")
     case _ => ???
   }
