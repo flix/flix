@@ -18,11 +18,11 @@ namespace Parity {
      * Returns `true` iff `e1` is less than or equal to `e2`.
      */
     def leq(e1: Parity, e2: Parity): Bool = match (e1, e2) with {
-        case (Parity.Bot, _)              => true
-        case (Parity.Odd, Parity.Odd)     => true
-        case (Parity.Even, Parity.Even)   => true
-        case (_, Parity.Top)              => true
-        case _                            => false
+        case (Parity.Bot, _)            => true
+        case (Parity.Odd, Parity.Odd)   => true
+        case (Parity.Even, Parity.Even) => true
+        case (_, Parity.Top)            => true
+        case _                          => false
     }
 
     /**
@@ -30,11 +30,11 @@ namespace Parity {
      */
     @commutative @associative
     def lub(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
-        case (Parity.Bot, x)              => x
-        case (x, Parity.Bot)              => x
-        case (Parity.Odd, Parity.Odd)     => Parity.Odd
-        case (Parity.Even, Parity.Even)   => Parity.Even
-        case _                            => Parity.Top
+        case (Parity.Bot, x)            => x
+        case (x, Parity.Bot)            => x
+        case (Parity.Odd, Parity.Odd)   => Parity.Odd
+        case (Parity.Even, Parity.Even) => Parity.Even
+        case _                          => Parity.Top
     }
 
     /**
@@ -42,11 +42,11 @@ namespace Parity {
      */
     @commutative @associative
     def glb(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
-        case (Parity.Top, x)                => x
-        case (x, Parity.Top)                => x
-        case (Parity.Odd, Parity.Odd)       => Parity.Odd
-        case (Parity.Even, Parity.Even)     => Parity.Even
-        case _                              => Parity.Bot
+        case (Parity.Top, x)            => x
+        case (x, Parity.Top)            => x
+        case (Parity.Odd, Parity.Odd)   => Parity.Odd
+        case (Parity.Even, Parity.Even) => Parity.Even
+        case _                          => Parity.Bot
     }
 
     /**

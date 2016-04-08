@@ -3,33 +3,64 @@
  */
 namespace ParitySign {
 
+    // TODO: Seems the enumerator/symbolic executor does not work correctly for this???
+
     /**
      * The elements of the Parity lattice.
      */
     enum Parity {
+                  case Top,
 
+        case Odd,          case Even,
+
+                  case Bot
     }
 
     /**
      * The elements of the Sign lattice.
      */
     enum Sign {
+                  case Top,
 
+        case Neg,          case Pos,
+
+                  case Zer,
+
+                  case Bot
     }
 
     /**
      * The Cartesian product of the two lattices.
      */
     enum ParitySign {
-
+        case PS(Parity, Sign)
     }
 
+    /**
+     * Returns `true` iff `e1` is less than or equal to `e2`.
+     */
+    def leq(x: ParitySign, y: ParitySign): Bool = match (x, y) with {
+        case (_, ParitySign.PS(Parity.Top, Sign.Top)) => true
 
-    def leq(x: ParitySign, y: ParitySign): Bool = ???
+        case _                                        => false
+    }
 
-    // TODO: Chain??
+    /**
+     * Returns the least upper bound of `e1` and `e2`.
+     */
+    @commutative @associative
+    def lub(e1: ParitySign, e2: ParitySign): ParitySign = match (e1, e2) with {
+        case _ => ParitySign.PS(Parity.Top, Sign.Top)
+    }
 
-    // See other wikipedia examples.
+    /**
+     * Returns the greatest lower bound of `e1` and `e2`.
+     */
+    @commutative @associative
+    def glb(e1: ParitySign, e2: ParitySign): ParitySign = match (e1, e2) with {
+        case _ => ParitySign.PS(Parity.Bot, Sign.Bot)
+    }
 
+    let ParitySign<> = (ParitySign.PS(Parity.Bot, Sign.Bot), ParitySign.PS(Parity.Top, Sign.Top), leq, lub, glb)
 
 }

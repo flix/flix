@@ -61,6 +61,8 @@ namespace Sign {
         case true   => Sign.Zer
     }
 
+    // TODO: Inc / Dec
+
     /**
      * Over-approximates integer `addition`.
      */
