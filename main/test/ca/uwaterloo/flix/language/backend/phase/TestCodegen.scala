@@ -1,18 +1,61 @@
 package ca.uwaterloo.flix.language.backend.phase
 
-import java.lang.reflect.InvocationTargetException
-import java.nio.file.{Files, Paths}
-
-import ca.uwaterloo.flix.api.{MatchException, SwitchException, UserException}
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.Definition
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.Definition.Function
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.phase.Codegen
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.Value
+import ca.uwaterloo.flix.util.{DebugBytecode, _}
 import org.scalatest.FunSuite
 
+// TODO: Move this to package `ca.uwaterloo.flix.language.phase` or even `ca.uwaterloo.flix.language.runtime`.
+// TODO: Combine new codegen tests with old (commented out) codegen tests and interpreter tests.
+// TODO: Factor out codegen/interpreter tests to some common file, but are tested under both implementations and can be indiviudually enabled.
+
 class TestCodegen extends FunSuite {
+
+  def createFlix() = {
+    val options = Options(
+      debugger = Debugger.Disabled,
+      print = Nil,
+      verbosity = Verbosity.Silent,
+      verify = Verify.Disabled,
+      codegen = CodeGeneration.Enabled,
+      debugBytecode = DebugBytecode.Enabled
+    )
+    new Flix().setOptions(options)
+  }
+
+  def getModel(input: String) = createFlix().addStr(input).solve().get
+
+  test("Codegen.01") {
+    val input =
+      """namespace A.B {
+        |  def a: Bool = false
+        |}
+        |namespace A {
+        |  def b: Bool = !false
+        |}
+        |namespace A {
+        |  namespace B {
+        |    def c: Int = 0
+        |
+        |    namespace C {
+        |      def d: Int = 42
+        |    }
+        |  }
+        |}
+        |def e: Int = -1
+      """.stripMargin
+    val model = getModel(input)
+    val result01 = model.getConstant("A.B/a")
+    val result02 = model.getConstant("A/b")
+    val result03 = model.getConstant("A.B/c")
+    val result04 = model.getConstant("A.B.C/d")
+    val result05 = model.getConstant("e")
+    assertResult(Value.False)(result01)
+    assertResult(Value.True)(result02)
+    assertResult(Value.mkInt32(0))(result03)
+    assertResult(Value.mkInt32(42))(result04)
+    assertResult(Value.mkInt32(-1))(result05)
+  }
 
 //  val loc = SourceLocation.Unknown
 //  val sp = SourcePosition.Unknown
