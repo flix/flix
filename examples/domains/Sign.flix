@@ -200,11 +200,11 @@ namespace SignAlt {
         case (_, Sign.Bot)          => Sign.Bot
         case (Sign.Neg, Sign.Neg)   => Sign.Neg
         case (Sign.Neg, Sign.Zer)   => Sign.Neg
-        case (Sign.Neg, Sign.Pos)   => Sign.Neg
-        case (Sign.Zer, Sign.Neg)   => Sign.Zer
+        case (Sign.Neg, Sign.Pos)   => Sign.Top
+        case (Sign.Zer, Sign.Neg)   => Sign.Neg
         case (Sign.Zer, Sign.Zer)   => Sign.Zer
-        case (Sign.Zer, Sign.Pos)   => Sign.Zer
-        case (Sign.Pos, Sign.Neg)   => Sign.Neg
+        case (Sign.Zer, Sign.Pos)   => Sign.Pos
+        case (Sign.Pos, Sign.Neg)   => Sign.Top
         case (Sign.Pos, Sign.Zer)   => Sign.Pos
         case (Sign.Pos, Sign.Pos)   => Sign.Pos
         case  _                     => Sign.Top
