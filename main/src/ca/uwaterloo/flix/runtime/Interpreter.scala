@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
+import java.lang.reflect.InvocationTargetException
+
 import ca.uwaterloo.flix.api.{IValue, MatchException, SwitchException, UserException, WrappedValue}
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Definition.Constant
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
@@ -369,12 +371,22 @@ object Interpreter {
   }
 
   def evalCall(defn: Constant, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef = {
-    var i = 0
-    while (i < defn.formals.length) {
-      env(defn.formals(i).ident.name) = args(i)
-      i = i + 1
+    if (defn.method == null) {
+      var i = 0
+      while (i < defn.formals.length) {
+        env(defn.formals(i).ident.name) = args(i)
+        i = i + 1
+      }
+      eval(defn.exp, root, env)
+    } else {
+      // TODO: Should the reflection call be here, or moved elsewhere?
+      try {
+        defn.method.invoke(null, args)
+      } catch {
+        // Rethrow the real exception
+        case e: InvocationTargetException => throw e.getTargetException
+      }
     }
-    eval(defn.exp, root, env)
   }
 
 }

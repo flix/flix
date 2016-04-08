@@ -29,22 +29,7 @@ object ExecutableAst {
                         exp: ExecutableAst.Expression,
                         tpe: Type,
                         loc: SourceLocation) extends ExecutableAst.Definition {
-
       var method: Method = null
-
-      def apply(args: Array[Object], root: ExecutableAst.Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty) = {
-        // TODO: Move this code somewhere appropriate.
-        if (method == null) {
-          Interpreter.evalCall(this, args, root, env)
-        } else {
-          try {
-            method.invoke(null, args)
-          } catch {
-            // Rethrow the real exception
-            case e: InvocationTargetException => throw e.getTargetException
-          }
-        }
-      }
     }
 
     case class Lattice(tpe: Type,
