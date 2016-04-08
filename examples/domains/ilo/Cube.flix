@@ -16,10 +16,27 @@ namespace Cube {
      * Returns `true` iff `e1` is less than or equal to `e2`.
      */
     def leq(e1: Cube, e2: Cube): Bool = match (e1, e2) with {
-        case (Cube.Bot, _)    => true
-        case (_, Cube.Top)    => true
+        case (Cube.Bot, _)      => true
 
-        case _                => false
+        case (Cube.X1, Cube.X1) => true
+        case (Cube.X1, Cube.Y1) => true
+        case (Cube.X1, Cube.Y2) => true
+
+        case (Cube.X2, Cube.X2) => true
+        case (Cube.X2, Cube.Y1) => true
+        case (Cube.X2, Cube.Y3) => true
+
+        case (Cube.X3, Cube.X3) => true
+        case (Cube.X3, Cube.Y2) => true
+        case (Cube.X3, Cube.Y3) => true
+
+        case (Cube.Y1, Cube.Y1) => true
+        case (Cube.Y2, Cube.Y2) => true
+        case (Cube.Y3, Cube.Y3) => true
+
+        case (_, Cube.Top)      => true
+
+        case _                  => false
     }
 
     /**
@@ -27,10 +44,40 @@ namespace Cube {
      */
     @commutative @associative
     def lub(e1: Cube, e2: Cube): Cube = match (e1, e2) with {
-        case (Cube.Bot, x)     => x
-        case (x, Cube.Bot)     => x
+        case (Cube.Bot, x)      => x
+        case (x, Cube.Bot)      => x
 
-        case _                 => Cube.Top
+        case (Cube.X1, Cube.X1) => Cube.X1
+        case (Cube.X1, Cube.X2) => Cube.Y1
+        case (Cube.X1, Cube.X3) => Cube.Y2
+        case (Cube.X1, Cube.Y1) => Cube.Y1
+        case (Cube.X1, Cube.Y2) => Cube.Y2
+
+        case (Cube.X2, Cube.X2) => Cube.X2
+        case (Cube.X2, Cube.X1) => Cube.Y1
+        case (Cube.X2, Cube.X3) => Cube.Y3
+        case (Cube.X2, Cube.Y1) => Cube.Y1
+        case (Cube.X2, Cube.Y3) => Cube.Y3
+
+        case (Cube.X3, Cube.X3) => Cube.X3
+        case (Cube.X3, Cube.X1) => Cube.Y2
+        case (Cube.X3, Cube.X2) => Cube.Y3
+        case (Cube.X3, Cube.Y2) => Cube.Y2
+        case (Cube.X3, Cube.Y3) => Cube.Y3
+
+        case (Cube.Y1, Cube.Y1) => Cube.Y1
+        case (Cube.Y1, Cube.X1) => Cube.Y1
+        case (Cube.Y1, Cube.X2) => Cube.Y1
+
+        case (Cube.Y2, Cube.Y2) => Cube.Y2
+        case (Cube.Y2, Cube.X1) => Cube.Y2
+        case (Cube.Y2, Cube.X3) => Cube.Y2
+
+        case (Cube.Y3, Cube.Y3) => Cube.Y3
+        case (Cube.Y3, Cube.X2) => Cube.Y3
+        case (Cube.Y3, Cube.X3) => Cube.Y3
+
+        case _                  => Cube.Top
     }
 
     /**
