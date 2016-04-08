@@ -66,7 +66,7 @@ namespace Parity {
     }
 
     /**
-     * Over-approximates integer `increment`.
+     * Over-approximates integer `decrement`.
      */
     @strict @monotone
     def dec(e: Parity): Parity = match e with {

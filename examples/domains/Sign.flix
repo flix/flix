@@ -82,7 +82,29 @@ namespace SignAlt {
         case true   => Sign.Zer
     }
 
-    // TODO: Inc/dec
+    /**
+     * Over-approximates integer `increment`.
+     */
+    @strict @monotone
+    fn inc(e: Sign): Sign = match e with {
+        case Sign.Bot => Sign.Bot
+        case Sign.Neg => Sign.Top
+        case Sign.Zer => Sign.Pos
+        case Sign.Pos => Sign.Pos
+        case Sign.Top => Sign.Top
+    }
+
+    /**
+     * Over-approximates integer `decrement`.
+     */
+    @strict @monotone
+    fn dec(e: Sign): Sign = match e with {
+        case Sign.Bot => Sign.Bot
+        case Sign.Neg => Sign.Neg
+        case Sign.Zer => Sign.Neg
+        case Sign.Pos => Sign.Top
+        case Sign.Top => Sign.Top
+    }
 
     /**
      * Over-approximates integer `addition`.
@@ -252,6 +274,7 @@ namespace SignAlt {
       * Over-approximates `bitwise left shift`.
       */
     @strict @monotone
+    // TODO: Bugged
     fn leftShift(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
        case (Sign.Bot, _)          => Sign.Bot
        case (_, Sign.Bot)          => Sign.Bot
@@ -271,6 +294,7 @@ namespace SignAlt {
      * Over-approximates `bitwise right shift`.
      */
     @strict @monotone
+    // TODO: Bugged
     fn rightShift(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Sign.Bot, _)          => Sign.Bot
         case (_, Sign.Bot)          => Sign.Bot
