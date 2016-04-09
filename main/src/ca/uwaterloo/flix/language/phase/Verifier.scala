@@ -406,12 +406,11 @@ object Verifier {
         }
         r.toList
       case Type.Tuple(elms) =>
-        // TODO: Verify
         def visitn(xs: List[Type]): List[List[SymVal]] = xs match {
-          case Nil => Nil
-          case t :: ts => visit(t) flatMap {
-            case l => visitn(ts) map {
-              case ls => l :: ls
+          case Nil => List(Nil)
+          case t :: ts => visitn(ts) flatMap {
+            case ls => visit(t) map {
+              case l => l :: ls
             }
           }
         }
@@ -431,6 +430,7 @@ object Verifier {
     val result = q map {
       case quantifier => quantifier.ident.name -> visit(quantifier.tpe)
     }
+
     expand(result)
   }
 

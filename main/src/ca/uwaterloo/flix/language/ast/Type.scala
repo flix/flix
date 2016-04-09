@@ -113,6 +113,7 @@ object Type {
     * @param name  the fully qualified name of the enum.
     * @param cases a map from tag names to tag types.
     */
+  // TODO: Should be sortedmap
   case class Enum(name: Symbol.Resolved, cases: immutable.Map[String, Type.Tag]) extends Type
 
   /**
