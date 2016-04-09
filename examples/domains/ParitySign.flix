@@ -3,7 +3,10 @@
  */
 namespace ParitySign {
 
-    // TODO: Seems the enumerator/symbolic executor does not work correctly for this???
+    // http://www.pietro.ferrara.name/2013_Dale.PDF
+    // The lattice and semantic structures of the reduced product are exactly the same as those of the Cartesian
+    // product. In addition, a reduction operator aimed at refining the information tracked by the two
+    // domains is introduced, and it is used after each lattice or semantic operator application.
 
     /**
      * The elements of the Parity lattice.
