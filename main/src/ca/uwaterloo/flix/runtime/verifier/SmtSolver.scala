@@ -30,9 +30,10 @@ object SmtSolver {
       System.exit(1)
     }
 
+    // TODO: Library is either libz3 or z3
     // attempt to load the native library.
     try {
-      System.loadLibrary("z3")
+      System.loadLibrary("libz3")
     } catch {
       case e: UnsatisfiedLinkError =>
         Console.println(errorMessage)
