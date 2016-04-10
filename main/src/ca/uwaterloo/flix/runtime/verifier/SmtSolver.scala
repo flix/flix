@@ -31,6 +31,12 @@ object SmtSolver {
     }
 
     try {
+      // try to preload the library.
+      if (isWindows)
+        System.loadLibrary("libz3")
+      else
+        System.loadLibrary("z3")
+
       val ctx = new Context()
       val r = f(ctx)
       ctx.dispose()
@@ -75,4 +81,8 @@ object SmtSolver {
       |###############################################################################
     """.stripMargin
 
+  /**
+    * Returns `true` if running on the Windows platform.
+    */
+  def isWindows: Boolean = System.getProperty("os.name").toLowerCase.contains("windows")
 }
