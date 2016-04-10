@@ -30,23 +30,19 @@ object SmtSolver {
       System.exit(1)
     }
 
-    // TODO: Library is either libz3 or z3
-    // attempt to load the native library.
     try {
-      System.loadLibrary("libz3")
+      val ctx = new Context()
+      val r = f(ctx)
+      ctx.dispose()
+      r
     } catch {
       case e: UnsatisfiedLinkError =>
         Console.println(errorMessage)
         Console.println()
         Console.println("> Unable to load the library. Stack Trace reproduced below: ")
         e.printStackTrace()
-        System.exit(1)
+        throw e
     }
-
-    val ctx = new Context()
-    val r = f(ctx)
-    ctx.dispose()
-    r
   }
 
   /**
@@ -66,7 +62,15 @@ object SmtSolver {
       |###   3. Ensure that you have the                                           ###
       |###      'Microsoft Visual Studio Redistributable 2012 Package' installed.  ###
       |###                                                                         ###
-      |### NB: You must have the 64 bit version of Java, Z3 and the VS package.    ###
+      |###  NB: You must have the 64 bit version of Java, Z3 and the VS package.   ###
+      |###                                                                         ###
+      |### On Linux:                                                               ###
+      |###    1. Ensure that java.library.path is set correctly.                   ###
+      |###    2. Ensure that LD_LIBRARY_PATH is set correctly.                     ###
+      |###                                                                         ###
+      |###  On Mac OS X:                                                           ###
+      |###    1. Ensure that java.library.path is set correctly.                   ###
+      |###    2. Ensure that DYLD_LIBRARY_PATH is set correctly.                   ###
       |###                                                                         ###
       |###############################################################################
     """.stripMargin
