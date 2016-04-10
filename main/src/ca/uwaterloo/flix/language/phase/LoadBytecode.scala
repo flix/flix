@@ -12,6 +12,8 @@ object LoadBytecode {
 
   class Loader extends ClassLoader {
     def apply(name: String, bytes: Array[Byte]): Class[_] = defineClass(name, bytes, 0, bytes.length)
+
+    def apply(prefix: List[String], bytes: Array[Byte]): Class[_] = apply(prefix.mkString("."), bytes)
   }
 
   /**
@@ -24,38 +26,49 @@ object LoadBytecode {
     }
 
     // Create a new classloader for each root we compile.
-    val loader = new Loader
+    val loader = new Loader()
 
-    // First, we group all the constants by their prefixes (i.e. classes)
+    // First, we group all the constants by their prefixes (i.e. classes).
+    // We also transform all non-function constants into 0-arg functions, which codegen expects.
     val constants: Map[List[String], List[ExecutableAst.Definition.Constant]] =
-      root.constants.values.toList.groupBy { c => c.name.prefix }
+      root.constants.values.map { f =>
+        f.tpe match {
+          case _: Type.Lambda => f
+          case t => f.copy(tpe = Type.Lambda(List(), t))
+        }
+      }.toList.groupBy(_.name.prefix)
 
-    // For each prefix (class), generate bytecode for its constants, then load the bytecode
+    // Create a map of names to types (i.e. declarations), so we can generate code for function calls.
+    // Note: We use `constants` (instead of `root.constants`) because we need the rewritten 0-arg functions.
+    val declarations: Map[Symbol.Resolved, Type] = constants.values.flatten.map { f => (f.name, f.tpe) }.toMap
+
+    // For each prefix (class), generate bytecode for its constants, then load the bytecode.
     val classes = mutable.Map.empty[List[String], Class[_]]
     for ((prefix, consts) <- constants) {
-      val bytecode = Codegen.compile(new Codegen.Context(consts, prefix.mkString("/")))
-      classes(prefix) = loader(prefix.mkString("."), bytecode)
+      val bytecode = Codegen.compile(Codegen.Context(prefix, consts, declarations))
+      classes(prefix) = loader(prefix, bytecode)
+
       if (options.debugBytecode == DebugBytecode.Enabled) {
-        dump(prefix.mkString("", "$", ".class"), bytecode)
+        dump(prefix, bytecode)
       }
     }
 
-    // Iterate over all constants, updating their fields to point to the method objects
+    // Iterate over all constants, updating their fields to point to the method objects.
     for ((name, const) <- root.constants) {
       val clazz = classes(name.prefix)
-      val decorated = Codegen.decorate(const.name)
       val argTpes = const.tpe match {
         case Type.Lambda(args, retTpe) => args.map(toJavaClass)
         case t => List()
       }
-      const.method = clazz.getMethod(decorated, argTpes: _*)
+      const.method = clazz.getMethod(name.suffix, argTpes: _*)
     }
 
     root
   }
 
-  // Write to a class file, for debugging.
   def dump(path: String, code: Array[Byte]): Unit = Files.write(Paths.get(path), code)
+
+  def dump(prefix: List[String], code: Array[Byte]): Unit = dump(prefix.mkString("", "$", ".class"), code)
 
   /**
     * Convert a Flix type `tpe` into a representation of a Java type, i.e. an instance of `Class[_]`.

@@ -64,6 +64,38 @@ class TestCodegen extends FunSuite {
     assertResult(Value.mkInt32(-1))(result05)
   }
 
+  test("Codegen.03") {
+    val input =
+      """namespace A.B {
+        |  def a: Bool = false
+        |}
+        |namespace A {
+        |  def b: Bool = A.B/a
+        |}
+        |namespace A {
+        |  namespace B {
+        |    def c: Int = 0
+        |
+        |    namespace C {
+        |      def d: Int = A.B/c
+        |    }
+        |  }
+        |}
+        |def e: Int = A.B.C/d
+      """.stripMargin
+    val model = getModel(input)
+    val result01 = model.getConstant("A.B/a")
+    val result02 = model.getConstant("A/b")
+    val result03 = model.getConstant("A.B/c")
+    val result04 = model.getConstant("A.B.C/d")
+    val result05 = model.getConstant("e")
+    assertResult(Value.False)(result01)
+    assertResult(Value.False)(result02)
+    assertResult(Value.mkInt32(0))(result03)
+    assertResult(Value.mkInt32(0))(result04)
+    assertResult(Value.mkInt32(0))(result05)
+  }
+
 //  val loc = SourceLocation.Unknown
 //  val sp = SourcePosition.Unknown
 //  val compiledClassName = "ca.uwaterloo.flix.compiled.FlixDefinitions"

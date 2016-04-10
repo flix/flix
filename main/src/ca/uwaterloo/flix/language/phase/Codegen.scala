@@ -12,26 +12,22 @@ import org.objectweb.asm.{ClassVisitor, ClassWriter, Label, MethodVisitor}
 // TODO: For now, we hardcode the type descriptors for all the Value objects
 // There's no nice way of using reflection to get the type of a companion object.
 // Later, we'll rewrite Value in a Java-like style so reflection is easier
+// TODO: Actually, it looks like "Value.Unit.getClass" will work
 
 // TODO: Debugging information
 
+// TODO: Comments/documentation
+
 object Codegen {
 
-  class Context(definitions: List[Definition.Constant], val clazz: String) {
-    // Non-function constants are compiled as 0-arg functions
-    val functions = definitions.map { f =>
-      f.tpe match {
-        case _: Type.Lambda => f
-        case t => f.copy(tpe = Type.Lambda(List(), t))
-      }
-    }
-    val getFunction = functions.map { f => (f.name, f) }.toMap
-  }
+  case class Context(prefix: List[String],
+                     functions: List[Definition.Constant],
+                     declarations: Map[Symbol.Resolved, Type])
 
   /*
-   * Decorate (mangle) a Symbol.Resolved to get the internal JVM name.
+   * Decorate (mangle) a prefix (list of strings) to get the internal JVM name.
    */
-  def decorate(name: Symbol.Resolved): String = name.parts.mkString("$")
+  def decorate(prefix: List[String]): String = prefix.mkString("/")
 
   /*
    * Returns the internal name of the JVM type that `tpe` maps to.
@@ -65,7 +61,7 @@ object Codegen {
     val visitor = new CheckClassAdapter(classWriter)
 
     // Initialize the visitor to create a class.
-    visitor.visit(V1_8, ACC_PUBLIC + ACC_SUPER, context.clazz, null, "java/lang/Object", null)
+    visitor.visit(V1_8, ACC_PUBLIC + ACC_SUPER, decorate(context.prefix), null, "java/lang/Object", null)
 
     compileConstructor(context, visitor)
     functions.foreach(compileFunction(context, visitor))
@@ -93,7 +89,9 @@ object Codegen {
    * The Flix function A.B.C/foo is compiled as the method A$B$C$foo.
    */
   private def compileFunction(context: Context, visitor: ClassVisitor)(function: Definition.Constant): Unit = {
-    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, decorate(function.name), descriptor(function.tpe), null, null)
+    // TODO: We might need to compile wrapper functions that unbox arguments and box return values
+
+    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, function.name.suffix, descriptor(function.tpe), null, null)
     mv.visitCode()
 
     compileExpression(context, mv)(function.exp)
@@ -159,23 +157,14 @@ object Codegen {
     case Expression.ClosureVar(env, name, tpe, loc) => ???
 
     case Expression.Ref(name, tpe, loc) =>
-      // TODO: Properly implement this. Refs need to be compiled as function calls.
-      visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/api/UserException")
-      visitor.visitInsn(DUP)
-      visitor.visitLdcInsn(s"Not yet implemented.")
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "MODULE$", "Lca/uwaterloo/flix/language/ast/package$SourceLocation$;")
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "Unknown", "()Lca/uwaterloo/flix/language/ast/package$SourceLocation;", false)
-      visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/api/UserException", "<init>", "(Ljava/lang/String;Lca/uwaterloo/flix/language/ast/package$SourceLocation;)V", false)
-      visitor.visitInsn(ATHROW)
+      val targetTpe = context.declarations(name)
+      visitor.visitMethodInsn(INVOKESTATIC, decorate(name.prefix), name.suffix, descriptor(targetTpe), false)
 
     case Expression.Hook(hook, tpe, loc) => ???
 
     case Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc) => ???
 
-    case Expression.ApplyRef(name, args, _, _) =>
-      args.foreach(compileExpression(context, visitor))
-      visitor.visitMethodInsn(INVOKESTATIC, context.clazz, decorate(name),
-        descriptor(context.getFunction(name).tpe), false)
+    case Expression.ApplyRef(name, args, _, _) => ???
     case Expression.ApplyClosure(exp, args, tpe, loc) => ???
 
     case Expression.Unary(op, exp, _, _) => compileUnaryExpr(context, visitor)(op, exp)
