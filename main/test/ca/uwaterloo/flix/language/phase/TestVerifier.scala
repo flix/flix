@@ -13,15 +13,16 @@ class TestVerifier extends FunSuite {
       .solve()
       .get
   }
-//
-//  test("Constant.flix") {
-//    new Flix()
-//      .addPath("./examples/domains/Constant.flix")
-//      .addPath("./examples/domains/Belnap.flix")
-//      .setOptions(Options.Default.copy(verify = Verify.Enabled))
-//      .solve()
-//      .get
-//  }
+
+  test("Constant.flix") {
+    new Flix()
+      .addPath("./examples/domains/Belnap.flix")
+      .addPath("./examples/domains/Constant.flix")
+      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .solve()
+      .get
+  }
+
 //
 //  test("ConstantSign.flix") {
 //    new Flix()

@@ -499,7 +499,7 @@ object Verifier {
         return m.getConstInterp(decl).toString
       }
     }
-    throw InternalCompilerException(s"Interpretation not found in Z3 model: '${id.name}'.")
+    "<<unknown>>"
   }
 
   /**
