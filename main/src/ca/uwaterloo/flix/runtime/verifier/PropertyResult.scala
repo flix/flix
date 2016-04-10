@@ -9,19 +9,25 @@ import ca.uwaterloo.flix.language.phase.Verifier.VerifierError
 sealed trait PropertyResult {
 
   /**
-    * Returns the number of paths explored by symbolic execution for this property.
+    * Returns the property associated with `this` property result.
+    */
+  def property: ExecutableAst.Property
+
+  /**
+    * Returns the number of paths explored by symbolic execution for `this` property.
     */
   def paths: Int
 
   /**
-    * Returns the number of SMT queries issued for this property.
+    * Returns the number of SMT queries issued for `this` property.
     */
   def queries: Int
 
   /**
-    * Returns the total time spent evaluating this property.
+    * Returns the total time spent evaluating `this` property.
     */
   def elapsed: Long
+
 }
 
 object PropertyResult {

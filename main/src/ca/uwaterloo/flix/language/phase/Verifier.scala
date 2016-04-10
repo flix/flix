@@ -631,7 +631,7 @@ object Verifier {
     implicit val consoleCtx = Compiler.ConsoleCtx
     Console.println(consoleCtx.blue(s"-- VERIFIER RESULTS --------------------------------------------------"))
 
-    for (result <- results) {
+    for (result <- results.sortBy(_.property.loc)) {
       result match {
         case PropertyResult.Success(property, paths, queries, elapsed) =>
           Console.println(consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries)")
