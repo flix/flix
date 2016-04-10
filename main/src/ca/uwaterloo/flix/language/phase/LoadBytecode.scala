@@ -3,7 +3,8 @@ package ca.uwaterloo.flix.language.phase
 import java.nio.file.{Files, Paths}
 
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol, Type}
-import ca.uwaterloo.flix.util.{CodeGeneration, DebugBytecode, Options}
+import ca.uwaterloo.flix.runtime.Value
+import ca.uwaterloo.flix.util.{CodeGeneration, DebugBytecode, InternalCompilerException, Options}
 
 import scala.collection.mutable
 
@@ -12,28 +13,6 @@ object LoadBytecode {
   class Loader extends ClassLoader {
     def apply(name: String, bytes: Array[Byte]): Class[_] = defineClass(name, bytes, 0, bytes.length)
   }
-
-  /**
-    * Returns the prefix of a Symbol.Resolved as a list of strings.
-    * For example, the prefix of the symbol "A.B.C/f" is simply List("A", "B", "C").
-    * A symbol "f" corresponds to "Root/f", so its prefix is List("Root").
-    */
-  def prefixOf(sym: Symbol.Resolved): List[String] = sym.parts match {
-    case x :: Nil => List("Root")
-    case xs => xs.init
-  }
-
-  /**
-    * Returns the suffix of a Symbol.Resolved as a string.
-    * For example, the suffix of the symbol "A.B.C/f" is simply "f".
-    */
-  def suffixOf(sym: Symbol.Resolved): String = sym.parts match {
-    case x :: Nil => x
-    case xs => xs.last
-  }
-
-  // Write to a class file, for debugging.
-  def dump(path: String, code: Array[Byte]): Unit = Files.write(Paths.get(path), code)
 
   /**
     * Generate bytecode, load the class, and attach references to compiled methods in the AST.
@@ -49,7 +28,7 @@ object LoadBytecode {
 
     // First, we group all the constants by their prefixes (i.e. classes)
     val constants: Map[List[String], List[ExecutableAst.Definition.Constant]] =
-      root.constants.values.toList.groupBy { c => prefixOf(c.name) }
+      root.constants.values.toList.groupBy { c => c.name.prefix }
 
     // For each prefix (class), generate bytecode for its constants, then load the bytecode
     val classes = mutable.Map.empty[List[String], Class[_]]
@@ -63,16 +42,42 @@ object LoadBytecode {
 
     // Iterate over all constants, updating their fields to point to the method objects
     for ((name, const) <- root.constants) {
-      val clazz = classes(prefixOf(name))
+      val clazz = classes(name.prefix)
       val decorated = Codegen.decorate(const.name)
       val argTpes = const.tpe match {
-        case Type.Lambda(args, retTpe) => args.map(Codegen.toJavaClass)
+        case Type.Lambda(args, retTpe) => args.map(toJavaClass)
         case t => List()
       }
       const.method = clazz.getMethod(decorated, argTpes: _*)
     }
 
     root
+  }
+
+  // Write to a class file, for debugging.
+  def dump(path: String, code: Array[Byte]): Unit = Files.write(Paths.get(path), code)
+
+  /**
+    * Convert a Flix type `tpe` into a representation of a Java type, i.e. an instance of `Class[_]`.
+    *
+    * Used for reflection.
+    */
+  def toJavaClass(tpe: Type): Class[_] = tpe match {
+    case Type.Unit => Value.Unit.getClass
+    case Type.Bool => classOf[Boolean]
+    case Type.Char => classOf[Char]
+    case Type.Float32 => classOf[Float]
+    case Type.Float64 => classOf[Double]
+    case Type.Int8 => classOf[Byte]
+    case Type.Int16 => classOf[Short]
+    case Type.Int32 => classOf[Int]
+    case Type.Int64 => classOf[Long]
+    case Type.Str => classOf[java.lang.String]
+    case Type.Enum(_, _) => classOf[Value.Tag]
+    case Type.Tuple(elms) => classOf[Value.Tuple]
+    case Type.Lambda(_, _) => ???
+    case Type.Tag(_, _, _) => throw InternalCompilerException(s"No corresponding JVM type for $tpe.")
+    case _ => ???
   }
 
 }

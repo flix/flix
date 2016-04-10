@@ -54,29 +54,6 @@ object Codegen {
     case _ => ???
   }
 
-  /**
-    * Convert a Flix type `tpe` into a representation of a Java type, i.e. an instance of `Class[_]`.
-    *
-    * Used for reflection.
-    */
-  def toJavaClass(tpe: Type): Class[_] = tpe match {
-    case Type.Unit => Value.Unit.getClass
-    case Type.Bool => classOf[Boolean]
-    case Type.Char => classOf[Char]
-    case Type.Float32 => classOf[Float]
-    case Type.Float64 => classOf[Double]
-    case Type.Int8 => classOf[Byte]
-    case Type.Int16 => classOf[Short]
-    case Type.Int32 => classOf[Int]
-    case Type.Int64 => classOf[Long]
-    case Type.Str => classOf[java.lang.String]
-    case Type.Enum(_, _) => classOf[Value.Tag]
-    case Type.Tuple(elms) => classOf[Value.Tuple]
-    case Type.Lambda(_, _) => ???
-    case Type.Tag(_, _, _) => throw InternalCompilerException(s"No corresponding JVM type for $tpe.")
-    case _ => ???
-  }
-
   /*
    * Given a list of Flix definitions, compile the definitions to bytecode and put them in a JVM class. For now, we put
    * all definitions in a single class: ca.uwaterloo.flix.runtime.compiled.FlixDefinitions. The Flix function
