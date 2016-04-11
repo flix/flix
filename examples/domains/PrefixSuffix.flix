@@ -62,8 +62,11 @@ namespace PrefixSuffix {
         case (PS.Pre(p1), PS.PreSuf(p2, s2)) => if (p1 == p2) PS.PreSuf(p2, s2) else PS.Bot
         case (PS.PreSuf(p1, s1), PS.Suf(s2)) => if (s1 == s2) PS.PreSuf(p1, s1) else PS.Bot
         case (PS.Suf(s1), PS.PreSuf(p2, s2)) => if (s1 == s2) PS.PreSuf(p2, s2) else PS.Bot
-
-        case _                      => PS.Bot
+        case (PS.Pre(p1), PS.Pre(p2))        => if (p1 == p2) PS.Pre(p1) else PS.Bot
+        case (PS.Suf(s1), PS.Suf(s2))        => if (s1 == s2) PS.Suf(s1) else PS.Bot
+        case (PS.Pre(p), PS.Suf(s))          => PS.PreSuf(p, s)
+        case (PS.Suf(s), PS.Pre(p))          => PS.PreSuf(p, s)
+        case _                               => PS.Bot
     }
 
      let PS<> = (PS.Bot, PS.Top, leq, lub, glb)
