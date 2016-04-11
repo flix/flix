@@ -164,7 +164,11 @@ object Codegen {
 
     case Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc) => ???
 
-    case Expression.ApplyRef(name, args, _, _) => ???
+    case Expression.ApplyRef(name, args, _, _) =>
+      val targetTpe = context.declarations(name)
+      args.foreach(compileExpression(context, visitor))
+      visitor.visitMethodInsn(INVOKESTATIC, decorate(name.prefix), name.suffix, descriptor(targetTpe), false)
+
     case Expression.ApplyClosure(exp, args, tpe, loc) => ???
 
     case Expression.Unary(op, exp, _, _) => compileUnaryExpr(context, visitor)(op, exp)
@@ -328,13 +332,13 @@ object Codegen {
         "Lca/uwaterloo/flix/runtime/Value$;")
       compileExpression(context, visitor)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkChar",
-        "(I)Ljava/lang/Object;", false)
+        "(C)Ljava/lang/Object;", false)
 
     case Type.Float32 =>
       visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$",
         "Lca/uwaterloo/flix/runtime/Value$;")
       compileExpression(context, visitor)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkFloat",
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkFloat32",
         "(F)Ljava/lang/Object;", false)
 
     case Type.Float64 =>
@@ -662,6 +666,7 @@ object Codegen {
       (e1.tpe: @unchecked) match {
         case Type.Int8 => visitor.visitInsn(I2B)
         case Type.Int16 => visitor.visitInsn(I2S)
+        case Type.Float32 | Type.Float64 | Type.Int32 | Type.Int64 => visitor.visitInsn(NOP)
       }
     } else {
       compileExpression(context, visitor)(e1)
@@ -742,7 +747,7 @@ object Codegen {
       case BinaryOperator.NotEqual => (IF_ICMPEQ, FCMPG, DCMPG, IFEQ)
     }
     e1.tpe match {
-      case Type.Bool | Type.Char if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
+      case Type.Bool if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
         // Bools and Chars can be compared for equality.
         visitor.visitJumpInsn(intOp, condElse)
       case Type.Float32 =>
@@ -751,7 +756,7 @@ object Codegen {
       case Type.Float64 =>
         visitor.visitInsn(doubleOp)
         visitor.visitJumpInsn(cmp, condElse)
-      case Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitJumpInsn(intOp, condElse)
+      case Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitJumpInsn(intOp, condElse)
       case Type.Int64 =>
         visitor.visitInsn(LCMP)
         visitor.visitJumpInsn(cmp, condElse)

@@ -11,19 +11,19 @@ import org.scalatest.FunSuite
 
 class TestCodegen extends FunSuite {
 
-  def createFlix() = {
+  def createFlix(dumpBytecode: Boolean = false) = {
     val options = Options(
       debugger = Debugger.Disabled,
       print = Nil,
       verbosity = Verbosity.Silent,
       verify = Verify.Disabled,
       codegen = CodeGeneration.Enabled,
-      debugBytecode = DebugBytecode.Enabled
+      debugBytecode = if (dumpBytecode) DebugBytecode.Enabled else DebugBytecode.Disabled
     )
     new Flix().setOptions(options)
   }
 
-  def getModel(input: String) = createFlix().addStr(input).solve().get
+  def getModel(input: String, dumpBytecode: Boolean = false) = createFlix(dumpBytecode).addStr(input).solve().get
 
   test("Codegen.01") {
     val input = "def x: Int = 42"
@@ -70,18 +70,18 @@ class TestCodegen extends FunSuite {
         |  def a: Bool = false
         |}
         |namespace A {
-        |  def b: Bool = A.B/a
+        |  def b: Bool = !A.B/a
         |}
         |namespace A {
         |  namespace B {
         |    def c: Int = 0
         |
         |    namespace C {
-        |      def d: Int = A.B/c
+        |      def d: Int = A.B/c + 40
         |    }
         |  }
         |}
-        |def e: Int = A.B.C/d
+        |def e: Int = A.B.C/d + 2
       """.stripMargin
     val model = getModel(input)
     val result01 = model.getConstant("A.B/a")
@@ -90,10 +90,10 @@ class TestCodegen extends FunSuite {
     val result04 = model.getConstant("A.B.C/d")
     val result05 = model.getConstant("e")
     assertResult(Value.False)(result01)
-    assertResult(Value.False)(result02)
+    assertResult(Value.True)(result02)
     assertResult(Value.mkInt32(0))(result03)
-    assertResult(Value.mkInt32(0))(result04)
-    assertResult(Value.mkInt32(0))(result05)
+    assertResult(Value.mkInt32(40))(result04)
+    assertResult(Value.mkInt32(42))(result05)
   }
 
 //  val loc = SourceLocation.Unknown
