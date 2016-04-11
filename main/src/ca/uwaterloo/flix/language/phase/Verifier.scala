@@ -634,19 +634,24 @@ object Verifier {
     for (result <- results.sortBy(_.property.loc)) {
       result match {
         case PropertyResult.Success(property, paths, queries, elapsed) =>
-          Console.println(consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries)")
+          Console.println(consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + toSeconds(elapsed) + " seconds.)")
 
         case PropertyResult.Failure(property, paths, queries, elapsed, error) =>
-          Console.println(consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries)")
+          Console.println(consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + toSeconds(elapsed) + ") seconds.")
 
         case PropertyResult.Unknown(property, paths, queries, elapsed, error) =>
-          Console.println(consoleCtx.red("? ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries)")
+          Console.println(consoleCtx.red("? ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + toSeconds(elapsed) + ") seconds.")
       }
     }
-    val timeInMiliseconds = f"${totalElapsed(results).toDouble / 1000000000.0}%3.1f"
+
     Console.println()
-    Console.println(s"Result: ${numberOfSuccess(results)} / ${results.length} properties proven in $timeInMiliseconds second. (${totalPaths(results)} paths, ${totalQueries(results)} queries) ")
+    Console.println(s"Result: ${numberOfSuccess(results)} / ${results.length} properties proven in ${toSeconds(totalElapsed(results))} seconds. (${totalPaths(results)} paths, ${totalQueries(results)} queries) ")
     Console.println()
   }
+
+  /**
+    * Converts the given number of nanoseconds `l` into human readable string representation.
+    */
+  private def toSeconds(l: Long): String = f"${l.toDouble / 1000000000.0}%3.1f"
 
 }
