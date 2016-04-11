@@ -54,6 +54,17 @@ namespace Parity {
      */
     def alpha(i: Int): Parity = if (i % 2 != 0) Parity.Odd else Parity.Even
 
+    // TODO:
+    // Can we use this function to express a lattice?
+    // What about a galois connection?
+    // Is there any way to express a gamma that returns a set? or symbolic set?
+    def gamma(e: Parity, i: Int): Bool = match e with {
+        case Parity.Bot => false
+        case Parity.Odd => i % 2 != 0
+        case Parity.Even => i % 2 == 0
+        case Parity.Top => true
+    }
+
     /**
      * Over-approximates integer `increment`.
      */
