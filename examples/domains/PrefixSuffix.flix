@@ -69,9 +69,28 @@ namespace PrefixSuffix {
         case _                                  => PS.Bot
     }
 
-    // TODO: Concatenate
-
-
+    /**
+      * Over-approximates `concatenate`.
+      */
+    @strict @monotone @associative
+    def concatenate(e1: PS, e2: PS): PS = match (e1, e2) with {
+        case (PS.Bot, _)                            => PS.Bot
+        case (_, PS.Bot)                            => PS.Bot
+        case (PS.PreSuf(p1, _), PS.PreSuf(_, s2))   => PS.PreSuf(p1, s2)
+        case (PS.PreSuf(p1, _), PS.Suf(s2))         => PS.PreSuf(p1, s2)
+        case (PS.Pre(p1), PS.PreSuf(_, s2))         => PS.PreSuf(p1, s2)
+        case (PS.Pre(p1), PS.Suf(s2))               => PS.PreSuf(p1, s2)
+        case (PS.PreSuf(p1, _), PS.Pre(_))          => PS.Pre(p1)
+        case (PS.Pre(p1), PS.Pre(_))                => PS.Pre(p1)
+        case (PS.Suf(_), PS.PreSuf(_, s2))          => PS.Suf(s2)
+        case (PS.Suf(_), PS.Suf(s2))                => PS.Suf(s2)
+        case (PS.Suf(_), PS.Pre(_))                 => PS.Top
+        case (PS.Pre(p1), PS.Top)                   => PS.Pre(p1)
+        case (PS.PreSuf(p1, _), PS.Top)             => PS.Pre(p1)
+        case (PS.Top, PS.Suf(s2))                   => PS.Suf(s2)
+        case (PS.Top, PS.PreSuf(_, s2))             => PS.Suf(s2)
+        case _                                      => PS.Top
+    }
 
     /**
       * Over-approximates `equal`.
