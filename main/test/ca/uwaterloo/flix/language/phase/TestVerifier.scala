@@ -51,6 +51,15 @@ class TestVerifier extends FunSuite {
       .get
   }
 
+  test("PrefixSuffix.flix") {
+    new Flix()
+      .addPath("./examples/domains/Belnap.flix")
+      .addPath("./examples/domains/PrefixSuffix.flix")
+      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .solve()
+      .get
+  }
+
   test("Sign.flix") {
     new Flix()
       .addPath("./examples/domains/Belnap.flix")
@@ -85,6 +94,14 @@ class TestVerifier extends FunSuite {
       .get
   }
 
+  test("ilo/InfNoAccDcc.flix") {
+    new Flix()
+      .addPath("./examples/domains/ilo/InfNoAccDcc.flix")
+      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .solve()
+      .get
+  }
+
   test("ilo/M2.flix") {
     new Flix()
       .addPath("./examples/domains/ilo/M2.flix")
@@ -104,6 +121,14 @@ class TestVerifier extends FunSuite {
   test("ilo/M2M3.flix") {
     new Flix()
       .addPath("./examples/domains/ilo/M2M3.flix")
+      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .solve()
+      .get
+  }
+
+  test("ilo/N5.flix") {
+    new Flix()
+      .addPath("./examples/domains/ilo/N5.flix")
       .setOptions(Options.Default.copy(verify = Verify.Enabled))
       .solve()
       .get
