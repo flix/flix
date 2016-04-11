@@ -23,25 +23,25 @@ class TestVerifier extends FunSuite {
       .get
   }
 
-//
-//  test("ConstantSign.flix") {
-//    new Flix()
-//      .addPath("./examples/domains/Belnap.flix")
+  //
+  //  test("ConstantSign.flix") {
+  //    new Flix()
+  //      .addPath("./examples/domains/Belnap.flix")
   //      .addPath("./examples/domains/ConstantSign.flix")
   //      .setOptions(Options.Default.copy(verify = Verify.Enabled))
-//      .solve()
-//      .get
-//  }
-//
-//  ignore("Interval.flix") {
-//    new Flix()
-//      .addPath("./examples/domains/Belnap.flix")
+  //      .solve()
+  //      .get
+  //  }
+  //
+  //  ignore("Interval.flix") {
+  //    new Flix()
+  //      .addPath("./examples/domains/Belnap.flix")
   //      .addPath("./examples/domains/Interval.flix")
   //      .setOptions(Options.Default.copy(verify = Verify.Enabled))
-//      .solve()
-//      .get
-//  }
-//
+  //      .solve()
+  //      .get
+  //  }
+  //
   test("Parity.flix") {
     new Flix()
       .addPath("./examples/domains/Belnap.flix")
@@ -54,28 +54,28 @@ class TestVerifier extends FunSuite {
   test("Sign.flix") {
     new Flix()
       .addPath("./examples/domains/Belnap.flix")
-        .addPath("./examples/domains/Sign.flix")
-        .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .addPath("./examples/domains/Sign.flix")
+      .setOptions(Options.Default.copy(verify = Verify.Enabled))
       .solve()
       .get
   }
-//
-//  test("SignAlt.flix") {
-//    new Flix()
-//      .addPath("./examples/domains/Belnap.flix")
-  //      .addPath("./examples/domains/SignAlt.flix")
+
+  test("StrictSign.flix") {
+    new Flix()
+      .addPath("./examples/domains/Belnap.flix")
+      .addPath("./examples/domains/StrictSign.flix")
+      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .solve()
+      .get
+  }
+  //
+  //  test("Type.flix") {
+  //    new Flix()
+  //      .addPath("./examples/domains/Type.flix")
   //      .setOptions(Options.Default.copy(verify = Verify.Enabled))
-//      .solve()
-//      .get
-//  }
-//
-//  test("Type.flix") {
-//    new Flix()
-//      .addPath("./examples/domains/Type.flix")
-//      .setOptions(Options.Default.copy(verify = Verify.Enabled))
-//      .solve()
-//      .get
-//  }
+  //      .solve()
+  //      .get
+  //  }
 
   test("ilo/Cube.flix") {
     new Flix()
