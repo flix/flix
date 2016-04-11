@@ -19,8 +19,8 @@ namespace PrefixSuffix {
     def leq(e1: PS, e2: PS): Bool = match (e1, e2) with {
         case (PS.Bot, _)                            => true
         case (PS.PreSuf(p1, s1), PS.PreSuf(p2, s2)) => p1 == p2 && s1 == s2
-        case (PS.PreSuf(p, s), PS.Pre(_))           => true
-        case (PS.PreSuf(p, s), PS.Suf(_))           => true
+        case (PS.PreSuf(p1, _), PS.Pre(p2))         => p1 == p2
+        case (PS.PreSuf(_, s1), PS.Suf(s2))         => s1 == s2
         case (PS.Pre(p1), PS.Pre(p2))               => p1 == p2
         case (PS.Suf(s1), PS.Suf(s2))               => s1 == s2
         case (_, PS.Top)                            => true
