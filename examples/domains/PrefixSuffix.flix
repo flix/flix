@@ -69,6 +69,37 @@ namespace PrefixSuffix {
         case _                                  => PS.Bot
     }
 
-     let PS<> = (PS.Bot, PS.Top, leq, lub, glb)
+    // TODO: Concatenate
+
+
+
+    /**
+      * Over-approximates `equal`.
+      */
+    @strict @monotone @commutative
+    def eq(e1: PS, e2: PS): Belnap/Belnap = match (e1, e2) with {
+        case (PS.Bot, _)            => Belnap/Belnap.Bot
+        case (_, PS.Bot)            => Belnap/Belnap.Bot
+        case (PS.PreSuf(p1, s1), PS.PreSuf(p2, s2)) => switch {
+            case (p1 != p2) => Belnap/Belnap.False
+            case (s1 != s2) => Belnap/Belnap.False
+            case true       => Belnap/Belnap.Top
+        }
+        case (PS.Pre(p1), PS.Pre(p2))           => if (p1 != p2) Belnap/Belnap.False else Belnap/Belnap.Top
+        case (PS.Suf(s1), PS.Suf(s2))           => if (s1 != s2) Belnap/Belnap.False else Belnap/Belnap.Top
+        case (PS.Pre(p1), PS.PreSuf(p2, _))     => if (p1 != p2) Belnap/Belnap.False else Belnap/Belnap.Top
+        case (PS.PreSuf(p1, _), PS.Pre(p2))     => if (p1 != p2) Belnap/Belnap.False else Belnap/Belnap.Top
+        case (PS.Suf(s1), PS.PreSuf(_, s2))     => if (s1 != s2) Belnap/Belnap.False else Belnap/Belnap.Top
+        case (PS.PreSuf(_, s1), PS.Suf(s2))     => if (s1 != s2) Belnap/Belnap.False else Belnap/Belnap.Top
+        case _                                  => Belnap/Belnap.Top
+    }
+
+    /**
+      * Over-approximates `not equal`.
+      */
+    @strict @monotone @commutative
+    def neq(e1: PS, e2: PS): Belnap/Belnap = Belnap/not(eq(e1, e2))
+
+    let PS<> = (PS.Bot, PS.Top, leq, lub, glb)
 
 }
