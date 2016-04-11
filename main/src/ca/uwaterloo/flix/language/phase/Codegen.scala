@@ -44,7 +44,8 @@ object Codegen {
     case Type.Int64 => asm.Type.LONG_TYPE.getDescriptor
     case Type.Str => asm.Type.getDescriptor(classOf[java.lang.String])
     case Type.Enum(_, _) => asm.Type.getDescriptor(classOf[Value.Tag])
-    case Type.Tuple(elms) => asm.Type.getDescriptor(classOf[Value.Tuple])
+    case Type.Tuple(_) => asm.Type.getDescriptor(classOf[Value.Tuple])
+    case Type.FSet(_) => asm.Type.getDescriptor(classOf[scala.collection.immutable.Set[AnyRef]])
     case Type.Lambda(args, retTpe) => s"""(${ args.map(descriptor).mkString })${descriptor(retTpe)}"""
     case Type.Tag(_, _, _) => throw InternalCompilerException(s"No corresponding JVM type for $tpe.")
     case _ => ???
@@ -106,7 +107,7 @@ object Codegen {
       case Type.Int64 => mv.visitInsn(LRETURN)
       case Type.Float32 => mv.visitInsn(FRETURN)
       case Type.Float64 => mv.visitInsn(DRETURN)
-      case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) => mv.visitInsn(ARETURN)
+      case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.FSet(_) => mv.visitInsn(ARETURN)
       case Type.Tag(_, _, _) => throw InternalCompilerException(s"Functions can't return type $tpe.")
       case _ => ???
     }
@@ -149,7 +150,7 @@ object Codegen {
       case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
       case Type.Float32 => visitor.visitVarInsn(FLOAD, offset)
       case Type.Float64 => visitor.visitVarInsn(DLOAD, offset)
-      case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) => visitor.visitVarInsn(ALOAD, offset)
+      case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.FSet(_) => visitor.visitVarInsn(ALOAD, offset)
       case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type $tpe.")
       case _ => ???
     }
@@ -198,7 +199,7 @@ object Codegen {
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
         case Type.Float32 => visitor.visitVarInsn(FSTORE, offset)
         case Type.Float64 => visitor.visitVarInsn(DSTORE, offset)
-        case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) =>
+        case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.FSet(_) =>
           visitor.visitVarInsn(ASTORE, offset)
         case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type ${exp1.tpe}.")
         case _ => ???
@@ -247,17 +248,21 @@ object Codegen {
       visitor.visitInsn(AALOAD)
       compileUnbox(context, visitor)(tpe)
     case Expression.Tuple(elms, _, _) =>
+      // TODO: Can we avoid boxing here?
+
       // Create the array to hold the tuple elements.
-      compileInt(visitor)(elms.size)
+      compileInt(visitor)(elms.length)
       visitor.visitTypeInsn(ANEWARRAY, asm.Type.getInternalName(classOf[AnyRef]))
 
       // Iterate over elms, boxing them and slotting each one into the array.
-      elms.zipWithIndex.foreach { case (e, i) =>
+      var i = 0
+      while (i < elms.length) {
         // Duplicate the array reference, otherwise AASTORE will consume it.
         visitor.visitInsn(DUP)
         compileInt(visitor)(i)
-        compileBoxedExpr(context, visitor)(e)
+        compileBoxedExpr(context, visitor)(elms(i))
         visitor.visitInsn(AASTORE)
+        i = i + 1
       }
 
       // Now construct a Value.Tuple: create a reference, load the arguments, and call the constructor.
@@ -275,7 +280,33 @@ object Codegen {
 
     case Expression.CheckNil(exp, loc) => ???
     case Expression.CheckCons(exp, loc) => ???
-    case Expression.FSet(elms, tpe, loc) => ???
+
+    case Expression.FSet(elms, tpe, loc) =>
+      // TODO: Can we avoid boxing here?
+
+      // First create a scala.immutable.Set
+      visitor.visitFieldInsn(GETSTATIC, "scala/Predef$", "MODULE$", "Lscala/Predef$;")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "scala/Predef$", "Set", "()Lscala/collection/immutable/Set$;", false)
+      visitor.visitFieldInsn(GETSTATIC, "scala/Predef$", "MODULE$", "Lscala/Predef$;")
+
+      // Create an array to hold the set elements
+      compileInt(visitor)(elms.length)
+      visitor.visitTypeInsn(ANEWARRAY, asm.Type.getInternalName(classOf[AnyRef]))
+
+      // Iterate over elms, boxing them and slotting each one into the array.
+      var i = 0
+      while (i < elms.length) {
+        // Duplicate the array reference, otherwise AASTORE will consume it.
+        visitor.visitInsn(DUP)
+        compileInt(visitor)(i)
+        compileBoxedExpr(context, visitor)(elms(i))
+        visitor.visitInsn(AASTORE)
+        i = i + 1
+      }
+
+      // Wrap the array and construct the set
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "scala/Predef$", "wrapRefArray", "([Ljava/lang/Object;)Lscala/collection/mutable/WrappedArray;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "scala/collection/immutable/Set$", "apply", "(Lscala/collection/Seq;)Lscala/collection/GenTraversable;", false)
 
     case Expression.UserError(_, loc) =>
       visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/api/UserException")
@@ -383,7 +414,7 @@ object Codegen {
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkStr",
         "(Ljava/lang/String;)Ljava/lang/Object;", false)
 
-    case Type.Unit | Type.Enum(_, _) | Type.Tuple(_) =>
+    case Type.Unit | Type.Enum(_, _) | Type.Tuple(_) | Type.FSet(_) =>
       compileExpression(context, visitor)(exp)
 
     case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type ${exp.tpe}.")
@@ -435,6 +466,8 @@ object Codegen {
     case Type.Enum(_, _) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tag")
 
     case Type.Tuple(_) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tuple")
+
+    case Type.FSet(_) => visitor.visitTypeInsn(CHECKCAST, "scala/collection/immutable/Set")
 
     case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type $tpe.")
 
