@@ -3,7 +3,7 @@
 namespace ConstantSign {
 
     /**
-     * The elements of the constant-sign lattice.
+     * The elements of the constant-parity lattice.
      */
     enum ConstParity {
                   case Top,
