@@ -58,106 +58,6 @@ class TestExamples extends FunSuite {
     assertResult(List(Tru))(A(List(Value.mkInt32(8))))
   }
 
-  test("Parity.flix") {
-    val input =
-      """namespace Parity {
-        |    let Parity<> = (Parity.Bot, Parity.Top, leq, lub, glb);
-        |    lat A(k: Int, v: Parity);
-        |
-        |    A(1, Parity.Odd).
-        |    A(2, Parity.Even).
-        |
-        |    A(3, Parity.Odd).
-        |    A(3, Parity.Even).
-        |
-        |    A(4, x) :- A(1, x), A(2, x).
-        |
-        |    A(5, plus(Parity.Odd, Parity.Even)).
-        |
-        |    A(6, plus(Parity.Odd, Parity.Odd)).
-        |
-        |    A(7, times(Parity.Odd, Parity.Even)).
-        |
-        |    A(8, times(Parity.Odd, Parity.Odd)).
-        |}
-      """.stripMargin
-
-    val model = new Flix()
-      .addPath("./examples/domains/Belnap.flix")
-      .addPath("./examples/domains/Parity.flix")
-      .addStr(input)
-      .solve()
-      .get
-
-    val Parity = Symbol.Resolved.mk(List("Parity", "Parity"))
-
-    val Odd = Value.mkTag(Parity, "Odd", Value.Unit)
-    val Evn = Value.mkTag(Parity, "Even", Value.Unit)
-    val Top = Value.mkTag(Parity, "Top", Value.Unit)
-
-    val A = model.getLattice("Parity/A").toMap
-
-    assertResult(List(Odd))(A(List(Value.mkInt32(1))))
-    assertResult(List(Evn))(A(List(Value.mkInt32(2))))
-    assertResult(List(Top))(A(List(Value.mkInt32(3))))
-    assertResult(None)(A.get(List(Value.mkInt32(4))))
-    assertResult(List(Odd))(A(List(Value.mkInt32(5))))
-    assertResult(List(Evn))(A(List(Value.mkInt32(6))))
-    assertResult(List(Evn))(A(List(Value.mkInt32(7))))
-    assertResult(List(Odd))(A(List(Value.mkInt32(8))))
-  }
-
-  test("Sign.flix") {
-    val input =
-      """namespace Sign {
-        |    let Sign<> = (Sign.Bot, Sign.Top, leq, lub, glb);
-        |    lat A(k: Int, v: Sign);
-        |
-        |    A(1, Sign.Neg).
-        |    A(2, Sign.Zer).
-        |    A(3, Sign.Pos).
-        |
-        |    A(4, Sign.Neg).
-        |    A(4, Sign.Zer).
-        |    A(4, Sign.Pos).
-        |
-        |    A(5, x) :- A(1, x), A(2, x), A(3, x).
-        |
-        |    A(6, plus(Sign.Zer, Sign.Pos)).
-        |    A(7, plus(Sign.Neg, Sign.Pos)).
-        |
-        |    A(8, times(Sign.Zer, Sign.Pos)).
-        |    A(9, times(Sign.Neg, Sign.Neg)).
-        |}
-      """.stripMargin
-
-    val model = new Flix()
-      .addPath("./examples/domains/Belnap.flix")
-      .addPath("./examples/domains/Sign.flix")
-      .addStr(input)
-      .solve()
-      .get
-
-    val Sign = Symbol.Resolved.mk(List("Sign", "Sign"))
-
-    val Neg = Value.mkTag(Sign, "Neg", Value.Unit)
-    val Zer = Value.mkTag(Sign, "Zer", Value.Unit)
-    val Pos = Value.mkTag(Sign, "Pos", Value.Unit)
-    val Top = Value.mkTag(Sign, "Top", Value.Unit)
-
-    val A = model.getLattice("Sign/A").toMap
-
-    assertResult(List(Neg))(A(List(Value.mkInt32(1))))
-    assertResult(List(Zer))(A(List(Value.mkInt32(2))))
-    assertResult(List(Pos))(A(List(Value.mkInt32(3))))
-    assertResult(List(Top))(A(List(Value.mkInt32(4))))
-    assertResult(None)(A.get(List(Value.mkInt32(5))))
-    assertResult(List(Pos))(A(List(Value.mkInt32(6))))
-    assertResult(List(Top))(A(List(Value.mkInt32(7))))
-    assertResult(List(Zer))(A(List(Value.mkInt32(8))))
-    assertResult(List(Pos))(A(List(Value.mkInt32(9))))
-  }
-
   test("Constant.flix") {
     val input =
       """namespace Constant {
@@ -257,9 +157,109 @@ class TestExamples extends FunSuite {
     assertResult(List(One))(A(List(Value.mkInt32(9))))
   }
 
+  test("Parity.flix") {
+    val input =
+      """namespace Parity {
+        |    let Parity<> = (Parity.Bot, Parity.Top, leq, lub, glb);
+        |    lat A(k: Int, v: Parity);
+        |
+        |    A(1, Parity.Odd).
+        |    A(2, Parity.Even).
+        |
+        |    A(3, Parity.Odd).
+        |    A(3, Parity.Even).
+        |
+        |    A(4, x) :- A(1, x), A(2, x).
+        |
+        |    A(5, plus(Parity.Odd, Parity.Even)).
+        |
+        |    A(6, plus(Parity.Odd, Parity.Odd)).
+        |
+        |    A(7, times(Parity.Odd, Parity.Even)).
+        |
+        |    A(8, times(Parity.Odd, Parity.Odd)).
+        |}
+      """.stripMargin
+
+    val model = new Flix()
+      .addPath("./examples/domains/Belnap.flix")
+      .addPath("./examples/domains/Parity.flix")
+      .addStr(input)
+      .solve()
+      .get
+
+    val Parity = Symbol.Resolved.mk(List("Parity", "Parity"))
+
+    val Odd = Value.mkTag(Parity, "Odd", Value.Unit)
+    val Evn = Value.mkTag(Parity, "Even", Value.Unit)
+    val Top = Value.mkTag(Parity, "Top", Value.Unit)
+
+    val A = model.getLattice("Parity/A").toMap
+
+    assertResult(List(Odd))(A(List(Value.mkInt32(1))))
+    assertResult(List(Evn))(A(List(Value.mkInt32(2))))
+    assertResult(List(Top))(A(List(Value.mkInt32(3))))
+    assertResult(None)(A.get(List(Value.mkInt32(4))))
+    assertResult(List(Odd))(A(List(Value.mkInt32(5))))
+    assertResult(List(Evn))(A(List(Value.mkInt32(6))))
+    assertResult(List(Evn))(A(List(Value.mkInt32(7))))
+    assertResult(List(Odd))(A(List(Value.mkInt32(8))))
+  }
+
   ignore("Dimension.flix") {
     val model = new Flix().addPath("./examples/domains/Dimension.flix").solve()
     assert(model.isSuccess)
+  }
+
+  test("StrictSign.flix") {
+    val input =
+      """namespace StrictSign {
+        |    let Sign<> = (Sign.Bot, Sign.Top, leq, lub, glb);
+        |    lat A(k: Int, v: Sign);
+        |
+        |    A(1, Sign.Neg).
+        |    A(2, Sign.Zer).
+        |    A(3, Sign.Pos).
+        |
+        |    A(4, Sign.Neg).
+        |    A(4, Sign.Zer).
+        |    A(4, Sign.Pos).
+        |
+        |    A(5, x) :- A(1, x), A(2, x), A(3, x).
+        |
+        |    A(6, plus(Sign.Zer, Sign.Pos)).
+        |    A(7, plus(Sign.Neg, Sign.Pos)).
+        |
+        |    A(8, times(Sign.Zer, Sign.Pos)).
+        |    A(9, times(Sign.Neg, Sign.Neg)).
+        |}
+      """.stripMargin
+
+    val model = new Flix()
+      .addPath("./examples/domains/Belnap.flix")
+      .addPath("./examples/domains/StrictSign.flix")
+      .addStr(input)
+      .solve()
+      .get
+
+    val Sign = Symbol.Resolved.mk(List("StrictSign", "Sign"))
+
+    val Neg = Value.mkTag(Sign, "Neg", Value.Unit)
+    val Zer = Value.mkTag(Sign, "Zer", Value.Unit)
+    val Pos = Value.mkTag(Sign, "Pos", Value.Unit)
+    val Top = Value.mkTag(Sign, "Top", Value.Unit)
+
+    val A = model.getLattice("StrictSign/A").toMap
+
+    assertResult(List(Neg))(A(List(Value.mkInt32(1))))
+    assertResult(List(Zer))(A(List(Value.mkInt32(2))))
+    assertResult(List(Pos))(A(List(Value.mkInt32(3))))
+    assertResult(List(Top))(A(List(Value.mkInt32(4))))
+    assertResult(None)(A.get(List(Value.mkInt32(5))))
+    assertResult(List(Pos))(A(List(Value.mkInt32(6))))
+    assertResult(List(Top))(A(List(Value.mkInt32(7))))
+    assertResult(List(Zer))(A(List(Value.mkInt32(8))))
+    assertResult(List(Pos))(A(List(Value.mkInt32(9))))
   }
 
   test("Type.flix") {
