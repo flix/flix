@@ -449,7 +449,7 @@ object Typer {
                   case (Type.Int16, Type.Int16) => TypedAst.Expression.Binary(op, e1, e2, Type.Int16, loc).toSuccess
                   case (Type.Int32, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Int32, loc).toSuccess
                   case (Type.Int64, Type.Int64) => TypedAst.Expression.Binary(op, e1, e2, Type.Int64, loc).toSuccess
-                  case (Type.BigInt, Type.BigInt) => TypedAst.Expression.Binary(op, e1, e2, Type.Int64, loc).toSuccess
+                  case (Type.BigInt, Type.BigInt) => TypedAst.Expression.Binary(op, e1, e2, Type.BigInt, loc).toSuccess
                   case (t1, t2) => TypeError.ExpectedEqualTypes(t1, t2, e1.loc, e2.loc).toFailure // TODO: Wrong error message.
                 }
               }
