@@ -110,8 +110,6 @@ namespace ConstantSign {
     /**
      * Over-approximates integer `addition`.
      */
-     // TODO: Bug with overflow for plus
-     // TODO: Bug where this was thought to be associative...
     @strict @monotone @commutative
     fn plus(e1: ConstSign, e2: ConstSign): ConstSign = match (e1, e2) with {
         case (ConstSign.Bot, _)                         => ConstSign.Bot
@@ -142,47 +140,48 @@ namespace ConstantSign {
         case (ConstSign.Neg, ConstSign.Pos)             => ConstSign.Neg
         case _                                          => ConstSign.Top
     }
-//
-//    /**
-//     * Over-approximates integer `multiplication`.
-//     */
-//    @strict @monotone @commutative @associative
-//    fn times(e1: ConstSign, e2: ConstSign): ConstSign = match (e1, e2) with {
-//        case (ConstSign.Bot, _)                         => ConstSign.Bot
-//        case (_, ConstSign.Bot)                         => ConstSign.Bot
-//        case (ConstSign.Cst(n1), ConstSign.Cst(n2))     => ConstSign.Cst(n1 * n2)
-//        case (ConstSign.Cst(0), _)                      => ConstSign.Cst(0)
-//        case (_, ConstSign.Cst(0))                      => ConstSign.Cst(0)
-//        case (ConstSign.Cst(n1), ConstSign.Neg)         => if (n1 > 0) ConstSign.Neg else ConstSign.Pos
-//        case (ConstSign.Neg, ConstSign.Cst(n1))         => if (n1 > 0) ConstSign.Neg else ConstSign.Pos
-//        case (ConstSign.Cst(n1), ConstSign.Pos)         => if (n1 < 0) ConstSign.Neg else ConstSign.Pos
-//        case (ConstSign.Pos, ConstSign.Cst(n1))         => if (n1 < 0) ConstSign.Neg else ConstSign.Pos
-//        case (ConstSign.Neg, ConstSign.Neg)             => ConstSign.Pos
-//        case (ConstSign.Pos, ConstSign.Neg)             => ConstSign.Neg
-//        case (ConstSign.Neg, ConstSign.Pos)             => ConstSign.Neg
-//        case (ConstSign.Pos, ConstSign.Pos)             => ConstSign.Pos
-//        case _                                          => ConstSign.Top
-//    }
-//
-//    /**
-//     * Over-approximates integer `division`.
-//     */
-//    @strict @monotone
-//    fn divide(e1: ConstSign, e2: ConstSign): ConstSign = match (e1, e2) with {
-//        case (ConstSign.Bot, _)                         => ConstSign.Bot
-//        case (_, ConstSign.Bot)                         => ConstSign.Bot
-//        case (_, ConstSign.Cst(0))                      => ConstSign.Bot
-//        case (ConstSign.Cst(n1), ConstSign.Cst(n2))     => ConstSign.Cst(n1 / n2)
-//        case (ConstSign.Cst(n1), ConstSign.Neg)         => if (n1 > 0) ConstSign.Neg else ConstSign.Pos
-//        case (ConstSign.Neg, ConstSign.Cst(n1))         => if (n1 > 0) ConstSign.Neg else ConstSign.Pos
-//        case (ConstSign.Cst(n1), ConstSign.Pos)         => if (n1 < 0) ConstSign.Neg else ConstSign.Pos
-//        case (ConstSign.Pos, ConstSign.Cst(n1))         => if (n1 < 0) ConstSign.Neg else ConstSign.Pos
-//        case (ConstSign.Neg, ConstSign.Neg)             => ConstSign.Pos
-//        case (ConstSign.Pos, ConstSign.Neg)             => ConstSign.Neg
-//        case (ConstSign.Neg, ConstSign.Pos)             => ConstSign.Neg
-//        case (ConstSign.Pos, ConstSign.Pos)             => ConstSign.Pos
-//        case _                                          => ConstSign.Top
-//    }
+
+    /**
+     * Over-approximates integer `multiplication`.
+     */
+    @strict @monotone @commutative @associative
+    fn times(e1: ConstSign, e2: ConstSign): ConstSign = match (e1, e2) with {
+        case (ConstSign.Bot, _)                         => ConstSign.Bot
+        case (_, ConstSign.Bot)                         => ConstSign.Bot
+        case (ConstSign.Cst(n1), ConstSign.Cst(n2))     => ConstSign.Cst(n1 * n2)
+        case (ConstSign.Cst(0ii), _)                    => ConstSign.Cst(0ii)
+        case (_, ConstSign.Cst(0ii))                    => ConstSign.Cst(0ii)
+        case (ConstSign.Cst(n1), ConstSign.Neg)         => if (n1 > 0ii) ConstSign.Neg else ConstSign.Pos
+        case (ConstSign.Neg, ConstSign.Cst(n1))         => if (n1 > 0ii) ConstSign.Neg else ConstSign.Pos
+        case (ConstSign.Cst(n1), ConstSign.Pos)         => if (n1 < 0ii) ConstSign.Neg else ConstSign.Pos
+        case (ConstSign.Pos, ConstSign.Cst(n1))         => if (n1 < 0ii) ConstSign.Neg else ConstSign.Pos
+        case (ConstSign.Neg, ConstSign.Neg)             => ConstSign.Pos
+        case (ConstSign.Pos, ConstSign.Neg)             => ConstSign.Neg
+        case (ConstSign.Neg, ConstSign.Pos)             => ConstSign.Neg
+        case (ConstSign.Pos, ConstSign.Pos)             => ConstSign.Pos
+        case _                                          => ConstSign.Top
+    }
+
+    /**
+     * Over-approximates integer `division`.
+     */
+    @strict @monotone
+    fn divide(e1: ConstSign, e2: ConstSign): ConstSign = match (e1, e2) with {
+        case (ConstSign.Bot, _)                         => ConstSign.Bot
+        case (_, ConstSign.Bot)                         => ConstSign.Bot
+        case (_, ConstSign.Cst(0ii))                    => ConstSign.Bot
+        case (ConstSign.Cst(0ii), _)                    => ConstSign.Cst(0ii)
+        case (ConstSign.Cst(n1), ConstSign.Cst(n2))     => ConstSign.Cst(n1 / n2)
+        case (ConstSign.Cst(n1), ConstSign.Neg)         => if (n1 > 0ii) ConstSign.Neg else ConstSign.Pos
+        case (ConstSign.Neg, ConstSign.Cst(n1))         => if (n1 > 0ii) ConstSign.Neg else ConstSign.Pos
+        case (ConstSign.Cst(n1), ConstSign.Pos)         => if (n1 < 0ii) ConstSign.Neg else ConstSign.Pos
+        case (ConstSign.Pos, ConstSign.Cst(n1))         => if (n1 < 0ii) ConstSign.Neg else ConstSign.Pos
+        case (ConstSign.Neg, ConstSign.Neg)             => ConstSign.Pos
+        case (ConstSign.Pos, ConstSign.Neg)             => ConstSign.Neg
+        case (ConstSign.Neg, ConstSign.Pos)             => ConstSign.Neg
+        case (ConstSign.Pos, ConstSign.Pos)             => ConstSign.Pos
+        case _                                          => ConstSign.Top
+    }
 //
 //    /**
 //     * Over-approximates integer `modulus`.

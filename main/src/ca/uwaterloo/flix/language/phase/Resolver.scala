@@ -746,6 +746,7 @@ object Resolver {
         case WeededAst.Pattern.Int16(lit, loc) => ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Int16(lit, loc), loc).toSuccess
         case WeededAst.Pattern.Int32(lit, loc) => ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Int32(lit, loc), loc).toSuccess
         case WeededAst.Pattern.Int64(lit, loc) => ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Int64(lit, loc), loc).toSuccess
+        case WeededAst.Pattern.BigInt(lit, loc) => ResolvedAst.Pattern.Lit(ResolvedAst.Literal.BigInt(lit, loc), loc).toSuccess
         case WeededAst.Pattern.Str(lit, loc) => ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Str(lit, loc), loc).toSuccess
 
         case WeededAst.Pattern.Tag(enum, tag, wpat, loc) => syms.lookupEnum(enum, namespace) flatMap {
