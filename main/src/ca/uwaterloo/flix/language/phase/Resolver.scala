@@ -580,6 +580,7 @@ object Resolver {
         case WeededAst.Literal.Int16(i, loc) => ResolvedAst.Literal.Int16(i, loc).toSuccess
         case WeededAst.Literal.Int32(i, loc) => ResolvedAst.Literal.Int32(i, loc).toSuccess
         case WeededAst.Literal.Int64(i, loc) => ResolvedAst.Literal.Int64(i, loc).toSuccess
+        case WeededAst.Literal.BigInt(i, loc) => ResolvedAst.Literal.BigInt(i, loc).toSuccess
         case WeededAst.Literal.Str(s, loc) => ResolvedAst.Literal.Str(s, loc).toSuccess
       }
 
@@ -605,6 +606,7 @@ object Resolver {
         case WeededAst.Expression.Int16(i, loc) => ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int16(i, loc), loc).toSuccess
         case WeededAst.Expression.Int32(i, loc) => ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int32(i, loc), loc).toSuccess
         case WeededAst.Expression.Int64(i, loc) => ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int64(i, loc), loc).toSuccess
+        case WeededAst.Expression.BigInt(i, loc) => ResolvedAst.Expression.Lit(ResolvedAst.Literal.BigInt(i, loc), loc).toSuccess
         case WeededAst.Expression.Str(s, loc) => ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str(s, loc), loc).toSuccess
 
         case WeededAst.Expression.Var(name, loc) =>
@@ -901,6 +903,7 @@ object Resolver {
           case "Int16" => Type.Int16.toSuccess
           case "Int32" => Type.Int32.toSuccess
           case "Int64" => Type.Int64.toSuccess
+          case "BigInt" => Type.BigInt.toSuccess
           case "Prop" => Type.Prop.toSuccess
           case "Native" => Type.Native.toSuccess
           case "Str" => Type.Str.toSuccess
@@ -966,6 +969,7 @@ object Resolver {
     case WeededAst.Pattern.Int16(_, _) => Set.empty
     case WeededAst.Pattern.Int32(_, _) => Set.empty
     case WeededAst.Pattern.Int64(_, _) => Set.empty
+    case WeededAst.Pattern.BigInt(_, _) => Set.empty
     case WeededAst.Pattern.Str(_, _) => Set.empty
     case WeededAst.Pattern.Tag(_, _, p, _) => freeVars(p)
     case WeededAst.Pattern.Tuple(elms, _) => elms.foldLeft(Set.empty[String]) {

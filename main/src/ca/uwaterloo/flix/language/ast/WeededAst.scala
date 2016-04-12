@@ -84,6 +84,8 @@ object WeededAst {
 
     case class Int64(lit: scala.Long, loc: SourceLocation) extends WeededAst.Literal
 
+    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends WeededAst.Literal
+
     case class Str(lit: java.lang.String, loc: SourceLocation) extends WeededAst.Literal
 
   }
@@ -117,6 +119,8 @@ object WeededAst {
     case class Int32(lit: scala.Int, loc: SourceLocation) extends WeededAst.Expression
 
     case class Int64(lit: scala.Long, loc: SourceLocation) extends WeededAst.Expression
+
+    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends WeededAst.Expression
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends WeededAst.Expression
 
@@ -197,6 +201,8 @@ object WeededAst {
     case class Int32(lit: scala.Int, loc: SourceLocation) extends WeededAst.Pattern
 
     case class Int64(lit: scala.Long, loc: SourceLocation) extends WeededAst.Pattern
+
+    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends WeededAst.Pattern
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends WeededAst.Pattern
 

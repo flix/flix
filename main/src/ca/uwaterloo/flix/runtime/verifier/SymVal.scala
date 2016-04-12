@@ -76,6 +76,13 @@ object SymVal {
   case class Int64(lit: Long) extends SymVal
 
   /**
+    * A BigInt value.
+    *
+    * @param lit the int literal.
+    */
+  case class BigInt(lit: java.math.BigInteger) extends SymVal
+
+  /**
     * A String value.
     *
     * @param lit the int literal.

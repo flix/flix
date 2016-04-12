@@ -396,6 +396,7 @@ object Verifier {
       case Type.Int16 => List(SymVal.AtomicVar(genSym.fresh2()))
       case Type.Int32 => List(SymVal.AtomicVar(genSym.fresh2()))
       case Type.Int64 => List(SymVal.AtomicVar(genSym.fresh2()))
+      case Type.BigInt => List(SymVal.AtomicVar(genSym.fresh2()))
       case Type.Str => List(SymVal.AtomicVar(genSym.fresh2()))
       case Type.Enum(name, cases) =>
         val r = cases flatMap {
@@ -474,6 +475,7 @@ object Verifier {
       case SymVal.Int16(i) => i.toString
       case SymVal.Int32(i) => i.toString
       case SymVal.Int64(i) => i.toString
+      case SymVal.BigInt(i) => i.toString()
       case SymVal.Str(s) => s
       case SymVal.Tag(tag, SymVal.Unit) => tag
       case SymVal.Tag(tag, elm) => tag + "(" + visit(elm) + ")"
@@ -531,6 +533,27 @@ object Verifier {
   }
 
   /**
+    * Translates the given SMT expression `exp0` into a Z3 arithmetic expression.
+    */
+  private def visitArithExpr(exp0: SmtExpr, ctx: Context): ArithExpr = exp0 match {
+    case SmtExpr.BigInt(lit) => ctx.mkInt(lit.longValueExact())
+    case SmtExpr.Var(id, tpe) => ctx.mkIntConst(id.name)
+    case SmtExpr.Plus(e1, e2) => ctx.mkAdd(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+    case SmtExpr.Minus(e1, e2) => ctx.mkSub(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+    case SmtExpr.Times(e1, e2) => ctx.mkMul(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+    case SmtExpr.Divide(e1, e2) => ctx.mkDiv(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+    case SmtExpr.Modulo(e1, e2) => ctx.mkMod(visitIntExpr(e1, ctx), visitIntExpr(e2, ctx))
+    case SmtExpr.BitwiseNegate(e) => throw InternalCompilerException(s"BitwiseNegate not supported for BigInt.")
+    case SmtExpr.BitwiseAnd(e1, e2) => throw InternalCompilerException(s"BitwiseAnd not supported for BigInt.")
+    case SmtExpr.BitwiseOr(e1, e2) => throw InternalCompilerException(s"BitwiseOr not supported for BigInt.")
+    case SmtExpr.BitwiseXor(e1, e2) => throw InternalCompilerException(s"BitwiseXor not supported for BigInt.")
+    case SmtExpr.BitwiseLeftShift(e1, e2) => throw InternalCompilerException(s"BitwiseLeftShift not supported for BigInt.")
+    case SmtExpr.BitwiseRightShift(e1, e2) => throw InternalCompilerException(s"BitwiseRightShift not supported for BigInt.")
+    case SmtExpr.Exponentiate(e1, e2) => throw InternalCompilerException(s"Exponentiation is not supported.")
+    case _ => throw InternalCompilerException(s"Unexpected SMT expression: '$exp0'.")
+  }
+
+  /**
     * Translates the given SMT expression `exp0` into a Z3 boolean expression.
     */
   private def visitBoolExpr(exp0: SmtExpr, ctx: Context): BoolExpr = exp0 match {
@@ -540,17 +563,37 @@ object Verifier {
     case SmtExpr.LogicalOr(e1, e2) => ctx.mkOr(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
     case SmtExpr.Implication(e1, e2) => ctx.mkImplies(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
     case SmtExpr.Bicondition(e1, e2) => ctx.mkIff(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
-    case SmtExpr.Less(e1, e2) => ctx.mkBVSLT(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-    case SmtExpr.LessEqual(e1, e2) => ctx.mkBVSLE(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-    case SmtExpr.Greater(e1, e2) => ctx.mkBVSGT(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-    case SmtExpr.GreaterEqual(e1, e2) => ctx.mkBVSGE(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+    case SmtExpr.Less(e1, e2) => e1.tpe match {
+      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int64 => ctx.mkBVSLT(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+      case Type.BigInt => ctx.mkLt(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+      case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
+    }
+    case SmtExpr.LessEqual(e1, e2) => e1.tpe match {
+      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int64 => ctx.mkBVSLE(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+      case Type.BigInt => ctx.mkLe(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+      case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
+    }
+    case SmtExpr.Greater(e1, e2) => e1.tpe match {
+      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int64 => ctx.mkBVSGT(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+      case Type.BigInt => ctx.mkGt(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+      case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
+    }
+    case SmtExpr.GreaterEqual(e1, e2) => e1.tpe match {
+      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int64 => ctx.mkBVSGE(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+      case Type.BigInt => ctx.mkGe(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+      case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
+    }
     case SmtExpr.Equal(e1, e2) => e1.tpe match {
       case Type.Bool => ctx.mkIff(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
-      case _ => ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int64 => ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+      case Type.BigInt => ctx.mkEq(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+      case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
     }
     case SmtExpr.NotEqual(e1, e2) => e1.tpe match {
       case Type.Bool => ctx.mkXor(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
-      case _ => ctx.mkNot(ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx)))
+      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int64 => ctx.mkNot(ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx)))
+      case Type.BigInt => ctx.mkNot(ctx.mkEq(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx)))
+      case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
     }
     case _ => throw InternalCompilerException(s"Unexpected SMT expression: '$exp0'.")
   }
@@ -582,6 +625,18 @@ object Verifier {
     case SmtExpr.BitwiseLeftShift(e1, e2) => ctx.mkBVSHL(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
     case SmtExpr.BitwiseRightShift(e1, e2) => ctx.mkBVLSHR(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
     case SmtExpr.Exponentiate(e1, e2) => throw InternalCompilerException(s"Exponentiation is not supported.")
+    case _ => throw InternalCompilerException(s"Unexpected SMT expression: '$exp0'.")
+  }
+
+  /**
+    * Translates the given SMT expression `exp0` into a Z3 integer expression.
+    */
+  private def visitIntExpr(exp0: SmtExpr, ctx: Context): IntExpr = exp0 match {
+    case SmtExpr.BigInt(i) => ctx.mkInt(i.longValueExact())
+    case SmtExpr.Var(id, tpe) => tpe match {
+      case Type.BigInt => ctx.mkIntConst(id.name)
+      case _ => throw InternalCompilerException(s"Unexpected non-int type: '$tpe'.")
+    }
     case _ => throw InternalCompilerException(s"Unexpected SMT expression: '$exp0'.")
   }
 

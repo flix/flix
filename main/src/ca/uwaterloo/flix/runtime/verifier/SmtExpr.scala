@@ -41,6 +41,13 @@ object SmtExpr {
   }
 
   /**
+    * BigInt constant.
+    */
+  case class BigInt(lit: java.math.BigInteger) extends SmtExpr {
+    def tpe: Type = Type.BigInt
+  }
+
+  /**
     * Variable.
     */
   case class Var(ident: Name.Ident, tpe: Type) extends SmtExpr
@@ -271,6 +278,7 @@ object SmtExpr {
     case Type.Int16 => // nop
     case Type.Int32 => // nop
     case Type.Int64 => // nop
+    case Type.BigInt => // nop
     case _ => throw InternalCompilerException(s"Unexpected non-numeric type: '$tpe'.")
   }
 

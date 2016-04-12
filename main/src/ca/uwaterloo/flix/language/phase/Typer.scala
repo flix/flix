@@ -287,6 +287,7 @@ object Typer {
         case ResolvedAst.Literal.Int16(i, loc) => TypedAst.Literal.Int16(i, loc)
         case ResolvedAst.Literal.Int32(i, loc) => TypedAst.Literal.Int32(i, loc)
         case ResolvedAst.Literal.Int64(i, loc) => TypedAst.Literal.Int64(i, loc)
+        case ResolvedAst.Literal.BigInt(i, loc) => TypedAst.Literal.BigInt(i, loc)
         case ResolvedAst.Literal.Str(s, loc) => TypedAst.Literal.Str(s, loc)
       }
 
@@ -371,6 +372,7 @@ object Typer {
                 case Type.Int16 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
                 case Type.Int32 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
                 case Type.Int64 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
+                case Type.BigInt => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
                 case _ => TypeError.ExpectedType(Type.Int32, e.tpe, e.loc).toFailure // TODO: Need more generic error message.
               }
             }
@@ -382,6 +384,7 @@ object Typer {
                   case Type.Int16 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
                   case Type.Int32 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
                   case Type.Int64 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
+                  case Type.BigInt => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
                   case _ => TypeError.ExpectedType(Type.Int32, e.tpe, e.loc).toFailure // TODO: Need more generic error message.
                 }
             }
@@ -397,6 +400,7 @@ object Typer {
                 case (Type.Int16, Type.Int16) => TypedAst.Expression.Binary(op, e1, e2, Type.Int16, loc).toSuccess
                 case (Type.Int32, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Int32, loc).toSuccess
                 case (Type.Int64, Type.Int64) => TypedAst.Expression.Binary(op, e1, e2, Type.Int64, loc).toSuccess
+                case (Type.BigInt, Type.BigInt) => TypedAst.Expression.Binary(op, e1, e2, Type.BigInt, loc).toSuccess
                 case (t1, t2) => TypeError.ExpectedEqualTypes(t1, t2, e1.loc, e2.loc).toFailure
               }
             }
@@ -416,6 +420,7 @@ object Typer {
                 case (Type.Int16, Type.Int16) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess
                 case (Type.Int32, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess
                 case (Type.Int64, Type.Int64) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess
+                case (Type.BigInt, Type.BigInt) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess
                 case (t1, t2) => TypeError.ExpectedEqualTypes(t1, t2, e1.loc, e2.loc).toFailure
               }
             }
@@ -444,6 +449,7 @@ object Typer {
                   case (Type.Int16, Type.Int16) => TypedAst.Expression.Binary(op, e1, e2, Type.Int16, loc).toSuccess
                   case (Type.Int32, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Int32, loc).toSuccess
                   case (Type.Int64, Type.Int64) => TypedAst.Expression.Binary(op, e1, e2, Type.Int64, loc).toSuccess
+                  case (Type.BigInt, Type.BigInt) => TypedAst.Expression.Binary(op, e1, e2, Type.Int64, loc).toSuccess
                   case (t1, t2) => TypeError.ExpectedEqualTypes(t1, t2, e1.loc, e2.loc).toFailure // TODO: Wrong error message.
                 }
               }
@@ -833,6 +839,7 @@ object Typer {
     case Type.Int16 => s"Int16"
     case Type.Int32 => s"Int32"
     case Type.Int64 => s"Int64"
+    case Type.BigInt => "BigInt"
     case Type.Prop => s"Prop"
     case Type.Str => s"Str"
     case Type.Tag(enumName, tagName, t) =>

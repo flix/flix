@@ -323,6 +323,16 @@ object ParsedAst {
     case class Int64(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
+      * BigInt Literal (arbitrary sized integer).
+      *
+      * @param sp1  the position of the first character in the literal.
+      * @param sign the sign (true if signed).
+      * @param lit  the big int literal.
+      * @param sp2  the position of the last character in the literal.
+      */
+    case class BigInt(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+
+    /**
       * String Literal.
       *
       * @param sp1 the position of the first character in the literal.
