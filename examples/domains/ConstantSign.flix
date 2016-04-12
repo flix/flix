@@ -11,7 +11,7 @@ namespace ConstantSign {
 
         case Neg,          case Pos,
 
-                case Cst(IntXX),
+                case Cst(BigInt),
 
                   case Bot
     }
@@ -83,7 +83,29 @@ namespace ConstantSign {
         case _ => ConstSign.Bot
     }
 
-    // TODO: Inc/dec
+    /**
+     * Over-approximates integer `increment`.
+     */
+    @strict @monotone
+    def inc(e: ConstSign): ConstSign = match e with {
+        case ConstSign.Bot      => ConstSign.Bot
+        case ConstSign.Cst(n)   => ConstSign.Cst(n + 1ii)
+        case ConstSign.Neg      => ConstSign.Top
+        case ConstSign.Pos      => ConstSign.Pos
+        case ConstSign.Top      => ConstSign.Top
+    }
+
+    /**
+     * Over-approximates integer `decrement`.
+     */
+    @strict @monotone
+    def dec(e: ConstSign): ConstSign = match e with {
+        case ConstSign.Bot      => ConstSign.Bot
+        case ConstSign.Cst(n)   => ConstSign.Cst(n - 1ii)
+        case ConstSign.Neg      => ConstSign.Neg
+        case ConstSign.Pos      => ConstSign.Top
+        case ConstSign.Top      => ConstSign.Top
+    }
 
     /**
      * Over-approximates integer `addition`.
