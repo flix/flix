@@ -1,6 +1,7 @@
 /**
  * An implementation of the sign domain lifted over the constant propagation domain.
  */
+ // TODO: Is this the reduced product in disguise?
 namespace ConstantSign {
 
     /**
