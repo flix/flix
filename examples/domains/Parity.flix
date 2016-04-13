@@ -1,5 +1,5 @@
 /**
- * An implementation of the parity abstract domain.
+ * An implementation of the parity domain.
  */
 namespace Parity {
 

@@ -1,5 +1,5 @@
 /**
- * An implementation of the ``type'' abstract domain.
+ * An implementation of the type domain.
  *
  * See Cousot & Cousot '92 for details.
  */

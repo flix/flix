@@ -1,6 +1,5 @@
 /**
- * An alternative implementation of the sign abstract domain
- * where zero is considered to be both positive and negative.
+ * An implementation of the sign domain.
  *
  * See Cousot & Cousot '77 for details.
  */

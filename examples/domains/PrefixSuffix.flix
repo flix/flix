@@ -1,3 +1,6 @@
+/**
+ * An implementation of Prefix-Suffix domain.
+ */
 namespace PrefixSuffix {
 
     /**

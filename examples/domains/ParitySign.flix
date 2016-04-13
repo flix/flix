@@ -1,5 +1,5 @@
 /**
- * The ParitySign lattice is the reduced product of the Parity and Sign lattices.
+ * An implementation of the reduced product of the Parity and Sign domains.
  */
 namespace ParitySign {
 
