@@ -152,6 +152,18 @@ namespace ConstantParity {
     }
 
     /**
+     * Over-approximates integer `division`.
+     */
+    @strict @monotone
+    def divide(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
+        case (ConstParity.Bot, _)                       => ConstParity.Bot
+        case (_, ConstParity.Bot)                       => ConstParity.Bot
+        case (_, ConstParity.Cst(0ii))                  => ConstParity.Bot
+        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst(n1 / n2)
+        case _                                          => ConstParity.Top
+    }
+
+    /**
      * Returns `true` iff the given number `n` is odd.
      */
     def isOdd(n: BigInt): Bool = (n % 2ii) != 0ii
