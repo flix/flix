@@ -709,4 +709,27 @@ object Verifier {
     */
   private def toSeconds(l: Long): String = f"${l.toDouble / 1000000000.0}%3.1f"
 
+  def main(args: Array[String]): Unit = {
+    SmtSolver.mkContext {
+      case ctx =>
+        //
+        //        EnumSort rSort = ctx.mkEnumSort(ctx.mkSymbol("res"), ctx.mkSymbol("res1"));
+        //        SetSort rSet = ctx.mkSetSort(rSort);
+        //        Expr rID = ctx.mkConst("rID", rSet);
+        //        BoolExpr c1 = (BoolExpr)ctx.mkSetMembership(rSort.getConsts()[0], rID);
+
+        //val elmSort = ctx.mkEnumSort(ctx.mkSymbol("a"), ctx.mkSymbol("b"));
+        val elmSort = ctx.mkIntSort()
+        val setSort = ctx.mkSetSort(elmSort)
+
+        val xSet = ctx.mkConst("x", setSort).asInstanceOf[ArrayExpr]
+        val ySet = ctx.mkConst("y", setSort).asInstanceOf[ArrayExpr]
+
+        val q = ctx.mkSetSubset(xSet, ySet)
+
+        println(SmtSolver.checkSat(ctx.mkNot(q), ctx))
+
+    }
+  }
+
 }
