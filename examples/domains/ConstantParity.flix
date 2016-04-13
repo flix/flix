@@ -163,7 +163,22 @@ namespace ConstantParity {
         case _                                          => ConstParity.Top
     }
 
-    // TODO: Modulo
+    /**
+     * Over-approximates integer `modulus`.
+     */
+    @strict @monotone
+    def modulo(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
+        case (ConstParity.Bot, _)                       => ConstParity.Bot
+        case (_, ConstParity.Bot)                       => ConstParity.Bot
+        case (_, ConstParity.Cst(0ii))                  => ConstParity.Bot
+        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst(n1 % n2)
+        case (ConstParity.Cst(n), ConstParity.Even)     => if (isOdd(n)) ConstParity.Odd else ConstParity.Even
+        case (ConstParity.Odd, ConstParity.Cst(n))      => if (isEven(n)) ConstParity.Odd else ConstParity.Top
+        case (ConstParity.Even, ConstParity.Cst(n))     => if (isEven(n)) ConstParity.Even else ConstParity.Top
+        case (ConstParity.Odd, ConstParity.Even)        => ConstParity.Odd
+        case (ConstParity.Even, ConstParity.Even)       => ConstParity.Even
+        case _                                          => ConstParity.Top
+    }
 
     /**
       * Over-approximates `equal`.
