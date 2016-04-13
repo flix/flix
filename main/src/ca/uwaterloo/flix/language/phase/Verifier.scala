@@ -261,6 +261,21 @@ object Verifier {
   }
 
   /**
+    * The result of a single symbolic execution.
+    */
+  sealed trait PathResult
+
+  object PathResult {
+
+    case object Success extends PathResult
+
+    case class Failure(model: Map[String, String]) extends PathResult
+
+    case class Unknown(model: Map[String, String]) extends PathResult
+
+  }
+
+  /**
     * Attempts to verify all properties in the given AST.
     */
   def verify(root: ExecutableAst.Root, options: Options)(implicit genSym: GenSym): Validation[ExecutableAst.Root, VerifierError] = {
@@ -293,7 +308,10 @@ object Verifier {
       val errors = results.collect {
         case PropertyResult.Failure(_, _, _, _, error) => error
       }
-      Validation.Failure(errors.toVector)
+      val unknowns = results.collect {
+        case PropertyResult.Unknown(_, _, _, _, error) => error
+      }
+      Validation.Failure((errors ++ unknowns).toVector)
     }
   }
 
@@ -320,21 +338,21 @@ object Verifier {
     var queries = 0
 
     // attempt to verify that the property holds under each environment.
-    val violations = envs flatMap {
+    val pathResults = envs flatMap {
       case env0 =>
         paths += 1
-        SymbolicEvaluator.eval(peelUniversallyQuantifiers(exp0), env0, root) flatMap {
+        SymbolicEvaluator.eval(peelUniversallyQuantifiers(exp0), env0, root) map {
           case (Nil, SymVal.True) =>
             // Case 1: The symbolic evaluator proved the property.
-            Nil
+            PathResult.Success
           case (Nil, SymVal.False) =>
             // Case 2: The symbolic evaluator disproved the property.
-            List(toVerifierError(property, mkModel(env0, null)))
+            PathResult.Failure(mkModel(env0, null))
           case (pc, v) => v match {
             case SymVal.True =>
               // Case 3.1: The property holds under some path condition.
               // The property holds regardless of whether the path condition is satisfiable.
-              Nil
+              PathResult.Success
             case SymVal.False =>
               // Case 3.2: The property *does not* hold under some path condition.
               // If the path condition is satisfiable then the property *does not* hold.
@@ -352,10 +370,20 @@ object Verifier {
     // stop the clock.
     val e = System.nanoTime() - t
 
-    if (violations.isEmpty) {
+    val failures = pathResults collect {
+      case r: PathResult.Failure => r
+    }
+
+    val unknowns = pathResults collect {
+      case r: PathResult.Unknown => r
+    }
+
+    if (failures.isEmpty && unknowns.isEmpty) {
       PropertyResult.Success(property, paths, queries, e)
+    } else if (failures.nonEmpty) {
+      PropertyResult.Failure(property, paths, queries, e, toVerifierError(property, failures.head.model))
     } else {
-      PropertyResult.Failure(property, paths, queries, e, violations.head)
+      PropertyResult.Unknown(property, paths, queries, e, toVerifierError(property, unknowns.head.model))
     }
 
   }
@@ -438,21 +466,20 @@ object Verifier {
   /**
     * Optionally returns a verifier error if the given path constraint `pc` is satisfiable.
     */
-  private def assertUnsatisfiable(p: Property, expr: SmtExpr, env0: Map[String, SymVal]): Option[VerifierError] = {
+  private def assertUnsatisfiable(p: Property, expr: SmtExpr, env0: Map[String, SymVal]): PathResult = {
     SmtSolver.mkContext(ctx => {
       val query = visitBoolExpr(expr, ctx)
       SmtSolver.checkSat(query, ctx) match {
         case SmtResult.Unsatisfiable =>
           // Case 3.1: The formula is UNSAT, i.e. the property HOLDS.
-          None
+          PathResult.Success
         case SmtResult.Satisfiable(model) =>
           // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.
-          Some(toVerifierError(p, mkModel(env0, Some(model))))
+          PathResult.Failure(mkModel(env0, Some(model)))
         case SmtResult.Unknown =>
           // Case 3.3: It is unknown whether the formula has a model.
           // Soundness require us to assume that there is a model.
-          // TODO: Better support for Unknown
-          Some(toVerifierError(p, mkModel(env0, None)))
+          PathResult.Unknown(mkModel(env0, None))
       }
     })
   }
@@ -464,7 +491,7 @@ object Verifier {
   private def mkModel(env: Map[String, SymVal], model: Option[Model]): Map[String, String] = {
     def visit(e0: SymVal): String = e0 match {
       case SymVal.AtomicVar(id) => model match {
-        case None => id.name + "?"
+        case None => "?"
         case Some(m) => getConstant(id, m)
       }
       case SymVal.Unit => "#U"
@@ -654,10 +681,28 @@ object Verifier {
   /**
     * Returns the number of successes of the given property results `rs`.
     */
-  private def numberOfSuccess(rs: List[PropertyResult]): Int = rs.count {
+  private def numberOfSuccesses(rs: List[PropertyResult]): Int = rs.count {
     case p: PropertyResult.Success => true
     case p: PropertyResult.Failure => false
     case p: PropertyResult.Unknown => false
+  }
+
+  /**
+    * Returns the number of failures of the given property results `rs`.
+    */
+  private def numberOfFailures(rs: List[PropertyResult]): Int = rs.count {
+    case p: PropertyResult.Success => false
+    case p: PropertyResult.Failure => true
+    case p: PropertyResult.Unknown => false
+  }
+
+  /**
+    * Returns the number of unknowns of the given property results `rs`.
+    */
+  private def numberOfUnknowns(rs: List[PropertyResult]): Int = rs.count {
+    case p: PropertyResult.Success => false
+    case p: PropertyResult.Failure => false
+    case p: PropertyResult.Unknown => true
   }
 
   /**
@@ -701,8 +746,18 @@ object Verifier {
       }
     }
 
+    val s = numberOfSuccesses(results)
+    val f = numberOfFailures(results)
+    val u = numberOfUnknowns(results)
+    val t = results.length
+
+    val mt = toSeconds(avgl(results.map(_.elapsed)))
+    val mp = avg(results.map(_.paths))
+    val mq = avg(results.map(_.queries))
+
     Console.println()
-    Console.println(s"Result: ${numberOfSuccess(results)} / ${results.length} properties proven in ${toSeconds(totalElapsed(results))} seconds. (${totalPaths(results)} paths, ${totalQueries(results)} queries) ")
+    Console.println(s"Properties: $s / $t proven in ${toSeconds(totalElapsed(results))} seconds. (success = $s; failure = $f; unknown = $u).")
+    Console.println(s"Paths: ${totalPaths(results)}. Queries: ${totalQueries(results)} (avg time = $mt sec; avg paths = $mp; avg queries = $mq).")
     Console.println()
   }
 
@@ -710,6 +765,18 @@ object Verifier {
     * Converts the given number of nanoseconds `l` into human readable string representation.
     */
   private def toSeconds(l: Long): String = f"${l.toDouble / 1000000000.0}%3.1f"
+
+  /**
+    * Returns the median of the given list `xs`.
+    */
+  private def avg(xs: List[Int]): Int =
+    if (xs.isEmpty) 0 else xs.sum / xs.length
+
+  /**
+    * Returns the median of the given list `xs`.
+    */
+  private def avgl(xs: List[Long]): Long =
+    if (xs.isEmpty) 0 else xs.sum / xs.length
 
   def main(args: Array[String]): Unit = {
     SmtSolver.mkContext {
