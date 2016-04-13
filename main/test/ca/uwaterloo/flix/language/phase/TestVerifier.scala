@@ -23,15 +23,24 @@ class TestVerifier extends FunSuite {
       .get
   }
 
-  //
-  //  test("ConstantSign.flix") {
-  //    new Flix()
-  //      .addPath("./examples/domains/Belnap.flix")
-  //      .addPath("./examples/domains/ConstantSign.flix")
-  //      .setOptions(Options.Default.copy(verify = Verify.Enabled))
-  //      .solve()
-  //      .get
-  //  }
+  test("ConstantParity.flix") {
+    new Flix()
+      .addPath("./examples/domains/Belnap.flix")
+      .addPath("./examples/domains/ConstantParity.flix")
+      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .solve()
+      .get
+  }
+
+  test("ConstantSign.flix") {
+    new Flix()
+      .addPath("./examples/domains/Belnap.flix")
+      .addPath("./examples/domains/ConstantSign.flix")
+      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .solve()
+      .get
+  }
+
   //
   //  ignore("Interval.flix") {
   //    new Flix()

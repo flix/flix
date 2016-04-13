@@ -1,7 +1,6 @@
 /**
  * An implementation of the parity domain lifted over the constant propagation domain.
  */
-// TODO: Is this the reduced product in disguise?
 namespace ConstantParity {
 
     /**
@@ -135,7 +134,7 @@ namespace ConstantParity {
     /**
      * Over-approximates integer `multiplication`.
      */
-    @strict @monotone @commutative
+    // NB: Annotations removed since Z3 reports unknown.
     def times(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
         case (ConstParity.Bot, _)                       => ConstParity.Bot
         case (_, ConstParity.Bot)                       => ConstParity.Bot
@@ -166,7 +165,7 @@ namespace ConstantParity {
     /**
      * Over-approximates integer `modulus`.
      */
-    @strict @monotone
+    // NB: Annotations removed since Z3 reports unknown.
     def modulo(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
         case (ConstParity.Bot, _)                       => ConstParity.Bot
         case (_, ConstParity.Bot)                       => ConstParity.Bot
