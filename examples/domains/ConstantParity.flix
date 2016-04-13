@@ -163,6 +163,47 @@ namespace ConstantParity {
         case _                                          => ConstParity.Top
     }
 
+    // TODO: Modulo
+
+    /**
+      * Over-approximates `equal`.
+      */
+    @strict @monotone @commutative
+    def eq(e1: ConstParity, e2: ConstParity): Belnap/Belnap = match (e1, e2) with {
+        case (ConstParity.Bot, _)                       => Belnap/Belnap.Bot
+        case (_, ConstParity.Bot)                       => Belnap/Belnap.Bot
+        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => Belnap/alpha(n1 == n2)
+        case (ConstParity.Cst(n), ConstParity.Even)     => if (isOdd(n))  Belnap/Belnap.False else Belnap/Belnap.Top
+        case (ConstParity.Even, ConstParity.Cst(n))     => if (isOdd(n))  Belnap/Belnap.False else Belnap/Belnap.Top
+        case (ConstParity.Cst(n), ConstParity.Odd)      => if (isEven(n)) Belnap/Belnap.False else Belnap/Belnap.Top
+        case (ConstParity.Odd, ConstParity.Cst(n))      => if (isEven(n)) Belnap/Belnap.False else Belnap/Belnap.Top
+        case _                                          => Belnap/Belnap.Top
+    }
+
+    /**
+      * Over-approximates `not equal`.
+      */
+    @strict @monotone @commutative
+    def neq(e1: ConstParity, e2: ConstParity): Belnap/Belnap = Belnap/not(eq(e1, e2))
+
+    /**
+      * Over-approximates `less than`.
+      */
+    @strict @monotone
+    def less(e1: ConstParity, e2: ConstParity): Belnap/Belnap = match (e1, e2) with {
+        case (ConstParity.Bot, _)                       => Belnap/Belnap.Bot
+        case (_, ConstParity.Bot)                       => Belnap/Belnap.Bot
+        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => Belnap/alpha(n1 < n2)
+        case _                                          => Belnap/Belnap.Top
+    }
+
+    /**
+      * Over-approximates `less than or equal`.
+      */
+    @strict @monotone
+    def lessEqual(e1: ConstParity, e2: ConstParity): Belnap/Belnap = Belnap/or(e1 `less` e2, e1 `eq` e2)
+
+
     /**
      * Returns `true` iff the given number `n` is odd.
      */
