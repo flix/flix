@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime.verifier
 
-import com.microsoft.z3.{BoolExpr, Context, Status}
+import com.microsoft.z3.{BoolExpr, Context, Status, Z3Exception}
 
 object SmtSolver {
 
@@ -8,12 +8,19 @@ object SmtSolver {
     * Checks the satisfiability of the given boolean formula `f`.
     */
   def checkSat(f: BoolExpr, ctx: Context): SmtResult = {
-    val solver = ctx.mkSolver()
-    solver.add(f)
-    solver.check() match {
-      case Status.SATISFIABLE => SmtResult.Satisfiable(solver.getModel)
-      case Status.UNSATISFIABLE => SmtResult.Unsatisfiable
-      case Status.UNKNOWN => SmtResult.Unknown
+    try {
+      val solver = ctx.mkSolver()
+      solver.add(f)
+      solver.check() match {
+        case Status.SATISFIABLE => SmtResult.Satisfiable(solver.getModel)
+        case Status.UNSATISFIABLE => SmtResult.Unsatisfiable
+        case Status.UNKNOWN => SmtResult.Unknown
+      }
+    } catch {
+      case e: Z3Exception =>
+        Console.println("Z3 Exception on Query:")
+        Console.println(f.toString)
+        throw e
     }
   }
 
