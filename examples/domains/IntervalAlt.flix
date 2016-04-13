@@ -5,7 +5,7 @@
  *
  * See Cousot & Cousot '77 for details.
  */
-namespace Interval {
+namespace IntervalAlt {
 
     /**
      * The elements of the interval lattice.
