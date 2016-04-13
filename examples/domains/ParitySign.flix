@@ -3,6 +3,16 @@
  */
 namespace ParitySign {
 
+    enum ParitySign {
+                             case Top,
+
+        case OddNeg, case EvenNeg, case OddPos, case EvenPos,
+
+                             case Zer,
+
+                             case Bot
+    }
+
     // TODO:
     // http://www.pietro.ferrara.name/2013_Dale.PDF
     // The lattice and semantic structures of the reduced product are exactly the same as those of the Cartesian
