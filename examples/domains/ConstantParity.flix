@@ -20,7 +20,7 @@ namespace ConstantParity {
     /**
      * Returns `true` iff `e1` is less than or equal to `e2`.
      */
-    fn leq(e1: ConstParity, e2: ConstParity): Bool = match (e1, e2) with {
+    def leq(e1: ConstParity, e2: ConstParity): Bool = match (e1, e2) with {
         case (ConstParity.Bot, _)                       => true
         case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => n1 == n2
         case (ConstParity.Cst(n), ConstParity.Odd)      => isOdd(n)
@@ -35,7 +35,7 @@ namespace ConstantParity {
      * Returns the least upper bound of `e1` and `e2`.
      */
     @commutative @associative
-    fn lub(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
+    def lub(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
         case (ConstParity.Bot, x)                       => x
         case (x, ConstParity.Bot)                       => x
         case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => switch {
@@ -44,8 +44,8 @@ namespace ConstantParity {
             case (isEven(n1) && isEven(n2)) => ConstParity.Even
             case true                       => ConstParity.Top
         }
-        case (ConstParity.Cst(n), ConstParity.Odd)      => if (isOdd(n)) ConstParity.Odd else ConstParity.Top
-        case (ConstParity.Odd, ConstParity.Cst(n))      => if (isOdd(n)) ConstParity.Odd else ConstParity.Top
+        case (ConstParity.Cst(n), ConstParity.Odd)      => if (isOdd(n))  ConstParity.Odd else ConstParity.Top
+        case (ConstParity.Odd, ConstParity.Cst(n))      => if (isOdd(n))  ConstParity.Odd else ConstParity.Top
         case (ConstParity.Cst(n), ConstParity.Even)     => if (isEven(n)) ConstParity.Even else ConstParity.Top
         case (ConstParity.Even, ConstParity.Cst(n))     => if (isEven(n)) ConstParity.Even else ConstParity.Top
         case (ConstParity.Odd, ConstParity.Odd)         => ConstParity.Odd
@@ -57,17 +57,98 @@ namespace ConstantParity {
      * Returns the greatest lower bound of `e1` and `e2`.
      */
     @commutative @associative
-    fn glb(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
+    def glb(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
         case (ConstParity.Top, x)                         => x
         case (x, ConstParity.Top)                         => x
-        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => if (n1 == n2) ConstParity.Cst(n1) else ConstParity.Bot
-        case (ConstParity.Cst(n), ConstParity.Odd)      => if (isOdd(n)) ConstParity.Cst(n) else ConstParity.Bot
-        case (ConstParity.Odd, ConstParity.Cst(n))      => if (isOdd(n)) ConstParity.Cst(n) else ConstParity.Bot
+        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => if (n1 == n2)  ConstParity.Cst(n1) else ConstParity.Bot
+        case (ConstParity.Cst(n), ConstParity.Odd)      => if (isOdd(n))  ConstParity.Cst(n) else ConstParity.Bot
+        case (ConstParity.Odd, ConstParity.Cst(n))      => if (isOdd(n))  ConstParity.Cst(n) else ConstParity.Bot
         case (ConstParity.Cst(n), ConstParity.Even)     => if (isEven(n)) ConstParity.Cst(n) else ConstParity.Bot
         case (ConstParity.Even, ConstParity.Cst(n))     => if (isEven(n)) ConstParity.Cst(n) else ConstParity.Bot
         case (ConstParity.Odd, ConstParity.Odd)         => ConstParity.Odd
         case (ConstParity.Even, ConstParity.Even)       => ConstParity.Even
         case _ => ConstParity.Bot
+    }
+
+    /**
+     * Over-approximates integer `increment`.
+     */
+    @strict @monotone
+    def inc(e: ConstParity): ConstParity = match e with {
+        case ConstParity.Bot    => ConstParity.Bot
+        case ConstParity.Cst(n) => ConstParity.Cst(n + 1ii)
+        case ConstParity.Even   => ConstParity.Odd
+        case ConstParity.Odd    => ConstParity.Even
+        case ConstParity.Top    => ConstParity.Top
+    }
+
+    /**
+     * Over-approximates integer `decrement`.
+     */
+    @strict @monotone
+    def dec(e: ConstParity): ConstParity = match e with {
+        case ConstParity.Bot    => ConstParity.Bot
+        case ConstParity.Cst(n) => ConstParity.Cst(n - 1ii)
+        case ConstParity.Even   => ConstParity.Odd
+        case ConstParity.Odd    => ConstParity.Even
+        case ConstParity.Top    => ConstParity.Top
+    }
+
+    /**
+     * Over-approximates integer `addition`.
+     */
+    @strict @monotone @commutative
+    def plus(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
+        case (ConstParity.Bot, _)                       => ConstParity.Bot
+        case (_, ConstParity.Bot)                       => ConstParity.Bot
+        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst(n1 + n2)
+        case (ConstParity.Cst(n), ConstParity.Odd)      => if (isOdd(n))  ConstParity.Even else ConstParity.Odd
+        case (ConstParity.Odd, ConstParity.Cst(n))      => if (isOdd(n))  ConstParity.Even else ConstParity.Odd
+        case (ConstParity.Cst(n), ConstParity.Even)     => if (isEven(n)) ConstParity.Even else ConstParity.Odd
+        case (ConstParity.Even, ConstParity.Cst(n))     => if (isEven(n)) ConstParity.Even else ConstParity.Odd
+        case (ConstParity.Even, ConstParity.Even)       => ConstParity.Even
+        case (ConstParity.Even, ConstParity.Odd)        => ConstParity.Odd
+        case (ConstParity.Odd, ConstParity.Even)        => ConstParity.Odd
+        case (ConstParity.Odd, ConstParity.Odd)         => ConstParity.Even
+        case _                                          => ConstParity.Top
+    }
+
+    /**
+     * Over-approximates integer `subtraction`.
+     */
+    @strict @monotone
+    def minus(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
+        case (ConstParity.Bot, _)                       => ConstParity.Bot
+        case (_, ConstParity.Bot)                       => ConstParity.Bot
+        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst(n1 - n2)
+        case (ConstParity.Cst(n), ConstParity.Odd)      => if (isOdd(n))  ConstParity.Even else ConstParity.Odd
+        case (ConstParity.Odd, ConstParity.Cst(n))      => if (isOdd(n))  ConstParity.Even else ConstParity.Odd
+        case (ConstParity.Cst(n), ConstParity.Even)     => if (isEven(n)) ConstParity.Even else ConstParity.Odd
+        case (ConstParity.Even, ConstParity.Cst(n))     => if (isEven(n)) ConstParity.Even else ConstParity.Odd
+        case (ConstParity.Even, ConstParity.Even)       => ConstParity.Even
+        case (ConstParity.Even, ConstParity.Odd)        => ConstParity.Odd
+        case (ConstParity.Odd, ConstParity.Even)        => ConstParity.Odd
+        case (ConstParity.Odd, ConstParity.Odd)         => ConstParity.Even
+        case _                                          => ConstParity.Top
+    }
+
+    /**
+     * Over-approximates integer `multiplication`.
+     */
+    @strict @monotone @commutative
+    def times(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
+        case (ConstParity.Bot, _)                       => ConstParity.Bot
+        case (_, ConstParity.Bot)                       => ConstParity.Bot
+        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst(n1 * n2)
+        case (ConstParity.Cst(n), ConstParity.Odd)      => if (isOdd(n)) ConstParity.Odd else ConstParity.Even
+        case (ConstParity.Odd, ConstParity.Cst(n))      => if (isOdd(n)) ConstParity.Odd else ConstParity.Even
+        case (ConstParity.Cst(_), ConstParity.Even)     => ConstParity.Even
+        case (ConstParity.Even, ConstParity.Cst(_))     => ConstParity.Even
+        case (ConstParity.Even, ConstParity.Even)       => ConstParity.Even
+        case (ConstParity.Even, ConstParity.Odd)        => ConstParity.Even
+        case (ConstParity.Odd, ConstParity.Even)        => ConstParity.Even
+        case (ConstParity.Odd, ConstParity.Odd)         => ConstParity.Odd
+        case _                                          => ConstParity.Top
     }
 
     /**
