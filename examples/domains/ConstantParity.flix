@@ -60,7 +60,13 @@ namespace ConstantParity {
     fn glb(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
         case (ConstParity.Top, x)                         => x
         case (x, ConstParity.Top)                         => x
-
+        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => if (n1 == n2) ConstParity.Cst(n1) else ConstParity.Bot
+        case (ConstParity.Cst(n), ConstParity.Odd)      => if (isOdd(n)) ConstParity.Cst(n) else ConstParity.Bot
+        case (ConstParity.Odd, ConstParity.Cst(n))      => if (isOdd(n)) ConstParity.Cst(n) else ConstParity.Bot
+        case (ConstParity.Cst(n), ConstParity.Even)     => if (isEven(n)) ConstParity.Cst(n) else ConstParity.Bot
+        case (ConstParity.Even, ConstParity.Cst(n))     => if (isEven(n)) ConstParity.Cst(n) else ConstParity.Bot
+        case (ConstParity.Odd, ConstParity.Odd)         => ConstParity.Odd
+        case (ConstParity.Even, ConstParity.Even)       => ConstParity.Even
         case _ => ConstParity.Bot
     }
 
