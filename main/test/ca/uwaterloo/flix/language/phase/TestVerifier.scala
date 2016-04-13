@@ -41,7 +41,6 @@ class TestVerifier extends FunSuite {
       .get
   }
 
-  //
   //  ignore("Interval.flix") {
   //    new Flix()
   //      .addPath("./examples/domains/Belnap.flix")
@@ -86,14 +85,14 @@ class TestVerifier extends FunSuite {
       .solve()
       .get
   }
-  //
-  //  test("Type.flix") {
-  //    new Flix()
-  //      .addPath("./examples/domains/Type.flix")
-  //      .setOptions(Options.Default.copy(verify = Verify.Enabled))
-  //      .solve()
-  //      .get
-  //  }
+
+  test("Type.flix") {
+    new Flix()
+      .addPath("./examples/domains/Type.flix")
+      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .solve()
+      .get
+  }
 
   test("ilo/Cube.flix") {
     new Flix()

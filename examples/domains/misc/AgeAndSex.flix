@@ -5,6 +5,8 @@
  */
 namespace AgeAndSex {
 
+    // TODO: Throw away?
+
     enum AgeAndSex {
                              case Top,
 

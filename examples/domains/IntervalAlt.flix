@@ -11,11 +11,11 @@ namespace Interval {
      * The elements of the interval lattice.
      */
     enum Interval {
-            case Top,
+                  case Top,
 
-        case Range(Int, Int)/*TODO: refinement type [x > y]*/,
+        case Range(BigInt, BigInt), // TODO: Cannot verify this class without refinements [x > y].
 
-            case Bot
+                  case Bot
     }
 
     /**
@@ -23,8 +23,7 @@ namespace Interval {
      */
     fn leq(e1: Interval, e2: Interval): Bool = match (e1, e2) with {
         case (Interval.Bot, _)                                  => true
-        case (Interval.Range(b1, e1), Interval.Range(b2, e2))   =>
-            b2 <= b1 && e1 <= e2
+        case (Interval.Range(b1, e1), Interval.Range(b2, e2))   => b2 <= b1 && e1 <= e2
         case (_, Interval.Top)                                  => true
         case _                                                  => false
     }
@@ -34,15 +33,11 @@ namespace Interval {
      */
     @commutative @associative
     fn lub(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
-        case (Interval.Bot, _)                                  => Interval.Bot
-        case (_, Interval.Bot)                                  => Interval.Bot
-        case (Interval.Range(b1, e1), Interval.Range(b2, e2))   =>
-            Interval.Range(Math/min(b1, b2), Math/max(e1, e2))
+        case (Interval.Bot, x)                                  => x
+        case (x, Interval.Bot)                                  => x
+        case (Interval.Range(b1, e1), Interval.Range(b2, e2))   => Interval.Range(Math/min(b1, b2), Math/max(e1, e2))
         case _                                                  => Interval.Top
     }
-
-    // TODO: Widen
-    // TODO: Narrow
 
     /**
      * Returns the greatest lower bound of `e1` and `e2`.
@@ -64,7 +59,7 @@ namespace Interval {
     /**
      * Abstracts a concrete integer into the interval domain.
      */
-    fn alpha(i: Int): Interval = Interval.Range(i, i)
+    fn alpha(i: BigInt): Interval = Interval.Range(i, i)
 
     /**
      * Over-approximates integer `addition`.
@@ -73,8 +68,7 @@ namespace Interval {
     fn plus(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
         case (Interval.Bot, _)                                  => Interval.Bot
         case (_, Interval.Bot)                                  => Interval.Bot
-        case (Interval.Range(b1, e1), Interval.Range(b2, e2))   =>
-            Interval.Range(b1 + b2, e1 + e2)
+        case (Interval.Range(b1, e1), Interval.Range(b2, e2))   => Interval.Range(b1 + b2, e1 + e2)
         case _                                                  => Interval.Top
     }
 
@@ -85,8 +79,7 @@ namespace Interval {
     fn minus(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
         case (Interval.Bot, _)                                  => Interval.Bot
         case (_, Interval.Bot)                                  => Interval.Bot
-        case (Interval.Range(b1, e1), Interval.Range(b2, e2))   =>
-            Interval.Range(b1 - e2, e1 - b2)
+        case (Interval.Range(b1, e1), Interval.Range(b2, e2))   => Interval.Range(b1 - e2, e1 - b2)
         case _                                                  => Interval.Top
     }
 
@@ -97,21 +90,20 @@ namespace Interval {
     fn times(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
         case (Interval.Bot, _)                                  => Interval.Bot
         case (_, Interval.Bot)                                  => Interval.Bot
-        case (Interval.Range(b1, e1), Interval.Range(b2, e2))   =>
-            Interval.Range(b1 * b2, e1 * e2)
+        case (Interval.Range(b1, e1), Interval.Range(b2, e2))   => Interval.Range(b1 * b2, e1 * e2)
         case _                                                  => Interval.Top
     }
 
     /**
      * Over-approximates integer `division`.
      */
-    @strict @monotone @commutative @associative
+    @strict @monotone
     fn divide(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
         case (Interval.Bot, _)                                  => Interval.Bot
         case (_, Interval.Bot)                                  => Interval.Bot
-        case (_, Interval.Range(0, 0))                          => Interval.Bot
+        case (_, Interval.Range(0ii, 0ii))                      => Interval.Bot
         case (Interval.Range(b1, e1), Interval.Range(b2, e2))   =>
-            if (b2 <= 0 && 0 <= e2)
+            if (b2 <= 0ii && 0ii <= e2)
                 Interval.Top
             else
                 Interval.Range(b1 / e2, e1 / b2)
@@ -129,8 +121,6 @@ namespace Interval {
 //        case Interval.Top           => Interval.Top
 //    }
 
-    // TODO, or, and, xor, leftShift, rightShift.
-
     /**
       * Over-approximates `equal`.
       */
@@ -145,8 +135,6 @@ namespace Interval {
         }
         case _                                                  => Belnap/Belnap.Top
     }
-
-    // TODO: Consider moving neq and lessEq.
 
     /**
       * Over-approximates `not equal`.
@@ -183,19 +171,14 @@ namespace Interval {
 
 }
 
-// TODO: Import
-
-// TODO
 namespace Math {
-
     /**
      * Returns the smallest of `i1` and `i2`.
      */
-    fn min(i1: Int, i2: Int): Int = if (i1 <= i2) i1 else i2
+    fn min(i1: BigInt, i2: BigInt): BigInt = if (i1 <= i2) i1 else i2
 
     /**
      * Returns the greatest of `i1` and `i2`.
      */
-    fn max(i1: Int, i2: Int): Int = if (i1 >= i2) i1 else i2
-
+    fn max(i1: BigInt, i2: BigInt): BigInt = if (i1 >= i2) i1 else i2
 }

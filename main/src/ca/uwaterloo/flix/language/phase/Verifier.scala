@@ -347,7 +347,7 @@ object Verifier {
             PathResult.Success
           case (Nil, SymVal.False) =>
             // Case 2: The symbolic evaluator disproved the property.
-            PathResult.Failure(mkModel(env0, null))
+            PathResult.Failure(mkModel(env0, None))
           case (pc, v) => v match {
             case SymVal.True =>
               // Case 3.1: The property holds under some path condition.
