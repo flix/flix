@@ -68,6 +68,14 @@ package object ast {
       SourceLocation(b.source, b.line, b.col, e.line, e.col, b.code)
     }
 
+    implicit object Order extends Ordering[SourceLocation] {
+
+      import scala.math.Ordered.orderingToOrdered
+
+      def compare(x: SourceLocation, y: SourceLocation): Int =
+        (x.source.format, x.beginLine, x.beginCol) compare(y.source.format, y.beginLine, y.beginCol)
+    }
+
   }
 
   /**

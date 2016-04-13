@@ -162,6 +162,11 @@ object SimplifiedAst {
       final val loc = SourceLocation.Unknown
     }
 
+    case class BigInt(lit: java.math.BigInteger) extends SimplifiedAst.Expression {
+      final val tpe = Type.BigInt
+      final val loc = SourceLocation.Unknown
+    }
+
     case class Str(lit: java.lang.String) extends SimplifiedAst.Expression {
       final val tpe = Type.Str
       final val loc = SourceLocation.Unknown

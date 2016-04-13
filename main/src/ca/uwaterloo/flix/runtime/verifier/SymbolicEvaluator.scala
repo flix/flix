@@ -92,6 +92,11 @@ object SymbolicEvaluator {
       case Expression.Int64(lit) => lift(pc0, SymVal.Int64(lit))
 
       /**
+        * BigInt.
+        */
+      case Expression.BigInt(lit) => lift(pc0, SymVal.BigInt(lit))
+
+      /**
         * Str.
         */
       case Expression.Str(lit) => lift(pc0, SymVal.Str(lit))
@@ -130,7 +135,7 @@ object SymbolicEvaluator {
           case (macc, freeVar) => macc + (freeVar.name -> env0(freeVar.name))
         }
         // Construct the closure.
-        val clo = SymVal.Closure(ref, cloVar.name, SymVal.Environment(env))
+        val clo = SymVal.Closure(ref.name, cloVar.name, SymVal.Environment(env))
         lift(pc0, clo)
 
       /**
@@ -153,15 +158,25 @@ object SymbolicEvaluator {
       /**
         * Apply Closure.
         */
-      // TODO: Something seems to be missing with the regular arguments.
       case Expression.ApplyClosure(exp, args, _, _) =>
-        // Evaluate the closure.
-        eval(pc0, exp, env0) flatMap {
-          case (pc, SymVal.Closure(cloExp, cloVar, cloEnv)) =>
-            // Construct the environment.
-            val newEnv = Map(cloVar -> cloEnv)
-            eval(pc, cloExp, newEnv)
-          case (_, v) => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
+        // Evaluate the arguments.
+        evaln(pc0, args, env0) flatMap {
+          case (pc, actuals) =>
+            // Evaluate the closure.
+            eval(pc, exp, env0) flatMap {
+              case (pc1, SymVal.Closure(ref, cloVar, cloEnv)) =>
+                // Lookup the name.
+                val defn = root.constants(ref)
+
+                // Construct the environment.
+                val initEnv: Map[String, SymVal] = Map(cloVar -> cloEnv)
+                val newEnv = (defn.formals zip actuals).foldLeft(initEnv) {
+                  case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
+                }
+
+                eval(pc1, defn.exp, newEnv)
+              case (_, v) => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
+            }
         }
 
       /**
@@ -201,6 +216,7 @@ object SymbolicEvaluator {
               case SymVal.Int16(i) => lift(pc, SymVal.Int16((-i).toShort))
               case SymVal.Int32(i) => lift(pc, SymVal.Int32(-i))
               case SymVal.Int64(i) => lift(pc, SymVal.Int64(-i))
+              case SymVal.BigInt(i) => lift(pc, SymVal.BigInt(i.negate()))
 
               // Symbolic semantics.
               case SymVal.AtomicVar(id) =>
@@ -220,6 +236,7 @@ object SymbolicEvaluator {
               case SymVal.Int16(i) => lift(pc, SymVal.Int16((~i).toShort))
               case SymVal.Int32(i) => lift(pc, SymVal.Int32(~i))
               case SymVal.Int64(i) => lift(pc, SymVal.Int64(~i))
+              case SymVal.BigInt(i) => throw InternalCompilerException(s"Type Error: BigInt does not support BitwiseNegate.")
 
               // Symbolic semantics
               case SymVal.AtomicVar(id) =>
@@ -249,6 +266,7 @@ object SymbolicEvaluator {
               case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 + i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 + i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 + i2))
+              case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => lift(pc, SymVal.BigInt(i1 add i2))
 
               // Symbolic semantics.
               case _ =>
@@ -266,6 +284,7 @@ object SymbolicEvaluator {
               case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 - i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 - i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 - i2))
+              case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => lift(pc, SymVal.BigInt(i1 subtract i2))
 
               // Symbolic semantics.
               case _ =>
@@ -283,6 +302,7 @@ object SymbolicEvaluator {
               case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 * i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 * i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 * i2))
+              case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => lift(pc, SymVal.BigInt(i1 multiply i2))
 
               // Symbolic semantics.
               case _ =>
@@ -300,6 +320,7 @@ object SymbolicEvaluator {
               case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 / i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 / i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 / i2))
+              case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => lift(pc, SymVal.BigInt(i1 divide i2))
 
               // Symbolic semantics.
               case _ =>
@@ -317,6 +338,7 @@ object SymbolicEvaluator {
               case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 % i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 % i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 % i2))
+              case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => lift(pc, SymVal.BigInt(i1 mod i2))
 
               // Symbolic semantics.
               case _ =>
@@ -334,6 +356,7 @@ object SymbolicEvaluator {
               case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16(Math.pow(i1, i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(Math.pow(i1, i2).toInt))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(Math.pow(i1, i2).toLong))
+              case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => throw InternalCompilerException(s"Type Error: BigInt does not support Exponentiate.")
 
               // Symbolic semantics.
               case _ =>
@@ -351,6 +374,7 @@ object SymbolicEvaluator {
               case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, toBool(i1 < i2))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, toBool(i1 < i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, toBool(i1 < i2))
+              case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => lift(pc, toBool(i1.compareTo(i2) < 0))
 
               // Symbolic semantics.
               case _ =>
@@ -368,6 +392,7 @@ object SymbolicEvaluator {
               case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, toBool(i1 <= i2))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, toBool(i1 <= i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, toBool(i1 <= i2))
+              case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => lift(pc, toBool(i1.compareTo(i2) <= 0))
 
               // Symbolic semantics.
               case _ =>
@@ -385,6 +410,7 @@ object SymbolicEvaluator {
               case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, toBool(i1 > i2))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, toBool(i1 > i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, toBool(i1 > i2))
+              case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => lift(pc, toBool(i1.compareTo(i2) > 0))
 
               // Symbolic semantics.
               case _ =>
@@ -402,6 +428,7 @@ object SymbolicEvaluator {
               case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, toBool(i1 >= i2))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, toBool(i1 >= i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, toBool(i1 >= i2))
+              case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => lift(pc, toBool(i1.compareTo(i2) >= 0))
 
               // Symbolic semantics.
               case _ =>
@@ -563,6 +590,7 @@ object SymbolicEvaluator {
               case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 & i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 & i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 & i2))
+              case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => lift(pc, SymVal.BigInt(i1 and i2))
 
               // Symbolic semantics.
               case _ =>
@@ -580,6 +608,7 @@ object SymbolicEvaluator {
               case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 | i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 | i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 | i2))
+              case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => lift(pc, SymVal.BigInt(i1 or i2))
 
               // Symbolic semantics.
               case _ =>
@@ -597,6 +626,7 @@ object SymbolicEvaluator {
               case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 ^ i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 ^ i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 ^ i2))
+              case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => lift(pc, SymVal.BigInt(i1 xor i2))
 
               // Symbolic semantics.
               case _ =>
@@ -614,6 +644,7 @@ object SymbolicEvaluator {
               case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 << i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 << i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 << i2))
+              case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => throw InternalCompilerException(s"Type Error: BigInt does not support BitwiseLeftShift.")
 
               // Symbolic semantics.
               case _ =>
@@ -631,6 +662,7 @@ object SymbolicEvaluator {
               case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 >> i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 >> i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 >> i2))
+              case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => throw InternalCompilerException(s"Type Error: BigInt does not support BitwiseRightShift.")
 
               // Symbolic semantics.
               case _ =>
@@ -861,6 +893,21 @@ object SymbolicEvaluator {
       )
 
       /**
+        * BigInt.
+        */
+      // Concrete semantics.
+      case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => lift(pc0, toBool(i1 == i2))
+      // Symbolic semantics.
+      case (SymVal.AtomicVar(id), SymVal.BigInt(i2)) => List(
+        (SmtExpr.Equal(SmtExpr.Var(id, Type.BigInt), SmtExpr.BigInt(i2)) :: pc0, SymVal.True),
+        (SmtExpr.NotEqual(SmtExpr.Var(id, Type.BigInt), SmtExpr.BigInt(i2)) :: pc0, SymVal.False)
+      )
+      case (SymVal.BigInt(i2), SymVal.AtomicVar(id)) => List(
+        (SmtExpr.Equal(SmtExpr.Var(id, Type.BigInt), SmtExpr.BigInt(i2)) :: pc0, SymVal.True),
+        (SmtExpr.NotEqual(SmtExpr.BigInt(i2), SmtExpr.Var(id, Type.BigInt)) :: pc0, SymVal.False)
+      )
+
+      /**
         * Str.
         */
       case (SymVal.Str(s1), SymVal.Str(s2)) => lift(pc0, toBool(s1 == s2))
@@ -949,6 +996,7 @@ object SymbolicEvaluator {
     case (SymVal.Int16(i), Type.Int16) => SmtExpr.Int16(i)
     case (SymVal.Int32(i), Type.Int32) => SmtExpr.Int32(i)
     case (SymVal.Int64(i), Type.Int64) => SmtExpr.Int64(i)
+    case (SymVal.BigInt(i), Type.BigInt) => SmtExpr.BigInt(i)
     case _ => throw InternalCompilerException(s"Unexpected value: '$v' of type '$tpe'.")
   }
 
@@ -960,6 +1008,7 @@ object SymbolicEvaluator {
     case Type.Int16 => SmtExpr.Int16(0)
     case Type.Int32 => SmtExpr.Int32(0)
     case Type.Int64 => SmtExpr.Int64(0)
+    case Type.BigInt => SmtExpr.BigInt(java.math.BigInteger.ZERO)
     case _ => throw InternalCompilerException(s"Unexpected non-numeric type '$tpe'.")
   }
 

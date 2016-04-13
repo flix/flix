@@ -62,6 +62,7 @@ object VarNumbering {
       case SimplifiedAst.Expression.Int16(lit) => e
       case SimplifiedAst.Expression.Int32(lit) => e
       case SimplifiedAst.Expression.Int64(lit) => e
+      case SimplifiedAst.Expression.BigInt(lit) => e
       case SimplifiedAst.Expression.Str(lit) => e
       case SimplifiedAst.Expression.LoadBool(n, o) => e
       case SimplifiedAst.Expression.LoadInt8(b, o) => e

@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime.verifier
 
-import com.microsoft.z3.{BoolExpr, Context, Status}
+import com.microsoft.z3.{BoolExpr, Context, Status, Z3Exception}
 
 object SmtSolver {
 
@@ -8,12 +8,19 @@ object SmtSolver {
     * Checks the satisfiability of the given boolean formula `f`.
     */
   def checkSat(f: BoolExpr, ctx: Context): SmtResult = {
-    val solver = ctx.mkSolver()
-    solver.add(f)
-    solver.check() match {
-      case Status.SATISFIABLE => SmtResult.Satisfiable(solver.getModel)
-      case Status.UNSATISFIABLE => SmtResult.Unsatisfiable
-      case Status.UNKNOWN => SmtResult.Unknown
+    try {
+      val solver = ctx.mkSolver()
+      solver.add(f)
+      solver.check() match {
+        case Status.SATISFIABLE => SmtResult.Satisfiable(solver.getModel)
+        case Status.UNSATISFIABLE => SmtResult.Unsatisfiable
+        case Status.UNKNOWN => SmtResult.Unknown
+      }
+    } catch {
+      case e: Z3Exception =>
+        Console.println("Z3 Exception on Query:")
+        Console.println(f.toString)
+        throw e
     }
   }
 
@@ -30,22 +37,25 @@ object SmtSolver {
       System.exit(1)
     }
 
-    // attempt to load the native library.
     try {
-      System.loadLibrary("libz3")
+      // try to preload the library.
+      if (isWindows)
+        System.loadLibrary("libz3")
+      else
+        System.loadLibrary("z3")
+
+      val ctx = new Context()
+      val r = f(ctx)
+      ctx.dispose()
+      r
     } catch {
       case e: UnsatisfiedLinkError =>
         Console.println(errorMessage)
         Console.println()
         Console.println("> Unable to load the library. Stack Trace reproduced below: ")
         e.printStackTrace()
-        System.exit(1)
+        throw e
     }
-
-    val ctx = new Context()
-    val r = f(ctx)
-    ctx.dispose()
-    r
   }
 
   /**
@@ -65,9 +75,21 @@ object SmtSolver {
       |###   3. Ensure that you have the                                           ###
       |###      'Microsoft Visual Studio Redistributable 2012 Package' installed.  ###
       |###                                                                         ###
-      |### NB: You must have the 64 bit version of Java, Z3 and the VS package.    ###
+      |###  NB: You must have the 64 bit version of Java, Z3 and the VS package.   ###
+      |###                                                                         ###
+      |### On Linux:                                                               ###
+      |###    1. Ensure that java.library.path is set correctly.                   ###
+      |###    2. Ensure that LD_LIBRARY_PATH is set correctly.                     ###
+      |###                                                                         ###
+      |###  On Mac OS X:                                                           ###
+      |###    1. Ensure that java.library.path is set correctly.                   ###
+      |###    2. Ensure that DYLD_LIBRARY_PATH is set correctly.                   ###
       |###                                                                         ###
       |###############################################################################
     """.stripMargin
 
+  /**
+    * Returns `true` if running on the Windows platform.
+    */
+  def isWindows: Boolean = System.getProperty("os.name").toLowerCase.contains("windows")
 }

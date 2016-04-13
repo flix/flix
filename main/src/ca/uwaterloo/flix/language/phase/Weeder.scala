@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
+import java.math.BigInteger
+
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -688,6 +690,11 @@ object Weeder {
           case lit => WeededAst.Literal.Int64(lit, mkSL(sp1, sp2))
         }
 
+      case ParsedAst.Literal.BigInt(sp1, sign, digits, sp2) =>
+        toBigInt(sign, digits, mkSL(sp1, sp2)) map {
+          case lit => WeededAst.Literal.BigInt(lit, mkSL(sp1, sp2))
+        }
+
       case ParsedAst.Literal.Str(sp1, lit, sp2) =>
         WeededAst.Literal.Str(lit, mkSL(sp1, sp2)).toSuccess
     }
@@ -740,6 +747,11 @@ object Weeder {
       case ParsedAst.Literal.Int64(sp1, sign, digits, sp2) =>
         toInt64(sign, digits, mkSL(sp1, sp2)) map {
           case lit => WeededAst.Expression.Int64(lit, mkSL(sp1, sp2))
+        }
+
+      case ParsedAst.Literal.BigInt(sp1, sign, digits, sp2) =>
+        toBigInt(sign, digits, mkSL(sp1, sp2)) map {
+          case lit => WeededAst.Expression.BigInt(lit, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Literal.Str(sp1, lit, sp2) =>
@@ -1014,6 +1026,10 @@ object Weeder {
       case ParsedAst.Literal.Int64(sp1, sign, digits, sp2) =>
         toInt64(sign, digits, mkSL(sp1, sp2)) map {
           case lit => WeededAst.Pattern.Int64(lit, mkSL(sp1, sp2))
+        }
+      case ParsedAst.Literal.BigInt(sp1, sign, digits, sp2) =>
+        toBigInt(sign, digits, mkSL(sp1, sp2)) map {
+          case lit => WeededAst.Pattern.BigInt(lit, mkSL(sp1, sp2))
         }
       case ParsedAst.Literal.Str(sp1, lit, sp2) =>
         WeededAst.Pattern.Str(lit, mkSL(sp1, sp2)).toSuccess
@@ -1317,6 +1333,16 @@ object Weeder {
   def toInt64(sign: Boolean, digits: String, loc: SourceLocation): Validation[Long, WeederError] = try {
     val s = if (sign) "-" + digits else digits
     s.toLong.toSuccess
+  } catch {
+    case ex: NumberFormatException => IllegalInt(loc).toFailure
+  }
+
+  /**
+    * Attempts to parse the given BigInt with `sign` and `digits`.
+    */
+  def toBigInt(sign: Boolean, digits: String, loc: SourceLocation): Validation[BigInteger, WeederError] = try {
+    val s = if (sign) "-" + digits else digits
+    new BigInteger(s).toSuccess
   } catch {
     case ex: NumberFormatException => IllegalInt(loc).toFailure
   }

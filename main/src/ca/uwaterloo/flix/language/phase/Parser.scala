@@ -308,7 +308,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Int: Rule1[ParsedAst.Literal] = rule {
-      Int8 | Int16 | Int32 | Int64 | IntDefault
+      Int8 | Int16 | Int32 | Int64 | BigInt | IntDefault
     }
 
     def IntDefault: Rule1[ParsedAst.Literal.Int32] = rule {
@@ -329,6 +329,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Int64: Rule1[ParsedAst.Literal.Int64] = rule {
       SP ~ Sign ~ Digits ~ atomic("i64") ~ SP ~> ParsedAst.Literal.Int64
+    }
+
+    def BigInt: Rule1[ParsedAst.Literal.BigInt] = rule {
+      SP ~ Sign ~ Digits ~ atomic("ii") ~ SP ~> ParsedAst.Literal.BigInt
     }
 
     def Str: Rule1[ParsedAst.Literal.Str] = rule {

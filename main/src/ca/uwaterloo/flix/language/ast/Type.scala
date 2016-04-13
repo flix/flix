@@ -20,6 +20,7 @@ sealed trait Type {
     case Type.Int16 => "Int16"
     case Type.Int32 => "Int32"
     case Type.Int64 => "Int64"
+    case Type.BigInt => "BigInt"
     case Type.Str => "Str"
     case Type.Native => "Native"
     case Type.Prop => "Prop"
@@ -93,6 +94,11 @@ object Type {
   case object Int64 extends Type
 
   /**
+    * An AST node that represents the big int type.
+    */
+  case object BigInt extends Type
+
+  /**
     * An AST node that represents the Str type.
     */
   case object Str extends Type
@@ -113,6 +119,7 @@ object Type {
     * @param name  the fully qualified name of the enum.
     * @param cases a map from tag names to tag types.
     */
+  // TODO: Should be sortedmap
   case class Enum(name: Symbol.Resolved, cases: immutable.Map[String, Type.Tag]) extends Type
 
   /**
