@@ -156,13 +156,17 @@ namespace SubZeroL {
         case (L.Y5, L.Z2)   => L.Z2
 
         case (L.Z1, L.Z1)   => L.Z1
-        // TODO: More
+        case (L.Z1, L.X1)   => L.Z1
+        case (L.Z1, L.X2)   => L.Z1
+        case (L.Z1, L.X3)   => L.Z1
         case (L.Z1, L.Y1)   => L.Z1
         case (L.Z1, L.Y2)   => L.Z1
         case (L.Z1, L.Y3)   => L.Z1
 
         case (L.Z2, L.Z2)   => L.Z2
-        // TODO: More
+        case (L.Z2, L.X2)   => L.Z2
+        case (L.Z2, L.X3)   => L.Z2
+        case (L.Z2, L.X4)   => L.Z2
         case (L.Z2, L.Y3)   => L.Z2
         case (L.Z2, L.Y4)   => L.Z2
         case (L.Z2, L.Y5)   => L.Z2
