@@ -2,7 +2,7 @@ package ca.uwaterloo.flix
 
 import java.nio.file.{Files, InvalidPathException, Paths}
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.util._
 
 /**
@@ -37,16 +37,34 @@ object Main {
     }
 
     // compute the least model.
-    builder.solve() match {
-      case Validation.Success(model, errors) =>
-        errors.foreach(e => println(e.message))
+    try {
+      builder.solve() match {
+        case Validation.Success(model, errors) =>
+          errors.foreach(e => println(e.message))
 
-        val print = options.print
-        for (name <- print) {
-          PrettyPrint.print(name, model)
-        }
-      case Validation.Failure(errors) =>
-        errors.foreach(e => println(e.message))
+          val print = options.print
+          for (name <- print) {
+            PrettyPrint.print(name, model)
+          }
+        case Validation.Failure(errors) =>
+          errors.foreach(e => println(e.message))
+      }
+    } catch {
+      case UserException(msg, loc) =>
+        Console.println("User error " + loc.format)
+        Console.println()
+        Console.println(loc.underline(new AnsiConsole))
+        System.exit(1)
+      case MatchException(msg, loc) =>
+        Console.println("Non-exhaustive match " + loc.format)
+        Console.println()
+        Console.println(loc.underline(new AnsiConsole))
+        System.exit(1)
+      case SwitchException(msg, loc) =>
+        Console.println("Non-exhaustive switch " + loc.format)
+        Console.println()
+        Console.println(loc.underline(new AnsiConsole))
+        System.exit(1)
     }
 
   }

@@ -4,7 +4,6 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.{Parser, Resolver, Typer, Weeder}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{AnsiConsole, Validation}
-import org.parboiled2.ErrorFormatter
 
 import scala.util.{Failure, Success}
 

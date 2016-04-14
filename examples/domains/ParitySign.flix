@@ -10,7 +10,7 @@ namespace ParitySign {
      */
     enum ParitySign {
                               case Top,
-
+            // TODO: Introduce Odd/Even and Pos/Neg?
                        case ENeg,    case EPos,
 
         case ONeg,            case Zer,            case OPos,
@@ -89,10 +89,10 @@ namespace ParitySign {
     @strict @monotone
     def inc(e: ParitySign): ParitySign = match e with {
         case ParitySign.Bot     => ParitySign.Bot
-        case ParitySign.Zer     => ParitySign.OPos
         case ParitySign.ONeg    => ParitySign.ENeg
-        case ParitySign.ENeg    => ParitySign.Top
+        case ParitySign.Zer     => ParitySign.OPos
         case ParitySign.OPos    => ParitySign.EPos
+        case ParitySign.ENeg    => ParitySign.Top
         case ParitySign.EPos    => ParitySign.OPos
         case _                  => ParitySign.Top
     }
@@ -103,7 +103,12 @@ namespace ParitySign {
     @strict @monotone
     def dec(e: ParitySign): ParitySign = match e with {
         case ParitySign.Bot     => ParitySign.Bot
-        case _                  => ParitySign.Top
+        case ParitySign.ONeg    => ParitySign.ENeg
+        case ParitySign.Zer     => ParitySign.ONeg
+        case ParitySign.OPos    => ParitySign.EPos
+        case ParitySign.ENeg    => ParitySign.ONeg
+        case ParitySign.EPos    => ParitySign.Top
+        //case _                  => ParitySign.Top
     }
 
     /**
@@ -113,6 +118,7 @@ namespace ParitySign {
     def plus(e1: ParitySign, e2: ParitySign): ParitySign = match (e1, e2) with {
         case (ParitySign.Bot, _)                => ParitySign.Bot
         case (_, ParitySign.Bot)                => ParitySign.Bot
+
         case _                                  => ParitySign.Top
     }
 
