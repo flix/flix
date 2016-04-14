@@ -3,60 +3,35 @@
  */
 namespace ParitySign {
 
-    enum ParitySign {
-                             case Top,
-
-        case OddNeg, case EvenNeg, case OddPos, case EvenPos,
-
-                             case Zer,
-
-                             case Bot
-    }
-
-    // TODO:
-    // http://www.pietro.ferrara.name/2013_Dale.PDF
-    // The lattice and semantic structures of the reduced product are exactly the same as those of the Cartesian
-    // product. In addition, a reduction operator aimed at refining the information tracked by the two
-    // domains is introduced, and it is used after each lattice or semantic operator application.
-
     /**
-     * The elements of the Parity lattice.
-     */
-    enum Parity {
-                  case Top,
-
-        case Odd,          case Even,
-
-                  case Bot
-    }
-
-    /**
-     * The elements of the Sign lattice.
-     */
-    enum Sign {
-                  case Top,
-
-        case Neg,          case Pos,
-
-                  case Zer,
-
-                  case Bot
-    }
-
-    /**
-     * The Cartesian product of the two lattices.
+     * The elements of the reduced product of the Parity and Sign lattices.
      */
     enum ParitySign {
-        case PS(Parity, Sign)
+                         case Top,
+
+        case ONeg, case ENeg, case OPos, case EPos,
+
+                         case Zer,
+
+                         case Bot
     }
 
     /**
      * Returns `true` iff `e1` is less than or equal to `e2`.
      */
     def leq(x: ParitySign, y: ParitySign): Bool = match (x, y) with {
-        case (_, ParitySign.PS(Parity.Top, Sign.Top)) => true
-
-        case _                                        => false
+        case (ParitySign.Bot, _)                => true
+        case (ParitySign.Zer, ParitySign.Zer)   => true
+        case (ParitySign.Zer, ParitySign.ONeg)  => true
+        case (ParitySign.Zer, ParitySign.ENeg)  => true
+        case (ParitySign.Zer, ParitySign.OPos)  => true
+        case (ParitySign.Zer, ParitySign.EPos)  => true
+        case (ParitySign.ONeg, ParitySign.ONeg) => true
+        case (ParitySign.ENeg, ParitySign.ENeg) => true
+        case (ParitySign.OPos, ParitySign.OPos) => true
+        case (ParitySign.EPos, ParitySign.EPos) => true
+        case (_, ParitySign.Top)                => true
+        case _                                  => false
     }
 
     /**
@@ -64,7 +39,22 @@ namespace ParitySign {
      */
     @commutative @associative
     def lub(e1: ParitySign, e2: ParitySign): ParitySign = match (e1, e2) with {
-        case _ => ParitySign.PS(Parity.Top, Sign.Top)
+        case (ParitySign.Bot, x)                => x
+        case (x, ParitySign.Bot)                => x
+        case (ParitySign.Zer,  ParitySign.Zer)  => ParitySign.Zer
+        case (ParitySign.Zer,  ParitySign.ONeg) => ParitySign.ONeg
+        case (ParitySign.Zer,  ParitySign.ENeg) => ParitySign.ENeg
+        case (ParitySign.Zer,  ParitySign.OPos) => ParitySign.OPos
+        case (ParitySign.Zer,  ParitySign.EPos) => ParitySign.EPos
+        case (ParitySign.ONeg, ParitySign.ONeg) => ParitySign.ONeg
+        case (ParitySign.ONeg, ParitySign.Zer)  => ParitySign.ONeg
+        case (ParitySign.ENeg, ParitySign.ENeg) => ParitySign.ENeg
+        case (ParitySign.ENeg, ParitySign.Zer)  => ParitySign.ENeg
+        case (ParitySign.OPos, ParitySign.OPos) => ParitySign.OPos
+        case (ParitySign.OPos, ParitySign.Zer)  => ParitySign.OPos
+        case (ParitySign.EPos, ParitySign.EPos) => ParitySign.EPos
+        case (ParitySign.EPos, ParitySign.Zer)  => ParitySign.EPos
+        case _ => ParitySign.Top
     }
 
     /**
@@ -72,9 +62,37 @@ namespace ParitySign {
      */
     @commutative @associative
     def glb(e1: ParitySign, e2: ParitySign): ParitySign = match (e1, e2) with {
-        case _ => ParitySign.PS(Parity.Bot, Sign.Bot)
+        case (ParitySign.Top, x)                => x
+        case (x, ParitySign.Top)                => x
+        case (ParitySign.Zer,  ParitySign.Zer)  => ParitySign.Zer
+        case (ParitySign.Zer,  ParitySign.ONeg) => ParitySign.Zer
+        case (ParitySign.Zer,  ParitySign.ENeg) => ParitySign.Zer
+        case (ParitySign.Zer,  ParitySign.OPos) => ParitySign.Zer
+        case (ParitySign.Zer,  ParitySign.EPos) => ParitySign.Zer
+        case (ParitySign.ONeg, ParitySign.ONeg) => ParitySign.ONeg
+        case (ParitySign.ONeg, ParitySign.ONeg) => ParitySign.ONeg
+        case (ParitySign.ENeg, ParitySign.ENeg) => ParitySign.ENeg
+        case (ParitySign.OPos, ParitySign.OPos) => ParitySign.OPos
+        case (ParitySign.EPos, ParitySign.EPos) => ParitySign.EPos
+        case (ParitySign.ONeg, ParitySign.ENeg) => ParitySign.Zer
+        case (ParitySign.ONeg, ParitySign.OPos) => ParitySign.Zer
+        case (ParitySign.ONeg, ParitySign.EPos) => ParitySign.Zer
+        case (ParitySign.ENeg, ParitySign.ONeg) => ParitySign.Zer
+        case (ParitySign.ENeg, ParitySign.OPos) => ParitySign.Zer
+        case (ParitySign.ENeg, ParitySign.EPos) => ParitySign.Zer
+        case (ParitySign.OPos, ParitySign.ONeg) => ParitySign.Zer
+        case (ParitySign.OPos, ParitySign.ENeg) => ParitySign.Zer
+        case (ParitySign.OPos, ParitySign.EPos) => ParitySign.Zer
+        case (ParitySign.EPos, ParitySign.ONeg) => ParitySign.Zer
+        case (ParitySign.EPos, ParitySign.ENeg) => ParitySign.Zer
+        case (ParitySign.EPos, ParitySign.OPos) => ParitySign.Zer
+        case (ParitySign.ONeg,  ParitySign.Zer) => ParitySign.Zer
+        case (ParitySign.ENeg,  ParitySign.Zer) => ParitySign.Zer
+        case (ParitySign.OPos,  ParitySign.Zer) => ParitySign.Zer
+        case (ParitySign.EPos,  ParitySign.Zer) => ParitySign.Zer
+        case _ => ParitySign.Bot
     }
 
-    let ParitySign<> = (ParitySign.PS(Parity.Bot, Sign.Bot), ParitySign.PS(Parity.Top, Sign.Top), leq, lub, glb)
+    let ParitySign<> = (ParitySign.Bot, ParitySign.Top, leq, lub, glb)
 
 }
