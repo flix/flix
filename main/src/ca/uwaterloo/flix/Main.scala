@@ -51,19 +51,19 @@ object Main {
       }
     } catch {
       case UserException(msg, loc) =>
-        Console.println("User error " + loc.format)
-        Console.println()
-        Console.println(loc.underline(new AnsiConsole))
+        Console.err.println("User error " + loc.format)
+        Console.err.println()
+        Console.err.println(loc.underline(new AnsiConsole))
         System.exit(1)
       case MatchException(msg, loc) =>
-        Console.println("Non-exhaustive match " + loc.format)
-        Console.println()
-        Console.println(loc.underline(new AnsiConsole))
+        Console.err.println("Non-exhaustive match " + loc.format)
+        Console.err.println()
+        Console.err.println(loc.underline(new AnsiConsole))
         System.exit(1)
       case SwitchException(msg, loc) =>
-        Console.println("Non-exhaustive switch " + loc.format)
-        Console.println()
-        Console.println(loc.underline(new AnsiConsole))
+        Console.err.println("Non-exhaustive switch " + loc.format)
+        Console.err.println()
+        Console.err.println(loc.underline(new AnsiConsole))
         System.exit(1)
     }
 

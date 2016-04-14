@@ -108,7 +108,7 @@ namespace ParitySign {
         case ParitySign.OPos    => ParitySign.EPos
         case ParitySign.ENeg    => ParitySign.ONeg
         case ParitySign.EPos    => ParitySign.Top
-        //case _                  => ParitySign.Top
+        case _                  => ParitySign.Top
     }
 
     /**
@@ -118,6 +118,9 @@ namespace ParitySign {
     def plus(e1: ParitySign, e2: ParitySign): ParitySign = match (e1, e2) with {
         case (ParitySign.Bot, _)                => ParitySign.Bot
         case (_, ParitySign.Bot)                => ParitySign.Bot
+        // case (ParitySign.ONeg, ParitySign.ONeg) => ParitySign.Even // TODO: Need Even and Odd
+
+
 
         case _                                  => ParitySign.Top
     }
