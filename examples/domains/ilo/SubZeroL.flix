@@ -54,6 +54,7 @@ namespace SubZeroL {
         case (L.Y4, L.Y4)   => true
         case (L.Y4, L.Z2)   => true
         case (L.Y5, L.Y5)   => true
+        case (L.Y5, L.Z2)   => true
 
         case (L.Z1, L.Z1)   => true
         case (L.Z2, L.Z2)   => true
@@ -72,7 +73,7 @@ namespace SubZeroL {
 
         case (L.X1, L.X1)   => L.X1
         case (L.X1, L.X2)   => L.Y1
-        case (L.X1, L.X3)   => L.Z1
+        case (L.X1, L.X3)   => L.Y2
         case (L.X1, L.Y1)   => L.Y1
         case (L.X1, L.Y2)   => L.Y2
         case (L.X1, L.Y3)   => L.Z1
@@ -81,7 +82,7 @@ namespace SubZeroL {
         case (L.X2, L.X2)   => L.X2
         case (L.X2, L.X1)   => L.Y1
         case (L.X2, L.X3)   => L.Y3
-        case (L.X2, L.X4)   => L.Z2
+        case (L.X2, L.X4)   => L.Y4
         case (L.X2, L.Y1)   => L.Y1
         case (L.X2, L.Y2)   => L.Z1
         case (L.X2, L.Y3)   => L.Y3
@@ -91,7 +92,7 @@ namespace SubZeroL {
         case (L.X2, L.Z2)   => L.Z2
 
         case (L.X3, L.X3)   => L.X3
-        case (L.X3, L.X1)   => L.Z1
+        case (L.X3, L.X1)   => L.Y2
         case (L.X3, L.X2)   => L.Y3
         case (L.X3, L.X4)   => L.Y5
         case (L.X3, L.Y1)   => L.Z1
@@ -103,15 +104,31 @@ namespace SubZeroL {
         case (L.X3, L.Z2)   => L.Z2
 
         case (L.X4, L.X4)   => L.X4
-        case (L.X4, L.X2)   => L.Z2
+        case (L.X4, L.X2)   => L.Y4
         case (L.X4, L.X3)   => L.Y5
         case (L.X4, L.Y3)   => L.Z2
         case (L.X4, L.Y4)   => L.Y4
         case (L.X4, L.Y5)   => L.Y5
         case (L.X4, L.Z2)   => L.Z2
 
+        case (L.Y1, L.Y1)   => L.Y1
+        case (L.Y1, L.X1)   => L.Y1
+        case (L.Y1, L.X2)   => L.Y1
+        case (L.Y1, L.X3)   => L.Z1
+        case (L.Y1, L.Y2)   => L.Z1
+        case (L.Y1, L.Y3)   => L.Z1
+
+        case (L.Y2, L.Y2)   => L.Y2
+        case (L.Y2, L.X1)   => L.Y2
+        case (L.Y2, L.X2)   => L.Z1
+        case (L.Y2, L.X3)   => L.Y2
+        case (L.Y2, L.Y1)   => L.Z1
+        case (L.Y2, L.Y3)   => L.Z1
+
+
+
         case (L.Z1, L.Z1)   => L.Z1
-        case (L.Z2, L.Z2)   => L.Z1
+        case (L.Z2, L.Z2)   => L.Z2
 
         case _              => L.Top
     }
