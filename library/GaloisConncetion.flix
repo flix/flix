@@ -11,3 +11,6 @@
 //        case Parity.Even => i % 2 == 0
 //        case Parity.Top => true
 //    }
+
+// TODO: There is a lot of fertile ground here.
+// Look at the paper on "A survey of product operators".
