@@ -137,17 +137,6 @@ namespace Constant {
     }
 
     /**
-      * Over-approximates `bitwise or`.
-      */
-    @strict @monotone @commutative @associative
-    def or(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
-        case (Constant.Bot, _)                      => Constant.Bot
-        case (_, Constant.Bot)                      => Constant.Bot
-        case (Constant.Cst(n1), Constant.Cst(n2))   => Constant.Cst(n1 | n2)
-        case _                                      => Constant.Top
-    }
-
-    /**
       * Over-approximates `bitwise and`.
       */
     @strict @monotone @commutative @associative
@@ -155,6 +144,17 @@ namespace Constant {
         case (Constant.Bot, _)                      => Constant.Bot
         case (_, Constant.Bot)                      => Constant.Bot
         case (Constant.Cst(n1), Constant.Cst(n2))   => Constant.Cst(n1 & n2)
+        case _                                      => Constant.Top
+    }
+
+    /**
+      * Over-approximates `bitwise or`.
+      */
+    @strict @monotone @commutative @associative
+    def or(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
+        case (Constant.Bot, _)                      => Constant.Bot
+        case (_, Constant.Bot)                      => Constant.Bot
+        case (Constant.Cst(n1), Constant.Cst(n2))   => Constant.Cst(n1 | n2)
         case _                                      => Constant.Top
     }
 

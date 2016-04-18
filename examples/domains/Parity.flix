@@ -154,20 +154,6 @@ namespace Parity {
     }
 
     /**
-     * Over-approximates `bitwise or`.
-     */
-    @strict @monotone @commutative @associative
-    def or(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
-      case (_, Parity.Bot)              => Parity.Bot
-      case (Parity.Bot, _)              => Parity.Bot
-      case (Parity.Odd, Parity.Odd)     => Parity.Odd
-      case (Parity.Even, Parity.Odd)    => Parity.Odd
-      case (Parity.Odd, Parity.Even)    => Parity.Odd
-      case (Parity.Even, Parity.Even)   => Parity.Even
-      case _                            => Parity.Top
-    }
-
-    /**
      * Over-approximates `bitwise and`.
      */
     @strict @monotone @commutative @associative
@@ -179,6 +165,20 @@ namespace Parity {
        case (Parity.Odd, Parity.Even)    => Parity.Even
        case (Parity.Even, Parity.Even)   => Parity.Even
        case _                            => Parity.Top
+    }
+
+    /**
+     * Over-approximates `bitwise or`.
+     */
+    @strict @monotone @commutative @associative
+    def or(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
+      case (_, Parity.Bot)              => Parity.Bot
+      case (Parity.Bot, _)              => Parity.Bot
+      case (Parity.Odd, Parity.Odd)     => Parity.Odd
+      case (Parity.Even, Parity.Odd)    => Parity.Odd
+      case (Parity.Odd, Parity.Even)    => Parity.Odd
+      case (Parity.Even, Parity.Even)   => Parity.Even
+      case _                            => Parity.Top
     }
 
     /**
