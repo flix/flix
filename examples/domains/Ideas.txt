@@ -1,6 +1,0 @@
-Examples of lattices:
-- https://en.wikipedia.org/wiki/File:Lattice_of_partitions_of_an_order_4_set.svg
-- https://en.wikipedia.org/wiki/File:Lattice_of_the_divisibility_of_60.svg
-- https://en.wikipedia.org/wiki/Greatest_common_divisor
-- https://en.wikipedia.org/wiki/Least_common_multiple
-- https://en.wikipedia.org/wiki/Tamari_lattice

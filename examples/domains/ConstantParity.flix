@@ -134,7 +134,8 @@ namespace ConstantParity {
     /**
      * Over-approximates integer `multiplication`.
      */
-    // NB: Annotations removed since Z3 reports unknown.
+    // NB: @monotone annotation removed since Z3 reports unknown.
+    @strict
     def times(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
         case (ConstParity.Bot, _)                       => ConstParity.Bot
         case (_, ConstParity.Bot)                       => ConstParity.Bot
@@ -165,7 +166,8 @@ namespace ConstantParity {
     /**
      * Over-approximates integer `modulus`.
      */
-    // NB: Annotations removed since Z3 reports unknown.
+    // NB: @monotone annotation removed since Z3 reports unknown.
+    @strict
     def modulo(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
         case (ConstParity.Bot, _)                       => ConstParity.Bot
         case (_, ConstParity.Bot)                       => ConstParity.Bot

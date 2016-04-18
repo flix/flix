@@ -181,7 +181,7 @@ namespace SubZeroL {
     def glb(e1: L, e2: L): L = match (e1, e2) with {
         case (L.Top, x)   => x
         case (x, L.Top)   => x
-
+        // TODO: Implement me.
         case _            => L.Bot
     }
 
