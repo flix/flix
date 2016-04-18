@@ -120,19 +120,4 @@ object SymVal {
     */
   case class Environment(m: Map[String, SymVal]) extends SymVal
 
-  /**
-    * A user error value.
-    */
-  case class UserError(loc: SourceLocation) extends SymVal
-
-  /**
-    * A match error value.
-    */
-  case class MatchError(loc: SourceLocation) extends SymVal
-
-  /**
-    * A switch error value.
-    */
-  case class SwitchError(loc: SourceLocation) extends SymVal
-
 }

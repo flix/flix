@@ -126,11 +126,7 @@ namespace Mod3 {
     def times(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
         case (_, Mod3.Bot)          => Mod3.Bot
         case (Mod3.Bot, _)          => Mod3.Bot
-        case (Mod3.Zer, _)          => Mod3.Zer
-        case (_, Mod3.Zer)          => Mod3.Zer
-        case (Mod3.One, x)          => x
-        case (x, Mod3.One)          => x
-        case (Mod3.Two, Mod3.Two)   => Mod3.One
+        // TODO: rest
         case _                      => Mod3.Top
     }
 
@@ -141,7 +137,6 @@ namespace Mod3 {
     def divide(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
         case (_, Mod3.Bot)          => Mod3.Bot
         case (Mod3.Bot, _)          => Mod3.Bot
-        case (_, Mod3.Zer)          => Mod3.Bot
         // TODO: rest
         case _                      => Mod3.Top
     }
@@ -158,6 +153,44 @@ namespace Mod3 {
     }
 
     // TODO: Rest
+
+    /**
+      * Over-approximates `equal`.
+      */
+    @strict @monotone @commutative
+    def eq(e1: Mod3, e2: Mod3): Belnap/Belnap = match (e1, e2) with {
+        case (Mod3.Bot, _)          => Belnap/Belnap.Bot
+        case (_, Mod3.Bot)          => Belnap/Belnap.Bot
+        case (Mod3.Zer, Mod3.One)   => Belnap/Belnap.False
+        case (Mod3.Zer, Mod3.Two)   => Belnap/Belnap.False
+        case (Mod3.One, Mod3.Zer)   => Belnap/Belnap.False
+        case (Mod3.One, Mod3.Two)   => Belnap/Belnap.False
+        case (Mod3.Two, Mod3.Zer)   => Belnap/Belnap.False
+        case (Mod3.Two, Mod3.One)   => Belnap/Belnap.False
+        case _                      => Belnap/Belnap.Top
+    }
+
+    /**
+      * Over-approximates `not equal`.
+      */
+    @strict @monotone @commutative
+    def neq(e1: Mod3, e2: Mod3): Belnap/Belnap = Belnap/not(eq(e1, e2))
+
+    /**
+      * Over-approximates `less than`.
+      */
+    @strict @monotone
+    def less(e1: Mod3, e2: Mod3): Belnap/Belnap = match (e1, e2) with {
+        case (Mod3.Bot, _)            => Belnap/Belnap.Bot
+        case (_, Mod3.Bot)            => Belnap/Belnap.Bot
+        case _                          => Belnap/Belnap.Top
+    }
+
+    /**
+      * Over-approximates `less than or equal`.
+      */
+    @strict @monotone
+    def lessEqual(e1: Mod3, e2: Mod3): Belnap/Belnap = Belnap/or(e1 `less` e2, e1 `eq` e2)
 
     let Mod3<> = (Mod3.Bot, Mod3.Top, leq, lub, glb)
 

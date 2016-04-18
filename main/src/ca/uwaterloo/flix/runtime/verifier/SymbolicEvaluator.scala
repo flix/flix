@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.runtime.verifier
 
+import ca.uwaterloo.flix.api.{MatchException, SwitchException, UserException}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.phase.GenSym
@@ -751,17 +752,17 @@ object SymbolicEvaluator {
       /**
         * User Error.
         */
-      case Expression.UserError(tpe, loc) => lift(pc0, SymVal.UserError(loc))
+      case Expression.UserError(tpe, loc) => throw new UserException("User Error.", loc)
 
       /**
         * Match Error.
         */
-      case Expression.MatchError(tpe, loc) => lift(pc0, SymVal.MatchError(loc))
+      case Expression.MatchError(tpe, loc) => throw new MatchException("Match Error.", loc)
 
       /**
         * Switch Error
         */
-      case Expression.SwitchError(tpe, loc) => lift(pc0, SymVal.SwitchError(loc))
+      case Expression.SwitchError(tpe, loc) => throw new SwitchException("Switch Error", loc)
 
       // NB: Not yet fully implemented in the backend.
       case e: Expression.FSet => throw InternalCompilerException(s"Unsupported expression: '$e'.")

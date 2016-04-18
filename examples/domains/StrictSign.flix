@@ -1,5 +1,5 @@
 /**
- * An alternative implementation of the sign abstract domain.
+ * An implementation of the strict sign domain.
  */
 namespace StrictSign {
 

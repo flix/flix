@@ -41,19 +41,19 @@ class TestVerifier extends FunSuite {
       .get
   }
 
-  //  ignore("Interval.flix") {
-  //    new Flix()
-  //      .addPath("./examples/domains/Belnap.flix")
-  //      .addPath("./examples/domains/Interval.flix")
-  //      .setOptions(Options.Default.copy(verify = Verify.Enabled))
-  //      .solve()
-  //      .get
-  //  }
-  //
   test("Parity.flix") {
     new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Parity.flix")
+      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .solve()
+      .get
+  }
+
+  test("Mod3.flix") {
+    new Flix()
+      .addPath("./examples/domains/Belnap.flix")
+      .addPath("./examples/domains/Mod3.flix")
       .setOptions(Options.Default.copy(verify = Verify.Enabled))
       .solve()
       .get

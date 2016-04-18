@@ -511,9 +511,6 @@ object Verifier {
       case SymVal.Tuple(elms) => "(" + elms.map(visit).mkString(", ") + ")"
       case SymVal.Closure(_, _, _) => "<<closure>>"
       case SymVal.Environment(_) => "<<environment>>"
-      case SymVal.UserError(loc) => "UserError(" + loc.format + ")"
-      case SymVal.MatchError(loc) => "MatchError(" + loc.format + ")"
-      case SymVal.SwitchError(loc) => "SwitchError(" + loc.format + ")"
     }
 
     env.foldLeft(SortedMap.empty[String, String]) {
