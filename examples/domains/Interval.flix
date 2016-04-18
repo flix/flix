@@ -14,6 +14,8 @@ namespace Interval {
         case Range(BigInt, BigInt)
     }
 
+    // TODO: Consider reduced product with Parity and Sign.
+
     /**
      * Returns the normalized element corresponding to the given interval `i`.
      *
