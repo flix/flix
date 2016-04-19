@@ -122,6 +122,8 @@ namespace PrefixSuffix {
     @strict @monotone @commutative
     def neq(e1: PS, e2: PS): Belnap/Belnap = Belnap/not(eq(e1, e2))
 
+    // TODO: Less equal?
+
     let PS<> = (PS.Bot, PS.Top, leq, lub, glb)
 
 }
