@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime.verifier
 
-import com.microsoft.z3.{BoolExpr, Context, Status, Z3Exception}
+import com.microsoft.z3.{BoolExpr, Context, Solver, Status}
 
 object SmtSolver {
 
@@ -8,19 +8,20 @@ object SmtSolver {
     * Checks the satisfiability of the given boolean formula `f`.
     */
   def checkSat(f: BoolExpr, ctx: Context): SmtResult = {
+    // use try-finally block to manage resources.
+    var solver: Solver = null
     try {
-      val solver = ctx.mkSolver()
+      solver = ctx.mkSolver()
       solver.add(f)
       solver.check() match {
         case Status.SATISFIABLE => SmtResult.Satisfiable(solver.getModel)
         case Status.UNSATISFIABLE => SmtResult.Unsatisfiable
         case Status.UNKNOWN => SmtResult.Unknown
       }
-    } catch {
-      case e: Z3Exception =>
-        Console.println("Z3 Exception on Query:")
-        Console.println(f.toString)
-        throw e
+    } finally {
+      // release resources.
+      if (solver != null) solver.dispose()
+      f.dispose()
     }
   }
 
@@ -37,26 +38,36 @@ object SmtSolver {
       System.exit(1)
     }
 
-    try {
-      // try to preload the library.
-      if (isWindows)
-        System.loadLibrary("libz3")
-      else
-        System.loadLibrary("z3")
+    // Try to load the Z3 library.
+    loadLibrary()
 
-      val ctx = new Context()
-      val r = f(ctx)
-      ctx.dispose()
-      r
-    } catch {
-      case e: UnsatisfiedLinkError =>
-        Console.println(errorMessage)
-        Console.println()
-        Console.println("> Unable to load the library. Stack Trace reproduced below: ")
-        e.printStackTrace()
-        throw e
+    // use try-finally block to manage resources.
+    var ctx: Context = null
+    try {
+      ctx = new Context()
+      f(ctx)
+    } finally {
+      // release resources.
+      if (ctx != null) ctx.dispose()
     }
   }
+
+  /**
+    * Attempts to load the Z3 native library.
+    */
+  private def loadLibrary(): Unit = try {
+    if (isWindows)
+      System.loadLibrary("libz3")
+    else
+      System.loadLibrary("z3")
+  } catch {
+    case e: UnsatisfiedLinkError =>
+      Console.println(errorMessage)
+      Console.println()
+      Console.println("> Unable to load the library. Stack Trace reproduced below: ")
+      throw e
+  }
+
 
   /**
     * Returns an error message explaining how to configure Microsoft Z3.
