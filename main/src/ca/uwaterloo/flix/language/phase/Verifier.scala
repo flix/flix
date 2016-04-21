@@ -467,7 +467,7 @@ object Verifier {
     * Optionally returns a verifier error if the given path constraint `pc` is satisfiable.
     */
   private def assertUnsatisfiable(p: Property, expr: SmtExpr, env0: Map[String, SymVal]): PathResult = {
-    SmtSolver.mkContext(ctx => {
+    SmtSolver.withContext(ctx => {
       val query = visitBoolExpr(expr, ctx)
       SmtSolver.checkSat(query, ctx) match {
         case SmtResult.Unsatisfiable =>
@@ -776,7 +776,7 @@ object Verifier {
     if (xs.isEmpty) 0 else xs.sum / xs.length
 
   def main(args: Array[String]): Unit = {
-    SmtSolver.mkContext {
+    SmtSolver.withContext {
       case ctx =>
         //
         //        EnumSort rSort = ctx.mkEnumSort(ctx.mkSymbol("res"), ctx.mkSymbol("res1"));

@@ -5,6 +5,13 @@ import com.microsoft.z3.{BoolExpr, Context, Solver, Status}
 object SmtSolver {
 
   /**
+    * A reference to the shared, non-thread safe Z3 context.
+    *
+    * Initialized by the first call to `withContext`.
+    */
+  var ctx: Context = null
+
+  /**
     * Checks the satisfiability of the given boolean formula `f`.
     */
   def checkSat(f: BoolExpr, ctx: Context): SmtResult = {
@@ -27,28 +34,26 @@ object SmtSolver {
   /**
     * Applies the given function `f` to an SMT context that is automatically closed.
     */
-  def mkContext[A](f: Context => A): A = {
-    // check that the path property is set.
-    val prop = System.getProperty("java.library.path")
-    if (prop == null) {
-      Console.println(errorMessage)
-      Console.println()
-      Console.println("> java.library.path not set.")
-      System.exit(1)
-    }
+  def withContext[A](f: Context => A): A = {
+    // Ensure that the context has been initialized.
+    if (ctx == null) {
+      // Check that the path property is set.
+      val prop = System.getProperty("java.library.path")
+      if (prop == null) {
+        Console.println(errorMessage)
+        Console.println()
+        Console.println("> java.library.path not set.")
+        System.exit(1)
+      }
 
-    // Try to load the Z3 library.
-    loadLibrary()
+      // Try to load the Z3 library.
+      loadLibrary()
 
-    // use try-finally block to manage resources.
-    var ctx: Context = null
-    try {
+      // Initialize the context.
       ctx = new Context()
-      f(ctx)
-    } finally {
-      // release resources.
-      if (ctx != null) ctx.dispose()
     }
+
+    f(ctx)
   }
 
   /**
