@@ -41,7 +41,7 @@ namespace Interval {
     /**
      * Returns the least upper bound of `e1` and `e2`.
      */
-    @commutative @associative
+    @commutative // @associative // TODO: associative kills the SMT solver.
     def lub(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
         case (Interval.Range(1ii, -1ii), x)                     => x
         case (x, Interval.Range(1ii, -1ii))                     => x
@@ -52,7 +52,7 @@ namespace Interval {
     /**
      * Returns the greatest lower bound of `e1` and `e2`.
      */
-    @commutative @associative
+    @commutative // @associative // TODO: associative kills the SMT solver.
     def glb(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
         case (Interval.Top, x)                                  => x
         case (x, Interval.Top)                                  => x
