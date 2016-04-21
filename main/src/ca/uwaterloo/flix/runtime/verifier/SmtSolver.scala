@@ -21,7 +21,6 @@ object SmtSolver {
     } finally {
       // release resources.
       if (solver != null) solver.dispose()
-      f.dispose()
     }
   }
 
