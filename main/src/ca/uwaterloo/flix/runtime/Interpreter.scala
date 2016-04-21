@@ -75,13 +75,14 @@ object Interpreter {
       }
       evalCall(root.constants(name), evalArgs, root, env.clone())
     case Expression.ApplyClosure(exp, args, tpe, loc) =>
+      val func = eval(exp, root, env)
       val evalArgs = new Array[AnyRef](args.length)
       var i = 0
       while (i < evalArgs.length) {
         evalArgs(i) = eval(args(i), root, env)
         i = i + 1
       }
-      evalCall(exp, evalArgs, root, env.clone())
+      evalCall(func, evalArgs, root, env.clone())
     case Expression.Unary(op, exp, _, _) => evalUnary(op, exp, root, env)
     case Expression.Binary(op, exp1, exp2, _, _) => op match {
       case o: ArithmeticOperator => evalArithmetic(o, exp1, exp2, root, env)
@@ -345,8 +346,8 @@ object Interpreter {
     case Term.Body.Exp(e, _, _) => eval(e, root, env)
   }
 
-  def evalCall(function: Expression, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef]): AnyRef =
-    eval(function, root, env) match {
+  def evalCall(function: AnyRef, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef]): AnyRef =
+    function match {
       case Value.Closure(ref, envVar, clEnv) =>
         val constant = root.constants(ref.name)
         val newEnv = mutable.Map.empty[String, AnyRef]
