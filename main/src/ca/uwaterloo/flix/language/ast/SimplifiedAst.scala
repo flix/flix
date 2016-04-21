@@ -336,13 +336,13 @@ object SimplifiedAst {
       *
       * @param lambda   the lambda associated with the closure.
       * @param envVar   the name of the closure environment variable.
-      * @param freeVars the cached set of free variables occurring within the lambda expression.
+      * @param freeVars the cached set of free variables and their indexes occurring within the lambda expression.
       * @param tpe      the type of the closure.
       * @param loc      the source location of the lambda.
       */
     case class MkClosure(lambda: SimplifiedAst.Expression.Lambda,
                          envVar: Name.Ident,
-                         freeVars: Set[Name.Ident],
+                         freeVars: Set[(Name.Ident, Int)],
                          tpe: Type.Lambda,
                          loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -357,13 +357,13 @@ object SimplifiedAst {
       *
       * @param ref      the reference to the lambda associated with the closure.
       * @param envVar   the name of the closure environment variable.
-      * @param freeVars the cached set of free variables occurring within the lambda expression.
+      * @param freeVars the cached set of free variables and their indexes occurring within the lambda expression.
       * @param tpe      the type of the closure.
       * @param loc      the source location of the lambda.
       */
     case class MkClosureRef(ref: SimplifiedAst.Expression.Ref,
                             envVar: Name.Ident,
-                            freeVars: Set[Name.Ident],
+                            freeVars: Set[(Name.Ident, Int)],
                             tpe: Type.Lambda,
                             loc: SourceLocation) extends SimplifiedAst.Expression
 

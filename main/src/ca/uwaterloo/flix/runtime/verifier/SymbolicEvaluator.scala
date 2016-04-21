@@ -127,7 +127,7 @@ object SymbolicEvaluator {
         // Build the closure environment where all the
         // free variables are bound to their current values.
         val env = freeVars.foldLeft(Map.empty[String, SymVal]) {
-          case (macc, freeVar) => macc + (freeVar.name -> env0(freeVar.name))
+          case (macc, freeVar) => macc + (freeVar._1.name -> env0(freeVar._1.name))
         }
         // Construct the closure.
         val clo = SymVal.Closure(ref, cloVar.name, SymVal.Environment(env))

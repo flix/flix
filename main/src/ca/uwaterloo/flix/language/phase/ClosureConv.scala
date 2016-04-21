@@ -73,7 +73,7 @@ object ClosureConv {
       // cache `freeVars`. The closure will actually be created at run time, where the closure environment will be
       // created with bindings for the variables, and then passed as an extra argument to the lambda. Thus, all free
       // variables have been eliminated, and in a later phase, we can lift the lambda to a top-level definition.
-      SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars.map(_._1), tpe, loc)
+      SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars.map(v => (v._1, -1)), tpe, loc)
 
     case SimplifiedAst.Expression.Hook(hook, tpe, loc) => exp
     case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>

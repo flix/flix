@@ -62,7 +62,7 @@ object Interpreter {
       // Create the closure environment, by binding values from the current environment to the free variables.
       val closureEnv = mutable.Map.empty[String, AnyRef]
       for (freeVar <- freeVars) {
-        val name = freeVar.name
+        val name = freeVar._1.name
         closureEnv(name) = env(name)
       }
       Value.Closure(ref, envVar, closureEnv)
