@@ -70,7 +70,7 @@ object CreateExecutableAst {
         case SimplifiedAst.FormalArg(ident, tpe) => ExecutableAst.FormalArg(ident, tpe)
       }.toArray
 
-      ExecutableAst.Definition.Constant(sast.name, formals, Expression.toExecutable(sast.exp), sast.tpe, sast.loc)
+      ExecutableAst.Definition.Constant(sast.name, formals, Expression.toExecutable(sast.exp), sast.isSynthetic, sast.tpe, sast.loc)
     }
 
     def toExecutable(sast: SimplifiedAst.Definition.Lattice, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Definition.Lattice = sast match {
@@ -90,8 +90,8 @@ object CreateExecutableAst {
         val botSym = genSym.freshDefn(List("bot"))
         val topSym = genSym.freshDefn(List("top"))
 
-        val botConst = ExecutableAst.Definition.Constant(botSym, formals = Array(), t(bot), bot.tpe, bot.loc)
-        val topConst = ExecutableAst.Definition.Constant(topSym, formals = Array(), t(top), top.tpe, top.loc)
+        val botConst = ExecutableAst.Definition.Constant(botSym, formals = Array(), t(bot), isSynthetic = true, bot.tpe, bot.loc)
+        val topConst = ExecutableAst.Definition.Constant(topSym, formals = Array(), t(top), isSynthetic = true, top.tpe, top.loc)
 
         // Update the map of definitions
         m ++= Map(botSym -> botConst, topSym -> topConst)
@@ -106,8 +106,6 @@ object CreateExecutableAst {
 
     def toExecutable(sast: SimplifiedAst.Definition.Index): ExecutableAst.Definition.Index =
       ExecutableAst.Definition.Index(sast.sym, sast.indexes, sast.loc)
-
-    // TODO: Compile SimplifiedAst.Definition.Function?
   }
 
   object Table {

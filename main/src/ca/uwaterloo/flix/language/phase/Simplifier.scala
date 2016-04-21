@@ -56,7 +56,7 @@ object Simplifier {
       val formals = tast.formals.map {
         case TypedAst.FormalArg(ident, tpe) => SimplifiedAst.FormalArg(ident, tpe)
       }
-      SimplifiedAst.Definition.Constant(tast.ann, tast.name, formals, Expression.simplify(tast.exp), tast.tpe, tast.loc)
+      SimplifiedAst.Definition.Constant(tast.ann, tast.name, formals, Expression.simplify(tast.exp), isSynthetic = false, tast.tpe, tast.loc)
     }
 
     def simplify(tast: TypedAst.Definition.Index)(implicit genSym: GenSym): SimplifiedAst.Definition.Index =

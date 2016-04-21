@@ -103,7 +103,7 @@ object LambdaLift {
         }
 
         // Create a new top-level definition, using the fresh name and lifted body.
-        val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), name, args2, exp, tpe2, loc)
+        val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), name, args2, exp, isSynthetic = true, tpe2, loc)
 
         // Update the map that holds newly-generated definitions
         m += (name -> defn)

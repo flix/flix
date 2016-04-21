@@ -91,6 +91,7 @@ object Codegen {
    */
   private def compileFunction(context: Context, visitor: ClassVisitor)(function: Definition.Constant): Unit = {
     // TODO: We might need to compile wrapper functions that unbox arguments and box return values
+    // TODO: Use ACC_SYNTHETIC for synthetic (compiler-generated functions). Right now it's easier to debug non-synthetic methods.
 
     val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, function.name.suffix, descriptor(function.tpe), null, null)
     mv.visitCode()

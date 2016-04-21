@@ -23,6 +23,7 @@ object SimplifiedAst {
                         name: Symbol.Resolved,
                         formals: List[SimplifiedAst.FormalArg],
                         exp: SimplifiedAst.Expression,
+                        isSynthetic: Boolean,
                         tpe: Type,
                         loc: SourceLocation) extends SimplifiedAst.Definition
 
@@ -37,21 +38,6 @@ object SimplifiedAst {
     case class Index(sym: Symbol.TableSym,
                      indexes: Seq[Seq[Name.Ident]],
                      loc: SourceLocation) extends SimplifiedAst.Definition
-
-    /**
-      * A typed AST node that represents the definition of a function.
-      *
-      * @param name the resolved name of the function.
-      * @param args the arguments of the function, for debugging purposes.
-      * @param body the expression body of the function.
-      * @param tpe  the (lambda) type of the function.
-      * @param loc  the source location of the function definition.
-      */
-    case class Function(name: Symbol.Resolved,
-                        args: List[String],
-                        body: SimplifiedAst.Expression,
-                        tpe: Type.Lambda,
-                        loc: SourceLocation) extends SimplifiedAst.Definition
 
   }
 

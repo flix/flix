@@ -27,6 +27,7 @@ object ExecutableAst {
     case class Constant(name: Symbol.Resolved,
                         formals: Array[ExecutableAst.FormalArg],
                         exp: ExecutableAst.Expression,
+                        isSynthetic: Boolean,
                         tpe: Type,
                         loc: SourceLocation) extends ExecutableAst.Definition {
       var method: Method = null

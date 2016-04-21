@@ -141,7 +141,7 @@ object VarNumbering {
     val numbered = visit(m, decl.exp)
 
     // Update and return the top-level definition
-    SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), decl.name, decl.formals, numbered, decl.tpe, decl.loc)
+    SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), decl.name, decl.formals, numbered, decl.isSynthetic, decl.tpe, decl.loc)
   }
 
 }
