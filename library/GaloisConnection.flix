@@ -66,9 +66,40 @@ impl JoinLattice[SymSet[Int]] {
 law GaloisConnection[A: Lattice, B: Lattice](α: A -> B, γ: (B, A) -> Bool): Prop =
  ∀(x: A, y: B). (α(x) ⊑ y) ↔ γ(y, x)
 
+// Let us try with this data type:
+enum InfSet {
+    case InfSet(Int -> Bool)
 
+    // TODO: We could even consider adding a finite set here.
+    // For materialized sets.
+}
 
+def union(xs: InfSet, ys: InfSet): InfSet =
+    let InfSet.InfSet(f) = xs in
+    let InfSet.InfSet(g) = ys in
+        InfSet.InfSet(x -> f(x) || g(x))
 
+def intersection(xs: InfSet, ys: InfSet): InfSet =
+    let InfSet.InfSet(f) = xs in
+    let InfSet.InfSet(g) = ys in
+        InfSet.InfSet(x -> f(x) && g(x))
+
+def difference(xs: InfSet, ys: InfSet): InfSet =
+    let InfSet.InfSet(f) = xs in
+    let InfSet.InfSet(g) = ys in
+        InfSet.InfSet(x -> f(x) && !g(x))
+
+// Uh oh... Stuck again ....
+def subset(xs: InfSet, ys: InfSet): Bool =
+    let InfSet.InfSet(f) = xs in
+    let InfSet.InfSet(g) = ys in
+         ∀(x: Int). f(x) → g(x)
+
+// TODO: Another issue is that if we do this, then we have to express addition on sets.
+// E.g.
+def plus(x: InfSet, y: InfSet): InfSet = ???
+
+// That requires some heavy lifting...
 
 def alpha(e: Int): Sign = switch {
     case (e == 0)   => Sign.Zer
