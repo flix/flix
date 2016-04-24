@@ -35,9 +35,7 @@ def gamma(e: Sign): Constant = match e with {
 law ConstSignGalois[Constant: Lattice, Sign: Lattice]: Prop =
     GaloisConnection(alpha, gamma)
 
-/**
- * Galois connection between Int and Sign.
- */
+
 // The challenge is that we can't define an infinite set.
 // This means we have to define the concrete lattice
 // as some kind of symbolic set/formulae/characteristic function.
@@ -93,7 +91,7 @@ def difference(xs: InfSet, ys: InfSet): InfSet =
 def subset(xs: InfSet, ys: InfSet): Bool =
     let InfSet.InfSet(f) = xs in
     let InfSet.InfSet(g) = ys in
-         ∀(x: Int). f(x) → g(x)
+         ∀(x: Int). f(x) → g(x) // unless we allow this.
 
 // TODO: Another issue is that if we do this, then we have to express addition on sets.
 // E.g.
@@ -101,15 +99,31 @@ def plus(x: InfSet, y: InfSet): InfSet = ???
 
 // That requires some heavy lifting...
 
-def alpha(e: Int): Sign = switch {
-    case (e == 0)   => Sign.Zer
-    case (e <= 0)   => Sign.Neg
-    case (e >= 0)   => Sign.Pos
+/**
+ * Galois connection between InfSet[Int] and Sign.
+ */
+def alpha(e: InfSet[Int]): Sign = ??? // TODO: This now requires a fold.
+
+def gamma(e: Parity): InfSet[Int] = match e with {
+    case Parity.Bot     => InfSet.InfSet(x -> false)
+    case Parity.Odd     => InfSet.InfSet(x -> x % 2 != 0)
+    case Parity.Even    => InfSet.InfSet(x -> x % 2 == 0)
+    case Parity.Top     => InfSet.InfSet(x -> true)
 }
 
-def gamma(e: Parity): Int -> Bool = match e with {
-    case Parity.Bot => false
-    case Parity.Odd => i % 2 != 0
-    case Parity.Even => i % 2 == 0
-    case Parity.Top => true
-}
+// Can we perhaps change the definition so we don't need a concrete lattice?
+// or some how avoid the concretization function for the proofs?
+
+// We need to show that
+// If α(x) ⊑ x' and  α(y) ⊑ y' then α(x + y) ⊑ x' aplus y'
+// i.e. if x' and y' are safe approximations of x and y, then x' aplus y' is safe.
+// Something like:
+law Safe2[A: Lattice, B: Lattice](α: A -> B): Prop =
+    ∀(x: A, y: B). ((α(x1) ⊑ x2) ∧ (α(y1) ⊑ y2)) → α(x1 + y1) ⊑ (x2 `aplus` y2)
+
+// Trouble here is that x1 and y1 are sets...
+
+// To sum up so far, the definition of galois connection seems to work nicely for e.g. sign and constant.
+// The trouble occurs when we have to consider the concrete semantics, which unfortunately is the most interesting
+// case.
+
