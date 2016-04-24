@@ -38,6 +38,35 @@ law ConstSignGalois[Constant: Lattice, Sign: Lattice]: Prop =
 /**
  * Galois connection between Int and Sign.
  */
+// The challenge is that we can't define an infinite set.
+// This means we have to define the concrete lattice
+// as some kind of symbolic set/formulae/characteristic function.
+
+// Let us try with functions.
+// Let f: L = Int -> Bool (i.e. if f(42) is true then 42 is in the set).
+
+impl PartialOrder[Int -> Bool] {
+    def leq(x: Int -> Bool, y: Int -> Bool): Bool // ups, this does not work...
+}
+
+// Let us try with a notion of symbolic set.
+impl PartialOrder[SymSet[Int]] {
+    def leq(x: SymSet[Int], y: SymSet[Int]): Bool = x `subsetOf` y
+}
+
+impl JoinLattice[SymSet[Int]] {
+    def lub(x: SymSet[Int], y: SymSet[Int]): SymSet[Int] = x `union` y
+}
+
+// An alternative is to change the definition of gamma:
+// Unfortunately, we have to do something quiet heavy weight
+// and fuse leq with gamma, to get:
+// γ': (B, A) -> Bool iff x ⊑ γ(y)
+// This is not very elegant, but it should work.
+law GaloisConnection[A: Lattice, B: Lattice](α: A -> B, γ: (B, A) -> Bool): Prop =
+ ∀(x: A, y: B). (α(x) ⊑ y) ↔ γ(y, x)
+
+
 
 
 
