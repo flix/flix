@@ -6141,6 +6141,31 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(4))(result04)
   }
 
+  ignore("Match.Literal.13") {
+    val input =
+      """fn f(x: Int, y: Int): Int = match x with {
+        |  case 0 => y
+        |  case _ =>  match y with {
+        |    case 0 => x
+        |    case _ => 0
+        |  }
+        |}
+        |fn g01: Int = f(0, 0)
+        |fn g02: Int = f(1, 0)
+        |fn g03: Int = f(0, 2)
+        |fn g04: Int = f(3, 4)
+      """.stripMargin
+    val model = getModel(input)
+    val result01 = model.getConstant("g01")
+    val result02 = model.getConstant("g02")
+    val result03 = model.getConstant("g03")
+    val result04 = model.getConstant("g04")
+    assertResult(Value.mkInt32(0))(result01)
+    assertResult(Value.mkInt32(1))(result02)
+    assertResult(Value.mkInt32(2))(result03)
+    assertResult(Value.mkInt32(0))(result04)
+  }
+
   test("Match.Tag.01") {
     val input =
       """enum NameAndAge { case T(Str,Int) }
