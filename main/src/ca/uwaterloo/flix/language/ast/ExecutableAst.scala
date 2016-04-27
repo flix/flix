@@ -280,19 +280,6 @@ object ExecutableAst {
                    loc: SourceLocation) extends ExecutableAst.Expression
 
     /**
-      * A typed AST node representing a closure variable expression that must be looked up from the closure environment.
-      *
-      * @param env  the name of the closure environment variable.
-      * @param name the name of the closure variable.
-      * @param tpe  the type of the variable.
-      * @param loc  the source location of the variable.
-      */
-    case class ClosureVar(env: Name.Ident,
-                          name: Name.Ident,
-                          tpe: Type,
-                          loc: SourceLocation) extends ExecutableAst.Expression
-
-    /**
       * A typed AST node representing a reference to a top-level definition.
       *
       * @param name the name of the reference.
@@ -306,18 +293,16 @@ object ExecutableAst {
     case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     /**
-      * A typed AST node representing the creation of a closure. At compile time, a unique `envVar` is created and
-      * `freeVars` is computed. The free variables are bound at run time.
+      * A typed AST node representing the creation of a closure. Free variables are computed at compile time and bound
+      * at run time.
       *
       * @param ref      the reference to the lambda associated with the closure.
-      * @param envVar   the name of the closure environment variable.
-      * @param freeVars the cached set of free variables and their indexes occurring within the lambda expression.
+      * @param freeVars the cached set of triples (free var, type, index) occurring within the lambda expression.
       * @param tpe      the type of the closure.
       * @param loc      the source location of the lambda.
       */
     case class MkClosureRef(ref: ExecutableAst.Expression.Ref,
-                            envVar: Name.Ident,
-                            freeVars: Set[(Name.Ident, Int)],
+                            freeVars: Array[(Name.Ident, Type, Int)],
                             tpe: Type.Lambda,
                             loc: SourceLocation) extends ExecutableAst.Expression
 

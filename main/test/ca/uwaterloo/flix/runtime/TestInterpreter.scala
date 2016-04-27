@@ -6141,7 +6141,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(4))(result04)
   }
 
-  ignore("Match.Literal.13") {
+  test("Match.Literal.13") {
     val input =
       """fn f(x: Int, y: Int): Int = match x with {
         |  case 0 => y

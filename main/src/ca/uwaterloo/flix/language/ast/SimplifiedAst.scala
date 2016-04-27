@@ -266,19 +266,6 @@ object SimplifiedAst {
     }
 
     /**
-      * A typed AST node representing a closure variable expression that must be looked up from the closure environment.
-      *
-      * @param env  the name of the closure environment variable.
-      * @param name the name of the closure variable.
-      * @param tpe  the type of the variable.
-      * @param loc  the source location of the variable.
-      */
-    case class ClosureVar(env: Name.Ident,
-                          name: Name.Ident,
-                          tpe: Type,
-                          loc: SourceLocation) extends SimplifiedAst.Expression
-
-    /**
       * A typed AST node representing a reference to a top-level definition.
       *
       * @param name the name of the reference.
@@ -316,35 +303,28 @@ object SimplifiedAst {
       * MkClosure is replaced with MkClosureRef.
       *
       * @param lambda   the lambda associated with the closure.
-      * @param envVar   the name of the closure environment variable.
-      * @param freeVars the cached set of free variables and their indexes occurring within the lambda expression.
+      * @param freeVars the cached set of triples (free var, type, index) occurring within the lambda expression.
       * @param tpe      the type of the closure.
       * @param loc      the source location of the lambda.
       */
     case class MkClosure(lambda: SimplifiedAst.Expression.Lambda,
-                         envVar: Name.Ident,
-                         freeVars: Set[(Name.Ident, Int)],
+                         freeVars: List[(Name.Ident, Type, Int)],
                          tpe: Type.Lambda,
                          loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
       * A typed AST node representing the creation of a closure, with the lambda lifted and replaced by a ref.
       *
-      * At compile time, a unique `envVar` is created and `freeVars` is computed.
-      * The free variables are bound at run time.
-      *
-      * MkClosureRef nodes may be created during closure conversion, but most of them are created during lambda lifting,
-      * to replace MkClosure nodes.
+      * Free variables are bound at run time. MkClosureRef nodes may be created during closure conversion, but most of
+      * them are created during lambda lifting, to replace MkClosure nodes.
       *
       * @param ref      the reference to the lambda associated with the closure.
-      * @param envVar   the name of the closure environment variable.
-      * @param freeVars the cached set of free variables and their indexes occurring within the lambda expression.
+      * @param freeVars the cached set of triples (free var, type, index) occurring within the lambda expression.
       * @param tpe      the type of the closure.
       * @param loc      the source location of the lambda.
       */
     case class MkClosureRef(ref: SimplifiedAst.Expression.Ref,
-                            envVar: Name.Ident,
-                            freeVars: Set[(Name.Ident, Int)],
+                            freeVars: List[(Name.Ident, Type, Int)],
                             tpe: Type.Lambda,
                             loc: SourceLocation) extends SimplifiedAst.Expression
 

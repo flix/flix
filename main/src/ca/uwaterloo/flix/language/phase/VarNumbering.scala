@@ -76,15 +76,14 @@ object VarNumbering {
         // A variable use, so lookup the variable offset and update the AST node.
         SimplifiedAst.Expression.Var(ident, m.get(ident.name), tpe, loc)
 
-      case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) => e
       case SimplifiedAst.Expression.Ref(name, tpe, loc) => e
       case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
         throw InternalCompilerException("Lambdas should have been converted to closures and lifted.")
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
-      case mkClosure @ SimplifiedAst.Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc) =>
-        var numberedFreeVars = freeVars.map { case (v, id) => (v, m.get(v.name))}
+      case mkClosure @ SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
+        val numberedFreeVars = freeVars.map { case (v, t, id) => (v, t, m.get(v.name))}
         mkClosure.copy(freeVars = numberedFreeVars)
-      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
+      case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
         throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
       case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
         SimplifiedAst.Expression.ApplyRef(name, args.map(visit(m, _)), tpe, loc)

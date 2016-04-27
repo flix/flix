@@ -164,17 +164,15 @@ object CreateExecutableAst {
         ExecutableAst.Expression.StoreInt32(toExecutable(e), offset, toExecutable(v))
       case SimplifiedAst.Expression.Var(ident, offset, tpe, loc) =>
         ExecutableAst.Expression.Var(ident, offset, tpe, loc)
-      case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) =>
-        ExecutableAst.Expression.ClosureVar(env, name, tpe, loc)
       case SimplifiedAst.Expression.Ref(name, tpe, loc) => ExecutableAst.Expression.Ref(name, tpe, loc)
       case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
         throw InternalCompilerException("Lambdas should have been converted to closures and lifted.")
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => ExecutableAst.Expression.Hook(hook, tpe, loc)
-      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
+      case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
         throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
-      case SimplifiedAst.Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc) =>
+      case SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
         val e = toExecutable(ref)
-        ExecutableAst.Expression.MkClosureRef(e.asInstanceOf[ExecutableAst.Expression.Ref], envVar, freeVars, tpe, loc)
+        ExecutableAst.Expression.MkClosureRef(e.asInstanceOf[ExecutableAst.Expression.Ref], freeVars.toArray, tpe, loc)
       case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
         val argsArray = args.map(toExecutable).toArray
         ExecutableAst.Expression.ApplyRef(name, argsArray, tpe, loc)

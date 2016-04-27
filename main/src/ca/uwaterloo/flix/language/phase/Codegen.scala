@@ -171,8 +171,6 @@ object Codegen {
       case _ => ???
     }
 
-    case Expression.ClosureVar(env, name, _, _) => ???
-
     case Expression.Ref(name, _, _) =>
       // Reference to a top-level definition that isn't used in a MkClosureRef or ApplyRef, so it's a 0-arg function.
       val targetTpe = context.declarations(name)
@@ -180,7 +178,7 @@ object Codegen {
 
     case Expression.Hook(hook, _, _) => ???
 
-    case Expression.MkClosureRef(ref, envVar, freeVars, _, _) =>
+    case Expression.MkClosureRef(ref, freeVars, _, _) =>
       // We create a closure the same way Java 8 does. We use InvokeDynamic and the LambdaMetafactory. The idea is that
       // LambdaMetafactory creates a CallSite (linkage), and then the CallSite target is invoked (capture) to create a
       // function object. Later, at ApplyRef, the function object is called (invocation).
