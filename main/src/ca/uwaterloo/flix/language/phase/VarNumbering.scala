@@ -81,7 +81,7 @@ object VarNumbering {
         throw InternalCompilerException("Lambdas should have been converted to closures and lifted.")
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
       case mkClosure @ SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
-        val numberedFreeVars = freeVars.map { case (v, t, id) => (v, t, m.get(v.name))}
+        val numberedFreeVars = freeVars.map { case (v, id, t) => (v, m.get(v.name), t)}
         mkClosure.copy(freeVars = numberedFreeVars)
       case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
         throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")

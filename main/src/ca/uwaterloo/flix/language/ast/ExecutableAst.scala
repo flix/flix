@@ -297,12 +297,12 @@ object ExecutableAst {
       * at run time.
       *
       * @param ref      the reference to the lambda associated with the closure.
-      * @param freeVars the cached set of triples (free var, type, index) occurring within the lambda expression.
+      * @param freeVars the cached set of triples (free var, index, type) occurring within the lambda expression.
       * @param tpe      the type of the closure.
       * @param loc      the source location of the lambda.
       */
     case class MkClosureRef(ref: ExecutableAst.Expression.Ref,
-                            freeVars: Array[(Name.Ident, Type, Int)],
+                            freeVars: Array[(Name.Ident, Int, Type)],
                             tpe: Type.Lambda,
                             loc: SourceLocation) extends ExecutableAst.Expression
 
