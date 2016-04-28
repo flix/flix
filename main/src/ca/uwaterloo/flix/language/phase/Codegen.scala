@@ -108,7 +108,8 @@ object Codegen {
    */
   private def compileFunction(context: Context, visitor: ClassVisitor)(function: Definition.Constant): Unit = {
     // TODO: We might need to compile wrapper/bridge functions that unbox arguments and box return values
-    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC + ACC_SYNTHETIC, function.name.suffix, descriptor(function.tpe), null, null)
+    val flags = if (function.isSynthetic) ACC_PUBLIC + ACC_STATIC + ACC_SYNTHETIC else ACC_PUBLIC + ACC_STATIC
+    val mv = visitor.visitMethod(flags, function.name.suffix, descriptor(function.tpe), null, null)
     mv.visitCode()
 
     compileExpression(context, mv)(function.exp)
