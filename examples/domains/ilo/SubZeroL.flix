@@ -219,6 +219,7 @@ namespace SubZeroL {
         case (L.Y2, L.X1)   => L.X1
         case (L.Y2, L.X3)   => L.X3
         case (L.Y2, L.Y1)   => L.X1
+        case (L.Y2, L.Y3)   => L.X3
         case (L.Y2, L.Y5)   => L.X3
         case (L.Y2, L.Z1)   => L.Y2
         case (L.Y2, L.Z2)   => L.X3
@@ -229,7 +230,7 @@ namespace SubZeroL {
         case (L.Y3, L.Y1)   => L.X2
         case (L.Y3, L.Y2)   => L.X3
         case (L.Y3, L.Y4)   => L.X2
-        case (L.Y3, L.Y5)   => L.X4
+        case (L.Y3, L.Y5)   => L.X3
         case (L.Y3, L.Z1)   => L.Y3
         case (L.Y3, L.Z2)   => L.Y3
 
