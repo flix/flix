@@ -297,12 +297,12 @@ object ExecutableAst {
       * at run time.
       *
       * @param ref      the reference to the lambda associated with the closure.
-      * @param freeVars the cached set of triples (free var, index, type) occurring within the lambda expression.
+      * @param freeVars the cached set of free variables occurring within the lambda expression.
       * @param tpe      the type of the closure.
       * @param loc      the source location of the lambda.
       */
     case class MkClosureRef(ref: ExecutableAst.Expression.Ref,
-                            freeVars: Array[(Name.Ident, Int, Type)],
+                            freeVars: Array[FreeVar],
                             tpe: Type.Lambda,
                             loc: SourceLocation) extends ExecutableAst.Expression
 
@@ -648,6 +648,8 @@ object ExecutableAst {
   case class Attribute(ident: Name.Ident, tpe: Type) extends ExecutableAst
 
   case class FormalArg(ident: Name.Ident, tpe: Type) extends ExecutableAst
+
+  case class FreeVar(ident: Name.Ident, offset: Int, tpe: Type) extends ExecutableAst
 
   case class Property(law: Law, exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst
 

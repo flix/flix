@@ -172,7 +172,8 @@ object CreateExecutableAst {
         throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
       case SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
         val e = toExecutable(ref)
-        ExecutableAst.Expression.MkClosureRef(e.asInstanceOf[ExecutableAst.Expression.Ref], freeVars.toArray, tpe, loc)
+        val fvs = freeVars.map(CreateExecutableAst.toExecutable).toArray
+        ExecutableAst.Expression.MkClosureRef(e.asInstanceOf[ExecutableAst.Expression.Ref], fvs, tpe, loc)
       case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
         val argsArray = args.map(toExecutable).toArray
         ExecutableAst.Expression.ApplyRef(name, argsArray, tpe, loc)
@@ -290,6 +291,9 @@ object CreateExecutableAst {
 
   def toExecutable(sast: SimplifiedAst.FormalArg): ExecutableAst.FormalArg =
     ExecutableAst.FormalArg(sast.ident, sast.tpe)
+
+  def toExecutable(sast: SimplifiedAst.FreeVar): ExecutableAst.FreeVar =
+    ExecutableAst.FreeVar(sast.ident, sast.offset, sast.tpe)
 
   def toExecutable(sast: SimplifiedAst.Property): ExecutableAst.Property =
     ExecutableAst.Property(sast.law, Expression.toExecutable(sast.exp), sast.loc)

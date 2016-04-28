@@ -192,7 +192,7 @@ object Codegen {
       // instruction (i.e. the arguments to the lambda object constructor).
       // We construct Expression.Var nodes and compile them as expected.
       freeVars.foreach { f =>
-        val v = Expression.Var(f._1, f._2, f._3, loc)
+        val v = Expression.Var(f.ident, f.offset, f.tpe, loc)
         compileExpression(context, visitor)(v)
       }
 
@@ -202,7 +202,7 @@ object Codegen {
       // The type descriptor of the CallSite. Its arguments are the types of capture variables, and its return
       // type is the interface the lambda object implements.
       val itfName = context.interfaces(tpe)
-      val invokedType = s"(${freeVars.map(f => descriptor(f._3)).mkString})L${decorate(itfName)};"
+      val invokedType = s"(${freeVars.map(f => descriptor(f.tpe)).mkString})L${decorate(itfName)};"
 
       // The handle for the bootstrap method we pass to InvokeDynamic, which is
       // `java.lang.invoke.LambdaMetafactory.metafactory`.

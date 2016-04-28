@@ -53,7 +53,7 @@ object Interpreter {
       val bindings = new Array[AnyRef](freeVars.length)
       var i = 0
       while (i < bindings.length) {
-        bindings(i) = env(freeVars(i)._1.name)
+        bindings(i) = env(freeVars(i).ident.name)
         i = i + 1
       }
       Value.Closure(ref, bindings)

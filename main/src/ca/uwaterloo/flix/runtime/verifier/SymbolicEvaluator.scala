@@ -117,7 +117,7 @@ object SymbolicEvaluator {
       case Expression.MkClosureRef(ref, freeVars, _, _) =>
         // Save the values of the free variables in a list.
         // When the closure is called, these values will be provided at the beginning of the argument list.
-        val env = freeVars.toList.map(f => env0(f._1.name))
+        val env = freeVars.toList.map(f => env0(f.ident.name))
         // Construct the closure.
         val clo = SymVal.Closure(ref, env)
         lift(pc0, clo)

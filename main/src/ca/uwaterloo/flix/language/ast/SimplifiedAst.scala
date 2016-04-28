@@ -303,12 +303,12 @@ object SimplifiedAst {
       * MkClosure is replaced with MkClosureRef.
       *
       * @param lambda   the lambda associated with the closure.
-      * @param freeVars the cached set of triples (free var, index, type) occurring within the lambda expression.
+      * @param freeVars the cached set of free variables occurring within the lambda expression.
       * @param tpe      the type of the closure.
       * @param loc      the source location of the lambda.
       */
     case class MkClosure(lambda: SimplifiedAst.Expression.Lambda,
-                         freeVars: List[(Name.Ident, Int, Type)],
+                         freeVars: List[FreeVar],
                          tpe: Type.Lambda,
                          loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -319,12 +319,12 @@ object SimplifiedAst {
       * them are created during lambda lifting, to replace MkClosure nodes.
       *
       * @param ref      the reference to the lambda associated with the closure.
-      * @param freeVars the cached set of triples (free var, index, type) occurring within the lambda expression.
+      * @param freeVars the cached set of free variables occurring within the lambda expression.
       * @param tpe      the type of the closure.
       * @param loc      the source location of the lambda.
       */
     case class MkClosureRef(ref: SimplifiedAst.Expression.Ref,
-                            freeVars: List[(Name.Ident, Int, Type)],
+                            freeVars: List[FreeVar],
                             tpe: Type.Lambda,
                             loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -684,6 +684,8 @@ object SimplifiedAst {
   case class Attribute(ident: Name.Ident, tpe: Type) extends SimplifiedAst
 
   case class FormalArg(ident: Name.Ident, tpe: Type) extends SimplifiedAst
+
+  case class FreeVar(ident: Name.Ident, offset: Int, tpe: Type) extends SimplifiedAst
 
   case class Property(law: Law, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst
 

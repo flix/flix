@@ -69,7 +69,7 @@ object ClosureConv {
       // bound values are passed as arguments.
       // Note that MkClosure keeps the old lambda type.
       // In a later phase, we will lift the lambda to a top-level definition.
-      SimplifiedAst.Expression.MkClosure(lambda, freeVars.map(v => (v._1, -1, v._2)), tpe, loc)
+      SimplifiedAst.Expression.MkClosure(lambda, freeVars.map(v => SimplifiedAst.FreeVar(v._1, -1, v._2)), tpe, loc)
 
     case SimplifiedAst.Expression.Hook(hook, tpe, loc) => exp
     case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
