@@ -179,10 +179,101 @@ namespace SubZeroL {
      */
     @commutative @associative
     def glb(e1: L, e2: L): L = match (e1, e2) with {
-        case (L.Top, x)   => x
-        case (x, L.Top)   => x
-        // TODO: Implement me.
-        case _            => L.Bot
+        case (L.Top, x)     => x
+        case (x, L.Top)     => x
+
+        case (L.X1, L.X1)   => L.X1
+        case (L.X1, L.Y1)   => L.X1
+        case (L.X1, L.Y2)   => L.X1
+        case (L.X1, L.Z1)   => L.X1
+
+        case (L.X2, L.X2)   => L.X2
+        case (L.X2, L.Y1)   => L.X2
+        case (L.X2, L.Y3)   => L.X2
+        case (L.X2, L.Y4)   => L.X2
+        case (L.X2, L.Z1)   => L.X2
+        case (L.X2, L.Z2)   => L.X2
+
+        case (L.X3, L.X3)   => L.X3
+        case (L.X3, L.Y2)   => L.X3
+        case (L.X3, L.Y3)   => L.X3
+        case (L.X3, L.Y5)   => L.X3
+        case (L.X3, L.Z1)   => L.X3
+        case (L.X3, L.Z2)   => L.X3
+
+        case (L.X4, L.X4)   => L.X4
+        case (L.X4, L.Y4)   => L.X4
+        case (L.X4, L.Y5)   => L.X4
+        case (L.X4, L.Z2)   => L.X4
+
+        case (L.Y1, L.Y1)   => L.Y1
+        case (L.Y1, L.X1)   => L.X1
+        case (L.Y1, L.X2)   => L.X2
+        case (L.Y1, L.Y2)   => L.X1
+        case (L.Y1, L.Y3)   => L.X2
+        case (L.Y1, L.Y4)   => L.X2
+        case (L.Y1, L.Z1)   => L.Y1
+        case (L.Y1, L.Z2)   => L.X2
+
+        case (L.Y2, L.Y2)   => L.Y2
+        case (L.Y2, L.X1)   => L.X1
+        case (L.Y2, L.X3)   => L.X3
+        case (L.Y2, L.Y1)   => L.X1
+        case (L.Y2, L.Y5)   => L.X3
+        case (L.Y2, L.Z1)   => L.Y2
+        case (L.Y2, L.Z2)   => L.X3
+
+        case (L.Y3, L.Y3)   => L.Y3
+        case (L.Y3, L.X2)   => L.X2
+        case (L.Y3, L.X3)   => L.X3
+        case (L.Y3, L.Y1)   => L.X2
+        case (L.Y3, L.Y2)   => L.X3
+        case (L.Y3, L.Y4)   => L.X2
+        case (L.Y3, L.Y5)   => L.X4
+        case (L.Y3, L.Z1)   => L.Y3
+        case (L.Y3, L.Z2)   => L.Y3
+
+        case (L.Y4, L.Y4)   => L.Y4
+        case (L.Y4, L.X2)   => L.X2
+        case (L.Y4, L.X4)   => L.X4
+        case (L.Y4, L.Y1)   => L.X2
+        case (L.Y4, L.Y3)   => L.X2
+        case (L.Y4, L.Y5)   => L.X4
+        case (L.Y4, L.Z1)   => L.X2
+        case (L.Y4, L.Z2)   => L.Y4
+
+        case (L.Y5, L.Y5)   => L.Y5
+        case (L.Y5, L.X3)   => L.X3
+        case (L.Y5, L.X4)   => L.X4
+        case (L.Y5, L.Y2)   => L.X3
+        case (L.Y5, L.Y3)   => L.X3
+        case (L.Y5, L.Y4)   => L.X4
+        case (L.Y5, L.Z1)   => L.X3
+        case (L.Y5, L.Z2)   => L.Y5
+
+        case (L.Z1, L.Z1)   => L.Z1
+        case (L.Z1, L.X1)   => L.X1
+        case (L.Z1, L.X2)   => L.X2
+        case (L.Z1, L.X3)   => L.X3
+        case (L.Z1, L.Y1)   => L.Y1
+        case (L.Z1, L.Y2)   => L.Y2
+        case (L.Z1, L.Y3)   => L.Y3
+        case (L.Z1, L.Y4)   => L.X2
+        case (L.Z1, L.Y5)   => L.X3
+        case (L.Z1, L.Z2)   => L.Y3
+
+        case (L.Z2, L.Z2)   => L.Z2
+        case (L.Z2, L.X2)   => L.X2
+        case (L.Z2, L.X3)   => L.X3
+        case (L.Z2, L.X4)   => L.X4
+        case (L.Z2, L.Y1)   => L.X2
+        case (L.Z2, L.Y2)   => L.X3
+        case (L.Z2, L.Y3)   => L.Y3
+        case (L.Z2, L.Y4)   => L.Y4
+        case (L.Z2, L.Y5)   => L.Y5
+        case (L.Z2, L.Z1)   => L.Y3
+
+        case _              => L.Bot
     }
 
     let L<> = (L.Bot, L.Top, leq, lub, glb)
