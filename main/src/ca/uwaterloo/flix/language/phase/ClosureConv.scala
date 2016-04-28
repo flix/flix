@@ -52,7 +52,7 @@ object ClosureConv {
       // uniformly. The implementation will supply values for the free variables, without any effort from the caller.
       val newArgs = freeVars.map { case (n, t) => SimplifiedAst.FormalArg(n, t) } ++ args
 
-      // Update the lambda type. Note that MkClosure keeps the old lambda type.
+      // Update the lambda type.
       val argTpes = freeVars.map(_._2) ++ tpe.args
       val newTpe = Type.Lambda(argTpes, tpe.retTpe)
 
@@ -67,6 +67,7 @@ object ClosureConv {
       // free variables) as well as the cached `freeVars`. The closure will actually be created at run time, where the
       // values for the free variables are bound and stored in the closure structure. When the closure is called, the
       // bound values are passed as arguments.
+      // Note that MkClosure keeps the old lambda type.
       // In a later phase, we will lift the lambda to a top-level definition.
       SimplifiedAst.Expression.MkClosure(lambda, freeVars.map(v => (v._1, -1, v._2)), tpe, loc)
 

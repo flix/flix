@@ -36,6 +36,8 @@ object LoadBytecode {
     *    annotated with @FunctionalInterface). Instead of using functional interfaces provided by Java or Scala (which
     *    are too specific or too general), we create our own.
     *    In this step, we first iterate over the entire AST to determine which function types are used in MkClosureRef.
+    *    We want the type of MkClosureRef, which is the type of the closure, not the type of the lambda, since its
+    *    underlying implementation method will have its argument list modified for capture variables.
     *    Note that this includes synthetic functions that were lambda lifted, as well as user-defined functions being
     *    passed around as closures. We only care about *types* so that two lambdas with the same signature can share the
     *    same functional interface.
@@ -144,7 +146,7 @@ object LoadBytecode {
     * set, and then look up types in the `declarations` map. Finally, return the types in a set, to remove duplicates.
     */
   private def extractLambdaTypes(consts: List[Definition.Constant], declarations: Map[Symbol.Resolved, Type]): Set[Type] = {
-    def visit(e: Expression): Set[Symbol.Resolved] = e match {
+    def visit(e: Expression): Set[Type] = e match {
       case Expression.Unit => Set.empty
       case Expression.True => Set.empty
       case Expression.False => Set.empty
@@ -167,7 +169,7 @@ object LoadBytecode {
       case Expression.Var(ident, o, tpe, loc) => Set.empty
       case Expression.Ref(name, tpe, loc) => Set.empty
       case Expression.Hook(hook, tpe, loc) => Set.empty
-      case Expression.MkClosureRef(ref, freeVars, tpe, loc) => Set(ref.name)
+      case Expression.MkClosureRef(ref, freeVars, tpe, loc) => Set(tpe)
       case Expression.ApplyRef(name, args, tpe, loc) => args.flatMap(visit).toSet
       case Expression.ApplyClosure(exp, args, tpe, loc) => visit(exp) ++ args.flatMap(visit)
       case Expression.Unary(op, exp, tpe, loc) => visit(exp)
@@ -187,7 +189,7 @@ object LoadBytecode {
       case Expression.SwitchError(tpe, loc) => Set.empty
     }
 
-    consts.flatMap(x => visit(x.exp)).map(f => declarations(f)).toSet
+    consts.flatMap(x => visit(x.exp)).toSet
   }
 
 }

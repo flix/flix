@@ -179,7 +179,7 @@ object Codegen {
 
     case Expression.Hook(hook, _, _) => ???
 
-    case Expression.MkClosureRef(ref, freeVars, _, _) =>
+    case Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
       // We create a closure the same way Java 8 does. We use InvokeDynamic and the LambdaMetafactory. The idea is that
       // LambdaMetafactory creates a CallSite (linkage), and then the CallSite target is invoked (capture) to create a
       // function object. Later, at ApplyRef, the function object is called (invocation).
@@ -188,15 +188,21 @@ object Codegen {
       // http://cr.openjdk.java.net/~briangoetz/lambda/lambda-translation.html
       // http://docs.oracle.com/javase/8/docs/api/java/lang/invoke/LambdaMetafactory.html
 
-      if (freeVars.nonEmpty) ??? // TODO, also note that `desc` will need ot be updated
+      // Load the capture values. We push them onto the stack, since they are the dynamic arguments of the InvokeDynamic
+      // instruction (i.e. the arguments to the lambda object constructor).
+      // We construct Expression.Var nodes and compile them as expected.
+      freeVars.foreach { f =>
+        val v = Expression.Var(f._1, f._2, f._3, loc)
+        compileExpression(context, visitor)(v)
+      }
 
       // The name of the method implemented by the lambda.
       val invokedName = "apply"
 
       // The type descriptor of the CallSite. Its arguments are the types of capture variables, and its return
       // type is the interface the lambda object implements.
-      val itfName = context.interfaces(ref.tpe)
-      val invokedType = s"()L${decorate(itfName)};"
+      val itfName = context.interfaces(tpe)
+      val invokedType = s"(${freeVars.map(f => descriptor(f._3)).mkString})L${decorate(itfName)};"
 
       // The handle for the bootstrap method we pass to InvokeDynamic, which is
       // `java.lang.invoke.LambdaMetafactory.metafactory`.
@@ -219,10 +225,14 @@ object Codegen {
       //                            Can be a specialization of `samMethodType` due to type erasure, but it's the same in
       //                            our implementation because we don't use generics for lambdas (we compile specialized
       //                            versions of functional interfaces).
+      //
+      // Note that samMethodType and instantiatedMethodType take ASM types, and represent the type of the function
+      // object, while implMethod takes a descriptor string and represents the implementation method's type (that is,
+      // with the capture variables included in the arguments list).
       val bsmArgs = Array(
-        asm.Type.getType(descriptor(ref.tpe)),
+        asm.Type.getType(descriptor(tpe)),
         new Handle(H_INVOKESTATIC, decorate(ref.name.prefix), ref.name.suffix, descriptor(ref.tpe)),
-        asm.Type.getType(descriptor(ref.tpe))
+        asm.Type.getType(descriptor(tpe))
       )
 
       // Finally, generate the InvokeDynamic instruction.
