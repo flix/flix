@@ -35,15 +35,15 @@ object LoadBytecode {
     *    Our implementation of closures requires the lambda function to be called through an interface (which is
     *    annotated with @FunctionalInterface). Instead of using functional interfaces provided by Java or Scala (which
     *    are too specific or too general), we create our own.
-    *    In this step, we first iterate over the entire AST to determine which function types are used in MkClosureRef.
-    *    We want the type of MkClosureRef, which is the type of the closure, not the type of the lambda, since its
-    *    underlying implementation method will have its argument list modified for capture variables.
+    *    In this step, we generate names for the functional interfaces, placing each interface in the package
+    *    ca.uwaterloo.flix.runtime. We iterate over the entire AST to determine which function types are used in
+    *    MkClosureRef, remove duplicate types, and then generate names. We want the type of MkClosureRef, which is the
+    *    type of the closure, not the type of the lambda, since its underlying implementation method will have its
+    *    argument list modified for capture variables.
     *    Note that this includes synthetic functions that were lambda lifted, as well as user-defined functions being
-    *    passed around as closures. We only care about *types* so that two lambdas with the same signature can share the
-    *    same functional interface.
-    *    We generate a unique name for each functional interface, and place it in the package ca.uwaterloo.flix.runtime.
-    *    The code generator then creates the bytecode which we then load. Finally, we record the types ane names in an
-    *    interfaces map, so that given a lambda's signature, we can lookup the functional interface it's called through.
+    *    passed around as closures.
+    *    Finally, we generate bytecode for each name. We keep the types and names in an interfaces map, so that given
+    *    a closure's signature, we can lookup the functional interface it's called through.
     *
     * 4. Generate and load bytecode.
     *    As of this step, we have grouped the constants into separate classes, transformed non-functions into 0-arg
@@ -78,34 +78,29 @@ object LoadBytecode {
     val declarations: Map[Symbol.Resolved, Type] = constantsList.map(f => f.name -> f.tpe).toMap
 
     // 3. Generate functional interfaces.
-    val lambdaTypes: Set[Type] = extractLambdaTypes(constantsList, declarations)
-    val interfaces: Map[Type, List[String]] = lambdaTypes.map { t =>
-      // The actual name doesn't really matter, this is just for debuggability.
-      val name = genSym.fresh2("Fn$" + Codegen.descriptor(t).replaceAll("[^a-zA-Z0-0]", "_")).name
-      val prefix = List("ca", "uwaterloo", "flix", "runtime", name)
-      val bytecode = Codegen.compileFunctionalInterface(prefix, t)
-
+    val interfaces: Map[Type, List[String]] = generateInterfaceNames(constantsList)
+    val loadedInterfaces: Map[Type, Class[_]] = interfaces.map { case (tpe, prefix) =>
+      // Use a temporary context with no functions, because the codegen needs the map of interfaces.
+      val bytecode = Codegen.compileFunctionalInterface(Codegen.Context(prefix, List.empty, declarations, interfaces))(tpe)
       if (options.debugBytecode == DebugBytecode.Enabled) {
         dump(prefix, bytecode)
       }
-
-      loader(prefix, bytecode)
-      t -> prefix
-    }.toMap
+      tpe -> loader(prefix, bytecode)
+    }.toMap // Despite IDE highlighting, this is actually necessary.
 
     // 4. Generate and load bytecode.
-    val classes: Map[List[String], Class[_]] = constantsMap.map { case (prefix, consts) =>
+    val loadedClasses: Map[List[String], Class[_]] = constantsMap.map { case (prefix, consts) =>
       val bytecode = Codegen.compile(Codegen.Context(prefix, consts, declarations, interfaces))
       if (options.debugBytecode == DebugBytecode.Enabled) {
         dump(prefix, bytecode)
       }
       prefix -> loader(prefix, bytecode)
-    }.toMap
+    }.toMap // Despite IDE highlighting, this is actually necessary.
 
     // 5. Load the methods.
     for ((prefix, consts) <- constantsMap; const <- consts) {
-      val clazz = classes(prefix)
-      val argTpes = const.tpe.asInstanceOf[Type.Lambda].args.map(toJavaClass)
+      val clazz = loadedClasses(prefix)
+      val argTpes = const.tpe.asInstanceOf[Type.Lambda].args.map(t => toJavaClass(t, loadedInterfaces))
       // Note: Update the original constant in root.constants, not the temporary one in constantsMap!
       root.constants(const.name).method = clazz.getMethod(const.name.suffix, argTpes: _*)
     }
@@ -119,9 +114,9 @@ object LoadBytecode {
 
   /**
     * Convert a Flix type `tpe` into a representation of a Java type, i.e. an instance of `Class[_]`.
-    * Used for reflection.
+    * Used for reflection. Note that this method depends on the generated and loaded functional interfaces.
     */
-  private def toJavaClass(tpe: Type): Class[_] = tpe match {
+  private def toJavaClass(tpe: Type, interfaces: Map[Type, Class[_]]): Class[_] = tpe match {
     case Type.Unit => Value.Unit.getClass
     case Type.Bool => classOf[Boolean]
     case Type.Char => classOf[Char]
@@ -135,17 +130,15 @@ object LoadBytecode {
     case Type.Enum(_, _) => classOf[Value.Tag]
     case Type.Tuple(elms) => classOf[Value.Tuple]
     case Type.FSet(_) => classOf[scala.collection.immutable.Set[AnyRef]]
-    case Type.Lambda(_, _) => ???
+    case Type.Lambda(_, _) => interfaces(tpe)
     case Type.Tag(_, _, _) => throw InternalCompilerException(s"No corresponding JVM type for $tpe.")
     case _ => ???
   }
 
   /**
-    * Returns a set of all the lambda types used in MkClosureRef. This set is used to compile functional interfaces.
-    * We traverse the AST of each definition and look for the `ref` used in a `MkClosureRef`. We flatten the resulting
-    * set, and then look up types in the `declarations` map. Finally, return the types in a set, to remove duplicates.
+    * Generates all the names of the functional interfaces used in the Flix program.
     */
-  private def extractLambdaTypes(consts: List[Definition.Constant], declarations: Map[Symbol.Resolved, Type]): Set[Type] = {
+  private def generateInterfaceNames(consts: List[Definition.Constant])(implicit genSym: GenSym): Map[Type, List[String]] = {
     def visit(e: Expression): Set[Type] = e match {
       case Expression.Unit => Set.empty
       case Expression.True => Set.empty
@@ -189,7 +182,12 @@ object LoadBytecode {
       case Expression.SwitchError(tpe, loc) => Set.empty
     }
 
-    consts.flatMap(x => visit(x.exp)).toSet
+    val types = consts.flatMap(x => visit(x.exp)).toSet
+    types.map { t =>
+      val name = genSym.fresh2("FnItf").name
+      val prefix = List("ca", "uwaterloo", "flix", "runtime", name)
+      t -> prefix
+    }.toMap
   }
 
 }

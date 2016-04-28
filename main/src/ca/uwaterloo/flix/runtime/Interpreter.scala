@@ -342,7 +342,7 @@ object Interpreter {
       case Value.Closure(ref, bindings) =>
         val constant = root.constants(ref.name)
         val newEnv = mutable.Map.empty[String, AnyRef]
-        // Bindings for the free variables are passed as arguments.
+        // Bindings for the capture variables are passed as arguments.
         var i = 0
         while (i < bindings.length) {
           newEnv(constant.formals(i).ident.name) = bindings(i)
