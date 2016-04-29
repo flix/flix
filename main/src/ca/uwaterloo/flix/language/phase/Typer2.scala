@@ -16,6 +16,22 @@ object Typer2 {
 
   }
 
+  val IntTypes: Set[Type] = Set(
+    Type.Int8,
+    Type.Int16,
+    Type.Int32,
+    Type.Int64
+  )
+
+  val NumTypes: Set[Type] = Set(
+    Type.Float32,
+    Type.Float64,
+    Type.Int8,
+    Type.Int16,
+    Type.Int32,
+    Type.Int64
+  )
+
   /**
     * Phase 1: Constraint Generation.
     */
@@ -38,7 +54,7 @@ object Typer2 {
           */
         def visit(e0: TypedAst.Expression, tenv: Map[Name.Ident, Type]): Type = e0 match {
           /*
-           * Literal Expressions.
+           * Literal Expression.
            */
           case TypedAst.Expression.Lit(lit, _, _) => lit match {
             case TypedAst.Literal.Unit(loc) => Type.Unit
@@ -57,25 +73,27 @@ object Typer2 {
 
 
           /*
-           * Unary Expressions.
+           * Unary Expression.
            */
-          case TypedAst.Expression.Unary(op, e1, _, _) => op match {
+          case TypedAst.Expression.Unary(op, exp1, _, _) => op match {
             case UnaryOperator.LogicalNot =>
-              val t1 = visit(e1, tenv)
-              constraints += TypeConstraint.Eq(t1, Type.Bool)
+              val tpe = visit(exp1, tenv)
+              constraints += TypeConstraint.Eq(tpe, Type.Bool)
               Type.Bool
 
-            case UnaryOperator.Plus =>
+            case UnaryOperator.Plus | UnaryOperator.Minus =>
+              val tpe = visit(exp1, tenv)
+              constraints += TypeConstraint.OneOf(tpe, NumTypes)
+              tpe
 
-              ???
-
-            case UnaryOperator.Minus => ???
-            case UnaryOperator.BitwiseNegate => ???
+            case UnaryOperator.BitwiseNegate =>
+              val tpe = visit(exp1, tenv)
+              constraints += TypeConstraint.OneOf(tpe, IntTypes)
+              tpe
           }
 
-
           /*
-           * Binary Expressions.
+           * Binary Expression.
            */
           case TypedAst.Expression.Binary(op, e1, e2, _, _) => op match {
             case BinaryOperator.Plus =>
@@ -98,11 +116,16 @@ object Typer2 {
             //(TypeConstraint.EqType(tpe1, Type.Lambda(tpes, r)) :: c1 ::: cs.flatten, r)
             r
 
-          case TypedAst.Expression.IfThenElse(e1, e2, e3, _, loc) =>
-            val tpe1 = visit(e1, tenv)
-            val tpe2 = visit(e2, tenv)
-            val tpe3 = visit(e3, tenv)
-            //(TypeConstraint.EqType(tpe1, Type.Bool) :: TypeConstraint.EqType(tpe2, tpe3) :: c1 ++ c2 ++ c3, tpe2)
+          /*
+           * If-then-else Expression.
+           */
+          case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
+            val tpe1 = visit(exp1, tenv)
+            val tpe2 = visit(exp2, tenv)
+            val tpe3 = visit(exp3, tenv)
+
+            constraints += TypeConstraint.Eq(tpe1, Type.Bool)
+            constraints += TypeConstraint.Eq(tpe2, tpe3)
             tpe2
         }
 
@@ -123,5 +146,6 @@ object Typer2 {
     def unify(cs: List[TypeConstraint.Eq]): List[TypeConstraint.Eq] = ???
 
   }
+
 
 }

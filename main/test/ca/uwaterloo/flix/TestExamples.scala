@@ -110,9 +110,9 @@ class TestExamples extends FunSuite {
         |    let ConstSign<> = (ConstSign.Bot, ConstSign.Top, leq, lub, glb);
         |    lat A(k: Int, v: ConstSign);
         |
-        |    A(1, ConstSign.Cst(-1)).
-        |    A(2, ConstSign.Cst(0)).
-        |    A(3, ConstSign.Cst(1)).
+        |    A(1, ConstSign.Cst(-1ii)).
+        |    A(2, ConstSign.Cst(0ii)).
+        |    A(3, ConstSign.Cst(1ii)).
         |
         |    A(4, x) :- A(1, x). // 4 -> top
         |    A(4, x) :- A(2, x). // 4 -> top
