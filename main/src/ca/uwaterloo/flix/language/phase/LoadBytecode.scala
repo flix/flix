@@ -47,8 +47,13 @@ object LoadBytecode {
     *    As of this step, we have grouped the constants into separate classes, transformed non-functions into 0-arg
     *    functions, collected all the declarations in a map, and created and loaded functional interfaces and collected
     *    them in a map.
-    *    Now, for each class, we generate and load the bytecode. Then for each constant, we use reflection to get the
-    *    corresponding java.lang.reflect.Method object.
+    *    Now, for each class, we generate and load the bytecode.
+    *
+    * 5. Load the methods.
+    *    For each constant, we use reflection to get the corresponding java.lang.reflect.Method object.
+    *    This is actually a bit tricky. We need the rewritten lambda types (non-functions -> 0-arg functions, free
+    *    variables eliminated) to perform the reflection lookup, so we iterate over constantsMap. However, we want to
+    *    mutate the original constant from root.constants, not the one in constantsMap (which will get GC'd).
     */
   def load(root: ExecutableAst.Root, options: Options)(implicit genSym: GenSym): ExecutableAst.Root = {
     if (options.codegen != CodeGeneration.Enabled) {
@@ -87,20 +92,20 @@ object LoadBytecode {
     }.toMap
 
     // 4. Generate and load bytecode.
-    for ((prefix, consts) <- constantsMap) {
+    val classes: Map[List[String], Class[_]] = constantsMap.map { case (prefix, consts) =>
       val bytecode = Codegen.compile(Codegen.Context(prefix, consts, declarations, interfaces))
       if (options.debugBytecode == DebugBytecode.Enabled) {
         dump(prefix, bytecode)
       }
-      val clazz = loader(prefix, bytecode)
+      prefix -> loader(prefix, bytecode)
+    }.toMap
 
-      for (const <- consts) {
-        val argTpes = const.tpe match {
-          case Type.Lambda(args, _) => args.map(toJavaClass)
-          case _ => throw new InternalCompilerException("Flix definitions should have been converted to functions.")
-        }
-        const.method = clazz.getMethod(const.name.suffix, argTpes: _*)
-      }
+    // 5. Load the methods.
+    for ((prefix, consts) <- constantsMap; const <- consts) {
+      val clazz = classes(prefix)
+      val argTpes = const.tpe.asInstanceOf[Type.Lambda].args.map(toJavaClass)
+      // Note: Update the original constant in root.constants, not the temporary one in constantsMap!
+      root.constants(const.name).method = clazz.getMethod(const.name.suffix, argTpes: _*)
     }
 
     root
