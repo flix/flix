@@ -576,6 +576,8 @@ class TestInterpreter extends FunSuite {
   // Expression.{Lambda,Apply}                                               //
   /////////////////////////////////////////////////////////////////////////////
 
+  // TODO: actual lambda functions and free variables (not just top-level definitions)
+
   test("Expression.Lambda.01") {
     val input =
       """namespace A.B {
@@ -806,7 +808,7 @@ class TestInterpreter extends FunSuite {
     assert(executed)
   }
 
-  ignore("Expression.Hook - Hook.Safe.02") {
+  test("Expression.Hook - Hook.Safe.02") {
     import HookSafeHelpers._
     val input = "fn g: Int = A/f(3)"
     var executed = false
@@ -4081,6 +4083,112 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.True)(result03)
   }
 
+  test("Expression.Binary - BinaryOperator.Equal.10") {
+    val input = "fn f: Bool = () == ()"
+    val model = getModel(input)
+    val result = model.getConstant("f")
+    assertResult(Value.True)(result)
+  }
+
+  test("Expression.Binary - BinaryOperator.Equal.11") {
+    val input =
+      """fn f01: Bool = true == true
+        |fn f02: Bool = true == false
+        |fn f03: Bool = false == false
+        |fn f04: Bool = false == true
+      """.stripMargin
+    val model = getModel(input)
+    val result01 = model.getConstant("f01")
+    val result02 = model.getConstant("f02")
+    val result03 = model.getConstant("f03")
+    val result04 = model.getConstant("f04")
+    assertResult(Value.True)(result01)
+    assertResult(Value.False)(result02)
+    assertResult(Value.True)(result03)
+    assertResult(Value.False)(result04)
+  }
+
+  test("Expression.Binary - BinaryOperator.Equal.12") {
+    val input =
+      """fn f01: Bool = "hello" == "hello"
+        |fn f02: Bool = "hello" == "hello!"
+      """.stripMargin
+    val model = getModel(input)
+    val result01 = model.getConstant("f01")
+    val result02 = model.getConstant("f02")
+    assertResult(Value.True)(result01)
+    assertResult(Value.False)(result02)
+  }
+
+  test("Expression.Binary - BinaryOperator.Equal.13") {
+    val input =
+      """enum T { case Top, case Val(Int), case Bot }
+        |fn f01: Bool = T.Top == T.Top
+        |fn f02: Bool = T.Top == T.Val(0)
+        |fn f03: Bool = T.Top == T.Bot
+        |fn f04: Bool = T.Val(0) == T.Bot
+        |fn f05: Bool = T.Val(0) == T.Val(0)
+        |fn f06: Bool = T.Val(1) == T.Val(2)
+      """.stripMargin
+    val model = getModel(input)
+    val result01 = model.getConstant("f01")
+    val result02 = model.getConstant("f02")
+    val result03 = model.getConstant("f03")
+    val result04 = model.getConstant("f04")
+    val result05 = model.getConstant("f05")
+    val result06 = model.getConstant("f06")
+    assertResult(Value.True)(result01)
+    assertResult(Value.False)(result02)
+    assertResult(Value.False)(result03)
+    assertResult(Value.False)(result04)
+    assertResult(Value.True)(result05)
+    assertResult(Value.False)(result06)
+  }
+
+  // TODO: Are tuple arities and types required to match?
+  // See https://github.com/magnus-madsen/flix/issues/148
+  test("Expression.Binary - BinaryOperator.Equal.14") {
+    val foo = (1, 2) == (3, 'a')
+    val input =
+      """fn f01: Bool = (1, 2, 3) == (1, 2, 3)
+        |fn f02: Bool = ('h', 'e', 'l', 'l', 'o') == ('h', 'e', 'l', 'l', 'o')
+        |fn f03: Bool = (1, 2, 'a') == (1, 2, 'b')
+        |//fn f04: Bool = (1, 2, true, false) == (1, 2, 3, 4)
+        |//fn f05: Bool = (1, 2, 3, 4) == (1, 2)
+      """.stripMargin
+    val model = getModel(input)
+    val result01 = model.getConstant("f01")
+    val result02 = model.getConstant("f02")
+//    val result03 = model.getConstant("f03")
+//    val result04 = model.getConstant("f04")
+//    val result05 = model.getConstant("f05")
+    assertResult(Value.True)(result01)
+    assertResult(Value.True)(result02)
+//    assertResult(Value.False)(result03)
+//    assertResult(Value.False)(result04)
+//    assertResult(Value.False)(result05)
+  }
+
+  test("Expression.Binary - BinaryOperator.Equal.15") {
+    val input =
+      """fn f01: Bool = #{1, 2, 4} == #{4, 2, 1}
+        |fn f02: Bool = #{1, 2, 4} == #{0, 1, 2, 4}
+        |fn f03: Bool = #{true, true} == #{true, false}
+        |fn f04: Bool = #{'a', 'b', 'c'} == #{'c', 'c', 'b', 'b', 'a', 'a'}
+      """.stripMargin
+    val model = getModel(input)
+    val result01 = model.getConstant("f01")
+    val result02 = model.getConstant("f02")
+    val result03 = model.getConstant("f03")
+    val result04 = model.getConstant("f04")
+    assertResult(Value.True)(result01)
+    assertResult(Value.False)(result02)
+    assertResult(Value.False)(result03)
+    assertResult(Value.True)(result04)
+  }
+
+  // TODO: Comparison of lambdas?
+
   test("Expression.Binary - BinaryOperator.NotEqual.01") {
     val input =
       s"""fn f01: Bool = 120000 != 30000
@@ -4287,6 +4395,112 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.True)(result02)
     assertResult(Value.False)(result03)
   }
+
+  test("Expression.Binary - BinaryOperator.NotEqual.10") {
+    val input = "fn f: Bool = () != ()"
+    val model = getModel(input)
+    val result = model.getConstant("f")
+    assertResult(Value.False)(result)
+  }
+
+  test("Expression.Binary - BinaryOperator.NotEqual.11") {
+    val input =
+      """fn f01: Bool = true != true
+        |fn f02: Bool = true != false
+        |fn f03: Bool = false != false
+        |fn f04: Bool = false != true
+      """.stripMargin
+    val model = getModel(input)
+    val result01 = model.getConstant("f01")
+    val result02 = model.getConstant("f02")
+    val result03 = model.getConstant("f03")
+    val result04 = model.getConstant("f04")
+    assertResult(Value.False)(result01)
+    assertResult(Value.True)(result02)
+    assertResult(Value.False)(result03)
+    assertResult(Value.True)(result04)
+  }
+
+  test("Expression.Binary - BinaryOperator.NotEqual.12") {
+    val input =
+      """fn f01: Bool = "hello" != "hello"
+        |fn f02: Bool = "hello" != "hello!"
+      """.stripMargin
+    val model = getModel(input)
+    val result01 = model.getConstant("f01")
+    val result02 = model.getConstant("f02")
+    assertResult(Value.False)(result01)
+    assertResult(Value.True)(result02)
+  }
+
+  test("Expression.Binary - BinaryOperator.NotEqual.13") {
+    val input =
+      """enum T { case Top, case Val(Int), case Bot }
+        |fn f01: Bool = T.Top != T.Top
+        |fn f02: Bool = T.Top != T.Val(0)
+        |fn f03: Bool = T.Top != T.Bot
+        |fn f04: Bool = T.Val(0) != T.Bot
+        |fn f05: Bool = T.Val(0) != T.Val(0)
+        |fn f06: Bool = T.Val(1) != T.Val(2)
+      """.stripMargin
+    val model = getModel(input)
+    val result01 = model.getConstant("f01")
+    val result02 = model.getConstant("f02")
+    val result03 = model.getConstant("f03")
+    val result04 = model.getConstant("f04")
+    val result05 = model.getConstant("f05")
+    val result06 = model.getConstant("f06")
+    assertResult(Value.False)(result01)
+    assertResult(Value.True)(result02)
+    assertResult(Value.True)(result03)
+    assertResult(Value.True)(result04)
+    assertResult(Value.False)(result05)
+    assertResult(Value.True)(result06)
+  }
+
+  // TODO: Are tuple arities and types required to match?
+  // See https://github.com/magnus-madsen/flix/issues/148
+  test("Expression.Binary - BinaryOperator.NotEqual.14") {
+    val foo = (1, 2) == (3, 'a')
+    val input =
+      """fn f01: Bool = (1, 2, 3) != (1, 2, 3)
+        |fn f02: Bool = ('h', 'e', 'l', 'l', 'o') != ('h', 'e', 'l', 'l', 'o')
+        |fn f03: Bool = (1, 2, 'a') != (1, 2, 'b')
+        |//fn f04: Bool = (1, 2, true, false) != (1, 2, 3, 4)
+        |//fn f05: Bool = (1, 2, 3, 4) != (1, 2)
+      """.stripMargin
+    val model = getModel(input)
+    val result01 = model.getConstant("f01")
+    val result02 = model.getConstant("f02")
+    //    val result03 = model.getConstant("f03")
+    //    val result04 = model.getConstant("f04")
+    //    val result05 = model.getConstant("f05")
+    assertResult(Value.False)(result01)
+    assertResult(Value.False)(result02)
+    //    assertResult(Value.True)(result03)
+    //    assertResult(Value.True)(result04)
+    //    assertResult(Value.True)(result05)
+  }
+
+  test("Expression.Binary - BinaryOperator.NotEqual.15") {
+    val input =
+      """fn f01: Bool = #{1, 2, 4} != #{4, 2, 1}
+        |fn f02: Bool = #{1, 2, 4} != #{0, 1, 2, 4}
+        |fn f03: Bool = #{true, true} != #{true, false}
+        |fn f04: Bool = #{'a', 'b', 'c'} != #{'c', 'c', 'b', 'b', 'a', 'a'}
+      """.stripMargin
+    val model = getModel(input)
+    val result01 = model.getConstant("f01")
+    val result02 = model.getConstant("f02")
+    val result03 = model.getConstant("f03")
+    val result04 = model.getConstant("f04")
+    assertResult(Value.False)(result01)
+    assertResult(Value.True)(result02)
+    assertResult(Value.True)(result03)
+    assertResult(Value.False)(result04)
+  }
+
+  // TODO: Comparison of lambdas?
 
   /////////////////////////////////////////////////////////////////////////////
   // Expression.Binary (Logical)                                             //
@@ -5348,6 +5562,8 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt64(42))(result)
   }
 
+  // TODO: Let of lambdas/closures
+
   /////////////////////////////////////////////////////////////////////////////
   // Expression.{CheckTag,GetTagValue}                                       //
   // Tested indirectly by pattern matching.                                  //
@@ -5854,7 +6070,7 @@ class TestInterpreter extends FunSuite {
     assertResult(Value.mkInt32(14))(result)
   }
 
-  ignore("Match.Literal.01") {
+  test("Match.Literal.01") {
     val input =
       """fn f(x: Unit): Bool = match x with {
         |  case () => true
@@ -6530,7 +6746,7 @@ class TestInterpreter extends FunSuite {
   // Term.Head.Exp                                                           //
   /////////////////////////////////////////////////////////////////////////////
 
-  ignore("Term.Head.Exp.01") {
+  test("Term.Head.Exp.01") {
     val input =
       """rel A(x: Unit);
         |
@@ -6618,7 +6834,7 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set("one", "two", "three").map(x => List(Value.mkStr(x))))
   }
 
-  ignore("Term.Head.Exp.08") {
+  test("Term.Head.Exp.08") {
     val input =
       """rel A(x: (Int, Str));
         |
@@ -6629,7 +6845,7 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set(List(Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one"))))))
   }
 
-  ignore("Term.Head.Exp.09") {
+  test("Term.Head.Exp.09") {
     val input =
       """enum Foo { case Foo(Int,Str) }
         |rel A(x: Foo);
@@ -6641,7 +6857,7 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set(List(Value.mkTag(Symbol.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))))
   }
 
-  ignore("Term.Head.Exp.10") {
+  test("Term.Head.Exp.10") {
     val input =
       """rel A(x: (Int, Int));
         |
