@@ -96,9 +96,13 @@ object Typer2 {
            * Binary Expression.
            */
           case TypedAst.Expression.Binary(op, e1, e2, _, _) => op match {
-            case BinaryOperator.Plus =>
-              // TODO: Use EqTypeOneOf.
-              ???
+            case BinaryOperator.Plus | BinaryOperator.Minus | BinaryOperator.Times | BinaryOperator.Divide =>
+              val tpe1 = visit(e1, tenv)
+              val tpe2 = visit(e2, tenv)
+              constraints += TypeConstraint.Eq(tpe1, tpe2)
+              constraints += TypeConstraint.OneOf(tpe1, NumTypes)
+              constraints += TypeConstraint.OneOf(tpe2, NumTypes)
+              tpe1
 
             case _: ComparisonOperator =>
               val tpe1 = visit(e1, tenv)
@@ -127,6 +131,14 @@ object Typer2 {
             constraints += TypeConstraint.Eq(tpe1, Type.Bool)
             constraints += TypeConstraint.Eq(tpe2, tpe3)
             tpe2
+
+
+          /*
+           * User Error.
+           */
+          case TypedAst.Expression.Error(tpe, loc) =>
+            ???
+
         }
 
 
