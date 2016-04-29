@@ -6,16 +6,28 @@ import scala.collection.mutable
 
 object Typer2 {
 
+  /**
+    * A common super-type for type constraints.
+    */
   sealed trait TypeConstraint
 
   object TypeConstraint {
 
+    /**
+      * A type constraint that requires `t1` to unify with `t2`.
+      */
     case class Eq(t1: Type, t2: Type) extends TypeConstraint
 
-    case class OneOf(t1: Type, t2: Set[Type]) extends TypeConstraint
+    /**
+      * A type constraint that requires `t1` to unify with one of the types `ts`.
+      */
+    case class OneOf(t1: Type, ts: Set[Type]) extends TypeConstraint
 
   }
 
+  /**
+    * The integral types.
+    */
   val IntTypes: Set[Type] = Set(
     Type.Int8,
     Type.Int16,
@@ -23,6 +35,9 @@ object Typer2 {
     Type.Int64
   )
 
+  /**
+    * The number types (i.e. integral and fractional types).
+    */
   val NumTypes: Set[Type] = Set(
     Type.Float32,
     Type.Float64,
@@ -54,7 +69,7 @@ object Typer2 {
           */
         def visit(e0: TypedAst.Expression, tenv: Map[Name.Ident, Type]): Type = e0 match {
           /*
-           * Literal Expression.
+           * Literal expression.
            */
           case TypedAst.Expression.Lit(lit, _, _) => lit match {
             case TypedAst.Literal.Unit(loc) => Type.Unit
@@ -62,18 +77,24 @@ object Typer2 {
             case TypedAst.Literal.Char(_, _) => Type.Char
             case TypedAst.Literal.Float32(_, _) => Type.Float32
             case TypedAst.Literal.Float64(_, _) => Type.Float64
+            case TypedAst.Literal.Int8(_, _) => Type.Int8
+            case TypedAst.Literal.Int16(_, _) => Type.Int16
+            case TypedAst.Literal.Int32(_, _) => Type.Int32
+            case TypedAst.Literal.Int64(_, _) => Type.Int64
+            case TypedAst.Literal.BigInt(_, _) => Type.BigInt
+            case TypedAst.Literal.Str(_, _) => Type.Str
           }
 
+          /*
+           * Variable expression.
+           */
           case TypedAst.Expression.Var(ident, _, _) =>
-            ??? // TODO Look up in type environment.
-
-          case TypedAst.Expression.Let(ident, exp1, exp2, tpe, _) =>
-            // update type environment and recurse
+            // TODO: Lookup the type in the type environment.
             ???
 
 
           /*
-           * Unary Expression.
+           * Unary expression.
            */
           case TypedAst.Expression.Unary(op, exp1, _, _) => op match {
             case UnaryOperator.LogicalNot =>
@@ -93,7 +114,7 @@ object Typer2 {
           }
 
           /*
-           * Binary Expression.
+           * Binary expression.
            */
           case TypedAst.Expression.Binary(op, e1, e2, _, _) => op match {
             case BinaryOperator.Plus | BinaryOperator.Minus | BinaryOperator.Times | BinaryOperator.Divide =>
@@ -107,13 +128,21 @@ object Typer2 {
             case _: ComparisonOperator =>
               val tpe1 = visit(e1, tenv)
               val tpe2 = visit(e2, tenv)
-
+              // TODO
               constraints += TypeConstraint.Eq(tpe1, tpe2)
 
               Type.Bool
           }
 
+
+          case TypedAst.Expression.Let(ident, exp1, exp2, tpe, _) =>
+            // update type environment and recurse
+            // TODO
+            ???
+
+
           case TypedAst.Expression.Apply(exp1, args, _, _) =>
+            // TODO
             val tpe1 = visit(exp1, tenv)
 
             val r = Type.Var(genSym.fresh2().name) // TODO
@@ -134,9 +163,10 @@ object Typer2 {
 
 
           /*
-           * User Error.
+           * User Error expression.
            */
           case TypedAst.Expression.Error(tpe, loc) =>
+            // TODO
             ???
 
         }
