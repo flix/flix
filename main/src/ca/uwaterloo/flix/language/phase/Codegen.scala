@@ -802,12 +802,15 @@ object Codegen {
   }
 
   /*
-   * Ints and Floats support all six comparison operations (LE, LT, GE, GT, EQ, NE), but Bools and Chars only support
-   * EQ and NE. Note that the generated code uses the negated condition, i.e. branch if the (source) condition is false.
+   * Ints, Floats, and Chars support all six comparison operations (LE, LT, GE, GT, EQ, NE), but Unit, Bools, Strings,
+   * Enums, Tuples, and Sets only support EQ and NE. Note that the generated code uses the negated condition, i.e.
+   * branch if the (source) condition is false.
    *
-   * Int8/16/32 comparisons only need a single instruction (IF_ICMPyy, where yy is one of {LE, LT, GE, GT, EQ, NE}),
-   * which jumps if the yy condition is true, i.e. the (source) condition is false. All other types do a comparison
-   * first (LCMP, {F,D}CMP{G,L}), and then a branch (IFyy).
+   * Some reference types (Unit, String, and Enum) can use reference equality because of interning.
+   *
+   * Int8/16/32 and Char comparisons only need a single instruction (IF_ICMPyy, where yy is one of
+   * {LE, LT, GE, GT, EQ, NE}), which jumps if the yy condition is true, i.e. the (source) condition is false. All other
+   * types do a comparison first (LCMP, {F,D}CMP{G,L}), and then a branch (IFyy).
    *
    * Specifically, LCMP can be represented in pseudocode as:
    *
@@ -839,39 +842,71 @@ object Codegen {
    */
   private def compileComparisonExpr(ctx: Context, visitor: MethodVisitor)
                                    (o: ComparisonOperator, e1: Expression, e2: Expression): Unit = {
-    compileExpression(ctx, visitor)(e1)
-    compileExpression(ctx, visitor)(e2)
-    val condElse = new Label()
-    val condEnd = new Label()
-    val (intOp, floatOp, doubleOp, cmp) = o match {
-      case BinaryOperator.Less => (IF_ICMPGE, FCMPG, DCMPG, IFGE)
-      case BinaryOperator.LessEqual => (IF_ICMPGT, FCMPG, DCMPG, IFGT)
-      case BinaryOperator.Greater => (IF_ICMPLE, FCMPL, DCMPL, IFLE)
-      case BinaryOperator.GreaterEqual => (IF_ICMPLT, FCMPL, DCMPL, IFLT)
-      case BinaryOperator.Equal => (IF_ICMPNE, FCMPG, DCMPG, IFNE)
-      case BinaryOperator.NotEqual => (IF_ICMPEQ, FCMPG, DCMPG, IFEQ)
-    }
     e1.tpe match {
-      case Type.Bool if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
-        // Bools and Chars can be compared for equality.
-        visitor.visitJumpInsn(intOp, condElse)
-      case Type.Float32 =>
-        visitor.visitInsn(floatOp)
-        visitor.visitJumpInsn(cmp, condElse)
-      case Type.Float64 =>
-        visitor.visitInsn(doubleOp)
-        visitor.visitJumpInsn(cmp, condElse)
-      case Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitJumpInsn(intOp, condElse)
-      case Type.Int64 =>
-        visitor.visitInsn(LCMP)
-        visitor.visitJumpInsn(cmp, condElse)
-      case _=> throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
+      case Type.Tuple(_) | Type.FSet(_) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
+        (e1.tpe: @unchecked) match {
+          case Type.Tuple(_) =>
+            // We know it's a tuple, so directly call java.util.Arrays.equals
+            compileExpression(ctx, visitor)(e1)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Tuple", "elms", "()[Ljava/lang/Object;", false)
+            compileExpression(ctx, visitor)(e2)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Tuple", "elms", "()[Ljava/lang/Object;", false)
+            visitor.visitMethodInsn(INVOKESTATIC, "java/util/Arrays", "equals", "([Ljava/lang/Object;[Ljava/lang/Object;)Z", false)
+          case Type.FSet(_) =>
+            // Call the general java.lang.Object.equals
+            compileExpression(ctx, visitor)(e1)
+            compileExpression(ctx, visitor)(e2)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "equals", "(Ljava/lang/Object;)Z", false)
+        }
+        if (o == BinaryOperator.NotEqual) {
+          val condElse = new Label()
+          val condEnd = new Label()
+          visitor.visitJumpInsn(IFEQ, condElse)
+          visitor.visitInsn(ICONST_0)
+          visitor.visitJumpInsn(GOTO, condEnd)
+          visitor.visitLabel(condElse)
+          visitor.visitInsn(ICONST_1)
+          visitor.visitLabel(condEnd)
+        }
+      case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type ${e1.tpe}.")
+      case _ =>
+        compileExpression(ctx, visitor)(e1)
+        compileExpression(ctx, visitor)(e2)
+        val condElse = new Label()
+        val condEnd = new Label()
+        val (intOp, floatOp, doubleOp, refOp, cmp) = o match {
+          case BinaryOperator.Less => (IF_ICMPGE, FCMPG, DCMPG, NOP, IFGE)
+          case BinaryOperator.LessEqual => (IF_ICMPGT, FCMPG, DCMPG, NOP, IFGT)
+          case BinaryOperator.Greater => (IF_ICMPLE, FCMPL, DCMPL, NOP, IFLE)
+          case BinaryOperator.GreaterEqual => (IF_ICMPLT, FCMPL, DCMPL, NOP, IFLT)
+          case BinaryOperator.Equal => (IF_ICMPNE, FCMPG, DCMPG, IF_ACMPNE, IFNE)
+          case BinaryOperator.NotEqual => (IF_ICMPEQ, FCMPG, DCMPG, IF_ACMPEQ, IFEQ)
+        }
+        e1.tpe match {
+          case Type.Unit | Type.Str | Type.Enum(_, _) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
+            // Unit, String, and Enum can be reference compared for equality.
+            visitor.visitJumpInsn(refOp, condElse)
+          case Type.Bool if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
+            // Bool can be (value) compared for equality.
+            visitor.visitJumpInsn(intOp, condElse)
+          case Type.Float32 =>
+            visitor.visitInsn(floatOp)
+            visitor.visitJumpInsn(cmp, condElse)
+          case Type.Float64 =>
+            visitor.visitInsn(doubleOp)
+            visitor.visitJumpInsn(cmp, condElse)
+          case Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitJumpInsn(intOp, condElse)
+          case Type.Int64 =>
+            visitor.visitInsn(LCMP)
+            visitor.visitJumpInsn(cmp, condElse)
+          case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
+        }
+        visitor.visitInsn(ICONST_1)
+        visitor.visitJumpInsn(GOTO, condEnd)
+        visitor.visitLabel(condElse)
+        visitor.visitInsn(ICONST_0)
+        visitor.visitLabel(condEnd)
     }
-    visitor.visitInsn(ICONST_1)
-    visitor.visitJumpInsn(GOTO, condEnd)
-    visitor.visitLabel(condElse)
-    visitor.visitInsn(ICONST_0)
-    visitor.visitLabel(condEnd)
   }
 
   /*
