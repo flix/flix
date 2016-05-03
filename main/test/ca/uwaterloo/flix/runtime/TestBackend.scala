@@ -606,4 +606,93 @@ class TestBackend extends FunSuite {
   // TODO: LoadExpression and StoreExpression tests.
   // {Load,Store}Expressions are generated, and not explicitly written in a Flix program
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.Var                                                          //
+  // Tested indirectly by Expression.{Lambda,Let}.                           //
+  /////////////////////////////////////////////////////////////////////////////
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.Ref                                                          //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Ref.01") {
+    val input =
+      """namespace Foo.Bar {
+        |  def x: Bool = false
+        |  def f: Str = "foo"
+        |}
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkStr("foo"), "Foo.Bar/f")
+  }
+
+  test("Expression.Ref.02") {
+    val input =
+      """namespace Foo {
+        |  def x: Int = 5
+        |  def f: Int = x
+        |}
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(5), "Foo/f")
+  }
+
+  test("Expression.Ref.03") {
+    val input =
+      """namespace Foo {
+        |  def x: Bool = true
+        |  def y: Bool = false
+        |  def f: Bool = y
+        |}
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.False, "Foo/f")
+  }
+
+  test("Expression.Ref.04") {
+    val input =
+      """namespace Foo {
+        |  def x: Str = "hello"
+        |}
+        |namespace Bar {
+        |  def x: Str = Foo/x
+        |}
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkStr("hello"), "Bar/x")
+  }
+
+  test("Expression.Ref.05") {
+    val input = "def x: Int = 42"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(42), "x")
+  }
+
+  test("Expression.Ref.06") {
+    val input =
+      """namespace A.B {
+        |  def a: Bool = false
+        |}
+        |namespace A {
+        |  def b: Bool = !A.B/a
+        |}
+        |namespace A {
+        |  namespace B {
+        |    def c: Int = 0
+        |
+        |    namespace C {
+        |      def d: Int = 42
+        |    }
+        |  }
+        |}
+        |def e: Int = -1
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.False, "A.B/a")
+    t.runTest(Value.True, "A/b")
+    t.runTest(Value.mkInt32(0), "A.B/c")
+    t.runTest(Value.mkInt32(42), "A.B.C/d")
+    t.runTest(Value.mkInt32(-1), "e")
+  }
+
 }
