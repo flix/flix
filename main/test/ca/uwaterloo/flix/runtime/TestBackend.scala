@@ -4401,4 +4401,118 @@ class TestBackend extends FunSuite {
     )), "f")
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.UserError                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: Typechecker doesn't properly handle ???
+  ignore("Expression.UserError.01") {
+    val input = "def f: Bool = ???"
+    val t = new Tester(input)
+    t.runInterceptTest[UserException]("f")
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.{Match,Switch}Error                                          //
+  // Tested indirectly by switch expressions and pattern matching.           //
+  /////////////////////////////////////////////////////////////////////////////
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Switch expressions                                                      //
+  // These don't exist in the ExecutableAst because they're desugared to     //
+  // Expression.IfThenElse.                                                  //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Switch.01") {
+    val input =
+      """def f(x: Bool): Int = switch {
+        |  case x => 1
+        |  case !x => 0
+        |}
+        |def g01: Int = f(true)
+        |def g02: Int = f(false)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(1), "g01")
+    t.runTest(Value.mkInt32(0), "g02")
+  }
+
+  test("Switch.02") {
+    val input =
+      """def f(x: Bool): Int = switch {
+        |  case x => 100
+        |  case true => 20
+        |}
+        |def g01: Int = f(true)
+        |def g02: Int = f(false)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(100), "g01")
+    t.runTest(Value.mkInt32(20), "g02")
+  }
+
+  test("Switch.03") {
+    val input =
+      """def f(x: Bool): Int = switch {
+        |  case x => 0
+        |  case !x => 1
+        |  case true => 2
+        |}
+        |def g01: Int = f(true)
+        |def g02: Int = f(false)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(0), "g01")
+    t.runTest(Value.mkInt32(1), "g02")
+  }
+
+  test("Switch.04") {
+    val input =
+      """def f(x: Int): Str = switch {
+        |  case x < 0 => "negative"
+        |  case x == 0 => "zero"
+        |  case x == 1 => "one"
+        |  case x == 2 => "two"
+        |  case x >= 3 => "many"
+        |}
+        |def g01: Str = f(-2)
+        |def g02: Str = f(-1)
+        |def g03: Str = f(0)
+        |def g04: Str = f(1)
+        |def g05: Str = f(2)
+        |def g06: Str = f(3)
+        |def g07: Str = f(4)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkStr("negative"), "g01")
+    t.runTest(Value.mkStr("negative"), "g02")
+    t.runTest(Value.mkStr("zero"), "g03")
+    t.runTest(Value.mkStr("one"), "g04")
+    t.runTest(Value.mkStr("two"), "g05")
+    t.runTest(Value.mkStr("many"), "g06")
+    t.runTest(Value.mkStr("many"), "g07")
+  }
+
+  test("Switch.05") {
+    val input =
+      """def f(x: Bool): Int = switch {
+        |  case x => 1
+        |}
+        |def g: Int = f(true)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(1), "g")
+  }
+
+  test("Switch.06") {
+    val input =
+      """def f(x: Bool): Int = switch {
+        |  case x => 1
+        |}
+        |def g: Int = f(false)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runInterceptTest[SwitchException]("g")
+  }
+
 }
