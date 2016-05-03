@@ -4083,4 +4083,188 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt64(42), "g")
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.{CheckTag,GetTagValue}                                       //
+  // Tested indirectly by pattern matching.                                  //
+  /////////////////////////////////////////////////////////////////////////////
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.Tag                                                          //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Tag.01") {
+    val input =
+      """enum ConstProp { case Top, case Val(Int), case Bot }
+        |def f: ConstProp = ConstProp.Top
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("ConstProp"), "Top", Value.Unit), "f")
+  }
+
+  test("Expression.Tag.02") {
+    val input =
+      """enum ConstProp { case Top, case Val(Int), case Bot }
+        |def f: ConstProp = ConstProp.Val(42)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("ConstProp"), "Val", Value.mkInt32(42)), "f")
+  }
+
+  test("Expression.Tag.03") {
+    val input =
+      """enum ConstProp { case Top, case Val(Int), case Bot }
+        |def f: ConstProp = ConstProp.Bot
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("ConstProp"), "Bot", Value.Unit), "f")
+  }
+
+  test("Expression.Tag.04") {
+    val input =
+      """enum Val { case Val(Bool) }
+        |def f: Val = Val.Val(true)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.True), "f")
+  }
+
+  test("Expression.Tag.05") {
+    val input =
+      """enum Val { case Val(Bool) }
+        |def f(x: Bool): Val = Val.Val(x)
+        |def g01: Val = f(true)
+        |def g02: Val = f(false)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.True), "g01")
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.False), "g02")
+  }
+
+  test("Expression.Tag.06") {
+    val input =
+      """enum Val { case Val(Str) }
+        |def f: Val = Val.Val("hi")
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkStr("hi")), "f")
+  }
+
+  test("Expression.Tag.07") {
+    val input =
+      """enum Val { case Val(Int, Str) }
+        |def f: Val = Val.Val(1, "one")
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.Tuple(Array(Value.mkInt32(1), "one"))), "f")
+  }
+
+  test("Expression.Tag.08") {
+    val input =
+      """enum Val { case Val(Str) }
+        |def f: Val = Val.Val(if (!(4 != 4)) "foo" else "bar")
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkStr("foo")), "f")
+  }
+
+  test("Expression.Tag.09") {
+    val input =
+      """enum Val { case Val(Str, Int) }
+        |def f: Val = Val.Val("ABC", 20 + 22)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.Tuple(Array("ABC", Value.mkInt32(42)))), "f")
+  }
+
+  test("Expression.Tag.10") {
+    val input =
+      """enum Val { case Val((Str, Int)) }
+        |def f: Val = Val.Val(("ABC", 20 + 22))
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.Tuple(Array("ABC", Value.mkInt32(42)))), "f")
+  }
+
+  test("Expression.Tag.11") {
+    val input =
+      """enum Val { case Val(Int8) }
+        |def f: Val = Val.Val(32i8)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkInt8(32)), "f")
+  }
+
+  test("Expression.Tag.12") {
+    val input =
+      """enum Val { case Val(Int16) }
+        |def f: Val = Val.Val(3200i16)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkInt16(3200)), "f")
+  }
+
+  test("Expression.Tag.13") {
+    val input =
+      """enum Val { case Val(Int32) }
+        |def f: Val = Val.Val(32000000i32)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkInt32(32000000)), "f")
+  }
+
+  test("Expression.Tag.14") {
+    val input =
+      """enum Val { case Val(Int64) }
+        |def f: Val = Val.Val(320000000000i64)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkInt64(320000000000L)), "f")
+  }
+
+  test("Expression.Tag.15") {
+    val input =
+      """enum Val { case Val(Char) }
+        |def f: Val = Val.Val('a')
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkChar('a')), "f")
+  }
+
+  test("Expression.Tag.16") {
+    val input =
+      """enum Val { case Val(Float32) }
+        |def f: Val = Val.Val(4.2f32)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkFloat32(4.2f)), "f")
+  }
+
+  test("Expression.Tag.17") {
+    val input =
+      """enum Val { case Val(Float64) }
+        |def f: Val = Val.Val(4.2f64)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkFloat64(4.2d)), "f")
+  }
+
+  test("Expression.Tag.18") {
+    val input =
+      """enum A { case AA(Int) }
+        |enum B { case BB(A) }
+        |def f: B = B.BB(A.AA(42))
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("B"), "BB", Value.mkTag(Symbol.Resolved.mk("A"), "AA", Value.mkInt32(42))), "f")
+  }
+
+  test("Expression.Tag.19") {
+    val input =
+      """enum Val { case Val(Set[Int]) }
+        |def f: Val = Val.Val(#{1, 2, 3})
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkSet(Set(1, 2, 3).map(Value.mkInt32))), "f")
+  }
+
 }
