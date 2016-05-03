@@ -80,7 +80,7 @@ impl PartialOrder[(A, B, C, D, E)] <= PartialOrder[A], PartialOrder[B], PartialO
 //
 // ## Options
 //
-
+// TODO: Reconsider this?
 /**
  * Implementation of `PartialOrder` for `Opt[A]`.
  *

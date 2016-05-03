@@ -1,4 +1,13 @@
 //
+// ## General Purpose Functions.
+//
+def min[E: TotalOrder](x: E, y: E): A =
+    if (x <= y) x else y
+
+def max[E: TotalOrder](x: E, y: E): A =
+    if (x >= y) x else y
+
+//
 // ## General Lattice Operations.
 //
 

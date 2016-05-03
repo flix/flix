@@ -33,6 +33,6 @@ impl PartialOrder[E] <= PreOrder[E], Norm[E] {
     /**
      * Returns `true` iff the element `x` is less than or equal to the element `y`.
      */
-    def leq(x: E, y: E): Bool = ⊡(x) ⊑ ⊡(y)
+    def leq(x: E, y: E): Bool = ⊡(x) ≼ ⊡(y)
 
 }
