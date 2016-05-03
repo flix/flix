@@ -72,7 +72,7 @@ object Typer2 {
            * Literal expression.
            */
           case TypedAst.Expression.Lit(lit, _, _) => lit match {
-            case TypedAst.Literal.Unit(loc) => Type.Unit
+            case TypedAst.Literal.Unit(_) => Type.Unit
             case TypedAst.Literal.Bool(_, _) => Type.Bool
             case TypedAst.Literal.Char(_, _) => Type.Char
             case TypedAst.Literal.Float32(_, _) => Type.Float32
@@ -237,14 +237,27 @@ object Typer2 {
           * Generates type constraints for the given pattern `p0` under the given type environment `tenv`.
           */
         def visitPat(p0: TypedAst.Pattern, tenv: Map[Name.Ident, Type]): Type = p0 match {
-          case TypedAst.Pattern.Wildcard(tpe, loc) => ???
-          case TypedAst.Pattern.Var(ident, tpe, loc) => ???
+          case TypedAst.Pattern.Wildcard(tpe, loc) => tpe
+          case TypedAst.Pattern.Var(ident, tpe, loc) => tpe
           case TypedAst.Pattern.Lit(lit, tpe, _) => lit match {
             case TypedAst.Literal.Unit(loc) => Type.Unit
-            // TODO ...
+            case TypedAst.Literal.Bool(_, _) => Type.Bool
+            case TypedAst.Literal.Char(_, _) => Type.Char
+            case TypedAst.Literal.Float32(_, _) => Type.Float32
+            case TypedAst.Literal.Float64(_, _) => Type.Float64
+            case TypedAst.Literal.Int8(_, _) => Type.Int8
+            case TypedAst.Literal.Int16(_, _) => Type.Int16
+            case TypedAst.Literal.Int32(_, _) => Type.Int32
+            case TypedAst.Literal.Int64(_, _) => Type.Int64
+            case TypedAst.Literal.BigInt(_, _) => Type.BigInt
+            case TypedAst.Literal.Str(_, _) => Type.Str
           }
+
           case TypedAst.Pattern.Tag(enum, tag, p1, tpe, loc) => ???
-          case TypedAst.Pattern.Tuple(elms, tpe, loc) => ???
+
+          case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
+            val tpes = elms.map(e => visitPat(e, tenv))
+            Type.Tuple(tpes)
         }
 
         visitExp(exp0, Map.empty)
@@ -262,15 +275,16 @@ object Typer2 {
     // TODO: Possibly return map from names to types.
     def unify(cs: List[TypeConstraint.Eq]): List[TypeConstraint.Eq] = ???
 
-    def unify(tc: TypeConstraint, tenv: Map[String, Type]): Map[String, Type] = tc match {  // TODO: Probably needs to return Validation.
+    def unify(tc: TypeConstraint, tenv: Map[String, Type]): Map[String, Type] = tc match {
+      // TODO: Probably needs to return Validation.
       case TypeConstraint.Eq(tpe1, tpe2) => unify(tpe1, tpe2, tenv)
       case TypeConstraint.OneOf(tpe1, ts) => ???
-        // try to unify each, and require at least one?
-        // how to ensure unique typing? need list of maps?
+      // try to unify each, and require at least one?
+      // how to ensure unique typing? need list of maps?
 
     }
 
-    def unify(tpe1: Type, tp2: Type, tenv: Map[String, Type]): Map[String, Type] = ???   // TODO: Probably needs to return Validation.
+    def unify(tpe1: Type, tp2: Type, tenv: Map[String, Type]): Map[String, Type] = ??? // TODO: Probably needs to return Validation.
 
   }
 
