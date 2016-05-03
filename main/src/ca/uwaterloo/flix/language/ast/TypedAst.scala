@@ -370,15 +370,6 @@ object TypedAst {
     case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
-      * A typed AST node representing a switch expression.
-      *
-      * @param rules the rules of the switch.
-      * @param tpe   the type of the rule bodies.
-      * @param loc   the source location.
-      */
-    case class Switch(rules: List[(TypedAst.Expression, TypedAst.Expression)], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
-
-    /**
       * A typed AST node representing a match expression.
       *
       * @param exp   the match expression.
@@ -387,6 +378,15 @@ object TypedAst {
       * @param loc   the source location.
       */
     case class Match(exp: TypedAst.Expression, rules: List[(TypedAst.Pattern, TypedAst.Expression)], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
+
+    /**
+      * A typed AST node representing a switch expression.
+      *
+      * @param rules the rules of the switch.
+      * @param tpe   the type of the rule bodies.
+      * @param loc   the source location.
+      */
+    case class Switch(rules: List[(TypedAst.Expression, TypedAst.Expression)], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing a tagged expression.
