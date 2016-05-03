@@ -1313,4 +1313,761 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt64(Long.MaxValue), "f07")
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.Binary (Arithmetic)                                          //
+  // BinaryOperator.{Plus,Minus,Times,Divide,Modulo,Exponentiate}            //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Binary - BinaryOperator.Plus.01") {
+    val input =
+      s"""def f01: Int = ${Int.MaxValue} + 1
+         |def f02: Int = 100000 + 400000
+         |def f03: Int = -400000 + 100000
+         |def f04: Int = -100000 + 400000
+         |def f05: Int = ${Int.MinValue} + -1
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(Int.MinValue), "f01")
+    t.runTest(Value.mkInt32(500000), "f02")
+    t.runTest(Value.mkInt32(-300000), "f03")
+    t.runTest(Value.mkInt32(300000), "f04")
+    t.runTest(Value.mkInt32(Int.MaxValue), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Plus.02") {
+    val input =
+      s"""def f01: Int8 = ${Byte.MaxValue}i8 + 1i8
+         |def f02: Int8 = 10i8 + 40i8
+         |def f03: Int8 = -40i8 + 10i8
+         |def f04: Int8 = -10i8 + 40i8
+         |def f05: Int8 = ${Byte.MinValue}i8 + -1i8
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt8(Byte.MinValue), "f01")
+    t.runTest(Value.mkInt8(50), "f02")
+    t.runTest(Value.mkInt8(-30), "f03")
+    t.runTest(Value.mkInt8(30), "f04")
+    t.runTest(Value.mkInt8(Byte.MaxValue), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Plus.03") {
+    val input =
+      s"""def f01: Int16 = ${Short.MaxValue}i16 + 1i16
+         |def f02: Int16 = 1000i16 + 4000i16
+         |def f03: Int16 = -4000i16 + 1000i16
+         |def f04: Int16 = -1000i16 + 4000i16
+         |def f05: Int16 = ${Short.MinValue}i16 + -1i16
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt16(Short.MinValue), "f01")
+    t.runTest(Value.mkInt16(5000), "f02")
+    t.runTest(Value.mkInt16(-3000), "f03")
+    t.runTest(Value.mkInt16(3000), "f04")
+    t.runTest(Value.mkInt16(Short.MaxValue), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Plus.04") {
+    val input =
+      s"""def f01: Int32 = ${Int.MaxValue}i32 + 1i32
+         |def f02: Int32 = 100000i32 + 400000i32
+         |def f03: Int32 = -400000i32 + 100000i32
+         |def f04: Int32 = -100000i32 + 400000i32
+         |def f05: Int32 = ${Int.MinValue}i32 + -1i32
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(Int.MinValue), "f01")
+    t.runTest(Value.mkInt32(500000), "f02")
+    t.runTest(Value.mkInt32(-300000), "f03")
+    t.runTest(Value.mkInt32(300000), "f04")
+    t.runTest(Value.mkInt32(Int.MaxValue), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Plus.05") {
+    val input =
+      s"""def f01: Int64 = ${Long.MaxValue}i64 + 1i64
+         |def f02: Int64 = 10000000000i64 + 40000000000i64
+         |def f03: Int64 = -40000000000i64 + 10000000000i64
+         |def f04: Int64 = -10000000000i64 + 40000000000i64
+         |def f05: Int64 = ${Long.MinValue}i64 + -1i64
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(Long.MinValue), "f01")
+    t.runTest(Value.mkInt64(50000000000L), "f02")
+    t.runTest(Value.mkInt64(-30000000000L), "f03")
+    t.runTest(Value.mkInt64(30000000000L), "f04")
+    t.runTest(Value.mkInt64(Long.MaxValue), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Plus.06") {
+    val input =
+      s"""def f01: Float = 12.34 + 56.78
+         |def f02: Float = 1234567890000000000000000000000000000000000000000.987654321 + 222.222
+         |def f03: Float = -1234567890000000000000000000000000000000000000000.987654321 + 0.0
+         |def f04: Float = 0.0000000000000000000000000000000000000000987654321 + 0.222
+         |def f05: Float = -0.0000000000000000000000000000000000000000987654321 + 0.222
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(69.12), "f01")
+    t.runTest(Value.mkFloat64(1.23456789E48), "f02")
+    t.runTest(Value.mkFloat64(-1.23456789E48), "f03")
+    t.runTest(Value.mkFloat64(0.222), "f04")
+    t.runTest(Value.mkFloat64(0.222), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Plus.07") {
+    val input =
+      s"""def f01: Float32 = 12.34f32 + 56.78f32
+         |def f02: Float32 = 123456789000000000000000000000000000000.987654321f32 + 222.222f32
+         |def f03: Float32 = -123456789000000000000000000000000000000.987654321f32 + 0.0f32
+         |def f04: Float32 = 0.000000000000000000000000000000987654321f32 + 0.222f32
+         |def f05: Float32 = -0.000000000000000000000000000000987654321f32 + 0.222f32
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat32(69.119995f), "f01")
+    t.runTest(Value.mkFloat32(1.23456789E38f), "f02")
+    t.runTest(Value.mkFloat32(-1.23456789E38f), "f03")
+    t.runTest(Value.mkFloat32(0.222f), "f04")
+    t.runTest(Value.mkFloat32(0.222f), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Plus.08") {
+    val input =
+      s"""def f01: Float64 = 12.34f64 + 56.78f64
+         |def f02: Float64 = 1234567890000000000000000000000000000000000000000.987654321f64 + 222.222f64
+         |def f03: Float64 = -1234567890000000000000000000000000000000000000000.987654321f64 + 0.0f64
+         |def f04: Float64 = 0.0000000000000000000000000000000000000000987654321f64 + 0.222f64
+         |def f05: Float64 = -0.0000000000000000000000000000000000000000987654321f64 + 0.222f64
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(69.12d), "f01")
+    t.runTest(Value.mkFloat64(1.23456789E48d), "f02")
+    t.runTest(Value.mkFloat64(-1.23456789E48d), "f03")
+    t.runTest(Value.mkFloat64(0.222d), "f04")
+    t.runTest(Value.mkFloat64(0.222d), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Minus.01") {
+    val input =
+      s"""def f01: Int = ${Int.MinValue} - 1
+         |def f02: Int = 400000 - 100000
+         |def f03: Int = -400000 - 100000
+         |def f04: Int = -100000 - 400000
+         |def f05: Int = ${Int.MaxValue} - -1
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(Int.MaxValue), "f01")
+    t.runTest(Value.mkInt32(300000), "f02")
+    t.runTest(Value.mkInt32(-500000), "f03")
+    t.runTest(Value.mkInt32(-500000), "f04")
+    t.runTest(Value.mkInt32(Int.MinValue), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Minus.02") {
+    val input =
+      s"""def f01: Int8 = ${Byte.MinValue}i8 - 1i8
+         |def f02: Int8 = 40i8 - 10i8
+         |def f03: Int8 = -40i8 - 10i8
+         |def f04: Int8 = -10i8 - 40i8
+         |def f05: Int8 = ${Byte.MaxValue}i8 - -1i8
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt8(Byte.MaxValue), "f01")
+    t.runTest(Value.mkInt8(30), "f02")
+    t.runTest(Value.mkInt8(-50), "f03")
+    t.runTest(Value.mkInt8(-50), "f04")
+    t.runTest(Value.mkInt8(Byte.MinValue), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Minus.03") {
+    val input =
+      s"""def f01: Int16 = ${Short.MinValue}i16 - 1i16
+         |def f02: Int16 = 4000i16 - 1000i16
+         |def f03: Int16 = -4000i16 - 1000i16
+         |def f04: Int16 = -1000i16 - 4000i16
+         |def f05: Int16 = ${Short.MaxValue}i16 - -1i16
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt16(Short.MaxValue), "f01")
+    t.runTest(Value.mkInt16(3000), "f02")
+    t.runTest(Value.mkInt16(-5000), "f03")
+    t.runTest(Value.mkInt16(-5000), "f04")
+    t.runTest(Value.mkInt16(Short.MinValue), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Minus.04") {
+    val input =
+      s"""def f01: Int32 = ${Int.MinValue}i32 - 1i32
+         |def f02: Int32 = 400000i32 - 100000i32
+         |def f03: Int32 = -400000i32 - 100000i32
+         |def f04: Int32 = -100000i32 - 400000i32
+         |def f05: Int32 = ${Int.MaxValue}i32 - -1i32
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(Int.MaxValue), "f01")
+    t.runTest(Value.mkInt32(300000), "f02")
+    t.runTest(Value.mkInt32(-500000), "f03")
+    t.runTest(Value.mkInt32(-500000), "f04")
+    t.runTest(Value.mkInt32(Int.MinValue), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Minus.05") {
+    val input =
+      s"""def f01: Int64 = ${Long.MinValue}i64 - 1i64
+         |def f02: Int64 = 40000000000i64 - 10000000000i64
+         |def f03: Int64 = -40000000000i64 - 10000000000i64
+         |def f04: Int64 = -10000000000i64 - 40000000000i64
+         |def f05: Int64 = ${Long.MaxValue}i64 - -1i64
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(Long.MaxValue), "f01")
+    t.runTest(Value.mkInt64(30000000000L), "f02")
+    t.runTest(Value.mkInt64(-50000000000L), "f03")
+    t.runTest(Value.mkInt64(-50000000000L), "f04")
+    t.runTest(Value.mkInt64(Long.MinValue), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Minus.06") {
+    val input =
+      s"""def f01: Float = 12.34 - 56.78
+         |def f02: Float = 1234567890000000000000000000000000000000000000000.987654321 - 222.222
+         |def f03: Float = -1234567890000000000000000000000000000000000000000.987654321 - 0.0
+         |def f04: Float = 0.0000000000000000000000000000000000000000987654321 - 0.222
+         |def f05: Float = -0.0000000000000000000000000000000000000000987654321 - 0.222
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(-44.44), "f01")
+    t.runTest(Value.mkFloat64(1.23456789E48), "f02")
+    t.runTest(Value.mkFloat64(-1.23456789E48), "f03")
+    t.runTest(Value.mkFloat64(-0.222), "f04")
+    t.runTest(Value.mkFloat64(-0.222), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Minus.07") {
+    val input =
+      s"""def f01: Float32 = 12.34f32 - 56.78f32
+         |def f02: Float32 = 123456789000000000000000000000000000000.987654321f32 - 222.222f32
+         |def f03: Float32 = -123456789000000000000000000000000000000.987654321f32 - 0.0f32
+         |def f04: Float32 = 0.000000000000000000000000000000987654321f32 - 0.222f32
+         |def f05: Float32 = -0.000000000000000000000000000000987654321f32 - 0.222f32
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat32(-44.44f), "f01")
+    t.runTest(Value.mkFloat32(1.23456789E38f), "f02")
+    t.runTest(Value.mkFloat32(-1.23456789E38f), "f03")
+    t.runTest(Value.mkFloat32(-0.222f), "f04")
+    t.runTest(Value.mkFloat32(-0.222f), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Minus.08") {
+    val input =
+      s"""def f01: Float64 = 12.34f64 - 56.78f64
+         |def f02: Float64 = 1234567890000000000000000000000000000000000000000.987654321f64 - 222.222f64
+         |def f03: Float64 = -1234567890000000000000000000000000000000000000000.987654321f64 - 0.0f64
+         |def f04: Float64 = 0.0000000000000000000000000000000000000000987654321f64 - 0.222f64
+         |def f05: Float64 = -0.0000000000000000000000000000000000000000987654321f64 - 0.222f64
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(-44.44d), "f01")
+    t.runTest(Value.mkFloat64(1.23456789E48d), "f02")
+    t.runTest(Value.mkFloat64(-1.23456789E48d), "f03")
+    t.runTest(Value.mkFloat64(-0.222d), "f04")
+    t.runTest(Value.mkFloat64(-0.222d), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Times.01") {
+    val input =
+      s"""def f01: Int = ${Int.MaxValue} * 2
+         |def f02: Int = 300 * 200
+         |def f03: Int = -200 * 300
+         |def f04: Int = -200 * -300
+         |def f05: Int = ${Int.MinValue} * -1
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(-2), "f01")
+    t.runTest(Value.mkInt32(60000), "f02")
+    t.runTest(Value.mkInt32(-60000), "f03")
+    t.runTest(Value.mkInt32(60000), "f04")
+    t.runTest(Value.mkInt32(Int.MinValue), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Times.02") {
+    val input =
+      s"""def f01: Int8 = ${Byte.MaxValue}i8 * 2i8
+         |def f02: Int8 = 3i8 * 2i8
+         |def f03: Int8 = -2i8 * 3i8
+         |def f04: Int8 = -2i8 * -3i8
+         |def f05: Int8 = ${Byte.MinValue}i8 * -1i8
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt8(-2), "f01")
+    t.runTest(Value.mkInt8(6), "f02")
+    t.runTest(Value.mkInt8(-6), "f03")
+    t.runTest(Value.mkInt8(6), "f04")
+    t.runTest(Value.mkInt8(Byte.MinValue), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Times.03") {
+    val input =
+      s"""def f01: Int16 = ${Short.MaxValue}i16 * 2i16
+         |def f02: Int16 = 30i16 * 20i16
+         |def f03: Int16 = -20i16 * 30i16
+         |def f04: Int16 = -20i16 * -30i16
+         |def f05: Int16 = ${Short.MinValue}i16 * -1i16
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt16(-2), "f01")
+    t.runTest(Value.mkInt16(600), "f02")
+    t.runTest(Value.mkInt16(-600), "f03")
+    t.runTest(Value.mkInt16(600), "f04")
+    t.runTest(Value.mkInt16(Short.MinValue), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Times.04") {
+    val input =
+      s"""def f01: Int32 = ${Int.MaxValue}i32 * 2i32
+         |def f02: Int32 = 300i32 * 200i32
+         |def f03: Int32 = -200i32 * 300i32
+         |def f04: Int32 = -200i32 * -300i32
+         |def f05: Int32 = ${Int.MinValue}i32 * -1i32
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(-2), "f01")
+    t.runTest(Value.mkInt32(60000), "f02")
+    t.runTest(Value.mkInt32(-60000), "f03")
+    t.runTest(Value.mkInt32(60000), "f04")
+    t.runTest(Value.mkInt32(Int.MinValue), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Times.05") {
+    val input =
+      s"""def f01: Int64 = ${Long.MaxValue}i64 * 2i64
+         |def f02: Int64 = 300000i64 * 200000i64
+         |def f03: Int64 = -200000i64 * 300000i64
+         |def f04: Int64 = -200000i64 * -300000i64
+         |def f05: Int64 = ${Long.MinValue}i64 * -1i64
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(-2), "f01")
+    t.runTest(Value.mkInt64(60000000000L), "f02")
+    t.runTest(Value.mkInt64(-60000000000L), "f03")
+    t.runTest(Value.mkInt64(60000000000L), "f04")
+    t.runTest(Value.mkInt64(Long.MinValue), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Times.06") {
+    val input =
+      s"""def f01: Float = 12.34 * 56.78
+         |def f02: Float = 1234567890000000000000000000000000000000000000000.987654321 * 222.222
+         |def f03: Float = -1234567890000000000000000000000000000000000000000.987654321 * 222.222
+         |def f04: Float = 0.0000000000000000000000000000000000000000987654321 * 0.222
+         |def f05: Float = -0.0000000000000000000000000000000000000000987654321 * 0.222
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(700.6652), "f01")
+    t.runTest(Value.mkFloat64(2.7434814565158003E50), "f02")
+    t.runTest(Value.mkFloat64(-2.7434814565158003E50), "f03")
+    t.runTest(Value.mkFloat64(2.19259259262E-41), "f04")
+    t.runTest(Value.mkFloat64(-2.19259259262E-41), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Times.07") {
+    val input =
+      s"""def f01: Float32 = 12.34f32 * 56.78f32
+         |def f02: Float32 = 123456789000000000000000000000000000000.987654321f32 * 0.222f32
+         |def f03: Float32 = -123456789000000000000000000000000000000.987654321f32 * 0.222f32
+         |def f04: Float32 = 0.000000000000000000000000000000987654321f32 * 222.222f32
+         |def f05: Float32 = -0.000000000000000000000000000000987654321f32 * 222.222f32
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat32(700.6652f), "f01")
+    t.runTest(Value.mkFloat32(2.7407407E37f), "f02")
+    t.runTest(Value.mkFloat32(-2.7407407E37f), "f03")
+    t.runTest(Value.mkFloat32(2.1947852E-28f), "f04")
+    t.runTest(Value.mkFloat32(-2.1947852E-28f), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Times.08") {
+    val input =
+      s"""def f01: Float64 = 12.34f64 * 56.78f64
+         |def f02: Float64 = 1234567890000000000000000000000000000000000000000.987654321f64 * 222.222f64
+         |def f03: Float64 = -1234567890000000000000000000000000000000000000000.987654321f64 * 222.222f64
+         |def f04: Float64 = 0.0000000000000000000000000000000000000000987654321f64 * 0.222f64
+         |def f05: Float64 = -0.0000000000000000000000000000000000000000987654321f64 * 0.222f64
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(700.6652d), "f01")
+    t.runTest(Value.mkFloat64(2.7434814565158003E50d), "f02")
+    t.runTest(Value.mkFloat64(-2.7434814565158003E50d), "f03")
+    t.runTest(Value.mkFloat64(2.19259259262E-41d), "f04")
+    t.runTest(Value.mkFloat64(-2.19259259262E-41d), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Divide.01") {
+    val input =
+      s"""def f01: Int = ${Int.MaxValue} / 1
+         |def f02: Int = 1200000 / 3
+         |def f03: Int = -1200000 / 3
+         |def f04: Int = -3 / 1200000
+         |def f05: Int = ${Int.MinValue} / -1
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(Int.MaxValue), "f01")
+    t.runTest(Value.mkInt32(400000), "f02")
+    t.runTest(Value.mkInt32(-400000), "f03")
+    t.runTest(Value.mkInt32(0), "f04")
+    t.runTest(Value.mkInt32(Int.MinValue), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Divide.02") {
+    val input =
+      s"""def f01: Int8 = ${Byte.MaxValue}i8 / 1i8
+         |def f02: Int8 = 12i8 / 3i8
+         |def f03: Int8 = -12i8 / 3i8
+         |def f04: Int8 = -3i8 / 12i8
+         |def f05: Int8 = ${Byte.MinValue}i8 / -1i8
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt8(Byte.MaxValue), "f01")
+    t.runTest(Value.mkInt8(4), "f02")
+    t.runTest(Value.mkInt8(-4), "f03")
+    t.runTest(Value.mkInt8(0), "f04")
+    t.runTest(Value.mkInt8(Byte.MinValue), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Divide.03") {
+    val input =
+      s"""def f01: Int16 = ${Short.MaxValue}i16 / 1i16
+         |def f02: Int16 = 12000i16 / 3i16
+         |def f03: Int16 = -12000i16 / 3i16
+         |def f04: Int16 = -3i16 / 12000i16
+         |def f05: Int16 = ${Short.MinValue}i16 / -1i16
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt16(Short.MaxValue), "f01")
+    t.runTest(Value.mkInt16(4000), "f02")
+    t.runTest(Value.mkInt16(-4000), "f03")
+    t.runTest(Value.mkInt16(0), "f04")
+    t.runTest(Value.mkInt16(Short.MinValue), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Divide.04") {
+    val input =
+      s"""def f01: Int32 = ${Int.MaxValue}i32 / 1i32
+         |def f02: Int32 = 1200000i32 / 3i32
+         |def f03: Int32 = -1200000i32 / 3i32
+         |def f04: Int32 = -3i32 / 1200000i32
+         |def f05: Int32 = ${Int.MinValue}i32 / -1i32
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(Int.MaxValue), "f01")
+    t.runTest(Value.mkInt32(400000), "f02")
+    t.runTest(Value.mkInt32(-400000), "f03")
+    t.runTest(Value.mkInt32(0), "f04")
+    t.runTest(Value.mkInt32(Int.MinValue), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Divide.05") {
+    val input =
+      s"""def f01: Int64 = ${Long.MaxValue}i64 / 1i64
+         |def f02: Int64 = 120000000000i64 / 3i64
+         |def f03: Int64 = -120000000000i64 / 3i64
+         |def f04: Int64 = -3i64 / 120000000000i64
+         |def f05: Int64 = ${Long.MinValue}i64 / -1i64
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(Long.MaxValue), "f01")
+    t.runTest(Value.mkInt64(40000000000L), "f02")
+    t.runTest(Value.mkInt64(-40000000000L), "f03")
+    t.runTest(Value.mkInt64(0), "f04")
+    t.runTest(Value.mkInt64(Long.MinValue), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Divide.06") {
+    val input =
+      s"""def f01: Float = 12.34 / 56.78
+         |def f02: Float = 1234567890000000000000000000000000000000000000000.987654321 / 222.222
+         |def f03: Float = -1234567890000000000000000000000000000000000000000.987654321 / 222.222
+         |def f04: Float = 0.0000000000000000000000000000000000000000987654321 / 0.222
+         |def f05: Float = -0.0000000000000000000000000000000000000000987654321 / 0.222
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(0.2173300457907714), "f01")
+    t.runTest(Value.mkFloat64(5.5555610605610604E45), "f02")
+    t.runTest(Value.mkFloat64(-5.5555610605610604E45), "f03")
+    t.runTest(Value.mkFloat64(4.4488933378378374E-40), "f04")
+    t.runTest(Value.mkFloat64(-4.4488933378378374E-40), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Divide.07") {
+    val input =
+      s"""def f01: Float32 = 12.34f32 / 56.78f32
+         |def f02: Float32 = 123456789000000000000000000000000000000.987654321f32 / 222.222f32
+         |def f03: Float32 = -123456789000000000000000000000000000000.987654321f32 / 222.222f32
+         |def f04: Float32 = 0.000000000000000000000000000000987654321f32 / 0.222f32
+         |def f05: Float32 = -0.000000000000000000000000000000987654321f32 / 0.222f32
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat32(0.21733005f), "f01")
+    t.runTest(Value.mkFloat32(5.5555608E35f), "f02")
+    t.runTest(Value.mkFloat32(-5.5555608E35f), "f03")
+    t.runTest(Value.mkFloat32(4.4488933E-30f), "f04")
+    t.runTest(Value.mkFloat32(-4.4488933E-30f), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Divide.08") {
+    val input =
+      s"""def f01: Float64 = 12.34f64 / 56.78f64
+         |def f02: Float64 = 1234567890000000000000000000000000000000000000000.987654321f64 / 222.222f64
+         |def f03: Float64 = -1234567890000000000000000000000000000000000000000.987654321f64 / 222.222f64
+         |def f04: Float64 = 0.0000000000000000000000000000000000000000987654321f64 / 0.222f64
+         |def f05: Float64 = -0.0000000000000000000000000000000000000000987654321f64 / 0.222f64
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(0.2173300457907714d), "f01")
+    t.runTest(Value.mkFloat64(5.5555610605610604E45d), "f02")
+    t.runTest(Value.mkFloat64(-5.5555610605610604E45d), "f03")
+    t.runTest(Value.mkFloat64(4.4488933378378374E-40d), "f04")
+    t.runTest(Value.mkFloat64(-4.4488933378378374E-40d), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Modulo.01") {
+    val input =
+      s"""def f01: Int = 1200000 % 200000
+         |def f02: Int = 1200000 % 500000
+         |def f03: Int = -1200000 % 500000
+         |def f04: Int = 1200000 % -500000
+         |def f05: Int = -1200000 % -500000
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(0), "f01")
+    t.runTest(Value.mkInt32(200000), "f02")
+    t.runTest(Value.mkInt32(-200000), "f03")
+    t.runTest(Value.mkInt32(200000), "f04")
+    t.runTest(Value.mkInt32(-200000), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Modulo.02") {
+    val input =
+      s"""def f01: Int8 = 12i8 % 2i8
+         |def f02: Int8 = 12i8 % 5i8
+         |def f03: Int8 = -12i8 % 5i8
+         |def f04: Int8 = 12i8 % -5i8
+         |def f05: Int8 = -12i8 % -5i8
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt8(0), "f01")
+    t.runTest(Value.mkInt8(2), "f02")
+    t.runTest(Value.mkInt8(-2), "f03")
+    t.runTest(Value.mkInt8(2), "f04")
+    t.runTest(Value.mkInt8(-2), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Modulo.03") {
+    val input =
+      s"""def f01: Int16 = 12000i16 % 2000i16
+         |def f02: Int16 = 12000i16 % 5000i16
+         |def f03: Int16 = -12000i16 % 5000i16
+         |def f04: Int16 = 12000i16 % -5000i16
+         |def f05: Int16 = -12000i16 % -5000i16
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt16(0), "f01")
+    t.runTest(Value.mkInt16(2000), "f02")
+    t.runTest(Value.mkInt16(-2000), "f03")
+    t.runTest(Value.mkInt16(2000), "f04")
+    t.runTest(Value.mkInt16(-2000), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Modulo.04") {
+    val input =
+      s"""def f01: Int32 = 1200000i32 % 200000i32
+         |def f02: Int32 = 1200000i32 % 500000i32
+         |def f03: Int32 = -1200000i32 % 500000i32
+         |def f04: Int32 = 1200000i32 % -500000i32
+         |def f05: Int32 = -1200000i32 % -500000i32
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(0), "f01")
+    t.runTest(Value.mkInt32(200000), "f02")
+    t.runTest(Value.mkInt32(-200000), "f03")
+    t.runTest(Value.mkInt32(200000), "f04")
+    t.runTest(Value.mkInt32(-200000), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Modulo.05") {
+    val input =
+      s"""def f01: Int64 = 120000000000i64 % 20000000000i64
+         |def f02: Int64 = 120000000000i64 % 50000000000i64
+         |def f03: Int64 = -120000000000i64 % 50000000000i64
+         |def f04: Int64 = 120000000000i64 % -50000000000i64
+         |def f05: Int64 = -120000000000i64 % -50000000000i64
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(0), "f01")
+    t.runTest(Value.mkInt64(20000000000L), "f02")
+    t.runTest(Value.mkInt64(-20000000000L), "f03")
+    t.runTest(Value.mkInt64(20000000000L), "f04")
+    t.runTest(Value.mkInt64(-20000000000L), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Modulo.06") {
+    val input =
+      s"""def f01: Float = 12.34 % 56.78
+         |def f02: Float = 1234567890000000000000000000000000000000000000000.987654321 % 222.222
+         |def f03: Float = -1234567890000000000000000000000000000000000000000.987654321 % 222.222
+         |def f04: Float = 0.0000000000000000000000000000000000000000987654321 % 0.222
+         |def f05: Float = -0.0000000000000000000000000000000000000000987654321 % 0.222
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(12.34), "f01")
+    t.runTest(Value.mkFloat64(88.53722751835619), "f02")
+    t.runTest(Value.mkFloat64(-88.53722751835619), "f03")
+    t.runTest(Value.mkFloat64(9.87654321E-41), "f04")
+    t.runTest(Value.mkFloat64(-9.87654321E-41), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Modulo.07") {
+    val input =
+      s"""def f01: Float32 = 12.34f32 % 56.78f32
+         |def f02: Float32 = 123456789000000000000000000000000000000.987654321f32 % 222.222f32
+         |def f03: Float32 = -123456789000000000000000000000000000000.987654321f32 % 222.222f32
+         |def f04: Float32 = 0.000000000000000000000000000000987654321f32 % 0.222f32
+         |def f05: Float32 = -0.000000000000000000000000000000987654321f32 % 0.222f32
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat32(12.34f), "f01")
+    t.runTest(Value.mkFloat32(29.297333f), "f02")
+    t.runTest(Value.mkFloat32(-29.297333f), "f03")
+    t.runTest(Value.mkFloat32(9.876543E-31f), "f04")
+    t.runTest(Value.mkFloat32(-9.876543E-31f), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Modulo.08") {
+    val input =
+      s"""def f01: Float64 = 12.34f64 % 56.78f64
+         |def f02: Float64 = 1234567890000000000000000000000000000000000000000.987654321f64 % 222.222f64
+         |def f03: Float64 = -1234567890000000000000000000000000000000000000000.987654321f64 % 222.222f64
+         |def f04: Float64 = 0.0000000000000000000000000000000000000000987654321f64 % 0.222f64
+         |def f05: Float64 = -0.0000000000000000000000000000000000000000987654321f64 % 0.222f64
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(12.34d), "f01")
+    t.runTest(Value.mkFloat64(88.53722751835619d), "f02")
+    t.runTest(Value.mkFloat64(-88.53722751835619d), "f03")
+    t.runTest(Value.mkFloat64(9.87654321E-41d), "f04")
+    t.runTest(Value.mkFloat64(-9.87654321E-41d), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Exponentiate.01") {
+    val input =
+      s"""def f01: Int = 2 ** 0
+         |def f02: Int = -2 ** 1
+         |def f03: Int = 2 ** 2
+         |def f04: Int = -2 ** 31
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(1), "f01")
+    t.runTest(Value.mkInt32(-2), "f02")
+    t.runTest(Value.mkInt32(4), "f03")
+    t.runTest(Value.mkInt32(-2147483648), "f04")
+  }
+
+  test("Expression.Binary - BinaryOperator.Exponentiate.02") {
+    val input =
+      s"""def f01: Int8 = 2i8 ** 0i8
+         |def f02: Int8 = -2i8 ** 1i8
+         |def f03: Int8 = 2i8 ** 2i8
+         |def f04: Int8 = -2i8 ** 7i8
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt8(1), "f01")
+    t.runTest(Value.mkInt8(-2), "f02")
+    t.runTest(Value.mkInt8(4), "f03")
+    t.runTest(Value.mkInt8(-128), "f04")
+  }
+
+  test("Expression.Binary - BinaryOperator.Exponentiate.03") {
+    val input =
+      s"""def f01: Int16 = 2i16 ** 0i16
+         |def f02: Int16 = -2i16 ** 1i16
+         |def f03: Int16 = 2i16 ** 2i16
+         |def f04: Int16 = -2i16 ** 15i16
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt16(1), "f01")
+    t.runTest(Value.mkInt16(-2), "f02")
+    t.runTest(Value.mkInt16(4), "f03")
+    t.runTest(Value.mkInt16(-32768), "f04")
+  }
+
+  test("Expression.Binary - BinaryOperator.Exponentiate.04") {
+    val input =
+      s"""def f01: Int32 = 2i32 ** 0i32
+         |def f02: Int32 = -2i32 ** 1i32
+         |def f03: Int32 = 2i32 ** 2i32
+         |def f04: Int32 = -2i32 ** 31i32
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(1), "f01")
+    t.runTest(Value.mkInt32(-2), "f02")
+    t.runTest(Value.mkInt32(4), "f03")
+    t.runTest(Value.mkInt32(-2147483648), "f04")
+  }
+
+  test("Expression.Binary - BinaryOperator.Exponentiate.05") {
+    val input =
+      s"""def f01: Int64 = 2i64 ** 0i64
+         |def f02: Int64 = -2i64 ** 1i64
+         |def f03: Int64 = 2i64 ** 2i64
+         |def f04: Int64 = -2i64 ** 63i64
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(1L), "f01")
+    t.runTest(Value.mkInt64(-2L), "f02")
+    t.runTest(Value.mkInt64(4L), "f03")
+    t.runTest(Value.mkInt64(-9223372036854775808L), "f04")
+  }
+
+  test("Expression.Binary - BinaryOperator.Exponentiate.06") {
+    val input =
+      s"""def f01: Float = 2.0 ** 0.0
+         |def f02: Float = -2.0 ** -1.0
+         |def f03: Float = 0.01 ** 0.5
+         |def f04: Float = -2.0 ** 100.0
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(1.0d), "f01")
+    t.runTest(Value.mkFloat64(-0.5d), "f02")
+    t.runTest(Value.mkFloat64(0.1d), "f03")
+    t.runTest(Value.mkFloat64(1.2676506002282294E30d), "f04")
+  }
+
+  test("Expression.Binary - BinaryOperator.Exponentiate.07") {
+    val input =
+      s"""def f01: Float32 = 2.0f32 ** 0.0f32
+         |def f02: Float32 = -2.0f32 ** -1.0f32
+         |def f03: Float32 = 0.01f32 ** 0.5f32
+         |def f04: Float32 = -2.0f32 ** 100.0f32
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat32(1.0f), "f01")
+    t.runTest(Value.mkFloat32(-0.5f), "f02")
+    t.runTest(Value.mkFloat32(0.1f), "f03")
+    t.runTest(Value.mkFloat32(1.2676506E30f), "f04")
+  }
+
+  test("Expression.Binary - BinaryOperator.Exponentiate.08") {
+    val input =
+      s"""def f01: Float64 = 2.0f64 ** 0.0f64
+         |def f02: Float64 = -2.0f64 ** -1.0f64
+         |def f03: Float64 = 0.01f64 ** 0.5f64
+         |def f04: Float64 = -2.0f64 ** 100.0f64
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(1.0d), "f01")
+    t.runTest(Value.mkFloat64(-0.5d), "f02")
+    t.runTest(Value.mkFloat64(0.1d), "f03")
+    t.runTest(Value.mkFloat64(1.2676506002282294E30d), "f04")
+  }
+
 }
