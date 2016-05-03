@@ -3692,4 +3692,138 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt64(-3000000000L), "f04")
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.IfThenElse                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.IfThenElse.01") {
+    val input = "def f: Int = if (false) 42 + 10 else 42 - 10"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(32), "f")
+  }
+
+  test("Expression.IfThenElse.02") {
+    val input = "def f: Int = if (true) 42 + 10 else 42 - 10"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(52), "f")
+  }
+
+  test("Expression.IfThenElse.03") {
+    val input =
+      """def f(x: Bool): Int = if (x) (if (false) 1 else 2) else (if (true) 3 else 4)
+        |def g01: Int = f(true)
+        |def g02: Int = f(false)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(2), "g01")
+    t.runTest(Value.mkInt32(3), "g02")
+  }
+
+  test("Expression.IfThenElse.04") {
+    val input =
+      """def f(x: Bool): Int = if (if (!x) true else false) 1234 else 5678
+        |def g01: Int = f(true)
+        |def g02: Int = f(false)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(5678), "g01")
+    t.runTest(Value.mkInt32(1234), "g02")
+  }
+
+  test("Expression.IfThenElse.05") {
+    val input =
+      """def f(x: Bool, y: Bool): Int = if (x && y) 1234 else 5678
+        |def g01: Int = f(true, true)
+        |def g02: Int = f(false, true)
+        |def g03: Int = f(true, false)
+        |def g04: Int = f(false, false)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(1234), "g01")
+    t.runTest(Value.mkInt32(5678), "g02")
+    t.runTest(Value.mkInt32(5678), "g03")
+    t.runTest(Value.mkInt32(5678), "g04")
+  }
+
+  test("Expression.IfThenElse.06") {
+    val input =
+      """def f(x: Bool, y: Bool): Int = if (x || y) 1234 else 5678
+        |def g01: Int = f(true, true)
+        |def g02: Int = f(false, true)
+        |def g03: Int = f(true, false)
+        |def g04: Int = f(false, false)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(1234), "g01")
+    t.runTest(Value.mkInt32(1234), "g02")
+    t.runTest(Value.mkInt32(1234), "g03")
+    t.runTest(Value.mkInt32(5678), "g04")
+  }
+
+  test("Expression.IfThenElse.07") {
+    val input =
+      """def f(x: Int8, y: Int8): Int8 = if (x < y) 12i8 else 56i8
+        |def g01: Int8 = f(5i8, 24i8)
+        |def g02: Int8 = f(5i8, 5i8)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt8(12), "g01")
+    t.runTest(Value.mkInt8(56), "g02")
+  }
+
+  test("Expression.IfThenElse.08") {
+    val input =
+      """def f(x: Int16, y: Int16): Int16 = if (x <= y) 1234i16 else 5678i16
+        |def g01: Int16 = f(500i16, 500i16)
+        |def g02: Int16 = f(500i16, 200i16)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt16(1234), "g01")
+    t.runTest(Value.mkInt16(5678), "g02")
+  }
+
+  test("Expression.IfThenElse.09") {
+    val input =
+      """def f(x: Int32, y: Int32): Int32 = if (x > y) 12341234i32 else 56785678i32
+        |def g01: Int32 = f(2400000i32, 500000i32)
+        |def g02: Int32 = f(500000i32, 500000i32)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(12341234), "g01")
+    t.runTest(Value.mkInt32(56785678), "g02")
+  }
+
+  test("Expression.IfThenElse.10") {
+    val input =
+      """def f(x: Int64, y: Int64): Int64 = if (x >= y) 123412341234i64 else 567856785678i64
+        |def g01: Int64 = f(50000000000i64, 50000000000i64)
+        |def g02: Int64 = f(20000000000i64, 50000000000i64)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(123412341234L), "g01")
+    t.runTest(Value.mkInt64(567856785678L), "g02")
+  }
+
+  test("Expression.IfThenElse.11") {
+    val input =
+      """def f(x: Int, y: Int): Int = if (x == y) 1234 else 5678
+        |def g01: Int = f(5, 5)
+        |def g02: Int = f(2, 5)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(1234), "g01")
+    t.runTest(Value.mkInt32(5678), "g02")
+  }
+
+  test("Expression.IfThenElse.12") {
+    val input =
+      """def f(x: Int, y: Int): Int = if (x != y) 1234 else 5678
+        |def g01: Int = f(2, 5)
+        |def g02: Int = f(5, 5)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(1234), "g01")
+    t.runTest(Value.mkInt32(5678), "g02")
+  }
+
 }
