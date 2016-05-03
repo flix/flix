@@ -4332,4 +4332,73 @@ class TestBackend extends FunSuite {
     val t = new Tester(input)
     t.runTest(Value.Tuple(Array(Value.mkSet(Set(1, 2, 3).map(Value.mkInt32)), Value.mkSet(Set('a', 'b').map(Value.mkChar)))), "f")
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.{CheckNil,CheckCons}                                         //
+  // Tested indirectly by pattern matching.                                  //
+  /////////////////////////////////////////////////////////////////////////////
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.Set                                                          //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Set.01") {
+    val input = "def f: Set[Int] = #{1, 4, 2}"
+    val t = new Tester(input)
+    t.runTest(Value.mkSet(Set(1, 4, 2).map(Value.mkInt32)), "f")
+  }
+
+  test("Expression.Set.02") {
+    val input = "def f: Set[Int8] = #{1i8 + 2i8, 3i8 * 4i8, 5i8 - 6i8}"
+    val t = new Tester(input)
+    t.runTest(Value.mkSet(Set(3, 12, -1).map(Value.mkInt8)), "f")
+  }
+
+  test("Expression.Set.03") {
+    val input = "def f: Set[(Int16, Bool)] = #{(1i16 + 2i16, true), (2i16 + 1i16, !false), (4i16 * 7i16, true), (5i16, true && false)}"
+    val t = new Tester(input)
+    t.runTest(Value.mkSet(Set(
+      Value.Tuple(Array(Value.mkInt16(3), Value.True)),
+      Value.Tuple(Array(Value.mkInt16(28), Value.True)),
+      Value.Tuple(Array(Value.mkInt16(5), Value.False))
+    )), "f")
+  }
+
+  test("Expression.Set.04") {
+    val input = "def f: Set[Int64] = #{10000000000i64}"
+    val t = new Tester(input)
+    t.runTest(Value.mkSet(Set(Value.mkInt64(10000000000L))), "f")
+  }
+
+  test("Expression.Set.05") {
+    val input = "def f: Set[Char] = #{'a', 'b', 'c'}"
+    val t = new Tester(input)
+    t.runTest(Value.mkSet(Set(Value.mkChar('a'), Value.mkChar('b'), Value.mkChar('c'))), "f")
+  }
+
+  test("Expression.Set.06") {
+    val input = "def f: Set[Float32] = #{0.0f32, -0.0f32}"
+    val t = new Tester(input)
+    t.runTest(Value.mkSet(Set(Value.mkFloat32(0.0f), Value.mkFloat32(-0.0f))), "f")
+  }
+
+  test("Expression.Set.07") {
+    val input = "def f: Set[Float64] = #{0.0f64, -0.0f64}"
+    val t = new Tester(input)
+    t.runTest(Value.mkSet(Set(Value.mkFloat64(0.0d), Value.mkFloat64(-0.0d))), "f")
+  }
+
+  test("Expression.Set.08") {
+    val input =
+      """enum T { case Top, case Val(Int), case Bot }
+        |def f: Set[T] = #{T.Top, T.Top, T.Val(1), T.Val(0)}
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkSet(Set(
+      Value.mkTag(Symbol.Resolved.mk("T"), "Top", Value.Unit),
+      Value.mkTag(Symbol.Resolved.mk("T"), "Val", Value.mkInt32(1)),
+      Value.mkTag(Symbol.Resolved.mk("T"), "Val", Value.mkInt32(0))
+    )), "f")
+  }
+
 }
