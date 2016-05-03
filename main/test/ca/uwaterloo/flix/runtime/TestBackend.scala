@@ -892,4 +892,28 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkFloat64(3.3d), "g")
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.{Hook,Apply} - Hook.Safe                                     //
+  // Re-implements Expression.Lambda tests but using (safe) hooks instead.   //
+  // Note that some Lambda tests can't be reimplemented here and vice versa. //
+  /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: Tests when interop (Hook) is implemented in codegen. The Tester class will need to be updated.
+  // There are some subtleties with codegen that might make us revisit the design, and affect the interpreter.
+  // Also, note that we can only interop with 0-arg native functions, not native values. addHook() and addHookUnsafe()
+  // will complain if you give them a non-function type. However, we don't allow 0-arg functions in Flix.
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.{Hook,Apply} - Hook.Unsafe                                   //
+  // Re-implements Expression.Lambda tests but using (unsafe) hooks instead. //
+  // Note that native functions need to be annotated with JBool, JInt, etc.  //
+  // This is necessary so that implicits are properly called.                //
+  // Note that some Lambda tests can't be reimplemented here and vice versa. //
+  /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: Tests when interop (Hook) is implemented in codegen. The Tester class will need to be updated.
+  // There are some subtleties with codegen that might make us revisit the design, and affect the interpreter.
+  // Also, note that we can only interop with 0-arg native functions, not native values. addHook() and addHookUnsafe()
+  // will complain if you give them a non-function type. However, we don't allow 0-arg functions in Flix.
+
 }
