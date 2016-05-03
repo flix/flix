@@ -122,4 +122,488 @@ class TestBackend extends FunSuite {
     val compiled = getModel(codegen = true)
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.{Unit,Bool,Char,Float32,Float64,Int8,Int16,Int32,Int64,Str}  //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Unit") {
+    val input = "def f: () = ()"
+    val t = new Tester(input)
+    t.runTest(Value.Unit, "f")
+  }
+
+  test("Expression.Bool.01") {
+    val input = "def f: Bool = true"
+    val t = new Tester(input)
+    t.runTest(Value.True, "f")
+  }
+
+  test("Expression.Bool.02") {
+    val input = "def f: Bool = false"
+    val t = new Tester(input)
+    t.runTest(Value.False, "f")
+  }
+
+  test("Expression.Char.01") {
+    val input = "def f: Char = 'a'"
+    val t = new Tester(input)
+    t.runTest(Value.mkChar('a'), "f")
+  }
+
+  test("Expression.Char.02") {
+    val input = "def f: Char = '0'"
+    val t = new Tester(input)
+    t.runTest(Value.mkChar('0'), "f")
+  }
+
+  test("Expression.Char.03") {
+    // Minimum character value (NUL)
+    val input = s"def f: Char = '${'\u0000'}'"
+    val t = new Tester(input)
+    t.runTest(Value.mkChar('\u0000'), "f")
+  }
+
+  test("Expression.Char.04") {
+    // Non-printable ASCII character DEL
+    val input = s"def f: Char = '${'\u007f'}'"
+    val t = new Tester(input)
+    t.runTest(Value.mkChar('\u007f'), "f")
+  }
+
+  test("Expression.Char.05") {
+    // Maximum character value
+    val input = s"def f: Char = '${'\uffff'}'"
+    val t = new Tester(input)
+    t.runTest(Value.mkChar('\uffff'), "f")
+  }
+
+  test("Expression.Char.06") {
+    // Chinese character for the number "ten"
+    val input = s"def f: Char = '${'十'}'"
+    val t = new Tester(input)
+    t.runTest(Value.mkChar('十'), "f")
+  }
+
+  test("Expression.Char.07") {
+    // Zero-width space
+    val input = s"def f: Char = '${'\u200b'}'"
+    val t = new Tester(input)
+    t.runTest(Value.mkChar('\u200b'), "f")
+  }
+
+  // TODO: More tests when we get the syntax for exponents. More tests when we have standard library (NaN, +/infinity).
+  // See JLS 3.10.2:
+  //   The largest positive finite literal of type float is 3.4028235e38f.
+  //   The smallest positive finite non-zero literal of type float is 1.40e-45f.
+  //   The largest positive finite literal of type double is 1.7976931348623157e308.
+  //   The smallest positive finite non-zero literal of type double is 4.9e-324.
+
+  test("Expression.Float.01") {
+    val input = "def f: Float = 0.0"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(0.0), "f")
+  }
+
+  test("Expression.Float.02") {
+    val input = "def f: Float = -0.0"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(-0.0), "f")
+  }
+
+  test("Expression.Float.03") {
+    val input = "def f: Float = 4.2"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(4.2), "f")
+  }
+
+  test("Expression.Float.04") {
+    val input = "def f: Float = 99999999999999999999999999999999999999999999999999999999999999999999999999999999.0"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(99999999999999999999999999999999999999999999999999999999999999999999999999999999.0), "f")
+  }
+
+  test("Expression.Float.05") {
+    val input = "def f: Float = 0.000000000000000000000000000000000000000000000000000000000000000000000000000000001"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(0.000000000000000000000000000000000000000000000000000000000000000000000000000000001), "f")
+  }
+
+  test("Expression.Float.06") {
+    val input = "def f: Float = -99999999999999999999999999999999999999999999999999999999999999999999999999999999.0"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(-99999999999999999999999999999999999999999999999999999999999999999999999999999999.0), "f")
+  }
+
+  test("Expression.Float.07") {
+    val input = "def f: Float = -0.000000000000000000000000000000000000000000000000000000000000000000000000000000001"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001), "f")
+  }
+
+  /*
+   * Note that there are specific bytecode instructions for constants 0.0f, 1.0f, and 2.0f.
+   */
+
+  test("Expression.Float32.01") {
+    val input = "def f: Float32 = 0.0f32"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat32(0.0f), "f")
+  }
+
+  test("Expression.Float32.02") {
+    val input = "def f: Float32 = -0.0f32"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat32(-0.0f), "f")
+  }
+
+  test("Expression.Float32.03") {
+    val input = "def f: Float32 = 1.0f32"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat32(1.0f), "f")
+  }
+
+  test("Expression.Float32.04") {
+    val input = "def f: Float32 = 2.0f32"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat32(2.0f), "f")
+  }
+
+  test("Expression.Float32.05") {
+    val input = "def f: Float32 = 4.2f32"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat32(4.2f), "f")
+  }
+
+  test("Expression.Float32.06") {
+    val input = "def f: Float32 = 999999999999999999999999999999.0f32"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat32(999999999999999999999999999999.0f), "f")
+  }
+
+  test("Expression.Float32.07") {
+    val input = "def f: Float32 = 0.0000000000000000000000000000001f32"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat32(0.0000000000000000000000000000001f), "f")
+  }
+
+  test("Expression.Float32.08") {
+    val input = "def f: Float32 = -999999999999999999999999999999.0f32"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat32(-999999999999999999999999999999.0f), "f")
+  }
+
+  test("Expression.Float32.09") {
+    val input = "def f: Float32 = -0.0000000000000000000000000000001f32"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat32(-0.0000000000000000000000000000001f), "f")
+  }
+
+  /*
+   * Note that there are specific bytecode instructions for constants 0.0d and 1.0d.
+   */
+
+  test("Expression.Float64.01") {
+    val input = "def f: Float64 = 0.0f64"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(0.0d), "f")
+  }
+
+  test("Expression.Float64.02") {
+    val input = "def f: Float64 = -0.0f64"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(-0.0d), "f")
+  }
+
+  test("Expression.Float64.03") {
+    val input = "def f: Float64 = 1.0f64"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(1.0d), "f")
+  }
+
+  test("Expression.Float64.04") {
+    val input = "def f: Float64 = 2.0f64"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(2.0d), "f")
+  }
+
+  test("Expression.Float64.05") {
+    val input = "def f: Float64 = 4.2f64"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(4.2d), "f")
+  }
+
+  test("Expression.Float64.06") {
+    val input = "def f: Float64 = 99999999999999999999999999999999999999999999999999999999999999999999999999999999.0f64"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(99999999999999999999999999999999999999999999999999999999999999999999999999999999.0d), "f")
+  }
+
+  test("Expression.Float64.07") {
+    val input = "def f: Float64 = 0.000000000000000000000000000000000000000000000000000000000000000000000000000000001f64"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(0.000000000000000000000000000000000000000000000000000000000000000000000000000000001d), "f")
+  }
+
+  test("Expression.Float64.08") {
+    val input = "def f: Float64 = -99999999999999999999999999999999999999999999999999999999999999999999999999999999.0f64"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(-99999999999999999999999999999999999999999999999999999999999999999999999999999999.0d), "f")
+  }
+
+  test("Expression.Float64.09") {
+    val input = "def f: Float64 = -0.000000000000000000000000000000000000000000000000000000000000000000000000000000001f64"
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001d), "f")
+  }
+
+  /*
+   * Note that there are specific bytecode instructions for the constants -1 to 5, inclusive.
+   */
+
+  test("Expression.Int.01") {
+    val input = "def f: Int = 0"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(0), "f")
+  }
+
+  test("Expression.Int.02") {
+    val input = "def f: Int = -1"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(-1), "f")
+  }
+
+  test("Expression.Int.03") {
+    val input = "def f: Int = 1"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(1), "f")
+  }
+
+  test("Expression.Int.04") {
+    val input = "def f: Int = 5"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(5), "f")
+  }
+
+  test("Expression.Int.05") {
+    val input = "def f: Int = -254542"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(-254542), "f")
+  }
+
+  test("Expression.Int.06") {
+    val input = "def f: Int = 45649878"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(45649878), "f")
+  }
+
+  test("Expression.Int.07") {
+    val input = s"def f: Int = ${Int.MaxValue}"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(Int.MaxValue), "f")
+  }
+
+  test("Expression.Int.08") {
+    val input = s"def f: Int = ${Int.MinValue}"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(Int.MinValue), "f")
+  }
+
+  /*
+   * Note that there is a specific bytecode instruction (BIPUSH) for pushing bytes
+   * (that aren't handled by the -1 to 5 constant instructions).
+   */
+
+  test("Expression.Int8.01") {
+    val input = "def f: Int8 = -105i8"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt8(-105), "f")
+  }
+
+  test("Expression.Int8.02") {
+    val input = "def f: Int8 = 121i8"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt8(121), "f")
+  }
+
+  test("Expression.Int8.03") {
+    val input = "def f: Int8 = -2i8"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt8(-2), "f")
+  }
+
+  test("Expression.Int8.04") {
+    val input = "def f: Int8 = 6i8"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt8(6), "f")
+  }
+
+  test("Expression.Int8.05") {
+    val input = s"def f: Int8 = ${Byte.MaxValue}i8"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt8(Byte.MaxValue), "f")
+  }
+
+  test("Expression.Int8.06") {
+    val input = s"def f: Int8 = ${Byte.MinValue}i8"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt8(Byte.MinValue), "f")
+  }
+
+  /*
+   * Note that there is a specific bytecode instruction (SIPUSH) for pushing shorts (that aren't handled by BIPUSH).
+   */
+
+  test("Expression.Int16.01") {
+    val input = "def f: Int16 = -5320i16"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt16(-5320), "f")
+  }
+
+  test("Expression.Int16.02") {
+    val input = "def f: Int16 = 4568i16"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt16(4568), "f")
+  }
+
+  test("Expression.Int16.03") {
+    val input = s"def f: Int16 = ${Byte.MinValue - 1}i16"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt16(Byte.MinValue - 1), "f")
+  }
+
+  test("Expression.Int16.04") {
+    val input = s"def f: Int16 = ${Byte.MaxValue + 1}i16"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt16(Byte.MaxValue + 1), "f")
+  }
+
+  test("Expression.Int16.05") {
+    val input = s"def f: Int16 = ${Short.MaxValue}i16"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt16(Short.MaxValue), "f")
+  }
+
+  test("Expression.Int16.06") {
+    val input = s"def f: Int16 = ${Short.MinValue}i16"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt16(Short.MinValue), "f")
+  }
+
+  /*
+   * Larger int constants need to be loaded with LDC.
+   */
+
+  test("Expression.Int32.01") {
+    val input = "def f: Int32 = -254542i32"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(-254542), "f")
+  }
+
+  test("Expression.Int32.02") {
+    val input = "def f: Int32 = 45649878i32"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(45649878), "f")
+  }
+
+  test("Expression.Int32.03") {
+    val input = s"def f: Int32 = ${Short.MinValue - 1}i32"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(Short.MinValue - 1), "f")
+  }
+
+  test("Expression.Int32.04") {
+    val input = s"def f: Int32 = ${Short.MaxValue + 1}i32"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(Short.MaxValue + 1), "f")
+  }
+
+  test("Expression.Int32.05") {
+    val input = s"def f: Int32 = ${Int.MaxValue}i32"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(Int.MaxValue), "f")
+  }
+
+  test("Expression.Int32.06") {
+    val input = s"def f: Int32 = ${Int.MinValue}i32"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(Int.MinValue), "f")
+  }
+
+  /*
+   * Note that there are specific bytecode instructions for the constants 0l and 1l.
+   */
+
+  test("Expression.Int64.01") {
+    val input = "def f: Int64 = -254454121542i64"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(-254454121542L), "f")
+  }
+
+  test("Expression.Int64.02") {
+    val input = "def f: Int64 = 45641198784545i64"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(45641198784545L), "f")
+  }
+
+  test("Expression.Int64.03") {
+    val input = s"def f: Int64 = ${Int.MinValue - 1}i64"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(Int.MinValue - 1), "f")
+  }
+
+  test("Expression.Int64.04") {
+    val input = s"def f: Int64 = ${Int.MaxValue + 1}i64"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(Int.MaxValue + 1), "f")
+  }
+
+  test("Expression.Int64.05") {
+    val input = s"def f: Int64 = ${Long.MaxValue}i64"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(Long.MaxValue), "f")
+  }
+
+  test("Expression.Int64.06") {
+    val input = s"def f: Int64 = ${Long.MinValue}i64"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(Long.MinValue), "f")
+  }
+
+  test("Expression.Int64.07") {
+    val input = "def f: Int64 = 0i64"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(0L), "f")
+  }
+
+  test("Expression.Int64.08") {
+    val input = "def f: Int64 = 1i64"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(1L), "f")
+  }
+
+  test("Expression.Str.01") {
+    val input = """def f: Str = """""
+    val t = new Tester(input)
+    t.runTest(Value.mkStr(""), "f")
+  }
+
+  test("Expression.Str.02") {
+    val input = """def f: Str = "Hello World!""""
+    val t = new Tester(input)
+    t.runTest(Value.mkStr("Hello World!"), "f")
+  }
+
+  test("Expression.Str.03") {
+    val input = """def f: Str = "asdf""""
+    val t = new Tester(input)
+    t.runTest(Value.mkStr("asdf"), "f")
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // LoadExpression and StoreExpression                                      //
+  /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: LoadExpression and StoreExpression tests.
+  // {Load,Store}Expressions are generated, and not explicitly written in a Flix program
+
 }
