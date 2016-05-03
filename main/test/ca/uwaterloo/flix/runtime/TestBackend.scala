@@ -3163,4 +3163,147 @@ class TestBackend extends FunSuite {
     t.runTest(Value.False, "f04")
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.Binary (Logical)                                             //
+  // BinaryOperator.{LogicalAnd,LogicalOr,Implication,Biconditional}         //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Binary - BinaryOperator.LogicalAnd.01") {
+    val input = "def f: Bool = true && true"
+    val t = new Tester(input)
+    t.runTest(Value.True, "f")
+  }
+
+  test("Expression.Binary - BinaryOperator.LogicalAnd.02") {
+    val input = "def f: Bool = true && false"
+    val t = new Tester(input)
+    t.runTest(Value.False, "f")
+  }
+
+  test("Expression.Binary - BinaryOperator.LogicalAnd.03") {
+    val input = "def f: Bool = false && false"
+    val t = new Tester(input)
+    t.runTest(Value.False, "f")
+  }
+
+  test("Expression.Binary - BinaryOperator.LogicalAnd.04") {
+    val input = "def f: Bool = false && true"
+    val t = new Tester(input)
+    t.runTest(Value.False, "f")
+  }
+
+  // TODO: Typechecker doesn't properly handle ???
+  ignore("Expression.Binary - BinaryOperator.LogicalAnd.05") {
+    val input = "def f: Bool = false && ???"
+    val t = new Tester(input)
+    t.runTest(Value.False, "f")
+  }
+
+  // TODO: Typechecker doesn't properly handle ???
+  ignore("Expression.Binary - BinaryOperator.LogicalAnd.06") {
+    val input = "def f: Bool = true && ???"
+    val t = new Tester(input)
+    t.runInterceptTest[UserException]("f")
+  }
+
+  test("Expression.Binary - BinaryOperator.LogicalOr.01") {
+    val input = "def f: Bool = true || true"
+    val t = new Tester(input)
+    t.runTest(Value.True, "f")
+  }
+
+  test("Expression.Binary - BinaryOperator.LogicalOr.02") {
+    val input = "def f: Bool = true || false"
+    val t = new Tester(input)
+    t.runTest(Value.True, "f")
+  }
+
+  test("Expression.Binary - BinaryOperator.LogicalOr.03") {
+    val input = "def f: Bool = false || false"
+    val t = new Tester(input)
+    t.runTest(Value.False, "f")
+  }
+
+  test("Expression.Binary - BinaryOperator.LogicalOr.04") {
+    val input = "def f: Bool = false || true"
+    val t = new Tester(input)
+    t.runTest(Value.True, "f")
+  }
+
+  // TODO: Typechecker doesn't properly handle ???
+  ignore("Expression.Binary - BinaryOperator.LogicalOr.05") {
+    val input = "def f: Bool = true || ???"
+    val t = new Tester(input)
+    t.runTest(Value.True, "f")
+  }
+
+  // TODO: Typechecker doesn't properly handle ???
+  ignore("Expression.Binary - BinaryOperator.LogicalOr.06") {
+    val input = "def f: Bool = false || ???"
+    val t = new Tester(input)
+    t.runInterceptTest[UserException]("f")
+  }
+
+  test("Expression.Binary - BinaryOperator.Implication.01") {
+    val input = "def f: Bool = true ==> true"
+    val t = new Tester(input)
+    t.runTest(Value.True, "f")
+  }
+
+  test("Expression.Binary - BinaryOperator.Implication.02") {
+    val input = "def f: Bool = true ==> false"
+    val t = new Tester(input)
+    t.runTest(Value.False, "f")
+  }
+
+  test("Expression.Binary - BinaryOperator.Implication.03") {
+    val input = "def f: Bool = false ==> false"
+    val t = new Tester(input)
+    t.runTest(Value.True, "f")
+  }
+
+  test("Expression.Binary - BinaryOperator.Implication.04") {
+    val input = "def f: Bool = false ==> true"
+    val t = new Tester(input)
+    t.runTest(Value.True, "f")
+  }
+
+  // TODO: Typechecker doesn't properly handle ???
+  ignore("Expression.Binary - BinaryOperator.Implication.05") {
+    val input = "def f: Bool = false ==> ???"
+    val t = new Tester(input)
+    t.runTest(Value.True, "f")
+  }
+
+  // TODO: Typechecker doesn't properly handle ???
+  ignore("Expression.Binary - BinaryOperator.Implication.06") {
+    val input = "def f: Bool = True ==> ???"
+    val t = new Tester(input)
+    t.runInterceptTest[UserException]("f")
+  }
+
+  test("Expression.Binary - BinaryOperator.Biconditional.01") {
+    val input = "def f: Bool = true <==> true"
+    val t = new Tester(input)
+    t.runTest(Value.True, "f")
+  }
+
+  test("Expression.Binary - BinaryOperator.Biconditional.02") {
+    val input = "def f: Bool = true <==> false"
+    val t = new Tester(input)
+    t.runTest(Value.False, "f")
+  }
+
+  test("Expression.Binary - BinaryOperator.Biconditional.03") {
+    val input = "def f: Bool = false <==> false"
+    val t = new Tester(input)
+    t.runTest(Value.True, "f")
+  }
+
+  test("Expression.Binary - BinaryOperator.Biconditional.04") {
+    val input = "def f: Bool = false <==> true"
+    val t = new Tester(input)
+    t.runTest(Value.False, "f")
+  }
+
 }
