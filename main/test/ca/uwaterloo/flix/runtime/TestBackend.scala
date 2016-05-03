@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api._
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.{DebugBytecode, _}
 import org.scalatest.FunSuite
 
@@ -693,6 +694,202 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt32(0), "A.B/c")
     t.runTest(Value.mkInt32(42), "A.B.C/d")
     t.runTest(Value.mkInt32(-1), "e")
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Lambdas - Expression.{MkClosureRef,ApplyRef,ApplyClosure}               //
+  // Note that closure conversion and lambda lifting means we don't actually //
+  // have lambdas in the AST. A lot of functionality is tested indirectly    //
+  // by pattern matching.                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: More tests when the typer handles lambda expressions.
+  // Test actual lambda expressions (not just top-level definitions): passing them around, free variables, etc.
+
+  test("Expression.Lambda.01") {
+    val input =
+      """namespace A.B {
+        |  def f: Bool = false
+        |}
+        |namespace A {
+        |  def g: Bool = A.B/f
+        |}
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.False, "A/g")
+  }
+
+  test("Expression.Lambda.02") {
+    val input =
+      """namespace A { def f(x: Int): Int = 24 }
+        |def g: Int = A/f(3)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(24), "g")
+  }
+
+  test("Expression.Lambda.03") {
+    val input =
+      """namespace A { def f(x: Int): Int = x }
+        |namespace A { def g: Int = f(3) }
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(3), "A/g")
+  }
+
+  test("Expression.Lambda.04") {
+    val input =
+      """def f(x: Int64, y: Int64): Int64 = x * y - 6i64
+        |def g: Int64 = f(3i64, 42i64)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(120), "g")
+  }
+
+  test("Expression.Lambda.05") {
+    val input =
+      """namespace A { def f(x: Int32): Int32 = let y = B/g(x + 1i32) in y * y }
+        |namespace B { def g(x: Int32): Int32 = x - 4i32 }
+        |namespace C { def h: Int32 = A/f(5i32) + B/g(0i32) }
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(0), "C/h")
+  }
+
+  test("Expression.Lambda.06") {
+    val input =
+      """def f(x: Int16): Int16 = g(x + 1i16)
+        |def g(x: Int16): Int16 = h(x + 10i16)
+        |def h(x: Int16): Int16 = x * x
+        |def x: Int16 = f(3i16)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(196), "x")
+  }
+
+  test("Expression.Lambda.07") {
+    val input =
+      """def f(x: Int8, y: Int8): Int8 = x - y
+        |def g(x: Int8): Int8 = x * 3i8
+        |def h(x: Int8): Int8 = g(x - 1i8)
+        |def x: Int8 = let x = 7i8 in f(g(3i8), h(h(x)))
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(-42), "x")
+  }
+
+  test("Expression.Lambda.08") {
+    val input =
+      """def f(x: Bool, y: Bool): Bool = if (x) true else y
+        |def g01: Bool = f(true, true)
+        |def g02: Bool = f(true, false)
+        |def g03: Bool = f(false, false)
+        |def g04: Bool = f(false, true)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.True, "g01")
+    t.runTest(Value.True, "g02")
+    t.runTest(Value.False, "g03")
+    t.runTest(Value.True, "g04")
+  }
+
+  test("Expression.Lambda.09") {
+    val input =
+      """def f(x: Bool, y: Bool): Bool = if (x) y else false
+        |def g01: Bool = f(true, true)
+        |def g02: Bool = f(true, false)
+        |def g03: Bool = f(false, false)
+        |def g04: Bool = f(false, true)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.True, "g01")
+    t.runTest(Value.False, "g02")
+    t.runTest(Value.False, "g03")
+    t.runTest(Value.False, "g04")
+  }
+
+  test("Expression.Lambda.10") {
+    val input =
+      """def f(x: Int, y: Int, z: Int): Int = x + y + z
+        |def g: Int = f(2, 42, 5)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(49), "g")
+  }
+
+  test("Expression.Lambda.11") {
+    val input =
+      """def f(x: (Int) -> Int, y: Int): Int = x(y)
+        |def g(x: Int): Int = x + 1
+        |def h: Int = f(g, 5)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(6), "h")
+  }
+
+  test("Expression.Lambda.12") {
+    val input =
+      """def f(x: (Int) -> Int): (Int) -> Int = x
+        |def g(x: Int): Int = x + 5
+        |def h: Int = (f(g))(40)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(45), "h")
+  }
+
+  test("Expression.Lambda.13") {
+    val input =
+      """enum Val { case Val(Int) }
+        |def f(x: Int): Val = Val.Val(x)
+        |def g: Val = f(111)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkInt32(111)), "g")
+  }
+
+  test("Expression.Lambda.14") {
+    val input =
+      """def f(a: Int, b: Int, c: Str, d: Int, e: Bool, f: ()): (Int, Int, Str, Int, Bool, ()) = (a, b, c, d, e, f)
+        |def g: (Int, Int, Str, Int, Bool, ()) = f(24, 53, "qwertyuiop", 9978, false, ())
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.Tuple(Array(Value.mkInt32(24), Value.mkInt32(53), Value.mkStr("qwertyuiop"), Value.mkInt32(9978), Value.False, Value.Unit)), "g")
+  }
+
+  test("Expression.Lambda.15") {
+    val input =
+      """def f(a: Int, b: Int, c: Int): Set[Int] = #{a, b, c}
+        |def g: Set[Int] = f(24, 53, 24)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkSet(Set(Value.mkInt32(24), Value.mkInt32(53), Value.mkInt32(24))), "g")
+  }
+
+  test("Expression.Lambda.17") {
+    val input =
+      """def f(a: Char, b: Char): Bool = a == b
+        |def g: Bool = f('a', 'b')
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.False, "g")
+  }
+
+  test("Expression.Lambda.18") {
+    val input =
+      """def f(a: Float32, b: Float32): Float32 = a + b
+        |def g: Float32 = f(1.2f32, 2.1f32)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat32(3.3f), "g")
+  }
+
+  test("Expression.Lambda.19") {
+    val input =
+      """def f(a: Float64, b: Float64): Float64 = a + b
+        |def g: Float64 = f(1.2f64, 2.1f64)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(3.3d), "g")
   }
 
 }
