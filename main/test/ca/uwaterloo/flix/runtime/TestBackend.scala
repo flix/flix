@@ -916,4 +916,401 @@ class TestBackend extends FunSuite {
   // Also, note that we can only interop with 0-arg native functions, not native values. addHook() and addHookUnsafe()
   // will complain if you give them a non-function type. However, we don't allow 0-arg functions in Flix.
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.Unary                                                        //
+  // UnaryOperator.{LogicalNot,Plus,Minus,BitwiseNegate}                     //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Unary - UnaryOperator.LogicalNot.01") {
+    val input = "def f: Bool = !true"
+    val t = new Tester(input)
+    t.runTest(Value.False, "f")
+  }
+
+  test("Expression.Unary - UnaryOperator.LogicalNot.02") {
+    val input = "def f: Bool = !false"
+    val t = new Tester(input)
+    t.runTest(Value.True, "f")
+  }
+
+  test("Expression.Unary - UnaryOperator.Plus.01") {
+    val input =
+      s"""def f01: Int = +0
+         |def f02: Int = +36000
+         |def f03: Int = +(-36000)
+         |def f04: Int = +${Int.MaxValue}
+         |def f05: Int = +${Int.MinValue}
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(0), "f01")
+    t.runTest(Value.mkInt32(36000), "f02")
+    t.runTest(Value.mkInt32(-36000), "f03")
+    t.runTest(Value.mkInt32(Int.MaxValue), "f04")
+    t.runTest(Value.mkInt32(Int.MinValue), "f05")
+  }
+
+  test("Expression.Unary - UnaryOperator.Plus.02") {
+    val input =
+      s"""def f01: Int8 = +0i8
+         |def f02: Int8 = +36i8
+         |def f03: Int8 = +(-36i8)
+         |def f04: Int8 = +${Byte.MaxValue}i8
+         |def f05: Int8 = +${Byte.MinValue}i8
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt8(0), "f01")
+    t.runTest(Value.mkInt8(36), "f02")
+    t.runTest(Value.mkInt8(-36), "f03")
+    t.runTest(Value.mkInt8(Byte.MaxValue), "f04")
+    t.runTest(Value.mkInt8(Byte.MinValue), "f05")
+  }
+
+  test("Expression.Unary - UnaryOperator.Plus.03") {
+    val input =
+      s"""def f01: Int16 = +0i16
+         |def f02: Int16 = +3600i16
+         |def f03: Int16 = +(-3600i16)
+         |def f04: Int16 = +${Short.MaxValue}i16
+         |def f05: Int16 = +${Short.MinValue}i16
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt16(0), "f01")
+    t.runTest(Value.mkInt16(3600), "f02")
+    t.runTest(Value.mkInt16(-3600), "f03")
+    t.runTest(Value.mkInt16(Short.MaxValue), "f04")
+    t.runTest(Value.mkInt16(Short.MinValue), "f05")
+  }
+
+  test("Expression.Unary - UnaryOperator.Plus.04") {
+    val input =
+      s"""def f01: Int32 = +0i32
+         |def f02: Int32 = +36000i32
+         |def f03: Int32 = +(-36000i32)
+         |def f04: Int32 = +${Int.MaxValue}i32
+         |def f05: Int32 = +${Int.MinValue}i32
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(0), "f01")
+    t.runTest(Value.mkInt32(36000), "f02")
+    t.runTest(Value.mkInt32(-36000), "f03")
+    t.runTest(Value.mkInt32(Int.MaxValue), "f04")
+    t.runTest(Value.mkInt32(Int.MinValue), "f05")
+  }
+
+  test("Expression.Unary - UnaryOperator.Plus.05") {
+    val input =
+      s"""def f01: Int64 = +0i64
+         |def f02: Int64 = +3600000000i64
+         |def f03: Int64 = +(-3600000000i64)
+         |def f04: Int64 = +${Long.MaxValue}i64
+         |def f05: Int64 = +${Long.MinValue}i64
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(0), "f01")
+    t.runTest(Value.mkInt64(3600000000L), "f02")
+    t.runTest(Value.mkInt64(-3600000000L), "f03")
+    t.runTest(Value.mkInt64(Long.MaxValue), "f04")
+    t.runTest(Value.mkInt64(Long.MinValue), "f05")
+  }
+
+  test("Expression.Unary - UnaryOperator.Plus.06") {
+    val input =
+      s"""def f01: Float = +0.0
+         |def f02: Float = +(-0.0)
+         |def f03: Float = +(4.2)
+         |def f04: Float = +99999999999999999999999999999999999999999999999999999999999999999999999999999999.0
+         |def f05: Float = +0.000000000000000000000000000000000000000000000000000000000000000000000000000000001
+         |def f06: Float = +(-99999999999999999999999999999999999999999999999999999999999999999999999999999999.0)
+         |def f07: Float = +(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001)
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(0.0), "f01")
+    t.runTest(Value.mkFloat64(0.0), "f02")
+    t.runTest(Value.mkFloat64(4.2), "f03")
+    t.runTest(Value.mkFloat64(99999999999999999999999999999999999999999999999999999999999999999999999999999999.0), "f04")
+    t.runTest(Value.mkFloat64(0.000000000000000000000000000000000000000000000000000000000000000000000000000000001), "f05")
+    t.runTest(Value.mkFloat64(-99999999999999999999999999999999999999999999999999999999999999999999999999999999.0), "f06")
+    t.runTest(Value.mkFloat64(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001), "f07")
+  }
+
+  test("Expression.Unary - UnaryOperator.Plus.07") {
+    val input =
+      s"""def f01: Float32 = +0.0f32
+         |def f02: Float32 = +(-0.0f32)
+         |def f03: Float32 = +(4.2f32)
+         |def f04: Float32 = +999999999999999999999999999999.0f32
+         |def f05: Float32 = +0.0000000000000000000000000000001f32
+         |def f06: Float32 = +(-999999999999999999999999999999.0f32)
+         |def f07: Float32 = +(-0.0000000000000000000000000000001f32)
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat32(0.0f), "f01")
+    t.runTest(Value.mkFloat32(-0.0f), "f02")
+    t.runTest(Value.mkFloat32(4.2f), "f03")
+    t.runTest(Value.mkFloat32(999999999999999999999999999999.0f), "f04")
+    t.runTest(Value.mkFloat32(0.0000000000000000000000000000001f), "f05")
+    t.runTest(Value.mkFloat32(-999999999999999999999999999999.0f), "f06")
+    t.runTest(Value.mkFloat32(-0.0000000000000000000000000000001f), "f07")
+  }
+
+  test("Expression.Unary - UnaryOperator.Plus.08") {
+    val input =
+      s"""def f01: Float64 = +0.0f64
+         |def f02: Float64 = +(-0.0f64)
+         |def f03: Float64 = +(4.2f64)
+         |def f04: Float64 = +99999999999999999999999999999999999999999999999999999999999999999999999999999999.0f64
+         |def f05: Float64 = +0.000000000000000000000000000000000000000000000000000000000000000000000000000000001f64
+         |def f06: Float64 = +(-99999999999999999999999999999999999999999999999999999999999999999999999999999999.0f64)
+         |def f07: Float64 = +(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001f64)
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(0.0d), "f01")
+    t.runTest(Value.mkFloat64(-0.0d), "f02")
+    t.runTest(Value.mkFloat64(4.2d), "f03")
+    t.runTest(Value.mkFloat64(99999999999999999999999999999999999999999999999999999999999999999999999999999999.0d), "f04")
+    t.runTest(Value.mkFloat64(0.000000000000000000000000000000000000000000000000000000000000000000000000000000001d), "f05")
+    t.runTest(Value.mkFloat64(-99999999999999999999999999999999999999999999999999999999999999999999999999999999.0d), "f06")
+    t.runTest(Value.mkFloat64(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001d), "f07")
+  }
+
+  test("Expression.Unary - UnaryOperator.Minus.01") {
+    val input =
+      s"""def f01: Int = -0
+         |def f02: Int = -36000
+         |def f03: Int = -(-36000)
+         |def f04: Int = -${Int.MaxValue}
+         |def f05: Int = -${Int.MinValue}
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(0), "f01")
+    t.runTest(Value.mkInt32(-36000), "f02")
+    t.runTest(Value.mkInt32(36000), "f03")
+    t.runTest(Value.mkInt32(-Int.MaxValue), "f04")
+    t.runTest(Value.mkInt32(Int.MinValue), "f05")
+  }
+
+  test("Expression.Unary - UnaryOperator.Minus.02") {
+    val input =
+      s"""def f01: Int8 = -0i8
+         |def f02: Int8 = -36i8
+         |def f03: Int8 = -(-36i8)
+         |def f04: Int8 = -${Byte.MaxValue}i8
+         |def f05: Int8 = -${Byte.MinValue}i8
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt8(0), "f01")
+    t.runTest(Value.mkInt8(-36), "f02")
+    t.runTest(Value.mkInt8(36), "f03")
+    t.runTest(Value.mkInt8(-Byte.MaxValue), "f04")
+    t.runTest(Value.mkInt8(Byte.MinValue), "f05")
+  }
+
+  test("Expression.Unary - UnaryOperator.Minus.03") {
+    val input =
+      s"""def f01: Int16 = -0i16
+         |def f02: Int16 = -3600i16
+         |def f03: Int16 = -(-3600i16)
+         |def f04: Int16 = -${Short.MaxValue}i16
+         |def f05: Int16 = -${Short.MinValue}i16
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt16(0), "f01")
+    t.runTest(Value.mkInt16(-3600), "f02")
+    t.runTest(Value.mkInt16(3600), "f03")
+    t.runTest(Value.mkInt16(-Short.MaxValue), "f04")
+    t.runTest(Value.mkInt16(Short.MinValue), "f05")
+  }
+
+  test("Expression.Unary - UnaryOperator.Minus.04") {
+    val input =
+      s"""def f01: Int32 = -0i32
+         |def f02: Int32 = -36000i32
+         |def f03: Int32 = -(-36000i32)
+         |def f04: Int32 = -${Int.MaxValue}i32
+         |def f05: Int32 = -${Int.MinValue}i32
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(0), "f01")
+    t.runTest(Value.mkInt32(-36000), "f02")
+    t.runTest(Value.mkInt32(36000), "f03")
+    t.runTest(Value.mkInt32(-Int.MaxValue), "f04")
+    t.runTest(Value.mkInt32(Int.MinValue), "f05")
+  }
+
+  test("Expression.Unary - UnaryOperator.Minus.05") {
+    val input =
+      s"""def f01: Int64 = -0i64
+         |def f02: Int64 = -3600000000i64
+         |def f03: Int64 = -(-3600000000i64)
+         |def f04: Int64 = -${Long.MaxValue}i64
+         |def f05: Int64 = -${Long.MinValue}i64
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(0), "f01")
+    t.runTest(Value.mkInt64(-3600000000L), "f02")
+    t.runTest(Value.mkInt64(3600000000L), "f03")
+    t.runTest(Value.mkInt64(-Long.MaxValue), "f04")
+    t.runTest(Value.mkInt64(Long.MinValue), "f05")
+  }
+
+  test("Expression.Unary - UnaryOperator.Minus.06") {
+    val input =
+      s"""def f01: Float = -0.0
+         |def f02: Float = -(-0.0)
+         |def f03: Float = -(4.2)
+         |def f04: Float = -99999999999999999999999999999999999999999999999999999999999999999999999999999999.0
+         |def f05: Float = -0.000000000000000000000000000000000000000000000000000000000000000000000000000000001
+         |def f06: Float = -(-99999999999999999999999999999999999999999999999999999999999999999999999999999999.0)
+         |def f07: Float = -(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001)
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(-0.0), "f01")
+    t.runTest(Value.mkFloat64(0.0), "f02")
+    t.runTest(Value.mkFloat64(-4.2), "f03")
+    t.runTest(Value.mkFloat64(-99999999999999999999999999999999999999999999999999999999999999999999999999999999.0), "f04")
+    t.runTest(Value.mkFloat64(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001), "f05")
+    t.runTest(Value.mkFloat64(99999999999999999999999999999999999999999999999999999999999999999999999999999999.0), "f06")
+    t.runTest(Value.mkFloat64(0.000000000000000000000000000000000000000000000000000000000000000000000000000000001), "f07")
+  }
+
+  test("Expression.Unary - UnaryOperator.Minus.07") {
+    val input =
+      s"""def f01: Float32 = -0.0f32
+         |def f02: Float32 = -(-0.0f32)
+         |def f03: Float32 = -(4.2f32)
+         |def f04: Float32 = -999999999999999999999999999999.0f32
+         |def f05: Float32 = -0.0000000000000000000000000000001f32
+         |def f06: Float32 = -(-999999999999999999999999999999.0f32)
+         |def f07: Float32 = -(-0.0000000000000000000000000000001f32)
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat32(-0.0f), "f01")
+    t.runTest(Value.mkFloat32(0.0f), "f02")
+    t.runTest(Value.mkFloat32(-4.2f), "f03")
+    t.runTest(Value.mkFloat32(-999999999999999999999999999999.0f), "f04")
+    t.runTest(Value.mkFloat32(-0.0000000000000000000000000000001f), "f05")
+    t.runTest(Value.mkFloat32(999999999999999999999999999999.0f), "f06")
+    t.runTest(Value.mkFloat32(0.0000000000000000000000000000001f), "f07")
+  }
+
+  test("Expression.Unary - UnaryOperator.Minus.08") {
+    val input =
+      s"""def f01: Float64 = -0.0f64
+         |def f02: Float64 = -(-0.0f64)
+         |def f03: Float64 = -(4.2f64)
+         |def f04: Float64 = -99999999999999999999999999999999999999999999999999999999999999999999999999999999.0f64
+         |def f05: Float64 = -0.000000000000000000000000000000000000000000000000000000000000000000000000000000001f64
+         |def f06: Float64 = -(-99999999999999999999999999999999999999999999999999999999999999999999999999999999.0f64)
+         |def f07: Float64 = -(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001f64)
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(-0.0d), "f01")
+    t.runTest(Value.mkFloat64(0.0d), "f02")
+    t.runTest(Value.mkFloat64(-4.2d), "f03")
+    t.runTest(Value.mkFloat64(-99999999999999999999999999999999999999999999999999999999999999999999999999999999.0d), "f04")
+    t.runTest(Value.mkFloat64(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001d), "f05")
+    t.runTest(Value.mkFloat64(99999999999999999999999999999999999999999999999999999999999999999999999999999999.0d), "f06")
+    t.runTest(Value.mkFloat64(0.000000000000000000000000000000000000000000000000000000000000000000000000000000001d), "f07")
+  }
+
+  test("Expression.Unary - UnaryOperator.BitwiseNegate.01") {
+    val input =
+      s"""def f01: Int = ~0
+         |def f02: Int = ~1
+         |def f03: Int = ~(-1)
+         |def f04: Int = ~36000
+         |def f05: Int = ~(-36000)
+         |def f06: Int = ~${Int.MaxValue}
+         |def f07: Int = ~${Int.MinValue}
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(-1), "f01")
+    t.runTest(Value.mkInt32(-2), "f02")
+    t.runTest(Value.mkInt32(0), "f03")
+    t.runTest(Value.mkInt32(-36001), "f04")
+    t.runTest(Value.mkInt32(35999), "f05")
+    t.runTest(Value.mkInt32(Int.MinValue), "f06")
+    t.runTest(Value.mkInt32(Int.MaxValue), "f07")
+  }
+
+  test("Expression.Unary - UnaryOperator.BitwiseNegate.02") {
+    val input =
+      s"""def f01: Int8 = ~0i8
+         |def f02: Int8 = ~1i8
+         |def f03: Int8 = ~(-1i8)
+         |def f04: Int8 = ~42i8
+         |def f05: Int8 = ~(-42i8)
+         |def f06: Int8 = ~${Byte.MaxValue}i8
+         |def f07: Int8 = ~${Byte.MinValue}i8
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt8(-1), "f01")
+    t.runTest(Value.mkInt8(-2), "f02")
+    t.runTest(Value.mkInt8(0), "f03")
+    t.runTest(Value.mkInt8(-43), "f04")
+    t.runTest(Value.mkInt8(41), "f05")
+    t.runTest(Value.mkInt8(Byte.MinValue), "f06")
+    t.runTest(Value.mkInt8(Byte.MaxValue), "f07")
+  }
+
+  test("Expression.Unary - UnaryOperator.BitwiseNegate.03") {
+    val input =
+      s"""def f01: Int16 = ~0i16
+         |def f02: Int16 = ~1i16
+         |def f03: Int16 = ~(-1i16)
+         |def f04: Int16 = ~420i16
+         |def f05: Int16 = ~(-420i16)
+         |def f06: Int16 = ~${Short.MaxValue}i16
+         |def f07: Int16 = ~${Short.MinValue}i16
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt16(-1), "f01")
+    t.runTest(Value.mkInt16(-2), "f02")
+    t.runTest(Value.mkInt16(0), "f03")
+    t.runTest(Value.mkInt16(-421), "f04")
+    t.runTest(Value.mkInt16(419), "f05")
+    t.runTest(Value.mkInt16(Short.MinValue), "f06")
+    t.runTest(Value.mkInt16(Short.MaxValue), "f07")
+  }
+
+  test("Expression.Unary - UnaryOperator.BitwiseNegate.04") {
+    val input =
+      s"""def f01: Int32 = ~0i32
+         |def f02: Int32 = ~1i32
+         |def f03: Int32 = ~(-1i32)
+         |def f04: Int32 = ~36000i32
+         |def f05: Int32 = ~(-36000i32)
+         |def f06: Int32 = ~${Int.MaxValue}i32
+         |def f07: Int32 = ~${Int.MinValue}i32
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(-1), "f01")
+    t.runTest(Value.mkInt32(-2), "f02")
+    t.runTest(Value.mkInt32(0), "f03")
+    t.runTest(Value.mkInt32(-36001), "f04")
+    t.runTest(Value.mkInt32(35999), "f05")
+    t.runTest(Value.mkInt32(Int.MinValue), "f06")
+    t.runTest(Value.mkInt32(Int.MaxValue), "f07")
+  }
+
+  test("Expression.Unary - UnaryOperator.BitwiseNegate.05") {
+    val input =
+      s"""def f01: Int64 = ~0i64
+         |def f02: Int64 = ~1i64
+         |def f03: Int64 = ~(-1i64)
+         |def f04: Int64 = ~10000000000i64
+         |def f05: Int64 = ~(-10000000000i64)
+         |def f06: Int64 = ~${Long.MaxValue}i64
+         |def f07: Int64 = ~${Long.MinValue}i64
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(-1), "f01")
+    t.runTest(Value.mkInt64(-2), "f02")
+    t.runTest(Value.mkInt64(0), "f03")
+    t.runTest(Value.mkInt64(-10000000001L), "f04")
+    t.runTest(Value.mkInt64(9999999999L), "f05")
+    t.runTest(Value.mkInt64(Long.MinValue), "f06")
+    t.runTest(Value.mkInt64(Long.MaxValue), "f07")
+  }
+
 }
