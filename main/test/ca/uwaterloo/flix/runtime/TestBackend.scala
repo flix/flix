@@ -705,6 +705,7 @@ class TestBackend extends FunSuite {
 
   // TODO: More tests when the typer handles lambda expressions.
   // Test actual lambda expressions (not just top-level definitions): passing them around, free variables, etc.
+  // Note: this also applies to comparison (?) of lambdas and using lambdas in let-expressions.
 
   test("Expression.Lambda.01") {
     val input =
@@ -3824,6 +3825,262 @@ class TestBackend extends FunSuite {
     val t = new Tester(input)
     t.runTest(Value.mkInt32(1234), "g01")
     t.runTest(Value.mkInt32(5678), "g02")
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Expression.Let                                                          //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Expression.Let.01") {
+    val input = "def f: Int = let x = true in 42"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(42), "f")
+  }
+
+  test("Expression.Let.02") {
+    val input = "def f: Int8 = let x = 42i8 in x"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(42), "f")
+  }
+
+  test("Expression.Let.03") {
+    val input = "def f: Int16 = let x = 1i16 in x + 2i16"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(3), "f")
+  }
+
+  test("Expression.Let.04") {
+    val input = """def f: Str = let x = false in if (x) "abz" else "xyz""""
+    val t = new Tester(input)
+    t.runTest(Value.mkStr("xyz"), "f")
+  }
+
+  test("Expression.Let.05") {
+    val input = "def f: Int = let x = 14 - 3 in x + 2"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(13), "f")
+  }
+
+  test("Expression.Let.06") {
+    val input =
+      """def f: Int =
+        |  let x = 14 - 3 in
+        |    let y = 2 * 4 in
+        |      x + y
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(19), "f")
+  }
+
+  test("Expression.Let.07") {
+    val input =
+      """def f: Int =
+        |  let x = 1 in
+        |    let y = x + 2 in
+        |      let z = y + 3 in
+        |        z
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(6), "f")
+  }
+
+  test("Expression.Let.08") {
+    val input =
+      """def f(a: Int, b: Int, c: Int): Int =
+        |  let x = 1337 in
+        |    let y = -101010 in
+        |      let z = 42 in
+        |        y
+        |def g: Int = f(-1337, 101010, -42)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(-101010), "g")
+  }
+
+  test("Expression.Let.09") {
+    val input =
+      """def f(a: Int, b: Int, c: Int): Int =
+        |  let x = 1337 in
+        |    let y = -101010 in
+        |      let z = 42 in
+        |        b
+        |def g: Int = f(-1337, 101010, -42)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(101010), "g")
+  }
+
+  test("Expression.Let.10") {
+    val input = "def f: Int64 = let x = 0i64 in x"
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(0), "f")
+  }
+
+  test("Expression.Let.11") {
+    val input =
+      """def f: Int64 =
+        |  let x = 1337i64 in
+        |    let y = -101010i64 in
+        |      let z = 42i64 in
+        |        y
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(-101010), "f")
+  }
+
+  test("Expression.Let.12") {
+    val input =
+      """def f: Int64 =
+        |  let x = 1337i64 in
+        |    let y = -101010i64 in
+        |      let z = 42i64 in
+        |        y
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(-101010), "f")
+  }
+
+  test("Expression.Let.13") {
+    val input =
+      """def f(a: Int64, b: Int64, c: Int64): Int64 =
+        |  let x = 1337i64 in
+        |    let y = -101010i64 in
+        |      let z = 42i64 in
+        |        y
+        |def g: Int64 = f(-1337i64, 101010i64, -42i64)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(-101010), "g")
+  }
+
+  test("Expression.Let.14") {
+    val input =
+      """def f(a: Int32, b: Int64, c: Int64): Int64 =
+        |  let x = 1337i32 in
+        |    let y = -101010i64 in
+        |      let z = 42i64 in
+        |        y
+        |def g: Int64 = f(-1337i32, 101010i64, -42i64)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(-101010), "g")
+  }
+
+  test("Expression.Let.15") {
+    val input =
+      """def f(a: Int64, b: Int64, c: Int64): Int64 =
+        |  let x = 1337i64 in
+        |    let y = -101010i64 in
+        |      let z = 42i64 in
+        |        b
+        |def g: Int64 = f(-1337i64, 101010i64, -42i64)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(101010), "g")
+  }
+
+  test("Expression.Let.16") {
+    val input =
+      """def f(a: Int32, b: Int64, c: Int64): Int64 =
+        |  let x = 1337i32 in
+        |    let y = -101010i64 in
+        |      let z = 42i64 in
+        |        b
+        |def g: Int64 = f(-1337i32, 101010i64, -42i64)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(101010), "g")
+  }
+
+  test("Expression.Let.17") {
+    val input =
+      """enum ConstProp { case Top, case Val(Int), case Bot }
+        |def f: ConstProp = let x = ConstProp.Val(42) in x
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("ConstProp"), "Val", Value.mkInt32(42)), "f")
+  }
+
+  test("Expression.Let.18") {
+    val input = "def f: () = let x = () in x"
+    val t = new Tester(input)
+    t.runTest(Value.Unit, "f")
+  }
+
+  test("Expression.Let.19") {
+    val input = """def f: Str = let x = "helloworld" in x"""
+    val t = new Tester(input)
+    t.runTest(Value.mkStr("helloworld"), "f")
+  }
+
+  test("Expression.Let.20") {
+    val input = "def f: (Int, Int) = let x = (123, 456) in x"
+    val t = new Tester(input)
+    t.runTest(Value.Tuple(Array(123, 456).map(Value.mkInt32)), "f")
+  }
+
+  test("Expression.Let.21") {
+    val input = "def f: Set[Int] = let x = #{9, 99, 999} in x"
+    val t = new Tester(input)
+    t.runTest(Value.mkSet(Set(9, 99, 999).map(Value.mkInt32)), "f")
+  }
+
+  test("Expression.Let.22") {
+    val input =
+      """def f: Char =
+        |  let x = 'a' in
+        |    let y = 'b' in
+        |      y
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkChar('b'), "f")
+  }
+
+  test("Expression.Let.23") {
+    val input =
+      """def f: Float32 =
+        |  let x = 1.2f32 in
+        |    let y = 3.4f32 in
+        |      y
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat32(3.4f), "f")
+  }
+
+  test("Expression.Let.24") {
+    val input =
+      """def f: Float64 =
+        |  let x = 1.2f64 in
+        |    let y = 3.4f64 in
+        |      y
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkFloat64(3.4d), "f")
+  }
+
+  test("Expression.Let.25") {
+    val input =
+      """def f(x: Int): Int32 =
+        |  let x = x + 1 in
+        |    let x = x + 2 in
+        |      x + 3
+        |def g: Int = f(0)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(6), "g")
+  }
+
+  test("Expression.Let.26") {
+    val input =
+      """def f(x: Int): Int64 =
+        |  let x = x + 1 in
+        |    let x = 40i64 in
+        |      let x = x + 2i64 in
+        |        x
+        |def g: Int64 = f(0)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt64(42), "g")
   }
 
 }
