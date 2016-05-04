@@ -66,9 +66,7 @@ object Simplifier {
   object Expression {
     def simplify(tast: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Expression = tast match {
       case TypedAst.Expression.Lit(lit, tpe, loc) => Literal.simplify(lit)
-      case TypedAst.Expression.Var(ident, tpe, loc) =>
-        // TODO: Variable numbering
-        SimplifiedAst.Expression.Var(ident, -1, tpe, loc)
+      case TypedAst.Expression.Var(ident, tpe, loc) => SimplifiedAst.Expression.Var(ident, -1, tpe, loc)
       case TypedAst.Expression.Ref(name, tpe, loc) => SimplifiedAst.Expression.Ref(name, tpe, loc)
       case TypedAst.Expression.Hook(hook, tpe, loc) => SimplifiedAst.Expression.Hook(hook, tpe, loc)
       case TypedAst.Expression.Lambda(args, body, tpe, loc) =>
@@ -90,7 +88,6 @@ object Simplifier {
             SimplifiedAst.Expression.IfThenElse(cond, body, acc, tpe, loc)
         }
       case TypedAst.Expression.Let(ident, e1, e2, tpe, loc) =>
-        // TODO: Variable numbering
         SimplifiedAst.Expression.Let(ident, -1, simplify(e1), simplify(e2), tpe, loc)
 
       case TypedAst.Expression.Match(exp0, rules, tpe, loc) =>
