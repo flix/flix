@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api._
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol}
 import ca.uwaterloo.flix.util.{DebugBytecode, _}
 import org.scalatest.FunSuite
 
@@ -96,8 +96,17 @@ class TestBackend extends FunSuite {
     }
   }
 
-  private class Tester(input: String, dumpBytecode: Boolean = false) {
-    private def getModel(codegen: Boolean) = {
+  private class Tester(input: String, solve: Boolean = true, dumpBytecode: Boolean = false) {
+
+    private val interpretedFlix = createFlix(codegen = false).addStr(input)
+    private val compiledFlix = createFlix(codegen = true).addStr(input)
+    private var interpreted: Model = null
+    private var compiled: Model = null
+
+    // A public Flix instance to expose the interop functions.
+    val flix = createFlix()
+
+    private def createFlix(codegen: Boolean = false) = {
       val options = Options(
         debugger = Debugger.Disabled,
         print = Nil,
@@ -106,7 +115,24 @@ class TestBackend extends FunSuite {
         codegen = if (codegen) CodeGeneration.Enabled else CodeGeneration.Disabled,
         debugBytecode = if (dumpBytecode) DebugBytecode.Enabled else DebugBytecode.Disabled
       )
-      new Flix().setOptions(options).addStr(input).solve().get
+      new Flix().setOptions(options)
+    }
+
+    def addHook(name: String, tpe: IType, inv: Invokable): Tester = {
+      interpretedFlix.addHook(name, tpe, inv)
+      compiledFlix.addHook(name, tpe, inv)
+      this
+    }
+
+    def addHook(name: String, tpe: IType, inv: InvokableUnsafe): Tester = {
+      interpretedFlix.addHookUnsafe(name, tpe, inv)
+      compiledFlix.addHookUnsafe(name, tpe, inv)
+      this
+    }
+
+    def run(): Unit = {
+      interpreted = interpretedFlix.solve().get
+      compiled = compiledFlix.solve().get
     }
 
     def runTest(expected: AnyRef, const: String): Unit = {
@@ -124,8 +150,9 @@ class TestBackend extends FunSuite {
       withClue(s"compiled model $model:") { assertResult(expected)(compiled.getRelation(model).toSet) }
     }
 
-    val interpreted = getModel(codegen = false)
-    val compiled = getModel(codegen = true)
+    // By default, solve the Flix program immediately.
+    // But in some cases we want to defer solving, so we can add hooks to native functions.
+    if (solve) run()
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -871,7 +898,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkSet(Set(Value.mkInt32(24), Value.mkInt32(53), Value.mkInt32(24))), "g")
   }
 
-  test("Expression.Lambda.17") {
+  test("Expression.Lambda.16") {
     val input =
       """def f(a: Char, b: Char): Bool = a == b
         |def g: Bool = f('a', 'b')
@@ -880,7 +907,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.False, "g")
   }
 
-  test("Expression.Lambda.18") {
+  test("Expression.Lambda.17") {
     val input =
       """def f(a: Float32, b: Float32): Float32 = a + b
         |def g: Float32 = f(1.2f32, 2.1f32)
@@ -889,7 +916,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkFloat32(3.3f), "g")
   }
 
-  test("Expression.Lambda.19") {
+  test("Expression.Lambda.18") {
     val input =
       """def f(a: Float64, b: Float64): Float64 = a + b
         |def g: Float64 = f(1.2f64, 2.1f64)
@@ -904,10 +931,301 @@ class TestBackend extends FunSuite {
   // Note that some Lambda tests can't be reimplemented here and vice versa. //
   /////////////////////////////////////////////////////////////////////////////
 
-  // TODO: Tests when interop (Hook) is implemented in codegen. The Tester class will need to be updated.
-  // There are some subtleties with codegen that might make us revisit the design, and affect the interpreter.
-  // Also, note that we can only interop with 0-arg native functions, not native values. addHook() and addHookUnsafe()
-  // will complain if you give them a non-function type. However, we don't allow 0-arg functions in Flix.
+  // TODO: These tests are set to ignore because codegen doesn't yet support interop.
+
+  // TODO: We're forced to pass a dummy parameter.
+  // See: https://github.com/magnus-madsen/flix/issues/130#issuecomment-216944729
+  ignore("Expression.Hook - Hook.Safe.01") {
+    import HookSafeHelpers._
+    val input = "namespace A { def g: Bool = A.B/f(0) }"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    def nativeF(x: IValue): IValue = flix.mkFalse
+
+    t.addHook("A.B/f", flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType), nativeF _).run()
+    t.runTest(Value.False, "A/g")
+  }
+
+  ignore("Expression.Hook - Hook.Safe.02") {
+    import HookSafeHelpers._
+    val input = "fn g: Int = A/f(3)"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
+    def nativeF(x: IValue): IValue = flix.mkInt32(24)
+
+    t.addHook("A/f", tpe, nativeF _).run()
+    t.runTest(Value.mkInt32(24), "g")
+  }
+
+  ignore("Expression.Hook - Hook.Safe.03") {
+    import HookSafeHelpers._
+    val input = "namespace A { fn g: Int = f(3) }"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
+    def nativeF(x: IValue): IValue = x
+
+    t.addHook("A/f", tpe, nativeF _).run()
+    t.runTest(Value.mkInt32(3), "A/g")
+  }
+
+  ignore("Expression.Hook - Hook.Safe.04") {
+    import HookSafeHelpers._
+    val input = "fn g: Int64 = f(3i64, 42i64)"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkInt64Type, flix.mkInt64Type), flix.mkInt64Type)
+    def nativeF(x: IValue, y: IValue): IValue = flix.mkInt64(x.getInt64 * y.getInt64 - 6)
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.mkInt64(120), "g")
+  }
+
+  ignore("Expression.Hook - Hook.Safe.05") {
+    import HookSafeHelpers._
+    val input = "namespace C { fn h: Int32 = A/f(5i32) + B/g(0i32) }"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
+    def nativeF(x: IValue): IValue = {
+      val y = nativeG(flix.mkInt32(x.getInt32 + 1))
+      flix.mkInt32(y.getInt32 * y.getInt32)
+    }
+    def nativeG(x: IValue): IValue = flix.mkInt32(x.getInt32 - 4)
+
+    t.addHook("A/f", tpe, nativeF _).addHook("B/g", tpe, nativeG _).run()
+    t.runTest(Value.mkInt32(0), "C/h")
+  }
+
+  ignore("Expression.Hook - Hook.Safe.06") {
+    import HookSafeHelpers._
+    val input = "fn x: Int16 = f(3i16)"
+    val t = new Tester(input, solve = false)
+    val flix = t.flix
+
+    val tpe = flix.mkFunctionType(Array(flix.mkInt16Type), flix.mkInt16Type)
+    def nativeF(x: IValue): IValue = nativeG(flix.mkInt16(x.getInt16 + 1))
+    def nativeG(x: IValue): IValue = nativeH(flix.mkInt16(x.getInt16 + 10))
+    def nativeH(x: IValue): IValue = flix.mkInt16(x.getInt16 * x.getInt16)
+
+    t.addHook("f", tpe, nativeF _).addHook("g", tpe, nativeG _).addHook("h", tpe, nativeH _).run()
+    t.runTest(Value.mkInt16(196), "x")
+  }
+
+  ignore("Expression.Hook - Hook.Safe.07") {
+    import HookSafeHelpers._
+    val input = "fn x: Int8 = let x = 7i8 in f(g(3i8), h(h(x)))"
+    val t = new Tester(input, solve = false)
+    val flix = t.flix
+
+    val tpe1 = flix.mkFunctionType(Array(flix.mkInt8Type), flix.mkInt8Type)
+    val tpe2 = flix.mkFunctionType(Array(flix.mkInt8Type, flix.mkInt8Type), flix.mkInt8Type)
+    def nativeF(x: IValue, y: IValue): IValue = flix.mkInt8(x.getInt8 - y.getInt8)
+    def nativeG(x: IValue): IValue = flix.mkInt8(x.getInt8 * 3)
+    def nativeH(x: IValue): IValue = nativeG(flix.mkInt8(x.getInt8 - 1))
+
+    t.addHook("f", tpe2, nativeF _).addHook("g", tpe1, nativeG _).addHook("h", tpe1, nativeH _).run()
+    t.runTest(Value.mkInt8(-42), "x")
+  }
+
+  ignore("Expression.Hook - Hook.Safe.08") {
+    import HookSafeHelpers._
+    val input =
+      """fn g01: Bool = f(true, true)
+        |fn g02: Bool = f(true, false)
+        |fn g03: Bool = f(false, false)
+        |fn g04: Bool = f(false, true)
+      """.stripMargin
+    val t = new Tester(input, solve = false)
+    val flix = t.flix
+
+    val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkBoolType), flix.mkBoolType)
+    def nativeF(x: IValue, y: IValue): IValue = if (x.getBool) flix.mkTrue else y
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.True, "g01")
+    t.runTest(Value.True, "g02")
+    t.runTest(Value.False, "g03")
+    t.runTest(Value.True, "g04")
+  }
+
+  ignore("Expression.Hook - Hook.Safe.09") {
+    import HookSafeHelpers._
+    val input =
+      """fn g01: Bool = f(true, true)
+        |fn g02: Bool = f(true, false)
+        |fn g03: Bool = f(false, false)
+        |fn g04: Bool = f(false, true)
+      """.stripMargin
+    val t = new Tester(input, solve = false)
+    val flix = t.flix
+
+    val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkBoolType), flix.mkBoolType)
+    def nativeF(x: IValue, y: IValue): IValue = if (x.getBool) y else flix.mkFalse
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.True, "g01")
+    t.runTest(Value.False, "g02")
+    t.runTest(Value.False, "g03")
+    t.runTest(Value.False, "g04")
+  }
+
+  ignore("Expression.Hook - Hook.Safe.10") {
+    import HookSafeHelpers._
+    val input = "fn g: Int = f(2, 42, 5)"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkInt32Type, flix.mkInt32Type), flix.mkInt32Type)
+    def nativeF(x: IValue, y: IValue, z: IValue): IValue = flix.mkInt32(x.getInt32 + y.getInt32 + z.getInt32)
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.mkInt32(49), "g")
+  }
+
+  ignore("Expression.Hook - Hook.Safe.11") {
+    import HookSafeHelpers._
+    val input = "fn h: Int = f(g, 5)"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpeG = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
+    val tpeF = flix.mkFunctionType(Array(tpeG, flix.mkInt32Type), flix.mkInt32Type)
+    def nativeF(x: IValue, y: IValue): IValue = {
+      val closure = x.getUnsafeRef.asInstanceOf[Value.HookClosure]
+      val hook = closure.hook.asInstanceOf[Ast.Hook.Safe]
+      hook.inv(Array(y))
+    }
+    def nativeG(x: IValue): IValue = flix.mkInt32(x.getInt32 + 1)
+
+    t.addHook("f", tpeF, nativeF _).addHook("g", tpeG, nativeG _).run()
+    t.runTest(Value.mkInt32(6), "h")
+  }
+
+  ignore("Expression.Hook - Hook.Safe.12") {
+    import HookSafeHelpers._
+    val input = "fn h: Int = (f(g))(40)"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpeG = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
+    val tpeF = flix.mkFunctionType(Array(tpeG), tpeG)
+    def nativeF(x: IValue): IValue = x
+    def nativeG(x: IValue): IValue = flix.mkInt32(x.getInt32 + 5)
+
+    t.addHook("f", tpeF, nativeF _).addHook("g", tpeG, nativeG _).run()
+    t.runTest(Value.mkInt32(45), "h")
+  }
+
+  // TODO: This test fails because Tag.tag (a Name.Ident) compares the source location.
+  // See https://github.com/magnus-madsen/flix/issues/119
+  ignore("Expression.Hook - Hook.Safe.13") {
+    import HookSafeHelpers._
+    val input =
+      """enum Val { case Val(Int) }
+        |fn g: Val = f(111)
+      """.stripMargin
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tagTpe = flix.mkTagType("Val", "Val", flix.mkInt32Type)
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkEnumType("Val", Array(tagTpe)))
+    def nativeF(x: IValue): IValue = flix.mkTag("Val", "Val", x)
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkInt32(111)), "g")
+  }
+
+  ignore("Expression.Hook - Hook.Safe.14") {
+    import HookSafeHelpers._
+    val input = """fn g: (Int, Int, Str, Int, Bool, ()) = f(24, 53, "qwertyuiop", 9978, false, ())"""
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpes = Array(flix.mkInt32Type, flix.mkInt32Type, flix.mkStrType, flix.mkInt32Type, flix.mkBoolType, flix.mkUnitType)
+    val tpe = flix.mkFunctionType(tpes, flix.mkTupleType(tpes))
+    def nativeF(a: IValue, b: IValue, c: IValue, d: IValue, e: IValue, f: IValue): IValue =
+      flix.mkTuple(Array(a, b, c, d, e, f))
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.Tuple(Array(Value.mkInt32(24), Value.mkInt32(53), Value.mkStr("qwertyuiop"), Value.mkInt32(9978), Value.False, Value.Unit)), "g")
+  }
+
+  ignore("Expression.Hook - Hook.Safe.15") {
+    import HookSafeHelpers._
+    val input = "fn g: Set[Int] = f(24, 53, 24)"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkInt32Type, flix.mkInt32Type), flix.mkSetType(flix.mkInt32Type))
+    def nativeF(x: IValue, y: IValue, z: IValue): IValue = flix.mkSet(Set(x, y, z))
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.mkSet(Set(Value.mkInt32(24), Value.mkInt32(53), Value.mkInt32(24))), "g")
+  }
+
+  ignore("Expression.Hook - Hook.Safe.16") {
+    import HookSafeHelpers._
+    val input = "fn g: Bool = f('a', 'b')"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkCharType, flix.mkCharType), flix.mkBoolType)
+    def nativeF(a: IValue, b: IValue): IValue = flix.mkBool(a.getChar == b.getChar)
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.False, "g")
+  }
+
+  ignore("Expression.Hook - Hook.Safe.17") {
+    import HookSafeHelpers._
+    val input = "fn g: Float32 = f(1.2f32, 2.1f32)"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkFloat32Type, flix.mkFloat32Type), flix.mkFloat32Type)
+    def nativeF(a: IValue, b: IValue): IValue = flix.mkFloat32(a.getFloat32 + b.getFloat32)
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.mkFloat32(3.3f), "g")
+  }
+
+  ignore("Expression.Hook - Hook.Safe.18") {
+    import HookSafeHelpers._
+    val input = "fn g: Float64 = f(1.2f64, 2.1f64)"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkFloat64Type, flix.mkFloat64Type), flix.mkFloat64Type)
+    def nativeF(a: IValue, b: IValue): IValue = flix.mkFloat64(a.getFloat64 + b.getFloat64)
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.mkFloat64(3.3d), "g")
+  }
+
+  ignore("Expression.Hook - Hook.Safe.19") {
+    import HookSafeHelpers._
+    val input = "fn h: Native = g(f(999))"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpeF = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkNativeType)
+    val tpeG = flix.mkFunctionType(Array(flix.mkNativeType), flix.mkNativeType)
+    def nativeF(x: IValue): IValue = flix.mkNative(MyObject(x.getInt32))
+    def nativeG(o: IValue): IValue = {
+      val obj = o.getUnsafeRef.asInstanceOf[MyObject]
+      flix.mkNative(MyObject(obj.x + 1))
+    }
+
+    t.addHook("f", tpeF, nativeF _).addHook("g", tpeG, nativeG _).run()
+    t.runTest(MyObject(1000), "h")
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Expression.{Hook,Apply} - Hook.Unsafe                                   //
@@ -917,10 +1235,291 @@ class TestBackend extends FunSuite {
   // This is necessary so that implicits are properly called.                //
   /////////////////////////////////////////////////////////////////////////////
 
-  // TODO: Tests when interop (Hook) is implemented in codegen. The Tester class will need to be updated.
-  // There are some subtleties with codegen that might make us revisit the design, and affect the interpreter.
-  // Also, note that we can only interop with 0-arg native functions, not native values. addHook() and addHookUnsafe()
-  // will complain if you give them a non-function type. However, we don't allow 0-arg functions in Flix.
+  // TODO: These tests are set to ignore because codegen doesn't yet support interop.
+
+  // TODO: We're forced to pass a dummy parameter.
+  // See: https://github.com/magnus-madsen/flix/issues/130#issuecomment-216944729
+  ignore("Expression.Hook - Hook.Unsafe.01") {
+    import HookUnsafeHelpers._
+    val input = "namespace A { def g: Bool = A.B/f(0) }"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    def nativeF(x: JInt): JBool = false
+
+    t.addHook("A.B/f", flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType), nativeF _).run()
+    t.runTest(Value.False, "A/g")
+  }
+
+  ignore("Expression.Hook - Hook.Unsafe.02") {
+    import HookUnsafeHelpers._
+    val input = "fn g: Int = A/f(3)"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
+    def nativeF(x: JInt): JInt = 24
+
+    t.addHook("A/f", tpe, nativeF _).run()
+    t.runTest(Value.mkInt32(24), "g")
+  }
+
+  ignore("Expression.Hook - Hook.Unsafe.03") {
+    import HookUnsafeHelpers._
+    val input = "namespace A { fn g: Int = f(3) }"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
+    def nativeF(x: JInt): JInt = x
+
+    t.addHook("A/f", tpe, nativeF _).run()
+    t.runTest(Value.mkInt32(3), "A/g")
+  }
+
+  ignore("Expression.Hook - Hook.Unsafe.04") {
+    import HookUnsafeHelpers._
+    val input = "fn g: Int64 = f(3i64, 42i64)"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkInt64Type, flix.mkInt64Type), flix.mkInt64Type)
+    def nativeF(x: JLong, y: JLong): JLong = x * y - 6
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.mkInt64(120), "g")
+  }
+
+  ignore("Expression.Hook - Hook.Unsafe.05") {
+    import HookUnsafeHelpers._
+    val input = "namespace C { fn h: Int32 = A/f(5i32) + B/g(0i32) }"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
+    def nativeF(x: JInt): JInt = { val y = nativeG(x + 1); y * y }
+    def nativeG(x: JInt): JInt = x - 4
+
+    t.addHook("A/f", tpe, nativeF _).addHook("B/g", tpe, nativeG _).run()
+    t.runTest(Value.mkInt32(0), "C/h")
+  }
+
+  ignore("Expression.Hook - Hook.Unsafe.06") {
+    import HookUnsafeHelpers._
+    val input = "fn x: Int16 = f(3i16)"
+    val t = new Tester(input, solve = false)
+    val flix = t.flix
+
+    val tpe = flix.mkFunctionType(Array(flix.mkInt16Type), flix.mkInt16Type)
+    def nativeF(x: JShort): JShort = nativeG((x + 1).toShort)
+    def nativeG(x: JShort): JShort = nativeH((x + 10).toShort)
+    def nativeH(x: JShort): JShort = (x * x).toShort
+
+    t.addHook("f", tpe, nativeF _).addHook("g", tpe, nativeG _).addHook("h", tpe, nativeH _).run()
+    t.runTest(Value.mkInt16(196), "x")
+  }
+
+  ignore("Expression.Hook - Hook.Unsafe.07") {
+    import HookUnsafeHelpers._
+    val input = "fn x: Int8 = let x = 7i8 in f(g(3i8), h(h(x)))"
+    val t = new Tester(input, solve = false)
+    val flix = t.flix
+
+    val tpe1 = flix.mkFunctionType(Array(flix.mkInt8Type), flix.mkInt8Type)
+    val tpe2 = flix.mkFunctionType(Array(flix.mkInt8Type, flix.mkInt8Type), flix.mkInt8Type)
+    def nativeF(x: JByte, y: JByte): JByte = (x - y).toByte
+    def nativeG(x: JByte): JByte = (x * 3).toByte
+    def nativeH(x: JByte): JByte = nativeG((x - 1).toByte)
+
+    t.addHook("f", tpe2, nativeF _).addHook("g", tpe1, nativeG _).addHook("h", tpe1, nativeH _).run()
+    t.runTest(Value.mkInt8(-42), "x")
+  }
+
+  ignore("Expression.Hook - Hook.Unsafe.08") {
+    import HookUnsafeHelpers._
+    val input =
+      """fn g01: Bool = f(true, true)
+        |fn g02: Bool = f(true, false)
+        |fn g03: Bool = f(false, false)
+        |fn g04: Bool = f(false, true)
+      """.stripMargin
+    val t = new Tester(input, solve = false)
+    val flix = t.flix
+
+    val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkBoolType), flix.mkBoolType)
+    def nativeF(x: JBool, y: JBool): JBool = if (x) true else y
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.True, "g01")
+    t.runTest(Value.True, "g02")
+    t.runTest(Value.False, "g03")
+    t.runTest(Value.True, "g04")
+  }
+
+  ignore("Expression.Hook - Hook.Unsafe.09") {
+    import HookUnsafeHelpers._
+    val input =
+      """fn g01: Bool = f(true, true)
+        |fn g02: Bool = f(true, false)
+        |fn g03: Bool = f(false, false)
+        |fn g04: Bool = f(false, true)
+      """.stripMargin
+    val t = new Tester(input, solve = false)
+    val flix = t.flix
+
+    val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkBoolType), flix.mkBoolType)
+    def nativeF(x: JBool, y: JBool): JBool = if (x) y else false
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.True, "g01")
+    t.runTest(Value.False, "g02")
+    t.runTest(Value.False, "g03")
+    t.runTest(Value.False, "g04")
+  }
+
+  ignore("Expression.Hook - Hook.Unsafe.10") {
+    import HookUnsafeHelpers._
+    val input = "fn g: Int = f(2, 42, 5)"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkInt32Type, flix.mkInt32Type), flix.mkInt32Type)
+    def nativeF(x: JInt, y: JInt, z: JInt): JInt = x + y + z
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.mkInt32(49), "g")
+  }
+
+  ignore("Expression.Hook - Hook.Unsafe.11") {
+    import HookUnsafeHelpers._
+    val input = "fn h: Int = f(g, 5)"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpeG = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
+    val tpeF = flix.mkFunctionType(Array(tpeG, flix.mkInt32Type), flix.mkInt32Type)
+    def nativeF(x: Value.HookClosure, y: JInt) = x.hook.asInstanceOf[Ast.Hook.Unsafe].inv(Array(y))
+    def nativeG(x: JInt): JInt = x + 1
+
+    t.addHook("f", tpeF, nativeF _).addHook("g", tpeG, nativeG _).run()
+    t.runTest(Value.mkInt32(6), "h")
+  }
+
+  ignore("Expression.Hook - Hook.Unsafe.12") {
+    import HookUnsafeHelpers._
+    val input = "fn h: Int = (f(g))(40)"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpeG = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
+    val tpeF = flix.mkFunctionType(Array(tpeG), tpeG)
+    def nativeF(x: Value.HookClosure): Value.HookClosure = x
+    def nativeG(x: JInt): JInt = x + 5
+
+    t.addHook("f", tpeF, nativeF _).addHook("g", tpeG, nativeG _).run()
+    t.runTest(Value.mkInt32(45), "h")
+  }
+
+  // TODO: This test fails because Tag.tag (a Name.Ident) compares the source location.
+  // See https://github.com/magnus-madsen/flix/issues/119
+  ignore("Expression.Hook - Hook.Unsafe.13") {
+    import HookUnsafeHelpers._
+    val input =
+      """enum Val { case Val(Int) }
+        |fn g: Val = f(111)
+      """.stripMargin
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tagTpe = flix.mkTagType("Val", "Val", flix.mkInt32Type)
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkEnumType("Val", Array(tagTpe)))
+    def nativeF(x: JInt): Value.Tag = Value.mkTag(Symbol.Resolved.mk("Val"), "Val", x)
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkInt32(111)), "g")
+  }
+
+  ignore("Expression.Hook - Hook.Unsafe.14") {
+    import HookUnsafeHelpers._
+    val input = """fn g: (Int, Int, Str, Int, Bool, ()) = f(24, 53, "qwertyuiop", 9978, false, ())"""
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpes = Array(flix.mkInt32Type, flix.mkInt32Type, flix.mkStrType, flix.mkInt32Type, flix.mkBoolType, flix.mkUnitType)
+    val tpe = flix.mkFunctionType(tpes, flix.mkTupleType(tpes))
+    def nativeF(a: JInt, b: JInt, c: String, d: JInt, e: JBool, f: Value.Unit.type): Value.Tuple =
+      Value.Tuple(Array(a, b, c, d, e, f))
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.Tuple(Array(Value.mkInt32(24), Value.mkInt32(53), Value.mkStr("qwertyuiop"), Value.mkInt32(9978), Value.False, Value.Unit)), "g")
+  }
+
+  ignore("Expression.Hook - Hook.Unsafe.15") {
+    import HookUnsafeHelpers._
+    val input = "fn g: Set[Int] = f(24, 53, 24)"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkInt32Type, flix.mkInt32Type), flix.mkSetType(flix.mkInt32Type))
+    def nativeF(x: JInt, y: JInt, z: JInt): Set[JInt] = Set(x, y, z)
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.mkSet(Set(Value.mkInt32(24), Value.mkInt32(53), Value.mkInt32(24))), "g")
+  }
+
+  ignore("Expression.Hook - Hook.Unsafe.16") {
+    import HookUnsafeHelpers._
+    val input = "fn g: Bool = f('a', 'b')"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkCharType, flix.mkCharType), flix.mkBoolType)
+    def nativeF(a: JChar, b: JChar): JBool = a == b
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.False, "g")
+  }
+
+  ignore("Expression.Hook - Hook.Unsafe.17") {
+    import HookUnsafeHelpers._
+    val input = "fn g: Float32 = f(1.2f32, 2.1f32)"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkFloat32Type, flix.mkFloat32Type), flix.mkFloat32Type)
+    def nativeF(a: JFloat, b: JFloat): JFloat = a + b
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.mkFloat32(3.3f), "g")
+  }
+
+  ignore("Expression.Hook - Hook.Unsafe.18") {
+    import HookUnsafeHelpers._
+    val input = "fn g: Float64 = f(1.2f64, 2.1f64)"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkFloat64Type, flix.mkFloat64Type), flix.mkFloat64Type)
+    def nativeF(a: JDouble, b: JDouble): JDouble = a + b
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.mkFloat64(3.3d), "g")
+  }
+
+  ignore("Expression.Hook - Hook.Unsafe.19") {
+    import HookUnsafeHelpers._
+    val input = "fn h: Native = g(f(999))"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpeF = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkNativeType)
+    val tpeG = flix.mkFunctionType(Array(flix.mkNativeType), flix.mkNativeType)
+    def nativeF(x: JInt): MyObject = MyObject(x)
+    def nativeG(o: MyObject): MyObject = MyObject(o.x + 1)
+
+    t.addHook("f", tpeF, nativeF _).addHook("g", tpeG, nativeG _).run()
+    t.runTest(MyObject(1000), "h")
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Expression.Unary                                                        //
