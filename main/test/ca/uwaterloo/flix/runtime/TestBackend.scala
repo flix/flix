@@ -900,7 +900,7 @@ class TestBackend extends FunSuite {
 
   /////////////////////////////////////////////////////////////////////////////
   // Expression.{Hook,Apply} - Hook.Safe                                     //
-  // Re-implements Expression.Lambda tests but using (safe) hooks instead.   //
+  // Reimplements Expression.Lambda tests but using (safe) hooks instead.    //
   // Note that some Lambda tests can't be reimplemented here and vice versa. //
   /////////////////////////////////////////////////////////////////////////////
 
@@ -911,10 +911,10 @@ class TestBackend extends FunSuite {
 
   /////////////////////////////////////////////////////////////////////////////
   // Expression.{Hook,Apply} - Hook.Unsafe                                   //
-  // Re-implements Expression.Lambda tests but using (unsafe) hooks instead. //
+  // Reimplements Expression.Lambda tests but using (unsafe) hooks instead . //
+  // Note that some Lambda tests can't be reimplemented here and vice versa. //
   // Note that native functions need to be annotated with JBool, JInt, etc.  //
   // This is necessary so that implicits are properly called.                //
-  // Note that some Lambda tests can't be reimplemented here and vice versa. //
   /////////////////////////////////////////////////////////////////////////////
 
   // TODO: Tests when interop (Hook) is implemented in codegen. The Tester class will need to be updated.
@@ -5620,6 +5620,30 @@ class TestBackend extends FunSuite {
     val t = new Tester(input)
     t.checkModel(Set(1.0d, 2.0d, 3.0d).map(x => List(Value.mkFloat64(x))), "A")
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Term.Head.ApplyHook - Hook.Safe                                         //
+  // Reimplements Term.Head.Exp tests but with ApplyHook (safe).             //
+  // Note that some tests can't be reimplemented here and vice versa.        //
+  /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: Tests when interop (Hook) is implemented in codegen. The Tester class will need to be updated.
+  // There are some subtleties with codegen that might make us revisit the design, and affect the interpreter.
+  // Also, note that we can only interop with 0-arg native functions, not native values. addHook() and addHookUnsafe()
+  // will complain if you give them a non-function type. However, we don't allow 0-arg functions in Flix.
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Term.Head.ApplyHook - Hook.Unsafe                                       //
+  // Reimplements Term.Head.Exp tests but with ApplyHook (unsafe).           //
+  // Note that some tests can't be reimplemented here and vice versa.        //
+  // Note that native functions need to be annotated with JBool, JInt, etc.  //
+  // This is necessary so that implicits are properly called.                //
+  /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: Tests when interop (Hook) is implemented in codegen. The Tester class will need to be updated.
+  // There are some subtleties with codegen that might make us revisit the design, and affect the interpreter.
+  // Also, note that we can only interop with 0-arg native functions, not native values. addHook() and addHookUnsafe()
+  // will complain if you give them a non-function type. However, we don't allow 0-arg functions in Flix.
 
   /////////////////////////////////////////////////////////////////////////////
   // Term.Body.Wildcard                                                      //
