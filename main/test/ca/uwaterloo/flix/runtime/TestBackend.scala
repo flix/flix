@@ -110,13 +110,18 @@ class TestBackend extends FunSuite {
     }
 
     def runTest(expected: AnyRef, const: String): Unit = {
-      assertResult(expected, s"- interpreter produced wrong value for $const")(interpreted.getConstant(const))
-      assertResult(expected, s"- compiler produced wrong value for $const")(compiled.getConstant(const))
+      withClue(s"interpreted value $const:") { assertResult(expected)(interpreted.getConstant(const)) }
+      withClue(s"compiled value $const:") { assertResult(expected)(compiled.getConstant(const)) }
     }
 
     def runInterceptTest[T <: AnyRef](const:String)(implicit manifest: Manifest[T]): Unit = {
       withClue(s"interpreted value $const:") { intercept[T](interpreted.getConstant(const)) }
       withClue(s"compiled value $const:") { intercept[T](compiled.getConstant(const)) }
+    }
+
+    def checkModel(expected: AnyRef, model: String): Unit = {
+      withClue(s"interpreted model $model:") { assertResult(expected)(interpreted.getRelation(model).toSet) }
+      withClue(s"compiled model $model:") { assertResult(expected)(compiled.getRelation(model).toSet) }
     }
 
     val interpreted = getModel(codegen = false)
@@ -5249,6 +5254,582 @@ class TestBackend extends FunSuite {
       """.stripMargin
     val t = new Tester(input)
     t.runInterceptTest[MatchException]("g")
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Term.Head.Var                                                           //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Term.Head.Var.01") {
+    val input =
+      """rel A(x: Bool);
+        |rel B(x: Bool);
+        |
+        |A(true).
+        |
+        |B(x) :- A(x).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(List(Value.True)), "B")
+  }
+
+  test("Term.Head.Var.02") {
+    val input =
+      """rel A(x: Int);
+        |rel B(x: Int);
+        |
+        |A(1).
+        |A(2).
+        |A(3).
+        |
+        |B(x) :- A(x).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "B")
+  }
+
+  test("Term.Head.Var.03") {
+    val input =
+      """rel A(x: Str);
+        |rel B(x: Str);
+        |
+        |A("one").
+        |A("two").
+        |A("three").
+        |
+        |B(x) :- A(x).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set("one", "two", "three").map(x => List(Value.mkStr(x))), "B")
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Term.Head.Exp                                                           //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Term.Head.Exp.01") {
+    val input =
+      """rel A(x: Unit);
+        |
+        |A(()).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(List(Value.Unit)), "A")
+  }
+
+  test("Term.Head.Exp.02") {
+    val input =
+      """rel A(x: Bool);
+        |
+        |A(true).
+        |A(false).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(true, false).map(x => List(Value.mkBool(x))), "A")
+  }
+
+  test("Term.Head.Exp.03") {
+    val input =
+      """rel A(x: Int8);
+        |
+        |A(1i8).
+        |A(2i8).
+        |A(3i8).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt8(x))), "A")
+  }
+
+  test("Term.Head.Exp.04") {
+    val input =
+      """rel A(x: Int16);
+        |
+        |A(1i16).
+        |A(2i16).
+        |A(3i16).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt16(x))), "A")
+  }
+
+  test("Term.Head.Exp.05") {
+    val input =
+      """rel A(x: Int32);
+        |
+        |A(1i32).
+        |A(2i32).
+        |A(3i32).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
+  }
+
+  test("Term.Head.Exp.06") {
+    val input =
+      """rel A(x: Int64);
+        |
+        |A(1i64).
+        |A(2i64).
+        |A(3i64).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt64(x))), "A")
+  }
+
+  test("Term.Head.Exp.07") {
+    val input =
+      """rel A(x: Str);
+        |
+        |A("one").
+        |A("two").
+        |A("three").
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set("one", "two", "three").map(x => List(Value.mkStr(x))), "A")
+  }
+
+  test("Term.Head.Exp.08") {
+    val input =
+      """rel A(x: (Int, Str));
+        |
+        |A((1, "one")).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(List(Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one"))))), "A")
+  }
+
+  test("Term.Head.Exp.09") {
+    val input =
+      """enum Foo { case Foo(Int,Str) }
+        |rel A(x: Foo);
+        |
+        |A(Foo.Foo(1, "one")).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(List(Value.mkTag(Symbol.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))), "A")
+  }
+
+  test("Term.Head.Exp.10") {
+    val input =
+      """rel A(x: (Int, Int));
+        |
+        |A((1, 2)).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(List(Value.Tuple(Array(1, 2).map(Value.mkInt32)))), "A")
+  }
+
+  test("Term.Head.Exp.11") {
+    val input =
+      """rel A(x: Char);
+        |
+        |A('a').
+        |A('b').
+        |A('c').
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set('a', 'b', 'c').map(x => List(Value.mkChar(x))), "A")
+  }
+
+  test("Term.Head.Exp.12") {
+    val input =
+      """rel A(x: Float32);
+        |
+        |A(1.0f32).
+        |A(2.0f32).
+        |A(3.0f32).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1.0f, 2.0f, 3.0f).map(x => List(Value.mkFloat32(x))), "A")
+  }
+
+  test("Term.Head.Exp.13") {
+    val input =
+      """rel A(x: Float64);
+        |
+        |A(1.0f64).
+        |A(2.0f64).
+        |A(3.0f64).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1.0d, 2.0d, 3.0d).map(x => List(Value.mkFloat64(x))), "A")
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Term.Head.Apply                                                         //
+  // These tests simply re-implement the Term.Head.Exp tests using Apply.    //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Term.Head.Apply.01") {
+    val input =
+      """rel A(x: ());
+        |def f(x: Int): () = ()
+        |
+        |A(f(0)).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(List(Value.Unit)), "A")
+  }
+
+  test("Term.Head.Apply.02") {
+    val input =
+      """rel A(x: Bool);
+        |def f(x: Int): Bool = x == 0
+        |
+        |A(f(0)).
+        |A(f(1)).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(true, false).map(x => List(Value.mkBool(x))), "A")
+  }
+
+  test("Term.Head.Apply.03") {
+    val input =
+      """rel A(x: Int8);
+        |def f(x: Int8): Int8 = x + 1i8
+        |
+        |A(f(0i8)).
+        |A(f(1i8)).
+        |A(f(2i8)).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt8(x))), "A")
+  }
+
+  test("Term.Head.Apply.04") {
+    val input =
+      """rel A(x: Int16);
+        |def f(x: Int16): Int16 = x + 1i16
+        |
+        |A(f(0i16)).
+        |A(f(1i16)).
+        |A(f(2i16)).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt16(x))), "A")
+  }
+
+  test("Term.Head.Apply.05") {
+    val input =
+      """rel A(x: Int32);
+        |def f(x: Int32): Int32 = x + 1i32
+        |
+        |A(f(0i32)).
+        |A(f(1i32)).
+        |A(f(2i32)).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
+  }
+
+  test("Term.Head.Apply.06") {
+    val input =
+      """rel A(x: Int64);
+        |def f(x: Int64): Int64 = x + 1i64
+        |
+        |A(f(0i64)).
+        |A(f(1i64)).
+        |A(f(2i64)).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt64(x))), "A")
+  }
+
+  test("Term.Head.Apply.07") {
+    val input =
+      """rel A(x: Str);
+        |def f(x: Str): Str = x
+        |
+        |A(f("one")).
+        |A(f("two")).
+        |A(f("three")).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set("one", "two", "three").map(x => List(Value.mkStr(x))), "A")
+  }
+
+  test("Term.Head.Apply.08") {
+    val input =
+      """rel A(x: (Int, Str));
+        |def f(x: Int): (Int, Str) = (x, "one")
+        |
+        |A(f(1)).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(List(Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one"))))), "A")
+  }
+
+  test("Term.Head.Apply.09") {
+    val input =
+      """enum Foo { case Foo(Int,Str) }
+        |rel A(x: Foo);
+        |def f(x: Str): Foo = Foo.Foo(1, x)
+        |
+        |A(f("one")).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(List(Value.mkTag(Symbol.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))), "A")
+  }
+
+  test("Term.Head.Apply.10") {
+    val input =
+      """rel A(x: (Int, Int));
+        |def f(x: Int, y: Int): (Int, Int) = (x, y)
+        |
+        |A(f(1, 2)).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(List(Value.Tuple(Array(1, 2).map(Value.mkInt32)))), "A")
+  }
+
+  test("Term.Head.Apply.11") {
+    val input =
+      """rel A(x: Char);
+        |def f(x: Char): Char = x
+        |
+        |A(f('a')).
+        |A(f('b')).
+        |A(f('c')).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set('a', 'b', 'c').map(x => List(Value.mkChar(x))), "A")
+  }
+
+  test("Term.Head.Apply.12") {
+    val input =
+      """rel A(x: Float32);
+        |def f(x: Float32): Float32 = x
+        |
+        |A(f(1.0f32)).
+        |A(f(2.0f32)).
+        |A(f(3.0f32)).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1.0f, 2.0f, 3.0f).map(x => List(Value.mkFloat32(x))), "A")
+  }
+
+  test("Term.Head.Apply.13") {
+    val input =
+      """rel A(x: Float64);
+        |def f(x: Float64): Float64 = x
+        |
+        |A(f(1.0f64)).
+        |A(f(2.0f64)).
+        |A(f(3.0f64)).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1.0d, 2.0d, 3.0d).map(x => List(Value.mkFloat64(x))), "A")
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Term.Body.Wildcard                                                      //
+  /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: See issue #65: https://github.com/magnus-madsen/flix/issues/65
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Term.Body.Var                                                           //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Term.Body.Var.01") {
+    val input =
+      """rel A(x: Bool, y: Bool);
+        |rel B(x: Bool);
+        |def f(x: Bool): Bool = x
+        |
+        |A(true, true).
+        |A(false, true).
+        |
+        |B(y) :- f(x), A(x, y).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(List(Value.True)), "B")
+  }
+
+  test("Term.Body.Var.02") {
+    val input =
+      """rel A(x: Int);
+        |rel B(x: Int);
+        |def f(x: Int): Bool = x % 2 == 0
+        |
+        |A(0).
+        |A(1).
+        |A(2).
+        |A(3).
+        |
+        |B(x) :- f(x), A(x).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(0, 2).map(x => List(Value.mkInt32(x))), "B")
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Term.Body.Exp                                                           //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Term.Body.Exp.01") {
+    val input =
+      """rel A(x: Int);
+        |def f(x: Bool): Bool = x
+        |
+        |A(1) :- f(true).
+        |A(2) :- f(true).
+        |A(3) :- f(true).
+        |A(4) :- f(false).
+        |A(5) :- f(false).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
+  }
+
+  test("Term.Body.Exp.02") {
+    val input =
+      """rel A(x: Int);
+        |def f(x: Int8): Bool = x >= 0i8
+        |
+        |A(1) :- f(0i8).
+        |A(2) :- f(0i8).
+        |A(3) :- f(0i8).
+        |A(4) :- f(-1i8).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
+  }
+
+  test("Term.Body.Exp.03") {
+    val input =
+      """rel A(x: Int);
+        |def f(x: Int16): Bool = x >= 0i16
+        |
+        |A(1) :- f(0i16).
+        |A(2) :- f(0i16).
+        |A(3) :- f(0i16).
+        |A(4) :- f(-200i16).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
+  }
+
+  test("Term.Body.Exp.04") {
+    val input =
+      """rel A(x: Int);
+        |def f(x: Int32): Bool = x >= 0i32
+        |
+        |A(1) :- f(0i32).
+        |A(2) :- f(0i32).
+        |A(3) :- f(0i32).
+        |A(4) :- f(-200000i32).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
+  }
+
+  test("Term.Body.Exp.05") {
+    val input =
+      """rel A(x: Int);
+        |def f(x: Int64): Bool = x >= 0i64
+        |
+        |A(1) :- f(0i64).
+        |A(2) :- f(0i64).
+        |A(3) :- f(0i64).
+        |A(4) :- f(-20000000000i64).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
+  }
+
+  test("Term.Body.Exp.06") {
+    val input =
+      """rel A(x: Int);
+        |def f(x: Str): Bool = true
+        |
+        |A(1) :- f("foo").
+        |A(2) :- f("bar").
+        |A(3) :- f("baz").
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
+  }
+
+  // TODO: Is a tuple an illegal body term?
+  ignore("Term.Body.Exp.07") {
+    val input =
+      """rel A(x: Int);
+        |def f(x: (Int, Str)): Bool = match x with {
+        |  case (a, "abc") => a >= 0
+        |  case _ => false
+        |}
+        |
+        |A(1) :- f((0, "abc")).
+        |A(2) :- f((0, "abc")).
+        |A(3) :- f((0, "abc")).
+        |A(4) :- f((-1, "abc")).
+        |A(5) :- f((0, "xyz")).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
+  }
+
+  // TODO: Is a tag an illegal body term?
+  ignore("Term.Body.Exp.08") {
+    val input =
+      """enum Val { case Top, case Val(Int), case Bot }
+        |rel A(x: Int);
+        |def f(x: Val): Bool = match x with {
+        |  case Val.Val(v) => v >= 0
+        |  case _ => false
+        |}
+        |
+        |A(1) :- f(Val.Val(0)).
+        |A(2) :- f(Val.Val(0)).
+        |A(3) :- f(Val.Val(0)).
+        |A(4) :- f(Val.Val(-1)).
+        |A(5) :- f(Val.Top).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
+  }
+
+  test("Term.Body.Exp.09") {
+    val input =
+      """rel A(x: Int);
+        |def f(x: Char): Bool = x >= 'b'
+        |
+        |A(1) :- f('b').
+        |A(2) :- f('b').
+        |A(3) :- f('b').
+        |A(4) :- f('a').
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
+  }
+
+  test("Term.Body.Exp.10") {
+    val input =
+      """rel A(x: Int);
+        |def f(x: Float32): Bool = x >= 0.0f32
+        |
+        |A(1) :- f(0.0f32).
+        |A(2) :- f(0.0f32).
+        |A(3) :- f(0.0f32).
+        |A(4) :- f(-1.0f32).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
+  }
+
+  test("Term.Body.Exp.11") {
+    val input =
+      """rel A(x: Int);
+        |def f(x: Float64): Bool = x >= 0.0f64
+        |
+        |A(1) :- f(0.0f64).
+        |A(2) :- f(0.0f64).
+        |A(3) :- f(0.0f64).
+        |A(4) :- f(-1.0f64).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
   }
 
 }
