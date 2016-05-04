@@ -5844,6 +5844,66 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt32(0), "g04")
   }
 
+  // TODO: Ignored because codegen doesn't support interop.
+  ignore("Match.Tuple.07") {
+    import HookUnsafeHelpers._
+    val input =
+      """def fst(t: (Native, Native)): Native = match t with {
+        |  case (x, _) => x
+        |}
+        |def g: (Native, Native) = f(12)
+        |def h: Native = fst(g)
+      """.stripMargin
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkTupleType(Array(flix.mkNativeType, flix.mkNativeType)))
+    def nativeF(x: Int): (MyObject, MyObject) = (MyObject(x), MyObject(x * 2))
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(MyObject(12), "h")
+  }
+
+  // TODO: Ignored because codegen doesn't support interop.
+  ignore("Match.Tuple.08") {
+    import HookUnsafeHelpers._
+    val input =
+      """def fst(t: (Native, Native)): Native = match t with {
+        |  case (x, _) => x
+        |}
+        |def g: (Native, Native) = f(12)
+        |def h: Native = fst(g)
+      """.stripMargin
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkTupleType(Array(flix.mkNativeType, flix.mkNativeType)))
+    def nativeF(x: Int): (Int, String) = (x, x.toString)
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.mkInt32(12), "h")
+  }
+
+  // TODO: Ignored because codegen doesn't support interop.
+  ignore("Match.Tuple.09") {
+    import HookUnsafeHelpers._
+    val input =
+      """def fst(t: (Int, Str)): Int = match t with {
+        |  case (x, _) => x
+        |}
+        |def g: (Int, Str) = f(12)
+        |def h: Int = fst(g)
+      """.stripMargin
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkTupleType(Array(flix.mkInt32Type, flix.mkStrType)))
+    def nativeF(x: Int): (Int, String) = (x, x.toString)
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.mkInt32(12), "h")
+  }
+
   test("Match.Error.01") {
     val input =
       """def f(x: Int): Bool = match x with {
