@@ -75,6 +75,9 @@ object Main {
       case "--verbose" :: xs => visit(xs, opts.copy(verbosity = Verbosity.Verbose))
       case "-s" :: xs => visit(xs, opts.copy(verbosity = Verbosity.Silent))
       case "--silent" :: xs => visit(xs, opts.copy(verbosity = Verbosity.Silent))
+      case "-c" :: xs => visit(xs, opts.copy(codegen = CodeGeneration.Enabled))
+      case "--compile" :: xs => visit(xs, opts.copy(codegen = CodeGeneration.Enabled))
+      case "--dump-bytecode" :: xs => visit(xs, opts.copy(debugBytecode = DebugBytecode.Enabled))
       case "--verify" :: xs => visit(xs, opts.copy(verify = Verify.Enabled))
       case ("-p" | "--print") :: xs =>
         val print = xs.takeWhile(s => !s.startsWith("-"))
