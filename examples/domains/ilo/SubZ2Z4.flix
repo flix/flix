@@ -1,0 +1,121 @@
+namespace SubZ2Z4 {
+
+    // See Figure 2.5 on page 38. The diagram below may be misleading.
+
+    enum L {
+                           case Top,
+
+                  case Y1, case Y2, case Y3,
+
+         case X1, case X2, case X3,
+
+                  case Bot
+    }
+
+    /**
+     * Returns `true` iff `e1` is less than or equal to `e2`.
+     */
+    def leq(e1: L, e2: L): Bool = match (e1, e2) with {
+        case (L.Bot, _) => true
+
+        case (L.X1, L.X1) => true
+        case (L.X1, L.Y1) => true
+
+        case (L.X2, L.X2) => true
+        case (L.X2, L.Y1) => true
+
+        case (L.X3, L.X3) => true
+        case (L.X3, L.Y1) => true
+        case (L.X3, L.Y2) => true
+        case (L.X3, L.Y3) => true
+
+        case (L.Y1, L.Y1) => true
+        case (L.Y2, L.Y2) => true
+        case (L.Y3, L.Y3) => true
+
+        case (_, L.Top)   => true
+
+        case _            => false
+    }
+
+    /**
+     * Returns the least upper bound of `e1` and `e2`.
+     */
+    @commutative @associative
+    def lub(e1: L, e2: L): L = match (e1, e2) with {
+        case (L.Bot, x)   => x
+        case (x, L.Bot)   => x
+
+        case (L.X1, L.X1) => L.X1
+        case (L.X1, L.X2) => L.Y1
+        case (L.X1, L.X3) => L.Y1
+        case (L.X1, L.Y1) => L.Y1
+
+        case (L.X2, L.X2) => L.X2
+        case (L.X2, L.X1) => L.Y1
+        case (L.X2, L.X3) => L.Y1
+        case (L.X2, L.Y1) => L.Y1
+
+        case (L.X3, L.X3) => L.X3
+        case (L.X3, L.X1) => L.Y1
+        case (L.X3, L.X2) => L.Y1
+        case (L.X3, L.Y1) => L.Y1
+        case (L.X3, L.Y2) => L.Y2
+        case (L.X3, L.Y3) => L.Y3
+
+        case (L.Y1, L.Y1) => L.Y1
+        case (L.Y1, L.X1) => L.Y1
+        case (L.Y1, L.X2) => L.Y1
+        case (L.Y1, L.X3) => L.Y1
+
+        case (L.Y2, L.Y2) => L.Y2
+        case (L.Y2, L.X3) => L.Y2
+
+        case (L.Y3, L.Y3) => L.Y3
+        case (L.Y3, L.X3) => L.Y3
+
+        case _            => L.Top
+    }
+
+    /**
+     * Returns the greatest lower bound of `e1` and `e2`.
+     */
+    @commutative @associative
+    def glb(e1: L, e2: L): L = match (e1, e2) with {
+        case (L.Top, x)   => x
+        case (x, L.Top)   => x
+
+        case (L.X1, L.X1) => L.X1
+        case (L.X1, L.Y1) => L.X1
+
+        case (L.X2, L.X2) => L.X2
+        case (L.X2, L.Y1) => L.X2
+
+        case (L.X3, L.X3) => L.X3
+        case (L.X3, L.Y1) => L.X3
+        case (L.X3, L.Y2) => L.X3
+        case (L.X3, L.Y3) => L.X3
+
+        case (L.Y1, L.Y1) => L.Y1
+        case (L.Y1, L.Y2) => L.X3
+        case (L.Y1, L.Y3) => L.X3
+        case (L.Y1, L.X1) => L.X1
+        case (L.Y1, L.X2) => L.X2
+        case (L.Y1, L.X3) => L.X3
+
+        case (L.Y2, L.Y2) => L.Y2
+        case (L.Y2, L.Y1) => L.X3
+        case (L.Y2, L.Y3) => L.X3
+        case (L.Y2, L.X3) => L.X3
+
+        case (L.Y3, L.Y3) => L.Y3
+        case (L.Y3, L.Y1) => L.X3
+        case (L.Y3, L.Y2) => L.X3
+        case (L.Y3, L.X3) => L.X3
+
+        case _            => L.Bot
+    }
+
+    let L<> = (L.Bot, L.Top, leq, lub, glb)
+
+}

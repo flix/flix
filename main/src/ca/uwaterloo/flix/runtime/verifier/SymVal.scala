@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime.verifier
 
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
+import ca.uwaterloo.flix.language.ast.Name
 
 /**
   * Symbolic Values.
@@ -76,6 +76,13 @@ object SymVal {
   case class Int64(lit: Long) extends SymVal
 
   /**
+    * A BigInt value.
+    *
+    * @param lit the int literal.
+    */
+  case class BigInt(lit: java.math.BigInteger) extends SymVal
+
+  /**
     * A String value.
     *
     * @param lit the int literal.
@@ -104,20 +111,5 @@ object SymVal {
     * @param env the closure environment.
     */
   case class Closure(exp: Expression.Ref, env: List[SymVal]) extends SymVal
-
-  /**
-    * A user error value.
-    */
-  case class UserError(loc: SourceLocation) extends SymVal
-
-  /**
-    * A match error value.
-    */
-  case class MatchError(loc: SourceLocation) extends SymVal
-
-  /**
-    * A switch error value.
-    */
-  case class SwitchError(loc: SourceLocation) extends SymVal
 
 }

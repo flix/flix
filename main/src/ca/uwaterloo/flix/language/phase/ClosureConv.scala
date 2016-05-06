@@ -21,6 +21,7 @@ object ClosureConv {
     case SimplifiedAst.Expression.Int16(lit) => exp
     case SimplifiedAst.Expression.Int32(lit) => exp
     case SimplifiedAst.Expression.Int64(lit) => exp
+    case SimplifiedAst.Expression.BigInt(lit) => exp
     case SimplifiedAst.Expression.Str(lit) => exp
     case SimplifiedAst.Expression.LoadBool(n, o) => exp
     case SimplifiedAst.Expression.LoadInt8(b, o) => exp
@@ -135,6 +136,7 @@ object ClosureConv {
     case SimplifiedAst.Expression.Int16(lit) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.Int32(lit) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.Int64(lit) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.BigInt(lit) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.Str(lit) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.LoadBool(n, o) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.LoadInt8(b, o) => mutable.LinkedHashSet.empty

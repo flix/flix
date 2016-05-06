@@ -235,6 +235,15 @@ object TypedAst {
       final val tpe = Type.Int64
     }
 
+    /**
+      * A typed AST node that represent a big int literal.
+      *
+      * @param lit the integer literal.
+      * @param loc the source location.
+      */
+    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends TypedAst.Literal {
+      final val tpe = Type.BigInt
+    }
 
     /**
       * A typed AST node representing a string literal.

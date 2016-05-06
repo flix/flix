@@ -70,6 +70,7 @@ object LambdaLift {
       case Expression.Int16(lit) => e
       case Expression.Int32(lit) => e
       case Expression.Int64(lit) => e
+      case Expression.BigInt(lit) => e
       case Expression.Str(lit) => e
       case Expression.LoadBool(n, o) => e
       case Expression.LoadInt8(b, o) => e

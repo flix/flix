@@ -1,3 +1,7 @@
+// TODO: These are not chains, and should not require total order.
+// The set ordering is not total.
+// TODO: New names? Increasing, Increase, Inc, ?
+
 /**
  * Combinator to construct an increasing chain lattice from a total order.
  */

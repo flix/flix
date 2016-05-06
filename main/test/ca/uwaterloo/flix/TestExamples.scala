@@ -58,6 +58,106 @@ class TestExamples extends FunSuite {
     assertResult(List(Tru))(A(List(Value.mkInt32(8))))
   }
 
+  test("Constant.flix") {
+    val input =
+      """namespace Constant {
+        |    let Constant<> = (Constant.Bot, Constant.Top, leq, lub, glb);
+        |    lat A(k: Int, v: Constant);
+        |
+        |    A(0, Constant.Cst(0)).
+        |    A(1, Constant.Cst(1)).
+        |    A(2, Constant.Cst(2)).
+        |
+        |    A(3, x) :- A(0, x).
+        |    A(3, x) :- A(1, x).
+        |    A(3, x) :- A(2, x).
+        |
+        |    A(4, x) :- A(0, x), A(1, x), A(2, x).
+        |
+        |    A(5, plus(x, y))  :- A(0, x), A(2, y).
+        |    A(6, times(x, y)) :- A(1, x), A(2, y).
+        |}
+      """.stripMargin
+
+    val model = new Flix()
+      .addPath("./examples/domains/Belnap.flix")
+      .addPath("./examples/domains/Constant.flix")
+      .addStr(input)
+      .solve()
+      .get
+
+    val Constant = Symbol.Resolved.mk(List("Constant", "Constant"))
+
+    val Zer = Value.mkTag(Constant, "Cst", Value.mkInt32(0))
+    val One = Value.mkTag(Constant, "Cst", Value.mkInt32(1))
+    val Two = Value.mkTag(Constant, "Cst", Value.mkInt32(2))
+    val Top = Value.mkTag(Constant, "Top", Value.Unit)
+
+    val A = model.getLattice("Constant/A").toMap
+
+    assertResult(List(Zer))(A(List(Value.mkInt32(0))))
+    assertResult(List(One))(A(List(Value.mkInt32(1))))
+    assertResult(List(Two))(A(List(Value.mkInt32(2))))
+    assertResult(List(Top))(A(List(Value.mkInt32(3))))
+    assertResult(None)(A.get(List(Value.mkInt32(4))))
+    assertResult(List(Two))(A(List(Value.mkInt32(5))))
+    assertResult(List(Two))(A(List(Value.mkInt32(6))))
+  }
+
+  // TODO: Implement BigInt in interpreter and codegen
+  ignore("ConstantSign.flix") {
+    val input =
+      """namespace ConstantSign {
+        |    let ConstSign<> = (ConstSign.Bot, ConstSign.Top, leq, lub, glb);
+        |    lat A(k: Int, v: ConstSign);
+        |
+        |    A(1, ConstSign.Cst(-1ii)).
+        |    A(2, ConstSign.Cst(0ii)).
+        |    A(3, ConstSign.Cst(1ii)).
+        |
+        |    A(4, x) :- A(1, x). // 4 -> top
+        |    A(4, x) :- A(2, x). // 4 -> top
+        |    A(4, x) :- A(3, x). // 4 -> top
+        |
+        |    A(5, x) :- A(2, x). // 5 -> pos
+        |    A(5, x) :- A(3, x). // 5 -> pos
+        |
+        |    A(6, x) :- A(1, x), A(2, x). // 6 -> bot
+        |    A(7, x) :- A(2, x), A(3, x). // 7 -> bot
+        |
+        |    A(8, x) :- A(4, x), A(5, x). // 8 -> pos
+        |
+        |    A(9, times(x, y)) :- A(1, x), A(1, y). // 9 -> 1
+        |}
+      """.stripMargin
+
+    val model = new Flix()
+      .addPath("./examples/domains/Belnap.flix")
+      .addPath("./examples/domains/ConstantSign.flix")
+      .addStr(input)
+      .solve()
+      .get
+
+    val ConstantSign = Symbol.Resolved.mk(List("ConstantSign", "ConstSign"))
+
+    val Zer = Value.mkTag(ConstantSign, "Cst", Value.mkInt32(0))
+    val One = Value.mkTag(ConstantSign, "Cst", Value.mkInt32(1))
+    val Pos = Value.mkTag(ConstantSign, "Pos", Value.Unit)
+    val Top = Value.mkTag(ConstantSign, "Top", Value.Unit)
+
+    val A = model.getLattice("ConstantSign/A").toMap
+
+    assertResult(List(Zer))(A(List(Value.mkInt32(2))))
+    assertResult(List(One))(A(List(Value.mkInt32(3))))
+    assertResult(List(Top))(A(List(Value.mkInt32(4))))
+    assertResult(List(Top))(A(List(Value.mkInt32(4))))
+    assertResult(List(Pos))(A(List(Value.mkInt32(5))))
+    assertResult(None)(A.get(List(Value.mkInt32(6))))
+    assertResult(None)(A.get(List(Value.mkInt32(7))))
+    assertResult(List(Pos))(A(List(Value.mkInt32(8))))
+    assertResult(List(One))(A(List(Value.mkInt32(9))))
+  }
+
   test("Parity.flix") {
     val input =
       """namespace Parity {
@@ -107,9 +207,14 @@ class TestExamples extends FunSuite {
     assertResult(List(Odd))(A(List(Value.mkInt32(8))))
   }
 
-  test("Sign.flix") {
+  ignore("Dimension.flix") {
+    val model = new Flix().addPath("./examples/domains/Dimension.flix").solve()
+    assert(model.isSuccess)
+  }
+
+  test("StrictSign.flix") {
     val input =
-      """namespace Sign {
+      """namespace StrictSign {
         |    let Sign<> = (Sign.Bot, Sign.Top, leq, lub, glb);
         |    lat A(k: Int, v: Sign);
         |
@@ -133,19 +238,19 @@ class TestExamples extends FunSuite {
 
     val model = new Flix()
       .addPath("./examples/domains/Belnap.flix")
-      .addPath("./examples/domains/Sign.flix")
+      .addPath("./examples/domains/StrictSign.flix")
       .addStr(input)
       .solve()
       .get
 
-    val Sign = Symbol.Resolved.mk(List("Sign", "Sign"))
+    val Sign = Symbol.Resolved.mk(List("StrictSign", "Sign"))
 
     val Neg = Value.mkTag(Sign, "Neg", Value.Unit)
     val Zer = Value.mkTag(Sign, "Zer", Value.Unit)
     val Pos = Value.mkTag(Sign, "Pos", Value.Unit)
     val Top = Value.mkTag(Sign, "Top", Value.Unit)
 
-    val A = model.getLattice("Sign/A").toMap
+    val A = model.getLattice("StrictSign/A").toMap
 
     assertResult(List(Neg))(A(List(Value.mkInt32(1))))
     assertResult(List(Zer))(A(List(Value.mkInt32(2))))
@@ -156,110 +261,6 @@ class TestExamples extends FunSuite {
     assertResult(List(Top))(A(List(Value.mkInt32(7))))
     assertResult(List(Zer))(A(List(Value.mkInt32(8))))
     assertResult(List(Pos))(A(List(Value.mkInt32(9))))
-  }
-
-  test("Constant.flix") {
-    val input =
-      """namespace Constant {
-        |    let Constant<> = (Constant.Bot, Constant.Top, leq, lub, glb);
-        |    lat A(k: Int, v: Constant);
-        |
-        |    A(0, Constant.Cst(0)).
-        |    A(1, Constant.Cst(1)).
-        |    A(2, Constant.Cst(2)).
-        |
-        |    A(3, x) :- A(0, x).
-        |    A(3, x) :- A(1, x).
-        |    A(3, x) :- A(2, x).
-        |
-        |    A(4, x) :- A(0, x), A(1, x), A(2, x).
-        |
-        |    A(5, plus(x, y))  :- A(0, x), A(2, y).
-        |    A(6, times(x, y)) :- A(1, x), A(2, y).
-        |}
-      """.stripMargin
-
-    val model = new Flix()
-      .addPath("./examples/domains/Belnap.flix")
-      .addPath("./examples/domains/Constant.flix")
-      .addStr(input)
-      .solve()
-      .get
-
-    val Constant = Symbol.Resolved.mk(List("Constant", "Constant"))
-
-    val Zer = Value.mkTag(Constant, "Cst", Value.mkInt32(0))
-    val One = Value.mkTag(Constant, "Cst", Value.mkInt32(1))
-    val Two = Value.mkTag(Constant, "Cst", Value.mkInt32(2))
-    val Top = Value.mkTag(Constant, "Top", Value.Unit)
-
-    val A = model.getLattice("Constant/A").toMap
-
-    assertResult(List(Zer))(A(List(Value.mkInt32(0))))
-    assertResult(List(One))(A(List(Value.mkInt32(1))))
-    assertResult(List(Two))(A(List(Value.mkInt32(2))))
-    assertResult(List(Top))(A(List(Value.mkInt32(3))))
-    assertResult(None)(A.get(List(Value.mkInt32(4))))
-    assertResult(List(Two))(A(List(Value.mkInt32(5))))
-    assertResult(List(Two))(A(List(Value.mkInt32(6))))
-  }
-
-  test("ConstantSign.flix") {
-    val input =
-      """namespace ConstantSign {
-        |    let ConstSign<> = (ConstSign.Bot, ConstSign.Top, leq, lub, glb);
-        |    lat A(k: Int, v: ConstSign);
-        |
-        |    A(1, ConstSign.Cst(-1)).
-        |    A(2, ConstSign.Cst(0)).
-        |    A(3, ConstSign.Cst(1)).
-        |
-        |    A(4, x) :- A(1, x). // 4 -> top
-        |    A(4, x) :- A(2, x). // 4 -> top
-        |    A(4, x) :- A(3, x). // 4 -> top
-        |
-        |    A(5, x) :- A(2, x). // 5 -> pos
-        |    A(5, x) :- A(3, x). // 5 -> pos
-        |
-        |    A(6, x) :- A(1, x), A(2, x). // 6 -> bot
-        |    A(7, x) :- A(2, x), A(3, x). // 7 -> bot
-        |
-        |    A(8, x) :- A(4, x), A(5, x). // 8 -> pos
-        |
-        |    A(9, times(x, y)) :- A(1, x), A(1, y). // 9 -> 1
-        |}
-      """.stripMargin
-
-    val model = new Flix()
-      .addPath("./examples/domains/Belnap.flix")
-      .addPath("./examples/domains/ConstantSign.flix")
-      .addStr(input)
-      .solve()
-      .get
-
-    val ConstantSign = Symbol.Resolved.mk(List("ConstantSign", "ConstSign"))
-
-    val Zer = Value.mkTag(ConstantSign, "Cst", Value.mkInt32(0))
-    val One = Value.mkTag(ConstantSign, "Cst", Value.mkInt32(1))
-    val Pos = Value.mkTag(ConstantSign, "Pos", Value.Unit)
-    val Top = Value.mkTag(ConstantSign, "Top", Value.Unit)
-
-    val A = model.getLattice("ConstantSign/A").toMap
-
-    assertResult(List(Zer))(A(List(Value.mkInt32(2))))
-    assertResult(List(One))(A(List(Value.mkInt32(3))))
-    assertResult(List(Top))(A(List(Value.mkInt32(4))))
-    assertResult(List(Top))(A(List(Value.mkInt32(4))))
-    assertResult(List(Pos))(A(List(Value.mkInt32(5))))
-    assertResult(None)(A.get(List(Value.mkInt32(6))))
-    assertResult(None)(A.get(List(Value.mkInt32(7))))
-    assertResult(List(Pos))(A(List(Value.mkInt32(8))))
-    assertResult(List(One))(A(List(Value.mkInt32(9))))
-  }
-
-  ignore("Dimension.flix") {
-    val model = new Flix().addPath("./examples/domains/Dimension.flix").solve()
-    assert(model.isSuccess)
   }
 
   test("Type.flix") {

@@ -123,6 +123,8 @@ object ResolvedAst {
 
     case class Int64(lit: scala.Long, loc: SourceLocation) extends ResolvedAst.Literal
 
+    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends ResolvedAst.Literal
+
     case class Str(lit: java.lang.String, loc: SourceLocation) extends ResolvedAst.Literal
 
   }

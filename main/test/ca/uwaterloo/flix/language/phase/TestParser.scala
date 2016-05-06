@@ -453,6 +453,11 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
+  test("Expression.BigInt.01") {
+    val input = "def f: BigInt = 123ii"
+    new Flix().addStr(input).compile().get
+  }
+
   test("Expression.LogicalExp.01") {
     val input = "def f: Bool = true && false"
     new Flix().addStr(input).compile().get
@@ -2118,6 +2123,11 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
+  test("Type.BigInt.01") {
+    val input = "def f: BigInt = 0ii"
+    new Flix().addStr(input).compile().get
+  }
+
   test("Type.Str.01") {
     val input = "def f: Str = \"foobar\""
     new Flix().addStr(input).compile().get
@@ -2369,6 +2379,21 @@ class TestParser extends FunSuite {
 
   test("Literal.Int64.03") {
     val input = "def f: Int64 = -123i64"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Literal.BigInt.01") {
+    val input = "def f: BigInt = 123ii"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Literal.BigInt.02") {
+    val input = "def f: BigInt = +123ii"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Literal.BigInt.03") {
+    val input = "def f: BigInt = -123ii"
     new Flix().addStr(input).compile().get
   }
 

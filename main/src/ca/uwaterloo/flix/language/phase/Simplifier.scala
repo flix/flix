@@ -293,6 +293,7 @@ object Simplifier {
       case TypedAst.Literal.Int16(i, loc) => SimplifiedAst.Expression.Int16(i)
       case TypedAst.Literal.Int32(i, loc) => SimplifiedAst.Expression.Int32(i)
       case TypedAst.Literal.Int64(i, loc) => SimplifiedAst.Expression.Int64(i)
+      case TypedAst.Literal.BigInt(i, loc) => SimplifiedAst.Expression.BigInt(i)
       case TypedAst.Literal.Str(s, loc) => SimplifiedAst.Expression.Str(s)
     }
   }

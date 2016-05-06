@@ -1,5 +1,5 @@
 /**
- * An implementation of the ``type'' abstract domain.
+ * An implementation of the type domain.
  *
  * See Cousot & Cousot '92 for details.
  */
@@ -19,7 +19,7 @@ namespace Type {
     /**
      * Returns `true` iff `e1` is less than or equal to `e2`.
      */
-    fn leq(e1: Type, e2: Type): Bool = match (e1, e2) with {
+    def leq(e1: Type, e2: Type): Bool = match (e1, e2) with {
         case (Type.Bot, _)              => true
         case (Type.Bool, Type.Bool)     => true
         case (Type.Int, Type.Int)       => true
@@ -32,7 +32,7 @@ namespace Type {
      * Returns the least upper bound of `e1` and `e2`.
      */
     @commutative @associative
-    fn lub(e1: Type, e2: Type): Type = match (e1, e2) with {
+    def lub(e1: Type, e2: Type): Type = match (e1, e2) with {
         case (Type.Bot, _)              => e2
         case (_, Type.Bot)              => e1
         case (Type.Bool, Type.Bool)     => Type.Bool
@@ -45,7 +45,7 @@ namespace Type {
      * Returns the greatest lower bound of `e1` and `e2`.
      */
     @commutative @associative
-    fn glb(e1: Type, e2: Type): Type = match (e1, e2) with {
+    def glb(e1: Type, e2: Type): Type = match (e1, e2) with {
         case (Type.Err, _)              => e2
         case (_, Type.Err)              => e1
         case (Type.Bool, Type.Bool)     => Type.Bool
@@ -58,7 +58,7 @@ namespace Type {
       * Returns the type of the sum of two operands with the given types `e1` and `e2`.
       */
     @strict @monotone @commutative @associative
-    fn sum(e1: Type, e2: Type): Type = match (e1, e2) with {
+    def sum(e1: Type, e2: Type): Type = match (e1, e2) with {
         case (Type.Bot, _)              => Type.Bot
         case (_, Type.Bot)              => Type.Bot
         case (Type.Bool, Type.Bool)     => Type.Err
@@ -78,7 +78,7 @@ namespace Type {
      * two operands with the given types `e1` and `e2`.
      */
     @strict @monotone
-    fn lessEqual(e1: Type, e2: Type): Type = match (e1, e2) with {
+    def lessEqual(e1: Type, e2: Type): Type = match (e1, e2) with {
         case (Type.Bot, _)              => Type.Bot
         case (_, Type.Bot)              => Type.Bot
         case (Type.Bool, Type.Bool)     => Type.Err
