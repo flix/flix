@@ -7691,4 +7691,34 @@ class TestInterpreter extends FunSuite {
     assertResult(A)(Set(1, 2, 3).map(x => List(Value.mkInt32(x))))
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Regression tests                                                        //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Regression.01") {
+    // See: https://github.com/magnus-madsen/flix/issues/149
+    val input =
+      """rel Load(label: Str, to: Str, from: Str)
+        |rel Pt(variable: Str, target: Str)
+        |rel PtH(object: Str, target: Str)
+        |
+        |// Note how `p` appears in both in the rule and function arg list.
+        |// Calling the function overwrites the value of `p`.
+        |Pt(p,b) :- Load(l,p,q), Pt(q,a), filter(b), PtH(a,b).
+        |def filter(p: Str): Bool = true
+        |
+        |// Input facts.
+        |Load("3", "d", "p").
+        |Pt("b", "b").
+        |Pt("p", "c").
+        |PtH("c","b").
+        |
+        |// Expected output.
+        |//Pt("d", "b").
+      """.stripMargin
+    val model = getModel(input)
+    val A = model.getRelation("Pt").toSet
+    assertResult(A)(Set(("b", "b"), ("p", "c"), ("d", "b")).map { case (x,y) => List(Value.mkStr(x), Value.mkStr(y)) })
+  }
+
 }

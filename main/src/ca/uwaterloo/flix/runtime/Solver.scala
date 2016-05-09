@@ -282,7 +282,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
         args(i) = Interpreter.evalBodyTerm(pred.terms(i), sCtx.root, row)
         i = i + 1
       }
-      val result = Interpreter.evalCall(defn, args, sCtx.root, row)
+      val result = Interpreter.evalCall(defn, args, sCtx.root, row.clone())
       if (Value.cast2bool(result))
         filter(rule, xs, row)
   }
