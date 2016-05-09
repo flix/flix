@@ -2,14 +2,82 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.runtime.Value
+import ca.uwaterloo.flix.runtime.{Model, Value}
+import ca.uwaterloo.flix.util.{DebugBytecode, _}
 import org.scalatest.FunSuite
 
 class TestExamples extends FunSuite {
 
+  private class Tester(dumpBytecode: Boolean = false) {
+
+    private val interpretedFlix = createFlix(codegen = false)
+    private val compiledFlix = createFlix(codegen = true)
+    private var interpreted: Model = null
+    private var compiled: Model = null
+
+    private def createFlix(codegen: Boolean = false) = {
+      val options = Options(
+        debugger = Debugger.Disabled,
+        print = Nil,
+        verbosity = Verbosity.Silent,
+        verify = Verify.Disabled,
+        codegen = if (codegen) CodeGeneration.Enabled else CodeGeneration.Disabled,
+        debugBytecode = if (dumpBytecode) DebugBytecode.Enabled else DebugBytecode.Disabled
+      )
+      new Flix().setOptions(options)
+    }
+
+    def addPath(path: String): Tester = {
+      interpretedFlix.addPath(path)
+      compiledFlix.addPath(path)
+      this
+    }
+
+    def addStr(str: String): Tester = {
+      interpretedFlix.addStr(str)
+      compiledFlix.addStr(str)
+      this
+    }
+
+    def run(): Tester = {
+      interpreted = interpretedFlix.solve().get
+      compiled = compiledFlix.solve().get
+      this
+    }
+
+    def checkValue(expected: AnyRef, latticeName: String, key: List[AnyRef]): Unit = {
+      withClue(s"interpreted value $latticeName($key):") {
+        val lattice = interpreted.getLattice(latticeName).toMap
+        assertResult(expected)(lattice(key))
+      }
+      withClue(s"compiled value $latticeName($key):") {
+        val lattice = compiled.getLattice(latticeName).toMap
+        assertResult(expected)(lattice(key))
+      }
+    }
+
+    def checkNone(latticeName: String, key: List[AnyRef]): Unit = {
+      withClue(s"interpreted value $latticeName($key):") {
+        val lattice = interpreted.getLattice(latticeName).toMap
+        assertResult(None)(lattice.get(key))
+      }
+      withClue(s"compiled value $latticeName($key):") {
+        val lattice = compiled.getLattice(latticeName).toMap
+        assertResult(None)(lattice.get(key))
+      }
+    }
+
+    def checkSuccess(): Unit = {
+      assert(interpretedFlix.solve().isSuccess)
+      assert(compiledFlix.solve().isSuccess)
+    }
+
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Domains                                                                 //
   /////////////////////////////////////////////////////////////////////////////
+
   test("Belnap.flix") {
     val input =
       """namespace Belnap {
@@ -34,11 +102,10 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
-    val model = new Flix()
+    val t = new Tester()
       .addPath("./examples/domains/Belnap.flix")
       .addStr(input)
-      .solve()
-      .get
+      .run()
 
     val Belnap = Symbol.Resolved.mk(List("Belnap", "Belnap"))
 
@@ -46,16 +113,14 @@ class TestExamples extends FunSuite {
     val Fls = Value.mkTag(Belnap, "False", Value.Unit)
     val Top = Value.mkTag(Belnap, "Top", Value.Unit)
 
-    val A = model.getLattice("Belnap/A").toMap
-
-    assertResult(List(Tru))(A(List(Value.mkInt32(1))))
-    assertResult(List(Fls))(A(List(Value.mkInt32(2))))
-    assertResult(List(Top))(A(List(Value.mkInt32(3))))
-    assertResult(None)(A.get(List(Value.mkInt32(4))))
-    assertResult(List(Tru))(A(List(Value.mkInt32(5))))
-    assertResult(List(Fls))(A(List(Value.mkInt32(6))))
-    assertResult(List(Tru))(A(List(Value.mkInt32(7))))
-    assertResult(List(Tru))(A(List(Value.mkInt32(8))))
+    t.checkValue(List(Tru), "Belnap/A", List(Value.mkInt32(1)))
+    t.checkValue(List(Fls), "Belnap/A", List(Value.mkInt32(2)))
+    t.checkValue(List(Top), "Belnap/A", List(Value.mkInt32(3)))
+    t.checkNone("Belnap/A", List(Value.mkInt32(4)))
+    t.checkValue(List(Tru), "Belnap/A", List(Value.mkInt32(5)))
+    t.checkValue(List(Fls), "Belnap/A", List(Value.mkInt32(6)))
+    t.checkValue(List(Tru), "Belnap/A", List(Value.mkInt32(7)))
+    t.checkValue(List(Tru), "Belnap/A", List(Value.mkInt32(8)))
   }
 
   test("Constant.flix") {
@@ -79,12 +144,11 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
-    val model = new Flix()
+    val t = new Tester()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Constant.flix")
       .addStr(input)
-      .solve()
-      .get
+      .run()
 
     val Constant = Symbol.Resolved.mk(List("Constant", "Constant"))
 
@@ -93,15 +157,13 @@ class TestExamples extends FunSuite {
     val Two = Value.mkTag(Constant, "Cst", Value.mkInt32(2))
     val Top = Value.mkTag(Constant, "Top", Value.Unit)
 
-    val A = model.getLattice("Constant/A").toMap
-
-    assertResult(List(Zer))(A(List(Value.mkInt32(0))))
-    assertResult(List(One))(A(List(Value.mkInt32(1))))
-    assertResult(List(Two))(A(List(Value.mkInt32(2))))
-    assertResult(List(Top))(A(List(Value.mkInt32(3))))
-    assertResult(None)(A.get(List(Value.mkInt32(4))))
-    assertResult(List(Two))(A(List(Value.mkInt32(5))))
-    assertResult(List(Two))(A(List(Value.mkInt32(6))))
+    t.checkValue(List(Zer), "Constant/A", List(Value.mkInt32(0)))
+    t.checkValue(List(One), "Constant/A", List(Value.mkInt32(1)))
+    t.checkValue(List(Two), "Constant/A", List(Value.mkInt32(2)))
+    t.checkValue(List(Top), "Constant/A", List(Value.mkInt32(3)))
+    t.checkNone("Constant/A", List(Value.mkInt32(4)))
+    t.checkValue(List(Two), "Constant/A", List(Value.mkInt32(5)))
+    t.checkValue(List(Two), "Constant/A", List(Value.mkInt32(6)))
   }
 
   // TODO: Implement BigInt in interpreter and codegen
@@ -131,12 +193,11 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
-    val model = new Flix()
+    val t = new Tester()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/ConstantSign.flix")
       .addStr(input)
-      .solve()
-      .get
+      .run()
 
     val ConstantSign = Symbol.Resolved.mk(List("ConstantSign", "ConstSign"))
 
@@ -145,17 +206,15 @@ class TestExamples extends FunSuite {
     val Pos = Value.mkTag(ConstantSign, "Pos", Value.Unit)
     val Top = Value.mkTag(ConstantSign, "Top", Value.Unit)
 
-    val A = model.getLattice("ConstantSign/A").toMap
-
-    assertResult(List(Zer))(A(List(Value.mkInt32(2))))
-    assertResult(List(One))(A(List(Value.mkInt32(3))))
-    assertResult(List(Top))(A(List(Value.mkInt32(4))))
-    assertResult(List(Top))(A(List(Value.mkInt32(4))))
-    assertResult(List(Pos))(A(List(Value.mkInt32(5))))
-    assertResult(None)(A.get(List(Value.mkInt32(6))))
-    assertResult(None)(A.get(List(Value.mkInt32(7))))
-    assertResult(List(Pos))(A(List(Value.mkInt32(8))))
-    assertResult(List(One))(A(List(Value.mkInt32(9))))
+    t.checkValue(List(Zer), "ConstantSign/A", List(Value.mkInt32(2)))
+    t.checkValue(List(One), "ConstantSign/A", List(Value.mkInt32(3)))
+    t.checkValue(List(Top), "ConstantSign/A", List(Value.mkInt32(4)))
+    t.checkValue(List(Top), "ConstantSign/A", List(Value.mkInt32(4)))
+    t.checkValue(List(Pos), "ConstantSign/A", List(Value.mkInt32(5)))
+    t.checkNone("ConstantSign/A", List(Value.mkInt32(6)))
+    t.checkNone("ConstantSign/A", List(Value.mkInt32(7)))
+    t.checkValue(List(Pos), "ConstantSign/A", List(Value.mkInt32(8)))
+    t.checkValue(List(One), "ConstantSign/A", List(Value.mkInt32(9)))
   }
 
   test("Parity.flix") {
@@ -182,12 +241,11 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
-    val model = new Flix()
+    val t = new Tester()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Parity.flix")
       .addStr(input)
-      .solve()
-      .get
+      .run()
 
     val Parity = Symbol.Resolved.mk(List("Parity", "Parity"))
 
@@ -195,21 +253,19 @@ class TestExamples extends FunSuite {
     val Evn = Value.mkTag(Parity, "Even", Value.Unit)
     val Top = Value.mkTag(Parity, "Top", Value.Unit)
 
-    val A = model.getLattice("Parity/A").toMap
-
-    assertResult(List(Odd))(A(List(Value.mkInt32(1))))
-    assertResult(List(Evn))(A(List(Value.mkInt32(2))))
-    assertResult(List(Top))(A(List(Value.mkInt32(3))))
-    assertResult(None)(A.get(List(Value.mkInt32(4))))
-    assertResult(List(Odd))(A(List(Value.mkInt32(5))))
-    assertResult(List(Evn))(A(List(Value.mkInt32(6))))
-    assertResult(List(Evn))(A(List(Value.mkInt32(7))))
-    assertResult(List(Odd))(A(List(Value.mkInt32(8))))
+    t.checkValue(List(Odd), "Parity/A", List(Value.mkInt32(1)))
+    t.checkValue(List(Evn), "Parity/A", List(Value.mkInt32(2)))
+    t.checkValue(List(Top), "Parity/A", List(Value.mkInt32(3)))
+    t.checkNone("Parity/A", List(Value.mkInt32(4)))
+    t.checkValue(List(Odd), "Parity/A", List(Value.mkInt32(5)))
+    t.checkValue(List(Evn), "Parity/A", List(Value.mkInt32(6)))
+    t.checkValue(List(Evn), "Parity/A", List(Value.mkInt32(7)))
+    t.checkValue(List(Odd), "Parity/A", List(Value.mkInt32(8)))
   }
 
   ignore("Dimension.flix") {
-    val model = new Flix().addPath("./examples/domains/Dimension.flix").solve()
-    assert(model.isSuccess)
+    val t = new Tester().addPath("./examples/domains/Dimension.flix")
+    t.checkSuccess()
   }
 
   test("StrictSign.flix") {
@@ -236,12 +292,11 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
-    val model = new Flix()
+    val t = new Tester()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/StrictSign.flix")
       .addStr(input)
-      .solve()
-      .get
+      .run()
 
     val Sign = Symbol.Resolved.mk(List("StrictSign", "Sign"))
 
@@ -250,22 +305,20 @@ class TestExamples extends FunSuite {
     val Pos = Value.mkTag(Sign, "Pos", Value.Unit)
     val Top = Value.mkTag(Sign, "Top", Value.Unit)
 
-    val A = model.getLattice("StrictSign/A").toMap
-
-    assertResult(List(Neg))(A(List(Value.mkInt32(1))))
-    assertResult(List(Zer))(A(List(Value.mkInt32(2))))
-    assertResult(List(Pos))(A(List(Value.mkInt32(3))))
-    assertResult(List(Top))(A(List(Value.mkInt32(4))))
-    assertResult(None)(A.get(List(Value.mkInt32(5))))
-    assertResult(List(Pos))(A(List(Value.mkInt32(6))))
-    assertResult(List(Top))(A(List(Value.mkInt32(7))))
-    assertResult(List(Zer))(A(List(Value.mkInt32(8))))
-    assertResult(List(Pos))(A(List(Value.mkInt32(9))))
+    t.checkValue(List(Neg), "StrictSign/A", List(Value.mkInt32(1)))
+    t.checkValue(List(Zer), "StrictSign/A", List(Value.mkInt32(2)))
+    t.checkValue(List(Pos), "StrictSign/A", List(Value.mkInt32(3)))
+    t.checkValue(List(Top), "StrictSign/A", List(Value.mkInt32(4)))
+    t.checkNone("StrictSign/A", List(Value.mkInt32(5)))
+    t.checkValue(List(Pos), "StrictSign/A", List(Value.mkInt32(6)))
+    t.checkValue(List(Top), "StrictSign/A", List(Value.mkInt32(7)))
+    t.checkValue(List(Zer), "StrictSign/A", List(Value.mkInt32(8)))
+    t.checkValue(List(Pos), "StrictSign/A", List(Value.mkInt32(9)))
   }
 
   test("Type.flix") {
-    val model = new Flix().addPath("./examples/domains/Type.flix").solve()
-    assert(model.isSuccess)
+    val t = new Tester().addPath("./examples/domains/Type.flix")
+    t.checkSuccess()
   }
 
 
@@ -274,43 +327,43 @@ class TestExamples extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
 
   test("Bank.flix") {
-    val model = new Flix().addPath("./examples/entities/Bank.flix").solve()
-    assert(model.isSuccess)
+    val t = new Tester().addPath("./examples/entities/Bank.flix")
+    t.checkSuccess()
   }
 
   test("Cinema.flix") {
-    val model = new Flix().addPath("./examples/entities/Cinema.flix").solve()
-    assert(model.isSuccess)
+    val t = new Tester().addPath("./examples/entities/Cinema.flix")
+    t.checkSuccess()
   }
 
   test("Company.flix") {
-    val model = new Flix().addPath("./examples/entities/Company.flix").solve()
-    assert(model.isSuccess)
+    val t = new Tester().addPath("./examples/entities/Company.flix")
+    t.checkSuccess()
   }
 
   test("Hotel.flix") {
-    val model = new Flix().addPath("./examples/entities/Hotel.flix").solve()
-    assert(model.isSuccess)
+    val t = new Tester().addPath("./examples/entities/Hotel.flix")
+    t.checkSuccess()
   }
 
   test("Library.flix") {
-    val model = new Flix().addPath("./examples/entities/Library.flix").solve()
-    assert(model.isSuccess)
+    val t = new Tester().addPath("./examples/entities/Library.flix")
+    t.checkSuccess()
   }
 
   test("Manufacturer.flix") {
-    val model = new Flix().addPath("./examples/entities/Manufacturer.flix").solve()
-    assert(model.isSuccess)
+    val t = new Tester().addPath("./examples/entities/Manufacturer.flix")
+    t.checkSuccess()
   }
 
   test("Realtor.flix") {
-    val model = new Flix().addPath("./examples/entities/Realtor.flix").solve()
-    assert(model.isSuccess)
+    val t = new Tester().addPath("./examples/entities/Realtor.flix")
+    t.checkSuccess()
   }
 
   test("Tournament.flix") {
-    val model = new Flix().addPath("./examples/entities/Tournament.flix").solve()
-    assert(model.isSuccess)
+    val t = new Tester().addPath("./examples/entities/Tournament.flix")
+    t.checkSuccess()
   }
 
 }

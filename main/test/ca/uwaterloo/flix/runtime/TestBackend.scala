@@ -130,9 +130,10 @@ class TestBackend extends FunSuite {
       this
     }
 
-    def run(): Unit = {
+    def run(): Tester = {
       interpreted = interpretedFlix.solve().get
       compiled = compiledFlix.solve().get
+      this
     }
 
     def runTest(expected: AnyRef, const: String): Unit = {
