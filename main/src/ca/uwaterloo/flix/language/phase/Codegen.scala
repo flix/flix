@@ -125,7 +125,6 @@ object Codegen {
    * Given a definition for a Flix function, generate bytecode. Takes a Context and an initialized ClassVisitor.
    */
   private def compileFunction(ctx: Context, visitor: ClassVisitor)(function: Definition.Constant): Unit = {
-    // TODO: We might need to compile wrapper/bridge functions that unbox arguments and box return values
     val flags = if (function.isSynthetic) ACC_PUBLIC + ACC_STATIC + ACC_SYNTHETIC else ACC_PUBLIC + ACC_STATIC
     val mv = visitor.visitMethod(flags, function.name.suffix, ctx.descriptor(function.tpe), null, null)
     mv.visitCode()
