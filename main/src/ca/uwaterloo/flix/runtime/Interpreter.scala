@@ -73,7 +73,7 @@ object Interpreter {
         evalArgs(i) = eval(args(i), root, env)
         i = i + 1
       }
-      evalCall(func, evalArgs, root, env.clone())
+      evalClosure(func, evalArgs, root, env.clone())
     case Expression.Unary(op, exp, _, _) => evalUnary(op, exp, root, env)
     case Expression.Binary(op, exp1, exp2, _, _) => op match {
       case o: ArithmeticOperator => evalArithmetic(o, exp1, exp2, root, env)
@@ -337,7 +337,7 @@ object Interpreter {
     case Term.Body.Exp(e, _, _) => eval(e, root, env)
   }
 
-  def evalCall(function: AnyRef, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef]): AnyRef =
+  private def evalClosure(function: AnyRef, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef]): AnyRef =
     function match {
       case Value.Closure(ref, bindings) =>
         val constant = root.constants(ref.name)
