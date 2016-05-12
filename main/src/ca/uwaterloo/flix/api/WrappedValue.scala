@@ -35,6 +35,8 @@ final class WrappedValue(val ref: AnyRef) extends IValue {
 
   def getInt64: Long = Value.cast2int64(ref)
 
+  def getBigInt: java.math.BigInteger = Value.cast2bigInt(ref)
+
   def getStr: String = Value.cast2str(ref)
 
   def getTuple: Array[IValue] = Value.cast2tuple(ref).map(e => new WrappedValue(e))

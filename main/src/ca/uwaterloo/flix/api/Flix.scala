@@ -246,6 +246,11 @@ class Flix {
   def mkInt64Type: IType = new WrappedType(Type.Int64)
 
   /**
+    * Returns the BigInt type.
+    */
+  def mkBigIntType: IType = new WrappedType(Type.BigInt)
+
+  /**
     * Returns the Str type.
     */
   def mkStrType: IType = new WrappedType(Type.Str)
@@ -436,6 +441,26 @@ class Flix {
     * Returns the int64 value corresponding to the given long.
     */
   def mkInt64(l: Long): IValue = new WrappedValue(Value.mkInt64(l))
+
+  /**
+    * Returns the BigInt value corresponding to the given int.
+    */
+  def mkBigInt(i: Int): IValue = new WrappedValue(Value.mkBigInt(i))
+
+  /**
+    * Returns the BigInt value corresponding to the given long.
+    */
+  def mkBigInt(l: Long): IValue = new WrappedValue(Value.mkBigInt(l))
+
+  /**
+    * Returns the BigInt value corresponding to the given string.
+    */
+  def mkBigInt(s: String): IValue = new WrappedValue(Value.mkBigInt(s))
+
+  /**
+    * Returns the BigInt value corresponding to the given java.math.BigInteger.
+    */
+  def mkBigInt(o: java.math.BigInteger): IValue = new WrappedValue(Value.mkBigInt(o))
 
   /**
     * Returns the str value corresponding to the given string.

@@ -101,6 +101,13 @@ trait IValue {
     */
   def getInt64: Long
 
+  /**
+    * Returns the BigInt represented by `this` value.
+    *
+    * @throws UnsupportedOperationException if `this` value is not of int64 type.
+    */
+  def getBigInt: java.math.BigInteger
+
   /////////////////////////////////////////////////////////////////////////////
   // Strings                                                                 //
   /////////////////////////////////////////////////////////////////////////////

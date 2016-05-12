@@ -205,7 +205,7 @@ object SymbolicEvaluator {
               case SymVal.Int16(i) => lift(pc, SymVal.Int16((-i).toShort))
               case SymVal.Int32(i) => lift(pc, SymVal.Int32(-i))
               case SymVal.Int64(i) => lift(pc, SymVal.Int64(-i))
-              case SymVal.BigInt(i) => lift(pc, SymVal.BigInt(i.negate()))
+              case SymVal.BigInt(i) => lift(pc, SymVal.BigInt(i.negate))
 
               // Symbolic semantics.
               case SymVal.AtomicVar(id) =>
@@ -225,7 +225,7 @@ object SymbolicEvaluator {
               case SymVal.Int16(i) => lift(pc, SymVal.Int16((~i).toShort))
               case SymVal.Int32(i) => lift(pc, SymVal.Int32(~i))
               case SymVal.Int64(i) => lift(pc, SymVal.Int64(~i))
-              case SymVal.BigInt(i) => throw InternalCompilerException(s"Type Error: BigInt does not support BitwiseNegate.")
+              case SymVal.BigInt(i) => lift(pc, SymVal.BigInt(i.not))
 
               // Symbolic semantics
               case SymVal.AtomicVar(id) =>
@@ -327,7 +327,7 @@ object SymbolicEvaluator {
               case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 % i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 % i2))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 % i2))
-              case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => lift(pc, SymVal.BigInt(i1 mod i2))
+              case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => lift(pc, SymVal.BigInt(i1 remainder i2))
 
               // Symbolic semantics.
               case _ =>
@@ -629,11 +629,11 @@ object SymbolicEvaluator {
               */
             case BinaryOperator.BitwiseLeftShift => (v1, v2) match {
               // Concrete semantics.
-              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 << i2).toByte))
-              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 << i2).toShort))
+              case (SymVal.Int8(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int8((i1 << i2).toByte))
+              case (SymVal.Int16(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int16((i1 << i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 << i2))
-              case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 << i2))
-              case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => throw InternalCompilerException(s"Type Error: BigInt does not support BitwiseLeftShift.")
+              case (SymVal.Int64(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int64(i1 << i2))
+              case (SymVal.BigInt(i1), SymVal.Int32(i2)) => lift(pc, SymVal.BigInt(i1 shiftLeft i2))
 
               // Symbolic semantics.
               case _ =>
@@ -647,11 +647,11 @@ object SymbolicEvaluator {
               */
             case BinaryOperator.BitwiseRightShift => (v1, v2) match {
               // Concrete semantics.
-              case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc, SymVal.Int8((i1 >> i2).toByte))
-              case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, SymVal.Int16((i1 >> i2).toShort))
+              case (SymVal.Int8(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int8((i1 >> i2).toByte))
+              case (SymVal.Int16(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int16((i1 >> i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int32(i1 >> i2))
-              case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, SymVal.Int64(i1 >> i2))
-              case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => throw InternalCompilerException(s"Type Error: BigInt does not support BitwiseRightShift.")
+              case (SymVal.Int64(i1), SymVal.Int32(i2)) => lift(pc, SymVal.Int64(i1 >> i2))
+              case (SymVal.BigInt(i1), SymVal.Int32(i2)) => lift(pc, SymVal.BigInt(i1 shiftRight i2))
 
               // Symbolic semantics.
               case _ =>

@@ -42,6 +42,7 @@ class TestBackend extends FunSuite {
     type JShort = java.lang.Short
     type JInt = java.lang.Integer
     type JLong = java.lang.Long
+    type JBigInt = java.math.BigInteger
 
     case class MyObject(x: Int)
 
@@ -615,6 +616,38 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt64(1L), "f")
   }
 
+  test("Expression.BigInt.01") {
+    val input = "def f: BigInt = 0ii"
+    val t = new Tester(input)
+    t.runTest(Value.mkBigInt(0), "f")
+  }
+
+  test("Expression.BigInt.02") {
+    val input = "def f: BigInt = 1ii"
+    val t = new Tester(input)
+    t.runTest(Value.mkBigInt(1), "f")
+  }
+
+  test("Expression.BigInt.03") {
+    val input = "def f: BigInt = 10ii"
+    val t = new Tester(input)
+    t.runTest(Value.mkBigInt(10), "f")
+  }
+
+  test("Expression.BigInt.04") {
+    // One larger than Long.MaxValue
+    val input = "def f: BigInt = 9223372036854775808ii"
+    val t = new Tester(input)
+    t.runTest(Value.mkBigInt("9223372036854775808"), "f")
+  }
+
+  test("Expression.BigInt.05") {
+    // One smaller than Long.MinValue
+    val input = "def f: BigInt = -9223372036854775809ii"
+    val t = new Tester(input)
+    t.runTest(Value.mkBigInt("-9223372036854775809"), "f")
+  }
+
   test("Expression.Str.01") {
     val input = """def f: Str = """""
     val t = new Tester(input)
@@ -926,6 +959,15 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkFloat64(3.3d), "g")
   }
 
+  test("Expression.Lambda.19") {
+    val input =
+      """def f(a: BigInt, b: BigInt): BigInt = a + b
+        |def g: BigInt = f(1ii, 9223372036854775808ii)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkBigInt("9223372036854775809"), "g")
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Expression.{Hook,Apply} - Hook.Safe                                     //
   // Reimplements Expression.Lambda tests but using (safe) hooks instead.    //
@@ -1211,6 +1253,19 @@ class TestBackend extends FunSuite {
   }
 
   ignore("Expression.Hook - Hook.Safe.19") {
+    import HookSafeHelpers._
+    val input = "fn g: BigInt = f(1ii, 9223372036854775808ii)"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkBigIntType, flix.mkBigIntType), flix.mkBigIntType)
+    def nativeF(a: IValue, b: IValue): IValue = flix.mkBigInt(a.getBigInt add b.getBigInt)
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.mkBigInt("9223372036854775809"), "g")
+  }
+
+  ignore("Expression.Hook - Hook.Safe.20") {
     import HookSafeHelpers._
     val input = "fn h: Native = g(f(999))"
     val t = new Tester(input, solve = false)
@@ -1509,6 +1564,19 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Unsafe.19") {
     import HookUnsafeHelpers._
+    val input = "fn g: BigInt = f(1ii, 9223372036854775808ii)"
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkBigIntType, flix.mkBigIntType), flix.mkBigIntType)
+    def nativeF(a: JBigInt, b: JBigInt): JBigInt = a add b
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.runTest(Value.mkBigInt("9223372036854775809"), "g")
+  }
+
+  ignore("Expression.Hook - Hook.Unsafe.20") {
+    import HookUnsafeHelpers._
     val input = "fn h: Native = g(f(999))"
     val t = new Tester(input, solve = false)
 
@@ -1679,6 +1747,22 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkFloat64(-0.000000000000000000000000000000000000000000000000000000000000000000000000000000001d), "f07")
   }
 
+  test("Expression.Unary - UnaryOperator.Plus.09") {
+    val input =
+      s"""def f01: BigInt = +0ii
+         |def f02: BigInt = +1ii
+         |def f03: BigInt = +10ii
+         |def f04: BigInt = +9223372036854775808ii
+         |def f05: BigInt = +(-9223372036854775809ii)
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkBigInt(0), "f01")
+    t.runTest(Value.mkBigInt(1), "f02")
+    t.runTest(Value.mkBigInt(10), "f03")
+    t.runTest(Value.mkBigInt("9223372036854775808"), "f04")
+    t.runTest(Value.mkBigInt("-9223372036854775809"), "f05")
+  }
+
   test("Expression.Unary - UnaryOperator.Minus.01") {
     val input =
       s"""def f01: Int = -0
@@ -1819,6 +1903,22 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkFloat64(0.000000000000000000000000000000000000000000000000000000000000000000000000000000001d), "f07")
   }
 
+  test("Expression.Unary - UnaryOperator.Minus.09") {
+    val input =
+      s"""def f01: BigInt = -0ii
+         |def f02: BigInt = -1ii
+         |def f03: BigInt = -10ii
+         |def f04: BigInt = -9223372036854775808ii
+         |def f05: BigInt = -(-9223372036854775809ii)
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkBigInt(-0), "f01")
+    t.runTest(Value.mkBigInt(-1), "f02")
+    t.runTest(Value.mkBigInt(-10), "f03")
+    t.runTest(Value.mkBigInt("-9223372036854775808"), "f04")
+    t.runTest(Value.mkBigInt("9223372036854775809"), "f05")
+  }
+
   test("Expression.Unary - UnaryOperator.BitwiseNegate.01") {
     val input =
       s"""def f01: Int = ~0
@@ -1917,6 +2017,22 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt64(9999999999L), "f05")
     t.runTest(Value.mkInt64(Long.MinValue), "f06")
     t.runTest(Value.mkInt64(Long.MaxValue), "f07")
+  }
+
+  test("Expression.Unary - UnaryOperator.BitwiseNegate.06") {
+    val input =
+      s"""def f01: BigInt = ~0ii
+         |def f02: BigInt = ~1ii
+         |def f03: BigInt = ~(-1ii)
+         |def f04: BigInt = ~9223372036854775808ii
+         |def f05: BigInt = ~(-9223372036854775809ii)
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkBigInt(-1), "f01")
+    t.runTest(Value.mkBigInt(-2), "f02")
+    t.runTest(Value.mkBigInt(0), "f03")
+    t.runTest(Value.mkBigInt("-9223372036854775809"), "f04")
+    t.runTest(Value.mkBigInt("9223372036854775808"), "f05")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -2052,6 +2168,22 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkFloat64(0.222d), "f05")
   }
 
+  test("Expression.Binary - BinaryOperator.Plus.09") {
+    val input =
+      s"""def f01: BigInt = 9223372036854775808ii + 1ii
+         |def f02: BigInt = 10000000000000000000ii + 40000000000000000000ii
+         |def f03: BigInt = -40000000000000000000ii + 10000000000000000000ii
+         |def f04: BigInt = -10000000000000000000ii + 40000000000000000000ii
+         |def f05: BigInt = -9223372036854775809ii + -1ii
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkBigInt("9223372036854775809"), "f01")
+    t.runTest(Value.mkBigInt("50000000000000000000"), "f02")
+    t.runTest(Value.mkBigInt("-30000000000000000000"), "f03")
+    t.runTest(Value.mkBigInt("30000000000000000000"), "f04")
+    t.runTest(Value.mkBigInt("-9223372036854775810"), "f05")
+  }
+
   test("Expression.Binary - BinaryOperator.Minus.01") {
     val input =
       s"""def f01: Int = ${Int.MinValue} - 1
@@ -2178,6 +2310,22 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkFloat64(-1.23456789E48d), "f03")
     t.runTest(Value.mkFloat64(-0.222d), "f04")
     t.runTest(Value.mkFloat64(-0.222d), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Minus.09") {
+    val input =
+      s"""def f01: BigInt = -9223372036854775809ii - 1ii
+         |def f02: BigInt = 40000000000000000000ii - 10000000000000000000ii
+         |def f03: BigInt = -40000000000000000000ii - 10000000000000000000ii
+         |def f04: BigInt = -10000000000000000000ii - 40000000000000000000ii
+         |def f05: BigInt = 9223372036854775808ii - -1ii
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkBigInt("-9223372036854775810"), "f01")
+    t.runTest(Value.mkBigInt("30000000000000000000"), "f02")
+    t.runTest(Value.mkBigInt("-50000000000000000000"), "f03")
+    t.runTest(Value.mkBigInt("-50000000000000000000"), "f04")
+    t.runTest(Value.mkBigInt("9223372036854775809"), "f05")
   }
 
   test("Expression.Binary - BinaryOperator.Times.01") {
@@ -2308,6 +2456,22 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkFloat64(-2.19259259262E-41d), "f05")
   }
 
+  test("Expression.Binary - BinaryOperator.Times.09") {
+    val input =
+      s"""def f01: BigInt = 9223372036854775808ii * 2ii
+         |def f02: BigInt = 30000000000ii * 20000000000ii
+         |def f03: BigInt = -20000000000ii * 30000000000ii
+         |def f04: BigInt = -20000000000ii * -30000000000ii
+         |def f05: BigInt = -9223372036854775809ii * -1ii
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkBigInt("18446744073709551616"), "f01")
+    t.runTest(Value.mkBigInt("600000000000000000000"), "f02")
+    t.runTest(Value.mkBigInt("-600000000000000000000"), "f03")
+    t.runTest(Value.mkBigInt("600000000000000000000"), "f04")
+    t.runTest(Value.mkBigInt("9223372036854775809"), "f05")
+  }
+
   test("Expression.Binary - BinaryOperator.Divide.01") {
     val input =
       s"""def f01: Int = ${Int.MaxValue} / 1
@@ -2436,6 +2600,22 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkFloat64(-4.4488933378378374E-40d), "f05")
   }
 
+  test("Expression.Binary - BinaryOperator.Divide.09") {
+    val input =
+      s"""def f01: BigInt = 9223372036854775808ii / 1ii
+         |def f02: BigInt = 1200000000000000000000ii / 3ii
+         |def f03: BigInt = -1200000000000000000000ii / 3ii
+         |def f04: BigInt = -3ii / 1200000000000000000000ii
+         |def f05: BigInt = -9223372036854775809ii / -1ii
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkBigInt("9223372036854775808"), "f01")
+    t.runTest(Value.mkBigInt("400000000000000000000"), "f02")
+    t.runTest(Value.mkBigInt("-400000000000000000000"), "f03")
+    t.runTest(Value.mkBigInt(0), "f04")
+    t.runTest(Value.mkBigInt("9223372036854775809"), "f05")
+  }
+
   test("Expression.Binary - BinaryOperator.Modulo.01") {
     val input =
       s"""def f01: Int = 1200000 % 200000
@@ -2562,6 +2742,22 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkFloat64(-88.53722751835619d), "f03")
     t.runTest(Value.mkFloat64(9.87654321E-41d), "f04")
     t.runTest(Value.mkFloat64(-9.87654321E-41d), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.Modulo.09") {
+    val input =
+      s"""def f01: BigInt = 1200000000000000000000ii % 200000000000000000000ii
+         |def f02: BigInt = 1200000000000000000000ii % 500000000000000000000ii
+         |def f03: BigInt = -1200000000000000000000ii % 500000000000000000000ii
+         |def f04: BigInt = 1200000000000000000000ii % -500000000000000000000ii
+         |def f05: BigInt = -1200000000000000000000ii % -500000000000000000000ii
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkBigInt(0), "f01")
+    t.runTest(Value.mkBigInt("200000000000000000000"), "f02")
+    t.runTest(Value.mkBigInt("-200000000000000000000"), "f03")
+    t.runTest(Value.mkBigInt("200000000000000000000"), "f04")
+    t.runTest(Value.mkBigInt("-200000000000000000000"), "f05")
   }
 
   test("Expression.Binary - BinaryOperator.Exponentiate.01") {
@@ -2828,6 +3024,24 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.Less.09") {
     val input =
+      s"""def f01: Bool = 12000000000000000000ii < 3000000000000000000ii
+         |def f02: Bool = 3000000000000000000ii < 12000000000000000000ii
+         |def f03: Bool = 3000000000000000000ii < 3000000000000000000ii
+         |def f04: Bool = -12000000000000000000ii < -3000000000000000000ii
+         |def f05: Bool = -3000000000000000000ii < -12000000000000000000ii
+         |def f06: Bool = -3000000000000000000ii < -3000000000000000000ii
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.False, "f01")
+    t.runTest(Value.True, "f02")
+    t.runTest(Value.False, "f03")
+    t.runTest(Value.True, "f04")
+    t.runTest(Value.False, "f05")
+    t.runTest(Value.False, "f06")
+  }
+
+  test("Expression.Binary - BinaryOperator.Less.10") {
+    val input =
       s"""def f01: Bool = '${'十'}' < '${'\u0000'}'
          |def f02: Bool = '${'\u0000'}' < '${'十'}'
          |def f03: Bool = '${'\u0000'}' < '${'\u0000'}'
@@ -2983,6 +3197,24 @@ class TestBackend extends FunSuite {
   }
 
   test("Expression.Binary - BinaryOperator.LessEqual.09") {
+    val input =
+      s"""def f01: Bool = 12000000000000000000ii <= 3000000000000000000ii
+         |def f02: Bool = 3000000000000000000ii <= 12000000000000000000ii
+         |def f03: Bool = 3000000000000000000ii <= 3000000000000000000ii
+         |def f04: Bool = -12000000000000000000ii <= -3000000000000000000ii
+         |def f05: Bool = -3000000000000000000ii <= -12000000000000000000ii
+         |def f06: Bool = -3000000000000000000ii <= -3000000000000000000ii
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.False, "f01")
+    t.runTest(Value.True, "f02")
+    t.runTest(Value.True, "f03")
+    t.runTest(Value.True, "f04")
+    t.runTest(Value.False, "f05")
+    t.runTest(Value.True, "f06")
+  }
+
+  test("Expression.Binary - BinaryOperator.LessEqual.10") {
     val input =
       s"""def f01: Bool = '${'十'}' <= '${'\u0000'}'
          |def f02: Bool = '${'\u0000'}' <= '${'十'}'
@@ -3140,6 +3372,24 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.Greater.09") {
     val input =
+      s"""def f01: Bool = 12000000000000000000ii > 3000000000000000000ii
+         |def f02: Bool = 3000000000000000000ii > 12000000000000000000ii
+         |def f03: Bool = 3000000000000000000ii > 3000000000000000000ii
+         |def f04: Bool = -12000000000000000000ii > -3000000000000000000ii
+         |def f05: Bool = -3000000000000000000ii > -12000000000000000000ii
+         |def f06: Bool = -3000000000000000000ii > -3000000000000000000ii
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.True, "f01")
+    t.runTest(Value.False, "f02")
+    t.runTest(Value.False, "f03")
+    t.runTest(Value.False, "f04")
+    t.runTest(Value.True, "f05")
+    t.runTest(Value.False, "f06")
+  }
+
+  test("Expression.Binary - BinaryOperator.Greater.10") {
+    val input =
       s"""def f01: Bool = '${'十'}' > '${'\u0000'}'
          |def f02: Bool = '${'\u0000'}' > '${'十'}'
          |def f03: Bool = '${'\u0000'}' > '${'\u0000'}'
@@ -3295,6 +3545,24 @@ class TestBackend extends FunSuite {
   }
 
   test("Expression.Binary - BinaryOperator.GreaterEqual.09") {
+    val input =
+      s"""def f01: Bool = 12000000000000000000ii >= 3000000000000000000ii
+         |def f02: Bool = 3000000000000000000ii >= 12000000000000000000ii
+         |def f03: Bool = 3000000000000000000ii >= 3000000000000000000ii
+         |def f04: Bool = -12000000000000000000ii >= -3000000000000000000ii
+         |def f05: Bool = -3000000000000000000ii >= -12000000000000000000ii
+         |def f06: Bool = -3000000000000000000ii >= -3000000000000000000ii
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.True, "f01")
+    t.runTest(Value.False, "f02")
+    t.runTest(Value.True, "f03")
+    t.runTest(Value.False, "f04")
+    t.runTest(Value.True, "f05")
+    t.runTest(Value.True, "f06")
+  }
+
+  test("Expression.Binary - BinaryOperator.GreaterEqual.10") {
     val input =
       s"""def f01: Bool = '${'十'}' >= '${'\u0000'}'
          |def f02: Bool = '${'\u0000'}' >= '${'十'}'
@@ -3452,6 +3720,24 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.Equal.09") {
     val input =
+      s"""def f01: Bool = 12000000000000000000ii == 3000000000000000000ii
+         |def f02: Bool = 3000000000000000000ii == 12000000000000000000ii
+         |def f03: Bool = 3000000000000000000ii == 3000000000000000000ii
+         |def f04: Bool = -12000000000000000000ii == -3000000000000000000ii
+         |def f05: Bool = -3000000000000000000ii == -12000000000000000000ii
+         |def f06: Bool = -3000000000000000000ii == -3000000000000000000ii
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.False, "f01")
+    t.runTest(Value.False, "f02")
+    t.runTest(Value.True, "f03")
+    t.runTest(Value.False, "f04")
+    t.runTest(Value.False, "f05")
+    t.runTest(Value.True, "f06")
+  }
+
+  test("Expression.Binary - BinaryOperator.Equal.10") {
+    val input =
       s"""def f01: Bool = '${'十'}' == '${'\u0000'}'
          |def f02: Bool = '${'\u0000'}' == '${'十'}'
          |def f03: Bool = '${'\u0000'}' == '${'\u0000'}'
@@ -3462,13 +3748,13 @@ class TestBackend extends FunSuite {
     t.runTest(Value.True, "f03")
   }
 
-  test("Expression.Binary - BinaryOperator.Equal.10") {
+  test("Expression.Binary - BinaryOperator.Equal.11") {
     val input = "def f: Bool = () == ()"
     val t = new Tester(input)
     t.runTest(Value.True, "f")
   }
 
-  test("Expression.Binary - BinaryOperator.Equal.11") {
+  test("Expression.Binary - BinaryOperator.Equal.12") {
     val input =
       """def f01: Bool = true == true
         |def f02: Bool = true == false
@@ -3482,7 +3768,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.False, "f04")
   }
 
-  test("Expression.Binary - BinaryOperator.Equal.12") {
+  test("Expression.Binary - BinaryOperator.Equal.13") {
     val input =
       """def f01: Bool = "hello" == "hello"
         |def f02: Bool = "hello" == "hello!"
@@ -3492,7 +3778,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.False, "f02")
   }
 
-  test("Expression.Binary - BinaryOperator.Equal.13") {
+  test("Expression.Binary - BinaryOperator.Equal.14") {
     val input =
       """enum T { case Top, case Val(Int), case Bot }
         |def f01: Bool = T.Top == T.Top
@@ -3511,7 +3797,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.False, "f06")
   }
 
-  test("Expression.Binary - BinaryOperator.Equal.14") {
+  test("Expression.Binary - BinaryOperator.Equal.15") {
     val foo = (1, 2) == (3, 'a')
     val input =
       """def f01: Bool = (1, 2, 3) == (1, 2, 3)
@@ -3523,7 +3809,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.True, "f02")
   }
 
-  test("Expression.Binary - BinaryOperator.Equal.15") {
+  test("Expression.Binary - BinaryOperator.Equal.16") {
     val input =
       """def f01: Bool = #{1, 2, 4} == #{4, 2, 1}
         |def f02: Bool = #{1, 2, 4} == #{0, 1, 2, 4}
@@ -3683,6 +3969,24 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.NotEqual.09") {
     val input =
+      s"""def f01: Bool = 12000000000000000000ii != 3000000000000000000ii
+         |def f02: Bool = 3000000000000000000ii != 12000000000000000000ii
+         |def f03: Bool = 3000000000000000000ii != 3000000000000000000ii
+         |def f04: Bool = -12000000000000000000ii != -3000000000000000000ii
+         |def f05: Bool = -3000000000000000000ii != -12000000000000000000ii
+         |def f06: Bool = -3000000000000000000ii != -3000000000000000000ii
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.True, "f01")
+    t.runTest(Value.True, "f02")
+    t.runTest(Value.False, "f03")
+    t.runTest(Value.True, "f04")
+    t.runTest(Value.True, "f05")
+    t.runTest(Value.False, "f06")
+  }
+
+  test("Expression.Binary - BinaryOperator.NotEqual.10") {
+    val input =
       s"""def f01: Bool = '${'十'}' != '${'\u0000'}'
          |def f02: Bool = '${'\u0000'}' != '${'十'}'
          |def f03: Bool = '${'\u0000'}' != '${'\u0000'}'
@@ -3693,13 +3997,13 @@ class TestBackend extends FunSuite {
     t.runTest(Value.False, "f03")
   }
 
-  test("Expression.Binary - BinaryOperator.NotEqual.10") {
+  test("Expression.Binary - BinaryOperator.NotEqual.11") {
     val input = "def f: Bool = () != ()"
     val t = new Tester(input)
     t.runTest(Value.False, "f")
   }
 
-  test("Expression.Binary - BinaryOperator.NotEqual.11") {
+  test("Expression.Binary - BinaryOperator.NotEqual.12") {
     val input =
       """def f01: Bool = true != true
         |def f02: Bool = true != false
@@ -3713,7 +4017,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.True, "f04")
   }
 
-  test("Expression.Binary - BinaryOperator.NotEqual.12") {
+  test("Expression.Binary - BinaryOperator.NotEqual.13") {
     val input =
       """def f01: Bool = "hello" != "hello"
         |def f02: Bool = "hello" != "hello!"
@@ -3723,7 +4027,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.True, "f02")
   }
 
-  test("Expression.Binary - BinaryOperator.NotEqual.13") {
+  test("Expression.Binary - BinaryOperator.NotEqual.14") {
     val input =
       """enum T { case Top, case Val(Int), case Bot }
         |def f01: Bool = T.Top != T.Top
@@ -3742,7 +4046,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.True, "f06")
   }
 
-  test("Expression.Binary - BinaryOperator.NotEqual.14") {
+  test("Expression.Binary - BinaryOperator.NotEqual.15") {
     val foo = (1, 2) == (3, 'a')
     val input =
       """def f01: Bool = (1, 2, 3) != (1, 2, 3)
@@ -3755,7 +4059,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.True, "f03")
   }
 
-  test("Expression.Binary - BinaryOperator.NotEqual.15") {
+  test("Expression.Binary - BinaryOperator.NotEqual.16") {
     val input =
       """def f01: Bool = #{1, 2, 4} != #{4, 2, 1}
         |def f02: Bool = #{1, 2, 4} != #{0, 1, 2, 4}
@@ -3998,6 +4302,22 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt64(-1), "f05")
   }
 
+  test("Expression.Binary - BinaryOperator.BitwiseAnd.06") {
+    val input =
+      s"""def f01: BigInt = 40000000000000000000ii & ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii
+         |def f02: BigInt = 40000000000000000000ii & 40000000000000000000ii
+         |def f03: BigInt = 40000000000000000000ii & 0ii
+         |def f04: BigInt = ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii & ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii
+         |def f05: BigInt = -1ii & -1ii
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkBigInt("40000000000000000000"), "f01")
+    t.runTest(Value.mkBigInt("40000000000000000000"), "f02")
+    t.runTest(Value.mkBigInt(0), "f03")
+    t.runTest(Value.mkBigInt(new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)), "f04")
+    t.runTest(Value.mkBigInt(-1), "f05")
+  }
+
   test("Expression.Binary - BinaryOperator.BitwiseOr.01") {
     val input =
       s"""def f01: Int = 40000 | ${0xFFFFFFFF}
@@ -4076,6 +4396,22 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt64(40000000000L), "f03")
     t.runTest(Value.mkInt64(0xFFFFFFFFFFFFFFFFL), "f04")
     t.runTest(Value.mkInt64(-1), "f05")
+  }
+
+  test("Expression.Binary - BinaryOperator.BitwiseOr.06") {
+    val input =
+      s"""def f01: BigInt = 40000000000000000000ii | ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii
+         |def f02: BigInt = 40000000000000000000ii | 40000000000000000000ii
+         |def f03: BigInt = 40000000000000000000ii | 0ii
+         |def f04: BigInt = ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii | ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii
+         |def f05: BigInt = -1ii | -1ii
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkBigInt(new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)), "f01")
+    t.runTest(Value.mkBigInt("40000000000000000000"), "f02")
+    t.runTest(Value.mkBigInt("40000000000000000000"), "f03")
+    t.runTest(Value.mkBigInt(new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)), "f04")
+    t.runTest(Value.mkBigInt(-1), "f05")
   }
 
   test("Expression.Binary - BinaryOperator.BitwiseXor.01") {
@@ -4158,6 +4494,22 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt64(0), "f05")
   }
 
+  test("Expression.Binary - BinaryOperator.BitwiseXor.06") {
+    val input =
+      s"""def f01: BigInt = 40000000000000000000ii ^ ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii
+         |def f02: BigInt = 40000000000000000000ii ^ 40000000000000000000ii
+         |def f03: BigInt = 40000000000000000000ii ^ 0ii
+         |def f04: BigInt = ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii ^ ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii
+         |def f05: BigInt = -1ii ^ -1ii
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkBigInt("255147905179352825855"), "f01")
+    t.runTest(Value.mkBigInt(0), "f02")
+    t.runTest(Value.mkBigInt("40000000000000000000"), "f03")
+    t.runTest(Value.mkBigInt(0), "f04")
+    t.runTest(Value.mkBigInt(0), "f05")
+  }
+
   test("Expression.Binary - BinaryOperator.BitwiseLeftShift.01") {
     val input =
       s"""def f01: Int = ${0x08} << 0
@@ -4228,6 +4580,18 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt64(0), "f04")
   }
 
+  test("Expression.Binary - BinaryOperator.BitwiseLeftShift.06") {
+    val input =
+      s"""def f01: BigInt = ${0x08}ii << 0
+         |def f02: BigInt = ${0x08}ii << 32
+         |def f03: BigInt = ${0x08}ii << 64
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkBigInt(0x08), "f01")
+    t.runTest(Value.mkBigInt(0x0000000800000000L), "f02")
+    t.runTest(Value.mkBigInt(new java.math.BigInteger("80000000000000000", 16)), "f03")
+  }
+
   test("Expression.Binary - BinaryOperator.BitwiseRightShift.01") {
     val input =
       s"""def f01: Int = 120000 >> 0
@@ -4296,6 +4660,20 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt64(3000000000L), "f02")
     t.runTest(Value.mkInt64(0), "f03")
     t.runTest(Value.mkInt64(-3000000000L), "f04")
+  }
+
+  test("Expression.Binary - BinaryOperator.BitwiseRightShift.06") {
+    val input =
+      s"""def f01: BigInt = 1200000000000000000000ii >> 0
+         |def f02: BigInt = 1200000000000000000000ii >> 2
+         |def f03: BigInt = 1200000000000000000000ii >> 72
+         |def f04: BigInt = -1200000000000000000000ii >> 2
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkBigInt("1200000000000000000000"), "f01")
+    t.runTest(Value.mkBigInt("300000000000000000000"), "f02")
+    t.runTest(Value.mkBigInt(0), "f03")
+    t.runTest(Value.mkBigInt("-300000000000000000000"), "f04")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -4688,6 +5066,17 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt64(42), "g")
   }
 
+  test("Expression.Let.27") {
+    val input =
+      """def f: BigInt =
+        |  let x = 12345678901234567890ii in
+        |    let y = 98765432109876543210ii in
+        |      y
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkBigInt("98765432109876543210"), "f")
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Expression.{CheckTag,GetTagValue}                                       //
   // Tested indirectly by pattern matching.                                  //
@@ -4872,6 +5261,15 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkSet(Set(1, 2, 3).map(Value.mkInt32))), "f")
   }
 
+  test("Expression.Tag.20") {
+    val input =
+      """enum Val { case Val(BigInt) }
+        |def f: Val = Val.Val(12345678901234567890ii)
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkBigInt("12345678901234567890")), "f")
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Expression.GetTupleIndex                                                //
   // Tested indirectly by pattern matching.                                  //
@@ -4921,9 +5319,9 @@ class TestBackend extends FunSuite {
   }
 
   test("Expression.Tuple.07") {
-    val input = """def f: (Int, Bool, Str) = (40 + 2, !(-12 < 22), if (true) "hi" else "hello")"""
+    val input = """def f: (BigInt, Bool, Str) = (40ii + 2ii, !(-12 < 22), if (true) "hi" else "hello")"""
     val t = new Tester(input)
-    t.runTest(Value.Tuple(Array(Value.mkInt32(42), Value.False, Value.mkStr("hi"))), "f")
+    t.runTest(Value.Tuple(Array(Value.mkBigInt(42), Value.False, Value.mkStr("hi"))), "f")
   }
 
   test("Expression.Tuple.08") {
@@ -5004,6 +5402,12 @@ class TestBackend extends FunSuite {
       Value.mkTag(Symbol.Resolved.mk("T"), "Val", Value.mkInt32(1)),
       Value.mkTag(Symbol.Resolved.mk("T"), "Val", Value.mkInt32(0))
     )), "f")
+  }
+
+  test("Expression.Set.09") {
+    val input = "def f: Set[BigInt] = #{1000000000000000000000000000000ii}"
+    val t = new Tester(input)
+    t.runTest(Value.mkSet(Set(Value.mkBigInt("1000000000000000000000000000000"))), "f")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -5459,6 +5863,23 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt32(0), "g04")
   }
 
+  test("Match.Literal.14") {
+    val input =
+      s"""def f(x: BigInt): Str = match x with {
+         |  case -9223372036854775809ii => "-"
+         |  case 9223372036854775809ii => "+"
+         |  case _ => "unknown"
+         |}
+         |def g01: Str = f(-9223372036854775809ii)
+         |def g02: Str = f(9223372036854775809ii)
+         |def g03: Str = f(6287816254523ii)
+       """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkStr("-"), "g01")
+    t.runTest(Value.mkStr("+"), "g02")
+    t.runTest(Value.mkStr("unknown"), "g03")
+  }
+
   test("Match.Tag.01") {
     val input =
       """enum NameAndAge { case T(Str,Int) }
@@ -5710,6 +6131,17 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkFloat64(4.2d), "f")
   }
 
+  test("Match.Tag.16") {
+    val input =
+      """enum Val { case Val(BigInt) }
+        |def f: BigInt = match Val.Val(100000000000000000000ii) with {
+        |  case Val.Val(x) => x
+        |}
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkBigInt("100000000000000000000"), "f")
+  }
+
   test("Match.Tuple.01") {
     val input =
       """def f(x: Int, y: Int): Int = match (x, y) with {
@@ -5747,19 +6179,19 @@ class TestBackend extends FunSuite {
 
   test("Match.Tuple.03") {
     val input =
-      """def f(x: Int, y: Int, z: Int): Int = match (x, (y, z)) with {
-        |  case (1, (2, 3)) => -1
-        |  case (1, (2, _)) => -2
-        |  case (1, (_, 3)) => -3
-        |  case (1, _) => -4
+      """def f(x: BigInt, y: Int, z: Int): Int = match (x, (y, z)) with {
+        |  case (1ii, (2, 3)) => -1
+        |  case (1ii, (2, _)) => -2
+        |  case (1ii, (_, 3)) => -3
+        |  case (1ii, _) => -4
         |  case (_, (a, b)) => a + b
         |}
-        |def g01: Int = f(1, 2, 3)
-        |def g02: Int = f(1, 2, 4)
-        |def g03: Int = f(1, 3, 3)
-        |def g04: Int = f(1, 5, 5)
-        |def g05: Int = f(2, 2, 3)
-        |def g06: Int = f(2, 10, 20)
+        |def g01: Int = f(1ii, 2, 3)
+        |def g02: Int = f(1ii, 2, 4)
+        |def g03: Int = f(1ii, 3, 3)
+        |def g04: Int = f(1ii, 5, 5)
+        |def g05: Int = f(2ii, 2, 3)
+        |def g06: Int = f(2ii, 10, 20)
       """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt32(-1), "g01")
@@ -6115,6 +6547,18 @@ class TestBackend extends FunSuite {
     t.checkModel(Set(1.0d, 2.0d, 3.0d).map(x => List(Value.mkFloat64(x))), "A")
   }
 
+  test("Term.Head.Exp.14") {
+    val input =
+      """rel A(x: BigInt);
+        |
+        |A(1ii).
+        |A(2ii).
+        |A(3ii).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkBigInt(x))), "A")
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Term.Head.Apply                                                         //
   // These tests simply re-implement the Term.Head.Exp tests using Apply.    //
@@ -6279,6 +6723,19 @@ class TestBackend extends FunSuite {
       """.stripMargin
     val t = new Tester(input)
     t.checkModel(Set(1.0d, 2.0d, 3.0d).map(x => List(Value.mkFloat64(x))), "A")
+  }
+
+  test("Term.Head.Apply.14") {
+    val input =
+      """rel A(x: BigInt);
+        |def f(x: BigInt): BigInt = x + 1ii
+        |
+        |A(f(0ii)).
+        |A(f(1ii)).
+        |A(f(2ii)).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkBigInt(x))), "A")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -6531,6 +6988,25 @@ class TestBackend extends FunSuite {
   }
 
   test("Term.Head.ApplyHook - Hook.Safe.14") {
+    import HookSafeHelpers._
+    val input =
+      """rel A(x: BigInt);
+        |
+        |A(f(0ii)).
+        |A(f(1ii)).
+        |A(f(2ii)).
+      """.stripMargin
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkBigIntType), flix.mkBigIntType)
+    def nativeF(x: IValue): IValue = flix.mkBigInt(x.getBigInt add java.math.BigInteger.valueOf(1))
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkBigInt(x))), "A")
+  }
+
+  test("Term.Head.ApplyHook - Hook.Safe.15") {
     import HookSafeHelpers._
     val input =
       """rel A(x: Native);
@@ -6803,6 +7279,25 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Unsafe.14") {
     import HookUnsafeHelpers._
     val input =
+      """rel A(x: BigInt);
+        |
+        |A(f(0ii)).
+        |A(f(1ii)).
+        |A(f(2ii)).
+      """.stripMargin
+    val t = new Tester(input, solve = false)
+
+    val flix = t.flix
+    val tpe = flix.mkFunctionType(Array(flix.mkBigIntType), flix.mkBigIntType)
+    def nativeF(x: JBigInt): JBigInt = x add java.math.BigInteger.valueOf(1)
+
+    t.addHook("f", tpe, nativeF _).run()
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkBigInt(x))), "A")
+  }
+
+  test("Term.Head.ApplyHook - Hook.Unsafe.15") {
+    import HookUnsafeHelpers._
+    val input =
       """rel A(x: Native);
         |
         |A(f(1)).
@@ -7025,6 +7520,20 @@ class TestBackend extends FunSuite {
         |A(2) :- f(0.0f64).
         |A(3) :- f(0.0f64).
         |A(4) :- f(-1.0f64).
+      """.stripMargin
+    val t = new Tester(input)
+    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
+  }
+
+  test("Term.Body.Exp.12") {
+    val input =
+      """rel A(x: Int);
+        |def f(x: BigInt): Bool = x >= 0ii
+        |
+        |A(1) :- f(0ii).
+        |A(2) :- f(0ii).
+        |A(3) :- f(0ii).
+        |A(4) :- f(-100000000000000000000ii).
       """.stripMargin
     val t = new Tester(input)
     t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")

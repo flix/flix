@@ -126,13 +126,13 @@ object LoadBytecode {
     case Type.Int16 => classOf[Short]
     case Type.Int32 => classOf[Int]
     case Type.Int64 => classOf[Long]
+    case Type.BigInt => classOf[java.math.BigInteger]
     case Type.Str => classOf[java.lang.String]
     case Type.Enum(_, _) => classOf[Value.Tag]
     case Type.Tuple(elms) => classOf[Value.Tuple]
     case Type.FSet(_) => classOf[scala.collection.immutable.Set[AnyRef]]
     case Type.Lambda(_, _) => interfaces(tpe)
     case Type.Tag(_, _, _) => throw InternalCompilerException(s"No corresponding JVM type for $tpe.")
-    case _ => ???
   }
 
   /**
@@ -150,6 +150,7 @@ object LoadBytecode {
       case Expression.Int16(lit) => Set.empty
       case Expression.Int32(lit) => Set.empty
       case Expression.Int64(lit) => Set.empty
+      case Expression.BigInt(lit) => Set.empty
       case Expression.Str(lit) => Set.empty
       case Expression.LoadBool(n, o) => Set.empty
       case Expression.LoadInt8(b, o) => Set.empty
