@@ -279,34 +279,32 @@ object Value {
   /**
     * Flix internal representation of tags.
     */
-  // TODO: Technically we don't need to store the enum name with the tag.
-  final class Tag private[Value](val enum: Symbol.Resolved, val tag: java.lang.String, val value: AnyRef) {
-    override val toString: java.lang.String = s"Value.Tag($enum, $tag, $value)"
-
+  final class Tag private[Value](val tag: java.lang.String, val value: AnyRef) {
     override def equals(other: Any): scala.Boolean = other match {
       case that: Value.Tag => that eq this
       case _ => false
     }
 
-    override val hashCode: Int = 41 * (41 * (41 + enum.hashCode) + tag.hashCode) + value.hashCode
+    override val hashCode: Int = 7 * tag.hashCode + 11 * value.hashCode
+
+    override def toString: java.lang.String = s"Value.Tag($tag, $value)"
   }
 
   /**
     * A cache for every tag ever created.
     */
-  private val tagCache = mutable.HashMap[(Symbol.Resolved, java.lang.String, AnyRef), Value.Tag]()
+  private val tagCache = mutable.HashMap[(java.lang.String, AnyRef), Value.Tag]()
 
   /**
-    * Constructs the tag for the given enum name `e`, tag name `t` and tag value `v`.
+    * Constructs the tag for the given tag `t` and value `v`.
     */
-  @inline
-  def mkTag(e: Symbol.Resolved, t: java.lang.String, v: AnyRef): Value.Tag = {
-    val triple = (e, t, v)
-    if (tagCache.contains(triple)) {
-      tagCache(triple)
+  def mkTag(t: java.lang.String, v: AnyRef): Value.Tag = {
+    val tuple = (t, v)
+    if (tagCache.contains(tuple)) {
+      tagCache(tuple)
     } else {
-      val ret = new Value.Tag(e, t, v)
-      tagCache(triple) = ret
+      val ret = new Value.Tag(t, v)
+      tagCache(tuple) = ret
       ret
     }
   }

@@ -473,11 +473,10 @@ class Flix {
   }
 
   /**
-    * Returns the tag with the given `enumName`, `tagName` and `tagValue`.
+    * Returns the tag with the given `tagName` and `tagValue`.
     */
-  def mkTag(enumName: String, tagName: String, tagValue: IValue): IValue = {
-    val enum = Symbol.Resolved.mk(enumName)
-    new WrappedValue(Value.mkTag(enum, tagName, tagValue.getUnsafeRef))
+  def mkTag(tagName: String, tagValue: IValue): IValue = {
+    new WrappedValue(Value.mkTag(tagName, tagValue.getUnsafeRef))
   }
 
   /**

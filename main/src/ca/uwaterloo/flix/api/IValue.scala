@@ -132,13 +132,6 @@ trait IValue {
   // Enums                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   /**
-    * Returns the fully qualified name of the enum represented by `this` value.
-    *
-    * @throws UnsupportedOperationException if `this` value is not of enum type.
-    */
-  def getEnumName: String
-
-  /**
     * Returns the name of the tag represented by `this` value.
     *
     * @throws UnsupportedOperationException if `this` value is not of enum type.

@@ -61,108 +61,80 @@ class TestValue extends FunSuite {
   }
 
   test("Value.Tag equality") {
-    val name1 = Symbol.Resolved.mk(List("foo", "bar"))
-    val name2 = Symbol.Resolved.mk(List("abc", "def"))
-    val t1 = Value.mkTag(name1, "aaa", Value.mkInt32(42))
-    val t2 = Value.mkTag(name1, "aaa", Value.mkInt32(10))
-    val t3 = Value.mkTag(name1, "zzz", Value.mkInt32(42))
-    val t4 = Value.mkTag(name1, "zzz", Value.mkInt32(10))
-    val t5 = Value.mkTag(name2, "aaa", Value.mkInt32(42))
-    val t6 = Value.mkTag(name2, "aaa", Value.mkInt32(10))
-    val t7 = Value.mkTag(name2, "zzz", Value.mkInt32(42))
-    val t8 = Value.mkTag(name2, "zzz", Value.mkInt32(10))
-    val t9 = Value.mkTag(name1, "aaa", Value.mkInt32(42))
-    val t10 = Value.mkTag(name1, "aaa", Value.mkInt32(42))
+    val t1 = Value.mkTag("a", Value.mkInt32(42))
+    val t2 = Value.mkTag("a", Value.mkInt32(21))
+    val t3 = Value.mkTag("a", Value.mkInt32(42))
+
+    val t4 = Value.mkTag("b", Value.mkInt32(42))
+    val t5 = Value.mkTag("b", Value.mkInt32(21))
+    val t6 = Value.mkTag("b", Value.mkInt32(42))
 
     assert(t1 == t1)
-    assert(t1 == t9)
-    assert(t9 == t1)
-    assert(t1 == t10)
-    assert(t9 == t10)
+    assert(t2 == t2)
+    assert(t3 == t3)
+    assert(t4 == t4)
+    assert(t5 == t5)
+    assert(t6 == t6)
+
+    assert(t1 == t3)
+    assert(t3 == t1)
+    assert(t4 == t6)
+    assert(t6 == t4)
+
     assert(t1 != t2)
-    assert(t1 != t3)
+    assert(t2 != t1)
     assert(t1 != t4)
+    assert(t4 != t1)
     assert(t1 != t5)
+    assert(t5 != t1)
     assert(t1 != t6)
-    assert(t1 != t7)
-    assert(t1 != t8)
-    assert(t2 != t3)
-    assert(t2 != t4)
-    assert(t2 != t5)
-    assert(t2 != t6)
-    assert(t2 != t7)
-    assert(t2 != t8)
-    assert(t3 != t4)
-    assert(t3 != t5)
-    assert(t3 != t6)
-    assert(t3 != t7)
-    assert(t3 != t8)
-    assert(t4 != t5)
-    assert(t4 != t6)
-    assert(t4 != t7)
-    assert(t4 != t8)
-    assert(t5 != t6)
-    assert(t5 != t7)
-    assert(t5 != t8)
-    assert(t6 != t7)
-    assert(t6 != t8)
-    assert(t7 != t8)
+    assert(t6 != t1)
   }
 
   test("Value.Tag hashing") {
     val set: mutable.Set[Value.Tag] = mutable.Set()
-    val name1 = Symbol.Resolved.mk(List("foo", "bar"))
-    val name2 = Symbol.Resolved.mk(List("abc", "def"))
-    val t1 = Value.mkTag(name1, "aaa", Value.mkInt32(42))
-    val t2 = Value.mkTag(name1, "aaa", Value.mkInt32(10))
-    val t3 = Value.mkTag(name1, "zzz", Value.mkInt32(42))
-    val t4 = Value.mkTag(name1, "zzz", Value.mkInt32(10))
-    val t5 = Value.mkTag(name2, "aaa", Value.mkInt32(42))
-    val t6 = Value.mkTag(name2, "aaa", Value.mkInt32(10))
-    val t7 = Value.mkTag(name2, "zzz", Value.mkInt32(42))
-    val t8 = Value.mkTag(name2, "zzz", Value.mkInt32(10))
-    val t9 = Value.mkTag(name1, "aaa", Value.mkInt32(42))
+
+    val t1 = Value.mkTag("a", Value.mkInt32(42))
+    val t2 = Value.mkTag("a", Value.mkInt32(21))
+    val t3 = Value.mkTag("a", Value.mkInt32(42))
+
+    val t4 = Value.mkTag("b", Value.mkInt32(42))
+    val t5 = Value.mkTag("b", Value.mkInt32(21))
+    val t6 = Value.mkTag("b", Value.mkInt32(42))
 
     set += t1
     assert(set.contains(t1))
-    assert(set.contains(t9))
+    assert(set.contains(t3))
     assert(!set.contains(t2))
-    assert(!set.contains(t3))
     assert(!set.contains(t4))
     assert(!set.contains(t5))
     assert(!set.contains(t6))
-    assert(!set.contains(t7))
-    assert(!set.contains(t8))
 
-    set -= t9
-    assert(set.isEmpty)
+    set += t4
+    assert(set.contains(t1))
+    assert(set.contains(t3))
+    assert(set.contains(t4))
+    assert(set.contains(t6))
+    assert(!set.contains(t2))
+    assert(!set.contains(t5))
 
-    set += t1
-    set += t2
-    set += t9
     assert(set.size == 2)
   }
 
   test("Value.Tag pattern matching") {
-    val v = Value.mkTag(Symbol.Resolved.mk(List("foo", "bar")), "aaa", Value.mkInt32(42))
+    val v = Value.mkTag("aaa", Value.mkInt32(42))
 
     val r1 = v match {
-      case v: Value.Tag => v.enum
-      case _ => Symbol.Resolved.mk(List("hi"))
-    }
-    assert(r1 == Symbol.Resolved.mk(List("foo", "bar")))
-
-    val r2 = v match {
       case v: Value.Tag => v.tag
       case _ => "???"
     }
-    assert(r2 == "aaa")
+    assert(r1 == "aaa")
 
-    val r3 = v match {
+    val r2 = v match {
       case v: Value.Tag => v.value
       case _ => Value.Unit
     }
-    assert(r3 == Value.mkInt32(42))
+    assert(r2 == Value.mkInt32(42))
   }
 
 }

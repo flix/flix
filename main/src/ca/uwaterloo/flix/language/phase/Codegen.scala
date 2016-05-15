@@ -329,16 +329,11 @@ object Codegen {
       // Load the Value companion object, then the arguments, and finally call `Value.mkTag`.
       visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
 
-      // Load `enum` as a string, by calling `Symbol.Resolved.mk`
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/Symbol$Resolved$", "MODULE$", "Lca/uwaterloo/flix/language/ast/Symbol$Resolved$;")
-      visitor.visitLdcInsn(enum.fqn)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/Symbol$Resolved$", "mk", "(Ljava/lang/String;)Lca/uwaterloo/flix/language/ast/Symbol$Resolved;", false)
-
       // Load `tag.name` and box `exp` if necessary.
       visitor.visitLdcInsn(tag.name)
       compileBoxedExpr(ctx, visitor)(exp)
 
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkTag", "(Lca/uwaterloo/flix/language/ast/Symbol$Resolved;Ljava/lang/String;Ljava/lang/Object;)Lca/uwaterloo/flix/runtime/Value$Tag;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkTag", "(Ljava/lang/String;Ljava/lang/Object;)Lca/uwaterloo/flix/runtime/Value$Tag;", false)
 
     case Expression.GetTupleIndex(base, offset, tpe, _) =>
       // Compile the tuple expression, load the tuple array, compile the offset, load the array element, and unbox if

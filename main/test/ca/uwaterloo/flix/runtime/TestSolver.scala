@@ -7,10 +7,10 @@ import org.scalatest.FunSuite
 class TestSolver extends FunSuite {
 
   object Parity {
-    val Top = Value.mkTag(Symbol.Resolved.mk(List("Parity")), "Top", Value.Unit)
-    val Odd = Value.mkTag(Symbol.Resolved.mk(List("Parity")), "Odd", Value.Unit)
-    val Even = Value.mkTag(Symbol.Resolved.mk(List("Parity")), "Even", Value.Unit)
-    val Bot = Value.mkTag(Symbol.Resolved.mk(List("Parity")), "Bot", Value.Unit)
+    val Top = Value.mkTag("Top", Value.Unit)
+    val Odd = Value.mkTag("Odd", Value.Unit)
+    val Even = Value.mkTag("Even", Value.Unit)
+    val Bot = Value.mkTag("Bot", Value.Unit)
 
     val Definition =
       """

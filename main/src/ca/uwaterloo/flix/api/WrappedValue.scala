@@ -41,8 +41,6 @@ final class WrappedValue(val ref: AnyRef) extends IValue {
 
   def getTuple: Array[IValue] = Value.cast2tuple(ref).map(e => new WrappedValue(e))
 
-  def getEnumName: String = Value.cast2tag(ref).enum.fqn
-
   def getTagName: String = Value.cast2tag(ref).tag
 
   def getTagValue: IValue = new WrappedValue(Value.cast2tag(ref).value)

@@ -88,7 +88,7 @@ object Interpreter {
       eval(exp2, root, newEnv)
     case Expression.CheckTag(tag, exp, _) => Value.mkBool(Value.cast2tag(eval(exp, root, env0)).tag == tag.name)
     case Expression.GetTagValue(tag, exp, _, _) => Value.cast2tag(eval(exp, root, env0)).value
-    case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(name, ident.name, eval(exp, root, env0))
+    case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(ident.name, eval(exp, root, env0))
     case Expression.GetTupleIndex(base, offset, _, _) => Value.cast2tuple(eval(base, root, env0))(offset)
     case Expression.Tuple(elms, _, _) =>
       val evalElms = new Array[AnyRef](elms.length)

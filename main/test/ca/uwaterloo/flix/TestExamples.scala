@@ -107,11 +107,9 @@ class TestExamples extends FunSuite {
       .addStr(input)
       .run()
 
-    val Belnap = Symbol.Resolved.mk(List("Belnap", "Belnap"))
-
-    val Tru = Value.mkTag(Belnap, "True", Value.Unit)
-    val Fls = Value.mkTag(Belnap, "False", Value.Unit)
-    val Top = Value.mkTag(Belnap, "Top", Value.Unit)
+    val Tru = Value.mkTag("True", Value.Unit)
+    val Fls = Value.mkTag("False", Value.Unit)
+    val Top = Value.mkTag("Top", Value.Unit)
 
     t.checkValue(List(Tru), "Belnap/A", List(Value.mkInt32(1)))
     t.checkValue(List(Fls), "Belnap/A", List(Value.mkInt32(2)))
@@ -150,12 +148,10 @@ class TestExamples extends FunSuite {
       .addStr(input)
       .run()
 
-    val Constant = Symbol.Resolved.mk(List("Constant", "Constant"))
-
-    val Zer = Value.mkTag(Constant, "Cst", Value.mkInt32(0))
-    val One = Value.mkTag(Constant, "Cst", Value.mkInt32(1))
-    val Two = Value.mkTag(Constant, "Cst", Value.mkInt32(2))
-    val Top = Value.mkTag(Constant, "Top", Value.Unit)
+    val Zer = Value.mkTag("Cst", Value.mkInt32(0))
+    val One = Value.mkTag("Cst", Value.mkInt32(1))
+    val Two = Value.mkTag("Cst", Value.mkInt32(2))
+    val Top = Value.mkTag("Top", Value.Unit)
 
     t.checkValue(List(Zer), "Constant/A", List(Value.mkInt32(0)))
     t.checkValue(List(One), "Constant/A", List(Value.mkInt32(1)))
@@ -198,12 +194,10 @@ class TestExamples extends FunSuite {
       .addStr(input)
       .run()
 
-    val ConstantSign = Symbol.Resolved.mk(List("ConstantSign", "ConstSign"))
-
-    val Zer = Value.mkTag(ConstantSign, "Cst", Value.mkBigInt(0))
-    val One = Value.mkTag(ConstantSign, "Cst", Value.mkBigInt(1))
-    val Pos = Value.mkTag(ConstantSign, "Pos", Value.Unit)
-    val Top = Value.mkTag(ConstantSign, "Top", Value.Unit)
+    val Zer = Value.mkTag("Cst", Value.mkBigInt(0))
+    val One = Value.mkTag("Cst", Value.mkBigInt(1))
+    val Pos = Value.mkTag("Pos", Value.Unit)
+    val Top = Value.mkTag("Top", Value.Unit)
 
     t.checkValue(List(Zer), "ConstantSign/A", List(Value.mkInt32(2)))
     t.checkValue(List(One), "ConstantSign/A", List(Value.mkInt32(3)))
@@ -246,11 +240,9 @@ class TestExamples extends FunSuite {
       .addStr(input)
       .run()
 
-    val Parity = Symbol.Resolved.mk(List("Parity", "Parity"))
-
-    val Odd = Value.mkTag(Parity, "Odd", Value.Unit)
-    val Evn = Value.mkTag(Parity, "Even", Value.Unit)
-    val Top = Value.mkTag(Parity, "Top", Value.Unit)
+    val Odd = Value.mkTag("Odd", Value.Unit)
+    val Evn = Value.mkTag("Even", Value.Unit)
+    val Top = Value.mkTag("Top", Value.Unit)
 
     t.checkValue(List(Odd), "Parity/A", List(Value.mkInt32(1)))
     t.checkValue(List(Evn), "Parity/A", List(Value.mkInt32(2)))
@@ -297,12 +289,10 @@ class TestExamples extends FunSuite {
       .addStr(input)
       .run()
 
-    val Sign = Symbol.Resolved.mk(List("StrictSign", "Sign"))
-
-    val Neg = Value.mkTag(Sign, "Neg", Value.Unit)
-    val Zer = Value.mkTag(Sign, "Zer", Value.Unit)
-    val Pos = Value.mkTag(Sign, "Pos", Value.Unit)
-    val Top = Value.mkTag(Sign, "Top", Value.Unit)
+    val Neg = Value.mkTag("Neg", Value.Unit)
+    val Zer = Value.mkTag("Zer", Value.Unit)
+    val Pos = Value.mkTag("Pos", Value.Unit)
+    val Top = Value.mkTag("Top", Value.Unit)
 
     t.checkValue(List(Neg), "StrictSign/A", List(Value.mkInt32(1)))
     t.checkValue(List(Zer), "StrictSign/A", List(Value.mkInt32(2)))

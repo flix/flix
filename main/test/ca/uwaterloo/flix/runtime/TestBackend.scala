@@ -911,7 +911,7 @@ class TestBackend extends FunSuite {
         |def g: Val = f(111)
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkInt32(111)), "g")
+    t.runTest(Value.mkTag("Val", Value.mkInt32(111)), "g")
   }
 
   test("Expression.Lambda.14") {
@@ -1179,10 +1179,10 @@ class TestBackend extends FunSuite {
     val flix = t.flix
     val tagTpe = flix.mkTagType("Val", "Val", flix.mkInt32Type)
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkEnumType("Val", Array(tagTpe)))
-    def nativeF(x: IValue): IValue = flix.mkTag("Val", "Val", x)
+    def nativeF(x: IValue): IValue = flix.mkTag("Val", x)
 
     t.addHook("f", tpe, nativeF _).run()
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkInt32(111)), "g")
+    t.runTest(Value.mkTag("Val", Value.mkInt32(111)), "g")
   }
 
   ignore("Expression.Hook - Hook.Safe.14") {
@@ -1489,10 +1489,10 @@ class TestBackend extends FunSuite {
     val flix = t.flix
     val tagTpe = flix.mkTagType("Val", "Val", flix.mkInt32Type)
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkEnumType("Val", Array(tagTpe)))
-    def nativeF(x: JInt): Value.Tag = Value.mkTag(Symbol.Resolved.mk("Val"), "Val", x)
+    def nativeF(x: JInt): Value.Tag = Value.mkTag("Val", x)
 
     t.addHook("f", tpe, nativeF _).run()
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkInt32(111)), "g")
+    t.runTest(Value.mkTag("Val", Value.mkInt32(111)), "g")
   }
 
   ignore("Expression.Hook - Hook.Unsafe.14") {
@@ -4981,7 +4981,7 @@ class TestBackend extends FunSuite {
         |def f: ConstProp = let x = ConstProp.Val(42) in x
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("ConstProp"), "Val", Value.mkInt32(42)), "f")
+    t.runTest(Value.mkTag("Val", Value.mkInt32(42)), "f")
   }
 
   test("Expression.Let.18") {
@@ -5092,7 +5092,7 @@ class TestBackend extends FunSuite {
         |def f: ConstProp = ConstProp.Top
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("ConstProp"), "Top", Value.Unit), "f")
+    t.runTest(Value.mkTag("Top", Value.Unit), "f")
   }
 
   test("Expression.Tag.02") {
@@ -5101,7 +5101,7 @@ class TestBackend extends FunSuite {
         |def f: ConstProp = ConstProp.Val(42)
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("ConstProp"), "Val", Value.mkInt32(42)), "f")
+    t.runTest(Value.mkTag("Val", Value.mkInt32(42)), "f")
   }
 
   test("Expression.Tag.03") {
@@ -5110,7 +5110,7 @@ class TestBackend extends FunSuite {
         |def f: ConstProp = ConstProp.Bot
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("ConstProp"), "Bot", Value.Unit), "f")
+    t.runTest(Value.mkTag("Bot", Value.Unit), "f")
   }
 
   test("Expression.Tag.04") {
@@ -5119,7 +5119,7 @@ class TestBackend extends FunSuite {
         |def f: Val = Val.Val(true)
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.True), "f")
+    t.runTest(Value.mkTag("Val", Value.True), "f")
   }
 
   test("Expression.Tag.05") {
@@ -5130,8 +5130,8 @@ class TestBackend extends FunSuite {
         |def g02: Val = f(false)
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.True), "g01")
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.False), "g02")
+    t.runTest(Value.mkTag("Val", Value.True), "g01")
+    t.runTest(Value.mkTag("Val", Value.False), "g02")
   }
 
   test("Expression.Tag.06") {
@@ -5140,7 +5140,7 @@ class TestBackend extends FunSuite {
         |def f: Val = Val.Val("hi")
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkStr("hi")), "f")
+    t.runTest(Value.mkTag("Val", Value.mkStr("hi")), "f")
   }
 
   test("Expression.Tag.07") {
@@ -5149,7 +5149,7 @@ class TestBackend extends FunSuite {
         |def f: Val = Val.Val(1, "one")
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.Tuple(Array(Value.mkInt32(1), "one"))), "f")
+    t.runTest(Value.mkTag("Val", Value.Tuple(Array(Value.mkInt32(1), "one"))), "f")
   }
 
   test("Expression.Tag.08") {
@@ -5158,7 +5158,7 @@ class TestBackend extends FunSuite {
         |def f: Val = Val.Val(if (!(4 != 4)) "foo" else "bar")
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkStr("foo")), "f")
+    t.runTest(Value.mkTag("Val", Value.mkStr("foo")), "f")
   }
 
   test("Expression.Tag.09") {
@@ -5167,7 +5167,7 @@ class TestBackend extends FunSuite {
         |def f: Val = Val.Val("ABC", 20 + 22)
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.Tuple(Array("ABC", Value.mkInt32(42)))), "f")
+    t.runTest(Value.mkTag("Val", Value.Tuple(Array("ABC", Value.mkInt32(42)))), "f")
   }
 
   test("Expression.Tag.10") {
@@ -5176,7 +5176,7 @@ class TestBackend extends FunSuite {
         |def f: Val = Val.Val(("ABC", 20 + 22))
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.Tuple(Array("ABC", Value.mkInt32(42)))), "f")
+    t.runTest(Value.mkTag("Val", Value.Tuple(Array("ABC", Value.mkInt32(42)))), "f")
   }
 
   test("Expression.Tag.11") {
@@ -5185,7 +5185,7 @@ class TestBackend extends FunSuite {
         |def f: Val = Val.Val(32i8)
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkInt8(32)), "f")
+    t.runTest(Value.mkTag("Val", Value.mkInt8(32)), "f")
   }
 
   test("Expression.Tag.12") {
@@ -5194,7 +5194,7 @@ class TestBackend extends FunSuite {
         |def f: Val = Val.Val(3200i16)
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkInt16(3200)), "f")
+    t.runTest(Value.mkTag("Val", Value.mkInt16(3200)), "f")
   }
 
   test("Expression.Tag.13") {
@@ -5203,7 +5203,7 @@ class TestBackend extends FunSuite {
         |def f: Val = Val.Val(32000000i32)
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkInt32(32000000)), "f")
+    t.runTest(Value.mkTag("Val", Value.mkInt32(32000000)), "f")
   }
 
   test("Expression.Tag.14") {
@@ -5212,7 +5212,7 @@ class TestBackend extends FunSuite {
         |def f: Val = Val.Val(320000000000i64)
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkInt64(320000000000L)), "f")
+    t.runTest(Value.mkTag("Val", Value.mkInt64(320000000000L)), "f")
   }
 
   test("Expression.Tag.15") {
@@ -5221,7 +5221,7 @@ class TestBackend extends FunSuite {
         |def f: Val = Val.Val('a')
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkChar('a')), "f")
+    t.runTest(Value.mkTag("Val", Value.mkChar('a')), "f")
   }
 
   test("Expression.Tag.16") {
@@ -5230,7 +5230,7 @@ class TestBackend extends FunSuite {
         |def f: Val = Val.Val(4.2f32)
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkFloat32(4.2f)), "f")
+    t.runTest(Value.mkTag("Val", Value.mkFloat32(4.2f)), "f")
   }
 
   test("Expression.Tag.17") {
@@ -5239,7 +5239,7 @@ class TestBackend extends FunSuite {
         |def f: Val = Val.Val(4.2f64)
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkFloat64(4.2d)), "f")
+    t.runTest(Value.mkTag("Val", Value.mkFloat64(4.2d)), "f")
   }
 
   test("Expression.Tag.18") {
@@ -5249,7 +5249,7 @@ class TestBackend extends FunSuite {
         |def f: B = B.BB(A.AA(42))
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("B"), "BB", Value.mkTag(Symbol.Resolved.mk("A"), "AA", Value.mkInt32(42))), "f")
+    t.runTest(Value.mkTag("BB", Value.mkTag("AA", Value.mkInt32(42))), "f")
   }
 
   test("Expression.Tag.19") {
@@ -5258,7 +5258,7 @@ class TestBackend extends FunSuite {
         |def f: Val = Val.Val(#{1, 2, 3})
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkSet(Set(1, 2, 3).map(Value.mkInt32))), "f")
+    t.runTest(Value.mkTag("Val", Value.mkSet(Set(1, 2, 3).map(Value.mkInt32))), "f")
   }
 
   test("Expression.Tag.20") {
@@ -5267,7 +5267,7 @@ class TestBackend extends FunSuite {
         |def f: Val = Val.Val(12345678901234567890ii)
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkTag(Symbol.Resolved.mk("Val"), "Val", Value.mkBigInt("12345678901234567890")), "f")
+    t.runTest(Value.mkTag("Val", Value.mkBigInt("12345678901234567890")), "f")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -5309,7 +5309,7 @@ class TestBackend extends FunSuite {
         |def f: (ConstProp, ConstProp) = (ConstProp.Val(111), ConstProp.Bot)
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.Tuple(Array(Value.mkTag(Symbol.Resolved.mk("ConstProp"), "Val", Value.mkInt32(111)), Value.mkTag(Symbol.Resolved.mk("ConstProp"), "Bot", Value.Unit))), "f")
+    t.runTest(Value.Tuple(Array(Value.mkTag("Val", Value.mkInt32(111)), Value.mkTag("Bot", Value.Unit))), "f")
   }
 
   test("Expression.Tuple.06") {
@@ -5398,9 +5398,9 @@ class TestBackend extends FunSuite {
       """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkSet(Set(
-      Value.mkTag(Symbol.Resolved.mk("T"), "Top", Value.Unit),
-      Value.mkTag(Symbol.Resolved.mk("T"), "Val", Value.mkInt32(1)),
-      Value.mkTag(Symbol.Resolved.mk("T"), "Val", Value.mkInt32(0))
+      Value.mkTag("Top", Value.Unit),
+      Value.mkTag("Val", Value.mkInt32(1)),
+      Value.mkTag("Val", Value.mkInt32(0))
     )), "f")
   }
 
@@ -6498,7 +6498,7 @@ class TestBackend extends FunSuite {
         |A(Foo.Foo(1, "one")).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(List(Value.mkTag(Symbol.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))), "A")
+    t.checkModel(Set(List(Value.mkTag("Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))), "A")
   }
 
   test("Term.Head.Exp.10") {
@@ -6672,7 +6672,7 @@ class TestBackend extends FunSuite {
         |A(f("one")).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(List(Value.mkTag(Symbol.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))), "A")
+    t.checkModel(Set(List(Value.mkTag("Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))), "A")
   }
 
   test("Term.Head.Apply.10") {
@@ -6907,10 +6907,10 @@ class TestBackend extends FunSuite {
     val tupleTpe = flix.mkTupleType(Array(flix.mkInt32Type, flix.mkStrType))
     val tagTpe = flix.mkTagType("Foo", "Foo", tupleTpe)
     val tpe = flix.mkFunctionType(Array(flix.mkStrType), flix.mkEnumType("Foo", Array(tagTpe)))
-    def nativeF(x: IValue): IValue = flix.mkTag("Foo", "Foo", flix.mkTuple(Array(flix.mkInt32(1), x)))
+    def nativeF(x: IValue): IValue = flix.mkTag("Foo", flix.mkTuple(Array(flix.mkInt32(1), x)))
 
     t.addHook("f", tpe, nativeF _).run()
-    t.checkModel(Set(List(Value.mkTag(Symbol.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))), "A")
+    t.checkModel(Set(List(Value.mkTag("Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))), "A")
   }
 
   test("Term.Head.ApplyHook - Hook.Safe.10") {
@@ -7196,10 +7196,10 @@ class TestBackend extends FunSuite {
     val tupleTpe = flix.mkTupleType(Array(flix.mkInt32Type, flix.mkStrType))
     val tagTpe = flix.mkTagType("Foo", "Foo", tupleTpe)
     val tpe = flix.mkFunctionType(Array(flix.mkStrType), flix.mkEnumType("Foo", Array(tagTpe)))
-    def nativeF(x: String): Value.Tag = Value.mkTag(Symbol.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), x)))
+    def nativeF(x: String): Value.Tag = Value.mkTag("Foo", Value.Tuple(Array(Value.mkInt32(1), x)))
 
     t.addHook("f", tpe, nativeF _).run()
-    t.checkModel(Set(List(Value.mkTag(Symbol.Resolved.mk("Foo"), "Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))), "A")
+    t.checkModel(Set(List(Value.mkTag("Foo", Value.Tuple(Array(Value.mkInt32(1), Value.mkStr("one")))))), "A")
   }
 
   test("Term.Head.ApplyHook - Hook.Unsafe.10") {
