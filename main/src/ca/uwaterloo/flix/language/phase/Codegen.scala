@@ -48,13 +48,13 @@ object Codegen {
         case Type.Int16 => asm.Type.SHORT_TYPE.getDescriptor
         case Type.Int32 => asm.Type.INT_TYPE.getDescriptor
         case Type.Int64 => asm.Type.LONG_TYPE.getDescriptor
+        case Type.BigInt => asm.Type.getDescriptor(classOf[java.math.BigInteger])
         case Type.Str => asm.Type.getDescriptor(classOf[java.lang.String])
         case Type.Enum(_, _) => asm.Type.getDescriptor(classOf[Value.Tag])
         case Type.Tuple(_) => asm.Type.getDescriptor(classOf[Value.Tuple])
         case Type.FSet(_) => asm.Type.getDescriptor(classOf[scala.collection.immutable.Set[AnyRef]])
         case Type.Lambda(_, _) => s"L${decorate(interfaces(tpe))};"
         case Type.Tag(_, _, _) => throw InternalCompilerException(s"No corresponding JVM type for $tpe.")
-        case _ => ???
       }
 
       tpe match {
@@ -141,10 +141,9 @@ object Codegen {
       case Type.Int64 => mv.visitInsn(LRETURN)
       case Type.Float32 => mv.visitInsn(FRETURN)
       case Type.Float64 => mv.visitInsn(DRETURN)
-      case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
+      case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
         mv.visitInsn(ARETURN)
       case Type.Tag(_, _, _) => throw InternalCompilerException(s"Functions can't return type $tpe.")
-      case _ => ???
     }
 
     // Dummy large numbers so the bytecode checker can run. Afterwards, the ASM library calculates the proper maxes.
@@ -173,6 +172,11 @@ object Codegen {
     case Expression.Int16(s) => compileInt(visitor)(s)
     case Expression.Int32(i) => compileInt(visitor)(i)
     case Expression.Int64(l) => compileInt(visitor)(l, isLong = true)
+    case Expression.BigInt(ii) =>
+      visitor.visitTypeInsn(NEW, "java/math/BigInteger")
+      visitor.visitInsn(DUP)
+      visitor.visitLdcInsn(ii.toString)
+      visitor.visitMethodInsn(INVOKESPECIAL, "java/math/BigInteger", "<init>", "(Ljava/lang/String;)V", false)
     case Expression.Str(s) => visitor.visitLdcInsn(s)
 
     case load: LoadExpression => compileLoadExpr(ctx, visitor)(load)
@@ -184,10 +188,9 @@ object Codegen {
       case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
       case Type.Float32 => visitor.visitVarInsn(FLOAD, offset)
       case Type.Float64 => visitor.visitVarInsn(DLOAD, offset)
-      case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
+      case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
         visitor.visitVarInsn(ALOAD, offset)
       case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type $tpe.")
-      case _ => ???
     }
 
     case Expression.Ref(name, _, _) =>
@@ -303,10 +306,9 @@ object Codegen {
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
         case Type.Float32 => visitor.visitVarInsn(FSTORE, offset)
         case Type.Float64 => visitor.visitVarInsn(DSTORE, offset)
-        case Type.Unit | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
+        case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
           visitor.visitVarInsn(ASTORE, offset)
         case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type ${exp1.tpe}.")
-        case _ => ???
       }
       compileExpression(ctx, visitor)(exp2)
 
@@ -486,11 +488,10 @@ object Codegen {
       compileExpression(ctx, visitor)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkStr", "(Ljava/lang/String;)Ljava/lang/Object;", false)
 
-    case Type.Unit | Type.Enum(_, _) | Type.Tuple(_) | Type.FSet(_) => compileExpression(ctx, visitor)(exp)
+    case Type.Unit | Type.BigInt | Type.Enum(_, _) | Type.Tuple(_) | Type.FSet(_) => compileExpression(ctx, visitor)(exp)
 
     case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type ${exp.tpe}.")
 
-    case _ => ???
   }
 
   /*
@@ -534,6 +535,8 @@ object Codegen {
       visitor.visitTypeInsn(CHECKCAST, "java/lang/Long")
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Long", "longValue", "()J", false)
 
+    case Type.BigInt => visitor.visitTypeInsn(CHECKCAST, "java/math/BigInteger")
+
     case Type.Str => visitor.visitTypeInsn(CHECKCAST, "java/lang/String")
 
     case Type.Enum(_, _) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tag")
@@ -544,7 +547,6 @@ object Codegen {
 
     case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type $tpe.")
 
-    case _ => ???
   }
 
   /*
@@ -698,6 +700,7 @@ object Codegen {
       visitor.visitInsn(I2S)
     case Type.Int32 => visitor.visitInsn(INEG)
     case Type.Int64 => visitor.visitInsn(LNEG)
+    case Type.BigInt => visitor.visitMethodInsn(INVOKEVIRTUAL, "java/math/BigInteger", "negate", "()Ljava/math/BigInteger;", false);
     case _ => throw InternalCompilerException(s"Can't apply UnaryOperator.Minus to type $tpe.")
   }
 
@@ -716,15 +719,16 @@ object Codegen {
    *
    * Note that sign extending and then negating a value is equal to negating and then sign extending it.
    */
-  private def compileUnaryNegateExpr(ctx: Context, visitor: MethodVisitor)(tpe: Type): Unit = {
-    visitor.visitInsn(ICONST_M1)
-    tpe match {
-      case Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitInsn(IXOR)
-      case Type.Int64 =>
-        visitor.visitInsn(I2L)
-        visitor.visitInsn(LXOR)
-      case _ => throw InternalCompilerException(s"Can't apply UnaryOperator.Negate to type $tpe.")
-    }
+  private def compileUnaryNegateExpr(ctx: Context, visitor: MethodVisitor)(tpe: Type): Unit = tpe match {
+    case Type.Int8 | Type.Int16 | Type.Int32 =>
+      visitor.visitInsn(ICONST_M1)
+      visitor.visitInsn(IXOR)
+    case Type.Int64 =>
+      visitor.visitInsn(ICONST_M1)
+      visitor.visitInsn(I2L)
+      visitor.visitInsn(LXOR)
+    case Type.BigInt => visitor.visitMethodInsn(INVOKEVIRTUAL, "java/math/BigInteger", "not", "()Ljava/math/BigInteger;", false);
+    case _ => throw InternalCompilerException(s"Can't apply UnaryOperator.Negate to type $tpe.")
   }
 
   /*
@@ -776,12 +780,12 @@ object Codegen {
     } else {
       compileExpression(ctx, visitor)(e1)
       compileExpression(ctx, visitor)(e2)
-      val (intOp, longOp, floatOp, doubleOp) = o match {
-        case BinaryOperator.Plus => (IADD, LADD, FADD, DADD)
-        case BinaryOperator.Minus => (ISUB, LSUB, FSUB, DSUB)
-        case BinaryOperator.Times => (IMUL, LMUL, FMUL, DMUL)
-        case BinaryOperator.Divide => (IDIV, LDIV, FDIV, DDIV)
-        case BinaryOperator.Modulo => (IREM, LREM, FREM, DREM)
+      val (intOp, longOp, floatOp, doubleOp, bigIntOp) = o match {
+        case BinaryOperator.Plus => (IADD, LADD, FADD, DADD, "add")
+        case BinaryOperator.Minus => (ISUB, LSUB, FSUB, DSUB, "subtract")
+        case BinaryOperator.Times => (IMUL, LMUL, FMUL, DMUL, "multiply")
+        case BinaryOperator.Divide => (IDIV, LDIV, FDIV, DDIV, "divide")
+        case BinaryOperator.Modulo => (IREM, LREM, FREM, DREM, "remainder")
         case BinaryOperator.Exponentiate => throw InternalCompilerException("BinaryOperator.Exponentiate already handled.")
       }
       e1.tpe match {
@@ -795,6 +799,7 @@ object Codegen {
           visitor.visitInsn(I2S)
         case Type.Int32 => visitor.visitInsn(intOp)
         case Type.Int64 => visitor.visitInsn(longOp)
+        case Type.BigInt => visitor.visitMethodInsn(INVOKEVIRTUAL, "java/math/BigInteger", bigIntOp, "(Ljava/math/BigInteger;)Ljava/math/BigInteger;", false);
         case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
       }
     }
@@ -838,6 +843,9 @@ object Codegen {
    * http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.lcmp
    * http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.fcmp_op
    * http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.if_cond
+   *
+   * BigInts are compared using the `compareTo` method.
+   * `bigint1 OP bigint2` is compiled as `bigint1.compareTo(bigint2) OP 0`.
    */
   private def compileComparisonExpr(ctx: Context, visitor: MethodVisitor)
                                    (o: ComparisonOperator, e1: Expression, e2: Expression): Unit = {
@@ -898,6 +906,10 @@ object Codegen {
           case Type.Int64 =>
             visitor.visitInsn(LCMP)
             visitor.visitJumpInsn(cmp, condElse)
+          case Type.BigInt =>
+            visitor.visitMethodInsn(INVOKEVIRTUAL, "java/math/BigInteger", "compareTo", "(Ljava/math/BigInteger;)I", false)
+            visitor.visitInsn(ICONST_0)
+            visitor.visitJumpInsn(intOp, condElse)
           case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
         }
         visitor.visitInsn(ICONST_1)
@@ -996,12 +1008,13 @@ object Codegen {
                                 (o: BitwiseOperator, e1: Expression, e2: Expression): Unit = {
     compileExpression(ctx, visitor)(e1)
     compileExpression(ctx, visitor)(e2)
-    val (intOp, longOp) = o match {
-      case BinaryOperator.BitwiseAnd => (IAND, LAND)
-      case BinaryOperator.BitwiseOr => (IOR, LOR)
-      case BinaryOperator.BitwiseXor => (IXOR, LXOR)
-      case BinaryOperator.BitwiseLeftShift => (ISHL, LSHL)
-      case BinaryOperator.BitwiseRightShift => (ISHR, LSHR)
+    val (tpe1, tpe2) = ("(Ljava/math/BigInteger;)Ljava/math/BigInteger;", "(I)Ljava/math/BigInteger;")
+    val (intOp, longOp, bigintOp, bigintTpe) = o match {
+      case BinaryOperator.BitwiseAnd => (IAND, LAND, "and", tpe1)
+      case BinaryOperator.BitwiseOr => (IOR, LOR, "or", tpe1)
+      case BinaryOperator.BitwiseXor => (IXOR, LXOR, "xor", tpe1)
+      case BinaryOperator.BitwiseLeftShift => (ISHL, LSHL, "shiftLeft", tpe2)
+      case BinaryOperator.BitwiseRightShift => (ISHR, LSHR, "shiftRight", tpe2)
     }
     e1.tpe match {
       case Type.Int8 =>
@@ -1012,6 +1025,7 @@ object Codegen {
         if (intOp == ISHL) visitor.visitInsn(I2S)
       case Type.Int32 => visitor.visitInsn(intOp)
       case Type.Int64 => visitor.visitInsn(longOp)
+      case Type.BigInt => visitor.visitMethodInsn(INVOKEVIRTUAL, "java/math/BigInteger", bigintOp, bigintTpe, false);
       case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
     }
   }

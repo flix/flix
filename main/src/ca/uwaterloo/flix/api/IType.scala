@@ -55,6 +55,11 @@ trait IType {
   def isInt64: Boolean
 
   /**
+    * Returns `true` if `this` type is the BigInt type.
+    */
+  def isBigInt: Boolean
+
+  /**
     * Returns `true` if `this` type is the str type.
     */
   def isStr: Boolean
