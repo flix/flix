@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.runtime
 
+import java.lang.reflect.InvocationTargetException
+
 import ca.uwaterloo.flix.api.{IValue, MatchException, SwitchException, UserException, WrappedValue}
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Definition.Constant
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
@@ -43,27 +45,18 @@ object Interpreter {
       case None => throw InternalRuntimeException(s"Key '${ident.name}' not found in environment: '${env.mkString(",")}'.")
       case Some(v) => v
     }
-    case Expression.ClosureVar(envVar, ident, _, _) =>
-      // First lookup the closure environment from the current environment.
-      val clEnv = env.get(envVar.name) match {
-        case None => throw InternalRuntimeException(s"Closure environment '${envVar.name}' not found in environment: '${env.mkString(",")}'.")
-        case Some(v) => v.asInstanceOf[mutable.Map[String, AnyRef]]
-      }
-      // Then lookup the variable from the closure environment.
-      clEnv.get(ident.name) match {
-        case None => throw InternalRuntimeException(s"Key '${ident.name}' not found in closure environment: '${clEnv.mkString(",")}'.")
-        case Some(v) => v
-      }
     case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env)
     case Expression.Hook(hook, _, _) => Value.HookClosure(hook)
-    case Expression.MkClosureRef(ref, envVar, freeVars, _, _) =>
-      // Create the closure environment, by binding values from the current environment to the free variables.
-      val closureEnv = mutable.Map.empty[String, AnyRef]
-      for (freeVar <- freeVars) {
-        val name = freeVar.name
-        closureEnv(name) = env(name)
+    case Expression.MkClosureRef(ref, freeVars, _, _) =>
+      // Save the values of the free variables in the Value.Closure structure.
+      // When the closure is called, these values will be provided at the beginning of the argument list.
+      val bindings = new Array[AnyRef](freeVars.length)
+      var i = 0
+      while (i < bindings.length) {
+        bindings(i) = env(freeVars(i).ident.name)
+        i = i + 1
       }
-      Value.Closure(ref, envVar, closureEnv)
+      Value.Closure(ref, bindings)
     case Expression.ApplyRef(name, args, _, _) =>
       val evalArgs = new Array[AnyRef](args.length)
       var i = 0
@@ -73,13 +66,14 @@ object Interpreter {
       }
       evalCall(root.constants(name), evalArgs, root, env.clone())
     case Expression.ApplyClosure(exp, args, tpe, loc) =>
+      val func = eval(exp, root, env)
       val evalArgs = new Array[AnyRef](args.length)
       var i = 0
       while (i < evalArgs.length) {
         evalArgs(i) = eval(args(i), root, env)
         i = i + 1
       }
-      evalCall(exp, evalArgs, root, env.clone())
+      evalClosure(func, evalArgs, root, env.clone())
     case Expression.Unary(op, exp, _, _) => evalUnary(op, exp, root, env)
     case Expression.Binary(op, exp1, exp2, _, _) => op match {
       case o: ArithmeticOperator => evalArithmetic(o, exp1, exp2, root, env)
@@ -343,19 +337,23 @@ object Interpreter {
     case Term.Body.Exp(e, _, _) => eval(e, root, env)
   }
 
-  def evalCall(function: Expression, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef = function match {
-    case Expression.Ref(name, tpe, loc) => evalCall(root.constants(name), args, root, env)
-    case _ => eval(function, root, env) match {
-      case Value.Closure(ref, envVar, clEnv) =>
+  private def evalClosure(function: AnyRef, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef]): AnyRef =
+    function match {
+      case Value.Closure(ref, bindings) =>
         val constant = root.constants(ref.name)
         val newEnv = mutable.Map.empty[String, AnyRef]
+        // Bindings for the capture variables are passed as arguments.
         var i = 0
-        while (i < args.length) {
-          newEnv(constant.formals(i).ident.name) = args(i)
+        while (i < bindings.length) {
+          newEnv(constant.formals(i).ident.name) = bindings(i)
           i = i + 1
         }
-        // Note: here we bind the closure environment `clEnv` to `envVar`.
-        newEnv(envVar.name) = clEnv
+        // Now pass the actual arguments supplied by the caller.
+        var j = 0
+        while (j < args.length) {
+          newEnv(constant.formals(i + j).ident.name) = args(j)
+          j = j + 1
+        }
         eval(constant.exp, root, newEnv)
       case Value.HookClosure(hook) => hook match {
         case Ast.Hook.Safe(name, inv, _) =>
@@ -366,19 +364,24 @@ object Interpreter {
       }
       case _ => throw new InternalRuntimeException(s"Trying to call a non-function: $function.")
     }
-  }
 
-  def evalCall(defn: Constant, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef]): AnyRef = {
-    var i = 0
-    while (i < defn.formals.length) {
-      env(defn.formals(i).ident.name) = args(i)
-      i = i + 1
+  def evalCall(defn: Constant, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef = {
+    if (defn.method == null) {
+      var i = 0
+      while (i < defn.formals.length) {
+        env(defn.formals(i).ident.name) = args(i)
+        i = i + 1
+      }
+      eval(defn.exp, root, env)
+    } else {
+      // TODO: Should the reflection call be here, or moved elsewhere?
+      try {
+        defn.method.invoke(null, args: _*)
+      } catch {
+        // Rethrow the real exception
+        case e: InvocationTargetException => throw e.getTargetException
+      }
     }
-    eval(defn.exp, root, env)
-  }
-
-  def eval2(exp: Expression, arg1: AnyRef, arg2: AnyRef, root: Root): AnyRef = {
-   evalCall(exp, Array(arg1, arg2), root, mutable.Map.empty[String, AnyRef])
   }
 
 }

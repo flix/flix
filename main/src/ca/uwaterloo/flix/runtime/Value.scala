@@ -197,7 +197,7 @@ object Value {
   /**
     * Flix internal representation of closures.
     */
-  final case class Closure(ref: ExecutableAst.Expression.Ref, envVar: Name.Ident, env: mutable.Map[String, AnyRef])
+  final case class Closure(ref: ExecutableAst.Expression.Ref, bindings: Array[AnyRef])
 
   // TODO: Introduce make function and make Closure constructor private.
 

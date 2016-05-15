@@ -10,13 +10,23 @@ import scala.collection.mutable
   * Essentially the identity transform, with a few differences:
   *
   * - Lists are copied to arrays
+  * - Certain nodes no longer exist in SimplifiedAst and thus do not exist in ExecutableAst
   */
 // TODO: Better name
 object CreateExecutableAst {
 
-  def toExecutable(sast: SimplifiedAst.Root): ExecutableAst.Root = {
+  /**
+    * Mutable map of top level definitions.
+    */
+  private type TopLevel = mutable.Map[Symbol.Resolved, ExecutableAst.Definition.Constant]
+
+  def toExecutable(sast: SimplifiedAst.Root)(implicit genSym: GenSym): ExecutableAst.Root = {
+    // A mutable map to hold top-level definitions created by lifting lattice expressions.
+    val m: TopLevel = mutable.Map.empty
+
     val constants = sast.constants.map { case (k, v) => k -> Definition.toExecutable(v) }
-    val lattices = sast.lattices.map { case (k, v) => k -> Definition.toExecutable(v) }
+    // Converting lattices to ExecutableAst will create new top-level definitions in the map `m`.
+    val lattices = sast.lattices.map { case (k, v) => k -> Definition.toExecutable(v, m) }
     val tables = sast.tables.map { case (k, v) => k -> Table.toExecutable(v) }
     val indexes = sast.indexes.map { case (k, v) => k -> Definition.toExecutable(v) }
     val facts = sast.facts.map(Constraint.toExecutable).toArray
@@ -24,12 +34,12 @@ object CreateExecutableAst {
     val properties = sast.properties.map(p => toExecutable(p))
     val time = sast.time
 
-    val dependenciesOf: Map[Symbol.TableSym, mutable.Set[(ExecutableAst.Constraint.Rule, ExecutableAst.Predicate.Body.Table)]] = {
-      val result = mutable.Map.empty[Symbol.TableSym, mutable.Set[(ExecutableAst.Constraint.Rule, ExecutableAst.Predicate.Body.Table)]]
+    val dependenciesOf: Map[Symbol.TableSym, Set[(ExecutableAst.Constraint.Rule, ExecutableAst.Predicate.Body.Table)]] = {
+      val result = mutable.Map.empty[Symbol.TableSym, Set[(ExecutableAst.Constraint.Rule, ExecutableAst.Predicate.Body.Table)]]
 
       for (rule <- rules) {
         rule.head match {
-          case ExecutableAst.Predicate.Head.Table(sym, _, _, _) => result.update(sym, mutable.Set.empty)
+          case ExecutableAst.Predicate.Head.Table(sym, _, _, _) => result.update(sym, Set.empty)
           case _ => // nop
         }
       }
@@ -41,7 +51,7 @@ object CreateExecutableAst {
               case (outer: ExecutableAst.Predicate.Head.Table, inner: ExecutableAst.Predicate.Body.Table) =>
                 if (outer.sym == inner.sym) {
                   val deps = result(outer.sym)
-                  deps += ((innerRule, inner))
+                  result(outer.sym) = deps + ((innerRule, inner))
                 }
               case _ => // nop
             }
@@ -51,7 +61,7 @@ object CreateExecutableAst {
       result.toMap
     }
 
-    ExecutableAst.Root(constants, lattices, tables, indexes, facts, rules, properties, time, dependenciesOf)
+    ExecutableAst.Root(constants ++ m, lattices, tables, indexes, facts, rules, properties, time, dependenciesOf)
   }
 
   object Definition {
@@ -60,19 +70,42 @@ object CreateExecutableAst {
         case SimplifiedAst.FormalArg(ident, tpe) => ExecutableAst.FormalArg(ident, tpe)
       }.toArray
 
-      ExecutableAst.Definition.Constant(sast.name, formals, Expression.toExecutable(sast.exp), sast.tpe, sast.loc)
+      ExecutableAst.Definition.Constant(sast.name, formals, Expression.toExecutable(sast.exp), sast.isSynthetic, sast.tpe, sast.loc)
     }
 
-    def toExecutable(sast: SimplifiedAst.Definition.Lattice): ExecutableAst.Definition.Lattice = sast match {
+    def toExecutable(sast: SimplifiedAst.Definition.Lattice, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Definition.Lattice = sast match {
       case SimplifiedAst.Definition.Lattice(tpe, bot, top, leq, lub, glb, loc) =>
         import Expression.{toExecutable => t}
-        ExecutableAst.Definition.Lattice(tpe, t(bot), t(top), t(leq), t(lub), t(glb), loc)
+
+        /**
+          * In `SimplifiedAst.Definition.Lattice`, bot/top/leq/lub/glb are `SimplifiedAst.Expression`s.
+          * For `ExecutableAst.Definition.Lattice`, they are `Symbol.Resolved`s.
+          *
+          * bot/top are arbitrary expressions, so we lift them to top-level definitions.
+          * We assume that leq/lub/glb are `Expression.Ref`s, so we do a cast and extract the symbols.
+          *
+          * Note that all of this code will eventually be replaced by typeclasses.
+          */
+
+        val botSym = genSym.freshDefn(List("bot"))
+        val topSym = genSym.freshDefn(List("top"))
+
+        val botConst = ExecutableAst.Definition.Constant(botSym, formals = Array(), t(bot), isSynthetic = true, bot.tpe, bot.loc)
+        val topConst = ExecutableAst.Definition.Constant(topSym, formals = Array(), t(top), isSynthetic = true, top.tpe, top.loc)
+
+        // Update the map of definitions
+        m ++= Map(botSym -> botConst, topSym -> topConst)
+
+        // Extract the symbols for leq/lub/glb
+        val leqSym = t(leq).asInstanceOf[ExecutableAst.Expression.Ref].name
+        val lubSym = t(lub).asInstanceOf[ExecutableAst.Expression.Ref].name
+        val glbSym = t(glb).asInstanceOf[ExecutableAst.Expression.Ref].name
+
+        ExecutableAst.Definition.Lattice(tpe, botSym, topSym, leqSym, lubSym, glbSym, loc)
     }
 
     def toExecutable(sast: SimplifiedAst.Definition.Index): ExecutableAst.Definition.Index =
       ExecutableAst.Definition.Index(sast.sym, sast.indexes, sast.loc)
-
-    // TODO: Compile SimplifiedAst.Definition.Function?
   }
 
   object Table {
@@ -132,17 +165,16 @@ object CreateExecutableAst {
         ExecutableAst.Expression.StoreInt32(toExecutable(e), offset, toExecutable(v))
       case SimplifiedAst.Expression.Var(ident, offset, tpe, loc) =>
         ExecutableAst.Expression.Var(ident, offset, tpe, loc)
-      case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) =>
-        ExecutableAst.Expression.ClosureVar(env, name, tpe, loc)
       case SimplifiedAst.Expression.Ref(name, tpe, loc) => ExecutableAst.Expression.Ref(name, tpe, loc)
       case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
         throw InternalCompilerException("Lambdas should have been converted to closures and lifted.")
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => ExecutableAst.Expression.Hook(hook, tpe, loc)
-      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
+      case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
         throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
-      case SimplifiedAst.Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc) =>
+      case SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
         val e = toExecutable(ref)
-        ExecutableAst.Expression.MkClosureRef(e.asInstanceOf[ExecutableAst.Expression.Ref], envVar, freeVars, tpe, loc)
+        val fvs = freeVars.map(CreateExecutableAst.toExecutable).toArray
+        ExecutableAst.Expression.MkClosureRef(e.asInstanceOf[ExecutableAst.Expression.Ref], fvs, tpe, loc)
       case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
         val argsArray = args.map(toExecutable).toArray
         ExecutableAst.Expression.ApplyRef(name, argsArray, tpe, loc)
@@ -180,16 +212,6 @@ object CreateExecutableAst {
       case SimplifiedAst.Expression.UserError(tpe, loc) => ExecutableAst.Expression.UserError(tpe, loc)
       case SimplifiedAst.Expression.MatchError(tpe, loc) => ExecutableAst.Expression.MatchError(tpe, loc)
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => ExecutableAst.Expression.SwitchError(tpe, loc)
-
-      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
-        throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
-      case SimplifiedAst.Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc) =>
-        val e = toExecutable(ref)
-        ExecutableAst.Expression.MkClosureRef(e.asInstanceOf[ExecutableAst.Expression.Ref], envVar, freeVars, tpe, loc)
-
-      case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) =>
-        ExecutableAst.Expression.ClosureVar(env, name, tpe, loc)
-
     }
   }
 
@@ -270,6 +292,9 @@ object CreateExecutableAst {
 
   def toExecutable(sast: SimplifiedAst.FormalArg): ExecutableAst.FormalArg =
     ExecutableAst.FormalArg(sast.ident, sast.tpe)
+
+  def toExecutable(sast: SimplifiedAst.FreeVar): ExecutableAst.FreeVar =
+    ExecutableAst.FreeVar(sast.ident, sast.offset, sast.tpe)
 
   def toExecutable(sast: SimplifiedAst.Property): ExecutableAst.Property =
     ExecutableAst.Property(sast.law, Expression.toExecutable(sast.exp), sast.loc)

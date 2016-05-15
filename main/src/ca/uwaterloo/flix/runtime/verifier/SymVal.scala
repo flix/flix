@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime.verifier
 
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
+import ca.uwaterloo.flix.language.ast.Name
 
 /**
   * Symbolic Values.
@@ -107,17 +107,9 @@ object SymVal {
   /**
     * A closure value.
     *
-    * @param ref the name of the top-level definition.
-    * @param clo the name of the closure variable.
+    * @param exp the expression of the closure.
     * @param env the closure environment.
     */
-  case class Closure(ref: Symbol.Resolved, clo: String, env: Environment) extends SymVal
-
-  /**
-    * An environment for closure variables.
-    *
-    * @param m the map from closure variables to symbolic values.
-    */
-  case class Environment(m: Map[String, SymVal]) extends SymVal
+  case class Closure(exp: Expression.Ref, env: List[SymVal]) extends SymVal
 
 }

@@ -23,6 +23,7 @@ object SimplifiedAst {
                         name: Symbol.Resolved,
                         formals: List[SimplifiedAst.FormalArg],
                         exp: SimplifiedAst.Expression,
+                        isSynthetic: Boolean,
                         tpe: Type,
                         loc: SourceLocation) extends SimplifiedAst.Definition
 
@@ -37,21 +38,6 @@ object SimplifiedAst {
     case class Index(sym: Symbol.TableSym,
                      indexes: Seq[Seq[Name.Ident]],
                      loc: SourceLocation) extends SimplifiedAst.Definition
-
-    /**
-      * A typed AST node that represents the definition of a function.
-      *
-      * @param name the resolved name of the function.
-      * @param args the arguments of the function, for debugging purposes.
-      * @param body the expression body of the function.
-      * @param tpe  the (lambda) type of the function.
-      * @param loc  the source location of the function definition.
-      */
-    case class Function(name: Symbol.Resolved,
-                        args: List[String],
-                        body: SimplifiedAst.Expression,
-                        tpe: Type.Lambda,
-                        loc: SourceLocation) extends SimplifiedAst.Definition
 
   }
 
@@ -285,19 +271,6 @@ object SimplifiedAst {
     }
 
     /**
-      * A typed AST node representing a closure variable expression that must be looked up from the closure environment.
-      *
-      * @param env  the name of the closure environment variable.
-      * @param name the name of the closure variable.
-      * @param tpe  the type of the variable.
-      * @param loc  the source location of the variable.
-      */
-    case class ClosureVar(env: Name.Ident,
-                          name: Name.Ident,
-                          tpe: Type,
-                          loc: SourceLocation) extends SimplifiedAst.Expression
-
-    /**
       * A typed AST node representing a reference to a top-level definition.
       *
       * @param name the name of the reference.
@@ -314,10 +287,6 @@ object SimplifiedAst {
       * A later phase/pass lifts these lambda functions to top-level definitions,
       * thus they no longer exist after lambda lifting.
       *
-      * During closure conversion, we determine if the lambda contains free variables. If it does, we set the lambda's
-      * `envVar`, which will be added as an additional parameter during lambda lifting. Then, during run time, the
-      * values of the free variables can be obtained via lookup through `envVar`.
-      *
       * @param args the formal arguments to the lambda.
       * @param body the body expression of the lambda.
       * @param tpe  the type of the lambda.
@@ -327,7 +296,6 @@ object SimplifiedAst {
                       body: SimplifiedAst.Expression,
                       tpe: Type.Lambda,
                       loc: SourceLocation) extends SimplifiedAst.Expression {
-      var envVar: Option[Name.Ident] = None
       override def toString: String = "λ(" + args.map(_.tpe).mkString(", ") + ") " + body
     }
 
@@ -337,38 +305,31 @@ object SimplifiedAst {
       * A typed AST node representing the creation of a closure.
       *
       * MkClosure nodes are created during closure conversion, replacing Lambda nodes. Then, during lambda lifting,
-      * MkClosure is replaced with MkClosureRef
+      * MkClosure is replaced with MkClosureRef.
       *
       * @param lambda   the lambda associated with the closure.
-      * @param envVar   the name of the closure environment variable.
       * @param freeVars the cached set of free variables occurring within the lambda expression.
       * @param tpe      the type of the closure.
       * @param loc      the source location of the lambda.
       */
     case class MkClosure(lambda: SimplifiedAst.Expression.Lambda,
-                         envVar: Name.Ident,
-                         freeVars: Set[Name.Ident],
+                         freeVars: List[FreeVar],
                          tpe: Type.Lambda,
                          loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
       * A typed AST node representing the creation of a closure, with the lambda lifted and replaced by a ref.
       *
-      * At compile time, a unique `envVar` is created and `freeVars` is computed.
-      * The free variables are bound at run time.
-      *
-      * MkClosureRef nodes may be created during closure conversion, but most of them are created during lambda lifting,
-      * to replace MkClosure nodes.
+      * Free variables are bound at run time. MkClosureRef nodes may be created during closure conversion, but most of
+      * them are created during lambda lifting, to replace MkClosure nodes.
       *
       * @param ref      the reference to the lambda associated with the closure.
-      * @param envVar   the name of the closure environment variable.
       * @param freeVars the cached set of free variables occurring within the lambda expression.
       * @param tpe      the type of the closure.
       * @param loc      the source location of the lambda.
       */
     case class MkClosureRef(ref: SimplifiedAst.Expression.Ref,
-                            envVar: Name.Ident,
-                            freeVars: Set[Name.Ident],
+                            freeVars: List[FreeVar],
                             tpe: Type.Lambda,
                             loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -728,6 +689,8 @@ object SimplifiedAst {
   case class Attribute(ident: Name.Ident, tpe: Type) extends SimplifiedAst
 
   case class FormalArg(ident: Name.Ident, tpe: Type) extends SimplifiedAst
+
+  case class FreeVar(ident: Name.Ident, offset: Int, tpe: Type) extends SimplifiedAst
 
   case class Property(law: Law, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst
 

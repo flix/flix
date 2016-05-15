@@ -7,7 +7,7 @@ import ca.uwaterloo.flix.language.ast.Type.Lambda
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.runtime.{Model, Solver, Value}
-import ca.uwaterloo.flix.util.{Options, Validation, Verify}
+import ca.uwaterloo.flix.util.{CodeGeneration, Options, Validation, Verify}
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
@@ -172,8 +172,8 @@ class Flix {
         val lifted = LambdaLift.lift(sast)
         val numbered = VarNumbering.number(lifted)
         val east = CreateExecutableAst.toExecutable(numbered)
-
-        Verifier.verify(east, options) map {
+        val compiled = LoadBytecode.load(east, options)
+        Verifier.verify(compiled, options) map {
           case ast => new Solver()(Solver.SolverContext(ast, options)).solve()
         }
     }

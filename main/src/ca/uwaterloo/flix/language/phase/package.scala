@@ -21,7 +21,7 @@ package object phase {
 
     def fresh2(prefix: String): Name.Ident = {
       number = number + 1
-      Name.Ident(SourcePosition.Unknown, prefix + number, SourcePosition.Unknown)
+      Name.Ident(SourcePosition.Unknown, prefix + "$" + number, SourcePosition.Unknown)
     }
 
   }

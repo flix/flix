@@ -111,6 +111,22 @@ object Symbol {
     }
 
     /**
+      * Returns the prefix as a list of strings.
+      * For example, the prefix of the symbol "A.B.C/f" is List("A", "B", "C").
+      * A symbol "f" corresponds to "Root/f", so its prefix is List("Root").
+      */
+    def prefix: List[String] = parts match {
+      case x :: Nil => List("Root")
+      case xs => xs.init
+    }
+
+    /**
+      * Returns the suffix as a string.
+      * For example, the suffix of the symbol "A.B.C/f" is "f".
+      */
+    def suffix: String = parts.last
+
+    /**
       * Returns `true` if this resolved name is equal to `obj` resolved name.
       */
     override def equals(obj: scala.Any): Boolean = obj match {

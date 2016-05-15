@@ -81,10 +81,9 @@ object LambdaLift {
       case Expression.StoreInt16(b, o, v) => e
       case Expression.StoreInt32(b, o, v) => e
       case Expression.Var(ident, o, tpe, loc) => e
-      case Expression.ClosureVar(env, name, tpe, loc) => e
       case Expression.Ref(name, tpe, loc) => e
 
-      case lam @ Expression.Lambda(args, body, tpe, loc) =>
+      case Expression.Lambda(args, body, tpe, loc) =>
         // Lift the lambda to a top-level definition, and replacing the Lambda expression with a Ref.
 
         // First, recursively visit the lambda body, lifting any inner lambdas.
@@ -93,18 +92,8 @@ object LambdaLift {
         // Then, generate a fresh name for the lifted lambda.
         val name = genSym.freshDefn(nameHint)
 
-        // If the lambda term has an envVar, then it has free variables. So rewrite the arguments and type to take an
-        // additional parameter: the closure environment
-        val (args2, tpe2) = lam.envVar match {
-          case Some(envVar) =>
-            val newArgs = args :+ SimplifiedAst.FormalArg(envVar, Type.ClosureEnv)
-            val newTpe = Type.Lambda(tpe.args :+ Type.ClosureEnv, tpe.retTpe)
-            (newArgs, newTpe)
-          case None => (args, tpe)
-        }
-
         // Create a new top-level definition, using the fresh name and lifted body.
-        val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), name, args2, exp, tpe2, loc)
+        val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), name, args, exp, isSynthetic = true, tpe, loc)
 
         // Update the map that holds newly-generated definitions
         m += (name -> defn)
@@ -113,13 +102,13 @@ object LambdaLift {
         SimplifiedAst.Expression.Ref(name, tpe, loc)
 
       case Expression.Hook(hook, tpe, loc) => e
-      case Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc) => e
+      case Expression.MkClosureRef(ref, freeVars, tpe, loc) => e
 
-      case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
+      case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
         // Replace the MkClosure node with a MkClosureRef node, since the Lambda has been replaced by a Ref.
         visit(lambda) match {
           case ref: SimplifiedAst.Expression.Ref =>
-            SimplifiedAst.Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc)
+            SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc)
           case _ => throw InternalCompilerException(s"Unexpected expression: '$lambda'.")
         }
 

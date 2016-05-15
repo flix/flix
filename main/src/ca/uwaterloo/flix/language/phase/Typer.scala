@@ -853,7 +853,6 @@ object Typer {
     case Type.Lambda(args, retTpe) =>
       "(" + args.map(prettyPrint).mkString(", ") + ") -> " + prettyPrint(retTpe)
     case Type.Predicate(terms) => s"Predicate(${terms map prettyPrint})"
-    case Type.ClosureEnv => "ClosureEnv"
     case Type.Native => s"native"
   }
 

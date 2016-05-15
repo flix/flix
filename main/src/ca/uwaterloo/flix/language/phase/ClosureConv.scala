@@ -3,6 +3,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.language.ast.{Name, SimplifiedAst, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import scala.collection.mutable
+
 object ClosureConv {
 
   /**
@@ -30,13 +32,12 @@ object ClosureConv {
     case SimplifiedAst.Expression.StoreInt16(b, o, v) => exp
     case SimplifiedAst.Expression.StoreInt32(b, o, v) => exp
     case SimplifiedAst.Expression.Var(ident, o, tpe, loc) => exp
-    case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) => exp
 
     case e: SimplifiedAst.Expression.Ref =>
       // If we encounter a Ref that has a lambda type (and is not being called in an Apply),
       // i.e. the Ref will evaluate to a lambda, we replace it with a MkClosureRef. Otherwise we leave it alone.
       e.tpe match {
-        case t: Type.Lambda => SimplifiedAst.Expression.MkClosureRef(e, genSym.fresh2("env"), Set.empty, t, e.loc)
+        case t: Type.Lambda => SimplifiedAst.Expression.MkClosureRef(e, List.empty, t, e.loc)
         case _ => e
       }
 
@@ -44,42 +45,37 @@ object ClosureConv {
       // Convert lambdas to closures. This is the main part of the `convert` function.
       // Closure conversion happens as follows:
 
-      // First, we generate a fresh variable name to refer to the closure environment.
-      // At run time, the closure environment will be created and then bound to `envVar`.
-      val envVar = genSym.fresh2("env")
-
-      // Next, we collect the free variables in the lambda expression.
+      // First, we collect the free variables in the lambda expression.
       // NB: We pass the lambda expression (instead of its body) to account for bound arguments.
-      val freeVars = freeVariables(exp)
+      val freeVars = freeVariables(exp).toList
 
-      // We create a substitution map: every free variable will be replaced by a reference to a closure variable,
-      // i.e. a lookup in the closure environment.
-      val m = freeVars.map { case (ident, t) =>
-        ident.name -> SimplifiedAst.Expression.ClosureVar(envVar, ident, t, ident.loc)
-      }.toMap
+      // We prepend the free variables to the arguments list. Thus all variables within the lambda body will be treated
+      // uniformly. The implementation will supply values for the free variables, without any effort from the caller.
+      val newArgs = freeVars.map { case (n, t) => SimplifiedAst.FormalArg(n, t) } ++ args
 
-      // Apply the substitution to the body expression of the lambda.
-      // Then we recurse on the result, to apply closure conversion on any lambdas within the body.
-      val lambda = SimplifiedAst.Expression.Lambda(args, convert(substitute(m, body)), tpe, loc)
+      // Update the lambda type.
+      val argTpes = freeVars.map(_._2) ++ tpe.args
+      val newTpe = Type.Lambda(argTpes, tpe.retTpe)
 
-      // If the lambda contains free variables, then we save the name of the closure environment
-      if (freeVars.nonEmpty) {
-        lambda.envVar = Some(envVar)
-      }
+      // We rewrite the lambda with its new arguments list and new body, with any nested lambdas also converted.
+      val lambda = SimplifiedAst.Expression.Lambda(newArgs, convert(body), newTpe, loc)
 
-      // At this point, `lambda` is the original lambda expression, but with all free variables replaced with lookups in
-      // the closure environment. Additionally, any lambdas within the body have also been closure converted.
+      // At this point, `lambda` is the original lambda expression, but with all free variables converted to new
+      // arguments, prepended to the original arguments list. Additionally, any lambdas within the body have also been
+      // closure converted.
 
-      // We return a MkClosure node, which contains the code `lambda` and the closure environment name `envVar`. We also
-      // cache `freeVars`. The closure will actually be created at run time, where the closure environment will be
-      // created with bindings for the variables, and then passed as an extra argument to the lambda. Thus, all free
-      // variables have been eliminated, and in a later phase, we can lift the lambda to a top-level definition.
-      SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars.map(_._1), tpe, loc)
+      // We return a MkClosure node, which contains `lambda` (rewritten to have extra arguments so there are no more
+      // free variables) as well as the cached `freeVars`. The closure will actually be created at run time, where the
+      // values for the free variables are bound and stored in the closure structure. When the closure is called, the
+      // bound values are passed as arguments.
+      // Note that MkClosure keeps the old lambda type.
+      // In a later phase, we will lift the lambda to a top-level definition.
+      SimplifiedAst.Expression.MkClosure(lambda, freeVars.map(v => SimplifiedAst.FreeVar(v._1, -1, v._2)), tpe, loc)
 
     case SimplifiedAst.Expression.Hook(hook, tpe, loc) => exp
-    case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
+    case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
       throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp'.")
-    case SimplifiedAst.Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc) =>
+    case SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
       throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp'.")
     case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
       throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp'.")
@@ -126,129 +122,41 @@ object ClosureConv {
   }
 
   /**
-    * Replaces variables in the given expression `e` by using the given substitution map `m`.
-    *
-    * Requires that all variables in any expression in `m` are fresh.
-    */
-  def substitute(m: Map[String, SimplifiedAst.Expression], e: SimplifiedAst.Expression): SimplifiedAst.Expression =
-    e match {
-    case SimplifiedAst.Expression.Unit => e
-    case SimplifiedAst.Expression.True => e
-    case SimplifiedAst.Expression.False => e
-    case SimplifiedAst.Expression.Char(lit) => e
-    case SimplifiedAst.Expression.Float32(lit) => e
-    case SimplifiedAst.Expression.Float64(lit) => e
-    case SimplifiedAst.Expression.Int8(lit) => e
-    case SimplifiedAst.Expression.Int16(lit) => e
-    case SimplifiedAst.Expression.Int32(lit) => e
-    case SimplifiedAst.Expression.Int64(lit) => e
-    case SimplifiedAst.Expression.BigInt(lit) => e
-    case SimplifiedAst.Expression.Str(lit) => e
-    case SimplifiedAst.Expression.LoadBool(n, o) => e
-    case SimplifiedAst.Expression.LoadInt8(b, o) => e
-    case SimplifiedAst.Expression.LoadInt16(b, o) => e
-    case SimplifiedAst.Expression.LoadInt32(b, o) => e
-    case SimplifiedAst.Expression.StoreBool(b, o, v) => e
-    case SimplifiedAst.Expression.StoreInt8(b, o, v) => e
-    case SimplifiedAst.Expression.StoreInt16(b, o, v) => e
-    case SimplifiedAst.Expression.StoreInt32(b, o, v) => e
-
-    case SimplifiedAst.Expression.Var(ident, o, tpe, loc) => m.get(ident.name) match {
-      case None => e
-      case Some(r) => r
-    }
-
-    case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) =>
-      throw InternalCompilerException(s"Illegal expression during closure conversion (substitution): '$e'.")
-    case SimplifiedAst.Expression.Ref(name, tpe, loc) => e
-    case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
-
-    case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
-      // Don't substitute bound variables. We handle this by temporarily modifying the substitution map, removing
-      // substitutions that conflict with the bound arguments.
-      val bound = args.map(_.ident.name)
-      val tempMap = m.filterNot { case (k, _) => bound.contains(k) }
-      SimplifiedAst.Expression.Lambda(args, substitute(tempMap, body), tpe, loc)
-
-    case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
-      throw InternalCompilerException(s"Illegal expression during closure conversion (substitution): '$e'.")
-    case SimplifiedAst.Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc) =>
-      throw InternalCompilerException(s"Illegal expression during closure conversion (substitution): '$e'.")
-    case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
-      SimplifiedAst.Expression.ApplyRef(name, args.map(substitute(m, _)), tpe, loc)
-    case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
-      SimplifiedAst.Expression.Apply(substitute(m, exp), args.map(substitute(m, _)), tpe, loc)
-    case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) =>
-      SimplifiedAst.Expression.Unary(op, substitute(m, exp), tpe, loc)
-    case SimplifiedAst.Expression.Binary(op, exp1, exp2, tpe, loc) =>
-      SimplifiedAst.Expression.Binary(op, substitute(m, exp1), substitute(m, exp2), tpe, loc)
-    case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-      SimplifiedAst.Expression.IfThenElse(substitute(m, exp1), substitute(m, exp2), substitute(m, exp3), tpe, loc)
-
-    case SimplifiedAst.Expression.Let(ident, offset, exp1, exp2, tpe, loc) =>
-      // Don't substitute bound variables. We handle this by temporarily modifying the substitution map, removing
-      // substitutions that conflict with the bound arguments.
-      val tempMap = m.filterNot { case (k, _) => k == ident.name }
-      SimplifiedAst.Expression.Let(ident, offset, substitute(m, exp1), substitute(tempMap, exp2), tpe, loc)
-
-    case SimplifiedAst.Expression.CheckTag(tag, exp, loc) =>
-      SimplifiedAst.Expression.CheckTag(tag, substitute(m, exp), loc)
-    case SimplifiedAst.Expression.GetTagValue(tag, exp, tpe, loc) =>
-      SimplifiedAst.Expression.GetTagValue(tag, substitute(m, exp), tpe, loc)
-    case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) =>
-      SimplifiedAst.Expression.Tag(enum, tag, substitute(m, exp), tpe, loc)
-    case SimplifiedAst.Expression.GetTupleIndex(exp, offset, tpe, loc) =>
-      SimplifiedAst.Expression.GetTupleIndex(substitute(m, exp), offset, tpe, loc)
-    case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
-      SimplifiedAst.Expression.Tuple(elms.map(substitute(m, _)), tpe, loc)
-    case SimplifiedAst.Expression.CheckNil(exp, loc) =>
-      SimplifiedAst.Expression.CheckNil(substitute(m, exp), loc)
-    case SimplifiedAst.Expression.CheckCons(exp, loc) =>
-      SimplifiedAst.Expression.CheckCons(substitute(m, exp), loc)
-    case SimplifiedAst.Expression.FSet(elms, tpe, loc) =>
-      SimplifiedAst.Expression.FSet(elms.map(substitute(m, _)), tpe, loc)
-    case SimplifiedAst.Expression.UserError(tpe, loc) => e
-    case SimplifiedAst.Expression.MatchError(tpe, loc) => e
-    case SimplifiedAst.Expression.SwitchError(tpe, loc) => e
-  }
-
-  /**
     * Returns the free variables in the given expression `exp`.
+    * Does a left-to-right traversal of the AST, collecting free variables in order, in a LinkedHashSet.
     */
-  def freeVariables(e: SimplifiedAst.Expression): Set[(Name.Ident, Type)] = e match {
-    case SimplifiedAst.Expression.Unit => Set.empty
-    case SimplifiedAst.Expression.True => Set.empty
-    case SimplifiedAst.Expression.False => Set.empty
-    case SimplifiedAst.Expression.Char(lit) => Set.empty
-    case SimplifiedAst.Expression.Float32(lit) => Set.empty
-    case SimplifiedAst.Expression.Float64(lit) => Set.empty
-    case SimplifiedAst.Expression.Int8(lit) => Set.empty
-    case SimplifiedAst.Expression.Int16(lit) => Set.empty
-    case SimplifiedAst.Expression.Int32(lit) => Set.empty
-    case SimplifiedAst.Expression.Int64(lit) => Set.empty
-    case SimplifiedAst.Expression.BigInt(lit) => Set.empty
-    case SimplifiedAst.Expression.Str(lit) => Set.empty
-    case SimplifiedAst.Expression.LoadBool(n, o) => Set.empty
-    case SimplifiedAst.Expression.LoadInt8(b, o) => Set.empty
-    case SimplifiedAst.Expression.LoadInt16(b, o) => Set.empty
-    case SimplifiedAst.Expression.LoadInt32(b, o) => Set.empty
-    case SimplifiedAst.Expression.StoreBool(b, o, v) => Set.empty
-    case SimplifiedAst.Expression.StoreInt8(b, o, v) => Set.empty
-    case SimplifiedAst.Expression.StoreInt16(b, o, v) => Set.empty
-    case SimplifiedAst.Expression.StoreInt32(b, o, v) => Set.empty
-    case SimplifiedAst.Expression.Var(ident, o, tpe, loc) => Set((ident, tpe))
-    case SimplifiedAst.Expression.ClosureVar(env, name, tpe, loc) =>
-      throw InternalCompilerException(s"Unexpected expression: '$e'.")
-    case SimplifiedAst.Expression.Ref(name, tpe, loc) => Set.empty
+  def freeVariables(e: SimplifiedAst.Expression): mutable.LinkedHashSet[(Name.Ident, Type)] = e match {
+    case SimplifiedAst.Expression.Unit => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.True => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.False => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.Char(lit) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.Float32(lit) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.Float64(lit) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.Int8(lit) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.Int16(lit) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.Int32(lit) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.Int64(lit) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.BigInt(lit) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.Str(lit) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.LoadBool(n, o) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.LoadInt8(b, o) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.LoadInt16(b, o) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.LoadInt32(b, o) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.StoreBool(b, o, v) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.StoreInt8(b, o, v) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.StoreInt16(b, o, v) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.StoreInt32(b, o, v) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.Var(ident, o, tpe, loc) => mutable.LinkedHashSet((ident, tpe))
+    case SimplifiedAst.Expression.Ref(name, tpe, loc) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
       val bound = args.map(_.ident.name)
       freeVariables(body).filterNot { v => bound.contains(v._1.name) }
-    case SimplifiedAst.Expression.Hook(hook, tpe, loc) => Set.empty
-    case SimplifiedAst.Expression.MkClosure(lambda, envVar, freeVars, tpe, loc) =>
+    case SimplifiedAst.Expression.Hook(hook, tpe, loc) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$e'.")
-    case SimplifiedAst.Expression.MkClosureRef(ref, envVar, freeVars, tpe, loc) =>
+    case SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$e'.")
-    case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) => args.flatMap(freeVariables).toSet
+    case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
     case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
       freeVariables(exp) ++ args.flatMap(freeVariables)
     case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) => freeVariables(exp)
@@ -263,13 +171,13 @@ object ClosureConv {
     case SimplifiedAst.Expression.GetTagValue(tag, exp, tpe, loc) => freeVariables(exp)
     case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) => freeVariables(exp)
     case SimplifiedAst.Expression.GetTupleIndex(base, offset, tpe, loc) => freeVariables(base)
-    case SimplifiedAst.Expression.Tuple(elms, tpe, loc) => elms.flatMap(freeVariables).toSet
+    case SimplifiedAst.Expression.Tuple(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
     case SimplifiedAst.Expression.CheckNil(exp, loc) => freeVariables(exp)
     case SimplifiedAst.Expression.CheckCons(exp, loc) => freeVariables(exp)
-    case SimplifiedAst.Expression.FSet(elms, tpe, loc) => elms.flatMap(freeVariables).toSet
-    case SimplifiedAst.Expression.UserError(tpe, loc) => Set.empty
-    case SimplifiedAst.Expression.MatchError(tpe, loc) => Set.empty
-    case SimplifiedAst.Expression.SwitchError(tpe, loc) => Set.empty
+    case SimplifiedAst.Expression.FSet(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
+    case SimplifiedAst.Expression.UserError(tpe, loc) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.SwitchError(tpe, loc) => mutable.LinkedHashSet.empty
   }
 
 }

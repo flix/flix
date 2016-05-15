@@ -509,8 +509,7 @@ object Verifier {
       case SymVal.Tag(tag, SymVal.Unit) => tag
       case SymVal.Tag(tag, elm) => tag + "(" + visit(elm) + ")"
       case SymVal.Tuple(elms) => "(" + elms.map(visit).mkString(", ") + ")"
-      case SymVal.Closure(_, _, _) => "<<closure>>"
-      case SymVal.Environment(_) => "<<environment>>"
+      case SymVal.Closure(_, _) => "<<closure>>"
     }
 
     env.foldLeft(SortedMap.empty[String, String]) {
