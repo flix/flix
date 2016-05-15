@@ -21,7 +21,7 @@ class TestWeeder extends FunSuite {
   test("DuplicateAnnotation.01") {
     val input =
       """@strict @strict
-        |fn foo(x: Int): Int = 42
+        |def foo(x: Int): Int = 42
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAnnotation])
@@ -30,7 +30,7 @@ class TestWeeder extends FunSuite {
   test("DuplicateAnnotation.02") {
     val input =
       """@strict @monotone @strict @monotone
-        |fn foo(x: Int): Int = 42
+        |def foo(x: Int): Int = 42
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateAnnotation])
@@ -55,19 +55,19 @@ class TestWeeder extends FunSuite {
   }
 
   test("DuplicateFormal.01") {
-    val input = "fn f(x: Int, x: Int): Int = 42"
+    val input = "def f(x: Int, x: Int): Int = 42"
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateFormal])
   }
 
   test("DuplicateFormal.02") {
-    val input = "fn f(x: Int, y: Int, x: Int): Int = 42"
+    val input = "def f(x: Int, y: Int, x: Int): Int = 42"
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateFormal])
   }
 
   test("DuplicateFormal.03") {
-    val input = "fn f(x: Bool, x: Int, x: Str): Int = 42"
+    val input = "def f(x: Bool, x: Int, x: Str): Int = 42"
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.DuplicateFormal])
   }
@@ -119,7 +119,7 @@ class TestWeeder extends FunSuite {
   test("IllegalAnnotation.01") {
     val input =
       """@abc
-        |fn foo(x: Int): Int = 42
+        |def foo(x: Int): Int = 42
       """.stripMargin
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalAnnotation])
@@ -128,7 +128,7 @@ class TestWeeder extends FunSuite {
   test("IllegalAnnotation.02") {
     val input =
       """@foobarbaz
-        |fn foo(x: Int): Int = 42
+        |def foo(x: Int): Int = 42
       """.stripMargin
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalAnnotation])
@@ -316,7 +316,7 @@ class TestWeeder extends FunSuite {
 
   test("NonLinearPattern.01") {
     val input =
-      """fn f: Bool = match (21, 42) with {
+      """def f: Bool = match (21, 42) with {
         |  case (x, x) => true
         |}
       """.stripMargin

@@ -616,7 +616,7 @@ class TestParser extends FunSuite {
 
   test("Expression.Switch.01") {
     val input =
-      """fn f(x: Int): Int = switch {
+      """def f(x: Int): Int = switch {
         |  case true  => 1
         |}
       """.stripMargin
@@ -625,7 +625,7 @@ class TestParser extends FunSuite {
 
   test("Expression.Switch.02") {
     val input =
-      """fn f(x: Int): Int = switch {
+      """def f(x: Int): Int = switch {
         |  case x < 0  => 1
         |}
       """.stripMargin
@@ -634,7 +634,7 @@ class TestParser extends FunSuite {
 
   test("Expression.Switch.03") {
     val input =
-      """fn f(x: Int): Int = switch {
+      """def f(x: Int): Int = switch {
         |  case x < 0  => 1
         |  case x > 0  => 2
         |  case x == 0 => 3
@@ -745,27 +745,27 @@ class TestParser extends FunSuite {
   }
 
   test("Expression.Tuple.01") {
-    val input = "fn f: Unit = ()"
+    val input = "def f: Unit = ()"
     new Flix().addStr(input).compile().get
   }
 
   test("Expression.Tuple.02") {
-    val input = "fn f: Int = (42)"
+    val input = "def f: Int = (42)"
     new Flix().addStr(input).compile().get
   }
 
   test("Expression.Tuple.03") {
-    val input = "fn f: (Int, Int) = (42, 21)"
+    val input = "def f: (Int, Int) = (42, 21)"
     new Flix().addStr(input).compile().get
   }
 
   test("Expression.Tuple.04") {
-    val input = "fn f(x: Int): (Int, Int, Int) = (42, x, 21)"
+    val input = "def f(x: Int): (Int, Int, Int) = (42, x, 21)"
     new Flix().addStr(input).compile().get
   }
 
   test("Expression.Tuple.05") {
-    val input = "fn f(x: Int): (Int, (Int, Int), Int) = (42, (x, x), 21)"
+    val input = "def f(x: Int): (Int, (Int, Int), Int) = (42, (x, x), 21)"
     new Flix().addStr(input).compile().get
   }
 
@@ -2589,7 +2589,7 @@ class TestParser extends FunSuite {
   test("Annotation.01") {
     val input =
       """@strict
-        |fn f(x: Int): Int = x
+        |def f(x: Int): Int = x
       """.stripMargin
     new Flix().addStr(input).compile().get
   }
@@ -2597,7 +2597,7 @@ class TestParser extends FunSuite {
   test("Annotation.02") {
     val input =
       """@monotone
-        |fn f(x: Int): Int = x
+        |def f(x: Int): Int = x
       """.stripMargin
     new Flix().addStr(input).compile().get
   }
@@ -2605,7 +2605,7 @@ class TestParser extends FunSuite {
   test("Annotation.03") {
     val input =
       """@strict @monotone
-        |fn f(x: Int): Int = x
+        |def f(x: Int): Int = x
       """.stripMargin
     new Flix().addStr(input).compile().get
   }
@@ -2613,7 +2613,7 @@ class TestParser extends FunSuite {
   test("Annotation.04") {
     val input =
       """@strict @monotone @commutative @associative @unsafe @unchecked
-        |fn f(x: Int): Int = x
+        |def f(x: Int): Int = x
       """.stripMargin
     new Flix().addStr(input).compile().get
   }

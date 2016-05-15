@@ -8,8 +8,8 @@ class TestResolver extends FunSuite {
   test("DuplicateDefinition01") {
     val input =
       s"""
-         |fn f: Int = 42
-         |fn f: Int = 21
+         |def f: Int = 42
+         |def f: Int = 21
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
@@ -18,9 +18,9 @@ class TestResolver extends FunSuite {
   test("DuplicateDefinition02") {
     val input =
       s"""
-         |fn f: Int = 42
-         |fn f: Int = 21
-         |fn f: Int = 11
+         |def f: Int = 42
+         |def f: Int = 21
+         |def f: Int = 11
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
@@ -29,9 +29,9 @@ class TestResolver extends FunSuite {
   test("DuplicateDefinition03") {
     val input =
       s"""
-         |fn f(x: Int): Int = 42
-         |fn f(x: Int): Int = 21
-         |fn f(x: Int): Int = 11
+         |def f(x: Int): Int = 42
+         |def f(x: Int): Int = 21
+         |def f(x: Int): Int = 11
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
@@ -40,9 +40,9 @@ class TestResolver extends FunSuite {
   test("DuplicateDefinition04") {
     val input =
       s"""
-         |fn f: Int = 42
-         |fn f(x: Int): Int = 21
-         |fn f(x: Bool, y: Int, z: String): Int = 11
+         |def f: Int = 42
+         |def f(x: Int): Int = 21
+         |def f(x: Bool, y: Int, z: String): Int = 11
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
@@ -52,11 +52,11 @@ class TestResolver extends FunSuite {
     val input =
       s"""
          |namespace A {
-         |  fn f: Int = 42
+         |  def f: Int = 42
          |}
          |
          |namespace A {
-         |  fn f: Int = 21
+         |  def f: Int = 21
          |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -67,13 +67,13 @@ class TestResolver extends FunSuite {
     val input =
       s"""
          |namespace A.B.C {
-         |  fn f: Int = 42
+         |  def f: Int = 42
          |}
          |
          |namespace A {
          |  namespace B {
          |    namespace C {
-         |      fn f: Int = 21
+         |      def f: Int = 21
          |    }
          |  }
          |}
@@ -83,7 +83,7 @@ class TestResolver extends FunSuite {
   }
 
   test("IllegalConstantName01") {
-    val input = "fn F: Int = 42"
+    val input = "def F: Int = 42"
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
   }
@@ -92,7 +92,7 @@ class TestResolver extends FunSuite {
     val input =
       s"""
          |namespace A {
-         |  fn Foo: Int = 42
+         |  def Foo: Int = 42
          |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -103,7 +103,7 @@ class TestResolver extends FunSuite {
     val input =
       s"""
          |namespace A {
-         |  fn FOO: Int = 42
+         |  def FOO: Int = 42
          |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -114,7 +114,7 @@ class TestResolver extends FunSuite {
     val input =
       s"""
          |namespace A {
-         |  fn F(x: Int): Int = 42
+         |  def F(x: Int): Int = 42
          |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -158,7 +158,7 @@ class TestResolver extends FunSuite {
     val input =
       s"""
          |namespace A {
-         |  fn f: Int = x;
+         |  def f: Int = x;
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -169,7 +169,7 @@ class TestResolver extends FunSuite {
     val input =
       s"""
          |namespace A {
-         |  fn f(x: Int, y: Int): Int = x + y + z;
+         |  def f(x: Int, y: Int): Int = x + y + z;
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -180,7 +180,7 @@ class TestResolver extends FunSuite {
     val input =
       s"""
          |namespace A {
-         |  fn f: Int = Foo.Bar
+         |  def f: Int = Foo.Bar
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -191,7 +191,7 @@ class TestResolver extends FunSuite {
     val input =
       s"""
          |namespace A {
-         |  fn f: Int = Foo/Bar.Qux(true)
+         |  def f: Int = Foo/Bar.Qux(true)
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -207,7 +207,7 @@ class TestResolver extends FunSuite {
          |    case Bar
          |  }
          |
-         |  fn f: B = B.Qux;
+         |  def f: B = B.Qux;
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -223,7 +223,7 @@ class TestResolver extends FunSuite {
          |    case Bar
          |  }
          |
-         |  fn f: B = B.Qux(1 + 2);
+         |  def f: B = B.Qux(1 + 2);
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -239,7 +239,7 @@ class TestResolver extends FunSuite {
          |    case Bar
          |  }
          |
-         |  fn f(b: B): Int = match b with {
+         |  def f(b: B): Int = match b with {
          |    case B.Qux => 42;
          |  }
          |}
@@ -269,7 +269,7 @@ class TestResolver extends FunSuite {
   }
 
   test("UnresolvedTypeReference01") {
-    val input = "fn x: Foo = 42"
+    val input = "def x: Foo = 42"
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTypeReference])
   }
@@ -287,7 +287,7 @@ class TestResolver extends FunSuite {
   test("Expression.Hook01") {
     val input =
       s"""namespace A {
-          |  fn f(x: Int): Bool = g(x)
+          |  def f(x: Int): Bool = g(x)
           |};
        """.stripMargin
     val flix = new Flix()
@@ -303,7 +303,7 @@ class TestResolver extends FunSuite {
   test("Expression.Hook02") {
     val input =
       s"""namespace A {
-          |  fn f(x: Bool, y: Int, z: Str): Bool = g(x, y, z)
+          |  def f(x: Bool, y: Int, z: Str): Bool = g(x, y, z)
           |};
        """.stripMargin
     val flix = new Flix()

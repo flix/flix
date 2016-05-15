@@ -992,7 +992,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Safe.02") {
     import HookSafeHelpers._
-    val input = "fn g: Int = A/f(3)"
+    val input = "def g: Int = A/f(3)"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1005,7 +1005,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Safe.03") {
     import HookSafeHelpers._
-    val input = "namespace A { fn g: Int = f(3) }"
+    val input = "namespace A { def g: Int = f(3) }"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1018,7 +1018,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Safe.04") {
     import HookSafeHelpers._
-    val input = "fn g: Int64 = f(3i64, 42i64)"
+    val input = "def g: Int64 = f(3i64, 42i64)"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1031,7 +1031,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Safe.05") {
     import HookSafeHelpers._
-    val input = "namespace C { fn h: Int32 = A/f(5i32) + B/g(0i32) }"
+    val input = "namespace C { def h: Int32 = A/f(5i32) + B/g(0i32) }"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1048,7 +1048,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Safe.06") {
     import HookSafeHelpers._
-    val input = "fn x: Int16 = f(3i16)"
+    val input = "def x: Int16 = f(3i16)"
     val t = new Tester(input, solve = false)
     val flix = t.flix
 
@@ -1063,7 +1063,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Safe.07") {
     import HookSafeHelpers._
-    val input = "fn x: Int8 = let x = 7i8 in f(g(3i8), h(h(x)))"
+    val input = "def x: Int8 = let x = 7i8 in f(g(3i8), h(h(x)))"
     val t = new Tester(input, solve = false)
     val flix = t.flix
 
@@ -1080,10 +1080,10 @@ class TestBackend extends FunSuite {
   ignore("Expression.Hook - Hook.Safe.08") {
     import HookSafeHelpers._
     val input =
-      """fn g01: Bool = f(true, true)
-        |fn g02: Bool = f(true, false)
-        |fn g03: Bool = f(false, false)
-        |fn g04: Bool = f(false, true)
+      """def g01: Bool = f(true, true)
+        |def g02: Bool = f(true, false)
+        |def g03: Bool = f(false, false)
+        |def g04: Bool = f(false, true)
       """.stripMargin
     val t = new Tester(input, solve = false)
     val flix = t.flix
@@ -1101,10 +1101,10 @@ class TestBackend extends FunSuite {
   ignore("Expression.Hook - Hook.Safe.09") {
     import HookSafeHelpers._
     val input =
-      """fn g01: Bool = f(true, true)
-        |fn g02: Bool = f(true, false)
-        |fn g03: Bool = f(false, false)
-        |fn g04: Bool = f(false, true)
+      """def g01: Bool = f(true, true)
+        |def g02: Bool = f(true, false)
+        |def g03: Bool = f(false, false)
+        |def g04: Bool = f(false, true)
       """.stripMargin
     val t = new Tester(input, solve = false)
     val flix = t.flix
@@ -1121,7 +1121,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Safe.10") {
     import HookSafeHelpers._
-    val input = "fn g: Int = f(2, 42, 5)"
+    val input = "def g: Int = f(2, 42, 5)"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1134,7 +1134,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Safe.11") {
     import HookSafeHelpers._
-    val input = "fn h: Int = f(g, 5)"
+    val input = "def h: Int = f(g, 5)"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1153,7 +1153,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Safe.12") {
     import HookSafeHelpers._
-    val input = "fn h: Int = (f(g))(40)"
+    val input = "def h: Int = (f(g))(40)"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1172,7 +1172,7 @@ class TestBackend extends FunSuite {
     import HookSafeHelpers._
     val input =
       """enum Val { case Val(Int) }
-        |fn g: Val = f(111)
+        |def g: Val = f(111)
       """.stripMargin
     val t = new Tester(input, solve = false)
 
@@ -1187,7 +1187,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Safe.14") {
     import HookSafeHelpers._
-    val input = """fn g: (Int, Int, Str, Int, Bool, ()) = f(24, 53, "qwertyuiop", 9978, false, ())"""
+    val input = """def g: (Int, Int, Str, Int, Bool, ()) = f(24, 53, "qwertyuiop", 9978, false, ())"""
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1202,7 +1202,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Safe.15") {
     import HookSafeHelpers._
-    val input = "fn g: Set[Int] = f(24, 53, 24)"
+    val input = "def g: Set[Int] = f(24, 53, 24)"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1215,7 +1215,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Safe.16") {
     import HookSafeHelpers._
-    val input = "fn g: Bool = f('a', 'b')"
+    val input = "def g: Bool = f('a', 'b')"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1228,7 +1228,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Safe.17") {
     import HookSafeHelpers._
-    val input = "fn g: Float32 = f(1.2f32, 2.1f32)"
+    val input = "def g: Float32 = f(1.2f32, 2.1f32)"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1241,7 +1241,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Safe.18") {
     import HookSafeHelpers._
-    val input = "fn g: Float64 = f(1.2f64, 2.1f64)"
+    val input = "def g: Float64 = f(1.2f64, 2.1f64)"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1254,7 +1254,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Safe.19") {
     import HookSafeHelpers._
-    val input = "fn g: BigInt = f(1ii, 9223372036854775808ii)"
+    val input = "def g: BigInt = f(1ii, 9223372036854775808ii)"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1267,7 +1267,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Safe.20") {
     import HookSafeHelpers._
-    val input = "fn h: Native = g(f(999))"
+    val input = "def h: Native = g(f(999))"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1309,7 +1309,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Unsafe.02") {
     import HookUnsafeHelpers._
-    val input = "fn g: Int = A/f(3)"
+    val input = "def g: Int = A/f(3)"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1322,7 +1322,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Unsafe.03") {
     import HookUnsafeHelpers._
-    val input = "namespace A { fn g: Int = f(3) }"
+    val input = "namespace A { def g: Int = f(3) }"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1335,7 +1335,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Unsafe.04") {
     import HookUnsafeHelpers._
-    val input = "fn g: Int64 = f(3i64, 42i64)"
+    val input = "def g: Int64 = f(3i64, 42i64)"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1348,7 +1348,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Unsafe.05") {
     import HookUnsafeHelpers._
-    val input = "namespace C { fn h: Int32 = A/f(5i32) + B/g(0i32) }"
+    val input = "namespace C { def h: Int32 = A/f(5i32) + B/g(0i32) }"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1362,7 +1362,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Unsafe.06") {
     import HookUnsafeHelpers._
-    val input = "fn x: Int16 = f(3i16)"
+    val input = "def x: Int16 = f(3i16)"
     val t = new Tester(input, solve = false)
     val flix = t.flix
 
@@ -1377,7 +1377,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Unsafe.07") {
     import HookUnsafeHelpers._
-    val input = "fn x: Int8 = let x = 7i8 in f(g(3i8), h(h(x)))"
+    val input = "def x: Int8 = let x = 7i8 in f(g(3i8), h(h(x)))"
     val t = new Tester(input, solve = false)
     val flix = t.flix
 
@@ -1394,10 +1394,10 @@ class TestBackend extends FunSuite {
   ignore("Expression.Hook - Hook.Unsafe.08") {
     import HookUnsafeHelpers._
     val input =
-      """fn g01: Bool = f(true, true)
-        |fn g02: Bool = f(true, false)
-        |fn g03: Bool = f(false, false)
-        |fn g04: Bool = f(false, true)
+      """def g01: Bool = f(true, true)
+        |def g02: Bool = f(true, false)
+        |def g03: Bool = f(false, false)
+        |def g04: Bool = f(false, true)
       """.stripMargin
     val t = new Tester(input, solve = false)
     val flix = t.flix
@@ -1415,10 +1415,10 @@ class TestBackend extends FunSuite {
   ignore("Expression.Hook - Hook.Unsafe.09") {
     import HookUnsafeHelpers._
     val input =
-      """fn g01: Bool = f(true, true)
-        |fn g02: Bool = f(true, false)
-        |fn g03: Bool = f(false, false)
-        |fn g04: Bool = f(false, true)
+      """def g01: Bool = f(true, true)
+        |def g02: Bool = f(true, false)
+        |def g03: Bool = f(false, false)
+        |def g04: Bool = f(false, true)
       """.stripMargin
     val t = new Tester(input, solve = false)
     val flix = t.flix
@@ -1435,7 +1435,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Unsafe.10") {
     import HookUnsafeHelpers._
-    val input = "fn g: Int = f(2, 42, 5)"
+    val input = "def g: Int = f(2, 42, 5)"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1448,7 +1448,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Unsafe.11") {
     import HookUnsafeHelpers._
-    val input = "fn h: Int = f(g, 5)"
+    val input = "def h: Int = f(g, 5)"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1463,7 +1463,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Unsafe.12") {
     import HookUnsafeHelpers._
-    val input = "fn h: Int = (f(g))(40)"
+    val input = "def h: Int = (f(g))(40)"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1482,7 +1482,7 @@ class TestBackend extends FunSuite {
     import HookUnsafeHelpers._
     val input =
       """enum Val { case Val(Int) }
-        |fn g: Val = f(111)
+        |def g: Val = f(111)
       """.stripMargin
     val t = new Tester(input, solve = false)
 
@@ -1497,7 +1497,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Unsafe.14") {
     import HookUnsafeHelpers._
-    val input = """fn g: (Int, Int, Str, Int, Bool, ()) = f(24, 53, "qwertyuiop", 9978, false, ())"""
+    val input = """def g: (Int, Int, Str, Int, Bool, ()) = f(24, 53, "qwertyuiop", 9978, false, ())"""
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1512,7 +1512,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Unsafe.15") {
     import HookUnsafeHelpers._
-    val input = "fn g: Set[Int] = f(24, 53, 24)"
+    val input = "def g: Set[Int] = f(24, 53, 24)"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1525,7 +1525,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Unsafe.16") {
     import HookUnsafeHelpers._
-    val input = "fn g: Bool = f('a', 'b')"
+    val input = "def g: Bool = f('a', 'b')"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1538,7 +1538,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Unsafe.17") {
     import HookUnsafeHelpers._
-    val input = "fn g: Float32 = f(1.2f32, 2.1f32)"
+    val input = "def g: Float32 = f(1.2f32, 2.1f32)"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1551,7 +1551,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Unsafe.18") {
     import HookUnsafeHelpers._
-    val input = "fn g: Float64 = f(1.2f64, 2.1f64)"
+    val input = "def g: Float64 = f(1.2f64, 2.1f64)"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1564,7 +1564,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Unsafe.19") {
     import HookUnsafeHelpers._
-    val input = "fn g: BigInt = f(1ii, 9223372036854775808ii)"
+    val input = "def g: BigInt = f(1ii, 9223372036854775808ii)"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1577,7 +1577,7 @@ class TestBackend extends FunSuite {
 
   ignore("Expression.Hook - Hook.Unsafe.20") {
     import HookUnsafeHelpers._
-    val input = "fn h: Native = g(f(999))"
+    val input = "def h: Native = g(f(999))"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
