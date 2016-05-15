@@ -495,6 +495,10 @@ object ExecutableAst {
       final val tpe: Type = Type.Bool
     }
 
+    case class FSet(elms: Array[ExecutableAst.Expression],
+                    tpe: Type.FSet,
+                    loc: SourceLocation) extends ExecutableAst.Expression
+
     case class Existential(params: List[Ast.FormalParam], exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
       def tpe: Type = Type.Bool
     }
@@ -503,32 +507,10 @@ object ExecutableAst {
       def tpe: Type = Type.Bool
     }
 
-    case class FSet(elms: Array[ExecutableAst.Expression],
-                    tpe: Type.FSet,
-                    loc: SourceLocation) extends ExecutableAst.Expression
-
-    /**
-      * A typed AST node representing an error.
-      *
-      * @param tpe the type of the error.
-      * @param loc the source location of the error.
-      */
     case class UserError(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    /**
-      * A typed AST node representing a match error.
-      *
-      * @param tpe the type of the error.
-      * @param loc the source location of the error.
-      */
     case class MatchError(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    /**
-      * A typed AST node representing a switch error.
-      *
-      * @param tpe the type of the error.
-      * @param loc the source location of the error.
-      */
     case class SwitchError(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
   }

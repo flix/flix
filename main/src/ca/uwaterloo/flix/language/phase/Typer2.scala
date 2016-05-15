@@ -141,6 +141,7 @@ object Typer2 {
           /*
            * Binary expression.
            */
+          // TODO: Check if we can use stuff like ArithmeticOperator, etc.
           case TypedAst.Expression.Binary(op, e1, e2, _, _) => op match {
             case BinaryOperator.Plus | BinaryOperator.Minus | BinaryOperator.Times | BinaryOperator.Divide =>
               val tpe1 = visitExp(e1, tenv)
@@ -150,13 +151,26 @@ object Typer2 {
               constraints += TypeConstraint.OneOf(tpe2, NumTypes)
               tpe1
 
-            case _: ComparisonOperator =>
+            case BinaryOperator.Modulo => ???
+
+            case BinaryOperator.Exponentiate => ???
+
+            case BinaryOperator.Equal | BinaryOperator.NotEqual => ???
+
+            case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual =>
               val tpe1 = visitExp(e1, tenv)
               val tpe2 = visitExp(e2, tenv)
               // TODO
               constraints += TypeConstraint.Eq(tpe1, tpe2)
 
               Type.Bool
+
+            // TODO: Logical Operator, can we shorten?
+            case BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr | BinaryOperator.Implication | BinaryOperator.Biconditional => ???
+
+            // TODO: BitwiseOperator, can we shorten?
+            case BinaryOperator.BitwiseAnd | BinaryOperator.BitwiseOr | BinaryOperator.BitwiseXor | BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift => ???
+
           }
 
           /*
@@ -198,6 +212,11 @@ object Typer2 {
            * Tuple expression.
            */
           case TypedAst.Expression.Tuple(elms, tpe, loc) => ???
+
+          /*
+           * Set expression.
+           */
+          case TypedAst.Expression.Set(elms, tpe, loc) => ???
 
           // FNone
           // FSome

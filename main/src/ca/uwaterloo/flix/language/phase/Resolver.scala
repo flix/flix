@@ -595,7 +595,7 @@ object Resolver {
       */
     def resolve(wast: WeededAst.Expression, namespace: List[String], syms: SymbolTable, locals: Set[String] = Set.empty): Validation[ResolvedAst.Expression, ResolverError] = {
       def visit(wast: WeededAst.Expression, locals: Set[String]): Validation[ResolvedAst.Expression, ResolverError] = wast match {
-
+        case WeededAst.Expression.Wild(loc) => ???
         case WeededAst.Expression.Unit(loc) => ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit(loc), loc).toSuccess
         case WeededAst.Expression.True(loc) => ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, loc), loc).toSuccess
         case WeededAst.Expression.False(loc) => ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(false, loc), loc).toSuccess
@@ -712,6 +712,8 @@ object Resolver {
         case _: WeededAst.Expression.FList => ???
         case _: WeededAst.Expression.FVec => ???
         case _: WeededAst.Expression.FMap => ???
+        case _: WeededAst.Expression.GetIndex => ???
+        case _: WeededAst.Expression.PutIndex => ???
         case _: WeededAst.Expression.Existential => ???
         case _: WeededAst.Expression.Universal => ???
 
@@ -944,6 +946,7 @@ object Resolver {
               case "Set" => Type.FSet(elms.head)
             }
           }
+        case _ => ??? // TODO
       }
 
       visit(wast)

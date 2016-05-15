@@ -828,6 +828,7 @@ object Typer {
   /**
     * Returns a human readable string representation of the given type `tpe`.
     */
+  // TODO: Remove this.
   private def prettyPrint(tpe: Type): String = tpe match {
     case Type.Any => "Any"
     case Type.Var(x) => s"Var($x)"
@@ -855,6 +856,12 @@ object Typer {
       "(" + args.map(prettyPrint).mkString(", ") + ") -> " + prettyPrint(retTpe)
     case Type.Predicate(terms) => s"Predicate(${terms map prettyPrint})"
     case Type.Native => s"native"
+    case Type.Abs(name, tpe) => s"Abs($name)"
+    case Type.FOpt(tpe) => s"FOpt($tpe)"
+    case Type.FList(tpe) => s"FList($tpe)"
+    case Type.FMap(k, v) => s"FMap($k, $v)"
+    case Type.Parametric(name, elms) => s"$name[$elms]"
+    case Type.Unresolved(name) => name.toString
   }
 
   private def prettyPrint(pat: ResolvedAst.Pattern): String = pat match {

@@ -335,7 +335,10 @@ object Simplifier {
     }
 
     def toExp(tast: TypedAst.Term.Head)(implicit genSym: GenSym): SimplifiedAst.Expression = tast match {
+      case TypedAst.Term.Head.Var(ident, tpe, loc) => ???
       case TypedAst.Term.Head.Lit(lit, tpe, loc) => Literal.simplify(lit)
+      case TypedAst.Term.Head.Apply(name, args, tpe, loc) => ???
+      case TypedAst.Term.Head.ApplyHook(hook, args, tpe, loc) => ???
       case TypedAst.Term.Head.Tag(enum, tag, t, tpe, loc) => SimplifiedAst.Expression.Tag(enum, tag, toExp(t), tpe, loc)
       case TypedAst.Term.Head.Tuple(elms, tpe, loc) => SimplifiedAst.Expression.Tuple(elms.map(e => toExp(e)), tpe, loc)
     }
