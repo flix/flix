@@ -1,5 +1,9 @@
 package ca.uwaterloo.flix.language.ast
 
+import java.lang.reflect.{InvocationTargetException, Method}
+
+import ca.uwaterloo.flix.runtime.Interpreter
+
 import scala.collection.mutable
 
 sealed trait ExecutableAst
@@ -14,7 +18,7 @@ object ExecutableAst {
                   rules: Array[ExecutableAst.Constraint.Rule],
                   properties: List[ExecutableAst.Property],
                   time: Time,
-                  dependenciesOf: Map[Symbol.TableSym, mutable.Set[(Constraint.Rule, ExecutableAst.Predicate.Body.Table)]]) extends ExecutableAst // TODO: Why mutable?
+                  dependenciesOf: Map[Symbol.TableSym, Set[(Constraint.Rule, ExecutableAst.Predicate.Body.Table)]]) extends ExecutableAst
 
   sealed trait Definition
 
@@ -23,15 +27,18 @@ object ExecutableAst {
     case class Constant(name: Symbol.Resolved,
                         formals: Array[ExecutableAst.FormalArg],
                         exp: ExecutableAst.Expression,
+                        isSynthetic: Boolean,
                         tpe: Type,
-                        loc: SourceLocation) extends ExecutableAst.Definition
+                        loc: SourceLocation) extends ExecutableAst.Definition {
+      var method: Method = null
+    }
 
     case class Lattice(tpe: Type,
-                       bot: ExecutableAst.Expression,
-                       top: ExecutableAst.Expression,
-                       leq: ExecutableAst.Expression,
-                       lub: ExecutableAst.Expression,
-                       glb: ExecutableAst.Expression,
+                       bot: Symbol.Resolved,
+                       top: Symbol.Resolved,
+                       leq: Symbol.Resolved,
+                       lub: Symbol.Resolved,
+                       glb: Symbol.Resolved,
                        loc: SourceLocation) extends ExecutableAst.Definition
 
     case class Index(name: Symbol.TableSym,
@@ -103,18 +110,21 @@ object ExecutableAst {
     case object Unit extends ExecutableAst.Expression {
       final val tpe = Type.Unit
       final val loc = SourceLocation.Unknown
+
       override def toString: String = "#U"
     }
 
     case object True extends ExecutableAst.Expression {
       final val tpe = Type.Bool
       final val loc = SourceLocation.Unknown
+
       override def toString: String = "#t"
     }
 
     case object False extends ExecutableAst.Expression {
       final val tpe = Type.Bool
       final val loc = SourceLocation.Unknown
+
       override def toString: String = "#f"
     }
 
@@ -275,19 +285,6 @@ object ExecutableAst {
                    loc: SourceLocation) extends ExecutableAst.Expression
 
     /**
-      * A typed AST node representing a closure variable expression that must be looked up from the closure environment.
-      *
-      * @param env  the name of the closure environment variable.
-      * @param name the name of the closure variable.
-      * @param tpe  the type of the variable.
-      * @param loc  the source location of the variable.
-      */
-    case class ClosureVar(env: Name.Ident,
-                          name: Name.Ident,
-                          tpe: Type,
-                          loc: SourceLocation) extends ExecutableAst.Expression
-
-    /**
       * A typed AST node representing a reference to a top-level definition.
       *
       * @param name the name of the reference.
@@ -301,18 +298,16 @@ object ExecutableAst {
     case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     /**
-      * A typed AST node representing the creation of a closure. At compile time, a unique `envVar` is created and
-      * `freeVars` is computed. The free variables are bound at run time.
+      * A typed AST node representing the creation of a closure. Free variables are computed at compile time and bound
+      * at run time.
       *
       * @param ref      the reference to the lambda associated with the closure.
-      * @param envVar   the name of the closure environment variable.
       * @param freeVars the cached set of free variables occurring within the lambda expression.
       * @param tpe      the type of the closure.
       * @param loc      the source location of the lambda.
       */
     case class MkClosureRef(ref: ExecutableAst.Expression.Ref,
-                            envVar: Name.Ident,
-                            freeVars: Set[Name.Ident],
+                            freeVars: Array[FreeVar],
                             tpe: Type.Lambda,
                             loc: SourceLocation) extends ExecutableAst.Expression
 
@@ -370,7 +365,7 @@ object ExecutableAst {
                       exp1: ExecutableAst.Expression,
                       exp2: ExecutableAst.Expression,
                       tpe: Type,
-                      loc: SourceLocation) extends ExecutableAst.Expression  {
+                      loc: SourceLocation) extends ExecutableAst.Expression {
       override def toString: String = "Binary(" + op + ", " + exp1 + ", " + exp2 + ")"
     }
 
@@ -422,6 +417,7 @@ object ExecutableAst {
                         exp: ExecutableAst.Expression,
                         loc: SourceLocation) extends ExecutableAst.Expression {
       final val tpe: Type = Type.Bool
+
       override def toString: String = "CheckTag(" + tag.name + ", " + exp + ")"
     }
 
@@ -649,6 +645,7 @@ object ExecutableAst {
       case class Var(ident: Name.Ident, v: scala.Int, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
       case class Exp(e: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
+
     }
 
   }
@@ -656,6 +653,8 @@ object ExecutableAst {
   case class Attribute(ident: Name.Ident, tpe: Type) extends ExecutableAst
 
   case class FormalArg(ident: Name.Ident, tpe: Type) extends ExecutableAst
+
+  case class FreeVar(ident: Name.Ident, offset: Int, tpe: Type) extends ExecutableAst
 
   case class Property(law: Law, exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst
 

@@ -108,15 +108,6 @@ object SymbolicEvaluator {
       case Expression.Var(ident, _, tpe, loc) => lift(pc0, env0(ident.name))
 
       /**
-        * Closure Variable.
-        */
-      case Expression.ClosureVar(env, name, _, _) =>
-        // Lookup the closure environment.
-        val SymVal.Environment(m) = env0(env.name)
-        // Lookup the variable in the closure environment.
-        lift(pc0, m(name.name))
-
-      /**
         * Reference.
         */
       case Expression.Ref(name, tpe, loc) =>
@@ -129,14 +120,12 @@ object SymbolicEvaluator {
       /**
         * Closure.
         */
-      case Expression.MkClosureRef(ref, cloVar, freeVars, _, _) =>
-        // Build the closure environment where all the
-        // free variables are bound to their current values.
-        val env = freeVars.foldLeft(Map.empty[String, SymVal]) {
-          case (macc, freeVar) => macc + (freeVar.name -> env0(freeVar.name))
-        }
+      case Expression.MkClosureRef(ref, freeVars, _, _) =>
+        // Save the values of the free variables in a list.
+        // When the closure is called, these values will be provided at the beginning of the argument list.
+        val env = freeVars.toList.map(f => env0(f.ident.name))
         // Construct the closure.
-        val clo = SymVal.Closure(ref.name, cloVar.name, SymVal.Environment(env))
+        val clo = SymVal.Closure(ref, env)
         lift(pc0, clo)
 
       /**
@@ -159,25 +148,24 @@ object SymbolicEvaluator {
       /**
         * Apply Closure.
         */
+      // TODO: check this implementation.
       case Expression.ApplyClosure(exp, args, _, _) =>
-        // Evaluate the arguments.
-        evaln(pc0, args, env0) flatMap {
-          case (pc, actuals) =>
-            // Evaluate the closure.
-            eval(pc, exp, env0) flatMap {
-              case (pc1, SymVal.Closure(ref, cloVar, cloEnv)) =>
-                // Lookup the name.
-                val defn = root.constants(ref)
-
-                // Construct the environment.
-                val initEnv: Map[String, SymVal] = Map(cloVar -> cloEnv)
-                val newEnv = (defn.formals zip actuals).foldLeft(initEnv) {
+        // Evaluate the closure.
+        eval(pc0, exp, env0) flatMap {
+          case (pc, SymVal.Closure(ref, bindings)) =>
+            // Lookup the definition
+            val defn = root.constants(ref.name)
+            // Evaluate all the arguments.
+            evaln(pc, args, env0) flatMap {
+              case (pc1, actuals) =>
+                // Construct the environment
+                val newArgs = bindings ++ actuals
+                val newEnv = (defn.formals zip newArgs).foldLeft(Map.empty[String, SymVal]) {
                   case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
                 }
-
                 eval(pc1, defn.exp, newEnv)
-              case (_, v) => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
             }
+          case (_, v) => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
         }
 
       /**

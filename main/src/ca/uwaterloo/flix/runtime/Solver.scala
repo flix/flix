@@ -137,7 +137,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     val definitions = sCtx.root.constants.foldLeft(Map.empty[Symbol.Resolved, () => AnyRef]) {
       case (macc, (sym, defn)) =>
         if (defn.formals.isEmpty)
-          macc + (sym -> (() => Interpreter.eval(defn.exp, sCtx.root)))
+          macc + (sym -> (() => Interpreter.evalCall(defn, Array.empty, sCtx.root)))
         else
           macc + (sym -> (() => throw new InternalRuntimeException("Unable to evalaute non-constant top-level definition.")))
     }
