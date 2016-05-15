@@ -8,14 +8,12 @@ import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
-import scala.collection.mutable
-
 object Interpreter {
 
-  /*
-   * Evaluates an `Expression`. Assumes all input has been type-checked.
-   */
-  def eval(expr: Expression, root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef = expr match {
+  /**
+    * Evaluates the given expression `exp0` under the given environment `env0`.
+    */
+  def eval(exp0: Expression, root: Root, env0: Map[String, AnyRef] = Map.empty): AnyRef = exp0 match {
     case Expression.Unit => Value.Unit
     case Expression.True => Value.True
     case Expression.False => Value.False
@@ -29,7 +27,7 @@ object Interpreter {
     case Expression.BigInt(lit) => Value.mkBigInt(lit)
     case Expression.Str(lit) => Value.mkStr(lit)
     case load: LoadExpression =>
-      val e = Value.cast2int64(eval(load.e, root, env))
+      val e = Value.cast2int64(eval(load.e, root, env0))
       val result = (e >> load.offset).toInt & load.mask
       load match {
         case _: Expression.LoadBool => Value.mkBool(result != 0)
@@ -38,15 +36,15 @@ object Interpreter {
         case _: Expression.LoadInt32 => Value.mkInt32(result)
       }
     case store: StoreExpression =>
-      val e = Value.cast2int64(eval(store.e, root, env))
-      val v = Value.cast2int64(eval(store.v, root, env))
+      val e = Value.cast2int64(eval(store.e, root, env0))
+      val v = Value.cast2int64(eval(store.v, root, env0))
       val result = (e & store.targetMask) | ((v & store.mask) << store.offset)
       Value.mkInt64(result)
-    case Expression.Var(ident, _, _, loc) => env.get(ident.name) match {
-      case None => throw InternalRuntimeException(s"Key '${ident.name}' not found in environment: '${env.mkString(",")}'.")
+    case Expression.Var(ident, _, _, loc) => env0.get(ident.name) match {
+      case None => throw InternalRuntimeException(s"Key '${ident.name}' not found in environment: '${env0.mkString(",")}'.")
       case Some(v) => v
     }
-    case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env)
+    case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env0)
     case Expression.Hook(hook, _, _) => Value.HookClosure(hook)
     case Expression.MkClosureRef(ref, freeVars, _, _) =>
       // Save the values of the free variables in the Value.Closure structure.
@@ -54,7 +52,7 @@ object Interpreter {
       val bindings = new Array[AnyRef](freeVars.length)
       var i = 0
       while (i < bindings.length) {
-        bindings(i) = env(freeVars(i).ident.name)
+        bindings(i) = env0(freeVars(i).ident.name)
         i = i + 1
       }
       Value.Closure(ref, bindings)
@@ -62,47 +60,47 @@ object Interpreter {
       val evalArgs = new Array[AnyRef](args.length)
       var i = 0
       while (i < evalArgs.length) {
-        evalArgs(i) = eval(args(i), root, env)
+        evalArgs(i) = eval(args(i), root, env0)
         i = i + 1
       }
-      evalCall(root.constants(name), evalArgs, root, env.clone())
+      evalCall(root.constants(name), evalArgs, root, env0)
     case Expression.ApplyClosure(exp, args, tpe, loc) =>
-      val func = eval(exp, root, env)
+      val func = eval(exp, root, env0)
       val evalArgs = new Array[AnyRef](args.length)
       var i = 0
       while (i < evalArgs.length) {
-        evalArgs(i) = eval(args(i), root, env)
+        evalArgs(i) = eval(args(i), root, env0)
         i = i + 1
       }
-      evalClosure(func, evalArgs, root, env.clone())
-    case Expression.Unary(op, exp, _, _) => evalUnary(op, exp, root, env)
+      evalClosure(func, evalArgs, root, env0)
+    case Expression.Unary(op, exp, _, _) => evalUnary(op, exp, root, env0)
     case Expression.Binary(op, exp1, exp2, _, _) => op match {
-      case o: ArithmeticOperator => evalArithmetic(o, exp1, exp2, root, env)
-      case o: ComparisonOperator => evalComparison(o, exp1, exp2, root, env)
-      case o: LogicalOperator => evalLogical(o, exp1, exp2, root, env)
-      case o: BitwiseOperator => evalBitwise(o, exp1, exp2, root, env)
+      case o: ArithmeticOperator => evalArithmetic(o, exp1, exp2, root, env0)
+      case o: ComparisonOperator => evalComparison(o, exp1, exp2, root, env0)
+      case o: LogicalOperator => evalLogical(o, exp1, exp2, root, env0)
+      case o: BitwiseOperator => evalBitwise(o, exp1, exp2, root, env0)
     }
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
-      val cond = Value.cast2bool(eval(exp1, root, env))
-      if (cond) eval(exp2, root, env) else eval(exp3, root, env)
+      val cond = Value.cast2bool(eval(exp1, root, env0))
+      if (cond) eval(exp2, root, env0) else eval(exp3, root, env0)
     case Expression.Let(ident, _, exp1, exp2, _, _) =>
-      val newEnv = env + (ident.name -> eval(exp1, root, env))
+      val newEnv = env0 + (ident.name -> eval(exp1, root, env0))
       eval(exp2, root, newEnv)
-    case Expression.CheckTag(tag, exp, _) => Value.mkBool(Value.cast2tag(eval(exp, root, env)).tag == tag.name)
-    case Expression.GetTagValue(tag, exp, _, _) => Value.cast2tag(eval(exp, root, env)).value
-    case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(name, ident.name, eval(exp, root, env))
-    case Expression.GetTupleIndex(base, offset, _, _) => Value.cast2tuple(eval(base, root, env))(offset)
+    case Expression.CheckTag(tag, exp, _) => Value.mkBool(Value.cast2tag(eval(exp, root, env0)).tag == tag.name)
+    case Expression.GetTagValue(tag, exp, _, _) => Value.cast2tag(eval(exp, root, env0)).value
+    case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(name, ident.name, eval(exp, root, env0))
+    case Expression.GetTupleIndex(base, offset, _, _) => Value.cast2tuple(eval(base, root, env0))(offset)
     case Expression.Tuple(elms, _, _) =>
       val evalElms = new Array[AnyRef](elms.length)
       var i = 0
       while (i < evalElms.length) {
-        evalElms(i) = eval(elms(i), root, env)
+        evalElms(i) = eval(elms(i), root, env0)
         i = i + 1
       }
       Value.Tuple(evalElms)
     case Expression.CheckNil(exp, _) => ???
     case Expression.CheckCons(exp, _) => ???
-    case Expression.FSet(elms, _, _) => Value.mkSet(elms.map(e => eval(e, root, env)).toSet)
+    case Expression.FSet(elms, _, _) => Value.mkSet(elms.map(e => eval(e, root, env0)).toSet)
     case Expression.Existential(params, exp, loc) => new InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
     case Expression.Universal(params, exp, loc) => new InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
     case Expression.UserError(_, loc) => throw UserException("User exception.", loc)
@@ -110,7 +108,7 @@ object Interpreter {
     case Expression.SwitchError(_, loc) => throw SwitchException("Non-exhaustive switch expression.", loc)
   }
 
-  private def evalUnary(op: UnaryOperator, e: Expression, root: Root, env: mutable.Map[String, AnyRef]): AnyRef = {
+  private def evalUnary(op: UnaryOperator, e: Expression, root: Root, env: Map[String, AnyRef]): AnyRef = {
     val v = eval(e, root, env)
     op match {
       case UnaryOperator.LogicalNot => Value.mkBool(!Value.cast2bool(v))
@@ -136,7 +134,7 @@ object Interpreter {
     }
   }
 
-  private def evalArithmetic(o: ArithmeticOperator, e1: Expression, e2: Expression, root: Root, env: mutable.Map[String, AnyRef]): AnyRef = {
+  private def evalArithmetic(o: ArithmeticOperator, e1: Expression, e2: Expression, root: Root, env: Map[String, AnyRef]): AnyRef = {
     val v1 = eval(e1, root, env)
     val v2 = eval(e2, root, env)
     o match {
@@ -202,7 +200,7 @@ object Interpreter {
     }
   }
 
-  private def evalComparison(o: ComparisonOperator, e1: Expression, e2: Expression, root: Root, env: mutable.Map[String, AnyRef]): AnyRef = {
+  private def evalComparison(o: ComparisonOperator, e1: Expression, e2: Expression, root: Root, env: Map[String, AnyRef]): AnyRef = {
     val v1 = eval(e1, root, env)
     val v2 = eval(e2, root, env)
     o match {
@@ -255,7 +253,7 @@ object Interpreter {
     }
   }
 
-  private def evalLogical(o: LogicalOperator, e1: Expression, e2: Expression, root: Root, env: mutable.Map[String, AnyRef]): AnyRef = o match {
+  private def evalLogical(o: LogicalOperator, e1: Expression, e2: Expression, root: Root, env: Map[String, AnyRef]): AnyRef = o match {
     case BinaryOperator.LogicalAnd =>
       if (Value.cast2bool(eval(e1, root, env))) eval(e2, root, env) else Value.False
     case BinaryOperator.LogicalOr =>
@@ -269,7 +267,7 @@ object Interpreter {
       evalComparison(BinaryOperator.Equal, e1, e2, root, env)
   }
 
-  private def evalBitwise(o: BitwiseOperator, e1: Expression, e2: Expression, root: Root, env: mutable.Map[String, AnyRef]): AnyRef = {
+  private def evalBitwise(o: BitwiseOperator, e1: Expression, e2: Expression, root: Root, env: Map[String, AnyRef]): AnyRef = {
     val v1 = eval(e1, root, env)
     val v2 = eval(e2, root, env)
     o match {
@@ -322,7 +320,7 @@ object Interpreter {
   /**
     * Evaluates the given head term `t` under the given environment `env0`
     */
-  def evalHeadTerm(t: Term.Head, root: Root, env: mutable.Map[String, AnyRef]): AnyRef = t match {
+  def evalHeadTerm(t: Term.Head, root: Root, env: Map[String, AnyRef]): AnyRef = t match {
     case Term.Head.Var(x, _, _) => env(x.name)
     case Term.Head.Exp(e, _, _) => eval(e, root, env)
     case Term.Head.Apply(name, args, _, _) =>
@@ -333,7 +331,7 @@ object Interpreter {
         evalArgs(i) = evalHeadTerm(args(i), root, env)
         i = i + 1
       }
-      evalCall(defn, evalArgs, root, env.clone())
+      evalCall(defn, evalArgs, root, env)
     case Term.Head.ApplyHook(hook, args, _, _) =>
       val evalArgs = new Array[AnyRef](args.length)
       var i = 0
@@ -350,30 +348,25 @@ object Interpreter {
       }
   }
 
-  def evalBodyTerm(t: Term.Body, root: Root, env: mutable.Map[String, AnyRef]): AnyRef = t match {
+  def evalBodyTerm(t: Term.Body, root: Root, env: Map[String, AnyRef]): AnyRef = t match {
     case Term.Body.Wildcard(_, _) => ???
     case Term.Body.Var(x, _, _, _) => env(x.name)
     case Term.Body.Exp(e, _, _) => eval(e, root, env)
   }
 
-  private def evalClosure(function: AnyRef, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef]): AnyRef =
+  private def evalClosure(function: AnyRef, args: Array[AnyRef], root: Root, env: Map[String, AnyRef]): AnyRef =
     function match {
       case Value.Closure(ref, bindings) =>
         val constant = root.constants(ref.name)
-        val newEnv = mutable.Map.empty[String, AnyRef]
         // Bindings for the capture variables are passed as arguments.
-        var i = 0
-        while (i < bindings.length) {
-          newEnv(constant.formals(i).ident.name) = bindings(i)
-          i = i + 1
+        val env1 = constant.formals.take(bindings.length).zip(bindings).foldLeft(env) {
+          case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
         }
         // Now pass the actual arguments supplied by the caller.
-        var j = 0
-        while (j < args.length) {
-          newEnv(constant.formals(i + j).ident.name) = args(j)
-          j = j + 1
+        val env2 = constant.formals.drop(bindings.length).zip(args).foldLeft(env1) {
+          case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
         }
-        eval(constant.exp, root, newEnv)
+        eval(constant.exp, root, env2)
       case Value.HookClosure(hook) => hook match {
         case Ast.Hook.Safe(name, inv, _) =>
           val wargs: Array[IValue] = args.map(new WrappedValue(_))
@@ -384,12 +377,10 @@ object Interpreter {
       case _ => throw new InternalRuntimeException(s"Trying to call a non-function: $function.")
     }
 
-  def evalCall(defn: Constant, args: Array[AnyRef], root: Root, env: mutable.Map[String, AnyRef] = mutable.Map.empty): AnyRef = {
+  def evalCall(defn: Constant, args: Array[AnyRef], root: Root, env0: Map[String, AnyRef] = Map.empty): AnyRef = {
     if (defn.method == null) {
-      var i = 0
-      while (i < defn.formals.length) {
-        env(defn.formals(i).ident.name) = args(i)
-        i = i + 1
+      val env = defn.formals.zip(args).foldLeft(env0) {
+        case (macc, (ExecutableAst.FormalArg(name, tpe), actual)) => macc + (name.name -> actual)
       }
       eval(defn.exp, root, env)
     } else {

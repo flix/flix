@@ -192,7 +192,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       val fact = new Array[AnyRef](p.arity)
       var i = 0
       while (i < fact.length) {
-        fact(i) = Interpreter.evalHeadTerm(terms(i), sCtx.root, env0)
+        fact(i) = Interpreter.evalHeadTerm(terms(i), sCtx.root, env0.toMap)
         i = i + 1
       }
       inferredFact(p.sym, fact, enqueue)
@@ -258,7 +258,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   def loop(rule: Constraint.Rule, ps: List[Predicate.Body.Loop], row: mutable.Map[String, AnyRef]): Unit = ps match {
     case Nil => filter(rule, rule.filters, row)
     case Predicate.Body.Loop(name, term, _, _, _) :: rest =>
-      val result = Value.cast2set(Interpreter.evalHeadTerm(term, sCtx.root, row))
+      val result = Value.cast2set(Interpreter.evalHeadTerm(term, sCtx.root, row.toMap))
       for (x <- result) {
         val newRow = row.clone()
         newRow.update(name.name, x)
@@ -279,10 +279,10 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       val args = new Array[AnyRef](pred.terms.length)
       var i = 0
       while (i < args.length) {
-        args(i) = Interpreter.evalBodyTerm(pred.terms(i), sCtx.root, row)
+        args(i) = Interpreter.evalBodyTerm(pred.terms(i), sCtx.root, row.toMap)
         i = i + 1
       }
-      val result = Interpreter.evalCall(defn, args, sCtx.root, row.clone())
+      val result = Interpreter.evalCall(defn, args, sCtx.root, row.toMap)
       if (Value.cast2bool(result))
         filter(rule, xs, row)
   }
@@ -300,7 +300,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       val args = new Array[AnyRef](pred.terms.length)
       var i = 0
       while (i < args.length) {
-        args(i) = Interpreter.evalBodyTerm(pred.terms(i), sCtx.root, row)
+        args(i) = Interpreter.evalBodyTerm(pred.terms(i), sCtx.root, row.toMap)
         i = i + 1
       }
 
@@ -345,7 +345,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   def eval(t: ExecutableAst.Term.Body, env: mutable.Map[String, AnyRef]): AnyRef = t match {
     case t: ExecutableAst.Term.Body.Wildcard => null
     case t: ExecutableAst.Term.Body.Var => env.getOrElse(t.ident.name, null)
-    case t: ExecutableAst.Term.Body.Exp => Interpreter.eval(t.e, sCtx.root, env)
+    case t: ExecutableAst.Term.Body.Exp => Interpreter.eval(t.e, sCtx.root, env.toMap)
   }
 
   /**
