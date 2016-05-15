@@ -104,7 +104,7 @@ trait IValue {
   /**
     * Returns the BigInt represented by `this` value.
     *
-    * @throws UnsupportedOperationException if `this` value is not of int64 type.
+    * @throws UnsupportedOperationException if `this` value is not of BigInt type.
     */
   def getBigInt: java.math.BigInteger
 
