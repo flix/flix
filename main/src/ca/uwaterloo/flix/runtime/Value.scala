@@ -155,6 +155,33 @@ object Value {
   def mkInt64(l: Long): AnyRef = new java.lang.Long(l)
 
   /**
+    * Constructs a java.math.BigInteger from the given int `i`.
+    */
+  @inline
+  def mkBigInt(i: Int): AnyRef = java.math.BigInteger.valueOf(i)
+
+  /**
+    * Constructs a java.math.BigInteger from the given long `l`.
+    */
+  @inline
+  def mkBigInt(l: Long): AnyRef = java.math.BigInteger.valueOf(l)
+
+  /**
+    * Constructs a java.math.BigInteger from the given string `s`.
+    */
+  @inline
+  def mkBigInt(s: String): AnyRef = new java.math.BigInteger(s)
+
+  /**
+    * Constructs the Flix representation of a java.math.BigInteger for the given `ref`.
+    */
+  @inline
+  def mkBigInt(ref: AnyRef): AnyRef = ref match {
+    case o: java.math.BigInteger => o
+    case _ => throw new InternalRuntimeException(s"Unexpected non-bigint value: '$ref'.")
+  }
+
+  /**
     * Casts the given reference `ref` to an int8.
     */
   @inline
@@ -188,6 +215,15 @@ object Value {
   def cast2int64(ref: AnyRef): Long = ref match {
     case o: java.lang.Long => o.longValue()
     case _ => throw new InternalRuntimeException(s"Unexpected non-int64 value: '$ref'.")
+  }
+
+  /**
+    * Casts the given reference `ref` to a java.math.BigInteger.
+    */
+  @inline
+  def cast2bigInt(ref: AnyRef): java.math.BigInteger = ref match {
+    case o: java.math.BigInteger => o
+    case _ => throw new InternalRuntimeException(s"Unexpected non-bigint value: '$ref'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////

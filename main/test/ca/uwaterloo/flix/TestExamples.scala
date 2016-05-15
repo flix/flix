@@ -166,8 +166,7 @@ class TestExamples extends FunSuite {
     t.checkValue(List(Two), "Constant/A", List(Value.mkInt32(6)))
   }
 
-  // TODO: Implement BigInt in interpreter and codegen
-  ignore("ConstantSign.flix") {
+  test("ConstantSign.flix") {
     val input =
       """namespace ConstantSign {
         |    let ConstSign<> = (ConstSign.Bot, ConstSign.Top, leq, lub, glb);
@@ -201,8 +200,8 @@ class TestExamples extends FunSuite {
 
     val ConstantSign = Symbol.Resolved.mk(List("ConstantSign", "ConstSign"))
 
-    val Zer = Value.mkTag(ConstantSign, "Cst", Value.mkInt32(0))
-    val One = Value.mkTag(ConstantSign, "Cst", Value.mkInt32(1))
+    val Zer = Value.mkTag(ConstantSign, "Cst", Value.mkBigInt(0))
+    val One = Value.mkTag(ConstantSign, "Cst", Value.mkBigInt(1))
     val Pos = Value.mkTag(ConstantSign, "Pos", Value.Unit)
     val Top = Value.mkTag(ConstantSign, "Top", Value.Unit)
 

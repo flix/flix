@@ -31,6 +31,9 @@ final class WrappedType(val tpe: Type) extends IType {
   def isInt64: Boolean =
     tpe == Type.Int64
 
+  def isBigInt: Boolean =
+    tpe == Type.BigInt
+
   def isStr: Boolean =
     tpe == Type.Str
 

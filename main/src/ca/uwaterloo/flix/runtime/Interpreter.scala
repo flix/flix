@@ -26,6 +26,7 @@ object Interpreter {
     case Expression.Int16(lit) => Value.mkInt16(lit)
     case Expression.Int32(lit) => Value.mkInt32(lit)
     case Expression.Int64(lit) => Value.mkInt64(lit)
+    case Expression.BigInt(lit) => Value.mkBigInt(lit)
     case Expression.Str(lit) => Value.mkStr(lit)
     case load: LoadExpression =>
       val e = Value.cast2int64(eval(load.e, root, env))
@@ -119,6 +120,7 @@ object Interpreter {
         case Type.Int16 => Value.mkInt16(-Value.cast2int16(v))
         case Type.Int32 => Value.mkInt32(-Value.cast2int32(v))
         case Type.Int64 => Value.mkInt64(-Value.cast2int64(v))
+        case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v).negate)
         case _ => throw new InternalRuntimeException(s"Can't apply UnaryOperator.$op to type ${e.tpe}.")
       }
       case UnaryOperator.BitwiseNegate => e.tpe match {
@@ -126,6 +128,7 @@ object Interpreter {
         case Type.Int16 => Value.mkInt16(~Value.cast2int16(v))
         case Type.Int32 => Value.mkInt32(~Value.cast2int32(v))
         case Type.Int64 => Value.mkInt64(~Value.cast2int64(v))
+        case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v).not)
         case _ => throw new InternalRuntimeException(s"Can't apply UnaryOperator.$op to type ${e.tpe}.")
       }
     }
@@ -142,6 +145,7 @@ object Interpreter {
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) + Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) + Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) + Value.cast2int64(v2))
+        case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v1) add Value.cast2bigInt(v2))
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.Minus => e1.tpe match {
@@ -151,6 +155,7 @@ object Interpreter {
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) - Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) - Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) - Value.cast2int64(v2))
+        case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v1) subtract Value.cast2bigInt(v2))
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.Times => e1.tpe match {
@@ -160,6 +165,7 @@ object Interpreter {
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) * Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) * Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) * Value.cast2int64(v2))
+        case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v1) multiply Value.cast2bigInt(v2))
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.Divide => e1.tpe match {
@@ -169,6 +175,7 @@ object Interpreter {
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) / Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) / Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) / Value.cast2int64(v2))
+        case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v1) divide Value.cast2bigInt(v2))
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.Modulo => e1.tpe match {
@@ -178,6 +185,7 @@ object Interpreter {
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) % Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) % Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) % Value.cast2int64(v2))
+        case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v1) remainder Value.cast2bigInt(v2))
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.Exponentiate => e1.tpe match {
@@ -204,6 +212,7 @@ object Interpreter {
         case Type.Int16 => Value.mkBool(Value.cast2int16(v1) < Value.cast2int16(v2))
         case Type.Int32 => Value.mkBool(Value.cast2int32(v1) < Value.cast2int32(v2))
         case Type.Int64 => Value.mkBool(Value.cast2int64(v1) < Value.cast2int64(v2))
+        case Type.BigInt => Value.mkBool((Value.cast2bigInt(v1) compareTo Value.cast2bigInt(v2)) < 0)
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.LessEqual => e1.tpe match {
@@ -214,6 +223,7 @@ object Interpreter {
         case Type.Int16 => Value.mkBool(Value.cast2int16(v1) <= Value.cast2int16(v2))
         case Type.Int32 => Value.mkBool(Value.cast2int32(v1) <= Value.cast2int32(v2))
         case Type.Int64 => Value.mkBool(Value.cast2int64(v1) <= Value.cast2int64(v2))
+        case Type.BigInt => Value.mkBool((Value.cast2bigInt(v1) compareTo Value.cast2bigInt(v2)) <= 0)
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.Greater => e1.tpe match {
@@ -224,6 +234,7 @@ object Interpreter {
         case Type.Int16 => Value.mkBool(Value.cast2int16(v1) > Value.cast2int16(v2))
         case Type.Int32 => Value.mkBool(Value.cast2int32(v1) > Value.cast2int32(v2))
         case Type.Int64 => Value.mkBool(Value.cast2int64(v1) > Value.cast2int64(v2))
+        case Type.BigInt => Value.mkBool((Value.cast2bigInt(v1) compareTo Value.cast2bigInt(v2)) > 0)
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.GreaterEqual => e1.tpe match {
@@ -234,6 +245,7 @@ object Interpreter {
         case Type.Int16 => Value.mkBool(Value.cast2int16(v1) >= Value.cast2int16(v2))
         case Type.Int32 => Value.mkBool(Value.cast2int32(v1) >= Value.cast2int32(v2))
         case Type.Int64 => Value.mkBool(Value.cast2int64(v1) >= Value.cast2int64(v2))
+        case Type.BigInt => Value.mkBool((Value.cast2bigInt(v1) compareTo Value.cast2bigInt(v2)) >= 0)
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.Equal => Value.mkBool(v1 == v2)
@@ -264,6 +276,7 @@ object Interpreter {
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) & Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) & Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) & Value.cast2int64(v2))
+        case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v1) and Value.cast2bigInt(v2))
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.BitwiseOr => e1.tpe match {
@@ -271,6 +284,7 @@ object Interpreter {
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) | Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) | Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) | Value.cast2int64(v2))
+        case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v1) or Value.cast2bigInt(v2))
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.BitwiseXor => e1.tpe match {
@@ -278,6 +292,7 @@ object Interpreter {
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) ^ Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) ^ Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) ^ Value.cast2int64(v2))
+        case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v1) xor Value.cast2bigInt(v2))
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.BitwiseLeftShift => e1.tpe match {
@@ -285,6 +300,7 @@ object Interpreter {
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) << Value.cast2int32(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) << Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) << Value.cast2int32(v2))
+        case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v1) shiftLeft Value.cast2int32(v2))
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
       case BinaryOperator.BitwiseRightShift => e1.tpe match {
@@ -292,6 +308,7 @@ object Interpreter {
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) >> Value.cast2int32(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) >> Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) >> Value.cast2int32(v2))
+        case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v1) shiftRight Value.cast2int32(v2))
         case _ => throw new InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
       }
     }
