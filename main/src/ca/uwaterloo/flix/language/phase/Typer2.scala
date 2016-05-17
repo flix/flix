@@ -358,7 +358,7 @@ object Typer2 {
 
     def unify(tc: TypeConstraint, tenv: Map[String, Type]): Map[String, Type] = tc match {
       // TODO: Probably needs to return Validation.
-      case TypeConstraint.Eq(tpe1, tpe2) => unify(tpe1, tpe2, tenv)
+      case TypeConstraint.Eq(tpe1, tpe2) => unify(tpe1, tpe2)
       case TypeConstraint.AllEq(tpes) => ??? // TODO
       case TypeConstraint.OneOf(tpe1, ts) => ???
       // try to unify each, and require at least one?
@@ -366,7 +366,14 @@ object Typer2 {
 
     }
 
-    def unify(tpe1: Type, tp2: Type, tenv: Map[String, Type]): Map[String, Type] = ??? // TODO: Probably needs to return Validation.
+
+    def unify(tpe1: Type, tpe2: Type): Map[String, Type] = (tpe1, tpe2) match {
+      case (Type.Var(id), x) => ???
+      case (x, Type.Var(id)) => ???
+      case (Type.Unit, Type.Unit) => Map.empty
+
+    }
+
 
   }
 
