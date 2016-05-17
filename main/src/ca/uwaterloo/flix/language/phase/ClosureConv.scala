@@ -175,6 +175,12 @@ object ClosureConv {
     case SimplifiedAst.Expression.CheckNil(exp, loc) => freeVariables(exp)
     case SimplifiedAst.Expression.CheckCons(exp, loc) => freeVariables(exp)
     case SimplifiedAst.Expression.FSet(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
+    case SimplifiedAst.Expression.Existential(params, exp, loc) =>
+      val bound = params.map(_.ident.name)
+      freeVariables(exp).filterNot { v => bound.contains(v._1.name) }
+    case SimplifiedAst.Expression.Universal(params, exp, loc) =>
+      val bound = params.map(_.ident.name)
+      freeVariables(exp).filterNot { v => bound.contains(v._1.name) }
     case SimplifiedAst.Expression.UserError(tpe, loc) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.SwitchError(tpe, loc) => mutable.LinkedHashSet.empty

@@ -132,6 +132,7 @@ object LoadBytecode {
     case Type.Tuple(elms) => classOf[Value.Tuple]
     case Type.FSet(_) => classOf[scala.collection.immutable.Set[AnyRef]]
     case Type.Lambda(_, _) => interfaces(tpe)
+    case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ???
     case Type.Tag(_, _, _) => throw InternalCompilerException(s"No corresponding JVM type for $tpe.")
   }
 
@@ -178,6 +179,10 @@ object LoadBytecode {
       case Expression.CheckNil(exp, loc) => visit(exp)
       case Expression.CheckCons(exp, loc) => visit(exp)
       case Expression.FSet(elms, tpe, loc) => elms.flatMap(visit).toSet
+      case Expression.Existential(params, exp, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: '$e' at ${loc.source.format}.")
+      case Expression.Universal(params, exp, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: '$e' at ${loc.source.format}.")
       case Expression.UserError(tpe, loc) => Set.empty
       case Expression.MatchError(tpe, loc) => Set.empty
       case Expression.SwitchError(tpe, loc) => Set.empty

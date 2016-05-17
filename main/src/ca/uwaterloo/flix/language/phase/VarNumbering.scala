@@ -128,6 +128,10 @@ object VarNumbering {
         SimplifiedAst.Expression.CheckCons(visit(m, exp), loc)
       case SimplifiedAst.Expression.FSet(elms, tpe, loc) =>
         SimplifiedAst.Expression.FSet(elms.map(visit(m, _)), tpe, loc)
+      case SimplifiedAst.Expression.Existential(params, exp, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: '$e' at ${loc.source.format}.")
+      case SimplifiedAst.Expression.Universal(params, exp, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: '$e' at ${loc.source.format}.")
       case SimplifiedAst.Expression.UserError(tpe, loc) => e
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => e
