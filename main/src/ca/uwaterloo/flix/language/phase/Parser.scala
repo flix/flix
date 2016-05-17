@@ -389,6 +389,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Ascribe: Rule1[ParsedAst.Expression] = rule {
+      // TODO: This is the culprit.
+      // In general it is a bad idea to do a full parse of something and then to try and backtrack.
       SP ~ Invoke ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Expression.Ascribe | Invoke
     }
 
