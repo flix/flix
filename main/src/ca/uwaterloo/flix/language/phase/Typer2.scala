@@ -6,6 +6,9 @@ import scala.collection.mutable
 
 object Typer2 {
 
+  // TODO: Switch to weededast or namedast etc.
+  // Need unique ids for each expr.
+
   /**
     * A common super-type for type constraints.
     */
@@ -17,6 +20,8 @@ object Typer2 {
       * A type constraint that requires `t1` to unify with `t2`.
       */
     case class Eq(t1: Type, t2: Type) extends TypeConstraint
+
+    case class AllEq(tpes: List[Type]) extends TypeConstraint
 
     /**
       * A type constraint that requires `t1` to unify with one of the types `ts`.
@@ -67,7 +72,7 @@ object Typer2 {
         /**
           * Generates type constraints for the given expression `e0` under the given type environment `tenv`.
           */
-        def visitExp(e0: TypedAst.Expression, tenv: Map[Name.Ident, Type]): Type = e0 match {
+        def visitExp(e0: TypedAst.Expression, tenv0: Map[Name.Ident, Type]): Type = e0 match {
           /*
            * Literal expression.
            */
@@ -112,7 +117,7 @@ object Typer2 {
            */
           case TypedAst.Expression.Apply(exp1, args, _, _) =>
             // TODO
-            val tpe1 = visitExp(exp1, tenv)
+            val tpe1 = visitExp(exp1, tenv0)
 
             val r = Type.Var(genSym.fresh2().name) // TODO
             //(TypeConstraint.EqType(tpe1, Type.Lambda(tpes, r)) :: c1 ::: cs.flatten, r)
@@ -123,17 +128,17 @@ object Typer2 {
            */
           case TypedAst.Expression.Unary(op, exp1, _, _) => op match {
             case UnaryOperator.LogicalNot =>
-              val tpe = visitExp(exp1, tenv)
+              val tpe = visitExp(exp1, tenv0)
               constraints += TypeConstraint.Eq(tpe, Type.Bool)
               Type.Bool
 
             case UnaryOperator.Plus | UnaryOperator.Minus =>
-              val tpe = visitExp(exp1, tenv)
+              val tpe = visitExp(exp1, tenv0)
               constraints += TypeConstraint.OneOf(tpe, NumTypes)
               tpe
 
             case UnaryOperator.BitwiseNegate =>
-              val tpe = visitExp(exp1, tenv)
+              val tpe = visitExp(exp1, tenv0)
               constraints += TypeConstraint.OneOf(tpe, IntTypes)
               tpe
           }
@@ -144,32 +149,57 @@ object Typer2 {
           // TODO: Check if we can use stuff like ArithmeticOperator, etc.
           case TypedAst.Expression.Binary(op, e1, e2, _, _) => op match {
             case BinaryOperator.Plus | BinaryOperator.Minus | BinaryOperator.Times | BinaryOperator.Divide =>
-              val tpe1 = visitExp(e1, tenv)
-              val tpe2 = visitExp(e2, tenv)
+              val tpe1 = visitExp(e1, tenv0)
+              val tpe2 = visitExp(e2, tenv0)
               constraints += TypeConstraint.Eq(tpe1, tpe2)
               constraints += TypeConstraint.OneOf(tpe1, NumTypes)
               constraints += TypeConstraint.OneOf(tpe2, NumTypes)
               tpe1
 
-            case BinaryOperator.Modulo => ???
+            case BinaryOperator.Modulo =>
+              val tpe1 = visitExp(e1, tenv0)
+              val tpe2 = visitExp(e2, tenv0)
+              constraints += TypeConstraint.Eq(tpe1, tpe2)
+              constraints += TypeConstraint.OneOf(tpe1, NumTypes)
+              constraints += TypeConstraint.OneOf(tpe2, NumTypes)
+              tpe1
 
-            case BinaryOperator.Exponentiate => ???
+            case BinaryOperator.Exponentiate =>
+              val tpe1 = visitExp(e1, tenv0)
+              val tpe2 = visitExp(e2, tenv0)
+              constraints += TypeConstraint.Eq(tpe1, tpe2)
+              constraints += TypeConstraint.OneOf(tpe1, NumTypes)
+              constraints += TypeConstraint.OneOf(tpe2, NumTypes)
+              tpe1
 
-            case BinaryOperator.Equal | BinaryOperator.NotEqual => ???
+            case BinaryOperator.Equal | BinaryOperator.NotEqual =>
+              val tpe1 = visitExp(e1, tenv0)
+              val tpe2 = visitExp(e2, tenv0)
+              constraints += TypeConstraint.Eq(tpe1, tpe2)
+              Type.Bool
 
             case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual =>
-              val tpe1 = visitExp(e1, tenv)
-              val tpe2 = visitExp(e2, tenv)
-              // TODO
+              val tpe1 = visitExp(e1, tenv0)
+              val tpe2 = visitExp(e2, tenv0)
               constraints += TypeConstraint.Eq(tpe1, tpe2)
-
               Type.Bool
 
             // TODO: Logical Operator, can we shorten?
-            case BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr | BinaryOperator.Implication | BinaryOperator.Biconditional => ???
+            case BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr | BinaryOperator.Implication | BinaryOperator.Biconditional =>
+              val tpe1 = visitExp(e1, tenv0)
+              val tpe2 = visitExp(e2, tenv0)
+              constraints += TypeConstraint.Eq(tpe1, Type.Bool)
+              constraints += TypeConstraint.Eq(tpe2, Type.Bool)
+              Type.Bool
 
             // TODO: BitwiseOperator, can we shorten?
-            case BinaryOperator.BitwiseAnd | BinaryOperator.BitwiseOr | BinaryOperator.BitwiseXor | BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift => ???
+            case BinaryOperator.BitwiseAnd | BinaryOperator.BitwiseOr | BinaryOperator.BitwiseXor | BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift =>
+              val tpe1 = visitExp(e1, tenv0)
+              val tpe2 = visitExp(e2, tenv0)
+              constraints += TypeConstraint.Eq(tpe1, tpe2)
+              constraints += TypeConstraint.OneOf(tpe1, NumTypes)
+              constraints += TypeConstraint.OneOf(tpe2, NumTypes)
+              tpe1
 
           }
 
@@ -185,9 +215,9 @@ object Typer2 {
            * If-then-else expression.
            */
           case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
-            val tpe1 = visitExp(exp1, tenv)
-            val tpe2 = visitExp(exp2, tenv)
-            val tpe3 = visitExp(exp3, tenv)
+            val tpe1 = visitExp(exp1, tenv0)
+            val tpe2 = visitExp(exp2, tenv0)
+            val tpe3 = visitExp(exp3, tenv0)
 
             constraints += TypeConstraint.Eq(tpe1, Type.Bool)
             constraints += TypeConstraint.Eq(tpe2, tpe3)
@@ -201,22 +231,40 @@ object Typer2 {
           /*
            * Switch expression.
            */
-          case TypedAst.Expression.Switch(rules, tpe, loc) => ???
+          case TypedAst.Expression.Switch(rules, tpe, loc) =>
+            val bodyTypes = mutable.ListBuffer.empty[Type]
+            for ((cond, body) <- rules) {
+              val condType = visitExp(cond, tenv0)
+              bodyTypes += visitExp(body, tenv0)
+              constraints += TypeConstraint.Eq(condType, Type.Bool)
+            }
+
+            constraints += TypeConstraint.AllEq(bodyTypes.toList)
+
+            bodyTypes.head // TODO: Or generate fresh symbol?
 
           /*
            * Tag expression.
            */
-          case TypedAst.Expression.Tag(name, ident, exp, tpe, loc) => ???
+          case TypedAst.Expression.Tag(enum, tag, exp, tpe, loc) =>
+            // TODO
+            val tpe = visitExp(exp, tenv0)
+            Type.Enum(enum, ???)
 
           /*
            * Tuple expression.
            */
-          case TypedAst.Expression.Tuple(elms, tpe, loc) => ???
+          case TypedAst.Expression.Tuple(elms, tpe, loc) =>
+            val tpes = elms.map(e => visitExp(e, tenv0))
+            Type.Tuple(tpes)
 
           /*
            * Set expression.
            */
-          case TypedAst.Expression.Set(elms, tpe, loc) => ???
+          case TypedAst.Expression.Set(elms, tpe, loc) =>
+            val tpes = elms.map(e => visitExp(e, tenv0))
+            constraints += TypeConstraint.AllEq(tpes)
+            Type.FSet(tpes.head)
 
           // FNone
           // FSome
@@ -231,12 +279,26 @@ object Typer2 {
           /*
            * Existential expression.
            */
-          case TypedAst.Expression.Existential(params, e, loc) => ???
+          // TODO: Weeder should check that arguments are not duplicated
+          case TypedAst.Expression.Existential(params, e, loc) =>
+            val tenv = params.foldLeft(tenv0) {
+              case (macc, Ast.FormalParam(id, t)) => macc + (id -> t)
+            }
+            val tpe = visitExp(e, tenv)
+            constraints += TypeConstraint.Eq(tpe, Type.Bool)
+            Type.Bool
 
           /*
            * Universal expression.
            */
-          case TypedAst.Expression.Universal(params, e, loc) => ???
+          // TODO: Weeder should check that arguments are not duplicated
+          case TypedAst.Expression.Universal(params, e, loc) =>
+            val tenv = params.foldLeft(tenv0) {
+              case (macc, Ast.FormalParam(id, t)) => macc + (id -> t)
+            }
+            val tpe = visitExp(e, tenv)
+            constraints += TypeConstraint.Eq(tpe, Type.Bool)
+            Type.Bool
 
           /*
            * Ascribe expression.
@@ -297,6 +359,7 @@ object Typer2 {
     def unify(tc: TypeConstraint, tenv: Map[String, Type]): Map[String, Type] = tc match {
       // TODO: Probably needs to return Validation.
       case TypeConstraint.Eq(tpe1, tpe2) => unify(tpe1, tpe2, tenv)
+      case TypeConstraint.AllEq(tpes) => ??? // TODO
       case TypeConstraint.OneOf(tpe1, ts) => ???
       // try to unify each, and require at least one?
       // how to ensure unique typing? need list of maps?
