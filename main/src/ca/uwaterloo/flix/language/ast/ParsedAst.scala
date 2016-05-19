@@ -384,12 +384,11 @@ object ParsedAst {
     /**
       * Apply Expression (function call).
       *
-      * @param sp1    the position of the first character in the expression.
       * @param lambda the lambda expression.
       * @param args   the arguments.
       * @param sp2    the position of the last character in the expression.
       */
-    case class Apply(sp1: SourcePosition, lambda: ParsedAst.Expression, args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Apply(lambda: ParsedAst.Expression, args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Infix Expression (function call).

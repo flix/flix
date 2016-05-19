@@ -770,7 +770,8 @@ object Weeder {
 
       case ParsedAst.Expression.Lit(sp1, lit, sp2) => toExpression(lit)
 
-      case ParsedAst.Expression.Apply(sp1, lambda, args, sp2) =>
+      case ParsedAst.Expression.Apply(lambda, args, sp2) =>
+        val sp1 = leftMostSourcePosition(lambda)
         @@(compile(lambda), @@(args map compile)) flatMap {
           case (_, Nil) => IllegalApply("A parameter list must contain at least one parameter or be omitted.", mkSL(sp1, sp2)).toFailure
           case (e, as) => WeededAst.Expression.Apply(e, as, mkSL(sp1, sp2)).toSuccess
@@ -1188,8 +1189,9 @@ object Weeder {
         case ParsedAst.Expression.Lit(sp1, lit, sp2) => Literals.compile(lit) map {
           case l => WeededAst.Term.Head.Lit(l, mkSL(sp1, sp2))
         }
-        case ParsedAst.Expression.Apply(sp1, lambda, args, sp2) => lambda match {
+        case ParsedAst.Expression.Apply(lambda, args, sp2) => lambda match {
           case ParsedAst.Expression.Var(_, name, _) =>
+            val sp1 = leftMostSourcePosition(lambda)
             @@(args map (a => toTerm(a, aliases))) flatMap {
               case Nil => IllegalApply("A parameter list must contain at least one parameter or be omitted.", mkSL(sp1, sp2)).toFailure
               case as => WeededAst.Term.Head.Apply(name, as, mkSL(sp1, sp2)).toSuccess
@@ -1231,7 +1233,7 @@ object Weeder {
         case ParsedAst.Expression.Lit(sp1, lit, sp2) => Literals.compile(lit) map {
           case l => WeededAst.Term.Body.Lit(l, mkSL(sp1, sp2))
         }
-        case ParsedAst.Expression.Apply(sp1, lambda, args, sp2) => IllegalBodyTerm("Functions call may not occur here.", mkSL(sp1, sp2)).toFailure
+        case ParsedAst.Expression.Apply(lambda, args, sp2) => IllegalBodyTerm("Functions call may not occur here.", mkSL(leftMostSourcePosition(lambda), sp2)).toFailure
         case _ => throw InternalCompilerException("Illegal body term. But proper error messages not yet implemented.")
       }
     }
@@ -1359,7 +1361,7 @@ object Weeder {
     case ParsedAst.Expression.Wild(sp1, _) => sp1
     case ParsedAst.Expression.Var(sp1, _, _) => sp1
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1
-    case ParsedAst.Expression.Apply(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.Apply(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Infix(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Lambda(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Unary(sp1, _, _, _) => sp1
@@ -1382,7 +1384,7 @@ object Weeder {
     case ParsedAst.Expression.PutIndex(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Existential(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Universal(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Ascribe(e, _, _) => leftMostSourcePosition(e)
+    case ParsedAst.Expression.Ascribe(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.UserError(sp1, _) => sp1
     case ParsedAst.Expression.Bot(sp1, sp2) => sp1
     case ParsedAst.Expression.Top(sp1, sp2) => sp1

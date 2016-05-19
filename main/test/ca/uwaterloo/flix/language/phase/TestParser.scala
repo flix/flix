@@ -599,6 +599,43 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
+  test("Expression.LetMatch.04") {
+    // Note: This is to test the performance of deeply nested lets.
+    val input =
+      """
+        |def f: Int =
+        |    let x1 = 1 in
+        |    let x2 = 1 in
+        |    let x3 = 1 in
+        |    let x4 = 1 in
+        |    let x5 = 1 in
+        |    let x6 = 1 in
+        |    let x7 = 1 in
+        |    let x8 = 1 in
+        |    let x9 = 1 in
+        |    let y1 = 1 in
+        |    let y2 = 1 in
+        |    let y3 = 1 in
+        |    let y4 = 1 in
+        |    let y5 = 1 in
+        |    let y6 = 1 in
+        |    let y7 = 1 in
+        |    let y8 = 1 in
+        |    let y9 = 1 in
+        |    let z1 = 1 in
+        |    let z2 = 1 in
+        |    let z3 = 1 in
+        |    let z4 = 1 in
+        |    let z5 = 1 in
+        |    let z6 = 1 in
+        |    let z7 = 1 in
+        |    let z8 = 1 in
+        |    let z9 = 1 in
+        |        1
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
   test("Expression.IfThenElse.01") {
     val input = "def f: Int = if (true) 42 else 21"
     new Flix().addStr(input).compile().get

@@ -390,12 +390,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Ascribe: Rule1[ParsedAst.Expression] = rule {
-      Invoke ~ optional(optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Expression.Ascribe)
-    }
-
-    def Invoke: Rule1[ParsedAst.Expression] = rule {
-      // TODO: Investigate whether this is slow.
-      Apply | FList
+      FList ~ optional(optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Expression.Ascribe)
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
@@ -435,8 +430,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
     }
 
-    def Apply: Rule1[ParsedAst.Expression.Apply] = rule {
-      SP ~ Primary ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Apply
+    def Apply: Rule1[ParsedAst.Expression] = rule {
+      Primary ~ optional(optWS ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Apply)
     }
 
     def Tag: Rule1[ParsedAst.Expression.Tag] = rule {
@@ -460,7 +455,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def FList: Rule1[ParsedAst.Expression] = rule {
-      Primary ~ optional(optWS ~ atomic("::") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.FList)
+      Apply ~ optional(optWS ~ atomic("::") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.FList)
     }
 
     def FVec: Rule1[ParsedAst.Expression.FVec] = rule {
