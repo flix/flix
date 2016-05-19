@@ -64,11 +64,11 @@ namespace Math {
     /**
      * Returns the smallest of `i1` and `i2`.
      */
-    fn min(i1: Int, i2: Int): Int = if (i1 <= i2) i1 else i2
+    def min(i1: Int, i2: Int): Int = if (i1 <= i2) i1 else i2
 
     /**
      * Returns the greatest of `i1` and `i2`.
      */
-    fn max(i1: Int, i2: Int): Int = if (i1 >= i2) i1 else i2
+    def max(i1: Int, i2: Int): Int = if (i1 >= i2) i1 else i2
 
 }
