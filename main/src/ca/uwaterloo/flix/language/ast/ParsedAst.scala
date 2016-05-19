@@ -609,12 +609,11 @@ object ParsedAst {
     /**
       * Ascribe Expression.
       *
-      * @param sp1 the position of the first character in the expression.
       * @param exp the expression.
       * @param tpe the ascribed type.
       * @param sp2 the position of the last character in the expression.
       */
-    case class Ascribe(sp1: SourcePosition, exp: ParsedAst.Expression, tpe: Type, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Ascribe(exp: ParsedAst.Expression, tpe: Type, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * User Error Expression (an expression that immediately aborts execution).

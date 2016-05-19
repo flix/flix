@@ -968,9 +968,9 @@ object Weeder {
           }
         }
 
-      case ParsedAst.Expression.Ascribe(sp1, exp, tpe, sp2) =>
+      case ParsedAst.Expression.Ascribe(exp, tpe, sp2) =>
         compile(exp) map {
-          case e => WeededAst.Expression.Ascribe(e, tpe, mkSL(sp1, sp2))
+          case e => WeededAst.Expression.Ascribe(e, tpe, mkSL(leftMostSourcePosition(exp), sp2))
         }
 
       case ParsedAst.Expression.UserError(sp1, sp2) =>
@@ -1382,7 +1382,7 @@ object Weeder {
     case ParsedAst.Expression.PutIndex(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Existential(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Universal(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Ascribe(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.Ascribe(e, _, _) => leftMostSourcePosition(e)
     case ParsedAst.Expression.UserError(sp1, _) => sp1
     case ParsedAst.Expression.Bot(sp1, sp2) => sp1
     case ParsedAst.Expression.Top(sp1, sp2) => sp1

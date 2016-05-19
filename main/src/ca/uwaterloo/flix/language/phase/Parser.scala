@@ -18,7 +18,7 @@ import scala.io.Source
 class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   /*
-    * Implicitely assumed default charset.
+    * Implicitly assumed default charset.
     */
   val DefaultCharset = Charset.forName("UTF-8")
 
@@ -215,6 +215,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
     }
 
+    // TODO: It would be faster to parse Facts and Rules together.
     def Fact: Rule1[ParsedAst.Declaration.Fact] = rule {
       SP ~ Predicate ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Fact
     }
@@ -389,12 +390,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Ascribe: Rule1[ParsedAst.Expression] = rule {
-      // TODO: This is the culprit.
-      // In general it is a bad idea to do a full parse of something and then to try and backtrack.
-      SP ~ Invoke ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Expression.Ascribe | Invoke
+      Invoke ~ optional(optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Expression.Ascribe)
     }
 
     def Invoke: Rule1[ParsedAst.Expression] = rule {
+      // TODO: Investigate whether this is slow.
       Apply | FList
     }
 
