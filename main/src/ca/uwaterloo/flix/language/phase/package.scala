@@ -12,6 +12,11 @@ package object phase {
 
     private var number: Int = 0
 
+    def freshId(): Int = {
+      number = number + 1
+      number
+    }
+
     def freshDefn(ns: List[String]): Symbol.Resolved = {
       number = number + 1
       Symbol.Resolved.mk(ns.init ::: ns.last + "$" + number :: Nil)

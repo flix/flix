@@ -6,9 +6,6 @@ import scala.collection.mutable
 
 object Typer2 {
 
-  // TODO: Switch to weededast or namedast etc.
-  // Need unique ids for each expr.
-
   /**
     * A common super-type for type constraints.
     */
@@ -62,7 +59,7 @@ object Typer2 {
       /**
         * Generates type constraints for the given expression `exp0`.
         */
-      def gen(exp0: TypedAst.Expression)(implicit genSym: GenSym): Unit = {
+      def gen(exp0: NamedAst.Expression)(implicit genSym: GenSym): Unit = {
 
         /*
          * A mutable set to hold the collected constraints.
@@ -72,50 +69,54 @@ object Typer2 {
         /**
           * Generates type constraints for the given expression `e0` under the given type environment `tenv`.
           */
-        def visitExp(e0: TypedAst.Expression, tenv0: Map[Name.Ident, Type]): Type = e0 match {
+        def visitExp(e0: NamedAst.Expression, tenv0: Map[Name.Ident, Type]): Type = e0 match {
           /*
-           * Literal expression.
+           * Unit expression.
            */
-          case TypedAst.Expression.Lit(lit, _, _) => lit match {
-            case TypedAst.Literal.Unit(_) => Type.Unit
-            case TypedAst.Literal.Bool(_, _) => Type.Bool
-            case TypedAst.Literal.Char(_, _) => Type.Char
-            case TypedAst.Literal.Float32(_, _) => Type.Float32
-            case TypedAst.Literal.Float64(_, _) => Type.Float64
-            case TypedAst.Literal.Int8(_, _) => Type.Int8
-            case TypedAst.Literal.Int16(_, _) => Type.Int16
-            case TypedAst.Literal.Int32(_, _) => Type.Int32
-            case TypedAst.Literal.Int64(_, _) => Type.Int64
-            case TypedAst.Literal.BigInt(_, _) => Type.BigInt
-            case TypedAst.Literal.Str(_, _) => Type.Str
-          }
+          case NamedAst.Expression.Unit(id, _) => Type.Unit
+
+          /*
+           * Bool expression.
+           */
+          case NamedAst.Expression.True(id, _) => Type.Bool
+          case NamedAst.Expression.False(id, _) => Type.Bool
+
+          case NamedAst.Expression.Char(id, _, _) => Type.Char
+          case NamedAst.Expression.Float32(id, _, _) => Type.Float32
+          case NamedAst.Expression.Float64(id, _, _) => Type.Float64
+          case NamedAst.Expression.Int8(id, _, _) => Type.Int8
+          case NamedAst.Expression.Int16(id, _, _) => Type.Int16
+          case NamedAst.Expression.Int32(id, _, _) => Type.Int32
+          case NamedAst.Expression.Int64(id, _, _) => Type.Int64
+          case NamedAst.Expression.BigInt(id, _, _) => Type.BigInt
+          case NamedAst.Expression.Str(id, _, _) => Type.Str
 
           /*
            * Variable expression.
            */
-          case TypedAst.Expression.Var(ident, _, _) =>
+          case NamedAst.Expression.Var(ident, _, _) =>
             // TODO: Lookup the type in the type environment.
             ???
 
           /*
            * Ref expression.
            */
-          case TypedAst.Expression.Ref(name, tpe, loc) => ???
+          //case NamedAst.Expression.Ref(id, name, tpe, loc) => ???
 
           /*
            * Hook expression.
            */
-          case TypedAst.Expression.Hook(hook, tpe, loc) => ???
+          //case NamedAst.Expression.Hook(id, hook, tpe, loc) => ???
 
           /*
            * Lambda expression.
            */
-          case TypedAst.Expression.Lambda(args, body, tpe, loc) => ???
+          case NamedAst.Expression.Lambda(args, body, tpe, loc) => ???
 
           /*
            * Apply expression.
            */
-          case TypedAst.Expression.Apply(exp1, args, _, _) =>
+          case NamedAst.Expression.Apply(id, exp1, args, _) =>
             // TODO
             val tpe1 = visitExp(exp1, tenv0)
 
@@ -126,7 +127,7 @@ object Typer2 {
           /*
            * Unary expression.
            */
-          case TypedAst.Expression.Unary(op, exp1, _, _) => op match {
+          case NamedAst.Expression.Unary(id, op, exp1, _) => op match {
             case UnaryOperator.LogicalNot =>
               val tpe = visitExp(exp1, tenv0)
               constraints += TypeConstraint.Eq(tpe, Type.Bool)
@@ -147,7 +148,7 @@ object Typer2 {
            * Binary expression.
            */
           // TODO: Check if we can use stuff like ArithmeticOperator, etc.
-          case TypedAst.Expression.Binary(op, e1, e2, _, _) => op match {
+          case NamedAst.Expression.Binary(id, op, e1, e2, _) => op match {
             case BinaryOperator.Plus | BinaryOperator.Minus | BinaryOperator.Times | BinaryOperator.Divide =>
               val tpe1 = visitExp(e1, tenv0)
               val tpe2 = visitExp(e2, tenv0)
@@ -206,7 +207,7 @@ object Typer2 {
           /*
            * Let expression.
            */
-          case TypedAst.Expression.Let(ident, exp1, exp2, tpe, _) =>
+          case NamedAst.Expression.Let(ident, exp1, exp2, tpe, _) =>
             // update type environment and recurse
             // TODO
             ???
@@ -214,7 +215,7 @@ object Typer2 {
           /*
            * If-then-else expression.
            */
-          case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
+          case NamedAst.Expression.IfThenElse(id, exp1, exp2, exp3, loc) =>
             val tpe1 = visitExp(exp1, tenv0)
             val tpe2 = visitExp(exp2, tenv0)
             val tpe3 = visitExp(exp3, tenv0)
@@ -226,12 +227,12 @@ object Typer2 {
           /*
            * Match expression.
            */
-          case TypedAst.Expression.Match(exp1, rules, tpe, loc) => ???
+          case NamedAst.Expression.Match(exp1, rules, tpe, loc) => ???
 
           /*
            * Switch expression.
            */
-          case TypedAst.Expression.Switch(rules, tpe, loc) =>
+          case NamedAst.Expression.Switch(id, rules, loc) =>
             val bodyTypes = mutable.ListBuffer.empty[Type]
             for ((cond, body) <- rules) {
               val condType = visitExp(cond, tenv0)
@@ -246,43 +247,47 @@ object Typer2 {
           /*
            * Tag expression.
            */
-          case TypedAst.Expression.Tag(enum, tag, exp, tpe, loc) =>
+          case NamedAst.Expression.Tag(id, enum, tag, exp, loc) =>
             // TODO
             val tpe = visitExp(exp, tenv0)
-            Type.Enum(enum, ???)
+            Type.Enum(???, ???)
 
           /*
            * Tuple expression.
            */
-          case TypedAst.Expression.Tuple(elms, tpe, loc) =>
+          case NamedAst.Expression.Tuple(id, elms, loc) =>
             val tpes = elms.map(e => visitExp(e, tenv0))
             Type.Tuple(tpes)
+
+          // FNone
+          // FSome
+
+          // FNil
+          // FList
+
+          // FVec
 
           /*
            * Set expression.
            */
-          case TypedAst.Expression.Set(elms, tpe, loc) =>
+          case NamedAst.Expression.FSet(id, elms, loc) =>
             val tpes = elms.map(e => visitExp(e, tenv0))
             constraints += TypeConstraint.AllEq(tpes)
             Type.FSet(tpes.head)
 
-          // FNone
-          // FSome
-          // FNil
-          // FList
-          // FVec
-          // FSet
           // FMap
+
           // GetIndex
+
           // PutIndex
 
           /*
            * Existential expression.
            */
           // TODO: Weeder should check that arguments are not duplicated
-          case TypedAst.Expression.Existential(params, e, loc) =>
+          case NamedAst.Expression.Existential(id, params, e, loc) =>
             val tenv = params.foldLeft(tenv0) {
-              case (macc, Ast.FormalParam(id, t)) => macc + (id -> t)
+              case (macc, Ast.FormalParam(name, t)) => macc + (name -> t)
             }
             val tpe = visitExp(e, tenv)
             constraints += TypeConstraint.Eq(tpe, Type.Bool)
@@ -292,9 +297,9 @@ object Typer2 {
            * Universal expression.
            */
           // TODO: Weeder should check that arguments are not duplicated
-          case TypedAst.Expression.Universal(params, e, loc) =>
+          case NamedAst.Expression.Universal(id, params, e, loc) =>
             val tenv = params.foldLeft(tenv0) {
-              case (macc, Ast.FormalParam(id, t)) => macc + (id -> t)
+              case (macc, Ast.FormalParam(name, t)) => macc + (name -> t)
             }
             val tpe = visitExp(e, tenv)
             constraints += TypeConstraint.Eq(tpe, Type.Bool)
@@ -308,37 +313,38 @@ object Typer2 {
           /*
            * User Error expression.
            */
-          case TypedAst.Expression.Error(tpe, loc) =>
+          case NamedAst.Expression.UserError(id, loc) =>
             // TODO
             ???
+
+          case _ => ???
 
         }
 
         /**
           * Generates type constraints for the given pattern `p0` under the given type environment `tenv`.
           */
-        def visitPat(p0: TypedAst.Pattern, tenv: Map[Name.Ident, Type]): Type = p0 match {
-          case TypedAst.Pattern.Wildcard(tpe, loc) => tpe
-          case TypedAst.Pattern.Var(ident, tpe, loc) => tpe
-          case TypedAst.Pattern.Lit(lit, tpe, _) => lit match {
-            case TypedAst.Literal.Unit(loc) => Type.Unit
-            case TypedAst.Literal.Bool(_, _) => Type.Bool
-            case TypedAst.Literal.Char(_, _) => Type.Char
-            case TypedAst.Literal.Float32(_, _) => Type.Float32
-            case TypedAst.Literal.Float64(_, _) => Type.Float64
-            case TypedAst.Literal.Int8(_, _) => Type.Int8
-            case TypedAst.Literal.Int16(_, _) => Type.Int16
-            case TypedAst.Literal.Int32(_, _) => Type.Int32
-            case TypedAst.Literal.Int64(_, _) => Type.Int64
-            case TypedAst.Literal.BigInt(_, _) => Type.BigInt
-            case TypedAst.Literal.Str(_, _) => Type.Str
-          }
-
-          case TypedAst.Pattern.Tag(enum, tag, p1, tpe, loc) => ???
-
-          case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
+        def visitPat(p0: NamedAst.Pattern, tenv: Map[Name.Ident, Type]): Type = p0 match {
+          case NamedAst.Pattern.Wild(loc) => ???
+          case NamedAst.Pattern.Var(ident, loc) => ???
+          case NamedAst.Pattern.Unit(loc) => Type.Unit
+          case NamedAst.Pattern.True(_) => Type.Bool
+          case NamedAst.Pattern.False(_) => Type.Bool
+          case NamedAst.Pattern.Char(_, _) => Type.Char
+          case NamedAst.Pattern.Float32(_, _) => Type.Float32
+          case NamedAst.Pattern.Float64(_, _) => Type.Float64
+          case NamedAst.Pattern.Int8(_, _) => Type.Int8
+          case NamedAst.Pattern.Int16(_, _) => Type.Int16
+          case NamedAst.Pattern.Int32(_, _) => Type.Int32
+          case NamedAst.Pattern.Int64(_, _) => Type.Int64
+          case NamedAst.Pattern.BigInt(_, _) => Type.BigInt
+          case NamedAst.Pattern.Str(_, _) => Type.Str
+          case NamedAst.Pattern.Tag(enum, tag, p1, loc) => ???
+          case NamedAst.Pattern.Tuple(elms, loc) =>
             val tpes = elms.map(e => visitPat(e, tenv))
             Type.Tuple(tpes)
+
+          case _ => ???
         }
 
         visitExp(exp0, Map.empty)
@@ -371,7 +377,7 @@ object Typer2 {
       case (Type.Var(id), x) => ???
       case (x, Type.Var(id)) => ???
       case (Type.Unit, Type.Unit) => Map.empty
-
+      case _ => ???
     }
 
 

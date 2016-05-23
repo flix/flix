@@ -1,8 +1,17 @@
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.phase.GenSym
+
 import scala.collection.mutable
 
 object Symbol {
+
+  /**
+    * Returns a fresh variable symbol for the given identifier.
+    */
+  def mkVarSym(ident: Name.Ident)(implicit genSym: GenSym): VarSym = {
+    ???
+  }
 
   /**
     * Returns the table symbol for the given fully qualified name.

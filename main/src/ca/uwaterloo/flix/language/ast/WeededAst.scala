@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.language.ast
 
+// TODO: Why are there seq here?
 import scala.collection.immutable.Seq
 
 trait WeededAst
