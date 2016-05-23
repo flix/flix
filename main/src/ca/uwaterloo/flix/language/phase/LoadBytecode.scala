@@ -128,10 +128,17 @@ object LoadBytecode {
     case Type.Int64 => classOf[Long]
     case Type.BigInt => classOf[java.math.BigInteger]
     case Type.Str => classOf[java.lang.String]
+    case Type.Native => ??? // TODO
     case Type.Enum(_, _) => classOf[Value.Tag]
     case Type.Tuple(elms) => classOf[Value.Tuple]
-    case Type.FSet(_) => classOf[scala.collection.immutable.Set[AnyRef]]
     case Type.Lambda(_, _) => interfaces(tpe)
+    case Type.Parametric(_, _) => ??? // TODO: How to handle?
+    case Type.FOpt(_) | Type.FList(_) => ??? // TODO
+    case Type.FSet(_) => classOf[scala.collection.immutable.Set[AnyRef]]
+    case Type.FMap(_, _) => ??? // TODO
+    case Type.Predicate(_) => ??? // TODO: How to handle?
+    case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
+    case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
     case Type.Tag(_, _, _) => throw InternalCompilerException(s"No corresponding JVM type for $tpe.")
   }
 
@@ -178,6 +185,10 @@ object LoadBytecode {
       case Expression.CheckNil(exp, loc) => visit(exp)
       case Expression.CheckCons(exp, loc) => visit(exp)
       case Expression.FSet(elms, tpe, loc) => elms.flatMap(visit).toSet
+      case Expression.Existential(params, exp, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: '$e' at ${loc.source.format}.")
+      case Expression.Universal(params, exp, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: '$e' at ${loc.source.format}.")
       case Expression.UserError(tpe, loc) => Set.empty
       case Expression.MatchError(tpe, loc) => Set.empty
       case Expression.SwitchError(tpe, loc) => Set.empty

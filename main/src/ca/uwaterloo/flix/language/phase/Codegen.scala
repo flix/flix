@@ -50,10 +50,17 @@ object Codegen {
         case Type.Int64 => asm.Type.LONG_TYPE.getDescriptor
         case Type.BigInt => asm.Type.getDescriptor(classOf[java.math.BigInteger])
         case Type.Str => asm.Type.getDescriptor(classOf[java.lang.String])
+        case Type.Native => ??? // TODO
         case Type.Enum(_, _) => asm.Type.getDescriptor(classOf[Value.Tag])
         case Type.Tuple(_) => asm.Type.getDescriptor(classOf[Value.Tuple])
-        case Type.FSet(_) => asm.Type.getDescriptor(classOf[scala.collection.immutable.Set[AnyRef]])
         case Type.Lambda(_, _) => s"L${decorate(interfaces(tpe))};"
+        case Type.Parametric(_, _) => ??? // TODO: How to handle?
+        case Type.FOpt(_) | Type.FList(_) => ??? // TODO
+        case Type.FSet(_) => asm.Type.getDescriptor(classOf[scala.collection.immutable.Set[AnyRef]])
+        case Type.FMap(_, _) => ??? // TODO
+        case Type.Predicate(_) => ??? // TODO: How to handle?
+        case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
+        case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
         case Type.Tag(_, _, _) => throw InternalCompilerException(s"No corresponding JVM type for $tpe.")
       }
 
@@ -133,7 +140,7 @@ object Codegen {
 
     val tpe = function.tpe match {
       case t: Type.Lambda => t.retTpe
-      case _ => function.tpe
+      case _ => throw new InternalCompilerException(s"Constant ${function.name} should have been converted to a function.")
     }
 
     tpe match {
@@ -143,6 +150,10 @@ object Codegen {
       case Type.Float64 => mv.visitInsn(DRETURN)
       case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
         mv.visitInsn(ARETURN)
+      case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+      case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
+      case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
+      case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
       case Type.Tag(_, _, _) => throw InternalCompilerException(s"Functions can't return type $tpe.")
     }
 
@@ -183,13 +194,16 @@ object Codegen {
     case store: StoreExpression => compileStoreExpr(ctx, visitor)(store)
 
     case Expression.Var(ident, offset, tpe, _) => tpe match {
-      case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 =>
-        visitor.visitVarInsn(ILOAD, offset)
+      case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ILOAD, offset)
       case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
       case Type.Float32 => visitor.visitVarInsn(FLOAD, offset)
       case Type.Float64 => visitor.visitVarInsn(DLOAD, offset)
       case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
         visitor.visitVarInsn(ALOAD, offset)
+      case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+      case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => // TODO: Deprecated
+      case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
+      case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
       case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type $tpe.")
     }
 
@@ -301,13 +315,16 @@ object Codegen {
     case Expression.Let(ident, offset, exp1, exp2, _, _) =>
       compileExpression(ctx, visitor)(exp1)
       exp1.tpe match {
-        case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 =>
-          visitor.visitVarInsn(ISTORE, offset)
+        case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ISTORE, offset)
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
         case Type.Float32 => visitor.visitVarInsn(FSTORE, offset)
         case Type.Float64 => visitor.visitVarInsn(DSTORE, offset)
         case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
           visitor.visitVarInsn(ASTORE, offset)
+        case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+        case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => // TODO: Deprecated
+        case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
+        case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of ${exp1.tpe} should never be compiled.")
         case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type ${exp1.tpe}.")
       }
       compileExpression(ctx, visitor)(exp2)
@@ -396,6 +413,11 @@ object Codegen {
       visitor.visitMethodInsn(INVOKEVIRTUAL, "scala/Predef$", "wrapRefArray", "([Ljava/lang/Object;)Lscala/collection/mutable/WrappedArray;", false)
       visitor.visitMethodInsn(INVOKEVIRTUAL, "scala/collection/immutable/Set$", "apply", "(Lscala/collection/Seq;)Lscala/collection/GenTraversable;", false)
 
+    case Expression.Existential(params, exp, loc) =>
+      throw InternalCompilerException(s"Unexpected expression: '$expr' at ${loc.source.format}.")
+    case Expression.Universal(params, exp, loc) =>
+      throw InternalCompilerException(s"Unexpected expression: '$expr' at ${loc.source.format}.")
+
     case Expression.UserError(_, loc) =>
       visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/api/UserException")
       visitor.visitInsn(DUP)
@@ -478,12 +500,16 @@ object Codegen {
       compileExpression(ctx, visitor)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkInt64", "(J)Ljava/lang/Object;", false)
 
-    case Type.Str =>
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+    case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
       compileExpression(ctx, visitor)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkStr", "(Ljava/lang/String;)Ljava/lang/Object;", false)
 
-    case Type.Unit | Type.BigInt | Type.Enum(_, _) | Type.Tuple(_) | Type.FSet(_) => compileExpression(ctx, visitor)(exp)
+    case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+
+    case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
+
+    case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
+
+    case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of ${exp.tpe} should never be compiled.")
 
     case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type ${exp.tpe}.")
 
@@ -538,7 +564,19 @@ object Codegen {
 
     case Type.Tuple(_) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tuple")
 
+    case Type.Lambda(_, _) =>
+      // TODO: Is this correct? Need to write a test when we can write lambda expressions.
+      visitor.visitTypeInsn(CHECKCAST, decorate(ctx.interfaces(tpe)))
+
     case Type.FSet(_) => visitor.visitTypeInsn(CHECKCAST, "scala/collection/immutable/Set")
+
+    case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+
+    case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
+
+    case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
+
+    case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
 
     case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type $tpe.")
 
