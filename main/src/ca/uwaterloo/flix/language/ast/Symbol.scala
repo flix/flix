@@ -10,7 +10,7 @@ object Symbol {
     * Returns a fresh variable symbol for the given identifier.
     */
   def mkVarSym(ident: Name.Ident)(implicit genSym: GenSym): VarSym = {
-    ???
+    new VarSym(genSym.freshId(), ident.name, ident.loc)
   }
 
   /**
@@ -32,10 +32,9 @@ object Symbol {
     *
     * @param id   the globally unique name of the symbol.
     * @param text the original name, as it appears in the source code, of the symbol
-    * @param tpe  the type of the symbol.
     * @param loc  the source location associated with the symbol.
     */
-  final class VarSym(val id: Int, val text: String, val tpe: Type, val loc: SourceLocation) {
+  final class VarSym(val id: Int, val text: String, val loc: SourceLocation) {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -52,7 +51,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override val toString: String = text + "$" + id
+    override def toString: String = text + "$" + id
   }
 
   /**
@@ -77,7 +76,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override val toString: String = namespace.mkString(".") + "/" + name
+    override def toString: String = namespace.mkString(".") + "/" + name
   }
 
 

@@ -136,14 +136,20 @@ object Namer {
         }
 
       case WeededAst.Expression.Match(exp, rules, loc) =>
-        val e = namer(exp, env0)
-        rules map {
+        val expVal = namer(exp, env0)
+        val rulesVal = rules map {
           case (pat, body) =>
+            // extend the environment with every variable occurring in the pattern
+            // and perform naming on the rule body under the extended environment.
             val p = Patterns.namer(pat)
-            Patterns.symbolsOf(p)
-            ???
+            val env = env0 ++ Patterns.symbolsOf(p)
+            namer(body, env) map {
+              case b => p -> b
+            }
         }
-        ???
+        @@(expVal, @@(rulesVal)) map {
+          case (e, rs) => NamedAst.Expression.Match(id(), e, rs, loc)
+        }
 
       case WeededAst.Expression.Switch(rules, loc) => @@(rules map {
         case (cond, body) => @@(namer(cond, env0), namer(body, env0))
@@ -222,11 +228,12 @@ object Namer {
     /**
       * Returns the named pattern corresponding to the given pattern `pat0`.
       */
-    def namer(pat0: WeededAst.Pattern): NamedAst.Pattern = pat0 match {
+    def namer(pat0: WeededAst.Pattern)(implicit genSym: GenSym): NamedAst.Pattern = pat0 match {
       case WeededAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(loc)
       case WeededAst.Pattern.Var(ident, loc) =>
-        ???
-
+        // make a fresh variable symbol for the local variable.
+        val sym = Symbol.mkVarSym(ident)
+        NamedAst.Pattern.Var(sym, loc)
       case WeededAst.Pattern.Unit(loc) => NamedAst.Pattern.Unit(loc)
       case WeededAst.Pattern.True(loc) => NamedAst.Pattern.True(loc)
       case WeededAst.Pattern.False(loc) => NamedAst.Pattern.False(loc)
@@ -257,7 +264,43 @@ object Namer {
     /**
       * Returns a map from variable names to variable symbols in the given pattern `pat0`.
       */
-    def symbolsOf(pat0: NamedAst.Pattern): Map[String, Symbol.VarSym] = ???
+    // TODO :Consider whether this is better done functionally or as part of the above function
+    def symbolsOf(pat0: NamedAst.Pattern): Map[String, Symbol.VarSym] = {
+      val m = mutable.Map.empty[String, Symbol.VarSym]
+
+      def visit(p: NamedAst.Pattern): Unit = p match {
+        case NamedAst.Pattern.Wild(loc) => // nop
+        case NamedAst.Pattern.Var(ident, loc) =>
+        case NamedAst.Pattern.Unit(loc) => // nop
+        case NamedAst.Pattern.True(loc) => // nop
+        case NamedAst.Pattern.False(loc) => // nop
+        case NamedAst.Pattern.Char(lit, loc) => // nop
+        case NamedAst.Pattern.Float32(lit, loc) => // nop
+        case NamedAst.Pattern.Float64(lit, loc) => // nop
+        case NamedAst.Pattern.Int8(lit, loc) => // nop
+        case NamedAst.Pattern.Int16(lit, loc) => // nop
+        case NamedAst.Pattern.Int32(lit, loc) => // nop
+        case NamedAst.Pattern.Int64(lit, loc) => // nop
+        case NamedAst.Pattern.BigInt(lit, loc) => // nop
+        case NamedAst.Pattern.Str(lit, loc) => // nop
+        case NamedAst.Pattern.Tag(enum, tag, pat, loc) =>
+          visit(pat)
+        case NamedAst.Pattern.Tuple(elms, loc) => elms foreach visit
+        case NamedAst.Pattern.FNone(loc) => // nop
+        case NamedAst.Pattern.FSome(pat, loc) => visit(pat)
+        case NamedAst.Pattern.FNil(loc) => // nop
+        case NamedAst.Pattern.FList(hd, tl, loc) => visit(hd); visit(tl)
+        case NamedAst.Pattern.FVec(elms, rest, loc) =>
+          elms foreach visit; rest foreach visit
+        case NamedAst.Pattern.FSet(elms, rest, loc) =>
+          elms foreach visit; rest foreach visit
+        case NamedAst.Pattern.FMap(elms, rest, loc) =>
+          ??? // TODO
+      }
+
+      visit(pat0)
+      m.toMap
+    }
 
   }
 

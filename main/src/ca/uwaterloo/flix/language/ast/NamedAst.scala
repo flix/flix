@@ -151,7 +151,7 @@ object NamedAst {
 
     case class Wild(loc: SourceLocation) extends NamedAst.Pattern
 
-    case class Var(ident: Name.Ident, loc: SourceLocation) extends NamedAst.Pattern
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NamedAst.Pattern
 
     case class Unit(loc: SourceLocation) extends NamedAst.Pattern
 
