@@ -50,11 +50,17 @@ object Codegen {
         case Type.Int64 => asm.Type.LONG_TYPE.getDescriptor
         case Type.BigInt => asm.Type.getDescriptor(classOf[java.math.BigInteger])
         case Type.Str => asm.Type.getDescriptor(classOf[java.lang.String])
+        case Type.Native => ??? // TODO
         case Type.Enum(_, _) => asm.Type.getDescriptor(classOf[Value.Tag])
         case Type.Tuple(_) => asm.Type.getDescriptor(classOf[Value.Tuple])
-        case Type.FSet(_) => asm.Type.getDescriptor(classOf[scala.collection.immutable.Set[AnyRef]])
         case Type.Lambda(_, _) => s"L${decorate(interfaces(tpe))};"
-        case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ???
+        case Type.Parametric(_, _) => ??? // TODO: How to handle?
+        case Type.FOpt(_) | Type.FList(_) => ??? // TODO
+        case Type.FSet(_) => asm.Type.getDescriptor(classOf[scala.collection.immutable.Set[AnyRef]])
+        case Type.FMap(_, _) => ??? // TODO
+        case Type.Predicate(_) => ??? // TODO: How to handle?
+        case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
+        case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
         case Type.Tag(_, _, _) => throw InternalCompilerException(s"No corresponding JVM type for $tpe.")
       }
 
@@ -144,7 +150,10 @@ object Codegen {
       case Type.Float64 => mv.visitInsn(DRETURN)
       case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
         mv.visitInsn(ARETURN)
-      case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ???
+      case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+      case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
+      case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
+      case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
       case Type.Tag(_, _, _) => throw InternalCompilerException(s"Functions can't return type $tpe.")
     }
 
@@ -185,14 +194,16 @@ object Codegen {
     case store: StoreExpression => compileStoreExpr(ctx, visitor)(store)
 
     case Expression.Var(ident, offset, tpe, _) => tpe match {
-      case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 =>
-        visitor.visitVarInsn(ILOAD, offset)
+      case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ILOAD, offset)
       case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
       case Type.Float32 => visitor.visitVarInsn(FLOAD, offset)
       case Type.Float64 => visitor.visitVarInsn(DLOAD, offset)
       case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
         visitor.visitVarInsn(ALOAD, offset)
-      case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ???
+      case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+      case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => // TODO: Deprecated
+      case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
+      case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
       case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type $tpe.")
     }
 
@@ -304,14 +315,16 @@ object Codegen {
     case Expression.Let(ident, offset, exp1, exp2, _, _) =>
       compileExpression(ctx, visitor)(exp1)
       exp1.tpe match {
-        case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 =>
-          visitor.visitVarInsn(ISTORE, offset)
+        case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ISTORE, offset)
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
         case Type.Float32 => visitor.visitVarInsn(FSTORE, offset)
         case Type.Float64 => visitor.visitVarInsn(DSTORE, offset)
         case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
           visitor.visitVarInsn(ASTORE, offset)
-        case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ???
+        case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+        case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => // TODO: Deprecated
+        case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
+        case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of ${exp1.tpe} should never be compiled.")
         case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type ${exp1.tpe}.")
       }
       compileExpression(ctx, visitor)(exp2)
@@ -490,7 +503,13 @@ object Codegen {
     case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
       compileExpression(ctx, visitor)(exp)
 
-    case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ???
+    case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+
+    case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
+
+    case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
+
+    case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of ${exp.tpe} should never be compiled.")
 
     case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type ${exp.tpe}.")
 
@@ -551,7 +570,13 @@ object Codegen {
 
     case Type.FSet(_) => visitor.visitTypeInsn(CHECKCAST, "scala/collection/immutable/Set")
 
-    case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ???
+    case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+
+    case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
+
+    case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
+
+    case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
 
     case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type $tpe.")
 
