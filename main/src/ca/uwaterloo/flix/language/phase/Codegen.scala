@@ -19,10 +19,16 @@ import org.objectweb.asm.{Type => _, _}
 object Codegen {
 
   private object Constants {
+    val objectClass = classOf[java.lang.Object]
+    val stringClass = classOf[java.lang.String]
+    val bigIntegerClass = classOf[java.math.BigInteger]
+    val arrayObjectClass = classOf[Array[Object]]
+    val setClass = classOf[scala.collection.immutable.Set[Object]]
+    val tagClass = classOf[Value.Tag]
+    val tupleClass = classOf[Value.Tuple]
+
     val valueObject = "ca/uwaterloo/flix/runtime/Value$"
-
     val scalaPredef = "scala/Predef$"
-
     val scalaMathPkg = "scala/math/package$"
 
     def loadValueObject(visitor: MethodVisitor): Unit =
@@ -58,15 +64,15 @@ object Codegen {
         case Type.Int16 => asm.Type.SHORT_TYPE.getDescriptor
         case Type.Int32 => asm.Type.INT_TYPE.getDescriptor
         case Type.Int64 => asm.Type.LONG_TYPE.getDescriptor
-        case Type.BigInt => asm.Type.getDescriptor(classOf[java.math.BigInteger])
-        case Type.Str => asm.Type.getDescriptor(classOf[java.lang.String])
+        case Type.BigInt => asm.Type.getDescriptor(Constants.bigIntegerClass)
+        case Type.Str => asm.Type.getDescriptor(Constants.stringClass)
         case Type.Native => ??? // TODO
-        case Type.Enum(_, _) => asm.Type.getDescriptor(classOf[Value.Tag])
-        case Type.Tuple(_) => asm.Type.getDescriptor(classOf[Value.Tuple])
+        case Type.Enum(_, _) => asm.Type.getDescriptor(Constants.tagClass)
+        case Type.Tuple(_) => asm.Type.getDescriptor(Constants.tupleClass)
         case Type.Lambda(_, _) => s"L${decorate(interfaces(tpe))};"
         case Type.Parametric(_, _) => ??? // TODO: How to handle?
         case Type.FOpt(_) | Type.FList(_) => ??? // TODO
-        case Type.FSet(_) => asm.Type.getDescriptor(classOf[scala.collection.immutable.Set[AnyRef]])
+        case Type.FSet(_) => asm.Type.getDescriptor(Constants.setClass)
         case Type.FMap(_, _) => ??? // TODO
         case Type.Predicate(_) => ??? // TODO: How to handle?
         case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
@@ -92,7 +98,7 @@ object Codegen {
    */
   def compileFunctionalInterface(ctx: Context)(tpe: Type): Array[Byte] = {
     val visitor = new ClassWriter(0)
-    visitor.visit(V1_8, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, decorate(ctx.prefix), null, asm.Type.getInternalName(classOf[java.lang.Object]), null)
+    visitor.visit(V1_8, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, decorate(ctx.prefix), null, asm.Type.getInternalName(Constants.objectClass), null)
 
     // Add annotation @java.lang.FunctionalInterface
     val av = visitor.visitAnnotation(asm.Type.getDescriptor(classOf[java.lang.FunctionalInterface]), true)
@@ -117,7 +123,7 @@ object Codegen {
     val visitor = new CheckClassAdapter(classWriter)
 
     // Initialize the visitor to create a class.
-    visitor.visit(V1_8, ACC_PUBLIC + ACC_SUPER, decorate(ctx.prefix), null, asm.Type.getInternalName(classOf[java.lang.Object]), null)
+    visitor.visit(V1_8, ACC_PUBLIC + ACC_SUPER, decorate(ctx.prefix), null, asm.Type.getInternalName(Constants.objectClass), null)
 
     compileConstructor(ctx, visitor)
     functions.foreach(compileFunction(ctx, visitor))
@@ -131,7 +137,7 @@ object Codegen {
    */
   private def compileConstructor(ctx: Context, visitor: ClassVisitor): Unit = {
     val mv = visitor.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null)
-    val clazz = classOf[java.lang.Object]
+    val clazz = Constants.objectClass
     val ctor = clazz.getConstructor()
     mv.visitCode()
     mv.visitVarInsn(ALOAD, 0)
@@ -200,8 +206,8 @@ object Codegen {
     case Expression.Int64(l) => compileInt(visitor)(l, isLong = true)
     case Expression.BigInt(ii) =>
       // java.math.BigInteger(String) constructor
-      val bigint = classOf[java.math.BigInteger]
-      val ctor = bigint.getConstructor(classOf[String])
+      val bigint = Constants.bigIntegerClass
+      val ctor = bigint.getConstructor(Constants.stringClass)
       val name = asm.Type.getInternalName(bigint)
 
       visitor.visitTypeInsn(NEW, name)
@@ -261,10 +267,9 @@ object Codegen {
 
       // The handle for the bootstrap method we pass to InvokeDynamic, which is
       // `java.lang.invoke.LambdaMetafactory.metafactory(...)`.
-      val methodName = "metafactory"
       val clazz = classOf[java.lang.invoke.LambdaMetafactory]
-      val method = clazz.getMethods.filter(m => m.getName == methodName).head
-      val bsmHandle = new Handle(H_INVOKESTATIC, asm.Type.getInternalName(clazz), methodName, asm.Type.getMethodDescriptor(method))
+      val method = clazz.getMethods.filter(m => m.getName == "metafactory").head
+      val bsmHandle = new Handle(H_INVOKESTATIC, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method))
 
       // The arguments array for the bootstrap method. Note that the JVM automatically provides the first three
       // arguments (caller, invokedName, invokedType). We need to explicitly provide the remaining three arguments:
@@ -348,30 +353,27 @@ object Codegen {
 
     case Expression.CheckTag(tag, exp, _) =>
       // ca.uwaterloo.flix.runtime.Value.Tag.tag() method
-      val methodName1 = "tag"
-      val clazz1 = classOf[ca.uwaterloo.flix.runtime.Value.Tag]
-      val method1 = clazz1.getMethod(methodName1)
+      val clazz1 = Constants.tagClass
+      val method1 = clazz1.getMethod("tag")
 
       // java.lang.String.equals(Object) method
-      val methodName2 = "equals"
-      val clazz2 = classOf[java.lang.String]
-      val method2 = clazz2.getMethod(methodName2, classOf[java.lang.Object])
+      val clazz2 = Constants.stringClass
+      val method2 = clazz2.getMethod("equals", Constants.objectClass)
 
       // Get the tag string of `exp` (compiled as a tag) and compare to `tag.name`.
       compileExpression(ctx, visitor)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), methodName1, asm.Type.getMethodDescriptor(method1), false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), method1.getName, asm.Type.getMethodDescriptor(method1), false)
       visitor.visitLdcInsn(tag.name)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz2), methodName2, asm.Type.getMethodDescriptor(method2), false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz2), method2.getName, asm.Type.getMethodDescriptor(method2), false)
 
     case Expression.GetTagValue(tag, exp, tpe, _) =>
       // ca.uwaterloo.flix.runtime.Value.Tag.value() method
-      val methodName = "value"
-      val clazz = classOf[ca.uwaterloo.flix.runtime.Value.Tag]
-      val method = clazz.getMethod(methodName)
+      val clazz = Constants.tagClass
+      val method = clazz.getMethod("value")
 
       // Compile `exp` as a tag expression, get its inner `value`, and unbox if necessary.
       compileExpression(ctx, visitor)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), methodName, asm.Type.getMethodDescriptor(method), false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
       compileUnbox(ctx, visitor)(tpe)
 
     case Expression.Tag(enum, tag, exp, _, _) =>
@@ -383,26 +385,25 @@ object Codegen {
 
     case Expression.GetTupleIndex(base, offset, tpe, _) =>
       // ca.uwaterloo.flix.runtime.Value.Tuple.elms()
-      val methodName = "elms"
-      val clazz = classOf[ca.uwaterloo.flix.runtime.Value.Tuple]
-      val method = clazz.getMethod(methodName)
+      val clazz = Constants.tupleClass
+      val method = clazz.getMethod("elms")
 
       // Compile the expression, load `elms`, compile the offset, load the array element, and unbox if necessary.
       compileExpression(ctx, visitor)(base)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), methodName, asm.Type.getMethodDescriptor(method), false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
       compileInt(visitor)(offset)
       visitor.visitInsn(AALOAD)
       compileUnbox(ctx, visitor)(tpe)
 
     case Expression.Tuple(elms, _, _) =>
       // ca.uwaterloo.flix.runtime.Value.Tuple(Object[]) constructor
-      val clazz = classOf[ca.uwaterloo.flix.runtime.Value.Tuple]
-      val ctor = clazz.getConstructor(classOf[Array[Object]])
+      val clazz = Constants.tupleClass
+      val ctor = clazz.getConstructor(Constants.arrayObjectClass)
       val name = asm.Type.getInternalName(clazz)
 
       // Create the array to hold the tuple elements.
       compileInt(visitor)(elms.length)
-      visitor.visitTypeInsn(ANEWARRAY, asm.Type.getInternalName(classOf[AnyRef]))
+      visitor.visitTypeInsn(ANEWARRAY, asm.Type.getInternalName(Constants.objectClass))
 
       // Iterate over elms, boxing them and slotting each one into the array.
       for ((e, i) <- elms.zipWithIndex) {
@@ -436,7 +437,7 @@ object Codegen {
 
       // Create an array to hold the set elements
       compileInt(visitor)(elms.length)
-      visitor.visitTypeInsn(ANEWARRAY, asm.Type.getInternalName(classOf[AnyRef]))
+      visitor.visitTypeInsn(ANEWARRAY, asm.Type.getInternalName(Constants.objectClass))
 
       // Iterate over elms, boxing them and slotting each one into the array.
       for ((e, i) <- elms.zipWithIndex) {
@@ -559,7 +560,7 @@ object Codegen {
     case Type.Unit => visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(ca.uwaterloo.flix.runtime.Value.Unit.getClass))
 
     case Type.Bool | Type.Char | Type.Float32 | Type.Float64 | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int64 =>
-      val (methodName, clazz) = tpe match {
+      val (methodName, clazz): (String, Class[_]) = tpe match {
         case Type.Bool => ("booleanValue", classOf[java.lang.Boolean])
         case Type.Char => ("charValue", classOf[java.lang.Character])
         case Type.Float32 => ("floatValue", classOf[java.lang.Float])
@@ -578,14 +579,14 @@ object Codegen {
 
     case Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
       val name = tpe match {
-        case Type.BigInt => asm.Type.getInternalName(classOf[java.math.BigInteger])
-        case Type.Str => asm.Type.getInternalName(classOf[java.lang.String])
-        case Type.Enum(_, _) => asm.Type.getInternalName(classOf[ca.uwaterloo.flix.runtime.Value.Tag])
-        case Type.Tuple(_) => asm.Type.getInternalName(classOf[ca.uwaterloo.flix.runtime.Value.Tuple])
+        case Type.BigInt => asm.Type.getInternalName(Constants.bigIntegerClass)
+        case Type.Str => asm.Type.getInternalName(Constants.stringClass)
+        case Type.Enum(_, _) => asm.Type.getInternalName(Constants.tagClass)
+        case Type.Tuple(_) => asm.Type.getInternalName(Constants.tupleClass)
         case Type.Lambda(_, _) =>
           // TODO: Is this correct? Need to write a test when we can write lambda expressions.
           decorate(ctx.interfaces(tpe))
-        case Type.FSet(_) => asm.Type.getInternalName(classOf[scala.collection.immutable.Set[_]])
+        case Type.FSet(_) => asm.Type.getInternalName(Constants.setClass)
         case _ => throw new InternalCompilerException(s"Type $tpe should not be handled in this case.")
       }
       visitor.visitTypeInsn(CHECKCAST, name)
@@ -755,10 +756,9 @@ object Codegen {
     case Type.Int64 => visitor.visitInsn(LNEG)
     case Type.BigInt =>
       // java.math.BigInteger.negate() method
-      val methodName = "negate"
-      val clazz = classOf[java.math.BigInteger]
-      val method = clazz.getMethod(methodName)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), methodName, asm.Type.getMethodDescriptor(method), false);
+      val clazz = Constants.bigIntegerClass
+      val method = clazz.getMethod("negate")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false);
     case _ => throw InternalCompilerException(s"Can't apply UnaryOperator.Minus to type $tpe.")
   }
 
@@ -787,10 +787,9 @@ object Codegen {
       visitor.visitInsn(LXOR)
     case Type.BigInt =>
       // java.math.BigInteger.not() method
-      val methodName = "not"
-      val clazz = classOf[java.math.BigInteger]
-      val method = clazz.getMethod(methodName)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), methodName, asm.Type.getMethodDescriptor(method), false);
+      val clazz = Constants.bigIntegerClass
+      val method = clazz.getMethod("not")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false);
     case _ => throw InternalCompilerException(s"Can't apply UnaryOperator.Negate to type $tpe.")
   }
 
@@ -864,7 +863,7 @@ object Codegen {
         case Type.Int64 => visitor.visitInsn(longOp)
         case Type.BigInt =>
           // java.math.BigInteger.{bigIntOp}() method
-          val clazz = classOf[java.math.BigInteger]
+          val clazz = Constants.bigIntegerClass
           val method = clazz.getMethod(bigIntOp, clazz)
           visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), bigIntOp, asm.Type.getMethodDescriptor(method), false);
         case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
@@ -921,31 +920,28 @@ object Codegen {
         (e1.tpe: @unchecked) match {
           case Type.Tuple(_) =>
             // ca.uwaterloo.flix.runtime.Value.Tuple.elms() method
-            val methodName1 = "elms"
-            val clazz1 = classOf[ca.uwaterloo.flix.runtime.Value.Tuple]
-            val method1 = clazz1.getMethod(methodName1)
+            val clazz1 = Constants.tupleClass
+            val method1 = clazz1.getMethod("elms")
 
             // java.util.Arrays.equals(Object[], Object[]) method
-            val methodName2 = "equals"
             val clazz2 = classOf[java.util.Arrays]
-            val method2 = clazz2.getMethod(methodName2, classOf[Array[Object]], classOf[Array[Object]])
+            val method2 = clazz2.getMethod("equals", Constants.arrayObjectClass, Constants.arrayObjectClass)
 
             // We know it's a tuple, so directly call java.util.Arrays.equals
             compileExpression(ctx, visitor)(e1)
-            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), methodName1, asm.Type.getMethodDescriptor(method1), false)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), method1.getName, asm.Type.getMethodDescriptor(method1), false)
             compileExpression(ctx, visitor)(e2)
-            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), methodName1, asm.Type.getMethodDescriptor(method1), false)
-            visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(clazz2), methodName2, asm.Type.getMethodDescriptor(method2), false)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), method1.getName, asm.Type.getMethodDescriptor(method1), false)
+            visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(clazz2), method2.getName, asm.Type.getMethodDescriptor(method2), false)
           case Type.FSet(_) =>
             // java.lang.Object.equals(Object) method
-            val methodName = "equals"
-            val clazz = classOf[java.lang.Object]
-            val method = clazz.getMethod(methodName, classOf[Object])
+            val clazz = Constants.objectClass
+            val method = clazz.getMethod("equals", Constants.objectClass)
 
             // Call the general java.lang.Object.equals
             compileExpression(ctx, visitor)(e1)
             compileExpression(ctx, visitor)(e2)
-            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), methodName, asm.Type.getMethodDescriptor(method), false)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
         }
         if (o == BinaryOperator.NotEqual) {
           val condElse = new Label()
@@ -990,10 +986,9 @@ object Codegen {
             visitor.visitJumpInsn(cmp, condElse)
           case Type.BigInt =>
             // java.math.BigInteger.compareTo(java.math.BigInteger)
-            val methodName = "compareTo"
-            val clazz = classOf[java.math.BigInteger]
-            val method = clazz.getMethod(methodName, clazz)
-            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), methodName, asm.Type.getMethodDescriptor(method), false)
+            val clazz = Constants.bigIntegerClass
+            val method = clazz.getMethod("compareTo", clazz)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
             visitor.visitInsn(ICONST_0)
             visitor.visitJumpInsn(intOp, condElse)
           case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
@@ -1111,7 +1106,7 @@ object Codegen {
       case Type.Int32 => visitor.visitInsn(intOp)
       case Type.Int64 => visitor.visitInsn(longOp)
       case Type.BigInt =>
-        val clazz = classOf[java.math.BigInteger]
+        val clazz = Constants.bigIntegerClass
         val method = clazz.getMethods.filter(m => m.getName == bigintOp).head
         visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), bigintOp, asm.Type.getMethodDescriptor(method), false);
       case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
