@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.api.{MatchException, SwitchException, UserException}
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression, LoadExpression, StoreExpression}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.Value
@@ -9,21 +10,37 @@ import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.util.CheckClassAdapter
 import org.objectweb.asm.{Type => _, _}
 
-// TODO: For now, we hardcode the type descriptors for all the Value objects
-// There's no nice way of using reflection to get the type of a companion object.
-// Later, we'll rewrite Value in a Java-like style so reflection is easier
-// Or at the very least, move the (common) names into static fields
-
 // TODO: Debugging information
 
 object Codegen {
 
+  /*
+   * Constants passed to the asm library to generate bytecode.
+   *
+   * Originally, we simply used string literals (to encode internal class names, descriptors, etc) and passed them to
+   * the library. This was very brittle for two reasons: 1) changing a class or method would break things and we
+   * wouldn't know until run time; and 2) multiple string literals would have to be updated.
+   *
+   * The solution is to use compile-time reflection whenever possible, and move commonly-used constants into this
+   * object. Constants that are used only once are left inline.
+   *
+   * Compile-time reflection gives us compile-time errors if we change a class and don't update here. However, we are
+   * stuck with run-time reflection for certain things, e.g. getting a method. So if we change a method and don't
+   * update here, we won't know until we run the tests.
+   *
+   * Note that we can't easily use reflection to get singleton or package objects. (It is possible with run-time
+   * reflection, but it is awkward and we don't get the benefit of compile-time errors.)
+   *
+   * TODO: Refactor the Value object to be Java-like style so reflection is easier. Or use run-time reflection?
+   */
   private object Constants {
-    val objectClass = classOf[java.lang.Object]
+    val objectClass = classOf[Object]
     val stringClass = classOf[java.lang.String]
     val bigIntegerClass = classOf[java.math.BigInteger]
     val arrayObjectClass = classOf[Array[Object]]
     val setClass = classOf[scala.collection.immutable.Set[Object]]
+
+    val unitClass = Value.Unit.getClass
     val tagClass = classOf[Value.Tag]
     val tupleClass = classOf[Value.Tuple]
 
@@ -55,7 +72,7 @@ object Codegen {
      */
     def descriptor(tpe: Type): String = {
       def inner(tpe: Type): String = tpe match {
-        case Type.Unit => asm.Type.getDescriptor(Value.Unit.getClass)
+        case Type.Unit => asm.Type.getDescriptor(Constants.unitClass)
         case Type.Bool => asm.Type.BOOLEAN_TYPE.getDescriptor
         case Type.Char => asm.Type.CHAR_TYPE.getDescriptor
         case Type.Float32 => asm.Type.FLOAT_TYPE.getDescriptor
@@ -184,7 +201,7 @@ object Codegen {
 
   private def compileExpression(ctx: Context, visitor: MethodVisitor)(expr: Expression): Unit = expr match {
     case Expression.Unit =>
-      val clazz = Value.Unit.getClass
+      val clazz = Constants.unitClass
       visitor.visitFieldInsn(GETSTATIC, asm.Type.getInternalName(clazz), "MODULE$", asm.Type.getDescriptor(clazz))
     case Expression.True => visitor.visitInsn(ICONST_1)
     case Expression.False => visitor.visitInsn(ICONST_0)
@@ -352,7 +369,7 @@ object Codegen {
       compileExpression(ctx, visitor)(exp2)
 
     case Expression.CheckTag(tag, exp, _) =>
-      // ca.uwaterloo.flix.runtime.Value.Tag.tag() method
+      // Value.Tag.tag() method
       val clazz1 = Constants.tagClass
       val method1 = clazz1.getMethod("tag")
 
@@ -367,7 +384,7 @@ object Codegen {
       visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz2), method2.getName, asm.Type.getMethodDescriptor(method2), false)
 
     case Expression.GetTagValue(tag, exp, tpe, _) =>
-      // ca.uwaterloo.flix.runtime.Value.Tag.value() method
+      // Value.Tag.value() method
       val clazz = Constants.tagClass
       val method = clazz.getMethod("value")
 
@@ -384,7 +401,7 @@ object Codegen {
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkTag", "(Ljava/lang/String;Ljava/lang/Object;)Lca/uwaterloo/flix/runtime/Value$Tag;", false)
 
     case Expression.GetTupleIndex(base, offset, tpe, _) =>
-      // ca.uwaterloo.flix.runtime.Value.Tuple.elms()
+      // Value.Tuple.elms()
       val clazz = Constants.tupleClass
       val method = clazz.getMethod("elms")
 
@@ -396,7 +413,7 @@ object Codegen {
       compileUnbox(ctx, visitor)(tpe)
 
     case Expression.Tuple(elms, _, _) =>
-      // ca.uwaterloo.flix.runtime.Value.Tuple(Object[]) constructor
+      // Value.Tuple(Object[]) constructor
       val clazz = Constants.tupleClass
       val ctor = clazz.getConstructor(Constants.arrayObjectClass)
       val name = asm.Type.getInternalName(clazz)
@@ -458,22 +475,22 @@ object Codegen {
       throw InternalCompilerException(s"Unexpected expression: '$expr' at ${loc.source.format}.")
 
     case Expression.UserError(_, loc) =>
-      val name = asm.Type.getInternalName(classOf[ca.uwaterloo.flix.api.UserException])
+      val name = asm.Type.getInternalName(classOf[UserException])
       val msg = s"User exception: ${loc.format}."
-      compileError(visitor, name, msg)
+      compileException(visitor, name, msg)
 
     case Expression.MatchError(_, loc) =>
-      val name = asm.Type.getInternalName(classOf[ca.uwaterloo.flix.api.MatchException])
+      val name = asm.Type.getInternalName(classOf[MatchException])
       val msg = s"Non-exhaustive match expression: ${loc.format}."
-      compileError(visitor, name, msg)
+      compileException(visitor, name, msg)
 
     case Expression.SwitchError(_, loc) =>
-      val name = asm.Type.getInternalName(classOf[ca.uwaterloo.flix.api.SwitchException])
+      val name = asm.Type.getInternalName(classOf[SwitchException])
       val msg = s"Non-exhaustive switch expression: ${loc.format}."
-      compileError(visitor, name, msg)
+      compileException(visitor, name, msg)
   }
 
-  private def compileError(visitor: MethodVisitor, name: String, msg: String): Unit = {
+  private def compileException(visitor: MethodVisitor, name: String, msg: String): Unit = {
     visitor.visitTypeInsn(NEW, name)
     visitor.visitInsn(DUP)
     visitor.visitLdcInsn(msg)
@@ -557,7 +574,7 @@ object Codegen {
    * Note that the generated code here is slightly more efficient than calling `cast2XX` since we don't have to branch.
    */
   private def compileUnbox(ctx: Context, visitor: MethodVisitor)(tpe: Type): Unit = tpe match {
-    case Type.Unit => visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(ca.uwaterloo.flix.runtime.Value.Unit.getClass))
+    case Type.Unit => visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.unitClass))
 
     case Type.Bool | Type.Char | Type.Float32 | Type.Float64 | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int64 =>
       val (methodName, clazz): (String, Class[_]) = tpe match {
@@ -919,7 +936,7 @@ object Codegen {
       case Type.Tuple(_) | Type.FSet(_) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
         (e1.tpe: @unchecked) match {
           case Type.Tuple(_) =>
-            // ca.uwaterloo.flix.runtime.Value.Tuple.elms() method
+            // Value.Tuple.elms() method
             val clazz1 = Constants.tupleClass
             val method1 = clazz1.getMethod("elms")
 
