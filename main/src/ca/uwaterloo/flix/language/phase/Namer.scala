@@ -50,8 +50,10 @@ object Namer {
     */
   def namer(program: WeededAst.Program)(implicit genSym: GenSym): Validation[NamedAst.Program, NamerError] = {
 
+    val prog = NamedAst.Program(Map.empty, program.hooks, program.time)
+
     for (root <- program.roots; decl <- root.decls) {
-      Declarations.namer(decl)
+      Declarations.namer(decl, prog)
     }
 
     NamedAst.Program(Map.empty, program.hooks, program.time).toSuccess // TODO
@@ -59,16 +61,88 @@ object Namer {
 
   object Declarations {
 
-    def namer(decl0: WeededAst.Declaration)(implicit genSym: GenSym): Unit = {
-      decl0 match {
-        case WeededAst.Declaration.Namespace(name, decls, loc) =>
-          decls.foreach(d => namer(d))
-
-        case WeededAst.Declaration.Definition(ann, idents, params, exp, tpe, loc) =>
-          Expressions.namer(exp, Map.empty)
-        case _ => // TODO
+    /**
+      * Performs naming on the given declaration `decl0` under the given (partial) program `prog0`.
+      */
+    def namer(decl0: WeededAst.Declaration, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[NamedAst.Program, NamerError] = decl0 match {
+      /*
+       * Namespace.
+       */
+      case WeededAst.Declaration.Namespace(name, decls, loc) => Validation.fold(decls, prog0) {
+        case (prog, decl) => namer(decl, prog)
       }
+
+      /*
+       * Definition.
+       */
+      case WeededAst.Declaration.Definition(ann, idents, params, exp, tpe, loc) =>
+        // TODO: Lookup defn
+        Expressions.namer(exp, Map.empty) map {
+          case e => prog0
+        }
+
+      /*
+       * Signature.
+       */
+      case WeededAst.Declaration.Signature(ident, params, tpe, loc) => ???
+
+      /*
+       * External.
+       */
+      case WeededAst.Declaration.External(ident, params, tpe, loc) => ???
+
+      /*
+       * Law.
+       */
+      case WeededAst.Declaration.Law(ident, tparams, params, tpe, exp, loc) => ???
+
+      /*
+       * Enum.
+       */
+      case WeededAst.Declaration.Enum(ident, cases, loc) => ???
+
+      /*
+       * Class.
+       */
+      case WeededAst.Declaration.Class(ident, tparams, decls, loc) => ???
+
+      /*
+       * Impl.
+       */
+      case WeededAst.Declaration.Impl(ident, tparams, decls, loc) => ???
+
+      /*
+       * Fact.
+       */
+      case WeededAst.Declaration.Fact(head, loc) => ???
+
+      /*
+       * Rule.
+       */
+      case WeededAst.Declaration.Rule(head, body, loc) => ???
+
+      /*
+       * Index.
+       */
+      case WeededAst.Declaration.Index(ident, indexes, loc) => ???
+
+      /*
+       * BoundedLattice (deprecated).
+       */
+      case WeededAst.Declaration.BoundedLattice(tpe, bot, top, leq, lub, glb, loc) => ???
+
+      /*
+       * Relation.
+       */
+      case WeededAst.Table.Relation(ident, attr, loc) => ???
+
+      /*
+       * Lattice.
+       */
+      case WeededAst.Table.Lattice(ident, keys, value, loc) => ???
+
     }
+
   }
 
   object Expressions {
@@ -82,7 +156,7 @@ object Namer {
        */
       case WeededAst.Expression.Wild(loc) => NamedAst.Expression.Wild(id(), loc).toSuccess
 
-      case WeededAst.Expression.Var(name, loc) =>
+      case WeededAst.Expression.Var(name, loc) if name.isUnqualified =>
         // lookup the variable name in the environment.
         env0.get(name.ident.name) match {
           case None =>
