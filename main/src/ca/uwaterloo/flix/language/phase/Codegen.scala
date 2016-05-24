@@ -13,7 +13,6 @@ import org.objectweb.asm.{Type => _, _}
 // There's no nice way of using reflection to get the type of a companion object.
 // Later, we'll rewrite Value in a Java-like style so reflection is easier
 // Or at the very least, move the (common) names into static fields
-// TODO: Actually, it looks like "Value.Unit.getClass" will work
 
 // TODO: Debugging information
 
@@ -82,9 +81,10 @@ object Codegen {
    */
   def compileFunctionalInterface(ctx: Context)(tpe: Type): Array[Byte] = {
     val visitor = new ClassWriter(0)
-    visitor.visit(V1_8, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, decorate(ctx.prefix), null, "java/lang/Object", null)
+    visitor.visit(V1_8, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, decorate(ctx.prefix), null, asm.Type.getInternalName(classOf[java.lang.Object]), null)
 
-    val av = visitor.visitAnnotation("Ljava/lang/FunctionalInterface;", true)
+    // Add annotation @java.lang.FunctionalInterface
+    val av = visitor.visitAnnotation(asm.Type.getDescriptor(classOf[java.lang.FunctionalInterface]), true)
     av.visitEnd()
 
     val mv = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "apply", ctx.descriptor(tpe), null, null)
@@ -106,7 +106,7 @@ object Codegen {
     val visitor = new CheckClassAdapter(classWriter)
 
     // Initialize the visitor to create a class.
-    visitor.visit(V1_8, ACC_PUBLIC + ACC_SUPER, decorate(ctx.prefix), null, "java/lang/Object", null)
+    visitor.visit(V1_8, ACC_PUBLIC + ACC_SUPER, decorate(ctx.prefix), null, asm.Type.getInternalName(classOf[java.lang.Object]), null)
 
     compileConstructor(ctx, visitor)
     functions.foreach(compileFunction(ctx, visitor))
@@ -120,9 +120,12 @@ object Codegen {
    */
   private def compileConstructor(ctx: Context, visitor: ClassVisitor): Unit = {
     val mv = visitor.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null)
+    val clazz = classOf[java.lang.Object]
+    val ctor = clazz.getConstructor()
     mv.visitCode()
     mv.visitVarInsn(ALOAD, 0)
-    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false)
+    // Call the super (java.lang.Object) constructor
+    mv.visitMethodInsn(INVOKESPECIAL, asm.Type.getInternalName(clazz), "<init>", asm.Type.getConstructorDescriptor(ctor), false)
     mv.visitInsn(RETURN)
     mv.visitMaxs(1, 1)
     mv.visitEnd()
@@ -164,7 +167,8 @@ object Codegen {
 
   private def compileExpression(ctx: Context, visitor: MethodVisitor)(expr: Expression): Unit = expr match {
     case Expression.Unit =>
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$Unit$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$Unit$;")
+      val clazz = Value.Unit.getClass
+      visitor.visitFieldInsn(GETSTATIC, asm.Type.getInternalName(clazz), "MODULE$", asm.Type.getDescriptor(clazz))
     case Expression.True => visitor.visitInsn(ICONST_1)
     case Expression.False => visitor.visitInsn(ICONST_0)
     case Expression.Char(c) => compileInt(visitor)(c)
@@ -184,10 +188,15 @@ object Codegen {
     case Expression.Int32(i) => compileInt(visitor)(i)
     case Expression.Int64(l) => compileInt(visitor)(l, isLong = true)
     case Expression.BigInt(ii) =>
-      visitor.visitTypeInsn(NEW, "java/math/BigInteger")
+      // java.math.BigInteger(String) constructor
+      val bigint = classOf[java.math.BigInteger]
+      val ctor = bigint.getConstructor(classOf[String])
+      val name = asm.Type.getInternalName(bigint)
+
+      visitor.visitTypeInsn(NEW, name)
       visitor.visitInsn(DUP)
       visitor.visitLdcInsn(ii.toString)
-      visitor.visitMethodInsn(INVOKESPECIAL, "java/math/BigInteger", "<init>", "(Ljava/lang/String;)V", false)
+      visitor.visitMethodInsn(INVOKESPECIAL, name, "<init>", asm.Type.getConstructorDescriptor(ctor), false)
     case Expression.Str(s) => visitor.visitLdcInsn(s)
 
     case load: LoadExpression => compileLoadExpr(ctx, visitor)(load)
@@ -240,13 +249,11 @@ object Codegen {
       val invokedType = ctx.descriptor(csTpe)
 
       // The handle for the bootstrap method we pass to InvokeDynamic, which is
-      // `java.lang.invoke.LambdaMetafactory.metafactory`.
-      val bsmHandle = new Handle(
-        H_INVOKESTATIC,
-        "java/lang/invoke/LambdaMetafactory",
-        "metafactory",
-        "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;"
-      )
+      // `java.lang.invoke.LambdaMetafactory.metafactory(...)`.
+      val methodName = "metafactory"
+      val clazz = classOf[java.lang.invoke.LambdaMetafactory]
+      val method = clazz.getMethods.filter(m => m.getName == methodName).head
+      val bsmHandle = new Handle(H_INVOKESTATIC, asm.Type.getInternalName(clazz), methodName, asm.Type.getMethodDescriptor(method))
 
       // The arguments array for the bootstrap method. Note that the JVM automatically provides the first three
       // arguments (caller, invokedName, invokedType). We need to explicitly provide the remaining three arguments:
@@ -264,11 +271,10 @@ object Codegen {
       // Note that samMethodType and instantiatedMethodType take ASM types, and represent the type of the function
       // object, while implMethod takes a descriptor string and represents the implementation method's type (that is,
       // with the capture variables included in the arguments list).
-      val bsmArgs = Array(
-        asm.Type.getType(ctx.descriptor(tpe)),
-        new Handle(H_INVOKESTATIC, decorate(ref.name.prefix), ref.name.suffix, ctx.descriptor(ref.tpe)),
-        asm.Type.getType(ctx.descriptor(tpe))
-      )
+      val samMethodType = asm.Type.getType(ctx.descriptor(tpe))
+      val implMethod = new Handle(H_INVOKESTATIC, decorate(ref.name.prefix), ref.name.suffix, ctx.descriptor(ref.tpe))
+      val instantiatedMethodType = asm.Type.getType(ctx.descriptor(tpe))
+      val bsmArgs = Array(samMethodType, implMethod, instantiatedMethodType)
 
       // Finally, generate the InvokeDynamic instruction.
       visitor.visitInvokeDynamicInsn(invokedName, invokedType, bsmHandle, bsmArgs: _*)
@@ -330,38 +336,59 @@ object Codegen {
       compileExpression(ctx, visitor)(exp2)
 
     case Expression.CheckTag(tag, exp, _) =>
+      // ca.uwaterloo.flix.runtime.Value.Tag.tag() method
+      val methodName1 = "tag"
+      val clazz1 = classOf[ca.uwaterloo.flix.runtime.Value.Tag]
+      val method1 = clazz1.getMethod(methodName1)
+
+      // java.lang.String.equals(Object) method
+      val methodName2 = "equals"
+      val clazz2 = classOf[java.lang.String]
+      val method2 = clazz2.getMethod(methodName2, classOf[java.lang.Object])
+
       // Get the tag string of `exp` (compiled as a tag) and compare to `tag.name`.
       compileExpression(ctx, visitor)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Tag", "tag", "()Ljava/lang/String;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), methodName1, asm.Type.getMethodDescriptor(method1), false)
       visitor.visitLdcInsn(tag.name)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz2), methodName2, asm.Type.getMethodDescriptor(method2), false)
 
     case Expression.GetTagValue(tag, exp, tpe, _) =>
+      // ca.uwaterloo.flix.runtime.Value.Tag.value() method
+      val methodName = "value"
+      val clazz = classOf[ca.uwaterloo.flix.runtime.Value.Tag]
+      val method = clazz.getMethod(methodName)
+
       // Compile `exp` as a tag expression, get its inner `value`, and unbox if necessary.
       compileExpression(ctx, visitor)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Tag", "value", "()Ljava/lang/Object;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), methodName, asm.Type.getMethodDescriptor(method), false)
       compileUnbox(ctx, visitor)(tpe)
 
     case Expression.Tag(enum, tag, exp, _, _) =>
-      // Load the Value companion object, then the arguments, and finally call `Value.mkTag`.
+      // Load the Value object, then the arguments (tag.name, boxing if necessary), and finally call `Value.mkTag`.
       visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
-
-      // Load `tag.name` and box `exp` if necessary.
       visitor.visitLdcInsn(tag.name)
       compileBoxedExpr(ctx, visitor)(exp)
-
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkTag", "(Ljava/lang/String;Ljava/lang/Object;)Lca/uwaterloo/flix/runtime/Value$Tag;", false)
 
     case Expression.GetTupleIndex(base, offset, tpe, _) =>
-      // Compile the tuple expression, load the tuple array, compile the offset, load the array element, and unbox if
-      // necessary.
+      // ca.uwaterloo.flix.runtime.Value.Tuple.elms()
+      val methodName = "elms"
+      val clazz = classOf[ca.uwaterloo.flix.runtime.Value.Tuple]
+      val method = clazz.getMethod(methodName)
+
+      // Compile the expression, load `elms`, compile the offset, load the array element, and unbox if necessary.
       compileExpression(ctx, visitor)(base)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Tuple", "elms", "()[Ljava/lang/Object;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), methodName, asm.Type.getMethodDescriptor(method), false)
       compileInt(visitor)(offset)
       visitor.visitInsn(AALOAD)
       compileUnbox(ctx, visitor)(tpe)
 
     case Expression.Tuple(elms, _, _) =>
+      // ca.uwaterloo.flix.runtime.Value.Tuple(Object[]) constructor
+      val clazz = classOf[ca.uwaterloo.flix.runtime.Value.Tuple]
+      val ctor = clazz.getConstructor(classOf[Array[Object]])
+      val name = asm.Type.getInternalName(clazz)
+
       // Create the array to hold the tuple elements.
       compileInt(visitor)(elms.length)
       visitor.visitTypeInsn(ANEWARRAY, asm.Type.getInternalName(classOf[AnyRef]))
@@ -376,7 +403,7 @@ object Codegen {
       }
 
       // Now construct a Value.Tuple: create a reference, load the arguments, and call the constructor.
-      visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/Value$Tuple")
+      visitor.visitTypeInsn(NEW, name)
 
       // We use dup_x1 and swap to manipulate the stack so we can avoid using a local variable.
       // Stack before: array, tuple (top)
@@ -385,7 +412,7 @@ object Codegen {
       visitor.visitInsn(SWAP)
 
       // Finally, call the constructor, which pops the reference (tuple) and argument (array).
-      visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/Value$Tuple", "<init>", "([Ljava/lang/Object;)V", false)
+      visitor.visitMethodInsn(INVOKESPECIAL, name, "<init>", asm.Type.getConstructorDescriptor(ctor), false)
 
     case Expression.CheckNil(exp, _) => ???
     case Expression.CheckCons(exp, _) => ???
@@ -419,7 +446,7 @@ object Codegen {
       throw InternalCompilerException(s"Unexpected expression: '$expr' at ${loc.source.format}.")
 
     case Expression.UserError(_, loc) =>
-      visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/api/UserException")
+      visitor.visitTypeInsn(NEW, asm.Type.getInternalName(classOf[ca.uwaterloo.flix.api.UserException]))
       visitor.visitInsn(DUP)
       visitor.visitLdcInsn(s"User exception: ${loc.format}.")
       // TODO: Load actual source location or change UserException
@@ -429,7 +456,7 @@ object Codegen {
       visitor.visitInsn(ATHROW)
 
     case Expression.MatchError(_, loc) =>
-      visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/api/MatchException")
+      visitor.visitTypeInsn(NEW, asm.Type.getInternalName(classOf[ca.uwaterloo.flix.api.MatchException]))
       visitor.visitInsn(DUP)
       visitor.visitLdcInsn(s"Non-exhaustive match expression: ${loc.format}.")
       // TODO: Load actual source location or change MatchException
@@ -439,7 +466,7 @@ object Codegen {
       visitor.visitInsn(ATHROW)
 
     case Expression.SwitchError(_, loc) =>
-      visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/api/SwitchException")
+      visitor.visitTypeInsn(NEW, asm.Type.getInternalName(classOf[ca.uwaterloo.flix.api.SwitchException]))
       visitor.visitInsn(DUP)
       visitor.visitLdcInsn(s"Non-exhaustive switch expression: ${loc.format}.")
       // TODO: Load actual source location or change SwitchException
@@ -522,53 +549,39 @@ object Codegen {
    * Note that the generated code here is slightly more efficient than calling `cast2XX` since we don't have to branch.
    */
   private def compileUnbox(ctx: Context, visitor: MethodVisitor)(tpe: Type): Unit = tpe match {
-    case Type.Unit => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Unit$")
+    case Type.Unit => visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(ca.uwaterloo.flix.runtime.Value.Unit.getClass))
 
-    case Type.Bool =>
-      visitor.visitTypeInsn(CHECKCAST, "java/lang/Boolean")
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false)
+    case Type.Bool | Type.Char | Type.Float32 | Type.Float64 | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int64 =>
+      val (methodName, clazz) = tpe match {
+        case Type.Bool => ("booleanValue", classOf[java.lang.Boolean])
+        case Type.Char => ("charValue", classOf[java.lang.Character])
+        case Type.Float32 => ("floatValue", classOf[java.lang.Float])
+        case Type.Float64 => ("doubleValue", classOf[java.lang.Double])
+        case Type.Int8 => ("byteValue", classOf[java.lang.Byte])
+        case Type.Int16 => ("shortValue", classOf[java.lang.Short])
+        case Type.Int32 => ("intValue", classOf[java.lang.Integer])
+        case Type.Int64 => ("longValue", classOf[java.lang.Long])
+        case _ => throw new InternalCompilerException(s"Type $tpe should not be handled in this case.")
+      }
+      val method = clazz.getMethod(methodName)
+      val name = asm.Type.getInternalName(clazz)
+      val desc = asm.Type.getMethodDescriptor(method)
+      visitor.visitTypeInsn(CHECKCAST, name)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, name, methodName, desc, false)
 
-    case Type.Char =>
-      visitor.visitTypeInsn(CHECKCAST, "java/lang/Character")
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false)
-
-    case Type.Float32 =>
-      visitor.visitTypeInsn(CHECKCAST, "java/lang/Float")
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Float", "floatValue", "()F", false)
-
-    case Type.Float64 =>
-      visitor.visitTypeInsn(CHECKCAST, "java/lang/Double")
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Double", "doubleValue", "()D", false)
-
-    case Type.Int8 =>
-      visitor.visitTypeInsn(CHECKCAST, "java/lang/Byte")
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Byte", "byteValue", "()B", false)
-
-    case Type.Int16 =>
-      visitor.visitTypeInsn(CHECKCAST, "java/lang/Short")
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Short", "shortValue", "()S", false)
-
-    case Type.Int32 =>
-      visitor.visitTypeInsn(CHECKCAST, "java/lang/Integer")
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false)
-
-    case Type.Int64 =>
-      visitor.visitTypeInsn(CHECKCAST, "java/lang/Long")
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Long", "longValue", "()J", false)
-
-    case Type.BigInt => visitor.visitTypeInsn(CHECKCAST, "java/math/BigInteger")
-
-    case Type.Str => visitor.visitTypeInsn(CHECKCAST, "java/lang/String")
-
-    case Type.Enum(_, _) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tag")
-
-    case Type.Tuple(_) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tuple")
-
-    case Type.Lambda(_, _) =>
-      // TODO: Is this correct? Need to write a test when we can write lambda expressions.
-      visitor.visitTypeInsn(CHECKCAST, decorate(ctx.interfaces(tpe)))
-
-    case Type.FSet(_) => visitor.visitTypeInsn(CHECKCAST, "scala/collection/immutable/Set")
+    case Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
+      val name = tpe match {
+        case Type.BigInt => asm.Type.getInternalName(classOf[java.math.BigInteger])
+        case Type.Str => asm.Type.getInternalName(classOf[java.lang.String])
+        case Type.Enum(_, _) => asm.Type.getInternalName(classOf[ca.uwaterloo.flix.runtime.Value.Tag])
+        case Type.Tuple(_) => asm.Type.getInternalName(classOf[ca.uwaterloo.flix.runtime.Value.Tuple])
+        case Type.Lambda(_, _) =>
+          // TODO: Is this correct? Need to write a test when we can write lambda expressions.
+          decorate(ctx.interfaces(tpe))
+        case Type.FSet(_) => asm.Type.getInternalName(classOf[scala.collection.immutable.Set[_]])
+        case _ => throw new InternalCompilerException(s"Type $tpe should not be handled in this case.")
+      }
+      visitor.visitTypeInsn(CHECKCAST, name)
 
     case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
 
@@ -733,7 +746,12 @@ object Codegen {
       visitor.visitInsn(I2S)
     case Type.Int32 => visitor.visitInsn(INEG)
     case Type.Int64 => visitor.visitInsn(LNEG)
-    case Type.BigInt => visitor.visitMethodInsn(INVOKEVIRTUAL, "java/math/BigInteger", "negate", "()Ljava/math/BigInteger;", false);
+    case Type.BigInt =>
+      // java.math.BigInteger.negate() method
+      val methodName = "negate"
+      val clazz = classOf[java.math.BigInteger]
+      val method = clazz.getMethod(methodName)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), methodName, asm.Type.getMethodDescriptor(method), false);
     case _ => throw InternalCompilerException(s"Can't apply UnaryOperator.Minus to type $tpe.")
   }
 
@@ -760,7 +778,12 @@ object Codegen {
       visitor.visitInsn(ICONST_M1)
       visitor.visitInsn(I2L)
       visitor.visitInsn(LXOR)
-    case Type.BigInt => visitor.visitMethodInsn(INVOKEVIRTUAL, "java/math/BigInteger", "not", "()Ljava/math/BigInteger;", false);
+    case Type.BigInt =>
+      // java.math.BigInteger.not() method
+      val methodName = "not"
+      val clazz = classOf[java.math.BigInteger]
+      val method = clazz.getMethod(methodName)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), methodName, asm.Type.getMethodDescriptor(method), false);
     case _ => throw InternalCompilerException(s"Can't apply UnaryOperator.Negate to type $tpe.")
   }
 
@@ -832,7 +855,11 @@ object Codegen {
           visitor.visitInsn(I2S)
         case Type.Int32 => visitor.visitInsn(intOp)
         case Type.Int64 => visitor.visitInsn(longOp)
-        case Type.BigInt => visitor.visitMethodInsn(INVOKEVIRTUAL, "java/math/BigInteger", bigIntOp, "(Ljava/math/BigInteger;)Ljava/math/BigInteger;", false);
+        case Type.BigInt =>
+          // java.math.BigInteger.{bigIntOp}() method
+          val clazz = classOf[java.math.BigInteger]
+          val method = clazz.getMethod(bigIntOp, clazz)
+          visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), bigIntOp, asm.Type.getMethodDescriptor(method), false);
         case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
       }
     }
@@ -886,17 +913,32 @@ object Codegen {
       case Type.Tuple(_) | Type.FSet(_) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
         (e1.tpe: @unchecked) match {
           case Type.Tuple(_) =>
+            // ca.uwaterloo.flix.runtime.Value.Tuple.elms() method
+            val methodName1 = "elms"
+            val clazz1 = classOf[ca.uwaterloo.flix.runtime.Value.Tuple]
+            val method1 = clazz1.getMethod(methodName1)
+
+            // java.util.Arrays.equals(Object[], Object[]) method
+            val methodName2 = "equals"
+            val clazz2 = classOf[java.util.Arrays]
+            val method2 = clazz2.getMethod(methodName2, classOf[Array[Object]], classOf[Array[Object]])
+
             // We know it's a tuple, so directly call java.util.Arrays.equals
             compileExpression(ctx, visitor)(e1)
-            visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Tuple", "elms", "()[Ljava/lang/Object;", false)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), methodName1, asm.Type.getMethodDescriptor(method1), false)
             compileExpression(ctx, visitor)(e2)
-            visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Tuple", "elms", "()[Ljava/lang/Object;", false)
-            visitor.visitMethodInsn(INVOKESTATIC, "java/util/Arrays", "equals", "([Ljava/lang/Object;[Ljava/lang/Object;)Z", false)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), methodName1, asm.Type.getMethodDescriptor(method1), false)
+            visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(clazz2), methodName2, asm.Type.getMethodDescriptor(method2), false)
           case Type.FSet(_) =>
+            // java.lang.Object.equals(Object) method
+            val methodName = "equals"
+            val clazz = classOf[java.lang.Object]
+            val method = clazz.getMethod(methodName, classOf[Object])
+
             // Call the general java.lang.Object.equals
             compileExpression(ctx, visitor)(e1)
             compileExpression(ctx, visitor)(e2)
-            visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "equals", "(Ljava/lang/Object;)Z", false)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), methodName, asm.Type.getMethodDescriptor(method), false)
         }
         if (o == BinaryOperator.NotEqual) {
           val condElse = new Label()
@@ -940,7 +982,11 @@ object Codegen {
             visitor.visitInsn(LCMP)
             visitor.visitJumpInsn(cmp, condElse)
           case Type.BigInt =>
-            visitor.visitMethodInsn(INVOKEVIRTUAL, "java/math/BigInteger", "compareTo", "(Ljava/math/BigInteger;)I", false)
+            // java.math.BigInteger.compareTo(java.math.BigInteger)
+            val methodName = "compareTo"
+            val clazz = classOf[java.math.BigInteger]
+            val method = clazz.getMethod(methodName, clazz)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), methodName, asm.Type.getMethodDescriptor(method), false)
             visitor.visitInsn(ICONST_0)
             visitor.visitJumpInsn(intOp, condElse)
           case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
@@ -1041,13 +1087,12 @@ object Codegen {
                                 (o: BitwiseOperator, e1: Expression, e2: Expression): Unit = {
     compileExpression(ctx, visitor)(e1)
     compileExpression(ctx, visitor)(e2)
-    val (tpe1, tpe2) = ("(Ljava/math/BigInteger;)Ljava/math/BigInteger;", "(I)Ljava/math/BigInteger;")
-    val (intOp, longOp, bigintOp, bigintTpe) = o match {
-      case BinaryOperator.BitwiseAnd => (IAND, LAND, "and", tpe1)
-      case BinaryOperator.BitwiseOr => (IOR, LOR, "or", tpe1)
-      case BinaryOperator.BitwiseXor => (IXOR, LXOR, "xor", tpe1)
-      case BinaryOperator.BitwiseLeftShift => (ISHL, LSHL, "shiftLeft", tpe2)
-      case BinaryOperator.BitwiseRightShift => (ISHR, LSHR, "shiftRight", tpe2)
+    val (intOp, longOp, bigintOp) = o match {
+      case BinaryOperator.BitwiseAnd => (IAND, LAND, "and")
+      case BinaryOperator.BitwiseOr => (IOR, LOR, "or")
+      case BinaryOperator.BitwiseXor => (IXOR, LXOR, "xor")
+      case BinaryOperator.BitwiseLeftShift => (ISHL, LSHL, "shiftLeft")
+      case BinaryOperator.BitwiseRightShift => (ISHR, LSHR, "shiftRight")
     }
     e1.tpe match {
       case Type.Int8 =>
@@ -1058,7 +1103,10 @@ object Codegen {
         if (intOp == ISHL) visitor.visitInsn(I2S)
       case Type.Int32 => visitor.visitInsn(intOp)
       case Type.Int64 => visitor.visitInsn(longOp)
-      case Type.BigInt => visitor.visitMethodInsn(INVOKEVIRTUAL, "java/math/BigInteger", bigintOp, bigintTpe, false);
+      case Type.BigInt =>
+        val clazz = classOf[java.math.BigInteger]
+        val method = clazz.getMethods.filter(m => m.getName == bigintOp).head
+        visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), bigintOp, asm.Type.getMethodDescriptor(method), false);
       case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
     }
   }
