@@ -18,6 +18,17 @@ import org.objectweb.asm.{Type => _, _}
 
 object Codegen {
 
+  private object Constants {
+    val valueObject = "ca/uwaterloo/flix/runtime/Value$"
+
+    val scalaPredef = "scala/Predef$"
+
+    val scalaMathPkg = "scala/math/package$"
+
+    def loadValueObject(visitor: MethodVisitor): Unit =
+      visitor.visitFieldInsn(GETSTATIC, valueObject, "MODULE$", s"L$valueObject;")
+  }
+
   case class Context(prefix: List[String],
                      functions: List[Definition.Constant],
                      declarations: Map[Symbol.Resolved, Type],
@@ -365,10 +376,10 @@ object Codegen {
 
     case Expression.Tag(enum, tag, exp, _, _) =>
       // Load the Value object, then the arguments (tag.name, boxing if necessary), and finally call `Value.mkTag`.
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+      Constants.loadValueObject(visitor)
       visitor.visitLdcInsn(tag.name)
       compileBoxedExpr(ctx, visitor)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkTag", "(Ljava/lang/String;Ljava/lang/Object;)Lca/uwaterloo/flix/runtime/Value$Tag;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkTag", "(Ljava/lang/String;Ljava/lang/Object;)Lca/uwaterloo/flix/runtime/Value$Tag;", false)
 
     case Expression.GetTupleIndex(base, offset, tpe, _) =>
       // ca.uwaterloo.flix.runtime.Value.Tuple.elms()
@@ -419,9 +430,9 @@ object Codegen {
 
     case Expression.FSet(elms, _, _) =>
       // First create a scala.immutable.Set
-      visitor.visitFieldInsn(GETSTATIC, "scala/Predef$", "MODULE$", "Lscala/Predef$;")
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "scala/Predef$", "Set", "()Lscala/collection/immutable/Set$;", false)
-      visitor.visitFieldInsn(GETSTATIC, "scala/Predef$", "MODULE$", "Lscala/Predef$;")
+      visitor.visitFieldInsn(GETSTATIC, Constants.scalaPredef, "MODULE$", s"L${Constants.scalaPredef};")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.scalaPredef, "Set", "()Lscala/collection/immutable/Set$;", false)
+      visitor.visitFieldInsn(GETSTATIC, Constants.scalaPredef, "MODULE$", s"L${Constants.scalaPredef};")
 
       // Create an array to hold the set elements
       compileInt(visitor)(elms.length)
@@ -437,7 +448,7 @@ object Codegen {
       }
 
       // Wrap the array and construct the set
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "scala/Predef$", "wrapRefArray", "([Ljava/lang/Object;)Lscala/collection/mutable/WrappedArray;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.scalaPredef, "wrapRefArray", "([Ljava/lang/Object;)Lscala/collection/mutable/WrappedArray;", false)
       visitor.visitMethodInsn(INVOKEVIRTUAL, "scala/collection/immutable/Set$", "apply", "(Lscala/collection/Seq;)Lscala/collection/GenTraversable;", false)
 
     case Expression.Existential(params, exp, loc) =>
@@ -446,34 +457,30 @@ object Codegen {
       throw InternalCompilerException(s"Unexpected expression: '$expr' at ${loc.source.format}.")
 
     case Expression.UserError(_, loc) =>
-      visitor.visitTypeInsn(NEW, asm.Type.getInternalName(classOf[ca.uwaterloo.flix.api.UserException]))
-      visitor.visitInsn(DUP)
-      visitor.visitLdcInsn(s"User exception: ${loc.format}.")
-      // TODO: Load actual source location or change UserException
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "MODULE$", "Lca/uwaterloo/flix/language/ast/package$SourceLocation$;")
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "Unknown", "()Lca/uwaterloo/flix/language/ast/package$SourceLocation;", false)
-      visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/api/UserException", "<init>", "(Ljava/lang/String;Lca/uwaterloo/flix/language/ast/package$SourceLocation;)V", false)
-      visitor.visitInsn(ATHROW)
+      val name = asm.Type.getInternalName(classOf[ca.uwaterloo.flix.api.UserException])
+      val msg = s"User exception: ${loc.format}."
+      compileError(visitor, name, msg)
 
     case Expression.MatchError(_, loc) =>
-      visitor.visitTypeInsn(NEW, asm.Type.getInternalName(classOf[ca.uwaterloo.flix.api.MatchException]))
-      visitor.visitInsn(DUP)
-      visitor.visitLdcInsn(s"Non-exhaustive match expression: ${loc.format}.")
-      // TODO: Load actual source location or change MatchException
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "MODULE$", "Lca/uwaterloo/flix/language/ast/package$SourceLocation$;")
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "Unknown", "()Lca/uwaterloo/flix/language/ast/package$SourceLocation;", false)
-      visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/api/MatchException", "<init>", "(Ljava/lang/String;Lca/uwaterloo/flix/language/ast/package$SourceLocation;)V", false)
-      visitor.visitInsn(ATHROW)
+      val name = asm.Type.getInternalName(classOf[ca.uwaterloo.flix.api.MatchException])
+      val msg = s"Non-exhaustive match expression: ${loc.format}."
+      compileError(visitor, name, msg)
 
     case Expression.SwitchError(_, loc) =>
-      visitor.visitTypeInsn(NEW, asm.Type.getInternalName(classOf[ca.uwaterloo.flix.api.SwitchException]))
-      visitor.visitInsn(DUP)
-      visitor.visitLdcInsn(s"Non-exhaustive switch expression: ${loc.format}.")
-      // TODO: Load actual source location or change SwitchException
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "MODULE$", "Lca/uwaterloo/flix/language/ast/package$SourceLocation$;")
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "Unknown", "()Lca/uwaterloo/flix/language/ast/package$SourceLocation;", false)
-      visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/api/SwitchException", "<init>", "(Ljava/lang/String;Lca/uwaterloo/flix/language/ast/package$SourceLocation;)V", false)
-      visitor.visitInsn(ATHROW)
+      val name = asm.Type.getInternalName(classOf[ca.uwaterloo.flix.api.SwitchException])
+      val msg = s"Non-exhaustive switch expression: ${loc.format}."
+      compileError(visitor, name, msg)
+  }
+
+  private def compileError(visitor: MethodVisitor, name: String, msg: String): Unit = {
+    visitor.visitTypeInsn(NEW, name)
+    visitor.visitInsn(DUP)
+    visitor.visitLdcInsn(msg)
+    // TODO: Load actual source location or change the exception
+    visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "MODULE$", "Lca/uwaterloo/flix/language/ast/package$SourceLocation$;")
+    visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "Unknown", "()Lca/uwaterloo/flix/language/ast/package$SourceLocation;", false)
+    visitor.visitMethodInsn(INVOKESPECIAL, name, "<init>", "(Ljava/lang/String;Lca/uwaterloo/flix/language/ast/package$SourceLocation;)V", false)
+    visitor.visitInsn(ATHROW)
   }
 
   /*
@@ -483,49 +490,49 @@ object Codegen {
   private def compileBoxedExpr(ctx: Context, visitor: MethodVisitor)(exp: Expression): Unit = exp.tpe match {
     case Type.Bool =>
       // If we know the value of the boolean expression, then compile it directly rather than calling mkBool.
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+      Constants.loadValueObject(visitor)
       exp match {
-        case Expression.True => visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "True", "()Ljava/lang/Object;", false)
-        case Expression.False => visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "False", "()Ljava/lang/Object;", false)
+        case Expression.True => visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "True", "()Ljava/lang/Object;", false)
+        case Expression.False => visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "False", "()Ljava/lang/Object;", false)
         case _ =>
           compileExpression(ctx, visitor)(exp)
-          visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkBool", "(Z)Ljava/lang/Object;", false)
+          visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkBool", "(Z)Ljava/lang/Object;", false)
       }
 
     case Type.Char =>
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+      Constants.loadValueObject(visitor)
       compileExpression(ctx, visitor)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkChar", "(C)Ljava/lang/Object;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkChar", "(C)Ljava/lang/Object;", false)
 
     case Type.Float32 =>
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+      Constants.loadValueObject(visitor)
       compileExpression(ctx, visitor)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkFloat32", "(F)Ljava/lang/Object;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkFloat32", "(F)Ljava/lang/Object;", false)
 
     case Type.Float64 =>
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+      Constants.loadValueObject(visitor)
       compileExpression(ctx, visitor)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkFloat64", "(D)Ljava/lang/Object;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkFloat64", "(D)Ljava/lang/Object;", false)
 
     case Type.Int8 =>
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+      Constants.loadValueObject(visitor)
       compileExpression(ctx, visitor)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkInt8", "(I)Ljava/lang/Object;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkInt8", "(I)Ljava/lang/Object;", false)
 
     case Type.Int16 =>
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+      Constants.loadValueObject(visitor)
       compileExpression(ctx, visitor)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkInt16", "(I)Ljava/lang/Object;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkInt16", "(I)Ljava/lang/Object;", false)
 
     case Type.Int32 =>
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+      Constants.loadValueObject(visitor)
       compileExpression(ctx, visitor)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkInt32", "(I)Ljava/lang/Object;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkInt32", "(I)Ljava/lang/Object;", false)
 
     case Type.Int64 =>
-      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+      Constants.loadValueObject(visitor)
       compileExpression(ctx, visitor)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkInt64", "(J)Ljava/lang/Object;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkInt64", "(J)Ljava/lang/Object;", false)
 
     case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
       compileExpression(ctx, visitor)(exp)
@@ -821,12 +828,12 @@ object Codegen {
         case Type.Int64 => (L2D, D2L)
         case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
       }
-      visitor.visitFieldInsn(GETSTATIC, "scala/math/package$", "MODULE$", "Lscala/math/package$;")
+      visitor.visitFieldInsn(GETSTATIC, Constants.scalaMathPkg, "MODULE$", s"L${Constants.scalaMathPkg};")
       compileExpression(ctx, visitor)(e1)
       visitor.visitInsn(castToDouble)
       compileExpression(ctx, visitor)(e2)
       visitor.visitInsn(castToDouble)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "scala/math/package$", "pow", "(DD)D", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.scalaMathPkg, "pow", "(DD)D", false)
       visitor.visitInsn(castFromDouble)
       (e1.tpe: @unchecked) match {
         case Type.Int8 => visitor.visitInsn(I2B)
