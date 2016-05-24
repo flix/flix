@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, WeededAst}
+import ca.uwaterloo.flix.language.ast.{NamedAst, SourceLocation, Symbol, WeededAst}
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -22,26 +22,39 @@ object Namer {
 
     implicit val consoleCtx = Compiler.ConsoleCtx
 
+    /**
+      * An error raised to indicate that the given `name` is used for multiple definitions.
+      *
+      * @param name the name.
+      * @param loc1 the location of the first definition.
+      * @param loc2 the location of the second definition.
+      */
+    case class DuplicateDefinition(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NamerError {
+      val message =
+        s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc1.source.format}")}
+           |
+           |${consoleCtx.red(s">> Duplicate definition of the name '$name'.")}
+           |
+           |First definition was here:
+           |${loc1.underline}
+           |Second definition was here:
+           |${loc2.underline}
+           |Tip: Consider renaming or removing one of the definitions.
+         """.stripMargin
+    }
+
   }
 
   /**
     * Performs naming on the given `program`.
     */
   def namer(program: WeededAst.Program)(implicit genSym: GenSym): Validation[NamedAst.Program, NamerError] = {
-    program.roots.map(namer)
 
-    NamedAst.Program(Nil, program.hooks, program.time).toSuccess // TODO
-  }
-
-  /**
-    * Performs naming on the given `root`.
-    */
-  def namer(root: WeededAst.Root)(implicit genSym: GenSym): Validation[NamedAst.Root, NamerError] = {
-    for (decl <- root.decls) {
+    for (root <- program.roots; decl <- root.decls) {
       Declarations.namer(decl)
     }
 
-    NamedAst.Root(Nil).toSuccess // TODO
+    NamedAst.Program(Map.empty, program.hooks, program.time).toSuccess // TODO
   }
 
   object Declarations {
@@ -69,7 +82,7 @@ object Namer {
        */
       case WeededAst.Expression.Wild(loc) => NamedAst.Expression.Wild(id(), loc).toSuccess
 
-      case WeededAst.Expression.Var(name, loc) if name.isUnqualified =>
+      case WeededAst.Expression.Var(name, loc) =>
         // lookup the variable name in the environment.
         env0.get(name.ident.name) match {
           case None =>

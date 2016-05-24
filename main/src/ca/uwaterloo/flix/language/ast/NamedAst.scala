@@ -6,17 +6,15 @@ trait NamedAst
 
 object NamedAst {
 
-  case class Program(roots: List[NamedAst.Root], hooks: Map[Symbol.Resolved, Ast.Hook], time: Time) extends NamedAst
-
-  case class Root(decls: List[NamedAst.Declaration]) extends NamedAst
+  case class Program(indexes: Map[Symbol.TableSym, NamedAst.Declaration.Index],
+                     hooks: Map[Symbol.Resolved, Ast.Hook],
+                     time: Time) extends NamedAst
 
   sealed trait Declaration extends NamedAst {
     def loc: SourceLocation
   }
 
   object Declaration {
-
-    case class Namespace(name: Name.NName, decls: List[NamedAst.Declaration], loc: SourceLocation) extends NamedAst.Declaration
 
     case class Definition(ann: Ast.Annotations, ident: Name.Ident, params: List[Ast.FormalParam], exp: NamedAst.Expression, tpe: Type, loc: SourceLocation) extends NamedAst.Declaration
 
