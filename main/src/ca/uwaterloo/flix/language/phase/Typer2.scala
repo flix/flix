@@ -85,7 +85,7 @@ object Typer2 {
            * Wildcard expression.
            */
           case NamedAst.Expression.Wild(id, loc) =>
-            ???
+            ??? // TODO
 
           /*
            * Variable expression.
@@ -116,11 +116,6 @@ object Typer2 {
           case NamedAst.Expression.Int64(id, lit, loc) => Type.Int64
           case NamedAst.Expression.BigInt(id, lit, loc) => Type.BigInt
           case NamedAst.Expression.Str(id, lit, loc) => Type.Str
-
-          /*
-           * Hook expression.
-           */
-          //case NamedAst.Expression.Hook(id, hook, tpe, loc) => ???
 
           /*
            * Lambda expression.
@@ -274,10 +269,13 @@ object Typer2 {
             Type.Tuple(tpes)
 
           /*
-           * Option expression.
+           * None expression.
            */
           case NamedAst.Expression.FNone(id, loc) => ???
 
+          /*
+           * Some expression.
+           */
           case NamedAst.Expression.FSome(id, exp, loc) => ???
 
           /*
@@ -353,8 +351,7 @@ object Typer2 {
            * User Error expression.
            */
           case NamedAst.Expression.UserError(id, loc) =>
-            // TODO
-            ???
+            Type.Var(id.toString)
 
         }
 
