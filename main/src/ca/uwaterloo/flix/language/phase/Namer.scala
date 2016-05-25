@@ -50,13 +50,13 @@ object Namer {
     */
   def namer(program: WeededAst.Program)(implicit genSym: GenSym): Validation[NamedAst.Program, NamerError] = {
 
-    val prog = NamedAst.Program(Map.empty, Map.empty, program.hooks, program.time)
+    val prog = NamedAst.Program(Map.empty, Map.empty, Map.empty, program.hooks, program.time)
 
     for (root <- program.roots; decl <- root.decls) {
       Declarations.namer(decl, Name.NName(SourcePosition.Unknown, Nil, SourcePosition.Unknown), prog)
     }
 
-    NamedAst.Program(Map.empty, Map.empty, program.hooks, program.time).toSuccess // TODO
+    NamedAst.Program(Map.empty, Map.empty, Map.empty, program.hooks, program.time).toSuccess // TODO
   }
 
   object Declarations {
@@ -150,7 +150,18 @@ object Namer {
       /*
        * BoundedLattice (deprecated).
        */
-      case WeededAst.Declaration.BoundedLattice(tpe, bot, top, leq, lub, glb, loc) => ???
+      case WeededAst.Declaration.BoundedLattice(tpe, bot0, top0, leq0, lub0, glb0, loc) =>
+        val botVal = Expressions.namer(bot0, Map.empty)
+        val topVal = Expressions.namer(top0, Map.empty)
+        val leqVal = Expressions.namer(leq0, Map.empty)
+        val lubVal = Expressions.namer(lub0, Map.empty)
+        val glbVal = Expressions.namer(glb0, Map.empty)
+
+        @@(botVal, topVal, leqVal, lubVal, glbVal) map {
+          case (bot, top, leq, lub, glb) =>
+            val lattice = NamedAst.Declaration.BoundedLattice(tpe, bot, top, leq, lub, glb, loc)
+            prog0.copy(lattices = prog0.lattices + (tpe -> lattice)) // NB: This just overrides any existing binding.
+        }
 
       /*
        * Relation.
