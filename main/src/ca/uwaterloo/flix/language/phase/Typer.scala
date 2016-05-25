@@ -540,7 +540,7 @@ object Typer {
             case elms =>
               val tpes = elms.map(e => (e.tpe, e.loc))
               expectEqual(tpes) map {
-                case tpe => TypedAst.Expression.Set(elms, Type.FSet(tpe), loc)
+                case tpe => TypedAst.Expression.FSet(elms, Type.FSet(tpe), loc)
               }
           }
 
@@ -859,6 +859,7 @@ object Typer {
     case Type.Abs(name, tpe) => s"Abs($name)"
     case Type.FOpt(tpe) => s"FOpt($tpe)"
     case Type.FList(tpe) => s"FList($tpe)"
+    case Type.FVec(tpe) =>  s"FVec($tpe)"
     case Type.FMap(k, v) => s"FMap($k, $v)"
     case Type.Parametric(name, elms) => s"$name[$elms]"
     case Type.Unresolved(name) => name.toString

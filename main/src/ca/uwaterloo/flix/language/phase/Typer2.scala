@@ -95,12 +95,11 @@ object Typer2 {
             ???
 
           /*
-           * Ref expression.
+           * Reference expression.
            */
           case NamedAst.Expression.Ref(id, ref, loc) =>
             Type.Var("TODO")
           // TODO
-
 
           /*
            * Literal expression.
@@ -435,7 +434,11 @@ object Typer2 {
 
       case NamedAst.Expression.Binary(id, op, exp1, exp2, loc) => ???
 
-      case NamedAst.Expression.IfThenElse(id, exp1, exp2, exp3, loc) => ???
+      case NamedAst.Expression.IfThenElse(id, exp1, exp2, exp3, loc) =>
+        val e1 = reassemble(exp1, tenv0)
+        val e2 = reassemble(exp2, tenv0)
+        val e3 = reassemble(exp3, tenv0)
+        TypedAst.Expression.IfThenElse(e1, e2, e3, tenv0(id), loc)
 
       case NamedAst.Expression.Let(id, sym, exp1, exp2, loc) => ???
 
@@ -447,15 +450,26 @@ object Typer2 {
 
       case NamedAst.Expression.Tuple(id, elms, loc) =>
         val es = elms.map(e => reassemble(e, tenv0))
-        TypedAst.Expression.Tuple(es, tenv0(id).asInstanceOf[Type.Tuple], loc)
+        val tpe: Type.Tuple = tenv0(id).asInstanceOf[Type.Tuple]
+        TypedAst.Expression.Tuple(es, tpe, loc)
 
-      case NamedAst.Expression.FNone(id, loc) => ???
+      case NamedAst.Expression.FNone(id, loc) =>
+        val tpe: Type.FOpt = tenv0(id).asInstanceOf[Type.FOpt]
+        TypedAst.Expression.FNone(tpe, loc)
 
-      case NamedAst.Expression.FSome(id, exp, loc) => ???
+      case NamedAst.Expression.FSome(id, exp, loc) =>
+        val tpe: Type.FOpt = tenv0(id).asInstanceOf[Type.FOpt]
+        TypedAst.Expression.FSome(reassemble(exp, tenv0), tpe, loc)
 
-      case NamedAst.Expression.FNil(id, loc) => ???
+      case NamedAst.Expression.FNil(id, loc) =>
+        val tpe: Type.FList = tenv0(id).asInstanceOf[Type.FList]
+        TypedAst.Expression.FNil(tpe, loc)
 
-      case NamedAst.Expression.FList(id, hd, tl, loc) => ???
+      case NamedAst.Expression.FList(id, hd, tl, loc) =>
+        val e1 = reassemble(hd, tenv0)
+        val e2 = reassemble(tl, tenv0)
+        val tpe: Type.FList = tenv0(id).asInstanceOf[Type.FList]
+        TypedAst.Expression.FList(e1, e2, tpe, loc)
 
       case NamedAst.Expression.FVec(id, elms, loc) => ???
 
@@ -470,11 +484,15 @@ object Typer2 {
       case NamedAst.Expression.Existential(id, params, exp, loc) =>
         val e = reassemble(exp, tenv0)
         TypedAst.Expression.Existential(params, e, loc)
+
       case NamedAst.Expression.Universal(id, params, exp, loc) =>
         val e = reassemble(exp, tenv0)
         TypedAst.Expression.Universal(params, e, loc)
+
       case NamedAst.Expression.Ascribe(id, exp, tpe, loc) =>
+        // simply reassemble the nested expression.
         reassemble(exp, tenv0)
+
       case NamedAst.Expression.UserError(id, loc) =>
         TypedAst.Expression.Error(tenv0(id), loc)
     }

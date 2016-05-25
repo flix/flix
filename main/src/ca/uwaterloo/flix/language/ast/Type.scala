@@ -31,6 +31,7 @@ sealed trait Type {
     case Type.Parametric(name, elms) => "Parametric(" + name + ", " + elms.mkString(", ") + ")"
     case Type.FOpt(tpe) => "Opt[" + tpe + "]"
     case Type.FList(tpe) => "Lst[" + tpe + "]"
+    case Type.FVec(tpe) => "Vec[" + tpe + "]"
     case Type.FSet(tpe) => "Set[" + tpe + "]"
     case Type.FMap(key, value) => "Map[" + key + ", " + value + "]"
     case Type.Unresolved(name) => "?" + name
@@ -158,6 +159,13 @@ object Type {
     * @param tpe the type of the list elements.
     */
   case class FList(tpe: Type) extends Type
+
+  /**
+    * An AST node that represents a Vec type.
+    *
+    * @param tpe the type of the list elements.
+    */
+  case class FVec(tpe: Type) extends Type
 
   /**
     * An AST node that represents a Set type.

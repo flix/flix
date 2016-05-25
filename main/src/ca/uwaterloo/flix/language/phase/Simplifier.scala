@@ -180,7 +180,7 @@ object Simplifier {
         SimplifiedAst.Expression.Tag(enum, tag, simplify(e), tpe, loc)
       case TypedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
-      case TypedAst.Expression.Set(elms, tpe, loc) =>
+      case TypedAst.Expression.FSet(elms, tpe, loc) =>
         SimplifiedAst.Expression.FSet(elms map simplify, tpe, loc)
       case TypedAst.Expression.Existential(params, exp, loc) =>
         SimplifiedAst.Expression.Existential(params, simplify(exp), loc)
