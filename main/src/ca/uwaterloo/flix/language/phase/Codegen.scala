@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression, LoadExpression, StoreExpression}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.Value
@@ -108,11 +109,29 @@ object Codegen {
     // Initialize the visitor to create a class.
     visitor.visit(V1_8, ACC_PUBLIC + ACC_SUPER, decorate(ctx.prefix), null, "java/lang/Object", null)
 
+    compileStaticFlixField(ctx, visitor)
     compileConstructor(ctx, visitor)
     functions.foreach(compileFunction(ctx, visitor))
 
     visitor.visitEnd()
     classWriter.toByteArray
+  }
+
+  /*
+   * Create a static field for the Flix object, and generate the class initializer to initialize the field to null.
+   */
+  private def compileStaticFlixField(ctx: Context, visitor: ClassVisitor): Unit = {
+    val name = "flixObject"
+    val fv = visitor.visitField(ACC_PUBLIC + ACC_STATIC, name, asm.Type.getDescriptor(classOf[Flix]), null, null)
+    fv.visitEnd()
+
+    val mv = visitor.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null)
+    mv.visitCode()
+    mv.visitInsn(ACONST_NULL)
+    mv.visitFieldInsn(PUTSTATIC, decorate(ctx.prefix), name, asm.Type.getDescriptor(classOf[Flix]))
+    mv.visitInsn(RETURN)
+    mv.visitMaxs(1, 0)
+    mv.visitEnd()
   }
 
   /*
@@ -157,8 +176,8 @@ object Codegen {
       case Type.Tag(_, _, _) => throw InternalCompilerException(s"Functions can't return type $tpe.")
     }
 
-    // Dummy large numbers so the bytecode checker can run. Afterwards, the ASM library calculates the proper maxes.
-    mv.visitMaxs(999, 999)
+    // Dummy large numbers (JVM limits) so the bytecode checker can run. Afterwards, the ASM library calculates the proper maxes.
+    mv.visitMaxs(65535, 65535)
     mv.visitEnd()
   }
 
