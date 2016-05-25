@@ -172,7 +172,7 @@ class Flix {
         val lifted = LambdaLift.lift(sast)
         val numbered = VarNumbering.number(lifted)
         val east = CreateExecutableAst.toExecutable(numbered)
-        val compiled = LoadBytecode.load(east, options)
+        val compiled = LoadBytecode.load(this, east, options)
         Verifier.verify(compiled, options) map {
           case ast => new Solver()(Solver.SolverContext(ast, options)).solve()
         }

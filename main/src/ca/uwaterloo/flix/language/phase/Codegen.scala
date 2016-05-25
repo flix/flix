@@ -20,6 +20,8 @@ import org.objectweb.asm.{Type => _, _}
 
 object Codegen {
 
+  val flixObjectName = "flixObject"
+
   case class Context(prefix: List[String],
                      functions: List[Definition.Constant],
                      declarations: Map[Symbol.Resolved, Type],
@@ -121,14 +123,13 @@ object Codegen {
    * Create a static field for the Flix object, and generate the class initializer to initialize the field to null.
    */
   private def compileStaticFlixField(ctx: Context, visitor: ClassVisitor): Unit = {
-    val name = "flixObject"
-    val fv = visitor.visitField(ACC_PUBLIC + ACC_STATIC, name, asm.Type.getDescriptor(classOf[Flix]), null, null)
+    val fv = visitor.visitField(ACC_PUBLIC + ACC_STATIC, flixObjectName, asm.Type.getDescriptor(classOf[Flix]), null, null)
     fv.visitEnd()
 
     val mv = visitor.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null)
     mv.visitCode()
     mv.visitInsn(ACONST_NULL)
-    mv.visitFieldInsn(PUTSTATIC, decorate(ctx.prefix), name, asm.Type.getDescriptor(classOf[Flix]))
+    mv.visitFieldInsn(PUTSTATIC, decorate(ctx.prefix), flixObjectName, asm.Type.getDescriptor(classOf[Flix]))
     mv.visitInsn(RETURN)
     mv.visitMaxs(1, 0)
     mv.visitEnd()

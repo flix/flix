@@ -984,7 +984,8 @@ class TestBackend extends FunSuite {
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
-    def nativeF(x: IValue): IValue = flix.mkFalse
+    val x = flix.mkFalse
+    def nativeF(dummy: IValue): IValue = x
 
     t.addHook("A.B/f", flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType), nativeF _).run()
     t.runTest(Value.False, "A/g")
@@ -1301,7 +1302,8 @@ class TestBackend extends FunSuite {
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
-    def nativeF(x: JInt): JBool = false
+    val x = false
+    def nativeF(dummy: JInt): JBool = x
 
     t.addHook("A.B/f", flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType), nativeF _).run()
     t.runTest(Value.False, "A/g")

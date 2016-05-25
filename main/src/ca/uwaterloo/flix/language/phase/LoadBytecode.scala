@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.phase
 
 import java.nio.file.{Files, Paths}
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression}
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol, Type}
 import ca.uwaterloo.flix.runtime.Value
@@ -49,7 +50,8 @@ object LoadBytecode {
     *    As of this step, we have grouped the constants into separate classes, transformed non-functions into 0-arg
     *    functions, collected all the declarations in a map, and created and loaded functional interfaces and collected
     *    them in a map.
-    *    Now, for each class, we generate and load the bytecode.
+    *    Now, for each class, we generate and load the bytecode. We also initialize the static Flix field to point to
+    *    `this`.
     *
     * 5. Load the methods.
     *    For each constant, we use reflection to get the corresponding java.lang.reflect.Method object.
@@ -57,7 +59,7 @@ object LoadBytecode {
     *    variables eliminated) to perform the reflection lookup, so we iterate over constantsMap. However, we want to
     *    mutate the original constant from root.constants, not the one in constantsMap (which will get GC'd).
     */
-  def load(root: ExecutableAst.Root, options: Options)(implicit genSym: GenSym): ExecutableAst.Root = {
+  def load(flix: Flix, root: ExecutableAst.Root, options: Options)(implicit genSym: GenSym): ExecutableAst.Root = {
     if (options.codegen != CodeGeneration.Enabled) {
       return root
     }
@@ -94,7 +96,10 @@ object LoadBytecode {
       if (options.debugBytecode == DebugBytecode.Enabled) {
         dump(prefix, bytecode)
       }
-      prefix -> loader(prefix, bytecode)
+      val clazz = loader(prefix, bytecode)
+      // Set the flixObject field to `this`.
+      clazz.getField(Codegen.flixObjectName).set(null, flix)
+      prefix -> clazz
     }.toMap // Despite IDE highlighting, this is actually necessary.
 
     // 5. Load the methods.
