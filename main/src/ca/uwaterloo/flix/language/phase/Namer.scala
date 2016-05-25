@@ -52,6 +52,7 @@ object Namer {
     // make an empty program to fold over.
     val prog0 = NamedAst.Program(
       enums = Map.empty,
+      definitions = Map.empty,
       lattices = Map.empty,
       indexes = Map.empty,
       tables = Map.empty,
@@ -86,11 +87,34 @@ object Namer {
       /*
        * Definition.
        */
-      case WeededAst.Declaration.Definition(ann, idents, params, exp, tpe, loc) =>
+      case WeededAst.Declaration.Definition(ann, ident, params, exp, tpe, loc) =>
+        // TODO: Need Gensym
+
         // check if the definition already exists.
-        // TODO
-        Expressions.namer(exp, Map.empty) map {
-          case e => prog0
+        prog0.definitions.get(ns0) match {
+          case None =>
+            // Case 1: The namespace does not yet exist. So the definition does not yet exist.
+            Expressions.namer(exp, Map.empty) map {
+              case e =>
+                val defn = NamedAst.Declaration.Definition(ann, ident, params, e, tpe, loc)
+                val defns = Map(ident.name -> defn)
+                prog0.copy(definitions = prog0.definitions + (ns0 -> defns))
+            }
+          case Some(defns0) =>
+            // Case 2: The namespace exists. Lookup the definition.
+            defns0.get(ident.name) match {
+              case None =>
+                // Case 2.1: The definition does not exist in the namespace. Update it.
+                Expressions.namer(exp, Map.empty) map {
+                  case e =>
+                    val defn = NamedAst.Declaration.Definition(ann, ident, params, e, tpe, loc)
+                    val defns = defns0 + (ident.name -> defn)
+                    prog0.copy(definitions = prog0.definitions + (ns0 -> defns))
+                }
+              case Some(defn) =>
+                // Case 2.2: Duplicate definition.
+                DuplicateEntity(ident.name, defn.loc, ident.loc).toFailure
+            }
         }
 
       /*

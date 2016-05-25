@@ -1,6 +1,9 @@
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.phase.Namer.NamerError
+import ca.uwaterloo.flix.util.Validation
 
 import scala.collection.mutable
 
@@ -49,6 +52,15 @@ object Typer2 {
     Type.Int64
   )
 
+  // TODO: DOC + Impl
+  def typer(program: NamedAst.Program)(implicit genSym: GenSym): Unit = {
+    for ((ns, defns) <- program.definitions) {
+      for ((name, defn) <- defns) {
+        ConstraintGeneration.Expressions.gen(defn.exp)
+      }
+    }
+  }
+
   /**
     * Phase 1: Constraint Generation.
     */
@@ -96,7 +108,9 @@ object Typer2 {
           /*
            * Ref expression.
            */
-          //case NamedAst.Expression.Ref(id, name, tpe, loc) => ???
+          case NamedAst.Expression.Ref(id, ref, loc) =>
+            Type.Var("TODO")
+            // TODO
 
           /*
            * Hook expression.
@@ -311,8 +325,6 @@ object Typer2 {
           case NamedAst.Expression.UserError(id, loc) =>
             // TODO
             ???
-
-          case _ => ???
 
         }
 

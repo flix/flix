@@ -7,6 +7,7 @@ trait NamedAst
 object NamedAst {
 
   case class Program(enums: Map[Name.NName, Map[String, NamedAst.Declaration.Enum]],
+                     definitions: Map[Name.NName, Map[String, NamedAst.Declaration.Definition]],
                      lattices: Map[Type, NamedAst.Declaration.BoundedLattice],
                      indexes: Map[Symbol.TableSym, NamedAst.Declaration.Index],
                      tables: Map[Name.NName, Map[String, NamedAst.Table]],
