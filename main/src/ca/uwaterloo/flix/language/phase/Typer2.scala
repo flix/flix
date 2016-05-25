@@ -396,7 +396,7 @@ object Typer2 {
       case NamedAst.Expression.Existential(id, params, exp, loc) => ???
       case NamedAst.Expression.Universal(id, params, exp, loc) => ???
       case NamedAst.Expression.Ascribe(id, exp, tpe, loc) => ???
-      case NamedAst.Expression.UserError(id, loc) => ???
+      case NamedAst.Expression.UserError(id, loc) => TypedAst.Expression.Error(tenv0(id), loc)
     }
 
   }

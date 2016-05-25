@@ -85,17 +85,17 @@ object Namer {
       /*
        * Signature.
        */
-      case WeededAst.Declaration.Signature(ident, params, tpe, loc) => ???
+      case WeededAst.Declaration.Signature(ident, params, tpe, loc) => ??? // TODO
 
       /*
        * External.
        */
-      case WeededAst.Declaration.External(ident, params, tpe, loc) => ???
+      case WeededAst.Declaration.External(ident, params, tpe, loc) => ??? // TODO
 
       /*
        * Law.
        */
-      case WeededAst.Declaration.Law(ident, tparams, params, tpe, exp, loc) => ???
+      case WeededAst.Declaration.Law(ident, tparams, params, tpe, exp, loc) => ??? // TODO
 
       /*
        * Enum.
@@ -471,11 +471,6 @@ object Namer {
     }
 
   }
-
-  object Predicates {
-
-  }
-
 
   /**
     * Short hand for genSym.freshId.
