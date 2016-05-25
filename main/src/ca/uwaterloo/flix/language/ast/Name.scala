@@ -3,6 +3,11 @@ package ca.uwaterloo.flix.language.ast
 object Name {
 
   /**
+    * The root namespace.
+    */
+  val RootNS = new NName(SourcePosition.Unknown, Nil, SourcePosition.Unknown)
+
+  /**
     * Identifier.
     *
     * @param sp1  the position of the first character in the identifier.

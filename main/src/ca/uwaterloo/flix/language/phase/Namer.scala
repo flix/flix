@@ -49,14 +49,25 @@ object Namer {
     * Performs naming on the given `program`.
     */
   def namer(program: WeededAst.Program)(implicit genSym: GenSym): Validation[NamedAst.Program, NamerError] = {
+    // make an empty program to fold over.
+    val prog0 = NamedAst.Program(
+      enums = Map.empty,
+      lattices = Map.empty,
+      indexes = Map.empty,
+      tables = Map.empty,
+      facts = Nil,
+      rules = Nil,
+      hooks = program.hooks,
+      time = program.time
+    )
 
-    val prog = NamedAst.Program(Map.empty, Map.empty, Map.empty, Map.empty, Nil, Nil, program.hooks, program.time)
+    // collect all the declarations.
+    val declarations = program.roots.flatMap(_.decls)
 
-    for (root <- program.roots; decl <- root.decls) {
-      Declarations.namer(decl, Name.NName(SourcePosition.Unknown, Nil, SourcePosition.Unknown), prog)
+    // fold over the top-level declarations.
+    Validation.fold(declarations, prog0) {
+      case (prog, decl) => Declarations.namer(decl, Name.RootNS, prog0)
     }
-
-    NamedAst.Program(Map.empty, Map.empty, Map.empty, Map.empty, Nil, Nil, program.hooks, program.time).toSuccess // TODO
   }
 
   object Declarations {
@@ -147,6 +158,7 @@ object Namer {
       case WeededAst.Declaration.Rule(h, b, loc) =>
         val head0 = h.asInstanceOf[WeededAst.Predicate.Head.Table]
         val head = NamedAst.Predicate.Head.Table(head0.name, head0.terms, head0.loc)
+        // TODO
         val body = b map {
           case WeededAst.Predicate.Body.Ambiguous(name, terms, loc) => NamedAst.Predicate.Body.Ambiguous(name, terms, loc)
           case WeededAst.Predicate.Body.NotEqual(ident1, ident2, loc) => NamedAst.Predicate.Body.NotEqual(ident1, ident2, loc)
@@ -168,7 +180,7 @@ object Namer {
             prog0.copy(indexes = prog0.indexes + (sym -> index)).toSuccess
           case Some(index) =>
             // Case 2: Some indexes already exist for the table.
-            ???
+            ??? // TODO
         }
 
       /*

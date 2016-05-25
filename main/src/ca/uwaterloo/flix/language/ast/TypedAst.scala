@@ -271,6 +271,54 @@ object TypedAst {
 
   object Expression {
 
+    case class Unit(loc: SourceLocation) extends TypedAst.Expression {
+      final def tpe: Type = Type.Unit
+    }
+
+    case class True(loc: SourceLocation) extends TypedAst.Expression {
+      final def tpe: Type = Type.Bool
+    }
+
+    case class False(loc: SourceLocation) extends TypedAst.Expression {
+      final def tpe: Type = Type.Bool
+    }
+
+    case class Char(lit: scala.Char, loc: SourceLocation) extends TypedAst.Expression {
+      final def tpe: Type = Type.Char
+    }
+
+    case class Float32(lit: scala.Float, loc: SourceLocation) extends TypedAst.Expression {
+      final def tpe: Type = Type.Float32
+    }
+
+    case class Float64(lit: scala.Double, loc: SourceLocation) extends TypedAst.Expression {
+      final def tpe: Type = Type.Float64
+    }
+
+    case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Expression {
+      final def tpe: Type = Type.Int8
+    }
+
+    case class Int16(lit: scala.Short, loc: SourceLocation) extends TypedAst.Expression {
+      final def tpe: Type = Type.Int16
+    }
+
+    case class Int32(lit: scala.Int, loc: SourceLocation) extends TypedAst.Expression {
+      final def tpe: Type = Type.Int32
+    }
+
+    case class Int64(lit: scala.Long, loc: SourceLocation) extends TypedAst.Expression {
+      final def tpe: Type = Type.Int64
+    }
+
+    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends TypedAst.Expression {
+      final def tpe: Type = Type.BigInt
+    }
+
+    case class Str(lit: java.lang.String, loc: SourceLocation) extends TypedAst.Expression {
+      final def tpe: Type = Type.Str
+    }
+
     /**
       * A typed AST node representing a literal expression.
       *
