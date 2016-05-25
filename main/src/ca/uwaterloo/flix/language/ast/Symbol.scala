@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
 import ca.uwaterloo.flix.language.phase.GenSym
 
 import scala.collection.mutable
@@ -11,6 +12,13 @@ object Symbol {
     */
   def mkVarSym(ident: Name.Ident)(implicit genSym: GenSym): VarSym = {
     new VarSym(genSym.freshId(), ident.name, ident.loc)
+  }
+
+  /**
+    * Returns the table symbol for the given name `ident` in the given namespace `ns`.
+    */
+  def mkTableSym(ns: NName, ident: Ident): TableSym = {
+    new TableSym(ns.parts, ident.name, ident.loc)
   }
 
   /**

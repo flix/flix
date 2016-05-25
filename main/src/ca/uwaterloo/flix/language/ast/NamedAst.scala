@@ -9,6 +9,7 @@ object NamedAst {
   case class Program(enums: Map[Name.NName, Map[String, NamedAst.Declaration.Enum]],
                      lattices: Map[Type, NamedAst.Declaration.BoundedLattice],
                      indexes: Map[Symbol.TableSym, NamedAst.Declaration.Index],
+                     tables: Map[Name.NName, Map[String, NamedAst.Table]],
                      hooks: Map[Symbol.Resolved, Ast.Hook],
                      time: Time) extends NamedAst
 

@@ -50,13 +50,13 @@ object Namer {
     */
   def namer(program: WeededAst.Program)(implicit genSym: GenSym): Validation[NamedAst.Program, NamerError] = {
 
-    val prog = NamedAst.Program(Map.empty, Map.empty, Map.empty, program.hooks, program.time)
+    val prog = NamedAst.Program(Map.empty, Map.empty, Map.empty, Map.empty, program.hooks, program.time)
 
     for (root <- program.roots; decl <- root.decls) {
       Declarations.namer(decl, Name.NName(SourcePosition.Unknown, Nil, SourcePosition.Unknown), prog)
     }
 
-    NamedAst.Program(Map.empty, Map.empty, Map.empty, program.hooks, program.time).toSuccess // TODO
+    NamedAst.Program(Map.empty, Map.empty, Map.empty, Map.empty, program.hooks, program.time).toSuccess // TODO
   }
 
   object Declarations {
@@ -106,8 +106,8 @@ object Namer {
           case None =>
             // Case 1: The namespace does not yet exist. So the enum does not yet exist.
             val enum = NamedAst.Declaration.Enum(ident, casesOf(cases), loc)
-            val enums = prog0.enums + (ns0 -> Map(ident.name -> enum))
-            prog0.copy(enums = enums).toSuccess
+            val enums = Map(ident.name -> enum)
+            prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
           case Some(enums0) =>
             // Case 2: The namespace exists. Lookup the enum.
             enums0.get(ident.name) match {
@@ -166,7 +166,27 @@ object Namer {
       /*
        * Relation.
        */
-      case WeededAst.Table.Relation(ident, attr, loc) => ???
+      case WeededAst.Table.Relation(ident, attr, loc) =>
+        // check if the table already exists.
+        prog0.tables.get(ns0) match {
+          case None =>
+            // Case 1: The namespace does not yet exist. So the table does not yet exist.
+            val table = NamedAst.Table.Relation(Symbol.mkTableSym(ns0, ident), attr, loc)
+            val tables = Map(ident.name -> table)
+            prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
+          case Some(tables0) =>
+            // Case 2: The namespace exists. Lookup the table.
+            tables0.get(ident.name) match {
+              case None =>
+                // Case 2.1: The table does not exist in the namespace. Update it.
+                val table = NamedAst.Table.Relation(Symbol.mkTableSym(ns0, ident), attr, loc)
+                val tables = tables0 + (ident.name -> table)
+                prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
+              case Some(table) =>
+                // Case 2.2: Duplicate definition.
+                DuplicateEntity(ident.name, table.loc, ident.loc).toFailure
+            }
+        }
 
       /*
        * Lattice.
