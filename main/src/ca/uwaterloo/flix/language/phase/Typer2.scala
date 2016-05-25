@@ -76,6 +76,11 @@ object Typer2 {
          */
         val constraints = mutable.Set.empty[TypeConstraint]
 
+        def eq(id: Int, tpe: Type): Type = {
+          // Add to constraints
+          tpe
+        }
+
         /**
           * Generates type constraints for the given expression `e0` under the given type environment `tenv`.
           */
@@ -266,7 +271,7 @@ object Typer2 {
            */
           case NamedAst.Expression.Tuple(id, elms, loc) =>
             val tpes = elms.map(e => visitExp(e, tenv0))
-            Type.Tuple(tpes)
+            eq(id, Type.Tuple(tpes))
 
           /*
            * None expression.
@@ -282,9 +287,8 @@ object Typer2 {
            * Nil expression.
            */
           case NamedAst.Expression.FNil(id, loc) =>
-            val sym = genSym.freshId()
-            val tpe = Type.Var(sym.toString)
-            Type.FList(tpe)
+            val tpe = Type.Var(id.toString)
+            eq(id, Type.FList(tpe))
 
           /*
            * List expression.
@@ -416,7 +420,6 @@ object Typer2 {
   }
 
 
-
   /**
     * Reassembles the given expression `exp0` under the given type environment `tenv0`.
     */
@@ -494,7 +497,7 @@ object Typer2 {
     /*
      * Match expression.
      */
-    case NamedAst.Expression.Match(id, exp, rules, loc) => ???  // TODO
+    case NamedAst.Expression.Match(id, exp, rules, loc) => ??? // TODO
 
     /*
      * Switch expression.
