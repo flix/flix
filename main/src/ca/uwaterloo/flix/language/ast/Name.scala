@@ -35,9 +35,27 @@ object Name {
     def isRoot: Boolean = idents.isEmpty
 
     /**
+      * Returns the string parts of the namespace.
+      */
+    def parts: List[String] = idents.map(_.name)
+
+    /**
       * The source location of the namespace.
       */
     def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
+
+    /**
+      * Returns the hash code of `this` namespace.
+      */
+    override def hashCode(): Int = parts.hashCode()
+
+    /**
+      * Returns `true` if `this` namespace equals `that`.
+      */
+    override def equals(o: scala.Any): Boolean = o match {
+      case that: NName => this.parts == that.parts
+      case _ => false
+    }
 
     /**
       * Human readable representation.

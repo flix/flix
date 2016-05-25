@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.{NamedAst, SourceLocation, Symbol, WeededAst}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -29,11 +29,11 @@ object Namer {
       * @param loc1 the location of the first definition.
       * @param loc2 the location of the second definition.
       */
-    case class DuplicateDefinition(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NamerError {
+    case class DuplicateEntity(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NamerError {
       val message =
         s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc1.source.format}")}
            |
-           |${consoleCtx.red(s">> Duplicate definition of the name '$name'.")}
+           |${consoleCtx.red(s">> Duplicate definition of '$name'.")}
            |
            |First definition was here:
            |${loc1.underline}
@@ -50,33 +50,34 @@ object Namer {
     */
   def namer(program: WeededAst.Program)(implicit genSym: GenSym): Validation[NamedAst.Program, NamerError] = {
 
-    val prog = NamedAst.Program(Map.empty, program.hooks, program.time)
+    val prog = NamedAst.Program(Map.empty, Map.empty, program.hooks, program.time)
 
     for (root <- program.roots; decl <- root.decls) {
-      Declarations.namer(decl, prog)
+      Declarations.namer(decl, Name.NName(SourcePosition.Unknown, Nil, SourcePosition.Unknown), prog)
     }
 
-    NamedAst.Program(Map.empty, program.hooks, program.time).toSuccess // TODO
+    NamedAst.Program(Map.empty, Map.empty, program.hooks, program.time).toSuccess // TODO
   }
 
   object Declarations {
 
     /**
-      * Performs naming on the given declaration `decl0` under the given (partial) program `prog0`.
+      * Performs naming on the given declaration `decl0` in the given namespace `ns0` under the given (partial) program `prog0`.
       */
-    def namer(decl0: WeededAst.Declaration, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[NamedAst.Program, NamerError] = decl0 match {
+    def namer(decl0: WeededAst.Declaration, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[NamedAst.Program, NamerError] = decl0 match {
       /*
        * Namespace.
        */
-      case WeededAst.Declaration.Namespace(name, decls, loc) => Validation.fold(decls, prog0) {
-        case (prog, decl) => namer(decl, prog)
+      case WeededAst.Declaration.Namespace(ns, decls, loc) => Validation.fold(decls, prog0) {
+        case (prog, decl) => namer(decl, ns, prog)
       }
 
       /*
        * Definition.
        */
       case WeededAst.Declaration.Definition(ann, idents, params, exp, tpe, loc) =>
-        // TODO: Lookup defn
+        // check if the definition already exists.
+        // TODO
         Expressions.namer(exp, Map.empty) map {
           case e => prog0
         }
@@ -99,7 +100,27 @@ object Namer {
       /*
        * Enum.
        */
-      case WeededAst.Declaration.Enum(ident, cases, loc) => ???
+      case WeededAst.Declaration.Enum(ident, cases, loc) =>
+        // check if the enum already exists.
+        prog0.enums.get(ns0) match {
+          case None =>
+            // Case 1: The namespace does not yet exist. So the enum does not yet exist.
+            val enum = NamedAst.Declaration.Enum(ident, casesOf(cases), loc)
+            val enums = prog0.enums + (ns0 -> Map(ident.name -> enum))
+            prog0.copy(enums = enums).toSuccess
+          case Some(enums0) =>
+            // Case 2: The namespace exists. Lookup the enum.
+            enums0.get(ident.name) match {
+              case None =>
+                // Case 2.1: The enum does not exist in the namespace. Update it.
+                val enum = NamedAst.Declaration.Enum(ident, casesOf(cases), loc)
+                val enums = enums0 + (ident.name -> enum)
+                prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
+              case Some(enum) =>
+                // Case 2.2: Duplicate definition.
+                DuplicateEntity(ident.name, enum.loc, ident.loc).toFailure
+            }
+        }
 
       /*
        * Class.
@@ -142,6 +163,14 @@ object Namer {
       case WeededAst.Table.Lattice(ident, keys, value, loc) => ???
 
     }
+
+    /**
+      * Performs naming on the given `cases` map.
+      */
+    def casesOf(cases: Map[String, WeededAst.Case]): Map[String, NamedAst.Case] =
+      cases.foldLeft(Map.empty[String, NamedAst.Case]) {
+        case (macc, (name, WeededAst.Case(enum, tag, tpe))) => macc + (name -> NamedAst.Case(enum, tag, tpe))
+      }
 
   }
 

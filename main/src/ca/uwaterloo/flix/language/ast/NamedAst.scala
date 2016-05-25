@@ -6,7 +6,8 @@ trait NamedAst
 
 object NamedAst {
 
-  case class Program(indexes: Map[Symbol.TableSym, NamedAst.Declaration.Index],
+  case class Program(enums: Map[Name.NName, Map[String, NamedAst.Declaration.Enum]],
+                     indexes: Map[Symbol.TableSym, NamedAst.Declaration.Index],
                      hooks: Map[Symbol.Resolved, Ast.Hook],
                      time: Time) extends NamedAst
 
