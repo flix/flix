@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.api
 
 import java.nio.file.{Files, Path, Paths}
 
+import ca.uwaterloo.flix.language.ast.Ast.Hook
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.language.ast.Type.Lambda
 import ca.uwaterloo.flix.language.ast._
@@ -133,6 +134,46 @@ class Flix {
         throw new IllegalStateException(s"Another hook already exists for the given '$name'.")
     }
     this
+  }
+
+  /**
+    * Calls the invokable with the given name `name`, passing the given `args.`
+    *
+    * @param name the fully qualified name for the invokable.
+    * @param args the array of arguments passed to the invokable.
+    */
+  def invoke(name: String, args: Array[IValue]): IValue = {
+    if (name == null)
+      throw new IllegalArgumentException("'name' must be non-null.")
+    if (args == null)
+      throw new IllegalArgumentException("'args' must be non-null.")
+
+    val rname = Symbol.Resolved.mk(name)
+    hooks.get(rname) match {
+      case None => throw new NoSuchElementException(s"Hook '$name' does not exist.")
+      case Some(_: Hook.Unsafe) => throw new RuntimeException(s"Trying to invoke a safe hook but '$name' is an unsafe hook.")
+      case Some(hook: Hook.Safe) => hook.inv(args)
+    }
+  }
+
+  /**
+    * Calls the unsafe invokable with the given name `name`, passing the given `args.`
+    *
+    * @param name the fully qualified name for the invokable.
+    * @param args the array of arguments passed to the invokable.
+    */
+  def invokeUnsafe(name: String, args: Array[AnyRef]): AnyRef = {
+    if (name == null)
+      throw new IllegalArgumentException("'name' must be non-null.")
+    if (args == null)
+      throw new IllegalArgumentException("'args' must be non-null.")
+
+    val rname = Symbol.Resolved.mk(name)
+    hooks.get(rname) match {
+      case None => throw new NoSuchElementException(s"Hook '$name' does not exist.")
+      case Some(_: Hook.Safe) => throw new RuntimeException(s"Trying to invoke an unsafe hook but '$name' is a safe hook.")
+      case Some(hook: Hook.Unsafe) => hook.inv(args)
+    }
   }
 
   /**
