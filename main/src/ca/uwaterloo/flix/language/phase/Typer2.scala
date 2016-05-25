@@ -396,17 +396,17 @@ object Typer2 {
       /*
        * Wildcard expression.
        */
-      case NamedAst.Expression.Wild(id, loc) => ???
+      case NamedAst.Expression.Wild(id, loc) => ??? // TODO
 
       /*
        * Variable expression.
        */
-      case NamedAst.Expression.Var(id, sym, loc) => ???
+      case NamedAst.Expression.Var(id, sym, loc) => TypedAst.Expression.Var(???, tenv0(id), loc) // TODO
 
       /*
        * Reference expression.
        */
-      case NamedAst.Expression.Ref(id, ref, loc) => ???
+      case NamedAst.Expression.Ref(id, ref, loc) => TypedAst.Expression.Ref(???, tenv0(id), loc) // TODO
 
       /*
        * Literal expression.
@@ -424,16 +424,28 @@ object Typer2 {
       case NamedAst.Expression.BigInt(id, lit, loc) => TypedAst.Expression.BigInt(lit, loc)
       case NamedAst.Expression.Str(id, lit, loc) => TypedAst.Expression.Str(lit, loc)
 
-      case NamedAst.Expression.Apply(id, lambda, args, loc) => ???
+      case NamedAst.Expression.Apply(id, lambda, args, loc) => ??? // TODO
 
-      case NamedAst.Expression.Lambda(id, params, exp, loc) => ???
+      case NamedAst.Expression.Lambda(id, params, exp, loc) => ??? // TODO
 
+      /*
+       * Unary expression.
+       */
       case NamedAst.Expression.Unary(id, op, exp, loc) =>
         val e = reassemble(exp, tenv0)
         TypedAst.Expression.Unary(op, e, tenv0(id), loc)
 
-      case NamedAst.Expression.Binary(id, op, exp1, exp2, loc) => ???
+      /*
+       * Binary expression.
+       */
+      case NamedAst.Expression.Binary(id, op, exp1, exp2, loc) =>
+        val e1 = reassemble(exp1, tenv0)
+        val e2 = reassemble(exp2, tenv0)
+        TypedAst.Expression.Binary(op, e1, e2, tenv0(id), loc)
 
+      /*
+       * If-then-else expression.
+       */
       case NamedAst.Expression.IfThenElse(id, exp1, exp2, exp3, loc) =>
         val e1 = reassemble(exp1, tenv0)
         val e2 = reassemble(exp2, tenv0)
@@ -471,15 +483,33 @@ object Typer2 {
         val tpe: Type.FList = tenv0(id).asInstanceOf[Type.FList]
         TypedAst.Expression.FList(e1, e2, tpe, loc)
 
-      case NamedAst.Expression.FVec(id, elms, loc) => ???
+      case NamedAst.Expression.FVec(id, elms, loc) =>
+        val es = elms.map(e => reassemble(e, tenv0))
+        val tpe: Type.FVec = tenv0(id).asInstanceOf[Type.FVec]
+        TypedAst.Expression.FVec(es, tpe, loc)
 
-      case NamedAst.Expression.FSet(id, elms, loc) => ???
+      case NamedAst.Expression.FSet(id, elms, loc) =>
+        val es = elms.map(e => reassemble(e, tenv0))
+        val tpe: Type.FSet = tenv0(id).asInstanceOf[Type.FSet]
+        TypedAst.Expression.FSet(es, tpe, loc)
 
-      case NamedAst.Expression.FMap(id, elms, loc) => ???
+      case NamedAst.Expression.FMap(id, elms, loc) =>
+        val es = elms map {
+          case (key, value) => (reassemble(key, tenv0), reassemble(value, tenv0))
+        }
+        val tpe: Type.FMap = tenv0(id).asInstanceOf[Type.FMap]
+        TypedAst.Expression.FMap(es, tpe, loc)
 
-      case NamedAst.Expression.GetIndex(id, exp1, exp2, loc) => ???
+      case NamedAst.Expression.GetIndex(id, exp1, exp2, loc) =>
+        val e1 = reassemble(exp1, tenv0)
+        val e2 = reassemble(exp2, tenv0)
+        TypedAst.Expression.GetIndex(e1, e2, tenv0(id), loc)
 
-      case NamedAst.Expression.PutIndex(id, exp1, exp2, exp3, loc) => ???
+      case NamedAst.Expression.PutIndex(id, exp1, exp2, exp3, loc) =>
+        val e1 = reassemble(exp1, tenv0)
+        val e2 = reassemble(exp2, tenv0)
+        val e3 = reassemble(exp3, tenv0)
+        TypedAst.Expression.PutIndex(e1, e2, e3, tenv0(id), loc)
 
       case NamedAst.Expression.Existential(id, params, exp, loc) =>
         val e = reassemble(exp, tenv0)
