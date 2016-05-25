@@ -1,9 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.phase.Namer.NamerError
-import ca.uwaterloo.flix.util.Validation
 
 import scala.collection.mutable
 
@@ -21,6 +18,7 @@ object Typer2 {
       */
     case class Eq(t1: Type, t2: Type) extends TypeConstraint
 
+    @deprecated
     case class AllEq(tpes: List[Type]) extends TypeConstraint
 
     /**
@@ -82,6 +80,28 @@ object Typer2 {
           * Generates type constraints for the given expression `e0` under the given type environment `tenv`.
           */
         def visitExp(e0: NamedAst.Expression, tenv0: Map[Name.Ident, Type]): Type = e0 match {
+
+          /*
+           * Wildcard expression.
+           */
+          case NamedAst.Expression.Wild(id, loc) =>
+            ???
+
+          /*
+           * Variable expression.
+           */
+          case NamedAst.Expression.Var(ident, sym, loc) =>
+            // TODO: Lookup the type in the type environment.
+            ???
+
+          /*
+           * Ref expression.
+           */
+          case NamedAst.Expression.Ref(id, ref, loc) =>
+            Type.Var("TODO")
+          // TODO
+
+
           /*
            * Literal expression.
            */
@@ -97,20 +117,6 @@ object Typer2 {
           case NamedAst.Expression.Int64(id, lit, loc) => Type.Int64
           case NamedAst.Expression.BigInt(id, lit, loc) => Type.BigInt
           case NamedAst.Expression.Str(id, lit, loc) => Type.Str
-
-          /*
-           * Variable expression.
-           */
-          case NamedAst.Expression.Var(ident, sym, loc) =>
-            // TODO: Lookup the type in the type environment.
-            ???
-
-          /*
-           * Ref expression.
-           */
-          case NamedAst.Expression.Ref(id, ref, loc) =>
-            Type.Var("TODO")
-            // TODO
 
           /*
            * Hook expression.
@@ -268,13 +274,30 @@ object Typer2 {
             val tpes = elms.map(e => visitExp(e, tenv0))
             Type.Tuple(tpes)
 
-          // FNone
-          // FSome
+          /*
+           * Option expression.
+           */
+          case NamedAst.Expression.FNone(id, loc) => ???
 
-          // FNil
-          // FList
+          case NamedAst.Expression.FSome(id, exp, loc) => ???
 
-          // FVec
+          /*
+           * Nil expression.
+           */
+          case NamedAst.Expression.FNil(id, loc) =>
+            val sym = genSym.freshId()
+            val tpe = Type.Var(sym.toString)
+            Type.FList(tpe)
+
+          /*
+           * List expression.
+           */
+          case NamedAst.Expression.FList(id, hd, tl, loc) => ???
+
+          /*
+           * Vector expression.
+           */
+          case NamedAst.Expression.FVec(id, elms, loc) => ???
 
           /*
            * Set expression.
@@ -284,16 +307,24 @@ object Typer2 {
             constraints += TypeConstraint.AllEq(tpes)
             Type.FSet(tpes.head)
 
-          // FMap
+          /*
+           * Map expression.
+           */
+          case NamedAst.Expression.FMap(id, elms, loc) => ???
 
-          // GetIndex
+          /*
+           * GetIndex expression.
+           */
+          case NamedAst.Expression.GetIndex(id, exp1, exp2, loc) => ???
 
-          // PutIndex
+          /*
+           * PutIndex expression.
+           */
+          case NamedAst.Expression.PutIndex(id, exp1, exp2, exp3, loc) => ???
 
           /*
            * Existential expression.
            */
-          // TODO: Weeder should check that arguments are not duplicated
           case NamedAst.Expression.Existential(id, params, e, loc) =>
             val tenv = params.foldLeft(tenv0) {
               case (macc, Ast.FormalParam(name, t)) => macc + (name -> t)
@@ -305,7 +336,6 @@ object Typer2 {
           /*
            * Universal expression.
            */
-          // TODO: Weeder should check that arguments are not duplicated
           case NamedAst.Expression.Universal(id, params, e, loc) =>
             val tenv = params.foldLeft(tenv0) {
               case (macc, Ast.FormalParam(name, t)) => macc + (name -> t)
@@ -317,7 +347,8 @@ object Typer2 {
           /*
            * Ascribe expression.
            */
-          // TODO
+          case NamedAst.Expression.Ascribe(id, exp, tpe, loc) =>
+            ???
 
           /*
            * User Error expression.
@@ -363,12 +394,23 @@ object Typer2 {
       * Reassembles the given expression `exp0` under the given type environment `tenv0`.
       */
     def reassemble(exp0: NamedAst.Expression, tenv0: Map[Int, Type]): TypedAst.Expression = exp0 match {
+      /*
+       * Wildcard expression.
+       */
       case NamedAst.Expression.Wild(id, loc) => ???
+
+      /*
+       * Variable expression.
+       */
       case NamedAst.Expression.Var(id, sym, loc) => ???
+
+      /*
+       * Reference expression.
+       */
       case NamedAst.Expression.Ref(id, ref, loc) => ???
 
       /*
-       * Literals.
+       * Literal expression.
        */
       case NamedAst.Expression.Unit(id, loc) => TypedAst.Expression.Unit(loc)
       case NamedAst.Expression.True(id, loc) => TypedAst.Expression.True(loc)
@@ -457,14 +499,12 @@ object Typer2 {
 
     }
 
-
     def unify(tpe1: Type, tpe2: Type): Map[String, Type] = (tpe1, tpe2) match {
       case (Type.Var(id), x) => ???
       case (x, Type.Var(id)) => ???
       case (Type.Unit, Type.Unit) => Map.empty
       case _ => ???
     }
-
 
   }
 

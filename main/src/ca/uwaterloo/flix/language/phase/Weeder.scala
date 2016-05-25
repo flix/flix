@@ -956,7 +956,7 @@ object Weeder {
           case e => paramsOpt match {
             case None => IllegalExistential("An existential quantifier must have at least one parameter.", mkSL(sp1, sp2)).toFailure
             case Some(Nil) => IllegalExistential("An existential quantifier must have at least one parameter.", mkSL(sp1, sp2)).toFailure
-            case Some(params) => WeededAst.Expression.Existential(params, e, mkSL(sp1, sp2)).toSuccess
+            case Some(params) => WeededAst.Expression.Existential(params, e, mkSL(sp1, sp2)).toSuccess // TODO: Weeder should check that arguments are not duplicated
           }
         }
 
@@ -965,7 +965,7 @@ object Weeder {
           case e => paramsOpt match {
             case None => IllegalUniversal("A universal quantifier must have at least one parameter.", mkSL(sp1, sp2)).toFailure
             case Some(Nil) => IllegalUniversal("An universal quantifier must have at least one parameter.", mkSL(sp1, sp2)).toFailure
-            case Some(params) => WeededAst.Expression.Universal(params, e, mkSL(sp1, sp2)).toSuccess
+            case Some(params) => WeededAst.Expression.Universal(params, e, mkSL(sp1, sp2)).toSuccess // TODO: Weeder should check that arguments are not duplicated
           }
         }
 
