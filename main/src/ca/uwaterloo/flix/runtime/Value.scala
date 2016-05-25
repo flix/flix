@@ -246,11 +246,6 @@ object Value {
     case _ => throw new InternalRuntimeException(s"Unexpected non-closure value: '$ref'.")
   }
 
-  /**
-    * Flix internal representation of hook closures.
-    */
-  final case class HookClosure(hook: Ast.Hook)
-
   // TODO: introduce make function and make class private
 
   /////////////////////////////////////////////////////////////////////////////

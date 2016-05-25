@@ -1134,22 +1134,22 @@ class TestBackend extends FunSuite {
   }
 
   ignore("Expression.Hook - Hook.Safe.11") {
-    import HookSafeHelpers._
-    val input = "def h: Int = f(g, 5)"
-    val t = new Tester(input, solve = false)
-
-    val flix = t.flix
-    val tpeG = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
-    val tpeF = flix.mkFunctionType(Array(tpeG, flix.mkInt32Type), flix.mkInt32Type)
-    def nativeF(x: IValue, y: IValue): IValue = {
-      val closure = x.getUnsafeRef.asInstanceOf[Value.HookClosure]
-      val hook = closure.hook.asInstanceOf[Ast.Hook.Safe]
-      hook.inv(Array(y))
-    }
-    def nativeG(x: IValue): IValue = flix.mkInt32(x.getInt32 + 1)
-
-    t.addHook("f", tpeF, nativeF _).addHook("g", tpeG, nativeG _).run()
-    t.runTest(Value.mkInt32(6), "h")
+//    import HookSafeHelpers._
+//    val input = "def h: Int = f(g, 5)"
+//    val t = new Tester(input, solve = false)
+//
+//    val flix = t.flix
+//    val tpeG = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
+//    val tpeF = flix.mkFunctionType(Array(tpeG, flix.mkInt32Type), flix.mkInt32Type)
+//    def nativeF(x: IValue, y: IValue): IValue = {
+//      val closure = x.getUnsafeRef.asInstanceOf[Value.HookClosure]
+//      val hook = closure.hook.asInstanceOf[Ast.Hook.Safe]
+//      hook.inv(Array(y))
+//    }
+//    def nativeG(x: IValue): IValue = flix.mkInt32(x.getInt32 + 1)
+//
+//    t.addHook("f", tpeF, nativeF _).addHook("g", tpeG, nativeG _).run()
+//    t.runTest(Value.mkInt32(6), "h")
   }
 
   ignore("Expression.Hook - Hook.Safe.12") {
@@ -1296,7 +1296,7 @@ class TestBackend extends FunSuite {
 
   // TODO: We're forced to pass a dummy parameter.
   // See: https://github.com/magnus-madsen/flix/issues/130#issuecomment-216944729
-  ignore("Expression.Hook - Hook.Unsafe.01") {
+  test("Expression.Hook - Hook.Unsafe.01") {
     import HookUnsafeHelpers._
     val input = "namespace A { def g: Bool = A.B/f(0) }"
     val t = new Tester(input, solve = false)
@@ -1309,7 +1309,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.False, "A/g")
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.02") {
+  test("Expression.Hook - Hook.Unsafe.02") {
     import HookUnsafeHelpers._
     val input = "def g: Int = A/f(3)"
     val t = new Tester(input, solve = false)
@@ -1322,7 +1322,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt32(24), "g")
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.03") {
+  test("Expression.Hook - Hook.Unsafe.03") {
     import HookUnsafeHelpers._
     val input = "namespace A { def g: Int = f(3) }"
     val t = new Tester(input, solve = false)
@@ -1335,7 +1335,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt32(3), "A/g")
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.04") {
+  test("Expression.Hook - Hook.Unsafe.04") {
     import HookUnsafeHelpers._
     val input = "def g: Int64 = f(3i64, 42i64)"
     val t = new Tester(input, solve = false)
@@ -1348,7 +1348,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt64(120), "g")
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.05") {
+  test("Expression.Hook - Hook.Unsafe.05") {
     import HookUnsafeHelpers._
     val input = "namespace C { def h: Int32 = A/f(5i32) + B/g(0i32) }"
     val t = new Tester(input, solve = false)
@@ -1362,7 +1362,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt32(0), "C/h")
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.06") {
+  test("Expression.Hook - Hook.Unsafe.06") {
     import HookUnsafeHelpers._
     val input = "def x: Int16 = f(3i16)"
     val t = new Tester(input, solve = false)
@@ -1377,7 +1377,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt16(196), "x")
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.07") {
+  test("Expression.Hook - Hook.Unsafe.07") {
     import HookUnsafeHelpers._
     val input = "def x: Int8 = let x = 7i8 in f(g(3i8), h(h(x)))"
     val t = new Tester(input, solve = false)
@@ -1393,7 +1393,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt8(-42), "x")
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.08") {
+  test("Expression.Hook - Hook.Unsafe.08") {
     import HookUnsafeHelpers._
     val input =
       """def g01: Bool = f(true, true)
@@ -1414,7 +1414,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.True, "g04")
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.09") {
+  test("Expression.Hook - Hook.Unsafe.09") {
     import HookUnsafeHelpers._
     val input =
       """def g01: Bool = f(true, true)
@@ -1435,7 +1435,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.False, "g04")
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.10") {
+  test("Expression.Hook - Hook.Unsafe.10") {
     import HookUnsafeHelpers._
     val input = "def g: Int = f(2, 42, 5)"
     val t = new Tester(input, solve = false)
@@ -1449,33 +1449,33 @@ class TestBackend extends FunSuite {
   }
 
   ignore("Expression.Hook - Hook.Unsafe.11") {
-    import HookUnsafeHelpers._
-    val input = "def h: Int = f(g, 5)"
-    val t = new Tester(input, solve = false)
-
-    val flix = t.flix
-    val tpeG = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
-    val tpeF = flix.mkFunctionType(Array(tpeG, flix.mkInt32Type), flix.mkInt32Type)
-    def nativeF(x: Value.HookClosure, y: JInt) = x.hook.asInstanceOf[Ast.Hook.Unsafe].inv(Array(y))
-    def nativeG(x: JInt): JInt = x + 1
-
-    t.addHook("f", tpeF, nativeF _).addHook("g", tpeG, nativeG _).run()
-    t.runTest(Value.mkInt32(6), "h")
+//    import HookUnsafeHelpers._
+//    val input = "def h: Int = f(g, 5)"
+//    val t = new Tester(input, solve = false)
+//
+//    val flix = t.flix
+//    val tpeG = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
+//    val tpeF = flix.mkFunctionType(Array(tpeG, flix.mkInt32Type), flix.mkInt32Type)
+//    def nativeF(x: Value.HookClosure, y: JInt) = x.hook.asInstanceOf[Ast.Hook.Unsafe].inv(Array(y))
+//    def nativeG(x: JInt): JInt = x + 1
+//
+//    t.addHook("f", tpeF, nativeF _).addHook("g", tpeG, nativeG _).run()
+//    t.runTest(Value.mkInt32(6), "h")
   }
 
   ignore("Expression.Hook - Hook.Unsafe.12") {
-    import HookUnsafeHelpers._
-    val input = "def h: Int = (f(g))(40)"
-    val t = new Tester(input, solve = false)
-
-    val flix = t.flix
-    val tpeG = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
-    val tpeF = flix.mkFunctionType(Array(tpeG), tpeG)
-    def nativeF(x: Value.HookClosure): Value.HookClosure = x
-    def nativeG(x: JInt): JInt = x + 5
-
-    t.addHook("f", tpeF, nativeF _).addHook("g", tpeG, nativeG _).run()
-    t.runTest(Value.mkInt32(45), "h")
+//    import HookUnsafeHelpers._
+//    val input = "def h: Int = (f(g))(40)"
+//    val t = new Tester(input, solve = false)
+//
+//    val flix = t.flix
+//    val tpeG = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
+//    val tpeF = flix.mkFunctionType(Array(tpeG), tpeG)
+//    def nativeF(x: Value.HookClosure): Value.HookClosure = x
+//    def nativeG(x: JInt): JInt = x + 5
+//
+//    t.addHook("f", tpeF, nativeF _).addHook("g", tpeG, nativeG _).run()
+//    t.runTest(Value.mkInt32(45), "h")
   }
 
   // TODO: This test fails because Tag.tag (a Name.Ident) compares the source location.
@@ -1497,7 +1497,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkTag("Val", Value.mkInt32(111)), "g")
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.14") {
+  test("Expression.Hook - Hook.Unsafe.14") {
     import HookUnsafeHelpers._
     val input = """def g: (Int, Int, Str, Int, Bool, ()) = f(24, 53, "qwertyuiop", 9978, false, ())"""
     val t = new Tester(input, solve = false)
@@ -1512,7 +1512,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.Tuple(Array(Value.mkInt32(24), Value.mkInt32(53), Value.mkStr("qwertyuiop"), Value.mkInt32(9978), Value.False, Value.Unit)), "g")
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.15") {
+  test("Expression.Hook - Hook.Unsafe.15") {
     import HookUnsafeHelpers._
     val input = "def g: Set[Int] = f(24, 53, 24)"
     val t = new Tester(input, solve = false)
@@ -1525,7 +1525,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkSet(Set(Value.mkInt32(24), Value.mkInt32(53), Value.mkInt32(24))), "g")
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.16") {
+  test("Expression.Hook - Hook.Unsafe.16") {
     import HookUnsafeHelpers._
     val input = "def g: Bool = f('a', 'b')"
     val t = new Tester(input, solve = false)
@@ -1538,7 +1538,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.False, "g")
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.17") {
+  test("Expression.Hook - Hook.Unsafe.17") {
     import HookUnsafeHelpers._
     val input = "def g: Float32 = f(1.2f32, 2.1f32)"
     val t = new Tester(input, solve = false)
@@ -1551,7 +1551,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkFloat32(3.3f), "g")
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.18") {
+  test("Expression.Hook - Hook.Unsafe.18") {
     import HookUnsafeHelpers._
     val input = "def g: Float64 = f(1.2f64, 2.1f64)"
     val t = new Tester(input, solve = false)
@@ -1564,7 +1564,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkFloat64(3.3d), "g")
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.19") {
+  test("Expression.Hook - Hook.Unsafe.19") {
     import HookUnsafeHelpers._
     val input = "def g: BigInt = f(1ii, 9223372036854775808ii)"
     val t = new Tester(input, solve = false)
@@ -1577,7 +1577,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkBigInt("9223372036854775809"), "g")
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.20") {
+  test("Expression.Hook - Hook.Unsafe.20") {
     import HookUnsafeHelpers._
     val input = "def h: Native = g(f(999))"
     val t = new Tester(input, solve = false)

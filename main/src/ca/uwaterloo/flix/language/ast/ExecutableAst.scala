@@ -295,8 +295,6 @@ object ExecutableAst {
       override def toString: String = "Ref(" + name.fqn + ")"
     }
 
-    case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
-
     /**
       * A typed AST node representing the creation of a closure. Free variables are computed at compile time and bound
       * at run time.
@@ -323,6 +321,19 @@ object ExecutableAst {
                         args: Array[ExecutableAst.Expression],
                         tpe: Type,
                         loc: SourceLocation) extends ExecutableAst.Expression
+
+    /**
+      * A typed AST node representing a function call.
+      *
+      * @param hook the hook being called
+      * @param args the function arguments.
+      * @param tpe  the return type of the function.
+      * @param loc  the source location of the expression.
+      */
+    case class ApplyHook(hook: Ast.Hook,
+                         args: Array[ExecutableAst.Expression],
+                         tpe: Type,
+                         loc: SourceLocation) extends ExecutableAst.Expression
 
     /**
       * A typed AST node representing a function call.

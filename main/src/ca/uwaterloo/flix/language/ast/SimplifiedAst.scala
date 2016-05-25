@@ -299,6 +299,15 @@ object SimplifiedAst {
       override def toString: String = "λ(" + args.map(_.tpe).mkString(", ") + ") " + body
     }
 
+    /**
+      * A typed AST node representing a hook (native function).
+      *
+      * A later phase/pass "inlines" these into ApplyHooks, thus they no longer exist in later ASTs.
+      *
+      * @param hook the hook representing the native function.
+      * @param tpe  the type of the hook.
+      * @param loc  the source location of the hook.
+      */
     case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
@@ -345,6 +354,19 @@ object SimplifiedAst {
                         args: List[SimplifiedAst.Expression],
                         tpe: Type,
                         loc: SourceLocation) extends SimplifiedAst.Expression
+
+    /**
+      * A typed AST node representing a function call.
+      *
+      * @param hook the hook being called
+      * @param args the function arguments.
+      * @param tpe  the return type of the function.
+      * @param loc  the source location of the expression.
+      */
+    case class ApplyHook(hook: Ast.Hook,
+                         args: List[SimplifiedAst.Expression],
+                         tpe: Type,
+                         loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
       * A typed AST node representing a function call.

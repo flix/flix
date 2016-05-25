@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.Hook
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression, LoadExpression, StoreExpression}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.Value
@@ -53,7 +54,7 @@ object Codegen {
         case Type.Int64 => asm.Type.LONG_TYPE.getDescriptor
         case Type.BigInt => asm.Type.getDescriptor(classOf[java.math.BigInteger])
         case Type.Str => asm.Type.getDescriptor(classOf[java.lang.String])
-        case Type.Native => ??? // TODO
+        case Type.Native => asm.Type.getDescriptor(classOf[java.lang.Object])
         case Type.Enum(_, _) => asm.Type.getDescriptor(classOf[Value.Tag])
         case Type.Tuple(_) => asm.Type.getDescriptor(classOf[Value.Tuple])
         case Type.Lambda(_, _) => s"L${decorate(interfaces(tpe))};"
@@ -168,9 +169,9 @@ object Codegen {
       case Type.Int64 => mv.visitInsn(LRETURN)
       case Type.Float32 => mv.visitInsn(FRETURN)
       case Type.Float64 => mv.visitInsn(DRETURN)
-      case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
-        mv.visitInsn(ARETURN)
-      case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
+           Type.FSet(_) => mv.visitInsn(ARETURN)
+      case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
       case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
       case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
       case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
@@ -218,9 +219,9 @@ object Codegen {
       case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
       case Type.Float32 => visitor.visitVarInsn(FLOAD, offset)
       case Type.Float64 => visitor.visitVarInsn(DLOAD, offset)
-      case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
-        visitor.visitVarInsn(ALOAD, offset)
-      case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
+           Type.FSet(_) => visitor.visitVarInsn(ALOAD, offset)
+      case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
       case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => // TODO: Deprecated
       case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
       case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
@@ -231,8 +232,6 @@ object Codegen {
       // Reference to a top-level definition that isn't used in a MkClosureRef or ApplyRef, so it's a 0-arg function.
       val targetTpe = ctx.declarations(name)
       visitor.visitMethodInsn(INVOKESTATIC, decorate(name.prefix), name.suffix, ctx.descriptor(targetTpe), false)
-
-    case Expression.Hook(hook, _, _) => ???
 
     case Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
       // We create a closure the same way Java 8 does. We use InvokeDynamic and the LambdaMetafactory. The idea is that
@@ -301,6 +300,37 @@ object Codegen {
       args.foreach(compileExpression(ctx, visitor))
       visitor.visitMethodInsn(INVOKESTATIC, decorate(name.prefix), name.suffix, ctx.descriptor(targetTpe), false)
 
+    case Expression.ApplyHook(hook, args, tpe, _) =>
+      // TODO: Implementation for Hook.Safe
+
+      val clazz = classOf[Flix]
+      val method = clazz.getMethods.filter(m => m.getName == "invokeUnsafe").head
+
+      // First we get the Flix object from the static field.
+      visitor.visitFieldInsn(GETSTATIC, decorate(ctx.prefix), flixObjectName, asm.Type.getDescriptor(clazz))
+
+      // Next we load the arguments for the invoke/invokeUnsafe virtual call, starting with the name of the hook.
+      visitor.visitLdcInsn(hook.name.toString)
+
+      // Create the arguments array.
+      compileInt(visitor)(args.length)
+      visitor.visitTypeInsn(ANEWARRAY, asm.Type.getInternalName(classOf[Object]))
+
+      // Evaluate the arguments left-to-right, putting them into the array.
+      for ((e, i) <- args.zipWithIndex) {
+        // Duplicate the array reference, otherwise AASTORE will consume it.
+        visitor.visitInsn(DUP)
+        compileInt(visitor)(i)
+        compileBoxedExpr(ctx, visitor)(e)
+        visitor.visitInsn(AASTORE)
+      }
+
+      // Finally, make the virtual call to invoke/invokeUnsafe.
+      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
+
+      // Unbox the result, if necessary.
+      compileUnbox(ctx, visitor)(tpe)
+
     case Expression.ApplyClosure(exp, args, _, _) =>
       // Lambdas are called through an interface. We don't know what function we're calling, but we know its type,
       // so we can lookup the interface we're calling through.
@@ -339,9 +369,9 @@ object Codegen {
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
         case Type.Float32 => visitor.visitVarInsn(FSTORE, offset)
         case Type.Float64 => visitor.visitVarInsn(DSTORE, offset)
-        case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
-          visitor.visitVarInsn(ASTORE, offset)
-        case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+        case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
+             Type.FSet(_) => visitor.visitVarInsn(ASTORE, offset)
+        case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
         case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => // TODO: Deprecated
         case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
         case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of ${exp1.tpe} should never be compiled.")
@@ -520,10 +550,10 @@ object Codegen {
       compileExpression(ctx, visitor)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkInt64", "(J)Ljava/lang/Object;", false)
 
-    case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
-      compileExpression(ctx, visitor)(exp)
+    case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
+         Type.FSet(_) => compileExpression(ctx, visitor)(exp)
 
-    case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+    case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
 
     case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
 
@@ -580,6 +610,8 @@ object Codegen {
 
     case Type.Str => visitor.visitTypeInsn(CHECKCAST, "java/lang/String")
 
+    case Type.Native => // Don't need to cast AnyRef to anything
+
     case Type.Enum(_, _) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tag")
 
     case Type.Tuple(_) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tuple")
@@ -590,7 +622,7 @@ object Codegen {
 
     case Type.FSet(_) => visitor.visitTypeInsn(CHECKCAST, "scala/collection/immutable/Set")
 
-    case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+    case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
 
     case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
 

@@ -168,7 +168,8 @@ object CreateExecutableAst {
       case SimplifiedAst.Expression.Ref(name, tpe, loc) => ExecutableAst.Expression.Ref(name, tpe, loc)
       case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
         throw InternalCompilerException("Lambdas should have been converted to closures and lifted.")
-      case SimplifiedAst.Expression.Hook(hook, tpe, loc) => ExecutableAst.Expression.Hook(hook, tpe, loc)
+      case SimplifiedAst.Expression.Hook(hook, tpe, loc) =>
+        throw InternalCompilerException("Hooks should have been inlined into ApplyHooks.")
       case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
         throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
       case SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
@@ -178,6 +179,9 @@ object CreateExecutableAst {
       case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
         val argsArray = args.map(toExecutable).toArray
         ExecutableAst.Expression.ApplyRef(name, argsArray, tpe, loc)
+      case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) =>
+        val argsArray = args.map(toExecutable).toArray
+        ExecutableAst.Expression.ApplyHook(hook, argsArray, tpe, loc)
       case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
         val argsArray = args.map(toExecutable).toArray
         ExecutableAst.Expression.ApplyClosure(toExecutable(exp), argsArray, tpe, loc)
