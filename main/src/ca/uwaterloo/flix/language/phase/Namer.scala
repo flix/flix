@@ -50,13 +50,13 @@ object Namer {
     */
   def namer(program: WeededAst.Program)(implicit genSym: GenSym): Validation[NamedAst.Program, NamerError] = {
 
-    val prog = NamedAst.Program(Map.empty, Map.empty, Map.empty, Map.empty, program.hooks, program.time)
+    val prog = NamedAst.Program(Map.empty, Map.empty, Map.empty, Map.empty, Nil, Nil, program.hooks, program.time)
 
     for (root <- program.roots; decl <- root.decls) {
       Declarations.namer(decl, Name.NName(SourcePosition.Unknown, Nil, SourcePosition.Unknown), prog)
     }
 
-    NamedAst.Program(Map.empty, Map.empty, Map.empty, Map.empty, program.hooks, program.time).toSuccess // TODO
+    NamedAst.Program(Map.empty, Map.empty, Map.empty, Map.empty, Nil, Nil, program.hooks, program.time).toSuccess // TODO
   }
 
   object Declarations {
@@ -135,7 +135,15 @@ object Namer {
       /*
        * Fact.
        */
-      case WeededAst.Declaration.Fact(head, loc) => ???
+      case WeededAst.Declaration.Fact(h, loc) =>
+        val head0 = h.asInstanceOf[WeededAst.Predicate.Head.Table]
+
+        @@(head0.terms.map(t => Terms.namer(t))) map {
+          case terms =>
+            val head = NamedAst.Predicate.Head.Table(head0.name, terms, head0.loc)
+            val fact = NamedAst.Declaration.Fact(head, loc)
+            prog0.copy(facts = fact :: prog0.facts)
+        }
 
       /*
        * Rule.
@@ -191,7 +199,27 @@ object Namer {
       /*
        * Lattice.
        */
-      case WeededAst.Table.Lattice(ident, keys, value, loc) => ???
+      case WeededAst.Table.Lattice(ident, keys, value, loc) =>
+        // check if the table already exists.
+        prog0.tables.get(ns0) match {
+          case None =>
+            // Case 1: The namespace does not yet exist. So the table does not yet exist.
+            val table = NamedAst.Table.Lattice(Symbol.mkTableSym(ns0, ident), keys, value, loc)
+            val tables = Map(ident.name -> table)
+            prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
+          case Some(tables0) =>
+            // Case 2: The namespace exists. Lookup the table.
+            tables0.get(ident.name) match {
+              case None =>
+                // Case 2.1: The table does not exist in the namespace. Update it.
+                val table = NamedAst.Table.Lattice(Symbol.mkTableSym(ns0, ident), keys, value, loc)
+                val tables = tables0 + (ident.name -> table)
+                prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
+              case Some(table) =>
+                // Case 2.2: Duplicate definition.
+                DuplicateEntity(ident.name, table.loc, ident.loc).toFailure
+            }
+        }
 
     }
 
@@ -424,6 +452,23 @@ object Namer {
       }
 
       (visit(pat0), m.toMap)
+    }
+
+  }
+
+  object Predicates {
+
+  }
+
+  object Terms {
+
+    // TODO: To be simplified.
+    def namer(t: WeededAst.Term.Head): Validation[NamedAst.Term.Head, NamerError] = t match {
+      case WeededAst.Term.Head.Var(ident, loc) => NamedAst.Term.Head.Var(ident, loc).toSuccess
+      case WeededAst.Term.Head.Lit(lit, loc) => ???
+      case WeededAst.Term.Head.Tag(enum, tag, t, loc) => ???
+      case WeededAst.Term.Head.Tuple(elms, loc) => ???
+      case WeededAst.Term.Head.Apply(name, args, loc) => ???
     }
 
   }

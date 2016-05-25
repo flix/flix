@@ -10,6 +10,8 @@ object NamedAst {
                      lattices: Map[Type, NamedAst.Declaration.BoundedLattice],
                      indexes: Map[Symbol.TableSym, NamedAst.Declaration.Index],
                      tables: Map[Name.NName, Map[String, NamedAst.Table]],
+                     facts: List[NamedAst.Declaration.Fact],
+                     rules: List[NamedAst.Declaration.Rule],
                      hooks: Map[Symbol.Resolved, Ast.Hook],
                      time: Time) extends NamedAst
 
