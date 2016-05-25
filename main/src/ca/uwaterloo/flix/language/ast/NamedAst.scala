@@ -200,6 +200,8 @@ object NamedAst {
 
   }
 
+  // TODO: Cleanup this stuff:
+
   sealed trait Predicate extends NamedAst
 
   object Predicate {
@@ -228,6 +230,5 @@ object NamedAst {
 
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type)
-
 
 }

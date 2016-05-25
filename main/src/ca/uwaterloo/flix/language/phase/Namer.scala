@@ -125,12 +125,12 @@ object Namer {
       /*
        * Class.
        */
-      case WeededAst.Declaration.Class(ident, tparams, decls, loc) => ???
+      case WeededAst.Declaration.Class(ident, tparams, decls, loc) => ??? // TODO
 
       /*
        * Impl.
        */
-      case WeededAst.Declaration.Impl(ident, tparams, decls, loc) => ???
+      case WeededAst.Declaration.Impl(ident, tparams, decls, loc) => ??? // TODO
 
       /*
        * Fact.
@@ -144,7 +144,16 @@ object Namer {
       /*
        * Rule.
        */
-      case WeededAst.Declaration.Rule(head, body, loc) => ???
+      case WeededAst.Declaration.Rule(h, b, loc) =>
+        val head0 = h.asInstanceOf[WeededAst.Predicate.Head.Table]
+        val head = NamedAst.Predicate.Head.Table(head0.name, head0.terms, head0.loc)
+        val body = b map {
+          case WeededAst.Predicate.Body.Ambiguous(name, terms, loc) => NamedAst.Predicate.Body.Ambiguous(name, terms, loc)
+          case WeededAst.Predicate.Body.NotEqual(ident1, ident2, loc) => NamedAst.Predicate.Body.NotEqual(ident1, ident2, loc)
+          case WeededAst.Predicate.Body.Loop(ident, term, loc) => NamedAst.Predicate.Body.Loop(ident, term, loc)
+        }
+        val rule = NamedAst.Declaration.Rule(head, body, loc)
+        prog0.copy(rules = rule :: prog0.rules).toSuccess
 
       /*
        * Index.
