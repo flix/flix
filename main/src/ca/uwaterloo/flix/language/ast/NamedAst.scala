@@ -208,7 +208,7 @@ object NamedAst {
 
     object Head {
 
-      case class Table(name: Name.QName, terms: List[NamedAst.Term.Head], loc: SourceLocation) extends NamedAst.Predicate.Head
+      case class Table(name: Name.QName, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends NamedAst.Predicate.Head
 
     }
 
@@ -216,48 +216,16 @@ object NamedAst {
 
     object Body {
 
-      case class Ambiguous(name: Name.QName, terms: List[NamedAst.Term.Body], loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Ambiguous(name: Name.QName, terms: List[WeededAst.Term.Body], loc: SourceLocation) extends NamedAst.Predicate.Body
 
       case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, loc: SourceLocation) extends NamedAst.Predicate.Body
 
-      case class Loop(ident: Name.Ident, term: NamedAst.Term.Head, loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Loop(ident: Name.Ident, term: WeededAst.Term.Head, loc: SourceLocation) extends NamedAst.Predicate.Body
 
     }
 
   }
 
-  // TODO: Deprecated and to be replaced by expressions.
-  sealed trait Term extends NamedAst {
-    def loc: SourceLocation
-  }
-
-  object Term {
-
-    sealed trait Head extends NamedAst.Term
-
-    object Head {
-
-      case class Var(ident: Name.Ident, loc: SourceLocation) extends NamedAst.Term.Head
-
-      case class Tag(enumName: Name.QName, tagName: Name.Ident, t: NamedAst.Term.Head, loc: SourceLocation) extends NamedAst.Term.Head
-
-      case class Tuple(elms: List[NamedAst.Term.Head], loc: SourceLocation) extends NamedAst.Term.Head
-
-      case class Apply(name: Name.QName, args: List[NamedAst.Term.Head], loc: SourceLocation) extends NamedAst.Term.Head
-
-    }
-
-    sealed trait Body extends NamedAst.Term
-
-    object Body {
-
-      case class Wild(loc: SourceLocation) extends NamedAst.Term.Body
-
-      case class Var(ident: Name.Ident, loc: SourceLocation) extends NamedAst.Term.Body
-
-    }
-
-  }
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type)
 

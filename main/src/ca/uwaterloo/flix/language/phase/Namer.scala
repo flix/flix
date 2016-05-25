@@ -137,13 +137,9 @@ object Namer {
        */
       case WeededAst.Declaration.Fact(h, loc) =>
         val head0 = h.asInstanceOf[WeededAst.Predicate.Head.Table]
-
-        @@(head0.terms.map(t => Terms.namer(t))) map {
-          case terms =>
-            val head = NamedAst.Predicate.Head.Table(head0.name, terms, head0.loc)
-            val fact = NamedAst.Declaration.Fact(head, loc)
-            prog0.copy(facts = fact :: prog0.facts)
-        }
+        val head = NamedAst.Predicate.Head.Table(head0.name, head0.terms, head0.loc)
+        val fact = NamedAst.Declaration.Fact(head, loc)
+        prog0.copy(facts = fact :: prog0.facts).toSuccess
 
       /*
        * Rule.
@@ -153,7 +149,18 @@ object Namer {
       /*
        * Index.
        */
-      case WeededAst.Declaration.Index(ident, indexes, loc) => ???
+      case WeededAst.Declaration.Index(ident, indexes, loc) =>
+        // check if the index already exists.
+        val sym = Symbol.mkTableSym(ns0, ident)
+        prog0.indexes.get(sym) match {
+          case None =>
+            // Case 1: No indexes exist for the table. Update the indexes.
+            val index = NamedAst.Declaration.Index(ident, indexes.map(_.toList).toList, loc)
+            prog0.copy(indexes = prog0.indexes + (sym -> index)).toSuccess
+          case Some(index) =>
+            // Case 2: Some indexes already exist for the table.
+            ???
+        }
 
       /*
        * BoundedLattice (deprecated).
@@ -460,18 +467,6 @@ object Namer {
 
   }
 
-  object Terms {
-
-    // TODO: To be simplified.
-    def namer(t: WeededAst.Term.Head): Validation[NamedAst.Term.Head, NamerError] = t match {
-      case WeededAst.Term.Head.Var(ident, loc) => NamedAst.Term.Head.Var(ident, loc).toSuccess
-      case WeededAst.Term.Head.Lit(lit, loc) => ???
-      case WeededAst.Term.Head.Tag(enum, tag, t, loc) => ???
-      case WeededAst.Term.Head.Tuple(elms, loc) => ???
-      case WeededAst.Term.Head.Apply(name, args, loc) => ???
-    }
-
-  }
 
   /**
     * Short hand for genSym.freshId.
