@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, IValue, WrappedValue}
 import ca.uwaterloo.flix.language.ast.Ast.Hook
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression, LoadExpression, StoreExpression}
 import ca.uwaterloo.flix.language.ast._
@@ -301,10 +301,12 @@ object Codegen {
       visitor.visitMethodInsn(INVOKESTATIC, decorate(name.prefix), name.suffix, ctx.descriptor(targetTpe), false)
 
     case Expression.ApplyHook(hook, args, tpe, _) =>
-      // TODO: Implementation for Hook.Safe
-
+      val (isSafe, name, elmsClassName) = hook match {
+        case _: Hook.Safe => (true, "invoke", asm.Type.getInternalName(classOf[IValue]))
+        case _: Hook.Unsafe => (false, "invokeUnsafe", asm.Type.getInternalName(classOf[Object]))
+      }
       val clazz = classOf[Flix]
-      val method = clazz.getMethods.filter(m => m.getName == "invokeUnsafe").head
+      val method = clazz.getMethods.filter(m => m.getName == name).head
 
       // First we get the Flix object from the static field.
       visitor.visitFieldInsn(GETSTATIC, decorate(ctx.prefix), flixObjectName, asm.Type.getDescriptor(clazz))
@@ -314,19 +316,34 @@ object Codegen {
 
       // Create the arguments array.
       compileInt(visitor)(args.length)
-      visitor.visitTypeInsn(ANEWARRAY, asm.Type.getInternalName(classOf[Object]))
+      visitor.visitTypeInsn(ANEWARRAY, elmsClassName)
 
       // Evaluate the arguments left-to-right, putting them into the array.
       for ((e, i) <- args.zipWithIndex) {
         // Duplicate the array reference, otherwise AASTORE will consume it.
         visitor.visitInsn(DUP)
         compileInt(visitor)(i)
-        compileBoxedExpr(ctx, visitor)(e)
+
+        // Load the actual element. If we're calling a safe hook, we need to wrap the value.
+        if (isSafe) {
+          val clazz = classOf[WrappedValue]
+          val ctor = clazz.getConstructor(classOf[Object])
+
+          visitor.visitTypeInsn(NEW, asm.Type.getInternalName(clazz))
+          visitor.visitInsn(DUP)
+          compileBoxedExpr(ctx, visitor)(e)
+          visitor.visitMethodInsn(INVOKESPECIAL, asm.Type.getInternalName(clazz), "<init>", asm.Type.getConstructorDescriptor(ctor), false)
+        } else {
+          compileBoxedExpr(ctx, visitor)(e)
+        }
         visitor.visitInsn(AASTORE)
       }
 
-      // Finally, make the virtual call to invoke/invokeUnsafe.
+      // Finally, make the virtual call to invoke/invokeUnsafe. If it's a safe hook, we also need to call `getUnsafeRef`.
       visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
+      if (isSafe) {
+        visitor.visitMethodInsn(INVOKEINTERFACE, elmsClassName, "getUnsafeRef", "()Ljava/lang/Object;", true)
+      }
 
       // Unbox the result, if necessary.
       compileUnbox(ctx, visitor)(tpe)
