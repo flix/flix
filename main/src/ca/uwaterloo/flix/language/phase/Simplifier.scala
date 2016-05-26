@@ -19,10 +19,11 @@ object Simplifier {
     val indexes = tast.indexes.map { case (k, v) => k -> Definition.simplify(v) }
     val facts = tast.facts.map(Constraint.simplify)
     val rules = tast.rules.map(Constraint.simplify)
+    val hooks = tast.hooks
     val properties = tast.properties.map { p => simplify(p) }
     val time = tast.time
 
-    SimplifiedAst.Root(constants, lattices, collections, indexes, facts, rules, properties, time)
+    SimplifiedAst.Root(constants, lattices, collections, indexes, facts, rules, hooks, properties, time)
   }
 
   object Table {

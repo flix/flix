@@ -45,6 +45,7 @@ object Interpreter {
       case Some(v) => v
     }
     case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env0)
+    case Expression.Hook(hook, _, _) => Value.HookClosure(hook.name, hook.isSafe)
     case Expression.MkClosureRef(ref, freeVars, _, _) =>
       // Save the values of the free variables in the Value.Closure structure.
       // When the closure is called, these values will be provided at the beginning of the argument list.
@@ -54,15 +55,15 @@ object Interpreter {
         bindings(i) = env0(freeVars(i).ident.name)
         i = i + 1
       }
-      Value.Closure(ref, bindings)
+      Value.Closure(ref.name, bindings)
     case Expression.ApplyRef(name, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
       evalCall(root.constants(name), args, root, env0)
-    case Expression.ApplyHook(hook, args0, _, _) =>
+    case Expression.ApplyHook(name, args0, isSafe, _, _) =>
       val args = evalArgs(args0, root, env0)
-      evalHook(hook, args, root, env0)
+      evalHook(name, args, isSafe, root, env0)
     case Expression.ApplyClosure(exp, args0, tpe, loc) =>
-      val func = eval(exp, root, env0).asInstanceOf[Value.Closure]
+      val func = eval(exp, root, env0)
       val args = evalArgs(args0, root, env0)
       evalClosure(func, args, root, env0)
     case Expression.Unary(op, exp, _, _) => evalUnary(op, exp, root, env0)
@@ -363,31 +364,36 @@ object Interpreter {
     }
   }
 
-  private def evalHook(hook: Ast.Hook, args: Array[AnyRef], root: Root, env: Map[String, AnyRef]): AnyRef =
-    hook match {
-      case Ast.Hook.Safe(name, inv, _) =>
+  private def evalHook(name: Symbol.Resolved, args: Array[AnyRef], isSafe: Boolean, root: Root, env: Map[String, AnyRef]): AnyRef =
+    isSafe match {
+      case true =>
         val wargs: Array[IValue] = args.map(new WrappedValue(_))
-        inv(wargs).getUnsafeRef
-      case Ast.Hook.Unsafe(name, inv, _) =>
-        inv(args)
+        val hook = root.hooks(name).asInstanceOf[Ast.Hook.Safe]
+        hook.inv(wargs).getUnsafeRef
+      case false =>
+        val hook = root.hooks(name).asInstanceOf[Ast.Hook.Unsafe]
+        hook.inv(args)
     }
 
-  private def evalClosure(function: Value.Closure, args: Array[AnyRef], root: Root, env: Map[String, AnyRef]): AnyRef = {
-    val Value.Closure(ref, bindings) = function
-    val constant = root.constants(ref.name)
+  private def evalClosure(function: AnyRef, args: Array[AnyRef], root: Root, env: Map[String, AnyRef]): AnyRef =
+    function match {
+      case Value.Closure(name, bindings) =>
+        val constant = root.constants(name)
 
-    // Bindings for the capture variables are passed as arguments.
-    val env1 = constant.formals.take(bindings.length).zip(bindings).foldLeft(env) {
-      case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
+        // Bindings for the capture variables are passed as arguments.
+        val env1 = constant.formals.take(bindings.length).zip(bindings).foldLeft(env) {
+          case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
+        }
+
+        // Now pass the actual arguments supplied by the caller.
+        val env2 = constant.formals.drop(bindings.length).zip(args).foldLeft(env1) {
+          case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
+        }
+
+        eval(constant.exp, root, env2)
+      case Value.HookClosure(name, isSafe) => evalHook(name, args, isSafe, root, env)
+      case _ => throw new InternalRuntimeException(s"Trying to call a non-function: $function.")
     }
-
-    // Now pass the actual arguments supplied by the caller.
-    val env2 = constant.formals.drop(bindings.length).zip(args).foldLeft(env1) {
-      case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
-    }
-
-    eval(constant.exp, root, env2)
-  }
 
   private def evalArgs(args: Array[Expression], root: Root, env: Map[String, AnyRef]): Array[AnyRef] = {
     val evalArgs = new Array[AnyRef](args.length)

@@ -155,6 +155,11 @@ object Ast {
     def name: Symbol.Resolved
 
     /**
+      * Returns true if the hook is Safe; false otherwise.
+      */
+    def isSafe: Boolean
+
+    /**
       * Returns the type of the hook.
       */
     def tpe: Type.Lambda
@@ -169,7 +174,9 @@ object Ast {
       * @param inv  the functional object.
       * @param tpe  the type of the function.
       */
-    case class Safe(name: Symbol.Resolved, inv: Invokable, tpe: Type.Lambda) extends Hook
+    case class Safe(name: Symbol.Resolved, inv: Invokable, tpe: Type.Lambda) extends Hook {
+      def isSafe = true
+    }
 
     /**
       * A reference to an implementation of the [[InvokableUnsafe]] interface.
@@ -178,7 +185,9 @@ object Ast {
       * @param inv  the functional object.
       * @param tpe  the type of the function.
       */
-    case class Unsafe(name: Symbol.Resolved, inv: InvokableUnsafe, tpe: Type.Lambda) extends Hook
+    case class Unsafe(name: Symbol.Resolved, inv: InvokableUnsafe, tpe: Type.Lambda) extends Hook {
+      def isSafe = false
+    }
 
   }
 

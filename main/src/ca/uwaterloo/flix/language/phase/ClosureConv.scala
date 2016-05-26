@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.{Name, SimplifiedAst, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SimplifiedAst, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
@@ -79,7 +79,7 @@ object ClosureConv {
       throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp'.")
     case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
       throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp'.")
-    case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) =>
+    case SimplifiedAst.Expression.ApplyHook(hook, args, isSafe, tpe, loc) =>
       throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp'.")
 
     case SimplifiedAst.Expression.Apply(e, args, tpe, loc) =>
@@ -87,8 +87,8 @@ object ClosureConv {
       // it with ApplyRef. We remove the Ref node and don't recurse on it to avoid creating a closure.
       // We do something similar if `e` is a Hook, where we transform Apply to ApplyHook.
       e match {
-        case e: SimplifiedAst.Expression.Ref => SimplifiedAst.Expression.ApplyRef(e.name, args.map(convert), tpe, loc)
-        case e: SimplifiedAst.Expression.Hook => SimplifiedAst.Expression.ApplyHook(e.hook, args.map(convert), tpe, loc)
+        case SimplifiedAst.Expression.Ref(name, _, _) => SimplifiedAst.Expression.ApplyRef(name, args.map(convert), tpe, loc)
+        case SimplifiedAst.Expression.Hook(hook, _, _) => SimplifiedAst.Expression.ApplyHook(hook.name, args.map(convert), hook.isSafe, tpe, loc)
         case _ => SimplifiedAst.Expression.Apply(convert(e), args.map(convert), tpe, loc)
       }
 
@@ -161,7 +161,7 @@ object ClosureConv {
     case SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$e'.")
     case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
-    case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
+    case SimplifiedAst.Expression.ApplyHook(hook, args, isSafe, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
     case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
       freeVariables(exp) ++ args.flatMap(freeVariables)
     case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) => freeVariables(exp)

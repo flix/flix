@@ -174,9 +174,10 @@ object LoadBytecode {
       case Expression.StoreInt32(b, o, v) => Set.empty
       case Expression.Var(ident, o, tpe, loc) => Set.empty
       case Expression.Ref(name, tpe, loc) => Set.empty
+      case Expression.Hook(hook, tpe, loc) => Set.empty
       case Expression.MkClosureRef(ref, freeVars, tpe, loc) => Set(tpe)
       case Expression.ApplyRef(name, args, tpe, loc) => args.flatMap(visit).toSet
-      case Expression.ApplyHook(hook, args, tpe, loc) => args.flatMap(visit).toSet
+      case Expression.ApplyHook(hook, args, isSafe, tpe, loc) => args.flatMap(visit).toSet
       case Expression.ApplyClosure(exp, args, tpe, loc) => visit(exp) ++ args.flatMap(visit)
       case Expression.Unary(op, exp, tpe, loc) => visit(exp)
       case Expression.Binary(op, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)

@@ -114,8 +114,8 @@ object LambdaLift {
 
       case Expression.ApplyRef(name, args, tpe, loc) =>
         Expression.ApplyRef(name, args.map(visit), tpe, loc)
-      case Expression.ApplyHook(hook, args, tpe, loc) =>
-        Expression.ApplyHook(hook, args.map(visit), tpe, loc)
+      case Expression.ApplyHook(hook, args, isSafe, tpe, loc) =>
+        Expression.ApplyHook(hook, args.map(visit), isSafe, tpe, loc)
       case Expression.Apply(exp, args, tpe, loc) =>
         Expression.Apply(visit(exp), args.map(visit), tpe, loc)
       case Expression.Unary(op, exp, tpe, loc) =>

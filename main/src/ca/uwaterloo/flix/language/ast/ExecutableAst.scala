@@ -16,6 +16,7 @@ object ExecutableAst {
                   indexes: Map[Symbol.TableSym, ExecutableAst.Definition.Index],
                   facts: Array[ExecutableAst.Constraint.Fact],
                   rules: Array[ExecutableAst.Constraint.Rule],
+                  hooks: Map[Symbol.Resolved, Ast.Hook],
                   properties: List[ExecutableAst.Property],
                   time: Time,
                   dependenciesOf: Map[Symbol.TableSym, Set[(Constraint.Rule, ExecutableAst.Predicate.Body.Table)]]) extends ExecutableAst
@@ -296,6 +297,15 @@ object ExecutableAst {
     }
 
     /**
+      * A typed AST node representing a hook (native function).
+      *
+      * @param hook the hook representing the native function.
+      * @param tpe  the type of the hook.
+      * @param loc  the source location of the hook.
+      */
+    case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    /**
       * A typed AST node representing the creation of a closure. Free variables are computed at compile time and bound
       * at run time.
       *
@@ -325,13 +335,15 @@ object ExecutableAst {
     /**
       * A typed AST node representing a function call.
       *
-      * @param hook the hook being called
-      * @param args the function arguments.
-      * @param tpe  the return type of the function.
-      * @param loc  the source location of the expression.
+      * @param name   the name of the hook being called
+      * @param args   the function arguments.
+      * @param isSafe whether this is a safe or unsafe hook.
+      * @param tpe    the return type of the function.
+      * @param loc    the source location of the expression.
       */
-    case class ApplyHook(hook: Ast.Hook,
+    case class ApplyHook(name: Symbol.Resolved,
                          args: Array[ExecutableAst.Expression],
+                         isSafe: Boolean,
                          tpe: Type,
                          loc: SourceLocation) extends ExecutableAst.Expression
 

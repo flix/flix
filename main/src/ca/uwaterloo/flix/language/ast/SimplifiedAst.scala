@@ -12,6 +12,7 @@ object SimplifiedAst {
                   indexes: Map[Symbol.TableSym, SimplifiedAst.Definition.Index],
                   facts: List[SimplifiedAst.Constraint.Fact],
                   rules: List[SimplifiedAst.Constraint.Rule],
+                  hooks: Map[Symbol.Resolved, Ast.Hook],
                   properties: List[SimplifiedAst.Property],
                   time: Time) extends SimplifiedAst
 
@@ -302,8 +303,6 @@ object SimplifiedAst {
     /**
       * A typed AST node representing a hook (native function).
       *
-      * A later phase/pass "inlines" these into ApplyHooks, thus they no longer exist in later ASTs.
-      *
       * @param hook the hook representing the native function.
       * @param tpe  the type of the hook.
       * @param loc  the source location of the hook.
@@ -358,13 +357,15 @@ object SimplifiedAst {
     /**
       * A typed AST node representing a function call.
       *
-      * @param hook the hook being called
-      * @param args the function arguments.
-      * @param tpe  the return type of the function.
-      * @param loc  the source location of the expression.
+      * @param name   the name of the hook being called
+      * @param args   the function arguments.
+      * @param isSafe whether this is a safe or unsafe hook.
+      * @param tpe    the return type of the function.
+      * @param loc    the source location of the expression.
       */
-    case class ApplyHook(hook: Ast.Hook,
+    case class ApplyHook(name: Symbol.Resolved,
                          args: List[SimplifiedAst.Expression],
+                         isSafe: Boolean,
                          tpe: Type,
                          loc: SourceLocation) extends SimplifiedAst.Expression
 

@@ -233,6 +233,25 @@ object Codegen {
       val targetTpe = ctx.declarations(name)
       visitor.visitMethodInsn(INVOKESTATIC, decorate(name.prefix), name.suffix, ctx.descriptor(targetTpe), false)
 
+    case Expression.Hook(hook, _, _) =>
+      val clazz = classOf[Value.HookClosure]
+      val ctor = clazz.getConstructors.head
+
+      // Create a Value.HookClosure. Start by creating a HookClosure reference and duplicating it.
+      visitor.visitTypeInsn(NEW, asm.Type.getInternalName(clazz))
+      visitor.visitInsn(DUP)
+
+      // Provide arguments to the constructor. Call `Symbol.Resolved.mk` with the fully-qualified name of the hook,
+      // then provide the value for isSafe.
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/Symbol$Resolved$", "MODULE$", "Lca/uwaterloo/flix/language/ast/Symbol$Resolved$;")
+      visitor.visitLdcInsn(hook.name.fqn)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/Symbol$Resolved$", "mk", "(Ljava/lang/String;)Lca/uwaterloo/flix/language/ast/Symbol$Resolved;", false)
+      if (hook.isSafe) visitor.visitInsn(ICONST_1)
+      else visitor.visitInsn(ICONST_0)
+
+      // Make the constructor call.
+      visitor.visitMethodInsn(INVOKESPECIAL, asm.Type.getInternalName(clazz), "<init>", asm.Type.getConstructorDescriptor(ctor), false)
+
     case Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
       // We create a closure the same way Java 8 does. We use InvokeDynamic and the LambdaMetafactory. The idea is that
       // LambdaMetafactory creates a CallSite (linkage), and then the CallSite target is invoked (capture) to create a
@@ -300,10 +319,10 @@ object Codegen {
       args.foreach(compileExpression(ctx, visitor))
       visitor.visitMethodInsn(INVOKESTATIC, decorate(name.prefix), name.suffix, ctx.descriptor(targetTpe), false)
 
-    case Expression.ApplyHook(hook, args, tpe, _) =>
-      val (isSafe, name, elmsClassName) = hook match {
-        case _: Hook.Safe => (true, "invoke", asm.Type.getInternalName(classOf[IValue]))
-        case _: Hook.Unsafe => (false, "invokeUnsafe", asm.Type.getInternalName(classOf[Object]))
+    case Expression.ApplyHook(hookName, args, isSafe, tpe, _) =>
+      val (name, elmsClassName) = isSafe match {
+        case true => ("invoke", asm.Type.getInternalName(classOf[IValue]))
+        case false => ("invokeUnsafe", asm.Type.getInternalName(classOf[Object]))
       }
       val clazz = classOf[Flix]
       val method = clazz.getMethods.filter(m => m.getName == name).head
@@ -312,7 +331,7 @@ object Codegen {
       visitor.visitFieldInsn(GETSTATIC, decorate(ctx.prefix), flixObjectName, asm.Type.getDescriptor(clazz))
 
       // Next we load the arguments for the invoke/invokeUnsafe virtual call, starting with the name of the hook.
-      visitor.visitLdcInsn(hook.name.toString)
+      visitor.visitLdcInsn(hookName.toString)
 
       // Create the arguments array.
       compileInt(visitor)(args.length)
@@ -327,7 +346,7 @@ object Codegen {
         // Load the actual element. If we're calling a safe hook, we need to wrap the value.
         if (isSafe) {
           val clazz = classOf[WrappedValue]
-          val ctor = clazz.getConstructor(classOf[Object])
+          val ctor = clazz.getConstructors.head
 
           visitor.visitTypeInsn(NEW, asm.Type.getInternalName(clazz))
           visitor.visitInsn(DUP)
