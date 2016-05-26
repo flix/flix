@@ -12,7 +12,7 @@ import org.objectweb.asm.util.CheckClassAdapter
 import org.objectweb.asm.{Type => _, _}
 
 // TODO: For now, we hardcode the type descriptors for all the Value objects
-// There's no nice way of using reflection to get the type of a companion object.
+// There's no nice way of using reflection to get the type of a singleton object.
 // Later, we'll rewrite Value in a Java-like style so reflection is easier
 // Or at the very least, move the (common) names into static fields
 // TODO: Actually, it looks like "Value.Unit.getClass" will work
@@ -393,7 +393,7 @@ object Codegen {
       compileUnbox(ctx, visitor)(tpe)
 
     case Expression.Tag(enum, tag, exp, _, _) =>
-      // Load the Value companion object, then the arguments, and finally call `Value.mkTag`.
+      // Load the Value singleton object, then the arguments, and finally call `Value.mkTag`.
       visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
 
       // Load `tag.name` and box `exp` if necessary.
@@ -403,10 +403,12 @@ object Codegen {
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkTag", "(Ljava/lang/String;Ljava/lang/Object;)Lca/uwaterloo/flix/runtime/Value$Tag;", false)
 
     case Expression.GetTupleIndex(base, offset, tpe, _) =>
-      // Compile the tuple expression, load the tuple array, compile the offset, load the array element, and unbox if
-      // necessary.
+      // Load the Value singleton object and base expression, to call `Value.cast2tuple`, to get the elements array.
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
       compileExpression(ctx, visitor)(base)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Tuple", "elms", "()[Ljava/lang/Object;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "cast2tuple", "(Ljava/lang/Object;)[Ljava/lang/Object;", false)
+
+      // Now compile the offset and load the array element. Unbox if necessary.
       compileInt(visitor)(offset)
       visitor.visitInsn(AALOAD)
       compileUnbox(ctx, visitor)(tpe)
@@ -614,7 +616,29 @@ object Codegen {
 
     case Type.Enum(_, _) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tag")
 
-    case Type.Tuple(_) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tuple")
+    case Type.Tuple(_) =>
+      // This is actually a bit more complicated, since we have multiple representations for a tuple (e.g. Value.Tuple,
+      // Array, scala.TupleN). We have to call `Value.cast2tuple` instead of doing a direct cast.
+
+      // Load the Value singleton object. Do a SWAP to put stack operands in the right order, then call
+      // `Value.cast2tuple`, to get the elements array.
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+      visitor.visitInsn(SWAP)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "cast2tuple", "(Ljava/lang/Object;)[Ljava/lang/Object;", false)
+
+      // TODO: Update this when we remove Value.Tuple.
+      // cast2tuple returns an Array, but we expect a Value.Tuple. So we have to construct one.
+      // Create the Value.Tuple reference.
+      visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/Value$Tuple")
+
+      // We use dup_x1 and swap to manipulate the stack so we can avoid using a local variable.
+      // Stack before: array, tuple (top)
+      // Stack after: tuple, tuple, array (top)
+      visitor.visitInsn(DUP_X1)
+      visitor.visitInsn(SWAP)
+
+      // Finally, call the constructor, which pops the reference (tuple) and argument (array).
+      visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/Value$Tuple", "<init>", "([Ljava/lang/Object;)V", false)
 
     case Type.Lambda(_, _) =>
       // TODO: Is this correct? Need to write a test when we can write lambda expressions.

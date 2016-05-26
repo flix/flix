@@ -246,8 +246,6 @@ object Value {
     case _ => throw new InternalRuntimeException(s"Unexpected non-closure value: '$ref'.")
   }
 
-  // TODO: introduce make function and make class private
-
   /////////////////////////////////////////////////////////////////////////////
   // Strings                                                                 //
   /////////////////////////////////////////////////////////////////////////////

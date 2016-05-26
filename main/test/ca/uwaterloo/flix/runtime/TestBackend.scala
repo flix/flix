@@ -1292,8 +1292,6 @@ class TestBackend extends FunSuite {
   // This is necessary so that implicits are properly called.                //
   /////////////////////////////////////////////////////////////////////////////
 
-  // TODO: These tests are set to ignore because codegen doesn't yet support interop.
-
   // TODO: We're forced to pass a dummy parameter.
   // See: https://github.com/magnus-madsen/flix/issues/130#issuecomment-216944729
   test("Expression.Hook - Hook.Unsafe.01") {
@@ -5534,8 +5532,6 @@ class TestBackend extends FunSuite {
   // (MkClosureRef, ApplyClosure, free variables).                           //
   /////////////////////////////////////////////////////////////////////////////
 
-  // TODO: Pattern match of native tuples (of native or flix types)
-
   test("Match.Wildcard.01") {
     val input =
       """def f: Int = match () with {
@@ -6279,8 +6275,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt32(0), "g04")
   }
 
-  // TODO: Ignored because codegen doesn't support interop.
-  ignore("Match.Tuple.07") {
+  test("Match.Tuple.07") {
     import HookUnsafeHelpers._
     val input =
       """def fst(t: (Native, Native)): Native = match t with {
@@ -6299,8 +6294,7 @@ class TestBackend extends FunSuite {
     t.runTest(MyObject(12), "h")
   }
 
-  // TODO: Ignored because codegen doesn't support interop.
-  ignore("Match.Tuple.08") {
+  test("Match.Tuple.08") {
     import HookUnsafeHelpers._
     val input =
       """def fst(t: (Native, Native)): Native = match t with {
@@ -6319,8 +6313,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt32(12), "h")
   }
 
-  // TODO: Ignored because codegen doesn't support interop.
-  ignore("Match.Tuple.09") {
+  test("Match.Tuple.09") {
     import HookUnsafeHelpers._
     val input =
       """def fst(t: (Int, Str)): Int = match t with {
