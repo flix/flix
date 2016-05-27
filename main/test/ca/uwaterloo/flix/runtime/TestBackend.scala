@@ -1135,35 +1135,33 @@ class TestBackend extends FunSuite {
 
   test("Expression.Hook - Hook.Safe.11") {
     import HookSafeHelpers._
-    val input = "def h: Int = f(g, 5)"
+    val input =
+      """def f(x: (Int) -> Int, y: Int): Int = x(y)
+        |def h: Int = f(g, 5)
+      """.stripMargin
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
     val tpeG = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
-    val tpeF = flix.mkFunctionType(Array(tpeG, flix.mkInt32Type), flix.mkInt32Type)
-    def nativeF(x: IValue, y: IValue): IValue = {
-      val closure = x.getUnsafeRef.asInstanceOf[Value.HookClosure]
-      val name = closure.name.fqn
-      flix.invoke(name, Array(y))
-    }
     def nativeG(x: IValue): IValue = flix.mkInt32(x.getInt32 + 1)
 
-    t.addHook("f", tpeF, nativeF _).addHook("g", tpeG, nativeG _).run()
+    t.addHook("g", tpeG, nativeG _).run()
     t.runTest(Value.mkInt32(6), "h")
   }
 
-  ignore("Expression.Hook - Hook.Safe.12") {
+  test("Expression.Hook - Hook.Safe.12") {
     import HookSafeHelpers._
-    val input = "def h: Int = (f(g))(40)"
+    val input =
+      """def f(x: (Int) -> Int): (Int) -> Int = x
+        |def h: Int = (f(g))(40)
+      """.stripMargin
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
     val tpeG = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
-    val tpeF = flix.mkFunctionType(Array(tpeG), tpeG)
-    def nativeF(x: IValue): IValue = x
     def nativeG(x: IValue): IValue = flix.mkInt32(x.getInt32 + 5)
 
-    t.addHook("f", tpeF, nativeF _).addHook("g", tpeG, nativeG _).run()
+    t.addHook("g", tpeG, nativeG _).run()
     t.runTest(Value.mkInt32(45), "h")
   }
 
@@ -1448,34 +1446,33 @@ class TestBackend extends FunSuite {
 
   test("Expression.Hook - Hook.Unsafe.11") {
     import HookUnsafeHelpers._
-    val input = "def h: Int = f(g, 5)"
+    val input =
+      """def f(x: (Int) -> Int, y: Int): Int = x(y)
+        |def h: Int = f(g, 5)
+      """.stripMargin
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
     val tpeG = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
-    val tpeF = flix.mkFunctionType(Array(tpeG, flix.mkInt32Type), flix.mkInt32Type)
-    def nativeF(x: Value.HookClosure, y: JInt) = {
-      val name = x.name.fqn
-      flix.invokeUnsafe(name, Array(y))
-    }
     def nativeG(x: JInt): JInt = x + 1
 
-    t.addHook("f", tpeF, nativeF _).addHook("g", tpeG, nativeG _).run()
+    t.addHook("g", tpeG, nativeG _).run()
     t.runTest(Value.mkInt32(6), "h")
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.12") {
+  test("Expression.Hook - Hook.Unsafe.12") {
     import HookUnsafeHelpers._
-    val input = "def h: Int = (f(g))(40)"
+    val input =
+      """def f(x: (Int) -> Int): (Int) -> Int = x
+        |def h: Int = (f(g))(40)
+      """.stripMargin
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
     val tpeG = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
-    val tpeF = flix.mkFunctionType(Array(tpeG), tpeG)
-    def nativeF(x: Value.HookClosure): Value.HookClosure = x
     def nativeG(x: JInt): JInt = x + 5
 
-    t.addHook("f", tpeF, nativeF _).addHook("g", tpeG, nativeG _).run()
+    t.addHook("g", tpeG, nativeG _).run()
     t.runTest(Value.mkInt32(45), "h")
   }
 

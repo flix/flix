@@ -760,7 +760,6 @@ object SymbolicEvaluator {
       /**
         * Unsupported expressions.
         */
-      case e: Expression.Hook => throw new InternalCompilerException(s"Unsupported expression: '$e'.")
       case e: Expression.ApplyHook => throw new InternalCompilerException(s"Unsupported expression: '$e'.")
       case e: Expression.Universal => throw InternalCompilerException(s"Unsupported expression: '$e'.")
       case e: Expression.Existential => throw InternalCompilerException(s"Unsupported expression: '$e'.")

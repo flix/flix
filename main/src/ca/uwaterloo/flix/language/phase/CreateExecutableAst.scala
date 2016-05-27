@@ -31,7 +31,6 @@ object CreateExecutableAst {
     val indexes = sast.indexes.map { case (k, v) => k -> Definition.toExecutable(v) }
     val facts = sast.facts.map(Constraint.toExecutable).toArray
     val rules = sast.rules.map(Constraint.toExecutable).toArray
-    val hooks = sast.hooks
     val properties = sast.properties.map(p => toExecutable(p))
     val time = sast.time
 
@@ -62,7 +61,7 @@ object CreateExecutableAst {
       result.toMap
     }
 
-    ExecutableAst.Root(constants ++ m, lattices, tables, indexes, facts, rules, hooks, properties, time, dependenciesOf)
+    ExecutableAst.Root(constants ++ m, lattices, tables, indexes, facts, rules, properties, time, dependenciesOf)
   }
 
   object Definition {
@@ -170,7 +169,7 @@ object CreateExecutableAst {
       case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
         throw InternalCompilerException("Lambdas should have been converted to closures and lifted.")
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) =>
-        ExecutableAst.Expression.Hook(hook, tpe, loc)
+        throw InternalCompilerException("Hooks should have been inlined into ApplyHooks or wrapped inside lambdas.")
       case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
         throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
       case SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
@@ -180,9 +179,9 @@ object CreateExecutableAst {
       case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
         val argsArray = args.map(toExecutable).toArray
         ExecutableAst.Expression.ApplyRef(name, argsArray, tpe, loc)
-      case SimplifiedAst.Expression.ApplyHook(hook, args, isSafe, tpe, loc) =>
+      case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) =>
         val argsArray = args.map(toExecutable).toArray
-        ExecutableAst.Expression.ApplyHook(hook, argsArray, isSafe, tpe, loc)
+        ExecutableAst.Expression.ApplyHook(hook, argsArray, tpe, loc)
       case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
         val argsArray = args.map(toExecutable).toArray
         ExecutableAst.Expression.ApplyClosure(toExecutable(exp), argsArray, tpe, loc)

@@ -90,8 +90,8 @@ object VarNumbering {
         throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
       case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
         SimplifiedAst.Expression.ApplyRef(name, args.map(visit(m, _)), tpe, loc)
-      case SimplifiedAst.Expression.ApplyHook(hook, args, isSafe, tpe, loc) =>
-        SimplifiedAst.Expression.ApplyHook(hook, args.map(visit(m, _)), isSafe, tpe, loc)
+      case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) =>
+        SimplifiedAst.Expression.ApplyHook(hook, args.map(visit(m, _)), tpe, loc)
       case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
         SimplifiedAst.Expression.Apply(visit(m, exp), args.map(visit(m, _)), tpe, loc)
       case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) =>

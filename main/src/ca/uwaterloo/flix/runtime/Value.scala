@@ -237,25 +237,12 @@ object Value {
 
   // TODO: Introduce make function and make Closure constructor private.
 
-  final case class HookClosure(name: Symbol.Resolved, isSafe: Boolean)
-
-  // TODO: Introduce make function and make class private.
-
   /**
     * Casts the given reference `ref` to a closure.
     */
   @inline
   def cast2closure(ref: AnyRef): Closure = ref match {
     case o: Closure => o
-    case _ => throw new InternalRuntimeException(s"Unexpected non-closure value: '$ref'.")
-  }
-
-  /**
-    * Casts the given reference `ref` to a hook closure.
-    */
-  @inline
-  def cast2hookclosure(ref: AnyRef): HookClosure = ref match {
-    case o: HookClosure => o
     case _ => throw new InternalRuntimeException(s"Unexpected non-closure value: '$ref'.")
   }
 
