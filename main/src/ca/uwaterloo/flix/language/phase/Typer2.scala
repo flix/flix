@@ -276,7 +276,8 @@ object Typer2 {
           /*
            * None expression.
            */
-          case NamedAst.Expression.FNone(id, loc) => ???
+          case NamedAst.Expression.FNone(id, loc) =>
+            eq(id, Type.FOpt(fresh()))
 
           /*
            * Some expression.
@@ -624,5 +625,11 @@ object Typer2 {
     case NamedAst.Expression.UserError(id, loc) =>
       TypedAst.Expression.Error(tenv0(id), loc)
   }
+
+  /**
+    * Returns a fresh type variable.
+    */
+  @inline
+  private def fresh()(implicit genSym: GenSym): Type.Var = genSym.freshTypeVar()
 
 }

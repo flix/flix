@@ -153,7 +153,7 @@ class Flix {
       throw new IllegalStateException("No input specified. Please add at least one string or path input.")
 
     // TODO: Cleanup
-    Compiler.compile(getSourceInputs, hooks.toMap)
+    Compiler.compile(getSourceInputs, hooks.toMap)(genSym)
   }
 
   /**

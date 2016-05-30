@@ -1,14 +1,14 @@
 package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.language.ast.{SourcePosition, Name}
-
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Name, SourcePosition, Symbol, Type}
 
 package object phase {
 
-  // TODO: Cleanup
+  // TODO: Cleanup, possibly unify with the Flix class?
 
   class GenSym() {
+
+    def freshTypeVar(): Type.Var = ???
 
     private var number: Int = 0
 
