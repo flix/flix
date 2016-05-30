@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.runtime
 
 import java.util
 
-import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Name, Symbol}
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
 import scala.collection.{immutable, mutable}
@@ -233,7 +233,7 @@ object Value {
   /**
     * Flix internal representation of closures.
     */
-  final case class Closure(ref: ExecutableAst.Expression.Ref, bindings: Array[AnyRef])
+  final case class Closure(name: Symbol.Resolved, bindings: Array[AnyRef])
 
   // TODO: Introduce make function and make Closure constructor private.
 
@@ -245,13 +245,6 @@ object Value {
     case o: Closure => o
     case _ => throw new InternalRuntimeException(s"Unexpected non-closure value: '$ref'.")
   }
-
-  /**
-    * Flix internal representation of hook closures.
-    */
-  final case class HookClosure(hook: Ast.Hook)
-
-  // TODO: introduce make function and make class private
 
   /////////////////////////////////////////////////////////////////////////////
   // Strings                                                                 //

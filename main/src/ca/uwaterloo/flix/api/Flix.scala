@@ -2,12 +2,13 @@ package ca.uwaterloo.flix.api
 
 import java.nio.file.{Files, Path, Paths}
 
-import ca.uwaterloo.flix.language.{CompilationError, Compiler}
+import ca.uwaterloo.flix.language.ast.Ast.Hook
 import ca.uwaterloo.flix.language.ast.Type.Lambda
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
+import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.runtime.{Model, Solver, Value}
-import ca.uwaterloo.flix.util.{CodeGeneration, Options, Validation, Verify}
+import ca.uwaterloo.flix.util.{Options, Validation}
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
@@ -136,6 +137,46 @@ class Flix {
   }
 
   /**
+    * Calls the invokable with the given name `name`, passing the given `args.`
+    *
+    * @param name the fully qualified name for the invokable.
+    * @param args the array of arguments passed to the invokable.
+    */
+  def invoke(name: String, args: Array[IValue]): IValue = {
+    if (name == null)
+      throw new IllegalArgumentException("'name' must be non-null.")
+    if (args == null)
+      throw new IllegalArgumentException("'args' must be non-null.")
+
+    val rname = Symbol.Resolved.mk(name)
+    hooks.get(rname) match {
+      case None => throw new NoSuchElementException(s"Hook '$name' does not exist.")
+      case Some(_: Hook.Unsafe) => throw new RuntimeException(s"Trying to invoke a safe hook but '$name' is an unsafe hook.")
+      case Some(hook: Hook.Safe) => hook.inv(args)
+    }
+  }
+
+  /**
+    * Calls the unsafe invokable with the given name `name`, passing the given `args.`
+    *
+    * @param name the fully qualified name for the invokable.
+    * @param args the array of arguments passed to the invokable.
+    */
+  def invokeUnsafe(name: String, args: Array[AnyRef]): AnyRef = {
+    if (name == null)
+      throw new IllegalArgumentException("'name' must be non-null.")
+    if (args == null)
+      throw new IllegalArgumentException("'args' must be non-null.")
+
+    val rname = Symbol.Resolved.mk(name)
+    hooks.get(rname) match {
+      case None => throw new NoSuchElementException(s"Hook '$name' does not exist.")
+      case Some(_: Hook.Safe) => throw new RuntimeException(s"Trying to invoke an unsafe hook but '$name' is a safe hook.")
+      case Some(hook: Hook.Unsafe) => hook.inv(args)
+    }
+  }
+
+  /**
     * Sets the options used for this Flix instance.
     */
   def setOptions(opts: Options): Flix = {
@@ -172,7 +213,7 @@ class Flix {
         val lifted = LambdaLift.lift(sast)
         val numbered = VarNumbering.number(lifted)
         val east = CreateExecutableAst.toExecutable(numbered)
-        val compiled = LoadBytecode.load(east, options)
+        val compiled = LoadBytecode.load(this, east, options)
         Verifier.verify(compiled, options) map {
           case ast => new Solver()(Solver.SolverContext(ast, options)).solve()
         }

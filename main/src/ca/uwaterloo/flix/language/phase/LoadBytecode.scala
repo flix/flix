@@ -2,12 +2,11 @@ package ca.uwaterloo.flix.language.phase
 
 import java.nio.file.{Files, Paths}
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression}
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol, Type}
 import ca.uwaterloo.flix.runtime.Value
 import ca.uwaterloo.flix.util.{CodeGeneration, DebugBytecode, InternalCompilerException, Options}
-
-import scala.collection.mutable
 
 object LoadBytecode {
 
@@ -49,7 +48,8 @@ object LoadBytecode {
     *    As of this step, we have grouped the constants into separate classes, transformed non-functions into 0-arg
     *    functions, collected all the declarations in a map, and created and loaded functional interfaces and collected
     *    them in a map.
-    *    Now, for each class, we generate and load the bytecode.
+    *    Now, for each class, we generate and load the bytecode. We also initialize the static Flix field to point to
+    *    `this`.
     *
     * 5. Load the methods.
     *    For each constant, we use reflection to get the corresponding java.lang.reflect.Method object.
@@ -57,7 +57,7 @@ object LoadBytecode {
     *    variables eliminated) to perform the reflection lookup, so we iterate over constantsMap. However, we want to
     *    mutate the original constant from root.constants, not the one in constantsMap (which will get GC'd).
     */
-  def load(root: ExecutableAst.Root, options: Options)(implicit genSym: GenSym): ExecutableAst.Root = {
+  def load(flix: Flix, root: ExecutableAst.Root, options: Options)(implicit genSym: GenSym): ExecutableAst.Root = {
     if (options.codegen != CodeGeneration.Enabled) {
       return root
     }
@@ -94,7 +94,10 @@ object LoadBytecode {
       if (options.debugBytecode == DebugBytecode.Enabled) {
         dump(prefix, bytecode)
       }
-      prefix -> loader(prefix, bytecode)
+      val clazz = loader(prefix, bytecode)
+      // Set the flixObject field.
+      clazz.getField(Codegen.flixObjectName).set(null, flix)
+      prefix -> clazz
     }.toMap // Despite IDE highlighting, this is actually necessary.
 
     // 5. Load the methods.
@@ -128,7 +131,7 @@ object LoadBytecode {
     case Type.Int64 => classOf[Long]
     case Type.BigInt => classOf[java.math.BigInteger]
     case Type.Str => classOf[java.lang.String]
-    case Type.Native => ??? // TODO
+    case Type.Native => classOf[java.lang.Object]
     case Type.Enum(_, _) => classOf[Value.Tag]
     case Type.Tuple(elms) => classOf[Value.Tuple]
     case Type.Lambda(_, _) => interfaces(tpe)
@@ -169,9 +172,9 @@ object LoadBytecode {
       case Expression.StoreInt32(b, o, v) => Set.empty
       case Expression.Var(ident, o, tpe, loc) => Set.empty
       case Expression.Ref(name, tpe, loc) => Set.empty
-      case Expression.Hook(hook, tpe, loc) => Set.empty
       case Expression.MkClosureRef(ref, freeVars, tpe, loc) => Set(tpe)
       case Expression.ApplyRef(name, args, tpe, loc) => args.flatMap(visit).toSet
+      case Expression.ApplyHook(hook, args, tpe, loc) => args.flatMap(visit).toSet
       case Expression.ApplyClosure(exp, args, tpe, loc) => visit(exp) ++ args.flatMap(visit)
       case Expression.Unary(op, exp, tpe, loc) => visit(exp)
       case Expression.Binary(op, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
