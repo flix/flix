@@ -9,7 +9,7 @@ object Options {
     Nil,
     verbosity = Verbosity.Silent,
     verify = Verify.Disabled,
-    codegen = CodeGeneration.Disabled,
+    codegen = CodeGeneration.Enabled,
     debugBytecode = DebugBytecode.Disabled
   )
 }
