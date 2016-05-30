@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
 

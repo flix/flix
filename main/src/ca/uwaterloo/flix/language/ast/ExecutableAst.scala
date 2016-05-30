@@ -1,10 +1,6 @@
 package ca.uwaterloo.flix.language.ast
 
-import java.lang.reflect.{InvocationTargetException, Method}
-
-import ca.uwaterloo.flix.runtime.Interpreter
-
-import scala.collection.mutable
+import java.lang.reflect.Method
 
 sealed trait ExecutableAst
 

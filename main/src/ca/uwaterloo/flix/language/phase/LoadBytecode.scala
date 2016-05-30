@@ -8,8 +8,6 @@ import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol, Type}
 import ca.uwaterloo.flix.runtime.Value
 import ca.uwaterloo.flix.util.{CodeGeneration, DebugBytecode, InternalCompilerException, Options}
 
-import scala.collection.mutable
-
 object LoadBytecode {
 
   private class Loader extends ClassLoader {
@@ -97,7 +95,7 @@ object LoadBytecode {
         dump(prefix, bytecode)
       }
       val clazz = loader(prefix, bytecode)
-      // Set the flixObject field to `this`.
+      // Set the flixObject field.
       clazz.getField(Codegen.flixObjectName).set(null, flix)
       prefix -> clazz
     }.toMap // Despite IDE highlighting, this is actually necessary.

@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.runtime
 
 import java.lang.reflect.InvocationTargetException
 
-import ca.uwaterloo.flix.api.{IValue, MatchException, SwitchException, UserException, WrappedValue}
+import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Definition.Constant
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast._
