@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.runtime
 
 import java.lang.reflect.InvocationTargetException
 
-import ca.uwaterloo.flix.api.{IValue, MatchException, SwitchException, UserException, WrappedValue}
+import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Definition.Constant
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast._
@@ -45,7 +45,6 @@ object Interpreter {
       case Some(v) => v
     }
     case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env0)
-    case Expression.Hook(hook, _, _) => Value.HookClosure(hook)
     case Expression.MkClosureRef(ref, freeVars, _, _) =>
       // Save the values of the free variables in the Value.Closure structure.
       // When the closure is called, these values will be provided at the beginning of the argument list.
@@ -55,24 +54,17 @@ object Interpreter {
         bindings(i) = env0(freeVars(i).ident.name)
         i = i + 1
       }
-      Value.Closure(ref, bindings)
-    case Expression.ApplyRef(name, args, _, _) =>
-      val evalArgs = new Array[AnyRef](args.length)
-      var i = 0
-      while (i < evalArgs.length) {
-        evalArgs(i) = eval(args(i), root, env0)
-        i = i + 1
-      }
-      evalCall(root.constants(name), evalArgs, root, env0)
-    case Expression.ApplyClosure(exp, args, tpe, loc) =>
-      val func = eval(exp, root, env0)
-      val evalArgs = new Array[AnyRef](args.length)
-      var i = 0
-      while (i < evalArgs.length) {
-        evalArgs(i) = eval(args(i), root, env0)
-        i = i + 1
-      }
-      evalClosure(func, evalArgs, root, env0)
+      Value.Closure(ref.name, bindings)
+    case Expression.ApplyRef(name, args0, _, _) =>
+      val args = evalArgs(args0, root, env0)
+      evalCall(root.constants(name), args, root, env0)
+    case Expression.ApplyHook(hook, args0, _, _) =>
+      val args = evalArgs(args0, root, env0)
+      evalHook(hook, args, root, env0)
+    case Expression.ApplyClosure(exp, args0, tpe, loc) =>
+      val func = eval(exp, root, env0).asInstanceOf[Value.Closure]
+      val args = evalArgs(args0, root, env0)
+      evalClosure(func, args, root, env0)
     case Expression.Unary(op, exp, _, _) => evalUnary(op, exp, root, env0)
     case Expression.Binary(op, exp1, exp2, _, _) => op match {
       case o: ArithmeticOperator => evalArithmetic(o, exp1, exp2, root, env0)
@@ -354,29 +346,6 @@ object Interpreter {
     case Term.Body.Exp(e, _, _) => eval(e, root, env)
   }
 
-  private def evalClosure(function: AnyRef, args: Array[AnyRef], root: Root, env: Map[String, AnyRef]): AnyRef =
-    function match {
-      case Value.Closure(ref, bindings) =>
-        val constant = root.constants(ref.name)
-        // Bindings for the capture variables are passed as arguments.
-        val env1 = constant.formals.take(bindings.length).zip(bindings).foldLeft(env) {
-          case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
-        }
-        // Now pass the actual arguments supplied by the caller.
-        val env2 = constant.formals.drop(bindings.length).zip(args).foldLeft(env1) {
-          case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
-        }
-        eval(constant.exp, root, env2)
-      case Value.HookClosure(hook) => hook match {
-        case Ast.Hook.Safe(name, inv, _) =>
-          val wargs: Array[IValue] = args.map(new WrappedValue(_))
-          inv(wargs).getUnsafeRef
-        case Ast.Hook.Unsafe(name, inv, _) =>
-          inv(args)
-      }
-      case _ => throw new InternalRuntimeException(s"Trying to call a non-function: $function.")
-    }
-
   def evalCall(defn: Constant, args: Array[AnyRef], root: Root, env0: Map[String, AnyRef] = Map.empty): AnyRef = {
     if (defn.method == null) {
       val env = defn.formals.zip(args).foldLeft(env0) {
@@ -392,6 +361,42 @@ object Interpreter {
         case e: InvocationTargetException => throw e.getTargetException
       }
     }
+  }
+
+  private def evalHook(hook: Ast.Hook, args: Array[AnyRef], root: Root, env: Map[String, AnyRef]): AnyRef =
+    hook match {
+      case Ast.Hook.Safe(name, inv, _) =>
+        val wargs: Array[IValue] = args.map(new WrappedValue(_))
+        inv(wargs).getUnsafeRef
+      case Ast.Hook.Unsafe(name, inv, _) =>
+        inv(args)
+    }
+
+  private def evalClosure(function: Value.Closure, args: Array[AnyRef], root: Root, env: Map[String, AnyRef]): AnyRef = {
+    val Value.Closure(name, bindings) = function
+    val constant = root.constants(name)
+
+    // Bindings for the capture variables are passed as arguments.
+    val env1 = constant.formals.take(bindings.length).zip(bindings).foldLeft(env) {
+      case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
+    }
+
+    // Now pass the actual arguments supplied by the caller.
+    val env2 = constant.formals.drop(bindings.length).zip(args).foldLeft(env1) {
+      case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
+    }
+
+    eval(constant.exp, root, env2)
+  }
+
+  private def evalArgs(args: Array[Expression], root: Root, env: Map[String, AnyRef]): Array[AnyRef] = {
+    val evalArgs = new Array[AnyRef](args.length)
+    var i = 0
+    while (i < evalArgs.length) {
+      evalArgs(i) = eval(args(i), root, env)
+      i = i + 1
+    }
+    evalArgs
   }
 
 }

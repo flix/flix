@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.api.{Flix, IValue, WrappedValue}
+import ca.uwaterloo.flix.language.ast.Ast.Hook
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression, LoadExpression, StoreExpression}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.Value
@@ -10,7 +12,7 @@ import org.objectweb.asm.util.CheckClassAdapter
 import org.objectweb.asm.{Type => _, _}
 
 // TODO: For now, we hardcode the type descriptors for all the Value objects
-// There's no nice way of using reflection to get the type of a companion object.
+// There's no nice way of using reflection to get the type of a singleton object.
 // Later, we'll rewrite Value in a Java-like style so reflection is easier
 // Or at the very least, move the (common) names into static fields
 // TODO: Actually, it looks like "Value.Unit.getClass" will work
@@ -18,6 +20,8 @@ import org.objectweb.asm.{Type => _, _}
 // TODO: Debugging information
 
 object Codegen {
+
+  val flixObjectName = "flixObject"
 
   case class Context(prefix: List[String],
                      functions: List[Definition.Constant],
@@ -50,7 +54,7 @@ object Codegen {
         case Type.Int64 => asm.Type.LONG_TYPE.getDescriptor
         case Type.BigInt => asm.Type.getDescriptor(classOf[java.math.BigInteger])
         case Type.Str => asm.Type.getDescriptor(classOf[java.lang.String])
-        case Type.Native => ??? // TODO
+        case Type.Native => asm.Type.getDescriptor(classOf[java.lang.Object])
         case Type.Enum(_, _) => asm.Type.getDescriptor(classOf[Value.Tag])
         case Type.Tuple(_) => asm.Type.getDescriptor(classOf[Value.Tuple])
         case Type.Lambda(_, _) => s"L${decorate(interfaces(tpe))};"
@@ -108,11 +112,28 @@ object Codegen {
     // Initialize the visitor to create a class.
     visitor.visit(V1_8, ACC_PUBLIC + ACC_SUPER, decorate(ctx.prefix), null, "java/lang/Object", null)
 
+    compileStaticFlixField(ctx, visitor)
     compileConstructor(ctx, visitor)
     functions.foreach(compileFunction(ctx, visitor))
 
     visitor.visitEnd()
     classWriter.toByteArray
+  }
+
+  /*
+   * Create a static field for the Flix object, and generate the class initializer to initialize the field to null.
+   */
+  private def compileStaticFlixField(ctx: Context, visitor: ClassVisitor): Unit = {
+    val fv = visitor.visitField(ACC_PUBLIC + ACC_STATIC, flixObjectName, asm.Type.getDescriptor(classOf[Flix]), null, null)
+    fv.visitEnd()
+
+    val mv = visitor.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null)
+    mv.visitCode()
+    mv.visitInsn(ACONST_NULL)
+    mv.visitFieldInsn(PUTSTATIC, decorate(ctx.prefix), flixObjectName, asm.Type.getDescriptor(classOf[Flix]))
+    mv.visitInsn(RETURN)
+    mv.visitMaxs(1, 0)
+    mv.visitEnd()
   }
 
   /*
@@ -148,17 +169,17 @@ object Codegen {
       case Type.Int64 => mv.visitInsn(LRETURN)
       case Type.Float32 => mv.visitInsn(FRETURN)
       case Type.Float64 => mv.visitInsn(DRETURN)
-      case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
-        mv.visitInsn(ARETURN)
-      case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
+           Type.FSet(_) => mv.visitInsn(ARETURN)
+      case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
       case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
       case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
       case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
       case Type.Tag(_, _, _) => throw InternalCompilerException(s"Functions can't return type $tpe.")
     }
 
-    // Dummy large numbers so the bytecode checker can run. Afterwards, the ASM library calculates the proper maxes.
-    mv.visitMaxs(999, 999)
+    // Dummy large numbers (JVM limits) so the bytecode checker can run. Afterwards, the ASM library calculates the proper maxes.
+    mv.visitMaxs(65535, 65535)
     mv.visitEnd()
   }
 
@@ -198,9 +219,9 @@ object Codegen {
       case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
       case Type.Float32 => visitor.visitVarInsn(FLOAD, offset)
       case Type.Float64 => visitor.visitVarInsn(DLOAD, offset)
-      case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
-        visitor.visitVarInsn(ALOAD, offset)
-      case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
+           Type.FSet(_) => visitor.visitVarInsn(ALOAD, offset)
+      case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
       case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => // TODO: Deprecated
       case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
       case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
@@ -211,8 +232,6 @@ object Codegen {
       // Reference to a top-level definition that isn't used in a MkClosureRef or ApplyRef, so it's a 0-arg function.
       val targetTpe = ctx.declarations(name)
       visitor.visitMethodInsn(INVOKESTATIC, decorate(name.prefix), name.suffix, ctx.descriptor(targetTpe), false)
-
-    case Expression.Hook(hook, _, _) => ???
 
     case Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
       // We create a closure the same way Java 8 does. We use InvokeDynamic and the LambdaMetafactory. The idea is that
@@ -281,6 +300,54 @@ object Codegen {
       args.foreach(compileExpression(ctx, visitor))
       visitor.visitMethodInsn(INVOKESTATIC, decorate(name.prefix), name.suffix, ctx.descriptor(targetTpe), false)
 
+    case Expression.ApplyHook(hook, args, tpe, _) =>
+      val (isSafe, name, elmsClassName) = hook match {
+        case _: Hook.Safe => (true, "invoke", asm.Type.getInternalName(classOf[IValue]))
+        case _: Hook.Unsafe => (false, "invokeUnsafe", asm.Type.getInternalName(classOf[Object]))
+      }
+      val clazz = classOf[Flix]
+      val method = clazz.getMethods.filter(m => m.getName == name).head
+
+      // First we get the Flix object from the static field.
+      visitor.visitFieldInsn(GETSTATIC, decorate(ctx.prefix), flixObjectName, asm.Type.getDescriptor(clazz))
+
+      // Next we load the arguments for the invoke/invokeUnsafe virtual call, starting with the name of the hook.
+      visitor.visitLdcInsn(hook.name.toString)
+
+      // Create the arguments array.
+      compileInt(visitor)(args.length)
+      visitor.visitTypeInsn(ANEWARRAY, elmsClassName)
+
+      // Evaluate the arguments left-to-right, putting them into the array.
+      for ((e, i) <- args.zipWithIndex) {
+        // Duplicate the array reference, otherwise AASTORE will consume it.
+        visitor.visitInsn(DUP)
+        compileInt(visitor)(i)
+
+        // Load the actual element. If we're calling a safe hook, we need to wrap the value.
+        if (isSafe) {
+          val clazz = classOf[WrappedValue]
+          val ctor = clazz.getConstructors.head
+
+          visitor.visitTypeInsn(NEW, asm.Type.getInternalName(clazz))
+          visitor.visitInsn(DUP)
+          compileBoxedExpr(ctx, visitor)(e)
+          visitor.visitMethodInsn(INVOKESPECIAL, asm.Type.getInternalName(clazz), "<init>", asm.Type.getConstructorDescriptor(ctor), false)
+        } else {
+          compileBoxedExpr(ctx, visitor)(e)
+        }
+        visitor.visitInsn(AASTORE)
+      }
+
+      // Finally, make the virtual call to invoke/invokeUnsafe. If it's a safe hook, we also need to call `getUnsafeRef`.
+      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
+      if (isSafe) {
+        visitor.visitMethodInsn(INVOKEINTERFACE, elmsClassName, "getUnsafeRef", "()Ljava/lang/Object;", true)
+      }
+
+      // Unbox the result, if necessary.
+      compileUnbox(ctx, visitor)(tpe)
+
     case Expression.ApplyClosure(exp, args, _, _) =>
       // Lambdas are called through an interface. We don't know what function we're calling, but we know its type,
       // so we can lookup the interface we're calling through.
@@ -319,9 +386,9 @@ object Codegen {
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
         case Type.Float32 => visitor.visitVarInsn(FSTORE, offset)
         case Type.Float64 => visitor.visitVarInsn(DSTORE, offset)
-        case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
-          visitor.visitVarInsn(ASTORE, offset)
-        case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+        case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
+             Type.FSet(_) => visitor.visitVarInsn(ASTORE, offset)
+        case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
         case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => // TODO: Deprecated
         case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
         case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of ${exp1.tpe} should never be compiled.")
@@ -343,7 +410,7 @@ object Codegen {
       compileUnbox(ctx, visitor)(tpe)
 
     case Expression.Tag(enum, tag, exp, _, _) =>
-      // Load the Value companion object, then the arguments, and finally call `Value.mkTag`.
+      // Load the Value singleton object, then the arguments, and finally call `Value.mkTag`.
       visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
 
       // Load `tag.name` and box `exp` if necessary.
@@ -353,10 +420,12 @@ object Codegen {
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkTag", "(Ljava/lang/String;Ljava/lang/Object;)Lca/uwaterloo/flix/runtime/Value$Tag;", false)
 
     case Expression.GetTupleIndex(base, offset, tpe, _) =>
-      // Compile the tuple expression, load the tuple array, compile the offset, load the array element, and unbox if
-      // necessary.
+      // Load the Value singleton object and base expression, to call `Value.cast2tuple`, to get the elements array.
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
       compileExpression(ctx, visitor)(base)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$Tuple", "elms", "()[Ljava/lang/Object;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "cast2tuple", "(Ljava/lang/Object;)[Ljava/lang/Object;", false)
+
+      // Now compile the offset and load the array element. Unbox if necessary.
       compileInt(visitor)(offset)
       visitor.visitInsn(AALOAD)
       compileUnbox(ctx, visitor)(tpe)
@@ -500,10 +569,10 @@ object Codegen {
       compileExpression(ctx, visitor)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "mkInt64", "(J)Ljava/lang/Object;", false)
 
-    case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
-      compileExpression(ctx, visitor)(exp)
+    case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
+         Type.FSet(_) => compileExpression(ctx, visitor)(exp)
 
-    case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+    case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
 
     case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
 
@@ -560,9 +629,33 @@ object Codegen {
 
     case Type.Str => visitor.visitTypeInsn(CHECKCAST, "java/lang/String")
 
+    case Type.Native => // Don't need to cast AnyRef to anything
+
     case Type.Enum(_, _) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tag")
 
-    case Type.Tuple(_) => visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/Value$Tuple")
+    case Type.Tuple(_) =>
+      // This is actually a bit more complicated, since we have multiple representations for a tuple (e.g. Value.Tuple,
+      // Array, scala.TupleN). We have to call `Value.cast2tuple` instead of doing a direct cast.
+
+      // Load the Value singleton object. Do a SWAP to put stack operands in the right order, then call
+      // `Value.cast2tuple`, to get the elements array.
+      visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/runtime/Value$", "MODULE$", "Lca/uwaterloo/flix/runtime/Value$;")
+      visitor.visitInsn(SWAP)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/Value$", "cast2tuple", "(Ljava/lang/Object;)[Ljava/lang/Object;", false)
+
+      // TODO: Update this when we remove Value.Tuple.
+      // cast2tuple returns an Array, but we expect a Value.Tuple. So we have to construct one.
+      // Create the Value.Tuple reference.
+      visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/Value$Tuple")
+
+      // We use dup_x1 and swap to manipulate the stack so we can avoid using a local variable.
+      // Stack before: array, tuple (top)
+      // Stack after: tuple, tuple, array (top)
+      visitor.visitInsn(DUP_X1)
+      visitor.visitInsn(SWAP)
+
+      // Finally, call the constructor, which pops the reference (tuple) and argument (array).
+      visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/Value$Tuple", "<init>", "([Ljava/lang/Object;)V", false)
 
     case Type.Lambda(_, _) =>
       // TODO: Is this correct? Need to write a test when we can write lambda expressions.
@@ -570,7 +663,7 @@ object Codegen {
 
     case Type.FSet(_) => visitor.visitTypeInsn(CHECKCAST, "scala/collection/immutable/Set")
 
-    case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+    case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
 
     case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
 

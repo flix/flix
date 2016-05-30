@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.{Ast, SimplifiedAst, Symbol, Type}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
+import ca.uwaterloo.flix.language.ast.{Ast, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
@@ -114,6 +114,8 @@ object LambdaLift {
 
       case Expression.ApplyRef(name, args, tpe, loc) =>
         Expression.ApplyRef(name, args.map(visit), tpe, loc)
+      case Expression.ApplyHook(hook, args, tpe, loc) =>
+        Expression.ApplyHook(hook, args.map(visit), tpe, loc)
       case Expression.Apply(exp, args, tpe, loc) =>
         Expression.Apply(visit(exp), args.map(visit), tpe, loc)
       case Expression.Unary(op, exp, tpe, loc) =>
