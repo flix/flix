@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.{MatchException, SwitchException, UserException}
+import ca.uwaterloo.flix.api._
+import ca.uwaterloo.flix.language.ast.Ast.Hook
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression, LoadExpression, StoreExpression}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.Value
@@ -17,7 +18,7 @@ object Codegen {
   /*
    * Constants passed to the asm library to generate bytecode.
    *
-   * Originally, we simply used string literals (to encode internal class names, descriptors, etc) and passed them to
+   * Originally, we simply used string literals (to encode internal class names, descriptors, etc.) and passed them to
    * the library. This was very brittle for two reasons: 1) changing a class or method would break things and we
    * wouldn't know until run time; and 2) multiple string literals would have to be updated.
    *
@@ -39,6 +40,7 @@ object Codegen {
     val bigIntegerClass = classOf[java.math.BigInteger]
     val arrayObjectClass = classOf[Array[Object]]
     val setClass = classOf[scala.collection.immutable.Set[Object]]
+    val flixClass = classOf[Flix]
 
     val unitClass = Value.Unit.getClass
     val tagClass = classOf[Value.Tag]
@@ -51,6 +53,9 @@ object Codegen {
     def loadValueObject(visitor: MethodVisitor): Unit =
       visitor.visitFieldInsn(GETSTATIC, valueObject, "MODULE$", s"L$valueObject;")
   }
+
+  // This constant is used in LoadBytecode, so we can't put it in the private Constants object.
+  val flixObject = "flixObject"
 
   case class Context(prefix: List[String],
                      functions: List[Definition.Constant],
@@ -83,7 +88,7 @@ object Codegen {
         case Type.Int64 => asm.Type.LONG_TYPE.getDescriptor
         case Type.BigInt => asm.Type.getDescriptor(Constants.bigIntegerClass)
         case Type.Str => asm.Type.getDescriptor(Constants.stringClass)
-        case Type.Native => ??? // TODO
+        case Type.Native => asm.Type.getDescriptor(Constants.objectClass)
         case Type.Enum(_, _) => asm.Type.getDescriptor(Constants.tagClass)
         case Type.Tuple(_) => asm.Type.getDescriptor(Constants.tupleClass)
         case Type.Lambda(_, _) => s"L${decorate(interfaces(tpe))};"
@@ -142,11 +147,28 @@ object Codegen {
     // Initialize the visitor to create a class.
     visitor.visit(V1_8, ACC_PUBLIC + ACC_SUPER, decorate(ctx.prefix), null, asm.Type.getInternalName(Constants.objectClass), null)
 
+    compileStaticFlixField(ctx, visitor)
     compileConstructor(ctx, visitor)
     functions.foreach(compileFunction(ctx, visitor))
 
     visitor.visitEnd()
     classWriter.toByteArray
+  }
+
+  /*
+   * Create a static field for the Flix object, and generate the class initializer to initialize the field to null.
+   */
+  private def compileStaticFlixField(ctx: Context, visitor: ClassVisitor): Unit = {
+    val fv = visitor.visitField(ACC_PUBLIC + ACC_STATIC, flixObject, asm.Type.getDescriptor(Constants.flixClass), null, null)
+    fv.visitEnd()
+
+    val mv = visitor.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null)
+    mv.visitCode()
+    mv.visitInsn(ACONST_NULL)
+    mv.visitFieldInsn(PUTSTATIC, decorate(ctx.prefix), flixObject, asm.Type.getDescriptor(Constants.flixClass))
+    mv.visitInsn(RETURN)
+    mv.visitMaxs(1, 0)
+    mv.visitEnd()
   }
 
   /*
@@ -185,17 +207,17 @@ object Codegen {
       case Type.Int64 => mv.visitInsn(LRETURN)
       case Type.Float32 => mv.visitInsn(FRETURN)
       case Type.Float64 => mv.visitInsn(DRETURN)
-      case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
-        mv.visitInsn(ARETURN)
-      case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
+           Type.FSet(_) => mv.visitInsn(ARETURN)
+      case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
       case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
       case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
       case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
       case Type.Tag(_, _, _) => throw InternalCompilerException(s"Functions can't return type $tpe.")
     }
 
-    // Dummy large numbers so the bytecode checker can run. Afterwards, the ASM library calculates the proper maxes.
-    mv.visitMaxs(999, 999)
+    // Dummy large numbers (JVM limits) so the bytecode checker can run. Afterwards, the ASM library calculates the proper maxes.
+    mv.visitMaxs(65535, 65535)
     mv.visitEnd()
   }
 
@@ -241,9 +263,9 @@ object Codegen {
       case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
       case Type.Float32 => visitor.visitVarInsn(FLOAD, offset)
       case Type.Float64 => visitor.visitVarInsn(DLOAD, offset)
-      case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
-        visitor.visitVarInsn(ALOAD, offset)
-      case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
+           Type.FSet(_) => visitor.visitVarInsn(ALOAD, offset)
+      case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
       case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => // TODO: Deprecated
       case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
       case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
@@ -254,8 +276,6 @@ object Codegen {
       // Reference to a top-level definition that isn't used in a MkClosureRef or ApplyRef, so it's a 0-arg function.
       val targetTpe = ctx.declarations(name)
       visitor.visitMethodInsn(INVOKESTATIC, decorate(name.prefix), name.suffix, ctx.descriptor(targetTpe), false)
-
-    case Expression.Hook(hook, _, _) => ???
 
     case Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
       // We create a closure the same way Java 8 does. We use InvokeDynamic and the LambdaMetafactory. The idea is that
@@ -320,6 +340,54 @@ object Codegen {
       args.foreach(compileExpression(ctx, visitor))
       visitor.visitMethodInsn(INVOKESTATIC, decorate(name.prefix), name.suffix, ctx.descriptor(targetTpe), false)
 
+    case Expression.ApplyHook(hook, args, tpe, _) =>
+      val (isSafe, name, elmsClass) = hook match {
+        case _: Hook.Safe => (true, "invoke", classOf[IValue])
+        case _: Hook.Unsafe => (false, "invokeUnsafe", Constants.objectClass)
+      }
+      val clazz = Constants.flixClass
+      val method = clazz.getMethods.filter(m => m.getName == name).head
+
+      // First we get the Flix object from the static field.
+      visitor.visitFieldInsn(GETSTATIC, decorate(ctx.prefix), flixObject, asm.Type.getDescriptor(clazz))
+
+      // Next we load the arguments for the invoke/invokeUnsafe virtual call, starting with the name of the hook.
+      visitor.visitLdcInsn(hook.name.toString)
+
+      // Create the arguments array.
+      compileInt(visitor)(args.length)
+      visitor.visitTypeInsn(ANEWARRAY, asm.Type.getInternalName(elmsClass))
+
+      // Evaluate the arguments left-to-right, putting them into the array.
+      for ((e, i) <- args.zipWithIndex) {
+        // Duplicate the array reference, otherwise AASTORE will consume it.
+        visitor.visitInsn(DUP)
+        compileInt(visitor)(i)
+
+        // Load the actual element. If we're calling a safe hook, we need to wrap the value.
+        if (isSafe) {
+          val clazz2 = classOf[WrappedValue]
+          val ctor = clazz2.getConstructors.head
+          visitor.visitTypeInsn(NEW, asm.Type.getInternalName(clazz2))
+          visitor.visitInsn(DUP)
+          compileBoxedExpr(ctx, visitor)(e)
+          visitor.visitMethodInsn(INVOKESPECIAL, asm.Type.getInternalName(clazz2), "<init>", asm.Type.getConstructorDescriptor(ctor), false)
+        } else {
+          compileBoxedExpr(ctx, visitor)(e)
+        }
+        visitor.visitInsn(AASTORE)
+      }
+
+      // Finally, make the virtual call to invoke/invokeUnsafe. If it's a safe hook, we also need to call `getUnsafeRef`.
+      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
+      if (isSafe) {
+        val method2 = elmsClass.getMethod("getUnsafeRef")
+        visitor.visitMethodInsn(INVOKEINTERFACE, asm.Type.getInternalName(elmsClass), method2.getName, asm.Type.getMethodDescriptor(method2), true)
+      }
+
+      // Unbox the result, if necessary.
+      compileUnbox(ctx, visitor)(tpe)
+
     case Expression.ApplyClosure(exp, args, _, _) =>
       // Lambdas are called through an interface. We don't know what function we're calling, but we know its type,
       // so we can lookup the interface we're calling through.
@@ -358,9 +426,9 @@ object Codegen {
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
         case Type.Float32 => visitor.visitVarInsn(FSTORE, offset)
         case Type.Float64 => visitor.visitVarInsn(DSTORE, offset)
-        case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
-          visitor.visitVarInsn(ASTORE, offset)
-        case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+        case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
+             Type.FSet(_) => visitor.visitVarInsn(ASTORE, offset)
+        case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
         case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => // TODO: Deprecated
         case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
         case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of ${exp1.tpe} should never be compiled.")
@@ -394,20 +462,19 @@ object Codegen {
       compileUnbox(ctx, visitor)(tpe)
 
     case Expression.Tag(enum, tag, exp, _, _) =>
-      // Load the Value object, then the arguments (tag.name, boxing if necessary), and finally call `Value.mkTag`.
+      // Load the Value singleton object, then the arguments (tag.name, boxing if necessary), and finally call `Value.mkTag`.
       Constants.loadValueObject(visitor)
       visitor.visitLdcInsn(tag.name)
       compileBoxedExpr(ctx, visitor)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkTag", "(Ljava/lang/String;Ljava/lang/Object;)Lca/uwaterloo/flix/runtime/Value$Tag;", false)
 
     case Expression.GetTupleIndex(base, offset, tpe, _) =>
-      // Value.Tuple.elms()
-      val clazz = Constants.tupleClass
-      val method = clazz.getMethod("elms")
-
-      // Compile the expression, load `elms`, compile the offset, load the array element, and unbox if necessary.
+      // Load the Value singleton object and base expression, to call `Value.cast2tuple`, to get the elements array.
+      Constants.loadValueObject(visitor)
       compileExpression(ctx, visitor)(base)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "cast2tuple", "(Ljava/lang/Object;)[Ljava/lang/Object;", false)
+
+      // Now compile the offset and load the array element. Unbox if necessary.
       compileInt(visitor)(offset)
       visitor.visitInsn(AALOAD)
       compileUnbox(ctx, visitor)(tpe)
@@ -552,10 +619,10 @@ object Codegen {
       compileExpression(ctx, visitor)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkInt64", "(J)Ljava/lang/Object;", false)
 
-    case Type.Unit | Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
-      compileExpression(ctx, visitor)(exp)
+    case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
+         Type.FSet(_) => compileExpression(ctx, visitor)(exp)
 
-    case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+    case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
 
     case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
 
@@ -594,12 +661,11 @@ object Codegen {
       visitor.visitTypeInsn(CHECKCAST, name)
       visitor.visitMethodInsn(INVOKEVIRTUAL, name, methodName, desc, false)
 
-    case Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
+    case Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Lambda(_, _) | Type.FSet(_) =>
       val name = tpe match {
         case Type.BigInt => asm.Type.getInternalName(Constants.bigIntegerClass)
         case Type.Str => asm.Type.getInternalName(Constants.stringClass)
         case Type.Enum(_, _) => asm.Type.getInternalName(Constants.tagClass)
-        case Type.Tuple(_) => asm.Type.getInternalName(Constants.tupleClass)
         case Type.Lambda(_, _) =>
           // TODO: Is this correct? Need to write a test when we can write lambda expressions.
           decorate(ctx.interfaces(tpe))
@@ -608,7 +674,35 @@ object Codegen {
       }
       visitor.visitTypeInsn(CHECKCAST, name)
 
-    case Type.Native | Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+    case Type.Native => // Don't need to cast AnyRef to anything
+
+    case Type.Tuple(_) =>
+      // This is actually a bit more complicated, since we have multiple representations for a tuple (e.g. Value.Tuple,
+      // Array, scala.TupleN). We have to call `Value.cast2tuple` instead of doing a direct cast.
+
+      // Load the Value singleton object. Do a SWAP to put stack operands in the right order, then call
+      // `Value.cast2tuple`, to get the elements array.
+      Constants.loadValueObject(visitor)
+      visitor.visitInsn(SWAP)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "cast2tuple", "(Ljava/lang/Object;)[Ljava/lang/Object;", false)
+
+      // TODO: Update this when we remove Value.Tuple.
+      // cast2tuple returns an Array, but we expect a Value.Tuple. So we have to construct one.
+      // Create the Value.Tuple reference.
+      visitor.visitTypeInsn(NEW, asm.Type.getInternalName(Constants.tupleClass))
+
+      // We use dup_x1 and swap to manipulate the stack so we can avoid using a local variable.
+      // Stack before: array, tuple (top)
+      // Stack after: tuple, tuple, array (top)
+      visitor.visitInsn(DUP_X1)
+      visitor.visitInsn(SWAP)
+
+      // Finally, call the constructor, which pops the reference (tuple) and argument (array).
+      val clazz = Constants.tupleClass
+      val ctor = clazz.getConstructor(Constants.arrayObjectClass)
+      visitor.visitMethodInsn(INVOKESPECIAL, asm.Type.getInternalName(clazz), "<init>", asm.Type.getConstructorDescriptor(ctor), false)
+
+    case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
 
     case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
 
