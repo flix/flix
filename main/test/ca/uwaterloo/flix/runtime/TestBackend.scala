@@ -3807,6 +3807,7 @@ class TestBackend extends FunSuite {
     val t = new Tester(input)
     t.runTest(Value.True, "f01")
     t.runTest(Value.True, "f02")
+    t.runTest(Value.False, "f03")
   }
 
   test("Expression.Binary - BinaryOperator.Equal.16") {

@@ -96,7 +96,7 @@ object LoadBytecode {
       }
       val clazz = loader(prefix, bytecode)
       // Set the flixObject field.
-      clazz.getField(Codegen.flixObjectName).set(null, flix)
+      clazz.getField(Codegen.flixObject).set(null, flix)
       prefix -> clazz
     }.toMap // Despite IDE highlighting, this is actually necessary.
 
