@@ -53,6 +53,8 @@ object Namer {
     val prog0 = NamedAst.Program(
       enums = Map.empty,
       definitions = Map.empty,
+      classes = Map.empty,
+      impls = Map.empty,
       lattices = Map.empty,
       indexes = Map.empty,
       tables = Map.empty,
@@ -160,7 +162,17 @@ object Namer {
       /*
        * Class.
        */
-      case WeededAst.Declaration.Class(ident, tparams, decls, loc) => ??? // TODO
+      case WeededAst.Declaration.Class(ident, tparams, decls, loc) =>
+        // check if the class already exists.
+        val sym = Symbol.mkClassSym(ident)
+        prog0.classes.get(sym) match {
+          case None =>
+            // Case 1: The class does not exist.
+            ???
+          case Some(clazz) =>
+            // Case 2: The class already exists.
+            ???
+        }
 
       /*
        * Impl.

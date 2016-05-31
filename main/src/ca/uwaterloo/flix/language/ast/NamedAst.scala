@@ -8,6 +8,8 @@ object NamedAst {
 
   case class Program(enums: Map[Name.NName, Map[String, NamedAst.Declaration.Enum]],
                      definitions: Map[Name.NName, Map[String, NamedAst.Declaration.Definition]],
+                     classes: Map[Symbol.ClassSym, NamedAst.Declaration.Class],
+                     impls: Map[Symbol.ImplSym, NamedAst.Declaration.Impl],
                      lattices: Map[Type, NamedAst.Declaration.BoundedLattice],
                      indexes: Map[Symbol.TableSym, NamedAst.Declaration.Index],
                      tables: Map[Name.NName, Map[String, NamedAst.Table]],
