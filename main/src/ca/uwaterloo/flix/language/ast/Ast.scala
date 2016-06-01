@@ -143,6 +143,7 @@ object Ast {
     * @param ident the name of the argument.
     * @param tpe   the type of the argument.
     */
+  // TODO: consider whether this should be moved?
   case class FormalParam(ident: Name.Ident, tpe: Type)
 
   /**

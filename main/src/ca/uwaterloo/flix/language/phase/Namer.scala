@@ -458,11 +458,11 @@ object Namer {
 
       case WeededAst.Expression.Existential(params, exp, loc) =>
         namer(exp, env0) map {
-          case e => NamedAst.Expression.Existential(id(), params.toList, e, loc)
+          case e => NamedAst.Expression.Existential(id(), ???, e, loc)
         }
 
       case WeededAst.Expression.Universal(params, exp, loc) => namer(exp, env0) map {
-        case e => NamedAst.Expression.Universal(id(), params.toList, e, loc)
+        case e => NamedAst.Expression.Universal(id(), ???, e, loc)
       }
 
       case WeededAst.Expression.Ascribe(exp, tpe, loc) => namer(exp, env0) map {
