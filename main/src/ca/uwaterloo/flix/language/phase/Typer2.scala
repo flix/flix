@@ -1,6 +1,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 
@@ -37,6 +40,14 @@ object Typer2 {
 
   }
 
+  sealed trait TyperError extends CompilationError
+
+  object TyperError {
+
+    // TODO
+    case class UnificationError(message: String) extends TyperError
+
+  }
 
   def typer(program: NamedAst.Program)(implicit genSym: GenSym): Unit = {
     for ((ns, defns) <- program.definitions) {
@@ -420,10 +431,16 @@ object Typer2 {
 
     def unify(tc: TypeConstraint, tenv: Map[String, Type]): Map[String, Type] = ???
 
-    def unify(tpe1: Type, tpe2: Type): Map[String, Type] = (tpe1, tpe2) match {
+    /**
+      * Unifies the given type `tpe1` with the type `tpe2`.
+      *
+      * Returns a `Success` with a substitution if the two types are unifiable.
+      * Otherwise returns a `Failure`.
+      */
+    def unify(tpe1: Type, tpe2: Type): Validation[Map[Symbol.VarSym, Type], TyperError] = (tpe1, tpe2) match {
       case (Type.Var(id), x) => ???
       case (x, Type.Var(id)) => ???
-      case (Type.Unit, Type.Unit) => Map.empty
+      case (Type.Unit, Type.Unit) => Map.empty[Symbol.VarSym, Type].toSuccess
       case _ => ???
     }
 
