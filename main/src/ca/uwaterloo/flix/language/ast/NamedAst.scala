@@ -139,9 +139,9 @@ object NamedAst {
 
     case class PutIndex(id: Int, exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Existential(id: Int, params: List[Ast.FormalParam], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class Existential(id: Int, params: List[NamedAst.FormalParam], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Universal(id: Int, params: List[Ast.FormalParam], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class Universal(id: Int, params: List[NamedAst.FormalParam], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Ascribe(id: Int, exp: NamedAst.Expression, tpe: Type, loc: SourceLocation) extends NamedAst.Expression
 
@@ -232,5 +232,7 @@ object NamedAst {
   }
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type)
+
+  case class FormalParam(sym: Symbol.VarSym, tpe: Type)
 
 }

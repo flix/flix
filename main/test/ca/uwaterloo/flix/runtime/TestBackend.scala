@@ -5882,9 +5882,9 @@ class TestBackend extends FunSuite {
   test("Match.Tag.01") {
     val input =
       """enum NameAndAge { case T(Str,Int) }
-        |def f(x: NameAndAge): Int = match x with {
-        |  case NameAndAge.T(_, age) => age
-        |}
+        |def f(x: NameAndAge): Int =
+        |  let NameAndAge.T(_, age) = x in
+        |    age
         |def g01: Int = f(NameAndAge.T("James", 42))
         |def g02: Int = f(NameAndAge.T("John", 21))
         |def g03: Int = f(NameAndAge.T("James", 5))
@@ -6143,9 +6143,8 @@ class TestBackend extends FunSuite {
 
   test("Match.Tuple.01") {
     val input =
-      """def f(x: Int, y: Int): Int = match (x, y) with {
-        |  case (a, b) => a + b
-        |}
+      """def f(x: Int, y: Int): Int =
+        |  let (a, b) = (x, y) in a + b
         |def g01: Int = f(5, 6)
         |def g02: Int = f(6, 5)
         |def g03: Int = f(100, 23)
@@ -6279,9 +6278,8 @@ class TestBackend extends FunSuite {
   test("Match.Tuple.07") {
     import HookUnsafeHelpers._
     val input =
-      """def fst(t: (Native, Native)): Native = match t with {
-        |  case (x, _) => x
-        |}
+      """def fst(t: (Native, Native)): Native =
+        |  let (x, _) = t in x
         |def g: (Native, Native) = f(12)
         |def h: Native = fst(g)
       """.stripMargin
@@ -6298,9 +6296,8 @@ class TestBackend extends FunSuite {
   test("Match.Tuple.08") {
     import HookUnsafeHelpers._
     val input =
-      """def fst(t: (Native, Native)): Native = match t with {
-        |  case (x, _) => x
-        |}
+      """def fst(t: (Native, Native)): Native =
+        |  let (x, _) = t in x
         |def g: (Native, Native) = f(12)
         |def h: Native = fst(g)
       """.stripMargin
@@ -6317,9 +6314,8 @@ class TestBackend extends FunSuite {
   test("Match.Tuple.09") {
     import HookUnsafeHelpers._
     val input =
-      """def fst(t: (Int, Str)): Int = match t with {
-        |  case (x, _) => x
-        |}
+      """def fst(t: (Int, Str)): Int =
+        |  let (x, _) = t in x
         |def g: (Int, Str) = f(12)
         |def h: Int = fst(g)
       """.stripMargin
