@@ -1,3 +1,19 @@
+/*
+ * Copyright 2016 Luqman Aden
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ca.uwaterloo.flix.util.perf
 
 import scala.collection.immutable.HashMap
@@ -10,7 +26,7 @@ object RandomLatticeGraph {
 
   def main(args: Array[String]): Unit = {
 
-    val lattices = HashMap(
+    val lattices = Map(
       "Belnap" -> Lattice(
         "Belnap",
         Array("Top", "True", "False", "Bot"),
@@ -102,11 +118,13 @@ object RandomLatticeGraph {
 
     val which = args(0).toString
     val N = args(1).toInt
-    val rng = if (args.length == 3) {
-      new Random(args(2).toLong)
+    val seed = if (args.length == 3) {
+      args(2).toLong
     } else {
-      new Random()
+      // We generate one here so that we can print out a seed value even if the user hasn't specified one
+      Random.nextLong()
     }
+    val rng = new Random(seed)
 
     val lattice = lattices get which match {
       case Some(l) => l
@@ -115,6 +133,9 @@ object RandomLatticeGraph {
         return
       }
     }
+
+    println(s"// N: $N")
+    println(s"// seed: $seed")
 
     // Create a list of N values, each assigned a random from our lattice
     val values: Array[String] = Seq.fill(N) {
