@@ -91,9 +91,22 @@ object RandomLatticeGraph {
       )
     )
 
-    // FIXME: Check for # of args
+    if (args.length < 2) {
+      println("Usage: lattice N [seed]")
+      println()
+      println(s"\tlattice \t- one of: ${lattices.keys.mkString(", ")}")
+      println("\t N \t\t- how many random values to generate")
+      println("\tseed \t\t- value to seed RNG with")
+      return
+    }
+
     val which = args(0).toString
     val N = args(1).toInt
+    val rng = if (args.length == 3) {
+      new Random(args(2).toLong)
+    } else {
+      new Random()
+    }
 
     val lattice = lattices get which match {
       case Some(l) => l
@@ -105,7 +118,7 @@ object RandomLatticeGraph {
 
     // Create a list of N values, each assigned a random from our lattice
     val values: Array[String] = Seq.fill(N) {
-      lattice.els(Random.nextInt(lattice.els.length))
+      lattice.els(rng.nextInt(lattice.els.length))
     }.toArray
 
     println(s"namespace Random${which}Graph {")
@@ -132,7 +145,7 @@ object RandomLatticeGraph {
     // Print out the random Values
     for ((value, i) <- values.zipWithIndex) {
       // Replace any %n in the value with a random Int
-      val v = "%n".r.replaceAllIn(value, _ => Random.nextInt(100000).toString)
+      val v = "%n".r.replaceAllIn(value, _ => rng.nextInt(100000).toString)
       println(s"    Value($i, $which/${lattice.name}.$v).")
     }
 
@@ -143,11 +156,11 @@ object RandomLatticeGraph {
       for (i <- 0 until 3*N) {
 
         // Choose some random values
-        val x = Random.nextInt(values.length)
-        val y = Random.nextInt(values.length)
+        val x = rng.nextInt(values.length)
+        val y = rng.nextInt(values.length)
 
         // and a random operation to perform on them
-        val op = lattice.unOps(Random.nextInt(lattice.unOps.length))
+        val op = lattice.unOps(rng.nextInt(lattice.unOps.length))
 
         println(s"""    UnOp($y, $x, "$op").""")
       }
@@ -158,12 +171,12 @@ object RandomLatticeGraph {
       for (i <- 0 until 7*N) {
 
         // Choose some random values
-        val x = Random.nextInt(values.length)
-        val y = Random.nextInt(values.length)
-        val z = Random.nextInt(values.length)
+        val x = rng.nextInt(values.length)
+        val y = rng.nextInt(values.length)
+        val z = rng.nextInt(values.length)
 
         // and a random operation to perform on them
-        val op = lattice.biOps(Random.nextInt(lattice.biOps.length))
+        val op = lattice.biOps(rng.nextInt(lattice.biOps.length))
 
         println(s"""    BiOp($z, $x, $y, "$op").""")
 
