@@ -123,9 +123,11 @@ class TestBackend extends FunSuite {
     // A public Flix instance to expose the interop functions.
     val flix = createFlix()
 
+    // TODO: This should really use the default options as a starting point.
     private def createFlix(codegen: Boolean = false) = {
       val options = Options(
         debugger = Debugger.Disabled,
+        parallel = Parallel.Enable,
         print = Nil,
         verbosity = Verbosity.Silent,
         verify = Verify.Disabled,

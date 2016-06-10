@@ -22,7 +22,8 @@ object Options {
     */
   val Default = Options(
     debugger = Debugger.Disabled,
-    Nil,
+    parallel = Parallel.Disable,
+    print = Nil,
     verbosity = Verbosity.Silent,
     verify = Verify.Disabled,
     codegen = CodeGeneration.Enabled,
@@ -34,6 +35,7 @@ object Options {
   * General Flix options.
   *
   * @param debugger      enable or disable the built-in web-based debugger.
+  * @param parallel      enable or disable parallel execution.
   * @param print         a list of things to print.
   * @param verbosity     the level of verbosity.
   * @param verify        enable or disable the built-in verifier.
@@ -41,6 +43,7 @@ object Options {
   * @param debugBytecode enable or disable debugging of bytecode.
   */
 case class Options(debugger: Debugger,
+                   parallel: Parallel,
                    print: List[String],
                    verbosity: Verbosity,
                    verify: Verify,
@@ -66,6 +69,25 @@ object Debugger {
     * Disables the built-in web-based debugger.
     */
   case object Disabled extends Debugger
+
+}
+
+/**
+  * An option to enable or disable parallel execution.
+  */
+sealed trait Parallel
+
+object Parallel {
+
+  /**
+    * Enable parallel execution.
+    */
+  case object Enable extends Parallel
+
+  /**
+    * Disable parallel execution.
+    */
+  case object Disable extends Parallel
 
 }
 

@@ -31,9 +31,11 @@ class TestExamples extends FunSuite {
     private var interpreted: Model = null
     private var compiled: Model = null
 
+    // TODO: This should really use the default options as a starting point.
     private def createFlix(codegen: Boolean = false) = {
       val options = Options(
         debugger = Debugger.Disabled,
+        parallel = Parallel.Enable,
         print = Nil,
         verbosity = Verbosity.Silent,
         verify = Verify.Disabled,

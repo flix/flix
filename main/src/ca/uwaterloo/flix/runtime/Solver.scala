@@ -21,7 +21,10 @@ import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Symbol}
 import ca.uwaterloo.flix.runtime.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
-import ca.uwaterloo.flix.util.{Debugger, InternalRuntimeException, Options, Verbosity}
+import ca.uwaterloo.flix.util._
+
+import java.util.concurrent._
+import java.util.ArrayList
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -46,9 +49,28 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   val dataStore = new DataStore[AnyRef]()
 
   /**
-    * The work list of pending predicate names and their associated values.
+    * The thread pool of workers.
+    */
+  val pool = sCtx.options.parallel match {
+    // Case 1: Parallel execution enabled. Use all available processors.
+    case Parallel.Enable => Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
+    // Case 2: Parallel execution disabled. Use a single thread.
+    case Parallel.Disable => Executors.newSingleThreadExecutor()
+  }
+
+  /**
+    * A queue of (rules, environment) pairs that must be re-processed.
+    *
+    * Updated when new facts are processed. Only accessed by a single thread.
     */
   val worklist = new mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])]
+
+  /**
+    * A collection of facts which have been inferred but not yet stored in the database.
+    *
+    * Updated by multiple threads. Must be accessed behind a lock.
+    */
+  val pendingFacts = new mutable.ListBuffer[(Symbol.TableSym, Array[AnyRef], Boolean)]()
 
   /**
     * The runtime performance monitor.
@@ -127,10 +149,48 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
           wait()
         }
       }
-      // extract fact from the worklist.
-      val (rule, env) = worklist.pop()
-      evalBody(rule, env)
+
+      /*
+       * Process every (rule, environment) pair in a separate task.
+       *
+       * Clear the work list.
+       * Execute all the tasks in parallel, and
+       * Await the result of *all* tasks.
+       */
+      val tasks = new ArrayList[Callable[Unit]]()
+      for ((rule, env) <- worklist) {
+        val task = new Callable[Unit] {
+          def call(): Unit = {
+            evalBody(rule, env)
+          }
+        }
+        tasks.add(task)
+      }
+      worklist.clear()
+
+      /*
+       * Executes the given tasks, returning a list of futures holding their status and results when all complete.
+       */
+      pool.invokeAll(tasks)
+
+      /*
+       * Stores all the pending facts into the datastore.
+       *
+       * Enqueues (rule, environment) pairs as a side-effect.
+       *
+       * Must be executed by a single-thread.
+       */
+      for ((sym, fact, enqueue) <- pendingFacts) {
+        inferredFact(sym, fact, enqueue)
+      }
+      pendingFacts.clear()
+
     }
+
+    /*
+     * Shutdown the thread pool.
+     */
+    pool.shutdown()
 
     // computed elapsed time.
     val elapsed = System.nanoTime() - t
@@ -200,6 +260,15 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
+    * Adds the given `fact` as pending for the relation or lattice with the symbol `sym`.
+    */
+  def newPendingFact(sym: Symbol.TableSym, fact: Array[AnyRef], enqueue: Boolean): Unit = {
+    pendingFacts.synchronized {
+      pendingFacts += ((sym, fact, enqueue))
+    }
+  }
+
+  /**
     * Evaluates the given head predicate `p` under the given environment `env0`.
     */
   def evalHead(p: Predicate.Head, env0: mutable.Map[String, AnyRef], enqueue: Boolean): Unit = p match {
@@ -211,7 +280,12 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
         fact(i) = Interpreter.evalHeadTerm(terms(i), sCtx.root, env0.toMap)
         i = i + 1
       }
-      inferredFact(p.sym, fact, enqueue)
+      if (!enqueue) {
+        inferredFact(p.sym, fact, enqueue)
+      } else {
+        newPendingFact(p.sym, fact, enqueue)
+      }
+
   }
 
 
