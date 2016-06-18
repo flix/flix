@@ -34,46 +34,71 @@ object Solver {
   /**
     * A case class representing a solver context.
     */
+  // TODO: Deprecated
   case class SolverContext(root: ExecutableAst.Root, options: Options)
 
 }
 
 /**
-  * A solver based on semi-naive evaluation.
+  * Flix Parallel Fixed Point Solver.
+  *
+  * Based on a variant of semi-naive evaluation.
+  * The solver iteratively evaluates every rule in the program to infer new facts.
+  * When no more new facts are discovered, the fixed point has been found, and computation terminates.
+  *
+  * The solver is parallel. At a high level:
+  * Rules are evaluated in parallel to infer new facts. These facts are collected into a set.
+  * When all rules have been evaluated, the database is updated with the new facts.
+  * This is also performed in parallel.
+  *
+  * Importantly, the datastore is *never* updated while rules are being evaluated.
   */
 class Solver(implicit val sCtx: Solver.SolverContext) {
 
   /**
-    * The primary data store that holds all relations and lattices.
+    * The datastore holds the facts in all relations and lattices in the program.
+    *
+    * Reading from the datastore is guaranteed to be thread-safe and can be performed by multiple threads concurrently.
+    *
+    * Writing to the datastore is, in general, not thread-safe:
+    * Each relation/lattice may be concurrently updated, but
+    * no concurrent writes may occur for the *same* relation/lattice.
     */
   val dataStore = new DataStore[AnyRef]()
 
   /**
-    * The thread pool of workers.
+    * The thread pool where rule evaluation takes place.
+    *
+    * Note: Evaluation of a rule only *reads* from the datastore.
+    * Thus it is safe to evaluate multiple rules concurrently.
     */
-  val pool = sCtx.options.parallel match {
-    // Case 1: Parallel execution enabled. Use all available processors.
-    case Parallel.Enable => Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
-    // Case 2: Parallel execution disabled. Use a single thread.
-    case Parallel.Disable => Executors.newSingleThreadExecutor()
-  }
+  val readers = mkThreadPool()
 
   /**
-    * A queue of (rules, environment) pairs that must be re-processed.
+    * The thread pool where updates to the data store takes places.
     *
-    * Updated when new facts are processed. Only accessed by a single thread.
+    * Note: A writer *must not* concurrently write to the same relation/lattice.
+    * However, different relations/lattices can be updated concurrently.
+    */
+  val writes = mkThreadPool()
+
+  /**
+    * The worklist of rules (and their initial environments) pending re-evaluation.
     */
   val worklist = new mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])]
+
+
 
   /**
     * A collection of facts which have been inferred but not yet stored in the database.
     *
     * Updated by multiple threads. Must be accessed behind a lock.
     */
+  // TODO: Deprecated
   val pendingFacts = new mutable.ListBuffer[(Symbol.TableSym, Array[AnyRef], Boolean)]()
 
   /**
-    * The runtime performance monitor.
+    * The performance monitor.
     */
   val monitor = new Monitor(this)
 
@@ -171,7 +196,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       /*
        * Executes the given tasks, returning a list of futures holding their status and results when all complete.
        */
-      pool.invokeAll(tasks)
+      readers.invokeAll(tasks)
 
       /*
        * Stores all the pending facts into the datastore.
@@ -190,7 +215,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     /*
      * Shutdown the thread pool.
      */
-    pool.shutdown()
+    readers.shutdown()
 
     // computed elapsed time.
     val elapsed = System.nanoTime() - t
@@ -474,5 +499,16 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       }
     }
   }
+
+  /**
+    * Returns a new thread pool configured to use the appropriate number of threads.
+    */
+  private def mkThreadPool(): ExecutorService = sCtx.options.parallel match {
+    // Case 1: Parallel execution enabled. Use all available processors.
+    case Parallel.Enable => Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
+    // Case 2: Parallel execution disabled. Use a single thread.
+    case Parallel.Disable => Executors.newSingleThreadExecutor()
+  }
+
 
 }
