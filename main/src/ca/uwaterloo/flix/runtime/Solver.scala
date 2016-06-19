@@ -154,29 +154,11 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     // measure the time elapsed.
     val t = System.nanoTime()
 
-    // iterate through all facts.
-    for (fact <- sCtx.root.facts) {
-      // evaluate the head of each fact.
-      val result = new mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef], Boolean)]()
-      evalHead(fact.head, mutable.Map.empty, enqueue = false, result)
-      // iterate through the newly inferred facts.
-      for ((sym, fact, enq) <- result) {
-        // update the datastore, but don't compute any dependencies.
-        sCtx.root.tables(sym) match {
-          case r: ExecutableAst.Table.Relation => dataStore.relations(sym).inferredFact(fact)
-          case l: ExecutableAst.Table.Lattice => dataStore.lattices(sym).inferredFact(fact)
-        }
-      }
+    // initialize the datastore.
+    initDataStore()
 
-
-      // TODO: Safe to ignore result here?
-      // TODO: Refactor to remove enqueue.
-    }
-
-    // add all rules to the worklist (under empty environments).
-    for (rule <- sCtx.root.rules) {
-      worklist.push((rule, mutable.Map.empty))
-    }
+    // initialize the worklist.
+    initWorkList()
 
     // iterate until fixpoint.
     while (worklist.nonEmpty) {
@@ -284,6 +266,40 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     sCtx.root.rules.toSeq.sortBy(_.elapsedTime).reverse.map {
       case r => (r, r.hitcount, r.elapsedTime)
     }.toList
+
+
+  /**
+    * Initialize the datastore with all the facts in the program.
+    */
+  def initDataStore(): Unit = {
+    // iterate through all facts.
+    for (fact <- sCtx.root.facts) {
+      // evaluate the head of each fact.
+      val deltaFacts = new mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef], Boolean)]()
+      evalHead(fact.head, mutable.Map.empty, enqueue = false, deltaFacts)
+
+      // iterate through the delta facts.
+      for ((sym, fact, enq) <- deltaFacts) {
+        // update the datastore, but don't compute any dependencies.
+        sCtx.root.tables(sym) match {
+          case r: ExecutableAst.Table.Relation =>
+            dataStore.relations(sym).inferredFact(fact)
+          case l: ExecutableAst.Table.Lattice =>
+            dataStore.lattices(sym).inferredFact(fact)
+        }
+      }
+    }
+  }
+
+  /**
+    * Initialize the worklist with every rule (under the empty environment).
+    */
+  def initWorkList(): Unit = {
+    // add all rules to the worklist (under empty environments).
+    for (rule <- sCtx.root.rules) {
+      worklist.push((rule, mutable.Map.empty))
+    }
+  }
 
   /**
     * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
