@@ -75,7 +75,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     * Note: Evaluation of a rule only *reads* from the datastore.
     * Thus it is safe to evaluate multiple rules concurrently.
     */
-  val readers = mkThreadPool()
+  val readersPool = mkThreadPool()
 
   /**
     * The thread pool where updates to the data store takes places.
@@ -83,7 +83,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     * Note: A writer *must not* concurrently write to the same relation/lattice.
     * However, different relations/lattices can be updated concurrently.
     */
-  val writers = mkThreadPool()
+  val writersPool = mkThreadPool()
 
   /**
     * The worklist of rules (and their initial environments) pending re-evaluation.
@@ -209,7 +209,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       /*
        * Executes the given tasks, returning a list of futures holding their status and results when all complete.
        */
-      val readerFutures = readers.invokeAll(readerTasks)
+      val readerFutures = readersPool.invokeAll(readerTasks)
       readersTime += System.nanoTime() - t
 
       /*
@@ -218,11 +218,11 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
        * Enqueues (rule, environment) pairs as a side-effect.
        */
       val tt = System.nanoTime()
+      val writerTasks = new ArrayList[Callable[Unit]]()
       for ((sym, facts) <- groupFactsBySymbol(readerFutures)) {
-        for (fact <- facts) {
-          inferredFact(sym, fact).call()
-        }
+        inferredFacts(sym, facts)
       }
+      writersPool.invokeAll(writerTasks)
       writersTime += System.nanoTime() - tt
 
     }
@@ -230,8 +230,8 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     /*
      * Spin down the thread pools.
      */
-    readers.shutdownNow()
-    writers.shutdownNow()
+    readersPool.shutdownNow()
+    writersPool.shutdownNow()
 
     // computed elapsed time.
     val elapsed = System.nanoTime() - t
@@ -253,29 +253,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       monitor.stop()
     }
 
-    // construct the model.
-    val definitions = sCtx.root.constants.foldLeft(Map.empty[Symbol.Resolved, () => AnyRef]) {
-      case (macc, (sym, defn)) =>
-        if (defn.formals.isEmpty)
-          macc + (sym -> (() => Interpreter.evalCall(defn, Array.empty, sCtx.root)))
-        else
-          macc + (sym -> (() => throw new InternalRuntimeException("Unable to evalaute non-constant top-level definition.")))
-    }
-
-    val relations = dataStore.relations.foldLeft(Map.empty[Symbol.TableSym, Iterable[List[AnyRef]]]) {
-      case (macc, (sym, relation)) =>
-        val table = relation.scan.toIterable.map(_.toList)
-        macc + ((sym, table))
-    }
-    val lattices = dataStore.lattices.foldLeft(Map.empty[Symbol.TableSym, Iterable[(List[AnyRef], List[AnyRef])]]) {
-      case (macc, (sym, lattice)) =>
-        val table = lattice.scan.toIterable.map {
-          case (keys, values) => (keys.toArray.toList, values.toList)
-        }
-        macc + ((sym, table))
-    }
-    model = new Model(sCtx.root, definitions, relations, lattices)
-    model
+    mkModel()
   }
 
   /**
@@ -493,22 +471,29 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-    * Returns a callable which processes an inferred `fact` for the relation or lattice with the symbol `sym`.
+    * Returns a callable to process a collection of inferred `facts` for the relation or lattice with the symbol `sym`.
     */
-  def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef]): Callable[Unit] = new Callable[Unit] {
-    def call(): Unit = sCtx.root.tables(sym) match {
-      case r: ExecutableAst.Table.Relation =>
-        val changed = dataStore.relations(sym).inferredFact(fact)
-        if (changed) {
-          dependencies(r.sym, fact)
-        }
-
-      case l: ExecutableAst.Table.Lattice =>
-        val changed = dataStore.lattices(sym).inferredFact(fact)
-        if (changed) {
-          dependencies(l.sym, fact)
-        }
+  def inferredFacts(sym: Symbol.TableSym, facts: ArrayBuffer[Array[AnyRef]]): Unit = {
+    for (fact <- facts) {
+      inferredFact(sym, fact)
     }
+  }
+
+  /**
+    * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
+    */
+  def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef]): Unit = sCtx.root.tables(sym) match {
+    case r: ExecutableAst.Table.Relation =>
+      val changed = dataStore.relations(sym).inferredFact(fact)
+      if (changed) {
+        dependencies(r.sym, fact)
+      }
+
+    case l: ExecutableAst.Table.Lattice =>
+      val changed = dataStore.lattices(sym).inferredFact(fact)
+      if (changed) {
+        dependencies(l.sym, fact)
+      }
   }
 
   /**
@@ -557,6 +542,35 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
           }
       }
     }
+  }
+
+  /**
+    * Constructs the minimal model from the datastore.
+    */
+  private def mkModel(): Model = {
+    // construct the model.
+    val definitions = sCtx.root.constants.foldLeft(Map.empty[Symbol.Resolved, () => AnyRef]) {
+      case (macc, (sym, defn)) =>
+        if (defn.formals.isEmpty)
+          macc + (sym -> (() => Interpreter.evalCall(defn, Array.empty, sCtx.root)))
+        else
+          macc + (sym -> (() => throw new InternalRuntimeException("Unable to evalaute non-constant top-level definition.")))
+    }
+
+    val relations = dataStore.relations.foldLeft(Map.empty[Symbol.TableSym, Iterable[List[AnyRef]]]) {
+      case (macc, (sym, relation)) =>
+        val table = relation.scan.toIterable.map(_.toList)
+        macc + ((sym, table))
+    }
+    val lattices = dataStore.lattices.foldLeft(Map.empty[Symbol.TableSym, Iterable[(List[AnyRef], List[AnyRef])]]) {
+      case (macc, (sym, lattice)) =>
+        val table = lattice.scan.toIterable.map {
+          case (keys, values) => (keys.toArray.toList, values.toList)
+        }
+        macc + ((sym, table))
+    }
+    model = new Model(sCtx.root, definitions, relations, lattices)
+    model
   }
 
   /**
