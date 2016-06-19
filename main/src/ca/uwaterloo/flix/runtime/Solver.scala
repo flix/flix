@@ -91,8 +91,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * The type in which inferred facts are aggregated.
     */
-  // TODO: Get rid of the enqueue bit.
-  type RuleResult = mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef], Boolean)]
+  type RuleResult = mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]
 
   /**
     * The performance monitor.
@@ -181,9 +180,9 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
         // TODO: Extract into function
         val task = new Callable[RuleResult] {
           def call(): RuleResult = {
-            val result = new mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef], Boolean)]()
-            evalBody(rule, env, result)
-            result
+            val deltaFacts = new mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]()
+            evalBody(rule, env, deltaFacts)
+            deltaFacts
           }
         }
         tasks.add(task)
@@ -205,8 +204,8 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       for (future <- futures.asScala) {
         // TODO: Make parallel and extract into function.
         val result = future.get()
-        for ((sym, fact, enqueue) <- result) {
-          inferredFact(sym, fact, enqueue)
+        for ((sym, fact) <- result) {
+          inferredFact(sym, fact)
         }
       }
 
@@ -275,11 +274,11 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     // iterate through all facts.
     for (fact <- sCtx.root.facts) {
       // evaluate the head of each fact.
-      val deltaFacts = new mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef], Boolean)]()
-      evalHead(fact.head, mutable.Map.empty, enqueue = false, deltaFacts)
+      val deltaFacts = new mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]()
+      evalHead(fact.head, mutable.Map.empty, deltaFacts)
 
       // iterate through the delta facts.
-      for ((sym, fact, enq) <- deltaFacts) {
+      for ((sym, fact) <- deltaFacts) {
         // update the datastore, but don't compute any dependencies.
         sCtx.root.tables(sym) match {
           case r: ExecutableAst.Table.Relation =>
@@ -304,16 +303,16 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
     */
-  def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef], enqueue: Boolean): Unit = sCtx.root.tables(sym) match {
+  def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef]): Unit = sCtx.root.tables(sym) match {
     case r: ExecutableAst.Table.Relation =>
       val changed = dataStore.relations(sym).inferredFact(fact)
-      if (changed && enqueue) {
+      if (changed) {
         dependencies(r.sym, fact)
       }
 
     case l: ExecutableAst.Table.Lattice =>
       val changed = dataStore.lattices(sym).inferredFact(fact)
-      if (changed && enqueue) {
+      if (changed) {
         dependencies(l.sym, fact)
       }
   }
@@ -321,7 +320,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Evaluates the given head predicate `p` under the given environment `env0`.
     */
-  def evalHead(p: Predicate.Head, env0: mutable.Map[String, AnyRef], enqueue: Boolean, result: RuleResult): Unit = p match {
+  def evalHead(p: Predicate.Head, env0: mutable.Map[String, AnyRef], result: RuleResult): Unit = p match {
     case p: Predicate.Head.Table =>
       val terms = p.terms
       val fact = new Array[AnyRef](p.arity)
@@ -331,7 +330,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
         i = i + 1
       }
 
-      result += ((p.sym, fact, enqueue))
+      result += ((p.sym, fact))
   }
 
   /**
@@ -463,7 +462,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   private def disjoint(rule: Constraint.Rule, ps: List[Predicate.Body.NotEqual], row: mutable.Map[String, AnyRef], result: RuleResult): Unit = ps match {
     case Nil =>
       // rule body complete, evaluate the head.
-      evalHead(rule.head, row, enqueue = true, result)
+      evalHead(rule.head, row, result)
     case Predicate.Body.NotEqual(ident1, ident2, _, _, _) :: xs =>
       val value1 = row(ident1.name)
       val value2 = row(ident2.name)
