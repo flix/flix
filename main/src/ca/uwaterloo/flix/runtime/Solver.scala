@@ -16,19 +16,21 @@
 
 package ca.uwaterloo.flix.runtime
 
+import java.util
+
 import ca.uwaterloo.flix.api.{IValue, WrappedValue}
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Symbol}
 import ca.uwaterloo.flix.runtime.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.util._
-
 import java.util.concurrent._
 import java.util.ArrayList
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 
 object Solver {
 
@@ -190,7 +192,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
        * Await the result of *all* tasks.
        */
       val t = System.nanoTime()
-      val tasks = new ArrayList[Callable[RuleResult]]()
+      val readerTasks = new ArrayList[Callable[RuleResult]]()
       for ((rule, env) <- worklist) {
         // TODO: Extract into function
         val task = new Callable[RuleResult] {
@@ -200,29 +202,25 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
             deltaFacts
           }
         }
-        tasks.add(task)
+        readerTasks.add(task)
       }
       worklist.clear()
 
       /*
        * Executes the given tasks, returning a list of futures holding their status and results when all complete.
        */
-      val futures = readers.invokeAll(tasks)
+      val readerFutures = readers.invokeAll(readerTasks)
       readersTime += System.nanoTime() - t
 
       /*
        * Stores all the pending facts into the datastore.
        *
        * Enqueues (rule, environment) pairs as a side-effect.
-       *
-       * Must be executed by a single-thread.
        */
       val tt = System.nanoTime()
-      for (future <- futures.asScala) {
-        // TODO: Make parallel and extract into function.
-        val result = future.get()
-        for ((sym, fact) <- result) {
-          inferredFact(sym, fact)
+      for ((sym, facts) <- groupFactsBySymbol(readerFutures)) {
+        for (fact <- facts) {
+          inferredFact(sym, fact).call()
         }
       }
       writersTime += System.nanoTime() - tt
@@ -230,9 +228,10 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     }
 
     /*
-     * Shutdown the thread pool.
+     * Spin down the thread pools.
      */
-    readers.shutdown()
+    readers.shutdownNow()
+    writers.shutdownNow()
 
     // computed elapsed time.
     val elapsed = System.nanoTime() - t
@@ -277,6 +276,22 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     }
     model = new Model(sCtx.root, definitions, relations, lattices)
     model
+  }
+
+  /**
+    * Sorts the given facts by their table symbol.
+    */
+  def groupFactsBySymbol(readerFutures: util.List[Future[RuleResult]]): mutable.Map[Symbol.TableSym, ArrayBuffer[Array[AnyRef]]] = {
+    val result = mutable.Map.empty[Symbol.TableSym, ArrayBuffer[Array[AnyRef]]]
+    val iterator = readerFutures.iterator()
+    while (iterator.hasNext) {
+      val deltaFacts = iterator.next().get()
+      for ((symbol, fact) <- deltaFacts) {
+        val buffer = result.getOrElseUpdate(symbol, ArrayBuffer.empty)
+        buffer += fact
+      }
+    }
+    result
   }
 
   def getModel: Model = model
@@ -478,20 +493,22 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-    * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
+    * Returns a callable which processes an inferred `fact` for the relation or lattice with the symbol `sym`.
     */
-  def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef]): Unit = sCtx.root.tables(sym) match {
-    case r: ExecutableAst.Table.Relation =>
-      val changed = dataStore.relations(sym).inferredFact(fact)
-      if (changed) {
-        dependencies(r.sym, fact)
-      }
+  def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef]): Callable[Unit] = new Callable[Unit] {
+    def call(): Unit = sCtx.root.tables(sym) match {
+      case r: ExecutableAst.Table.Relation =>
+        val changed = dataStore.relations(sym).inferredFact(fact)
+        if (changed) {
+          dependencies(r.sym, fact)
+        }
 
-    case l: ExecutableAst.Table.Lattice =>
-      val changed = dataStore.lattices(sym).inferredFact(fact)
-      if (changed) {
-        dependencies(l.sym, fact)
-      }
+      case l: ExecutableAst.Table.Lattice =>
+        val changed = dataStore.lattices(sym).inferredFact(fact)
+        if (changed) {
+          dependencies(l.sym, fact)
+        }
+    }
   }
 
   /**
