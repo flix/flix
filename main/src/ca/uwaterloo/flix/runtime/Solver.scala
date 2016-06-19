@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.runtime
 
-import java.util
-
 import ca.uwaterloo.flix.api.{IValue, WrappedValue}
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Symbol}
@@ -29,7 +27,6 @@ import java.util.ArrayList
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 object Solver {
@@ -94,6 +91,9 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     * The type in which inferred facts are aggregated.
     */
   type RuleResult = mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]
+
+  // TODO: Type for mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])]
+  // TODO: Move types upward.
 
   /**
     * The performance monitor.
@@ -453,28 +453,30 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Returns a callable to process a collection of inferred `facts` for the relation or lattice with the symbol `sym`.
     */
-  def inferredFacts(sym: Symbol.TableSym, facts: ArrayBuffer[Array[AnyRef]]): Callable[Unit] = new Callable[Unit] {
-    def call(): Unit = {
+  def inferredFacts(sym: Symbol.TableSym, facts: ArrayBuffer[Array[AnyRef]]): Callable[mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])]] = new Callable[mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])]] {
+    def call(): mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])] = {
+      val localWorkList = new mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])]
       for (fact <- facts) {
-        inferredFact(sym, fact)
+        inferredFact(sym, fact, localWorkList)
       }
+      localWorkList
     }
   }
 
   /**
     * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
     */
-  def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef]): Unit = sCtx.root.tables(sym) match {
+  def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])]): Unit = sCtx.root.tables(sym) match {
     case r: ExecutableAst.Table.Relation =>
       val changed = dataStore.relations(sym).inferredFact(fact)
       if (changed) {
-        dependencies(r.sym, fact)
+        dependencies(r.sym, fact, localWorkList)
       }
 
     case l: ExecutableAst.Table.Lattice =>
       val changed = dataStore.lattices(sym).inferredFact(fact)
       if (changed) {
-        dependencies(l.sym, fact)
+        dependencies(l.sym, fact, localWorkList)
       }
   }
 
@@ -492,7 +494,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Returns all dependencies of the given symbol `sym` along with an environment.
     */
-  def dependencies(sym: Symbol.TableSym, fact: Array[AnyRef]): Unit = {
+  def dependencies(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])]): Unit = {
 
     def unify(pat: Array[String], fact: Array[AnyRef], limit: Int): mutable.Map[String, AnyRef] = {
       val env = mutable.Map.empty[String, AnyRef]
@@ -513,18 +515,14 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
           // unify all terms with their values.
           val env = unify(p.index2var, fact, fact.length)
           if (env != null) {
-            worklist.synchronized {
-              worklist.push((rule, env))
-            }
+            localWorkList.push((rule, env))
           }
         case l: ExecutableAst.Table.Lattice =>
           // unify only key terms with their values.
           val numberOfKeys = l.keys.length
           val env = unify(p.index2var, fact, numberOfKeys)
           if (env != null) {
-            worklist.synchronized {
-              worklist.push((rule, env))
-            }
+            localWorkList.push((rule, env))
           }
       }
     }
@@ -536,12 +534,19 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   private def parallelUpdateDataStore(iter: Iterator[RuleResult]): Unit = {
     val t = System.nanoTime()
 
-    val tasks = new ArrayList[Callable[Unit]]()
+    // --- begin parallel execution ---
+    val tasks = new ArrayList[Callable[mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])]]]()
     for ((sym, facts) <- groupFactsBySymbol(iter)) {
       val task = inferredFacts(sym, facts)
       tasks.add(task)
     }
-    writersPool.invokeAll(tasks)
+    val localWorkLists = writersPool.invokeAll(tasks)
+    // --- end parallel execution ---
+
+    // update the global work list with each of the local work lists.
+    for (localWorkList <- flatten(localWorkLists)) {
+      worklist ++= localWorkList
+    }
 
     writersTime += System.nanoTime() - t
   }
