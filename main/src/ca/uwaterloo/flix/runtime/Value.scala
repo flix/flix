@@ -302,6 +302,7 @@ object Value {
   /**
     * A cache for every tag ever created.
     */
+    // TODO: Remove this, since it is inefficient and not parallel friendly.
   private val tagCache = mutable.HashMap[(java.lang.String, AnyRef), Value.Tag]()
 
   /**

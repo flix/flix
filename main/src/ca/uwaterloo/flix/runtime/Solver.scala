@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.{IValue, WrappedValue}
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Constraint.Rule
 import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Symbol}
 import ca.uwaterloo.flix.runtime.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
@@ -56,6 +57,24 @@ object Solver {
 class Solver(implicit val sCtx: Solver.SolverContext) {
 
   /**
+    * We begin by introducing several types that will be used throughout.
+    */
+
+  /**
+    * The type of environments.
+    */
+  // TODO: mutable.Map[String, AnyRef])
+
+
+  /**
+    * The type in which inferred facts are aggregated.
+    */
+  type RuleResult = mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]
+
+  // TODO: Type for mutable.ArrayStack[(Rule, mutable.Map[String, AnyRef])]
+  // TODO: Move types upward.
+
+  /**
     * The datastore holds the facts in all relations and lattices in the program.
     *
     * Reading from the datastore is guaranteed to be thread-safe and can be performed by multiple threads concurrently.
@@ -85,15 +104,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * The worklist of rules (and their initial environments) pending re-evaluation.
     */
-  val worklist = new mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])]
-
-  /**
-    * The type in which inferred facts are aggregated.
-    */
-  type RuleResult = mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]
-
-  // TODO: Type for mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])]
-  // TODO: Move types upward.
+  val worklist = new mutable.ArrayStack[(Rule, mutable.Map[String, AnyRef])]
 
   /**
     * The performance monitor.
@@ -216,7 +227,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   def getModel: Model = model
 
   // TODO: Move
-  def getRuleStats: List[(ExecutableAst.Constraint.Rule, Int, Long)] =
+  def getRuleStats: List[(Rule, Int, Long)] =
     sCtx.root.rules.toSeq.sortBy(_.elapsedTime).reverse.map {
       case r => (r, r.hitcount, r.elapsedTime)
     }.toList
@@ -274,7 +285,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Evaluates the body of the given `rule` under the given initial environment `env0`.
     */
-  def evalBody(rule: Constraint.Rule, env0: mutable.Map[String, AnyRef], result: RuleResult): Unit = {
+  def evalBody(rule: Rule, env0: mutable.Map[String, AnyRef], result: RuleResult): Unit = {
     val t = System.nanoTime()
 
     cross(rule, rule.tables, env0, result)
@@ -286,7 +297,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Computes the cross product of all collections in the body.
     */
-  def cross(rule: Constraint.Rule, ps: List[Predicate.Body.Table], row: mutable.Map[String, AnyRef], result: RuleResult): Unit = ps match {
+  def cross(rule: Rule, ps: List[Predicate.Body.Table], row: mutable.Map[String, AnyRef], result: RuleResult): Unit = ps match {
     case Nil =>
       // cross product complete, now filter
       loop(rule, rule.loops, row, result)
@@ -327,7 +338,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Unfolds the given loop predicates `ps` over the initial `row`.
     */
-  def loop(rule: Constraint.Rule, ps: List[Predicate.Body.Loop], row: mutable.Map[String, AnyRef], result: RuleResult): Unit = ps match {
+  def loop(rule: Rule, ps: List[Predicate.Body.Loop], row: mutable.Map[String, AnyRef], result: RuleResult): Unit = ps match {
     case Nil => filter(rule, rule.filters, row, result)
     case Predicate.Body.Loop(name, term, _, _, _) :: rest =>
       val value = Value.cast2set(Interpreter.evalHeadTerm(term, sCtx.root, row.toMap))
@@ -342,7 +353,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     * Filters the given `row` through all filter functions in the body.
     */
   @tailrec
-  private def filter(rule: Constraint.Rule, ps: List[Predicate.Body.ApplyFilter], row: mutable.Map[String, AnyRef], result: RuleResult): Unit = ps match {
+  private def filter(rule: Rule, ps: List[Predicate.Body.ApplyFilter], row: mutable.Map[String, AnyRef], result: RuleResult): Unit = ps match {
     case Nil =>
       // filter with hook functions
       filterHook(rule, rule.filterHooks, row, result)
@@ -363,7 +374,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     * Filters the given `row` through all filter hook functions in the body.
     */
   @tailrec
-  private def filterHook(rule: Constraint.Rule, ps: List[Predicate.Body.ApplyHookFilter], row: mutable.Map[String, AnyRef], result: RuleResult): Unit = ps match {
+  private def filterHook(rule: Rule, ps: List[Predicate.Body.ApplyHookFilter], row: mutable.Map[String, AnyRef], result: RuleResult): Unit = ps match {
     case Nil =>
       // filter complete, now check disjointness
       disjoint(rule, rule.disjoint, row, result)
@@ -397,7 +408,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     * Filters the given `row` through all disjointness filters in the body.
     */
   @tailrec
-  private def disjoint(rule: Constraint.Rule, ps: List[Predicate.Body.NotEqual], row: mutable.Map[String, AnyRef], result: RuleResult): Unit = ps match {
+  private def disjoint(rule: Rule, ps: List[Predicate.Body.NotEqual], row: mutable.Map[String, AnyRef], result: RuleResult): Unit = ps match {
     case Nil =>
       // rule body complete, evaluate the head.
       evalHead(rule.head, row, result)
@@ -428,9 +439,9 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Returns a callable to process a collection of inferred `facts` for the relation or lattice with the symbol `sym`.
     */
-  def inferredFacts(sym: Symbol.TableSym, facts: ArrayBuffer[Array[AnyRef]]): Callable[mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])]] = new Callable[mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])]] {
-    def call(): mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])] = {
-      val localWorkList = new mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])]
+  def inferredFacts(sym: Symbol.TableSym, facts: ArrayBuffer[Array[AnyRef]]): Callable[mutable.ArrayStack[(Rule, mutable.Map[String, AnyRef])]] = new Callable[mutable.ArrayStack[(Rule, mutable.Map[String, AnyRef])]] {
+    def call(): mutable.ArrayStack[(Rule, mutable.Map[String, AnyRef])] = {
+      val localWorkList = new mutable.ArrayStack[(Rule, mutable.Map[String, AnyRef])]
       for (fact <- facts) {
         inferredFact(sym, fact, localWorkList)
       }
@@ -441,7 +452,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
     */
-  def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])]): Unit = sCtx.root.tables(sym) match {
+  def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: mutable.ArrayStack[(Rule, mutable.Map[String, AnyRef])]): Unit = sCtx.root.tables(sym) match {
     case r: ExecutableAst.Table.Relation =>
       val changed = dataStore.relations(sym).inferredFact(fact)
       if (changed) {
@@ -469,7 +480,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Returns all dependencies of the given symbol `sym` along with an environment.
     */
-  def dependencies(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])]): Unit = {
+  def dependencies(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: mutable.ArrayStack[(Rule, mutable.Map[String, AnyRef])]): Unit = {
 
     def unify(pat: Array[String], fact: Array[AnyRef], limit: Int): mutable.Map[String, AnyRef] = {
       val env = mutable.Map.empty[String, AnyRef]
@@ -538,7 +549,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     val t = System.nanoTime()
 
     // --- begin parallel execution ---
-    val tasks = new ArrayList[Callable[mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])]]]()
+    val tasks = new ArrayList[Callable[mutable.ArrayStack[(Rule, mutable.Map[String, AnyRef])]]]()
     for ((sym, facts) <- groupFactsBySymbol(iter)) {
       val task = inferredFacts(sym, facts)
       tasks.add(task)
