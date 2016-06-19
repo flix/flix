@@ -157,15 +157,8 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     */
   def solve(): Model = {
 
-    if (sCtx.options.debugger == Debugger.Enabled) {
-      monitor.start()
-
-      val restServer = new RestServer(this)
-      restServer.start()
-
-      val shell = new Shell(this)
-      shell.start()
-    }
+    // initialize the solver.
+    initSolver()
 
     // measure the time elapsed.
     val t = System.nanoTime()
@@ -253,6 +246,20 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       case r => (r, r.hitcount, r.elapsedTime)
     }.toList
 
+  /**
+    * Initialize the solver by starting the monitor, debugger, shell etc.
+    */
+  def initSolver(): Unit = {
+    if (sCtx.options.debugger == Debugger.Enabled) {
+      monitor.start()
+
+      val restServer = new RestServer(this)
+      restServer.start()
+
+      val shell = new Shell(this)
+      shell.start()
+    }
+  }
 
   /**
     * Initialize the datastore with all the facts in the program.
@@ -446,9 +453,11 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Returns a callable to process a collection of inferred `facts` for the relation or lattice with the symbol `sym`.
     */
-  def inferredFacts(sym: Symbol.TableSym, facts: ArrayBuffer[Array[AnyRef]]): Unit = {
-    for (fact <- facts) {
-      inferredFact(sym, fact)
+  def inferredFacts(sym: Symbol.TableSym, facts: ArrayBuffer[Array[AnyRef]]): Callable[Unit] = new Callable[Unit] {
+    def call(): Unit = {
+      for (fact <- facts) {
+        inferredFact(sym, fact)
+      }
     }
   }
 
@@ -504,14 +513,18 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
           // unify all terms with their values.
           val env = unify(p.index2var, fact, fact.length)
           if (env != null) {
-            worklist += ((rule, env))
+            worklist.synchronized {
+              worklist.push((rule, env))
+            }
           }
         case l: ExecutableAst.Table.Lattice =>
           // unify only key terms with their values.
           val numberOfKeys = l.keys.length
           val env = unify(p.index2var, fact, numberOfKeys)
           if (env != null) {
-            worklist += ((rule, env))
+            worklist.synchronized {
+              worklist.push((rule, env))
+            }
           }
       }
     }
@@ -523,11 +536,12 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   private def parallelUpdateDataStore(iter: Iterator[RuleResult]): Unit = {
     val t = System.nanoTime()
 
-    val writerTasks = new ArrayList[Callable[Unit]]()
+    val tasks = new ArrayList[Callable[Unit]]()
     for ((sym, facts) <- groupFactsBySymbol(iter)) {
-      inferredFacts(sym, facts)
+      val task = inferredFacts(sym, facts)
+      tasks.add(task)
     }
-    writersPool.invokeAll(writerTasks)
+    writersPool.invokeAll(tasks)
 
     writersTime += System.nanoTime() - t
   }
@@ -547,7 +561,6 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     }
     result
   }
-
 
   /**
     * Constructs the minimal model from the datastore.
