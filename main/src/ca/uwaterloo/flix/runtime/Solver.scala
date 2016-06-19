@@ -177,36 +177,11 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
         }
       }
 
-      /*
-       * Process every (rule, environment) pair in a separate task.
-       *
-       * Clear the work list.
-       * Execute all the tasks in parallel, and
-       * Await the result of *all* tasks.
-       */
-      val t = System.nanoTime()
-      val readerTasks = new ArrayList[Callable[RuleResult]]()
-      for ((rule, env) <- worklist) {
-        // TODO: Extract into function
-        val task = new Callable[RuleResult] {
-          def call(): RuleResult = {
-            val deltaFacts = new mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]()
-            evalBody(rule, env, deltaFacts)
-            deltaFacts
-          }
-        }
-        readerTasks.add(task)
-      }
-      worklist.clear()
+      // evaluate the rules in parallel.
+      val results = parallelEvaluateRules()
 
-      /*
-       * Executes the given tasks, returning a list of futures holding their status and results when all complete.
-       */
-      val readerFutures = readersPool.invokeAll(readerTasks)
-      readersTime += System.nanoTime() - t
-
-      parallelUpdateDataStore(flatten(readerFutures))
-
+      // update the datastore in parallel.
+      parallelUpdateDataStore(results)
     }
 
     /*
@@ -526,6 +501,34 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
           }
       }
     }
+  }
+
+  /**
+    * Evaluates each of the rules in parallel.
+    */
+  private def parallelEvaluateRules(): Iterator[RuleResult] = {
+    val t = System.nanoTime()
+
+    // --- begin parallel execution ---
+    val readerTasks = new ArrayList[Callable[RuleResult]]()
+    for ((rule, env) <- worklist) {
+      // TODO: Extract into function
+      val task = new Callable[RuleResult] {
+        def call(): RuleResult = {
+          val deltaFacts = new mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]()
+          evalBody(rule, env, deltaFacts)
+          deltaFacts
+        }
+      }
+      readerTasks.add(task)
+    }
+    val result = flatten(readersPool.invokeAll(readerTasks))
+    // -- end parallel execution ---
+
+    readersTime += System.nanoTime() - t
+
+    worklist.clear()
+    result
   }
 
   /**
