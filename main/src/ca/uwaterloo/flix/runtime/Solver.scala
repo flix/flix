@@ -89,6 +89,12 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   val worklist = new mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])]
 
   /**
+    * The type in which inferred facts are aggregated.
+    */
+  // TODO: Get rid of the enqueue bit.
+  type RuleResult = mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef], Boolean)]
+
+  /**
     * The performance monitor.
     */
   val monitor = new Monitor(this)
@@ -104,11 +110,6 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     */
   @volatile
   var model: Model = null
-
-  // TODO: Use more appropiate data type, e.g. arraylist
-  // TODO: Get rid of the enqueue bit.
-  type RuleResult = mutable.ListBuffer[(Symbol.TableSym, Array[AnyRef], Boolean)]
-
 
   /**
     * Returns the number of elements in the worklist.
@@ -153,10 +154,21 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     // measure the time elapsed.
     val t = System.nanoTime()
 
-    // evaluate all facts.
+    // iterate through all facts.
     for (fact <- sCtx.root.facts) {
-      val result = new mutable.ListBuffer[(Symbol.TableSym, Array[AnyRef], Boolean)]()
+      // evaluate the head of each fact.
+      val result = new mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef], Boolean)]()
       evalHead(fact.head, mutable.Map.empty, enqueue = false, result)
+      // iterate through the newly inferred facts.
+      for ((sym, fact, enq) <- result) {
+        // update the datastore, but don't compute any dependencies.
+        sCtx.root.tables(sym) match {
+          case r: ExecutableAst.Table.Relation => dataStore.relations(sym).inferredFact(fact)
+          case l: ExecutableAst.Table.Lattice => dataStore.lattices(sym).inferredFact(fact)
+        }
+      }
+
+
       // TODO: Safe to ignore result here?
       // TODO: Refactor to remove enqueue.
     }
@@ -187,7 +199,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
         // TODO: Extract into function
         val task = new Callable[RuleResult] {
           def call(): RuleResult = {
-            val result = new mutable.ListBuffer[(Symbol.TableSym, Array[AnyRef], Boolean)]()
+            val result = new mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef], Boolean)]()
             evalBody(rule, env, result)
             result
           }
@@ -291,13 +303,6 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-    * Adds the given `fact` as pending for the relation or lattice with the symbol `sym`.
-    */
-  def newPendingFact(sym: Symbol.TableSym, fact: Array[AnyRef], enqueue: Boolean, result: RuleResult): Unit = {
-    result += ((sym, fact, enqueue))
-  }
-
-  /**
     * Evaluates the given head predicate `p` under the given environment `env0`.
     */
   def evalHead(p: Predicate.Head, env0: mutable.Map[String, AnyRef], enqueue: Boolean, result: RuleResult): Unit = p match {
@@ -309,14 +314,9 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
         fact(i) = Interpreter.evalHeadTerm(terms(i), sCtx.root, env0.toMap)
         i = i + 1
       }
-      if (!enqueue) {
-        inferredFact(p.sym, fact, enqueue)
-      } else {
-        newPendingFact(p.sym, fact, enqueue, result)
-      }
 
+      result += ((p.sym, fact, enqueue))
   }
-
 
   /**
     * Evaluates the body of the given `rule` under the given initial environment `env0`.
@@ -507,12 +507,11 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Returns a new thread pool configured to use the appropriate number of threads.
     */
-  private def mkThreadPool(): ExecutorService = sCtx.options.parallel match {
-    // Case 1: Parallel execution enabled. Use all available processors.
-    case Parallel.Enable => Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
-    // Case 2: Parallel execution disabled. Use a single thread.
-    case Parallel.Disable => Executors.newSingleThreadExecutor()
+  private def mkThreadPool(): ExecutorService = sCtx.options.solver.threads match {
+    // Case 1: Parallel execution disabled. Use a single thread.
+    case 1 => Executors.newSingleThreadExecutor()
+    // Case 2: Parallel execution enabled. Use the specified number of processors.
+    case n => Executors.newFixedThreadPool(n)
   }
-
 
 }

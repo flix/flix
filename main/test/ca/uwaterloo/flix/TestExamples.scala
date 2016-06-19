@@ -35,7 +35,7 @@ class TestExamples extends FunSuite {
     private def createFlix(codegen: Boolean = false) = {
       val options = Options(
         debugger = Debugger.Disabled,
-        parallel = Parallel.Enable,
+        solver = SolverOpts.Default,
         print = Nil,
         verbosity = Verbosity.Silent,
         verify = Verify.Disabled,

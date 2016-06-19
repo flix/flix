@@ -22,8 +22,8 @@ object Options {
     */
   val Default = Options(
     debugger = Debugger.Disabled,
-    parallel = Parallel.Disable,
     print = Nil,
+    solver = SolverOpts.Default,
     verbosity = Verbosity.Silent,
     verify = Verify.Disabled,
     codegen = CodeGeneration.Enabled,
@@ -35,16 +35,16 @@ object Options {
   * General Flix options.
   *
   * @param debugger      enable or disable the built-in web-based debugger.
-  * @param parallel      enable or disable parallel execution.
   * @param print         a list of things to print.
+  * @param solver        solver options.
   * @param verbosity     the level of verbosity.
   * @param verify        enable or disable the built-in verifier.
   * @param codegen       enable or disable JVM code generation.
   * @param debugBytecode enable or disable debugging of bytecode.
   */
 case class Options(debugger: Debugger,
-                   parallel: Parallel,
                    print: List[String],
+                   solver: SolverOpts,
                    verbosity: Verbosity,
                    verify: Verify,
                    codegen: CodeGeneration,
@@ -72,24 +72,19 @@ object Debugger {
 
 }
 
-/**
-  * An option to enable or disable parallel execution.
-  */
-sealed trait Parallel
-
-object Parallel {
-
+object SolverOpts {
   /**
-    * Enable parallel execution.
+    * Default solver options.
     */
-  case object Enable extends Parallel
-
-  /**
-    * Disable parallel execution.
-    */
-  case object Disable extends Parallel
-
+  val Default: SolverOpts = SolverOpts(Runtime.getRuntime.availableProcessors())
 }
+
+/**
+  * Solver options.
+  *
+  * @param threads the number of threads to use.
+  */
+case class SolverOpts(threads: Int)
 
 /**
   * An option to control the level of verbosity.

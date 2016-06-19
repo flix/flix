@@ -127,7 +127,7 @@ class TestBackend extends FunSuite {
     private def createFlix(codegen: Boolean = false) = {
       val options = Options(
         debugger = Debugger.Disabled,
-        parallel = Parallel.Enable,
+        solver = ca.uwaterloo.flix.util.SolverOpts.Default,
         print = Nil,
         verbosity = Verbosity.Silent,
         verify = Verify.Disabled,
