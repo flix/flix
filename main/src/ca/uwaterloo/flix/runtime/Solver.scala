@@ -212,18 +212,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       val readerFutures = readersPool.invokeAll(readerTasks)
       readersTime += System.nanoTime() - t
 
-      /*
-       * Stores all the pending facts into the datastore.
-       *
-       * Enqueues (rule, environment) pairs as a side-effect.
-       */
-      val tt = System.nanoTime()
-      val writerTasks = new ArrayList[Callable[Unit]]()
-      for ((sym, facts) <- groupFactsBySymbol(readerFutures)) {
-        inferredFacts(sym, facts)
-      }
-      writersPool.invokeAll(writerTasks)
-      writersTime += System.nanoTime() - tt
+      parallelUpdateDataStore(flatten(readerFutures))
 
     }
 
@@ -254,22 +243,6 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     }
 
     mkModel()
-  }
-
-  /**
-    * Sorts the given facts by their table symbol.
-    */
-  def groupFactsBySymbol(readerFutures: util.List[Future[RuleResult]]): mutable.Map[Symbol.TableSym, ArrayBuffer[Array[AnyRef]]] = {
-    val result = mutable.Map.empty[Symbol.TableSym, ArrayBuffer[Array[AnyRef]]]
-    val iterator = readerFutures.iterator()
-    while (iterator.hasNext) {
-      val deltaFacts = iterator.next().get()
-      for ((symbol, fact) <- deltaFacts) {
-        val buffer = result.getOrElseUpdate(symbol, ArrayBuffer.empty)
-        buffer += fact
-      }
-    }
-    result
   }
 
   def getModel: Model = model
@@ -545,6 +518,38 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
+    * Updates the datastore in parallel.
+    */
+  private def parallelUpdateDataStore(iter: Iterator[RuleResult]): Unit = {
+    val t = System.nanoTime()
+
+    val writerTasks = new ArrayList[Callable[Unit]]()
+    for ((sym, facts) <- groupFactsBySymbol(iter)) {
+      inferredFacts(sym, facts)
+    }
+    writersPool.invokeAll(writerTasks)
+
+    writersTime += System.nanoTime() - t
+  }
+
+
+  /**
+    * Sorts the given facts by their table symbol.
+    */
+  def groupFactsBySymbol(iter: Iterator[RuleResult]): mutable.Map[Symbol.TableSym, ArrayBuffer[Array[AnyRef]]] = {
+    val result = mutable.Map.empty[Symbol.TableSym, ArrayBuffer[Array[AnyRef]]]
+    while (iter.hasNext) {
+      val deltaFacts = iter.next()
+      for ((symbol, fact) <- deltaFacts) {
+        val buffer = result.getOrElseUpdate(symbol, ArrayBuffer.empty)
+        buffer += fact
+      }
+    }
+    result
+  }
+
+
+  /**
     * Constructs the minimal model from the datastore.
     */
   private def mkModel(): Model = {
@@ -581,6 +586,18 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     case 1 => Executors.newSingleThreadExecutor()
     // Case 2: Parallel execution enabled. Use the specified number of processors.
     case n => Executors.newFixedThreadPool(n)
+  }
+
+  /**
+    * Returns an iterator over the result of the given list of Java futures.
+    */
+  private def flatten[A](fs: java.util.List[Future[A]]): Iterator[A] = {
+    val iter = fs.iterator()
+    new Iterator[A] {
+      def hasNext: Boolean = iter.hasNext
+
+      def next(): A = iter.next().get()
+    }
   }
 
 }
