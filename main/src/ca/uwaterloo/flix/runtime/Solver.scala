@@ -111,6 +111,21 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   var model: Model = null
 
   /**
+    * Time spent during initialization of the datastore.
+    */
+  var initTime: Long = 0
+
+  /**
+    * Time spent during the readers phase.
+    */
+  var readersTime: Long = 0
+
+  /**
+    * Time spent during the writers phase.
+    */
+  var writersTime: Long = 0
+
+  /**
     * Returns the number of elements in the worklist.
     */
   def getQueueSize = worklist.length
@@ -174,7 +189,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
        * Execute all the tasks in parallel, and
        * Await the result of *all* tasks.
        */
-
+      val t = System.nanoTime()
       val tasks = new ArrayList[Callable[RuleResult]]()
       for ((rule, env) <- worklist) {
         // TODO: Extract into function
@@ -193,6 +208,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
        * Executes the given tasks, returning a list of futures holding their status and results when all complete.
        */
       val futures = readers.invokeAll(tasks)
+      readersTime += System.nanoTime() - t
 
       /*
        * Stores all the pending facts into the datastore.
@@ -201,6 +217,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
        *
        * Must be executed by a single-thread.
        */
+      val tt = System.nanoTime()
       for (future <- futures.asScala) {
         // TODO: Make parallel and extract into function.
         val result = future.get()
@@ -208,6 +225,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
           inferredFact(sym, fact)
         }
       }
+      writersTime += System.nanoTime() - tt
 
     }
 
@@ -221,10 +239,13 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
 
     if (sCtx.options.verbosity != Verbosity.Silent) {
       val solverTime = elapsed / 1000000
+      val initMiliSeconds = initTime / 1000000
+      val readersMiliSeconds = readersTime / 1000000
+      val writersMiliSeconds = writersTime / 1000000
       val initialFacts = sCtx.root.facts.length
       val totalFacts = dataStore.numberOfFacts
       val throughput = (1000 * totalFacts) / (solverTime + 1)
-      Console.println(f"Successfully solved in $solverTime%,d msec.")
+      Console.println(f"Solved in $solverTime%,d msec. (init: $initMiliSeconds%,d msec, readers: $readersMiliSeconds%,d msec, writers: $writersMiliSeconds%,d msec)")
       Console.println(f"Initial Facts: $initialFacts%,d. Total Facts: $totalFacts%,d.")
       Console.println(f"Throughput: $throughput%,d facts per second.")
     }
@@ -271,6 +292,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     * Initialize the datastore with all the facts in the program.
     */
   def initDataStore(): Unit = {
+    val t = System.nanoTime()
     // iterate through all facts.
     for (fact <- sCtx.root.facts) {
       // evaluate the head of each fact.
@@ -288,6 +310,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
         }
       }
     }
+    initTime = System.nanoTime() - t
   }
 
   /**
@@ -298,39 +321,6 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     for (rule <- sCtx.root.rules) {
       worklist.push((rule, mutable.Map.empty))
     }
-  }
-
-  /**
-    * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
-    */
-  def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef]): Unit = sCtx.root.tables(sym) match {
-    case r: ExecutableAst.Table.Relation =>
-      val changed = dataStore.relations(sym).inferredFact(fact)
-      if (changed) {
-        dependencies(r.sym, fact)
-      }
-
-    case l: ExecutableAst.Table.Lattice =>
-      val changed = dataStore.lattices(sym).inferredFact(fact)
-      if (changed) {
-        dependencies(l.sym, fact)
-      }
-  }
-
-  /**
-    * Evaluates the given head predicate `p` under the given environment `env0`.
-    */
-  def evalHead(p: Predicate.Head, env0: mutable.Map[String, AnyRef], result: RuleResult): Unit = p match {
-    case p: Predicate.Head.Table =>
-      val terms = p.terms
-      val fact = new Array[AnyRef](p.arity)
-      var i = 0
-      while (i < fact.length) {
-        fact(i) = Interpreter.evalHeadTerm(terms(i), sCtx.root, env0.toMap)
-        i = i + 1
-      }
-
-      result += ((p.sym, fact))
   }
 
   /**
@@ -468,6 +458,39 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       val value2 = row(ident2.name)
       if (value1 != value2) {
         disjoint(rule, xs, row, result)
+      }
+  }
+
+  /**
+    * Evaluates the given head predicate `p` under the given environment `env0`.
+    */
+  def evalHead(p: Predicate.Head, env0: mutable.Map[String, AnyRef], result: RuleResult): Unit = p match {
+    case p: Predicate.Head.Table =>
+      val terms = p.terms
+      val fact = new Array[AnyRef](p.arity)
+      var i = 0
+      while (i < fact.length) {
+        fact(i) = Interpreter.evalHeadTerm(terms(i), sCtx.root, env0.toMap)
+        i = i + 1
+      }
+
+      result += ((p.sym, fact))
+  }
+
+  /**
+    * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
+    */
+  def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef]): Unit = sCtx.root.tables(sym) match {
+    case r: ExecutableAst.Table.Relation =>
+      val changed = dataStore.relations(sym).inferredFact(fact)
+      if (changed) {
+        dependencies(r.sym, fact)
+      }
+
+    case l: ExecutableAst.Table.Lattice =>
+      val changed = dataStore.lattices(sym).inferredFact(fact)
+      if (changed) {
+        dependencies(l.sym, fact)
       }
   }
 
