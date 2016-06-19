@@ -28,6 +28,7 @@ import java.util.ArrayList
 
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.collection.JavaConverters._
 
 object Solver {
 
@@ -87,16 +88,6 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     */
   val worklist = new mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])]
 
-
-
-  /**
-    * A collection of facts which have been inferred but not yet stored in the database.
-    *
-    * Updated by multiple threads. Must be accessed behind a lock.
-    */
-  // TODO: Deprecated
-  val pendingFacts = new mutable.ListBuffer[(Symbol.TableSym, Array[AnyRef], Boolean)]()
-
   /**
     * The performance monitor.
     */
@@ -113,6 +104,9 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     */
   @volatile
   var model: Model = null
+
+  type RuleResult = mutable.ListBuffer[(Symbol.TableSym, Array[AnyRef], Boolean)]
+
 
   /**
     * Returns the number of elements in the worklist.
@@ -159,7 +153,10 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
 
     // evaluate all facts.
     for (fact <- sCtx.root.facts) {
-      evalHead(fact.head, mutable.Map.empty, enqueue = false)
+      val result = new mutable.ListBuffer[(Symbol.TableSym, Array[AnyRef], Boolean)]()
+      evalHead(fact.head, mutable.Map.empty, enqueue = false, result)
+      // TODO: Safe to ignore result here?
+      // TODO: Refactor to remove enqueue.
     }
 
     // add all rules to the worklist (under empty environments).
@@ -182,11 +179,14 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
        * Execute all the tasks in parallel, and
        * Await the result of *all* tasks.
        */
-      val tasks = new ArrayList[Callable[Unit]]()
+
+      val tasks = new ArrayList[Callable[RuleResult]]()
       for ((rule, env) <- worklist) {
-        val task = new Callable[Unit] {
-          def call(): Unit = {
-            evalBody(rule, env)
+        val task = new Callable[RuleResult] {
+          def call(): RuleResult = {
+            val result = new mutable.ListBuffer[(Symbol.TableSym, Array[AnyRef], Boolean)]()
+            evalBody(rule, env, result)
+            result
           }
         }
         tasks.add(task)
@@ -196,7 +196,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       /*
        * Executes the given tasks, returning a list of futures holding their status and results when all complete.
        */
-      readers.invokeAll(tasks)
+      val futures = readers.invokeAll(tasks)
 
       /*
        * Stores all the pending facts into the datastore.
@@ -205,10 +205,12 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
        *
        * Must be executed by a single-thread.
        */
-      for ((sym, fact, enqueue) <- pendingFacts) {
-        inferredFact(sym, fact, enqueue)
+      for (future <- futures.asScala) {
+        val result = future.get()
+        for ((sym, fact, enqueue) <- result) {
+          inferredFact(sym, fact, enqueue)
+        }
       }
-      pendingFacts.clear()
 
     }
 
@@ -287,16 +289,14 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Adds the given `fact` as pending for the relation or lattice with the symbol `sym`.
     */
-  def newPendingFact(sym: Symbol.TableSym, fact: Array[AnyRef], enqueue: Boolean): Unit = {
-    pendingFacts.synchronized {
-      pendingFacts += ((sym, fact, enqueue))
-    }
+  def newPendingFact(sym: Symbol.TableSym, fact: Array[AnyRef], enqueue: Boolean, result: RuleResult): Unit = {
+    result += ((sym, fact, enqueue))
   }
 
   /**
     * Evaluates the given head predicate `p` under the given environment `env0`.
     */
-  def evalHead(p: Predicate.Head, env0: mutable.Map[String, AnyRef], enqueue: Boolean): Unit = p match {
+  def evalHead(p: Predicate.Head, env0: mutable.Map[String, AnyRef], enqueue: Boolean, result: RuleResult): Unit = p match {
     case p: Predicate.Head.Table =>
       val terms = p.terms
       val fact = new Array[AnyRef](p.arity)
@@ -308,7 +308,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       if (!enqueue) {
         inferredFact(p.sym, fact, enqueue)
       } else {
-        newPendingFact(p.sym, fact, enqueue)
+        newPendingFact(p.sym, fact, enqueue, result)
       }
 
   }
@@ -317,10 +317,10 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Evaluates the body of the given `rule` under the given initial environment `env0`.
     */
-  def evalBody(rule: Constraint.Rule, env0: mutable.Map[String, AnyRef]): Unit = {
+  def evalBody(rule: Constraint.Rule, env0: mutable.Map[String, AnyRef], result: RuleResult): Unit = {
     val t = System.nanoTime()
 
-    cross(rule, rule.tables, env0)
+    cross(rule, rule.tables, env0, result)
 
     rule.elapsedTime += System.nanoTime() - t
     rule.hitcount += 1
@@ -329,10 +329,10 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Computes the cross product of all collections in the body.
     */
-  def cross(rule: Constraint.Rule, ps: List[Predicate.Body.Table], row: mutable.Map[String, AnyRef]): Unit = ps match {
+  def cross(rule: Constraint.Rule, ps: List[Predicate.Body.Table], row: mutable.Map[String, AnyRef], result: RuleResult): Unit = ps match {
     case Nil =>
       // cross product complete, now filter
-      loop(rule, rule.loops, row)
+      loop(rule, rule.loops, row, result)
     case (p: Predicate.Body.Table) :: xs =>
       // lookup the relation or lattice.
       val table = sCtx.root.tables(p.sym) match {
@@ -363,21 +363,21 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
 
         // compute the cross product of the remaining
         // collections under the new environment.
-        cross(rule, xs, newRow)
+        cross(rule, xs, newRow, result)
       }
   }
 
   /**
     * Unfolds the given loop predicates `ps` over the initial `row`.
     */
-  def loop(rule: Constraint.Rule, ps: List[Predicate.Body.Loop], row: mutable.Map[String, AnyRef]): Unit = ps match {
-    case Nil => filter(rule, rule.filters, row)
+  def loop(rule: Constraint.Rule, ps: List[Predicate.Body.Loop], row: mutable.Map[String, AnyRef], result: RuleResult): Unit = ps match {
+    case Nil => filter(rule, rule.filters, row, result)
     case Predicate.Body.Loop(name, term, _, _, _) :: rest =>
-      val result = Value.cast2set(Interpreter.evalHeadTerm(term, sCtx.root, row.toMap))
-      for (x <- result) {
+      val value = Value.cast2set(Interpreter.evalHeadTerm(term, sCtx.root, row.toMap))
+      for (x <- value) {
         val newRow = row.clone()
         newRow.update(name.name, x)
-        loop(rule, rest, newRow)
+        loop(rule, rest, newRow, result)
       }
   }
 
@@ -385,10 +385,10 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     * Filters the given `row` through all filter functions in the body.
     */
   @tailrec
-  private def filter(rule: Constraint.Rule, ps: List[Predicate.Body.ApplyFilter], row: mutable.Map[String, AnyRef]): Unit = ps match {
+  private def filter(rule: Constraint.Rule, ps: List[Predicate.Body.ApplyFilter], row: mutable.Map[String, AnyRef], result: RuleResult): Unit = ps match {
     case Nil =>
       // filter with hook functions
-      filterHook(rule, rule.filterHooks, row)
+      filterHook(rule, rule.filterHooks, row, result)
     case (pred: Predicate.Body.ApplyFilter) :: xs =>
       val defn = sCtx.root.constants(pred.name)
       val args = new Array[AnyRef](pred.terms.length)
@@ -397,19 +397,19 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
         args(i) = Interpreter.evalBodyTerm(pred.terms(i), sCtx.root, row.toMap)
         i = i + 1
       }
-      val result = Interpreter.evalCall(defn, args, sCtx.root, row.toMap)
-      if (Value.cast2bool(result))
-        filter(rule, xs, row)
+      val v = Interpreter.evalCall(defn, args, sCtx.root, row.toMap)
+      if (Value.cast2bool(v))
+        filter(rule, xs, row, result)
   }
 
   /**
     * Filters the given `row` through all filter hook functions in the body.
     */
   @tailrec
-  private def filterHook(rule: Constraint.Rule, ps: List[Predicate.Body.ApplyHookFilter], row: mutable.Map[String, AnyRef]): Unit = ps match {
+  private def filterHook(rule: Constraint.Rule, ps: List[Predicate.Body.ApplyHookFilter], row: mutable.Map[String, AnyRef], result: RuleResult): Unit = ps match {
     case Nil =>
       // filter complete, now check disjointness
-      disjoint(rule, rule.disjoint, row)
+      disjoint(rule, rule.disjoint, row, result)
     case (pred: Predicate.Body.ApplyHookFilter) :: xs =>
 
       val args = new Array[AnyRef](pred.terms.length)
@@ -424,14 +424,14 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
           val wargs = args map {
             case arg => new WrappedValue(arg): IValue
           }
-          val result = inv.apply(wargs).getUnsafeRef
-          if (Value.cast2bool(result)) {
-            filterHook(rule, xs, row)
+          val v = inv.apply(wargs).getUnsafeRef
+          if (Value.cast2bool(v)) {
+            filterHook(rule, xs, row, result)
           }
         case Ast.Hook.Unsafe(name, inv, tpe) =>
-          val result = inv.apply(args)
-          if (Value.cast2bool(result)) {
-            filterHook(rule, xs, row)
+          val v = inv.apply(args)
+          if (Value.cast2bool(v)) {
+            filterHook(rule, xs, row, result)
           }
       }
   }
@@ -440,15 +440,15 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     * Filters the given `row` through all disjointness filters in the body.
     */
   @tailrec
-  private def disjoint(rule: Constraint.Rule, ps: List[Predicate.Body.NotEqual], row: mutable.Map[String, AnyRef]): Unit = ps match {
+  private def disjoint(rule: Constraint.Rule, ps: List[Predicate.Body.NotEqual], row: mutable.Map[String, AnyRef], result: RuleResult): Unit = ps match {
     case Nil =>
       // rule body complete, evaluate the head.
-      evalHead(rule.head, row, enqueue = true)
+      evalHead(rule.head, row, enqueue = true, result)
     case Predicate.Body.NotEqual(ident1, ident2, _, _, _) :: xs =>
       val value1 = row(ident1.name)
       val value2 = row(ident2.name)
       if (value1 != value2) {
-        disjoint(rule, xs, row)
+        disjoint(rule, xs, row, result)
       }
   }
 
