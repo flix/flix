@@ -81,7 +81,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     * Note: A writer *must not* concurrently write to the same relation/lattice.
     * However, different relations/lattices can be updated concurrently.
     */
-  val writes = mkThreadPool()
+  val writers = mkThreadPool()
 
   /**
     * The worklist of rules (and their initial environments) pending re-evaluation.
@@ -105,6 +105,8 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   @volatile
   var model: Model = null
 
+  // TODO: Use more appropiate data type, e.g. arraylist
+  // TODO: Get rid of the enqueue bit.
   type RuleResult = mutable.ListBuffer[(Symbol.TableSym, Array[AnyRef], Boolean)]
 
 
@@ -182,6 +184,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
 
       val tasks = new ArrayList[Callable[RuleResult]]()
       for ((rule, env) <- worklist) {
+        // TODO: Extract into function
         val task = new Callable[RuleResult] {
           def call(): RuleResult = {
             val result = new mutable.ListBuffer[(Symbol.TableSym, Array[AnyRef], Boolean)]()
@@ -206,6 +209,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
        * Must be executed by a single-thread.
        */
       for (future <- futures.asScala) {
+        // TODO: Make parallel and extract into function.
         val result = future.get()
         for ((sym, fact, enqueue) <- result) {
           inferredFact(sym, fact, enqueue)
