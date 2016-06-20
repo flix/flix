@@ -30,25 +30,25 @@ import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
 
 /**
- * A built-in HTTP REST server that provides a JSON interface to debugging facilities of Flix.
- *
- * Usage of this class may incur additional solver overhead.
- */
+  * A built-in HTTP REST server that provides a JSON interface to debugging facilities of Flix.
+  *
+  * Usage of this class may incur additional solver overhead.
+  */
 class RestServer(solver: Solver) {
 
   /**
-   * The minimum port number to bind to.
-   */
+    * The minimum port number to bind to.
+    */
   val MinPort = 8000
 
   /**
-   * The maximum port number to bind to.
-   */
+    * The maximum port number to bind to.
+    */
   val MaxPort = 8100
 
   /**
-   * A collection of static resources included in the Jar.
-   */
+    * A collection of static resources included in the Jar.
+    */
   val StaticResources = Set[String](
     // HTML
     "/web/index.html",
@@ -73,18 +73,18 @@ class RestServer(solver: Solver) {
   )
 
   /**
-   * A simple http handler which serves static resources.
-   */
+    * A simple http handler which serves static resources.
+    */
   class FileHandler extends HttpHandler {
 
     /**
-     * A loaded resources is an array of bytes and its associated mimetype.
-     */
+      * A loaded resources is an array of bytes and its associated mimetype.
+      */
     case class LoadedResource(bytes: Array[Byte], mimetype: String)
 
     /**
-     * Immediately loads all the given `resources` into memory.
-     */
+      * Immediately loads all the given `resources` into memory.
+      */
     def loadResources(resources: Set[String]): Map[String, LoadedResource] = StaticResources.foldLeft(Map.empty[String, LoadedResource]) {
       case (m, path) =>
 
@@ -113,13 +113,13 @@ class RestServer(solver: Solver) {
     }
 
     /**
-     * All resources are loaded upon startup.
-     */
+      * All resources are loaded upon startup.
+      */
     val LoadedResources: Map[String, LoadedResource] = loadResources(StaticResources)
 
     /**
-     * Returns the mime-type corresponding to the given `path`.
-     */
+      * Returns the mime-type corresponding to the given `path`.
+      */
     def mimetypeOf(path: String): String = path match {
       case p if p.endsWith(".css") => "text/css"
       case p if p.endsWith(".js") => "text/javascript; charset=utf-8"
@@ -134,8 +134,8 @@ class RestServer(solver: Solver) {
     }
 
     /**
-     * Handles every incoming http request.
-     */
+      * Handles every incoming http request.
+      */
     def handle(t: HttpExchange): Unit = try {
       // construct the local path
       val requestPath = t.getRequestURI.getPath
@@ -169,17 +169,17 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * A simple http handler which serves JSON.
-   */
+    * A simple http handler which serves JSON.
+    */
   abstract class JsonHandler extends HttpHandler {
     /**
-     * An abstract method which returns the JSON object to be sent.
-     */
+      * An abstract method which returns the JSON object to be sent.
+      */
     def json: JValue
 
     /**
-     * Handles every incoming http request.
-     */
+      * Handles every incoming http request.
+      */
     def handle(t: HttpExchange): Unit = {
       t.getResponseHeaders.add("Content-Type", "application/javascript")
 
@@ -194,8 +194,8 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * Returns the current status of the computation.
-   */
+    * Returns the current status of the computation.
+    */
   class GetStatus extends JsonHandler {
     def json: JValue = JObject(List(
       if (solver.worklist.nonEmpty)
@@ -206,8 +206,8 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * Returns the name and size of all relations.
-   */
+    * Returns the name and size of all relations.
+    */
   class GetRelations extends JsonHandler {
     def json: JValue = JArray(solver.dataStore.relations.toList.map {
       case (name, relation) => JObject(List(
@@ -218,8 +218,8 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * Returns the name and size of all lattices.
-   */
+    * Returns the name and size of all lattices.
+    */
   class GetLattices extends JsonHandler {
     def json: JValue = JArray(solver.dataStore.lattices.toList.map {
       case (name, lattice) => JObject(List(
@@ -230,10 +230,10 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * Returns all the rows in the relation.
-   *
-   * @param relation a reference to the datastore backing the relation.
-   */
+    * Returns all the rows in the relation.
+    *
+    * @param relation a reference to the datastore backing the relation.
+    */
   class ListRelation(relation: IndexedRelation[AnyRef]) extends JsonHandler {
     def json: JValue = JObject(
       JField("cols", JArray(relation.relation.attributes.toList.map(a => JString(a.ident.name)))),
@@ -243,10 +243,10 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * Returns all the rows in the lattice.
-   *
-   * @param lattice a reference to the datastore backing the lattice.
-   */
+    * Returns all the rows in the lattice.
+    *
+    * @param lattice a reference to the datastore backing the lattice.
+    */
   class ListLattice(lattice: IndexedLattice[AnyRef]) extends JsonHandler {
     def json: JValue = JObject(
       JField("cols", JArray(lattice.lattice.keys.toList.map(a => JString(a.ident.name)) ::: lattice.lattice.values.toList.map(a => JString(a.ident.name)))),
@@ -256,14 +256,15 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * Returns a list of telemetry samples.
-   */
+    * Returns a list of telemetry samples.
+    */
   class GetTelemetry extends JsonHandler {
     def json: JValue = JArray(solver.monitor.getTelemetry.reverse.map {
-      case Monitor.Sample(time, queue, facts, memory) =>
+      case Monitor.Sample(time, readTasks, writeTasks, facts, memory) =>
         JObject(List(
           JField("time", JInt(time / 1000000)),
-          JField("queue", JInt(queue)),
+          JField("readTasks", JInt(readTasks)),
+          JField("writeTasks", JInt(writeTasks)),
           JField("facts", JInt(facts)),
           JField("memory", JInt(memory))
         ))
@@ -271,8 +272,8 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * Returns rule performance statistics.
-   */
+    * Returns rule performance statistics.
+    */
   class GetRulePerformance extends JsonHandler {
     def json: JValue = JArray(solver.getRuleStats.map {
       case (rule, hits, time) => JObject(List(
@@ -285,8 +286,8 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * Returns predicate performance statistics.
-   */
+    * Returns predicate performance statistics.
+    */
   class GetPredicatePerformance extends JsonHandler {
     def json: JValue = JArray(solver.dataStore.predicateStats.map {
       case (name, size, indexedLookups, indexedScans, fullScans) => JObject(List(
@@ -300,8 +301,8 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * Returns index hits statistics.
-   */
+    * Returns index hits statistics.
+    */
   class GetIndexHits extends JsonHandler {
     def json: JValue = JArray(solver.dataStore.indexHits.map {
       case (name, index, hits) => JObject(List(
@@ -326,8 +327,8 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * Returns compiler performance statistics.
-   */
+    * Returns compiler performance statistics.
+    */
   class GetCompilerPhasePerformance extends JsonHandler {
     def json: JValue = JArray(List(
       JObject(List(JField("name", JString("Parser")), JField("time", JInt(solver.sCtx.root.time.parser / 1000000)))),
@@ -339,8 +340,8 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * Bootstraps the internal http server.
-   */
+    * Bootstraps the internal http server.
+    */
   def start(): Unit = {
     // initialize server.
     val server = newServer(MinPort, MaxPort)
@@ -375,8 +376,8 @@ class RestServer(solver: Solver) {
   }
 
   /**
-   * Returns a new HttpServer bound to a port between the given `minPort` and `maxPort`.
-   */
+    * Returns a new HttpServer bound to a port between the given `minPort` and `maxPort`.
+    */
   private def newServer(minPort: Int, maxPort: Int): HttpServer = {
     assert(minPort <= maxPort)
 

@@ -76,7 +76,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   type Interpretation = mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]
 
   //
-  // Members of the solver:
+  // State of the solver:
   //
 
   /**
@@ -127,6 +127,21 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   @volatile
   var model: Model = null
 
+  //
+  // Statistics:
+  //
+  /**
+    * Current read tasks.
+    */
+  @volatile
+  var currentReadTasks: Int = 0
+
+  /**
+    * Current write tasks.
+    */
+  @volatile
+  var currentWriteTasks: Int = 0
+
   /**
     * Total wall-clock time.
     */
@@ -148,9 +163,14 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   var writersTime: Long = 0
 
   /**
-    * Returns the number of elements in the work list.
+    * Returns the number of current read tasks.
     */
-  def getQueueSize = worklist.length
+  def getCurrentReadTasks = currentReadTasks
+
+  /**
+    * Returns the number of current write tasks.
+    */
+  def getCurrentWriteTasks = currentWriteTasks
 
   /**
     * Returns the number of facts in the datastore.
@@ -553,10 +573,12 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     for ((rule, env) <- worklist) {
       val task = evalBody(rule, env)
       readerTasks.add(task)
+      currentReadTasks += 1
     }
     val result = flatten(readersPool.invokeAll(readerTasks))
     // -- end parallel execution ---
 
+    currentReadTasks = 0
     readersTime += System.nanoTime() - t
 
     worklist.clear()
@@ -574,9 +596,11 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     for ((sym, facts) <- groupFactsBySymbol(iter)) {
       val task = inferredFacts(sym, facts)
       tasks.add(task)
+      currentWriteTasks += facts.length
     }
     val localWorkLists = writersPool.invokeAll(tasks)
     // --- end parallel execution ---
+    currentWriteTasks = 0
 
     // update the global work list with each of the local work lists.
     for (localWorkList <- flatten(localWorkLists)) {
