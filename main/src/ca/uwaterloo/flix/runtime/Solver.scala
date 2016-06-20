@@ -41,46 +41,50 @@ object Solver {
 }
 
 /**
-  * Flix Parallel Fixed Point Solver.
+  * Flix Fixed Point Solver.
   *
   * Based on a variant of semi-naive evaluation.
-  * The solver iteratively evaluates every rule in the program to infer new facts.
-  * When no more new facts are discovered, the fixed point has been found, and computation terminates.
   *
-  * The solver is parallel. At a high level:
-  * Rules are evaluated in parallel to infer new facts. These facts are collected into a set.
-  * When all rules have been evaluated, the database is updated with the new facts.
-  * This is also performed in parallel.
-  *
-  * Importantly, the datastore is *never* updated while rules are being evaluated.
+  * The solver computes the least fixed point of the rules in the given program.
   */
 class Solver(implicit val sCtx: Solver.SolverContext) {
 
-  /**
-    * We begin by introducing several types that will be used throughout.
-    */
+  //
+  // Types of the solver:
+  //
 
   /**
     * The type of environments.
+    *
+    * An environment is map from identifiers to values.
     */
-  // TODO: mutable.Map[String, AnyRef])
-
+  type Env = mutable.Map[String, AnyRef]
 
   /**
-    * The type in which inferred facts are aggregated.
+    * The type of work lists.
+    *
+    * A (possibly local) work list is a collection of (rule, env) pairs
+    * specifying that the rule must be re-evaluated under the associated environment.
     */
-  type RuleResult = mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]
+  type WorkList = mutable.ArrayStack[(Rule, Env)]
 
-  // TODO: Type for mutable.ArrayStack[(Rule, mutable.Map[String, AnyRef])]
-  // TODO: Move types upward.
+  /**
+    * The type of a (partial) interpretation.
+    *
+    * An interpretation is collection of facts.
+    */
+  type Interpretation = mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]
+
+  //
+  // Members of the solver:
+  //
 
   /**
     * The datastore holds the facts in all relations and lattices in the program.
     *
     * Reading from the datastore is guaranteed to be thread-safe and can be performed by multiple threads concurrently.
     *
-    * Writing to the datastore is, in general, not thread-safe:
-    * Each relation/lattice may be concurrently updated, but
+    * Writing to the datastore is, in general, not thread-safe: Each relation/lattice may be concurrently updated, but
     * no concurrent writes may occur for the *same* relation/lattice.
     */
   val dataStore = new DataStore[AnyRef]()
@@ -94,17 +98,17 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   val readersPool = mkThreadPool()
 
   /**
-    * The thread pool where updates to the data store takes places.
+    * The thread pool where writes to the datastore takes places.
     *
     * Note: A writer *must not* concurrently write to the same relation/lattice.
-    * However, different relations/lattices can be updated concurrently.
+    * However, different relations/lattices can be written to concurrently.
     */
   val writersPool = mkThreadPool()
 
   /**
-    * The worklist of rules (and their initial environments) pending re-evaluation.
+    * The global work list.
     */
-  val worklist = new mutable.ArrayStack[(Rule, mutable.Map[String, AnyRef])]
+  val worklist = mkWorkList()
 
   /**
     * The performance monitor.
@@ -139,12 +143,12 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   var writersTime: Long = 0
 
   /**
-    * Returns the number of elements in the worklist.
+    * Returns the number of elements in the work list.
     */
   def getQueueSize = worklist.length
 
   /**
-    * Returns the number of facts in the database.
+    * Returns the number of facts in the datastore.
     */
   def getNumberOfFacts: Int = dataStore.numberOfFacts
 
@@ -255,7 +259,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     // iterate through all facts.
     for (fact <- sCtx.root.facts) {
       // evaluate the head of each fact.
-      val deltaFacts = new mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]()
+      val deltaFacts = mkInterpretation()
       evalHead(fact.head, mutable.Map.empty, deltaFacts)
 
       // iterate through the delta facts.
@@ -283,12 +287,14 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-    * Evaluates the body of the given `rule` under the given initial environment `env0`.
+    * Evaluates the body of the given `rule` under the given initial environment `env`.
+    *
+    * Updates the given interpretation `interp`.
     */
-  def evalBody(rule: Rule, env0: mutable.Map[String, AnyRef], result: RuleResult): Unit = {
+  def evalBody(rule: Rule, env: Env, interp: Interpretation): Unit = {
     val t = System.nanoTime()
 
-    cross(rule, rule.tables, env0, result)
+    cross(rule, rule.tables, env, interp)
 
     rule.elapsedTime += System.nanoTime() - t
     rule.hitcount += 1
@@ -297,7 +303,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Computes the cross product of all collections in the body.
     */
-  def cross(rule: Rule, ps: List[Predicate.Body.Table], row: mutable.Map[String, AnyRef], result: RuleResult): Unit = ps match {
+  def cross(rule: Rule, ps: List[Predicate.Body.Table], row: Env, result: Interpretation): Unit = ps match {
     case Nil =>
       // cross product complete, now filter
       loop(rule, rule.loops, row, result)
@@ -338,7 +344,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Unfolds the given loop predicates `ps` over the initial `row`.
     */
-  def loop(rule: Rule, ps: List[Predicate.Body.Loop], row: mutable.Map[String, AnyRef], result: RuleResult): Unit = ps match {
+  def loop(rule: Rule, ps: List[Predicate.Body.Loop], row: Env, result: Interpretation): Unit = ps match {
     case Nil => filter(rule, rule.filters, row, result)
     case Predicate.Body.Loop(name, term, _, _, _) :: rest =>
       val value = Value.cast2set(Interpreter.evalHeadTerm(term, sCtx.root, row.toMap))
@@ -353,7 +359,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     * Filters the given `row` through all filter functions in the body.
     */
   @tailrec
-  private def filter(rule: Rule, ps: List[Predicate.Body.ApplyFilter], row: mutable.Map[String, AnyRef], result: RuleResult): Unit = ps match {
+  private def filter(rule: Rule, ps: List[Predicate.Body.ApplyFilter], row: Env, result: Interpretation): Unit = ps match {
     case Nil =>
       // filter with hook functions
       filterHook(rule, rule.filterHooks, row, result)
@@ -374,7 +380,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     * Filters the given `row` through all filter hook functions in the body.
     */
   @tailrec
-  private def filterHook(rule: Rule, ps: List[Predicate.Body.ApplyHookFilter], row: mutable.Map[String, AnyRef], result: RuleResult): Unit = ps match {
+  private def filterHook(rule: Rule, ps: List[Predicate.Body.ApplyHookFilter], row: Env, result: Interpretation): Unit = ps match {
     case Nil =>
       // filter complete, now check disjointness
       disjoint(rule, rule.disjoint, row, result)
@@ -408,7 +414,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     * Filters the given `row` through all disjointness filters in the body.
     */
   @tailrec
-  private def disjoint(rule: Rule, ps: List[Predicate.Body.NotEqual], row: mutable.Map[String, AnyRef], result: RuleResult): Unit = ps match {
+  private def disjoint(rule: Rule, ps: List[Predicate.Body.NotEqual], row: Env, result: Interpretation): Unit = ps match {
     case Nil =>
       // rule body complete, evaluate the head.
       evalHead(rule.head, row, result)
@@ -423,7 +429,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Evaluates the given head predicate `p` under the given environment `env0`.
     */
-  def evalHead(p: Predicate.Head, env0: mutable.Map[String, AnyRef], result: RuleResult): Unit = p match {
+  def evalHead(p: Predicate.Head, env0: Env, result: Interpretation): Unit = p match {
     case p: Predicate.Head.Table =>
       val terms = p.terms
       val fact = new Array[AnyRef](p.arity)
@@ -439,9 +445,9 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Returns a callable to process a collection of inferred `facts` for the relation or lattice with the symbol `sym`.
     */
-  def inferredFacts(sym: Symbol.TableSym, facts: ArrayBuffer[Array[AnyRef]]): Callable[mutable.ArrayStack[(Rule, mutable.Map[String, AnyRef])]] = new Callable[mutable.ArrayStack[(Rule, mutable.Map[String, AnyRef])]] {
-    def call(): mutable.ArrayStack[(Rule, mutable.Map[String, AnyRef])] = {
-      val localWorkList = new mutable.ArrayStack[(Rule, mutable.Map[String, AnyRef])]
+  def inferredFacts(sym: Symbol.TableSym, facts: ArrayBuffer[Array[AnyRef]]): Callable[WorkList] = new Callable[WorkList] {
+    def call(): WorkList = {
+      val localWorkList = mkWorkList()
       for (fact <- facts) {
         inferredFact(sym, fact, localWorkList)
       }
@@ -452,7 +458,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
     */
-  def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: mutable.ArrayStack[(Rule, mutable.Map[String, AnyRef])]): Unit = sCtx.root.tables(sym) match {
+  def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: WorkList): Unit = sCtx.root.tables(sym) match {
     case r: ExecutableAst.Table.Relation =>
       val changed = dataStore.relations(sym).inferredFact(fact)
       if (changed) {
@@ -471,7 +477,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     *
     * Returns `null` if the term is a free variable.
     */
-  def eval(t: ExecutableAst.Term.Body, env: mutable.Map[String, AnyRef]): AnyRef = t match {
+  def eval(t: ExecutableAst.Term.Body, env: Env): AnyRef = t match {
     case t: ExecutableAst.Term.Body.Wildcard => null
     case t: ExecutableAst.Term.Body.Var => env.getOrElse(t.ident.name, null)
     case t: ExecutableAst.Term.Body.Exp => Interpreter.eval(t.e, sCtx.root, env.toMap)
@@ -480,9 +486,9 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Returns all dependencies of the given symbol `sym` along with an environment.
     */
-  def dependencies(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: mutable.ArrayStack[(Rule, mutable.Map[String, AnyRef])]): Unit = {
+  def dependencies(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: WorkList): Unit = {
 
-    def unify(pat: Array[String], fact: Array[AnyRef], limit: Int): mutable.Map[String, AnyRef] = {
+    def unify(pat: Array[String], fact: Array[AnyRef], limit: Int): Env = {
       val env = mutable.Map.empty[String, AnyRef]
       var i = 0
       while (i < limit) {
@@ -517,16 +523,16 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Evaluates each of the rules in parallel.
     */
-  private def parallelEvaluateRules(): Iterator[RuleResult] = {
+  private def parallelEvaluateRules(): Iterator[Interpretation] = {
     val t = System.nanoTime()
 
     // --- begin parallel execution ---
-    val readerTasks = new ArrayList[Callable[RuleResult]]()
+    val readerTasks = new ArrayList[Callable[Interpretation]]()
     for ((rule, env) <- worklist) {
       // TODO: Extract into function
-      val task = new Callable[RuleResult] {
-        def call(): RuleResult = {
-          val deltaFacts = new mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]()
+      val task = new Callable[Interpretation] {
+        def call(): Interpretation = {
+          val deltaFacts = mkInterpretation()
           evalBody(rule, env, deltaFacts)
           deltaFacts
         }
@@ -545,11 +551,11 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Updates the datastore in parallel.
     */
-  private def parallelUpdateDataStore(iter: Iterator[RuleResult]): Unit = {
+  private def parallelUpdateDataStore(iter: Iterator[Interpretation]): Unit = {
     val t = System.nanoTime()
 
     // --- begin parallel execution ---
-    val tasks = new ArrayList[Callable[mutable.ArrayStack[(Rule, mutable.Map[String, AnyRef])]]]()
+    val tasks = new ArrayList[Callable[WorkList]]()
     for ((sym, facts) <- groupFactsBySymbol(iter)) {
       val task = inferredFacts(sym, facts)
       tasks.add(task)
@@ -569,7 +575,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Sorts the given facts by their table symbol.
     */
-  def groupFactsBySymbol(iter: Iterator[RuleResult]): mutable.Map[Symbol.TableSym, ArrayBuffer[Array[AnyRef]]] = {
+  def groupFactsBySymbol(iter: Iterator[Interpretation]): mutable.Map[Symbol.TableSym, ArrayBuffer[Array[AnyRef]]] = {
     val result = mutable.Map.empty[Symbol.TableSym, ArrayBuffer[Array[AnyRef]]]
     while (iter.hasNext) {
       val deltaFacts = iter.next()
@@ -631,5 +637,15 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       def next(): A = iter.next().get()
     }
   }
+
+  /**
+    * Returns a fresh work list.
+    */
+  private def mkWorkList(): WorkList = new mutable.ArrayStack[(Rule, Env)]
+
+  /**
+    * Returns a fresh (empty) interpretation.
+    */
+  private def mkInterpretation(): Interpretation = new mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]()
 
 }
