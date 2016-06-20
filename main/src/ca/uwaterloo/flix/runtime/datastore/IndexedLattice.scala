@@ -26,7 +26,7 @@ import java.util
 
 import scala.reflect.ClassTag
 
-class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Lattice, indexes: Set[Int])(implicit sCtx: Solver.SolverContext, m: ClassTag[ValueType]) extends IndexedCollection[ValueType] {
+class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Lattice, indexes: Set[Int], root: ExecutableAst.Root)(implicit m: ClassTag[ValueType]) extends IndexedCollection[ValueType] {
   /**
     * A map from indexes to a map from keys to rows (represented as map from keys to elements).
     */
@@ -46,7 +46,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
     * The lattice operations associated with each lattice.
     */
   private val latticeOps: Array[ExecutableAst.Definition.Lattice] = lattice.values.map {
-    case ExecutableAst.Attribute(_, tpe) => sCtx.root.lattices(tpe)
+    case ExecutableAst.Attribute(_, tpe) => root.lattices(tpe)
   }
 
   /**
@@ -55,8 +55,8 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   private val Bot: Array[ValueType] = {
     val a = new Array[AnyRef](latticeOps.length)
     for ((l, i) <- latticeOps.zipWithIndex) {
-      val defn = sCtx.root.constants(l.bot)
-      a(i) = Interpreter.evalCall(defn, Array.empty, sCtx.root)
+      val defn = root.constants(l.bot)
+      a(i) = Interpreter.evalCall(defn, Array.empty, root)
     }
     a.asInstanceOf[Array[ValueType]]
   }
@@ -67,7 +67,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   private val Leq: Array[ExecutableAst.Definition.Constant] = {
     val a = new Array[ExecutableAst.Definition.Constant](latticeOps.length)
     for ((l, i) <- latticeOps.zipWithIndex) {
-      a(i) = sCtx.root.constants(l.leq)
+      a(i) = root.constants(l.leq)
     }
     a
   }
@@ -78,7 +78,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   private val Lub: Array[ExecutableAst.Definition.Constant] = {
     val a = new Array[ExecutableAst.Definition.Constant](latticeOps.length)
     for ((l, i) <- latticeOps.zipWithIndex) {
-      a(i) = sCtx.root.constants(l.lub)
+      a(i) = root.constants(l.lub)
     }
     a
   }
@@ -89,7 +89,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   private val Glb: Array[ExecutableAst.Definition.Constant] = {
     val a = new Array[ExecutableAst.Definition.Constant](latticeOps.length)
     for ((l, i) <- latticeOps.zipWithIndex) {
-      a(i) = sCtx.root.constants(l.glb)
+      a(i) = root.constants(l.glb)
     }
     a
   }
@@ -102,8 +102,8 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   }
 
   /**
-   * Returns the size of the relation.
-   */
+    * Returns the size of the relation.
+    */
   // TODO: Optimize
   def getSize: Int = scan.size
 
@@ -252,7 +252,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
 
         if (rv != pv) {
           val bot = Bot(i)
-          val glb = Interpreter.evalCall(Glb(i), Array(pv, rv).asInstanceOf[Array[AnyRef]], sCtx.root).asInstanceOf[ValueType]
+          val glb = Interpreter.evalCall(Glb(i), Array(pv, rv).asInstanceOf[Array[AnyRef]], root).asInstanceOf[ValueType]
 
           if (bot == glb)
             return false
@@ -275,9 +275,10 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
       val v2: ValueType = b(i)
 
       // if v1 and v2 are equal we do not need to compute leq.
-      if (v1 != v2) { // TODO: use neq
+      if (v1 != v2) {
+        // TODO: use neq
         // v1 and v2 are different, must compute leq.
-        val result = Interpreter.evalCall(Leq(i), Array(v1, v2).asInstanceOf[Array[AnyRef]], sCtx.root).asInstanceOf[ValueType]
+        val result = Interpreter.evalCall(Leq(i), Array(v1, v2).asInstanceOf[Array[AnyRef]], root).asInstanceOf[ValueType]
         if (!Value.cast2bool(result)) {
           return false
         }
@@ -302,7 +303,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
       else if (v2 == Bot(i)) // TODO: use eq
         result(i) = v1
       else
-        result(i) = Interpreter.evalCall(Lub(i), Array(v1, v2).asInstanceOf[Array[AnyRef]], sCtx.root).asInstanceOf[ValueType]
+        result(i) = Interpreter.evalCall(Lub(i), Array(v1, v2).asInstanceOf[Array[AnyRef]], root).asInstanceOf[ValueType]
 
       i = i + 1
     }

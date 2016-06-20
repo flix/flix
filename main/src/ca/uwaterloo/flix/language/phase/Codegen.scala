@@ -1043,7 +1043,7 @@ object Codegen {
   private def compileComparisonExpr(ctx: Context, visitor: MethodVisitor)
                                    (o: ComparisonOperator, e1: Expression, e2: Expression): Unit = {
     e1.tpe match {
-      case Type.Tuple(_) | Type.FSet(_) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
+      case Type.Enum(_, _) | Type.Tuple(_) | Type.FSet(_) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
         (e1.tpe: @unchecked) match {
           case Type.Tuple(_) =>
             // Value.Tuple.elms() method
@@ -1060,7 +1060,7 @@ object Codegen {
             compileExpression(ctx, visitor)(e2)
             visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), method1.getName, asm.Type.getMethodDescriptor(method1), false)
             visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(clazz2), method2.getName, asm.Type.getMethodDescriptor(method2), false)
-          case Type.FSet(_) =>
+          case Type.Enum(_, _) | Type.FSet(_) =>
             // java.lang.Object.equals(Object) method
             val clazz = Constants.objectClass
             val method = clazz.getMethod("equals", Constants.objectClass)
@@ -1095,7 +1095,7 @@ object Codegen {
           case BinaryOperator.NotEqual => (IF_ICMPEQ, FCMPG, DCMPG, IF_ACMPEQ, IFEQ)
         }
         e1.tpe match {
-          case Type.Unit | Type.Str | Type.Enum(_, _) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
+          case Type.Unit | Type.Str if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
             // Unit, String, and Enum can be reference compared for equality.
             visitor.visitJumpInsn(refOp, condElse)
           case Type.Bool if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>

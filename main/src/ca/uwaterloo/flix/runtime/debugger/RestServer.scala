@@ -331,11 +331,11 @@ class RestServer(solver: Solver) {
     */
   class GetCompilerPhasePerformance extends JsonHandler {
     def json: JValue = JArray(List(
-      JObject(List(JField("name", JString("Parser")), JField("time", JInt(solver.sCtx.root.time.parser / 1000000)))),
-      JObject(List(JField("name", JString("Weeder")), JField("time", JInt(solver.sCtx.root.time.weeder / 1000000)))),
-      JObject(List(JField("name", JString("Resolver")), JField("time", JInt(solver.sCtx.root.time.resolver / 1000000)))),
-      JObject(List(JField("name", JString("Typer")), JField("time", JInt(solver.sCtx.root.time.typer / 1000000)))),
-      JObject(List(JField("name", JString("Verifier")), JField("time", JInt(solver.sCtx.root.time.verifier / 1000000))))
+      JObject(List(JField("name", JString("Parser")), JField("time", JInt(solver.root.time.parser / 1000000)))),
+      JObject(List(JField("name", JString("Weeder")), JField("time", JInt(solver.root.time.weeder / 1000000)))),
+      JObject(List(JField("name", JString("Resolver")), JField("time", JInt(solver.root.time.resolver / 1000000)))),
+      JObject(List(JField("name", JString("Typer")), JField("time", JInt(solver.root.time.typer / 1000000)))),
+      JObject(List(JField("name", JString("Verifier")), JField("time", JInt(solver.root.time.verifier / 1000000))))
     ))
   }
 

@@ -30,16 +30,6 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-object Solver {
-
-  /**
-    * A case class representing a solver context.
-    */
-  // TODO: Deprecated
-  case class SolverContext(root: ExecutableAst.Root, options: Options)
-
-}
-
 /**
   * Flix Fixed Point Solver.
   *
@@ -47,7 +37,7 @@ object Solver {
   *
   * The solver computes the least fixed point of the rules in the given program.
   */
-class Solver(implicit val sCtx: Solver.SolverContext) {
+class Solver(val root: ExecutableAst.Root, options: Options) {
 
   //
   // Types of the solver:
@@ -87,7 +77,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     * Writing to the datastore is, in general, not thread-safe: Each relation/lattice may be concurrently updated, but
     * no concurrent writes may occur for the *same* relation/lattice.
     */
-  val dataStore = new DataStore[AnyRef]()
+  val dataStore = new DataStore[AnyRef](root)
 
   /**
     * The thread pool where rule evaluation takes place.
@@ -233,7 +223,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   def getModel: Model = model
 
   def getRuleStats: List[(Rule, Int, Long)] =
-    sCtx.root.rules.toSeq.sortBy(_.elapsedTime).reverse.map {
+    root.rules.toSeq.sortBy(_.elapsedTime).reverse.map {
       case r => (r, r.hitcount, r.elapsedTime)
     }.toList
 
@@ -241,7 +231,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     * Initialize the solver by starting the monitor, debugger, shell etc.
     */
   private def initSolver(): Unit = {
-    if (sCtx.options.debugger == Debugger.Enabled) {
+    if (options.debugger == Debugger.Enabled) {
       monitor.start()
 
       val restServer = new RestServer(this)
@@ -260,7 +250,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   private def initDataStore(): Unit = {
     val t = System.nanoTime()
     // iterate through all facts.
-    for (fact <- sCtx.root.facts) {
+    for (fact <- root.facts) {
       // evaluate the head of each fact.
       val interp = mkInterpretation()
       evalHead(fact.head, mutable.Map.empty, interp)
@@ -268,7 +258,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       // iterate through the interpretation.
       for ((sym, fact) <- interp) {
         // update the datastore, but don't compute any dependencies.
-        sCtx.root.tables(sym) match {
+        root.tables(sym) match {
           case r: ExecutableAst.Table.Relation =>
             dataStore.relations(sym).inferredFact(fact)
           case l: ExecutableAst.Table.Lattice =>
@@ -284,7 +274,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     */
   private def initWorkList(): Unit = {
     // add all rules to the worklist (under empty environments).
-    for (rule <- sCtx.root.rules) {
+    for (rule <- root.rules) {
       worklist.push((rule, mutable.Map.empty))
     }
   }
@@ -298,7 +288,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     writersPool.shutdownNow()
 
     // stop the debugger (if enabled).
-    if (sCtx.options.debugger == Debugger.Enabled) {
+    if (options.debugger == Debugger.Enabled) {
       monitor.stop()
     }
 
@@ -309,12 +299,12 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     * Prints debugging information.
     */
   private def printDebug(): Unit = {
-    if (sCtx.options.verbosity != Verbosity.Silent) {
+    if (options.verbosity != Verbosity.Silent) {
       val solverTime = totalTime / 1000000
       val initMiliSeconds = initTime / 1000000
       val readersMiliSeconds = readersTime / 1000000
       val writersMiliSeconds = writersTime / 1000000
-      val initialFacts = sCtx.root.facts.length
+      val initialFacts = root.facts.length
       val totalFacts = dataStore.numberOfFacts
       val throughput = (1000 * totalFacts) / (solverTime + 1)
       Console.println(f"Solved in $solverTime%,d msec. (init: $initMiliSeconds%,d msec, readers: $readersMiliSeconds%,d msec, writers: $writersMiliSeconds%,d msec)")
@@ -351,7 +341,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       evalLoop(rule, rule.loops, env, interp)
     case (p: Predicate.Body.Table) :: xs =>
       // lookup the relation or lattice.
-      val table = sCtx.root.tables(p.sym) match {
+      val table = root.tables(p.sym) match {
         case r: Table.Relation => dataStore.relations(p.sym)
         case l: Table.Lattice => dataStore.lattices(p.sym)
       }
@@ -389,7 +379,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   private def evalLoop(rule: Rule, ps: List[Predicate.Body.Loop], env: Env, interp: Interpretation): Unit = ps match {
     case Nil => evalFilter(rule, rule.filters, env, interp)
     case Predicate.Body.Loop(name, term, _, _, _) :: rest =>
-      val value = Value.cast2set(Interpreter.evalHeadTerm(term, sCtx.root, env.toMap))
+      val value = Value.cast2set(Interpreter.evalHeadTerm(term, root, env.toMap))
       for (x <- value) {
         val newRow = env.clone()
         newRow.update(name.name, x)
@@ -406,14 +396,14 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       // filter with hook functions
       evalFilterHook(rule, rule.filterHooks, env, interp)
     case (pred: Predicate.Body.ApplyFilter) :: xs =>
-      val defn = sCtx.root.constants(pred.name)
+      val defn = root.constants(pred.name)
       val args = new Array[AnyRef](pred.terms.length)
       var i = 0
       while (i < args.length) {
-        args(i) = Interpreter.evalBodyTerm(pred.terms(i), sCtx.root, env.toMap)
+        args(i) = Interpreter.evalBodyTerm(pred.terms(i), root, env.toMap)
         i = i + 1
       }
-      val result = Interpreter.evalCall(defn, args, sCtx.root, env.toMap)
+      val result = Interpreter.evalCall(defn, args, root, env.toMap)
       if (Value.cast2bool(result))
         evalFilter(rule, xs, env, interp)
   }
@@ -431,7 +421,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       val args = new Array[AnyRef](pred.terms.length)
       var i = 0
       while (i < args.length) {
-        args(i) = Interpreter.evalBodyTerm(pred.terms(i), sCtx.root, env.toMap)
+        args(i) = Interpreter.evalBodyTerm(pred.terms(i), root, env.toMap)
         i = i + 1
       }
 
@@ -477,7 +467,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       val fact = new Array[AnyRef](p.arity)
       var i = 0
       while (i < fact.length) {
-        fact(i) = Interpreter.evalHeadTerm(terms(i), sCtx.root, env.toMap)
+        fact(i) = Interpreter.evalHeadTerm(terms(i), root, env.toMap)
         i = i + 1
       }
 
@@ -500,7 +490,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
     */
-  private def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: WorkList): Unit = sCtx.root.tables(sym) match {
+  private def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: WorkList): Unit = root.tables(sym) match {
     case r: ExecutableAst.Table.Relation =>
       val changed = dataStore.relations(sym).inferredFact(fact)
       if (changed) {
@@ -522,7 +512,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   private def evalTerm(t: ExecutableAst.Term.Body, env: Env): AnyRef = t match {
     case t: ExecutableAst.Term.Body.Wildcard => null
     case t: ExecutableAst.Term.Body.Var => env.getOrElse(t.ident.name, null)
-    case t: ExecutableAst.Term.Body.Exp => Interpreter.eval(t.e, sCtx.root, env.toMap)
+    case t: ExecutableAst.Term.Body.Exp => Interpreter.eval(t.e, root, env.toMap)
   }
 
   /**
@@ -542,8 +532,8 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       env
     }
 
-    val table = sCtx.root.tables(sym)
-    for ((rule, p) <- sCtx.root.dependenciesOf(sym)) {
+    val table = root.tables(sym)
+    for ((rule, p) <- root.dependenciesOf(sym)) {
       table match {
         case r: ExecutableAst.Table.Relation =>
           // unify all terms with their values.
@@ -631,10 +621,10 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     */
   private def mkModel(): Model = {
     // construct the model.
-    val definitions = sCtx.root.constants.foldLeft(Map.empty[Symbol.Resolved, () => AnyRef]) {
+    val definitions = root.constants.foldLeft(Map.empty[Symbol.Resolved, () => AnyRef]) {
       case (macc, (sym, defn)) =>
         if (defn.formals.isEmpty)
-          macc + (sym -> (() => Interpreter.evalCall(defn, Array.empty, sCtx.root)))
+          macc + (sym -> (() => Interpreter.evalCall(defn, Array.empty, root)))
         else
           macc + (sym -> (() => throw new InternalRuntimeException("Unable to evalaute non-constant top-level definition.")))
     }
@@ -651,14 +641,14 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
         }
         macc + ((sym, table))
     }
-    model = new Model(sCtx.root, definitions, relations, lattices)
+    model = new Model(root, definitions, relations, lattices)
     model
   }
 
   /**
     * Returns a new thread pool configured to use the appropriate number of threads.
     */
-  private def mkThreadPool(): ExecutorService = sCtx.options.solver.threads match {
+  private def mkThreadPool(): ExecutorService = options.solver.threads match {
     // Case 1: Parallel execution disabled. Use a single thread.
     case 1 => Executors.newSingleThreadExecutor()
     // Case 2: Parallel execution enabled. Use the specified number of processors.

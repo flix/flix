@@ -290,34 +290,19 @@ object Value {
     */
   final class Tag private[Value](val tag: java.lang.String, val value: AnyRef) {
     override def equals(other: Any): scala.Boolean = other match {
-      case that: Value.Tag => that eq this
+      case that: Value.Tag => this.tag == that.tag && this.value == that.value
       case _ => false
     }
 
-    override val hashCode: Int = 7 * tag.hashCode + 11 * value.hashCode
+    override def hashCode: Int = 7 * tag.hashCode + 11 * value.hashCode
 
     override def toString: java.lang.String = s"Value.Tag($tag, $value)"
   }
 
   /**
-    * A cache for every tag ever created.
-    */
-    // TODO: Remove this, since it is inefficient and not parallel friendly.
-  private val tagCache = mutable.HashMap[(java.lang.String, AnyRef), Value.Tag]()
-
-  /**
     * Constructs the tag for the given tag `t` and value `v`.
     */
-  def mkTag(t: java.lang.String, v: AnyRef): Value.Tag = {
-    val tuple = (t, v)
-    if (tagCache.contains(tuple)) {
-      tagCache(tuple)
-    } else {
-      val ret = new Value.Tag(t, v)
-      tagCache(tuple) = ret
-      ret
-    }
-  }
+  def mkTag(t: java.lang.String, v: AnyRef): Value.Tag = new Value.Tag(t, v)
 
   /**
     * Casts the given reference `ref` to a tag.

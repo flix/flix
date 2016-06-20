@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.runtime.datastore
 
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Table
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
 import ca.uwaterloo.flix.language.phase.Indexer
 import ca.uwaterloo.flix.runtime.Solver
 import ca.uwaterloo.flix.util.BitOps
@@ -28,7 +28,7 @@ import scala.reflect.ClassTag
 /**
   * A class implementing a data store for indexed relations and lattices.
   */
-class DataStore[ValueType <: AnyRef](implicit sCtx: Solver.SolverContext, m: ClassTag[ValueType]) {
+class DataStore[ValueType <: AnyRef](root: ExecutableAst.Root)(implicit m: ClassTag[ValueType]) {
 
   /**
     * A map from names to indexed relations.
@@ -44,10 +44,10 @@ class DataStore[ValueType <: AnyRef](implicit sCtx: Solver.SolverContext, m: Cla
     * Initializes the relations and lattices.
     */
   // compute indexes based on the program constraint rules.
-  val indexes = Indexer.index(sCtx.root)
+  val indexes = Indexer.index(root)
 
   // initialize all indexed relations and lattices.
-  for ((sym, table) <- sCtx.root.tables) {
+  for ((sym, table) <- root.tables) {
     // translate indexes into their binary representation.
     val idx = indexes(sym) map {
       case columns => BitOps.setBits(vec = 0, bits = columns)
@@ -58,7 +58,7 @@ class DataStore[ValueType <: AnyRef](implicit sCtx: Solver.SolverContext, m: Cla
         relations(sym) = new IndexedRelation[ValueType](r, idx, idx.head)
 
       case l: Table.Lattice =>
-        lattices(sym) = new IndexedLattice[ValueType](l, idx)
+        lattices(sym) = new IndexedLattice[ValueType](l, idx, root)
     }
   }
 
