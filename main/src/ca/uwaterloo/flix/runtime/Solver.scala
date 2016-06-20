@@ -328,7 +328,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     *
     * Updates the given interpretation `interp`.
     */
-  def evalBody(rule: Rule, env: Env): Callable[Interpretation] = new Callable[Interpretation] {
+  private def evalBody(rule: Rule, env: Env): Callable[Interpretation] = new Callable[Interpretation] {
     def call(): Interpretation = {
       val t = System.nanoTime()
 
@@ -471,7 +471,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Evaluates the given head predicate `p` under the given environment `env0`.
     */
-  def evalHead(p: Predicate.Head, env: Env, interp: Interpretation): Unit = p match {
+  private def evalHead(p: Predicate.Head, env: Env, interp: Interpretation): Unit = p match {
     case p: Predicate.Head.Table =>
       val terms = p.terms
       val fact = new Array[AnyRef](p.arity)
@@ -487,7 +487,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Returns a callable to process a collection of inferred `facts` for the relation or lattice with the symbol `sym`.
     */
-  def inferredFacts(sym: Symbol.TableSym, facts: ArrayBuffer[Array[AnyRef]]): Callable[WorkList] = new Callable[WorkList] {
+  private def inferredFacts(sym: Symbol.TableSym, facts: ArrayBuffer[Array[AnyRef]]): Callable[WorkList] = new Callable[WorkList] {
     def call(): WorkList = {
       val localWorkList = mkWorkList()
       for (fact <- facts) {
@@ -500,7 +500,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
     */
-  def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: WorkList): Unit = sCtx.root.tables(sym) match {
+  private def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: WorkList): Unit = sCtx.root.tables(sym) match {
     case r: ExecutableAst.Table.Relation =>
       val changed = dataStore.relations(sym).inferredFact(fact)
       if (changed) {
@@ -528,7 +528,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Returns all dependencies of the given symbol `sym` along with an environment.
     */
-  def dependencies(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: WorkList): Unit = {
+  private def dependencies(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: WorkList): Unit = {
 
     def unify(pat: Array[String], fact: Array[AnyRef], limit: Int): Env = {
       val env = mutable.Map.empty[String, AnyRef]
@@ -614,7 +614,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Sorts the given facts by their table symbol.
     */
-  def groupFactsBySymbol(iter: Iterator[Interpretation]): mutable.Map[Symbol.TableSym, ArrayBuffer[Array[AnyRef]]] = {
+  private def groupFactsBySymbol(iter: Iterator[Interpretation]): mutable.Map[Symbol.TableSym, ArrayBuffer[Array[AnyRef]]] = {
     val result = mutable.Map.empty[Symbol.TableSym, ArrayBuffer[Array[AnyRef]]]
     while (iter.hasNext) {
       val interp = iter.next()
