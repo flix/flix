@@ -401,11 +401,11 @@ var LandingPage = React.createClass({displayName: "LandingPage",
                 React.createElement("div", {className: "row"}, 
 
                     React.createElement("div", {className: "col-xs-6"}, 
-                        React.createElement("h3", null, "Readers (", currentReadTasks, ")"), 
+                        React.createElement("h3", null, "Read Tasks (", currentReadTasks, ")"), 
                         React.createElement(LineChart, {key: Math.random(), width: 600, height: 250, labels: labels, data: readTasks, 
                                    theme: "green"}), 
 
-                        React.createElement("h3", null, "Writers (", currentWriteTasks, ")"), 
+                        React.createElement("h3", null, "Write Tasks (", currentWriteTasks, ")"), 
                         React.createElement(LineChart, {key: Math.random(), width: 600, height: 250, labels: labels, data: writeTasks, 
                                    theme: "orangered"}), 
 
