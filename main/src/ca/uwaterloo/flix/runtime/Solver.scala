@@ -128,6 +128,11 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   var model: Model = null
 
   /**
+    * Total wall-clock time.
+    */
+  var totalTime: Long = 0
+
+  /**
     * Time spent during initialization of the datastore.
     */
   var initTime: Long = 0
@@ -168,15 +173,11 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-    * Solves the current Flix program.
+    * Solves the Flix program.
     */
   def solve(): Model = {
-
     // initialize the solver.
     initSolver()
-
-    // measure the time elapsed.
-    val t = System.nanoTime()
 
     // initialize the datastore.
     initDataStore()
@@ -186,45 +187,23 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
 
     // iterate until fixpoint.
     while (worklist.nonEmpty) {
-      if (paused) {
-        synchronized {
-          wait()
-        }
-      }
+      // check if the solver has been paused.
+      checkPaused()
 
       // evaluate the rules in parallel.
-      val results = parallelEvaluateRules()
+      val interps = parallelEvaluateRules()
 
       // update the datastore in parallel.
-      parallelUpdateDataStore(results)
+      parallelUpdateDataStore(interps)
     }
 
-    /*
-     * Spin down the thread pools.
-     */
-    readersPool.shutdownNow()
-    writersPool.shutdownNow()
+    // stop the solver.
+    stopSolver()
 
-    // computed elapsed time.
-    val elapsed = System.nanoTime() - t
+    // print debugging information.
+    printDebug()
 
-    if (sCtx.options.verbosity != Verbosity.Silent) {
-      val solverTime = elapsed / 1000000
-      val initMiliSeconds = initTime / 1000000
-      val readersMiliSeconds = readersTime / 1000000
-      val writersMiliSeconds = writersTime / 1000000
-      val initialFacts = sCtx.root.facts.length
-      val totalFacts = dataStore.numberOfFacts
-      val throughput = (1000 * totalFacts) / (solverTime + 1)
-      Console.println(f"Solved in $solverTime%,d msec. (init: $initMiliSeconds%,d msec, readers: $readersMiliSeconds%,d msec, writers: $writersMiliSeconds%,d msec)")
-      Console.println(f"Initial Facts: $initialFacts%,d. Total Facts: $totalFacts%,d.")
-      Console.println(f"Throughput: $throughput%,d facts per second.")
-    }
-
-    if (sCtx.options.debugger == Debugger.Enabled) {
-      monitor.stop()
-    }
-
+    // build and return the model.
     mkModel()
   }
 
@@ -239,7 +218,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Initialize the solver by starting the monitor, debugger, shell etc.
     */
-  def initSolver(): Unit = {
+  private def initSolver(): Unit = {
     if (sCtx.options.debugger == Debugger.Enabled) {
       monitor.start()
 
@@ -249,12 +228,14 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       val shell = new Shell(this)
       shell.start()
     }
+
+    totalTime = System.nanoTime()
   }
 
   /**
     * Initialize the datastore with all the facts in the program.
     */
-  def initDataStore(): Unit = {
+  private def initDataStore(): Unit = {
     val t = System.nanoTime()
     // iterate through all facts.
     for (fact <- sCtx.root.facts) {
@@ -279,10 +260,44 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Initialize the worklist with every rule (under the empty environment).
     */
-  def initWorkList(): Unit = {
+  private def initWorkList(): Unit = {
     // add all rules to the worklist (under empty environments).
     for (rule <- sCtx.root.rules) {
       worklist.push((rule, mutable.Map.empty))
+    }
+  }
+
+  /**
+    * Stops the solver.
+    */
+  private def stopSolver(): Unit = {
+    // spin down thread pools.
+    readersPool.shutdownNow()
+    writersPool.shutdownNow()
+
+    // stop the debugger (if enabled).
+    if (sCtx.options.debugger == Debugger.Enabled) {
+      monitor.stop()
+    }
+
+    totalTime = System.nanoTime() - totalTime
+  }
+
+  /**
+    * Prints debugging information.
+    */
+  private def printDebug(): Unit = {
+    if (sCtx.options.verbosity != Verbosity.Silent) {
+      val solverTime = totalTime / 1000000
+      val initMiliSeconds = initTime / 1000000
+      val readersMiliSeconds = readersTime / 1000000
+      val writersMiliSeconds = writersTime / 1000000
+      val initialFacts = sCtx.root.facts.length
+      val totalFacts = dataStore.numberOfFacts
+      val throughput = (1000 * totalFacts) / (solverTime + 1)
+      Console.println(f"Solved in $solverTime%,d msec. (init: $initMiliSeconds%,d msec, readers: $readersMiliSeconds%,d msec, writers: $writersMiliSeconds%,d msec)")
+      Console.println(f"Initial Facts: $initialFacts%,d. Total Facts: $totalFacts%,d.")
+      Console.println(f"Throughput: $throughput%,d facts per second.")
     }
   }
 
@@ -647,5 +662,15 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     * Returns a fresh (empty) interpretation.
     */
   private def mkInterpretation(): Interpretation = new mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]()
+
+  /**
+    * Checks if the solver is paused, and if so, waits for an interrupt.
+    */
+  private def checkPaused(): Unit =
+    if (paused) {
+      synchronized {
+        wait()
+      }
+    }
 
 }
