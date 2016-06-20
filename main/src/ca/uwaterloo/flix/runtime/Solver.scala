@@ -207,6 +207,9 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     mkModel()
   }
 
+  /**
+    * Returns the model (if available).
+    */
   def getModel: Model = model
 
   // TODO: Move
@@ -309,7 +312,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   def evalBody(rule: Rule, env: Env, interp: Interpretation): Unit = {
     val t = System.nanoTime()
 
-    cross(rule, rule.tables, env, interp)
+    evalCross(rule, rule.tables, env, interp)
 
     rule.elapsedTime += System.nanoTime() - t
     rule.hitcount += 1
@@ -318,10 +321,10 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Computes the cross product of all collections in the body.
     */
-  def cross(rule: Rule, ps: List[Predicate.Body.Table], row: Env, result: Interpretation): Unit = ps match {
+  private def evalCross(rule: Rule, ps: List[Predicate.Body.Table], env: Env, interp: Interpretation): Unit = ps match {
     case Nil =>
       // cross product complete, now filter
-      loop(rule, rule.loops, row, result)
+      evalLoop(rule, rule.loops, env, interp)
     case (p: Predicate.Body.Table) :: xs =>
       // lookup the relation or lattice.
       val table = sCtx.root.tables(p.sym) match {
@@ -333,14 +336,14 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       val pat = new Array[AnyRef](p.arity)
       var i = 0
       while (i < pat.length) {
-        pat(i) = eval(p.terms(i), row)
+        pat(i) = eval(p.terms(i), env)
         i = i + 1
       }
 
       // lookup all matching rows.
       for (matchedRow <- table.lookup(pat)) {
         // copy the environment for every row.
-        val newRow = row.clone()
+        val newRow = env.clone()
 
         var i = 0
         while (i < matchedRow.length) {
@@ -352,59 +355,59 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
 
         // compute the cross product of the remaining
         // collections under the new environment.
-        cross(rule, xs, newRow, result)
+        evalCross(rule, xs, newRow, interp)
       }
   }
 
   /**
-    * Unfolds the given loop predicates `ps` over the initial `row`.
+    * Unfolds the given loop predicates `ps` over the initial `env`.
     */
-  def loop(rule: Rule, ps: List[Predicate.Body.Loop], row: Env, result: Interpretation): Unit = ps match {
-    case Nil => filter(rule, rule.filters, row, result)
+  private def evalLoop(rule: Rule, ps: List[Predicate.Body.Loop], env: Env, interp: Interpretation): Unit = ps match {
+    case Nil => evalFilter(rule, rule.filters, env, interp)
     case Predicate.Body.Loop(name, term, _, _, _) :: rest =>
-      val value = Value.cast2set(Interpreter.evalHeadTerm(term, sCtx.root, row.toMap))
+      val value = Value.cast2set(Interpreter.evalHeadTerm(term, sCtx.root, env.toMap))
       for (x <- value) {
-        val newRow = row.clone()
+        val newRow = env.clone()
         newRow.update(name.name, x)
-        loop(rule, rest, newRow, result)
+        evalLoop(rule, rest, newRow, interp)
       }
   }
 
   /**
-    * Filters the given `row` through all filter functions in the body.
+    * Filters the given `env` through all filter functions in the body.
     */
   @tailrec
-  private def filter(rule: Rule, ps: List[Predicate.Body.ApplyFilter], row: Env, result: Interpretation): Unit = ps match {
+  private def evalFilter(rule: Rule, ps: List[Predicate.Body.ApplyFilter], env: Env, interp: Interpretation): Unit = ps match {
     case Nil =>
       // filter with hook functions
-      filterHook(rule, rule.filterHooks, row, result)
+      evalFilterHook(rule, rule.filterHooks, env, interp)
     case (pred: Predicate.Body.ApplyFilter) :: xs =>
       val defn = sCtx.root.constants(pred.name)
       val args = new Array[AnyRef](pred.terms.length)
       var i = 0
       while (i < args.length) {
-        args(i) = Interpreter.evalBodyTerm(pred.terms(i), sCtx.root, row.toMap)
+        args(i) = Interpreter.evalBodyTerm(pred.terms(i), sCtx.root, env.toMap)
         i = i + 1
       }
-      val v = Interpreter.evalCall(defn, args, sCtx.root, row.toMap)
-      if (Value.cast2bool(v))
-        filter(rule, xs, row, result)
+      val result = Interpreter.evalCall(defn, args, sCtx.root, env.toMap)
+      if (Value.cast2bool(result))
+        evalFilter(rule, xs, env, interp)
   }
 
   /**
-    * Filters the given `row` through all filter hook functions in the body.
+    * Filters the given `env` through all filter hook functions in the body.
     */
   @tailrec
-  private def filterHook(rule: Rule, ps: List[Predicate.Body.ApplyHookFilter], row: Env, result: Interpretation): Unit = ps match {
+  private def evalFilterHook(rule: Rule, ps: List[Predicate.Body.ApplyHookFilter], env: Env, interp: Interpretation): Unit = ps match {
     case Nil =>
       // filter complete, now check disjointness
-      disjoint(rule, rule.disjoint, row, result)
+      evalDisjoint(rule, rule.disjoint, env, interp)
     case (pred: Predicate.Body.ApplyHookFilter) :: xs =>
 
       val args = new Array[AnyRef](pred.terms.length)
       var i = 0
       while (i < args.length) {
-        args(i) = Interpreter.evalBodyTerm(pred.terms(i), sCtx.root, row.toMap)
+        args(i) = Interpreter.evalBodyTerm(pred.terms(i), sCtx.root, env.toMap)
         i = i + 1
       }
 
@@ -413,48 +416,48 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
           val wargs = args map {
             case arg => new WrappedValue(arg): IValue
           }
-          val v = inv.apply(wargs).getUnsafeRef
-          if (Value.cast2bool(v)) {
-            filterHook(rule, xs, row, result)
+          val result = inv.apply(wargs).getUnsafeRef
+          if (Value.cast2bool(result)) {
+            evalFilterHook(rule, xs, env, interp)
           }
         case Ast.Hook.Unsafe(name, inv, tpe) =>
-          val v = inv.apply(args)
-          if (Value.cast2bool(v)) {
-            filterHook(rule, xs, row, result)
+          val result = inv.apply(args)
+          if (Value.cast2bool(result)) {
+            evalFilterHook(rule, xs, env, interp)
           }
       }
   }
 
   /**
-    * Filters the given `row` through all disjointness filters in the body.
+    * Filters the given `env` through all disjointness filters in the body.
     */
   @tailrec
-  private def disjoint(rule: Rule, ps: List[Predicate.Body.NotEqual], row: Env, result: Interpretation): Unit = ps match {
+  private def evalDisjoint(rule: Rule, ps: List[Predicate.Body.NotEqual], env: Env, interp: Interpretation): Unit = ps match {
     case Nil =>
       // rule body complete, evaluate the head.
-      evalHead(rule.head, row, result)
+      evalHead(rule.head, env, interp)
     case Predicate.Body.NotEqual(ident1, ident2, _, _, _) :: xs =>
-      val value1 = row(ident1.name)
-      val value2 = row(ident2.name)
+      val value1 = env(ident1.name)
+      val value2 = env(ident2.name)
       if (value1 != value2) {
-        disjoint(rule, xs, row, result)
+        evalDisjoint(rule, xs, env, interp)
       }
   }
 
   /**
     * Evaluates the given head predicate `p` under the given environment `env0`.
     */
-  def evalHead(p: Predicate.Head, env0: Env, result: Interpretation): Unit = p match {
+  def evalHead(p: Predicate.Head, env: Env, interp: Interpretation): Unit = p match {
     case p: Predicate.Head.Table =>
       val terms = p.terms
       val fact = new Array[AnyRef](p.arity)
       var i = 0
       while (i < fact.length) {
-        fact(i) = Interpreter.evalHeadTerm(terms(i), sCtx.root, env0.toMap)
+        fact(i) = Interpreter.evalHeadTerm(terms(i), sCtx.root, env.toMap)
         i = i + 1
       }
 
-      result += ((p.sym, fact))
+      interp += ((p.sym, fact))
   }
 
   /**
