@@ -191,10 +191,10 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       checkPaused()
 
       // evaluate the rules in parallel.
-      val interps = parallelEvaluateRules()
+      val interps = parallelEval()
 
       // update the datastore in parallel.
-      parallelUpdateDataStore(interps)
+      parallelUpdate(interps)
     }
 
     // stop the solver.
@@ -212,7 +212,6 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     */
   def getModel: Model = model
 
-  // TODO: Move
   def getRuleStats: List[(Rule, Int, Long)] =
     sCtx.root.rules.toSeq.sortBy(_.elapsedTime).reverse.map {
       case r => (r, r.hitcount, r.elapsedTime)
@@ -243,11 +242,11 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     // iterate through all facts.
     for (fact <- sCtx.root.facts) {
       // evaluate the head of each fact.
-      val deltaFacts = mkInterpretation()
-      evalHead(fact.head, mutable.Map.empty, deltaFacts)
+      val interp = mkInterpretation()
+      evalHead(fact.head, mutable.Map.empty, interp)
 
-      // iterate through the delta facts.
-      for ((sym, fact) <- deltaFacts) {
+      // iterate through the interpretation.
+      for ((sym, fact) <- interp) {
         // update the datastore, but don't compute any dependencies.
         sCtx.root.tables(sym) match {
           case r: ExecutableAst.Table.Relation =>
@@ -305,17 +304,22 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-    * Evaluates the body of the given `rule` under the given initial environment `env`.
+    * Returns a callable which evaluates the body of the given `rule` under the given initial environment `env`.
     *
     * Updates the given interpretation `interp`.
     */
-  def evalBody(rule: Rule, env: Env, interp: Interpretation): Unit = {
-    val t = System.nanoTime()
+  def evalBody(rule: Rule, env: Env): Callable[Interpretation] = new Callable[Interpretation] {
+    def call(): Interpretation = {
+      val t = System.nanoTime()
 
-    evalCross(rule, rule.tables, env, interp)
+      val interp = mkInterpretation()
+      evalCross(rule, rule.tables, env, interp)
 
-    rule.elapsedTime += System.nanoTime() - t
-    rule.hitcount += 1
+      rule.elapsedTime += System.nanoTime() - t
+      rule.hitcount += 1
+
+      interp
+    }
   }
 
   /**
@@ -336,7 +340,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       val pat = new Array[AnyRef](p.arity)
       var i = 0
       while (i < pat.length) {
-        pat(i) = eval(p.terms(i), env)
+        pat(i) = evalTerm(p.terms(i), env)
         i = i + 1
       }
 
@@ -495,7 +499,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
     *
     * Returns `null` if the term is a free variable.
     */
-  def eval(t: ExecutableAst.Term.Body, env: Env): AnyRef = t match {
+  private def evalTerm(t: ExecutableAst.Term.Body, env: Env): AnyRef = t match {
     case t: ExecutableAst.Term.Body.Wildcard => null
     case t: ExecutableAst.Term.Body.Var => env.getOrElse(t.ident.name, null)
     case t: ExecutableAst.Term.Body.Exp => Interpreter.eval(t.e, sCtx.root, env.toMap)
@@ -541,20 +545,13 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Evaluates each of the rules in parallel.
     */
-  private def parallelEvaluateRules(): Iterator[Interpretation] = {
+  private def parallelEval(): Iterator[Interpretation] = {
     val t = System.nanoTime()
 
     // --- begin parallel execution ---
     val readerTasks = new ArrayList[Callable[Interpretation]]()
     for ((rule, env) <- worklist) {
-      // TODO: Extract into function
-      val task = new Callable[Interpretation] {
-        def call(): Interpretation = {
-          val deltaFacts = mkInterpretation()
-          evalBody(rule, env, deltaFacts)
-          deltaFacts
-        }
-      }
+      val task = evalBody(rule, env)
       readerTasks.add(task)
     }
     val result = flatten(readersPool.invokeAll(readerTasks))
@@ -569,7 +566,7 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   /**
     * Updates the datastore in parallel.
     */
-  private def parallelUpdateDataStore(iter: Iterator[Interpretation]): Unit = {
+  private def parallelUpdate(iter: Iterator[Interpretation]): Unit = {
     val t = System.nanoTime()
 
     // --- begin parallel execution ---
@@ -596,8 +593,8 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   def groupFactsBySymbol(iter: Iterator[Interpretation]): mutable.Map[Symbol.TableSym, ArrayBuffer[Array[AnyRef]]] = {
     val result = mutable.Map.empty[Symbol.TableSym, ArrayBuffer[Array[AnyRef]]]
     while (iter.hasNext) {
-      val deltaFacts = iter.next()
-      for ((symbol, fact) <- deltaFacts) {
+      val interp = iter.next()
+      for ((symbol, fact) <- interp) {
         val buffer = result.getOrElseUpdate(symbol, ArrayBuffer.empty)
         buffer += fact
       }
