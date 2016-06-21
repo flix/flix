@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<project name="flix" default="build-all" basedir=".">
+
+    <!-- ======================================================== -->
+    <!-- Initialization of all property settings                  -->
+    <!-- ======================================================== -->
+    <property name="src" value="main/src"/>
+    <property name="out.dir" value="out"/>
+    <property name="lib.dir" value="lib"/>
+    <property file="local.properties"/>
+
+    <!-- ======================================================== -->
+    <!-- Load scala ant task                                      -->
+    <!-- ======================================================== -->
+    <taskdef resource="scala/tools/ant/antlib.xml">
+        <classpath>
+            <pathelement location="${scala.home}/lib/scala-compiler.jar"/>
+            <pathelement location="${scala.home}/lib/scala-library.jar"/>
+            <pathelement location="${scala.home}/lib/scala-reflect.jar"/>
+        </classpath>
+    </taskdef>
+
+    <!-- ======================================================== -->
+    <!-- Classpath                                                -->
+    <!-- ======================================================== -->
+    <path id="classpath">
+        <pathelement location="${scala.home}/lib/scala-library.jar"/>
+        <pathelement location="${lib.dir}/com.microsoft.z3.jar"/>
+        <pathelement location="${lib.dir}/com.github.shapeless-2.3.0.jar"/>
+
+        <fileset dir="${lib.dir}">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+
+
+    <target name="build-all">
+        <mkdir dir="${out.dir}"/>
+        <scalac srcdir="${src}" destdir="${out.dir}" classpathref="classpath">
+            <include name="**/*.scala"/>
+        </scalac>
+    </target>
+
+    <target name="clean">
+        <delete dir="${out.dir}"/>
+    </target>
+
+</project>
