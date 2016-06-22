@@ -126,6 +126,7 @@ class TestBackend extends FunSuite {
     private def createFlix(codegen: Boolean = false) = {
       val options = Options(
         debugger = Debugger.Disabled,
+        tutorial = Tutorial.Disabled,
         print = Nil,
         verbosity = Verbosity.Silent,
         verify = Verify.Disabled,

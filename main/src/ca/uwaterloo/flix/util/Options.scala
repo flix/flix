@@ -23,6 +23,7 @@ object Options {
   val Default = Options(
     debugger = Debugger.Disabled,
     Nil,
+    tutorial = Tutorial.Disabled,
     verbosity = Verbosity.Silent,
     verify = Verify.Disabled,
     codegen = CodeGeneration.Enabled,
@@ -42,6 +43,7 @@ object Options {
   */
 case class Options(debugger: Debugger,
                    print: List[String],
+                   tutorial: Tutorial,
                    verbosity: Verbosity,
                    verify: Verify,
                    codegen: CodeGeneration,
@@ -66,6 +68,25 @@ object Debugger {
     * Disables the built-in web-based debugger.
     */
   case object Disabled extends Debugger
+
+}
+
+/**
+  * An option to control whether to emit the tutorial.
+  */
+sealed trait Tutorial
+
+object Tutorial {
+
+  /**
+    * Do output tutorial.
+    */
+  case object Enabled extends Tutorial
+
+  /**
+    * Do not output the tutorial.
+    */
+  case object Disabled extends Tutorial
 
 }
 

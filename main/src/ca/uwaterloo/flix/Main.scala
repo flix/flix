@@ -45,6 +45,9 @@ object Main {
     // parse command line arguments.
     val options = parseArgs(args)
 
+    // check whether we should output the tutorial.
+    // TODO
+
     // configure Flix and add the paths.
     val builder = new Flix()
     builder.setOptions(options)
@@ -109,6 +112,7 @@ object Main {
       case "--verbose" :: xs => visit(xs, opts.copy(verbosity = Verbosity.Verbose))
       case "-s" :: xs => visit(xs, opts.copy(verbosity = Verbosity.Silent))
       case "--silent" :: xs => visit(xs, opts.copy(verbosity = Verbosity.Silent))
+      case "--tutorial" :: xs => visit(xs, opts.copy(tutorial = Tutorial.Enabled))
       case "-Xinterpreter" :: xs => visit(xs, opts.copy(codegen = CodeGeneration.Disabled))
       case "-Xdump-bytecode" :: xs => visit(xs, opts.copy(debugBytecode = DebugBytecode.Enabled))
       case "--verify" :: xs => visit(xs, opts.copy(verify = Verify.Enabled))
