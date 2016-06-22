@@ -1,9 +1,10 @@
 <?xml version="1.0"?>
 <project name="flix" default="build-all" basedir=".">
+
     <!-- ======================================================== -->
     <!-- Initialization properties.                               -->
     <!-- ======================================================== -->
-    <property name="src.dir" value="main/src"/>
+    <property name="src.dir" value="main"/>
     <property name="out.dir" value="out"/>
     <property name="lib.dir" value="lib"/>
     <property file="local.properties"/>
@@ -19,6 +20,13 @@
             <pathelement location="${scala.home}/lib/scala-compiler.jar"/>
             <pathelement location="${scala.home}/lib/scala-library.jar"/>
             <pathelement location="${scala.home}/lib/scala-reflect.jar"/>
+        </classpath>
+    </taskdef>
+
+    <taskdef name="scalatest" classname="org.scalatest.tools.ScalaTestAntTask">
+        <classpath>
+            <pathelement location="${scala.home}/lib/scala-library.jar"/>
+            <pathelement location="${lib.dir}/org.scalatest-2.2.6.jar"/>
         </classpath>
     </taskdef>
 
@@ -64,6 +72,7 @@
 
             <!-- Bundle scala libraries. -->
             <zipgroupfileset file="${scala.home}/lib/scala-library.jar"/>
+            <zipgroupfileset file="${scala.home}/lib/scala-xml_2.11-1.0.4.jar"/>
         </jar>
     </target>
 
@@ -90,4 +99,19 @@
     <target name="run-main" depends="build-all">
         <java jar="${out.dir}/flix.jar" fork="true"/>
     </target>
+
+    <!-- ======================================================== -->
+    <!-- Run scalatest.                                           -->
+    <!-- ======================================================== -->
+    <target name="run-tests" depends="build-all">
+        <java classname="org.scalatest.tools.Runner" fork="true">
+            <classpath>
+                <pathelement location="${out.dir}/flix.jar"/>
+            </classpath>
+            <arg value="-o"/>
+            <arg value="-s"/>
+            <arg value="ca.uwaterloo.flix.TestAll"/>
+        </java>
+    </target>
+
 </project>
