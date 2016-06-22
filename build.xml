@@ -62,7 +62,7 @@
     <!-- ======================================================== -->
     <!-- Build fat jar.                                           -->
     <!-- ======================================================== -->
-    <target name="build-jar" depends="build-src">
+    <target name="build-jar">
         <jar destfile="${out.dir}/flix.jar" manifest="main/src/META-INF/MANIFEST.MF">
             <!-- Include compiled class files. -->
             <fileset dir="${out.dir}/classes" includes="**/*.class"/>
@@ -96,19 +96,19 @@
     <!-- ======================================================== -->
     <!-- Run the generated fat JAR.                               -->
     <!-- ======================================================== -->
-    <target name="run-main" depends="build-all">
+    <target name="run-main">
         <java jar="${out.dir}/flix.jar" fork="true"/>
     </target>
 
     <!-- ======================================================== -->
     <!-- Run scalatest.                                           -->
     <!-- ======================================================== -->
-    <target name="run-tests" depends="build-all">
+    <target name="run-tests">
         <java classname="org.scalatest.tools.Runner" fork="true">
             <classpath>
                 <pathelement location="${out.dir}/flix.jar"/>
             </classpath>
-            <arg value="-o"/>
+            <arg value="-oC"/>
             <arg value="-s"/>
             <arg value="ca.uwaterloo.flix.TestAll"/>
         </java>
