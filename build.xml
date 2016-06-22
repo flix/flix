@@ -1,8 +1,7 @@
 <?xml version="1.0"?>
 <project name="flix" default="build-all" basedir=".">
-
     <!-- ======================================================== -->
-    <!-- Initialization of all property settings                  -->
+    <!-- Initialization properties.                               -->
     <!-- ======================================================== -->
     <property name="src.dir" value="main/src"/>
     <property name="out.dir" value="out"/>
@@ -13,7 +12,7 @@
     <fail unless="scala.home">You must set the property scala.home in local.properties.</fail>
 
     <!-- ======================================================== -->
-    <!-- Load scala ant task                                      -->
+    <!-- Load scala ant task.                                     -->
     <!-- ======================================================== -->
     <taskdef resource="scala/tools/ant/antlib.xml">
         <classpath>
@@ -24,7 +23,7 @@
     </taskdef>
 
     <!-- ======================================================== -->
-    <!-- Setup project classpath                                  -->
+    <!-- Setup project classpath.                                 -->
     <!-- ======================================================== -->
     <path id="classpath">
         <pathelement location="${scala.home}/lib/scala-library.jar"/>
@@ -55,22 +54,26 @@
     <!-- ======================================================== -->
     <!-- Build fat jar.                                           -->
     <!-- ======================================================== -->
-    <target name="build-jar">
+    <target name="build-jar" depends="build-src">
         <jar destfile="${out.dir}/flix.jar" manifest="main/src/META-INF/MANIFEST.MF">
             <!-- Include compiled class files. -->
             <fileset dir="${out.dir}/classes" includes="**/*.class"/>
-            <!-- Bundle all libraries -->
+
+            <!-- Bundle libraries. -->
             <zipgroupfileset dir="${lib.dir}" includes="**/*.jar"/>
+
+            <!-- Bundle scala libraries. -->
+            <zipgroupfileset file="${scala.home}/lib/scala-library.jar"/>
         </jar>
     </target>
 
     <!-- ======================================================== -->
-    <!-- Compile all targets                                      -->
+    <!-- Compile all targets.                                     -->
     <!-- ======================================================== -->
     <target name="build-all" depends="build-src, build-jar"/>
 
     <!-- ======================================================== -->
-    <!-- Clean project                                            -->
+    <!-- Clean project.                                           -->
     <!-- ======================================================== -->
     <target name="clean">
         <delete dir="${out.dir}"/>
@@ -81,4 +84,10 @@
     <!-- ======================================================== -->
     <target name="rebuild" depends="clean, build-all"/>
 
+    <!-- ======================================================== -->
+    <!-- Run the generated fat JAR.                               -->
+    <!-- ======================================================== -->
+    <target name="run-main" depends="build-all">
+        <java jar="${out.dir}/flix.jar" fork="true"/>
+    </target>
 </project>
