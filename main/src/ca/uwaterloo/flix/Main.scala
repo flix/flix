@@ -38,6 +38,7 @@ object Main {
       null
     }
 
+<<<<<<< 2ddeb406da7d4288a63c2497d28e9387e779983d
     // construct flix options.
     val options = Options.Default.copy(
       debug = cmdOpts.debug,
@@ -47,6 +48,16 @@ object Main {
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       verifier = cmdOpts.verifier
     )
+=======
+    // parse command line arguments.
+    val options = parseArgs(args)
+
+    // check whether we should output the tutorial.
+    if (options.tutorial == Tutorial.Enabled) {
+      writeTutorial()
+      System.exit(0)
+    }
+>>>>>>> WIP tutorial.
 
     // configure Flix and add the paths.
     val builder = new Flix()
