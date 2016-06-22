@@ -46,7 +46,10 @@ object Main {
     val options = parseArgs(args)
 
     // check whether we should output the tutorial.
-    // TODO
+    if (options.tutorial == Tutorial.Enabled) {
+      writeTutorial()
+      System.exit(0)
+    }
 
     // configure Flix and add the paths.
     val builder = new Flix()
@@ -127,4 +130,18 @@ object Main {
 
     visit(args, Options.Default.copy(verbosity = Verbosity.Normal))
   }
+
+  // TODO
+  private def writeTutorial(): Unit = {
+    val path = "/tutorial/tutorial.flix"
+    val inputStream = getClass.getResourceAsStream(path)
+    val outPath = Paths.get("tutorial.flix")
+
+
+    Files.copy(inputStream, outPath)
+
+    Console.println("Successfully created `tutorial.flix'. Feel free to open and edit.")
+    Console.println("Run the file with `java -jar flix.jar tutorial.flix'.")
+  }
+
 }
