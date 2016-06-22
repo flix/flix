@@ -4,10 +4,13 @@
     <!-- ======================================================== -->
     <!-- Initialization of all property settings                  -->
     <!-- ======================================================== -->
-    <property name="src" value="main/src"/>
+    <property name="src.dir" value="main/src"/>
     <property name="out.dir" value="out"/>
     <property name="lib.dir" value="lib"/>
     <property file="local.properties"/>
+
+    <!-- Ensure that scala.home was set. -->
+    <fail unless="scala.home">You must set the property scala.home in local.properties.</fail>
 
     <!-- ======================================================== -->
     <!-- Load scala ant task                                      -->
@@ -21,28 +24,61 @@
     </taskdef>
 
     <!-- ======================================================== -->
-    <!-- Classpath                                                -->
+    <!-- Setup project classpath                                  -->
     <!-- ======================================================== -->
     <path id="classpath">
         <pathelement location="${scala.home}/lib/scala-library.jar"/>
-        <pathelement location="${lib.dir}/com.microsoft.z3.jar"/>
-        <pathelement location="${lib.dir}/com.github.shapeless-2.3.0.jar"/>
-
         <fileset dir="${lib.dir}">
             <include name="**/*.jar"/>
         </fileset>
     </path>
 
-
-    <target name="build-all">
+    <!-- ======================================================== -->
+    <!-- Compiles scala sources.                                  -->
+    <!-- ======================================================== -->
+    <target name="build-src">
+        <!-- Create build directories. -->
         <mkdir dir="${out.dir}"/>
-        <scalac srcdir="${src}" destdir="${out.dir}" classpathref="classpath">
+        <mkdir dir="${out.dir}/classes"/>
+
+        <!-- Compile scala sources. -->
+        <scalac srcdir="${src.dir}" destdir="${out.dir}/classes" classpathref="classpath">
             <include name="**/*.scala"/>
         </scalac>
+
+        <!-- Copy resources. -->
+        <copy todir="${out.dir}/classes">
+            <fileset dir="${src.dir}" excludes="*/.scala"/>
+        </copy>
     </target>
 
+    <!-- ======================================================== -->
+    <!-- Build fat jar.                                           -->
+    <!-- ======================================================== -->
+    <target name="build-jar">
+        <jar destfile="${out.dir}/flix.jar" manifest="main/src/META-INF/MANIFEST.MF">
+            <!-- Include compiled class files. -->
+            <fileset dir="${out.dir}/classes" includes="**/*.class"/>
+            <!-- Bundle all libraries -->
+            <zipgroupfileset dir="${lib.dir}" includes="**/*.jar"/>
+        </jar>
+    </target>
+
+    <!-- ======================================================== -->
+    <!-- Compile all targets                                      -->
+    <!-- ======================================================== -->
+    <target name="build-all" depends="build-src, build-jar"/>
+
+    <!-- ======================================================== -->
+    <!-- Clean project                                            -->
+    <!-- ======================================================== -->
     <target name="clean">
         <delete dir="${out.dir}"/>
     </target>
+
+    <!-- ======================================================== -->
+    <!-- Rebuild entire project.                                  -->
+    <!-- ======================================================== -->
+    <target name="rebuild" depends="clean, build-all"/>
 
 </project>
