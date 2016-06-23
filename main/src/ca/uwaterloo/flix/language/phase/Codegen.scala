@@ -1003,7 +1003,7 @@ object Codegen {
    * Enums, Tuples, and Sets only support EQ and NE. Note that the generated code uses the negated condition, i.e.
    * branch if the (source) condition is false.
    *
-   * Some reference types (Unit, String, and Enum) can use reference equality because of interning.
+   * Some reference types (Unit and String) can use reference equality because of interning.
    *
    * Int8/16/32 and Char comparisons only need a single instruction (IF_ICMPyy, where yy is one of
    * {LE, LT, GE, GT, EQ, NE}), which jumps if the yy condition is true, i.e. the (source) condition is false. All other
