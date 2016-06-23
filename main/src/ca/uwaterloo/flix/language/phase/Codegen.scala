@@ -1096,7 +1096,7 @@ object Codegen {
         }
         e1.tpe match {
           case Type.Unit | Type.Str if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
-            // Unit, String, and Enum can be reference compared for equality.
+            // Unit and String can be reference compared for equality.
             visitor.visitJumpInsn(refOp, condElse)
           case Type.Bool if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
             // Bool can be (value) compared for equality.

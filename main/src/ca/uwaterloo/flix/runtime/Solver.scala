@@ -61,7 +61,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * The type of a (partial) interpretation.
     *
-    * An interpretation is collection of facts.
+    * An interpretation is collection of facts (a table symbol associated with an array of facts).
     */
   type Interpretation = mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]
 
