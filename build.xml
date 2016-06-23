@@ -23,13 +23,6 @@
         </classpath>
     </taskdef>
 
-    <taskdef name="scalatest" classname="org.scalatest.tools.ScalaTestAntTask">
-        <classpath>
-            <pathelement location="${scala.home}/lib/scala-library.jar"/>
-            <pathelement location="${lib.dir}/org.scalatest-2.2.6.jar"/>
-        </classpath>
-    </taskdef>
-
     <!-- ======================================================== -->
     <!-- Setup project classpath.                                 -->
     <!-- ======================================================== -->
