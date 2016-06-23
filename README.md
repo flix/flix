@@ -14,18 +14,27 @@ Please include information such as the Flix version and JVM version you are usin
 
 ### Building with SBT
 
+Flix can be built with the Scala Simple Build Tool (SBT). Ensure SBT is installed and on your path.
 
+The available tasks are:
+
+- `compile`: compiles all sources files.
+- `clean`: cleans all build files.
+- `run`: runs Flix (with no input).
+- `test`: runs all test cases.
 
 ### Building with Apache Ant
 
-Flix comes with an Apache Ant build script: build.xml. The build script includes the following targets:
+Flix can be built with Apache Ant. Ensure that Ant is installed and on your path.
+
+The available Ant targets are:
 
 - `build-all`: alias for `build-src, build-jar`.
 - `build-jar`: builds the `flix.jar` file.
 - `build-src`: compiles all source files.
 - `clean`: cleans all build files.
 - `rebuild`: alias for `clean, build-all`.
-- `run-main`: runs flix (with no input).
+- `run-main`: runs Flix (with no input).
 - `run-tests`: runs all test cases.
 
 The recommended way to checkout and build Flix is with the commands:
@@ -40,7 +49,7 @@ ant run-main
 
 ### Building with Intellij IDEA
 
-Flix can be built from within the Intellij IDEA IDE.
+Flix can be built from within the IntelliJ IDEA IDE.
 
 1. Clone the Flix GitHub repository.
 2. Create a fresh project on top of the cloned directory.
