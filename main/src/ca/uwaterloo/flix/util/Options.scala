@@ -22,7 +22,8 @@ object Options {
     */
   val Default = Options(
     debugger = Debugger.Disabled,
-    Nil,
+    print = Nil,
+    solver = SolverOpts.Default,
     verbosity = Verbosity.Silent,
     verify = Verify.Disabled,
     codegen = CodeGeneration.Enabled,
@@ -35,6 +36,7 @@ object Options {
   *
   * @param debugger      enable or disable the built-in web-based debugger.
   * @param print         a list of things to print.
+  * @param solver        solver options.
   * @param verbosity     the level of verbosity.
   * @param verify        enable or disable the built-in verifier.
   * @param codegen       enable or disable JVM code generation.
@@ -42,6 +44,7 @@ object Options {
   */
 case class Options(debugger: Debugger,
                    print: List[String],
+                   solver: SolverOpts,
                    verbosity: Verbosity,
                    verify: Verify,
                    codegen: CodeGeneration,
@@ -68,6 +71,20 @@ object Debugger {
   case object Disabled extends Debugger
 
 }
+
+object SolverOpts {
+  /**
+    * Default solver options.
+    */
+  val Default: SolverOpts = SolverOpts(Runtime.getRuntime.availableProcessors())
+}
+
+/**
+  * Solver options.
+  *
+  * @param threads the number of threads to use.
+  */
+case class SolverOpts(threads: Int)
 
 /**
   * An option to control the level of verbosity.

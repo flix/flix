@@ -21,25 +21,25 @@ import ca.uwaterloo.flix.util.{PrettyPrint, Version}
 class Shell(solver: Solver) extends Thread {
 
   /**
-   * A common super-type for input commands.
-   */
+    * A common super-type for input commands.
+    */
   sealed trait Input
 
   object Input {
 
     /**
-     * Does literally nothing.
-     */
+      * Does literally nothing.
+      */
     case object Nop extends Input
 
     /**
-     * Prints information about the available commands.
-     */
+      * Prints information about the available commands.
+      */
     case object Help extends Input
 
     /**
-     * Prints some basic status information about the fixpoint computation.
-     */
+      * Prints some basic status information about the fixpoint computation.
+      */
     case object Status extends Input
 
     /**
@@ -48,35 +48,35 @@ class Shell(solver: Solver) extends Thread {
     case class Print(name: String) extends Input
 
     /**
-     * Pauses the fixpoint computation.
-     */
+      * Pauses the fixpoint computation.
+      */
     case object Pause extends Input
 
     /**
-     * Resumes the fixpoint computation.
-     */
+      * Resumes the fixpoint computation.
+      */
     case object Unpause extends Input
 
     /**
-     * Gracefully terminates Flix.
-     */
+      * Gracefully terminates Flix.
+      */
     case object Exit extends Input
 
     /**
-     * Immediately and brutally terminates Flix.
-     */
+      * Immediately and brutally terminates Flix.
+      */
     case object Abort extends Input
 
     /**
-     * A command that was not unknown. Possibly a typo.
-     */
+      * A command that was not unknown. Possibly a typo.
+      */
     case class Unknown(line: String) extends Input
 
   }
 
   /**
-   * Prints the welcome banner and starts the interactive shell.
-   */
+    * Prints the welcome banner and starts the interactive shell.
+    */
   override def run(): Unit = {
     Thread.sleep(100)
     printWelcomeBanner()
@@ -84,8 +84,8 @@ class Shell(solver: Solver) extends Thread {
   }
 
   /**
-   * Continuously reads a line of input from the input stream, parses and executes it.
-   */
+    * Continuously reads a line of input from the input stream, parses and executes it.
+    */
   def loop(): Unit = {
     while (!Thread.currentThread().isInterrupted) {
       Console.print(prompt)
@@ -103,8 +103,8 @@ class Shell(solver: Solver) extends Thread {
   }
 
   /**
-   * Parses the string `line` into a command.
-   */
+    * Parses the string `line` into a command.
+    */
   private def parse(line: String): Input = line match {
     case null => Input.Abort
     case "" => Input.Nop
@@ -119,13 +119,13 @@ class Shell(solver: Solver) extends Thread {
   }
 
   /**
-   * Executes the given command `cmd`
-   */
+    * Executes the given command `cmd`
+    */
   private def execute(cmd: Input): Unit = cmd match {
     case Input.Nop => // nop
 
     case Input.Status =>
-      Console.println(s"Queue Size: ${solver.getQueueSize}, Total Facts: ${solver.getNumberOfFacts}.")
+      Console.println(s"Read Tasks: ${solver.getCurrentReadTasks}, Write Tasks: ${solver.getCurrentWriteTasks}, Total Facts: ${solver.getNumberOfFacts}.")
 
     case Input.Pause =>
       Console.println("Fixpoint computation paused.")
@@ -160,16 +160,16 @@ class Shell(solver: Solver) extends Thread {
   }
 
   /**
-   * Prints the welcome banner to the console.
-   */
+    * Prints the welcome banner to the console.
+    */
   private def printWelcomeBanner(): Unit = {
     Console.println(s"Welcome to Flix ${Version.currentVersion}!  Type 'help' for more information.")
     Console.println(s"Enter a command and hit return. Type 'exit' or press ctrl+d to quit.")
   }
 
   /**
-   * Prints the prompt.
-   */
+    * Prints the prompt.
+    */
   private def prompt: String = "flix> "
 }
 

@@ -18,40 +18,90 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.{IValue, WrappedValue}
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Constraint.Rule
 import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Symbol}
 import ca.uwaterloo.flix.runtime.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
-import ca.uwaterloo.flix.util.{Debugger, InternalRuntimeException, Options, Verbosity}
+import ca.uwaterloo.flix.util._
+import java.util.concurrent._
+import java.util.ArrayList
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-
-object Solver {
-
-  /**
-    * A case class representing a solver context.
-    */
-  case class SolverContext(root: ExecutableAst.Root, options: Options)
-
-}
+import scala.collection.mutable.ArrayBuffer
 
 /**
-  * A solver based on semi-naive evaluation.
+  * Flix Fixed Point Solver.
+  *
+  * Based on a variant of semi-naive evaluation.
+  *
+  * The solver computes the least fixed point of the rules in the given program.
   */
-class Solver(implicit val sCtx: Solver.SolverContext) {
+class Solver(val root: ExecutableAst.Root, options: Options) {
+
+  //
+  // Types of the solver:
+  //
 
   /**
-    * The primary data store that holds all relations and lattices.
+    * The type of environments.
+    *
+    * An environment is map from identifiers to values.
     */
-  val dataStore = new DataStore[AnyRef]()
+  type Env = mutable.Map[String, AnyRef]
 
   /**
-    * The work list of pending predicate names and their associated values.
+    * The type of work lists.
+    *
+    * A (possibly local) work list is a collection of (rule, env) pairs
+    * specifying that the rule must be re-evaluated under the associated environment.
     */
-  val worklist = new mutable.ArrayStack[(Constraint.Rule, mutable.Map[String, AnyRef])]
+  type WorkList = mutable.ArrayStack[(Rule, Env)]
 
   /**
-    * The runtime performance monitor.
+    * The type of a (partial) interpretation.
+    *
+    * An interpretation is collection of facts (a table symbol associated with an array of facts).
+    */
+  type Interpretation = mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]
+
+  //
+  // State of the solver:
+  //
+
+  /**
+    * The datastore holds the facts in all relations and lattices in the program.
+    *
+    * Reading from the datastore is guaranteed to be thread-safe and can be performed by multiple threads concurrently.
+    *
+    * Writing to the datastore is, in general, not thread-safe: Each relation/lattice may be concurrently updated, but
+    * no concurrent writes may occur for the *same* relation/lattice.
+    */
+  val dataStore = new DataStore[AnyRef](root)
+
+  /**
+    * The thread pool where rule evaluation takes place.
+    *
+    * Note: Evaluation of a rule only *reads* from the datastore.
+    * Thus it is safe to evaluate multiple rules concurrently.
+    */
+  val readersPool = mkThreadPool()
+
+  /**
+    * The thread pool where writes to the datastore takes places.
+    *
+    * Note: A writer *must not* concurrently write to the same relation/lattice.
+    * However, different relations/lattices can be written to concurrently.
+    */
+  val writersPool = mkThreadPool()
+
+  /**
+    * The global work list.
+    */
+  val worklist = mkWorkList()
+
+  /**
+    * The performance monitor.
     */
   val monitor = new Monitor(this)
 
@@ -67,13 +117,53 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   @volatile
   var model: Model = null
 
+  //
+  // Statistics:
+  //
   /**
-    * Returns the number of elements in the worklist.
+    * Current read tasks.
     */
-  def getQueueSize = worklist.length
+  @volatile
+  var currentReadTasks: Int = 0
 
   /**
-    * Returns the number of facts in the database.
+    * Current write tasks.
+    */
+  @volatile
+  var currentWriteTasks: Int = 0
+
+  /**
+    * Total wall-clock time.
+    */
+  var totalTime: Long = 0
+
+  /**
+    * Time spent during initialization of the datastore.
+    */
+  var initTime: Long = 0
+
+  /**
+    * Time spent during the readers phase.
+    */
+  var readersTime: Long = 0
+
+  /**
+    * Time spent during the writers phase.
+    */
+  var writersTime: Long = 0
+
+  /**
+    * Returns the number of current read tasks.
+    */
+  def getCurrentReadTasks = currentReadTasks
+
+  /**
+    * Returns the number of current write tasks.
+    */
+  def getCurrentWriteTasks = currentWriteTasks
+
+  /**
+    * Returns the number of facts in the datastore.
     */
   def getNumberOfFacts: Int = dataStore.numberOfFacts
 
@@ -93,11 +183,55 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
   }
 
   /**
-    * Solves the current Flix program.
+    * Solves the Flix program.
     */
   def solve(): Model = {
+    // initialize the solver.
+    initSolver()
 
-    if (sCtx.options.debugger == Debugger.Enabled) {
+    // initialize the datastore.
+    initDataStore()
+
+    // initialize the worklist.
+    initWorkList()
+
+    // iterate until fixpoint.
+    while (worklist.nonEmpty) {
+      // check if the solver has been paused.
+      checkPaused()
+
+      // evaluate the rules in parallel.
+      val interps = parallelEval()
+
+      // update the datastore in parallel.
+      parallelUpdate(interps)
+    }
+
+    // stop the solver.
+    stopSolver()
+
+    // print debugging information.
+    printDebug()
+
+    // build and return the model.
+    mkModel()
+  }
+
+  /**
+    * Returns the model (if available).
+    */
+  def getModel: Model = model
+
+  def getRuleStats: List[(Rule, Int, Long)] =
+    root.rules.toSeq.sortBy(_.elapsedTime).reverse.map {
+      case r => (r, r.hitcount, r.elapsedTime)
+    }.toList
+
+  /**
+    * Initialize the solver by starting the monitor, debugger, shell etc.
+    */
+  private def initSolver(): Unit = {
+    if (options.debugger == Debugger.Enabled) {
       monitor.start()
 
       val restServer = new RestServer(this)
@@ -107,53 +241,390 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
       shell.start()
     }
 
-    // measure the time elapsed.
+    totalTime = System.nanoTime()
+  }
+
+  /**
+    * Initialize the datastore with all the facts in the program.
+    */
+  private def initDataStore(): Unit = {
     val t = System.nanoTime()
+    // iterate through all facts.
+    for (fact <- root.facts) {
+      // evaluate the head of each fact.
+      val interp = mkInterpretation()
+      evalHead(fact.head, mutable.Map.empty, interp)
 
-    // evaluate all facts.
-    for (fact <- sCtx.root.facts) {
-      evalHead(fact.head, mutable.Map.empty, enqueue = false)
-    }
-
-    // add all rules to the worklist (under empty environments).
-    for (rule <- sCtx.root.rules) {
-      worklist.push((rule, mutable.Map.empty))
-    }
-
-    // iterate until fixpoint.
-    while (worklist.nonEmpty) {
-      if (paused) {
-        synchronized {
-          wait()
+      // iterate through the interpretation.
+      for ((sym, fact) <- interp) {
+        // update the datastore, but don't compute any dependencies.
+        root.tables(sym) match {
+          case r: ExecutableAst.Table.Relation =>
+            dataStore.relations(sym).inferredFact(fact)
+          case l: ExecutableAst.Table.Lattice =>
+            dataStore.lattices(sym).inferredFact(fact)
         }
       }
-      // extract fact from the worklist.
-      val (rule, env) = worklist.pop()
-      evalBody(rule, env)
     }
+    initTime = System.nanoTime() - t
+  }
 
-    // computed elapsed time.
-    val elapsed = System.nanoTime() - t
-
-    if (sCtx.options.verbosity != Verbosity.Silent) {
-      val solverTime = elapsed / 1000000
-      val initialFacts = sCtx.root.facts.length
-      val totalFacts = dataStore.numberOfFacts
-      val throughput = (1000 * totalFacts) / (solverTime + 1)
-      Console.println(f"Successfully solved in $solverTime%,d msec.")
-      Console.println(f"Initial Facts: $initialFacts%,d. Total Facts: $totalFacts%,d.")
-      Console.println(f"Throughput: $throughput%,d facts per second.")
+  /**
+    * Initialize the worklist with every rule (under the empty environment).
+    */
+  private def initWorkList(): Unit = {
+    // add all rules to the worklist (under empty environments).
+    for (rule <- root.rules) {
+      worklist.push((rule, mutable.Map.empty))
     }
+  }
 
-    if (sCtx.options.debugger == Debugger.Enabled) {
+  /**
+    * Stops the solver.
+    */
+  private def stopSolver(): Unit = {
+    // spin down thread pools.
+    readersPool.shutdownNow()
+    writersPool.shutdownNow()
+
+    // stop the debugger (if enabled).
+    if (options.debugger == Debugger.Enabled) {
       monitor.stop()
     }
 
+    totalTime = System.nanoTime() - totalTime
+  }
+
+  /**
+    * Prints debugging information.
+    */
+  private def printDebug(): Unit = {
+    if (options.verbosity != Verbosity.Silent) {
+      val solverTime = totalTime / 1000000
+      val initMiliSeconds = initTime / 1000000
+      val readersMiliSeconds = readersTime / 1000000
+      val writersMiliSeconds = writersTime / 1000000
+      val initialFacts = root.facts.length
+      val totalFacts = dataStore.numberOfFacts
+      val throughput = (1000 * totalFacts) / (solverTime + 1)
+      Console.println(f"Solved in $solverTime%,d msec. (init: $initMiliSeconds%,d msec, readers: $readersMiliSeconds%,d msec, writers: $writersMiliSeconds%,d msec)")
+      Console.println(f"Initial Facts: $initialFacts%,d. Total Facts: $totalFacts%,d.")
+      Console.println(f"Throughput: $throughput%,d facts per second.")
+    }
+  }
+
+  /**
+    * Returns a callable which evaluates the body of the given `rule` under the given initial environment `env`.
+    *
+    * Updates the given interpretation `interp`.
+    */
+  private def evalBody(rule: Rule, env: Env): Callable[Interpretation] = new Callable[Interpretation] {
+    def call(): Interpretation = {
+      val t = System.nanoTime()
+
+      val interp = mkInterpretation()
+      evalCross(rule, rule.tables, env, interp)
+
+      rule.elapsedTime += System.nanoTime() - t
+      rule.hitcount += 1
+
+      interp
+    }
+  }
+
+  /**
+    * Computes the cross product of all collections in the body.
+    */
+  private def evalCross(rule: Rule, ps: List[Predicate.Body.Table], env: Env, interp: Interpretation): Unit = ps match {
+    case Nil =>
+      // cross product complete, now filter
+      evalLoop(rule, rule.loops, env, interp)
+    case (p: Predicate.Body.Table) :: xs =>
+      // lookup the relation or lattice.
+      val table = root.tables(p.sym) match {
+        case r: Table.Relation => dataStore.relations(p.sym)
+        case l: Table.Lattice => dataStore.lattices(p.sym)
+      }
+
+      // evaluate all terms in the predicate.
+      val pat = new Array[AnyRef](p.arity)
+      var i = 0
+      while (i < pat.length) {
+        pat(i) = evalTerm(p.terms(i), env)
+        i = i + 1
+      }
+
+      // lookup all matching rows.
+      for (matchedRow <- table.lookup(pat)) {
+        // copy the environment for every row.
+        val newRow = env.clone()
+
+        var i = 0
+        while (i < matchedRow.length) {
+          val varName = p.index2var(i)
+          if (varName != null)
+            newRow.update(varName, matchedRow(i))
+          i = i + 1
+        }
+
+        // compute the cross product of the remaining
+        // collections under the new environment.
+        evalCross(rule, xs, newRow, interp)
+      }
+  }
+
+  /**
+    * Unfolds the given loop predicates `ps` over the initial `env`.
+    */
+  private def evalLoop(rule: Rule, ps: List[Predicate.Body.Loop], env: Env, interp: Interpretation): Unit = ps match {
+    case Nil => evalFilter(rule, rule.filters, env, interp)
+    case Predicate.Body.Loop(name, term, _, _, _) :: rest =>
+      val value = Value.cast2set(Interpreter.evalHeadTerm(term, root, env.toMap))
+      for (x <- value) {
+        val newRow = env.clone()
+        newRow.update(name.name, x)
+        evalLoop(rule, rest, newRow, interp)
+      }
+  }
+
+  /**
+    * Filters the given `env` through all filter functions in the body.
+    */
+  @tailrec
+  private def evalFilter(rule: Rule, ps: List[Predicate.Body.ApplyFilter], env: Env, interp: Interpretation): Unit = ps match {
+    case Nil =>
+      // filter with hook functions
+      evalFilterHook(rule, rule.filterHooks, env, interp)
+    case (pred: Predicate.Body.ApplyFilter) :: xs =>
+      val defn = root.constants(pred.name)
+      val args = new Array[AnyRef](pred.terms.length)
+      var i = 0
+      while (i < args.length) {
+        args(i) = Interpreter.evalBodyTerm(pred.terms(i), root, env.toMap)
+        i = i + 1
+      }
+      val result = Interpreter.evalCall(defn, args, root, env.toMap)
+      if (Value.cast2bool(result))
+        evalFilter(rule, xs, env, interp)
+  }
+
+  /**
+    * Filters the given `env` through all filter hook functions in the body.
+    */
+  @tailrec
+  private def evalFilterHook(rule: Rule, ps: List[Predicate.Body.ApplyHookFilter], env: Env, interp: Interpretation): Unit = ps match {
+    case Nil =>
+      // filter complete, now check disjointness
+      evalDisjoint(rule, rule.disjoint, env, interp)
+    case (pred: Predicate.Body.ApplyHookFilter) :: xs =>
+
+      val args = new Array[AnyRef](pred.terms.length)
+      var i = 0
+      while (i < args.length) {
+        args(i) = Interpreter.evalBodyTerm(pred.terms(i), root, env.toMap)
+        i = i + 1
+      }
+
+      pred.hook match {
+        case Ast.Hook.Safe(name, inv, tpe) =>
+          val wargs = args map {
+            case arg => new WrappedValue(arg): IValue
+          }
+          val result = inv.apply(wargs).getUnsafeRef
+          if (Value.cast2bool(result)) {
+            evalFilterHook(rule, xs, env, interp)
+          }
+        case Ast.Hook.Unsafe(name, inv, tpe) =>
+          val result = inv.apply(args)
+          if (Value.cast2bool(result)) {
+            evalFilterHook(rule, xs, env, interp)
+          }
+      }
+  }
+
+  /**
+    * Filters the given `env` through all disjointness filters in the body.
+    */
+  @tailrec
+  private def evalDisjoint(rule: Rule, ps: List[Predicate.Body.NotEqual], env: Env, interp: Interpretation): Unit = ps match {
+    case Nil =>
+      // rule body complete, evaluate the head.
+      evalHead(rule.head, env, interp)
+    case Predicate.Body.NotEqual(ident1, ident2, _, _, _) :: xs =>
+      val value1 = env(ident1.name)
+      val value2 = env(ident2.name)
+      if (value1 != value2) {
+        evalDisjoint(rule, xs, env, interp)
+      }
+  }
+
+  /**
+    * Evaluates the given head predicate `p` under the given environment `env0`.
+    */
+  private def evalHead(p: Predicate.Head, env: Env, interp: Interpretation): Unit = p match {
+    case p: Predicate.Head.Table =>
+      val terms = p.terms
+      val fact = new Array[AnyRef](p.arity)
+      var i = 0
+      while (i < fact.length) {
+        fact(i) = Interpreter.evalHeadTerm(terms(i), root, env.toMap)
+        i = i + 1
+      }
+
+      interp += ((p.sym, fact))
+  }
+
+  /**
+    * Returns a callable to process a collection of inferred `facts` for the relation or lattice with the symbol `sym`.
+    */
+  private def inferredFacts(sym: Symbol.TableSym, facts: ArrayBuffer[Array[AnyRef]]): Callable[WorkList] = new Callable[WorkList] {
+    def call(): WorkList = {
+      val localWorkList = mkWorkList()
+      for (fact <- facts) {
+        inferredFact(sym, fact, localWorkList)
+      }
+      localWorkList
+    }
+  }
+
+  /**
+    * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
+    */
+  private def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: WorkList): Unit = root.tables(sym) match {
+    case r: ExecutableAst.Table.Relation =>
+      val changed = dataStore.relations(sym).inferredFact(fact)
+      if (changed) {
+        dependencies(r.sym, fact, localWorkList)
+      }
+
+    case l: ExecutableAst.Table.Lattice =>
+      val changed = dataStore.lattices(sym).inferredFact(fact)
+      if (changed) {
+        dependencies(l.sym, fact, localWorkList)
+      }
+  }
+
+  /**
+    * Evaluates the given body term `t` to a value.
+    *
+    * Returns `null` if the term is a free variable.
+    */
+  private def evalTerm(t: ExecutableAst.Term.Body, env: Env): AnyRef = t match {
+    case t: ExecutableAst.Term.Body.Wildcard => null
+    case t: ExecutableAst.Term.Body.Var => env.getOrElse(t.ident.name, null)
+    case t: ExecutableAst.Term.Body.Exp => Interpreter.eval(t.e, root, env.toMap)
+  }
+
+  /**
+    * Returns all dependencies of the given symbol `sym` along with an environment.
+    */
+  private def dependencies(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: WorkList): Unit = {
+
+    def unify(pat: Array[String], fact: Array[AnyRef], limit: Int): Env = {
+      val env = mutable.Map.empty[String, AnyRef]
+      var i = 0
+      while (i < limit) {
+        val varName = pat(i)
+        if (varName != null)
+          env.update(varName, fact(i))
+        i = i + 1
+      }
+      env
+    }
+
+    val table = root.tables(sym)
+    for ((rule, p) <- root.dependenciesOf(sym)) {
+      table match {
+        case r: ExecutableAst.Table.Relation =>
+          // unify all terms with their values.
+          val env = unify(p.index2var, fact, fact.length)
+          if (env != null) {
+            localWorkList.push((rule, env))
+          }
+        case l: ExecutableAst.Table.Lattice =>
+          // unify only key terms with their values.
+          val numberOfKeys = l.keys.length
+          val env = unify(p.index2var, fact, numberOfKeys)
+          if (env != null) {
+            localWorkList.push((rule, env))
+          }
+      }
+    }
+  }
+
+  /**
+    * Evaluates each of the rules in parallel.
+    */
+  private def parallelEval(): Iterator[Interpretation] = {
+    val t = System.nanoTime()
+
+    // --- begin parallel execution ---
+    val readerTasks = new ArrayList[Callable[Interpretation]]()
+    for ((rule, env) <- worklist) {
+      val task = evalBody(rule, env)
+      readerTasks.add(task)
+      currentReadTasks += 1
+    }
+    val result = flatten(readersPool.invokeAll(readerTasks))
+    // -- end parallel execution ---
+
+    currentReadTasks = 0
+    readersTime += System.nanoTime() - t
+
+    worklist.clear()
+    result
+  }
+
+  /**
+    * Updates the datastore in parallel.
+    */
+  private def parallelUpdate(iter: Iterator[Interpretation]): Unit = {
+    val t = System.nanoTime()
+
+    // --- begin parallel execution ---
+    val tasks = new ArrayList[Callable[WorkList]]()
+    for ((sym, facts) <- groupFactsBySymbol(iter)) {
+      val task = inferredFacts(sym, facts)
+      tasks.add(task)
+      currentWriteTasks += facts.length
+    }
+    val localWorkLists = writersPool.invokeAll(tasks)
+    // --- end parallel execution ---
+    currentWriteTasks = 0
+
+    // update the global work list with each of the local work lists.
+    for (localWorkList <- flatten(localWorkLists)) {
+      worklist ++= localWorkList
+    }
+
+    writersTime += System.nanoTime() - t
+  }
+
+
+  /**
+    * Sorts the given facts by their table symbol.
+    */
+  private def groupFactsBySymbol(iter: Iterator[Interpretation]): mutable.Map[Symbol.TableSym, ArrayBuffer[Array[AnyRef]]] = {
+    val result = mutable.Map.empty[Symbol.TableSym, ArrayBuffer[Array[AnyRef]]]
+    while (iter.hasNext) {
+      val interp = iter.next()
+      for ((symbol, fact) <- interp) {
+        val buffer = result.getOrElseUpdate(symbol, ArrayBuffer.empty)
+        buffer += fact
+      }
+    }
+    result
+  }
+
+  /**
+    * Constructs the minimal model from the datastore.
+    */
+  private def mkModel(): Model = {
     // construct the model.
-    val definitions = sCtx.root.constants.foldLeft(Map.empty[Symbol.Resolved, () => AnyRef]) {
+    val definitions = root.constants.foldLeft(Map.empty[Symbol.Resolved, () => AnyRef]) {
       case (macc, (sym, defn)) =>
         if (defn.formals.isEmpty)
-          macc + (sym -> (() => Interpreter.evalCall(defn, Array.empty, sCtx.root)))
+          macc + (sym -> (() => Interpreter.evalCall(defn, Array.empty, root)))
         else
           macc + (sym -> (() => throw new InternalRuntimeException("Unable to evalaute non-constant top-level definition.")))
     }
@@ -170,235 +641,50 @@ class Solver(implicit val sCtx: Solver.SolverContext) {
         }
         macc + ((sym, table))
     }
-    model = new Model(sCtx.root, definitions, relations, lattices)
+    model = new Model(root, definitions, relations, lattices)
     model
   }
 
-  def getModel: Model = model
-
-  // TODO: Move
-  def getRuleStats: List[(ExecutableAst.Constraint.Rule, Int, Long)] =
-    sCtx.root.rules.toSeq.sortBy(_.elapsedTime).reverse.map {
-      case r => (r, r.hitcount, r.elapsedTime)
-    }.toList
-
   /**
-    * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
+    * Returns a new thread pool configured to use the appropriate number of threads.
     */
-  def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef], enqueue: Boolean): Unit = sCtx.root.tables(sym) match {
-    case r: ExecutableAst.Table.Relation =>
-      val changed = dataStore.relations(sym).inferredFact(fact)
-      if (changed && enqueue) {
-        dependencies(r.sym, fact)
-      }
-
-    case l: ExecutableAst.Table.Lattice =>
-      val changed = dataStore.lattices(sym).inferredFact(fact)
-      if (changed && enqueue) {
-        dependencies(l.sym, fact)
-      }
+  private def mkThreadPool(): ExecutorService = options.solver.threads match {
+    // Case 1: Parallel execution disabled. Use a single thread.
+    case 1 => Executors.newSingleThreadExecutor()
+    // Case 2: Parallel execution enabled. Use the specified number of processors.
+    case n => Executors.newFixedThreadPool(n)
   }
 
   /**
-    * Evaluates the given head predicate `p` under the given environment `env0`.
+    * Returns an iterator over the result of the given list of Java futures.
     */
-  def evalHead(p: Predicate.Head, env0: mutable.Map[String, AnyRef], enqueue: Boolean): Unit = p match {
-    case p: Predicate.Head.Table =>
-      val terms = p.terms
-      val fact = new Array[AnyRef](p.arity)
-      var i = 0
-      while (i < fact.length) {
-        fact(i) = Interpreter.evalHeadTerm(terms(i), sCtx.root, env0.toMap)
-        i = i + 1
-      }
-      inferredFact(p.sym, fact, enqueue)
-  }
+  private def flatten[A](fs: java.util.List[Future[A]]): Iterator[A] = {
+    val iter = fs.iterator()
+    new Iterator[A] {
+      def hasNext: Boolean = iter.hasNext
 
-
-  /**
-    * Evaluates the body of the given `rule` under the given initial environment `env0`.
-    */
-  def evalBody(rule: Constraint.Rule, env0: mutable.Map[String, AnyRef]): Unit = {
-    val t = System.nanoTime()
-
-    cross(rule, rule.tables, env0)
-
-    rule.elapsedTime += System.nanoTime() - t
-    rule.hitcount += 1
-  }
-
-  /**
-    * Computes the cross product of all collections in the body.
-    */
-  def cross(rule: Constraint.Rule, ps: List[Predicate.Body.Table], row: mutable.Map[String, AnyRef]): Unit = ps match {
-    case Nil =>
-      // cross product complete, now filter
-      loop(rule, rule.loops, row)
-    case (p: Predicate.Body.Table) :: xs =>
-      // lookup the relation or lattice.
-      val table = sCtx.root.tables(p.sym) match {
-        case r: Table.Relation => dataStore.relations(p.sym)
-        case l: Table.Lattice => dataStore.lattices(p.sym)
-      }
-
-      // evaluate all terms in the predicate.
-      val pat = new Array[AnyRef](p.arity)
-      var i = 0
-      while (i < pat.length) {
-        pat(i) = eval(p.terms(i), row)
-        i = i + 1
-      }
-
-      // lookup all matching rows.
-      for (matchedRow <- table.lookup(pat)) {
-        // copy the environment for every row.
-        val newRow = row.clone()
-
-        var i = 0
-        while (i < matchedRow.length) {
-          val varName = p.index2var(i)
-          if (varName != null)
-            newRow.update(varName, matchedRow(i))
-          i = i + 1
-        }
-
-        // compute the cross product of the remaining
-        // collections under the new environment.
-        cross(rule, xs, newRow)
-      }
-  }
-
-  /**
-    * Unfolds the given loop predicates `ps` over the initial `row`.
-    */
-  def loop(rule: Constraint.Rule, ps: List[Predicate.Body.Loop], row: mutable.Map[String, AnyRef]): Unit = ps match {
-    case Nil => filter(rule, rule.filters, row)
-    case Predicate.Body.Loop(name, term, _, _, _) :: rest =>
-      val result = Value.cast2set(Interpreter.evalHeadTerm(term, sCtx.root, row.toMap))
-      for (x <- result) {
-        val newRow = row.clone()
-        newRow.update(name.name, x)
-        loop(rule, rest, newRow)
-      }
-  }
-
-  /**
-    * Filters the given `row` through all filter functions in the body.
-    */
-  @tailrec
-  private def filter(rule: Constraint.Rule, ps: List[Predicate.Body.ApplyFilter], row: mutable.Map[String, AnyRef]): Unit = ps match {
-    case Nil =>
-      // filter with hook functions
-      filterHook(rule, rule.filterHooks, row)
-    case (pred: Predicate.Body.ApplyFilter) :: xs =>
-      val defn = sCtx.root.constants(pred.name)
-      val args = new Array[AnyRef](pred.terms.length)
-      var i = 0
-      while (i < args.length) {
-        args(i) = Interpreter.evalBodyTerm(pred.terms(i), sCtx.root, row.toMap)
-        i = i + 1
-      }
-      val result = Interpreter.evalCall(defn, args, sCtx.root, row.toMap)
-      if (Value.cast2bool(result))
-        filter(rule, xs, row)
-  }
-
-  /**
-    * Filters the given `row` through all filter hook functions in the body.
-    */
-  @tailrec
-  private def filterHook(rule: Constraint.Rule, ps: List[Predicate.Body.ApplyHookFilter], row: mutable.Map[String, AnyRef]): Unit = ps match {
-    case Nil =>
-      // filter complete, now check disjointness
-      disjoint(rule, rule.disjoint, row)
-    case (pred: Predicate.Body.ApplyHookFilter) :: xs =>
-
-      val args = new Array[AnyRef](pred.terms.length)
-      var i = 0
-      while (i < args.length) {
-        args(i) = Interpreter.evalBodyTerm(pred.terms(i), sCtx.root, row.toMap)
-        i = i + 1
-      }
-
-      pred.hook match {
-        case Ast.Hook.Safe(name, inv, tpe) =>
-          val wargs = args map {
-            case arg => new WrappedValue(arg): IValue
-          }
-          val result = inv.apply(wargs).getUnsafeRef
-          if (Value.cast2bool(result)) {
-            filterHook(rule, xs, row)
-          }
-        case Ast.Hook.Unsafe(name, inv, tpe) =>
-          val result = inv.apply(args)
-          if (Value.cast2bool(result)) {
-            filterHook(rule, xs, row)
-          }
-      }
-  }
-
-  /**
-    * Filters the given `row` through all disjointness filters in the body.
-    */
-  @tailrec
-  private def disjoint(rule: Constraint.Rule, ps: List[Predicate.Body.NotEqual], row: mutable.Map[String, AnyRef]): Unit = ps match {
-    case Nil =>
-      // rule body complete, evaluate the head.
-      evalHead(rule.head, row, enqueue = true)
-    case Predicate.Body.NotEqual(ident1, ident2, _, _, _) :: xs =>
-      val value1 = row(ident1.name)
-      val value2 = row(ident2.name)
-      if (value1 != value2) {
-        disjoint(rule, xs, row)
-      }
-  }
-
-  /**
-    * Evaluates the given body term `t` to a value.
-    *
-    * Returns `null` if the term is a free variable.
-    */
-  def eval(t: ExecutableAst.Term.Body, env: mutable.Map[String, AnyRef]): AnyRef = t match {
-    case t: ExecutableAst.Term.Body.Wildcard => null
-    case t: ExecutableAst.Term.Body.Var => env.getOrElse(t.ident.name, null)
-    case t: ExecutableAst.Term.Body.Exp => Interpreter.eval(t.e, sCtx.root, env.toMap)
-  }
-
-  /**
-    * Returns all dependencies of the given symbol `sym` along with an environment.
-    */
-  def dependencies(sym: Symbol.TableSym, fact: Array[AnyRef]): Unit = {
-
-    def unify(pat: Array[String], fact: Array[AnyRef], limit: Int): mutable.Map[String, AnyRef] = {
-      val env = mutable.Map.empty[String, AnyRef]
-      var i = 0
-      while (i < limit) {
-        val varName = pat(i)
-        if (varName != null)
-          env.update(varName, fact(i))
-        i = i + 1
-      }
-      env
-    }
-
-    val table = sCtx.root.tables(sym)
-    for ((rule, p) <- sCtx.root.dependenciesOf(sym)) {
-      table match {
-        case r: ExecutableAst.Table.Relation =>
-          // unify all terms with their values.
-          val env = unify(p.index2var, fact, fact.length)
-          if (env != null) {
-            worklist += ((rule, env))
-          }
-        case l: ExecutableAst.Table.Lattice =>
-          // unify only key terms with their values.
-          val numberOfKeys = l.keys.length
-          val env = unify(p.index2var, fact, numberOfKeys)
-          if (env != null) {
-            worklist += ((rule, env))
-          }
-      }
+      def next(): A = iter.next().get()
     }
   }
+
+  /**
+    * Returns a fresh work list.
+    */
+  private def mkWorkList(): WorkList = new mutable.ArrayStack[(Rule, Env)]
+
+  /**
+    * Returns a fresh (empty) interpretation.
+    */
+  private def mkInterpretation(): Interpretation = new mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]()
+
+  /**
+    * Checks if the solver is paused, and if so, waits for an interrupt.
+    */
+  private def checkPaused(): Unit =
+    if (paused) {
+      synchronized {
+        wait()
+      }
+    }
 
 }

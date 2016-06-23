@@ -105,6 +105,7 @@ object Main {
       case Nil => opts
       case "-d" :: xs => visit(xs, opts.copy(debugger = Debugger.Enabled))
       case "--debugger" :: xs => visit(xs, opts.copy(debugger = Debugger.Enabled))
+      case "--threads" :: n :: xs => visit(xs, opts.copy(solver = SolverOpts(threads = n.toInt)))
       case "-v" :: xs => visit(xs, opts.copy(verbosity = Verbosity.Verbose))
       case "--verbose" :: xs => visit(xs, opts.copy(verbosity = Verbosity.Verbose))
       case "-s" :: xs => visit(xs, opts.copy(verbosity = Verbosity.Silent))

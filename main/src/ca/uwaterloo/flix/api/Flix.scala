@@ -231,7 +231,7 @@ class Flix {
         val east = CreateExecutableAst.toExecutable(numbered)
         val compiled = LoadBytecode.load(this, east, options)
         Verifier.verify(compiled, options) map {
-          case ast => new Solver()(Solver.SolverContext(ast, options)).solve()
+          case ast => new Solver(ast, options).solve()
         }
     }
   }

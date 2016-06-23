@@ -381,13 +381,15 @@ var LandingPage = React.createClass({
         }
 
         var labels = this.state.telemetry.map(s => Math.round(s.time / 1000));
-        var queue = this.state.telemetry.map(s => s.queue);
+        var readTasks = this.state.telemetry.map(s => s.readTasks);
+        var writeTasks = this.state.telemetry.map(s => s.writeTasks);
         var facts = this.state.telemetry.map(s => s.facts);
         var memory = this.state.telemetry.map(s => s.memory);
 
         var last = this.state.telemetry[this.state.telemetry.length - 1];
-        var currentQueuelength = numeral(last.queue).format('0,0');
-        var currentNumberOfacts = numeral(last.facts).format('0,0');
+        var currentReadTasks = numeral(last.readTasks).format('0,0');
+        var currentWriteTasks = numeral(last.writeTasks).format('0,0');
+        var currentFacts = numeral(last.facts).format('0,0');
         var currentMemoryUsage = numeral(last.memory).format('0,0');
 
         return (
@@ -399,17 +401,21 @@ var LandingPage = React.createClass({
                 <div className="row">
 
                     <div className="col-xs-6">
-                        <h3>Worklist ({currentQueuelength} items)</h3>
-                        <LineChart key={Math.random()} width={600} height={250} labels={labels} data={queue}
-                                   theme="blue"/>
+                        <h3>Read Tasks ({currentReadTasks})</h3>
+                        <LineChart key={Math.random()} width={600} height={250} labels={labels} data={readTasks}
+                                   theme="green"/>
 
-                        <h3>Database ({currentNumberOfacts} facts)</h3>
+                        <h3>Write Tasks ({currentWriteTasks})</h3>
+                        <LineChart key={Math.random()} width={600} height={250} labels={labels} data={writeTasks}
+                                   theme="orangered"/>
+
+                        <h3>Database ({currentFacts} facts)</h3>
                         <LineChart key={Math.random()} width={600} height={250} labels={labels} data={facts}
                                    theme="magenta"/>
 
                         <h3>Memory Usage ({currentMemoryUsage} MB)</h3>
                         <LineChart key={Math.random()} width={600} height={250} labels={labels} data={memory}
-                                   theme="orangered"/>
+                                   theme="blue"/>
                     </div>
 
                     <div className="col-xs-6">
@@ -1084,6 +1090,9 @@ var LineChart = React.createClass({
     componentDidMount: function () {
         var dataset = LineChart.getBlueDataSet(this.props.data);
 
+        if (this.props.theme === "green") {
+            dataset = LineChart.getGreenDataSet(this.props.data);
+        }
         if (this.props.theme === "magenta") {
             dataset = LineChart.getMagentaDataSet(this.props.data);
         }
@@ -1133,16 +1142,31 @@ LineChart.getBlueDataSet = function (data) {
 };
 
 /**
+ * Returns a data set colored green.
+ */
+LineChart.getGreenDataSet = function (data) {
+    return {
+        fillColor: "rgba(187,205,151,0.2)",
+        strokeColor: "rgba(187,205,151,1)",
+        pointColor: "rgba(187,205,151,1)",
+        pointStrokeColor: "#fff",
+        pointHighlightFill: "#fff",
+        pointHighlightStroke: "rgba(187,205,151,1)",
+        data: data
+    }
+};
+
+/**
  * Returns a data set colored magenta.
  */
 LineChart.getMagentaDataSet = function (data) {
     return {
-        fillColor: "rgb(243, 234, 245)",
-        strokeColor: "rgb(195, 151, 205)",
-        pointColor: "rgb(195, 151, 205)",
+        fillColor: "rgb(243,234,245)",
+        strokeColor: "rgb(195,151,205)",
+        pointColor: "rgb(195,151,205)",
         pointStrokeColor: "#fff",
         pointHighlightFill: "#fff",
-        pointHighlightStroke: "rgb(243, 234, 245)",
+        pointHighlightStroke: "rgb(243,234,245)",
         data: data
     }
 };

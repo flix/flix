@@ -32,7 +32,7 @@ import scala.collection.mutable
   * @param indexes the indexes.
   * @param default the default index.
   */
-final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relation, indexes: Set[Int], default: Int)(implicit sCtx: Solver.SolverContext) extends IndexedCollection[ValueType] {
+final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relation, indexes: Set[Int], default: Int) extends IndexedCollection[ValueType] {
 
   /**
     * A map from indexes to keys to rows of values.
