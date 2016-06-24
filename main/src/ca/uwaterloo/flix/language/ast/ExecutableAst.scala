@@ -99,7 +99,7 @@ object ExecutableAst {
       /**
         * Records the amount of time spent evaluating this rule.
         */
-      var time = new AtomicLong()
+      val time = new AtomicLong()
 
     }
 
