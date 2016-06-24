@@ -30,12 +30,12 @@ Flix can be built with Apache Ant. Ensure that Ant is installed and on your path
 The available Ant targets are:
 
 - `build-all`: alias for `build-src, build-jar`.
-- `build-jar`: builds the `flix.jar` file.
 - `build-src`: compiles all source files.
+- `build-jar`: builds the `flix.jar` file.
 - `clean`: cleans all build files.
 - `rebuild`: alias for `clean, build-all`.
-- `run-main`: runs Flix (with no input).
-- `run-tests`: runs all test cases.
+- `main`: runs Flix (with no input).
+- `test`: runs all test cases.
 
 The recommended way to checkout and build Flix is with the commands:
 

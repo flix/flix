@@ -7,6 +7,12 @@
     <property name="src.dir" value="main"/>
     <property name="out.dir" value="out"/>
     <property name="lib.dir" value="lib"/>
+
+    <!-- Try to read SCALA_HOME from the host environment -->
+    <property environment="env"/>
+    <property name="scala.home" value="${env.SCALA_HOME}"/>
+
+    <!-- Try to read local.properties -->
     <property file="local.properties"/>
 
     <!-- Ensure that scala.home was set. -->
@@ -89,14 +95,14 @@
     <!-- ======================================================== -->
     <!-- Run the generated fat JAR.                               -->
     <!-- ======================================================== -->
-    <target name="run-main">
+    <target name="main">
         <java jar="${out.dir}/flix.jar" fork="true"/>
     </target>
 
     <!-- ======================================================== -->
     <!-- Run scalatest.                                           -->
     <!-- ======================================================== -->
-    <target name="run-tests">
+    <target name="test">
         <java classname="org.scalatest.tools.Runner" fork="true">
             <classpath>
                 <pathelement location="${out.dir}/flix.jar"/>
