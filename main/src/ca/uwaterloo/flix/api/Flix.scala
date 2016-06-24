@@ -224,7 +224,8 @@ class Flix {
         val ast = PropertyGen.collectProperties(tast)
         val sast = Simplifier.simplify(ast)
         val lifted = LambdaLift.lift(sast)
-        val numbered = VarNumbering.number(lifted)
+        val opt = Optimizer.optimize(lifted)
+        val numbered = VarNumbering.number(opt)
         val east = CreateExecutableAst.toExecutable(numbered)
         val compiled = LoadBytecode.load(this, east, options)
         QuickChecker.quickCheck(compiled, options) flatMap {
