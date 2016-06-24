@@ -2,7 +2,7 @@ language: java
 
 env:
   global:
-    - JAVA_OPTS="-Xss8m -Xmx2048m"
+    - ANT_OPTS="-Xss8m -Xmx2048m"
 
 jdk:
    - oraclejdk8
@@ -11,8 +11,8 @@ os:
     - linux
 
 before_install:
-  - ulimit -a
   - ulimit -s 32768
+  - ulimit -a
   - env
   - pushd .
   - cd
