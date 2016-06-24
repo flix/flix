@@ -43,8 +43,8 @@ The recommended way to checkout and build Flix is with the commands:
 git clone https://github.com/flix/flix.git
 cd flix
 ant build-all
-ant run-tests
-ant run-main
+ant main
+ant test
 ```
 
 ### Building with Intellij IDEA
