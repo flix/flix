@@ -7,6 +7,7 @@ os:
     - linux
 
 before_install:
+  - ulimit -a
   - env
   - pushd .
   - cd

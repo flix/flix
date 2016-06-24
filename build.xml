@@ -97,12 +97,10 @@
     <!-- Run scalatest.                                           -->
     <!-- ======================================================== -->
     <target name="test" depends="build-all">
-        <java classname="org.scalatest.tools.Runner" fork="true" failonerror="true" maxmemory="512">
+        <java classname="org.scalatest.tools.Runner" fork="true" failonerror="true">
             <classpath>
                 <pathelement location="${out.dir}/flix.jar"/>
             </classpath>
-            <arg value="-oCX"/>
-            <arg value="-P"/>
             <arg value="-s"/>
             <arg value="ca.uwaterloo.flix.TestAll"/>
         </java>
