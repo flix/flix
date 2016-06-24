@@ -8,6 +8,7 @@ os:
 
 before_install:
   - ulimit -a
+  - ulimit -s 32768
   - env
   - pushd .
   - cd
