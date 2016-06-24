@@ -95,14 +95,14 @@
     <!-- ======================================================== -->
     <!-- Run the generated fat JAR.                               -->
     <!-- ======================================================== -->
-    <target name="main">
+    <target name="main" depends="build-all">
         <java jar="${out.dir}/flix.jar" fork="true"/>
     </target>
 
     <!-- ======================================================== -->
     <!-- Run scalatest.                                           -->
     <!-- ======================================================== -->
-    <target name="test">
+    <target name="test" depends="build-all">
         <java classname="org.scalatest.tools.Runner" fork="true">
             <classpath>
                 <pathelement location="${out.dir}/flix.jar"/>
