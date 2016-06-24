@@ -7,6 +7,7 @@ os:
     - linux
 
 before_install:
+  - env
   - pushd .
   - cd
   - wget http://downloads.typesafe.com/scala/2.11.7/scala-2.11.7.tgz

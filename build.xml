@@ -105,6 +105,7 @@
                 <pathelement location="${out.dir}/flix.jar"/>
             </classpath>
             <arg value="-oCX"/>
+            <arg value="-P"/>
             <arg value="-s"/>
             <arg value="ca.uwaterloo.flix.TestAll"/>
         </java>
