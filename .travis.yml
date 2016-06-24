@@ -6,9 +6,7 @@ jdk:
 os:
     - linux
 
-
 before_install:
-  - export JAVA_OPTS="-Xmx2048m"
   - env
   - pushd .
   - cd

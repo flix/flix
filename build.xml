@@ -97,7 +97,7 @@
     <!-- Run scalatest.                                           -->
     <!-- ======================================================== -->
     <target name="test" depends="build-all">
-        <java classname="org.scalatest.tools.Runner" fork="true" failonerror="true">
+        <java classname="org.scalatest.tools.Runner" fork="true" failonerror="true" maxmemory="512">
             <classpath>
                 <pathelement location="${out.dir}/flix.jar"/>
             </classpath>
