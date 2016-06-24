@@ -223,8 +223,8 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   def getModel: Model = model
 
   def getRuleStats: List[(Rule, Int, Long)] =
-    root.rules.toSeq.sortBy(_.elapsedTime).reverse.map {
-      case r => (r, r.hitcount, r.elapsedTime)
+    root.rules.toSeq.sortBy(_.time.get()).reverse.map {
+      case r => (r, r.hits.get(), r.time.get())
     }.toList
 
   /**
@@ -325,8 +325,8 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       val interp = mkInterpretation()
       evalCross(rule, rule.tables, env, interp)
 
-      rule.elapsedTime += System.nanoTime() - t
-      rule.hitcount += 1
+      rule.hits.incrementAndGet()
+      rule.time.addAndGet(System.nanoTime() - t)
 
       interp
     }

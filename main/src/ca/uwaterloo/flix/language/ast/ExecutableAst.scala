@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import java.lang.reflect.Method
+import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 sealed trait ExecutableAst
 
@@ -88,8 +89,18 @@ object ExecutableAst {
                     filterHooks: List[ExecutableAst.Predicate.Body.ApplyHookFilter],
                     disjoint: List[ExecutableAst.Predicate.Body.NotEqual],
                     loops: List[ExecutableAst.Predicate.Body.Loop]) extends ExecutableAst.Constraint {
-      var elapsedTime: Long = 0
-      var hitcount: Int = 0
+
+
+      /**
+        * Records the number of times this rule has been evaluated.
+        */
+      val hits = new AtomicInteger()
+
+      /**
+        * Records the amount of time spent evaluating this rule.
+        */
+      var time = new AtomicLong()
+
     }
 
   }
