@@ -1,5 +1,9 @@
 language: java
 
+env:
+  global:
+    - JAVA_OPTS="-Xss8m -Xmx2048M"
+
 jdk:
    - oraclejdk8
 
