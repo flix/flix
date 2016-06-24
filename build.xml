@@ -13,7 +13,7 @@
     <property name="scala.home" value="${env.SCALA_HOME}"/>
 
     <!-- Ensure that scala.home was set. -->
-    <fail unless="scala.home">You must set the property scala.home.</fail>
+    <fail unless="${scala.home}">You must set the property scala.home.</fail>
 
     <!-- ======================================================== -->
     <!-- Load scala ant task.                                     -->
