@@ -3,9 +3,6 @@ language: java
 jdk:
    - oraclejdk8
 
-scala:
-  - 2.11.7
-
 os:
     - linux
 
@@ -17,6 +14,5 @@ before_install:
   - export SCALA_HOME=`pwd`/scala-2.11.7
   - export PATH=$SCALA_HOME/bin:$PATH
   - popd
-  - env
   - scalac -version
   - which scalac

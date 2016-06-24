@@ -109,7 +109,9 @@ object Codegen {
         case Type.Tuple(_) => asm.Type.getDescriptor(Constants.tupleClass)
         case Type.Lambda(_, _) => s"L${decorate(interfaces(tpe))};"
         case Type.Parametric(_, _) => ??? // TODO: How to handle?
-        case Type.FOpt(_) | Type.FList(_) => ??? // TODO
+        case Type.FOpt(_) => ??? // TODO
+        case Type.FList(_)=> ??? // TODO
+        case Type.FVec(_)=> ??? // TODO
         case Type.FSet(_) => asm.Type.getDescriptor(Constants.setClass)
         case Type.FMap(_, _) => ??? // TODO
         case Type.Predicate(_) => ??? // TODO: How to handle?
@@ -225,7 +227,10 @@ object Codegen {
       case Type.Float64 => mv.visitInsn(DRETURN)
       case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
            Type.FSet(_) => mv.visitInsn(ARETURN)
-      case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+      case Type.FOpt(_)=> ??? // TODO
+      case Type.FList(_) => ??? // TODO
+      case Type.FVec(_) => ??? // TODO
+      case Type.FMap(_, _) => ??? // TODO
       case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
       case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
       case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
@@ -281,7 +286,7 @@ object Codegen {
       case Type.Float64 => visitor.visitVarInsn(DLOAD, offset)
       case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
            Type.FSet(_) => visitor.visitVarInsn(ALOAD, offset)
-      case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+      case Type.FOpt(_) | Type.FList(_) | Type.FVec(_) | Type.FMap(_, _) => ??? // TODO
       case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => // TODO: Deprecated
       case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
       case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
@@ -444,7 +449,7 @@ object Codegen {
         case Type.Float64 => visitor.visitVarInsn(DSTORE, offset)
         case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
              Type.FSet(_) => visitor.visitVarInsn(ASTORE, offset)
-        case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+        case Type.FOpt(_) | Type.FList(_) | Type.FVec(_) | Type.FMap(_, _) => ??? // TODO
         case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => // TODO: Deprecated
         case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
         case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of ${exp1.tpe} should never be compiled.")
@@ -638,7 +643,7 @@ object Codegen {
     case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
          Type.FSet(_) => compileExpression(ctx, visitor)(exp)
 
-    case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+    case Type.FOpt(_) | Type.FList(_) | Type.FVec(_) | Type.FMap(_, _) => ??? // TODO
 
     case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
 
@@ -718,7 +723,7 @@ object Codegen {
       val ctor = clazz.getConstructor(Constants.arrayObjectClass)
       visitor.visitMethodInsn(INVOKESPECIAL, asm.Type.getInternalName(clazz), "<init>", asm.Type.getConstructorDescriptor(ctor), false)
 
-    case Type.FOpt(_) | Type.FList(_) | Type.FMap(_, _) => ??? // TODO
+    case Type.FOpt(_) | Type.FList(_) | Type.FVec(_) | Type.FMap(_, _) => ??? // TODO
 
     case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
 

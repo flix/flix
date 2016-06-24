@@ -12,11 +12,8 @@
     <property environment="env"/>
     <property name="scala.home" value="${env.SCALA_HOME}"/>
 
-    <!-- Try to read local.properties -->
-    <property file="local.properties"/>
-
     <!-- Ensure that scala.home was set. -->
-    <fail unless="scala.home">You must set the property scala.home in local.properties.</fail>
+    <fail unless="scala.home">You must set the property scala.home.</fail>
 
     <!-- ======================================================== -->
     <!-- Load scala ant task.                                     -->
@@ -107,7 +104,7 @@
             <classpath>
                 <pathelement location="${out.dir}/flix.jar"/>
             </classpath>
-            <arg value="-oC"/>
+            <arg value="-oCX"/>
             <arg value="-s"/>
             <arg value="ca.uwaterloo.flix.TestAll"/>
         </java>
