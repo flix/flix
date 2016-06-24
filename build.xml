@@ -48,7 +48,7 @@
 
         <!-- Copy resources. -->
         <copy todir="${out.dir}/classes">
-            <fileset dir="${src.dir}" excludes="*/.scala"/>
+            <fileset dir="${src.dir}/src" excludes="*/.scala"/>
         </copy>
     </target>
 
