@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.library.TestLibrary
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.runtime.{TestBackend, TestSolver, TestValue}
 import ca.uwaterloo.flix.util.TestValidation
@@ -35,8 +34,9 @@ class TestAll extends Suites(
   new TestBackend,
   new TestSolver,
   new TestValue,
-  new TestValidation,
+  new TestValidation
   //new TestLibrary, // TODO
-  new TestExamples) with ParallelTestExecution {
+  // new TestExamples // TODO: temporarily removed while we figure out what to do with travis.
+) with ParallelTestExecution {
 
 }
