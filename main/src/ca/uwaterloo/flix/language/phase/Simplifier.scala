@@ -81,6 +81,18 @@ object Simplifier {
 
   object Expression {
     def simplify(tast: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Expression = tast match {
+      case TypedAst.Expression.Unit(loc) => ??? // TODO
+      case TypedAst.Expression.True(loc) => ??? // TODO
+      case TypedAst.Expression.False(loc) => ??? // TODO
+      case TypedAst.Expression.Char(lit, loc) => ??? // TODO
+      case TypedAst.Expression.Float32(lit, loc) => ??? // TODO
+      case TypedAst.Expression.Float64(lit, loc) => ??? // TODO
+      case TypedAst.Expression.Int8(lit, loc) => ??? // TODO
+      case TypedAst.Expression.Int16(lit, loc) => ??? // TODO
+      case TypedAst.Expression.Int32(lit, loc) => ??? // TODO
+      case TypedAst.Expression.Int64(lit, loc) => ??? // TODO
+      case TypedAst.Expression.BigInt(lit, loc) => ??? // TODO
+      case TypedAst.Expression.Str(lit, loc) => ??? // TODO
       case TypedAst.Expression.Lit(lit, tpe, loc) => Literal.simplify(lit)
       case TypedAst.Expression.Var(ident, tpe, loc) => SimplifiedAst.Expression.Var(ident, -1, tpe, loc)
       case TypedAst.Expression.Ref(name, tpe, loc) => SimplifiedAst.Expression.Ref(name, tpe, loc)
@@ -196,8 +208,16 @@ object Simplifier {
         SimplifiedAst.Expression.Tag(enum, tag, simplify(e), tpe, loc)
       case TypedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
+      case TypedAst.Expression.FNone(tpe, loc) => ??? // TODO
+      case TypedAst.Expression.FSome(e, tpe, loc) => ??? // TODO
+      case TypedAst.Expression.FNil(tpe, loc) => ??? // TODO
+      case TypedAst.Expression.FList(hd, tl, tpe, loc) => ??? // TODO
+      case TypedAst.Expression.FVec(elms, tpe, loc) => ??? // TODO
       case TypedAst.Expression.FSet(elms, tpe, loc) =>
         SimplifiedAst.Expression.FSet(elms map simplify, tpe, loc)
+      case TypedAst.Expression.FMap(elms, tpe, loc) => ??? // TODO
+      case TypedAst.Expression.GetIndex(e1, e2, tpe, loc) => ??? // TODO
+      case TypedAst.Expression.PutIndex(e1, e2, e3, tpe, loc) => ??? // TODO
       case TypedAst.Expression.Existential(params, exp, loc) =>
         SimplifiedAst.Expression.Existential(params, simplify(exp), loc)
       case TypedAst.Expression.Universal(params, exp, loc) =>

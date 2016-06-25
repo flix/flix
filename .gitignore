@@ -1,6 +1,7 @@
 .idea/
 /api/
 /out/
+/local.properties
 /*.iml
 /flix.jar
 target

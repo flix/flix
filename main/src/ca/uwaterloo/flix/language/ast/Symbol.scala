@@ -168,8 +168,6 @@ object Symbol {
   // TODO: deprecated
   object Resolved {
 
-    private val cache = mutable.HashMap.empty[List[String], Resolved]
-
     def mk(name: String): Resolved = {
       if (name.contains("/")) {
         val index = name.indexOf("/")
@@ -179,9 +177,7 @@ object Symbol {
         mk(List(name))
     }
 
-    def mk(parts: List[String]): Resolved = {
-      cache.getOrElseUpdate(parts, new Resolved(parts))
-    }
+    def mk(parts: List[String]): Resolved = new Resolved(parts)
   }
 
   /**
@@ -220,7 +216,7 @@ object Symbol {
       * Returns `true` if this resolved name is equal to `obj` resolved name.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: Resolved => this eq that
+      case that: Resolved => this.parts == that.parts
       case _ => false
     }
 
