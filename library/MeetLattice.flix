@@ -4,30 +4,14 @@
 class MeetLattice[E] => PartialOrder[E] {
 
     /**
-     * Returns the greatest element of the lattice.
-     */
-    def top: E
-
-    /**
      * Returns the greatest lower bound of the two elements `x` and `y`.
      */
     def glb(x: E, y: E): E
 
     /**
-     * Alias for the greatest element of the lattice.
-     */
-    def ⊤: E
-
-    /**
      * Alias for the greatest lower bound operator.
      */
     def ⊓(x: E, y: E): E = glb(x, y)
-
-    /**
-     * The greatest element law asserts that every element of the lattice is
-     * greater than or equal to the top element.
-     */
-    law GreatestElement: Prop = ∀(x: E). x ⊑ ⊤
 
     /**
      * The lower bound law asserts that the greatest lower bound operator returns an

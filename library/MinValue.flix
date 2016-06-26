@@ -8,9 +8,15 @@ class MinValue[E] => PartialOrder[E] {
     def minValue: E
 
     /**
-     * The smallest value law asserts that the `minValue` is indeed the smallest value.
+     * Alias for the least element of the lattice.
      */
-    law SmallestValue: Prop = ∀(x: E). minValue <= x
+    def ⊥: E = bot
+
+    /**
+     * The least element law asserts that every element of the lattice is
+     * less than or equal to the bottom element.
+     */
+    law LeastElement: Prop = ∀(x: E). ⊥ ⊑ x
 }
 
 //

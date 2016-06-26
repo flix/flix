@@ -8,9 +8,15 @@ class MaxValue[E] => PartialOrder[E] {
     def maxValue: E
 
     /**
-     * The largest value law asserts that the `MaxValue` is indeed the largest value.
+     * Alias for the greatest element of the lattice.
      */
-    law LargestValue: Prop = ∀(x: E). MaxValue <= x
+    def ⊤: E
+
+    /**
+     * The greatest element law asserts that every element of the lattice is
+     * greater than or equal to the top element.
+     */
+    law GreatestElement: Prop = ∀(x: E). x ⊑ ⊤
 }
 
 //
