@@ -1,7 +1,7 @@
 /**
  * Types equipped with a partial order.
  */
-class PartialOrder[E] {
+class PartialOrder[E] => Eq[E] {
 
     /**
      * Returns `true` iff the element `x` is less than or equal to the element `y`.
