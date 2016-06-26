@@ -309,7 +309,7 @@ object Simplifier {
       case (Tuple(elms, tpe, loc) :: ps, v :: vs) =>
         val freshVars = elms.map(_ => genSym.fresh2())
         val zero = simplify(elms ::: ps, freshVars ::: vs, succ, fail)
-        (elms zip freshVars zipWithIndex).foldRight(zero) {
+        elms.zip(freshVars).zipWithIndex.foldRight(zero) {
           case (((pat, name), idx), exp) =>
             SExp.Let(name, -1, SExp.GetTupleIndex(SExp.Var(v, -1, tpe, loc), idx, pat.tpe, loc), exp, succ.tpe, loc)
         }

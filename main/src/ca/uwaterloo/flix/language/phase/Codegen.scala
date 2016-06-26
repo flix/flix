@@ -27,6 +27,8 @@ import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.util.CheckClassAdapter
 import org.objectweb.asm.{Type => _, _}
 
+import scala.language.existentials
+
 // TODO: Debugging information
 
 object Codegen {

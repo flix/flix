@@ -17,9 +17,10 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api._
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol}
 import ca.uwaterloo.flix.util.{DebugBytecode, _}
 import org.scalatest.FunSuite
+
+import scala.language.implicitConversions
 
 class TestBackend extends FunSuite {
 

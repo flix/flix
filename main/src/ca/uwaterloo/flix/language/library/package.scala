@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.Type
 
 import scala.collection.immutable
+import scala.language.implicitConversions
 
 package object library {
 
