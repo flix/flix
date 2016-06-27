@@ -21,5 +21,7 @@ lazy val flix = (project in file("."))
     scalaSource in Test :=  baseDirectory.value / "main" / "test",
     unmanagedResourceDirectories in Compile += baseDirectory.value / "main" / "src" / "ca" / "uwaterloo" / "flix" / "runtime" / "debugger",
     scalacOptions ++= Seq("-feature", "-unchecked", "-deprecation"),
-    libraryDependencies ++= dependencies
+    libraryDependencies ++= dependencies,
+    fork in Test :=  true,
+    test := (testOnly in Test).toTask(" *.TestAll").value
   )
