@@ -16,10 +16,10 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, SourceLocation, Type}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Definition.Constant
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Expression, ExpressionFolder, Root}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, SourceLocation, Type}
 
 object Optimizer {
 
@@ -71,7 +71,26 @@ object Optimizer {
 
   object DeadCodeElimination {
 
-    def optimize(f: Constant): Constant = f
+    def optimize(f: Constant): Constant = {
+
+      object RemoveKnownConditional extends ExpressionFolder {
+        override def foldIfThenElse(cond: Expression,
+                                    thenExp: Expression,
+                                    elseExp: Expression,
+                                    tpe: Type,
+                                    loc: SourceLocation): Expression = cond match {
+          // Condition known to be true, so replace whole expression with just the consequent expression
+          case Expression.True => super.foldExpression(thenExp)
+
+          // Condition known to be false, so replace whole expression with just the alternative expression
+          case Expression.False => super.foldExpression(elseExp)
+
+          case _ => super.foldIfThenElse(cond, thenExp, elseExp, tpe, loc)
+        }
+      }
+
+      f.copy(exp = RemoveKnownConditional.foldExpression(f.exp))
+    }
 
   }
 
