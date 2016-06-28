@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Definition.Constant
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Expression, ExpressionFolder, Root}
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Expression, ExpressionFolder, FreeVar, Root}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, Name, SourceLocation, Type}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object Optimizer {
 
@@ -96,8 +97,68 @@ object Optimizer {
 
   object CopyPropagation {
 
-    def optimize(f: Constant): Constant = f
+    def optimize(f: Constant): Constant = {
 
+      /**
+        * Replaces any references to `oldVar` with `newVar`.
+        */
+      class ReplaceVarInExp(oldVar: Name.Ident,
+                            newVar: Name.Ident,
+                            newOffset: scala.Int,
+                            newLoc: SourceLocation) extends ExpressionFolder {
+        override def foldVar(ident: Name.Ident,
+                             offset: scala.Int,
+                             tpe: Type,
+                             loc: SourceLocation): Expression = {
+          if (ident.name == oldVar.name) {
+            Var(newVar, newOffset, tpe, newLoc)
+          } else {
+            Var(ident, offset, tpe, loc)
+          }
+        }
+
+        override def foldMkClosure(lambda: Lambda,
+                                   freeVars: List[FreeVar],
+                                   tpe: Type.Lambda,
+                                   loc: SourceLocation): Expression = throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
+
+        override def foldMkClosureRef(ref: Ref,
+                                      freeVars: List[FreeVar],
+                                      tpe: Type.Lambda,
+                                      loc: SourceLocation): Expression = {
+          val fFreeVars = freeVars.map {
+            case f @ FreeVar(ident, _, t) =>
+              if (ident.name == oldVar.name) {
+                FreeVar(newVar, newOffset, t)
+              } else {
+                f
+              }
+          }
+          MkClosureRef(ref, fFreeVars, tpe, loc)
+        }
+      }
+
+      object PropagateSimpleBindings extends ExpressionFolder {
+        override def foldLet(ident: Name.Ident,
+                             offset: scala.Int,
+                             rhs: Expression,
+                             body: Expression,
+                             tpe: Type,
+                             loc: SourceLocation): Expression = rhs match {
+          // If we have something like
+          //    Let x = y in body
+          // We can transform that to just
+          //    body
+          // where we've replaced all references to `x` with `y` in `body`.
+          case Var(bIdent, bOffset, _, bLoc) => new ReplaceVarInExp(ident, bIdent, bOffset, bLoc).foldExpression(body)
+
+          // Otherwise don't change anything
+          case _ => Let(ident, offset, rhs, body, tpe, loc)
+        }
+      }
+
+      f.copy(exp = PropagateSimpleBindings.foldExpression(f.exp))
+    }
   }
 
 }
