@@ -16,11 +16,14 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.{Invokable, IValue, Flix}
+import ca.uwaterloo.flix.api.{Flix, IValue, Invokable}
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestSolver extends FunSuite {
+
+  val opts = Options.DefaultTest
 
   object Parity {
     val Top = Value.mkTag("Top", Value.Unit)
@@ -92,7 +95,7 @@ class TestSolver extends FunSuite {
         |A(x, z) :- A(x, y), A(y, z).
       """.stripMargin
 
-    val model = new Flix().addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(s).solve().get
     val A = model.getRelation("A").toList
     assert(A contains List(Value.mkInt32(1), Value.mkInt32(3)))
   }
@@ -109,7 +112,7 @@ class TestSolver extends FunSuite {
         |A(x, z) :- A(x, y), A(y, z).
       """.stripMargin
 
-    val model = new Flix().addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(s).solve().get
     val A = model.getRelation("A").toList
     assert(A contains List(Value.mkInt32(1), Value.mkInt32(5)))
     assert(A contains List(Value.mkInt32(1), Value.mkInt32(5)))
@@ -126,7 +129,7 @@ class TestSolver extends FunSuite {
         |A(x, z) :- A(x, y), A(y, z).
       """.stripMargin
 
-    val model = new Flix().addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(s).solve().get
     val A = model.getRelation("A").toList
     assert(A contains List(Value.mkInt32(2), Value.mkInt32(2)))
   }
@@ -142,7 +145,7 @@ class TestSolver extends FunSuite {
         |A(x, c, z) :- A(x, c, y), A(y, c, z).
       """.stripMargin
 
-    val model = new Flix().addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(s).solve().get
     val A = model.getRelation("A").toList
     assert(A contains List(Value.mkInt32(1), Value.mkStr("a"), Value.mkInt32(3)))
   }
@@ -159,7 +162,7 @@ class TestSolver extends FunSuite {
         |A(x, c, z) :- A(x, c, y), A(y, c, z).
       """.stripMargin
 
-    val model = new Flix().addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(s).solve().get
     val A = model.getRelation("A").toList
     assert(A contains List(Value.mkInt32(2), Value.mkStr("b"), Value.mkInt32(2)))
   }
@@ -175,7 +178,7 @@ class TestSolver extends FunSuite {
         |A(x, c, y) :- A(y, c, x).
       """.stripMargin
 
-    val model = new Flix().addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(s).solve().get
     val A = model.getRelation("A").toList
     assert(A contains List(Value.mkInt32(1), Value.mkStr("b"), Value.mkInt32(3)))
   }
@@ -191,7 +194,7 @@ class TestSolver extends FunSuite {
         |A(x, c, y) :- A(y, c, x).
       """.stripMargin
 
-    val model = new Flix().addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(s).solve().get
     val A = model.getRelation("A").toList
     assert(A contains List(Value.mkInt32(1), Value.mkStr("b"), Value.mkInt32(3)))
   }
@@ -208,7 +211,7 @@ class TestSolver extends FunSuite {
         |R(x) :- A(x), B(x).
       """.stripMargin
 
-    val model = new Flix().addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(s).solve().get
     val R = model.getRelation("R").toList
     assert(R contains List(Value.mkInt32(2)))
   }
@@ -228,7 +231,7 @@ class TestSolver extends FunSuite {
         |R(x) :- A(x), B(x), C(x).
       """.stripMargin
 
-    val model = new Flix().addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(s).solve().get
     val R = model.getRelation("R").toList
     assert(R contains List(Value.mkInt32(3)))
   }
@@ -248,7 +251,7 @@ class TestSolver extends FunSuite {
         |R(x) :- C(x), A(x), B(x), B(x), C(x), A(x).
       """.stripMargin
 
-    val model = new Flix().addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(s).solve().get
     val R = model.getRelation("R").toList
     assert(R contains List(Value.mkInt32(3)))
   }
@@ -266,7 +269,7 @@ class TestSolver extends FunSuite {
         |R(x, z) :- A(x, y), B(y, z).
       """.stripMargin
 
-    val model = new Flix().addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(s).solve().get
     val R = model.getRelation("R").toList
     assert(R contains List(Value.mkInt32(3), Value.mkInt32(5)))
   }
@@ -286,7 +289,7 @@ class TestSolver extends FunSuite {
         |R(x, w) :- A(x, y), B(y, z), C(z, w).
       """.stripMargin
 
-    val model = new Flix().addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(s).solve().get
     val R = model.getRelation("R").toList
     assert(R contains List(Value.mkInt32(1), Value.mkInt32(7)))
   }
@@ -306,7 +309,7 @@ class TestSolver extends FunSuite {
         |B(x, z) :- A(x, y), C(y, z).
       """.stripMargin
 
-    val model = new Flix().addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(s).solve().get
     val A = model.getRelation("A").toList
     val B = model.getRelation("B").toList
     val C = model.getRelation("C").toList
@@ -331,7 +334,7 @@ class TestSolver extends FunSuite {
         |R(x) :- A(x), B(x), C(x).
       """.stripMargin
 
-    val model = new Flix().addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(s).solve().get
     val R = model.getRelation("R").toList
     assert(R.isEmpty)
   }
@@ -351,7 +354,7 @@ class TestSolver extends FunSuite {
         |C(x, y) :- A(x, _), B(_, y).
       """.stripMargin
 
-    val model = new Flix().addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(s).solve().get
     val C = model.getRelation("C").toList
     assert(C contains List(Value.mkInt32(1), Value.mkInt32(6)))
     assert(C contains List(Value.mkInt32(1), Value.mkInt32(8)))
@@ -369,7 +372,7 @@ class TestSolver extends FunSuite {
         |
       """.stripMargin
 
-    val model = new Flix().addStr(Parity.Definition).addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(Parity.Definition).addStr(s).solve().get
     val A = model.getLattice("A").toMap
     assert(A(List(Value.mkInt32(1))).head == Parity.Odd)
     assert(A(List(Value.mkInt32(2))).head == Parity.Even)
@@ -385,7 +388,7 @@ class TestSolver extends FunSuite {
         |
       """.stripMargin
 
-    val model = new Flix().addStr(Parity.Definition).addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(Parity.Definition).addStr(s).solve().get
     val A = model.getLattice("A").toMap
     assert(A(List(Value.mkInt32(1))).head == Parity.Top)
   }
@@ -401,7 +404,7 @@ class TestSolver extends FunSuite {
         |A(3, x) :- A(2,x).
       """.stripMargin
 
-    val model = new Flix().addStr(Parity.Definition).addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(Parity.Definition).addStr(s).solve().get
     val A = model.getLattice("A").toMap
     assert(A(List(Value.mkInt32(3))).head == Parity.Top)
   }
@@ -416,7 +419,7 @@ class TestSolver extends FunSuite {
         |B(x, y) :- A(x), A(y), x != y.
       """.stripMargin
 
-    val model = new Flix().addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(s).solve().get
     val B = model.getRelation("B").toList
     assert(B contains List(Value.mkInt32(1), Value.mkInt32(2)))
     assert(B contains List(Value.mkInt32(1), Value.mkInt32(3)))
@@ -439,7 +442,7 @@ class TestSolver extends FunSuite {
         |B(x, y) :- A(x, y), x != y.
       """.stripMargin
 
-    val model = new Flix().addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(s).solve().get
     val B = model.getRelation("B").toList
     assert(B contains List(Value.mkInt32(1), Value.mkInt32(2)))
     assert(!(B contains List(Value.mkInt32(2), Value.mkInt32(2))))
@@ -457,7 +460,7 @@ class TestSolver extends FunSuite {
         |B(x, z) :- A(x, y), A(y, z), x != z.
       """.stripMargin
 
-    val model = new Flix().addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(s).solve().get
     val B = model.getRelation("B").toList
     assert(B contains List(Value.mkInt32(1), Value.mkInt32(3)))
     assert(!(B contains List(Value.mkInt32(1), Value.mkInt32(1))))
@@ -476,7 +479,7 @@ class TestSolver extends FunSuite {
         |B(y) :- A(x), y <- f(x): Set[Int].
       """.stripMargin
 
-    val model = new Flix().addStr(s).solve().get
+    val model = new Flix().setOptions(opts).addStr(s).solve().get
     val B = model.getRelation("B").toSet
     assert(B contains List(Value.mkInt32(1)))
     assert(B contains List(Value.mkInt32(4)))
@@ -493,7 +496,7 @@ class TestSolver extends FunSuite {
         |B(x) :- f(x), A(x).
       """.stripMargin
 
-    val flix = new Flix()
+    val flix = new Flix().setOptions(opts)
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkStrType)
     flix
       .addStr(s)
