@@ -745,32 +745,42 @@ object Verifier {
     implicit val consoleCtx = Compiler.ConsoleCtx
     Console.println(consoleCtx.blue(s"-- VERIFIER RESULTS --------------------------------------------------"))
 
-    for (result <- results.sortBy(_.property.loc)) {
-      result match {
-        case PropertyResult.Success(property, paths, queries, elapsed) =>
-          Console.println(consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + toSeconds(elapsed) + " seconds.)")
+    for ((source, properties) <- results.groupBy(_.property.loc.source)) {
 
-        case PropertyResult.Failure(property, paths, queries, elapsed, error) =>
-          Console.println(consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + toSeconds(elapsed) + ") seconds.")
+      Console.println()
+      Console.println(s"  -- Verification Results for ${source.format} -- ")
+      Console.println()
 
-        case PropertyResult.Unknown(property, paths, queries, elapsed, error) =>
-          Console.println(consoleCtx.red("? ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + toSeconds(elapsed) + ") seconds.")
+      for (result <- properties.sortBy(_.property.loc)) {
+        result match {
+          case PropertyResult.Success(property, paths, queries, elapsed) =>
+            Console.println("  " + consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + toSeconds(elapsed) + " seconds.)")
+
+          case PropertyResult.Failure(property, paths, queries, elapsed, error) =>
+            Console.println("  " + consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + toSeconds(elapsed) + ") seconds.")
+
+          case PropertyResult.Unknown(property, paths, queries, elapsed, error) =>
+            Console.println("  " + consoleCtx.red("? ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + toSeconds(elapsed) + ") seconds.")
+        }
       }
+
+      val s = numberOfSuccesses(properties)
+      val f = numberOfFailures(properties)
+      val u = numberOfUnknowns(properties)
+      val t = properties.length
+
+      val mt = toSeconds(avgl(properties.map(_.elapsed)))
+      val mp = avg(properties.map(_.paths))
+      val mq = avg(properties.map(_.queries))
+
+      Console.println()
+      Console.println(s"  Properties: $s / $t proven in ${toSeconds(totalElapsed(properties))} seconds. (success = $s; failure = $f; unknown = $u).")
+      Console.println(s"  Paths: ${totalPaths(properties)}. Queries: ${totalQueries(properties)} (avg time = $mt sec; avg paths = $mp; avg queries = $mq).")
+      Console.println()
+
     }
 
-    val s = numberOfSuccesses(results)
-    val f = numberOfFailures(results)
-    val u = numberOfUnknowns(results)
-    val t = results.length
 
-    val mt = toSeconds(avgl(results.map(_.elapsed)))
-    val mp = avg(results.map(_.paths))
-    val mq = avg(results.map(_.queries))
-
-    Console.println()
-    Console.println(s"Properties: $s / $t proven in ${toSeconds(totalElapsed(results))} seconds. (success = $s; failure = $f; unknown = $u).")
-    Console.println(s"Paths: ${totalPaths(results)}. Queries: ${totalQueries(results)} (avg time = $mt sec; avg paths = $mp; avg queries = $mq).")
-    Console.println()
   }
 
   /**
