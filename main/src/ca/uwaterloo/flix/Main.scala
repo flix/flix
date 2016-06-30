@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix
 
 import java.io.File
+import java.nio.file.{Files, Paths}
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.util._
@@ -36,6 +37,18 @@ object Main {
       Console.err.println("Unable to parse command line arguments. Will now exit.")
       System.exit(1)
       null
+    }
+
+    // check if the --tutorial flag was passed.
+    if (cmdOpts.tutorial != null) {
+      writeTutorial(cmdOpts.tutorial)
+      System.exit(0)
+    }
+
+    // check that some input files were passed.
+    if (cmdOpts.files.isEmpty) {
+      Console.err.println("No input. Try --help.")
+      System.exit(1)
     }
 
     // construct flix options.
@@ -94,6 +107,7 @@ object Main {
   case class CmdOpts(monitor: Boolean = false,
                      print: Seq[String] = Seq(),
                      threads: Int = -1,
+                     tutorial: File = null,
                      verbose: Boolean = false,
                      verifier: Boolean = false,
                      debug: Boolean = false,
@@ -129,6 +143,11 @@ object Main {
         valueName("<n>").
         text("selects the number of threads to use.")
 
+      // Tutorial.
+      opt[File]("tutorial").action((f, c) => c.copy(tutorial = f)).
+        valueName("<file>").
+        text("writes the Flix tutorial to <file>.")
+
       // Verbose.
       opt[Unit]('v', "verbose").action((_, c) => c.copy(verbose = true))
         .text("enables verbose output.")
@@ -152,12 +171,28 @@ object Main {
 
       // Input files.
       arg[File]("<file>...").action((x, c) => c.copy(files = c.files :+ x))
+        .optional()
         .unbounded()
         .text("input Flix source code files.")
 
     }
 
     parser.parse(args, CmdOpts())
+  }
+
+  /**
+    * Emits the Flix tutorial to the given file.
+    */
+  def writeTutorial(file: File): Unit = {
+    val outputFile = file.toPath
+    if (Files.exists(outputFile)) {
+      Console.err.println(s"Refusing to overwrite existing file ``${file.getName}''.")
+      System.exit(1)
+    }
+
+    val inputStream = LocalResource.getTutorialInputStream
+    Files.copy(inputStream, outputFile)
+    Console.println(s"Tutorial successfully written to ``${file.getName}''.")
   }
 
 }
