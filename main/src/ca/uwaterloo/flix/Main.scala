@@ -32,7 +32,10 @@ object Main {
   def main(argv: Array[String]): Unit = {
 
     // parse command line options.
-    val cmdOpts = parseCmdOpts(argv)
+    val cmdOpts: CmdOpts = parseCmdOpts(argv) match {
+      case None => System.exit(1); ???
+      case Some(opts) => opts
+    }
 
     // construct flix options.
     var options = Options.Default
@@ -114,28 +117,28 @@ object Main {
     *
     * @param args the arguments array.
     */
-  def parseCmdOpts(args: Array[String]): CmdOpts = {
+  def parseCmdOpts(args: Array[String]): Option[CmdOpts] = {
     val parser = new scopt.OptionParser[CmdOpts]("flix") {
 
       // Head
-      head("flix", Version.CurrentVersion.toString)
+      head("The Flix Programming Language (C) 2015-2016", Version.CurrentVersion.toString)
 
       // Help.
-      help("help").text("prints this usage text")
+      help("help").text("prints this usage information.")
 
       // Monitor.
       opt[Unit]('m', "monitor").action((_, c) => c.copy(monitor = true)).
-        text("enables the web-based debugger and profiler.")
+        text("enables the debugger and profiler.")
 
       // Print.
       opt[Seq[String]]('p', "print").action((xs, c) => c.copy(print = xs)).
-        valueName("<name>,<name>...").
-        text("relations and lattices to print.")
+        valueName("<name>...").
+        text("prints the given relations and lattices.")
 
       // Threads.
       opt[Int]('t', "threads").action((i, c) => c.copy(threads = i)).
-        validate(x => if (x > 0) success else failure("Value <nthreads> must be at least 1.")).
-        valueName("<nthreads>").
+        validate(x => if (x > 0) success else failure("Value <n> must be at least 1.")).
+        valueName("<n>").
         text("number of threads to use.")
 
       // Verbose.
@@ -144,22 +147,20 @@ object Main {
 
       // Verifier.
       opt[Unit]("verifier").action((_, c) => c.copy(verifier = true)).
-        text("enables program verifier.")
+        text("enables the verifier.")
 
       // Version.
-      version("version")
+      version("version").text("prints version number.")
 
       // Experimental options:
 
       // XDebug.
       opt[Unit]("Xdebug").action((_, c) => c.copy(debug = true)).
-        hidden().
-        text("[Experimental] enables debugging mode.")
+        text("[experimental] enables debugging mode.")
 
       // XInterpreter.
       opt[Unit]("Xinterpreter").action((_, c) => c.copy(interpreter = true)).
-        hidden().
-        text("[Experimental] enables interpreted evaluation.")
+        text("[experimental] enables interpreted evaluation.")
 
       // Input files.
       arg[File]("<file>...").action((x, c) => c.copy(files = c.files :+ x))
@@ -168,7 +169,7 @@ object Main {
 
     }
 
-    parser.parse(args, CmdOpts()).get
+    parser.parse(args, CmdOpts())
   }
 
 }

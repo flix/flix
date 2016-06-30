@@ -22,19 +22,19 @@ class TestMain extends FunSuite {
 
   test("p.flix") {
     val args = Array("p.flix")
-    val opts = Main.parseCmdOpts(args)
+    val opts = Main.parseCmdOpts(args).get
     assert(opts.files.exists(_.getName == "p.flix"))
   }
 
   test("p.flix.zip") {
     val args = Array("p.flix.zip")
-    val opts = Main.parseCmdOpts(args)
+    val opts = Main.parseCmdOpts(args).get
     assert(opts.files.exists(_.getName == "p.flix.zip"))
   }
 
   test("a.flix b.flix c.flix") {
     val args = Array("a.flix", "b.flix", "c.flix")
-    val opts = Main.parseCmdOpts(args)
+    val opts = Main.parseCmdOpts(args).get
     assert(opts.files.exists(_.getName == "a.flix"))
     assert(opts.files.exists(_.getName == "b.flix"))
     assert(opts.files.exists(_.getName == "c.flix"))
@@ -42,68 +42,68 @@ class TestMain extends FunSuite {
 
   test("-m") {
     val args = Array("-m", "p.flix")
-    val opts = Main.parseCmdOpts(args)
+    val opts = Main.parseCmdOpts(args).get
     assert(opts.monitor)
   }
 
   test("--monitor") {
     val args = Array("--monitor", "p.flix")
-    val opts = Main.parseCmdOpts(args)
+    val opts = Main.parseCmdOpts(args).get
     assert(opts.monitor)
   }
 
   test("-t") {
     val args = Array("-t", "42", "p.flix")
-    val opts = Main.parseCmdOpts(args)
+    val opts = Main.parseCmdOpts(args).get
     assert(opts.threads == 42)
   }
 
   test("--threads") {
     val args = Array("--threads", "42", "p.flix")
-    val opts = Main.parseCmdOpts(args)
+    val opts = Main.parseCmdOpts(args).get
     assert(opts.threads == 42)
   }
 
   test("-v") {
     val args = Array("-v", "p.flix")
-    val opts = Main.parseCmdOpts(args)
+    val opts = Main.parseCmdOpts(args).get
     assert(opts.verbose)
   }
 
   test("--verbose") {
     val args = Array("--verbose", "p.flix")
-    val opts = Main.parseCmdOpts(args)
+    val opts = Main.parseCmdOpts(args).get
     assert(opts.verbose)
   }
 
   test("--verifier") {
     val args = Array("--verifier", "p.flix")
-    val opts = Main.parseCmdOpts(args)
+    val opts = Main.parseCmdOpts(args).get
     assert(opts.verifier)
   }
 
   test("-p foo") {
     val args = Array("-p", "foo", "p.flix")
-    val opts = Main.parseCmdOpts(args)
+    val opts = Main.parseCmdOpts(args).get
     assert(opts.print.contains("foo"))
   }
 
   test("-p foo,bar") {
     val args = Array("-p", "foo,bar", "p.flix")
-    val opts = Main.parseCmdOpts(args)
+    val opts = Main.parseCmdOpts(args).get
     assert(opts.print.contains("foo"))
     assert(opts.print.contains("bar"))
   }
 
   test("--print foo") {
     val args = Array("--print", "foo", "p.flix")
-    val opts = Main.parseCmdOpts(args)
+    val opts = Main.parseCmdOpts(args).get
     assert(opts.print.contains("foo"))
   }
 
   test("--print foo,bar") {
     val args = Array("--print", "foo,bar", "p.flix")
-    val opts = Main.parseCmdOpts(args)
+    val opts = Main.parseCmdOpts(args).get
     assert(opts.print.contains("foo"))
     assert(opts.print.contains("bar"))
   }
