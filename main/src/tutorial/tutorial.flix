@@ -143,23 +143,40 @@ namespace Tutorial.CP {
         case (Constant.Cst(n1), Constant.Cst(n2)) => if (n2 == 0) Constant.Bot else Constant.Cst(n1 / n2)
         case _ => Constant.Top
     }
-    // Notice the special case to avoid division-by-zero in the analysis itself!
+
+    // !! Notice the special case to avoid division-by-zero in the analysis itself!
 
 
-        def isMaybeZero(e: Constant): Bool
-            = match e with {
-                case Constant.Bot => false
-                case Constant.Cst(n) => n == 0
-                case Constant.Top => true
-            }
+    //
+    // This complete the analysis itself. But before we try to run it, let us
+    // add some features to look for a simple type of bugs: Possible division-
+    // by-zero errors.
+    //
 
-
-
+    //
+    // We define a relation to hold the names of local variables possibly
+    // involved in a division-by-zero error:
+    //
     rel ArithmeticError(r: Str)
 
+    //
+    // We populate this relation with the rule below. This rule states that if
+    // there is a division statement r = n / d, the value of the local variable
+    // d is y, and y is possibly zero according to the `isMaybeZero` filter
+    // function then we infer a possible error for `r`.
+    //
     ArithmeticError(r) :- isMaybeZero(y),
                           DivStm(r, n, d),
                           LocalVar(d, y).
+
+    //
+    // Defining the filter function is straightforward:
+    //
+    def isMaybeZero(e: Constant): Bool = match e with {
+        case Constant.Bot => false
+        case Constant.Cst(n) => n == 0
+        case Constant.Top => true
+    }
 
     //
     // Let us now try to analyse the following small program:
@@ -173,7 +190,6 @@ namespace Tutorial.CP {
     //
     // We encode this program using the input facts:
     //
-
     LitStm("x", 3).
     LitStm("y", 7).
     LitStm("z", 0).
