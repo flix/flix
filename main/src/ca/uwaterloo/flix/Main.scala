@@ -32,32 +32,21 @@ object Main {
   def main(argv: Array[String]): Unit = {
 
     // parse command line options.
-    val cmdOpts: CmdOpts = parseCmdOpts(argv) match {
-      case None => System.exit(1); ???
-      case Some(opts) => opts
+    val cmdOpts: CmdOpts = parseCmdOpts(argv).getOrElse {
+      Console.err.println("Unable to parse command line arguments. Will now exit.")
+      System.exit(1)
+      null
     }
 
     // construct flix options.
-    var options = Options.Default
-    if (cmdOpts.monitor) {
-      options = options.copy(debugger = Debugger.Enabled)
-    }
-    options = options.copy(print = cmdOpts.print.toList)
-    if (cmdOpts.threads != -1) {
-      options = options.copy(solver = SolverOpts.Default.copy(threads = cmdOpts.threads))
-    }
-    if (cmdOpts.verbose) {
-      options = options.copy(verbosity = Verbosity.Verbose)
-    }
-    if (cmdOpts.verifier) {
-      options = options.copy(verify = Verify.Enabled)
-    }
-    if (cmdOpts.debug) {
-      options = options.copy(debugBytecode = DebugBytecode.Enabled)
-    }
-    if (cmdOpts.interpreter) {
-      options = options.copy(codegen = CodeGeneration.Enabled)
-    }
+    val options = Options.Default.copy(
+      debug = cmdOpts.debug,
+      evaluation = if (cmdOpts.interpreter) Evaluation.Interpreted else Evaluation.Compiled,
+      monitor = cmdOpts.monitor,
+      threads = cmdOpts.threads,
+      verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
+      verifier = cmdOpts.verifier
+    )
 
     // configure Flix and add the paths.
     val builder = new Flix()
@@ -72,7 +61,7 @@ object Main {
         case Validation.Success(model, errors) =>
           errors.foreach(e => println(e.message))
 
-          val print = options.print
+          val print = cmdOpts.print
           for (name <- print) {
             PrettyPrint.print(name, model)
           }
@@ -109,8 +98,7 @@ object Main {
                      verifier: Boolean = false,
                      debug: Boolean = false,
                      interpreter: Boolean = false,
-                     files: Seq[File] = Seq()
-                    )
+                     files: Seq[File] = Seq())
 
   /**
     * Parse command line options.
@@ -121,7 +109,7 @@ object Main {
     val parser = new scopt.OptionParser[CmdOpts]("flix") {
 
       // Head
-      head("The Flix Programming Language (C) 2015-2016", Version.CurrentVersion.toString)
+      head("The Flix Programming Language", Version.CurrentVersion.toString)
 
       // Help.
       help("help").text("prints this usage information.")
@@ -133,13 +121,13 @@ object Main {
       // Print.
       opt[Seq[String]]('p', "print").action((xs, c) => c.copy(print = xs)).
         valueName("<name>...").
-        text("prints the given relations and lattices.")
+        text("selects the relations/lattices to print.")
 
       // Threads.
       opt[Int]('t', "threads").action((i, c) => c.copy(threads = i)).
         validate(x => if (x > 0) success else failure("Value <n> must be at least 1.")).
         valueName("<n>").
-        text("number of threads to use.")
+        text("selects the number of threads to use.")
 
       // Verbose.
       opt[Unit]('v', "verbose").action((_, c) => c.copy(verbose = true))
@@ -150,13 +138,13 @@ object Main {
         text("enables the verifier.")
 
       // Version.
-      version("version").text("prints version number.")
+      version("version").text("prints the version number.")
 
       // Experimental options:
 
       // XDebug.
       opt[Unit]("Xdebug").action((_, c) => c.copy(debug = true)).
-        text("[experimental] enables debugging mode.")
+        text("[experimental] enables otuput of debugging information.")
 
       // XInterpreter.
       opt[Unit]("Xinterpreter").action((_, c) => c.copy(interpreter = true)).
@@ -165,7 +153,7 @@ object Main {
       // Input files.
       arg[File]("<file>...").action((x, c) => c.copy(files = c.files :+ x))
         .unbounded()
-        .text("input files.")
+        .text("input Flix source code files.")
 
     }
 

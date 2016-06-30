@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression}
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol, Type}
 import ca.uwaterloo.flix.runtime.Value
-import ca.uwaterloo.flix.util.{CodeGeneration, DebugBytecode, InternalCompilerException, Options}
+import ca.uwaterloo.flix.util.{Evaluation, InternalCompilerException, Options}
 
 object LoadBytecode {
 
@@ -74,7 +74,7 @@ object LoadBytecode {
     *    mutate the original constant from root.constants, not the one in constantsMap (which will get GC'd).
     */
   def load(flix: Flix, root: ExecutableAst.Root, options: Options)(implicit genSym: GenSym): ExecutableAst.Root = {
-    if (options.codegen != CodeGeneration.Enabled) {
+    if (options.evaluation == Evaluation.Interpreted) {
       return root
     }
 
@@ -98,7 +98,7 @@ object LoadBytecode {
     val loadedInterfaces: Map[Type, Class[_]] = interfaces.map { case (tpe, prefix) =>
       // Use a temporary context with no functions, because the codegen needs the map of interfaces.
       val bytecode = Codegen.compileFunctionalInterface(Codegen.Context(prefix, List.empty, declarations, interfaces))(tpe)
-      if (options.debugBytecode == DebugBytecode.Enabled) {
+      if (options.debug) {
         dump(prefix, bytecode)
       }
       tpe -> loader(prefix, bytecode)
@@ -107,7 +107,7 @@ object LoadBytecode {
     // 4. Generate and load bytecode.
     val loadedClasses: Map[List[String], Class[_]] = constantsMap.map { case (prefix, consts) =>
       val bytecode = Codegen.compile(Codegen.Context(prefix, consts, declarations, interfaces))
-      if (options.debugBytecode == DebugBytecode.Enabled) {
+      if (options.debug) {
         dump(prefix, bytecode)
       }
       val clazz = loader(prefix, bytecode)

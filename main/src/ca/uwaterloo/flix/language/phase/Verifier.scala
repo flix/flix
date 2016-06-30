@@ -298,7 +298,7 @@ object Verifier {
     /*
      * Check if verification is enabled. Otherwise return success immediately.
      */
-    if (options.verify != Verify.Enabled) {
+    if (options.verifier) {
       return root.toSuccess
     }
 

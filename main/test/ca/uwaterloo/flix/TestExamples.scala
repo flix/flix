@@ -17,9 +17,8 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.{Model, Value}
-import ca.uwaterloo.flix.util.{DebugBytecode, _}
+import ca.uwaterloo.flix.util._
 import org.scalatest.FunSuite
 
 class TestExamples extends FunSuite {
@@ -33,14 +32,8 @@ class TestExamples extends FunSuite {
 
     // TODO: This should really use the default options as a starting point.
     private def createFlix(codegen: Boolean = false) = {
-      val options = Options(
-        debugger = Debugger.Disabled,
-        solver = SolverOpts.Default,
-        print = Nil,
-        verbosity = Verbosity.Silent,
-        verify = Verify.Disabled,
-        codegen = if (codegen) CodeGeneration.Enabled else CodeGeneration.Disabled,
-        debugBytecode = if (dumpBytecode) DebugBytecode.Enabled else DebugBytecode.Disabled
+      val options = Options.Default.copy(
+        evaluation = if (codegen) Evaluation.Compiled else Evaluation.Interpreted
       )
       new Flix().setOptions(options)
     }

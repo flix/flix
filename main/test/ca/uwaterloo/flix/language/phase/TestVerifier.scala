@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.util.{Options, Verify}
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestVerifier extends FunSuite {
@@ -25,7 +25,7 @@ class TestVerifier extends FunSuite {
   test("Belnap.flix") {
     new Flix()
       .addPath("./examples/domains/Belnap.flix")
-      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .setOptions(Options.Default.copy(verifier = true))
       .solve()
       .get
   }
@@ -34,7 +34,7 @@ class TestVerifier extends FunSuite {
     new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Constant.flix")
-      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .setOptions(Options.Default.copy(verifier = true))
       .solve()
       .get
   }
@@ -43,7 +43,7 @@ class TestVerifier extends FunSuite {
     new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/ConstantParity.flix")
-      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .setOptions(Options.Default.copy(verifier = true))
       .solve()
       .get
   }
@@ -52,7 +52,7 @@ class TestVerifier extends FunSuite {
     new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/ConstantSign.flix")
-      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .setOptions(Options.Default.copy(verifier = true))
       .solve()
       .get
   }
@@ -61,7 +61,7 @@ class TestVerifier extends FunSuite {
     new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Parity.flix")
-      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .setOptions(Options.Default.copy(verifier = true))
       .solve()
       .get
   }
@@ -70,7 +70,7 @@ class TestVerifier extends FunSuite {
     new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Mod3.flix")
-      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .setOptions(Options.Default.copy(verifier = true))
       .solve()
       .get
   }
@@ -79,7 +79,7 @@ class TestVerifier extends FunSuite {
     new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/PrefixSuffix.flix")
-      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .setOptions(Options.Default.copy(verifier = true))
       .solve()
       .get
   }
@@ -88,7 +88,7 @@ class TestVerifier extends FunSuite {
     new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Sign.flix")
-      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .setOptions(Options.Default.copy(verifier = true))
       .solve()
       .get
   }
@@ -97,7 +97,7 @@ class TestVerifier extends FunSuite {
     new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/StrictSign.flix")
-      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .setOptions(Options.Default.copy(verifier = true))
       .solve()
       .get
   }
@@ -105,7 +105,7 @@ class TestVerifier extends FunSuite {
   test("Type.flix") {
     new Flix()
       .addPath("./examples/domains/Type.flix")
-      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .setOptions(Options.Default.copy(verifier = true))
       .solve()
       .get
   }
@@ -113,7 +113,7 @@ class TestVerifier extends FunSuite {
   test("ilo/Cube.flix") {
     new Flix()
       .addPath("./examples/domains/ilo/Cube.flix")
-      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .setOptions(Options.Default.copy(verifier = true))
       .solve()
       .get
   }
@@ -121,7 +121,7 @@ class TestVerifier extends FunSuite {
   test("ilo/InfNoAccDcc.flix") {
     new Flix()
       .addPath("./examples/domains/ilo/InfNoAccDcc.flix")
-      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .setOptions(Options.Default.copy(verifier = true))
       .solve()
       .get
   }
@@ -129,7 +129,7 @@ class TestVerifier extends FunSuite {
   test("ilo/M2.flix") {
     new Flix()
       .addPath("./examples/domains/ilo/M2.flix")
-      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .setOptions(Options.Default.copy(verifier = true))
       .solve()
       .get
   }
@@ -137,7 +137,7 @@ class TestVerifier extends FunSuite {
   test("ilo/M3.flix") {
     new Flix()
       .addPath("./examples/domains/ilo/M3.flix")
-      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .setOptions(Options.Default.copy(verifier = true))
       .solve()
       .get
   }
@@ -145,7 +145,7 @@ class TestVerifier extends FunSuite {
   test("ilo/M2M3.flix") {
     new Flix()
       .addPath("./examples/domains/ilo/M2M3.flix")
-      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .setOptions(Options.Default.copy(verifier = true))
       .solve()
       .get
   }
@@ -153,7 +153,7 @@ class TestVerifier extends FunSuite {
   test("ilo/N5.flix") {
     new Flix()
       .addPath("./examples/domains/ilo/N5.flix")
-      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .setOptions(Options.Default.copy(verifier = true))
       .solve()
       .get
   }
@@ -161,7 +161,7 @@ class TestVerifier extends FunSuite {
   test("ilo/SubD4.flix") {
     new Flix()
       .addPath("./examples/domains/ilo/SubD4.flix")
-      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .setOptions(Options.Default.copy(verifier = true))
       .solve()
       .get
   }
@@ -169,7 +169,7 @@ class TestVerifier extends FunSuite {
   test("ilo/SubZ2Z4.flix") {
     new Flix()
       .addPath("./examples/domains/ilo/SubZ2Z4.flix")
-      .setOptions(Options.Default.copy(verify = Verify.Enabled))
+      .setOptions(Options.Default.copy(verifier = true))
       .solve()
       .get
   }
