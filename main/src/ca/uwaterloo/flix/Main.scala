@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix
 
-import java.nio.file.{Files, InvalidPathException, Paths}
+import java.io.File
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.util._
@@ -31,25 +31,28 @@ object Main {
     */
   def main(argv: Array[String]): Unit = {
 
-    val paths = argv.filter(p => p.endsWith(".flix") || p.endsWith(".flix.zip")).toList
-    val args = argv.filterNot(p => p.endsWith(".flix") || p.endsWith(".flix.zip")).toList
-
-    // check that each path is valid.
-    for (path <- paths) {
-      if (!isValidPath(path)) {
-        Console.println(s"Error: '$path' is not a valid path.")
-        System.exit(1)
-      }
+    // parse command line options.
+    val cmdOpts: CmdOpts = parseCmdOpts(argv).getOrElse {
+      Console.err.println("Unable to parse command line arguments. Will now exit.")
+      System.exit(1)
+      null
     }
 
-    // parse command line arguments.
-    val options = parseArgs(args)
+    // construct flix options.
+    val options = Options.Default.copy(
+      debug = cmdOpts.debug,
+      evaluation = if (cmdOpts.interpreter) Evaluation.Interpreted else Evaluation.Compiled,
+      monitor = cmdOpts.monitor,
+      threads = if (cmdOpts.threads == -1) Options.Default.threads else cmdOpts.threads,
+      verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
+      verifier = cmdOpts.verifier
+    )
 
     // configure Flix and add the paths.
     val builder = new Flix()
     builder.setOptions(options)
-    for (path <- paths) {
-      builder.addPath(Paths.get(path))
+    for (file <- cmdOpts.files) {
+      builder.addPath(file.toPath)
     }
 
     // compute the least model.
@@ -58,7 +61,7 @@ object Main {
         case Validation.Success(model, errors) =>
           errors.foreach(e => println(e.message))
 
-          val print = options.print
+          val print = cmdOpts.print
           for (name <- print) {
             PrettyPrint.print(name, model)
           }
@@ -86,42 +89,75 @@ object Main {
   }
 
   /**
-    * Returns `true` iff the given string `s` is a path to a readable file.
+    * A case class representing the parsed command line options.
     */
-  private def isValidPath(s: String): Boolean = try {
-    val path = Paths.get(s)
-    Files.exists(path) && Files.isRegularFile(path) && Files.isReadable(path)
-  } catch {
-    case e: InvalidPathException => false
-  }
-
-  // TODO: Improve such that print is not part of the options.
+  case class CmdOpts(monitor: Boolean = false,
+                     print: Seq[String] = Seq(),
+                     threads: Int = -1,
+                     verbose: Boolean = false,
+                     verifier: Boolean = false,
+                     debug: Boolean = false,
+                     interpreter: Boolean = false,
+                     files: Seq[File] = Seq())
 
   /**
-    * Parses the given list of command line arguments `args`.
+    * Parse command line options.
+    *
+    * @param args the arguments array.
     */
-  private def parseArgs(args: List[String]): Options = {
-    def visit(ls: List[String], opts: Options): Options = ls match {
-      case Nil => opts
-      case "-d" :: xs => visit(xs, opts.copy(debugger = Debugger.Enabled))
-      case "--debugger" :: xs => visit(xs, opts.copy(debugger = Debugger.Enabled))
-      case "--threads" :: n :: xs => visit(xs, opts.copy(solver = SolverOpts(threads = n.toInt)))
-      case "-v" :: xs => visit(xs, opts.copy(verbosity = Verbosity.Verbose))
-      case "--verbose" :: xs => visit(xs, opts.copy(verbosity = Verbosity.Verbose))
-      case "-s" :: xs => visit(xs, opts.copy(verbosity = Verbosity.Silent))
-      case "--silent" :: xs => visit(xs, opts.copy(verbosity = Verbosity.Silent))
-      case "-Xinterpreter" :: xs => visit(xs, opts.copy(codegen = CodeGeneration.Disabled))
-      case "-Xdump-bytecode" :: xs => visit(xs, opts.copy(debugBytecode = DebugBytecode.Enabled))
-      case "--verify" :: xs => visit(xs, opts.copy(verify = Verify.Enabled))
-      case ("-p" | "--print") :: xs =>
-        val print = xs.takeWhile(s => !s.startsWith("-"))
-        val rest = xs.drop(print.length)
-        visit(rest, opts.copy(print = print))
-      case arg =>
-        Console.println(s"Error: '$arg' is not a valid argument.")
-        ???
+  def parseCmdOpts(args: Array[String]): Option[CmdOpts] = {
+    val parser = new scopt.OptionParser[CmdOpts]("flix") {
+
+      // Head
+      head("The Flix Programming Language", Version.CurrentVersion.toString)
+
+      // Help.
+      help("help").text("prints this usage information.")
+
+      // Monitor.
+      opt[Unit]('m', "monitor").action((_, c) => c.copy(monitor = true)).
+        text("enables the debugger and profiler.")
+
+      // Print.
+      opt[Seq[String]]('p', "print").action((xs, c) => c.copy(print = xs)).
+        valueName("<name>...").
+        text("selects the relations/lattices to print.")
+
+      // Threads.
+      opt[Int]('t', "threads").action((i, c) => c.copy(threads = i)).
+        validate(x => if (x > 0) success else failure("Value <n> must be at least 1.")).
+        valueName("<n>").
+        text("selects the number of threads to use.")
+
+      // Verbose.
+      opt[Unit]('v', "verbose").action((_, c) => c.copy(verbose = true))
+        .text("enables verbose output.")
+
+      // Verifier.
+      opt[Unit]("verifier").action((_, c) => c.copy(verifier = true)).
+        text("enables the verifier.")
+
+      // Version.
+      version("version").text("prints the version number.")
+
+      // Experimental options:
+
+      // XDebug.
+      opt[Unit]("Xdebug").action((_, c) => c.copy(debug = true)).
+        text("[experimental] enables otuput of debugging information.")
+
+      // XInterpreter.
+      opt[Unit]("Xinterpreter").action((_, c) => c.copy(interpreter = true)).
+        text("[experimental] enables interpreted evaluation.")
+
+      // Input files.
+      arg[File]("<file>...").action((x, c) => c.copy(files = c.files :+ x))
+        .unbounded()
+        .text("input Flix source code files.")
+
     }
 
-    visit(args, Options.Default.copy(verbosity = Verbosity.Normal))
+    parser.parse(args, CmdOpts())
   }
+
 }

@@ -231,7 +231,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Initialize the solver by starting the monitor, debugger, shell etc.
     */
   private def initSolver(): Unit = {
-    if (options.debugger == Debugger.Enabled) {
+    if (options.monitor) {
       monitor.start()
 
       val restServer = new RestServer(this)
@@ -288,7 +288,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     writersPool.shutdownNow()
 
     // stop the debugger (if enabled).
-    if (options.debugger == Debugger.Enabled) {
+    if (options.monitor) {
       monitor.stop()
     }
 
@@ -648,7 +648,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Returns a new thread pool configured to use the appropriate number of threads.
     */
-  private def mkThreadPool(): ExecutorService = options.solver.threads match {
+  private def mkThreadPool(): ExecutorService = options.threads match {
     // Case 1: Parallel execution disabled. Use a single thread.
     case 1 => Executors.newSingleThreadExecutor()
     // Case 2: Parallel execution enabled. Use the specified number of processors.

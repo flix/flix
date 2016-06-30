@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api._
-import ca.uwaterloo.flix.util.{DebugBytecode, _}
+import ca.uwaterloo.flix.util._
 import org.scalatest.FunSuite
 
 import scala.language.implicitConversions
@@ -124,17 +124,8 @@ class TestBackend extends FunSuite {
     // A public Flix instance to expose the interop functions.
     val flix = createFlix()
 
-    // TODO: This should really use the default options as a starting point.
     private def createFlix(codegen: Boolean = false) = {
-      val options = Options(
-        debugger = Debugger.Disabled,
-        solver = ca.uwaterloo.flix.util.SolverOpts.Default,
-        print = Nil,
-        verbosity = Verbosity.Silent,
-        verify = Verify.Disabled,
-        codegen = if (codegen) CodeGeneration.Enabled else CodeGeneration.Disabled,
-        debugBytecode = if (dumpBytecode) DebugBytecode.Enabled else DebugBytecode.Disabled
-      )
+      val options = Options.DefaultTest.copy(evaluation = if (codegen) Evaluation.Compiled else Evaluation.Interpreted)
       new Flix().setOptions(options)
     }
 
