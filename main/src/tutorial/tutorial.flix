@@ -6,7 +6,7 @@
 
 namespace Tutorial.ConstantPropagation {
 
-    rel LitExp(r: Str, c: Int)
+    rel LitStm(r: Str, c: Int)
     rel AddExp(r: Str, x: Str, y: Str)
     rel DivExp(r: Str, x: Str, y: Str)
 
@@ -88,7 +88,7 @@ namespace Tutorial.ConstantPropagation {
     let Constant<> = (Constant.Bot, Constant.Top, leq, lub, glb)
 
 
-    LocalVar(r, lift(c)) :- LitExp(r, c).
+    LocalVar(r, lift(c)) :- LitStm(r, c).
 
     def lift(i: Int): Constant = Constant.Cst(i)
 
@@ -142,5 +142,6 @@ namespace Tutorial.ConstantPropagation {
 
     LitStm("x", 42).
     LitStm("y", 21).
+
 
 }
