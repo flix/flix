@@ -30,9 +30,8 @@ class TestExamples extends FunSuite {
     private var interpreted: Model = null
     private var compiled: Model = null
 
-    // TODO: This should really use the default options as a starting point.
     private def createFlix(codegen: Boolean = false) = {
-      val options = Options.Default.copy(
+      val options = Options.DefaultTest.copy(
         evaluation = if (codegen) Evaluation.Compiled else Evaluation.Interpreted
       )
       new Flix().setOptions(options)

@@ -124,9 +124,8 @@ class TestBackend extends FunSuite {
     // A public Flix instance to expose the interop functions.
     val flix = createFlix()
 
-    // TODO: This should really use the default options as a starting point.
     private def createFlix(codegen: Boolean = false) = {
-      val options = Options.Default.copy(evaluation = if (codegen) Evaluation.Compiled else Evaluation.Interpreted)
+      val options = Options.DefaultTest.copy(evaluation = if (codegen) Evaluation.Compiled else Evaluation.Interpreted)
       new Flix().setOptions(options)
     }
 

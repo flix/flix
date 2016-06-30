@@ -28,6 +28,11 @@ object Options {
     verbosity = Verbosity.Normal,
     verifier = false
   )
+
+  /**
+    * Default test options.
+    */
+  val DefaultTest = Default.copy(verbosity = Verbosity.Silent)
 }
 
 /**
