@@ -1,14 +1,33 @@
 //
-//   Welcome to the Flix Tutorial!
+// Welcome to the introductory Flix Tutorial!
 //
-//   In this tutorial
+// In this tutorial we will develop a simple intra-procedural dataflow analysis
+// that performs constant propagation for local variables. The program language
+// we consider is very simple, it has three types of statements:
 //
+//      x = c        [literal statement]
+//      x = y + z    [addition statement]
+//      x = y / z    [division statement]
+//
+//
+// We begin by defining a namespace for all our declarations. We could have
+// used the root namespace, but to avoid clashes with other examples we
+// create a new namespace.
+//
+namespace Tutorial.CP {
 
-namespace Tutorial.ConstantPropagation {
-
+    //
+    // We will represent the program-under-analysis using three input
+    // relations. One for each type of statement:
+    //
     rel LitStm(r: Str, c: Int)
-    rel AddExp(r: Str, x: Str, y: Str)
-    rel DivExp(r: Str, x: Str, y: Str)
+    rel AddStm(r: Str, x: Str, y: Str)
+    rel DivStm(r: Str, x: Str, y: Str)
+
+    //
+    // Here the LitStm relation holds every literal statement of the form r = c.
+    // Similarly, for AddStm and DivStm.
+    //
 
     lat LocalVar(k: Str, v: Constant)
 
@@ -92,11 +111,11 @@ namespace Tutorial.ConstantPropagation {
 
     def lift(i: Int): Constant = Constant.Cst(i)
 
-    LocalVar(r, sum(v1, v2)) :- AddExp(r, x, y),
+    LocalVar(r, sum(v1, v2)) :- AddStm(r, x, y),
                                 LocalVar(x, v1),
                                 LocalVar(y, v2).
 
-    LocalVar(r, div(v1, v2)) :- DivExp(r, x, y),
+    LocalVar(r, div(v1, v2)) :- DivStm(r, x, y),
                                 LocalVar(x, v1),
                                 LocalVar(y, v2).
 
@@ -112,8 +131,7 @@ namespace Tutorial.ConstantPropagation {
         = match (e1, e2) with {
             case (_, Constant.Bot) => Constant.Bot
             case (Constant.Bot, _) => Constant.Bot
-            // TODO: zero case
-            case (Constant.Cst(n1), Constant.Cst(n2)) => Constant.Cst(n1 / n2)
+            case (Constant.Cst(n1), Constant.Cst(n2)) => if (n2 == 0) Constant.Bot else Constant.Cst(n1 / n2)
             case _ => Constant.Top
         }
 
@@ -130,18 +148,53 @@ namespace Tutorial.ConstantPropagation {
     rel ArithmeticError(r: Str)
 
     ArithmeticError(r) :- isMaybeZero(y),
-                          DivExp(r, n, d),
+                          DivStm(r, n, d),
                           LocalVar(d, y).
 
     //
     // Let us now try to analyse the following small program:
     //
-    // x = 42;
-    // y = 21;
+    // x = 3;
+    // y = 7;
     // z = 0;
+    // w = x + y;
+    // v = w / z;
 
-    LitStm("x", 42).
-    LitStm("y", 21).
+    //
+    // We encode this program using the input facts:
+    //
 
+    LitStm("x", 3).
+    LitStm("y", 7).
+    LitStm("z", 0).
+    AddStm("w", "x", "y").
+    DivStm("v", "w", "z").
+
+    //
+    // We can now run our program with Flix and inspect the output!
+    //
+    // Run: flix -p Tutorial.CP/LocalVar,Tutorial.CP/ArithmeticError tutorial.flix
+    //
+    // This should produce output like:
+    //
+
+    // Tutorial.CP/LocalVar:
+    //
+    //    +---+---------+
+    //    | k | v       |
+    //    +---+---------+
+    //    | x | Cst(3)  |
+    //    | y | Cst(7)  |
+    //    | z | Cst(0)  |
+    //    | w | Cst(10) |
+    //    +---+---------+
+
+    // Tutorial.CP/ArithmeticError
+    //
+    //    +---+
+    //    | r |
+    //    +---+
+    //    | v |
+    //    +---+
 
 }
