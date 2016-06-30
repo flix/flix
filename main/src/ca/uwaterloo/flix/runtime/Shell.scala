@@ -163,7 +163,7 @@ class Shell(solver: Solver) extends Thread {
     * Prints the welcome banner to the console.
     */
   private def printWelcomeBanner(): Unit = {
-    Console.println(s"Welcome to Flix ${Version.currentVersion}!  Type 'help' for more information.")
+    Console.println(s"Welcome to Flix ${Version.CurrentVersion}!  Type 'help' for more information.")
     Console.println(s"Enter a command and hit return. Type 'exit' or press ctrl+d to quit.")
   }
 
