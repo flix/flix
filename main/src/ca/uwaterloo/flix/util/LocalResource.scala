@@ -17,14 +17,28 @@
 package ca.uwaterloo.flix.util
 
 import java.io.InputStream
+import java.nio.file.{Files, Paths}
 
 object LocalResource {
+
+  val RootPath = "main/src"
 
   /**
     * Returns the Flix tutorial.
     */
-  def getTutorialInputStream: InputStream = {
-    val inputStream = getClass.getResourceAsStream("/tutorial/tutorial.flix")
+  def getTutorial: InputStream = getInputStream("/tutorial/tutorial.flix")
+
+  /**
+    * Returns the an input stream for the given relative path.
+    */
+  private def getInputStream(relativePath: String): InputStream = {
+    val path = Paths.get(RootPath + relativePath)
+
+    val inputStream = if (Files.exists(path))
+      Files.newInputStream(path)
+    else
+      getClass.getResourceAsStream(relativePath)
+
     if (inputStream == null) {
       throw new RuntimeException("Tutorial not found. Corrupted JAR?")
     }

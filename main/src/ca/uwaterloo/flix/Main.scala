@@ -190,7 +190,7 @@ object Main {
       System.exit(1)
     }
 
-    val inputStream = LocalResource.getTutorialInputStream
+    val inputStream = LocalResource.getTutorial
     Files.copy(inputStream, outputFile)
     Console.println(s"Tutorial successfully written to ``${file.getName}''.")
   }

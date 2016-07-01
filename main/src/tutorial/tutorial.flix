@@ -5,7 +5,7 @@
 // that performs constant propagation for local variables. The program language
 // we consider is very simple, it has three types of statements:
 //
-//      x = c        [literal statement]
+//      x = c        [assignment statement]
 //      x = y + z    [addition statement]
 //      x = y / z    [division statement]
 //
@@ -20,14 +20,9 @@ namespace Tutorial.CP {
     // We will represent the program-under-analysis using three input
     // relations. One for each type of statement:
     //
-    rel LitStm(r: Str, c: Int)
-    rel AddStm(r: Str, x: Str, y: Str)
-    rel DivStm(r: Str, x: Str, y: Str)
-
-    //
-    // Here the LitStm relation holds every literal statement of the form r = c.
-    // Similarly, for AddStm and DivStm.
-    //
+    rel LitStm(r: Str, c: Int)         // r = c
+    rel AddStm(r: Str, x: Str, y: Str) // r = x + y
+    rel DivStm(r: Str, x: Str, y: Str) // r = x / y
 
     //
     // The next step is to define the lattice LocalVar which maps every local
@@ -83,26 +78,28 @@ namespace Tutorial.CP {
     }
 
     //
-    // This complete the specification of the lattice. To associate these
-    // functions with the type Constant we have to write some magic:
+    // This complete the specification of the lattice. We associate the
+    // lattice components with the Constant type in the following way:
     //
     let Constant<> = (Constant.Bot, Constant.Top, leq, lub, glb)
-    // NB: In the future, this wierd syntax will be replaced by type classes.
+    // NB: In the future, this syntax is subject to change.
 
     //
-    // Finally it is handly to have a small function to lift an integer into
+    // Finally it is handy to have a small function to lift an integer into
     // an element of the constant propagation lattice. Strictly speaking,
     // this is not necessary.
     //
     def alpha(i: Int): Constant = Constant.Cst(i)
 
     //
-    // We can now define the semantic rules of the analysis!
+    // We can now define the semantic rules of the analysis.
     //
 
     //
     // The first rule models literal statements r = c and lifts the constant
-    // into the constant propagation lattice.
+    // into the constant propagation lattice. Intuitively, if the body of
+    // the rule (whatever is to the right of ':-') then the head (what is on
+    // the left of ':-') is inferred.
     //
     LocalVar(r, alpha(c)) :- LitStm(r, c).
 
@@ -144,8 +141,7 @@ namespace Tutorial.CP {
         case _ => Constant.Top
     }
 
-    // !! Notice the special case to avoid division-by-zero in the analysis itself!
-
+    // !! Notice the special case to avoid division-by-zero in the analysis itself !!
 
     //
     // This complete the analysis itself. But before we try to run it, let us
@@ -190,11 +186,11 @@ namespace Tutorial.CP {
     //
     // We encode this program using the input facts:
     //
-    LitStm("x", 3).
-    LitStm("y", 7).
-    LitStm("z", 0).
-    AddStm("w", "x", "y").
-    DivStm("v", "w", "z").
+    LitStm("x", 3).        // x = 3
+    LitStm("y", 7).        // y = 7
+    LitStm("z", 0).        // z = 0
+    AddStm("w", "x", "y"). // w = x + y
+    DivStm("v", "w", "z"). // v = w / z
 
     //
     // We can now run our program with Flix and inspect the output!
@@ -227,9 +223,9 @@ namespace Tutorial.CP {
     // Here are some exercises for learning Flix:
     //
     // (0) Write some input programs and run the analysis on them.
-    // (1) Extend the analysis with an assignment statement: x = y.
+    // (1) Extend the analysis with a variable assignment statement: x = y.
     // (2) Extend the analysis with operators for subtraction and multiplication.
-    // (3) Modify the (constant propagaton) lattice to have two extra elements Neg and Pos,
+    // (3) Modify the (constant propagation) lattice to have two extra elements Neg and Pos,
     //     and re-implement the partial order, least upper bound, greatest lower bound,
     //     and operations on the lattice to support these two new elements.
     //
