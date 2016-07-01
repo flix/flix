@@ -5,6 +5,7 @@ lazy val commonSettings = Seq(
 )
 
 lazy val dependencies = Seq(
+  "com.github.scopt" %% "scopt" % "3.5.0",
   "org.scalatest" %% "scalatest" % "2.2.6" % Test,
   "org.parboiled" %% "parboiled" % "2.1.2",
   "org.json4s" %% "json4s-native" % "3.2.11",

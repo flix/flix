@@ -144,7 +144,7 @@ object Main {
 
       // XDebug.
       opt[Unit]("Xdebug").action((_, c) => c.copy(debug = true)).
-        text("[experimental] enables otuput of debugging information.")
+        text("[experimental] enables output of debugging information.")
 
       // XInterpreter.
       opt[Unit]("Xinterpreter").action((_, c) => c.copy(interpreter = true)).
