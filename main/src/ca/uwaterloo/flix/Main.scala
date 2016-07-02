@@ -17,10 +17,12 @@
 package ca.uwaterloo.flix
 
 import java.io.File
-import java.nio.file.{Files, Paths}
+import java.nio.file.Files
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.util._
+
+import scala.concurrent.duration.Duration
 
 /**
   * The main entry point for the Flix compiler and runtime.
@@ -56,6 +58,7 @@ object Main {
       debug = cmdOpts.debug,
       evaluation = if (cmdOpts.interpreter) Evaluation.Interpreted else Evaluation.Compiled,
       monitor = cmdOpts.monitor,
+      timeout = cmdOpts.timeout,
       threads = if (cmdOpts.threads == -1) Options.Default.threads else cmdOpts.threads,
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       verifier = cmdOpts.verifier
@@ -107,6 +110,7 @@ object Main {
   case class CmdOpts(monitor: Boolean = false,
                      print: Seq[String] = Seq(),
                      threads: Int = -1,
+                     timeout: Duration = Duration.Inf,
                      tutorial: File = null,
                      verbose: Boolean = false,
                      verifier: Boolean = false,
@@ -137,11 +141,16 @@ object Main {
         valueName("<name>...").
         text("selects the relations/lattices to print.")
 
+      // Timeout
+      opt[Duration]("timeout").action((d, c) => c.copy(timeout = d)).
+        valueName("<n>").
+        text("sets the solver timeout (1ms, 1s, 1min, etc).")
+
       // Threads.
-      opt[Int]('t', "threads").action((i, c) => c.copy(threads = i)).
+      opt[Int]("threads").action((i, c) => c.copy(threads = i)).
         validate(x => if (x > 0) success else failure("Value <n> must be at least 1.")).
         valueName("<n>").
-        text("selects the number of threads to use.")
+        text("sets the number of threads to use.")
 
       // Tutorial.
       opt[File]("tutorial").action((f, c) => c.copy(tutorial = f)).

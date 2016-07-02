@@ -16,19 +16,22 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.{IValue, WrappedValue}
-import ca.uwaterloo.flix.language.ast.ExecutableAst._
+import java.util.ArrayList
+import java.util.concurrent._
+
+import ca.uwaterloo.flix.api.{IValue, TimeoutException, WrappedValue}
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Constraint.Rule
+import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Symbol}
 import ca.uwaterloo.flix.runtime.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.util._
-import java.util.concurrent._
-import java.util.ArrayList
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
 
 /**
   * Flix Fixed Point Solver.
@@ -205,6 +208,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
 
       // update the datastore in parallel.
       parallelUpdate(interps)
+
+      // check soft timeout.
+      checkTimeout()
     }
 
     // stop the solver.
@@ -686,5 +692,18 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         wait()
       }
     }
+
+  /**
+    * Checks whether the solver has exceed the timeout. If so, throws a timeout exception.
+    */
+  private def checkTimeout(): Unit = {
+    if (options.timeout.isFinite()) {
+      val elapsed = System.nanoTime() - totalTime
+      if (elapsed > options.timeout.toNanos) {
+        stopSolver()
+        throw TimeoutException(options.timeout, Duration(elapsed, NANOSECONDS))
+      }
+    }
+  }
 
 }

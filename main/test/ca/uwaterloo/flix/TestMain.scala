@@ -16,7 +16,11 @@
 
 package ca.uwaterloo.flix
 
+import java.util.concurrent.TimeUnit
+
 import org.scalatest.FunSuite
+
+import scala.concurrent.duration.Duration
 
 class TestMain extends FunSuite {
 
@@ -52,10 +56,54 @@ class TestMain extends FunSuite {
     assert(opts.monitor)
   }
 
-  test("-t") {
-    val args = Array("-t", "42", "p.flix")
+  test("-p foo") {
+    val args = Array("-p", "foo", "p.flix")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.threads == 42)
+    assert(opts.print.contains("foo"))
+  }
+
+  test("-p foo,bar") {
+    val args = Array("-p", "foo,bar", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.print.contains("foo"))
+    assert(opts.print.contains("bar"))
+  }
+
+  test("--print foo") {
+    val args = Array("--print", "foo", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.print.contains("foo"))
+  }
+
+  test("--print foo,bar") {
+    val args = Array("--print", "foo,bar", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.print.contains("foo"))
+    assert(opts.print.contains("bar"))
+  }
+
+  test("--timeout 42ms") {
+    val args = Array("--timeout", "42ms", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.timeout == Duration(42, TimeUnit.MILLISECONDS))
+  }
+
+  test("--timeout 42s") {
+    val args = Array("--timeout", "42s", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.timeout == Duration(42, TimeUnit.SECONDS))
+  }
+
+  test("--timeout 42min") {
+    val args = Array("--timeout", "42min", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.timeout == Duration(42, TimeUnit.MINUTES))
+  }
+
+  test("--timeout 42hours") {
+    val args = Array("--timeout", "42hours", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.timeout == Duration(42, TimeUnit.HOURS))
   }
 
   test("--threads") {
@@ -86,32 +134,6 @@ class TestMain extends FunSuite {
     val args = Array("--verifier", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.verifier)
-  }
-
-  test("-p foo") {
-    val args = Array("-p", "foo", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.print.contains("foo"))
-  }
-
-  test("-p foo,bar") {
-    val args = Array("-p", "foo,bar", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.print.contains("foo"))
-    assert(opts.print.contains("bar"))
-  }
-
-  test("--print foo") {
-    val args = Array("--print", "foo", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.print.contains("foo"))
-  }
-
-  test("--print foo,bar") {
-    val args = Array("--print", "foo,bar", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.print.contains("foo"))
-    assert(opts.print.contains("bar"))
   }
 
   test("--Xdebug") {
