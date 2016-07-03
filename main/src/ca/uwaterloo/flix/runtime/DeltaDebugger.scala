@@ -66,17 +66,19 @@ object DeltaDebugger {
     /*
      * Repeatedly minimize and re-run the program.
      */
+    var globalIteration = 1
     var globalFacts = root.facts.toSet
     var globalBlockSize = root.facts.length / 2
 
     while (globalBlockSize >= 1) {
-      Console.println(c.green(s"-- Facts: ${globalFacts.size}, Block Size: $globalBlockSize --"))
+      Console.println(s"-- iteration: $globalIteration, current facts: ${globalFacts.size}, block size: $globalBlockSize --")
 
       // partition the facts into blocks of `size`.
       val blocks = globalFacts.grouped(globalBlockSize).toSet
 
       // a local variable to hold in this iteration.
       var facts = blocks
+      var round = 1
       for (block <- blocks) {
         // every fact except for those in the current block.
         facts = facts - block
@@ -85,25 +87,33 @@ object DeltaDebugger {
         trySolve(root.copy(facts = facts.flatten.toArray), options, exception) match {
           case SolverResult.Success =>
             // the program successfully completed. Must backtrack.
-            Console.println(c.red(s"  > Minimization failed. Program ran successfully."))
+            Console.println(c.red(s"    [block $round] block kept. Program ran successfully (${block.size} facts retained.)"))
             facts = facts + block // put the block back
           case SolverResult.FailDiffException =>
             // the program failed with a different exception. Must backtrack.
-            Console.println(c.red(s"  > Minimization failed. Mismatched exceptions."))
+            Console.println(c.red(s"    [block $round] block kept. Mismatched exceptions (${block.size} facts retained.)"))
             facts = facts + block // put the block back
           case SolverResult.FailSameException =>
             // the program failed with the same exception. Continue minimization.
-            Console.println(c.green(s"  > Minimization successful. Continuing minimization."))
+            Console.println(c.green(s"    [block $round] block discarded (${block.size} facts discarded.)"))
           // no need to put the block back.
         }
+
+        // increase round count.
+        round += 1
       }
+
+      // increase the iteration count.
+      globalIteration += 1
       // update the global facts variable.
       globalFacts = facts.flatten
-      // decrease block size.
+      // decrease the global block size.
       globalBlockSize = globalBlockSize / 2
+
+      Console.println()
     }
 
-    Console.println(c.green(s"> Delta debugging complete. Final number of facts ${globalFacts.size}."))
+    Console.println(c.green(s"Delta debugging complete! Final number of facts ${globalFacts.size}."))
 
     // TODO: Figureout better mechanism.
     System.exit(0)
