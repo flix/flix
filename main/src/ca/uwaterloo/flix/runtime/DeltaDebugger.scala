@@ -71,7 +71,7 @@ object DeltaDebugger {
     var globalBlockSize = root.facts.length / 2
 
     while (globalBlockSize >= 1) {
-      Console.println(s"-- iteration: $globalIteration, current facts: ${globalFacts.size}, block size: $globalBlockSize --")
+      Console.println(s"--- iteration: $globalIteration, current facts: ${globalFacts.size}, block size: $globalBlockSize ---")
 
       // partition the facts into blocks of `size`.
       val blocks = globalFacts.grouped(globalBlockSize).toSet
@@ -87,15 +87,15 @@ object DeltaDebugger {
         trySolve(root.copy(facts = facts.flatten.toArray), options, exception) match {
           case SolverResult.Success =>
             // the program successfully completed. Must backtrack.
-            Console.println(c.red(s"    [block $round] block kept. Program ran successfully (${block.size} facts retained.)"))
+            Console.println(c.red(s"    [block $round] ${block.size} facts retained (program ran successfully.)"))
             facts = facts + block // put the block back
           case SolverResult.FailDiffException =>
             // the program failed with a different exception. Must backtrack.
-            Console.println(c.red(s"    [block $round] block kept. Mismatched exceptions (${block.size} facts retained.)"))
+            Console.println(c.red(s"    [block $round] ${block.size} facts retained (different exception.)"))
             facts = facts + block // put the block back
           case SolverResult.FailSameException =>
             // the program failed with the same exception. Continue minimization.
-            Console.println(c.green(s"    [block $round] block discarded (${block.size} facts discarded.)"))
+            Console.println(c.green(s"    [block $round] ${block.size} facts discarded."))
           // no need to put the block back.
         }
 
