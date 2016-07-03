@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api._
+import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast.ExecutableAst
 import ca.uwaterloo.flix.util.{Options, Verbosity}
 
@@ -51,37 +52,52 @@ object DeltaDebugger {
     *
     */
   def solve(root: ExecutableAst.Root, options: Options): Model = {
+    val c = Compiler.ConsoleCtx
+
     /*
      * Attempts to determine the exception the (original) program crashes with.
      */
     val exception = tryInit(root, options).getOrElse {
-      // TODO
-      Console.err.println("No excep?")
-      ???
+      Console.err.println(s"Program ran successfully. No need for delta debugging?")
+      System.exit(1)
+      throw null
     }
 
+    // TODO: Need some kind of print stats?
     Console.println(s"Initial Number of Facts: ${root.facts.length}")
 
     /*
      * Repeatedly minimize and re-run the program.
      */
-    var current = DeltaDebugger.minimize(root.copy())
+    var prev = root
+    var curr = DeltaDebugger.minimize(prev)
+    var size = 0
 
     while (true) {
-      trySolve(current, options, exception) match {
+      trySolve(curr, options, exception) match {
         case SolverResult.Success =>
           // the program successfully completed. Must backtrack.
+          Console.println(c.red(s"> Minimization failed. Program ran successfully."))
+          curr = prev // backtrack
+          size += 1   // increase granularity
           ???
         case SolverResult.FailDiffException =>
           // the program failed with a different exception. Must backtrack.
+          Console.println(c.red(s"> Minimization failed. Mismatched exceptions."))
+          curr = prev // backtrack
+          size += 1   // increase granularity
           ???
         case SolverResult.FailSameException =>
           // the program failed with the same exception. Continue minimization.
-          current = DeltaDebugger.minimize(current.copy())
+          Console.println(c.green(s"> Minimization successful. Continuing minimization."))
+          prev = curr
       }
+      curr = DeltaDebugger.minimize(curr.copy())
     }
 
     ???
+
+
   }
 
 
