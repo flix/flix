@@ -69,35 +69,44 @@ object DeltaDebugger {
     /*
      * Repeatedly minimize and re-run the program.
      */
-    var prev = root
-    var curr = DeltaDebugger.minimize(prev)
-    var size = 0
+    var current = root.facts.toSet
+    var size = root.facts.length / 2
 
-    while (true) {
-      trySolve(curr, options, exception) match {
-        case SolverResult.Success =>
-          // the program successfully completed. Must backtrack.
-          Console.println(c.red(s"> Minimization failed. Program ran successfully."))
-          curr = prev // backtrack
-          size += 1   // increase granularity
-          ???
-        case SolverResult.FailDiffException =>
-          // the program failed with a different exception. Must backtrack.
-          Console.println(c.red(s"> Minimization failed. Mismatched exceptions."))
-          curr = prev // backtrack
-          size += 1   // increase granularity
-          ???
-        case SolverResult.FailSameException =>
-          // the program failed with the same exception. Continue minimization.
-          Console.println(c.green(s"> Minimization successful. Continuing minimization."))
-          prev = curr
+    while (size >= 1) {
+      // partition the facts into blocks of `size`.
+      val blocks = current.grouped(size).toSet
+      var facts = blocks
+
+      for (block <- blocks) {
+        // find the set of facts except for those in the current block.
+        facts = blocks - block
+
+        // try to solve the program.
+        trySolve(root.copy(facts = facts.flatten.toArray), options, exception) match {
+          case SolverResult.Success =>
+            // the program successfully completed. Must backtrack.
+            Console.println(c.red(s"> Minimization failed. Program ran successfully."))
+            facts = blocks + block // put the block back
+          case SolverResult.FailDiffException =>
+            // the program failed with a different exception. Must backtrack.
+            Console.println(c.red(s"> Minimization failed. Mismatched exceptions."))
+            facts = blocks + block // put the block back
+          case SolverResult.FailSameException =>
+            // the program failed with the same exception. Continue minimization.
+            Console.println(c.green(s"> Minimization successful. Continuing minimization."))
+        }
       }
-      curr = DeltaDebugger.minimize(curr.copy())
+      // update the global variable.
+      current = facts.flatten
+      // decrease block size.
+      size = size / 2
     }
 
-    ???
+    Console.println(c.green(s"> Delta debugging complete. Final number of facts ${current.size}."))
 
-
+    // TODO: Figureout better mechanism.
+    System.exit(0)
+    null
   }
 
 
