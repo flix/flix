@@ -63,46 +63,47 @@ object DeltaDebugger {
       throw null
     }
 
-    // TODO: Need some kind of print stats?
-    Console.println(s"Initial Number of Facts: ${root.facts.length}")
-
     /*
      * Repeatedly minimize and re-run the program.
      */
-    var current = root.facts.toSet
-    var size = root.facts.length / 2
+    var globalFacts = root.facts.toSet
+    var globalBlockSize = root.facts.length / 2
 
-    while (size >= 1) {
+    while (globalBlockSize >= 1) {
+      Console.println(c.green(s"-- Facts: ${globalFacts.size}, Block Size: $globalBlockSize --"))
+
       // partition the facts into blocks of `size`.
-      val blocks = current.grouped(size).toSet
-      var facts = blocks
+      val blocks = globalFacts.grouped(globalBlockSize).toSet
 
+      // a local variable to hold in this iteration.
+      var facts = blocks
       for (block <- blocks) {
-        // find the set of facts except for those in the current block.
-        facts = blocks - block
+        // every fact except for those in the current block.
+        facts = facts - block
 
         // try to solve the program.
         trySolve(root.copy(facts = facts.flatten.toArray), options, exception) match {
           case SolverResult.Success =>
             // the program successfully completed. Must backtrack.
-            Console.println(c.red(s"> Minimization failed. Program ran successfully."))
-            facts = blocks + block // put the block back
+            Console.println(c.red(s"  > Minimization failed. Program ran successfully."))
+            facts = facts + block // put the block back
           case SolverResult.FailDiffException =>
             // the program failed with a different exception. Must backtrack.
-            Console.println(c.red(s"> Minimization failed. Mismatched exceptions."))
-            facts = blocks + block // put the block back
+            Console.println(c.red(s"  > Minimization failed. Mismatched exceptions."))
+            facts = facts + block // put the block back
           case SolverResult.FailSameException =>
             // the program failed with the same exception. Continue minimization.
-            Console.println(c.green(s"> Minimization successful. Continuing minimization."))
+            Console.println(c.green(s"  > Minimization successful. Continuing minimization."))
+          // no need to put the block back.
         }
       }
-      // update the global variable.
-      current = facts.flatten
+      // update the global facts variable.
+      globalFacts = facts.flatten
       // decrease block size.
-      size = size / 2
+      globalBlockSize = globalBlockSize / 2
     }
 
-    Console.println(c.green(s"> Delta debugging complete. Final number of facts ${current.size}."))
+    Console.println(c.green(s"> Delta debugging complete. Final number of facts ${globalFacts.size}."))
 
     // TODO: Figureout better mechanism.
     System.exit(0)
@@ -143,18 +144,6 @@ object DeltaDebugger {
         }
     }
   }
-
-  /**
-    * TODO: DOC
-    *
-    * @param root
-    * @return
-    */
-  def minimize(root: ExecutableAst.Root): ExecutableAst.Root = {
-    val minimizedFacts = root.facts.take(root.facts.length / 2)
-    root.copy(facts = minimizedFacts)
-  }
-
 
   /**
     * Returns `true` iff the two given exceptions `ex1` and `ex2` are the same.
