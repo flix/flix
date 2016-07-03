@@ -16,11 +16,23 @@
 
 package ca.uwaterloo.flix.runtime
 
+import ca.uwaterloo.flix.api.{MatchException, RuleException}
+
 // TODO: Rename to minimizer?
 object DeltaDebugger {
 
-  // TODO
-  def sameException(ex1: RuntimeException, ex2: RuntimeException): Boolean = false
+  /**
+    * Returns `true` iff the two given exceptions `ex1` and `ex2` are the same.
+    *
+    * @param ex1 the 1st exception.
+    * @param ex2 the 2nd exception.
+    * @return `true` iff `ex1` is equal to `ex2`.
+    */
+  def sameException(ex1: RuntimeException, ex2: RuntimeException): Boolean = (ex1, ex2) match {
+    case (MatchException(msg1, loc1), MatchException(msg2, loc2)) => msg1 == msg2 && loc1 == loc2
+    case (RuleException(msg1, loc1), RuleException(msg2, loc2)) => msg1 == msg2 && loc1 == loc2
+    case _ => ??? //ex1.getClass == ex2.getClass
+  }
 
 
 }

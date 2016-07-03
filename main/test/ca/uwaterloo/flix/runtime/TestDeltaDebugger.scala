@@ -16,16 +16,17 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.{MatchException, RuleException, SwitchException}
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.api._
+import ca.uwaterloo.flix.language.ast.{SourceInput, SourceLocation}
 import org.scalatest.FunSuite
+
+import scala.concurrent.duration.{Duration, _}
 
 class TestDeltaDebugger extends FunSuite {
 
   //
   // Flix Exceptions.
   //
-
   test("SameException.MatchException.01") {
     val loc = SourceLocation.Unknown
     val ex1 = new MatchException("test", loc)
@@ -35,8 +36,8 @@ class TestDeltaDebugger extends FunSuite {
 
   test("SameException.RuleException.01") {
     val loc = SourceLocation.Unknown
-    val ex1 = new RuleException(loc)
-    val ex2 = new RuleException(loc)
+    val ex1 = new RuleException("test", loc)
+    val ex2 = new RuleException("test", loc)
     assert(DeltaDebugger.sameException(ex1, ex2))
   }
 
@@ -47,18 +48,22 @@ class TestDeltaDebugger extends FunSuite {
     assert(DeltaDebugger.sameException(ex1, ex2))
   }
 
-
   test("SameException.TimeoutException.01") {
+    val ex1 = new TimeoutException(Duration(1, SECONDS), Duration(3, SECONDS))
+    val ex2 = new TimeoutException(Duration(2, SECONDS), Duration(4, SECONDS))
+    assert(DeltaDebugger.sameException(ex1, ex2))
+  }
+
+  test("SameException.UserException.01") {
     val loc = SourceLocation.Unknown
-    val ex1 = ???
-    val ex2 = new SwitchException("test", loc)
+    val ex1 = new UserException("test", loc)
+    val ex2 = new UserException("test", loc)
     assert(DeltaDebugger.sameException(ex1, ex2))
   }
 
   //
   // Java Exceptions.
   //
-
   test("SameException.ArithmeticException.01") {
     val ex1 = new ArithmeticException()
     val ex2 = new ArithmeticException()
@@ -134,11 +139,59 @@ class TestDeltaDebugger extends FunSuite {
   //
   // Unequal Exceptions.
   //
-  test("SameException.NotEqual") {
-    val ex1 = new ArithmeticException()
-    val ex2 = new UnsupportedOperationException("test")
+  test("SameException.NotEqual01") {
+    val ex00 = new MatchException("test", SourceLocation.Unknown)
+    val ex01 = new RuleException("test", SourceLocation.Unknown)
+    val ex02 = new SwitchException("test", SourceLocation.Unknown)
+    val ex03 = new TimeoutException(Duration(1, SECONDS), Duration(2, SECONDS))
+    val ex04 = new UserException("test", SourceLocation.Unknown)
+    val ex05 = new ArithmeticException()
+    val ex06 = new IllegalArgumentException()
+    val ex07 = new IndexOutOfBoundsException()
+    val ex08 = new NoSuchElementException()
+    val ex09 = new NullPointerException()
+    val ex10 = new UnsupportedOperationException()
 
+    assert(!DeltaDebugger.sameException(ex00, ex01))
+    assert(!DeltaDebugger.sameException(ex01, ex02))
+    assert(!DeltaDebugger.sameException(ex02, ex03))
+    assert(!DeltaDebugger.sameException(ex03, ex04))
+    assert(!DeltaDebugger.sameException(ex04, ex05))
+    assert(!DeltaDebugger.sameException(ex05, ex06))
+    assert(!DeltaDebugger.sameException(ex06, ex07))
+    assert(!DeltaDebugger.sameException(ex07, ex08))
+    assert(!DeltaDebugger.sameException(ex08, ex09))
+    assert(!DeltaDebugger.sameException(ex09, ex10))
+    assert(!DeltaDebugger.sameException(ex10, ex00))
+  }
 
+  test("SameException.NotEqual.MatchException01") {
+    val sl1 = SourceLocation(SourceInput.Str("test"), 1, 0, 1, 21, () => "test")
+    val sl2 = SourceLocation(SourceInput.Str("test"), 1, 0, 1, 42, () => "test")
+    val ex1 = new MatchException("test", sl1)
+    val ex2 = new MatchException("test", sl2)
+    assert(!DeltaDebugger.sameException(ex1, ex2))
+  }
+
+  test("SameException.NotEqual.RuleException") {
+    val sl1 = SourceLocation(SourceInput.Str("test"), 1, 0, 1, 21, () => "test")
+    val sl2 = SourceLocation(SourceInput.Str("test"), 1, 0, 1, 42, () => "test")
+    val ex1 = new RuleException("test", sl1)
+    val ex2 = new RuleException("test", sl2)
+    assert(!DeltaDebugger.sameException(ex1, ex2))
+  }
+
+  test("SameException.NotEqual.SwitchException") {
+    val sl1 = SourceLocation(SourceInput.Str("test"), 1, 0, 1, 21, () => "test")
+    val sl2 = SourceLocation(SourceInput.Str("test"), 1, 0, 1, 42, () => "test")
+    val ex1 = new SwitchException("test", sl1)
+    val ex2 = new SwitchException("test", sl2)
+    assert(!DeltaDebugger.sameException(ex1, ex2))
+  }
+
+  test("SameException.NotEqual.UserException") {
+    val ex1 = new UserException("ONE", SourceLocation.Unknown)
+    val ex2 = new UserException("TWO", SourceLocation.Unknown)
     assert(!DeltaDebugger.sameException(ex1, ex2))
   }
 
