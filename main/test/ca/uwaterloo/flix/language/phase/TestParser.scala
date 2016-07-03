@@ -2081,6 +2081,34 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
+  test("Declaration.Fact.Head.True") {
+    val input = "true."
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Declaration.Fact.Head.False") {
+    val input = "false."
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Declaration.Rule.Head.True") {
+    val input =
+      """rel R(a: Int, b: Int)
+        |
+        |true :- R(x, y).
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Declaration.Rule.Head.False") {
+    val input =
+      """rel R(a: Int, b: Int)
+        |
+        |false :- R(x, y).
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
   // TODO: Deprecated direct use of parser
   test("Predicate.Equal.01") {
     val input = "r := 42"

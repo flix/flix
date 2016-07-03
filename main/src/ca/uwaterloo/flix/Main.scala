@@ -100,6 +100,11 @@ object Main {
         Console.err.println()
         Console.err.println(loc.underline(new AnsiConsole))
         System.exit(1)
+      case RuleException(loc) =>
+        Console.err.println("Integrity rule violated at " + loc.format)
+        Console.err.println()
+        Console.err.println(loc.underline(new AnsiConsole))
+        System.exit(1)
     }
 
   }

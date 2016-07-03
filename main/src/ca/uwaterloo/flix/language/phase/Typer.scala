@@ -625,6 +625,8 @@ object Typer {
         * Types the given head predicate `rast` under the given AST `root`.
         */
       def typer(rast: ResolvedAst.Predicate.Head, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Head, TypeError] = rast match {
+        case ResolvedAst.Predicate.Head.True(loc) => TypedAst.Predicate.Head.True(loc).toSuccess
+        case ResolvedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc).toSuccess
         case ResolvedAst.Predicate.Head.Table(name, rterms, loc) =>
           // lookup the collection.
           root.tables(name) match {

@@ -620,6 +620,14 @@ object TypedAst {
 
     object Head {
 
+      case class True(loc: SourceLocation) extends TypedAst.Predicate.Head {
+        def tpe: Type = Type.Predicate(Nil)
+      }
+
+      case class False(loc: SourceLocation) extends TypedAst.Predicate.Head {
+        def tpe: Type = Type.Predicate(Nil)
+      }
+
       /**
         * A typed relational predicate that occurs in the head of a fact/rule.
         *

@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.runtime
 import java.util.ArrayList
 import java.util.concurrent._
 
-import ca.uwaterloo.flix.api.{IValue, TimeoutException, WrappedValue}
+import ca.uwaterloo.flix.api.{IValue, RuleException, TimeoutException, WrappedValue}
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Constraint.Rule
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Symbol}
@@ -30,8 +30,7 @@ import ca.uwaterloo.flix.util._
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.duration.Duration
-import scala.concurrent.duration._
+import scala.concurrent.duration.{Duration, _}
 
 /**
   * Flix Fixed Point Solver.
@@ -188,7 +187,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Solves the Flix program.
     */
-  def solve(): Model = {
+  def solve(): Model = try {
     // initialize the solver.
     initSolver()
 
@@ -203,14 +202,14 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       // check if the solver has been paused.
       checkPaused()
 
+      // check soft timeout.
+      checkTimeout()
+
       // evaluate the rules in parallel.
       val interps = parallelEval()
 
       // update the datastore in parallel.
       parallelUpdate(interps)
-
-      // check soft timeout.
-      checkTimeout()
     }
 
     // stop the solver.
@@ -221,6 +220,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
 
     // build and return the model.
     mkModel()
+  } catch {
+    // Re-throw exceptions caught inside the individual reader/writer tasks.
+    case ex: ExecutionException => throw ex.getCause
   }
 
   /**
@@ -289,6 +291,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Stops the solver.
     */
   private def stopSolver(): Unit = {
+    // empty worklist.
+    worklist.clear()
+
     // spin down thread pools.
     readersPool.shutdownNow()
     writersPool.shutdownNow()
@@ -325,7 +330,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Updates the given interpretation `interp`.
     */
   private def evalBody(rule: Rule, env: Env): Callable[Interpretation] = new Callable[Interpretation] {
-    def call(): Interpretation = {
+    def call(): Interpretation = try {
       val t = System.nanoTime()
 
       val interp = mkInterpretation()
@@ -335,6 +340,10 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       rule.time.addAndGet(System.nanoTime() - t)
 
       interp
+    } catch {
+      case ex@RuleException(loc) =>
+        stopSolver()
+        throw ex
     }
   }
 
@@ -478,6 +487,8 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       }
 
       interp += ((p.sym, fact))
+    case Predicate.Head.True(loc) => // nop
+    case Predicate.Head.False(loc) => throw RuleException(loc)
   }
 
   /**
