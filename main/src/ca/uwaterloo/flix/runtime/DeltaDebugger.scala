@@ -56,6 +56,7 @@ object DeltaDebugger {
      */
     val exception = tryInit(root, options).getOrElse {
       // TODO
+      Console.err.println("No excep?")
       ???
     }
 
@@ -65,8 +66,19 @@ object DeltaDebugger {
      * Repeatedly minimize and re-run the program.
      */
     var current = DeltaDebugger.minimize(root.copy())
-    while (true) {
 
+    while (true) {
+      trySolve(current, options, exception) match {
+        case SolverResult.Success =>
+          // the program successfully completed. Must backtrack.
+          ???
+        case SolverResult.FailDiffException =>
+          // the program failed with a different exception. Must backtrack.
+          ???
+        case SolverResult.FailSameException =>
+          // the program failed with the same exception. Continue minimization.
+          current = DeltaDebugger.minimize(current.copy())
+      }
     }
 
     ???
