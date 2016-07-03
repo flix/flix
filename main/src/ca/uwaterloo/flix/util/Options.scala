@@ -23,6 +23,7 @@ object Options {
     * Default options.
     */
   val Default = Options(
+    delta = false,
     debug = false,
     evaluation = Evaluation.Compiled,
     monitor = false,
@@ -41,6 +42,7 @@ object Options {
 /**
   * General Flix options.
   *
+  * @param delta      enables the delta debugger.
   * @param debug      enables the emission of debugging information.
   * @param evaluation selects the evaluation strategy,
   * @param monitor    enables the debugger and profiler.
@@ -49,7 +51,7 @@ object Options {
   * @param verbosity  selects the level of verbosity.
   * @param verifier   enables the verifier.
   */
-case class Options(debug: Boolean, evaluation: Evaluation, monitor: Boolean, timeout: Duration, threads: Int, verbosity: Verbosity, verifier: Boolean)
+case class Options(delta: Boolean, debug: Boolean, evaluation: Evaluation, monitor: Boolean, timeout: Duration, threads: Int, verbosity: Verbosity, verifier: Boolean)
 
 /**
   * An option to control the level of verbosity.

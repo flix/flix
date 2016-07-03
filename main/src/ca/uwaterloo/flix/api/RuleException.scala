@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 /**
   * An exception thrown to indicate a timeout.
   *
+  * @param msg the error message.
   * @param loc the source location of the rule.
   */
-case class RuleException(loc: SourceLocation) extends FlixException(s"The integrity rule defined at ${loc.format} is violated.")
+case class RuleException(msg: String, loc: SourceLocation) extends FlixException(msg)

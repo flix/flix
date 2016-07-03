@@ -341,7 +341,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
 
       interp
     } catch {
-      case ex@RuleException(loc) =>
+      case ex@RuleException(msg, loc) =>
         stopSolver()
         throw ex
     }
@@ -488,7 +488,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
 
       interp += ((p.sym, fact))
     case Predicate.Head.True(loc) => // nop
-    case Predicate.Head.False(loc) => throw RuleException(loc)
+    case Predicate.Head.False(loc) => throw RuleException(s"The integrity rule defined at ${loc.format} is violated.", loc)
   }
 
   /**

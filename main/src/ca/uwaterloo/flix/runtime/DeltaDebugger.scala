@@ -17,10 +17,106 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api._
+import ca.uwaterloo.flix.language.ast.ExecutableAst
+import ca.uwaterloo.flix.util.{Options, Verbosity}
 
 // TODO: Rename to minimizer?
 object DeltaDebugger {
 
+  /**
+    * A common super-type to represent the result of running the solver.
+    */
+  sealed trait SolverResult
+
+  object SolverResult {
+
+    /**
+      * The solver successfully computed the minimal model.
+      */
+    case object Success extends SolverResult
+
+    /**
+      * The solver failed with the *same* exception as the original exception.
+      */
+    case object FailSameException extends SolverResult
+
+    /**
+      * The solver failed with a *different* exception than the original exception.
+      */
+    case object FailDiffException extends SolverResult
+
+  }
+
+  /**
+    *
+    */
+  def solve(root: ExecutableAst.Root, options: Options): Model = {
+    /*
+     * Attempts to determine the exception the (original) program crashes with.
+     */
+    val exception = tryInit(root, options).getOrElse {
+      // TODO
+      ???
+    }
+
+    Console.println(s"Initial Number of Facts: ${root.facts.length}")
+
+    /*
+     * Repeatedly minimize and re-run the program.
+     */
+    var current = DeltaDebugger.minimize(root.copy())
+    while (true) {
+
+    }
+
+    ???
+  }
+
+
+  /**
+    * Optionally returns the exception thrown by the original program.
+    */
+  def tryInit(root: ExecutableAst.Root, options: Options): Option[RuntimeException] = {
+    try {
+      runSolver(root, options)
+      None
+    } catch {
+      case ex: RuntimeException => Some(ex)
+    }
+  }
+
+  /**
+    * Attempts to solve the given program expects `expectedException` to be thrown.
+    */
+  def trySolve(root: ExecutableAst.Root, options: Options, expectedException: RuntimeException): SolverResult = {
+    try {
+      // run the solver.
+      runSolver(root, options)
+      // the solver successfully completed, return `Success`.
+      SolverResult.Success
+    } catch {
+      case actualException: RuntimeException =>
+        // the solver crashed with an exception.
+        if (sameException(expectedException, actualException)) {
+          // the solver failed with the *same* exception.
+          SolverResult.FailSameException
+        } else {
+          // the solver failed with a *different* exception.
+          SolverResult.FailDiffException
+        }
+    }
+  }
+
+  /**
+    * TODO: DOC
+    *
+    * @param root
+    * @return
+    */
+  def minimize(root: ExecutableAst.Root): ExecutableAst.Root = {
+    val minimizedFacts = root.facts.take(root.facts.length / 2)
+    root.copy(facts = minimizedFacts)
+  }
 
 
   /**
@@ -39,5 +135,13 @@ object DeltaDebugger {
     case _ => ex1.getClass == ex2.getClass
   }
 
+  /**
+    * Runs the solver.
+    */
+  private def runSolver(root: ExecutableAst.Root, options: Options): Unit = {
+    // silence output from the solver.
+    val opts = options.copy(verbosity = Verbosity.Silent)
+    new Solver(root, opts).solve()
+  }
 
 }
