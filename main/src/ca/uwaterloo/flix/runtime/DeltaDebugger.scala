@@ -49,7 +49,7 @@ object DeltaDebugger {
   }
 
   /**
-    *
+    * Runs the delta debugger on the given program.
     */
   def solve(root: ExecutableAst.Root, options: Options): Model = {
     val c = Compiler.ConsoleCtx
@@ -87,15 +87,15 @@ object DeltaDebugger {
         trySolve(root.copy(facts = facts.flatten.toArray), options, exception) match {
           case SolverResult.Success =>
             // the program successfully completed. Must backtrack.
-            Console.println(c.red(s"    [block $round] ${block.size} facts retained (program ran successfully.)"))
+            Console.println(c.red(s"    [block $round] ${block.size} fact(s) retained (program ran successfully.)"))
             facts = facts + block // put the block back
           case SolverResult.FailDiffException =>
             // the program failed with a different exception. Must backtrack.
-            Console.println(c.red(s"    [block $round] ${block.size} facts retained (different exception.)"))
+            Console.println(c.red(s"    [block $round] ${block.size} fact(s) retained (different exception.)"))
             facts = facts + block // put the block back
           case SolverResult.FailSameException =>
             // the program failed with the same exception. Continue minimization.
-            Console.println(c.green(s"    [block $round] ${block.size} facts discarded."))
+            Console.println(c.green(s"    [block $round] ${block.size} fact(s) discarded."))
           // no need to put the block back.
         }
 
@@ -113,13 +113,20 @@ object DeltaDebugger {
       Console.println()
     }
 
-    Console.println(c.green(s"Delta debugging complete! Final number of facts ${globalFacts.size}."))
+    Console.println(c.green(s"Delta debugging complete!"))
+    Console.println(s"Total number of facts: ${globalFacts.size}")
+
+    Console.println()
+    Console.println("Printing Facts:")
+    Console.println()
+    for (fact <- globalFacts) {
+      Console.println(format(fact))
+    }
 
     // TODO: Figureout better mechanism.
     System.exit(0)
     null
   }
-
 
   /**
     * Optionally returns the exception thrown by the original program.
@@ -178,6 +185,30 @@ object DeltaDebugger {
     // silence output from the solver.
     val opts = options.copy(verbosity = Verbosity.Silent)
     new Solver(root, opts).solve()
+  }
+
+  /**
+    * Returns a printable string representation of the given fact.
+    */
+  // TODO: Need more generic way to print asts.
+  private def format(f: ExecutableAst.Constraint.Fact): String = f.head match {
+    case ExecutableAst.Predicate.Head.True(loc) => "true"
+    case ExecutableAst.Predicate.Head.False(loc) => "false"
+    case ExecutableAst.Predicate.Head.Table(sym, terms, tpe, loc) => sym.name + "(" + terms.map(format).mkString(", ") + ")."
+  }
+
+  /**
+    * Returns a printable string representation of the given term.
+    */
+  // TODO: Need more generic way to print asts.
+  private def format(t: ExecutableAst.Term.Head): String = t match {
+    case ExecutableAst.Term.Head.Var(ident, tpe, loc) => ident.name
+    case ExecutableAst.Term.Head.Exp(e, tpe, loc) => e match {
+      case ExecutableAst.Expression.Int32(i) => i.toString
+      case _ => e.toString
+    }
+    case ExecutableAst.Term.Head.Apply(name, args, tpe, loc) => throw new UnsupportedOperationException("Not yet implemented.")
+    case ExecutableAst.Term.Head.ApplyHook(hook, args, tpe, loc) => throw new UnsupportedOperationException("Not yet implemented.")
   }
 
 }
