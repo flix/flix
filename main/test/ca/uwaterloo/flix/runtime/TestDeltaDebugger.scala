@@ -31,34 +31,34 @@ class TestDeltaDebugger extends FunSuite {
     val loc = SourceLocation.Unknown
     val ex1 = new MatchException("test", loc)
     val ex2 = new MatchException("test", loc)
-    assert(DeltaDebugger.sameException(ex1, ex2))
+    assert(DeltaSolver.sameException(ex1, ex2))
   }
 
   test("SameException.RuleException.01") {
     val loc = SourceLocation.Unknown
     val ex1 = new RuleException("test", loc)
     val ex2 = new RuleException("test", loc)
-    assert(DeltaDebugger.sameException(ex1, ex2))
+    assert(DeltaSolver.sameException(ex1, ex2))
   }
 
   test("SameException.SwitchException.01") {
     val loc = SourceLocation.Unknown
     val ex1 = new SwitchException("test", loc)
     val ex2 = new SwitchException("test", loc)
-    assert(DeltaDebugger.sameException(ex1, ex2))
+    assert(DeltaSolver.sameException(ex1, ex2))
   }
 
   test("SameException.TimeoutException.01") {
     val ex1 = new TimeoutException(Duration(1, SECONDS), Duration(3, SECONDS))
     val ex2 = new TimeoutException(Duration(2, SECONDS), Duration(4, SECONDS))
-    assert(DeltaDebugger.sameException(ex1, ex2))
+    assert(DeltaSolver.sameException(ex1, ex2))
   }
 
   test("SameException.UserException.01") {
     val loc = SourceLocation.Unknown
     val ex1 = new UserException("test", loc)
     val ex2 = new UserException("test", loc)
-    assert(DeltaDebugger.sameException(ex1, ex2))
+    assert(DeltaSolver.sameException(ex1, ex2))
   }
 
   //
@@ -67,73 +67,73 @@ class TestDeltaDebugger extends FunSuite {
   test("SameException.ArithmeticException.01") {
     val ex1 = new ArithmeticException()
     val ex2 = new ArithmeticException()
-    assert(DeltaDebugger.sameException(ex1, ex2))
+    assert(DeltaSolver.sameException(ex1, ex2))
   }
 
   test("SameException.ArithmeticException.02") {
     val ex1 = new ArithmeticException("test")
     val ex2 = new ArithmeticException("test")
-    assert(DeltaDebugger.sameException(ex1, ex2))
+    assert(DeltaSolver.sameException(ex1, ex2))
   }
 
   test("SameException.IllegalArgumentException.01") {
     val ex1 = new IllegalArgumentException()
     val ex2 = new IllegalArgumentException()
-    assert(DeltaDebugger.sameException(ex1, ex2))
+    assert(DeltaSolver.sameException(ex1, ex2))
   }
 
   test("SameException.IllegalArgumentException.02") {
     val ex1 = new IllegalArgumentException("test")
     val ex2 = new IllegalArgumentException("test")
-    assert(DeltaDebugger.sameException(ex1, ex2))
+    assert(DeltaSolver.sameException(ex1, ex2))
   }
 
   test("SameException.IndexOutOfBoundsException.01") {
     val ex1 = new IndexOutOfBoundsException()
     val ex2 = new IndexOutOfBoundsException()
-    assert(DeltaDebugger.sameException(ex1, ex2))
+    assert(DeltaSolver.sameException(ex1, ex2))
   }
 
   test("SameException.IndexOutOfBoundsException.02") {
     val ex1 = new IndexOutOfBoundsException("test")
     val ex2 = new IndexOutOfBoundsException("test")
-    assert(DeltaDebugger.sameException(ex1, ex2))
+    assert(DeltaSolver.sameException(ex1, ex2))
   }
 
   test("SameException.NoSuchElementException.01") {
     val ex1 = new NoSuchElementException()
     val ex2 = new NoSuchElementException()
-    assert(DeltaDebugger.sameException(ex1, ex2))
+    assert(DeltaSolver.sameException(ex1, ex2))
   }
 
   test("SameException.NoSuchElementException.02") {
     val ex1 = new NoSuchElementException("test")
     val ex2 = new NoSuchElementException("test")
-    assert(DeltaDebugger.sameException(ex1, ex2))
+    assert(DeltaSolver.sameException(ex1, ex2))
   }
 
   test("SameException.NullPointerException.01") {
     val ex1 = new NullPointerException()
     val ex2 = new NullPointerException()
-    assert(DeltaDebugger.sameException(ex1, ex2))
+    assert(DeltaSolver.sameException(ex1, ex2))
   }
 
   test("SameException.NullPointerException.02") {
     val ex1 = new NullPointerException("test")
     val ex2 = new NullPointerException("test")
-    assert(DeltaDebugger.sameException(ex1, ex2))
+    assert(DeltaSolver.sameException(ex1, ex2))
   }
 
   test("SameException.UnsupportedOperationException.01") {
     val ex1 = new UnsupportedOperationException()
     val ex2 = new UnsupportedOperationException()
-    assert(DeltaDebugger.sameException(ex1, ex2))
+    assert(DeltaSolver.sameException(ex1, ex2))
   }
 
   test("SameException.UnsupportedOperationException.02") {
     val ex1 = new UnsupportedOperationException("test")
     val ex2 = new UnsupportedOperationException("test")
-    assert(DeltaDebugger.sameException(ex1, ex2))
+    assert(DeltaSolver.sameException(ex1, ex2))
   }
 
   //
@@ -152,17 +152,17 @@ class TestDeltaDebugger extends FunSuite {
     val ex09 = new NullPointerException()
     val ex10 = new UnsupportedOperationException()
 
-    assert(!DeltaDebugger.sameException(ex00, ex01))
-    assert(!DeltaDebugger.sameException(ex01, ex02))
-    assert(!DeltaDebugger.sameException(ex02, ex03))
-    assert(!DeltaDebugger.sameException(ex03, ex04))
-    assert(!DeltaDebugger.sameException(ex04, ex05))
-    assert(!DeltaDebugger.sameException(ex05, ex06))
-    assert(!DeltaDebugger.sameException(ex06, ex07))
-    assert(!DeltaDebugger.sameException(ex07, ex08))
-    assert(!DeltaDebugger.sameException(ex08, ex09))
-    assert(!DeltaDebugger.sameException(ex09, ex10))
-    assert(!DeltaDebugger.sameException(ex10, ex00))
+    assert(!DeltaSolver.sameException(ex00, ex01))
+    assert(!DeltaSolver.sameException(ex01, ex02))
+    assert(!DeltaSolver.sameException(ex02, ex03))
+    assert(!DeltaSolver.sameException(ex03, ex04))
+    assert(!DeltaSolver.sameException(ex04, ex05))
+    assert(!DeltaSolver.sameException(ex05, ex06))
+    assert(!DeltaSolver.sameException(ex06, ex07))
+    assert(!DeltaSolver.sameException(ex07, ex08))
+    assert(!DeltaSolver.sameException(ex08, ex09))
+    assert(!DeltaSolver.sameException(ex09, ex10))
+    assert(!DeltaSolver.sameException(ex10, ex00))
   }
 
   test("SameException.NotEqual.MatchException01") {
@@ -170,7 +170,7 @@ class TestDeltaDebugger extends FunSuite {
     val sl2 = SourceLocation(SourceInput.Str("test"), 1, 0, 1, 42, () => "test")
     val ex1 = new MatchException("test", sl1)
     val ex2 = new MatchException("test", sl2)
-    assert(!DeltaDebugger.sameException(ex1, ex2))
+    assert(!DeltaSolver.sameException(ex1, ex2))
   }
 
   test("SameException.NotEqual.RuleException") {
@@ -178,7 +178,7 @@ class TestDeltaDebugger extends FunSuite {
     val sl2 = SourceLocation(SourceInput.Str("test"), 1, 0, 1, 42, () => "test")
     val ex1 = new RuleException("test", sl1)
     val ex2 = new RuleException("test", sl2)
-    assert(!DeltaDebugger.sameException(ex1, ex2))
+    assert(!DeltaSolver.sameException(ex1, ex2))
   }
 
   test("SameException.NotEqual.SwitchException") {
@@ -186,13 +186,13 @@ class TestDeltaDebugger extends FunSuite {
     val sl2 = SourceLocation(SourceInput.Str("test"), 1, 0, 1, 42, () => "test")
     val ex1 = new SwitchException("test", sl1)
     val ex2 = new SwitchException("test", sl2)
-    assert(!DeltaDebugger.sameException(ex1, ex2))
+    assert(!DeltaSolver.sameException(ex1, ex2))
   }
 
   test("SameException.NotEqual.UserException") {
     val ex1 = new UserException("ONE", SourceLocation.Unknown)
     val ex2 = new UserException("TWO", SourceLocation.Unknown)
-    assert(!DeltaDebugger.sameException(ex1, ex2))
+    assert(!DeltaSolver.sameException(ex1, ex2))
   }
 
 }

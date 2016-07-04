@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.Type.Lambda
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
-import ca.uwaterloo.flix.runtime.{DeltaDebugger, Model, Solver, Value}
+import ca.uwaterloo.flix.runtime.{DeltaSolver, Model, Solver, Value}
 import ca.uwaterloo.flix.util.{Options, Validation}
 
 import scala.collection.mutable.ListBuffer
@@ -243,7 +243,7 @@ class Flix {
     * number of input facts which cause some unhandled exception.
     */
   def deltaSolve(): Unit = compile2().map {
-    case root => DeltaDebugger.solve(root, options)
+    case root => DeltaSolver.solve(root, options)
   }
 
   /**

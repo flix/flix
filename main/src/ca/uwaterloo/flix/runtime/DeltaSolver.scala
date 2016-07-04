@@ -16,13 +16,29 @@
 
 package ca.uwaterloo.flix.runtime
 
+import java.nio.file.StandardOpenOption._
+import java.nio.file.{Files, Path, Paths}
+
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.Compiler
-import ca.uwaterloo.flix.language.ast.{PrettyPrinter, ExecutableAst}
+import ca.uwaterloo.flix.language.ast.{ExecutableAst, PrettyPrinter}
 import ca.uwaterloo.flix.util.{Options, Verbosity}
 
-// TODO: Rename to minimizer?
-object DeltaDebugger {
+object DeltaSolver {
+
+  /**
+    * A common super-type to represent the delta solver partition strategy.
+    */
+  sealed trait DeltaStrategy
+
+  object DeltaStrategy {
+
+    // TODO
+    case object Linear extends DeltaStrategy
+
+    case object Random extends DeltaStrategy
+
+  }
 
   /**
     * A common super-type to represent the result of running the solver.
@@ -55,12 +71,24 @@ object DeltaDebugger {
     val c = Compiler.ConsoleCtx
 
     /*
+     * The path to write the minimized facts to.
+     */
+    val path = Paths.get("delta.flix")
+
+    /*
+     * Refuse to overwrite existing file.
+     */
+    if (Files.exists(path)) {
+      Console.err.println(s"Path `$path' already exists. Refusing to overwrite.")
+      throw new IllegalStateException()
+    }
+
+    /*
      * Attempts to determine the exception the (original) program crashes with.
      */
     val exception = tryInit(root, options).getOrElse {
       Console.err.println(s"Program ran successfully. No need for delta debugging?")
-      System.exit(1)
-      throw null
+      throw new IllegalStateException()
     }
 
     /*
@@ -72,7 +100,7 @@ object DeltaDebugger {
     val totalNumberOfFacts = globalFacts.size
 
     while (globalBlockSize >= 1) {
-      Console.println(f"--- iteration: $globalIteration%4d, current facts: ${globalFacts.size}%4d, block size: $globalBlockSize%4d ---")
+      Console.println(f"--- iteration: $globalIteration%3d, current facts: ${globalFacts.size}%5d, block size: $globalBlockSize%5d ---")
 
       // partition the facts into blocks of `size`.
       val blocks = globalFacts.grouped(globalBlockSize).toSet
@@ -88,15 +116,15 @@ object DeltaDebugger {
         trySolve(root.copy(facts = facts.flatten.toArray), options, exception) match {
           case SolverResult.Success =>
             // the program successfully completed. Must backtrack.
-            Console.println(c.red(f"    [block $round%2d] ${block.size}%3d fact(s) retained (program ran successfully)."))
+            Console.println(c.red(f"    [block $round%3d] ${block.size}%5d fact(s) retained (program ran successfully)."))
             facts = facts + block // put the block back
           case SolverResult.FailDiffException =>
             // the program failed with a different exception. Must backtrack.
-            Console.println(c.red(f"    [block $round%2d] ${block.size}%3d fact(s) retained (different exception)."))
+            Console.println(c.red(f"    [block $round%3d] ${block.size}%5d fact(s) retained (different exception)."))
             facts = facts + block // put the block back
           case SolverResult.FailSameException =>
             // the program failed with the same exception. Continue minimization.
-            Console.println(c.green(f"    [block $round%2d] ${block.size}%3d fact(s) discarded."))
+            Console.println(c.green(f"    [block $round%3d] ${block.size}%5d fact(s) discarded."))
           // no need to put the block back.
         }
 
@@ -115,18 +143,12 @@ object DeltaDebugger {
       val percentage = 100.0 * numberOfFacts.toDouble / totalNumberOfFacts.toDouble
       Console.println(f"--- Progress: $numberOfFacts%4d out of $totalNumberOfFacts%4d facts ($percentage%2.1f%%) --- ")
       Console.println()
+
+      writeFacts(globalFacts, path)
     }
 
+    Console.println(c.green(s"    >>> Delta Debugging Complete! :-) Output written to `$path'. <<<"))
     Console.println()
-    Console.println(c.green(s"    >>> Delta Debugging Complete! :-) <<<"))
-    Console.println()
-
-    Console.println()
-    Console.println("Printing Facts:")
-    Console.println()
-    for (fact <- globalFacts) {
-      Console.println(PrettyPrinter.fmt(fact, new StringBuilder))
-    }
   }
 
   /**
@@ -186,6 +208,19 @@ object DeltaDebugger {
     // silence output from the solver.
     val opts = options.copy(verbosity = Verbosity.Silent)
     new Solver(root, opts).solve()
+  }
+
+  /**
+    * Writes the given `facts` to the given `path`.
+    */
+  private def writeFacts(facts: Traversable[ExecutableAst.Constraint.Fact], path: Path): Unit = {
+    val writer = Files.newBufferedWriter(path, WRITE, CREATE, TRUNCATE_EXISTING)
+    for (fact <- facts) {
+      val formattedFact = PrettyPrinter.fmt(fact, new StringBuilder).toString
+      writer.write(formattedFact)
+      writer.newLine()
+    }
+    writer.close()
   }
 
 }
