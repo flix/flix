@@ -72,6 +72,12 @@ object Main {
       flix.addPath(file.toPath)
     }
 
+    // check if we are running in delta debugging mode.
+    if (cmdOpts.delta) {
+      flix.deltaSolve()
+      System.exit(0)
+    }
+
     // compute the least model.
     try {
       flix.solve() match {

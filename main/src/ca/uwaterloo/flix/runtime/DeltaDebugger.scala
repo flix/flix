@@ -51,7 +51,7 @@ object DeltaDebugger {
   /**
     * Runs the delta debugger on the given program.
     */
-  def solve(root: ExecutableAst.Root, options: Options): Model = {
+  def solve(root: ExecutableAst.Root, options: Options): Unit = {
     val c = Compiler.ConsoleCtx
 
     /*
@@ -112,8 +112,8 @@ object DeltaDebugger {
       globalBlockSize = globalBlockSize / 2
 
       val numberOfFacts = globalFacts.size
-      val percentage = (100.0 * numberOfFacts.toDouble / totalNumberOfFacts.toDouble).toInt
-      Console.println(f"--- Progress: $numberOfFacts%4d out of $totalNumberOfFacts%4d facts ($percentage%2d%%) --- ")
+      val percentage = 100.0 * numberOfFacts.toDouble / totalNumberOfFacts.toDouble
+      Console.println(f"--- Progress: $numberOfFacts%4d out of $totalNumberOfFacts%4d facts ($percentage%2.1f%%) --- ")
       Console.println()
     }
 
@@ -127,10 +127,6 @@ object DeltaDebugger {
     for (fact <- globalFacts) {
       Console.println(format(fact))
     }
-
-    // TODO: Figureout better mechanism.
-    System.exit(0)
-    null
   }
 
   /**

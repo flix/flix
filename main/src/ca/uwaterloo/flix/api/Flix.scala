@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.runtime.{DeltaDebugger, Model, Solver, Value}
-import ca.uwaterloo.flix.util.{Verbosity, Options, Validation}
+import ca.uwaterloo.flix.util.{Options, Validation}
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
@@ -213,16 +213,11 @@ class Flix {
     Compiler.compile(getSourceInputs, hooks.toMap)(genSym)
   }
 
-  /**
-    * Solves the Flix program and returns the minimal model.
-    *
-    * NB: Automatically calls `compile()` thus there is no reason to do so manually.
-    */
-  def solve(): Validation[Model, CompilationError] = {
+  // TODO: Refactor this into compile()
+  private def compile2(): Validation[ExecutableAst.Root, CompilationError] = {
     implicit val _ = genSym
 
-    // TODO: Cleanup
-    compile() flatMap {
+    compile().flatMap {
       case tast =>
         val ast = PropertyGen.collectProperties(tast)
         val sast = Simplifier.simplify(ast)
@@ -231,27 +226,24 @@ class Flix {
         val east = CreateExecutableAst.toExecutable(numbered)
         val compiled = LoadBytecode.load(this, east, options)
         Verifier.verify(compiled, options) map {
-          case root => if (!options.delta)
-            runSolver(root)
-          else
-            runDeltaSolver(root)
+          case root => root
         }
     }
   }
 
   /**
-    * Runs the fixed point solver on the given program and returns the minimal model.
+    * Runs the Flix fixed point solver on the program and returns the minimal model.
     */
-  private def runSolver(program: ExecutableAst.Root): Model = {
-    new Solver(program, options).solve()
+  def solve(): Validation[Model, CompilationError] = compile2().map {
+    case root => new Solver(root, options).solve()
   }
 
   /**
-    * Repeatedly runs the fixed point solver on the given program trying to minimize
-    * the number of input facts triggering an exception during analysis, i.e. delta debugging.
+    * Runs the Flix fixed point solver on the program trying to minimize the
+    * number of input facts which cause some unhandled exception.
     */
-  private def runDeltaSolver(program: ExecutableAst.Root): Model = {
-    DeltaDebugger.solve(program, options)
+  def deltaSolve(): Unit = compile2().map {
+    case root => DeltaDebugger.solve(root, options)
   }
 
   /**
