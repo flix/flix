@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix
 
 import java.io.File
-import java.nio.file.{Files, Paths}
+import java.nio.file.Files
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.util._
@@ -105,6 +105,7 @@ object Main {
     * A case class representing the parsed command line options.
     */
   case class CmdOpts(monitor: Boolean = false,
+                     optimize: Boolean = false,
                      print: Seq[String] = Seq(),
                      threads: Int = -1,
                      tutorial: File = null,
@@ -131,6 +132,10 @@ object Main {
       // Monitor.
       opt[Unit]('m', "monitor").action((_, c) => c.copy(monitor = true)).
         text("enables the debugger and profiler.")
+
+      // Optimize.
+      opt[Unit]('o', "optimize").action((_, c) => c.copy(optimize = true))
+        .text("enables compiler optimizations.")
 
       // Print.
       opt[Seq[String]]('p', "print").action((xs, c) => c.copy(print = xs)).

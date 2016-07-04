@@ -52,6 +52,18 @@ class TestMain extends FunSuite {
     assert(opts.monitor)
   }
 
+  test("-o") {
+    val args = Array("-o", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.optimize)
+  }
+
+  test("--optimize") {
+    val args = Array("--optimize", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.optimize)
+  }
+
   test("-t") {
     val args = Array("-t", "42", "p.flix")
     val opts = Main.parseCmdOpts(args).get
