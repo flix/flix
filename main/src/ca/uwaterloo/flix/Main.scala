@@ -56,6 +56,7 @@ object Main {
       debug = cmdOpts.debug,
       evaluation = if (cmdOpts.interpreter) Evaluation.Interpreted else Evaluation.Compiled,
       monitor = cmdOpts.monitor,
+      optimize = cmdOpts.optimize,
       threads = if (cmdOpts.threads == -1) Options.Default.threads else cmdOpts.threads,
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       verifier = cmdOpts.verifier

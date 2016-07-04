@@ -24,6 +24,7 @@ object Options {
     debug = false,
     evaluation = Evaluation.Compiled,
     monitor = false,
+    optimize = false,
     threads = Runtime.getRuntime.availableProcessors(),
     verbosity = Verbosity.Normal,
     verifier = false
@@ -41,11 +42,12 @@ object Options {
   * @param debug      enables the emission of debugging information.
   * @param evaluation selects the evaluation strategy,
   * @param monitor    enables the debugger and profiler.
+  * @param optimize   enables compiler optimizations.
   * @param threads    selects the number of threads to use.
   * @param verbosity  selects the level of verbosity.
   * @param verifier   enables the verifier.
   */
-case class Options(debug: Boolean, evaluation: Evaluation, monitor: Boolean, threads: Int, verbosity: Verbosity, verifier: Boolean)
+case class Options(debug: Boolean, evaluation: Evaluation, monitor: Boolean, optimize: Boolean, threads: Int, verbosity: Verbosity, verifier: Boolean)
 
 /**
   * An option to control the level of verbosity.
