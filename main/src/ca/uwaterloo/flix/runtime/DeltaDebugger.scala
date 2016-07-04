@@ -117,7 +117,9 @@ object DeltaDebugger {
       Console.println()
     }
 
-    Console.println(c.green(s"Delta debugging complete!"))
+    Console.println()
+    Console.println(c.green(s"    >>> Delta Debugging Complete! :-) <<<"))
+    Console.println()
 
     Console.println()
     Console.println("Printing Facts:")
@@ -193,21 +195,20 @@ object DeltaDebugger {
   /**
     * Returns a printable string representation of the given fact.
     */
-  // TODO: Need more generic way to print asts.
   private def format(f: ExecutableAst.Constraint.Fact): String = f.head match {
     case ExecutableAst.Predicate.Head.True(loc) => "true"
     case ExecutableAst.Predicate.Head.False(loc) => "false"
-    case ExecutableAst.Predicate.Head.Table(sym, terms, tpe, loc) => sym.name + "(" + terms.map(format).mkString(", ") + ")."
+    case ExecutableAst.Predicate.Head.Table(sym, terms, tpe, loc) => sym.toString + "(" + terms.map(format).mkString(", ") + ")."
   }
 
   /**
     * Returns a printable string representation of the given term.
     */
-  // TODO: Need more generic way to print asts.
   private def format(t: ExecutableAst.Term.Head): String = t match {
     case ExecutableAst.Term.Head.Var(ident, tpe, loc) => ident.name
     case ExecutableAst.Term.Head.Exp(e, tpe, loc) => e match {
       case ExecutableAst.Expression.Int32(i) => i.toString
+      case ExecutableAst.Expression.Str(s) => "\"" + s + "\""
       case _ => e.toString
     }
     case ExecutableAst.Term.Head.Apply(name, args, tpe, loc) => throw new UnsupportedOperationException("Not yet implemented.")
