@@ -29,7 +29,7 @@ class TestTyper extends FunSuite {
   @deprecated
   val SL = SourceLocation.Unknown
   @deprecated
-  val Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty, Map.empty, new Time(0, 0, 0, 0, 0))
+  val Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty, Map.empty, new Time(0, 0, 0, 0, 0, 0))
   @deprecated
   val Ident = ident("x")
   @deprecated

@@ -124,9 +124,7 @@ package object ast {
 
   /**
     * A class that tracks the amount of time spent in each phase of the compiler.
-    *
-    * @param parser the time spent in the parser.
     */
-  case class Time(parser: Long, weeder: Long, resolver: Long, typer: Long, verifier: Long)
+  case class Time(parser: Long, weeder: Long, resolver: Long, typer: Long, verifier: Long, solver: Long)
 
 }
