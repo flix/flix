@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.Compiler
-import ca.uwaterloo.flix.language.ast.ExecutableAst
+import ca.uwaterloo.flix.language.ast.{PrettyPrinter, ExecutableAst}
 import ca.uwaterloo.flix.util.{Options, Verbosity}
 
 // TODO: Rename to minimizer?
@@ -125,7 +125,7 @@ object DeltaDebugger {
     Console.println("Printing Facts:")
     Console.println()
     for (fact <- globalFacts) {
-      Console.println(format(fact))
+      Console.println(PrettyPrinter.fmt(fact, new StringBuilder))
     }
   }
 
@@ -186,29 +186,6 @@ object DeltaDebugger {
     // silence output from the solver.
     val opts = options.copy(verbosity = Verbosity.Silent)
     new Solver(root, opts).solve()
-  }
-
-  /**
-    * Returns a printable string representation of the given fact.
-    */
-  private def format(f: ExecutableAst.Constraint.Fact): String = f.head match {
-    case ExecutableAst.Predicate.Head.True(loc) => "true"
-    case ExecutableAst.Predicate.Head.False(loc) => "false"
-    case ExecutableAst.Predicate.Head.Table(sym, terms, tpe, loc) => sym.toString + "(" + terms.map(format).mkString(", ") + ")."
-  }
-
-  /**
-    * Returns a printable string representation of the given term.
-    */
-  private def format(t: ExecutableAst.Term.Head): String = t match {
-    case ExecutableAst.Term.Head.Var(ident, tpe, loc) => ident.name
-    case ExecutableAst.Term.Head.Exp(e, tpe, loc) => e match {
-      case ExecutableAst.Expression.Int32(i) => i.toString
-      case ExecutableAst.Expression.Str(s) => "\"" + s + "\""
-      case _ => e.toString
-    }
-    case ExecutableAst.Term.Head.Apply(name, args, tpe, loc) => throw new UnsupportedOperationException("Not yet implemented.")
-    case ExecutableAst.Term.Head.ApplyHook(hook, args, tpe, loc) => throw new UnsupportedOperationException("Not yet implemented.")
   }
 
 }
