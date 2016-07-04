@@ -222,7 +222,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     mkModel()
   } catch {
     // Re-throw exceptions caught inside the individual reader/writer tasks.
-    case ex: ExecutionException => throw ex.getCause
+    case ex: ExecutionException =>
+      stopSolver()
+      throw ex.getCause
   }
 
   /**
@@ -330,7 +332,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Updates the given interpretation `interp`.
     */
   private def evalBody(rule: Rule, env: Env): Callable[Interpretation] = new Callable[Interpretation] {
-    def call(): Interpretation = try {
+    def call(): Interpretation = {
       val t = System.nanoTime()
 
       val interp = mkInterpretation()
@@ -340,10 +342,6 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       rule.time.addAndGet(System.nanoTime() - t)
 
       interp
-    } catch {
-      case ex@RuleException(msg, loc) =>
-        stopSolver()
-        throw ex
     }
   }
 
