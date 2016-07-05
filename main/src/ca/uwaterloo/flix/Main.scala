@@ -43,12 +43,12 @@ object Main {
 
     // check if the --tutorial flag was passed.
     if (cmdOpts.tutorial != null) {
-      writeTutorial(cmdOpts.tutorial)
+      printTutorial(cmdOpts.tutorial)
       System.exit(0)
     }
 
     // check that some input files were passed.
-    if (cmdOpts.files.isEmpty) {
+    if (cmdOpts.files.isEmpty && !cmdOpts.pipe) {
       Console.err.println("No input. Try --help.")
       System.exit(1)
     }
@@ -69,6 +69,12 @@ object Main {
     flix.setOptions(options)
     for (file <- cmdOpts.files) {
       flix.addPath(file.toPath)
+    }
+
+    // read input from standard-in.
+    if (cmdOpts.pipe) {
+      val s = StreamOps.readAll(Console.in)
+      flix.addStr(s)
     }
 
     // check if we are running in delta debugging mode.
@@ -126,6 +132,7 @@ object Main {
     */
   case class CmdOpts(delta: Option[File] = None,
                      monitor: Boolean = false,
+                     pipe: Boolean = false,
                      print: Seq[String] = Seq(),
                      threads: Int = -1,
                      timeout: Duration = Duration.Inf,
@@ -159,6 +166,10 @@ object Main {
       opt[Unit]('m', "monitor").action((_, c) => c.copy(monitor = true)).
         text("enables the debugger and profiler.")
 
+      // Pipe.
+      opt[Unit]("pipe").action((_, c) => c.copy(pipe = true)).
+        text("read input from standard in.")
+
       // Print.
       opt[Seq[String]]('p', "print").action((xs, c) => c.copy(print = xs)).
         valueName("<name>...").
@@ -178,7 +189,7 @@ object Main {
       // Tutorial.
       opt[String]("tutorial").action((f, c) => c.copy(tutorial = f)).
         valueName("<name>").
-        text("prints tutorial <name> to standard out.")
+        text("prints the tutorial to standard out. Try `--tutorial help'.")
 
       // Verbose.
       opt[Unit]('v', "verbose").action((_, c) => c.copy(verbose = true))
@@ -213,14 +224,16 @@ object Main {
   }
 
   /**
-    * Emits the Flix tutorial to the given file.
+    * Prints the given tutorial to standard out.
     */
-  def writeTutorial(name: String): Unit = {
+  def printTutorial(name: String): Unit = {
     val inputStream = name match {
       case "delta-debugging" => LocalResource.Tutorials.DeltaDebugging
       case "introduction" => LocalResource.Tutorials.Introduction
       case _ =>
-        Console.err.println(s"Unknown tutorial ``$name''.")
+        Console.println("No match. Available tutorials:")
+        Console.println("  introduction")
+        Console.println("  delta-debugging")
         System.exit(1)
         null
     }
