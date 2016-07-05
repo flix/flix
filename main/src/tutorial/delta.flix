@@ -43,6 +43,10 @@ namespace Tutorial.Delta {
     false :- A(7).
 
     //
+    // (note that if you remove the fact A(7) the program runs fine).
+    //
+
+    //
     // We can run this program with:
     //
     // java -jar flix.jar <tutorial-file>
