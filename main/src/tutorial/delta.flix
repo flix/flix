@@ -45,7 +45,7 @@ namespace Tutorial.Delta {
     //
     // We can run this program with:
     //
-    // java -jar flix.jar <file>
+    // java -jar flix.jar <tutorial-file>
     //
     // which should produce a result like:
     //
@@ -57,7 +57,33 @@ namespace Tutorial.Delta {
     // OK, good. Flix sees the error.
     //
 
-
+    //
+    // We have ten input facts A(0) ... A(9).
+    //
+    // We can use delta debugging to reduce this to a smaller set of
+    // input facts that will trigger the same error. To do so, run:
+    //
+    // java -jar flix.jar --delta out.flix <tutorial-file>
+    //
+    // The output should look something like:
+    //
+    //   Caught `ca.uwaterloo.flix.api.RuleException' with message:
+    //       `The integrity rule defined at delta-debugging.flix:43:5 is violated.'
+    //   Delta Debugging Started. Trying to minimize 10 facts.
+    //
+    // After each iteration, the current set of facts is written to `out.flix`.
+    //
+    // You can inspect this file as the delta debugger is running or when it
+    // has completed. In this case it runs till completion, and we see:
+    //
+    //   >>> Delta Debugging Complete! <<<
+    //   >>> Output written to `out.flix'. <<<
+    //
+    // And when we open `out.flix`:
+    //
+    //   Tutorial.Delta/A(7i32).
+    //
+    // which is what we expected.
 
 
 }
