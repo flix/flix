@@ -23,10 +23,13 @@ object LocalResource {
 
   val RootPath = "main/src"
 
-  /**
-    * Returns the Flix tutorial.
-    */
-  def getTutorial: InputStream = getInputStream("/tutorial/tutorial.flix")
+  object Tutorials {
+
+    def DeltaDebugging: InputStream = getInputStream("/tutorials/delta-debugging.flix")
+
+    def Introduction: InputStream = getInputStream("/tutorials/introduction.flix")
+
+  }
 
   /**
     * Returns the an input stream for the given relative path.

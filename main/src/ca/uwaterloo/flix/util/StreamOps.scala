@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.util
 
-import java.io.{ByteArrayOutputStream, InputStream}
+import java.io._
 
 object StreamOps {
 
@@ -35,6 +35,18 @@ object StreamOps {
     } while (read != -1)
 
     os.toByteArray
+  }
+
+  /**
+    * Copies the `inputStream` to the `outputStream`.
+    */
+  def writeAll(inputStream: InputStream, outputStream: PrintStream): Unit = {
+    val reader = new BufferedReader(new InputStreamReader(inputStream))
+    var line = reader.readLine()
+    while (line != null) {
+      outputStream.println(line)
+      line = reader.readLine()
+    }
   }
 
 }

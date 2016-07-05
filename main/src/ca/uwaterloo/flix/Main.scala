@@ -129,7 +129,7 @@ object Main {
                      print: Seq[String] = Seq(),
                      threads: Int = -1,
                      timeout: Duration = Duration.Inf,
-                     tutorial: File = null,
+                     tutorial: String = null,
                      verbose: Boolean = false,
                      verifier: Boolean = false,
                      debug: Boolean = false,
@@ -176,9 +176,9 @@ object Main {
         text("sets the number of threads to use.")
 
       // Tutorial.
-      opt[File]("tutorial").action((f, c) => c.copy(tutorial = f)).
-        valueName("<file>").
-        text("writes the Flix tutorial to <file>.")
+      opt[String]("tutorial").action((f, c) => c.copy(tutorial = f)).
+        valueName("<name>").
+        text("prints tutorial <name> to standard out.")
 
       // Verbose.
       opt[Unit]('v', "verbose").action((_, c) => c.copy(verbose = true))
@@ -215,16 +215,18 @@ object Main {
   /**
     * Emits the Flix tutorial to the given file.
     */
-  def writeTutorial(file: File): Unit = {
-    val outputFile = file.toPath
-    if (Files.exists(outputFile)) {
-      Console.err.println(s"Refusing to overwrite existing file ``${file.getName}''.")
-      System.exit(1)
+  def writeTutorial(name: String): Unit = {
+    val inputStream = name match {
+      case "delta-debugging" => LocalResource.Tutorials.DeltaDebugging
+      case "introduction" => LocalResource.Tutorials.Introduction
+      case _ =>
+        Console.err.println(s"Unknown tutorial ``$name''.")
+        System.exit(1)
+        null
     }
 
-    val inputStream = LocalResource.getTutorial
-    Files.copy(inputStream, outputFile)
-    Console.println(s"Tutorial successfully written to ``${file.getName}''.")
+    StreamOps.writeAll(inputStream, Console.out)
+    inputStream.close()
   }
 
 }
