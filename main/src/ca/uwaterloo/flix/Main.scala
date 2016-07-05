@@ -157,23 +157,23 @@ object Main {
       // Delta.
       opt[File]("delta").action((f, c) => c.copy(delta = Some(f))).
         valueName("<file>").
-        text("enables the delta debugger and write facts to <file>.")
+        text("enables the delta debugger. Output facts to <file>.")
 
       // Help.
       help("help").text("prints this usage information.")
 
       // Monitor.
-      opt[Unit]('m', "monitor").action((_, c) => c.copy(monitor = true)).
+      opt[Unit]("monitor").action((_, c) => c.copy(monitor = true)).
         text("enables the debugger and profiler.")
 
       // Pipe.
       opt[Unit]("pipe").action((_, c) => c.copy(pipe = true)).
-        text("read input from standard in.")
+        text("reads from standard input.")
 
       // Print.
-      opt[Seq[String]]('p', "print").action((xs, c) => c.copy(print = xs)).
+      opt[Seq[String]]("print").action((xs, c) => c.copy(print = xs)).
         valueName("<name>...").
-        text("selects the relations/lattices to print.")
+        text("prints the named relations/lattices.")
 
       // Timeout
       opt[Duration]("timeout").action((d, c) => c.copy(timeout = d)).
@@ -189,10 +189,10 @@ object Main {
       // Tutorial.
       opt[String]("tutorial").action((f, c) => c.copy(tutorial = f)).
         valueName("<name>").
-        text("prints the tutorial to standard out. Try `--tutorial help'.")
+        text("prints the named tutorial to stdout. Try `--tutorial help'.")
 
       // Verbose.
-      opt[Unit]('v', "verbose").action((_, c) => c.copy(verbose = true))
+      opt[Unit]("verbose").action((_, c) => c.copy(verbose = true))
         .text("enables verbose output.")
 
       // Verifier.
@@ -203,6 +203,8 @@ object Main {
       version("version").text("prints the version number.")
 
       // Experimental options:
+      note("")
+      note("The following options are experimental:")
 
       // XDebug.
       opt[Unit]("Xdebug").action((_, c) => c.copy(debug = true)).
@@ -211,6 +213,8 @@ object Main {
       // XInterpreter.
       opt[Unit]("Xinterpreter").action((_, c) => c.copy(interpreter = true)).
         text("[experimental] enables interpreted evaluation.")
+
+      note("")
 
       // Input files.
       arg[File]("<file>...").action((x, c) => c.copy(files = c.files :+ x))
