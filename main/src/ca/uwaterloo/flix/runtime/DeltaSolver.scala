@@ -80,7 +80,9 @@ object DeltaSolver {
     /*
      * Print information about the caught exception.
      */
-    Console.println(c.blue(s"Caught `${exception.getClass.getName}': `${exception.getMessage}'."))
+    Console.println(c.blue(s"Caught `${exception.getClass.getName}' with message:"))
+    Console.println(c.blue(s"    `${exception.getMessage}'"))
+    Console.println(c.blue(s"Delta Debugging Started. Trying to minimize ${root.facts.length} facts."))
     Console.println()
 
     /*
