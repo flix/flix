@@ -73,8 +73,14 @@ object Main {
 
     // check if we are running in delta debugging mode.
     if (cmdOpts.delta.nonEmpty) {
-      flix.deltaSolve(cmdOpts.delta.get.toPath)
-      System.exit(0)
+      flix.deltaSolve(cmdOpts.delta.get.toPath) match {
+        case Validation.Success(_, errors) =>
+          errors.foreach(e => println(e.message))
+          System.exit(0)
+        case Validation.Failure(errors) =>
+          errors.foreach(e => println(e.message))
+          System.exit(1)
+      }
     }
 
     // compute the least model.

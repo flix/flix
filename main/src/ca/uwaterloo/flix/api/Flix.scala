@@ -244,7 +244,7 @@ class Flix {
     *
     * @param path the path to write the minimized facts to.
     */
-  def deltaSolve(path: Path): Unit = compile2().map {
+  def deltaSolve(path: Path): Validation[Unit, CompilationError] = compile2().map {
     case root => DeltaSolver.solve(root, options, path)
   }
 

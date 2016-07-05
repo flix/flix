@@ -121,7 +121,7 @@ Kill(l, top(42)) :- Phi(l,_,_).
 //def isTop(e: SULattice): Bool = match e with {
 //   case SULattice.Bottom => false
 //   case SULattice.Single(s) => false
-//   case SULattice.Top => true
+//   case SULattice.Top => (1 / 0) == 0
 //}
 
 //false :- isTop(x), SU("431", "212 hbMakeCodeLengths:freq_addr<mem>", x).
