@@ -45,9 +45,9 @@ class TestMain extends FunSuite {
   }
 
   test("--delta") {
-    val args = Array("--delta", "p.flix")
+    val args = Array("--delta", "delta.flix", "p.flix")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.delta)
+    assert(opts.delta.nonEmpty)
   }
 
   test("-m") {

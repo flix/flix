@@ -55,7 +55,6 @@ object Main {
 
     // construct flix options.
     val options = Options.Default.copy(
-      delta = cmdOpts.delta,
       debug = cmdOpts.debug,
       evaluation = if (cmdOpts.interpreter) Evaluation.Interpreted else Evaluation.Compiled,
       monitor = cmdOpts.monitor,
@@ -73,8 +72,8 @@ object Main {
     }
 
     // check if we are running in delta debugging mode.
-    if (cmdOpts.delta) {
-      flix.deltaSolve()
+    if (cmdOpts.delta.nonEmpty) {
+      flix.deltaSolve(cmdOpts.delta.get.toPath)
       System.exit(0)
     }
 
@@ -119,7 +118,7 @@ object Main {
   /**
     * A case class representing the parsed command line options.
     */
-  case class CmdOpts(delta: Boolean = false,
+  case class CmdOpts(delta: Option[File] = None,
                      monitor: Boolean = false,
                      print: Seq[String] = Seq(),
                      threads: Int = -1,
@@ -143,8 +142,9 @@ object Main {
       head("The Flix Programming Language", Version.CurrentVersion.toString)
 
       // Delta.
-      opt[Unit]("delta").action((_, c) => c.copy(delta = true)).
-        text("enables the delta debugger.")
+      opt[File]("delta").action((f, c) => c.copy(delta = Some(f))).
+        valueName("<file>").
+        text("enables the delta debugger and write facts to <file>.")
 
       // Help.
       help("help").text("prints this usage information.")

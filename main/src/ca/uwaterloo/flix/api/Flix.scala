@@ -241,9 +241,11 @@ class Flix {
   /**
     * Runs the Flix fixed point solver on the program trying to minimize the
     * number of input facts which cause some unhandled exception.
+    *
+    * @param path the path to write the minimized facts to.
     */
-  def deltaSolve(): Unit = compile2().map {
-    case root => DeltaSolver.solve(root, options)
+  def deltaSolve(path: Path): Unit = compile2().map {
+    case root => DeltaSolver.solve(root, options, path)
   }
 
   /**

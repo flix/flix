@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.runtime
 
 import java.nio.file.StandardOpenOption._
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Path}
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.Compiler
@@ -25,20 +25,6 @@ import ca.uwaterloo.flix.language.ast.{ExecutableAst, PrettyPrinter}
 import ca.uwaterloo.flix.util.{Options, Verbosity}
 
 object DeltaSolver {
-
-  /**
-    * A common super-type to represent the delta solver partition strategy.
-    */
-  sealed trait DeltaStrategy
-
-  object DeltaStrategy {
-
-    // TODO
-    case object Linear extends DeltaStrategy
-
-    case object Random extends DeltaStrategy
-
-  }
 
   /**
     * A common super-type to represent the result of running the solver.
@@ -66,30 +52,36 @@ object DeltaSolver {
 
   /**
     * Runs the delta debugger on the given program.
+    *
+    * @param root    the program.
+    * @param options the Flix options.
+    * @param path    the path to write the minimized facts to.
     */
-  def solve(root: ExecutableAst.Root, options: Options): Unit = {
+  def solve(root: ExecutableAst.Root, options: Options, path: Path): Unit = {
     val c = Compiler.ConsoleCtx
-
-    /*
-     * The path to write the minimized facts to.
-     */
-    val path = Paths.get("delta.flix")
 
     /*
      * Refuse to overwrite existing file.
      */
     if (Files.exists(path)) {
       Console.err.println(s"Path `$path' already exists. Refusing to overwrite.")
-      throw new IllegalStateException()
+      System.exit(1)
     }
 
     /*
      * Attempts to determine the exception the (original) program crashes with.
      */
     val exception = tryInit(root, options).getOrElse {
-      Console.err.println(s"Program ran successfully. No need for delta debugging?")
-      throw new IllegalStateException()
+      Console.err.println(s"The program ran successfully. No need for delta debugging?")
+      System.exit(1)
+      null
     }
+
+    /*
+     * Print information about the caught exception.
+     */
+    Console.println(c.blue(s"Caught `${exception.getClass.getName}': `${exception.getMessage}'."))
+    Console.println()
 
     /*
      * Repeatedly minimize and re-run the program.
@@ -147,7 +139,9 @@ object DeltaSolver {
       writeFacts(globalFacts, path)
     }
 
-    Console.println(c.green(s"    >>> Delta Debugging Complete! :-) Output written to `$path'. <<<"))
+    Console.println(c.green(s"    >>> Delta Debugging Complete! <<<"))
+    Console.println(c.green(s"    >>> Output written to `$path'. <<<"))
+
     Console.println()
   }
 
