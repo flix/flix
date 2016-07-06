@@ -22,7 +22,7 @@ import org.scalatest.FunSuite
 
 import scala.concurrent.duration.{Duration, _}
 
-class TestDeltaDebugger extends FunSuite {
+class TestDeltaSolver extends FunSuite {
 
   //
   // Flix Exceptions.

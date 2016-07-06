@@ -18,7 +18,7 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
-import ca.uwaterloo.flix.runtime.{TestDeltaDebugger, TestBackend, TestSolver, TestValue}
+import ca.uwaterloo.flix.runtime.{TestDeltaSolver, TestBackend, TestSolver, TestValue}
 import ca.uwaterloo.flix.util.TestValidation
 import org.scalatest.{ParallelTestExecution, Suites}
 
@@ -36,7 +36,7 @@ class TestAll extends Suites(
   new TestValue,
   new TestValidation,
   new TestMain,
-  new TestDeltaDebugger
+  new TestDeltaSolver
   //new TestLibrary, // TODO
   // new TestExamples // TODO: temporarily removed while we figure out what to do with travis.
 ) with ParallelTestExecution {
