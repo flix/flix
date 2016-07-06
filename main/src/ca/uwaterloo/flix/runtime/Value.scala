@@ -416,6 +416,19 @@ object Value {
     case _ => throw new InternalRuntimeException(s"Unexpected non-map value: '$ref'.")
   }
 
+  /**
+    * Casts the given `ref` to a Flix value.
+    */
+  // TODO: This is temporary fix until we figure out a proper way to deal with non-flix values.
+  @inline
+  def cast2flix(ref: AnyRef): AnyRef = ref match {
+    case Tuple1(a: AnyRef) => Value.Tuple(Array(a))
+    case Tuple2(a: AnyRef, b: AnyRef) => Value.Tuple(Array(a, b))
+    case Tuple3(a: AnyRef, b: AnyRef, c: AnyRef) => Value.Tuple(Array(a, b, c))
+    case Tuple4(a: AnyRef, b: AnyRef, c: AnyRef, d: AnyRef) => Value.Tuple(Array(a, b, c, d))
+    case _ => ref
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Pretty Printing                                                         //
   /////////////////////////////////////////////////////////////////////////////
