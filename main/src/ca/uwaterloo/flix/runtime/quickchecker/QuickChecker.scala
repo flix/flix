@@ -25,13 +25,18 @@ import scala.util.Random
 object QuickChecker {
 
 
-
   /////////////////////////////////////////////////////////////////////////////
   // Generator Streams                                                       //
   /////////////////////////////////////////////////////////////////////////////
 
+  /**
+    * A global random number generator.
+    */
   val Random = new Random()
 
+  /**
+    * A common super-type for infinite generator streams.
+    */
   trait Stream[A] {
     def head: A
 
@@ -40,10 +45,14 @@ object QuickChecker {
     def #::(h: A): Stream[A] = Hd(h, this)
   }
 
-  case class Hd[A](head: A, tail: Stream[A]) extends Stream[A] {
-    def isEmpty = false
-  }
+  /**
+    * A single stream element.
+    */
+  case class Hd[A](head: A, tail: Stream[A]) extends Stream[A]
 
+  /**
+    * Generates a stream of boolean values.
+    */
   class GenBool extends Stream[SymVal] {
     val stream = SymVal.True #:: SymVal.False #:: this
 
@@ -52,6 +61,9 @@ object QuickChecker {
     def tail: Stream[SymVal] = stream.tail
   }
 
+  /**
+    * Generates a stream of tuple values.
+    */
   class GenTuple[A](gs: List[Stream[A]]) extends Stream[SymVal.Tuple] {
     def head: Tuple = ???
 
