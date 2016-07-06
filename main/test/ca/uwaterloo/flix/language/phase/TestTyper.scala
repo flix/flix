@@ -158,7 +158,7 @@ class TestTyper extends FunSuite {
     val input =
       """def f: Int = 1
         |def g: Int = 2
-        |def h: Int = f + g
+        |def h: Int = f() + g()
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get
@@ -173,7 +173,7 @@ class TestTyper extends FunSuite {
         |  def g: Int = 2
         |}
         |
-        |def h: Int = A/f + B/g
+        |def h: Int = A/f() + B/g()
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get

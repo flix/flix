@@ -174,7 +174,7 @@ object Typer {
       Expression.typer(rast.exp, root, env) flatMap {
         case e =>
           if (rast.formals.isEmpty) {
-            expect(rast.tpe, e.tpe, rast.loc) map {
+            expect(rast.tpe, Type.Lambda(Nil, e.tpe), rast.loc) map {
               case tpe => TypedAst.Definition.Constant(rast.ann, rast.name, formals, e, tpe, rast.loc)
             }
           } else {

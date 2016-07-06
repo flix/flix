@@ -209,23 +209,6 @@ object Weeder {
     }
 
     /**
-      * An error raised to indicate an illegal apply (function call).
-      *
-      * @param msg the error message.
-      * @param loc the location where the illegal expression occurs.
-      */
-    case class IllegalApply(msg: String, loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> Illegal call.")}
-           |
-           |${loc.underline}
-           |$msg
-         """.stripMargin
-    }
-
-    /**
       * An error raised to indicate an illegal existential quantification expression.
       *
       * @param msg the error message.
@@ -491,7 +474,7 @@ object Weeder {
 
         paramsOpt match {
           case None => @@(annVal, expVal) flatMap {
-            case (ann, e) => WeededAst.Declaration.Definition(ann, ident, Nil, e, tpe, sl).toSuccess
+            case (ann, e) => WeededAst.Declaration.Definition(ann, ident, Nil, e, Type.Lambda(Nil, tpe), sl).toSuccess
           }
           case Some(Nil) => IllegalParameterList(sl).toFailure
           case Some(params) =>
@@ -789,7 +772,6 @@ object Weeder {
       case ParsedAst.Expression.Apply(lambda, args, sp2) =>
         val sp1 = leftMostSourcePosition(lambda)
         @@(compile(lambda), @@(args map compile)) flatMap {
-          case (_, Nil) => IllegalApply("A parameter list must contain at least one parameter or be omitted.", mkSL(sp1, sp2)).toFailure
           case (e, as) => WeededAst.Expression.Apply(e, as, mkSL(sp1, sp2)).toSuccess
         }
 
@@ -1209,7 +1191,6 @@ object Weeder {
           case ParsedAst.Expression.Var(_, name, _) =>
             val sp1 = leftMostSourcePosition(lambda)
             @@(args map (a => toTerm(a, aliases))) flatMap {
-              case Nil => IllegalApply("A parameter list must contain at least one parameter or be omitted.", mkSL(sp1, sp2)).toFailure
               case as => WeededAst.Term.Head.Apply(name, as, mkSL(sp1, sp2)).toSuccess
             }
           case _ => throw InternalCompilerException("Illegal head term. But proper error messages not yet implemented.")
@@ -1232,7 +1213,6 @@ object Weeder {
           }
         case _ => throw InternalCompilerException("Illegal head term. But proper error messages not yet implemented.")
       }
-
 
     }
 
