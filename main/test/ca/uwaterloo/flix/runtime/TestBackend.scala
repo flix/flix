@@ -708,12 +708,12 @@ class TestBackend extends FunSuite {
   test("Expression.Ref.02") {
     val input =
       """namespace Foo {
-        |  def x: Int = 5
-        |  def f: Int = x
+        |  def f: Int = 5
+        |  def g: Int = f()
         |}
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkInt32(5), "Foo/f")
+    t.runTest(Value.mkInt32(5), "Foo/g")
   }
 
   test("Expression.Ref.03") {
@@ -721,7 +721,7 @@ class TestBackend extends FunSuite {
       """namespace Foo {
         |  def x: Bool = true
         |  def y: Bool = false
-        |  def f: Bool = y
+        |  def f: Bool = y()
         |}
       """.stripMargin
     val t = new Tester(input)
@@ -734,7 +734,7 @@ class TestBackend extends FunSuite {
         |  def x: Str = "hello"
         |}
         |namespace Bar {
-        |  def x: Str = Foo/x
+        |  def x: Str = Foo/x()
         |}
       """.stripMargin
     val t = new Tester(input)
@@ -753,7 +753,7 @@ class TestBackend extends FunSuite {
         |  def a: Bool = false
         |}
         |namespace A {
-        |  def b: Bool = !A.B/a
+        |  def b: Bool = !A.B/a()
         |}
         |namespace A {
         |  namespace B {
@@ -791,7 +791,7 @@ class TestBackend extends FunSuite {
         |  def f: Bool = false
         |}
         |namespace A {
-        |  def g: Bool = A.B/f
+        |  def g: Bool = A.B/f()
         |}
       """.stripMargin
     val t = new Tester(input)
@@ -6291,7 +6291,7 @@ class TestBackend extends FunSuite {
       """def fst(t: (Native, Native)): Native =
         |  let (x, _) = t in x
         |def g: (Native, Native) = f(12)
-        |def h: Native = fst(g)
+        |def h: Native = fst(g())
       """.stripMargin
     val t = new Tester(input, solve = false)
 
@@ -6309,7 +6309,7 @@ class TestBackend extends FunSuite {
       """def fst(t: (Native, Native)): Native =
         |  let (x, _) = t in x
         |def g: (Native, Native) = f(12)
-        |def h: Native = fst(g)
+        |def h: Native = fst(g())
       """.stripMargin
     val t = new Tester(input, solve = false)
 
@@ -6327,7 +6327,7 @@ class TestBackend extends FunSuite {
       """def fst(t: (Int, Str)): Int =
         |  let (x, _) = t in x
         |def g: (Int, Str) = f(12)
-        |def h: Int = fst(g)
+        |def h: Int = fst(g())
       """.stripMargin
     val t = new Tester(input, solve = false)
 

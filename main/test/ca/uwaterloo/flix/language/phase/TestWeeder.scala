@@ -150,12 +150,6 @@ class TestWeeder extends FunSuite {
     assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalAnnotation])
   }
 
-  test("IllegalApply.01") {
-    val input = "def f: Int = g()"
-    val result = new Flix().addStr(input).solve()
-    assert(result.errors.head.isInstanceOf[Weeder.WeederError.IllegalApply])
-  }
-
   test("IllegalBodyTerm.01") {
     val input = "P(x) :- A(f(x))."
     val result = new Flix().addStr(input).solve()

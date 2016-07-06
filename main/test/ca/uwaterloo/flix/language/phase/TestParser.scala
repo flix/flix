@@ -741,16 +741,16 @@ class TestParser extends FunSuite {
 
   test("Expression.Apply.01") {
     val input =
-      """def f(x: Int): Int = x
-        |def g: Int = f(42)
+      """def f: Int = 42
+        |def g: Int = f()
       """.stripMargin
     new Flix().addStr(input).compile().get
   }
 
   test("Expression.Apply.02") {
     val input =
-      """def f(x: Int, y: Int): Int = x + y
-        |def g: Int = f(1, 2)
+      """def f(x: Int): Int = x
+        |def g: Int = f(42)
       """.stripMargin
     new Flix().addStr(input).compile().get
   }
@@ -758,12 +758,20 @@ class TestParser extends FunSuite {
   test("Expression.Apply.03") {
     val input =
       """def f(x: Int, y: Int): Int = x + y
-        |def g: Int = f(1, f(2, 3))
+        |def g: Int = f(1, 2)
       """.stripMargin
     new Flix().addStr(input).compile().get
   }
 
   test("Expression.Apply.04") {
+    val input =
+      """def f(x: Int, y: Int): Int = x + y
+        |def g: Int = f(1, f(2, 3))
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Expression.Apply.05") {
     val input =
       """def f(x: Int, y: Int): Int = x + y
         |def g: Int = f(f(1, 2), f(3, 4))
@@ -2105,6 +2113,17 @@ class TestParser extends FunSuite {
       """rel R(a: Int, b: Int)
         |
         |false :- R(x, y).
+      """.stripMargin
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Declaration.Rule.04") {
+    val input =
+      """def f: Int = 42
+        |
+        |rel R(a: Int)
+        |
+        |R(f()).
       """.stripMargin
     new Flix().addStr(input).compile().get
   }

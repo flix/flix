@@ -526,4 +526,55 @@ class TestSolver extends FunSuite {
     }
   }
 
+  test("Transfer01") {
+    val s =
+      """rel A(x: Int);
+        |
+        |def f: Int = 42
+        |
+        |A(f()).
+      """.stripMargin
+
+    val flix = new Flix().addStr(s).setOptions(opts)
+    val model = flix.solve().get
+
+    val A = model.getRelation("A").toSet
+    assert(A contains List(Value.mkInt32(42)))
+  }
+
+  test("Transfer02") {
+    val s =
+      """rel A(x: Int, y: Int);
+        |
+        |def f: Int = 42
+        |def g(x: Int): Int = 21 + x
+        |
+        |A(f(), g(21)).
+      """.stripMargin
+
+    val flix = new Flix().addStr(s).setOptions(opts)
+    val model = flix.solve().get
+
+    val A = model.getRelation("A").toSet
+    assert(A contains List(Value.mkInt32(42), Value.mkInt32(42)))
+  }
+
+  test("Transfer03") {
+    val s =
+      """rel A(x: Int, y: Int, z: Int);
+        |
+        |def f: Int = 42
+        |def g(x: Int): Int = 21 + x
+        |def h(x: Int, y: Int): Int = f() + g(x) + y
+        |
+        |A(f(), g(21), h(21, 11)).
+      """.stripMargin
+
+    val flix = new Flix().addStr(s).setOptions(opts)
+    val model = flix.solve().get
+
+    val A = model.getRelation("A").toSet
+    assert(A contains List(Value.mkInt32(42), Value.mkInt32(42), Value.mkInt32(42 + 42 + 11)))
+  }
+  
 }
