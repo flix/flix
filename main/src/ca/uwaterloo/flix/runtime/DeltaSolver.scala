@@ -99,7 +99,7 @@ object DeltaSolver {
       // partition the facts into blocks of `size`.
       val blocks = globalFacts.grouped(globalBlockSize).toSet
 
-      // a local variable to hold in this iteration.
+      // a local variable to hold the current facts.
       var facts = blocks
       var round = 1
       for (block <- blocks) {
@@ -119,10 +119,8 @@ object DeltaSolver {
           case SolverResult.FailSameException =>
             // the program failed with the same exception. Continue minimization.
             Console.println(c.green(f"    [block $round%3d] ${block.size}%5d fact(s) discarded."))
-          // no need to put the block back.
         }
 
-        // increase round count.
         round += 1
       }
 
