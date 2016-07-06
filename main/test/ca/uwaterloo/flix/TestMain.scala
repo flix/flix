@@ -50,12 +50,6 @@ class TestMain extends FunSuite {
     assert(opts.delta.nonEmpty)
   }
 
-  test("-m") {
-    val args = Array("-m", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.monitor)
-  }
-
   test("--monitor") {
     val args = Array("--monitor", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -72,19 +66,6 @@ class TestMain extends FunSuite {
     val args = Array("--optimize", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.optimize)
-  }
-
-  test("-p foo") {
-    val args = Array("-p", "foo", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.print.contains("foo"))
-  }
-
-  test("-p foo,bar") {
-    val args = Array("-p", "foo,bar", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.print.contains("foo"))
-    assert(opts.print.contains("bar"))
   }
 
   test("--print foo") {
@@ -134,12 +115,6 @@ class TestMain extends FunSuite {
     val args = Array("--tutorial", "tut.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.tutorial != null)
-  }
-
-  test("-v") {
-    val args = Array("-v", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.verbose)
   }
 
   test("--verbose") {

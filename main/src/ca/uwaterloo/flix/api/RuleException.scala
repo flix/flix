@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.language.ast.SourceLocation
 
 /**
-  * An exception thrown to indicate a timeout.
+  * An exception thrown to indicate the violation of a rule integrity constraint.
   *
   * @param msg the error message.
   * @param loc the source location of the rule.
