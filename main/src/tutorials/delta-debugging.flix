@@ -19,7 +19,7 @@
 //
 // Note 1: The greedy strategy is *NOT* guaranteed to find THE minimal solution.
 // Note 2: The delta debugger will eventually terminate when it cannot
-// remove any more facts without also preventing the error from occuring.
+// remove any more facts without also preventing the error from occurring.
 //
 
 namespace Tutorial.DeltaDebugging {
