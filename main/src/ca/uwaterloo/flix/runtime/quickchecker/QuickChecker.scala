@@ -90,4 +90,13 @@ object QuickChecker {
     def tail: Stream[Int] = GenRandomInt32
   }
 
+  /**
+    * Generates Random Int64 values.
+    */
+  object GenRandomInt64 extends Stream[SymVal] {
+    def head: SymVal = SymVal.Int64(Random.nextLong())
+
+    def tail: Stream[SymVal] = GenRandomInt64
+  }
+
 }
