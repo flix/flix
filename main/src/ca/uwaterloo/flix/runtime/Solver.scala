@@ -219,7 +219,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     printDebug()
 
     // build and return the model.
-    mkModel()
+    mkModel(totalTime)
   } catch {
     // Re-throw exceptions caught inside the individual reader/writer tasks.
     case ex: ExecutionException =>
@@ -634,7 +634,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Constructs the minimal model from the datastore.
     */
-  private def mkModel(): Model = {
+  private def mkModel(elapsed: Long): Model = {
     // construct the model.
     val definitions = root.constants.foldLeft(Map.empty[Symbol.Resolved, () => AnyRef]) {
       case (macc, (sym, defn)) =>
@@ -656,7 +656,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         }
         macc + ((sym, table))
     }
-    model = new Model(root, definitions, relations, lattices)
+    model = new Model(root, root.time.copy(solver = elapsed), definitions, relations, lattices)
     model
   }
 

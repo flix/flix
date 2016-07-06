@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{Time, ExecutableAst, Symbol}
 
 /**
   * A class representing the minimal model.
@@ -27,11 +27,14 @@ import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
   * @param lattices    the lattice facts in the model.
   */
 class Model(root: ExecutableAst.Root,
+            time: Time,
             definitions: Map[Symbol.Resolved, () => AnyRef],
             relations: Map[Symbol.TableSym, Iterable[List[AnyRef]]],
             lattices: Map[Symbol.TableSym, Iterable[(List[AnyRef], List[AnyRef])]]) {
 
   def getRoot: ExecutableAst.Root = root
+
+  def getTime: Time = time
 
   def getConstant(sym: Symbol.Resolved): AnyRef = definitions(sym)()
 

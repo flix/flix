@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix
 
 import java.io.File
-import java.nio.file.Files
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.util._
@@ -57,6 +56,7 @@ object Main {
     val options = Options.Default.copy(
       debug = cmdOpts.debug,
       evaluation = if (cmdOpts.interpreter) Evaluation.Interpreted else Evaluation.Compiled,
+      optimize = cmdOpts.optimize,
       monitor = cmdOpts.monitor,
       timeout = cmdOpts.timeout,
       threads = if (cmdOpts.threads == -1) Options.Default.threads else cmdOpts.threads,
@@ -132,6 +132,7 @@ object Main {
     */
   case class CmdOpts(delta: Option[File] = None,
                      monitor: Boolean = false,
+                     optimize: Boolean = false,
                      pipe: Boolean = false,
                      print: Seq[String] = Seq(),
                      threads: Int = -1,
@@ -165,6 +166,10 @@ object Main {
       // Monitor.
       opt[Unit]("monitor").action((_, c) => c.copy(monitor = true)).
         text("enables the debugger and profiler.")
+
+      // Optimize.
+      opt[Unit]("optimize").action((_, c) => c.copy(optimize = true))
+        .text("enables compiler optimizations.")
 
       // Pipe.
       opt[Unit]("pipe").action((_, c) => c.copy(pipe = true)).
