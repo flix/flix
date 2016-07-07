@@ -40,14 +40,12 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   /**
     * The number of element columns in the lattice.
     */
-  private val numberOfElms = lattice.values.length
+  private val numberOfElms = 1
 
   /**
     * The lattice operations associated with each lattice.
     */
-  private val latticeOps: Array[ExecutableAst.Definition.Lattice] = lattice.values.map {
-    case ExecutableAst.Attribute(_, tpe) => root.lattices(tpe)
-  }
+  private val latticeOps: Array[ExecutableAst.Definition.Lattice] = Array(root.lattices(lattice.value.tpe))
 
   /**
     * The bottom element(s).

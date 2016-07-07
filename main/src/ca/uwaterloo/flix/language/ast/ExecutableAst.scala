@@ -70,7 +70,7 @@ object ExecutableAst {
 
     case class Lattice(sym: Symbol.TableSym,
                        keys: Array[ExecutableAst.Attribute],
-                       values: Array[ExecutableAst.Attribute],
+                       value: ExecutableAst.Attribute,
                        loc: SourceLocation) extends ExecutableAst.Table
 
   }
