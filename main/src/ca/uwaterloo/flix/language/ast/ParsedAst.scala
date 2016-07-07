@@ -805,6 +805,22 @@ object ParsedAst {
   object Predicate {
 
     /**
+      * True Predicate.
+      *
+      * @param sp1 the position of the first character in the predicate.
+      * @param sp2 the position of the last character in the predicate.
+      */
+    case class True(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Predicate
+
+    /**
+      * False Predicate.
+      *
+      * @param sp1 the position of the first character in the predicate.
+      * @param sp2 the position of the last character in the predicate.
+      */
+    case class False(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Predicate
+
+    /**
       * Ambiguous Predicate.
       *
       * @param sp1   the position of the first character in the predicate.

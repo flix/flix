@@ -16,25 +16,50 @@
 
 package ca.uwaterloo.flix.util
 
-import java.io.{ByteArrayOutputStream, InputStream}
+import java.io._
 
 object StreamOps {
 
   /**
     * Reads an array of all bytes read from the given input stream `is`.
     */
-  def readAllBytes(is: InputStream): Array[Byte] = {
-    val os = new ByteArrayOutputStream()
+  def readAllBytes(inputStream: InputStream): Array[Byte] = {
+    val outputStream = new ByteArrayOutputStream()
 
     val buffer = new Array[Byte](0xFFFF)
 
-    var read: Int = is.read(buffer)
+    var read: Int = inputStream.read(buffer)
     do {
-      os.write(buffer, 0, read)
-      read = is.read(buffer)
+      outputStream.write(buffer, 0, read)
+      read = inputStream.read(buffer)
     } while (read != -1)
 
-    os.toByteArray
+    outputStream.toByteArray
+  }
+
+  /**
+    * Reads the `reader` into a string.
+    */
+  def readAll(reader: BufferedReader): String = {
+    val sb = new StringBuilder()
+    var line = reader.readLine()
+    while (line != null) {
+      sb.append(line).append(System.lineSeparator())
+      line = reader.readLine()
+    }
+    sb.toString()
+  }
+
+  /**
+    * Copies the `inputStream` to the `outputStream`.
+    */
+  def writeAll(inputStream: InputStream, outputStream: PrintStream): Unit = {
+    val reader = new BufferedReader(new InputStreamReader(inputStream))
+    var line = reader.readLine()
+    while (line != null) {
+      outputStream.println(line)
+      line = reader.readLine()
+    }
   }
 
 }

@@ -561,6 +561,14 @@ object ExecutableAst {
 
     object Head {
 
+      case class True(loc: SourceLocation) extends ExecutableAst.Predicate.Head {
+        def tpe: Type = Type.Predicate(Nil)
+      }
+
+      case class False(loc: SourceLocation) extends ExecutableAst.Predicate.Head {
+        def tpe: Type = Type.Predicate(Nil)
+      }
+
       case class Table(sym: Symbol.TableSym,
                        terms: Array[ExecutableAst.Term.Head],
                        tpe: Type.Predicate,

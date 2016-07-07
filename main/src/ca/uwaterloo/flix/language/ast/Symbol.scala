@@ -19,8 +19,6 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
 import ca.uwaterloo.flix.language.phase.GenSym
 
-import scala.collection.mutable
-
 object Symbol {
 
   /**
@@ -158,7 +156,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = namespace.mkString(".") + "/" + name
+    override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "/" + name
   }
 
 

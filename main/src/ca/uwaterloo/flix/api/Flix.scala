@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.Type.Lambda
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
-import ca.uwaterloo.flix.runtime.{Model, Solver, Value}
+import ca.uwaterloo.flix.runtime.{DeltaSolver, Model, Solver, Value}
 import ca.uwaterloo.flix.util.{Options, Validation}
 
 import scala.collection.mutable.ListBuffer
@@ -213,16 +213,11 @@ class Flix {
     Compiler.compile(getSourceInputs, hooks.toMap)(genSym)
   }
 
-  /**
-    * Solves the Flix program and returns the minimal model.
-    *
-    * NB: Automatically calls `compile()` thus there is no reason to do so manually.
-    */
-  def solve(): Validation[Model, CompilationError] = {
+  // TODO: Refactor this into compile()
+  private def compile2(): Validation[ExecutableAst.Root, CompilationError] = {
     implicit val _ = genSym
 
-    // TODO: Cleanup
-    compile() flatMap {
+    compile().flatMap {
       case tast =>
         val ast = PropertyGen.collectProperties(tast)
         val sast = Simplifier.simplify(ast)
@@ -231,9 +226,26 @@ class Flix {
         val east = CreateExecutableAst.toExecutable(numbered)
         val compiled = LoadBytecode.load(this, east, options)
         Verifier.verify(compiled, options) map {
-          case ast => new Solver(ast, options).solve()
+          case root => root
         }
     }
+  }
+
+  /**
+    * Runs the Flix fixed point solver on the program and returns the minimal model.
+    */
+  def solve(): Validation[Model, CompilationError] = compile2().map {
+    case root => new Solver(root, options).solve()
+  }
+
+  /**
+    * Runs the Flix fixed point solver on the program trying to minimize the
+    * number of input facts which cause some unhandled exception.
+    *
+    * @param path the path to write the minimized facts to.
+    */
+  def deltaSolve(path: Path): Validation[Unit, CompilationError] = compile2().map {
+    case root => DeltaSolver.solve(root, options, path)
   }
 
   /**

@@ -251,6 +251,10 @@ object WeededAst {
 
     object Head {
 
+      case class True(loc: SourceLocation) extends WeededAst.Predicate.Head
+
+      case class False(loc: SourceLocation) extends WeededAst.Predicate.Head
+
       case class Table(name: Name.QName, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
 
     }
@@ -264,6 +268,7 @@ object WeededAst {
       case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, loc: SourceLocation) extends WeededAst.Predicate.Body
 
       case class Loop(ident: Name.Ident, term: WeededAst.Term.Head, loc: SourceLocation) extends WeededAst.Predicate.Body
+
     }
 
   }

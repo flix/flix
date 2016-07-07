@@ -16,19 +16,21 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.{IValue, WrappedValue}
-import ca.uwaterloo.flix.language.ast.ExecutableAst._
+import java.util.ArrayList
+import java.util.concurrent._
+
+import ca.uwaterloo.flix.api.{IValue, RuleException, TimeoutException, WrappedValue}
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Constraint.Rule
+import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Symbol}
 import ca.uwaterloo.flix.runtime.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.util._
-import java.util.concurrent._
-import java.util.ArrayList
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.duration.{Duration, _}
 
 /**
   * Flix Fixed Point Solver.
@@ -185,7 +187,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Solves the Flix program.
     */
-  def solve(): Model = {
+  def solve(): Model = try {
     // initialize the solver.
     initSolver()
 
@@ -199,6 +201,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     while (worklist.nonEmpty) {
       // check if the solver has been paused.
       checkPaused()
+
+      // check soft timeout.
+      checkTimeout()
 
       // evaluate the rules in parallel.
       val interps = parallelEval()
@@ -215,6 +220,11 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
 
     // build and return the model.
     mkModel(totalTime)
+  } catch {
+    // Re-throw exceptions caught inside the individual reader/writer tasks.
+    case ex: ExecutionException =>
+      stopSolver()
+      throw ex.getCause
   }
 
   /**
@@ -283,6 +293,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Stops the solver.
     */
   private def stopSolver(): Unit = {
+    // empty worklist.
+    worklist.clear()
+
     // spin down thread pools.
     readersPool.shutdownNow()
     writersPool.shutdownNow()
@@ -472,6 +485,8 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       }
 
       interp += ((p.sym, fact))
+    case Predicate.Head.True(loc) => // nop
+    case Predicate.Head.False(loc) => throw RuleException(s"The integrity rule defined at ${loc.format} is violated.", loc)
   }
 
   /**
@@ -686,5 +701,18 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         wait()
       }
     }
+
+  /**
+    * Checks whether the solver has exceed the timeout. If so, throws a timeout exception.
+    */
+  private def checkTimeout(): Unit = {
+    if (options.timeout.isFinite()) {
+      val elapsed = System.nanoTime() - totalTime
+      if (elapsed > options.timeout.toNanos) {
+        stopSolver()
+        throw TimeoutException(options.timeout, Duration(elapsed, NANOSECONDS))
+      }
+    }
+  }
 
 }

@@ -338,6 +338,8 @@ object Simplifier {
 
     object Head {
       def simplify(tast: TypedAst.Predicate.Head)(implicit genSym: GenSym): SimplifiedAst.Predicate.Head = tast match {
+        case TypedAst.Predicate.Head.True(loc) => SimplifiedAst.Predicate.Head.True(loc)
+        case TypedAst.Predicate.Head.False(loc) => SimplifiedAst.Predicate.Head.False(loc)
         case TypedAst.Predicate.Head.Table(sym, terms, tpe, loc) =>
           SimplifiedAst.Predicate.Head.Table(sym, terms map Term.simplify, tpe, loc)
       }

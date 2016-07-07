@@ -20,8 +20,8 @@ import java.math.BigInteger
 
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -1135,6 +1135,8 @@ object Weeder {
         * Compiles the given parsed predicate `p` to a weeded head predicate.
         */
       def compile(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Equal] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
+        case ParsedAst.Predicate.True(sp1, sp2) => WeededAst.Predicate.Head.True(mkSL(sp1, sp2)).toSuccess
+        case ParsedAst.Predicate.False(sp1, sp2) => WeededAst.Predicate.Head.False(mkSL(sp1, sp2)).toSuccess
         case p: ParsedAst.Predicate.Ambiguous =>
           @@(p.terms.map(t => Term.Head.toTerm(t, aliases))) map {
             case terms => WeededAst.Predicate.Head.Table(p.name, terms, mkSL(p.sp1, p.sp2))
@@ -1153,6 +1155,8 @@ object Weeder {
         * Compiles the given parsed predicate `p` to a weeded body predicate.
         */
       def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] = past match {
+        case ParsedAst.Predicate.True(sp1, sp2) => Unsupported("'true' predicate in body.", mkSL(sp1, sp2)).toFailure
+        case ParsedAst.Predicate.False(sp1, sp2) => Unsupported("'false' predicate in body.", mkSL(sp1, sp2)).toFailure
         case p: ParsedAst.Predicate.Ambiguous =>
           @@(p.terms.map(Term.Body.toTerm)) map {
             case terms => WeededAst.Predicate.Body.Ambiguous(p.name, terms, mkSL(p.sp1, p.sp2))

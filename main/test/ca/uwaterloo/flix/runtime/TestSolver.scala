@@ -16,10 +16,11 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.{Flix, IValue, Invokable}
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.api.{Flix, IValue, Invokable, TimeoutException}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
+
+import scala.concurrent.duration.{Duration, _}
 
 class TestSolver extends FunSuite {
 
@@ -510,6 +511,19 @@ class TestSolver extends FunSuite {
     val B = model.getRelation("B").toSet
     assert(B contains List(Value.mkInt32(1)))
     assert(!(B contains List(Value.mkInt32(2))))
+  }
+
+  test("Timeout") {
+    intercept[TimeoutException] {
+      val s =
+        """rel A(x: Str)
+          |rel B(x: Str)
+          |
+          |A("foo").
+          |B(x) :- A(x).
+        """.stripMargin
+      new Flix().setOptions(opts.copy(timeout = Duration(0, MILLISECONDS))).addStr(s).solve()
+    }
   }
 
   test("Transfer01") {

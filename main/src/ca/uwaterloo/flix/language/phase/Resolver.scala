@@ -796,6 +796,8 @@ object Resolver {
         */
       def resolve(wast: WeededAst.Predicate.Head, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Head, ResolverError] = wast match {
         // TODO: What if a function symbol occurs in the head?
+        case WeededAst.Predicate.Head.True(loc) => ResolvedAst.Predicate.Head.True(loc).toSuccess
+        case WeededAst.Predicate.Head.False(loc) => ResolvedAst.Predicate.Head.False(loc).toSuccess
         case WeededAst.Predicate.Head.Table(name, wterms, loc) =>
           syms.lookupTable(name, namespace) flatMap {
             case (rname, defn) => @@(wterms map (t => Term.Head.resolve(t, namespace, syms))) map {
