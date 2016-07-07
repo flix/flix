@@ -696,6 +696,7 @@ object SimplifiedAst {
 
       }
 
+      // TODO: To be replaced.
       case class ApplyHook(hook: Ast.Hook,
                            args: List[SimplifiedAst.Term.Head],
                            tpe: Type,

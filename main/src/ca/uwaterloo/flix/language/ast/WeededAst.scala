@@ -299,10 +299,6 @@ object WeededAst {
 
       case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Term.Body
 
-      // TODO
-      case class ApplyRef(ref: Symbol.Resolved, params: List[Name.Ident], loc: SourceLocation) extends WeededAst.Term.Body
-
-      // TODO: Remove literals.
       case class Lit(lit: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Term.Body
 
     }

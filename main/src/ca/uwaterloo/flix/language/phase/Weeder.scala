@@ -1233,16 +1233,6 @@ object Weeder {
         case _ => throw InternalCompilerException("Illegal body term. But proper error messages not yet implemented.")
       }
 
-      /**
-        * Compiles the given expression to term lifting out expressions as needed.
-        */
-      // TODO: Need to
-      def liftTerm(exp: ParsedAst.Expression): Validation[(WeededAst.Term.Body, Option[WeededAst.Declaration.Definition]), WeederError] = exp match {
-        case ParsedAst.Expression.Wild(sp1, sp2) => (WeededAst.Term.Body.Wild(mkSL(sp1, sp2)), None).toSuccess
-        case ParsedAst.Expression.Var(sp1, name, sp2) if name.isUnqualified => (WeededAst.Term.Body.Var(name.ident, mkSL(sp1, sp2)), None).toSuccess
-        case ParsedAst.Expression.Var(sp1, name, sp2) => IllegalBodyTerm("Qualified variable may not occur here.", mkSL(sp1, sp2)).toFailure
-      }
-
     }
 
   }
