@@ -5,4 +5,4 @@ dependencies:
 
 machine:
   environment:
-    SCALA_HOME: /home/ubuntu/scala-2.11.7
+    SCALA_HOME: /home/ubuntu/flix/scala-2.11.7
