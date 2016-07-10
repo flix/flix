@@ -3,6 +3,6 @@ dependencies:
     - wget http://downloads.typesafe.com/scala/2.11.7/scala-2.11.7.tgz
     - tar xzf scala-2.11.7.tgz
 
-  override:
-    environment:
-      SCALA_HOME: /home/ubuntu/scala-2.11.7
+machine:
+  environment:
+    SCALA_HOME: /home/ubuntu/scala-2.11.7
