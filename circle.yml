@@ -1,4 +1,4 @@
-before:
+pre:
   - env
   - pushd .
   - cd
