@@ -1,6 +1,7 @@
 # The Flix Programming Language
 
 [![Build Status](https://travis-ci.org/flix/flix.svg?branch=master)](https://travis-ci.org/flix/flix)
+[![CircleCI](https://circleci.com/gh/flix/flix.svg?style=svg)](https://circleci.com/gh/flix/flix)
 
 Main repository for the source code of the Flix compiler and run-time.
 
