@@ -36,9 +36,9 @@ class TestAll extends Suites(
   new TestValue,
   new TestValidation,
   new TestMain,
-  new TestDeltaSolver,
+  new TestDeltaSolver
   //new TestLibrary, // TODO
-   new TestExamples
+  // new TestExamples // TODO: Pending fixes to Codegen performance.
 ) with ParallelTestExecution {
 
 }
