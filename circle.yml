@@ -5,5 +5,4 @@ dependencies:
 
   override:
     environment:
-      SCALA_HOME: `pwd`/scala-2.11.7
-      PATH: $SCALA_HOME/bin:$PATH
+      SCALA_HOME: /home/ubuntu/scala-2.11.7
