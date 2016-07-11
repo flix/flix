@@ -38,7 +38,7 @@ class TestAll extends Suites(
   new TestMain,
   new TestDeltaSolver
   //new TestLibrary, // TODO
-  // new TestExamples // TODO: temporarily removed while we figure out what to do with travis.
+  // new TestExamples // TODO: Pending fixes to Codegen performance.
 ) with ParallelTestExecution {
 
 }
