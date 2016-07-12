@@ -318,49 +318,4 @@ class TestExamples extends FunSuite {
     t.checkSuccess()
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Entities                                                                //
-  /////////////////////////////////////////////////////////////////////////////
-
-  test("Bank.flix") {
-    val t = new Tester().addPath("./examples/entities/Bank.flix")
-    t.checkSuccess()
-  }
-
-  test("Cinema.flix") {
-    val t = new Tester().addPath("./examples/entities/Cinema.flix")
-    t.checkSuccess()
-  }
-
-  test("Company.flix") {
-    val t = new Tester().addPath("./examples/entities/Company.flix")
-    t.checkSuccess()
-  }
-
-  test("Hotel.flix") {
-    val t = new Tester().addPath("./examples/entities/Hotel.flix")
-    t.checkSuccess()
-  }
-
-  test("Library.flix") {
-    val t = new Tester().addPath("./examples/entities/Library.flix")
-    t.checkSuccess()
-  }
-
-  test("Manufacturer.flix") {
-    val t = new Tester().addPath("./examples/entities/Manufacturer.flix")
-    t.checkSuccess()
-  }
-
-  test("Realtor.flix") {
-    val t = new Tester().addPath("./examples/entities/Realtor.flix")
-    t.checkSuccess()
-  }
-
-  test("Tournament.flix") {
-    val t = new Tester().addPath("./examples/entities/Tournament.flix")
-    t.checkSuccess()
-  }
-
 }
