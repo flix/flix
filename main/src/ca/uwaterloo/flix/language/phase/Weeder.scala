@@ -442,8 +442,8 @@ object Weeder {
     val b = System.nanoTime()
     @@(program.roots map weed) map {
       case rts =>
-        val e = System.nanoTime()
-        WeededAst.Program(rts, hooks, program.time.copy(weeder = e - b))
+        val e = System.nanoTime() - b
+        WeededAst.Program(rts, hooks, program.time.copy(weeder = e))
     }
   }
 

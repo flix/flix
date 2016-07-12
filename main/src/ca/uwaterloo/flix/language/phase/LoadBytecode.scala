@@ -74,6 +74,8 @@ object LoadBytecode {
     *    mutate the original constant from root.constants, not the one in constantsMap (which will get GC'd).
     */
   def load(flix: Flix, root: ExecutableAst.Root, options: Options)(implicit genSym: GenSym): ExecutableAst.Root = {
+    val t = System.nanoTime()
+
     if (options.evaluation == Evaluation.Interpreted) {
       return root
     }
@@ -124,7 +126,8 @@ object LoadBytecode {
       root.constants(const.name).method = clazz.getMethod(const.name.suffix, argTpes: _*)
     }
 
-    root
+    val e = System.nanoTime() - t
+    root.copy(time = root.time.copy(codeGen = e))
   }
 
   private def dump(path: String, code: Array[Byte]): Unit = Files.write(Paths.get(path), code)

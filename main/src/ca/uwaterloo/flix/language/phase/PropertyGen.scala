@@ -348,6 +348,8 @@ object PropertyGen {
     * Returns all the verification conditions required to ensure the safety of the given AST `root`.
     */
   def collectProperties(root: TypedAst.Root): TypedAst.Root = {
+    val t = System.nanoTime()
+
     val lattices = root.lattices.values.toList
 
     // Collect partial order properties.
@@ -399,7 +401,8 @@ object PropertyGen {
    // TODO: Sort
     val properties = partialOrderProperties ++ latticeProperties ++ functionProperties
 
-    root.copy(properties = properties)
+    val e = System.nanoTime() - t
+    root.copy(properties = properties, time = root.time.copy(propertyGen = e))
   }
 
 
