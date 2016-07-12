@@ -4191,6 +4191,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.True, "f")
   }
 
+  // TODO: Typechecker doesn't properly handle ???
   ignore("Expression.Binary - BinaryOperator.Implication.06") {
     val input = "def f: Bool = True ==> ???"
     val t = new Tester(input)

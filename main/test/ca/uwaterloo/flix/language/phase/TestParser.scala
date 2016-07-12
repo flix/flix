@@ -618,37 +618,37 @@ class TestParser extends FunSuite {
   test("Expression.LetMatch.04") {
     // Note: This is to test the performance of deeply nested lets.
     val input =
-      """
-        |def f: Int =
-        |    let x1 = 1 in
-        |    let x2 = 1 in
-        |    let x3 = 1 in
-        |    let x4 = 1 in
-        |    let x5 = 1 in
-        |    let x6 = 1 in
-        |    let x7 = 1 in
-        |    let x8 = 1 in
-        |    let x9 = 1 in
-        |    let y1 = 1 in
-        |    let y2 = 1 in
-        |    let y3 = 1 in
-        |    let y4 = 1 in
-        |    let y5 = 1 in
-        |    let y6 = 1 in
-        |    let y7 = 1 in
-        |    let y8 = 1 in
-        |    let y9 = 1 in
-        |    let z1 = 1 in
-        |    let z2 = 1 in
-        |    let z3 = 1 in
-        |    let z4 = 1 in
-        |    let z5 = 1 in
-        |    let z6 = 1 in
-        |    let z7 = 1 in
-        |    let z8 = 1 in
-        |    let z9 = 1 in
-        |        1
-      """.stripMargin
+    """
+      |def f: Int =
+      |    let x1 = 1 in
+      |    let x2 = 1 in
+      |    let x3 = 1 in
+      |    let x4 = 1 in
+      |    let x5 = 1 in
+      |    let x6 = 1 in
+      |    let x7 = 1 in
+      |    let x8 = 1 in
+      |    let x9 = 1 in
+      |    let y1 = 1 in
+      |    let y2 = 1 in
+      |    let y3 = 1 in
+      |    let y4 = 1 in
+      |    let y5 = 1 in
+      |    let y6 = 1 in
+      |    let y7 = 1 in
+      |    let y8 = 1 in
+      |    let y9 = 1 in
+      |    let z1 = 1 in
+      |    let z2 = 1 in
+      |    let z3 = 1 in
+      |    let z4 = 1 in
+      |    let z5 = 1 in
+      |    let z6 = 1 in
+      |    let z7 = 1 in
+      |    let z8 = 1 in
+      |    let z9 = 1 in
+      |        1
+    """.stripMargin
     new Flix().addStr(input).compile().get
   }
 
@@ -1026,9 +1026,12 @@ class TestParser extends FunSuite {
     }
   }
 
-  ignore("Expression.Set.01") {
-    val input = "def f: Set[Int] = #{}"
-    new Flix().addStr(input).compile().get
+  test("Expression.Set.01") {
+    // TODO: Pending new type system.
+    intercept[AssertionError] {
+      val input = "def f: Set[Int] = #{}"
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.Set.02") {
@@ -1061,14 +1064,20 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
-  ignore("Expression.SetSet.01") {
-    val input = "def f: Set[Set[Int]] = #{}"
-    new Flix().addStr(input).compile().get
+  test("Expression.SetSet.01") {
+    // TODO: Pending new type system.
+    intercept[AssertionError] {
+      val input = "def f: Set[Set[Int]] = #{}"
+      new Flix().addStr(input).compile().get
+    }
   }
 
-  ignore("Expression.SetSet.02") {
-    val input = "def f: Set[Set[Int]] = #{#{}}"
-    new Flix().addStr(input).compile().get
+  test("Expression.SetSet.02") {
+    // TODO: Pending new type system.
+    intercept[AssertionError] {
+      val input = "def f: Set[Set[Int]] = #{#{}}"
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.SetSet.03") {
@@ -1172,89 +1181,140 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
-  ignore("Expression.Lambda.01") {
-    val input = "def f: Int -> Int = x -> x"
-    new Flix().addStr(input).compile().get
+  test("Expression.Lambda.01") {
+    // TODO: Pending new type system.
+    intercept[NotImplementedError] {
+      val input = "def f: Int -> Int = x -> x"
+      new Flix().addStr(input).compile().get
+    }
   }
 
-  ignore("Expression.Lambda.02") {
-    val input = "def f: Int -> Int = (x) -> x"
-    new Flix().addStr(input).compile().get
+  test("Expression.Lambda.02") {
+    // TODO: Pending new type system.
+    intercept[NotImplementedError] {
+      val input = "def f: Int -> Int = (x) -> x"
+      new Flix().addStr(input).compile().get
+    }
   }
 
-  ignore("Expression.Lambda.03") {
-    val input = "def f: (Bool, Char) -> Int = (x, y) -> 42"
-    new Flix().addStr(input).compile().get
+  test("Expression.Lambda.03") {
+    // TODO: Pending new type system.
+    intercept[NotImplementedError] {
+      val input = "def f: (Bool, Char) -> Int = (x, y) -> 42"
+      new Flix().addStr(input).compile().get
+    }
   }
 
-  ignore("Expression.Lambda.04") {
-    val input = "def f: (Bool, Char, Int) -> Int = (x, y, z) -> 42"
-    new Flix().addStr(input).compile().get
+  test("Expression.Lambda.04") {
+    // TODO: Pending new type system.
+    intercept[NotImplementedError] {
+      val input = "def f: (Bool, Char, Int) -> Int = (x, y, z) -> 42"
+      new Flix().addStr(input).compile().get
+    }
   }
 
-  ignore("Expression.Lambda.05") {
-    val input = "def f: (Int8, Int16, Int32, Int64) -> Int32 = (x, y, z, w) -> z"
-    new Flix().addStr(input).compile().get
+  test("Expression.Lambda.05") {
+    // TODO: Pending new type system.
+    intercept[NotImplementedError] {
+      val input = "def f: (Int8, Int16, Int32, Int64) -> Int32 = (x, y, z, w) -> z"
+      new Flix().addStr(input).compile().get
+    }
   }
 
-  ignore("Expression.Lambda.06") {
-    val input = "def f: Int -> (Bool, Char) = x -> (true, 'a')"
-    new Flix().addStr(input).compile().get
+  test("Expression.Lambda.06") {
+    // TODO: Pending new type system.
+    intercept[NotImplementedError] {
+      val input = "def f: Int -> (Bool, Char) = x -> (true, 'a')"
+      new Flix().addStr(input).compile().get
+    }
   }
 
-  ignore("Expression.Lambda.07") {
-    val input = "def f: Int -> (Bool, Char, Int) = x -> (true, 'a', 42)"
-    new Flix().addStr(input).compile().get
+  test("Expression.Lambda.07") {
+    // TODO: Pending new type system.
+    intercept[NotImplementedError] {
+      val input = "def f: Int -> (Bool, Char, Int) = x -> (true, 'a', 42)"
+      new Flix().addStr(input).compile().get
+    }
   }
 
-  ignore("Expression.Lambda.08") {
-    val input = "def f: (Bool, Char) -> (Char, Bool) = (x, y) -> (y, x)"
-    new Flix().addStr(input).compile().get
+  test("Expression.Lambda.08") {
+    // TODO: Pending new type system.
+    intercept[NotImplementedError] {
+      val input = "def f: (Bool, Char) -> (Char, Bool) = (x, y) -> (y, x)"
+      new Flix().addStr(input).compile().get
+    }
   }
 
-  ignore("Expression.Lambda.09") {
-    val input = "def f: (Bool, Char, Int) -> (Int, Char, Bool) = (x, y, z) -> (z, y, x)"
-    new Flix().addStr(input).compile().get
+  test("Expression.Lambda.09") {
+    // TODO: Pending new type system.
+    intercept[NotImplementedError] {
+      val input = "def f: (Bool, Char, Int) -> (Int, Char, Bool) = (x, y, z) -> (z, y, x)"
+      new Flix().addStr(input).compile().get
+    }
   }
 
-  ignore("Expression.Lambda.10") {
-    val input = "def f: ((Bool, Char), Int) -> (Bool, Char) = (x, y) -> x"
-    new Flix().addStr(input).compile().get
+  test("Expression.Lambda.10") {
+    // TODO: Pending new type system.
+    intercept[NotImplementedError] {
+      val input = "def f: ((Bool, Char), Int) -> (Bool, Char) = (x, y) -> x"
+      new Flix().addStr(input).compile().get
+    }
   }
 
-  ignore("Expression.Lambda.11") {
-    val input = "def f: (Bool, (Char, Int)) -> (Char, Int) = (x, y) -> y"
-    new Flix().addStr(input).compile().get
+  test("Expression.Lambda.11") {
+    // TODO: Pending new type system.
+    intercept[NotImplementedError] {
+      val input = "def f: (Bool, (Char, Int)) -> (Char, Int) = (x, y) -> y"
+      new Flix().addStr(input).compile().get
+    }
   }
 
-  ignore("Expression.Lambda.12") {
-    val input = "def f: (Int, Int) -> ((Int, Int), (Int, Int)) = x -> (x, x)"
-    new Flix().addStr(input).compile().get
+  test("Expression.Lambda.12") {
+    // TODO: Pending new type system.
+    intercept[NotImplementedError] {
+      val input = "def f: (Int, Int) -> ((Int, Int), (Int, Int)) = x -> (x, x)"
+      new Flix().addStr(input).compile().get
+    }
   }
 
-  ignore("Expression.Lambda.13") {
-    val input = "def f: Bool -> Char -> Int = x -> (y -> 42)"
-    new Flix().addStr(input).compile().get
+  test("Expression.Lambda.13") {
+    // TODO: Pending new type system.
+    intercept[NotImplementedError] {
+      val input = "def f: Bool -> Char -> Int = x -> (y -> 42)"
+      new Flix().addStr(input).compile().get
+    }
   }
 
-  ignore("Expression.Lambda.14") {
-    val input = "def f: (Bool, Bool) -> Char -> Int = (x1, x2) -> (y -> 42)"
-    new Flix().addStr(input).compile().get
+  test("Expression.Lambda.14") {
+    // TODO: Pending new type system.
+    intercept[NotImplementedError] {
+      val input = "def f: (Bool, Bool) -> Char -> Int = (x1, x2) -> (y -> 42)"
+      new Flix().addStr(input).compile().get
+    }
   }
 
-  ignore("Expression.Lambda.15") {
-    val input = "def f: Bool -> (Char, Char) -> Int = x -> ((y1, y2) -> 42)"
-    new Flix().addStr(input).compile().get
+  test("Expression.Lambda.15") {
+    // TODO: Pending new type system.
+    intercept[NotImplementedError] {
+      val input = "def f: Bool -> (Char, Char) -> Int = x -> ((y1, y2) -> 42)"
+      new Flix().addStr(input).compile().get
+    }
   }
 
-  ignore("Expression.Lambda.16") {
-    val input = "def f: Bool -> Char -> (Int, Int) = x -> (y -> (21, 42))"
-    new Flix().addStr(input).compile().get
+  test("Expression.Lambda.16") {
+    // TODO: Pending new type system.
+    intercept[NotImplementedError] {
+      val input = "def f: Bool -> Char -> (Int, Int) = x -> (y -> (21, 42))"
+      new Flix().addStr(input).compile().get
+    }
   }
 
-  ignore("Expression.Lambda.17") {
-    val input = "def f: (Bool, Bool) -> (Char, Char) -> (Int, Int) = (x1, x2) -> ((y1, y2) -> (21, 42))"
-    new Flix().addStr(input).compile().get
+  test("Expression.Lambda.17") {
+    // TODO: Pending new type system.
+    intercept[NotImplementedError] {
+      val input = "def f: (Bool, Bool) -> (Char, Char) -> (Int, Int) = (x1, x2) -> ((y1, y2) -> (21, 42))"
+      new Flix().addStr(input).compile().get
+    }
   }
 
   ignore("Expression.UserError.01") {
@@ -1284,16 +1344,6 @@ class TestParser extends FunSuite {
 
   ignore("Expression.Glb.01") {
     val input = "def f[E: JoinSemiLattice](x: E, y: E): E = x ⊓ y"
-    new Flix().addStr(input).compile().get
-  }
-
-  ignore("Expression.Widen.01") {
-    val input = "def f[E: Widen](x: E, y: E): E = x ▽ y"
-    new Flix().addStr(input).compile().get
-  }
-
-  ignore("Expression.Narrow.01") {
-    val input = "def f[E: Narrow](x: E, y: E): E = x △ y"
     new Flix().addStr(input).compile().get
   }
 
@@ -2302,9 +2352,9 @@ class TestParser extends FunSuite {
     }
   }
 
-  ignore("Type.Set.01") {
-    val input = "def f: Set[Int] = #{}"
-    intercept[scala.NotImplementedError] {
+  test("Type.Set.01") {
+    intercept[AssertionError] {
+      val input = "def f: Set[Int] = #{}"
       new Flix().addStr(input).compile().get
     }
   }

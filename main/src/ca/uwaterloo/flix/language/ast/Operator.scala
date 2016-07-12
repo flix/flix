@@ -214,11 +214,13 @@ object ExtBinaryOperator {
   /**
     * The widening operator ▽.
     */
+  // TODO: Remove?
   case object Widen extends ExtBinaryOperator
 
   /**
     * The narrowing operator △.
     */
+  // TODO: Remove?
   case object Narrow extends ExtBinaryOperator
 
 }
