@@ -177,10 +177,7 @@ object Codegen {
     compileConstructor(ctx, visitor)
     ctx.functions.foreach(compileFunction(ctx, visitor))
 
-    // Check class invariants, if compiler invariants are enabled.
-    if (options.invariants) {
-      visitor.visitEnd()
-    }
+    visitor.visitEnd()
 
     classWriter.toByteArray
   }
