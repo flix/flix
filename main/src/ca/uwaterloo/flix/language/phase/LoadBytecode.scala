@@ -108,7 +108,7 @@ object LoadBytecode {
 
     // 4. Generate and load bytecode.
     val loadedClasses: Map[List[String], Class[_]] = constantsMap.map { case (prefix, consts) =>
-      val bytecode = Codegen.compile(Codegen.Context(prefix, consts, declarations, interfaces))
+      val bytecode = Codegen.compile(Codegen.Context(prefix, consts, declarations, interfaces), options)
       if (options.debug) {
         dump(prefix, bytecode)
       }
