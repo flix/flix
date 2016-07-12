@@ -467,25 +467,6 @@ class TestSolver extends FunSuite {
     assert(!(B contains List(Value.mkInt32(1), Value.mkInt32(1))))
   }
 
-  ignore("Loop01") {
-    val s =
-      """rel A(x: Int);
-        |rel B(x: Int);
-        |
-        |def f(x: Int): Set[Int] = #{x * x};
-        |
-        |A(1).
-        |A(2).
-        |
-        |B(y) :- A(x), y <- f(x): Set[Int].
-      """.stripMargin
-
-    val model = new Flix().setOptions(opts).addStr(s).solve().get
-    val B = model.getRelation("B").toSet
-    assert(B contains List(Value.mkInt32(1)))
-    assert(B contains List(Value.mkInt32(4)))
-  }
-
   test("FilterHook01") {
     val s =
       """rel A(x: Int);

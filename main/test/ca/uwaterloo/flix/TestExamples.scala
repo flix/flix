@@ -262,11 +262,6 @@ class TestExamples extends FunSuite {
     t.checkValue(List(Odd), "Parity/A", List(Value.mkInt32(8)))
   }
 
-  ignore("Dimension.flix") {
-    val t = new Tester().addPath("./examples/domains/Dimension.flix")
-    t.checkSuccess()
-  }
-
   test("StrictSign.flix") {
     val input =
       """namespace StrictSign {
