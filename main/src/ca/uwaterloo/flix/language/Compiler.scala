@@ -78,7 +78,7 @@ object Compiler {
     val e = System.nanoTime() - t
 
     val root = pasts map {
-      case asts => ParsedAst.Program(asts, Time(e, 0, 0, 0, 0, 0))
+      case asts => ParsedAst.Program(asts, Time.Default.copy(parser = e))
     }
 
     root flatMap {

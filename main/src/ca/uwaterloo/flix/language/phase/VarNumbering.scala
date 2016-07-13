@@ -52,8 +52,10 @@ object VarNumbering {
     * Iterate over all top-level definitions and number all variables
     */
   def number(root: SimplifiedAst.Root): SimplifiedAst.Root = {
+    val t = System.nanoTime()
     val defs = root.constants.map { case (name, defn) => name -> number(defn) }
-    root.copy(constants = defs)
+    val e = System.nanoTime() - t
+    root.copy(constants = defs, time = root.time.copy(varNumbering = e))
   }
 
   /**

@@ -810,6 +810,8 @@ object Typer {
   def expect(expected: Type, actual: Type, loc: SourceLocation): Validation[Type, TypeError] =
     if (expected == Type.Any)
       actual.toSuccess
+    else if (actual == Type.Any)
+      actual.toSuccess
     else if (expected == actual)
       actual.toSuccess
     else
@@ -824,7 +826,11 @@ object Typer {
     * @param loc2 the source location of the second type.
     */
   def expectEqual(tpe1: Type, tpe2: Type, loc1: SourceLocation, loc2: SourceLocation): Validation[Type, TypeError] =
-    if (tpe1 == tpe2)
+    if (tpe1 == Type.Any)
+      tpe2.toSuccess
+    else if (tpe2 == Type.Any)
+      tpe1.toSuccess
+    else if (tpe1 == tpe2)
       tpe1.toSuccess
     else
       ExpectedEqualTypes(tpe1, tpe2, loc1, loc2).toFailure
@@ -838,7 +844,7 @@ object Typer {
     if (types.forall(t => t._1 == tpe1)) {
       tpe1.toSuccess
     } else {
-      val (tpe2, loc2) = types.find(t => t._1 != tpe1).get
+      val (tpe2, loc2) = types.find(t => t._1 != tpe1 && tpe1 != Type.Any && t._1 != Type.Any).get
       ExpectedEqualTypes(tpe1, tpe2, loc1, loc2).toFailure
     }
   }

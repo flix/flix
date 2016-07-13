@@ -29,6 +29,8 @@ import ca.uwaterloo.flix.language.ast._
 object Simplifier {
 
   def simplify(tast: TypedAst.Root)(implicit genSym: GenSym): SimplifiedAst.Root = {
+    val t = System.nanoTime()
+
     val constants = tast.constants.map { case (k, v) => k -> Definition.simplify(v) }
     val lattices = tast.lattices.map { case (k, v) => k -> Definition.simplify(v) }
     val collections = tast.tables.map { case (k, v) => k -> Table.simplify(v) }
@@ -38,7 +40,8 @@ object Simplifier {
     val properties = tast.properties.map { p => simplify(p) }
     val time = tast.time
 
-    SimplifiedAst.Root(constants, lattices, collections, indexes, facts, rules, properties, time)
+    val e = System.nanoTime() - t
+    SimplifiedAst.Root(constants, lattices, collections, indexes, facts, rules, properties, time.copy(simplifier = e))
   }
 
   object Table {

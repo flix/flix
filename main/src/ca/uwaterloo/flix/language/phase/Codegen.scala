@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Hook
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression, LoadExpression, StoreExpression}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.Value
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, Options}
 import org.objectweb.asm
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.util.CheckClassAdapter
@@ -159,19 +159,26 @@ object Codegen {
    *
    * Example: The Flix definition A.B.C/foo is compiled as the method foo in class C, within the package A.B.
    */
-  def compile(ctx: Context): Array[Byte] = {
-    val functions = ctx.functions
+  def compile(ctx: Context, options: Options): Array[Byte] = {
+    // Initialize the class writer.
     val classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES)
-    val visitor = new CheckClassAdapter(classWriter)
+
+    // Wrap the class writer in a CheckClassAdapter if compiler invariants are enabled.
+    val visitor =
+      if (options.invariants)
+        new CheckClassAdapter(classWriter)
+      else
+        classWriter
 
     // Initialize the visitor to create a class.
     visitor.visit(V1_8, ACC_PUBLIC + ACC_SUPER, decorate(ctx.prefix), null, asm.Type.getInternalName(Constants.objectClass), null)
 
     compileStaticFlixField(ctx, visitor)
     compileConstructor(ctx, visitor)
-    functions.foreach(compileFunction(ctx, visitor))
+    ctx.functions.foreach(compileFunction(ctx, visitor))
 
     visitor.visitEnd()
+
     classWriter.toByteArray
   }
 

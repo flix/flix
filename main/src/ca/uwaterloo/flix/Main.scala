@@ -54,8 +54,8 @@ object Main {
 
     // construct flix options.
     val options = Options.Default.copy(
-      debug = cmdOpts.debug,
-      evaluation = if (cmdOpts.interpreter) Evaluation.Interpreted else Evaluation.Compiled,
+      debug = cmdOpts.xdebug,
+      evaluation = if (cmdOpts.xinterpreter) Evaluation.Interpreted else Evaluation.Compiled,
       optimize = cmdOpts.optimize,
       monitor = cmdOpts.monitor,
       timeout = cmdOpts.timeout,
@@ -140,8 +140,9 @@ object Main {
                      tutorial: String = null,
                      verbose: Boolean = false,
                      verifier: Boolean = false,
-                     debug: Boolean = false,
-                     interpreter: Boolean = false,
+                     xdebug: Boolean = false,
+                     xinterpreter: Boolean = false,
+                     xinvariants: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -211,13 +212,17 @@ object Main {
       note("")
       note("The following options are experimental:")
 
-      // XDebug.
-      opt[Unit]("Xdebug").action((_, c) => c.copy(debug = true)).
+      // Xdebug.
+      opt[Unit]("Xdebug").action((_, c) => c.copy(xdebug = true)).
         text("[experimental] enables output of debugging information.")
 
-      // XInterpreter.
-      opt[Unit]("Xinterpreter").action((_, c) => c.copy(interpreter = true)).
+      // Xinterpreter.
+      opt[Unit]("Xinterpreter").action((_, c) => c.copy(xinterpreter = true)).
         text("[experimental] enables interpreted evaluation.")
+
+      // Xinvariants.
+      opt[Unit]("Xinvariants").action((_, c) => c.copy(xinvariants = true)).
+        text("[experimental] enables compiler invariants.")
 
       note("")
 

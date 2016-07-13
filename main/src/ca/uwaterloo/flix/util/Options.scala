@@ -25,6 +25,7 @@ object Options {
   val Default = Options(
     debug = false,
     evaluation = Evaluation.Compiled,
+    invariants = false,
     monitor = false,
     optimize = false,
     timeout = Duration.Inf,
@@ -43,7 +44,8 @@ object Options {
   * General Flix options.
   *
   * @param debug      enables the emission of debugging information.
-  * @param evaluation selects the evaluation strategy,
+  * @param evaluation selects the evaluation strategy.
+  * @param invariants enables checking of compiler invariants.
   * @param optimize   enables compiler optimizations.
   * @param monitor    enables the debugger and profiler.
   * @param timeout    selects the solver timeout.
@@ -51,7 +53,7 @@ object Options {
   * @param verbosity  selects the level of verbosity.
   * @param verifier   enables the verifier.
   */
-case class Options(debug: Boolean, evaluation: Evaluation, optimize: Boolean, monitor: Boolean, timeout: Duration, threads: Int, verbosity: Verbosity, verifier: Boolean)
+case class Options(debug: Boolean, evaluation: Evaluation, invariants: Boolean, optimize: Boolean, monitor: Boolean, timeout: Duration, threads: Int, verbosity: Verbosity, verifier: Boolean)
 
 /**
   * An option to control the level of verbosity.

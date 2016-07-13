@@ -4113,15 +4113,13 @@ class TestBackend extends FunSuite {
     t.runTest(Value.False, "f")
   }
 
-  // TODO: Typechecker doesn't properly handle ???
-  ignore("Expression.Binary - BinaryOperator.LogicalAnd.05") {
+  test("Expression.Binary - BinaryOperator.LogicalAnd.05") {
     val input = "def f: Bool = false && ???"
     val t = new Tester(input)
     t.runTest(Value.False, "f")
   }
 
-  // TODO: Typechecker doesn't properly handle ???
-  ignore("Expression.Binary - BinaryOperator.LogicalAnd.06") {
+  test("Expression.Binary - BinaryOperator.LogicalAnd.06") {
     val input = "def f: Bool = true && ???"
     val t = new Tester(input)
     t.runInterceptTest[UserException]("f")
@@ -4151,15 +4149,13 @@ class TestBackend extends FunSuite {
     t.runTest(Value.True, "f")
   }
 
-  // TODO: Typechecker doesn't properly handle ???
-  ignore("Expression.Binary - BinaryOperator.LogicalOr.05") {
+  test("Expression.Binary - BinaryOperator.LogicalOr.05") {
     val input = "def f: Bool = true || ???"
     val t = new Tester(input)
     t.runTest(Value.True, "f")
   }
 
-  // TODO: Typechecker doesn't properly handle ???
-  ignore("Expression.Binary - BinaryOperator.LogicalOr.06") {
+  test("Expression.Binary - BinaryOperator.LogicalOr.06") {
     val input = "def f: Bool = false || ???"
     val t = new Tester(input)
     t.runInterceptTest[UserException]("f")
@@ -4189,8 +4185,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.True, "f")
   }
 
-  // TODO: Typechecker doesn't properly handle ???
-  ignore("Expression.Binary - BinaryOperator.Implication.05") {
+  test("Expression.Binary - BinaryOperator.Implication.05") {
     val input = "def f: Bool = false ==> ???"
     val t = new Tester(input)
     t.runTest(Value.True, "f")
@@ -5425,7 +5420,6 @@ class TestBackend extends FunSuite {
   // Expression.UserError                                                    //
   /////////////////////////////////////////////////////////////////////////////
 
-  // TODO: Typechecker doesn't properly handle ???
   ignore("Expression.UserError.01") {
     val input = "def f: Bool = ???"
     val t = new Tester(input)
