@@ -78,7 +78,16 @@ class AsciiTable {
   }
 
   /**
-   * Writes the table to the given `stream`.
+   * Adds the given row.
+   */
+  def mkCenteredRow(row: List[Any]): AsciiTable = {
+    rows = row.map(_.toString) :: rows
+    alignment = row.map(x => Align.Middle)
+    this
+  }
+
+  /**
+   * Writes the entire table to the given `stream`.
    */
   def write(stream: PrintStream): Unit = {
     val xs = rows
@@ -102,6 +111,50 @@ class AsciiTable {
     }
     w.println(formatLine(ws))
     w.println(s"Query matched $numberOfMatchedRows row(s) out of $numberOfRows total row(s).")
+
+    w.flush()
+  }
+
+  /**
+   * Writes the table's column headers.
+   */
+  def writeHeader(stream: PrintStream): Unit = {
+    val ys = columns
+    val ws = columnWidth(ys)
+    val as = alignment
+
+    val w = new PrintWriter(stream)
+    w.println(formatLine(ws))
+    w.println(formatRow(ys, ws, as))
+    w.println(formatLine(ws))
+
+    w.flush()
+  }
+
+  def writeRows(stream: PrintStream): Unit = {
+    val ys = columns
+    val ws = columnWidth(ys)
+    val as = alignment
+
+    val w = new PrintWriter(stream)
+    for (row <- rows.reverse) {
+      if (row.exists(filter)) {
+        w.println(formatRow(row, ws, as))
+      }
+    }
+    w.flush()
+
+    rows = List.empty[List[String]]
+  }
+
+  /**
+   * Writes the closing line for the table.
+   */
+  def writeFooter(stream: PrintStream): Unit = {
+    val ws = columnWidth(columns)
+
+    val w = new PrintWriter(stream)
+    w.println(formatLine(ws))
 
     w.flush()
   }
