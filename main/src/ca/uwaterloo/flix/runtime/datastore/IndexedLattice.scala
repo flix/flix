@@ -30,7 +30,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   /**
     * A map from indexes to a map from keys to rows (represented as map from keys to an element):
     *
-    *   Index -> IndexKey -> Keys -> Elm.
+    * Index -> IndexKey -> Keys -> Elm.
     */
   private val store = mutable.Map.empty[Int, mutable.Map[Key[ValueType], mutable.Map[Key[ValueType], ValueType]]]
 
@@ -38,11 +38,6 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
     * The number of key columns in the lattice.
     */
   private val numberOfKeys = lattice.keys.length
-
-  /**
-    * The number of element columns in the lattice.
-    */
-  private val numberOfElms = 1
 
   /**
     * The lattice operations associated with each lattice.
@@ -104,10 +99,10 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
     // Lookup the lattice map (create it, if it doesn't exist).
     val ikey = keyOf(idx, fact)
     val map = store(idx).getOrElseUpdate(ikey, mutable.Map.empty)
-    val key = keyPart(fact)
+    val key = keysOf(fact)
 
     // Lookup the old element (create it, if it doesn't exist).
-    val newElm = elmPart(fact)
+    val newElm = elmOf(fact)
     val oldElm = map.getOrElseUpdate(key, Bot)
 
     // Compute the lub and check if it is subsumed by the old element.
@@ -158,17 +153,21 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
       // match the keys
       case (keys, _) => matchKey(util.Arrays.copyOf[ValueType](pat, numberOfKeys), keys.toArray)
     } map {
-      case (keys, elms) =>
-        // TODO: Make more efficient.
-        if (matchElms(elmPart(pat), elms)) {
-          if (elmPart(pat) == null) (keys, elms) else (keys, evalGlb(elmPart(pat), elms))
-        } else
-          null
+      case (keys, elm) =>
+        // match the elements.
+        if (elmOf(pat) == null) {
+          (keys, elm)
+        } else {
+          val glb = evalGlb(elmOf(pat), elm)
+          if (glb == Bot) null else (keys, glb)
+        }
     } filter {
+      // remove null elements introduced above.
       case e => e != null
     } map {
       case (keys, elms) =>
-        val result = new Array[ValueType](numberOfKeys + numberOfElms)
+        // construct the result.
+        val result = new Array[ValueType](numberOfKeys + 1)
         System.arraycopy(keys.toArray, 0, result, 0, numberOfKeys)
         result(result.length - 1) = elms
         result.asInstanceOf[Array[ValueType]]
@@ -185,7 +184,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   /**
     * Returns the key part of the given array `a`.
     */
-  def keyPart(a: Array[ValueType]): Key[ValueType] = {
+  private def keysOf(a: Array[ValueType]): Key[ValueType] = {
     (numberOfKeys: @switch) match {
       case 1 => new Key1(a(0))
       case 2 => new Key2(a(0), a(1))
@@ -199,7 +198,8 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   /**
     * Returns the element part of the given array `a`.
     */
-  def elmPart(a: Array[ValueType]): ValueType = {
+  @inline
+  private def elmOf(a: Array[ValueType]): ValueType = {
     return a(a.length - 1)
   }
 
@@ -208,7 +208,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
     * are equal to their corresponding entry in the given `row`.
     */
   // TODO: Optimize by changing signature
-  def matchKey(pat: Array[ValueType], row: Array[ValueType]): Boolean = {
+  private def matchKey(pat: Array[ValueType], row: Array[ValueType]): Boolean = {
     var i = 0
     while (i < pat.length) {
       val pv = pat(i)
@@ -218,19 +218,6 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
       i = i + 1
     }
     return true
-  }
-
-  /**
-    * Returns the greatest lower bound of the given pattern `pat` and the given `elm` if it is non-bottom.
-    */
-  // TODO: Names
-  def matchElms(pat: ValueType, elms: ValueType): Boolean = {
-    if (pat == null) {
-      return true
-    }
-
-    val glb = evalGlb(pat, elms)
-    return glb != Bot
   }
 
   /**
