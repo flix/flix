@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.phase.Verifier.VerifierError
 import ca.uwaterloo.flix.language.phase.{GenSym, Verifier}
-import ca.uwaterloo.flix.runtime.verifier.SymVal.Tuple
+import ca.uwaterloo.flix.runtime.verifier.SymVal.Unit
 import ca.uwaterloo.flix.runtime.verifier.{PropertyResult, SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{Options, Validation, Verbosity}
@@ -114,6 +114,7 @@ object QuickChecker {
       case Type.Bool => ???
 
       case Type.Enum(name, cases) => ???
+      case _ => ???
     }
 
     quantifiers.map {
@@ -124,85 +125,60 @@ object QuickChecker {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Stream API                                                              //
+  // Arbitrary and Generator                                                 //
   /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * A global random number generator.
-    */
-  // TODO: Move into each stream.
-  val Random = new Random()
-
-
-  /**
-    * A common super-type for infinite generator streams.
-    */
-  trait Stream[A] {
-    def head: A
-
-    def tail: Stream[A]
-
-    def #::(h: A): Stream[A] = Hd(h, this)
+  trait Arbitrary[A] {
+    def get: Gen[A]
   }
 
-  /**
-    * A single stream element.
-    */
-  case class Hd[A](head: A, tail: Stream[A]) extends Stream[A]
+  trait Gen[A] {
+    def mk(r: Random): A
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Arbitrary                                                               //
+  /////////////////////////////////////////////////////////////////////////////
+  object ArbUnit extends Arbitrary[SymVal.Unit.type] {
+    def get: Gen[SymVal.Unit.type] = new Gen[SymVal.Unit.type] {
+      def mk(r: Random): SymVal.Unit.type = SymVal.Unit
+    }
+  }
+
+  object ArbBool extends Arbitrary[SymVal.Bool] {
+    def get: Gen[SymVal.Bool] = GenBool
+  }
+
+  object ArbInt8 extends Arbitrary[SymVal.Int8] {
+    def get: Gen[SymVal.Int8] = new Gen[SymVal.Int8] {
+      def mk(r: Random): SymVal.Int8 = GenInt8.mk(r)
+    }
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Generators                                                              //
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-    * Generates a stream of boolean values.
+    * A generator for random booleans.
     */
-  class GenBool extends Stream[SymVal] {
-    val stream = SymVal.True #:: SymVal.False #:: this
-
-    def head: SymVal = stream.head
-
-    def tail: Stream[SymVal] = stream.tail
+  object GenBool extends Gen[SymVal.Bool] {
+    def mk(r: Random): SymVal.Bool = if (r.nextBoolean()) SymVal.True else SymVal.False
   }
 
   /**
-    * Generates a stream of tuple values.
+    * Generates a random char.
     */
-  class GenTuple[A](gs: List[Stream[A]]) extends Stream[SymVal.Tuple] {
-    def head: Tuple = ???
-
-    def tail: Stream[Tuple] = ???
-  }
+  private def randomChar(): SymVal = ???
 
   /**
-    * Generates a stream of Int32 values.
+    * Randomly returns
     */
-  class GenInt32 extends Stream[Int] {
-    val stream = 0 #:: 1 #:: -1 #:: 2 #:: -2 #:: 3 #:: -3 #:: GenRandomInt32
+  //private def randomInt8(): SymVal = choose(0, 1, 2, 3, -1, -2, -3, Byte.MinValue, Byte.MaxValue, Random.nextInt(Byte.MaxValue + 1).toByte)
 
-    def head: Int = stream.head
-
-    def tail: Stream[Int] = stream.tail
+  object GenInt8 extends Gen[SymVal.Int8] {
+    def mk(r: Random): SymVal.Int8 = SymVal.Int8(???)
   }
-
-  /**
-    * Generates Random Int32 values.
-    */
-  object GenRandomInt32 extends Stream[Int] {
-    def head: Int = Random.nextInt()
-
-    def tail: Stream[Int] = GenRandomInt32
-  }
-
-  /**
-    * Generates Random Int64 values.
-    */
-  object GenRandomInt64 extends Stream[SymVal] {
-    def head: SymVal = SymVal.Int64(Random.nextLong())
-
-    def tail: Stream[SymVal] = GenRandomInt64
-  }
-
 
   /**
     * Returns `true` if all the given property results `rs` are successful

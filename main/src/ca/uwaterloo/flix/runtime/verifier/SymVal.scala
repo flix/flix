@@ -39,14 +39,19 @@ object SymVal {
   case object Unit extends SymVal
 
   /**
+    * A common super-type for booleans.
+    */
+  sealed trait Bool extends SymVal
+
+  /**
     * The `True` value.
     */
-  case object True extends SymVal
+  case object True extends Bool
 
   /**
     * The `False` value.
     */
-  case object False extends SymVal
+  case object False extends Bool
 
   /**
     * A Char value.
