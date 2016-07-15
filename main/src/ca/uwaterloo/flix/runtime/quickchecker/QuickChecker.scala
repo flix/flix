@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.runtime.quickchecker
 
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression.Var
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, Type}
+import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.phase.Verifier.VerifierError
 import ca.uwaterloo.flix.language.phase.{GenSym, Verifier}
 import ca.uwaterloo.flix.runtime.verifier.SymVal.Tuple
@@ -40,7 +40,7 @@ object QuickChecker {
   /**
     * Attempts to quickcheck all properties in the given AST.
     */
-  def quickCheck(root: ExecutableAst.Root, options: Options)(implicit genSym: GenSym): Validation[ExecutableAst.Root, VerifierError] = {
+  def quickCheck(root: Root, options: Options)(implicit genSym: GenSym): Validation[Root, VerifierError] = {
     /*
      * Check if the quickchecker is enabled. Otherwise return success immediately.
      */
@@ -105,14 +105,19 @@ object QuickChecker {
       }
     }
 
-   ???
+    ???
   }
 
   def genEnv(quantifiers: List[Var]): Map[String, SymVal] = {
 
     def visit(tpe: Type): List[SymVal] = tpe match {
       case Type.Bool => ???
-      case _ => ???
+
+      case Type.Enum(name, cases) => ???
+    }
+
+    quantifiers.map {
+      case Var(ident, offset, tpe, loc) => visit(tpe)
     }
 
     ???
