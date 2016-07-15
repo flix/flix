@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.language.phase.Resolver.ResolverError
 import org.scalatest.FunSuite
 
@@ -2131,48 +2130,6 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
-  // TODO: Deprecated direct use of parser
-  test("Predicate.Equal.01") {
-    val input = "r := 42"
-    val result = new Parser(SourceInput.Str(input)).Predicate.run().get
-    assert(result.isInstanceOf[ParsedAst.Predicate.Equal])
-  }
-
-  // TODO: Deprecated direct use of parser
-  ignore("Predicate.Equal.02") {
-    val input = "r := (true, 42, \"foo\")"
-    val result = new Parser(SourceInput.Str(input)).Predicate.run().get
-    assert(result.isInstanceOf[ParsedAst.Predicate.Equal])
-  }
-
-  // TODO: Deprecated direct use of parser
-  test("Predicate.Equal.03") {
-    val input = "r := f(x, g(y, z))"
-    val result = new Parser(SourceInput.Str(input)).Predicate.run().get
-    assert(result.isInstanceOf[ParsedAst.Predicate.Equal])
-  }
-
-  // TODO: Deprecated direct use of parser
-  test("Predicate.Loop.01") {
-    val input = "y <- f(x)"
-    val result = new Parser(SourceInput.Str(input)).Predicate.run().get
-    assert(result.isInstanceOf[ParsedAst.Predicate.Loop])
-  }
-
-  // TODO: Deprecated direct use of parser
-  test("Predicate.Loop.02") {
-    val input = "x <- f(1, 2, 3)"
-    val result = new Parser(SourceInput.Str(input)).Predicate.run().get
-    assert(result.isInstanceOf[ParsedAst.Predicate.Loop])
-  }
-
-  // TODO: Deprecated direct use of parser
-  test("Predicate.NotEqual.01") {
-    val input = "x != y"
-    val result = new Parser(SourceInput.Str(input)).Predicate.run().get
-    assert(result.isInstanceOf[ParsedAst.Predicate])
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
@@ -2236,13 +2193,6 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
-  ignore("Type.Prop.01") {
-    val input = "def f: Prop = true"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
-  }
-
   test("Type.Enum.01") {
     val input =
       """enum Color {
@@ -2264,24 +2214,18 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
-  ignore("Type.Lambda.01") {
-    val input = "def f: Int = (x -> x + 1)(42)"
-    new Flix().addStr(input).compile().get
+  test("Type.Lambda.01") {
+    intercept[NotImplementedError] {
+      val input = "def f: Int = (x -> x + 1)(42)"
+      new Flix().addStr(input).compile().get
+    }
   }
 
-  ignore("Type.Lambda.02") {
-    val input = "def f: Int = ((x, y) -> x + y)(21, 42)"
-    new Flix().addStr(input).compile().get
-  }
-
-  ignore("Type.Parametric.01") {
-    val input = "def f(x: A): A = x"
-    new Flix().addStr(input).compile().get
-  }
-
-  ignore("Type.Parametric.02") {
-    val input = "def f(x: A, y: B): A = x"
-    new Flix().addStr(input).compile().get
+  test("Type.Lambda.02") {
+    intercept[NotImplementedError] {
+      val input = "def f: Int = ((x, y) -> x + y)(21, 42)"
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Type.Opt.01") {
