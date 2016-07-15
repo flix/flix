@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.runtime.datastore
 
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
-import ca.uwaterloo.flix.runtime.{Value, Interpreter, Solver}
+import ca.uwaterloo.flix.language.ast.ExecutableAst
+import ca.uwaterloo.flix.runtime.{Value, Interpreter}
 
 import scala.annotation.switch
 import scala.collection.mutable
@@ -62,24 +62,12 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   /**
     * The Leq operator(s). Must be defined as Flix functions.
     */
-  private val Leq: Array[ExecutableAst.Definition.Constant] = {
-    val a = new Array[ExecutableAst.Definition.Constant](latticeOps.length)
-    for ((l, i) <- latticeOps.zipWithIndex) {
-      a(i) = root.constants(l.leq)
-    }
-    a
-  }
+  private val Leq: ExecutableAst.Definition.Constant = root.constants(latticeOps(0).leq)
 
   /**
     * The Lub operator(s). Must be defined as Flix functions.
     */
-  private val Lub: Array[ExecutableAst.Definition.Constant] = {
-    val a = new Array[ExecutableAst.Definition.Constant](latticeOps.length)
-    for ((l, i) <- latticeOps.zipWithIndex) {
-      a(i) = root.constants(l.lub)
-    }
-    a
-  }
+  private val Lub: ExecutableAst.Definition.Constant = root.constants(latticeOps(0).lub)
 
   /**
     * The Glb operator(s). Must be defined as Flix functions.
@@ -128,8 +116,8 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
     val oldElm = map.getOrElseUpdate(key, Bot)
 
     // Compute the lub and check if it is subsumed by the old element.
-    val result = lub(newElm, oldElm)
-    if (!leq(result, oldElm)) {
+    val result = lub(newElm(0), oldElm(0))
+    if (!leq(result(0), oldElm(0))) {
       // Update all indexes.
       for (idx <- indexes) {
         val ikey = keyOf(idx, fact)
@@ -264,48 +252,33 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   }
 
   /**
-    * Returns `true` iff `a` is pairwise less than or equal to `b`.
+    * Returns `true` iff `x` is less than or equal to `y` according to the partial order.
     */
-  private def leq(a: Array[ValueType], b: Array[ValueType]): Boolean = {
-    var i = 0
-    while (i < a.length) {
-      val v1: ValueType = a(i)
-      val v2: ValueType = b(i)
-
-      // if v1 and v2 are equal we do not need to compute leq.
-      if (v1 != v2) {
-        // TODO: use neq
-        // v1 and v2 are different, must compute leq.
-        val result = Interpreter.evalCall(Leq(i), Array(v1, v2).asInstanceOf[Array[AnyRef]], root).asInstanceOf[ValueType]
-        if (!Value.cast2bool(result)) {
-          return false
-        }
-      }
-      i = i + 1
+  private def leq(x: ValueType, y: ValueType): Boolean = {
+    if (x eq y) {
+      return true
     }
-    return true
+
+    val args = Array(x, y).asInstanceOf[Array[AnyRef]]
+    val result = Interpreter.evalCall(Leq, args, root).asInstanceOf[ValueType]
+    Value.cast2bool(result)
   }
 
   /**
-    * Returns the pairwise least upper bound of `a` and `b`.
+    * Returns the least upper bound of `x` and `y` according to the partial order.
     */
-  private def lub(a: Array[ValueType], b: Array[ValueType]): Array[ValueType] = {
-    val result = new Array[ValueType](a.length)
-    var i = 0
-    while (i < result.length) {
-      val v1: ValueType = a(i)
-      val v2: ValueType = b(i)
+  private def lub(x: ValueType, y: ValueType): Array[ValueType] = {
+    // TODO
+    //if (x eq y) {
+    //  return x
+    // }
 
-      if (v1 == Bot(i)) // TODO: use eq
-        result(i) = v2
-      else if (v2 == Bot(i)) // TODO: use eq
-        result(i) = v1
-      else
-        result(i) = Interpreter.evalCall(Lub(i), Array(v1, v2).asInstanceOf[Array[AnyRef]], root).asInstanceOf[ValueType]
+    val args = Array(x, y).asInstanceOf[Array[AnyRef]]
+    val r = Interpreter.evalCall(Lub, args, root).asInstanceOf[ValueType]
 
-      i = i + 1
-    }
-    return result
+    val res = new Array[ValueType](1)
+    res(0) = r
+    res
   }
 
 }
