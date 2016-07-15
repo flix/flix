@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.Type.Lambda
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
+import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.{DeltaSolver, Model, Solver, Value}
 import ca.uwaterloo.flix.util.{Options, Validation}
 
@@ -225,8 +226,10 @@ class Flix {
         val numbered = VarNumbering.number(lifted)
         val east = CreateExecutableAst.toExecutable(numbered)
         val compiled = LoadBytecode.load(this, east, options)
-        Verifier.verify(compiled, options) map {
-          case root => root
+        QuickChecker.quickCheck(compiled, options) flatMap {
+          r => Verifier.verify(r, options) map {
+            case root => root
+          }
         }
     }
   }
