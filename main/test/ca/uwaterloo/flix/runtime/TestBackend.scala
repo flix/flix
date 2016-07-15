@@ -4191,9 +4191,8 @@ class TestBackend extends FunSuite {
     t.runTest(Value.True, "f")
   }
 
-  // TODO: Typechecker doesn't properly handle ???
-  ignore("Expression.Binary - BinaryOperator.Implication.06") {
-    val input = "def f: Bool = True ==> ???"
+  test("Expression.Binary - BinaryOperator.Implication.06") {
+    val input = "def f: Bool = true ==> ???"
     val t = new Tester(input)
     t.runInterceptTest[UserException]("f")
   }
@@ -5414,16 +5413,6 @@ class TestBackend extends FunSuite {
     val input = "def f: Set[BigInt] = #{1000000000000000000000000000000ii}"
     val t = new Tester(input)
     t.runTest(Value.mkSet(Set(Value.mkBigInt("1000000000000000000000000000000"))), "f")
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Expression.UserError                                                    //
-  /////////////////////////////////////////////////////////////////////////////
-
-  ignore("Expression.UserError.01") {
-    val input = "def f: Bool = ???"
-    val t = new Tester(input)
-    t.runInterceptTest[UserException]("f")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -7435,45 +7424,6 @@ class TestBackend extends FunSuite {
         |A(1) :- f("foo").
         |A(2) :- f("bar").
         |A(3) :- f("baz").
-      """.stripMargin
-    val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
-  }
-
-  // TODO: Is a tuple an illegal body term?
-  ignore("Term.Body.Exp.07") {
-    val input =
-      """rel A(x: Int);
-        |def f(x: (Int, Str)): Bool = match x with {
-        |  case (a, "abc") => a >= 0
-        |  case _ => false
-        |}
-        |
-        |A(1) :- f((0, "abc")).
-        |A(2) :- f((0, "abc")).
-        |A(3) :- f((0, "abc")).
-        |A(4) :- f((-1, "abc")).
-        |A(5) :- f((0, "xyz")).
-      """.stripMargin
-    val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
-  }
-
-  // TODO: Is a tag an illegal body term?
-  ignore("Term.Body.Exp.08") {
-    val input =
-      """enum Val { case Top, case Val(Int), case Bot }
-        |rel A(x: Int);
-        |def f(x: Val): Bool = match x with {
-        |  case Val.Val(v) => v >= 0
-        |  case _ => false
-        |}
-        |
-        |A(1) :- f(Val.Val(0)).
-        |A(2) :- f(Val.Val(0)).
-        |A(3) :- f(Val.Val(0)).
-        |A(4) :- f(Val.Val(-1)).
-        |A(5) :- f(Val.Top).
       """.stripMargin
     val t = new Tester(input)
     t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
