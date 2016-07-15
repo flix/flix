@@ -28,9 +28,11 @@ import scala.reflect.ClassTag
 
 class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Lattice, indexes: Set[Int], root: ExecutableAst.Root)(implicit m: ClassTag[ValueType]) extends IndexedCollection[ValueType] {
   /**
-    * A map from indexes to a map from keys to rows (represented as map from keys to elements).
+    * A map from indexes to a map from keys to rows (represented as map from keys to an element):
+    *
+    *   Index -> IndexKey -> Keys -> Elm.
     */
-  private val store = mutable.Map.empty[Int, mutable.Map[Key[ValueType], mutable.Map[Key[ValueType], Array[ValueType]]]]
+  private val store = mutable.Map.empty[Int, mutable.Map[Key[ValueType], mutable.Map[Key[ValueType], ValueType]]]
 
   /**
     * The number of key columns in the lattice.
@@ -45,34 +47,34 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   /**
     * The lattice operations associated with each lattice.
     */
-  private val latticeOps: Array[ExecutableAst.Definition.Lattice] = Array(root.lattices(lattice.value.tpe))
+  private val latticeOps: ExecutableAst.Definition.Lattice = root.lattices(lattice.value.tpe)
 
   /**
-    * The bottom element(s).
+    * The Bot function definition.
     */
-  private val Bot: Array[ValueType] = {
-    val a = new Array[AnyRef](latticeOps.length)
-    for ((l, i) <- latticeOps.zipWithIndex) {
-      val defn = root.constants(l.bot)
-      a(i) = Interpreter.evalCall(defn, Array.empty, root)
-    }
-    a.asInstanceOf[Array[ValueType]]
+  private val BotDefn: ExecutableAst.Definition.Constant = root.constants(latticeOps.bot)
+
+  /**
+    * The Leq function definition.
+    */
+  private val LeqDefn: ExecutableAst.Definition.Constant = root.constants(latticeOps.leq)
+
+  /**
+    * The Lub function definition.
+    */
+  private val LubDefn: ExecutableAst.Definition.Constant = root.constants(latticeOps.lub)
+
+  /**
+    * The Glb function definition.
+    */
+  private val GlbDefn: ExecutableAst.Definition.Constant = root.constants(latticeOps.glb)
+
+  /**
+    * The bottom element.
+    */
+  private val Bot: ValueType = {
+    Interpreter.evalCall(BotDefn, Array.empty, root).asInstanceOf[ValueType]
   }
-
-  /**
-    * The Leq operator(s). Must be defined as Flix functions.
-    */
-  private val Leq: ExecutableAst.Definition.Constant = root.constants(latticeOps(0).leq)
-
-  /**
-    * The Lub operator(s). Must be defined as Flix functions.
-    */
-  private val Lub: ExecutableAst.Definition.Constant = root.constants(latticeOps(0).lub)
-
-  /**
-    * The Glb operator(s). Must be defined as Flix functions.
-    */
-  private val Glb: ExecutableAst.Definition.Constant = root.constants(latticeOps(0).glb)
 
   /**
     * Initialize the store for all indexes.
@@ -84,7 +86,6 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   /**
     * Returns the size of the relation.
     */
-  // TODO: Optimize
   def getSize: Int = scan.size
 
   /**
@@ -110,8 +111,8 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
     val oldElm = map.getOrElseUpdate(key, Bot)
 
     // Compute the lub and check if it is subsumed by the old element.
-    val result = lub(newElm(0), oldElm(0))
-    if (!leq(result(0), oldElm(0))) {
+    val result = evalLub(newElm, oldElm)
+    if (!evalLeq(result, oldElm)) {
       // Update all indexes.
       for (idx <- indexes) {
         val ikey = keyOf(idx, fact)
@@ -158,16 +159,18 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
       case (keys, _) => matchKey(util.Arrays.copyOf[ValueType](pat, numberOfKeys), keys.toArray)
     } map {
       case (keys, elms) =>
-        val elmsCopy = elms.clone()
-        // match the elements possibly changing elms2 to their greatest lower bound.
-        if (matchElms(elmPart(pat), elmsCopy)) (keys, elmsCopy) else null
+        // TODO: Make more efficient.
+        if (matchElms(elmPart(pat), elms)) {
+          if (elmPart(pat) == null) (keys, elms) else (keys, evalGlb(elmPart(pat), elms))
+        } else
+          null
     } filter {
       case e => e != null
     } map {
       case (keys, elms) =>
         val result = new Array[ValueType](numberOfKeys + numberOfElms)
         System.arraycopy(keys.toArray, 0, result, 0, numberOfKeys)
-        System.arraycopy(elms, 0, result, numberOfKeys, numberOfElms)
+        result(result.length - 1) = elms
         result.asInstanceOf[Array[ValueType]]
     }
   }
@@ -175,7 +178,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   /**
     * Returns all rows in the relation using a table scan.
     */
-  def scan: Iterator[(Key[ValueType], Array[ValueType])] = store(indexes.head).iterator.flatMap {
+  def scan: Iterator[(Key[ValueType], ValueType)] = store(indexes.head).iterator.flatMap {
     case (key, m) => m.iterator
   }
 
@@ -196,8 +199,8 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   /**
     * Returns the element part of the given array `a`.
     */
-  def elmPart(a: Array[ValueType]): Array[ValueType] = {
-    return util.Arrays.copyOfRange[ValueType](a, numberOfKeys, a.length)
+  def elmPart(a: Array[ValueType]): ValueType = {
+    return a(a.length - 1)
   }
 
   /**
@@ -218,73 +221,53 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   }
 
   /**
-    * Returns `true` iff the pairwise greatest lower bound of
-    * the given pattern `pat` and the given `row` is non-bottom.
-    *
-    * Modifies the given `row` in the process.
+    * Returns the greatest lower bound of the given pattern `pat` and the given `elm` if it is non-bottom.
     */
-  def matchElms(pat: Array[ValueType], row: Array[ValueType]): Boolean = {
-    var i = 0
-    while (i < pat.length) {
-      val pv = pat(i)
-      if (pv != null) {
-        val rv = row(i)
-
-        if (rv != pv) {
-          val bot = Bot(i)
-          val glb = glb2(pv, rv)
-
-          if (bot == glb)
-            return false
-
-          row(i) = glb
-        }
-      }
-      i = i + 1
+  // TODO: Names
+  def matchElms(pat: ValueType, elms: ValueType): Boolean = {
+    if (pat == null) {
+      return true
     }
-    return true
+
+    val glb = evalGlb(pat, elms)
+    return glb != Bot
   }
 
   /**
     * Returns `true` iff `x` is less than or equal to `y`.
     */
-  private def leq(x: ValueType, y: ValueType): Boolean = {
-    if (x eq y) {
-      return true
-    }
+  private def evalLeq(x: ValueType, y: ValueType): Boolean = {
+    // if `x` and `y` are the same object then they must be equal.
+    if (x eq y) return true
 
+    // evaluate the partial order function passing the arguments `x` and `y`.
     val args = Array(x, y).asInstanceOf[Array[AnyRef]]
-    val result = Interpreter.evalCall(Leq, args, root).asInstanceOf[ValueType]
+    val result = Interpreter.evalCall(LeqDefn, args, root)
     Value.cast2bool(result)
   }
 
   /**
     * Returns the least upper bound of `x` and `y`.
     */
-  private def lub(x: ValueType, y: ValueType): Array[ValueType] = {
-    // TODO
-    //if (x eq y) {
-    //  return x
-    // }
+  private def evalLub(x: ValueType, y: ValueType): ValueType = {
+    // if `x` and `y` are the same object then there is no need to compute the lub.
+    if (x eq y) return x
 
+    // evaluate the least upper bound function passing the arguments `x` and `y`.
     val args = Array(x, y).asInstanceOf[Array[AnyRef]]
-    val r = Interpreter.evalCall(Lub, args, root).asInstanceOf[ValueType]
-
-    val res = new Array[ValueType](1)
-    res(0) = r
-    res
+    Interpreter.evalCall(LubDefn, args, root).asInstanceOf[ValueType]
   }
 
   /**
     * Returns the greatest lower bound of `x` and `y`..
     */
-  private def glb2(x: ValueType, y: ValueType): ValueType = {
-    if (x eq y) {
-      return x
-    }
+  private def evalGlb(x: ValueType, y: ValueType): ValueType = {
+    // if `x` and `y` are the same object then there is no need to compute the glb.
+    if (x eq y) return x
 
+    // evaluate the greatest lower bound function passing the arguments `x` and `y`.
     val args = Array(x, y).asInstanceOf[Array[AnyRef]]
-    Interpreter.evalCall(Glb, args, root).asInstanceOf[ValueType]
+    Interpreter.evalCall(GlbDefn, args, root).asInstanceOf[ValueType]
   }
 
 }

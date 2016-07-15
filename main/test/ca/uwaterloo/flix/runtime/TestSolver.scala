@@ -375,9 +375,9 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().setOptions(opts).addStr(Parity.Definition).addStr(s).solve().get
     val A = model.getLattice("A").toMap
-    assert(A(List(Value.mkInt32(1))).head == Parity.Odd)
-    assert(A(List(Value.mkInt32(2))).head == Parity.Even)
-    assert(A(List(Value.mkInt32(3))).head == Parity.Top)
+    assert(A(List(Value.mkInt32(1))) == Parity.Odd)
+    assert(A(List(Value.mkInt32(2))) == Parity.Even)
+    assert(A(List(Value.mkInt32(3))) == Parity.Top)
   }
 
   test("Lattice02") {
@@ -391,7 +391,7 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().setOptions(opts).addStr(Parity.Definition).addStr(s).solve().get
     val A = model.getLattice("A").toMap
-    assert(A(List(Value.mkInt32(1))).head == Parity.Top)
+    assert(A(List(Value.mkInt32(1))) == Parity.Top)
   }
 
   test("Lattice03") {
@@ -407,7 +407,7 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().setOptions(opts).addStr(Parity.Definition).addStr(s).solve().get
     val A = model.getLattice("A").toMap
-    assert(A(List(Value.mkInt32(3))).head == Parity.Top)
+    assert(A(List(Value.mkInt32(3))) == Parity.Top)
   }
 
   test("NotEqual01") {

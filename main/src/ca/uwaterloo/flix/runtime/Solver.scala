@@ -649,10 +649,10 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         val table = relation.scan.toIterable.map(_.toList)
         macc + ((sym, table))
     }
-    val lattices = dataStore.lattices.foldLeft(Map.empty[Symbol.TableSym, Iterable[(List[AnyRef], List[AnyRef])]]) {
+    val lattices = dataStore.lattices.foldLeft(Map.empty[Symbol.TableSym, Iterable[(List[AnyRef], AnyRef)]]) {
       case (macc, (sym, lattice)) =>
         val table = lattice.scan.toIterable.map {
-          case (keys, values) => (keys.toArray.toList, values.toList)
+          case (keys, values) => (keys.toArray.toList, values)
         }
         macc + ((sym, table))
     }

@@ -251,7 +251,7 @@ class RestServer(solver: Solver) {
     def json: JValue = JObject(
       JField("cols", JArray(lattice.lattice.keys.toList.map(a => JString(a.ident.name)) ::: JString(lattice.lattice.value.ident.name) :: Nil)),
       JField("rows", JArray(lattice.scan.toList.map {
-        case (key, elms) => JArray(key.toArray.map(k => JString(Value.pretty(k))).toList ::: elms.map(e => JString(Value.pretty(e))).toList)
+        case (key, elm) => JArray(key.toArray.map(k => JString(Value.pretty(k))).toList ::: JString(Value.pretty(elm)) :: Nil)
       })))
   }
 
