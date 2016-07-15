@@ -25,6 +25,7 @@ object Options {
     evaluation = Evaluation.Compiled,
     monitor = false,
     optimize = false,
+    quickchecker = false,
     threads = Runtime.getRuntime.availableProcessors(),
     verbosity = Verbosity.Normal,
     verifier = false
@@ -39,15 +40,16 @@ object Options {
 /**
   * General Flix options.
   *
-  * @param debug      enables the emission of debugging information.
-  * @param evaluation selects the evaluation strategy,
-  * @param monitor    enables the debugger and profiler.
-  * @param optimize   enables compiler optimizations.
-  * @param threads    selects the number of threads to use.
-  * @param verbosity  selects the level of verbosity.
-  * @param verifier   enables the verifier.
+  * @param debug        enables the emission of debugging information.
+  * @param evaluation   selects the evaluation strategy,
+  * @param monitor      enables the debugger and profiler.
+  * @param optimize     enables compiler optimizations.
+  * @param quickchecker enables the quickchecker.
+  * @param threads      selects the number of threads to use.
+  * @param verbosity    selects the level of verbosity.
+  * @param verifier     enables the verifier.
   */
-case class Options(debug: Boolean, evaluation: Evaluation, monitor: Boolean, optimize: Boolean, threads: Int, verbosity: Verbosity, verifier: Boolean)
+case class Options(debug: Boolean, evaluation: Evaluation, monitor: Boolean, optimize: Boolean, quickchecker: Boolean, threads: Int, verbosity: Verbosity, verifier: Boolean)
 
 /**
   * An option to control the level of verbosity.

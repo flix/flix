@@ -16,23 +16,91 @@
 
 package ca.uwaterloo.flix.runtime.quickchecker
 
-import ca.uwaterloo.flix.runtime.verifier.SymVal
+import ca.uwaterloo.flix.language.ast.ExecutableAst
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
+import ca.uwaterloo.flix.language.phase.Verifier.VerifierError
+import ca.uwaterloo.flix.language.phase.{GenSym, Verifier}
 import ca.uwaterloo.flix.runtime.verifier.SymVal.Tuple
+import ca.uwaterloo.flix.runtime.verifier.{PropertyResult, SymVal}
+import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{Options, Validation, Verbosity}
 
 import scala.language.implicitConversions
 import scala.util.Random
 
 object QuickChecker {
 
+  // TODO: Refactor shared components:
+  // - VerifierError
+  // - SymbolicEvaluator.
+
+
+  /**
+    * Attempts to quickcheck all properties in the given AST.
+    */
+  def quickCheck(root: ExecutableAst.Root, options: Options)(implicit genSym: GenSym): Validation[ExecutableAst.Root, VerifierError] = {
+    /*
+     * Check if the quickchecker is enabled. Otherwise return success immediately.
+     */
+    if (!options.quickchecker) {
+      return root.toSuccess
+    }
+
+    /*
+     * Verify each property.
+     */
+    val results = root.properties.map(p => quickCheckProperty(p, root))
+
+    /*
+     * Print verbose information (if enabled).
+     */
+    if (options.verbosity == Verbosity.Verbose) {
+      // TODO
+      //printVerbose(results)
+    }
+
+    /*
+     * Returns the original AST root if all properties verified successfully.
+     */
+    if (isSuccess(results)) {
+      root.toSuccess
+    } else {
+      val errors = results.collect {
+        case PropertyResult.Failure(_, _, _, _, error) => error
+      }
+      val unknowns = results.collect {
+        case PropertyResult.Unknown(_, _, _, _, error) => error
+      }
+      Validation.Failure((errors ++ unknowns).toVector)
+    }
+  }
+
+  /**
+    * Attempts to quickcheck the given `property`.
+    */
+  def quickCheckProperty(property: Property, root: Root): PropertyResult = {
+    // the base expression.
+    val exp0 = property.exp
+
+
+    Verifier.getUniversallyQuantifiedVariables(exp0)
+
+    Verifier.peelUniversallyQuantifiers(exp0)
+
+    ???
+  }
+
 
   /////////////////////////////////////////////////////////////////////////////
-  // Generator Streams                                                       //
+  // Stream API                                                              //
   /////////////////////////////////////////////////////////////////////////////
 
   /**
     * A global random number generator.
     */
+  // TODO: Move into each stream.
   val Random = new Random()
+
 
   /**
     * A common super-type for infinite generator streams.
@@ -49,6 +117,10 @@ object QuickChecker {
     * A single stream element.
     */
   case class Hd[A](head: A, tail: Stream[A]) extends Stream[A]
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Generators                                                              //
+  /////////////////////////////////////////////////////////////////////////////
 
   /**
     * Generates a stream of boolean values.
@@ -99,4 +171,14 @@ object QuickChecker {
     def tail: Stream[SymVal] = GenRandomInt64
   }
 
+
+  /**
+    * Returns `true` if all the given property results `rs` are successful
+    */
+  // TODO: Share?
+  private def isSuccess(rs: List[PropertyResult]): Boolean = rs.forall {
+    case p: PropertyResult.Success => true
+    case p: PropertyResult.Failure => false
+    case p: PropertyResult.Unknown => false
+  }
 }
