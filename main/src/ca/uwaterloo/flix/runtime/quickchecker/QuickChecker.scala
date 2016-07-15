@@ -16,12 +16,13 @@
 
 package ca.uwaterloo.flix.runtime.quickchecker
 
-import ca.uwaterloo.flix.language.ast.ExecutableAst
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression.Var
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
+import ca.uwaterloo.flix.language.ast.{ExecutableAst, Type}
 import ca.uwaterloo.flix.language.phase.Verifier.VerifierError
 import ca.uwaterloo.flix.language.phase.{GenSym, Verifier}
 import ca.uwaterloo.flix.runtime.verifier.SymVal.Tuple
-import ca.uwaterloo.flix.runtime.verifier.{PropertyResult, SymVal}
+import ca.uwaterloo.flix.runtime.verifier.{PropertyResult, SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{Options, Validation, Verbosity}
 
@@ -78,18 +79,37 @@ object QuickChecker {
   /**
     * Attempts to quickcheck the given `property`.
     */
-  def quickCheckProperty(property: Property, root: Root): PropertyResult = {
-    // the base expression.
+  def quickCheckProperty(property: Property, root: Root)(implicit genSym: GenSym): PropertyResult = {
     val exp0 = property.exp
 
+    val exp1 = Verifier.peelUniversallyQuantifiers(exp0)
 
-    Verifier.getUniversallyQuantifiedVariables(exp0)
+    val quantifiers = Verifier.getUniversallyQuantifiedVariables(exp0)
 
-    Verifier.peelUniversallyQuantifiers(exp0)
+    val env0 = genEnv(quantifiers)
+
+    val ls = SymbolicEvaluator.eval(exp1, env0, root)
+
+    ls.head match {
+      case (Nil, SymVal.True) =>
+        // Case 1: The symbolic evaluator proved the property.
+        PropertyResult.Success(property, 0, 0, 0)
+      case (Nil, SymVal.False) =>
+        // Case 2: The symbolic evaluator disproved the property.
+        val err = ??? // TODO
+        PropertyResult.Failure(property, 0, 0, 0, err)
+      case (_, v) => throw new IllegalStateException(s"The symbolic evaluator returned a non-boolean value: $v.")
+    }
+  }
+
+  def genEnv(quantifiers: List[Var]): Map[String, SymVal] = {
+
+    def visit(tpe: Type): List[SymVal] = tpe match {
+      case _ => ???
+    }
 
     ???
   }
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Stream API                                                              //
