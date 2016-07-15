@@ -56,6 +56,12 @@ class TestMain extends FunSuite {
     assert(opts.monitor)
   }
 
+  test("--quickchecker") {
+    val args = Array("--quickchecker")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.quickchecker)
+  }
+
   test("--pipe") {
     val args = Array("--pipe")
     val opts = Main.parseCmdOpts(args).get

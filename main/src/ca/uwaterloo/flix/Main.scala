@@ -58,6 +58,7 @@ object Main {
       evaluation = if (cmdOpts.xinterpreter) Evaluation.Interpreted else Evaluation.Compiled,
       optimize = cmdOpts.optimize,
       monitor = cmdOpts.monitor,
+      quickchecker = cmdOpts.quickchecker,
       timeout = cmdOpts.timeout,
       threads = if (cmdOpts.threads == -1) Options.Default.threads else cmdOpts.threads,
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
@@ -135,6 +136,7 @@ object Main {
                      optimize: Boolean = false,
                      pipe: Boolean = false,
                      print: Seq[String] = Seq(),
+                     quickchecker: Boolean = false,
                      threads: Int = -1,
                      timeout: Duration = Duration.Inf,
                      tutorial: String = null,
@@ -180,6 +182,10 @@ object Main {
       opt[Seq[String]]("print").action((xs, c) => c.copy(print = xs)).
         valueName("<name>...").
         text("prints the named relations/lattices.")
+
+      // Quickchecker.
+      opt[Unit]("quickchecker").action((_, c) => c.copy(quickchecker = true)).
+        text("enables the quickchecker.")
 
       // Timeout
       opt[Duration]("timeout").action((d, c) => c.copy(timeout = d)).
