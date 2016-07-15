@@ -151,19 +151,17 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
 
     table filter {
       // match the keys
-      case (keys, _) => matchKey(util.Arrays.copyOf[ValueType](pat, numberOfKeys), keys.toArray)
+      case (keys, _) => matchKeys(pat, keys.toArray)
     } map {
       case (keys, elm) =>
-        // match the elements.
-        if (elmOf(pat) == null) {
+        // compute greatest lower bounds.
+        if (elmOf(pat) == null)
           (keys, elm)
-        } else {
-          val glb = evalGlb(elmOf(pat), elm)
-          if (glb == Bot) null else (keys, glb)
-        }
+         else
+          (keys, evalGlb(elmOf(pat), elm))
     } filter {
       // remove null elements introduced above.
-      case e => e != null
+      case e => !isBot(e._2)
     } map {
       case (keys, elms) =>
         // construct the result.
@@ -204,13 +202,12 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   }
 
   /**
-    * Returns `true` iff all non-null entries in the given pattern `pat`
-    * are equal to their corresponding entry in the given `row`.
+    * Returns `true` iff all non-null keys in the given pattern `pat` are
+    * equal to their corresponding entry in the given `row`.
     */
-  // TODO: Optimize by changing signature
-  private def matchKey(pat: Array[ValueType], row: Array[ValueType]): Boolean = {
+  private def matchKeys(pat: Array[ValueType], row: Array[ValueType]): Boolean = {
     var i = 0
-    while (i < pat.length) {
+    while (i < numberOfKeys) {
       val pv = pat(i)
       if (pv != null)
         if (pv != row(i))
@@ -219,6 +216,11 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
     }
     return true
   }
+
+  /**
+    * Returns true if `x` is the bottom element.
+    */
+  private def isBot(x: ValueType): Boolean = x == Bot
 
   /**
     * Returns `true` iff `x` is less than or equal to `y`.
