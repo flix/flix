@@ -1274,33 +1274,28 @@ class TestParser extends FunSuite {
     }
   }
 
-  ignore("Expression.Bot.01") {
-    val input = "def f[E: JoinSemiLattice]: E = ⊥"
+  test("Expression.Bot.01") {
+    val input = "def ⊥: Int = 42"
     new Flix().addStr(input).compile().get
   }
 
-  ignore("Expression.Top.01") {
-    val input = "def f[E: JoinSemiLattice]: E = ⊤"
+  test("Expression.Top.01") {
+    val input = "def ⊤: Int = 42"
     new Flix().addStr(input).compile().get
   }
 
-  ignore("Expression.Leq.01") {
-    val input = "def f[E: JoinSemiLattice](x: E, y: E): Bool = x ⊑ y"
+  test("Expression.Leq.01") {
+    val input = "def ⊑: Int = 42"
     new Flix().addStr(input).compile().get
   }
 
-  ignore("Expression.Lub.01") {
-    val input = "def f[E: JoinSemiLattice](x: E, y: E): E = x ⊔ y"
+  test("Expression.Lub.01") {
+    val input = "def ⊔: Int = 42"
     new Flix().addStr(input).compile().get
   }
 
-  ignore("Expression.Glb.01") {
-    val input = "def f[E: JoinSemiLattice](x: E, y: E): E = x ⊓ y"
-    new Flix().addStr(input).compile().get
-  }
-
-  ignore("Expression.BotLeqTop.01") {
-    val input = "def f[E: Lattice](x: E, y: E): Bool = ⊥ ⊑ ⊤"
+  test("Expression.Glb.01") {
+    val input = "def ⊓: Int = 42"
     new Flix().addStr(input).compile().get
   }
 
@@ -2572,31 +2567,6 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
-  ignore("Operator.ExtendedBinary.Leq ⊑") {
-    val input = "def f[E: JoinSemiLattice](x: E, y: E): Bool = x ⊑ y"
-    new Flix().addStr(input).compile().get
-  }
-
-  ignore("Operator.ExtendedBinary.Lub ⊔") {
-    val input = "def f[E: JoinSemiLattice](x: E, y: E): E = x ⊔ y"
-    new Flix().addStr(input).compile().get
-  }
-
-  ignore("Operator.ExtendedBinary.Glb ⊓") {
-    val input = "def f[E: JoinSemiLattice](x: E, y: E): E = x ⊓ y"
-    new Flix().addStr(input).compile().get
-  }
-
-  ignore("Operator.ExtendedBinary.Widen ▽") {
-    val input = "def f[E: Widen](x: E, y: E): E = x ▽ y"
-    new Flix().addStr(input).compile().get
-  }
-
-  ignore("Operator.ExtendedBinary.Narrow △") {
-    val input = "def f[E: Narrow](x: E, y: E): E = x △ y"
-    new Flix().addStr(input).compile().get
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // UTF8 Operators                                                          //
   /////////////////////////////////////////////////////////////////////////////
@@ -2683,8 +2653,13 @@ class TestParser extends FunSuite {
     new Flix().addStr(input).compile().get
   }
 
-  ignore("WhiteSpace.04") {
-    val input = "\n\r"
+  test("WhiteSpace.NewLine.Unix") {
+    val input = "\n"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("WhiteSpace.NewLine.Windows") {
+    val input = "\r\n"
     new Flix().addStr(input).compile().get
   }
 

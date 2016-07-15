@@ -855,7 +855,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def NewLine: Rule0 = rule {
-    "\n" | "\r\n"
+    "\n" | "\r"
   }
 
   /////////////////////////////////////////////////////////////////////////////
