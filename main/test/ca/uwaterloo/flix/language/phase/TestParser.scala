@@ -984,48 +984,6 @@ class TestParser extends FunSuite {
     }
   }
 
-  ignore("Expression.GetIndex.01") {
-    val input = "def f(v: Vec[Int]): Int = v[0]"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
-  }
-
-  ignore("Expression.GetIndex.02") {
-    val input = "def f(v: Vec[Int]): Int = v[0] + v[1] + v[2]"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
-  }
-
-  ignore("Expression.GetIndex.03") {
-    val input = "def f(v: Vec[Int], x: Int): Int = v[x]"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
-  }
-
-  ignore("Expression.PutIndex.01") {
-    val input = "def f(v: Vec[Int]): Int = v[0 -> 42]"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
-  }
-
-  ignore("Expression.PutIndex.02") {
-    val input = "def f(v: Vec[Int]): Int = v[0 -> 21][1 -> 42]"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
-  }
-
-  ignore("Expression.PutIndex.03") {
-    val input = "def f(v: Vec[Int], x: Int): Int = v[x -> 0, (x + 1) -> 1]"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
-  }
-
   test("Expression.Set.01") {
     // TODO: Pending new type system.
     intercept[AssertionError] {
@@ -1315,11 +1273,6 @@ class TestParser extends FunSuite {
       val input = "def f: (Bool, Bool) -> (Char, Char) -> (Int, Int) = (x1, x2) -> ((y1, y2) -> (21, 42))"
       new Flix().addStr(input).compile().get
     }
-  }
-
-  ignore("Expression.UserError.01") {
-    val input = "def f: Int = ???"
-    new Flix().addStr(input).compile().get
   }
 
   ignore("Expression.Bot.01") {
