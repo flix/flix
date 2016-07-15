@@ -238,7 +238,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
 
         if (rv != pv) {
           val bot = Bot(i)
-          val glb = Interpreter.evalCall(Glb(i), Array(pv, rv).asInstanceOf[Array[AnyRef]], root).asInstanceOf[ValueType]
+          val glb = glb2(pv, rv)
 
           if (bot == glb)
             return false
@@ -252,7 +252,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   }
 
   /**
-    * Returns `true` iff `x` is less than or equal to `y` according to the partial order.
+    * Returns `true` iff `x` is less than or equal to `y`.
     */
   private def leq(x: ValueType, y: ValueType): Boolean = {
     if (x eq y) {
@@ -265,7 +265,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   }
 
   /**
-    * Returns the least upper bound of `x` and `y` according to the partial order.
+    * Returns the least upper bound of `x` and `y`.
     */
   private def lub(x: ValueType, y: ValueType): Array[ValueType] = {
     // TODO
@@ -279,6 +279,19 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
     val res = new Array[ValueType](1)
     res(0) = r
     res
+  }
+
+  /**
+    * Returns the greatest lower bound of `x` and `y`..
+    */
+  private def glb2(x: ValueType, y: ValueType): ValueType = {
+    // TODO
+    //if (x eq y) {
+    //  return x
+    // }
+
+    val args = Array(x, y).asInstanceOf[Array[AnyRef]]
+    Interpreter.evalCall(Glb(0), args, root).asInstanceOf[ValueType]
   }
 
 }
