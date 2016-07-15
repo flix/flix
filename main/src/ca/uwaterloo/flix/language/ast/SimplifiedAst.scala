@@ -633,6 +633,14 @@ object SimplifiedAst {
 
     object Head {
 
+      case class True(loc: SourceLocation) extends SimplifiedAst.Predicate.Head {
+        def tpe: Type = Type.Predicate(Nil)
+      }
+
+      case class False(loc: SourceLocation) extends SimplifiedAst.Predicate.Head {
+        def tpe: Type = Type.Predicate(Nil)
+      }
+
       case class Table(sym: Symbol.TableSym,
                        terms: List[SimplifiedAst.Term.Head],
                        tpe: Type.Predicate,

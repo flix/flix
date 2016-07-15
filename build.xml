@@ -42,7 +42,7 @@
         <mkdir dir="${out.dir}/classes"/>
 
         <!-- Compile scala sources. -->
-        <scalac srcdir="${src.dir}" destdir="${out.dir}/classes" classpathref="classpath">
+        <scalac srcdir="${src.dir}" destdir="${out.dir}/classes" classpathref="classpath" fork="true">
             <include name="**/*.scala"/>
         </scalac>
 

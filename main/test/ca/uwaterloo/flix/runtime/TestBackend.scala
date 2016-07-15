@@ -708,12 +708,12 @@ class TestBackend extends FunSuite {
   test("Expression.Ref.02") {
     val input =
       """namespace Foo {
-        |  def x: Int = 5
-        |  def f: Int = x
+        |  def f: Int = 5
+        |  def g: Int = f()
         |}
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkInt32(5), "Foo/f")
+    t.runTest(Value.mkInt32(5), "Foo/g")
   }
 
   test("Expression.Ref.03") {
@@ -721,7 +721,7 @@ class TestBackend extends FunSuite {
       """namespace Foo {
         |  def x: Bool = true
         |  def y: Bool = false
-        |  def f: Bool = y
+        |  def f: Bool = y()
         |}
       """.stripMargin
     val t = new Tester(input)
@@ -734,7 +734,7 @@ class TestBackend extends FunSuite {
         |  def x: Str = "hello"
         |}
         |namespace Bar {
-        |  def x: Str = Foo/x
+        |  def x: Str = Foo/x()
         |}
       """.stripMargin
     val t = new Tester(input)
@@ -753,7 +753,7 @@ class TestBackend extends FunSuite {
         |  def a: Bool = false
         |}
         |namespace A {
-        |  def b: Bool = !A.B/a
+        |  def b: Bool = !A.B/a()
         |}
         |namespace A {
         |  namespace B {
@@ -791,7 +791,7 @@ class TestBackend extends FunSuite {
         |  def f: Bool = false
         |}
         |namespace A {
-        |  def g: Bool = A.B/f
+        |  def g: Bool = A.B/f()
         |}
       """.stripMargin
     val t = new Tester(input)
@@ -4113,15 +4113,13 @@ class TestBackend extends FunSuite {
     t.runTest(Value.False, "f")
   }
 
-  // TODO: Typechecker doesn't properly handle ???
-  ignore("Expression.Binary - BinaryOperator.LogicalAnd.05") {
+  test("Expression.Binary - BinaryOperator.LogicalAnd.05") {
     val input = "def f: Bool = false && ???"
     val t = new Tester(input)
     t.runTest(Value.False, "f")
   }
 
-  // TODO: Typechecker doesn't properly handle ???
-  ignore("Expression.Binary - BinaryOperator.LogicalAnd.06") {
+  test("Expression.Binary - BinaryOperator.LogicalAnd.06") {
     val input = "def f: Bool = true && ???"
     val t = new Tester(input)
     t.runInterceptTest[UserException]("f")
@@ -4151,15 +4149,13 @@ class TestBackend extends FunSuite {
     t.runTest(Value.True, "f")
   }
 
-  // TODO: Typechecker doesn't properly handle ???
-  ignore("Expression.Binary - BinaryOperator.LogicalOr.05") {
+  test("Expression.Binary - BinaryOperator.LogicalOr.05") {
     val input = "def f: Bool = true || ???"
     val t = new Tester(input)
     t.runTest(Value.True, "f")
   }
 
-  // TODO: Typechecker doesn't properly handle ???
-  ignore("Expression.Binary - BinaryOperator.LogicalOr.06") {
+  test("Expression.Binary - BinaryOperator.LogicalOr.06") {
     val input = "def f: Bool = false || ???"
     val t = new Tester(input)
     t.runInterceptTest[UserException]("f")
@@ -4189,16 +4185,14 @@ class TestBackend extends FunSuite {
     t.runTest(Value.True, "f")
   }
 
-  // TODO: Typechecker doesn't properly handle ???
-  ignore("Expression.Binary - BinaryOperator.Implication.05") {
+  test("Expression.Binary - BinaryOperator.Implication.05") {
     val input = "def f: Bool = false ==> ???"
     val t = new Tester(input)
     t.runTest(Value.True, "f")
   }
 
-  // TODO: Typechecker doesn't properly handle ???
-  ignore("Expression.Binary - BinaryOperator.Implication.06") {
-    val input = "def f: Bool = True ==> ???"
+  test("Expression.Binary - BinaryOperator.Implication.06") {
+    val input = "def f: Bool = true ==> ???"
     val t = new Tester(input)
     t.runInterceptTest[UserException]("f")
   }
@@ -5422,17 +5416,6 @@ class TestBackend extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Expression.UserError                                                    //
-  /////////////////////////////////////////////////////////////////////////////
-
-  // TODO: Typechecker doesn't properly handle ???
-  ignore("Expression.UserError.01") {
-    val input = "def f: Bool = ???"
-    val t = new Tester(input)
-    t.runInterceptTest[UserException]("f")
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
   // Expression.{Match,Switch}Error                                          //
   // Tested indirectly by switch expressions and pattern matching.           //
   /////////////////////////////////////////////////////////////////////////////
@@ -6291,7 +6274,7 @@ class TestBackend extends FunSuite {
       """def fst(t: (Native, Native)): Native =
         |  let (x, _) = t in x
         |def g: (Native, Native) = f(12)
-        |def h: Native = fst(g)
+        |def h: Native = fst(g())
       """.stripMargin
     val t = new Tester(input, solve = false)
 
@@ -6309,7 +6292,7 @@ class TestBackend extends FunSuite {
       """def fst(t: (Native, Native)): Native =
         |  let (x, _) = t in x
         |def g: (Native, Native) = f(12)
-        |def h: Native = fst(g)
+        |def h: Native = fst(g())
       """.stripMargin
     val t = new Tester(input, solve = false)
 
@@ -6327,7 +6310,7 @@ class TestBackend extends FunSuite {
       """def fst(t: (Int, Str)): Int =
         |  let (x, _) = t in x
         |def g: (Int, Str) = f(12)
-        |def h: Int = fst(g)
+        |def h: Int = fst(g())
       """.stripMargin
     val t = new Tester(input, solve = false)
 
@@ -7441,45 +7424,6 @@ class TestBackend extends FunSuite {
         |A(1) :- f("foo").
         |A(2) :- f("bar").
         |A(3) :- f("baz").
-      """.stripMargin
-    val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
-  }
-
-  // TODO: Is a tuple an illegal body term?
-  ignore("Term.Body.Exp.07") {
-    val input =
-      """rel A(x: Int);
-        |def f(x: (Int, Str)): Bool = match x with {
-        |  case (a, "abc") => a >= 0
-        |  case _ => false
-        |}
-        |
-        |A(1) :- f((0, "abc")).
-        |A(2) :- f((0, "abc")).
-        |A(3) :- f((0, "abc")).
-        |A(4) :- f((-1, "abc")).
-        |A(5) :- f((0, "xyz")).
-      """.stripMargin
-    val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
-  }
-
-  // TODO: Is a tag an illegal body term?
-  ignore("Term.Body.Exp.08") {
-    val input =
-      """enum Val { case Top, case Val(Int), case Bot }
-        |rel A(x: Int);
-        |def f(x: Val): Bool = match x with {
-        |  case Val.Val(v) => v >= 0
-        |  case _ => false
-        |}
-        |
-        |A(1) :- f(Val.Val(0)).
-        |A(2) :- f(Val.Val(0)).
-        |A(3) :- f(Val.Val(0)).
-        |A(4) :- f(Val.Val(-1)).
-        |A(5) :- f(Val.Top).
       """.stripMargin
     val t = new Tester(input)
     t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")

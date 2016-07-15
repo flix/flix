@@ -1,5 +1,5 @@
 //
-// Welcome to the introductory Flix Tutorial!
+// Welcome to the introduction to Flix!
 //
 // In this tutorial we will develop a simple intra-procedural dataflow analysis
 // that performs constant propagation for local variables. The program language

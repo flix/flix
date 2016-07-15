@@ -131,8 +131,7 @@ object CreateExecutableAst {
         ExecutableAst.Table.Relation(symbol, attributesArray, loc)
       case SimplifiedAst.Table.Lattice(symbol, keys, value, loc) =>
         val keysArray = keys.map(CreateExecutableAst.toExecutable).toArray
-        val valuesArray = Array(CreateExecutableAst.toExecutable(value))
-        ExecutableAst.Table.Lattice(symbol, keysArray, valuesArray, loc)
+        ExecutableAst.Table.Lattice(symbol, keysArray, CreateExecutableAst.toExecutable(value), loc)
     }
   }
 
@@ -239,6 +238,8 @@ object CreateExecutableAst {
 
     object Head {
       def toExecutable(sast: SimplifiedAst.Predicate.Head): ExecutableAst.Predicate.Head = sast match {
+        case SimplifiedAst.Predicate.Head.True(loc) => ExecutableAst.Predicate.Head.True(loc)
+        case SimplifiedAst.Predicate.Head.False(loc) => ExecutableAst.Predicate.Head.False(loc)
         case SimplifiedAst.Predicate.Head.Table(name, terms, tpe, loc) =>
           ExecutableAst.Predicate.Head.Table(name, terms.map(Term.toExecutable).toArray, tpe, loc)
       }

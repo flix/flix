@@ -20,8 +20,8 @@ import java.math.BigInteger
 
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -205,23 +205,6 @@ object Weeder {
            |
            |${loc.underline}
            |
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate an illegal apply (function call).
-      *
-      * @param msg the error message.
-      * @param loc the location where the illegal expression occurs.
-      */
-    case class IllegalApply(msg: String, loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> Illegal call.")}
-           |
-           |${loc.underline}
-           |$msg
          """.stripMargin
     }
 
@@ -459,8 +442,8 @@ object Weeder {
     val b = System.nanoTime()
     @@(program.roots map weed) map {
       case rts =>
-        val e = System.nanoTime()
-        WeededAst.Program(rts, hooks, program.time.copy(weeder = e - b))
+        val e = System.nanoTime() - b
+        WeededAst.Program(rts, hooks, program.time.copy(weeder = e))
     }
   }
 
@@ -491,7 +474,7 @@ object Weeder {
 
         paramsOpt match {
           case None => @@(annVal, expVal) flatMap {
-            case (ann, e) => WeededAst.Declaration.Definition(ann, ident, Nil, e, tpe, sl).toSuccess
+            case (ann, e) => WeededAst.Declaration.Definition(ann, ident, Nil, e, Type.Lambda(Nil, tpe), sl).toSuccess
           }
           case Some(Nil) => IllegalParameterList(sl).toFailure
           case Some(params) =>
@@ -789,7 +772,6 @@ object Weeder {
       case ParsedAst.Expression.Apply(lambda, args, sp2) =>
         val sp1 = leftMostSourcePosition(lambda)
         @@(compile(lambda), @@(args map compile)) flatMap {
-          case (_, Nil) => IllegalApply("A parameter list must contain at least one parameter or be omitted.", mkSL(sp1, sp2)).toFailure
           case (e, as) => WeededAst.Expression.Apply(e, as, mkSL(sp1, sp2)).toSuccess
         }
 
@@ -1153,6 +1135,8 @@ object Weeder {
         * Compiles the given parsed predicate `p` to a weeded head predicate.
         */
       def compile(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Equal] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
+        case ParsedAst.Predicate.True(sp1, sp2) => WeededAst.Predicate.Head.True(mkSL(sp1, sp2)).toSuccess
+        case ParsedAst.Predicate.False(sp1, sp2) => WeededAst.Predicate.Head.False(mkSL(sp1, sp2)).toSuccess
         case p: ParsedAst.Predicate.Ambiguous =>
           @@(p.terms.map(t => Term.Head.toTerm(t, aliases))) map {
             case terms => WeededAst.Predicate.Head.Table(p.name, terms, mkSL(p.sp1, p.sp2))
@@ -1171,6 +1155,8 @@ object Weeder {
         * Compiles the given parsed predicate `p` to a weeded body predicate.
         */
       def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] = past match {
+        case ParsedAst.Predicate.True(sp1, sp2) => Unsupported("'true' predicate in body.", mkSL(sp1, sp2)).toFailure
+        case ParsedAst.Predicate.False(sp1, sp2) => Unsupported("'false' predicate in body.", mkSL(sp1, sp2)).toFailure
         case p: ParsedAst.Predicate.Ambiguous =>
           @@(p.terms.map(Term.Body.toTerm)) map {
             case terms => WeededAst.Predicate.Body.Ambiguous(p.name, terms, mkSL(p.sp1, p.sp2))
@@ -1209,7 +1195,6 @@ object Weeder {
           case ParsedAst.Expression.Var(_, name, _) =>
             val sp1 = leftMostSourcePosition(lambda)
             @@(args map (a => toTerm(a, aliases))) flatMap {
-              case Nil => IllegalApply("A parameter list must contain at least one parameter or be omitted.", mkSL(sp1, sp2)).toFailure
               case as => WeededAst.Term.Head.Apply(name, as, mkSL(sp1, sp2)).toSuccess
             }
           case _ => throw InternalCompilerException("Illegal head term. But proper error messages not yet implemented.")
@@ -1232,7 +1217,6 @@ object Weeder {
           }
         case _ => throw InternalCompilerException("Illegal head term. But proper error messages not yet implemented.")
       }
-
 
     }
 

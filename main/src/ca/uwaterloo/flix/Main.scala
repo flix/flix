@@ -17,10 +17,11 @@
 package ca.uwaterloo.flix
 
 import java.io.File
-import java.nio.file.Files
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.util._
+
+import scala.concurrent.duration.Duration
 
 /**
   * The main entry point for the Flix compiler and runtime.
@@ -41,37 +42,56 @@ object Main {
 
     // check if the --tutorial flag was passed.
     if (cmdOpts.tutorial != null) {
-      writeTutorial(cmdOpts.tutorial)
+      printTutorial(cmdOpts.tutorial)
       System.exit(0)
     }
 
     // check that some input files were passed.
-    if (cmdOpts.files.isEmpty) {
+    if (cmdOpts.files.isEmpty && !cmdOpts.pipe) {
       Console.err.println("No input. Try --help.")
       System.exit(1)
     }
 
     // construct flix options.
     val options = Options.Default.copy(
-      debug = cmdOpts.debug,
-      evaluation = if (cmdOpts.interpreter) Evaluation.Interpreted else Evaluation.Compiled,
-      monitor = cmdOpts.monitor,
+      debug = cmdOpts.xdebug,
+      evaluation = if (cmdOpts.xinterpreter) Evaluation.Interpreted else Evaluation.Compiled,
       optimize = cmdOpts.optimize,
+      monitor = cmdOpts.monitor,
+      timeout = cmdOpts.timeout,
       threads = if (cmdOpts.threads == -1) Options.Default.threads else cmdOpts.threads,
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       verifier = cmdOpts.verifier
     )
 
     // configure Flix and add the paths.
-    val builder = new Flix()
-    builder.setOptions(options)
+    val flix = new Flix()
+    flix.setOptions(options)
     for (file <- cmdOpts.files) {
-      builder.addPath(file.toPath)
+      flix.addPath(file.toPath)
+    }
+
+    // read input from standard-in.
+    if (cmdOpts.pipe) {
+      val s = StreamOps.readAll(Console.in)
+      flix.addStr(s)
+    }
+
+    // check if we are running in delta debugging mode.
+    if (cmdOpts.delta.nonEmpty) {
+      flix.deltaSolve(cmdOpts.delta.get.toPath) match {
+        case Validation.Success(_, errors) =>
+          errors.foreach(e => println(e.message))
+          System.exit(0)
+        case Validation.Failure(errors) =>
+          errors.foreach(e => println(e.message))
+          System.exit(1)
+      }
     }
 
     // compute the least model.
     try {
-      builder.solve() match {
+      flix.solve() match {
         case Validation.Success(model, errors) =>
           errors.foreach(e => println(e.message))
 
@@ -98,6 +118,11 @@ object Main {
         Console.err.println()
         Console.err.println(loc.underline(new AnsiConsole))
         System.exit(1)
+      case RuleException(msg, loc) =>
+        Console.err.println("Integrity rule violated " + loc.format)
+        Console.err.println()
+        Console.err.println(loc.underline(new AnsiConsole))
+        System.exit(1)
     }
 
   }
@@ -105,15 +130,19 @@ object Main {
   /**
     * A case class representing the parsed command line options.
     */
-  case class CmdOpts(monitor: Boolean = false,
+  case class CmdOpts(delta: Option[File] = None,
+                     monitor: Boolean = false,
                      optimize: Boolean = false,
+                     pipe: Boolean = false,
                      print: Seq[String] = Seq(),
                      threads: Int = -1,
-                     tutorial: File = null,
+                     timeout: Duration = Duration.Inf,
+                     tutorial: String = null,
                      verbose: Boolean = false,
                      verifier: Boolean = false,
-                     debug: Boolean = false,
-                     interpreter: Boolean = false,
+                     xdebug: Boolean = false,
+                     xinterpreter: Boolean = false,
+                     xinvariants: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -127,35 +156,49 @@ object Main {
       // Head
       head("The Flix Programming Language", Version.CurrentVersion.toString)
 
+      // Delta.
+      opt[File]("delta").action((f, c) => c.copy(delta = Some(f))).
+        valueName("<file>").
+        text("enables the delta debugger. Output facts to <file>.")
+
       // Help.
       help("help").text("prints this usage information.")
 
       // Monitor.
-      opt[Unit]('m', "monitor").action((_, c) => c.copy(monitor = true)).
+      opt[Unit]("monitor").action((_, c) => c.copy(monitor = true)).
         text("enables the debugger and profiler.")
 
       // Optimize.
-      opt[Unit]('o', "optimize").action((_, c) => c.copy(optimize = true))
+      opt[Unit]("optimize").action((_, c) => c.copy(optimize = true))
         .text("enables compiler optimizations.")
 
+      // Pipe.
+      opt[Unit]("pipe").action((_, c) => c.copy(pipe = true)).
+        text("reads from standard input.")
+
       // Print.
-      opt[Seq[String]]('p', "print").action((xs, c) => c.copy(print = xs)).
+      opt[Seq[String]]("print").action((xs, c) => c.copy(print = xs)).
         valueName("<name>...").
-        text("selects the relations/lattices to print.")
+        text("prints the named relations/lattices.")
+
+      // Timeout
+      opt[Duration]("timeout").action((d, c) => c.copy(timeout = d)).
+        valueName("<n>").
+        text("sets the solver timeout (1ms, 1s, 1min, etc).")
 
       // Threads.
-      opt[Int]('t', "threads").action((i, c) => c.copy(threads = i)).
+      opt[Int]("threads").action((i, c) => c.copy(threads = i)).
         validate(x => if (x > 0) success else failure("Value <n> must be at least 1.")).
         valueName("<n>").
-        text("selects the number of threads to use.")
+        text("sets the number of threads to use.")
 
       // Tutorial.
-      opt[File]("tutorial").action((f, c) => c.copy(tutorial = f)).
-        valueName("<file>").
-        text("writes the Flix tutorial to <file>.")
+      opt[String]("tutorial").action((f, c) => c.copy(tutorial = f)).
+        valueName("<name>").
+        text("prints the named tutorial to stdout. Try `--tutorial help'.")
 
       // Verbose.
-      opt[Unit]('v', "verbose").action((_, c) => c.copy(verbose = true))
+      opt[Unit]("verbose").action((_, c) => c.copy(verbose = true))
         .text("enables verbose output.")
 
       // Verifier.
@@ -166,14 +209,22 @@ object Main {
       version("version").text("prints the version number.")
 
       // Experimental options:
+      note("")
+      note("The following options are experimental:")
 
-      // XDebug.
-      opt[Unit]("Xdebug").action((_, c) => c.copy(debug = true)).
+      // Xdebug.
+      opt[Unit]("Xdebug").action((_, c) => c.copy(xdebug = true)).
         text("[experimental] enables output of debugging information.")
 
-      // XInterpreter.
-      opt[Unit]("Xinterpreter").action((_, c) => c.copy(interpreter = true)).
+      // Xinterpreter.
+      opt[Unit]("Xinterpreter").action((_, c) => c.copy(xinterpreter = true)).
         text("[experimental] enables interpreted evaluation.")
+
+      // Xinvariants.
+      opt[Unit]("Xinvariants").action((_, c) => c.copy(xinvariants = true)).
+        text("[experimental] enables compiler invariants.")
+
+      note("")
 
       // Input files.
       arg[File]("<file>...").action((x, c) => c.copy(files = c.files :+ x))
@@ -187,18 +238,22 @@ object Main {
   }
 
   /**
-    * Emits the Flix tutorial to the given file.
+    * Prints the given tutorial to standard out.
     */
-  def writeTutorial(file: File): Unit = {
-    val outputFile = file.toPath
-    if (Files.exists(outputFile)) {
-      Console.err.println(s"Refusing to overwrite existing file ``${file.getName}''.")
-      System.exit(1)
+  def printTutorial(name: String): Unit = {
+    val inputStream = name match {
+      case "delta-debugging" => LocalResource.Tutorials.DeltaDebugging
+      case "introduction" => LocalResource.Tutorials.Introduction
+      case _ =>
+        Console.println("No match. Available tutorials:")
+        Console.println("  introduction")
+        Console.println("  delta-debugging")
+        System.exit(1)
+        null
     }
 
-    val inputStream = LocalResource.getTutorial
-    Files.copy(inputStream, outputFile)
-    Console.println(s"Tutorial successfully written to ``${file.getName}''.")
+    StreamOps.writeAll(inputStream, Console.out)
+    inputStream.close()
   }
 
 }

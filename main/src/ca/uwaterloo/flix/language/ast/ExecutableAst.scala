@@ -70,7 +70,7 @@ object ExecutableAst {
 
     case class Lattice(sym: Symbol.TableSym,
                        keys: Array[ExecutableAst.Attribute],
-                       values: Array[ExecutableAst.Attribute],
+                       value: ExecutableAst.Attribute,
                        loc: SourceLocation) extends ExecutableAst.Table
 
   }
@@ -560,6 +560,14 @@ object ExecutableAst {
     sealed trait Head extends ExecutableAst.Predicate
 
     object Head {
+
+      case class True(loc: SourceLocation) extends ExecutableAst.Predicate.Head {
+        def tpe: Type = Type.Predicate(Nil)
+      }
+
+      case class False(loc: SourceLocation) extends ExecutableAst.Predicate.Head {
+        def tpe: Type = Type.Predicate(Nil)
+      }
 
       case class Table(sym: Symbol.TableSym,
                        terms: Array[ExecutableAst.Term.Head],

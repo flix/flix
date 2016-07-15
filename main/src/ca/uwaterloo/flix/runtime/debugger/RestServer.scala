@@ -249,9 +249,9 @@ class RestServer(solver: Solver) {
     */
   class ListLattice(lattice: IndexedLattice[AnyRef]) extends JsonHandler {
     def json: JValue = JObject(
-      JField("cols", JArray(lattice.lattice.keys.toList.map(a => JString(a.ident.name)) ::: lattice.lattice.values.toList.map(a => JString(a.ident.name)))),
+      JField("cols", JArray(lattice.lattice.keys.toList.map(a => JString(a.ident.name)) ::: JString(lattice.lattice.value.ident.name) :: Nil)),
       JField("rows", JArray(lattice.scan.toList.map {
-        case (key, elms) => JArray(key.toArray.map(k => JString(Value.pretty(k))).toList ::: elms.map(e => JString(Value.pretty(e))).toList)
+        case (key, elm) => JArray(key.toArray.map(k => JString(Value.pretty(k))).toList ::: JString(Value.pretty(elm)) :: Nil)
       })))
   }
 
@@ -335,7 +335,12 @@ class RestServer(solver: Solver) {
       JObject(List(JField("name", JString("Weeder")), JField("time", JInt(solver.root.time.weeder / 1000000)))),
       JObject(List(JField("name", JString("Resolver")), JField("time", JInt(solver.root.time.resolver / 1000000)))),
       JObject(List(JField("name", JString("Typer")), JField("time", JInt(solver.root.time.typer / 1000000)))),
-      JObject(List(JField("name", JString("Verifier")), JField("time", JInt(solver.root.time.verifier / 1000000))))
+      JObject(List(JField("name", JString("PropertyGen")), JField("time", JInt(solver.root.time.propertyGen / 1000000)))),
+      JObject(List(JField("name", JString("Verifier")), JField("time", JInt(solver.root.time.verifier / 1000000)))),
+      JObject(List(JField("name", JString("LambdaLift")), JField("time", JInt(solver.root.time.lambdaLift / 1000000)))),
+      JObject(List(JField("name", JString("Simplifier")), JField("time", JInt(solver.root.time.simplifier / 1000000)))),
+      JObject(List(JField("name", JString("VarNumbering")), JField("time", JInt(solver.root.time.varNumbering / 1000000)))),
+      JObject(List(JField("name", JString("CodeGen")), JField("time", JInt(solver.root.time.codeGen / 1000000))))
     ))
   }
 

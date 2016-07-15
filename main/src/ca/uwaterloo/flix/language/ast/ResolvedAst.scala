@@ -250,6 +250,10 @@ object ResolvedAst {
 
     object Head {
 
+      case class True(loc: SourceLocation) extends ResolvedAst.Predicate.Head
+
+      case class False(loc: SourceLocation) extends ResolvedAst.Predicate.Head
+
       /**
         * A relational predicate that occurs in the head of a fact/rule.
         *

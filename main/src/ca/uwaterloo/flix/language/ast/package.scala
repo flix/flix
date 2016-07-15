@@ -122,9 +122,23 @@ package object ast {
     }
   }
 
+  object Time {
+    val Default: Time = Time(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+  }
+
   /**
     * A class that tracks the amount of time spent in each phase of the compiler.
     */
-  case class Time(parser: Long, weeder: Long, resolver: Long, typer: Long, verifier: Long, solver: Long)
+  case class Time(parser: Long,
+                  weeder: Long,
+                  resolver: Long,
+                  typer: Long,
+                  propertyGen: Long,
+                  verifier: Long,
+                  lambdaLift: Long,
+                  simplifier: Long,
+                  varNumbering: Long,
+                  codeGen: Long,
+                  solver: Long)
 
 }

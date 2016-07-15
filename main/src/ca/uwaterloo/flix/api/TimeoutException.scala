@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2016 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,14 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix
+package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.language.LanguageSuite
-import ca.uwaterloo.flix.runtime.RuntimeSuite
-import ca.uwaterloo.flix.util.UtilSuite
+import scala.concurrent.duration.Duration
 
-import org.scalatest.{ParallelTestExecution, Suites}
-
-class TestAll extends Suites(
-  new LanguageSuite,
-  new RuntimeSuite,
-  new UtilSuite,
-  new TestMain,
-  new TestExamples
-) with ParallelTestExecution {
-  /* left empty */
-}
+/**
+  * An exception thrown to indicate a timeout.
+  *
+  * @param timeout the timeout duration.
+  * @param elapsed the elapsed duration.
+  */
+case class TimeoutException(timeout: Duration, elapsed: Duration) extends FlixException(s"Timeout: $timeout. (elapsed: $elapsed.)")

@@ -119,14 +119,14 @@ class TestExamples extends FunSuite {
     val Fls = Value.mkTag("False", Value.Unit)
     val Top = Value.mkTag("Top", Value.Unit)
 
-    t.checkValue(List(Tru), "Belnap/A", List(Value.mkInt32(1)))
-    t.checkValue(List(Fls), "Belnap/A", List(Value.mkInt32(2)))
-    t.checkValue(List(Top), "Belnap/A", List(Value.mkInt32(3)))
+    t.checkValue(Tru, "Belnap/A", List(Value.mkInt32(1)))
+    t.checkValue(Fls, "Belnap/A", List(Value.mkInt32(2)))
+    t.checkValue(Top, "Belnap/A", List(Value.mkInt32(3)))
     t.checkNone("Belnap/A", List(Value.mkInt32(4)))
-    t.checkValue(List(Tru), "Belnap/A", List(Value.mkInt32(5)))
-    t.checkValue(List(Fls), "Belnap/A", List(Value.mkInt32(6)))
-    t.checkValue(List(Tru), "Belnap/A", List(Value.mkInt32(7)))
-    t.checkValue(List(Tru), "Belnap/A", List(Value.mkInt32(8)))
+    t.checkValue(Tru, "Belnap/A", List(Value.mkInt32(5)))
+    t.checkValue(Fls, "Belnap/A", List(Value.mkInt32(6)))
+    t.checkValue(Tru, "Belnap/A", List(Value.mkInt32(7)))
+    t.checkValue(Tru, "Belnap/A", List(Value.mkInt32(8)))
   }
 
   test("Constant.flix") {
@@ -161,13 +161,13 @@ class TestExamples extends FunSuite {
     val Two = Value.mkTag("Cst", Value.mkInt32(2))
     val Top = Value.mkTag("Top", Value.Unit)
 
-    t.checkValue(List(Zer), "Constant/A", List(Value.mkInt32(0)))
-    t.checkValue(List(One), "Constant/A", List(Value.mkInt32(1)))
-    t.checkValue(List(Two), "Constant/A", List(Value.mkInt32(2)))
-    t.checkValue(List(Top), "Constant/A", List(Value.mkInt32(3)))
+    t.checkValue(Zer, "Constant/A", List(Value.mkInt32(0)))
+    t.checkValue(One, "Constant/A", List(Value.mkInt32(1)))
+    t.checkValue(Two, "Constant/A", List(Value.mkInt32(2)))
+    t.checkValue(Top, "Constant/A", List(Value.mkInt32(3)))
     t.checkNone("Constant/A", List(Value.mkInt32(4)))
-    t.checkValue(List(Two), "Constant/A", List(Value.mkInt32(5)))
-    t.checkValue(List(Two), "Constant/A", List(Value.mkInt32(6)))
+    t.checkValue(Two, "Constant/A", List(Value.mkInt32(5)))
+    t.checkValue(Two, "Constant/A", List(Value.mkInt32(6)))
   }
 
   test("ConstantSign.flix") {
@@ -207,15 +207,15 @@ class TestExamples extends FunSuite {
     val Pos = Value.mkTag("Pos", Value.Unit)
     val Top = Value.mkTag("Top", Value.Unit)
 
-    t.checkValue(List(Zer), "ConstantSign/A", List(Value.mkInt32(2)))
-    t.checkValue(List(One), "ConstantSign/A", List(Value.mkInt32(3)))
-    t.checkValue(List(Top), "ConstantSign/A", List(Value.mkInt32(4)))
-    t.checkValue(List(Top), "ConstantSign/A", List(Value.mkInt32(4)))
-    t.checkValue(List(Pos), "ConstantSign/A", List(Value.mkInt32(5)))
+    t.checkValue(Zer, "ConstantSign/A", List(Value.mkInt32(2)))
+    t.checkValue(One, "ConstantSign/A", List(Value.mkInt32(3)))
+    t.checkValue(Top, "ConstantSign/A", List(Value.mkInt32(4)))
+    t.checkValue(Top, "ConstantSign/A", List(Value.mkInt32(4)))
+    t.checkValue(Pos, "ConstantSign/A", List(Value.mkInt32(5)))
     t.checkNone("ConstantSign/A", List(Value.mkInt32(6)))
     t.checkNone("ConstantSign/A", List(Value.mkInt32(7)))
-    t.checkValue(List(Pos), "ConstantSign/A", List(Value.mkInt32(8)))
-    t.checkValue(List(One), "ConstantSign/A", List(Value.mkInt32(9)))
+    t.checkValue(Pos, "ConstantSign/A", List(Value.mkInt32(8)))
+    t.checkValue(One, "ConstantSign/A", List(Value.mkInt32(9)))
   }
 
   test("Parity.flix") {
@@ -252,19 +252,14 @@ class TestExamples extends FunSuite {
     val Evn = Value.mkTag("Even", Value.Unit)
     val Top = Value.mkTag("Top", Value.Unit)
 
-    t.checkValue(List(Odd), "Parity/A", List(Value.mkInt32(1)))
-    t.checkValue(List(Evn), "Parity/A", List(Value.mkInt32(2)))
-    t.checkValue(List(Top), "Parity/A", List(Value.mkInt32(3)))
+    t.checkValue(Odd, "Parity/A", List(Value.mkInt32(1)))
+    t.checkValue(Evn, "Parity/A", List(Value.mkInt32(2)))
+    t.checkValue(Top, "Parity/A", List(Value.mkInt32(3)))
     t.checkNone("Parity/A", List(Value.mkInt32(4)))
-    t.checkValue(List(Odd), "Parity/A", List(Value.mkInt32(5)))
-    t.checkValue(List(Evn), "Parity/A", List(Value.mkInt32(6)))
-    t.checkValue(List(Evn), "Parity/A", List(Value.mkInt32(7)))
-    t.checkValue(List(Odd), "Parity/A", List(Value.mkInt32(8)))
-  }
-
-  ignore("Dimension.flix") {
-    val t = new Tester().addPath("./examples/domains/Dimension.flix")
-    t.checkSuccess()
+    t.checkValue(Odd, "Parity/A", List(Value.mkInt32(5)))
+    t.checkValue(Evn, "Parity/A", List(Value.mkInt32(6)))
+    t.checkValue(Evn, "Parity/A", List(Value.mkInt32(7)))
+    t.checkValue(Odd, "Parity/A", List(Value.mkInt32(8)))
   }
 
   test("StrictSign.flix") {
@@ -302,64 +297,19 @@ class TestExamples extends FunSuite {
     val Pos = Value.mkTag("Pos", Value.Unit)
     val Top = Value.mkTag("Top", Value.Unit)
 
-    t.checkValue(List(Neg), "StrictSign/A", List(Value.mkInt32(1)))
-    t.checkValue(List(Zer), "StrictSign/A", List(Value.mkInt32(2)))
-    t.checkValue(List(Pos), "StrictSign/A", List(Value.mkInt32(3)))
-    t.checkValue(List(Top), "StrictSign/A", List(Value.mkInt32(4)))
+    t.checkValue(Neg, "StrictSign/A", List(Value.mkInt32(1)))
+    t.checkValue(Zer, "StrictSign/A", List(Value.mkInt32(2)))
+    t.checkValue(Pos, "StrictSign/A", List(Value.mkInt32(3)))
+    t.checkValue(Top, "StrictSign/A", List(Value.mkInt32(4)))
     t.checkNone("StrictSign/A", List(Value.mkInt32(5)))
-    t.checkValue(List(Pos), "StrictSign/A", List(Value.mkInt32(6)))
-    t.checkValue(List(Top), "StrictSign/A", List(Value.mkInt32(7)))
-    t.checkValue(List(Zer), "StrictSign/A", List(Value.mkInt32(8)))
-    t.checkValue(List(Pos), "StrictSign/A", List(Value.mkInt32(9)))
+    t.checkValue(Pos, "StrictSign/A", List(Value.mkInt32(6)))
+    t.checkValue(Top, "StrictSign/A", List(Value.mkInt32(7)))
+    t.checkValue(Zer, "StrictSign/A", List(Value.mkInt32(8)))
+    t.checkValue(Pos, "StrictSign/A", List(Value.mkInt32(9)))
   }
 
   test("Type.flix") {
     val t = new Tester().addPath("./examples/domains/Type.flix")
-    t.checkSuccess()
-  }
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Entities                                                                //
-  /////////////////////////////////////////////////////////////////////////////
-
-  test("Bank.flix") {
-    val t = new Tester().addPath("./examples/entities/Bank.flix")
-    t.checkSuccess()
-  }
-
-  test("Cinema.flix") {
-    val t = new Tester().addPath("./examples/entities/Cinema.flix")
-    t.checkSuccess()
-  }
-
-  test("Company.flix") {
-    val t = new Tester().addPath("./examples/entities/Company.flix")
-    t.checkSuccess()
-  }
-
-  test("Hotel.flix") {
-    val t = new Tester().addPath("./examples/entities/Hotel.flix")
-    t.checkSuccess()
-  }
-
-  test("Library.flix") {
-    val t = new Tester().addPath("./examples/entities/Library.flix")
-    t.checkSuccess()
-  }
-
-  test("Manufacturer.flix") {
-    val t = new Tester().addPath("./examples/entities/Manufacturer.flix")
-    t.checkSuccess()
-  }
-
-  test("Realtor.flix") {
-    val t = new Tester().addPath("./examples/entities/Realtor.flix")
-    t.checkSuccess()
-  }
-
-  test("Tournament.flix") {
-    val t = new Tester().addPath("./examples/entities/Tournament.flix")
     t.checkSuccess()
   }
 

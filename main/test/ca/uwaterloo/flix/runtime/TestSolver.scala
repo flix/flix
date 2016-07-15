@@ -16,10 +16,11 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.{Flix, IValue, Invokable}
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.api.{Flix, IValue, Invokable, TimeoutException}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
+
+import scala.concurrent.duration.{Duration, _}
 
 class TestSolver extends FunSuite {
 
@@ -374,9 +375,9 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().setOptions(opts).addStr(Parity.Definition).addStr(s).solve().get
     val A = model.getLattice("A").toMap
-    assert(A(List(Value.mkInt32(1))).head == Parity.Odd)
-    assert(A(List(Value.mkInt32(2))).head == Parity.Even)
-    assert(A(List(Value.mkInt32(3))).head == Parity.Top)
+    assert(A(List(Value.mkInt32(1))) == Parity.Odd)
+    assert(A(List(Value.mkInt32(2))) == Parity.Even)
+    assert(A(List(Value.mkInt32(3))) == Parity.Top)
   }
 
   test("Lattice02") {
@@ -390,7 +391,7 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().setOptions(opts).addStr(Parity.Definition).addStr(s).solve().get
     val A = model.getLattice("A").toMap
-    assert(A(List(Value.mkInt32(1))).head == Parity.Top)
+    assert(A(List(Value.mkInt32(1))) == Parity.Top)
   }
 
   test("Lattice03") {
@@ -406,7 +407,7 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().setOptions(opts).addStr(Parity.Definition).addStr(s).solve().get
     val A = model.getLattice("A").toMap
-    assert(A(List(Value.mkInt32(3))).head == Parity.Top)
+    assert(A(List(Value.mkInt32(3))) == Parity.Top)
   }
 
   test("NotEqual01") {
@@ -466,25 +467,6 @@ class TestSolver extends FunSuite {
     assert(!(B contains List(Value.mkInt32(1), Value.mkInt32(1))))
   }
 
-  ignore("Loop01") {
-    val s =
-      """rel A(x: Int);
-        |rel B(x: Int);
-        |
-        |def f(x: Int): Set[Int] = #{x * x};
-        |
-        |A(1).
-        |A(2).
-        |
-        |B(y) :- A(x), y <- f(x): Set[Int].
-      """.stripMargin
-
-    val model = new Flix().setOptions(opts).addStr(s).solve().get
-    val B = model.getRelation("B").toSet
-    assert(B contains List(Value.mkInt32(1)))
-    assert(B contains List(Value.mkInt32(4)))
-  }
-
   test("FilterHook01") {
     val s =
       """rel A(x: Int);
@@ -510,6 +492,106 @@ class TestSolver extends FunSuite {
     val B = model.getRelation("B").toSet
     assert(B contains List(Value.mkInt32(1)))
     assert(!(B contains List(Value.mkInt32(2))))
+  }
+
+  test("Timeout") {
+    intercept[TimeoutException] {
+      val s =
+        """rel A(x: Str)
+          |rel B(x: Str)
+          |
+          |A("foo").
+          |B(x) :- A(x).
+        """.stripMargin
+      new Flix().setOptions(opts.copy(timeout = Duration(0, MILLISECONDS))).addStr(s).solve()
+    }
+  }
+
+  test("Transfer01") {
+    val s =
+      """rel A(x: Int);
+        |
+        |def f: Int = 42
+        |
+        |A(f()).
+      """.stripMargin
+
+    val flix = new Flix().addStr(s).setOptions(opts)
+    val model = flix.solve().get
+
+    val A = model.getRelation("A").toSet
+    assert(A contains List(Value.mkInt32(42)))
+  }
+
+  test("Transfer02") {
+    val s =
+      """rel A(x: Int, y: Int);
+        |
+        |def f: Int = 42
+        |def g(x: Int): Int = 21 + x
+        |
+        |A(f(), g(21)).
+      """.stripMargin
+
+    val flix = new Flix().addStr(s).setOptions(opts)
+    val model = flix.solve().get
+
+    val A = model.getRelation("A").toSet
+    assert(A contains List(Value.mkInt32(42), Value.mkInt32(42)))
+  }
+
+  test("Transfer03") {
+    val s =
+      """rel A(x: Int, y: Int, z: Int);
+        |
+        |def f: Int = 42
+        |def g(x: Int): Int = 21 + x
+        |def h(x: Int, y: Int): Int = f() + g(x) + y
+        |
+        |A(f(), g(21), h(21, 11)).
+      """.stripMargin
+
+    val flix = new Flix().addStr(s).setOptions(opts)
+    val model = flix.solve().get
+
+    val A = model.getRelation("A").toSet
+    assert(A contains List(Value.mkInt32(42), Value.mkInt32(42), Value.mkInt32(42 + 42 + 11)))
+  }
+
+  test("Transfer04") {
+    val s =
+      """rel A(x: Int, y: Int)
+        |rel B(x: Int)
+        |
+        |def x: Int = 42
+        |
+        |A(x(), x) :- B(x).
+        |B(21).
+      """.stripMargin
+
+    val flix = new Flix().addStr(s).setOptions(opts)
+    val model = flix.solve().get
+
+    val A = model.getRelation("A").toSet
+    assert(A contains List(Value.mkInt32(42), Value.mkInt32(21)))
+  }
+
+  test("Transfer05") {
+    val s =
+      """rel A(x: Int, y: Int, z: Int)
+        |rel B(x: Int)
+        |
+        |def x(x: Int): Int = x + 1
+        |
+        |A(x(x(x)), x(x), x) :- B(x).
+        |B(21).
+      """.stripMargin
+
+    val flix = new Flix().addStr(s).setOptions(opts)
+    val model = flix.solve().get
+
+    val A = model.getRelation("A").toSet
+    assert(A contains List(Value.mkInt32(23), Value.mkInt32(22), Value.mkInt32(21)))
   }
 
 }

@@ -37,7 +37,7 @@ final class WrappedModel(val model: Model) extends IModel {
     model.getLatticeOpt(name) match {
       case None => throw new IllegalArgumentException(s"Unknown relation: '$name'.")
       case Some(iterable) => iterable.map {
-        case (keys, values) => (keys ::: values).map(e => new WrappedValue(e): IValue).toArray
+        case (keys, elm) => (keys :: elm :: Nil).map(e => new WrappedValue(e): IValue).toArray
       }.asJava
     }
   }

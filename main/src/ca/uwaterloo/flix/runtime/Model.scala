@@ -30,7 +30,7 @@ class Model(root: ExecutableAst.Root,
             time: Time,
             definitions: Map[Symbol.Resolved, () => AnyRef],
             relations: Map[Symbol.TableSym, Iterable[List[AnyRef]]],
-            lattices: Map[Symbol.TableSym, Iterable[(List[AnyRef], List[AnyRef])]]) {
+            lattices: Map[Symbol.TableSym, Iterable[(List[AnyRef], AnyRef)]]) {
 
   def getRoot: ExecutableAst.Root = root
 
@@ -46,10 +46,10 @@ class Model(root: ExecutableAst.Root,
   def getRelationOpt(name: String): Option[Iterable[List[AnyRef]]] =
     relations.get(Symbol.mkTableSym(name))
 
-  def getLattice(name: String): Iterable[(List[AnyRef], List[AnyRef])] =
+  def getLattice(name: String): Iterable[(List[AnyRef], AnyRef)] =
     getLatticeOpt(name).get
 
-  def getLatticeOpt(name: String): Option[Iterable[(List[AnyRef], List[AnyRef])]] =
+  def getLatticeOpt(name: String): Option[Iterable[(List[AnyRef], AnyRef)]] =
     lattices.get(Symbol.mkTableSym(name))
 
 }

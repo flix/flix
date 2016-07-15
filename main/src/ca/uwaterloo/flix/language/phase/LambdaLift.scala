@@ -33,6 +33,8 @@ object LambdaLift {
     * Performs lambda lifting on all definitions in the AST.
     */
   def lift(root: SimplifiedAst.Root)(implicit genSym: GenSym): SimplifiedAst.Root = {
+    val t = System.nanoTime()
+
     // A mutable map to hold lambdas that are lifted to the top level.
     val m: TopLevel = mutable.Map.empty
 
@@ -42,7 +44,8 @@ object LambdaLift {
     val properties = root.properties.map(p => lift(p, m))
 
     // Return the updated AST root.
-    root.copy(constants = definitions ++ m, properties = properties)
+    val e = System.nanoTime() - t
+    root.copy(constants = definitions ++ m, properties = properties, time = root.time.copy(lambdaLift = e))
   }
 
   /**
