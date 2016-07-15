@@ -35,6 +35,7 @@ object QuickChecker {
   // - VerifierError
   // - SymbolicEvaluator.
 
+  val Limit = 1000
 
   /**
     * Attempts to quickcheck all properties in the given AST.
@@ -86,25 +87,31 @@ object QuickChecker {
 
     val quantifiers = Verifier.getUniversallyQuantifiedVariables(exp0)
 
-    val env0 = genEnv(quantifiers)
+    val envStream = genEnv(quantifiers)
 
-    val ls = SymbolicEvaluator.eval(exp1, env0, root)
+    for (i <- 0 until Limit) {
+      // val env = envStream.next()
 
-    ls.head match {
-      case (Nil, SymVal.True) =>
-        // Case 1: The symbolic evaluator proved the property.
-        PropertyResult.Success(property, 0, 0, 0)
-      case (Nil, SymVal.False) =>
-        // Case 2: The symbolic evaluator disproved the property.
-        val err = ??? // TODO
-        PropertyResult.Failure(property, 0, 0, 0, err)
-      case (_, v) => throw new IllegalStateException(s"The symbolic evaluator returned a non-boolean value: $v.")
+      val ls = SymbolicEvaluator.eval(exp1, envStream, root)
+      ls.head match {
+        case (Nil, SymVal.True) =>
+          // Case 1: The symbolic evaluator proved the property.
+          PropertyResult.Success(property, 0, 0, 0)
+        case (Nil, SymVal.False) =>
+          // Case 2: The symbolic evaluator disproved the property.
+          val err = ??? // TODO
+          PropertyResult.Failure(property, 0, 0, 0, err)
+        case (_, v) => throw new IllegalStateException(s"The symbolic evaluator returned a non-boolean value: $v.")
+      }
     }
+
+   ???
   }
 
   def genEnv(quantifiers: List[Var]): Map[String, SymVal] = {
 
     def visit(tpe: Type): List[SymVal] = tpe match {
+      case Type.Bool => ???
       case _ => ???
     }
 
