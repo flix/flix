@@ -56,10 +56,10 @@ object PrettyPrint {
       case None => // nop
       case Some(xs) =>
         val l = model.getRoot.tables(sym).asInstanceOf[ExecutableAst.Table.Lattice]
-        val cols = l.keys.map(_.ident.name).toList ::: l.values.map(_.ident.name).toList
+        val cols = l.keys.map(_.ident.name).toList ::: l.value.ident.name :: Nil
         val ascii = new AsciiTable().withCols(cols: _*)
-        for ((keys, elms) <- xs.toSeq.sortBy(_._1.head.toString)) {
-          ascii.mkRow((keys map Value.pretty) ++ (elms map Value.pretty))
+        for ((keys, elm) <- xs.toSeq.sortBy(_._1.head.toString)) {
+          ascii.mkRow((keys map Value.pretty) ++ List(Value.pretty(elm)))
         }
 
         Console.println(l.sym)

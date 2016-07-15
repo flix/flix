@@ -131,8 +131,7 @@ object CreateExecutableAst {
         ExecutableAst.Table.Relation(symbol, attributesArray, loc)
       case SimplifiedAst.Table.Lattice(symbol, keys, value, loc) =>
         val keysArray = keys.map(CreateExecutableAst.toExecutable).toArray
-        val valuesArray = Array(CreateExecutableAst.toExecutable(value))
-        ExecutableAst.Table.Lattice(symbol, keysArray, valuesArray, loc)
+        ExecutableAst.Table.Lattice(symbol, keysArray, CreateExecutableAst.toExecutable(value), loc)
     }
   }
 
