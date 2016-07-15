@@ -72,13 +72,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   /**
     * The Glb operator(s). Must be defined as Flix functions.
     */
-  private val Glb: Array[ExecutableAst.Definition.Constant] = {
-    val a = new Array[ExecutableAst.Definition.Constant](latticeOps.length)
-    for ((l, i) <- latticeOps.zipWithIndex) {
-      a(i) = root.constants(l.glb)
-    }
-    a
-  }
+  private val Glb: ExecutableAst.Definition.Constant = root.constants(latticeOps(0).glb)
 
   /**
     * Initialize the store for all indexes.
@@ -285,13 +279,12 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
     * Returns the greatest lower bound of `x` and `y`..
     */
   private def glb2(x: ValueType, y: ValueType): ValueType = {
-    // TODO
-    //if (x eq y) {
-    //  return x
-    // }
+    if (x eq y) {
+      return x
+    }
 
     val args = Array(x, y).asInstanceOf[Array[AnyRef]]
-    Interpreter.evalCall(Glb(0), args, root).asInstanceOf[ValueType]
+    Interpreter.evalCall(Glb, args, root).asInstanceOf[ValueType]
   }
 
 }
