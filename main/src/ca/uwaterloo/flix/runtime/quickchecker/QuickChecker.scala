@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.phase.Verifier.VerifierError
 import ca.uwaterloo.flix.language.phase.{GenSym, Verifier}
-import ca.uwaterloo.flix.runtime.verifier.SymVal.{Char, Unit}
+import ca.uwaterloo.flix.runtime.verifier.SymVal.Unit
 import ca.uwaterloo.flix.runtime.verifier.{PropertyResult, SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{Options, Validation, Verbosity}
@@ -139,9 +139,13 @@ object QuickChecker {
   /////////////////////////////////////////////////////////////////////////////
   // Arbitrary                                                               //
   /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Arbitrary unit values.
+    */
   object ArbUnit extends Arbitrary[SymVal.Unit.type] {
     def get: Gen[SymVal.Unit.type] = GenUnit
   }
+
 
   object ArbBool extends Arbitrary[SymVal.Bool] {
     def get: Gen[SymVal.Bool] = GenBool
@@ -175,7 +179,21 @@ object QuickChecker {
     * A generator for char values.
     */
   object GenChar extends Gen[SymVal.Char] {
-    def mk(r: Random): Char = ???
+    def mk(r: Random): SymVal.Char = ???
+  }
+
+  /**
+    * A generator for float32 values.
+    */
+  object GenFloat32 extends Gen[SymVal.Float32] {
+    def mk(r: Random): SymVal.Float32 = ???
+  }
+
+  /**
+    * A generator for float64 values.
+    */
+  object GenFloat64 extends Gen[SymVal.Float64] {
+    def mk(r: Random): SymVal.Float64 = ???
   }
 
   /**
@@ -185,6 +203,42 @@ object QuickChecker {
     def mk(r: Random): SymVal.Int8 = SymVal.Int8(???)
   }
 
+  /**
+    * A generator for int16 values.
+    */
+  object GenInt16 extends Gen[SymVal.Int16] {
+    def mk(r: Random): SymVal.Int16 = SymVal.Int16(???)
+  }
+
+  /**
+    * A generator for int32 values.
+    */
+  object GenInt32 extends Gen[SymVal.Int32] {
+    def mk(r: Random): SymVal.Int32 = SymVal.Int32(???)
+  }
+
+  /**
+    * A generator for int64 values.
+    */
+  object GenInt64 extends Gen[SymVal.Int64] {
+    def mk(r: Random): SymVal.Int64 = SymVal.Int64(???)
+  }
+
+  /**
+    * A generator for bigint values.
+    */
+  object GenBigInt extends Gen[SymVal.BigInt] {
+    def mk(r: Random): SymVal.BigInt = SymVal.BigInt(???)
+  }
+
+  /**
+    * A generator for str values.
+    */
+  object GenStr extends Gen[SymVal.Str] {
+    def mk(r: Random): SymVal.Str = ???
+  }
+
+  // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   /**
     * Returns `true` if all the given property results `rs` are successful
