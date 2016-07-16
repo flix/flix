@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.runtime.quickchecker
 
-import java.math.BigInteger
-
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression.Var
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
@@ -32,6 +30,8 @@ import ca.uwaterloo.flix.util._
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.util.Random
+
+import java.math.BigInteger
 
 object QuickChecker {
 
@@ -79,11 +79,11 @@ object QuickChecker {
 
 
   /**
-    * Attempts to quickcheck all properties in the given AST.
+    * Attempts to quick check all properties in the given AST.
     */
   def quickCheck(root: Root, options: Options)(implicit genSym: GenSym): Validation[Root, VerifierError] = {
     /*
-     * Check if the quickchecker is enabled. Otherwise return success immediately.
+     * Check if the quick checker is enabled. Otherwise return success immediately.
      */
     if (!options.quickchecker) {
       return root.toSuccess
@@ -115,9 +115,9 @@ object QuickChecker {
   }
 
   /**
-    * Attempts to quickcheck the given `property`.
+    * Attempts to quick check the given `property`.
     */
-  def quickCheckProperty(property: Property, root: Root)(implicit genSym: GenSym): QuickCheckResult = {
+  private def quickCheckProperty(property: Property, root: Root)(implicit genSym: GenSym): QuickCheckResult = {
 
     val t = System.nanoTime()
 
@@ -156,18 +156,18 @@ object QuickChecker {
     }
   }
 
+  // TODO: DOC
   def genEnv(quantifiers: List[Var]): Map[String, SymVal] = {
     val r: Random = new Random()
     quantifiers.foldLeft(Map.empty[String, SymVal]) {
-      case (macc, Var(ident, offset, tpe, loc)) => macc + (ident.name -> new ArbType(tpe).gen.mk(r))
+      case (macc, Var(ident, offset, tpe, loc)) => macc + (ident.name -> new ArbSymVal(tpe).gen.mk(r))
     }
   }
-
 
   /**
     * Prints verbose results.
     */
-  def printVerbose(results: List[QuickCheckResult]): Unit = {
+  private def printVerbose(results: List[QuickCheckResult]): Unit = {
     implicit val consoleCtx = Compiler.ConsoleCtx
     Console.println(consoleCtx.blue(s"-- QUICK CHECKER RESULTS ---------------------------------------------"))
 
@@ -193,31 +193,41 @@ object QuickChecker {
       val e = properties.map(_.elapsed).sum
 
       Console.println()
-      Console.println(s"  Properties: $s / $t quick checked in ${toSeconds(e)} seconds. (success = $s; failure = $f).")
+      Console.println(s"  Properties: $s / $t quick checked in ${TimeOps.toSeconds(e)} seconds. (success = $s; failure = $f).")
       Console.println()
-
     }
   }
-
-  /**
-    * Converts the given number of nanoseconds `l` into human readable string representation.
-    */
-  // TODO: Share?
-  private def toSeconds(l: Long): String = f"${l.toDouble / 1000000000.0}%3.1f"
 
   /////////////////////////////////////////////////////////////////////////////
   // Arbitrary and Generator                                                 //
   /////////////////////////////////////////////////////////////////////////////
+  /**
+    * An interface for types `A` equipped with a generator.
+    */
   trait Arbitrary[A] {
+    /**
+      * Returns a generator for the type `A`.
+      */
     def gen: Generator[A]
   }
 
+  /**
+    * An interface for types which can be randomly generated.
+    */
   trait Generator[+A] {
+    /**
+      * Returns a random value of type `A`.
+      */
     def mk(r: Random): A
   }
 
-
-  class ArbType(tpe: Type) extends Arbitrary[SymVal] {
+  /////////////////////////////////////////////////////////////////////////////
+  // Arbitrary Values                                                        //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * An arbitrary for symbolic values based on the given type `tpe`.
+    */
+  class ArbSymVal(tpe: Type) extends Arbitrary[SymVal] {
     def gen: Generator[SymVal] = tpe match {
       case Type.Unit => ArbUnit.gen
       case Type.Bool => ArbBool.gen
@@ -228,18 +238,18 @@ object QuickChecker {
 
       case Type.Enum(name, cases) => oneOf(cases.values.map(t =>
         new Generator[SymVal] {
-          def mk(r: Random): SymVal = SymVal.Tag(t.tag.name, new ArbType(t.tpe).gen.mk(r))
+          def mk(r: Random): SymVal = SymVal.Tag(t.tag.name, new ArbSymVal(t.tpe).gen.mk(r))
         }
       ).toArray: _*)
+
+      case Type.Var(_) => throw InternalCompilerException(s"Unable to generate values of type `$tpe'.")
     }
   }
 
 
   /////////////////////////////////////////////////////////////////////////////
-  // Arbitrary Instaces                                                      //
+  // Arbitrary Instances                                                     //
   /////////////////////////////////////////////////////////////////////////////
-
-
   /**
     * An arbitrary for unit.
     */

@@ -754,13 +754,13 @@ object Verifier {
       for (result <- properties.sortBy(_.property.loc)) {
         result match {
           case PropertyResult.Success(property, paths, queries, elapsed) =>
-            Console.println("  " + consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + toSeconds(elapsed) + " seconds.)")
+            Console.println("  " + consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + " seconds.)")
 
           case PropertyResult.Failure(property, paths, queries, elapsed, error) =>
-            Console.println("  " + consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + toSeconds(elapsed) + ") seconds.")
+            Console.println("  " + consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + ") seconds.")
 
           case PropertyResult.Unknown(property, paths, queries, elapsed, error) =>
-            Console.println("  " + consoleCtx.red("? ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + toSeconds(elapsed) + ") seconds.")
+            Console.println("  " + consoleCtx.red("? ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + ") seconds.")
         }
       }
 
@@ -769,12 +769,12 @@ object Verifier {
       val u = numberOfUnknowns(properties)
       val t = properties.length
 
-      val mt = toSeconds(avgl(properties.map(_.elapsed)))
+      val mt = TimeOps.toSeconds(avgl(properties.map(_.elapsed)))
       val mp = avg(properties.map(_.paths))
       val mq = avg(properties.map(_.queries))
 
       Console.println()
-      Console.println(s"  Properties: $s / $t proven in ${toSeconds(totalElapsed(properties))} seconds. (success = $s; failure = $f; unknown = $u).")
+      Console.println(s"  Properties: $s / $t proven in ${TimeOps.toSeconds(totalElapsed(properties))} seconds. (success = $s; failure = $f; unknown = $u).")
       Console.println(s"  Paths: ${totalPaths(properties)}. Queries: ${totalQueries(properties)} (avg time = $mt sec; avg paths = $mp; avg queries = $mq).")
       Console.println()
 
@@ -782,11 +782,6 @@ object Verifier {
 
 
   }
-
-  /**
-    * Converts the given number of nanoseconds `l` into human readable string representation.
-    */
-  private def toSeconds(l: Long): String = f"${l.toDouble / 1000000000.0}%3.1f"
 
   /**
     * Returns the median of the given list `xs`.
