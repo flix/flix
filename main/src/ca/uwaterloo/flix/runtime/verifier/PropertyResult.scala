@@ -19,6 +19,8 @@ package ca.uwaterloo.flix.runtime.verifier
 import ca.uwaterloo.flix.language.ast.ExecutableAst
 import ca.uwaterloo.flix.language.phase.Verifier.VerifierError
 
+// TODO: Rename, and move
+
 /**
   * A type to hold the result of a property verification.
   */

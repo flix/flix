@@ -16,16 +16,19 @@
 
 package ca.uwaterloo.flix.runtime.quickchecker
 
+import java.math.BigInteger
+
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression.Var
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.phase.Verifier.VerifierError
 import ca.uwaterloo.flix.language.phase.{GenSym, Verifier}
-import ca.uwaterloo.flix.runtime.verifier.SymVal.{Tag, Unit}
-import ca.uwaterloo.flix.runtime.verifier.{PropertyResult, SymVal, SymbolicEvaluator}
+import ca.uwaterloo.flix.runtime.verifier.SymVal.Unit
+import ca.uwaterloo.flix.runtime.verifier.{SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
 
+import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.util.Random
 
@@ -35,7 +38,36 @@ object QuickChecker {
   // - VerifierError
   // - SymbolicEvaluator.
 
-  val Limit = 1000
+  val Limit = 100
+
+
+  sealed trait QCRunResult {
+    def property: Property
+  }
+
+  object QCRunResult {
+
+    case class Success(property: Property) extends QCRunResult
+
+    case class Failure(property: Property) extends QCRunResult
+
+    // TODO: add model
+
+  }
+
+
+  sealed trait QuickCheckResult {
+    def property: Property
+  }
+
+  object QuickCheckResult {
+
+    case class Success(property: Property, runs: Int) extends QuickCheckResult
+
+    case class Failure(property: Property, runs: Int, error: VerifierError) extends QuickCheckResult
+
+  }
+
 
   /**
     * Attempts to quickcheck all properties in the given AST.
@@ -68,19 +100,16 @@ object QuickChecker {
       root.toSuccess
     } else {
       val errors = results.collect {
-        case PropertyResult.Failure(_, _, _, _, error) => error
+        case QuickCheckResult.Failure(_, _, error) => error
       }
-      val unknowns = results.collect {
-        case PropertyResult.Unknown(_, _, _, _, error) => error
-      }
-      Validation.Failure((errors ++ unknowns).toVector)
+      Validation.Failure(errors.toVector)
     }
   }
 
   /**
     * Attempts to quickcheck the given `property`.
     */
-  def quickCheckProperty(property: Property, root: Root)(implicit genSym: GenSym): PropertyResult = {
+  def quickCheckProperty(property: Property, root: Root)(implicit genSym: GenSym): QuickCheckResult = {
     val exp0 = property.exp
 
     val exp1 = Verifier.peelUniversallyQuantifiers(exp0)
@@ -89,44 +118,39 @@ object QuickChecker {
 
     val envStream = genEnv(quantifiers)
 
-    for (i <- 0 until Limit) {
-      // val env = envStream.next()
+    val success = mutable.ListBuffer.empty[QCRunResult]
+    val failure = mutable.ListBuffer.empty[QCRunResult]
 
+    for (i <- 0 until Limit) {
       val ls = SymbolicEvaluator.eval(exp1, envStream, root)
+
       ls.head match {
         case (Nil, SymVal.True) =>
           // Case 1: The symbolic evaluator proved the property.
-          PropertyResult.Success(property, 0, 0, 0)
+          success += QCRunResult.Success(property)
         case (Nil, SymVal.False) =>
           // Case 2: The symbolic evaluator disproved the property.
           val err = ??? // TODO
-          PropertyResult.Failure(property, 0, 0, 0, err)
+          failure += QCRunResult.Failure(property)
         case (_, v) => throw new IllegalStateException(s"The symbolic evaluator returned a non-boolean value: $v.")
       }
     }
 
-    ???
+    if (failure.nonEmpty) {
+      println(s"FAIL, $Limit tests.")
+      QuickCheckResult.Failure(property, 0, ???)
+    } else {
+      println(s"OK, $Limit tests.")
+      QuickCheckResult.Success(property, 0)
+    }
   }
 
   def genEnv(quantifiers: List[Var]): Map[String, SymVal] = {
 
     val r: Random = new Random()
 
-    def visit(tpe: Type): SymVal = tpe match {
-      case Type.Unit => ArbUnit.get.mk(r)
-      case Type.Bool => ArbBool.get.mk(r)
-      case Type.Char => ???
-      case Type.Float32 => ???
-      case Type.Float64 => ???
-      case Type.Int8 => ArbInt8.get.mk(r)
-
-      case Type.Enum(name, cases) => ??? //oneOf(cases.map(t => new ArbTag()))
-
-      case _ => throw InternalRuntimeException(s"Unable to enumerate type `$tpe'.")
-    }
-
     quantifiers.foldLeft(Map.empty[String, SymVal]) {
-      case (macc, Var(ident, offset, tpe, loc)) => macc + (ident.name -> visit(tpe))
+      case (macc, Var(ident, offset, tpe, loc)) => macc + (ident.name -> new ArbType(tpe).get.mk(r))
     }
   }
 
@@ -137,7 +161,7 @@ object QuickChecker {
     def get: Gen[A]
   }
 
-  trait Gen[A] {
+  trait Gen[+A] {
     def mk(r: Random): A
   }
 
@@ -158,9 +182,19 @@ object QuickChecker {
     def get: Gen[SymVal.Int8] = oneOf(Int8Cst(0), GenInt8)
   }
 
-  class ArbTag(a: Arbitrary[SymVal]) extends Arbitrary[SymVal.Tag] {
-    def get: Gen[SymVal.Tag] = new Gen[SymVal.Tag] {
-      override def mk(r: Random): Tag = ???
+  class ArbType(tpe: Type) extends Arbitrary[SymVal] {
+    def get: Gen[SymVal] = tpe match {
+      case Type.Unit => GenUnit
+      case Type.Bool => GenBool
+
+
+      case Type.BigInt => GenBigInt
+
+      case Type.Enum(name, cases) => oneOf(cases.values.map(t =>
+        new Gen[SymVal] {
+          def mk(r: Random): SymVal = SymVal.Tag(t.tag.name, new ArbType(t.tpe).get.mk(r))
+        }
+      ).toArray: _*)
     }
   }
 
@@ -242,7 +276,7 @@ object QuickChecker {
     * A generator for bigint values.
     */
   object GenBigInt extends Gen[SymVal.BigInt] {
-    def mk(r: Random): SymVal.BigInt = SymVal.BigInt(???) // TODO
+    def mk(r: Random): SymVal.BigInt = SymVal.BigInt(new BigInteger(128, r.self)) // TODO: Random generator?
   }
 
   /**
@@ -252,7 +286,26 @@ object QuickChecker {
     def mk(r: Random): SymVal.Str = ??? // TODO
   }
 
-  private def oneOf[A](gs: Gen[A]*): Gen[A] = ???
+  /**
+    * A generator for values of the given type `tpe`.
+    */
+  class GenType(tpe: Type) extends Gen[SymVal] {
+    def mk(r: Random): SymVal = tpe match {
+      case Type.Unit => GenUnit.mk(r)
+      case Type.Bool => GenBool.mk(r)
+
+      case Type.Enum(name, cases) => oneOf[SymVal](cases.values.map(t => new GenType(t)).toArray: _*).mk(r)
+
+      case _ => throw InternalRuntimeException(s"Unable to generate values for the type `$tpe'.")
+    }
+  }
+
+  /**
+    * A generator combinator that randomly selects one of the given generators `gs`.
+    */
+  private def oneOf[A](gs: Gen[A]*): Gen[A] = new Gen[A] {
+    def mk(r: Random): A = gs(r.nextInt(gs.length)).mk(r)
+  }
 
   // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -260,9 +313,8 @@ object QuickChecker {
     * Returns `true` if all the given property results `rs` are successful
     */
   // TODO: Share?
-  private def isSuccess(rs: List[PropertyResult]): Boolean = rs.forall {
-    case p: PropertyResult.Success => true
-    case p: PropertyResult.Failure => false
-    case p: PropertyResult.Unknown => false
+  private def isSuccess(rs: List[QuickCheckResult]): Boolean = rs.forall {
+    case p: QuickCheckResult.Success => true
+    case p: QuickCheckResult.Failure => false
   }
 }
