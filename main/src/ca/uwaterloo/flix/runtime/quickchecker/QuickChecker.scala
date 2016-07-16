@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.phase.Verifier.VerifierError
 import ca.uwaterloo.flix.language.phase.{GenSym, Verifier}
-import ca.uwaterloo.flix.runtime.verifier.SymVal.Unit
+import ca.uwaterloo.flix.runtime.verifier.SymVal.{Char, Unit}
 import ca.uwaterloo.flix.runtime.verifier.{PropertyResult, SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{Options, Validation, Verbosity}
@@ -140,9 +140,7 @@ object QuickChecker {
   // Arbitrary                                                               //
   /////////////////////////////////////////////////////////////////////////////
   object ArbUnit extends Arbitrary[SymVal.Unit.type] {
-    def get: Gen[SymVal.Unit.type] = new Gen[SymVal.Unit.type] {
-      def mk(r: Random): SymVal.Unit.type = SymVal.Unit
-    }
+    def get: Gen[SymVal.Unit.type] = GenUnit
   }
 
   object ArbBool extends Arbitrary[SymVal.Bool] {
@@ -160,25 +158,33 @@ object QuickChecker {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-    * A generator for random booleans.
+    * A trivial generator for the unit value.
+    */
+  object GenUnit extends Gen[SymVal.Unit.type] {
+    def mk(r: Random): Unit.type = SymVal.Unit
+  }
+
+  /**
+    * A generator for boolean values.
     */
   object GenBool extends Gen[SymVal.Bool] {
     def mk(r: Random): SymVal.Bool = if (r.nextBoolean()) SymVal.True else SymVal.False
   }
 
   /**
-    * Generates a random char.
+    * A generator for char values.
     */
-  private def randomChar(): SymVal = ???
+  object GenChar extends Gen[SymVal.Char] {
+    def mk(r: Random): Char = ???
+  }
 
   /**
-    * Randomly returns
+    * A generator for int8 values.
     */
-  //private def randomInt8(): SymVal = choose(0, 1, 2, 3, -1, -2, -3, Byte.MinValue, Byte.MaxValue, Random.nextInt(Byte.MaxValue + 1).toByte)
-
   object GenInt8 extends Gen[SymVal.Int8] {
     def mk(r: Random): SymVal.Int8 = SymVal.Int8(???)
   }
+
 
   /**
     * Returns `true` if all the given property results `rs` are successful
