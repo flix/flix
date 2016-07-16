@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.runtime.quickchecker
 
+import java.math.BigInteger
+
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression.Var
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
@@ -29,10 +31,6 @@ import ca.uwaterloo.flix.util._
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.util.Random
-
-import java.math.BigInteger
-
-import ca.uwaterloo.flix.runtime.verifier.Verifier
 
 object QuickChecker {
 
@@ -184,7 +182,7 @@ object QuickChecker {
           success += TestResult.Success(property)
         case SymVal.False =>
           // Case 2: The symbolic evaluator disproved the property.
-          val error = PropertyError.mk(property, Verifier.mkModel(env, None)) // TODO: Dont rely on Verifier.
+          val error = PropertyError.mk(property, SymVal.mkModel(env, None))
           failure += TestResult.Failure(property, error)
         case v => throw new IllegalStateException(s"The symbolic evaluator returned a non-boolean value: $v.")
       }

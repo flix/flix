@@ -172,7 +172,7 @@ object Verifier {
             PathResult.Success
           case (Nil, SymVal.False) =>
             // Case 2: The symbolic evaluator disproved the property.
-            PathResult.Failure(mkModel(env0, None))
+            PathResult.Failure(SymVal.mkModel(env0, None))
           case (pc, v) => v match {
             case SymVal.True =>
               // Case 3.1: The property holds under some path condition.
@@ -281,58 +281,13 @@ object Verifier {
           PathResult.Success
         case SmtResult.Satisfiable(model) =>
           // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.
-          PathResult.Failure(mkModel(env0, Some(model)))
+          PathResult.Failure(SymVal.mkModel(env0, Some(model)))
         case SmtResult.Unknown =>
           // Case 3.3: It is unknown whether the formula has a model.
           // Soundness require us to assume that there is a model.
-          PathResult.Unknown(mkModel(env0, None))
+          PathResult.Unknown(SymVal.mkModel(env0, None))
       }
     })
-  }
-
-  /**
-    * Returns a stringified model of `env` where all free variables have been
-    * replaced by their corresponding values from the Z3 model `model`.
-    */
-  def mkModel(env: Map[String, SymVal], model: Option[Model]): Map[String, String] = {
-    def visit(e0: SymVal): String = e0 match {
-      case SymVal.AtomicVar(id) => model match {
-        case None => "?"
-        case Some(m) => getConstant(id, m)
-      }
-      case SymVal.Unit => "#U"
-      case SymVal.True => "true"
-      case SymVal.False => "false"
-      case SymVal.Char(c) => c.toString
-      case SymVal.Float32(f) => f.toString
-      case SymVal.Float64(f) => f.toString
-      case SymVal.Int8(i) => i.toString
-      case SymVal.Int16(i) => i.toString
-      case SymVal.Int32(i) => i.toString
-      case SymVal.Int64(i) => i.toString
-      case SymVal.BigInt(i) => i.toString()
-      case SymVal.Str(s) => s
-      case SymVal.Tag(tag, SymVal.Unit) => tag
-      case SymVal.Tag(tag, elm) => tag + "(" + visit(elm) + ")"
-      case SymVal.Tuple(elms) => "(" + elms.map(visit).mkString(", ") + ")"
-      case SymVal.Closure(_, _) => "<<closure>>"
-    }
-
-    env.foldLeft(SortedMap.empty[String, String]) {
-      case (macc, (key, value)) => macc + (key -> visit(value))
-    }
-  }
-
-  /**
-    * Returns a string representation of the given constant `id` in the Z3 model `m`.
-    */
-  private def getConstant(id: Name.Ident, m: Model): String = {
-    for (decl <- m.getConstDecls) {
-      if (id.name == decl.getName.toString) {
-        return m.getConstInterp(decl).toString
-      }
-    }
-    "<<unknown>>"
   }
 
   /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2016 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.runtime.quickchecker
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
-class TestVerifier extends FunSuite {
+class TestQuickChecker extends FunSuite {
 
-  val opts: Options = Options.DefaultTest.copy(verifier = true)
+  val opts: Options = Options.DefaultTest.copy(quickchecker = true)
 
   test("Belnap.flix") {
     new Flix()

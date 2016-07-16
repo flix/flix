@@ -18,6 +18,9 @@ package ca.uwaterloo.flix.runtime.evaluator
 
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast.Name
+import com.microsoft.z3.Model
+
+import scala.collection.immutable.SortedMap
 
 /**
   * Symbolic Values.
@@ -133,4 +136,48 @@ object SymVal {
     */
   case class Closure(exp: Expression.Ref, env: List[SymVal]) extends SymVal
 
+  /**
+    * Returns a stringified model of `env` where all free variables have been
+    * replaced by their corresponding values from the Z3 model `model`.
+    */
+  def mkModel(env: Map[String, SymVal], model: Option[Model]): Map[String, String] = {
+    def visit(e0: SymVal): String = e0 match {
+      case SymVal.AtomicVar(id) => model match {
+        case None => "?"
+        case Some(m) => getConstant(id, m)
+      }
+      case SymVal.Unit => "#U"
+      case SymVal.True => "true"
+      case SymVal.False => "false"
+      case SymVal.Char(c) => c.toString
+      case SymVal.Float32(f) => f.toString
+      case SymVal.Float64(f) => f.toString
+      case SymVal.Int8(i) => i.toString
+      case SymVal.Int16(i) => i.toString
+      case SymVal.Int32(i) => i.toString
+      case SymVal.Int64(i) => i.toString
+      case SymVal.BigInt(i) => i.toString()
+      case SymVal.Str(s) => s
+      case SymVal.Tag(tag, SymVal.Unit) => tag
+      case SymVal.Tag(tag, elm) => tag + "(" + visit(elm) + ")"
+      case SymVal.Tuple(elms) => "(" + elms.map(visit).mkString(", ") + ")"
+      case SymVal.Closure(_, _) => "<<closure>>"
+    }
+
+    env.foldLeft(SortedMap.empty[String, String]) {
+      case (macc, (key, value)) => macc + (key -> visit(value))
+    }
+  }
+
+  /**
+    * Returns a string representation of the given constant `id` in the Z3 model `m`.
+    */
+  private def getConstant(id: Name.Ident, m: Model): String = {
+    for (decl <- m.getConstDecls) {
+      if (id.name == decl.getName.toString) {
+        return m.getConstInterp(decl).toString
+      }
+    }
+    "<<unknown>>"
+  }
 }
