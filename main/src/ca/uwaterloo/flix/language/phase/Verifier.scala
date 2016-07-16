@@ -504,7 +504,7 @@ object Verifier {
     * Returns a stringified model of `env` where all free variables have been
     * replaced by their corresponding values from the Z3 model `model`.
     */
-  private def mkModel(env: Map[String, SymVal], model: Option[Model]): Map[String, String] = {
+  def mkModel(env: Map[String, SymVal], model: Option[Model]): Map[String, String] = {
     def visit(e0: SymVal): String = e0 match {
       case SymVal.AtomicVar(id) => model match {
         case None => "?"
@@ -548,7 +548,7 @@ object Verifier {
   /**
     * Returns a verifier error for the given property `prop` under the given environment `env`.
     */
-  private def toVerifierError(prop: Property, env: Map[String, String]): VerifierError = prop.law match {
+  def toVerifierError(prop: Property, env: Map[String, String]): VerifierError = prop.law match {
     case Law.Associativity => VerifierError.AssociativityError(env, prop.loc)
     case Law.Commutativity => VerifierError.CommutativityError(env, prop.loc)
     case Law.Reflexivity => VerifierError.ReflexivityError(env, prop.loc)

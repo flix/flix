@@ -50,7 +50,7 @@ object QuickChecker {
 
     case class Success(property: Property) extends QCRunResult
 
-    case class Failure(property: Property) extends QCRunResult
+    case class Failure(property: Property, error: VerifierError) extends QCRunResult
 
     // TODO: add model
 
@@ -127,13 +127,13 @@ object QuickChecker {
 
     val quantifiers = Verifier.getUniversallyQuantifiedVariables(exp0)
 
-    val envStream = genEnv(quantifiers)
-
-    val success = mutable.ListBuffer.empty[QCRunResult]
-    val failure = mutable.ListBuffer.empty[QCRunResult]
+    val success = mutable.ListBuffer.empty[QCRunResult.Success]
+    val failure = mutable.ListBuffer.empty[QCRunResult.Failure]
 
     for (i <- 0 until Limit) {
-      val ls = SymbolicEvaluator.eval(exp1, envStream, root)
+      val env = genEnv(quantifiers)
+
+      val ls = SymbolicEvaluator.eval(exp1, env, root)
 
       ls.head match {
         case (Nil, SymVal.True) =>
@@ -141,8 +141,8 @@ object QuickChecker {
           success += QCRunResult.Success(property)
         case (Nil, SymVal.False) =>
           // Case 2: The symbolic evaluator disproved the property.
-          val err = ??? // TODO
-          failure += QCRunResult.Failure(property)
+          val error = Verifier.toVerifierError(property, Verifier.mkModel(env, None)) // TODO: Dont rely on Verifier.
+          failure += QCRunResult.Failure(property, error)
         case (_, v) => throw new IllegalStateException(s"The symbolic evaluator returned a non-boolean value: $v.")
       }
     }
@@ -150,7 +150,7 @@ object QuickChecker {
     val e = System.nanoTime()
 
     if (failure.nonEmpty) {
-      QuickCheckResult.Failure(property, Limit, e, ???) // TODO: Limit
+      QuickCheckResult.Failure(property, Limit, e, failure.head.error) // TODO: Limit
     } else {
       QuickCheckResult.Success(property, Limit, e) // TODO: Limit
     }
