@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.phase.{GenSym, Verifier}
 import ca.uwaterloo.flix.runtime.verifier.SymVal.Unit
 import ca.uwaterloo.flix.runtime.verifier.{PropertyResult, SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{Options, Validation, Verbosity}
+import ca.uwaterloo.flix.util._
 
 import scala.language.implicitConversions
 import scala.util.Random
@@ -110,18 +110,24 @@ object QuickChecker {
 
   def genEnv(quantifiers: List[Var]): Map[String, SymVal] = {
 
-    def visit(tpe: Type): List[SymVal] = tpe match {
-      case Type.Bool => ???
+    val r: Random = ???
+
+    def visit(tpe: Type): SymVal = tpe match {
+      // TODO: Should use arb.
+      case Type.Unit => ArbUnit.get.mk(r)
+      case Type.Bool => ArbBool.get.mk(r)
+      case Type.Char => ???
+      case Type.Float32 => ???
+      case Type.Float64 => ???
+      case Type.Int8 => ArbInt8.get.mk(r)
 
       case Type.Enum(name, cases) => ???
-      case _ => ???
+      case _ => throw InternalRuntimeException(s"Unable to enumerate type `$tpe'.")
     }
 
-    quantifiers.map {
-      case Var(ident, offset, tpe, loc) => visit(tpe)
+    quantifiers.foldLeft(Map.empty[String, SymVal]) {
+      case (macc, Var(ident, offset, tpe, loc)) => macc + (ident.name -> visit(tpe))
     }
-
-    ???
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -139,22 +145,17 @@ object QuickChecker {
   /////////////////////////////////////////////////////////////////////////////
   // Arbitrary                                                               //
   /////////////////////////////////////////////////////////////////////////////
-  /**
-    * Arbitrary unit values.
-    */
   object ArbUnit extends Arbitrary[SymVal.Unit.type] {
     def get: Gen[SymVal.Unit.type] = GenUnit
   }
-
 
   object ArbBool extends Arbitrary[SymVal.Bool] {
     def get: Gen[SymVal.Bool] = GenBool
   }
 
+
   object ArbInt8 extends Arbitrary[SymVal.Int8] {
-    def get: Gen[SymVal.Int8] = new Gen[SymVal.Int8] {
-      def mk(r: Random): SymVal.Int8 = GenInt8.mk(r)
-    }
+    def get: Gen[SymVal.Int8] = oneOf(Int8Cst(0), GenInt8)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -179,64 +180,73 @@ object QuickChecker {
     * A generator for char values.
     */
   object GenChar extends Gen[SymVal.Char] {
-    def mk(r: Random): SymVal.Char = ???
+    def mk(r: Random): SymVal.Char = ??? // TODO
   }
 
   /**
     * A generator for float32 values.
     */
   object GenFloat32 extends Gen[SymVal.Float32] {
-    def mk(r: Random): SymVal.Float32 = ???
+    def mk(r: Random): SymVal.Float32 = ??? // TODO
   }
 
   /**
     * A generator for float64 values.
     */
   object GenFloat64 extends Gen[SymVal.Float64] {
-    def mk(r: Random): SymVal.Float64 = ???
+    def mk(r: Random): SymVal.Float64 = ??? // TODO
   }
 
   /**
     * A generator for int8 values.
     */
   object GenInt8 extends Gen[SymVal.Int8] {
-    def mk(r: Random): SymVal.Int8 = SymVal.Int8(???)
+    def mk(r: Random): SymVal.Int8 = SymVal.Int8(???) // TODO
+  }
+
+  /**
+    * A generator for the constant int8 value `c`.
+    */
+  case class Int8Cst(c: Byte) extends Gen[SymVal.Int8] {
+    def mk(r: Random): SymVal.Int8 = SymVal.Int8(c)
   }
 
   /**
     * A generator for int16 values.
     */
   object GenInt16 extends Gen[SymVal.Int16] {
-    def mk(r: Random): SymVal.Int16 = SymVal.Int16(???)
+    def mk(r: Random): SymVal.Int16 = SymVal.Int16(???) // TODO
   }
 
   /**
     * A generator for int32 values.
     */
   object GenInt32 extends Gen[SymVal.Int32] {
-    def mk(r: Random): SymVal.Int32 = SymVal.Int32(???)
+    def mk(r: Random): SymVal.Int32 = SymVal.Int32(???) // TODO
   }
 
   /**
     * A generator for int64 values.
     */
   object GenInt64 extends Gen[SymVal.Int64] {
-    def mk(r: Random): SymVal.Int64 = SymVal.Int64(???)
+    def mk(r: Random): SymVal.Int64 = SymVal.Int64(???) // TODO
   }
 
   /**
     * A generator for bigint values.
     */
   object GenBigInt extends Gen[SymVal.BigInt] {
-    def mk(r: Random): SymVal.BigInt = SymVal.BigInt(???)
+    def mk(r: Random): SymVal.BigInt = SymVal.BigInt(???) // TODO
   }
 
   /**
     * A generator for str values.
     */
   object GenStr extends Gen[SymVal.Str] {
-    def mk(r: Random): SymVal.Str = ???
+    def mk(r: Random): SymVal.Str = ??? // TODO
   }
+
+  private def oneOf[A](gs: Gen[A]*): Gen[A] = ???
 
   // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
