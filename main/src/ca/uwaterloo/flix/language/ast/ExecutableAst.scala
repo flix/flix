@@ -106,6 +106,26 @@ object ExecutableAst {
   }
 
   sealed trait Expression extends ExecutableAst {
+
+    /**
+      * Returns a list of all the universally quantified variables in this expression.
+      */
+    def getUniversallyQuantifiedVariables: List[Expression.Var] = this match {
+      case Expression.Universal(params, _, _) => params.map {
+        case Ast.FormalParam(ident, tpe) => Expression.Var(ident, -1, tpe, SourceLocation.Unknown)
+      }
+      case _ => Nil
+    }
+
+    /**
+      * Returns this expression with all universal quantifiers stripped.
+      */
+    def peelUniversallyQuantifiers: Expression = this match {
+      case Expression.Existential(params, exp, loc) => exp.peelUniversallyQuantifiers
+      case Expression.Universal(params, exp, loc) => exp.peelUniversallyQuantifiers
+      case _ => this
+    }
+
     def tpe: Type
 
     def loc: SourceLocation

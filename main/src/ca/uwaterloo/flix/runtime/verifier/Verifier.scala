@@ -154,7 +154,7 @@ object Verifier {
     val exp0 = property.exp
 
     // a sequence of environments under which the base expression must hold.
-    val envs = enumerate(getUniversallyQuantifiedVariables(exp0))
+    val envs = enumerate(exp0.getUniversallyQuantifiedVariables)
 
     // the number of paths explored by the symbolic evaluator.
     var paths = 0
@@ -166,7 +166,7 @@ object Verifier {
     val pathResults = envs flatMap {
       case env0 =>
         paths += 1
-        SymbolicEvaluator.eval(peelUniversallyQuantifiers(exp0), env0, root) map {
+        SymbolicEvaluator.eval(exp0.peelUniversallyQuantifiers, env0, root) map {
           case (Nil, SymVal.True) =>
             // Case 1: The symbolic evaluator proved the property.
             PathResult.Success
@@ -211,25 +211,6 @@ object Verifier {
       PropertyResult.Unknown(property, paths, queries, e, PropertyError.mk(property, unknowns.head.model))
     }
 
-  }
-
-  /**
-    * Returns a list of all the universally quantified variables in the given expression `exp0`.
-    */
-  def getUniversallyQuantifiedVariables(exp0: Expression): List[Var] = exp0 match {
-    case Expression.Universal(params, _, _) => params.map {
-      case Ast.FormalParam(ident, tpe) => Var(ident, -1, tpe, SourceLocation.Unknown)
-    }
-    case _ => Nil
-  }
-
-  /**
-    * Returns the expression `exp0` with all universal quantifiers stripped.
-    */
-  def peelUniversallyQuantifiers(exp0: Expression): Expression = exp0 match {
-    case Expression.Existential(params, exp, loc) => peelUniversallyQuantifiers(exp)
-    case Expression.Universal(params, exp, loc) => peelUniversallyQuantifiers(exp)
-    case _ => exp0
   }
 
   /**

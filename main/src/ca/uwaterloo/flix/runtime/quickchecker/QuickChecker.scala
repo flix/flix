@@ -108,7 +108,7 @@ object QuickChecker {
     /*
      * Number of tests to run.
      */
-    val Limit = 1000
+    val Limit = 100
 
     /*
      * Check if the quick checker is enabled. Otherwise return success immediately.
@@ -154,8 +154,6 @@ object QuickChecker {
     val t = System.nanoTime()
 
     val exp0 = property.exp
-    val exp1 = Verifier.peelUniversallyQuantifiers(exp0)
-    val quantifiers = Verifier.getUniversallyQuantifiedVariables(exp0)
 
     /*
      * Accumulate successes and failures.
@@ -170,12 +168,12 @@ object QuickChecker {
       /*
        * Generate random parameter values in an environment.
        */
-      val env = randomEnv(quantifiers)
+      val env = randomEnv(exp0.getUniversallyQuantifiedVariables)
 
       /*
        * Run the symbolic evaluator on the generated environment.
        */
-      val List((_, result)) = SymbolicEvaluator.eval(exp1, env, root)
+      val List((_, result)) = SymbolicEvaluator.eval(exp0.peelUniversallyQuantifiers, env, root)
 
       /*
        * Inspect the result.
