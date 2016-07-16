@@ -193,7 +193,7 @@ object QuickChecker {
       val e = properties.map(_.elapsed).sum
 
       Console.println()
-      Console.println(s"  Properties: $s / $t proven in ${toSeconds(e)} seconds. (success = $s; failure = $f).")
+      Console.println(s"  Properties: $s / $t quick checked in ${toSeconds(e)} seconds. (success = $s; failure = $f).")
       Console.println()
 
     }
@@ -231,7 +231,14 @@ object QuickChecker {
 
 
   object ArbInt8 extends Arbitrary[SymVal.Int8] {
-    def gen: Generator[SymVal.Int8] = oneOf(CstInt8(0), GenInt8)
+    def gen: Generator[SymVal.Int8] = oneOf(
+      CstInt8(+0),
+      CstInt8(-1),
+      CstInt8(+1),
+      CstInt8(Byte.MinValue),
+      CstInt8(Byte.MaxValue),
+      GenInt8
+    )
   }
 
   class ArbType(tpe: Type) extends Arbitrary[SymVal] {
@@ -273,7 +280,7 @@ object QuickChecker {
     * A generator for char values.
     */
   object GenChar extends Generator[SymVal.Char] {
-    def mk(r: Random): SymVal.Char = SymVal.Char(r.nextPrintableChar()) // TODO
+    def mk(r: Random): SymVal.Char = SymVal.Char(r.nextPrintableChar())
   }
 
   /**
@@ -341,6 +348,13 @@ object QuickChecker {
     */
   case class CstInt8(c: Byte) extends Generator[SymVal.Int8] {
     def mk(r: Random): SymVal.Int8 = SymVal.Int8(c)
+  }
+
+  /**
+    * A generator for the constant int16 value `c`.
+    */
+  case class CstInt16(c: Short) extends Generator[SymVal.Int16] {
+    def mk(r: Random): SymVal.Int16 = SymVal.Int16(c)
   }
 
   /////////////////////////////////////////////////////////////////////////////
