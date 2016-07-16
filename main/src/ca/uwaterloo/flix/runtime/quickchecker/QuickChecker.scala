@@ -39,49 +39,80 @@ object QuickChecker {
   // - VerifierError
   // - SymbolicEvaluator.
 
-  val Limit = 100
-
-
-  sealed trait QCRunResult {
+  /**
+    * Represents the result of a single test execution.
+    */
+  sealed trait TestResult {
+    /**
+      * Returns the property associated with `this` property result.
+      */
     def property: Property
   }
 
-  object QCRunResult {
+  object TestResult {
 
-    case class Success(property: Property) extends QCRunResult
+    /**
+      * A successful test.
+      */
+    case class Success(property: Property) extends TestResult
 
-    case class Failure(property: Property, error: VerifierError) extends QCRunResult
-
-    // TODO: add model
+    /**
+      * A failed test.
+      */
+    case class Failure(property: Property, error: VerifierError) extends TestResult
 
   }
 
+  /**
+    * Represents the result of multiple tests of a property.
+    */
+  sealed trait PropertyResult {
 
-  sealed trait QCPropertyResult {
+    /**
+      * Returns `true` iff all tests of the property succeeded.
+      */
+    def isSuccess: Boolean = isInstanceOf[PropertyResult.Success]
 
-    def isSuccess: Boolean = isInstanceOf[QCPropertyResult.Success]
-
+    /**
+      * Returns `true` iff some tests of the property failed.
+      */
     def isFailure: Boolean = !isSuccess
 
+    /**
+      * Returns the property associated with `this` property result.
+      */
     def property: Property
 
+    /**
+      * Returns the total time spent testing the property.
+      */
     def elapsed: Long
 
   }
 
-  object QCPropertyResult {
+  object PropertyResult {
 
-    case class Success(property: Property, tests: Int, elapsed: Long) extends QCPropertyResult
+    /**
+      * A property that passed the quick checker.
+      */
+    case class Success(property: Property, tests: Int, elapsed: Long) extends PropertyResult
 
-    case class Failure(property: Property, success: Int, failure: Int, elapsed: Long, error: VerifierError) extends QCPropertyResult
+    /**
+      * A property that failed the quick checker.
+      */
+    case class Failure(property: Property, success: Int, failure: Int, elapsed: Long, error: VerifierError) extends PropertyResult
 
   }
-
 
   /**
     * Attempts to quick check all properties in the given AST.
     */
   def quickCheck(root: Root, options: Options)(implicit genSym: GenSym): Validation[Root, VerifierError] = {
+    /*
+     * Number of tests to run.
+     */
+    val Limit = 1000
+
     /*
      * Check if the quick checker is enabled. Otherwise return success immediately.
      */
@@ -97,7 +128,7 @@ object QuickChecker {
     /*
      * Quick check each property.
      */
-    val results = root.properties.map(p => quickCheckProperty(p, root))
+    val results = root.properties.map(p => quickCheckProperty(p, Limit, root))
 
     /*
      * Print verbose information (if enabled).
@@ -113,7 +144,7 @@ object QuickChecker {
       root.toSuccess
     } else {
       val errors = results.collect {
-        case QCPropertyResult.Failure(_, _, _, _, error) => error
+        case PropertyResult.Failure(_, _, _, _, error) => error
       }
       Validation.Failure(errors.toVector)
     }
@@ -122,7 +153,7 @@ object QuickChecker {
   /**
     * Attempts to quick check the given `property`.
     */
-  private def quickCheckProperty(property: Property, root: Root)(implicit genSym: GenSym, random: Random): QCPropertyResult = {
+  private def quickCheckProperty(property: Property, limit: Int, root: Root)(implicit genSym: GenSym, random: Random): PropertyResult = {
     val t = System.nanoTime()
 
     val exp0 = property.exp
@@ -132,13 +163,13 @@ object QuickChecker {
     /*
      * Accumulate successes and failures.
      */
-    val success = mutable.ListBuffer.empty[QCRunResult.Success]
-    val failure = mutable.ListBuffer.empty[QCRunResult.Failure]
+    val success = mutable.ListBuffer.empty[TestResult.Success]
+    val failure = mutable.ListBuffer.empty[TestResult.Failure]
 
     /*
      * Runs as many tests as requested.
      */
-    for (i <- 0 until Limit) {
+    for (i <- 0 until limit) {
       /*
        * Generate random parameter values in an environment.
        */
@@ -155,11 +186,11 @@ object QuickChecker {
       result match {
         case SymVal.True =>
           // Case 1: The symbolic evaluator proved the property.
-          success += QCRunResult.Success(property)
+          success += TestResult.Success(property)
         case SymVal.False =>
           // Case 2: The symbolic evaluator disproved the property.
           val error = Verifier.toVerifierError(property, Verifier.mkModel(env, None)) // TODO: Dont rely on Verifier.
-          failure += QCRunResult.Failure(property, error)
+          failure += TestResult.Failure(property, error)
         case v => throw new IllegalStateException(s"The symbolic evaluator returned a non-boolean value: $v.")
       }
     }
@@ -170,9 +201,9 @@ object QuickChecker {
      */
     val e = System.nanoTime() - t
     if (failure.isEmpty) {
-      QCPropertyResult.Success(property, success.size, e)
+      PropertyResult.Success(property, success.size, e)
     } else {
-      QCPropertyResult.Failure(property, success.size, failure.size, e, failure.head.error)
+      PropertyResult.Failure(property, success.size, failure.size, e, failure.head.error)
     }
   }
 
@@ -188,7 +219,7 @@ object QuickChecker {
   /**
     * Prints verbose results.
     */
-  private def printVerbose(results: List[QCPropertyResult]): Unit = {
+  private def printVerbose(results: List[PropertyResult]): Unit = {
     implicit val consoleCtx = Compiler.ConsoleCtx
     Console.println(consoleCtx.blue(s"-- QUICK CHECKER RESULTS ---------------------------------------------"))
 
@@ -200,10 +231,10 @@ object QuickChecker {
 
       for (result <- properties.sortBy(_.property.loc)) {
         result match {
-          case QCPropertyResult.Success(property, tests, elapsed) =>
+          case PropertyResult.Success(property, tests, elapsed) =>
             Console.println("  " + consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ") (" + tests + " tests, " + TimeOps.toSeconds(elapsed) + " seconds.)")
 
-          case QCPropertyResult.Failure(property, success, failure, elapsed, error) =>
+          case PropertyResult.Failure(property, success, failure, elapsed, error) =>
             Console.println("  " + consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ") (" + success + " SUCCESS, " + failure + " FAILED, " + TimeOps.toSeconds(elapsed) + " seconds.)")
         }
       }
@@ -280,7 +311,6 @@ object QuickChecker {
       case _ => throw InternalCompilerException(s"Unable to generate values of type `$tpe'.")
     }
   }
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Arbitrary Instances                                                     //
