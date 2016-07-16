@@ -311,6 +311,73 @@ object QuickChecker {
     )
   }
 
+  /**
+    * An arbitrary for int16 values.
+    */
+  object ArbInt16 extends Arbitrary[SymVal.Int16] {
+    def gen: Generator[SymVal.Int16] = oneOf(
+      CstInt16(+0),
+      CstInt16(-1),
+      CstInt16(+1),
+      CstInt16(Short.MinValue),
+      CstInt16(Short.MaxValue),
+      GenInt16
+    )
+  }
+
+  /**
+    * An arbitrary for int32 values.
+    */
+  object ArbInt32 extends Arbitrary[SymVal.Int32] {
+    def gen: Generator[SymVal.Int32] = oneOf(
+      CstInt32(+0),
+      CstInt32(-1),
+      CstInt32(+1),
+      CstInt32(Int.MinValue),
+      CstInt32(Int.MaxValue),
+      GenInt32
+    )
+  }
+
+  /**
+    * An arbitrary for int64 values.
+    */
+  object ArbInt64 extends Arbitrary[SymVal.Int64] {
+    def gen: Generator[SymVal.Int64] = oneOf(
+      CstInt64(+0),
+      CstInt64(-1),
+      CstInt64(+1),
+      CstInt64(Long.MinValue),
+      CstInt64(Long.MaxValue),
+      GenInt64
+    )
+  }
+
+  /**
+    * An arbitrary for bigint values.
+    */
+  object ArbBigInt extends Arbitrary[SymVal.BigInt] {
+    def gen: Generator[SymVal.BigInt] = oneOf(
+      CstBigInt(new BigInteger("+0")),
+      CstBigInt(new BigInteger("-1")),
+      CstBigInt(new BigInteger("+1")),
+      CstBigInt(new BigInteger(Long.MinValue.toString)),
+      CstBigInt(new BigInteger(Long.MaxValue.toString)),
+      CstBigInt(new BigInteger(Long.MaxValue.toString).add(new BigInteger(Long.MaxValue.toString))),
+      GenBigInt
+    )
+  }
+
+  /**
+    * An arbitrary for str values.
+    */
+  object ArbStr extends Arbitrary[SymVal.Str] {
+    def gen: Generator[SymVal.Str] = oneOf(
+      CstStr(""),
+      GenStr
+    )
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Generator Instances                                                     //
   /////////////////////////////////////////////////////////////////////////////
