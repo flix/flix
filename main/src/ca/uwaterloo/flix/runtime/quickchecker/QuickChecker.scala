@@ -20,18 +20,19 @@ import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression.Var
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
 import ca.uwaterloo.flix.language.ast.Type
-import ca.uwaterloo.flix.language.phase.Verifier.VerifierError
-import ca.uwaterloo.flix.language.phase.{GenSym, Verifier}
-import ca.uwaterloo.flix.runtime.verifier.SymVal.{Char, Unit}
-import ca.uwaterloo.flix.runtime.verifier.{SymVal, SymbolicEvaluator}
+import ca.uwaterloo.flix.runtime.verifier.Verifier.VerifierError
+import ca.uwaterloo.flix.language.phase.GenSym
+import ca.uwaterloo.flix.runtime.evaluator.SymVal.{Char, Unit}
+import ca.uwaterloo.flix.runtime.evaluator.{SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
 
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.util.Random
-
 import java.math.BigInteger
+
+import ca.uwaterloo.flix.runtime.verifier.Verifier
 
 object QuickChecker {
 

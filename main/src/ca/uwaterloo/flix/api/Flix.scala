@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
+import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.{DeltaSolver, Model, Solver, Value}
 import ca.uwaterloo.flix.util.{Options, Validation}
 

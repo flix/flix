@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.runtime.verifier
 
 import ca.uwaterloo.flix.language.ast.ExecutableAst
-import ca.uwaterloo.flix.language.phase.Verifier.VerifierError
+import Verifier.VerifierError
 
 // TODO: Rename, and move
 

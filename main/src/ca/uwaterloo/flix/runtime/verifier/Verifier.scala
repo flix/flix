@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2016 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.runtime.verifier
 
 import ca.uwaterloo.flix.language._
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression._
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Property
-import ca.uwaterloo.flix.runtime.verifier._
-import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, Property}
+import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.phase.GenSym
+import ca.uwaterloo.flix.runtime.evaluator.{SmtExpr, SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util._
 import com.microsoft.z3._
 
 import scala.collection.immutable.SortedMap
