@@ -39,7 +39,7 @@ object QuickChecker {
   // - VerifierError
   // - SymbolicEvaluator.
 
-  val Limit = 1000
+  val Limit = 100
 
 
   sealed trait QCRunResult {
@@ -71,9 +71,9 @@ object QuickChecker {
 
   object QuickCheckResult {
 
-    case class Success(property: Property, runs: Int, elapsed: Long) extends QuickCheckResult
+    case class Success(property: Property, tests: Int, elapsed: Long) extends QuickCheckResult
 
-    case class Failure(property: Property, runs: Int, elapsed: Long, error: VerifierError) extends QuickCheckResult
+    case class Failure(property: Property, success: Int, failure: Int, elapsed: Long, error: VerifierError) extends QuickCheckResult
 
   }
 
@@ -108,7 +108,7 @@ object QuickChecker {
       root.toSuccess
     } else {
       val errors = results.collect {
-        case QuickCheckResult.Failure(_, _, _, error) => error
+        case QuickCheckResult.Failure(_, _, _, _, error) => error
       }
       Validation.Failure(errors.toVector)
     }
@@ -147,12 +147,12 @@ object QuickChecker {
       }
     }
 
-    val e = System.nanoTime()
+    val e = System.nanoTime() - t
 
-    if (failure.nonEmpty) {
-      QuickCheckResult.Failure(property, Limit, e, failure.head.error) // TODO: Limit
+    if (failure.isEmpty) {
+      QuickCheckResult.Success(property, success.size, e)
     } else {
-      QuickCheckResult.Success(property, Limit, e) // TODO: Limit
+      QuickCheckResult.Failure(property, success.size, failure.size, e, failure.head.error)
     }
   }
 
@@ -179,11 +179,11 @@ object QuickChecker {
 
       for (result <- properties.sortBy(_.property.loc)) {
         result match {
-          case QuickCheckResult.Success(property, runs, elapsed) =>
-            Console.println("  " + consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ") (" + runs + " tests.)") // TODO: Elapsed toSeconds
+          case QuickCheckResult.Success(property, tests, elapsed) =>
+            Console.println("  " + consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ") (" + tests + " tests, " + TimeOps.toSeconds(elapsed) + " seconds.)")
 
-          case QuickCheckResult.Failure(property, runs, elapsed, error) =>
-            Console.println("  " + consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ") " + runs + " tests.") // TODO: Elapsed toSeconds
+          case QuickCheckResult.Failure(property, success, failure, elapsed, error) =>
+            Console.println("  " + consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ") (" + success + " SUCCESS, " + failure + " FAILED, " + TimeOps.toSeconds(elapsed) + " seconds.)")
         }
       }
 
