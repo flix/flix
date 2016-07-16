@@ -252,19 +252,32 @@ object QuickChecker {
     def gen: Generator[SymVal] = tpe match {
       case Type.Unit => ArbUnit.gen
       case Type.Bool => ArbBool.gen
-
-      // TODO: Rest
+      case Type.Char => ArbChar.gen
+      case Type.Float32 => ArbFloat32.gen
+      case Type.Float64 => ArbFloat64.gen
       case Type.Int8 => ArbInt8.gen
+      case Type.Int16 => ArbInt16.gen
+      case Type.Int32 => ArbInt32.gen
+      case Type.Int64 => ArbInt64.gen
+      case Type.BigInt => ArbBigInt.gen
+      case Type.Str => ArbStr.gen
 
-      case Type.BigInt => GenBigInt
+      case Type.Enum(name, cases) =>
+        val elms = cases.values.map(
+          t => new Generator[SymVal] {
+            def mk(r: Random): SymVal = SymVal.Tag(t.tag.name, new ArbSymVal(t.tpe).gen.mk(r))
+          }
+        )
+        oneOf(elms.toArray: _*)
 
-      case Type.Enum(name, cases) => oneOf(cases.values.map(t =>
-        new Generator[SymVal] {
-          def mk(r: Random): SymVal = SymVal.Tag(t.tag.name, new ArbSymVal(t.tpe).gen.mk(r))
+      case Type.Tuple(elms) => new Generator[SymVal] {
+        def mk(r: Random): SymVal = {
+          val vals = elms.map(t => new ArbSymVal(t).gen.mk(r))
+          SymVal.Tuple(vals)
         }
-      ).toArray: _*)
+      }
 
-      case Type.Var(_) => throw InternalCompilerException(s"Unable to generate values of type `$tpe'.")
+      case _ => throw InternalCompilerException(s"Unable to generate values of type `$tpe'.")
     }
   }
 
