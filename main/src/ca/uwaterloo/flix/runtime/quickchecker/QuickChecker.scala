@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.runtime.quickchecker
 
 import java.math.BigInteger
 
+import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression.Var
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
 import ca.uwaterloo.flix.language.ast.Type
@@ -57,16 +58,22 @@ object QuickChecker {
 
 
   sealed trait QuickCheckResult {
+
     def isSuccess: Boolean = isInstanceOf[QuickCheckResult.Success]
 
+    def isFailure: Boolean = !isSuccess
+
     def property: Property
+
+    def elapsed: Long
+
   }
 
   object QuickCheckResult {
 
-    case class Success(property: Property, runs: Int) extends QuickCheckResult
+    case class Success(property: Property, runs: Int, elapsed: Long) extends QuickCheckResult
 
-    case class Failure(property: Property, runs: Int, error: VerifierError) extends QuickCheckResult
+    case class Failure(property: Property, runs: Int, elapsed: Long, error: VerifierError) extends QuickCheckResult
 
   }
 
@@ -91,8 +98,7 @@ object QuickChecker {
      * Print verbose information (if enabled).
      */
     if (options.verbosity == Verbosity.Verbose) {
-      // TODO
-      //printVerbose(results)
+      printVerbose(results)
     }
 
     /*
@@ -102,7 +108,7 @@ object QuickChecker {
       root.toSuccess
     } else {
       val errors = results.collect {
-        case QuickCheckResult.Failure(_, _, error) => error
+        case QuickCheckResult.Failure(_, _, _, error) => error
       }
       Validation.Failure(errors.toVector)
     }
@@ -112,6 +118,9 @@ object QuickChecker {
     * Attempts to quickcheck the given `property`.
     */
   def quickCheckProperty(property: Property, root: Root)(implicit genSym: GenSym): QuickCheckResult = {
+
+    val t = System.nanoTime()
+
     val exp0 = property.exp
 
     val exp1 = Verifier.peelUniversallyQuantifiers(exp0)
@@ -138,12 +147,12 @@ object QuickChecker {
       }
     }
 
+    val e = System.nanoTime()
+
     if (failure.nonEmpty) {
-      println(s"FAIL, $Limit tests.")
-      QuickCheckResult.Failure(property, 0, ???)
+      QuickCheckResult.Failure(property, Limit, e, ???) // TODO: Limit
     } else {
-      println(s"OK, $Limit tests.")
-      QuickCheckResult.Success(property, 0)
+      QuickCheckResult.Success(property, Limit, e) // TODO: Limit
     }
   }
 
@@ -153,6 +162,48 @@ object QuickChecker {
       case (macc, Var(ident, offset, tpe, loc)) => macc + (ident.name -> new ArbType(tpe).gen.mk(r))
     }
   }
+
+
+  /**
+    * Prints verbose results.
+    */
+  def printVerbose(results: List[QuickCheckResult]): Unit = {
+    implicit val consoleCtx = Compiler.ConsoleCtx
+    Console.println(consoleCtx.blue(s"-- QUICK CHECKER RESULTS ---------------------------------------------"))
+
+    for ((source, properties) <- results.groupBy(_.property.loc.source)) {
+
+      Console.println()
+      Console.println(s"  -- Quick Check ${source.format} -- ")
+      Console.println()
+
+      for (result <- properties.sortBy(_.property.loc)) {
+        result match {
+          case QuickCheckResult.Success(property, runs, elapsed) =>
+            Console.println("  " + consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ") (" + runs + " tests.)") // TODO: Elapsed toSeconds
+
+          case QuickCheckResult.Failure(property, runs, elapsed, error) =>
+            Console.println("  " + consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ") " + runs + " tests.") // TODO: Elapsed toSeconds
+        }
+      }
+
+      val s = properties.count(_.isSuccess)
+      val f = properties.count(_.isFailure)
+      val t = properties.length
+      val e = properties.map(_.elapsed).sum
+
+      Console.println()
+      Console.println(s"  Properties: $s / $t proven in ${toSeconds(e)} seconds. (success = $s; failure = $f).")
+      Console.println()
+
+    }
+  }
+
+  /**
+    * Converts the given number of nanoseconds `l` into human readable string representation.
+    */
+  // TODO: Share?
+  private def toSeconds(l: Long): String = f"${l.toDouble / 1000000000.0}%3.1f"
 
   /////////////////////////////////////////////////////////////////////////////
   // Arbitrary and Generator                                                 //
@@ -281,12 +332,6 @@ object QuickChecker {
     def mk(r: Random): SymVal.Str = SymVal.Str(r.nextString(3))
   }
 
-  /**
-    * A generator combinator that randomly selects one of the given generators `gs`.
-    */
-  private def oneOf[A](gs: Generator[A]*): Generator[A] = new Generator[A] {
-    def mk(r: Random): A = gs(r.nextInt(gs.length)).mk(r)
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Constant Generators                                                     //
@@ -296,6 +341,17 @@ object QuickChecker {
     */
   case class CstInt8(c: Byte) extends Generator[SymVal.Int8] {
     def mk(r: Random): SymVal.Int8 = SymVal.Int8(c)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Combinators                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+
+  /**
+    * A generator combinator that randomly selects one of the given generators `gs`.
+    */
+  private def oneOf[A](gs: Generator[A]*): Generator[A] = new Generator[A] {
+    def mk(r: Random): A = gs(r.nextInt(gs.length)).mk(r)
   }
 
 }
