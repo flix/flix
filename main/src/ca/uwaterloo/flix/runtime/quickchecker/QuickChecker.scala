@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.phase.Verifier.VerifierError
 import ca.uwaterloo.flix.language.phase.{GenSym, Verifier}
-import ca.uwaterloo.flix.runtime.verifier.SymVal.Unit
+import ca.uwaterloo.flix.runtime.verifier.SymVal.{Char, Unit}
 import ca.uwaterloo.flix.runtime.verifier.{SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
@@ -217,30 +217,6 @@ object QuickChecker {
   }
 
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Arbitrary                                                               //
-  /////////////////////////////////////////////////////////////////////////////
-
-  object ArbUnit extends Arbitrary[SymVal.Unit.type] {
-    def gen: Generator[SymVal.Unit.type] = GenUnit
-  }
-
-  object ArbBool extends Arbitrary[SymVal.Bool] {
-    def gen: Generator[SymVal.Bool] = GenBool
-  }
-
-
-  object ArbInt8 extends Arbitrary[SymVal.Int8] {
-    def gen: Generator[SymVal.Int8] = oneOf(
-      CstInt8(+0),
-      CstInt8(-1),
-      CstInt8(+1),
-      CstInt8(Byte.MinValue),
-      CstInt8(Byte.MaxValue),
-      GenInt8
-    )
-  }
-
   class ArbType(tpe: Type) extends Arbitrary[SymVal] {
     def gen: Generator[SymVal] = tpe match {
       case Type.Unit => ArbUnit.gen
@@ -258,10 +234,86 @@ object QuickChecker {
     }
   }
 
+
   /////////////////////////////////////////////////////////////////////////////
-  // Random Generators                                                       //
+  // Arbitrary Instaces                                                      //
   /////////////////////////////////////////////////////////////////////////////
 
+
+  /**
+    * An arbitrary for unit.
+    */
+  object ArbUnit extends Arbitrary[SymVal.Unit.type] {
+    def gen: Generator[SymVal.Unit.type] = GenUnit
+  }
+
+  /**
+    * An arbitrary for boolean values.
+    */
+  object ArbBool extends Arbitrary[SymVal.Bool] {
+    def gen: Generator[SymVal.Bool] = GenBool
+  }
+
+  /**
+    * An arbitrary for char values.
+    */
+  object ArbChar extends Arbitrary[SymVal.Char] {
+    def gen: Generator[SymVal.Char] = GenChar
+  }
+
+  /**
+    * An arbitrary for float32 values.
+    */
+  object ArbFloat32 extends Arbitrary[SymVal.Float32] {
+    def gen: Generator[SymVal.Float32] = oneOf(
+      CstFloat32(+0.0f),
+      CstFloat32(-0.0f),
+      CstFloat32(+1.0f),
+      CstFloat32(-1.0f),
+      CstFloat32(Float.MinValue),
+      CstFloat32(Float.MaxValue),
+      CstFloat32(Float.NegativeInfinity),
+      CstFloat32(Float.PositiveInfinity),
+      CstFloat32(Float.NaN),
+      GenFloat32
+    )
+  }
+
+  /**
+    * An arbitrary for float64 values.
+    */
+  object ArbFloat64 extends Arbitrary[SymVal.Float64] {
+    def gen: Generator[SymVal.Float64] = oneOf(
+      CstFloat64(+0.0d),
+      CstFloat64(-0.0d),
+      CstFloat64(+1.0d),
+      CstFloat64(-1.0d),
+      CstFloat64(Double.MinValue),
+      CstFloat64(Double.MaxValue),
+      CstFloat64(Double.NegativeInfinity),
+      CstFloat64(Double.PositiveInfinity),
+      CstFloat64(Double.NaN),
+      GenFloat64
+    )
+  }
+
+  /**
+    * An arbitrary for int8 values.
+    */
+  object ArbInt8 extends Arbitrary[SymVal.Int8] {
+    def gen: Generator[SymVal.Int8] = oneOf(
+      CstInt8(+0),
+      CstInt8(-1),
+      CstInt8(+1),
+      CstInt8(Byte.MinValue),
+      CstInt8(Byte.MaxValue),
+      GenInt8
+    )
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Generator Instances                                                     //
+  /////////////////////////////////////////////////////////////////////////////
   /**
     * A trivial generator for the unit value.
     */
@@ -339,15 +391,14 @@ object QuickChecker {
     def mk(r: Random): SymVal.Str = SymVal.Str(r.nextString(3))
   }
 
-
   /////////////////////////////////////////////////////////////////////////////
-  // Constant Generators                                                     //
+  // Constant Generator Instances                                            //
   /////////////////////////////////////////////////////////////////////////////
   /**
     * A generator for the constant char value `c`.
     */
   case class CstChar(c: Char) extends Generator[SymVal.Char] {
-    def mk(r: Random): SymVal.Char = SymVal.Char(c)
+    def mk(r: Random): SymVal.Char = SymVal.Char(c.asInstanceOf[Int])
   }
 
   /**
@@ -360,7 +411,7 @@ object QuickChecker {
   /**
     * A generator for the constant float64 value `c`.
     */
-  case class CstFloat64(c: Float) extends Generator[SymVal.Float64] {
+  case class CstFloat64(c: Double) extends Generator[SymVal.Float64] {
     def mk(r: Random): SymVal.Float64 = SymVal.Float64(c)
   }
 
@@ -399,12 +450,16 @@ object QuickChecker {
     def mk(r: Random): SymVal.BigInt = SymVal.BigInt(c)
   }
 
-  // TODO: Rest
+  /**
+    * A generator for the constant str value `c`.
+    */
+  case class CstStr(c: String) extends Generator[SymVal.Str] {
+    def mk(r: Random): SymVal.Str = SymVal.Str(c)
+  }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Combinators                                                             //
+  // Generator Combinators                                                   //
   /////////////////////////////////////////////////////////////////////////////
-
   /**
     * A generator combinator that randomly selects one of the given generators `gs`.
     */
