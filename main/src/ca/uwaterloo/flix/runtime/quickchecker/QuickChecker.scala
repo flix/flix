@@ -90,7 +90,12 @@ object QuickChecker {
     }
 
     /*
-     * Verify each property.
+     * Initialize a shared random instance.
+     */
+    implicit val random = new Random()
+
+    /*
+     * Quick check each property.
      */
     val results = root.properties.map(p => quickCheckProperty(p, root))
 
@@ -117,7 +122,7 @@ object QuickChecker {
   /**
     * Attempts to quick check the given `property`.
     */
-  private def quickCheckProperty(property: Property, root: Root)(implicit genSym: GenSym): QuickCheckResult = {
+  private def quickCheckProperty(property: Property, root: Root)(implicit genSym: GenSym, random: Random): QuickCheckResult = {
 
     val t = System.nanoTime()
 
@@ -131,24 +136,32 @@ object QuickChecker {
     val failure = mutable.ListBuffer.empty[QCRunResult.Failure]
 
     for (i <- 0 until Limit) {
-      val env = genEnv(quantifiers)
+      /*
+       * Generate random parameter values in an environment.
+       */
+      val env = randomEnv(quantifiers)
 
-      val ls = SymbolicEvaluator.eval(exp1, env, root)
+      /*
+       * Run the symbolic evaluator on the generated environment.
+       */
+      val List((_, result)) = SymbolicEvaluator.eval(exp1, env, root)
 
-      ls.head match {
-        case (Nil, SymVal.True) =>
+      /*
+       * Inspect the result.
+       */
+      result match {
+        case SymVal.True =>
           // Case 1: The symbolic evaluator proved the property.
           success += QCRunResult.Success(property)
-        case (Nil, SymVal.False) =>
+        case SymVal.False =>
           // Case 2: The symbolic evaluator disproved the property.
           val error = Verifier.toVerifierError(property, Verifier.mkModel(env, None)) // TODO: Dont rely on Verifier.
           failure += QCRunResult.Failure(property, error)
-        case (_, v) => throw new IllegalStateException(s"The symbolic evaluator returned a non-boolean value: $v.")
+        case v => throw new IllegalStateException(s"The symbolic evaluator returned a non-boolean value: $v.")
       }
     }
 
     val e = System.nanoTime() - t
-
     if (failure.isEmpty) {
       QuickCheckResult.Success(property, success.size, e)
     } else {
@@ -156,11 +169,12 @@ object QuickChecker {
     }
   }
 
-  // TODO: DOC
-  def genEnv(quantifiers: List[Var]): Map[String, SymVal] = {
-    val r: Random = new Random()
+  /**
+    * Generates a random environment for the given list of quantifiers.
+    */
+  def randomEnv(quantifiers: List[Var])(implicit random: Random): Map[String, SymVal] = {
     quantifiers.foldLeft(Map.empty[String, SymVal]) {
-      case (macc, Var(ident, offset, tpe, loc)) => macc + (ident.name -> new ArbSymVal(tpe).gen.mk(r))
+      case (macc, Var(ident, offset, tpe, loc)) => macc + (ident.name -> new ArbSymVal(tpe).gen.mk(random))
     }
   }
 
