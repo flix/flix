@@ -31,270 +31,79 @@ import scala.collection.immutable.SortedMap
 object Verifier {
 
   /**
-    * A common super-type for verification errors.
-    */
-  sealed trait VerifierError extends CompilationError
-
-  object VerifierError {
-
-    implicit val consoleCtx = Compiler.ConsoleCtx
-
-    /**
-      * An error raised to indicate that a function is not associative.
-      */
-    case class AssociativityError(m: Map[String, String], loc: SourceLocation) extends VerifierError {
-      val message =
-        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> The function is not associative.")}
-           |
-           |Counter-example: ${m.mkString(", ")}
-           |
-           |The function was defined here:
-           |${loc.underline}
-           """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that a function is not commutative.
-      */
-    case class CommutativityError(m: Map[String, String], loc: SourceLocation) extends VerifierError {
-      val message =
-        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> The function is not commutative.")}
-           |
-           |Counter-example: ${m.mkString(", ")}
-           |
-           |The function was defined here:
-           |${loc.underline}
-           """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that a partial order is not reflexive.
-      */
-    case class ReflexivityError(m: Map[String, String], loc: SourceLocation) extends VerifierError {
-      val message =
-        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> The partial order is not reflexive.")}
-           |
-           |Counter-example: ${m.mkString(", ")}
-           |
-           |The partial order was defined here:
-           |${loc.underline}
-           """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that a partial order is not anti-symmetric.
-      */
-    case class AntiSymmetryError(m: Map[String, String], loc: SourceLocation) extends VerifierError {
-      val message =
-        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> The partial order is not anti-symmetric.")}
-           |
-           |Counter-example: ${m.mkString(", ")}
-           |
-           |The partial order was defined here:
-           |${loc.underline}
-           """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that a partial order is not transitive.
-      */
-    case class TransitivityError(m: Map[String, String], loc: SourceLocation) extends VerifierError {
-      val message =
-        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> The partial order is not transitive.")}
-           |
-           |Counter-example: ${m.mkString(", ")}
-           |
-           |The partial order was defined here:
-           |${loc.underline}
-           """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that the least element is not smallest.
-      */
-    case class LeastElementError(loc: SourceLocation) extends VerifierError {
-      val message =
-        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> The least element is not the smallest.")}
-           |
-           |The partial order was defined here:
-           |${loc.underline}
-           """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that the lub is not an upper bound.
-      */
-    case class UpperBoundError(m: Map[String, String], loc: SourceLocation) extends VerifierError {
-      val message =
-        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> The lub is not an upper bound.")}
-           |
-           |Counter-example: ${m.mkString(", ")}
-           |
-           |The lub was defined here:
-           |${loc.underline}
-           """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that the lub is not a least upper bound.
-      */
-    case class LeastUpperBoundError(m: Map[String, String], loc: SourceLocation) extends VerifierError {
-      val message =
-        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> The lub is not a least upper bound.")}
-           |
-           |Counter-example: ${m.mkString(", ")}
-           |
-           |The lub was defined here:
-           |${loc.underline}
-           """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that the greatest element is not the largest.
-      */
-    case class GreatestElementError(loc: SourceLocation) extends VerifierError {
-      val message =
-        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> The greatest element is not the largest.")}
-           |
-           |The partial order was defined here:
-           |${loc.underline}
-           """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that the glb is not a lower bound.
-      */
-    case class LowerBoundError(m: Map[String, String], loc: SourceLocation) extends VerifierError {
-      val message =
-        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> The glb is not a lower bound.")}
-           |
-           |Counter-example: ${m.mkString(", ")}
-           |
-           |The glb was defined here:
-           |${loc.underline}
-           """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that the glb is not the greatest lower bound.
-      */
-    case class GreatestLowerBoundError(m: Map[String, String], loc: SourceLocation) extends VerifierError {
-      val message =
-        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> The glb is not a greatest lower bound.")}
-           |
-           |Counter-example: ${m.mkString(", ")}
-           |
-           |The glb was defined here:
-           |${loc.underline}
-           """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that the function is not strict.
-      */
-    case class StrictError(loc: SourceLocation) extends VerifierError {
-      val message =
-        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> The function is not strict.")}
-           |
-           |The function was defined here:
-           |${loc.underline}
-           """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that the function is not monotone.
-      */
-    case class MonotoneError(m: Map[String, String], loc: SourceLocation) extends VerifierError {
-      val message =
-        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> The function is not monotone.")}
-           |
-           |Counter-example: ${m.mkString(", ")}
-           |
-           |The function was defined here:
-           |${loc.underline}
-           """.stripMargin
-    }
-
-
-    /**
-      * An error raised to indicate that the height function may be negative.
-      */
-    case class HeightNonNegativeError(m: Map[String, String], loc: SourceLocation) extends VerifierError {
-      val message =
-        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> The height function is not non-negative.")}
-           |
-           |Counter-example: ${m.mkString(", ")}
-           |
-           |The height function was defined here:
-           |${loc.underline}
-           """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that the height function is not strictly decreasing.
-      */
-    case class HeightStrictlyDecreasingError(m: Map[String, String], loc: SourceLocation) extends VerifierError {
-      val message =
-        s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> The height function is not strictly decreasing.")}
-           |
-           |Counter-example: ${m.mkString(", ")}
-           |
-           |The height function was defined here:
-           |${loc.underline}
-           """.stripMargin
-    }
-
-  }
-
-  /**
     * The result of a single symbolic execution.
     */
   sealed trait PathResult
 
   object PathResult {
 
+    /**
+      * The property was true in the single execution.
+      */
     case object Success extends PathResult
 
+    /**
+      * The property was false in the single execution.
+      */
     case class Failure(model: Map[String, String]) extends PathResult
 
+    /**
+      * Unknown whether the property was true/false in the single execution.
+      */
     case class Unknown(model: Map[String, String]) extends PathResult
+
+  }
+
+  /**
+    * A type to hold the result of a property verification.
+    */
+  sealed trait PropertyResult {
+
+    /**
+      * Returns the property associated with `this` property result.
+      */
+    def property: ExecutableAst.Property
+
+    /**
+      * Returns the number of paths explored by symbolic execution for `this` property.
+      */
+    def paths: Int
+
+    /**
+      * Returns the number of SMT queries issued for `this` property.
+      */
+    def queries: Int
+
+    /**
+      * Returns the total time spent evaluating `this` property.
+      */
+    def elapsed: Long
+
+  }
+
+  object PropertyResult {
+
+    /**
+      * A property that was proven.
+      */
+    case class Success(property: ExecutableAst.Property, paths: Int, queries: Int, elapsed: Long) extends PropertyResult
+
+    /**
+      * A property that was disproved.
+      */
+    case class Failure(property: ExecutableAst.Property, paths: Int, queries: Int, elapsed: Long, error: PropertyError) extends PropertyResult
+
+    /**
+      * A property whose validity is unknown.
+      */
+    case class Unknown(property: ExecutableAst.Property, paths: Int, queries: Int, elapsed: Long, error: PropertyError) extends PropertyResult
 
   }
 
   /**
     * Attempts to verify all properties in the given AST.
     */
-  def verify(root: ExecutableAst.Root, options: Options)(implicit genSym: GenSym): Validation[ExecutableAst.Root, VerifierError] = {
+  def verify(root: ExecutableAst.Root, options: Options)(implicit genSym: GenSym): Validation[ExecutableAst.Root, PropertyError] = {
     /*
      * Check if verification is enabled. Otherwise return success immediately.
      */
@@ -548,22 +357,22 @@ object Verifier {
   /**
     * Returns a verifier error for the given property `prop` under the given environment `env`.
     */
-  def toVerifierError(prop: Property, env: Map[String, String]): VerifierError = prop.law match {
-    case Law.Associativity => VerifierError.AssociativityError(env, prop.loc)
-    case Law.Commutativity => VerifierError.CommutativityError(env, prop.loc)
-    case Law.Reflexivity => VerifierError.ReflexivityError(env, prop.loc)
-    case Law.AntiSymmetry => VerifierError.AntiSymmetryError(env, prop.loc)
-    case Law.Transitivity => VerifierError.TransitivityError(env, prop.loc)
-    case Law.LeastElement => VerifierError.LeastElementError(prop.loc)
-    case Law.UpperBound => VerifierError.UpperBoundError(env, prop.loc)
-    case Law.LeastUpperBound => VerifierError.LeastUpperBoundError(env, prop.loc)
-    case Law.GreatestElement => VerifierError.GreatestElementError(prop.loc)
-    case Law.LowerBound => VerifierError.LowerBoundError(env, prop.loc)
-    case Law.GreatestLowerBound => VerifierError.GreatestLowerBoundError(env, prop.loc)
-    case Law.Strict => VerifierError.StrictError(prop.loc)
-    case Law.Monotone => VerifierError.MonotoneError(env, prop.loc)
-    case Law.HeightNonNegative => VerifierError.HeightNonNegativeError(env, prop.loc)
-    case Law.HeightStrictlyDecreasing => VerifierError.HeightStrictlyDecreasingError(env, prop.loc)
+  def toVerifierError(prop: Property, env: Map[String, String]): PropertyError = prop.law match {
+    case Law.Associativity => PropertyError.AssociativityError(env, prop.loc)
+    case Law.Commutativity => PropertyError.CommutativityError(env, prop.loc)
+    case Law.Reflexivity => PropertyError.ReflexivityError(env, prop.loc)
+    case Law.AntiSymmetry => PropertyError.AntiSymmetryError(env, prop.loc)
+    case Law.Transitivity => PropertyError.TransitivityError(env, prop.loc)
+    case Law.LeastElement => PropertyError.LeastElementError(prop.loc)
+    case Law.UpperBound => PropertyError.UpperBoundError(env, prop.loc)
+    case Law.LeastUpperBound => PropertyError.LeastUpperBoundError(env, prop.loc)
+    case Law.GreatestElement => PropertyError.GreatestElementError(prop.loc)
+    case Law.LowerBound => PropertyError.LowerBoundError(env, prop.loc)
+    case Law.GreatestLowerBound => PropertyError.GreatestLowerBoundError(env, prop.loc)
+    case Law.Strict => PropertyError.StrictError(prop.loc)
+    case Law.Monotone => PropertyError.MonotoneError(env, prop.loc)
+    case Law.HeightNonNegative => PropertyError.HeightNonNegativeError(env, prop.loc)
+    case Law.HeightStrictlyDecreasing => PropertyError.HeightStrictlyDecreasingError(env, prop.loc)
   }
 
   /**
@@ -787,12 +596,12 @@ object Verifier {
     * Returns the median of the given list `xs`.
     */
   private def avg(xs: List[Int]): Int =
-    if (xs.isEmpty) 0 else xs.sum / xs.length
+  if (xs.isEmpty) 0 else xs.sum / xs.length
 
   /**
     * Returns the median of the given list `xs`.
     */
   private def avgl(xs: List[Long]): Long =
-    if (xs.isEmpty) 0 else xs.sum / xs.length
+  if (xs.isEmpty) 0 else xs.sum / xs.length
 
 }

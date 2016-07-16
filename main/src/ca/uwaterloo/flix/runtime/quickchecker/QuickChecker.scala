@@ -19,8 +19,7 @@ package ca.uwaterloo.flix.runtime.quickchecker
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression.Var
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
-import ca.uwaterloo.flix.language.ast.Type
-import ca.uwaterloo.flix.runtime.verifier.Verifier.VerifierError
+import ca.uwaterloo.flix.language.ast.{PropertyError, Type}
 import ca.uwaterloo.flix.language.phase.GenSym
 import ca.uwaterloo.flix.runtime.evaluator.SymVal.{Char, Unit}
 import ca.uwaterloo.flix.runtime.evaluator.{SymVal, SymbolicEvaluator}
@@ -30,15 +29,12 @@ import ca.uwaterloo.flix.util._
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.util.Random
+
 import java.math.BigInteger
 
 import ca.uwaterloo.flix.runtime.verifier.Verifier
 
 object QuickChecker {
-
-  // TODO: Refactor shared components:
-  // - VerifierError
-  // - SymbolicEvaluator.
 
   /**
     * Represents the result of a single test execution.
@@ -60,7 +56,7 @@ object QuickChecker {
     /**
       * A failed test.
       */
-    case class Failure(property: Property, error: VerifierError) extends TestResult
+    case class Failure(property: Property, error: PropertyError) extends TestResult
 
   }
 
@@ -101,14 +97,14 @@ object QuickChecker {
     /**
       * A property that failed the quick checker.
       */
-    case class Failure(property: Property, success: Int, failure: Int, elapsed: Long, error: VerifierError) extends PropertyResult
+    case class Failure(property: Property, success: Int, failure: Int, elapsed: Long, error: PropertyError) extends PropertyResult
 
   }
 
   /**
     * Attempts to quick check all properties in the given AST.
     */
-  def quickCheck(root: Root, options: Options)(implicit genSym: GenSym): Validation[Root, VerifierError] = {
+  def quickCheck(root: Root, options: Options)(implicit genSym: GenSym): Validation[Root, PropertyError] = {
     /*
      * Number of tests to run.
      */
