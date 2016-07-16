@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.phase.Verifier.VerifierError
 import ca.uwaterloo.flix.language.phase.{GenSym, Verifier}
-import ca.uwaterloo.flix.runtime.verifier.SymVal.Unit
+import ca.uwaterloo.flix.runtime.verifier.SymVal.{Tag, Unit}
 import ca.uwaterloo.flix.runtime.verifier.{PropertyResult, SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
@@ -110,10 +110,9 @@ object QuickChecker {
 
   def genEnv(quantifiers: List[Var]): Map[String, SymVal] = {
 
-    val r: Random = ???
+    val r: Random = new Random()
 
     def visit(tpe: Type): SymVal = tpe match {
-      // TODO: Should use arb.
       case Type.Unit => ArbUnit.get.mk(r)
       case Type.Bool => ArbBool.get.mk(r)
       case Type.Char => ???
@@ -121,7 +120,8 @@ object QuickChecker {
       case Type.Float64 => ???
       case Type.Int8 => ArbInt8.get.mk(r)
 
-      case Type.Enum(name, cases) => ???
+      case Type.Enum(name, cases) => ??? //oneOf(cases.map(t => new ArbTag()))
+
       case _ => throw InternalRuntimeException(s"Unable to enumerate type `$tpe'.")
     }
 
@@ -156,6 +156,12 @@ object QuickChecker {
 
   object ArbInt8 extends Arbitrary[SymVal.Int8] {
     def get: Gen[SymVal.Int8] = oneOf(Int8Cst(0), GenInt8)
+  }
+
+  class ArbTag(a: Arbitrary[SymVal]) extends Arbitrary[SymVal.Tag] {
+    def get: Gen[SymVal.Tag] = new Gen[SymVal.Tag] {
+      override def mk(r: Random): Tag = ???
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
