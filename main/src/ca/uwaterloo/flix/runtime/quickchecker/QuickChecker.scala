@@ -344,6 +344,27 @@ object QuickChecker {
   // Constant Generators                                                     //
   /////////////////////////////////////////////////////////////////////////////
   /**
+    * A generator for the constant char value `c`.
+    */
+  case class CstChar(c: Char) extends Generator[SymVal.Char] {
+    def mk(r: Random): SymVal.Char = SymVal.Char(c)
+  }
+
+  /**
+    * A generator for the constant float32 value `c`.
+    */
+  case class CstFloat32(c: Float) extends Generator[SymVal.Float32] {
+    def mk(r: Random): SymVal.Float32 = SymVal.Float32(c)
+  }
+
+  /**
+    * A generator for the constant float64 value `c`.
+    */
+  case class CstFloat64(c: Float) extends Generator[SymVal.Float64] {
+    def mk(r: Random): SymVal.Float64 = SymVal.Float64(c)
+  }
+
+  /**
     * A generator for the constant int8 value `c`.
     */
   case class CstInt8(c: Byte) extends Generator[SymVal.Int8] {
@@ -356,6 +377,29 @@ object QuickChecker {
   case class CstInt16(c: Short) extends Generator[SymVal.Int16] {
     def mk(r: Random): SymVal.Int16 = SymVal.Int16(c)
   }
+
+  /**
+    * A generator for the constant int32 value `c`.
+    */
+  case class CstInt32(c: Int) extends Generator[SymVal.Int32] {
+    def mk(r: Random): SymVal.Int32 = SymVal.Int32(c)
+  }
+
+  /**
+    * A generator for the constant int64 value `c`.
+    */
+  case class CstInt64(c: Long) extends Generator[SymVal.Int64] {
+    def mk(r: Random): SymVal.Int64 = SymVal.Int64(c)
+  }
+
+  /**
+    * A generator for the constant big int value `c`.
+    */
+  case class CstBigInt(c: BigInteger) extends Generator[SymVal.BigInt] {
+    def mk(r: Random): SymVal.BigInt = SymVal.BigInt(c)
+  }
+
+  // TODO: Rest
 
   /////////////////////////////////////////////////////////////////////////////
   // Combinators                                                             //
