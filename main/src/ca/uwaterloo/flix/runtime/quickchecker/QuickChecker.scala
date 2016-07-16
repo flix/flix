@@ -186,7 +186,7 @@ object QuickChecker {
           success += TestResult.Success(property)
         case SymVal.False =>
           // Case 2: The symbolic evaluator disproved the property.
-          val error = Verifier.toVerifierError(property, Verifier.mkModel(env, None)) // TODO: Dont rely on Verifier.
+          val error = PropertyError.mk(property, Verifier.mkModel(env, None)) // TODO: Dont rely on Verifier.
           failure += TestResult.Failure(property, error)
         case v => throw new IllegalStateException(s"The symbolic evaluator returned a non-boolean value: $v.")
       }

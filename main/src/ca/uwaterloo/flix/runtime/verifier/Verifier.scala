@@ -206,9 +206,9 @@ object Verifier {
     if (failures.isEmpty && unknowns.isEmpty) {
       PropertyResult.Success(property, paths, queries, e)
     } else if (failures.nonEmpty) {
-      PropertyResult.Failure(property, paths, queries, e, toVerifierError(property, failures.head.model))
+      PropertyResult.Failure(property, paths, queries, e, PropertyError.mk(property, failures.head.model))
     } else {
-      PropertyResult.Unknown(property, paths, queries, e, toVerifierError(property, unknowns.head.model))
+      PropertyResult.Unknown(property, paths, queries, e, PropertyError.mk(property, unknowns.head.model))
     }
 
   }
@@ -352,27 +352,6 @@ object Verifier {
       }
     }
     "<<unknown>>"
-  }
-
-  /**
-    * Returns a verifier error for the given property `prop` under the given environment `env`.
-    */
-  def toVerifierError(prop: Property, env: Map[String, String]): PropertyError = prop.law match {
-    case Law.Associativity => PropertyError.AssociativityError(env, prop.loc)
-    case Law.Commutativity => PropertyError.CommutativityError(env, prop.loc)
-    case Law.Reflexivity => PropertyError.ReflexivityError(env, prop.loc)
-    case Law.AntiSymmetry => PropertyError.AntiSymmetryError(env, prop.loc)
-    case Law.Transitivity => PropertyError.TransitivityError(env, prop.loc)
-    case Law.LeastElement => PropertyError.LeastElementError(prop.loc)
-    case Law.UpperBound => PropertyError.UpperBoundError(env, prop.loc)
-    case Law.LeastUpperBound => PropertyError.LeastUpperBoundError(env, prop.loc)
-    case Law.GreatestElement => PropertyError.GreatestElementError(prop.loc)
-    case Law.LowerBound => PropertyError.LowerBoundError(env, prop.loc)
-    case Law.GreatestLowerBound => PropertyError.GreatestLowerBoundError(env, prop.loc)
-    case Law.Strict => PropertyError.StrictError(prop.loc)
-    case Law.Monotone => PropertyError.MonotoneError(env, prop.loc)
-    case Law.HeightNonNegative => PropertyError.HeightNonNegativeError(env, prop.loc)
-    case Law.HeightStrictlyDecreasing => PropertyError.HeightStrictlyDecreasingError(env, prop.loc)
   }
 
   /**

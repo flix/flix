@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Property
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 
 /**
@@ -26,6 +27,27 @@ sealed trait PropertyError extends CompilationError
 object PropertyError {
 
   implicit val consoleCtx = Compiler.ConsoleCtx
+
+  /**
+    * Returns a property error for the given property `prop` under the given environment `env`.
+    */
+  def mk(prop: Property, env: Map[String, String]): PropertyError = prop.law match {
+    case Law.Associativity => AssociativityError(env, prop.loc)
+    case Law.Commutativity => CommutativityError(env, prop.loc)
+    case Law.Reflexivity => ReflexivityError(env, prop.loc)
+    case Law.AntiSymmetry => AntiSymmetryError(env, prop.loc)
+    case Law.Transitivity => TransitivityError(env, prop.loc)
+    case Law.LeastElement => LeastElementError(prop.loc)
+    case Law.UpperBound => UpperBoundError(env, prop.loc)
+    case Law.LeastUpperBound => LeastUpperBoundError(env, prop.loc)
+    case Law.GreatestElement => GreatestElementError(prop.loc)
+    case Law.LowerBound => LowerBoundError(env, prop.loc)
+    case Law.GreatestLowerBound => GreatestLowerBoundError(env, prop.loc)
+    case Law.Strict => StrictError(prop.loc)
+    case Law.Monotone => MonotoneError(env, prop.loc)
+    case Law.HeightNonNegative => HeightNonNegativeError(env, prop.loc)
+    case Law.HeightStrictlyDecreasing => HeightStrictlyDecreasingError(env, prop.loc)
+  }
 
   /**
     * An error raised to indicate that a function is not associative.
