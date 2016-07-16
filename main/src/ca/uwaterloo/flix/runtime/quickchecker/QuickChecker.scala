@@ -57,9 +57,9 @@ object QuickChecker {
   }
 
 
-  sealed trait QuickCheckResult {
+  sealed trait QCPropertyResult {
 
-    def isSuccess: Boolean = isInstanceOf[QuickCheckResult.Success]
+    def isSuccess: Boolean = isInstanceOf[QCPropertyResult.Success]
 
     def isFailure: Boolean = !isSuccess
 
@@ -69,11 +69,11 @@ object QuickChecker {
 
   }
 
-  object QuickCheckResult {
+  object QCPropertyResult {
 
-    case class Success(property: Property, tests: Int, elapsed: Long) extends QuickCheckResult
+    case class Success(property: Property, tests: Int, elapsed: Long) extends QCPropertyResult
 
-    case class Failure(property: Property, success: Int, failure: Int, elapsed: Long, error: VerifierError) extends QuickCheckResult
+    case class Failure(property: Property, success: Int, failure: Int, elapsed: Long, error: VerifierError) extends QCPropertyResult
 
   }
 
@@ -113,7 +113,7 @@ object QuickChecker {
       root.toSuccess
     } else {
       val errors = results.collect {
-        case QuickCheckResult.Failure(_, _, _, _, error) => error
+        case QCPropertyResult.Failure(_, _, _, _, error) => error
       }
       Validation.Failure(errors.toVector)
     }
@@ -122,19 +122,22 @@ object QuickChecker {
   /**
     * Attempts to quick check the given `property`.
     */
-  private def quickCheckProperty(property: Property, root: Root)(implicit genSym: GenSym, random: Random): QuickCheckResult = {
-
+  private def quickCheckProperty(property: Property, root: Root)(implicit genSym: GenSym, random: Random): QCPropertyResult = {
     val t = System.nanoTime()
 
     val exp0 = property.exp
-
     val exp1 = Verifier.peelUniversallyQuantifiers(exp0)
-
     val quantifiers = Verifier.getUniversallyQuantifiedVariables(exp0)
 
+    /*
+     * Accumulate successes and failures.
+     */
     val success = mutable.ListBuffer.empty[QCRunResult.Success]
     val failure = mutable.ListBuffer.empty[QCRunResult.Failure]
 
+    /*
+     * Runs as many tests as requested.
+     */
     for (i <- 0 until Limit) {
       /*
        * Generate random parameter values in an environment.
@@ -161,18 +164,22 @@ object QuickChecker {
       }
     }
 
+
+    /*
+     * Collect the results.
+     */
     val e = System.nanoTime() - t
     if (failure.isEmpty) {
-      QuickCheckResult.Success(property, success.size, e)
+      QCPropertyResult.Success(property, success.size, e)
     } else {
-      QuickCheckResult.Failure(property, success.size, failure.size, e, failure.head.error)
+      QCPropertyResult.Failure(property, success.size, failure.size, e, failure.head.error)
     }
   }
 
   /**
     * Generates a random environment for the given list of quantifiers.
     */
-  def randomEnv(quantifiers: List[Var])(implicit random: Random): Map[String, SymVal] = {
+  private def randomEnv(quantifiers: List[Var])(implicit random: Random): Map[String, SymVal] = {
     quantifiers.foldLeft(Map.empty[String, SymVal]) {
       case (macc, Var(ident, offset, tpe, loc)) => macc + (ident.name -> new ArbSymVal(tpe).gen.mk(random))
     }
@@ -181,7 +188,7 @@ object QuickChecker {
   /**
     * Prints verbose results.
     */
-  private def printVerbose(results: List[QuickCheckResult]): Unit = {
+  private def printVerbose(results: List[QCPropertyResult]): Unit = {
     implicit val consoleCtx = Compiler.ConsoleCtx
     Console.println(consoleCtx.blue(s"-- QUICK CHECKER RESULTS ---------------------------------------------"))
 
@@ -193,10 +200,10 @@ object QuickChecker {
 
       for (result <- properties.sortBy(_.property.loc)) {
         result match {
-          case QuickCheckResult.Success(property, tests, elapsed) =>
+          case QCPropertyResult.Success(property, tests, elapsed) =>
             Console.println("  " + consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ") (" + tests + " tests, " + TimeOps.toSeconds(elapsed) + " seconds.)")
 
-          case QuickCheckResult.Failure(property, success, failure, elapsed, error) =>
+          case QCPropertyResult.Failure(property, success, failure, elapsed, error) =>
             Console.println("  " + consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ") (" + success + " SUCCESS, " + failure + " FAILED, " + TimeOps.toSeconds(elapsed) + " seconds.)")
         }
       }
@@ -246,6 +253,7 @@ object QuickChecker {
       case Type.Unit => ArbUnit.gen
       case Type.Bool => ArbBool.gen
 
+      // TODO: Rest
       case Type.Int8 => ArbInt8.gen
 
       case Type.BigInt => GenBigInt
