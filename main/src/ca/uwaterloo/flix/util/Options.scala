@@ -28,6 +28,7 @@ object Options {
     invariants = false,
     monitor = false,
     optimize = false,
+    quickchecker = false,
     timeout = Duration.Inf,
     threads = Runtime.getRuntime.availableProcessors(),
     verbosity = Verbosity.Normal,
@@ -43,17 +44,18 @@ object Options {
 /**
   * General Flix options.
   *
-  * @param debug      enables the emission of debugging information.
-  * @param evaluation selects the evaluation strategy.
-  * @param invariants enables checking of compiler invariants.
-  * @param optimize   enables compiler optimizations.
-  * @param monitor    enables the debugger and profiler.
-  * @param timeout    selects the solver timeout.
-  * @param threads    selects the number of threads to use.
-  * @param verbosity  selects the level of verbosity.
-  * @param verifier   enables the verifier.
+  * @param debug        enables the emission of debugging information.
+  * @param evaluation   selects the evaluation strategy.
+  * @param invariants   enables checking of compiler invariants.
+  * @param optimize     enables compiler optimizations.
+  * @param monitor      enables the debugger and profiler.
+  * @param quickchecker enables the quickchecker.
+  * @param timeout      selects the solver timeout.
+  * @param threads      selects the number of threads to use.
+  * @param verbosity    selects the level of verbosity.
+  * @param verifier     enables the verifier.
   */
-case class Options(debug: Boolean, evaluation: Evaluation, invariants: Boolean, optimize: Boolean, monitor: Boolean, timeout: Duration, threads: Int, verbosity: Verbosity, verifier: Boolean)
+case class Options(debug: Boolean, evaluation: Evaluation, invariants: Boolean, optimize: Boolean, monitor: Boolean, quickchecker: Boolean, timeout: Duration, threads: Int, verbosity: Verbosity, verifier: Boolean)
 
 /**
   * An option to control the level of verbosity.
