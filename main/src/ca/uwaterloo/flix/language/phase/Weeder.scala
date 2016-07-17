@@ -1236,6 +1236,7 @@ object Weeder {
         case ParsedAst.Expression.Apply(lambda, args, sp2) => IllegalBodyTerm("Functions call may not occur here.", mkSL(leftMostSourcePosition(lambda), sp2)).toFailure
         case _ => throw InternalCompilerException("Illegal body term. But proper error messages not yet implemented.")
       }
+
     }
 
   }
