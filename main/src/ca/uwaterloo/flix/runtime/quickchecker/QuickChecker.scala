@@ -20,7 +20,7 @@ import java.math.BigInteger
 
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression.Var
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, Property, Root}
 import ca.uwaterloo.flix.language.ast.{PropertyError, Type}
 import ca.uwaterloo.flix.language.phase.GenSym
 import ca.uwaterloo.flix.runtime.evaluator.SymVal.{Char, Unit}
@@ -171,23 +171,22 @@ object QuickChecker {
       /*
        * Run the symbolic evaluator on the generated environment.
        */
-      val List((_, result)) = SymbolicEvaluator.eval(exp0.peelUniversallyQuantifiers, env, root)
-
-      /*
-       * Inspect the result.
-       */
-      result match {
-        case SymVal.True =>
+      try {
+        if (eval(exp0.peelUniversallyQuantifiers, env, root)) {
           // Case 1: The symbolic evaluator proved the property.
           success += TestResult.Success(property)
-        case SymVal.False =>
+        } else {
           // Case 2: The symbolic evaluator disproved the property.
           val error = PropertyError.mk(property, SymVal.mkModel(env, None))
           failure += TestResult.Failure(property, error)
-        case v => throw new IllegalStateException(s"The symbolic evaluator returned a non-boolean value: $v.")
+        }
+      } catch {
+        case ex: Exception =>
+          // Case 3: The symbolic evaluator failed with an exception.
+          val error = PropertyError.mk(property, SymVal.mkModel(env, None))
+          failure += TestResult.Failure(property, error)
       }
     }
-
 
     /*
      * Collect the results.
@@ -197,6 +196,18 @@ object QuickChecker {
       PropertyResult.Success(property, success.size, e)
     } else {
       PropertyResult.Failure(property, success.size, failure.size, e, failure.head.error)
+    }
+  }
+
+  /**
+    * Evaluates the given expression `exp0` to a boolean value under the given environment `env0`.
+    */
+  private def eval(exp0: Expression, env0: Map[String, SymVal], root: Root)(implicit genSym: GenSym): Boolean = {
+    val result = SymbolicEvaluator.eval(exp0.peelUniversallyQuantifiers, env0, root)
+    result match {
+      case List((Nil, SymVal.True)) => true
+      case List((Nil, SymVal.False)) => false
+      case List((_, v)) => throw new IllegalStateException(s"The symbolic evaluator returned a non-boolean value: $v.")
     }
   }
 
