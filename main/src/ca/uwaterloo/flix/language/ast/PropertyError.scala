@@ -56,13 +56,13 @@ object PropertyError {
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-           |${consoleCtx.red(s">> The function is not associative.")}
+         |${consoleCtx.red(s">> The function is not associative.")}
          |
-           |Counter-example: ${m.mkString(", ")}
+         |Counter-example: ${m.mkString(", ")}
          |
-           |The function was defined here:
+         |The function was defined here:
          |${loc.underline}
-           """.stripMargin
+         """.stripMargin
   }
 
   /**
@@ -72,13 +72,13 @@ object PropertyError {
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-           |${consoleCtx.red(s">> The function is not commutative.")}
+         |${consoleCtx.red(s">> The function is not commutative.")}
          |
-           |Counter-example: ${m.mkString(", ")}
+         |Counter-example: ${m.mkString(", ")}
          |
-           |The function was defined here:
+         |The function was defined here:
          |${loc.underline}
-           """.stripMargin
+         """.stripMargin
   }
 
   /**
@@ -88,13 +88,13 @@ object PropertyError {
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-           |${consoleCtx.red(s">> The partial order is not reflexive.")}
+         |${consoleCtx.red(s">> The partial order is not reflexive.")}
          |
-           |Counter-example: ${m.mkString(", ")}
+         |Counter-example: ${m.mkString(", ")}
          |
-           |The partial order was defined here:
+         |The partial order was defined here:
          |${loc.underline}
-           """.stripMargin
+         """.stripMargin
   }
 
   /**
@@ -104,13 +104,13 @@ object PropertyError {
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-           |${consoleCtx.red(s">> The partial order is not anti-symmetric.")}
+         |${consoleCtx.red(s">> The partial order is not anti-symmetric.")}
          |
-           |Counter-example: ${m.mkString(", ")}
+         |Counter-example: ${m.mkString(", ")}
          |
-           |The partial order was defined here:
+         |The partial order was defined here:
          |${loc.underline}
-           """.stripMargin
+         """.stripMargin
   }
 
   /**
@@ -120,13 +120,13 @@ object PropertyError {
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-           |${consoleCtx.red(s">> The partial order is not transitive.")}
+         |${consoleCtx.red(s">> The partial order is not transitive.")}
          |
-           |Counter-example: ${m.mkString(", ")}
+         |Counter-example: ${m.mkString(", ")}
          |
-           |The partial order was defined here:
+         |The partial order was defined here:
          |${loc.underline}
-           """.stripMargin
+         """.stripMargin
   }
 
   /**
@@ -136,11 +136,11 @@ object PropertyError {
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-           |${consoleCtx.red(s">> The least element is not the smallest.")}
+         |${consoleCtx.red(s">> The least element is not the smallest.")}
          |
-           |The partial order was defined here:
+         |The partial order was defined here:
          |${loc.underline}
-           """.stripMargin
+         """.stripMargin
   }
 
   /**
@@ -150,13 +150,13 @@ object PropertyError {
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-           |${consoleCtx.red(s">> The lub is not an upper bound.")}
+         |${consoleCtx.red(s">> The lub is not an upper bound.")}
          |
-           |Counter-example: ${m.mkString(", ")}
+         |Counter-example: ${m.mkString(", ")}
          |
-           |The lub was defined here:
+         |The lub was defined here:
          |${loc.underline}
-           """.stripMargin
+         """.stripMargin
   }
 
   /**
@@ -166,13 +166,13 @@ object PropertyError {
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-           |${consoleCtx.red(s">> The lub is not a least upper bound.")}
+         |${consoleCtx.red(s">> The lub is not a least upper bound.")}
          |
-           |Counter-example: ${m.mkString(", ")}
+         |Counter-example: ${m.mkString(", ")}
          |
-           |The lub was defined here:
+         |The lub was defined here:
          |${loc.underline}
-           """.stripMargin
+         """.stripMargin
   }
 
   /**
@@ -182,11 +182,11 @@ object PropertyError {
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-           |${consoleCtx.red(s">> The greatest element is not the largest.")}
+         |${consoleCtx.red(s">> The greatest element is not the largest.")}
          |
-           |The partial order was defined here:
+         |The partial order was defined here:
          |${loc.underline}
-           """.stripMargin
+         """.stripMargin
   }
 
   /**
@@ -196,13 +196,13 @@ object PropertyError {
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-           |${consoleCtx.red(s">> The glb is not a lower bound.")}
+         |${consoleCtx.red(s">> The glb is not a lower bound.")}
          |
-           |Counter-example: ${m.mkString(", ")}
+         |Counter-example: ${m.mkString(", ")}
          |
-           |The glb was defined here:
+         |The glb was defined here:
          |${loc.underline}
-           """.stripMargin
+         """.stripMargin
   }
 
   /**
@@ -212,13 +212,13 @@ object PropertyError {
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-           |${consoleCtx.red(s">> The glb is not a greatest lower bound.")}
+         |${consoleCtx.red(s">> The glb is not a greatest lower bound.")}
          |
-           |Counter-example: ${m.mkString(", ")}
+         |Counter-example: ${m.mkString(", ")}
          |
-           |The glb was defined here:
+         |The glb was defined here:
          |${loc.underline}
-           """.stripMargin
+         """.stripMargin
   }
 
   /**
@@ -228,11 +228,11 @@ object PropertyError {
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-           |${consoleCtx.red(s">> The function is not strict.")}
+         |${consoleCtx.red(s">> The function is not strict.")}
          |
-           |The function was defined here:
+         |The function was defined here:
          |${loc.underline}
-           """.stripMargin
+         """.stripMargin
   }
 
   /**
@@ -242,13 +242,13 @@ object PropertyError {
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-           |${consoleCtx.red(s">> The function is not monotone.")}
+         |${consoleCtx.red(s">> The function is not monotone.")}
          |
-           |Counter-example: ${m.mkString(", ")}
+         |Counter-example: ${m.mkString(", ")}
          |
-           |The function was defined here:
+         |The function was defined here:
          |${loc.underline}
-           """.stripMargin
+         """.stripMargin
   }
 
 
@@ -259,13 +259,13 @@ object PropertyError {
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-           |${consoleCtx.red(s">> The height function is not non-negative.")}
+         |${consoleCtx.red(s">> The height function is not non-negative.")}
          |
-           |Counter-example: ${m.mkString(", ")}
+         |Counter-example: ${m.mkString(", ")}
          |
-           |The height function was defined here:
+         |The height function was defined here:
          |${loc.underline}
-           """.stripMargin
+         """.stripMargin
   }
 
   /**
@@ -275,13 +275,13 @@ object PropertyError {
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-           |${consoleCtx.red(s">> The height function is not strictly decreasing.")}
+         |${consoleCtx.red(s">> The height function is not strictly decreasing.")}
          |
-           |Counter-example: ${m.mkString(", ")}
+         |Counter-example: ${m.mkString(", ")}
          |
-           |The height function was defined here:
+         |The height function was defined here:
          |${loc.underline}
-           """.stripMargin
+         """.stripMargin
   }
 
 }

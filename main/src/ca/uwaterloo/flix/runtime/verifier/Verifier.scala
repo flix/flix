@@ -154,7 +154,7 @@ object Verifier {
     val exp0 = property.exp
 
     // a sequence of environments under which the base expression must hold.
-    val envs = enumerate(exp0.getUniversallyQuantifiedVariables)
+    val envs = enumerate(exp0.getQuantifiers)
 
     // the number of paths explored by the symbolic evaluator.
     var paths = 0
@@ -166,7 +166,7 @@ object Verifier {
     val pathResults = envs flatMap {
       case env0 =>
         paths += 1
-        SymbolicEvaluator.eval(exp0.peelUniversallyQuantifiers, env0, root) map {
+        SymbolicEvaluator.eval(exp0.peelQuantifiers, env0, root) map {
           case (Nil, SymVal.True) =>
             // Case 1: The symbolic evaluator proved the property.
             PathResult.Success

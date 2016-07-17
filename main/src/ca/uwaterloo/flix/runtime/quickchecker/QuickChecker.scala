@@ -166,13 +166,13 @@ object QuickChecker {
       /*
        * Generate random parameter values in an environment.
        */
-      val env = randomEnv(exp0.getUniversallyQuantifiedVariables)
+      val env = randomEnv(exp0.getQuantifiers)
 
       /*
        * Run the symbolic evaluator on the generated environment.
        */
       try {
-        if (eval(exp0.peelUniversallyQuantifiers, env, root)) {
+        if (eval(exp0.peelQuantifiers, env, root)) {
           // Case 1: The symbolic evaluator proved the property.
           success += TestResult.Success(property)
         } else {
@@ -203,7 +203,7 @@ object QuickChecker {
     * Evaluates the given expression `exp0` to a boolean value under the given environment `env0`.
     */
   private def eval(exp0: Expression, env0: Map[String, SymVal], root: Root)(implicit genSym: GenSym): Boolean = {
-    val result = SymbolicEvaluator.eval(exp0.peelUniversallyQuantifiers, env0, root)
+    val result = SymbolicEvaluator.eval(exp0.peelQuantifiers, env0, root)
     result match {
       case List((Nil, SymVal.True)) => true
       case List((Nil, SymVal.False)) => false
