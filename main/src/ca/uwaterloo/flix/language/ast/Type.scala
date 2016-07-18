@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.util.InternalCompilerException
+
 import scala.collection.immutable
 
 /**
@@ -23,10 +25,15 @@ import scala.collection.immutable
   */
 sealed trait Type {
   /**
+    * The kind of `this` type.
+    */
+  def kind: Kind
+
+  /**
     * Returns a human readable string representation of `this` type.
     */
   override def toString: String = this match {
-    case Type.Var(x) => "Var(" + x + ")"
+    case Type.Var(x, k) => x
     case Type.Unit => "Unit"
     case Type.Bool => "Bool"
     case Type.Char => "Char"
@@ -39,119 +46,204 @@ sealed trait Type {
     case Type.BigInt => "BigInt"
     case Type.Str => "Str"
     case Type.Native => "Native"
-    case Type.Prop => "Prop"
+
+    case Type.Apply(Type.Apply(Type.Arrow, t2), t1) => t1.toString + " -> " + t2.toString
+    case Type.Apply(Type.FOpt, t) => "Opt[" + t.toString + "]"
+    case Type.Apply(Type.FList, t) => "List[" + t.toString + "]"
+    case Type.Apply(Type.FVec, t) => "Vec[" + t.toString + "]"
+    case Type.Apply(Type.FSet, t) => "Set[" + t.toString + "]"
+    case Type.Apply(Type.Apply(Type.FMap, k), v) => "Map[" + k.toString + ", " + v.toString + "]"
+
     case Type.Tag(enum, tag, tpe) => tag.name + "(" + tpe + ")"
     case Type.Enum(enum, cases) => enum.fqn
     case Type.Tuple(elms) => "(" + elms.mkString(". ") + ")"
-    case Type.Lambda(args, r) => "λ(" + args.mkString(", ") + ") -> " + r
-    case Type.Parametric(name, elms) => "Parametric(" + name + ", " + elms.mkString(", ") + ")"
-    case Type.FOpt(tpe) => "Opt[" + tpe + "]"
-    case Type.FList(tpe) => "Lst[" + tpe + "]"
-    case Type.FVec(tpe) => "Vec[" + tpe + "]"
-    case Type.FSet(tpe) => "Set[" + tpe + "]"
-    case Type.FMap(key, value) => "Map[" + key + ", " + value + "]"
-    case Type.Unresolved(name) => "?" + name
-    case Type.Abs(name, tpe) => ??? // TODO
-    case Type.Any => "Any"
-    case Type.Predicate(terms) => "Predicate(" + terms.mkString(", ") + ")"
+
+    case _ => super.toString
   }
 }
 
 object Type {
 
-  /**
-    * A type variable.
-    */
-  case class Var(x: String) extends Type
+  /////////////////////////////////////////////////////////////////////////////
+  // Types                                                                   //
+  /////////////////////////////////////////////////////////////////////////////
 
   /**
-    * An AST node that represents the Unit type.
+    * A type variable expression.
     */
-  case object Unit extends Type
+  case class Var(name: String, kind: Kind) extends Type
 
   /**
-    * An AST node that represents the Bool type.
+    * A type constructor that represents the unit value.
     */
-  case object Bool extends Type
+  case object Unit extends Type {
+    def kind: Kind = Kind.Star
+  }
 
   /**
-    * An AST node that represents the Char type.
+    * A type constructor that represent boolean values.
     */
-  case object Char extends Type
+  case object Bool extends Type {
+    def kind: Kind = Kind.Star
+  }
 
   /**
-    * An AST node that represents the Float32 type.
+    * A type constructor that represent character values.
     */
-  case object Float32 extends Type
+  case object Char extends Type {
+    def kind: Kind = Kind.Star
+  }
 
   /**
-    * An AST node that represents the Float64 type.
+    * A type constructor that represent 32-bit floating point numbers.
     */
-  case object Float64 extends Type
+  case object Float32 extends Type {
+    def kind: Kind = Kind.Star
+  }
 
   /**
-    * An AST node that represents the 8-bit signed integer type.
+    * A type constructor that represent 64-bit floating point numbers.
     */
-  case object Int8 extends Type
+  case object Float64 extends Type {
+    def kind: Kind = Kind.Star
+  }
 
   /**
-    * An AST node that represents the 16-bit signed integer type.
+    * A type constructor that represent 8-bit signed integers.
     */
-  case object Int16 extends Type
+  case object Int8 extends Type {
+    def kind: Kind = Kind.Star
+  }
 
   /**
-    * An AST node that represents the 32-bit signed integer type.
+    * A type constructor that represent 16-bit signed integers.
     */
-  case object Int32 extends Type
+  case object Int16 extends Type {
+    def kind: Kind = Kind.Star
+  }
 
   /**
-    * An AST node that represents the 64-bit signed integer type.
+    * A type constructor that represent 32-bit signed integers.
     */
-  case object Int64 extends Type
+  case object Int32 extends Type {
+    def kind: Kind = Kind.Star
+  }
 
   /**
-    * An AST node that represents the big int type.
+    * A type constructor that represent 64-bit signed integers.
     */
-  case object BigInt extends Type
+  case object Int64 extends Type {
+    def kind: Kind = Kind.Star
+  }
 
   /**
-    * An AST node that represents the Str type.
+    * A type constructor that represent arbitrary-precision integers.
     */
-  case object Str extends Type
+  case object BigInt extends Type {
+    def kind: Kind = Kind.Star
+  }
 
   /**
-    * An AST node that represents a native type.
+    * A type constructor that represent strings.
     */
-  case object Native extends Type
+  case object Str extends Type {
+    def kind: Kind = Kind.Star
+  }
 
   /**
-    * An AST node that represents the proposition type.
+    * A type constructor that represent native objects.
     */
-  case object Prop extends Type
+  case object Native extends Type {
+    def kind: Kind = Kind.Star
+  }
 
   /**
-    * An AST node that represents an enum type.
+    * A type constructor that represents enums.
     *
     * @param name  the fully qualified name of the enum.
     * @param cases a map from tag names to tag types.
     */
-  // TODO: Should be sortedmap
-  case class Enum(name: Symbol.Resolved, cases: immutable.Map[String, Type.Tag]) extends Type
+  case class Enum(name: Symbol.Resolved, cases: immutable.Map[String, Type.Tag]) extends Type {
+    def kind: Kind = Kind.Star
+  }
 
   /**
-    * An AST node that represents a tuple type.
-    *
-    * @param elms the types of the elements.
+    * A type expression that represents functions.
     */
-  case class Tuple(elms: List[Type]) extends Type
+  object Arrow extends Type {
+    def kind: Kind = Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+  }
 
   /**
-    * An AST node that represents a lambda type.
-    *
-    * @param args   the type of the arguments.
-    * @param retTpe the type of the return type.
+    * A type constructor that represents tuples.
     */
-  case class Lambda(args: List[Type], retTpe: Type) extends Type
+  case class FTuple(length: Int) extends Type {
+    def kind: Kind = (0 until length).foldLeft(Kind.Star: Kind) {
+      case (kacc, _) => Kind.Arrow(Kind.Star, kacc)
+    }
+  }
+
+  /**
+    * A type constructor that represents options.
+    */
+  case object FOpt extends Type {
+    def kind: Kind = Kind.Arrow(Kind.Star, Kind.Star)
+  }
+
+  /**
+    * A type constructor that represents list values.
+    */
+  case object FList extends Type {
+    def kind: Kind = Kind.Arrow(Kind.Star, Kind.Star)
+  }
+
+  /**
+    * A type constructor that represents vector values
+    */
+  case object FVec extends Type {
+    def kind: Kind = Kind.Arrow(Kind.Star, Kind.Star)
+  }
+
+  /**
+    * A type constructor that represents set values.
+    */
+  case object FSet extends Type {
+    def kind: Kind = Kind.Arrow(Kind.Star, Kind.Star)
+  }
+
+  /**
+    * A type constructor that represents map values.
+    */
+  case object FMap extends Type {
+    def kind: Kind = Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+  }
+
+  /**
+    * A type expression that represents the application of `t2` to `t1`.
+    */
+  case class Apply(t1: Type, t2: Type) extends Type {
+    /**
+      * Returns the kind of `this` type.
+      *
+      * The kind of a type application can unique be determined
+      * from the kind of the first type argument `t1`.
+      */
+    def kind: Kind = t1.kind match {
+      case Kind.Star => throw InternalCompilerException("Illegal kind.")
+      case Kind.Arrow(_, k) => k
+    }
+  }
+
+  //
+  // TODO: --- Everything below here may be removed ---
+  //
+  /**
+    * An AST node that represents the proposition type.
+    */
+  // TODO: Remove?
+  case object Prop extends Type {
+    def kind: Kind = Kind.Star
+  }
 
   /**
     * An AST node that represent a parametric type.
@@ -159,66 +251,46 @@ object Type {
     * @param name the ambiguous name.
     * @param elms the type of the type parameters.
     */
-  // TODO: check with pierce book and see how this should be represented.
-  case class Parametric(name: Name.QName, elms: Seq[Type]) extends Type
+  // TODO: remove?
+  case class Parametric(name: Name.QName, elms: Seq[Type]) extends Type {
+    def kind: Kind = ???
+  }
 
-  /**
-    * An AST node that represents an Opt type.
-    *
-    * @param tpe the type of the wrapped value.
-    */
-  case class FOpt(tpe: Type) extends Type
 
-  /**
-    * An AST node that represents a List type.
-    *
-    * @param tpe the type of the list elements.
-    */
-  case class FList(tpe: Type) extends Type
+  //
+  // TODO: --- Everything below here is considered deprecated  ---
+  //
 
-  /**
-    * An AST node that represents a Vec type.
-    *
-    * @param tpe the type of the list elements.
-    */
-  case class FVec(tpe: Type) extends Type
-
-  /**
-    * An AST node that represents a Set type.
-    *
-    * @param tpe the type of the set elements.
-    */
-  case class FSet(tpe: Type) extends Type
-
-  /**
-    * An AST node that represents a Map type.
-    *
-    * @param key   the type of the keys.
-    * @param value the type of the values.
-    */
-  case class FMap(key: Type, value: Type) extends Type
 
   /**
     * An AST node that represents a predicate type.
     *
     * @param terms the type of predicate terms.
     */
-  case class Predicate(terms: List[Type]) extends Type
+  // TODO: To be removed
+  case class Predicate(terms: List[Type]) extends Type {
+    def kind: Kind = Kind.Star
+  }
 
   /**
     * An AST node that represent a reference to an unresolved type.
     *
     * @param name the name of the unresolved type.
     */
-  @deprecated("to be removed", "0.1.0")
-  case class Unresolved(name: Name.QName) extends Type
+  // TODO: To be removed
+  case class Unresolved(name: Name.QName) extends Type {
+    def kind: Kind = Kind.Star
+  }
 
-  // TODO: check with pierce book and see how this should be represented.
-  @deprecated("to be removed", "0.1.0")
-  case class Abs(name: Var, tpe: Type) extends Type
+  // TODO: To be removed
+  case class Abs(name: Var, tpe: Type) extends Type {
+    def kind: Kind = Kind.Star
+  }
 
-  @deprecated("to be removed", "0.1.0")
-  case object Any extends Type
+  // TODO: To be removed
+  case object Any extends Type {
+    def kind: Kind = Kind.Star
+  }
 
   /**
     * An AST node that represents the type of a tag.
@@ -227,7 +299,70 @@ object Type {
     * @param tag  the name of the tag.
     * @param tpe  the type of the nested value.
     */
-  @deprecated("to be removed", "0.1.0")
-  case class Tag(enum: Symbol.Resolved, tag: Name.Ident, tpe: Type) extends Type
+  // TODO: To be removed
+  case class Tag(enum: Symbol.Resolved, tag: Name.Ident, tpe: Type) extends Type {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
+    * An AST node that represents a tuple type.
+    *
+    * @param elms the types of the elements.
+    */
+  case class Tuple(elms: List[Type]) extends Type {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
+    * TODO:
+    * The type of functions.
+    *
+    * @param args   the type of the arguments.
+    * @param retTpe the type of the return type.
+    */
+  // TODO: Rename to arrow?
+  case class Lambda(args: List[Type], retTpe: Type) extends Type {
+    def kind: Kind = Kind.Star
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Helper Functions                                                        //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Constructs the function type A -> B where `A` is the given type `a` and `B` is the given type `b`.
+    */
+  def mkArrow(a: Type, b: Type): Type = Apply(Apply(Arrow, a), b)
+
+  /**
+    * Constructs the type Opt[A] where `A` is the given type `tpe`.
+    */
+  def mkFOpt(tpe: Type): Type = Apply(FOpt, tpe)
+
+  /**
+    * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
+    */
+  def mkFTuple(ts: List[Type]): Type = ts.foldLeft(Type.FTuple(ts.length): Type) {
+    case (tacc, tpe) => Apply(tacc, tpe)
+  }
+
+  /**
+    * Constructs the type List[A] where `A` is the given type `tpe`.
+    */
+  def mkFList(tpe: Type): Type = Apply(FList, tpe)
+
+  /**
+    * Constructs the type Vec[A] where `A` is the given type `tpe`.
+    */
+  def mkFVec(tpe: Type): Type = Apply(FVec, tpe)
+
+  /**
+    * Constructs the type Set[A] where `A` is the given type `tpe`.
+    */
+  def mkFSet(tpe: Type): Type = Apply(FSet, tpe)
+
+  /**
+    * Constructs the type Map[K, V] where `K` is the given type `k` and `V` is the given type `v`.
+    */
+  def mkFMap(k: Type, v: Type): Type = Apply(Apply(FMap, k), v)
 
 }

@@ -946,9 +946,9 @@ object Resolver {
           case x :: Nil => x
           case xs => Type.Tuple(xs)
         }
-        case Type.FSet(welms) =>
+        case Type.Apply(Type.FSet, welms) =>
           resolve(welms, namespace, syms) map {
-            case elms => Type.FSet(elms)
+            case elms => Type.mkFSet(elms)
           }
         case Type.Lambda(wargs, wretType) =>
           val argsVal = @@(wargs map visit)
@@ -961,7 +961,7 @@ object Resolver {
         case Type.Parametric(qname, welms) =>
           @@(welms map (e => resolve(e, namespace, syms))) map {
             case elms => qname.ident.name match {
-              case "Set" => Type.FSet(elms.head)
+              case "Set" => Type.mkFSet(elms.head)
             }
           }
         case _ => ??? // TODO

@@ -155,14 +155,14 @@ object LoadBytecode {
     case Type.Tuple(elms) => classOf[Value.Tuple]
     case Type.Lambda(_, _) => interfaces(tpe)
     case Type.Parametric(_, _) => ??? // TODO: How to handle?
-    case Type.FOpt(_) => ??? // TODO
-    case Type.FList(_) => ??? // TODO
-    case Type.FVec(_) => ??? // TODO
-    case Type.FSet(_) => classOf[scala.collection.immutable.Set[AnyRef]]
-    case Type.FMap(_, _) => ??? // TODO
+    case Type.FOpt => ??? // TODO
+    case Type.FList => ??? // TODO
+    case Type.FVec => ??? // TODO
+    case Type.FSet => classOf[scala.collection.immutable.Set[AnyRef]]
+    case Type.FMap => ??? // TODO
     case Type.Predicate(_) => ??? // TODO: How to handle?
     case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
-    case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
+    case Type.Var(_, _) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
     case Type.Tag(_, _, _) => throw InternalCompilerException(s"No corresponding JVM type for $tpe.")
   }
 

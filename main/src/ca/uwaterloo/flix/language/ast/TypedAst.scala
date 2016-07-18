@@ -472,19 +472,19 @@ object TypedAst {
       */
     case class Tuple(elms: List[TypedAst.Expression], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Expression
 
-    case class FNone(tpe: Type.FOpt, loc: SourceLocation) extends TypedAst.Expression
+    case class FNone(tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class FSome(exp: TypedAst.Expression, tpe: Type.FOpt, loc: SourceLocation) extends TypedAst.Expression
+    case class FSome(exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class FNil(tpe: Type.FList, loc: SourceLocation) extends TypedAst.Expression
+    case class FNil(tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class FList(hd: TypedAst.Expression, tl: TypedAst.Expression, tpe: Type.FList, loc: SourceLocation) extends TypedAst.Expression
+    case class FList(hd: TypedAst.Expression, tl: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class FVec(elms: List[TypedAst.Expression], tpe: Type.FVec, loc: SourceLocation) extends TypedAst.Expression
+    case class FVec(elms: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class FSet(elms: List[TypedAst.Expression], tpe: Type.FSet, loc: SourceLocation) extends TypedAst.Expression
+    case class FSet(elms: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class FMap(elms: List[(TypedAst.Expression, TypedAst.Expression)], tpe: Type.FMap, loc: SourceLocation) extends TypedAst.Expression
+    case class FMap(elms: List[(TypedAst.Expression, TypedAst.Expression)], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class GetIndex(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 

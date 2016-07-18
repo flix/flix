@@ -296,20 +296,21 @@ object Typer2 {
            * None expression.
            */
           case NamedAst.Expression.FNone(id, loc) =>
-            ret(id, EmptyContext, Type.FOpt(fresh()))
+            ret(id, EmptyContext, Type.FOpt)
 
           /*
            * Some expression.
            */
           case NamedAst.Expression.FSome(id, exp, loc) =>
             val (ctx, tpe) = visitExp(exp, tenv0)
-            ret(id, ctx, Type.FOpt(tpe))
+            ret(id, ctx, Type.FOpt)
 
           /*
            * Nil expression.
            */
           case NamedAst.Expression.FNil(id, loc) =>
-            ret(id, EmptyContext, Type.FList(fresh()))
+            ???
+            //ret(id, EmptyContext, Type.FList(fresh()))
 
           /*
            * List expression.
@@ -318,13 +319,16 @@ object Typer2 {
             val (ctx1, tpe1) = visitExp(hd, tenv0)
             val (ctx2, tpe2) = visitExp(tl, tenv0)
             constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
-            ret(id, ctx1 ::: ctx2, Type.FList(tpe1))
+            ???
+            //ret(id, ctx1 ::: ctx2, Type.FList(tpe1))
 
           /*
            * Vector expression.
            */
           case NamedAst.Expression.FVec(id, Nil, loc) =>
-            ret(id, EmptyContext, Type.FVec(fresh()))
+            //ret(id, EmptyContext, Type.FVec(fresh()))
+            ???
+
           case NamedAst.Expression.FVec(id, elms, loc) =>
             val elements = elms.map(e => visitExp(e, tenv0))
             for ((ctx, tpe) <- elements.tail) {
@@ -454,8 +458,8 @@ object Typer2 {
       * Otherwise returns a `Failure`.
       */
     def unify(tpe1: Type, tpe2: Type): Validation[Map[Symbol.VarSym, Type], TyperError] = (tpe1, tpe2) match {
-      case (Type.Var(id), x) => ???
-      case (x, Type.Var(id)) => ???
+      case (Type.Var(id, _), x) => ???
+      case (x, Type.Var(id, _)) => ???
       case (Type.Unit, Type.Unit) => Map.empty[Symbol.VarSym, Type].toSuccess
       case _ => ???
     }
@@ -571,22 +575,26 @@ object Typer2 {
      * None expression.
      */
     case NamedAst.Expression.FNone(id, loc) =>
-      val tpe: Type.FOpt = tenv0(id).asInstanceOf[Type.FOpt]
-      TypedAst.Expression.FNone(tpe, loc)
+      // TODO
+      ???
+      //val tpe: Type.FOpt = tenv0(id).asInstanceOf[Type.FOpt]
+      //TypedAst.Expression.FNone(tpe, loc)
 
     /*
      * Some expression.
      */
     case NamedAst.Expression.FSome(id, exp, loc) =>
-      val tpe: Type.FOpt = tenv0(id).asInstanceOf[Type.FOpt]
-      TypedAst.Expression.FSome(reassemble(exp, tenv0), tpe, loc)
+      ???
+      //val tpe: Type.FOpt = tenv0(id).asInstanceOf[Type.FOpt]
+      //TypedAst.Expression.FSome(reassemble(exp, tenv0), tpe, loc)
 
     /*
      * Nil expression.
      */
     case NamedAst.Expression.FNil(id, loc) =>
-      val tpe: Type.FList = tenv0(id).asInstanceOf[Type.FList]
-      TypedAst.Expression.FNil(tpe, loc)
+      ???
+      //val tpe: Type.FList = tenv0(id).asInstanceOf[Type.FList]
+      //TypedAst.Expression.FNil(tpe, loc)
 
     /*
      * List expression.
@@ -594,24 +602,27 @@ object Typer2 {
     case NamedAst.Expression.FList(id, hd, tl, loc) =>
       val e1 = reassemble(hd, tenv0)
       val e2 = reassemble(tl, tenv0)
-      val tpe: Type.FList = tenv0(id).asInstanceOf[Type.FList]
-      TypedAst.Expression.FList(e1, e2, tpe, loc)
+      //val tpe: Type.FList = tenv0(id).asInstanceOf[Type.FList]
+      //TypedAst.Expression.FList(e1, e2, tpe, loc)
+      ???
 
     /*
      * Vec expression.
      */
     case NamedAst.Expression.FVec(id, elms, loc) =>
       val es = elms.map(e => reassemble(e, tenv0))
-      val tpe: Type.FVec = tenv0(id).asInstanceOf[Type.FVec]
-      TypedAst.Expression.FVec(es, tpe, loc)
+      //val tpe: Type.FVec = tenv0(id).asInstanceOf[Type.FVec]
+      //TypedAst.Expression.FVec(es, tpe, loc)
+      ???
 
     /*
      * Set expression.
      */
     case NamedAst.Expression.FSet(id, elms, loc) =>
       val es = elms.map(e => reassemble(e, tenv0))
-      val tpe: Type.FSet = tenv0(id).asInstanceOf[Type.FSet]
-      TypedAst.Expression.FSet(es, tpe, loc)
+      //val tpe: Type.FSet = tenv0(id).asInstanceOf[Type.FSet]
+      //TypedAst.Expression.FSet(es, tpe, loc)
+      ???
 
     /*
      * Map expression.
@@ -620,8 +631,9 @@ object Typer2 {
       val es = elms map {
         case (key, value) => (reassemble(key, tenv0), reassemble(value, tenv0))
       }
-      val tpe: Type.FMap = tenv0(id).asInstanceOf[Type.FMap]
-      TypedAst.Expression.FMap(es, tpe, loc)
+      //val tpe: Type.FMap = tenv0(id).asInstanceOf[Type.FMap]
+      //TypedAst.Expression.FMap(es, tpe, loc)
+      ???
 
     /*
      * GetIndex expression.

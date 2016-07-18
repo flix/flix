@@ -556,7 +556,7 @@ object Typer {
             case elms =>
               val tpes = elms.map(e => (e.tpe, e.loc))
               expectEqual(tpes) map {
-                case tpe => TypedAst.Expression.FSet(elms, Type.FSet(tpe), loc)
+                case tpe => TypedAst.Expression.FSet(elms, Type.mkFSet(tpe), loc)
               }
           }
 
@@ -853,41 +853,7 @@ object Typer {
     * Returns a human readable string representation of the given type `tpe`.
     */
   // TODO: Remove this.
-  private def prettyPrint(tpe: Type): String = tpe match {
-    case Type.Any => "Any"
-    case Type.Var(x) => s"Var($x)"
-    case Type.Unit => s"()"
-    case Type.Bool => s"Bool"
-    case Type.Char => s"Char"
-    case Type.Float32 => s"Float32"
-    case Type.Float64 => s"Float64"
-    case Type.Int8 => s"Int8"
-    case Type.Int16 => s"Int16"
-    case Type.Int32 => s"Int32"
-    case Type.Int64 => s"Int64"
-    case Type.BigInt => "BigInt"
-    case Type.Prop => s"Prop"
-    case Type.Str => s"Str"
-    case Type.Tag(enumName, tagName, t) =>
-      val enumAndTag = enumName.fqn + "." + tagName.name
-      val nested = s"(${prettyPrint(t)}})"
-      enumAndTag + nested
-    case Type.Enum(name, cases) =>
-      s"Enum(${cases.head._2.enum})"
-    case Type.Tuple(elms) => "(" + elms.map(prettyPrint).mkString(", ") + ")"
-    case Type.FSet(elms) => "Set(" + prettyPrint(elms) + ")"
-    case Type.Lambda(args, retTpe) =>
-      "(" + args.map(prettyPrint).mkString(", ") + ") -> " + prettyPrint(retTpe)
-    case Type.Predicate(terms) => s"Predicate(${terms map prettyPrint})"
-    case Type.Native => s"native"
-    case Type.Abs(name, tpe) => s"Abs($name)"
-    case Type.FOpt(tpe) => s"FOpt($tpe)"
-    case Type.FList(tpe) => s"FList($tpe)"
-    case Type.FVec(tpe) =>  s"FVec($tpe)"
-    case Type.FMap(k, v) => s"FMap($k, $v)"
-    case Type.Parametric(name, elms) => s"$name[$elms]"
-    case Type.Unresolved(name) => name.toString
-  }
+  private def prettyPrint(tpe: Type): String = tpe.toString
 
   private def prettyPrint(pat: ResolvedAst.Pattern): String = pat match {
     case ResolvedAst.Pattern.Wildcard(loc) => "_"

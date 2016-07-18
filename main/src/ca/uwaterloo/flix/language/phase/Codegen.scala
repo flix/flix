@@ -111,14 +111,14 @@ object Codegen {
         case Type.Tuple(_) => asm.Type.getDescriptor(Constants.tupleClass)
         case Type.Lambda(_, _) => s"L${decorate(interfaces(tpe))};"
         case Type.Parametric(_, _) => ??? // TODO: How to handle?
-        case Type.FOpt(_) => ??? // TODO
-        case Type.FList(_)=> ??? // TODO
-        case Type.FVec(_)=> ??? // TODO
-        case Type.FSet(_) => asm.Type.getDescriptor(Constants.setClass)
-        case Type.FMap(_, _) => ??? // TODO
+        case Type.FOpt => ??? // TODO
+        case Type.FList => ??? // TODO
+        case Type.FVec=> ??? // TODO
+        case Type.Apply(Type.FSet, _) => asm.Type.getDescriptor(Constants.setClass)
+        case Type.FMap => ??? // TODO
         case Type.Predicate(_) => ??? // TODO: How to handle?
         case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
-        case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
+        case Type.Var(_, _) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
         case Type.Tag(_, _, _) => throw InternalCompilerException(s"No corresponding JVM type for $tpe.")
       }
 
@@ -235,14 +235,14 @@ object Codegen {
       case Type.Float32 => mv.visitInsn(FRETURN)
       case Type.Float64 => mv.visitInsn(DRETURN)
       case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-           Type.FSet(_) => mv.visitInsn(ARETURN)
-      case Type.FOpt(_)=> ??? // TODO
-      case Type.FList(_) => ??? // TODO
-      case Type.FVec(_) => ??? // TODO
-      case Type.FMap(_, _) => ??? // TODO
+           Type.Apply(Type.FSet, _) => mv.visitInsn(ARETURN)
+      case Type.FOpt=> ??? // TODO
+      case Type.FList => ??? // TODO
+      case Type.FVec => ??? // TODO
+      case Type.FMap => ??? // TODO
       case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
       case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
-      case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
+      case Type.Var(_, _) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
       case Type.Tag(_, _, _) => throw InternalCompilerException(s"Functions can't return type $tpe.")
     }
 
@@ -294,11 +294,11 @@ object Codegen {
       case Type.Float32 => visitor.visitVarInsn(FLOAD, offset)
       case Type.Float64 => visitor.visitVarInsn(DLOAD, offset)
       case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-           Type.FSet(_) => visitor.visitVarInsn(ALOAD, offset)
-      case Type.FOpt(_) | Type.FList(_) | Type.FVec(_) | Type.FMap(_, _) => ??? // TODO
+           Type.Apply(Type.FSet, _) => visitor.visitVarInsn(ALOAD, offset)
+      case Type.FOpt | Type.FList | Type.FVec | Type.FMap => ??? // TODO
       case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => // TODO: Deprecated
       case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
-      case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
+      case Type.Var(_, _) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
       case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type $tpe.")
     }
 
@@ -457,11 +457,11 @@ object Codegen {
         case Type.Float32 => visitor.visitVarInsn(FSTORE, offset)
         case Type.Float64 => visitor.visitVarInsn(DSTORE, offset)
         case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-             Type.FSet(_) => visitor.visitVarInsn(ASTORE, offset)
-        case Type.FOpt(_) | Type.FList(_) | Type.FVec(_) | Type.FMap(_, _) => ??? // TODO
+             Type.Apply(Type.FSet, _) => visitor.visitVarInsn(ASTORE, offset)
+        case Type.FOpt | Type.FList | Type.FVec | Type.FMap => ??? // TODO
         case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => // TODO: Deprecated
         case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
-        case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of ${exp1.tpe} should never be compiled.")
+        case Type.Var(_, _) | Type.Prop => throw InternalCompilerException(s"Value of ${exp1.tpe} should never be compiled.")
         case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type ${exp1.tpe}.")
       }
       compileExpression(ctx, visitor)(exp2)
@@ -650,15 +650,15 @@ object Codegen {
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkInt64", "(J)Ljava/lang/Object;", false)
 
     case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-         Type.FSet(_) => compileExpression(ctx, visitor)(exp)
+         Type.Apply(Type.FSet, _) => compileExpression(ctx, visitor)(exp)
 
-    case Type.FOpt(_) | Type.FList(_) | Type.FVec(_) | Type.FMap(_, _) => ??? // TODO
+    case Type.FOpt | Type.FList | Type.FVec | Type.FMap => ??? // TODO
 
     case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
 
     case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
 
-    case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of ${exp.tpe} should never be compiled.")
+    case Type.Var(_, _) | Type.Prop => throw InternalCompilerException(s"Value of ${exp.tpe} should never be compiled.")
 
     case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type ${exp.tpe}.")
 
@@ -691,7 +691,7 @@ object Codegen {
       visitor.visitTypeInsn(CHECKCAST, name)
       visitor.visitMethodInsn(INVOKEVIRTUAL, name, methodName, desc, false)
 
-    case Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Lambda(_, _) | Type.FSet(_) =>
+    case Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Lambda(_, _) | Type.Apply(Type.FSet, _) =>
       val name = tpe match {
         case Type.BigInt => asm.Type.getInternalName(Constants.bigIntegerClass)
         case Type.Str => asm.Type.getInternalName(Constants.stringClass)
@@ -699,7 +699,7 @@ object Codegen {
         case Type.Lambda(_, _) =>
           // TODO: Is this correct? Need to write a test when we can write lambda expressions.
           decorate(ctx.interfaces(tpe))
-        case Type.FSet(_) => asm.Type.getInternalName(Constants.setClass)
+        case Type.Apply(Type.FSet, _) => asm.Type.getInternalName(Constants.setClass)
         case _ => throw new InternalCompilerException(s"Type $tpe should not be handled in this case.")
       }
       visitor.visitTypeInsn(CHECKCAST, name)
@@ -732,13 +732,13 @@ object Codegen {
       val ctor = clazz.getConstructor(Constants.arrayObjectClass)
       visitor.visitMethodInsn(INVOKESPECIAL, asm.Type.getInternalName(clazz), "<init>", asm.Type.getConstructorDescriptor(ctor), false)
 
-    case Type.FOpt(_) | Type.FList(_) | Type.FVec(_) | Type.FMap(_, _) => ??? // TODO
+    case Type.FOpt | Type.FList | Type.FVec | Type.FMap => ??? // TODO
 
     case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
 
     case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
 
-    case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
+    case Type.Var(_, _) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
 
     case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type $tpe.")
 
@@ -1057,7 +1057,7 @@ object Codegen {
   private def compileComparisonExpr(ctx: Context, visitor: MethodVisitor)
                                    (o: ComparisonOperator, e1: Expression, e2: Expression): Unit = {
     e1.tpe match {
-      case Type.Enum(_, _) | Type.Tuple(_) | Type.FSet(_) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
+      case Type.Enum(_, _) | Type.Tuple(_) | Type.FSet if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
         (e1.tpe: @unchecked) match {
           case Type.Tuple(_) =>
             // Value.Tuple.elms() method
@@ -1074,7 +1074,7 @@ object Codegen {
             compileExpression(ctx, visitor)(e2)
             visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), method1.getName, asm.Type.getMethodDescriptor(method1), false)
             visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(clazz2), method2.getName, asm.Type.getMethodDescriptor(method2), false)
-          case Type.Enum(_, _) | Type.FSet(_) =>
+          case Type.Enum(_, _) | Type.FSet =>
             // java.lang.Object.equals(Object) method
             val clazz = Constants.objectClass
             val method = clazz.getMethod("equals", Constants.objectClass)

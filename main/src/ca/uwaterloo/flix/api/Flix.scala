@@ -381,7 +381,7 @@ class Flix {
     if (tpe == null)
       throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
 
-    new WrappedType(Type.FOpt(tpe.asInstanceOf[WrappedType].tpe))
+    new WrappedType(Type.mkFOpt(tpe.asInstanceOf[WrappedType].tpe))
   }
 
   /**
@@ -391,7 +391,7 @@ class Flix {
     if (tpe == null)
       throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
 
-    new WrappedType(Type.FList(tpe.asInstanceOf[WrappedType].tpe))
+    new WrappedType(Type.mkFList(tpe.asInstanceOf[WrappedType].tpe))
   }
 
   /**
@@ -401,7 +401,7 @@ class Flix {
     if (tpe == null)
       throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
 
-    new WrappedType(Type.FSet(tpe.asInstanceOf[WrappedType].tpe))
+    new WrappedType(Type.mkFSet(tpe.asInstanceOf[WrappedType].tpe))
   }
 
   /**
@@ -413,7 +413,7 @@ class Flix {
     if (value == null)
       throw new IllegalArgumentException("Argument 'value' must be non-null.")
 
-    new WrappedType(Type.FMap(key.asInstanceOf[WrappedType].tpe, value.asInstanceOf[WrappedType].tpe))
+    new WrappedType(Type.mkFMap(key.asInstanceOf[WrappedType].tpe, value.asInstanceOf[WrappedType].tpe))
   }
 
   /**

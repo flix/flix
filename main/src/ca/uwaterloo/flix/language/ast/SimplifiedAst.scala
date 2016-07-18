@@ -578,7 +578,7 @@ object SimplifiedAst {
     }
 
     case class FSet(elms: List[SimplifiedAst.Expression],
-                    tpe: Type.FSet,
+                    tpe: Type,
                     loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Existential(params: List[Ast.FormalParam], exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
