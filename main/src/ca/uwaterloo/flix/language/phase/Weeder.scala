@@ -18,11 +18,13 @@ package ca.uwaterloo.flix.language.phase
 
 import java.math.BigInteger
 
-import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
-import ca.uwaterloo.flix.language.{CompilationError, Compiler}
+import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.errors.WeederError
+import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
+import scala.collection.immutable.Seq
 import scala.collection.mutable
 
 /**
@@ -30,428 +32,23 @@ import scala.collection.mutable
   */
 object Weeder {
 
-  import WeederError._
-
-  /**
-    * A common super-type for weeding errors.
-    */
-  sealed trait WeederError extends CompilationError
-
-  object WeederError {
-
-    implicit val consoleCtx = Compiler.ConsoleCtx
-
-    /**
-      * An error raised to indicate that the alias `name` was defined multiple times.
-      *
-      * @param name the name of the variable.
-      * @param loc1 the location of the first declaration.
-      * @param loc2 the location of the second declaration.
-      */
-    case class DuplicateAlias(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
-           |
-           |${consoleCtx.red(s">> Duplicate definition of the variable '$name'.")}
-           |
-           |First definition was here:
-           |${loc1.underline}
-           |Second definition was here:
-           |${loc2.underline}
-           |Tip: Consider renaming or removing one of the aliases.
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that the annotation `name` was used multiple times.
-      *
-      * @param name the name of the attribute.
-      * @param loc1 the location of the first use.
-      * @param loc2 the location of the second use.
-      */
-    case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
-           |
-           |${consoleCtx.red(s">> Duplicate annotation '$name'.")}
-           |
-           |First definition was here:
-           |${loc1.underline}
-           |Second definition was here:
-           |${loc2.underline}
-           |Tip: Remove one of the annotations.
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that the attribute `name` was declared multiple times.
-      *
-      * @param name the name of the attribute.
-      * @param loc1 the location of the first declaration.
-      * @param loc2 the location of the second declaration.
-      */
-    case class DuplicateAttribute(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
-           |
-           |${consoleCtx.red(s">> Duplicate attribute name '$name'.")}
-           |
-           |First definition was here:
-           |${loc1.underline}
-           |Second definition was here:
-           |${loc2.underline}
-           |Tip: Consider renaming or removing one of the attributes.
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that the formal parameter `name` was declared multiple times.
-      *
-      * @param name the name of the argument.
-      * @param loc1 the location of the first declaration.
-      * @param loc2 the location of the second declaration.
-      */
-    case class DuplicateFormal(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
-           |
-           |${consoleCtx.red(s">> Duplicate formal argument '$name'.")}
-           |
-           |First definition was here:
-           |${loc1.underline}
-           |Second definition was here:
-           |${loc2.underline}
-           |Tip: Consider renaming or removing one of the arguments.
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that the tag `name` was declared multiple times.
-      *
-      * @param name the name of the tag.
-      * @param loc1 the location of the first declaration.
-      * @param loc2 the location of the second declaration.
-      */
-    case class DuplicateTag(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
-           |
-           |${consoleCtx.red(s">> Duplicate tag name '$name'.")}
-           |
-           |First declaration was here:
-           |${loc1.underline}
-           |Second declaration was here:
-           |${loc2.underline}
-           |Tip: Consider renaming or removing one of the tags.
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that an index declaration declares no indexes.
-      *
-      * @param loc the location where the declaration occurs.
-      */
-    case class EmptyIndex(loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> An index must declare at least one group of attributes.")}
-           |
-           |${loc.underline}
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that a relation declares no attributes.
-      *
-      * @param loc the location of the declaration.
-      */
-    case class EmptyRelation(loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> A relation must have at least one attribute (column).")}
-           |
-           |${loc.underline}
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that a lattice declares no attributes.
-      *
-      * @param loc the location of the declaration.
-      */
-    case class EmptyLattice(loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> A lattice must have at least one attribute (column).")}
-           |
-           |${loc.underline}
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate the presence of an illegal annotation.
-      *
-      * @param name the name of the illegal annotation.
-      * @param loc  the location of the annotation.
-      */
-    case class IllegalAnnotation(name: String, loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> Illegal annotation '$name'.")}
-           |
-           |${loc.underline}
-           |
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate an illegal existential quantification expression.
-      *
-      * @param msg the error message.
-      * @param loc the location where the illegal expression occurs.
-      */
-    case class IllegalExistential(msg: String, loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> Illegal existential quantification.")}
-           |
-           |${loc.underline}
-           |$msg
-         """.stripMargin
-    }
-
-
-    /**
-      * An error raised to indicate that an float is out of bounds.
-      *
-      * @param loc the location where the illegal float occurs.
-      */
-    case class IllegalFloat(loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> Illegal float.")}
-           |
-           |${loc.underline}
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that an index declaration defines an index on zero attributes.
-      *
-      * @param loc the location where the illegal index occurs.
-      */
-    case class IllegalIndex(loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> Illegal index. An index must select at least one attribute.")}
-           |
-           |${loc.underline}
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that a predicate is not allowed in the head of a fact/rule.
-      *
-      * @param loc the location where the illegal predicate occurs.
-      */
-    case class IllegalHeadPredicate(loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> Illegal predicate in the head of a fact/rule.")}
-           |
-           |${loc.underline}
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that an illegal term occurs in a body predicate.
-      *
-      * @param msg the error message.
-      * @param loc the location where the illegal term occurs.
-      */
-    case class IllegalBodyTerm(msg: String, loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> Illegal term in the body of a rule.")}
-           |
-           |${loc.underline}
-           |$msg
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that an illegal term occurs in a head predicate.
-      *
-      * @param msg the error message.
-      * @param loc the location where the illegal term occurs.
-      */
-    case class IllegalHeadTerm(msg: String, loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> Illegal term in the head of a fact/rule.")}
-           |
-           |${loc.underline}
-           |$msg
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that an int is out of bounds.
-      *
-      * @param loc the location where the illegal int occurs.
-      */
-    case class IllegalInt(loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> Illegal int.")}
-           |
-           |${loc.underline}
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate an illegal bounded lattice definition.
-      *
-      * @param loc the location where the illegal definition occurs.
-      */
-    case class IllegalLattice(loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> Lattice definition must have exactly five components: bot, top, leq, lub and glb.")}
-           |
-           |${loc.underline}
-           |the 1st component must be the bottom element,
-           |the 2nd component must be the top element,
-           |the 3rd component must be the partial order function,
-           |the 4th component must be the least upper bound function, and
-           |the 5th component must be the greatest upper bound function.
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate an illegal parameter list.
-      *
-      * @param loc the location where the illegal parameter list occurs.
-      */
-    case class IllegalParameterList(loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> Illegal parameter list.")}
-           |
-           |${loc.underline}
-           |A parameter list must contain at least one parameter or be omitted.
-           |
-           |Hint: Remove the unnecessary parenthesis.
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate an illegal universal quantification expression.
-      *
-      * @param msg the error message.
-      * @param loc the location where the illegal expression occurs.
-      */
-    case class IllegalUniversal(msg: String, loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> Illegal universal quantification.")}
-           |
-           |${loc.underline}
-           |$msg
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate an illegal wildcard in an expression.
-      *
-      * @param loc the location where the illegal definition occurs.
-      */
-    case class IllegalWildcard(loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> Illegal wildcard in expression.")}
-           |
-           |${loc.underline}
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that the variable `name` occurs multiple times in the same pattern.
-      *
-      * @param name the name of the variable.
-      * @param loc1 the location of the first use of the variable.
-      * @param loc2 the location of the second use of the variable.
-      */
-    case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
-           |
-           |${consoleCtx.red(s">> Duplicate definition of the same variable '$name' in pattern.")}
-           |
-           |First definition was here:
-           |${loc1.underline}
-           |Second definition was here:
-           |${loc2.underline}
-           |
-           |A variable is must only occurs once in a pattern.
-           |
-           |Tip: Remove the duplicate variable and use '==' to test for equality.
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that a syntactic construct, although successfully parsed, is currently not supported.
-      *
-      * @param msg the error message.
-      * @param loc the location of the syntactic construct.
-      */
-    case class Unsupported(msg: String, loc: SourceLocation) extends WeederError {
-      val message =
-        s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-           |${consoleCtx.red(s">> Unsupported feature: $msg")}
-           |
-           |${loc.underline}
-           |This feature is not yet supported, implemented or considered stable.
-           |
-           |Tip: Avoid using this feature.
-         """.stripMargin
-    }
-
-  }
-
   /**
     * Weeds the whole program.
     */
   def weed(program: ParsedAst.Program, hooks: Map[Symbol.Resolved, Ast.Hook]): Validation[WeededAst.Program, WeederError] = {
     val b = System.nanoTime()
     @@(program.roots map weed) map {
-      case rts =>
+      case roots =>
         val e = System.nanoTime() - b
-        WeededAst.Program(rts, hooks, program.time.copy(weeder = e))
+        WeededAst.Program(roots, hooks, program.time.copy(weeder = e))
     }
   }
 
   /**
-    * Weeds the abstract syntax tree.
+    * Weeds the given abstract syntax tree.
     */
-  def weed(root: ParsedAst.Root): Validation[WeededAst.Root, WeederError] = {
-    @@(root.decls map Declarations.compile) map {
+  private def weed(root: ParsedAst.Root): Validation[WeededAst.Root, WeederError] = {
+    @@(root.decls map Declarations.weed) map {
       case decls => WeededAst.Root(decls)
     }
   }
@@ -461,58 +58,62 @@ object Weeder {
     /**
       * Compiles the given parsed declaration `past` to a weeded declaration.
       */
-    def compile(decl: ParsedAst.Declaration): Validation[WeededAst.Declaration, WeederError] = decl match {
+    def weed(decl: ParsedAst.Declaration): Validation[WeededAst.Declaration, WeederError] = decl match {
       case ParsedAst.Declaration.Namespace(sp1, name, decls, sp2) =>
-        @@(decls.map(compile)) map {
+        @@(decls.map(weed)) map {
           case ds => WeededAst.Declaration.Namespace(name, ds, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Declaration.Definition(ann, sp1, ident, paramsOpt, tpe, exp, sp2) =>
         val sl = mkSL(ident.sp1, ident.sp2)
-        val annVal = Annotations.compile(ann)
-        val expVal = Expressions.compile(exp)
+        val annVal = Annotations.weed(ann)
+        val expVal = Expressions.weed(exp)
 
+        /*
+         * Check for `IllegalParameterList`.
+         */
         paramsOpt match {
           case None => @@(annVal, expVal) flatMap {
-            case (ann, e) => WeededAst.Declaration.Definition(ann, ident, Nil, e, Type.Lambda(Nil, tpe), sl).toSuccess
+            case (as, e) => WeededAst.Declaration.Definition(as, ident, Nil, e, Type.Lambda(Nil, tpe), sl).toSuccess
           }
           case Some(Nil) => IllegalParameterList(sl).toFailure
           case Some(params) =>
             /*
-             * Check duplicate parameters.
+             * Check for `DuplicateFormal`.
              */
-            val seen = mutable.Map.empty[String, Name.Ident]
-            val formalsVal = @@(params.map {
-              case formal@Ast.FormalParam(id, t) => seen.get(id.name) match {
-                case None =>
-                  seen += (id.name -> id)
-                  formal.toSuccess
-                case Some(otherIdent) =>
-                  DuplicateFormal(id.name, otherIdent.loc, id.loc).toFailure
-              }
-            })
-
+            val formalsVal = checkDuplicateFormal(params)
             @@(annVal, formalsVal, expVal) map {
-              case (ann, fs, e) =>
+              case (as, fs, e) =>
                 val t = Type.Lambda(fs map (_.tpe), tpe)
-                WeededAst.Declaration.Definition(ann, ident, fs, e, t, sl)
+                WeededAst.Declaration.Definition(as, ident, fs, e, t, sl)
             }
         }
 
-      case ParsedAst.Declaration.Signature(sp1, ident, paramsOpt, tpe, sp2) => paramsOpt match {
-        case None => WeededAst.Declaration.Signature(ident, Nil, tpe, mkSL(sp1, sp2)).toSuccess
-        case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
-        case Some(params) => WeededAst.Declaration.Signature(ident, params, tpe, mkSL(sp1, sp2)).toSuccess
-      }
+      case ParsedAst.Declaration.Signature(sp1, ident, paramsOpt, tpe, sp2) =>
+        /*
+         * Check for `IllegalParameterList`.
+         */
+        paramsOpt match {
+          case None => WeededAst.Declaration.Signature(ident, Nil, tpe, mkSL(sp1, sp2)).toSuccess
+          case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
+          case Some(params) => WeededAst.Declaration.Signature(ident, params, tpe, mkSL(sp1, sp2)).toSuccess
+        }
 
-      case ParsedAst.Declaration.External(sp1, ident, paramsOpt, tpe, sp2) => paramsOpt match {
-        case None => WeededAst.Declaration.External(ident, Nil, tpe, mkSL(sp1, sp2)).toSuccess
-        case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
-        case Some(params) => WeededAst.Declaration.External(ident, params, tpe, mkSL(sp1, sp2)).toSuccess
-      }
+      case ParsedAst.Declaration.External(sp1, ident, paramsOpt, tpe, sp2) =>
+        /*
+         * Check for `IllegalParameterList`.
+         */
+        paramsOpt match {
+          case None => WeededAst.Declaration.External(ident, Nil, tpe, mkSL(sp1, sp2)).toSuccess
+          case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
+          case Some(params) => WeededAst.Declaration.External(ident, params, tpe, mkSL(sp1, sp2)).toSuccess
+        }
 
       case ParsedAst.Declaration.Law(sp1, ident, tparams, paramsOpt, tpe, exp, sp2) =>
-        Expressions.compile(exp) flatMap {
+        /*
+         * Check for `IllegalParameterList`.
+         */
+        Expressions.weed(exp) flatMap {
           case e => paramsOpt match {
             case None => WeededAst.Declaration.Law(ident, tparams, Nil, tpe, e, mkSL(sp1, sp2)).toSuccess
             case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
@@ -522,7 +123,7 @@ object Weeder {
 
       case ParsedAst.Declaration.Enum(sp1, ident, cases, sp2) =>
         /*
-         * Check duplicate tags.
+         * Check for `DuplicateTag`.
          */
         Validation.fold[ParsedAst.Case, Map[String, WeededAst.Case], WeederError](cases, Map.empty) {
           case (macc, caze: ParsedAst.Case) =>
@@ -536,66 +137,47 @@ object Weeder {
         }
 
       case ParsedAst.Declaration.Class(sp1, ident, tparams, bounds, decls, sp2) =>
-        @@(decls.map(compile)) map {
+        @@(decls.map(weed)) map {
           case ds => WeededAst.Declaration.Class(ident, tparams, ds, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Declaration.Impl(sp1, ident, tparams, bounds, decls, sp2) =>
-        @@(decls.map(compile)) map {
+        @@(decls.map(weed)) map {
           case ds => WeededAst.Declaration.Impl(ident, tparams, ds, mkSL(sp1, sp2))
         }
 
-      case ParsedAst.Declaration.Relation(sp1, ident, attr, sp2) =>
+      case ParsedAst.Declaration.Relation(sp1, ident, attrs, sp2) =>
         /*
-         * Check that the relation declares at least one attribute.
+         * Check for `EmptyRelation`
          */
-        if (attr.isEmpty)
+        if (attrs.isEmpty)
           return EmptyRelation(mkSL(sp1, sp2)).toFailure
 
         /*
-         * Check that the relation does not declare the same attribute twice.
+         * Check for `DuplicateAttribute`.
          */
-        val seen = mutable.Map.empty[String, Name.Ident]
-        val attributesVal = attr.map {
-          case attr@Ast.Attribute(id, tpe) => seen.get(id.name) match {
-            case None =>
-              seen += (id.name -> id)
-              attr.toSuccess
-            case Some(otherIdent) =>
-              DuplicateAttribute(id.name, otherIdent.loc, id.loc).toFailure
-          }
+        checkDuplicateAttribute(attrs) map {
+          case as => WeededAst.Table.Relation(ident, as, mkSL(sp1, sp2))
         }
 
-        @@(attributesVal) map {
-          case attributes => WeededAst.Table.Relation(ident, attributes, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Declaration.Lattice(sp1, ident, attr, sp2) =>
+      case ParsedAst.Declaration.Lattice(sp1, ident, attrs, sp2) =>
         /*
-         * Check that the lattice declares at least one attribute.
+         * Check for `EmptyLattice`.
          */
-        if (attr.isEmpty)
+        if (attrs.isEmpty)
           return EmptyLattice(mkSL(sp1, sp2)).toFailure
 
         /*
-         * Check that the lattice does not declare the same attribute twice.
+         * Check for `DuplicateAttribute`.
          */
-        val seen = mutable.Map.empty[String, Name.Ident]
-        val attributesVal = attr.map {
-          case attr@Ast.Attribute(id, tpe) => seen.get(id.name) match {
-            case None =>
-              seen += (id.name -> id)
-              attr.toSuccess
-            case Some(otherIdent) =>
-              DuplicateAttribute(id.name, otherIdent.loc, id.loc).toFailure
-          }
-        }
-        @@(attributesVal) flatMap {
-          case attributes => WeededAst.Table.Lattice(ident, attr.init.toList, attr.last, mkSL(sp1, sp2)).toSuccess
+        checkDuplicateAttribute(attrs) map {
+          case as =>
+            // Split the attributes into keys and element.
+            WeededAst.Table.Lattice(ident, as.init, as.last, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Declaration.Fact(sp1, head, sp2) =>
-        Predicate.Head.compile(head) map {
+        Predicate.Head.weed(head) map {
           case p => WeededAst.Declaration.Fact(p, mkSL(sp1, sp2))
         }
 
@@ -613,8 +195,8 @@ object Weeder {
 
         aliasesVal flatMap {
           case aliases =>
-            val headVal = Predicate.Head.compile(head, aliases)
-            val bodyVal = @@(body.filterNot(_.isInstanceOf[ParsedAst.Predicate.Equal]).map(Predicate.Body.compile))
+            val headVal = Predicate.Head.weed(head, aliases)
+            val bodyVal = @@(body.filterNot(_.isInstanceOf[ParsedAst.Predicate.Equal]).map(Predicate.Body.weed))
 
             @@(headVal, bodyVal) map {
               case (h, b) => WeededAst.Declaration.Rule(h, b, mkSL(sp1, sp2))
@@ -622,6 +204,9 @@ object Weeder {
         }
 
       case ParsedAst.Declaration.Index(sp1, ident, indexes, sp2) =>
+        /*
+         * Check for `EmptyIndex` and `IllegalIndex`.
+         */
         val sl = mkSL(sp1, sp2)
         if (indexes.isEmpty)
           EmptyIndex(sl).toFailure
@@ -631,7 +216,7 @@ object Weeder {
           WeededAst.Declaration.Index(ident, indexes, sl).toSuccess
 
       case ParsedAst.Declaration.BoundedLattice(sp1, tpe, elms, sp2) =>
-        val elmsVal = @@(elms.toList.map(Expressions.compile))
+        val elmsVal = @@(elms.toList.map(Expressions.weed))
         elmsVal flatMap {
           case List(bot, top, leq, lub, glb) => WeededAst.Declaration.BoundedLattice(tpe, bot, top, leq, lub, glb, mkSL(sp1, sp2)).toSuccess
           case _ => IllegalLattice(mkSL(sp1, sp2)).toFailure
@@ -642,9 +227,6 @@ object Weeder {
   }
 
   object Literals {
-    /**
-      * Compiles the parsed literal `past` to a weeded literal.
-      */
     // TODO: Remove once terms have been unified with expressions.
     def compile(literal: ParsedAst.Literal): Validation[WeededAst.Literal, WeederError] = literal match {
       case ParsedAst.Literal.Unit(sp1, sp2) =>
@@ -703,9 +285,9 @@ object Weeder {
   object Expressions {
 
     /**
-      * Compiles a parsed literal to a weeded expression.
+      * Translates the given literal to an expression.
       */
-    def toExpression(literal: ParsedAst.Literal): Validation[WeededAst.Expression, WeederError] = literal match {
+    def toExp(lit0: ParsedAst.Literal): Validation[WeededAst.Expression, WeederError] = lit0 match {
       case ParsedAst.Literal.Unit(sp1, sp2) =>
         WeededAst.Expression.Unit(mkSL(sp1, sp2)).toSuccess
 
@@ -758,26 +340,28 @@ object Weeder {
     }
 
     /**
-      * Compiles a parsed expression to a weeded expression.
+      * Weeds the given expression.
       */
-    def compile(expression: ParsedAst.Expression): Validation[WeededAst.Expression, WeederError] = expression match {
+    def weed(exp0: ParsedAst.Expression): Validation[WeededAst.Expression, WeederError] = exp0 match {
       case ParsedAst.Expression.Wild(sp1, sp2) =>
         IllegalWildcard(mkSL(sp1, sp2)).toFailure
 
       case ParsedAst.Expression.Var(sp1, name, sp2) =>
         WeededAst.Expression.Var(name, mkSL(sp1, sp2)).toSuccess
 
-      case ParsedAst.Expression.Lit(sp1, lit, sp2) => toExpression(lit)
+      case ParsedAst.Expression.Lit(sp1, lit, sp2) => toExp(lit)
 
       case ParsedAst.Expression.Apply(lambda, args, sp2) =>
         val sp1 = leftMostSourcePosition(lambda)
-        @@(compile(lambda), @@(args map compile)) flatMap {
+        @@(weed(lambda), @@(args map weed)) flatMap {
           case (e, as) => WeededAst.Expression.Apply(e, as, mkSL(sp1, sp2)).toSuccess
         }
 
       case ParsedAst.Expression.Infix(exp1, name, exp2, sp2) =>
-        // Rewrites to apply expression.
-        @@(compile(exp1), compile(exp2)) map {
+        /*
+         * Rewrites infix expressions to apply expressions.
+         */
+        @@(weed(exp1), weed(exp2)) map {
           case (e1, e2) =>
             val loc = mkSL(leftMostSourcePosition(exp1), sp2)
             val e3 = WeededAst.Expression.Var(name, loc)
@@ -785,22 +369,24 @@ object Weeder {
         }
 
       case ParsedAst.Expression.Lambda(sp1, params, exp, sp2) =>
-        compile(exp) map {
+        weed(exp) map {
           case e => WeededAst.Expression.Lambda(params.toList, e, mkSL(sp1, sp2))
         }
 
-      case ParsedAst.Expression.Unary(sp1, op, exp, sp2) => compile(exp) map {
+      case ParsedAst.Expression.Unary(sp1, op, exp, sp2) => weed(exp) map {
         case e => WeededAst.Expression.Unary(op, e, mkSL(sp1, sp2))
       }
 
       case ParsedAst.Expression.Binary(exp1, op, exp2, sp2) =>
-        @@(compile(exp1), compile(exp2)) map {
+        @@(weed(exp1), weed(exp2)) map {
           case (e1, e2) => WeededAst.Expression.Binary(op, e1, e2, mkSL(leftMostSourcePosition(exp1), sp2))
         }
 
       case ParsedAst.Expression.ExtendedBinary(exp1, op, exp2, sp2) =>
-        // Rewrites apply expression.
-        @@(compile(exp1), compile(exp2)) map {
+        /*
+         * Rewrites extended binary expressions to apply expressions.
+         */
+        @@(weed(exp1), weed(exp2)) map {
           case (e1, e2) =>
             op match {
               case ExtBinaryOperator.Leq =>
@@ -851,51 +437,59 @@ object Weeder {
         }
 
       case ParsedAst.Expression.IfThenElse(sp1, exp1, exp2, exp3, sp2) =>
-        @@(compile(exp1), compile(exp2), compile(exp3)) map {
+        @@(weed(exp1), weed(exp2), weed(exp3)) map {
           case (e1, e2, e3) => WeededAst.Expression.IfThenElse(e1, e2, e3, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Expression.LetMatch(sp1, pat, exp1, exp2, sp2) =>
-        // Compiles a let-match to a regular let-binding or a full-blown pattern match.
-        @@(Patterns.compile(pat), compile(exp1), compile(exp2)) map {
+        /*
+         * Rewrites a let-match to a regular let-binding or a full-blown pattern match.
+         */
+        @@(Patterns.weed(pat), weed(exp1), weed(exp2)) map {
           case (WeededAst.Pattern.Var(ident, loc), value, body) =>
+            // Let-binding
             WeededAst.Expression.Let(ident, value, body, mkSL(sp1, sp2))
           case (pattern, value, body) =>
+            // Full-blown pattern match.
             val rules = List(pattern -> body)
             WeededAst.Expression.Match(value, rules, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Expression.Match(sp1, exp, rules, sp2) =>
         val rulesVal = rules map {
-          case (pat, body) => @@(Patterns.compile(pat), compile(body))
+          case (pat, body) => @@(Patterns.weed(pat), weed(body))
         }
-        @@(compile(exp), @@(rulesVal)) map {
+        @@(weed(exp), @@(rulesVal)) map {
           case (e, rs) => WeededAst.Expression.Match(e, rs, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Expression.Switch(sp1, rules, sp2) =>
         val rulesVal = rules map {
-          case (cond, body) => @@(Expressions.compile(cond), Expressions.compile(body))
+          case (cond, body) => @@(Expressions.weed(cond), Expressions.weed(body))
         }
         @@(rulesVal) map {
           case rs => WeededAst.Expression.Switch(rs, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Expression.Tag(sp1, enum, tag, o, sp2) =>
-        // Introduces Unit expression (if needed).
+        /*
+         * Introduce implicit unit, if needed.
+         */
         o match {
           case None =>
             val loc = mkSL(sp1, sp2)
             val exp = WeededAst.Expression.Unit(loc)
             WeededAst.Expression.Tag(enum, tag, exp, loc).toSuccess
-          case Some(exp) => compile(exp) map {
+          case Some(exp) => weed(exp) map {
             case e => WeededAst.Expression.Tag(enum, tag, e, mkSL(sp1, sp2))
           }
         }
 
       case ParsedAst.Expression.Tuple(sp1, elms, sp2) =>
-        // Eliminates single-element tuples.
-        @@(elms map compile) map {
+        /*
+         * Rewrites empty tuples to Unit and eliminate single-element tuples.
+         */
+        @@(elms map weed) map {
           case Nil =>
             val loc = mkSL(sp1, sp2)
             WeededAst.Expression.Unit(loc)
@@ -907,7 +501,7 @@ object Weeder {
         WeededAst.Expression.FNone(mkSL(sp1, sp2)).toSuccess
 
       case ParsedAst.Expression.FSome(sp1, exp, sp2) =>
-        compile(exp) map {
+        weed(exp) map {
           case e => WeededAst.Expression.FSome(e, mkSL(sp1, sp2))
         }
 
@@ -916,23 +510,23 @@ object Weeder {
 
       case ParsedAst.Expression.FList(hd, tl, sp2) =>
         val sp1 = leftMostSourcePosition(hd)
-        @@(compile(hd), compile(tl)) map {
+        @@(weed(hd), weed(tl)) map {
           case (e1, e2) => WeededAst.Expression.FList(e1, e2, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Expression.FVec(sp1, elms, sp2) =>
-        @@(elms map compile) map {
+        @@(elms map weed) map {
           case es => WeededAst.Expression.FVec(es, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Expression.FSet(sp1, elms, sp2) =>
-        @@(elms map compile) map {
+        @@(elms map weed) map {
           case es => WeededAst.Expression.FSet(es, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Expression.FMap(sp1, elms, sp2) =>
         val elmsVal = elms map {
-          case (key, value) => @@(compile(key), compile(value))
+          case (key, value) => @@(weed(key), weed(value))
         }
 
         @@(elmsVal) map {
@@ -940,35 +534,53 @@ object Weeder {
         }
 
       case ParsedAst.Expression.GetIndex(sp1, exp1, exp2, sp2) =>
-        @@(compile(exp1), compile(exp2)) map {
+        @@(weed(exp1), weed(exp2)) map {
           case (e1, e2) => WeededAst.Expression.GetIndex(e1, e2, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Expression.PutIndex(sp1, exp1, exp2, exp3, sp2) =>
-        @@(compile(exp1), compile(exp2), compile(exp3)) map {
+        @@(weed(exp1), weed(exp2), weed(exp3)) map {
           case (e1, e2, e3) => WeededAst.Expression.PutIndex(e1, e2, e3, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Expression.Existential(sp1, paramsOpt, exp, sp2) =>
-        compile(exp) flatMap {
+        /*
+         * Checks for `IllegalExistential`.
+         */
+        weed(exp) flatMap {
           case e => paramsOpt match {
             case None => IllegalExistential("An existential quantifier must have at least one parameter.", mkSL(sp1, sp2)).toFailure
             case Some(Nil) => IllegalExistential("An existential quantifier must have at least one parameter.", mkSL(sp1, sp2)).toFailure
-            case Some(params) => WeededAst.Expression.Existential(params, e, mkSL(sp1, sp2)).toSuccess // TODO: Weeder should check that arguments are not duplicated
+            case Some(params) =>
+              /*
+               * Check for `DuplicateFormal`.
+               */
+              checkDuplicateFormal(params) map {
+                case ps => WeededAst.Expression.Existential(ps, e, mkSL(sp1, sp2))
+              }
           }
         }
 
       case ParsedAst.Expression.Universal(sp1, paramsOpt, exp, sp2) =>
-        compile(exp) flatMap {
+        /*
+         * Checks for `IllegalExistential`.
+         */
+        weed(exp) flatMap {
           case e => paramsOpt match {
             case None => IllegalUniversal("A universal quantifier must have at least one parameter.", mkSL(sp1, sp2)).toFailure
             case Some(Nil) => IllegalUniversal("An universal quantifier must have at least one parameter.", mkSL(sp1, sp2)).toFailure
-            case Some(params) => WeededAst.Expression.Universal(params, e, mkSL(sp1, sp2)).toSuccess // TODO: Weeder should check that arguments are not duplicated
+            case Some(params) =>
+              /*
+               * Check for `DuplicateFormal`.
+               */
+              checkDuplicateFormal(params) map {
+                case ps => WeededAst.Expression.Universal(ps, e, mkSL(sp1, sp2))
+              }
           }
         }
 
       case ParsedAst.Expression.Ascribe(exp, tpe, sp2) =>
-        compile(exp) map {
+        weed(exp) map {
           case e => WeededAst.Expression.Ascribe(e, tpe, mkSL(leftMostSourcePosition(exp), sp2))
         }
 
@@ -995,9 +607,9 @@ object Weeder {
   object Patterns {
 
     /**
-      * Compiles a parsed literal to a weeded pattern.
+      * Weeds the given pattern.
       */
-    def compile(pattern: ParsedAst.Literal): Validation[WeededAst.Pattern, WeederError] = pattern match {
+    def weed(pat0: ParsedAst.Literal): Validation[WeededAst.Pattern, WeederError] = pat0 match {
       case ParsedAst.Literal.Unit(sp1, sp2) => WeededAst.Pattern.Unit(mkSL(sp1, sp2)).toSuccess
       case ParsedAst.Literal.True(sp1, sp2) => WeededAst.Pattern.True(mkSL(sp1, sp2)).toSuccess
       case ParsedAst.Literal.False(sp1, sp2) => WeededAst.Pattern.False(mkSL(sp1, sp2)).toSuccess
@@ -1037,7 +649,7 @@ object Weeder {
     /**
       * Compiles a parsed pattern into a weeded pattern.
       */
-    def compile(pattern: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = {
+    def weed(pattern: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = {
       /*
        *  Check for non-linear pattern, i.e. if a variable occurs multiple times.
        */
@@ -1057,10 +669,12 @@ object Weeder {
             NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
         }
 
-        case ParsedAst.Pattern.Lit(sp1, lit, sp2) => compile(lit)
+        case ParsedAst.Pattern.Lit(sp1, lit, sp2) => weed(lit)
 
         case ParsedAst.Pattern.Tag(sp1, enum, tag, o, sp2) =>
-          // Introduces Unit expression (if needed).
+          /*
+           * Introduce implicit unit, if needed.
+           */
           o match {
             case None =>
               val loc = mkSL(sp1, sp2)
@@ -1072,7 +686,9 @@ object Weeder {
           }
 
         case ParsedAst.Pattern.Tuple(sp1, pats, sp2) =>
-          // Eliminates single-element tuples.
+          /*
+           * Rewrites empty tuples to Unit and eliminate single-element tuples.
+           */
           @@(pats map visit) map {
             case Nil => WeededAst.Pattern.Unit(mkSL(sp1, sp2))
             case x :: Nil => x
@@ -1091,7 +707,7 @@ object Weeder {
           WeededAst.Pattern.FNil(mkSL(sp1, sp2)).toSuccess
 
         case ParsedAst.Pattern.FList(pat1, pat2, sp2) =>
-          @@(compile(pat1), compile(pat2)) map {
+          @@(weed(pat1), weed(pat2)) map {
             case (hd, tl) => WeededAst.Pattern.FList(hd, tl, mkSL(pat1.leftMostSourcePosition, sp2))
           }
 
@@ -1132,9 +748,9 @@ object Weeder {
     object Head {
 
       /**
-        * Compiles the given parsed predicate `p` to a weeded head predicate.
+        * Weeds the given head predicate.
         */
-      def compile(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Equal] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
+      def weed(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Equal] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
         case ParsedAst.Predicate.True(sp1, sp2) => WeededAst.Predicate.Head.True(mkSL(sp1, sp2)).toSuccess
         case ParsedAst.Predicate.False(sp1, sp2) => WeededAst.Predicate.Head.False(mkSL(sp1, sp2)).toSuccess
         case p: ParsedAst.Predicate.Ambiguous =>
@@ -1152,11 +768,11 @@ object Weeder {
     object Body {
 
       /**
-        * Compiles the given parsed predicate `p` to a weeded body predicate.
+        * Weeds the given body predicate.
         */
-      def compile(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] = past match {
-        case ParsedAst.Predicate.True(sp1, sp2) => Unsupported("'true' predicate in body.", mkSL(sp1, sp2)).toFailure
-        case ParsedAst.Predicate.False(sp1, sp2) => Unsupported("'false' predicate in body.", mkSL(sp1, sp2)).toFailure
+      def weed(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] = past match {
+        case ParsedAst.Predicate.True(sp1, sp2) => Unsupported("'true' predicate is not allowed in the body of a rule.", mkSL(sp1, sp2)).toFailure
+        case ParsedAst.Predicate.False(sp1, sp2) => Unsupported("'false' predicate is not allowed in the body of a rule.", mkSL(sp1, sp2)).toFailure
         case p: ParsedAst.Predicate.Ambiguous =>
           @@(p.terms.map(Term.Body.toTerm)) map {
             case terms => WeededAst.Predicate.Body.Ambiguous(p.name, terms, mkSL(p.sp1, p.sp2))
@@ -1245,7 +861,7 @@ object Weeder {
     /**
       * Weeds the given sequence of parsed annotation `xs`.
       */
-    def compile(xs: Seq[ParsedAst.Annotation]): Validation[Ast.Annotations, WeederError] = {
+    def weed(xs: Seq[ParsedAst.Annotation]): Validation[Ast.Annotations, WeederError] = {
       // collect seen annotations.
       val seen = mutable.Map.empty[String, ParsedAst.Annotation]
 
@@ -1254,7 +870,7 @@ object Weeder {
         case x => seen.get(x.name) match {
           case None =>
             seen += (x.name -> x)
-            Annotations.compile(x)
+            Annotations.weed(x)
           case Some(otherAnn) =>
             DuplicateAnnotation(x.name, mkSL(otherAnn.sp1, otherAnn.sp2), mkSL(x.sp1, x.sp2)).toFailure
         }
@@ -1265,7 +881,7 @@ object Weeder {
     /**
       * Weeds the given parsed annotation `past`.
       */
-    def compile(past: ParsedAst.Annotation): Validation[Ast.Annotation, WeederError] = {
+    def weed(past: ParsedAst.Annotation): Validation[Ast.Annotation, WeederError] = {
       val loc = mkSL(past.sp1, past.sp2)
       past.name match {
         case "associative" => Ast.Annotation.Associative(loc).toSuccess
@@ -1389,6 +1005,38 @@ object Weeder {
     case ParsedAst.Expression.UserError(sp1, _) => sp1
     case ParsedAst.Expression.Bot(sp1, sp2) => sp1
     case ParsedAst.Expression.Top(sp1, sp2) => sp1
+  }
+
+  /**
+    * Checks that no attributes are repeated.
+    */
+  private def checkDuplicateAttribute(attrs: Seq[Ast.Attribute]): Validation[List[Ast.Attribute], WeederError] = {
+    val seen = mutable.Map.empty[String, Name.Ident]
+    @@(attrs.map {
+      case attr@Ast.Attribute(id, tpe) => seen.get(id.name) match {
+        case None =>
+          seen += (id.name -> id)
+          attr.toSuccess
+        case Some(otherIdent) =>
+          DuplicateAttribute(id.name, otherIdent.loc, id.loc).toFailure
+      }
+    })
+  }
+
+  /**
+    * Checks that no formal parameters are repeated.
+    */
+  private def checkDuplicateFormal(params: Seq[Ast.FormalParam]): Validation[List[Ast.FormalParam], WeederError] = {
+    val seen = mutable.Map.empty[String, Name.Ident]
+    @@(params.map {
+      case formal@Ast.FormalParam(id, t) => seen.get(id.name) match {
+        case None =>
+          seen += (id.name -> id)
+          formal.toSuccess
+        case Some(otherIdent) =>
+          DuplicateFormal(id.name, otherIdent.loc, id.loc).toFailure
+      }
+    })
   }
 
 }
