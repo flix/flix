@@ -110,16 +110,8 @@ object Codegen {
         case Type.Enum(_, _) => asm.Type.getDescriptor(Constants.tagClass)
         case Type.Tuple(_) => asm.Type.getDescriptor(Constants.tupleClass)
         case Type.Lambda(_, _) => s"L${decorate(interfaces(tpe))};"
-        case Type.Parametric(_, _) => ??? // TODO: How to handle?
-        case Type.FOpt => ??? // TODO
-        case Type.FList => ??? // TODO
-        case Type.FVec=> ??? // TODO
         case Type.Apply(Type.FSet, _) => asm.Type.getDescriptor(Constants.setClass)
-        case Type.FMap => ??? // TODO
-        case Type.Predicate(_) => ??? // TODO: How to handle?
-        case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
-        case Type.Var(_, _) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
-        case Type.Tag(_, _, _) => throw InternalCompilerException(s"No corresponding JVM type for $tpe.")
+        case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
 
       tpe match {
@@ -236,14 +228,7 @@ object Codegen {
       case Type.Float64 => mv.visitInsn(DRETURN)
       case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
            Type.Apply(Type.FSet, _) => mv.visitInsn(ARETURN)
-      case Type.FOpt=> ??? // TODO
-      case Type.FList => ??? // TODO
-      case Type.FVec => ??? // TODO
-      case Type.FMap => ??? // TODO
-      case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
-      case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
-      case Type.Var(_, _) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
-      case Type.Tag(_, _, _) => throw InternalCompilerException(s"Functions can't return type $tpe.")
+      case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
 
     // Dummy large numbers (JVM limits) so the bytecode checker can run. Afterwards, the ASM library calculates the proper maxes.
@@ -295,11 +280,7 @@ object Codegen {
       case Type.Float64 => visitor.visitVarInsn(DLOAD, offset)
       case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
            Type.Apply(Type.FSet, _) => visitor.visitVarInsn(ALOAD, offset)
-      case Type.FOpt | Type.FList | Type.FVec | Type.FMap => ??? // TODO
-      case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => // TODO: Deprecated
-      case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
-      case Type.Var(_, _) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
-      case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type $tpe.")
+      case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
 
     case Expression.Ref(name, _, _) =>
@@ -458,11 +439,7 @@ object Codegen {
         case Type.Float64 => visitor.visitVarInsn(DSTORE, offset)
         case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
              Type.Apply(Type.FSet, _) => visitor.visitVarInsn(ASTORE, offset)
-        case Type.FOpt | Type.FList | Type.FVec | Type.FMap => ??? // TODO
-        case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => // TODO: Deprecated
-        case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
-        case Type.Var(_, _) | Type.Prop => throw InternalCompilerException(s"Value of ${exp1.tpe} should never be compiled.")
-        case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type ${exp1.tpe}.")
+        case tpe => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
       compileExpression(ctx, visitor)(exp2)
 
@@ -652,16 +629,7 @@ object Codegen {
     case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
          Type.Apply(Type.FSet, _) => compileExpression(ctx, visitor)(exp)
 
-    case Type.FOpt | Type.FList | Type.FVec | Type.FMap => ??? // TODO
-
-    case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
-
-    case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
-
-    case Type.Var(_, _) | Type.Prop => throw InternalCompilerException(s"Value of ${exp.tpe} should never be compiled.")
-
-    case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type ${exp.tpe}.")
-
+    case tpe => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }
 
   /*
@@ -732,16 +700,7 @@ object Codegen {
       val ctor = clazz.getConstructor(Constants.arrayObjectClass)
       visitor.visitMethodInsn(INVOKESPECIAL, asm.Type.getInternalName(clazz), "<init>", asm.Type.getConstructorDescriptor(ctor), false)
 
-    case Type.FOpt | Type.FList | Type.FVec | Type.FMap => ??? // TODO
-
-    case Type.Parametric(_, _) | Type.Predicate(_) => ??? // TODO: How to handle?
-
-    case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
-
-    case Type.Var(_, _) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
-
-    case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type $tpe.")
-
+    case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }
 
   /*
@@ -1057,7 +1016,7 @@ object Codegen {
   private def compileComparisonExpr(ctx: Context, visitor: MethodVisitor)
                                    (o: ComparisonOperator, e1: Expression, e2: Expression): Unit = {
     e1.tpe match {
-      case Type.Enum(_, _) | Type.Tuple(_) | Type.FSet if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
+      case Type.Enum(_, _) | Type.Tuple(_) | Type.Apply(Type.FSet, _) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
         (e1.tpe: @unchecked) match {
           case Type.Tuple(_) =>
             // Value.Tuple.elms() method
@@ -1074,7 +1033,7 @@ object Codegen {
             compileExpression(ctx, visitor)(e2)
             visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), method1.getName, asm.Type.getMethodDescriptor(method1), false)
             visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(clazz2), method2.getName, asm.Type.getMethodDescriptor(method2), false)
-          case Type.Enum(_, _) | Type.FSet =>
+          case Type.Enum(_, _) | Type.Apply(Type.FSet, _) =>
             // java.lang.Object.equals(Object) method
             val clazz = Constants.objectClass
             val method = clazz.getMethod("equals", Constants.objectClass)

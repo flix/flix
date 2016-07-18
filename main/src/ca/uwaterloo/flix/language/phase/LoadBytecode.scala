@@ -154,16 +154,8 @@ object LoadBytecode {
     case Type.Enum(_, _) => classOf[Value.Tag]
     case Type.Tuple(elms) => classOf[Value.Tuple]
     case Type.Lambda(_, _) => interfaces(tpe)
-    case Type.Parametric(_, _) => ??? // TODO: How to handle?
-    case Type.FOpt => ??? // TODO
-    case Type.FList => ??? // TODO
-    case Type.FVec => ??? // TODO
     case Type.FSet => classOf[scala.collection.immutable.Set[AnyRef]]
-    case Type.FMap => ??? // TODO
-    case Type.Predicate(_) => ??? // TODO: How to handle?
-    case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
-    case Type.Var(_, _) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
-    case Type.Tag(_, _, _) => throw InternalCompilerException(s"No corresponding JVM type for $tpe.")
+    case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }
 
   /**
