@@ -25,6 +25,42 @@ import scala.collection.mutable
 
 object Typer2 {
 
+  /**
+    * A substitution is a map from type variables to types.
+    */
+  object Substitution {
+    /**
+      * Returns the empty substitution.
+      */
+    val empty: Substitution = Substitution(Map.empty)
+
+    /**
+      * Returns the singleton substitution mapping `x` to `tpe`.
+      */
+    def singleton(x: Type.Var, tpe: Type): Substitution = Substitution(Map(x -> tpe))
+  }
+
+  case class Substitution(m: Map[Type.Var, Type]) {
+
+    /**
+      * Applies `this` substitution to the given type `tpe`.
+      */
+    def apply(tpe: Type): Type = tpe match {
+      case x: Type.Var => m.get(x) match {
+        case None => x
+        case Some(y) => y
+      }
+      case Type.Unit => Type.Unit
+    }
+
+    /**
+      * Applies `this` substitution to the given types `ts`.
+      */
+    def apply(ts: List[Type]): List[Type] = ts.map(t => apply(t))
+
+  }
+
+
   sealed trait TypeClass
 
   object TypeClass {
@@ -310,7 +346,7 @@ object Typer2 {
            */
           case NamedAst.Expression.FNil(id, loc) =>
             ???
-            //ret(id, EmptyContext, Type.FList(fresh()))
+          //ret(id, EmptyContext, Type.FList(fresh()))
 
           /*
            * List expression.
@@ -320,7 +356,7 @@ object Typer2 {
             val (ctx2, tpe2) = visitExp(tl, tenv0)
             constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
             ???
-            //ret(id, ctx1 ::: ctx2, Type.FList(tpe1))
+          //ret(id, ctx1 ::: ctx2, Type.FList(tpe1))
 
           /*
            * Vector expression.
@@ -577,24 +613,24 @@ object Typer2 {
     case NamedAst.Expression.FNone(id, loc) =>
       // TODO
       ???
-      //val tpe: Type.FOpt = tenv0(id).asInstanceOf[Type.FOpt]
-      //TypedAst.Expression.FNone(tpe, loc)
+    //val tpe: Type.FOpt = tenv0(id).asInstanceOf[Type.FOpt]
+    //TypedAst.Expression.FNone(tpe, loc)
 
     /*
      * Some expression.
      */
     case NamedAst.Expression.FSome(id, exp, loc) =>
       ???
-      //val tpe: Type.FOpt = tenv0(id).asInstanceOf[Type.FOpt]
-      //TypedAst.Expression.FSome(reassemble(exp, tenv0), tpe, loc)
+    //val tpe: Type.FOpt = tenv0(id).asInstanceOf[Type.FOpt]
+    //TypedAst.Expression.FSome(reassemble(exp, tenv0), tpe, loc)
 
     /*
      * Nil expression.
      */
     case NamedAst.Expression.FNil(id, loc) =>
       ???
-      //val tpe: Type.FList = tenv0(id).asInstanceOf[Type.FList]
-      //TypedAst.Expression.FNil(tpe, loc)
+    //val tpe: Type.FList = tenv0(id).asInstanceOf[Type.FList]
+    //TypedAst.Expression.FNil(tpe, loc)
 
     /*
      * List expression.

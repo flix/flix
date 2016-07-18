@@ -30,6 +30,11 @@ sealed trait Type {
   def kind: Kind
 
   /**
+    * Returns the type variables in `this` type.
+    */
+  def typeVars: Set[Type.Var] = ???
+
+  /**
     * Returns a human readable string representation of `this` type.
     */
   override def toString: String = this match {

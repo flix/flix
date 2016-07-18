@@ -1027,4 +1027,69 @@ class TestTyper extends FunSuite {
     assert(result.errors.head.isInstanceOf[Typer.TypeError])
   }
 
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Substitutions                                                           //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Substitution.Empty.01") {
+    val tpe = Type.Unit
+    val subst = Typer2.Substitution.empty
+    assertResult(Type.Unit)(subst(tpe))
+  }
+
+  test("Substitution.Empty.02") {
+    val tpe = Type.Bool
+    val subst = Typer2.Substitution.empty
+    assertResult(Type.Bool)(subst(tpe))
+  }
+
+  test("Substitution.Empty.03") {
+    val tpe = Type.Var("A", Kind.Star)
+    val subst = Typer2.Substitution.empty
+    assertResult(Type.Var("A", Kind.Star))(subst(tpe))
+  }
+
+  test("Substitution.Empty.04") {
+    val tpe = Type.mkArrow(Type.Bool, Type.Unit)
+    val subst = Typer2.Substitution.empty
+    assertResult(Type.Var("A", Kind.Star))(subst(tpe))
+  }
+
+  test("Substitution.Singleton.01") {
+    val tpe = Type.Var("A", Kind.Star)
+    val subst = Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Bool)
+    assertResult(Type.Var("A", Kind.Star))(subst(tpe))
+  }
+
+  test("Substitution.Singleton.02") {
+    val tpe = Type.Var("A", Kind.Star)
+    val subst = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
+    assertResult(Type.Bool)(subst(tpe))
+  }
+
+  test("Substitution.Singleton.03") {
+    val tpe = Type.mkFOpt(Type.Var("A", Kind.Star))
+    val subst = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
+    assertResult(Type.mkFOpt(Type.Bool))(subst(tpe))
+  }
+
+  test("Substitution.Singleton.04") {
+    val tpe = Type.mkFMap(Type.Var("K", Kind.Star), Type.Var("V", Kind.Star))
+    val subst = Typer2.Substitution.singleton(Type.Var("K", Kind.Star), Type.Bool)
+    assertResult(Type.mkFMap(Type.Bool, Type.Var("V", Kind.Star)), Type.Var("V", Kind.Star))(subst(tpe))
+  }
+
+  test("Substitution.Singleton.05") {
+    val tpe = Type.mkFMap(Type.Var("A", Kind.Star), Type.Var("A", Kind.Star))
+    val subst = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
+    assertResult(Type.mkFMap(Type.Bool, Type.Bool))(subst(tpe))
+  }
+
+  test("Substitution.Singleton.06") {
+    val tpe = Type.Var("A", Kind.Star)
+    val subst = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Var("B", Kind.Star))
+    assertResult(Type.Var("B", Kind.Star))(subst(tpe))
+  }
+
 }
