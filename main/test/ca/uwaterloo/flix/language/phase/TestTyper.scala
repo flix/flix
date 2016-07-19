@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.Type.Var
+import ca.uwaterloo.flix.language.ast.Type.{Bool, Var}
 import ca.uwaterloo.flix.language.errors.TypeError
 import org.scalatest.FunSuite
 
@@ -1342,10 +1342,126 @@ class TestTyper extends FunSuite {
   }
 
   test("Unify.01") {
-    val A = Type.Var("A", Kind.Star)
-    val result = Typer2.unify(A, Type.Bool).get
+    val tpe1 = Type.Var("A", Kind.Star)
+    val tpe2 = Type.Bool
+    val result = Typer2.unify(tpe1, tpe2).get
+    assertResult(result(tpe1))(Type.Bool)
+  }
 
+  test("Unify.02") {
+    val tpe1 = Type.Var("A", Kind.Star)
+    val tpe2 = Type.Bool
+    val result = Typer2.unify(tpe2, tpe1).get
+    assertResult(result(tpe1))(Type.Bool)
+  }
+
+  test("Unify.03") {
+    val A = Type.Var("A", Kind.Star)
+    val tpe1 = Type.mkFOpt(A)
+    val tpe2 = Type.mkFOpt(Type.Bool)
+    val result = Typer2.unify(tpe1, tpe2).get
     assertResult(result(A))(Type.Bool)
   }
+
+  test("Unify.04") {
+    val A = Type.Var("A", Kind.Star)
+    val tpe1 = Type.mkFOpt(Type.Bool)
+    val tpe2 = Type.mkFOpt(A)
+    val result = Typer2.unify(tpe1, tpe2).get
+    assertResult(result(A))(Type.Bool)
+  }
+
+  test("Unify.05") {
+    val A = Type.Var("A", Kind.Star)
+    val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
+    val tpe2 = Type.mkArrow(Type.Bool, A)
+    val result = Typer2.unify(tpe1, tpe2).get
+    assertResult(result(A))(Type.Char)
+  }
+
+  test("Unify.06") {
+    val A = Type.Var("A", Kind.Star)
+    val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
+    val tpe2 = Type.mkArrow(Type.Bool, A)
+    val result = Typer2.unify(tpe1, tpe2).get
+    assertResult(result(A))(Type.Char)
+  }
+
+  test("Unify.07") {
+    val A = Type.Var("A", Kind.Star)
+    val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
+    val tpe2 = A
+    val result = Typer2.unify(tpe1, tpe2).get
+    assertResult(result(A))(tpe1)
+  }
+
+  test("Unify.08") {
+    val A = Type.Var("A", Kind.Star)
+    val tpe1 = A
+    val tpe2 = Type.mkArrow(Type.Bool, Type.Char)
+    val result = Typer2.unify(tpe1, tpe2).get
+    assertResult(result(A))(tpe1)
+  }
+
+  test("Unify.09") {
+    val A = Type.Var("A", Kind.Star)
+    val tpe1 = Type.mkArrow(A, Type.Bool)
+    val tpe2 = Type.mkArrow(Type.Bool, A)
+    val result = Typer2.unify(tpe1, tpe2).get
+    assertResult(result(A))(Type.Bool)
+  }
+
+  test("Unify.10") {
+    val A = Type.Var("A", Kind.Star)
+    val B = Type.Var("B", Kind.Star)
+    val tpe1 = Type.mkArrow(A, B)
+    val tpe2 = Type.mkArrow(Type.Bool, Type.Char)
+    val result = Typer2.unify(tpe1, tpe2).get
+    assertResult(result(A))(Type.Bool)
+    assertResult(result(B))(Type.Char)
+  }
+
+  test("Unify.11") {
+    val A = Type.Var("A", Kind.Star)
+    val B = Type.Var("B", Kind.Star)
+    val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
+    val tpe2 = Type.mkArrow(A, B)
+    val result = Typer2.unify(tpe1, tpe2).get
+    assertResult(result(A))(Type.Bool)
+    assertResult(result(B))(Type.Char)
+  }
+
+  test("Unify.12") {
+    val A = Type.Var("A", Kind.Star)
+    val B = Type.Var("B", Kind.Star)
+    val tpe1 = Type.mkArrow(A, Type.Char)
+    val tpe2 = Type.mkArrow(Type.Bool, B)
+    val result = Typer2.unify(tpe1, tpe2).get
+    assertResult(result(A))(Type.Bool)
+    assertResult(result(B))(Type.Char)
+  }
+
+  test("Unify.13") {
+    val A = Type.Var("A", Kind.Star)
+    val B = Type.Var("B", Kind.Star)
+    val C = Type.Var("C", Kind.Star)
+    val tpe1 = Type.mkArrow(A, B)
+    val tpe2 = Type.mkArrow(C, Type.Bool)
+    val result = Typer2.unify(tpe1, tpe2).get
+    assertResult(result(B))(Type.Bool)
+    assertResult(result(A))(C)
+  }
+
+  test("Unify.14") {
+    val A = Type.Var("A", Kind.Star)
+    val B = Type.Var("B", Kind.Star)
+    val C = Type.Var("C", Kind.Star)
+    val tpe1 = Type.mkArrow(Type.mkFOpt(A), B)
+    val tpe2 = Type.mkArrow(C, Type.mkFList(Type.Bool))
+    val result = Typer2.unify(tpe1, tpe2).get
+    assertResult(result(B))(Type.mkFList(Type.Bool))
+    assertResult(result(C))(Type.mkFOpt(A))
+  }
+
 
 }
