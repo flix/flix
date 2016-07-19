@@ -73,6 +73,10 @@ object Typer2 {
       case Type.FMap => Type.FMap
       case Type.Enum(name, cases) => Type.Enum(name, cases.map(x => (x._1, apply(x._2).asInstanceOf[Type.Tag])))
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
+
+        // TODO: Remove once tags are gone:
+      case Type.Tag(name, tag, t) => Type.Tag(name, tag, apply(t))
+
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'")
     }
 
@@ -559,13 +563,25 @@ object Typer2 {
           case subst2 => subst2 @@ subst1
         }
       }
+
+      // TODO: Remove once tags are gone:
+    case (Type.Tag(_, _, t1), Type.Tag(_, _, t2)) => unify(t1, t2)
+
     case _ => TypeError.UnificationError(tpe1, tpe2).toFailure
   }
 
   /**
     * Unifies the two given lists of types `ts1` and `ts2`.
     */
-  def unify(ts1: List[Type], ts2: List[Type]): Validation[Substitution, TypeError] = ??? // TODO
+  def unify(ts1: List[Type], ts2: List[Type]): Validation[Substitution, TypeError] = (ts1, ts2) match {
+    case (Nil, Nil) => Substitution.empty.toSuccess
+    case (tpe1 :: rs1, tpe2 :: rs2) => unify(tpe1, tpe2) flatMap {
+      case subst1 => unify(subst1(rs1), subst1(rs2)) map {
+        case subst2 => subst2 @@ subst1
+      }
+    }
+    case _ => throw InternalCompilerException(s"Mismatched type lists: `$ts1' and `$ts2'.")
+  }
 
   /**
     * Unifies the given variable `x` with the given type `tpe`.
