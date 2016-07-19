@@ -112,7 +112,8 @@ object Namer {
         prog0.definitions.get(ns0) match {
           case None =>
             // Case 1: The namespace does not yet exist. So the definition does not yet exist.
-            Expressions.namer(exp, Map.empty) map {
+            val env0 = getEnvFromParams(params)
+            Expressions.namer(exp, env0) map {
               case e =>
                 val defn = NamedAst.Declaration.Definition(ann, ident, params, e, tpe, loc)
                 val defns = Map(ident.name -> defn)
@@ -123,7 +124,8 @@ object Namer {
             defns0.get(ident.name) match {
               case None =>
                 // Case 2.1: The definition does not exist in the namespace. Update it.
-                Expressions.namer(exp, Map.empty) map {
+                val env0 = getEnvFromParams(params)
+                Expressions.namer(exp, env0) map {
                   case e =>
                     val defn = NamedAst.Declaration.Definition(ann, ident, params, e, tpe, loc)
                     val defns = defns0 + (ident.name -> defn)
@@ -307,9 +309,9 @@ object Namer {
       * Performs naming on the given `cases` map.
       */
     def casesOf(cases: Map[String, WeededAst.Case]): Map[String, NamedAst.Case] =
-      cases.foldLeft(Map.empty[String, NamedAst.Case]) {
-        case (macc, (name, WeededAst.Case(enum, tag, tpe))) => macc + (name -> NamedAst.Case(enum, tag, tpe))
-      }
+    cases.foldLeft(Map.empty[String, NamedAst.Case]) {
+      case (macc, (name, WeededAst.Case(enum, tag, tpe))) => macc + (name -> NamedAst.Case(enum, tag, tpe))
+    }
 
   }
 
@@ -534,6 +536,15 @@ object Namer {
       (visit(pat0), m.toMap)
     }
 
+  }
+
+  /**
+    * Returns a mapping from name to variable symbols from the given list of parameters `params`.
+    */
+  private def getEnvFromParams(params: List[Ast.FormalParam])(implicit genSyn: GenSym): Map[String, Symbol.VarSym] = {
+    params.foldLeft(Map.empty[String, Symbol.VarSym]) {
+      case (macc, Ast.FormalParam(id, _)) => macc + (id.name -> Symbol.mkVarSym(id))
+    }
   }
 
   /**

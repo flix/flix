@@ -149,6 +149,9 @@ object Typer2 {
 
   }
 
+  /**
+    * Type checks the given program.
+    */
   def typer(program: NamedAst.Program)(implicit genSym: GenSym): Unit = {
     for ((ns, defns) <- program.definitions) {
       for ((name, defn) <- defns) {
