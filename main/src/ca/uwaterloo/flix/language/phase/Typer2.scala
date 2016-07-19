@@ -528,8 +528,8 @@ object Typer2 {
     * Returns [[Failure]] if the two types cannot be unified.
     */
   def unify(tpe1: Type, tpe2: Type): Validation[Substitution, TypeError] = (tpe1, tpe2) match {
-    // TODO: Var
-
+    case (x: Type.Var, _) => unifyVar(x, tpe2)
+    case (_, x: Type.Var) => unifyVar(x, tpe2)
     case (Type.Unit, Type.Unit) => Substitution.empty.toSuccess
     case (Type.Bool, Type.Bool) => Substitution.empty.toSuccess
     case (Type.Char, Type.Char) => Substitution.empty.toSuccess
@@ -550,10 +550,22 @@ object Typer2 {
     case (Type.FSet, Type.FSet) => Substitution.empty.toSuccess
     case (Type.FMap, Type.FMap) => Substitution.empty.toSuccess
     case (Type.Enum(name1, _), Type.Enum(name2, _)) if name1 == name2 => ??? // TODO: Need to unify inside cases?
-    // TODO: Apply
-
+    case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
+      unify(t11, t21) flatMap {
+        case subst1 => unify(subst1(t12), subst1(t22)) map {
+          case subst2 => subst2 @@ subst1
+        }
+      }
     case _ => TypeError.UnificationError(tpe1, tpe2).toFailure
   }
+
+
+  /**
+    * Unifies the given variable `x` with the given type `tpe`.
+    *
+    * Performs the so-called occurs-check to ensure that the substitution is kind-preserving.
+    */
+  def unifyVar(x: Type.Var, tpe: Type): Validation[Substitution, TypeError] = ???
 
 
   /**
