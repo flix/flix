@@ -116,4 +116,14 @@ object TypeError {
     val message = "UnificationError" // TODO
   }
 
+  // TODO
+  case class OccursCheck() extends TypeError {
+    val message = "OccursCheck" // TODO
+  }
+
+  // TODO
+  case class KindError() extends TypeError {
+    val message = "KindError" // TODO
+  }
+
 }

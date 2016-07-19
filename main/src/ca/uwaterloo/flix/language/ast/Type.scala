@@ -32,7 +32,31 @@ sealed trait Type {
   /**
     * Returns the type variables in `this` type.
     */
-  def typeVars: Set[Type.Var] = ???
+  def typeVars: Set[Type.Var] = this match {
+    case x: Type.Var => Set(x)
+    case Type.Unit => Set.empty
+    case Type.Bool => Set.empty
+    case Type.Char => Set.empty
+    case Type.Float32 => Set.empty
+    case Type.Float64 => Set.empty
+    case Type.Int8 => Set.empty
+    case Type.Int16 => Set.empty
+    case Type.Int32 => Set.empty
+    case Type.Int64 => Set.empty
+    case Type.BigInt => Set.empty
+    case Type.Str => Set.empty
+    case Type.Native => Set.empty
+    case Type.Arrow => Set.empty
+    case Type.FTuple(l) => Set.empty
+    case Type.FOpt => Set.empty
+    case Type.FList => Set.empty
+    case Type.FVec => Set.empty
+    case Type.FMap => Set.empty
+    case Type.Enum(name, cases) => Set.empty // TODO: Recurse?
+    case Type.Apply(t1, t2) => t1.typeVars ++ t2.typeVars
+
+    case _ => throw InternalCompilerException(s"Unexpected type: `${this}'.")
+  }
 
   /**
     * Returns a human readable string representation of `this` type.

@@ -529,7 +529,7 @@ object Typer2 {
     */
   def unify(tpe1: Type, tpe2: Type): Validation[Substitution, TypeError] = (tpe1, tpe2) match {
     case (x: Type.Var, _) => unifyVar(x, tpe2)
-    case (_, x: Type.Var) => unifyVar(x, tpe2)
+    case (_, x: Type.Var) => unifyVar(x, tpe1)
     case (Type.Unit, Type.Unit) => Substitution.empty.toSuccess
     case (Type.Bool, Type.Bool) => Substitution.empty.toSuccess
     case (Type.Char, Type.Char) => Substitution.empty.toSuccess
@@ -559,14 +559,23 @@ object Typer2 {
     case _ => TypeError.UnificationError(tpe1, tpe2).toFailure
   }
 
-
   /**
     * Unifies the given variable `x` with the given type `tpe`.
     *
     * Performs the so-called occurs-check to ensure that the substitution is kind-preserving.
     */
-  def unifyVar(x: Type.Var, tpe: Type): Validation[Substitution, TypeError] = ???
-
+  def unifyVar(x: Type.Var, tpe: Type): Validation[Substitution, TypeError] = {
+    if (x == tpe) {
+      return Substitution.empty.toSuccess
+    }
+    if (tpe.typeVars contains x) {
+      return TypeError.OccursCheck().toFailure
+    }
+    if (x.kind != tpe.kind) {
+      return TypeError.KindError().toFailure
+    }
+    return Substitution.singleton(x, tpe).toSuccess
+  }
 
   /**
     * Reassembles the given expression `exp0` under the given type environment `tenv0`.

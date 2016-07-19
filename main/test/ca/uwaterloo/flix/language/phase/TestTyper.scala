@@ -1345,14 +1345,14 @@ class TestTyper extends FunSuite {
     val tpe1 = Type.Var("A", Kind.Star)
     val tpe2 = Type.Bool
     val result = Typer2.unify(tpe1, tpe2).get
-    assertResult(result(tpe1))(Type.Bool)
+    assertResult(Type.Bool)(result(tpe1))
   }
 
   test("Unify.02") {
-    val tpe1 = Type.Var("A", Kind.Star)
-    val tpe2 = Type.Bool
-    val result = Typer2.unify(tpe2, tpe1).get
-    assertResult(result(tpe1))(Type.Bool)
+    val tpe1 = Type.Bool
+    val tpe2 = Type.Var("A", Kind.Star)
+    val result = Typer2.unify(tpe1, tpe2).get
+    assertResult(Type.Bool)(result(tpe2))
   }
 
   test("Unify.03") {
@@ -1360,7 +1360,7 @@ class TestTyper extends FunSuite {
     val tpe1 = Type.mkFOpt(A)
     val tpe2 = Type.mkFOpt(Type.Bool)
     val result = Typer2.unify(tpe1, tpe2).get
-    assertResult(result(A))(Type.Bool)
+    assertResult(Type.Bool)(result(A))
   }
 
   test("Unify.04") {
@@ -1368,7 +1368,7 @@ class TestTyper extends FunSuite {
     val tpe1 = Type.mkFOpt(Type.Bool)
     val tpe2 = Type.mkFOpt(A)
     val result = Typer2.unify(tpe1, tpe2).get
-    assertResult(result(A))(Type.Bool)
+    assertResult(Type.Bool)(result(A))
   }
 
   test("Unify.05") {
@@ -1376,7 +1376,7 @@ class TestTyper extends FunSuite {
     val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
     val tpe2 = Type.mkArrow(Type.Bool, A)
     val result = Typer2.unify(tpe1, tpe2).get
-    assertResult(result(A))(Type.Char)
+    assertResult(Type.Char)(result(A))
   }
 
   test("Unify.06") {
@@ -1384,7 +1384,7 @@ class TestTyper extends FunSuite {
     val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
     val tpe2 = Type.mkArrow(Type.Bool, A)
     val result = Typer2.unify(tpe1, tpe2).get
-    assertResult(result(A))(Type.Char)
+    assertResult(Type.Char)(result(A))
   }
 
   test("Unify.07") {
@@ -1392,7 +1392,7 @@ class TestTyper extends FunSuite {
     val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
     val tpe2 = A
     val result = Typer2.unify(tpe1, tpe2).get
-    assertResult(result(A))(tpe1)
+    assertResult(tpe1)(result(A))
   }
 
   test("Unify.08") {
@@ -1400,7 +1400,7 @@ class TestTyper extends FunSuite {
     val tpe1 = A
     val tpe2 = Type.mkArrow(Type.Bool, Type.Char)
     val result = Typer2.unify(tpe1, tpe2).get
-    assertResult(result(A))(tpe1)
+    assertResult(tpe2)(result(A))
   }
 
   test("Unify.09") {
@@ -1408,7 +1408,7 @@ class TestTyper extends FunSuite {
     val tpe1 = Type.mkArrow(A, Type.Bool)
     val tpe2 = Type.mkArrow(Type.Bool, A)
     val result = Typer2.unify(tpe1, tpe2).get
-    assertResult(result(A))(Type.Bool)
+    assertResult(Type.Bool)(result(A))
   }
 
   test("Unify.10") {
@@ -1417,8 +1417,8 @@ class TestTyper extends FunSuite {
     val tpe1 = Type.mkArrow(A, B)
     val tpe2 = Type.mkArrow(Type.Bool, Type.Char)
     val result = Typer2.unify(tpe1, tpe2).get
-    assertResult(result(A))(Type.Bool)
-    assertResult(result(B))(Type.Char)
+    assertResult(Type.Bool)(result(A))
+    assertResult(Type.Char)(result(B))
   }
 
   test("Unify.11") {
@@ -1427,8 +1427,8 @@ class TestTyper extends FunSuite {
     val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
     val tpe2 = Type.mkArrow(A, B)
     val result = Typer2.unify(tpe1, tpe2).get
-    assertResult(result(A))(Type.Bool)
-    assertResult(result(B))(Type.Char)
+    assertResult(Type.Bool)(result(A))
+    assertResult(Type.Char)(result(B))
   }
 
   test("Unify.12") {
@@ -1437,8 +1437,8 @@ class TestTyper extends FunSuite {
     val tpe1 = Type.mkArrow(A, Type.Char)
     val tpe2 = Type.mkArrow(Type.Bool, B)
     val result = Typer2.unify(tpe1, tpe2).get
-    assertResult(result(A))(Type.Bool)
-    assertResult(result(B))(Type.Char)
+    assertResult(Type.Bool)(result(A))
+    assertResult(Type.Char)(result(B))
   }
 
   test("Unify.13") {
@@ -1448,8 +1448,8 @@ class TestTyper extends FunSuite {
     val tpe1 = Type.mkArrow(A, B)
     val tpe2 = Type.mkArrow(C, Type.Bool)
     val result = Typer2.unify(tpe1, tpe2).get
-    assertResult(result(B))(Type.Bool)
-    assertResult(result(A))(C)
+    assertResult(Type.Bool)(result(B))
+    assertResult(C)(result(A))
   }
 
   test("Unify.14") {
@@ -1459,8 +1459,8 @@ class TestTyper extends FunSuite {
     val tpe1 = Type.mkArrow(Type.mkFOpt(A), B)
     val tpe2 = Type.mkArrow(C, Type.mkFList(Type.Bool))
     val result = Typer2.unify(tpe1, tpe2).get
-    assertResult(result(B))(Type.mkFList(Type.Bool))
-    assertResult(result(C))(Type.mkFOpt(A))
+    assertResult(Type.mkFList(Type.Bool))(result(B))
+    assertResult(Type.mkFOpt(A))(result(C))
   }
 
 
