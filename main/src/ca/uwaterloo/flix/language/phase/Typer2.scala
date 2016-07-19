@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
@@ -98,6 +99,19 @@ object Typer2 {
       Substitution(m) ++ this
     }
 
+    /**
+      * Returns the composition of `this` substitution with `that` substitution,
+      * provided that the two substitutions are equal on shared variables.
+      */
+    def merge(that: Substitution): Validation[Substitution, TypeError] = {
+      val shared = this.m.keySet intersect that.m.keySet
+      val conflicts = shared.filter(v => this.apply(v) != that.apply(v))
+      if (conflicts.nonEmpty)
+        TypeError.MergeError().toFailure
+      else
+        (this ++ that).toSuccess
+    }
+
   }
 
 
@@ -129,15 +143,6 @@ object Typer2 {
     // TODO: It is possible that the contexts should be merged,
     // i.e. the signature should be (Context, Type, Type).
     case class Eq(ct1: ContextAndType, ct2: ContextAndType) extends TypeConstraint
-
-  }
-
-  sealed trait TyperError extends CompilationError
-
-  object TyperError {
-
-    // TODO
-    case class UnificationError(message: String) extends TyperError
 
   }
 
@@ -533,7 +538,7 @@ object Typer2 {
       * Returns a `Success` with a substitution if the two types are unifiable.
       * Otherwise returns a `Failure`.
       */
-    def unify(tpe1: Type, tpe2: Type): Validation[Map[Symbol.VarSym, Type], TyperError] = (tpe1, tpe2) match {
+    def unify(tpe1: Type, tpe2: Type): Validation[Map[Symbol.VarSym, Type], TypeError] = (tpe1, tpe2) match {
       case (Type.Var(id, _), x) => ???
       case (x, Type.Var(id, _)) => ???
       case (Type.Unit, Type.Unit) => Map.empty[Symbol.VarSym, Type].toSuccess

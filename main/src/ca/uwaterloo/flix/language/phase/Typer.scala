@@ -17,6 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.errors.TypeError._
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -29,96 +31,6 @@ object Typer {
   // TODO: Check that lattice variables are not bound multiple times.
   // TODO: https://flockler.com/thumbs/1992/truthy_s830x0_q80_noupscale.png
 
-  import TypeError._
-
-  /**
-    * A common super-type for type errors.
-    */
-  sealed trait TypeError extends CompilationError
-
-  object TypeError {
-
-    implicit val consoleCtx = Compiler.ConsoleCtx
-
-    /**
-      * An error raised to indicate a type mismatch between an `expected` and an `actual` type.
-      *
-      * @param expected the expected type.
-      * @param actual   the actual type.
-      * @param loc      the source location.
-      */
-    case class ExpectedType(expected: Type, actual: Type, loc: SourceLocation) extends TypeError {
-      val message =
-        s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-            |${consoleCtx.red(s">> Expected type '${prettyPrint(expected)}' but actual type is '${prettyPrint(actual)}'.")}
-           |
-            |${loc.underline}
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that the two given types `tpe1` and `tpe2` were expected to be equal.
-      *
-      * @param tpe1 the first type.
-      * @param tpe2 the second type.
-      * @param loc1 the source location of the first type.
-      * @param loc2 the source location of the second type.
-      */
-    case class ExpectedEqualTypes(tpe1: Type, tpe2: Type, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
-      val message =
-        s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc1.source.format}")}
-           |
-            |${consoleCtx.red(s">> Expected equal types '${prettyPrint(tpe1)}' and '${prettyPrint(tpe2)}'.")}
-           |
-            |${loc1.underline}
-           |${loc2.underline}
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that the given type `tpe` was expected to be a function type.
-      *
-      * @param tpe the erroneous type.
-      * @param loc the source location.
-      */
-    // TODO: Pretty print
-    case class IllegalApply(tpe: Type, loc: SourceLocation) extends TypeError {
-      val message = s"Type Error: The type '${prettyPrint(tpe)}' is not a function type at ${loc.format}.\n"
-    }
-
-    /**
-      * An error raised to indicate a type mismatch between a pattern `pat` and an expected type `tpe`.
-      *
-      * @param pat the pattern.
-      * @param tpe the type.
-      * @param loc the source location.
-      */
-    // TODO: Pretty print
-    case class IllegalPattern(pat: ResolvedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypeError {
-      val message = s"Type Error: Pattern '${prettyPrint(pat)}' does not match expected type '${prettyPrint(tpe)}' at ${loc.format}.\n"
-    }
-
-    // TODO: Check arity of function calls, predicates, etc.
-
-    /**
-      * An error raised to indicate that a type has no associated lattice.
-      *
-      * @param tpe the type that has no lattice.
-      * @param loc the source location.
-      */
-    case class NoSuchLattice(tpe: Type, loc: SourceLocation) extends TypeError {
-      val message =
-        s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-            |${consoleCtx.red(s">> No lattice declared for '${prettyPrint(tpe)}'.")}
-           |
-            |${loc.underline}
-           |Tip: Associate a lattice with the type.
-         """.stripMargin
-    }
-
-  }
 
   /**
     * Runs the typer on the entire given AST `rast`.
@@ -849,11 +761,6 @@ object Typer {
     }
   }
 
-  /**
-    * Returns a human readable string representation of the given type `tpe`.
-    */
-  // TODO: Remove this.
-  private def prettyPrint(tpe: Type): String = tpe.toString
 
   private def prettyPrint(pat: ResolvedAst.Pattern): String = pat match {
     case ResolvedAst.Pattern.Wildcard(loc) => "_"

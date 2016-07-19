@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.errors.TypeError
 import org.scalatest.FunSuite
 
 class TestTyper extends FunSuite {
@@ -830,7 +831,7 @@ class TestTyper extends FunSuite {
           |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError.NoSuchLattice])
+    assert(result.errors.head.isInstanceOf[TypeError.NoSuchLattice])
   }
 
   test("NoSuchLattice02") {
@@ -844,7 +845,7 @@ class TestTyper extends FunSuite {
           |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError.NoSuchLattice])
+    assert(result.errors.head.isInstanceOf[TypeError.NoSuchLattice])
   }
 
 
@@ -912,7 +913,7 @@ class TestTyper extends FunSuite {
       """let Int<> = (0, 1, 2, 3, 4);
       """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+    assert(result.errors.head.isInstanceOf[TypeError])
   }
 
   test("Definition.BoundedLattice.TypeError02") {
@@ -924,7 +925,7 @@ class TestTyper extends FunSuite {
         |let Int<> = (0, 1, lub, leq, glb);
       """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+    assert(result.errors.head.isInstanceOf[TypeError])
   }
 
   test("Expression.Lambda.TypeError") {
@@ -991,25 +992,25 @@ class TestTyper extends FunSuite {
   test("Expression.Unary.LogicalNot.TypeError") {
     val input = "def f: Bool = !42"
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+    assert(result.errors.head.isInstanceOf[TypeError])
   }
 
   test("Expression.Unary.Plus.TypeError") {
     val input = "def f: Int = +true"
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+    assert(result.errors.head.isInstanceOf[TypeError])
   }
 
   test("Expression.Unary.Minus.TypeError") {
     val input = "def f: Int = -true"
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+    assert(result.errors.head.isInstanceOf[TypeError])
   }
 
   test("Expression.Unary.BitwiseNegate.TypeError") {
     val input = "def f: Int = ~true"
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+    assert(result.errors.head.isInstanceOf[TypeError])
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1018,13 +1019,13 @@ class TestTyper extends FunSuite {
   test("Expression.IfThenElse.TypeError.NonBooleanCondition") {
     val input = "def f: Int = if (42) 1 else 2"
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+    assert(result.errors.head.isInstanceOf[TypeError])
   }
 
   test("Expression.IfThenElse.TypeError.MismatchedBranches") {
     val input = "def f: Int = if (true) true else 1234"
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+    assert(result.errors.head.isInstanceOf[TypeError])
   }
 
 
