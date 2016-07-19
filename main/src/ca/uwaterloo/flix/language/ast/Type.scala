@@ -163,16 +163,6 @@ object Type {
   }
 
   /**
-    * A type constructor that represents enums.
-    *
-    * @param name  the fully qualified name of the enum.
-    * @param cases a map from tag names to tag types.
-    */
-  case class Enum(name: Symbol.Resolved, cases: immutable.Map[String, Type.Tag]) extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
     * A type expression that represents functions.
     */
   object Arrow extends Type {
@@ -180,7 +170,7 @@ object Type {
   }
 
   /**
-    * A type constructor that represents tuples.
+    * A type constructor that represents tuples of the given `length`.
     */
   case class FTuple(length: Int) extends Type {
     def kind: Kind = (0 until length).foldLeft(Kind.Star: Kind) {
@@ -221,6 +211,16 @@ object Type {
     */
   case object FMap extends Type {
     def kind: Kind = Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+  }
+
+  /**
+    * A type constructor that represents enums.
+    *
+    * @param name  the fully qualified name of the enum.
+    * @param cases a map from tag names to tag types.
+    */
+  case class Enum(name: Symbol.Resolved, cases: immutable.Map[String, Type.Tag]) extends Type {
+    def kind: Kind = Kind.Star
   }
 
   /**

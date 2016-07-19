@@ -1053,7 +1053,7 @@ class TestTyper extends FunSuite {
   test("Substitution.Empty.04") {
     val tpe = Type.mkArrow(Type.Bool, Type.Unit)
     val subst = Typer2.Substitution.empty
-    assertResult(Type.Var("A", Kind.Star))(subst(tpe))
+    assertResult(Type.mkArrow(Type.Bool, Type.Unit))(subst(tpe))
   }
 
   test("Substitution.Singleton.01") {
@@ -1091,5 +1091,39 @@ class TestTyper extends FunSuite {
     val subst = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Var("B", Kind.Star))
     assertResult(Type.Var("B", Kind.Star))(subst(tpe))
   }
+
+  test("Substitution.++.01") {
+    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
+    val subst2 = Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Char)
+
+    val tpe = Type.Var("A", Kind.Star)
+    assertResult(Type.Bool)((subst1 ++ subst2) (tpe))
+  }
+
+  test("Substitution.++.02") {
+    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
+    val subst2 = Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Char)
+
+    val tpe = Type.Var("B", Kind.Star)
+    assertResult(Type.Char)((subst1 ++ subst2) (tpe))
+  }
+
+  test("Substitution.++.03") {
+    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
+    val subst2 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Char)
+
+    val tpe = Type.Var("A", Kind.Star)
+    assertResult(Type.Bool)((subst1 ++ subst2) (tpe))
+  }
+
+  test("Substitution.++.04") {
+    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
+    val subst2 = Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Char)
+
+    val tpe = Type.mkArrow(Type.Var("A", Kind.Star), Type.Var("B", Kind.Star))
+    assertResult(Type.mkArrow(Type.Bool, Type.Char))((subst1 ++ subst2) (tpe))
+  }
+
+  
 
 }

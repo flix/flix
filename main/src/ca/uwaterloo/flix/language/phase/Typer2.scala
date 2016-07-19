@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
@@ -46,17 +46,57 @@ object Typer2 {
       * Applies `this` substitution to the given type `tpe`.
       */
     def apply(tpe: Type): Type = tpe match {
-      case x: Type.Var => m.get(x) match {
-        case None => x
-        case Some(y) => y
-      }
+      case x: Type.Var =>
+        m.get(x) match {
+          case None => x
+          case Some(y) if x.kind == tpe.kind => y
+          case Some(y) if x.kind != tpe.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${tpe.kind}'.")
+        }
       case Type.Unit => Type.Unit
+      case Type.Bool => Type.Bool
+      case Type.Char => Type.Char
+      case Type.Float32 => Type.Float32
+      case Type.Float64 => Type.Float64
+      case Type.Int8 => Type.Int8
+      case Type.Int16 => Type.Int16
+      case Type.Int32 => Type.Int32
+      case Type.Int64 => Type.Int64
+      case Type.BigInt => Type.BigInt
+      case Type.Str => Type.Str
+      case Type.Native => Type.Native
+      case Type.Arrow => Type.Arrow
+      case Type.FTuple(l) => Type.FTuple(l)
+      case Type.FOpt => Type.FOpt
+      case Type.FList => Type.FList
+      case Type.FVec => Type.FVec
+      case Type.FSet => Type.FSet
+      case Type.FMap => Type.FMap
+      case Type.Enum(name, cases) => Type.Enum(name, cases.map(x => (x._1, apply(x._2).asInstanceOf[Type.Tag])))
+      case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
+      case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'")
     }
 
     /**
       * Applies `this` substitution to the given types `ts`.
       */
     def apply(ts: List[Type]): List[Type] = ts.map(t => apply(t))
+
+    /**
+      * Returns the left-biased  composition of `this` substitution with `that` substitution.
+      */
+    def ++(that: Substitution): Substitution = {
+      Substitution(this.m ++ that.m.filter(kv => !this.m.contains(kv._1)))
+    }
+
+    /**
+      * Returns the composition of `this` substitution with `that` substitution.
+      */
+    def @@(that: Substitution): Substitution = {
+      val m = that.m.map {
+        case (x, t) => x -> this.apply(t)
+      }
+      Substitution(m) ++ this
+    }
 
   }
 
