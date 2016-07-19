@@ -523,28 +523,12 @@ object Typer2 {
   }
 
   /**
-    * Phase 2: Unification.
+    * Returns the most general unifier of the two given types `tpe1` and `tpe2`.
+    *
+    * Returns [[Failure]] if the two types cannot be unified.
     */
-  object Unification {
-
-    // TODO: Possibly return map from names to types.
-    def unify(cs: List[TypeConstraint.Eq]): List[TypeConstraint.Eq] = ???
-
-    def unify(tc: TypeConstraint, tenv: Map[String, Type]): Map[String, Type] = ???
-
-    /**
-      * Unifies the given type `tpe1` with the type `tpe2`.
-      *
-      * Returns a `Success` with a substitution if the two types are unifiable.
-      * Otherwise returns a `Failure`.
-      */
-    def unify(tpe1: Type, tpe2: Type): Validation[Map[Symbol.VarSym, Type], TypeError] = (tpe1, tpe2) match {
-      case (Type.Var(id, _), x) => ???
-      case (x, Type.Var(id, _)) => ???
-      case (Type.Unit, Type.Unit) => Map.empty[Symbol.VarSym, Type].toSuccess
-      case _ => ???
-    }
-
+  def unify(tpe1: Type, tpe2: Type): Validation[Substitution, TypeError] = (tpe1, tpe2) match {
+    case (Type.Unit, Type.Unit) => Substitution.empty.toSuccess
   }
 
 

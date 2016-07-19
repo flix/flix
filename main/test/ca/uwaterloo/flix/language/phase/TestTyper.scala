@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.Type.Var
 import ca.uwaterloo.flix.language.errors.TypeError
 import org.scalatest.FunSuite
 
@@ -1191,6 +1192,160 @@ class TestTyper extends FunSuite {
     val subst2 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Int32) @@ Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Int64)
 
     assert(subst1.merge(subst2).isFailure)
+  }
+
+  test("Unify.Var.01") {
+    val result = Typer2.unify(Type.Var("A", Kind.Star), Type.Unit)
+    assert(result.isSuccess)
+  }
+
+  test("Unify.Var.02") {
+    val result = Typer2.unify(Type.Unit, Type.Var("A", Kind.Star))
+    assert(result.isSuccess)
+  }
+
+  test("Unify.Var.03") {
+    val result = Typer2.unify(Type.Var("A", Kind.Star), Type.Var("A", Kind.Star))
+    assert(result.isSuccess)
+  }
+
+  test("Unify.Var.04") {
+    val result = Typer2.unify(Type.Var("A", Kind.Star), Type.Var("B", Kind.Star))
+    assert(result.isSuccess)
+  }
+
+  test("Unify.Unit") {
+    val result = Typer2.unify(Type.Unit, Type.Unit)
+    assert(result.isSuccess)
+  }
+
+  test("Unify.Bool") {
+    val result = Typer2.unify(Type.Bool, Type.Bool)
+    assert(result.isSuccess)
+  }
+
+  test("Unify.Char") {
+    val result = Typer2.unify(Type.Char, Type.Char)
+    assert(result.isSuccess)
+  }
+
+  test("Unify.Float32") {
+    val result = Typer2.unify(Type.Float32, Type.Float32)
+    assert(result.isSuccess)
+  }
+
+  test("Unify.Float64") {
+    val result = Typer2.unify(Type.Float64, Type.Float64)
+    assert(result.isSuccess)
+  }
+
+  test("Unify.Int8") {
+    val result = Typer2.unify(Type.Int8, Type.Int8)
+    assert(result.isSuccess)
+  }
+
+  test("Unify.Int16") {
+    val result = Typer2.unify(Type.Int16, Type.Int16)
+    assert(result.isSuccess)
+  }
+
+  test("Unify.Int32") {
+    val result = Typer2.unify(Type.Int32, Type.Int32)
+    assert(result.isSuccess)
+  }
+
+  test("Unify.Int64") {
+    val result = Typer2.unify(Type.Int64, Type.Int64)
+    assert(result.isSuccess)
+  }
+
+  test("Unify.BigInt") {
+    val result = Typer2.unify(Type.BigInt, Type.BigInt)
+    assert(result.isSuccess)
+  }
+
+  test("Unify.Str") {
+    val result = Typer2.unify(Type.Str, Type.Str)
+    assert(result.isSuccess)
+  }
+
+  test("Unify.Native") {
+    val result = Typer2.unify(Type.Native, Type.Native)
+    assert(result.isSuccess)
+  }
+
+  test("Unify.Arrow") {
+    val result = Typer2.unify(Type.Arrow, Type.Arrow)
+    assert(result.isSuccess)
+  }
+
+  test("Unify.FTuple") {
+    val result = Typer2.unify(Type.FTuple(42), Type.FTuple(42))
+    assert(result.isSuccess)
+  }
+
+  test("Unify.FOpt.01") {
+    val result = Typer2.unify(Type.FOpt, Type.FOpt)
+    assert(result.isSuccess)
+  }
+
+  test("Unify.FOpt.02") {
+    val result = Typer2.unify(Type.mkFOpt(Type.Bool), Type.mkFOpt(Type.Bool))
+    assert(result.isSuccess)
+  }
+
+  test("Unify.FList.01") {
+    val result = Typer2.unify(Type.FList, Type.FList)
+    assert(result.isSuccess)
+  }
+
+  test("Unify.FList.02") {
+    val result = Typer2.unify(Type.mkFList(Type.Bool), Type.mkFList(Type.Bool))
+    assert(result.isSuccess)
+  }
+
+  test("Unify.FVec.01") {
+    val result = Typer2.unify(Type.FVec, Type.FVec)
+    assert(result.isSuccess)
+  }
+
+  test("Unify.FVec.02") {
+    val result = Typer2.unify(Type.mkFVec(Type.Bool), Type.mkFVec(Type.Bool))
+    assert(result.isSuccess)
+  }
+
+  test("Unify.FSet.01") {
+    val result = Typer2.unify(Type.FSet, Type.FSet)
+    assert(result.isSuccess)
+  }
+
+  test("Unify.FSet.02") {
+    val result = Typer2.unify(Type.mkFSet(Type.Bool), Type.mkFSet(Type.Bool))
+    assert(result.isSuccess)
+  }
+
+  test("Unify.FMap.01") {
+    val result = Typer2.unify(Type.FMap, Type.FMap)
+    assert(result.isSuccess)
+  }
+
+  test("Unify.FMap.02") {
+    val result = Typer2.unify(Type.mkFMap(Type.Bool, Type.Char), Type.mkFMap(Type.Bool, Type.Char))
+    assert(result.isSuccess)
+  }
+
+  test("Unify.Enum") {
+    val name = Symbol.Resolved.mk("Color")
+    val cases = Map.empty[String, Type.Tag]
+    val result = Typer2.unify(Type.Enum(name, cases), Type.Enum(name, cases))
+    assert(result.isSuccess)
+  }
+
+  test("Unify.01") {
+    val A = Type.Var("A", Kind.Star)
+    val result = Typer2.unify(A, Type.Bool).get
+
+    assertResult(result(A))(Type.Bool)
   }
 
 }
