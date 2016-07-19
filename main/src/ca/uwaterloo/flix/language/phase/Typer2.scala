@@ -74,7 +74,7 @@ object Typer2 {
       case Type.Enum(name, cases) => Type.Enum(name, cases.map(x => (x._1, apply(x._2).asInstanceOf[Type.Tag])))
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
 
-        // TODO: Remove once tags are gone:
+      // TODO: Remove once tags are gone:
       case Type.Tag(name, tag, t) => Type.Tag(name, tag, apply(t))
 
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'")
@@ -196,9 +196,12 @@ object Typer2 {
           /*
            * Variable expression.
            */
-          case NamedAst.Expression.Var(ident, sym, loc) =>
-            // TODO: Lookup the type in the type environment.
-            ???
+          case NamedAst.Expression.Var(ident, sym, loc) => tenv0.get(sym) match {
+            case None =>
+              ??? // TODO
+            case Some(tpe) => (Nil, tpe)
+          }
+
 
           /*
            * Reference expression.
@@ -521,6 +524,9 @@ object Typer2 {
           case _ => ???
         }
 
+
+        // TODO: Need to create initial type environment from defn
+
         visitExp(exp0, Map.empty)
 
       }
@@ -567,7 +573,7 @@ object Typer2 {
         }
       }
 
-      // TODO: Remove once tags are gone:
+    // TODO: Remove once tags are gone:
     case (Type.Tag(_, _, t1), Type.Tag(_, _, t2)) => unify(t1, t2)
 
     case _ => TypeError.UnificationError(tpe1, tpe2).toFailure
