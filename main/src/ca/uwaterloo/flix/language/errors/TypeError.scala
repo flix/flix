@@ -108,7 +108,7 @@ object TypeError {
 
   // TODO
   case class MergeError() extends TypeError {
-    val message = ???
+    val message = "MergeError" // TODO
   }
 
 }

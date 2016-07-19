@@ -1158,5 +1158,39 @@ class TestTyper extends FunSuite {
     assertResult(Type.Bool)((subst3 @@ (subst2 @@ subst1)) (tpe))
   }
 
+  test("Substitution.Merge.01") {
+    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
+    val subst2 = Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Char)
+
+    assert(subst1.merge(subst2).isSuccess)
+  }
+
+  test("Substitution.Merge.02") {
+    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
+    val subst2 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
+
+    assert(subst1.merge(subst2).isSuccess)
+  }
+
+  test("Substitution.Merge.03") {
+    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool) @@ Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Char)
+    val subst2 = Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Char) @@ Typer2.Substitution.singleton(Type.Var("C", Kind.Star), Type.Int32)
+
+    assert(subst1.merge(subst2).isSuccess)
+  }
+
+  test("Substitution.Merge.04") {
+    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
+    val subst2 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Char)
+
+    assert(subst1.merge(subst2).isFailure)
+  }
+
+  test("Substitution.Merge.05") {
+    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Int8) @@ Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Int16)
+    val subst2 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Int32) @@ Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Int64)
+
+    assert(subst1.merge(subst2).isFailure)
+  }
 
 }
