@@ -1334,11 +1334,43 @@ class TestTyper extends FunSuite {
     assert(result.isSuccess)
   }
 
-  test("Unify.Enum") {
+  test("Unify.Enum.01") {
     val name = Symbol.Resolved.mk("Color")
     val cases = Map.empty[String, Type.Tag]
     val result = Typer2.unify(Type.Enum(name, cases), Type.Enum(name, cases))
     assert(result.isSuccess)
+  }
+
+  test("Unify.Enum.02") {
+    val name = Symbol.Resolved.mk("Color")
+    val cases = Map(
+      "Red" -> Type.Tag(name, Name.Ident(SourcePosition.Unknown, "Red", SourcePosition.Unknown), Type.Unit),
+      "Green" -> Type.Tag(name, Name.Ident(SourcePosition.Unknown, "Green", SourcePosition.Unknown), Type.Unit),
+      "Blue" -> Type.Tag(name, Name.Ident(SourcePosition.Unknown, "Blue", SourcePosition.Unknown), Type.Unit)
+    )
+    val result = Typer2.unify(Type.Enum(name, cases), Type.Enum(name, cases))
+    assert(result.isSuccess)
+  }
+
+  test("Unify.Enum.03") {
+    val A = Type.Var("A", Kind.Star)
+    val B = Type.Var("B", Kind.Star)
+    val C = Type.Var("C", Kind.Star)
+    val name = Symbol.Resolved.mk("Color")
+    val cases1 = Map(
+      "Red" -> Type.Tag(name, Name.Ident(SourcePosition.Unknown, "Red", SourcePosition.Unknown), Type.Bool),
+      "Green" -> Type.Tag(name, Name.Ident(SourcePosition.Unknown, "Green", SourcePosition.Unknown), Type.Char),
+      "Blue" -> Type.Tag(name, Name.Ident(SourcePosition.Unknown, "Blue", SourcePosition.Unknown), Type.Int8)
+    )
+    val cases2 = Map(
+      "Red" -> Type.Tag(name, Name.Ident(SourcePosition.Unknown, "Red", SourcePosition.Unknown), A),
+      "Green" -> Type.Tag(name, Name.Ident(SourcePosition.Unknown, "Green", SourcePosition.Unknown), B),
+      "Blue" -> Type.Tag(name, Name.Ident(SourcePosition.Unknown, "Blue", SourcePosition.Unknown), C)
+    )
+    val result = Typer2.unify(Type.Enum(name, cases1), Type.Enum(name, cases2)).get
+    assertResult(Type.Bool)(result(A))
+    assertResult(Type.Char)(result(B))
+    assertResult(Type.Int8)(result(C))
   }
 
   test("Unify.01") {

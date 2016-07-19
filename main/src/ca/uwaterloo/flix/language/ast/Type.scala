@@ -52,7 +52,9 @@ sealed trait Type {
     case Type.FList => Set.empty
     case Type.FVec => Set.empty
     case Type.FMap => Set.empty
-    case Type.Enum(name, cases) => Set.empty // TODO: Recurse?
+    case Type.Enum(_, cases) => (cases flatMap {
+      case (_, Type.Tag(_, _, tpe)) => tpe.typeVars
+    }).toSet
     case Type.Apply(t1, t2) => t1.typeVars ++ t2.typeVars
 
     case _ => throw InternalCompilerException(s"Unexpected type: `${this}'.")

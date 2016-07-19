@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
@@ -549,7 +548,11 @@ object Typer2 {
     case (Type.FVec, Type.FVec) => Substitution.empty.toSuccess
     case (Type.FSet, Type.FSet) => Substitution.empty.toSuccess
     case (Type.FMap, Type.FMap) => Substitution.empty.toSuccess
-    case (Type.Enum(name1, _), Type.Enum(name2, _)) if name1 == name2 => ??? // TODO: Need to unify inside cases?
+    case (Type.Enum(name1, cases1), Type.Enum(name2, cases2)) if name1 == name2 =>
+      val ts1 = cases1.values.toList
+      val ts2 = cases2.values.toList
+      unify(ts1, ts2)
+
     case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
       unify(t11, t21) flatMap {
         case subst1 => unify(subst1(t12), subst1(t22)) map {
@@ -558,6 +561,11 @@ object Typer2 {
       }
     case _ => TypeError.UnificationError(tpe1, tpe2).toFailure
   }
+
+  /**
+    * Unifies the two given lists of types `ts1` and `ts2`.
+    */
+  def unify(ts1: List[Type], ts2: List[Type]): Validation[Substitution, TypeError] = ??? // TODO
 
   /**
     * Unifies the given variable `x` with the given type `tpe`.
