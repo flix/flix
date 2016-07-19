@@ -528,7 +528,31 @@ object Typer2 {
     * Returns [[Failure]] if the two types cannot be unified.
     */
   def unify(tpe1: Type, tpe2: Type): Validation[Substitution, TypeError] = (tpe1, tpe2) match {
+    // TODO: Var
+
     case (Type.Unit, Type.Unit) => Substitution.empty.toSuccess
+    case (Type.Bool, Type.Bool) => Substitution.empty.toSuccess
+    case (Type.Char, Type.Char) => Substitution.empty.toSuccess
+    case (Type.Float32, Type.Float32) => Substitution.empty.toSuccess
+    case (Type.Float64, Type.Float64) => Substitution.empty.toSuccess
+    case (Type.Int8, Type.Int8) => Substitution.empty.toSuccess
+    case (Type.Int16, Type.Int16) => Substitution.empty.toSuccess
+    case (Type.Int32, Type.Int32) => Substitution.empty.toSuccess
+    case (Type.Int64, Type.Int64) => Substitution.empty.toSuccess
+    case (Type.BigInt, Type.BigInt) => Substitution.empty.toSuccess
+    case (Type.Str, Type.Str) => Substitution.empty.toSuccess
+    case (Type.Native, Type.Native) => Substitution.empty.toSuccess
+    case (Type.Arrow, Type.Arrow) => Substitution.empty.toSuccess
+    case (Type.FTuple(l1), Type.FTuple(l2)) if l1 == l2 => Substitution.empty.toSuccess
+    case (Type.FOpt, Type.FOpt) => Substitution.empty.toSuccess
+    case (Type.FList, Type.FList) => Substitution.empty.toSuccess
+    case (Type.FVec, Type.FVec) => Substitution.empty.toSuccess
+    case (Type.FSet, Type.FSet) => Substitution.empty.toSuccess
+    case (Type.FMap, Type.FMap) => Substitution.empty.toSuccess
+    case (Type.Enum(name1, _), Type.Enum(name2, _)) if name1 == name2 => ??? // TODO: Need to unify inside cases?
+    // TODO: Apply
+
+    case _ => TypeError.UnificationError(tpe1, tpe2).toFailure
   }
 
 

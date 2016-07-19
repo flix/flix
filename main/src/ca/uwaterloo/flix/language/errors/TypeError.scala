@@ -111,4 +111,9 @@ object TypeError {
     val message = "MergeError" // TODO
   }
 
+  // TODO
+  case class UnificationError(tpe1: Type, tpe2: Type) extends TypeError {
+    val message = "UnificationError" // TODO
+  }
+
 }
