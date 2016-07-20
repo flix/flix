@@ -16,15 +16,13 @@
 
 package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.language.ast.{Name, SourcePosition, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, SourcePosition, Symbol, Type}
 
 package object phase {
 
   // TODO: Cleanup, possibly unify with the Flix class?
 
   class GenSym() {
-
-    def freshTypeVar(): Type.Var = ???
 
     private var number: Int = 0
 
@@ -44,6 +42,8 @@ package object phase {
       number = number + 1
       Name.Ident(SourcePosition.Unknown, prefix + "$" + number, SourcePosition.Unknown)
     }
+
+    def freshTypeVar(): Type.Var = Type.Var(freshId().toString, Kind.Star) // TODO: Should require kind?
 
   }
 

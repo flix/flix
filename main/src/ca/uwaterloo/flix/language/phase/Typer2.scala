@@ -118,6 +118,13 @@ object Typer2 {
   }
 
   /**
+    * Returns the composition of the given lists of substitutions `subs`.
+    */
+  def mergeAll(subs: List[Substitution]): Validation[Substitution, TypeError] = Validation.fold[Substitution, Substitution, TypeError](subs, Substitution.empty) {
+    case (subst1, subst2) => subst1.merge(subst2)
+  }
+
+  /**
     * Type checks the given program.
     */
   def typer(program: NamedAst.Program)(implicit genSym: GenSym): Unit = {
@@ -214,64 +221,64 @@ object Typer2 {
          */
         case NamedAst.Expression.Binary(op, e1, e2, tvar, loc) => op match {
           case BinaryOperator.Plus =>
-//            val (ctx1, tpe1) = visitExp(e1, tenv0)
+            //            val (ctx1, tpe1) = visitExp(e1, tenv0)
             //            val (ctx2, tpe2) = visitExp(e2, tenv0)
             //            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
             ???
 
           case BinaryOperator.Minus =>
-//            val (ctx1, tpe1) = visitExp(e1, tenv0)
-//            val (ctx2, tpe2) = visitExp(e2, tenv0)
-//            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
+            //            val (ctx1, tpe1) = visitExp(e1, tenv0)
+            //            val (ctx2, tpe2) = visitExp(e2, tenv0)
+            //            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
             ???
 
           case BinaryOperator.Times =>
-//            val (ctx1, tpe1) = visitExp(e1, tenv0)
-//            val (ctx2, tpe2) = visitExp(e2, tenv0)
-//            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
+            //            val (ctx1, tpe1) = visitExp(e1, tenv0)
+            //            val (ctx2, tpe2) = visitExp(e2, tenv0)
+            //            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
             ???
 
           case BinaryOperator.Divide =>
-//            val (ctx1, tpe1) = visitExp(e1, tenv0)
-//            val (ctx2, tpe2) = visitExp(e2, tenv0)
-//            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
+            //            val (ctx1, tpe1) = visitExp(e1, tenv0)
+            //            val (ctx2, tpe2) = visitExp(e2, tenv0)
+            //            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
             ???
 
           case BinaryOperator.Modulo =>
-//            val (ctx1, tpe1) = visitExp(e1, tenv0)
-//            val (ctx2, tpe2) = visitExp(e2, tenv0)
-//            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
+            //            val (ctx1, tpe1) = visitExp(e1, tenv0)
+            //            val (ctx2, tpe2) = visitExp(e2, tenv0)
+            //            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
             ???
 
           case BinaryOperator.Exponentiate =>
-//            val (ctx1, tpe1) = visitExp(e1, tenv0)
-//            val (ctx2, tpe2) = visitExp(e2, tenv0)
-//            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
+            //            val (ctx1, tpe1) = visitExp(e1, tenv0)
+            //            val (ctx2, tpe2) = visitExp(e2, tenv0)
+            //            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
             ???
 
           case BinaryOperator.Equal | BinaryOperator.NotEqual =>
-//            val (ctx1, tpe1) = visitExp(e1, tenv0)
-//            val (ctx2, tpe2) = visitExp(e2, tenv0)
-//            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
+            //            val (ctx1, tpe1) = visitExp(e1, tenv0)
+            //            val (ctx2, tpe2) = visitExp(e2, tenv0)
+            //            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
             ???
 
           case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual =>
-//            val (ctx1, tpe1) = visitExp(e1, tenv0)
-//            val (ctx2, tpe2) = visitExp(e2, tenv0)
-//            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
+            //            val (ctx1, tpe1) = visitExp(e1, tenv0)
+            //            val (ctx2, tpe2) = visitExp(e2, tenv0)
+            //            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
             ???
 
           case BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr | BinaryOperator.Implication | BinaryOperator.Biconditional =>
-//            val (ctx1, tpe1) = visitExp(e1, tenv0)
-//            val (ctx2, tpe2) = visitExp(e2, tenv0)
-//            constraints += TypeConstraint.Eq((ctx1, tpe1), (EmptyContext, Type.Bool))
-//            constraints += TypeConstraint.Eq((ctx2, tpe2), (EmptyContext, Type.Bool))
+            //            val (ctx1, tpe1) = visitExp(e1, tenv0)
+            //            val (ctx2, tpe2) = visitExp(e2, tenv0)
+            //            constraints += TypeConstraint.Eq((ctx1, tpe1), (EmptyContext, Type.Bool))
+            //            constraints += TypeConstraint.Eq((ctx2, tpe2), (EmptyContext, Type.Bool))
             ???
 
           case BinaryOperator.BitwiseAnd | BinaryOperator.BitwiseOr | BinaryOperator.BitwiseXor | BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift =>
-//            val (ctx1, tpe1) = visitExp(e1, tenv0)
-//            val (ctx2, tpe2) = visitExp(e2, tenv0)
-//            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
+            //            val (ctx1, tpe1) = visitExp(e1, tenv0)
+            //            val (ctx2, tpe2) = visitExp(e2, tenv0)
+            //            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
             ???
 
         }
@@ -280,22 +287,29 @@ object Typer2 {
          * Let expression.
          */
         case NamedAst.Expression.Let(id, sym, exp1, exp2, loc) =>
-//          val (ctx1, tpe1) = visitExp(exp1, tenv0)
-//          val (ctx2, tpe2) = visitExp(exp2, tenv0 + (sym -> tpe1))
-//          ret(id, ctx1 ::: ctx2, tpe2)
+          //          val (ctx1, tpe1) = visitExp(exp1, tenv0)
+          //          val (ctx2, tpe2) = visitExp(exp2, tenv0 + (sym -> tpe1))
+          //          ret(id, ctx1 ::: ctx2, tpe2)
           ???
 
         /*
          * If-then-else expression.
          */
-        case NamedAst.Expression.IfThenElse(id, exp1, exp2, exp3, loc) =>
-//          val (ctx1, tpe1) = visitExp(exp1, tenv0)
-//          val (ctx2, tpe2) = visitExp(exp2, tenv0)
-//          val (ctx3, tpe3) = visitExp(exp3, tenv0)
-//          constraints += TypeConstraint.Eq((ctx1, tpe1), (EmptyContext, Type.Bool))
-//          constraints += TypeConstraint.Eq((ctx2, tpe2), (ctx3, tpe3))
-//          ret(id, ctx2 ::: ctx3, tpe2)
-          ???
+        case NamedAst.Expression.IfThenElse(exp1, exp2, exp3, tvar, loc) =>
+          val res1 = visitExp(exp1, tenv0)
+          val res2 = visitExp(exp1, tenv0)
+          val res3 = visitExp(exp1, tenv0)
+          @@(res1, res2, res3) flatMap {
+            case ((subst1, tpe1), (subst2, tpe2), (subst3, tpe3)) =>
+              val substCondVal = unify(tpe1, Type.Bool)
+              val substBodyVal = unify(tpe2, tpe3)
+              @@(substCondVal, substBodyVal) flatMap {
+                case (substCond, substBody) => mergeAll(List(subst1, subst2, subst3, substCond, substBody)) map {
+                  case mergedSubst =>
+                    (mergedSubst, tpe2)
+                }
+              }
+          }
 
         /*
          * Match expression.
@@ -323,17 +337,17 @@ object Typer2 {
          */
         case NamedAst.Expression.Tag(id, enum, tag, exp, loc) =>
           // TODO
-//          val tpe = visitExp(exp, tenv0)
+          //          val tpe = visitExp(exp, tenv0)
           ???
 
         /*
          * Tuple expression.
          */
         case NamedAst.Expression.Tuple(id, elms, loc) =>
-//          val elements = elms.map(e => visitExp(e, tenv0))
-//          val contexts = elements.flatMap(_._1)
-//          val types = elements.map(_._2)
-//          ret(id, contexts, Type.Tuple(types))
+          //          val elements = elms.map(e => visitExp(e, tenv0))
+          //          val contexts = elements.flatMap(_._1)
+          //          val types = elements.map(_._2)
+          //          ret(id, contexts, Type.Tuple(types))
           ???
 
         /*
@@ -346,8 +360,8 @@ object Typer2 {
          * Some expression.
          */
         case NamedAst.Expression.FSome(id, exp, loc) =>
-//          val (ctx, tpe) = visitExp(exp, tenv0)
-//          ret(id, ctx, Type.FOpt)
+          //          val (ctx, tpe) = visitExp(exp, tenv0)
+          //          ret(id, ctx, Type.FOpt)
           ???
 
         /*
@@ -361,9 +375,9 @@ object Typer2 {
          * List expression.
          */
         case NamedAst.Expression.FList(id, hd, tl, loc) =>
-//          val (ctx1, tpe1) = visitExp(hd, tenv0)
-//          val (ctx2, tpe2) = visitExp(tl, tenv0)
-//          constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
+          //          val (ctx1, tpe1) = visitExp(hd, tenv0)
+          //          val (ctx2, tpe2) = visitExp(tl, tenv0)
+          //          constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
           ???
         //ret(id, ctx1 ::: ctx2, Type.FList(tpe1))
 
@@ -371,14 +385,14 @@ object Typer2 {
          * Vector expression.
          */
         case NamedAst.Expression.FVec(elms, tvar, loc) =>
-//          val elements = elms.map(e => visitExp(e, tenv0))
-//          for ((ctx, tpe) <- elements.tail) {
-//            // assert that each element has the same type as the first element.
-//            val (ctx0, tpe0) = elements.head
-//            constraints += TypeConstraint.Eq((ctx0, tpe0), (ctx, tpe))
-//          }
-//          val contexts = elements.flatMap(_._1)
-//          ret(id, contexts, elements.head._2)
+          //          val elements = elms.map(e => visitExp(e, tenv0))
+          //          for ((ctx, tpe) <- elements.tail) {
+          //            // assert that each element has the same type as the first element.
+          //            val (ctx0, tpe0) = elements.head
+          //            constraints += TypeConstraint.Eq((ctx0, tpe0), (ctx, tpe))
+          //          }
+          //          val contexts = elements.flatMap(_._1)
+          //          ret(id, contexts, elements.head._2)
           ???
 
         /*
@@ -397,45 +411,45 @@ object Typer2 {
          * GetIndex expression.
          */
         case NamedAst.Expression.GetIndex(id, exp1, exp2, loc) =>
-//          val (ctx1, tpe1) = visitExp(exp1, tenv0)
-//          val (ctx2, tpe2) = visitExp(exp2, tenv0)
-//          constraints += TypeConstraint.Eq((ctx2, tpe2), (EmptyContext, Type.Int32))
-//          ret(id, (TypeClass.Indexed -> tpe1) :: ctx1 ::: ctx2, tpe1)
+          //          val (ctx1, tpe1) = visitExp(exp1, tenv0)
+          //          val (ctx2, tpe2) = visitExp(exp2, tenv0)
+          //          constraints += TypeConstraint.Eq((ctx2, tpe2), (EmptyContext, Type.Int32))
+          //          ret(id, (TypeClass.Indexed -> tpe1) :: ctx1 ::: ctx2, tpe1)
           ???
 
         /*
          * PutIndex expression.
          */
         case NamedAst.Expression.PutIndex(id, exp1, exp2, exp3, loc) =>
-//          val (ctx1, tpe1) = visitExp(exp1, tenv0)
-//          val (ctx2, tpe2) = visitExp(exp2, tenv0)
-//          val (ctx3, tpe3) = visitExp(exp3, tenv0)
-//          constraints += TypeConstraint.Eq((ctx2, tpe2), (EmptyContext, Type.Int32))
-//          ret(id, (TypeClass.Indexed -> tpe1) :: (TypeClass.Indexed -> tpe3) :: ctx1 ::: ctx2 ::: ctx3, tpe1)
+          //          val (ctx1, tpe1) = visitExp(exp1, tenv0)
+          //          val (ctx2, tpe2) = visitExp(exp2, tenv0)
+          //          val (ctx3, tpe3) = visitExp(exp3, tenv0)
+          //          constraints += TypeConstraint.Eq((ctx2, tpe2), (EmptyContext, Type.Int32))
+          //          ret(id, (TypeClass.Indexed -> tpe1) :: (TypeClass.Indexed -> tpe3) :: ctx1 ::: ctx2 ::: ctx3, tpe1)
           ???
 
         /*
          * Existential expression.
          */
         case NamedAst.Expression.Existential(params, e, loc) =>
-//          val tenv = params.foldLeft(tenv0) {
-//            case (macc, NamedAst.FormalParam(sym, t)) => macc + (sym -> t)
-//          }
-//          val (ctx, tpe) = visitExp(e, tenv)
-//          constraints += TypeConstraint.Eq((ctx, tpe), (EmptyContext, Type.Bool))
-//          ret(id, ctx, Type.Bool)
+          //          val tenv = params.foldLeft(tenv0) {
+          //            case (macc, NamedAst.FormalParam(sym, t)) => macc + (sym -> t)
+          //          }
+          //          val (ctx, tpe) = visitExp(e, tenv)
+          //          constraints += TypeConstraint.Eq((ctx, tpe), (EmptyContext, Type.Bool))
+          //          ret(id, ctx, Type.Bool)
           ???
 
         /*
          * Universal expression.
          */
         case NamedAst.Expression.Universal(params, e, loc) =>
-//          val tenv = params.foldLeft(tenv0) {
-//            case (macc, NamedAst.FormalParam(sym, t)) => macc + (sym -> t)
-//          }
-//          val (ctx, tpe) = visitExp(e, tenv)
-//          constraints += TypeConstraint.Eq((ctx, tpe), (EmptyContext, Type.Bool))
-//          ret(id, ctx, Type.Bool)
+          //          val tenv = params.foldLeft(tenv0) {
+          //            case (macc, NamedAst.FormalParam(sym, t)) => macc + (sym -> t)
+          //          }
+          //          val (ctx, tpe) = visitExp(e, tenv)
+          //          constraints += TypeConstraint.Eq((ctx, tpe), (EmptyContext, Type.Bool))
+          //          ret(id, ctx, Type.Bool)
           ???
 
         /*
