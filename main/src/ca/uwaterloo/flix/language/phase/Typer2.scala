@@ -492,7 +492,11 @@ object Typer2 {
         case NamedAst.Pattern.BigInt(i, loc) => (Substitution.empty, Type.BigInt).toSuccess
         case NamedAst.Pattern.Str(s, loc) => (Substitution.empty, Type.Str).toSuccess
 
-        case NamedAst.Pattern.Tag(enum, tag, p1, tvar, loc) => ???
+        case NamedAst.Pattern.Tag(enum, tag, p1, tvar, loc) =>
+          visitPat(p1, tenv) map {
+            case (subst, tpe) =>
+              (subst, Type.Enum(???, ???))
+          }
 
         case NamedAst.Pattern.Tuple(pats, tvar, loc) =>
           val elmsVal = @@(pats.map(p => visitPat(p, tenv)))
