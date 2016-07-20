@@ -314,7 +314,12 @@ object Typer2 {
         /*
          * Match expression.
          */
-        case NamedAst.Expression.Match(exp1, rules, tpe, loc) => ???
+        case NamedAst.Expression.Match(exp1, rules, tpe, loc) =>
+          rules map {
+            case (pat, exp) => visitPat(pat, tenv0)
+          }
+
+          ???
 
         /*
          * Switch expression.
@@ -467,27 +472,25 @@ object Typer2 {
       }
 
       /**
-        * Generates type constraints for the given pattern `p0` under the given type environment `tenv`.
+        * Infers the type of the given expression `e0` under the given type environment `tenv0`.
         */
-      def visitPat(p0: NamedAst.Pattern, tenv: Map[Name.Ident, Type]): Type = p0 match {
+      def visitPat(p0: NamedAst.Pattern, tenv: Map[Symbol.VarSym, Type]): (Substitution, Type) = p0 match {
         case NamedAst.Pattern.Wild(loc) => ???
-        case NamedAst.Pattern.Var(ident, loc) => ???
-        case NamedAst.Pattern.Unit(loc) => Type.Unit
-        case NamedAst.Pattern.True(_) => Type.Bool
-        case NamedAst.Pattern.False(_) => Type.Bool
-        case NamedAst.Pattern.Char(_, _) => Type.Char
-        case NamedAst.Pattern.Float32(_, _) => Type.Float32
-        case NamedAst.Pattern.Float64(_, _) => Type.Float64
-        case NamedAst.Pattern.Int8(_, _) => Type.Int8
-        case NamedAst.Pattern.Int16(_, _) => Type.Int16
-        case NamedAst.Pattern.Int32(_, _) => Type.Int32
-        case NamedAst.Pattern.Int64(_, _) => Type.Int64
-        case NamedAst.Pattern.BigInt(_, _) => Type.BigInt
-        case NamedAst.Pattern.Str(_, _) => Type.Str
+        case NamedAst.Pattern.Var(sym, loc) => ???
+        case NamedAst.Pattern.Unit(loc) => (Substitution.empty, Type.Unit)
+        case NamedAst.Pattern.True(_) => (Substitution.empty, Type.Bool)
+        case NamedAst.Pattern.False(_) => (Substitution.empty, Type.Bool)
+        case NamedAst.Pattern.Char(_, _) => (Substitution.empty, Type.Char)
+        case NamedAst.Pattern.Float32(_, _) => (Substitution.empty, Type.Float32)
+        case NamedAst.Pattern.Float64(_, _) => (Substitution.empty, Type.Float64)
+        case NamedAst.Pattern.Int8(_, _) => (Substitution.empty, Type.Int8)
+        case NamedAst.Pattern.Int16(_, _) => (Substitution.empty, Type.Int16)
+        case NamedAst.Pattern.Int32(_, _) => (Substitution.empty, Type.Int32)
+        case NamedAst.Pattern.Int64(_, _) => (Substitution.empty, Type.Int64)
+        case NamedAst.Pattern.BigInt(_, _) => (Substitution.empty, Type.BigInt)
+        case NamedAst.Pattern.Str(_, _) => (Substitution.empty, Type.Str)
         case NamedAst.Pattern.Tag(enum, tag, p1, loc) => ???
-        case NamedAst.Pattern.Tuple(elms, loc) =>
-          val tpes = elms.map(e => visitPat(e, tenv))
-          Type.Tuple(tpes)
+        case NamedAst.Pattern.Tuple(elms, loc) => ???
 
         case _ => ???
       }
