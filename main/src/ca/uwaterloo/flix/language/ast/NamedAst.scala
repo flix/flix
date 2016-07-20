@@ -80,88 +80,86 @@ object NamedAst {
   }
 
   sealed trait Expression extends NamedAst {
-    def id: Int
-
     def loc: SourceLocation
   }
 
   object Expression {
 
-    case class Wild(id: Int, loc: SourceLocation) extends NamedAst.Expression
+    case class Wild(tpe: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Var(id: Int, sym: Symbol.VarSym, loc: SourceLocation) extends NamedAst.Expression
+    case class Var(sym: Symbol.VarSym, tpe: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Ref(id: Int, ref: Name.QName, loc: SourceLocation) extends NamedAst.Expression
+    case class Ref(ref: Name.QName, tvar: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Unit(id: Int, loc: SourceLocation) extends NamedAst.Expression
+    case class Unit(loc: SourceLocation) extends NamedAst.Expression
 
-    case class True(id: Int, loc: SourceLocation) extends NamedAst.Expression
+    case class True(loc: SourceLocation) extends NamedAst.Expression
 
-    case class False(id: Int, loc: SourceLocation) extends NamedAst.Expression
+    case class False(loc: SourceLocation) extends NamedAst.Expression
 
-    case class Char(id: Int, lit: scala.Char, loc: SourceLocation) extends NamedAst.Expression
+    case class Char(lit: scala.Char, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Float32(id: Int, lit: scala.Float, loc: SourceLocation) extends NamedAst.Expression
+    case class Float32(lit: scala.Float, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Float64(id: Int, lit: scala.Double, loc: SourceLocation) extends NamedAst.Expression
+    case class Float64(lit: scala.Double, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Int8(id: Int, lit: scala.Byte, loc: SourceLocation) extends NamedAst.Expression
+    case class Int8(lit: scala.Byte, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Int16(id: Int, lit: scala.Short, loc: SourceLocation) extends NamedAst.Expression
+    case class Int16(lit: scala.Short, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Int32(id: Int, lit: scala.Int, loc: SourceLocation) extends NamedAst.Expression
+    case class Int32(lit: scala.Int, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Int64(id: Int, lit: scala.Long, loc: SourceLocation) extends NamedAst.Expression
+    case class Int64(lit: scala.Long, loc: SourceLocation) extends NamedAst.Expression
 
-    case class BigInt(id: Int, lit: java.math.BigInteger, loc: SourceLocation) extends NamedAst.Expression
+    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Str(id: Int, lit: java.lang.String, loc: SourceLocation) extends NamedAst.Expression
+    case class Str(lit: java.lang.String, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Apply(id: Int, lambda: NamedAst.Expression, args: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
+    case class Apply(lambda: NamedAst.Expression, args: List[NamedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Lambda(id: Int, params: List[Symbol.VarSym], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class Lambda(params: List[Symbol.VarSym], exp: NamedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Unary(id: Int, op: UnaryOperator, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class Unary(op: UnaryOperator, exp: NamedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Binary(id: Int, op: BinaryOperator, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class Binary(op: BinaryOperator, exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class IfThenElse(id: Int, exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class IfThenElse(exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Let(id: Int, sym: Symbol.VarSym, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class Let(sym: Symbol.VarSym, exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Match(id: Int, exp: NamedAst.Expression, rules: List[(NamedAst.Pattern, NamedAst.Expression)], loc: SourceLocation) extends NamedAst.Expression
+    case class Match(exp: NamedAst.Expression, rules: List[(NamedAst.Pattern, NamedAst.Expression)], tvar: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Switch(id: Int, rules: List[(NamedAst.Expression, NamedAst.Expression)], loc: SourceLocation) extends NamedAst.Expression
+    case class Switch(rules: List[(NamedAst.Expression, NamedAst.Expression)], tvar: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Tag(id: Int, enum: Name.QName, tag: Name.Ident, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class Tag(enum: Name.QName, tag: Name.Ident, exp: NamedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Tuple(id: Int, elms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
+    case class Tuple(elms: List[NamedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FNone(id: Int, loc: SourceLocation) extends NamedAst.Expression
+    case class FNone(tvar: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FSome(id: Int, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class FSome(exp: NamedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FNil(id: Int, loc: SourceLocation) extends NamedAst.Expression
+    case class FNil(tvar: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FList(id: Int, hd: NamedAst.Expression, tl: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class FList(hd: NamedAst.Expression, tl: NamedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FVec(id: Int, elms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
+    case class FVec(elms: List[NamedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FSet(id: Int, elms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Expression
+    case class FSet(elms: List[NamedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FMap(id: Int, elms: List[(NamedAst.Expression, NamedAst.Expression)], loc: SourceLocation) extends NamedAst.Expression
+    case class FMap(elms: List[(NamedAst.Expression, NamedAst.Expression)], tvar: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class GetIndex(id: Int, exp1: NamedAst.Expression, exp2: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class GetIndex(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class PutIndex(id: Int, exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class PutIndex(exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Existential(id: Int, params: List[NamedAst.FormalParam], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class Existential(params: List[NamedAst.FormalParam], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Universal(id: Int, params: List[NamedAst.FormalParam], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class Universal(params: List[NamedAst.FormalParam], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Ascribe(id: Int, exp: NamedAst.Expression, tpe: Type, loc: SourceLocation) extends NamedAst.Expression
+    case class Ascribe(exp: NamedAst.Expression, tpe: Type, loc: SourceLocation) extends NamedAst.Expression
 
-    case class UserError(id: Int, loc: SourceLocation) extends NamedAst.Expression
+    case class UserError(tvar: Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
   }
 

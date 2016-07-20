@@ -117,422 +117,375 @@ object Typer2 {
 
   }
 
-
-  sealed trait TypeClass
-
-  object TypeClass {
-
-    case object Equal extends TypeClass
-
-    case object Number extends TypeClass
-
-    case object TotalOrder extends TypeClass
-
-    case object Indexed extends TypeClass
-
-  }
-
-  type ContextAndType = (List[(TypeClass, Type)], Type)
-
-  val EmptyContext = Nil
-
-  /**
-    * A common super-type for type constraints.
-    */
-  sealed trait TypeConstraint
-
-  object TypeConstraint {
-
-    // TODO: It is possible that the contexts should be merged,
-    // i.e. the signature should be (Context, Type, Type).
-    case class Eq(ct1: ContextAndType, ct2: ContextAndType) extends TypeConstraint
-
-  }
-
   /**
     * Type checks the given program.
     */
   def typer(program: NamedAst.Program)(implicit genSym: GenSym): Unit = {
     for ((ns, defns) <- program.definitions) {
       for ((name, defn) <- defns) {
-        ConstraintGeneration.Expressions.gen(defn.exp)
+        Expressions.infer(defn.exp)
       }
     }
   }
 
-  /**
-    * Phase 1: Constraint Generation.
-    */
-  object ConstraintGeneration {
+  object Expressions {
 
-    object Expressions {
+    /**
+      * Infers the type of the given expression `exp0`.
+      */
+    def infer(exp0: NamedAst.Expression)(implicit genSym: GenSym): Unit = {
 
       /**
-        * Generates type constraints for the given expression `exp0`.
+        * Infers the type of the given expression `e0` under the given type environment `tenv0`.
         */
-      def gen(exp0: NamedAst.Expression)(implicit genSym: GenSym): Unit = {
+      def visitExp(e0: NamedAst.Expression, tenv0: Map[Symbol.VarSym, Type]): Validation[(Substitution, Type), TypeError] = e0 match {
 
         /*
-         * A mutable set to hold the collected constraints.
+         * Wildcard expression.
          */
-        val constraints = mutable.Set.empty[TypeConstraint]
+        case NamedAst.Expression.Wild(tpe, loc) => (Substitution.empty, tpe).toSuccess
 
-        def ret(id: Int, ctx: List[(TypeClass, Type)], tpe: Type): ContextAndType = {
-          // Add to constraints
+        /*
+         * Variable expression.
+         */
+        case NamedAst.Expression.Var(sym, tvar, loc) => (Substitution.empty, tvar).toSuccess
+
+        /*
+         * Reference expression.
+         */
+        case NamedAst.Expression.Ref(ref, tvar, loc) => (Substitution.empty, tvar).toSuccess
+
+        /*
+         * Literal expression.
+         */
+        case NamedAst.Expression.Unit(loc) => (Substitution.empty, Type.Unit).toSuccess
+        case NamedAst.Expression.True(loc) => (Substitution.empty, Type.Bool).toSuccess
+        case NamedAst.Expression.False(loc) => (Substitution.empty, Type.Bool).toSuccess
+        case NamedAst.Expression.Char(lit, loc) => (Substitution.empty, Type.Char).toSuccess
+        case NamedAst.Expression.Float32(lit, loc) => (Substitution.empty, Type.Float32).toSuccess
+        case NamedAst.Expression.Float64(lit, loc) => (Substitution.empty, Type.Float64).toSuccess
+        case NamedAst.Expression.Int8(lit, loc) => (Substitution.empty, Type.Int8).toSuccess
+        case NamedAst.Expression.Int16(lit, loc) => (Substitution.empty, Type.Int16).toSuccess
+        case NamedAst.Expression.Int32(lit, loc) => (Substitution.empty, Type.Int32).toSuccess
+        case NamedAst.Expression.Int64(lit, loc) => (Substitution.empty, Type.Int64).toSuccess
+        case NamedAst.Expression.BigInt(lit, loc) => (Substitution.empty, Type.BigInt).toSuccess
+        case NamedAst.Expression.Str(lit, loc) => (Substitution.empty, Type.Str).toSuccess
+
+        /*
+         * Lambda expression.
+         */
+        case NamedAst.Expression.Lambda(args, body, tpe, loc) => ???
+
+        /*
+         * Apply expression.
+         */
+        case NamedAst.Expression.Apply(id, exp1, args, _) => ???
+
+        /*
+         * Unary expression.
+         */
+        case NamedAst.Expression.Unary(op, exp1, tvar, loc) => op match {
+          case UnaryOperator.LogicalNot =>
+            visitExp(exp1, tenv0) map {
+              case (subst, tpe) => (subst, Type.Bool)
+            }
+
+          case UnaryOperator.Plus =>
+            // TODO: Use type classes to distinguish Int8, Int16, Int32, etc.
+            visitExp(exp1, tenv0) map {
+              case (subst, tpe) => (subst, tpe)
+            }
+
+          case UnaryOperator.Minus =>
+            // TODO: Use type classes to distinguish Int8, Int16, Int32, etc.
+            visitExp(exp1, tenv0) map {
+              case (subst, tpe) => (subst, tpe)
+            }
+
+          case UnaryOperator.BitwiseNegate =>
+            // TODO: Use type classes to distinguish Int8, Int16, Int32, etc.
+            visitExp(exp1, tenv0) map {
+              case (subst, tpe) => (subst, tpe)
+            }
+        }
+
+        /*
+         * Binary expression.
+         */
+        case NamedAst.Expression.Binary(op, e1, e2, tvar, loc) => op match {
+          case BinaryOperator.Plus =>
+//            val (ctx1, tpe1) = visitExp(e1, tenv0)
+            //            val (ctx2, tpe2) = visitExp(e2, tenv0)
+            //            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
+            ???
+
+          case BinaryOperator.Minus =>
+//            val (ctx1, tpe1) = visitExp(e1, tenv0)
+//            val (ctx2, tpe2) = visitExp(e2, tenv0)
+//            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
+            ???
+
+          case BinaryOperator.Times =>
+//            val (ctx1, tpe1) = visitExp(e1, tenv0)
+//            val (ctx2, tpe2) = visitExp(e2, tenv0)
+//            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
+            ???
+
+          case BinaryOperator.Divide =>
+//            val (ctx1, tpe1) = visitExp(e1, tenv0)
+//            val (ctx2, tpe2) = visitExp(e2, tenv0)
+//            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
+            ???
+
+          case BinaryOperator.Modulo =>
+//            val (ctx1, tpe1) = visitExp(e1, tenv0)
+//            val (ctx2, tpe2) = visitExp(e2, tenv0)
+//            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
+            ???
+
+          case BinaryOperator.Exponentiate =>
+//            val (ctx1, tpe1) = visitExp(e1, tenv0)
+//            val (ctx2, tpe2) = visitExp(e2, tenv0)
+//            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
+            ???
+
+          case BinaryOperator.Equal | BinaryOperator.NotEqual =>
+//            val (ctx1, tpe1) = visitExp(e1, tenv0)
+//            val (ctx2, tpe2) = visitExp(e2, tenv0)
+//            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
+            ???
+
+          case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual =>
+//            val (ctx1, tpe1) = visitExp(e1, tenv0)
+//            val (ctx2, tpe2) = visitExp(e2, tenv0)
+//            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
+            ???
+
+          case BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr | BinaryOperator.Implication | BinaryOperator.Biconditional =>
+//            val (ctx1, tpe1) = visitExp(e1, tenv0)
+//            val (ctx2, tpe2) = visitExp(e2, tenv0)
+//            constraints += TypeConstraint.Eq((ctx1, tpe1), (EmptyContext, Type.Bool))
+//            constraints += TypeConstraint.Eq((ctx2, tpe2), (EmptyContext, Type.Bool))
+            ???
+
+          case BinaryOperator.BitwiseAnd | BinaryOperator.BitwiseOr | BinaryOperator.BitwiseXor | BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift =>
+//            val (ctx1, tpe1) = visitExp(e1, tenv0)
+//            val (ctx2, tpe2) = visitExp(e2, tenv0)
+//            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
+            ???
+
+        }
+
+        /*
+         * Let expression.
+         */
+        case NamedAst.Expression.Let(id, sym, exp1, exp2, loc) =>
+//          val (ctx1, tpe1) = visitExp(exp1, tenv0)
+//          val (ctx2, tpe2) = visitExp(exp2, tenv0 + (sym -> tpe1))
+//          ret(id, ctx1 ::: ctx2, tpe2)
           ???
-        }
 
-        /**
-          * Generates type constraints for the given expression `e0` under the given type environment `tenv`.
-          */
-        def visitExp(e0: NamedAst.Expression, tenv0: Map[Symbol.VarSym, Type]): ContextAndType = e0 match {
+        /*
+         * If-then-else expression.
+         */
+        case NamedAst.Expression.IfThenElse(id, exp1, exp2, exp3, loc) =>
+//          val (ctx1, tpe1) = visitExp(exp1, tenv0)
+//          val (ctx2, tpe2) = visitExp(exp2, tenv0)
+//          val (ctx3, tpe3) = visitExp(exp3, tenv0)
+//          constraints += TypeConstraint.Eq((ctx1, tpe1), (EmptyContext, Type.Bool))
+//          constraints += TypeConstraint.Eq((ctx2, tpe2), (ctx3, tpe3))
+//          ret(id, ctx2 ::: ctx3, tpe2)
+          ???
 
-          /*
-           * Wildcard expression.
-           */
-          case NamedAst.Expression.Wild(id, loc) =>
-            ??? // TODO
+        /*
+         * Match expression.
+         */
+        case NamedAst.Expression.Match(exp1, rules, tpe, loc) => ???
 
-          /*
-           * Variable expression.
-           */
-          case NamedAst.Expression.Var(ident, sym, loc) => tenv0.get(sym) match {
-            case None =>
-              ??? // TODO
-            case Some(tpe) => (Nil, tpe)
-          }
+        /*
+         * Switch expression.
+         */
+        case NamedAst.Expression.Switch(id, rules, loc) =>
+          ???
+        //            val bodyTypes = mutable.ListBuffer.empty[Type]
+        //            for ((cond, body) <- rules) {
+        //              val condType = visitExp(cond, tenv0)
+        //              bodyTypes += visitExp(body, tenv0)
+        //              constraints += TypeConstraint.Eq(condType, Type.Bool)
+        //            }
+        //
+        //            constraints += TypeConstraint.AllEq(bodyTypes.toList)
+        //
+        //            bodyTypes.head // TODO: Or generate fresh symbol?
 
+        /*
+         * Tag expression.
+         */
+        case NamedAst.Expression.Tag(id, enum, tag, exp, loc) =>
+          // TODO
+//          val tpe = visitExp(exp, tenv0)
+          ???
 
-          /*
-           * Reference expression.
-           */
-          case NamedAst.Expression.Ref(id, ref, loc) =>
-            ???
+        /*
+         * Tuple expression.
+         */
+        case NamedAst.Expression.Tuple(id, elms, loc) =>
+//          val elements = elms.map(e => visitExp(e, tenv0))
+//          val contexts = elements.flatMap(_._1)
+//          val types = elements.map(_._2)
+//          ret(id, contexts, Type.Tuple(types))
+          ???
 
-          /*
-           * Literal expression.
-           */
-          case NamedAst.Expression.Unit(id, _) => (EmptyContext, Type.Unit)
-          case NamedAst.Expression.True(id, loc) => (EmptyContext, Type.Bool)
-          case NamedAst.Expression.False(id, loc) => (EmptyContext, Type.Bool)
-          case NamedAst.Expression.Char(id, lit, loc) => (EmptyContext, Type.Char)
-          case NamedAst.Expression.Float32(id, lit, loc) => (EmptyContext, Type.Float32)
-          case NamedAst.Expression.Float64(id, lit, loc) => (EmptyContext, Type.Float64)
-          case NamedAst.Expression.Int8(id, lit, loc) => (EmptyContext, Type.Int8)
-          case NamedAst.Expression.Int16(id, lit, loc) => (EmptyContext, Type.Int16)
-          case NamedAst.Expression.Int32(id, lit, loc) => (EmptyContext, Type.Int32)
-          case NamedAst.Expression.Int64(id, lit, loc) => (EmptyContext, Type.Int64)
-          case NamedAst.Expression.BigInt(id, lit, loc) => (EmptyContext, Type.BigInt)
-          case NamedAst.Expression.Str(id, lit, loc) => (EmptyContext, Type.Str)
+        /*
+         * None expression.
+         */
+        case NamedAst.Expression.FNone(id, loc) =>
+          ???
 
-          /*
-           * Lambda expression.
-           */
-          case NamedAst.Expression.Lambda(args, body, tpe, loc) => ???
+        /*
+         * Some expression.
+         */
+        case NamedAst.Expression.FSome(id, exp, loc) =>
+//          val (ctx, tpe) = visitExp(exp, tenv0)
+//          ret(id, ctx, Type.FOpt)
+          ???
 
-          /*
-           * Apply expression.
-           */
-          case NamedAst.Expression.Apply(id, exp1, args, _) =>
-            ???
+        /*
+         * Nil expression.
+         */
+        case NamedAst.Expression.FNil(id, loc) =>
+          ???
+        //ret(id, EmptyContext, Type.FList(fresh()))
 
-          /*
-           * Unary expression.
-           */
-          case NamedAst.Expression.Unary(id, op, exp1, _) => op match {
-            case UnaryOperator.LogicalNot =>
-              val (ctx, tpe) = visitExp(exp1, tenv0)
-              constraints += TypeConstraint.Eq((ctx, tpe), (EmptyContext, Type.Bool))
-              ret(id, ctx, Type.Bool)
+        /*
+         * List expression.
+         */
+        case NamedAst.Expression.FList(id, hd, tl, loc) =>
+//          val (ctx1, tpe1) = visitExp(hd, tenv0)
+//          val (ctx2, tpe2) = visitExp(tl, tenv0)
+//          constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
+          ???
+        //ret(id, ctx1 ::: ctx2, Type.FList(tpe1))
 
-            case UnaryOperator.Plus =>
-              val (ctx, tpe) = visitExp(exp1, tenv0)
-              ret(id, (TypeClass.Number -> tpe) :: ctx, tpe)
+        /*
+         * Vector expression.
+         */
+        case NamedAst.Expression.FVec(elms, tvar, loc) =>
+//          val elements = elms.map(e => visitExp(e, tenv0))
+//          for ((ctx, tpe) <- elements.tail) {
+//            // assert that each element has the same type as the first element.
+//            val (ctx0, tpe0) = elements.head
+//            constraints += TypeConstraint.Eq((ctx0, tpe0), (ctx, tpe))
+//          }
+//          val contexts = elements.flatMap(_._1)
+//          ret(id, contexts, elements.head._2)
+          ???
 
-            case UnaryOperator.Minus =>
-              val (ctx, tpe) = visitExp(exp1, tenv0)
-              ret(id, (TypeClass.Number -> tpe) :: ctx, tpe)
+        /*
+         * Set expression.
+         */
+        case NamedAst.Expression.FSet(id, elms, loc) =>
+          ??? // TODO
 
-            case UnaryOperator.BitwiseNegate =>
-              val (ctx, tpe) = visitExp(exp1, tenv0)
-              ret(id, (TypeClass.Number -> tpe) :: ctx, tpe)
-          }
+        /*
+         * Map expression.
+         */
+        case NamedAst.Expression.FMap(id, elms, loc) =>
+          ??? // TODO
 
-          /*
-           * Binary expression.
-           */
-          case NamedAst.Expression.Binary(id, op, e1, e2, _) => op match {
-            case BinaryOperator.Plus =>
-              val (ctx1, tpe1) = visitExp(e1, tenv0)
-              val (ctx2, tpe2) = visitExp(e2, tenv0)
-              constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
-              ret(id, (TypeClass.Number -> tpe1) :: (TypeClass.Number -> tpe2) :: ctx1 ::: ctx2, tpe1)
+        /*
+         * GetIndex expression.
+         */
+        case NamedAst.Expression.GetIndex(id, exp1, exp2, loc) =>
+//          val (ctx1, tpe1) = visitExp(exp1, tenv0)
+//          val (ctx2, tpe2) = visitExp(exp2, tenv0)
+//          constraints += TypeConstraint.Eq((ctx2, tpe2), (EmptyContext, Type.Int32))
+//          ret(id, (TypeClass.Indexed -> tpe1) :: ctx1 ::: ctx2, tpe1)
+          ???
 
-            case BinaryOperator.Minus =>
-              val (ctx1, tpe1) = visitExp(e1, tenv0)
-              val (ctx2, tpe2) = visitExp(e2, tenv0)
-              constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
-              ret(id, (TypeClass.Number -> tpe1) :: (TypeClass.Number -> tpe2) :: ctx1 ::: ctx2, tpe1)
+        /*
+         * PutIndex expression.
+         */
+        case NamedAst.Expression.PutIndex(id, exp1, exp2, exp3, loc) =>
+//          val (ctx1, tpe1) = visitExp(exp1, tenv0)
+//          val (ctx2, tpe2) = visitExp(exp2, tenv0)
+//          val (ctx3, tpe3) = visitExp(exp3, tenv0)
+//          constraints += TypeConstraint.Eq((ctx2, tpe2), (EmptyContext, Type.Int32))
+//          ret(id, (TypeClass.Indexed -> tpe1) :: (TypeClass.Indexed -> tpe3) :: ctx1 ::: ctx2 ::: ctx3, tpe1)
+          ???
 
-            case BinaryOperator.Times =>
-              val (ctx1, tpe1) = visitExp(e1, tenv0)
-              val (ctx2, tpe2) = visitExp(e2, tenv0)
-              constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
-              ret(id, (TypeClass.Number -> tpe1) :: (TypeClass.Number -> tpe2) :: ctx1 ::: ctx2, tpe1)
+        /*
+         * Existential expression.
+         */
+        case NamedAst.Expression.Existential(params, e, loc) =>
+//          val tenv = params.foldLeft(tenv0) {
+//            case (macc, NamedAst.FormalParam(sym, t)) => macc + (sym -> t)
+//          }
+//          val (ctx, tpe) = visitExp(e, tenv)
+//          constraints += TypeConstraint.Eq((ctx, tpe), (EmptyContext, Type.Bool))
+//          ret(id, ctx, Type.Bool)
+          ???
 
-            case BinaryOperator.Divide =>
-              val (ctx1, tpe1) = visitExp(e1, tenv0)
-              val (ctx2, tpe2) = visitExp(e2, tenv0)
-              constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
-              ret(id, (TypeClass.Number -> tpe1) :: (TypeClass.Number -> tpe2) :: ctx1 ::: ctx2, tpe1)
+        /*
+         * Universal expression.
+         */
+        case NamedAst.Expression.Universal(params, e, loc) =>
+//          val tenv = params.foldLeft(tenv0) {
+//            case (macc, NamedAst.FormalParam(sym, t)) => macc + (sym -> t)
+//          }
+//          val (ctx, tpe) = visitExp(e, tenv)
+//          constraints += TypeConstraint.Eq((ctx, tpe), (EmptyContext, Type.Bool))
+//          ret(id, ctx, Type.Bool)
+          ???
 
-            case BinaryOperator.Modulo =>
-              val (ctx1, tpe1) = visitExp(e1, tenv0)
-              val (ctx2, tpe2) = visitExp(e2, tenv0)
-              constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
-              ret(id, (TypeClass.Number -> tpe1) :: (TypeClass.Number -> tpe2) :: ctx1 ::: ctx2, tpe1)
+        /*
+         * Ascribe expression.
+         */
+        case NamedAst.Expression.Ascribe(exp, tpe, loc) =>
+          ???
 
-            case BinaryOperator.Exponentiate =>
-              val (ctx1, tpe1) = visitExp(e1, tenv0)
-              val (ctx2, tpe2) = visitExp(e2, tenv0)
-              constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
-              ret(id, (TypeClass.Number -> tpe1) :: (TypeClass.Number -> tpe2) :: ctx1 ::: ctx2, tpe1)
-
-            case BinaryOperator.Equal | BinaryOperator.NotEqual =>
-              val (ctx1, tpe1) = visitExp(e1, tenv0)
-              val (ctx2, tpe2) = visitExp(e2, tenv0)
-              constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
-              ret(id, (TypeClass.Equal -> tpe1) :: (TypeClass.Equal -> tpe2) :: ctx1 ::: ctx2, Type.Bool)
-
-            case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual =>
-              val (ctx1, tpe1) = visitExp(e1, tenv0)
-              val (ctx2, tpe2) = visitExp(e2, tenv0)
-              constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
-              ret(id, (TypeClass.TotalOrder -> tpe1) :: (TypeClass.TotalOrder -> tpe2) :: ctx1 ::: ctx2, Type.Bool)
-
-            case BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr | BinaryOperator.Implication | BinaryOperator.Biconditional =>
-              val (ctx1, tpe1) = visitExp(e1, tenv0)
-              val (ctx2, tpe2) = visitExp(e2, tenv0)
-              constraints += TypeConstraint.Eq((ctx1, tpe1), (EmptyContext, Type.Bool))
-              constraints += TypeConstraint.Eq((ctx2, tpe2), (EmptyContext, Type.Bool))
-              ret(id, ctx1 ::: ctx2, Type.Bool)
-
-            case BinaryOperator.BitwiseAnd | BinaryOperator.BitwiseOr | BinaryOperator.BitwiseXor | BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift =>
-              val (ctx1, tpe1) = visitExp(e1, tenv0)
-              val (ctx2, tpe2) = visitExp(e2, tenv0)
-              constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
-              ret(id, (TypeClass.Number -> tpe1) :: (TypeClass.Number -> tpe2) :: ctx1 ::: ctx2, tpe1)
-
-          }
-
-          /*
-           * Let expression.
-           */
-          case NamedAst.Expression.Let(id, sym, exp1, exp2, loc) =>
-            val (ctx1, tpe1) = visitExp(exp1, tenv0)
-            val (ctx2, tpe2) = visitExp(exp2, tenv0 + (sym -> tpe1))
-            ret(id, ctx1 ::: ctx2, tpe2)
-
-          /*
-           * If-then-else expression.
-           */
-          case NamedAst.Expression.IfThenElse(id, exp1, exp2, exp3, loc) =>
-            val (ctx1, tpe1) = visitExp(exp1, tenv0)
-            val (ctx2, tpe2) = visitExp(exp2, tenv0)
-            val (ctx3, tpe3) = visitExp(exp3, tenv0)
-            constraints += TypeConstraint.Eq((ctx1, tpe1), (EmptyContext, Type.Bool))
-            constraints += TypeConstraint.Eq((ctx2, tpe2), (ctx3, tpe3))
-            ret(id, ctx2 ::: ctx3, tpe2)
-
-          /*
-           * Match expression.
-           */
-          case NamedAst.Expression.Match(exp1, rules, tpe, loc) => ???
-
-          /*
-           * Switch expression.
-           */
-          case NamedAst.Expression.Switch(id, rules, loc) =>
-            ???
-          //            val bodyTypes = mutable.ListBuffer.empty[Type]
-          //            for ((cond, body) <- rules) {
-          //              val condType = visitExp(cond, tenv0)
-          //              bodyTypes += visitExp(body, tenv0)
-          //              constraints += TypeConstraint.Eq(condType, Type.Bool)
-          //            }
-          //
-          //            constraints += TypeConstraint.AllEq(bodyTypes.toList)
-          //
-          //            bodyTypes.head // TODO: Or generate fresh symbol?
-
-          /*
-           * Tag expression.
-           */
-          case NamedAst.Expression.Tag(id, enum, tag, exp, loc) =>
-            // TODO
-            val tpe = visitExp(exp, tenv0)
-            ???
-
-          /*
-           * Tuple expression.
-           */
-          case NamedAst.Expression.Tuple(id, elms, loc) =>
-            val elements = elms.map(e => visitExp(e, tenv0))
-            val contexts = elements.flatMap(_._1)
-            val types = elements.map(_._2)
-            ret(id, contexts, Type.Tuple(types))
-
-          /*
-           * None expression.
-           */
-          case NamedAst.Expression.FNone(id, loc) =>
-            ret(id, EmptyContext, Type.FOpt)
-
-          /*
-           * Some expression.
-           */
-          case NamedAst.Expression.FSome(id, exp, loc) =>
-            val (ctx, tpe) = visitExp(exp, tenv0)
-            ret(id, ctx, Type.FOpt)
-
-          /*
-           * Nil expression.
-           */
-          case NamedAst.Expression.FNil(id, loc) =>
-            ???
-          //ret(id, EmptyContext, Type.FList(fresh()))
-
-          /*
-           * List expression.
-           */
-          case NamedAst.Expression.FList(id, hd, tl, loc) =>
-            val (ctx1, tpe1) = visitExp(hd, tenv0)
-            val (ctx2, tpe2) = visitExp(tl, tenv0)
-            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
-            ???
-          //ret(id, ctx1 ::: ctx2, Type.FList(tpe1))
-
-          /*
-           * Vector expression.
-           */
-          case NamedAst.Expression.FVec(id, Nil, loc) =>
-            //ret(id, EmptyContext, Type.FVec(fresh()))
-            ???
-
-          case NamedAst.Expression.FVec(id, elms, loc) =>
-            val elements = elms.map(e => visitExp(e, tenv0))
-            for ((ctx, tpe) <- elements.tail) {
-              // assert that each element has the same type as the first element.
-              val (ctx0, tpe0) = elements.head
-              constraints += TypeConstraint.Eq((ctx0, tpe0), (ctx, tpe))
-            }
-            val contexts = elements.flatMap(_._1)
-            ret(id, contexts, elements.head._2)
-
-          /*
-           * Set expression.
-           */
-          case NamedAst.Expression.FSet(id, elms, loc) =>
-            ??? // TODO
-
-          /*
-           * Map expression.
-           */
-          case NamedAst.Expression.FMap(id, elms, loc) =>
-            ??? // TODO
-
-          /*
-           * GetIndex expression.
-           */
-          case NamedAst.Expression.GetIndex(id, exp1, exp2, loc) =>
-            val (ctx1, tpe1) = visitExp(exp1, tenv0)
-            val (ctx2, tpe2) = visitExp(exp2, tenv0)
-            constraints += TypeConstraint.Eq((ctx2, tpe2), (EmptyContext, Type.Int32))
-            ret(id, (TypeClass.Indexed -> tpe1) :: ctx1 ::: ctx2, tpe1)
-
-          /*
-           * PutIndex expression.
-           */
-          case NamedAst.Expression.PutIndex(id, exp1, exp2, exp3, loc) =>
-            val (ctx1, tpe1) = visitExp(exp1, tenv0)
-            val (ctx2, tpe2) = visitExp(exp2, tenv0)
-            val (ctx3, tpe3) = visitExp(exp3, tenv0)
-            constraints += TypeConstraint.Eq((ctx2, tpe2), (EmptyContext, Type.Int32))
-            ret(id, (TypeClass.Indexed -> tpe1) :: (TypeClass.Indexed -> tpe3) :: ctx1 ::: ctx2 ::: ctx3, tpe1)
-
-          /*
-           * Existential expression.
-           */
-          case NamedAst.Expression.Existential(id, params, e, loc) =>
-            val tenv = params.foldLeft(tenv0) {
-              case (macc, NamedAst.FormalParam(sym, t)) => macc + (sym -> t)
-            }
-            val (ctx, tpe) = visitExp(e, tenv)
-            constraints += TypeConstraint.Eq((ctx, tpe), (EmptyContext, Type.Bool))
-            ret(id, ctx, Type.Bool)
-
-          /*
-           * Universal expression.
-           */
-          case NamedAst.Expression.Universal(id, params, e, loc) =>
-            val tenv = params.foldLeft(tenv0) {
-              case (macc, NamedAst.FormalParam(sym, t)) => macc + (sym -> t)
-            }
-            val (ctx, tpe) = visitExp(e, tenv)
-            constraints += TypeConstraint.Eq((ctx, tpe), (EmptyContext, Type.Bool))
-            ret(id, ctx, Type.Bool)
-
-          /*
-           * Ascribe expression.
-           */
-          case NamedAst.Expression.Ascribe(id, exp, tpe, loc) =>
-            val (ctx, tpe) = visitExp(exp, tenv0)
-            constraints += TypeConstraint.Eq((ctx, tpe), (EmptyContext, tpe))
-            ret(id, ctx, tpe)
-
-          /*
-           * User Error expression.
-           */
-          case NamedAst.Expression.UserError(id, loc) =>
-            ret(id, EmptyContext, fresh())
-
-        }
-
-        /**
-          * Generates type constraints for the given pattern `p0` under the given type environment `tenv`.
-          */
-        def visitPat(p0: NamedAst.Pattern, tenv: Map[Name.Ident, Type]): Type = p0 match {
-          case NamedAst.Pattern.Wild(loc) => ???
-          case NamedAst.Pattern.Var(ident, loc) => ???
-          case NamedAst.Pattern.Unit(loc) => Type.Unit
-          case NamedAst.Pattern.True(_) => Type.Bool
-          case NamedAst.Pattern.False(_) => Type.Bool
-          case NamedAst.Pattern.Char(_, _) => Type.Char
-          case NamedAst.Pattern.Float32(_, _) => Type.Float32
-          case NamedAst.Pattern.Float64(_, _) => Type.Float64
-          case NamedAst.Pattern.Int8(_, _) => Type.Int8
-          case NamedAst.Pattern.Int16(_, _) => Type.Int16
-          case NamedAst.Pattern.Int32(_, _) => Type.Int32
-          case NamedAst.Pattern.Int64(_, _) => Type.Int64
-          case NamedAst.Pattern.BigInt(_, _) => Type.BigInt
-          case NamedAst.Pattern.Str(_, _) => Type.Str
-          case NamedAst.Pattern.Tag(enum, tag, p1, loc) => ???
-          case NamedAst.Pattern.Tuple(elms, loc) =>
-            val tpes = elms.map(e => visitPat(e, tenv))
-            Type.Tuple(tpes)
-
-          case _ => ???
-        }
-
-
-        // TODO: Need to create initial type environment from defn
-
-        visitExp(exp0, Map.empty)
+        /*
+         * User Error expression.
+         */
+        case NamedAst.Expression.UserError(tvar, loc) =>
+          (Substitution.empty, tvar).toSuccess
 
       }
-    }
 
+      /**
+        * Generates type constraints for the given pattern `p0` under the given type environment `tenv`.
+        */
+      def visitPat(p0: NamedAst.Pattern, tenv: Map[Name.Ident, Type]): Type = p0 match {
+        case NamedAst.Pattern.Wild(loc) => ???
+        case NamedAst.Pattern.Var(ident, loc) => ???
+        case NamedAst.Pattern.Unit(loc) => Type.Unit
+        case NamedAst.Pattern.True(_) => Type.Bool
+        case NamedAst.Pattern.False(_) => Type.Bool
+        case NamedAst.Pattern.Char(_, _) => Type.Char
+        case NamedAst.Pattern.Float32(_, _) => Type.Float32
+        case NamedAst.Pattern.Float64(_, _) => Type.Float64
+        case NamedAst.Pattern.Int8(_, _) => Type.Int8
+        case NamedAst.Pattern.Int16(_, _) => Type.Int16
+        case NamedAst.Pattern.Int32(_, _) => Type.Int32
+        case NamedAst.Pattern.Int64(_, _) => Type.Int64
+        case NamedAst.Pattern.BigInt(_, _) => Type.BigInt
+        case NamedAst.Pattern.Str(_, _) => Type.Str
+        case NamedAst.Pattern.Tag(enum, tag, p1, loc) => ???
+        case NamedAst.Pattern.Tuple(elms, loc) =>
+          val tpes = elms.map(e => visitPat(e, tenv))
+          Type.Tuple(tpes)
+
+        case _ => ???
+      }
+
+
+      // TODO: Need to create initial type environment from defn
+
+      visitExp(exp0, Map.empty)
+
+    }
   }
+
 
   /**
     * Returns the most general unifier of the two given types `tpe1` and `tpe2`.
@@ -611,224 +564,205 @@ object Typer2 {
   }
 
   /**
-    * Reassembles the given expression `exp0` under the given type environment `tenv0`.
+    * Reassembles the given expression `exp0` with the given substitution `subst0`.
     */
-  def reassemble(exp0: NamedAst.Expression, tenv0: Map[Int, Type]): TypedAst.Expression = exp0 match {
+  def reassemble(exp0: NamedAst.Expression, subst0: Substitution): TypedAst.Expression = exp0 match {
     /*
      * Wildcard expression.
      */
-    case NamedAst.Expression.Wild(id, loc) => ??? // TODO
+    case NamedAst.Expression.Wild(tvar, loc) => ??? // TODO: TypedAst.Expression.Wild(subst0(tvar), loc)
 
     /*
      * Variable expression.
      */
-    case NamedAst.Expression.Var(id, sym, loc) => TypedAst.Expression.Var(???, tenv0(id), loc) // TODO
+    case NamedAst.Expression.Var(sym, tvar, loc) => TypedAst.Expression.Var(sym.toIdent, subst0(tvar), loc)
 
     /*
      * Reference expression.
      */
-    case NamedAst.Expression.Ref(id, ref, loc) => TypedAst.Expression.Ref(???, tenv0(id), loc) // TODO
+    case NamedAst.Expression.Ref(ref, tvar, loc) => TypedAst.Expression.Ref(???, subst0(tvar), loc) // TODO: What symbol?
 
     /*
      * Literal expression.
      */
-    case NamedAst.Expression.Unit(id, loc) => TypedAst.Expression.Unit(loc)
-    case NamedAst.Expression.True(id, loc) => TypedAst.Expression.True(loc)
-    case NamedAst.Expression.False(id, loc) => TypedAst.Expression.False(loc)
-    case NamedAst.Expression.Char(id, lit, loc) => TypedAst.Expression.Char(lit, loc)
-    case NamedAst.Expression.Float32(id, lit, loc) => TypedAst.Expression.Float32(lit, loc)
-    case NamedAst.Expression.Float64(id, lit, loc) => TypedAst.Expression.Float64(lit, loc)
-    case NamedAst.Expression.Int8(id, lit, loc) => TypedAst.Expression.Int8(lit, loc)
-    case NamedAst.Expression.Int16(id, lit, loc) => TypedAst.Expression.Int16(lit, loc)
-    case NamedAst.Expression.Int32(id, lit, loc) => TypedAst.Expression.Int32(lit, loc)
-    case NamedAst.Expression.Int64(id, lit, loc) => TypedAst.Expression.Int64(lit, loc)
-    case NamedAst.Expression.BigInt(id, lit, loc) => TypedAst.Expression.BigInt(lit, loc)
-    case NamedAst.Expression.Str(id, lit, loc) => TypedAst.Expression.Str(lit, loc)
+    case NamedAst.Expression.Unit(loc) => TypedAst.Expression.Unit(loc)
+    case NamedAst.Expression.True(loc) => TypedAst.Expression.True(loc)
+    case NamedAst.Expression.False(loc) => TypedAst.Expression.False(loc)
+    case NamedAst.Expression.Char(lit, loc) => TypedAst.Expression.Char(lit, loc)
+    case NamedAst.Expression.Float32(lit, loc) => TypedAst.Expression.Float32(lit, loc)
+    case NamedAst.Expression.Float64(lit, loc) => TypedAst.Expression.Float64(lit, loc)
+    case NamedAst.Expression.Int8(lit, loc) => TypedAst.Expression.Int8(lit, loc)
+    case NamedAst.Expression.Int16(lit, loc) => TypedAst.Expression.Int16(lit, loc)
+    case NamedAst.Expression.Int32(lit, loc) => TypedAst.Expression.Int32(lit, loc)
+    case NamedAst.Expression.Int64(lit, loc) => TypedAst.Expression.Int64(lit, loc)
+    case NamedAst.Expression.BigInt(lit, loc) => TypedAst.Expression.BigInt(lit, loc)
+    case NamedAst.Expression.Str(lit, loc) => TypedAst.Expression.Str(lit, loc)
 
     /*
      * Apply expression.
      */
-    case NamedAst.Expression.Apply(id, lambda, args, loc) => ??? // TODO
+    case NamedAst.Expression.Apply(lambda, args, tvar, loc) => ??? // TODO
 
     /*
      * Lambda expression.
      */
-    case NamedAst.Expression.Lambda(id, params, exp, loc) => ??? // TODO
+    case NamedAst.Expression.Lambda(params, exp, tvar, loc) => ??? // TODO
 
     /*
      * Unary expression.
      */
-    case NamedAst.Expression.Unary(id, op, exp, loc) =>
-      val e = reassemble(exp, tenv0)
-      TypedAst.Expression.Unary(op, e, tenv0(id), loc)
+    case NamedAst.Expression.Unary(op, exp, tvar, loc) =>
+      val e = reassemble(exp, subst0)
+      TypedAst.Expression.Unary(op, e, subst0(tvar), loc)
 
     /*
      * Binary expression.
      */
-    case NamedAst.Expression.Binary(id, op, exp1, exp2, loc) =>
-      val e1 = reassemble(exp1, tenv0)
-      val e2 = reassemble(exp2, tenv0)
-      TypedAst.Expression.Binary(op, e1, e2, tenv0(id), loc)
+    case NamedAst.Expression.Binary(op, exp1, exp2, tvar, loc) =>
+      val e1 = reassemble(exp1, subst0)
+      val e2 = reassemble(exp2, subst0)
+      TypedAst.Expression.Binary(op, e1, e2, subst0(tvar), loc)
 
     /*
      * If-then-else expression.
      */
-    case NamedAst.Expression.IfThenElse(id, exp1, exp2, exp3, loc) =>
-      val e1 = reassemble(exp1, tenv0)
-      val e2 = reassemble(exp2, tenv0)
-      val e3 = reassemble(exp3, tenv0)
-      TypedAst.Expression.IfThenElse(e1, e2, e3, tenv0(id), loc)
+    case NamedAst.Expression.IfThenElse(exp1, exp2, exp3, tvar, loc) =>
+      val e1 = reassemble(exp1, subst0)
+      val e2 = reassemble(exp2, subst0)
+      val e3 = reassemble(exp3, subst0)
+      TypedAst.Expression.IfThenElse(e1, e2, e3, subst0(tvar), loc)
 
     /*
      * Let expression.
      */
-    case NamedAst.Expression.Let(id, sym, exp1, exp2, loc) => ??? // TODO
+    case NamedAst.Expression.Let(sym, exp1, exp2, tvar, loc) => ??? // TODO
 
     /*
      * Match expression.
      */
-    case NamedAst.Expression.Match(id, exp, rules, loc) => ??? // TODO
+    case NamedAst.Expression.Match(exp, rules, tvar, loc) => ??? // TODO
 
     /*
      * Switch expression.
      */
-    case NamedAst.Expression.Switch(id, rules, loc) =>
+    case NamedAst.Expression.Switch(rules, tvar, loc) =>
       val rs = rules.map {
-        case (cond, body) => (reassemble(cond, tenv0), reassemble(body, tenv0))
+        case (cond, body) => (reassemble(cond, subst0), reassemble(body, subst0))
       }
-      TypedAst.Expression.Switch(rs, tenv0(id), loc)
+      TypedAst.Expression.Switch(rs, subst0(tvar), loc)
 
     /*
      * Tag expression.
      */
-    case NamedAst.Expression.Tag(id, enum, tag, exp, loc) =>
-      val e = reassemble(exp, tenv0)
-      val tpe: Type.Enum = tenv0(id).asInstanceOf[Type.Enum]
-      TypedAst.Expression.Tag(???, tag, e, tpe, loc) // TODO
+    case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
+      val e = reassemble(exp, subst0)
+      TypedAst.Expression.Tag(???, tag, e, subst0(tvar), loc) // TODO what symbol?
 
     /*
      * Tuple expression.
      */
-    case NamedAst.Expression.Tuple(id, elms, loc) =>
-      val es = elms.map(e => reassemble(e, tenv0))
-      val tpe: Type.Tuple = tenv0(id).asInstanceOf[Type.Tuple]
-      TypedAst.Expression.Tuple(es, tpe, loc)
+    case NamedAst.Expression.Tuple(elms, tvar, loc) =>
+      val es = elms.map(e => reassemble(e, subst0))
+      TypedAst.Expression.Tuple(es, subst0(tvar), loc)
 
     /*
      * None expression.
      */
-    case NamedAst.Expression.FNone(id, loc) =>
-      // TODO
-      ???
-    //val tpe: Type.FOpt = tenv0(id).asInstanceOf[Type.FOpt]
-    //TypedAst.Expression.FNone(tpe, loc)
+    case NamedAst.Expression.FNone(tvar, loc) =>
+      TypedAst.Expression.FNone(subst0(tvar), loc)
 
     /*
      * Some expression.
      */
-    case NamedAst.Expression.FSome(id, exp, loc) =>
-      ???
-    //val tpe: Type.FOpt = tenv0(id).asInstanceOf[Type.FOpt]
-    //TypedAst.Expression.FSome(reassemble(exp, tenv0), tpe, loc)
+    case NamedAst.Expression.FSome(exp, tvar, loc) =>
+      val e = reassemble(exp, subst0)
+      TypedAst.Expression.FSome(e, subst0(tvar), loc)
 
     /*
      * Nil expression.
      */
-    case NamedAst.Expression.FNil(id, loc) =>
-      ???
-    //val tpe: Type.FList = tenv0(id).asInstanceOf[Type.FList]
-    //TypedAst.Expression.FNil(tpe, loc)
+    case NamedAst.Expression.FNil(tvar, loc) =>
+      TypedAst.Expression.FNil(subst0(tvar), loc)
 
     /*
      * List expression.
      */
-    case NamedAst.Expression.FList(id, hd, tl, loc) =>
-      val e1 = reassemble(hd, tenv0)
-      val e2 = reassemble(tl, tenv0)
-      //val tpe: Type.FList = tenv0(id).asInstanceOf[Type.FList]
-      //TypedAst.Expression.FList(e1, e2, tpe, loc)
-      ???
+    case NamedAst.Expression.FList(hd, tl, tvar, loc) =>
+      val e1 = reassemble(hd, subst0)
+      val e2 = reassemble(tl, subst0)
+      TypedAst.Expression.FList(e1, e2, subst0(tvar), loc)
 
     /*
      * Vec expression.
      */
-    case NamedAst.Expression.FVec(id, elms, loc) =>
-      val es = elms.map(e => reassemble(e, tenv0))
-      //val tpe: Type.FVec = tenv0(id).asInstanceOf[Type.FVec]
-      //TypedAst.Expression.FVec(es, tpe, loc)
-      ???
+    case NamedAst.Expression.FVec(elms, tvar, loc) =>
+      val es = elms.map(e => reassemble(e, subst0))
+      TypedAst.Expression.FVec(es, subst0(tvar), loc)
 
     /*
      * Set expression.
      */
-    case NamedAst.Expression.FSet(id, elms, loc) =>
-      val es = elms.map(e => reassemble(e, tenv0))
-      //val tpe: Type.FSet = tenv0(id).asInstanceOf[Type.FSet]
-      //TypedAst.Expression.FSet(es, tpe, loc)
-      ???
+    case NamedAst.Expression.FSet(elms, tvar, loc) =>
+      val es = elms.map(e => reassemble(e, subst0))
+      TypedAst.Expression.FSet(es, subst0(tvar), loc)
 
     /*
      * Map expression.
      */
-    case NamedAst.Expression.FMap(id, elms, loc) =>
+    case NamedAst.Expression.FMap(elms, tvar, loc) =>
       val es = elms map {
-        case (key, value) => (reassemble(key, tenv0), reassemble(value, tenv0))
+        case (key, value) => (reassemble(key, subst0), reassemble(value, subst0))
       }
-      //val tpe: Type.FMap = tenv0(id).asInstanceOf[Type.FMap]
-      //TypedAst.Expression.FMap(es, tpe, loc)
-      ???
+      TypedAst.Expression.FMap(es, subst0(tvar), loc)
 
     /*
      * GetIndex expression.
      */
-    case NamedAst.Expression.GetIndex(id, exp1, exp2, loc) =>
-      val e1 = reassemble(exp1, tenv0)
-      val e2 = reassemble(exp2, tenv0)
-      TypedAst.Expression.GetIndex(e1, e2, tenv0(id), loc)
+    case NamedAst.Expression.GetIndex(exp1, exp2, tvar, loc) =>
+      val e1 = reassemble(exp1, subst0)
+      val e2 = reassemble(exp2, subst0)
+      TypedAst.Expression.GetIndex(e1, e2, subst0(tvar), loc)
 
     /*
      * PutIndex expression.
      */
-    case NamedAst.Expression.PutIndex(id, exp1, exp2, exp3, loc) =>
-      val e1 = reassemble(exp1, tenv0)
-      val e2 = reassemble(exp2, tenv0)
-      val e3 = reassemble(exp3, tenv0)
-      TypedAst.Expression.PutIndex(e1, e2, e3, tenv0(id), loc)
+    case NamedAst.Expression.PutIndex(exp1, exp2, exp3, tvar, loc) =>
+      val e1 = reassemble(exp1, subst0)
+      val e2 = reassemble(exp2, subst0)
+      val e3 = reassemble(exp3, subst0)
+      TypedAst.Expression.PutIndex(e1, e2, e3, subst0(tvar), loc)
 
     /*
      * Existential expression.
      */
-    case NamedAst.Expression.Existential(id, params, exp, loc) =>
-      val e = reassemble(exp, tenv0)
-      //TypedAst.Expression.Existential(params, e, loc)
-      ???
+    case NamedAst.Expression.Existential(params, exp, loc) =>
+      val e = reassemble(exp, subst0)
+      TypedAst.Expression.Existential(compat(params, subst0), e, loc)
 
     /*
      * Universal expression.
      */
-    case NamedAst.Expression.Universal(id, params, exp, loc) =>
-      val e = reassemble(exp, tenv0)
-      //TypedAst.Expression.Universal(params, e, loc)
-      ???
+    case NamedAst.Expression.Universal(params, exp, loc) =>
+      val e = reassemble(exp, subst0)
+      TypedAst.Expression.Universal(compat(params, subst0), e, loc)
 
     /*
      * Ascribe expression.
      */
-    case NamedAst.Expression.Ascribe(id, exp, tpe, loc) =>
+    case NamedAst.Expression.Ascribe(exp, tpe, loc) =>
       // simply reassemble the nested expression.
-      reassemble(exp, tenv0)
+      reassemble(exp, subst0)
 
     /*
      * User Error expression.
      */
-    case NamedAst.Expression.UserError(id, loc) =>
-      TypedAst.Expression.Error(tenv0(id), loc)
+    case NamedAst.Expression.UserError(tvar, loc) =>
+      TypedAst.Expression.Error(subst0(tvar), loc)
   }
 
-  /**
-    * Returns a fresh type variable.
-    */
-  @inline
-  private def fresh()(implicit genSym: GenSym): Type.Var = genSym.freshTypeVar()
+
+  private def compat(ps: List[NamedAst.FormalParam], subst: Substitution): List[Ast.FormalParam] = ps map {
+    case NamedAst.FormalParam(sym, tpe) => Ast.FormalParam(sym.toIdent, subst(tpe))
+  }
 
 }

@@ -324,54 +324,43 @@ object Namer {
       /*
        * Variables.
        */
-      case WeededAst.Expression.Wild(loc) => NamedAst.Expression.Wild(id(), loc).toSuccess
+      case WeededAst.Expression.Wild(loc) => NamedAst.Expression.Wild(genSym.freshTypeVar(), loc).toSuccess
 
       case WeededAst.Expression.Var(name, loc) if name.isUnqualified =>
         // lookup the variable name in the environment.
         env0.get(name.ident.name) match {
           case None =>
             // Case 1: reference.
-            NamedAst.Expression.Ref(id(), name, loc).toSuccess
+            NamedAst.Expression.Ref(name, genSym.freshTypeVar(), loc).toSuccess
           case Some(sym) =>
             // Case 2: variable.
-            NamedAst.Expression.Var(id(), sym, loc).toSuccess
+            NamedAst.Expression.Var(sym, genSym.freshTypeVar(), loc).toSuccess
         }
 
       case WeededAst.Expression.Var(name, loc) =>
-        NamedAst.Expression.Ref(id(), name, loc).toSuccess
+        NamedAst.Expression.Ref(name, genSym.freshTypeVar(), loc).toSuccess
 
       /*
        * Literals.
        */
-      case WeededAst.Expression.Unit(loc) => NamedAst.Expression.Unit(id(), loc).toSuccess
-
-      case WeededAst.Expression.True(loc) => NamedAst.Expression.True(id(), loc).toSuccess
-
-      case WeededAst.Expression.False(loc) => NamedAst.Expression.False(id(), loc).toSuccess
-
-      case WeededAst.Expression.Char(lit, loc) => NamedAst.Expression.Char(id(), lit, loc).toSuccess
-
-      case WeededAst.Expression.Float32(lit, loc) => NamedAst.Expression.Float32(id(), lit, loc).toSuccess
-
-      case WeededAst.Expression.Float64(lit, loc) => NamedAst.Expression.Float64(id(), lit, loc).toSuccess
-
-      case WeededAst.Expression.Int8(lit, loc) => NamedAst.Expression.Int8(id(), lit, loc).toSuccess
-
-      case WeededAst.Expression.Int16(lit, loc) => NamedAst.Expression.Int16(id(), lit, loc).toSuccess
-
-      case WeededAst.Expression.Int32(lit, loc) => NamedAst.Expression.Int32(id(), lit, loc).toSuccess
-
-      case WeededAst.Expression.Int64(lit, loc) => NamedAst.Expression.Int64(id(), lit, loc).toSuccess
-
-      case WeededAst.Expression.BigInt(lit, loc) => NamedAst.Expression.BigInt(id(), lit, loc).toSuccess
-
-      case WeededAst.Expression.Str(lit, loc) => NamedAst.Expression.Str(id(), lit, loc).toSuccess
+      case WeededAst.Expression.Unit(loc) => NamedAst.Expression.Unit(loc).toSuccess
+      case WeededAst.Expression.True(loc) => NamedAst.Expression.True(loc).toSuccess
+      case WeededAst.Expression.False(loc) => NamedAst.Expression.False(loc).toSuccess
+      case WeededAst.Expression.Char(lit, loc) => NamedAst.Expression.Char(lit, loc).toSuccess
+      case WeededAst.Expression.Float32(lit, loc) => NamedAst.Expression.Float32(lit, loc).toSuccess
+      case WeededAst.Expression.Float64(lit, loc) => NamedAst.Expression.Float64(lit, loc).toSuccess
+      case WeededAst.Expression.Int8(lit, loc) => NamedAst.Expression.Int8(lit, loc).toSuccess
+      case WeededAst.Expression.Int16(lit, loc) => NamedAst.Expression.Int16(lit, loc).toSuccess
+      case WeededAst.Expression.Int32(lit, loc) => NamedAst.Expression.Int32(lit, loc).toSuccess
+      case WeededAst.Expression.Int64(lit, loc) => NamedAst.Expression.Int64(lit, loc).toSuccess
+      case WeededAst.Expression.BigInt(lit, loc) => NamedAst.Expression.BigInt(lit, loc).toSuccess
+      case WeededAst.Expression.Str(lit, loc) => NamedAst.Expression.Str(lit, loc).toSuccess
 
       case WeededAst.Expression.Apply(lambda, args, loc) =>
         val lambdaVal = namer(lambda, env0)
         val argsVal = @@(args map (a => namer(a, env0)))
         @@(lambdaVal, argsVal) map {
-          case (e, es) => NamedAst.Expression.Apply(id(), e, es, loc)
+          case (e, es) => NamedAst.Expression.Apply(e, es, genSym.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Lambda(params, exp, loc) =>
@@ -381,28 +370,28 @@ object Namer {
           case (ident, sym) => ident.name -> sym
         }
         namer(exp, env0 ++ env1) map {
-          case e => NamedAst.Expression.Lambda(id(), syms, e, loc)
+          case e => NamedAst.Expression.Lambda(syms, e, genSym.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Unary(op, exp, loc) => namer(exp, env0) map {
-        case e => NamedAst.Expression.Unary(id(), op, e, loc)
+        case e => NamedAst.Expression.Unary(op, e, genSym.freshTypeVar(), loc)
       }
 
       case WeededAst.Expression.Binary(op, exp1, exp2, loc) =>
         @@(namer(exp1, env0), namer(exp2, env0)) map {
-          case (e1, e2) => NamedAst.Expression.Binary(id(), op, e1, e2, loc)
+          case (e1, e2) => NamedAst.Expression.Binary(op, e1, e2, genSym.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
         @@(namer(exp1, env0), namer(exp2, env0), namer(exp3, env0)) map {
-          case (e1, e2, e3) => NamedAst.Expression.IfThenElse(id(), e1, e2, e3, loc)
+          case (e1, e2, e3) => NamedAst.Expression.IfThenElse(e1, e2, e3, genSym.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Let(ident, exp1, exp2, loc) =>
         // make a fresh variable symbol for the local variable.
         val sym = Symbol.mkVarSym(ident)
         @@(namer(exp1, env0), namer(exp2, env0 + (ident.name -> sym))) map {
-          case (e1, e2) => NamedAst.Expression.Let(id(), sym, e1, e2, loc)
+          case (e1, e2) => NamedAst.Expression.Let(sym, e1, e2, genSym.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Match(exp, rules, loc) =>
@@ -417,77 +406,77 @@ object Namer {
             }
         }
         @@(expVal, @@(rulesVal)) map {
-          case (e, rs) => NamedAst.Expression.Match(id(), e, rs, loc)
+          case (e, rs) => NamedAst.Expression.Match(e, rs, genSym.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Switch(rules, loc) => @@(rules map {
         case (cond, body) => @@(namer(cond, env0), namer(body, env0))
       }) map {
-        case rs => NamedAst.Expression.Switch(id(), rs, loc)
+        case rs => NamedAst.Expression.Switch(rs, genSym.freshTypeVar(), loc)
       }
 
       case WeededAst.Expression.Tag(enum, tag, exp, loc) => namer(exp, env0) map {
-        case e => NamedAst.Expression.Tag(id(), enum, tag, e, loc)
+        case e => NamedAst.Expression.Tag(enum, tag, e, genSym.freshTypeVar(), loc)
       }
 
       case WeededAst.Expression.Tuple(elms, loc) =>
         @@(elms map (e => namer(e, env0))) map {
-          case es => NamedAst.Expression.Tuple(id(), es, loc)
+          case es => NamedAst.Expression.Tuple(es, genSym.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.FNone(loc) => NamedAst.Expression.FNone(id(), loc).toSuccess
+      case WeededAst.Expression.FNone(loc) => NamedAst.Expression.FNone(genSym.freshTypeVar(), loc).toSuccess
 
       case WeededAst.Expression.FSome(exp, loc) => namer(exp, env0) map {
-        case e => NamedAst.Expression.FSome(id(), e, loc)
+        case e => NamedAst.Expression.FSome(e, genSym.freshTypeVar(), loc)
       }
 
-      case WeededAst.Expression.FNil(loc) => NamedAst.Expression.FNil(id(), loc).toSuccess
+      case WeededAst.Expression.FNil(loc) => NamedAst.Expression.FNil(genSym.freshTypeVar(), loc).toSuccess
 
       case WeededAst.Expression.FList(hd, tl, loc) =>
         @@(namer(hd, env0), namer(tl, env0)) map {
-          case (e1, e2) => NamedAst.Expression.FList(id(), e1, e2, loc)
+          case (e1, e2) => NamedAst.Expression.FList(e1, e2, genSym.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.FVec(elms, loc) =>
         @@(elms map (e => namer(e, env0))) map {
-          case es => NamedAst.Expression.FVec(id(), es, loc)
+          case es => NamedAst.Expression.FVec(es, genSym.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.FSet(elms, loc) =>
         @@(elms map (e => namer(e, env0))) map {
-          case es => NamedAst.Expression.FSet(id(), es, loc)
+          case es => NamedAst.Expression.FSet(es, genSym.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.FMap(elms, loc) => @@(elms map {
         case (key, value) => @@(namer(key, env0), namer(value, env0))
       }) map {
-        case es => NamedAst.Expression.FMap(id(), es, loc)
+        case es => NamedAst.Expression.FMap(es, genSym.freshTypeVar(), loc)
       }
 
       case WeededAst.Expression.GetIndex(exp1, exp2, loc) =>
         @@(namer(exp1, env0), namer(exp2, env0)) map {
-          case (e1, e2) => NamedAst.Expression.GetIndex(id(), e1, e2, loc)
+          case (e1, e2) => NamedAst.Expression.GetIndex(e1, e2, genSym.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.PutIndex(exp1, exp2, exp3, loc) =>
         @@(namer(exp1, env0), namer(exp2, env0)) map {
-          case (e1, e2) => NamedAst.Expression.GetIndex(id(), e1, e2, loc)
+          case (e1, e2) => NamedAst.Expression.GetIndex(e1, e2, genSym.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Existential(params, exp, loc) =>
         namer(exp, env0) map {
-          case e => NamedAst.Expression.Existential(id(), ???, e, loc)
+          case e => NamedAst.Expression.Existential(???, e, loc) // TODO
         }
 
       case WeededAst.Expression.Universal(params, exp, loc) => namer(exp, env0) map {
-        case e => NamedAst.Expression.Universal(id(), ???, e, loc)
+        case e => NamedAst.Expression.Universal(???, e, loc) // TODO
       }
 
       case WeededAst.Expression.Ascribe(exp, tpe, loc) => namer(exp, env0) map {
-        case e => NamedAst.Expression.Ascribe(id(), e, tpe, loc)
+        case e => NamedAst.Expression.Ascribe(e, tpe, loc)
       }
 
-      case WeededAst.Expression.UserError(loc) => NamedAst.Expression.UserError(id(), loc).toSuccess
+      case WeededAst.Expression.UserError(loc) => NamedAst.Expression.UserError(genSym.freshTypeVar(), loc).toSuccess
     }
 
   }
@@ -546,11 +535,5 @@ object Namer {
       case (macc, Ast.FormalParam(id, _)) => macc + (id.name -> Symbol.mkVarSym(id))
     }
   }
-
-  /**
-    * Short hand for genSym.freshId.
-    */
-  @inline
-  private def id()(implicit genSym: GenSym): Int = genSym.freshId()
 
 }

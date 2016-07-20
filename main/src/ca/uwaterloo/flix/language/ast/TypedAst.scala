@@ -461,7 +461,7 @@ object TypedAst {
       * @param tpe   the type of the expression.
       * @param loc   the source location.
       */
-    case class Tag(name: Symbol.Resolved, ident: Name.Ident, exp: TypedAst.Expression, tpe: Type.Enum, loc: SourceLocation) extends TypedAst.Expression
+    case class Tag(name: Symbol.Resolved, ident: Name.Ident, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     /**
       * A typed AST node representing a tuple expression.
@@ -470,7 +470,7 @@ object TypedAst {
       * @param tpe  the type of the tuple.
       * @param loc  the source location.
       */
-    case class Tuple(elms: List[TypedAst.Expression], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Expression
+    case class Tuple(elms: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class FNone(tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
