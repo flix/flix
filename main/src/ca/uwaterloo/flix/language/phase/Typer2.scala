@@ -118,9 +118,9 @@ object Typer2 {
   }
 
   /**
-    * Returns the composition of the given lists of substitutions `subs`.
+    * Returns the composition of the given lists of substitutions `substs`.
     */
-  def mergeAll(subs: List[Substitution]): Validation[Substitution, TypeError] = Validation.fold[Substitution, Substitution, TypeError](subs, Substitution.empty) {
+  def mergeAll(substs: List[Substitution]): Validation[Substitution, TypeError] = Validation.fold[Substitution, Substitution, TypeError](substs, Substitution.empty) {
     case (subst1, subst2) => subst1.merge(subst2)
   }
 
@@ -145,6 +145,7 @@ object Typer2 {
       /**
         * Infers the type of the given expression `e0` under the given type environment `tenv0`.
         */
+      // TODO: tenv0 should be a list of assumptions...
       def visitExp(e0: NamedAst.Expression, tenv0: Map[Symbol.VarSym, Type]): Validation[(Substitution, Type), TypeError] = e0 match {
 
         /*
@@ -474,25 +475,47 @@ object Typer2 {
       /**
         * Infers the type of the given expression `e0` under the given type environment `tenv0`.
         */
-      def visitPat(p0: NamedAst.Pattern, tenv: Map[Symbol.VarSym, Type]): (Substitution, Type) = p0 match {
-        case NamedAst.Pattern.Wild(loc) => ???
-        case NamedAst.Pattern.Var(sym, loc) => ???
-        case NamedAst.Pattern.Unit(loc) => (Substitution.empty, Type.Unit)
-        case NamedAst.Pattern.True(loc) => (Substitution.empty, Type.Bool)
-        case NamedAst.Pattern.False(loc) => (Substitution.empty, Type.Bool)
-        case NamedAst.Pattern.Char(c, loc) => (Substitution.empty, Type.Char)
-        case NamedAst.Pattern.Float32(i, loc) => (Substitution.empty, Type.Float32)
-        case NamedAst.Pattern.Float64(i, loc) => (Substitution.empty, Type.Float64)
-        case NamedAst.Pattern.Int8(i, loc) => (Substitution.empty, Type.Int8)
-        case NamedAst.Pattern.Int16(i, loc) => (Substitution.empty, Type.Int16)
-        case NamedAst.Pattern.Int32(i, loc) => (Substitution.empty, Type.Int32)
-        case NamedAst.Pattern.Int64(i, loc) => (Substitution.empty, Type.Int64)
-        case NamedAst.Pattern.BigInt(i, loc) => (Substitution.empty, Type.BigInt)
-        case NamedAst.Pattern.Str(s, loc ) => (Substitution.empty, Type.Str)
-        case NamedAst.Pattern.Tag(enum, tag, p1, loc) => ???
-        case NamedAst.Pattern.Tuple(elms, loc) => ???
+      // TODO: What is the type env exactly? Should probably be removed/refactored.
+      def visitPat(p0: NamedAst.Pattern, tenv: Map[Symbol.VarSym, Type]): Validation[(Substitution, Type), TypeError] = p0 match {
+        case NamedAst.Pattern.Wild(tvar, loc) => (Substitution.empty, tvar).toSuccess
+        case NamedAst.Pattern.Var(sym, tvar, loc) => (Substitution.empty, tvar).toSuccess
+        case NamedAst.Pattern.Unit(loc) => (Substitution.empty, Type.Unit).toSuccess
+        case NamedAst.Pattern.True(loc) => (Substitution.empty, Type.Bool).toSuccess
+        case NamedAst.Pattern.False(loc) => (Substitution.empty, Type.Bool).toSuccess
+        case NamedAst.Pattern.Char(c, loc) => (Substitution.empty, Type.Char).toSuccess
+        case NamedAst.Pattern.Float32(i, loc) => (Substitution.empty, Type.Float32).toSuccess
+        case NamedAst.Pattern.Float64(i, loc) => (Substitution.empty, Type.Float64).toSuccess
+        case NamedAst.Pattern.Int8(i, loc) => (Substitution.empty, Type.Int8).toSuccess
+        case NamedAst.Pattern.Int16(i, loc) => (Substitution.empty, Type.Int16).toSuccess
+        case NamedAst.Pattern.Int32(i, loc) => (Substitution.empty, Type.Int32).toSuccess
+        case NamedAst.Pattern.Int64(i, loc) => (Substitution.empty, Type.Int64).toSuccess
+        case NamedAst.Pattern.BigInt(i, loc) => (Substitution.empty, Type.BigInt).toSuccess
+        case NamedAst.Pattern.Str(s, loc) => (Substitution.empty, Type.Str).toSuccess
 
-        case _ => ???
+        case NamedAst.Pattern.Tag(enum, tag, p1, tvar, loc) => ???
+
+        case NamedAst.Pattern.Tuple(pats, tvar, loc) =>
+          val elmsVal = @@(pats.map(p => visitPat(p, tenv)))
+          elmsVal flatMap {
+            case elms =>
+              val substs = elms.map(_._1)
+              val tpes = elms.map(_._2)
+              val resultType = Type.mkFTuple(tpes)
+              unify(tvar, resultType) flatMap {
+                case subst => mergeAll(subst :: substs) map {
+                  case resultSubst => (resultSubst, resultType)
+                }
+              }
+
+          }
+
+        case NamedAst.Pattern.FNone(tvar, loc) => ???
+        case NamedAst.Pattern.FSome(pat, tvar, loc) => ???
+        case NamedAst.Pattern.FNil(tvar, loc) => ???
+        case NamedAst.Pattern.FList(hd, tl, tvar, loc) => ???
+        case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => ???
+        case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => ???
+        case NamedAst.Pattern.FMap(elms, rest, tvar, loc) => ???
       }
 
 

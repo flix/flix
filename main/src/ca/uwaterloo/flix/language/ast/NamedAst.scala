@@ -169,9 +169,9 @@ object NamedAst {
 
   object Pattern {
 
-    case class Wild(loc: SourceLocation) extends NamedAst.Pattern
+    case class Wild(tvar: Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
-    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NamedAst.Pattern
+    case class Var(sym: Symbol.VarSym, tvar: Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
     case class Unit(loc: SourceLocation) extends NamedAst.Pattern
 
@@ -197,23 +197,23 @@ object NamedAst {
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends NamedAst.Pattern
 
-    case class Tag(enum: Name.QName, tag: Name.Ident, pat: NamedAst.Pattern, loc: SourceLocation) extends NamedAst.Pattern
+    case class Tag(enum: Name.QName, tag: Name.Ident, pat: NamedAst.Pattern, tvar: Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
-    case class Tuple(elms: scala.List[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Pattern
+    case class Tuple(elms: scala.List[NamedAst.Pattern], tvar: Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
-    case class FNone(loc: SourceLocation) extends NamedAst.Pattern
+    case class FNone(tvar: Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
-    case class FSome(pat: NamedAst.Pattern, loc: SourceLocation) extends NamedAst.Pattern
+    case class FSome(pat: NamedAst.Pattern, tvar: Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
-    case class FNil(loc: SourceLocation) extends NamedAst.Pattern
+    case class FNil(tvar: Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
-    case class FList(hd: NamedAst.Pattern, tl: NamedAst.Pattern, loc: SourceLocation) extends NamedAst.Pattern
+    case class FList(hd: NamedAst.Pattern, tl: NamedAst.Pattern, tvar: Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
-    case class FVec(elms: List[NamedAst.Pattern], rest: Option[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Pattern
+    case class FVec(elms: List[NamedAst.Pattern], rest: Option[NamedAst.Pattern], tvar: Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
-    case class FSet(elms: List[NamedAst.Pattern], rest: Option[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Pattern
+    case class FSet(elms: List[NamedAst.Pattern], rest: Option[NamedAst.Pattern], tvar: Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
-    case class FMap(elms: List[(NamedAst.Pattern, NamedAst.Pattern)], rest: Option[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Pattern
+    case class FMap(elms: List[(NamedAst.Pattern, NamedAst.Pattern)], rest: Option[NamedAst.Pattern], tvar: Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
   }
 

@@ -43,7 +43,7 @@ package object phase {
       Name.Ident(SourcePosition.Unknown, prefix + "$" + number, SourcePosition.Unknown)
     }
 
-    def freshTypeVar(): Type.Var = Type.Var(freshId().toString, Kind.Star) // TODO: Should require kind?
+    def freshTypeVar(k: Kind = Kind.Star): Type.Var = Type.Var(freshId().toString, k)
 
   }
 
