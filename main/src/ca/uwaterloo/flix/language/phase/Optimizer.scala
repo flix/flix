@@ -32,11 +32,8 @@ object Optimizer {
         // Do simple copy propagation to get rid of targets of direct assignment
         fn = CopyPropagation.optimize(fn)
 
-        // Replace Unit == Unit checks
-        fn = EliminateUnitChecks.optimize(fn)
-
-        // Clean up by removing code
-        fn = DeadCodeElimination.optimize(fn)
+        // Clean up by simplifying some expressions and removing dead code
+        fn = ConstantFolding.optimize(fn)
 
         name -> fn
     }
@@ -44,53 +41,46 @@ object Optimizer {
     root.copy(constants = constants)
   }
 
-  object EliminateUnitChecks {
+  object ConstantFolding extends ExpressionFolder {
 
-    def optimize(f: Constant): Constant = {
-
-      object ReplaceUnitCheckWithTrue extends ExpressionFolder {
-        override def foldBinary(op: BinaryOperator,
-                                exp1: Expression,
-                                exp2: Expression,
-                                tpe: Type,
-                                loc: SourceLocation): Expression = {
-          // Replace an equality check on the Unit type with just True
-          // We need not check that exp2 is also of type Unit since
-          // the type checker wil guarantee that exp1.tpe == exp2.tpe.
-          if (op == BinaryOperator.Equal && exp1.tpe == Unit.tpe) {
-            True
-          } else {
-            super.foldBinary(op, exp1, exp2, tpe, loc)
-          }
-        }
+    override def foldBinary(op: BinaryOperator,
+                            exp1: Expression,
+                            exp2: Expression,
+                            tpe: Type,
+                            loc: SourceLocation): Expression = {
+      // Replace an equality check on the Unit type with just True
+      // We need not check that exp2 is also of type Unit since
+      // the type checker wil guarantee that exp1.tpe == exp2.tpe.
+      if (op == BinaryOperator.Equal && exp1.tpe == Unit.tpe) {
+        True
+      } else {
+        super.foldBinary(op, exp1, exp2, tpe, loc)
       }
-
-      f.copy(exp = ReplaceUnitCheckWithTrue.foldExpression(f.exp))
     }
 
-  }
+    override def foldIfThenElse(cond: Expression,
+                                thenExp: Expression,
+                                elseExp: Expression,
+                                tpe: Type,
+                                loc: SourceLocation): Expression = {
+      val fCond = super.foldExpression(cond)
+      fCond match {
+        // Condition known to be true, so replace whole expression with just the consequent expression
+        case Expression.True => super.foldExpression(thenExp)
 
-  object DeadCodeElimination {
+        // Condition known to be false, so replace whole expression with just the alternative expression
+        case Expression.False => super.foldExpression(elseExp)
+
+        case _ => Expression.IfThenElse(fCond,
+                                        super.foldExpression(thenExp),
+                                        super.foldExpression(elseExp),
+                                        tpe,
+                                        loc)
+      }
+    }
 
     def optimize(f: Constant): Constant = {
-
-      object RemoveKnownConditional extends ExpressionFolder {
-        override def foldIfThenElse(cond: Expression,
-                                    thenExp: Expression,
-                                    elseExp: Expression,
-                                    tpe: Type,
-                                    loc: SourceLocation): Expression = cond match {
-          // Condition known to be true, so replace whole expression with just the consequent expression
-          case Expression.True => super.foldExpression(thenExp)
-
-          // Condition known to be false, so replace whole expression with just the alternative expression
-          case Expression.False => super.foldExpression(elseExp)
-
-          case _ => super.foldIfThenElse(cond, thenExp, elseExp, tpe, loc)
-        }
-      }
-
-      f.copy(exp = RemoveKnownConditional.foldExpression(f.exp))
+      f.copy(exp = super.foldExpression(f.exp))
     }
 
   }
