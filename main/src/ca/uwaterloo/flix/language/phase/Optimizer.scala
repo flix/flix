@@ -173,6 +173,20 @@ object Optimizer {
         // Condition known to be false, so replace whole expression with just the alternative expression
         case Expression.False => super.foldExpression(elseExp)
 
+        case Expression.CheckTag(_, exp, _) => exp.tpe match {
+          case Type.Enum(_, cases) =>
+            // No need to actually check when we have a unary enum since it can only be one case
+            // and the type checker should guarantee that this is a legitimate transformation.
+            if (cases.size == 1) {
+              // So just replace with the consequent expression
+              super.foldExpression(thenExp)
+            } else {
+              Expression.IfThenElse(fCond, super.foldExpression(thenExp), super.foldExpression(elseExp), tpe, loc)
+            }
+
+          case _ => Expression.IfThenElse(fCond, super.foldExpression(thenExp), super.foldExpression(elseExp), tpe, loc)
+        }
+
         case _ => Expression.IfThenElse(fCond,
                                         super.foldExpression(thenExp),
                                         super.foldExpression(elseExp),
