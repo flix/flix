@@ -48,13 +48,115 @@ object Optimizer {
                             exp2: Expression,
                             tpe: Type,
                             loc: SourceLocation): Expression = {
-      // Replace an equality check on the Unit type with just True
-      // We need not check that exp2 is also of type Unit since
-      // the type checker wil guarantee that exp1.tpe == exp2.tpe.
-      if (op == BinaryOperator.Equal && exp1.tpe == Unit.tpe) {
-        True
-      } else {
-        super.foldBinary(op, exp1, exp2, tpe, loc)
+
+      op match {
+        // Replace an equality check on the Unit type with just True
+        // We need not check that exp2 is also of type Unit since
+        // the type checker wil guarantee that exp1.tpe == exp2.tpe.
+        case BinaryOperator.Equal =>
+          if (exp1.tpe == Unit.tpe) {
+            True
+          } else {
+            super.foldBinary(op, exp1, exp2, tpe, loc)
+          }
+
+        // Simplify arithmetic operations where we already know exp1 and exp2
+        case BinaryOperator.Plus =>
+          val fExp1 = foldExpression(exp1)
+          val fExp2 = foldExpression(exp2)
+
+          (fExp1, fExp2) match {
+            case (Expression.Float32(a), Expression.Float32(b)) => Expression.Float32(a + b)
+            case (Expression.Float64(a), Expression.Float64(b)) => Expression.Float64(a + b)
+            case (Expression.Int8(a), Expression.Int8(b)) => Expression.Int8((a + b).toByte)
+            case (Expression.Int16(a), Expression.Int16(b)) => Expression.Int16((a + b).toShort)
+            case (Expression.Int32(a), Expression.Int32(b)) => Expression.Int32(a + b)
+            case (Expression.Int64(a), Expression.Int64(b)) => Expression.Int64(a + b)
+            case (Expression.BigInt(a), Expression.BigInt(b)) => Expression.BigInt(a.add(b))
+            case _ => Expression.Binary(op, fExp1, fExp2, tpe, loc)
+          }
+
+        case BinaryOperator.Minus =>
+          val fExp1 = foldExpression(exp1)
+          val fExp2 = foldExpression(exp2)
+
+          (fExp1, fExp2) match {
+            case (Expression.Float32(a), Expression.Float32(b)) => Expression.Float32(a - b)
+            case (Expression.Float64(a), Expression.Float64(b)) => Expression.Float64(a - b)
+            case (Expression.Int8(a), Expression.Int8(b)) => Expression.Int8((a - b).toByte)
+            case (Expression.Int16(a), Expression.Int16(b)) => Expression.Int16((a - b).toShort)
+            case (Expression.Int32(a), Expression.Int32(b)) => Expression.Int32(a - b)
+            case (Expression.Int64(a), Expression.Int64(b)) => Expression.Int64(a - b)
+            case (Expression.BigInt(a), Expression.BigInt(b)) => Expression.BigInt(a.subtract(b))
+            case _ => Expression.Binary(op, fExp1, fExp2, tpe, loc)
+          }
+
+        case BinaryOperator.Times =>
+          val fExp1 = foldExpression(exp1)
+          val fExp2 = foldExpression(exp2)
+
+          (fExp1, fExp2) match {
+            case (Expression.Float32(a), Expression.Float32(b)) => Expression.Float32(a * b)
+            case (Expression.Float64(a), Expression.Float64(b)) => Expression.Float64(a * b)
+            case (Expression.Int8(a), Expression.Int8(b)) => Expression.Int8((a * b).toByte)
+            case (Expression.Int16(a), Expression.Int16(b)) => Expression.Int16((a * b).toShort)
+            case (Expression.Int32(a), Expression.Int32(b)) => Expression.Int32(a * b)
+            case (Expression.Int64(a), Expression.Int64(b)) => Expression.Int64(a * b)
+            case (Expression.BigInt(a), Expression.BigInt(b)) => Expression.BigInt(a.multiply(b))
+            case _ => Expression.Binary(op, fExp1, fExp2, tpe, loc)
+          }
+
+        case BinaryOperator.Divide =>
+          val fExp1 = foldExpression(exp1)
+          val fExp2 = foldExpression(exp2)
+
+          (fExp1, fExp2) match {
+            case (Expression.Float32(a), Expression.Float32(b)) =>
+              if (b == 0) {
+                throw InternalCompilerException("Tried to divide by 0.")
+              } else {
+                Expression.Float32(a / b)
+              }
+            case (Expression.Float64(a), Expression.Float64(b)) =>
+              if (b == 0) {
+                throw InternalCompilerException("Tried to divide by 0.")
+              } else {
+                Expression.Float64(a / b)
+              }
+            case (Expression.Int8(a), Expression.Int8(b)) =>
+              if (b == 0) {
+                throw InternalCompilerException("Tried to divide by 0.")
+              } else {
+                Expression.Int8((a / b).toByte)
+              }
+            case (Expression.Int16(a), Expression.Int16(b)) =>
+              if (b == 0) {
+                throw InternalCompilerException("Tried to divide by 0.")
+              } else {
+                Expression.Int16((a / b).toShort)
+              }
+            case (Expression.Int32(a), Expression.Int32(b)) =>
+              if (b == 0) {
+                throw InternalCompilerException("Tried to divide by 0.")
+              } else {
+                Expression.Int32(a / b)
+              }
+            case (Expression.Int64(a), Expression.Int64(b)) =>
+              if (b == 0) {
+                throw InternalCompilerException("Tried to divide by 0.")
+              } else {
+                Expression.Int64(a / b)
+              }
+            case (Expression.BigInt(a), Expression.BigInt(b)) =>
+              if (b == 0) {
+                throw InternalCompilerException("Tried to divide by 0.")
+              } else {
+                Expression.BigInt(a.divide(b))
+              }
+            case _ => Expression.Binary(op, fExp1, fExp2, tpe, loc)
+          }
+
+        case _ => super.foldBinary(op, exp1, exp2, tpe, loc)
       }
     }
 
