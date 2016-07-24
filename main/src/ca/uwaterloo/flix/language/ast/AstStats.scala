@@ -29,6 +29,10 @@ object AstStats {
       case SimplifiedAst.Expression.False => AstStats(numberOfExpressions = 1, numberOfFalseLiterals = 1)
       // TODO: Rest
 
+      case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) => op match {
+        case UnaryOperator.Plus => visitExp(exp).incUnaryPlus
+      }
+
       case SimplifiedAst.Expression.Binary(op, exp1, exp2, tpe, loc) => op match {
         case BinaryOperator.Plus => (visitExp(exp1) + visitExp(exp2)).incBinaryPlus
       }
@@ -90,11 +94,30 @@ case class AstStats(numberOfExpressions: Int = 0,
                     numberOfBinaryBitwiseXorExpressions: Int = 0,
                     numberOfBinaryBitwiseAndExpressions: Int = 0,
                     numberOfBinaryBitwiseLeftShiftExpressions: Int = 0,
-                    numberOfBinaryBitwiseRightShiftExpressions: Int = 0
-                    // TODO: Rest...
+                    numberOfBinaryBitwiseRightShiftExpressions: Int = 0,
+                    numberOfIfThenElseExpressions: Int = 0,
+                    numberOfLetExpressions: Int = 0,
+                    numberOfCheckTagExpressions: Int = 0,
+                    numberOfGetTagValueExpressions: Int = 0,
+                    numberOfTagExpressions: Int = 0,
+                    numberOfGetTupleIndexExpressions: Int = 0,
+                    numberOfTupleExpressions: Int = 0,
+                    numberOfCheckNilExpressions: Int = 0,
+                    numberOfCheckConsExpressions: Int = 0,
+                    numberOfFSetExpressions: Int = 0,
+                    numberOfExistentialExpressions: Int = 0,
+                    numberOfUniversalExpressions: Int = 0,
+                    numberOfMatchErrorExpressions: Int = 0,
+                    numberOfUserErrorExpressions: Int = 0,
+                    numberOfSwitchErrorExpressions: Int = 0
                    ) {
 
   def +(that: AstStats): AstStats = ???
+
+  def incUnaryPlus: AstStats = copy(
+    numberOfUnaryExpressions = numberOfUnaryExpressions + 1,
+    numberOfUnaryPlusExpressions = numberOfUnaryPlusExpressions + 1
+  )
 
   def incBinaryPlus: AstStats = copy(
     numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
