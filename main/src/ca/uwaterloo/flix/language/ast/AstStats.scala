@@ -27,6 +27,7 @@ object AstStats {
       case SimplifiedAst.Expression.Unit => AstStats(numberOfExpressions = 1, numberOfUnitLiterals = 1)
       case SimplifiedAst.Expression.True => AstStats(numberOfExpressions = 1, numberOfTrueLiterals = 1)
       case SimplifiedAst.Expression.False => AstStats(numberOfExpressions = 1, numberOfFalseLiterals = 1)
+
       // TODO: Rest
       case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) => op match {
         case UnaryOperator.Plus => visitExp(exp).incUnaryPlus
@@ -39,9 +40,31 @@ object AstStats {
         case BinaryOperator.Minus => (visitExp(exp1) + visitExp(exp2)).incBinaryMinus
         case BinaryOperator.Times => (visitExp(exp1) + visitExp(exp2)).incBinaryTimes
         case BinaryOperator.Divide => (visitExp(exp1) + visitExp(exp2)).incBinaryDivide
+        case BinaryOperator.Modulo => (visitExp(exp1) + visitExp(exp2)).incBinaryModulo
+        case BinaryOperator.Exponentiate => (visitExp(exp1) + visitExp(exp2)).incBinaryExponentiate
+        case BinaryOperator.Less => (visitExp(exp1) + visitExp(exp2)).incBinaryLess
+        case BinaryOperator.LessEqual => (visitExp(exp1) + visitExp(exp2)).incBinaryLessEqual
+        case BinaryOperator.Greater => (visitExp(exp1) + visitExp(exp2)).incBinaryGreater
+        case BinaryOperator.GreaterEqual => (visitExp(exp1) + visitExp(exp2)).incBinaryGreaterEqual
+        case BinaryOperator.Equal => (visitExp(exp1) + visitExp(exp2)).incBinaryEqual
+        case BinaryOperator.NotEqual => (visitExp(exp1) + visitExp(exp2)).incBinaryNotEqual
+        case BinaryOperator.LogicalAnd => (visitExp(exp1) + visitExp(exp2)).incBinaryLogicalAnd
+        case BinaryOperator.LogicalOr => (visitExp(exp1) + visitExp(exp2)).incBinaryLogicalOr
+        case BinaryOperator.Implication => (visitExp(exp1) + visitExp(exp2)).incBinaryImplication
+        case BinaryOperator.Biconditional => (visitExp(exp1) + visitExp(exp2)).incBinaryBiconditional
+        case BinaryOperator.BitwiseAnd => (visitExp(exp1) + visitExp(exp2)).incBinaryBitwiseAnd
+        case BinaryOperator.BitwiseOr => (visitExp(exp1) + visitExp(exp2)).incBinaryBitwiseOr
+        case BinaryOperator.BitwiseXor => (visitExp(exp1) + visitExp(exp2)).incBinaryBitwiseXor
+        case BinaryOperator.BitwiseLeftShift => (visitExp(exp1) + visitExp(exp2)).incBinaryBitwiseLeftShift
+        case BinaryOperator.BitwiseRightShift => (visitExp(exp1) + visitExp(exp2)).incBinaryBitwiseRightShift
       }
       case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         (visitExp(exp1) + visitExp(exp2) + visitExp(exp3)).incIfThenElse
+      case SimplifiedAst.Expression.Let(ident, offset, exp1, exp2, tpe, loc) =>
+        (visitExp(exp1) + visitExp(exp2)).incLet
+
+
+
     }
 
     ??? // TODO
@@ -265,6 +288,16 @@ case class AstStats(numberOfExpressions: Int = 0,
     numberOfBinaryBitwiseLeftShiftExpressions = numberOfBinaryBitwiseLeftShiftExpressions + 1
   )
 
+  def incBinaryBitwiseRightShift: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
+    numberOfBinaryBitwiseRightShiftExpressions = numberOfBinaryBitwiseRightShiftExpressions + 1
+  )
+
+  def incLet: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfLetExpressions = numberOfLetExpressions + 1
+  )
 
   def incIfThenElse: AstStats = copy(
     numberOfExpressions = numberOfExpressions + 1,
