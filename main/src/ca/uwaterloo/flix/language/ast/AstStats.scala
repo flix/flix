@@ -94,6 +94,7 @@ case class AstStats(numberOfExpressions: Int = 0,
                     numberOfBinaryEqualExpressions: Int = 0,
                     numberOfBinaryNotEqualExpressions: Int = 0,
                     numberOfBinaryLogicalAndExpressions: Int = 0,
+                    numberOfBinaryLogicalOrExpressions: Int = 0,
                     numberOfBinaryImplicationExpressions: Int = 0,
                     numberOfBinaryBiconditionalExpressions: Int = 0,
                     numberOfBinaryBitwiseOrExpressions: Int = 0,
@@ -216,7 +217,53 @@ case class AstStats(numberOfExpressions: Int = 0,
     numberOfBinaryNotEqualExpressions = numberOfBinaryNotEqualExpressions + 1
   )
 
+  def incBinaryLogicalAnd: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
+    numberOfBinaryLogicalAndExpressions = numberOfBinaryLogicalAndExpressions + 1
+  )
 
+  def incBinaryLogicalOr: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
+    numberOfBinaryLogicalOrExpressions = numberOfBinaryLogicalOrExpressions + 1
+  )
+
+  def incBinaryImplication: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
+    numberOfBinaryImplicationExpressions = numberOfBinaryImplicationExpressions + 1
+  )
+
+  def incBinaryBiconditional: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
+    numberOfBinaryBiconditionalExpressions = numberOfBinaryBiconditionalExpressions + 1
+  )
+
+  def incBinaryBitwiseAnd: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
+    numberOfBinaryBitwiseAndExpressions = numberOfBinaryBitwiseAndExpressions + 1
+  )
+
+  def incBinaryBitwiseOr: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
+    numberOfBinaryBitwiseOrExpressions = numberOfBinaryBitwiseOrExpressions + 1
+  )
+
+  def incBinaryBitwiseXor: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
+    numberOfBinaryBitwiseXorExpressions = numberOfBinaryBitwiseXorExpressions + 1
+  )
+
+  def incBinaryBitwiseLeftShift: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
+    numberOfBinaryBitwiseLeftShiftExpressions = numberOfBinaryBitwiseLeftShiftExpressions + 1
+  )
 
 
   def incIfThenElse: AstStats = copy(
