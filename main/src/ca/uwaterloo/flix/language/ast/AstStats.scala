@@ -28,15 +28,20 @@ object AstStats {
       case SimplifiedAst.Expression.True => AstStats(numberOfExpressions = 1, numberOfTrueLiterals = 1)
       case SimplifiedAst.Expression.False => AstStats(numberOfExpressions = 1, numberOfFalseLiterals = 1)
       // TODO: Rest
-
       case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) => op match {
         case UnaryOperator.Plus => visitExp(exp).incUnaryPlus
+        case UnaryOperator.Minus => visitExp(exp).incUnaryMinus
+        case UnaryOperator.LogicalNot => visitExp(exp).incUnaryLogicalNot
+        case UnaryOperator.BitwiseNegate => visitExp(exp).incUnaryBitwiseNegate
       }
-
       case SimplifiedAst.Expression.Binary(op, exp1, exp2, tpe, loc) => op match {
         case BinaryOperator.Plus => (visitExp(exp1) + visitExp(exp2)).incBinaryPlus
+        case BinaryOperator.Minus => (visitExp(exp1) + visitExp(exp2)).incBinaryMinus
+        case BinaryOperator.Times => (visitExp(exp1) + visitExp(exp2)).incBinaryTimes
+        case BinaryOperator.Divide => (visitExp(exp1) + visitExp(exp2)).incBinaryDivide
       }
-
+      case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+        (visitExp(exp1) + visitExp(exp2) + visitExp(exp3)).incIfThenElse
     }
 
     ??? // TODO
@@ -73,7 +78,8 @@ case class AstStats(numberOfExpressions: Int = 0,
                     numberOfUnaryExpressions: Int = 0,
                     numberOfUnaryPlusExpressions: Int = 0,
                     numberOfUnaryMinusExpressions: Int = 0,
-                    numberOfUnaryNegateExpressions: Int = 0,
+                    numberOfUnaryLogicalNotExpressions: Int = 0,
+                    numberOfUnaryBitwiseNegateExpressions: Int = 0,
                     numberOfBinaryExpressions: Int = 0,
                     numberOfBinaryPlusExpressions: Int = 0,
                     numberOfBinaryMinusExpressions: Int = 0,
@@ -115,13 +121,107 @@ case class AstStats(numberOfExpressions: Int = 0,
   def +(that: AstStats): AstStats = ???
 
   def incUnaryPlus: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
     numberOfUnaryExpressions = numberOfUnaryExpressions + 1,
     numberOfUnaryPlusExpressions = numberOfUnaryPlusExpressions + 1
   )
 
+  def incUnaryMinus: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfUnaryExpressions = numberOfUnaryExpressions + 1,
+    numberOfUnaryMinusExpressions = numberOfUnaryMinusExpressions + 1
+  )
+
+  def incUnaryLogicalNot: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfUnaryExpressions = numberOfUnaryExpressions + 1,
+    numberOfUnaryLogicalNotExpressions = numberOfUnaryLogicalNotExpressions + 1
+  )
+
+  def incUnaryBitwiseNegate: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfUnaryExpressions = numberOfUnaryExpressions + 1,
+    numberOfUnaryBitwiseNegateExpressions = numberOfUnaryBitwiseNegateExpressions + 1
+  )
+
   def incBinaryPlus: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
     numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
     numberOfBinaryPlusExpressions = numberOfBinaryPlusExpressions + 1
+  )
+
+  def incBinaryMinus: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
+    numberOfBinaryMinusExpressions = numberOfBinaryMinusExpressions + 1
+  )
+
+  def incBinaryTimes: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
+    numberOfBinaryTimesExpressions = numberOfBinaryTimesExpressions + 1
+  )
+
+  def incBinaryDivide: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
+    numberOfBinaryDivideExpressions = numberOfBinaryDivideExpressions + 1
+  )
+
+  def incBinaryModulo: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
+    numberOfBinaryModuloExpressions = numberOfBinaryModuloExpressions + 1
+  )
+
+  def incBinaryExponentiate: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
+    numberOfBinaryExponentiateExpressions = numberOfBinaryExponentiateExpressions + 1
+  )
+
+  def incBinaryLess: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
+    numberOfBinaryLessExpressions = numberOfBinaryLessExpressions + 1
+  )
+
+  def incBinaryLessEqual: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
+    numberOfBinaryLessEqualExpressions = numberOfBinaryLessEqualExpressions + 1
+  )
+
+  def incBinaryGreater: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
+    numberOfBinaryGreaterExpressions = numberOfBinaryGreaterExpressions + 1
+  )
+
+  def incBinaryGreaterEqual: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
+    numberOfBinaryGreaterEqualExpressions = numberOfBinaryGreaterEqualExpressions + 1
+  )
+
+  def incBinaryEqual: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
+    numberOfBinaryEqualExpressions = numberOfBinaryEqualExpressions + 1
+  )
+
+  def incBinaryNotEqual: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfBinaryExpressions = numberOfBinaryExpressions + 1,
+    numberOfBinaryNotEqualExpressions = numberOfBinaryNotEqualExpressions + 1
+  )
+
+
+
+
+  def incIfThenElse: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfIfThenElseExpressions = numberOfIfThenElseExpressions + 1
   )
 
   // TODO: Rest
