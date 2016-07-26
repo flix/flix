@@ -39,7 +39,16 @@ object AstStats {
       case SimplifiedAst.Expression.Int64(lit) => AstStats(numberOfExpressions = 1, numberOfInt64Literals = 1)
       case SimplifiedAst.Expression.BigInt(lit) => AstStats(numberOfExpressions = 1, numberOfBigIntLiterals = 1)
       case SimplifiedAst.Expression.Str(lit) => AstStats(numberOfExpressions = 1, numberOfStrLiterals = 1)
-
+      case SimplifiedAst.Expression.Var(ident, _, tpe, loc) => AstStats(numberOfExpressions = 1, numberOfVarExpressions = 1)
+      case SimplifiedAst.Expression.Ref(name, tpe, loc) => AstStats(numberOfExpressions = 1, numberOfRefExpressions = 1)
+      case SimplifiedAst.Expression.LoadBool(exp, _) => visitExp(exp).incLoadBool
+      case SimplifiedAst.Expression.LoadInt8(exp, _) => visitExp(exp).incLoadInt8
+      case SimplifiedAst.Expression.LoadInt16(exp, _) => visitExp(exp).incLoadInt16
+      case SimplifiedAst.Expression.LoadInt32(exp, _) => visitExp(exp).incLoadInt32
+      case SimplifiedAst.Expression.StoreBool(exp1, _, exp2) => (visitExp(exp1) + visitExp(exp2)).incStoreBool
+      case SimplifiedAst.Expression.StoreInt8(exp1, _, exp2) => (visitExp(exp1) + visitExp(exp2)).incStoreInt8
+      case SimplifiedAst.Expression.StoreInt16(exp1, _, exp2) => (visitExp(exp1) + visitExp(exp2)).incStoreInt16
+      case SimplifiedAst.Expression.StoreInt32(exp1, _, exp2) => (visitExp(exp1) + visitExp(exp2)).incStoreInt32
 
       // TODO: Rest
       case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) => op match {
@@ -173,6 +182,46 @@ case class AstStats(numberOfExpressions: Int = 0,
                    ) {
 
   def +(that: AstStats): AstStats = ???
+
+  def incLoadBool: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    ??? // TODO
+  )
+
+  def incLoadInt8: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    ??? // TODO
+  )
+
+  def incLoadInt16: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    ??? // TODO
+  )
+
+  def incLoadInt32: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    ??? // TODO
+  )
+
+  def incStoreBool: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    ??? // TODO
+  )
+
+  def incStoreInt8: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    ??? // TODO
+  )
+
+  def incStoreInt16: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    ??? // TODO
+  )
+
+  def incStoreInt32: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    ??? // TODO
+  )
 
   def incUnaryPlus: AstStats = copy(
     numberOfExpressions = numberOfExpressions + 1,
