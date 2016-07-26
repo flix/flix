@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.util.InternalCompilerException
+
 object AstStats {
 
   /**
@@ -49,7 +51,7 @@ object AstStats {
       case SimplifiedAst.Expression.StoreInt32(exp1, _, exp2) => (visitExp(exp1) + visitExp(exp2)).incStoreInt32
       case SimplifiedAst.Expression.Var(ident, _, tpe, loc) => AstStats(numberOfExpressions = 1, numberOfVarExpressions = 1)
       case SimplifiedAst.Expression.Ref(name, tpe, loc) => AstStats(numberOfExpressions = 1, numberOfRefExpressions = 1)
-      case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) => ???
+      case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) => visitExp(body).incLambda
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => AstStats(numberOfHookExpressions = 1)
       case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) => visitExp(lambda).incMkClosure
       case SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) => AstStats(numberOfMkClosureRefExpressions = 1)
@@ -98,14 +100,12 @@ object AstStats {
       case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) => visitExp(exp).incTag
       case SimplifiedAst.Expression.GetTagValue(tag, exp, tpe, loc) =>
         visitExp(exp).incGetTagValue
-      case SimplifiedAst.Expression.CheckNil(exp, loc) => ???
-      case SimplifiedAst.Expression.CheckCons(exp, loc) => ???
       case SimplifiedAst.Expression.FSet(elms, tpe, loc) =>
         val s = elms.foldLeft(AstStats()) {
           case (acc, exp) => acc + visitExp(exp)
         }
         s.incFSet
-      case SimplifiedAst.Expression.GetTupleIndex(base, offset, tpe, loc) => ???
+      case SimplifiedAst.Expression.GetTupleIndex(base, offset, tpe, loc) => visitExp(base)
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
         val s = elms.foldLeft(AstStats()) {
           case (acc, e) => acc + visitExp(e)
@@ -116,6 +116,7 @@ object AstStats {
       case SimplifiedAst.Expression.MatchError(tpe, loc) => AstStats(numberOfExpressions = 1, numberOfMatchErrorExpressions = 1)
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => AstStats(numberOfExpressions = 1, numberOfSwitchErrorExpressions = 1)
       case SimplifiedAst.Expression.UserError(tpe, loc) => AstStats(numberOfExpressions = 1, numberOfUserErrorExpressions = 1)
+      case _ => throw InternalCompilerException(s"Unexpected expressions: `$exp0'.")
     }
 
     /**
