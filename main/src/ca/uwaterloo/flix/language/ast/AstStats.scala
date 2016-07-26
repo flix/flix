@@ -18,6 +18,9 @@ package ca.uwaterloo.flix.language.ast
 
 object AstStats {
 
+  /**
+    * Computes statistics for the given program.
+    */
   def statsOf(root: SimplifiedAst.Root): AstStats = {
 
     /**
@@ -27,6 +30,16 @@ object AstStats {
       case SimplifiedAst.Expression.Unit => AstStats(numberOfExpressions = 1, numberOfUnitLiterals = 1)
       case SimplifiedAst.Expression.True => AstStats(numberOfExpressions = 1, numberOfTrueLiterals = 1)
       case SimplifiedAst.Expression.False => AstStats(numberOfExpressions = 1, numberOfFalseLiterals = 1)
+      case SimplifiedAst.Expression.Char(lit) => AstStats(numberOfExpressions = 1, numberOfCharLiterals = 1)
+      case SimplifiedAst.Expression.Float32(lit) => AstStats(numberOfExpressions = 1, numberOfFloat32Literals = 1)
+      case SimplifiedAst.Expression.Float64(lit) => AstStats(numberOfExpressions = 1, numberOfFloat64Literals = 1)
+      case SimplifiedAst.Expression.Int8(lit) => AstStats(numberOfExpressions = 1, numberOfInt8Literals = 1)
+      case SimplifiedAst.Expression.Int16(lit) => AstStats(numberOfExpressions = 1, numberOfInt16Literals = 1)
+      case SimplifiedAst.Expression.Int32(lit) => AstStats(numberOfExpressions = 1, numberOfInt32Literals = 1)
+      case SimplifiedAst.Expression.Int64(lit) => AstStats(numberOfExpressions = 1, numberOfInt64Literals = 1)
+      case SimplifiedAst.Expression.BigInt(lit) => AstStats(numberOfExpressions = 1, numberOfBigIntLiterals = 1)
+      case SimplifiedAst.Expression.Str(lit) => AstStats(numberOfExpressions = 1, numberOfStrLiterals = 1)
+
 
       // TODO: Rest
       case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) => op match {
@@ -79,7 +92,12 @@ object AstStats {
       case SimplifiedAst.Expression.UserError(tpe, loc) => AstStats(numberOfExpressions = 1, numberOfUserErrorExpressions = 1)
     }
 
-    ??? // TODO
+    /**
+      * Visit each definition.
+      */
+    root.constants.foldLeft(AstStats()) {
+      case (acc, defn) => acc + visitExp(defn._2.exp)
+    }
   }
 
 }
