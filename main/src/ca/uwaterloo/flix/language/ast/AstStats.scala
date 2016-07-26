@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.util.InternalCompilerException
-
 object AstStats {
 
   /**
@@ -116,7 +114,7 @@ object AstStats {
       case SimplifiedAst.Expression.MatchError(tpe, loc) => AstStats(numberOfMatchErrorExpressions = 1)
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => AstStats(numberOfSwitchErrorExpressions = 1)
       case SimplifiedAst.Expression.UserError(tpe, loc) => AstStats(numberOfUserErrorExpressions = 1)
-      case _ => throw InternalCompilerException(s"Unexpected expressions: `$exp0'.")
+      case _ => AstStats()
     }
 
     /**
@@ -203,13 +201,77 @@ case class AstStats(numberOfUnitLiterals: Int = 0,
                     numberOfSwitchErrorExpressions: Int = 0
                    ) {
 
-  def totalUnaryExpressions: Int = ???
-
-  def totalBinaryExpressions: Int = ???
-
-  def totalExpressions: Int = ???
-
-  def +(that: AstStats): AstStats = ???
+  def +(that: AstStats): AstStats = AstStats(
+    this.numberOfUnitLiterals + that.numberOfUnitLiterals,
+    this.numberOfTrueLiterals + that.numberOfTrueLiterals,
+    this.numberOfFalseLiterals + that.numberOfFalseLiterals,
+    this.numberOfCharLiterals + that.numberOfCharLiterals,
+    this.numberOfFloat32Literals + that.numberOfFloat32Literals,
+    this.numberOfFloat64Literals + that.numberOfFloat64Literals,
+    this.numberOfInt8Literals + that.numberOfInt8Literals,
+    this.numberOfInt16Literals + that.numberOfInt16Literals,
+    this.numberOfInt32Literals + that.numberOfInt32Literals,
+    this.numberOfInt64Literals + that.numberOfInt64Literals,
+    this.numberOfBigIntLiterals + that.numberOfBigIntLiterals,
+    this.numberOfStrLiterals + that.numberOfStrLiterals,
+    this.numberOfLoadBool + that.numberOfLoadBool,
+    this.numberOfLoadInt8 + that.numberOfLoadInt8,
+    this.numberOfLoadInt16 + that.numberOfLoadInt16,
+    this.numberOfLoadInt32 + that.numberOfLoadInt32,
+    this.numberOfStoreBool + that.numberOfStoreBool,
+    this.numberOfStoreInt8 + that.numberOfStoreInt8,
+    this.numberOfStoreInt16 + that.numberOfStoreInt16,
+    this.numberOfStoreInt32 + that.numberOfStoreInt32,
+    this.numberOfVarExpressions + that.numberOfVarExpressions,
+    this.numberOfRefExpressions + that.numberOfRefExpressions,
+    this.numberOfLambdaExpressions + that.numberOfLambdaExpressions,
+    this.numberOfHookExpressions + that.numberOfHookExpressions,
+    this.numberOfMkClosureExpressions + that.numberOfMkClosureExpressions,
+    this.numberOfMkClosureRefExpressions + that.numberOfMkClosureRefExpressions,
+    this.numberOfApplyRefExpressions + that.numberOfApplyRefExpressions,
+    this.numberOfApplyHookExpressions + that.numberOfApplyHookExpressions,
+    this.numberOfApplyExpressions + that.numberOfApplyExpressions,
+    this.numberOfUnaryPlusExpressions + that.numberOfUnaryPlusExpressions,
+    this.numberOfUnaryMinusExpressions + that.numberOfUnaryMinusExpressions,
+    this.numberOfUnaryLogicalNotExpressions + that.numberOfUnaryLogicalNotExpressions,
+    this.numberOfUnaryBitwiseNegateExpressions + that.numberOfUnaryBitwiseNegateExpressions,
+    this.numberOfBinaryPlusExpressions + that.numberOfBinaryPlusExpressions,
+    this.numberOfBinaryMinusExpressions + that.numberOfBinaryMinusExpressions,
+    this.numberOfBinaryTimesExpressions + that.numberOfBinaryTimesExpressions,
+    this.numberOfBinaryDivideExpressions + that.numberOfBinaryDivideExpressions,
+    this.numberOfBinaryModuloExpressions + that.numberOfBinaryModuloExpressions,
+    this.numberOfBinaryExponentiateExpressions + that.numberOfBinaryExponentiateExpressions,
+    this.numberOfBinaryLessExpressions + that.numberOfBinaryLessExpressions,
+    this.numberOfBinaryLessEqualExpressions + that.numberOfBinaryLessEqualExpressions,
+    this.numberOfBinaryGreaterExpressions + that.numberOfBinaryGreaterExpressions,
+    this.numberOfBinaryGreaterEqualExpressions + that.numberOfBinaryGreaterEqualExpressions,
+    this.numberOfBinaryEqualExpressions + that.numberOfBinaryEqualExpressions,
+    this.numberOfBinaryNotEqualExpressions + that.numberOfBinaryNotEqualExpressions,
+    this.numberOfBinaryLogicalAndExpressions + that.numberOfBinaryLogicalAndExpressions,
+    this.numberOfBinaryLogicalOrExpressions + that.numberOfBinaryLogicalOrExpressions,
+    this.numberOfBinaryImplicationExpressions + that.numberOfBinaryImplicationExpressions,
+    this.numberOfBinaryBiconditionalExpressions + that.numberOfBinaryBiconditionalExpressions,
+    this.numberOfBinaryBitwiseOrExpressions + that.numberOfBinaryBitwiseOrExpressions,
+    this.numberOfBinaryBitwiseXorExpressions + that.numberOfBinaryBitwiseXorExpressions,
+    this.numberOfBinaryBitwiseAndExpressions + that.numberOfBinaryBitwiseAndExpressions,
+    this.numberOfBinaryBitwiseLeftShiftExpressions + that.numberOfBinaryBitwiseLeftShiftExpressions,
+    this.numberOfBinaryBitwiseRightShiftExpressions + that.numberOfBinaryBitwiseRightShiftExpressions,
+    this.numberOfIfThenElseExpressions + that.numberOfIfThenElseExpressions,
+    this.numberOfLetExpressions + that.numberOfLetExpressions,
+    this.numberOfCheckTagExpressions + that.numberOfCheckTagExpressions,
+    this.numberOfGetTagValueExpressions + that.numberOfGetTagValueExpressions,
+    this.numberOfTagExpressions + that.numberOfTagExpressions,
+    this.numberOfGetTupleIndexExpressions + that.numberOfGetTupleIndexExpressions,
+    this.numberOfTupleExpressions + that.numberOfTupleExpressions,
+    this.numberOfCheckNilExpressions + that.numberOfCheckNilExpressions,
+    this.numberOfCheckConsExpressions + that.numberOfCheckConsExpressions,
+    this.numberOfFSetExpressions + that.numberOfFSetExpressions,
+    this.numberOfExistentialExpressions + that.numberOfExistentialExpressions,
+    this.numberOfUniversalExpressions + that.numberOfUniversalExpressions,
+    this.numberOfMatchErrorExpressions + that.numberOfMatchErrorExpressions,
+    this.numberOfUserErrorExpressions + that.numberOfUserErrorExpressions,
+    this.numberOfSwitchErrorExpressions + that.numberOfSwitchErrorExpressions
+  )
 
   def incLoadBool: AstStats = copy(numberOfLoadBool = numberOfLoadBool + 1)
 
