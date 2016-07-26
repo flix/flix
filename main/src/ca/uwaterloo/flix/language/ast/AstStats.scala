@@ -27,18 +27,18 @@ object AstStats {
       * Computes statistics for the given expression `exp0`.
       */
     def visitExp(exp0: ExecutableAst.Expression): AstStats = exp0 match {
-      case ExecutableAst.Expression.Unit => AstStats(numberOfUnitLiterals = 1)
-      case ExecutableAst.Expression.True => AstStats(numberOfTrueLiterals = 1)
-      case ExecutableAst.Expression.False => AstStats(numberOfFalseLiterals = 1)
-      case ExecutableAst.Expression.Char(lit) => AstStats(numberOfCharLiterals = 1)
-      case ExecutableAst.Expression.Float32(lit) => AstStats(numberOfFloat32Literals = 1)
-      case ExecutableAst.Expression.Float64(lit) => AstStats(numberOfFloat64Literals = 1)
-      case ExecutableAst.Expression.Int8(lit) => AstStats(numberOfInt8Literals = 1)
-      case ExecutableAst.Expression.Int16(lit) => AstStats(numberOfInt16Literals = 1)
-      case ExecutableAst.Expression.Int32(lit) => AstStats(numberOfInt32Literals = 1)
-      case ExecutableAst.Expression.Int64(lit) => AstStats(numberOfInt64Literals = 1)
-      case ExecutableAst.Expression.BigInt(lit) => AstStats(numberOfBigIntLiterals = 1)
-      case ExecutableAst.Expression.Str(lit) => AstStats(numberOfStrLiterals = 1)
+      case ExecutableAst.Expression.Unit => AstStats(unitLiterals = 1)
+      case ExecutableAst.Expression.True => AstStats(trueLiterals = 1)
+      case ExecutableAst.Expression.False => AstStats(falseLiterals = 1)
+      case ExecutableAst.Expression.Char(lit) => AstStats(charLiterals = 1)
+      case ExecutableAst.Expression.Float32(lit) => AstStats(float32Literals = 1)
+      case ExecutableAst.Expression.Float64(lit) => AstStats(float64Literals = 1)
+      case ExecutableAst.Expression.Int8(lit) => AstStats(int8Literals = 1)
+      case ExecutableAst.Expression.Int16(lit) => AstStats(int16Literals = 1)
+      case ExecutableAst.Expression.Int32(lit) => AstStats(int32Literals = 1)
+      case ExecutableAst.Expression.Int64(lit) => AstStats(int64Literals = 1)
+      case ExecutableAst.Expression.BigInt(lit) => AstStats(bigIntLiterals = 1)
+      case ExecutableAst.Expression.Str(lit) => AstStats(strLiterals = 1)
       case ExecutableAst.Expression.LoadBool(exp, _) => visitExp(exp).incLoadBool
       case ExecutableAst.Expression.LoadInt8(exp, _) => visitExp(exp).incLoadInt8
       case ExecutableAst.Expression.LoadInt16(exp, _) => visitExp(exp).incLoadInt16
@@ -47,16 +47,16 @@ object AstStats {
       case ExecutableAst.Expression.StoreInt8(exp1, _, exp2) => (visitExp(exp1) + visitExp(exp2)).incStoreInt8
       case ExecutableAst.Expression.StoreInt16(exp1, _, exp2) => (visitExp(exp1) + visitExp(exp2)).incStoreInt16
       case ExecutableAst.Expression.StoreInt32(exp1, _, exp2) => (visitExp(exp1) + visitExp(exp2)).incStoreInt32
-      case ExecutableAst.Expression.Var(ident, _, tpe, loc) => AstStats(numberOfVarExpressions = 1)
-      case ExecutableAst.Expression.Ref(name, tpe, loc) => AstStats(numberOfRefExpressions = 1)
-      case ExecutableAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) => AstStats(numberOfMkClosureRefExpressions = 1)
+      case ExecutableAst.Expression.Var(ident, _, tpe, loc) => AstStats(varExpressions = 1)
+      case ExecutableAst.Expression.Ref(name, tpe, loc) => AstStats(refExpressions = 1)
+      case ExecutableAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) => AstStats(mkClosureRefExpressions = 1)
       case ExecutableAst.Expression.ApplyClosure(exp, args, tpe, loc) =>
         val s = args.foldLeft(visitExp(exp)) {
           case (acc, e) => acc + visitExp(e)
         }
-        s.copy(numberOfApplyClosureExpressions = s.numberOfApplyClosureExpressions + 1)
-      case ExecutableAst.Expression.ApplyRef(name, args, tpe, loc) => AstStats(numberOfApplyRefExpressions = 1)
-      case ExecutableAst.Expression.ApplyHook(hook, args, tpe, loc) => AstStats(numberOfApplyHookExpressions = 1)
+        s.copy(applyClosureExpressions = s.applyClosureExpressions + 1)
+      case ExecutableAst.Expression.ApplyRef(name, args, tpe, loc) => AstStats(applyRefExpressions = 1)
+      case ExecutableAst.Expression.ApplyHook(hook, args, tpe, loc) => AstStats(applyHookExpressions = 1)
       case ExecutableAst.Expression.Unary(op, exp, tpe, loc) => op match {
         case UnaryOperator.Plus => visitExp(exp).incUnaryPlus
         case UnaryOperator.Minus => visitExp(exp).incUnaryMinus
@@ -95,11 +95,6 @@ object AstStats {
       case ExecutableAst.Expression.Tag(enum, tag, exp, tpe, loc) => visitExp(exp).incTag
       case ExecutableAst.Expression.GetTagValue(tag, exp, tpe, loc) =>
         visitExp(exp).incGetTagValue
-      case ExecutableAst.Expression.FSet(elms, tpe, loc) =>
-        val s = elms.foldLeft(AstStats()) {
-          case (acc, exp) => acc + visitExp(exp)
-        }
-        s.incFSet
       case ExecutableAst.Expression.GetTupleIndex(base, offset, tpe, loc) => visitExp(base)
       case ExecutableAst.Expression.Tuple(elms, tpe, loc) =>
         val s = elms.foldLeft(AstStats()) {
@@ -108,9 +103,9 @@ object AstStats {
         s.incTuple
       case ExecutableAst.Expression.Existential(params, exp, loc) => visitExp(exp).incExistential
       case ExecutableAst.Expression.Universal(params, exp, loc) => visitExp(exp).incUniversal
-      case ExecutableAst.Expression.MatchError(tpe, loc) => AstStats(numberOfMatchErrorExpressions = 1)
-      case ExecutableAst.Expression.SwitchError(tpe, loc) => AstStats(numberOfSwitchErrorExpressions = 1)
-      case ExecutableAst.Expression.UserError(tpe, loc) => AstStats(numberOfUserErrorExpressions = 1)
+      case ExecutableAst.Expression.MatchError(tpe, loc) => AstStats(matchErrorExpressions = 1)
+      case ExecutableAst.Expression.SwitchError(tpe, loc) => AstStats(switchErrorExpressions = 1)
+      case ExecutableAst.Expression.UserError(tpe, loc) => AstStats(userErrorExpressions = 1)
       case _ => AstStats()
     }
 
@@ -127,226 +122,222 @@ object AstStats {
 /**
   * A collection of statistics about an abstract syntax tree.
   */
-case class AstStats(numberOfUnitLiterals: Int = 0,
-                    numberOfTrueLiterals: Int = 0,
-                    numberOfFalseLiterals: Int = 0,
-                    numberOfCharLiterals: Int = 0,
-                    numberOfFloat32Literals: Int = 0,
-                    numberOfFloat64Literals: Int = 0,
-                    numberOfInt8Literals: Int = 0,
-                    numberOfInt16Literals: Int = 0,
-                    numberOfInt32Literals: Int = 0,
-                    numberOfInt64Literals: Int = 0,
-                    numberOfBigIntLiterals: Int = 0,
-                    numberOfStrLiterals: Int = 0,
-                    numberOfLoadBool: Int = 0,
-                    numberOfLoadInt8: Int = 0,
-                    numberOfLoadInt16: Int = 0,
-                    numberOfLoadInt32: Int = 0,
-                    numberOfStoreBool: Int = 0,
-                    numberOfStoreInt8: Int = 0,
-                    numberOfStoreInt16: Int = 0,
-                    numberOfStoreInt32: Int = 0,
-                    numberOfVarExpressions: Int = 0,
-                    numberOfRefExpressions: Int = 0,
-                    numberOfMkClosureRefExpressions: Int = 0,
-                    numberOfApplyClosureExpressions: Int = 0,
-                    numberOfApplyRefExpressions: Int = 0,
-                    numberOfApplyHookExpressions: Int = 0,
-                    numberOfUnaryPlusExpressions: Int = 0,
-                    numberOfUnaryMinusExpressions: Int = 0,
-                    numberOfUnaryLogicalNotExpressions: Int = 0,
-                    numberOfUnaryBitwiseNegateExpressions: Int = 0,
-                    numberOfBinaryPlusExpressions: Int = 0,
-                    numberOfBinaryMinusExpressions: Int = 0,
-                    numberOfBinaryTimesExpressions: Int = 0,
-                    numberOfBinaryDivideExpressions: Int = 0,
-                    numberOfBinaryModuloExpressions: Int = 0,
-                    numberOfBinaryExponentiateExpressions: Int = 0,
-                    numberOfBinaryLessExpressions: Int = 0,
-                    numberOfBinaryLessEqualExpressions: Int = 0,
-                    numberOfBinaryGreaterExpressions: Int = 0,
-                    numberOfBinaryGreaterEqualExpressions: Int = 0,
-                    numberOfBinaryEqualExpressions: Int = 0,
-                    numberOfBinaryNotEqualExpressions: Int = 0,
-                    numberOfBinaryLogicalAndExpressions: Int = 0,
-                    numberOfBinaryLogicalOrExpressions: Int = 0,
-                    numberOfBinaryImplicationExpressions: Int = 0,
-                    numberOfBinaryBiconditionalExpressions: Int = 0,
-                    numberOfBinaryBitwiseOrExpressions: Int = 0,
-                    numberOfBinaryBitwiseXorExpressions: Int = 0,
-                    numberOfBinaryBitwiseAndExpressions: Int = 0,
-                    numberOfBinaryBitwiseLeftShiftExpressions: Int = 0,
-                    numberOfBinaryBitwiseRightShiftExpressions: Int = 0,
-                    numberOfIfThenElseExpressions: Int = 0,
-                    numberOfLetExpressions: Int = 0,
-                    numberOfCheckTagExpressions: Int = 0,
-                    numberOfGetTagValueExpressions: Int = 0,
-                    numberOfTagExpressions: Int = 0,
-                    numberOfGetTupleIndexExpressions: Int = 0,
-                    numberOfTupleExpressions: Int = 0,
-                    numberOfCheckNilExpressions: Int = 0,
-                    numberOfCheckConsExpressions: Int = 0,
-                    numberOfFSetExpressions: Int = 0,
-                    numberOfExistentialExpressions: Int = 0,
-                    numberOfUniversalExpressions: Int = 0,
-                    numberOfMatchErrorExpressions: Int = 0,
-                    numberOfUserErrorExpressions: Int = 0,
-                    numberOfSwitchErrorExpressions: Int = 0
+case class AstStats(unitLiterals: Int = 0,
+                    trueLiterals: Int = 0,
+                    falseLiterals: Int = 0,
+                    charLiterals: Int = 0,
+                    float32Literals: Int = 0,
+                    float64Literals: Int = 0,
+                    int8Literals: Int = 0,
+                    int16Literals: Int = 0,
+                    int32Literals: Int = 0,
+                    int64Literals: Int = 0,
+                    bigIntLiterals: Int = 0,
+                    strLiterals: Int = 0,
+                    loadBoolExpressions: Int = 0,
+                    loadInt8Expressions: Int = 0,
+                    loadInt16Expressions: Int = 0,
+                    loadInt32Expressions: Int = 0,
+                    storeBoolExpressions: Int = 0,
+                    storeInt8Expressions: Int = 0,
+                    storeInt16Expressions: Int = 0,
+                    storeInt32Expressions: Int = 0,
+                    varExpressions: Int = 0,
+                    refExpressions: Int = 0,
+                    mkClosureRefExpressions: Int = 0,
+                    applyClosureExpressions: Int = 0,
+                    applyRefExpressions: Int = 0,
+                    applyHookExpressions: Int = 0,
+                    unaryPlusExpressions: Int = 0,
+                    unaryMinusExpressions: Int = 0,
+                    unaryLogicalNotExpressions: Int = 0,
+                    unaryBitwiseNegateExpressions: Int = 0,
+                    plusExpressions: Int = 0,
+                    minusExpressions: Int = 0,
+                    timesExpressions: Int = 0,
+                    divideExpressions: Int = 0,
+                    moduloExpressions: Int = 0,
+                    exponentiateExpressions: Int = 0,
+                    lessExpressions: Int = 0,
+                    lessEqualExpressions: Int = 0,
+                    greaterExpressions: Int = 0,
+                    greaterEqualExpressions: Int = 0,
+                    equalExpressions: Int = 0,
+                    notEqualExpressions: Int = 0,
+                    logicalAndExpressions: Int = 0,
+                    logicalOrExpressions: Int = 0,
+                    implicationExpressions: Int = 0,
+                    biconditionalExpressions: Int = 0,
+                    bitwiseOrExpressions: Int = 0,
+                    bitwiseXorExpressions: Int = 0,
+                    bitwiseAndExpressions: Int = 0,
+                    bitwiseLeftShiftExpressions: Int = 0,
+                    bitwiseRightShiftExpressions: Int = 0,
+                    ifThenElseExpressions: Int = 0,
+                    letExpressions: Int = 0,
+                    checkTagExpressions: Int = 0,
+                    getTagValueExpressions: Int = 0,
+                    tagExpressions: Int = 0,
+                    getTupleIndexExpressions: Int = 0,
+                    tupleExpressions: Int = 0,
+                    checkNilExpressions: Int = 0,
+                    checkConsExpressions: Int = 0,
+                    existentialExpressions: Int = 0,
+                    universalExpressions: Int = 0,
+                    matchErrorExpressions: Int = 0,
+                    userErrorExpressions: Int = 0,
+                    switchErrorExpressions: Int = 0
                    ) {
 
   def +(that: AstStats): AstStats = AstStats(
-    this.numberOfUnitLiterals + that.numberOfUnitLiterals,
-    this.numberOfTrueLiterals + that.numberOfTrueLiterals,
-    this.numberOfFalseLiterals + that.numberOfFalseLiterals,
-    this.numberOfCharLiterals + that.numberOfCharLiterals,
-    this.numberOfFloat32Literals + that.numberOfFloat32Literals,
-    this.numberOfFloat64Literals + that.numberOfFloat64Literals,
-    this.numberOfInt8Literals + that.numberOfInt8Literals,
-    this.numberOfInt16Literals + that.numberOfInt16Literals,
-    this.numberOfInt32Literals + that.numberOfInt32Literals,
-    this.numberOfInt64Literals + that.numberOfInt64Literals,
-    this.numberOfBigIntLiterals + that.numberOfBigIntLiterals,
-    this.numberOfStrLiterals + that.numberOfStrLiterals,
-    this.numberOfLoadBool + that.numberOfLoadBool,
-    this.numberOfLoadInt8 + that.numberOfLoadInt8,
-    this.numberOfLoadInt16 + that.numberOfLoadInt16,
-    this.numberOfLoadInt32 + that.numberOfLoadInt32,
-    this.numberOfStoreBool + that.numberOfStoreBool,
-    this.numberOfStoreInt8 + that.numberOfStoreInt8,
-    this.numberOfStoreInt16 + that.numberOfStoreInt16,
-    this.numberOfStoreInt32 + that.numberOfStoreInt32,
-    this.numberOfVarExpressions + that.numberOfVarExpressions,
-    this.numberOfRefExpressions + that.numberOfRefExpressions,
-    this.numberOfMkClosureRefExpressions + that.numberOfMkClosureRefExpressions,
-    this.numberOfApplyClosureExpressions + that.numberOfApplyClosureExpressions,
-    this.numberOfApplyRefExpressions + that.numberOfApplyRefExpressions,
-    this.numberOfApplyHookExpressions + that.numberOfApplyHookExpressions,
-    this.numberOfUnaryPlusExpressions + that.numberOfUnaryPlusExpressions,
-    this.numberOfUnaryMinusExpressions + that.numberOfUnaryMinusExpressions,
-    this.numberOfUnaryLogicalNotExpressions + that.numberOfUnaryLogicalNotExpressions,
-    this.numberOfUnaryBitwiseNegateExpressions + that.numberOfUnaryBitwiseNegateExpressions,
-    this.numberOfBinaryPlusExpressions + that.numberOfBinaryPlusExpressions,
-    this.numberOfBinaryMinusExpressions + that.numberOfBinaryMinusExpressions,
-    this.numberOfBinaryTimesExpressions + that.numberOfBinaryTimesExpressions,
-    this.numberOfBinaryDivideExpressions + that.numberOfBinaryDivideExpressions,
-    this.numberOfBinaryModuloExpressions + that.numberOfBinaryModuloExpressions,
-    this.numberOfBinaryExponentiateExpressions + that.numberOfBinaryExponentiateExpressions,
-    this.numberOfBinaryLessExpressions + that.numberOfBinaryLessExpressions,
-    this.numberOfBinaryLessEqualExpressions + that.numberOfBinaryLessEqualExpressions,
-    this.numberOfBinaryGreaterExpressions + that.numberOfBinaryGreaterExpressions,
-    this.numberOfBinaryGreaterEqualExpressions + that.numberOfBinaryGreaterEqualExpressions,
-    this.numberOfBinaryEqualExpressions + that.numberOfBinaryEqualExpressions,
-    this.numberOfBinaryNotEqualExpressions + that.numberOfBinaryNotEqualExpressions,
-    this.numberOfBinaryLogicalAndExpressions + that.numberOfBinaryLogicalAndExpressions,
-    this.numberOfBinaryLogicalOrExpressions + that.numberOfBinaryLogicalOrExpressions,
-    this.numberOfBinaryImplicationExpressions + that.numberOfBinaryImplicationExpressions,
-    this.numberOfBinaryBiconditionalExpressions + that.numberOfBinaryBiconditionalExpressions,
-    this.numberOfBinaryBitwiseOrExpressions + that.numberOfBinaryBitwiseOrExpressions,
-    this.numberOfBinaryBitwiseXorExpressions + that.numberOfBinaryBitwiseXorExpressions,
-    this.numberOfBinaryBitwiseAndExpressions + that.numberOfBinaryBitwiseAndExpressions,
-    this.numberOfBinaryBitwiseLeftShiftExpressions + that.numberOfBinaryBitwiseLeftShiftExpressions,
-    this.numberOfBinaryBitwiseRightShiftExpressions + that.numberOfBinaryBitwiseRightShiftExpressions,
-    this.numberOfIfThenElseExpressions + that.numberOfIfThenElseExpressions,
-    this.numberOfLetExpressions + that.numberOfLetExpressions,
-    this.numberOfCheckTagExpressions + that.numberOfCheckTagExpressions,
-    this.numberOfGetTagValueExpressions + that.numberOfGetTagValueExpressions,
-    this.numberOfTagExpressions + that.numberOfTagExpressions,
-    this.numberOfGetTupleIndexExpressions + that.numberOfGetTupleIndexExpressions,
-    this.numberOfTupleExpressions + that.numberOfTupleExpressions,
-    this.numberOfCheckNilExpressions + that.numberOfCheckNilExpressions,
-    this.numberOfCheckConsExpressions + that.numberOfCheckConsExpressions,
-    this.numberOfFSetExpressions + that.numberOfFSetExpressions,
-    this.numberOfExistentialExpressions + that.numberOfExistentialExpressions,
-    this.numberOfUniversalExpressions + that.numberOfUniversalExpressions,
-    this.numberOfMatchErrorExpressions + that.numberOfMatchErrorExpressions,
-    this.numberOfUserErrorExpressions + that.numberOfUserErrorExpressions,
-    this.numberOfSwitchErrorExpressions + that.numberOfSwitchErrorExpressions
+    this.unitLiterals + that.unitLiterals,
+    this.trueLiterals + that.trueLiterals,
+    this.falseLiterals + that.falseLiterals,
+    this.charLiterals + that.charLiterals,
+    this.float32Literals + that.float32Literals,
+    this.float64Literals + that.float64Literals,
+    this.int8Literals + that.int8Literals,
+    this.int16Literals + that.int16Literals,
+    this.int32Literals + that.int32Literals,
+    this.int64Literals + that.int64Literals,
+    this.bigIntLiterals + that.bigIntLiterals,
+    this.strLiterals + that.strLiterals,
+    this.loadBoolExpressions + that.loadBoolExpressions,
+    this.loadInt8Expressions + that.loadInt8Expressions,
+    this.loadInt16Expressions + that.loadInt16Expressions,
+    this.loadInt32Expressions + that.loadInt32Expressions,
+    this.storeBoolExpressions + that.storeBoolExpressions,
+    this.storeInt8Expressions + that.storeInt8Expressions,
+    this.storeInt16Expressions + that.storeInt16Expressions,
+    this.storeInt32Expressions + that.storeInt32Expressions,
+    this.varExpressions + that.varExpressions,
+    this.refExpressions + that.refExpressions,
+    this.mkClosureRefExpressions + that.mkClosureRefExpressions,
+    this.applyClosureExpressions + that.applyClosureExpressions,
+    this.applyRefExpressions + that.applyRefExpressions,
+    this.applyHookExpressions + that.applyHookExpressions,
+    this.unaryPlusExpressions + that.unaryPlusExpressions,
+    this.unaryMinusExpressions + that.unaryMinusExpressions,
+    this.unaryLogicalNotExpressions + that.unaryLogicalNotExpressions,
+    this.unaryBitwiseNegateExpressions + that.unaryBitwiseNegateExpressions,
+    this.plusExpressions + that.plusExpressions,
+    this.minusExpressions + that.minusExpressions,
+    this.timesExpressions + that.timesExpressions,
+    this.divideExpressions + that.divideExpressions,
+    this.moduloExpressions + that.moduloExpressions,
+    this.exponentiateExpressions + that.exponentiateExpressions,
+    this.lessExpressions + that.lessExpressions,
+    this.lessEqualExpressions + that.lessEqualExpressions,
+    this.greaterExpressions + that.greaterExpressions,
+    this.greaterEqualExpressions + that.greaterEqualExpressions,
+    this.equalExpressions + that.equalExpressions,
+    this.notEqualExpressions + that.notEqualExpressions,
+    this.logicalAndExpressions + that.logicalAndExpressions,
+    this.logicalOrExpressions + that.logicalOrExpressions,
+    this.implicationExpressions + that.implicationExpressions,
+    this.biconditionalExpressions + that.biconditionalExpressions,
+    this.bitwiseOrExpressions + that.bitwiseOrExpressions,
+    this.bitwiseXorExpressions + that.bitwiseXorExpressions,
+    this.bitwiseAndExpressions + that.bitwiseAndExpressions,
+    this.bitwiseLeftShiftExpressions + that.bitwiseLeftShiftExpressions,
+    this.bitwiseRightShiftExpressions + that.bitwiseRightShiftExpressions,
+    this.ifThenElseExpressions + that.ifThenElseExpressions,
+    this.letExpressions + that.letExpressions,
+    this.checkTagExpressions + that.checkTagExpressions,
+    this.getTagValueExpressions + that.getTagValueExpressions,
+    this.tagExpressions + that.tagExpressions,
+    this.getTupleIndexExpressions + that.getTupleIndexExpressions,
+    this.tupleExpressions + that.tupleExpressions,
+    this.checkNilExpressions + that.checkNilExpressions,
+    this.checkConsExpressions + that.checkConsExpressions,
+    this.existentialExpressions + that.existentialExpressions,
+    this.universalExpressions + that.universalExpressions,
+    this.matchErrorExpressions + that.matchErrorExpressions,
+    this.userErrorExpressions + that.userErrorExpressions,
+    this.switchErrorExpressions + that.switchErrorExpressions
   )
 
-  def incLoadBool: AstStats = copy(numberOfLoadBool = numberOfLoadBool + 1)
+  def incLoadBool: AstStats = copy(loadBoolExpressions = loadBoolExpressions + 1)
 
-  def incLoadInt8: AstStats = copy(numberOfLoadInt8 = numberOfLoadInt8 + 1)
+  def incLoadInt8: AstStats = copy(loadInt8Expressions = loadInt8Expressions + 1)
 
-  def incLoadInt16: AstStats = copy(numberOfLoadInt16 = numberOfLoadInt16 + 1)
+  def incLoadInt16: AstStats = copy(loadInt16Expressions = loadInt16Expressions + 1)
 
-  def incLoadInt32: AstStats = copy(numberOfLoadInt32 = numberOfLoadInt32 + 1)
+  def incLoadInt32: AstStats = copy(loadInt32Expressions = loadInt32Expressions + 1)
 
-  def incStoreBool: AstStats = copy(numberOfStoreBool = numberOfStoreBool + 1)
+  def incStoreBool: AstStats = copy(storeBoolExpressions = storeBoolExpressions + 1)
 
-  def incStoreInt8: AstStats = copy(numberOfStoreInt8 = numberOfStoreInt8 + 1)
+  def incStoreInt8: AstStats = copy(storeInt8Expressions = storeInt8Expressions + 1)
 
-  def incStoreInt16: AstStats = copy(numberOfStoreInt16 = numberOfStoreInt16 + 1)
+  def incStoreInt16: AstStats = copy(storeInt16Expressions = storeInt16Expressions + 1)
 
-  def incStoreInt32: AstStats = copy(numberOfStoreInt32 = numberOfStoreInt32 + 1)
+  def incStoreInt32: AstStats = copy(storeInt32Expressions = storeInt32Expressions + 1)
 
-  def incUnaryPlus: AstStats = copy(numberOfUnaryPlusExpressions = numberOfUnaryPlusExpressions + 1)
+  def incUnaryPlus: AstStats = copy(unaryPlusExpressions = unaryPlusExpressions + 1)
 
-  def incUnaryMinus: AstStats = copy(numberOfUnaryMinusExpressions = numberOfUnaryMinusExpressions + 1)
+  def incUnaryMinus: AstStats = copy(unaryMinusExpressions = unaryMinusExpressions + 1)
 
-  def incUnaryLogicalNot: AstStats = copy(numberOfUnaryLogicalNotExpressions = numberOfUnaryLogicalNotExpressions + 1)
+  def incUnaryLogicalNot: AstStats = copy(unaryLogicalNotExpressions = unaryLogicalNotExpressions + 1)
 
-  def incUnaryBitwiseNegate: AstStats = copy(numberOfUnaryBitwiseNegateExpressions = numberOfUnaryBitwiseNegateExpressions + 1)
+  def incUnaryBitwiseNegate: AstStats = copy(unaryBitwiseNegateExpressions = unaryBitwiseNegateExpressions + 1)
 
-  def incBinaryPlus: AstStats = copy(numberOfBinaryPlusExpressions = numberOfBinaryPlusExpressions + 1)
+  def incBinaryPlus: AstStats = copy(plusExpressions = plusExpressions + 1)
 
-  def incBinaryMinus: AstStats = copy(numberOfBinaryMinusExpressions = numberOfBinaryMinusExpressions + 1)
+  def incBinaryMinus: AstStats = copy(minusExpressions = minusExpressions + 1)
 
-  def incBinaryTimes: AstStats = copy(numberOfBinaryTimesExpressions = numberOfBinaryTimesExpressions + 1)
+  def incBinaryTimes: AstStats = copy(timesExpressions = timesExpressions + 1)
 
-  def incBinaryDivide: AstStats = copy(numberOfBinaryDivideExpressions = numberOfBinaryDivideExpressions + 1)
+  def incBinaryDivide: AstStats = copy(divideExpressions = divideExpressions + 1)
 
-  def incBinaryModulo: AstStats = copy(numberOfBinaryModuloExpressions = numberOfBinaryModuloExpressions + 1)
+  def incBinaryModulo: AstStats = copy(moduloExpressions = moduloExpressions + 1)
 
-  def incBinaryExponentiate: AstStats = copy(numberOfBinaryExponentiateExpressions = numberOfBinaryExponentiateExpressions + 1)
+  def incBinaryExponentiate: AstStats = copy(exponentiateExpressions = exponentiateExpressions + 1)
 
-  def incBinaryLess: AstStats = copy(numberOfBinaryLessExpressions = numberOfBinaryLessExpressions + 1)
+  def incBinaryLess: AstStats = copy(lessExpressions = lessExpressions + 1)
 
-  def incBinaryLessEqual: AstStats = copy(numberOfBinaryLessEqualExpressions = numberOfBinaryLessEqualExpressions + 1)
+  def incBinaryLessEqual: AstStats = copy(lessEqualExpressions = lessEqualExpressions + 1)
 
-  def incBinaryGreater: AstStats = copy(numberOfBinaryGreaterExpressions = numberOfBinaryGreaterExpressions + 1)
+  def incBinaryGreater: AstStats = copy(greaterExpressions = greaterExpressions + 1)
 
-  def incBinaryGreaterEqual: AstStats = copy(numberOfBinaryGreaterEqualExpressions = numberOfBinaryGreaterEqualExpressions + 1)
+  def incBinaryGreaterEqual: AstStats = copy(greaterEqualExpressions = greaterEqualExpressions + 1)
 
-  def incBinaryEqual: AstStats = copy(numberOfBinaryEqualExpressions = numberOfBinaryEqualExpressions + 1)
+  def incBinaryEqual: AstStats = copy(equalExpressions = equalExpressions + 1)
 
-  def incBinaryNotEqual: AstStats = copy(numberOfBinaryNotEqualExpressions = numberOfBinaryNotEqualExpressions + 1)
+  def incBinaryNotEqual: AstStats = copy(notEqualExpressions = notEqualExpressions + 1)
 
-  def incBinaryLogicalAnd: AstStats = copy(numberOfBinaryLogicalAndExpressions = numberOfBinaryLogicalAndExpressions + 1)
+  def incBinaryLogicalAnd: AstStats = copy(logicalAndExpressions = logicalAndExpressions + 1)
 
-  def incBinaryLogicalOr: AstStats = copy(numberOfBinaryLogicalOrExpressions = numberOfBinaryLogicalOrExpressions + 1)
+  def incBinaryLogicalOr: AstStats = copy(logicalOrExpressions = logicalOrExpressions + 1)
 
-  def incBinaryImplication: AstStats = copy(numberOfBinaryImplicationExpressions = numberOfBinaryImplicationExpressions + 1)
+  def incBinaryImplication: AstStats = copy(implicationExpressions = implicationExpressions + 1)
 
-  def incBinaryBiconditional: AstStats = copy(numberOfBinaryBiconditionalExpressions = numberOfBinaryBiconditionalExpressions + 1)
+  def incBinaryBiconditional: AstStats = copy(biconditionalExpressions = biconditionalExpressions + 1)
 
-  def incBinaryBitwiseAnd: AstStats = copy(numberOfBinaryBitwiseAndExpressions = numberOfBinaryBitwiseAndExpressions + 1)
+  def incBinaryBitwiseAnd: AstStats = copy(bitwiseAndExpressions = bitwiseAndExpressions + 1)
 
-  def incBinaryBitwiseOr: AstStats = copy(numberOfBinaryBitwiseOrExpressions = numberOfBinaryBitwiseOrExpressions + 1)
+  def incBinaryBitwiseOr: AstStats = copy(bitwiseOrExpressions = bitwiseOrExpressions + 1)
 
-  def incBinaryBitwiseXor: AstStats = copy(numberOfBinaryBitwiseXorExpressions = numberOfBinaryBitwiseXorExpressions + 1)
+  def incBinaryBitwiseXor: AstStats = copy(bitwiseXorExpressions = bitwiseXorExpressions + 1)
 
-  def incBinaryBitwiseLeftShift: AstStats = copy(numberOfBinaryBitwiseLeftShiftExpressions = numberOfBinaryBitwiseLeftShiftExpressions + 1)
+  def incBinaryBitwiseLeftShift: AstStats = copy(bitwiseLeftShiftExpressions = bitwiseLeftShiftExpressions + 1)
 
-  def incBinaryBitwiseRightShift: AstStats = copy(numberOfBinaryBitwiseRightShiftExpressions = numberOfBinaryBitwiseRightShiftExpressions + 1)
+  def incBinaryBitwiseRightShift: AstStats = copy(bitwiseRightShiftExpressions = bitwiseRightShiftExpressions + 1)
 
-  def incLet: AstStats = copy(numberOfLetExpressions = numberOfLetExpressions + 1)
+  def incLet: AstStats = copy(letExpressions = letExpressions + 1)
 
-  def incCheckTag: AstStats = copy(numberOfCheckTagExpressions = numberOfCheckTagExpressions + 1)
+  def incCheckTag: AstStats = copy(checkTagExpressions = checkTagExpressions + 1)
 
-  def incGetTagValue: AstStats = copy(numberOfGetTagValueExpressions = numberOfGetTagValueExpressions + 1)
+  def incGetTagValue: AstStats = copy(getTagValueExpressions = getTagValueExpressions + 1)
 
-  def incIfThenElse: AstStats = copy(numberOfIfThenElseExpressions = numberOfIfThenElseExpressions + 1)
+  def incIfThenElse: AstStats = copy(ifThenElseExpressions = ifThenElseExpressions + 1)
 
-  def incFSet: AstStats = copy(numberOfFSetExpressions = numberOfFSetExpressions + 1)
+  def incTag: AstStats = copy(tagExpressions = tagExpressions + 1)
 
-  def incTag: AstStats = copy(numberOfTagExpressions = numberOfTagExpressions + 1)
+  def incTuple: AstStats = copy(tupleExpressions = tupleExpressions + 1)
 
-  def incTuple: AstStats = copy(numberOfTupleExpressions = numberOfTupleExpressions + 1)
+  def incExistential: AstStats = copy(existentialExpressions = existentialExpressions + 1)
 
-  def incExistential: AstStats = copy(numberOfExistentialExpressions = numberOfExistentialExpressions + 1)
-
-  def incUniversal: AstStats = copy(numberOfUniversalExpressions = numberOfUniversalExpressions + 1)
+  def incUniversal: AstStats = copy(universalExpressions = universalExpressions + 1)
 
 }
 
