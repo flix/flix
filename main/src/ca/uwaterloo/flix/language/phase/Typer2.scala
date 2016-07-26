@@ -210,18 +210,17 @@ object Typer2 {
          * Literal expression.
          */
         case NamedAst.Expression.Unit(loc) => liftM(Type.Unit)
-        //case NamedAst.Expression.True(loc) => (subst0, Type.Bool).toSuccess
-        //case NamedAst.Expression.False(loc) => (subst0, Type.Bool).toSuccess
-        //case NamedAst.Expression.Char(lit, loc) => (subst0, Type.Char).toSuccess
-        //case NamedAst.Expression.Float32(lit, loc) => (subst0, Type.Float32).toSuccess
-        //case NamedAst.Expression.Float64(lit, loc) => (subst0, Type.Float64).toSuccess
-        //case NamedAst.Expression.Int8(lit, loc) => (subst0, Type.Int8).toSuccess
-        //case NamedAst.Expression.Int16(lit, loc) => (subst0, Type.Int16).toSuccess
-        //case NamedAst.Expression.Int32(lit, loc) => (subst0, Type.Int32).toSuccess
-        //case NamedAst.Expression.Int64(lit, loc) => (subst0, Type.Int64).toSuccess
-        //case NamedAst.Expression.BigInt(lit, loc) => (subst0, Type.BigInt).toSuccess
-        //case NamedAst.Expression.Str(lit, loc) => (subst0, Type.Str).toSuccess
-
+        case NamedAst.Expression.True(loc) => liftM(Type.Bool)
+        case NamedAst.Expression.False(loc) => liftM(Type.Bool)
+        case NamedAst.Expression.Char(lit, loc) => liftM(Type.Char)
+        case NamedAst.Expression.Float32(lit, loc) => liftM(Type.Float32)
+        case NamedAst.Expression.Float64(lit, loc) => liftM(Type.Float64)
+        case NamedAst.Expression.Int8(lit, loc) => liftM(Type.Int8)
+        case NamedAst.Expression.Int16(lit, loc) => liftM(Type.Int16)
+        case NamedAst.Expression.Int32(lit, loc) => liftM(Type.Int32)
+        case NamedAst.Expression.Int64(lit, loc) => liftM(Type.Int64)
+        case NamedAst.Expression.BigInt(lit, loc) => liftM(Type.BigInt)
+        case NamedAst.Expression.Str(lit, loc) => liftM(Type.Str)
 
         /*
          * Lambda expression.
