@@ -39,8 +39,6 @@ object AstStats {
       case SimplifiedAst.Expression.Int64(lit) => AstStats(numberOfExpressions = 1, numberOfInt64Literals = 1)
       case SimplifiedAst.Expression.BigInt(lit) => AstStats(numberOfExpressions = 1, numberOfBigIntLiterals = 1)
       case SimplifiedAst.Expression.Str(lit) => AstStats(numberOfExpressions = 1, numberOfStrLiterals = 1)
-      case SimplifiedAst.Expression.Var(ident, _, tpe, loc) => AstStats(numberOfExpressions = 1, numberOfVarExpressions = 1)
-      case SimplifiedAst.Expression.Ref(name, tpe, loc) => AstStats(numberOfExpressions = 1, numberOfRefExpressions = 1)
       case SimplifiedAst.Expression.LoadBool(exp, _) => visitExp(exp).incLoadBool
       case SimplifiedAst.Expression.LoadInt8(exp, _) => visitExp(exp).incLoadInt8
       case SimplifiedAst.Expression.LoadInt16(exp, _) => visitExp(exp).incLoadInt16
@@ -49,8 +47,19 @@ object AstStats {
       case SimplifiedAst.Expression.StoreInt8(exp1, _, exp2) => (visitExp(exp1) + visitExp(exp2)).incStoreInt8
       case SimplifiedAst.Expression.StoreInt16(exp1, _, exp2) => (visitExp(exp1) + visitExp(exp2)).incStoreInt16
       case SimplifiedAst.Expression.StoreInt32(exp1, _, exp2) => (visitExp(exp1) + visitExp(exp2)).incStoreInt32
-
-      // TODO: Rest
+      case SimplifiedAst.Expression.Var(ident, _, tpe, loc) => AstStats(numberOfExpressions = 1, numberOfVarExpressions = 1)
+      case SimplifiedAst.Expression.Ref(name, tpe, loc) => AstStats(numberOfExpressions = 1, numberOfRefExpressions = 1)
+      case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) => ???
+      case SimplifiedAst.Expression.Hook(hook, tpe, loc) => AstStats(numberOfHookExpressions = 1)
+      case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) => visitExp(lambda).incMkClosure
+      case SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) => AstStats(numberOfMkClosureRefExpressions = 1)
+      case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
+        val s = args.foldLeft(visitExp(exp)) {
+          case (acc, e) => acc + visitExp(e)
+        }
+        s.incApply
+      case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) => AstStats(numberOfApplyRefExpressions = 1)
+      case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) => AstStats(numberOfApplyHookExpressions = 1)
       case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) => op match {
         case UnaryOperator.Plus => visitExp(exp).incUnaryPlus
         case UnaryOperator.Minus => visitExp(exp).incUnaryMinus
@@ -86,14 +95,18 @@ object AstStats {
         (visitExp(exp1) + visitExp(exp2)).incLet
       case SimplifiedAst.Expression.CheckTag(tag, exp, loc) =>
         visitExp(exp).incCheckTag
+      case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) => ???
       case SimplifiedAst.Expression.GetTagValue(tag, exp, tpe, loc) =>
         visitExp(exp).incGetTagValue
-
+      case SimplifiedAst.Expression.CheckNil(exp, loc) => ???
+      case SimplifiedAst.Expression.CheckCons(exp, loc) => ???
       case SimplifiedAst.Expression.FSet(elms, tpe, loc) =>
         val s = elms.foldLeft(AstStats()) {
           case (acc, exp) => acc + visitExp(exp)
         }
         s.incFSet
+      case SimplifiedAst.Expression.GetTupleIndex(base, offset, tpe, loc) => ???
+      case SimplifiedAst.Expression.Tuple(elms, tpe, loc) => ???
       case SimplifiedAst.Expression.Existential(params, exp, loc) => visitExp(exp).incExistential
       case SimplifiedAst.Expression.Universal(params, exp, loc) => visitExp(exp).incUniversal
       case SimplifiedAst.Expression.MatchError(tpe, loc) => AstStats(numberOfExpressions = 1, numberOfMatchErrorExpressions = 1)
@@ -127,7 +140,14 @@ case class AstStats(numberOfExpressions: Int = 0,
                     numberOfInt64Literals: Int = 0,
                     numberOfBigIntLiterals: Int = 0,
                     numberOfStrLiterals: Int = 0,
-                    // TODO: Load and Store
+                    numberOfLoadBool: Int = 0,
+                    numberOfLoadInt8: Int = 0,
+                    numberOfLoadInt16: Int = 0,
+                    numberOfLoadInt32: Int = 0,
+                    numberOfStoreBool: Int = 0,
+                    numberOfStoreInt8: Int = 0,
+                    numberOfStoreInt16: Int = 0,
+                    numberOfStoreInt32: Int = 0,
                     numberOfVarExpressions: Int = 0,
                     numberOfRefExpressions: Int = 0,
                     numberOfLambdaExpressions: Int = 0,
@@ -185,42 +205,42 @@ case class AstStats(numberOfExpressions: Int = 0,
 
   def incLoadBool: AstStats = copy(
     numberOfExpressions = numberOfExpressions + 1,
-    ??? // TODO
+    numberOfLoadBool = numberOfLoadBool + 1
   )
 
   def incLoadInt8: AstStats = copy(
     numberOfExpressions = numberOfExpressions + 1,
-    ??? // TODO
+    numberOfLoadInt8 = numberOfLoadInt8 + 1
   )
 
   def incLoadInt16: AstStats = copy(
     numberOfExpressions = numberOfExpressions + 1,
-    ??? // TODO
+    numberOfLoadInt16 = numberOfLoadInt16 + 1
   )
 
   def incLoadInt32: AstStats = copy(
     numberOfExpressions = numberOfExpressions + 1,
-    ??? // TODO
+    numberOfLoadInt32 = numberOfLoadInt32 + 1
   )
 
   def incStoreBool: AstStats = copy(
     numberOfExpressions = numberOfExpressions + 1,
-    ??? // TODO
+    numberOfStoreBool = numberOfStoreBool + 1
   )
 
   def incStoreInt8: AstStats = copy(
     numberOfExpressions = numberOfExpressions + 1,
-    ??? // TODO
+    numberOfStoreInt8 = numberOfStoreInt8 + 1
   )
 
   def incStoreInt16: AstStats = copy(
     numberOfExpressions = numberOfExpressions + 1,
-    ??? // TODO
+    numberOfStoreInt16 = numberOfStoreInt16 + 1
   )
 
   def incStoreInt32: AstStats = copy(
     numberOfExpressions = numberOfExpressions + 1,
-    ??? // TODO
+    numberOfStoreInt32 = numberOfStoreInt32 + 1
   )
 
   def incUnaryPlus: AstStats = copy(
@@ -373,6 +393,21 @@ case class AstStats(numberOfExpressions: Int = 0,
     numberOfBinaryBitwiseRightShiftExpressions = numberOfBinaryBitwiseRightShiftExpressions + 1
   )
 
+  def incLambda: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfLambdaExpressions = numberOfLambdaExpressions + 1
+  )
+
+  def incMkClosure: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfMkClosureExpressions = numberOfMkClosureExpressions + 1
+  )
+
+  def incApply: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfApplyExpressions = numberOfApplyExpressions + 1
+  )
+
   def incLet: AstStats = copy(
     numberOfExpressions = numberOfExpressions + 1,
     numberOfLetExpressions = numberOfLetExpressions + 1
@@ -392,8 +427,6 @@ case class AstStats(numberOfExpressions: Int = 0,
     numberOfExpressions = numberOfExpressions + 1,
     numberOfIfThenElseExpressions = numberOfIfThenElseExpressions + 1
   )
-
-  // TODO: Rest
 
   def incFSet: AstStats = copy(
     numberOfExpressions = numberOfExpressions + 1,
