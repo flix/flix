@@ -125,6 +125,30 @@ object Typer2 {
   }
 
 
+  case class InferMonad[A](a: A, s: Substitution) {
+
+    def map(f: A => A): InferMonad[A] = InferMonad(f(a), s)
+
+    def flatMap(f: A => InferMonad[A]): InferMonad[A] = {
+      val t = f(a)
+      InferMonad(t.a, t.s @@ s)
+    }
+
+  }
+
+  def liftM[A](a: A): InferMonad[A] = InferMonad(a, Substitution.empty)
+
+  def unifyM(tpe1: Type, tpe2: Type): InferMonad[Type] = unify(tpe1, tpe2) match {
+    case Validation.Success(subst, _) => InferMonad[Type](subst(tpe1), subst)
+    case _ => ???
+  }
+
+  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type): InferMonad[Type] =
+    for (
+      tpe <- unifyM(tpe1, tpe2);
+      res <- unifyM(tpe, tpe3)
+    ) yield res
+
   /**
     * Type checks the given program.
     */
@@ -143,58 +167,71 @@ object Typer2 {
       */
     def infer(exp0: NamedAst.Expression)(implicit genSym: GenSym): Unit = {
 
-
       /**
         *
         */
-      def visitExp1(e0: NamedAst.Expression, subst0: Substitution): Validation[(Substitution, Type), TypeError] = e0 match {
+      def visitExpM(e0: NamedAst.Expression): InferMonad[Type] = e0 match {
 
         /*
          * Wildcard expression.
          */
-        case NamedAst.Expression.Wild(tpe, loc) => (subst0, tpe).toSuccess
+        case NamedAst.Expression.Wild(tpe, loc) => liftM(tpe)
 
         /*
          * Variable expression.
          */
-        case NamedAst.Expression.Var(sym, tvar, loc) => (subst0, tvar).toSuccess
+        case NamedAst.Expression.Var(sym, tvar, loc) => liftM(tvar)
 
         /*
          * Reference expression.
          */
-        case NamedAst.Expression.Ref(ref, tvar, loc) => (subst0, tvar).toSuccess
+        case NamedAst.Expression.Ref(ref, tvar, loc) => liftM(tvar)
 
         /*
          * Literal expression.
          */
-        case NamedAst.Expression.Unit(loc) => (subst0, Type.Unit).toSuccess
-        case NamedAst.Expression.True(loc) => (subst0, Type.Bool).toSuccess
-        case NamedAst.Expression.False(loc) => (subst0, Type.Bool).toSuccess
-        case NamedAst.Expression.Char(lit, loc) => (subst0, Type.Char).toSuccess
-        case NamedAst.Expression.Float32(lit, loc) => (subst0, Type.Float32).toSuccess
-        case NamedAst.Expression.Float64(lit, loc) => (subst0, Type.Float64).toSuccess
-        case NamedAst.Expression.Int8(lit, loc) => (subst0, Type.Int8).toSuccess
-        case NamedAst.Expression.Int16(lit, loc) => (subst0, Type.Int16).toSuccess
-        case NamedAst.Expression.Int32(lit, loc) => (subst0, Type.Int32).toSuccess
-        case NamedAst.Expression.Int64(lit, loc) => (subst0, Type.Int64).toSuccess
-        case NamedAst.Expression.BigInt(lit, loc) => (subst0, Type.BigInt).toSuccess
-        case NamedAst.Expression.Str(lit, loc) => (subst0, Type.Str).toSuccess
+        case NamedAst.Expression.Unit(loc) => liftM(Type.Unit)
+        //case NamedAst.Expression.True(loc) => (subst0, Type.Bool).toSuccess
+        //case NamedAst.Expression.False(loc) => (subst0, Type.Bool).toSuccess
+        //case NamedAst.Expression.Char(lit, loc) => (subst0, Type.Char).toSuccess
+        //case NamedAst.Expression.Float32(lit, loc) => (subst0, Type.Float32).toSuccess
+        //case NamedAst.Expression.Float64(lit, loc) => (subst0, Type.Float64).toSuccess
+        //case NamedAst.Expression.Int8(lit, loc) => (subst0, Type.Int8).toSuccess
+        //case NamedAst.Expression.Int16(lit, loc) => (subst0, Type.Int16).toSuccess
+        //case NamedAst.Expression.Int32(lit, loc) => (subst0, Type.Int32).toSuccess
+        //case NamedAst.Expression.Int64(lit, loc) => (subst0, Type.Int64).toSuccess
+        //case NamedAst.Expression.BigInt(lit, loc) => (subst0, Type.BigInt).toSuccess
+        //case NamedAst.Expression.Str(lit, loc) => (subst0, Type.Str).toSuccess
+
+        /*
+         * Match expression.
+         */
+        case NamedAst.Expression.Match(exp1, rules, tpe, loc) =>
+          liftM(Type.Int64)
 
         /*
          * If-then-else expression.
          */
         case NamedAst.Expression.IfThenElse(exp1, exp2, exp3, tvar, loc) =>
-          visitExp1(exp1, subst0) map {
-            case (subst1, tpe1) => visitExp1(exp2, subst1) map {
-              case (subst2, tpe2) => visitExp1(exp3, subst2) map {
-                case (subst3, tpe3) => unify(subst3(tpe1), Type.Bool) map {
-                  case subst4 => unify(subst4(tpe2), subst4(tpe3))
-                }
-              }
-            }
-          }
+          for (
+            tpe1 <- visitExpM(exp1);
+            tpe2 <- visitExpM(exp2);
+            tpe3 <- visitExpM(exp3);
+            ____ <- unifyM(Type.Bool, tpe1);
+            rtpe <- unifyM(tvar, tpe2, tpe3)
+          )
+            yield rtpe
 
-          ???
+        /*
+         * Tag expression.
+         */
+        case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
+          for (
+            tpe <- visitExpM(exp)
+          )
+            yield Type.Int64 // TODO
+
+
       }
 
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -583,6 +620,8 @@ object Typer2 {
 
 
       // TODO: Need to create initial type environment from defn
+
+      visitExpM(exp0)
 
       visitExp(exp0, Map.empty)
 
