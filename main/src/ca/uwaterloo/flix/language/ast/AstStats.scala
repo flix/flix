@@ -95,7 +95,7 @@ object AstStats {
         (visitExp(exp1) + visitExp(exp2)).incLet
       case SimplifiedAst.Expression.CheckTag(tag, exp, loc) =>
         visitExp(exp).incCheckTag
-      case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) => ???
+      case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) => visitExp(exp).incTag
       case SimplifiedAst.Expression.GetTagValue(tag, exp, tpe, loc) =>
         visitExp(exp).incGetTagValue
       case SimplifiedAst.Expression.CheckNil(exp, loc) => ???
@@ -106,7 +106,11 @@ object AstStats {
         }
         s.incFSet
       case SimplifiedAst.Expression.GetTupleIndex(base, offset, tpe, loc) => ???
-      case SimplifiedAst.Expression.Tuple(elms, tpe, loc) => ???
+      case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
+        val s = elms.foldLeft(AstStats()) {
+          case (acc, e) => acc + visitExp(e)
+        }
+        s.incTuple
       case SimplifiedAst.Expression.Existential(params, exp, loc) => visitExp(exp).incExistential
       case SimplifiedAst.Expression.Universal(params, exp, loc) => visitExp(exp).incUniversal
       case SimplifiedAst.Expression.MatchError(tpe, loc) => AstStats(numberOfExpressions = 1, numberOfMatchErrorExpressions = 1)
@@ -200,6 +204,12 @@ case class AstStats(numberOfExpressions: Int = 0,
                     numberOfUserErrorExpressions: Int = 0,
                     numberOfSwitchErrorExpressions: Int = 0
                    ) {
+
+  def totalUnaryExpressions: Int = ???
+
+  def totalBinaryExpressions: Int = ???
+
+  def totalExpressions: Int = ???
 
   def +(that: AstStats): AstStats = ???
 
@@ -431,6 +441,16 @@ case class AstStats(numberOfExpressions: Int = 0,
   def incFSet: AstStats = copy(
     numberOfExpressions = numberOfExpressions + 1,
     numberOfFSetExpressions = numberOfFSetExpressions + 1
+  )
+
+  def incTag: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfTagExpressions = numberOfTagExpressions + 1
+  )
+
+  def incTuple: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfTupleExpressions = numberOfTupleExpressions + 1
   )
 
   def incExistential: AstStats = copy(
