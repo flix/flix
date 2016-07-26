@@ -62,9 +62,21 @@ object AstStats {
         (visitExp(exp1) + visitExp(exp2) + visitExp(exp3)).incIfThenElse
       case SimplifiedAst.Expression.Let(ident, offset, exp1, exp2, tpe, loc) =>
         (visitExp(exp1) + visitExp(exp2)).incLet
+      case SimplifiedAst.Expression.CheckTag(tag, exp, loc) =>
+        visitExp(exp).incCheckTag
+      case SimplifiedAst.Expression.GetTagValue(tag, exp, tpe, loc) =>
+        visitExp(exp).incGetTagValue
 
-
-
+      case SimplifiedAst.Expression.FSet(elms, tpe, loc) =>
+        val s = elms.foldLeft(AstStats()) {
+          case (acc, exp) => acc + visitExp(exp)
+        }
+        s.incFSet
+      case SimplifiedAst.Expression.Existential(params, exp, loc) => visitExp(exp).incExistential
+      case SimplifiedAst.Expression.Universal(params, exp, loc) => visitExp(exp).incUniversal
+      case SimplifiedAst.Expression.MatchError(tpe, loc) => AstStats(numberOfExpressions = 1, numberOfMatchErrorExpressions = 1)
+      case SimplifiedAst.Expression.SwitchError(tpe, loc) => AstStats(numberOfExpressions = 1, numberOfSwitchErrorExpressions = 1)
+      case SimplifiedAst.Expression.UserError(tpe, loc) => AstStats(numberOfExpressions = 1, numberOfUserErrorExpressions = 1)
     }
 
     ??? // TODO
@@ -299,12 +311,37 @@ case class AstStats(numberOfExpressions: Int = 0,
     numberOfLetExpressions = numberOfLetExpressions + 1
   )
 
+  def incCheckTag: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfCheckTagExpressions = numberOfCheckTagExpressions + 1
+  )
+
+  def incGetTagValue: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfGetTagValueExpressions = numberOfGetTagValueExpressions + 1
+  )
+
   def incIfThenElse: AstStats = copy(
     numberOfExpressions = numberOfExpressions + 1,
     numberOfIfThenElseExpressions = numberOfIfThenElseExpressions + 1
   )
 
   // TODO: Rest
+
+  def incFSet: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfFSetExpressions = numberOfFSetExpressions + 1
+  )
+
+  def incExistential: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfExistentialExpressions = numberOfExistentialExpressions + 1
+  )
+
+  def incUniversal: AstStats = copy(
+    numberOfExpressions = numberOfExpressions + 1,
+    numberOfUniversalExpressions = numberOfUniversalExpressions + 1
+  )
 
 }
 
