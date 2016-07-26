@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -27,44 +28,12 @@ import scala.collection.mutable
 
 object Namer {
 
-  import NamerError._
-
-  /**
-    * A common super-type for naming errors.
-    */
-  sealed trait NamerError extends CompilationError
-
-  object NamerError {
-
-    implicit val consoleCtx = Compiler.ConsoleCtx
-
-    /**
-      * An error raised to indicate that the given `name` is used for multiple definitions.
-      *
-      * @param name the name.
-      * @param loc1 the location of the first definition.
-      * @param loc2 the location of the second definition.
-      */
-    case class DuplicateEntity(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NamerError {
-      val message =
-        s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc1.source.format}")}
-           |
-           |${consoleCtx.red(s">> Duplicate definition of '$name'.")}
-           |
-           |First definition was here:
-           |${loc1.underline}
-           |Second definition was here:
-           |${loc2.underline}
-           |Tip: Consider renaming or removing one of the definitions.
-         """.stripMargin
-    }
-
-  }
+  import NameError._
 
   /**
     * Performs naming on the given `program`.
     */
-  def namer(program: WeededAst.Program)(implicit genSym: GenSym): Validation[NamedAst.Program, NamerError] = {
+  def namer(program: WeededAst.Program)(implicit genSym: GenSym): Validation[NamedAst.Program, NameError] = {
     // make an empty program to fold over.
     val prog0 = NamedAst.Program(
       enums = Map.empty,
@@ -94,7 +63,7 @@ object Namer {
     /**
       * Performs naming on the given declaration `decl0` in the given namespace `ns0` under the given (partial) program `prog0`.
       */
-    def namer(decl0: WeededAst.Declaration, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[NamedAst.Program, NamerError] = decl0 match {
+    def namer(decl0: WeededAst.Declaration, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[NamedAst.Program, NameError] = decl0 match {
       /*
        * Namespace.
        */
@@ -320,7 +289,7 @@ object Namer {
     /**
       * Performs naming on the given expression `exp0` under the given environment `env0`.
       */
-    def namer(exp0: WeededAst.Expression, env0: Map[String, Symbol.VarSym])(implicit genSym: GenSym): Validation[NamedAst.Expression, NamerError] = exp0 match {
+    def namer(exp0: WeededAst.Expression, env0: Map[String, Symbol.VarSym])(implicit genSym: GenSym): Validation[NamedAst.Expression, NameError] = exp0 match {
       /*
        * Variables.
        */

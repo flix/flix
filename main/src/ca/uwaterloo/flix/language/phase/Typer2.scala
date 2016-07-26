@@ -125,6 +125,11 @@ object Typer2 {
   }
 
   /**
+    * A monad for type inference.
+    */
+
+
+  /**
     * Type checks the given program.
     */
   def typer(program: NamedAst.Program)(implicit genSym: GenSym): Unit = {
