@@ -125,10 +125,19 @@ object Typer2 {
   }
 
 
+  /**
+    * TODO: DOC
+    */
   case class InferMonad[A](a: A, s: Substitution) {
 
+    /**
+      * TODO: DOC
+      */
     def map(f: A => A): InferMonad[A] = InferMonad(f(a), s)
 
+    /**
+      * TODO: DOC
+      */
     def flatMap(f: A => InferMonad[A]): InferMonad[A] = {
       val t = f(a)
       InferMonad(t.a, t.s @@ s)
@@ -136,18 +145,28 @@ object Typer2 {
 
   }
 
+  /**
+    * TODO: DOC
+    */
   def liftM[A](a: A): InferMonad[A] = InferMonad(a, Substitution.empty)
 
+  /**
+    * TODO: DOC
+    */
   def unifyM(tpe1: Type, tpe2: Type): InferMonad[Type] = unify(tpe1, tpe2) match {
     case Validation.Success(subst, _) => InferMonad[Type](subst(tpe1), subst)
     case _ => ???
   }
 
+  /**
+    * TODO: DOC
+    */
   def unifyM(tpe1: Type, tpe2: Type, tpe3: Type): InferMonad[Type] =
-    for (
-      tpe <- unifyM(tpe1, tpe2);
-      res <- unifyM(tpe, tpe3)
-    ) yield res
+  for (
+    tpe <- unifyM(tpe1, tpe2);
+    res <- unifyM(tpe, tpe3)
+  ) yield res
+
 
   /**
     * Type checks the given program.
@@ -168,9 +187,9 @@ object Typer2 {
     def infer(exp0: NamedAst.Expression)(implicit genSym: GenSym): Unit = {
 
       /**
-        *
+        * Infers the type of the given expression `exp0` inside the inference monad.
         */
-      def visitExpM(e0: NamedAst.Expression): InferMonad[Type] = e0 match {
+      def visitExp(e0: NamedAst.Expression): InferMonad[Type] = e0 match {
 
         /*
          * Wildcard expression.
@@ -203,77 +222,6 @@ object Typer2 {
         //case NamedAst.Expression.BigInt(lit, loc) => (subst0, Type.BigInt).toSuccess
         //case NamedAst.Expression.Str(lit, loc) => (subst0, Type.Str).toSuccess
 
-        /*
-         * Match expression.
-         */
-        case NamedAst.Expression.Match(exp1, rules, tpe, loc) =>
-          liftM(Type.Int64)
-
-        /*
-         * If-then-else expression.
-         */
-        case NamedAst.Expression.IfThenElse(exp1, exp2, exp3, tvar, loc) =>
-          for (
-            tpe1 <- visitExpM(exp1);
-            tpe2 <- visitExpM(exp2);
-            tpe3 <- visitExpM(exp3);
-            ____ <- unifyM(Type.Bool, tpe1);
-            rtpe <- unifyM(tvar, tpe2, tpe3)
-          )
-            yield rtpe
-
-        /*
-         * Tag expression.
-         */
-        case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
-          for (
-            tpe <- visitExpM(exp)
-          )
-            yield Type.Int64 // TODO
-
-
-      }
-
-      /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-      /**
-        * Infers the type of the given expression `e0` under the given type environment `tenv0`.
-        */
-      // TODO: tenv0 should be a list of assumptions...
-      def visitExp(e0: NamedAst.Expression, tenv0: Map[Symbol.VarSym, Type]): Validation[(Substitution, Type), TypeError] = e0 match {
-
-        /*
-         * Wildcard expression.
-         */
-        case NamedAst.Expression.Wild(tpe, loc) => (Substitution.empty, tpe).toSuccess
-
-        /*
-         * Variable expression.
-         */
-        case NamedAst.Expression.Var(sym, tvar, loc) => (Substitution.empty, tvar).toSuccess
-
-        /*
-         * Reference expression.
-         */
-        case NamedAst.Expression.Ref(ref, tvar, loc) => (Substitution.empty, tvar).toSuccess
-
-        /*
-         * Literal expression.
-         */
-        case NamedAst.Expression.Unit(loc) => (Substitution.empty, Type.Unit).toSuccess
-        case NamedAst.Expression.True(loc) => (Substitution.empty, Type.Bool).toSuccess
-        case NamedAst.Expression.False(loc) => (Substitution.empty, Type.Bool).toSuccess
-        case NamedAst.Expression.Char(lit, loc) => (Substitution.empty, Type.Char).toSuccess
-        case NamedAst.Expression.Float32(lit, loc) => (Substitution.empty, Type.Float32).toSuccess
-        case NamedAst.Expression.Float64(lit, loc) => (Substitution.empty, Type.Float64).toSuccess
-        case NamedAst.Expression.Int8(lit, loc) => (Substitution.empty, Type.Int8).toSuccess
-        case NamedAst.Expression.Int16(lit, loc) => (Substitution.empty, Type.Int16).toSuccess
-        case NamedAst.Expression.Int32(lit, loc) => (Substitution.empty, Type.Int32).toSuccess
-        case NamedAst.Expression.Int64(lit, loc) => (Substitution.empty, Type.Int64).toSuccess
-        case NamedAst.Expression.BigInt(lit, loc) => (Substitution.empty, Type.BigInt).toSuccess
-        case NamedAst.Expression.Str(lit, loc) => (Substitution.empty, Type.Str).toSuccess
 
         /*
          * Lambda expression.
@@ -289,28 +237,13 @@ object Typer2 {
          * Unary expression.
          */
         case NamedAst.Expression.Unary(op, exp1, tvar, loc) => op match {
-          case UnaryOperator.LogicalNot =>
-            visitExp(exp1, tenv0) map {
-              case (subst, tpe) => (subst, Type.Bool)
-            }
+          case UnaryOperator.LogicalNot => ???
 
-          case UnaryOperator.Plus =>
-            // TODO: Use type classes to distinguish Int8, Int16, Int32, etc.
-            visitExp(exp1, tenv0) map {
-              case (subst, tpe) => (subst, tpe)
-            }
+          case UnaryOperator.Plus => ???
 
-          case UnaryOperator.Minus =>
-            // TODO: Use type classes to distinguish Int8, Int16, Int32, etc.
-            visitExp(exp1, tenv0) map {
-              case (subst, tpe) => (subst, tpe)
-            }
+          case UnaryOperator.Minus => ???
 
-          case UnaryOperator.BitwiseNegate =>
-            // TODO: Use type classes to distinguish Int8, Int16, Int32, etc.
-            visitExp(exp1, tenv0) map {
-              case (subst, tpe) => (subst, tpe)
-            }
+          case UnaryOperator.BitwiseNegate => ???
         }
 
         /*
@@ -389,38 +322,30 @@ object Typer2 {
           //          ret(id, ctx1 ::: ctx2, tpe2)
           ???
 
+
         /*
          * If-then-else expression.
          */
         case NamedAst.Expression.IfThenElse(exp1, exp2, exp3, tvar, loc) =>
-          val res1 = visitExp(exp1, tenv0)
-          val res2 = visitExp(exp1, tenv0)
-          val res3 = visitExp(exp1, tenv0)
-          @@(res1, res2, res3) flatMap {
-            case ((subst1, tpe1), (subst2, tpe2), (subst3, tpe3)) =>
-              val substCondVal = unify(tpe1, Type.Bool)
-              val substBodyVal = unify(tpe2, tpe3)
-              @@(substCondVal, substBodyVal) flatMap {
-                case (substCond, substBody) => mergeAll(List(subst1, subst2, subst3, substCond, substBody)) map {
-                  case mergedSubst =>
-                    (mergedSubst, tpe2)
-                }
-              }
-          }
+          for (
+            tpe1 <- visitExp(exp1);
+            tpe2 <- visitExp(exp2);
+            tpe3 <- visitExp(exp3);
+            ____ <- unifyM(Type.Bool, tpe1);
+            rtpe <- unifyM(tvar, tpe2, tpe3)
+          )
+            yield rtpe
+
 
         /*
          * Match expression.
          */
         case NamedAst.Expression.Match(exp1, rules, tpe, loc) =>
-          rules map {
-            case (pat, exp) => visitPat(pat, tenv0)
-          }
-
-          ???
+          liftM(Type.Int64)
 
         /*
-         * Switch expression.
-         */
+           * Switch expression.
+           */
         case NamedAst.Expression.Switch(id, rules, loc) =>
           ???
         //            val bodyTypes = mutable.ListBuffer.empty[Type]
@@ -437,10 +362,12 @@ object Typer2 {
         /*
          * Tag expression.
          */
-        case NamedAst.Expression.Tag(id, enum, tag, exp, loc) =>
-          // TODO
-          //          val tpe = visitExp(exp, tenv0)
-          ???
+        case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
+          for (
+            tpe <- visitExp(exp)
+          )
+            yield Type.Int64 // TODO
+
 
         /*
          * Tuple expression.
@@ -563,8 +490,7 @@ object Typer2 {
         /*
          * User Error expression.
          */
-        case NamedAst.Expression.UserError(tvar, loc) =>
-          (Substitution.empty, tvar).toSuccess
+        case NamedAst.Expression.UserError(tvar, loc) => ???
 
       }
 
@@ -621,9 +547,7 @@ object Typer2 {
 
       // TODO: Need to create initial type environment from defn
 
-      visitExpM(exp0)
-
-      visitExp(exp0, Map.empty)
+      visitExp(exp0)
 
     }
   }
