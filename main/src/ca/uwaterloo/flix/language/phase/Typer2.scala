@@ -124,10 +124,6 @@ object Typer2 {
     case (subst1, subst2) => subst1.merge(subst2)
   }
 
-  /**
-    * A monad for type inference.
-    */
-
 
   /**
     * Type checks the given program.
@@ -146,6 +142,64 @@ object Typer2 {
       * Infers the type of the given expression `exp0`.
       */
     def infer(exp0: NamedAst.Expression)(implicit genSym: GenSym): Unit = {
+
+
+      /**
+        *
+        */
+      def visitExp1(e0: NamedAst.Expression, subst0: Substitution): Validation[(Substitution, Type), TypeError] = e0 match {
+
+        /*
+         * Wildcard expression.
+         */
+        case NamedAst.Expression.Wild(tpe, loc) => (subst0, tpe).toSuccess
+
+        /*
+         * Variable expression.
+         */
+        case NamedAst.Expression.Var(sym, tvar, loc) => (subst0, tvar).toSuccess
+
+        /*
+         * Reference expression.
+         */
+        case NamedAst.Expression.Ref(ref, tvar, loc) => (subst0, tvar).toSuccess
+
+        /*
+         * Literal expression.
+         */
+        case NamedAst.Expression.Unit(loc) => (subst0, Type.Unit).toSuccess
+        case NamedAst.Expression.True(loc) => (subst0, Type.Bool).toSuccess
+        case NamedAst.Expression.False(loc) => (subst0, Type.Bool).toSuccess
+        case NamedAst.Expression.Char(lit, loc) => (subst0, Type.Char).toSuccess
+        case NamedAst.Expression.Float32(lit, loc) => (subst0, Type.Float32).toSuccess
+        case NamedAst.Expression.Float64(lit, loc) => (subst0, Type.Float64).toSuccess
+        case NamedAst.Expression.Int8(lit, loc) => (subst0, Type.Int8).toSuccess
+        case NamedAst.Expression.Int16(lit, loc) => (subst0, Type.Int16).toSuccess
+        case NamedAst.Expression.Int32(lit, loc) => (subst0, Type.Int32).toSuccess
+        case NamedAst.Expression.Int64(lit, loc) => (subst0, Type.Int64).toSuccess
+        case NamedAst.Expression.BigInt(lit, loc) => (subst0, Type.BigInt).toSuccess
+        case NamedAst.Expression.Str(lit, loc) => (subst0, Type.Str).toSuccess
+
+        /*
+         * If-then-else expression.
+         */
+        case NamedAst.Expression.IfThenElse(exp1, exp2, exp3, tvar, loc) =>
+          visitExp1(exp1, subst0) map {
+            case (subst1, tpe1) => visitExp1(exp2, subst1) map {
+              case (subst2, tpe2) => visitExp1(exp3, subst2) map {
+                case (subst3, tpe3) => unify(subst3(tpe1), Type.Bool) map {
+                  case subst4 => unify(subst4(tpe2), subst4(tpe3))
+                }
+              }
+            }
+          }
+
+          ???
+      }
+
+      /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
       /**
         * Infers the type of the given expression `e0` under the given type environment `tenv0`.
