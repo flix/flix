@@ -381,33 +381,33 @@ object Typer2 {
         /*
          * None expression.
          */
-        case NamedAst.Expression.FNone(id, loc) =>
-          ???
+        case NamedAst.Expression.FNone(tvar, loc) =>
+          liftM(Type.mkFOpt(tvar))
 
         /*
          * Some expression.
          */
-        case NamedAst.Expression.FSome(id, exp, loc) =>
-          //          val (ctx, tpe) = visitExp(exp, tenv0)
-          //          ret(id, ctx, Type.FOpt)
-          ???
+        case NamedAst.Expression.FSome(exp, tvar, loc) =>
+          for (
+            innerType <- visitExp(exp);
+            resultType <- unifyM(tvar, Type.mkFOpt(innerType))
+          ) yield resultType
 
         /*
          * Nil expression.
          */
-        case NamedAst.Expression.FNil(id, loc) =>
-          ???
-        //ret(id, EmptyContext, Type.FList(fresh()))
+        case NamedAst.Expression.FNil(tvar, loc) =>
+          liftM(Type.mkFList(tvar))
 
         /*
          * List expression.
          */
-        case NamedAst.Expression.FList(id, hd, tl, loc) =>
-          //          val (ctx1, tpe1) = visitExp(hd, tenv0)
-          //          val (ctx2, tpe2) = visitExp(tl, tenv0)
-          //          constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
-          ???
-        //ret(id, ctx1 ::: ctx2, Type.FList(tpe1))
+        case NamedAst.Expression.FList(head, tail, tvar, loc) =>
+          for (
+            headType <- visitExp(head);
+            tailType <- visitExp(tail);
+            resultType <- unifyM(tvar, Type.mkFList(headType), tailType)
+          ) yield resultType
 
         /*
          * Vector expression.
@@ -483,13 +483,17 @@ object Typer2 {
         /*
          * Ascribe expression.
          */
-        case NamedAst.Expression.Ascribe(exp, tpe, loc) =>
-          ???
+        case NamedAst.Expression.Ascribe(exp, expectedType, loc) =>
+          for (
+            actualType <- visitExp(exp);
+            resultType <- unifyM(actualType, expectedType)
+          )
+            yield resultType
 
         /*
          * User Error expression.
          */
-        case NamedAst.Expression.UserError(tvar, loc) => ???
+        case NamedAst.Expression.UserError(tvar, loc) => liftM(tvar)
 
       }
 
