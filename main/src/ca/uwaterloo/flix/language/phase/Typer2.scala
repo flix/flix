@@ -167,6 +167,8 @@ object Typer2 {
     res <- unifyM(tpe, tpe3)
   ) yield res
 
+  // TODO
+  def unifyM(ts: List[Type]): InferMonad[Type] = ???
 
   /**
     * Type checks the given program.
@@ -248,12 +250,14 @@ object Typer2 {
         /*
          * Binary expression.
          */
-        case NamedAst.Expression.Binary(op, e1, e2, tvar, loc) => op match {
+        case NamedAst.Expression.Binary(op, exp1, exp2, tvar, loc) => op match {
           case BinaryOperator.Plus =>
-            //            val (ctx1, tpe1) = visitExp(e1, tenv0)
-            //            val (ctx2, tpe2) = visitExp(e2, tenv0)
-            //            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
-            ???
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              ____ <- unifyM(tpe1, Type.Int32);
+              ____ <- unifyM(tpe2, Type.Int32)
+            ) yield Type.Int32
 
           case BinaryOperator.Minus =>
             //            val (ctx1, tpe1) = visitExp(e1, tenv0)
