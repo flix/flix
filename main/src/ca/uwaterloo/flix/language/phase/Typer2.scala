@@ -201,7 +201,9 @@ object Typer2 {
         /*
          * Variable expression.
          */
-        case NamedAst.Expression.Var(sym, tvar, loc) => liftM(tvar)
+        case NamedAst.Expression.Var(sym, tvar, loc) =>
+          // TODO: Must get type variable from sym...
+          liftM(tvar)
 
         /*
          * Reference expression.
@@ -463,7 +465,7 @@ object Typer2 {
         /*
          * Existential expression.
          */
-        case NamedAst.Expression.Existential(params, e, loc) =>
+        case NamedAst.Expression.Existential(params, exp, loc) =>
           //          val tenv = params.foldLeft(tenv0) {
           //            case (macc, NamedAst.FormalParam(sym, t)) => macc + (sym -> t)
           //          }
@@ -475,14 +477,17 @@ object Typer2 {
         /*
          * Universal expression.
          */
-        case NamedAst.Expression.Universal(params, e, loc) =>
-          //          val tenv = params.foldLeft(tenv0) {
-          //            case (macc, NamedAst.FormalParam(sym, t)) => macc + (sym -> t)
-          //          }
-          //          val (ctx, tpe) = visitExp(e, tenv)
-          //          constraints += TypeConstraint.Eq((ctx, tpe), (EmptyContext, Type.Bool))
-          //          ret(id, ctx, Type.Bool)
-          ???
+        case NamedAst.Expression.Universal(params, exp, loc) =>
+          val subst0 = params.foldLeft(Substitution.empty) {
+            // TODO: Need to setup connection between sym and the Exp.Var's tvar.
+            case (subst, NamedAst.FormalParam(sym, tpe)) => subst @@ Substitution.singleton(???, tpe)
+          }
+
+          for (
+            ___ <- InferMonad(Type.Bool: Type, subst0);
+            tpe <- visitExp(exp);
+            ___ <- unifyM(Type.Bool, tpe)
+          ) yield Type.Bool
 
         /*
          * Ascribe expression.
