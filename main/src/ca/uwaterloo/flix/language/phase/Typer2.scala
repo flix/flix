@@ -257,20 +257,20 @@ object Typer2 {
           case UnaryOperator.Plus =>
             for (
               tpe1 <- visitExp(exp1);
-              res <- unifyM(tvar, tpe1, Type.Int32)
-            ) yield res
+              resultType <- unifyM(tvar, tpe1, Type.Int32)
+            ) yield resultType
 
           case UnaryOperator.Minus =>
             for (
               tpe1 <- visitExp(exp1);
-              res <- unifyM(tvar, tpe1, Type.Int32)
-            ) yield res
+              resultType <- unifyM(tvar, tpe1, Type.Int32)
+            ) yield resultType
 
           case UnaryOperator.BitwiseNegate =>
             for (
               tpe1 <- visitExp(exp1);
-              res <- unifyM(tvar, tpe1, Type.Int32)
-            ) yield res
+              resultType <- unifyM(tvar, tpe1, Type.Int32)
+            ) yield resultType
         }
 
         /*
@@ -336,29 +336,30 @@ object Typer2 {
             ) yield resultType
 
           case BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr | BinaryOperator.Implication | BinaryOperator.Biconditional =>
-            //            val (ctx1, tpe1) = visitExp(e1, tenv0)
-            //            val (ctx2, tpe2) = visitExp(e2, tenv0)
-            //            constraints += TypeConstraint.Eq((ctx1, tpe1), (EmptyContext, Type.Bool))
-            //            constraints += TypeConstraint.Eq((ctx2, tpe2), (EmptyContext, Type.Bool))
-            ???
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              resultType <- unifyM(tvar, tpe1, tpe2, Type.Bool)
+            ) yield resultType
 
           case BinaryOperator.BitwiseAnd | BinaryOperator.BitwiseOr | BinaryOperator.BitwiseXor | BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift =>
-            //            val (ctx1, tpe1) = visitExp(e1, tenv0)
-            //            val (ctx2, tpe2) = visitExp(e2, tenv0)
-            //            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
-            ???
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
+            ) yield Type.Int32
 
         }
 
         /*
          * Let expression.
          */
-        case NamedAst.Expression.Let(id, sym, exp1, exp2, loc) =>
-          //          val (ctx1, tpe1) = visitExp(exp1, tenv0)
-          //          val (ctx2, tpe2) = visitExp(exp2, tenv0 + (sym -> tpe1))
-          //          ret(id, ctx1 ::: ctx2, tpe2)
-          ???
-
+        case NamedAst.Expression.Let(sym, exp1, exp2, tvar, loc) =>
+          for (
+            tpe1 <- visitExp(exp1);
+            tpe2 <- visitExp(exp2);
+            resultVar <- unifyM(tvar, tpe2)
+          ) yield resultVar
 
         /*
          * If-then-else expression.
@@ -755,7 +756,10 @@ object Typer2 {
     /*
      * Let expression.
      */
-    case NamedAst.Expression.Let(sym, exp1, exp2, tvar, loc) => ??? // TODO
+    case NamedAst.Expression.Let(sym, exp1, exp2, tvar, loc) =>
+      val e1 = reassemble(exp1, subst0)
+      val e2 = reassemble(exp2, subst0)
+      TypedAst.Expression.Let(sym.toIdent, e1, e2, subst0(tvar), loc)
 
     /*
      * Match expression.
