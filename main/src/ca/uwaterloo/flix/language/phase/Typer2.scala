@@ -131,12 +131,12 @@ object Typer2 {
     /**
       * TODO: DOC
       */
-    def map(f: A => A): InferMonad[A] = InferMonad(f(a), s)
+    def map[B](f: A => B): InferMonad[B] = InferMonad(f(a), s)
 
     /**
       * TODO: DOC
       */
-    def flatMap(f: A => InferMonad[A]): InferMonad[A] = {
+    def flatMap[B](f: A => InferMonad[B]): InferMonad[B] = {
       val t = f(a)
       InferMonad(t.a, t.s @@ s)
     }
@@ -371,9 +371,7 @@ object Typer2 {
             tpe3 <- visitExp(exp3);
             ____ <- unifyM(Type.Bool, tpe1);
             rtpe <- unifyM(tvar, tpe2, tpe3)
-          )
-            yield rtpe
-
+          ) yield rtpe
 
         /*
          * Match expression.
@@ -403,12 +401,14 @@ object Typer2 {
           )
             yield Type.Int64 // TODO
 
-
         /*
          * Tuple expression.
          */
         case NamedAst.Expression.Tuple(elms, tvar, loc) =>
-          ??? // TODO
+          for (
+            elementTypes <- visitExps2(elms);
+            resultType <- unifyM(tvar, Type.mkFTuple(elementTypes))
+          ) yield resultType
 
         /*
          * None expression.
@@ -544,14 +544,24 @@ object Typer2 {
       def visitExps(es: List[NamedAst.Expression]): InferMonad[Type] = es match {
         case Nil => throw InternalCompilerException("Empty list?")
         case x :: Nil => visitExp(x)
-        case x :: rs =>
+        case x :: xs =>
           for (
             tpe1 <- visitExp(x);
-            tpe2 <- visitExps(rs);
+            tpe2 <- visitExps(xs);
             resultType <- unifyM(tpe1, tpe2)
           ) yield resultType
       }
 
+      // TODO: Doc and names.
+      def visitExps2(es: List[NamedAst.Expression]): InferMonad[List[Type]] = es match {
+        case Nil => throw InternalCompilerException("Empty list?")
+        case x :: Nil => visitExp(x).map(tpe => List(tpe))
+        case x :: xs =>
+          for (
+            tpe <- visitExp(x);
+            tpes <- visitExps2(xs)
+          ) yield tpe :: tpes
+      }
 
       /**
         * Infers the type of the given expression `e0` under the given type environment `tenv0`.
