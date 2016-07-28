@@ -418,27 +418,31 @@ object Typer2 {
          * Vector expression.
          */
         case NamedAst.Expression.FVec(elms, tvar, loc) =>
-          //          val elements = elms.map(e => visitExp(e, tenv0))
-          //          for ((ctx, tpe) <- elements.tail) {
-          //            // assert that each element has the same type as the first element.
-          //            val (ctx0, tpe0) = elements.head
-          //            constraints += TypeConstraint.Eq((ctx0, tpe0), (ctx, tpe))
-          //          }
-          //          val contexts = elements.flatMap(_._1)
-          //          ret(id, contexts, elements.head._2)
-          ???
+          for (
+            elementType <- visitExps(elms);
+            resultType <- unifyM(Type.mkFVec(elementType), tvar)
+          ) yield resultType
 
         /*
          * Set expression.
          */
-        case NamedAst.Expression.FSet(id, elms, loc) =>
-          ??? // TODO
+        case NamedAst.Expression.FSet(elms, tvar, loc) =>
+          for (
+            elementType <- visitExps(elms);
+            resultType <- unifyM(tvar, Type.mkFSet(elementType))
+          ) yield resultType
 
         /*
          * Map expression.
          */
-        case NamedAst.Expression.FMap(id, elms, loc) =>
-          ??? // TODO
+        case NamedAst.Expression.FMap(elms, tvar, loc) =>
+          val keys = elms.map(_._1)
+          val vals = elms.map(_._2)
+          for (
+            keyType <- visitExps(keys);
+            valType <- visitExps(vals);
+            resultType <- unifyM(tvar, Type.mkFMap(keyType, valType))
+          ) yield resultType
 
         /*
          * GetIndex expression.
@@ -504,6 +508,8 @@ object Typer2 {
         case NamedAst.Expression.UserError(tvar, loc) => liftM(tvar)
 
       }
+
+      def visitExps(es: List[NamedAst.Expression]): InferMonad[Type] = ???
 
       /**
         * Infers the type of the given expression `e0` under the given type environment `tenv0`.
