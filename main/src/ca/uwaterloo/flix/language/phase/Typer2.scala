@@ -410,12 +410,8 @@ object Typer2 {
         /*
          * Tuple expression.
          */
-        case NamedAst.Expression.Tuple(id, elms, loc) =>
-          //          val elements = elms.map(e => visitExp(e, tenv0))
-          //          val contexts = elements.flatMap(_._1)
-          //          val types = elements.map(_._2)
-          //          ret(id, contexts, Type.Tuple(types))
-          ???
+        case NamedAst.Expression.Tuple(elms, tvar, loc) =>
+          ??? // TODO
 
         /*
          * None expression.
@@ -547,7 +543,9 @@ object Typer2 {
 
       }
 
+      // TODO: Doc and names.
       def visitExps(es: List[NamedAst.Expression]): InferMonad[Type] = ???
+
 
       /**
         * Infers the type of the given expression `e0` under the given type environment `tenv0`.
@@ -691,7 +689,7 @@ object Typer2 {
     /*
      * Wildcard expression.
      */
-    case NamedAst.Expression.Wild(tvar, loc) => ??? // TODO: TypedAst.Expression.Wild(subst0(tvar), loc)
+    case NamedAst.Expression.Wild(tvar, loc) => throw InternalCompilerException("Not yet supported")
 
     /*
      * Variable expression.
@@ -896,8 +894,8 @@ object Typer2 {
     case NamedAst.Pattern.Wild(tvar, loc) => TypedAst.Pattern.Wildcard(subst0(tvar), loc)
     case NamedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(sym.toIdent, subst0(tvar), loc)
     case NamedAst.Pattern.Unit(loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Unit(loc), Type.Unit, loc)
-    case NamedAst.Pattern.True(loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Bool(true, loc), Type.Bool, loc)
-    case NamedAst.Pattern.False(loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Bool(false, loc), Type.Bool, loc)
+    case NamedAst.Pattern.True(loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Bool(lit = true, loc), Type.Bool, loc)
+    case NamedAst.Pattern.False(loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Bool(lit = false, loc), Type.Bool, loc)
     case NamedAst.Pattern.Char(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Char(lit, loc), Type.Char, loc)
     case NamedAst.Pattern.Float32(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Float32(lit, loc), Type.Float32, loc)
     case NamedAst.Pattern.Float64(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Float64(lit, loc), Type.Float64, loc)
@@ -913,13 +911,13 @@ object Typer2 {
     case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
       val es = elms.map(e => reassemble(e, subst0))
       TypedAst.Pattern.Tuple(es, subst0(tvar), loc)
-    case NamedAst.Pattern.FNone(tvar, loc) => ???
-    case NamedAst.Pattern.FSome(pat, tvar, loc) => ???
-    case NamedAst.Pattern.FNil(tvar, loc) => ???
-    case NamedAst.Pattern.FList(hd, tl, tvar, loc) => ???
-    case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => ???
-    case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => ???
-    case NamedAst.Pattern.FMap(elms, rest, tvar, loc) => ???
+    case NamedAst.Pattern.FNone(tvar, loc) => throw InternalCompilerException("Not yet supported")
+    case NamedAst.Pattern.FSome(pat, tvar, loc) => throw InternalCompilerException("Not yet supported")
+    case NamedAst.Pattern.FNil(tvar, loc) => throw InternalCompilerException("Not yet supported")
+    case NamedAst.Pattern.FList(hd, tl, tvar, loc) => throw InternalCompilerException("Not yet supported")
+    case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => throw InternalCompilerException("Not yet supported")
+    case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => throw InternalCompilerException("Not yet supported")
+    case NamedAst.Pattern.FMap(elms, rest, tvar, loc) => throw InternalCompilerException("Not yet supported")
   }
 
 
