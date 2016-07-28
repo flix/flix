@@ -442,7 +442,7 @@ object Namer {
       }
 
       case WeededAst.Expression.Ascribe(exp, tpe, loc) => namer(exp, env0) map {
-        case e => NamedAst.Expression.Ascribe(e, tpe, loc)
+        case e => NamedAst.Expression.Ascribe(e, Types.lookup(tpe), loc)
       }
 
       case WeededAst.Expression.UserError(loc) => NamedAst.Expression.UserError(genSym.freshTypeVar(), loc).toSuccess
@@ -492,6 +492,29 @@ object Namer {
       }
 
       (visit(pat0), m.toMap)
+    }
+
+  }
+
+  object Types {
+
+    // TODO: use this everywhere.
+    def lookup(tpe0: Type): Type = tpe0 match {
+      case Type.Unresolved(name) => name.ident.name match {
+        case "Unit" => Type.Unit
+        case "Bool" => Type.Bool
+        case "Char" => Type.Char
+        case "Float" => Type.Float64
+        case "Float32" => Type.Float32
+        case "Float64" => Type.Float64
+        case "Int" => Type.Int32
+        case "Int8" => Type.Int8
+        case "Int16" => Type.Int16
+        case "Int32" => Type.Int32
+        case "Int64" => Type.Int64
+        case "BigInt" => Type.BigInt
+        case "Str" => Type.Str
+      }
     }
 
   }
