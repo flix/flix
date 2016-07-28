@@ -719,7 +719,7 @@ object Typer2 {
     /*
      * Reference expression.
      */
-    case NamedAst.Expression.Ref(ref, tvar, loc) => TypedAst.Expression.Ref(???, subst0(tvar), loc) // TODO: What symbol?
+    case NamedAst.Expression.Ref(ref, tvar, loc) => TypedAst.Expression.Ref(ref.toResolved, subst0(tvar), loc)
 
     /*
      * Literal expression.
@@ -740,7 +740,10 @@ object Typer2 {
     /*
      * Apply expression.
      */
-    case NamedAst.Expression.Apply(lambda, args, tvar, loc) => ??? // TODO
+    case NamedAst.Expression.Apply(lambda, actuals, tvar, loc) =>
+      val l = reassemble(lambda, subst0)
+      val as = actuals.map(e => reassemble(e, subst0))
+      TypedAst.Expression.Apply(l, as, subst0(tvar), loc)
 
     /*
      * Lambda expression.
