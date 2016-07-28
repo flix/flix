@@ -21,8 +21,6 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
-import scala.collection.mutable
-
 object Typer2 {
 
   /**
@@ -204,9 +202,7 @@ object Typer2 {
         /*
          * Variable expression.
          */
-        case NamedAst.Expression.Var(sym, tvar, loc) =>
-          // TODO: Must get type variable from sym...
-          liftM(tvar)
+        case NamedAst.Expression.Var(sym, tvar, loc) => unifyM(sym.tvar, tvar)
 
         /*
          * Reference expression.

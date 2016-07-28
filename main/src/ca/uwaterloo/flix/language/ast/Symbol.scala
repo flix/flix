@@ -25,7 +25,7 @@ object Symbol {
     * Returns a fresh variable symbol for the given identifier.
     */
   def mkVarSym(ident: Name.Ident)(implicit genSym: GenSym): VarSym = {
-    new VarSym(genSym.freshId(), ident.name, ident.loc)
+    new VarSym(genSym.freshId(), ident.name, genSym.freshTypeVar(), ident.loc)
   }
 
   /**
@@ -68,9 +68,10 @@ object Symbol {
     *
     * @param id   the globally unique name of the symbol.
     * @param text the original name, as it appears in the source code, of the symbol
+    * @param tvar the type variable associated with the symbol.
     * @param loc  the source location associated with the symbol.
     */
-  final class VarSym(val id: Int, val text: String, val loc: SourceLocation) {
+  final class VarSym(val id: Int, val text: String, val tvar: Type.Var, val loc: SourceLocation) {
 
     // TODO: Temporary convenience method.
     def toIdent: Name.Ident = {
