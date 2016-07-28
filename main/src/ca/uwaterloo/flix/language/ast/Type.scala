@@ -51,6 +51,7 @@ sealed trait Type {
     case Type.FOpt => Set.empty
     case Type.FList => Set.empty
     case Type.FVec => Set.empty
+    case Type.FSet => Set.empty
     case Type.FMap => Set.empty
     case Type.Enum(_, cases) => (cases flatMap {
       case (_, Type.Tag(_, _, tpe)) => tpe.typeVars

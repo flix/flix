@@ -261,21 +261,18 @@ object Typer2 {
 
           case UnaryOperator.Plus =>
             for (
-              tpe1 <- visitExp(exp1);
-              resultType <- unifyM(tvar, tpe1, Type.Int32)
-            ) yield resultType
+              tpe1 <- visitExp(exp1)
+            ) yield tpe1
 
           case UnaryOperator.Minus =>
             for (
-              tpe1 <- visitExp(exp1);
-              resultType <- unifyM(tvar, tpe1, Type.Int32)
-            ) yield resultType
+              tpe1 <- visitExp(exp1)
+            ) yield tpe1
 
           case UnaryOperator.BitwiseNegate =>
             for (
-              tpe1 <- visitExp(exp1);
-              resultType <- unifyM(tvar, tpe1, Type.Int32)
-            ) yield resultType
+              tpe1 <- visitExp(exp1)
+            ) yield tpe1
         }
 
         /*
@@ -391,8 +388,8 @@ object Typer2 {
           val condExps = rules.map(_._1)
           val bodyExps = rules.map(_._2)
           for (
-            condType <- visitExps(condExps);
-            bodyType <- visitExps(bodyExps);
+            condType <- visitExps(condExps, Type.Bool);
+            bodyType <- visitExps(bodyExps, genSym.freshTypeVar());
             _ <- unifyM(condType, Type.Bool);
             resultType <- unifyM(tvar, bodyType)
           ) yield resultType
@@ -451,7 +448,7 @@ object Typer2 {
          */
         case NamedAst.Expression.FVec(elms, tvar, loc) =>
           for (
-            elementType <- visitExps(elms);
+            elementType <- visitExps(elms, genSym.freshTypeVar());
             resultType <- unifyM(Type.mkFVec(elementType), tvar)
           ) yield resultType
 
@@ -460,7 +457,7 @@ object Typer2 {
          */
         case NamedAst.Expression.FSet(elms, tvar, loc) =>
           for (
-            elementType <- visitExps(elms);
+            elementType <- visitExps(elms, genSym.freshTypeVar());
             resultType <- unifyM(tvar, Type.mkFSet(elementType))
           ) yield resultType
 
@@ -471,8 +468,8 @@ object Typer2 {
           val keys = elms.map(_._1)
           val vals = elms.map(_._2)
           for (
-            keyType <- visitExps(keys);
-            valType <- visitExps(vals);
+            keyType <- visitExps(keys, genSym.freshTypeVar());
+            valType <- visitExps(vals, genSym.freshTypeVar());
             resultType <- unifyM(tvar, Type.mkFMap(keyType, valType))
           ) yield resultType
 
@@ -505,13 +502,11 @@ object Typer2 {
          * Existential expression.
          */
         case NamedAst.Expression.Existential(params, exp, loc) =>
-          //          val tenv = params.foldLeft(tenv0) {
-          //            case (macc, NamedAst.FormalParam(sym, t)) => macc + (sym -> t)
-          //          }
-          //          val (ctx, tpe) = visitExp(e, tenv)
-          //          constraints += TypeConstraint.Eq((ctx, tpe), (EmptyContext, Type.Bool))
-          //          ret(id, ctx, Type.Bool)
-          ???
+          // TODO: Check formal parameters.
+          for (
+            tpe <- visitExp(exp);
+            resultType <- unifyM(tpe, Type.Bool)
+          ) yield resultType
 
         /*
          * Universal expression.
@@ -546,13 +541,12 @@ object Typer2 {
       }
 
       // TODO: Doc and names.
-      def visitExps(es: List[NamedAst.Expression]): InferMonad[Type] = es match {
-        case Nil => throw InternalCompilerException("Empty list?")
-        case x :: Nil => visitExp(x)
+      def visitExps(es: List[NamedAst.Expression], tpe: Type): InferMonad[Type] = es match {
+        case Nil => liftM(tpe)
         case x :: xs =>
           for (
             tpe1 <- visitExp(x);
-            tpe2 <- visitExps(xs);
+            tpe2 <- visitExps(xs, tpe);
             resultType <- unifyM(tpe1, tpe2)
           ) yield resultType
       }
@@ -934,13 +928,13 @@ object Typer2 {
     case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
       val es = elms.map(e => reassemble(e, subst0))
       TypedAst.Pattern.Tuple(es, subst0(tvar), loc)
-    case NamedAst.Pattern.FNone(tvar, loc) => throw InternalCompilerException("Not yet supported")
-    case NamedAst.Pattern.FSome(pat, tvar, loc) => throw InternalCompilerException("Not yet supported")
-    case NamedAst.Pattern.FNil(tvar, loc) => throw InternalCompilerException("Not yet supported")
-    case NamedAst.Pattern.FList(hd, tl, tvar, loc) => throw InternalCompilerException("Not yet supported")
-    case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => throw InternalCompilerException("Not yet supported")
-    case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => throw InternalCompilerException("Not yet supported")
-    case NamedAst.Pattern.FMap(elms, rest, tvar, loc) => throw InternalCompilerException("Not yet supported")
+    case NamedAst.Pattern.FNone(tvar, loc) => ???
+    case NamedAst.Pattern.FSome(pat, tvar, loc) => ???
+    case NamedAst.Pattern.FNil(tvar, loc) => ???
+    case NamedAst.Pattern.FList(hd, tl, tvar, loc) => ???
+    case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => ???
+    case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => ???
+    case NamedAst.Pattern.FMap(elms, rest, tvar, loc) => ???
   }
 
 
