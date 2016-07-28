@@ -447,23 +447,27 @@ object Typer2 {
         /*
          * GetIndex expression.
          */
-        case NamedAst.Expression.GetIndex(id, exp1, exp2, loc) =>
-          //          val (ctx1, tpe1) = visitExp(exp1, tenv0)
-          //          val (ctx2, tpe2) = visitExp(exp2, tenv0)
-          //          constraints += TypeConstraint.Eq((ctx2, tpe2), (EmptyContext, Type.Int32))
-          //          ret(id, (TypeClass.Indexed -> tpe1) :: ctx1 ::: ctx2, tpe1)
-          ???
+        case NamedAst.Expression.GetIndex(exp1, exp2, tvar, loc) =>
+          for (
+            tpe1 <- visitExp(exp1);
+            tpe2 <- visitExp(exp2);
+            ____ <- unifyM(tpe1, Type.mkFVec(tvar));
+            ____ <- unifyM(tpe2, Type.Int32)
+          ) yield tvar
 
         /*
          * PutIndex expression.
          */
-        case NamedAst.Expression.PutIndex(id, exp1, exp2, exp3, loc) =>
-          //          val (ctx1, tpe1) = visitExp(exp1, tenv0)
-          //          val (ctx2, tpe2) = visitExp(exp2, tenv0)
-          //          val (ctx3, tpe3) = visitExp(exp3, tenv0)
-          //          constraints += TypeConstraint.Eq((ctx2, tpe2), (EmptyContext, Type.Int32))
-          //          ret(id, (TypeClass.Indexed -> tpe1) :: (TypeClass.Indexed -> tpe3) :: ctx1 ::: ctx2 ::: ctx3, tpe1)
-          ???
+        case NamedAst.Expression.PutIndex(exp1, exp2, exp3, tvar, loc) =>
+          val elementType = genSym.freshTypeVar()
+          for (
+            tpe1 <- visitExp(exp1);
+            tpe2 <- visitExp(exp2);
+            tpe3 <- visitExp(exp3);
+            ____ <- unifyM(tpe2, Type.Int32);
+            ____ <- unifyM(tpe3, elementType);
+            resultType <- unifyM(tvar, tpe1, Type.mkFVec(elementType))
+          ) yield resultType
 
         /*
          * Existential expression.
