@@ -579,7 +579,7 @@ object TypedAst {
       * @param tpe   the type of the tag.
       * @param loc   the source location.
       */
-    case class Tag(name: Symbol.Resolved, ident: Name.Ident, pat: TypedAst.Pattern, tpe: Type.Enum, loc: SourceLocation) extends TypedAst.Pattern
+    case class Tag(name: Symbol.Resolved, ident: Name.Ident, pat: TypedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
     /**
       * A typed AST node representing a tuple pattern.
@@ -588,7 +588,7 @@ object TypedAst {
       * @param tpe  the type of the tuple.
       * @param loc  the source location.
       */
-    case class Tuple(elms: List[TypedAst.Pattern], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Pattern
+    case class Tuple(elms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
     // TODO: Add for opt, list, map, ???
 

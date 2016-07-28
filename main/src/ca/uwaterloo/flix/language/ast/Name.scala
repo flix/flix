@@ -93,6 +93,10 @@ object Name {
     * @param sp2       the position of the last character in the qualified name.
     */
   case class QName(sp1: SourcePosition, namespace: NName, ident: Ident, sp2: SourcePosition) {
+
+    // TODO: Temporary convenience method.
+    def toResolved: Symbol.Resolved = Symbol.Resolved.mk(namespace.parts ::: ident.name :: Nil)
+
     /**
       * Returns `true` if this name is qualified by a namespace.
       */
@@ -111,8 +115,7 @@ object Name {
     /**
       * Human readable representation.
       */
-    override def toString: String =
-      if (isUnqualified) ident.toString else namespace.toString + "/" + ident
+    override def toString: String = if (isUnqualified) ident.toString else namespace.toString + "/" + ident
   }
 
 }

@@ -176,7 +176,10 @@ object Typer2 {
   def typer(program: NamedAst.Program)(implicit genSym: GenSym): Unit = {
     for ((ns, defns) <- program.definitions) {
       for ((name, defn) <- defns) {
-        Expressions.infer(defn.exp)
+        val InferMonad(tpe, subst) = Expressions.infer(defn.exp)
+        val exp = reassemble(defn.exp, subst)
+
+        //TypedAst.Definition.Constant(defn.ann, ???, ???, exp, tpe, defn.loc)
       }
     }
   }
@@ -186,7 +189,7 @@ object Typer2 {
     /**
       * Infers the type of the given expression `exp0`.
       */
-    def infer(exp0: NamedAst.Expression)(implicit genSym: GenSym): Unit = {
+    def infer(exp0: NamedAst.Expression)(implicit genSym: GenSym): InferMonad[Type] = {
 
       /**
         * Infers the type of the given expression `exp0` inside the inference monad.
@@ -642,7 +645,7 @@ object Typer2 {
   }
 
   /**
-    * Reassembles the given expression `exp0` with the given substitution `subst0`.
+    * Applies the given substitution `subst0` to the given expression `exp0`.
     */
   def reassemble(exp0: NamedAst.Expression, subst0: Substitution): TypedAst.Expression = exp0 match {
     /*
@@ -718,7 +721,12 @@ object Typer2 {
     /*
      * Match expression.
      */
-    case NamedAst.Expression.Match(exp, rules, tvar, loc) => ??? // TODO
+    case NamedAst.Expression.Match(exp1, rules, tvar, loc) =>
+      val e1 = reassemble(exp1, subst0)
+      val rs = rules map {
+        case (pat, exp) => reassemble(pat, subst0) -> reassemble(exp, subst0)
+      }
+      TypedAst.Expression.Match(e1, rs, subst0(tvar), loc)
 
     /*
      * Switch expression.
@@ -734,7 +742,7 @@ object Typer2 {
      */
     case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
       val e = reassemble(exp, subst0)
-      TypedAst.Expression.Tag(???, tag, e, subst0(tvar), loc) // TODO what symbol?
+      TypedAst.Expression.Tag(enum.toResolved, tag, e, subst0(tvar), loc)
 
     /*
      * Tuple expression.
@@ -836,6 +844,39 @@ object Typer2 {
      */
     case NamedAst.Expression.UserError(tvar, loc) =>
       TypedAst.Expression.Error(subst0(tvar), loc)
+  }
+
+  /**
+    * Applies the given substitution `subst0` to the given pattern `pat0`.
+    */
+  def reassemble(pat0: NamedAst.Pattern, subst0: Substitution): TypedAst.Pattern = pat0 match {
+    case NamedAst.Pattern.Wild(tvar, loc) => TypedAst.Pattern.Wildcard(subst0(tvar), loc)
+    case NamedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(sym.toIdent, subst0(tvar), loc)
+    case NamedAst.Pattern.Unit(loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Unit(loc), Type.Unit, loc)
+    case NamedAst.Pattern.True(loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Bool(true, loc), Type.Bool, loc)
+    case NamedAst.Pattern.False(loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Bool(false, loc), Type.Bool, loc)
+    case NamedAst.Pattern.Char(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Char(lit, loc), Type.Char, loc)
+    case NamedAst.Pattern.Float32(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Float32(lit, loc), Type.Float32, loc)
+    case NamedAst.Pattern.Float64(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Float64(lit, loc), Type.Float64, loc)
+    case NamedAst.Pattern.Int8(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Int8(lit, loc), Type.Int8, loc)
+    case NamedAst.Pattern.Int16(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Int16(lit, loc), Type.Int16, loc)
+    case NamedAst.Pattern.Int32(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Int32(lit, loc), Type.Int32, loc)
+    case NamedAst.Pattern.Int64(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Int64(lit, loc), Type.Int64, loc)
+    case NamedAst.Pattern.BigInt(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.BigInt(lit, loc), Type.BigInt, loc)
+    case NamedAst.Pattern.Str(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Str(lit, loc), Type.Str, loc)
+    case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
+      val p = reassemble(pat, subst0)
+      TypedAst.Pattern.Tag(enum.toResolved, tag, p, subst0(tvar), loc)
+    case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
+      val es = elms.map(e => reassemble(e, subst0))
+      TypedAst.Pattern.Tuple(es, subst0(tvar), loc)
+    case NamedAst.Pattern.FNone(tvar, loc) => ???
+    case NamedAst.Pattern.FSome(pat, tvar, loc) => ???
+    case NamedAst.Pattern.FNil(tvar, loc) => ???
+    case NamedAst.Pattern.FList(hd, tl, tvar, loc) => ???
+    case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => ???
+    case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => ???
+    case NamedAst.Pattern.FMap(elms, rest, tvar, loc) => ???
   }
 
 

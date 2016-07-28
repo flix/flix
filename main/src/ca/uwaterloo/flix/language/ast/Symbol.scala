@@ -73,7 +73,11 @@ object Symbol {
   final class VarSym(val id: Int, val text: String, val loc: SourceLocation) {
 
     // TODO: Temporary convenience method.
-    def toIdent: Name.Ident = ???
+    def toIdent: Name.Ident = {
+      val sp1 = SourcePosition(loc.source, loc.beginLine, loc.beginCol, loc.line)
+      val sp2 = SourcePosition(loc.source, loc.endLine, loc.endCol, loc.line)
+      Name.Ident(sp1, text + "$" + id, sp2)
+    }
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
