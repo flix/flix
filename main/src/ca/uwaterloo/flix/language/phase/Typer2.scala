@@ -248,13 +248,29 @@ object Typer2 {
          * Unary expression.
          */
         case NamedAst.Expression.Unary(op, exp1, tvar, loc) => op match {
-          case UnaryOperator.LogicalNot => ???
+          case UnaryOperator.LogicalNot =>
+            for (
+              tpe1 <- visitExp(exp1);
+              res <- unifyM(tvar, tpe1, Type.Bool)
+            ) yield res
 
-          case UnaryOperator.Plus => ???
+          case UnaryOperator.Plus =>
+            for (
+              tpe1 <- visitExp(exp1);
+              res <- unifyM(tvar, tpe1, Type.Int32)
+            ) yield res
 
-          case UnaryOperator.Minus => ???
+          case UnaryOperator.Minus =>
+            for (
+              tpe1 <- visitExp(exp1);
+              res <- unifyM(tvar, tpe1, Type.Int32)
+            ) yield res
 
-          case UnaryOperator.BitwiseNegate => ???
+          case UnaryOperator.BitwiseNegate =>
+            for (
+              tpe1 <- visitExp(exp1);
+              res <- unifyM(tvar, tpe1, Type.Int32)
+            ) yield res
         }
 
         /*
