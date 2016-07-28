@@ -237,7 +237,7 @@ object Typer2 {
         /*
          * Lambda expression.
          */
-        case NamedAst.Expression.Lambda(args, body, tpe, loc) => ???
+        case NamedAst.Expression.Lambda(args, body, tpe, loc) => ??? // TODO
 
         /*
          * Apply expression.
@@ -283,42 +283,42 @@ object Typer2 {
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
+              ____ <- unifyM(tvar, tpe1, tpe2)
             ) yield Type.Int32
 
           case BinaryOperator.Minus =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
+              ____ <- unifyM(tvar, tpe1, tpe2)
             ) yield Type.Int32
 
           case BinaryOperator.Times =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
+              ____ <- unifyM(tvar, tpe1, tpe2)
             ) yield Type.Int32
 
           case BinaryOperator.Divide =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
+              ____ <- unifyM(tvar, tpe1, tpe2)
             ) yield Type.Int32
 
           case BinaryOperator.Modulo =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
+              ____ <- unifyM(tvar, tpe1, tpe2)
             ) yield Type.Int32
 
           case BinaryOperator.Exponentiate =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
+              ____ <- unifyM(tvar, tpe1, tpe2)
             ) yield Type.Int32
 
           case BinaryOperator.Equal | BinaryOperator.NotEqual =>
@@ -348,7 +348,7 @@ object Typer2 {
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
+              ____ <- unifyM(tvar, tpe1)
             ) yield Type.Int32
 
         }
@@ -379,7 +379,7 @@ object Typer2 {
          * Match expression.
          */
         case NamedAst.Expression.Match(exp1, rules, tpe, loc) =>
-          liftM(Type.Int64)
+          liftM(Type.Int64) // TODO: Hack to get things running.
 
         /*
            * Switch expression.
@@ -401,7 +401,7 @@ object Typer2 {
           for (
             tpe <- visitExp(exp)
           )
-            yield Type.Int64 // TODO
+            yield Type.Int64 // TODO: Hack to get things running.
 
         /*
          * Tuple expression.
