@@ -384,18 +384,15 @@ object Typer2 {
         /*
            * Switch expression.
            */
-        case NamedAst.Expression.Switch(id, rules, loc) =>
-          ???
-        //            val bodyTypes = mutable.ListBuffer.empty[Type]
-        //            for ((cond, body) <- rules) {
-        //              val condType = visitExp(cond, tenv0)
-        //              bodyTypes += visitExp(body, tenv0)
-        //              constraints += TypeConstraint.Eq(condType, Type.Bool)
-        //            }
-        //
-        //            constraints += TypeConstraint.AllEq(bodyTypes.toList)
-        //
-        //            bodyTypes.head // TODO: Or generate fresh symbol?
+        case NamedAst.Expression.Switch(rules, tvar, loc) =>
+          val condExps = rules.map(_._1)
+          val bodyExps = rules.map(_._2)
+          for (
+            condType <- visitExps(condExps);
+            bodyType <- visitExps(bodyExps);
+            _ <- unifyM(condType, Type.Bool);
+            resultType <- unifyM(tvar, bodyType)
+          ) yield resultType
 
         /*
          * Tag expression.
@@ -544,7 +541,16 @@ object Typer2 {
       }
 
       // TODO: Doc and names.
-      def visitExps(es: List[NamedAst.Expression]): InferMonad[Type] = ???
+      def visitExps(es: List[NamedAst.Expression]): InferMonad[Type] = es match {
+        case Nil => throw InternalCompilerException("Empty list?")
+        case x :: Nil => visitExp(x)
+        case x :: rs =>
+          for (
+            tpe1 <- visitExp(x);
+            tpe2 <- visitExps(rs);
+            resultType <- unifyM(tpe1, tpe2)
+          ) yield resultType
+      }
 
 
       /**
