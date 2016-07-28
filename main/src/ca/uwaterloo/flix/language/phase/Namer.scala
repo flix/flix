@@ -84,7 +84,7 @@ object Namer {
             val env0 = getEnvFromParams(params)
             Expressions.namer(exp, env0) map {
               case e =>
-                val defn = NamedAst.Declaration.Definition(ann, ident, params, e, Types.lookup(tpe), loc)
+                val defn = NamedAst.Declaration.Definition(ann, ident, params, e, tpe, loc)
                 val defns = Map(ident.name -> defn)
                 prog0.copy(definitions = prog0.definitions + (ns0 -> defns))
             }
@@ -96,7 +96,7 @@ object Namer {
                 val env0 = getEnvFromParams(params)
                 Expressions.namer(exp, env0) map {
                   case e =>
-                    val defn = NamedAst.Declaration.Definition(ann, ident, params, e, Types.lookup(tpe), loc)
+                    val defn = NamedAst.Declaration.Definition(ann, ident, params, e, tpe, loc)
                     val defns = defns0 + (ident.name -> defn)
                     prog0.copy(definitions = prog0.definitions + (ns0 -> defns))
                 }
@@ -218,8 +218,8 @@ object Namer {
 
         @@(botVal, topVal, leqVal, lubVal, glbVal) map {
           case (bot, top, leq, lub, glb) =>
-            val lattice = NamedAst.Declaration.BoundedLattice(Types.lookup(tpe), bot, top, leq, lub, glb, loc)
-            prog0.copy(lattices = prog0.lattices + (Types.lookup(tpe) -> lattice)) // NB: This just overrides any existing binding.
+            val lattice = NamedAst.Declaration.BoundedLattice(tpe, bot, top, leq, lub, glb, loc)
+            prog0.copy(lattices = prog0.lattices + (tpe -> lattice)) // NB: This just overrides any existing binding.
         }
 
       /*
@@ -279,7 +279,7 @@ object Namer {
       */
     def casesOf(cases: Map[String, WeededAst.Case]): Map[String, NamedAst.Case] =
     cases.foldLeft(Map.empty[String, NamedAst.Case]) {
-      case (macc, (name, WeededAst.Case(enum, tag, tpe))) => macc + (name -> NamedAst.Case(enum, tag, Types.lookup(tpe)))
+      case (macc, (name, WeededAst.Case(enum, tag, tpe))) => macc + (name -> NamedAst.Case(enum, tag, tpe))
     }
 
   }
@@ -442,7 +442,7 @@ object Namer {
       }
 
       case WeededAst.Expression.Ascribe(exp, tpe, loc) => namer(exp, env0) map {
-        case e => NamedAst.Expression.Ascribe(e, Types.lookup(tpe), loc)
+        case e => NamedAst.Expression.Ascribe(e, tpe, loc)
       }
 
       case WeededAst.Expression.UserError(loc) => NamedAst.Expression.UserError(genSym.freshTypeVar(), loc).toSuccess
@@ -492,32 +492,6 @@ object Namer {
       }
 
       (visit(pat0), m.toMap)
-    }
-
-  }
-
-  object Types {
-
-    // TODO: Move into typer, I think.
-    def lookup(tpe0: Type): Type = tpe0 match {
-      case Type.Unresolved(name) => name.ident.name match {
-        case "Unit" => Type.Unit
-        case "Bool" => Type.Bool
-        case "Char" => Type.Char
-        case "Float" => Type.Float64
-        case "Float32" => Type.Float32
-        case "Float64" => Type.Float64
-        case "Int" => Type.Int32
-        case "Int8" => Type.Int8
-        case "Int16" => Type.Int16
-        case "Int32" => Type.Int32
-        case "Int64" => Type.Int64
-        case "BigInt" => Type.BigInt
-        case "Str" => Type.Str
-        case _ => Type.Unresolved(name)
-      }
-      // TODO: Rest
-      case _ => tpe0
     }
 
   }

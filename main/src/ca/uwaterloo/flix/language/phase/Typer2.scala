@@ -529,7 +529,7 @@ object Typer2 {
         case NamedAst.Expression.Ascribe(exp, expectedType, loc) =>
           for (
             actualType <- visitExp(exp);
-            resultType <- unifyM(actualType, expectedType)
+            resultType <- unifyM(actualType, Types.lookup(expectedType))
           )
             yield resultType
 
@@ -694,6 +694,32 @@ object Typer2 {
       return TypeError.KindError().toFailure
     }
     return Substitution.singleton(x, tpe).toSuccess
+  }
+
+  object Types {
+
+    // TODO: Move into typer, I think.
+    def lookup(tpe0: Type): Type = tpe0 match {
+      case Type.Unresolved(name) => name.ident.name match {
+        case "Unit" => Type.Unit
+        case "Bool" => Type.Bool
+        case "Char" => Type.Char
+        case "Float" => Type.Float64
+        case "Float32" => Type.Float32
+        case "Float64" => Type.Float64
+        case "Int" => Type.Int32
+        case "Int8" => Type.Int8
+        case "Int16" => Type.Int16
+        case "Int32" => Type.Int32
+        case "Int64" => Type.Int64
+        case "BigInt" => Type.BigInt
+        case "Str" => Type.Str
+        case _ => Type.Unresolved(name)
+      }
+      // TODO: Rest
+      case _ => tpe0
+    }
+
   }
 
   /**
