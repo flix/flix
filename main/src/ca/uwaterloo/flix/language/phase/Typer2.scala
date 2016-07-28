@@ -165,6 +165,15 @@ object Typer2 {
     res <- unifyM(tpe, tpe3)
   ) yield res
 
+  /**
+    * TODO: DOC
+    */
+  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type): InferMonad[Type] =
+  for (
+    tpe <- unifyM(tpe1, tpe2, tpe3);
+    res <- unifyM(tpe, tpe4)
+  ) yield res
+
   // TODO
   def unifyM(ts: List[Type]): InferMonad[Type] = ???
 
@@ -256,51 +265,59 @@ object Typer2 {
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tpe1, Type.Int32);
-              ____ <- unifyM(tpe2, Type.Int32)
+              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
             ) yield Type.Int32
 
           case BinaryOperator.Minus =>
-            //            val (ctx1, tpe1) = visitExp(e1, tenv0)
-            //            val (ctx2, tpe2) = visitExp(e2, tenv0)
-            //            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
-            ???
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
+            ) yield Type.Int32
 
           case BinaryOperator.Times =>
-            //            val (ctx1, tpe1) = visitExp(e1, tenv0)
-            //            val (ctx2, tpe2) = visitExp(e2, tenv0)
-            //            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
-            ???
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
+            ) yield Type.Int32
 
           case BinaryOperator.Divide =>
-            //            val (ctx1, tpe1) = visitExp(e1, tenv0)
-            //            val (ctx2, tpe2) = visitExp(e2, tenv0)
-            //            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
-            ???
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
+            ) yield Type.Int32
 
           case BinaryOperator.Modulo =>
-            //            val (ctx1, tpe1) = visitExp(e1, tenv0)
-            //            val (ctx2, tpe2) = visitExp(e2, tenv0)
-            //            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
-            ???
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
+            ) yield Type.Int32
 
           case BinaryOperator.Exponentiate =>
-            //            val (ctx1, tpe1) = visitExp(e1, tenv0)
-            //            val (ctx2, tpe2) = visitExp(e2, tenv0)
-            //            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
-            ???
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
+            ) yield Type.Int32
 
           case BinaryOperator.Equal | BinaryOperator.NotEqual =>
-            //            val (ctx1, tpe1) = visitExp(e1, tenv0)
-            //            val (ctx2, tpe2) = visitExp(e2, tenv0)
-            //            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
-            ???
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              ____ <- unifyM(tpe1, tpe2);
+              resultType <- unifyM(tvar, Type.Bool)
+            ) yield resultType
 
           case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual =>
-            //            val (ctx1, tpe1) = visitExp(e1, tenv0)
-            //            val (ctx2, tpe2) = visitExp(e2, tenv0)
-            //            constraints += TypeConstraint.Eq((ctx1, tpe1), (ctx2, tpe2))
-            ???
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              ____ <- unifyM(tpe1, tpe2);
+              resultType <- unifyM(tvar, Type.Bool)
+            ) yield resultType
 
           case BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr | BinaryOperator.Implication | BinaryOperator.Biconditional =>
             //            val (ctx1, tpe1) = visitExp(e1, tenv0)
