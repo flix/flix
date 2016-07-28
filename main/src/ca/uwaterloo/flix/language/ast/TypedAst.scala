@@ -590,7 +590,15 @@ object TypedAst {
       */
     case class Tuple(elms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
-    // TODO: Add for opt, list, map, ???
+
+    // TODO
+    //    case NamedAst.Pattern.FNone(tvar, loc) => ???
+    //    case NamedAst.Pattern.FSome(pat, tvar, loc) => ???
+    //    case NamedAst.Pattern.FNil(tvar, loc) => ???
+    //    case NamedAst.Pattern.FList(hd, tl, tvar, loc) => ???
+    //    case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => ???
+    //    case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => ???
+    //    case NamedAst.Pattern.FMap(elms, rest, tvar, loc) => ???
 
   }
 

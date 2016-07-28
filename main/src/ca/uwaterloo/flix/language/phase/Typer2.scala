@@ -379,6 +379,14 @@ object Typer2 {
          * Match expression.
          */
         case NamedAst.Expression.Match(exp1, rules, tpe, loc) =>
+          val patterns = rules map {
+            case (pat, exp) => visitPat(pat)
+          }
+
+          val bodies = rules map {
+            case (pat, exp) => visitExp(exp)
+          }
+
           liftM(Type.Int64) // TODO: Hack to get things running.
 
         /*
@@ -562,46 +570,27 @@ object Typer2 {
       }
 
       /**
-        * Infers the type of the given expression `e0` under the given type environment `tenv0`.
+        * Infers the type of the given pattern `pat0`.
         */
-      // TODO: What is the type env exactly? Should probably be removed/refactored.
-      def visitPat(p0: NamedAst.Pattern, tenv: Map[Symbol.VarSym, Type]): Validation[(Substitution, Type), TypeError] = p0 match {
-        case NamedAst.Pattern.Wild(tvar, loc) => (Substitution.empty, tvar).toSuccess
-        case NamedAst.Pattern.Var(sym, tvar, loc) => (Substitution.empty, tvar).toSuccess
-        case NamedAst.Pattern.Unit(loc) => (Substitution.empty, Type.Unit).toSuccess
-        case NamedAst.Pattern.True(loc) => (Substitution.empty, Type.Bool).toSuccess
-        case NamedAst.Pattern.False(loc) => (Substitution.empty, Type.Bool).toSuccess
-        case NamedAst.Pattern.Char(c, loc) => (Substitution.empty, Type.Char).toSuccess
-        case NamedAst.Pattern.Float32(i, loc) => (Substitution.empty, Type.Float32).toSuccess
-        case NamedAst.Pattern.Float64(i, loc) => (Substitution.empty, Type.Float64).toSuccess
-        case NamedAst.Pattern.Int8(i, loc) => (Substitution.empty, Type.Int8).toSuccess
-        case NamedAst.Pattern.Int16(i, loc) => (Substitution.empty, Type.Int16).toSuccess
-        case NamedAst.Pattern.Int32(i, loc) => (Substitution.empty, Type.Int32).toSuccess
-        case NamedAst.Pattern.Int64(i, loc) => (Substitution.empty, Type.Int64).toSuccess
-        case NamedAst.Pattern.BigInt(i, loc) => (Substitution.empty, Type.BigInt).toSuccess
-        case NamedAst.Pattern.Str(s, loc) => (Substitution.empty, Type.Str).toSuccess
-
+      def visitPat(pat0: NamedAst.Pattern): InferMonad[Type] = pat0 match {
+        case NamedAst.Pattern.Wild(tvar, loc) => liftM(tvar)
+        case NamedAst.Pattern.Var(sym, tvar, loc) => unifyM(sym.tvar, tvar)
+        case NamedAst.Pattern.Unit(loc) => liftM(Type.Unit)
+        case NamedAst.Pattern.True(loc) => liftM(Type.Bool)
+        case NamedAst.Pattern.False(loc) => liftM(Type.Bool)
+        case NamedAst.Pattern.Char(c, loc) => liftM(Type.Char)
+        case NamedAst.Pattern.Float32(i, loc) => liftM(Type.Float32)
+        case NamedAst.Pattern.Float64(i, loc) => liftM(Type.Float64)
+        case NamedAst.Pattern.Int8(i, loc) => liftM(Type.Int8)
+        case NamedAst.Pattern.Int16(i, loc) => liftM(Type.Int16)
+        case NamedAst.Pattern.Int32(i, loc) => liftM(Type.Int32)
+        case NamedAst.Pattern.Int64(i, loc) => liftM(Type.Int64)
+        case NamedAst.Pattern.BigInt(i, loc) => liftM(Type.BigInt)
+        case NamedAst.Pattern.Str(s, loc) => liftM(Type.Str)
         case NamedAst.Pattern.Tag(enum, tag, p1, tvar, loc) =>
-          visitPat(p1, tenv) map {
-            case (subst, tpe) =>
-              (subst, Type.Enum(???, ???))
-          }
-
+          ???
         case NamedAst.Pattern.Tuple(pats, tvar, loc) =>
-          val elmsVal = @@(pats.map(p => visitPat(p, tenv)))
-          elmsVal flatMap {
-            case elms =>
-              val substs = elms.map(_._1)
-              val tpes = elms.map(_._2)
-              val resultType = Type.mkFTuple(tpes)
-              unify(tvar, resultType) flatMap {
-                case subst => mergeAll(subst :: substs) map {
-                  case resultSubst => (resultSubst, resultType)
-                }
-              }
-
-          }
-
+          ???
         case NamedAst.Pattern.FNone(tvar, loc) => ???
         case NamedAst.Pattern.FSome(pat, tvar, loc) => ???
         case NamedAst.Pattern.FNil(tvar, loc) => ???
