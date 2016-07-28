@@ -153,7 +153,7 @@ object Typer2 {
     */
   def unifyM(tpe1: Type, tpe2: Type): InferMonad[Type] = unify(tpe1, tpe2) match {
     case Validation.Success(subst, _) => InferMonad[Type](subst(tpe1), subst)
-    case _ => ???
+    case Validation.Failure(errors) => throw InternalCompilerException(s"Unable to unify `$tpe1' with `$tpe2'. Errors ${errors.mkString(", ")}.")
   }
 
   /**
@@ -242,7 +242,12 @@ object Typer2 {
         /*
          * Apply expression.
          */
-        case NamedAst.Expression.Apply(id, exp1, args, _) => ???
+        case NamedAst.Expression.Apply(lambda, actuals, tvar, loc) =>
+          for (
+            lambdaType <- visitExp(lambda);
+            actualTypes <- visitExps2(actuals);
+            arrowType <- unifyM(lambdaType, Type.mkArrow(Type.mkFTuple(actualTypes), tvar))
+          ) yield tvar
 
         /*
          * Unary expression.
@@ -554,8 +559,7 @@ object Typer2 {
 
       // TODO: Doc and names.
       def visitExps2(es: List[NamedAst.Expression]): InferMonad[List[Type]] = es match {
-        case Nil => throw InternalCompilerException("Empty list?")
-        case x :: Nil => visitExp(x).map(tpe => List(tpe))
+        case Nil => liftM(Nil)
         case x :: xs =>
           for (
             tpe <- visitExp(x);

@@ -64,7 +64,7 @@ sealed trait Type {
     * Returns a human readable string representation of `this` type.
     */
   override def toString: String = this match {
-    case Type.Var(x, k) => x
+    case Type.Var(x, k) => s"Var($x)"
     case Type.Unit => "Unit"
     case Type.Bool => "Bool"
     case Type.Char => "Char"
