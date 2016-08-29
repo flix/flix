@@ -112,8 +112,8 @@ object Codegen {
         case Type.Lambda(_, _) => s"L${decorate(interfaces(tpe))};"
         case Type.Parametric(_, _) => ??? // TODO: How to handle?
         case Type.FOpt(_) => ??? // TODO
-        case Type.FList(_)=> ??? // TODO
-        case Type.FVec(_)=> ??? // TODO
+        case Type.FList(_) => ??? // TODO
+        case Type.FVec(_) => ??? // TODO
         case Type.FSet(_) => asm.Type.getDescriptor(Constants.setClass)
         case Type.FMap(_, _) => ??? // TODO
         case Type.Predicate(_) => ??? // TODO: How to handle?
@@ -165,10 +165,10 @@ object Codegen {
 
     // Wrap the class writer in a CheckClassAdapter if compiler invariants are enabled.
     val visitor =
-      if (options.invariants)
-        new CheckClassAdapter(classWriter)
-      else
-        classWriter
+    if (options.invariants)
+      new CheckClassAdapter(classWriter)
+    else
+      classWriter
 
     // Initialize the visitor to create a class.
     visitor.visit(V1_8, ACC_PUBLIC + ACC_SUPER, decorate(ctx.prefix), null, asm.Type.getInternalName(Constants.objectClass), null)
@@ -236,7 +236,7 @@ object Codegen {
       case Type.Float64 => mv.visitInsn(DRETURN)
       case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
            Type.FSet(_) => mv.visitInsn(ARETURN)
-      case Type.FOpt(_)=> ??? // TODO
+      case Type.FOpt(_) => ??? // TODO
       case Type.FList(_) => ??? // TODO
       case Type.FVec(_) => ??? // TODO
       case Type.FMap(_, _) => ??? // TODO
@@ -369,6 +369,9 @@ object Codegen {
       // Evaluate arguments left-to-right and push them onto the stack. Then make the call.
       args.foreach(compileExpression(ctx, visitor))
       visitor.visitMethodInsn(INVOKESTATIC, decorate(name.prefix), name.suffix, ctx.descriptor(targetTpe), false)
+
+    case Expression.ApplyTail(name, formals, actuals, _, _) =>
+      ??? // TODO
 
     case Expression.ApplyHook(hook, args, tpe, _) =>
       val (isSafe, name, elmsClass) = hook match {

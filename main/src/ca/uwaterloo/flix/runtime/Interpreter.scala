@@ -74,6 +74,9 @@ object Interpreter {
     case Expression.ApplyRef(name, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
       evalCall(root.constants(name), args, root, env0)
+    case Expression.ApplyTail(name, _, args0, _, _) =>
+      val args = evalArgs(args0.toArray, root, env0)
+      evalCall(root.constants(name), args, root, env0)
     case Expression.ApplyHook(hook, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
       evalHook(hook, args, root, env0)

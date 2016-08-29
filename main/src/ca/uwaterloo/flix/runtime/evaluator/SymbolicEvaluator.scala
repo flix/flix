@@ -162,6 +162,23 @@ object SymbolicEvaluator {
         }
 
       /**
+        * Apply Tail. (similar to ApplyRef).
+        */
+      case Expression.ApplyTail(name, _, args, _, _) =>
+        // Lookup the reference.
+        val defn = root.constants(name)
+        // Evaluate all the arguments.
+        evaln(pc0, args, env0) flatMap {
+          case (pc, as) =>
+            // Bind the actual arguments to the formal variables.
+            val newEnv = (defn.formals zip as).foldLeft(Map.empty[String, SymVal]) {
+              case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
+            }
+            // Evaluate the body under the new environment.
+            eval(pc, defn.exp, newEnv)
+        }
+
+      /**
         * Apply Closure.
         */
       // TODO: check this implementation.
@@ -956,11 +973,11 @@ object SymbolicEvaluator {
       * Evaluates `x` first and then `y` second.
       */
     def eval2(pc0: PathConstraint, x: Expression, y: Expression, env0: Environment): List[(PathConstraint, (SymVal, SymVal))] =
-      eval(pc0, x, env0) flatMap {
-        case (pcx, vx) => eval(pcx, y, env0) map {
-          case (pcy, vy) => pcy -> ((vx, vy))
-        }
+    eval(pc0, x, env0) flatMap {
+      case (pcx, vx) => eval(pcx, y, env0) map {
+        case (pcy, vy) => pcy -> ((vx, vy))
       }
+    }
 
     /**
       * Evaluates the list of expressions `xs` under the path constraint `pc` and environment `env0`.
@@ -990,7 +1007,7 @@ object SymbolicEvaluator {
     * Returns the symbolic value corresponding to the given boolean `b`.
     */
   private def toBool(b: Boolean): SymVal =
-    if (b) SymVal.True else SymVal.False
+  if (b) SymVal.True else SymVal.False
 
   /**
     * Converts the given value `v` to an expression.
