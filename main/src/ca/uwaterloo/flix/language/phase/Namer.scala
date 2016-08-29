@@ -52,9 +52,9 @@ object Namer {
            |${consoleCtx.red(s">> Duplicate definition of '$name'.")}
            |
            |First definition was here:
-           |${loc1.underline}
+           |${loc1.highlight}
            |Second definition was here:
-           |${loc2.underline}
+           |${loc2.highlight}
            |Tip: Consider renaming or removing one of the definitions.
          """.stripMargin
     }

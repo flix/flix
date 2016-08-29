@@ -61,7 +61,7 @@ object PropertyError {
          |Counter-example: ${m.mkString(", ")}
          |
          |The function was defined here:
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -77,7 +77,7 @@ object PropertyError {
          |Counter-example: ${m.mkString(", ")}
          |
          |The function was defined here:
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -93,7 +93,7 @@ object PropertyError {
          |Counter-example: ${m.mkString(", ")}
          |
          |The partial order was defined here:
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -109,7 +109,7 @@ object PropertyError {
          |Counter-example: ${m.mkString(", ")}
          |
          |The partial order was defined here:
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -125,7 +125,7 @@ object PropertyError {
          |Counter-example: ${m.mkString(", ")}
          |
          |The partial order was defined here:
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -139,7 +139,7 @@ object PropertyError {
          |${consoleCtx.red(s">> The least element is not the smallest.")}
          |
          |The partial order was defined here:
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -155,7 +155,7 @@ object PropertyError {
          |Counter-example: ${m.mkString(", ")}
          |
          |The lub was defined here:
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -171,7 +171,7 @@ object PropertyError {
          |Counter-example: ${m.mkString(", ")}
          |
          |The lub was defined here:
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -185,7 +185,7 @@ object PropertyError {
          |${consoleCtx.red(s">> The greatest element is not the largest.")}
          |
          |The partial order was defined here:
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -201,7 +201,7 @@ object PropertyError {
          |Counter-example: ${m.mkString(", ")}
          |
          |The glb was defined here:
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -217,7 +217,7 @@ object PropertyError {
          |Counter-example: ${m.mkString(", ")}
          |
          |The glb was defined here:
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -231,7 +231,7 @@ object PropertyError {
          |${consoleCtx.red(s">> The function is not strict.")}
          |
          |The function was defined here:
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -247,7 +247,7 @@ object PropertyError {
          |Counter-example: ${m.mkString(", ")}
          |
          |The function was defined here:
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -264,7 +264,7 @@ object PropertyError {
          |Counter-example: ${m.mkString(", ")}
          |
          |The height function was defined here:
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -280,7 +280,7 @@ object PropertyError {
          |Counter-example: ${m.mkString(", ")}
          |
          |The height function was defined here:
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 

@@ -277,7 +277,7 @@ class RestServer(solver: Solver) {
   class GetRulePerformance extends JsonHandler {
     def json: JValue = JArray(solver.getRuleStats.map {
       case (rule, hits, time) => JObject(List(
-        JField("rule", JString(rule.head.loc.line())),
+        JField("rule", JString(rule.head.loc.lineAt(rule.head.loc.beginLine))),
         JField("loc", JString(rule.head.loc.format)),
         JField("hits", JInt(hits)),
         JField("time", JInt(time / 1000000))
