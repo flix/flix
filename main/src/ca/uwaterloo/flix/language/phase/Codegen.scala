@@ -222,7 +222,10 @@ object Codegen {
     val mv = visitor.visitMethod(flags, function.name.suffix, ctx.descriptor(function.tpe), null, null)
     mv.visitCode()
 
-    compileExpression(ctx, mv)(function.exp)
+    val entryPoint = new Label()
+    mv.visitLabel(entryPoint)
+
+    compileExpression(ctx, mv, entryPoint)(function.exp)
 
     val tpe = function.tpe match {
       case t: Type.Lambda => t.retTpe
@@ -251,7 +254,7 @@ object Codegen {
     mv.visitEnd()
   }
 
-  private def compileExpression(ctx: Context, visitor: MethodVisitor)(expr: Expression): Unit = expr match {
+  private def compileExpression(ctx: Context, visitor: MethodVisitor, entryPoint: Label)(expr: Expression): Unit = expr match {
     case Expression.Unit =>
       val clazz = Constants.unitClass
       visitor.visitFieldInsn(GETSTATIC, asm.Type.getInternalName(clazz), "MODULE$", asm.Type.getDescriptor(clazz))
@@ -285,8 +288,8 @@ object Codegen {
       visitor.visitMethodInsn(INVOKESPECIAL, name, "<init>", asm.Type.getConstructorDescriptor(ctor), false)
     case Expression.Str(s) => visitor.visitLdcInsn(s)
 
-    case load: LoadExpression => compileLoadExpr(ctx, visitor)(load)
-    case store: StoreExpression => compileStoreExpr(ctx, visitor)(store)
+    case load: LoadExpression => compileLoadExpr(ctx, visitor, entryPoint)(load)
+    case store: StoreExpression => compileStoreExpr(ctx, visitor, entryPoint)(store)
 
     case Expression.Var(ident, offset, tpe, _) => tpe match {
       case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ILOAD, offset)
@@ -321,7 +324,7 @@ object Codegen {
       // We construct Expression.Var nodes and compile them as expected.
       for (f <- freeVars) {
         val v = Expression.Var(f.ident, f.offset, f.tpe, loc)
-        compileExpression(ctx, visitor)(v)
+        compileExpression(ctx, visitor, entryPoint)(v)
       }
 
       // The name of the method implemented by the lambda.
@@ -367,11 +370,37 @@ object Codegen {
       val targetTpe = ctx.declarations(name)
 
       // Evaluate arguments left-to-right and push them onto the stack. Then make the call.
-      args.foreach(compileExpression(ctx, visitor))
+      args.foreach(compileExpression(ctx, visitor, entryPoint))
       visitor.visitMethodInsn(INVOKESTATIC, decorate(name.prefix), name.suffix, ctx.descriptor(targetTpe), false)
 
     case Expression.ApplyTail(name, formals, actuals, _, _) =>
-      ??? // TODO
+      // Evaluate each argument and overwrite the local variable.
+      var offset = 0
+      for (arg <- actuals) {
+        // Evaluate the argument and push the result on the stack.
+        compileExpression(ctx, visitor, entryPoint)(arg)
+        // Overwrite the local variable with the value on the stack.
+        arg.tpe match {
+          case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 =>
+            visitor.visitVarInsn(ISTORE, offset)
+            offset += 1
+          case Type.Int64 =>
+            visitor.visitVarInsn(LSTORE, offset)
+            offset += 2
+          case Type.Float32 =>
+            visitor.visitVarInsn(FSTORE, offset)
+            offset += 1
+          case Type.Float64 =>
+            visitor.visitVarInsn(DSTORE, offset)
+            offset += 2
+          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
+            visitor.visitVarInsn(ASTORE, offset)
+            offset += 1
+          case _ => throw InternalCompilerException(s"Not yet implemented.") // TODO
+        }
+      }
+      // Jump to the entry point of the method.
+      visitor.visitJumpInsn(GOTO, entryPoint)
 
     case Expression.ApplyHook(hook, args, tpe, _) =>
       val (isSafe, name, elmsClass) = hook match {
@@ -403,10 +432,10 @@ object Codegen {
           val ctor = clazz2.getConstructors.head
           visitor.visitTypeInsn(NEW, asm.Type.getInternalName(clazz2))
           visitor.visitInsn(DUP)
-          compileBoxedExpr(ctx, visitor)(e)
+          compileBoxedExpr(ctx, visitor, entryPoint)(e)
           visitor.visitMethodInsn(INVOKESPECIAL, asm.Type.getInternalName(clazz2), "<init>", asm.Type.getConstructorDescriptor(ctor), false)
         } else {
-          compileBoxedExpr(ctx, visitor)(e)
+          compileBoxedExpr(ctx, visitor, entryPoint)(e)
         }
         visitor.visitInsn(AASTORE)
       }
@@ -427,33 +456,33 @@ object Codegen {
       val name = ctx.interfaces(exp.tpe)
 
       // Evaluate the function we're calling.
-      compileExpression(ctx, visitor)(exp)
+      compileExpression(ctx, visitor, entryPoint)(exp)
 
       // Evaluate arguments left-to-right and push them onto the stack. Then make the interface call.
-      args.foreach(compileExpression(ctx, visitor))
+      args.foreach(compileExpression(ctx, visitor, entryPoint))
       visitor.visitMethodInsn(INVOKEINTERFACE, decorate(name), "apply", ctx.descriptor(exp.tpe), true)
 
-    case Expression.Unary(op, exp, _, _) => compileUnaryExpr(ctx, visitor)(op, exp)
+    case Expression.Unary(op, exp, _, _) => compileUnaryExpr(ctx, visitor, entryPoint)(op, exp)
     case Expression.Binary(op, exp1, exp2, _, _) => op match {
-      case o: ArithmeticOperator => compileArithmeticExpr(ctx, visitor)(o, exp1, exp2)
-      case o: ComparisonOperator => compileComparisonExpr(ctx, visitor)(o, exp1, exp2)
-      case o: LogicalOperator => compileLogicalExpr(ctx, visitor)(o, exp1, exp2)
-      case o: BitwiseOperator => compileBitwiseExpr(ctx, visitor)(o, exp1, exp2)
+      case o: ArithmeticOperator => compileArithmeticExpr(ctx, visitor, entryPoint)(o, exp1, exp2)
+      case o: ComparisonOperator => compileComparisonExpr(ctx, visitor, entryPoint)(o, exp1, exp2)
+      case o: LogicalOperator => compileLogicalExpr(ctx, visitor, entryPoint)(o, exp1, exp2)
+      case o: BitwiseOperator => compileBitwiseExpr(ctx, visitor, entryPoint)(o, exp1, exp2)
     }
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
       val ifElse = new Label()
       val ifEnd = new Label()
-      compileExpression(ctx, visitor)(exp1)
+      compileExpression(ctx, visitor, entryPoint)(exp1)
       visitor.visitJumpInsn(IFEQ, ifElse)
-      compileExpression(ctx, visitor)(exp2)
+      compileExpression(ctx, visitor, entryPoint)(exp2)
       visitor.visitJumpInsn(GOTO, ifEnd)
       visitor.visitLabel(ifElse)
-      compileExpression(ctx, visitor)(exp3)
+      compileExpression(ctx, visitor, entryPoint)(exp3)
       visitor.visitLabel(ifEnd)
 
     case Expression.Let(ident, offset, exp1, exp2, _, _) =>
-      compileExpression(ctx, visitor)(exp1)
+      compileExpression(ctx, visitor, entryPoint)(exp1)
       exp1.tpe match {
         case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ISTORE, offset)
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
@@ -467,7 +496,7 @@ object Codegen {
         case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of ${exp1.tpe} should never be compiled.")
         case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type ${exp1.tpe}.")
       }
-      compileExpression(ctx, visitor)(exp2)
+      compileExpression(ctx, visitor, entryPoint)(exp2)
 
     case Expression.CheckTag(tag, exp, _) =>
       // Value.Tag.tag() method
@@ -479,7 +508,7 @@ object Codegen {
       val method2 = clazz2.getMethod("equals", Constants.objectClass)
 
       // Get the tag string of `exp` (compiled as a tag) and compare to `tag.name`.
-      compileExpression(ctx, visitor)(exp)
+      compileExpression(ctx, visitor, entryPoint)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), method1.getName, asm.Type.getMethodDescriptor(method1), false)
       visitor.visitLdcInsn(tag.name)
       visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz2), method2.getName, asm.Type.getMethodDescriptor(method2), false)
@@ -490,7 +519,7 @@ object Codegen {
       val method = clazz.getMethod("value")
 
       // Compile `exp` as a tag expression, get its inner `value`, and unbox if necessary.
-      compileExpression(ctx, visitor)(exp)
+      compileExpression(ctx, visitor, entryPoint)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
       compileUnbox(ctx, visitor)(tpe)
 
@@ -498,13 +527,13 @@ object Codegen {
       // Load the Value singleton object, then the arguments (tag.name, boxing if necessary), and finally call `Value.mkTag`.
       Constants.loadValueObject(visitor)
       visitor.visitLdcInsn(tag.name)
-      compileBoxedExpr(ctx, visitor)(exp)
+      compileBoxedExpr(ctx, visitor, entryPoint)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkTag", "(Ljava/lang/String;Ljava/lang/Object;)Lca/uwaterloo/flix/runtime/Value$Tag;", false)
 
     case Expression.GetTupleIndex(base, offset, tpe, _) =>
       // Load the Value singleton object and base expression, to call `Value.cast2tuple`, to get the elements array.
       Constants.loadValueObject(visitor)
-      compileExpression(ctx, visitor)(base)
+      compileExpression(ctx, visitor, entryPoint)(base)
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "cast2tuple", "(Ljava/lang/Object;)[Ljava/lang/Object;", false)
 
       // Now compile the offset and load the array element. Unbox if necessary.
@@ -527,7 +556,7 @@ object Codegen {
         // Duplicate the array reference, otherwise AASTORE will consume it.
         visitor.visitInsn(DUP)
         compileInt(visitor)(i)
-        compileBoxedExpr(ctx, visitor)(e)
+        compileBoxedExpr(ctx, visitor, entryPoint)(e)
         visitor.visitInsn(AASTORE)
       }
 
@@ -561,7 +590,7 @@ object Codegen {
         // Duplicate the array reference, otherwise AASTORE will consume it.
         visitor.visitInsn(DUP)
         compileInt(visitor)(i)
-        compileBoxedExpr(ctx, visitor)(e)
+        compileBoxedExpr(ctx, visitor, entryPoint)(e)
         visitor.visitInsn(AASTORE)
       }
 
@@ -605,7 +634,7 @@ object Codegen {
    * Some types (e.g. bool, int, str) need to be boxed as Flix values.
    * Other types (e.g. tag, tuple) are already Flix values.
    */
-  private def compileBoxedExpr(ctx: Context, visitor: MethodVisitor)(exp: Expression): Unit = exp.tpe match {
+  private def compileBoxedExpr(ctx: Context, visitor: MethodVisitor, entryPoint: Label)(exp: Expression): Unit = exp.tpe match {
     case Type.Bool =>
       // If we know the value of the boolean expression, then compile it directly rather than calling mkBool.
       Constants.loadValueObject(visitor)
@@ -613,47 +642,47 @@ object Codegen {
         case Expression.True => visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "True", "()Ljava/lang/Object;", false)
         case Expression.False => visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "False", "()Ljava/lang/Object;", false)
         case _ =>
-          compileExpression(ctx, visitor)(exp)
+          compileExpression(ctx, visitor, entryPoint)(exp)
           visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkBool", "(Z)Ljava/lang/Object;", false)
       }
 
     case Type.Char =>
       Constants.loadValueObject(visitor)
-      compileExpression(ctx, visitor)(exp)
+      compileExpression(ctx, visitor, entryPoint)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkChar", "(C)Ljava/lang/Object;", false)
 
     case Type.Float32 =>
       Constants.loadValueObject(visitor)
-      compileExpression(ctx, visitor)(exp)
+      compileExpression(ctx, visitor, entryPoint)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkFloat32", "(F)Ljava/lang/Object;", false)
 
     case Type.Float64 =>
       Constants.loadValueObject(visitor)
-      compileExpression(ctx, visitor)(exp)
+      compileExpression(ctx, visitor, entryPoint)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkFloat64", "(D)Ljava/lang/Object;", false)
 
     case Type.Int8 =>
       Constants.loadValueObject(visitor)
-      compileExpression(ctx, visitor)(exp)
+      compileExpression(ctx, visitor, entryPoint)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkInt8", "(I)Ljava/lang/Object;", false)
 
     case Type.Int16 =>
       Constants.loadValueObject(visitor)
-      compileExpression(ctx, visitor)(exp)
+      compileExpression(ctx, visitor, entryPoint)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkInt16", "(I)Ljava/lang/Object;", false)
 
     case Type.Int32 =>
       Constants.loadValueObject(visitor)
-      compileExpression(ctx, visitor)(exp)
+      compileExpression(ctx, visitor, entryPoint)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkInt32", "(I)Ljava/lang/Object;", false)
 
     case Type.Int64 =>
       Constants.loadValueObject(visitor)
-      compileExpression(ctx, visitor)(exp)
+      compileExpression(ctx, visitor, entryPoint)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkInt64", "(J)Ljava/lang/Object;", false)
 
     case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-         Type.FSet(_) => compileExpression(ctx, visitor)(exp)
+         Type.FSet(_) => compileExpression(ctx, visitor, entryPoint)(exp)
 
     case Type.FOpt(_) | Type.FList(_) | Type.FVec(_) | Type.FMap(_, _) => ??? // TODO
 
@@ -766,8 +795,8 @@ object Codegen {
    * If we used I2B instead of a mask, sign extension would give:
    *            11111111 11111111 11111111 10101010
    */
-  private def compileLoadExpr(ctx: Context, visitor: MethodVisitor)(load: LoadExpression): Unit = {
-    compileExpression(ctx, visitor)(load.e)
+  private def compileLoadExpr(ctx: Context, visitor: MethodVisitor, entryPoint: Label)(load: LoadExpression): Unit = {
+    compileExpression(ctx, visitor, entryPoint)(load.e)
     if (load.offset > 0) {
       compileInt(visitor)(load.offset)
       visitor.visitInsn(LSHR)
@@ -809,11 +838,11 @@ object Codegen {
    *   e      = xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 00000000 00000000 00000000 00000000
    *   result = 11111111 11111111 11111111 11111111 11110000 11110000 11110000 11110000
    */
-  private def compileStoreExpr(ctx: Context, visitor: MethodVisitor)(store: StoreExpression): Unit = {
-    compileExpression(ctx, visitor)(store.e)
+  private def compileStoreExpr(ctx: Context, visitor: MethodVisitor, entryPoint: Label)(store: StoreExpression): Unit = {
+    compileExpression(ctx, visitor, entryPoint)(store.e)
     compileInt(visitor)(store.targetMask, isLong = true)
     visitor.visitInsn(LAND)
-    compileExpression(ctx, visitor)(store.v)
+    compileExpression(ctx, visitor, entryPoint)(store.v)
     visitor.visitInsn(I2L)
     compileInt(visitor)(store.mask, isLong = true)
     visitor.visitInsn(LAND)
@@ -851,8 +880,8 @@ object Codegen {
     if (isLong && scala.Int.MinValue <= i && i <= scala.Int.MaxValue && i != 0 && i != 1) visitor.visitInsn(I2L)
   }
 
-  private def compileUnaryExpr(ctx: Context, visitor: MethodVisitor)(op: UnaryOperator, e: Expression): Unit = {
-    compileExpression(ctx, visitor)(e)
+  private def compileUnaryExpr(ctx: Context, visitor: MethodVisitor, entryPoint: Label)(op: UnaryOperator, e: Expression): Unit = {
+    compileExpression(ctx, visitor, entryPoint)(e)
     op match {
       case UnaryOperator.LogicalNot =>
         val condElse = new Label()
@@ -961,7 +990,7 @@ object Codegen {
    * are represented as ints and so we use I2D), then we invoke the static method `math.pow`, and then we have to cast
    * back to the original type (D2F, D2I, D2L; note that bytes and shorts need to be cast again with I2B and I2S).
    */
-  private def compileArithmeticExpr(ctx: Context, visitor: MethodVisitor)
+  private def compileArithmeticExpr(ctx: Context, visitor: MethodVisitor, entryPoint: Label)
                                    (o: ArithmeticOperator, e1: Expression, e2: Expression): Unit = {
     if (o == BinaryOperator.Exponentiate) {
       val (castToDouble, castFromDouble) = e1.tpe match {
@@ -972,9 +1001,9 @@ object Codegen {
         case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
       }
       visitor.visitFieldInsn(GETSTATIC, Constants.scalaMathPkg, "MODULE$", s"L${Constants.scalaMathPkg};")
-      compileExpression(ctx, visitor)(e1)
+      compileExpression(ctx, visitor, entryPoint)(e1)
       visitor.visitInsn(castToDouble)
-      compileExpression(ctx, visitor)(e2)
+      compileExpression(ctx, visitor, entryPoint)(e2)
       visitor.visitInsn(castToDouble)
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.scalaMathPkg, "pow", "(DD)D", false)
       visitor.visitInsn(castFromDouble)
@@ -984,8 +1013,8 @@ object Codegen {
         case Type.Float32 | Type.Float64 | Type.Int32 | Type.Int64 => visitor.visitInsn(NOP)
       }
     } else {
-      compileExpression(ctx, visitor)(e1)
-      compileExpression(ctx, visitor)(e2)
+      compileExpression(ctx, visitor, entryPoint)(e1)
+      compileExpression(ctx, visitor, entryPoint)(e2)
       val (intOp, longOp, floatOp, doubleOp, bigIntOp) = o match {
         case BinaryOperator.Plus => (IADD, LADD, FADD, DADD, "add")
         case BinaryOperator.Minus => (ISUB, LSUB, FSUB, DSUB, "subtract")
@@ -1057,7 +1086,7 @@ object Codegen {
    * BigInts are compared using the `compareTo` method.
    * `bigint1 OP bigint2` is compiled as `bigint1.compareTo(bigint2) OP 0`.
    */
-  private def compileComparisonExpr(ctx: Context, visitor: MethodVisitor)
+  private def compileComparisonExpr(ctx: Context, visitor: MethodVisitor, entryPoint: Label)
                                    (o: ComparisonOperator, e1: Expression, e2: Expression): Unit = {
     e1.tpe match {
       case Type.Enum(_, _) | Type.Tuple(_) | Type.FSet(_) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
@@ -1072,9 +1101,9 @@ object Codegen {
             val method2 = clazz2.getMethod("equals", Constants.arrayObjectClass, Constants.arrayObjectClass)
 
             // We know it's a tuple, so directly call java.util.Arrays.equals
-            compileExpression(ctx, visitor)(e1)
+            compileExpression(ctx, visitor, entryPoint)(e1)
             visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), method1.getName, asm.Type.getMethodDescriptor(method1), false)
-            compileExpression(ctx, visitor)(e2)
+            compileExpression(ctx, visitor, entryPoint)(e2)
             visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), method1.getName, asm.Type.getMethodDescriptor(method1), false)
             visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(clazz2), method2.getName, asm.Type.getMethodDescriptor(method2), false)
           case Type.Enum(_, _) | Type.FSet(_) =>
@@ -1083,8 +1112,8 @@ object Codegen {
             val method = clazz.getMethod("equals", Constants.objectClass)
 
             // Call the general java.lang.Object.equals
-            compileExpression(ctx, visitor)(e1)
-            compileExpression(ctx, visitor)(e2)
+            compileExpression(ctx, visitor, entryPoint)(e1)
+            compileExpression(ctx, visitor, entryPoint)(e2)
             visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
         }
         if (o == BinaryOperator.NotEqual) {
@@ -1099,8 +1128,8 @@ object Codegen {
         }
       case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type ${e1.tpe}.")
       case _ =>
-        compileExpression(ctx, visitor)(e1)
-        compileExpression(ctx, visitor)(e2)
+        compileExpression(ctx, visitor, entryPoint)(e1)
+        compileExpression(ctx, visitor, entryPoint)(e2)
         val condElse = new Label()
         val condEnd = new Label()
         val (intOp, floatOp, doubleOp, refOp, cmp) = o match {
@@ -1149,14 +1178,14 @@ object Codegen {
    * Note that LogicalAnd, LogicalOr, and Implication do short-circuit evaluation.
    * Implication and Biconditional are rewritten to their logical equivalents, and then compiled.
    */
-  private def compileLogicalExpr(ctx: Context, visitor: MethodVisitor)
+  private def compileLogicalExpr(ctx: Context, visitor: MethodVisitor, entryPoint: Label)
                                 (o: LogicalOperator, e1: Expression, e2: Expression): Unit = o match {
     case BinaryOperator.LogicalAnd =>
       val andFalseBranch = new Label()
       val andEnd = new Label()
-      compileExpression(ctx, visitor)(e1)
+      compileExpression(ctx, visitor, entryPoint)(e1)
       visitor.visitJumpInsn(IFEQ, andFalseBranch)
-      compileExpression(ctx, visitor)(e2)
+      compileExpression(ctx, visitor, entryPoint)(e2)
       visitor.visitJumpInsn(IFEQ, andFalseBranch)
       visitor.visitInsn(ICONST_1)
       visitor.visitJumpInsn(GOTO, andEnd)
@@ -1167,9 +1196,9 @@ object Codegen {
       val orTrueBranch = new Label()
       val orFalseBranch = new Label()
       val orEnd = new Label()
-      compileExpression(ctx, visitor)(e1)
+      compileExpression(ctx, visitor, entryPoint)(e1)
       visitor.visitJumpInsn(IFNE, orTrueBranch)
-      compileExpression(ctx, visitor)(e2)
+      compileExpression(ctx, visitor, entryPoint)(e2)
       visitor.visitJumpInsn(IFEQ, orFalseBranch)
       visitor.visitLabel(orTrueBranch)
       visitor.visitInsn(ICONST_1)
@@ -1180,10 +1209,10 @@ object Codegen {
     case BinaryOperator.Implication =>
       // (e1 ==> e2) === (!e1 || e2)
       val notExp = Expression.Unary(UnaryOperator.LogicalNot, e1, Type.Bool, e1.loc)
-      compileLogicalExpr(ctx, visitor)(BinaryOperator.LogicalOr, notExp, e2)
+      compileLogicalExpr(ctx, visitor, entryPoint)(BinaryOperator.LogicalOr, notExp, e2)
     case BinaryOperator.Biconditional =>
       // (e1 <==> e2) === (e1 == e2)
-      compileComparisonExpr(ctx, visitor)(BinaryOperator.Equal, e1, e2)
+      compileComparisonExpr(ctx, visitor, entryPoint)(BinaryOperator.Equal, e1, e2)
   }
 
   /*
@@ -1229,10 +1258,10 @@ object Codegen {
    *
    * Note: the right-hand operand of a shift (i.e. the shift amount) *must* be Int32.
    */
-  private def compileBitwiseExpr(ctx: Context, visitor: MethodVisitor)
+  private def compileBitwiseExpr(ctx: Context, visitor: MethodVisitor, entryPoint: Label)
                                 (o: BitwiseOperator, e1: Expression, e2: Expression): Unit = {
-    compileExpression(ctx, visitor)(e1)
-    compileExpression(ctx, visitor)(e2)
+    compileExpression(ctx, visitor, entryPoint)(e1)
+    compileExpression(ctx, visitor, entryPoint)(e2)
     val (intOp, longOp, bigintOp) = o match {
       case BinaryOperator.BitwiseAnd => (IAND, LAND, "and")
       case BinaryOperator.BitwiseOr => (IOR, LOR, "or")
