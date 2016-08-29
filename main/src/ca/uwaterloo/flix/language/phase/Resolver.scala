@@ -51,9 +51,9 @@ object Resolver {
             |${consoleCtx.red(s">> Duplicate definition of the name '$sym'.")}
            |
             |First definition was here:
-           |${loc1.underline}
+           |${loc1.highlight}
            |Second definition was here:
-           |${loc2.underline}
+           |${loc2.highlight}
            |Tip: Consider renaming or removing one of the definitions.
          """.stripMargin
     }
@@ -70,7 +70,7 @@ object Resolver {
            |
             |${consoleCtx.red(s">> Illegal uppercase name '$name'.")}
            |
-           |${loc.underline}
+           |${loc.highlight}
            |A value or function definition must start with a lowercase letter.
          """.stripMargin
     }
@@ -88,7 +88,7 @@ object Resolver {
            |
             |${consoleCtx.red(s">> Illegal lowercase name '$name'.")}
            |
-           |${loc.underline}
+           |${loc.highlight}
            |A relation or lattice definition must start with an uppercase letter.
          """.stripMargin
     }
@@ -105,7 +105,7 @@ object Resolver {
            |
             |${consoleCtx.red(s">> Illegal uppercase variable name '$name'.")}
            |
-           |${loc.underline}
+           |${loc.highlight}
            |A variable name must start with a lowercase letter.
          """.stripMargin
     }
@@ -135,7 +135,7 @@ object Resolver {
            |
             |${consoleCtx.red(s">> Unresolved reference to constant '$name'.")}
            |
-            |${loc.underline}
+            |${loc.highlight}
          """.stripMargin
     }
 
@@ -152,7 +152,7 @@ object Resolver {
            |
             |${consoleCtx.red(s">> Unresolved reference to enum '$name'.")}
            |
-            |${loc.underline}
+            |${loc.highlight}
          """.stripMargin
     }
 
@@ -171,7 +171,7 @@ object Resolver {
            |
             |${consoleCtx.red(s">> Unresolved reference to tag '$tag'.")}
            |
-            |${loc.underline}
+            |${loc.highlight}
            |${consoleCtx.green(s"Did you mean: '${Levenshtein.bestMatch(tag, tags).getOrElse("<<no suggestion>>")}' ?")}
            |
             |The enum '${enum.ident}' declares the tags: $formattedTags at '${enum.loc.format}'.
@@ -192,7 +192,7 @@ object Resolver {
            |
             |${consoleCtx.red(s">> Unresolved reference to relation '$name'.")}
            |
-            |${loc.underline}
+            |${loc.highlight}
          """.stripMargin
     }
 
@@ -209,7 +209,7 @@ object Resolver {
            |
             |${consoleCtx.red(s">> Unresolved reference to type '$name'.")}
            |
-            |${loc.underline}
+            |${loc.highlight}
          """.stripMargin
     }
 

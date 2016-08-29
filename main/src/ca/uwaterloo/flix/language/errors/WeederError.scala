@@ -43,9 +43,9 @@ object WeederError {
          |${consoleCtx.red(s">> Duplicate definition of the variable '$name'.")}
          |
          |First definition was here:
-         |${loc1.underline}
+         |${loc1.highlight}
          |Second definition was here:
-         |${loc2.underline}
+         |${loc2.highlight}
          """.stripMargin
   }
 
@@ -63,9 +63,9 @@ object WeederError {
          |${consoleCtx.red(s">> Duplicate annotation '$name'.")}
          |
          |First definition was here:
-         |${loc1.underline}
+         |${loc1.highlight}
          |Second definition was here:
-         |${loc2.underline}
+         |${loc2.highlight}
          """.stripMargin
   }
 
@@ -83,9 +83,9 @@ object WeederError {
          |${consoleCtx.red(s">> Duplicate attribute name '$name'.")}
          |
          |First definition was here:
-         |${loc1.underline}
+         |${loc1.highlight}
          |Second definition was here:
-         |${loc2.underline}
+         |${loc2.highlight}
          """.stripMargin
   }
 
@@ -103,9 +103,9 @@ object WeederError {
          |${consoleCtx.red(s">> Duplicate formal argument '$name'.")}
          |
          |First definition was here:
-         |${loc1.underline}
+         |${loc1.highlight}
          |Second definition was here:
-         |${loc2.underline}
+         |${loc2.highlight}
          """.stripMargin
   }
 
@@ -123,9 +123,9 @@ object WeederError {
          |${consoleCtx.red(s">> Duplicate tag name '$name'.")}
          |
          |First declaration was here:
-         |${loc1.underline}
+         |${loc1.highlight}
          |Second declaration was here:
-         |${loc2.underline}
+         |${loc2.highlight}
          """.stripMargin
   }
 
@@ -140,7 +140,7 @@ object WeederError {
          |
          |${consoleCtx.red(s">> An index must declare at least one group of attributes.")}
          |
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -155,7 +155,7 @@ object WeederError {
          |
          |${consoleCtx.red(s">> A relation must have at least one attribute (column).")}
          |
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -170,7 +170,7 @@ object WeederError {
          |
          |${consoleCtx.red(s">> A lattice must have at least one attribute (column).")}
          |
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -186,7 +186,7 @@ object WeederError {
          |
          |${consoleCtx.red(s">> Illegal annotation '$name'.")}
          |
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -202,7 +202,7 @@ object WeederError {
          |
          |${consoleCtx.red(s">> Illegal existential quantification.")}
          |
-         |${loc.underline}
+         |${loc.highlight}
          |$msg
          """.stripMargin
   }
@@ -219,7 +219,7 @@ object WeederError {
          |
          |${consoleCtx.red(s">> Illegal float.")}
          |
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -234,7 +234,7 @@ object WeederError {
          |
          |${consoleCtx.red(s">> Illegal index. An index must select at least one attribute.")}
          |
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -249,7 +249,7 @@ object WeederError {
          |
          |${consoleCtx.red(s">> Illegal predicate in the head of a fact/rule.")}
          |
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -265,7 +265,7 @@ object WeederError {
          |
          |${consoleCtx.red(s">> Illegal term in the body of a rule.")}
          |
-         |${loc.underline}
+         |${loc.highlight}
          |$msg
          """.stripMargin
   }
@@ -282,7 +282,7 @@ object WeederError {
          |
          |${consoleCtx.red(s">> Illegal term in the head of a fact/rule.")}
          |
-         |${loc.underline}
+         |${loc.highlight}
          |$msg
          """.stripMargin
   }
@@ -298,7 +298,7 @@ object WeederError {
          |
          |${consoleCtx.red(s">> Illegal int.")}
          |
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -313,7 +313,7 @@ object WeederError {
          |
          |${consoleCtx.red(s">> Lattice definition must have exactly five components: bot, top, leq, lub and glb.")}
          |
-         |${loc.underline}
+         |${loc.highlight}
          |the 1st component must be the bottom element,
          |the 2nd component must be the top element,
          |the 3rd component must be the partial order function,
@@ -333,7 +333,7 @@ object WeederError {
          |
          |${consoleCtx.red(s">> Illegal parameter list.")}
          |
-         |${loc.underline}
+         |${loc.highlight}
          |A parameter list must contain at least one parameter or be omitted.
          """.stripMargin
   }
@@ -350,7 +350,7 @@ object WeederError {
          |
          |${consoleCtx.red(s">> Illegal universal quantification.")}
          |
-         |${loc.underline}
+         |${loc.highlight}
          |$msg
          """.stripMargin
   }
@@ -366,7 +366,7 @@ object WeederError {
          |
          |${consoleCtx.red(s">> Illegal wildcard in expression.")}
          |
-         |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -384,9 +384,9 @@ object WeederError {
          |${consoleCtx.red(s">> Duplicate definition of the same variable '$name' in pattern.")}
          |
          |First definition was here:
-         |${loc1.underline}
+         |${loc1.highlight}
          |Second definition was here:
-         |${loc2.underline}
+         |${loc2.highlight}
          |
          |A variable must only occurs once in a pattern.
          """.stripMargin
@@ -404,7 +404,7 @@ object WeederError {
          |
          |${consoleCtx.red(s">> Unsupported feature: $msg")}
          |
-         |${loc.underline}
+         |${loc.highlight}
          |This feature is not yet supported, implemented or considered stable.
          |
          |Tip: Avoid using this feature.

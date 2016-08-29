@@ -53,7 +53,7 @@ object Typer {
            |
             |${consoleCtx.red(s">> Expected type '${prettyPrint(expected)}' but actual type is '${prettyPrint(actual)}'.")}
            |
-            |${loc.underline}
+            |${loc.highlight}
          """.stripMargin
     }
 
@@ -69,10 +69,15 @@ object Typer {
       val message =
         s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc1.source.format}")}
            |
-            |${consoleCtx.red(s">> Expected equal types '${prettyPrint(tpe1)}' and '${prettyPrint(tpe2)}'.")}
+           |${consoleCtx.red(s">> Expected equal types '${prettyPrint(tpe1)}' and '${prettyPrint(tpe2)}'.")}
            |
-            |${loc1.underline}
-           |${loc2.underline}
+           |the type '${consoleCtx.magenta(prettyPrint(tpe1))}' was inferred for the expression:
+           |
+           |${loc1.highlight}
+           |
+           |the type '${consoleCtx.magenta(prettyPrint(tpe2))}' was inferred for the expression:
+           |
+           |${loc2.highlight}
          """.stripMargin
     }
 
@@ -113,7 +118,7 @@ object Typer {
            |
             |${consoleCtx.red(s">> No lattice declared for '${prettyPrint(tpe)}'.")}
            |
-            |${loc.underline}
+            |${loc.highlight}
            |Tip: Associate a lattice with the type.
          """.stripMargin
     }
