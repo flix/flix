@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Timer, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 object Typer2 {
@@ -180,7 +180,10 @@ object Typer2 {
   /**
     * Type checks the given program.
     */
-  def typer(program: NamedAst.Program)(implicit genSym: GenSym): Unit = {
+  def typer(program: NamedAst.Program)(implicit genSym: GenSym): TypedAst.Root = {
+    val s = System.nanoTime()
+
+    val constants = ???
     for ((ns, defns) <- program.definitions) {
       for ((name, defn) <- defns) {
         val InferMonad(tpe, subst) = Expressions.infer(defn.exp)
@@ -189,6 +192,27 @@ object Typer2 {
         //TypedAst.Definition.Constant(defn.ann, ???, ???, exp, tpe, defn.loc)
       }
     }
+
+    val lattices = ???
+
+    val tables = ???
+    val indexes = ???
+
+    /*
+     * Facts.
+     */
+    val facts = program.facts.map {
+      case NamedAst.Declaration.Fact(head, loc) =>
+        val head = ???
+        TypedAst.Constraint.Fact(head)
+    }
+
+    val rules = ???
+
+    val e = System.nanoTime()
+    val time = program.time.copy(typer = e - s)
+
+    TypedAst.Root(constants, lattices, tables, indexes, facts, rules, program.hooks, Nil, time)
   }
 
   object Expressions {
