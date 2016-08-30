@@ -24,15 +24,16 @@ import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 
-// TODO: Cleanup TODOs and docs before committing.
-
+/**
+  * The Namer phase introduces unique symbols for each syntactic entity in the program.
+  */
 object Namer {
 
   import NameError._
 
   /**
-    * Performs naming on the given `program`.
-    */
+    * Introduces unique names for each syntactic entity in the given `program`.
+    **/
   def namer(program: WeededAst.Program)(implicit genSym: GenSym): Validation[NamedAst.Program, NameError] = {
     // make an empty program to fold over.
     val prog0 = NamedAst.Program(
@@ -75,8 +76,6 @@ object Namer {
        * Definition.
        */
       case WeededAst.Declaration.Definition(ann, ident, params, exp, tpe, loc) =>
-        // TODO: Need Gensym
-
         // check if the definition already exists.
         prog0.definitions.get(ns0) match {
           case None =>
@@ -155,10 +154,10 @@ object Namer {
         prog0.classes.get(sym) match {
           case None =>
             // Case 1: The class does not exist.
-            ???
+            ??? // TODO
           case Some(clazz) =>
             // Case 2: The class already exists.
-            ???
+            ??? // TODO
         }
 
       /*
@@ -170,8 +169,7 @@ object Namer {
        * Fact.
        */
       case WeededAst.Declaration.Fact(h, loc) =>
-        val head0 = h.asInstanceOf[WeededAst.Predicate.Head.Table]
-        val head = NamedAst.Predicate.Head.Table(head0.name, head0.terms, head0.loc)
+        val head = Predicates.namer(h)
         val fact = NamedAst.Declaration.Fact(head, loc)
         prog0.copy(facts = fact :: prog0.facts).toSuccess
 
@@ -179,9 +177,8 @@ object Namer {
        * Rule.
        */
       case WeededAst.Declaration.Rule(h, b, loc) =>
-        val head0 = h.asInstanceOf[WeededAst.Predicate.Head.Table]
-        val head = NamedAst.Predicate.Head.Table(head0.name, head0.terms, head0.loc)
-        // TODO
+        val head = Predicates.namer(h)
+        // TODO: Introduces Predicates.namer for body predicates.
         val body = b map {
           case WeededAst.Predicate.Body.Ambiguous(name, terms, loc) => NamedAst.Predicate.Body.Ambiguous(name, terms, loc)
           case WeededAst.Predicate.Body.NotEqual(ident1, ident2, loc) => NamedAst.Predicate.Body.NotEqual(ident1, ident2, loc)
@@ -492,6 +489,16 @@ object Namer {
       }
 
       (visit(pat0), m.toMap)
+    }
+
+  }
+
+  object Predicates {
+
+    def namer(head: WeededAst.Predicate.Head): NamedAst.Predicate.Head = head match {
+      case WeededAst.Predicate.Head.True(loc) => NamedAst.Predicate.Head.True(loc)
+      case WeededAst.Predicate.Head.False(loc) => NamedAst.Predicate.Head.False(loc)
+      case WeededAst.Predicate.Head.Table(name, terms, loc) => NamedAst.Predicate.Head.Table(name, terms, loc)
     }
 
   }

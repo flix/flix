@@ -227,6 +227,10 @@ object NamedAst {
 
     object Head {
 
+      case class True(loc: SourceLocation) extends NamedAst.Predicate.Head
+
+      case class False(loc: SourceLocation) extends NamedAst.Predicate.Head
+
       case class Table(name: Name.QName, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends NamedAst.Predicate.Head
 
     }
