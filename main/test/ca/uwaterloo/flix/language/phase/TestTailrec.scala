@@ -208,6 +208,88 @@ class TestTailrec extends FunSuite {
     assertResult(10 * 9 * 8 * 7 * 6 * 5 * 4 * 3 * 2 * 1)(result.get.getConstant("r"))
   }
 
+  test("Tailrec.GreatestCommonDivisor (of 8, 16)") {
+    val input =
+      """def r: Int = gcd(8, 16)
+        |
+        |def gcd(n: Int, m: Int): Int = switch {
+        |  case n == m => n
+        |  case n >= m => gcd(n - m, m)
+        |  case n <= m => gcd(n, m - n)
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assertResult(8)(result.get.getConstant("r"))
+  }
 
+  test("Tailrec.GreatestCommonDivisor (of 16, 8)") {
+    val input =
+      """def r: Int = gcd(16, 8)
+        |
+        |def gcd(n: Int, m: Int): Int = switch {
+        |  case n == m => n
+        |  case n >= m => gcd(n - m, m)
+        |  case n <= m => gcd(n, m - n)
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assertResult(8)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.GreatestCommonDivisor (of 42, 56)") {
+    val input =
+      """def r: Int = gcd(42, 56)
+        |
+        |def gcd(n: Int, m: Int): Int = switch {
+        |  case n == m => n
+        |  case n >= m => gcd(n - m, m)
+        |  case n <= m => gcd(n, m - n)
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assertResult(14)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.GreatestCommonDivisor (of 56, 42)") {
+    val input =
+      """def r: Int = gcd(56, 42)
+        |
+        |def gcd(n: Int, m: Int): Int = switch {
+        |  case n == m => n
+        |  case n >= m => gcd(n - m, m)
+        |  case n <= m => gcd(n, m - n)
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assertResult(14)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.GreatestCommonDivisor (of 24, 468)") {
+    val input =
+      """def r: Int = gcd(24, 468)
+        |
+        |def gcd(n: Int, m: Int): Int = switch {
+        |  case n == m => n
+        |  case n >= m => gcd(n - m, m)
+        |  case n <= m => gcd(n, m - n)
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assertResult(12)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.GreatestCommonDivisor (of 468, 24)") {
+    val input =
+      """def r: Int = gcd(468, 24)
+        |
+        |def gcd(n: Int, m: Int): Int = switch {
+        |  case n == m => n
+        |  case n >= m => gcd(n - m, m)
+        |  case n <= m => gcd(n, m - n)
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assertResult(12)(result.get.getConstant("r"))
+  }
 
 }
