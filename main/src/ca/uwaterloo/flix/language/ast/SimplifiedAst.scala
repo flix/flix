@@ -739,4 +739,340 @@ object SimplifiedAst {
 
   case class Property(law: Law, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst
 
+
+  /**
+   * A trait to consume a SimplifiedAst.Expression
+   * and produce a new Expression that's modified
+   * in some way. Typical usage is to extend the
+   * trait and override which methods corresponding
+   * to whatever case of Expression you're interested
+   * in and then call the `foldExpression` method
+   * to begin modifying a given expression.
+   */
+  trait ExpressionFolder {
+
+    /**
+     * This is the entry point for the folder. It recursively visits every Expression
+     * calling out to the overridable fold* methods.
+     *
+     * @param expr The expression to fold over and potentially modify.
+     * @return The potentially modified Expression.
+     */
+    final def foldExpression(expr: Expression): Expression = expr match {
+      case Expression.Unit => foldUnit()
+
+      case Expression.True => foldTrue()
+      case Expression.False => foldFalse()
+
+      case Expression.Char(lit) => foldChar(lit)
+
+      case Expression.Float32(lit) => foldFloat32(lit)
+      case Expression.Float64(lit) => foldFloat64(lit)
+
+      case Expression.Int8(lit) => foldInt8(lit)
+      case Expression.Int16(lit) => foldInt16(lit)
+      case Expression.Int32(lit) => foldInt32(lit)
+      case Expression.Int64(lit) => foldInt64(lit)
+      case Expression.BigInt(lit) => foldBigInt(lit)
+
+      case Expression.Str(lit) => foldStr(lit)
+
+      case Expression.LoadBool(e, offset) => foldLoadBool(e, offset)
+      case Expression.LoadInt8(e, offset) => foldLoadInt8(e, offset)
+      case Expression.LoadInt16(e, offset) => foldLoadInt16(e, offset)
+      case Expression.LoadInt32(e, offset) => foldLoadInt32(e, offset)
+
+      case Expression.StoreBool(e, offset, v) => foldStoreBool(e, offset, v)
+      case Expression.StoreInt8(e, offset, v) => foldStoreInt8(e, offset, v)
+      case Expression.StoreInt16(e, offset, v) => foldStoreInt16(e, offset, v)
+      case Expression.StoreInt32(e, offset, v) => foldStoreInt32(e, offset, v)
+
+      case Expression.Var(ident, offset, tpe, loc) => foldVar(ident, offset, tpe, loc)
+
+      case Expression.Ref(name, tpe, loc) => foldRef(name, tpe, loc)
+
+      case Expression.Lambda(args, body, tpe, loc) => foldLambda(args, body, tpe, loc)
+
+      case Expression.Hook(hook, tpe, loc) => foldHook(hook, tpe, loc)
+
+      case Expression.MkClosure(lambda, freeVars, tpe, loc) => foldMkClosure(lambda, freeVars, tpe, loc)
+      case Expression.MkClosureRef(ref, freeVars, tpe, loc) => foldMkClosureRef(ref, freeVars, tpe, loc)
+
+      case Expression.ApplyRef(name, args, tpe, loc) => foldApplyRef(name, args, tpe, loc)
+      case Expression.ApplyHook(hook, args, tpe, loc) => foldApplyHook(hook, args, tpe, loc)
+      case Expression.Apply(exp, args, tpe, loc) => foldApply(exp, args, tpe, loc)
+
+      case Expression.Unary(op, exp, tpe, loc) => foldUnary(op, exp, tpe, loc)
+      case Expression.Binary(op, exp1, exp2, tpe, loc) => foldBinary(op, exp1, exp2, tpe, loc)
+
+      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => foldIfThenElse(exp1, exp2, exp3, tpe, loc)
+
+      case Expression.Let(ident, offset, exp1, exp2, tpe, loc) => foldLet(ident, offset, exp1, exp2, tpe, loc)
+
+      case Expression.CheckTag(tag, exp, loc) => foldCheckTag(tag, exp, loc)
+      case Expression.GetTagValue(tag, exp, tpe, loc) => foldGetTagValue(tag, exp, tpe, loc)
+      case Expression.Tag(enum, tag, exp, tpe, loc) => foldTag(enum, tag, exp, tpe, loc)
+
+      case Expression.GetTupleIndex(base, offset, tpe, loc) => foldGetTupleIndex(base, offset, tpe, loc)
+      case Expression.Tuple(elms, tpe, loc) => foldTuple(elms, tpe, loc)
+
+      case Expression.CheckNil(exp, loc) => foldCheckNil(exp, loc)
+      case Expression.CheckCons(exp, loc) => foldCheckCons(exp, loc)
+
+      case Expression.FSet(elms, tpe, loc) => foldFSet(elms, tpe, loc)
+
+      case Expression.Existential(params, exp, loc) => foldExistential(params, exp, loc)
+      case Expression.Universal(params, exp, loc) => foldUniversal(params, exp, loc)
+
+      case Expression.UserError(tpe, loc) => foldUserError(tpe, loc)
+      case Expression.MatchError(tpe, loc) => foldMatchError(tpe, loc)
+      case Expression.SwitchError(tpe, loc) => foldSwitchError(tpe, loc)
+    }
+
+    def foldUnit(): Expression = Expression.Unit
+
+    def foldTrue(): Expression = Expression.True
+    def foldFalse(): Expression = Expression.False
+
+    def foldChar(lit: scala.Char): Expression = Expression.Char(lit)
+
+    def foldFloat32(lit: scala.Float): Expression = Expression.Float32(lit)
+    def foldFloat64(lit: scala.Double): Expression = Expression.Float64(lit)
+
+    def foldInt8(lit: scala.Byte): Expression = Expression.Int8(lit)
+    def foldInt16(lit: scala.Short): Expression = Expression.Int16(lit)
+    def foldInt32(lit: scala.Int): Expression = Expression.Int32(lit)
+    def foldInt64(lit: scala.Long): Expression = Expression.Int64(lit)
+    def foldBigInt(lit: java.math.BigInteger): Expression = Expression.BigInt(lit)
+
+    def foldStr(lit: java.lang.String): Expression = Expression.Str(lit)
+
+    def foldLoadBool(e: Expression, offset: scala.Int): Expression = {
+      val fe = foldExpression(e)
+      Expression.LoadBool(fe, offset)
+    }
+
+    def foldLoadInt8(e: Expression, offset: scala.Int): Expression = {
+      val fe = foldExpression(e)
+      Expression.LoadInt8(fe, offset)
+    }
+
+    def foldLoadInt16(e: Expression, offset: scala.Int): Expression = {
+      val fe = foldExpression(e)
+      Expression.LoadInt16(fe, offset)
+    }
+
+    def foldLoadInt32(e: Expression, offset: scala.Int): Expression = {
+      val fe = foldExpression(e)
+      Expression.LoadInt32(fe, offset)
+    }
+
+    def foldStoreBool(e: Expression,
+                      offset: scala.Int,
+                      v: Expression): Expression = {
+      val fe = foldExpression(e)
+      val fv = foldExpression(v)
+      Expression.StoreBool(fe, offset, fv)
+    }
+
+    def foldStoreInt8(e: Expression,
+                      offset: scala.Int,
+                      v: Expression): Expression = {
+      val fe = foldExpression(e)
+      val fv = foldExpression(v)
+      Expression.StoreInt8(fe, offset, fv)
+    }
+
+    def foldStoreInt16(e: Expression,
+                      offset: scala.Int,
+                      v: Expression): Expression = {
+      val fe = foldExpression(e)
+      val fv = foldExpression(v)
+      Expression.StoreInt16(fe, offset, fv)
+    }
+
+    def foldStoreInt32(e: Expression,
+                      offset: scala.Int,
+                      v: Expression): Expression = {
+      val fe = foldExpression(e)
+      val fv = foldExpression(v)
+      Expression.StoreInt32(fe, offset, fv)
+    }
+
+    def foldVar(ident: Name.Ident,
+                offset: scala.Int,
+                tpe: Type,
+                loc: SourceLocation): Expression = Expression.Var(ident, offset, tpe, loc)
+
+    def foldRef(name: Symbol.Resolved,
+                tpe: Type,
+                loc: SourceLocation): Expression = Expression.Ref(name, tpe, loc)
+
+    def foldLambda(args: List[SimplifiedAst.FormalArg],
+                   body: SimplifiedAst.Expression,
+                   tpe: Type.Lambda,
+                   loc: SourceLocation): Expression = {
+      val fbody = foldExpression(body)
+      Expression.Lambda(args, fbody, tpe, loc)
+    }
+
+    def foldHook(hook: Ast.Hook,
+                 tpe: Type,
+                 loc: SourceLocation): Expression = Expression.Hook(hook, tpe, loc)
+
+    def foldMkClosure(lambda: SimplifiedAst.Expression.Lambda,
+                      freeVars: List[FreeVar],
+                      tpe: Type.Lambda,
+                      loc: SourceLocation): Expression = {
+      val flambda = lambda.copy(body = foldExpression(lambda.body))
+      Expression.MkClosure(flambda, freeVars, tpe, loc)
+    }
+
+    def foldMkClosureRef(ref: SimplifiedAst.Expression.Ref,
+                         freeVars: List[FreeVar],
+                         tpe: Type.Lambda,
+                         loc: SourceLocation): Expression = Expression.MkClosureRef(ref, freeVars, tpe, loc)
+
+    def foldApplyRef(name: Symbol.Resolved,
+                     args: List[SimplifiedAst.Expression],
+                     tpe: Type,
+                     loc: SourceLocation): Expression = {
+      val fargs = args.map(exp => foldExpression(exp))
+      Expression.ApplyRef(name, fargs, tpe, loc)
+    }
+
+    def foldApplyHook(hook: Ast.Hook,
+                      args: List[SimplifiedAst.Expression],
+                      tpe: Type,
+                      loc: SourceLocation): Expression = {
+      val fargs = args.map(exp => foldExpression(exp))
+      Expression.ApplyHook(hook, fargs, tpe, loc)
+    }
+
+    def foldApply(exp: SimplifiedAst.Expression,
+                  args: List[SimplifiedAst.Expression],
+                  tpe: Type,
+                  loc: SourceLocation): Expression = {
+      val fexp = foldExpression(exp)
+      val fargs = args.map(exp => foldExpression(exp))
+      Expression.Apply(fexp, fargs, tpe, loc)
+    }
+
+    def foldUnary(op: UnaryOperator,
+                  exp: SimplifiedAst.Expression,
+                  tpe: Type,
+                  loc: SourceLocation): Expression = {
+      val fexp = foldExpression(exp)
+      Expression.Unary(op, fexp, tpe, loc)
+    }
+
+    def foldBinary(op: BinaryOperator,
+                   exp1: SimplifiedAst.Expression,
+                   exp2: SimplifiedAst.Expression,
+                   tpe: Type,
+                   loc: SourceLocation): Expression = {
+      val fexp1 = foldExpression(exp1)
+      val fexp2 = foldExpression(exp2)
+      Expression.Binary(op, fexp1, fexp2, tpe, loc)
+    }
+
+    def foldIfThenElse(exp1: SimplifiedAst.Expression,
+                       exp2: SimplifiedAst.Expression,
+                       exp3: SimplifiedAst.Expression,
+                       tpe: Type,
+                       loc: SourceLocation): Expression = {
+      val fexp1 = foldExpression(exp1)
+      val fexp2 = foldExpression(exp2)
+      val fexp3 = foldExpression(exp3)
+      Expression.IfThenElse(fexp1, fexp2, fexp3, tpe, loc)
+    }
+
+    def foldLet(ident: Name.Ident,
+                offset: scala.Int,
+                exp1: SimplifiedAst.Expression,
+                exp2: SimplifiedAst.Expression,
+                tpe: Type,
+                loc: SourceLocation): Expression = {
+      val fexp1 = foldExpression(exp1)
+      val fexp2 = foldExpression(exp2)
+      Expression.Let(ident, offset, fexp1, fexp2, tpe, loc)
+    }
+
+    def foldCheckTag(tag: Name.Ident,
+                     exp: SimplifiedAst.Expression,
+                     loc: SourceLocation): Expression = {
+      val fexp = foldExpression(exp)
+      Expression.CheckTag(tag, fexp, loc)
+    }
+
+    def foldGetTagValue(tag: Name.Ident,
+                        exp: SimplifiedAst.Expression,
+                        tpe: Type,
+                        loc: SourceLocation): Expression = {
+      val fexp = foldExpression(exp)
+      Expression.GetTagValue(tag, fexp, tpe, loc)
+    }
+
+    def foldTag(enum: Symbol.Resolved,
+                tag: Name.Ident,
+                exp: SimplifiedAst.Expression,
+                tpe: Type.Enum,
+                loc: SourceLocation): Expression = {
+      val fexp = foldExpression(exp)
+      Expression.Tag(enum, tag, fexp, tpe, loc)
+    }
+
+    def foldGetTupleIndex(base: SimplifiedAst.Expression,
+                          offset: scala.Int,
+                          tpe: Type,
+                          loc: SourceLocation): Expression = {
+      val fbase = foldExpression(base)
+      Expression.GetTupleIndex(fbase, offset, tpe, loc)
+    }
+
+    def foldTuple(elms: List[SimplifiedAst.Expression],
+                  tpe: Type.Tuple,
+                  loc: SourceLocation): Expression = {
+      val felms = elms.map(exp => foldExpression(exp))
+      Expression.Tuple(felms, tpe, loc)
+    }
+
+    def foldCheckNil(exp: SimplifiedAst.Expression,
+                     loc: SourceLocation): Expression = {
+      val fexp = foldExpression(exp)
+      Expression.CheckNil(fexp, loc)
+    }
+
+    def foldCheckCons(exp: SimplifiedAst.Expression,
+                     loc: SourceLocation): Expression = {
+      val fexp = foldExpression(exp)
+      Expression.CheckCons(fexp, loc)
+    }
+
+    def foldFSet(elms: List[SimplifiedAst.Expression],
+                 tpe: Type.FSet,
+                 loc: SourceLocation): Expression = {
+      val felms = elms.map(exp => foldExpression(exp))
+      Expression.FSet(felms, tpe, loc)
+    }
+
+    def foldExistential(params: List[Ast.FormalParam],
+                        exp: SimplifiedAst.Expression,
+                        loc: SourceLocation): Expression = {
+      val fexp = foldExpression(exp)
+      Expression.Existential(params, fexp, loc)
+    }
+
+    def foldUniversal(params: List[Ast.FormalParam],
+                      exp: SimplifiedAst.Expression,
+                      loc: SourceLocation): Expression = {
+      val fexp = foldExpression(exp)
+      Expression.Universal(params, fexp, loc)
+    }
+
+    def foldUserError(tpe: Type, loc: SourceLocation): Expression = Expression.UserError(tpe, loc)
+    def foldMatchError(tpe: Type, loc: SourceLocation): Expression = Expression.MatchError(tpe, loc)
+    def foldSwitchError(tpe: Type, loc: SourceLocation): Expression = Expression.SwitchError(tpe, loc)
+
+  }
 }
