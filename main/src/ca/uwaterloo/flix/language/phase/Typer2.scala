@@ -408,8 +408,7 @@ object Typer2 {
         case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
           for (
             tpe <- visitExp(exp)
-          )
-            yield Type.Int64 // TODO: Hack to get things running.
+          ) yield Type.Int64 // TODO: Hack to get things running.
 
         /*
          * Tuple expression.
@@ -587,10 +586,17 @@ object Typer2 {
         case NamedAst.Pattern.Int64(i, loc) => liftM(Type.Int64)
         case NamedAst.Pattern.BigInt(i, loc) => liftM(Type.BigInt)
         case NamedAst.Pattern.Str(s, loc) => liftM(Type.Str)
-        case NamedAst.Pattern.Tag(enum, tag, p1, tvar, loc) =>
-          ???
-        case NamedAst.Pattern.Tuple(pats, tvar, loc) =>
-          ???
+        case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
+          for (
+            tpe <- visitPat(pat)
+          ) yield Type.Int64 // TODO: Hack to get things running.
+
+        case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
+          for (
+            elementTypes <- visitPats2(elms);
+            resultType <- unifyM(tvar, Type.mkFTuple(elementTypes))
+          ) yield resultType
+
         case NamedAst.Pattern.FNone(tvar, loc) => ???
         case NamedAst.Pattern.FSome(pat, tvar, loc) => ???
         case NamedAst.Pattern.FNil(tvar, loc) => ???
@@ -598,6 +604,16 @@ object Typer2 {
         case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => ???
         case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => ???
         case NamedAst.Pattern.FMap(elms, rest, tvar, loc) => ???
+      }
+
+      // TODO: Doc and names.
+      def visitPats2(es: List[NamedAst.Pattern]): InferMonad[List[Type]] = es match {
+        case Nil => liftM(Nil)
+        case x :: xs =>
+          for (
+            tpe <- visitPat(x);
+            tpes <- visitPats2(xs)
+          ) yield tpe :: tpes
       }
 
 
