@@ -21,9 +21,9 @@ import org.scalatest.FunSuite
 
 class TestTailrec extends FunSuite {
 
-  test("Tailrec.01") {
+  test("Tailrec.Countdown (of 1)") {
     val input =
-      """def r: Int = f(42)
+      """def r: Int = f(1)
         |
         |def f(i: Int): Int =
         |  if (i == 0) 0 else f(i - 1)
@@ -32,18 +32,18 @@ class TestTailrec extends FunSuite {
     assertResult(0)(result.get.getConstant("r"))
   }
 
-  test("Tailrec.02") {
+  test("Tailrec.Countdown (of 5)") {
     val input =
-      """def r: Int = f(42)
+      """def r: Int = f(5)
         |
         |def f(i: Int): Int =
-        |  if (i == 21) 84 else f(i - 1)
+        |  if (i == 0) 0 else f(i - 1)
       """.stripMargin
     val result = new Flix().addStr(input).solve()
-    assertResult(84)(result.get.getConstant("r"))
+    assertResult(0)(result.get.getConstant("r"))
   }
 
-  test("Tailrec.03") {
+  test("Tailrec.Countdown (of 1_000_000)") {
     val input =
       """def r: Int = f(1000000)
         |
@@ -54,26 +54,160 @@ class TestTailrec extends FunSuite {
     assertResult(0)(result.get.getConstant("r"))
   }
 
-  test("Tailrec.04") {
+  test("Tailrec.Countover (of 1)") {
     val input =
-      """def r: Int = f(42, 0)
+      """def r: Int = f(1, 0)
         |
         |def f(i: Int, j: Int): Int =
         |  if (i == 0) j else f(i - 1, j + 1)
       """.stripMargin
     val result = new Flix().addStr(input).solve()
-    assertResult(42)(result.get.getConstant("r"))
+    assertResult(1)(result.get.getConstant("r"))
   }
 
-  test("Tailrec.05") {
+  test("Tailrec.Countover (of 5)") {
     val input =
-      """def r: Int = f(42, 0)
+      """def r: Int = f(5, 0)
         |
         |def f(i: Int, j: Int): Int =
-        |  if (i == 0) j else f(i - 1, j + 2)
+        |  if (i == 0) j else f(i - 1, j + 1)
       """.stripMargin
     val result = new Flix().addStr(input).solve()
-    assertResult(84)(result.get.getConstant("r"))
+    assertResult(5)(result.get.getConstant("r"))
   }
+
+  test("Tailrec.Sum (of 1)") {
+    val input =
+      """def r: Int = f(1, 0)
+        |
+        |def f(n: Int, m: Int): Int =
+        |  if (n == 0) m else f(n - 1, m + n)
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assertResult(1)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.Sum (of 2)") {
+    val input =
+      """def r: Int = f(2, 0)
+        |
+        |def f(n: Int, m: Int): Int =
+        |  if (n == 0) m else f(n - 1, m + n)
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assertResult(2 + 1)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.Sum (of 3)") {
+    val input =
+      """def r: Int = f(3, 0)
+        |
+        |def f(n: Int, m: Int): Int =
+        |  if (n == 0) m else f(n - 1, m + n)
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assertResult(3 + 2 + 1)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.Sum (of 4)") {
+    val input =
+      """def r: Int = f(4, 0)
+        |
+        |def f(n: Int, m: Int): Int =
+        |  if (n == 0) m else f(n - 1, m + n)
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assertResult(4 + 3 + 2 + 1)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.Sum (of 5)") {
+    val input =
+      """def r: Int = f(5, 0)
+        |
+        |def f(n: Int, m: Int): Int =
+        |  if (n == 0) m else f(n - 1, m + n)
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assertResult(5 + 4 + 3 + 2 + 1)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.Sum (of 10)") {
+    val input =
+      """def r: Int = f(10, 0)
+        |
+        |def f(n: Int, m: Int): Int =
+        |  if (n == 0) m else f(n - 1, m + n)
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assertResult(10 + 9 + 8 + 7 + 6 + 5 + 4 + 3 + 2 + 1)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.Factorial (of 1)") {
+    val input =
+      """def r: Int = f(1, 1)
+        |
+        |def f(n: Int, m: Int): Int =
+        |  if (n <= 1) m else f(n - 1, m * n)
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assertResult(1)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.Factorial (of 2)") {
+    val input =
+      """def r: Int = f(2, 1)
+        |
+        |def f(n: Int, m: Int): Int =
+        |  if (n <= 1) m else f(n - 1, m * n)
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assertResult(2 * 1)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.Factorial (of 3)") {
+    val input =
+      """def r: Int = f(3, 1)
+        |
+        |def f(n: Int, m: Int): Int =
+        |  if (n <= 1) m else f(n - 1, m * n)
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assertResult(3 * 2 * 1)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.Factorial (of 4)") {
+    val input =
+      """def r: Int = f(4, 1)
+        |
+        |def f(n: Int, m: Int): Int =
+        |  if (n <= 1) m else f(n - 1, m * n)
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assertResult(4 * 3 * 2 * 1)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.Factorial (of 5)") {
+    val input =
+      """def r: Int = f(5, 1)
+        |
+        |def f(n: Int, m: Int): Int =
+        |  if (n <= 1) m else f(n - 1, m * n)
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assertResult(5 * 4 * 3 * 2 * 1)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.Factorial (of 10)") {
+    val input =
+      """def r: Int = f(10, 1)
+        |
+        |def f(n: Int, m: Int): Int =
+        |  if (n <= 1) m else f(n - 1, m * n)
+      """.stripMargin
+    val result = new Flix().addStr(input).solve()
+    assertResult(10 * 9 * 8 * 7 * 6 * 5 * 4 * 3 * 2 * 1)(result.get.getConstant("r"))
+  }
+
+
 
 }
