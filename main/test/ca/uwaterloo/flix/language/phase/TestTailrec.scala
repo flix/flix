@@ -17,9 +17,12 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestTailrec extends FunSuite {
+
+  val opts = Options.DefaultTest
 
   test("Tailrec.Countdown (of 1)") {
     val input =
@@ -28,7 +31,7 @@ class TestTailrec extends FunSuite {
         |def f(i: Int): Int =
         |  if (i == 0) 0 else f(i - 1)
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(0)(result.get.getConstant("r"))
   }
 
@@ -39,7 +42,7 @@ class TestTailrec extends FunSuite {
         |def f(i: Int): Int =
         |  if (i == 0) 0 else f(i - 1)
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(0)(result.get.getConstant("r"))
   }
 
@@ -50,7 +53,7 @@ class TestTailrec extends FunSuite {
         |def f(i: Int): Int =
         |  if (i == 0) 0 else f(i - 1)
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(0)(result.get.getConstant("r"))
   }
 
@@ -61,7 +64,7 @@ class TestTailrec extends FunSuite {
         |def f(i: Int, j: Int): Int =
         |  if (i == 0) j else f(i - 1, j + 1)
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(1)(result.get.getConstant("r"))
   }
 
@@ -72,8 +75,19 @@ class TestTailrec extends FunSuite {
         |def f(i: Int, j: Int): Int =
         |  if (i == 0) j else f(i - 1, j + 1)
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(5)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.Countover (of 1_000_000)") {
+    val input =
+      """def r: Int = f(1000000, 0)
+        |
+        |def f(i: Int, j: Int): Int =
+        |  if (i == 0) j else f(i - 1, j + 1)
+      """.stripMargin
+    val result = new Flix().setOptions(opts).addStr(input).solve()
+    assertResult(1000000)(result.get.getConstant("r"))
   }
 
   test("Tailrec.Sum (of 1)") {
@@ -83,7 +97,7 @@ class TestTailrec extends FunSuite {
         |def f(n: Int, m: Int): Int =
         |  if (n == 0) m else f(n - 1, m + n)
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(1)(result.get.getConstant("r"))
   }
 
@@ -94,7 +108,7 @@ class TestTailrec extends FunSuite {
         |def f(n: Int, m: Int): Int =
         |  if (n == 0) m else f(n - 1, m + n)
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(2 + 1)(result.get.getConstant("r"))
   }
 
@@ -105,7 +119,7 @@ class TestTailrec extends FunSuite {
         |def f(n: Int, m: Int): Int =
         |  if (n == 0) m else f(n - 1, m + n)
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(3 + 2 + 1)(result.get.getConstant("r"))
   }
 
@@ -116,7 +130,7 @@ class TestTailrec extends FunSuite {
         |def f(n: Int, m: Int): Int =
         |  if (n == 0) m else f(n - 1, m + n)
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(4 + 3 + 2 + 1)(result.get.getConstant("r"))
   }
 
@@ -127,7 +141,7 @@ class TestTailrec extends FunSuite {
         |def f(n: Int, m: Int): Int =
         |  if (n == 0) m else f(n - 1, m + n)
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(5 + 4 + 3 + 2 + 1)(result.get.getConstant("r"))
   }
 
@@ -138,7 +152,7 @@ class TestTailrec extends FunSuite {
         |def f(n: Int, m: Int): Int =
         |  if (n == 0) m else f(n - 1, m + n)
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(10 + 9 + 8 + 7 + 6 + 5 + 4 + 3 + 2 + 1)(result.get.getConstant("r"))
   }
 
@@ -149,7 +163,7 @@ class TestTailrec extends FunSuite {
         |def f(n: Int, m: Int): Int =
         |  if (n <= 1) m else f(n - 1, m * n)
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(1)(result.get.getConstant("r"))
   }
 
@@ -160,7 +174,7 @@ class TestTailrec extends FunSuite {
         |def f(n: Int, m: Int): Int =
         |  if (n <= 1) m else f(n - 1, m * n)
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(2 * 1)(result.get.getConstant("r"))
   }
 
@@ -171,7 +185,7 @@ class TestTailrec extends FunSuite {
         |def f(n: Int, m: Int): Int =
         |  if (n <= 1) m else f(n - 1, m * n)
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(3 * 2 * 1)(result.get.getConstant("r"))
   }
 
@@ -182,7 +196,7 @@ class TestTailrec extends FunSuite {
         |def f(n: Int, m: Int): Int =
         |  if (n <= 1) m else f(n - 1, m * n)
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(4 * 3 * 2 * 1)(result.get.getConstant("r"))
   }
 
@@ -193,7 +207,7 @@ class TestTailrec extends FunSuite {
         |def f(n: Int, m: Int): Int =
         |  if (n <= 1) m else f(n - 1, m * n)
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(5 * 4 * 3 * 2 * 1)(result.get.getConstant("r"))
   }
 
@@ -204,7 +218,7 @@ class TestTailrec extends FunSuite {
         |def f(n: Int, m: Int): Int =
         |  if (n <= 1) m else f(n - 1, m * n)
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(10 * 9 * 8 * 7 * 6 * 5 * 4 * 3 * 2 * 1)(result.get.getConstant("r"))
   }
 
@@ -218,7 +232,7 @@ class TestTailrec extends FunSuite {
         |  case n <= m => gcd(n, m - n)
         |}
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(8)(result.get.getConstant("r"))
   }
 
@@ -232,7 +246,7 @@ class TestTailrec extends FunSuite {
         |  case n <= m => gcd(n, m - n)
         |}
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(8)(result.get.getConstant("r"))
   }
 
@@ -246,7 +260,7 @@ class TestTailrec extends FunSuite {
         |  case n <= m => gcd(n, m - n)
         |}
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(14)(result.get.getConstant("r"))
   }
 
@@ -260,7 +274,7 @@ class TestTailrec extends FunSuite {
         |  case n <= m => gcd(n, m - n)
         |}
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(14)(result.get.getConstant("r"))
   }
 
@@ -274,7 +288,7 @@ class TestTailrec extends FunSuite {
         |  case n <= m => gcd(n, m - n)
         |}
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(12)(result.get.getConstant("r"))
   }
 
@@ -288,8 +302,85 @@ class TestTailrec extends FunSuite {
         |  case n <= m => gcd(n, m - n)
         |}
       """.stripMargin
-    val result = new Flix().addStr(input).solve()
+    val result = new Flix().setOptions(opts).addStr(input).solve()
     assertResult(12)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.Fibonacci (of 1)") {
+    val input =
+      """def r: Int = fib(1, 0, 1)
+        |
+        |def fib(n: Int, a: Int, b: Int): Int =
+        |  if (n == 0) b else fib(n - 1, a + b, a)
+      """.stripMargin
+    val result = new Flix().setOptions(opts).addStr(input).solve()
+    assertResult(0)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.Fibonacci (of 2)") {
+    val input =
+      """def r: Int = fib(2, 0, 1)
+        |
+        |def fib(n: Int, a: Int, b: Int): Int =
+        |  if (n == 0) b else fib(n - 1, a + b, a)
+      """.stripMargin
+    val result = new Flix().setOptions(opts).addStr(input).solve()
+    assertResult(1)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.Fibonacci (of 3)") {
+    val input =
+      """def r: Int = fib(3, 0, 1)
+        |
+        |def fib(n: Int, a: Int, b: Int): Int =
+        |  if (n == 0) b else fib(n - 1, a + b, a)
+      """.stripMargin
+    val result = new Flix().setOptions(opts).addStr(input).solve()
+    assertResult(1)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.Fibonacci (of 4)") {
+    val input =
+      """def r: Int = fib(4, 0, 1)
+        |
+        |def fib(n: Int, a: Int, b: Int): Int =
+        |  if (n == 0) b else fib(n - 1, a + b, a)
+      """.stripMargin
+    val result = new Flix().setOptions(opts).addStr(input).solve()
+    assertResult(2)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.Fibonacci (of 5)") {
+    val input =
+      """def r: Int = fib(5, 0, 1)
+        |
+        |def fib(n: Int, a: Int, b: Int): Int =
+        |  if (n == 0) b else fib(n - 1, a + b, a)
+      """.stripMargin
+    val result = new Flix().setOptions(opts).addStr(input).solve()
+    assertResult(3)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.Fibonacci (of 10)") {
+    val input =
+      """def r: Int = fib(10, 0, 1)
+        |
+        |def fib(n: Int, a: Int, b: Int): Int =
+        |  if (n == 0) b else fib(n - 1, a + b, a)
+      """.stripMargin
+    val result = new Flix().setOptions(opts).addStr(input).solve()
+    assertResult(34)(result.get.getConstant("r"))
+  }
+
+  test("Tailrec.Fibonacci (of 25)") {
+    val input =
+      """def r: Int = fib(25, 0, 1)
+        |
+        |def fib(n: Int, a: Int, b: Int): Int =
+        |  if (n == 0) b else fib(n - 1, a + b, a)
+      """.stripMargin
+    val result = new Flix().setOptions(opts).addStr(input).solve()
+    assertResult(46368)(result.get.getConstant("r"))
   }
 
 }

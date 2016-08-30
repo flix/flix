@@ -374,31 +374,49 @@ object Codegen {
       visitor.visitMethodInsn(INVOKESTATIC, decorate(name.prefix), name.suffix, ctx.descriptor(targetTpe), false)
 
     case Expression.ApplyTail(name, formals, actuals, _, _) =>
-      // Evaluate each argument and overwrite the local variable.
-      var offset = 0
+      // Evaluate each argument and push the result on the stack.
+      // Compute the stack height taken by the arguments based on their types.
+      var globalOffset: Int = 0
       for (arg <- actuals) {
         // Evaluate the argument and push the result on the stack.
         compileExpression(ctx, visitor, entryPoint)(arg)
-        // Overwrite the local variable with the value on the stack.
+
+        // Update stack height used by the argument.
         arg.tpe match {
-          case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 =>
-            visitor.visitVarInsn(ISTORE, offset)
-            offset += 1
-          case Type.Int64 =>
-            visitor.visitVarInsn(LSTORE, offset)
-            offset += 2
-          case Type.Float32 =>
-            visitor.visitVarInsn(FSTORE, offset)
-            offset += 1
-          case Type.Float64 =>
-            visitor.visitVarInsn(DSTORE, offset)
-            offset += 2
-          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
-            visitor.visitVarInsn(ASTORE, offset)
-            offset += 1
+          case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => globalOffset += 1
+          case Type.Int64 => globalOffset += 2
+          case Type.Float32 => globalOffset += 1
+          case Type.Float64 => globalOffset += 2
+          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) => globalOffset += 1
           case _ => throw InternalCompilerException(s"Not yet implemented.") // TODO
         }
       }
+
+      // Overwrite each local variable with the value on the stack.
+      // The values are on the stack in reverse order, so we must iterate over the arguments in reverse order.
+      var offset = globalOffset
+      for (arg <- actuals.reverse) {
+        // Overwrite the local variable with the value on the stack.
+        arg.tpe match {
+          case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 =>
+            offset -= 1
+            visitor.visitVarInsn(ISTORE, offset)
+          case Type.Int64 =>
+            offset -= 2
+            visitor.visitVarInsn(LSTORE, offset)
+          case Type.Float32 =>
+            offset -= 1
+            visitor.visitVarInsn(FSTORE, offset)
+          case Type.Float64 =>
+            offset -= 2
+            visitor.visitVarInsn(DSTORE, offset)
+          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) | Type.FSet(_) =>
+            offset -= 1
+            visitor.visitVarInsn(ASTORE, offset)
+          case _ => throw InternalCompilerException(s"Not yet implemented.") // TODO
+        }
+      }
+
       // Jump to the entry point of the method.
       visitor.visitJumpInsn(GOTO, entryPoint)
 
