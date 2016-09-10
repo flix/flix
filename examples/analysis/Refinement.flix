@@ -82,13 +82,13 @@ Refinement(s1, x, r) :- DivStm(s2, r, _, y),
                         LocalVar(s2, y, v2),
                         CFG(s1, s2),
                         mustRefineSign(v2),
-                        r := Ref.Ref(Domain.Constant, 50).
+                        r := Ref.Ref(Domain.Constant, 5).
 
 //
-// Backward propagate refinement.
+// Backwards propagate refinement.
 //
-Refinement(s1, x, decreaseByOne(r)) :- Refinement(s2, x, r),
-                                       CFG(s1, s2).
+Refinement(s1, x, step(r)) :- Refinement(s2, x, r),
+                              CFG(s1, s2).
 
 //
 // Refinement of literal statements s: z = c.
@@ -101,34 +101,44 @@ LocalVar(s, z, lift2cst(c)) :- LitStm(s, z, c),
 // refine the literal to the interval domain.
 LocalVar(s, z, lift2inv(c)) :- LitStm(s, z, c),
                                Refinement(s, z, r),
-                               refineWithCst(r).
+                               refineWithInv(r).
 
 
 //
 // Refinement through addition statements s2: z = x + y.
 //
 // refine the input variable 'x'.
-Refinement(s1, x, decreaseByOne(r)) :- AddStm(s2, z, x, _)
-                                       Refinement(s2, z, r),
-                                       CFG(s1, s2).
+Refinement(s1, x, step(r)) :- AddStm(s2, z, x, _),
+                              Refinement(s2, z, r),
+                              CFG(s1, s2).
 // refine the input variable 'y'.
-Refinement(s1, y, decreaseByOne(r)) :- AddStm(s2, z, _, y)
-                                       Refinement(s2, z, r),
-                                       CFG(s1, s2).
+Refinement(s1, y, step(r)) :- AddStm(s2, z, _, y),
+                              Refinement(s2, z, r),
+                              CFG(s1, s2).
 
 //
 // Refinement through division statements s2: z = x / y.
 //
 // refine the input variable 'x'.
-Refinement(s1, x, decreaseByOne(r)) :- DivStm(s2, z, x, _)
-                                       Refinement(s2, z, r),
-                                       CFG(s1, s2).
+Refinement(s1, x, step(r)) :- DivStm(s2, z, x, _),
+                              Refinement(s2, z, r),
+                              CFG(s1, s2).
 // refine the input variable 'y'.
-Refinement(s1, y, decreaseByOne(r)) :- DivStm(s2, z, _, y)
-                                       Refinement(s2, z, r),
-                                       CFG(s1, s2).
+Refinement(s1, y, step(r)) :- DivStm(s2, z, _, y),
+                              Refinement(s2, z, r),
+                              CFG(s1, s2).
 
 
-def plus(x: RefLat, y: RefLat): RefLat = match (x, y,) with {
+def plus(x: RefLat, y: RefLat): RefLat = match (x, y) with {
     case (RefLat.Sign(s), RefLat.Sign(s)) => RefLat.Sign(s1 `signPlus` s2)
 }
+
+//
+// Example program.
+//
+
+//
+// line1: var x = 42
+// line2: var y = 21
+// line3:
+
