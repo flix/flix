@@ -47,6 +47,8 @@ lat Refinement(stm: Int, localVar: Str, ref: Ref)
 //
 lat LocalVar(stm: Int, var: Str, value: Value)
 
+// TODO: Don't use r for both result and refinement.
+
 //
 // Literal statements.
 //
@@ -56,10 +58,6 @@ lat LocalVar(stm: Int, var: Str, value: Value)
 // whereas the rules for the other abstract domains requires refinement.
 //
 LocalVar(s, x, alpha2s(c)) :- LitStm(s, x, c).
-
-LocalVar(s, x, alpha2c(c)) :- requiresConstant(r), LitStm(s, x, c), Refinement(s, x, r).
-
-LocalVar(s, x, alpha2i(c)) :- enableInterval(r), LitStm(s, x, c), Refinement(s, x, r).
 
 //
 // Addition statements.
@@ -78,8 +76,57 @@ LocalVar(s2, r, div(v1, v2)) :- DivStm(s2, r, x, y),
                                 CFG(s1, s2).
 
 //
-// Refinement.
+// Refinement of division.
 //
+Refinement(s1, x, r) :- DivStm(s2, r, _, y),
+                        LocalVar(s2, y, v2),
+                        CFG(s1, s2),
+                        mustRefineSign(v2),
+                        r := Ref.Ref(Domain.Constant, 50).
+
+//
+// Backward propagate refinement.
+//
+Refinement(s1, x, decreaseByOne(r)) :- Refinement(s2, x, r),
+                                       CFG(s1, s2).
+
+//
+// Refinement of literal statements s: z = c.
+//
+// refine the literal to the constant propagation domain.
+LocalVar(s, z, lift2cst(c)) :- LitStm(s, z, c),
+                               Refinement(s, z, r),
+                               refineWithCst(r).
+
+// refine the literal to the interval domain.
+LocalVar(s, z, lift2inv(c)) :- LitStm(s, z, c),
+                               Refinement(s, z, r),
+                               refineWithCst(r).
+
+
+//
+// Refinement through addition statements s2: z = x + y.
+//
+// refine the input variable 'x'.
+Refinement(s1, x, decreaseByOne(r)) :- AddStm(s2, z, x, _)
+                                       Refinement(s2, z, r),
+                                       CFG(s1, s2).
+// refine the input variable 'y'.
+Refinement(s1, y, decreaseByOne(r)) :- AddStm(s2, z, _, y)
+                                       Refinement(s2, z, r),
+                                       CFG(s1, s2).
+
+//
+// Refinement through division statements s2: z = x / y.
+//
+// refine the input variable 'x'.
+Refinement(s1, x, decreaseByOne(r)) :- DivStm(s2, z, x, _)
+                                       Refinement(s2, z, r),
+                                       CFG(s1, s2).
+// refine the input variable 'y'.
+Refinement(s1, y, decreaseByOne(r)) :- DivStm(s2, z, _, y)
+                                       Refinement(s2, z, r),
+                                       CFG(s1, s2).
 
 
 def plus(x: RefLat, y: RefLat): RefLat = match (x, y,) with {
