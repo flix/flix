@@ -84,18 +84,18 @@ object Simplifier {
 
   object Expression {
     def simplify(tast: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Expression = tast match {
-      case TypedAst.Expression.Unit(loc) => ??? // TODO
-      case TypedAst.Expression.True(loc) => ??? // TODO
-      case TypedAst.Expression.False(loc) => ??? // TODO
-      case TypedAst.Expression.Char(lit, loc) => ??? // TODO
-      case TypedAst.Expression.Float32(lit, loc) => ??? // TODO
-      case TypedAst.Expression.Float64(lit, loc) => ??? // TODO
-      case TypedAst.Expression.Int8(lit, loc) => ??? // TODO
-      case TypedAst.Expression.Int16(lit, loc) => ??? // TODO
-      case TypedAst.Expression.Int32(lit, loc) => ??? // TODO
-      case TypedAst.Expression.Int64(lit, loc) => ??? // TODO
-      case TypedAst.Expression.BigInt(lit, loc) => ??? // TODO
-      case TypedAst.Expression.Str(lit, loc) => ??? // TODO
+      case TypedAst.Expression.Unit(loc) => SimplifiedAst.Expression.Unit
+      case TypedAst.Expression.True(loc) => SimplifiedAst.Expression.True
+      case TypedAst.Expression.False(loc) => SimplifiedAst.Expression.False
+      case TypedAst.Expression.Char(lit, loc) => SimplifiedAst.Expression.Char(lit)
+      case TypedAst.Expression.Float32(lit, loc) => SimplifiedAst.Expression.Float32(lit)
+      case TypedAst.Expression.Float64(lit, loc) => SimplifiedAst.Expression.Float64(lit)
+      case TypedAst.Expression.Int8(lit, loc) => SimplifiedAst.Expression.Int8(lit)
+      case TypedAst.Expression.Int16(lit, loc) => SimplifiedAst.Expression.Int16(lit)
+      case TypedAst.Expression.Int32(lit, loc) => SimplifiedAst.Expression.Int32(lit)
+      case TypedAst.Expression.Int64(lit, loc) => SimplifiedAst.Expression.Int64(lit)
+      case TypedAst.Expression.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
+      case TypedAst.Expression.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
       case TypedAst.Expression.Lit(lit, tpe, loc) => Literal.simplify(lit)
       case TypedAst.Expression.Var(ident, tpe, loc) => SimplifiedAst.Expression.Var(ident, -1, tpe, loc)
       case TypedAst.Expression.Ref(name, tpe, loc) => SimplifiedAst.Expression.Ref(name, tpe, loc)

@@ -189,7 +189,7 @@ object Typer2 {
     val constants = program.definitions.foldLeft(Map.empty[Symbol.Resolved, TypedAst.Definition.Constant]) {
       case (macc, (ns, defns)) => macc ++ defns.foldLeft(Map.empty[Symbol.Resolved, TypedAst.Definition.Constant]) {
         case (macc2, (name, defn)) =>
-          macc2 + (toResolved(ns, name) -> Declarations.infer(defn))
+          macc2 + (toResolvedTemporaryHelperMethod(ns, name) -> Declarations.infer(defn))
       }
     }
 
@@ -245,7 +245,8 @@ object Typer2 {
   }
 
 
-  def toResolved(ns: Name.NName, name: String): Symbol.Resolved = Symbol.Resolved.mk(ns + name)
+  def toResolvedTemporaryHelperMethod(ns: Name.NName, name: String): Symbol.Resolved =
+    if (ns.isRoot) Symbol.Resolved.mk(name) else Symbol.Resolved.mk(ns.parts ::: name :: Nil)
 
   def infer(attr: Ast.Attribute): TypedAst.Attribute = ???
 
@@ -256,8 +257,13 @@ object Typer2 {
       val InferMonad(tpe, subst) = Expressions.infer(defn.exp)
       val exp = reassemble(defn.exp, subst)
 
-      //TypedAst.Definition.Constant(defn.ann, ???, ???, exp, tpe, defn.loc)
-      ???
+      val name = defn.sym
+      // TODO: Must check types of formals
+      val formals = defn.params.map {
+        case Ast.FormalParam(ident, tpe) => TypedAst.FormalArg(ident, tpe)
+      }
+
+      TypedAst.Definition.Constant(defn.ann, name.toResolvedTemporaryHelperMethod, formals, exp, tpe, defn.loc)
     }
 
   }

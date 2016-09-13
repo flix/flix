@@ -29,6 +29,13 @@ object Symbol {
   }
 
   /**
+    * Returns the definition symbol for the given name `ident` in the given namespace `ns`.
+    */
+  def mkDefnSym(ns: NName, ident: Ident): DefnSym = {
+    new DefnSym(ns.parts, ident.name, ident.loc)
+  }
+
+  /**
     * Returns the class symbol for the given name `ident`.
     */
   def mkClassSym(ident: Ident): ClassSym = {
@@ -97,6 +104,35 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = text + "$" + id
+  }
+
+  /**
+    * Definition Symbol.
+    */
+  final class DefnSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
+
+    // TODO: Temporary convenience method.
+    def toResolvedTemporaryHelperMethod: Symbol.Resolved = {
+      Symbol.Resolved.mk(namespace ::: name :: Nil)
+    }
+
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: DefnSym => this.namespace == that.namespace && this.name == that.name
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = 7 * namespace.hashCode() + 11 * name.hashCode
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "/" + name
   }
 
   /**

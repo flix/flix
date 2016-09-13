@@ -83,7 +83,8 @@ object Namer {
             val env0 = getEnvFromParams(params)
             Expressions.namer(exp, env0) map {
               case e =>
-                val defn = NamedAst.Declaration.Definition(ann, ident, params, e, tpe, loc)
+                val sym = Symbol.mkDefnSym(ns0, ident)
+                val defn = NamedAst.Declaration.Definition(sym, ann, ident, params, e, tpe, loc)
                 val defns = Map(ident.name -> defn)
                 prog0.copy(definitions = prog0.definitions + (ns0 -> defns))
             }
@@ -95,7 +96,8 @@ object Namer {
                 val env0 = getEnvFromParams(params)
                 Expressions.namer(exp, env0) map {
                   case e =>
-                    val defn = NamedAst.Declaration.Definition(ann, ident, params, e, tpe, loc)
+                    val sym = Symbol.mkDefnSym(ns0, ident)
+                    val defn = NamedAst.Declaration.Definition(sym, ann, ident, params, e, tpe, loc)
                     val defns = defns0 + (ident.name -> defn)
                     prog0.copy(definitions = prog0.definitions + (ns0 -> defns))
                 }
