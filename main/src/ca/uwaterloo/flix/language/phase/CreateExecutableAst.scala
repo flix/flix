@@ -194,6 +194,8 @@ object CreateExecutableAst {
       case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
         val argsArray = args.map(toExecutable).toArray
         ExecutableAst.Expression.ApplyRef(name, argsArray, tpe, loc)
+      case SimplifiedAst.Expression.ApplyTail(name, formals, actuals, tpe, loc) =>
+        ExecutableAst.Expression.ApplyTail(name, formals.map(CreateExecutableAst.toExecutable), actuals.map(toExecutable), tpe, loc)
       case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) =>
         val argsArray = args.map(toExecutable).toArray
         ExecutableAst.Expression.ApplyHook(hook, argsArray, tpe, loc)

@@ -370,6 +370,21 @@ object SimplifiedAst {
                         loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
+      * A typed AST node representing a tail recursive call.
+      *
+      * @param name the name of the function being called.
+      * @param formals the formal parameters.
+      * @param actuals the actual parameters.
+      * @param tpe  the return type of the function.
+      * @param loc  the source location of the expression.
+      */
+    case class ApplyTail(name: Symbol.Resolved,
+                         formals: List[SimplifiedAst.FormalArg],
+                         actuals: List[SimplifiedAst.Expression],
+                         tpe: Type,
+                         loc: SourceLocation) extends SimplifiedAst.Expression
+
+    /**
       * A typed AST node representing a function call.
       *
       * @param hook the hook being called
