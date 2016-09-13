@@ -189,7 +189,7 @@ object Typer2 {
     val constants = program.definitions.foldLeft(Map.empty[Symbol.Resolved, TypedAst.Definition.Constant]) {
       case (macc, (ns, defns)) => macc ++ defns.foldLeft(Map.empty[Symbol.Resolved, TypedAst.Definition.Constant]) {
         case (macc2, (name, defn)) =>
-          macc2 + (Symbol.Resolved.mk(ns + name) -> Declarations.infer(defn))
+          macc2 + (toResolved(ns, name) -> Declarations.infer(defn))
       }
     }
 
@@ -207,14 +207,19 @@ object Typer2 {
      * Tables.
      */
     val tables = program.tables.foldLeft(Map.empty[Symbol.TableSym, TypedAst.Table]) {
-      case (macc, (ns, decl)) => ???
+      case (macc, (ns, decls)) => macc ++ decls.foldLeft(Map.empty[Symbol.TableSym, TypedAst.Table]) {
+        case (macc2, (_, NamedAst.Table.Relation(sym, attr, loc))) =>
+          macc + (sym -> TypedAst.Table.Relation(sym, attr.map(infer), loc))
+        case (macc2, (_, NamedAst.Table.Lattice(sym, keys, value, loc))) =>
+          macc2 + (sym -> TypedAst.Table.Lattice(sym, keys.map(infer), infer(value), loc))
+      }
     }
 
     /*
      * Indexes.
      */
     val indexes = program.indexes.foldLeft(Map.empty[Symbol.TableSym, TypedAst.Definition.Index]) {
-      case (macc, (sym, decl)) => ???
+      case (macc, (sym, NamedAst.Declaration.Index(ident, idxs, loc))) => macc + (sym -> TypedAst.Definition.Index(sym, idxs, loc))
     }
 
     /*
@@ -238,6 +243,11 @@ object Typer2 {
 
     TypedAst.Root(constants, lattices, tables, indexes, facts, rules, program.hooks, Nil, time)
   }
+
+
+  def toResolved(ns: Name.NName, name: String): Symbol.Resolved = Symbol.Resolved.mk(ns + name)
+
+  def infer(attr: Ast.Attribute): TypedAst.Attribute = ???
 
 
   object Declarations {
