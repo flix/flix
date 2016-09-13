@@ -75,8 +75,8 @@ object Symbol {
 
     // TODO: Temporary convenience method.
     def toIdent: Name.Ident = {
-      val sp1 = SourcePosition(loc.source, loc.beginLine, loc.beginCol, loc.line)
-      val sp2 = SourcePosition(loc.source, loc.endLine, loc.endCol, loc.line)
+      val sp1 = SourcePosition(loc.source, loc.beginLine, loc.beginCol, None)
+      val sp2 = SourcePosition(loc.source, loc.endLine, loc.endCol, None)
       Name.Ident(sp1, text + "$" + id, sp2)
     }
 

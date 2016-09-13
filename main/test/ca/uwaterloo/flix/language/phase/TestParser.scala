@@ -2605,7 +2605,7 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   test("Annotation.01") {
     val input =
-      """@strict
+      """@strict @unchecked
         |def f(x: Int): Int = x
       """.stripMargin
     new Flix().addStr(input).compile().get
@@ -2613,7 +2613,7 @@ class TestParser extends FunSuite {
 
   test("Annotation.02") {
     val input =
-      """@monotone
+      """@monotone @unchecked
         |def f(x: Int): Int = x
       """.stripMargin
     new Flix().addStr(input).compile().get
@@ -2621,7 +2621,7 @@ class TestParser extends FunSuite {
 
   test("Annotation.03") {
     val input =
-      """@strict @monotone
+      """@strict @monotone @unchecked
         |def f(x: Int): Int = x
       """.stripMargin
     new Flix().addStr(input).compile().get

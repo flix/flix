@@ -31,7 +31,6 @@ object Typer {
   // TODO: Check that lattice variables are not bound multiple times.
   // TODO: https://flockler.com/thumbs/1992/truthy_s830x0_q80_noupscale.png
 
-
   /**
     * Runs the typer on the entire given AST `rast`.
     */

@@ -207,23 +207,17 @@ class Flix {
   /**
     * Compiles the Flix program and returns the typed ast.
     */
-  def compile(): Validation[TypedAst.Root, CompilationError] = {
+  def compile(): Validation[ExecutableAst.Root, CompilationError] = {
     if (strings.isEmpty && paths.isEmpty)
       throw new IllegalStateException("No input specified. Please add at least one string or path input.")
 
-    // TODO: Cleanup
-    Compiler.compile(getSourceInputs, hooks.toMap)(genSym)
-  }
-
-  // TODO: Refactor this into compile()
-  private def compile2(): Validation[ExecutableAst.Root, CompilationError] = {
     implicit val _ = genSym
 
-    compile().flatMap {
+    Compiler.compile(getSourceInputs, hooks.toMap).flatMap {
       case tast =>
         val ast = PropertyGen.collectProperties(tast)
         val sast = Simplifier.simplify(ast)
-        val lifted = LambdaLift.lift(sast)
+        val lifted = Tailrec.tailrec(LambdaLift.lift(sast))
         val numbered = VarNumbering.number(lifted)
         val east = CreateExecutableAst.toExecutable(numbered)
         val compiled = LoadBytecode.load(this, east, options)
@@ -238,7 +232,7 @@ class Flix {
   /**
     * Runs the Flix fixed point solver on the program and returns the minimal model.
     */
-  def solve(): Validation[Model, CompilationError] = compile2().map {
+  def solve(): Validation[Model, CompilationError] = compile().map {
     case root => new Solver(root, options).solve()
   }
 
@@ -248,8 +242,15 @@ class Flix {
     *
     * @param path the path to write the minimized facts to.
     */
-  def deltaSolve(path: Path): Validation[Unit, CompilationError] = compile2().map {
+  def deltaSolve(path: Path): Validation[Unit, CompilationError] = compile().map {
     case root => DeltaSolver.solve(root, options, path)
+  }
+
+  /**
+    * Returns statistics about the abstract syntax tree.
+    */
+  def astStats(): Validation[AstStats, CompilationError] = compile() map {
+    case root => AstStats.statsOf(root)
   }
 
   /**

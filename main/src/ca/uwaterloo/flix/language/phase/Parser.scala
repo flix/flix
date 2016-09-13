@@ -909,7 +909,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     val lineNumber = cursor2line(cursor)
     val columnNumber = cursor2column(cursor)
     rule {
-      push(SourcePosition(source, lineNumber, columnNumber, () => input.getLine(lineNumber)))
+      push(SourcePosition(source, lineNumber, columnNumber, Some(input)))
     }
   }
 

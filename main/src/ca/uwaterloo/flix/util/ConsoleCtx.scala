@@ -42,4 +42,6 @@ class AnsiConsole extends ConsoleCtx {
   def red(s: String): String = Console.RED + s + Console.RESET
 
   def cyan(s: String): String = Console.CYAN + s + Console.RESET
+
+  def magenta(s: String): String = Console.MAGENTA + s + Console.RESET
 }

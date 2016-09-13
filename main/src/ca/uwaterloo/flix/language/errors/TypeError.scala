@@ -39,9 +39,9 @@ object TypeError {
     val message =
       s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-            |${consoleCtx.red(s">> Expected type `$expected' but actual type is `$actual'.")}
+         |${consoleCtx.red(s">> Expected type `$expected' but actual type is `$actual'.")}
          |
-            |${loc.underline}
+         |${loc.highlight}
          """.stripMargin
   }
 
@@ -57,10 +57,10 @@ object TypeError {
     val message =
       s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc1.source.format}")}
          |
-            |${consoleCtx.red(s">> Expected equal types `$tpe1' and `$tpe2'.")}
+         |${consoleCtx.red(s">> Expected equal types `$tpe1' and `$tpe2'.")}
          |
-            |${loc1.underline}
-         |${loc2.underline}
+         |${loc1.highlight}
+         |${loc2.highlight}
          """.stripMargin
   }
 
@@ -99,9 +99,9 @@ object TypeError {
     val message =
       s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-            |${consoleCtx.red(s">> No lattice declared for `$tpe'.")}
+         |${consoleCtx.red(s">> No lattice declared for `$tpe'.")}
          |
-            |${loc.underline}
+         |${loc.highlight}
          |Tip: Associate a lattice with the type.
          """.stripMargin
   }

@@ -166,32 +166,32 @@ class TestDeltaSolver extends FunSuite {
   }
 
   test("SameException.NotEqual.MatchException01") {
-    val sl1 = SourceLocation(SourceInput.Str("test"), 1, 0, 1, 21, () => "test")
-    val sl2 = SourceLocation(SourceInput.Str("test"), 1, 0, 1, 42, () => "test")
-    val ex1 = new MatchException("test", sl1)
-    val ex2 = new MatchException("test", sl2)
+    val sl1 = SourceLocation(SourceInput.Str("test"), 1, 0, 1, 21, i => "")
+    val sl2 = SourceLocation(SourceInput.Str("test"), 1, 0, 1, 42, i => "")
+    val ex1 = MatchException("test", sl1)
+    val ex2 = MatchException("test", sl2)
     assert(!DeltaSolver.sameException(ex1, ex2))
   }
 
   test("SameException.NotEqual.RuleException") {
-    val sl1 = SourceLocation(SourceInput.Str("test"), 1, 0, 1, 21, () => "test")
-    val sl2 = SourceLocation(SourceInput.Str("test"), 1, 0, 1, 42, () => "test")
-    val ex1 = new RuleException("test", sl1)
-    val ex2 = new RuleException("test", sl2)
+    val sl1 = SourceLocation(SourceInput.Str("test"), 1, 0, 1, 21, i => "")
+    val sl2 = SourceLocation(SourceInput.Str("test"), 1, 0, 1, 42, i => "")
+    val ex1 = RuleException("test", sl1)
+    val ex2 = RuleException("test", sl2)
     assert(!DeltaSolver.sameException(ex1, ex2))
   }
 
   test("SameException.NotEqual.SwitchException") {
-    val sl1 = SourceLocation(SourceInput.Str("test"), 1, 0, 1, 21, () => "test")
-    val sl2 = SourceLocation(SourceInput.Str("test"), 1, 0, 1, 42, () => "test")
-    val ex1 = new SwitchException("test", sl1)
-    val ex2 = new SwitchException("test", sl2)
+    val sl1 = SourceLocation(SourceInput.Str("test"), 1, 0, 1, 21, i => "")
+    val sl2 = SourceLocation(SourceInput.Str("test"), 1, 0, 1, 42, i => "")
+    val ex1 = SwitchException("test", sl1)
+    val ex2 = SwitchException("test", sl2)
     assert(!DeltaSolver.sameException(ex1, ex2))
   }
 
   test("SameException.NotEqual.UserException") {
-    val ex1 = new UserException("ONE", SourceLocation.Unknown)
-    val ex2 = new UserException("TWO", SourceLocation.Unknown)
+    val ex1 = UserException("ONE", SourceLocation.Unknown)
+    val ex2 = UserException("TWO", SourceLocation.Unknown)
     assert(!DeltaSolver.sameException(ex1, ex2))
   }
 

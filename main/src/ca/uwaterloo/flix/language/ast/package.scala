@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language
 import java.nio.file.Path
 
 import ca.uwaterloo.flix.util.ConsoleCtx
+import org.parboiled2.ParserInput
 
 package object ast {
 
@@ -58,17 +59,17 @@ package object ast {
     /**
       * Represents an unknown source position.
       */
-    val Unknown: SourcePosition = SourcePosition(SourceInput.Str(""), 0, 0, () => "")
+    val Unknown: SourcePosition = SourcePosition(SourceInput.Str(""), 0, 0, None)
   }
 
   /**
     * A class that represent a physical source position inside a source input.
     *
-    * @param line the line number.
-    * @param col  the column number.
-    * @param code the line.
+    * @param line  the line number.
+    * @param col   the column number.
+    * @param input the parser input.
     */
-  case class SourcePosition(source: SourceInput, line: Int, col: Int, code: () => String)
+  case class SourcePosition(source: SourceInput, line: Int, col: Int, input: Option[ParserInput])
 
   /**
     * Companion object for the [[SourceLocation]] class.
@@ -81,7 +82,11 @@ package object ast {
 
     def mk(b: SourcePosition, e: SourcePosition): SourceLocation = {
       assert(b.source == e.source)
-      SourceLocation(b.source, b.line, b.col, e.line, e.col, b.code)
+      val lineAt = b.input match {
+        case None => (i: Int) => ""
+        case Some(input) => (i: Int) => input.getLine(i)
+      }
+      SourceLocation(b.source, b.line, b.col, e.line, e.col, lineAt)
     }
 
     implicit object Order extends Ordering[SourceLocation] {
@@ -102,9 +107,9 @@ package object ast {
     * @param beginCol  the column number where the entity begins.
     * @param endLine   the line number where the entity ends.
     * @param endCol    the column number where the entity ends.
-    * @param line      the optional line (if the syntactic entity occurs on one line).
+    * @param lineAt    a closure which returns the text at the given line offset.
     */
-  case class SourceLocation(source: SourceInput, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int, line: () => String) {
+  case class SourceLocation(source: SourceInput, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int, lineAt: Int => String) {
 
     /**
       * Returns a formatted string representation of `this` source location.
@@ -114,12 +119,34 @@ package object ast {
     /**
       * Returns this line of code with the source location underlined.
       */
-    def underline(implicit consoleCtx: ConsoleCtx): String = {
+    def highlight(implicit consoleCtx: ConsoleCtx): String = if (beginLine == endLine) underline else leftline
+
+    /**
+      * Highlights this source location with red arrows under the text.
+      */
+    private def underline(implicit consoleCtx: ConsoleCtx): String = {
       val lineNo = beginLine.toString + "|"
-      val line1 = lineNo + line() + "\n"
+      val line1 = lineNo + lineAt(beginLine) + "\n"
       val line2 = " " * (beginCol + lineNo.length - 1) + consoleCtx.red("^" * (endCol - beginCol))
       line1 + line2
     }
+
+    /**
+      * Highlights this source location with red arrows left of the text.
+      */
+    private def leftline(implicit consoleCtx: ConsoleCtx): String = {
+      val sb = new StringBuilder()
+      for (lineNo <- beginLine to endLine) {
+        val currentLine = lineAt(lineNo)
+        sb.
+          append(lineNo).append("|").
+          append(consoleCtx.red(">")).
+          append(currentLine).
+          append("\n")
+      }
+      sb.toString()
+    }
+
   }
 
   object Time {

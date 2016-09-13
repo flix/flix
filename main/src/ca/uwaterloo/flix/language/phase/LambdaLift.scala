@@ -133,6 +133,8 @@ object LambdaLift {
 
       case Expression.ApplyRef(name, args, tpe, loc) =>
         Expression.ApplyRef(name, args.map(visit), tpe, loc)
+      case Expression.ApplyTail(name, formals, actuals, tpe, loc) =>
+        Expression.ApplyTail(name, formals, actuals.map(visit), tpe, loc)
       case Expression.ApplyHook(hook, args, tpe, loc) =>
         Expression.ApplyHook(hook, args.map(visit), tpe, loc)
       case Expression.Apply(exp, args, tpe, loc) =>
