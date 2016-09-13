@@ -104,7 +104,6 @@ object ClosureConv {
     case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
       throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp'.")
 
-    case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) => exp
     case SimplifiedAst.Expression.Apply(e, args, tpe, loc) =>
       // We're trying to call some expression `e`. If `e` is a Ref, then it's a top-level function, so we directly call
       // it with ApplyRef. We remove the Ref node and don't recurse on it to avoid creating a closure.
@@ -114,6 +113,8 @@ object ClosureConv {
         case SimplifiedAst.Expression.Hook(hook, _, _) => SimplifiedAst.Expression.ApplyHook(hook, args.map(convert), tpe, loc)
         case _ => SimplifiedAst.Expression.Apply(convert(e), args.map(convert), tpe, loc)
       }
+    case SimplifiedAst.Expression.ApplyTail(name, formals, actuals, tpe, loc) => exp
+    case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) => exp
 
     case SimplifiedAst.Expression.Unary(op, e, tpe, loc) =>
       SimplifiedAst.Expression.Unary(op, convert(e), tpe, loc)
@@ -185,6 +186,7 @@ object ClosureConv {
       throw InternalCompilerException(s"Unexpected expression: '$e'.")
     case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
     case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
+    case SimplifiedAst.Expression.ApplyTail(name, formals, actuals, tpe, loc) =>  mutable.LinkedHashSet.empty ++ actuals.flatMap(freeVariables)
     case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
       freeVariables(exp) ++ args.flatMap(freeVariables)
     case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) => freeVariables(exp)
