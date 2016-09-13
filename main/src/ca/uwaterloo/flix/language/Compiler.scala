@@ -84,14 +84,13 @@ object Compiler {
     root flatMap {
       case past => Weeder.weed(past, hooks) flatMap {
         case wast =>
-          // TODO
-          //Namer.namer(wast) map {
-          //  case nast => Typer2.typer(nast)
-          //}
+          Namer.namer(wast) map {
+            case nast => Typer2.typer(nast)
+          }
 
-          Resolver.resolve(wast) flatMap {
-          case rast => Typer.typecheck(rast)
-        }
+//          Resolver.resolve(wast) flatMap {
+//          case rast => Typer.typecheck(rast)
+//        }
       }
     }
   }

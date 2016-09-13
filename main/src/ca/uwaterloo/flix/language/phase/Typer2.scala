@@ -183,20 +183,39 @@ object Typer2 {
   def typer(program: NamedAst.Program)(implicit genSym: GenSym): TypedAst.Root = {
     val s = System.nanoTime()
 
-    val constants = ???
-    for ((ns, defns) <- program.definitions) {
-      for ((name, defn) <- defns) {
-        val InferMonad(tpe, subst) = Expressions.infer(defn.exp)
-        val exp = reassemble(defn.exp, subst)
-
-        //TypedAst.Definition.Constant(defn.ann, ???, ???, exp, tpe, defn.loc)
+    /*
+     * Definitions.
+     */
+    val constants = program.definitions.foldLeft(Map.empty[Symbol.Resolved, TypedAst.Definition.Constant]) {
+      case (macc, (ns, defns)) => macc ++ defns.foldLeft(Map.empty[Symbol.Resolved, TypedAst.Definition.Constant]) {
+        case (macc2, (name, defn)) =>
+          macc2 + (Symbol.Resolved.mk(ns + name) -> Declarations.infer(defn))
       }
     }
 
-    val lattices = ???
+    /*
+     * Lattices.
+     */
+    val lattices = program.lattices.foldLeft(Map.empty[Type, TypedAst.Definition.BoundedLattice]) {
+      case (macc, (tpe, decl)) =>
+        val NamedAst.Declaration.BoundedLattice(tpe, e1, e2, e3, e4, e5, loc) = decl
+        // TODO
+        ???
+    }
 
-    val tables = ???
-    val indexes = ???
+    /*
+     * Tables.
+     */
+    val tables = program.tables.foldLeft(Map.empty[Symbol.TableSym, TypedAst.Table]) {
+      case (macc, (ns, decl)) => ???
+    }
+
+    /*
+     * Indexes.
+     */
+    val indexes = program.indexes.foldLeft(Map.empty[Symbol.TableSym, TypedAst.Definition.Index]) {
+      case (macc, (sym, decl)) => ???
+    }
 
     /*
      * Facts.
@@ -207,12 +226,30 @@ object Typer2 {
         TypedAst.Constraint.Fact(head)
     }
 
-    val rules = ???
+    /*
+     * Rule.
+     */
+    val rules = program.rules.map {
+      case NamedAst.Declaration.Rule(head, body, loc) => ???
+    }
 
     val e = System.nanoTime()
     val time = program.time.copy(typer = e - s)
 
     TypedAst.Root(constants, lattices, tables, indexes, facts, rules, program.hooks, Nil, time)
+  }
+
+
+  object Declarations {
+
+    def infer(defn: NamedAst.Declaration.Definition)(implicit genSym: GenSym): TypedAst.Definition.Constant = {
+      val InferMonad(tpe, subst) = Expressions.infer(defn.exp)
+      val exp = reassemble(defn.exp, subst)
+
+      //TypedAst.Definition.Constant(defn.ann, ???, ???, exp, tpe, defn.loc)
+      ???
+    }
+
   }
 
   object Expressions {
