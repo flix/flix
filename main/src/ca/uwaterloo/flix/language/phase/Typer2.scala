@@ -212,8 +212,29 @@ object Typer2 {
     val lattices = program.lattices.foldLeft(Map.empty[Type, TypedAst.Definition.BoundedLattice]) {
       case (macc, (tpe, decl)) =>
         val NamedAst.Declaration.BoundedLattice(tpe, e1, e2, e3, e4, e5, loc) = decl
-        // TODO
-        ???
+
+        val declaredType = Types.lookup(tpe, program)
+
+        val InferMonad(_, subst) = for (
+          botType <- Expressions.infer(e1, program);
+          topType <- Expressions.infer(e2, program);
+          leqType <- Expressions.infer(e3, program);
+          lubType <- Expressions.infer(e4, program);
+          glbType <- Expressions.infer(e5, program);
+          _______ <- unifyM(botType, declaredType);
+          _______ <- unifyM(topType, declaredType)
+        // TODO Add constraints for leq, lub, glb, etc.
+        )
+          yield botType
+
+        val bot = reassemble(e1, subst)
+        val top = reassemble(e2, subst)
+        val leq = reassemble(e3, subst)
+        val lub = reassemble(e4, subst)
+        val glb = reassemble(e5, subst)
+
+        val lattice = TypedAst.Definition.BoundedLattice(declaredType, bot, top, leq, lub, glb, loc)
+        macc + (declaredType -> lattice)
     }
 
     /*
