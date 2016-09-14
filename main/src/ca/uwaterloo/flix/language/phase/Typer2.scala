@@ -78,6 +78,7 @@ object Typer2 {
 
       // TODO: Remove once tags are gone:
       case Type.Tag(name, tag, t) => Type.Tag(name, tag, apply(t))
+      case Type.Lambda(args, retTpe) => Type.Lambda(args map apply, apply(retTpe))
 
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'")
     }
@@ -213,7 +214,7 @@ object Typer2 {
       case (macc, (tpe, decl)) =>
         val NamedAst.Declaration.BoundedLattice(tpe, e1, e2, e3, e4, e5, ns, loc) = decl
 
-        val declaredType = Types.lookup(tpe, program)
+        val declaredType = Types.resolve(tpe, program)
 
         val InferMonad(_, subst) = for (
           botType <- Expressions.infer(e1, ns, program);
@@ -292,20 +293,21 @@ object Typer2 {
       // TODO: Must check types of formals by creating a substition...
       val name = defn.sym
       val formals = defn.params.map {
-        case NamedAst.FormalParam(sym, tpe) => TypedAst.FormalArg(sym.toIdent, Types.lookup(tpe, program))
+        case NamedAst.FormalParam(sym, tpe) => TypedAst.FormalArg(sym.toIdent, Types.resolve(tpe, program))
       }
 
       // TODO: Must also check return type.
 
-      val declaredType = Types.lookup(defn.tpe.asInstanceOf[Type.Lambda].retTpe, program)
-      val InferMonad(tpe, subst) = for (
+      val declaredType = Types.resolve(defn.tpe.asInstanceOf[Type.Lambda].retTpe, program)
+      val InferMonad(resultType, subst) = for (
         inferredType <- Expressions.infer(defn.exp, ns, program);
         unifiedType <- unifyM(inferredType, declaredType)
       ) yield unifiedType
 
       val exp = reassemble(defn.exp, subst)
 
-      TypedAst.Definition.Constant(defn.ann, name.toResolvedTemporaryHelperMethod, formals, exp, tpe, defn.loc)
+      val lambdaType = Type.Lambda(formals.map(_.tpe), resultType)
+      TypedAst.Definition.Constant(defn.ann, name.toResolvedTemporaryHelperMethod, formals, exp, lambdaType, defn.loc)
     }
 
   }
@@ -660,7 +662,7 @@ object Typer2 {
         case NamedAst.Expression.Ascribe(exp, expectedType, loc) =>
           for (
             actualType <- visitExp(exp);
-            resultType <- unifyM(actualType, Types.lookup(expectedType, program))
+            resultType <- unifyM(actualType, Types.resolve(expectedType, program))
           )
             yield resultType
 
@@ -711,9 +713,7 @@ object Typer2 {
         case NamedAst.Pattern.BigInt(i, loc) => liftM(Type.BigInt)
         case NamedAst.Pattern.Str(s, loc) => liftM(Type.Str)
         case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
-          for (
-            tpe <- visitPat(pat)
-          ) yield Type.Int64 // TODO: Hack to get things running.
+          ???
 
         case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
           for (
@@ -829,7 +829,7 @@ object Typer2 {
 
     // TODO: Move into typer, I think.
     // TODO: Need to be recursive?
-    def lookup(tpe0: Type, program: Program): Type = tpe0 match {
+    def resolve(tpe0: Type, program: Program): Type = tpe0 match {
       case Type.Unresolved(name) => name.ident.name match {
         case "Unit" => Type.Unit
         case "Bool" => Type.Bool
@@ -856,6 +856,8 @@ object Typer2 {
           ??? // TODO: Enum not found?
       }
       // TODO: Rest
+      case Type.Lambda(args, retTpe) => Type.Lambda(args.map(a => resolve(a, program)), resolve(retTpe, program))
+
       case _ => tpe0
     }
 
@@ -1113,7 +1115,7 @@ object Typer2 {
         case None => ???
         case Some(defns) => defns.get(ref.ident.name) match {
           case None => throw new RuntimeException("Reference not found!")
-          case Some(defn) => defn.tpe
+          case Some(defn) => Types.resolve(defn.tpe, program)
         }
       }
     } else {
@@ -1123,7 +1125,7 @@ object Typer2 {
           throw new RuntimeException(s"namespace ${ref.namespace} not found") // TODO: namespace doesnt exist.
         case Some(nm) => nm.get(ref.ident.name) match {
           case None => ??? // TODO: name doesnt exist in namespace.
-          case Some(defn) => defn.tpe
+          case Some(defn) => Types.resolve(defn.tpe, program)
         }
       }
     }

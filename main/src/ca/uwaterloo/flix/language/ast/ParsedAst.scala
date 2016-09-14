@@ -891,4 +891,6 @@ object ParsedAst {
     */
   case class ContextBound(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Type], sp2: SourcePosition) extends ParsedAst
 
+  // TODO: Introduce ParsedType.
+
 }

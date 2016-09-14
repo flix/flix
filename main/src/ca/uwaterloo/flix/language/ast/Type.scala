@@ -58,6 +58,9 @@ sealed trait Type {
     }).toSet
     case Type.Apply(t1, t2) => t1.typeVars ++ t2.typeVars
 
+    case Type.Lambda(args, retTpe) => args.flatMap(_.typeVars).toSet ++ retTpe.typeVars
+    case Type.Unresolved(name) => Set.empty
+
     case _ => throw InternalCompilerException(s"Unexpected type: `${this}'.")
   }
 
