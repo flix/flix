@@ -30,7 +30,7 @@ class TestNamer extends FunSuite with TestUtils {
          |def f: Int = 21
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.DuplicateEntity](result)
+    assertError[NameError.DuplicateDefinition](result)
   }
 
   test("DuplicateDefinition02") {
@@ -41,7 +41,7 @@ class TestNamer extends FunSuite with TestUtils {
          |def f: Int = 11
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.DuplicateEntity](result)
+    assertError[NameError.DuplicateDefinition](result)
   }
 
   test("DuplicateDefinition03") {
@@ -52,7 +52,7 @@ class TestNamer extends FunSuite with TestUtils {
          |def f(x: Int): Int = 11
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.DuplicateEntity](result)
+    assertError[NameError.DuplicateDefinition](result)
   }
 
   test("DuplicateDefinition04") {
@@ -63,7 +63,7 @@ class TestNamer extends FunSuite with TestUtils {
          |def f(x: Bool, y: Int, z: String): Int = 11
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.DuplicateEntity](result)
+    assertError[NameError.DuplicateDefinition](result)
   }
 
   test("DuplicateDefinition05") {
@@ -78,7 +78,7 @@ class TestNamer extends FunSuite with TestUtils {
          |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.DuplicateEntity](result)
+    assertError[NameError.DuplicateDefinition](result)
   }
 
   test("DuplicateDefinition06") {
@@ -97,16 +97,16 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.DuplicateEntity](result)
+    assertError[NameError.DuplicateDefinition](result)
   }
 
-  test("IllegalConstantName01") {
+  test("IllegalDefinitionName01") {
     val input = "def F: Int = 42"
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
+    assertError[NameError.IllegalDefinitionName](result)
   }
 
-  test("IllegalConstantName02") {
+  test("IllegalDefinitionName02") {
     val input =
       s"""
          |namespace A {
@@ -114,10 +114,10 @@ class TestNamer extends FunSuite with TestUtils {
          |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
+    assertError[NameError.IllegalDefinitionName](result)
   }
 
-  test("IllegalConstantName03") {
+  test("IllegalDefinitionName03") {
     val input =
       s"""
          |namespace A {
@@ -125,10 +125,10 @@ class TestNamer extends FunSuite with TestUtils {
          |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
+    assertError[NameError.IllegalDefinitionName](result)
   }
 
-  test("IllegalConstantName04") {
+  test("IllegalDefinitionName04") {
     val input =
       s"""
          |namespace A {
@@ -136,40 +136,43 @@ class TestNamer extends FunSuite with TestUtils {
          |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
+    assertError[NameError.IllegalDefinitionName](result)
   }
 
   test("IllegalRelationName01") {
-    val input =
-      s"""
-         |namespace A {
-         |  rel f(x: Int)
-         |}
-       """.stripMargin
+    val input = "rel f(x: Int)"
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalRelationName])
+    assertError[NameError.IllegalTableName](result)
   }
 
   test("IllegalRelationName02") {
-    val input =
-      s"""
-         |namespace A {
-         |  rel foo(x: Int)
-         |}
-       """.stripMargin
+    val input = "rel foo(x: Int)"
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalRelationName])
+    assertError[NameError.IllegalTableName](result)
   }
 
   test("IllegalRelationName03") {
-    val input =
-      s"""
-         |namespace A {
-         |  rel fOO(x: Int)
-         |}
-       """.stripMargin
+    val input = "rel fOO(x: Int)"
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalRelationName])
+    assertError[NameError.IllegalTableName](result)
+  }
+
+  test("IllegalLatticeName01") {
+    val input = "lat f(x: Int)"
+    val result = new Flix().addStr(input).compile()
+    assertError[NameError.IllegalTableName](result)
+  }
+
+  test("IllegalLatticeName02") {
+    val input = "lat foo(x: Int)"
+    val result = new Flix().addStr(input).compile()
+    assertError[NameError.IllegalTableName](result)
+  }
+
+  test("IllegalLatticeName03") {
+    val input = "lat fOO(x: Int)"
+    val result = new Flix().addStr(input).compile()
+    assertError[NameError.IllegalTableName](result)
   }
 
   test("UnresolvedConstantReference01") {

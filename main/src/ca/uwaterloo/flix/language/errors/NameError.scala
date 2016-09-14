@@ -26,18 +26,16 @@ sealed trait NameError extends CompilationError
 
 object NameError {
 
-  // TODO: Introduce name error for each individual duplicate symbol.
-
   implicit val consoleCtx = Compiler.ConsoleCtx
 
   /**
-    * An error raised to indicate that the given `name` is used for multiple definitions.
+    * An error raised to indicate that the given definition `name` is defined multiple times.
     *
     * @param name the name.
     * @param loc1 the location of the first definition.
     * @param loc2 the location of the second definition.
     */
-  case class DuplicateEntity(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+  case class DuplicateDefinition(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     val message =
       s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc1.source.format}")}
          |
@@ -47,7 +45,40 @@ object NameError {
          |${loc1.highlight}
          |Second definition was here:
          |${loc2.highlight}
-         |Tip: Consider renaming or removing one of the definitions.
+         """.stripMargin
+  }
+
+  /**
+    * An error raised to indicate that a definition name must be lowercase.
+    *
+    * @param name the invalid name.
+    * @param loc  the location of the name.
+    */
+  case class IllegalDefinitionName(name: String, loc: SourceLocation) extends NameError {
+    val message =
+      s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc.source.format}")}
+         |
+         |${consoleCtx.red(s">> Illegal uppercase name '$name'.")}
+         |
+         |${loc.highlight}
+         |A function definition must start with a lowercase letter.
+         """.stripMargin
+  }
+
+  /**
+    * An error raised to indicate that the given table name must be uppercase.
+    *
+    * @param name the invalid name.
+    * @param loc  the location of the name.
+    */
+  case class IllegalTableName(name: String, loc: SourceLocation) extends NameError {
+    val message =
+      s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc.source.format}")}
+         |
+         |${consoleCtx.red(s">> Illegal lowercase name '$name'.")}
+         |
+         |${loc.highlight}
+         |A relation or lattice definition must start with an uppercase letter.
          """.stripMargin
   }
 

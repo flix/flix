@@ -76,6 +76,11 @@ object Namer {
        * Definition.
        */
       case WeededAst.Declaration.Definition(ann, ident, params, exp, tpe, loc) =>
+        // check if the name is legal.
+        if (ident.name.head.isUpper) {
+          return IllegalDefinitionName(ident.name, loc).toFailure
+        }
+
         // check if the definition already exists.
         prog0.definitions.get(ns0) match {
           case None =>
@@ -103,7 +108,7 @@ object Namer {
                 }
               case Some(defn) =>
                 // Case 2.2: Duplicate definition.
-                DuplicateEntity(ident.name, defn.loc, ident.loc).toFailure
+                DuplicateDefinition(ident.name, defn.loc, ident.loc).toFailure
             }
         }
 
@@ -143,7 +148,7 @@ object Namer {
                 prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
               case Some(enum) =>
                 // Case 2.2: Duplicate definition.
-                DuplicateEntity(ident.name, enum.loc, ident.loc).toFailure
+                DuplicateDefinition(ident.name, enum.loc, ident.loc).toFailure
             }
         }
 
@@ -225,6 +230,11 @@ object Namer {
        * Relation.
        */
       case WeededAst.Table.Relation(ident, attr, loc) =>
+        // check if the name is legal.
+        if (ident.name.head.isLower) {
+          return IllegalTableName(ident.name, loc).toFailure
+        }
+
         // check if the table already exists.
         prog0.tables.get(ns0) match {
           case None =>
@@ -242,7 +252,7 @@ object Namer {
                 prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
               case Some(table) =>
                 // Case 2.2: Duplicate definition.
-                DuplicateEntity(ident.name, table.loc, ident.loc).toFailure
+                DuplicateDefinition(ident.name, table.loc, ident.loc).toFailure
             }
         }
 
@@ -250,6 +260,11 @@ object Namer {
        * Lattice.
        */
       case WeededAst.Table.Lattice(ident, keys, value, loc) =>
+        // check if the name is legal.
+        if (ident.name.head.isLower) {
+          return IllegalTableName(ident.name, loc).toFailure
+        }
+
         // check if the table already exists.
         prog0.tables.get(ns0) match {
           case None =>
@@ -267,7 +282,7 @@ object Namer {
                 prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
               case Some(table) =>
                 // Case 2.2: Duplicate definition.
-                DuplicateEntity(ident.name, table.loc, ident.loc).toFailure
+                DuplicateDefinition(ident.name, table.loc, ident.loc).toFailure
             }
         }
 
