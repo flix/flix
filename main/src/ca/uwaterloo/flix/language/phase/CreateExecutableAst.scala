@@ -55,7 +55,7 @@ object CreateExecutableAst {
 
       for (rule <- rules) {
         rule.head match {
-          case ExecutableAst.Predicate.Head.Table(sym, _, _, _) => result.update(sym, Set.empty)
+          case ExecutableAst.Predicate.Head.Table(sym, _, _) => result.update(sym, Set.empty)
           case _ => // nop
         }
       }
@@ -242,8 +242,8 @@ object CreateExecutableAst {
       def toExecutable(sast: SimplifiedAst.Predicate.Head): ExecutableAst.Predicate.Head = sast match {
         case SimplifiedAst.Predicate.Head.True(loc) => ExecutableAst.Predicate.Head.True(loc)
         case SimplifiedAst.Predicate.Head.False(loc) => ExecutableAst.Predicate.Head.False(loc)
-        case SimplifiedAst.Predicate.Head.Table(name, terms, tpe, loc) =>
-          ExecutableAst.Predicate.Head.Table(name, terms.map(Term.toExecutable).toArray, tpe, loc)
+        case SimplifiedAst.Predicate.Head.Table(name, terms, loc) =>
+          ExecutableAst.Predicate.Head.Table(name, terms.map(Term.toExecutable).toArray, loc)
       }
     }
 
@@ -257,7 +257,7 @@ object CreateExecutableAst {
       }
 
       def toExecutable(sast: SimplifiedAst.Predicate.Body): ExecutableAst.Predicate.Body = sast match {
-        case SimplifiedAst.Predicate.Body.Table(sym, terms, tpe, loc) =>
+        case SimplifiedAst.Predicate.Body.Table(sym, terms, loc) =>
           val termsArray = terms.map(Term.toExecutable).toArray
           val index2var: Array[String] = {
             val r = new Array[String](termsArray.length)
@@ -272,7 +272,7 @@ object CreateExecutableAst {
             }
             r
           }
-          ExecutableAst.Predicate.Body.Table(sym, termsArray, index2var, freeVars(terms), tpe, loc)
+          ExecutableAst.Predicate.Body.Table(sym, termsArray, index2var, freeVars(terms), loc)
         case SimplifiedAst.Predicate.Body.ApplyFilter(name, terms, tpe, loc) =>
           val termsArray = terms.map(Term.toExecutable).toArray
           ExecutableAst.Predicate.Body.ApplyFilter(name, termsArray, freeVars(terms), tpe, loc)

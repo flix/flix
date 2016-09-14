@@ -635,8 +635,6 @@ object SimplifiedAst {
   }
 
   sealed trait Predicate extends SimplifiedAst {
-    def tpe: Type
-
     def loc: SourceLocation
   }
 
@@ -646,17 +644,12 @@ object SimplifiedAst {
 
     object Head {
 
-      case class True(loc: SourceLocation) extends SimplifiedAst.Predicate.Head {
-        def tpe: Type = Type.Predicate(Nil)
-      }
+      case class True(loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
-      case class False(loc: SourceLocation) extends SimplifiedAst.Predicate.Head {
-        def tpe: Type = Type.Predicate(Nil)
-      }
+      case class False(loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
       case class Table(sym: Symbol.TableSym,
                        terms: List[SimplifiedAst.Term.Head],
-                       tpe: Type.Predicate,
                        loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
     }
@@ -667,7 +660,6 @@ object SimplifiedAst {
 
       case class Table(sym: Symbol.TableSym,
                        terms: List[SimplifiedAst.Term.Body],
-                       tpe: Type.Predicate,
                        loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
       case class ApplyFilter(name: Symbol.Resolved,

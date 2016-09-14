@@ -343,15 +343,15 @@ object Simplifier {
       def simplify(tast: TypedAst.Predicate.Head)(implicit genSym: GenSym): SimplifiedAst.Predicate.Head = tast match {
         case TypedAst.Predicate.Head.True(loc) => SimplifiedAst.Predicate.Head.True(loc)
         case TypedAst.Predicate.Head.False(loc) => SimplifiedAst.Predicate.Head.False(loc)
-        case TypedAst.Predicate.Head.Table(sym, terms, tpe, loc) =>
-          SimplifiedAst.Predicate.Head.Table(sym, terms map Term.simplify, tpe, loc)
+        case TypedAst.Predicate.Head.Table(sym, terms, loc) =>
+          SimplifiedAst.Predicate.Head.Table(sym, terms map Term.simplify, loc)
       }
     }
 
     object Body {
       def simplify(tast: TypedAst.Predicate.Body)(implicit genSym: GenSym): SimplifiedAst.Predicate.Body = tast match {
-        case TypedAst.Predicate.Body.Table(sym, terms, tpe, loc) =>
-          SimplifiedAst.Predicate.Body.Table(sym, terms map Term.simplify, tpe, loc)
+        case TypedAst.Predicate.Body.Table(sym, terms, loc) =>
+          SimplifiedAst.Predicate.Body.Table(sym, terms map Term.simplify, loc)
         case TypedAst.Predicate.Body.ApplyFilter(name, terms, tpe, loc) =>
           SimplifiedAst.Predicate.Body.ApplyFilter(name, terms map Term.simplify, tpe, loc)
         case TypedAst.Predicate.Body.ApplyHookFilter(hook, terms, tpe, loc) =>

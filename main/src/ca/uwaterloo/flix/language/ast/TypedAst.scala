@@ -607,11 +607,6 @@ object TypedAst {
     */
   sealed trait Predicate extends TypedAst {
     /**
-      * The type of the predicate.
-      */
-    def tpe: Type
-
-    /**
       * The source location of the predicate.
       */
     def loc: SourceLocation
@@ -628,23 +623,18 @@ object TypedAst {
 
     object Head {
 
-      case class True(loc: SourceLocation) extends TypedAst.Predicate.Head {
-        def tpe: Type = Type.Predicate(Nil)
-      }
+      case class True(loc: SourceLocation) extends TypedAst.Predicate.Head
 
-      case class False(loc: SourceLocation) extends TypedAst.Predicate.Head {
-        def tpe: Type = Type.Predicate(Nil)
-      }
+      case class False(loc: SourceLocation) extends TypedAst.Predicate.Head
 
       /**
         * A typed relational predicate that occurs in the head of a fact/rule.
         *
         * @param sym   the symbol of the predicate.
         * @param terms the terms of the predicate.
-        * @param tpe   the type of the predicate.
         * @param loc   the source location.
         */
-      case class Table(sym: Symbol.TableSym, terms: List[TypedAst.Term.Head], tpe: Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Head
+      case class Table(sym: Symbol.TableSym, terms: List[TypedAst.Term.Head], loc: SourceLocation) extends TypedAst.Predicate.Head
 
     }
 
@@ -660,10 +650,9 @@ object TypedAst {
         *
         * @param sym   the symbol of the table.
         * @param terms the terms of the predicate.
-        * @param tpe   the type of the predicate.
         * @param loc   the source location.
         */
-      case class Table(sym: Symbol.TableSym, terms: List[TypedAst.Term.Body], tpe: Type.Predicate, loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Table(sym: Symbol.TableSym, terms: List[TypedAst.Term.Body], loc: SourceLocation) extends TypedAst.Predicate.Body
 
       /**
         * A filter predicate that occurs in the body of a rule.

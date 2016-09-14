@@ -549,7 +549,7 @@ object Typer {
 
               @@(termsVal) map {
                 case terms =>
-                  TypedAst.Predicate.Head.Table(name, terms, Type.Predicate(terms map (_.tpe)), loc)
+                  TypedAst.Predicate.Head.Table(name, terms, loc)
               }
 
             case ResolvedAst.Table.Lattice(_, keys, value, _) =>
@@ -561,7 +561,7 @@ object Typer {
 
               @@(termsVal) map {
                 case terms =>
-                  TypedAst.Predicate.Head.Table(name, terms, Type.Predicate(terms map (_.tpe)), loc)
+                  TypedAst.Predicate.Head.Table(name, terms, loc)
               }
           }
 
@@ -583,7 +583,7 @@ object Typer {
               }
 
               @@(termsVal) map {
-                case terms => TypedAst.Predicate.Body.Table(sym, terms, Type.Predicate(terms map (_.tpe)), loc)
+                case terms => TypedAst.Predicate.Body.Table(sym, terms, loc)
               }
             case ResolvedAst.Table.Lattice(_, keys, value, _) =>
               // type check the terms against the attributes.
@@ -593,7 +593,7 @@ object Typer {
               }
 
               @@(termsVal) map {
-                case terms => TypedAst.Predicate.Body.Table(sym, terms, Type.Predicate(terms map (_.tpe)), loc)
+                case terms => TypedAst.Predicate.Body.Table(sym, terms, loc)
               }
           }
 

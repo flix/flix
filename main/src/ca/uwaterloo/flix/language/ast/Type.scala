@@ -332,79 +332,30 @@ object Type {
   //
   // TODO: --- Everything below here may be removed ---
   //
-  /**
-    * An AST node that represents the proposition type.
-    */
-  // TODO: Remove?
-  case object Prop extends Type {
-    def kind: Kind = Kind.Star
-  }
 
-  /**
-    * An AST node that represent a parametric type.
-    *
-    * @param name the ambiguous name.
-    * @param elms the type of the type parameters.
-    */
-  // TODO: remove?
+  // TODO: remove
   case class Parametric(name: Name.QName, elms: Seq[Type]) extends Type {
     def kind: Kind = ???
   }
 
 
-  //
-  // TODO: --- Everything below here is considered deprecated  ---
-  //
-
-
-  /**
-    * An AST node that represents a predicate type.
-    *
-    * @param terms the type of predicate terms.
-    */
-  // TODO: To be removed
-  case class Predicate(terms: List[Type]) extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * An AST node that represent a reference to an unresolved type.
-    *
-    * @param name the name of the unresolved type.
-    */
   // TODO: To be removed
   case class Unresolved(name: Name.QName) extends Type {
     def kind: Kind = Kind.Star
   }
 
-  /**
-    * An AST node that represents the type of a tag.
-    *
-    * @param enum the fully qualified name of the enum.
-    * @param tag  the name of the tag.
-    * @param tpe  the type of the nested value.
-    */
+
   // TODO: To be removed
   case class Tag(enum: Symbol.Resolved, tag: Name.Ident, tpe: Type) extends Type {
     def kind: Kind = Kind.Star
   }
 
-  /**
-    * An AST node that represents a tuple type.
-    *
-    * @param elms the types of the elements.
-    */
+
   case class Tuple(elms: List[Type]) extends Type {
     def kind: Kind = Kind.Star
   }
 
-  /**
-    * TODO:
-    * The type of functions.
-    *
-    * @param args   the type of the arguments.
-    * @param retTpe the type of the return type.
-    */
+
   // TODO: Rename to arrow?
   case class Lambda(args: List[Type], retTpe: Type) extends Type {
     def kind: Kind = Kind.Star

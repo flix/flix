@@ -925,7 +925,6 @@ object Resolver {
           case "Int32" => Type.Int32.toSuccess
           case "Int64" => Type.Int64.toSuccess
           case "BigInt" => Type.BigInt.toSuccess
-          case "Prop" => Type.Prop.toSuccess
           case "Native" => Type.Native.toSuccess
           case "Str" => Type.Str.toSuccess
           case _ => syms.lookupType(name, namespace) flatMap (tpe => visit(tpe))
@@ -958,12 +957,6 @@ object Resolver {
             case (args, retTpe) => Type.Lambda(args, retTpe)
           }
         case Type.Native => Type.Native.toSuccess // TODO: Dont give a name.
-        case Type.Parametric(qname, welms) =>
-          @@(welms map (e => resolve(e, namespace, syms))) map {
-            case elms => qname.ident.name match {
-              case "Set" => Type.mkFSet(elms.head)
-            }
-          }
         case _ => ??? // TODO
       }
 

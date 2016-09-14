@@ -585,8 +585,6 @@ object ExecutableAst {
   }
 
   sealed trait Predicate extends ExecutableAst {
-    def tpe: Type
-
     def loc: SourceLocation
   }
 
@@ -596,17 +594,12 @@ object ExecutableAst {
 
     object Head {
 
-      case class True(loc: SourceLocation) extends ExecutableAst.Predicate.Head {
-        def tpe: Type = Type.Predicate(Nil)
-      }
+      case class True(loc: SourceLocation) extends ExecutableAst.Predicate.Head
 
-      case class False(loc: SourceLocation) extends ExecutableAst.Predicate.Head {
-        def tpe: Type = Type.Predicate(Nil)
-      }
+      case class False(loc: SourceLocation) extends ExecutableAst.Predicate.Head
 
       case class Table(sym: Symbol.TableSym,
                        terms: Array[ExecutableAst.Term.Head],
-                       tpe: Type.Predicate,
                        loc: SourceLocation) extends ExecutableAst.Predicate.Head {
         /**
           * Returns the arity of the predicate.
@@ -629,7 +622,6 @@ object ExecutableAst {
                        terms: Array[ExecutableAst.Term.Body],
                        index2var: Array[String],
                        freeVars: Set[String],
-                       tpe: Type.Predicate,
                        loc: SourceLocation) extends ExecutableAst.Predicate.Body {
         /**
           * Returns the arity of this table predicate.
