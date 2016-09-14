@@ -36,6 +36,13 @@ object Symbol {
   }
 
   /**
+    * Returns the enum symbol for the given name `ident` in the given namespace `ns`.
+    */
+  def mkEnumSym(ns: NName, ident: Ident): EnumSym = {
+    new EnumSym(ns.parts, ident.name, ident.loc)
+  }
+
+  /**
     * Returns the class symbol for the given name `ident`.
     */
   def mkClassSym(ident: Ident): ClassSym = {
@@ -134,6 +141,37 @@ object Symbol {
       */
     override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "/" + name
   }
+
+
+  /**
+    * Enum Symbol.
+    */
+  final class EnumSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
+
+    // TODO: Temporary convenience method.
+    def toResolvedTemporaryHelperMethod: Symbol.Resolved = {
+      Symbol.Resolved.mk(namespace ::: name :: Nil)
+    }
+
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: EnumSym => this.namespace == that.namespace && this.name == that.name
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = 7 * namespace.hashCode() + 11 * name.hashCode
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "/" + name
+  }
+
 
   /**
     * Class Symbol.

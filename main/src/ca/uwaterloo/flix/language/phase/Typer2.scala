@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
+import scala.collection.mutable
+
 object Typer2 {
 
   /**
@@ -260,12 +262,12 @@ object Typer2 {
       // TODO: Must check types of formals by creating a substition...
       val name = defn.sym
       val formals = defn.params.map {
-        case NamedAst.FormalParam(sym, tpe) => TypedAst.FormalArg(sym.toIdent, Types.lookup(tpe))
+        case NamedAst.FormalParam(sym, tpe) => TypedAst.FormalArg(sym.toIdent, Types.lookup(tpe, program))
       }
 
       // TODO: Must also check return type.
 
-      val declaredType = Types.lookup(defn.tpe.asInstanceOf[Type.Lambda].retTpe)
+      val declaredType = Types.lookup(defn.tpe.asInstanceOf[Type.Lambda].retTpe, program)
       val InferMonad(tpe, subst) = for (
         inferredType <- Expressions.infer(defn.exp, program);
         unifiedType <- unifyM(inferredType, declaredType)
@@ -373,42 +375,42 @@ object Typer2 {
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
               ____ <- unifyM(tvar, tpe1, tpe2)
-            ) yield Type.Int32
+            ) yield Type.Int32 // TODO
 
           case BinaryOperator.Minus =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
               ____ <- unifyM(tvar, tpe1, tpe2)
-            ) yield Type.Int32
+            ) yield Type.Int32 // TODO
 
           case BinaryOperator.Times =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
               ____ <- unifyM(tvar, tpe1, tpe2)
-            ) yield Type.Int32
+            ) yield Type.Int32 // TODO
 
           case BinaryOperator.Divide =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
               ____ <- unifyM(tvar, tpe1, tpe2)
-            ) yield Type.Int32
+            ) yield Type.Int32 // TODO
 
           case BinaryOperator.Modulo =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
               ____ <- unifyM(tvar, tpe1, tpe2)
-            ) yield Type.Int32
+            ) yield Type.Int32 // TODO
 
           case BinaryOperator.Exponentiate =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
               ____ <- unifyM(tvar, tpe1, tpe2)
-            ) yield Type.Int32
+            ) yield Type.Int32 // TODO
 
           case BinaryOperator.Equal | BinaryOperator.NotEqual =>
             for (
@@ -476,7 +478,7 @@ object Typer2 {
             case (pat, exp) => visitExp(exp)
           }
 
-          liftM(Type.Int64) // TODO: Hack to get things running.
+          ???
 
         /*
            * Switch expression.
@@ -495,9 +497,11 @@ object Typer2 {
          * Tag expression.
          */
         case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
+          val enumType = lookupTagType(enum, tag, program)
           for (
-            tpe <- visitExp(exp)
-          ) yield Type.Int64 // TODO: Hack to get things running.
+            __________ <- visitExp(exp); // TODO: need to check that the nested type is compatible with one of the tag types.
+            resultType <- unifyM(enumType, tvar)
+          ) yield resultType
 
         /*
          * Tuple expression.
@@ -625,7 +629,7 @@ object Typer2 {
         case NamedAst.Expression.Ascribe(exp, expectedType, loc) =>
           for (
             actualType <- visitExp(exp);
-            resultType <- unifyM(actualType, Types.lookup(expectedType))
+            resultType <- unifyM(actualType, Types.lookup(expectedType, program))
           )
             yield resultType
 
@@ -793,7 +797,8 @@ object Typer2 {
   object Types {
 
     // TODO: Move into typer, I think.
-    def lookup(tpe0: Type): Type = tpe0 match {
+    // TODO: Need to be recursive?
+    def lookup(tpe0: Type, program: Program): Type = tpe0 match {
       case Type.Unresolved(name) => name.ident.name match {
         case "Unit" => Type.Unit
         case "Bool" => Type.Bool
@@ -808,7 +813,16 @@ object Typer2 {
         case "Int64" => Type.Int64
         case "BigInt" => Type.BigInt
         case "Str" => Type.Str
-        case _ => Type.Unresolved(name)
+        case _ =>
+          // Lookup the enum type.
+          for ((ns, decls) <- program.enums) {
+            for ((enumName, decl) <- decls) {
+              if (enumName == name.ident.name) {
+                return decl.tpe
+              }
+            }
+          }
+          ??? // TODO: Enum not found?
       }
       // TODO: Rest
       case _ => tpe0
@@ -1060,7 +1074,7 @@ object Typer2 {
   /**
     * Returns the declared type of the given reference `ref` in the given `program`.
     */
-  def lookupRefType(ref: QName, program: Program): Type = {
+  private def lookupRefType(ref: QName, program: Program): Type = {
     program.definitions.get(ref.namespace) match {
       case None =>
         throw new RuntimeException("namespace not found") // TODO: namespace doesnt exist.
@@ -1068,6 +1082,35 @@ object Typer2 {
         case None => ??? // TODO: name doesnt exist in namespace.
         case Some(defn) => defn.tpe
       }
+    }
+  }
+
+  /**
+    * Returns the declared type of the given `tag`.
+    */
+  private def lookupTagType(name: Name.QName, tag: Name.Ident, program: Program): Type = {
+    /**
+      * Lookup the tag name in all enums across all namespaces.
+      */
+    val matches = mutable.Set.empty[NamedAst.Declaration.Enum]
+    for ((ns, decls) <- program.enums) {
+      for ((enumName, decl) <- decls) {
+        for ((tagName, caze) <- decl.cases) {
+          if (tag.name == tagName) {
+            matches += decl
+          }
+        }
+      }
+    }
+
+    if (matches.isEmpty) {
+      throw new RuntimeException("Tag not found") // TODO: Replace by error handling.
+    } else if (matches.size == 1) {
+      val NamedAst.Declaration.Enum(sym, cases, tpe, loc) = matches.head
+      tpe
+    } else {
+      // TODO: Use the current namespace, and or enum name.
+      throw new RuntimeException("Ambigious tag name")
     }
   }
 

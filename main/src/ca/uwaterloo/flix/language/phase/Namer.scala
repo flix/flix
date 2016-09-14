@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.ast.WeededAst.Case
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
@@ -154,7 +155,8 @@ object Namer {
         prog0.enums.get(ns0) match {
           case None =>
             // Case 1: The namespace does not yet exist. So the enum does not yet exist.
-            val enum = NamedAst.Declaration.Enum(ident, casesOf(cases), loc)
+            val sym = Symbol.mkEnumSym(ns0, ident)
+            val enum = NamedAst.Declaration.Enum(sym, casesOf(cases), typeOf(sym, cases), loc)
             val enums = Map(ident.name -> enum)
             prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
           case Some(enums0) =>
@@ -162,7 +164,8 @@ object Namer {
             enums0.get(ident.name) match {
               case None =>
                 // Case 2.1: The enum does not exist in the namespace. Update it.
-                val enum = NamedAst.Declaration.Enum(ident, casesOf(cases), loc)
+                val sym = Symbol.mkEnumSym(ns0, ident)
+                val enum = NamedAst.Declaration.Enum(sym, casesOf(cases), typeOf(sym, cases), loc)
                 val enums = enums0 + (ident.name -> enum)
                 prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
               case Some(enum) =>
@@ -314,6 +317,13 @@ object Namer {
     cases.foldLeft(Map.empty[String, NamedAst.Case]) {
       case (macc, (name, WeededAst.Case(enum, tag, tpe))) => macc + (name -> NamedAst.Case(enum, tag, tpe))
     }
+
+    /**
+      * Returns the type corresponding to the given cases of an enum.
+      */
+    def typeOf(sym: Symbol.EnumSym, cases: Map[String, Case]): Type = Type.Enum(sym.toResolvedTemporaryHelperMethod, cases.foldLeft(Map.empty[String, Type.Tag]) {
+      case (macc, (name, WeededAst.Case(enum, tag, tpe))) => macc + (name -> Type.Tag(sym.toResolvedTemporaryHelperMethod, tag, tpe))
+    })
 
   }
 

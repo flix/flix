@@ -49,7 +49,7 @@ object NamedAst {
 
     case class Law(ident: Name.Ident, tparams: List[ParsedAst.ContextBound], params: List[Ast.FormalParam], tpe: Type, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Declaration
 
-    case class Enum(ident: Name.Ident, cases: Map[String, NamedAst.Case], loc: SourceLocation) extends NamedAst.Declaration
+    case class Enum(sym: Symbol.EnumSym, cases: Map[String, NamedAst.Case], tpe: Type, loc: SourceLocation) extends NamedAst.Declaration
 
     case class Class(ident: Name.Ident, tparams: List[Type], /* bounds: List[ContextBound],*/ decls: List[NamedAst.Declaration], loc: SourceLocation) extends NamedAst.Declaration
 
