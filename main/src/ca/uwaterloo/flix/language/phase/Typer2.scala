@@ -202,7 +202,7 @@ object Typer2 {
     val constants = program.definitions.foldLeft(Map.empty[Symbol.Resolved, TypedAst.Definition.Constant]) {
       case (macc, (ns, defns)) => macc ++ defns.foldLeft(Map.empty[Symbol.Resolved, TypedAst.Definition.Constant]) {
         case (macc2, (name, defn)) =>
-          macc2 + (toResolvedTemporaryHelperMethod(ns, name) -> Declarations.infer(defn, program))
+          macc2 + (toResolvedTemporaryHelperMethod(ns, name) -> Declarations.infer(defn, ns, program))
       }
     }
 
@@ -211,16 +211,16 @@ object Typer2 {
      */
     val lattices = program.lattices.foldLeft(Map.empty[Type, TypedAst.Definition.BoundedLattice]) {
       case (macc, (tpe, decl)) =>
-        val NamedAst.Declaration.BoundedLattice(tpe, e1, e2, e3, e4, e5, loc) = decl
+        val NamedAst.Declaration.BoundedLattice(tpe, e1, e2, e3, e4, e5, ns, loc) = decl
 
         val declaredType = Types.lookup(tpe, program)
 
         val InferMonad(_, subst) = for (
-          botType <- Expressions.infer(e1, program);
-          topType <- Expressions.infer(e2, program);
-          leqType <- Expressions.infer(e3, program);
-          lubType <- Expressions.infer(e4, program);
-          glbType <- Expressions.infer(e5, program);
+          botType <- Expressions.infer(e1, ns, program);
+          topType <- Expressions.infer(e2, ns, program);
+          leqType <- Expressions.infer(e3, ns, program);
+          lubType <- Expressions.infer(e4, ns, program);
+          glbType <- Expressions.infer(e5, ns, program);
           _______ <- unifyM(botType, declaredType);
           _______ <- unifyM(topType, declaredType)
         // TODO Add constraints for leq, lub, glb, etc.
@@ -287,7 +287,7 @@ object Typer2 {
 
   object Declarations {
 
-    def infer(defn: NamedAst.Declaration.Definition, program: NamedAst.Program)(implicit genSym: GenSym): TypedAst.Definition.Constant = {
+    def infer(defn: NamedAst.Declaration.Definition, ns: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): TypedAst.Definition.Constant = {
 
       // TODO: Must check types of formals by creating a substition...
       val name = defn.sym
@@ -299,7 +299,7 @@ object Typer2 {
 
       val declaredType = Types.lookup(defn.tpe.asInstanceOf[Type.Lambda].retTpe, program)
       val InferMonad(tpe, subst) = for (
-        inferredType <- Expressions.infer(defn.exp, program);
+        inferredType <- Expressions.infer(defn.exp, ns, program);
         unifiedType <- unifyM(inferredType, declaredType)
       ) yield unifiedType
 
@@ -313,9 +313,9 @@ object Typer2 {
   object Expressions {
 
     /**
-      * Infers the type of the given expression `exp0`.
+      * Infers the type of the given expression `exp0` in the namespace `ns0` and `program`.
       */
-    def infer(exp0: NamedAst.Expression, program: NamedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = {
+    def infer(exp0: NamedAst.Expression, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = {
 
       /**
         * Infers the type of the given expression `exp0` inside the inference monad.
@@ -336,7 +336,7 @@ object Typer2 {
          * Reference expression.
          */
         case NamedAst.Expression.Ref(ref, tvar, loc) =>
-          val declaredType = lookupRefType(ref, program)
+          val declaredType = lookupRefType(ref, ns0, program)
           unifyM(tvar, declaredType)
 
         /*
@@ -1103,15 +1103,28 @@ object Typer2 {
   }
 
   /**
-    * Returns the declared type of the given reference `ref` in the given `program`.
+    * Returns the declared type of the given reference `ref` in the current namespace `ns` in the given `program`.
     */
-  private def lookupRefType(ref: QName, program: Program): Type = {
-    program.definitions.get(ref.namespace) match {
-      case None =>
-        throw new RuntimeException("namespace not found") // TODO: namespace doesnt exist.
-      case Some(nm) => nm.get(ref.ident.name) match {
-        case None => ??? // TODO: name doesnt exist in namespace.
-        case Some(defn) => defn.tpe
+  private def lookupRefType(ref: QName, ns: Name.NName, program: Program): Type = {
+    // check whether the reference is fully-qualified.
+    if (ref.isUnqualified) {
+      // Case 1: Unqualified reference. Try the local namespace.
+      program.definitions.get(ns) match {
+        case None => ???
+        case Some(defns) => defns.get(ref.ident.name) match {
+          case None => throw new RuntimeException("Reference not found!")
+          case Some(defn) => defn.tpe
+        }
+      }
+    } else {
+      // Case 2: Qualified. Lookup the namespace.
+      program.definitions.get(ref.namespace) match {
+        case None =>
+          throw new RuntimeException(s"namespace ${ref.namespace} not found") // TODO: namespace doesnt exist.
+        case Some(nm) => nm.get(ref.ident.name) match {
+          case None => ??? // TODO: name doesnt exist in namespace.
+          case Some(defn) => defn.tpe
+        }
       }
     }
   }

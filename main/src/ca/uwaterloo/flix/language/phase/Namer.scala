@@ -244,7 +244,7 @@ object Namer {
 
         @@(botVal, topVal, leqVal, lubVal, glbVal) map {
           case (bot, top, leq, lub, glb) =>
-            val lattice = NamedAst.Declaration.BoundedLattice(tpe, bot, top, leq, lub, glb, loc)
+            val lattice = NamedAst.Declaration.BoundedLattice(tpe, bot, top, leq, lub, glb, ns0, loc)
             prog0.copy(lattices = prog0.lattices + (tpe -> lattice)) // NB: This just overrides any existing binding.
         }
 

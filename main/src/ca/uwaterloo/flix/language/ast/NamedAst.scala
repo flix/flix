@@ -62,7 +62,7 @@ object NamedAst {
     case class Index(ident: Name.Ident, indexes: List[List[Name.Ident]], loc: SourceLocation) extends NamedAst.Declaration
 
     @deprecated("Will be replaced by type classes", "0.1.0")
-    case class BoundedLattice(tpe: Type, bot: NamedAst.Expression, top: NamedAst.Expression, leq: NamedAst.Expression, lub: NamedAst.Expression, glb: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Declaration
+    case class BoundedLattice(tpe: Type, bot: NamedAst.Expression, top: NamedAst.Expression, leq: NamedAst.Expression, lub: NamedAst.Expression, glb: NamedAst.Expression, ns: Name.NName, loc: SourceLocation) extends NamedAst.Declaration
 
   }
 
