@@ -265,7 +265,12 @@ object Typer2 {
 
       // TODO: Must also check return type.
 
-      val InferMonad(tpe, subst) = Expressions.infer(defn.exp, program)
+      val declaredType = Types.lookup(defn.tpe.asInstanceOf[Type.Lambda].retTpe)
+      val InferMonad(tpe, subst) = for (
+        inferredType <- Expressions.infer(defn.exp, program);
+        unifiedType <- unifyM(inferredType, declaredType)
+      ) yield unifiedType
+
       val exp = reassemble(defn.exp, subst)
 
       TypedAst.Definition.Constant(defn.ann, name.toResolvedTemporaryHelperMethod, formals, exp, tpe, defn.loc)
