@@ -55,7 +55,7 @@ object Namer {
 
     // fold over the top-level declarations.
     Validation.fold(declarations, prog0) {
-      case (prog, decl) => Declarations.namer(decl, Name.RootNS, prog0)
+      case (pacc, decl) => Declarations.namer(decl, Name.RootNS, pacc)
     }
   }
 
@@ -69,7 +69,7 @@ object Namer {
        * Namespace.
        */
       case WeededAst.Declaration.Namespace(ns, decls, loc) => Validation.fold(decls, prog0) {
-        case (prog, decl) => namer(decl, ns, prog)
+        case (pacc, decl) => namer(decl, ns, pacc)
       }
 
       /*

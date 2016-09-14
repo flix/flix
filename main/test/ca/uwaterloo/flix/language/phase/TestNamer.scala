@@ -16,10 +16,12 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.{Flix, IValue, Invokable}
+import ca.uwaterloo.flix.language.errors.NameError
 import org.scalatest.FunSuite
 
-class TestResolver extends FunSuite {
+class TestNamer extends FunSuite with TestUtils {
 
   test("DuplicateDefinition01") {
     val input =
@@ -28,7 +30,7 @@ class TestResolver extends FunSuite {
          |def f: Int = 21
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
+    assertError[NameError.DuplicateEntity](result)
   }
 
   test("DuplicateDefinition02") {
@@ -39,7 +41,7 @@ class TestResolver extends FunSuite {
          |def f: Int = 11
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
+    assertError[NameError.DuplicateEntity](result)
   }
 
   test("DuplicateDefinition03") {
@@ -50,7 +52,7 @@ class TestResolver extends FunSuite {
          |def f(x: Int): Int = 11
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
+    assertError[NameError.DuplicateEntity](result)
   }
 
   test("DuplicateDefinition04") {
@@ -61,7 +63,7 @@ class TestResolver extends FunSuite {
          |def f(x: Bool, y: Int, z: String): Int = 11
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
+    assertError[NameError.DuplicateEntity](result)
   }
 
   test("DuplicateDefinition05") {
@@ -76,7 +78,7 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
+    assertError[NameError.DuplicateEntity](result)
   }
 
   test("DuplicateDefinition06") {
@@ -95,7 +97,7 @@ class TestResolver extends FunSuite {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
+    assertError[NameError.DuplicateEntity](result)
   }
 
   test("IllegalConstantName01") {

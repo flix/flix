@@ -26,6 +26,8 @@ sealed trait NameError extends CompilationError
 
 object NameError {
 
+  // TODO: Introduce name error for each individual duplicate symbol.
+
   implicit val consoleCtx = Compiler.ConsoleCtx
 
   /**
