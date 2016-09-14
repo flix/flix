@@ -82,12 +82,13 @@ sealed trait Type {
     case Type.Str => "Str"
     case Type.Native => "Native"
 
-    case Type.Apply(Type.Apply(Type.Arrow, t2), t1) => t1.toString + " -> " + t2.toString
     case Type.Apply(Type.FOpt, t) => "Opt[" + t.toString + "]"
     case Type.Apply(Type.FList, t) => "List[" + t.toString + "]"
     case Type.Apply(Type.FVec, t) => "Vec[" + t.toString + "]"
     case Type.Apply(Type.FSet, t) => "Set[" + t.toString + "]"
     case Type.Apply(Type.Apply(Type.FMap, k), v) => "Map[" + k.toString + ", " + v.toString + "]"
+    case Type.Apply(Type.Apply(Type.Arrow, t2), t1) => t1.toString + " -> " + t2.toString
+    case Type.Apply(t1, t2) => s"Apply($t1, $t2)"
 
     case Type.Tag(enum, tag, tpe) => tag.name + "(" + tpe + ")"
     case Type.Enum(enum, cases) => enum.fqn

@@ -713,7 +713,11 @@ object Typer2 {
         case NamedAst.Pattern.BigInt(i, loc) => liftM(Type.BigInt)
         case NamedAst.Pattern.Str(s, loc) => liftM(Type.Str)
         case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
-          ???
+          val enumType = lookupTagType(enum, tag, program)
+          for (
+            __________ <- visitPat(pat); // TODO: need to check that the nested type is compatible with one of the tag types.
+            resultType <- unifyM(enumType, tvar)
+          ) yield resultType
 
         case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
           for (

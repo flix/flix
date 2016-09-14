@@ -566,8 +566,6 @@ object SimplifiedAst {
                              tpe: Type,
                              loc: SourceLocation) extends SimplifiedAst.Expression {
 
-      assert(base.tpe.isInstanceOf[Type.Tuple], s"GetTupleIndex expects an expression of Type.Tuple, but got '${base.tpe}'.")
-
       override def toString: String = base + "[" + offset + "]"
     }
 
@@ -579,7 +577,7 @@ object SimplifiedAst {
       * @param loc  the source location of the tuple.
       */
     case class Tuple(elms: List[SimplifiedAst.Expression],
-                     tpe: Type.Tuple,
+                     tpe: Type,
                      loc: SourceLocation) extends SimplifiedAst.Expression {
       override def toString: String = "(" + elms.mkString(", ") + ")"
     }

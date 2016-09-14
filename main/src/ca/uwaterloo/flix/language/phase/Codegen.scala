@@ -487,8 +487,8 @@ object Codegen {
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
         case Type.Float32 => visitor.visitVarInsn(FSTORE, offset)
         case Type.Float64 => visitor.visitVarInsn(DSTORE, offset)
-        case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
-             Type.Apply(Type.FSet, _) => visitor.visitVarInsn(ASTORE, offset)
+        case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) => visitor.visitVarInsn(ASTORE, offset)
+        case Type.Apply(_, _) => visitor.visitVarInsn(ASTORE, offset)
         case tpe => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
       compileExpression(ctx, visitor, entryPoint)(exp2)
