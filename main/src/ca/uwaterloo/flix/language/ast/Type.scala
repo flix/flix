@@ -280,6 +280,55 @@ object Type {
     }
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Helper Functions                                                        //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Constructs the function type A -> B where `A` is the given type `a` and `B` is the given type `b`.
+    */
+  def mkArrow(a: Type, b: Type): Type = Apply(Apply(Arrow, a), b)
+
+  /**
+    * Constructs the type Opt[A] where `A` is the given type `tpe`.
+    */
+  def mkFOpt(tpe: Type): Type = Apply(FOpt, tpe)
+
+  /**
+    * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
+    */
+  def mkFTuple(ts: List[Type]): Type = ts.foldLeft(Type.FTuple(ts.length): Type) {
+    case (tacc, tpe) => Apply(tacc, tpe)
+  }
+
+  /**
+    * Constructs the type List[A] where `A` is the given type `tpe`.
+    */
+  def mkFList(tpe: Type): Type = Apply(FList, tpe)
+
+  /**
+    * Constructs the type Vec[A] where `A` is the given type `tpe`.
+    */
+  def mkFVec(tpe: Type): Type = Apply(FVec, tpe)
+
+  /**
+    * Constructs the type Set[A] where `A` is the given type `tpe`.
+    */
+  def mkFSet(tpe: Type): Type = Apply(FSet, tpe)
+
+  /**
+    * Constructs the type Map[K, V] where `K` is the given type `k` and `V` is the given type `v`.
+    */
+  def mkFMap(k: Type, v: Type): Type = Apply(Apply(FMap, k), v)
+
+
+
+
+
+
+
+
+
+
   //
   // TODO: --- Everything below here may be removed ---
   //
@@ -328,16 +377,6 @@ object Type {
     def kind: Kind = Kind.Star
   }
 
-  // TODO: To be removed
-  case class Abs(name: Var, tpe: Type) extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  // TODO: To be removed
-  case object Any extends Type {
-    def kind: Kind = Kind.Star
-  }
-
   /**
     * An AST node that represents the type of a tag.
     *
@@ -371,44 +410,7 @@ object Type {
     def kind: Kind = Kind.Star
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Helper Functions                                                        //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * Constructs the function type A -> B where `A` is the given type `a` and `B` is the given type `b`.
-    */
-  def mkArrow(a: Type, b: Type): Type = Apply(Apply(Arrow, a), b)
 
-  /**
-    * Constructs the type Opt[A] where `A` is the given type `tpe`.
-    */
-  def mkFOpt(tpe: Type): Type = Apply(FOpt, tpe)
 
-  /**
-    * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
-    */
-  def mkFTuple(ts: List[Type]): Type = ts.foldLeft(Type.FTuple(ts.length): Type) {
-    case (tacc, tpe) => Apply(tacc, tpe)
-  }
-
-  /**
-    * Constructs the type List[A] where `A` is the given type `tpe`.
-    */
-  def mkFList(tpe: Type): Type = Apply(FList, tpe)
-
-  /**
-    * Constructs the type Vec[A] where `A` is the given type `tpe`.
-    */
-  def mkFVec(tpe: Type): Type = Apply(FVec, tpe)
-
-  /**
-    * Constructs the type Set[A] where `A` is the given type `tpe`.
-    */
-  def mkFSet(tpe: Type): Type = Apply(FSet, tpe)
-
-  /**
-    * Constructs the type Map[K, V] where `K` is the given type `k` and `V` is the given type `v`.
-    */
-  def mkFMap(k: Type, v: Type): Type = Apply(Apply(FMap, k), v)
 
 }

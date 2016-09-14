@@ -720,7 +720,7 @@ object Resolver {
             case (e, tpe) => ResolvedAst.Expression.Ascribe(e, tpe, loc)
           }
 
-        case WeededAst.Expression.UserError(loc) => ResolvedAst.Expression.Error(Type.Any, loc).toSuccess // TODO: type
+        case WeededAst.Expression.UserError(loc) => ???
 
         case _: WeededAst.Expression.FNone => ???
         case _: WeededAst.Expression.FSome => ???

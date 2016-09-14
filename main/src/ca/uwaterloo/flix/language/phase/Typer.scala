@@ -624,10 +624,10 @@ object Typer {
         case ResolvedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
           TypedAst.Predicate.Body.NotEqual(ident1, ident2, Type.Bool, loc).toSuccess
 
-        case ResolvedAst.Predicate.Body.Loop(ident, rterm, loc) =>
-          Term.typer(rterm, Type.Any, root) map {
-            case term => TypedAst.Predicate.Body.Loop(ident, term, Type.Bool, loc) // TODO: Type
-          }
+        case ResolvedAst.Predicate.Body.Loop(ident, rterm, loc) => ???
+//          Term.typer(rterm, Type.Any, root) map {
+//            case term => TypedAst.Predicate.Body.Loop(ident, term, Type.Bool, loc) // TODO: Type
+//          }
 
       }
     }
@@ -719,11 +719,12 @@ object Typer {
     * @param loc      the source location.
     */
   def expect(expected: Type, actual: Type, loc: SourceLocation): Validation[Type, TypeError] =
-    if (expected == Type.Any)
-      actual.toSuccess
-    else if (actual == Type.Any)
-      actual.toSuccess
-    else if (expected == actual)
+    //if (expected == Type.Any)
+    //  actual.toSuccess
+    //else if (actual == Type.Any)
+    //  actual.toSuccess
+    //else
+    if (expected == actual)
       actual.toSuccess
     else
       ExpectedType(expected, actual, loc).toFailure
@@ -737,11 +738,12 @@ object Typer {
     * @param loc2 the source location of the second type.
     */
   def expectEqual(tpe1: Type, tpe2: Type, loc1: SourceLocation, loc2: SourceLocation): Validation[Type, TypeError] =
-    if (tpe1 == Type.Any)
-      tpe2.toSuccess
-    else if (tpe2 == Type.Any)
-      tpe1.toSuccess
-    else if (tpe1 == tpe2)
+    //if (tpe1 == Type.Any)
+    //  tpe2.toSuccess
+    //else if (tpe2 == Type.Any)
+    //  tpe1.toSuccess
+    //else
+    if (tpe1 == tpe2)
       tpe1.toSuccess
     else
       ExpectedEqualTypes(tpe1, tpe2, loc1, loc2).toFailure
@@ -755,7 +757,7 @@ object Typer {
     if (types.forall(t => t._1 == tpe1)) {
       tpe1.toSuccess
     } else {
-      val (tpe2, loc2) = types.find(t => t._1 != tpe1 && tpe1 != Type.Any && t._1 != Type.Any).get
+      val (tpe2, loc2) = types.find(t => t._1 != tpe1 /* && tpe1 != Type.Any && t._1 != Type.Any */).get
       ExpectedEqualTypes(tpe1, tpe2, loc1, loc2).toFailure
     }
   }
