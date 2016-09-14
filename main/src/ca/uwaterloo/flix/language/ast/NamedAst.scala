@@ -41,7 +41,7 @@ object NamedAst {
   object Declaration {
 
     // TODO: Remove ident, since we have sym?
-    case class Definition(sym: Symbol.DefnSym, ann: Ast.Annotations, ident: Name.Ident, params: List[Ast.FormalParam], exp: NamedAst.Expression, tpe: Type, loc: SourceLocation) extends NamedAst.Declaration
+    case class Definition(sym: Symbol.DefnSym, params: List[NamedAst.FormalParam], exp: NamedAst.Expression, ann: Ast.Annotations, tpe: Type, loc: SourceLocation) extends NamedAst.Declaration
 
     case class Signature(ident: Name.Ident, params: List[Ast.FormalParam], tpe: Type, loc: SourceLocation) extends NamedAst.Declaration
 

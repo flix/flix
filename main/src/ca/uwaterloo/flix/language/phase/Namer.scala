@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 /**
   * The Namer phase introduces unique symbols for each syntactic entity in the program.
@@ -75,7 +76,7 @@ object Namer {
       /*
        * Definition.
        */
-      case WeededAst.Declaration.Definition(ann, ident, params, exp, tpe, loc) =>
+      case WeededAst.Declaration.Definition(ann, ident, params0, exp, tpe, loc) =>
         // check if the name is legal.
         if (ident.name.head.isUpper) {
           return IllegalDefinitionName(ident.name, loc).toFailure
@@ -85,11 +86,20 @@ object Namer {
         prog0.definitions.get(ns0) match {
           case None =>
             // Case 1: The namespace does not yet exist. So the definition does not yet exist.
-            val env0 = getEnvFromParams(params)
+
+            // introduce a variable symbols for each formal parameter.
+            var pms0 = List.empty[NamedAst.FormalParam]
+            var env0 = Map.empty[String, Symbol.VarSym]
+            for (Ast.FormalParam(ident, tpe) <- params0) {
+              val sym = Symbol.mkVarSym(ident)
+              pms0 = NamedAst.FormalParam(sym, tpe) :: pms0
+              env0 = env0 + (ident.name -> sym)
+            }
+
             Expressions.namer(exp, env0) map {
               case e =>
                 val sym = Symbol.mkDefnSym(ns0, ident)
-                val defn = NamedAst.Declaration.Definition(sym, ann, ident, params, e, tpe, loc)
+                val defn = NamedAst.Declaration.Definition(sym, pms0, e, ann, tpe, loc)
                 val defns = Map(ident.name -> defn)
                 prog0.copy(definitions = prog0.definitions + (ns0 -> defns))
             }
@@ -98,11 +108,20 @@ object Namer {
             defns0.get(ident.name) match {
               case None =>
                 // Case 2.1: The definition does not exist in the namespace. Update it.
-                val env0 = getEnvFromParams(params)
+
+                // introduce a variable symbols for each formal parameter.
+                var pms0 = List.empty[NamedAst.FormalParam]
+                var env0 = Map.empty[String, Symbol.VarSym]
+                for (Ast.FormalParam(ident, tpe) <- params0) {
+                  val sym = Symbol.mkVarSym(ident)
+                  pms0 = NamedAst.FormalParam(sym, tpe) :: pms0
+                  env0 = env0 + (ident.name -> sym)
+                }
+
                 Expressions.namer(exp, env0) map {
                   case e =>
                     val sym = Symbol.mkDefnSym(ns0, ident)
-                    val defn = NamedAst.Declaration.Definition(sym, ann, ident, params, e, tpe, loc)
+                    val defn = NamedAst.Declaration.Definition(sym, pms0, e, ann, tpe, loc)
                     val defns = defns0 + (ident.name -> defn)
                     prog0.copy(definitions = prog0.definitions + (ns0 -> defns))
                 }
@@ -518,15 +537,6 @@ object Namer {
       case WeededAst.Predicate.Head.Table(name, terms, loc) => NamedAst.Predicate.Head.Table(name, terms, loc)
     }
 
-  }
-
-  /**
-    * Returns a mapping from name to variable symbols from the given list of parameters `params`.
-    */
-  private def getEnvFromParams(params: List[Ast.FormalParam])(implicit genSyn: GenSym): Map[String, Symbol.VarSym] = {
-    params.foldLeft(Map.empty[String, Symbol.VarSym]) {
-      case (macc, Ast.FormalParam(id, _)) => macc + (id.name -> Symbol.mkVarSym(id))
-    }
   }
 
 }
