@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.ast.Name.QName
+import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -189,7 +191,7 @@ object Typer2 {
     val constants = program.definitions.foldLeft(Map.empty[Symbol.Resolved, TypedAst.Definition.Constant]) {
       case (macc, (ns, defns)) => macc ++ defns.foldLeft(Map.empty[Symbol.Resolved, TypedAst.Definition.Constant]) {
         case (macc2, (name, defn)) =>
-          macc2 + (toResolvedTemporaryHelperMethod(ns, name) -> Declarations.infer(defn))
+          macc2 + (toResolvedTemporaryHelperMethod(ns, name) -> Declarations.infer(defn, program))
       }
     }
 
@@ -253,7 +255,7 @@ object Typer2 {
 
   object Declarations {
 
-    def infer(defn: NamedAst.Declaration.Definition)(implicit genSym: GenSym): TypedAst.Definition.Constant = {
+    def infer(defn: NamedAst.Declaration.Definition, program: NamedAst.Program)(implicit genSym: GenSym): TypedAst.Definition.Constant = {
 
       // TODO: Must check types of formals by creating a substition...
       val name = defn.sym
@@ -263,10 +265,10 @@ object Typer2 {
 
       // TODO: Must also check return type.
 
-      val InferMonad(tpe, subst) = Expressions.infer(defn.exp)
+      val InferMonad(tpe, subst) = Expressions.infer(defn.exp, program)
       val exp = reassemble(defn.exp, subst)
 
-      TypedAst.Definition.Constant(defn.ann, name.toResolvedTemporaryHelperMethod, formals, exp, Types.lookup(defn.tpe), defn.loc)
+      TypedAst.Definition.Constant(defn.ann, name.toResolvedTemporaryHelperMethod, formals, exp, tpe, defn.loc)
     }
 
   }
@@ -276,7 +278,7 @@ object Typer2 {
     /**
       * Infers the type of the given expression `exp0`.
       */
-    def infer(exp0: NamedAst.Expression)(implicit genSym: GenSym): InferMonad[Type] = {
+    def infer(exp0: NamedAst.Expression, program: NamedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = {
 
       /**
         * Infers the type of the given expression `exp0` inside the inference monad.
@@ -296,7 +298,9 @@ object Typer2 {
         /*
          * Reference expression.
          */
-        case NamedAst.Expression.Ref(ref, tvar, loc) => liftM(tvar)
+        case NamedAst.Expression.Ref(ref, tvar, loc) =>
+          val declaredType = lookupRefType(ref, program)
+          unifyM(tvar, declaredType)
 
         /*
          * Literal expression.
@@ -1048,6 +1052,19 @@ object Typer2 {
     case NamedAst.Pattern.FMap(elms, rest, tvar, loc) => ???
   }
 
+  /**
+    * Returns the declared type of the given reference `ref` in the given `program`.
+    */
+  def lookupRefType(ref: QName, program: Program): Type = {
+    program.definitions.get(ref.namespace) match {
+      case None =>
+        throw new RuntimeException("namespace not found") // TODO: namespace doesnt exist.
+      case Some(nm) => nm.get(ref.ident.name) match {
+        case None => ??? // TODO: name doesnt exist in namespace.
+        case Some(defn) => defn.tpe
+      }
+    }
+  }
 
   private def compat(ps: List[NamedAst.FormalParam], subst: Substitution): List[Ast.FormalParam] = ps map {
     case NamedAst.FormalParam(sym, tpe) => Ast.FormalParam(sym.toIdent, subst(tpe))
