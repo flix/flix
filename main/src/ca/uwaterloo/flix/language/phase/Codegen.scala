@@ -111,6 +111,7 @@ object Codegen {
         case Type.Tuple(_) => asm.Type.getDescriptor(Constants.tupleClass)
         case Type.Lambda(_, _) => s"L${decorate(interfaces(tpe))};"
         case Type.Apply(Type.FSet, _) => asm.Type.getDescriptor(Constants.setClass)
+        case _ if tpe.isTuple => asm.Type.getDescriptor(Constants.tupleClass)
         case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
 
@@ -281,8 +282,9 @@ object Codegen {
       case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
       case Type.Float32 => visitor.visitVarInsn(FLOAD, offset)
       case Type.Float64 => visitor.visitVarInsn(DLOAD, offset)
-      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
+      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Lambda(_, _) |
            Type.Apply(Type.FSet, _) => visitor.visitVarInsn(ALOAD, offset)
+      case _ if tpe.isTuple =>  visitor.visitVarInsn(ALOAD, offset)
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
 

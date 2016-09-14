@@ -155,6 +155,7 @@ object LoadBytecode {
     case Type.Tuple(elms) => classOf[Value.Tuple]
     case Type.Lambda(_, _) => interfaces(tpe)
     case Type.FSet => classOf[scala.collection.immutable.Set[AnyRef]]
+    case _ if tpe.isTuple => classOf[Value.Tuple]
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }
 

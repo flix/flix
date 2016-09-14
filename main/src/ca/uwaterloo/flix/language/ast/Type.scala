@@ -65,6 +65,16 @@ sealed trait Type {
   }
 
   /**
+    * Returns `true` if `this` type is a tuple type.
+    */
+  def isTuple: Boolean = this match {
+    case Type.Tuple(_) => true // deprecated
+    case Type.FTuple(_) => true
+    case Type.Apply(t1, t2) => t1.isTuple
+    case _ => false
+  }
+
+  /**
     * Returns a human readable string representation of `this` type.
     */
   override def toString: String = this match {

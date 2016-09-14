@@ -183,10 +183,10 @@ object Typer2 {
   def unifyM(ts: List[Type]): InferMonad[Type] = {
     def visit(tpe0: Type, xs: List[Type]): InferMonad[Type] = xs match {
       case Nil => liftM(tpe0)
-      case tpe :: Nil => unifyM(tpe0, tpe)
-      case tpe1 :: tpe2 :: ys => unifyM(tpe1, tpe2) flatMap {
-        case tpe => visit(tpe, ys)
-      }
+      case tpe :: ys => for (
+        intermediate <- unifyM(tpe0, tpe);
+        resultType <- visit(intermediate, ys)
+      ) yield resultType
     }
     visit(ts.head, ts.tail)
   }
@@ -533,7 +533,7 @@ object Typer2 {
           val enumType = lookupTagType(enum, tag, program)
           for (
             __________ <- visitExp(exp); // TODO: need to check that the nested type is compatible with one of the tag types.
-            resultType <- unifyM(enumType, tvar)
+            resultType <- unifyM(tvar, enumType)
           ) yield resultType
 
         /*
@@ -716,7 +716,7 @@ object Typer2 {
           val enumType = lookupTagType(enum, tag, program)
           for (
             __________ <- visitPat(pat); // TODO: need to check that the nested type is compatible with one of the tag types.
-            resultType <- unifyM(enumType, tvar)
+            resultType <- unifyM(tvar, enumType)
           ) yield resultType
 
         case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
