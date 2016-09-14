@@ -179,7 +179,16 @@ object Typer2 {
   ) yield res
 
   // TODO
-  def unifyM(ts: List[Type]): InferMonad[Type] = ???
+  def unifyM(ts: List[Type]): InferMonad[Type] = {
+    def visit(tpe0: Type, xs: List[Type]): InferMonad[Type] = xs match {
+      case Nil => liftM(tpe0)
+      case tpe :: Nil => unifyM(tpe0, tpe)
+      case tpe1 :: tpe2 :: ys => unifyM(tpe1, tpe2) flatMap {
+        case tpe => visit(tpe, ys)
+      }
+    }
+    visit(ts.head, ts.tail)
+  }
 
   /**
     * Type checks the given program.
@@ -469,16 +478,17 @@ object Typer2 {
         /*
          * Match expression.
          */
-        case NamedAst.Expression.Match(exp1, rules, tpe, loc) =>
-          val patterns = rules map {
-            case (pat, exp) => visitPat(pat)
-          }
+        case NamedAst.Expression.Match(exp1, rules, tvar, loc) =>
+          val patterns = rules.map(_._1)
+          val bodies = rules.map(_._2)
 
-          val bodies = rules map {
-            case (pat, exp) => visitExp(exp)
-          }
-
-          ???
+          for (
+            matchType <- visitExp(exp1);
+            patternTypes <- visitPats2(patterns);
+            patternType <- unifyM(patternTypes);
+            ___________ <- unifyM(matchType, patternType);
+            resultType <- visitExps(bodies, tvar)
+          ) yield resultType
 
         /*
            * Switch expression.
