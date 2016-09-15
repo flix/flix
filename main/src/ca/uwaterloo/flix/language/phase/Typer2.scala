@@ -847,16 +847,26 @@ object Typer2 {
       case NamedAst.Type.Ref(name, loc) if name.isUnqualified => name.ident.name match {
         case "Unit" => Type.Unit
         case "Bool" => Type.Bool
+        case "Char" => Type.Char
+        case "Float32" => Type.Float32
+        case "Float64" => Type.Float64
+        case "Int" => Type.Int32
+        case "Int8" => Type.Int8
+        case "Int16" => Type.Int16
+        case "Int32" => Type.Int32
+        case "Int64" => Type.Int64
+        case "BigInt" => Type.BigInt
+        case "Str" => Type.Str
         case typeName =>
           program.enums.get(ns0) match {
             case None =>
               throw new RuntimeException(s"Unknown namespace $ns0")
             case Some(decls) => decls.get(typeName) match {
-              case None => ??? // unknown type
+              case None =>
+                throw new RuntimeException(s"Unknown type name ${typeName}")
               case Some(enum) => resolve(enum.tpe, ns0, program)
             }
           }
-
       }
       case NamedAst.Type.Enum(name, cases) =>
         Type.Enum(name.toResolvedTemporaryHelperMethod, cases.foldLeft(Map.empty[String, Type.Tag]) {
