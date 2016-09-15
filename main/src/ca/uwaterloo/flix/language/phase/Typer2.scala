@@ -859,12 +859,9 @@ object Typer2 {
             resolve(tpe, ns0, program)
           ))
         })
-      case NamedAst.Type.Tuple(elms, loc) =>
-        ???
-      case NamedAst.Type.Lambda(tparams, retType, loc) =>
-        ???
-      case NamedAst.Type.Parametric(base, tparams, loc) =>
-        ???
+      case NamedAst.Type.Tuple(elms, loc) => Type.Tuple(elms.map(tpe => resolve(tpe, ns0, program)))
+      case NamedAst.Type.Lambda(tparams, retType, loc) => Type.Lambda(tparams.map(tpe => resolve(tpe, ns0, program)), resolve(retType, ns0, program))
+      case NamedAst.Type.Parametric(base, tparams, loc) => ??? // TODO
     }
 
   }
