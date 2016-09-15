@@ -31,8 +31,8 @@ object NamedAst {
                      lattices: Map[NamedAst.Type, NamedAst.Declaration.BoundedLattice],
                      indexes: Map[Symbol.TableSym, NamedAst.Declaration.Index],
                      tables: Map[Name.NName, Map[String, NamedAst.Table]],
-                     facts: List[NamedAst.Declaration.Fact],
-                     rules: List[NamedAst.Declaration.Rule],
+                     facts: Map[Name.NName, List[NamedAst.Declaration.Fact]],
+                     rules: Map[Name.NName, List[NamedAst.Declaration.Rule]],
                      hooks: Map[Symbol.Resolved, Ast.Hook],
                      time: Time) extends NamedAst
 
@@ -62,7 +62,6 @@ object NamedAst {
 
     case class Index(ident: Name.Ident, indexes: List[List[Name.Ident]], loc: SourceLocation) extends NamedAst.Declaration
 
-    @deprecated("Will be replaced by type classes", "0.1.0")
     case class BoundedLattice(tpe: NamedAst.Type, bot: NamedAst.Expression, top: NamedAst.Expression, leq: NamedAst.Expression, lub: NamedAst.Expression, glb: NamedAst.Expression, ns: Name.NName, loc: SourceLocation) extends NamedAst.Declaration
 
   }
@@ -218,8 +217,6 @@ object NamedAst {
     case class FMap(elms: List[(NamedAst.Pattern, NamedAst.Pattern)], rest: Option[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
   }
-
-  // TODO: Cleanup this stuff:
 
   sealed trait Predicate extends NamedAst
 

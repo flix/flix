@@ -260,23 +260,24 @@ object Typer2 {
     /*
      * Facts.
      */
-    val facts = program.facts.map {
-      case NamedAst.Declaration.Fact(head, loc) =>
-        val head = ???
-        TypedAst.Constraint.Fact(head)
+    val facts = program.facts.flatMap {
+      case (ns, fs) => fs map {
+        case NamedAst.Declaration.Fact(head, loc) =>
+          val h = Predicates.infer(head, ns, program)
+          TypedAst.Constraint.Fact(h)
+      }
+
     }
 
     /*
      * Rule.
      */
-    val rules = program.rules.map {
-      case NamedAst.Declaration.Rule(head, body, loc) => ???
-    }
+    val rules = ???
 
     val e = System.nanoTime()
     val time = program.time.copy(typer = e - s)
 
-    TypedAst.Root(constants, lattices, tables, indexes, facts, rules, program.hooks, Nil, time)
+    TypedAst.Root(constants, lattices, tables, indexes, facts.toList, rules, program.hooks, Nil, time)
   }
 
 
@@ -836,6 +837,27 @@ object Typer2 {
     return Substitution.singleton(x, tpe).toSuccess
   }
 
+
+  object Predicates {
+
+    /**
+      * Infers the type of the given head predicate.
+      */
+    def infer(head: NamedAst.Predicate.Head, ns: Name.NName, program: Program): TypedAst.Predicate.Head = head match {
+      case NamedAst.Predicate.Head.True(loc) => TypedAst.Predicate.Head.True(loc)
+      case NamedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
+      case NamedAst.Predicate.Head.Table(qname, terms, loc) =>
+        val table = lookupTable(qname, ns, program)
+        val ts = ???
+        TypedAst.Predicate.Head.Table(table.sym, ts, loc)
+    }
+
+  }
+
+  object Terms {
+
+  }
+
   object Types {
 
     /**
@@ -1127,6 +1149,7 @@ object Typer2 {
   /**
     * Returns the declared type of the given reference `ref` in the current namespace `ns` in the given `program`.
     */
+  // TODO: Better to lookup the defn, and then get its type?
   private def lookupRefType(ref: QName, ns: Name.NName, program: Program): Type = {
     // check whether the reference is fully-qualified.
     if (ref.isUnqualified) {
@@ -1154,6 +1177,7 @@ object Typer2 {
   /**
     * Returns the declared type of the given `tag`.
     */
+  // TODO: Better to lookup the defn, and then get its type?
   private def lookupTagType(name: Name.QName, tag: Name.Ident, ns: Name.NName, program: Program): Type = {
     /**
       * Lookup the tag name in all enums across all namespaces.
@@ -1179,6 +1203,22 @@ object Typer2 {
       throw new RuntimeException("Ambigious tag name")
     }
   }
+
+  /**
+    * TODO: DOC
+    */
+  private def lookupTable(qname: Name.QName, ns: Name.NName, program: Program): NamedAst.Table = {
+    if (qname.isUnqualified) {
+      val tables = program.tables(ns)
+      tables.get(qname.ident.name) match {
+        case None => throw new RuntimeException(s"Unknown table ${qname}")
+        case Some(table) => table
+      }
+    } else {
+      ???
+    }
+  }
+
 
   private def compat(ps: List[NamedAst.FormalParam], subst: Substitution): List[Ast.FormalParam] = ps map {
     case NamedAst.FormalParam(sym, tpe, loc) => Ast.FormalParam(sym.toIdent, subst(???))

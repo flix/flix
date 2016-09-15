@@ -43,8 +43,8 @@ object Namer {
       lattices = Map.empty,
       indexes = Map.empty,
       tables = Map.empty,
-      facts = Nil,
-      rules = Nil,
+      facts = Map.empty,
+      rules = Map.empty,
       hooks = program.hooks,
       time = program.time
     )
@@ -197,7 +197,8 @@ object Namer {
       case WeededAst.Declaration.Fact(h, loc) =>
         val head = Predicates.namer(h)
         val fact = NamedAst.Declaration.Fact(head, loc)
-        prog0.copy(facts = fact :: prog0.facts).toSuccess
+        val facts = fact :: prog0.facts.getOrElse(ns0, Nil)
+        prog0.copy(facts = prog0.facts + (ns0 -> facts)).toSuccess
 
       /*
        * Rule.
@@ -211,7 +212,8 @@ object Namer {
           case WeededAst.Predicate.Body.Loop(ident, term, loc) => NamedAst.Predicate.Body.Loop(ident, term, loc)
         }
         val rule = NamedAst.Declaration.Rule(head, body, loc)
-        prog0.copy(rules = rule :: prog0.rules).toSuccess
+        val rules = rule :: prog0.rules.getOrElse(ns0, Nil)
+        prog0.copy(rules = prog0.rules + (ns0 -> rules)).toSuccess
 
       /*
        * Index.
@@ -540,7 +542,7 @@ object Namer {
     def namer(head: WeededAst.Predicate.Head): NamedAst.Predicate.Head = head match {
       case WeededAst.Predicate.Head.True(loc) => NamedAst.Predicate.Head.True(loc)
       case WeededAst.Predicate.Head.False(loc) => NamedAst.Predicate.Head.False(loc)
-      case WeededAst.Predicate.Head.Table(name, terms, loc) => NamedAst.Predicate.Head.Table(name, terms, loc)
+      case WeededAst.Predicate.Head.Table(qname, terms, loc) => NamedAst.Predicate.Head.Table(qname, terms, loc)
     }
 
   }
