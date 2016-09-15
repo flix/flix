@@ -146,20 +146,12 @@ object Ast {
   }
 
   /**
-    * Attribute (column of a relation or lattice).
-    *
-    * @param ident the name of the attribute.
-    * @param tpe   the type of the attribute.
-    */
-  case class Attribute(ident: Name.Ident, tpe: Type)
-
-  /**
     * Formal Parameter.
     *
     * @param ident the name of the argument.
     * @param tpe   the type of the argument.
     */
-  // TODO: consider whether this should be moved?
+  // TODO: Remove
   case class FormalParam(ident: Name.Ident, tpe: Type)
 
   /**

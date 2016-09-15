@@ -284,7 +284,7 @@ object Typer2 {
     if (ns.isRoot) Symbol.Resolved.mk(name) else Symbol.Resolved.mk(ns.parts ::: name :: Nil)
 
 
-  def infer(attr: Ast.Attribute): TypedAst.Attribute = TypedAst.Attribute(attr.ident, attr.tpe)
+  def infer(attr: NamedAst.Attribute): TypedAst.Attribute = ???
 
   object Declarations {
 
@@ -293,12 +293,12 @@ object Typer2 {
       // TODO: Must check types of formals by creating a substition...
       val name = defn.sym
       val formals = defn.params.map {
-        case NamedAst.FormalParam(sym, tpe) => TypedAst.FormalArg(sym.toIdent, Types.resolve(tpe, program))
+        case NamedAst.FormalParam(sym, tpe, loc) => TypedAst.FormalArg(sym.toIdent, Types.resolve(tpe, program))
       }
 
       // TODO: Must also check return type.
 
-      val declaredType = Types.resolve(defn.tpe.asInstanceOf[Type.Lambda].retTpe, program)
+      val declaredType = Types.resolve(defn.tpe.asInstanceOf[NamedAst.Type.Lambda].retType, program)
       val InferMonad(resultType, subst) = for (
         inferredType <- Expressions.infer(defn.exp, ns, program);
         unifiedType <- unifyM(inferredType, declaredType)
@@ -647,7 +647,7 @@ object Typer2 {
         case NamedAst.Expression.Universal(params, exp, loc) =>
           val subst0 = params.foldLeft(Substitution.empty) {
             // TODO: Need to setup connection between sym and the Exp.Var's tvar.
-            case (subst, NamedAst.FormalParam(sym, tpe)) => subst @@ Substitution.singleton(???, tpe)
+            case (subst, NamedAst.FormalParam(sym, tpe, loc)) => ???
           }
 
           for (
@@ -831,38 +831,15 @@ object Typer2 {
 
   object Types {
 
-    // TODO: Move into typer, I think.
-    // TODO: Need to be recursive?
-    def resolve(tpe0: Type, program: Program): Type = tpe0 match {
-      case Type.Unresolved(name) => name.ident.name match {
-        case "Unit" => Type.Unit
-        case "Bool" => Type.Bool
-        case "Char" => Type.Char
-        case "Float" => Type.Float64
-        case "Float32" => Type.Float32
-        case "Float64" => Type.Float64
-        case "Int" => Type.Int32
-        case "Int8" => Type.Int8
-        case "Int16" => Type.Int16
-        case "Int32" => Type.Int32
-        case "Int64" => Type.Int64
-        case "BigInt" => Type.BigInt
-        case "Str" => Type.Str
-        case _ =>
-          // Lookup the enum type.
-          for ((ns, decls) <- program.enums) {
-            for ((enumName, decl) <- decls) {
-              if (enumName == name.ident.name) {
-                return decl.tpe
-              }
-            }
-          }
-          ??? // TODO: Enum not found?
-      }
-      // TODO: Rest
-      case Type.Lambda(args, retTpe) => Type.Lambda(args.map(a => resolve(a, program)), resolve(retTpe, program))
+    /**
+      * TODO: DOC
+      * @param tpe0
+      * @param program
+      * @return
+      */
+    def resolve(tpe0: NamedAst.Type, program: Program): Type = tpe0 match {
 
-      case _ => tpe0
+      case _ => throw new RuntimeException(s"Unknown type ${tpe0}")
     }
 
   }
@@ -1157,7 +1134,7 @@ object Typer2 {
       throw new RuntimeException("Tag not found") // TODO: Replace by error handling.
     } else if (matches.size == 1) {
       val NamedAst.Declaration.Enum(sym, cases, tpe, loc) = matches.head
-      tpe
+      Types.resolve(tpe, program)
     } else {
       // TODO: Use the current namespace, and or enum name.
       throw new RuntimeException("Ambigious tag name")
@@ -1165,7 +1142,7 @@ object Typer2 {
   }
 
   private def compat(ps: List[NamedAst.FormalParam], subst: Substitution): List[Ast.FormalParam] = ps map {
-    case NamedAst.FormalParam(sym, tpe) => Ast.FormalParam(sym.toIdent, subst(tpe))
+    case NamedAst.FormalParam(sym, tpe, loc) => Ast.FormalParam(sym.toIdent, subst(???))
   }
 
 }

@@ -333,12 +333,6 @@ object Type {
   // TODO: --- Everything below here may be removed ---
   //
 
-  // TODO: remove
-  case class Parametric(name: Name.QName, elms: Seq[Type]) extends Type {
-    def kind: Kind = ???
-  }
-
-
   // TODO: To be removed
   case class Unresolved(name: Name.QName) extends Type {
     def kind: Kind = Kind.Star

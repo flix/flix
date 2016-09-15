@@ -20,7 +20,6 @@ import java.nio.charset.Charset
 import java.nio.file.Files
 import java.util.zip.ZipFile
 
-import ca.uwaterloo.flix.language.ast.{Type => PType}
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.util.StreamOps
 import org.parboiled2._
@@ -142,7 +141,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Enum: Rule1[ParsedAst.Declaration.Enum] = {
       def UnitCase: Rule1[ParsedAst.Case] = rule {
-        SP ~ atomic("case") ~ WS ~ Ident ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) => ParsedAst.Case(sp1, ident, PType.Unit, sp2))
+        SP ~ atomic("case") ~ WS ~ Ident ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) =>
+          ParsedAst.Case(sp1, ident, ParsedAst.Type.Unit(sp1, sp2), sp2))
       }
 
       def NestedCase: Rule1[ParsedAst.Case] = rule {
@@ -161,7 +161,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Class: Rule1[ParsedAst.Declaration.Class] = {
 
-      def TypeParams: Rule1[Seq[Type]] = rule {
+      def TypeParams: Rule1[Seq[ParsedAst.Type]] = rule {
         "[" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ "]"
       }
 
@@ -188,7 +188,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Impl: Rule1[ParsedAst.Declaration.Impl] = {
 
-      def TypeParams: Rule1[Seq[Type]] = rule {
+      def TypeParams: Rule1[Seq[ParsedAst.Type]] = rule {
         "[" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ "]"
       }
 
@@ -252,7 +252,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def TypeParams: Rule1[Seq[ParsedAst.ContextBound]] = {
       def ContextBound: Rule1[ParsedAst.ContextBound] = rule {
-        SP ~ Ident ~ optional(optWS ~ ":" ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, bound: Option[PType], sp2: SourcePosition) => bound match {
+        SP ~ Ident ~ optional(optWS ~ ":" ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, bound: Option[ParsedAst.Type], sp2: SourcePosition) => bound match {
           case None => ParsedAst.ContextBound(sp1, ident, Seq.empty, sp2)
           case Some(tpe) => ParsedAst.ContextBound(sp1, ident, Seq(tpe), sp2)
         })
@@ -268,15 +268,15 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   }
 
-  def Attribute: Rule1[Ast.Attribute] = rule {
-    Ident ~ optWS ~ ":" ~ optWS ~ Type ~> Ast.Attribute
+  def Attribute: Rule1[ParsedAst.Attribute] = rule {
+    SP ~ Ident ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Attribute
   }
 
-  def Attributes: Rule1[Seq[Ast.Attribute]] = rule {
+  def Attributes: Rule1[Seq[ParsedAst.Attribute]] = rule {
     zeroOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS)
   }
 
-  def FormalParams: Rule1[Option[Seq[Ast.FormalParam]]] = rule {
+  def FormalParams: Rule1[Option[Seq[ParsedAst.FormalParam]]] = rule {
     optional("(" ~ optWS ~ ArgumentList ~ optWS ~ ")")
   }
 
@@ -670,31 +670,31 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
-  def Type: Rule1[PType] = rule {
+  def Type: Rule1[ParsedAst.Type] = rule {
     Types.UnaryLambda
   }
 
   object Types {
 
-    def Primary: Rule1[PType] = rule {
-      Lambda | Tuple | Parametric | Name
+    def Primary: Rule1[ParsedAst.Type] = rule {
+      Lambda | Tuple /*| Parametric*/ | Ref
     }
 
-    def Name: Rule1[PType] = rule {
-      QName ~> PType.Unresolved
+    def Ref: Rule1[ParsedAst.Type] = rule {
+      SP ~ QName ~ SP ~> ParsedAst.Type.Ref
     }
 
-    def Tuple: Rule1[PType] = {
-      def Unit: Rule1[PType] = rule {
-        atomic("()") ~ optWS ~> (() => PType.Unit)
+    def Tuple: Rule1[ParsedAst.Type] = {
+      def Unit: Rule1[ParsedAst.Type] = rule {
+        SP ~ atomic("()") ~ SP ~ optWS ~> ParsedAst.Type.Unit
       }
 
-      def Singleton: Rule1[PType] = rule {
+      def Singleton: Rule1[ParsedAst.Type] = rule {
         "(" ~ optWS ~ Type ~ optWS ~ ")" ~ optWS
       }
 
-      def Tuple: Rule1[PType] = rule {
-        "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~> ((xs: Seq[PType]) => PType.Tuple(xs.toList))
+      def Tuple: Rule1[ParsedAst.Type] = rule {
+        SP ~ "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optWS ~> ParsedAst.Type.Tuple
       }
 
       rule {
@@ -702,31 +702,31 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
     }
 
-    def UnaryLambda: Rule1[PType] = rule {
-      Primary ~ optional(optWS ~ atomic("->") ~ optWS ~ Type) ~> ((t: PType, o: Option[PType]) => o match {
+    def UnaryLambda: Rule1[ParsedAst.Type] = rule {
+      SP ~ Primary ~ optional(optWS ~ atomic("->") ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, t: ParsedAst.Type, o: Option[ParsedAst.Type], sp2: SourcePosition) => o match {
         case None => t
-        case Some(r) => PType.Lambda(List(t), r) // TODO: Maybe need to reverse order???
+        case Some(r) => ParsedAst.Type.Lambda(sp1, List(t), r, sp2) // TODO: Maybe need to reverse order???
       })
     }
 
-    def Lambda: Rule1[PType] = rule {
-      "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Type ~> ((xs: Seq[PType], r: PType) => PType.Lambda(xs.toList, r))
+    def Lambda: Rule1[ParsedAst.Type] = rule {
+      SP ~ "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.Lambda
     }
 
-    def Parametric: Rule1[PType] = rule {
-      QName ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ optWS ~> PType.Parametric
+    def Parametric: Rule1[ParsedAst.Type] = rule {
+      SP ~ Type ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~ optWS ~> ParsedAst.Type.Parametric
     }
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Helpers                                                                 //
   /////////////////////////////////////////////////////////////////////////////
-  def ArgumentList: Rule1[Seq[Ast.FormalParam]] = rule {
+  def ArgumentList: Rule1[Seq[ParsedAst.FormalParam]] = rule {
     zeroOrMore(Argument).separatedBy(optWS ~ "," ~ optWS)
   }
 
-  def Argument: Rule1[Ast.FormalParam] = rule {
-    Ident ~ ":" ~ optWS ~ Type ~> Ast.FormalParam
+  def Argument: Rule1[ParsedAst.FormalParam] = rule {
+    SP ~ Ident ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.FormalParam
   }
 
   /////////////////////////////////////////////////////////////////////////////
