@@ -214,7 +214,7 @@ object Typer2 {
       case (macc, (tpe, decl)) =>
         val NamedAst.Declaration.BoundedLattice(tpe, e1, e2, e3, e4, e5, ns, loc) = decl
 
-        val declaredType = Types.resolve(tpe, program)
+        val declaredType = Types.resolve(tpe, ns, program)
 
         val InferMonad(_, subst) = for (
           botType <- Expressions.infer(e1, ns, program);
@@ -293,12 +293,12 @@ object Typer2 {
       // TODO: Must check types of formals by creating a substition...
       val name = defn.sym
       val formals = defn.params.map {
-        case NamedAst.FormalParam(sym, tpe, loc) => TypedAst.FormalArg(sym.toIdent, Types.resolve(tpe, program))
+        case NamedAst.FormalParam(sym, tpe, loc) => TypedAst.FormalArg(sym.toIdent, Types.resolve(tpe, ns, program))
       }
 
       // TODO: Must also check return type.
 
-      val declaredType = Types.resolve(defn.tpe.asInstanceOf[NamedAst.Type.Lambda].retType, program)
+      val declaredType = Types.resolve(defn.tpe.asInstanceOf[NamedAst.Type.Lambda].retType, ns, program)
       val InferMonad(resultType, subst) = for (
         inferredType <- Expressions.infer(defn.exp, ns, program);
         unifiedType <- unifyM(inferredType, declaredType)
@@ -507,7 +507,7 @@ object Typer2 {
 
           for (
             matchType <- visitExp(exp1);
-            patternTypes <- visitPats2(patterns);
+            patternTypes <- visitPats2(patterns, ns0);
             patternType <- unifyM(patternTypes);
             ___________ <- unifyM(matchType, patternType);
             resultType <- visitExps(bodies, tvar)
@@ -530,7 +530,7 @@ object Typer2 {
          * Tag expression.
          */
         case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
-          val enumType = lookupTagType(enum, tag, program)
+          val enumType = lookupTagType(enum, tag, ns0, program)
           for (
             __________ <- visitExp(exp); // TODO: need to check that the nested type is compatible with one of the tag types.
             resultType <- unifyM(tvar, enumType)
@@ -662,7 +662,7 @@ object Typer2 {
         case NamedAst.Expression.Ascribe(exp, expectedType, loc) =>
           for (
             actualType <- visitExp(exp);
-            resultType <- unifyM(actualType, Types.resolve(expectedType, program))
+            resultType <- unifyM(actualType, Types.resolve(expectedType, ns0, program))
           )
             yield resultType
 
@@ -697,7 +697,7 @@ object Typer2 {
       /**
         * Infers the type of the given pattern `pat0`.
         */
-      def visitPat(pat0: NamedAst.Pattern): InferMonad[Type] = pat0 match {
+      def visitPat(pat0: NamedAst.Pattern, ns0: Name.NName): InferMonad[Type] = pat0 match {
         case NamedAst.Pattern.Wild(tvar, loc) => liftM(tvar)
         case NamedAst.Pattern.Var(sym, tvar, loc) => unifyM(sym.tvar, tvar)
         case NamedAst.Pattern.Unit(loc) => liftM(Type.Unit)
@@ -713,15 +713,15 @@ object Typer2 {
         case NamedAst.Pattern.BigInt(i, loc) => liftM(Type.BigInt)
         case NamedAst.Pattern.Str(s, loc) => liftM(Type.Str)
         case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
-          val enumType = lookupTagType(enum, tag, program)
+          val enumType = lookupTagType(enum, tag, ns0, program)
           for (
-            __________ <- visitPat(pat); // TODO: need to check that the nested type is compatible with one of the tag types.
+            __________ <- visitPat(pat, ns0); // TODO: need to check that the nested type is compatible with one of the tag types.
             resultType <- unifyM(tvar, enumType)
           ) yield resultType
 
         case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
           for (
-            elementTypes <- visitPats2(elms);
+            elementTypes <- visitPats2(elms, ns0);
             resultType <- unifyM(tvar, Type.mkFTuple(elementTypes))
           ) yield resultType
 
@@ -735,12 +735,12 @@ object Typer2 {
       }
 
       // TODO: Doc and names.
-      def visitPats2(es: List[NamedAst.Pattern]): InferMonad[List[Type]] = es match {
+      def visitPats2(es: List[NamedAst.Pattern], ns: Name.NName): InferMonad[List[Type]] = es match {
         case Nil => liftM(Nil)
         case x :: xs =>
           for (
-            tpe <- visitPat(x);
-            tpes <- visitPats2(xs)
+            tpe <- visitPat(x, ns);
+            tpes <- visitPats2(xs, ns)
           ) yield tpe :: tpes
       }
 
@@ -833,13 +833,38 @@ object Typer2 {
 
     /**
       * TODO: DOC
-      * @param tpe0
-      * @param program
-      * @return
+      *
       */
-    def resolve(tpe0: NamedAst.Type, program: Program): Type = tpe0 match {
+    def resolve(tpe0: NamedAst.Type, ns0: Name.NName, program: Program): Type = tpe0 match {
+      case NamedAst.Type.Unit(loc) => Type.Unit
+      case NamedAst.Type.Ref(name, loc) if name.isUnqualified => name.ident.name match {
+        case "Unit" => Type.Unit
+        case "Bool" => Type.Bool
+        case typeName =>
+          program.enums.get(ns0) match {
+            case None =>
+              throw new RuntimeException(s"Unknown namespace $ns0")
+            case Some(decls) => decls.get(typeName) match {
+              case None => ??? // unknown type
+              case Some(enum) => resolve(enum.tpe, ns0, program)
+            }
+          }
 
-      case _ => throw new RuntimeException(s"Unknown type ${tpe0}")
+      }
+      case NamedAst.Type.Enum(name, cases) =>
+        Type.Enum(name.toResolvedTemporaryHelperMethod, cases.foldLeft(Map.empty[String, Type.Tag]) {
+          case (macc, (tagName, tpe)) => macc + (tagName -> Type.Tag(
+            name.toResolvedTemporaryHelperMethod,
+            Name.Ident(SourcePosition.Unknown, tagName, SourcePosition.Unknown),
+            resolve(tpe, ns0, program)
+          ))
+        })
+      case NamedAst.Type.Tuple(elms, loc) =>
+        ???
+      case NamedAst.Type.Lambda(tparams, retType, loc) =>
+        ???
+      case NamedAst.Type.Parametric(base, tparams, loc) =>
+        ???
     }
 
   }
@@ -1096,7 +1121,7 @@ object Typer2 {
         case None => ???
         case Some(defns) => defns.get(ref.ident.name) match {
           case None => throw new RuntimeException("Reference not found!")
-          case Some(defn) => Types.resolve(defn.tpe, program)
+          case Some(defn) => Types.resolve(defn.tpe, ns, program)
         }
       }
     } else {
@@ -1106,7 +1131,7 @@ object Typer2 {
           throw new RuntimeException(s"namespace ${ref.namespace} not found") // TODO: namespace doesnt exist.
         case Some(nm) => nm.get(ref.ident.name) match {
           case None => ??? // TODO: name doesnt exist in namespace.
-          case Some(defn) => Types.resolve(defn.tpe, program)
+          case Some(defn) => Types.resolve(defn.tpe, ns, program)
         }
       }
     }
@@ -1115,7 +1140,7 @@ object Typer2 {
   /**
     * Returns the declared type of the given `tag`.
     */
-  private def lookupTagType(name: Name.QName, tag: Name.Ident, program: Program): Type = {
+  private def lookupTagType(name: Name.QName, tag: Name.Ident, ns: Name.NName, program: Program): Type = {
     /**
       * Lookup the tag name in all enums across all namespaces.
       */
@@ -1134,7 +1159,7 @@ object Typer2 {
       throw new RuntimeException("Tag not found") // TODO: Replace by error handling.
     } else if (matches.size == 1) {
       val NamedAst.Declaration.Enum(sym, cases, tpe, loc) = matches.head
-      Types.resolve(tpe, program)
+      Types.resolve(tpe, ns, program)
     } else {
       // TODO: Use the current namespace, and or enum name.
       throw new RuntimeException("Ambigious tag name")

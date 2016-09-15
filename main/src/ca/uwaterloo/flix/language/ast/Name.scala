@@ -21,7 +21,7 @@ object Name {
   /**
     * The root namespace.
     */
-  val RootNS = new NName(SourcePosition.Unknown, Nil, SourcePosition.Unknown)
+  val RootNS = NName(SourcePosition.Unknown, Nil, SourcePosition.Unknown)
 
   /**
     * Identifier.
