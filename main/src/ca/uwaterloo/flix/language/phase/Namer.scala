@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.WeededAst.Case
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation
@@ -559,11 +558,14 @@ object Namer {
   }
 
   object Attributes {
-    def namer(attr: WeededAst.Attribute): NamedAst.Attribute = ???
-  }
 
-  object FormalParams {
-    def param(param: WeededAst.FormalParam): NamedAst.FormalParam = ???
+    /**
+      * Translates the given weeded attribute to a named attribute.
+      */
+    def namer(attr: WeededAst.Attribute): NamedAst.Attribute = attr match {
+      case WeededAst.Attribute(ident, tpe, loc) => NamedAst.Attribute(ident, Types.namer(tpe), loc)
+    }
+
   }
 
 }

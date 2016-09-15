@@ -2,6 +2,7 @@
 
 HEAD:
     - Added quick checker.
+    - Added tail recursion.
 
 2016-07-14:
     - Added delta debugging (see --delta and --tutorial delta-debugging).

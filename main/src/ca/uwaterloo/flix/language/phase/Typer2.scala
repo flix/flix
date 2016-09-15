@@ -244,9 +244,9 @@ object Typer2 {
     val tables = program.tables.foldLeft(Map.empty[Symbol.TableSym, TypedAst.Table]) {
       case (macc, (ns, decls)) => macc ++ decls.foldLeft(Map.empty[Symbol.TableSym, TypedAst.Table]) {
         case (macc2, (_, NamedAst.Table.Relation(sym, attr, loc))) =>
-          macc + (sym -> TypedAst.Table.Relation(sym, attr.map(infer), loc))
+          macc + (sym -> TypedAst.Table.Relation(sym, attr.map(a => infer(a, ns, program)), loc))
         case (macc2, (_, NamedAst.Table.Lattice(sym, keys, value, loc))) =>
-          macc2 + (sym -> TypedAst.Table.Lattice(sym, keys.map(infer), infer(value), loc))
+          macc2 + (sym -> TypedAst.Table.Lattice(sym, keys.map(k => infer(k, ns, program)), infer(value, ns, program), loc))
       }
     }
 
@@ -284,7 +284,14 @@ object Typer2 {
     if (ns.isRoot) Symbol.Resolved.mk(name) else Symbol.Resolved.mk(ns.parts ::: name :: Nil)
 
 
-  def infer(attr: NamedAst.Attribute): TypedAst.Attribute = ???
+  /**
+    * Translates the given named attribute into a typed attributes.
+    *
+    * Substitutes the declared type for a resolved type.
+    */
+  def infer(attr: NamedAst.Attribute, ns: Name.NName, program: Program): TypedAst.Attribute = attr match {
+    case NamedAst.Attribute(ident, tpe, loc) => TypedAst.Attribute(ident, Types.resolve(tpe, ns, program))
+  }
 
   object Declarations {
 
