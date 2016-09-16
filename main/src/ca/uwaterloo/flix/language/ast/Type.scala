@@ -117,7 +117,7 @@ object Type {
   /**
     * A type variable expression.
     */
-  case class Var(name: String, kind: Kind) extends Type
+  case class Var(id: Int, kind: Kind) extends Type
 
   /**
     * A type constructor that represents the unit value.

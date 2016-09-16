@@ -26,6 +26,9 @@ package object phase {
 
     private var number: Int = 0
 
+    /**
+      * Returns a freshly generated unique id.
+      */
     def freshId(): Int = {
       number = number + 1
       number
@@ -43,7 +46,11 @@ package object phase {
       Name.Ident(SourcePosition.Unknown, prefix + "$" + number, SourcePosition.Unknown)
     }
 
-    def freshTypeVar(k: Kind = Kind.Star): Type.Var = Type.Var(freshId().toString, k)
+    /**
+      * Returns a fresh type variable.
+      */
+    // TODO: Move into Type? see also Symbol.mkVarSym
+    def freshTypeVar(k: Kind = Kind.Star): Type.Var = Type.Var(freshId(), k)
 
   }
 

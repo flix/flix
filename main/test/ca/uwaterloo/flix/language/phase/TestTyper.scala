@@ -1047,9 +1047,9 @@ class TestTyper extends FunSuite {
   }
 
   test("Substitution.Empty.03") {
-    val tpe = Type.Var("A", Kind.Star)
+    val tpe = Type.Var(1, Kind.Star)
     val subst = Typer2.Substitution.empty
-    assertResult(Type.Var("A", Kind.Star))(subst(tpe))
+    assertResult(Type.Var(1, Kind.Star))(subst(tpe))
   }
 
   test("Substitution.Empty.04") {
@@ -1059,158 +1059,158 @@ class TestTyper extends FunSuite {
   }
 
   test("Substitution.Singleton.01") {
-    val tpe = Type.Var("A", Kind.Star)
-    val subst = Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Bool)
-    assertResult(Type.Var("A", Kind.Star))(subst(tpe))
+    val tpe = Type.Var(1, Kind.Star)
+    val subst = Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Bool)
+    assertResult(Type.Var(1, Kind.Star))(subst(tpe))
   }
 
   test("Substitution.Singleton.02") {
-    val tpe = Type.Var("A", Kind.Star)
-    val subst = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
+    val tpe = Type.Var(1, Kind.Star)
+    val subst = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
     assertResult(Type.Bool)(subst(tpe))
   }
 
   test("Substitution.Singleton.03") {
-    val tpe = Type.mkFOpt(Type.Var("A", Kind.Star))
-    val subst = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
+    val tpe = Type.mkFOpt(Type.Var(1, Kind.Star))
+    val subst = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
     assertResult(Type.mkFOpt(Type.Bool))(subst(tpe))
   }
 
   test("Substitution.Singleton.04") {
-    val tpe = Type.mkFMap(Type.Var("K", Kind.Star), Type.Var("V", Kind.Star))
-    val subst = Typer2.Substitution.singleton(Type.Var("K", Kind.Star), Type.Bool)
-    assertResult(Type.mkFMap(Type.Bool, Type.Var("V", Kind.Star)), Type.Var("V", Kind.Star))(subst(tpe))
+    val tpe = Type.mkFMap(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
+    val subst = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    assertResult(Type.mkFMap(Type.Bool, Type.Var(2, Kind.Star)), Type.Var(2, Kind.Star))(subst(tpe))
   }
 
   test("Substitution.Singleton.05") {
-    val tpe = Type.mkFMap(Type.Var("A", Kind.Star), Type.Var("A", Kind.Star))
-    val subst = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
+    val tpe = Type.mkFMap(Type.Var(1, Kind.Star), Type.Var(1, Kind.Star))
+    val subst = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
     assertResult(Type.mkFMap(Type.Bool, Type.Bool))(subst(tpe))
   }
 
   test("Substitution.Singleton.06") {
-    val tpe = Type.Var("A", Kind.Star)
-    val subst = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Var("B", Kind.Star))
-    assertResult(Type.Var("B", Kind.Star))(subst(tpe))
+    val tpe = Type.Var(1, Kind.Star)
+    val subst = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
+    assertResult(Type.Var(2, Kind.Star))(subst(tpe))
   }
 
   test("Substitution.++.01") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
-    val subst2 = Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Char)
+    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst2 = Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
 
-    val tpe = Type.Var("A", Kind.Star)
+    val tpe = Type.Var(1, Kind.Star)
     assertResult(Type.Bool)((subst1 ++ subst2) (tpe))
   }
 
   test("Substitution.++.02") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
-    val subst2 = Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Char)
+    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst2 = Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
 
-    val tpe = Type.Var("B", Kind.Star)
+    val tpe = Type.Var(2, Kind.Star)
     assertResult(Type.Char)((subst1 ++ subst2) (tpe))
   }
 
   test("Substitution.++.03") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
-    val subst2 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Char)
+    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst2 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Char)
 
-    val tpe = Type.Var("A", Kind.Star)
+    val tpe = Type.Var(1, Kind.Star)
     assertResult(Type.Bool)((subst1 ++ subst2) (tpe))
   }
 
   test("Substitution.++.04") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
-    val subst2 = Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Char)
+    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst2 = Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
 
-    val tpe = Type.mkArrow(Type.Var("A", Kind.Star), Type.Var("B", Kind.Star))
+    val tpe = Type.mkArrow(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
     assertResult(Type.mkArrow(Type.Bool, Type.Char))((subst1 ++ subst2) (tpe))
   }
 
   test("Substitution.@@.01") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
-    val subst2 = Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Char)
+    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst2 = Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
 
-    val tpe = Type.mkArrow(Type.Var("A", Kind.Star), Type.Var("B", Kind.Star))
+    val tpe = Type.mkArrow(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
     assertResult(Type.mkArrow(Type.Bool, Type.Char))((subst2 @@ subst1) (tpe))
   }
 
   test("Substitution.@@.02") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
-    val subst2 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Char)
+    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst2 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Char)
 
-    val tpe = Type.Var("A", Kind.Star)
+    val tpe = Type.Var(1, Kind.Star)
     assertResult(Type.Bool)((subst2 @@ subst1) (tpe))
   }
 
   test("Substitution.@@.03") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Var("B", Kind.Star))
-    val subst2 = Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Bool)
+    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
+    val subst2 = Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Bool)
 
-    val tpe = Type.Var("A", Kind.Star)
+    val tpe = Type.Var(1, Kind.Star)
     assertResult(Type.Bool)((subst2 @@ subst1) (tpe))
   }
 
   test("Substitution.@@.04") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Var("B", Kind.Star))
-    val subst2 = Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Var("C", Kind.Star))
-    val subst3 = Typer2.Substitution.singleton(Type.Var("C", Kind.Star), Type.Bool)
+    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
+    val subst2 = Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Var(3, Kind.Star))
+    val subst3 = Typer2.Substitution.singleton(Type.Var(3, Kind.Star), Type.Bool)
 
-    val tpe = Type.Var("A", Kind.Star)
+    val tpe = Type.Var(1, Kind.Star)
     assertResult(Type.Bool)((subst3 @@ (subst2 @@ subst1)) (tpe))
   }
 
   test("Substitution.Merge.01") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
-    val subst2 = Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Char)
+    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst2 = Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
 
     assert(subst1.merge(subst2).isSuccess)
   }
 
   test("Substitution.Merge.02") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
-    val subst2 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
+    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst2 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
 
     assert(subst1.merge(subst2).isSuccess)
   }
 
   test("Substitution.Merge.03") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool) @@ Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Char)
-    val subst2 = Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Char) @@ Typer2.Substitution.singleton(Type.Var("C", Kind.Star), Type.Int32)
+    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool) @@ Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
+    val subst2 = Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char) @@ Typer2.Substitution.singleton(Type.Var(3, Kind.Star), Type.Int32)
 
     assert(subst1.merge(subst2).isSuccess)
   }
 
   test("Substitution.Merge.04") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Bool)
-    val subst2 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Char)
+    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst2 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Char)
 
     assert(subst1.merge(subst2).isFailure)
   }
 
   test("Substitution.Merge.05") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Int8) @@ Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Int16)
-    val subst2 = Typer2.Substitution.singleton(Type.Var("A", Kind.Star), Type.Int32) @@ Typer2.Substitution.singleton(Type.Var("B", Kind.Star), Type.Int64)
+    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Int8) @@ Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Int16)
+    val subst2 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Int32) @@ Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Int64)
 
     assert(subst1.merge(subst2).isFailure)
   }
 
   test("Unify.Var.01") {
-    val result = Typer2.unify(Type.Var("A", Kind.Star), Type.Unit)
+    val result = Typer2.unify(Type.Var(1, Kind.Star), Type.Unit)
     assert(result.isSuccess)
   }
 
   test("Unify.Var.02") {
-    val result = Typer2.unify(Type.Unit, Type.Var("A", Kind.Star))
+    val result = Typer2.unify(Type.Unit, Type.Var(1, Kind.Star))
     assert(result.isSuccess)
   }
 
   test("Unify.Var.03") {
-    val result = Typer2.unify(Type.Var("A", Kind.Star), Type.Var("A", Kind.Star))
+    val result = Typer2.unify(Type.Var(1, Kind.Star), Type.Var(1, Kind.Star))
     assert(result.isSuccess)
   }
 
   test("Unify.Var.04") {
-    val result = Typer2.unify(Type.Var("A", Kind.Star), Type.Var("B", Kind.Star))
+    val result = Typer2.unify(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
     assert(result.isSuccess)
   }
 
@@ -1353,9 +1353,9 @@ class TestTyper extends FunSuite {
   }
 
   test("Unify.Enum.03") {
-    val A = Type.Var("A", Kind.Star)
-    val B = Type.Var("B", Kind.Star)
-    val C = Type.Var("C", Kind.Star)
+    val A = Type.Var(1, Kind.Star)
+    val B = Type.Var(2, Kind.Star)
+    val C = Type.Var(3, Kind.Star)
     val name = Symbol.Resolved.mk("Color")
     val cases1 = Map(
       "Red" -> Type.Tag(name, Name.Ident(SourcePosition.Unknown, "Red", SourcePosition.Unknown), Type.Bool),
@@ -1374,7 +1374,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Unify.01") {
-    val tpe1 = Type.Var("A", Kind.Star)
+    val tpe1 = Type.Var(1, Kind.Star)
     val tpe2 = Type.Bool
     val result = Typer2.unify(tpe1, tpe2).get
     assertResult(Type.Bool)(result(tpe1))
@@ -1382,13 +1382,13 @@ class TestTyper extends FunSuite {
 
   test("Unify.02") {
     val tpe1 = Type.Bool
-    val tpe2 = Type.Var("A", Kind.Star)
+    val tpe2 = Type.Var(1, Kind.Star)
     val result = Typer2.unify(tpe1, tpe2).get
     assertResult(Type.Bool)(result(tpe2))
   }
 
   test("Unify.03") {
-    val A = Type.Var("A", Kind.Star)
+    val A = Type.Var(1, Kind.Star)
     val tpe1 = Type.mkFOpt(A)
     val tpe2 = Type.mkFOpt(Type.Bool)
     val result = Typer2.unify(tpe1, tpe2).get
@@ -1396,7 +1396,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Unify.04") {
-    val A = Type.Var("A", Kind.Star)
+    val A = Type.Var(1, Kind.Star)
     val tpe1 = Type.mkFOpt(Type.Bool)
     val tpe2 = Type.mkFOpt(A)
     val result = Typer2.unify(tpe1, tpe2).get
@@ -1404,7 +1404,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Unify.05") {
-    val A = Type.Var("A", Kind.Star)
+    val A = Type.Var(1, Kind.Star)
     val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
     val tpe2 = Type.mkArrow(Type.Bool, A)
     val result = Typer2.unify(tpe1, tpe2).get
@@ -1412,7 +1412,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Unify.06") {
-    val A = Type.Var("A", Kind.Star)
+    val A = Type.Var(1, Kind.Star)
     val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
     val tpe2 = Type.mkArrow(Type.Bool, A)
     val result = Typer2.unify(tpe1, tpe2).get
@@ -1420,7 +1420,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Unify.07") {
-    val A = Type.Var("A", Kind.Star)
+    val A = Type.Var(1, Kind.Star)
     val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
     val tpe2 = A
     val result = Typer2.unify(tpe1, tpe2).get
@@ -1428,7 +1428,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Unify.08") {
-    val A = Type.Var("A", Kind.Star)
+    val A = Type.Var(1, Kind.Star)
     val tpe1 = A
     val tpe2 = Type.mkArrow(Type.Bool, Type.Char)
     val result = Typer2.unify(tpe1, tpe2).get
@@ -1436,7 +1436,7 @@ class TestTyper extends FunSuite {
   }
 
   test("Unify.09") {
-    val A = Type.Var("A", Kind.Star)
+    val A = Type.Var(1, Kind.Star)
     val tpe1 = Type.mkArrow(A, Type.Bool)
     val tpe2 = Type.mkArrow(Type.Bool, A)
     val result = Typer2.unify(tpe1, tpe2).get
@@ -1444,8 +1444,8 @@ class TestTyper extends FunSuite {
   }
 
   test("Unify.10") {
-    val A = Type.Var("A", Kind.Star)
-    val B = Type.Var("B", Kind.Star)
+    val A = Type.Var(1, Kind.Star)
+    val B = Type.Var(2, Kind.Star)
     val tpe1 = Type.mkArrow(A, B)
     val tpe2 = Type.mkArrow(Type.Bool, Type.Char)
     val result = Typer2.unify(tpe1, tpe2).get
@@ -1454,8 +1454,8 @@ class TestTyper extends FunSuite {
   }
 
   test("Unify.11") {
-    val A = Type.Var("A", Kind.Star)
-    val B = Type.Var("B", Kind.Star)
+    val A = Type.Var(1, Kind.Star)
+    val B = Type.Var(2, Kind.Star)
     val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
     val tpe2 = Type.mkArrow(A, B)
     val result = Typer2.unify(tpe1, tpe2).get
@@ -1464,8 +1464,8 @@ class TestTyper extends FunSuite {
   }
 
   test("Unify.12") {
-    val A = Type.Var("A", Kind.Star)
-    val B = Type.Var("B", Kind.Star)
+    val A = Type.Var(1, Kind.Star)
+    val B = Type.Var(2, Kind.Star)
     val tpe1 = Type.mkArrow(A, Type.Char)
     val tpe2 = Type.mkArrow(Type.Bool, B)
     val result = Typer2.unify(tpe1, tpe2).get
@@ -1474,9 +1474,9 @@ class TestTyper extends FunSuite {
   }
 
   test("Unify.13") {
-    val A = Type.Var("A", Kind.Star)
-    val B = Type.Var("B", Kind.Star)
-    val C = Type.Var("C", Kind.Star)
+    val A = Type.Var(1, Kind.Star)
+    val B = Type.Var(2, Kind.Star)
+    val C = Type.Var(3, Kind.Star)
     val tpe1 = Type.mkArrow(A, B)
     val tpe2 = Type.mkArrow(C, Type.Bool)
     val result = Typer2.unify(tpe1, tpe2).get
@@ -1485,9 +1485,9 @@ class TestTyper extends FunSuite {
   }
 
   test("Unify.14") {
-    val A = Type.Var("A", Kind.Star)
-    val B = Type.Var("B", Kind.Star)
-    val C = Type.Var("C", Kind.Star)
+    val A = Type.Var(1, Kind.Star)
+    val B = Type.Var(2, Kind.Star)
+    val C = Type.Var(3, Kind.Star)
     val tpe1 = Type.mkArrow(Type.mkFOpt(A), B)
     val tpe2 = Type.mkArrow(C, Type.mkFList(Type.Bool))
     val result = Typer2.unify(tpe1, tpe2).get

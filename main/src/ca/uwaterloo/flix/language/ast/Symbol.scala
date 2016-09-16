@@ -24,6 +24,7 @@ object Symbol {
   /**
     * Returns a fresh variable symbol for the given identifier.
     */
+  // TODO: Move into GenSym?
   def mkVarSym(ident: Name.Ident)(implicit genSym: GenSym): VarSym = {
     new VarSym(genSym.freshId(), ident.name, genSym.freshTypeVar(), ident.loc)
   }
