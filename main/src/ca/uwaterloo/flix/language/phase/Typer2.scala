@@ -316,9 +316,7 @@ object Typer2 {
       val subst0 = defn0.params.foldLeft(Substitution.empty) {
         case (substacc, NamedAst.FormalParam(sym, tpe, loc)) =>
           val resolvedType = Types.resolve(tpe, ns0, program)
-          substacc ++
-            Substitution.singleton(sym.tvar, resolvedType) ++
-            Substitution.singleton(Type.Var(sym.id.toString, Kind.Star), resolvedType) // TODO: This is a bit flaky.
+          substacc ++ Substitution.singleton(sym.tvar, resolvedType)
       }
 
       // Translate the named formals into typed formals.
@@ -362,7 +360,7 @@ object Typer2 {
         /*
          * Variable expression.
          */
-        case NamedAst.Expression.Var(sym, tvar, loc) => unifyM(sym.tvar, tvar)
+        case NamedAst.Expression.Var(sym, loc) => liftM(sym.tvar)
 
         /*
          * Reference expression.
@@ -436,7 +434,7 @@ object Typer2 {
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32) // TODO
+              ____ <- unifyM(tvar, tpe1, tpe2)
             ) yield Type.Int32 // TODO
 
           case BinaryOperator.Minus =>
@@ -943,7 +941,7 @@ object Typer2 {
     /*
      * Variable expression.
      */
-    case NamedAst.Expression.Var(sym, tvar, loc) => TypedAst.Expression.Var(sym.toIdent, subst0(tvar), loc)
+    case NamedAst.Expression.Var(sym, loc) => TypedAst.Expression.Var(sym.toIdent, subst0(sym.tvar), loc)
 
     /*
      * Reference expression.

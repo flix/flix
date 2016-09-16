@@ -88,7 +88,7 @@ object NamedAst {
 
     case class Wild(tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Var(sym: Symbol.VarSym, tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NamedAst.Expression
 
     case class Ref(ref: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 

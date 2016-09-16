@@ -342,7 +342,7 @@ object Namer {
             NamedAst.Expression.Ref(name, genSym.freshTypeVar(), loc).toSuccess
           case Some(sym) =>
             // Case 2: variable.
-            NamedAst.Expression.Var(sym, genSym.freshTypeVar(), loc).toSuccess
+            NamedAst.Expression.Var(sym, loc).toSuccess
         }
 
       case WeededAst.Expression.Var(name, loc) =>
