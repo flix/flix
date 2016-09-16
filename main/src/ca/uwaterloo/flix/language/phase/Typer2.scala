@@ -151,7 +151,7 @@ object Typer2 {
       * TODO: DOC
       */
     def flatMap[B](f: A => InferMonad[B]): InferMonad[B] = f(a) match {
-      case Success(a1, s1) => Success(a1, s1)
+      case Success(a1, s1) => Success(a1, s1 @@ s)
       case Failure(e) => Failure(e)
     }
   }
