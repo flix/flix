@@ -156,6 +156,11 @@ object Typer2 {
   /**
     * TODO: DOC
     */
+  def liftM[A](a: A, s: Substitution): InferMonad[A] = InferMonad(a, s)
+
+  /**
+    * TODO: DOC
+    */
   def unifyM(tpe1: Type, tpe2: Type): InferMonad[Type] = unify(tpe1, tpe2) match {
     case Validation.Success(subst, _) => InferMonad[Type](subst(tpe1), subst)
     case Validation.Failure(errors) => throw InternalCompilerException(s"Unable to unify `$tpe1' with `$tpe2'. Errors ${errors.mkString(", ")}.")
@@ -302,26 +307,37 @@ object Typer2 {
 
   object Declarations {
 
-    def infer(defn: NamedAst.Declaration.Definition, ns: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): TypedAst.Definition.Constant = {
+    /**
+      * Infers the type of the given definition `defn0` in the given namespace `ns0`.
+      */
+    def infer(defn0: NamedAst.Declaration.Definition, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): TypedAst.Definition.Constant = {
 
-      // TODO: Must check types of formals by creating a substition...
-      val name = defn.sym
-      val formals = defn.params.map {
-        case NamedAst.FormalParam(sym, tpe, loc) => TypedAst.FormalArg(sym.toIdent, Types.resolve(tpe, ns, program))
+      // Compute a substitution from the named formals.
+      val subst0 = defn0.params.foldLeft(Substitution.empty) {
+        case (substacc, NamedAst.FormalParam(sym, tpe, loc)) =>
+          val resolvedType = Types.resolve(tpe, ns0, program)
+          substacc ++
+            Substitution.singleton(sym.tvar, resolvedType) ++
+            Substitution.singleton(Type.Var(sym.id.toString, Kind.Star), resolvedType) // TODO: This is a bit flaky.
       }
 
-      // TODO: Must also check return type.
+      // Translate the named formals into typed formals.
+      val formals = defn0.params.map {
+        case NamedAst.FormalParam(sym, tpe, loc) =>
+          TypedAst.FormalArg(sym.toIdent, Types.resolve(tpe, ns0, program))
+      }
 
-      val declaredType = Types.resolve(defn.tpe.asInstanceOf[NamedAst.Type.Lambda].retType, ns, program)
+      val declaredType = Types.resolve(defn0.tpe.asInstanceOf[NamedAst.Type.Lambda].retType, ns0, program)
       val InferMonad(resultType, subst) = for (
-        inferredType <- Expressions.infer(defn.exp, ns, program);
-        unifiedType <- unifyM(inferredType, declaredType)
+        expectedType <- liftM(declaredType, subst0);
+        inferredType <- Expressions.infer(defn0.exp, ns0, program);
+        unifiedType <- unifyM(expectedType, inferredType)
       ) yield unifiedType
 
-      val exp = reassemble(defn.exp, subst)
 
+      val exp = reassemble(defn0.exp, subst)
       val lambdaType = Type.Lambda(formals.map(_.tpe), resultType)
-      TypedAst.Definition.Constant(defn.ann, name.toResolvedTemporaryHelperMethod, formals, exp, lambdaType, defn.loc)
+      TypedAst.Definition.Constant(defn0.ann, defn0.sym.toResolvedTemporaryHelperMethod, formals, exp, lambdaType, defn0.loc)
     }
 
   }
@@ -420,7 +436,7 @@ object Typer2 {
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2)
+              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32) // TODO
             ) yield Type.Int32 // TODO
 
           case BinaryOperator.Minus =>
