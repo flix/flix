@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.phase.GenSym
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.immutable
@@ -282,6 +283,11 @@ object Type {
   /////////////////////////////////////////////////////////////////////////////
   // Helper Functions                                                        //
   /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Returns a fresh type variable.
+    */
+  def freshTypeVar(k: Kind = Kind.Star)(implicit genSym: GenSym): Type.Var = Type.Var(genSym.freshId(), k)
+
   /**
     * Constructs the function type A -> B where `A` is the given type `a` and `B` is the given type `b`.
     */

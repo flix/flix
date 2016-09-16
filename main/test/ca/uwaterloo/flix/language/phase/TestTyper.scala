@@ -179,8 +179,9 @@ class TestTyper extends FunSuite {
       , SL)
 
     val expectedType = Type.Lambda(List(Type.Int32), Type.Unit)
-    val actualType = Typer.Expression.typer(rast, Root).get.tpe
-    assertResult(expectedType)(actualType)
+    //val actualType = Typer.Expression.typer(rast, Root).get.tpe
+    //assertResult(expectedType)(actualType)
+    ???
   }
 
   test("Expression.Lambda02") {
@@ -207,8 +208,9 @@ class TestTyper extends FunSuite {
         Type.Int32,
         Type.Str
       ), retTpe = Type.Str)
-    val actualType = Typer.Expression.typer(rast, Root).get.tpe
-    assertResult(expectedType)(actualType)
+    //val actualType = Typer.Expression.typer(rast, Root).get.tpe
+    //assertResult(expectedType)(actualType)
+    ???
   }
 
 
@@ -224,8 +226,9 @@ class TestTyper extends FunSuite {
           , SL),
       args = List(ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int32(42, SL), SL)), SL)
 
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Unit)(result.get.tpe)
+    //val result = Typer.Expression.typer(rast, Root)
+    //assertResult(Type.Unit)(result.get.tpe)
+    ???
   }
 
   test("Expression.Apply02") {
@@ -250,8 +253,9 @@ class TestTyper extends FunSuite {
         ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo", SL), SL)
       ), SL)
 
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int32)(result.get.tpe)
+    //val result = Typer.Expression.typer(rast, Root)
+    //assertResult(Type.Int32)(result.get.tpe)
+    ???
   }
 
 
@@ -946,17 +950,11 @@ class TestTyper extends FunSuite {
       body = ResolvedAst.Expression.Var(w, SL)
       , SL)
 
-    val result = Typer.Expression.typer(rast, Root)
-    assert(result.isFailure)
+    //val result = Typer.Expression.typer(rast, Root)
+    //assert(result.isFailure)
+    ???
   }
 
-
-  test("Pattern.TypeError") {
-    val rast = ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Unit(SL), SL)
-    val tpe = Type.Bool
-    val result = Typer.Pattern.typer(rast, tpe, Root)
-    assert(result.isFailure)
-  }
   test("Expression.Apply.TypeError.IllegalArgumentType") {
     val x = ident("x")
     val y = ident("y")
@@ -979,8 +977,9 @@ class TestTyper extends FunSuite {
         ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL)
       ), SL)
 
-    val result = Typer.Expression.typer(rast, Root)
-    assert(result.isFailure)
+    //val result = Typer.Expression.typer(rast, Root)
+    //assert(result.isFailure)
+    ???
   }
 
   /////////////////////////////////////////////////////////////////////////////

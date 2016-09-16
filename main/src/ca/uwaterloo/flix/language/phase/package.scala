@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.language.ast.{Kind, Name, SourcePosition, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Name, SourcePosition, Symbol}
 
 package object phase {
 
@@ -45,13 +45,6 @@ package object phase {
       number = number + 1
       Name.Ident(SourcePosition.Unknown, prefix + "$" + number, SourcePosition.Unknown)
     }
-
-    /**
-      * Returns a fresh type variable.
-      */
-    // TODO: Move into Type? see also Symbol.mkVarSym
-    def freshTypeVar(k: Kind = Kind.Star): Type.Var = Type.Var(freshId(), k)
-
   }
 
 }

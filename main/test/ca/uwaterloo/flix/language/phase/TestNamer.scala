@@ -183,7 +183,8 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedConstantReference])
+    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedConstantReference])
+    ???
   }
 
   test("UnresolvedConstantReference02") {
@@ -194,7 +195,8 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedConstantReference])
+    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedConstantReference])
+    ???
   }
 
   test("UnresolvedEnumReference01") {
@@ -205,7 +207,8 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedEnumReference])
+    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedEnumReference])
+    ???
   }
 
   test("UnresolvedEnumReference02") {
@@ -216,7 +219,8 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedEnumReference])
+    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedEnumReference])
+    ???
   }
 
   test("UnresolvedTagReference01") {
@@ -232,7 +236,8 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
+    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
+    ???
   }
 
   test("UnresolvedTagReference02") {
@@ -248,7 +253,8 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
+    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
+    ???
   }
 
   test("UnresolvedTagReference03") {
@@ -266,7 +272,8 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
+    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
+    ???
   }
 
   test("UnresolvedRelationReference01") {
@@ -276,7 +283,8 @@ class TestNamer extends FunSuite with TestUtils {
           |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedRelationReference])
+    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedRelationReference])
+    ???
   }
 
   test("UnresolvedRelationReference02") {
@@ -286,13 +294,15 @@ class TestNamer extends FunSuite with TestUtils {
           |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedRelationReference])
+    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedRelationReference])
+    ???
   }
 
   test("UnresolvedTypeReference01") {
     val input = "def x: Foo = 42"
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTypeReference])
+    // assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTypeReference])
+    ???
   }
 
   test("UnresolvedTypeReference02") {
@@ -302,7 +312,8 @@ class TestNamer extends FunSuite with TestUtils {
           |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTypeReference])
+    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTypeReference])
+    ???
   }
 
   test("Expression.Hook01") {

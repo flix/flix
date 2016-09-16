@@ -549,7 +549,7 @@ object Typer2 {
           val bodyExps = rules.map(_._2)
           for (
             condType <- visitExps(condExps, Type.Bool);
-            bodyType <- visitExps(bodyExps, genSym.freshTypeVar());
+            bodyType <- visitExps(bodyExps, Type.freshTypeVar());
             _ <- unifyM(condType, Type.Bool);
             resultType <- unifyM(tvar, bodyType)
           ) yield resultType
@@ -609,7 +609,7 @@ object Typer2 {
          */
         case NamedAst.Expression.FVec(elms, tvar, loc) =>
           for (
-            elementType <- visitExps(elms, genSym.freshTypeVar());
+            elementType <- visitExps(elms, Type.freshTypeVar());
             resultType <- unifyM(Type.mkFVec(elementType), tvar)
           ) yield resultType
 
@@ -618,7 +618,7 @@ object Typer2 {
          */
         case NamedAst.Expression.FSet(elms, tvar, loc) =>
           for (
-            elementType <- visitExps(elms, genSym.freshTypeVar());
+            elementType <- visitExps(elms, Type.freshTypeVar());
             resultType <- unifyM(tvar, Type.mkFSet(elementType))
           ) yield resultType
 
@@ -629,8 +629,8 @@ object Typer2 {
           val keys = elms.map(_._1)
           val vals = elms.map(_._2)
           for (
-            keyType <- visitExps(keys, genSym.freshTypeVar());
-            valType <- visitExps(vals, genSym.freshTypeVar());
+            keyType <- visitExps(keys, Type.freshTypeVar());
+            valType <- visitExps(vals, Type.freshTypeVar());
             resultType <- unifyM(tvar, Type.mkFMap(keyType, valType))
           ) yield resultType
 
@@ -649,7 +649,7 @@ object Typer2 {
          * PutIndex expression.
          */
         case NamedAst.Expression.PutIndex(exp1, exp2, exp3, tvar, loc) =>
-          val elementType = genSym.freshTypeVar()
+          val elementType = Type.freshTypeVar()
           for (
             tpe1 <- visitExp(exp1);
             tpe2 <- visitExp(exp2);

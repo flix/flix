@@ -89,7 +89,7 @@ object Namer {
             var pms0 = List.empty[NamedAst.FormalParam]
             var env0 = Map.empty[String, Symbol.VarSym]
             for (WeededAst.FormalParam(ident, tpe, loc) <- params0) {
-              val sym = Symbol.mkVarSym(ident)
+              val sym = Symbol.freshVarSym(ident)
               pms0 = NamedAst.FormalParam(sym, Types.namer(tpe), loc) :: pms0
               env0 = env0 + (ident.name -> sym)
             }
@@ -111,7 +111,7 @@ object Namer {
                 var pms0 = List.empty[NamedAst.FormalParam]
                 var env0 = Map.empty[String, Symbol.VarSym]
                 for (WeededAst.FormalParam(ident, tpe, loc) <- params0) {
-                  val sym = Symbol.mkVarSym(ident)
+                  val sym = Symbol.freshVarSym(ident)
                   pms0 = NamedAst.FormalParam(sym, Types.namer(tpe), loc) :: pms0
                   env0 = env0 + (ident.name -> sym)
                 }
@@ -332,21 +332,21 @@ object Namer {
       /*
        * Variables.
        */
-      case WeededAst.Expression.Wild(loc) => NamedAst.Expression.Wild(genSym.freshTypeVar(), loc).toSuccess
+      case WeededAst.Expression.Wild(loc) => NamedAst.Expression.Wild(Type.freshTypeVar(), loc).toSuccess
 
       case WeededAst.Expression.Var(name, loc) if name.isUnqualified =>
         // lookup the variable name in the environment.
         env0.get(name.ident.name) match {
           case None =>
             // Case 1: reference.
-            NamedAst.Expression.Ref(name, genSym.freshTypeVar(), loc).toSuccess
+            NamedAst.Expression.Ref(name, Type.freshTypeVar(), loc).toSuccess
           case Some(sym) =>
             // Case 2: variable.
             NamedAst.Expression.Var(sym, loc).toSuccess
         }
 
       case WeededAst.Expression.Var(name, loc) =>
-        NamedAst.Expression.Ref(name, genSym.freshTypeVar(), loc).toSuccess
+        NamedAst.Expression.Ref(name, Type.freshTypeVar(), loc).toSuccess
 
       /*
        * Literals.
@@ -368,38 +368,38 @@ object Namer {
         val lambdaVal = namer(lambda, env0)
         val argsVal = @@(args map (a => namer(a, env0)))
         @@(lambdaVal, argsVal) map {
-          case (e, es) => NamedAst.Expression.Apply(e, es, genSym.freshTypeVar(), loc)
+          case (e, es) => NamedAst.Expression.Apply(e, es, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Lambda(params, exp, loc) =>
         // make a fresh variable symbol for each for parameter.
-        val syms = params map (ident => Symbol.mkVarSym(ident))
+        val syms = params map (ident => Symbol.freshVarSym(ident))
         val env1 = (params zip syms) map {
           case (ident, sym) => ident.name -> sym
         }
         namer(exp, env0 ++ env1) map {
-          case e => NamedAst.Expression.Lambda(syms, e, genSym.freshTypeVar(), loc)
+          case e => NamedAst.Expression.Lambda(syms, e, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Unary(op, exp, loc) => namer(exp, env0) map {
-        case e => NamedAst.Expression.Unary(op, e, genSym.freshTypeVar(), loc)
+        case e => NamedAst.Expression.Unary(op, e, Type.freshTypeVar(), loc)
       }
 
       case WeededAst.Expression.Binary(op, exp1, exp2, loc) =>
         @@(namer(exp1, env0), namer(exp2, env0)) map {
-          case (e1, e2) => NamedAst.Expression.Binary(op, e1, e2, genSym.freshTypeVar(), loc)
+          case (e1, e2) => NamedAst.Expression.Binary(op, e1, e2, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
         @@(namer(exp1, env0), namer(exp2, env0), namer(exp3, env0)) map {
-          case (e1, e2, e3) => NamedAst.Expression.IfThenElse(e1, e2, e3, genSym.freshTypeVar(), loc)
+          case (e1, e2, e3) => NamedAst.Expression.IfThenElse(e1, e2, e3, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Let(ident, exp1, exp2, loc) =>
         // make a fresh variable symbol for the local variable.
-        val sym = Symbol.mkVarSym(ident)
+        val sym = Symbol.freshVarSym(ident)
         @@(namer(exp1, env0), namer(exp2, env0 + (ident.name -> sym))) map {
-          case (e1, e2) => NamedAst.Expression.Let(sym, e1, e2, genSym.freshTypeVar(), loc)
+          case (e1, e2) => NamedAst.Expression.Let(sym, e1, e2, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Match(exp, rules, loc) =>
@@ -414,61 +414,61 @@ object Namer {
             }
         }
         @@(expVal, @@(rulesVal)) map {
-          case (e, rs) => NamedAst.Expression.Match(e, rs, genSym.freshTypeVar(), loc)
+          case (e, rs) => NamedAst.Expression.Match(e, rs, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Switch(rules, loc) => @@(rules map {
         case (cond, body) => @@(namer(cond, env0), namer(body, env0))
       }) map {
-        case rs => NamedAst.Expression.Switch(rs, genSym.freshTypeVar(), loc)
+        case rs => NamedAst.Expression.Switch(rs, Type.freshTypeVar(), loc)
       }
 
       case WeededAst.Expression.Tag(enum, tag, exp, loc) => namer(exp, env0) map {
-        case e => NamedAst.Expression.Tag(enum, tag, e, genSym.freshTypeVar(), loc)
+        case e => NamedAst.Expression.Tag(enum, tag, e, Type.freshTypeVar(), loc)
       }
 
       case WeededAst.Expression.Tuple(elms, loc) =>
         @@(elms map (e => namer(e, env0))) map {
-          case es => NamedAst.Expression.Tuple(es, genSym.freshTypeVar(), loc)
+          case es => NamedAst.Expression.Tuple(es, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.FNone(loc) => NamedAst.Expression.FNone(genSym.freshTypeVar(), loc).toSuccess
+      case WeededAst.Expression.FNone(loc) => NamedAst.Expression.FNone(Type.freshTypeVar(), loc).toSuccess
 
       case WeededAst.Expression.FSome(exp, loc) => namer(exp, env0) map {
-        case e => NamedAst.Expression.FSome(e, genSym.freshTypeVar(), loc)
+        case e => NamedAst.Expression.FSome(e, Type.freshTypeVar(), loc)
       }
 
-      case WeededAst.Expression.FNil(loc) => NamedAst.Expression.FNil(genSym.freshTypeVar(), loc).toSuccess
+      case WeededAst.Expression.FNil(loc) => NamedAst.Expression.FNil(Type.freshTypeVar(), loc).toSuccess
 
       case WeededAst.Expression.FList(hd, tl, loc) =>
         @@(namer(hd, env0), namer(tl, env0)) map {
-          case (e1, e2) => NamedAst.Expression.FList(e1, e2, genSym.freshTypeVar(), loc)
+          case (e1, e2) => NamedAst.Expression.FList(e1, e2, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.FVec(elms, loc) =>
         @@(elms map (e => namer(e, env0))) map {
-          case es => NamedAst.Expression.FVec(es, genSym.freshTypeVar(), loc)
+          case es => NamedAst.Expression.FVec(es, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.FSet(elms, loc) =>
         @@(elms map (e => namer(e, env0))) map {
-          case es => NamedAst.Expression.FSet(es, genSym.freshTypeVar(), loc)
+          case es => NamedAst.Expression.FSet(es, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.FMap(elms, loc) => @@(elms map {
         case (key, value) => @@(namer(key, env0), namer(value, env0))
       }) map {
-        case es => NamedAst.Expression.FMap(es, genSym.freshTypeVar(), loc)
+        case es => NamedAst.Expression.FMap(es, Type.freshTypeVar(), loc)
       }
 
       case WeededAst.Expression.GetIndex(exp1, exp2, loc) =>
         @@(namer(exp1, env0), namer(exp2, env0)) map {
-          case (e1, e2) => NamedAst.Expression.GetIndex(e1, e2, genSym.freshTypeVar(), loc)
+          case (e1, e2) => NamedAst.Expression.GetIndex(e1, e2, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.PutIndex(exp1, exp2, exp3, loc) =>
         @@(namer(exp1, env0), namer(exp2, env0)) map {
-          case (e1, e2) => NamedAst.Expression.GetIndex(e1, e2, genSym.freshTypeVar(), loc)
+          case (e1, e2) => NamedAst.Expression.GetIndex(e1, e2, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Existential(params, exp, loc) =>
@@ -484,7 +484,7 @@ object Namer {
         case e => ???
       }
 
-      case WeededAst.Expression.UserError(loc) => NamedAst.Expression.UserError(genSym.freshTypeVar(), loc).toSuccess
+      case WeededAst.Expression.UserError(loc) => NamedAst.Expression.UserError(Type.freshTypeVar(), loc).toSuccess
     }
 
   }
@@ -497,12 +497,12 @@ object Namer {
     def namer(pat0: WeededAst.Pattern)(implicit genSym: GenSym): (NamedAst.Pattern, Map[String, Symbol.VarSym]) = {
       val m = mutable.Map.empty[String, Symbol.VarSym]
       def visit(p: WeededAst.Pattern): NamedAst.Pattern = p match {
-        case WeededAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(genSym.freshTypeVar(), loc)
+        case WeededAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(Type.freshTypeVar(), loc)
         case WeededAst.Pattern.Var(ident, loc) =>
           // make a fresh variable symbol for the local variable.
-          val sym = Symbol.mkVarSym(ident)
+          val sym = Symbol.freshVarSym(ident)
           m += (ident.name -> sym)
-          NamedAst.Pattern.Var(sym, genSym.freshTypeVar(), loc)
+          NamedAst.Pattern.Var(sym, Type.freshTypeVar(), loc)
         case WeededAst.Pattern.Unit(loc) => NamedAst.Pattern.Unit(loc)
         case WeededAst.Pattern.True(loc) => NamedAst.Pattern.True(loc)
         case WeededAst.Pattern.False(loc) => NamedAst.Pattern.False(loc)
@@ -515,19 +515,19 @@ object Namer {
         case WeededAst.Pattern.Int64(lit, loc) => NamedAst.Pattern.Int64(lit, loc)
         case WeededAst.Pattern.BigInt(lit, loc) => NamedAst.Pattern.BigInt(lit, loc)
         case WeededAst.Pattern.Str(lit, loc) => NamedAst.Pattern.Str(lit, loc)
-        case WeededAst.Pattern.Tag(enum, tag, pat, loc) => NamedAst.Pattern.Tag(enum, tag, visit(pat), genSym.freshTypeVar(), loc)
-        case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, genSym.freshTypeVar(), loc)
-        case WeededAst.Pattern.FNone(loc) => NamedAst.Pattern.FNone(genSym.freshTypeVar(), loc)
-        case WeededAst.Pattern.FSome(pat, loc) => NamedAst.Pattern.FSome(visit(pat), genSym.freshTypeVar(), loc)
-        case WeededAst.Pattern.FNil(loc) => NamedAst.Pattern.FNil(genSym.freshTypeVar(), loc)
-        case WeededAst.Pattern.FList(hd, tl, loc) => NamedAst.Pattern.FList(visit(hd), visit(tl), genSym.freshTypeVar(), loc)
-        case WeededAst.Pattern.FVec(elms, rest, loc) => NamedAst.Pattern.FVec(elms map visit, rest map visit, genSym.freshTypeVar(), loc)
-        case WeededAst.Pattern.FSet(elms, rest, loc) => NamedAst.Pattern.FSet(elms map visit, rest map visit, genSym.freshTypeVar(), loc)
+        case WeededAst.Pattern.Tag(enum, tag, pat, loc) => NamedAst.Pattern.Tag(enum, tag, visit(pat), Type.freshTypeVar(), loc)
+        case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
+        case WeededAst.Pattern.FNone(loc) => NamedAst.Pattern.FNone(Type.freshTypeVar(), loc)
+        case WeededAst.Pattern.FSome(pat, loc) => NamedAst.Pattern.FSome(visit(pat), Type.freshTypeVar(), loc)
+        case WeededAst.Pattern.FNil(loc) => NamedAst.Pattern.FNil(Type.freshTypeVar(), loc)
+        case WeededAst.Pattern.FList(hd, tl, loc) => NamedAst.Pattern.FList(visit(hd), visit(tl), Type.freshTypeVar(), loc)
+        case WeededAst.Pattern.FVec(elms, rest, loc) => NamedAst.Pattern.FVec(elms map visit, rest map visit, Type.freshTypeVar(), loc)
+        case WeededAst.Pattern.FSet(elms, rest, loc) => NamedAst.Pattern.FSet(elms map visit, rest map visit, Type.freshTypeVar(), loc)
         case WeededAst.Pattern.FMap(elms, rest, loc) =>
           val kvs = elms map {
             case (k, v) => visit(k) -> visit(v)
           }
-          NamedAst.Pattern.FMap(kvs, rest map visit, genSym.freshTypeVar(), loc)
+          NamedAst.Pattern.FMap(kvs, rest map visit, Type.freshTypeVar(), loc)
       }
 
       (visit(pat0), m.toMap)

@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.phase.Resolver.ResolverError
 import org.scalatest.FunSuite
 
 class TestParser extends FunSuite {
@@ -43,7 +42,7 @@ class TestParser extends FunSuite {
       """import a.b.c/_
         |def g: Int = f() + 42
       """.stripMargin
-    new Flix().addStr(input1).addStr(input2).compile().errors.head.isInstanceOf[ResolverError]
+    new Flix().addStr(input1).addStr(input2).compile().errors.head.isInstanceOf[String] // TODO
   }
 
   test("Import.Definition.01") {
@@ -56,7 +55,7 @@ class TestParser extends FunSuite {
       """import a.b.c/f
         |def g: Int = f() + 42
       """.stripMargin
-    new Flix().addStr(input1).addStr(input2).compile().errors.head.isInstanceOf[ResolverError]
+    new Flix().addStr(input1).addStr(input2).compile().errors.head.isInstanceOf[String] // TODO
   }
 
   test("Import.Namespace.01") {
@@ -69,7 +68,7 @@ class TestParser extends FunSuite {
       """import a.b.c
         |def g: Int = c/f() + 42
       """.stripMargin
-    new Flix().addStr(input1).addStr(input2).compile().errors.head.isInstanceOf[ResolverError]
+    new Flix().addStr(input1).addStr(input2).compile().errors.head.isInstanceOf[String] // TODO
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -268,12 +267,12 @@ class TestParser extends FunSuite {
 
   test("Lattice.01") {
     val input = "lat L(a: A)"
-    new Flix().addStr(input).compile().errors.head.isInstanceOf[ResolverError]
+    new Flix().addStr(input).compile().errors.head.isInstanceOf[String] // TODO
   }
 
   test("Lattice.02") {
     val input = "lat L(a: A, b: B, c: C)"
-    new Flix().addStr(input).compile().errors.head.isInstanceOf[ResolverError]
+    new Flix().addStr(input).compile().errors.head.isInstanceOf[String] // TODO
   }
 
   test("Declaration.Index.01") {
