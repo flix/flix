@@ -854,13 +854,16 @@ object Typer2 {
       case NamedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
       case NamedAst.Predicate.Head.Table(qname, terms, loc) =>
         val table = lookupTable(qname, ns, program)
-        val ts = ???
+        val ts = terms map Terms.toHeadTerm
         TypedAst.Predicate.Head.Table(table.sym, ts, loc)
     }
 
   }
 
   object Terms {
+
+    // TODO: Compability
+    def toHeadTerm(e: NamedAst.Expression): TypedAst.Term.Head = ???
 
   }
 
@@ -876,6 +879,7 @@ object Typer2 {
         case "Unit" => Type.Unit
         case "Bool" => Type.Bool
         case "Char" => Type.Char
+        case "Float" => Type.Float64
         case "Float32" => Type.Float32
         case "Float64" => Type.Float64
         case "Int" => Type.Int32
