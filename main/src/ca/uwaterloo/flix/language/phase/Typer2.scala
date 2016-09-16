@@ -272,12 +272,18 @@ object Typer2 {
     /*
      * Rule.
      */
-    val rules = ???
+    val rules = program.rules.flatMap {
+      case (ns, rs) => rs map {
+        case NamedAst.Declaration.Rule(head, body, loc) =>
+          val h = Predicates.infer(head, ns, program)
+          TypedAst.Constraint.Rule(h, ???)
+      }
+    }
 
     val e = System.nanoTime()
     val time = program.time.copy(typer = e - s)
 
-    TypedAst.Root(constants, lattices, tables, indexes, facts.toList, rules, program.hooks, Nil, time)
+    TypedAst.Root(constants, lattices, tables, indexes, facts.toList, rules.toList, program.hooks, Nil, time)
   }
 
 

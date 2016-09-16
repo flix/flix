@@ -230,7 +230,7 @@ object NamedAst {
 
       case class False(loc: SourceLocation) extends NamedAst.Predicate.Head
 
-      case class Table(name: Name.QName, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends NamedAst.Predicate.Head
+      case class Table(name: Name.QName, terms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Predicate.Head
 
     }
 
@@ -238,11 +238,11 @@ object NamedAst {
 
     object Body {
 
-      case class Ambiguous(name: Name.QName, terms: List[WeededAst.Term.Body], loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Ambiguous(name: Name.QName, terms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Predicate.Body
 
       case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, loc: SourceLocation) extends NamedAst.Predicate.Body
 
-      case class Loop(ident: Name.Ident, term: WeededAst.Term.Head, loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Loop(ident: Name.Ident, term: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
     }
 

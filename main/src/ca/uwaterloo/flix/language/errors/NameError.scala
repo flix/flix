@@ -35,6 +35,7 @@ object NameError {
     * @param loc1 the location of the first definition.
     * @param loc2 the location of the second definition.
     */
+  // TODO: Use sym, and/or namespace?
   case class DuplicateDefinition(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     val message =
       s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc1.source.format}")}

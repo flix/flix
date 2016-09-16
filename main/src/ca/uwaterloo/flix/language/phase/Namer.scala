@@ -195,25 +195,23 @@ object Namer {
        * Fact.
        */
       case WeededAst.Declaration.Fact(h, loc) =>
-        val head = Predicates.namer(h)
-        val fact = NamedAst.Declaration.Fact(head, loc)
-        val facts = fact :: prog0.facts.getOrElse(ns0, Nil)
-        prog0.copy(facts = prog0.facts + (ns0 -> facts)).toSuccess
+        Predicates.namer(h) map {
+          case head =>
+            val fact = NamedAst.Declaration.Fact(head, loc)
+            val facts = fact :: prog0.facts.getOrElse(ns0, Nil)
+            prog0.copy(facts = prog0.facts + (ns0 -> facts))
+        }
 
       /*
        * Rule.
        */
       case WeededAst.Declaration.Rule(h, b, loc) =>
-        val head = Predicates.namer(h)
-        // TODO: Introduces Predicates.namer for body predicates.
-        val body = b map {
-          case WeededAst.Predicate.Body.Ambiguous(name, terms, loc) => NamedAst.Predicate.Body.Ambiguous(name, terms, loc)
-          case WeededAst.Predicate.Body.NotEqual(ident1, ident2, loc) => NamedAst.Predicate.Body.NotEqual(ident1, ident2, loc)
-          case WeededAst.Predicate.Body.Loop(ident, term, loc) => NamedAst.Predicate.Body.Loop(ident, term, loc)
+        @@(Predicates.namer(h), @@(b.map(Predicates.namer))) map {
+          case (head, body) =>
+            val rule = NamedAst.Declaration.Rule(head, body, loc)
+            val rules = rule :: prog0.rules.getOrElse(ns0, Nil)
+            prog0.copy(rules = prog0.rules + (ns0 -> rules))
         }
-        val rule = NamedAst.Declaration.Rule(head, body, loc)
-        val rules = rule :: prog0.rules.getOrElse(ns0, Nil)
-        prog0.copy(rules = prog0.rules + (ns0 -> rules)).toSuccess
 
       /*
        * Index.
@@ -539,10 +537,28 @@ object Namer {
 
   object Predicates {
 
-    def namer(head: WeededAst.Predicate.Head): NamedAst.Predicate.Head = head match {
-      case WeededAst.Predicate.Head.True(loc) => NamedAst.Predicate.Head.True(loc)
-      case WeededAst.Predicate.Head.False(loc) => NamedAst.Predicate.Head.False(loc)
-      case WeededAst.Predicate.Head.Table(qname, terms, loc) => NamedAst.Predicate.Head.Table(qname, terms, loc)
+    // TODO: Need to drag var symbols along
+    def namer(head: WeededAst.Predicate.Head)(implicit genSym: GenSym): Validation[NamedAst.Predicate.Head, NameError] = head match {
+      case WeededAst.Predicate.Head.True(loc) => NamedAst.Predicate.Head.True(loc).toSuccess
+      case WeededAst.Predicate.Head.False(loc) => NamedAst.Predicate.Head.False(loc).toSuccess
+      case WeededAst.Predicate.Head.Table(qname, terms, loc) =>
+        @@(terms.map(t => Expressions.namer(t, Map.empty /* TODO */))) map {
+          case ts => NamedAst.Predicate.Head.Table(qname, ts, loc)
+        }
+    }
+
+    // TODO: Need to drag var symbols along
+    def namer(body: WeededAst.Predicate.Body)(implicit genSym: GenSym): Validation[NamedAst.Predicate.Body, NameError] = body match {
+      case WeededAst.Predicate.Body.Ambiguous(qname, terms, loc) =>
+        @@(terms.map(t => Expressions.namer(t, Map.empty /* TODO */))) map {
+          case ts => NamedAst.Predicate.Body.Ambiguous(qname, ts, loc)
+        }
+      case WeededAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
+        NamedAst.Predicate.Body.NotEqual(ident1, ident2, loc).toSuccess
+      case WeededAst.Predicate.Body.Loop(ident, term, loc) =>
+        Expressions.namer(term, Map.empty /* TODO */) map {
+          case t => NamedAst.Predicate.Body.Loop(ident, t, loc)
+        }
     }
 
   }

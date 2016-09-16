@@ -244,62 +244,6 @@ object Weeder {
 
   }
 
-  object Literals {
-    // TODO: Remove once terms have been unified with expressions.
-    def compile(literal: ParsedAst.Literal): Validation[WeededAst.Literal, WeederError] = literal match {
-      case ParsedAst.Literal.Unit(sp1, sp2) =>
-        WeededAst.Literal.Unit(mkSL(sp1, sp2)).toSuccess
-
-      case ParsedAst.Literal.True(sp1, sp2) =>
-        WeededAst.Literal.True(mkSL(sp1, sp2)).toSuccess
-
-      case ParsedAst.Literal.False(sp1, sp2) =>
-        WeededAst.Literal.False(mkSL(sp1, sp2)).toSuccess
-
-      case ParsedAst.Literal.Char(sp1, lit, sp2) =>
-        WeededAst.Literal.Char(lit(0), mkSL(sp1, sp2)).toSuccess
-
-      case ParsedAst.Literal.Float32(sp1, sign, before, after, sp2) =>
-        toFloat32(sign, before, after, mkSL(sp1, sp2)) map {
-          case lit => WeededAst.Literal.Float32(lit, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Literal.Float64(sp1, sign, before, after, sp2) =>
-        toFloat64(sign, before, after, mkSL(sp1, sp2)) map {
-          case lit => WeededAst.Literal.Float64(lit, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Literal.Int8(sp1, sign, digits, sp2) =>
-        toInt8(sign, digits, mkSL(sp1, sp2)) map {
-          case lit => WeededAst.Literal.Int8(lit, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Literal.Int16(sp1, sign, digits, sp2) =>
-        toInt16(sign, digits, mkSL(sp1, sp2)) map {
-          case lit => WeededAst.Literal.Int16(lit, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) =>
-        toInt32(sign, digits, mkSL(sp1, sp2)) map {
-          case lit => WeededAst.Literal.Int32(lit, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Literal.Int64(sp1, sign, digits, sp2) =>
-        toInt64(sign, digits, mkSL(sp1, sp2)) map {
-          case lit => WeededAst.Literal.Int64(lit, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Literal.BigInt(sp1, sign, digits, sp2) =>
-        toBigInt(sign, digits, mkSL(sp1, sp2)) map {
-          case lit => WeededAst.Literal.BigInt(lit, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Literal.Str(sp1, lit, sp2) =>
-        WeededAst.Literal.Str(lit, mkSL(sp1, sp2)).toSuccess
-    }
-  }
-
-
   object Expressions {
 
     /**
@@ -771,11 +715,13 @@ object Weeder {
       def weed(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Equal] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
         case ParsedAst.Predicate.True(sp1, sp2) => WeededAst.Predicate.Head.True(mkSL(sp1, sp2)).toSuccess
         case ParsedAst.Predicate.False(sp1, sp2) => WeededAst.Predicate.Head.False(mkSL(sp1, sp2)).toSuccess
-        case p: ParsedAst.Predicate.Ambiguous =>
-          @@(p.terms.map(t => Term.Head.toTerm(t, aliases))) map {
-            case terms => WeededAst.Predicate.Head.Table(p.name, terms, mkSL(p.sp1, p.sp2))
-          }
 
+        case ParsedAst.Predicate.Ambiguous(sp1, qname, terms, sp2) =>
+          // TODO: Check that the predicate is uppercase.
+          // TODO: This does not yet handle aliases.
+          @@(terms.toList.map(Expressions.weed)) map {
+            case ts => WeededAst.Predicate.Head.Table(qname, ts, mkSL(sp1, sp2))
+          }
         case ParsedAst.Predicate.Equal(sp1, ident, term, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
         case ParsedAst.Predicate.Loop(sp1, ident, term, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
         case ParsedAst.Predicate.NotEqual(sp1, ident1, ident2, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
@@ -792,85 +738,20 @@ object Weeder {
         case ParsedAst.Predicate.True(sp1, sp2) => Unsupported("'true' predicate is not allowed in the body of a rule.", mkSL(sp1, sp2)).toFailure
         case ParsedAst.Predicate.False(sp1, sp2) => Unsupported("'false' predicate is not allowed in the body of a rule.", mkSL(sp1, sp2)).toFailure
         case p: ParsedAst.Predicate.Ambiguous =>
-          @@(p.terms.map(Term.Body.toTerm)) map {
+          // TODO: Why not disambiguate here?
+          @@(p.terms.map(Expressions.weed)) map {
             case terms => WeededAst.Predicate.Body.Ambiguous(p.name, terms, mkSL(p.sp1, p.sp2))
           }
 
         case p: ParsedAst.Predicate.NotEqual =>
           WeededAst.Predicate.Body.NotEqual(p.ident1, p.ident2, mkSL(p.sp1, p.sp2)).toSuccess
 
-        case p: ParsedAst.Predicate.Loop => Term.Head.toTerm(p.term, Map.empty) map {
+        case p: ParsedAst.Predicate.Loop => Expressions.weed(p.term) map {
           case term => WeededAst.Predicate.Body.Loop(p.ident, term, mkSL(p.sp1, p.sp2))
         }
 
         case p: ParsedAst.Predicate.Equal => throw InternalCompilerException("Alias predicate should already have been eliminated.")
       }
-    }
-
-  }
-
-  object Term {
-
-    object Head {
-
-      /**
-        * Compiles the parsed expression `exp` into a weeded head term.
-        *
-        */
-      def toTerm(exp: ParsedAst.Expression, aliases: Map[String, ParsedAst.Predicate.Equal]): Validation[WeededAst.Term.Head, WeederError] = exp match {
-        case ParsedAst.Expression.Wild(sp1, sp2) => IllegalHeadTerm("Wildcards may not occur here.", mkSL(sp1, sp2)).toFailure
-        case ParsedAst.Expression.Var(sp1, name, sp2) if name.isUnqualified => WeededAst.Term.Head.Var(name.ident, mkSL(sp1, sp2)).toSuccess
-        case ParsedAst.Expression.Var(sp1, name, sp2) =>
-          IllegalHeadTerm("Qualified variable may not occur here.", mkSL(sp1, sp2)).toFailure
-        case ParsedAst.Expression.Lit(sp1, lit, sp2) => Literals.compile(lit) map {
-          case l => WeededAst.Term.Head.Lit(l, mkSL(sp1, sp2))
-        }
-        case ParsedAst.Expression.Apply(lambda, args, sp2) => lambda match {
-          case ParsedAst.Expression.Var(_, name, _) =>
-            val sp1 = leftMostSourcePosition(lambda)
-            @@(args map (a => toTerm(a, aliases))) flatMap {
-              case as => WeededAst.Term.Head.Apply(name, as, mkSL(sp1, sp2)).toSuccess
-            }
-          case _ => throw InternalCompilerException("Illegal head term. But proper error messages not yet implemented.")
-        }
-        case ParsedAst.Expression.Tag(sp1, enum, tag, o, sp2) => o match {
-          case None =>
-            val loc = mkSL(sp1, sp2)
-            val lit = WeededAst.Literal.Unit(loc)
-            val term = WeededAst.Term.Head.Lit(lit, loc)
-            WeededAst.Term.Head.Tag(enum, tag, term, mkSL(sp1, sp2)).toSuccess
-          case Some(e) => toTerm(e, aliases) map {
-            case t => WeededAst.Term.Head.Tag(enum, tag, t, mkSL(sp1, sp2))
-          }
-        }
-        case ParsedAst.Expression.Tuple(sp1, elms, sp2) =>
-          @@(elms.map(e => toTerm(e, aliases))) map {
-            case Nil => WeededAst.Term.Head.Lit(WeededAst.Literal.Unit(mkSL(sp1, sp2)), mkSL(sp1, sp2))
-            case t :: Nil => t
-            case es => WeededAst.Term.Head.Tuple(es, mkSL(sp1, sp2))
-          }
-        case _ => throw InternalCompilerException("Illegal head term. But proper error messages not yet implemented.")
-      }
-
-    }
-
-    object Body {
-
-      /**
-        * Compiles the parsed expression `exp` into a weeded body term.
-        *
-        */
-      def toTerm(exp: ParsedAst.Expression): Validation[WeededAst.Term.Body, WeederError] = exp match {
-        case ParsedAst.Expression.Wild(sp1, sp2) => WeededAst.Term.Body.Wild(mkSL(sp1, sp2)).toSuccess
-        case ParsedAst.Expression.Var(sp1, name, sp2) if name.isUnqualified => WeededAst.Term.Body.Var(name.ident, mkSL(sp1, sp2)).toSuccess
-        case ParsedAst.Expression.Var(sp1, name, sp2) => IllegalBodyTerm("Qualified variable may not occur here.", mkSL(sp1, sp2)).toFailure
-        case ParsedAst.Expression.Lit(sp1, lit, sp2) => Literals.compile(lit) map {
-          case l => WeededAst.Term.Body.Lit(l, mkSL(sp1, sp2))
-        }
-        case ParsedAst.Expression.Apply(lambda, args, sp2) => IllegalBodyTerm("Functions call may not occur here.", mkSL(leftMostSourcePosition(lambda), sp2)).toFailure
-        case _ => throw InternalCompilerException("Illegal body term. But proper error messages not yet implemented.")
-      }
-
     }
 
   }

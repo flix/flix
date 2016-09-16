@@ -585,29 +585,29 @@ object Resolver {
     }
   }
 
-  object Literal {
-    /**
-      * Performs symbol resolution in the given literal `wast` under the given `namespace`.
-      */
-    def resolve(wast: WeededAst.Literal, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Literal, ResolverError] = {
-      def visit(wast: WeededAst.Literal): Validation[ResolvedAst.Literal, ResolverError] = wast match {
-        case WeededAst.Literal.Unit(loc) => ResolvedAst.Literal.Unit(loc).toSuccess
-        case WeededAst.Literal.True(loc) => ResolvedAst.Literal.Bool(true, loc).toSuccess
-        case WeededAst.Literal.False(loc) => ResolvedAst.Literal.Bool(false, loc).toSuccess
-        case WeededAst.Literal.Char(c, loc) => ResolvedAst.Literal.Char(c, loc).toSuccess
-        case WeededAst.Literal.Float32(f, loc) => ResolvedAst.Literal.Float32(f, loc).toSuccess
-        case WeededAst.Literal.Float64(f, loc) => ResolvedAst.Literal.Float64(f, loc).toSuccess
-        case WeededAst.Literal.Int8(i, loc) => ResolvedAst.Literal.Int8(i, loc).toSuccess
-        case WeededAst.Literal.Int16(i, loc) => ResolvedAst.Literal.Int16(i, loc).toSuccess
-        case WeededAst.Literal.Int32(i, loc) => ResolvedAst.Literal.Int32(i, loc).toSuccess
-        case WeededAst.Literal.Int64(i, loc) => ResolvedAst.Literal.Int64(i, loc).toSuccess
-        case WeededAst.Literal.BigInt(i, loc) => ResolvedAst.Literal.BigInt(i, loc).toSuccess
-        case WeededAst.Literal.Str(s, loc) => ResolvedAst.Literal.Str(s, loc).toSuccess
-      }
-
-      visit(wast)
-    }
-  }
+//  object Literal {
+//    /**
+//      * Performs symbol resolution in the given literal `wast` under the given `namespace`.
+//      */
+//    def resolve(wast: WeededAst.Literal, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Literal, ResolverError] = {
+//      def visit(wast: WeededAst.Literal): Validation[ResolvedAst.Literal, ResolverError] = wast match {
+//        case WeededAst.Literal.Unit(loc) => ResolvedAst.Literal.Unit(loc).toSuccess
+//        case WeededAst.Literal.True(loc) => ResolvedAst.Literal.Bool(true, loc).toSuccess
+//        case WeededAst.Literal.False(loc) => ResolvedAst.Literal.Bool(false, loc).toSuccess
+//        case WeededAst.Literal.Char(c, loc) => ResolvedAst.Literal.Char(c, loc).toSuccess
+//        case WeededAst.Literal.Float32(f, loc) => ResolvedAst.Literal.Float32(f, loc).toSuccess
+//        case WeededAst.Literal.Float64(f, loc) => ResolvedAst.Literal.Float64(f, loc).toSuccess
+//        case WeededAst.Literal.Int8(i, loc) => ResolvedAst.Literal.Int8(i, loc).toSuccess
+//        case WeededAst.Literal.Int16(i, loc) => ResolvedAst.Literal.Int16(i, loc).toSuccess
+//        case WeededAst.Literal.Int32(i, loc) => ResolvedAst.Literal.Int32(i, loc).toSuccess
+//        case WeededAst.Literal.Int64(i, loc) => ResolvedAst.Literal.Int64(i, loc).toSuccess
+//        case WeededAst.Literal.BigInt(i, loc) => ResolvedAst.Literal.BigInt(i, loc).toSuccess
+//        case WeededAst.Literal.Str(s, loc) => ResolvedAst.Literal.Str(s, loc).toSuccess
+//      }
+//
+//      visit(wast)
+//    }
+//  }
 
   object Expression {
 
@@ -803,12 +803,7 @@ object Resolver {
         // TODO: What if a function symbol occurs in the head?
         case WeededAst.Predicate.Head.True(loc) => ResolvedAst.Predicate.Head.True(loc).toSuccess
         case WeededAst.Predicate.Head.False(loc) => ResolvedAst.Predicate.Head.False(loc).toSuccess
-        case WeededAst.Predicate.Head.Table(name, wterms, loc) =>
-          syms.lookupTable(name, namespace) flatMap {
-            case (rname, defn) => @@(wterms map (t => Term.Head.resolve(t, namespace, syms))) map {
-              case terms => ResolvedAst.Predicate.Head.Table(rname, terms, loc)
-            }
-          }
+        case WeededAst.Predicate.Head.Table(name, wterms, loc) => ???
       }
     }
 
@@ -818,7 +813,7 @@ object Resolver {
         */
       def resolve(wast: WeededAst.Predicate.Body, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Predicate.Body, ResolverError] = wast match {
         case WeededAst.Predicate.Body.Ambiguous(name, wterms, loc) =>
-          val termsVal = @@(wterms map (t => Term.Body.resolve(t, namespace, syms)))
+          val termsVal = ???
 
           if (name.ident.name.head.isUpper) {
             @@(syms.lookupTable(name, namespace), termsVal) map {
@@ -834,10 +829,7 @@ object Resolver {
         case WeededAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
           ResolvedAst.Predicate.Body.NotEqual(ident1, ident2, loc).toSuccess
 
-        case WeededAst.Predicate.Body.Loop(ident, term, loc) =>
-          Term.Head.resolve(term, namespace, syms) map {
-            case term => ResolvedAst.Predicate.Body.Loop(ident, term, loc)
-          }
+        case WeededAst.Predicate.Body.Loop(ident, term, loc) => ???
       }
     }
 
@@ -847,64 +839,10 @@ object Resolver {
 
     object Head {
 
-      /**
-        * Performs symbol resolution in the given head term `wast` under the given `namespace`.
-        */
-      def resolve(wast: WeededAst.Term.Head, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Term.Head, ResolverError] = wast match {
-        case WeededAst.Term.Head.Var(ident, loc) =>
-          if (ident.name.head.isLower)
-            ResolvedAst.Term.Head.Var(ident, loc).toSuccess
-          else
-            IllegalVariableName(ident.name, loc).toFailure
-        case WeededAst.Term.Head.Lit(wlit, loc) => Literal.resolve(wlit, namespace, syms) map {
-          case lit => ResolvedAst.Term.Head.Lit(lit, loc)
-        }
-
-        case WeededAst.Term.Head.Tag(enum, tag, t, loc) =>
-          syms.lookupEnum(enum, namespace) flatMap {
-            case (rname, defn) => resolve(t, namespace, syms) flatMap {
-              case e =>
-                val tags = defn.cases.keySet
-                if (tags contains tag.name)
-                  ResolvedAst.Term.Head.Tag(rname, tag, e, loc).toSuccess
-                else
-                  UnresolvedTagReference(defn, tag.name, loc).toFailure
-            }
-          }
-
-        case WeededAst.Term.Head.Tuple(welms, loc) =>
-          @@(welms map (e => resolve(e, namespace, syms))) map {
-            case elms => ResolvedAst.Term.Head.Tuple(elms, loc)
-          }
-
-        case WeededAst.Term.Head.Apply(name, wargs, loc) =>
-          syms.lookupConstant(name, namespace) flatMap {
-            case (rname, Left(defn)) => @@(wargs map (arg => resolve(arg, namespace, syms))) map {
-              case args => ResolvedAst.Term.Head.Apply(rname, args.toList, loc)
-            }
-            case (rname, Right(hook)) => @@(wargs map (arg => resolve(arg, namespace, syms))) map {
-              case args => ResolvedAst.Term.Head.ApplyHook(hook, args.toList, loc)
-            }
-          }
-      }
     }
 
     object Body {
 
-      /**
-        * Performs symbol resolution in the given body term `wast` under the given `namespace`.
-        */
-      def resolve(wast: WeededAst.Term.Body, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Term.Body, ResolverError] = wast match {
-        case WeededAst.Term.Body.Wild(loc) => ResolvedAst.Term.Body.Wildcard(loc).toSuccess
-        case WeededAst.Term.Body.Var(ident, loc) =>
-          if (ident.name.head.isLower)
-            ResolvedAst.Term.Body.Var(ident, loc).toSuccess
-          else
-            IllegalVariableName(ident.name, loc).toFailure
-        case WeededAst.Term.Body.Lit(wlit, loc) => Literal.resolve(wlit, namespace, syms) map {
-          case lit => ResolvedAst.Term.Body.Lit(lit, loc)
-        }
-      }
     }
 
   }

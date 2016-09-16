@@ -55,7 +55,6 @@ object WeededAst {
 
     case class Index(ident: Name.Ident, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends WeededAst.Declaration
 
-    @deprecated("Will be replaced by type classes", "0.1.0")
     case class BoundedLattice(tpe: WeededAst.Type, bot: WeededAst.Expression, top: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, glb: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
   }
@@ -71,39 +70,6 @@ object WeededAst {
     case class Relation(ident: Name.Ident, attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Table
 
     case class Lattice(ident: Name.Ident, keys: List[WeededAst.Attribute], value: WeededAst.Attribute, loc: SourceLocation) extends WeededAst.Table
-
-  }
-
-  // TODO: Deprecated to be removed once terms are removed.
-  sealed trait Literal extends WeededAst {
-    def loc: SourceLocation
-  }
-
-  object Literal {
-
-    case class Unit(loc: SourceLocation) extends WeededAst.Literal
-
-    case class True(loc: SourceLocation) extends WeededAst.Literal
-
-    case class False(loc: SourceLocation) extends WeededAst.Literal
-
-    case class Char(lit: scala.Char, loc: SourceLocation) extends WeededAst.Literal
-
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends WeededAst.Literal
-
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends WeededAst.Literal
-
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends WeededAst.Literal
-
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends WeededAst.Literal
-
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends WeededAst.Literal
-
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends WeededAst.Literal
-
-    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends WeededAst.Literal
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends WeededAst.Literal
 
   }
 
@@ -255,7 +221,7 @@ object WeededAst {
 
       case class False(loc: SourceLocation) extends WeededAst.Predicate.Head
 
-      case class Table(name: Name.QName, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
+      case class Table(name: Name.QName, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
 
     }
 
@@ -263,48 +229,11 @@ object WeededAst {
 
     object Body {
 
-      case class Ambiguous(name: Name.QName, terms: List[WeededAst.Term.Body], loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Ambiguous(name: Name.QName, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Body
 
       case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, loc: SourceLocation) extends WeededAst.Predicate.Body
 
-      case class Loop(ident: Name.Ident, term: WeededAst.Term.Head, loc: SourceLocation) extends WeededAst.Predicate.Body
-
-    }
-
-  }
-
-  // TODO: Deprecated and to be replaced by expressions.
-  sealed trait Term extends WeededAst {
-    def loc: SourceLocation
-  }
-
-  object Term {
-
-    sealed trait Head extends WeededAst.Term
-
-    object Head {
-
-      case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Term.Head
-
-      case class Lit(lit: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Term.Head
-
-      case class Tag(enumName: Name.QName, tagName: Name.Ident, t: WeededAst.Term.Head, loc: SourceLocation) extends WeededAst.Term.Head
-
-      case class Tuple(elms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Term.Head
-
-      case class Apply(name: Name.QName, args: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Term.Head
-
-    }
-
-    sealed trait Body extends WeededAst.Term
-
-    object Body {
-
-      case class Wild(loc: SourceLocation) extends WeededAst.Term.Body
-
-      case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Term.Body
-
-      case class Lit(lit: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Term.Body
+      case class Loop(ident: Name.Ident, term: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
 
     }
 
