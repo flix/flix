@@ -1186,8 +1186,8 @@ class TestBackend extends FunSuite {
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
-    val tagTpe = flix.mkTagType("Val", "Val", flix.mkInt32Type)
-    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkEnumType("Val", Array(tagTpe)))
+    val tagTpe = ??? // TODO
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkEnumType("Val", ???))
     def nativeF(x: IValue): IValue = flix.mkTag("Val", x)
 
     t.addHook("f", tpe, nativeF _).run()
@@ -1497,8 +1497,8 @@ class TestBackend extends FunSuite {
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
-    val tagTpe = flix.mkTagType("Val", "Val", flix.mkInt32Type)
-    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkEnumType("Val", Array(tagTpe)))
+    val tagTpe = ??? // TODO
+    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkEnumType("Val", ???))
     def nativeF(x: JInt): Value.Tag = Value.mkTag("Val", x)
 
     t.addHook("f", tpe, nativeF _).run()
@@ -6890,8 +6890,8 @@ class TestBackend extends FunSuite {
 
     val flix = t.flix
     val tupleTpe = flix.mkTupleType(Array(flix.mkInt32Type, flix.mkStrType))
-    val tagTpe = flix.mkTagType("Foo", "Foo", tupleTpe)
-    val tpe = flix.mkFunctionType(Array(flix.mkStrType), flix.mkEnumType("Foo", Array(tagTpe)))
+    val tagTpe = ??? // TODO
+    val tpe = flix.mkFunctionType(Array(flix.mkStrType), flix.mkEnumType("Foo", ???))
     def nativeF(x: IValue): IValue = flix.mkTag("Foo", flix.mkTuple(Array(flix.mkInt32(1), x)))
 
     t.addHook("f", tpe, nativeF _).run()
@@ -7179,8 +7179,8 @@ class TestBackend extends FunSuite {
 
     val flix = t.flix
     val tupleTpe = flix.mkTupleType(Array(flix.mkInt32Type, flix.mkStrType))
-    val tagTpe = flix.mkTagType("Foo", "Foo", tupleTpe)
-    val tpe = flix.mkFunctionType(Array(flix.mkStrType), flix.mkEnumType("Foo", Array(tagTpe)))
+    val tagTpe = ??? // TODO
+    val tpe = flix.mkFunctionType(Array(flix.mkStrType), flix.mkEnumType("Foo", ???))
     def nativeF(x: String): Value.Tag = Value.mkTag("Foo", Value.Tuple(Array(Value.mkInt32(1), x)))
 
     t.addHook("f", tpe, nativeF _).run()

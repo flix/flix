@@ -492,16 +492,7 @@ object Resolver {
     def resolve(wast: WeededAst.Declaration.Enum, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.Enum, ResolverError] = {
       val name = Symbol.Resolved.mk(namespace ::: wast.ident.name :: Nil)
 
-      val casesVal = Validation.fold[String, WeededAst.Case, String, Type.Tag, ResolverError](wast.cases) {
-        case (k, WeededAst.Case(_, tag, wtpe)) => ???
-//          Types.resolve(wtpe, namespace, syms) map {
-//          case tpe => k -> Type.Tag(name, tag, tpe)
-//        }
-      }
-
-      casesVal map {
-        case cases => ResolvedAst.Definition.Enum(name, cases, wast.loc)
-      }
+      ???
     }
 
     def resolve(wast: WeededAst.Declaration.BoundedLattice, namespace: List[String], syms: SymbolTable): Validation[ResolvedAst.Definition.BoundedLattice, ResolverError] = {
@@ -855,34 +846,7 @@ object Resolver {
     def resolve(wast: Type, namespace: List[String], syms: SymbolTable): Validation[Type, ResolverError] = {
       def visit(wast: Type): Validation[Type, ResolverError] = wast match {
         case Type.Unit => Type.Unit.toSuccess
-        case Type.Unresolved(name) => name.ident.name match {
-          case "Unit" => Type.Unit.toSuccess
-          case "Bool" => Type.Bool.toSuccess
-          case "Char" => Type.Char.toSuccess
-          case "Float" => Type.Float64.toSuccess
-          case "Float32" => Type.Float32.toSuccess
-          case "Float64" => Type.Float64.toSuccess
-          case "Int" => Type.Int32.toSuccess
-          case "Int8" => Type.Int8.toSuccess
-          case "Int16" => Type.Int16.toSuccess
-          case "Int32" => Type.Int32.toSuccess
-          case "Int64" => Type.Int64.toSuccess
-          case "BigInt" => Type.BigInt.toSuccess
-          case "Native" => Type.Native.toSuccess
-          case "Str" => Type.Str.toSuccess
-          case _ => syms.lookupType(name, namespace) flatMap (tpe => visit(tpe))
-        }
-        case Type.Tag(_, tagName, tpe) =>
-          visit(tpe) map (t => Type.Tag(Symbol.Resolved.mk(namespace), tagName, t))
-        case Type.Enum(name, wcases) =>
-          val casesVal = Validation.fold(wcases) {
-            case (k, Type.Tag(_, tag, wtpe)) => resolve(wtpe, namespace, syms) map {
-              case tpe => k -> Type.Tag(name, tag, tpe)
-            }
-          }
-          casesVal map {
-            case cases => Type.Enum(name, cases)
-          }
+        case Type.Enum(name, wcases) => ???
         case Type.Tuple(welms) => @@(welms map (e => resolve(e, namespace, syms))) map {
           case Nil => Type.Unit
           case x :: Nil => x

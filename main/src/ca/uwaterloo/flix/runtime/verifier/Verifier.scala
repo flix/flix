@@ -234,8 +234,8 @@ object Verifier {
       case Type.Str => List(SymVal.AtomicVar(genSym.fresh2()))
       case Type.Enum(name, cases) =>
         val r = cases flatMap {
-          case (tag, tagType) =>
-            visit(tagType.tpe) map {
+          case (tag, innerType) =>
+            visit(innerType) map {
               case e => SymVal.Tag(tag, e)
             }
         }

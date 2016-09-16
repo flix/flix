@@ -48,7 +48,7 @@ object ResolvedAst {
     case class Constant(ann: Ast.Annotations, name: Symbol.Resolved, formals: List[ResolvedAst.FormalArg], exp: ResolvedAst.Expression, tpe: Type, loc: SourceLocation) extends ResolvedAst.Definition
 
     //  TODO: DOC
-    case class Enum(name: Symbol.Resolved, cases: Map[String, Type.Tag], loc: SourceLocation) extends ResolvedAst.Definition
+    case class Enum(name: Symbol.Resolved, cases: Map[String, Type], loc: SourceLocation) extends ResolvedAst.Definition
 
     /**
       * A resolved AST node that represents a bounded lattice definition.

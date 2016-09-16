@@ -53,13 +53,12 @@ sealed trait Type {
     case Type.FVec => Set.empty
     case Type.FSet => Set.empty
     case Type.FMap => Set.empty
-    case Type.Enum(_, cases) => (cases flatMap {
-      case (_, Type.Tag(_, _, tpe)) => tpe.typeVars
-    }).toSet
+    case Type.Enum(enumName, cases) => cases.flatMap {
+      case (tagName, tpe) => tpe.typeVars
+    }.toSet
     case Type.Apply(t1, t2) => t1.typeVars ++ t2.typeVars
 
     case Type.Lambda(args, retTpe) => args.flatMap(_.typeVars).toSet ++ retTpe.typeVars
-    case Type.Unresolved(name) => Set.empty
 
     case _ => throw InternalCompilerException(s"Unexpected type: `${this}'.")
   }
@@ -100,7 +99,6 @@ sealed trait Type {
     case Type.Apply(Type.Apply(Type.Arrow, t2), t1) => t1.toString + " -> " + t2.toString
     case Type.Apply(t1, t2) => s"Apply($t1, $t2)"
 
-    case Type.Tag(enum, tag, tpe) => tag.name + "(" + tpe + ")"
     case Type.Enum(enum, cases) => enum.fqn
     case Type.Tuple(elms) => "(" + elms.mkString(". ") + ")"
 
@@ -260,7 +258,8 @@ object Type {
     * @param name  the fully qualified name of the enum.
     * @param cases a map from tag names to tag types.
     */
-  case class Enum(name: Symbol.Resolved, cases: immutable.Map[String, Type.Tag]) extends Type {
+  // TODO: Change or remove symbol
+  case class Enum(name: Symbol.Resolved, cases: immutable.Map[String, Type]) extends Type {
     def kind: Kind = Kind.Star
   }
 
@@ -321,41 +320,19 @@ object Type {
   def mkFMap(k: Type, v: Type): Type = Apply(Apply(FMap, k), v)
 
 
-
-
-
-
-
-
-
-
   //
   // TODO: --- Everything below here may be removed ---
   //
 
-  // TODO: To be removed
-  case class Unresolved(name: Name.QName) extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-
-  // TODO: To be removed
-  case class Tag(enum: Symbol.Resolved, tag: Name.Ident, tpe: Type) extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-
+  // TODO: To be removed.
   case class Tuple(elms: List[Type]) extends Type {
     def kind: Kind = Kind.Star
   }
 
-
-  // TODO: Rename to arrow?
+  // TODO: To be removed.
   case class Lambda(args: List[Type], retTpe: Type) extends Type {
     def kind: Kind = Kind.Star
   }
-
-
 
 
 }

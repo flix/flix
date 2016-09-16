@@ -448,13 +448,7 @@ object Typer {
 
         case ResolvedAst.Expression.Tag(enumName, tagName, re, loc) =>
           visit(re, env) flatMap {
-            case e =>
-              val enum = root.enums(enumName)
-              val cases = enum.cases.map { case (k, v) => k -> v.asInstanceOf[Type.Tag] }
-              val caze = cases(tagName.name)
-              expect(caze.tpe, e.tpe, e.loc) map {
-                _ => TypedAst.Expression.Tag(enumName, tagName, e, Type.Enum(enumName, cases), loc)
-              }
+            case e => ???
           }
 
         case ResolvedAst.Expression.Tuple(relms, loc) =>
@@ -506,11 +500,6 @@ object Typer {
         }
       case ResolvedAst.Pattern.Tag(enumName, tagName, rpat, loc) => tpe match {
         case enum@Type.Enum(name, cases) => cases.get(tagName.name) match {
-          case Some(tag) if enumName == tag.enum => {
-            typer(rpat, tag.tpe, root) map {
-              case pat => TypedAst.Pattern.Tag(enumName, tagName, pat, enum, loc)
-            }
-          }
           case _ => IllegalPattern(rast, tpe, loc).toFailure
         }
         case _ => IllegalPattern(rast, tpe, loc).toFailure
@@ -649,10 +638,7 @@ object Typer {
         }
 
       case ResolvedAst.Term.Head.Tag(enum, tag, term, loc) =>
-        val inner = tpe.asInstanceOf[Type.Enum]
-        Term.typer(term, inner.cases(tag.name).tpe, root) map {
-          case t => TypedAst.Term.Head.Tag(enum, tag, t, tpe.asInstanceOf[Type.Enum], loc)
-        }
+        ???
 
       case ResolvedAst.Term.Head.Tuple(relms, loc) =>
         val telms = tpe.asInstanceOf[Type.Tuple].elms

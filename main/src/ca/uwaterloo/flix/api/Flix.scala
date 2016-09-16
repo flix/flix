@@ -330,38 +330,21 @@ class Flix {
   def mkStrType: IType = new WrappedType(Type.Str)
 
   /**
-    * Returns the Tag type for the given `enumName` with the `tagName` and nested type `tpe`.
-    */
-  def mkTagType(enumName: String, tagName: String, tpe: IType): IType = {
-    if (enumName == null)
-      throw new IllegalArgumentException("Argument 'enumName' must be non-null.")
-    if (tagName == null)
-      throw new IllegalArgumentException("Argument 'tagName' must be non-null.")
-    if (tpe == null)
-      throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
-
-    val enum = Symbol.Resolved.mk(enumName)
-    val tag = Name.Ident(SourcePosition.Unknown, tagName, SourcePosition.Unknown)
-    new WrappedType(new Type.Tag(enum, tag, tpe.asInstanceOf[WrappedType].tpe))
-  }
-
-  /**
     * Returns the enum with the given `enumName` and `tags`.
     */
-  def mkEnumType(enumName: String, tags: Array[IType]): IType = {
+  def mkEnumType(enumName: String, tags: java.util.Map[String, IType]): IType = {
     if (enumName == null)
       throw new IllegalArgumentException("Argument 'enumName' must be non-null.")
     if (tags == null)
       throw new IllegalArgumentException("Argument 'tags' must be non-null.")
 
-    val cases = tags.foldLeft(Map.empty[String, Type.Tag]) {
-      case (macc, tpe) =>
-        val tag = tpe.asInstanceOf[WrappedType].tpe.asInstanceOf[Type.Tag]
-        val tagName = tag.tag.name
-        macc + (tagName -> tag)
+    import collection.JavaConverters._
+    val cases = tags.asScala.foldLeft(Map.empty[String, Type]) {
+      case (macc, (tag, tpe)) =>
+        macc + (tag -> tpe.asInstanceOf[WrappedType].tpe)
     }
 
-    new WrappedType(new Type.Enum(Symbol.Resolved.mk(enumName), cases))
+    new WrappedType(Type.Enum(Symbol.Resolved.mk(enumName), cases))
   }
 
   /**

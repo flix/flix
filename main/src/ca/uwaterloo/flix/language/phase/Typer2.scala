@@ -73,11 +73,11 @@ object Typer2 {
       case Type.FVec => Type.FVec
       case Type.FSet => Type.FSet
       case Type.FMap => Type.FMap
-      case Type.Enum(name, cases) => Type.Enum(name, cases.map(x => (x._1, apply(x._2).asInstanceOf[Type.Tag])))
+      case Type.Enum(name, cases) => Type.Enum(name, cases.foldLeft(Map.empty[String, Type]) {
+        case (macc, (tag, t)) => macc + (tag -> apply(t))
+      })
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
 
-      // TODO: Remove once tags are gone:
-      case Type.Tag(name, tag, t) => Type.Tag(name, tag, apply(t))
       case Type.Lambda(args, retTpe) => Type.Lambda(args map apply, apply(retTpe))
 
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'")
@@ -820,9 +820,6 @@ object Typer2 {
         }
       }
 
-    // TODO: Remove once tags are gone:
-    case (Type.Tag(_, _, t1), Type.Tag(_, _, t2)) => unify(t1, t2)
-
     case _ => TypeError.UnificationError(tpe1, tpe2).toFailure
   }
 
@@ -915,12 +912,8 @@ object Typer2 {
           }
       }
       case NamedAst.Type.Enum(name, cases) =>
-        Type.Enum(name.toResolvedTemporaryHelperMethod, cases.foldLeft(Map.empty[String, Type.Tag]) {
-          case (macc, (tagName, tpe)) => macc + (tagName -> Type.Tag(
-            name.toResolvedTemporaryHelperMethod,
-            Name.Ident(SourcePosition.Unknown, tagName, SourcePosition.Unknown),
-            resolve(tpe, ns0, program)
-          ))
+        Type.Enum(name.toResolvedTemporaryHelperMethod, cases.foldLeft(Map.empty[String, Type]) {
+          case (macc, (tag, t)) => macc + (tag -> resolve(t, ns0, program))
         })
       case NamedAst.Type.Tuple(elms, loc) => Type.Tuple(elms.map(tpe => resolve(tpe, ns0, program)))
       case NamedAst.Type.Lambda(tparams, retType, loc) => Type.Lambda(tparams.map(tpe => resolve(tpe, ns0, program)), resolve(retType, ns0, program))

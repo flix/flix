@@ -1105,7 +1105,6 @@ object Codegen {
           visitor.visitInsn(ICONST_1)
           visitor.visitLabel(condEnd)
         }
-      case Type.Tag(_, _, _) => throw InternalCompilerException(s"Can't have a value of type ${e1.tpe}.")
       case _ =>
         compileExpression(ctx, visitor, entryPoint)(e1)
         compileExpression(ctx, visitor, entryPoint)(e2)

@@ -1336,18 +1336,14 @@ class TestTyper extends FunSuite {
 
   test("Unify.Enum.01") {
     val name = Symbol.Resolved.mk("Color")
-    val cases = Map.empty[String, Type.Tag]
+    val cases = Map.empty[String, Type]
     val result = Typer2.unify(Type.Enum(name, cases), Type.Enum(name, cases))
     assert(result.isSuccess)
   }
 
   test("Unify.Enum.02") {
     val name = Symbol.Resolved.mk("Color")
-    val cases = Map(
-      "Red" -> Type.Tag(name, Name.Ident(SourcePosition.Unknown, "Red", SourcePosition.Unknown), Type.Unit),
-      "Green" -> Type.Tag(name, Name.Ident(SourcePosition.Unknown, "Green", SourcePosition.Unknown), Type.Unit),
-      "Blue" -> Type.Tag(name, Name.Ident(SourcePosition.Unknown, "Blue", SourcePosition.Unknown), Type.Unit)
-    )
+    val cases = Map("Red" -> Type.Unit, "Green" -> Type.Unit, "Blue" -> Type.Unit)
     val result = Typer2.unify(Type.Enum(name, cases), Type.Enum(name, cases))
     assert(result.isSuccess)
   }
@@ -1358,14 +1354,14 @@ class TestTyper extends FunSuite {
     val C = Type.Var(3, Kind.Star)
     val name = Symbol.Resolved.mk("Color")
     val cases1 = Map(
-      "Red" -> Type.Tag(name, Name.Ident(SourcePosition.Unknown, "Red", SourcePosition.Unknown), Type.Bool),
-      "Green" -> Type.Tag(name, Name.Ident(SourcePosition.Unknown, "Green", SourcePosition.Unknown), Type.Char),
-      "Blue" -> Type.Tag(name, Name.Ident(SourcePosition.Unknown, "Blue", SourcePosition.Unknown), Type.Int8)
+      "Red" -> Type.Bool,
+      "Green" -> Type.Char,
+      "Blue" -> Type.Int8
     )
     val cases2 = Map(
-      "Red" -> Type.Tag(name, Name.Ident(SourcePosition.Unknown, "Red", SourcePosition.Unknown), A),
-      "Green" -> Type.Tag(name, Name.Ident(SourcePosition.Unknown, "Green", SourcePosition.Unknown), B),
-      "Blue" -> Type.Tag(name, Name.Ident(SourcePosition.Unknown, "Blue", SourcePosition.Unknown), C)
+      "Red" -> A,
+      "Green" -> B,
+      "Blue" -> C
     )
     val result = Typer2.unify(Type.Enum(name, cases1), Type.Enum(name, cases2)).get
     assertResult(Type.Bool)(result(A))

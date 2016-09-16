@@ -298,11 +298,11 @@ object QuickChecker {
       case Type.Str => ArbStr.gen
 
       case Type.Enum(name, cases) =>
-        val elms = cases.values.map(
-          t => new Generator[SymVal] {
-            def mk(r: Random): SymVal = SymVal.Tag(t.tag.name, new ArbSymVal(t.tpe).gen.mk(r))
+        val elms = cases.map {
+          case (tag, innerType) => new Generator[SymVal] {
+            def mk(r: Random): SymVal = SymVal.Tag(tag, new ArbSymVal(innerType).gen.mk(r))
           }
-        )
+        }
         oneOf(elms.toArray: _*)
 
       case Type.Tuple(elms) => new Generator[SymVal] {
