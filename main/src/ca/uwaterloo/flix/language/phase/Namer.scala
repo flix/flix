@@ -197,7 +197,13 @@ object Namer {
        * Fact.
        */
       case WeededAst.Declaration.Fact(h, loc) =>
-        Predicates.namer(h) map {
+        // Introduce a variable symbol for each free variable in the terms of the head predicate.
+        val freeVars = Predicates.freeVars(h)
+        val env0 = freeVars.foldLeft(Map.empty[String, Symbol.VarSym]) {
+          case (macc, ident) => macc + (ident.name -> Symbol.freshVarSym(ident))
+        }
+
+        Predicates.namer(h, env0) map {
           case head =>
             val fact = NamedAst.Declaration.Fact(head, loc)
             val facts = fact :: prog0.facts.getOrElse(ns0, Nil)
@@ -207,8 +213,8 @@ object Namer {
       /*
        * Rule.
        */
-      case WeededAst.Declaration.Rule(h, b, loc) =>
-        @@(Predicates.namer(h), @@(b.map(Predicates.namer))) map {
+      case WeededAst.Declaration.Rule(h, bs, loc) =>
+        @@(Predicates.namer(h, ???), @@(bs.map(b => Predicates.namer(b, ???)))) map {
           case (head, body) =>
             val rule = NamedAst.Declaration.Rule(head, body, loc)
             val rules = rule :: prog0.rules.getOrElse(ns0, Nil)
@@ -489,6 +495,49 @@ object Namer {
       case WeededAst.Expression.UserError(loc) => NamedAst.Expression.UserError(Type.freshTypeVar(), loc).toSuccess
     }
 
+    /**
+      * Returns all the free variables in the given expression `exp0`.
+      */
+    def freeVars(exp0: WeededAst.Expression): List[Name.Ident] = exp0 match {
+      case WeededAst.Expression.Wild(loc) => Nil
+      case WeededAst.Expression.Var(name, loc) => ???
+      case WeededAst.Expression.Unit(loc) => Nil
+      case WeededAst.Expression.True(loc) => Nil
+      case WeededAst.Expression.False(loc) => Nil
+      case WeededAst.Expression.Char(lit, loc) => Nil
+      case WeededAst.Expression.Float32(lit, loc) => Nil
+      case WeededAst.Expression.Float64(lit, loc) => Nil
+      case WeededAst.Expression.Int8(lit, loc) => Nil
+      case WeededAst.Expression.Int16(lit, loc) => Nil
+      case WeededAst.Expression.Int32(lit, loc) => Nil
+      case WeededAst.Expression.Int64(lit, loc) => Nil
+      case WeededAst.Expression.BigInt(lit, loc) => Nil
+      case WeededAst.Expression.Str(lit, loc) => Nil
+      case WeededAst.Expression.Apply(lambda, args, loc) => ???
+      case WeededAst.Expression.Lambda(params, exp, loc) => ???
+      case WeededAst.Expression.Unary(op, exp, loc) => freeVars(exp)
+      case WeededAst.Expression.Binary(op, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+      case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+      case WeededAst.Expression.Let(ident, exp1, exp2, loc) => ???
+      case WeededAst.Expression.Match(exp, rules, loc) => ???
+      case WeededAst.Expression.Switch(rules, loc) => ???
+      case WeededAst.Expression.Tag(enum, tag, exp, loc) => ???
+      case WeededAst.Expression.Tuple(elms, loc) => ???
+      case WeededAst.Expression.FNone(loc) => ???
+      case WeededAst.Expression.FSome(exp, loc) => ???
+      case WeededAst.Expression.FNil(loc) => ???
+      case WeededAst.Expression.FList(hd, tl, loc) => ???
+      case WeededAst.Expression.FVec(elms, loc) => ???
+      case WeededAst.Expression.FSet(elms, loc) => ???
+      case WeededAst.Expression.FMap(elms, loc) => ???
+      case WeededAst.Expression.GetIndex(exp1, exp2, loc) => ???
+      case WeededAst.Expression.PutIndex(exp1, exp2, exp3, loc) => ???
+      case WeededAst.Expression.Existential(params, exp, loc) => ???
+      case WeededAst.Expression.Universal(params, exp, loc) => ???
+      case WeededAst.Expression.Ascribe(exp, tpe, loc) => ???
+      case WeededAst.Expression.UserError(loc) => Nil
+    }
+
   }
 
   object Patterns {
@@ -540,7 +589,7 @@ object Namer {
   object Predicates {
 
     // TODO: Need to drag var symbols along
-    def namer(head: WeededAst.Predicate.Head)(implicit genSym: GenSym): Validation[NamedAst.Predicate.Head, NameError] = head match {
+    def namer(head: WeededAst.Predicate.Head, env0: Map[String, Symbol.VarSym])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Head, NameError] = head match {
       case WeededAst.Predicate.Head.True(loc) => NamedAst.Predicate.Head.True(loc).toSuccess
       case WeededAst.Predicate.Head.False(loc) => NamedAst.Predicate.Head.False(loc).toSuccess
       case WeededAst.Predicate.Head.Table(qname, terms, loc) =>
@@ -550,7 +599,7 @@ object Namer {
     }
 
     // TODO: Need to drag var symbols along
-    def namer(body: WeededAst.Predicate.Body)(implicit genSym: GenSym): Validation[NamedAst.Predicate.Body, NameError] = body match {
+    def namer(body: WeededAst.Predicate.Body, env0: Map[String, Symbol.VarSym])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Body, NameError] = body match {
       case WeededAst.Predicate.Body.Ambiguous(qname, terms, loc) =>
         @@(terms.map(t => Expressions.namer(t, Map.empty /* TODO */))) map {
           case ts => NamedAst.Predicate.Body.Ambiguous(qname, ts, loc)
@@ -561,6 +610,24 @@ object Namer {
         Expressions.namer(term, Map.empty /* TODO */) map {
           case t => NamedAst.Predicate.Body.Loop(ident, t, loc)
         }
+    }
+
+    /**
+      * Returns all the free variables in the given head predicate `head0`.
+      */
+    def freeVars(head0: WeededAst.Predicate.Head): List[Name.Ident] = head0 match {
+      case WeededAst.Predicate.Head.True(loc) => Nil
+      case WeededAst.Predicate.Head.False(loc) => Nil
+      case WeededAst.Predicate.Head.Table(qname, terms, loc) => terms flatMap Expressions.freeVars
+    }
+
+    /**
+      * Returns all the free variables in the given body predicate `body0`.
+      */
+    def freeVars(body0: WeededAst.Predicate.Body): List[Name.Ident] = body0 match {
+      case WeededAst.Predicate.Body.Ambiguous(qname, terms, loc) => ???
+      case WeededAst.Predicate.Body.NotEqual(ident1, ident2, loc) => List(ident1, ident2)
+      case WeededAst.Predicate.Body.Loop(ident, term, loc) => List(ident) ++ Expressions.freeVars(term)
     }
 
   }

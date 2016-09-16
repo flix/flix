@@ -229,6 +229,7 @@ object WeededAst {
 
     object Body {
 
+      // TODO: This can be dismbiguoated by the weeder...
       case class Ambiguous(name: Name.QName, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Body
 
       case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, loc: SourceLocation) extends WeededAst.Predicate.Body
