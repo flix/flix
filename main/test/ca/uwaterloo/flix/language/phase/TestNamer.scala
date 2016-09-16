@@ -175,29 +175,6 @@ class TestNamer extends FunSuite with TestUtils {
     assertError[NameError.IllegalTableName](result)
   }
 
-  test("UnresolvedConstantReference01") {
-    val input =
-      s"""
-         |namespace A {
-         |  def f: Int = x;
-         |}
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedConstantReference])
-    ???
-  }
-
-  test("UnresolvedConstantReference02") {
-    val input =
-      s"""
-         |namespace A {
-         |  def f(x: Int, y: Int): Int = x + y + z;
-         |}
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedConstantReference])
-    ???
-  }
 
   test("UnresolvedEnumReference01") {
     val input =

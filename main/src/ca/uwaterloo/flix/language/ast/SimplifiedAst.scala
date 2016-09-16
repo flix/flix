@@ -531,7 +531,7 @@ object SimplifiedAst {
     case class Tag(enum: Symbol.Resolved,
                    tag: Name.Ident,
                    exp: SimplifiedAst.Expression,
-                   tpe: Type.Enum,
+                   tpe: Type,
                    loc: SourceLocation) extends SimplifiedAst.Expression {
       override def toString: String = {
         val inner = exp match {

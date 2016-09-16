@@ -517,7 +517,7 @@ object ExecutableAst {
     case class Tag(enum: Symbol.Resolved,
                    tag: Name.Ident,
                    exp: ExecutableAst.Expression,
-                   tpe: Type.Enum,
+                   tpe: Type,
                    loc: SourceLocation) extends ExecutableAst.Expression {
       override def toString: String = {
         val inner = exp match {

@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
-import ca.uwaterloo.flix.language.ast.{ResolvedAst, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{Name, ResolvedAst, SourceLocation, Type}
 
 /**
   * A common super-type for type errors.
@@ -124,6 +124,22 @@ object TypeError {
   // TODO
   case class KindError() extends TypeError {
     val message = "KindError" // TODO
+  }
+
+  /**
+    * An error raised to indicate that a definition was not found.
+    *
+    * @param name the invalid name.
+    * @param loc  the location of the name.
+    */
+  case class UnresolvedDefinition(name: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
+    val message =
+      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
+         |
+         |${consoleCtx.red(s">> Illegal uppercase name '$name'.")}
+         |
+         |${loc.highlight}
+         """.stripMargin
   }
 
 }

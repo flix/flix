@@ -208,7 +208,7 @@ object Simplifier {
         SExp.Let(matchVar, -1, matchExp, inner, tpe, loc)
 
       case TypedAst.Expression.Tag(enum, tag, e, tpe, loc) =>
-        SimplifiedAst.Expression.Tag(enum, tag, simplify(e), tpe.asInstanceOf[Type.Enum], loc)
+        SimplifiedAst.Expression.Tag(enum, tag, simplify(e), tpe, loc)
       case TypedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
       case TypedAst.Expression.FNone(tpe, loc) => ??? // TODO

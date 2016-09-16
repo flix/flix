@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.Symbol
@@ -23,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.Type.{Bool, Var}
 import ca.uwaterloo.flix.language.errors.TypeError
 import org.scalatest.FunSuite
 
-class TestTyper extends FunSuite {
+class TestTyper extends FunSuite with TestUtils {
 
   // TODO: Consider using real syntax?
   def ident(s: String): Name.Ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
@@ -1028,6 +1029,27 @@ class TestTyper extends FunSuite {
     assert(result.errors.head.isInstanceOf[TypeError])
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Unresolved Symbols                                                      //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("UnresolvedDefinition01") {
+    val input = "def f: Int = x"
+    val result = new Flix().addStr(input).compile()
+    assertError[TypeError.UnresolvedDefinition](result)
+  }
+
+  test("UnresolvedConstantReference02") {
+    val input =
+      s"""
+         |namespace A {
+         |  def f(x: Int, y: Int): Int = x + y + z;
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedConstantReference])
+    ???
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Substitutions                                                           //

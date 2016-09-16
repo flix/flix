@@ -16,10 +16,11 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.Name.QName
+import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.errors.TypeError.UnresolvedDefinition
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
@@ -131,49 +132,71 @@ object Typer2 {
   /**
     * TODO: DOC
     */
-  case class InferMonad[A](a: A, s: Substitution) {
+  trait InferMonad[A] {
+    def map[B](f: A => B): InferMonad[B]
 
-    /**
-      * TODO: DOC
-      */
-    def map[B](f: A => B): InferMonad[B] = InferMonad(f(a), s)
-
-    /**
-      * TODO: DOC
-      */
-    def flatMap[B](f: A => InferMonad[B]): InferMonad[B] = {
-      val t = f(a)
-      InferMonad(t.a, t.s @@ s)
-    }
-
+    def flatMap[B](f: A => InferMonad[B]): InferMonad[B]
   }
 
   /**
     * TODO: DOC
     */
-  def liftM[A](a: A): InferMonad[A] = InferMonad(a, Substitution.empty)
+  case class Success[A](a: A, s: Substitution) extends InferMonad[A] {
+    /**
+      * TODO: DOC
+      */
+    def map[B](f: A => B): InferMonad[B] = Success(f(a), s)
+
+    /**
+      * TODO: DOC
+      */
+    def flatMap[B](f: A => InferMonad[B]): InferMonad[B] = f(a) match {
+      case Success(a1, s1) => Success(a1, s1)
+      case Failure(e) => Failure(e)
+    }
+  }
+
+  case class Failure[A](e: CompilationError) extends InferMonad[A] {
+
+    def map[B](f: (A) => B): InferMonad[B] = Failure(e)
+
+    def flatMap[B](f: (A) => InferMonad[B]): InferMonad[B] = Failure(e)
+
+  }
+
 
   /**
     * TODO: DOC
     */
-  def liftM[A](a: A, s: Substitution): InferMonad[A] = InferMonad(a, s)
+  def liftM[A](a: A): InferMonad[A] = Success(a, Substitution.empty)
+
+  /**
+    * TODO: DOC
+    */
+  def liftM[A](a: A, s: Substitution): InferMonad[A] = Success(a, s)
+
+  /**
+    * TODO: DOC
+    */
+  def failM[A](e: CompilationError): InferMonad[A] = Failure(e)
 
   /**
     * TODO: DOC
     */
   def unifyM(tpe1: Type, tpe2: Type): InferMonad[Type] = unify(tpe1, tpe2) match {
-    case Validation.Success(subst, _) => InferMonad[Type](subst(tpe1), subst)
+    case Validation.Success(subst, _) => Success[Type](subst(tpe1), subst)
     case Validation.Failure(errors) => throw InternalCompilerException(s"Unable to unify `$tpe1' with `$tpe2'. Errors ${errors.mkString(", ")}.")
   }
 
   /**
     * TODO: DOC
     */
-  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type): InferMonad[Type] =
-  for (
-    tpe <- unifyM(tpe1, tpe2);
-    res <- unifyM(tpe, tpe3)
-  ) yield res
+  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type): InferMonad[Type] = {
+    for (
+      tpe <- unifyM(tpe1, tpe2);
+      res <- unifyM(tpe, tpe3)
+    ) yield res
+  }
 
   /**
     * TODO: DOC
@@ -221,7 +244,7 @@ object Typer2 {
 
         val declaredType = Types.resolve(tpe, ns, program)
 
-        val InferMonad(_, subst) = for (
+        val Success(_, subst) = for (
           botType <- Expressions.infer(e1, ns, program);
           topType <- Expressions.infer(e2, ns, program);
           leqType <- Expressions.infer(e3, ns, program);
@@ -326,7 +349,7 @@ object Typer2 {
       }
 
       val declaredType = Types.resolve(defn0.tpe.asInstanceOf[NamedAst.Type.Lambda].retType, ns0, program)
-      val InferMonad(resultType, subst) = for (
+      val Success(resultType, subst) = for (
         expectedType <- liftM(declaredType, subst0);
         inferredType <- Expressions.infer(defn0.exp, ns0, program);
         unifiedType <- unifyM(expectedType, inferredType)
@@ -366,8 +389,9 @@ object Typer2 {
          * Reference expression.
          */
         case NamedAst.Expression.Ref(ref, tvar, loc) =>
-          val declaredType = lookupRefType(ref, ns0, program)
-          unifyM(tvar, declaredType)
+          lookupRefType(ref, ns0, program) flatMap {
+            case declaredType => unifyM(tvar, declaredType)
+          }
 
         /*
          * Literal expression.
@@ -679,7 +703,7 @@ object Typer2 {
           }
 
           for (
-            ___ <- InferMonad(Type.Bool: Type, subst0);
+            ___ <- liftM(Type.Bool, subst0);
             tpe <- visitExp(exp);
             ___ <- unifyM(Type.Bool, tpe)
           ) yield Type.Bool
@@ -1167,15 +1191,15 @@ object Typer2 {
     * Returns the declared type of the given reference `ref` in the current namespace `ns` in the given `program`.
     */
   // TODO: Better to lookup the defn, and then get its type?
-  private def lookupRefType(ref: QName, ns: Name.NName, program: Program): Type = {
+  private def lookupRefType(ref: Name.QName, ns: Name.NName, program: Program): InferMonad[Type] = {
     // check whether the reference is fully-qualified.
     if (ref.isUnqualified) {
       // Case 1: Unqualified reference. Try the local namespace.
       program.definitions.get(ns) match {
         case None => ???
         case Some(defns) => defns.get(ref.ident.name) match {
-          case None => throw new RuntimeException("Reference not found!")
-          case Some(defn) => Types.resolve(defn.tpe, ns, program)
+          case None => failM(UnresolvedDefinition(ref, ns, ref.loc))
+          case Some(defn) => liftM(Types.resolve(defn.tpe, ns, program))
         }
       }
     } else {
@@ -1185,7 +1209,7 @@ object Typer2 {
           throw new RuntimeException(s"namespace ${ref.namespace} not found") // TODO: namespace doesnt exist.
         case Some(nm) => nm.get(ref.ident.name) match {
           case None => ??? // TODO: name doesnt exist in namespace.
-          case Some(defn) => Types.resolve(defn.tpe, ns, program)
+          case Some(defn) => liftM(Types.resolve(defn.tpe, ns, program))
         }
       }
     }

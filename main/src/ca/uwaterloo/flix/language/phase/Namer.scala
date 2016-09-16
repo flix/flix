@@ -197,12 +197,14 @@ object Namer {
        * Fact.
        */
       case WeededAst.Declaration.Fact(h, loc) =>
-        // Introduce a variable symbol for each free variable in the terms of the head predicate.
+        // Introduce a variable symbol for each free variable in the head predicate terms.
+        // TODO: Actually these should be disallowed?
         val freeVars = Predicates.freeVars(h)
         val env0 = freeVars.foldLeft(Map.empty[String, Symbol.VarSym]) {
           case (macc, ident) => macc + (ident.name -> Symbol.freshVarSym(ident))
         }
 
+        // Perform naming on the head predicate under the computed environment of free variables.
         Predicates.namer(h, env0) map {
           case head =>
             val fact = NamedAst.Declaration.Fact(head, loc)
@@ -634,6 +636,9 @@ object Namer {
 
   object Types {
 
+    /**
+      * Translates the given weeded type into a named type.
+      */
     def namer(tpe: WeededAst.Type): NamedAst.Type = tpe match {
       case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc)
       case WeededAst.Type.Ref(name, loc) => NamedAst.Type.Ref(name, loc)
