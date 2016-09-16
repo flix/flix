@@ -68,7 +68,9 @@ object Namer {
        * Namespace.
        */
       case WeededAst.Declaration.Namespace(ns, decls, loc) => Validation.fold(decls, prog0) {
-        case (pacc, decl) => namer(decl, ns, pacc)
+        case (pacc, decl) =>
+          val namespace = Name.NName(ns.sp1, ns0.idents ::: ns.idents, ns.sp2)
+          namer(decl, namespace, pacc)
       }
 
       /*

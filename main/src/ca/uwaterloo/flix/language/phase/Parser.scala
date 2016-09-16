@@ -677,7 +677,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   object Types {
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Lambda | Tuple /*| Parametric*/ | Ref
+      Lambda | Tuple | Parametric | Ref
     }
 
     def Ref: Rule1[ParsedAst.Type] = rule {
@@ -714,7 +714,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Parametric: Rule1[ParsedAst.Type] = rule {
-      SP ~ Type ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~ optWS ~> ParsedAst.Type.Parametric
+      SP ~ Ref ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~ optWS ~> ParsedAst.Type.Parametric
     }
   }
 
