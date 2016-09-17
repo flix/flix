@@ -77,9 +77,8 @@ object Typer2 {
         case (macc, (tag, t)) => macc + (tag -> apply(t))
       })
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
-
+      case Type.Tuple(elms) => Type.Tuple(elms map apply)
       case Type.Lambda(args, retTpe) => Type.Lambda(args map apply, apply(retTpe))
-
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'")
     }
 
@@ -859,6 +858,9 @@ object Typer2 {
         }
       }
 
+    case (Type.Tuple(elms1), Type.Tuple(elms2)) =>
+      unify(elms1, elms2)
+
     case (Type.Lambda(arguments1, returnType1), Type.Lambda(arguments2, returnType2)) =>
       unify(arguments1, arguments2) flatMap {
         case subst1 => unify(subst1(returnType1), subst1(returnType2)) map {
@@ -947,14 +949,12 @@ object Typer2 {
         case "BigInt" => Type.BigInt
         case "Str" => Type.Str
         case typeName =>
-          program.enums.get(ns0) match {
-            case None =>
-              throw new RuntimeException(s"Unknown namespace $ns0")
-            case Some(decls) => decls.get(typeName) match {
-              case None =>
-                throw new RuntimeException(s"Unknown type name ${typeName}")
-              case Some(enum) => resolve(enum.tpe, ns0, program)
-            }
+          // Lookup the enums in the current namespace.
+          // If the namespace doesn't even exist, just use an empty map.
+          val decls = program.enums.getOrElse(ns0, Map.empty)
+          decls.get(typeName) match {
+            case None => ??? // TODO TypeError.UnresolvedType(name, ns0, loc)
+            case Some(enum) => resolve(enum.tpe, ns0, program)
           }
       }
       case NamedAst.Type.Enum(name, cases) =>

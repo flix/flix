@@ -28,64 +28,6 @@ object TypeError {
 
   implicit val consoleCtx = Compiler.ConsoleCtx
 
-  /**
-    * An error raised to indicate a type mismatch between an `expected` and an `actual` type.
-    *
-    * @param expected the expected type.
-    * @param actual   the actual type.
-    * @param loc      the source location.
-    */
-  case class ExpectedType(expected: Type, actual: Type, loc: SourceLocation) extends TypeError {
-    val message =
-      s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Expected type `$expected' but actual type is `$actual'.")}
-         |
-         |${loc.highlight}
-         """.stripMargin
-  }
-
-  /**
-    * An error raised to indicate that the two given types `tpe1` and `tpe2` were expected to be equal.
-    *
-    * @param tpe1 the first type.
-    * @param tpe2 the second type.
-    * @param loc1 the source location of the first type.
-    * @param loc2 the source location of the second type.
-    */
-  case class ExpectedEqualTypes(tpe1: Type, tpe2: Type, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
-    val message =
-      s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc1.source.format}")}
-         |
-         |${consoleCtx.red(s">> Expected equal types `$tpe1' and `$tpe2'.")}
-         |
-         |${loc1.highlight}
-         |${loc2.highlight}
-         """.stripMargin
-  }
-
-  /**
-    * An error raised to indicate that the given type `tpe` was expected to be a function type.
-    *
-    * @param tpe the erroneous type.
-    * @param loc the source location.
-    */
-  // TODO: Pretty print
-  case class IllegalApply(tpe: Type, loc: SourceLocation) extends TypeError {
-    val message = s"Type Error: The type `$tpe' is not a function type at ${loc.format}.\n"
-  }
-
-  /**
-    * An error raised to indicate a type mismatch between a pattern `pat` and an expected type `tpe`.
-    *
-    * @param pat the pattern.
-    * @param tpe the type.
-    * @param loc the source location.
-    */
-  // TODO: Pretty print
-  case class IllegalPattern(pat: ResolvedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypeError {
-    val message = s"Type Error: Pattern `$pat' does not match expected type `$tpe' at ${loc.format}.\n"
-  }
 
   // TODO: Check arity of function calls, predicates, etc.
 
@@ -95,6 +37,7 @@ object TypeError {
     * @param tpe the type that has no lattice.
     * @param loc the source location.
     */
+  // TODO
   case class NoSuchLattice(tpe: Type, loc: SourceLocation) extends TypeError {
     val message =
       s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.source.format}")}
@@ -136,10 +79,27 @@ object TypeError {
     val message =
       s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
          |
-         |${consoleCtx.red(s">> Illegal uppercase name '$name'.")}
+         |${consoleCtx.red(s">> Unknown definition '$name' not found in the namespace '$ns'.")}
          |
          |${loc.highlight}
          """.stripMargin
   }
+
+  /**
+    * An error raised to indicate that a type was not found.
+    *
+    * @param name the invalid name.
+    * @param loc  the location of the name.
+    */
+  case class UnresolvedType(name: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
+    val message =
+      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
+         |
+         |${consoleCtx.red(s">> Unknown type '$name' not found in the namespace '$ns'.")}
+         |
+         |${loc.highlight}
+         """.stripMargin
+  }
+
 
 }

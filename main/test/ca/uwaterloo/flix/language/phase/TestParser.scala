@@ -16,10 +16,14 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.errors.TypeError
 import org.scalatest.FunSuite
 
-class TestParser extends FunSuite {
+class TestParser extends FunSuite with TestUtils {
+
+  // TODO: Remove all intercept from test that use them.
 
   /////////////////////////////////////////////////////////////////////////////
   // Root                                                                    //
@@ -267,12 +271,12 @@ class TestParser extends FunSuite {
 
   test("Lattice.01") {
     val input = "lat L(a: A)"
-    new Flix().addStr(input).compile().errors.head.isInstanceOf[String] // TODO
+    assertError[TypeError.UnresolvedType](new Flix().addStr(input).compile())
   }
 
   test("Lattice.02") {
     val input = "lat L(a: A, b: B, c: C)"
-    new Flix().addStr(input).compile().errors.head.isInstanceOf[String] // TODO
+    assertError[TypeError.UnresolvedType](new Flix().addStr(input).compile())
   }
 
   test("Declaration.Index.01") {
@@ -983,11 +987,8 @@ class TestParser extends FunSuite {
   }
 
   test("Expression.Set.01") {
-    // TODO: Pending new type system.
-    intercept[AssertionError] {
-      val input = "def f: Set[Int] = #{}"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Set[Int] = #{}"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Set.02") {
@@ -2244,8 +2245,8 @@ class TestParser extends FunSuite {
   }
 
   test("Type.Set.01") {
-    intercept[AssertionError] {
-      val input = "def f: Set[Int] = #{}"
+    val input = "def f: Set[Int] = #{}"
+    intercept[scala.NotImplementedError] {
       new Flix().addStr(input).compile().get
     }
   }
