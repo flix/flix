@@ -175,8 +175,7 @@ class TestNamer extends FunSuite with TestUtils {
     assertError[NameError.IllegalTableName](result)
   }
 
-
-  test("UnresolvedEnumReference01") {
+  test("UnresolvedEnum01") {
     val input =
       s"""
          |namespace A {
@@ -184,11 +183,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedEnumReference])
-    ???
+    assertError[TypeError.UnresolvedTag](result)
   }
 
-  test("UnresolvedEnumReference02") {
+  test("UnresolvedEnum02") {
     val input =
       s"""
          |namespace A {
@@ -196,8 +194,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedEnumReference])
-    ???
+    assertError[TypeError.UnresolvedTag](result)
   }
 
   test("UnresolvedTag01") {
@@ -248,51 +245,45 @@ class TestNamer extends FunSuite with TestUtils {
     assertError[TypeError.UnresolvedTag](result)
   }
 
-  test("UnresolvedRelationReference01") {
+  test("UnresolvedTable01") {
+    val input = "VarPointsTo(1, 2)."
+    val result = new Flix().addStr(input).compile()
+    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedRelationReference])
+    ???
+  }
+
+  test("UnresolvedTable02") {
     val input =
       s"""namespace A {
           |  VarPointsTo(1, 2).
-          |};
+          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedRelationReference])
     ???
   }
 
-  test("UnresolvedRelationReference02") {
-    val input =
-      s"""namespace A {
-          |  VarPointsTo(1, 2).
-          |};
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedRelationReference])
-    ???
-  }
-
-  test("UnresolvedTypeReference01") {
+  test("UnresolvedType01") {
     val input = "def x: Foo = 42"
     val result = new Flix().addStr(input).compile()
-    // assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTypeReference])
-    ???
+    assertError[TypeError.UnresolvedType](result)
   }
 
-  test("UnresolvedTypeReference02") {
+  test("UnresolvedType02") {
     val input =
       s"""namespace A {
           |  def foo(bar: Baz, baz: Baz): Qux = bar;
           |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTypeReference])
-    ???
+    assertError[TypeError.UnresolvedType](result)
   }
 
   test("Expression.Hook01") {
     val input =
       s"""namespace A {
           |  def f(x: Int): Bool = g(x)
-          |};
+          |}
        """.stripMargin
     val flix = new Flix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType)
@@ -308,7 +299,7 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       s"""namespace A {
           |  def f(x: Bool, y: Int, z: Str): Bool = g(x, y, z)
-          |};
+          |}
        """.stripMargin
     val flix = new Flix()
     val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkInt32Type, flix.mkStrType), flix.mkBoolType)
@@ -326,7 +317,7 @@ class TestNamer extends FunSuite with TestUtils {
           |  rel R(a: Bool, b: Int, c: Str);
           |
           |  R(x, y, z) :- f(x, y, z), R(x, y, z).
-          |};
+          |}
        """.stripMargin
     val flix = new Flix()
     val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkInt32Type, flix.mkStrType), flix.mkBoolType)
@@ -345,7 +336,7 @@ class TestNamer extends FunSuite with TestUtils {
           |  rel R(a: Bool, b: Int, c: Str);
           |
           |  R(x, y, f(x, y, z)) :- R(x, y, z).
-          |};
+          |}
        """.stripMargin
     val flix = new Flix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkStrType), flix.mkStrType)
