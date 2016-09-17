@@ -81,18 +81,12 @@ object Compiler {
       case asts => ParsedAst.Program(asts, Time.Default.copy(parser = e))
     }
 
-    root flatMap {
-      case past => Weeder.weed(past, hooks) flatMap {
-        case wast =>
-          Namer.namer(wast) map {
-            case nast => Typer2.typer(nast)
-          }
-
-//          Resolver.resolve(wast) flatMap {
-//          case rast => Typer.typecheck(rast)
-//        }
-      }
-    }
+    for (
+      parsedAst <- root;
+      weededAst <- Weeder.weed(parsedAst, hooks);
+      namedAst <- Namer.namer(weededAst);
+      typedAst <- Typer2.typer(namedAst)
+    ) yield typedAst
   }
 
 }

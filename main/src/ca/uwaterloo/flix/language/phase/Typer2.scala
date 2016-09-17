@@ -133,6 +133,17 @@ object Typer2 {
     * TODO: DOC
     */
   trait InferMonad[A] {
+
+    def get: A = this match {
+      case Success(a, s) => a
+      case Failure(e) => throw new RuntimeException()
+    }
+
+    def isSuccess: Boolean = this match {
+      case x: Success[A] => true
+      case x: Failure[A] => false
+    }
+
     def map[B](f: A => B): InferMonad[B]
 
     def flatMap[B](f: A => InferMonad[B]): InferMonad[B]
@@ -156,7 +167,7 @@ object Typer2 {
     }
   }
 
-  case class Failure[A](e: CompilationError) extends InferMonad[A] {
+  case class Failure[A](e: TypeError) extends InferMonad[A] {
 
     def map[B](f: (A) => B): InferMonad[B] = Failure(e)
 
@@ -178,14 +189,14 @@ object Typer2 {
   /**
     * TODO: DOC
     */
-  def failM[A](e: CompilationError): InferMonad[A] = Failure(e)
+  def failM[A](e: TypeError): InferMonad[A] = Failure(e)
 
   /**
     * TODO: DOC
     */
   def unifyM(tpe1: Type, tpe2: Type): InferMonad[Type] = unify(tpe1, tpe2) match {
-    case Validation.Success(subst, _) => Success[Type](subst(tpe1), subst)
-    case Validation.Failure(errors) => throw InternalCompilerException(s"Unable to unify `$tpe1' with `$tpe2'. Errors ${errors.mkString(", ")}.")
+    case Success(subst, _) => Success(subst(tpe1), subst)
+    case Failure(e) => Failure(e)
   }
 
   /**
@@ -222,7 +233,7 @@ object Typer2 {
   /**
     * Type checks the given program.
     */
-  def typer(program: NamedAst.Program)(implicit genSym: GenSym): TypedAst.Root = {
+  def typer(program: NamedAst.Program)(implicit genSym: GenSym): Validation[TypedAst.Root, TypeError] = {
     val s = System.nanoTime()
 
     /*
@@ -230,8 +241,11 @@ object Typer2 {
      */
     val constants = program.definitions.foldLeft(Map.empty[Symbol.Resolved, TypedAst.Definition.Constant]) {
       case (macc, (ns, defns)) => macc ++ defns.foldLeft(Map.empty[Symbol.Resolved, TypedAst.Definition.Constant]) {
-        case (macc2, (name, defn)) =>
-          macc2 + (toResolvedTemporaryHelperMethod(ns, name) -> Declarations.infer(defn, ns, program))
+        case (macc2, (name, defn0)) =>
+          Declarations.infer(defn0, ns, program) match {
+            case Success(defn, _) => macc2 + (toResolvedTemporaryHelperMethod(ns, name) -> defn)
+            case Failure(e) => return e.toFailure[TypedAst.Root, TypeError]
+          }
       }
     }
 
@@ -311,7 +325,7 @@ object Typer2 {
     val e = System.nanoTime()
     val time = program.time.copy(typer = e - s)
 
-    TypedAst.Root(constants, lattices, tables, indexes, facts.toList, rules.toList, program.hooks, Nil, time)
+    TypedAst.Root(constants, lattices, tables, indexes, facts.toList, rules.toList, program.hooks, Nil, time).toSuccess
   }
 
 
@@ -333,7 +347,7 @@ object Typer2 {
     /**
       * Infers the type of the given definition `defn0` in the given namespace `ns0`.
       */
-    def infer(defn0: NamedAst.Declaration.Definition, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): TypedAst.Definition.Constant = {
+    def infer(defn0: NamedAst.Declaration.Definition, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): InferMonad[TypedAst.Definition.Constant] = {
 
       // Compute a substitution from the named formals.
       val subst0 = defn0.params.foldLeft(Substitution.empty) {
@@ -349,16 +363,20 @@ object Typer2 {
       }
 
       val declaredType = Types.resolve(defn0.tpe.asInstanceOf[NamedAst.Type.Lambda].retType, ns0, program)
-      val Success(resultType, subst) = for (
+      val result = for (
         expectedType <- liftM(declaredType, subst0);
         inferredType <- Expressions.infer(defn0.exp, ns0, program);
         unifiedType <- unifyM(expectedType, inferredType)
       ) yield unifiedType
 
-
-      val exp = reassemble(defn0.exp, subst)
-      val lambdaType = Type.Lambda(formals.map(_.tpe), resultType)
-      TypedAst.Definition.Constant(defn0.ann, defn0.sym.toResolvedTemporaryHelperMethod, formals, exp, lambdaType, defn0.loc)
+      // TODO: See if this can be rewritten nicer
+      result match {
+        case Success(resultType, subst) =>
+          val exp = reassemble(defn0.exp, subst)
+          val lambdaType = Type.Lambda(formals.map(_.tpe), resultType)
+          liftM(TypedAst.Definition.Constant(defn0.ann, defn0.sym.toResolvedTemporaryHelperMethod, formals, exp, lambdaType, defn0.loc))
+        case Failure(e) => Failure(e)
+      }
     }
 
   }
@@ -810,28 +828,28 @@ object Typer2 {
     *
     * Returns [[Failure]] if the two types cannot be unified.
     */
-  def unify(tpe1: Type, tpe2: Type): Validation[Substitution, TypeError] = (tpe1, tpe2) match {
+  def unify(tpe1: Type, tpe2: Type): InferMonad[Substitution] = (tpe1, tpe2) match {
     case (x: Type.Var, _) => unifyVar(x, tpe2)
     case (_, x: Type.Var) => unifyVar(x, tpe1)
-    case (Type.Unit, Type.Unit) => Substitution.empty.toSuccess
-    case (Type.Bool, Type.Bool) => Substitution.empty.toSuccess
-    case (Type.Char, Type.Char) => Substitution.empty.toSuccess
-    case (Type.Float32, Type.Float32) => Substitution.empty.toSuccess
-    case (Type.Float64, Type.Float64) => Substitution.empty.toSuccess
-    case (Type.Int8, Type.Int8) => Substitution.empty.toSuccess
-    case (Type.Int16, Type.Int16) => Substitution.empty.toSuccess
-    case (Type.Int32, Type.Int32) => Substitution.empty.toSuccess
-    case (Type.Int64, Type.Int64) => Substitution.empty.toSuccess
-    case (Type.BigInt, Type.BigInt) => Substitution.empty.toSuccess
-    case (Type.Str, Type.Str) => Substitution.empty.toSuccess
-    case (Type.Native, Type.Native) => Substitution.empty.toSuccess
-    case (Type.Arrow, Type.Arrow) => Substitution.empty.toSuccess
-    case (Type.FTuple(l1), Type.FTuple(l2)) if l1 == l2 => Substitution.empty.toSuccess
-    case (Type.FOpt, Type.FOpt) => Substitution.empty.toSuccess
-    case (Type.FList, Type.FList) => Substitution.empty.toSuccess
-    case (Type.FVec, Type.FVec) => Substitution.empty.toSuccess
-    case (Type.FSet, Type.FSet) => Substitution.empty.toSuccess
-    case (Type.FMap, Type.FMap) => Substitution.empty.toSuccess
+    case (Type.Unit, Type.Unit) => liftM(Substitution.empty)
+    case (Type.Bool, Type.Bool) => liftM(Substitution.empty)
+    case (Type.Char, Type.Char) => liftM(Substitution.empty)
+    case (Type.Float32, Type.Float32) => liftM(Substitution.empty)
+    case (Type.Float64, Type.Float64) => liftM(Substitution.empty)
+    case (Type.Int8, Type.Int8) => liftM(Substitution.empty)
+    case (Type.Int16, Type.Int16) => liftM(Substitution.empty)
+    case (Type.Int32, Type.Int32) => liftM(Substitution.empty)
+    case (Type.Int64, Type.Int64) => liftM(Substitution.empty)
+    case (Type.BigInt, Type.BigInt) => liftM(Substitution.empty)
+    case (Type.Str, Type.Str) => liftM(Substitution.empty)
+    case (Type.Native, Type.Native) => liftM(Substitution.empty)
+    case (Type.Arrow, Type.Arrow) => liftM(Substitution.empty)
+    case (Type.FTuple(l1), Type.FTuple(l2)) if l1 == l2 => liftM(Substitution.empty)
+    case (Type.FOpt, Type.FOpt) => liftM(Substitution.empty)
+    case (Type.FList, Type.FList) => liftM(Substitution.empty)
+    case (Type.FVec, Type.FVec) => liftM(Substitution.empty)
+    case (Type.FSet, Type.FSet) => liftM(Substitution.empty)
+    case (Type.FMap, Type.FMap) => liftM(Substitution.empty)
     case (Type.Enum(name1, cases1), Type.Enum(name2, cases2)) if name1 == name2 =>
       val ts1 = cases1.values.toList
       val ts2 = cases2.values.toList
@@ -851,14 +869,14 @@ object Typer2 {
         }
       }
 
-    case _ => TypeError.UnificationError(tpe1, tpe2).toFailure
+    case _ => failM(TypeError.UnificationError(tpe1, tpe2))
   }
 
   /**
     * Unifies the two given lists of types `ts1` and `ts2`.
     */
-  def unify(ts1: List[Type], ts2: List[Type]): Validation[Substitution, TypeError] = (ts1, ts2) match {
-    case (Nil, Nil) => Substitution.empty.toSuccess
+  def unify(ts1: List[Type], ts2: List[Type]): InferMonad[Substitution] = (ts1, ts2) match {
+    case (Nil, Nil) => liftM(Substitution.empty)
     case (tpe1 :: rs1, tpe2 :: rs2) => unify(tpe1, tpe2) flatMap {
       case subst1 => unify(subst1(rs1), subst1(rs2)) map {
         case subst2 => subst2 @@ subst1
@@ -872,17 +890,17 @@ object Typer2 {
     *
     * Performs the so-called occurs-check to ensure that the substitution is kind-preserving.
     */
-  def unifyVar(x: Type.Var, tpe: Type): Validation[Substitution, TypeError] = {
+  def unifyVar(x: Type.Var, tpe: Type): InferMonad[Substitution] = {
     if (x == tpe) {
-      return Substitution.empty.toSuccess
+      return liftM(Substitution.empty)
     }
     if (tpe.typeVars contains x) {
-      return TypeError.OccursCheck().toFailure
+      return failM(TypeError.OccursCheck())
     }
     if (x.kind != tpe.kind) {
-      return TypeError.KindError().toFailure
+      return failM(TypeError.KindError())
     }
-    return Substitution.singleton(x, tpe).toSuccess
+    liftM(Substitution.singleton(x, tpe))
   }
 
 
