@@ -491,7 +491,7 @@ object Namer {
       }
 
       case WeededAst.Expression.Ascribe(exp, tpe, loc) => namer(exp, env0) map {
-        case e => ???
+        case e => NamedAst.Expression.Ascribe(e, Types.namer(tpe), loc)
       }
 
       case WeededAst.Expression.UserError(loc) => NamedAst.Expression.UserError(Type.freshTypeVar(), loc).toSuccess

@@ -371,7 +371,7 @@ object Codegen {
           case Type.Float32 => globalOffset += 1
           case Type.Float64 => globalOffset += 2
           case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) => globalOffset += 1
-          case _ => throw InternalCompilerException(s"Not yet implemented.") // TODO
+          case tpe => throw InternalCompilerException(s"Unexpected type '$tpe'.")
         }
       }
 

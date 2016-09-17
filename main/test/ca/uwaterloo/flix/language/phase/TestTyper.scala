@@ -1512,5 +1512,18 @@ class TestTyper extends FunSuite with TestUtils {
     assertResult(Type.mkFOpt(A))(result(C))
   }
 
+  test("UnifyM.01") {
+    val A = Type.Var(1, Kind.Star)
+    val B = Type.Var(2, Kind.Star)
+    val C = Type.Var(3, Kind.Star)
+    val D = Type.Int32
+    val Typer2.Success(_, subst) = for (
+      _ <- Typer2.unifyM(A, B);
+      _ <- Typer2.unifyM(B, C);
+      _ <- Typer2.unifyM(C, D)
+    ) yield null
+
+    assertResult(Type.Int32)(subst(A))
+  }
 
 }

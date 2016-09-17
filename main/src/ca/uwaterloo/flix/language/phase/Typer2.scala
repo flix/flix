@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
@@ -348,21 +347,12 @@ object Typer2 {
       * Infers the type of the given definition `defn0` in the given namespace `ns0`.
       */
     def infer(defn0: NamedAst.Declaration.Definition, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): InferMonad[TypedAst.Definition.Constant] = {
+      // compute a substitution from formal parameters to their declared types.
+      val subst0 = getSubstFromFormalParams(defn0.params, ns0, program)
 
-      // Compute a substitution from the named formals.
-      val subst0 = defn0.params.foldLeft(Substitution.empty) {
-        case (substacc, NamedAst.FormalParam(sym, tpe, loc)) =>
-          val resolvedType = Types.resolve(tpe, ns0, program)
-          substacc ++ Substitution.singleton(sym.tvar, resolvedType)
-      }
-
-      // Translate the named formals into typed formals.
-      val formals = defn0.params.map {
-        case NamedAst.FormalParam(sym, tpe, loc) =>
-          TypedAst.FormalArg(sym.toIdent, Types.resolve(tpe, ns0, program))
-      }
-
+      // compute the declared return type of the definition.
       val declaredType = Types.resolve(defn0.tpe.asInstanceOf[NamedAst.Type.Lambda].retType, ns0, program)
+
       val result = for (
         expectedType <- liftM(declaredType, subst0);
         inferredType <- Expressions.infer(defn0.exp, ns0, program);
@@ -373,7 +363,14 @@ object Typer2 {
       result match {
         case Success(resultType, subst) =>
           val exp = reassemble(defn0.exp, subst)
-          val lambdaType = Type.Lambda(formals.map(_.tpe), resultType)
+
+          // Translate the named formals into typed formals.
+          val formals = defn0.params.map {
+            case NamedAst.FormalParam(sym, tpe, loc) =>
+              TypedAst.FormalArg(sym.toIdent, subst(Types.resolve(tpe, ns0, program)))
+          }
+
+          val lambdaType = subst(Type.Lambda(formals.map(_.tpe), resultType))
           liftM(TypedAst.Definition.Constant(defn0.ann, defn0.sym.toResolvedTemporaryHelperMethod, formals, exp, lambdaType, defn0.loc))
         case Failure(e) => Failure(e)
       }
@@ -1285,6 +1282,20 @@ object Typer2 {
     }
   }
 
+  /**
+    * Returns a substitution from formal parameters to their declared types.
+    *
+    * @param params  the formal parameters.
+    * @param ns0     the current namespace.
+    * @param program the program.
+    */
+  private def getSubstFromFormalParams(params: List[NamedAst.FormalParam], ns0: Name.NName, program: Program): Substitution = {
+    params.foldLeft(Substitution.empty) {
+      case (acc, NamedAst.FormalParam(sym, tpe, loc)) =>
+        val resolvedType = Types.resolve(tpe, ns0, program)
+        acc ++ Substitution.singleton(sym.tvar, resolvedType)
+    }
+  }
 
   private def compat(ps: List[NamedAst.FormalParam], subst: Substitution): List[Ast.FormalParam] = ps map {
     case NamedAst.FormalParam(sym, tpe, loc) => Ast.FormalParam(sym.toIdent, subst(???))
