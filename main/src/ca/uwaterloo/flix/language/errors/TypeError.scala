@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.language.errors
 
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Type}
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
-import ca.uwaterloo.flix.language.ast.{Name, ResolvedAst, SourceLocation, Type}
 
 /**
   * A common super-type for type errors.
@@ -80,6 +80,22 @@ object TypeError {
       s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
          |
          |${consoleCtx.red(s">> Unknown definition '$name' not found in the namespace '$ns'.")}
+         |
+         |${loc.highlight}
+         """.stripMargin
+  }
+
+  /**
+    * An error raised to indicate that a tag was not found.
+    *
+    * @param name the invalid name.
+    * @param loc  the location of the name.
+    */
+  case class UnresolvedTag(name: Name.QName, tag: Name.Ident, ns: Name.NName, loc: SourceLocation) extends TypeError {
+    val message =
+      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
+         |
+         |${consoleCtx.red(s">> Unknown tag '${tag.name}' not found in the namespace '$ns'.")}
          |
          |${loc.highlight}
          """.stripMargin

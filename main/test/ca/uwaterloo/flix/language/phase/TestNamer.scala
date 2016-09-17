@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.{Flix, IValue, Invokable}
-import ca.uwaterloo.flix.language.errors.NameError
+import ca.uwaterloo.flix.language.errors.{NameError, TypeError}
 import org.scalatest.FunSuite
 
 class TestNamer extends FunSuite with TestUtils {
@@ -200,24 +200,21 @@ class TestNamer extends FunSuite with TestUtils {
     ???
   }
 
-  test("UnresolvedTagReference01") {
+  test("UnresolvedTag01") {
     val input =
       s"""
-         |namespace A {
-         |  enum B {
-         |    case Foo,
-         |    case Bar
-         |  }
-         |
-         |  def f: B = B.Qux;
+         |enum A {
+         |  case Foo
          |}
+         |
+         |def f: A = A.Qux;
+         |
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
-    ???
+    assertError[TypeError.UnresolvedTag](result)
   }
 
-  test("UnresolvedTagReference02") {
+  test("UnresolvedTag02") {
     val input =
       s"""
          |namespace A {
@@ -230,11 +227,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
-    ???
+    assertError[TypeError.UnresolvedTag](result)
   }
 
-  test("UnresolvedTagReference03") {
+  test("UnresolvedTag03") {
     val input =
       s"""
          |namespace A {
@@ -249,8 +245,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
-    ???
+    assertError[TypeError.UnresolvedTag](result)
   }
 
   test("UnresolvedRelationReference01") {

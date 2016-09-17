@@ -20,9 +20,9 @@ import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.errors.TypeError.UnresolvedDefinition
-import ca.uwaterloo.flix.util.Validation.{ToSuccess, ToFailure}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.language.phase.Unification._
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -1015,7 +1015,7 @@ object Typer2 {
     }
 
     if (matches.isEmpty) {
-      throw new RuntimeException("Tag not found") // TODO: Replace by error handling.
+      failM(TypeError.UnresolvedTag(name, tag, ns, tag.loc))
     } else if (matches.size == 1) {
       val NamedAst.Declaration.Enum(sym, cases, tpe, loc) = matches.head
       Types.resolve(tpe, ns, program)
