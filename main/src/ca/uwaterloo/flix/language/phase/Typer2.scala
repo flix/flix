@@ -173,7 +173,6 @@ object Typer2 {
 
   }
 
-
   /**
     * TODO: DOC
     */
@@ -188,6 +187,18 @@ object Typer2 {
     * TODO: DOC
     */
   def failM[A](e: TypeError): InferMonad[A] = Failure(e)
+
+  /**
+    * TODO: DOC
+    */
+  def sequenceM[A](xs: List[InferMonad[A]]): InferMonad[List[A]] = xs match {
+    case Nil => liftM(Nil)
+    case y :: ys => y flatMap {
+      case r => sequenceM(ys) map {
+        case rs => r :: rs
+      }
+    }
+  }
 
   /**
     * TODO: DOC
@@ -254,9 +265,8 @@ object Typer2 {
       case (macc, (tpe, decl)) =>
         val NamedAst.Declaration.BoundedLattice(tpe, e1, e2, e3, e4, e5, ns, loc) = decl
 
-        val declaredType = Types.resolve(tpe, ns, program)
-
-        val Success(_, subst) = for (
+        val Success(resolvedType, subst) = for (
+          declaredType <- Types.resolve(tpe, ns, program);
           botType <- Expressions.infer(e1, ns, program);
           topType <- Expressions.infer(e2, ns, program);
           leqType <- Expressions.infer(e3, ns, program);
@@ -266,7 +276,7 @@ object Typer2 {
           _______ <- unifyM(topType, declaredType)
         // TODO Add constraints for leq, lub, glb, etc.
         )
-          yield botType
+          yield declaredType
 
         val bot = reassemble(e1, subst)
         val top = reassemble(e2, subst)
@@ -274,20 +284,16 @@ object Typer2 {
         val lub = reassemble(e4, subst)
         val glb = reassemble(e5, subst)
 
-        val lattice = TypedAst.Definition.BoundedLattice(declaredType, bot, top, leq, lub, glb, loc)
-        macc + (declaredType -> lattice)
+        val lattice = TypedAst.Definition.BoundedLattice(resolvedType, bot, top, leq, lub, glb, loc)
+        macc + (resolvedType -> lattice)
     }
 
     /*
      * Tables.
      */
-    val tables = program.tables.foldLeft(Map.empty[Symbol.TableSym, TypedAst.Table]) {
-      case (macc, (ns, decls)) => macc ++ decls.foldLeft(Map.empty[Symbol.TableSym, TypedAst.Table]) {
-        case (macc2, (_, NamedAst.Table.Relation(sym, attr, loc))) =>
-          macc + (sym -> TypedAst.Table.Relation(sym, attr.map(a => infer(a, ns, program)), loc))
-        case (macc2, (_, NamedAst.Table.Lattice(sym, keys, value, loc))) =>
-          macc2 + (sym -> TypedAst.Table.Lattice(sym, keys.map(k => infer(k, ns, program)), infer(value, ns, program), loc))
-      }
+    val tables = inferTables(program) match {
+      case Success(m, _) => m
+      case Failure(e) => return e.toFailure
     }
 
     /*
@@ -327,6 +333,30 @@ object Typer2 {
   }
 
 
+  // TODO: Document and move somewhere.
+  def inferTables(program: Program): InferMonad[Map[Symbol.TableSym, TypedAst.Table]] = {
+    // resolve types for attributes in relations and lattices.
+    val tables = program.tables.toList.flatMap {
+      case (ns, decls) => decls.map {
+        // relation, infer types for the attributes.
+        case (_, NamedAst.Table.Relation(sym, attr, loc)) =>
+          sequenceM(attr.map(a => infer(a, ns, program))) map {
+            case as => sym -> (TypedAst.Table.Relation(sym, as, loc): TypedAst.Table)
+          }
+        // lattice, infer types for the keys and value.
+        case (_, NamedAst.Table.Lattice(sym, keys, value, loc)) =>
+          sequenceM(keys.map(a => infer(a, ns, program))) flatMap {
+            case ks => infer(value, ns, program) map {
+              case v => sym -> (TypedAst.Table.Lattice(sym, ks, v, loc): TypedAst.Table)
+            }
+          }
+      }
+    }
+
+    sequenceM(tables).map(_.toMap)
+  }
+
+
   def toResolvedTemporaryHelperMethod(ns: Name.NName, name: String): Symbol.Resolved =
     if (ns.isRoot) Symbol.Resolved.mk(name) else Symbol.Resolved.mk(ns.parts ::: name :: Nil)
 
@@ -336,8 +366,10 @@ object Typer2 {
     *
     * Substitutes the declared type for a resolved type.
     */
-  def infer(attr: NamedAst.Attribute, ns: Name.NName, program: Program): TypedAst.Attribute = attr match {
-    case NamedAst.Attribute(ident, tpe, loc) => TypedAst.Attribute(ident, Types.resolve(tpe, ns, program))
+  def infer(attr: NamedAst.Attribute, ns: Name.NName, program: Program): InferMonad[TypedAst.Attribute] = attr match {
+    case NamedAst.Attribute(ident, tpe, loc) => Types.resolve(tpe, ns, program) map {
+      case rtpe => TypedAst.Attribute(ident, rtpe)
+    }
   }
 
   object Declarations {
@@ -346,16 +378,12 @@ object Typer2 {
       * Infers the type of the given definition `defn0` in the given namespace `ns0`.
       */
     def infer(defn0: NamedAst.Declaration.Definition, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): InferMonad[TypedAst.Definition.Constant] = {
-      // compute a substitution from formal parameters to their declared types.
-      val subst0 = getSubstFromFormalParams(defn0.params, ns0, program)
-
-      // compute the declared return type of the definition.
-      val declaredType = Types.resolve(defn0.tpe.asInstanceOf[NamedAst.Type.Lambda].retType, ns0, program)
 
       val result = for (
-        expectedType <- liftM(declaredType, subst0);
+        ____________ <- getSubstFromFormalParams(defn0.params, ns0, program);
+        declaredType <- Types.resolve(defn0.tpe.asInstanceOf[NamedAst.Type.Lambda].retType, ns0, program);
         inferredType <- Expressions.infer(defn0.exp, ns0, program);
-        unifiedType <- unifyM(expectedType, inferredType)
+        unifiedType <- unifyM(declaredType, inferredType)
       ) yield unifiedType
 
       // TODO: See if this can be rewritten nicer
@@ -365,12 +393,17 @@ object Typer2 {
 
           // Translate the named formals into typed formals.
           val formals = defn0.params.map {
-            case NamedAst.FormalParam(sym, tpe, loc) =>
-              TypedAst.FormalArg(sym.toIdent, subst(Types.resolve(tpe, ns0, program)))
+            case NamedAst.FormalParam(sym, tpe, loc) => Types.resolve(tpe, ns0, program).map {
+              case t => TypedAst.FormalArg(sym.toIdent, subst(t))
+            }
           }
 
-          val lambdaType = subst(Type.Lambda(formals.map(_.tpe), resultType))
-          liftM(TypedAst.Definition.Constant(defn0.ann, defn0.sym.toResolvedTemporaryHelperMethod, formals, exp, lambdaType, defn0.loc))
+          sequenceM(formals) map {
+            case fs =>
+              val lambdaType = subst(Type.Lambda(fs.map(_.tpe), resultType))
+              TypedAst.Definition.Constant(defn0.ann, defn0.sym.toResolvedTemporaryHelperMethod, fs, exp, lambdaType, defn0.loc)
+          }
+
         case Failure(e) => Failure(e)
       }
     }
@@ -596,8 +629,8 @@ object Typer2 {
          * Tag expression.
          */
         case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
-          val enumType = lookupTagType(enum, tag, ns0, program)
           for (
+            enumType <- lookupTagType(enum, tag, ns0, program);
             __________ <- visitExp(exp); // TODO: need to check that the nested type is compatible with one of the tag types.
             resultType <- unifyM(tvar, enumType)
           ) yield resultType
@@ -728,7 +761,8 @@ object Typer2 {
         case NamedAst.Expression.Ascribe(exp, expectedType, loc) =>
           for (
             actualType <- visitExp(exp);
-            resultType <- unifyM(actualType, Types.resolve(expectedType, ns0, program))
+            resolvedType <- Types.resolve(expectedType, ns0, program);
+            resultType <- unifyM(actualType, resolvedType)
           )
             yield resultType
 
@@ -779,8 +813,8 @@ object Typer2 {
         case NamedAst.Pattern.BigInt(i, loc) => liftM(Type.BigInt)
         case NamedAst.Pattern.Str(s, loc) => liftM(Type.Str)
         case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
-          val enumType = lookupTagType(enum, tag, ns0, program)
           for (
+            enumType <- lookupTagType(enum, tag, ns0, program);
             __________ <- visitPat(pat, ns0); // TODO: need to check that the nested type is compatible with one of the tag types.
             resultType <- unifyM(tvar, enumType)
           ) yield resultType
@@ -932,37 +966,48 @@ object Typer2 {
       * TODO: DOC
       *
       */
-    def resolve(tpe0: NamedAst.Type, ns0: Name.NName, program: Program): Type = tpe0 match {
-      case NamedAst.Type.Unit(loc) => Type.Unit
+    def resolve(tpe0: NamedAst.Type, ns0: Name.NName, program: Program): InferMonad[Type] = tpe0 match {
+      case NamedAst.Type.Unit(loc) => liftM(Type.Unit)
       case NamedAst.Type.Ref(name, loc) if name.isUnqualified => name.ident.name match {
-        case "Unit" => Type.Unit
-        case "Bool" => Type.Bool
-        case "Char" => Type.Char
-        case "Float" => Type.Float64
-        case "Float32" => Type.Float32
-        case "Float64" => Type.Float64
-        case "Int" => Type.Int32
-        case "Int8" => Type.Int8
-        case "Int16" => Type.Int16
-        case "Int32" => Type.Int32
-        case "Int64" => Type.Int64
-        case "BigInt" => Type.BigInt
-        case "Str" => Type.Str
+        case "Unit" => liftM(Type.Unit)
+        case "Bool" => liftM(Type.Bool)
+        case "Char" => liftM(Type.Char)
+        case "Float" => liftM(Type.Float64)
+        case "Float32" => liftM(Type.Float32)
+        case "Float64" => liftM(Type.Float64)
+        case "Int" => liftM(Type.Int32)
+        case "Int8" => liftM(Type.Int8)
+        case "Int16" => liftM(Type.Int16)
+        case "Int32" => liftM(Type.Int32)
+        case "Int64" => liftM(Type.Int64)
+        case "BigInt" => liftM(Type.BigInt)
+        case "Str" => liftM(Type.Str)
         case typeName =>
           // Lookup the enums in the current namespace.
           // If the namespace doesn't even exist, just use an empty map.
           val decls = program.enums.getOrElse(ns0, Map.empty)
           decls.get(typeName) match {
-            case None => ??? // TODO TypeError.UnresolvedType(name, ns0, loc)
+            case None => failM(TypeError.UnresolvedType(name, ns0, loc))
             case Some(enum) => resolve(enum.tpe, ns0, program)
           }
       }
       case NamedAst.Type.Enum(name, cases) =>
-        Type.Enum(name.toResolvedTemporaryHelperMethod, cases.foldLeft(Map.empty[String, Type]) {
-          case (macc, (tag, t)) => macc + (tag -> resolve(t, ns0, program))
-        })
-      case NamedAst.Type.Tuple(elms, loc) => Type.Tuple(elms.map(tpe => resolve(tpe, ns0, program)))
-      case NamedAst.Type.Lambda(tparams, retType, loc) => Type.Lambda(tparams.map(tpe => resolve(tpe, ns0, program)), resolve(retType, ns0, program))
+        val asList = cases.toList
+        val tags = asList.map(_._1)
+        val tpes = asList.map(_._2)
+        sequenceM(tpes.map(tpe => resolve(tpe, ns0, program))) map {
+          case rtpes => Type.Enum(name.toResolvedTemporaryHelperMethod, (tags zip rtpes).toMap)
+        }
+      case NamedAst.Type.Tuple(elms, loc) =>
+        sequenceM(elms.map(tpe => resolve(tpe, ns0, program))) map {
+          case resolvedType => Type.Tuple(resolvedType)
+        }
+      case NamedAst.Type.Lambda(tparams, retType, loc) =>
+        sequenceM(tparams.map(tpe => resolve(tpe, ns0, program))) flatMap {
+          case ts => resolve(retType, ns0, program) map {
+            case r => Type.Lambda(ts, r)
+          }
+        }
       case NamedAst.Type.Parametric(base, tparams, loc) => ??? // TODO
     }
 
@@ -1221,7 +1266,7 @@ object Typer2 {
         case None => ???
         case Some(defns) => defns.get(ref.ident.name) match {
           case None => failM(UnresolvedDefinition(ref, ns, ref.loc))
-          case Some(defn) => liftM(Types.resolve(defn.tpe, ns, program))
+          case Some(defn) => Types.resolve(defn.tpe, ns, program)
         }
       }
     } else {
@@ -1231,7 +1276,7 @@ object Typer2 {
           throw new RuntimeException(s"namespace ${ref.namespace} not found") // TODO: namespace doesnt exist.
         case Some(nm) => nm.get(ref.ident.name) match {
           case None => ??? // TODO: name doesnt exist in namespace.
-          case Some(defn) => liftM(Types.resolve(defn.tpe, ns, program))
+          case Some(defn) => Types.resolve(defn.tpe, ns, program)
         }
       }
     }
@@ -1241,7 +1286,7 @@ object Typer2 {
     * Returns the declared type of the given `tag`.
     */
   // TODO: Better to lookup the defn, and then get its type?
-  private def lookupTagType(name: Name.QName, tag: Name.Ident, ns: Name.NName, program: Program): Type = {
+  private def lookupTagType(name: Name.QName, tag: Name.Ident, ns: Name.NName, program: Program): InferMonad[Type] = {
     /**
       * Lookup the tag name in all enums across all namespaces.
       */
@@ -1289,12 +1334,12 @@ object Typer2 {
     * @param ns0     the current namespace.
     * @param program the program.
     */
-  private def getSubstFromFormalParams(params: List[NamedAst.FormalParam], ns0: Name.NName, program: Program): Substitution = {
-    params.foldLeft(Substitution.empty) {
-      case (acc, NamedAst.FormalParam(sym, tpe, loc)) =>
-        val resolvedType = Types.resolve(tpe, ns0, program)
-        acc ++ Substitution.singleton(sym.tvar, resolvedType)
-    }
+  private def getSubstFromFormalParams(params: List[NamedAst.FormalParam], ns0: Name.NName, program: Program): InferMonad[List[Type]] = {
+    sequenceM(params map {
+      case NamedAst.FormalParam(sym, tpe, loc) => Types.resolve(tpe, ns0, program) flatMap {
+        case resolvedType => unifyM(sym.tvar, resolvedType)
+      }
+    })
   }
 
   private def compat(ps: List[NamedAst.FormalParam], subst: Substitution): List[Ast.FormalParam] = ps map {
