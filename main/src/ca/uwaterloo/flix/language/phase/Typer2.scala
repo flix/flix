@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.errors.TypeError.UnresolvedDefinition
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -421,7 +421,7 @@ object Typer2 {
           for (
             lambdaType <- visitExp(lambda);
             actualTypes <- visitExps2(actuals);
-            arrowType <- unifyM(lambdaType, Type.mkArrow(Type.mkFTuple(actualTypes), tvar))
+            arrowType <- unifyM(lambdaType, Type.Lambda(actualTypes, tvar))
           ) yield tvar
 
         /*
@@ -840,6 +840,13 @@ object Typer2 {
     case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
       unify(t11, t21) flatMap {
         case subst1 => unify(subst1(t12), subst1(t22)) map {
+          case subst2 => subst2 @@ subst1
+        }
+      }
+
+    case (Type.Lambda(arguments1, returnType1), Type.Lambda(arguments2, returnType2)) =>
+      unify(arguments1, arguments2) flatMap {
+        case subst1 => unify(subst1(returnType1), subst1(returnType2)) map {
           case subst2 => subst2 @@ subst1
         }
       }

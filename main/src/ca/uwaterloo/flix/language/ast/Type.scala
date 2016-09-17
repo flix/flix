@@ -301,9 +301,11 @@ object Type {
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
-  def mkFTuple(ts: List[Type]): Type = ts.foldLeft(Type.FTuple(ts.length): Type) {
-    case (tacc, tpe) => Apply(tacc, tpe)
-  }
+  // TODO: Tuple representation
+  def mkFTuple(ts: List[Type]): Type = Type.Tuple(ts)
+  //ts.foldLeft(Type.FTuple(ts.length): Type) {
+  //  case (tacc, tpe) => Apply(tacc, tpe)
+  //}
 
   /**
     * Constructs the type List[A] where `A` is the given type `tpe`.
