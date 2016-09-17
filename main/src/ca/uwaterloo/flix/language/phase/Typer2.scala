@@ -278,11 +278,11 @@ object Typer2 {
         )
           yield declaredType
 
-        val bot = reassemble(e1, ns, subst)
-        val top = reassemble(e2, ns, subst)
-        val leq = reassemble(e3, ns, subst)
-        val lub = reassemble(e4, ns, subst)
-        val glb = reassemble(e5, ns, subst)
+        val bot = reassemble(e1, ns, program, subst)
+        val top = reassemble(e2, ns, program, subst)
+        val leq = reassemble(e3, ns, program, subst)
+        val lub = reassemble(e4, ns, program, subst)
+        val glb = reassemble(e5, ns, program, subst)
 
         val lattice = TypedAst.Definition.BoundedLattice(resolvedType, bot, top, leq, lub, glb, loc)
         macc + (resolvedType -> lattice)
@@ -389,7 +389,7 @@ object Typer2 {
       // TODO: See if this can be rewritten nicer
       result match {
         case Success(resultType, subst) =>
-          val exp = reassemble(defn0.exp, ns0, subst)
+          val exp = reassemble(defn0.exp, ns0, program, subst)
 
           // Translate the named formals into typed formals.
           val formals = defn0.params.map {
@@ -1016,7 +1016,7 @@ object Typer2 {
   /**
     * Applies the given substitution `subst0` to the given expression `exp0` in the given namespace `ns0`.
     */
-  def reassemble(exp0: NamedAst.Expression, ns0: Name.NName, subst0: Substitution): TypedAst.Expression = {
+  def reassemble(exp0: NamedAst.Expression, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Expression = {
     /**
       * Applies the given substitution `subst0` to the given expression `exp0`.
       */
