@@ -34,48 +34,6 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Imports                                                                 //
-  /////////////////////////////////////////////////////////////////////////////
-  test("Import.Wildcard.01") {
-    val input1 =
-      """namespace a.b.c {
-        |  def f: Int = 42
-        |}
-      """.stripMargin
-    val input2 =
-      """import a.b.c/_
-        |def g: Int = f() + 42
-      """.stripMargin
-    new Flix().addStr(input1).addStr(input2).compile().errors.head.isInstanceOf[String] // TODO
-  }
-
-  test("Import.Definition.01") {
-    val input1 =
-      """namespace a.b.c {
-        |  def f: Int = 42
-        |}
-      """.stripMargin
-    val input2 =
-      """import a.b.c/f
-        |def g: Int = f() + 42
-      """.stripMargin
-    new Flix().addStr(input1).addStr(input2).compile().errors.head.isInstanceOf[String] // TODO
-  }
-
-  test("Import.Namespace.01") {
-    val input1 =
-      """namespace a.b.c {
-        |  def f: Int = 42
-        |}
-      """.stripMargin
-    val input2 =
-      """import a.b.c
-        |def g: Int = c/f() + 42
-      """.stripMargin
-    new Flix().addStr(input1).addStr(input2).compile().errors.head.isInstanceOf[String] // TODO
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
   // Declarations                                                            //
   /////////////////////////////////////////////////////////////////////////////
   test("Declaration.Namespace.01") {
