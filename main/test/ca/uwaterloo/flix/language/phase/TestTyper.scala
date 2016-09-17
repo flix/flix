@@ -1057,315 +1057,280 @@ class TestTyper extends FunSuite with TestUtils {
 
   test("Substitution.Empty.01") {
     val tpe = Type.Unit
-    val subst = Typer2.Substitution.empty
+    val subst = Unification.Substitution.empty
     assertResult(Type.Unit)(subst(tpe))
   }
 
   test("Substitution.Empty.02") {
     val tpe = Type.Bool
-    val subst = Typer2.Substitution.empty
+    val subst = Unification.Substitution.empty
     assertResult(Type.Bool)(subst(tpe))
   }
 
   test("Substitution.Empty.03") {
     val tpe = Type.Var(1, Kind.Star)
-    val subst = Typer2.Substitution.empty
+    val subst = Unification.Substitution.empty
     assertResult(Type.Var(1, Kind.Star))(subst(tpe))
   }
 
   test("Substitution.Empty.04") {
     val tpe = Type.mkArrow(Type.Bool, Type.Unit)
-    val subst = Typer2.Substitution.empty
+    val subst = Unification.Substitution.empty
     assertResult(Type.mkArrow(Type.Bool, Type.Unit))(subst(tpe))
   }
 
   test("Substitution.Singleton.01") {
     val tpe = Type.Var(1, Kind.Star)
-    val subst = Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Bool)
+    val subst = Unification.Substitution.singleton(Type.Var(2, Kind.Star), Type.Bool)
     assertResult(Type.Var(1, Kind.Star))(subst(tpe))
   }
 
   test("Substitution.Singleton.02") {
     val tpe = Type.Var(1, Kind.Star)
-    val subst = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
     assertResult(Type.Bool)(subst(tpe))
   }
 
   test("Substitution.Singleton.03") {
     val tpe = Type.mkFOpt(Type.Var(1, Kind.Star))
-    val subst = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
     assertResult(Type.mkFOpt(Type.Bool))(subst(tpe))
   }
 
   test("Substitution.Singleton.04") {
     val tpe = Type.mkFMap(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
-    val subst = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
     assertResult(Type.mkFMap(Type.Bool, Type.Var(2, Kind.Star)), Type.Var(2, Kind.Star))(subst(tpe))
   }
 
   test("Substitution.Singleton.05") {
     val tpe = Type.mkFMap(Type.Var(1, Kind.Star), Type.Var(1, Kind.Star))
-    val subst = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
     assertResult(Type.mkFMap(Type.Bool, Type.Bool))(subst(tpe))
   }
 
   test("Substitution.Singleton.06") {
     val tpe = Type.Var(1, Kind.Star)
-    val subst = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
+    val subst = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
     assertResult(Type.Var(2, Kind.Star))(subst(tpe))
   }
 
   test("Substitution.++.01") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
-    val subst2 = Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
+    val subst1 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst2 = Unification.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
 
     val tpe = Type.Var(1, Kind.Star)
     assertResult(Type.Bool)((subst1 ++ subst2) (tpe))
   }
 
   test("Substitution.++.02") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
-    val subst2 = Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
+    val subst1 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst2 = Unification.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
 
     val tpe = Type.Var(2, Kind.Star)
     assertResult(Type.Char)((subst1 ++ subst2) (tpe))
   }
 
   test("Substitution.++.03") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
-    val subst2 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Char)
+    val subst1 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst2 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Char)
 
     val tpe = Type.Var(1, Kind.Star)
     assertResult(Type.Bool)((subst1 ++ subst2) (tpe))
   }
 
   test("Substitution.++.04") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
-    val subst2 = Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
+    val subst1 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst2 = Unification.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
 
     val tpe = Type.mkArrow(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
     assertResult(Type.mkArrow(Type.Bool, Type.Char))((subst1 ++ subst2) (tpe))
   }
 
   test("Substitution.@@.01") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
-    val subst2 = Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
+    val subst1 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst2 = Unification.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
 
     val tpe = Type.mkArrow(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
     assertResult(Type.mkArrow(Type.Bool, Type.Char))((subst2 @@ subst1) (tpe))
   }
 
   test("Substitution.@@.02") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
-    val subst2 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Char)
+    val subst1 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
+    val subst2 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Char)
 
     val tpe = Type.Var(1, Kind.Star)
     assertResult(Type.Bool)((subst2 @@ subst1) (tpe))
   }
 
   test("Substitution.@@.03") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
-    val subst2 = Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Bool)
+    val subst1 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
+    val subst2 = Unification.Substitution.singleton(Type.Var(2, Kind.Star), Type.Bool)
 
     val tpe = Type.Var(1, Kind.Star)
     assertResult(Type.Bool)((subst2 @@ subst1) (tpe))
   }
 
   test("Substitution.@@.04") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
-    val subst2 = Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Var(3, Kind.Star))
-    val subst3 = Typer2.Substitution.singleton(Type.Var(3, Kind.Star), Type.Bool)
+    val subst1 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
+    val subst2 = Unification.Substitution.singleton(Type.Var(2, Kind.Star), Type.Var(3, Kind.Star))
+    val subst3 = Unification.Substitution.singleton(Type.Var(3, Kind.Star), Type.Bool)
 
     val tpe = Type.Var(1, Kind.Star)
     assertResult(Type.Bool)((subst3 @@ (subst2 @@ subst1)) (tpe))
   }
 
-  test("Substitution.Merge.01") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
-    val subst2 = Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
-
-    assert(subst1.merge(subst2).isSuccess)
-  }
-
-  test("Substitution.Merge.02") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
-    val subst2 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
-
-    assert(subst1.merge(subst2).isSuccess)
-  }
-
-  test("Substitution.Merge.03") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool) @@ Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char)
-    val subst2 = Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Char) @@ Typer2.Substitution.singleton(Type.Var(3, Kind.Star), Type.Int32)
-
-    assert(subst1.merge(subst2).isSuccess)
-  }
-
-  test("Substitution.Merge.04") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
-    val subst2 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Char)
-
-    assert(subst1.merge(subst2).isFailure)
-  }
-
-  test("Substitution.Merge.05") {
-    val subst1 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Int8) @@ Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Int16)
-    val subst2 = Typer2.Substitution.singleton(Type.Var(1, Kind.Star), Type.Int32) @@ Typer2.Substitution.singleton(Type.Var(2, Kind.Star), Type.Int64)
-
-    assert(subst1.merge(subst2).isFailure)
-  }
-
   test("Unify.Var.01") {
-    val result = Typer2.unify(Type.Var(1, Kind.Star), Type.Unit)
+    val result = Unification.unify(Type.Var(1, Kind.Star), Type.Unit)
     assert(result.isSuccess)
   }
 
   test("Unify.Var.02") {
-    val result = Typer2.unify(Type.Unit, Type.Var(1, Kind.Star))
+    val result = Unification.unify(Type.Unit, Type.Var(1, Kind.Star))
     assert(result.isSuccess)
   }
 
   test("Unify.Var.03") {
-    val result = Typer2.unify(Type.Var(1, Kind.Star), Type.Var(1, Kind.Star))
+    val result = Unification.unify(Type.Var(1, Kind.Star), Type.Var(1, Kind.Star))
     assert(result.isSuccess)
   }
 
   test("Unify.Var.04") {
-    val result = Typer2.unify(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
+    val result = Unification.unify(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
     assert(result.isSuccess)
   }
 
   test("Unify.Unit") {
-    val result = Typer2.unify(Type.Unit, Type.Unit)
+    val result = Unification.unify(Type.Unit, Type.Unit)
     assert(result.isSuccess)
   }
 
   test("Unify.Bool") {
-    val result = Typer2.unify(Type.Bool, Type.Bool)
+    val result = Unification.unify(Type.Bool, Type.Bool)
     assert(result.isSuccess)
   }
 
   test("Unify.Char") {
-    val result = Typer2.unify(Type.Char, Type.Char)
+    val result = Unification.unify(Type.Char, Type.Char)
     assert(result.isSuccess)
   }
 
   test("Unify.Float32") {
-    val result = Typer2.unify(Type.Float32, Type.Float32)
+    val result = Unification.unify(Type.Float32, Type.Float32)
     assert(result.isSuccess)
   }
 
   test("Unify.Float64") {
-    val result = Typer2.unify(Type.Float64, Type.Float64)
+    val result = Unification.unify(Type.Float64, Type.Float64)
     assert(result.isSuccess)
   }
 
   test("Unify.Int8") {
-    val result = Typer2.unify(Type.Int8, Type.Int8)
+    val result = Unification.unify(Type.Int8, Type.Int8)
     assert(result.isSuccess)
   }
 
   test("Unify.Int16") {
-    val result = Typer2.unify(Type.Int16, Type.Int16)
+    val result = Unification.unify(Type.Int16, Type.Int16)
     assert(result.isSuccess)
   }
 
   test("Unify.Int32") {
-    val result = Typer2.unify(Type.Int32, Type.Int32)
+    val result = Unification.unify(Type.Int32, Type.Int32)
     assert(result.isSuccess)
   }
 
   test("Unify.Int64") {
-    val result = Typer2.unify(Type.Int64, Type.Int64)
+    val result = Unification.unify(Type.Int64, Type.Int64)
     assert(result.isSuccess)
   }
 
   test("Unify.BigInt") {
-    val result = Typer2.unify(Type.BigInt, Type.BigInt)
+    val result = Unification.unify(Type.BigInt, Type.BigInt)
     assert(result.isSuccess)
   }
 
   test("Unify.Str") {
-    val result = Typer2.unify(Type.Str, Type.Str)
+    val result = Unification.unify(Type.Str, Type.Str)
     assert(result.isSuccess)
   }
 
   test("Unify.Native") {
-    val result = Typer2.unify(Type.Native, Type.Native)
+    val result = Unification.unify(Type.Native, Type.Native)
     assert(result.isSuccess)
   }
 
   test("Unify.Arrow") {
-    val result = Typer2.unify(Type.Arrow, Type.Arrow)
+    val result = Unification.unify(Type.Arrow, Type.Arrow)
     assert(result.isSuccess)
   }
 
   test("Unify.FTuple") {
-    val result = Typer2.unify(Type.FTuple(42), Type.FTuple(42))
+    val result = Unification.unify(Type.FTuple(42), Type.FTuple(42))
     assert(result.isSuccess)
   }
 
   test("Unify.FOpt.01") {
-    val result = Typer2.unify(Type.FOpt, Type.FOpt)
+    val result = Unification.unify(Type.FOpt, Type.FOpt)
     assert(result.isSuccess)
   }
 
   test("Unify.FOpt.02") {
-    val result = Typer2.unify(Type.mkFOpt(Type.Bool), Type.mkFOpt(Type.Bool))
+    val result = Unification.unify(Type.mkFOpt(Type.Bool), Type.mkFOpt(Type.Bool))
     assert(result.isSuccess)
   }
 
   test("Unify.FList.01") {
-    val result = Typer2.unify(Type.FList, Type.FList)
+    val result = Unification.unify(Type.FList, Type.FList)
     assert(result.isSuccess)
   }
 
   test("Unify.FList.02") {
-    val result = Typer2.unify(Type.mkFList(Type.Bool), Type.mkFList(Type.Bool))
+    val result = Unification.unify(Type.mkFList(Type.Bool), Type.mkFList(Type.Bool))
     assert(result.isSuccess)
   }
 
   test("Unify.FVec.01") {
-    val result = Typer2.unify(Type.FVec, Type.FVec)
+    val result = Unification.unify(Type.FVec, Type.FVec)
     assert(result.isSuccess)
   }
 
   test("Unify.FVec.02") {
-    val result = Typer2.unify(Type.mkFVec(Type.Bool), Type.mkFVec(Type.Bool))
+    val result = Unification.unify(Type.mkFVec(Type.Bool), Type.mkFVec(Type.Bool))
     assert(result.isSuccess)
   }
 
   test("Unify.FSet.01") {
-    val result = Typer2.unify(Type.FSet, Type.FSet)
+    val result = Unification.unify(Type.FSet, Type.FSet)
     assert(result.isSuccess)
   }
 
   test("Unify.FSet.02") {
-    val result = Typer2.unify(Type.mkFSet(Type.Bool), Type.mkFSet(Type.Bool))
+    val result = Unification.unify(Type.mkFSet(Type.Bool), Type.mkFSet(Type.Bool))
     assert(result.isSuccess)
   }
 
   test("Unify.FMap.01") {
-    val result = Typer2.unify(Type.FMap, Type.FMap)
+    val result = Unification.unify(Type.FMap, Type.FMap)
     assert(result.isSuccess)
   }
 
   test("Unify.FMap.02") {
-    val result = Typer2.unify(Type.mkFMap(Type.Bool, Type.Char), Type.mkFMap(Type.Bool, Type.Char))
+    val result = Unification.unify(Type.mkFMap(Type.Bool, Type.Char), Type.mkFMap(Type.Bool, Type.Char))
     assert(result.isSuccess)
   }
 
   test("Unify.Enum.01") {
     val name = Symbol.Resolved.mk("Color")
     val cases = Map.empty[String, Type]
-    val result = Typer2.unify(Type.Enum(name, cases), Type.Enum(name, cases))
+    val result = Unification.unify(Type.Enum(name, cases), Type.Enum(name, cases))
     assert(result.isSuccess)
   }
 
   test("Unify.Enum.02") {
     val name = Symbol.Resolved.mk("Color")
     val cases = Map("Red" -> Type.Unit, "Green" -> Type.Unit, "Blue" -> Type.Unit)
-    val result = Typer2.unify(Type.Enum(name, cases), Type.Enum(name, cases))
+    val result = Unification.unify(Type.Enum(name, cases), Type.Enum(name, cases))
     assert(result.isSuccess)
   }
 
@@ -1384,7 +1349,7 @@ class TestTyper extends FunSuite with TestUtils {
       "Green" -> B,
       "Blue" -> C
     )
-    val result = Typer2.unify(Type.Enum(name, cases1), Type.Enum(name, cases2)).get
+    val result = Unification.unify(Type.Enum(name, cases1), Type.Enum(name, cases2)).get
     assertResult(Type.Bool)(result(A))
     assertResult(Type.Char)(result(B))
     assertResult(Type.Int8)(result(C))
@@ -1393,14 +1358,14 @@ class TestTyper extends FunSuite with TestUtils {
   test("Unify.01") {
     val tpe1 = Type.Var(1, Kind.Star)
     val tpe2 = Type.Bool
-    val result = Typer2.unify(tpe1, tpe2).get
+    val result = Unification.unify(tpe1, tpe2).get
     assertResult(Type.Bool)(result(tpe1))
   }
 
   test("Unify.02") {
     val tpe1 = Type.Bool
     val tpe2 = Type.Var(1, Kind.Star)
-    val result = Typer2.unify(tpe1, tpe2).get
+    val result = Unification.unify(tpe1, tpe2).get
     assertResult(Type.Bool)(result(tpe2))
   }
 
@@ -1408,7 +1373,7 @@ class TestTyper extends FunSuite with TestUtils {
     val A = Type.Var(1, Kind.Star)
     val tpe1 = Type.mkFOpt(A)
     val tpe2 = Type.mkFOpt(Type.Bool)
-    val result = Typer2.unify(tpe1, tpe2).get
+    val result = Unification.unify(tpe1, tpe2).get
     assertResult(Type.Bool)(result(A))
   }
 
@@ -1416,7 +1381,7 @@ class TestTyper extends FunSuite with TestUtils {
     val A = Type.Var(1, Kind.Star)
     val tpe1 = Type.mkFOpt(Type.Bool)
     val tpe2 = Type.mkFOpt(A)
-    val result = Typer2.unify(tpe1, tpe2).get
+    val result = Unification.unify(tpe1, tpe2).get
     assertResult(Type.Bool)(result(A))
   }
 
@@ -1424,7 +1389,7 @@ class TestTyper extends FunSuite with TestUtils {
     val A = Type.Var(1, Kind.Star)
     val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
     val tpe2 = Type.mkArrow(Type.Bool, A)
-    val result = Typer2.unify(tpe1, tpe2).get
+    val result = Unification.unify(tpe1, tpe2).get
     assertResult(Type.Char)(result(A))
   }
 
@@ -1432,7 +1397,7 @@ class TestTyper extends FunSuite with TestUtils {
     val A = Type.Var(1, Kind.Star)
     val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
     val tpe2 = Type.mkArrow(Type.Bool, A)
-    val result = Typer2.unify(tpe1, tpe2).get
+    val result = Unification.unify(tpe1, tpe2).get
     assertResult(Type.Char)(result(A))
   }
 
@@ -1440,7 +1405,7 @@ class TestTyper extends FunSuite with TestUtils {
     val A = Type.Var(1, Kind.Star)
     val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
     val tpe2 = A
-    val result = Typer2.unify(tpe1, tpe2).get
+    val result = Unification.unify(tpe1, tpe2).get
     assertResult(tpe1)(result(A))
   }
 
@@ -1448,7 +1413,7 @@ class TestTyper extends FunSuite with TestUtils {
     val A = Type.Var(1, Kind.Star)
     val tpe1 = A
     val tpe2 = Type.mkArrow(Type.Bool, Type.Char)
-    val result = Typer2.unify(tpe1, tpe2).get
+    val result = Unification.unify(tpe1, tpe2).get
     assertResult(tpe2)(result(A))
   }
 
@@ -1456,7 +1421,7 @@ class TestTyper extends FunSuite with TestUtils {
     val A = Type.Var(1, Kind.Star)
     val tpe1 = Type.mkArrow(A, Type.Bool)
     val tpe2 = Type.mkArrow(Type.Bool, A)
-    val result = Typer2.unify(tpe1, tpe2).get
+    val result = Unification.unify(tpe1, tpe2).get
     assertResult(Type.Bool)(result(A))
   }
 
@@ -1465,7 +1430,7 @@ class TestTyper extends FunSuite with TestUtils {
     val B = Type.Var(2, Kind.Star)
     val tpe1 = Type.mkArrow(A, B)
     val tpe2 = Type.mkArrow(Type.Bool, Type.Char)
-    val result = Typer2.unify(tpe1, tpe2).get
+    val result = Unification.unify(tpe1, tpe2).get
     assertResult(Type.Bool)(result(A))
     assertResult(Type.Char)(result(B))
   }
@@ -1475,7 +1440,7 @@ class TestTyper extends FunSuite with TestUtils {
     val B = Type.Var(2, Kind.Star)
     val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
     val tpe2 = Type.mkArrow(A, B)
-    val result = Typer2.unify(tpe1, tpe2).get
+    val result = Unification.unify(tpe1, tpe2).get
     assertResult(Type.Bool)(result(A))
     assertResult(Type.Char)(result(B))
   }
@@ -1485,7 +1450,7 @@ class TestTyper extends FunSuite with TestUtils {
     val B = Type.Var(2, Kind.Star)
     val tpe1 = Type.mkArrow(A, Type.Char)
     val tpe2 = Type.mkArrow(Type.Bool, B)
-    val result = Typer2.unify(tpe1, tpe2).get
+    val result = Unification.unify(tpe1, tpe2).get
     assertResult(Type.Bool)(result(A))
     assertResult(Type.Char)(result(B))
   }
@@ -1496,7 +1461,7 @@ class TestTyper extends FunSuite with TestUtils {
     val C = Type.Var(3, Kind.Star)
     val tpe1 = Type.mkArrow(A, B)
     val tpe2 = Type.mkArrow(C, Type.Bool)
-    val result = Typer2.unify(tpe1, tpe2).get
+    val result = Unification.unify(tpe1, tpe2).get
     assertResult(Type.Bool)(result(B))
     assertResult(C)(result(A))
   }
@@ -1507,7 +1472,7 @@ class TestTyper extends FunSuite with TestUtils {
     val C = Type.Var(3, Kind.Star)
     val tpe1 = Type.mkArrow(Type.mkFOpt(A), B)
     val tpe2 = Type.mkArrow(C, Type.mkFList(Type.Bool))
-    val result = Typer2.unify(tpe1, tpe2).get
+    val result = Unification.unify(tpe1, tpe2).get
     assertResult(Type.mkFList(Type.Bool))(result(B))
     assertResult(Type.mkFOpt(A))(result(C))
   }
@@ -1517,10 +1482,10 @@ class TestTyper extends FunSuite with TestUtils {
     val B = Type.Var(2, Kind.Star)
     val C = Type.Var(3, Kind.Star)
     val D = Type.Int32
-    val Typer2.Success(_, subst) = for (
-      _ <- Typer2.unifyM(A, B);
-      _ <- Typer2.unifyM(B, C);
-      _ <- Typer2.unifyM(C, D)
+    val Unification.Success(_, subst) = for (
+      _ <- Unification.unifyM(A, B);
+      _ <- Unification.unifyM(B, C);
+      _ <- Unification.unifyM(C, D)
     ) yield null
 
     assertResult(Type.Int32)(subst(A))

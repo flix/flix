@@ -945,59 +945,73 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   test("Expression.Set.01") {
-    val input = "def f: Set[Int] = #{}"
-    new Flix().addStr(input).compile().get
+    intercept[NotImplementedError] {
+      val input = "def f: Set[Int] = #{}"
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.Set.02") {
-    val input = "def f: Set[Int] = #{1}"
-    new Flix().addStr(input).compile().get
+    intercept[NotImplementedError] {
+      val input = "def f: Set[Int] = #{1}"
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.Set.03") {
-    val input = "def f: Set[Int] = #{1, 2}"
-    new Flix().addStr(input).compile().get
+    intercept[NotImplementedError] {
+      val input = "def f: Set[Int] = #{1, 2}"
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.Set.04") {
-    val input = "def f: Set[Int] = #{1, 2, 3}"
-    new Flix().addStr(input).compile().get
+    intercept[NotImplementedError] {
+      val input = "def f: Set[Int] = #{1, 2, 3}"
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.Set.05") {
-    val input = "def f: Set[(Int, Int)] = #{(1, 2)}"
-    new Flix().addStr(input).compile().get
+    intercept[NotImplementedError] {
+      val input = "def f: Set[(Int, Int)] = #{(1, 2)}"
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.Set.06") {
-    val input = "def f: Set[(Int, Int)] = #{(1, 2), (3, 4)}"
-    new Flix().addStr(input).compile().get
+    intercept[NotImplementedError] {
+      val input = "def f: Set[(Int, Int)] = #{(1, 2), (3, 4)}"
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.Set.07") {
-    val input = "def f: Set[Int] = #{1 + 2, 3 + 4, 5 + 6}"
-    new Flix().addStr(input).compile().get
+    intercept[NotImplementedError] {
+      val input = "def f: Set[Int] = #{1 + 2, 3 + 4, 5 + 6}"
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.SetSet.01") {
-    // TODO: Pending new type system.
-    intercept[AssertionError] {
+    intercept[NotImplementedError] {
       val input = "def f: Set[Set[Int]] = #{}"
       new Flix().addStr(input).compile().get
     }
   }
 
   test("Expression.SetSet.02") {
-    // TODO: Pending new type system.
-    intercept[AssertionError] {
+    intercept[NotImplementedError] {
       val input = "def f: Set[Set[Int]] = #{#{}}"
       new Flix().addStr(input).compile().get
     }
   }
 
   test("Expression.SetSet.03") {
-    val input = "def f: Set[Set[Int]] = #{#{1, 2}, #{3, 4}, #{5, 6}}"
-    new Flix().addStr(input).compile().get
+    intercept[NotImplementedError] {
+      val input = "def f: Set[Set[Int]] = #{#{1, 2}, #{3, 4}, #{5, 6}}"
+      new Flix().addStr(input).compile().get
+    }
   }
 
   test("Expression.Map.01") {
