@@ -67,11 +67,11 @@ object Typer2 {
         )
           yield declaredType
 
-        val bot = reassemble(e1, ns, program, subst)
-        val top = reassemble(e2, ns, program, subst)
-        val leq = reassemble(e3, ns, program, subst)
-        val lub = reassemble(e4, ns, program, subst)
-        val glb = reassemble(e5, ns, program, subst)
+        val bot = Expressions.reassemble(e1, ns, program, subst)
+        val top = Expressions.reassemble(e2, ns, program, subst)
+        val leq = Expressions.reassemble(e3, ns, program, subst)
+        val lub = Expressions.reassemble(e4, ns, program, subst)
+        val glb = Expressions.reassemble(e5, ns, program, subst)
 
         val lattice = TypedAst.Definition.BoundedLattice(resolvedType, bot, top, leq, lub, glb, loc)
         macc + (resolvedType -> lattice)
@@ -178,7 +178,7 @@ object Typer2 {
       // TODO: See if this can be rewritten nicer
       result match {
         case Success(resultType, subst) =>
-          val exp = reassemble(defn0.exp, ns0, program, subst)
+          val exp = Expressions.reassemble(defn0.exp, ns0, program, subst)
 
           // Translate the named formals into typed formals.
           val formals = defn0.params.map {
@@ -643,6 +643,261 @@ object Typer2 {
       visitExp(exp0)
 
     }
+
+
+
+
+    /**
+      * Applies the given substitution `subst0` to the given expression `exp0` in the given namespace `ns0`.
+      */
+    def reassemble(exp0: NamedAst.Expression, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Expression = {
+      /**
+        * Applies the given substitution `subst0` to the given expression `exp0`.
+        */
+      def visitExp(exp0: NamedAst.Expression, subst0: Substitution): TypedAst.Expression = exp0 match {
+        /*
+         * Wildcard expression.
+         */
+        case NamedAst.Expression.Wild(tvar, loc) => throw InternalCompilerException("Not yet supported")
+
+        /*
+         * Variable expression.
+         */
+        case NamedAst.Expression.Var(sym, loc) => TypedAst.Expression.Var(sym.toIdent, subst0(sym.tvar), loc)
+
+        /*
+         * Reference expression.
+         */
+        case NamedAst.Expression.Ref(qname, tvar, loc) =>
+          Disambiguation.lookupRef(qname, ns0, program).get match {
+            case LookupResult.Defn(defn) => TypedAst.Expression.Ref(defn.sym.toResolvedTemporaryHelperMethod, subst0(tvar), loc)
+            case LookupResult.Hook(hook) => ??? // TODO
+          }
+
+        /*
+         * Literal expression.
+         */
+        case NamedAst.Expression.Unit(loc) => TypedAst.Expression.Unit(loc)
+        case NamedAst.Expression.True(loc) => TypedAst.Expression.True(loc)
+        case NamedAst.Expression.False(loc) => TypedAst.Expression.False(loc)
+        case NamedAst.Expression.Char(lit, loc) => TypedAst.Expression.Char(lit, loc)
+        case NamedAst.Expression.Float32(lit, loc) => TypedAst.Expression.Float32(lit, loc)
+        case NamedAst.Expression.Float64(lit, loc) => TypedAst.Expression.Float64(lit, loc)
+        case NamedAst.Expression.Int8(lit, loc) => TypedAst.Expression.Int8(lit, loc)
+        case NamedAst.Expression.Int16(lit, loc) => TypedAst.Expression.Int16(lit, loc)
+        case NamedAst.Expression.Int32(lit, loc) => TypedAst.Expression.Int32(lit, loc)
+        case NamedAst.Expression.Int64(lit, loc) => TypedAst.Expression.Int64(lit, loc)
+        case NamedAst.Expression.BigInt(lit, loc) => TypedAst.Expression.BigInt(lit, loc)
+        case NamedAst.Expression.Str(lit, loc) => TypedAst.Expression.Str(lit, loc)
+
+        /*
+         * Apply expression.
+         */
+        case NamedAst.Expression.Apply(lambda, actuals, tvar, loc) =>
+          val l = visitExp(lambda, subst0)
+          val as = actuals.map(e => visitExp(e, subst0))
+          TypedAst.Expression.Apply(l, as, subst0(tvar), loc)
+
+        /*
+         * Lambda expression.
+         */
+        case NamedAst.Expression.Lambda(params, exp, tvar, loc) => ??? // TODO
+
+        /*
+         * Unary expression.
+         */
+        case NamedAst.Expression.Unary(op, exp, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.Unary(op, e, subst0(tvar), loc)
+
+        /*
+         * Binary expression.
+         */
+        case NamedAst.Expression.Binary(op, exp1, exp2, tvar, loc) =>
+          val e1 = visitExp(exp1, subst0)
+          val e2 = visitExp(exp2, subst0)
+          TypedAst.Expression.Binary(op, e1, e2, subst0(tvar), loc)
+
+        /*
+         * If-then-else expression.
+         */
+        case NamedAst.Expression.IfThenElse(exp1, exp2, exp3, tvar, loc) =>
+          val e1 = visitExp(exp1, subst0)
+          val e2 = visitExp(exp2, subst0)
+          val e3 = visitExp(exp3, subst0)
+          TypedAst.Expression.IfThenElse(e1, e2, e3, subst0(tvar), loc)
+
+        /*
+         * Let expression.
+         */
+        case NamedAst.Expression.Let(sym, exp1, exp2, tvar, loc) =>
+          val e1 = visitExp(exp1, subst0)
+          val e2 = visitExp(exp2, subst0)
+          TypedAst.Expression.Let(sym.toIdent, e1, e2, subst0(tvar), loc)
+
+        /*
+         * Match expression.
+         */
+        case NamedAst.Expression.Match(exp1, rules, tvar, loc) =>
+          val e1 = visitExp(exp1, subst0)
+          val rs = rules map {
+            case (pat, exp) => visitPat(pat, subst0) -> visitExp(exp, subst0)
+          }
+          TypedAst.Expression.Match(e1, rs, subst0(tvar), loc)
+
+        /*
+         * Switch expression.
+         */
+        case NamedAst.Expression.Switch(rules, tvar, loc) =>
+          val rs = rules.map {
+            case (cond, body) => (visitExp(cond, subst0), visitExp(body, subst0))
+          }
+          TypedAst.Expression.Switch(rs, subst0(tvar), loc)
+
+        /*
+         * Tag expression.
+         */
+        case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.Tag(enum.toResolved, tag, e, subst0(tvar), loc)
+
+        /*
+         * Tuple expression.
+         */
+        case NamedAst.Expression.Tuple(elms, tvar, loc) =>
+          val es = elms.map(e => visitExp(e, subst0))
+          TypedAst.Expression.Tuple(es, subst0(tvar), loc)
+
+        /*
+         * None expression.
+         */
+        case NamedAst.Expression.FNone(tvar, loc) =>
+          TypedAst.Expression.FNone(subst0(tvar), loc)
+
+        /*
+         * Some expression.
+         */
+        case NamedAst.Expression.FSome(exp, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.FSome(e, subst0(tvar), loc)
+
+        /*
+         * Nil expression.
+         */
+        case NamedAst.Expression.FNil(tvar, loc) =>
+          TypedAst.Expression.FNil(subst0(tvar), loc)
+
+        /*
+         * List expression.
+         */
+        case NamedAst.Expression.FList(hd, tl, tvar, loc) =>
+          val e1 = visitExp(hd, subst0)
+          val e2 = visitExp(tl, subst0)
+          TypedAst.Expression.FList(e1, e2, subst0(tvar), loc)
+
+        /*
+         * Vec expression.
+         */
+        case NamedAst.Expression.FVec(elms, tvar, loc) =>
+          val es = elms.map(e => visitExp(e, subst0))
+          TypedAst.Expression.FVec(es, subst0(tvar), loc)
+
+        /*
+         * Set expression.
+         */
+        case NamedAst.Expression.FSet(elms, tvar, loc) =>
+          val es = elms.map(e => visitExp(e, subst0))
+          TypedAst.Expression.FSet(es, subst0(tvar), loc)
+
+        /*
+         * Map expression.
+         */
+        case NamedAst.Expression.FMap(elms, tvar, loc) =>
+          val es = elms map {
+            case (key, value) => (visitExp(key, subst0), visitExp(value, subst0))
+          }
+          TypedAst.Expression.FMap(es, subst0(tvar), loc)
+
+        /*
+         * GetIndex expression.
+         */
+        case NamedAst.Expression.GetIndex(exp1, exp2, tvar, loc) =>
+          val e1 = visitExp(exp1, subst0)
+          val e2 = visitExp(exp2, subst0)
+          TypedAst.Expression.GetIndex(e1, e2, subst0(tvar), loc)
+
+        /*
+         * PutIndex expression.
+         */
+        case NamedAst.Expression.PutIndex(exp1, exp2, exp3, tvar, loc) =>
+          val e1 = visitExp(exp1, subst0)
+          val e2 = visitExp(exp2, subst0)
+          val e3 = visitExp(exp3, subst0)
+          TypedAst.Expression.PutIndex(e1, e2, e3, subst0(tvar), loc)
+
+        /*
+         * Existential expression.
+         */
+        case NamedAst.Expression.Existential(params, exp, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.Existential(compat(params, subst0), e, loc)
+
+        /*
+         * Universal expression.
+         */
+        case NamedAst.Expression.Universal(params, exp, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.Universal(compat(params, subst0), e, loc)
+
+        /*
+         * Ascribe expression.
+         */
+        case NamedAst.Expression.Ascribe(exp, tpe, loc) =>
+          // simply reassemble the nested expression.
+          visitExp(exp, subst0)
+
+        /*
+         * User Error expression.
+         */
+        case NamedAst.Expression.UserError(tvar, loc) =>
+          TypedAst.Expression.Error(subst0(tvar), loc)
+      }
+
+      /**
+        * Applies the given substitution `subst0` to the given pattern `pat0`.
+        */
+      def visitPat(pat0: NamedAst.Pattern, subst0: Substitution): TypedAst.Pattern = pat0 match {
+        case NamedAst.Pattern.Wild(tvar, loc) => TypedAst.Pattern.Wildcard(subst0(tvar), loc)
+        case NamedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(sym.toIdent, subst0(tvar), loc)
+        case NamedAst.Pattern.Unit(loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Unit(loc), Type.Unit, loc)
+        case NamedAst.Pattern.True(loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Bool(lit = true, loc), Type.Bool, loc)
+        case NamedAst.Pattern.False(loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Bool(lit = false, loc), Type.Bool, loc)
+        case NamedAst.Pattern.Char(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Char(lit, loc), Type.Char, loc)
+        case NamedAst.Pattern.Float32(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Float32(lit, loc), Type.Float32, loc)
+        case NamedAst.Pattern.Float64(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Float64(lit, loc), Type.Float64, loc)
+        case NamedAst.Pattern.Int8(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Int8(lit, loc), Type.Int8, loc)
+        case NamedAst.Pattern.Int16(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Int16(lit, loc), Type.Int16, loc)
+        case NamedAst.Pattern.Int32(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Int32(lit, loc), Type.Int32, loc)
+        case NamedAst.Pattern.Int64(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Int64(lit, loc), Type.Int64, loc)
+        case NamedAst.Pattern.BigInt(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.BigInt(lit, loc), Type.BigInt, loc)
+        case NamedAst.Pattern.Str(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Str(lit, loc), Type.Str, loc)
+        case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
+          val p = visitPat(pat, subst0)
+          TypedAst.Pattern.Tag(enum.toResolved, tag, p, subst0(tvar), loc)
+        case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
+          val es = elms.map(e => visitPat(e, subst0))
+          TypedAst.Pattern.Tuple(es, subst0(tvar), loc)
+        case NamedAst.Pattern.FNone(tvar, loc) => ???
+        case NamedAst.Pattern.FSome(pat, tvar, loc) => ???
+        case NamedAst.Pattern.FNil(tvar, loc) => ???
+        case NamedAst.Pattern.FList(hd, tl, tvar, loc) => ???
+        case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => ???
+        case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => ???
+        case NamedAst.Pattern.FMap(elms, rest, tvar, loc) => ???
+      }
+
+      visitExp(exp0, subst0)
+    }
   }
 
   object Predicates {
@@ -721,257 +976,6 @@ object Typer2 {
 
   }
 
-  /**
-    * Applies the given substitution `subst0` to the given expression `exp0` in the given namespace `ns0`.
-    */
-  def reassemble(exp0: NamedAst.Expression, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Expression = {
-    /**
-      * Applies the given substitution `subst0` to the given expression `exp0`.
-      */
-    def visitExp(exp0: NamedAst.Expression, subst0: Substitution): TypedAst.Expression = exp0 match {
-      /*
-       * Wildcard expression.
-       */
-      case NamedAst.Expression.Wild(tvar, loc) => throw InternalCompilerException("Not yet supported")
-
-      /*
-       * Variable expression.
-       */
-      case NamedAst.Expression.Var(sym, loc) => TypedAst.Expression.Var(sym.toIdent, subst0(sym.tvar), loc)
-
-      /*
-       * Reference expression.
-       */
-      case NamedAst.Expression.Ref(qname, tvar, loc) =>
-        Disambiguation.lookupRef(qname, ns0, program).get match {
-          case LookupResult.Defn(defn) => TypedAst.Expression.Ref(defn.sym.toResolvedTemporaryHelperMethod, subst0(tvar), loc)
-          case LookupResult.Hook(hook) => ??? // TODO
-        }
-
-      /*
-       * Literal expression.
-       */
-      case NamedAst.Expression.Unit(loc) => TypedAst.Expression.Unit(loc)
-      case NamedAst.Expression.True(loc) => TypedAst.Expression.True(loc)
-      case NamedAst.Expression.False(loc) => TypedAst.Expression.False(loc)
-      case NamedAst.Expression.Char(lit, loc) => TypedAst.Expression.Char(lit, loc)
-      case NamedAst.Expression.Float32(lit, loc) => TypedAst.Expression.Float32(lit, loc)
-      case NamedAst.Expression.Float64(lit, loc) => TypedAst.Expression.Float64(lit, loc)
-      case NamedAst.Expression.Int8(lit, loc) => TypedAst.Expression.Int8(lit, loc)
-      case NamedAst.Expression.Int16(lit, loc) => TypedAst.Expression.Int16(lit, loc)
-      case NamedAst.Expression.Int32(lit, loc) => TypedAst.Expression.Int32(lit, loc)
-      case NamedAst.Expression.Int64(lit, loc) => TypedAst.Expression.Int64(lit, loc)
-      case NamedAst.Expression.BigInt(lit, loc) => TypedAst.Expression.BigInt(lit, loc)
-      case NamedAst.Expression.Str(lit, loc) => TypedAst.Expression.Str(lit, loc)
-
-      /*
-       * Apply expression.
-       */
-      case NamedAst.Expression.Apply(lambda, actuals, tvar, loc) =>
-        val l = visitExp(lambda, subst0)
-        val as = actuals.map(e => visitExp(e, subst0))
-        TypedAst.Expression.Apply(l, as, subst0(tvar), loc)
-
-      /*
-       * Lambda expression.
-       */
-      case NamedAst.Expression.Lambda(params, exp, tvar, loc) => ??? // TODO
-
-      /*
-       * Unary expression.
-       */
-      case NamedAst.Expression.Unary(op, exp, tvar, loc) =>
-        val e = visitExp(exp, subst0)
-        TypedAst.Expression.Unary(op, e, subst0(tvar), loc)
-
-      /*
-       * Binary expression.
-       */
-      case NamedAst.Expression.Binary(op, exp1, exp2, tvar, loc) =>
-        val e1 = visitExp(exp1, subst0)
-        val e2 = visitExp(exp2, subst0)
-        TypedAst.Expression.Binary(op, e1, e2, subst0(tvar), loc)
-
-      /*
-       * If-then-else expression.
-       */
-      case NamedAst.Expression.IfThenElse(exp1, exp2, exp3, tvar, loc) =>
-        val e1 = visitExp(exp1, subst0)
-        val e2 = visitExp(exp2, subst0)
-        val e3 = visitExp(exp3, subst0)
-        TypedAst.Expression.IfThenElse(e1, e2, e3, subst0(tvar), loc)
-
-      /*
-       * Let expression.
-       */
-      case NamedAst.Expression.Let(sym, exp1, exp2, tvar, loc) =>
-        val e1 = visitExp(exp1, subst0)
-        val e2 = visitExp(exp2, subst0)
-        TypedAst.Expression.Let(sym.toIdent, e1, e2, subst0(tvar), loc)
-
-      /*
-       * Match expression.
-       */
-      case NamedAst.Expression.Match(exp1, rules, tvar, loc) =>
-        val e1 = visitExp(exp1, subst0)
-        val rs = rules map {
-          case (pat, exp) => visitPat(pat, subst0) -> visitExp(exp, subst0)
-        }
-        TypedAst.Expression.Match(e1, rs, subst0(tvar), loc)
-
-      /*
-       * Switch expression.
-       */
-      case NamedAst.Expression.Switch(rules, tvar, loc) =>
-        val rs = rules.map {
-          case (cond, body) => (visitExp(cond, subst0), visitExp(body, subst0))
-        }
-        TypedAst.Expression.Switch(rs, subst0(tvar), loc)
-
-      /*
-       * Tag expression.
-       */
-      case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
-        val e = visitExp(exp, subst0)
-        TypedAst.Expression.Tag(enum.toResolved, tag, e, subst0(tvar), loc)
-
-      /*
-       * Tuple expression.
-       */
-      case NamedAst.Expression.Tuple(elms, tvar, loc) =>
-        val es = elms.map(e => visitExp(e, subst0))
-        TypedAst.Expression.Tuple(es, subst0(tvar), loc)
-
-      /*
-       * None expression.
-       */
-      case NamedAst.Expression.FNone(tvar, loc) =>
-        TypedAst.Expression.FNone(subst0(tvar), loc)
-
-      /*
-       * Some expression.
-       */
-      case NamedAst.Expression.FSome(exp, tvar, loc) =>
-        val e = visitExp(exp, subst0)
-        TypedAst.Expression.FSome(e, subst0(tvar), loc)
-
-      /*
-       * Nil expression.
-       */
-      case NamedAst.Expression.FNil(tvar, loc) =>
-        TypedAst.Expression.FNil(subst0(tvar), loc)
-
-      /*
-       * List expression.
-       */
-      case NamedAst.Expression.FList(hd, tl, tvar, loc) =>
-        val e1 = visitExp(hd, subst0)
-        val e2 = visitExp(tl, subst0)
-        TypedAst.Expression.FList(e1, e2, subst0(tvar), loc)
-
-      /*
-       * Vec expression.
-       */
-      case NamedAst.Expression.FVec(elms, tvar, loc) =>
-        val es = elms.map(e => visitExp(e, subst0))
-        TypedAst.Expression.FVec(es, subst0(tvar), loc)
-
-      /*
-       * Set expression.
-       */
-      case NamedAst.Expression.FSet(elms, tvar, loc) =>
-        val es = elms.map(e => visitExp(e, subst0))
-        TypedAst.Expression.FSet(es, subst0(tvar), loc)
-
-      /*
-       * Map expression.
-       */
-      case NamedAst.Expression.FMap(elms, tvar, loc) =>
-        val es = elms map {
-          case (key, value) => (visitExp(key, subst0), visitExp(value, subst0))
-        }
-        TypedAst.Expression.FMap(es, subst0(tvar), loc)
-
-      /*
-       * GetIndex expression.
-       */
-      case NamedAst.Expression.GetIndex(exp1, exp2, tvar, loc) =>
-        val e1 = visitExp(exp1, subst0)
-        val e2 = visitExp(exp2, subst0)
-        TypedAst.Expression.GetIndex(e1, e2, subst0(tvar), loc)
-
-      /*
-       * PutIndex expression.
-       */
-      case NamedAst.Expression.PutIndex(exp1, exp2, exp3, tvar, loc) =>
-        val e1 = visitExp(exp1, subst0)
-        val e2 = visitExp(exp2, subst0)
-        val e3 = visitExp(exp3, subst0)
-        TypedAst.Expression.PutIndex(e1, e2, e3, subst0(tvar), loc)
-
-      /*
-       * Existential expression.
-       */
-      case NamedAst.Expression.Existential(params, exp, loc) =>
-        val e = visitExp(exp, subst0)
-        TypedAst.Expression.Existential(compat(params, subst0), e, loc)
-
-      /*
-       * Universal expression.
-       */
-      case NamedAst.Expression.Universal(params, exp, loc) =>
-        val e = visitExp(exp, subst0)
-        TypedAst.Expression.Universal(compat(params, subst0), e, loc)
-
-      /*
-       * Ascribe expression.
-       */
-      case NamedAst.Expression.Ascribe(exp, tpe, loc) =>
-        // simply reassemble the nested expression.
-        visitExp(exp, subst0)
-
-      /*
-       * User Error expression.
-       */
-      case NamedAst.Expression.UserError(tvar, loc) =>
-        TypedAst.Expression.Error(subst0(tvar), loc)
-    }
-
-    /**
-      * Applies the given substitution `subst0` to the given pattern `pat0`.
-      */
-    def visitPat(pat0: NamedAst.Pattern, subst0: Substitution): TypedAst.Pattern = pat0 match {
-      case NamedAst.Pattern.Wild(tvar, loc) => TypedAst.Pattern.Wildcard(subst0(tvar), loc)
-      case NamedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(sym.toIdent, subst0(tvar), loc)
-      case NamedAst.Pattern.Unit(loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Unit(loc), Type.Unit, loc)
-      case NamedAst.Pattern.True(loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Bool(lit = true, loc), Type.Bool, loc)
-      case NamedAst.Pattern.False(loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Bool(lit = false, loc), Type.Bool, loc)
-      case NamedAst.Pattern.Char(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Char(lit, loc), Type.Char, loc)
-      case NamedAst.Pattern.Float32(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Float32(lit, loc), Type.Float32, loc)
-      case NamedAst.Pattern.Float64(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Float64(lit, loc), Type.Float64, loc)
-      case NamedAst.Pattern.Int8(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Int8(lit, loc), Type.Int8, loc)
-      case NamedAst.Pattern.Int16(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Int16(lit, loc), Type.Int16, loc)
-      case NamedAst.Pattern.Int32(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Int32(lit, loc), Type.Int32, loc)
-      case NamedAst.Pattern.Int64(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Int64(lit, loc), Type.Int64, loc)
-      case NamedAst.Pattern.BigInt(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.BigInt(lit, loc), Type.BigInt, loc)
-      case NamedAst.Pattern.Str(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Str(lit, loc), Type.Str, loc)
-      case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
-        val p = visitPat(pat, subst0)
-        TypedAst.Pattern.Tag(enum.toResolved, tag, p, subst0(tvar), loc)
-      case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
-        val es = elms.map(e => visitPat(e, subst0))
-        TypedAst.Pattern.Tuple(es, subst0(tvar), loc)
-      case NamedAst.Pattern.FNone(tvar, loc) => ???
-      case NamedAst.Pattern.FSome(pat, tvar, loc) => ???
-      case NamedAst.Pattern.FNil(tvar, loc) => ???
-      case NamedAst.Pattern.FList(hd, tl, tvar, loc) => ???
-      case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => ???
-      case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => ???
-      case NamedAst.Pattern.FMap(elms, rest, tvar, loc) => ???
-    }
-
-    visitExp(exp0, subst0)
-  }
 
   /**
     * Returns the declared type of the given `tag`.
