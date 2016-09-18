@@ -179,6 +179,11 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   test("Declaration.Definition.03") {
+    val input = "def f(x: Int, y: Int): Int = x + y + 42"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Declaration.Definition.04") {
     val input = "def f(x: Int, y: Int, z: Int): Int = x + y + z + 42"
     new Flix().addStr(input).compile().get
   }

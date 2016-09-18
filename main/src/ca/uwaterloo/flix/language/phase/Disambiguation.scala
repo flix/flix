@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
-import ca.uwaterloo.flix.language.ast.{Ast, Name, NamedAst, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, NamedAst}
 import ca.uwaterloo.flix.language.errors.TypeError.UnresolvedDefinition
 import ca.uwaterloo.flix.language.phase.Unification._
 
@@ -39,18 +39,20 @@ object Disambiguation {
   /**
     * Finds the definition with the qualified name `qname` in the namespace `ns0`.
     */
-  def lookupRef(qname: Name.QName, ns0: Name.NName, program: Program): InferMonad[NamedAst.Declaration.Definition] = {
+  def lookupRef(qname: Name.QName, ns0: Name.NName, program: Program): InferMonad[LookupResult] = {
     // check whether the reference is fully-qualified.
     if (qname.isUnqualified) {
       // Case 1: Unqualified reference. Try the local namespace.
-      program.definitions.get(ns0) match {
-        case None => ???
-        case Some(defns) => defns.get(qname.ident.name) match {
-          case None =>
-            // TODO: Try to lookup the name as a hook
-            failM(UnresolvedDefinition(qname, ns0, qname.loc))
-          case Some(defn) => liftM(defn)
-        }
+      val defns = program.definitions.getOrElse(ns0, Map.empty)
+      defns.get(qname.ident.name) match {
+        case None =>
+          // Case 1.1: The definition was not found in the local namespace.
+          // Check if it is a hook.
+          // TODO: Try to lookup the name as a hook
+          failM(UnresolvedDefinition(qname, ns0, qname.loc))
+        case Some(defn) =>
+          // Case 1.2: The definition was found. Return it.
+          liftM(LookupResult.Defn(defn))
       }
     } else {
       // Case 2: Qualified. Lookup the namespace.
@@ -59,7 +61,7 @@ object Disambiguation {
           throw new RuntimeException(s"namespace ${qname.namespace} not found") // TODO: namespace doesnt exist.
         case Some(nm) => nm.get(qname.ident.name) match {
           case None => ??? // TODO: name doesnt exist in namespace.
-          case Some(defn) => liftM(defn)
+          case Some(defn) => liftM(LookupResult.Defn(defn))
         }
       }
     }

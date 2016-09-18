@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.phase.Disambiguation.LookupResult
 import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -224,11 +225,14 @@ object Typer2 {
          * Reference expression.
          */
         case NamedAst.Expression.Ref(ref, tvar, loc) =>
-          for (
-            definition <- Disambiguation.lookupRef(ref, ns0, program);
-            declaredType <- Typer2.Types.resolve(definition.tpe, ns0, program);
-            resultType <- unifyM(tvar, declaredType)
-          ) yield resultType
+          Disambiguation.lookupRef(ref, ns0, program) flatMap {
+            case LookupResult.Defn(defn) =>
+              for (
+                declaredType <- Typer2.Types.resolve(defn.tpe, ns0, program);
+                resultType <- unifyM(tvar, declaredType)
+              ) yield resultType
+            case LookupResult.Hook(hook) => ???
+          }
 
         /*
          * Literal expression.
@@ -739,9 +743,11 @@ object Typer2 {
       /*
        * Reference expression.
        */
-      case NamedAst.Expression.Ref(ref, tvar, loc) =>
-        val namespace = ns0.idents.map(_.name) ::: ref.namespace.idents.map(_.name) ::: ref.ident.name :: Nil
-        TypedAst.Expression.Ref(Symbol.Resolved.mk(namespace), subst0(tvar), loc)
+      case NamedAst.Expression.Ref(qname, tvar, loc) =>
+        Disambiguation.lookupRef(qname, ns0, program).get match {
+          case LookupResult.Defn(defn) => TypedAst.Expression.Ref(defn.sym.toResolvedTemporaryHelperMethod, subst0(tvar), loc)
+          case LookupResult.Hook(hook) => ??? // TODO
+        }
 
       /*
        * Literal expression.
