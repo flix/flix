@@ -17,19 +17,22 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
-import ca.uwaterloo.flix.language.ast.{Name, NamedAst, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, NamedAst, Type}
 import ca.uwaterloo.flix.language.errors.TypeError.UnresolvedDefinition
 import ca.uwaterloo.flix.language.phase.Unification._
 
 object Disambiguation {
 
+  /**
+    * An ADT for the result of looking up a name.
+    */
   sealed trait LookupResult
 
   object LookupResult {
 
-    case class Definition(defn: NamedAst.Declaration.Definition) extends LookupResult
+    case class Defn(defn: NamedAst.Declaration.Definition) extends LookupResult
 
-    case class External(exern: NamedAst.Declaration.External) extends LookupResult
+    case class Hook(hook: Ast.Hook) extends LookupResult
 
   }
 
@@ -43,7 +46,9 @@ object Disambiguation {
       program.definitions.get(ns0) match {
         case None => ???
         case Some(defns) => defns.get(qname.ident.name) match {
-          case None => failM(UnresolvedDefinition(qname, ns0, qname.loc))
+          case None =>
+            // TODO: Try to lookup the name as a hook
+            failM(UnresolvedDefinition(qname, ns0, qname.loc))
           case Some(defn) => liftM(defn)
         }
       }
