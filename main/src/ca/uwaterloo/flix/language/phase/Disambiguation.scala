@@ -1,0 +1,63 @@
+/*
+ *  Copyright 2016 Magnus Madsen
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package ca.uwaterloo.flix.language.phase
+
+import ca.uwaterloo.flix.language.ast.NamedAst.Program
+import ca.uwaterloo.flix.language.ast.{Name, NamedAst, Type}
+import ca.uwaterloo.flix.language.errors.TypeError.UnresolvedDefinition
+import ca.uwaterloo.flix.language.phase.Unification._
+
+object Disambiguation {
+
+  sealed trait LookupResult
+
+  object LookupResult {
+
+    case class Definition(defn: NamedAst.Declaration.Definition) extends LookupResult
+
+    case class External(exern: NamedAst.Declaration.External) extends LookupResult
+
+  }
+
+  /**
+    * Finds the definition with the qualified name `qname` in the namespace `ns0`.
+    */
+  def lookupRef(qname: Name.QName, ns0: Name.NName, program: Program): InferMonad[NamedAst.Declaration.Definition] = {
+    // check whether the reference is fully-qualified.
+    if (qname.isUnqualified) {
+      // Case 1: Unqualified reference. Try the local namespace.
+      program.definitions.get(ns0) match {
+        case None => ???
+        case Some(defns) => defns.get(qname.ident.name) match {
+          case None => failM(UnresolvedDefinition(qname, ns0, qname.loc))
+          case Some(defn) => liftM(defn)
+        }
+      }
+    } else {
+      // Case 2: Qualified. Lookup the namespace.
+      program.definitions.get(qname.namespace) match {
+        case None =>
+          throw new RuntimeException(s"namespace ${qname.namespace} not found") // TODO: namespace doesnt exist.
+        case Some(nm) => nm.get(qname.ident.name) match {
+          case None => ??? // TODO: name doesnt exist in namespace.
+          case Some(defn) => liftM(defn)
+        }
+      }
+    }
+  }
+
+}

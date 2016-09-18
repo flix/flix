@@ -41,6 +41,7 @@ object Kind {
   /**
     * The kind of type expressions that take a kind `k1` to kind `k2`.
     */
+  // TODO: Generaliz to List of kinds to kind.
   case class Arrow(k1: Kind, k2: Kind) extends Kind
 
 }

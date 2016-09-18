@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.errors.TypeError.UnresolvedDefinition
 import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -225,9 +224,11 @@ object Typer2 {
          * Reference expression.
          */
         case NamedAst.Expression.Ref(ref, tvar, loc) =>
-          lookupRefType(ref, ns0, program) flatMap {
-            case declaredType => unifyM(tvar, declaredType)
-          }
+          for (
+            definition <- Disambiguation.lookupRef(ref, ns0, program);
+            declaredType <- Typer2.Types.resolve(definition.tpe, ns0, program);
+            resultType <- unifyM(tvar, declaredType)
+          ) yield resultType
 
         /*
          * Literal expression.
@@ -965,34 +966,6 @@ object Typer2 {
     }
 
     visitExp(exp0, subst0)
-  }
-
-  /**
-    * Returns the declared type of the given reference `ref` in the current namespace `ns` in the given `program`.
-    */
-  // TODO: Better to lookup the defn, and then get its type?
-  private def lookupRefType(ref: Name.QName, ns: Name.NName, program: Program): InferMonad[Type] = {
-    // check whether the reference is fully-qualified.
-    if (ref.isUnqualified) {
-      // Case 1: Unqualified reference. Try the local namespace.
-      program.definitions.get(ns) match {
-        case None => ???
-        case Some(defns) => defns.get(ref.ident.name) match {
-          case None => failM(UnresolvedDefinition(ref, ns, ref.loc))
-          case Some(defn) => Types.resolve(defn.tpe, ns, program)
-        }
-      }
-    } else {
-      // Case 2: Qualified. Lookup the namespace.
-      program.definitions.get(ref.namespace) match {
-        case None =>
-          throw new RuntimeException(s"namespace ${ref.namespace} not found") // TODO: namespace doesnt exist.
-        case Some(nm) => nm.get(ref.ident.name) match {
-          case None => ??? // TODO: name doesnt exist in namespace.
-          case Some(defn) => Types.resolve(defn.tpe, ns, program)
-        }
-      }
-    }
   }
 
   /**
