@@ -502,7 +502,7 @@ object Namer {
       */
     def freeVars(exp0: WeededAst.Expression): List[Name.Ident] = exp0 match {
       case WeededAst.Expression.Wild(loc) => Nil
-      case WeededAst.Expression.Var(name, loc) => ???
+      case WeededAst.Expression.Var(qname, loc) => List(qname.ident)
       case WeededAst.Expression.Unit(loc) => Nil
       case WeededAst.Expression.True(loc) => Nil
       case WeededAst.Expression.False(loc) => Nil
@@ -515,12 +515,12 @@ object Namer {
       case WeededAst.Expression.Int64(lit, loc) => Nil
       case WeededAst.Expression.BigInt(lit, loc) => Nil
       case WeededAst.Expression.Str(lit, loc) => Nil
-      case WeededAst.Expression.Apply(lambda, args, loc) => ???
-      case WeededAst.Expression.Lambda(params, exp, loc) => ???
+      case WeededAst.Expression.Apply(lambda, args, loc) => freeVars(lambda) ++ args.flatMap(freeVars)
+      case WeededAst.Expression.Lambda(params, exp, loc) => filterBoundVars(freeVars(exp), params)
       case WeededAst.Expression.Unary(op, exp, loc) => freeVars(exp)
       case WeededAst.Expression.Binary(op, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
       case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
-      case WeededAst.Expression.Let(ident, exp1, exp2, loc) => ???
+      case WeededAst.Expression.Let(ident, exp1, exp2, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
       case WeededAst.Expression.Match(exp, rules, loc) => ???
       case WeededAst.Expression.Switch(rules, loc) => ???
       case WeededAst.Expression.Tag(enum, tag, exp, loc) => ???
@@ -538,6 +538,13 @@ object Namer {
       case WeededAst.Expression.Universal(params, exp, loc) => ???
       case WeededAst.Expression.Ascribe(exp, tpe, loc) => ???
       case WeededAst.Expression.UserError(loc) => Nil
+    }
+
+    /**
+      * Returns the given `freeVars` less the `boundVars`.
+      */
+    def filterBoundVars(freeVars: List[Name.Ident], boundVars: List[Name.Ident]): List[Name.Ident] = {
+      freeVars.filter(n1 => !boundVars.exists(n2 => n1.name == n2.name))
     }
 
   }
