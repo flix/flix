@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object Unification {
 
@@ -39,6 +38,17 @@ object Unification {
   }
 
   case class Substitution(m: Map[Type.Var, Type]) {
+
+    // TODO: Remove in the future.
+    val invariant = (m.forall {
+      case (tvar, tpe) => m.get(tvar) match {
+        case Some(t: Type.Var) => !m.contains(t)
+        case _ => true
+      }
+    })
+
+    if (!invariant)
+      throw new RuntimeException
 
     /**
       * Applies `this` substitution to the given type `tpe`.
@@ -101,67 +111,91 @@ object Unification {
 
   }
 
+  // TODO: Doc
+  // TODO: Move to utils as a general Result monad?
+  sealed trait UnifierResult {
+    def isOk: Boolean = this.isInstanceOf[UnifierResult.Ok]
+
+    def get: Substitution = this match {
+      case UnifierResult.Ok(subst) => subst
+      case UnifierResult.Err(e) => throw new RuntimeException() // TODO
+    }
+  }
+
+  object UnifierResult {
+
+    case class Ok(subst: Substitution) extends UnifierResult
+
+    case class Err(e: TypeError) extends UnifierResult
+
+  }
+
   /**
     * Returns the most general unifier of the two given types `tpe1` and `tpe2`.
     *
     * Returns [[Failure]] if the two types cannot be unified.
     */
-  def unify(tpe1: Type, tpe2: Type): InferMonad[Substitution] = (tpe1, tpe2) match {
+  def unify(tpe1: Type, tpe2: Type): UnifierResult = (tpe1, tpe2) match {
     case (x: Type.Var, _) => unifyVar(x, tpe2)
     case (_, x: Type.Var) => unifyVar(x, tpe1)
-    case (Type.Unit, Type.Unit) => liftM(Substitution.empty)
-    case (Type.Bool, Type.Bool) => liftM(Substitution.empty)
-    case (Type.Char, Type.Char) => liftM(Substitution.empty)
-    case (Type.Float32, Type.Float32) => liftM(Substitution.empty)
-    case (Type.Float64, Type.Float64) => liftM(Substitution.empty)
-    case (Type.Int8, Type.Int8) => liftM(Substitution.empty)
-    case (Type.Int16, Type.Int16) => liftM(Substitution.empty)
-    case (Type.Int32, Type.Int32) => liftM(Substitution.empty)
-    case (Type.Int64, Type.Int64) => liftM(Substitution.empty)
-    case (Type.BigInt, Type.BigInt) => liftM(Substitution.empty)
-    case (Type.Str, Type.Str) => liftM(Substitution.empty)
-    case (Type.Native, Type.Native) => liftM(Substitution.empty)
-    case (Type.Arrow, Type.Arrow) => liftM(Substitution.empty)
-    case (Type.FTuple(l1), Type.FTuple(l2)) if l1 == l2 => liftM(Substitution.empty)
-    case (Type.FOpt, Type.FOpt) => liftM(Substitution.empty)
-    case (Type.FList, Type.FList) => liftM(Substitution.empty)
-    case (Type.FVec, Type.FVec) => liftM(Substitution.empty)
-    case (Type.FSet, Type.FSet) => liftM(Substitution.empty)
-    case (Type.FMap, Type.FMap) => liftM(Substitution.empty)
+    case (Type.Unit, Type.Unit) => UnifierResult.Ok(Substitution.empty)
+    case (Type.Bool, Type.Bool) => UnifierResult.Ok(Substitution.empty)
+    case (Type.Char, Type.Char) => UnifierResult.Ok(Substitution.empty)
+    case (Type.Float32, Type.Float32) => UnifierResult.Ok(Substitution.empty)
+    case (Type.Float64, Type.Float64) => UnifierResult.Ok(Substitution.empty)
+    case (Type.Int8, Type.Int8) => UnifierResult.Ok(Substitution.empty)
+    case (Type.Int16, Type.Int16) => UnifierResult.Ok(Substitution.empty)
+    case (Type.Int32, Type.Int32) => UnifierResult.Ok(Substitution.empty)
+    case (Type.Int64, Type.Int64) => UnifierResult.Ok(Substitution.empty)
+    case (Type.BigInt, Type.BigInt) => UnifierResult.Ok(Substitution.empty)
+    case (Type.Str, Type.Str) => UnifierResult.Ok(Substitution.empty)
+    case (Type.Native, Type.Native) => UnifierResult.Ok(Substitution.empty)
+    case (Type.Arrow, Type.Arrow) => UnifierResult.Ok(Substitution.empty)
+    case (Type.FTuple(l1), Type.FTuple(l2)) if l1 == l2 => UnifierResult.Ok(Substitution.empty)
+    case (Type.FOpt, Type.FOpt) => UnifierResult.Ok(Substitution.empty)
+    case (Type.FList, Type.FList) => UnifierResult.Ok(Substitution.empty)
+    case (Type.FVec, Type.FVec) => UnifierResult.Ok(Substitution.empty)
+    case (Type.FSet, Type.FSet) => UnifierResult.Ok(Substitution.empty)
+    case (Type.FMap, Type.FMap) => UnifierResult.Ok(Substitution.empty)
     case (Type.Enum(name1, cases1), Type.Enum(name2, cases2)) if name1 == name2 =>
       val ts1 = cases1.values.toList
       val ts2 = cases2.values.toList
       unify(ts1, ts2)
 
     case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
-      unify(t11, t21) flatMap {
-        case subst1 => unify(subst1(t12), subst1(t22)) map {
-          case subst2 => subst2 @@ subst1
+      unify(t11, t21) match {
+        case UnifierResult.Ok(subst1) => unify(subst1(t12), subst1(t22)) match {
+          case UnifierResult.Ok(subst2) => UnifierResult.Ok(subst2 @@ subst1)
+          case UnifierResult.Err(e) => UnifierResult.Err(e)
         }
+        case UnifierResult.Err(e) => UnifierResult.Err(e)
       }
 
     case (Type.Tuple(elms1), Type.Tuple(elms2)) =>
       unify(elms1, elms2)
 
     case (Type.Lambda(arguments1, returnType1), Type.Lambda(arguments2, returnType2)) =>
-      unify(arguments1, arguments2) flatMap {
-        case subst1 => unify(subst1(returnType1), subst1(returnType2)) map {
-          case subst2 => subst2 @@ subst1
+      unify(arguments1, arguments2) match {
+        case UnifierResult.Ok(subst1) => unify(subst1(returnType1), subst1(returnType2)) match {
+          case UnifierResult.Ok(subst2) => UnifierResult.Ok(subst2 @@ subst1)
+          case UnifierResult.Err(e) => UnifierResult.Err(e)
         }
+        case UnifierResult.Err(e) => UnifierResult.Err(e)
       }
-
-    case _ => failM(TypeError.UnificationError(tpe1, tpe2))
+    case _ => UnifierResult.Err(TypeError.UnificationError(tpe1, tpe2))
   }
 
   /**
     * Unifies the two given lists of types `ts1` and `ts2`.
     */
-  def unify(ts1: List[Type], ts2: List[Type]): InferMonad[Substitution] = (ts1, ts2) match {
-    case (Nil, Nil) => liftM(Substitution.empty)
-    case (tpe1 :: rs1, tpe2 :: rs2) => unify(tpe1, tpe2) flatMap {
-      case subst1 => unify(subst1(rs1), subst1(rs2)) map {
-        case subst2 => subst2 @@ subst1
+  def unify(ts1: List[Type], ts2: List[Type]): UnifierResult = (ts1, ts2) match {
+    case (Nil, Nil) => UnifierResult.Ok(Substitution.empty)
+    case (tpe1 :: rs1, tpe2 :: rs2) => unify(tpe1, tpe2) match {
+      case UnifierResult.Ok(subst1) => unify(subst1(rs1), subst1(rs2)) match {
+        case UnifierResult.Ok(subst2) => UnifierResult.Ok(subst2 @@ subst1)
+        case UnifierResult.Err(e) => UnifierResult.Err(e)
       }
+      case UnifierResult.Err(e) => UnifierResult.Err(e)
     }
     case _ => throw InternalCompilerException(s"Mismatched type lists: `$ts1' and `$ts2'.")
   }
@@ -171,17 +205,17 @@ object Unification {
     *
     * Performs the so-called occurs-check to ensure that the substitution is kind-preserving.
     */
-  def unifyVar(x: Type.Var, tpe: Type): InferMonad[Substitution] = {
+  def unifyVar(x: Type.Var, tpe: Type): UnifierResult = {
     if (x == tpe) {
-      return liftM(Substitution.empty)
+      return UnifierResult.Ok(Substitution.empty)
     }
     if (tpe.typeVars contains x) {
-      return failM(TypeError.OccursCheck())
+      return UnifierResult.Err(TypeError.OccursCheck())
     }
     if (x.kind != tpe.kind) {
-      return failM(TypeError.KindError())
+      return UnifierResult.Err(TypeError.KindError())
     }
-    liftM(Substitution.singleton(x, tpe))
+    UnifierResult.Ok(Substitution.singleton(x, tpe))
   }
 
 
@@ -262,8 +296,8 @@ object Unification {
     * TODO: DOC
     */
   def unifyM(tpe1: Type, tpe2: Type): InferMonad[Type] = unify(tpe1, tpe2) match {
-    case Success(subst, _) => Success(subst(tpe1), subst)
-    case Failure(e) => Failure(e)
+    case UnifierResult.Ok(subst) => Success(subst(tpe1), subst)
+    case UnifierResult.Err(e) => Failure(e)
   }
 
   /**

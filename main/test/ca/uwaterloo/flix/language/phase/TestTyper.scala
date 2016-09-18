@@ -1182,156 +1182,156 @@ class TestTyper extends FunSuite with TestUtils {
 
   test("Unify.Var.01") {
     val result = Unification.unify(Type.Var(1, Kind.Star), Type.Unit)
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.Var.02") {
     val result = Unification.unify(Type.Unit, Type.Var(1, Kind.Star))
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.Var.03") {
     val result = Unification.unify(Type.Var(1, Kind.Star), Type.Var(1, Kind.Star))
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.Var.04") {
     val result = Unification.unify(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.Unit") {
     val result = Unification.unify(Type.Unit, Type.Unit)
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.Bool") {
     val result = Unification.unify(Type.Bool, Type.Bool)
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.Char") {
     val result = Unification.unify(Type.Char, Type.Char)
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.Float32") {
     val result = Unification.unify(Type.Float32, Type.Float32)
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.Float64") {
     val result = Unification.unify(Type.Float64, Type.Float64)
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.Int8") {
     val result = Unification.unify(Type.Int8, Type.Int8)
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.Int16") {
     val result = Unification.unify(Type.Int16, Type.Int16)
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.Int32") {
     val result = Unification.unify(Type.Int32, Type.Int32)
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.Int64") {
     val result = Unification.unify(Type.Int64, Type.Int64)
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.BigInt") {
     val result = Unification.unify(Type.BigInt, Type.BigInt)
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.Str") {
     val result = Unification.unify(Type.Str, Type.Str)
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.Native") {
     val result = Unification.unify(Type.Native, Type.Native)
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.Arrow") {
     val result = Unification.unify(Type.Arrow, Type.Arrow)
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.FTuple") {
     val result = Unification.unify(Type.FTuple(42), Type.FTuple(42))
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.FOpt.01") {
     val result = Unification.unify(Type.FOpt, Type.FOpt)
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.FOpt.02") {
     val result = Unification.unify(Type.mkFOpt(Type.Bool), Type.mkFOpt(Type.Bool))
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.FList.01") {
     val result = Unification.unify(Type.FList, Type.FList)
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.FList.02") {
     val result = Unification.unify(Type.mkFList(Type.Bool), Type.mkFList(Type.Bool))
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.FVec.01") {
     val result = Unification.unify(Type.FVec, Type.FVec)
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.FVec.02") {
     val result = Unification.unify(Type.mkFVec(Type.Bool), Type.mkFVec(Type.Bool))
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.FSet.01") {
     val result = Unification.unify(Type.FSet, Type.FSet)
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.FSet.02") {
     val result = Unification.unify(Type.mkFSet(Type.Bool), Type.mkFSet(Type.Bool))
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.FMap.01") {
     val result = Unification.unify(Type.FMap, Type.FMap)
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.FMap.02") {
     val result = Unification.unify(Type.mkFMap(Type.Bool, Type.Char), Type.mkFMap(Type.Bool, Type.Char))
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.Enum.01") {
     val name = Symbol.Resolved.mk("Color")
     val cases = Map.empty[String, Type]
     val result = Unification.unify(Type.Enum(name, cases), Type.Enum(name, cases))
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.Enum.02") {
     val name = Symbol.Resolved.mk("Color")
     val cases = Map("Red" -> Type.Unit, "Green" -> Type.Unit, "Blue" -> Type.Unit)
     val result = Unification.unify(Type.Enum(name, cases), Type.Enum(name, cases))
-    assert(result.isSuccess)
+    assert(result.isOk)
   }
 
   test("Unify.Enum.03") {
