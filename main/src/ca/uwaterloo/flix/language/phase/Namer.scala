@@ -99,7 +99,7 @@ object Namer {
             Expressions.namer(exp, env0) map {
               case e =>
                 val sym = Symbol.mkDefnSym(ns0, ident)
-                val defn = NamedAst.Declaration.Definition(sym, pms0, e, ann, Types.namer(tpe), loc)
+                val defn = NamedAst.Declaration.Definition(sym, pms0.reverse, e, ann, Types.namer(tpe), loc)
                 val defns = Map(ident.name -> defn)
                 prog0.copy(definitions = prog0.definitions + (ns0 -> defns))
             }
@@ -121,7 +121,7 @@ object Namer {
                 Expressions.namer(exp, env0) map {
                   case e =>
                     val sym = Symbol.mkDefnSym(ns0, ident)
-                    val defn = NamedAst.Declaration.Definition(sym, pms0, e, ann, Types.namer(tpe), loc)
+                    val defn = NamedAst.Declaration.Definition(sym, pms0.reverse, e, ann, Types.namer(tpe), loc)
                     val defns = defns0 + (ident.name -> defn)
                     prog0.copy(definitions = prog0.definitions + (ns0 -> defns))
                 }

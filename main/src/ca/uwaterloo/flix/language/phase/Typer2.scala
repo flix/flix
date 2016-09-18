@@ -169,10 +169,10 @@ object Typer2 {
     def infer(defn0: NamedAst.Declaration.Definition, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): InferMonad[TypedAst.Definition.Constant] = {
 
       val result = for (
-        ____________ <- getSubstFromFormalParams(defn0.params, ns0, program);
-        declaredType <- Types.resolve(defn0.tpe.asInstanceOf[NamedAst.Type.Lambda].retType, ns0, program);
+        declaredType <- Types.resolve(defn0.tpe, ns0, program);
+        formalTypes <- getSubstFromFormalParams(defn0.params, ns0, program);
         inferredType <- Expressions.infer(defn0.exp, ns0, program);
-        unifiedType <- unifyM(declaredType, inferredType)
+        unifiedType <- unifyM(declaredType, Type.Lambda(formalTypes, inferredType))
       ) yield unifiedType
 
       // TODO: See if this can be rewritten nicer
@@ -189,8 +189,7 @@ object Typer2 {
 
           sequenceM(formals) map {
             case fs =>
-              val lambdaType = subst(Type.Lambda(fs.map(_.tpe), resultType))
-              TypedAst.Definition.Constant(defn0.ann, defn0.sym.toResolvedTemporaryHelperMethod, fs, exp, lambdaType, defn0.loc)
+              TypedAst.Definition.Constant(defn0.ann, defn0.sym.toResolvedTemporaryHelperMethod, fs, exp, resultType, defn0.loc)
           }
 
         case Failure(e) => Failure(e)
@@ -299,42 +298,42 @@ object Typer2 {
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2)
+              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
             ) yield Type.Int32 // TODO
 
           case BinaryOperator.Minus =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2)
+              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
             ) yield Type.Int32 // TODO
 
           case BinaryOperator.Times =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2)
+              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
             ) yield Type.Int32 // TODO
 
           case BinaryOperator.Divide =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2)
+              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
             ) yield Type.Int32 // TODO
 
           case BinaryOperator.Modulo =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2)
+              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
             ) yield Type.Int32 // TODO
 
           case BinaryOperator.Exponentiate =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2)
+              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
             ) yield Type.Int32 // TODO
 
           case BinaryOperator.Equal | BinaryOperator.NotEqual =>
@@ -364,7 +363,7 @@ object Typer2 {
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1)
+              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
             ) yield Type.Int32
 
         }
