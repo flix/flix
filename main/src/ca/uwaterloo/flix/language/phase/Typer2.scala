@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Disambiguation.LookupResult
 import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 import scala.collection.mutable
 
@@ -97,9 +97,13 @@ object Typer2 {
      */
     val facts = program.facts.flatMap {
       case (ns, fs) => fs map {
-        case NamedAst.Declaration.Fact(head, loc) =>
-          val h = Predicates.infer(head, ns, program)
-          TypedAst.Constraint.Fact(h)
+        case NamedAst.Declaration.Fact(head0, loc) =>
+          Predicates.infer(head0, ns, program) match {
+            case Success(_, subst) =>
+              val head = Predicates.reassemble(head0, ns, program, subst)
+              TypedAst.Constraint.Fact(head)
+            case Failure(e) => return e.toFailure
+          }
       }
 
     }
@@ -111,7 +115,7 @@ object Typer2 {
       case (ns, rs) => rs map {
         case NamedAst.Declaration.Rule(head, body, loc) =>
           val h = Predicates.infer(head, ns, program)
-          TypedAst.Constraint.Rule(h, ???)
+          TypedAst.Constraint.Rule(???, ???)
       }
     }
 
@@ -644,9 +648,6 @@ object Typer2 {
 
     }
 
-
-
-
     /**
       * Applies the given substitution `subst0` to the given expression `exp0` in the given namespace `ns0`.
       */
@@ -905,21 +906,54 @@ object Typer2 {
     /**
       * Infers the type of the given head predicate.
       */
-    def infer(head: NamedAst.Predicate.Head, ns: Name.NName, program: Program): TypedAst.Predicate.Head = head match {
+    def infer(head: NamedAst.Predicate.Head, ns: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = head match {
+      case NamedAst.Predicate.Head.True(loc) => Unification.liftM(Nil)
+      case NamedAst.Predicate.Head.False(loc) => Unification.liftM(Nil)
+      case NamedAst.Predicate.Head.Table(qname, terms, loc) =>
+        val declaredTypes = lookupTable(qname, ns, program) match {
+          case NamedAst.Table.Relation(sym, attr, _) => attr.map(_.tpe)
+          case NamedAst.Table.Lattice(sym, keys, value, _) => keys.map(_.tpe) ::: value.tpe :: Nil
+        }
+
+        for (
+          expectedTypes <- sequenceM(declaredTypes.map(tpe => Types.resolve(tpe, ns, program)));
+          actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns, program)));
+          unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes)
+        ) yield unifiedTypes
+    }
+
+    /**
+      * Applies the given substitution `subst0` to the given head predicate `head0` in the given namespace `ns0`.
+      */
+    def reassemble(head0: NamedAst.Predicate.Head, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
       case NamedAst.Predicate.Head.True(loc) => TypedAst.Predicate.Head.True(loc)
       case NamedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
       case NamedAst.Predicate.Head.Table(qname, terms, loc) =>
-        val table = lookupTable(qname, ns, program)
-        val ts = terms map Terms.toHeadTerm
-        TypedAst.Predicate.Head.Table(table.sym, ts, loc)
+        lookupTable(qname, ns0, program) match {
+          case NamedAst.Table.Relation(sym, attr, _) =>
+            TypedAst.Predicate.Head.Table(sym, terms.map(t => Terms.compatHead(t, ns0, program, subst0)), loc)
+          case NamedAst.Table.Lattice(sym, keys, value, _) => ???
+        }
     }
 
   }
 
   object Terms {
 
-    // TODO: Compability
-    def toHeadTerm(e: NamedAst.Expression): TypedAst.Term.Head = ???
+    def compatHead(exp0: NamedAst.Expression, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Term.Head = {
+      Expressions.reassemble(exp0, ns0, program, subst0) match {
+        case TypedAst.Expression.Var(ident, tpe, loc) => TypedAst.Term.Head.Var(ident, tpe, loc)
+        case TypedAst.Expression.Unit(loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Unit(loc), Type.Unit, loc)
+      }
+
+      //      case class Lit(literal: TypedAst.Literal, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
+//      case class Tag(enumName: Symbol.Resolved, tagName: Name.Ident, t: TypedAst.Term.Head, tpe: Type.Enum, loc: SourceLocation) extends TypedAst.Term.Head
+//      case class Tuple(elms: List[TypedAst.Term.Head], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Term.Head
+//      case class Apply(name: Symbol.Resolved, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
+//      case class ApplyHook(hook: Ast.Hook, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
+
+
+    }
 
   }
 

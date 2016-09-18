@@ -81,6 +81,7 @@ object WeededAst {
 
     case class Wild(loc: SourceLocation) extends WeededAst.Expression
 
+    // TODO: Split into Var and Ref?
     case class Var(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
     case class Unit(loc: SourceLocation) extends WeededAst.Expression

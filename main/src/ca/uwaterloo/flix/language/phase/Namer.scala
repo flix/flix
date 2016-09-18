@@ -197,15 +197,10 @@ object Namer {
        * Fact.
        */
       case WeededAst.Declaration.Fact(h, loc) =>
-        // Introduce a variable symbol for each free variable in the head predicate terms.
-        // TODO: Actually these should be disallowed?
-        val freeVars = Predicates.freeVars(h)
-        val env0 = freeVars.foldLeft(Map.empty[String, Symbol.VarSym]) {
-          case (macc, ident) => macc + (ident.name -> Symbol.freshVarSym(ident))
-        }
+        // TODO: Check that there are no free variables in a fact.
 
         // Perform naming on the head predicate under the computed environment of free variables.
-        Predicates.namer(h, env0) map {
+        Predicates.namer(h, Map.empty[String, Symbol.VarSym]) map {
           case head =>
             val fact = NamedAst.Declaration.Fact(head, loc)
             val facts = fact :: prog0.facts.getOrElse(ns0, Nil)
@@ -216,7 +211,16 @@ object Namer {
        * Rule.
        */
       case WeededAst.Declaration.Rule(h, bs, loc) =>
-        @@(Predicates.namer(h, ???), @@(bs.map(b => Predicates.namer(b, ???)))) map {
+        // Introduce a variable symbol for each free variable in the head and body predicates terms.
+        val freeVars = Predicates.freeVars(h) ++ bs.flatMap(Predicates.freeVars)
+        val env0 = freeVars.foldLeft(Map.empty[String, Symbol.VarSym]) {
+          case (macc, ident) => macc.get(ident.name) match {
+            case None => macc + (ident.name -> Symbol.freshVarSym(ident))
+            case Some(sym) => macc
+          }
+        }
+
+        @@(Predicates.namer(h, env0), @@(bs.map(b => Predicates.namer(b, env0)))) map {
           case (head, body) =>
             val rule = NamedAst.Declaration.Rule(head, body, loc)
             val rules = rule :: prog0.rules.getOrElse(ns0, Nil)
@@ -523,8 +527,8 @@ object Namer {
       case WeededAst.Expression.Let(ident, exp1, exp2, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
       case WeededAst.Expression.Match(exp, rules, loc) => ???
       case WeededAst.Expression.Switch(rules, loc) => ???
-      case WeededAst.Expression.Tag(enum, tag, exp, loc) => ???
-      case WeededAst.Expression.Tuple(elms, loc) => ???
+      case WeededAst.Expression.Tag(enum, tag, exp, loc) => freeVars(exp)
+      case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
       case WeededAst.Expression.FNone(loc) => ???
       case WeededAst.Expression.FSome(exp, loc) => ???
       case WeededAst.Expression.FNil(loc) => ???
@@ -597,7 +601,6 @@ object Namer {
 
   object Predicates {
 
-    // TODO: Need to drag var symbols along
     def namer(head: WeededAst.Predicate.Head, env0: Map[String, Symbol.VarSym])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Head, NameError] = head match {
       case WeededAst.Predicate.Head.True(loc) => NamedAst.Predicate.Head.True(loc).toSuccess
       case WeededAst.Predicate.Head.False(loc) => NamedAst.Predicate.Head.False(loc).toSuccess
@@ -607,7 +610,6 @@ object Namer {
         }
     }
 
-    // TODO: Need to drag var symbols along
     def namer(body: WeededAst.Predicate.Body, env0: Map[String, Symbol.VarSym])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Body, NameError] = body match {
       case WeededAst.Predicate.Body.Ambiguous(qname, terms, loc) =>
         @@(terms.map(t => Expressions.namer(t, Map.empty /* TODO */))) map {
@@ -634,7 +636,7 @@ object Namer {
       * Returns all the free variables in the given body predicate `body0`.
       */
     def freeVars(body0: WeededAst.Predicate.Body): List[Name.Ident] = body0 match {
-      case WeededAst.Predicate.Body.Ambiguous(qname, terms, loc) => ???
+      case WeededAst.Predicate.Body.Ambiguous(qname, terms, loc) => terms.flatMap(Expressions.freeVars)
       case WeededAst.Predicate.Body.NotEqual(ident1, ident2, loc) => List(ident1, ident2)
       case WeededAst.Predicate.Body.Loop(ident, term, loc) => List(ident) ++ Expressions.freeVars(term)
     }

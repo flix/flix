@@ -312,4 +312,10 @@ object Unification {
     visit(ts.head, ts.tail)
   }
 
+  def unifyM(xs: List[Type], ys: List[Type]): InferMonad[List[Type]] =
+    sequenceM((xs zip ys).map {
+      case (x, y) => unifyM(x, y)
+    })
+
+
 }

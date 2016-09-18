@@ -717,46 +717,16 @@ object TypedAst {
 
     object Head {
 
-      /**
-        * A typed AST node representing a variable term.
-        *
-        * @param ident the variable name.
-        * @param tpe   the type of the term.
-        * @param loc   the source location.
-        */
       case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
 
-      /**
-        * A typed AST node representing a literal term.
-        *
-        * @param literal the literal.
-        * @param tpe     the type of the term.
-        * @param loc     the source location.
-        */
       case class Lit(literal: TypedAst.Literal, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
 
       case class Tag(enumName: Symbol.Resolved, tagName: Name.Ident, t: TypedAst.Term.Head, tpe: Type.Enum, loc: SourceLocation) extends TypedAst.Term.Head
 
       case class Tuple(elms: List[TypedAst.Term.Head], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Term.Head
 
-      /**
-        * A typed AST node representing a function call term.
-        *
-        * @param name the name of the called function.
-        * @param args the arguments to the function.
-        * @param tpe  the type of the term.
-        * @param loc  the source location.
-        */
       case class Apply(name: Symbol.Resolved, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
 
-      /**
-        * A typed AST node representing a hook function call term.
-        *
-        * @param hook the hook.
-        * @param args the arguments to the function.
-        * @param tpe  the type of the term.
-        * @param loc  the source location.
-        */
       case class ApplyHook(hook: Ast.Hook, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
 
     }
