@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Disambiguation.LookupResult
 import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -930,9 +930,10 @@ object Typer2 {
       case NamedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
       case NamedAst.Predicate.Head.Table(qname, terms, loc) =>
         lookupTable(qname, ns0, program) match {
-          case NamedAst.Table.Relation(sym, attr, _) =>
+          case NamedAst.Table.Relation(sym, _, _) =>
             TypedAst.Predicate.Head.Table(sym, terms.map(t => Terms.compatHead(t, ns0, program, subst0)), loc)
-          case NamedAst.Table.Lattice(sym, keys, value, _) => ???
+          case NamedAst.Table.Lattice(sym, _, _, _) =>
+            TypedAst.Predicate.Head.Table(sym, terms.map(t => Terms.compatHead(t, ns0, program, subst0)), loc)
         }
     }
 
@@ -943,14 +944,19 @@ object Typer2 {
     def compatHead(exp0: NamedAst.Expression, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Term.Head = {
       Expressions.reassemble(exp0, ns0, program, subst0) match {
         case TypedAst.Expression.Var(ident, tpe, loc) => TypedAst.Term.Head.Var(ident, tpe, loc)
-        case TypedAst.Expression.Unit(loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Unit(loc), Type.Unit, loc)
+        case TypedAst.Expression.Int32(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Int32(lit, loc), Type.Int32, loc)
+        case TypedAst.Expression.Lit(lit, tpe, loc) => TypedAst.Term.Head.Lit(lit, tpe, loc)
+
+        case TypedAst.Expression.Apply(TypedAst.Expression.Ref(name, _, _), args, tpe, loc) =>
+          TypedAst.Term.Head.Apply(name, ???, tpe, loc)
+
       }
 
       //      case class Lit(literal: TypedAst.Literal, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
-//      case class Tag(enumName: Symbol.Resolved, tagName: Name.Ident, t: TypedAst.Term.Head, tpe: Type.Enum, loc: SourceLocation) extends TypedAst.Term.Head
-//      case class Tuple(elms: List[TypedAst.Term.Head], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Term.Head
-//      case class Apply(name: Symbol.Resolved, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
-//      case class ApplyHook(hook: Ast.Hook, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
+      //      case class Tag(enumName: Symbol.Resolved, tagName: Name.Ident, t: TypedAst.Term.Head, tpe: Type.Enum, loc: SourceLocation) extends TypedAst.Term.Head
+      //      case class Tuple(elms: List[TypedAst.Term.Head], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Term.Head
+      //      case class Apply(name: Symbol.Resolved, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
+      //      case class ApplyHook(hook: Ast.Hook, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
 
 
     }
