@@ -1039,7 +1039,7 @@ class TestTyper extends FunSuite with TestUtils {
     assertError[TypeError.UnresolvedDefinition](result)
   }
 
-  test("UnresolvedConstantReference02") {
+  test("UnresolvedDefinition02") {
     val input =
       s"""
          |namespace A {
@@ -1047,8 +1047,7 @@ class TestTyper extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedConstantReference])
-    ???
+    assertError[TypeError.UnresolvedDefinition](result)
   }
 
   /////////////////////////////////////////////////////////////////////////////
