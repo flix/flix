@@ -113,9 +113,21 @@ object Typer2 {
      */
     val rules = program.rules.flatMap {
       case (ns, rs) => rs map {
-        case NamedAst.Declaration.Rule(head, body, loc) =>
-          val h = Predicates.infer(head, ns, program)
-          TypedAst.Constraint.Rule(???, ???)
+        case NamedAst.Declaration.Rule(head0, body0, loc) =>
+          Predicates.infer(head0, ns, program) match {
+            case Success(_, subst) =>
+              val head = Predicates.reassemble(head0, ns, program, subst)
+              val body = body0.map {
+                case b => Predicates.infer(b, ns, program) match {
+                  case Success(_, subst1) => Predicates.reassemble(b, ns, program, subst1)
+                  case Failure(e) => return e.toFailure
+                }
+              }
+              TypedAst.Constraint.Rule(head, ???)
+
+            case Failure(e) => return e.toFailure
+          }
+
       }
     }
 
@@ -914,12 +926,29 @@ object Typer2 {
           case NamedAst.Table.Relation(sym, attr, _) => attr.map(_.tpe)
           case NamedAst.Table.Lattice(sym, keys, value, _) => keys.map(_.tpe) ::: value.tpe :: Nil
         }
-
         for (
           expectedTypes <- sequenceM(declaredTypes.map(tpe => Types.resolve(tpe, ns, program)));
           actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns, program)));
           unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes)
         ) yield unifiedTypes
+    }
+
+    /**
+      * Infers the type of the given body predicate.
+      */
+    def infer(body: NamedAst.Predicate.Body, ns: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = body match {
+      case NamedAst.Predicate.Body.Ambiguous(qname, terms, loc) =>
+        val declaredTypes = lookupTable(qname, ns, program) match {
+          case NamedAst.Table.Relation(sym, attr, _) => attr.map(_.tpe)
+          case NamedAst.Table.Lattice(sym, keys, value, _) => keys.map(_.tpe) ::: value.tpe :: Nil
+        }
+        for (
+          expectedTypes <- sequenceM(declaredTypes.map(tpe => Types.resolve(tpe, ns, program)));
+          actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns, program)));
+          unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes)
+        ) yield unifiedTypes
+      case NamedAst.Predicate.Body.NotEqual(ident1, ident2, loc) => Unification.liftM(Nil) // TODO
+      case NamedAst.Predicate.Body.Loop(ident, term, loc) => Unification.liftM(Nil) // TODO
     }
 
     /**
@@ -937,29 +966,57 @@ object Typer2 {
         }
     }
 
+    /**
+      * Applies the given substitution `subst0` to the given body predicate `body0` in the given namespace `ns0`.
+      */
+    def reassemble(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
+      case NamedAst.Predicate.Body.Ambiguous(qname, terms, loc) =>
+        ???
+
+      case NamedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
+        ???
+      case NamedAst.Predicate.Body.Loop(ident, term, loc) =>
+        ???
+    }
+
   }
 
   object Terms {
 
+    // TODO: Temporary method
     def compatHead(exp0: NamedAst.Expression, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Term.Head = {
-      Expressions.reassemble(exp0, ns0, program, subst0) match {
-        case TypedAst.Expression.Var(ident, tpe, loc) => TypedAst.Term.Head.Var(ident, tpe, loc)
-        case TypedAst.Expression.Int32(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Int32(lit, loc), Type.Int32, loc)
-        case TypedAst.Expression.Lit(lit, tpe, loc) => TypedAst.Term.Head.Lit(lit, tpe, loc)
+      exp2headterm(Expressions.reassemble(exp0, ns0, program, subst0))
+    }
 
-        case TypedAst.Expression.Apply(TypedAst.Expression.Ref(name, _, _), args, tpe, loc) =>
-          TypedAst.Term.Head.Apply(name, ???, tpe, loc)
+    //      case class Lit(literal: TypedAst.Literal, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
+    //      case class Tag(enumName: Symbol.Resolved, tagName: Name.Ident, t: TypedAst.Term.Head, tpe: Type.Enum, loc: SourceLocation) extends TypedAst.Term.Head
+    //      case class Tuple(elms: List[TypedAst.Term.Head], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Term.Head
+    //      case class Apply(name: Symbol.Resolved, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
+    //      case class ApplyHook(hook: Ast.Hook, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
 
-      }
+    private def exp2headterm(exp0: TypedAst.Expression): TypedAst.Term.Head = exp0 match {
+      case TypedAst.Expression.Var(ident, tpe, loc) => TypedAst.Term.Head.Var(ident, tpe, loc)
+      case TypedAst.Expression.Unit(loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Unit(loc), Type.Unit, loc)
+      case TypedAst.Expression.True(loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Bool(true, loc), Type.Bool, loc)
+      case TypedAst.Expression.False(loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Bool(false, loc), Type.Bool, loc)
+      case TypedAst.Expression.Char(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Char(lit, loc), Type.Char, loc)
+      case TypedAst.Expression.Float32(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Float32(lit, loc), Type.Float32, loc)
+      case TypedAst.Expression.Float64(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Float64(lit, loc), Type.Float32, loc)
+      case TypedAst.Expression.Int8(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Int8(lit, loc), Type.Int8, loc)
+      case TypedAst.Expression.Int16(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Int16(lit, loc), Type.Int16, loc)
+      case TypedAst.Expression.Int32(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Int32(lit, loc), Type.Int32, loc)
+      case TypedAst.Expression.Int64(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Int64(lit, loc), Type.Int64, loc)
+      case TypedAst.Expression.BigInt(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.BigInt(lit, loc), Type.BigInt, loc)
+      case TypedAst.Expression.Str(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Str(lit, loc), Type.Str, loc)
+      case TypedAst.Expression.Lit(lit, tpe, loc) => TypedAst.Term.Head.Lit(lit, tpe, loc)
+      case TypedAst.Expression.Tag(enumName, tagName, exp, tpe, loc) => TypedAst.Term.Head.Tag(enumName, tagName, exp2headterm(exp), tpe, loc)
+      case TypedAst.Expression.Apply(TypedAst.Expression.Ref(name, _, _), args, tpe, loc) =>
+        TypedAst.Term.Head.Apply(name, args.map(exp2headterm), tpe, loc)
 
-      //      case class Lit(literal: TypedAst.Literal, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
-      //      case class Tag(enumName: Symbol.Resolved, tagName: Name.Ident, t: TypedAst.Term.Head, tpe: Type.Enum, loc: SourceLocation) extends TypedAst.Term.Head
-      //      case class Tuple(elms: List[TypedAst.Term.Head], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Term.Head
-      //      case class Apply(name: Symbol.Resolved, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
-      //      case class ApplyHook(hook: Ast.Hook, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
-
+      case _ => throw new UnsupportedOperationException(s"Not implemented for $exp0")
 
     }
+
 
   }
 
