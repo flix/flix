@@ -1096,6 +1096,7 @@ object Typer {
       *
       */
     // TODO: Move into Result monad?
+    // TODO: Introduce resolve for list of types.
     def resolve(tpe0: NamedAst.Type, ns0: Name.NName, program: Program): InferMonad[Type] = tpe0 match {
       case NamedAst.Type.Unit(loc) => liftM(Type.Unit)
       case NamedAst.Type.Ref(qname, loc) if qname.isUnqualified => qname.ident.name match {
