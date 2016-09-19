@@ -248,9 +248,9 @@ object WeededAst {
 
     case class Tuple(elms: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
 
-    case class Lambda(tparams: List[WeededAst.Type], retType: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+    case class Arrow(tparams: List[WeededAst.Type], retType: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-    case class Parametric(base: WeededAst.Type, tparams: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
+    case class Apply(base: WeededAst.Type, tparams: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
 
   }
 

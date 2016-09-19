@@ -671,13 +671,13 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   def Type: Rule1[ParsedAst.Type] = rule {
-    Types.UnaryLambda
+    Types.UnaryArrow
   }
 
   object Types {
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Lambda | Tuple | Parametric | Ref
+      Arrow | Tuple | Apply | Ref
     }
 
     def Ref: Rule1[ParsedAst.Type] = rule {
@@ -702,19 +702,20 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
     }
 
-    def UnaryLambda: Rule1[ParsedAst.Type] = rule {
+    def UnaryArrow: Rule1[ParsedAst.Type] = rule {
       SP ~ Primary ~ optional(optWS ~ atomic("->") ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, t: ParsedAst.Type, o: Option[ParsedAst.Type], sp2: SourcePosition) => o match {
         case None => t
-        case Some(r) => ParsedAst.Type.Lambda(sp1, List(t), r, sp2) // TODO: Maybe need to reverse order???
+        case Some(r) => ParsedAst.Type.Arrow(sp1, List(t), r, sp2) // TODO: Maybe need to reverse order???
       })
     }
 
-    def Lambda: Rule1[ParsedAst.Type] = rule {
-      SP ~ "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.Lambda
+    def Arrow: Rule1[ParsedAst.Type] = rule {
+      SP ~ "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.Arrow
     }
 
-    def Parametric: Rule1[ParsedAst.Type] = rule {
-      SP ~ Ref ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~ optWS ~> ParsedAst.Type.Parametric
+    // TODO: Allow a more general base type.
+    def Apply: Rule1[ParsedAst.Type] = rule {
+      SP ~ Ref ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~ optWS ~> ParsedAst.Type.Apply
     }
   }
 

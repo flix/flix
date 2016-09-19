@@ -262,9 +262,9 @@ object NamedAst {
 
     case class Tuple(elms: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
 
-    case class Lambda(tparams: List[NamedAst.Type], retType: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+    case class Arrow(tparams: List[NamedAst.Type], retType: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-    case class Parametric(base: NamedAst.Type, tparams: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
+    case class Apply(base: NamedAst.Type, tparams: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
 
   }
 

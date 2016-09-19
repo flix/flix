@@ -1138,13 +1138,13 @@ object Typer {
         sequenceM(elms.map(tpe => resolve(tpe, ns0, program))) map {
           case resolvedType => Type.Tuple(resolvedType)
         }
-      case NamedAst.Type.Lambda(tparams, retType, loc) =>
+      case NamedAst.Type.Arrow(tparams, retType, loc) =>
         sequenceM(tparams.map(tpe => resolve(tpe, ns0, program))) flatMap {
           case ts => resolve(retType, ns0, program) map {
             case r => Type.Lambda(ts, r)
           }
         }
-      case NamedAst.Type.Parametric(base, tparams, loc) => ??? // TODO
+      case NamedAst.Type.Apply(base, tparams, loc) => ??? // TODO
     }
 
   }

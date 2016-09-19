@@ -899,11 +899,11 @@ object ParsedAst {
       * Lambda type.
       *
       * @param sp1     the position of the first character in the type.
-      * @param tparams the types of the arguments.
-      * @param retType the return type.
+      * @param tparams the arguments types.
+      * @param tresult the result type.
       * @param sp2     the position of the last character in the type.
       */
-    case class Lambda(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], retType: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+    case class Arrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], tresult: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Parametric type.
@@ -913,7 +913,7 @@ object ParsedAst {
       * @param tparams the type parameters.
       * @param sp2     the position of the last character in the type.
       */
-    case class Parametric(sp1: SourcePosition, base: ParsedAst.Type, tparams: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
+    case class Apply(sp1: SourcePosition, base: ParsedAst.Type, tparams: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
 
   }
 

@@ -657,8 +657,8 @@ object Namer {
       case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc)
       case WeededAst.Type.Ref(name, loc) => NamedAst.Type.Ref(name, loc)
       case WeededAst.Type.Tuple(elms, loc) => NamedAst.Type.Tuple(elms map namer, loc)
-      case WeededAst.Type.Lambda(tparams, retType, loc) => NamedAst.Type.Lambda(tparams map namer, namer(retType), loc)
-      case WeededAst.Type.Parametric(base, tparams, loc) => NamedAst.Type.Parametric(namer(base), tparams map namer, loc)
+      case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams map namer, namer(tresult), loc)
+      case WeededAst.Type.Apply(base, tparams, loc) => NamedAst.Type.Apply(namer(base), tparams map namer, loc)
     }
 
   }

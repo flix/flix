@@ -74,7 +74,7 @@ object Weeder {
          */
         paramsOpt match {
           case None => @@(annVal, expVal) flatMap {
-            case (as, e) => WeededAst.Declaration.Definition(as, ident, Nil, e, WeededAst.Type.Lambda(Nil, Types.weed(tpe), sl), sl).toSuccess
+            case (as, e) => WeededAst.Declaration.Definition(as, ident, Nil, e, WeededAst.Type.Arrow(Nil, Types.weed(tpe), sl), sl).toSuccess
           }
           case Some(Nil) => IllegalParameterList(sl).toFailure
           case Some(params) =>
@@ -84,7 +84,7 @@ object Weeder {
             val formalsVal = checkDuplicateFormal(params)
             @@(annVal, formalsVal, expVal) map {
               case (as, fs, e) =>
-                val t = WeededAst.Type.Lambda(fs map (_.tpe), Types.weed(tpe), sl)
+                val t = WeededAst.Type.Arrow(fs map (_.tpe), Types.weed(tpe), sl)
                 WeededAst.Declaration.Definition(as, ident, fs, e, t, sl)
             }
         }
@@ -812,8 +812,8 @@ object Weeder {
       case ParsedAst.Type.Unit(sp1, sp2) => WeededAst.Type.Unit(mkSL(sp1, sp2))
       case ParsedAst.Type.Ref(sp1, name, sp2) => WeededAst.Type.Ref(name, mkSL(sp1, sp2))
       case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(weed), mkSL(sp1, sp2))
-      case ParsedAst.Type.Lambda(sp1, tparams, retType, sp2) => WeededAst.Type.Lambda(tparams.toList.map(weed), weed(retType), mkSL(sp1, sp2))
-      case ParsedAst.Type.Parametric(sp1, base, tparams, sp2) => WeededAst.Type.Parametric(weed(base), tparams.toList.map(weed), mkSL(sp1, sp2))
+      case ParsedAst.Type.Arrow(sp1, tparams, tresult, sp2) => WeededAst.Type.Arrow(tparams.toList.map(weed), weed(tresult), mkSL(sp1, sp2))
+      case ParsedAst.Type.Apply(sp1, base, tparams, sp2) => WeededAst.Type.Apply(weed(base), tparams.toList.map(weed), mkSL(sp1, sp2))
     }
 
   }
