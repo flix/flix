@@ -355,7 +355,7 @@ class Flix {
       throw new IllegalArgumentException("Argument 'types' must be non-null.")
 
     val elms = types.toList.map(_.asInstanceOf[WrappedType].tpe)
-    new WrappedType(Type.Tuple(elms))
+    new WrappedType(Type.Apply(Type.FTuple(elms.length), elms))
   }
 
   /**

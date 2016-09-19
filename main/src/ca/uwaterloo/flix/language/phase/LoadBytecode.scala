@@ -152,7 +152,7 @@ object LoadBytecode {
     case Type.Str => classOf[java.lang.String]
     case Type.Native => classOf[java.lang.Object]
     case Type.Enum(_, _) => classOf[Value.Tag]
-    case Type.Tuple(elms) => classOf[Value.Tuple]
+    case Type.Apply(Type.FTuple(l), _) => classOf[Value.Tuple]
     case Type.Lambda(_, _) => interfaces(tpe)
     case Type.FSet => classOf[scala.collection.immutable.Set[AnyRef]]
     case _ if tpe.isTuple => classOf[Value.Tuple]

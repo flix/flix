@@ -83,7 +83,6 @@ object Unification {
         case (macc, (tag, t)) => macc + (tag -> apply(t))
       })
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
-      case Type.Tuple(elms) => Type.Tuple(elms map apply)
       case Type.Lambda(args, retTpe) => Type.Lambda(args map apply, apply(retTpe))
     }
 
@@ -151,9 +150,6 @@ object Unification {
         }
         case Result.Err(e) => Result.Err(e)
       }
-
-    case (Type.Tuple(elms1), Type.Tuple(elms2)) =>
-      unify(elms1, elms2)
 
     case (Type.Lambda(arguments1, returnType1), Type.Lambda(arguments2, returnType2)) =>
       unify(arguments1, arguments2) match {

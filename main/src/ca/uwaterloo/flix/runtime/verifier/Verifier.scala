@@ -240,7 +240,7 @@ object Verifier {
             }
         }
         r.toList
-      case Type.Tuple(elms) =>
+      case Type.Apply(Type.FTuple(_), elms) =>
         def visitn(xs: List[Type]): List[List[SymVal]] = xs match {
           case Nil => List(Nil)
           case t :: ts => visitn(ts) flatMap {

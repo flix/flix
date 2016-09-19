@@ -59,7 +59,6 @@ sealed trait Type {
     }.toSet
     case Type.Apply(t, ts) => t.typeVars ++ ts.flatMap(_.typeVars)
 
-    case Type.Tuple(elms) => elms.flatMap(_.typeVars).toSet
     case Type.Lambda(args, retTpe) => args.flatMap(_.typeVars).toSet ++ retTpe.typeVars
 
     case _ => throw InternalCompilerException(s"Unexpected type: `${this}'.")
@@ -69,7 +68,6 @@ sealed trait Type {
     * Returns `true` if `this` type is a tuple type.
     */
   def isTuple: Boolean = this match {
-    case Type.Tuple(_) => true // deprecated
     case Type.FTuple(_) => true
     case Type.Apply(t1, t2) => t1.isTuple
     case _ => false
@@ -100,7 +98,6 @@ sealed trait Type {
     case Type.Apply(t, ts) => s"Apply($t, $ts)"
 
     case Type.Enum(enum, cases) => enum.fqn
-    case Type.Tuple(elms) => "(" + elms.mkString(". ") + ")"
 
     case _ => super.toString
   }
@@ -303,8 +300,7 @@ object Type {
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
-  // TODO: Tuple representation
-  def mkFTuple(ts: List[Type]): Type = Type.Tuple(ts)
+  def mkFTuple(ts: List[Type]): Type = Apply(FTuple(ts.length), ts)
 
   /**
     * Constructs the type List[A] where `A` is the given type `tpe`.
@@ -330,11 +326,6 @@ object Type {
   //
   // TODO: --- Everything below here may be removed ---
   //
-
-  // TODO: To be removed.
-  case class Tuple(elms: List[Type]) extends Type {
-    def kind: Kind = Kind.Star
-  }
 
   // TODO: To be removed.
   case class Lambda(args: List[Type], retTpe: Type) extends Type {

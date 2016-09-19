@@ -1136,7 +1136,7 @@ object Typer {
         }
       case NamedAst.Type.Tuple(elms, loc) =>
         sequenceM(elms.map(tpe => resolve(tpe, ns0, program))) map {
-          case resolvedType => Type.Tuple(resolvedType)
+          case resolvedTypes => Type.Apply(Type.FTuple(resolvedTypes.length), resolvedTypes)
         }
       case NamedAst.Type.Arrow(tparams, retType, loc) =>
         sequenceM(tparams.map(tpe => resolve(tpe, ns0, program))) flatMap {

@@ -961,7 +961,7 @@ object SymbolicEvaluator {
           }
         }
         val elms = elms1 zip elms2
-        val types = tpe.asInstanceOf[Type.Tuple].elms
+        val types = tpe.asInstanceOf[Type.Apply].ts
         visit(pc0, elms, types)
 
       case _ => throw InternalCompilerException(s"Unexpected values: '$x' and '$y'.")

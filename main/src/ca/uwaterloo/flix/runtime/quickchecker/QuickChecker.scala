@@ -305,7 +305,7 @@ object QuickChecker {
         }
         oneOf(elms.toArray: _*)
 
-      case Type.Tuple(elms) => new Generator[SymVal] {
+      case Type.Apply(Type.FTuple(l), elms) => new Generator[SymVal] {
         def mk(r: Random): SymVal = {
           val vals = elms.map(t => new ArbSymVal(t).gen.mk(r))
           SymVal.Tuple(vals)

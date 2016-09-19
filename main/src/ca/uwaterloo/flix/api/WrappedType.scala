@@ -64,7 +64,7 @@ final class WrappedType(val tpe: Type) extends IType {
   }
 
   def isTuple: Boolean = tpe match {
-    case Type.Tuple(elms) => true
+    case Type.Apply(Type.FTuple(l), _) => true
     case _ => false
   }
 
@@ -94,7 +94,7 @@ final class WrappedType(val tpe: Type) extends IType {
   }
 
   def getTupleParams: Array[IType] = tpe match {
-    case Type.Tuple(elms) => elms.map(t => new WrappedType(t)).toArray
+    case Type.Apply(Type.FTuple(l), elms) => elms.map(t => new WrappedType(t)).toArray
     case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 

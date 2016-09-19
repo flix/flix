@@ -108,7 +108,7 @@ object Codegen {
         case Type.Str => asm.Type.getDescriptor(Constants.stringClass)
         case Type.Native => asm.Type.getDescriptor(Constants.objectClass)
         case Type.Enum(_, _) => asm.Type.getDescriptor(Constants.tagClass)
-        case Type.Tuple(_) => asm.Type.getDescriptor(Constants.tupleClass)
+        case Type.Apply(Type.FTuple(l), _) => asm.Type.getDescriptor(Constants.tupleClass)
         case Type.Lambda(_, _) => s"L${decorate(interfaces(tpe))};"
         case Type.Apply(Type.FSet, _) => asm.Type.getDescriptor(Constants.setClass)
         case _ if tpe.isTuple => asm.Type.getDescriptor(Constants.tupleClass)
@@ -230,7 +230,7 @@ object Codegen {
       case Type.Int64 => mv.visitInsn(LRETURN)
       case Type.Float32 => mv.visitInsn(FRETURN)
       case Type.Float64 => mv.visitInsn(DRETURN)
-      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
+      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Lambda(_, _) |
            Type.Apply(Type.FSet, _) => mv.visitInsn(ARETURN)
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
@@ -370,7 +370,7 @@ object Codegen {
           case Type.Int64 => globalOffset += 2
           case Type.Float32 => globalOffset += 1
           case Type.Float64 => globalOffset += 2
-          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) => globalOffset += 1
+          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Lambda(_, _) => globalOffset += 1
           case tpe => throw InternalCompilerException(s"Unexpected type '$tpe'.")
         }
       }
@@ -393,7 +393,7 @@ object Codegen {
           case Type.Float64 =>
             offset -= 2
             visitor.visitVarInsn(DSTORE, offset)
-          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) =>
+          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Lambda(_, _) =>
             offset -= 1
             visitor.visitVarInsn(ASTORE, offset)
           case _ => throw InternalCompilerException(s"Not yet implemented.") // TODO
@@ -489,7 +489,7 @@ object Codegen {
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
         case Type.Float32 => visitor.visitVarInsn(FSTORE, offset)
         case Type.Float64 => visitor.visitVarInsn(DSTORE, offset)
-        case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) => visitor.visitVarInsn(ASTORE, offset)
+        case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Lambda(_, _) => visitor.visitVarInsn(ASTORE, offset)
         case Type.Apply(_, _) => visitor.visitVarInsn(ASTORE, offset)
         case tpe => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
@@ -678,7 +678,7 @@ object Codegen {
       compileExpression(ctx, visitor, entryPoint)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkInt64", "(J)Ljava/lang/Object;", false)
 
-    case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Tuple(_) | Type.Lambda(_, _) |
+    case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Lambda(_, _) |
          Type.Apply(Type.FSet, _) => compileExpression(ctx, visitor, entryPoint)(exp)
 
     case tpe => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
@@ -726,7 +726,7 @@ object Codegen {
 
     case Type.Native => // Don't need to cast AnyRef to anything
 
-    case Type.Tuple(_) =>
+    case Type.Apply(Type.FTuple(l), _) =>
       // This is actually a bit more complicated, since we have multiple representations for a tuple (e.g. Value.Tuple,
       // Array, scala.TupleN). We have to call `Value.cast2tuple` instead of doing a direct cast.
 
@@ -1068,9 +1068,9 @@ object Codegen {
   private def compileComparisonExpr(ctx: Context, visitor: MethodVisitor, entryPoint: Label)
                                    (o: ComparisonOperator, e1: Expression, e2: Expression): Unit = {
     e1.tpe match {
-      case Type.Enum(_, _) | Type.Tuple(_) | Type.Apply(Type.FSet, _) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
+      case Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.FSet, _) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
         (e1.tpe: @unchecked) match {
-          case Type.Tuple(_) =>
+          case Type.Apply(Type.FTuple(_), _) =>
             // Value.Tuple.elms() method
             val clazz1 = Constants.tupleClass
             val method1 = clazz1.getMethod("elms")
