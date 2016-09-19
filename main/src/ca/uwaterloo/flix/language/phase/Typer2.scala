@@ -374,13 +374,20 @@ object Typer2 {
               resultType <- unifyM(tvar, tpe1, tpe2, Type.Bool)
             ) yield resultType
 
-          case BinaryOperator.BitwiseAnd | BinaryOperator.BitwiseOr | BinaryOperator.BitwiseXor | BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift =>
+          case BinaryOperator.BitwiseAnd | BinaryOperator.BitwiseOr | BinaryOperator.BitwiseXor =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
-            ) yield Type.Int32
+              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2))
+            ) yield resultType
 
+          case BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift =>
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              lhsType <- unifyM(tvar, tpe1);
+              rhsType <- unifyM(tpe2, Type.Int32)
+            ) yield lhsType
         }
 
         /*
@@ -1140,8 +1147,36 @@ object Typer2 {
     })
   }
 
+  // TODO: Compatability --------------
+
   private def compat(ps: List[NamedAst.FormalParam], subst: Substitution): List[Ast.FormalParam] = ps map {
     case NamedAst.FormalParam(sym, tpe, loc) => Ast.FormalParam(sym.toIdent, subst(???))
+  }
+
+  // TODO: Ugly hack. Remove once we have type classes.
+  def guesstimateType(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
+    case (Type.Float32, _) => Type.Float32
+    case (_, Type.Float32) => Type.Float32
+
+    case (Type.Float64, _) => Type.Float64
+    case (_, Type.Float64) => Type.Float64
+
+    case (Type.Int8, _) => Type.Int8
+    case (_, Type.Int8) => Type.Int8
+
+    case (Type.Int16, _) => Type.Int16
+    case (_, Type.Int16) => Type.Int16
+
+    case (Type.Int32, _) => Type.Int32
+    case (_, Type.Int32) => Type.Int32
+
+    case (Type.Int64, _) => Type.Int64
+    case (_, Type.Int64) => Type.Int64
+
+    case (Type.BigInt, _) => Type.BigInt
+    case (_, Type.BigInt) => Type.BigInt
+
+    case _ => Type.Int32
   }
 
 }
