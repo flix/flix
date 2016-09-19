@@ -313,43 +313,43 @@ object Typer2 {
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
-            ) yield Type.Int32 // TODO
+              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2))
+            ) yield resultType
 
           case BinaryOperator.Minus =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
-            ) yield Type.Int32 // TODO
+              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2))
+            ) yield resultType
 
           case BinaryOperator.Times =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
-            ) yield Type.Int32 // TODO
+              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2))
+            ) yield resultType
 
           case BinaryOperator.Divide =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
-            ) yield Type.Int32 // TODO
+              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2))
+            ) yield resultType
 
           case BinaryOperator.Modulo =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
-            ) yield Type.Int32 // TODO
+              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2))
+            ) yield resultType
 
           case BinaryOperator.Exponentiate =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tvar, tpe1, tpe2, Type.Int32)
-            ) yield Type.Int32 // TODO
+              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2))
+            ) yield resultType
 
           case BinaryOperator.Equal | BinaryOperator.NotEqual =>
             for (
