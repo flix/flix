@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
-object Typer2 {
+object Typer {
 
   /**
     * Type checks the given program.
@@ -248,7 +248,7 @@ object Typer2 {
           Disambiguation.lookupRef(ref, ns0, program) flatMap {
             case LookupResult.Defn(ns, defn) =>
               for (
-                declaredType <- Typer2.Types.resolve(defn.tpe, ns, program);
+                declaredType <- Typer.Types.resolve(defn.tpe, ns, program);
                 resultType <- unifyM(tvar, declaredType)
               ) yield resultType
             case LookupResult.Hook(hook) => liftM(hook.tpe)

@@ -85,7 +85,7 @@ object Compiler {
       parsedAst <- root;
       weededAst <- Weeder.weed(parsedAst, hooks);
       namedAst <- Namer.namer(weededAst);
-      typedAst <- Typer2.typer(namedAst)
+      typedAst <- Typer.typer(namedAst)
     ) yield typedAst
   }
 
