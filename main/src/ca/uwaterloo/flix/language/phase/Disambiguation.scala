@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
-import ca.uwaterloo.flix.language.ast.{Ast, Name, NamedAst, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, NamedAst}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.errors.TypeError.UnresolvedDefinition
 import ca.uwaterloo.flix.language.phase.Unification._
@@ -35,7 +35,7 @@ object Disambiguation {
 
   object LookupResult {
 
-    case class Defn(defn: NamedAst.Declaration.Definition) extends LookupResult
+    case class Defn(ns: Name.NName, defn: NamedAst.Declaration.Definition) extends LookupResult
 
     case class Hook(hook: Ast.Hook) extends LookupResult
 
@@ -58,7 +58,7 @@ object Disambiguation {
           failM(UnresolvedDefinition(qname, ns0, qname.loc))
         case Some(defn) =>
           // Case 1.2: The definition was found. Return it.
-          liftM(LookupResult.Defn(defn))
+          liftM(LookupResult.Defn(ns0, defn))
       }
     } else {
       // Case 2: Qualified. Lookup the namespace.
@@ -67,7 +67,7 @@ object Disambiguation {
           throw new RuntimeException(s"namespace ${qname.namespace} not found") // TODO: namespace doesnt exist.
         case Some(nm) => nm.get(qname.ident.name) match {
           case None => ??? // TODO: name doesnt exist in namespace.
-          case Some(defn) => liftM(LookupResult.Defn(defn))
+          case Some(defn) => liftM(LookupResult.Defn(qname.namespace, defn))
         }
       }
     }
@@ -76,7 +76,7 @@ object Disambiguation {
   /**
     * Finds the enum definition matching the given qualified name and tag.
     */
-  def lookupEnumByTag(name: Name.QName, tag: Name.Ident, ns: Name.NName, program: Program): Result[NamedAst.Declaration.Enum, TypeError] = {
+  def lookupEnumByTag(qname: Name.QName, tag: Name.Ident, ns: Name.NName, program: Program): Result[NamedAst.Declaration.Enum, TypeError] = {
     /*
      * Lookup the tag name in all enums across all namespaces.
      */
@@ -97,13 +97,15 @@ object Disambiguation {
       return Ok(globalMatches.head)
     }
 
-    // Case 2: No or multiple matches found. Use the namespace to disambiguate.
+    // Case 2: No or multiple matches found.
+    // Lookup the tag in either the fully qualified namespace or the current namespace.
+    val namespace = if (qname.isQualified) qname.namespace else ns
 
     /*
      * Lookup the tag name in all enums in the current namespace.
      */
     val namespaceMatches = mutable.Set.empty[NamedAst.Declaration.Enum]
-    for ((enumName, decl) <- program.enums.getOrElse(ns, Map.empty[String, NamedAst.Declaration.Enum])) {
+    for ((enumName, decl) <- program.enums.getOrElse(namespace, Map.empty[String, NamedAst.Declaration.Enum])) {
       for ((tagName, caze) <- decl.cases) {
         if (tag.name == tagName) {
           namespaceMatches += decl
@@ -118,7 +120,7 @@ object Disambiguation {
 
     // Case 2.2: No matches found in namespace.
     if (namespaceMatches.isEmpty) {
-      return Err(TypeError.UnresolvedTag(name, tag, ns, tag.loc))
+      return Err(TypeError.UnresolvedTag(qname, tag, ns, tag.loc))
     }
 
     // Case 2.3: Multiple matches found in namespace...

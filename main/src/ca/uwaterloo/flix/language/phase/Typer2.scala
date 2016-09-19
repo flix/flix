@@ -240,9 +240,9 @@ object Typer2 {
          */
         case NamedAst.Expression.Ref(ref, tvar, loc) =>
           Disambiguation.lookupRef(ref, ns0, program) flatMap {
-            case LookupResult.Defn(defn) =>
+            case LookupResult.Defn(ns, defn) =>
               for (
-                declaredType <- Typer2.Types.resolve(defn.tpe, ns0, program);
+                declaredType <- Typer2.Types.resolve(defn.tpe, ns, program);
                 resultType <- unifyM(tvar, declaredType)
               ) yield resultType
             case LookupResult.Hook(hook) => ???
@@ -627,7 +627,7 @@ object Typer2 {
           Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
             case Ok(decl) => for (
               enumType <- Types.resolve(decl.tpe, ns0, program);
-              ________ <- visitPat(pat, ns0);  // TODO: need to check that the nested type is compatible with one of the tag types.
+              ________ <- visitPat(pat, ns0); // TODO: need to check that the nested type is compatible with one of the tag types.
               resultType <- unifyM(tvar, enumType)
             ) yield resultType
             case Err(e) => failM(e)
@@ -688,7 +688,7 @@ object Typer2 {
          */
         case NamedAst.Expression.Ref(qname, tvar, loc) =>
           Disambiguation.lookupRef(qname, ns0, program).get match {
-            case LookupResult.Defn(defn) => TypedAst.Expression.Ref(defn.sym.toResolvedTemporaryHelperMethod, subst0(tvar), loc)
+            case LookupResult.Defn(ns, defn) => TypedAst.Expression.Ref(defn.sym.toResolvedTemporaryHelperMethod, subst0(tvar), loc)
             case LookupResult.Hook(hook) => ??? // TODO
           }
 
@@ -1058,7 +1058,7 @@ object Typer2 {
       */
     def resolve(tpe0: NamedAst.Type, ns0: Name.NName, program: Program): InferMonad[Type] = tpe0 match {
       case NamedAst.Type.Unit(loc) => liftM(Type.Unit)
-      case NamedAst.Type.Ref(name, loc) if name.isUnqualified => name.ident.name match {
+      case NamedAst.Type.Ref(qname, loc) if qname.isUnqualified => qname.ident.name match {
         case "Unit" => liftM(Type.Unit)
         case "Bool" => liftM(Type.Bool)
         case "Char" => liftM(Type.Char)
@@ -1073,14 +1073,21 @@ object Typer2 {
         case "BigInt" => liftM(Type.BigInt)
         case "Str" => liftM(Type.Str)
         case typeName =>
-          // Lookup the enums in the current namespace.
+          // Lookup the enum in the current namespace.
           // If the namespace doesn't even exist, just use an empty map.
           val decls = program.enums.getOrElse(ns0, Map.empty)
           decls.get(typeName) match {
-            case None => failM(TypeError.UnresolvedType(name, ns0, loc))
+            case None => failM(TypeError.UnresolvedType(qname, ns0, loc))
             case Some(enum) => resolve(enum.tpe, ns0, program)
           }
       }
+      case NamedAst.Type.Ref(qname, loc) if qname.isQualified =>
+        // Lookup the enum using the namespace.
+        val decls = program.enums.getOrElse(qname.namespace, Map.empty)
+        decls.get(qname.ident.name) match {
+          case None => failM(TypeError.UnresolvedType(qname, ns0, loc))
+          case Some(enum) => resolve(enum.tpe, qname.namespace, program)
+        }
       case NamedAst.Type.Enum(name, cases) =>
         val asList = cases.toList
         val tags = asList.map(_._1)
