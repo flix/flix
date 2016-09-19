@@ -715,12 +715,13 @@ object Weeder {
       def weed(past: ParsedAst.Predicate, aliases: Map[String, ParsedAst.Predicate.Equal] = Map.empty): Validation[WeededAst.Predicate.Head, WeederError] = past match {
         case ParsedAst.Predicate.True(sp1, sp2) => WeededAst.Predicate.Head.True(mkSL(sp1, sp2)).toSuccess
         case ParsedAst.Predicate.False(sp1, sp2) => WeededAst.Predicate.Head.False(mkSL(sp1, sp2)).toSuccess
-
         case ParsedAst.Predicate.Ambiguous(sp1, qname, terms, sp2) =>
-          // TODO: Check that the predicate is uppercase.
-          // TODO: This does not yet handle aliases.
-          @@(terms.toList.map(Expressions.weed)) map {
-            case ts => WeededAst.Predicate.Head.Table(qname, ts, mkSL(sp1, sp2))
+          @@(terms.toList.map(Expressions.weed)) flatMap {
+            case ts =>
+              if (qname.isUpperCase)
+                WeededAst.Predicate.Head.Table(qname, ts, mkSL(sp1, sp2)).toSuccess
+              else
+                IllegalSyntax("A head predicate must be uppercase and refer to a relation or lattice.", mkSL(sp1, sp2)).toFailure
           }
         case ParsedAst.Predicate.Equal(sp1, ident, term, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
         case ParsedAst.Predicate.Loop(sp1, ident, term, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
@@ -735,8 +736,8 @@ object Weeder {
         * Weeds the given body predicate.
         */
       def weed(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] = past match {
-        case ParsedAst.Predicate.True(sp1, sp2) => Unsupported("'true' predicate is not allowed in the body of a rule.", mkSL(sp1, sp2)).toFailure
-        case ParsedAst.Predicate.False(sp1, sp2) => Unsupported("'false' predicate is not allowed in the body of a rule.", mkSL(sp1, sp2)).toFailure
+        case ParsedAst.Predicate.True(sp1, sp2) => IllegalSyntax("A true predicate is not allowed in the body of a rule.", mkSL(sp1, sp2)).toFailure
+        case ParsedAst.Predicate.False(sp1, sp2) => IllegalSyntax("A false predicate is not allowed in the body of a rule.", mkSL(sp1, sp2)).toFailure
         case ParsedAst.Predicate.Ambiguous(sp1, qname, terms, sp2) =>
           val loc = mkSL(sp1, sp2)
           @@(terms.map(Expressions.weed)) map {
@@ -746,12 +747,12 @@ object Weeder {
               else
                 WeededAst.Predicate.Body.Filter(qname, ts, loc)
           }
-        case p: ParsedAst.Predicate.NotEqual =>
-          WeededAst.Predicate.Body.NotEqual(p.ident1, p.ident2, mkSL(p.sp1, p.sp2)).toSuccess
-        case p: ParsedAst.Predicate.Loop => Expressions.weed(p.term) map {
-          case term => WeededAst.Predicate.Body.Loop(p.ident, term, mkSL(p.sp1, p.sp2))
+        case ParsedAst.Predicate.NotEqual(sp1, ident1, ident2, sp2) =>
+          WeededAst.Predicate.Body.NotEqual(ident1, ident2, mkSL(sp1, sp2)).toSuccess
+        case ParsedAst.Predicate.Loop(sp1, ident, term, sp2) => Expressions.weed(term) map {
+          case t => WeededAst.Predicate.Body.Loop(ident, t, mkSL(sp1, sp2))
         }
-        case p: ParsedAst.Predicate.Equal => throw InternalCompilerException("Alias predicate should already have been eliminated.")
+        case ParsedAst.Predicate.Equal(sp1, ident, term, sp2) => throw InternalCompilerException("Alias predicate should already have been eliminated.")
       }
     }
 

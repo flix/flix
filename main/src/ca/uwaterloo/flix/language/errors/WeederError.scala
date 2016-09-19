@@ -393,21 +393,18 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that a syntactic construct, although successfully parsed, is currently not supported.
+    * An error raised to indicate a syntax error not caught by the parser.
     *
     * @param msg the error message.
-    * @param loc the location of the syntactic construct.
+    * @param loc the location of the syntax error.
     */
-  case class Unsupported(msg: String, loc: SourceLocation) extends WeederError {
+  case class IllegalSyntax(msg: String, loc: SourceLocation) extends WeederError {
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-         |${consoleCtx.red(s">> Unsupported feature: $msg")}
+         |${consoleCtx.red(s">> $msg")}
          |
          |${loc.highlight}
-         |This feature is not yet supported, implemented or considered stable.
-         |
-         |Tip: Avoid using this feature.
          """.stripMargin
   }
 
