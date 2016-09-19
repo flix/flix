@@ -378,13 +378,13 @@ object ParsedAst {
     case class Wild(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Variable Expression.
+      * Variable or Reference Expression.
       *
       * @param sp1  the position of the first character in the expression.
       * @param name the ambiguous name.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Var(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
+    case class VarOrRef(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Literal Expression.

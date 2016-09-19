@@ -348,7 +348,7 @@ object Namer {
        */
       case WeededAst.Expression.Wild(loc) => NamedAst.Expression.Wild(Type.freshTypeVar(), loc).toSuccess
 
-      case WeededAst.Expression.Var(name, loc) if name.isUnqualified =>
+      case WeededAst.Expression.VarOrRef(name, loc) if name.isUnqualified =>
         // lookup the variable name in the environment.
         env0.get(name.ident.name) match {
           case None =>
@@ -359,7 +359,7 @@ object Namer {
             NamedAst.Expression.Var(sym, loc).toSuccess
         }
 
-      case WeededAst.Expression.Var(name, loc) =>
+      case WeededAst.Expression.VarOrRef(name, loc) =>
         NamedAst.Expression.Ref(name, Type.freshTypeVar(), loc).toSuccess
 
       /*
@@ -506,7 +506,7 @@ object Namer {
       */
     def freeVars(exp0: WeededAst.Expression): List[Name.Ident] = exp0 match {
       case WeededAst.Expression.Wild(loc) => Nil
-      case WeededAst.Expression.Var(qname, loc) => List(qname.ident)
+      case WeededAst.Expression.VarOrRef(qname, loc) => List(qname.ident)
       case WeededAst.Expression.Unit(loc) => Nil
       case WeededAst.Expression.True(loc) => Nil
       case WeededAst.Expression.False(loc) => Nil

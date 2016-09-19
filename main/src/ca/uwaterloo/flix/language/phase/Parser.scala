@@ -504,8 +504,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ atomic("_") ~ SP ~> ParsedAst.Expression.Wild
     }
 
-    def Var: Rule1[ParsedAst.Expression.Var] = rule {
-      SP ~ QName ~ SP ~> ParsedAst.Expression.Var
+    def Var: Rule1[ParsedAst.Expression.VarOrRef] = rule {
+      SP ~ QName ~ SP ~> ParsedAst.Expression.VarOrRef
     }
 
     def UnaryLambda: Rule1[ParsedAst.Expression.Lambda] = rule {
