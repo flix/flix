@@ -21,10 +21,9 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Disambiguation.LookupResult
 import ca.uwaterloo.flix.language.phase.Unification._
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
-
-import scala.collection.mutable
 
 object Typer2 {
 
@@ -438,11 +437,14 @@ object Typer2 {
          * Tag expression.
          */
         case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
-          for (
-            enumType <- lookupTagType(enum, tag, ns0, program);
-            __________ <- visitExp(exp); // TODO: need to check that the nested type is compatible with one of the tag types.
-            resultType <- unifyM(tvar, enumType)
-          ) yield resultType
+          Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
+            case Ok(decl) => for (
+              enumType <- Types.resolve(decl.tpe, ns0, program);
+              ________ <- visitExp(exp);
+              resultType <- unifyM(tvar, enumType)
+            ) yield resultType
+            case Err(e) => failM(e)
+          }
 
         /*
          * Tuple expression.
@@ -622,11 +624,14 @@ object Typer2 {
         case NamedAst.Pattern.BigInt(i, loc) => liftM(Type.BigInt)
         case NamedAst.Pattern.Str(s, loc) => liftM(Type.Str)
         case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
-          for (
-            enumType <- lookupTagType(enum, tag, ns0, program);
-            __________ <- visitPat(pat, ns0); // TODO: need to check that the nested type is compatible with one of the tag types.
-            resultType <- unifyM(tvar, enumType)
-          ) yield resultType
+          Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
+            case Ok(decl) => for (
+              enumType <- Types.resolve(decl.tpe, ns0, program);
+              ________ <- visitPat(pat, ns0);  // TODO: need to check that the nested type is compatible with one of the tag types.
+              resultType <- unifyM(tvar, enumType)
+            ) yield resultType
+            case Err(e) => failM(e)
+          }
 
         case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
           for (
@@ -1096,37 +1101,6 @@ object Typer2 {
       case NamedAst.Type.Parametric(base, tparams, loc) => ??? // TODO
     }
 
-  }
-
-
-  /**
-    * Returns the declared type of the given `tag`.
-    */
-  // TODO: Better to lookup the defn, and then get its type?
-  private def lookupTagType(name: Name.QName, tag: Name.Ident, ns: Name.NName, program: Program): InferMonad[Type] = {
-    /**
-      * Lookup the tag name in all enums across all namespaces.
-      */
-    val matches = mutable.Set.empty[NamedAst.Declaration.Enum]
-    for ((ns, decls) <- program.enums) {
-      for ((enumName, decl) <- decls) {
-        for ((tagName, caze) <- decl.cases) {
-          if (tag.name == tagName) {
-            matches += decl
-          }
-        }
-      }
-    }
-
-    if (matches.isEmpty) {
-      failM(TypeError.UnresolvedTag(name, tag, ns, tag.loc))
-    } else if (matches.size == 1) {
-      val NamedAst.Declaration.Enum(sym, cases, tpe, loc) = matches.head
-      Types.resolve(tpe, ns, program)
-    } else {
-      // TODO: Use the current namespace, and or enum name.
-      throw new RuntimeException("Ambigious tag name")
-    }
   }
 
   /**
