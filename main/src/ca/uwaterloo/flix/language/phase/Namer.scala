@@ -611,9 +611,13 @@ object Namer {
     }
 
     def namer(body: WeededAst.Predicate.Body, env0: Map[String, Symbol.VarSym])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Body, NameError] = body match {
-      case WeededAst.Predicate.Body.Ambiguous(qname, terms, loc) =>
+      case WeededAst.Predicate.Body.Table(qname, terms, loc) =>
         @@(terms.map(t => Expressions.namer(t, env0))) map {
-          case ts => NamedAst.Predicate.Body.Ambiguous(qname, ts, loc)
+          case ts => NamedAst.Predicate.Body.Table(qname, ts, loc)
+        }
+      case WeededAst.Predicate.Body.Filter(qname, terms, loc) =>
+        @@(terms.map(t => Expressions.namer(t, env0))) map {
+          case ts => NamedAst.Predicate.Body.Filter(qname, ts, loc)
         }
       case WeededAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
         NamedAst.Predicate.Body.NotEqual(ident1, ident2, loc).toSuccess
@@ -636,7 +640,8 @@ object Namer {
       * Returns all the free variables in the given body predicate `body0`.
       */
     def freeVars(body0: WeededAst.Predicate.Body): List[Name.Ident] = body0 match {
-      case WeededAst.Predicate.Body.Ambiguous(qname, terms, loc) => terms.flatMap(Expressions.freeVars)
+      case WeededAst.Predicate.Body.Table(qname, terms, loc) => terms.flatMap(Expressions.freeVars)
+      case WeededAst.Predicate.Body.Filter(qname, terms, loc) => terms.flatMap(Expressions.freeVars)
       case WeededAst.Predicate.Body.NotEqual(ident1, ident2, loc) => List(ident1, ident2)
       case WeededAst.Predicate.Body.Loop(ident, term, loc) => List(ident) ++ Expressions.freeVars(term)
     }

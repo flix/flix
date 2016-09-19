@@ -127,14 +127,14 @@ object Weeder {
          */
         Expressions.weed(exp) flatMap {
           case e => paramsOpt match {
-            case None => WeededAst.Declaration.Law(ident, tparams, Nil, Types.weed(tpe), e, mkSL(sp1, sp2)).toSuccess
+            case None => WeededAst.Declaration.Law(ident, tparams.toList, Nil, Types.weed(tpe), e, mkSL(sp1, sp2)).toSuccess
             case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
             case Some(params) =>
               /*
                * Check for `DuplicateFormal`.
                */
               checkDuplicateFormal(params) map {
-                case ps => WeededAst.Declaration.Law(ident, tparams, ps, Types.weed(tpe), e, mkSL(sp1, sp2))
+                case ps => WeededAst.Declaration.Law(ident, tparams.toList, ps, Types.weed(tpe), e, mkSL(sp1, sp2))
               }
           }
         }
@@ -156,12 +156,12 @@ object Weeder {
 
       case ParsedAst.Declaration.Class(sp1, ident, tparams, bounds, decls, sp2) =>
         @@(decls.map(weed)) map {
-          case ds => WeededAst.Declaration.Class(ident, tparams map Types.weed, ds, mkSL(sp1, sp2))
+          case ds => WeededAst.Declaration.Class(ident, tparams.toList.map(Types.weed), ds, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Declaration.Impl(sp1, ident, tparams, bounds, decls, sp2) =>
         @@(decls.map(weed)) map {
-          case ds => WeededAst.Declaration.Impl(ident, tparams map Types.weed, ds, mkSL(sp1, sp2))
+          case ds => WeededAst.Declaration.Impl(ident, tparams.toList.map(Types.weed), ds, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Declaration.Relation(sp1, ident, attrs, sp2) =>
@@ -231,7 +231,7 @@ object Weeder {
         else if (indexes.exists(_.isEmpty))
           IllegalIndex(sl).toFailure
         else
-          WeededAst.Declaration.Index(ident, indexes, sl).toSuccess
+          WeededAst.Declaration.Index(ident, indexes.toList.map(_.toList), sl).toSuccess
 
       case ParsedAst.Declaration.BoundedLattice(sp1, tpe, elms, sp2) =>
         val elmsVal = @@(elms.toList.map(Expressions.weed))
@@ -737,19 +737,20 @@ object Weeder {
       def weed(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] = past match {
         case ParsedAst.Predicate.True(sp1, sp2) => Unsupported("'true' predicate is not allowed in the body of a rule.", mkSL(sp1, sp2)).toFailure
         case ParsedAst.Predicate.False(sp1, sp2) => Unsupported("'false' predicate is not allowed in the body of a rule.", mkSL(sp1, sp2)).toFailure
-        case p: ParsedAst.Predicate.Ambiguous =>
-          // TODO: Why not disambiguate here?
-          @@(p.terms.map(Expressions.weed)) map {
-            case terms => WeededAst.Predicate.Body.Ambiguous(p.name, terms, mkSL(p.sp1, p.sp2))
+        case ParsedAst.Predicate.Ambiguous(sp1, qname, terms, sp2) =>
+          val loc = mkSL(sp1, sp2)
+          @@(terms.map(Expressions.weed)) map {
+            case ts =>
+              if (qname.isUpperCase)
+                WeededAst.Predicate.Body.Table(qname, ts, loc)
+              else
+                WeededAst.Predicate.Body.Filter(qname, ts, loc)
           }
-
         case p: ParsedAst.Predicate.NotEqual =>
           WeededAst.Predicate.Body.NotEqual(p.ident1, p.ident2, mkSL(p.sp1, p.sp2)).toSuccess
-
         case p: ParsedAst.Predicate.Loop => Expressions.weed(p.term) map {
           case term => WeededAst.Predicate.Body.Loop(p.ident, term, mkSL(p.sp1, p.sp2))
         }
-
         case p: ParsedAst.Predicate.Equal => throw InternalCompilerException("Alias predicate should already have been eliminated.")
       }
     }

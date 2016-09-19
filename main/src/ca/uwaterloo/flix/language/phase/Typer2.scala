@@ -955,7 +955,7 @@ object Typer2 {
       * Infers the type of the given body predicate.
       */
     def infer(body: NamedAst.Predicate.Body, ns: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = body match {
-      case NamedAst.Predicate.Body.Ambiguous(qname, terms, loc) =>
+      case NamedAst.Predicate.Body.Table(qname, terms, loc) =>
         val declaredTypes = lookupTable(qname, ns, program) match {
           case NamedAst.Table.Relation(sym, attr, _) => attr.map(_.tpe)
           case NamedAst.Table.Lattice(sym, keys, value, _) => keys.map(_.tpe) ::: value.tpe :: Nil
@@ -965,6 +965,10 @@ object Typer2 {
           actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns, program)));
           unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes)
         ) yield unifiedTypes
+
+      case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
+        ???
+
       case NamedAst.Predicate.Body.NotEqual(ident1, ident2, loc) => Unification.liftM(Nil) // TODO
       case NamedAst.Predicate.Body.Loop(ident, term, loc) => Unification.liftM(Nil) // TODO
     }
@@ -988,14 +992,13 @@ object Typer2 {
       * Applies the given substitution `subst0` to the given body predicate `body0` in the given namespace `ns0`.
       */
     def reassemble(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
-      case NamedAst.Predicate.Body.Ambiguous(qname, terms, loc) =>
+      case NamedAst.Predicate.Body.Table(qname, terms, loc) =>
         lookupTable(qname, ns0, program) match {
-          case NamedAst.Table.Relation(sym, _, _) =>
-            TypedAst.Predicate.Body.Table(sym, terms.map(t => Terms.compatBody(t, ns0, program, subst0)), loc)
-          case NamedAst.Table.Lattice(sym, _, _, _) =>
-            TypedAst.Predicate.Body.Table(sym, terms.map(t => Terms.compatBody(t, ns0, program, subst0)), loc)
+          case NamedAst.Table.Relation(sym, _, _) => TypedAst.Predicate.Body.Table(sym, terms.map(t => Terms.compatBody(t, ns0, program, subst0)), loc)
+          case NamedAst.Table.Lattice(sym, _, _, _) => TypedAst.Predicate.Body.Table(sym, terms.map(t => Terms.compatBody(t, ns0, program, subst0)), loc)
         }
-
+      case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
+        ???
       case NamedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
         ???
       case NamedAst.Predicate.Body.Loop(ident, term, loc) =>
