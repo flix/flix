@@ -1095,9 +1095,11 @@ object Typer {
       * TODO: DOC
       *
       */
+    // TODO: Move into Result monad?
     def resolve(tpe0: NamedAst.Type, ns0: Name.NName, program: Program): InferMonad[Type] = tpe0 match {
       case NamedAst.Type.Unit(loc) => liftM(Type.Unit)
       case NamedAst.Type.Ref(qname, loc) if qname.isUnqualified => qname.ident.name match {
+        // Basic Types
         case "Unit" => liftM(Type.Unit)
         case "Bool" => liftM(Type.Bool)
         case "Char" => liftM(Type.Char)
@@ -1112,6 +1114,15 @@ object Typer {
         case "BigInt" => liftM(Type.BigInt)
         case "Str" => liftM(Type.Str)
         case "Native" => liftM(Type.Native)
+
+        // Higher-Kinded Types.
+        case "Opt" => liftM(Type.FOpt)
+        case "List" => liftM(Type.FList)
+        case "Vec" => liftM(Type.FVec)
+        case "Set" => liftM(Type.FSet)
+        case "Map" => liftM(Type.FMap)
+
+        // Enum Types.
         case typeName =>
           // Lookup the enum in the current namespace.
           // If the namespace doesn't even exist, just use an empty map.
@@ -1145,7 +1156,11 @@ object Typer {
             case r => Type.mkArrow(ts, r)
           }
         }
-      case NamedAst.Type.Apply(base, tparams, loc) => ??? // TODO
+      case NamedAst.Type.Apply(base, tparams, loc) =>
+        for (
+          baseType <- resolve(base, ns0, program);
+          argTypes <- sequenceM(tparams.map(tpe => resolve(tpe, ns0, program)))
+        ) yield Type.Apply(baseType, argTypes)
     }
 
   }

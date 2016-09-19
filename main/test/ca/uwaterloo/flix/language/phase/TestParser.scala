@@ -950,74 +950,56 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   test("Expression.Set.01") {
-    intercept[NotImplementedError] {
-      val input = "def f: Set[Int] = #{}"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Set[Int] = #{}"
+    new Flix().addStr(input).solve().get
   }
 
   test("Expression.Set.02") {
-    intercept[NotImplementedError] {
-      val input = "def f: Set[Int] = #{1}"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Set[Int] = #{1}"
+    new Flix().addStr(input).solve().get
   }
 
   test("Expression.Set.03") {
-    intercept[NotImplementedError] {
-      val input = "def f: Set[Int] = #{1, 2}"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Set[Int] = #{1, 2}"
+    new Flix().addStr(input).solve().get
   }
 
   test("Expression.Set.04") {
-    intercept[NotImplementedError] {
-      val input = "def f: Set[Int] = #{1, 2, 3}"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Set[Int] = #{1, 2, 3}"
+    new Flix().addStr(input).solve().get
   }
 
   test("Expression.Set.05") {
-    intercept[NotImplementedError] {
-      val input = "def f: Set[(Int, Int)] = #{(1, 2)}"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Set[(Int, Int)] = #{(1, 2)}"
+    new Flix().addStr(input).solve().get
   }
 
   test("Expression.Set.06") {
-    intercept[NotImplementedError] {
-      val input = "def f: Set[(Int, Int)] = #{(1, 2), (3, 4)}"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Set[(Int, Int)] = #{(1, 2), (3, 4)}"
+    new Flix().addStr(input).solve().get
   }
 
   test("Expression.Set.07") {
-    intercept[NotImplementedError] {
-      val input = "def f: Set[Int] = #{1 + 2, 3 + 4, 5 + 6}"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Set[Int] = #{1 + 2, 3 + 4, 5 + 6}"
+    new Flix().addStr(input).solve().get
   }
 
   test("Expression.SetSet.01") {
-    intercept[NotImplementedError] {
-      val input = "def f: Set[Set[Int]] = #{}"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Set[Set[Int]] = #{}"
+    new Flix().addStr(input).solve().get
   }
 
   test("Expression.SetSet.02") {
-    intercept[NotImplementedError] {
-      val input = "def f: Set[Set[Int]] = #{#{}}"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Set[Set[Int]] = #{#{}}"
+    new Flix().addStr(input).solve().get
   }
 
   test("Expression.SetSet.03") {
-    intercept[NotImplementedError] {
-      val input = "def f: Set[Set[Int]] = #{#{1, 2}, #{3, 4}, #{5, 6}}"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Set[Set[Int]] = #{#{1, 2}, #{3, 4}, #{5, 6}}"
+    new Flix().addStr(input).solve().get
   }
+
+  // TODO: Use solve instead of compile.
 
   test("Expression.Map.01") {
     val input = "def f: Map[Char, Int] = @{}"
