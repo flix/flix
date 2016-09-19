@@ -108,15 +108,15 @@ object Codegen {
         case Type.Str => asm.Type.getDescriptor(Constants.stringClass)
         case Type.Native => asm.Type.getDescriptor(Constants.objectClass)
         case Type.Enum(_, _) => asm.Type.getDescriptor(Constants.tagClass)
+        case Type.Apply(Type.Arrow(l), _) => s"L${decorate(interfaces(tpe))};"
         case Type.Apply(Type.FTuple(l), _) => asm.Type.getDescriptor(Constants.tupleClass)
-        case Type.Lambda(_, _) => s"L${decorate(interfaces(tpe))};"
         case Type.Apply(Type.FSet, _) => asm.Type.getDescriptor(Constants.setClass)
         case _ if tpe.isTuple => asm.Type.getDescriptor(Constants.tupleClass)
         case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
 
       tpe match {
-        case Type.Lambda(args, retTpe) => s"(${args.map(inner).mkString})${inner(retTpe)}"
+        case Type.Apply(Type.Arrow(l), ts) => s"(${ts.take(l - 1).map(inner).mkString})${inner(ts.last)}"
         case _ => inner(tpe)
       }
     }
@@ -221,8 +221,8 @@ object Codegen {
     compileExpression(ctx, mv, entryPoint)(function.exp)
 
     val tpe = function.tpe match {
-      case t: Type.Lambda => t.retTpe
-      case _ => throw new InternalCompilerException(s"Constant ${function.name} should have been converted to a function.")
+      case Type.Apply(Type.Arrow(l), ts) => ts.last
+      case _ => throw InternalCompilerException(s"Constant ${function.name} should have been converted to a function.")
     }
 
     tpe match {
@@ -230,7 +230,7 @@ object Codegen {
       case Type.Int64 => mv.visitInsn(LRETURN)
       case Type.Float32 => mv.visitInsn(FRETURN)
       case Type.Float64 => mv.visitInsn(DRETURN)
-      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Lambda(_, _) |
+      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) |
            Type.Apply(Type.FSet, _) => mv.visitInsn(ARETURN)
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
@@ -282,7 +282,7 @@ object Codegen {
       case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
       case Type.Float32 => visitor.visitVarInsn(FLOAD, offset)
       case Type.Float64 => visitor.visitVarInsn(DLOAD, offset)
-      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Lambda(_, _) |
+      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.Arrow(_), _) |
            Type.Apply(Type.FSet, _) => visitor.visitVarInsn(ALOAD, offset)
       case _ if tpe.isTuple =>  visitor.visitVarInsn(ALOAD, offset)
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
@@ -315,7 +315,7 @@ object Codegen {
 
       // The type descriptor of the CallSite. Its arguments are the types of capture variables, and its return
       // type is the interface the lambda object implements (i.e. the type of the closure).
-      val csTpe = Type.Lambda(freeVars.toList.map(_.tpe), tpe)
+      val csTpe = Type.mkArrow(freeVars.toList.map(_.tpe), tpe)
       val invokedType = ctx.descriptor(csTpe)
 
       // The handle for the bootstrap method we pass to InvokeDynamic, which is
@@ -370,7 +370,7 @@ object Codegen {
           case Type.Int64 => globalOffset += 2
           case Type.Float32 => globalOffset += 1
           case Type.Float64 => globalOffset += 2
-          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Lambda(_, _) => globalOffset += 1
+          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) => globalOffset += 1
           case tpe => throw InternalCompilerException(s"Unexpected type '$tpe'.")
         }
       }
@@ -393,7 +393,7 @@ object Codegen {
           case Type.Float64 =>
             offset -= 2
             visitor.visitVarInsn(DSTORE, offset)
-          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Lambda(_, _) =>
+          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) =>
             offset -= 1
             visitor.visitVarInsn(ASTORE, offset)
           case _ => throw InternalCompilerException(s"Not yet implemented.") // TODO
@@ -489,7 +489,7 @@ object Codegen {
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
         case Type.Float32 => visitor.visitVarInsn(FSTORE, offset)
         case Type.Float64 => visitor.visitVarInsn(DSTORE, offset)
-        case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Lambda(_, _) => visitor.visitVarInsn(ASTORE, offset)
+        case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) => visitor.visitVarInsn(ASTORE, offset)
         case Type.Apply(_, _) => visitor.visitVarInsn(ASTORE, offset)
         case tpe => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
@@ -678,7 +678,7 @@ object Codegen {
       compileExpression(ctx, visitor, entryPoint)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkInt64", "(J)Ljava/lang/Object;", false)
 
-    case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Lambda(_, _) |
+    case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) |
          Type.Apply(Type.FSet, _) => compileExpression(ctx, visitor, entryPoint)(exp)
 
     case tpe => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
@@ -711,12 +711,12 @@ object Codegen {
       visitor.visitTypeInsn(CHECKCAST, name)
       visitor.visitMethodInsn(INVOKEVIRTUAL, name, methodName, desc, false)
 
-    case Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Lambda(_, _) | Type.Apply(Type.FSet, _) =>
+    case Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Apply(Type.Arrow(_), _) | Type.Apply(Type.FSet, _) =>
       val name = tpe match {
         case Type.BigInt => asm.Type.getInternalName(Constants.bigIntegerClass)
         case Type.Str => asm.Type.getInternalName(Constants.stringClass)
         case Type.Enum(_, _) => asm.Type.getInternalName(Constants.tagClass)
-        case Type.Lambda(_, _) =>
+        case Type.Apply(Type.Arrow(l), _) =>
           // TODO: Is this correct? Need to write a test when we can write lambda expressions.
           decorate(ctx.interfaces(tpe))
         case Type.Apply(Type.FSet, _) => asm.Type.getInternalName(Constants.setClass)

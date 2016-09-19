@@ -310,7 +310,7 @@ object SimplifiedAst {
       */
     case class Lambda(args: List[SimplifiedAst.FormalArg],
                       body: SimplifiedAst.Expression,
-                      tpe: Type.Lambda,
+                      tpe: Type,
                       loc: SourceLocation) extends SimplifiedAst.Expression {
       override def toString: String = "λ(" + args.map(_.tpe).mkString(", ") + ") " + body
     }
@@ -337,7 +337,7 @@ object SimplifiedAst {
       */
     case class MkClosure(lambda: SimplifiedAst.Expression.Lambda,
                          freeVars: List[FreeVar],
-                         tpe: Type.Lambda,
+                         tpe: Type,
                          loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
@@ -353,7 +353,7 @@ object SimplifiedAst {
       */
     case class MkClosureRef(ref: SimplifiedAst.Expression.Ref,
                             freeVars: List[FreeVar],
-                            tpe: Type.Lambda,
+                            tpe: Type,
                             loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**

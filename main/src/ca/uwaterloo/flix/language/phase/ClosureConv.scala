@@ -53,11 +53,15 @@ object ClosureConv {
       // If we encounter a Ref that has a lambda type (and is not being called in an Apply),
       // i.e. the Ref will evaluate to a lambda, we replace it with a MkClosureRef. Otherwise we leave it alone.
       e.tpe match {
-        case t: Type.Lambda => SimplifiedAst.Expression.MkClosureRef(e, List.empty, t, e.loc)
+        case t@Type.Apply(Type.Arrow(_), _) => SimplifiedAst.Expression.MkClosureRef(e, List.empty, t, e.loc)
         case _ => e
       }
 
     case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
+      // Retrieve the type of the function.
+      val Type.Apply(Type.Arrow(l), ts) = tpe
+      val (targs, tresult) = (ts.take(l - 1), ts.last)
+
       // Convert lambdas to closures. This is the main part of the `convert` function.
       // Closure conversion happens as follows:
 
@@ -70,8 +74,8 @@ object ClosureConv {
       val newArgs = freeVars.map { case (n, t) => SimplifiedAst.FormalArg(n, t) } ++ args
 
       // Update the lambda type.
-      val argTpes = freeVars.map(_._2) ++ tpe.args
-      val newTpe = Type.Lambda(argTpes, tpe.retTpe)
+      val argTpes = freeVars.map(_._2) ++ targs
+      val newTpe = Type.mkArrow(argTpes, tresult)
 
       // We rewrite the lambda with its new arguments list and new body, with any nested lambdas also converted.
       val lambda = SimplifiedAst.Expression.Lambda(newArgs, convert(body), newTpe, loc)
@@ -89,10 +93,14 @@ object ClosureConv {
       SimplifiedAst.Expression.MkClosure(lambda, freeVars.map(v => SimplifiedAst.FreeVar(v._1, -1, v._2)), tpe, loc)
 
     case SimplifiedAst.Expression.Hook(hook, tpe, loc) =>
+      // Retrieve the type of the function.
+      val Type.Apply(Type.Arrow(l), ts) = tpe
+      val (targs, tresult) = (ts.take(l - 1), ts.last)
+
       // Wrap the hook inside a lambda, so we can create a closure.
-      val args = hook.tpe.args.map { t => SimplifiedAst.FormalArg(genSym.fresh2("arg"), t) }
+      val args = targs.map { t => SimplifiedAst.FormalArg(genSym.fresh2("arg"), t) }
       val hookArgs = args.map { f => SimplifiedAst.Expression.Var(f.ident, -1, f.tpe, loc) }
-      val body = SimplifiedAst.Expression.ApplyHook(hook, hookArgs, hook.tpe.retTpe, loc)
+      val body = SimplifiedAst.Expression.ApplyHook(hook, hookArgs, tresult, loc)
       val lambda = SimplifiedAst.Expression.Lambda(args, body, hook.tpe, loc)
 
       // Closure convert the lambda.

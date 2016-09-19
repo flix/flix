@@ -86,8 +86,8 @@ object LoadBytecode {
     // 1. Group constants and transform non-functions.
     val constantsMap: Map[List[String], List[Definition.Constant]] = root.constants.values.map { f =>
       f.tpe match {
-        case _: Type.Lambda => f
-        case t => f.copy(tpe = Type.Lambda(List(), t))
+        case Type.Apply(Type.Arrow(l), _) => f
+        case t => f.copy(tpe = Type.mkArrow(List(), t))
       }
     }.toList.groupBy(_.name.prefix)
     val constantsList: List[Definition.Constant] = constantsMap.values.flatten.toList
@@ -120,8 +120,11 @@ object LoadBytecode {
 
     // 5. Load the methods.
     for ((prefix, consts) <- constantsMap; const <- consts) {
+      val Type.Apply(Type.Arrow(l), ts) = const.tpe
+      val targs = ts.take(l - 1)
+
       val clazz = loadedClasses(prefix)
-      val argTpes = const.tpe.asInstanceOf[Type.Lambda].args.map(t => toJavaClass(t, loadedInterfaces))
+      val argTpes = targs.map(t => toJavaClass(t, loadedInterfaces))
       // Note: Update the original constant in root.constants, not the temporary one in constantsMap!
       root.constants(const.name).method = clazz.getMethod(const.name.suffix, argTpes: _*)
     }
@@ -153,7 +156,7 @@ object LoadBytecode {
     case Type.Native => classOf[java.lang.Object]
     case Type.Enum(_, _) => classOf[Value.Tag]
     case Type.Apply(Type.FTuple(l), _) => classOf[Value.Tuple]
-    case Type.Lambda(_, _) => interfaces(tpe)
+    case Type.Apply(Type.Arrow(l), _) => interfaces(tpe)
     case Type.FSet => classOf[scala.collection.immutable.Set[AnyRef]]
     case _ if tpe.isTuple => classOf[Value.Tuple]
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")

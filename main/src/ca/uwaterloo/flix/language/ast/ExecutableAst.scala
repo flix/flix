@@ -349,7 +349,7 @@ object ExecutableAst {
       */
     case class MkClosureRef(ref: ExecutableAst.Expression.Ref,
                             freeVars: Array[FreeVar],
-                            tpe: Type.Lambda,
+                            tpe: Type,
                             loc: SourceLocation) extends ExecutableAst.Expression
 
     /**

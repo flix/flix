@@ -173,7 +173,7 @@ object Simplifier {
                   next: Name.Ident): SExp = ((names, cases): @unchecked) match {
           case (Nil, Nil) =>
             // Base case: simply call the function representing the first case, to start the pattern match.
-            SExp.Apply(SExp.Var(vars.head, -1, Type.Lambda(List(), tpe), loc), List(), tpe, loc)
+            SExp.Apply(SExp.Var(vars.head, -1, Type.mkArrow(List(), tpe), loc), List(), tpe, loc)
           case (n :: ns, (pat, body) :: cs) =>
             // Construct the lambda that represents the current case:
             //   fn() = if `matchVar` matches `pat`, return `body`, else call `next()`
@@ -183,9 +183,9 @@ object Simplifier {
                 xs = List(pat),
                 ys = List(matchVar),
                 succ = simplify(body),
-                fail = SExp.Apply(SExp.Var(next, -1, Type.Lambda(List(), tpe), loc), List(), tpe, loc)
+                fail = SExp.Apply(SExp.Var(next, -1, Type.mkArrow(List(), tpe), loc), List(), tpe, loc)
               ),
-              Type.Lambda(List(), tpe), loc)
+              Type.mkArrow(List(), tpe), loc)
 
             // Construct the let-expression, binding the lambda to the current case's `name`.
             // Recursively construct the body of the let-expression, on the remaining names and cases.
@@ -199,7 +199,7 @@ object Simplifier {
           * Fourth, we generate the match error and bind it to the `fallthrough` name. Note that the match error must
           * be wrapped in a function call, to defer its evaluation.
           */
-        val error = SExp.Lambda(List(), SExp.MatchError(tpe, loc), Type.Lambda(List(), tpe), loc)
+        val error = SExp.Lambda(List(), SExp.MatchError(tpe, loc), Type.mkArrow(List(), tpe), loc)
         val inner = SExp.Let(fallthrough, -1, error, patterns, tpe, loc)
 
         /**

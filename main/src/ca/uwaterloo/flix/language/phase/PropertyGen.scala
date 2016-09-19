@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.Ast.Annotation
 import ca.uwaterloo.flix.language.ast.Type
-import ca.uwaterloo.flix.language.ast.Type.Lambda
 import ca.uwaterloo.flix.language.ast.TypedAst.Definition.BoundedLattice
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression._
@@ -242,11 +241,11 @@ object PropertyGen {
     */
   def mkStrict1(f: TypedAst.Definition.Constant, root: TypedAst.Root): TypedAst.Property = {
     val exp = {
-      val lambda = f.tpe.asInstanceOf[Lambda]
-      val (tpe :: Nil) = lambda.args
-      val retTpe = lambda.retTpe
-      val argLat = root.lattices(tpe)
-      val retLat = root.lattices(retTpe)
+      val Type.Apply(Type.Arrow(l), ts) = f.tpe
+      val (targs, tresult) = (ts.take(l - 1), ts.last)
+
+      val argLat = root.lattices(targs.head)
+      val retLat = root.lattices(tresult)
       ∀()(≡(f(argLat.bot), retLat.bot))
     }
 
@@ -258,10 +257,11 @@ object PropertyGen {
     */
   def mkStrict2(f: TypedAst.Definition.Constant, root: TypedAst.Root): TypedAst.Property = {
     val exp = {
-      val (tpe1 :: tpe2 :: Nil) = f.tpe.asInstanceOf[Type.Lambda].args
-      val retTpe = f.tpe.asInstanceOf[Type.Lambda].retTpe
-      val (arg1Lat, arg2Lat) = (root.lattices(tpe1), root.lattices(tpe2))
-      val retLat = root.lattices(retTpe)
+      val Type.Apply(Type.Arrow(l), ts) = f.tpe
+      val (targs, tresult) = (ts.take(l - 1), ts.last)
+
+      val (arg1Lat, arg2Lat) = (root.lattices(targs(0)), root.lattices(targs(1)))
+      val retLat = root.lattices(tresult)
 
       ∀()(≡(f(arg1Lat.bot, arg2Lat.bot), retLat.bot))
     }
@@ -274,8 +274,11 @@ object PropertyGen {
     */
   def mkMonotone1(f: TypedAst.Definition.Constant, root: TypedAst.Root): TypedAst.Property = {
     val exp = {
+      val Type.Apply(Type.Arrow(l), ts) = f.tpe
+      val (targs, tresult) = (ts.take(l - 1), ts.last)
+
       val lat1 = latticeOps(root.lattices(f.formals.head.tpe))
-      val lat2 = latticeOps(root.lattices(f.tpe.asInstanceOf[Type.Lambda].retTpe))
+      val lat2 = latticeOps(root.lattices(tresult))
 
       val (x, y) = (lat1.mkVar("x"), lat1.mkVar("y"))
 
@@ -290,9 +293,11 @@ object PropertyGen {
     */
   def mkMonotone2(f: TypedAst.Definition.Constant, root: TypedAst.Root): TypedAst.Property = {
     val exp = {
-      val (tpe1 :: tpe2 :: Nil) = f.formals.map(_.tpe)
-      val (lat1, lat2) = (latticeOps(root.lattices(tpe1)), latticeOps(root.lattices(tpe2)))
-      val lat3 = latticeOps(root.lattices(f.tpe.asInstanceOf[Type.Lambda].retTpe))
+      val Type.Apply(Type.Arrow(l), ts) = f.tpe
+      val (targs, tresult) = (ts.take(l - 1), ts.last)
+
+      val (lat1, lat2) = (latticeOps(root.lattices(targs(0))), latticeOps(root.lattices(targs(1))))
+      val lat3 = latticeOps(root.lattices(tresult))
 
       val (x1, y1, x2, y2) = (lat1.mkVar("x1"), lat1.mkVar("y1"), lat2.mkVar("x2"), lat2.mkVar("y2"))
 
@@ -462,15 +467,19 @@ object PropertyGen {
 
   implicit class RichLambda(val defn: TypedAst.Definition.Constant) {
     def apply(e1: Expression): Expression = {
-      val t = defn.tpe.asInstanceOf[Type.Lambda]
-      val r = Expression.Ref(defn.name, t, SourceLocation.Unknown)
-      Expression.Apply(r, List(e1), t.retTpe, SourceLocation.Unknown)
+      val Type.Apply(Type.Arrow(l), ts) = defn.tpe
+      val (targs, tresult) = (ts.take(l - 1), ts.last)
+
+      val r = Expression.Ref(defn.name, defn.tpe, SourceLocation.Unknown)
+      Expression.Apply(r, List(e1), tresult, SourceLocation.Unknown)
     }
 
     def apply(e1: Expression, e2: Expression): Expression = {
-      val t = defn.tpe.asInstanceOf[Type.Lambda]
-      val r = Expression.Ref(defn.name, t, SourceLocation.Unknown)
-      Expression.Apply(r, List(e1, e2), t.retTpe, SourceLocation.Unknown)
+      val Type.Apply(Type.Arrow(l), ts) = defn.tpe
+      val (targs, tresult) = (ts.take(l - 1), ts.last)
+
+      val r = Expression.Ref(defn.name, defn.tpe, SourceLocation.Unknown)
+      Expression.Apply(r, List(e1, e2), tresult, SourceLocation.Unknown)
     }
   }
 

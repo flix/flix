@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.api
 import java.nio.file.{Files, Path, Paths}
 
 import ca.uwaterloo.flix.language.ast.Ast.Hook
-import ca.uwaterloo.flix.language.ast.Type.Lambda
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
@@ -116,8 +115,7 @@ class Flix {
       throw new IllegalArgumentException("'tpe' must be a function type.")
 
     val qname = Name.mkQName(name)
-    val typ = tpe.asInstanceOf[WrappedType].tpe.asInstanceOf[Lambda]
-    val hook = Ast.Hook.Safe(qname.toResolved, inv, typ)
+    val hook = Ast.Hook.Safe(qname.toResolved, inv, tpe.asInstanceOf[WrappedType].tpe)
     val entries = hooks.getOrElse(qname.namespace, Map.empty)
     hooks += (qname.namespace -> (entries + (qname.ident.name -> hook)))
 
@@ -142,8 +140,7 @@ class Flix {
       throw new IllegalArgumentException("'tpe' must be a function type.")
 
     val qname = Name.mkQName(name)
-    val typ = tpe.asInstanceOf[WrappedType].tpe.asInstanceOf[Lambda]
-    val hook = Ast.Hook.Unsafe(qname.toResolved, inv, typ)
+    val hook = Ast.Hook.Unsafe(qname.toResolved, inv, tpe.asInstanceOf[WrappedType].tpe)
     val entries = hooks.getOrElse(qname.namespace, Map.empty)
     hooks += (qname.namespace -> (entries + (qname.ident.name -> hook)))
 
@@ -418,7 +415,7 @@ class Flix {
 
     val args = arguments.toList.map(_.asInstanceOf[WrappedType].tpe)
     val retTpe = returnType.asInstanceOf[WrappedType].tpe
-    new WrappedType(Type.Lambda(args, retTpe))
+    new WrappedType(Type.mkArrow(args, retTpe))
   }
 
   /////////////////////////////////////////////////////////////////////////////

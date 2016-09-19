@@ -58,10 +58,6 @@ sealed trait Type {
       case (tagName, tpe) => tpe.typeVars
     }.toSet
     case Type.Apply(t, ts) => t.typeVars ++ ts.flatMap(_.typeVars)
-
-    case Type.Lambda(args, retTpe) => args.flatMap(_.typeVars).toSet ++ retTpe.typeVars
-
-    case _ => throw InternalCompilerException(s"Unexpected type: `${this}'.")
   }
 
   /**
@@ -90,16 +86,15 @@ sealed trait Type {
     case Type.BigInt => "BigInt"
     case Type.Str => "Str"
     case Type.Native => "Native"
-
-    case Type.Apply(Type.FOpt, List(t)) => "Opt[" + t.toString + "]"
-    case Type.Apply(Type.FList, List(t)) => "List[" + t.toString + "]"
-    case Type.Apply(Type.FVec, List(t)) => "Vec[" + t.toString + "]"
-    case Type.Apply(Type.FSet, List(t)) => "Set[" + t.toString + "]"
-    case Type.Apply(t, ts) => s"Apply($t, $ts)"
-
+    case Type.Arrow(l) => "Arrow"
+    case Type.FTuple(l) => "Tuple"
+    case Type.FOpt => "Opt"
+    case Type.FList => "List"
+    case Type.FVec => "Vec"
+    case Type.FSet => "Set"
+    case Type.FMap => "Map"
+    case Type.Apply(t, ts) => s"$t[${ts.mkString(", ")}]"
     case Type.Enum(enum, cases) => enum.fqn
-
-    case _ => super.toString
   }
 }
 
@@ -290,7 +285,7 @@ object Type {
   /**
     * Constructs the function type [A] -> B where `A` is the given sequence of types `as` and `B` is the given type `b`.
     */
-  def mkArrow(as: List[Type], b: Type): Type = Apply(Arrow(as.length), as)
+  def mkArrow(as: List[Type], b: Type): Type = Apply(Arrow(as.length + 1), as ::: b :: Nil)
 
   /**
     * Constructs the type Opt[A] where `A` is the given type `tpe`.
@@ -321,16 +316,5 @@ object Type {
     * Constructs the type Map[K, V] where `K` is the given type `k` and `V` is the given type `v`.
     */
   def mkFMap(k: Type, v: Type): Type = Apply(FMap, List(k, v))
-
-
-  //
-  // TODO: --- Everything below here may be removed ---
-  //
-
-  // TODO: To be removed.
-  case class Lambda(args: List[Type], retTpe: Type) extends Type {
-    def kind: Kind = Kind.Star
-  }
-
 
 }

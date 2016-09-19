@@ -191,9 +191,9 @@ object Typer {
 
       val result = for (
         declaredType <- Types.resolve(defn0.tpe, ns0, program);
-        formalTypes <- getSubstFromFormalParams(defn0.params, ns0, program);
-        inferredType <- Expressions.infer(defn0.exp, ns0, program);
-        unifiedType <- unifyM(declaredType, Type.Lambda(formalTypes, inferredType))
+        argumentTypes <- getSubstFromFormalParams(defn0.params, ns0, program);
+        resultType <- Expressions.infer(defn0.exp, ns0, program);
+        unifiedType <- unifyM(declaredType, Type.mkArrow(argumentTypes, resultType))
       ) yield unifiedType
 
       // TODO: See if this can be rewritten nicer
@@ -282,7 +282,7 @@ object Typer {
           for (
             lambdaType <- visitExp(lambda);
             actualTypes <- visitExps2(actuals);
-            arrowType <- unifyM(lambdaType, Type.Lambda(actualTypes, tvar))
+            arrowType <- unifyM(lambdaType, Type.mkArrow(actualTypes, tvar))
           ) yield tvar
 
         /*
@@ -974,7 +974,8 @@ object Typer {
               unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes)
             ) yield unifiedTypes
           case Ok(Target.Hook(hook)) =>
-            val declaredTypes = hook.tpe.args
+            val Type.Apply(Type.Arrow(l), ts) = hook.tpe
+            val declaredTypes = ts.take(l - 1)
             for (
               actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns0, program)));
               unifiedTypes <- Unification.unifyM(declaredTypes, actualTypes)
@@ -1141,7 +1142,7 @@ object Typer {
       case NamedAst.Type.Arrow(tparams, retType, loc) =>
         sequenceM(tparams.map(tpe => resolve(tpe, ns0, program))) flatMap {
           case ts => resolve(retType, ns0, program) map {
-            case r => Type.Lambda(ts, r)
+            case r => Type.mkArrow(ts, r)
           }
         }
       case NamedAst.Type.Apply(base, tparams, loc) => ??? // TODO

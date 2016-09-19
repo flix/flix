@@ -179,7 +179,7 @@ class TestTyper extends FunSuite with TestUtils {
       body = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit(SL), SL)
       , SL)
 
-    val expectedType = Type.Lambda(List(Type.Int32), Type.Unit)
+    //val expectedType = Type.Lambda(List(Type.Int32), Type.Unit)
     //val actualType = Typer.Expression.typer(rast, Root).get.tpe
     //assertResult(expectedType)(actualType)
     ???
@@ -202,13 +202,13 @@ class TestTyper extends FunSuite with TestUtils {
       body = ResolvedAst.Expression.Var(w, SL)
       , SL)
 
-    val expectedType = Type.Lambda(
-      args = List(
-        Type.Unit,
-        Type.Bool,
-        Type.Int32,
-        Type.Str
-      ), retTpe = Type.Str)
+//    val expectedType = Type.Lambda(
+//      args = List(
+//        Type.Unit,
+//        Type.Bool,
+//        Type.Int32,
+//        Type.Str
+//      ), retTpe = Type.Str)
     //val actualType = Typer.Expression.typer(rast, Root).get.tpe
     //assertResult(expectedType)(actualType)
     ???

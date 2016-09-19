@@ -184,7 +184,7 @@ object TypedAst {
 
     case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Lambda(args: List[TypedAst.FormalArg], body: TypedAst.Expression, tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Expression
+    case class Lambda(args: List[TypedAst.FormalArg], body: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Apply(exp: TypedAst.Expression, args: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 

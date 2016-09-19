@@ -59,7 +59,7 @@ final class WrappedType(val tpe: Type) extends IType {
   }
 
   def isFunction: Boolean = tpe match {
-    case Type.Lambda(args, retTpe) => true
+    case Type.Apply(Type.Arrow(l), _) => true
     case _ => false
   }
 

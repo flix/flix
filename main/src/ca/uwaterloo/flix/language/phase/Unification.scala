@@ -40,12 +40,12 @@ object Unification {
   case class Substitution(m: Map[Type.Var, Type]) {
 
     // TODO: Remove in the future.
-    val invariant = (m.forall {
+    val invariant = m.forall {
       case (tvar, tpe) => m.get(tvar) match {
         case Some(t: Type.Var) => !m.contains(t)
         case _ => true
       }
-    })
+    }
 
     if (!invariant)
       throw new RuntimeException
@@ -83,7 +83,6 @@ object Unification {
         case (macc, (tag, t)) => macc + (tag -> apply(t))
       })
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
-      case Type.Lambda(args, retTpe) => Type.Lambda(args map apply, apply(retTpe))
     }
 
     /**
@@ -142,18 +141,9 @@ object Unification {
       val ts2 = cases2.values.toList
       unify(ts1, ts2)
 
-    case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
-      unify(t11, t21) match {
-        case Result.Ok(subst1) => unify(subst1(t12), subst1(t22)) match {
-          case Result.Ok(subst2) => Result.Ok(subst2 @@ subst1)
-          case Result.Err(e) => Result.Err(e)
-        }
-        case Result.Err(e) => Result.Err(e)
-      }
-
-    case (Type.Lambda(arguments1, returnType1), Type.Lambda(arguments2, returnType2)) =>
-      unify(arguments1, arguments2) match {
-        case Result.Ok(subst1) => unify(subst1(returnType1), subst1(returnType2)) match {
+    case (Type.Apply(t1, ts1), Type.Apply(t2, ts2)) =>
+      unify(t1, t2) match {
+        case Result.Ok(subst1) => unify(subst1(ts1), subst1(ts2)) match {
           case Result.Ok(subst2) => Result.Ok(subst2 @@ subst1)
           case Result.Err(e) => Result.Err(e)
         }
