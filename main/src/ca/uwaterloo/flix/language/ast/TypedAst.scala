@@ -321,7 +321,7 @@ object TypedAst {
 
       case class Tag(enumName: Symbol.Resolved, tagName: Name.Ident, t: TypedAst.Term.Head, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
 
-      case class Tuple(elms: List[TypedAst.Term.Head], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Term.Head
+      case class Tuple(elms: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
 
       case class Apply(name: Symbol.Resolved, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
 

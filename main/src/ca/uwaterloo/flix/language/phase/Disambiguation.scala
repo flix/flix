@@ -44,7 +44,7 @@ object Disambiguation {
   /**
     * Finds the definition with the qualified name `qname` in the namespace `ns0`.
     */
-  // TODO: Better to use Result[]
+  // TODO: Return Result[Lookup]
   def lookupRef(qname: Name.QName, ns0: Name.NName, program: Program): InferMonad[LookupResult] = {
     // check whether the reference is fully-qualified.
     if (qname.isUnqualified) {

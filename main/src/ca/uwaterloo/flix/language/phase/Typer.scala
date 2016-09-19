@@ -954,21 +954,32 @@ object Typer {
     /**
       * Infers the type of the given body predicate.
       */
-    def infer(body: NamedAst.Predicate.Body, ns: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = body match {
+    def infer(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = body0 match {
       case NamedAst.Predicate.Body.Table(qname, terms, loc) =>
-        val declaredTypes = lookupTable(qname, ns, program) match {
+        val declaredTypes = lookupTable(qname, ns0, program) match {
           case NamedAst.Table.Relation(sym, attr, _) => attr.map(_.tpe)
           case NamedAst.Table.Lattice(sym, keys, value, _) => keys.map(_.tpe) ::: value.tpe :: Nil
         }
         for (
-          expectedTypes <- sequenceM(declaredTypes.map(tpe => Types.resolve(tpe, ns, program)));
-          actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns, program)));
+          expectedTypes <- sequenceM(declaredTypes.map(tpe => Types.resolve(tpe, ns0, program)));
+          actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns0, program)));
           unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes)
         ) yield unifiedTypes
-
       case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
-        ???
-
+        Disambiguation.lookupRef(qname, ns0, program) flatMap {
+          case LookupResult.Defn(_, defn) =>
+            for (
+              expectedTypes <- sequenceM(defn.params.map(a => Types.resolve(a.tpe, ns0, program)));
+              actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns0, program)));
+              unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes)
+            ) yield unifiedTypes
+          case LookupResult.Hook(hook) =>
+            val declaredTypes = hook.tpe.args
+            for (
+              actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns0, program)));
+              unifiedTypes <- Unification.unifyM(declaredTypes, actualTypes)
+            ) yield unifiedTypes
+        }
       case NamedAst.Predicate.Body.NotEqual(ident1, ident2, loc) => Unification.liftM(Nil) // TODO
       case NamedAst.Predicate.Body.Loop(ident, term, loc) => Unification.liftM(Nil) // TODO
     }
@@ -1040,8 +1051,13 @@ object Typer {
       case TypedAst.Expression.Str(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Str(lit, loc), Type.Str, loc)
       case TypedAst.Expression.Lit(lit, tpe, loc) => TypedAst.Term.Head.Lit(lit, tpe, loc)
       case TypedAst.Expression.Tag(enumName, tagName, exp, tpe, loc) => TypedAst.Term.Head.Tag(enumName, tagName, exp2headterm(exp), tpe, loc)
-      case TypedAst.Expression.Apply(TypedAst.Expression.Ref(name, _, _), args, tpe, loc) =>
-        TypedAst.Term.Head.Apply(name, args.map(exp2headterm), tpe, loc)
+      case TypedAst.Expression.Tuple(elms, tpe, loc) => TypedAst.Term.Head.Tuple(elms map exp2headterm, tpe, loc)
+      case TypedAst.Expression.Apply(base, args, tpe, loc) => base match {
+        case TypedAst.Expression.Ref(name, _, _) => TypedAst.Term.Head.Apply(name, args.map(exp2headterm), tpe, loc)
+        case TypedAst.Expression.Hook(hook, _, _) => TypedAst.Term.Head.ApplyHook(hook, args.map(exp2headterm), tpe, loc)
+        case _ => ???
+      }
+
       case _ => throw new UnsupportedOperationException(s"Not implemented for $exp0")
     }
 
@@ -1088,6 +1104,7 @@ object Typer {
         case "Int64" => liftM(Type.Int64)
         case "BigInt" => liftM(Type.BigInt)
         case "Str" => liftM(Type.Str)
+        case "Native" => liftM(Type.Native)
         case typeName =>
           // Lookup the enum in the current namespace.
           // If the namespace doesn't even exist, just use an empty map.

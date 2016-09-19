@@ -458,10 +458,6 @@ object SimplifiedAst {
                           exp3: SimplifiedAst.Expression,
                           tpe: Type,
                           loc: SourceLocation) extends SimplifiedAst.Expression {
-      // TODO: Built infrastructure for this.
-      // type invariants.
-      assert(exp1.tpe == Type.Bool, s"Expected Type.Bool but got '${exp1.tpe}'.")
-      assert(exp2.tpe == exp3.tpe, s"Expected equal types, but got '${exp1.tpe}' and '${exp2.tpe}'.")
 
       override def toString: String = "IfThenElse(" + exp1 + ", " + exp2 + ", " + exp3 + ")"
     }
