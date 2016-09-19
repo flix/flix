@@ -1260,7 +1260,7 @@ class TestTyper extends FunSuite with TestUtils {
   }
 
   test("Unify.Arrow") {
-    val result = Unification.unify(Type.Arrow, Type.Arrow)
+    val result = Unification.unify(Type.Arrow(3), Type.Arrow(3))
     assert(result.isOk)
   }
 

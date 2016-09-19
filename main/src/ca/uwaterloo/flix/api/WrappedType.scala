@@ -99,27 +99,27 @@ final class WrappedType(val tpe: Type) extends IType {
   }
 
   def getOptParam: IType = tpe match {
-    case Type.Apply(Type.FOpt, elm) => new WrappedType(elm)
+    case Type.Apply(Type.FOpt, List(elm)) => new WrappedType(elm)
     case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 
   def getListParam: IType = tpe match {
-    case Type.Apply(Type.FList, elm) => new WrappedType(elm)
+    case Type.Apply(Type.FList, List(elm)) => new WrappedType(elm)
     case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 
   def getSetParam: IType = tpe match {
-    case Type.Apply(Type.FSet, elm) => new WrappedType(elm)
+    case Type.Apply(Type.FSet, List(elm)) => new WrappedType(elm)
     case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 
   def getMapKeyParam: IType = tpe match {
-    case Type.Apply(Type.Apply(Type.FMap, k), v) => new WrappedType(k)
+    case Type.Apply(Type.FMap, List(k, v)) => new WrappedType(k)
     case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 
   def getMapValueParam: IType = tpe match {
-    case Type.Apply(Type.Apply(Type.FMap, k), v) => new WrappedType(v)
+    case Type.Apply(Type.FMap, List(k, v)) => new WrappedType(v)
     case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 

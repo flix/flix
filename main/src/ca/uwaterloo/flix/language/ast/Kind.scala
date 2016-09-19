@@ -23,10 +23,10 @@ trait Kind {
 
   override def toString: String = this match {
     case Kind.Star => "*"
-    case Kind.Arrow(Kind.Star, Kind.Star) => "* -> *"
-    case Kind.Arrow(Kind.Star, k2) => "* -> (" + k2.toString + ")"
-    case Kind.Arrow(k1, Kind.Star) => "(" + k1.toString + ") -> *"
-    case Kind.Arrow(k1, k2) => "(" + k1.toString + ") -> (" + k2.toString + ")"
+    case Kind.Arrow(List(Kind.Star), Kind.Star) => "* -> *"
+    case Kind.Arrow(List(Kind.Star), kr) => s"* -> ($kr)"
+    case Kind.Arrow(kparams, Kind.Star) => s"(${kparams.mkString(", ")}) -> *"
+    case Kind.Arrow(kparams, kr) => s"(${kparams.mkString(", ")}) -> ($kr)"
   }
 
 }
@@ -39,9 +39,8 @@ object Kind {
   object Star extends Kind
 
   /**
-    * The kind of type expressions that take a kind `k1` to kind `k2`.
+    * The kind of type expressions that take a sequence of kinds `kparams` to a kind `kr`.
     */
-  // TODO: Generaliz to List of kinds to kind.
-  case class Arrow(k1: Kind, k2: Kind) extends Kind
+  case class Arrow(kparams: List[Kind], kr: Kind) extends Kind
 
 }

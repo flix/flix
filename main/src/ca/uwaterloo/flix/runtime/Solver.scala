@@ -391,7 +391,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   private def evalLoop(rule: Rule, ps: List[Predicate.Body.Loop], env: Env, interp: Interpretation): Unit = ps match {
     case Nil => evalFilter(rule, rule.filters, env, interp)
-    case Predicate.Body.Loop(name, term, _, _, _) :: rest =>
+    case Predicate.Body.Loop(name, term, _, _) :: rest =>
       val value = Value.cast2set(Interpreter.evalHeadTerm(term, root, env.toMap))
       for (x <- value) {
         val newRow = env.clone()
@@ -463,7 +463,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     case Nil =>
       // rule body complete, evaluate the head.
       evalHead(rule.head, env, interp)
-    case Predicate.Body.NotEqual(ident1, ident2, _, _, _) :: xs =>
+    case Predicate.Body.NotEqual(ident1, ident2, _, _) :: xs =>
       val value1 = env(ident1.name)
       val value2 = env(ident2.name)
       if (value1 != value2) {

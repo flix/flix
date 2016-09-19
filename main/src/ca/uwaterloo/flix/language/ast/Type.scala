@@ -47,7 +47,7 @@ sealed trait Type {
     case Type.BigInt => Set.empty
     case Type.Str => Set.empty
     case Type.Native => Set.empty
-    case Type.Arrow => Set.empty
+    case Type.Arrow(l) => Set.empty
     case Type.FTuple(l) => Set.empty
     case Type.FOpt => Set.empty
     case Type.FList => Set.empty
@@ -57,7 +57,7 @@ sealed trait Type {
     case Type.Enum(enumName, cases) => cases.flatMap {
       case (tagName, tpe) => tpe.typeVars
     }.toSet
-    case Type.Apply(t1, t2) => t1.typeVars ++ t2.typeVars
+    case Type.Apply(t, ts) => t.typeVars ++ ts.flatMap(_.typeVars)
 
     case Type.Tuple(elms) => elms.flatMap(_.typeVars).toSet
     case Type.Lambda(args, retTpe) => args.flatMap(_.typeVars).toSet ++ retTpe.typeVars
@@ -93,13 +93,11 @@ sealed trait Type {
     case Type.Str => "Str"
     case Type.Native => "Native"
 
-    case Type.Apply(Type.FOpt, t) => "Opt[" + t.toString + "]"
-    case Type.Apply(Type.FList, t) => "List[" + t.toString + "]"
-    case Type.Apply(Type.FVec, t) => "Vec[" + t.toString + "]"
-    case Type.Apply(Type.FSet, t) => "Set[" + t.toString + "]"
-    case Type.Apply(Type.Apply(Type.FMap, k), v) => "Map[" + k.toString + ", " + v.toString + "]"
-    case Type.Apply(Type.Apply(Type.Arrow, t2), t1) => t1.toString + " -> " + t2.toString
-    case Type.Apply(t1, t2) => s"Apply($t1, $t2)"
+    case Type.Apply(Type.FOpt, List(t)) => "Opt[" + t.toString + "]"
+    case Type.Apply(Type.FList, List(t)) => "List[" + t.toString + "]"
+    case Type.Apply(Type.FVec, List(t)) => "Vec[" + t.toString + "]"
+    case Type.Apply(Type.FSet, List(t)) => "Set[" + t.toString + "]"
+    case Type.Apply(t, ts) => s"Apply($t, $ts)"
 
     case Type.Enum(enum, cases) => enum.fqn
     case Type.Tuple(elms) => "(" + elms.mkString(". ") + ")"
@@ -206,52 +204,50 @@ object Type {
   /**
     * A type expression that represents functions.
     */
-  object Arrow extends Type {
-    def kind: Kind = Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+  case class Arrow(length: Int) extends Type {
+    def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
   }
 
   /**
     * A type constructor that represents tuples of the given `length`.
     */
   case class FTuple(length: Int) extends Type {
-    def kind: Kind = (0 until length).foldLeft(Kind.Star: Kind) {
-      case (kacc, _) => Kind.Arrow(Kind.Star, kacc)
-    }
+    def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
   }
 
   /**
     * A type constructor that represents options.
     */
   case object FOpt extends Type {
-    def kind: Kind = Kind.Arrow(Kind.Star, Kind.Star)
+    def kind: Kind = Kind.Arrow(List(Kind.Star), Kind.Star)
   }
 
   /**
     * A type constructor that represents list values.
     */
   case object FList extends Type {
-    def kind: Kind = Kind.Arrow(Kind.Star, Kind.Star)
+    def kind: Kind = Kind.Arrow(List(Kind.Star), Kind.Star)
   }
 
   /**
     * A type constructor that represents vector values
     */
   case object FVec extends Type {
-    def kind: Kind = Kind.Arrow(Kind.Star, Kind.Star)
+    def kind: Kind = Kind.Arrow(List(Kind.Star), Kind.Star)
   }
 
   /**
     * A type constructor that represents set values.
     */
   case object FSet extends Type {
-    def kind: Kind = Kind.Arrow(Kind.Star, Kind.Star)
+    def kind: Kind = Kind.Arrow(List(Kind.Star), Kind.Star)
   }
 
   /**
     * A type constructor that represents map values.
     */
   case object FMap extends Type {
-    def kind: Kind = Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+    def kind: Kind = Kind.Arrow(List(Kind.Star, Kind.Star), Kind.Star)
   }
 
   /**
@@ -266,16 +262,16 @@ object Type {
   }
 
   /**
-    * A type expression that represents the application of `t2` to `t1`.
+    * A type expression that represents the application of `ts` to `t`.
     */
-  case class Apply(t1: Type, t2: Type) extends Type {
+  case class Apply(t: Type, ts: List[Type]) extends Type {
     /**
       * Returns the kind of `this` type.
       *
       * The kind of a type application can unique be determined
-      * from the kind of the first type argument `t1`.
+      * from the kind of the first type argument `t`.
       */
-    def kind: Kind = t1.kind match {
+    def kind: Kind = t.kind match {
       case Kind.Star => throw InternalCompilerException("Illegal kind.")
       case Kind.Arrow(_, k) => k
     }
@@ -292,41 +288,43 @@ object Type {
   /**
     * Constructs the function type A -> B where `A` is the given type `a` and `B` is the given type `b`.
     */
-  def mkArrow(a: Type, b: Type): Type = Apply(Apply(Arrow, a), b)
+  def mkArrow(a: Type, b: Type): Type = Apply(Arrow(2), List(a, b))
+
+  /**
+    * Constructs the function type [A] -> B where `A` is the given sequence of types `as` and `B` is the given type `b`.
+    */
+  def mkArrow(as: List[Type], b: Type): Type = Apply(Arrow(as.length), as)
 
   /**
     * Constructs the type Opt[A] where `A` is the given type `tpe`.
     */
-  def mkFOpt(tpe: Type): Type = Apply(FOpt, tpe)
+  def mkFOpt(a: Type): Type = Apply(FOpt, List(a))
 
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
   // TODO: Tuple representation
   def mkFTuple(ts: List[Type]): Type = Type.Tuple(ts)
-  //ts.foldLeft(Type.FTuple(ts.length): Type) {
-  //  case (tacc, tpe) => Apply(tacc, tpe)
-  //}
 
   /**
     * Constructs the type List[A] where `A` is the given type `tpe`.
     */
-  def mkFList(tpe: Type): Type = Apply(FList, tpe)
+  def mkFList(a: Type): Type = Apply(FList, List(a))
 
   /**
     * Constructs the type Vec[A] where `A` is the given type `tpe`.
     */
-  def mkFVec(tpe: Type): Type = Apply(FVec, tpe)
+  def mkFVec(a: Type): Type = Apply(FVec, List(a))
 
   /**
     * Constructs the type Set[A] where `A` is the given type `tpe`.
     */
-  def mkFSet(tpe: Type): Type = Apply(FSet, tpe)
+  def mkFSet(a: Type): Type = Apply(FSet, List(a))
 
   /**
     * Constructs the type Map[K, V] where `K` is the given type `k` and `V` is the given type `v`.
     */
-  def mkFMap(k: Type, v: Type): Type = Apply(Apply(FMap, k), v)
+  def mkFMap(k: Type, v: Type): Type = Apply(FMap, List(k, v))
 
 
   //
