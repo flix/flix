@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.Disambiguation.LookupResult
+import ca.uwaterloo.flix.language.phase.Disambiguation.Target
 import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
@@ -245,13 +245,13 @@ object Typer {
          * Reference expression.
          */
         case NamedAst.Expression.Ref(ref, tvar, loc) =>
-          Disambiguation.lookupRef(ref, ns0, program) flatMap {
-            case LookupResult.Defn(ns, defn) =>
-              for (
-                declaredType <- Typer.Types.resolve(defn.tpe, ns, program);
-                resultType <- unifyM(tvar, declaredType)
+          Disambiguation.lookupRef(ref, ns0, program) match {
+            case Ok(Target.Defn(ns, defn)) =>
+              for (declaredType <- Typer.Types.resolve(defn.tpe, ns, program);
+                   resultType <- unifyM(tvar, declaredType)
               ) yield resultType
-            case LookupResult.Hook(hook) => liftM(hook.tpe)
+            case Ok(Target.Hook(hook)) => liftM(hook.tpe)
+            case Err(e) => failM(e)
           }
 
         /*
@@ -701,8 +701,8 @@ object Typer {
          */
         case NamedAst.Expression.Ref(qname, tvar, loc) =>
           Disambiguation.lookupRef(qname, ns0, program).get match {
-            case LookupResult.Defn(ns, defn) => TypedAst.Expression.Ref(defn.sym.toResolvedTemporaryHelperMethod, subst0(tvar), loc)
-            case LookupResult.Hook(hook) => TypedAst.Expression.Hook(hook, hook.tpe, loc)
+            case Target.Defn(ns, defn) => TypedAst.Expression.Ref(defn.sym.toResolvedTemporaryHelperMethod, subst0(tvar), loc)
+            case Target.Hook(hook) => TypedAst.Expression.Hook(hook, hook.tpe, loc)
           }
 
         /*
@@ -966,19 +966,20 @@ object Typer {
           unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes)
         ) yield unifiedTypes
       case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
-        Disambiguation.lookupRef(qname, ns0, program) flatMap {
-          case LookupResult.Defn(_, defn) =>
+        Disambiguation.lookupRef(qname, ns0, program) match {
+          case Ok(Target.Defn(ns, defn)) =>
             for (
               expectedTypes <- sequenceM(defn.params.map(a => Types.resolve(a.tpe, ns0, program)));
               actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns0, program)));
               unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes)
             ) yield unifiedTypes
-          case LookupResult.Hook(hook) =>
+          case Ok(Target.Hook(hook)) =>
             val declaredTypes = hook.tpe.args
             for (
               actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns0, program)));
               unifiedTypes <- Unification.unifyM(declaredTypes, actualTypes)
             ) yield unifiedTypes
+          case Err(e) => failM(e)
         }
       case NamedAst.Predicate.Body.NotEqual(ident1, ident2, loc) => Unification.liftM(Nil) // TODO
       case NamedAst.Predicate.Body.Loop(ident, term, loc) => Unification.liftM(Nil) // TODO
@@ -1009,7 +1010,12 @@ object Typer {
           case NamedAst.Table.Lattice(sym, _, _, _) => TypedAst.Predicate.Body.Table(sym, terms.map(t => Terms.compatBody(t, ns0, program, subst0)), loc)
         }
       case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
-        ???
+        Disambiguation.lookupRef(qname, ns0, program) match {
+          case Ok(Target.Defn(ns, defn)) =>
+            TypedAst.Predicate.Body.ApplyFilter(defn.sym.toResolvedTemporaryHelperMethod, terms.map(t => Terms.compatBody(t, ns0, program, subst0)), loc)
+          case Ok(Target.Hook(hook)) => TypedAst.Predicate.Body.ApplyHookFilter(hook, terms.map(t => Terms.compatBody(t, ns0, program, subst0)), loc)
+          case Err(e) => throw InternalCompilerException(s"Never happens. Unable to lookup filter function '$qname'.")
+        }
       case NamedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
         ???
       case NamedAst.Predicate.Body.Loop(ident, term, loc) =>

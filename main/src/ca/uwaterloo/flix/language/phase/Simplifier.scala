@@ -352,14 +352,14 @@ object Simplifier {
       def simplify(tast: TypedAst.Predicate.Body)(implicit genSym: GenSym): SimplifiedAst.Predicate.Body = tast match {
         case TypedAst.Predicate.Body.Table(sym, terms, loc) =>
           SimplifiedAst.Predicate.Body.Table(sym, terms map Term.simplify, loc)
-        case TypedAst.Predicate.Body.ApplyFilter(name, terms, tpe, loc) =>
-          SimplifiedAst.Predicate.Body.ApplyFilter(name, terms map Term.simplify, tpe, loc)
-        case TypedAst.Predicate.Body.ApplyHookFilter(hook, terms, tpe, loc) =>
-          SimplifiedAst.Predicate.Body.ApplyHookFilter(hook, terms map Term.simplify, tpe, loc)
-        case TypedAst.Predicate.Body.NotEqual(ident1, ident2, tpe, loc) =>
-          SimplifiedAst.Predicate.Body.NotEqual(ident1, ident2, tpe, loc)
-        case TypedAst.Predicate.Body.Loop(ident, term, tpe, loc) =>
-          SimplifiedAst.Predicate.Body.Loop(ident, Term.simplify(term), tpe, loc)
+        case TypedAst.Predicate.Body.ApplyFilter(name, terms, loc) =>
+          SimplifiedAst.Predicate.Body.ApplyFilter(name, terms map Term.simplify, loc)
+        case TypedAst.Predicate.Body.ApplyHookFilter(hook, terms, loc) =>
+          SimplifiedAst.Predicate.Body.ApplyHookFilter(hook, terms map Term.simplify, loc)
+        case TypedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
+          SimplifiedAst.Predicate.Body.NotEqual(ident1, ident2, loc)
+        case TypedAst.Predicate.Body.Loop(ident, term, loc) =>
+          SimplifiedAst.Predicate.Body.Loop(ident, Term.simplify(term), loc)
       }
     }
 

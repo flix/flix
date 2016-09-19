@@ -31,21 +31,17 @@ object Disambiguation {
   /**
     * An ADT for the result of looking up a name.
     */
-  sealed trait LookupResult
+  sealed trait Target
 
-  object LookupResult {
-
-    case class Defn(ns: Name.NName, defn: NamedAst.Declaration.Definition) extends LookupResult
-
-    case class Hook(hook: Ast.Hook) extends LookupResult
-
+  object Target {
+    case class Defn(ns: Name.NName, defn: NamedAst.Declaration.Definition) extends Target
+    case class Hook(hook: Ast.Hook) extends Target
   }
 
   /**
     * Finds the definition with the qualified name `qname` in the namespace `ns0`.
     */
-  // TODO: Return Result[Lookup]
-  def lookupRef(qname: Name.QName, ns0: Name.NName, program: Program): InferMonad[LookupResult] = {
+  def lookupRef(qname: Name.QName, ns0: Name.NName, program: Program): Result[Target, TypeError] = {
     // check whether the reference is fully-qualified.
     if (qname.isUnqualified) {
       // Case 1: Unqualified reference. Lookup both the definition and the hook.
@@ -53,10 +49,10 @@ object Disambiguation {
       val hookOpt = program.hooks.getOrElse(ns0, Map.empty).get(qname.ident.name)
 
       (defnOpt, hookOpt) match {
-        case (None, None) => failM(UnresolvedDefinition(qname, ns0, qname.loc))
-        case (Some(defn), None) => liftM(LookupResult.Defn(ns0, defn))
-        case (None, Some(hook)) => liftM(LookupResult.Hook(hook))
-        case (Some(defn), Some(hook)) => ??? // TODO: Overloaded name.
+        case (Some(defn), None) => Ok(Target.Defn(ns0, defn))
+        case (None, Some(hook)) => Ok(Target.Hook(hook))
+        case (None, None) => Err(UnresolvedDefinition(qname, ns0, qname.loc))
+        case (Some(defn), Some(hook)) => Err(???) // TODO: Overloaded name.
       }
     } else {
       // Case 2: Qualified. Lookup both the definition and the hook.
@@ -64,10 +60,10 @@ object Disambiguation {
       val hookOpt = program.hooks.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
 
       (defnOpt, hookOpt) match {
-        case (None, None) => failM(UnresolvedDefinition(qname, ns0, qname.loc))
-        case (Some(defn), None) => liftM(LookupResult.Defn(qname.namespace, defn))
-        case (None, Some(hook)) => liftM(LookupResult.Hook(hook))
-        case (Some(defn), Some(hook)) => ??? // TODO: Overloaded name.
+        case (Some(defn), None) => Ok(Target.Defn(qname.namespace, defn))
+        case (None, Some(hook)) => Ok(Target.Hook(hook))
+        case (None, None) => Err(UnresolvedDefinition(qname, ns0, qname.loc))
+        case (Some(defn), Some(hook)) => Err(???) // TODO: Overloaded name.
       }
     }
   }
@@ -89,7 +85,6 @@ object Disambiguation {
         }
       }
     }
-
 
     // Case 1: Exact match found. Simply return it.
     if (globalMatches.size == 1) {

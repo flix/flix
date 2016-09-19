@@ -632,25 +632,21 @@ object ExecutableAst {
       case class ApplyFilter(name: Symbol.Resolved,
                              terms: Array[ExecutableAst.Term.Body],
                              freeVars: Set[String],
-                             tpe: Type.Lambda,
                              loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
       case class ApplyHookFilter(hook: Ast.Hook,
                                  terms: Array[ExecutableAst.Term.Body],
                                  freeVars: Set[String],
-                                 tpe: Type.Lambda,
                                  loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
       case class NotEqual(ident1: Name.Ident,
                           ident2: Name.Ident,
                           freeVars: Set[String],
-                          tpe: Type,
                           loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
       case class Loop(ident: Name.Ident,
                       term: ExecutableAst.Term.Head,
                       freeVars: Set[String],
-                      tpe: Type,
                       loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
     }

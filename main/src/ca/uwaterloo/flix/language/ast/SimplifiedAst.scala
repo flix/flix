@@ -649,22 +649,18 @@ object SimplifiedAst {
 
       case class ApplyFilter(name: Symbol.Resolved,
                              terms: List[SimplifiedAst.Term.Body],
-                             tpe: Type.Lambda,
                              loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
       case class ApplyHookFilter(hook: Ast.Hook,
                                  terms: List[SimplifiedAst.Term.Body],
-                                 tpe: Type.Lambda,
                                  loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
       case class NotEqual(ident1: Name.Ident,
                           ident2: Name.Ident,
-                          tpe: Type,
                           loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
       case class Loop(ident: Name.Ident,
                       term: SimplifiedAst.Term.Head,
-                      tpe: Type,
                       loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
     }

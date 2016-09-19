@@ -294,13 +294,13 @@ object TypedAst {
 
       case class Table(sym: Symbol.TableSym, terms: List[TypedAst.Term.Body], loc: SourceLocation) extends TypedAst.Predicate.Body
 
-      case class ApplyFilter(name: Symbol.Resolved, terms: List[TypedAst.Term.Body], tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class ApplyFilter(name: Symbol.Resolved, terms: List[TypedAst.Term.Body], loc: SourceLocation) extends TypedAst.Predicate.Body
 
-      case class ApplyHookFilter(hook: Ast.Hook, terms: List[TypedAst.Term.Body], tpe: Type.Lambda, loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class ApplyHookFilter(hook: Ast.Hook, terms: List[TypedAst.Term.Body],loc: SourceLocation) extends TypedAst.Predicate.Body
 
-      case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, loc: SourceLocation) extends TypedAst.Predicate.Body
 
-      case class Loop(ident: Name.Ident, term: TypedAst.Term.Head, tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Loop(ident: Name.Ident, term: TypedAst.Term.Head, loc: SourceLocation) extends TypedAst.Predicate.Body
 
     }
 

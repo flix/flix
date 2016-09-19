@@ -273,18 +273,18 @@ object CreateExecutableAst {
             r
           }
           ExecutableAst.Predicate.Body.Table(sym, termsArray, index2var, freeVars(terms), loc)
-        case SimplifiedAst.Predicate.Body.ApplyFilter(name, terms, tpe, loc) =>
+        case SimplifiedAst.Predicate.Body.ApplyFilter(name, terms, loc) =>
           val termsArray = terms.map(Term.toExecutable).toArray
-          ExecutableAst.Predicate.Body.ApplyFilter(name, termsArray, freeVars(terms), tpe, loc)
-        case SimplifiedAst.Predicate.Body.ApplyHookFilter(hook, terms, tpe, loc) =>
+          ExecutableAst.Predicate.Body.ApplyFilter(name, termsArray, freeVars(terms), loc)
+        case SimplifiedAst.Predicate.Body.ApplyHookFilter(hook, terms, loc) =>
           val termsArray = terms.map(Term.toExecutable).toArray
-          ExecutableAst.Predicate.Body.ApplyHookFilter(hook, termsArray, freeVars(terms), tpe, loc)
-        case SimplifiedAst.Predicate.Body.NotEqual(ident1, ident2, tpe, loc) =>
+          ExecutableAst.Predicate.Body.ApplyHookFilter(hook, termsArray, freeVars(terms), loc)
+        case SimplifiedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
           val freeVars = Set(ident1.name, ident2.name)
-          ExecutableAst.Predicate.Body.NotEqual(ident1, ident2, freeVars, tpe, loc)
-        case SimplifiedAst.Predicate.Body.Loop(ident, term, tpe, loc) =>
+          ExecutableAst.Predicate.Body.NotEqual(ident1, ident2, freeVars, loc)
+        case SimplifiedAst.Predicate.Body.Loop(ident, term, loc) =>
           val freeVars = Set.empty[String] // TODO
-          ExecutableAst.Predicate.Body.Loop(ident, Term.toExecutable(term), freeVars, tpe, loc)
+          ExecutableAst.Predicate.Body.Loop(ident, Term.toExecutable(term), freeVars, loc)
       }
     }
 
