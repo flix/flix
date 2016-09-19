@@ -24,6 +24,23 @@ object Name {
   val RootNS = NName(SourcePosition.Unknown, Nil, SourcePosition.Unknown)
 
   /**
+    * Returns the given string `fqn` as a qualified name.
+    */
+  def mkQName(fqn: String): QName = {
+    val sp = SourcePosition.Unknown
+
+    if (!fqn.contains('/'))
+      return QName(sp, Name.RootNS, Ident(sp, fqn, sp), sp)
+
+    val index = fqn.indexOf('/')
+    val parts = fqn.substring(0, index).split('.').toList
+    val name = fqn.substring(index + 1, fqn.length)
+    val nname = NName(sp, parts.map(t => Name.Ident(sp, t, sp)), sp)
+    val ident = Ident(sp, name, sp)
+    QName(sp, nname, ident, sp)
+  }
+
+  /**
     * Identifier.
     *
     * @param sp1  the position of the first character in the identifier.

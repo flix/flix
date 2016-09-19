@@ -44,31 +44,30 @@ object Disambiguation {
   /**
     * Finds the definition with the qualified name `qname` in the namespace `ns0`.
     */
+  // TODO: Better to use Result[]
   def lookupRef(qname: Name.QName, ns0: Name.NName, program: Program): InferMonad[LookupResult] = {
-    // TODO: Better to use Result[]
     // check whether the reference is fully-qualified.
     if (qname.isUnqualified) {
-      // Case 1: Unqualified reference. Try the local namespace.
-      val defns = program.definitions.getOrElse(ns0, Map.empty)
-      defns.get(qname.ident.name) match {
-        case None =>
-          // Case 1.1: The definition was not found in the local namespace.
-          // Check if it is a hook.
-          // TODO: Try to lookup the name as a hook
-          failM(UnresolvedDefinition(qname, ns0, qname.loc))
-        case Some(defn) =>
-          // Case 1.2: The definition was found. Return it.
-          liftM(LookupResult.Defn(ns0, defn))
+      // Case 1: Unqualified reference. Lookup both the definition and the hook.
+      val defnOpt = program.definitions.getOrElse(ns0, Map.empty).get(qname.ident.name)
+      val hookOpt = program.hooks.getOrElse(ns0, Map.empty).get(qname.ident.name)
+
+      (defnOpt, hookOpt) match {
+        case (None, None) => failM(UnresolvedDefinition(qname, ns0, qname.loc))
+        case (Some(defn), None) => liftM(LookupResult.Defn(ns0, defn))
+        case (None, Some(hook)) => liftM(LookupResult.Hook(hook))
+        case (Some(defn), Some(hook)) => ??? // TODO: Overloaded name.
       }
     } else {
-      // Case 2: Qualified. Lookup the namespace.
-      program.definitions.get(qname.namespace) match {
-        case None =>
-          throw new RuntimeException(s"namespace ${qname.namespace} not found") // TODO: namespace doesnt exist.
-        case Some(nm) => nm.get(qname.ident.name) match {
-          case None => ??? // TODO: name doesnt exist in namespace.
-          case Some(defn) => liftM(LookupResult.Defn(qname.namespace, defn))
-        }
+      // Case 2: Qualified. Lookup both the definition and the hook.
+      val defnOpt = program.definitions.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+      val hookOpt = program.hooks.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+
+      (defnOpt, hookOpt) match {
+        case (None, None) => failM(UnresolvedDefinition(qname, ns0, qname.loc))
+        case (Some(defn), None) => liftM(LookupResult.Defn(qname.namespace, defn))
+        case (None, Some(hook)) => liftM(LookupResult.Hook(hook))
+        case (Some(defn), Some(hook)) => ??? // TODO: Overloaded name.
       }
     }
   }

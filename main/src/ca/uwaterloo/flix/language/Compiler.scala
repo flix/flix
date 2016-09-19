@@ -72,7 +72,7 @@ object Compiler {
   /**
     * Returns the typed AST corresponding to the given `inputs`.
     */
-  def compile(inputs: List[SourceInput], hooks: Map[Symbol.Resolved, Ast.Hook])(implicit genSym: GenSym): Validation[TypedAst.Root, CompilationError] = {
+  def compile(inputs: List[SourceInput], hooks: Map[Name.NName, Map[String, Ast.Hook]])(implicit genSym: GenSym): Validation[TypedAst.Root, CompilationError] = {
     val t = System.nanoTime()
     val pasts = @@(inputs.map(parse))
     val e = System.nanoTime() - t

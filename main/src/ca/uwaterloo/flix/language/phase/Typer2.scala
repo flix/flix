@@ -130,10 +130,16 @@ object Typer2 {
       }
     }
 
+    val hooks = program.hooks.flatMap {
+      case (ns, hs) => hs.map {
+        case (name, hook) => Symbol.Resolved.mk(ns.parts ::: name :: Nil) -> hook
+      }
+    }
+
     val e = System.nanoTime()
     val time = program.time.copy(typer = e - s)
 
-    TypedAst.Root(constants, lattices, tables, indexes, facts.toList, rules.toList, program.hooks, Nil, time).toSuccess
+    TypedAst.Root(constants, lattices, tables, indexes, facts.toList, rules.toList, hooks, Nil, time).toSuccess
   }
 
 
@@ -245,7 +251,7 @@ object Typer2 {
                 declaredType <- Typer2.Types.resolve(defn.tpe, ns, program);
                 resultType <- unifyM(tvar, declaredType)
               ) yield resultType
-            case LookupResult.Hook(hook) => ???
+            case LookupResult.Hook(hook) => liftM(hook.tpe)
           }
 
         /*
@@ -696,7 +702,7 @@ object Typer2 {
         case NamedAst.Expression.Ref(qname, tvar, loc) =>
           Disambiguation.lookupRef(qname, ns0, program).get match {
             case LookupResult.Defn(ns, defn) => TypedAst.Expression.Ref(defn.sym.toResolvedTemporaryHelperMethod, subst0(tvar), loc)
-            case LookupResult.Hook(hook) => ??? // TODO
+            case LookupResult.Hook(hook) => TypedAst.Expression.Hook(hook, hook.tpe, loc)
           }
 
         /*

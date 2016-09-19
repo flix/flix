@@ -49,7 +49,7 @@ class Flix {
   /**
     * A map of hooks to JVM invokable methods.
     */
-  private val hooks = mutable.Map.empty[Symbol.Resolved, Ast.Hook]
+  private val hooks = mutable.Map.empty[Name.NName, Map[String, Ast.Hook]]
 
   /**
     * The current Flix options.
@@ -115,14 +115,12 @@ class Flix {
     if (!tpe.isFunction)
       throw new IllegalArgumentException("'tpe' must be a function type.")
 
-    val rname = Symbol.Resolved.mk(name)
-    hooks.get(rname) match {
-      case None =>
-        val typ = tpe.asInstanceOf[WrappedType].tpe.asInstanceOf[Lambda]
-        hooks += (rname -> Ast.Hook.Safe(rname, inv, typ))
-      case Some(otherHook) =>
-        throw new IllegalStateException(s"Another hook already exists for the given '$name'.")
-    }
+    val qname = Name.mkQName(name)
+    val typ = tpe.asInstanceOf[WrappedType].tpe.asInstanceOf[Lambda]
+    val hook = Ast.Hook.Safe(qname.toResolved, inv, typ)
+    val entries = hooks.getOrElse(qname.namespace, Map.empty)
+    hooks += (qname.namespace -> (entries + (qname.ident.name -> hook)))
+
     this
   }
 
@@ -143,14 +141,12 @@ class Flix {
     if (!tpe.isFunction)
       throw new IllegalArgumentException("'tpe' must be a function type.")
 
-    val rname = Symbol.Resolved.mk(name)
-    hooks.get(rname) match {
-      case None =>
-        val typ = tpe.asInstanceOf[WrappedType].tpe.asInstanceOf[Lambda]
-        hooks += (rname -> Ast.Hook.Unsafe(rname, inv, typ))
-      case Some(otherHook) =>
-        throw new IllegalStateException(s"Another hook already exists for the given '$name'.")
-    }
+    val qname = Name.mkQName(name)
+    val typ = tpe.asInstanceOf[WrappedType].tpe.asInstanceOf[Lambda]
+    val hook = Ast.Hook.Unsafe(qname.toResolved, inv, typ)
+    val entries = hooks.getOrElse(qname.namespace, Map.empty)
+    hooks += (qname.namespace -> (entries + (qname.ident.name -> hook)))
+
     this
   }
 
@@ -166,8 +162,10 @@ class Flix {
     if (args == null)
       throw new IllegalArgumentException("'args' must be non-null.")
 
-    val rname = Symbol.Resolved.mk(name)
-    hooks.get(rname) match {
+    val qname = Name.mkQName(name)
+    val hook = hooks.get(qname.namespace).flatMap(_.get(qname.ident.name))
+
+    hook match {
       case None => throw new NoSuchElementException(s"Hook '$name' does not exist.")
       case Some(_: Hook.Unsafe) => throw new RuntimeException(s"Trying to invoke a safe hook but '$name' is an unsafe hook.")
       case Some(hook: Hook.Safe) => hook.inv(args)
@@ -186,8 +184,10 @@ class Flix {
     if (args == null)
       throw new IllegalArgumentException("'args' must be non-null.")
 
-    val rname = Symbol.Resolved.mk(name)
-    hooks.get(rname) match {
+    val qname = Name.mkQName(name)
+    val hook = hooks.get(qname.namespace).flatMap(_.get(qname.ident.name))
+
+    hook match {
       case None => throw new NoSuchElementException(s"Hook '$name' does not exist.")
       case Some(_: Hook.Safe) => throw new RuntimeException(s"Trying to invoke an unsafe hook but '$name' is a safe hook.")
       case Some(hook: Hook.Unsafe) => hook.inv(args)

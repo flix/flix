@@ -33,7 +33,7 @@ object NamedAst {
                      tables: Map[Name.NName, Map[String, NamedAst.Table]],
                      facts: Map[Name.NName, List[NamedAst.Declaration.Fact]],
                      rules: Map[Name.NName, List[NamedAst.Declaration.Rule]],
-                     hooks: Map[Symbol.Resolved, Ast.Hook],
+                     hooks: Map[Name.NName, Map[String, Ast.Hook]],
                      time: Time) extends NamedAst
 
   sealed trait Declaration extends NamedAst {
