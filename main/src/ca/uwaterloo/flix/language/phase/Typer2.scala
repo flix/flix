@@ -123,7 +123,7 @@ object Typer2 {
                   case Failure(e) => return e.toFailure
                 }
               }
-              TypedAst.Constraint.Rule(head, ???)
+              TypedAst.Constraint.Rule(head, body)
 
             case Failure(e) => return e.toFailure
           }
@@ -971,7 +971,12 @@ object Typer2 {
       */
     def reassemble(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
       case NamedAst.Predicate.Body.Ambiguous(qname, terms, loc) =>
-        ???
+        lookupTable(qname, ns0, program) match {
+          case NamedAst.Table.Relation(sym, _, _) =>
+            TypedAst.Predicate.Body.Table(sym, terms.map(t => Terms.compatBody(t, ns0, program, subst0)), loc)
+          case NamedAst.Table.Lattice(sym, _, _, _) =>
+            TypedAst.Predicate.Body.Table(sym, terms.map(t => Terms.compatBody(t, ns0, program, subst0)), loc)
+        }
 
       case NamedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
         ???
@@ -986,6 +991,10 @@ object Typer2 {
     // TODO: Temporary method
     def compatHead(exp0: NamedAst.Expression, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Term.Head = {
       exp2headterm(Expressions.reassemble(exp0, ns0, program, subst0))
+    }
+
+    def compatBody(exp0: NamedAst.Expression, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Term.Body = {
+      exp2bodyterm(Expressions.reassemble(exp0, ns0, program, subst0))
     }
 
     //      case class Lit(literal: TypedAst.Literal, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
@@ -1012,9 +1021,25 @@ object Typer2 {
       case TypedAst.Expression.Tag(enumName, tagName, exp, tpe, loc) => TypedAst.Term.Head.Tag(enumName, tagName, exp2headterm(exp), tpe, loc)
       case TypedAst.Expression.Apply(TypedAst.Expression.Ref(name, _, _), args, tpe, loc) =>
         TypedAst.Term.Head.Apply(name, args.map(exp2headterm), tpe, loc)
-
       case _ => throw new UnsupportedOperationException(s"Not implemented for $exp0")
+    }
 
+    private def exp2bodyterm(exp0: TypedAst.Expression): TypedAst.Term.Body = exp0 match {
+      case TypedAst.Expression.Var(ident, tpe, loc) => TypedAst.Term.Body.Var(ident, tpe, loc)
+      case TypedAst.Expression.Unit(loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Unit(loc), Type.Unit, loc)
+      case TypedAst.Expression.True(loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Bool(true, loc), Type.Bool, loc)
+      case TypedAst.Expression.False(loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Bool(false, loc), Type.Bool, loc)
+      case TypedAst.Expression.Char(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Char(lit, loc), Type.Char, loc)
+      case TypedAst.Expression.Float32(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Float32(lit, loc), Type.Float32, loc)
+      case TypedAst.Expression.Float64(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Float64(lit, loc), Type.Float32, loc)
+      case TypedAst.Expression.Int8(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Int8(lit, loc), Type.Int8, loc)
+      case TypedAst.Expression.Int16(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Int16(lit, loc), Type.Int16, loc)
+      case TypedAst.Expression.Int32(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Int32(lit, loc), Type.Int32, loc)
+      case TypedAst.Expression.Int64(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Int64(lit, loc), Type.Int64, loc)
+      case TypedAst.Expression.BigInt(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.BigInt(lit, loc), Type.BigInt, loc)
+      case TypedAst.Expression.Str(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Str(lit, loc), Type.Str, loc)
+      case TypedAst.Expression.Lit(lit, tpe, loc) => TypedAst.Term.Body.Lit(lit, tpe, loc)
+      case _ => throw new UnsupportedOperationException(s"Not implemented for $exp0")
     }
 
 
