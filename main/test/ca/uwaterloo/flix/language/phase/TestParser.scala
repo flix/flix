@@ -1098,139 +1098,88 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   test("Expression.Lambda.01") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: Int -> Int = x -> x"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Int -> Int = x -> x"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Lambda.02") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: Int -> Int = (x) -> x"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Int -> Int = (x) -> x"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Lambda.03") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: (Bool, Char) -> Int = (x, y) -> 42"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: (Bool, Char) -> Int = (x, y) -> 42"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Lambda.04") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: (Bool, Char, Int) -> Int = (x, y, z) -> 42"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: (Bool, Char, Int) -> Int = (x, y, z) -> 42"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Lambda.05") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: (Int8, Int16, Int32, Int64) -> Int32 = (x, y, z, w) -> z"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: (Int8, Int16, Int32, Int64) -> Int32 = (x, y, z, w) -> z"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Lambda.06") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: Int -> (Bool, Char) = x -> (true, 'a')"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Int -> (Bool, Char) = x -> (true, 'a')"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Lambda.07") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: Int -> (Bool, Char, Int) = x -> (true, 'a', 42)"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Int -> (Bool, Char, Int) = x -> (true, 'a', 42)"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Lambda.08") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: (Bool, Char) -> (Char, Bool) = (x, y) -> (y, x)"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: (Bool, Char) -> (Char, Bool) = (x, y) -> (y, x)"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Lambda.09") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: (Bool, Char, Int) -> (Int, Char, Bool) = (x, y, z) -> (z, y, x)"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: (Bool, Char, Int) -> (Int, Char, Bool) = (x, y, z) -> (z, y, x)"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Lambda.10") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: ((Bool, Char), Int) -> (Bool, Char) = (x, y) -> x"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: ((Bool, Char), Int) -> (Bool, Char) = (x, y) -> x"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Lambda.11") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: (Bool, (Char, Int)) -> (Char, Int) = (x, y) -> y"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: (Bool, (Char, Int)) -> (Char, Int) = (x, y) -> y"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Lambda.12") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: (Int, Int) -> ((Int, Int), (Int, Int)) = x -> (x, x)"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: (Int, Int) -> ((Int, Int), (Int, Int)) = (x, y) -> ((x, y), (y, x))"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Lambda.13") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: Bool -> Char -> Int = x -> (y -> 42)"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Bool -> Char -> Int = x -> (y -> 42)"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Lambda.14") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: (Bool, Bool) -> Char -> Int = (x1, x2) -> (y -> 42)"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: (Bool, Bool) -> Char -> Int = (x1, x2) -> (y -> 42)"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Lambda.15") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: Bool -> (Char, Char) -> Int = x -> ((y1, y2) -> 42)"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Bool -> (Char, Char) -> Int = x -> ((y1, y2) -> 42)"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Lambda.16") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: Bool -> Char -> (Int, Int) = x -> (y -> (21, 42))"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Bool -> Char -> (Int, Int) = x -> (y -> (21, 42))"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Lambda.17") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: (Bool, Bool) -> (Char, Char) -> (Int, Int) = (x1, x2) -> ((y1, y2) -> (21, 42))"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: (Bool, Bool) -> (Char, Char) -> (Int, Int) = (x1, x2) -> ((y1, y2) -> (21, 42))"
+    new Flix().addStr(input).compile().get
   }
 
   test("Expression.Bot.01") {
