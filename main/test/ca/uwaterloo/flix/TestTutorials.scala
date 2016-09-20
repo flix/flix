@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2016 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,24 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.language.LanguageSuite
-import ca.uwaterloo.flix.runtime.RuntimeSuite
-import ca.uwaterloo.flix.util.UtilSuite
+import ca.uwaterloo.flix.api.{Flix, RuleException}
+import ca.uwaterloo.flix.util.Options
+import org.scalatest.FunSuite
 
-import org.scalatest.{ParallelTestExecution, Suites}
+class TestTutorials extends FunSuite {
 
-class TestAll extends Suites(
-  new LanguageSuite,
-  new RuntimeSuite,
-  new UtilSuite,
-  new TestMain,
-  new TestExamples,
-  new TestTutorials
-) with ParallelTestExecution {
-  /* left empty */
+  val opts = Options.DefaultTest
+
+  test("introduction.flix") {
+    val path = "main/src/tutorials/introduction.flix"
+    new Flix().setOptions(opts).addPath(path).solve().get
+  }
+
+  test("delta-debugging.flix") {
+    intercept[RuleException] {
+      val path = "main/src/tutorials/delta-debugging.flix"
+      new Flix().setOptions(opts).addPath(path).solve().get
+    }
+  }
+
 }
