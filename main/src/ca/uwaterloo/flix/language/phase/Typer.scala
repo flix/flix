@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
+import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Disambiguation.Target
@@ -289,7 +290,12 @@ object Typer {
         /*
          * Lambda expression.
          */
-        case NamedAst.Expression.Lambda(args, body, tpe, loc) => ??? // TODO
+        case NamedAst.Expression.Lambda(args, body, tvar, loc) =>
+          val argTypes = args.map(_.tvar)
+          for (
+            bodyType <- visitExp(body);
+            resultType <- unifyM(tvar, Type.mkArrow(argTypes, bodyType))
+          ) yield resultType
 
         /*
          * Apply expression.
@@ -760,7 +766,16 @@ object Typer {
         /*
          * Lambda expression.
          */
-        case NamedAst.Expression.Lambda(params, exp, tvar, loc) => ??? // TODO
+        case NamedAst.Expression.Lambda(params, exp, tvar, loc) =>
+          val lambdaArgs = params map {
+            case sym =>
+              val argIdent = sym.toIdent
+              val argType = subst0(sym.tvar)
+              TypedAst.FormalArg(argIdent, argType)
+          }
+          val lambdaBody = reassemble(exp, ns0, program, subst0)
+          val lambdaType = subst0(tvar)
+          TypedAst.Expression.Lambda(lambdaArgs, lambdaBody, lambdaType, loc)
 
         /*
          * Unary expression.

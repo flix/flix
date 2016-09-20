@@ -2169,17 +2169,23 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   test("Type.Lambda.01") {
-    intercept[NotImplementedError] {
-      val input = "def f: Int = (x -> x + 1)(42)"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Bool -> Int = ???"
+    new Flix().addStr(input).compile().get
   }
 
   test("Type.Lambda.02") {
-    intercept[NotImplementedError] {
-      val input = "def f: Int = ((x, y) -> x + y)(21, 42)"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: (Bool, Char, Int) -> Str = ???"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Type.Lambda.03") {
+    val input = "def f(g: Bool -> Int): Int = g(42)"
+    new Flix().addStr(input).compile().get
+  }
+
+  test("Type.Lambda.04") {
+    val input = "def f(g: (Bool, Char, Int) -> Str): Int = g(true, 'a', 42)"
+    new Flix().addStr(input).compile().get
   }
 
   test("Type.Opt.01") {
