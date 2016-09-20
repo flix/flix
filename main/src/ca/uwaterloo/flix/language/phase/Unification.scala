@@ -197,6 +197,72 @@ object Unification {
     unifyTypes(tpe1, tpe2)
   }
 
+  /**
+    * The type inference monad. Either [[Success]] or [[Failure]].
+    */
+  trait InferMonad[A] {
+    /**
+      * Applies `f` to the value inside the monad.
+      */
+    def map[B](f: A => B): InferMonad[B]
+
+    /**
+      * Applies `f` to the value inside the monad unwrapping the result.
+      */
+    def flatMap[B](f: A => InferMonad[B]): InferMonad[B]
+  }
+
+  /**
+    * A monad that holds a value `a` and a current substitution `s`.
+    */
+  case class Success[A](a: A, s: Substitution) extends InferMonad[A] {
+    /**
+      * Applies `f` to the value inside the monad while maintaining the current substitution.
+      */
+    def map[B](f: A => B): InferMonad[B] = Success(f(a), s)
+
+    /**
+      * TODO: DOC
+      */
+    def flatMap[B](f: A => InferMonad[B]): InferMonad[B] = f(a) match {
+      case Success(a1, s1) => Success(a1, s1 @@ s)
+      case Failure(e) => Failure(e)
+    }
+  }
+
+  /**
+    * A monad that holds a type error.
+    *
+    * Any operation applied to the monad results in the same type error being propagated.
+    */
+  case class Failure[A](e: TypeError) extends InferMonad[A] {
+    /**
+      * Ignores `f` and propagates the current failure.
+      */
+    def map[B](f: (A) => B): InferMonad[B] = Failure(e)
+
+    /**
+      * Ignores `f` and propagates the current failure.
+      */
+    def flatMap[B](f: (A) => InferMonad[B]): InferMonad[B] = Failure(e)
+
+  }
+
+  /**
+    * TODO: DOC
+    */
+  def liftM[A](a: A): InferMonad[A] = Success(a, Substitution.empty)
+
+  /**
+    * TODO: DOC
+    */
+  def liftM[A](a: A, s: Substitution): InferMonad[A] = Success(a, s)
+
+  /**
+    * TODO: DOC
+    */
+  def failM[A](e: TypeError): InferMonad[A] = Failure(e)
+
 
   /**
     * TODO: DOC
@@ -245,67 +311,6 @@ object Unification {
   /**
     * TODO: DOC
     */
-  trait InferMonad[A] {
-
-    def get: A = this match {
-      case Success(a, s) => a
-      case Failure(e) => throw new RuntimeException()
-    }
-
-    def isSuccess: Boolean = this match {
-      case x: Success[A] => true
-      case x: Failure[A] => false
-    }
-
-    def map[B](f: A => B): InferMonad[B]
-
-    def flatMap[B](f: A => InferMonad[B]): InferMonad[B]
-  }
-
-  /**
-    * TODO: DOC
-    */
-  case class Success[A](a: A, s: Substitution) extends InferMonad[A] {
-    /**
-      * TODO: DOC
-      */
-    def map[B](f: A => B): InferMonad[B] = Success(f(a), s)
-
-    /**
-      * TODO: DOC
-      */
-    def flatMap[B](f: A => InferMonad[B]): InferMonad[B] = f(a) match {
-      case Success(a1, s1) => Success(a1, s1 @@ s)
-      case Failure(e) => Failure(e)
-    }
-  }
-
-  case class Failure[A](e: TypeError) extends InferMonad[A] {
-
-    def map[B](f: (A) => B): InferMonad[B] = Failure(e)
-
-    def flatMap[B](f: (A) => InferMonad[B]): InferMonad[B] = Failure(e)
-
-  }
-
-  /**
-    * TODO: DOC
-    */
-  def liftM[A](a: A): InferMonad[A] = Success(a, Substitution.empty)
-
-  /**
-    * TODO: DOC
-    */
-  def liftM[A](a: A, s: Substitution): InferMonad[A] = Success(a, s)
-
-  /**
-    * TODO: DOC
-    */
-  def failM[A](e: TypeError): InferMonad[A] = Failure(e)
-
-  /**
-    * TODO: DOC
-    */
   def sequenceM[A](xs: List[InferMonad[A]]): InferMonad[List[A]] = xs match {
     case Nil => liftM(Nil)
     case y :: ys => y flatMap {
@@ -314,6 +319,5 @@ object Unification {
       }
     }
   }
-
 
 }
