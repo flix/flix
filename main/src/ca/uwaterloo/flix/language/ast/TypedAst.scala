@@ -178,6 +178,8 @@ object TypedAst {
 
     case class Lit(literal: TypedAst.Literal, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
+    case class Wild(tpe: Type, loc: SourceLocation) extends TypedAst.Expression
+
     case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Ref(name: Symbol.Resolved, tpe: Type, loc: SourceLocation) extends TypedAst.Expression

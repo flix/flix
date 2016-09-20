@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
-import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Disambiguation.Target
@@ -728,7 +727,14 @@ object Typer {
         /*
          * Variable expression.
          */
-        case NamedAst.Expression.Var(sym, loc) => TypedAst.Expression.Var(sym.toIdent, subst0(sym.tvar), loc)
+        // TODO: Does this mean we should not distinguish variables?
+        case NamedAst.Expression.Var(sym, loc) =>
+          val qname = Name.mkQName(sym.text)
+          Disambiguation.lookupRef(qname, ns0, program) match {
+            case Ok(Target.Defn(ns, defn)) => TypedAst.Expression.Ref(defn.sym.toResolvedTemporaryHelperMethod, subst0(sym.tvar), loc)
+            case Ok(Target.Hook(hook)) => TypedAst.Expression.Hook(hook, subst0(sym.tvar), loc)
+            case Err(e) => TypedAst.Expression.Var(sym.toIdent, subst0(sym.tvar), loc)
+          }
 
         /*
          * Reference expression.
@@ -1075,9 +1081,11 @@ object Typer {
           case Err(e) => throw InternalCompilerException(s"Never happens. Unable to lookup filter function '$qname'.")
         }
       case NamedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
-        ???
+        // TODO: Need to retrieve the symbol...
+        TypedAst.Predicate.Body.NotEqual(ident1, ident2, loc)
       case NamedAst.Predicate.Body.Loop(ident, term, loc) =>
-        ???
+        // TODO: Need to retrieve the symbol...
+        TypedAst.Predicate.Body.Loop(ident, Terms.compatHead(term, ns0, program, subst0), loc)
     }
 
   }
@@ -1086,40 +1094,46 @@ object Typer {
 
     // TODO: Temporary method
     def compatHead(exp0: NamedAst.Expression, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Term.Head = {
-      exp2headterm(Expressions.reassemble(exp0, ns0, program, subst0))
+      exp2headterm(Expressions.reassemble(exp0, ns0, program, subst0), ns0, program)
     }
 
     def compatBody(exp0: NamedAst.Expression, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Term.Body = {
       exp2bodyterm(Expressions.reassemble(exp0, ns0, program, subst0))
     }
 
-    private def exp2headterm(exp0: TypedAst.Expression): TypedAst.Term.Head = exp0 match {
-      case TypedAst.Expression.Var(ident, tpe, loc) => TypedAst.Term.Head.Var(ident, tpe, loc)
-      case TypedAst.Expression.Unit(loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Unit(loc), Type.Unit, loc)
-      case TypedAst.Expression.True(loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Bool(true, loc), Type.Bool, loc)
-      case TypedAst.Expression.False(loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Bool(false, loc), Type.Bool, loc)
-      case TypedAst.Expression.Char(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Char(lit, loc), Type.Char, loc)
-      case TypedAst.Expression.Float32(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Float32(lit, loc), Type.Float32, loc)
-      case TypedAst.Expression.Float64(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Float64(lit, loc), Type.Float32, loc)
-      case TypedAst.Expression.Int8(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Int8(lit, loc), Type.Int8, loc)
-      case TypedAst.Expression.Int16(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Int16(lit, loc), Type.Int16, loc)
-      case TypedAst.Expression.Int32(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Int32(lit, loc), Type.Int32, loc)
-      case TypedAst.Expression.Int64(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Int64(lit, loc), Type.Int64, loc)
-      case TypedAst.Expression.BigInt(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.BigInt(lit, loc), Type.BigInt, loc)
-      case TypedAst.Expression.Str(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Str(lit, loc), Type.Str, loc)
-      case TypedAst.Expression.Lit(lit, tpe, loc) => TypedAst.Term.Head.Lit(lit, tpe, loc)
-      case TypedAst.Expression.Tag(enumName, tagName, exp, tpe, loc) => TypedAst.Term.Head.Tag(enumName, tagName, exp2headterm(exp), tpe, loc)
-      case TypedAst.Expression.Tuple(elms, tpe, loc) => TypedAst.Term.Head.Tuple(elms map exp2headterm, tpe, loc)
-      case TypedAst.Expression.Apply(base, args, tpe, loc) => base match {
-        case TypedAst.Expression.Ref(name, _, _) => TypedAst.Term.Head.Apply(name, args.map(exp2headterm), tpe, loc)
-        case TypedAst.Expression.Hook(hook, _, _) => TypedAst.Term.Head.ApplyHook(hook, args.map(exp2headterm), tpe, loc)
-        case _ => throw new RuntimeException(s"Unknown expression $base") // TODO
+    def exp2headterm(exp0: TypedAst.Expression, ns0: Name.NName, program: Program): TypedAst.Term.Head = {
+
+      def visit(e0: TypedAst.Expression): TypedAst.Term.Head = e0 match {
+        case TypedAst.Expression.Var(ident, tpe, loc) => TypedAst.Term.Head.Var(ident, tpe, loc)
+        case TypedAst.Expression.Unit(loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Unit(loc), Type.Unit, loc)
+        case TypedAst.Expression.True(loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Bool(true, loc), Type.Bool, loc)
+        case TypedAst.Expression.False(loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Bool(false, loc), Type.Bool, loc)
+        case TypedAst.Expression.Char(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Char(lit, loc), Type.Char, loc)
+        case TypedAst.Expression.Float32(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Float32(lit, loc), Type.Float32, loc)
+        case TypedAst.Expression.Float64(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Float64(lit, loc), Type.Float32, loc)
+        case TypedAst.Expression.Int8(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Int8(lit, loc), Type.Int8, loc)
+        case TypedAst.Expression.Int16(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Int16(lit, loc), Type.Int16, loc)
+        case TypedAst.Expression.Int32(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Int32(lit, loc), Type.Int32, loc)
+        case TypedAst.Expression.Int64(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Int64(lit, loc), Type.Int64, loc)
+        case TypedAst.Expression.BigInt(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.BigInt(lit, loc), Type.BigInt, loc)
+        case TypedAst.Expression.Str(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Str(lit, loc), Type.Str, loc)
+        case TypedAst.Expression.Lit(lit, tpe, loc) => TypedAst.Term.Head.Lit(lit, tpe, loc)
+        case TypedAst.Expression.Tag(enumName, tagName, exp, tpe, loc) => TypedAst.Term.Head.Tag(enumName, tagName, visit(exp), tpe, loc)
+        case TypedAst.Expression.Tuple(elms, tpe, loc) => TypedAst.Term.Head.Tuple(elms map visit, tpe, loc)
+        case TypedAst.Expression.Apply(base, args, tpe, loc) => base match {
+          case TypedAst.Expression.Ref(name, _, _) => TypedAst.Term.Head.Apply(name, args.map(visit), tpe, loc)
+          case TypedAst.Expression.Hook(hook, _, _) => TypedAst.Term.Head.ApplyHook(hook, args.map(visit), tpe, loc)
+          case _ => throw new RuntimeException(s"Unknown expression $base") // TODO
+        }
+
+        case _ => throw new UnsupportedOperationException(s"Not implemented for $e0")
       }
 
-      case _ => throw new UnsupportedOperationException(s"Not implemented for $exp0")
+      visit(exp0)
     }
 
-    private def exp2bodyterm(exp0: TypedAst.Expression): TypedAst.Term.Body = exp0 match {
+    def exp2bodyterm(exp0: TypedAst.Expression): TypedAst.Term.Body = exp0 match {
+      case TypedAst.Expression.Wild(tpe, loc) => TypedAst.Term.Body.Wildcard(tpe, loc)
       case TypedAst.Expression.Var(ident, tpe, loc) => TypedAst.Term.Body.Var(ident, tpe, loc)
       case TypedAst.Expression.Unit(loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Unit(loc), Type.Unit, loc)
       case TypedAst.Expression.True(loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Bool(true, loc), Type.Bool, loc)
