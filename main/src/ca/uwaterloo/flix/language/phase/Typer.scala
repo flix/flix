@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import com.sun.corba.se.spi.orbutil.fsm.Guard.Result
 
 object Typer {
 
@@ -195,9 +196,13 @@ object Typer {
       * Infers the type of the given definition `defn0` in the given namespace `ns0`.
       */
     def infer(defn0: NamedAst.Declaration.Definition, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): InferMonad[TypedAst.Definition.Constant] = {
+      // Resolve the declared type.
+      val declaredType = Disambiguation.resolve(defn0.tpe, ns0, program) match {
+        case Ok(tpe) => tpe
+        case Err(e) => return failM(e)
+      }
 
       val result = for (
-        declaredType <- Types.resolve(defn0.tpe, ns0, program);
         argumentTypes <- getSubstFromFormalParams(defn0.params, ns0, program);
         resultType <- Expressions.infer(defn0.exp, ns0, program);
         unifiedType <- unifyM(declaredType, Type.mkArrow(argumentTypes, resultType))
@@ -653,11 +658,16 @@ object Typer {
         case NamedAst.Pattern.Str(s, loc) => liftM(Type.Str)
         case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
           Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
-            case Ok(decl) => for (
-              enumType <- Types.resolve(decl.tpe, ns0, program);
-              ________ <- visitPat(pat, ns0); // TODO: need to check that the nested type is compatible with one of the tag types.
-              resultType <- unifyM(tvar, enumType)
-            ) yield resultType
+            case Ok(decl) => Disambiguation.resolve(decl.tpe, ns0, program) match {
+              case Ok(enumType) =>
+                val cazeType = enumType.asInstanceOf[Type.Enum].cases(tag.name)
+                for (
+                  innerType <- visitPat(pat, ns0);
+                  _________ <- unifyM(innerType, cazeType);
+                  resultType <- unifyM(tvar, enumType)
+                ) yield resultType
+              case Err(e) => failM(e)
+            }
             case Err(e) => failM(e)
           }
 
@@ -979,16 +989,22 @@ object Typer {
           case NamedAst.Table.Relation(sym, attr, _) => attr.map(_.tpe)
           case NamedAst.Table.Lattice(sym, keys, value, _) => keys.map(_.tpe) ::: value.tpe :: Nil
         }
+        val expectedTypes = Disambiguation.resolve(declaredTypes, ns0, program) match {
+          case Ok(tpes) => tpes
+          case Err(e) => return failM(e)
+        }
         for (
-          expectedTypes <- sequenceM(declaredTypes.map(tpe => Types.resolve(tpe, ns0, program)));
           actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns0, program)));
           unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes)
         ) yield unifiedTypes
       case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
         Disambiguation.lookupRef(qname, ns0, program) match {
           case Ok(Target.Defn(ns, defn)) =>
+            val expectedTypes = Disambiguation.resolve(defn.params.map(_.tpe), ns, program) match {
+              case Ok(tpes) => tpes
+              case Err(e) => return failM(e)
+            }
             for (
-              expectedTypes <- sequenceM(defn.params.map(a => Types.resolve(a.tpe, ns0, program)));
               actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns0, program)));
               unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes)
             ) yield unifiedTypes
