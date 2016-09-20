@@ -23,8 +23,7 @@ import ca.uwaterloo.flix.language.phase.Disambiguation.Target
 import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
-import com.sun.corba.se.spi.orbutil.fsm.Guard.Result
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 object Typer {
 
@@ -202,29 +201,33 @@ object Typer {
         case Err(e) => return failM(e)
       }
 
+      val subst = getSubst(defn0.params, ns0, program).get
+
+      // TODO: Some duplication
+      val argumentTypes = Disambiguation.resolve(defn0.params.map(_.tpe), ns0, program) match {
+        case Ok(tpes) => tpes
+        case Err(e) => return failM(e)
+      }
+
       val result = for (
-        argumentTypes <- getSubstFromFormalParams(defn0.params, ns0, program);
+        _ <- liftM(null, subst);
         resultType <- Expressions.infer(defn0.exp, ns0, program);
         unifiedType <- unifyM(declaredType, Type.mkArrow(argumentTypes, resultType))
       ) yield unifiedType
 
       // TODO: See if this can be rewritten nicer
       result match {
-        case Success(resultType, subst) =>
-          val exp = Expressions.reassemble(defn0.exp, ns0, program, subst)
+        case Success(resultType, subst0) =>
+          val exp = Expressions.reassemble(defn0.exp, ns0, program, subst0)
 
           // Translate the named formals into typed formals.
           val formals = defn0.params.map {
-            case NamedAst.FormalParam(sym, tpe, loc) => Types.resolve(tpe, ns0, program).map {
-              case t => TypedAst.FormalArg(sym.toIdent, subst(t))
-            }
+            case NamedAst.FormalParam(sym, tpe, loc) =>
+              val t = Disambiguation.resolve(tpe, ns0, program).get
+              TypedAst.FormalArg(sym.toIdent, subst0(t))
           }
 
-          sequenceM(formals) map {
-            case fs =>
-              TypedAst.Definition.Constant(defn0.ann, defn0.sym.toResolvedTemporaryHelperMethod, fs, exp, resultType, defn0.loc)
-          }
-
+          liftM(TypedAst.Definition.Constant(defn0.ann, defn0.sym.toResolvedTemporaryHelperMethod, formals, exp, resultType, defn0.loc))
         case Failure(e) => Failure(e)
       }
     }
@@ -1097,7 +1100,7 @@ object Typer {
       case TypedAst.Expression.Apply(base, args, tpe, loc) => base match {
         case TypedAst.Expression.Ref(name, _, _) => TypedAst.Term.Head.Apply(name, args.map(exp2headterm), tpe, loc)
         case TypedAst.Expression.Hook(hook, _, _) => TypedAst.Term.Head.ApplyHook(hook, args.map(exp2headterm), tpe, loc)
-        case _ => ???
+        case _ => throw new RuntimeException(s"Unknown expression $base") // TODO
       }
 
       case _ => throw new UnsupportedOperationException(s"Not implemented for $exp0")
@@ -1119,85 +1122,6 @@ object Typer {
       case TypedAst.Expression.Str(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Str(lit, loc), Type.Str, loc)
       case TypedAst.Expression.Lit(lit, tpe, loc) => TypedAst.Term.Body.Lit(lit, tpe, loc)
       case _ => throw new UnsupportedOperationException(s"Not implemented for $exp0")
-    }
-
-
-  }
-
-  object Types {
-
-    /**
-      * TODO: DOC
-      *
-      */
-    // TODO: Move into Result monad?
-    // TODO: Introduce resolve for list of types.
-    @deprecated
-    def resolve(tpe0: NamedAst.Type, ns0: Name.NName, program: Program): InferMonad[Type] = tpe0 match {
-      case NamedAst.Type.Unit(loc) => liftM(Type.Unit)
-      case NamedAst.Type.Ref(qname, loc) if qname.isUnqualified => qname.ident.name match {
-        // Basic Types
-        case "Unit" => liftM(Type.Unit)
-        case "Bool" => liftM(Type.Bool)
-        case "Char" => liftM(Type.Char)
-        case "Float" => liftM(Type.Float64)
-        case "Float32" => liftM(Type.Float32)
-        case "Float64" => liftM(Type.Float64)
-        case "Int" => liftM(Type.Int32)
-        case "Int8" => liftM(Type.Int8)
-        case "Int16" => liftM(Type.Int16)
-        case "Int32" => liftM(Type.Int32)
-        case "Int64" => liftM(Type.Int64)
-        case "BigInt" => liftM(Type.BigInt)
-        case "Str" => liftM(Type.Str)
-        case "Native" => liftM(Type.Native)
-
-        // Higher-Kinded Types.
-        case "Opt" => liftM(Type.FOpt)
-        case "List" => liftM(Type.FList)
-        case "Vec" => liftM(Type.FVec)
-        case "Set" => liftM(Type.FSet)
-        case "Map" => liftM(Type.FMap)
-
-        // Enum Types.
-        case typeName =>
-          // Lookup the enum in the current namespace.
-          // If the namespace doesn't even exist, just use an empty map.
-          val decls = program.enums.getOrElse(ns0, Map.empty)
-          decls.get(typeName) match {
-            case None => failM(TypeError.UnresolvedType(qname, ns0, loc))
-            case Some(enum) => resolve(enum.tpe, ns0, program)
-          }
-      }
-      case NamedAst.Type.Ref(qname, loc) if qname.isQualified =>
-        // Lookup the enum using the namespace.
-        val decls = program.enums.getOrElse(qname.namespace, Map.empty)
-        decls.get(qname.ident.name) match {
-          case None => failM(TypeError.UnresolvedType(qname, ns0, loc))
-          case Some(enum) => resolve(enum.tpe, qname.namespace, program)
-        }
-      case NamedAst.Type.Enum(name, cases) =>
-        val asList = cases.toList
-        val tags = asList.map(_._1)
-        val tpes = asList.map(_._2)
-        sequenceM(tpes.map(tpe => resolve(tpe, ns0, program))) map {
-          case rtpes => Type.Enum(name.toResolvedTemporaryHelperMethod, (tags zip rtpes).toMap)
-        }
-      case NamedAst.Type.Tuple(elms, loc) =>
-        sequenceM(elms.map(tpe => resolve(tpe, ns0, program))) map {
-          case resolvedTypes => Type.Apply(Type.FTuple(resolvedTypes.length), resolvedTypes)
-        }
-      case NamedAst.Type.Arrow(tparams, retType, loc) =>
-        sequenceM(tparams.map(tpe => resolve(tpe, ns0, program))) flatMap {
-          case ts => resolve(retType, ns0, program) map {
-            case r => Type.mkArrow(ts, r)
-          }
-        }
-      case NamedAst.Type.Apply(base, tparams, loc) =>
-        for (
-          baseType <- resolve(base, ns0, program);
-          argTypes <- sequenceM(tparams.map(tpe => resolve(tpe, ns0, program)))
-        ) yield Type.Apply(baseType, argTypes)
     }
 
   }
@@ -1224,12 +1148,19 @@ object Typer {
     * @param ns0     the current namespace.
     * @param program the program.
     */
-  private def getSubstFromFormalParams(params: List[NamedAst.FormalParam], ns0: Name.NName, program: Program): InferMonad[List[Type]] = {
-    sequenceM(params map {
-      case NamedAst.FormalParam(sym, tpe, loc) => Types.resolve(tpe, ns0, program) flatMap {
-        case resolvedType => unifyM(sym.tvar, resolvedType)
-      }
-    })
+  // TODO: Move into Unification?
+  private def getSubst(params: List[NamedAst.FormalParam], ns0: Name.NName, program: Program): Result[Unification.Substitution, TypeError] = {
+    val declaredTypes = Disambiguation.resolve(params.map(_.tpe), ns0, program) match {
+      case Ok(tpes) => tpes
+      case Err(e) => return Err(e)
+    }
+
+    val substitution = (params zip declaredTypes).foldLeft(Substitution.empty) {
+      case (substacc, (NamedAst.FormalParam(sym, _, _), declaredType)) =>
+        substacc ++ Substitution.singleton(sym.tvar, declaredType)
+    }
+
+    Ok(substitution)
   }
 
   // TODO: Compatability --------------
