@@ -959,11 +959,15 @@ object Typer {
           case NamedAst.Table.Relation(sym, attr, _) => attr.map(_.tpe)
           case NamedAst.Table.Lattice(sym, keys, value, _) => keys.map(_.tpe) ::: value.tpe :: Nil
         }
-        for (
-          expectedTypes <- sequenceM(declaredTypes.map(tpe => Types.resolve(tpe, ns, program)));
-          actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns, program)));
-          unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes)
-        ) yield unifiedTypes
+
+        Disambiguation.resolve(declaredTypes, ns, program) match {
+          case Ok(expectedTypes) =>
+            for (
+              actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns, program)));
+              unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes)
+            ) yield unifiedTypes
+          case Err(e) => failM(e)
+        }
     }
 
     /**
