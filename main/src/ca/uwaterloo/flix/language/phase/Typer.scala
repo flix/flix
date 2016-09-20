@@ -302,7 +302,7 @@ object Typer {
         case NamedAst.Expression.Apply(lambda, actuals, tvar, loc) =>
           for (
             lambdaType <- visitExp(lambda);
-            actualTypes <- visitExps2(actuals);
+            actualTypes <- seqM(actuals.map(visitExp));
             arrowType <- unifyM(lambdaType, Type.mkArrow(actualTypes, tvar), loc)
           ) yield tvar
 
@@ -490,7 +490,7 @@ object Typer {
          */
         case NamedAst.Expression.Tuple(elms, tvar, loc) =>
           for (
-            elementTypes <- visitExps2(elms);
+            elementTypes <- seqM(elms.map(visitExp));
             resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
           ) yield resultType
 
@@ -634,16 +634,6 @@ object Typer {
             tpe2 <- visitExps(xs, tpe);
             resultType <- unifyM(tpe1, tpe2, x.loc)
           ) yield resultType
-      }
-
-      // TODO: Doc and names.
-      def visitExps2(es: List[NamedAst.Expression]): InferMonad[List[Type]] = es match {
-        case Nil => liftM(Nil)
-        case x :: xs =>
-          for (
-            tpe <- visitExp(x);
-            tpes <- visitExps2(xs)
-          ) yield tpe :: tpes
       }
 
       /**
