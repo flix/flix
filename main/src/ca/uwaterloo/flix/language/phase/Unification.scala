@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -265,7 +265,7 @@ object Unification {
   /**
     * TODO: DOC
     */
-  def unifyM(tpe1: Type, tpe2: Type): InferMonad[Type] = unify(tpe1, tpe2) match {
+  def unifyM(tpe1: Type, tpe2: Type, loc: SourceLocation): InferMonad[Type] = unify(tpe1, tpe2) match {
     case Result.Ok(subst) => Success(subst(tpe1), subst)
     case Result.Err(e) => Failure(e)
   }
@@ -273,37 +273,37 @@ object Unification {
   /**
     * TODO: DOC
     */
-  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type): InferMonad[Type] = {
+  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): InferMonad[Type] = {
     for (
-      tpe <- unifyM(tpe1, tpe2);
-      res <- unifyM(tpe, tpe3)
+      tpe <- unifyM(tpe1, tpe2, loc);
+      res <- unifyM(tpe, tpe3, loc)
     ) yield res
   }
 
   /**
     * TODO: DOC
     */
-  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type): InferMonad[Type] =
+  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation): InferMonad[Type] =
   for (
-    tpe <- unifyM(tpe1, tpe2, tpe3);
-    res <- unifyM(tpe, tpe4)
+    tpe <- unifyM(tpe1, tpe2, tpe3, loc);
+    res <- unifyM(tpe, tpe4, loc)
   ) yield res
 
   // TODO
-  def unifyM(ts: List[Type]): InferMonad[Type] = {
+  def unifyM(ts: List[Type], loc: SourceLocation): InferMonad[Type] = {
     def visit(tpe0: Type, xs: List[Type]): InferMonad[Type] = xs match {
       case Nil => liftM(tpe0)
       case tpe :: ys => for (
-        intermediate <- unifyM(tpe0, tpe);
+        intermediate <- unifyM(tpe0, tpe, loc);
         resultType <- visit(intermediate, ys)
       ) yield resultType
     }
     visit(ts.head, ts.tail)
   }
 
-  def unifyM(xs: List[Type], ys: List[Type]): InferMonad[List[Type]] =
+  def unifyM(xs: List[Type], ys: List[Type], loc: SourceLocation): InferMonad[List[Type]] =
     sequenceM((xs zip ys).map {
-      case (x, y) => unifyM(x, y)
+      case (x, y) => unifyM(x, y, loc)
     })
 
 

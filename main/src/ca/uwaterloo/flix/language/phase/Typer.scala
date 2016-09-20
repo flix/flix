@@ -65,8 +65,8 @@ object Typer {
             leqType <- Expressions.infer(e3, ns, program);
             lubType <- Expressions.infer(e4, ns, program);
             glbType <- Expressions.infer(e5, ns, program);
-            _______ <- unifyM(botType, declaredType);
-            _______ <- unifyM(topType, declaredType)
+            _______ <- unifyM(botType, declaredType, loc);
+            _______ <- unifyM(topType, declaredType, loc)
           // TODO Add constraints for leq, lub, glb, etc.
           )
             yield declaredType
@@ -212,7 +212,7 @@ object Typer {
       val result = for (
         _ <- liftM(null, subst);
         resultType <- Expressions.infer(defn0.exp, ns0, program);
-        unifiedType <- unifyM(declaredType, Type.mkArrow(argumentTypes, resultType))
+        unifiedType <- unifyM(declaredType, Type.mkArrow(argumentTypes, resultType), defn0.loc)
       ) yield unifiedType
 
       // TODO: See if this can be rewritten nicer
@@ -263,7 +263,7 @@ object Typer {
           Disambiguation.lookupRef(ref, ns0, program) match {
             case Ok(Target.Defn(ns, defn)) =>
               Disambiguation.resolve(defn.tpe, ns, program) match {
-                case Ok(declaredType) => unifyM(tvar, declaredType)
+                case Ok(declaredType) => unifyM(tvar, declaredType, loc)
                 case Err(e) => failM(e)
               }
             case Ok(Target.Hook(hook)) => liftM(hook.tpe)
@@ -293,7 +293,7 @@ object Typer {
           val argTypes = args.map(_.tvar)
           for (
             bodyType <- visitExp(body);
-            resultType <- unifyM(tvar, Type.mkArrow(argTypes, bodyType))
+            resultType <- unifyM(tvar, Type.mkArrow(argTypes, bodyType), loc)
           ) yield resultType
 
         /*
@@ -303,7 +303,7 @@ object Typer {
           for (
             lambdaType <- visitExp(lambda);
             actualTypes <- visitExps2(actuals);
-            arrowType <- unifyM(lambdaType, Type.mkArrow(actualTypes, tvar))
+            arrowType <- unifyM(lambdaType, Type.mkArrow(actualTypes, tvar), loc)
           ) yield tvar
 
         /*
@@ -313,7 +313,7 @@ object Typer {
           case UnaryOperator.LogicalNot =>
             for (
               tpe1 <- visitExp(exp1);
-              res <- unifyM(tvar, tpe1, Type.Bool)
+              res <- unifyM(tvar, tpe1, Type.Bool, loc)
             ) yield res
 
           case UnaryOperator.Plus =>
@@ -340,80 +340,80 @@ object Typer {
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2))
+              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2), loc)
             ) yield resultType
 
           case BinaryOperator.Minus =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2))
+              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2), loc)
             ) yield resultType
 
           case BinaryOperator.Times =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2))
+              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2), loc)
             ) yield resultType
 
           case BinaryOperator.Divide =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2))
+              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2), loc)
             ) yield resultType
 
           case BinaryOperator.Modulo =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2))
+              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2), loc)
             ) yield resultType
 
           case BinaryOperator.Exponentiate =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2))
+              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2), loc)
             ) yield resultType
 
           case BinaryOperator.Equal | BinaryOperator.NotEqual =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tpe1, tpe2);
-              resultType <- unifyM(tvar, Type.Bool)
+              ____ <- unifyM(tpe1, tpe2, loc);
+              resultType <- unifyM(tvar, Type.Bool, loc)
             ) yield resultType
 
           case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              ____ <- unifyM(tpe1, tpe2);
-              resultType <- unifyM(tvar, Type.Bool)
+              ____ <- unifyM(tpe1, tpe2, loc);
+              resultType <- unifyM(tvar, Type.Bool, loc)
             ) yield resultType
 
           case BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr | BinaryOperator.Implication | BinaryOperator.Biconditional =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, Type.Bool)
+              resultType <- unifyM(tvar, tpe1, tpe2, Type.Bool, loc)
             ) yield resultType
 
           case BinaryOperator.BitwiseAnd | BinaryOperator.BitwiseOr | BinaryOperator.BitwiseXor =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2))
+              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2), loc)
             ) yield resultType
 
           case BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              lhsType <- unifyM(tvar, tpe1);
-              rhsType <- unifyM(tpe2, Type.Int32)
+              lhsType <- unifyM(tvar, tpe1, loc);
+              rhsType <- unifyM(tpe2, Type.Int32, loc)
             ) yield lhsType
         }
 
@@ -424,7 +424,7 @@ object Typer {
           for (
             tpe1 <- visitExp(exp1);
             tpe2 <- visitExp(exp2);
-            resultVar <- unifyM(tvar, tpe2)
+            resultVar <- unifyM(tvar, tpe2, loc)
           ) yield resultVar
 
         /*
@@ -435,8 +435,8 @@ object Typer {
             tpe1 <- visitExp(exp1);
             tpe2 <- visitExp(exp2);
             tpe3 <- visitExp(exp3);
-            ____ <- unifyM(Type.Bool, tpe1);
-            rtpe <- unifyM(tvar, tpe2, tpe3)
+            ____ <- unifyM(Type.Bool, tpe1, loc);
+            rtpe <- unifyM(tvar, tpe2, tpe3, loc)
           ) yield rtpe
 
         /*
@@ -449,8 +449,8 @@ object Typer {
           for (
             matchType <- visitExp(exp1);
             patternTypes <- visitPats2(patterns, ns0);
-            patternType <- unifyM(patternTypes);
-            ___________ <- unifyM(matchType, patternType);
+            patternType <- unifyM(patternTypes, loc);
+            ___________ <- unifyM(matchType, patternType, loc);
             resultType <- visitExps(bodies, tvar)
           ) yield resultType
 
@@ -463,8 +463,8 @@ object Typer {
           for (
             condType <- visitExps(condExps, Type.Bool);
             bodyType <- visitExps(bodyExps, Type.freshTypeVar());
-            _ <- unifyM(condType, Type.Bool);
-            resultType <- unifyM(tvar, bodyType)
+            _ <- unifyM(condType, Type.Bool, loc);
+            resultType <- unifyM(tvar, bodyType, loc)
           ) yield resultType
 
         /*
@@ -477,8 +477,8 @@ object Typer {
                 val cazeType = enumType.asInstanceOf[Type.Enum].cases(tag.name)
                 for (
                   innerType <- visitExp(exp);
-                  _________ <- unifyM(innerType, cazeType);
-                  resultType <- unifyM(tvar, enumType)
+                  _________ <- unifyM(innerType, cazeType, loc);
+                  resultType <- unifyM(tvar, enumType, loc)
                 ) yield resultType
               case Err(e) => failM(e)
             }
@@ -491,7 +491,7 @@ object Typer {
         case NamedAst.Expression.Tuple(elms, tvar, loc) =>
           for (
             elementTypes <- visitExps2(elms);
-            resultType <- unifyM(tvar, Type.mkFTuple(elementTypes))
+            resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
           ) yield resultType
 
         /*
@@ -506,7 +506,7 @@ object Typer {
         case NamedAst.Expression.FSome(exp, tvar, loc) =>
           for (
             innerType <- visitExp(exp);
-            resultType <- unifyM(tvar, Type.mkFOpt(innerType))
+            resultType <- unifyM(tvar, Type.mkFOpt(innerType), loc)
           ) yield resultType
 
         /*
@@ -522,7 +522,7 @@ object Typer {
           for (
             headType <- visitExp(head);
             tailType <- visitExp(tail);
-            resultType <- unifyM(tvar, Type.mkFList(headType), tailType)
+            resultType <- unifyM(tvar, Type.mkFList(headType), tailType, loc)
           ) yield resultType
 
         /*
@@ -531,7 +531,7 @@ object Typer {
         case NamedAst.Expression.FVec(elms, tvar, loc) =>
           for (
             elementType <- visitExps(elms, Type.freshTypeVar());
-            resultType <- unifyM(Type.mkFVec(elementType), tvar)
+            resultType <- unifyM(Type.mkFVec(elementType), tvar, loc)
           ) yield resultType
 
         /*
@@ -540,7 +540,7 @@ object Typer {
         case NamedAst.Expression.FSet(elms, tvar, loc) =>
           for (
             elementType <- visitExps(elms, Type.freshTypeVar());
-            resultType <- unifyM(tvar, Type.mkFSet(elementType))
+            resultType <- unifyM(tvar, Type.mkFSet(elementType), loc)
           ) yield resultType
 
         /*
@@ -552,7 +552,7 @@ object Typer {
           for (
             keyType <- visitExps(keys, Type.freshTypeVar());
             valType <- visitExps(vals, Type.freshTypeVar());
-            resultType <- unifyM(tvar, Type.mkFMap(keyType, valType))
+            resultType <- unifyM(tvar, Type.mkFMap(keyType, valType), loc)
           ) yield resultType
 
         /*
@@ -562,8 +562,8 @@ object Typer {
           for (
             tpe1 <- visitExp(exp1);
             tpe2 <- visitExp(exp2);
-            ____ <- unifyM(tpe1, Type.mkFVec(tvar));
-            ____ <- unifyM(tpe2, Type.Int32)
+            ____ <- unifyM(tpe1, Type.mkFVec(tvar), loc);
+            ____ <- unifyM(tpe2, Type.Int32, loc)
           ) yield tvar
 
         /*
@@ -575,9 +575,9 @@ object Typer {
             tpe1 <- visitExp(exp1);
             tpe2 <- visitExp(exp2);
             tpe3 <- visitExp(exp3);
-            ____ <- unifyM(tpe2, Type.Int32);
-            ____ <- unifyM(tpe3, elementType);
-            resultType <- unifyM(tvar, tpe1, Type.mkFVec(elementType))
+            ____ <- unifyM(tpe2, Type.Int32, loc);
+            ____ <- unifyM(tpe3, elementType, loc);
+            resultType <- unifyM(tvar, tpe1, Type.mkFVec(elementType), loc)
           ) yield resultType
 
         /*
@@ -587,7 +587,7 @@ object Typer {
           // TODO: Check formal parameters.
           for (
             tpe <- visitExp(exp);
-            resultType <- unifyM(tpe, Type.Bool)
+            resultType <- unifyM(tpe, Type.Bool, loc)
           ) yield resultType
 
         /*
@@ -602,7 +602,7 @@ object Typer {
           for (
             ___ <- liftM(Type.Bool, subst0);
             tpe <- visitExp(exp);
-            ___ <- unifyM(Type.Bool, tpe)
+            ___ <- unifyM(Type.Bool, tpe, loc)
           ) yield Type.Bool
 
         /*
@@ -613,7 +613,7 @@ object Typer {
             case Ok(resolvedType) =>
               for (
                 actualType <- visitExp(exp);
-                resultType <- unifyM(actualType, resolvedType)
+                resultType <- unifyM(actualType, resolvedType, loc)
               ) yield resultType
             case Err(e) => failM(e)
           }
@@ -632,7 +632,7 @@ object Typer {
           for (
             tpe1 <- visitExp(x);
             tpe2 <- visitExps(xs, tpe);
-            resultType <- unifyM(tpe1, tpe2)
+            resultType <- unifyM(tpe1, tpe2, x.loc)
           ) yield resultType
       }
 
@@ -651,7 +651,7 @@ object Typer {
         */
       def visitPat(pat0: NamedAst.Pattern, ns0: Name.NName): InferMonad[Type] = pat0 match {
         case NamedAst.Pattern.Wild(tvar, loc) => liftM(tvar)
-        case NamedAst.Pattern.Var(sym, tvar, loc) => unifyM(sym.tvar, tvar)
+        case NamedAst.Pattern.Var(sym, tvar, loc) => unifyM(sym.tvar, tvar, loc)
         case NamedAst.Pattern.Unit(loc) => liftM(Type.Unit)
         case NamedAst.Pattern.True(loc) => liftM(Type.Bool)
         case NamedAst.Pattern.False(loc) => liftM(Type.Bool)
@@ -671,8 +671,8 @@ object Typer {
                 val cazeType = enumType.asInstanceOf[Type.Enum].cases(tag.name)
                 for (
                   innerType <- visitPat(pat, ns0);
-                  _________ <- unifyM(innerType, cazeType);
-                  resultType <- unifyM(tvar, enumType)
+                  _________ <- unifyM(innerType, cazeType, loc);
+                  resultType <- unifyM(tvar, enumType, loc)
                 ) yield resultType
               case Err(e) => failM(e)
             }
@@ -682,7 +682,7 @@ object Typer {
         case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
           for (
             elementTypes <- visitPats2(elms, ns0);
-            resultType <- unifyM(tvar, Type.mkFTuple(elementTypes))
+            resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
           ) yield resultType
 
         case NamedAst.Pattern.FNone(tvar, loc) => ???
@@ -999,7 +999,7 @@ object Typer {
           case Ok(expectedTypes) =>
             for (
               actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns, program)));
-              unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes)
+              unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes, loc)
             ) yield unifiedTypes
           case Err(e) => failM(e)
         }
@@ -1021,7 +1021,7 @@ object Typer {
         }
         for (
           actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns0, program)));
-          unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes)
+          unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes, loc)
         ) yield unifiedTypes
       case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
         Disambiguation.lookupRef(qname, ns0, program) match {
@@ -1032,14 +1032,14 @@ object Typer {
             }
             for (
               actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns0, program)));
-              unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes)
+              unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes, loc)
             ) yield unifiedTypes
           case Ok(Target.Hook(hook)) =>
             val Type.Apply(Type.Arrow(l), ts) = hook.tpe
             val declaredTypes = ts.take(l - 1)
             for (
               actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns0, program)));
-              unifiedTypes <- Unification.unifyM(declaredTypes, actualTypes)
+              unifiedTypes <- Unification.unifyM(declaredTypes, actualTypes, loc)
             ) yield unifiedTypes
           case Err(e) => failM(e)
         }
