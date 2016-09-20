@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast.{Ast, Name, NamedAst, Type}
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.errors.TypeError.UnresolvedDefinition
+import ca.uwaterloo.flix.language.errors.TypeError.UnresolvedRef
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result._
 
@@ -53,8 +53,8 @@ object Disambiguation {
       (defnOpt, hookOpt) match {
         case (Some(defn), None) => Ok(Target.Defn(ns0, defn))
         case (None, Some(hook)) => Ok(Target.Hook(hook))
-        case (None, None) => Err(UnresolvedDefinition(qname, ns0, qname.loc))
-        case (Some(defn), Some(hook)) => Err(???) // TODO: Overloaded name.
+        case (None, None) => Err(UnresolvedRef(qname, ns0, qname.loc))
+        case (Some(defn), Some(hook)) => Err(TypeError.AmbiguousRef(qname, ns0, qname.loc))
       }
     } else {
       // Case 2: Qualified. Lookup both the definition and the hook.
@@ -64,8 +64,8 @@ object Disambiguation {
       (defnOpt, hookOpt) match {
         case (Some(defn), None) => Ok(Target.Defn(qname.namespace, defn))
         case (None, Some(hook)) => Ok(Target.Hook(hook))
-        case (None, None) => Err(UnresolvedDefinition(qname, ns0, qname.loc))
-        case (Some(defn), Some(hook)) => Err(???) // TODO: Overloaded name.
+        case (None, None) => Err(UnresolvedRef(qname, ns0, qname.loc))
+        case (Some(defn), Some(hook)) => Err(TypeError.AmbiguousRef(qname, ns0, qname.loc))
       }
     }
   }

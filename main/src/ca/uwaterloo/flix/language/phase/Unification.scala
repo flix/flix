@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 object Unification {
 
   /**
-    * A substitution is a map from type variables to types.
+    * Companion object for the [[Substitution]] class.
     */
   object Substitution {
     /**
@@ -37,6 +37,9 @@ object Unification {
     def singleton(x: Type.Var, tpe: Type): Substitution = Substitution(Map(x -> tpe))
   }
 
+  /**
+    * A substitution is a map from type variables to types.
+    */
   case class Substitution(m: Map[Type.Var, Type]) {
 
     // TODO: Remove in the future.

@@ -28,6 +28,111 @@ object TypeError {
 
   implicit val consoleCtx = Compiler.ConsoleCtx
 
+  /**
+    * Ambiguous Reference Error.
+    *
+    * @param qn  the ambiguous name.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
+    */
+  case class AmbiguousRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
+    val message =
+      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
+         |
+         |${consoleCtx.red(s">> Ambiguous reference '$qn' (in namespace '$ns').")}
+         |
+         |${loc.highlight}
+         """.stripMargin
+  }
+
+  /**
+    * Unresolved Reference Error.
+    *
+    * @param qn  the unresolved reference name.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
+    */
+  case class UnresolvedRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
+    val message =
+      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
+         |
+         |${consoleCtx.red(s">> Unknown definition '$qn' (in namespace '$ns').")}
+         |
+         |${loc.highlight}
+         """.stripMargin
+  }
+
+  /**
+    * Unresolved Table Error.
+    *
+    * @param qn  the unresolved table name.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
+    */
+  case class UnresolvedTable(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
+    val message =
+      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
+         |
+         |${consoleCtx.red(s">> Unknown relation or lattice '$qn' (in namespace '$ns').")}
+         |
+         |${loc.highlight}
+         """.stripMargin
+  }
+
+  /**
+    * Unresolved Tag Error.
+    *
+    * @param enumName the enum name.
+    * @param tagName  the tag name.
+    * @param ns       the current namespace.
+    * @param loc      the location where the error occurred.
+    */
+  case class UnresolvedTag(enumName: Name.QName, tagName: Name.Ident, ns: Name.NName, loc: SourceLocation) extends TypeError {
+    val message =
+      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
+         |
+         |${consoleCtx.red(s">> Unknown tag '${tagName.name}' (in namespace '$ns').")}
+         |
+         |${loc.highlight}
+         """.stripMargin
+  }
+
+  /**
+    * Unresolved Type Error.
+    *
+    * @param qn  the unresolved name.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
+    */
+  case class UnresolvedType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
+    val message =
+      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
+         |
+         |${consoleCtx.red(s">> Unknown type '$qn' (in namespace '$ns').")}
+         |
+         |${loc.highlight}
+         """.stripMargin
+  }
+
+  /**
+    * Unification Error.
+    *
+    * @param tpe1 the first type.
+    * @param tpe2 the second type.
+    * @param loc  the location where the error occurred.
+    */
+  case class UnificationError(tpe1: Type, tpe2: Type, /* TODO: */ loc: SourceLocation = SourceLocation.Unknown) extends TypeError {
+    val message =
+      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
+         |
+         |${consoleCtx.red(s">> Unable to unify '$tpe1' and '$tpe2'.")}
+         |
+         |${loc.highlight}
+         """.stripMargin
+  }
+
+  // TODO -----------------------------------------------------------------------
+
 
   // TODO: Check arity of function calls, predicates, etc.
 
@@ -45,19 +150,9 @@ object TypeError {
          |${consoleCtx.red(s">> No lattice declared for `$tpe'.")}
          |
          |${loc.highlight}
-         |Tip: Associate a lattice with the type.
          """.stripMargin
   }
 
-  // TODO
-  case class MergeError() extends TypeError {
-    val message = "MergeError" // TODO
-  }
-
-  // TODO
-  case class UnificationError(tpe1: Type, tpe2: Type) extends TypeError {
-    val message = "UnificationError" // TODO
-  }
 
   // TODO
   case class OccursCheck() extends TypeError {
@@ -67,74 +162,6 @@ object TypeError {
   // TODO
   case class KindError() extends TypeError {
     val message = "KindError" // TODO
-  }
-
-  /**
-    * An error raised to indicate that a definition was not found.
-    *
-    * @param name the invalid name.
-    * @param ns   the current namespace.
-    * @param loc  the location of the name.
-    */
-  case class UnresolvedDefinition(name: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
-    val message =
-      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Unknown definition '$name' not found in the namespace '$ns'.")}
-         |
-         |${loc.highlight}
-         """.stripMargin
-  }
-
-  /**
-    * An error raised to indicate that a table was not found.
-    *
-    * @param qname the invalid name.
-    * @param ns    the current namespace.
-    * @param loc   the location of the name.
-    */
-  case class UnresolvedTable(qname: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
-    val message =
-      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Unknown relation or lattice '$qname' not found in the namespace '$ns'.")}
-         |
-         |${loc.highlight}
-         """.stripMargin
-  }
-
-  /**
-    * An error raised to indicate that a tag was not found.
-    *
-    * @param qname the invalid name.
-    * @param ns    the current namespace.
-    * @param loc   the location of the name.
-    */
-  case class UnresolvedTag(qname: Name.QName, tag: Name.Ident, ns: Name.NName, loc: SourceLocation) extends TypeError {
-    val message =
-      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Unknown tag '${tag.name}' not found in the namespace '$ns'.")}
-         |
-         |${loc.highlight}
-         """.stripMargin
-  }
-
-  /**
-    * An error raised to indicate that a type was not found.
-    *
-    * @param qname the invalid name.
-    * @param ns    the current namespace.
-    * @param loc   the location of the name.
-    */
-  case class UnresolvedType(qname: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
-    val message =
-      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Unknown type '$qname' not found in the namespace '$ns'.")}
-         |
-         |${loc.highlight}
-         """.stripMargin
   }
 
 

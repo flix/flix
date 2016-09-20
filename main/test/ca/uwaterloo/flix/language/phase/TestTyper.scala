@@ -921,7 +921,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("UnresolvedDefinition01") {
     val input = "def f: Int = x"
     val result = new Flix().addStr(input).compile()
-    assertError[TypeError.UnresolvedDefinition](result)
+    assertError[TypeError.UnresolvedRef](result)
   }
 
   test("UnresolvedDefinition02") {
@@ -932,7 +932,7 @@ class TestTyper extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[TypeError.UnresolvedDefinition](result)
+    assertError[TypeError.UnresolvedRef](result)
   }
 
   /////////////////////////////////////////////////////////////////////////////
