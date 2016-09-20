@@ -162,18 +162,6 @@ class TestWeeder extends FunSuite {
     assert(result.errors.head.isInstanceOf[WeederError.IllegalAnnotation])
   }
 
-  test("IllegalBodyTerm.01") {
-    val input = "P(x) :- A(f(x))."
-    val result = new Flix().addStr(input).solve()
-    assert(result.errors.head.isInstanceOf[WeederError.IllegalBodyTerm])
-  }
-
-  test("IllegalBodyTerm.02") {
-    val input = "P(x) :- A(x), B(f(x)), C(x)."
-    val result = new Flix().addStr(input).solve()
-    assert(result.errors.head.isInstanceOf[WeederError.IllegalBodyTerm])
-  }
-
   test("IllegalExistential.01") {
     val input = "def f: Prop = ∃. true"
     val result = new Flix().addStr(input).compile()
@@ -226,18 +214,6 @@ class TestWeeder extends FunSuite {
     val input = "x != y :- A(x, y)."
     val result = new Flix().addStr(input).solve()
     assert(result.errors.head.isInstanceOf[WeederError.IllegalHeadPredicate])
-  }
-
-  test("IllegalHeadTerm.01") {
-    val input = "P(_)."
-    val result = new Flix().addStr(input).solve()
-    assert(result.errors.head.isInstanceOf[WeederError.IllegalHeadTerm])
-  }
-
-  test("IllegalHeadTerm.02") {
-    val input = "P(x, _, z) :- A(x, z)."
-    val result = new Flix().addStr(input).solve()
-    assert(result.errors.head.isInstanceOf[WeederError.IllegalHeadTerm])
   }
 
   test("IllegalInt8.01") {

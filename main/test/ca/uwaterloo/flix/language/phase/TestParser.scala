@@ -2205,9 +2205,7 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Type.Set.01") {
     val input = "def f: Set[Int] = #{}"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
+    new Flix().addStr(input).compile().get
   }
 
   test("Type.Map.01") {
