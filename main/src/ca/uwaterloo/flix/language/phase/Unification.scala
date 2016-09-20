@@ -285,15 +285,15 @@ object Unification {
     * Unifies all the types in the given non-empty list `ts`.
     */
   def unifyM(ts: List[Type], loc: SourceLocation): InferMonad[Type] = {
-    // TODO: Is this the correct order?
-    def visit(tpe0: Type, xs: List[Type]): InferMonad[Type] = xs match {
-      case Nil => liftM(tpe0)
-      case y :: ys => for (
-        intermediate <- unifyM(tpe0, y, loc);
-        resultType <- visit(intermediate, ys)
-      ) yield resultType
+    assert(ts.nonEmpty)
+    // TODO: Need help verification order.
+    def visit(x0: InferMonad[Type], xs: List[Type]): InferMonad[Type] = xs match {
+      case Nil => x0
+      case y :: ys => x0 flatMap {
+        case tpe => visit(unifyM(tpe, y, loc), ys)
+      }
     }
-    visit(ts.head, ts.tail)
+    visit(liftM(ts.head), ts.tail)
   }
 
   /**
@@ -304,9 +304,9 @@ object Unification {
   })
 
   /**
-    * Collects the result of each type inference monad going left to right.
+    * Collects the result of each type inference monad in `ts` going left to right.
     */
-  // TODO: Order
+  // TODO: Need help verification order.
   def seqM[A](xs: List[InferMonad[A]]): InferMonad[List[A]] = xs match {
     case Nil => liftM(Nil)
     case y :: ys => y flatMap {
