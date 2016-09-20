@@ -248,8 +248,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("UnresolvedTable01") {
     val input = "VarPointsTo(1, 2)."
     val result = new Flix().addStr(input).compile()
-    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedRelationReference])
-    ???
+    assertError[TypeError.UnresolvedTable](result)
   }
 
   test("UnresolvedTable02") {
@@ -259,8 +258,7 @@ class TestNamer extends FunSuite with TestUtils {
           |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    //assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedRelationReference])
-    ???
+    assertError[TypeError.UnresolvedTable](result)
   }
 
   test("UnresolvedType01") {

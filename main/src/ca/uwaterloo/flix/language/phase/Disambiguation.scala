@@ -124,6 +124,29 @@ object Disambiguation {
   }
 
   /**
+    * Finds the table of the given `qname` in the namespace `ns`.
+    *
+    * Returns [[Err]] of [[TypeError.UnresolvedTable]] if the table does not exist.
+    */
+  def lookupTable(qname: Name.QName, ns: Name.NName, program: Program): Result[NamedAst.Table, TypeError] = {
+    if (qname.isUnqualified) {
+      // Lookup in the current namespace.
+      val tables = program.tables.getOrElse(ns, Map.empty)
+      tables.get(qname.ident.name) match {
+        case None => Err(TypeError.UnresolvedTable(qname, ns, qname.loc))
+        case Some(table) => Ok(table)
+      }
+    } else {
+      // Lookup in the qualified namespace.
+      val tables = program.tables.getOrElse(qname.namespace, Map.empty)
+      tables.get(qname.ident.name) match {
+        case None => Err(TypeError.UnresolvedTable(qname, qname.namespace, qname.loc))
+        case Some(table) => Ok(table)
+      }
+    }
+  }
+
+  /**
     * Resolves the given type `tpe0` in the given namespace `ns0`.
     */
   def resolve(tpe0: NamedAst.Type, ns0: Name.NName, program: Program): Result[Type, TypeError] = tpe0 match {

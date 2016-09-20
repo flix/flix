@@ -73,6 +73,7 @@ object TypeError {
     * An error raised to indicate that a definition was not found.
     *
     * @param name the invalid name.
+    * @param ns   the current namespace.
     * @param loc  the location of the name.
     */
   case class UnresolvedDefinition(name: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
@@ -86,12 +87,30 @@ object TypeError {
   }
 
   /**
+    * An error raised to indicate that a table was not found.
+    *
+    * @param qname the invalid name.
+    * @param ns    the current namespace.
+    * @param loc   the location of the name.
+    */
+  case class UnresolvedTable(qname: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
+    val message =
+      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
+         |
+         |${consoleCtx.red(s">> Unknown relation or lattice '$qname' not found in the namespace '$ns'.")}
+         |
+         |${loc.highlight}
+         """.stripMargin
+  }
+
+  /**
     * An error raised to indicate that a tag was not found.
     *
-    * @param name the invalid name.
-    * @param loc  the location of the name.
+    * @param qname the invalid name.
+    * @param ns    the current namespace.
+    * @param loc   the location of the name.
     */
-  case class UnresolvedTag(name: Name.QName, tag: Name.Ident, ns: Name.NName, loc: SourceLocation) extends TypeError {
+  case class UnresolvedTag(qname: Name.QName, tag: Name.Ident, ns: Name.NName, loc: SourceLocation) extends TypeError {
     val message =
       s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
          |
@@ -104,14 +123,15 @@ object TypeError {
   /**
     * An error raised to indicate that a type was not found.
     *
-    * @param name the invalid name.
-    * @param loc  the location of the name.
+    * @param qname the invalid name.
+    * @param ns    the current namespace.
+    * @param loc   the location of the name.
     */
-  case class UnresolvedType(name: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
+  case class UnresolvedType(qname: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
     val message =
       s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
          |
-         |${consoleCtx.red(s">> Unknown type '$name' not found in the namespace '$ns'.")}
+         |${consoleCtx.red(s">> Unknown type '$qname' not found in the namespace '$ns'.")}
          |
          |${loc.highlight}
          """.stripMargin

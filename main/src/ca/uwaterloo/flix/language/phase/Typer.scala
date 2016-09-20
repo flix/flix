@@ -968,9 +968,10 @@ object Typer {
       case NamedAst.Predicate.Head.True(loc) => Unification.liftM(Nil)
       case NamedAst.Predicate.Head.False(loc) => Unification.liftM(Nil)
       case NamedAst.Predicate.Head.Table(qname, terms, loc) =>
-        val declaredTypes = lookupTable(qname, ns, program) match {
-          case NamedAst.Table.Relation(sym, attr, _) => attr.map(_.tpe)
-          case NamedAst.Table.Lattice(sym, keys, value, _) => keys.map(_.tpe) ::: value.tpe :: Nil
+        val declaredTypes = Disambiguation.lookupTable(qname, ns, program) match {
+          case Ok(NamedAst.Table.Relation(sym, attr, _)) => attr.map(_.tpe)
+          case Ok(NamedAst.Table.Lattice(sym, keys, value, _)) => keys.map(_.tpe) ::: value.tpe :: Nil
+          case Err(e) => return failM(e)
         }
 
         Disambiguation.resolve(declaredTypes, ns, program) match {
@@ -988,9 +989,10 @@ object Typer {
       */
     def infer(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = body0 match {
       case NamedAst.Predicate.Body.Table(qname, terms, loc) =>
-        val declaredTypes = lookupTable(qname, ns0, program) match {
-          case NamedAst.Table.Relation(sym, attr, _) => attr.map(_.tpe)
-          case NamedAst.Table.Lattice(sym, keys, value, _) => keys.map(_.tpe) ::: value.tpe :: Nil
+        val declaredTypes = Disambiguation.lookupTable(qname, ns0, program) match {
+          case Ok(NamedAst.Table.Relation(sym, attr, _)) => attr.map(_.tpe)
+          case Ok(NamedAst.Table.Lattice(sym, keys, value, _)) => keys.map(_.tpe) ::: value.tpe :: Nil
+          case Err(e) => return failM(e)
         }
         val expectedTypes = Disambiguation.resolve(declaredTypes, ns0, program) match {
           case Ok(tpes) => tpes
@@ -1031,11 +1033,12 @@ object Typer {
       case NamedAst.Predicate.Head.True(loc) => TypedAst.Predicate.Head.True(loc)
       case NamedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
       case NamedAst.Predicate.Head.Table(qname, terms, loc) =>
-        lookupTable(qname, ns0, program) match {
-          case NamedAst.Table.Relation(sym, _, _) =>
+        Disambiguation.lookupTable(qname, ns0, program) match {
+          case Ok(NamedAst.Table.Relation(sym, _, _)) =>
             TypedAst.Predicate.Head.Table(sym, terms.map(t => Terms.compatHead(t, ns0, program, subst0)), loc)
-          case NamedAst.Table.Lattice(sym, _, _, _) =>
+          case Ok(NamedAst.Table.Lattice(sym, _, _, _)) =>
             TypedAst.Predicate.Head.Table(sym, terms.map(t => Terms.compatHead(t, ns0, program, subst0)), loc)
+          case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
         }
     }
 
@@ -1044,9 +1047,10 @@ object Typer {
       */
     def reassemble(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
       case NamedAst.Predicate.Body.Table(qname, terms, loc) =>
-        lookupTable(qname, ns0, program) match {
-          case NamedAst.Table.Relation(sym, _, _) => TypedAst.Predicate.Body.Table(sym, terms.map(t => Terms.compatBody(t, ns0, program, subst0)), loc)
-          case NamedAst.Table.Lattice(sym, _, _, _) => TypedAst.Predicate.Body.Table(sym, terms.map(t => Terms.compatBody(t, ns0, program, subst0)), loc)
+        Disambiguation.lookupTable(qname, ns0, program) match {
+          case Ok(NamedAst.Table.Relation(sym, _, _)) => TypedAst.Predicate.Body.Table(sym, terms.map(t => Terms.compatBody(t, ns0, program, subst0)), loc)
+          case Ok(NamedAst.Table.Lattice(sym, _, _, _)) => TypedAst.Predicate.Body.Table(sym, terms.map(t => Terms.compatBody(t, ns0, program, subst0)), loc)
+          case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
         }
       case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
         Disambiguation.lookupRef(qname, ns0, program) match {
@@ -1073,12 +1077,6 @@ object Typer {
     def compatBody(exp0: NamedAst.Expression, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Term.Body = {
       exp2bodyterm(Expressions.reassemble(exp0, ns0, program, subst0))
     }
-
-    //      case class Lit(literal: TypedAst.Literal, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
-    //      case class Tag(enumName: Symbol.Resolved, tagName: Name.Ident, t: TypedAst.Term.Head, tpe: Type.Enum, loc: SourceLocation) extends TypedAst.Term.Head
-    //      case class Tuple(elms: List[TypedAst.Term.Head], tpe: Type.Tuple, loc: SourceLocation) extends TypedAst.Term.Head
-    //      case class Apply(name: Symbol.Resolved, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
-    //      case class ApplyHook(hook: Ast.Hook, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
 
     private def exp2headterm(exp0: TypedAst.Expression): TypedAst.Term.Head = exp0 match {
       case TypedAst.Expression.Var(ident, tpe, loc) => TypedAst.Term.Head.Var(ident, tpe, loc)
@@ -1124,21 +1122,6 @@ object Typer {
       case _ => throw new UnsupportedOperationException(s"Not implemented for $exp0")
     }
 
-  }
-
-  /**
-    * TODO: DOC
-    */
-  private def lookupTable(qname: Name.QName, ns: Name.NName, program: Program): NamedAst.Table = {
-    if (qname.isUnqualified) {
-      val tables = program.tables(ns)
-      tables.get(qname.ident.name) match {
-        case None => throw new RuntimeException(s"Unknown table ${qname}")
-        case Some(table) => table
-      }
-    } else {
-      ???
-    }
   }
 
   /**
