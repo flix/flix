@@ -538,9 +538,11 @@ object Typer {
          * Set expression.
          */
         case NamedAst.Expression.FSet(elms, tvar, loc) =>
+          val elementType = Type.freshTypeVar()
           for (
-            elementType <- visitExps(elms, Type.freshTypeVar());
-            resultType <- unifyM(tvar, Type.mkFSet(elementType), loc)
+            actualTypes <- seqM(elms map visitExp);
+            unifiedType <- unifyM(elementType :: actualTypes, loc);
+            resultType <- unifyM(tvar, Type.mkFSet(unifiedType), loc)
           ) yield resultType
 
         /*
