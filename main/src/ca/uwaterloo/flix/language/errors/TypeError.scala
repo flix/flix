@@ -121,7 +121,7 @@ object TypeError {
     * @param tpe2 the second type.
     * @param loc  the location where the error occurred.
     */
-  case class UnificationError(tpe1: Type, tpe2: Type, /* TODO: */ loc: SourceLocation = SourceLocation.Unknown) extends TypeError {
+  case class UnificationError(tpe1: Type, tpe2: Type, loc: SourceLocation) extends TypeError {
     val message =
       s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
          |
@@ -130,6 +130,8 @@ object TypeError {
          |${loc.highlight}
          """.stripMargin
   }
+
+
 
   // TODO -----------------------------------------------------------------------
 

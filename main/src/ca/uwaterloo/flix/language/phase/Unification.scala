@@ -117,77 +117,130 @@ object Unification {
     *
     * Returns [[Failure]] if the two types cannot be unified.
     */
-  def unify(tpe1: Type, tpe2: Type): Result[Substitution, TypeError] = (tpe1, tpe2) match {
-    case (x: Type.Var, _) => unifyVar(x, tpe2)
-    case (_, x: Type.Var) => unifyVar(x, tpe1)
-    case (Type.Unit, Type.Unit) => Result.Ok(Substitution.empty)
-    case (Type.Bool, Type.Bool) => Result.Ok(Substitution.empty)
-    case (Type.Char, Type.Char) => Result.Ok(Substitution.empty)
-    case (Type.Float32, Type.Float32) => Result.Ok(Substitution.empty)
-    case (Type.Float64, Type.Float64) => Result.Ok(Substitution.empty)
-    case (Type.Int8, Type.Int8) => Result.Ok(Substitution.empty)
-    case (Type.Int16, Type.Int16) => Result.Ok(Substitution.empty)
-    case (Type.Int32, Type.Int32) => Result.Ok(Substitution.empty)
-    case (Type.Int64, Type.Int64) => Result.Ok(Substitution.empty)
-    case (Type.BigInt, Type.BigInt) => Result.Ok(Substitution.empty)
-    case (Type.Str, Type.Str) => Result.Ok(Substitution.empty)
-    case (Type.Native, Type.Native) => Result.Ok(Substitution.empty)
-    case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
-    case (Type.FTuple(l1), Type.FTuple(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
-    case (Type.FOpt, Type.FOpt) => Result.Ok(Substitution.empty)
-    case (Type.FList, Type.FList) => Result.Ok(Substitution.empty)
-    case (Type.FVec, Type.FVec) => Result.Ok(Substitution.empty)
-    case (Type.FSet, Type.FSet) => Result.Ok(Substitution.empty)
-    case (Type.FMap, Type.FMap) => Result.Ok(Substitution.empty)
-    case (Type.Enum(name1, cases1), Type.Enum(name2, cases2)) if name1 == name2 =>
-      val ts1 = cases1.values.toList
-      val ts2 = cases2.values.toList
-      unify(ts1, ts2)
+  def unify(tpe1: Type, tpe2: Type, loc: SourceLocation): Result[Substitution, TypeError] = {
 
-    case (Type.Apply(t1, ts1), Type.Apply(t2, ts2)) =>
-      unify(t1, t2) match {
-        case Result.Ok(subst1) => unify(subst1(ts1), subst1(ts2)) match {
+    // NB: Uses a closure to capture the source location `loc`.
+
+    /**
+      * Unifies the given variable `x` with the given type `tpe`.
+      *
+      * Performs the so-called occurs-check to ensure that the substitution is kind-preserving.
+      */
+    def unifyVar(x: Type.Var, tpe: Type): Result[Substitution, TypeError] = {
+      if (x == tpe) {
+        return Result.Ok(Substitution.empty)
+      }
+      if (tpe.typeVars contains x) {
+        return Result.Err(TypeError.OccursCheck())
+      }
+      if (x.kind != tpe.kind) {
+        return Result.Err(TypeError.KindError())
+      }
+      Result.Ok(Substitution.singleton(x, tpe))
+    }
+
+    /**
+      * Unifies the two given types `tpe1` and `tpe2`.
+      */
+    def unifyTypes(tpe1: Type, tpe2: Type): Result[Substitution, TypeError] = (tpe1, tpe2) match {
+      case (x: Type.Var, _) => unifyVar(x, tpe2)
+      case (_, x: Type.Var) => unifyVar(x, tpe1)
+      case (Type.Unit, Type.Unit) => Result.Ok(Substitution.empty)
+      case (Type.Bool, Type.Bool) => Result.Ok(Substitution.empty)
+      case (Type.Char, Type.Char) => Result.Ok(Substitution.empty)
+      case (Type.Float32, Type.Float32) => Result.Ok(Substitution.empty)
+      case (Type.Float64, Type.Float64) => Result.Ok(Substitution.empty)
+      case (Type.Int8, Type.Int8) => Result.Ok(Substitution.empty)
+      case (Type.Int16, Type.Int16) => Result.Ok(Substitution.empty)
+      case (Type.Int32, Type.Int32) => Result.Ok(Substitution.empty)
+      case (Type.Int64, Type.Int64) => Result.Ok(Substitution.empty)
+      case (Type.BigInt, Type.BigInt) => Result.Ok(Substitution.empty)
+      case (Type.Str, Type.Str) => Result.Ok(Substitution.empty)
+      case (Type.Native, Type.Native) => Result.Ok(Substitution.empty)
+      case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
+      case (Type.FTuple(l1), Type.FTuple(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
+      case (Type.FOpt, Type.FOpt) => Result.Ok(Substitution.empty)
+      case (Type.FList, Type.FList) => Result.Ok(Substitution.empty)
+      case (Type.FVec, Type.FVec) => Result.Ok(Substitution.empty)
+      case (Type.FSet, Type.FSet) => Result.Ok(Substitution.empty)
+      case (Type.FMap, Type.FMap) => Result.Ok(Substitution.empty)
+      case (Type.Enum(name1, cases1), Type.Enum(name2, cases2)) if name1 == name2 =>
+        val ts1 = cases1.values.toList
+        val ts2 = cases2.values.toList
+        unifyAll(ts1, ts2)
+      case (Type.Apply(t1, ts1), Type.Apply(t2, ts2)) =>
+        unifyTypes(t1, t2) match {
+          case Result.Ok(subst1) => unifyAll(subst1(ts1), subst1(ts2)) match {
+            case Result.Ok(subst2) => Result.Ok(subst2 @@ subst1)
+            case Result.Err(e) => Result.Err(e)
+          }
+          case Result.Err(e) => Result.Err(e)
+        }
+      case _ => Result.Err(TypeError.UnificationError(tpe1, tpe2, loc))
+    }
+
+    /**
+      * Unifies the two given lists of types `ts1` and `ts2`.
+      */
+    def unifyAll(ts1: List[Type], ts2: List[Type]): Result[Substitution, TypeError] = (ts1, ts2) match {
+      case (Nil, Nil) => Result.Ok(Substitution.empty)
+      case (t1 :: rs1, t2 :: rs2) => unifyTypes(t1, t2) match {
+        case Result.Ok(subst1) => unifyAll(subst1(rs1), subst1(rs2)) match {
           case Result.Ok(subst2) => Result.Ok(subst2 @@ subst1)
           case Result.Err(e) => Result.Err(e)
         }
         case Result.Err(e) => Result.Err(e)
       }
-    case _ => Result.Err(TypeError.UnificationError(tpe1, tpe2))
+      case _ => throw InternalCompilerException(s"Mismatched type lists: `$ts1' and `$ts2'.")
+    }
+
+    unifyTypes(tpe1, tpe2)
+  }
+
+
+  /**
+    * TODO: DOC
+    */
+  def unifyM(tpe1: Type, tpe2: Type, loc: SourceLocation): InferMonad[Type] = unify(tpe1, tpe2, loc) match {
+    case Result.Ok(subst) => Success(subst(tpe1), subst)
+    case Result.Err(e) => Failure(e)
   }
 
   /**
-    * Unifies the two given lists of types `ts1` and `ts2`.
+    * TODO: DOC
     */
-  def unify(ts1: List[Type], ts2: List[Type]): Result[Substitution, TypeError] = (ts1, ts2) match {
-    case (Nil, Nil) => Result.Ok(Substitution.empty)
-    case (tpe1 :: rs1, tpe2 :: rs2) => unify(tpe1, tpe2) match {
-      case Result.Ok(subst1) => unify(subst1(rs1), subst1(rs2)) match {
-        case Result.Ok(subst2) => Result.Ok(subst2 @@ subst1)
-        case Result.Err(e) => Result.Err(e)
-      }
-      case Result.Err(e) => Result.Err(e)
-    }
-    case _ => throw InternalCompilerException(s"Mismatched type lists: `$ts1' and `$ts2'.")
+  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): InferMonad[Type] = {
+    for (
+      tpe <- unifyM(tpe1, tpe2, loc);
+      res <- unifyM(tpe, tpe3, loc)
+    ) yield res
   }
 
   /**
-    * Unifies the given variable `x` with the given type `tpe`.
-    *
-    * Performs the so-called occurs-check to ensure that the substitution is kind-preserving.
+    * TODO: DOC
     */
-  def unifyVar(x: Type.Var, tpe: Type): Result[Substitution, TypeError] = {
-    if (x == tpe) {
-      return Result.Ok(Substitution.empty)
+  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation): InferMonad[Type] =
+  for (
+    tpe <- unifyM(tpe1, tpe2, tpe3, loc);
+    res <- unifyM(tpe, tpe4, loc)
+  ) yield res
+
+  // TODO
+  def unifyM(ts: List[Type], loc: SourceLocation): InferMonad[Type] = {
+    def visit(tpe0: Type, xs: List[Type]): InferMonad[Type] = xs match {
+      case Nil => liftM(tpe0)
+      case tpe :: ys => for (
+        intermediate <- unifyM(tpe0, tpe, loc);
+        resultType <- visit(intermediate, ys)
+      ) yield resultType
     }
-    if (tpe.typeVars contains x) {
-      return Result.Err(TypeError.OccursCheck())
-    }
-    if (x.kind != tpe.kind) {
-      return Result.Err(TypeError.KindError())
-    }
-    Result.Ok(Substitution.singleton(x, tpe))
+    visit(ts.head, ts.tail)
   }
 
+  def unifyM(xs: List[Type], ys: List[Type], loc: SourceLocation): InferMonad[List[Type]] =
+    sequenceM((xs zip ys).map {
+      case (x, y) => unifyM(x, y, loc)
+    })
 
   /**
     * TODO: DOC
@@ -261,50 +314,6 @@ object Unification {
       }
     }
   }
-
-  /**
-    * TODO: DOC
-    */
-  def unifyM(tpe1: Type, tpe2: Type, loc: SourceLocation): InferMonad[Type] = unify(tpe1, tpe2) match {
-    case Result.Ok(subst) => Success(subst(tpe1), subst)
-    case Result.Err(e) => Failure(e)
-  }
-
-  /**
-    * TODO: DOC
-    */
-  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): InferMonad[Type] = {
-    for (
-      tpe <- unifyM(tpe1, tpe2, loc);
-      res <- unifyM(tpe, tpe3, loc)
-    ) yield res
-  }
-
-  /**
-    * TODO: DOC
-    */
-  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation): InferMonad[Type] =
-  for (
-    tpe <- unifyM(tpe1, tpe2, tpe3, loc);
-    res <- unifyM(tpe, tpe4, loc)
-  ) yield res
-
-  // TODO
-  def unifyM(ts: List[Type], loc: SourceLocation): InferMonad[Type] = {
-    def visit(tpe0: Type, xs: List[Type]): InferMonad[Type] = xs match {
-      case Nil => liftM(tpe0)
-      case tpe :: ys => for (
-        intermediate <- unifyM(tpe0, tpe, loc);
-        resultType <- visit(intermediate, ys)
-      ) yield resultType
-    }
-    visit(ts.head, ts.tail)
-  }
-
-  def unifyM(xs: List[Type], ys: List[Type], loc: SourceLocation): InferMonad[List[Type]] =
-    sequenceM((xs zip ys).map {
-      case (x, y) => unifyM(x, y, loc)
-    })
 
 
 }
