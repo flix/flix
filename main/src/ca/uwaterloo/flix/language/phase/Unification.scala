@@ -42,14 +42,13 @@ object Unification {
     */
   case class Substitution(m: Map[Type.Var, Type]) {
 
-    // TODO: Remove in the future.
+    // TODO: To be removed. Used to look for bug.
     val invariant = m.forall {
       case (tvar, tpe) => m.get(tvar) match {
         case Some(t: Type.Var) => !m.contains(t)
         case _ => true
       }
     }
-
     if (!invariant)
       throw new RuntimeException
 
@@ -249,23 +248,23 @@ object Unification {
   }
 
   /**
-    * TODO: DOC
+    * Lifts the given value `a` into the type inference monad with an empty substitution.
     */
   def liftM[A](a: A): InferMonad[A] = Success(a, Substitution.empty)
 
   /**
-    * TODO: DOC
+    * Lifts the given value `a` into the type inference monad with the given substitution `s`.
     */
   def liftM[A](a: A, s: Substitution): InferMonad[A] = Success(a, s)
 
   /**
-    * TODO: DOC
+    * Lifts the given error `e` into the type inference monad.
     */
   def failM[A](e: TypeError): InferMonad[A] = Failure(e)
 
-
   /**
-    * TODO: DOC
+    * Unifies the two given types `tpe1` and `tpe2` lifting their unified types and
+    * associated substitution into the type inference monad.
     */
   def unifyM(tpe1: Type, tpe2: Type, loc: SourceLocation): InferMonad[Type] = unify(tpe1, tpe2, loc) match {
     case Result.Ok(subst) => Success(subst(tpe1), subst)
@@ -273,48 +272,45 @@ object Unification {
   }
 
   /**
-    * TODO: DOC
+    * Unifies the three given types `tpe1`, `tpe2`, and `tpe3`.
     */
-  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): InferMonad[Type] = {
-    for (
-      tpe <- unifyM(tpe1, tpe2, loc);
-      res <- unifyM(tpe, tpe3, loc)
-    ) yield res
-  }
+  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): InferMonad[Type] = unifyM(List(tpe1, tpe2, tpe3), loc)
 
   /**
-    * TODO: DOC
+    * Unifies the four given types `tpe1`, `tpe2`, `tpe3` and `tpe4`.
     */
-  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation): InferMonad[Type] =
-  for (
-    tpe <- unifyM(tpe1, tpe2, tpe3, loc);
-    res <- unifyM(tpe, tpe4, loc)
-  ) yield res
+  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation): InferMonad[Type] = unifyM(List(tpe1, tpe2, tpe3, tpe4), loc)
 
-  // TODO
+  /**
+    * Unifies all the types in the given non-empty list `ts`.
+    */
   def unifyM(ts: List[Type], loc: SourceLocation): InferMonad[Type] = {
+    // TODO: Is this the correct order?
     def visit(tpe0: Type, xs: List[Type]): InferMonad[Type] = xs match {
       case Nil => liftM(tpe0)
-      case tpe :: ys => for (
-        intermediate <- unifyM(tpe0, tpe, loc);
+      case y :: ys => for (
+        intermediate <- unifyM(tpe0, y, loc);
         resultType <- visit(intermediate, ys)
       ) yield resultType
     }
     visit(ts.head, ts.tail)
   }
 
-  def unifyM(xs: List[Type], ys: List[Type], loc: SourceLocation): InferMonad[List[Type]] =
-    sequenceM((xs zip ys).map {
-      case (x, y) => unifyM(x, y, loc)
-    })
+  /**
+    * Pairwise unifies the two given lists of types `xs` and `ys`.
+    */
+  def unifyM(xs: List[Type], ys: List[Type], loc: SourceLocation): InferMonad[List[Type]] = seqM((xs zip ys).map {
+    case (x, y) => unifyM(x, y, loc)
+  })
 
   /**
-    * TODO: DOC
+    * Collects the result of each type inference monad going left to right.
     */
-  def sequenceM[A](xs: List[InferMonad[A]]): InferMonad[List[A]] = xs match {
+  // TODO: Order
+  def seqM[A](xs: List[InferMonad[A]]): InferMonad[List[A]] = xs match {
     case Nil => liftM(Nil)
     case y :: ys => y flatMap {
-      case r => sequenceM(ys) map {
+      case r => seqM(ys) map {
         case rs => r :: rs
       }
     }

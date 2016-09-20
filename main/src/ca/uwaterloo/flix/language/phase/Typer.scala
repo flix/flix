@@ -156,12 +156,12 @@ object Typer {
       case (ns, decls) => decls.map {
         // relation, infer types for the attributes.
         case (_, NamedAst.Table.Relation(sym, attr, loc)) =>
-          sequenceM(attr.map(a => infer(a, ns, program))) map {
+          seqM(attr.map(a => infer(a, ns, program))) map {
             case as => sym -> (TypedAst.Table.Relation(sym, as, loc): TypedAst.Table)
           }
         // lattice, infer types for the keys and value.
         case (_, NamedAst.Table.Lattice(sym, keys, value, loc)) =>
-          sequenceM(keys.map(a => infer(a, ns, program))) flatMap {
+          seqM(keys.map(a => infer(a, ns, program))) flatMap {
             case ks => infer(value, ns, program) map {
               case v => sym -> (TypedAst.Table.Lattice(sym, ks, v, loc): TypedAst.Table)
             }
@@ -169,7 +169,7 @@ object Typer {
       }
     }
 
-    sequenceM(tables).map(_.toMap)
+    seqM(tables).map(_.toMap)
   }
 
 
@@ -998,7 +998,7 @@ object Typer {
         Disambiguation.resolve(declaredTypes, ns, program) match {
           case Ok(expectedTypes) =>
             for (
-              actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns, program)));
+              actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns, program)));
               unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes, loc)
             ) yield unifiedTypes
           case Err(e) => failM(e)
@@ -1020,7 +1020,7 @@ object Typer {
           case Err(e) => return failM(e)
         }
         for (
-          actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns0, program)));
+          actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns0, program)));
           unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes, loc)
         ) yield unifiedTypes
       case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
@@ -1031,14 +1031,14 @@ object Typer {
               case Err(e) => return failM(e)
             }
             for (
-              actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns0, program)));
+              actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns0, program)));
               unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes, loc)
             ) yield unifiedTypes
           case Ok(Target.Hook(hook)) =>
             val Type.Apply(Type.Arrow(l), ts) = hook.tpe
             val declaredTypes = ts.take(l - 1)
             for (
-              actualTypes <- sequenceM(terms.map(t => Expressions.infer(t, ns0, program)));
+              actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns0, program)));
               unifiedTypes <- Unification.unifyM(declaredTypes, actualTypes, loc)
             ) yield unifiedTypes
           case Err(e) => failM(e)
