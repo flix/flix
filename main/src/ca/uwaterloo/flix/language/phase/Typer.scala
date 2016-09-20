@@ -31,7 +31,7 @@ object Typer {
     * Type checks the given program.
     */
   def typer(program: NamedAst.Program)(implicit genSym: GenSym): Validation[TypedAst.Root, TypeError] = {
-    val s = System.nanoTime()
+    val startTime = System.nanoTime()
 
     /*
      * Definitions.
@@ -142,8 +142,8 @@ object Typer {
       }
     }
 
-    val e = System.nanoTime()
-    val time = program.time.copy(typer = e - s)
+    val currentTime = System.nanoTime()
+    val time = program.time.copy(typer = currentTime - startTime)
 
     TypedAst.Root(constants, lattices, tables, indexes, facts.toList, rules.toList, hooks, Nil, time).toSuccess
   }
@@ -254,9 +254,10 @@ object Typer {
         case NamedAst.Expression.Ref(ref, tvar, loc) =>
           Disambiguation.lookupRef(ref, ns0, program) match {
             case Ok(Target.Defn(ns, defn)) =>
-              for (declaredType <- Typer.Types.resolve(defn.tpe, ns, program);
-                   resultType <- unifyM(tvar, declaredType)
-              ) yield resultType
+              Disambiguation.resolve(defn.tpe, ns, program) match {
+                case Ok(declaredType) => unifyM(tvar, declaredType)
+                case Err(e) => failM(e)
+              }
             case Ok(Target.Hook(hook)) => liftM(hook.tpe)
             case Err(e) => failM(e)
           }
@@ -458,11 +459,16 @@ object Typer {
          */
         case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
           Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
-            case Ok(decl) => for (
-              enumType <- Types.resolve(decl.tpe, ns0, program);
-              ________ <- visitExp(exp);
-              resultType <- unifyM(tvar, enumType)
-            ) yield resultType
+            case Ok(decl) => Disambiguation.resolve(decl.tpe, ns0, program) match {
+              case Ok(enumType) =>
+                val cazeType = enumType.asInstanceOf[Type.Enum].cases(tag.name)
+                for (
+                  innerType <- visitExp(exp);
+                  _________ <- unifyM(innerType, cazeType);
+                  resultType <- unifyM(tvar, enumType)
+                ) yield resultType
+              case Err(e) => failM(e)
+            }
             case Err(e) => failM(e)
           }
 
