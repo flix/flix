@@ -78,8 +78,16 @@ object Result {
   case class Err[T, E](e: E) extends Result[T, E]
 
   /**
-    * Applies
+    * Evaluates the given results from left to right collecting the values into a list.
+    *
+    * Returns the first error value encountered, if any.
     */
-  //def seqM[T, E](xs: List[Result[T, E]]): Result[List[T], E]
+  def seqM[T, E](xs: List[Result[T, E]]): Result[List[T], E] = xs match {
+    case Nil => Ok(Nil)
+    case y :: ys => y match {
+      case Ok(r) => seqM(ys).map(rs => r :: rs)
+      case Err(e) => Err(e)
+    }
+  }
 
 }

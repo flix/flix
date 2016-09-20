@@ -53,18 +53,24 @@ object Typer {
       case (macc, (tpe, decl)) =>
         val NamedAst.Declaration.BoundedLattice(tpe, e1, e2, e3, e4, e5, ns, loc) = decl
 
-        val Success(resolvedType, subst) = for (
-          declaredType <- Types.resolve(tpe, ns, program);
-          botType <- Expressions.infer(e1, ns, program);
-          topType <- Expressions.infer(e2, ns, program);
-          leqType <- Expressions.infer(e3, ns, program);
-          lubType <- Expressions.infer(e4, ns, program);
-          glbType <- Expressions.infer(e5, ns, program);
-          _______ <- unifyM(botType, declaredType);
-          _______ <- unifyM(topType, declaredType)
-        // TODO Add constraints for leq, lub, glb, etc.
-        )
-          yield declaredType
+        val Success(resolvedType, subst) = {
+          val declaredType = Disambiguation.resolve(tpe, ns, program) match {
+            case Ok(tpe) => tpe
+            case Err(e) => return e.toFailure
+          }
+
+          for (
+            botType <- Expressions.infer(e1, ns, program);
+            topType <- Expressions.infer(e2, ns, program);
+            leqType <- Expressions.infer(e3, ns, program);
+            lubType <- Expressions.infer(e4, ns, program);
+            glbType <- Expressions.infer(e5, ns, program);
+            _______ <- unifyM(botType, declaredType);
+            _______ <- unifyM(topType, declaredType)
+          // TODO Add constraints for leq, lub, glb, etc.
+          )
+            yield declaredType
+        }
 
         val bot = Expressions.reassemble(e1, ns, program, subst)
         val top = Expressions.reassemble(e2, ns, program, subst)
@@ -177,8 +183,9 @@ object Typer {
     * Substitutes the declared type for a resolved type.
     */
   def infer(attr: NamedAst.Attribute, ns: Name.NName, program: Program): InferMonad[TypedAst.Attribute] = attr match {
-    case NamedAst.Attribute(ident, tpe, loc) => Types.resolve(tpe, ns, program) map {
-      case rtpe => TypedAst.Attribute(ident, rtpe)
+    case NamedAst.Attribute(ident, tpe, loc) => Disambiguation.resolve(tpe, ns, program) match {
+      case Ok(rtpe) => liftM(TypedAst.Attribute(ident, rtpe))
+      case Err(e) => failM(e)
     }
   }
 
@@ -583,12 +590,14 @@ object Typer {
          * Ascribe expression.
          */
         case NamedAst.Expression.Ascribe(exp, expectedType, loc) =>
-          for (
-            actualType <- visitExp(exp);
-            resolvedType <- Types.resolve(expectedType, ns0, program);
-            resultType <- unifyM(actualType, resolvedType)
-          )
-            yield resultType
+          Disambiguation.resolve(expectedType, ns0, program) match {
+            case Ok(resolvedType) =>
+              for (
+                actualType <- visitExp(exp);
+                resultType <- unifyM(actualType, resolvedType)
+              ) yield resultType
+            case Err(e) => failM(e)
+          }
 
         /*
          * User Error expression.
@@ -1097,6 +1106,7 @@ object Typer {
       */
     // TODO: Move into Result monad?
     // TODO: Introduce resolve for list of types.
+    @deprecated
     def resolve(tpe0: NamedAst.Type, ns0: Name.NName, program: Program): InferMonad[Type] = tpe0 match {
       case NamedAst.Type.Unit(loc) => liftM(Type.Unit)
       case NamedAst.Type.Ref(qname, loc) if qname.isUnqualified => qname.ident.name match {

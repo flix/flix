@@ -16,75 +16,101 @@
 
 package ca.uwaterloo.flix.util
 
+import ca.uwaterloo.flix.util.Result._
 import org.scalatest.FunSuite
 
 class TestResult extends FunSuite {
 
   test("isOk") {
-    assert(Result.Ok(42).isOk)
+    assert(Ok(42).isOk)
   }
 
   test("isErr") {
-    assert(Result.Err(42).isErr)
+    assert(Err(42).isErr)
   }
 
   test("get01") {
-    assertResult(42)(Result.Ok(42).get)
+    assertResult(42)(Ok(42).get)
   }
 
   test("get02") {
     intercept[IllegalStateException] {
-      Result.Err(42).get
+      Err(42).get
     }
   }
 
   test("map01") {
-    assertResult(Result.Ok(43))(Result.Ok(42).map(_ + 1))
+    assertResult(Ok(43))(Ok(42).map(_ + 1))
   }
 
   test("map02") {
-    assertResult(Result.Err(42))(Result.Err[Int, Int](42).map(_ + 1))
+    assertResult(Err(42))(Err[Int, Int](42).map(_ + 1))
   }
 
   test("map03") {
-    assertResult(Result.Ok(45))(Result.Ok(42).map(_ + 1).map(_ + 1).map(_ + 1))
+    assertResult(Ok(45))(Ok(42).map(_ + 1).map(_ + 1).map(_ + 1))
   }
 
   test("flatMap01") {
-    assertResult(Result.Ok[Int, Int](43))(Result.Ok[Int, Int](42).flatMap(x => Result.Ok(x + 1)))
+    assertResult(Ok[Int, Int](43))(Ok[Int, Int](42).flatMap(x => Ok(x + 1)))
   }
 
   test("flatMap02") {
-    assertResult(Result.Err[Int, Int](42))(Result.Err[Int, Int](42).flatMap(x => Result.Ok(x + 1)))
+    assertResult(Err[Int, Int](42))(Err[Int, Int](42).flatMap(x => Ok(x + 1)))
   }
 
   test("flatMap03") {
-    assertResult(Result.Ok[Int, Int](44))(Result.Ok[Int, Int](42).flatMap(x => Result.Ok(x + 1)).flatMap(x => Result.Ok(x + 1)))
+    assertResult(Ok[Int, Int](44))(Ok[Int, Int](42).flatMap(x => Ok(x + 1)).flatMap(x => Ok(x + 1)))
   }
 
   test("for01") {
     val r = for (
-      a <- Result.Ok[Int, Int](42)
+      a <- Ok[Int, Int](42)
     ) yield a
-    assertResult(Result.Ok(42))(r)
+    assertResult(Ok(42))(r)
   }
 
   test("for02") {
     val r = for (
-      a <- Result.Ok[Int, Int](42);
-      b <- Result.Ok(21);
-      c <- Result.Ok(11)
+      a <- Ok[Int, Int](42);
+      b <- Ok(21);
+      c <- Ok(11)
     ) yield a + b + c
-    assertResult(Result.Ok(42 + 21 + 11))(r)
+    assertResult(Ok(42 + 21 + 11))(r)
   }
 
   test("for03") {
     val r = for (
-      a <- Result.Ok[Int, Int](42);
-      b <- Result.Err[Int, Int](82);
-      c <- Result.Ok(11)
+      a <- Ok[Int, Int](42);
+      b <- Err[Int, Int](82);
+      c <- Ok(11)
     ) yield a + b
-    assertResult(Result.Err(82))(r)
+    assertResult(Err(82))(r)
+  }
+
+  test("seqM01") {
+    assertResult(Ok(Nil))(seqM(Nil))
+  }
+
+  test("seqM02") {
+    val a = Ok(1): Result[Int, String]
+    val b = Ok(2): Result[Int, String]
+    assertResult(Ok(List(1, 2)))(seqM(List(a, b)))
+  }
+
+  test("seqM03") {
+    val a = Ok(1): Result[Int, String]
+    val b = Ok(2): Result[Int, String]
+    val c = Ok(3): Result[Int, String]
+    assertResult(Ok(List(1, 2, 3)))(seqM(List(a, b, c)))
+  }
+
+  test("seqM04") {
+    val a = Ok(1): Result[Int, String]
+    val b = Ok(2): Result[Int, String]
+    val c = Ok(3): Result[Int, String]
+    val d = Ok(4): Result[Int, String]
+    assertResult(Ok(List(1, 2, 3, 4)))(seqM(List(a, b, c, d)))
   }
 
 }

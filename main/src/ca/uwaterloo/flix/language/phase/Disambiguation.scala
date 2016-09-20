@@ -17,12 +17,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
-import ca.uwaterloo.flix.language.ast.{Ast, Name, NamedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, NamedAst, Type}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.errors.TypeError.UnresolvedDefinition
-import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.util.Result
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.Result._
 
 import scala.collection.mutable
 
@@ -34,8 +33,11 @@ object Disambiguation {
   sealed trait Target
 
   object Target {
+
     case class Defn(ns: Name.NName, defn: NamedAst.Declaration.Definition) extends Target
+
     case class Hook(hook: Ast.Hook) extends Target
+
   }
 
   /**
@@ -119,6 +121,82 @@ object Disambiguation {
 
     // Case 2.3: Multiple matches found in namespace...
     ???
+  }
+
+  /**
+    * Resolves the given type `tpe0` in the given namespace `ns0`.
+    */
+  def resolve(tpe0: NamedAst.Type, ns0: Name.NName, program: Program): Result[Type, TypeError] = tpe0 match {
+    case NamedAst.Type.Unit(loc) => Ok(Type.Unit)
+    case NamedAst.Type.Ref(qname, loc) if qname.isUnqualified => qname.ident.name match {
+      // Basic Types
+      case "Unit" => Ok(Type.Unit)
+      case "Bool" => Ok(Type.Bool)
+      case "Char" => Ok(Type.Char)
+      case "Float" => Ok(Type.Float64)
+      case "Float32" => Ok(Type.Float32)
+      case "Float64" => Ok(Type.Float64)
+      case "Int" => Ok(Type.Int32)
+      case "Int8" => Ok(Type.Int8)
+      case "Int16" => Ok(Type.Int16)
+      case "Int32" => Ok(Type.Int32)
+      case "Int64" => Ok(Type.Int64)
+      case "BigInt" => Ok(Type.BigInt)
+      case "Str" => Ok(Type.Str)
+      case "Native" => Ok(Type.Native)
+
+      // Higher-Kinded Types.
+      case "Opt" => Ok(Type.FOpt)
+      case "List" => Ok(Type.FList)
+      case "Vec" => Ok(Type.FVec)
+      case "Set" => Ok(Type.FSet)
+      case "Map" => Ok(Type.FMap)
+
+      // Enum Types.
+      case typeName =>
+        // Lookup the enum in the current namespace.
+        // If the namespace doesn't even exist, just use an empty map.
+        val decls = program.enums.getOrElse(ns0, Map.empty)
+        decls.get(typeName) match {
+          case None => Err(TypeError.UnresolvedType(qname, ns0, loc))
+          case Some(enum) => resolve(enum.tpe, ns0, program)
+        }
+    }
+    case NamedAst.Type.Ref(qname, loc) if qname.isQualified =>
+      // Lookup the enum using the namespace.
+      val decls = program.enums.getOrElse(qname.namespace, Map.empty)
+      decls.get(qname.ident.name) match {
+        case None => Err(TypeError.UnresolvedType(qname, ns0, loc))
+        case Some(enum) => resolve(enum.tpe, qname.namespace, program)
+      }
+    case NamedAst.Type.Enum(name, cases) =>
+      val asList = cases.toList
+      val tags = asList.map(_._1)
+      val tpes = asList.map(_._2)
+      seqM(tpes.map(tpe => resolve(tpe, ns0, program))) map {
+        case rtpes => Type.Enum(name.toResolvedTemporaryHelperMethod, (tags zip rtpes).toMap)
+      }
+    case NamedAst.Type.Tuple(elms0, loc) =>
+      for (
+        elms <- seqM(elms0.map(tpe => resolve(tpe, ns0, program)))
+      ) yield Type.mkFTuple(elms)
+    case NamedAst.Type.Arrow(tparams0, tresult0, loc) =>
+      for (
+        tparams <- seqM(tparams0.map(tpe => resolve(tpe, ns0, program)));
+        tresult <- resolve(tresult0, ns0, program)
+      ) yield Type.mkArrow(tparams, tresult)
+    case NamedAst.Type.Apply(base0, tparams0, loc) =>
+      for (
+        baseType <- resolve(base0, ns0, program);
+        argTypes <- seqM(tparams0.map(tpe => resolve(tpe, ns0, program)))
+      ) yield Type.Apply(baseType, argTypes)
+  }
+
+  /**
+    * Resolves the given type `tpe0` in the given namespace `ns0`.
+    */
+  def resolve(tpes0: List[NamedAst.Type], ns0: Name.NName, program: Program): Result[List[Type], TypeError] = {
+    seqM(tpes0.map(tpe => resolve(tpe, ns0, program)))
   }
 
 }
