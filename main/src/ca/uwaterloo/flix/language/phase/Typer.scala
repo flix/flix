@@ -443,28 +443,31 @@ object Typer {
          * Match expression.
          */
         case NamedAst.Expression.Match(exp1, rules, tvar, loc) =>
+          assert(rules.nonEmpty)
           val patterns = rules.map(_._1)
           val bodies = rules.map(_._2)
-
           for (
             matchType <- visitExp(exp1);
             patternTypes <- visitPats2(patterns, ns0);
             patternType <- unifyM(patternTypes, loc);
             ___________ <- unifyM(matchType, patternType, loc);
-            resultType <- visitExps(bodies, tvar)
+            actualBodyTypes <- seqM(bodies map visitExp);
+            resultType <- unifyM(actualBodyTypes, loc)
           ) yield resultType
 
         /*
            * Switch expression.
            */
         case NamedAst.Expression.Switch(rules, tvar, loc) =>
+          assert(rules.nonEmpty)
           val condExps = rules.map(_._1)
           val bodyExps = rules.map(_._2)
           for (
-            condType <- visitExps(condExps, Type.Bool);
-            bodyType <- visitExps(bodyExps, Type.freshTypeVar());
-            _ <- unifyM(condType, Type.Bool, loc);
-            resultType <- unifyM(tvar, bodyType, loc)
+            actualCondTypes <- seqM(condExps map visitExp);
+            actualBodyTypes <- seqM(bodyExps map visitExp);
+            unifiedCondTypes <- unifyM(Type.Bool :: actualCondTypes, loc);
+            unifiedBodyType <- unifyM(actualBodyTypes, loc);
+            resultType <- unifyM(tvar, unifiedBodyType, loc)
           ) yield resultType
 
         /*
@@ -529,9 +532,11 @@ object Typer {
          * Vector expression.
          */
         case NamedAst.Expression.FVec(elms, tvar, loc) =>
+          val elementType = Type.freshTypeVar()
           for (
-            elementType <- visitExps(elms, Type.freshTypeVar());
-            resultType <- unifyM(Type.mkFVec(elementType), tvar, loc)
+            actualTypes <- seqM(elms map visitExp);
+            unifiedType <- unifyM(elementType :: actualTypes, loc);
+            resultType <- unifyM(tvar, Type.mkFVec(unifiedType), loc)
           ) yield resultType
 
         /*
@@ -549,12 +554,18 @@ object Typer {
          * Map expression.
          */
         case NamedAst.Expression.FMap(elms, tvar, loc) =>
+          val keyType = Type.freshTypeVar()
+          val valType = Type.freshTypeVar()
+
           val keys = elms.map(_._1)
           val vals = elms.map(_._2)
+
           for (
-            keyType <- visitExps(keys, Type.freshTypeVar());
-            valType <- visitExps(vals, Type.freshTypeVar());
-            resultType <- unifyM(tvar, Type.mkFMap(keyType, valType), loc)
+            actualKeyTypes <- seqM(keys map visitExp);
+            actualValTypes <- seqM(vals map visitExp);
+            unifiedKeyType <- unifyM(keyType :: actualKeyTypes, loc);
+            unifiedValType <- unifyM(valType :: actualValTypes, loc);
+            resultType <- unifyM(tvar, Type.mkFMap(unifiedKeyType, unifiedValType), loc)
           ) yield resultType
 
         /*
@@ -627,17 +638,6 @@ object Typer {
 
       }
 
-      // TODO: Doc and names.
-      def visitExps(es: List[NamedAst.Expression], tpe: Type): InferMonad[Type] = es match {
-        case Nil => liftM(tpe)
-        case x :: xs =>
-          for (
-            tpe1 <- visitExp(x);
-            tpe2 <- visitExps(xs, tpe);
-            resultType <- unifyM(tpe1, tpe2, x.loc)
-          ) yield resultType
-      }
-
       /**
         * Infers the type of the given pattern `pat0`.
         */
@@ -687,6 +687,7 @@ object Typer {
       }
 
       // TODO: Doc and names.
+      // TODO: Remve
       def visitPats2(es: List[NamedAst.Pattern], ns: Name.NName): InferMonad[List[Type]] = es match {
         case Nil => liftM(Nil)
         case x :: xs =>
@@ -696,8 +697,6 @@ object Typer {
           ) yield tpe :: tpes
       }
 
-
-      // TODO: Need to create initial type environment from defn
 
       visitExp(exp0)
 

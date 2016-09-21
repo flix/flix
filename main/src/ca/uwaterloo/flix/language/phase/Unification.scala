@@ -221,7 +221,7 @@ object Unification {
     def map[B](f: A => B): InferMonad[B] = Success(f(a), s)
 
     /**
-      * TODO: DOC
+      * Applies `f` to the value inside the monad and composes the current and new substitutions.
       */
     def flatMap[B](f: A => InferMonad[B]): InferMonad[B] = f(a) match {
       case Success(a1, s1) => Success(a1, s1 @@ s)
@@ -286,7 +286,6 @@ object Unification {
     */
   def unifyM(ts: List[Type], loc: SourceLocation): InferMonad[Type] = {
     assert(ts.nonEmpty)
-    // TODO: Need help verification order.
     def visit(x0: InferMonad[Type], xs: List[Type]): InferMonad[Type] = xs match {
       case Nil => x0
       case y :: ys => x0 flatMap {
@@ -306,7 +305,6 @@ object Unification {
   /**
     * Collects the result of each type inference monad in `ts` going left to right.
     */
-  // TODO: Need help verification order.
   def seqM[A](xs: List[InferMonad[A]]): InferMonad[List[A]] = xs match {
     case Nil => liftM(Nil)
     case y :: ys => y flatMap {
