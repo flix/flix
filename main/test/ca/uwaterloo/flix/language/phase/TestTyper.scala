@@ -1361,18 +1361,4 @@ class TestTyper extends FunSuite with TestUtils {
     assertResult(Type.mkFOpt(A))(result(C))
   }
 
-  test("UnifyM.01") {
-    val A = Type.Var(1, Kind.Star)
-    val B = Type.Var(2, Kind.Star)
-    val C = Type.Var(3, Kind.Star)
-    val D = Type.Int32
-    val Unification.Success(_, subst) = for (
-      _ <- Unification.unifyM(A, B, SourceLocation.Unknown);
-      _ <- Unification.unifyM(B, C, SourceLocation.Unknown);
-      _ <- Unification.unifyM(C, D, SourceLocation.Unknown)
-    ) yield null
-
-    assertResult(Type.Int32)(subst(A))
-  }
-
 }

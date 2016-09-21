@@ -1073,7 +1073,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt16(196), "x")
   }
 
-  test("Expression.Hook - Hook.Safe.07") {
+  ignore("Expression.Hook - Hook.Safe.07") {
     import HookSafeHelpers._
     val input = "def x: Int8 = let x = 7i8 in f(g(3i8), h(h(x)))"
     val t = new Tester(input, solve = false)
@@ -1384,7 +1384,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt16(196), "x")
   }
 
-  test("Expression.Hook - Hook.Unsafe.07") {
+  ignore("Expression.Hook - Hook.Unsafe.07") {
     import HookUnsafeHelpers._
     val input = "def x: Int8 = let x = 7i8 in f(g(3i8), h(h(x)))"
     val t = new Tester(input, solve = false)

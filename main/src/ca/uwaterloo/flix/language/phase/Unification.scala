@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 object Unification {
@@ -113,8 +114,6 @@ object Unification {
 
   /**
     * Returns the most general unifier of the two given types `tpe1` and `tpe2`.
-    *
-    * Returns [[Failure]] if the two types cannot be unified.
     */
   def unify(tpe1: Type, tpe2: Type, loc: SourceLocation): Result[Substitution, TypeError] = {
 
@@ -197,79 +196,66 @@ object Unification {
   }
 
   /**
-    * The type inference monad. Either [[Success]] or [[Failure]].
+    * A type inference state monad that maintains the current substitution.
     */
-  trait InferMonad[A] {
+  case class InferMonad[A](run: Substitution => Result[(Substitution, A), TypeError]) {
     /**
-      * Applies `f` to the value inside the monad.
+      * TODO: DOC
       */
-    def map[B](f: A => B): InferMonad[B]
+    // TODO: Verify the implementation.
+    def map[B](f: A => B): InferMonad[B] = {
+      def runNext(s0: Substitution): Result[(Substitution, B), TypeError] = {
+        run(s0) map {
+          case (s, a) => (s, f(a))
+        }
+      }
+      InferMonad(runNext)
+    }
 
     /**
-      * Applies `f` to the value inside the monad unwrapping the result.
+      * TODO: DOC
       */
-    def flatMap[B](f: A => InferMonad[B]): InferMonad[B]
-  }
-
-  /**
-    * A monad that holds a value `a` and a current substitution `s`.
-    */
-  case class Success[A](a: A, s: Substitution) extends InferMonad[A] {
-    /**
-      * Applies `f` to the value inside the monad while maintaining the current substitution.
-      */
-    def map[B](f: A => B): InferMonad[B] = Success(f(a), s)
-
-    /**
-      * Applies `f` to the value inside the monad and composes the current and new substitutions.
-      */
-    def flatMap[B](f: A => InferMonad[B]): InferMonad[B] = f(a) match {
-      case Success(a1, s1) => Success(a1, s1 @@ s)
-      case Failure(e) => Failure(e)
+    // TODO: Verify the implementation.
+    def flatMap[B](f: A => InferMonad[B]): InferMonad[B] = {
+      def runNext(s0: Substitution): Result[(Substitution, B), TypeError] = {
+        run(s0) flatMap {
+          case (s, a) => f(a) match {
+            case InferMonad(g) => g(s)
+          }
+        }
+      }
+      InferMonad(runNext)
     }
   }
 
   /**
-    * A monad that holds a type error.
-    *
-    * Any operation applied to the monad results in the same type error being propagated.
+    * Lifts the given value `a` into the type inference monad
     */
-  case class Failure[A](e: TypeError) extends InferMonad[A] {
-    /**
-      * Ignores `f` and propagates the current failure.
-      */
-    def map[B](f: (A) => B): InferMonad[B] = Failure(e)
-
-    /**
-      * Ignores `f` and propagates the current failure.
-      */
-    def flatMap[B](f: (A) => InferMonad[B]): InferMonad[B] = Failure(e)
-
-  }
+  def liftM[A](a: A): InferMonad[A] = InferMonad(s => Ok((s, a)))
 
   /**
-    * Lifts the given value `a` into the type inference monad with an empty substitution.
+    * Lifts the given value `a` and substitution `s` into the type inference monad..
     */
-  def liftM[A](a: A): InferMonad[A] = Success(a, Substitution.empty)
-
-  /**
-    * Lifts the given value `a` into the type inference monad with the given substitution `s`.
-    */
-  def liftM[A](a: A, s: Substitution): InferMonad[A] = Success(a, s)
+  def liftM[A](a: A, s: Substitution): InferMonad[A] = InferMonad(_ => Ok(s, a))
 
   /**
     * Lifts the given error `e` into the type inference monad.
     */
-  def failM[A](e: TypeError): InferMonad[A] = Failure(e)
+  def failM[A](e: TypeError): InferMonad[A] = InferMonad(_ => Err(e))
 
   /**
     * Unifies the two given types `tpe1` and `tpe2` lifting their unified types and
     * associated substitution into the type inference monad.
     */
-  def unifyM(tpe1: Type, tpe2: Type, loc: SourceLocation): InferMonad[Type] = unify(tpe1, tpe2, loc) match {
-    case Result.Ok(subst) => Success(subst(tpe1), subst)
-    case Result.Err(e) => Failure(e)
-  }
+  def unifyM(tpe1: Type, tpe2: Type, loc: SourceLocation): InferMonad[Type] =
+    InferMonad((s: Substitution) =>
+        unify(s(tpe1), s(tpe2), loc) match {
+          case Result.Ok(s1) =>
+            val subst = s1 @@ s
+            Ok(subst, subst(tpe1))
+          case Result.Err(e) => Err(e)
+        }
+    )
 
   /**
     * Unifies the three given types `tpe1`, `tpe2`, and `tpe3`.

@@ -40,8 +40,8 @@ object Typer {
       case (macc, (ns, defns)) => macc ++ defns.foldLeft(Map.empty[Symbol.Resolved, TypedAst.Definition.Constant]) {
         case (macc2, (name, defn0)) =>
           Declarations.infer(defn0, ns, program) match {
-            case Success(defn, _) => macc2 + (toResolvedTemporaryHelperMethod(ns, name) -> defn)
-            case Failure(e) => return e.toFailure[TypedAst.Root, TypeError]
+            case Ok(defn) => macc2 + (toResolvedTemporaryHelperMethod(ns, name) -> defn)
+            case Err(e) => return e.toFailure[TypedAst.Root, TypeError]
           }
       }
     }
@@ -53,7 +53,7 @@ object Typer {
       case (macc, (tpe, decl)) =>
         val NamedAst.Declaration.BoundedLattice(tpe, e1, e2, e3, e4, e5, ns, loc) = decl
 
-        val Success(resolvedType, subst) = {
+        val InferMonad(run) = {
           val declaredType = Disambiguation.resolve(tpe, ns, program) match {
             case Ok(tpe) => tpe
             case Err(e) => return e.toFailure
@@ -72,22 +72,26 @@ object Typer {
             yield declaredType
         }
 
-        val bot = Expressions.reassemble(e1, ns, program, subst)
-        val top = Expressions.reassemble(e2, ns, program, subst)
-        val leq = Expressions.reassemble(e3, ns, program, subst)
-        val lub = Expressions.reassemble(e4, ns, program, subst)
-        val glb = Expressions.reassemble(e5, ns, program, subst)
+        run(Substitution.empty) match {
+          case Ok((subst, resolvedType)) =>
 
-        val lattice = TypedAst.Definition.BoundedLattice(resolvedType, bot, top, leq, lub, glb, loc)
-        macc + (resolvedType -> lattice)
+            val bot = Expressions.reassemble(e1, ns, program, subst)
+            val top = Expressions.reassemble(e2, ns, program, subst)
+            val leq = Expressions.reassemble(e3, ns, program, subst)
+            val lub = Expressions.reassemble(e4, ns, program, subst)
+            val glb = Expressions.reassemble(e5, ns, program, subst)
+
+            val lattice = TypedAst.Definition.BoundedLattice(resolvedType, bot, top, leq, lub, glb, loc)
+            macc + (resolvedType -> lattice)
+          case Err(e) => return e.toFailure
+        }
     }
 
     /*
      * Tables.
      */
     val tables = inferTables(program) match {
-      case Success(m, _) => m
-      case Failure(e) => return e.toFailure
+      case InferMonad(run) => run(Substitution.empty).get._2
     }
 
     /*
@@ -104,10 +108,10 @@ object Typer {
       case (ns, fs) => fs map {
         case NamedAst.Declaration.Fact(head0, loc) =>
           Predicates.infer(head0, ns, program) match {
-            case Success(_, subst) =>
+            case InferMonad(run) =>
+              val (subst, _) = run(Substitution.empty).get
               val head = Predicates.reassemble(head0, ns, program, subst)
               TypedAst.Constraint.Fact(head)
-            case Failure(e) => return e.toFailure
           }
       }
 
@@ -120,17 +124,17 @@ object Typer {
       case (ns, rs) => rs map {
         case NamedAst.Declaration.Rule(head0, body0, loc) =>
           Predicates.infer(head0, ns, program) match {
-            case Success(_, subst) =>
+            case InferMonad(run1) =>
+              val (subst, _) = run1(Substitution.empty).get
               val head = Predicates.reassemble(head0, ns, program, subst)
               val body = body0.map {
                 case b => Predicates.infer(b, ns, program) match {
-                  case Success(_, subst1) => Predicates.reassemble(b, ns, program, subst1)
-                  case Failure(e) => return e.toFailure
+                  case InferMonad(run2) =>
+                    val (subst2, _) = run2(Substitution.empty).get
+                    Predicates.reassemble(b, ns, program, subst2)
                 }
               }
               TypedAst.Constraint.Rule(head, body)
-
-            case Failure(e) => return e.toFailure
           }
 
       }
@@ -194,11 +198,11 @@ object Typer {
     /**
       * Infers the type of the given definition `defn0` in the given namespace `ns0`.
       */
-    def infer(defn0: NamedAst.Declaration.Definition, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): InferMonad[TypedAst.Definition.Constant] = {
+    def infer(defn0: NamedAst.Declaration.Definition, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): Result[TypedAst.Definition.Constant, TypeError] = {
       // Resolve the declared type.
       val declaredType = Disambiguation.resolve(defn0.tpe, ns0, program) match {
         case Ok(tpe) => tpe
-        case Err(e) => return failM(e)
+        case Err(e) => return Err(e)
       }
 
       val subst = getSubst(defn0.params, ns0, program).get
@@ -206,35 +210,40 @@ object Typer {
       // TODO: Some duplication
       val argumentTypes = Disambiguation.resolve(defn0.params.map(_.tpe), ns0, program) match {
         case Ok(tpes) => tpes
-        case Err(e) => return failM(e)
+        case Err(e) => return Err(e)
       }
 
       val result = for (
-        _ <- liftM(null, subst);
         resultType <- Expressions.infer(defn0.exp, ns0, program);
         unifiedType <- unifyM(declaredType, Type.mkArrow(argumentTypes, resultType), defn0.loc)
       ) yield unifiedType
 
       // TODO: See if this can be rewritten nicer
       result match {
-        case Success(resultType, subst0) =>
-          val exp = Expressions.reassemble(defn0.exp, ns0, program, subst0)
+        case InferMonad(run) =>
+          run(subst) match {
+            case Ok((subst0, resultType)) =>
+              val exp = Expressions.reassemble(defn0.exp, ns0, program, subst0)
 
-          // Translate the named formals into typed formals.
-          val formals = defn0.params.map {
-            case NamedAst.FormalParam(sym, tpe, loc) =>
-              val t = Disambiguation.resolve(tpe, ns0, program).get
-              TypedAst.FormalArg(sym.toIdent, subst0(t))
+              // Translate the named formals into typed formals.
+              val formals = defn0.params.map {
+                case NamedAst.FormalParam(sym, tpe, loc) =>
+                  val t = Disambiguation.resolve(tpe, ns0, program).get
+                  TypedAst.FormalArg(sym.toIdent, subst0(t))
+              }
+
+              Ok(TypedAst.Definition.Constant(defn0.ann, defn0.sym.toResolvedTemporaryHelperMethod, formals, exp, resultType, defn0.loc))
+
+            case Err(e) => Err(e)
           }
-
-          liftM(TypedAst.Definition.Constant(defn0.ann, defn0.sym.toResolvedTemporaryHelperMethod, formals, exp, resultType, defn0.loc))
-        case Failure(e) => Failure(e)
       }
     }
 
   }
 
   object Expressions {
+
+    // TODO: Use names: inferredType vs. expectedType.
 
     /**
       * Infers the type of the given expression `exp0` in the namespace `ns0` and `program`.
@@ -446,14 +455,14 @@ object Typer {
           assert(rules.nonEmpty)
           val patterns = rules.map(_._1)
           val bodies = rules.map(_._2)
-          for (
-            matchType <- visitExp(exp1);
-            patternTypes <- seqM(patterns map visitPat);
-            patternType <- unifyM(patternTypes, loc);
-            ___________ <- unifyM(matchType, patternType, loc);
-            actualBodyTypes <- seqM(bodies map visitExp);
+          for {
+            matchType <- visitExp(exp1)
+            patternTypes <- seqM(patterns map visitPat)
+            patternType <- unifyM(patternTypes, loc)
+            ___________ <- unifyM(matchType, patternType, loc)
+            actualBodyTypes <- seqM(bodies map visitExp)
             resultType <- unifyM(tvar :: actualBodyTypes, loc)
-          ) yield resultType
+          } yield resultType
 
         /*
            * Switch expression.
