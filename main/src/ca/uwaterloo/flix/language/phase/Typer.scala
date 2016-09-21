@@ -448,11 +448,11 @@ object Typer {
           val bodies = rules.map(_._2)
           for (
             matchType <- visitExp(exp1);
-            patternTypes <- visitPats2(patterns, ns0);
+            patternTypes <- seqM(patterns map visitPat);
             patternType <- unifyM(patternTypes, loc);
             ___________ <- unifyM(matchType, patternType, loc);
             actualBodyTypes <- seqM(bodies map visitExp);
-            resultType <- unifyM(actualBodyTypes, loc)
+            resultType <- unifyM(tvar :: actualBodyTypes, loc)
           ) yield resultType
 
         /*
@@ -641,7 +641,7 @@ object Typer {
       /**
         * Infers the type of the given pattern `pat0`.
         */
-      def visitPat(pat0: NamedAst.Pattern, ns0: Name.NName): InferMonad[Type] = pat0 match {
+      def visitPat(pat0: NamedAst.Pattern): InferMonad[Type] = pat0 match {
         case NamedAst.Pattern.Wild(tvar, loc) => liftM(tvar)
         case NamedAst.Pattern.Var(sym, tvar, loc) => unifyM(sym.tvar, tvar, loc)
         case NamedAst.Pattern.Unit(loc) => liftM(Type.Unit)
@@ -662,7 +662,7 @@ object Typer {
               case Ok(enumType) =>
                 val cazeType = enumType.asInstanceOf[Type.Enum].cases(tag.name)
                 for (
-                  innerType <- visitPat(pat, ns0);
+                  innerType <- visitPat(pat);
                   _________ <- unifyM(innerType, cazeType, loc);
                   resultType <- unifyM(tvar, enumType, loc)
                 ) yield resultType
@@ -673,7 +673,7 @@ object Typer {
 
         case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
           for (
-            elementTypes <- visitPats2(elms, ns0);
+            elementTypes <- seqM(elms map visitPat);
             resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
           ) yield resultType
 
@@ -686,20 +686,7 @@ object Typer {
         case NamedAst.Pattern.FMap(elms, rest, tvar, loc) => ???
       }
 
-      // TODO: Doc and names.
-      // TODO: Remve
-      def visitPats2(es: List[NamedAst.Pattern], ns: Name.NName): InferMonad[List[Type]] = es match {
-        case Nil => liftM(Nil)
-        case x :: xs =>
-          for (
-            tpe <- visitPat(x, ns);
-            tpes <- visitPats2(xs, ns)
-          ) yield tpe :: tpes
-      }
-
-
       visitExp(exp0)
-
     }
 
     /**
