@@ -86,14 +86,6 @@ object Symbol {
     * @param loc  the source location associated with the symbol.
     */
   final class VarSym(val id: Int, val text: String, val tvar: Type.Var, val loc: SourceLocation) {
-
-    // TODO: Temporary convenience method.
-    def toIdent: Name.Ident = {
-      val sp1 = SourcePosition(loc.source, loc.beginLine, loc.beginCol, None)
-      val sp2 = SourcePosition(loc.source, loc.endLine, loc.endCol, None)
-      Name.Ident(sp1, text + "$" + id, sp2)
-    }
-
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -111,6 +103,13 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = text + "$" + id
+
+    // TODO: Temporary convenience method.
+    def toIdent: Name.Ident = {
+      val sp1 = SourcePosition(loc.source, loc.beginLine, loc.beginCol, None)
+      val sp2 = SourcePosition(loc.source, loc.endLine, loc.endCol, None)
+      Name.Ident(sp1, text + "$" + id, sp2)
+    }
   }
 
   /**

@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.Disambiguation.Target
+import ca.uwaterloo.flix.language.phase.Disambiguation.RefTarget
 import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
@@ -270,12 +270,12 @@ object Typer {
          */
         case NamedAst.Expression.Ref(ref, tvar, loc) =>
           Disambiguation.lookupRef(ref, ns0, program) match {
-            case Ok(Target.Defn(ns, defn)) =>
+            case Ok(RefTarget.Defn(ns, defn)) =>
               Disambiguation.resolve(defn.tpe, ns, program) match {
                 case Ok(declaredType) => unifyM(tvar, declaredType, loc)
                 case Err(e) => failM(e)
               }
-            case Ok(Target.Hook(hook)) => liftM(hook.tpe)
+            case Ok(RefTarget.Hook(hook)) => liftM(hook.tpe)
             case Err(e) => failM(e)
           }
 
@@ -679,17 +679,23 @@ object Typer {
             }
             case Err(e) => failM(e)
           }
-
         case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
           for (
             elementTypes <- seqM(elms map visitPat);
             resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
           ) yield resultType
-
-        case NamedAst.Pattern.FNone(tvar, loc) => ???
-        case NamedAst.Pattern.FSome(pat, tvar, loc) => ???
-        case NamedAst.Pattern.FNil(tvar, loc) => ???
-        case NamedAst.Pattern.FList(hd, tl, tvar, loc) => ???
+        case NamedAst.Pattern.FNone(tvar, loc) => liftM(Type.mkFOpt(tvar))
+        case NamedAst.Pattern.FSome(pat, tvar, loc) =>
+          for (inferredType <- visitPat(pat))
+            yield Type.mkFOpt(inferredType)
+        case NamedAst.Pattern.FNil(tvar, loc) => liftM(Type.mkFList(tvar))
+        case NamedAst.Pattern.FList(hd, tl, tvar, loc) =>
+          for {
+            inferredHeadType <- visitPat(hd)
+            inferredTailType <- visitPat(tl)
+            inferredListType <- unifyM(Type.mkFList(inferredHeadType), inferredTailType, loc)
+            resultType <- unifyM(tvar, inferredListType, loc)
+          } yield resultType
         case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => ???
         case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => ???
         case NamedAst.Pattern.FMap(elms, rest, tvar, loc) => ???
@@ -718,8 +724,8 @@ object Typer {
         case NamedAst.Expression.Var(sym, loc) =>
           val qname = Name.mkQName(sym.text)
           Disambiguation.lookupRef(qname, ns0, program) match {
-            case Ok(Target.Defn(ns, defn)) => TypedAst.Expression.Ref(defn.sym.toResolvedTemporaryHelperMethod, subst0(sym.tvar), loc)
-            case Ok(Target.Hook(hook)) => TypedAst.Expression.Hook(hook, subst0(sym.tvar), loc)
+            case Ok(RefTarget.Defn(ns, defn)) => TypedAst.Expression.Ref(defn.sym.toResolvedTemporaryHelperMethod, subst0(sym.tvar), loc)
+            case Ok(RefTarget.Hook(hook)) => TypedAst.Expression.Hook(hook, subst0(sym.tvar), loc)
             case Err(e) => TypedAst.Expression.Var(sym.toIdent, subst0(sym.tvar), loc)
           }
 
@@ -728,8 +734,8 @@ object Typer {
          */
         case NamedAst.Expression.Ref(qname, tvar, loc) =>
           Disambiguation.lookupRef(qname, ns0, program).get match {
-            case Target.Defn(ns, defn) => TypedAst.Expression.Ref(defn.sym.toResolvedTemporaryHelperMethod, subst0(tvar), loc)
-            case Target.Hook(hook) => TypedAst.Expression.Hook(hook, hook.tpe, loc)
+            case RefTarget.Defn(ns, defn) => TypedAst.Expression.Ref(defn.sym.toResolvedTemporaryHelperMethod, subst0(tvar), loc)
+            case RefTarget.Hook(hook) => TypedAst.Expression.Hook(hook, hook.tpe, loc)
           }
 
         /*
@@ -1012,7 +1018,7 @@ object Typer {
         ) yield unifiedTypes
       case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
         Disambiguation.lookupRef(qname, ns0, program) match {
-          case Ok(Target.Defn(ns, defn)) =>
+          case Ok(RefTarget.Defn(ns, defn)) =>
             val expectedTypes = Disambiguation.resolve(defn.params.map(_.tpe), ns, program) match {
               case Ok(tpes) => tpes
               case Err(e) => return failM(e)
@@ -1021,7 +1027,7 @@ object Typer {
               actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns0, program)));
               unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes, loc)
             ) yield unifiedTypes
-          case Ok(Target.Hook(hook)) =>
+          case Ok(RefTarget.Hook(hook)) =>
             val Type.Apply(Type.Arrow(l), ts) = hook.tpe
             val declaredTypes = ts.take(l - 1)
             for (
@@ -1062,9 +1068,9 @@ object Typer {
         }
       case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
         Disambiguation.lookupRef(qname, ns0, program) match {
-          case Ok(Target.Defn(ns, defn)) =>
+          case Ok(RefTarget.Defn(ns, defn)) =>
             TypedAst.Predicate.Body.ApplyFilter(defn.sym.toResolvedTemporaryHelperMethod, terms.map(t => Terms.compatBody(t, ns0, program, subst0)), loc)
-          case Ok(Target.Hook(hook)) => TypedAst.Predicate.Body.ApplyHookFilter(hook, terms.map(t => Terms.compatBody(t, ns0, program, subst0)), loc)
+          case Ok(RefTarget.Hook(hook)) => TypedAst.Predicate.Body.ApplyHookFilter(hook, terms.map(t => Terms.compatBody(t, ns0, program, subst0)), loc)
           case Err(e) => throw InternalCompilerException(s"Never happens. Unable to lookup filter function '$qname'.")
         }
       case NamedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>

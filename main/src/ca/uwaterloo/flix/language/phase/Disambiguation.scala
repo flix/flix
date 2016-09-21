@@ -28,22 +28,22 @@ import scala.collection.mutable
 object Disambiguation {
 
   /**
-    * An ADT for the result of looking up a name.
+    * The result of a reference lookup.
     */
-  sealed trait Target
+  sealed trait RefTarget
 
-  object Target {
+  object RefTarget {
 
-    case class Defn(ns: Name.NName, defn: NamedAst.Declaration.Definition) extends Target
+    case class Defn(ns: Name.NName, defn: NamedAst.Declaration.Definition) extends RefTarget
 
-    case class Hook(hook: Ast.Hook) extends Target
+    case class Hook(hook: Ast.Hook) extends RefTarget
 
   }
 
   /**
     * Finds the definition with the qualified name `qname` in the namespace `ns0`.
     */
-  def lookupRef(qname: Name.QName, ns0: Name.NName, program: Program): Result[Target, TypeError] = {
+  def lookupRef(qname: Name.QName, ns0: Name.NName, program: Program): Result[RefTarget, TypeError] = {
     // check whether the reference is fully-qualified.
     if (qname.isUnqualified) {
       // Case 1: Unqualified reference. Lookup both the definition and the hook.
@@ -51,8 +51,8 @@ object Disambiguation {
       val hookOpt = program.hooks.getOrElse(ns0, Map.empty).get(qname.ident.name)
 
       (defnOpt, hookOpt) match {
-        case (Some(defn), None) => Ok(Target.Defn(ns0, defn))
-        case (None, Some(hook)) => Ok(Target.Hook(hook))
+        case (Some(defn), None) => Ok(RefTarget.Defn(ns0, defn))
+        case (None, Some(hook)) => Ok(RefTarget.Hook(hook))
         case (None, None) => Err(UnresolvedRef(qname, ns0, qname.loc))
         case (Some(defn), Some(hook)) => Err(TypeError.AmbiguousRef(qname, ns0, qname.loc))
       }
@@ -62,8 +62,8 @@ object Disambiguation {
       val hookOpt = program.hooks.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
 
       (defnOpt, hookOpt) match {
-        case (Some(defn), None) => Ok(Target.Defn(qname.namespace, defn))
-        case (None, Some(hook)) => Ok(Target.Hook(hook))
+        case (Some(defn), None) => Ok(RefTarget.Defn(qname.namespace, defn))
+        case (None, Some(hook)) => Ok(RefTarget.Hook(hook))
         case (None, None) => Err(UnresolvedRef(qname, ns0, qname.loc))
         case (Some(defn), Some(hook)) => Err(TypeError.AmbiguousRef(qname, ns0, qname.loc))
       }

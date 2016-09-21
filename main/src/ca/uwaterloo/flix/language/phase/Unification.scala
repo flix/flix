@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.Result._
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object Unification {
 
@@ -42,16 +43,6 @@ object Unification {
     * A substitution is a map from type variables to types.
     */
   case class Substitution(m: Map[Type.Var, Type]) {
-
-    // TODO: To be removed. Used to look for bug.
-    val invariant = m.forall {
-      case (tvar, tpe) => m.get(tvar) match {
-        case Some(t: Type.Var) => !m.contains(t)
-        case _ => true
-      }
-    }
-    if (!invariant)
-      throw new RuntimeException
 
     /**
       * Applies `this` substitution to the given type `tpe`.
@@ -91,10 +82,10 @@ object Unification {
     /**
       * Applies `this` substitution to the given types `ts`.
       */
-    def apply(ts: List[Type]): List[Type] = ts.map(t => apply(t))
+    def apply(ts: List[Type]): List[Type] = ts map apply
 
     /**
-      * Returns the left-biased  composition of `this` substitution with `that` substitution.
+      * Returns the left-biased composition of `this` substitution with `that` substitution.
       */
     def ++(that: Substitution): Substitution = {
       Substitution(this.m ++ that.m.filter(kv => !this.m.contains(kv._1)))
@@ -200,11 +191,11 @@ object Unification {
     */
   case class InferMonad[A](run: Substitution => Result[(Substitution, A), TypeError]) {
     /**
-      * TODO: DOC
+      * Applies the given function `f` to the value in the monad.
       */
-    // TODO: Verify the implementation.
     def map[B](f: A => B): InferMonad[B] = {
       def runNext(s0: Substitution): Result[(Substitution, B), TypeError] = {
+        // Run the original function and map over its result (since it may have error'd).
         run(s0) map {
           case (s, a) => (s, f(a))
         }
@@ -213,13 +204,14 @@ object Unification {
     }
 
     /**
-      * TODO: DOC
+      * Applies the given function `f` to the value in the monad.
       */
-    // TODO: Verify the implementation.
     def flatMap[B](f: A => InferMonad[B]): InferMonad[B] = {
       def runNext(s0: Substitution): Result[(Substitution, B), TypeError] = {
+        // Run the original function and flatMap over its result (since it may have error'd).
         run(s0) flatMap {
           case (s, a) => f(a) match {
+            // Unwrap the returned monad and apply the inner function g.
             case InferMonad(g) => g(s)
           }
         }
@@ -247,15 +239,16 @@ object Unification {
     * Unifies the two given types `tpe1` and `tpe2` lifting their unified types and
     * associated substitution into the type inference monad.
     */
-  def unifyM(tpe1: Type, tpe2: Type, loc: SourceLocation): InferMonad[Type] =
+  def unifyM(tpe1: Type, tpe2: Type, loc: SourceLocation): InferMonad[Type] = {
     InferMonad((s: Substitution) =>
-        unify(s(tpe1), s(tpe2), loc) match {
-          case Result.Ok(s1) =>
-            val subst = s1 @@ s
-            Ok(subst, subst(tpe1))
-          case Result.Err(e) => Err(e)
-        }
+      unify(s(tpe1), s(tpe2), loc) match {
+        case Result.Ok(s1) =>
+          val subst = s1 @@ s
+          Ok(subst, subst(tpe1))
+        case Result.Err(e) => Err(e)
+      }
     )
+  }
 
   /**
     * Unifies the three given types `tpe1`, `tpe2`, and `tpe3`.
