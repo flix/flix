@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Disambiguation.RefTarget
 import ca.uwaterloo.flix.language.phase.Unification._
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.Result.{Ok, Err}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
@@ -87,11 +87,9 @@ object Typer {
         }
     }
 
-    /*
-     * Tables.
-     */
-    val tables = inferTables(program) match {
-      case InferMonad(run) => run(Substitution.empty).get._2
+    val tables = Tables.typecheck(program) match {
+      case Ok(res) => res
+      case Err(e) => return e.toFailure
     }
 
     /*
@@ -152,46 +150,8 @@ object Typer {
     TypedAst.Root(constants, lattices, tables, indexes, facts.toList, rules.toList, hooks, Nil, time).toSuccess
   }
 
-
-  // TODO: Document and move somewhere.
-  def inferTables(program: Program): InferMonad[Map[Symbol.TableSym, TypedAst.Table]] = {
-    // resolve types for attributes in relations and lattices.
-    val tables = program.tables.toList.flatMap {
-      case (ns, decls) => decls.map {
-        // relation, infer types for the attributes.
-        case (_, NamedAst.Table.Relation(sym, attr, loc)) =>
-          seqM(attr.map(a => infer(a, ns, program))) map {
-            case as => sym -> (TypedAst.Table.Relation(sym, as, loc): TypedAst.Table)
-          }
-        // lattice, infer types for the keys and value.
-        case (_, NamedAst.Table.Lattice(sym, keys, value, loc)) =>
-          seqM(keys.map(a => infer(a, ns, program))) flatMap {
-            case ks => infer(value, ns, program) map {
-              case v => sym -> (TypedAst.Table.Lattice(sym, ks, v, loc): TypedAst.Table)
-            }
-          }
-      }
-    }
-
-    seqM(tables).map(_.toMap)
-  }
-
-
   def toResolvedTemporaryHelperMethod(ns: Name.NName, name: String): Symbol.Resolved =
     if (ns.isRoot) Symbol.Resolved.mk(name) else Symbol.Resolved.mk(ns.parts ::: name :: Nil)
-
-
-  /**
-    * Translates the given named attribute into a typed attributes.
-    *
-    * Substitutes the declared type for a resolved type.
-    */
-  def infer(attr: NamedAst.Attribute, ns: Name.NName, program: Program): InferMonad[TypedAst.Attribute] = attr match {
-    case NamedAst.Attribute(ident, tpe, loc) => Disambiguation.resolve(tpe, ns, program) match {
-      case Ok(rtpe) => liftM(TypedAst.Attribute(ident, rtpe))
-      case Err(e) => failM(e)
-    }
-  }
 
   object Declarations {
 
@@ -1079,6 +1039,57 @@ object Typer {
       case NamedAst.Predicate.Body.Loop(ident, term, loc) =>
         // TODO: Need to retrieve the symbol...
         TypedAst.Predicate.Body.Loop(ident, Terms.compatHead(term, ns0, program, subst0), loc)
+    }
+
+  }
+
+  object Tables {
+
+    /**
+      * Performs type inference and reassembly on all tables in the given program.
+      *
+      * Returns [[Err]] if a type resolution fails.
+      */
+    def typecheck(program: Program): Result[Map[Symbol.TableSym, TypedAst.Table], TypeError] = {
+
+      /**
+        * Performs type resolution on the given `table` declared in the namespace `ns`.
+        *
+        * Returns [[Err]] if a type is unresolved.
+        */
+      def visitTable(table: NamedAst.Table, ns: Name.NName): Result[(Symbol.TableSym, TypedAst.Table), TypeError] = table match {
+        case NamedAst.Table.Relation(sym, attr, loc) =>
+          for (typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a, ns))))
+            yield sym -> TypedAst.Table.Relation(sym, typedAttributes, loc)
+        case NamedAst.Table.Lattice(sym, keys, value, loc) =>
+          for {
+            typedKeys <- Result.seqM(keys.map(a => visitAttribute(a, ns)))
+            typedVal <- visitAttribute(value, ns)
+          } yield sym -> TypedAst.Table.Lattice(sym, typedKeys, typedVal, loc)
+      }
+
+      /**
+        * Performs type resolution on the given attribute `attr` declared in the namespace `ns`.
+        */
+      def visitAttribute(attr: NamedAst.Attribute, ns: Name.NName): Result[TypedAst.Attribute, TypeError] = attr match {
+        case NamedAst.Attribute(ident, tpe, loc) =>
+          // Resolve the declared type.
+          Disambiguation.resolve(tpe, ns, program) map {
+            case resolvedType => TypedAst.Attribute(ident, resolvedType)
+          }
+      }
+
+      /*
+       * Visit every table in the program.
+       */
+      val result = program.tables.toList.flatMap {
+        case (ns, tables) => tables.map {
+          case (name, table) => visitTable(table, ns)
+        }
+      }
+
+      // Sequence the result and convert it back to a map.
+      Result.seqM(result).map(_.toMap)
     }
 
   }
