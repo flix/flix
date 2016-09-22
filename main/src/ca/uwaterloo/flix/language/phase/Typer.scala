@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Disambiguation.RefTarget
 import ca.uwaterloo.flix.language.phase.Unification._
-import ca.uwaterloo.flix.util.Result.{Ok, Err}
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
@@ -87,7 +87,7 @@ object Typer {
         }
     }
 
-    val tables = Tables.typecheck(program) match {
+    val tables = Declarations.Tables.typecheck(program) match {
       case Ok(res) => res
       case Err(e) => return e.toFailure
     }
@@ -102,17 +102,9 @@ object Typer {
     /*
      * Facts.
      */
-    val facts = program.facts.flatMap {
-      case (ns, fs) => fs map {
-        case NamedAst.Declaration.Fact(head0, loc) =>
-          Predicates.infer(head0, ns, program) match {
-            case InferMonad(run) =>
-              val (subst, _) = run(Substitution.empty).get
-              val head = Predicates.reassemble(head0, ns, program, subst)
-              TypedAst.Constraint.Fact(head)
-          }
-      }
-
+    val facts = Declarations.Constraints.typecheck(program) match {
+      case Ok(res) => res
+      case Err(e) => return e.toFailure
     }
 
     /*
@@ -147,7 +139,7 @@ object Typer {
     val currentTime = System.nanoTime()
     val time = program.time.copy(typer = currentTime - startTime)
 
-    TypedAst.Root(constants, lattices, tables, indexes, facts.toList, rules.toList, hooks, Nil, time).toSuccess
+    TypedAst.Root(constants, lattices, tables, indexes, facts, rules.toList, hooks, Nil, time).toSuccess
   }
 
   def toResolvedTemporaryHelperMethod(ns: Name.NName, name: String): Symbol.Resolved =
@@ -197,6 +189,85 @@ object Typer {
             case Err(e) => Err(e)
           }
       }
+    }
+
+    object Constraints {
+
+      /**
+        * Performs type inference and reassembly on all facts in the given program.
+        *
+        * Returns [[Err]] if the head predicate fails to type check.
+        */
+      def typecheck(program: Program)(implicit genSym: GenSym): Result[List[TypedAst.Constraint.Fact], TypeError] = {
+
+        /**
+          * Performs type checking on the given `fact` in the given namespace `ns`.
+          */
+        def visitFact(fact: NamedAst.Declaration.Fact, ns: Name.NName): Result[TypedAst.Constraint.Fact, TypeError] = fact match {
+          case NamedAst.Declaration.Fact(head, loc) =>
+            Predicates.typecheck(head, ns, program) map {
+              case h => TypedAst.Constraint.Fact(h)
+            }
+        }
+
+        // Visit every fact in the program.
+        val result = program.facts.toList.flatMap {
+          case (ns, facts) => facts.map(f => visitFact(f, ns))
+        }
+
+        // Sequence the result.
+        Result.seqM(result)
+      }
+
+    }
+
+    object Tables {
+
+      /**
+        * Performs type inference and reassembly on all tables in the given program.
+        *
+        * Returns [[Err]] if a type resolution fails.
+        */
+      def typecheck(program: Program): Result[Map[Symbol.TableSym, TypedAst.Table], TypeError] = {
+
+        /**
+          * Performs type resolution on the given `table` declared in the namespace `ns`.
+          *
+          * Returns [[Err]] if a type is unresolved.
+          */
+        def visitTable(table: NamedAst.Table, ns: Name.NName): Result[(Symbol.TableSym, TypedAst.Table), TypeError] = table match {
+          case NamedAst.Table.Relation(sym, attr, loc) =>
+            for (typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a, ns))))
+              yield sym -> TypedAst.Table.Relation(sym, typedAttributes, loc)
+          case NamedAst.Table.Lattice(sym, keys, value, loc) =>
+            for {
+              typedKeys <- Result.seqM(keys.map(a => visitAttribute(a, ns)))
+              typedVal <- visitAttribute(value, ns)
+            } yield sym -> TypedAst.Table.Lattice(sym, typedKeys, typedVal, loc)
+        }
+
+        /**
+          * Performs type resolution on the given attribute `attr` declared in the namespace `ns`.
+          */
+        def visitAttribute(attr: NamedAst.Attribute, ns: Name.NName): Result[TypedAst.Attribute, TypeError] = attr match {
+          case NamedAst.Attribute(ident, tpe, loc) =>
+            // Resolve the declared type.
+            Disambiguation.resolve(tpe, ns, program) map {
+              case resolvedType => TypedAst.Attribute(ident, resolvedType)
+            }
+        }
+
+        // Visit every table in the program.
+        val result = program.tables.toList.flatMap {
+          case (ns, tables) => tables.map {
+            case (name, table) => visitTable(table, ns)
+          }
+        }
+
+        // Sequence the result and convert it back to a map.
+        Result.seqM(result).map(_.toMap)
+      }
+
     }
 
   }
@@ -936,6 +1007,38 @@ object Typer {
   object Predicates {
 
     /**
+      * Performs type inference and reassembly on the given predicate `head` in the given namespace `ns`.
+      */
+    def typecheck(head: NamedAst.Predicate.Head, ns: Name.NName, program: Program)(implicit genSym: GenSym): Result[TypedAst.Predicate.Head, TypeError] = head match {
+      case NamedAst.Predicate.Head.True(loc) => Ok(TypedAst.Predicate.Head.True(loc))
+      case NamedAst.Predicate.Head.False(loc) => Ok(TypedAst.Predicate.Head.False(loc))
+      case NamedAst.Predicate.Head.Table(qname, terms, loc) =>
+        // Lookup the table associated with the predicate to find the declared types of the terms.
+        Disambiguation.lookupTable(qname, ns, program) flatMap {
+          case NamedAst.Table.Relation(sym, attr, _) =>
+            // Resolve the declared types.
+            Disambiguation.resolve(attr.map(_.tpe), ns, program) flatMap {
+              case expectedTypes =>
+                // Compute the inferred types of the terms and unify them with the declared types.
+                val result = for (
+                  inferredTypes <- seqM(terms.map(t => Expressions.infer(t, ns, program)));
+                  unifiedTypes <- unifyM(expectedTypes, inferredTypes, loc)
+                ) yield unifiedTypes
+
+                // Evaluate the monad with the empty substitution.
+                result.run(Substitution.empty) map {
+                  case (subst, _) =>
+                    // Reassemble the expressions and predicate.
+                    val ts = terms.map(t => Terms.compatHead(t, ns, program, subst))
+                    TypedAst.Predicate.Head.Table(sym, ts, loc)
+                }
+            }
+          case NamedAst.Table.Lattice(sym, keys, value, _) =>
+            ???
+        }
+    }
+
+    /**
       * Infers the type of the given head predicate.
       */
     def infer(head: NamedAst.Predicate.Head, ns: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = head match {
@@ -1039,57 +1142,6 @@ object Typer {
       case NamedAst.Predicate.Body.Loop(ident, term, loc) =>
         // TODO: Need to retrieve the symbol...
         TypedAst.Predicate.Body.Loop(ident, Terms.compatHead(term, ns0, program, subst0), loc)
-    }
-
-  }
-
-  object Tables {
-
-    /**
-      * Performs type inference and reassembly on all tables in the given program.
-      *
-      * Returns [[Err]] if a type resolution fails.
-      */
-    def typecheck(program: Program): Result[Map[Symbol.TableSym, TypedAst.Table], TypeError] = {
-
-      /**
-        * Performs type resolution on the given `table` declared in the namespace `ns`.
-        *
-        * Returns [[Err]] if a type is unresolved.
-        */
-      def visitTable(table: NamedAst.Table, ns: Name.NName): Result[(Symbol.TableSym, TypedAst.Table), TypeError] = table match {
-        case NamedAst.Table.Relation(sym, attr, loc) =>
-          for (typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a, ns))))
-            yield sym -> TypedAst.Table.Relation(sym, typedAttributes, loc)
-        case NamedAst.Table.Lattice(sym, keys, value, loc) =>
-          for {
-            typedKeys <- Result.seqM(keys.map(a => visitAttribute(a, ns)))
-            typedVal <- visitAttribute(value, ns)
-          } yield sym -> TypedAst.Table.Lattice(sym, typedKeys, typedVal, loc)
-      }
-
-      /**
-        * Performs type resolution on the given attribute `attr` declared in the namespace `ns`.
-        */
-      def visitAttribute(attr: NamedAst.Attribute, ns: Name.NName): Result[TypedAst.Attribute, TypeError] = attr match {
-        case NamedAst.Attribute(ident, tpe, loc) =>
-          // Resolve the declared type.
-          Disambiguation.resolve(tpe, ns, program) map {
-            case resolvedType => TypedAst.Attribute(ident, resolvedType)
-          }
-      }
-
-      /*
-       * Visit every table in the program.
-       */
-      val result = program.tables.toList.flatMap {
-        case (ns, tables) => tables.map {
-          case (name, table) => visitTable(table, ns)
-        }
-      }
-
-      // Sequence the result and convert it back to a map.
-      Result.seqM(result).map(_.toMap)
     }
 
   }
