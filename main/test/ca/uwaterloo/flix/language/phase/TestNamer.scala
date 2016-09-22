@@ -245,22 +245,6 @@ class TestNamer extends FunSuite with TestUtils {
     assertError[TypeError.UnresolvedTag](result)
   }
 
-  test("UnresolvedTable01") {
-    val input = "VarPointsTo(1, 2)."
-    val result = new Flix().addStr(input).compile()
-    assertError[TypeError.UnresolvedTable](result)
-  }
-
-  test("UnresolvedTable02") {
-    val input =
-      s"""namespace A {
-          |  VarPointsTo(1, 2).
-          |}
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    assertError[TypeError.UnresolvedTable](result)
-  }
-
   test("UnresolvedType01") {
     val input = "def x: Foo = 42"
     val result = new Flix().addStr(input).compile()

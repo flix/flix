@@ -142,9 +142,6 @@ object Typer {
     TypedAst.Root(constants, lattices, tables, indexes, facts, rules.toList, hooks, Nil, time).toSuccess
   }
 
-  def toResolvedTemporaryHelperMethod(ns: Name.NName, name: String): Symbol.Resolved =
-    if (ns.isRoot) Symbol.Resolved.mk(name) else Symbol.Resolved.mk(ns.parts ::: name :: Nil)
-
   object Declarations {
 
     /**
@@ -1262,5 +1259,8 @@ object Typer {
 
     case _ => Type.Int32
   }
+
+  def toResolvedTemporaryHelperMethod(ns: Name.NName, name: String): Symbol.Resolved =
+    if (ns.isRoot) Symbol.Resolved.mk(name) else Symbol.Resolved.mk(ns.parts ::: name :: Nil)
 
 }

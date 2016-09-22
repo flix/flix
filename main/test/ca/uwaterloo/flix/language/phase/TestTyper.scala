@@ -934,4 +934,26 @@ class TestTyper extends FunSuite with TestUtils {
     assertError[TypeError.UnresolvedRef](result)
   }
 
+  test("UnresolvedTable01") {
+    val input = "VarPointsTo(1, 2)."
+    val result = new Flix().addStr(input).compile()
+    assertError[TypeError.UnresolvedTable](result)
+  }
+
+  test("UnresolvedTable02") {
+    val input =
+      s"""namespace A {
+          |  VarPointsTo(1, 2).
+          |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    assertError[TypeError.UnresolvedTable](result)
+  }
+
+  test("UnresolvedTable03") {
+    val input = "index AddrOf({foo, bar})"
+    val result = new Flix().addStr(input).compile()
+    assertError[TypeError.UnresolvedTable](result)
+  }
+
 }
