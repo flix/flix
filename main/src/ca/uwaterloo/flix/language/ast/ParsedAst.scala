@@ -107,12 +107,13 @@ object ParsedAst {
       * @param ann       the associated annotations.
       * @param sp1       the position of the first character in the declaration.
       * @param ident     the name of the definition.
+      * @param tparams   the type parameters.
       * @param paramsOpt the formal parameters.
       * @param tpe       the declared type.
       * @param exp       the expression.
       * @param sp2       the position of the last character in the declaration.
       */
-    case class Definition(ann: Seq[ParsedAst.Annotation], sp1: SourcePosition, ident: Name.Ident, paramsOpt: Option[Seq[ParsedAst.FormalParam]], tpe: ParsedAst.Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Definition(ann: Seq[ParsedAst.Annotation], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], paramsOpt: Option[Seq[ParsedAst.FormalParam]], tpe: ParsedAst.Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Signature Declaration (top-level function or expression signature).

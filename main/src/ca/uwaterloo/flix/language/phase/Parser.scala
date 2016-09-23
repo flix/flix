@@ -99,7 +99,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     Declarations.Namespace |
       Declarations.Rule |
       Declarations.Fact |
-      Declarations.Function |
+      Declarations.Definition |
       Declarations.External |
       Declarations.Enum |
       Declarations.LetLattice |
@@ -117,13 +117,13 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ atomic("namespace") ~ WS ~ NName ~ optWS ~ '{' ~ optWS ~ zeroOrMore(Declaration).separatedBy(optWS) ~ optWS ~ '}' ~ SP ~ optSC ~> ParsedAst.Declaration.Namespace
     }
 
-    def Function: Rule1[ParsedAst.Declaration.Definition] = {
+    def Definition: Rule1[ParsedAst.Declaration.Definition] = {
       def Annotations: Rule1[Seq[ParsedAst.Annotation]] = rule {
         zeroOrMore(Annotation).separatedBy(WS)
       }
 
       rule {
-        Annotations ~ optWS ~ SP ~ atomic("def") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Declaration.Definition
+        Annotations ~ optWS ~ SP ~ atomic("def") ~ WS ~ Ident ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Declaration.Definition
       }
     }
 
@@ -178,7 +178,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       def ClassBody: Rule1[Seq[ParsedAst.Declaration]] = rule {
-        "{" ~ optWS ~ zeroOrMore(Function | Signature | Law).separatedBy(WS) ~ optWS ~ "}"
+        "{" ~ optWS ~ zeroOrMore(Definition | Signature | Law).separatedBy(WS) ~ optWS ~ "}"
       }
 
       rule {
@@ -205,7 +205,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       def ImplBody: Rule1[Seq[ParsedAst.Declaration.Definition]] = rule {
-        "{" ~ optWS ~ zeroOrMore(Function).separatedBy(WS) ~ optWS ~ "}"
+        "{" ~ optWS ~ zeroOrMore(Definition).separatedBy(WS) ~ optWS ~ "}"
       }
 
       rule {

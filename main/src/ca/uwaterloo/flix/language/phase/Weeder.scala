@@ -64,7 +64,7 @@ object Weeder {
           case ds => WeededAst.Declaration.Namespace(name, ds, mkSL(sp1, sp2))
         }
 
-      case ParsedAst.Declaration.Definition(ann, sp1, ident, paramsOpt, tpe, exp, sp2) =>
+      case ParsedAst.Declaration.Definition(ann, sp1, ident, tparams, paramsOpt, tpe, exp, sp2) =>
         val sl = mkSL(ident.sp1, ident.sp2)
         val annVal = Annotations.weed(ann)
         val expVal = Expressions.weed(exp)
