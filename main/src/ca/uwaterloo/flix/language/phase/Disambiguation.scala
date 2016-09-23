@@ -150,6 +150,7 @@ object Disambiguation {
     * Resolves the given type `tpe0` in the given namespace `ns0`.
     */
   def resolve(tpe0: NamedAst.Type, ns0: Name.NName, program: Program): Result[Type, TypeError] = tpe0 match {
+    case NamedAst.Type.Var(tvar, loc) => Ok(tvar)
     case NamedAst.Type.Unit(loc) => Ok(Type.Unit)
     case NamedAst.Type.Ref(qname, loc) if qname.isUnqualified => qname.ident.name match {
       // Basic Types
@@ -213,6 +214,11 @@ object Disambiguation {
         baseType <- resolve(base0, ns0, program);
         argTypes <- seqM(tparams0.map(tpe => resolve(tpe, ns0, program)))
       ) yield Type.Apply(baseType, argTypes)
+    case NamedAst.Type.Forall(quantifiers, base, loc) =>
+      resolve(base, ns0, program) map {
+        case tpe => Type.Forall(quantifiers, tpe)
+      }
+
   }
 
   /**

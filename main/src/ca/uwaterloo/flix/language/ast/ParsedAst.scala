@@ -879,13 +879,13 @@ object ParsedAst {
     case class Unit(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Reference (named) type.
+      * Type Variable or Type Reference.
       *
-      * @param sp1  the position of the first character in the type.
-      * @param name the qualified name of the type.
-      * @param sp2  the position of the last character in the type.
+      * @param sp1   the position of the first character in the type.
+      * @param qname the qualified name of the type.
+      * @param sp2   the position of the last character in the type.
       */
-    case class Ref(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Type
+    case class VarOrRef(sp1: SourcePosition, qname: Name.QName, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Tuple type.

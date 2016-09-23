@@ -44,7 +44,7 @@ object NamedAst {
 
   object Declaration {
 
-    case class Definition(sym: Symbol.DefnSym, params: List[NamedAst.FormalParam], exp: NamedAst.Expression, ann: Ast.Annotations, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
+    case class Definition(sym: Symbol.DefnSym, tparams: List[ast.Type.Var], params: List[NamedAst.FormalParam], exp: NamedAst.Expression, ann: Ast.Annotations, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
     case class Signature(ident: Name.Ident, params: List[Ast.FormalParam], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
@@ -256,6 +256,8 @@ object NamedAst {
 
   object Type {
 
+    case class Var(tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Type
+
     case class Unit(loc: SourceLocation) extends NamedAst.Type
 
     case class Ref(name: Name.QName, loc: SourceLocation) extends NamedAst.Type
@@ -264,9 +266,11 @@ object NamedAst {
 
     case class Tuple(elms: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
 
-    case class Arrow(tparams: List[NamedAst.Type], retType: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+    case class Arrow(params: List[NamedAst.Type], ret: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Apply(base: NamedAst.Type, tparams: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
+
+    case class Forall(quantifiers: List[ast.Type.Var], base: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
   }
 

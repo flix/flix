@@ -411,7 +411,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetMatch | IfThenElse | Match | Switch | Tag | Lambda | Tuple | FNil | FNone | FSome | FVec | FSet | FMap | Literal |
-        Existential | Universal | Bot | Top | UnaryLambda | Wild | Var | UserError
+        Existential | Universal | Bot | Top | UnaryLambda | Wild | VarOrRef | UserError
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -504,7 +504,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ atomic("_") ~ SP ~> ParsedAst.Expression.Wild
     }
 
-    def Var: Rule1[ParsedAst.Expression.VarOrRef] = rule {
+    def VarOrRef: Rule1[ParsedAst.Expression.VarOrRef] = rule {
       SP ~ QName ~ SP ~> ParsedAst.Expression.VarOrRef
     }
 
@@ -677,11 +677,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   object Types {
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Tuple | Apply | Ref
+      Arrow | Tuple | Apply | VarOrRef
     }
 
-    def Ref: Rule1[ParsedAst.Type] = rule {
-      SP ~ QName ~ SP ~> ParsedAst.Type.Ref
+    def VarOrRef: Rule1[ParsedAst.Type] = rule {
+      SP ~ QName ~ SP ~> ParsedAst.Type.VarOrRef
     }
 
     def Tuple: Rule1[ParsedAst.Type] = {
@@ -715,7 +715,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     // TODO: Allow a more general base type.
     def Apply: Rule1[ParsedAst.Type] = rule {
-      SP ~ Ref ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~ optWS ~> ParsedAst.Type.Apply
+      SP ~ VarOrRef ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~ optWS ~> ParsedAst.Type.Apply
     }
   }
 

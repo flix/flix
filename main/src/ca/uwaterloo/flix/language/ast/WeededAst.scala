@@ -32,7 +32,7 @@ object WeededAst {
 
     case class Namespace(name: Name.NName, decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Definition(ann: Ast.Annotations, ident: Name.Ident, params: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
+    case class Definition(ann: Ast.Annotations, ident: Name.Ident, tparams: List[Name.Ident], params: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
 
     case class Signature(ident: Name.Ident, params: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
 
@@ -244,7 +244,7 @@ object WeededAst {
 
     case class Unit(loc: SourceLocation) extends WeededAst.Type
 
-    case class Ref(name: Name.QName, loc: SourceLocation) extends WeededAst.Type
+    case class VarOrRef(qname: Name.QName, loc: SourceLocation) extends WeededAst.Type
 
     case class Tuple(elms: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
 

@@ -134,7 +134,7 @@ object Typer {
           * Performs type inference and reassembly on the given definition `defn` in the given namespace `ns`.
           */
         def visitDefn(defn: NamedAst.Declaration.Definition, ns: Name.NName): Result[(Symbol.Resolved, TypedAst.Definition.Constant), TypeError] = defn match {
-          case NamedAst.Declaration.Definition(sym, params, exp, ann, tpe, loc) =>
+          case NamedAst.Declaration.Definition(sym, tparams, params, exp, ann, tpe, loc) =>
             infer(defn, ns, program) map {
               case d => sym.toResolvedTemporaryHelperMethod -> d
             }
@@ -162,22 +162,23 @@ object Typer {
           case Err(e) => return Err(e)
         }
 
-        val subst = getSubstFromParams(defn0.params, ns0, program).get
-
         // TODO: Some duplication
         val argumentTypes = Disambiguation.resolve(defn0.params.map(_.tpe), ns0, program) match {
           case Ok(tpes) => tpes
           case Err(e) => return Err(e)
         }
 
+        val tparams = defn0.tparams
+
         val result = for (
           resultType <- Expressions.infer(defn0.exp, ns0, program);
-          unifiedType <- unifyM(declaredType, Type.mkArrow(argumentTypes, resultType), defn0.loc)
+          unifiedType <- unifyM(declaredType, Type.mkForall(tparams, Type.mkArrow(argumentTypes, resultType)), defn0.loc)
         ) yield unifiedType
 
         // TODO: See if this can be rewritten nicer
         result match {
           case InferMonad(run) =>
+            val subst = getSubstFromParams(defn0.params, ns0, program).get
             run(subst) match {
               case Ok((subst0, resultType)) =>
                 val exp = Expressions.reassemble(defn0.exp, ns0, program, subst0)

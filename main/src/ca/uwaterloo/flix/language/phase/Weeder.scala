@@ -64,17 +64,20 @@ object Weeder {
           case ds => WeededAst.Declaration.Namespace(name, ds, mkSL(sp1, sp2))
         }
 
-      case ParsedAst.Declaration.Definition(ann, sp1, ident, tparams, paramsOpt, tpe, exp, sp2) =>
+      case ParsedAst.Declaration.Definition(ann, sp1, ident, tparams0, paramsOpt, tpe, exp, sp2) =>
         val sl = mkSL(ident.sp1, ident.sp2)
         val annVal = Annotations.weed(ann)
         val expVal = Expressions.weed(exp)
+        val tparams = tparams0.toList.map(_.ident)
 
         /*
          * Check for `IllegalParameterList`.
          */
         paramsOpt match {
           case None => @@(annVal, expVal) flatMap {
-            case (as, e) => WeededAst.Declaration.Definition(as, ident, Nil, e, WeededAst.Type.Arrow(Nil, Types.weed(tpe), sl), sl).toSuccess
+            case (as, e) =>
+              val t = WeededAst.Type.Arrow(Nil, Types.weed(tpe), sl)
+              WeededAst.Declaration.Definition(as, ident, tparams, Nil, e, t, sl).toSuccess
           }
           case Some(Nil) => IllegalParameterList(sl).toFailure
           case Some(params) =>
@@ -85,7 +88,7 @@ object Weeder {
             @@(annVal, formalsVal, expVal) map {
               case (as, fs, e) =>
                 val t = WeededAst.Type.Arrow(fs map (_.tpe), Types.weed(tpe), sl)
-                WeededAst.Declaration.Definition(as, ident, fs, e, t, sl)
+                WeededAst.Declaration.Definition(as, ident, tparams, fs, e, t, sl)
             }
         }
 
@@ -810,7 +813,7 @@ object Weeder {
       */
     def weed(tpe: ParsedAst.Type): WeededAst.Type = tpe match {
       case ParsedAst.Type.Unit(sp1, sp2) => WeededAst.Type.Unit(mkSL(sp1, sp2))
-      case ParsedAst.Type.Ref(sp1, name, sp2) => WeededAst.Type.Ref(name, mkSL(sp1, sp2))
+      case ParsedAst.Type.VarOrRef(sp1, name, sp2) => WeededAst.Type.VarOrRef(name, mkSL(sp1, sp2))
       case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(weed), mkSL(sp1, sp2))
       case ParsedAst.Type.Arrow(sp1, tparams, tresult, sp2) => WeededAst.Type.Arrow(tparams.toList.map(weed), weed(tresult), mkSL(sp1, sp2))
       case ParsedAst.Type.Apply(sp1, base, tparams, sp2) => WeededAst.Type.Apply(weed(base), tparams.toList.map(weed), mkSL(sp1, sp2))

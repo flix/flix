@@ -76,59 +76,47 @@ object Namer {
       /*
        * Definition.
        */
-      case WeededAst.Declaration.Definition(ann, ident, params0, exp, tpe, loc) =>
+      case WeededAst.Declaration.Definition(ann, ident, tparams0, params0, exp, tpe, loc) =>
         // check if the name is legal.
         if (ident.name.head.isUpper) {
           return IllegalDefinitionName(ident.name, loc).toFailure
         }
 
         // check if the definition already exists.
-        prog0.definitions.get(ns0) match {
+        val defns = prog0.definitions.getOrElse(ns0, Map.empty)
+        defns.get(ident.name) match {
           case None =>
-            // Case 1: The namespace does not yet exist. So the definition does not yet exist.
+            // Case 1: The definition does not already exist. Update it.
 
-            // introduce a variable symbols for each formal parameter.
+            // Compute the type environment from the formal type parameters.
+            val tenv0 = tparams0.foldLeft(Map.empty[String, Type.Var]) {
+              case (macc, name) => macc + (name.name -> Type.freshTypeVar())
+            }
+
+            // Introduce a variable symbols for each formal parameter.
             var pms0 = List.empty[NamedAst.FormalParam]
             var env0 = Map.empty[String, Symbol.VarSym]
             for (WeededAst.FormalParam(ident, tpe, loc) <- params0) {
               val sym = Symbol.freshVarSym(ident)
-              pms0 = NamedAst.FormalParam(sym, Types.namer(tpe), loc) :: pms0
+              pms0 = NamedAst.FormalParam(sym, Types.namer(tpe, tenv0), loc) :: pms0
               env0 = env0 + (ident.name -> sym)
             }
 
-            Expressions.namer(exp, env0) map {
+            Expressions.namer(exp, env0, tenv0) map {
               case e =>
                 val sym = Symbol.mkDefnSym(ns0, ident)
-                val defn = NamedAst.Declaration.Definition(sym, pms0.reverse, e, ann, Types.namer(tpe), loc)
-                val defns = Map(ident.name -> defn)
-                prog0.copy(definitions = prog0.definitions + (ns0 -> defns))
+                // Qualify the type of the definition it its type parameters.
+                val qualifiedType =
+                if (tenv0.isEmpty)
+                  Types.namer(tpe, tenv0)
+                else
+                  NamedAst.Type.Forall(tenv0.values.toList, Types.namer(tpe, tenv0), loc)
+                val defn = NamedAst.Declaration.Definition(sym, tenv0.values.toList, pms0.reverse, e, ann, qualifiedType, loc)
+                prog0.copy(definitions = prog0.definitions + (ns0 -> (defns + (ident.name -> defn))))
             }
-          case Some(defns0) =>
-            // Case 2: The namespace exists. Lookup the definition.
-            defns0.get(ident.name) match {
-              case None =>
-                // Case 2.1: The definition does not exist in the namespace. Update it.
-
-                // introduce a variable symbols for each formal parameter.
-                var pms0 = List.empty[NamedAst.FormalParam]
-                var env0 = Map.empty[String, Symbol.VarSym]
-                for (WeededAst.FormalParam(ident, tpe, loc) <- params0) {
-                  val sym = Symbol.freshVarSym(ident)
-                  pms0 = NamedAst.FormalParam(sym, Types.namer(tpe), loc) :: pms0
-                  env0 = env0 + (ident.name -> sym)
-                }
-
-                Expressions.namer(exp, env0) map {
-                  case e =>
-                    val sym = Symbol.mkDefnSym(ns0, ident)
-                    val defn = NamedAst.Declaration.Definition(sym, pms0.reverse, e, ann, Types.namer(tpe), loc)
-                    val defns = defns0 + (ident.name -> defn)
-                    prog0.copy(definitions = prog0.definitions + (ns0 -> defns))
-                }
-              case Some(defn) =>
-                // Case 2.2: Duplicate definition.
-                DuplicateDefinition(ident.name, defn.loc, ident.loc).toFailure
-            }
+          case Some(defn) =>
+            // Case 2: Duplicate definition.
+            DuplicateDefinition(ident.name, defn.loc, ident.loc).toFailure
         }
 
       /*
@@ -155,7 +143,7 @@ object Namer {
           case None =>
             // Case 1: The namespace does not yet exist. So the enum does not yet exist.
             val sym = Symbol.mkEnumSym(ns0, ident)
-            val enum = NamedAst.Declaration.Enum(sym, casesOf(cases), typeOf(sym, cases), loc)
+            val enum = NamedAst.Declaration.Enum(sym, casesOf(cases, Map.empty), typeOf(sym, cases, Map.empty), loc)
             val enums = Map(ident.name -> enum)
             prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
           case Some(enums0) =>
@@ -164,7 +152,7 @@ object Namer {
               case None =>
                 // Case 2.1: The enum does not exist in the namespace. Update it.
                 val sym = Symbol.mkEnumSym(ns0, ident)
-                val enum = NamedAst.Declaration.Enum(sym, casesOf(cases), typeOf(sym, cases), loc)
+                val enum = NamedAst.Declaration.Enum(sym, casesOf(cases, Map.empty), typeOf(sym, cases, Map.empty), loc)
                 val enums = enums0 + (ident.name -> enum)
                 prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
               case Some(enum) =>
@@ -200,7 +188,7 @@ object Namer {
         // TODO: Check that there are no free variables in a fact.
 
         // Perform naming on the head predicate under the computed environment of free variables.
-        Predicates.namer(h, Map.empty[String, Symbol.VarSym]) map {
+        Predicates.namer(h, Map.empty[String, Symbol.VarSym], Map.empty[String, Type.Var]) map {
           case head =>
             val fact = NamedAst.Declaration.Fact(head, loc)
             val facts = fact :: prog0.facts.getOrElse(ns0, Nil)
@@ -220,7 +208,7 @@ object Namer {
           }
         }
 
-        @@(Predicates.namer(h, env0), @@(bs.map(b => Predicates.namer(b, env0)))) map {
+        @@(Predicates.namer(h, env0, Map.empty[String, Type.Var]), @@(bs.map(b => Predicates.namer(b, env0, Map.empty[String, Type.Var])))) map {
           case (head, body) =>
             val rule = NamedAst.Declaration.Rule(head, body, loc)
             val rules = rule :: prog0.rules.getOrElse(ns0, Nil)
@@ -241,16 +229,16 @@ object Namer {
        * BoundedLattice (deprecated).
        */
       case WeededAst.Declaration.BoundedLattice(tpe, bot0, top0, leq0, lub0, glb0, loc) =>
-        val botVal = Expressions.namer(bot0, Map.empty)
-        val topVal = Expressions.namer(top0, Map.empty)
-        val leqVal = Expressions.namer(leq0, Map.empty)
-        val lubVal = Expressions.namer(lub0, Map.empty)
-        val glbVal = Expressions.namer(glb0, Map.empty)
+        val botVal = Expressions.namer(bot0, Map.empty, Map.empty)
+        val topVal = Expressions.namer(top0, Map.empty, Map.empty)
+        val leqVal = Expressions.namer(leq0, Map.empty, Map.empty)
+        val lubVal = Expressions.namer(lub0, Map.empty, Map.empty)
+        val glbVal = Expressions.namer(glb0, Map.empty, Map.empty)
 
         @@(botVal, topVal, leqVal, lubVal, glbVal) map {
           case (bot, top, leq, lub, glb) =>
-            val lattice = NamedAst.Declaration.BoundedLattice(Types.namer(tpe), bot, top, leq, lub, glb, ns0, loc)
-            prog0.copy(lattices = prog0.lattices + (Types.namer(tpe) -> lattice)) // NB: This just overrides any existing binding.
+            val lattice = NamedAst.Declaration.BoundedLattice(Types.namer(tpe, Map.empty), bot, top, leq, lub, glb, ns0, loc)
+            prog0.copy(lattices = prog0.lattices + (Types.namer(tpe, Map.empty) -> lattice)) // NB: This just overrides any existing binding.
         }
 
       /*
@@ -266,7 +254,7 @@ object Namer {
         prog0.tables.get(ns0) match {
           case None =>
             // Case 1: The namespace does not yet exist. So the table does not yet exist.
-            val table = NamedAst.Table.Relation(Symbol.mkTableSym(ns0, ident), attr map Attributes.namer, loc)
+            val table = NamedAst.Table.Relation(Symbol.mkTableSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
             val tables = Map(ident.name -> table)
             prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
           case Some(tables0) =>
@@ -274,7 +262,7 @@ object Namer {
             tables0.get(ident.name) match {
               case None =>
                 // Case 2.1: The table does not exist in the namespace. Update it.
-                val table = NamedAst.Table.Relation(Symbol.mkTableSym(ns0, ident), attr map Attributes.namer, loc)
+                val table = NamedAst.Table.Relation(Symbol.mkTableSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
                 val tables = tables0 + (ident.name -> table)
                 prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
               case Some(table) =>
@@ -296,7 +284,7 @@ object Namer {
         prog0.tables.get(ns0) match {
           case None =>
             // Case 1: The namespace does not yet exist. So the table does not yet exist.
-            val table = NamedAst.Table.Lattice(Symbol.mkTableSym(ns0, ident), keys map Attributes.namer, Attributes.namer(value), loc)
+            val table = NamedAst.Table.Lattice(Symbol.mkTableSym(ns0, ident), keys.map(k => Attributes.namer(k, Map.empty)), Attributes.namer(value, Map.empty), loc)
             val tables = Map(ident.name -> table)
             prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
           case Some(tables0) =>
@@ -304,7 +292,7 @@ object Namer {
             tables0.get(ident.name) match {
               case None =>
                 // Case 2.1: The table does not exist in the namespace. Update it.
-                val table = NamedAst.Table.Lattice(Symbol.mkTableSym(ns0, ident), keys map Attributes.namer, Attributes.namer(value), loc)
+                val table = NamedAst.Table.Lattice(Symbol.mkTableSym(ns0, ident), keys.map(k => Attributes.namer(k, Map.empty)), Attributes.namer(value, Map.empty), loc)
                 val tables = tables0 + (ident.name -> table)
                 prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
               case Some(table) =>
@@ -318,15 +306,15 @@ object Namer {
     /**
       * Performs naming on the given `cases` map.
       */
-    def casesOf(cases: Map[String, WeededAst.Case]): Map[String, NamedAst.Case] = cases.foldLeft(Map.empty[String, NamedAst.Case]) {
-      case (macc, (name, WeededAst.Case(enum, tag, tpe))) => macc + (name -> NamedAst.Case(enum, tag, Types.namer(tpe)))
+    def casesOf(cases: Map[String, WeededAst.Case], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Map[String, NamedAst.Case] = cases.foldLeft(Map.empty[String, NamedAst.Case]) {
+      case (macc, (name, WeededAst.Case(enum, tag, tpe))) => macc + (name -> NamedAst.Case(enum, tag, Types.namer(tpe, tenv0)))
     }
 
     /**
       * Returns the type corresponding to the given cases of an enum.
       */
-    def typeOf(sym: Symbol.EnumSym, cases: Map[String, WeededAst.Case]): NamedAst.Type.Enum = NamedAst.Type.Enum(sym, cases.foldLeft(Map.empty[String, NamedAst.Type]) {
-      case (macc, (tag, WeededAst.Case(enumName, tagName, tpe))) => macc + (tag -> Types.namer(tpe))
+    def typeOf(sym: Symbol.EnumSym, cases: Map[String, WeededAst.Case], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.Type.Enum = NamedAst.Type.Enum(sym, cases.foldLeft(Map.empty[String, NamedAst.Type]) {
+      case (macc, (tag, WeededAst.Case(enumName, tagName, tpe))) => macc + (tag -> Types.namer(tpe, tenv0))
     })
 
   }
@@ -336,7 +324,7 @@ object Namer {
     /**
       * Performs naming on the given expression `exp0` under the given environment `env0`.
       */
-    def namer(exp0: WeededAst.Expression, env0: Map[String, Symbol.VarSym])(implicit genSym: GenSym): Validation[NamedAst.Expression, NameError] = exp0 match {
+    def namer(exp0: WeededAst.Expression, env0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Expression, NameError] = exp0 match {
       /*
        * Variables.
        */
@@ -373,8 +361,8 @@ object Namer {
       case WeededAst.Expression.Str(lit, loc) => NamedAst.Expression.Str(lit, loc).toSuccess
 
       case WeededAst.Expression.Apply(lambda, args, loc) =>
-        val lambdaVal = namer(lambda, env0)
-        val argsVal = @@(args map (a => namer(a, env0)))
+        val lambdaVal = namer(lambda, env0, tenv0)
+        val argsVal = @@(args map (a => namer(a, env0, tenv0)))
         @@(lambdaVal, argsVal) map {
           case (e, es) => NamedAst.Expression.Apply(e, es, Type.freshTypeVar(), loc)
         }
@@ -385,39 +373,39 @@ object Namer {
         val env1 = (params zip syms) map {
           case (ident, sym) => ident.name -> sym
         }
-        namer(exp, env0 ++ env1) map {
+        namer(exp, env0 ++ env1, tenv0) map {
           case e => NamedAst.Expression.Lambda(syms, e, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.Unary(op, exp, loc) => namer(exp, env0) map {
+      case WeededAst.Expression.Unary(op, exp, loc) => namer(exp, env0, tenv0) map {
         case e => NamedAst.Expression.Unary(op, e, Type.freshTypeVar(), loc)
       }
 
       case WeededAst.Expression.Binary(op, exp1, exp2, loc) =>
-        @@(namer(exp1, env0), namer(exp2, env0)) map {
+        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) map {
           case (e1, e2) => NamedAst.Expression.Binary(op, e1, e2, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
-        @@(namer(exp1, env0), namer(exp2, env0), namer(exp3, env0)) map {
+        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0), namer(exp3, env0, tenv0)) map {
           case (e1, e2, e3) => NamedAst.Expression.IfThenElse(e1, e2, e3, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Let(ident, exp1, exp2, loc) =>
         // make a fresh variable symbol for the local variable.
         val sym = Symbol.freshVarSym(ident)
-        @@(namer(exp1, env0), namer(exp2, env0 + (ident.name -> sym))) map {
+        @@(namer(exp1, env0, tenv0), namer(exp2, env0 + (ident.name -> sym), tenv0)) map {
           case (e1, e2) => NamedAst.Expression.Let(sym, e1, e2, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Match(exp, rules, loc) =>
-        val expVal = namer(exp, env0)
+        val expVal = namer(exp, env0, tenv0)
         val rulesVal = rules map {
           case (pat, body) =>
             // extend the environment with every variable occurring in the pattern
             // and perform naming on the rule body under the extended environment.
             val (p, env1) = Patterns.namer(pat)
-            namer(body, env0 ++ env1) map {
+            namer(body, env0 ++ env1, tenv0) map {
               case b => p -> b
             }
         }
@@ -426,70 +414,70 @@ object Namer {
         }
 
       case WeededAst.Expression.Switch(rules, loc) => @@(rules map {
-        case (cond, body) => @@(namer(cond, env0), namer(body, env0))
+        case (cond, body) => @@(namer(cond, env0, tenv0), namer(body, env0, tenv0))
       }) map {
         case rs => NamedAst.Expression.Switch(rs, Type.freshTypeVar(), loc)
       }
 
-      case WeededAst.Expression.Tag(enum, tag, exp, loc) => namer(exp, env0) map {
+      case WeededAst.Expression.Tag(enum, tag, exp, loc) => namer(exp, env0, tenv0) map {
         case e => NamedAst.Expression.Tag(enum, tag, e, Type.freshTypeVar(), loc)
       }
 
       case WeededAst.Expression.Tuple(elms, loc) =>
-        @@(elms map (e => namer(e, env0))) map {
+        @@(elms map (e => namer(e, env0, tenv0))) map {
           case es => NamedAst.Expression.Tuple(es, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.FNone(loc) => NamedAst.Expression.FNone(Type.freshTypeVar(), loc).toSuccess
 
-      case WeededAst.Expression.FSome(exp, loc) => namer(exp, env0) map {
+      case WeededAst.Expression.FSome(exp, loc) => namer(exp, env0, tenv0) map {
         case e => NamedAst.Expression.FSome(e, Type.freshTypeVar(), loc)
       }
 
       case WeededAst.Expression.FNil(loc) => NamedAst.Expression.FNil(Type.freshTypeVar(), loc).toSuccess
 
       case WeededAst.Expression.FList(hd, tl, loc) =>
-        @@(namer(hd, env0), namer(tl, env0)) map {
+        @@(namer(hd, env0, tenv0), namer(tl, env0, tenv0)) map {
           case (e1, e2) => NamedAst.Expression.FList(e1, e2, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.FVec(elms, loc) =>
-        @@(elms map (e => namer(e, env0))) map {
+        @@(elms map (e => namer(e, env0, tenv0))) map {
           case es => NamedAst.Expression.FVec(es, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.FSet(elms, loc) =>
-        @@(elms map (e => namer(e, env0))) map {
+        @@(elms map (e => namer(e, env0, tenv0))) map {
           case es => NamedAst.Expression.FSet(es, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.FMap(elms, loc) => @@(elms map {
-        case (key, value) => @@(namer(key, env0), namer(value, env0))
+        case (key, value) => @@(namer(key, env0, tenv0), namer(value, env0, tenv0))
       }) map {
         case es => NamedAst.Expression.FMap(es, Type.freshTypeVar(), loc)
       }
 
       case WeededAst.Expression.GetIndex(exp1, exp2, loc) =>
-        @@(namer(exp1, env0), namer(exp2, env0)) map {
+        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) map {
           case (e1, e2) => NamedAst.Expression.GetIndex(e1, e2, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.PutIndex(exp1, exp2, exp3, loc) =>
-        @@(namer(exp1, env0), namer(exp2, env0)) map {
+        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) map {
           case (e1, e2) => NamedAst.Expression.GetIndex(e1, e2, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Existential(params, exp, loc) =>
-        namer(exp, env0) map {
+        namer(exp, env0, tenv0) map {
           case e => ??? // TODO
         }
 
-      case WeededAst.Expression.Universal(params, exp, loc) => namer(exp, env0) map {
+      case WeededAst.Expression.Universal(params, exp, loc) => namer(exp, env0, tenv0) map {
         case e => ??? // TODO
       }
 
-      case WeededAst.Expression.Ascribe(exp, tpe, loc) => namer(exp, env0) map {
-        case e => NamedAst.Expression.Ascribe(e, Types.namer(tpe), loc)
+      case WeededAst.Expression.Ascribe(exp, tpe, loc) => namer(exp, env0, tenv0) map {
+        case e => NamedAst.Expression.Ascribe(e, Types.namer(tpe, tenv0), loc)
       }
 
       case WeededAst.Expression.UserError(loc) => NamedAst.Expression.UserError(Type.freshTypeVar(), loc).toSuccess
@@ -595,28 +583,28 @@ object Namer {
 
   object Predicates {
 
-    def namer(head: WeededAst.Predicate.Head, env0: Map[String, Symbol.VarSym])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Head, NameError] = head match {
+    def namer(head: WeededAst.Predicate.Head, env0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Head, NameError] = head match {
       case WeededAst.Predicate.Head.True(loc) => NamedAst.Predicate.Head.True(loc).toSuccess
       case WeededAst.Predicate.Head.False(loc) => NamedAst.Predicate.Head.False(loc).toSuccess
       case WeededAst.Predicate.Head.Table(qname, terms, loc) =>
-        @@(terms.map(t => Expressions.namer(t, env0))) map {
+        @@(terms.map(t => Expressions.namer(t, env0, tenv0))) map {
           case ts => NamedAst.Predicate.Head.Table(qname, ts, loc)
         }
     }
 
-    def namer(body: WeededAst.Predicate.Body, env0: Map[String, Symbol.VarSym])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Body, NameError] = body match {
+    def namer(body: WeededAst.Predicate.Body, env0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Body, NameError] = body match {
       case WeededAst.Predicate.Body.Table(qname, terms, loc) =>
-        @@(terms.map(t => Expressions.namer(t, env0))) map {
+        @@(terms.map(t => Expressions.namer(t, env0, tenv0))) map {
           case ts => NamedAst.Predicate.Body.Table(qname, ts, loc)
         }
       case WeededAst.Predicate.Body.Filter(qname, terms, loc) =>
-        @@(terms.map(t => Expressions.namer(t, env0))) map {
+        @@(terms.map(t => Expressions.namer(t, env0, tenv0))) map {
           case ts => NamedAst.Predicate.Body.Filter(qname, ts, loc)
         }
       case WeededAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
         NamedAst.Predicate.Body.NotEqual(ident1, ident2, loc).toSuccess
       case WeededAst.Predicate.Body.Loop(ident, term, loc) =>
-        Expressions.namer(term, env0) map {
+        Expressions.namer(term, env0, tenv0) map {
           case t => NamedAst.Predicate.Body.Loop(ident, t, loc)
         }
     }
@@ -647,12 +635,26 @@ object Namer {
     /**
       * Translates the given weeded type into a named type.
       */
-    def namer(tpe: WeededAst.Type): NamedAst.Type = tpe match {
-      case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc)
-      case WeededAst.Type.Ref(name, loc) => NamedAst.Type.Ref(name, loc)
-      case WeededAst.Type.Tuple(elms, loc) => NamedAst.Type.Tuple(elms map namer, loc)
-      case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams map namer, namer(tresult), loc)
-      case WeededAst.Type.Apply(base, tparams, loc) => NamedAst.Type.Apply(namer(base), tparams map namer, loc)
+    def namer(tpe: WeededAst.Type, env0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.Type = {
+      /**
+        * Inner visitor.
+        */
+      def visit(tpe: WeededAst.Type, env: Map[String, Type.Var]): NamedAst.Type = tpe match {
+        case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc)
+        case WeededAst.Type.VarOrRef(qname, loc) =>
+          // TODO: Look into ways to improve this.
+          if (qname.isUnqualified && qname.ident.name.head.isLower)
+            env.get(qname.ident.name) match {
+              case None => NamedAst.Type.Ref(qname, loc)
+              case Some(tvar) => NamedAst.Type.Var(tvar, loc)
+            }
+          else
+            NamedAst.Type.Ref(qname, loc)
+        case WeededAst.Type.Tuple(elms, loc) => NamedAst.Type.Tuple(elms.map(e => visit(e, env)), loc)
+        case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams.map(t => visit(t, env)), visit(tresult, env), loc)
+        case WeededAst.Type.Apply(base, tparams, loc) => NamedAst.Type.Apply(visit(base, env), tparams.map(t => visit(t, env)), loc)
+      }
+      visit(tpe, env0)
     }
 
   }
@@ -662,8 +664,8 @@ object Namer {
     /**
       * Translates the given weeded attribute to a named attribute.
       */
-    def namer(attr: WeededAst.Attribute): NamedAst.Attribute = attr match {
-      case WeededAst.Attribute(ident, tpe, loc) => NamedAst.Attribute(ident, Types.namer(tpe), loc)
+    def namer(attr: WeededAst.Attribute, tenv0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.Attribute = attr match {
+      case WeededAst.Attribute(ident, tpe, loc) => NamedAst.Attribute(ident, Types.namer(tpe, tenv0), loc)
     }
 
   }

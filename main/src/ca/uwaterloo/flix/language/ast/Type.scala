@@ -58,6 +58,7 @@ sealed trait Type {
       case (tagName, tpe) => tpe.typeVars
     }.toSet
     case Type.Apply(t, ts) => t.typeVars ++ ts.flatMap(_.typeVars)
+    case Type.Forall(quantifiers, base) => base.typeVars -- quantifiers
   }
 
   /**
@@ -73,7 +74,7 @@ sealed trait Type {
     * Returns a human readable string representation of `this` type.
     */
   override def toString: String = this match {
-    case Type.Var(x, k) => s"Var($x)"
+    case Type.Var(x, k) => "'" + x
     case Type.Unit => "Unit"
     case Type.Bool => "Bool"
     case Type.Char => "Char"
@@ -93,8 +94,10 @@ sealed trait Type {
     case Type.FVec => "Vec"
     case Type.FSet => "Set"
     case Type.FMap => "Map"
+    case Type.Apply(Type.Arrow(l), ts) => ts.mkString(" -> ")
     case Type.Apply(t, ts) => s"$t[${ts.mkString(", ")}]"
     case Type.Enum(enum, cases) => enum.fqn
+    case Type.Forall(quantifiers, base) => s"∀(${quantifiers.mkString(", ")}). $base"
   }
 }
 
@@ -269,6 +272,13 @@ object Type {
     }
   }
 
+  /**
+    * A universally quantified type expression.
+    */
+  case class Forall(quantifiers: List[Type.Var], base: Type) extends Type {
+    def kind: Kind = base.kind
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Helper Functions                                                        //
   /////////////////////////////////////////////////////////////////////////////
@@ -316,5 +326,12 @@ object Type {
     * Constructs the type Map[K, V] where `K` is the given type `k` and `V` is the given type `v`.
     */
   def mkFMap(k: Type, v: Type): Type = Apply(FMap, List(k, v))
+
+  /**
+    * Constructors the universally quantified type ∀(xs...) base.
+    *
+    * Returns the base type if the given list of qualifiers is empty.
+    */
+  def mkForall(qualifiers: List[Type.Var], base: Type): Type = if (qualifiers.isEmpty) base else Type.Forall(qualifiers, base)
 
 }
