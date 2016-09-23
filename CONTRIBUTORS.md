@@ -7,3 +7,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Magnus Madsen](https://github.com/magnus-madsen) ([website](http://plg.uwaterloo.ca/~mmadsen/))
 - [Ming-Ho Yee](https://github.com/mhyee) ([website](http://mhyee.com))
 - [Paul Phillips](https://github.com/paulp)
+- [Liam Palmer](https://github.com/liampalmer43)
