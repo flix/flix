@@ -36,14 +36,9 @@ object Typer {
     /*
      * Definitions.
      */
-    val constants = program.definitions.foldLeft(Map.empty[Symbol.Resolved, TypedAst.Definition.Constant]) {
-      case (macc, (ns, defns)) => macc ++ defns.foldLeft(Map.empty[Symbol.Resolved, TypedAst.Definition.Constant]) {
-        case (macc2, (name, defn0)) =>
-          Declarations.infer(defn0, ns, program) match {
-            case Ok(defn) => macc2 + (toResolvedTemporaryHelperMethod(ns, name) -> defn)
-            case Err(e) => return e.toFailure[TypedAst.Root, TypeError]
-          }
-      }
+    val defns = Declarations.Definitions.typecheck(program) match {
+      case Ok(res) => res
+      case Err(e) => return e.toFailure
     }
 
     /*
@@ -140,54 +135,10 @@ object Typer {
     val currentTime = System.nanoTime()
     val time = program.time.copy(typer = currentTime - startTime)
 
-    TypedAst.Root(constants, lattices, tables, indexes, facts, rules.toList, hooks, Nil, time).toSuccess
+    TypedAst.Root(defns, lattices, tables, indexes, facts, rules.toList, hooks, Nil, time).toSuccess
   }
 
   object Declarations {
-
-    /**
-      * Infers the type of the given definition `defn0` in the given namespace `ns0`.
-      */
-    def infer(defn0: NamedAst.Declaration.Definition, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): Result[TypedAst.Definition.Constant, TypeError] = {
-      // Resolve the declared type.
-      val declaredType = Disambiguation.resolve(defn0.tpe, ns0, program) match {
-        case Ok(tpe) => tpe
-        case Err(e) => return Err(e)
-      }
-
-      val subst = getSubst(defn0.params, ns0, program).get
-
-      // TODO: Some duplication
-      val argumentTypes = Disambiguation.resolve(defn0.params.map(_.tpe), ns0, program) match {
-        case Ok(tpes) => tpes
-        case Err(e) => return Err(e)
-      }
-
-      val result = for (
-        resultType <- Expressions.infer(defn0.exp, ns0, program);
-        unifiedType <- unifyM(declaredType, Type.mkArrow(argumentTypes, resultType), defn0.loc)
-      ) yield unifiedType
-
-      // TODO: See if this can be rewritten nicer
-      result match {
-        case InferMonad(run) =>
-          run(subst) match {
-            case Ok((subst0, resultType)) =>
-              val exp = Expressions.reassemble(defn0.exp, ns0, program, subst0)
-
-              // Translate the named formals into typed formals.
-              val formals = defn0.params.map {
-                case NamedAst.FormalParam(sym, tpe, loc) =>
-                  val t = Disambiguation.resolve(tpe, ns0, program).get
-                  TypedAst.FormalArg(sym.toIdent, subst0(t))
-              }
-
-              Ok(TypedAst.Definition.Constant(defn0.ann, defn0.sym.toResolvedTemporaryHelperMethod, formals, exp, resultType, defn0.loc))
-
-            case Err(e) => Err(e)
-          }
-      }
-    }
 
     object Constraints {
 
@@ -218,7 +169,83 @@ object Typer {
       }
 
     }
-    
+
+    object Definitions {
+
+      /**
+        * Performs type inference and reassembly on all definitions in the given program.
+        *
+        * Returns [[Err]] if a definition fails to type check.
+        */
+      def typecheck(program: Program)(implicit genSym: GenSym): Result[Map[Symbol.Resolved, TypedAst.Definition.Constant], TypeError] = {
+        /**
+          * Performs type inference and reassembly on the given definition `defn` in the given namespace `ns`.
+          */
+        def visitDefn(defn: NamedAst.Declaration.Definition, ns: Name.NName): Result[(Symbol.Resolved, TypedAst.Definition.Constant), TypeError] = defn match {
+          case NamedAst.Declaration.Definition(sym, params, exp, ann, tpe, loc) =>
+            infer(defn, ns, program) map {
+              case d => sym.toResolvedTemporaryHelperMethod -> d
+            }
+        }
+
+        // Visit every definition in the program.
+        val result = program.definitions.toList.flatMap {
+          case (ns, defns) => defns.map {
+            case (name, defn) => visitDefn(defn, ns)
+          }
+        }
+
+        // Sequence the results and convert them back to a map.
+        Result.seqM(result).map(_.toMap)
+      }
+
+      /**
+        * Infers the type of the given definition `defn0` in the given namespace `ns0`.
+        */
+      // TODO: Cleanup
+      def infer(defn0: NamedAst.Declaration.Definition, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): Result[TypedAst.Definition.Constant, TypeError] = {
+        // Resolve the declared type.
+        val declaredType = Disambiguation.resolve(defn0.tpe, ns0, program) match {
+          case Ok(tpe) => tpe
+          case Err(e) => return Err(e)
+        }
+
+        val subst = getSubst(defn0.params, ns0, program).get
+
+        // TODO: Some duplication
+        val argumentTypes = Disambiguation.resolve(defn0.params.map(_.tpe), ns0, program) match {
+          case Ok(tpes) => tpes
+          case Err(e) => return Err(e)
+        }
+
+        val result = for (
+          resultType <- Expressions.infer(defn0.exp, ns0, program);
+          unifiedType <- unifyM(declaredType, Type.mkArrow(argumentTypes, resultType), defn0.loc)
+        ) yield unifiedType
+
+        // TODO: See if this can be rewritten nicer
+        result match {
+          case InferMonad(run) =>
+            run(subst) match {
+              case Ok((subst0, resultType)) =>
+                val exp = Expressions.reassemble(defn0.exp, ns0, program, subst0)
+
+                // Translate the named formals into typed formals.
+                val formals = defn0.params.map {
+                  case NamedAst.FormalParam(sym, tpe, loc) =>
+                    val t = Disambiguation.resolve(tpe, ns0, program).get
+                    TypedAst.FormalArg(sym.toIdent, subst0(t))
+                }
+
+                Ok(TypedAst.Definition.Constant(defn0.ann, defn0.sym.toResolvedTemporaryHelperMethod, formals, exp, resultType, defn0.loc))
+
+              case Err(e) => Err(e)
+            }
+        }
+      }
+
+    }
+
     object Indexes {
 
       /**
