@@ -33,9 +33,6 @@ object Typer {
   def typer(program: NamedAst.Program)(implicit genSym: GenSym): Validation[TypedAst.Root, TypeError] = {
     val startTime = System.nanoTime()
 
-    /*
-     * Definitions.
-     */
     val defns = Declarations.Definitions.typecheck(program) match {
       case Ok(res) => res
       case Err(e) => return e.toFailure
@@ -87,25 +84,16 @@ object Typer {
       case Err(e) => return e.toFailure
     }
 
-    /*
-     * Indexes.
-     */
     val indexes = Declarations.Indexes.typecheck(program) match {
       case Ok(res) => res
       case Err(e) => return e.toFailure
     }
 
-    /*
-     * Facts.
-     */
     val facts = Declarations.Constraints.typecheck(program) match {
       case Ok(res) => res
       case Err(e) => return e.toFailure
     }
 
-    /*
-     * Rule.
-     */
     val rules = program.rules.flatMap {
       case (ns, rs) => rs map {
         case NamedAst.Declaration.Rule(head0, body0, loc) =>
@@ -292,12 +280,71 @@ object Typer {
 
     }
 
+    object Lattices {
+
+      /**
+        * Performs type inference and reassembly on all lattices in the given program.
+        *
+        * Returns [[Err]] if a type error occurs.
+        */
+      def typecheck(program: Program)(implicit genSym: GenSym): Result[Map[Type, TypedAst.Definition.BoundedLattice], TypeError] = {
+
+        /**
+          * Performs type inference and reassembly on the given `lattice`.
+          */
+        def visitLattice(lattice: NamedAst.Declaration.BoundedLattice): Result[(Type, TypedAst.Definition.BoundedLattice), TypeError] = lattice match {
+          case NamedAst.Declaration.BoundedLattice(tpe, e1, e2, e3, e4, e5, ns, loc) =>
+            // Perform type resolution on the declared type.
+            Disambiguation.resolve(tpe, ns, program) flatMap {
+              case declaredType =>
+
+                // Perform type inference on each of the lattice components.
+                val m = for {
+                  botType <- Expressions.infer(e1, ns, program)
+                  topType <- Expressions.infer(e2, ns, program)
+                  leqType <- Expressions.infer(e3, ns, program)
+                  lubType <- Expressions.infer(e4, ns, program)
+                  glbType <- Expressions.infer(e5, ns, program)
+                  _______ <- unifyM(botType, declaredType, loc)
+                  _______ <- unifyM(topType, declaredType, loc)
+                  _______ <- unifyM(leqType, Type.mkArrow(List(declaredType, declaredType), Type.Bool), loc)
+                  _______ <- unifyM(lubType, Type.mkArrow(List(declaredType, declaredType), declaredType), loc)
+                  _______ <- unifyM(glbType, Type.mkArrow(List(declaredType, declaredType), declaredType), loc)
+                } yield declaredType
+
+                // Evaluate the type inference monad with the empty substitution
+                m.run(Substitution.empty) map {
+                  case (subst, _) =>
+                    // Reassemble the lattice components.
+                    val bot = Expressions.reassemble(e1, ns, program, subst)
+                    val top = Expressions.reassemble(e2, ns, program, subst)
+                    val leq = Expressions.reassemble(e3, ns, program, subst)
+                    val lub = Expressions.reassemble(e4, ns, program, subst)
+                    val glb = Expressions.reassemble(e5, ns, program, subst)
+
+                    declaredType -> TypedAst.Definition.BoundedLattice(declaredType, bot, top, leq, lub, glb, loc)
+                }
+            }
+        }
+
+
+        // Visit every lattice in the program.
+        val result = program.lattices.toList.map {
+          case (_, lattice) => visitLattice(lattice)
+        }
+
+        // Sequence the results and convert them back to a map.
+        Result.seqM(result).map(_.toMap)
+      }
+
+    }
+
     object Tables {
 
       /**
         * Performs type inference and reassembly on all tables in the given program.
         *
-        * Returns [[Err]] if a type resolution fails.
+        * Returns [[Err]] if type resolution fails.
         */
       def typecheck(program: Program): Result[Map[Symbol.TableSym, TypedAst.Table], TypeError] = {
 
