@@ -719,26 +719,23 @@ object Typer {
          * Existential expression.
          */
         case NamedAst.Expression.Existential(params, exp, loc) =>
-          // TODO: Check formal parameters.
-          for (
-            tpe <- visitExp(exp);
-            resultType <- unifyM(tpe, Type.Bool, loc)
-          ) yield resultType
+          // NB: An existential behaves very much like a lambda.
+          val argTypes = params.map(_.sym.tvar)
+          for {
+            bodyType <- visitExp(exp)
+            ________ <- unifyM(bodyType, Type.Bool, loc)
+          } yield Type.mkArrow(argTypes, bodyType)
 
         /*
          * Universal expression.
          */
         case NamedAst.Expression.Universal(params, exp, loc) =>
-          val subst0 = params.foldLeft(Substitution.empty) {
-            // TODO: Need to setup connection between sym and the Exp.Var's tvar.
-            case (subst, NamedAst.FormalParam(sym, tpe, loc)) => ???
-          }
-
-          for (
-            ___ <- liftM(Type.Bool, subst0);
-            tpe <- visitExp(exp);
-            ___ <- unifyM(Type.Bool, tpe, loc)
-          ) yield Type.Bool
+          // NB: An existential behaves very much like a lambda.
+          val argTypes = params.map(_.sym.tvar)
+          for {
+            bodyType <- visitExp(exp)
+            ________ <- unifyM(bodyType, Type.Bool, loc)
+          } yield Type.mkArrow(argTypes, bodyType)
 
         /*
          * Ascribe expression.
