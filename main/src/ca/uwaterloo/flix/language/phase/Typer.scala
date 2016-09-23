@@ -1067,7 +1067,7 @@ object Typer {
          * User Error expression.
          */
         case NamedAst.Expression.UserError(tvar, loc) =>
-          TypedAst.Expression.Error(subst0(tvar), loc)
+          TypedAst.Expression.UserError(subst0(tvar), loc)
       }
 
       /**

@@ -225,7 +225,7 @@ object Simplifier {
         ??? // TODO
       case TypedAst.Expression.Universal(params, exp, loc) =>
         ??? // TODO
-      case TypedAst.Expression.Error(tpe, loc) =>
+      case TypedAst.Expression.UserError(tpe, loc) =>
         SimplifiedAst.Expression.UserError(tpe, loc)
     }
   }

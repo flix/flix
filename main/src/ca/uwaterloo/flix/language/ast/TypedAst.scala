@@ -234,29 +234,13 @@ object TypedAst {
       def tpe: Type = Type.Bool
     }
 
-    case class Error(tpe: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class UserError(tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
   }
 
   sealed trait Pattern extends TypedAst {
     def tpe: Type
-
     def loc: SourceLocation
-
-    def freeVars: Map[String, Type] = {
-      def visit(pat: TypedAst.Pattern, m: Map[String, Type]): Map[String, Type] =
-        pat match {
-          case TypedAst.Pattern.Wildcard(_, _) => m
-          case TypedAst.Pattern.Var(ident, tpe, _) => m + (ident.name -> tpe)
-          case TypedAst.Pattern.Lit(_, _, _) => m
-          case TypedAst.Pattern.Tag(_, _, pat2, _, _) => visit(pat2, m)
-          case TypedAst.Pattern.Tuple(elms, _, _) => elms.foldLeft(m) {
-            case (macc, elm) => visit(elm, macc)
-          }
-        }
-
-      visit(this, Map.empty)
-    }
   }
 
   object Pattern {
