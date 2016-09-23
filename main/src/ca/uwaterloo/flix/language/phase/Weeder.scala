@@ -221,7 +221,7 @@ object Weeder {
             }
         }
 
-      case ParsedAst.Declaration.Index(sp1, ident, indexes, sp2) =>
+      case ParsedAst.Declaration.Index(sp1, qname, indexes, sp2) =>
         /*
          * Check for `EmptyIndex` and `IllegalIndex`.
          */
@@ -231,7 +231,7 @@ object Weeder {
         else if (indexes.exists(_.isEmpty))
           IllegalIndex(sl).toFailure
         else
-          WeededAst.Declaration.Index(ident, indexes.toList.map(_.toList), sl).toSuccess
+          WeededAst.Declaration.Index(qname, indexes.toList.map(_.toList), sl).toSuccess
 
       case ParsedAst.Declaration.BoundedLattice(sp1, tpe, elms, sp2) =>
         val elmsVal = @@(elms.toList.map(e => Expressions.weed(e)))

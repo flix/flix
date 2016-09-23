@@ -95,8 +95,9 @@ object Typer {
     /*
      * Indexes.
      */
-    val indexes = program.indexes.foldLeft(Map.empty[Symbol.TableSym, TypedAst.Definition.Index]) {
-      case (macc, (sym, NamedAst.Declaration.Index(ident, idxs, loc))) => macc + (sym -> TypedAst.Definition.Index(sym, idxs, loc))
+    val indexes = Declarations.Indexes.typecheck(program) match {
+      case Ok(res) => res
+      case Err(e) => return e.toFailure
     }
 
     /*
@@ -212,8 +213,54 @@ object Typer {
           case (ns, facts) => facts.map(f => visitFact(f, ns))
         }
 
-        // Sequence the result.
+        // Sequence the results and convert them back to a map.
         Result.seqM(result)
+      }
+
+    }
+    
+    object Indexes {
+
+      /**
+        * Performs type inference and reassembly on all indexes in the given program.
+        *
+        * Returns [[Err]] if an index refers to a non-existent table or a non-existent attribute in a table.
+        */
+      def typecheck(program: Program): Result[Map[Symbol.TableSym, TypedAst.Definition.Index], TypeError] = {
+
+        /**
+          * Checks that the referenced table exists and that every attribute used by the index exists.
+          */
+        def visitIndex(index: NamedAst.Declaration.Index, ns: Name.NName): Result[(Symbol.TableSym, TypedAst.Definition.Index), TypeError] = index match {
+          case NamedAst.Declaration.Index(qname, indexes, loc) =>
+            // Lookup the referenced table.
+            Disambiguation.lookupTable(qname, ns, program) flatMap {
+              case table =>
+                val declaredAttributes = attributesOf(table).map(_.ident.name)
+                // Iterate through every index in the declaration.
+                for (index <- indexes) {
+                  // Iterate through every attribute name in the current index.
+                  for (referencedAttribute <- index) {
+                    if (!(declaredAttributes contains referencedAttribute.name)) {
+                      return Err(TypeError.UnresolvedAttribute(referencedAttribute, referencedAttribute.loc))
+                    }
+                  }
+                }
+                Ok(table.sym -> TypedAst.Definition.Index(table.sym, indexes, loc))
+            }
+        }
+
+        // Visit every index in the program.
+        val result = program.indexes.toList.flatMap {
+          case (ns, indexes) => indexes.map {
+            case (name, index) => visitIndex(index, ns)
+          }
+        }
+
+        // TODO: Duplicate indexes.
+
+        // Sequence the results and convert them back to a map.
+        Result.seqM(result).map(_.toMap)
       }
 
     }
@@ -261,7 +308,7 @@ object Typer {
           }
         }
 
-        // Sequence the result and convert it back to a map.
+        // Sequence the results and convert them back to a map.
         Result.seqM(result).map(_.toMap)
       }
 
@@ -724,9 +771,26 @@ object Typer {
             inferredListType <- unifyM(Type.mkFList(inferredHeadType), inferredTailType, loc)
             resultType <- unifyM(tvar, inferredListType, loc)
           } yield resultType
-        case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => ???
-        case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => ???
-        case NamedAst.Pattern.FMap(elms, rest, tvar, loc) => ???
+        case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => rest match {
+          case None =>
+            for {
+              inferredElementTypes <- seqM(elms.map(visitPat))
+              unifiedElementType <- unifyM(inferredElementTypes, loc)
+              resultType <- unifyM(tvar, Type.mkFVec(unifiedElementType), loc)
+            } yield resultType
+          case Some(remainder) =>
+            for {
+              inferredElementTypes <- seqM(elms.map(visitPat))
+              inferredRemainderType <- visitPat(remainder)
+              unifiedElementType <- unifyM(inferredElementTypes, loc)
+              resultType <- unifyM(tvar, Type.mkFVec(unifiedElementType), inferredRemainderType, loc)
+            } yield resultType
+        }
+        case NamedAst.Pattern.FSet(elms, rest, tvar, loc) =>
+          ???
+
+        case NamedAst.Pattern.FMap(elms, rest, tvar, loc) =>
+          ???
       }
 
       visitExp(exp0)
@@ -1226,6 +1290,14 @@ object Typer {
     }
 
     Ok(substitution)
+  }
+
+  /**
+    * Returns the attributes of the given `table`.
+    */
+  def attributesOf(table: NamedAst.Table): List[NamedAst.Attribute] = table match {
+    case NamedAst.Table.Relation(sym, attr, loc) => attr
+    case NamedAst.Table.Lattice(sym, keys, value, loc) => keys ::: value :: Nil
   }
 
   // TODO: Compatability --------------

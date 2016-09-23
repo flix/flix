@@ -24,12 +24,14 @@ trait NamedAst
 
 object NamedAst {
 
+  // TODO: Ensure that these have consistent signatures.
+
   case class Program(enums: Map[Name.NName, Map[String, NamedAst.Declaration.Enum]],
                      definitions: Map[Name.NName, Map[String, NamedAst.Declaration.Definition]],
                      classes: Map[Symbol.ClassSym, NamedAst.Declaration.Class],
                      impls: Map[Symbol.ImplSym, NamedAst.Declaration.Impl],
                      lattices: Map[NamedAst.Type, NamedAst.Declaration.BoundedLattice],
-                     indexes: Map[Symbol.TableSym, NamedAst.Declaration.Index],
+                     indexes: Map[Name.NName, Map[String, NamedAst.Declaration.Index]],
                      tables: Map[Name.NName, Map[String, NamedAst.Table]],
                      facts: Map[Name.NName, List[NamedAst.Declaration.Fact]],
                      rules: Map[Name.NName, List[NamedAst.Declaration.Rule]],
@@ -60,7 +62,7 @@ object NamedAst {
 
     case class Rule(head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation) extends NamedAst.Declaration
 
-    case class Index(ident: Name.Ident, indexes: List[List[Name.Ident]], loc: SourceLocation) extends NamedAst.Declaration
+    case class Index(qname: Name.QName, indexes: List[List[Name.Ident]], loc: SourceLocation) extends NamedAst.Declaration
 
     case class BoundedLattice(tpe: NamedAst.Type, bot: NamedAst.Expression, top: NamedAst.Expression, leq: NamedAst.Expression, lub: NamedAst.Expression, glb: NamedAst.Expression, ns: Name.NName, loc: SourceLocation) extends NamedAst.Declaration
 

@@ -230,18 +230,12 @@ object Namer {
       /*
        * Index.
        */
-      case WeededAst.Declaration.Index(ident, indexes, loc) =>
-        // check if the index already exists.
-        val sym = Symbol.mkTableSym(ns0, ident)
-        prog0.indexes.get(sym) match {
-          case None =>
-            // Case 1: No indexes exist for the table. Update the indexes.
-            val index = NamedAst.Declaration.Index(ident, indexes.map(_.toList).toList, loc)
-            prog0.copy(indexes = prog0.indexes + (sym -> index)).toSuccess
-          case Some(index) =>
-            // Case 2: Some indexes already exist for the table.
-            ??? // TODO
-        }
+      case WeededAst.Declaration.Index(qname, indexes, loc) =>
+        // TODO: Duplicate indexes in the same namespace.
+        val name = qname.ident.name
+        val index = NamedAst.Declaration.Index(qname, indexes.map(_.toList), loc)
+        val decls = prog0.indexes.getOrElse(ns0, Map.empty)
+        prog0.copy(indexes = prog0.indexes + (ns0 -> (decls + (name -> index)))).toSuccess
 
       /*
        * BoundedLattice (deprecated).

@@ -205,11 +205,11 @@ object ParsedAst {
       * Index Declaration.
       *
       * @param sp1     the position of the first character in the declaration.
-      * @param ident   the name of the relation or lattice.
+      * @param qname   the name of the relation or lattice.
       * @param indexes the sequence of indexes.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class Index(sp1: SourcePosition, ident: Name.Ident, indexes: Seq[Seq[Name.Ident]], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Index(sp1: SourcePosition, qname: Name.QName, indexes: Seq[Seq[Name.Ident]], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Fact Declaration.

@@ -44,7 +44,7 @@ object TypedAst {
                               glb: TypedAst.Expression,
                               loc: SourceLocation) extends TypedAst.Definition
 
-    case class Index(sym: Symbol.TableSym, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends TypedAst.Definition
+    case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends TypedAst.Definition
 
   }
 

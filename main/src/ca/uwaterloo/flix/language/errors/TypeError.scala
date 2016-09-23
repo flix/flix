@@ -46,6 +46,22 @@ object TypeError {
   }
 
   /**
+    * Unresolved Attribute Error.
+    *
+    * @param name the unresolved attribute name.
+    * @param loc  the location where the error occurred.
+    */
+  case class UnresolvedAttribute(name: Name.Ident, loc: SourceLocation) extends TypeError {
+    val message =
+      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
+         |
+         |${consoleCtx.red(s">> Unknown attribute '$name'.")}
+         |
+         |${loc.highlight}
+         """.stripMargin
+  }
+
+  /**
     * Unresolved Reference Error.
     *
     * @param qn  the unresolved reference name.
@@ -130,7 +146,6 @@ object TypeError {
          |${loc.highlight}
          """.stripMargin
   }
-
 
 
   // TODO -----------------------------------------------------------------------
