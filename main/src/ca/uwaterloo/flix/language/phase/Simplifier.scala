@@ -222,9 +222,9 @@ object Simplifier {
       case TypedAst.Expression.GetIndex(e1, e2, tpe, loc) => ??? // TODO
       case TypedAst.Expression.PutIndex(e1, e2, e3, tpe, loc) => ??? // TODO
       case TypedAst.Expression.Existential(params, exp, loc) =>
-        SimplifiedAst.Expression.Existential(params, simplify(exp), loc)
+        ??? // TODO
       case TypedAst.Expression.Universal(params, exp, loc) =>
-        SimplifiedAst.Expression.Universal(params, simplify(exp), loc)
+        ??? // TODO
       case TypedAst.Expression.Error(tpe, loc) =>
         SimplifiedAst.Expression.UserError(tpe, loc)
     }
@@ -316,6 +316,8 @@ object Simplifier {
           case (((pat, name), idx), exp) =>
             SExp.Let(name, -1, SExp.GetTupleIndex(SExp.Var(v, -1, tpe, loc), idx, pat.tpe, loc), exp, succ.tpe, loc)
         }
+
+      case _ => ??? // TODO: implement remaining patterns.
 
     }
   }

@@ -425,7 +425,7 @@ object PropertyGen {
     * Returns an expression universally quantified by the given variables.
     */
   def ∀(q: Expression.Var*)(e: Expression): TypedAst.Expression = {
-    val params = q.toList.map(e => Ast.FormalParam(e.ident, e.tpe))
+    val params = q.toList.map(e => ???) // TODO
     TypedAst.Expression.Universal(params, e, SourceLocation.Unknown)
   }
 

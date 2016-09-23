@@ -70,6 +70,7 @@ object TypedAst {
 
   sealed trait Literal extends TypedAst {
     def tpe: Type
+
     def loc: SourceLocation
   }
 
@@ -123,6 +124,7 @@ object TypedAst {
 
   sealed trait Expression extends TypedAst {
     def tpe: Type
+
     def loc: SourceLocation
   }
 
@@ -224,12 +226,11 @@ object TypedAst {
 
     case class PutIndex(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-
-    case class Existential(params: List[Ast.FormalParam], exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
+    case class Existential(params: List[TypedAst.FormalParam], exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = Type.Bool
     }
 
-    case class Universal(params: List[Ast.FormalParam], exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
+    case class Universal(params: List[TypedAst.FormalParam], exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = Type.Bool
     }
 
@@ -270,6 +271,20 @@ object TypedAst {
 
     case class Tuple(elms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
+    case class FNone(tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
+
+    case class FSome(pat: TypedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
+
+    case class FNil(tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
+
+    case class FList(hd: TypedAst.Pattern, tl: TypedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
+
+    case class FVec(elms: List[TypedAst.Pattern], rest: Option[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
+
+    case class FSet(elms: List[TypedAst.Pattern], rest: Option[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
+
+    case class FMap(elms: List[(TypedAst.Pattern, TypedAst.Pattern)], rest: Option[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
+
   }
 
   sealed trait Predicate extends TypedAst {
@@ -298,7 +313,7 @@ object TypedAst {
 
       case class ApplyFilter(name: Symbol.Resolved, terms: List[TypedAst.Term.Body], loc: SourceLocation) extends TypedAst.Predicate.Body
 
-      case class ApplyHookFilter(hook: Ast.Hook, terms: List[TypedAst.Term.Body],loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class ApplyHookFilter(hook: Ast.Hook, terms: List[TypedAst.Term.Body], loc: SourceLocation) extends TypedAst.Predicate.Body
 
       case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, loc: SourceLocation) extends TypedAst.Predicate.Body
 
@@ -312,6 +327,7 @@ object TypedAst {
 
     sealed trait Head extends TypedAst {
       def tpe: Type
+
       def loc: SourceLocation
     }
 
@@ -333,19 +349,27 @@ object TypedAst {
 
     sealed trait Body extends TypedAst {
       def tpe: Type
+
       def loc: SourceLocation
     }
 
     object Body {
+
       case class Wildcard(tpe: Type, loc: SourceLocation) extends TypedAst.Term.Body
+
       case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Body
+
       case class Lit(lit: TypedAst.Literal, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Body
+
     }
 
   }
 
   case class Attribute(ident: Name.Ident, tpe: Type) extends TypedAst
 
+  case class FormalParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst
+
+  // TODO: Deprecated
   case class FormalArg(ident: Name.Ident, tpe: Type) extends TypedAst
 
   case class Property(law: Law, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst

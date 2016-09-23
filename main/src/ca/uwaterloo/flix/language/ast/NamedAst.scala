@@ -270,10 +270,10 @@ object NamedAst {
 
   }
 
-  case class Attribute(ident: Name.Ident, tpe: NamedAst.Type, loc: SourceLocation)
+  case class Attribute(ident: Name.Ident, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
 
-  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: NamedAst.Type)
+  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: NamedAst.Type) extends NamedAst
 
-  case class FormalParam(sym: Symbol.VarSym, tpe: NamedAst.Type, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
 
 }

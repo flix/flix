@@ -38,45 +38,9 @@ object Typer {
       case Err(e) => return e.toFailure
     }
 
-    /*
-     * Lattices.
-     */
-    val lattices = program.lattices.foldLeft(Map.empty[Type, TypedAst.Definition.BoundedLattice]) {
-      case (macc, (tpe, decl)) =>
-        val NamedAst.Declaration.BoundedLattice(tpe, e1, e2, e3, e4, e5, ns, loc) = decl
-
-        val InferMonad(run) = {
-          val declaredType = Disambiguation.resolve(tpe, ns, program) match {
-            case Ok(tpe) => tpe
-            case Err(e) => return e.toFailure
-          }
-
-          for (
-            botType <- Expressions.infer(e1, ns, program);
-            topType <- Expressions.infer(e2, ns, program);
-            leqType <- Expressions.infer(e3, ns, program);
-            lubType <- Expressions.infer(e4, ns, program);
-            glbType <- Expressions.infer(e5, ns, program);
-            _______ <- unifyM(botType, declaredType, loc);
-            _______ <- unifyM(topType, declaredType, loc)
-          // TODO Add constraints for leq, lub, glb, etc.
-          )
-            yield declaredType
-        }
-
-        run(Substitution.empty) match {
-          case Ok((subst, resolvedType)) =>
-
-            val bot = Expressions.reassemble(e1, ns, program, subst)
-            val top = Expressions.reassemble(e2, ns, program, subst)
-            val leq = Expressions.reassemble(e3, ns, program, subst)
-            val lub = Expressions.reassemble(e4, ns, program, subst)
-            val glb = Expressions.reassemble(e5, ns, program, subst)
-
-            val lattice = TypedAst.Definition.BoundedLattice(resolvedType, bot, top, leq, lub, glb, loc)
-            macc + (resolvedType -> lattice)
-          case Err(e) => return e.toFailure
-        }
+    val lattices = Declarations.Lattices.typecheck(program) match {
+      case Ok(res) => res
+      case Err(e) => return e.toFailure
     }
 
     val tables = Declarations.Tables.typecheck(program) match {
@@ -198,7 +162,7 @@ object Typer {
           case Err(e) => return Err(e)
         }
 
-        val subst = getSubst(defn0.params, ns0, program).get
+        val subst = getSubstFromParams(defn0.params, ns0, program).get
 
         // TODO: Some duplication
         val argumentTypes = Disambiguation.resolve(defn0.params.map(_.tpe), ns0, program) match {
@@ -845,21 +809,27 @@ object Typer {
             inferredListType <- unifyM(Type.mkFList(inferredHeadType), inferredTailType, loc)
             resultType <- unifyM(tvar, inferredListType, loc)
           } yield resultType
-        case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => rest match {
-          case None =>
-            for {
-              inferredElementTypes <- seqM(elms.map(visitPat))
-              unifiedElementType <- unifyM(inferredElementTypes, loc)
-              resultType <- unifyM(tvar, Type.mkFVec(unifiedElementType), loc)
-            } yield resultType
-          case Some(remainder) =>
-            for {
-              inferredElementTypes <- seqM(elms.map(visitPat))
-              inferredRemainderType <- visitPat(remainder)
-              unifiedElementType <- unifyM(inferredElementTypes, loc)
-              resultType <- unifyM(tvar, Type.mkFVec(unifiedElementType), inferredRemainderType, loc)
-            } yield resultType
-        }
+        case NamedAst.Pattern.FVec(elms, rest, tvar, loc) =>
+          // Introduce a fresh type variable for the type of the elements in the vector.
+          val elementType = Type.freshTypeVar()
+
+          // Perform type inference for the elements.
+          val m = for {
+            inferredElementTypes <- seqM(elms.map(visitPat))
+            unifiedElementType <- unifyM(elementType :: inferredElementTypes, loc)
+            resultType <- unifyM(tvar, Type.mkFVec(elementType), loc)
+          } yield resultType
+
+          // Check if there is a rest, if so unify it with the result type.
+          rest match {
+            case None => m
+            case Some(remainder) =>
+              for {
+                resultType <- m
+                inferredRemainderType <- visitPat(remainder)
+                unifiedType <- unifyM(inferredRemainderType, resultType, loc)
+              } yield unifiedType
+          }
         case NamedAst.Pattern.FSet(elms, rest, tvar, loc) =>
           ???
 
@@ -980,7 +950,7 @@ object Typer {
         case NamedAst.Expression.Match(exp1, rules, tvar, loc) =>
           val e1 = visitExp(exp1, subst0)
           val rs = rules map {
-            case (pat, exp) => visitPat(pat, subst0) -> visitExp(exp, subst0)
+            case (pat, exp) => visitPat(pat) -> visitExp(exp, subst0)
           }
           TypedAst.Expression.Match(e1, rs, subst0(tvar), loc)
 
@@ -1079,14 +1049,14 @@ object Typer {
          */
         case NamedAst.Expression.Existential(params, exp, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.Existential(compat(params, subst0), e, loc)
+          TypedAst.Expression.Existential(visitParams(params), e, loc)
 
         /*
          * Universal expression.
          */
         case NamedAst.Expression.Universal(params, exp, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.Universal(compat(params, subst0), e, loc)
+          TypedAst.Expression.Universal(visitParams(params), e, loc)
 
         /*
          * Ascribe expression.
@@ -1103,9 +1073,9 @@ object Typer {
       }
 
       /**
-        * Applies the given substitution `subst0` to the given pattern `pat0`.
+        * Applies the substitution to the given pattern `pat0`.
         */
-      def visitPat(pat0: NamedAst.Pattern, subst0: Substitution): TypedAst.Pattern = pat0 match {
+      def visitPat(pat0: NamedAst.Pattern): TypedAst.Pattern = pat0 match {
         case NamedAst.Pattern.Wild(tvar, loc) => TypedAst.Pattern.Wildcard(subst0(tvar), loc)
         case NamedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(sym.toIdent, subst0(tvar), loc)
         case NamedAst.Pattern.Unit(loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Unit(loc), Type.Unit, loc)
@@ -1121,18 +1091,32 @@ object Typer {
         case NamedAst.Pattern.BigInt(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.BigInt(lit, loc), Type.BigInt, loc)
         case NamedAst.Pattern.Str(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Str(lit, loc), Type.Str, loc)
         case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
-          val p = visitPat(pat, subst0)
-          TypedAst.Pattern.Tag(enum.toResolved, tag, p, subst0(tvar), loc)
-        case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
-          val es = elms.map(e => visitPat(e, subst0))
-          TypedAst.Pattern.Tuple(es, subst0(tvar), loc)
-        case NamedAst.Pattern.FNone(tvar, loc) => ???
-        case NamedAst.Pattern.FSome(pat, tvar, loc) => ???
-        case NamedAst.Pattern.FNil(tvar, loc) => ???
-        case NamedAst.Pattern.FList(hd, tl, tvar, loc) => ???
-        case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => ???
-        case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => ???
-        case NamedAst.Pattern.FMap(elms, rest, tvar, loc) => ???
+          TypedAst.Pattern.Tag(enum.toResolved, tag, visitPat(pat), subst0(tvar), loc)
+        case NamedAst.Pattern.Tuple(elms, tvar, loc) => TypedAst.Pattern.Tuple(elms map visitPat, subst0(tvar), loc)
+        case NamedAst.Pattern.FNone(tvar, loc) => TypedAst.Pattern.FNone(subst0(tvar), loc)
+        case NamedAst.Pattern.FSome(pat, tvar, loc) => TypedAst.Pattern.FSome(visitPat(pat), subst0(tvar), loc)
+        case NamedAst.Pattern.FNil(tvar, loc) => TypedAst.Pattern.FNil(subst0(tvar), loc)
+        case NamedAst.Pattern.FList(hd, tl, tvar, loc) => TypedAst.Pattern.FList(visitPat(hd), visitPat(tl), subst0(tvar), loc)
+        case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => TypedAst.Pattern.FVec(elms map visitPat, rest.map(visitPat), subst0(tvar), loc)
+        case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => TypedAst.Pattern.FSet(elms map visitPat, rest.map(visitPat), subst0(tvar), loc)
+        case NamedAst.Pattern.FMap(elms, rest, tvar, loc) =>
+          val es = elms map {
+            case (k, v) => (visitPat(k), visitPat(v))
+          }
+          TypedAst.Pattern.FMap(es, rest.map(visitPat), subst0(tvar), loc)
+      }
+
+      /**
+        * Applies the substitution to the given list of formal parameters.
+        */
+      def visitParams(xs: List[NamedAst.FormalParam]): List[TypedAst.FormalParam] = {
+        xs map {
+          case NamedAst.FormalParam(sym, tpe, loc) =>
+            Disambiguation.resolve(tpe, ns0, program) match {
+              case Ok(resolvedType) => TypedAst.FormalParam(sym, subst0(resolvedType), loc)
+              case Err(e) => throw InternalCompilerException("Never happens. Resolution should have failed during type inference.")
+            }
+        }
       }
 
       visitExp(exp0, subst0)
@@ -1327,8 +1311,8 @@ object Typer {
       case TypedAst.Expression.Wild(tpe, loc) => TypedAst.Term.Body.Wildcard(tpe, loc)
       case TypedAst.Expression.Var(ident, tpe, loc) => TypedAst.Term.Body.Var(ident, tpe, loc)
       case TypedAst.Expression.Unit(loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Unit(loc), Type.Unit, loc)
-      case TypedAst.Expression.True(loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Bool(true, loc), Type.Bool, loc)
-      case TypedAst.Expression.False(loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Bool(false, loc), Type.Bool, loc)
+      case TypedAst.Expression.True(loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Bool(lit = true, loc), Type.Bool, loc)
+      case TypedAst.Expression.False(loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Bool(lit = false, loc), Type.Bool, loc)
       case TypedAst.Expression.Char(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Char(lit, loc), Type.Char, loc)
       case TypedAst.Expression.Float32(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Float32(lit, loc), Type.Float32, loc)
       case TypedAst.Expression.Float64(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Float64(lit, loc), Type.Float32, loc)
@@ -1347,23 +1331,22 @@ object Typer {
   /**
     * Returns a substitution from formal parameters to their declared types.
     *
+    * Performs type resolution of the declared type of each formal parameters.
+    *
     * @param params  the formal parameters.
     * @param ns0     the current namespace.
     * @param program the program.
     */
-  // TODO: Move into Unification?
-  private def getSubst(params: List[NamedAst.FormalParam], ns0: Name.NName, program: Program): Result[Unification.Substitution, TypeError] = {
-    val declaredTypes = Disambiguation.resolve(params.map(_.tpe), ns0, program) match {
-      case Ok(tpes) => tpes
-      case Err(e) => return Err(e)
+  def getSubstFromParams(params: List[NamedAst.FormalParam], ns0: Name.NName, program: Program): Result[Unification.Substitution, TypeError] = {
+    // Perform type resolution on each parameter.
+    Disambiguation.resolve(params.map(_.tpe), ns0, program) map {
+      case declaredTypes =>
+        // Compute the substitution by mapping the symbol of each parameter to its declared type.
+        (params zip declaredTypes).foldLeft(Substitution.empty) {
+          case (macc, (NamedAst.FormalParam(sym, _, _), declaredType)) =>
+            macc ++ Substitution.singleton(sym.tvar, declaredType)
+        }
     }
-
-    val substitution = (params zip declaredTypes).foldLeft(Substitution.empty) {
-      case (substacc, (NamedAst.FormalParam(sym, _, _), declaredType)) =>
-        substacc ++ Substitution.singleton(sym.tvar, declaredType)
-    }
-
-    Ok(substitution)
   }
 
   /**
@@ -1374,13 +1357,10 @@ object Typer {
     case NamedAst.Table.Lattice(sym, keys, value, loc) => keys ::: value :: Nil
   }
 
-  // TODO: Compatability --------------
-
-  private def compat(ps: List[NamedAst.FormalParam], subst: Substitution): List[Ast.FormalParam] = ps map {
-    case NamedAst.FormalParam(sym, tpe, loc) => Ast.FormalParam(sym.toIdent, subst(???))
-  }
-
-  // TODO: Ugly hack. Remove once we have type classes.
+  /**
+    * A temporary hack which "guesses" the type of an arithmetic operation based on one of its arguments.
+    */
+  // TODO: Hack to be removed once type classes are implemented.
   def guesstimateType(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
     case (Type.Float32, _) => Type.Float32
     case (_, Type.Float32) => Type.Float32
@@ -1405,8 +1385,5 @@ object Typer {
 
     case _ => Type.Int32
   }
-
-  def toResolvedTemporaryHelperMethod(ns: Name.NName, name: String): Symbol.Resolved =
-    if (ns.isRoot) Symbol.Resolved.mk(name) else Symbol.Resolved.mk(ns.parts ::: name :: Nil)
 
 }
