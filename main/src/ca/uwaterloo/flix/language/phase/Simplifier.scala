@@ -398,14 +398,30 @@ object Simplifier {
     case TypedAst.Pattern.Int64(lit, loc) => true
     case TypedAst.Pattern.BigInt(lit, loc) => true
     case TypedAst.Pattern.Str(lit, loc) => true
-    case _ => ??? // TODO: Other patterns?
+    case TypedAst.Pattern.Tag(_, _, p, _, _) => isLiteral(p)
+    case TypedAst.Pattern.Tuple(elms, _, _) => elms forall isLiteral
+    // TODO: Any other patterns that are literals?
+    case _ => false
   }
 
   /**
     * Returns the given pattern as a literal expression.
     */
   def lit2exp(pat: TypedAst.Pattern): SimplifiedAst.Expression = pat match {
-
+    case TypedAst.Pattern.Unit(loc) => SimplifiedAst.Expression.Unit
+    case TypedAst.Pattern.True(loc) => SimplifiedAst.Expression.True
+    case TypedAst.Pattern.False(loc) => SimplifiedAst.Expression.False
+    case TypedAst.Pattern.Char(lit, loc) => SimplifiedAst.Expression.Char(lit)
+    case TypedAst.Pattern.Int8(lit, loc) => SimplifiedAst.Expression.Int8(lit)
+    case TypedAst.Pattern.Int16(lit, loc) => SimplifiedAst.Expression.Int16(lit)
+    case TypedAst.Pattern.Int32(lit, loc) => SimplifiedAst.Expression.Int32(lit)
+    case TypedAst.Pattern.Int64(lit, loc) => SimplifiedAst.Expression.Int64(lit)
+    case TypedAst.Pattern.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
+    case TypedAst.Pattern.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
+    case TypedAst.Pattern.Tag(enumName, tagName, p, tpe, loc) =>
+      SimplifiedAst.Expression.Tag(enumName, tagName, lit2exp(p), tpe, loc)
+    case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
+      SimplifiedAst.Expression.Tuple(elms map lit2exp, tpe, loc)
     case _ => throw InternalCompilerException(s"Unexpected non-literal pattern $pat.")
   }
 

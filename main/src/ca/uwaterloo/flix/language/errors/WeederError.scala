@@ -254,40 +254,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that an illegal term occurs in a body predicate.
-    *
-    * @param msg the error message.
-    * @param loc the location where the illegal term occurs.
-    */
-  case class IllegalBodyTerm(msg: String, loc: SourceLocation) extends WeederError {
-    val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Illegal term in the body of a rule.")}
-         |
-         |${loc.highlight}
-         |$msg
-         """.stripMargin
-  }
-
-  /**
-    * An error raised to indicate that an illegal term occurs in a head predicate.
-    *
-    * @param msg the error message.
-    * @param loc the location where the illegal term occurs.
-    */
-  case class IllegalHeadTerm(msg: String, loc: SourceLocation) extends WeederError {
-    val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Illegal term in the head of a fact/rule.")}
-         |
-         |${loc.highlight}
-         |$msg
-         """.stripMargin
-  }
-
-  /**
     * An error raised to indicate that an int is out of bounds.
     *
     * @param loc the location where the illegal int occurs.
