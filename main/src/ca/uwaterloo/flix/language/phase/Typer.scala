@@ -1133,9 +1133,9 @@ object Typer {
       case NamedAst.Predicate.Head.Table(qname, terms, loc) =>
         // Lookup the table associated with the predicate to find the declared types of the terms.
         Disambiguation.lookupTable(qname, ns, program) flatMap {
-          case NamedAst.Table.Relation(sym, attr, _) =>
+          table =>
             // Resolve the declared types.
-            Disambiguation.resolve(attr.map(_.tpe), ns, program) flatMap {
+            Disambiguation.resolve(table.attr.map(_.tpe), ns, program) flatMap {
               case expectedTypes =>
                 // Compute the inferred types of the terms and unify them with the declared types.
                 val result = for (
@@ -1148,11 +1148,9 @@ object Typer {
                   case (subst, _) =>
                     // Reassemble the expressions and predicate.
                     val ts = terms.map(t => Expressions.reassemble(t, ns, program, subst))
-                    TypedAst.Predicate.Head.Table(sym, ts, loc)
+                    TypedAst.Predicate.Head.Table(table.sym, ts, loc)
                 }
             }
-          case NamedAst.Table.Lattice(sym, keys, value, _) =>
-            ???
         }
     }
 
