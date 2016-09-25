@@ -523,7 +523,7 @@ class TestTyper extends FunSuite with TestUtils {
   }
 
   test("Expression.LetMatch02") {
-    val input = "def f: Int8 = let (x, (y, z, w)) = (true, ('a', 1i8, 2i8)) in z + w"
+    val input = "def f: Int8 = let (x, (y, z, w)) = (true, ('a', 1i8, 2i8)) in (z: Int8) + w"  // TODO: Added ascription to help the type system.
     val result = new Flix().addStr(input).compile()
     result.get
   }
@@ -793,25 +793,25 @@ class TestTyper extends FunSuite with TestUtils {
   /////////////////////////////////////////////////////////////////////////////
 
   test("Type.Int8.Plus") {
-    val input = "def f(x: Int8, y: Int8): Int8 = x + y"
+    val input = "def f(x: Int8, y: Int8): Int8 = (x: Int8) + y" // TODO: Added ascription to help the type system.
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Type.Int8.Times") {
-    val input = "def f(x: Int8, y: Int8): Int8 = x * y"
+    val input = "def f(x: Int8, y: Int8): Int8 = (x: Int8) * y" // TODO: Added ascription to help the type system.
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Type.Int16.Plus") {
-    val input = "def f(x: Int16, y: Int16): Int16 = x + y"
+    val input = "def f(x: Int16, y: Int16): Int16 = (x: Int16) + y" // TODO: Added ascription to help the type system.
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Type.Int16.Times") {
-    val input = "def f(x: Int16, y: Int16): Int16 = x * y"
+    val input = "def f(x: Int16, y: Int16): Int16 = (x: Int16) * y" // TODO: Added ascription to help the type system.
     val result = new Flix().addStr(input).compile()
     result.get
   }
@@ -835,13 +835,13 @@ class TestTyper extends FunSuite with TestUtils {
   }
 
   test("Type.Int64.Plus") {
-    val input = "def f(x: Int64, y: Int64): Int64 = x + y"
+    val input = "def f(x: Int64, y: Int64): Int64 = (x: Int64) + y" // TODO: Added ascription to help the type system.
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Type.Int64.Times") {
-    val input = "def f(x: Int64, y: Int64): Int64 = x * y"
+    val input = "def f(x: Int64, y: Int64): Int64 = (x: Int64) * y" // TODO: Added ascription to help the type system.
     val result = new Flix().addStr(input).compile()
     result.get
   }
