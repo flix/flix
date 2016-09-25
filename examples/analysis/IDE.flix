@@ -81,9 +81,9 @@ namespace IDE {
 //
 //// Inputs
 //// ===========
- lat EshIntra(node: Str, infact: Str, outfact: Str, transformer: Transformer<>);
- lat EshCallStart(node: Str, infact: Str, proc: Str, outfact: Str, transformer: Transformer<>);
- lat EshEndReturn(proc: Str, infact: Str, node: Str, outfact: Str, transformer: Transformer<>);
+ lat EshIntra(node: Str, infact: Str, outfact: Str, transformer: Transformer);
+ lat EshCallStart(node: Str, infact: Str, proc: Str, outfact: Str, transformer: Transformer);
+ lat EshEndReturn(proc: Str, infact: Str, node: Str, outfact: Str, transformer: Transformer);
 //// Call-to-Return edges should be included above in EshIntra
  rel CFG(src: Str, dst: Str);
  rel CallGraph(callsite: Str, proc: Str);
@@ -92,14 +92,14 @@ namespace IDE {
 
 //// Internal lattices
 //// ===========
- lat JumpFn(infact: Str, node: Str, outfact: Str, transformer: Transformer<>);
- lat SummaryFn(node: Str, infact: Str, outfact: Str, transformer: Transformer<>);
- lat ResultProc(proc: Str, fact: Str, value: Value<>);
+ lat JumpFn(infact: Str, node: Str, outfact: Str, transformer: Transformer);
+ lat SummaryFn(node: Str, infact: Str, outfact: Str, transformer: Transformer);
+ lat ResultProc(proc: Str, fact: Str, value: Value);
  rel InProc(proc: Str, node: Str);
 //
 //// Output
 //// ===========
- lat Result(node: Str, fact: Str, value: Value<>);
+ lat Result(node: Str, fact: Str, value: Value);
 //
 //
 
@@ -140,7 +140,7 @@ ResultProc(proc,dp,apply(cs,v)) :-
 //
 //// Rules for Example (constant propagation) from IDE paper
 //// ===========
-def id(): Transformer = Transformer.NonBotTrans(1,0,Value.Bot)
+def id: Transformer = Transformer.NonBotTrans(1,0,Value.Bot)
 //
 //(fact (CFG {
 CFG("smain","n1").
@@ -203,5 +203,4 @@ EshEndReturn("p","x","n6","x",id()).
 JumpFn("zero","smain","zero",id()).
 ResultProc("main","zero",Value.Top).
 
-print Result.
 }
