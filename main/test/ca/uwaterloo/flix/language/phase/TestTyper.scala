@@ -771,23 +771,6 @@ class TestTyper extends FunSuite with TestUtils {
     result.get
   }
 
-  test("NoSuchLattice01") {
-    val input = "lat A(x: Int, y: Int)"
-    val result = new Flix().addStr(input).compile()
-    assertError[TypeError.NoSuchLattice](result)
-  }
-
-  test("NoSuchLattice02") {
-    val input =
-      """
-        |enum E { case E }
-        |
-        |lat A(x: Int, y: E)
-      """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    assertError[TypeError.NoSuchLattice](result)
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////

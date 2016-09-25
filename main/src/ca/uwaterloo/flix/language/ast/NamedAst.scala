@@ -248,7 +248,7 @@ object NamedAst {
 
       case class Filter(name: Name.QName, terms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Predicate.Body
 
-      case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class NotEqual(sym1: Symbol.VarSym, sym2: Symbol.VarSym, loc: SourceLocation) extends NamedAst.Predicate.Body
 
       case class Loop(ident: Name.Ident, term: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 

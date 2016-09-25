@@ -100,7 +100,7 @@ namespace ConstantParity {
     def plus(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
         case (ConstParity.Bot, _)                       => ConstParity.Bot
         case (_, ConstParity.Bot)                       => ConstParity.Bot
-        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst(n1 + n2)
+        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst((n1: BigInt) + n2) // TODO: Added ascription to help type system
         case (ConstParity.Cst(n), ConstParity.Odd)      => if (isOdd(n))  ConstParity.Even else ConstParity.Odd
         case (ConstParity.Odd, ConstParity.Cst(n))      => if (isOdd(n))  ConstParity.Even else ConstParity.Odd
         case (ConstParity.Cst(n), ConstParity.Even)     => if (isEven(n)) ConstParity.Even else ConstParity.Odd
@@ -119,7 +119,7 @@ namespace ConstantParity {
     def minus(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
         case (ConstParity.Bot, _)                       => ConstParity.Bot
         case (_, ConstParity.Bot)                       => ConstParity.Bot
-        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst(n1 - n2)
+        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst((n1: BigInt) - n2) // TODO: Added ascription to help type system
         case (ConstParity.Cst(n), ConstParity.Odd)      => if (isOdd(n))  ConstParity.Even else ConstParity.Odd
         case (ConstParity.Odd, ConstParity.Cst(n))      => if (isOdd(n))  ConstParity.Even else ConstParity.Odd
         case (ConstParity.Cst(n), ConstParity.Even)     => if (isEven(n)) ConstParity.Even else ConstParity.Odd
@@ -139,7 +139,7 @@ namespace ConstantParity {
     def times(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
         case (ConstParity.Bot, _)                       => ConstParity.Bot
         case (_, ConstParity.Bot)                       => ConstParity.Bot
-        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst(n1 * n2)
+        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst((n1: BigInt) * n2) // TODO: Added ascription to help type system
         case (ConstParity.Cst(n), ConstParity.Odd)      => if (isOdd(n)) ConstParity.Odd else ConstParity.Even
         case (ConstParity.Odd, ConstParity.Cst(n))      => if (isOdd(n)) ConstParity.Odd else ConstParity.Even
         case (ConstParity.Cst(_), ConstParity.Even)     => ConstParity.Even
@@ -159,7 +159,7 @@ namespace ConstantParity {
         case (ConstParity.Bot, _)                       => ConstParity.Bot
         case (_, ConstParity.Bot)                       => ConstParity.Bot
         case (_, ConstParity.Cst(0ii))                  => ConstParity.Bot
-        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst(n1 / n2)
+        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst((n1: BigInt) / n2) // TODO: Added ascription to help type system
         case _                                          => ConstParity.Top
     }
 
@@ -172,7 +172,7 @@ namespace ConstantParity {
         case (ConstParity.Bot, _)                       => ConstParity.Bot
         case (_, ConstParity.Bot)                       => ConstParity.Bot
         case (_, ConstParity.Cst(0ii))                  => ConstParity.Bot
-        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst(n1 % n2)
+        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst((n1: BigInt) % n2) // TODO: Added ascription to help type system
         case (ConstParity.Cst(n), ConstParity.Even)     => if (isOdd(n)) ConstParity.Odd else ConstParity.Even
         case (ConstParity.Odd, ConstParity.Cst(n))      => if (isEven(n)) ConstParity.Odd else ConstParity.Top
         case (ConstParity.Even, ConstParity.Cst(n))     => if (isEven(n)) ConstParity.Even else ConstParity.Top

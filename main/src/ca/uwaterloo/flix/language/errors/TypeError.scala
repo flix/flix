@@ -150,27 +150,6 @@ object TypeError {
 
   // TODO -----------------------------------------------------------------------
 
-
-  // TODO: Check arity of function calls, predicates, etc.
-
-  /**
-    * An error raised to indicate that a type has no associated lattice.
-    *
-    * @param tpe the type that has no lattice.
-    * @param loc the source location.
-    */
-  // TODO
-  case class NoSuchLattice(tpe: Type, loc: SourceLocation) extends TypeError {
-    val message =
-      s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> No lattice declared for `$tpe'.")}
-         |
-         |${loc.highlight}
-         """.stripMargin
-  }
-
-
   // TODO
   case class OccursCheck() extends TypeError {
     val message = "OccursCheck" // TODO
