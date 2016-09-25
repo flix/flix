@@ -58,6 +58,7 @@ object Typer {
       case Err(e) => return e.toFailure
     }
 
+    // TODO
     val rules = program.rules.flatMap {
       case (ns, rs) => rs map {
         case NamedAst.Declaration.Rule(head0, body0, loc) =>
@@ -1074,20 +1075,20 @@ object Typer {
         * Applies the substitution to the given pattern `pat0`.
         */
       def visitPat(pat0: NamedAst.Pattern): TypedAst.Pattern = pat0 match {
-        case NamedAst.Pattern.Wild(tvar, loc) => TypedAst.Pattern.Wildcard(subst0(tvar), loc)
+        case NamedAst.Pattern.Wild(tvar, loc) => TypedAst.Pattern.Wild(subst0(tvar), loc)
         case NamedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(sym.toIdent, subst0(tvar), loc)
-        case NamedAst.Pattern.Unit(loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Unit(loc), Type.Unit, loc)
-        case NamedAst.Pattern.True(loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Bool(lit = true, loc), Type.Bool, loc)
-        case NamedAst.Pattern.False(loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Bool(lit = false, loc), Type.Bool, loc)
-        case NamedAst.Pattern.Char(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Char(lit, loc), Type.Char, loc)
-        case NamedAst.Pattern.Float32(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Float32(lit, loc), Type.Float32, loc)
-        case NamedAst.Pattern.Float64(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Float64(lit, loc), Type.Float64, loc)
-        case NamedAst.Pattern.Int8(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Int8(lit, loc), Type.Int8, loc)
-        case NamedAst.Pattern.Int16(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Int16(lit, loc), Type.Int16, loc)
-        case NamedAst.Pattern.Int32(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Int32(lit, loc), Type.Int32, loc)
-        case NamedAst.Pattern.Int64(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Int64(lit, loc), Type.Int64, loc)
-        case NamedAst.Pattern.BigInt(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.BigInt(lit, loc), Type.BigInt, loc)
-        case NamedAst.Pattern.Str(lit, loc) => TypedAst.Pattern.Lit(TypedAst.Literal.Str(lit, loc), Type.Str, loc)
+        case NamedAst.Pattern.Unit(loc) => TypedAst.Pattern.Unit(loc)
+        case NamedAst.Pattern.True(loc) => TypedAst.Pattern.True(loc)
+        case NamedAst.Pattern.False(loc) => TypedAst.Pattern.False(loc)
+        case NamedAst.Pattern.Char(lit, loc) => TypedAst.Pattern.Char(lit, loc)
+        case NamedAst.Pattern.Float32(lit, loc) => TypedAst.Pattern.Float32(lit, loc)
+        case NamedAst.Pattern.Float64(lit, loc) => TypedAst.Pattern.Float64(lit, loc)
+        case NamedAst.Pattern.Int8(lit, loc) => TypedAst.Pattern.Int8(lit, loc)
+        case NamedAst.Pattern.Int16(lit, loc) => TypedAst.Pattern.Int16(lit, loc)
+        case NamedAst.Pattern.Int32(lit, loc) => TypedAst.Pattern.Int32(lit, loc)
+        case NamedAst.Pattern.Int64(lit, loc) => TypedAst.Pattern.Int64(lit, loc)
+        case NamedAst.Pattern.BigInt(lit, loc) => TypedAst.Pattern.BigInt(lit, loc)
+        case NamedAst.Pattern.Str(lit, loc) => TypedAst.Pattern.Str(lit, loc)
         case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
           TypedAst.Pattern.Tag(enum.toResolved, tag, visitPat(pat), subst0(tvar), loc)
         case NamedAst.Pattern.Tuple(elms, tvar, loc) => TypedAst.Pattern.Tuple(elms map visitPat, subst0(tvar), loc)
@@ -1146,7 +1147,7 @@ object Typer {
                 result.run(Substitution.empty) map {
                   case (subst, _) =>
                     // Reassemble the expressions and predicate.
-                    val ts = terms.map(t => Terms.compatHead(t, ns, program, subst))
+                    val ts = terms.map(t => Expressions.reassemble(t, ns, program, subst))
                     TypedAst.Predicate.Head.Table(sym, ts, loc)
                 }
             }
@@ -1229,9 +1230,11 @@ object Typer {
       case NamedAst.Predicate.Head.Table(qname, terms, loc) =>
         Disambiguation.lookupTable(qname, ns0, program) match {
           case Ok(NamedAst.Table.Relation(sym, _, _)) =>
-            TypedAst.Predicate.Head.Table(sym, terms.map(t => Terms.compatHead(t, ns0, program, subst0)), loc)
+            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
+            TypedAst.Predicate.Head.Table(sym, ts, loc)
           case Ok(NamedAst.Table.Lattice(sym, _, _, _)) =>
-            TypedAst.Predicate.Head.Table(sym, terms.map(t => Terms.compatHead(t, ns0, program, subst0)), loc)
+            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
+            TypedAst.Predicate.Head.Table(sym, ts, loc)
           case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
         }
     }
@@ -1242,86 +1245,29 @@ object Typer {
     def reassemble(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
       case NamedAst.Predicate.Body.Table(qname, terms, loc) =>
         Disambiguation.lookupTable(qname, ns0, program) match {
-          case Ok(NamedAst.Table.Relation(sym, _, _)) => TypedAst.Predicate.Body.Table(sym, terms.map(t => Terms.compatBody(t, ns0, program, subst0)), loc)
-          case Ok(NamedAst.Table.Lattice(sym, _, _, _)) => TypedAst.Predicate.Body.Table(sym, terms.map(t => Terms.compatBody(t, ns0, program, subst0)), loc)
+          case Ok(NamedAst.Table.Relation(sym, _, _)) => TypedAst.Predicate.Body.Table(sym, terms.map(t => Expressions.reassemble(t, ns0, program, subst0)), loc)
+          case Ok(NamedAst.Table.Lattice(sym, _, _, _)) =>
+            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
+            TypedAst.Predicate.Body.Table(sym, ts, loc)
           case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
         }
       case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
         Disambiguation.lookupRef(qname, ns0, program) match {
           case Ok(RefTarget.Defn(ns, defn)) =>
-            TypedAst.Predicate.Body.ApplyFilter(defn.sym.toResolvedTemporaryHelperMethod, terms.map(t => Terms.compatBody(t, ns0, program, subst0)), loc)
-          case Ok(RefTarget.Hook(hook)) => TypedAst.Predicate.Body.ApplyHookFilter(hook, terms.map(t => Terms.compatBody(t, ns0, program, subst0)), loc)
-          case Err(e) => throw InternalCompilerException(s"Never happens. Unable to lookup filter function '$qname'.")
+            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
+            TypedAst.Predicate.Body.ApplyFilter(defn.sym.toResolvedTemporaryHelperMethod, ts, loc)
+          case Ok(RefTarget.Hook(hook)) =>
+            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
+            TypedAst.Predicate.Body.ApplyHookFilter(hook, ts, loc)
+          case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
         }
       case NamedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
         // TODO: Need to retrieve the symbol...
         TypedAst.Predicate.Body.NotEqual(ident1, ident2, loc)
       case NamedAst.Predicate.Body.Loop(ident, term, loc) =>
         // TODO: Need to retrieve the symbol...
-        TypedAst.Predicate.Body.Loop(ident, Terms.compatHead(term, ns0, program, subst0), loc)
-    }
-
-  }
-
-  object Terms {
-
-    // TODO: Temporary method
-    def compatHead(exp0: NamedAst.Expression, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Term.Head = {
-      exp2headterm(Expressions.reassemble(exp0, ns0, program, subst0), ns0, program)
-    }
-
-    def compatBody(exp0: NamedAst.Expression, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Term.Body = {
-      exp2bodyterm(Expressions.reassemble(exp0, ns0, program, subst0))
-    }
-
-    def exp2headterm(exp0: TypedAst.Expression, ns0: Name.NName, program: Program): TypedAst.Term.Head = {
-
-      def visit(e0: TypedAst.Expression): TypedAst.Term.Head = e0 match {
-        case TypedAst.Expression.Var(ident, tpe, loc) => TypedAst.Term.Head.Var(ident, tpe, loc)
-        case TypedAst.Expression.Unit(loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Unit(loc), Type.Unit, loc)
-        case TypedAst.Expression.True(loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Bool(true, loc), Type.Bool, loc)
-        case TypedAst.Expression.False(loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Bool(false, loc), Type.Bool, loc)
-        case TypedAst.Expression.Char(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Char(lit, loc), Type.Char, loc)
-        case TypedAst.Expression.Float32(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Float32(lit, loc), Type.Float32, loc)
-        case TypedAst.Expression.Float64(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Float64(lit, loc), Type.Float32, loc)
-        case TypedAst.Expression.Int8(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Int8(lit, loc), Type.Int8, loc)
-        case TypedAst.Expression.Int16(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Int16(lit, loc), Type.Int16, loc)
-        case TypedAst.Expression.Int32(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Int32(lit, loc), Type.Int32, loc)
-        case TypedAst.Expression.Int64(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Int64(lit, loc), Type.Int64, loc)
-        case TypedAst.Expression.BigInt(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.BigInt(lit, loc), Type.BigInt, loc)
-        case TypedAst.Expression.Str(lit, loc) => TypedAst.Term.Head.Lit(TypedAst.Literal.Str(lit, loc), Type.Str, loc)
-        case TypedAst.Expression.Lit(lit, tpe, loc) => TypedAst.Term.Head.Lit(lit, tpe, loc)
-        case TypedAst.Expression.Tag(enumName, tagName, exp, tpe, loc) => TypedAst.Term.Head.Tag(enumName, tagName, visit(exp), tpe, loc)
-        case TypedAst.Expression.Tuple(elms, tpe, loc) => TypedAst.Term.Head.Tuple(elms map visit, tpe, loc)
-        case TypedAst.Expression.Apply(base, args, tpe, loc) => base match {
-          case TypedAst.Expression.Ref(name, _, _) => TypedAst.Term.Head.Apply(name, args.map(visit), tpe, loc)
-          case TypedAst.Expression.Hook(hook, _, _) => TypedAst.Term.Head.ApplyHook(hook, args.map(visit), tpe, loc)
-          case _ => throw new RuntimeException(s"Unknown expression $base") // TODO
-        }
-
-        case _ => throw new UnsupportedOperationException(s"Not implemented for $e0")
-      }
-
-      visit(exp0)
-    }
-
-    def exp2bodyterm(exp0: TypedAst.Expression): TypedAst.Term.Body = exp0 match {
-      case TypedAst.Expression.Wild(tpe, loc) => TypedAst.Term.Body.Wildcard(tpe, loc)
-      case TypedAst.Expression.Var(ident, tpe, loc) => TypedAst.Term.Body.Var(ident, tpe, loc)
-      case TypedAst.Expression.Unit(loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Unit(loc), Type.Unit, loc)
-      case TypedAst.Expression.True(loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Bool(lit = true, loc), Type.Bool, loc)
-      case TypedAst.Expression.False(loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Bool(lit = false, loc), Type.Bool, loc)
-      case TypedAst.Expression.Char(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Char(lit, loc), Type.Char, loc)
-      case TypedAst.Expression.Float32(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Float32(lit, loc), Type.Float32, loc)
-      case TypedAst.Expression.Float64(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Float64(lit, loc), Type.Float32, loc)
-      case TypedAst.Expression.Int8(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Int8(lit, loc), Type.Int8, loc)
-      case TypedAst.Expression.Int16(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Int16(lit, loc), Type.Int16, loc)
-      case TypedAst.Expression.Int32(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Int32(lit, loc), Type.Int32, loc)
-      case TypedAst.Expression.Int64(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Int64(lit, loc), Type.Int64, loc)
-      case TypedAst.Expression.BigInt(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.BigInt(lit, loc), Type.BigInt, loc)
-      case TypedAst.Expression.Str(lit, loc) => TypedAst.Term.Body.Lit(TypedAst.Literal.Str(lit, loc), Type.Str, loc)
-      case TypedAst.Expression.Lit(lit, tpe, loc) => TypedAst.Term.Body.Lit(lit, tpe, loc)
-      case _ => throw new UnsupportedOperationException(s"Not implemented for $exp0")
+        val t = Expressions.reassemble(term, ns0, program, subst0)
+        TypedAst.Predicate.Body.Loop(ident, t, loc)
     }
 
   }

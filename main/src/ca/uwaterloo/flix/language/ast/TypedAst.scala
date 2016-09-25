@@ -20,6 +20,8 @@ sealed trait TypedAst
 
 object TypedAst {
 
+  // TODO: Use symbols everywhere.
+
   case class Root(constants: Map[Symbol.Resolved, TypedAst.Definition.Constant],
                   lattices: Map[Type, TypedAst.Definition.BoundedLattice],
                   tables: Map[Symbol.TableSym, TypedAst.Table],
@@ -65,60 +67,6 @@ object TypedAst {
     case class Fact(head: TypedAst.Predicate.Head) extends TypedAst.Constraint
 
     case class Rule(head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body]) extends TypedAst.Constraint
-
-  }
-
-  sealed trait Literal extends TypedAst {
-    def tpe: Type
-
-    def loc: SourceLocation
-  }
-
-  object Literal {
-
-    case class Unit(loc: SourceLocation) extends TypedAst.Literal {
-      final val tpe = Type.Unit
-    }
-
-    case class Bool(lit: scala.Boolean, loc: SourceLocation) extends TypedAst.Literal {
-      final val tpe = Type.Bool
-    }
-
-    case class Char(lit: scala.Char, loc: SourceLocation) extends TypedAst.Literal {
-      final val tpe = Type.Char
-    }
-
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends TypedAst.Literal {
-      final val tpe = Type.Float32
-    }
-
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends TypedAst.Literal {
-      final val tpe = Type.Float64
-    }
-
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Literal {
-      final val tpe = Type.Int8
-    }
-
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends TypedAst.Literal {
-      final val tpe = Type.Int16
-    }
-
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends TypedAst.Literal {
-      final val tpe = Type.Int32
-    }
-
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends TypedAst.Literal {
-      final val tpe = Type.Int64
-    }
-
-    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends TypedAst.Literal {
-      final val tpe = Type.BigInt
-    }
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends TypedAst.Literal {
-      final val tpe = Type.Str
-    }
 
   }
 
@@ -177,8 +125,6 @@ object TypedAst {
     case class Str(lit: java.lang.String, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Str
     }
-
-    case class Lit(literal: TypedAst.Literal, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Wild(tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -240,16 +186,63 @@ object TypedAst {
 
   sealed trait Pattern extends TypedAst {
     def tpe: Type
+
     def loc: SourceLocation
   }
 
   object Pattern {
 
-    case class Wildcard(tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
+    case class Wild(tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
     case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
-    case class Lit(lit: TypedAst.Literal, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
+    case class Unit(loc: SourceLocation) extends TypedAst.Pattern {
+      def tpe: Type = Type.Unit
+    }
+
+    case class True(loc: SourceLocation) extends TypedAst.Pattern {
+      def tpe: Type = Type.Bool
+    }
+
+    case class False(loc: SourceLocation) extends TypedAst.Pattern {
+      def tpe: Type = Type.Bool
+    }
+
+    case class Char(lit: scala.Char, loc: SourceLocation) extends TypedAst.Pattern {
+      def tpe: Type = Type.Char
+    }
+
+    case class Float32(lit: scala.Float, loc: SourceLocation) extends TypedAst.Pattern {
+      def tpe: Type = Type.Float32
+    }
+
+    case class Float64(lit: scala.Double, loc: SourceLocation) extends TypedAst.Pattern {
+      def tpe: Type = Type.Float64
+    }
+
+    case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Pattern {
+      def tpe: Type = Type.Int16
+    }
+
+    case class Int16(lit: scala.Short, loc: SourceLocation) extends TypedAst.Pattern {
+      def tpe: Type = Type.Int16
+    }
+
+    case class Int32(lit: scala.Int, loc: SourceLocation) extends TypedAst.Pattern {
+      def tpe: Type = Type.Int32
+    }
+
+    case class Int64(lit: scala.Long, loc: SourceLocation) extends TypedAst.Pattern {
+      def tpe: Type = Type.Int64
+    }
+
+    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends TypedAst.Pattern {
+      def tpe: Type = Type.BigInt
+    }
+
+    case class Str(lit: java.lang.String, loc: SourceLocation) extends TypedAst.Pattern {
+      def tpe: Type = Type.Str
+    }
 
     case class Tag(name: Symbol.Resolved, ident: Name.Ident, pat: TypedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
@@ -285,7 +278,7 @@ object TypedAst {
 
       case class False(loc: SourceLocation) extends TypedAst.Predicate.Head
 
-      case class Table(sym: Symbol.TableSym, terms: List[TypedAst.Term.Head], loc: SourceLocation) extends TypedAst.Predicate.Head
+      case class Table(sym: Symbol.TableSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
 
     }
 
@@ -293,57 +286,15 @@ object TypedAst {
 
     object Body {
 
-      case class Table(sym: Symbol.TableSym, terms: List[TypedAst.Term.Body], loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Table(sym: Symbol.TableSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
 
-      case class ApplyFilter(name: Symbol.Resolved, terms: List[TypedAst.Term.Body], loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class ApplyFilter(name: Symbol.Resolved, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
 
-      case class ApplyHookFilter(hook: Ast.Hook, terms: List[TypedAst.Term.Body], loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class ApplyHookFilter(hook: Ast.Hook, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
 
       case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, loc: SourceLocation) extends TypedAst.Predicate.Body
 
-      case class Loop(ident: Name.Ident, term: TypedAst.Term.Head, loc: SourceLocation) extends TypedAst.Predicate.Body
-
-    }
-
-  }
-
-  object Term {
-
-    sealed trait Head extends TypedAst {
-      def tpe: Type
-
-      def loc: SourceLocation
-    }
-
-    object Head {
-
-      case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
-
-      case class Lit(literal: TypedAst.Literal, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
-
-      case class Tag(enumName: Symbol.Resolved, tagName: Name.Ident, t: TypedAst.Term.Head, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
-
-      case class Tuple(elms: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
-
-      case class Apply(name: Symbol.Resolved, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
-
-      case class ApplyHook(hook: Ast.Hook, args: List[TypedAst.Term.Head], tpe: Type, loc: SourceLocation) extends TypedAst.Term.Head
-
-    }
-
-    sealed trait Body extends TypedAst {
-      def tpe: Type
-
-      def loc: SourceLocation
-    }
-
-    object Body {
-
-      case class Wildcard(tpe: Type, loc: SourceLocation) extends TypedAst.Term.Body
-
-      case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Body
-
-      case class Lit(lit: TypedAst.Literal, tpe: Type, loc: SourceLocation) extends TypedAst.Term.Body
+      case class Loop(ident: Name.Ident, term: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Predicate.Body
 
     }
 

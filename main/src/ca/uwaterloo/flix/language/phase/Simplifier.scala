@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.BinaryOperator.Equal
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
   * A phase that simplifies a Typed AST by:
@@ -96,7 +97,6 @@ object Simplifier {
       case TypedAst.Expression.Int64(lit, loc) => SimplifiedAst.Expression.Int64(lit)
       case TypedAst.Expression.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
       case TypedAst.Expression.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
-      case TypedAst.Expression.Lit(lit, tpe, loc) => Literal.simplify(lit)
       case TypedAst.Expression.Var(ident, tpe, loc) => SimplifiedAst.Expression.Var(ident, -1, tpe, loc)
       case TypedAst.Expression.Ref(name, tpe, loc) => SimplifiedAst.Expression.Ref(name, tpe, loc)
       case TypedAst.Expression.Hook(hook, tpe, loc) => SimplifiedAst.Expression.Hook(hook, tpe, loc)
@@ -256,7 +256,7 @@ object Simplifier {
         *
         * We proceed by recursion on the remaining patterns and variables.
         */
-      case (Wildcard(tpe, loc) :: ps, v :: vs) =>
+      case (Wild(tpe, loc) :: ps, v :: vs) =>
         simplify(ps, vs, succ, fail)
 
       /**
@@ -280,10 +280,10 @@ object Simplifier {
         * recursion on the remaining patterns and variables and the
         * alternative expression is `fail`.
         */
-      case (Lit(lit, tpe, loc) :: ps, v :: vs) =>
+      case (lit :: ps, v :: vs) if isLiteral(lit) =>
         val exp = simplify(ps, vs, succ, fail)
-        val cond = SExp.Binary(Equal, Literal.simplify(lit), SExp.Var(v, -1, tpe, loc), Type.Bool, loc)
-        SExp.IfThenElse(cond, exp, fail, succ.tpe, loc)
+        val cond = SExp.Binary(Equal, lit2exp(lit), SExp.Var(v, -1, lit.tpe, lit.loc), Type.Bool, lit.loc)
+        SExp.IfThenElse(cond, exp, fail, succ.tpe, lit.loc)
 
       /**
         * Matching a tag may succeed or fail.
@@ -320,23 +320,7 @@ object Simplifier {
       case _ => ??? // TODO: implement remaining patterns.
 
     }
-  }
 
-  object Literal {
-    def simplify(tast: TypedAst.Literal)(implicit genSym: GenSym): SimplifiedAst.Expression = tast match {
-      case TypedAst.Literal.Unit(loc) => SimplifiedAst.Expression.Unit
-      case TypedAst.Literal.Bool(b, loc) =>
-        if (b) SimplifiedAst.Expression.True else SimplifiedAst.Expression.False
-      case TypedAst.Literal.Char(c, loc) => SimplifiedAst.Expression.Char(c)
-      case TypedAst.Literal.Float32(f, loc) => SimplifiedAst.Expression.Float32(f)
-      case TypedAst.Literal.Float64(f, loc) => SimplifiedAst.Expression.Float64(f)
-      case TypedAst.Literal.Int8(i, loc) => SimplifiedAst.Expression.Int8(i)
-      case TypedAst.Literal.Int16(i, loc) => SimplifiedAst.Expression.Int16(i)
-      case TypedAst.Literal.Int32(i, loc) => SimplifiedAst.Expression.Int32(i)
-      case TypedAst.Literal.Int64(i, loc) => SimplifiedAst.Expression.Int64(i)
-      case TypedAst.Literal.BigInt(i, loc) => SimplifiedAst.Expression.BigInt(i)
-      case TypedAst.Literal.Str(s, loc) => SimplifiedAst.Expression.Str(s)
-    }
   }
 
   object Predicate {
@@ -346,51 +330,47 @@ object Simplifier {
         case TypedAst.Predicate.Head.True(loc) => SimplifiedAst.Predicate.Head.True(loc)
         case TypedAst.Predicate.Head.False(loc) => SimplifiedAst.Predicate.Head.False(loc)
         case TypedAst.Predicate.Head.Table(sym, terms, loc) =>
-          SimplifiedAst.Predicate.Head.Table(sym, terms map Term.simplify, loc)
+          SimplifiedAst.Predicate.Head.Table(sym, terms map Term.simplifyHead, loc)
       }
     }
 
     object Body {
       def simplify(tast: TypedAst.Predicate.Body)(implicit genSym: GenSym): SimplifiedAst.Predicate.Body = tast match {
         case TypedAst.Predicate.Body.Table(sym, terms, loc) =>
-          SimplifiedAst.Predicate.Body.Table(sym, terms map Term.simplify, loc)
+          SimplifiedAst.Predicate.Body.Table(sym, terms map Term.simplifyBody, loc)
         case TypedAst.Predicate.Body.ApplyFilter(name, terms, loc) =>
-          SimplifiedAst.Predicate.Body.ApplyFilter(name, terms map Term.simplify, loc)
+          SimplifiedAst.Predicate.Body.ApplyFilter(name, terms map Term.simplifyBody, loc)
         case TypedAst.Predicate.Body.ApplyHookFilter(hook, terms, loc) =>
-          SimplifiedAst.Predicate.Body.ApplyHookFilter(hook, terms map Term.simplify, loc)
+          SimplifiedAst.Predicate.Body.ApplyHookFilter(hook, terms map Term.simplifyBody, loc)
         case TypedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
           SimplifiedAst.Predicate.Body.NotEqual(ident1, ident2, loc)
         case TypedAst.Predicate.Body.Loop(ident, term, loc) =>
-          SimplifiedAst.Predicate.Body.Loop(ident, Term.simplify(term), loc)
+          SimplifiedAst.Predicate.Body.Loop(ident, Term.simplifyHead(term), loc)
       }
     }
 
   }
 
   object Term {
-    def simplify(tast: TypedAst.Term.Head)(implicit genSym: GenSym): SimplifiedAst.Term.Head = tast match {
-      case TypedAst.Term.Head.Var(ident, tpe, loc) => SimplifiedAst.Term.Head.Var(ident, tpe, loc)
-      case TypedAst.Term.Head.Lit(lit, tpe, loc) => SimplifiedAst.Term.Head.Exp(Literal.simplify(lit), tpe, loc)
-      case TypedAst.Term.Head.Tag(enum, tag, t, tpe, loc) => SimplifiedAst.Term.Head.Exp(toExp(tast), tpe, loc)
-      case TypedAst.Term.Head.Tuple(elms, tpe, loc) => SimplifiedAst.Term.Head.Exp(toExp(tast), tpe, loc)
-      case TypedAst.Term.Head.Apply(name, args, tpe, loc) => SimplifiedAst.Term.Head.Apply(name, args map simplify, tpe, loc)
-      case TypedAst.Term.Head.ApplyHook(hook, args, tpe, loc) => SimplifiedAst.Term.Head.ApplyHook(hook, args map simplify, tpe, loc)
+
+    def simplifyHead(e: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Term.Head = e match {
+      case TypedAst.Expression.Var(ident, tpe, loc) =>
+        SimplifiedAst.Term.Head.Var(ident, tpe, loc)
+      case TypedAst.Expression.Apply(TypedAst.Expression.Ref(name, _, _), args, tpe, loc) =>
+        val as = args map simplifyHead
+        SimplifiedAst.Term.Head.Apply(name, as, tpe, loc)
+      case TypedAst.Expression.Apply(TypedAst.Expression.Hook(hook, _, _), args, tpe, loc) =>
+        val as = args map simplifyHead
+        SimplifiedAst.Term.Head.ApplyHook(hook, as, tpe, loc)
+      case _ => SimplifiedAst.Term.Head.Exp(Expression.simplify(e), e.tpe, e.loc)
     }
 
-    def toExp(tast: TypedAst.Term.Head)(implicit genSym: GenSym): SimplifiedAst.Expression = tast match {
-      case TypedAst.Term.Head.Var(ident, tpe, loc) => ???
-      case TypedAst.Term.Head.Lit(lit, tpe, loc) => Literal.simplify(lit)
-      case TypedAst.Term.Head.Apply(name, args, tpe, loc) => ???
-      case TypedAst.Term.Head.ApplyHook(hook, args, tpe, loc) => ???
-      case TypedAst.Term.Head.Tag(enum, tag, t, tpe, loc) => SimplifiedAst.Expression.Tag(enum, tag, toExp(t), tpe, loc)
-      case TypedAst.Term.Head.Tuple(elms, tpe, loc) => SimplifiedAst.Expression.Tuple(elms.map(e => toExp(e)), tpe, loc)
+    def simplifyBody(e: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Term.Body = e match {
+      case TypedAst.Expression.Wild(tpe, loc) => SimplifiedAst.Term.Body.Wildcard(tpe, loc)
+      case TypedAst.Expression.Var(ident, tpe, loc) => SimplifiedAst.Term.Body.Var(ident, -1, tpe, loc)
+      case _ => SimplifiedAst.Term.Body.Exp(Expression.simplify(e), e.tpe, e.loc)
     }
 
-    def simplify(tast: TypedAst.Term.Body)(implicit genSym: GenSym): SimplifiedAst.Term.Body = tast match {
-      case TypedAst.Term.Body.Wildcard(tpe, loc) => SimplifiedAst.Term.Body.Wildcard(tpe, loc)
-      case TypedAst.Term.Body.Var(ident, tpe, loc) => SimplifiedAst.Term.Body.Var(ident, -1, tpe, loc)
-      case TypedAst.Term.Body.Lit(lit, tpe, loc) => SimplifiedAst.Term.Body.Exp(Literal.simplify(lit), tpe, loc)
-    }
   }
 
   def simplify(tast: TypedAst.Attribute)(implicit genSym: GenSym): SimplifiedAst.Attribute =
@@ -401,5 +381,32 @@ object Simplifier {
 
   def simplify(tast: TypedAst.Property)(implicit genSym: GenSym): SimplifiedAst.Property =
     SimplifiedAst.Property(tast.law, Expression.simplify(tast.exp), tast.loc)
+
+  /**
+    * Returns `true` if the given pattern `pat` is a literal.
+    */
+  def isLiteral(pat: TypedAst.Pattern): Boolean = pat match {
+    case TypedAst.Pattern.Unit(loc) => true
+    case TypedAst.Pattern.True(loc) => true
+    case TypedAst.Pattern.False(loc) => true
+    case TypedAst.Pattern.Char(lit, loc) => true
+    case TypedAst.Pattern.Float32(lit, loc) => true
+    case TypedAst.Pattern.Float64(lit, loc) => true
+    case TypedAst.Pattern.Int8(lit, loc) => true
+    case TypedAst.Pattern.Int16(lit, loc) => true
+    case TypedAst.Pattern.Int32(lit, loc) => true
+    case TypedAst.Pattern.Int64(lit, loc) => true
+    case TypedAst.Pattern.BigInt(lit, loc) => true
+    case TypedAst.Pattern.Str(lit, loc) => true
+    case _ => ??? // TODO: Other patterns?
+  }
+
+  /**
+    * Returns the given pattern as a literal expression.
+    */
+  def lit2exp(pat: TypedAst.Pattern): SimplifiedAst.Expression = pat match {
+
+    case _ => throw InternalCompilerException(s"Unexpected non-literal pattern $pat.")
+  }
 
 }
