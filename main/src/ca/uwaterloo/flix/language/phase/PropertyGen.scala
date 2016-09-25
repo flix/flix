@@ -16,12 +16,11 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.Ast.Annotation
-import ca.uwaterloo.flix.language.ast.Type
-import ca.uwaterloo.flix.language.ast.TypedAst.Definition.BoundedLattice
+import ca.uwaterloo.flix.language.ast.TypedAst.Declaration.BoundedLattice
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression._
+import ca.uwaterloo.flix.language.ast.{Type, _}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -32,7 +31,7 @@ object PropertyGen {
   /**
     * Associativity.
     */
-  def mkAssociativity(f: TypedAst.Definition.Constant): TypedAst.Property = {
+  def mkAssociativity(f: TypedAst.Declaration.Definition)(implicit genSym: GenSym): TypedAst.Property = {
     val exp = {
       val tpe = f.formals.head.tpe
       val (x, y, z) = (mkVar2("x", tpe), mkVar2("y", tpe), mkVar2("z", tpe))
@@ -46,7 +45,7 @@ object PropertyGen {
   /**
     * Commutativity.
     */
-  def mkCommutativity(f: TypedAst.Definition.Constant): TypedAst.Property = {
+  def mkCommutativity(f: TypedAst.Declaration.Definition)(implicit genSym: GenSym): TypedAst.Property = {
     val exp = {
       val tpe = f.formals.head.tpe
       val (x, y) = (mkVar2("x", tpe), mkVar2("y", tpe))
@@ -65,7 +64,7 @@ object PropertyGen {
     /**
       * Reflexivity.
       */
-    def mkReflexivity(lattice: BoundedLattice): TypedAst.Property = {
+    def mkReflexivity(lattice: BoundedLattice)(implicit genSym: GenSym): TypedAst.Property = {
       val ops = latticeOps(lattice)
 
       import ops._
@@ -82,7 +81,7 @@ object PropertyGen {
     /**
       * Anti-symmetry.
       */
-    def mkAntiSymmetry(lattice: BoundedLattice): TypedAst.Property = {
+    def mkAntiSymmetry(lattice: BoundedLattice)(implicit genSym: GenSym): TypedAst.Property = {
       val ops = latticeOps(lattice)
 
       import ops._
@@ -99,7 +98,7 @@ object PropertyGen {
     /**
       * Transitivity.
       */
-    def mkTransitivity(lattice: BoundedLattice): TypedAst.Property = {
+    def mkTransitivity(lattice: BoundedLattice)(implicit genSym: GenSym): TypedAst.Property = {
       val ops = latticeOps(lattice)
 
       import ops._
@@ -123,7 +122,7 @@ object PropertyGen {
     /**
       * The bottom element must be the least element.
       */
-    def mkLeastElement(lattice: BoundedLattice): TypedAst.Property = {
+    def mkLeastElement(lattice: BoundedLattice)(implicit genSym: GenSym): TypedAst.Property = {
       val ops = latticeOps(lattice)
 
       import ops._
@@ -140,7 +139,7 @@ object PropertyGen {
     /**
       * The lub must be an upper bound.
       */
-    def mkUpperBound(lattice: BoundedLattice): TypedAst.Property = {
+    def mkUpperBound(lattice: BoundedLattice)(implicit genSym: GenSym): TypedAst.Property = {
 
       val ops = latticeOps(lattice)
 
@@ -158,7 +157,7 @@ object PropertyGen {
     /**
       * The lub must be the least upper bound.
       */
-    def mkLeastUpperBound(lattice: BoundedLattice): TypedAst.Property = {
+    def mkLeastUpperBound(lattice: BoundedLattice)(implicit genSym: GenSym): TypedAst.Property = {
 
       val ops = latticeOps(lattice)
 
@@ -183,7 +182,7 @@ object PropertyGen {
     /**
       * The top element must be the greatest element.
       */
-    def mkGreatestElement(lattice: BoundedLattice): TypedAst.Property = {
+    def mkGreatestElement(lattice: BoundedLattice)(implicit genSym: GenSym): TypedAst.Property = {
 
       val ops = latticeOps(lattice)
 
@@ -201,7 +200,7 @@ object PropertyGen {
     /**
       * The glb must be a lower bound.
       */
-    def mkLowerBound(lattice: BoundedLattice): TypedAst.Property = {
+    def mkLowerBound(lattice: BoundedLattice)(implicit genSym: GenSym): TypedAst.Property = {
 
       val ops = latticeOps(lattice)
 
@@ -219,7 +218,7 @@ object PropertyGen {
     /**
       * The glb must be the greatest lower bound.
       */
-    def mkGreatestLowerBound(lattice: BoundedLattice): TypedAst.Property = {
+    def mkGreatestLowerBound(lattice: BoundedLattice)(implicit genSym: GenSym): TypedAst.Property = {
 
       val ops = latticeOps(lattice)
 
@@ -239,7 +238,7 @@ object PropertyGen {
   /**
     * The function `f` must be strict in all its arguments.
     */
-  def mkStrict1(f: TypedAst.Definition.Constant, root: TypedAst.Root): TypedAst.Property = {
+  def mkStrict1(f: TypedAst.Declaration.Definition, root: TypedAst.Root)(implicit genSym: GenSym): TypedAst.Property = {
     val exp = {
       val Type.Apply(Type.Arrow(l), ts) = f.tpe
       val (targs, tresult) = (ts.take(l - 1), ts.last)
@@ -255,7 +254,7 @@ object PropertyGen {
   /**
     * The function `f` must be strict in all its arguments.
     */
-  def mkStrict2(f: TypedAst.Definition.Constant, root: TypedAst.Root): TypedAst.Property = {
+  def mkStrict2(f: TypedAst.Declaration.Definition, root: TypedAst.Root)(implicit genSym: GenSym): TypedAst.Property = {
     val exp = {
       val Type.Apply(Type.Arrow(l), ts) = f.tpe
       val (targs, tresult) = (ts.take(l - 1), ts.last)
@@ -272,7 +271,7 @@ object PropertyGen {
   /**
     * The function `f` must be monotone in all its arguments.
     */
-  def mkMonotone1(f: TypedAst.Definition.Constant, root: TypedAst.Root): TypedAst.Property = {
+  def mkMonotone1(f: TypedAst.Declaration.Definition, root: TypedAst.Root)(implicit genSym: GenSym): TypedAst.Property = {
     val exp = {
       val Type.Apply(Type.Arrow(l), ts) = f.tpe
       val (targs, tresult) = (ts.take(l - 1), ts.last)
@@ -291,7 +290,7 @@ object PropertyGen {
   /**
     * The function `f` must be monotone in all its arguments.
     */
-  def mkMonotone2(f: TypedAst.Definition.Constant, root: TypedAst.Root): TypedAst.Property = {
+  def mkMonotone2(f: TypedAst.Declaration.Definition, root: TypedAst.Root)(implicit genSym: GenSym): TypedAst.Property = {
     val exp = {
       val Type.Apply(Type.Arrow(l), ts) = f.tpe
       val (targs, tresult) = (ts.take(l - 1), ts.last)
@@ -312,7 +311,7 @@ object PropertyGen {
     /**
       * Height function must be non-negative.
       */
-    def mkHeightNonNegative(lattice: BoundedLattice): TypedAst.Property = {
+    def mkHeightNonNegative(lattice: BoundedLattice)(implicit genSym: GenSym): TypedAst.Property = {
       val ops = latticeOps(lattice)
 
       import ops._
@@ -329,7 +328,7 @@ object PropertyGen {
     /**
       * Height function must be decreasing.
       */
-    def mkHeightStrictlyDecreasing(lattice: BoundedLattice): TypedAst.Property = {
+    def mkHeightStrictlyDecreasing(lattice: BoundedLattice)(implicit genSym: GenSym): TypedAst.Property = {
       val ops = latticeOps(lattice)
 
       import ops._
@@ -352,7 +351,7 @@ object PropertyGen {
   /**
     * Returns all the verification conditions required to ensure the safety of the given AST `root`.
     */
-  def collectProperties(root: TypedAst.Root): TypedAst.Root = {
+  def collectProperties(root: TypedAst.Root)(implicit genSym: GenSym): TypedAst.Root = {
     val t = System.nanoTime()
 
     val lattices = root.lattices.values.toList
@@ -381,7 +380,7 @@ object PropertyGen {
     }
 
     // Collect function properties.
-    val functionProperties = root.constants.values flatMap {
+    val functionProperties = root.definitions.values flatMap {
       case f if f.ann.isUnchecked => Nil
       case f => f.ann.annotations.flatMap {
         case Annotation.Associative(loc) => Some(mkAssociativity(f))
@@ -403,7 +402,7 @@ object PropertyGen {
     }
 
     // return all the collected properties.
-   // TODO: Sort
+    // TODO: Sort
     val properties = partialOrderProperties ++ latticeProperties ++ functionProperties
 
     val e = System.nanoTime() - t
@@ -417,15 +416,17 @@ object PropertyGen {
   /**
     * Returns a variable expression of the given name `s`.
     */
-  def mkVar2(s: String, tpe: Type): Expression.Var = {
-    Var(Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown), tpe, SourceLocation.Unknown)
+  def mkVar2(s: String, tpe: Type)(implicit genSym: GenSym): Expression.Var = {
+    val ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
+    val sym = Symbol.freshVarSym(ident)
+    Var(sym, tpe, SourceLocation.Unknown)
   }
 
   /**
     * Returns an expression universally quantified by the given variables.
     */
   def ∀(q: Expression.Var*)(e: Expression): TypedAst.Expression = {
-    val params = q.toList.map(e => ???) // TODO: This can be fixed as soon as variables have symbols.
+    val params = q.toList.map(e => TypedAst.FormalParam(e.sym, e.tpe, e.loc))
     TypedAst.Expression.Universal(params, e, SourceLocation.Unknown)
   }
 
@@ -433,39 +434,39 @@ object PropertyGen {
     * Returns the logical negation of the expression `e`.
     */
   def ¬(e: Expression): Expression =
-    Unary(UnaryOperator.LogicalNot, e, Type.Bool, SourceLocation.Unknown)
+  Unary(UnaryOperator.LogicalNot, e, Type.Bool, SourceLocation.Unknown)
 
   /**
     * Returns the logical conjunction of the two expressions `e1` and `e2`.
     */
   def ∧(e1: Expression, e2: Expression): Expression =
-    Binary(BinaryOperator.LogicalAnd, e1, e2, Type.Bool, SourceLocation.Unknown)
+  Binary(BinaryOperator.LogicalAnd, e1, e2, Type.Bool, SourceLocation.Unknown)
 
   /**
     * Returns the logical disjunction of the two expressions `e1` and `e2`.
     */
   def ∨(e1: Expression, e2: Expression): Expression =
-    Binary(BinaryOperator.LogicalOr, e1, e2, Type.Bool, SourceLocation.Unknown)
+  Binary(BinaryOperator.LogicalOr, e1, e2, Type.Bool, SourceLocation.Unknown)
 
   /**
     * Returns the logical implication of the two expressions `e1` and `e2`.
     */
   def →(e1: Expression, e2: Expression): Expression =
-    ∨(¬(e1), e2)
+  ∨(¬(e1), e2)
 
   /**
     * Returns the logical bi-implication of the two expressions `e1` and `e2`.
     */
   def ↔(e1: Expression, e2: Expression): Expression =
-    ∧(→(e1, e2), →(e2, e1))
+  ∧(→(e1, e2), →(e2, e1))
 
   /**
     * Returns an equality test of the two expressions `e1` and `e2`.
     */
   def ≡(e1: Expression, e2: Expression): Expression =
-    Binary(BinaryOperator.Equal, e1, e2, Type.Bool, SourceLocation.Unknown)
+  Binary(BinaryOperator.Equal, e1, e2, Type.Bool, SourceLocation.Unknown)
 
-  implicit class RichLambda(val defn: TypedAst.Definition.Constant) {
+  implicit class RichLambda(val defn: TypedAst.Declaration.Definition) {
     def apply(e1: Expression): Expression = {
       val Type.Apply(Type.Arrow(l), ts) = defn.tpe
       val (targs, tresult) = (ts.take(l - 1), ts.last)
@@ -492,8 +493,10 @@ object PropertyGen {
     /**
       * Returns a variable expression of the given name `s`.
       */
-    def mkVar(s: String): Expression.Var = {
-      Var(Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown), lattice.tpe, SourceLocation.Unknown)
+    def mkVar(s: String)(implicit genSym: GenSym): Expression.Var = {
+      val ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
+      val sym = Symbol.freshVarSym(ident)
+      Var(sym, lattice.tpe, SourceLocation.Unknown)
     }
 
     /**
@@ -510,31 +513,31 @@ object PropertyGen {
       * Returns the `true` if `e1` is less than or equal to `e2` according to the partial order.
       */
     def ⊑(e1: Expression, e2: Expression): Expression =
-      Apply(lattice.leq, List(e1, e2), Type.Bool, SourceLocation.Unknown)
+    Apply(lattice.leq, List(e1, e2), Type.Bool, SourceLocation.Unknown)
 
     /**
       * Returns the least upper bound of the two expressions `e1` and `e2`.
       */
     def ⊔(e1: Expression, e2: Expression): Expression =
-      Apply(lattice.lub, List(e1, e2), e1.tpe, SourceLocation.Unknown)
+    Apply(lattice.lub, List(e1, e2), e1.tpe, SourceLocation.Unknown)
 
     /**
       * Returns the greatest lower bound of the two expressions `e1` and `e2`.
       */
     def ⊓(e1: Expression, e2: Expression): Expression =
-      Apply(lattice.glb, List(e1, e2), e1.tpe, SourceLocation.Unknown)
+    Apply(lattice.glb, List(e1, e2), e1.tpe, SourceLocation.Unknown)
 
     /**
       * Returns the widening of the two expressions `e1` and `e2`.
       */
     def ▽(e1: Expression, e2: Expression): Expression =
-      throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+    throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
 
     /**
       * Returns the narrowing of the two expressions `e1` and `e2`.
       */
     def △(e1: Expression, e2: Expression): Expression =
-      throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
+    throw new UnsupportedOperationException("Not Yet Implemented. Sorry.")
   }
 
 }

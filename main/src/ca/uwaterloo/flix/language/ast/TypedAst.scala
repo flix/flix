@@ -20,23 +20,31 @@ sealed trait TypedAst
 
 object TypedAst {
 
-  // TODO: Use symbols everywhere.
+  // TODO: Get rid of Symbol.Resolved and Name.Ident
 
-  case class Root(constants: Map[Symbol.Resolved, TypedAst.Definition.Constant],
-                  lattices: Map[Type, TypedAst.Definition.BoundedLattice],
+  case class Root(definitions: Map[Symbol.Resolved, TypedAst.Declaration.Definition],
+                  lattices: Map[Type, TypedAst.Declaration.BoundedLattice],
                   tables: Map[Symbol.TableSym, TypedAst.Table],
-                  indexes: Map[Symbol.TableSym, TypedAst.Definition.Index],
-                  facts: List[TypedAst.Constraint.Fact],
-                  rules: List[TypedAst.Constraint.Rule],
+                  indexes: Map[Symbol.TableSym, TypedAst.Declaration.Index],
+                  facts: List[TypedAst.Declaration.Fact],
+                  rules: List[TypedAst.Declaration.Rule],
                   hooks: Map[Symbol.Resolved, Ast.Hook],
                   properties: List[TypedAst.Property],
                   time: Time) extends TypedAst
 
-  sealed trait Definition
+  sealed trait Declaration extends TypedAst {
+    def loc: SourceLocation
+  }
 
-  object Definition {
+  object Declaration {
 
-    case class Constant(ann: Ast.Annotations, name: Symbol.Resolved, formals: List[TypedAst.FormalArg], exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Definition
+    case class Definition(ann: Ast.Annotations, name: Symbol.Resolved, formals: List[TypedAst.FormalArg], exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Declaration
+
+    case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends TypedAst.Declaration
+
+    case class Fact(head: TypedAst.Predicate.Head, loc: SourceLocation) extends TypedAst.Declaration
+
+    case class Rule(head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body], loc: SourceLocation) extends TypedAst.Declaration
 
     case class BoundedLattice(tpe: Type,
                               bot: TypedAst.Expression,
@@ -44,9 +52,7 @@ object TypedAst {
                               leq: TypedAst.Expression,
                               lub: TypedAst.Expression,
                               glb: TypedAst.Expression,
-                              loc: SourceLocation) extends TypedAst.Definition
-
-    case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends TypedAst.Definition
+                              loc: SourceLocation) extends TypedAst.Declaration
 
   }
 
@@ -57,16 +63,6 @@ object TypedAst {
     case class Relation(sym: Symbol.TableSym, attributes: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Table
 
     case class Lattice(sym: Symbol.TableSym, keys: List[TypedAst.Attribute], value: TypedAst.Attribute, loc: SourceLocation) extends TypedAst.Table
-
-  }
-
-  sealed trait Constraint extends TypedAst
-
-  object Constraint {
-
-    case class Fact(head: TypedAst.Predicate.Head) extends TypedAst.Constraint
-
-    case class Rule(head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body]) extends TypedAst.Constraint
 
   }
 
@@ -128,7 +124,7 @@ object TypedAst {
 
     case class Wild(tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Ref(name: Symbol.Resolved, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -142,7 +138,7 @@ object TypedAst {
 
     case class Binary(op: BinaryOperator, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Let(ident: Name.Ident, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Let(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -194,7 +190,7 @@ object TypedAst {
 
     case class Wild(tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
-    case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
+    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
     case class Unit(loc: SourceLocation) extends TypedAst.Pattern {
       def tpe: Type = Type.Unit

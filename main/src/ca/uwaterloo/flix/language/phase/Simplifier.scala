@@ -32,12 +32,12 @@ object Simplifier {
   def simplify(tast: TypedAst.Root)(implicit genSym: GenSym): SimplifiedAst.Root = {
     val t = System.nanoTime()
 
-    val constants = tast.constants.map { case (k, v) => k -> Definition.simplify(v) }
+    val constants = tast.definitions.map { case (k, v) => k -> Definition.simplify(v) }
     val lattices = tast.lattices.map { case (k, v) => k -> Definition.simplify(v) }
     val collections = tast.tables.map { case (k, v) => k -> Table.simplify(v) }
     val indexes = tast.indexes.map { case (k, v) => k -> Definition.simplify(v) }
-    val facts = tast.facts.map(Constraint.simplify)
-    val rules = tast.rules.map(Constraint.simplify)
+    val facts = tast.facts.map(Definition.simplify)
+    val rules = tast.rules.map(Definition.simplify)
     val properties = tast.properties.map { p => simplify(p) }
     val time = tast.time
 
@@ -54,33 +54,32 @@ object Simplifier {
     }
   }
 
-  object Constraint {
-    def simplify(tast: TypedAst.Constraint.Fact)(implicit genSym: GenSym): SimplifiedAst.Constraint.Fact =
-      SimplifiedAst.Constraint.Fact(Predicate.Head.simplify(tast.head))
-
-    def simplify(tast: TypedAst.Constraint.Rule)(implicit genSym: GenSym): SimplifiedAst.Constraint.Rule = {
-      val head = Predicate.Head.simplify(tast.head)
-      val body = tast.body.map(Predicate.Body.simplify)
-      SimplifiedAst.Constraint.Rule(head, body)
-    }
-  }
-
   object Definition {
-    def simplify(tast: TypedAst.Definition.BoundedLattice)(implicit genSym: GenSym): SimplifiedAst.Definition.Lattice = tast match {
-      case TypedAst.Definition.BoundedLattice(tpe, bot, top, leq, lub, glb, loc) =>
+    def simplify(tast: TypedAst.Declaration.BoundedLattice)(implicit genSym: GenSym): SimplifiedAst.Definition.Lattice = tast match {
+      case TypedAst.Declaration.BoundedLattice(tpe, bot, top, leq, lub, glb, loc) =>
         import Expression.{simplify => s}
         SimplifiedAst.Definition.Lattice(tpe, s(bot), s(top), s(leq), s(lub), s(glb), loc)
     }
 
-    def simplify(tast: TypedAst.Definition.Constant)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant = {
+    def simplify(tast: TypedAst.Declaration.Definition)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant = {
       val formals = tast.formals.map {
         case TypedAst.FormalArg(ident, tpe) => SimplifiedAst.FormalArg(ident, tpe)
       }
       SimplifiedAst.Definition.Constant(tast.ann, tast.name, formals, Expression.simplify(tast.exp), isSynthetic = false, tast.tpe, tast.loc)
     }
 
-    def simplify(tast: TypedAst.Definition.Index)(implicit genSym: GenSym): SimplifiedAst.Definition.Index =
+    def simplify(tast: TypedAst.Declaration.Index)(implicit genSym: GenSym): SimplifiedAst.Definition.Index =
       SimplifiedAst.Definition.Index(tast.sym, tast.indexes, tast.loc)
+
+    def simplify(tast: TypedAst.Declaration.Fact)(implicit genSym: GenSym): SimplifiedAst.Constraint.Fact =
+      SimplifiedAst.Constraint.Fact(Predicate.Head.simplify(tast.head))
+
+    def simplify(tast: TypedAst.Declaration.Rule)(implicit genSym: GenSym): SimplifiedAst.Constraint.Rule = {
+      val head = Predicate.Head.simplify(tast.head)
+      val body = tast.body.map(Predicate.Body.simplify)
+      SimplifiedAst.Constraint.Rule(head, body)
+    }
+
   }
 
   object Expression {
@@ -97,7 +96,7 @@ object Simplifier {
       case TypedAst.Expression.Int64(lit, loc) => SimplifiedAst.Expression.Int64(lit)
       case TypedAst.Expression.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
       case TypedAst.Expression.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
-      case TypedAst.Expression.Var(ident, tpe, loc) => SimplifiedAst.Expression.Var(ident, -1, tpe, loc)
+      case TypedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Expression.Var(sym.toIdent, -1, tpe, loc)
       case TypedAst.Expression.Ref(name, tpe, loc) => SimplifiedAst.Expression.Ref(name, tpe, loc)
       case TypedAst.Expression.Hook(hook, tpe, loc) => SimplifiedAst.Expression.Hook(hook, tpe, loc)
       case TypedAst.Expression.Lambda(args, body, tpe, loc) =>
@@ -118,8 +117,8 @@ object Simplifier {
             val body = simplify(e2)
             SimplifiedAst.Expression.IfThenElse(cond, body, acc, tpe, loc)
         }
-      case TypedAst.Expression.Let(ident, e1, e2, tpe, loc) =>
-        SimplifiedAst.Expression.Let(ident, -1, simplify(e1), simplify(e2), tpe, loc)
+      case TypedAst.Expression.Let(sym, e1, e2, tpe, loc) =>
+        SimplifiedAst.Expression.Let(sym.toIdent, -1, simplify(e1), simplify(e2), tpe, loc)
 
       case TypedAst.Expression.Match(exp0, rules, tpe, loc) =>
         import SimplifiedAst.{Expression => SExp}
@@ -222,9 +221,13 @@ object Simplifier {
       case TypedAst.Expression.GetIndex(e1, e2, tpe, loc) => ??? // TODO
       case TypedAst.Expression.PutIndex(e1, e2, e3, tpe, loc) => ??? // TODO
       case TypedAst.Expression.Existential(params, exp, loc) =>
-        ??? // TODO
+        val ps = params.map(p => Ast.FormalParam(p.sym.toIdent, p.sym.tvar)) // TODO: use of tvar
+        val e = simplify(exp)
+        SimplifiedAst.Expression.Existential(ps, e, loc)
       case TypedAst.Expression.Universal(params, exp, loc) =>
-        ??? // TODO
+        val ps = params.map(p => Ast.FormalParam(p.sym.toIdent, p.sym.tvar)) // TODO: use of tvar
+      val e = simplify(exp)
+        SimplifiedAst.Expression.Universal(ps, e, loc)
       case TypedAst.Expression.UserError(tpe, loc) =>
         SimplifiedAst.Expression.UserError(tpe, loc)
     }
@@ -267,9 +270,9 @@ object Simplifier {
         * The body of the let-binding is computed by recursion on the
         * remaining patterns and variables.
         */
-      case (Var(ident, tpe, loc) :: ps, v :: vs) =>
+      case (Var(sym, tpe, loc) :: ps, v :: vs) =>
         val exp = simplify(ps, vs, succ, fail)
-        SExp.Let(ident, -1, SExp.Var(v, -1, tpe, loc), exp, succ.tpe, loc)
+        SExp.Let(sym.toIdent, -1, SExp.Var(v, -1, tpe, loc), exp, succ.tpe, loc)
 
       /**
         * Matching a literal may succeed or fail.
@@ -354,8 +357,8 @@ object Simplifier {
   object Term {
 
     def simplifyHead(e: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Term.Head = e match {
-      case TypedAst.Expression.Var(ident, tpe, loc) =>
-        SimplifiedAst.Term.Head.Var(ident, tpe, loc)
+      case TypedAst.Expression.Var(sym, tpe, loc) =>
+        SimplifiedAst.Term.Head.Var(sym.toIdent, tpe, loc)
       case TypedAst.Expression.Apply(TypedAst.Expression.Ref(name, _, _), args, tpe, loc) =>
         val as = args map simplifyHead
         SimplifiedAst.Term.Head.Apply(name, as, tpe, loc)
@@ -367,7 +370,7 @@ object Simplifier {
 
     def simplifyBody(e: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Term.Body = e match {
       case TypedAst.Expression.Wild(tpe, loc) => SimplifiedAst.Term.Body.Wildcard(tpe, loc)
-      case TypedAst.Expression.Var(ident, tpe, loc) => SimplifiedAst.Term.Body.Var(ident, -1, tpe, loc)
+      case TypedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Term.Body.Var(sym.toIdent, -1, tpe, loc)
       case _ => SimplifiedAst.Term.Body.Exp(Expression.simplify(e), e.tpe, e.loc)
     }
 

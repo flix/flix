@@ -73,7 +73,7 @@ object Typer {
                     Predicates.reassemble(b, ns, program, subst2)
                 }
               }
-              TypedAst.Constraint.Rule(head, body)
+              TypedAst.Declaration.Rule(head, body, loc)
           }
 
       }
@@ -100,15 +100,15 @@ object Typer {
         *
         * Returns [[Err]] if the head predicate fails to type check.
         */
-      def typecheck(program: Program)(implicit genSym: GenSym): Result[List[TypedAst.Constraint.Fact], TypeError] = {
+      def typecheck(program: Program)(implicit genSym: GenSym): Result[List[TypedAst.Declaration.Fact], TypeError] = {
 
         /**
           * Performs type checking on the given `fact` in the given namespace `ns`.
           */
-        def visitFact(fact: NamedAst.Declaration.Fact, ns: Name.NName): Result[TypedAst.Constraint.Fact, TypeError] = fact match {
+        def visitFact(fact: NamedAst.Declaration.Fact, ns: Name.NName): Result[TypedAst.Declaration.Fact, TypeError] = fact match {
           case NamedAst.Declaration.Fact(head, loc) =>
             Predicates.typecheck(head, ns, program) map {
-              case h => TypedAst.Constraint.Fact(h)
+              case h => TypedAst.Declaration.Fact(h, loc)
             }
         }
 
@@ -130,11 +130,11 @@ object Typer {
         *
         * Returns [[Err]] if a definition fails to type check.
         */
-      def typecheck(program: Program)(implicit genSym: GenSym): Result[Map[Symbol.Resolved, TypedAst.Definition.Constant], TypeError] = {
+      def typecheck(program: Program)(implicit genSym: GenSym): Result[Map[Symbol.Resolved, TypedAst.Declaration.Definition], TypeError] = {
         /**
           * Performs type inference and reassembly on the given definition `defn` in the given namespace `ns`.
           */
-        def visitDefn(defn: NamedAst.Declaration.Definition, ns: Name.NName): Result[(Symbol.Resolved, TypedAst.Definition.Constant), TypeError] = defn match {
+        def visitDefn(defn: NamedAst.Declaration.Definition, ns: Name.NName): Result[(Symbol.Resolved, TypedAst.Declaration.Definition), TypeError] = defn match {
           case NamedAst.Declaration.Definition(sym, tparams, params, exp, ann, tpe, loc) =>
             infer(defn, ns, program) map {
               case d => sym.toResolvedTemporaryHelperMethod -> d
@@ -156,7 +156,7 @@ object Typer {
         * Infers the type of the given definition `defn0` in the given namespace `ns0`.
         */
       // TODO: Cleanup
-      def infer(defn0: NamedAst.Declaration.Definition, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): Result[TypedAst.Definition.Constant, TypeError] = {
+      def infer(defn0: NamedAst.Declaration.Definition, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): Result[TypedAst.Declaration.Definition, TypeError] = {
         // Resolve the declared type.
         val declaredType = Disambiguation.resolve(defn0.tpe, ns0, program) match {
           case Ok(tpe) => tpe
@@ -191,7 +191,7 @@ object Typer {
                     TypedAst.FormalArg(sym.toIdent, subst0(t))
                 }
 
-                Ok(TypedAst.Definition.Constant(defn0.ann, defn0.sym.toResolvedTemporaryHelperMethod, formals, exp, resultType, defn0.loc))
+                Ok(TypedAst.Declaration.Definition(defn0.ann, defn0.sym.toResolvedTemporaryHelperMethod, formals, exp, resultType, defn0.loc))
 
               case Err(e) => Err(e)
             }
@@ -207,12 +207,12 @@ object Typer {
         *
         * Returns [[Err]] if an index refers to a non-existent table or a non-existent attribute in a table.
         */
-      def typecheck(program: Program): Result[Map[Symbol.TableSym, TypedAst.Definition.Index], TypeError] = {
+      def typecheck(program: Program): Result[Map[Symbol.TableSym, TypedAst.Declaration.Index], TypeError] = {
 
         /**
           * Checks that the referenced table exists and that every attribute used by the index exists.
           */
-        def visitIndex(index: NamedAst.Declaration.Index, ns: Name.NName): Result[(Symbol.TableSym, TypedAst.Definition.Index), TypeError] = index match {
+        def visitIndex(index: NamedAst.Declaration.Index, ns: Name.NName): Result[(Symbol.TableSym, TypedAst.Declaration.Index), TypeError] = index match {
           case NamedAst.Declaration.Index(qname, indexes, loc) =>
             // Lookup the referenced table.
             Disambiguation.lookupTable(qname, ns, program) flatMap {
@@ -227,7 +227,7 @@ object Typer {
                     }
                   }
                 }
-                Ok(table.sym -> TypedAst.Definition.Index(table.sym, indexes, loc))
+                Ok(table.sym -> TypedAst.Declaration.Index(table.sym, indexes, loc))
             }
         }
 
@@ -253,12 +253,12 @@ object Typer {
         *
         * Returns [[Err]] if a type error occurs.
         */
-      def typecheck(program: Program)(implicit genSym: GenSym): Result[Map[Type, TypedAst.Definition.BoundedLattice], TypeError] = {
+      def typecheck(program: Program)(implicit genSym: GenSym): Result[Map[Type, TypedAst.Declaration.BoundedLattice], TypeError] = {
 
         /**
           * Performs type inference and reassembly on the given `lattice`.
           */
-        def visitLattice(lattice: NamedAst.Declaration.BoundedLattice): Result[(Type, TypedAst.Definition.BoundedLattice), TypeError] = lattice match {
+        def visitLattice(lattice: NamedAst.Declaration.BoundedLattice): Result[(Type, TypedAst.Declaration.BoundedLattice), TypeError] = lattice match {
           case NamedAst.Declaration.BoundedLattice(tpe, e1, e2, e3, e4, e5, ns, loc) =>
             // Perform type resolution on the declared type.
             Disambiguation.resolve(tpe, ns, program) flatMap {
@@ -288,7 +288,7 @@ object Typer {
                     val lub = Expressions.reassemble(e4, ns, program, subst)
                     val glb = Expressions.reassemble(e5, ns, program, subst)
 
-                    declaredType -> TypedAst.Definition.BoundedLattice(declaredType, bot, top, leq, lub, glb, loc)
+                    declaredType -> TypedAst.Declaration.BoundedLattice(declaredType, bot, top, leq, lub, glb, loc)
                 }
             }
         }
@@ -850,7 +850,7 @@ object Typer {
         /*
          * Wildcard expression.
          */
-        case NamedAst.Expression.Wild(tvar, loc) => throw InternalCompilerException("Not yet supported")
+        case NamedAst.Expression.Wild(tvar, loc) => TypedAst.Expression.Wild(subst0(tvar), loc)
 
         /*
          * Variable expression.
@@ -861,7 +861,7 @@ object Typer {
           Disambiguation.lookupRef(qname, ns0, program) match {
             case Ok(RefTarget.Defn(ns, defn)) => TypedAst.Expression.Ref(defn.sym.toResolvedTemporaryHelperMethod, subst0(sym.tvar), loc)
             case Ok(RefTarget.Hook(hook)) => TypedAst.Expression.Hook(hook, subst0(sym.tvar), loc)
-            case Err(e) => TypedAst.Expression.Var(sym.toIdent, subst0(sym.tvar), loc)
+            case Err(e) => TypedAst.Expression.Var(sym, subst0(sym.tvar), loc)
           }
 
         /*
@@ -941,7 +941,7 @@ object Typer {
         case NamedAst.Expression.Let(sym, exp1, exp2, tvar, loc) =>
           val e1 = visitExp(exp1, subst0)
           val e2 = visitExp(exp2, subst0)
-          TypedAst.Expression.Let(sym.toIdent, e1, e2, subst0(tvar), loc)
+          TypedAst.Expression.Let(sym, e1, e2, subst0(tvar), loc)
 
         /*
          * Match expression.
@@ -1076,7 +1076,7 @@ object Typer {
         */
       def visitPat(pat0: NamedAst.Pattern): TypedAst.Pattern = pat0 match {
         case NamedAst.Pattern.Wild(tvar, loc) => TypedAst.Pattern.Wild(subst0(tvar), loc)
-        case NamedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(sym.toIdent, subst0(tvar), loc)
+        case NamedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(sym, subst0(tvar), loc)
         case NamedAst.Pattern.Unit(loc) => TypedAst.Pattern.Unit(loc)
         case NamedAst.Pattern.True(loc) => TypedAst.Pattern.True(loc)
         case NamedAst.Pattern.False(loc) => TypedAst.Pattern.False(loc)
