@@ -2221,12 +2221,12 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   test("Type.Lambda.03") {
-    val input = "def f(g: Bool -> Int): Int = g(42)"
+    val input = "def f(g: Bool -> Int): Int = g(true)"
     run(input)
   }
 
   test("Type.Lambda.04") {
-    val input = "def f(g: (Bool, Char, Int) -> Str): Int = g(true, 'a', 42)"
+    val input = "def f(g: (Bool, Char, Int) -> Str): Str = g(true, 'a', 42)"
     run(input)
   }
 
