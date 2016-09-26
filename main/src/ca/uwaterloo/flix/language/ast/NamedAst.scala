@@ -24,8 +24,6 @@ trait NamedAst
 
 object NamedAst {
 
-  // TODO: Ensure that these have consistent signatures.
-
   case class Program(enums: Map[Name.NName, Map[String, NamedAst.Declaration.Enum]],
                      definitions: Map[Name.NName, Map[String, NamedAst.Declaration.Definition]],
                      classes: Map[Symbol.ClassSym, NamedAst.Declaration.Class],

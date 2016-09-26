@@ -217,7 +217,7 @@ object Typer {
             // Lookup the referenced table.
             Disambiguation.lookupTable(qname, ns, program) flatMap {
               case table =>
-                val declaredAttributes = attributesOf(table).map(_.ident.name)
+                val declaredAttributes = table.attr.map(_.ident.name)
                 // Iterate through every index in the declaration.
                 for (index <- indexes) {
                   // Iterate through every attribute name in the current index.
@@ -1289,14 +1289,6 @@ object Typer {
             macc ++ Substitution.singleton(sym.tvar, declaredType)
         }
     }
-  }
-
-  /**
-    * Returns the attributes of the given `table`.
-    */
-  def attributesOf(table: NamedAst.Table): List[NamedAst.Attribute] = table match {
-    case NamedAst.Table.Relation(sym, attr, loc) => attr
-    case NamedAst.Table.Lattice(sym, keys, value, loc) => keys ::: value :: Nil
   }
 
   /**

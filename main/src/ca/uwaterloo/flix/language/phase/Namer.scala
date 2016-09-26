@@ -122,17 +122,17 @@ object Namer {
       /*
        * Signature.
        */
-      case WeededAst.Declaration.Signature(ident, params, tpe, loc) => ??? // TODO
+      case WeededAst.Declaration.Signature(ident, params, tpe, loc) => ??? // TODO: Signature
 
       /*
        * External.
        */
-      case WeededAst.Declaration.External(ident, params, tpe, loc) => ??? // TODO
+      case WeededAst.Declaration.External(ident, params, tpe, loc) => ??? // TODO: External
 
       /*
        * Law.
        */
-      case WeededAst.Declaration.Law(ident, tparams, params, tpe, exp, loc) => ??? // TODO
+      case WeededAst.Declaration.Law(ident, tparams, params, tpe, exp, loc) => ??? // TODO: Law
 
       /*
        * Enum.
@@ -164,22 +164,12 @@ object Namer {
       /*
        * Class.
        */
-      case WeededAst.Declaration.Class(ident, tparams, decls, loc) =>
-        // check if the class already exists.
-        val sym = Symbol.mkClassSym(ident)
-        prog0.classes.get(sym) match {
-          case None =>
-            // Case 1: The class does not exist.
-            ??? // TODO
-          case Some(clazz) =>
-            // Case 2: The class already exists.
-            ??? // TODO
-        }
+      case WeededAst.Declaration.Class(ident, tparams, decls, loc) => ??? // TODO: Class
 
       /*
        * Impl.
        */
-      case WeededAst.Declaration.Impl(ident, tparams, decls, loc) => ??? // TODO
+      case WeededAst.Declaration.Impl(ident, tparams, decls, loc) => ??? // TODO: Impl
 
       /*
        * Fact.
@@ -468,13 +458,24 @@ object Namer {
         }
 
       case WeededAst.Expression.Existential(params, exp, loc) =>
+        val ps = params map {
+          case WeededAst.FormalParam(ident, tpe, loc1) =>
+            val sym = Symbol.freshVarSym(ident)
+            NamedAst.FormalParam(sym, Types.namer(tpe, tenv0), loc1)
+        }
         namer(exp, env0, tenv0) map {
-          case e => ??? // TODO
+          case e => NamedAst.Expression.Existential(ps, e, loc)
         }
 
-      case WeededAst.Expression.Universal(params, exp, loc) => namer(exp, env0, tenv0) map {
-        case e => ??? // TODO
-      }
+      case WeededAst.Expression.Universal(params, exp, loc) =>
+        val ps = params map {
+          case WeededAst.FormalParam(ident, tpe, loc1) =>
+            val sym = Symbol.freshVarSym(ident)
+            NamedAst.FormalParam(sym, Types.namer(tpe, tenv0), loc1)
+        }
+        namer(exp, env0, tenv0) map {
+          case e => NamedAst.Expression.Existential(ps, e, loc)
+        }
 
       case WeededAst.Expression.Ascribe(exp, tpe, loc) => namer(exp, env0, tenv0) map {
         case e => NamedAst.Expression.Ascribe(e, Types.namer(tpe, tenv0), loc)
@@ -507,23 +508,60 @@ object Namer {
       case WeededAst.Expression.Binary(op, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
       case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
       case WeededAst.Expression.Let(ident, exp1, exp2, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
-      case WeededAst.Expression.Match(exp, rules, loc) => ???
-      case WeededAst.Expression.Switch(rules, loc) => ???
+      case WeededAst.Expression.Match(exp, rules, loc) => freeVars(exp) ++ rules.flatMap {
+        case (pat, body) => filterBoundVars(freeVars(body), freeVars(pat))
+      }
+      case WeededAst.Expression.Switch(rules, loc) => rules flatMap {
+        case (cond, body) => freeVars(cond) ++ freeVars(body)
+      }
       case WeededAst.Expression.Tag(enum, tag, exp, loc) => freeVars(exp)
       case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
-      case WeededAst.Expression.FNone(loc) => ???
-      case WeededAst.Expression.FSome(exp, loc) => ???
-      case WeededAst.Expression.FNil(loc) => ???
-      case WeededAst.Expression.FList(hd, tl, loc) => ???
-      case WeededAst.Expression.FVec(elms, loc) => ???
-      case WeededAst.Expression.FSet(elms, loc) => ???
-      case WeededAst.Expression.FMap(elms, loc) => ???
-      case WeededAst.Expression.GetIndex(exp1, exp2, loc) => ???
-      case WeededAst.Expression.PutIndex(exp1, exp2, exp3, loc) => ???
-      case WeededAst.Expression.Existential(params, exp, loc) => ???
-      case WeededAst.Expression.Universal(params, exp, loc) => ???
-      case WeededAst.Expression.Ascribe(exp, tpe, loc) => ???
+      case WeededAst.Expression.FNone(loc) => Nil
+      case WeededAst.Expression.FSome(exp, loc) => freeVars(exp)
+      case WeededAst.Expression.FNil(loc) => Nil
+      case WeededAst.Expression.FList(hd, tl, loc) => freeVars(hd) ++ freeVars(tl)
+      case WeededAst.Expression.FVec(elms, loc) => elms flatMap freeVars
+      case WeededAst.Expression.FSet(elms, loc) => elms flatMap freeVars
+      case WeededAst.Expression.FMap(elms, loc) => elms flatMap {
+        case (k, v) => freeVars(k) ++ freeVars(v)
+      }
+      case WeededAst.Expression.GetIndex(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+      case WeededAst.Expression.PutIndex(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+      case WeededAst.Expression.Existential(params, exp, loc) => filterBoundVars(freeVars(exp), params.map(_.ident))
+      case WeededAst.Expression.Universal(params, exp, loc) => filterBoundVars(freeVars(exp), params.map(_.ident))
+      case WeededAst.Expression.Ascribe(exp, tpe, loc) => freeVars(exp)
       case WeededAst.Expression.UserError(loc) => Nil
+    }
+
+    /**
+      * Returns all the free variables in the given pattern `pat0`.
+      */
+    def freeVars(pat0: WeededAst.Pattern): List[Name.Ident] = pat0 match {
+      case WeededAst.Pattern.Var(ident, loc) => List(ident)
+      case WeededAst.Pattern.Wild(loc) => Nil
+      case WeededAst.Pattern.Unit(loc) => Nil
+      case WeededAst.Pattern.True(loc) => Nil
+      case WeededAst.Pattern.False(loc) => Nil
+      case WeededAst.Pattern.Char(lit, loc) => Nil
+      case WeededAst.Pattern.Float32(lit, loc) => Nil
+      case WeededAst.Pattern.Float64(lit, loc) => Nil
+      case WeededAst.Pattern.Int8(lit, loc) => Nil
+      case WeededAst.Pattern.Int16(lit, loc) => Nil
+      case WeededAst.Pattern.Int32(lit, loc) => Nil
+      case WeededAst.Pattern.Int64(lit, loc) => Nil
+      case WeededAst.Pattern.BigInt(lit, loc) => Nil
+      case WeededAst.Pattern.Str(lit, loc) => Nil
+      case WeededAst.Pattern.Tag(enumName, tagName, p, loc) => freeVars(p)
+      case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
+      case WeededAst.Pattern.FNone(loc) => Nil
+      case WeededAst.Pattern.FSome(p, loc) => freeVars(p)
+      case WeededAst.Pattern.FNil(loc) => Nil
+      case WeededAst.Pattern.FList(hd, tl, loc) => freeVars(hd) ++ freeVars(tl)
+      case WeededAst.Pattern.FVec(elms, rest, loc) => elms.flatMap(freeVars) ++ rest.map(freeVars).getOrElse(Nil)
+      case WeededAst.Pattern.FSet(elms, rest, loc) => elms.flatMap(freeVars) ++ rest.map(freeVars).getOrElse(Nil)
+      case WeededAst.Pattern.FMap(elms, rest, loc) => (elms flatMap {
+        case (k, v) => freeVars(k) ++ freeVars(v)
+      }) ++ rest.map(freeVars).getOrElse(Nil)
     }
 
     /**
@@ -633,9 +671,9 @@ object Namer {
   object Types {
 
     /**
-      * Translates the given weeded type into a named type.
+      * Translates the given weeded type `tpe` into a named type under the given type environment `tenv0`.
       */
-    def namer(tpe: WeededAst.Type, env0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.Type = {
+    def namer(tpe: WeededAst.Type, tenv0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.Type = {
       /**
         * Inner visitor.
         */
@@ -654,7 +692,7 @@ object Namer {
         case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams.map(t => visit(t, env)), visit(tresult, env), loc)
         case WeededAst.Type.Apply(base, tparams, loc) => NamedAst.Type.Apply(visit(base, env), tparams.map(t => visit(t, env)), loc)
       }
-      visit(tpe, env0)
+      visit(tpe, tenv0)
     }
 
   }

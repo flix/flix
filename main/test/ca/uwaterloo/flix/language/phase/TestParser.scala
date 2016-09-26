@@ -1299,56 +1299,56 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   test("Expression.Existential.01") {
-    val input = "def f: Prop = ∃(x: Bool). true"
+    val input = "def f: Bool = ∃(x: Bool). true"
     intercept[scala.NotImplementedError] {
       run(input)
     }
   }
 
   test("Expression.Existential.02") {
-    val input = "def f: Prop = ∃(x: Int, y: Int). x == y"
+    val input = "def f: Bool = ∃(x: Int, y: Int). x == y"
     intercept[scala.NotImplementedError] {
       run(input)
     }
   }
 
   test("Expression.Existential.03") {
-    val input = "def f: Prop = \\exists(x: Bool). true"
+    val input = "def f: Bool = \\exists(x: Bool). true"
     intercept[scala.NotImplementedError] {
       run(input)
     }
   }
 
   test("Expression.Existential.04") {
-    val input = "def f: Prop = \\exists(x: Int, y: Int). x == y"
+    val input = "def f: Bool = \\exists(x: Int, y: Int). x == y"
     intercept[scala.NotImplementedError] {
       run(input)
     }
   }
 
   test("Expression.Universal.01") {
-    val input = "def f: Prop = ∀(x: Bool). true"
+    val input = "def f: Bool = ∀(x: Bool). true"
     intercept[scala.NotImplementedError] {
       run(input)
     }
   }
 
   test("Expression.Universal.02") {
-    val input = "def f: Prop = ∀(x: Int, y: Int). x == y"
+    val input = "def f: Bool = ∀(x: Int, y: Int). x == y"
     intercept[scala.NotImplementedError] {
       run(input)
     }
   }
 
   test("Expression.Universal.03") {
-    val input = "def f: Prop = \\forall(x: Bool). true"
+    val input = "def f: Bool = \\forall(x: Bool). true"
     intercept[scala.NotImplementedError] {
       run(input)
     }
   }
 
   test("Expression.Universal.04") {
-    val input = "def f: Prop = \\forall(x: Int, y: Int). x == y"
+    val input = "def f: Bool = \\forall(x: Int, y: Int). x == y"
     intercept[scala.NotImplementedError] {
       run(input)
     }
