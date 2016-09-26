@@ -359,8 +359,6 @@ object Typer {
 
   object Expressions {
 
-    // TODO: Use names: inferredType vs. expectedType.
-
     /**
       * Infers the type of the given expression `exp0` in the namespace `ns0` and `program`.
       */
@@ -415,10 +413,10 @@ object Typer {
          * Lambda expression.
          */
         case NamedAst.Expression.Lambda(args, body, tvar, loc) =>
-          val argTypes = args.map(_.tvar)
+          val argumentTypes = args.map(_.tvar)
           for (
-            bodyType <- visitExp(body);
-            resultType <- unifyM(tvar, Type.mkArrow(argTypes, bodyType), loc)
+            inferredBodyType <- visitExp(body);
+            resultType <- unifyM(tvar, Type.mkArrow(argumentTypes, inferredBodyType), loc)
           ) yield resultType
 
         /*
@@ -426,10 +424,10 @@ object Typer {
          */
         case NamedAst.Expression.Apply(lambda, actuals, tvar, loc) =>
           for (
-            lambdaType <- visitExp(lambda);
-            actualTypes <- seqM(actuals.map(visitExp));
-            arrowType <- unifyM(lambdaType, Type.mkArrow(actualTypes, tvar), loc)
-          ) yield tvar
+            inferredLambdaType <- visitExp(lambda);
+            inferredArgumentTypes <- seqM(actuals.map(visitExp));
+            resultType <- unifyM(inferredLambdaType, Type.mkArrow(inferredArgumentTypes, tvar), loc)
+          ) yield resultType
 
         /*
          * Unary expression.
@@ -453,8 +451,8 @@ object Typer {
 
           case UnaryOperator.BitwiseNegate =>
             for (
-              tpe1 <- visitExp(exp1)
-            ) yield tpe1
+              inferredType <- visitExp(exp1)
+            ) yield inferredType
         }
 
         /*
@@ -1216,8 +1214,8 @@ object Typer {
             ) yield unifiedTypes
           case Err(e) => failM(e)
         }
-      case NamedAst.Predicate.Body.NotEqual(ident1, ident2, loc) => Unification.liftM(Nil) // TODO
-      case NamedAst.Predicate.Body.Loop(ident, term, loc) => Unification.liftM(Nil) // TODO
+      case NamedAst.Predicate.Body.NotEqual(sym1, sym2, loc) => Unification.liftM(Nil) // TODO
+      case NamedAst.Predicate.Body.Loop(sym, term, loc) => Unification.liftM(Nil) // TODO
     }
 
     /**
@@ -1260,13 +1258,13 @@ object Typer {
             TypedAst.Predicate.Body.ApplyHookFilter(hook, ts, loc)
           case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
         }
-      case NamedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
+      case NamedAst.Predicate.Body.NotEqual(sym1, sym2, loc) =>
         // TODO: Need to retrieve the symbol...
-        TypedAst.Predicate.Body.NotEqual(ident1, ident2, loc)
-      case NamedAst.Predicate.Body.Loop(ident, term, loc) =>
+        TypedAst.Predicate.Body.NotEqual(sym1, sym2, loc)
+      case NamedAst.Predicate.Body.Loop(sym, term, loc) =>
         // TODO: Need to retrieve the symbol...
         val t = Expressions.reassemble(term, ns0, program, subst0)
-        TypedAst.Predicate.Body.Loop(ident, t, loc)
+        TypedAst.Predicate.Body.Loop(sym, t, loc)
     }
 
   }
