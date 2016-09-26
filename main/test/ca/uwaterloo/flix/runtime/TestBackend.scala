@@ -5083,6 +5083,72 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkBigInt("98765432109876543210"), "f")
   }
 
+  test("Expression.Let.28") {
+    val input =
+      """def f: Int =
+        |  let x = 42;
+        |    x
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(42), "f")
+  }
+
+  test("Expression.Let.29") {
+    val input =
+      """def f: Int =
+        |  let x = 42;
+        |  let y = 21;
+        |    x + y
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(42 + 21), "f")
+  }
+
+  test("Expression.Let.30") {
+    val input =
+      """def f: Int =
+        |  let x = 42;
+        |  let y = 21;
+        |  let z = 11;
+        |    x + y + z
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(42 + 21 + 11), "f")
+  }
+
+  test("Expression.Let.31") {
+    val input =
+      """def f: Int =
+        |  let x = {
+        |    let a = 1;
+        |    let b = 2;
+        |      a + b
+        |   };
+        |   x
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(1 + 2), "f")
+  }
+
+  test("Expression.Let.32") {
+    val input =
+      """def f: Int =
+        |  let x = {
+        |    let a = 1;
+        |    let b = 2;
+        |      a + b
+        |   };
+        |   let y = {
+        |     let c = 3;
+        |     let d = 4;
+        |       c + d
+        |   };
+        |   x + y
+      """.stripMargin
+    val t = new Tester(input)
+    t.runTest(Value.mkInt32(1 + 2 + 3 + 4), "f")
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Expression.{CheckTag,GetTagValue}                                       //
   // Tested indirectly by pattern matching.                                  //
