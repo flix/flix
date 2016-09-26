@@ -222,7 +222,7 @@ object Simplifier {
       case TypedAst.Expression.PutIndex(e1, e2, e3, tpe, loc) => ??? // TODO
       case TypedAst.Expression.Existential(params, exp, loc) =>
         val ps = params.map(p => Ast.FormalParam(p.sym.toIdent, p.sym.tvar)) // TODO: use of tvar
-        val e = simplify(exp)
+      val e = simplify(exp)
         SimplifiedAst.Expression.Existential(ps, e, loc)
       case TypedAst.Expression.Universal(params, exp, loc) =>
         val ps = params.map(p => Ast.FormalParam(p.sym.toIdent, p.sym.tvar)) // TODO: use of tvar
@@ -320,7 +320,23 @@ object Simplifier {
             SExp.Let(name, -1, SExp.GetTupleIndex(SExp.Var(v, -1, tpe, loc), idx, pat.tpe, loc), exp, succ.tpe, loc)
         }
 
-      case _ => ??? // TODO: implement remaining patterns.
+      /**
+        * Matching nil may succeed or fail.
+        *
+        * // TODO
+        */
+      case (FNil(tpe, loc) :: ps, v :: vs) =>
+        ??? // TODO
+
+      /**
+        * Matching a list may succeed or fail.
+        *
+        * TODO
+        */
+      case (FList(hd, tl, tpe, loc) :: ps, v :: vs) =>
+        ??? // TODO
+
+      case p => throw InternalCompilerException(s"Unsupported pattern '$p'.")
 
     }
 
