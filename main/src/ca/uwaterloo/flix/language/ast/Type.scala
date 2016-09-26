@@ -288,48 +288,6 @@ object Type {
   def freshTypeVar(k: Kind = Kind.Star)(implicit genSym: GenSym): Type.Var = Type.Var(genSym.freshId(), k)
 
   /**
-    * Replaces every free variables in the given type `tpe` with a fresh type variable.
-    */
-  def refreshTypeVars(tpe: Type)(implicit genSym: GenSym): Type = {
-    val freshVars = tpe.typeVars.foldLeft(Map.empty[Int, Type.Var]) {
-      case (macc, tvar) => macc + (tvar.id -> freshTypeVar(tvar.kind))
-    }
-
-    /**
-      * Replaces every variable occurrence in the given type using the map `freeVars`.
-      */
-    def visit(t0: Type): Type = t0 match {
-      case Type.Var(x, k) => freshVars(x)
-      case Type.Unit => Type.Unit
-      case Type.Bool => Type.Bool
-      case Type.Char => Type.Char
-      case Type.Float32 => Type.Float32
-      case Type.Float64 => Type.Float64
-      case Type.Int8 => Type.Int8
-      case Type.Int16 => Type.Int16
-      case Type.Int32 => Type.Int32
-      case Type.Int64 => Type.Int64
-      case Type.BigInt => Type.BigInt
-      case Type.Str => Type.Str
-      case Type.Native => Type.Native
-      case Type.Arrow(l) => Type.Arrow(l)
-      case Type.FTuple(l) => Type.FTuple(l)
-      case Type.FOpt => Type.FOpt
-      case Type.FList => Type.FList
-      case Type.FVec => Type.FVec
-      case Type.FSet => Type.FSet
-      case Type.FMap => Type.FMap
-      case Type.Apply(t, ts) => Type.Apply(visit(t), ts map visit)
-      case Type.Enum(enum, cases) => Type.Enum(enum, cases map {
-        case (k, v) => k -> visit(v)
-      })
-      case Type.Forall(quantifiers, base) => Type.Forall(quantifiers, visit(base))
-    }
-
-    visit(tpe)
-  }
-
-  /**
     * Constructs the function type A -> B where `A` is the given type `a` and `B` is the given type `b`.
     */
   def mkArrow(a: Type, b: Type): Type = Apply(Arrow(2), List(a, b))
@@ -372,8 +330,59 @@ object Type {
   /**
     * Constructors the universally quantified type ∀(xs...) base.
     *
-    * Returns the base type if the given list of qualifiers is empty.
+    * Returns the base type if the given list of quantifiers is empty.
     */
-  def mkForall(qualifiers: List[Type.Var], base: Type): Type = if (qualifiers.isEmpty) base else Type.Forall(qualifiers, base)
+  def mkForall(quantifiers: List[Type.Var], base: Type): Type = if (quantifiers.isEmpty) base else Type.Forall(quantifiers, base)
+
+  /**
+    * Instantiates the given type `tpe` by replacing all quantified type variables with fresh type variables.
+    */
+  def instantiate(tpe: Type)(implicit genSym: GenSym): Type = tpe match {
+    case Type.Forall(quantifiers, base) => refreshTypeVars(quantifiers, base)
+    case _ => tpe
+  }
+
+  /**
+    * Replaces every free occurrence of a type variable in `typeVars`
+    * with a fresh type variable in the given type `tpe`.
+    */
+  def refreshTypeVars(typeVars: List[Type.Var], tpe: Type)(implicit genSym: GenSym): Type = {
+    val freshVars = typeVars.foldLeft(Map.empty[Int, Type.Var]) {
+      case (macc, tvar) => macc + (tvar.id -> freshTypeVar(tvar.kind))
+    }
+
+    /**
+      * Replaces every variable occurrence in the given type using the map `freeVars`.
+      */
+    def visit(t0: Type): Type = t0 match {
+      case Type.Var(x, k) => freshVars.getOrElse(x, t0)
+      case Type.Unit => Type.Unit
+      case Type.Bool => Type.Bool
+      case Type.Char => Type.Char
+      case Type.Float32 => Type.Float32
+      case Type.Float64 => Type.Float64
+      case Type.Int8 => Type.Int8
+      case Type.Int16 => Type.Int16
+      case Type.Int32 => Type.Int32
+      case Type.Int64 => Type.Int64
+      case Type.BigInt => Type.BigInt
+      case Type.Str => Type.Str
+      case Type.Native => Type.Native
+      case Type.Arrow(l) => Type.Arrow(l)
+      case Type.FTuple(l) => Type.FTuple(l)
+      case Type.FOpt => Type.FOpt
+      case Type.FList => Type.FList
+      case Type.FVec => Type.FVec
+      case Type.FSet => Type.FSet
+      case Type.FMap => Type.FMap
+      case Type.Apply(t, ts) => Type.Apply(visit(t), ts map visit)
+      case Type.Enum(enum, cases) => Type.Enum(enum, cases map {
+        case (k, v) => k -> visit(v)
+      })
+      case Type.Forall(quantifiers, base) => Type.Forall(quantifiers, visit(base))
+    }
+
+    visit(tpe)
+  }
 
 }

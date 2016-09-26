@@ -106,12 +106,12 @@ object Namer {
               case e =>
                 val sym = Symbol.mkDefnSym(ns0, ident)
                 // Qualify the type of the definition it its type parameters.
-                val qualifiedType =
+                val quantifiedType =
                 if (tenv0.isEmpty)
                   Types.namer(tpe, tenv0)
                 else
                   NamedAst.Type.Forall(tenv0.values.toList, Types.namer(tpe, tenv0), loc)
-                val defn = NamedAst.Declaration.Definition(sym, tenv0.values.toList, pms0.reverse, e, ann, qualifiedType, loc)
+                val defn = NamedAst.Declaration.Definition(sym, tenv0.values.toList, pms0.reverse, e, ann, quantifiedType, loc)
                 prog0.copy(definitions = prog0.definitions + (ns0 -> (defns + (ident.name -> defn))))
             }
           case Some(defn) =>

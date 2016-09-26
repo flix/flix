@@ -154,11 +154,9 @@ object Typer {
           case Err(e) => return Err(e)
         }
 
-        val tparams = defn0.tparams
-
         val result = for (
           resultType <- Expressions.infer(defn0.exp, ns0, program);
-          unifiedType <- unifyM(declaredType, Type.mkForall(tparams, Type.mkArrow(argumentTypes, resultType)), defn0.loc)
+          unifiedType <- unifyM(Type.instantiate(declaredType), Type.mkArrow(argumentTypes, resultType), defn0.loc)
         ) yield unifiedType
 
         // TODO: See if this can be rewritten nicer
@@ -386,7 +384,7 @@ object Typer {
           Disambiguation.lookupRef(ref, ns0, program) match {
             case Ok(RefTarget.Defn(ns, defn)) =>
               Disambiguation.resolve(defn.tpe, ns, program) match {
-                case Ok(declaredType) => unifyM(tvar, declaredType, loc)
+                case Ok(declaredType) => unifyM(tvar, Type.instantiate(declaredType), loc)
                 case Err(e) => failM(e)
               }
             case Ok(RefTarget.Hook(hook)) => liftM(hook.tpe)
@@ -423,10 +421,12 @@ object Typer {
          * Apply expression.
          */
         case NamedAst.Expression.Apply(lambda, actuals, tvar, loc) =>
+          val freshResultType = Type.freshTypeVar()
           for (
             inferredLambdaType <- visitExp(lambda);
             inferredArgumentTypes <- seqM(actuals.map(visitExp));
-            resultType <- unifyM(inferredLambdaType, Type.mkArrow(inferredArgumentTypes, tvar), loc)
+            expectedLambdaType <- unifyM(inferredLambdaType, Type.mkArrow(inferredArgumentTypes, freshResultType), loc);
+            resultType <- unifyM(freshResultType, tvar, loc)
           ) yield resultType
 
         /*
@@ -721,22 +721,20 @@ object Typer {
          */
         case NamedAst.Expression.Existential(params, exp, loc) =>
           // NB: An existential behaves very much like a lambda.
-          val argTypes = params.map(_.sym.tvar)
           for {
             bodyType <- visitExp(exp)
-            ________ <- unifyM(bodyType, Type.Bool, loc)
-          } yield Type.mkArrow(argTypes, bodyType)
+            resultType <- unifyM(bodyType, Type.Bool, loc)
+          } yield resultType
 
         /*
          * Universal expression.
          */
         case NamedAst.Expression.Universal(params, exp, loc) =>
           // NB: An existential behaves very much like a lambda.
-          val argTypes = params.map(_.sym.tvar)
           for {
             bodyType <- visitExp(exp)
-            ________ <- unifyM(bodyType, Type.Bool, loc)
-          } yield Type.mkArrow(argTypes, bodyType)
+            resultType <- unifyM(bodyType, Type.Bool, loc)
+          } yield resultType
 
         /*
          * Ascribe expression.
