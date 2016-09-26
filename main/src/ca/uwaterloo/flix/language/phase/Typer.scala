@@ -33,62 +33,24 @@ object Typer {
   def typer(program: NamedAst.Program)(implicit genSym: GenSym): Validation[TypedAst.Root, TypeError] = {
     val startTime = System.nanoTime()
 
-    val defns = Declarations.Definitions.typecheck(program) match {
-      case Ok(res) => res
-      case Err(e) => return e.toFailure
+    val result = for {
+      definitions <- Declarations.Definitions.typecheck(program)
+      lattices <- Declarations.Lattices.typecheck(program)
+      tables <- Declarations.Tables.typecheck(program)
+      indexes <- Declarations.Indexes.typecheck(program)
+      facts <- Declarations.Constraints.typecheckFacts(program)
+      rules <- Declarations.Constraints.typecheckRules(program)
+      hooks <- Declarations.Hooks.typecheck(program)
+    } yield {
+      val currentTime = System.nanoTime()
+      val time = program.time.copy(typer = currentTime - startTime)
+      TypedAst.Root(definitions, lattices, tables, indexes, facts, rules, hooks, Nil, time)
     }
 
-    val lattices = Declarations.Lattices.typecheck(program) match {
-      case Ok(res) => res
-      case Err(e) => return e.toFailure
+    result match {
+      case Ok(p) => p.toSuccess
+      case Err(e) => e.toFailure
     }
-
-    val tables = Declarations.Tables.typecheck(program) match {
-      case Ok(res) => res
-      case Err(e) => return e.toFailure
-    }
-
-    val indexes = Declarations.Indexes.typecheck(program) match {
-      case Ok(res) => res
-      case Err(e) => return e.toFailure
-    }
-
-    val facts = Declarations.Constraints.typecheck(program) match {
-      case Ok(res) => res
-      case Err(e) => return e.toFailure
-    }
-
-    // TODO
-    val rules = program.rules.flatMap {
-      case (ns, rs) => rs map {
-        case NamedAst.Declaration.Rule(head0, body0, loc) =>
-          Predicates.infer(head0, ns, program) match {
-            case InferMonad(run1) =>
-              val (subst, _) = run1(Substitution.empty).get
-              val head = Predicates.reassemble(head0, ns, program, subst)
-              val body = body0.map {
-                case b => Predicates.infer(b, ns, program) match {
-                  case InferMonad(run2) =>
-                    val (subst2, _) = run2(Substitution.empty).get
-                    Predicates.reassemble(b, ns, program, subst2)
-                }
-              }
-              TypedAst.Declaration.Rule(head, body, loc)
-          }
-
-      }
-    }
-
-    val hooks = program.hooks.flatMap {
-      case (ns, hs) => hs.map {
-        case (name, hook) => Symbol.Resolved.mk(ns.parts ::: name :: Nil) -> hook
-      }
-    }
-
-    val currentTime = System.nanoTime()
-    val time = program.time.copy(typer = currentTime - startTime)
-
-    TypedAst.Root(defns, lattices, tables, indexes, facts, rules.toList, hooks, Nil, time).toSuccess
   }
 
   object Declarations {
@@ -100,7 +62,7 @@ object Typer {
         *
         * Returns [[Err]] if the head predicate fails to type check.
         */
-      def typecheck(program: Program)(implicit genSym: GenSym): Result[List[TypedAst.Declaration.Fact], TypeError] = {
+      def typecheckFacts(program: Program)(implicit genSym: GenSym): Result[List[TypedAst.Declaration.Fact], TypeError] = {
 
         /**
           * Performs type checking on the given `fact` in the given namespace `ns`.
@@ -119,6 +81,29 @@ object Typer {
 
         // Sequence the results and convert them back to a map.
         Result.seqM(result)
+      }
+
+      // TODO: DOC
+      def typecheckRules(program: Program)(implicit genSym: GenSym): Result[List[TypedAst.Declaration.Rule], TypeError] = {
+        val rules = program.rules.flatMap {
+          case (ns, rs) => rs map {
+            case NamedAst.Declaration.Rule(head0, body0, loc) =>
+              Predicates.infer(head0, ns, program) match {
+                case InferMonad(run1) =>
+                  val (subst, _) = run1(Substitution.empty).get
+                  val head = Predicates.reassemble(head0, ns, program, subst)
+                  val body = body0.map {
+                    case b => Predicates.infer(b, ns, program) match {
+                      case InferMonad(run2) =>
+                        val (subst2, _) = run2(Substitution.empty).get
+                        Predicates.reassemble(b, ns, program, subst2)
+                    }
+                  }
+                  TypedAst.Declaration.Rule(head, body, loc)
+              }
+          }
+        }
+        Ok(rules.toList)
       }
 
     }
@@ -196,6 +181,22 @@ object Typer {
               case Err(e) => Err(e)
             }
         }
+      }
+
+    }
+
+    object Hooks {
+
+      /**
+        * Performs type inference and reassembly on all hooks in the given program.
+        */
+      def typecheck(program: NamedAst.Program): Result[Map[Symbol.Resolved, Ast.Hook], TypeError] = {
+        val hooks = program.hooks.flatMap {
+          case (ns, hs) => hs.map {
+            case (name, hook) => Symbol.Resolved.mk(ns.parts ::: name :: Nil) -> hook
+          }
+        }
+        Ok(hooks)
       }
 
     }
