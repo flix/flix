@@ -119,6 +119,20 @@ rel PromiseLinkOut(c: Ctx, s: Stm, o1: Obj, o2: Obj)
 // Declarations: Promise Graph                                               //
 ///////////////////////////////////////////////////////////////////////////////
 
+// A resolve edge o -> p from a value `o` to a promise `p`.
+rel ResolveEdge(o: Obj, p: Obj)
+
+// A reject edge o -> p from a value `o` to a promise `p`.
+rel RejectEdge(o: Obj, p: Obj)
+
+// An onResolve edge p -> m from a promise `o` to a function `m`.
+rel OnResolveEdge(o: Obj, m: Obj)
+
+// An onReject edge p -> m from a promise `o` to a function `m`.
+rel OnRejectEdge(p: Obj, m: Obj)
+
+// A promise link edge p1 -> p2 from one promise `p1` to another promise `p2`.
+rel LinkEdge(p1: Obj, p2: Obj)
 
 
 ///////////////////////////////////////////////////////////////////////////////
