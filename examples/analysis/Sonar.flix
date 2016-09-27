@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// Analysis Types and Relations                                              //
+// Common Data Types                                                         //
 ///////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -14,11 +14,19 @@ enum Ctx {
     case None
 }
 
-/**
- * Input Relations.
- */
-// Obj creation expression: s: v1 = new Obj().
-rel NewObj(s: Stm, x: Var, o: Obj)
+enum State {
+    case Pending,
+    case Fulfilled, // TODO: Needs value.
+    case Rejected   // TODO: Needs value.
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Declarations: Input Core Expressions                                      //
+///////////////////////////////////////////////////////////////////////////////
+
+// Obj creation expression: s: v = new Obj().
+rel NewObj(s: Stm, v: Var, o: Obj)
 
 // Assignment expression: s: v1 = v2.
 rel Assign(s: Stm, v1: Var, v2: Var)
@@ -29,45 +37,92 @@ rel Load(s: Stm, v1: Var, v2: Var, f: Field)
 // Field store expression: s: v1.f = v2
 rel Store(s: Stm, v1: Var, f: Field, v2: Var)
 
-// Call expressions: s: x(...).
-rel Call(s: Stm, x: Var)
+// Call expressions: s: v1(v2).
+rel Call(s: Stm, v1: Var, v2: Var)
 
 // Argument (as seen from the caller).
-rel CallActual(s: Stm, x: Var)
+rel CallActual(s: Stm, v: Var)
 
 // Argument (as seen from the callee).
-rel CallFormal(s: Stm, m: Obj, x: Var)
+rel CallFormal(s: Stm, m: Obj, v: Var)
 
 // Return (as seen from the callee).
-rel CallReturn(s: Stm, x: Var)
+rel CallReturn(s: Stm, v: Var)
 
 // Return (as seen from the caller).
-rel CallResult(s: Stm, x: Var)
+rel CallResult(s: Stm, v: Var)
 
 // Control-flow Graph edge s1 -> s2.
 rel CFG(s1: Stm, s2: Stm)
 
 
+///////////////////////////////////////////////////////////////////////////////
+// Declarations: Input Promise Expressions                                   //
+///////////////////////////////////////////////////////////////////////////////
 
-/**
- * Analysis Relations.
- */
+// Initialize promise expression: s: promisify(v)
+rel Promisify(s: Stm, v: Var)
+
+// Resolve promise expression: s: v1.resolve(v2)
+rel Resolve(s: Stm, v1: Var, v2: Var)
+
+// Reject promise expression: s: v1.reject(v2)
+rel Reject(s: Stm, v1: Var, v2: Var)
+
+// On resolve expression: s: v1.onResolve(v2)
+rel OnResolve(s: Stm, v1: Var, v2: Var)
+
+// On reject expression: s: v1.onReject(v2)
+rel OnReject(s: Stm, v1: Var, v2: Var)
+
+// Promise link expression: s: v1.link(v2)
+rel Link(s: Stm, v1: Var, v2: Var)
+
+///////////////////////////////////////////////////////////////////////////////
+// Declarations: Relations derived by Analysis                               //
+///////////////////////////////////////////////////////////////////////////////
+
  // The statement `s` is reachable in context `c`.
 rel Reachable(c: Ctx, s: Stm)
+
+// Call at statement `s` to function object `m`.
+rel CallGraph(s: Stm, m: Obj)
 
 // Var `v` points-to object `o` at statement `s` in context `c`.
 rel VarPointsToIn(c: Ctx, s: Stm, x: Var, o: Obj)
 rel VarPointsToOut(c: Ctx, s: Stm, x: Var, o: Obj)
 
-// Field `f` of object `o1` points-to object `o2` at statement `s` in context `c`..
+// Field `f` of object `o1` points-to object `o2` at statement `s` in context `c`.
 rel HeapPointsToIn(c: Ctx, s: Stm, o1: Obj, f: Field, o2: Obj)
 rel HeapPointsToOut(c: Ctx, s: Stm, o1: Obj, f: Field, o2: Obj)
 
-// Call at statement `s` to function object `m`.
-rel CallGraph(s: Stm, m: Obj)
+// The promise `o` is in promise state `t` at statement `s` in context `c`.
+rel PromiseStateIn(c: Ctx, s: Stm, o: Obj, t: State)
+rel PromiseStateOut(c: Ctx, s: Stm, o: Obj, t: State)
+
+// The promise `o` has `r` registered as a fulfill reaction at statement `s` in context `c`.
+rel FulfillReactionIn(c: Ctx, s: Stm, o: Obj, r: Obj)
+rel FulfillReactionOut(c: Ctx, s: Stm, o: Obj, r: Obj)
+
+// The promise `o` has `r` registered as a reject reaction at statement `s` in context `c`.
+rel RejectReactionIn(c: Ctx, s: Stm, o: Obj, r: Obj)
+rel RejectReactionOut(c: Ctx, s: Stm, o: Obj, r: Obj)
+
+// The promise `o1` is linked to `o2` at statement `s` in context `c`.
+// If `o1` is linked to `o2` then when `o1` is resolved/rejected so is `o2`.
+rel PromiseLinkIn(c: Ctx, s: Stm, o1: Obj, o2: Obj)
+rel PromiseLinkOut(c: Ctx, s: Stm, o1: Obj, o2: Obj)
+
+// TODO: Queue
 
 ///////////////////////////////////////////////////////////////////////////////
-// Abstract Semantics                                                        //
+// Declarations: Promise Graph                                               //
+///////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Semantics: Core Expressions                                               //
 ///////////////////////////////////////////////////////////////////////////////
 
 // NewObj Rule: s: v = new Obj()
@@ -92,7 +147,7 @@ HeapPointsToOut(c, s, o1, f, o2) :- Store(s, v1, f, v2),
                                     Reachable(c, s).
 
 ///////////////////////////////////////////////////////////////////////////////
-// Reachability                                                              //
+// Semantics: Promise Expressions                                            //
 ///////////////////////////////////////////////////////////////////////////////
 
 // Mark the entry point as reachable.
@@ -107,6 +162,14 @@ VarPointsToOut(c, s, v, o) :- VarPointsToIn(c, s, v, o).
 
 HeapPointsToIn(c, s2, o1, f, o2) :- CFG(s1, s2), HeapPointsToOut(c, s1, o1, f, o2).
 HeapPointsToOut(c, s, o1, f, o2) :- HeapPointsToIn(c, s, o1, f, o2).
+
+///////////////////////////////////////////////////////////////////////////////
+// Semantics: Promise Graph                                                  //
+///////////////////////////////////////////////////////////////////////////////
+
+
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Example Program                                                           //
