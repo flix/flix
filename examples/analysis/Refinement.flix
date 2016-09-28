@@ -28,15 +28,45 @@ enum Ref {
     case Ref(Domain, Int)
 }
 
+/**
+ * Returns `true` if the given element `e1` is smaller or equal to the given element `e2`.
+ */
 def leq2(e1: Ref, e2: Ref): Bool = match (e1, e2) with {
-    case (Ref.Ref(Domain.Sign, f1), Ref.Ref(Domain.Sign, f2)) => true
-    case _                                                  => false
+    case (Ref.Ref(Domain.Sign, f1), Ref.Ref(Domain.Sign, f2))           => f1 <= f2
+    case (Ref.Ref(Domain.Parity, f1), Ref.Ref(Domain.Parity, f2))       => f1 <= f2
+    case (Ref.Ref(Domain.Constant, f1), Ref.Ref(Domain.Constant, f2))   => f1 <= f2
+    case (Ref.Ref(Domain.Sign, _), Ref.Ref(Domain.Parity, _))           => true
+    case (Ref.Ref(Domain.Sign, _), Ref.Ref(Domain.Constant, _))         => true
+    case (Ref.Ref(Domain.Parity, _), Ref.Ref(Domain.Constant, _))       => true
+    case _                                                              => false
 }
 
+/**
+ * Returns the least upper bound of the two given elements `e1` and `e2`.
+ */
+def lub2(e1: Ref, e2: Ref): Ref = match (e1, e2) with {
+    case (Ref.Ref(Domain.Sign, f1), Ref.Ref(Domain.Sign, f2))           => Ref.Ref(Domain.Sign, max(f1, f2))
+    case (Ref.Ref(Domain.Parity, f1), Ref.Ref(Domain.Parity, f2))       => Ref.Ref(Domain.Sign, max(f1, f2))
+    case (Ref.Ref(Domain.Constant, f1), Ref.Ref(Domain.Constant, f2))   => Ref.Ref(Domain.Sign, max(f1, f2))
 
+    case (Ref.Ref(Domain.Sign, _), Ref.Ref(Domain.Parity, f))           => Ref.Ref(Domain.Parity, f)
+    case (Ref.Ref(Domain.Parity, f), Ref.Ref(Domain.Sign, _))           => Ref.Ref(Domain.Parity, f)
 
-// TODO: Define partial order ^
+    case (Ref.Ref(Domain.Sign, _), Ref.Ref(Domain.Constant, f))         => Ref.Ref(Domain.Constant, f)
+    case (Ref.Ref(Domain.Constant, f), Ref.Ref(Domain.Sign, _))         => Ref.Ref(Domain.Constant, f)
 
+    case (Ref.Ref(Domain.Parity, _), Ref.Ref(Domain.Constant, f))       => Ref.Ref(Domain.Constant, f)
+    case (Ref.Ref(Domain.Constant, f), Ref.Ref(Domain.Parity, _))       => Ref.Ref(Domain.Constant, f)
+}
+
+def max(x: Int, y: Int): Int = if (x >= y) x else y
+
+/**
+ * Returns the greatest lower bound of the two given elements `e1` and `e2`.
+ */
+def glb2(e1: Ref, e2: Ref): Ref = ??? // TODO
+
+let Ref<> = (Ref.Ref(Domain.Sign, 0), ???, leq2, lub2, glb2);
 
 //
 // At each program point, i.e. control-flow graph node we will assign an element
@@ -48,9 +78,6 @@ lat Refinement(stm: Int, localVar: Str, ref: Ref)
 // We can now define the semantics of the analysis.
 //
 lat LocalVar(stm: Int, var: Str, value: Value)
-
-// TODO: Don't use r for both result and refinement.
-
 
 //
 // Literal statements.
