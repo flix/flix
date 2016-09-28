@@ -179,7 +179,7 @@ Refinement(s1, y, step(r)) :-
 
 
 //
-// We will use the simple "is zero" lattice as the A lattice.
+// We will use the zero lattice as the A lattice.
 //
 enum A {
     case ATop,
@@ -202,92 +202,108 @@ def lubA(e1: A, e2: A): A = match (e1, e2) with {
     case (_, A.ATop)        => A.ATop
 }
 
+def sumA(e1: A, e2: A): A = match (e1, e2) with {
+    case (A.ABot, _)        => A.ABot
+    case (_, A.ABot)        => A.ABot
+    case (A.AZer, A.AZer)   => A.AZer
+    case _                  => A.ATop
+}
 
 
+//
+// We will use the constant propagation lattice as the B lattice.
+//
+enum B {
+    case BTop,
+   case Cst(Int),
+    case BBot
+}
 
-//def alpha2a(i: Int): A = if (i == 0) A.AZer else A.ATop
+def leqB(e1: B, e2: B): Bool = match (e1, e2) with {
+    case (B.BBot, _)            => true
+    case (B.Cst(n1), B.Cst(n2)) => n1 == n2
+    case (_, B.BTop)            => true
+    case _                      => false
+}
 
 //
 // We now define the three lattices stacked on top of each other.
 //
 enum Value {
-         case Top,
-
-        case Cst(Int),
-
-         case Top2,
-
-    case Odd, case Even,
-
-         case Top1,
-
-         case Two,
-
-         case Bot
+    case BVal(B),
+    case AVal(A)
 }
 
-def leq(e1: Value, e2: Value): Bool = match (e1, e2) with {
-    case (Value.Bot, _)                 => true
-    case _                              => false
-}
+//
+//def leq(e1: Value, e2: Value): Bool = match (e1, e2) with {
+//    case (Value.Bot, _)                 => true
+//    case _                              => false
+//}
+//
+//def lub(e1: Value, e2: Value): Value = ???
+//
+//def glb(e1: Value, e2: Value): Value = ???
+//
+//let Value<> = (Value.Bot, Value.Top, leq, lub, glb);
+//
+//
+///**
+// * Returns the given integer `i` as an element of the sign lattice.
+// */
+//def alpha2s(i: Int): Value = switch {
+//    case i <  0 => Value.Neg
+//    case i == 0 => Value.Zer
+//    case i >  0 => Value.Pos
+//}
+//
+///**
+// * Returns the given integer `i` as an element of the parity lattice.
+// */
+//def alpha2p(i: Int): Value =
+//  if (i % 2 == 0) Value.Even else Value.Odd
+//
+///**
+// * Returns the given integer `i` as an element of the constant propagation lattice.
+// */
+//def alpha2c(i: Int): Value = Value.Cst(i)
+//
+///**
+// * Returns the sum of the two given values `e1` and `e2`.
+// */
+//def sum(e1: Value, e2: Value): Value = match (e1, e2) with {
+//    case (Value.Bot, _)                         => Value.Bot
+//    case (_, Value.Bot)                         => Value.Bot
+//    case (Value.Neg, Value.Neg)                 => Value.NegPos
+//    case (Value.Neg, Value.Zer)                 => Value.Neg
+//    case (Value.Neg, Value.Pos)                 => Value.NegPos
+//    case (Value.Zer, Value.Neg)                 => Value.Neg
+//    case (Value.Zer, Value.Zer)                 => Value.Zer
+//    case (Value.Zer, Value.Pos)                 => Value.Pos
+//    case (Value.Pos, Value.Neg)                 => Value.NegPos
+//    case (Value.Pos, Value.Zer)                 => Value.Pos
+//    case (Value.Pos, Value.Pos)                 => Value.Pos
+//    case (Value.Neg, Value.Odd)                 => Value.OddEven
+//
+//
+//    case (Value.Cst(n1), Value.Cst(n2))         => Value.Cst(n1 + n2)
+//    case _                                          => Value.Top
+//}
 
-def lub(e1: Value, e2: Value): Value = ???
 
-def glb(e1: Value, e2: Value): Value = ???
-
-let Value<> = (Value.Bot, Value.Top, leq, lub, glb);
+//def alpha2a(i: Int): A = if (i == 0) A.AZer else A.ATop
 
 
-/**
- * Returns the given integer `i` as an element of the sign lattice.
- */
-def alpha2s(i: Int): Value = switch {
-    case i <  0 => Value.Neg
-    case i == 0 => Value.Zer
-    case i >  0 => Value.Pos
-}
-
-/**
- * Returns the given integer `i` as an element of the parity lattice.
- */
-def alpha2p(i: Int): Value =
-  if (i % 2 == 0) Value.Even else Value.Odd
-
-/**
- * Returns the given integer `i` as an element of the constant propagation lattice.
- */
-def alpha2c(i: Int): Value = Value.Cst(i)
-
-/**
- * Returns the sum of the two given values `e1` and `e2`.
- */
-def sum(e1: Value, e2: Value): Value = match (e1, e2) with {
-    case (Value.Bot, _)                         => Value.Bot
-    case (_, Value.Bot)                         => Value.Bot
-    case (Value.Neg, Value.Neg)                 => Value.NegPos
-    case (Value.Neg, Value.Zer)                 => Value.Neg
-    case (Value.Neg, Value.Pos)                 => Value.NegPos
-    case (Value.Zer, Value.Neg)                 => Value.Neg
-    case (Value.Zer, Value.Zer)                 => Value.Zer
-    case (Value.Zer, Value.Pos)                 => Value.Pos
-    case (Value.Pos, Value.Neg)                 => Value.NegPos
-    case (Value.Pos, Value.Zer)                 => Value.Pos
-    case (Value.Pos, Value.Pos)                 => Value.Pos
-    case (Value.Neg, Value.Odd)                 => Value.OddEven
+//
+///**
+// * Returns `true` if ...
+// */
+//def refineWithParity(r: Ref): Bool = ???
+//
+//def refineWithCst(r: Ref): Bool = ???
+//
+//def mustRefineSign(e: Value): Bool = ???
 
 
-    case (Value.Cst(n1), Value.Cst(n2))         => Value.Cst(n1 + n2)
-    case _                                          => Value.Top
-}
-
-/**
- * Returns `true` if ...
- */
-def refineWithParity(r: Ref): Bool = ???
-
-def refineWithCst(r: Ref): Bool = ???
-
-def mustRefineSign(e: Value): Bool = ???
 
 //
 // Example program.
