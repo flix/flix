@@ -16,8 +16,8 @@ enum Ctx {
 
 enum State {
     case Pending,
-    case Fulfilled, // TODO: Needs value.
-    case Rejected   // TODO: Needs value.
+    case Fulfilled,
+    case Rejected
 }
 
 
@@ -96,9 +96,10 @@ rel VarPointsToOut(c: Ctx, s: Stm, x: Var, o: Obj)
 rel HeapPointsToIn(c: Ctx, s: Stm, o1: Obj, f: Field, o2: Obj)
 rel HeapPointsToOut(c: Ctx, s: Stm, o1: Obj, f: Field, o2: Obj)
 
-// The promise `o` is in promise state `t` at statement `s` in context `c`.
-rel PromiseStateIn(c: Ctx, s: Stm, o: Obj, t: State)
-rel PromiseStateOut(c: Ctx, s: Stm, o: Obj, t: State)
+// The promise `o` is in promise state `t` with value `v` at statement `s` in context `c`.
+// If the promise is pending then the value is the special `null` object.
+rel PromiseStateIn(c: Ctx, s: Stm, o: Obj, t: State, v: Obj)
+rel PromiseStateOut(c: Ctx, s: Stm, o: Obj, t: State, v: Obj)
 
 // The promise `o` has `r` registered as a fulfill reaction at statement `s` in context `c`.
 rel FulfillReactionIn(c: Ctx, s: Stm, o: Obj, r: Obj)
