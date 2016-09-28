@@ -19,44 +19,50 @@ rel CFG(s1: Str, s2: Str)
 //
 
 enum Domain {
-    case Constant,
-    case Parity,
-    case Sign
+    case C,
+    case B,
+    case A
 }
 
 enum Ref {
     case Ref(Domain, Int)
 }
 
+def step(e: Ref): Ref = match e with {
+    case Ref.Ref(Domain.A, f) => if (f <= 0) Ref.Ref(Domain.A, f) else Ref.Ref(Domain.A, f - 1)
+    case Ref.Ref(Domain.B, f) => if (f <= 0) Ref.Ref(Domain.B, f) else Ref.Ref(Domain.A, f - 1)
+    case Ref.Ref(Domain.C, f) => if (f <= 0) Ref.Ref(Domain.C, f) else Ref.Ref(Domain.A, f - 1)
+}
+
 /**
  * Returns `true` if the given element `e1` is smaller or equal to the given element `e2`.
  */
 def leq2(e1: Ref, e2: Ref): Bool = match (e1, e2) with {
-    case (Ref.Ref(Domain.Sign, f1), Ref.Ref(Domain.Sign, f2))           => f1 <= f2
-    case (Ref.Ref(Domain.Parity, f1), Ref.Ref(Domain.Parity, f2))       => f1 <= f2
-    case (Ref.Ref(Domain.Constant, f1), Ref.Ref(Domain.Constant, f2))   => f1 <= f2
-    case (Ref.Ref(Domain.Sign, _), Ref.Ref(Domain.Parity, _))           => true
-    case (Ref.Ref(Domain.Sign, _), Ref.Ref(Domain.Constant, _))         => true
-    case (Ref.Ref(Domain.Parity, _), Ref.Ref(Domain.Constant, _))       => true
-    case _                                                              => false
+    case (Ref.Ref(Domain.A, f1), Ref.Ref(Domain.A, f2)) => f1 <= f2
+    case (Ref.Ref(Domain.B, f1), Ref.Ref(Domain.B, f2)) => f1 <= f2
+    case (Ref.Ref(Domain.C, f1), Ref.Ref(Domain.C, f2)) => f1 <= f2
+    case (Ref.Ref(Domain.A, _), Ref.Ref(Domain.B, _))   => true
+    case (Ref.Ref(Domain.A, _), Ref.Ref(Domain.C, _))   => true
+    case (Ref.Ref(Domain.B, _), Ref.Ref(Domain.C, _))   => true
+    case _                                              => false
 }
 
 /**
  * Returns the least upper bound of the two given elements `e1` and `e2`.
  */
 def lub2(e1: Ref, e2: Ref): Ref = match (e1, e2) with {
-    case (Ref.Ref(Domain.Sign, f1), Ref.Ref(Domain.Sign, f2))           => Ref.Ref(Domain.Sign, max(f1, f2))
-    case (Ref.Ref(Domain.Parity, f1), Ref.Ref(Domain.Parity, f2))       => Ref.Ref(Domain.Sign, max(f1, f2))
-    case (Ref.Ref(Domain.Constant, f1), Ref.Ref(Domain.Constant, f2))   => Ref.Ref(Domain.Sign, max(f1, f2))
+    case (Ref.Ref(Domain.A, f1), Ref.Ref(Domain.A, f2)) => Ref.Ref(Domain.A, max(f1, f2))
+    case (Ref.Ref(Domain.B, f1), Ref.Ref(Domain.B, f2)) => Ref.Ref(Domain.A, max(f1, f2))
+    case (Ref.Ref(Domain.C, f1), Ref.Ref(Domain.C, f2)) => Ref.Ref(Domain.A, max(f1, f2))
 
-    case (Ref.Ref(Domain.Sign, _), Ref.Ref(Domain.Parity, f))           => Ref.Ref(Domain.Parity, f)
-    case (Ref.Ref(Domain.Parity, f), Ref.Ref(Domain.Sign, _))           => Ref.Ref(Domain.Parity, f)
+    case (Ref.Ref(Domain.A, _), Ref.Ref(Domain.B, f))   => Ref.Ref(Domain.B, f)
+    case (Ref.Ref(Domain.B, f), Ref.Ref(Domain.A, _))   => Ref.Ref(Domain.B, f)
 
-    case (Ref.Ref(Domain.Sign, _), Ref.Ref(Domain.Constant, f))         => Ref.Ref(Domain.Constant, f)
-    case (Ref.Ref(Domain.Constant, f), Ref.Ref(Domain.Sign, _))         => Ref.Ref(Domain.Constant, f)
+    case (Ref.Ref(Domain.A, _), Ref.Ref(Domain.C, f))   => Ref.Ref(Domain.C, f)
+    case (Ref.Ref(Domain.C, f), Ref.Ref(Domain.A, _))   => Ref.Ref(Domain.C, f)
 
-    case (Ref.Ref(Domain.Parity, _), Ref.Ref(Domain.Constant, f))       => Ref.Ref(Domain.Constant, f)
-    case (Ref.Ref(Domain.Constant, f), Ref.Ref(Domain.Parity, _))       => Ref.Ref(Domain.Constant, f)
+    case (Ref.Ref(Domain.B, _), Ref.Ref(Domain.C, f))   => Ref.Ref(Domain.C, f)
+    case (Ref.Ref(Domain.C, f), Ref.Ref(Domain.B, _))   => Ref.Ref(Domain.C, f)
 }
 
 def max(x: Int, y: Int): Int = if (x >= y) x else y
@@ -66,7 +72,7 @@ def max(x: Int, y: Int): Int = if (x >= y) x else y
  */
 def glb2(e1: Ref, e2: Ref): Ref = ??? // TODO
 
-let Ref<> = (Ref.Ref(Domain.Sign, 0), ???, leq2, lub2, glb2);
+let Ref<> = (Ref.Ref(Domain.A, 0), ???, leq2, lub2, glb2);
 
 //
 // At each program point, i.e. control-flow graph node we will assign an element
@@ -111,7 +117,7 @@ LocalVar(s2, r, div(v1, v2)) :-
 //
 // Refinement of division.
 //
-Refinement(s1, x, Ref.Ref(Domain.Constant, 5)) :-
+Refinement(s1, x, Ref.Ref(Domain.C, 5)) :-
     DivStm(s2, r, _, y),
     LocalVar(s2, y, v2),
     CFG(s1, s2),
@@ -172,6 +178,34 @@ Refinement(s1, y, step(r)) :-
 
 
 
+//
+// We will use the simple "is zero" lattice as the A lattice.
+//
+enum A {
+    case ATop,
+    case AZer,
+    case ABot
+}
+
+def leqA(e1: A, e2: A): Bool = match (e1, e2) with {
+    case (A.ABot, _)        => true
+    case (A.AZer, A.AZer)   => true
+    case (_, A.ATop)        => true
+    case _                  => false
+}
+
+def lubA(e1: A, e2: A): A = match (e1, e2) with {
+    case (A.ABot, x)        => x
+    case (x, A.ABot)        => x
+    case (A.AZer, A.AZer)   => A.AZer
+    case (A.ATop, _)        => A.ATop
+    case (_, A.ATop)        => A.ATop
+}
+
+
+
+
+//def alpha2a(i: Int): A = if (i == 0) A.AZer else A.ATop
 
 //
 // We now define the three lattices stacked on top of each other.
