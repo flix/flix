@@ -87,78 +87,88 @@ lat LocalVar(stm: Int, var: Str, value: Value)
 // The rule for the lowest abstract domain has no pre-conditions,
 // whereas the rules for the other abstract domains requires refinement.
 //
-LocalVar(s, x, alpha2s(c)) :- LitStm(s, x, c).
+LocalVar(s, x, alpha2s(c)) :-
+    LitStm(s, x, c).
 
 //
 // Addition statements.
 //
-LocalVar(s2, r, sum(v1, v2)) :- AddStm(s2, r, x, y),
-                                LocalVar(s1, x, v1),
-                                LocalVar(s2, y, v2),
-                                CFG(s1, s2).
+LocalVar(s2, r, sum(v1, v2)) :-
+    AddStm(s2, r, x, y),
+    LocalVar(s1, x, v1),
+    LocalVar(s2, y, v2),
+    CFG(s1, s2).
 
 //
 // Division statements.
 //
-LocalVar(s2, r, div(v1, v2)) :- DivStm(s2, r, x, y),
-                                LocalVar(s1, x, v1),
-                                LocalVar(s2, y, v2),
-                                CFG(s1, s2).
+LocalVar(s2, r, div(v1, v2)) :-
+    DivStm(s2, r, x, y),
+    LocalVar(s1, x, v1),
+    LocalVar(s2, y, v2),
+    CFG(s1, s2).
 
 //
 // Refinement of division.
 //
 Refinement(s1, x, Ref.Ref(Domain.Constant, 5)) :-
-                        DivStm(s2, r, _, y),
-                        LocalVar(s2, y, v2),
-                        CFG(s1, s2),
-                        mustRefineSign(v2).
+    DivStm(s2, r, _, y),
+    LocalVar(s2, y, v2),
+    CFG(s1, s2),
+    mustRefineSign(v2).
 
 //
 // Backwards propagate refinement.
 //
-Refinement(s1, x, step(r)) :- Refinement(s2, x, r),
-                              CFG(s1, s2).
+Refinement(s1, x, step(r)) :-
+    Refinement(s2, x, r),
+    CFG(s1, s2).
 
 //
 // Refinement of literal statements s: z = c.
 //
 // refine the literal to the constant propagation domain.
-LocalVar(s, z, alpha2p(c)) :- LitStm(s, z, c),
-                               Refinement(s, z, r),
-                               refineWithParity(r).
+LocalVar(s, z, alpha2p(c)) :-
+    LitStm(s, z, c),
+    Refinement(s, z, r),
+    refineWithParity(r).
 
 // refine the literal to the interval domain.
-LocalVar(s, z, alpha2c(c)) :- LitStm(s, z, c),
-                               Refinement(s, z, r),
-                               refineWithCst(r).
+LocalVar(s, z, alpha2c(c)) :-
+    LitStm(s, z, c),
+    Refinement(s, z, r),
+    refineWithCst(r).
 
 
 //
 // Refinement through addition statements s2: z = x + y.
 //
 // refine the input variable 'x'.
-Refinement(s1, x, step(r)) :- AddStm(s2, z, x, _),
-                              Refinement(s2, z, r),
-                              CFG(s1, s2).
+Refinement(s1, x, step(r)) :-
+    AddStm(s2, z, x, _),
+    Refinement(s2, z, r),
+    CFG(s1, s2).
 
 // refine the input variable 'y'.
-Refinement(s1, y, step(r)) :- AddStm(s2, z, _, y),
-                              Refinement(s2, z, r),
-                              CFG(s1, s2).
+Refinement(s1, y, step(r)) :-
+    AddStm(s2, z, _, y),
+    Refinement(s2, z, r),
+    CFG(s1, s2).
 
 //
 // Refinement through division statements s2: z = x / y.
 //
 // refine the input variable 'x'.
-Refinement(s1, x, step(r)) :- DivStm(s2, z, x, _),
-                              Refinement(s2, z, r),
-                              CFG(s1, s2).
+Refinement(s1, x, step(r)) :-
+    DivStm(s2, z, x, _),
+    Refinement(s2, z, r),
+    CFG(s1, s2).
 
 // refine the input variable 'y'.
-Refinement(s1, y, step(r)) :- DivStm(s2, z, _, y),
-                              Refinement(s2, z, r),
-                              CFG(s1, s2).
+Refinement(s1, y, step(r)) :-
+    DivStm(s2, z, _, y),
+    Refinement(s2, z, r),
+    CFG(s1, s2).
 
 
 
@@ -171,22 +181,20 @@ enum Value {
 
         case Cst(Int),
 
-       case OddEven,
+         case Top2,
 
     case Odd, case Even,
 
-       case NegPos,
+         case Top1,
 
-case Neg, case Zer, case Pos,
+         case Two,
 
          case Bot
 }
 
 def leq(e1: Value, e2: Value): Bool = match (e1, e2) with {
     case (Value.Bot, _)                 => true
-    case (Value.Pos, Value.Pos)       => true
-
-    case _                                => false
+    case _                              => false
 }
 
 def lub(e1: Value, e2: Value): Value = ???
@@ -238,6 +246,9 @@ def sum(e1: Value, e2: Value): Value = match (e1, e2) with {
     case _                                          => Value.Top
 }
 
+/**
+ * Returns `true` if ...
+ */
 def refineWithParity(r: Ref): Bool = ???
 
 def refineWithCst(r: Ref): Bool = ???
