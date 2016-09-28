@@ -5,14 +5,14 @@
 //
 // We assume a simple program language which has three instructions:
 //
-rel LitStm(stm: Int, localVar: Str, const: Int)
-rel AddStm(stm: Int, r: Str, x: Str, y: Str)
-rel DivStm(stm: Int, r: Str, x: Str, y: Str)
+rel LitStm(s: Str, z: Str, c: Int)
+rel AddStm(s: Str, z: Str, x: Str, y: Str)
+rel DivStm(s: Str, z: Str, x: Str, y: Str)
 
 //
 // The statements of the program are connected by at control-flow graph.
 //
-rel CFG(s1: Int, s2: Int)
+rel CFG(s1: Str, s2: Str)
 
 //
 // We now introduce the idea of refinement
@@ -248,8 +248,21 @@ def mustRefineSign(e: Value): Bool = ???
 // Example program.
 //
 
-//
 // l1: var x = +2
 // l2: var y = -2
 // l3: var z = x + y
 // l4: var w = x / z
+// l5: var q = 42
+
+LitStm("l1", "x", +2).
+LitStm("l2", "x", -2).
+LitStm("l5", "x", 42).
+
+AddStm("l3", "z", "x", "y").
+DivStm("l4", "w", "x", "z").
+
+CFG("l1", "l2").
+CFG("l2", "l3").
+CFG("l3", "l4").
+CFG("l4", "l5").
+
