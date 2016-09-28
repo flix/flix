@@ -114,7 +114,8 @@ rel RejectReactionOut(c: Ctx, s: Stm, o: Obj, r: Obj)
 rel PromiseLinkIn(c: Ctx, s: Stm, o1: Obj, o2: Obj)
 rel PromiseLinkOut(c: Ctx, s: Stm, o1: Obj, o2: Obj)
 
-// TODO: Queue
+// The lambda `l` is in the queue for a promise in state `t` with value `v` and child promise `o`.
+rel Queue(c: Ctx, s: Stm, t: State, v: Obj, l: Obj, o: Obj)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Declarations: Promise Graph                                               //
@@ -218,10 +219,24 @@ PromiseLinkOut(c, s, o1, o2) :- PromiseLinkIn(c, s, o1, o2).
 /*
  * E-Resolved-Settled: v1.resolve(v2).
  */
+// No-op actually does not do anything.
 
 /*
  * E-Resolved-Pending: v1.resolve(v2).
  */
+// 1. Set the state of the promise to fulfilled.
+PromiseStateOut(c, s, o, State.Fulfilled, r) :- Resolve(s, v1, v2),
+                                                VarPointsToIn(c, s, v1, o),
+                                                VarPointsToIn(c, s, v2, r),
+                                                Reachable(c, s).
+
+// 2. Add all fulfill reactions to the queue.
+Queue(c, s, State.Fulfilled, argVal, lambdaObj, childObj) :-
+    Resolve(s, baseVar, argVar),
+    VarPointsToIn(c, s, baseVar, promiseObj),
+    VarPointsToIn(c, s, argVar, argVal),
+    FulfillReactionIn(c, s, promiseObj, lambdaObj, childObj),
+    Reachable(c, s).
 
 /*
  * E-Loop.
@@ -246,12 +261,20 @@ PromiseLinkOut(c, s, o1, o2) :- PromiseLinkIn(c, s, o1, o2).
 // TODO: Need to allocate objects before use...
 
 // Input program
-// var p1 = promisify({});
-// var p2 = promisify({});
-// var p3 = p2.onResolve(x => x);
+// var p1 = {};
+// var p2 = {};
+// var lambda = ...
+// var arg = ...
+// promisify(o1);
+// promisify(o2);
+// var p3 = p2.onResolve(lambda);
 // p1.link(p2);
 // p1.resolve(42);
 
+
+// var p1 = {};
+
+// var p2 = {};
 
 // l1: var p1 = promisify ({});
 NewObj(Stm.Stm("l1"), Var.Var("p1"), Obj.Obj("line1")).
