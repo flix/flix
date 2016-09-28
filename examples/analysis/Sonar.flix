@@ -161,10 +161,6 @@ HeapPointsToOut(c, s, o1, f, o2) :- Store(s, v1, f, v2),
                                     VarPointsToIn(c, s, v2, o2),
                                     Reachable(c, s).
 
-///////////////////////////////////////////////////////////////////////////////
-// Semantics: Promise Expressions                                            //
-///////////////////////////////////////////////////////////////////////////////
-
 // Mark the entry point as reachable.
 Reachable(Ctx.None, Stm.Stm("l1")).
 
@@ -179,6 +175,63 @@ HeapPointsToIn(c, s2, o1, f, o2) :- CFG(s1, s2), HeapPointsToOut(c, s1, o1, f, o
 HeapPointsToOut(c, s, o1, f, o2) :- HeapPointsToIn(c, s, o1, f, o2).
 
 ///////////////////////////////////////////////////////////////////////////////
+// Semantics: Promise Expressions                                            //
+///////////////////////////////////////////////////////////////////////////////
+
+/*
+ * E-Promisify: s: promisify(v).
+ */
+PromiseStateOut(c, s, o, State.Pending, Obj.Obj("null")) :- Promisify(s, v),
+                                                            VarPointsToIn(c, s, v, o),
+                                                            Reachable(c, s).
+
+/*
+ * E-OnResolve-Pending: v1.onResolve(v2).
+ */
+// 1. Set the state of the child promise to pending.
+
+// TODO
+//PromiseStateOut(c, s, o, State.Pending, Obj.Obj("null")) :- OnResolve(s, v1, v2),
+//                                                            VarPointsToIn(c, s, v1, p),
+//                                                            VarPointsToIn(c, s, v2, l)
+
+// 2. Add the fulfill reaction on the promise.
+
+// 3. Return the child promise.
+
+/*
+ * E-OnResolve-Fulfilled: v1.onResolve(v2).
+ */
+
+/*
+ * E-Link: v1.link(v2).
+ */
+PromiseLinkOut(c, s, o1, o2) :- Link(s, v1, v2),
+                                VarPointsToIn(c, s, v1, o1),
+                                VarPointsToIn(c, s, v2, o2),
+                                Reachable(c, s).
+
+// Propagate dataflow.
+PromiseLinkIn(c, s2, o1, o2) :- CFG(s1, s2), Reachable(c, s1), PromiseLinkOut(c, s1, o1, o2).
+PromiseLinkOut(c, s, o1, o2) :- PromiseLinkIn(c, s, o1, o2).
+
+/*
+ * E-Resolved-Settled: v1.resolve(v2).
+ */
+
+/*
+ * E-Resolved-Pending: v1.resolve(v2).
+ */
+
+/*
+ * E-Loop.
+ */
+
+/*
+ * E-Job-Fulfilled.
+ */
+
+///////////////////////////////////////////////////////////////////////////////
 // Semantics: Promise Graph                                                  //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -190,13 +243,32 @@ HeapPointsToOut(c, s, o1, f, o2) :- HeapPointsToIn(c, s, o1, f, o2).
 // Example Program                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-// Input program
-// var o1 = {};
-// var o2 = {};
-// o2.f = o1
-NewObj(Stm.Stm("l1"), Var.Var("o1"), Obj.Obj("site1")).
-NewObj(Stm.Stm("l2"), Var.Var("o2"), Obj.Obj("site2")).
-Store(Stm.Stm("l3"), Var.Var("o2"), Field.Field("f"), Var.Var("o1")).
+// TODO: Need to allocate objects before use...
 
+// Input program
+// var p1 = promisify({});
+// var p2 = promisify({});
+// var p3 = p2.onResolve(x => x);
+// p1.link(p2);
+// p1.resolve(42);
+
+
+// l1: var p1 = promisify ({});
+NewObj(Stm.Stm("l1"), Var.Var("p1"), Obj.Obj("line1")).
+Promisify(Stm.Stm("l1"), Var.Var("p1")).
 CFG(Stm.Stm("l1"), Stm.Stm("l2")).
+
+// l2: var p2 = promisify ({});
+NewObj(Stm.Stm("l2"), Var.Var("p2"), Obj.Obj("line2")).
+Promisify(Stm.Stm("l2"), Var.Var("p2")).
 CFG(Stm.Stm("l2"), Stm.Stm("l3")).
+
+// var p3 = p2.onResolve(x => x);
+NewObj(Stm.Stm("l3"), Var.Var("lambda"), Obj.Obj("lambda")).
+OnResolve(Stm.Stm("l3"), Var.Var("p2"), Var.Var("lambda")).
+CFG(Stm.Stm("l3"), Stm.Stm("l4")).
+
+// p1.link(p2);
+
+
+// p1.resolve(42);
