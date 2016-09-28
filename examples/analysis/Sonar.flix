@@ -182,9 +182,10 @@ HeapPointsToOut(c, s, o1, f, o2) :- HeapPointsToIn(c, s, o1, f, o2).
 /*
  * E-Promisify: s: promisify(v).
  */
-PromiseStateOut(c, s, o, State.Pending, Obj.Obj("null")) :- Promisify(s, v),
-                                                            VarPointsToIn(c, s, v, o),
-                                                            Reachable(c, s).
+PromiseStateOut(c, s, o, State.Pending, Obj.Obj("null")) :-
+    Promisify(s, v),
+    VarPointsToIn(c, s, v, o),
+    Reachable(c, s).
 
 /*
  * E-OnResolve-Pending: v1.onResolve(v2).
@@ -207,10 +208,11 @@ PromiseStateOut(c, s, o, State.Pending, Obj.Obj("null")) :- Promisify(s, v),
 /*
  * E-Link: v1.link(v2).
  */
-PromiseLinkOut(c, s, o1, o2) :- Link(s, v1, v2),
-                                VarPointsToIn(c, s, v1, o1),
-                                VarPointsToIn(c, s, v2, o2),
-                                Reachable(c, s).
+PromiseLinkOut(c, s, o1, o2) :-
+    Link(s, v1, v2),
+    VarPointsToIn(c, s, v1, o1),
+    VarPointsToIn(c, s, v2, o2),
+    Reachable(c, s).
 
 // Propagate dataflow.
 PromiseLinkIn(c, s2, o1, o2) :- CFG(s1, s2), Reachable(c, s1), PromiseLinkOut(c, s1, o1, o2).
