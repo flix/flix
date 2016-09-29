@@ -21,7 +21,7 @@ package ca.uwaterloo.flix.runtime.value;
  * <p>
  * We use Java to ensure that we have absolute control over the structure of the object.
  */
-public class FList {
+public final class FList {
 
     /**
      * A field for the head of the list.

@@ -95,6 +95,7 @@ object Codegen {
      */
     def descriptor(tpe: Type): String = {
       def inner(tpe: Type): String = tpe match {
+        case Type.Var(id, kind) => asm.Type.getDescriptor(Constants.objectClass) // TODO
         case Type.Unit => asm.Type.getDescriptor(Constants.unitClass)
         case Type.Bool => asm.Type.BOOLEAN_TYPE.getDescriptor
         case Type.Char => asm.Type.CHAR_TYPE.getDescriptor
@@ -110,6 +111,7 @@ object Codegen {
         case Type.Enum(_, _) => asm.Type.getDescriptor(Constants.tagClass)
         case Type.Apply(Type.Arrow(l), _) => s"L${decorate(interfaces(tpe))};"
         case Type.Apply(Type.FTuple(l), _) => asm.Type.getDescriptor(Constants.tupleClass)
+        case Type.Apply(Type.FList, _) => asm.Type.getDescriptor(Constants.objectClass)
         case Type.Apply(Type.FSet, _) => asm.Type.getDescriptor(Constants.setClass)
         case Type.Apply(_, _) => ??? // TODO
         case _ if tpe.isTuple => asm.Type.getDescriptor(Constants.tupleClass)
@@ -285,7 +287,7 @@ object Codegen {
       case Type.Float64 => visitor.visitVarInsn(DLOAD, offset)
       case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.Arrow(_), _) |
            Type.Apply(Type.FSet, _) => visitor.visitVarInsn(ALOAD, offset)
-      case _ if tpe.isTuple =>  visitor.visitVarInsn(ALOAD, offset)
+      case _ if tpe.isTuple => visitor.visitVarInsn(ALOAD, offset)
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
 
@@ -570,8 +572,36 @@ object Codegen {
       // Finally, call the constructor, which pops the reference (tuple) and argument (array).
       visitor.visitMethodInsn(INVOKESPECIAL, name, "<init>", asm.Type.getConstructorDescriptor(ctor), false)
 
-    case Expression.IsNil(exp, _) => ???
-    case Expression.IsList(exp, _) => ???
+    case Expression.FNil(tpe, loc) =>
+      // Call the static method ca.uwaterloo.flix.runtime.value.FNil.get().
+      ???
+
+    case Expression.FList(hd, tl, tpe, loc) =>
+      // Generate code for hd and tl.
+      // Call the constructor of ca.uwaterloo.flix.runtime.value.FList(hd, tl).
+      ???
+
+    case Expression.IsNil(exp, loc) =>
+      // Generate code for exp.
+      // Perform INSTANCEOF for ca.uwaterloo.flix.runtime.value.FNil.
+      ???
+
+    case Expression.IsList(exp, loc) =>
+      // Generate code for exp.
+      // Perform INSTANCEOF for ca.uwaterloo.flix.runtime.value.FList.
+      ???
+
+    case Expression.GetHead(exp, tpe, loc) =>
+      // Generate code for exp.
+      // Cast the result to ca.uwaterloo.flix.runtime.value.FList
+      // Call the INSTANCE method ca.uwaterloo.flix.runtime.value.FList.getHd
+      ???
+
+    case Expression.GetTail(exp, tpe, loc) =>
+      // Generate code for exp.
+      // Cast the result to ca.uwaterloo.flix.runtime.value.FList
+      // Call the INSTANCE method ca.uwaterloo.flix.runtime.value.FList.getTl
+      ???
 
     case Expression.FSet(elms, _, _) =>
       // First create a scala.immutable.Set
