@@ -455,6 +455,8 @@ object Simplifier {
     case TypedAst.Pattern.True(loc) => SimplifiedAst.Expression.True
     case TypedAst.Pattern.False(loc) => SimplifiedAst.Expression.False
     case TypedAst.Pattern.Char(lit, loc) => SimplifiedAst.Expression.Char(lit)
+    case TypedAst.Pattern.Float32(lit, loc) => SimplifiedAst.Expression.Float32(lit)
+    case TypedAst.Pattern.Float64(lit, loc) => SimplifiedAst.Expression.Float64(lit)
     case TypedAst.Pattern.Int8(lit, loc) => SimplifiedAst.Expression.Int8(lit)
     case TypedAst.Pattern.Int16(lit, loc) => SimplifiedAst.Expression.Int16(lit)
     case TypedAst.Pattern.Int32(lit, loc) => SimplifiedAst.Expression.Int32(lit)

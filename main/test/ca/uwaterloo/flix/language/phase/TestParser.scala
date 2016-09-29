@@ -24,21 +24,11 @@ import org.scalatest.FunSuite
 
 class TestParser extends FunSuite with TestUtils {
 
-  // TODO: Remove all intercept from test that use them.
-
   /**
     * Runs Flix on the given input string `s`.
     */
   def run(s: String): Unit = {
     new Flix().setOptions(Options.DefaultTest).addStr(s).solve().get
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Root                                                                    //
-  /////////////////////////////////////////////////////////////////////////////
-  test("Root.01") {
-    val input = ""
-    run(input)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -392,6 +382,16 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
+  test("Expression.Bool.01") {
+    val input = "def f: Bool = true"
+    run(input)
+  }
+
+  test("Expression.Bool.02") {
+    val input = "def f: Bool = false"
+    run(input)
+  }
+
   test("Expression.Char.01") {
     val input = "def f: Char = 'a'"
     run(input)
@@ -427,8 +427,18 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
+  test("Expression.Int8.02") {
+    val input = "def f: Int8 = -123i8"
+    run(input)
+  }
+
   test("Expression.Int16.01") {
     val input = "def f: Int16 = 123i16"
+    run(input)
+  }
+
+  test("Expression.Int16.02") {
+    val input = "def f: Int16 = -123i16"
     run(input)
   }
 
@@ -437,13 +447,53 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
+  test("Expression.Int32.02") {
+    val input = "def f: Int32 = -123i32"
+    run(input)
+  }
+
   test("Expression.Int64.01") {
     val input = "def f: Int64 = 123i64"
     run(input)
   }
 
+  test("Expression.Int64.02") {
+    val input = "def f: Int64 = -123i64"
+    run(input)
+  }
+
   test("Expression.BigInt.01") {
     val input = "def f: BigInt = 123ii"
+    run(input)
+  }
+
+  test("Expression.BigInt.02") {
+    val input = "def f: BigInt = -123ii"
+    run(input)
+  }
+
+  test("Expression.Str.01") {
+    val input = "def f: Str = \"\""
+    run(input)
+  }
+
+  test("Expression.Str.02") {
+    val input = "def f: Str = \"a\""
+    run(input)
+  }
+
+  test("Expression.Str.03") {
+    val input = "def f: Str = \"0\""
+    run(input)
+  }
+
+  test("Expression.Str.04") {
+    val input = "def f: Str = \"abc\""
+    run(input)
+  }
+
+  test("Expression.Str.05") {
+    val input = "def f: Str = \"abc123'!@#$%^&*()\""
     run(input)
   }
 
@@ -631,19 +681,77 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
+  test("Expression.Block.07") {
+    val input =
+      """
+        |def f: Int = {
+        |  let x = {42};
+        |  let y = {21};
+        |  x + y
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Expression.Block.08") {
+    val input =
+      """
+        |def f: Int = {
+        |  let x = {42};
+        |  let y = {
+        |    let z = 21;
+        |    let w = {11};
+        |      z + w
+        |  };
+        |  x + y
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Expression.Block.09") {
+    val input =
+      """
+        |def f: Int = {
+        |  let x = {42};
+        |  let y = {
+        |    let z = 21;
+        |    let w = {
+        |      let q = 11;
+        |      let u = 5;
+        |      q + u
+        |    };
+        |    z + w
+        |  };
+        |  x + y
+        |}
+      """.stripMargin
+    run(input)
+  }
+
   test("Expression.LetMatch.01") {
-    val input = "def f: Int = let x = 42 in x"
+    val input =
+      """
+        |def f: Int =
+        |  let x = 42 in x
+        | """.stripMargin
     run(input)
   }
 
   test("Expression.LetMatch.02") {
-    val input = "def f: Int = let (x, y) = (42, 21) in x + y"
+    val input =
+      """
+        |def f: Int =
+        |  let (x, y) = (42, 21) in
+        |    x + y
+        | """.stripMargin
     run(input)
   }
 
   test("Expression.LetMatch.03") {
     val input =
-      """def f: Int =
+      """
+        |def f: Int =
         |  let x = 1 in
         |  let y = 2 in
         |  let z = 3 in
@@ -690,18 +798,30 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   test("Expression.LetMatch.05") {
-    val input = "def f: Int = let x = 42; x"
+    val input =
+      """
+        |def f: Int =
+        |  let x = 42;
+        |    x
+        | """.stripMargin
     run(input)
   }
 
   test("Expression.LetMatch.06") {
-    val input = "def f: Int = let x = 42; let y = 21; x + y"
+    val input =
+      """
+        |def f: Int =
+        |  let x = 42;
+        |  let y = 21;
+        |    x + y
+        | """.stripMargin
     run(input)
   }
 
   test("Expression.LetMatch.07") {
     val input =
-      """def f: Int =
+      """
+        |def f: Int =
         |  let x = 1;
         |  let y = 2;
         |  let z = 3;
@@ -1405,7 +1525,51 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Pattern.Literal.Int.01") {
+  test("Pattern.Literal.Float32.01") {
+    val input =
+      """def f(x: Float32): Int = match x with {
+        |  case 1.0f32 => 1
+        |  case 2.0f32 => 2
+        |  case 3.0f32 => 3
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Pattern.Literal.Float64.01") {
+    val input =
+      """def f(x: Float64): Int = match x with {
+        |  case 1.0f64 => 1
+        |  case 2.0f64 => 2
+        |  case 3.0f64 => 3
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Pattern.Literal.Int8.01") {
+    val input =
+      """def f(x: Int8): Int = match x with {
+        |  case 1i8 => 1
+        |  case 2i8 => 2
+        |  case 3i8 => 3
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Pattern.Literal.Int16.01") {
+    val input =
+      """def f(x: Int16): Int = match x with {
+        |  case 1i16 => 1
+        |  case 2i16 => 2
+        |  case 3i16 => 3
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Pattern.Literal.Int32.01") {
     val input =
       """def f(x: Int): Int = match x with {
         |  case 1 => 1
@@ -1416,12 +1580,12 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Pattern.Literal.Int.02") {
+  test("Pattern.Literal.Int64.01") {
     val input =
-      """def f(x: Int16): Int = match x with {
-        |  case 1i16 => 1
-        |  case 2i16 => 2
-        |  case 3i16 => 3
+      """def f(x: Int64): Int = match x with {
+        |  case 1i64 => 1
+        |  case 2i64 => 2
+        |  case 3i64 => 3
         |}
       """.stripMargin
     run(input)
@@ -2644,26 +2808,36 @@ class TestParser extends FunSuite with TestUtils {
   // Whitespace                                                              //
   /////////////////////////////////////////////////////////////////////////////
   test("WhiteSpace.01") {
-    val input = " "
+    val input = ""
     run(input)
   }
 
   test("WhiteSpace.02") {
-    val input = "    "
+    val input = " "
     run(input)
   }
 
   test("WhiteSpace.03") {
+    val input = "    "
+    run(input)
+  }
+
+  test("WhiteSpace.04") {
     val input = "\t"
     run(input)
   }
 
-  test("WhiteSpace.NewLine.Unix") {
+  test("WhiteSpace.NewLine.01") {
     val input = "\n"
     run(input)
   }
 
-  test("WhiteSpace.NewLine.Windows") {
+  test("WhiteSpace.NewLine.02") {
+    val input = "\r"
+    run(input)
+  }
+
+  test("WhiteSpace.NewLine.03") {
     val input = "\r\n"
     run(input)
   }
