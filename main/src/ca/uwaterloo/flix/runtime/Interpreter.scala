@@ -110,7 +110,7 @@ object Interpreter {
       }
       Value.Tuple(evalElms)
     case Expression.FNil(tpe, loc) =>
-      value.FNil.get()
+      value.FNil.getSingleton()
     case Expression.FList(hd, tl, tpe, loc) =>
       val h = eval(hd, root, env0)
       val t = eval(tl, root, env0)

@@ -22,6 +22,7 @@ package ca.uwaterloo.flix.runtime.value;
  * We use Java to ensure that we have absolute control over the structure of the object.
  */
 public final class FNil {
+
     /**
      * The singleton instance of `FNil`.
      */
@@ -37,7 +38,7 @@ public final class FNil {
     /**
      * Returns the singleton instance of `FNil`.
      */
-    public static FNil get() {
+    public static FNil getSingleton() {
         return INSTANCE;
     }
 
@@ -48,4 +49,5 @@ public final class FNil {
     public String toString() {
         return "FNil";
     }
+
 }

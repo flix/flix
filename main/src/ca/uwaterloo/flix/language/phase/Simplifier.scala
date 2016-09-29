@@ -320,6 +320,10 @@ object Simplifier {
             SExp.Let(name, -1, SExp.GetTupleIndex(SExp.Var(v, -1, tpe, loc), idx, pat.tpe, loc), exp, succ.tpe, loc)
         }
 
+      case (FNone(tpe, loc) :: ps, v :: vs) => ???
+
+      case (FSome(pat, tpe, loc) :: ps, v :: vs) => ???
+
       /**
         * Matching Nil may succeed or fail.
         *
@@ -349,6 +353,12 @@ object Simplifier {
           SExp.Let(freshTailVar, -1,
             SExp.GetTail(listExp, tpe, loc), inner, tpe, loc), tpe, loc)
         SExp.IfThenElse(cond, consequent, fail, succ.tpe, loc)
+
+      case (FVec(elms, rest, tpe, loc) :: ps, v :: vs) => ???
+
+      case (FSet(elms, rest, tpe, loc) :: ps, v :: vs) => ???
+
+      case (FMap(elms, rest, tpe, loc) :: ps, v :: vs) => ???
 
       case p => throw InternalCompilerException(s"Unsupported pattern '$p'.")
 
