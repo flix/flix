@@ -157,10 +157,14 @@ object LambdaLift {
         Expression.GetTupleIndex(visit(exp), offset, tpe, loc)
       case Expression.Tuple(elms, tpe, loc) =>
         Expression.Tuple(elms.map(visit), tpe, loc)
-      case Expression.CheckNil(exp, loc) =>
-        Expression.CheckNil(visit(exp), loc)
-      case Expression.CheckCons(exp, loc) =>
-        Expression.CheckCons(visit(exp), loc)
+      case Expression.IsNil(exp, loc) =>
+        Expression.IsNil(visit(exp), loc)
+      case Expression.IsList(exp, loc) =>
+        Expression.IsList(visit(exp), loc)
+      case Expression.GetHead(exp, tpe, loc) =>
+        Expression.GetHead(visit(exp), tpe, loc)
+      case Expression.GetTail(exp, tpe, loc) =>
+        Expression.GetTail(visit(exp), tpe, loc)
       case Expression.FSet(elms, tpe, loc) =>
         Expression.FSet(elms.map(visit), tpe, loc)
       case Expression.Existential(params, exp, loc) =>

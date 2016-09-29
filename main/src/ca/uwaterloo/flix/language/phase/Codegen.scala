@@ -569,8 +569,8 @@ object Codegen {
       // Finally, call the constructor, which pops the reference (tuple) and argument (array).
       visitor.visitMethodInsn(INVOKESPECIAL, name, "<init>", asm.Type.getConstructorDescriptor(ctor), false)
 
-    case Expression.CheckNil(exp, _) => ???
-    case Expression.CheckCons(exp, _) => ???
+    case Expression.IsNil(exp, _) => ???
+    case Expression.IsList(exp, _) => ???
 
     case Expression.FSet(elms, _, _) =>
       // First create a scala.immutable.Set

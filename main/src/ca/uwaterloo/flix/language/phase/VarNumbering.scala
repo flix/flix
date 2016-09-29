@@ -99,7 +99,7 @@ object VarNumbering {
       case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
         throw InternalCompilerException("Lambdas should have been converted to closures and lifted.")
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
-      case mkClosure @ SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
+      case mkClosure@SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
         val numberedFreeVars = freeVars.map {
           case SimplifiedAst.FreeVar(v, _, t) => SimplifiedAst.FreeVar(v, m.get(v.name), t)
         }
@@ -144,10 +144,14 @@ object VarNumbering {
         SimplifiedAst.Expression.GetTupleIndex(visit(m, exp), offset, tpe, loc)
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms.map(visit(m, _)), tpe, loc)
-      case SimplifiedAst.Expression.CheckNil(exp, loc) =>
-        SimplifiedAst.Expression.CheckNil(visit(m, exp), loc)
-      case SimplifiedAst.Expression.CheckCons(exp, loc) =>
-        SimplifiedAst.Expression.CheckCons(visit(m, exp), loc)
+      case SimplifiedAst.Expression.IsNil(exp, loc) =>
+        SimplifiedAst.Expression.IsNil(visit(m, exp), loc)
+      case SimplifiedAst.Expression.IsList(exp, loc) =>
+        SimplifiedAst.Expression.IsList(visit(m, exp), loc)
+      case SimplifiedAst.Expression.GetHead(exp, tpe, loc) =>
+        SimplifiedAst.Expression.GetHead(visit(m, exp), tpe, loc)
+      case SimplifiedAst.Expression.GetTail(exp, tpe, loc) =>
+        SimplifiedAst.Expression.GetTail(visit(m, exp), tpe, loc)
       case SimplifiedAst.Expression.FSet(elms, tpe, loc) =>
         SimplifiedAst.Expression.FSet(elms.map(visit(m, _)), tpe, loc)
       case SimplifiedAst.Expression.Existential(params, exp, loc) => ???

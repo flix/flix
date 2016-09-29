@@ -368,11 +368,11 @@ object ExecutableAst {
     /**
       * A typed AST node representing a tail recursive call.
       *
-      * @param name the name of the function being called.
+      * @param name    the name of the function being called.
       * @param formals the formal parameters.
       * @param actuals the actual parameters.
-      * @param tpe  the return type of the function.
-      * @param loc  the source location of the expression.
+      * @param tpe     the return type of the function.
+      * @param loc     the source location of the expression.
       */
     case class ApplyTail(name: Symbol.Resolved,
                          formals: List[ExecutableAst.FormalArg],
@@ -556,13 +556,17 @@ object ExecutableAst {
       override def toString: String = "(" + elms.mkString(", ") + ")"
     }
 
-    case class CheckNil(exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
+    case class IsNil(exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
       final val tpe: Type = Type.Bool
     }
 
-    case class CheckCons(exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
+    case class IsList(exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
       final val tpe: Type = Type.Bool
     }
+
+    case class GetHead(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class GetTail(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class FSet(elms: Array[ExecutableAst.Expression],
                     tpe: Type,

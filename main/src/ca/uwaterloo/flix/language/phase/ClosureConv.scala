@@ -142,10 +142,14 @@ object ClosureConv {
       SimplifiedAst.Expression.GetTupleIndex(convert(e), offset, tpe, loc)
     case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
       SimplifiedAst.Expression.Tuple(elms.map(convert), tpe, loc)
-    case SimplifiedAst.Expression.CheckNil(e, loc) =>
-      SimplifiedAst.Expression.CheckNil(convert(e), loc)
-    case SimplifiedAst.Expression.CheckCons(e, loc) =>
-      SimplifiedAst.Expression.CheckCons(convert(e), loc)
+    case SimplifiedAst.Expression.IsNil(e, loc) =>
+      SimplifiedAst.Expression.IsNil(convert(e), loc)
+    case SimplifiedAst.Expression.IsList(e, loc) =>
+      SimplifiedAst.Expression.IsList(convert(e), loc)
+    case SimplifiedAst.Expression.GetHead(e, tpe, loc) =>
+      SimplifiedAst.Expression.GetHead(convert(e), tpe, loc)
+    case SimplifiedAst.Expression.GetTail(e, tpe, loc) =>
+      SimplifiedAst.Expression.GetTail(convert(e), tpe, loc)
     case SimplifiedAst.Expression.FSet(elms, tpe, loc) =>
       SimplifiedAst.Expression.FSet(elms.map(convert), tpe, loc)
     case SimplifiedAst.Expression.Existential(params, e, loc) =>
@@ -194,7 +198,7 @@ object ClosureConv {
       throw InternalCompilerException(s"Unexpected expression: '$e'.")
     case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
     case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
-    case SimplifiedAst.Expression.ApplyTail(name, formals, actuals, tpe, loc) =>  mutable.LinkedHashSet.empty ++ actuals.flatMap(freeVariables)
+    case SimplifiedAst.Expression.ApplyTail(name, formals, actuals, tpe, loc) => mutable.LinkedHashSet.empty ++ actuals.flatMap(freeVariables)
     case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
       freeVariables(exp) ++ args.flatMap(freeVariables)
     case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) => freeVariables(exp)
@@ -210,8 +214,10 @@ object ClosureConv {
     case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) => freeVariables(exp)
     case SimplifiedAst.Expression.GetTupleIndex(base, offset, tpe, loc) => freeVariables(base)
     case SimplifiedAst.Expression.Tuple(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
-    case SimplifiedAst.Expression.CheckNil(exp, loc) => freeVariables(exp)
-    case SimplifiedAst.Expression.CheckCons(exp, loc) => freeVariables(exp)
+    case SimplifiedAst.Expression.IsNil(exp, loc) => freeVariables(exp)
+    case SimplifiedAst.Expression.IsList(exp, loc) => freeVariables(exp)
+    case SimplifiedAst.Expression.GetHead(exp, tpe, loc) => freeVariables(exp)
+    case SimplifiedAst.Expression.GetTail(exp, tpe, loc) => freeVariables(exp)
     case SimplifiedAst.Expression.FSet(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
     case SimplifiedAst.Expression.Existential(params, exp, loc) =>
       val bound = params.map(_.ident.name)

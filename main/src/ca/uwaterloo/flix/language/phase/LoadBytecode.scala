@@ -203,8 +203,8 @@ object LoadBytecode {
       case Expression.Tag(enum, tag, exp, tpe, loc) => visit(exp)
       case Expression.GetTupleIndex(base, offset, tpe, loc) => visit(base)
       case Expression.Tuple(elms, tpe, loc) => elms.flatMap(visit).toSet
-      case Expression.CheckNil(exp, loc) => visit(exp)
-      case Expression.CheckCons(exp, loc) => visit(exp)
+      case Expression.IsNil(exp, loc) => visit(exp)
+      case Expression.IsList(exp, loc) => visit(exp)
       case Expression.FSet(elms, tpe, loc) => elms.flatMap(visit).toSet
       case Expression.Existential(params, exp, loc) =>
         throw InternalCompilerException(s"Unexpected expression: '$e' at ${loc.source.format}.")

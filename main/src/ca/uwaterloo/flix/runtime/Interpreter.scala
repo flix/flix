@@ -109,8 +109,8 @@ object Interpreter {
         i = i + 1
       }
       Value.Tuple(evalElms)
-    case Expression.CheckNil(exp, _) => ???
-    case Expression.CheckCons(exp, _) => ???
+    case Expression.IsNil(exp, _) => ???
+    case Expression.IsList(exp, _) => ???
     case Expression.FSet(elms, _, _) => Value.mkSet(elms.map(e => eval(e, root, env0)).toSet)
     case Expression.Existential(params, exp, loc) => new InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
     case Expression.Universal(params, exp, loc) => new InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")

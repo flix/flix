@@ -321,12 +321,16 @@ object Simplifier {
         }
 
       /**
-        * Matching nil may succeed or fail.
+        * Matching Nil may succeed or fail.
         *
         * // TODO
         */
       case (FNil(tpe, loc) :: ps, v :: vs) =>
-        ??? // TODO
+        // TODO: need to fix the types.
+        val cond = SExp.IsNil(SExp.Var(v, -1, tpe, loc), loc)
+        val consequent = simplify(ps, vs, succ, fail)
+        val alternative = fail
+        SExp.IfThenElse(cond, consequent, alternative, tpe, loc)
 
       /**
         * Matching a list may succeed or fail.
@@ -334,7 +338,17 @@ object Simplifier {
         * TODO
         */
       case (FList(hd, tl, tpe, loc) :: ps, v :: vs) =>
-        ??? // TODO
+        // TODO: need to fix the types.
+        val listExp = SExp.Var(v, -1, tpe, loc)
+        val freshHeadVar = genSym.fresh2()
+        val freshTailVar = genSym.fresh2()
+        val cond = SExp.IsList(SExp.Var(v, -1, tpe, loc), loc)
+        val inner = simplify(hd :: tl :: ps, freshHeadVar :: freshTailVar :: vs, succ, fail)
+        val consequent = SExp.Let(freshHeadVar, -1,
+          SExp.GetHead(listExp, tpe, loc),
+          SExp.Let(freshTailVar, -1,
+            SExp.GetTail(listExp, tpe, loc), inner, tpe, loc), tpe, loc)
+        SExp.IfThenElse(cond, consequent, fail, succ.tpe, loc)
 
       case p => throw InternalCompilerException(s"Unsupported pattern '$p'.")
 

@@ -787,8 +787,8 @@ object SymbolicEvaluator {
 
       // NB: Not yet fully implemented in the backend.
       case e: Expression.FSet => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.CheckNil => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.CheckCons => throw InternalCompilerException(s"Unsupported expression: '$e'.")
+      case e: Expression.IsNil => throw InternalCompilerException(s"Unsupported expression: '$e'.")
+      case e: Expression.IsList => throw InternalCompilerException(s"Unsupported expression: '$e'.")
 
       /**
         * Unsupported expressions.

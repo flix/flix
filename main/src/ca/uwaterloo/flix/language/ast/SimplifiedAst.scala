@@ -372,11 +372,11 @@ object SimplifiedAst {
     /**
       * A typed AST node representing a tail recursive call.
       *
-      * @param name the name of the function being called.
+      * @param name    the name of the function being called.
       * @param formals the formal parameters.
       * @param actuals the actual parameters.
-      * @param tpe  the return type of the function.
-      * @param loc  the source location of the expression.
+      * @param tpe     the return type of the function.
+      * @param loc     the source location of the expression.
       */
     case class ApplyTail(name: Symbol.Resolved,
                          formals: List[SimplifiedAst.FormalArg],
@@ -567,13 +567,17 @@ object SimplifiedAst {
       override def toString: String = "(" + elms.mkString(", ") + ")"
     }
 
-    case class CheckNil(exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
+    case class IsNil(exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
       final val tpe: Type = Type.Bool
     }
 
-    case class CheckCons(exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
+    case class IsList(exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
       final val tpe: Type = Type.Bool
     }
+
+    case class GetHead(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class GetTail(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class FSet(elms: List[SimplifiedAst.Expression],
                     tpe: Type,
