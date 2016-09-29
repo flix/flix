@@ -21,28 +21,32 @@ namespace IFDS {
     // Rules
 
     // intraproc
-    PathEdge(d1,m,d3) :- PathEdge(d1,n,d2),
-                         EshIntra(n,d2,d3),
-                         CFG(n,m).
+    PathEdge(d1,m,d3) :-
+        PathEdge(d1,n,d2),
+        EshIntra(n,d2,d3),
+        CFG(n,m).
 
     // use summary
-    PathEdge(d1,m,d3) :- PathEdge(d1,n,d2),
-                         SummaryEdge(n,d2,d3),
-                         CFG(n,m).
+    PathEdge(d1,m,d3) :-
+        PathEdge(d1,n,d2),
+        SummaryEdge(n,d2,d3),
+        CFG(n,m).
 
     // call-to-start
-    PathEdge(d3,start,d3) :- PathEdge(d1,call,d2),
-                             CallGraph(call,target),
-                             EshCallStart(call,d2,target,d3),
-                             StartNode(target,start).
+    PathEdge(d3,start,d3) :-
+        PathEdge(d1,call,d2),
+        CallGraph(call,target),
+        EshCallStart(call,d2,target,d3),
+        StartNode(target,start).
 
     // compute summary
-    SummaryEdge(call, d4, d5s) :- CallGraph(call,target),
-                                  StartNode(target,start),
-                                  EndNode(target,end),
-                                  EshCallStart(call,d4,target,d1),
-                                  PathEdge(d1,end,d2),
-                                  EshEndReturn(target,d2,call,d5s).
+    SummaryEdge(call, d4, d5s) :-
+        CallGraph(call,target),
+        StartNode(target,start),
+        EndNode(target,end),
+        EshCallStart(call,d4,target,d1),
+        PathEdge(d1,end,d2),
+        EshEndReturn(target,d2,call,d5s).
 
     // tabulate result
     Result(n,d2) :- PathEdge(_,n,d2).

@@ -1,6 +1,8 @@
 # Changelog
 
 HEAD:
+    - Added polymorphic types.
+    - Added unification-based type system.
     - Added quick checker.
     - Added tail recursion.
 
