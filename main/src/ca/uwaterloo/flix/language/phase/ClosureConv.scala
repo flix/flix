@@ -142,6 +142,10 @@ object ClosureConv {
       SimplifiedAst.Expression.GetTupleIndex(convert(e), offset, tpe, loc)
     case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
       SimplifiedAst.Expression.Tuple(elms.map(convert), tpe, loc)
+    case SimplifiedAst.Expression.FNil(tpe, loc) =>
+      SimplifiedAst.Expression.FNil(tpe, loc)
+    case SimplifiedAst.Expression.FList(hd, tl, tpe, loc) =>
+      SimplifiedAst.Expression.FList(convert(hd), convert(tl), tpe, loc)
     case SimplifiedAst.Expression.IsNil(e, loc) =>
       SimplifiedAst.Expression.IsNil(convert(e), loc)
     case SimplifiedAst.Expression.IsList(e, loc) =>
@@ -214,6 +218,8 @@ object ClosureConv {
     case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) => freeVariables(exp)
     case SimplifiedAst.Expression.GetTupleIndex(base, offset, tpe, loc) => freeVariables(base)
     case SimplifiedAst.Expression.Tuple(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
+    case SimplifiedAst.Expression.FNil(tpe, loc) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.FList(hd, tl, tpe, loc) => freeVariables(hd) ++ freeVariables(tl)
     case SimplifiedAst.Expression.IsNil(exp, loc) => freeVariables(exp)
     case SimplifiedAst.Expression.IsList(exp, loc) => freeVariables(exp)
     case SimplifiedAst.Expression.GetHead(exp, tpe, loc) => freeVariables(exp)

@@ -221,6 +221,10 @@ object CreateExecutableAst {
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
         val elmsArray = elms.map(toExecutable).toArray
         ExecutableAst.Expression.Tuple(elmsArray, tpe, loc)
+      case SimplifiedAst.Expression.FNil(tpe, loc) =>
+        ExecutableAst.Expression.FNil(tpe, loc)
+      case SimplifiedAst.Expression.FList(hd, tl, tpe, loc) =>
+        ExecutableAst.Expression.FList(toExecutable(hd), toExecutable(tl), tpe, loc)
       case SimplifiedAst.Expression.IsNil(exp, loc) => ExecutableAst.Expression.IsNil(toExecutable(exp), loc)
       case SimplifiedAst.Expression.IsList(exp, loc) => ExecutableAst.Expression.IsList(toExecutable(exp), loc)
       case SimplifiedAst.Expression.GetHead(exp, tpe, loc) => ExecutableAst.Expression.GetHead(toExecutable(exp), tpe, loc)

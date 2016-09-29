@@ -212,8 +212,8 @@ object Simplifier {
         SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
       case TypedAst.Expression.FNone(tpe, loc) => ??? // TODO
       case TypedAst.Expression.FSome(e, tpe, loc) => ??? // TODO
-      case TypedAst.Expression.FNil(tpe, loc) => ??? // TODO
-      case TypedAst.Expression.FList(hd, tl, tpe, loc) => ??? // TODO
+      case TypedAst.Expression.FNil(tpe, loc) => SimplifiedAst.Expression.FNil(tpe, loc)
+      case TypedAst.Expression.FList(hd, tl, tpe, loc) => SimplifiedAst.Expression.FList(simplify(hd), simplify(tl), tpe, loc)
       case TypedAst.Expression.FVec(elms, tpe, loc) => ??? // TODO
       case TypedAst.Expression.FSet(elms, tpe, loc) =>
         SimplifiedAst.Expression.FSet(elms map simplify, tpe, loc)

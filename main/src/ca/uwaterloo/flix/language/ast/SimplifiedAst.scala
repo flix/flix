@@ -554,18 +554,12 @@ object SimplifiedAst {
       override def toString: String = base + "[" + offset + "]"
     }
 
-    /**
-      * A typed AST node representing a tuple expression.
-      *
-      * @param elms the elements of the tuple.
-      * @param tpe  the type of the tuple.
-      * @param loc  the source location of the tuple.
-      */
-    case class Tuple(elms: List[SimplifiedAst.Expression],
-                     tpe: Type,
-                     loc: SourceLocation) extends SimplifiedAst.Expression {
-      override def toString: String = "(" + elms.mkString(", ") + ")"
-    }
+
+    case class Tuple(elms: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class FNil(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class FList(hd: SimplifiedAst.Expression, tl: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class IsNil(exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
       final val tpe: Type = Type.Bool

@@ -157,6 +157,10 @@ object LambdaLift {
         Expression.GetTupleIndex(visit(exp), offset, tpe, loc)
       case Expression.Tuple(elms, tpe, loc) =>
         Expression.Tuple(elms.map(visit), tpe, loc)
+      case Expression.FNil(tpe, loc) =>
+        Expression.FNil(tpe, loc)
+      case Expression.FList(hd, tl, tpe, loc) =>
+        Expression.FList(visit(hd), visit(tl), tpe, loc)
       case Expression.IsNil(exp, loc) =>
         Expression.IsNil(visit(exp), loc)
       case Expression.IsList(exp, loc) =>
