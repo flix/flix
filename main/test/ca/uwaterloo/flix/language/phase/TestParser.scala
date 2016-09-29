@@ -582,7 +582,7 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Expression.Block.04") {
+  ignore("Expression.Block.04") {
     val input =
       """
         |def f: Int = {

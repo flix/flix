@@ -286,7 +286,7 @@ object Codegen {
       case Type.Float32 => visitor.visitVarInsn(FLOAD, offset)
       case Type.Float64 => visitor.visitVarInsn(DLOAD, offset)
       case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.Arrow(_), _) |
-           Type.Apply(Type.FSet, _) => visitor.visitVarInsn(ALOAD, offset)
+           Type.Apply(Type.FList, _) | Type.Apply(Type.FSet, _) => visitor.visitVarInsn(ALOAD, offset)
       case _ if tpe.isTuple => visitor.visitVarInsn(ALOAD, offset)
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }

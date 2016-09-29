@@ -463,7 +463,10 @@ object Namer {
             val sym = Symbol.freshVarSym(ident)
             NamedAst.FormalParam(sym, Types.namer(tpe, tenv0), loc1)
         }
-        namer(exp, env0, tenv0) map {
+        val env1 = ps.foldLeft(env0) {
+          case (macc, NamedAst.FormalParam(sym, tpe, _)) => macc + (sym.text -> sym)
+        }
+        namer(exp, env1, tenv0) map {
           case e => NamedAst.Expression.Existential(ps, e, loc)
         }
 
@@ -473,7 +476,10 @@ object Namer {
             val sym = Symbol.freshVarSym(ident)
             NamedAst.FormalParam(sym, Types.namer(tpe, tenv0), loc1)
         }
-        namer(exp, env0, tenv0) map {
+        val env1 = ps.foldLeft(env0) {
+          case (macc, NamedAst.FormalParam(sym, tpe, _)) => macc + (sym.text -> sym)
+        }
+        namer(exp, env1, tenv0) map {
           case e => NamedAst.Expression.Existential(ps, e, loc)
         }
 
