@@ -111,6 +111,7 @@ object Codegen {
         case Type.Apply(Type.Arrow(l), _) => s"L${decorate(interfaces(tpe))};"
         case Type.Apply(Type.FTuple(l), _) => asm.Type.getDescriptor(Constants.tupleClass)
         case Type.Apply(Type.FSet, _) => asm.Type.getDescriptor(Constants.setClass)
+        case Type.Apply(_, _) => ??? // TODO
         case _ if tpe.isTuple => asm.Type.getDescriptor(Constants.tupleClass)
         case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
