@@ -206,8 +206,8 @@ object Simplifier {
           */
         SExp.Let(matchVar, -1, matchExp, inner, tpe, loc)
 
-      case TypedAst.Expression.Tag(enum, tag, e, tpe, loc) =>
-        SimplifiedAst.Expression.Tag(enum, tag, simplify(e), tpe, loc)
+      case TypedAst.Expression.Tag(sym, tag, e, tpe, loc) =>
+        SimplifiedAst.Expression.Tag(sym.toResolved, tag, simplify(e), tpe, loc)
       case TypedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
       case TypedAst.Expression.FNone(tpe, loc) => ??? // TODO
@@ -462,8 +462,8 @@ object Simplifier {
     case TypedAst.Pattern.Int64(lit, loc) => SimplifiedAst.Expression.Int64(lit)
     case TypedAst.Pattern.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
     case TypedAst.Pattern.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
-    case TypedAst.Pattern.Tag(enumName, tagName, p, tpe, loc) =>
-      SimplifiedAst.Expression.Tag(enumName, tagName, lit2exp(p), tpe, loc)
+    case TypedAst.Pattern.Tag(sym, tag, p, tpe, loc) =>
+      SimplifiedAst.Expression.Tag(sym.toResolved, tag, lit2exp(p), tpe, loc)
     case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
       SimplifiedAst.Expression.Tuple(elms map lit2exp, tpe, loc)
     case _ => throw InternalCompilerException(s"Unexpected non-literal pattern $pat.")

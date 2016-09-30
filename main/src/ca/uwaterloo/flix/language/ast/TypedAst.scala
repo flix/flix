@@ -146,7 +146,7 @@ object TypedAst {
 
     case class Switch(rules: List[(TypedAst.Expression, TypedAst.Expression)], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Tag(name: Symbol.Resolved, ident: Name.Ident, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Tag(sym: Symbol.EnumSym, tag: Name.Ident, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Tuple(elms: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -240,7 +240,7 @@ object TypedAst {
       def tpe: Type = Type.Str
     }
 
-    case class Tag(name: Symbol.Resolved, ident: Name.Ident, pat: TypedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
+    case class Tag(sym: Symbol.EnumSym, tag: Name.Ident, pat: TypedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
     case class Tuple(elms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 

@@ -432,7 +432,7 @@ object Typer {
          * Unary expression.
          */
         case NamedAst.Expression.Unary(op, exp1, tvar, loc) => op match {
-            // TODO: Must unify tvar
+          // TODO: Must unify tvar
           case UnaryOperator.LogicalNot =>
             for (
               tpe1 <- visitExp(exp1);
@@ -903,7 +903,7 @@ object Typer {
          */
         case NamedAst.Expression.Lambda(params, exp, tvar, loc) =>
           val lambdaArgs = params map {
-            case sym => TypedAst.FormalParam(sym,  subst0(sym.tvar), sym.loc)
+            case sym => TypedAst.FormalParam(sym, subst0(sym.tvar), sym.loc)
           }
           val lambdaBody = reassemble(exp, ns0, program, subst0)
           val lambdaType = subst0(tvar)
@@ -963,9 +963,13 @@ object Typer {
         /*
          * Tag expression.
          */
-        case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
-          val e = visitExp(exp, subst0)
-          TypedAst.Expression.Tag(enum.toResolved, tag, e, subst0(tvar), loc)
+        case NamedAst.Expression.Tag(qname, tag, exp, tvar, loc) =>
+          Disambiguation.lookupEnumByTag(qname, tag, ns0, program) match {
+            case Ok(enum) =>
+              val e = visitExp(exp, subst0)
+              TypedAst.Expression.Tag(enum.sym, tag, e, subst0(tvar), loc)
+            case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
+          }
 
         /*
          * Tuple expression.
@@ -1087,8 +1091,11 @@ object Typer {
         case NamedAst.Pattern.Int64(lit, loc) => TypedAst.Pattern.Int64(lit, loc)
         case NamedAst.Pattern.BigInt(lit, loc) => TypedAst.Pattern.BigInt(lit, loc)
         case NamedAst.Pattern.Str(lit, loc) => TypedAst.Pattern.Str(lit, loc)
-        case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
-          TypedAst.Pattern.Tag(enum.toResolved, tag, visitPat(pat), subst0(tvar), loc)
+        case NamedAst.Pattern.Tag(qname, tag, pat, tvar, loc) =>
+          Disambiguation.lookupEnumByTag(qname, tag, ns0, program) match {
+            case Ok(enum) => TypedAst.Pattern.Tag(enum.sym, tag, visitPat(pat), subst0(tvar), loc)
+            case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
+          }
         case NamedAst.Pattern.Tuple(elms, tvar, loc) => TypedAst.Pattern.Tuple(elms map visitPat, subst0(tvar), loc)
         case NamedAst.Pattern.FNone(tvar, loc) => TypedAst.Pattern.FNone(subst0(tvar), loc)
         case NamedAst.Pattern.FSome(pat, tvar, loc) => TypedAst.Pattern.FSome(visitPat(pat), subst0(tvar), loc)
