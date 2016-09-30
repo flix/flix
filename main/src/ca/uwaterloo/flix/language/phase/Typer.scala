@@ -40,11 +40,10 @@ object Typer {
       indexes <- Declarations.Indexes.typecheck(program)
       facts <- Declarations.Constraints.typecheckFacts(program)
       rules <- Declarations.Constraints.typecheckRules(program)
-      hooks <- Declarations.Hooks.typecheck(program)
     } yield {
       val currentTime = System.nanoTime()
       val time = program.time.copy(typer = currentTime - startTime)
-      TypedAst.Root(definitions, lattices, tables, indexes, facts, rules, hooks, Nil, time)
+      TypedAst.Root(definitions, lattices, tables, indexes, facts, rules, Nil, time)
     }
 
     result match {
@@ -178,22 +177,6 @@ object Typer {
               case Err(e) => Err(e)
             }
         }
-      }
-
-    }
-
-    object Hooks {
-
-      /**
-        * Performs type inference and reassembly on all hooks in the given program.
-        */
-      def typecheck(program: NamedAst.Program): Result[Map[Symbol.Resolved, Ast.Hook], TypeError] = {
-        val hooks = program.hooks.flatMap {
-          case (ns, hs) => hs.map {
-            case (name, hook) => Symbol.Resolved.mk(ns.parts ::: name :: Nil) -> hook
-          }
-        }
-        Ok(hooks)
       }
 
     }

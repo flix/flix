@@ -26,7 +26,6 @@ object TypedAst {
                   indexes: Map[Symbol.TableSym, TypedAst.Declaration.Index],
                   facts: List[TypedAst.Declaration.Fact],
                   rules: List[TypedAst.Declaration.Rule],
-                  hooks: Map[Symbol.Resolved, Ast.Hook], // TODO:  Symbol.Res
                   properties: List[TypedAst.Property],
                   time: Time) extends TypedAst
 
