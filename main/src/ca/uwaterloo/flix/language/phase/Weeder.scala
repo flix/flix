@@ -451,9 +451,9 @@ object Weeder {
             case None =>
               val loc = mkSL(sp1, sp2)
               val exp = WeededAst.Expression.Unit(loc)
-              WeededAst.Expression.Tag(enum, tag, exp, loc).toSuccess
+              WeededAst.Expression.Tag(Some(enum), tag, exp, loc).toSuccess
             case Some(exp) => visit(exp) map {
-              case e => WeededAst.Expression.Tag(enum, tag, e, mkSL(sp1, sp2))
+              case e => WeededAst.Expression.Tag(Some(enum), tag, e, mkSL(sp1, sp2))
             }
           }
 
@@ -652,9 +652,9 @@ object Weeder {
             case None =>
               val loc = mkSL(sp1, sp2)
               val lit = WeededAst.Pattern.Unit(loc)
-              WeededAst.Pattern.Tag(enum, tag, lit, loc).toSuccess
+              WeededAst.Pattern.Tag(Some(enum), tag, lit, loc).toSuccess
             case Some(pat) => visit(pat) map {
-              case p => WeededAst.Pattern.Tag(enum, tag, p, mkSL(sp1, sp2))
+              case p => WeededAst.Pattern.Tag(Some(enum), tag, p, mkSL(sp1, sp2))
             }
           }
 

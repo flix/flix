@@ -73,7 +73,7 @@ object Disambiguation {
   /**
     * Finds the enum definition matching the given qualified name and tag.
     */
-  def lookupEnumByTag(qname: Name.QName, tag: Name.Ident, ns: Name.NName, program: Program): Result[NamedAst.Declaration.Enum, TypeError] = {
+  def lookupEnumByTag(qname: Option[Name.QName], tag: Name.Ident, ns: Name.NName, program: Program): Result[NamedAst.Declaration.Enum, TypeError] = {
     /*
      * Lookup the tag name in all enums across all namespaces.
      */
@@ -95,7 +95,7 @@ object Disambiguation {
 
     // Case 2: No or multiple matches found.
     // Lookup the tag in either the fully qualified namespace or the current namespace.
-    val namespace = if (qname.isQualified) qname.namespace else ns
+    val namespace = if (qname.exists(_.isQualified)) qname.get.namespace else ns
 
     /*
      * Lookup the tag name in all enums in the current namespace.
@@ -116,7 +116,7 @@ object Disambiguation {
 
     // Case 2.2: No matches found in namespace.
     if (namespaceMatches.isEmpty) {
-      return Err(TypeError.UnresolvedTag(qname, tag, ns, tag.loc))
+      return Err(TypeError.UnresolvedTag(tag, ns, tag.loc))
     }
 
     // Case 2.3: Multiple matches found in namespace...

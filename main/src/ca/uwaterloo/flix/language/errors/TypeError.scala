@@ -98,16 +98,15 @@ object TypeError {
   /**
     * Unresolved Tag Error.
     *
-    * @param enumName the enum name.
-    * @param tagName  the tag name.
-    * @param ns       the current namespace.
-    * @param loc      the location where the error occurred.
+    * @param tag the tag name.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
     */
-  case class UnresolvedTag(enumName: Name.QName, tagName: Name.Ident, ns: Name.NName, loc: SourceLocation) extends TypeError {
+  case class UnresolvedTag(tag: Name.Ident, ns: Name.NName, loc: SourceLocation) extends TypeError {
     val message =
       s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
          |
-         |${consoleCtx.red(s">> Unknown tag '${tagName.name}' (in namespace '$ns').")}
+         |${consoleCtx.red(s">> Unknown tag '${tag.name}'.")}
          |
          |${loc.highlight}
          """.stripMargin
