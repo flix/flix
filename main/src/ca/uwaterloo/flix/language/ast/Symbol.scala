@@ -43,6 +43,14 @@ object Symbol {
   }
 
   /**
+    * Returns the enum symbol for the given fully qualified name.
+    */
+  def mkEnumSym(fqn: String): EnumSym = split(fqn) match {
+    case None => new EnumSym(Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new EnumSym(ns, name, SourceLocation.Unknown)
+  }
+
+  /**
     * Returns the class symbol for the given name `ident`.
     */
   def mkClassSym(ident: Ident): ClassSym = {
@@ -66,16 +74,10 @@ object Symbol {
   /**
     * Returns the table symbol for the given fully qualified name.
     */
-  def mkTableSym(fqn: String): TableSym = {
-    if (!fqn.contains('/'))
-      return new TableSym(List.empty, fqn, SourceLocation.Unknown)
-
-    val index = fqn.indexOf('/')
-    val namespace = fqn.substring(0, index).split('.').toList
-    val name = fqn.substring(index + 1, fqn.length)
-    new TableSym(namespace, name, SourceLocation.Unknown)
+  def mkTableSym(fqn: String): TableSym = split(fqn) match {
+    case None => new TableSym(Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new TableSym(ns, name, SourceLocation.Unknown)
   }
-
 
   /**
     * Variable Symbol.
@@ -146,12 +148,6 @@ object Symbol {
     * Enum Symbol.
     */
   final class EnumSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
-
-    // TODO: Temporary convenience method.
-    def toResolvedTemporaryHelperMethod: Symbol.Resolved = {
-      Symbol.Resolved.mk(namespace ::: name :: Nil)
-    }
-
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -309,6 +305,21 @@ object Symbol {
       * Human readable representation.
       */
     override val toString: String = fqn
+  }
+
+  /**
+    * Optionally returns the namespace part and name of the given fully qualified string `fqn`.
+    *
+    * Returns `None` if the `fqn` is not qualified.
+    */
+  private def split(fqn: String): Option[(List[String], String)] = {
+    if (!fqn.contains('/'))
+      return None
+
+    val index = fqn.indexOf('/')
+    val namespace = fqn.substring(0, index).split('.').toList
+    val name = fqn.substring(index + 1, fqn.length)
+    Some((namespace, name))
   }
 
 }

@@ -327,10 +327,10 @@ class Flix {
   def mkStrType: IType = new WrappedType(Type.Str)
 
   /**
-    * Returns the enum with the given `enumName` and `tags`.
+    * Returns the enum with the given `fqn` and `tags`.
     */
-  def mkEnumType(enumName: String, tags: java.util.Map[String, IType]): IType = {
-    if (enumName == null)
+  def mkEnumType(fqn: String, tags: java.util.Map[String, IType]): IType = {
+    if (fqn == null)
       throw new IllegalArgumentException("Argument 'enumName' must be non-null.")
     if (tags == null)
       throw new IllegalArgumentException("Argument 'tags' must be non-null.")
@@ -341,7 +341,7 @@ class Flix {
         macc + (tag -> tpe.asInstanceOf[WrappedType].tpe)
     }
 
-    new WrappedType(Type.Enum(Symbol.Resolved.mk(enumName), cases))
+    new WrappedType(Type.Enum(Symbol.mkEnumSym(fqn), cases))
   }
 
   /**

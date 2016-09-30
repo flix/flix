@@ -96,7 +96,7 @@ sealed trait Type {
     case Type.FMap => "Map"
     case Type.Apply(Type.Arrow(l), ts) => ts.mkString(" -> ")
     case Type.Apply(t, ts) => s"$t[${ts.mkString(", ")}]"
-    case Type.Enum(enum, cases) => enum.fqn
+    case Type.Enum(enum, cases) => enum.toString
     case Type.Forall(quantifiers, base) => s"∀(${quantifiers.mkString(", ")}). $base"
   }
 }
@@ -248,11 +248,10 @@ object Type {
   /**
     * A type constructor that represents enums.
     *
-    * @param name  the fully qualified name of the enum.
+    * @param sym   the symbol of the enum.
     * @param cases a map from tag names to tag types.
     */
-  // TODO: Change or remove symbol
-  case class Enum(name: Symbol.Resolved, cases: immutable.Map[String, Type]) extends Type {
+  case class Enum(sym: Symbol.EnumSym, cases: immutable.Map[String, Type]) extends Type {
     def kind: Kind = Kind.Star
   }
 

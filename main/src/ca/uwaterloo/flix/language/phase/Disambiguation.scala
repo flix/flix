@@ -193,12 +193,12 @@ object Disambiguation {
         case None => Err(TypeError.UnresolvedType(qname, ns0, loc))
         case Some(enum) => resolve(enum.tpe, qname.namespace, program)
       }
-    case NamedAst.Type.Enum(name, cases) =>
+    case NamedAst.Type.Enum(sym, cases) =>
       val asList = cases.toList
       val tags = asList.map(_._1)
       val tpes = asList.map(_._2)
       seqM(tpes.map(tpe => resolve(tpe, ns0, program))) map {
-        case rtpes => Type.Enum(name.toResolvedTemporaryHelperMethod, (tags zip rtpes).toMap)
+        case rtpes => Type.Enum(sym, (tags zip rtpes).toMap)
       }
     case NamedAst.Type.Tuple(elms0, loc) =>
       for (
