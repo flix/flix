@@ -170,8 +170,7 @@ object Typer {
                 // Translate the named formals into typed formals.
                 val formals = defn0.params.map {
                   case NamedAst.FormalParam(sym, tpe, loc) =>
-                    val t = Disambiguation.resolve(tpe, ns0, program).get
-                    TypedAst.FormalArg(sym.toIdent, subst0(t))
+                    TypedAst.FormalParam(sym, subst0(sym.tvar), sym.loc)
                 }
 
                 Ok(TypedAst.Declaration.Definition(defn0.ann, defn0.sym.toResolvedTemporaryHelperMethod, formals, exp, resultType, defn0.loc))
@@ -900,10 +899,7 @@ object Typer {
          */
         case NamedAst.Expression.Lambda(params, exp, tvar, loc) =>
           val lambdaArgs = params map {
-            case sym =>
-              val argIdent = sym.toIdent
-              val argType = subst0(sym.tvar)
-              TypedAst.FormalArg(argIdent, argType)
+            case sym => TypedAst.FormalParam(sym,  subst0(sym.tvar), sym.loc)
           }
           val lambdaBody = reassemble(exp, ns0, program, subst0)
           val lambdaType = subst0(tvar)

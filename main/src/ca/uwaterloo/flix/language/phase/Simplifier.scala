@@ -63,7 +63,7 @@ object Simplifier {
 
     def simplify(tast: TypedAst.Declaration.Definition)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant = {
       val formals = tast.formals.map {
-        case TypedAst.FormalArg(ident, tpe) => SimplifiedAst.FormalArg(ident, tpe)
+        case TypedAst.FormalParam(sym, tpe, loc) => SimplifiedAst.FormalArg(sym.toIdent, tpe)
       }
       SimplifiedAst.Definition.Constant(tast.ann, tast.name, formals, Expression.simplify(tast.exp), isSynthetic = false, tast.tpe, tast.loc)
     }
@@ -221,11 +221,11 @@ object Simplifier {
       case TypedAst.Expression.GetIndex(e1, e2, tpe, loc) => ??? // TODO
       case TypedAst.Expression.PutIndex(e1, e2, e3, tpe, loc) => ??? // TODO
       case TypedAst.Expression.Existential(params, exp, loc) =>
-        val ps = params.map(p => Ast.FormalParam(p.sym.toIdent, p.sym.tvar)) // TODO: use of tvar
+        val ps = params.map(p => Ast.FormalParam(p.sym.toIdent, p.tpe))
       val e = simplify(exp)
         SimplifiedAst.Expression.Existential(ps, e, loc)
       case TypedAst.Expression.Universal(params, exp, loc) =>
-        val ps = params.map(p => Ast.FormalParam(p.sym.toIdent, p.sym.tvar)) // TODO: use of tvar
+        val ps = params.map(p => Ast.FormalParam(p.sym.toIdent, p.tpe))
       val e = simplify(exp)
         SimplifiedAst.Expression.Universal(ps, e, loc)
       case TypedAst.Expression.UserError(tpe, loc) =>
@@ -418,8 +418,8 @@ object Simplifier {
   def simplify(tast: TypedAst.Attribute)(implicit genSym: GenSym): SimplifiedAst.Attribute =
     SimplifiedAst.Attribute(tast.ident, tast.tpe)
 
-  def simplify(tast: TypedAst.FormalArg)(implicit genSym: GenSym): SimplifiedAst.FormalArg =
-    SimplifiedAst.FormalArg(tast.ident, tast.tpe)
+  def simplify(tast: TypedAst.FormalParam)(implicit genSym: GenSym): SimplifiedAst.FormalArg =
+    SimplifiedAst.FormalArg(tast.sym.toIdent, tast.tpe)
 
   def simplify(tast: TypedAst.Property)(implicit genSym: GenSym): SimplifiedAst.Property =
     SimplifiedAst.Property(tast.law, Expression.simplify(tast.exp), tast.loc)

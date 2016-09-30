@@ -38,7 +38,7 @@ object TypedAst {
 
   object Declaration {
 
-    case class Definition(ann: Ast.Annotations, name: Symbol.Resolved, formals: List[TypedAst.FormalArg], exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Declaration
+    case class Definition(ann: Ast.Annotations, name: Symbol.Resolved, formals: List[TypedAst.FormalParam], exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Declaration
 
     case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends TypedAst.Declaration
 
@@ -130,7 +130,7 @@ object TypedAst {
 
     case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Lambda(args: List[TypedAst.FormalArg], body: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Lambda(args: List[TypedAst.FormalParam], body: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Apply(exp: TypedAst.Expression, args: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -299,9 +299,6 @@ object TypedAst {
   case class Attribute(ident: Name.Ident, tpe: Type) extends TypedAst
 
   case class FormalParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst
-
-  // TODO: Deprecated
-  case class FormalArg(ident: Name.Ident, tpe: Type) extends TypedAst
 
   case class Property(law: Law, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst
 
