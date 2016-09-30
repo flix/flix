@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 import scala.collection.immutable
 
 /**
-  * A common super-type for types.
+  * Representation of monotypes.
   */
 sealed trait Type {
   /**
@@ -275,6 +275,7 @@ object Type {
   /**
     * A universally quantified type expression.
     */
+  // TODO: Move into Scheme.
   case class Forall(quantifiers: List[Type.Var], base: Type) extends Type {
     def kind: Kind = base.kind
   }
