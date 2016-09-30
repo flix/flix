@@ -587,7 +587,7 @@ object Codegen {
       val ctor = "(Ljava/lang/Object;Ljava/lang/Object;)V"
       visitor.visitTypeInsn(NEW, name)
       visitor.visitInsn(DUP)
-      compileExpression(ctx, visitor, entryPoint)(hd)
+      compileBoxedExpr(ctx, visitor, entryPoint)(hd)
       compileExpression(ctx, visitor, entryPoint)(tl)
       visitor.visitMethodInsn(INVOKESPECIAL, name, "<init>", ctor, false)
 

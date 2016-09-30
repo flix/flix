@@ -1150,58 +1150,42 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Expression.List.01") {
     val input = "def f: List[Int] = Nil"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Expression.List.02") {
     val input = "def f: List[Int] = 1 :: Nil"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Expression.List.03") {
     val input = "def f: List[Int] = 1 :: 2 :: Nil"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Expression.List.04") {
     val input = "def f: List[(Int, Int)] = Nil"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Expression.List.05") {
     val input = "def f: List[(Int, Int)] = (1, 2) :: (3, 4) :: Nil"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Expression.ListList.01") {
     val input = "def f: List[List[Int]] = Nil"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Expression.ListList.02") {
     val input = "def f: List[List[Int]] = (1 :: Nil) :: Nil"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Expression.ListList.03") {
     val input = "def f: List[List[Int]] = (Nil) :: (1 :: Nil) :: (2 :: 3 :: 4 :: Nil) :: Nil"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Expression.Vec.01") {
@@ -2401,9 +2385,7 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Type.List.01") {
     val input = "def f: List[Int] = Nil"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Type.Vec.01") {

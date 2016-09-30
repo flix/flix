@@ -639,7 +639,8 @@ object Typer {
          * Nil expression.
          */
         case NamedAst.Expression.FNil(tvar, loc) =>
-          liftM(Type.mkFList(tvar))
+          val freshElmVar = Type.freshTypeVar()
+          unifyM(Type.mkFList(freshElmVar), tvar, loc)
 
         /*
          * List expression.
