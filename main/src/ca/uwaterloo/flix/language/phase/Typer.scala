@@ -826,7 +826,7 @@ object Typer {
     /**
       * Applies the given substitution `subst0` to the given expression `exp0` in the given namespace `ns0`.
       */
-    def reassemble(exp0: NamedAst.Expression, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Expression = {
+    def reassemble(exp0: NamedAst.Expression, ns0: Name.NName, program: Program, subst0: Substitution, resolveFreeVars: Boolean = false): TypedAst.Expression = {
       /**
         * Applies the given substitution `subst0` to the given expression `exp0`.
         */
@@ -839,13 +839,17 @@ object Typer {
         /*
          * Variable expression.
          */
-        // TODO: Does this mean we should not distinguish variables?
         case NamedAst.Expression.Var(sym, loc) =>
-          val qname = Name.mkQName(sym.text)
-          Disambiguation.lookupRef(qname, ns0, program) match {
-            case Ok(RefTarget.Defn(ns, defn)) => TypedAst.Expression.Ref(defn.sym, subst0(sym.tvar), loc)
-            case Ok(RefTarget.Hook(hook)) => TypedAst.Expression.Hook(hook, subst0(sym.tvar), loc)
-            case Err(e) => TypedAst.Expression.Var(sym, subst0(sym.tvar), loc)
+          // TODO: This should be taken into account during type inference.
+          if (!resolveFreeVars) {
+            TypedAst.Expression.Var(sym, subst0(sym.tvar), loc)
+          } else {
+            val qname = Name.mkQName(sym.text)
+            Disambiguation.lookupRef(qname, ns0, program) match {
+              case Ok(RefTarget.Defn(ns, defn)) => TypedAst.Expression.Ref(defn.sym, subst0(sym.tvar), loc)
+              case Ok(RefTarget.Hook(hook)) => TypedAst.Expression.Hook(hook, subst0(sym.tvar), loc)
+              case Err(e) => TypedAst.Expression.Var(sym, subst0(sym.tvar), loc)
+            }
           }
 
         /*
@@ -888,7 +892,7 @@ object Typer {
           val lambdaArgs = params map {
             case sym => TypedAst.FormalParam(sym, subst0(sym.tvar), sym.loc)
           }
-          val lambdaBody = reassemble(exp, ns0, program, subst0)
+          val lambdaBody = visitExp(exp, subst0)
           val lambdaType = subst0(tvar)
           TypedAst.Expression.Lambda(lambdaArgs, lambdaBody, lambdaType, loc)
 
@@ -1135,7 +1139,7 @@ object Typer {
                 result.run(Substitution.empty) map {
                   case (subst, _) =>
                     // Reassemble the expressions and predicate.
-                    val ts = terms.map(t => Expressions.reassemble(t, ns, program, subst))
+                    val ts = terms.map(t => Expressions.reassemble(t, ns, program, subst, resolveFreeVars = true))
                     TypedAst.Predicate.Head.Table(table.sym, ts, loc)
                 }
             }
@@ -1216,10 +1220,10 @@ object Typer {
       case NamedAst.Predicate.Head.Table(qname, terms, loc) =>
         Disambiguation.lookupTable(qname, ns0, program) match {
           case Ok(NamedAst.Table.Relation(sym, _, _)) =>
-            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
+            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
             TypedAst.Predicate.Head.Table(sym, ts, loc)
           case Ok(NamedAst.Table.Lattice(sym, _, _, _)) =>
-            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
+            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
             TypedAst.Predicate.Head.Table(sym, ts, loc)
           case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
         }
@@ -1231,19 +1235,19 @@ object Typer {
     def reassemble(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
       case NamedAst.Predicate.Body.Table(qname, terms, loc) =>
         Disambiguation.lookupTable(qname, ns0, program) match {
-          case Ok(NamedAst.Table.Relation(sym, _, _)) => TypedAst.Predicate.Body.Table(sym, terms.map(t => Expressions.reassemble(t, ns0, program, subst0)), loc)
+          case Ok(NamedAst.Table.Relation(sym, _, _)) => TypedAst.Predicate.Body.Table(sym, terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true)), loc)
           case Ok(NamedAst.Table.Lattice(sym, _, _, _)) =>
-            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
+            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
             TypedAst.Predicate.Body.Table(sym, ts, loc)
           case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
         }
       case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
         Disambiguation.lookupRef(qname, ns0, program) match {
           case Ok(RefTarget.Defn(ns, defn)) =>
-            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
+            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
             TypedAst.Predicate.Body.ApplyFilter(defn.sym, ts, loc)
           case Ok(RefTarget.Hook(hook)) =>
-            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
+            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
             TypedAst.Predicate.Body.ApplyHookFilter(hook, ts, loc)
           case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
         }
@@ -1252,7 +1256,7 @@ object Typer {
         TypedAst.Predicate.Body.NotEqual(sym1, sym2, loc)
       case NamedAst.Predicate.Body.Loop(sym, term, loc) =>
         // TODO: Need to retrieve the symbol...
-        val t = Expressions.reassemble(term, ns0, program, subst0)
+        val t = Expressions.reassemble(term, ns0, program, subst0, resolveFreeVars = true)
         TypedAst.Predicate.Body.Loop(sym, t, loc)
     }
 
