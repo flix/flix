@@ -747,6 +747,21 @@ class TestTyper extends FunSuite with TestUtils {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // UserError (Positive)                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Expression.UserError.01") {
+    val input = "def f: Unit = ???"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.UserError.02") {
+    val input = "def f: Int = ???"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Ascribe (Positive)                                                      //
   /////////////////////////////////////////////////////////////////////////////
   test("Expression.Ascribe01") {
