@@ -41,7 +41,7 @@ class TestInt64 extends FunSuite {
 
   test("size.01") {
     val input = "def r: Int32 = Int64/size()"
-    runTest(input, 64)
+    runTest(input, 64L)
   }
 
   test("min.01") {

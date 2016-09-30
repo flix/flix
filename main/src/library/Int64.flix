@@ -22,16 +22,9 @@ namespace Int64 {
     def size: Int32 = 64
 
     /**
-     * Returns frequently used Int64 values for readability.
-     */
-    def zero: Int64 = 0i64
-    def one: Int64 = 1i64
-    def two: Int64 = 2i64
-
-    /**
      * Returns the minimum number representable by an `Int64`.
      */
-    def minValue: Int64 = one() << (size() - 1)
+    def minValue: Int64 = 1i64 << (size() - 1)
 
     /**
      * Returns the maximum number representable by an `Int64`.
@@ -53,8 +46,8 @@ namespace Int64 {
      * If the absolute value exceeds maxValue(), -1 is returned
      */
     def abs(x: Int64): Int64 = switch {
-        case x >= zero()        => x
-        case x == minValue()    => -one()
+        case x >= 0i64          => x
+        case x == minValue()    => -1i64
         case x != minValue()    => -x
     }
 
@@ -63,11 +56,11 @@ namespace Int64 {
      * If this distance exceeds maxValue(), -1 is returned
      */
     def dist(x: Int64, y: Int64): Int64 = switch {
-        case x >= zero() && y >= zero()                 => abs(x - y)
-        case x < zero() && y < zero()                   => abs(x - y)
-        case x == minValue() || y == minValue()         => -one()
-        case minValue() + abs(x) + abs(y) >= zero()     => -one()
-        case minValue() + abs(x) + abs(y) < zero()      => abs(x - y)
+        case x >= 0i64 && y >= 0i64                 => abs(x - y)
+        case x < 0i64 && y < 0i64                   => abs(x - y)
+        case x == minValue() || y == minValue()     => -1i64
+        case minValue() + abs(x) + abs(y) >= 0i64   => -1i64
+        case minValue() + abs(x) + abs(y) < 0i64    => abs(x - y)
     }
 
     /**
@@ -84,7 +77,7 @@ namespace Int64 {
      * Returns 1 if x > 0, -1 if x < 0, and 0 if x = 0.
      * This sign of x
      */
-    def signum(x: Int64): Int32 = compare(x, zero())
+    def signum(x: Int64): Int32 = compare(x, 0i64)
 
     /**
      * Returns the logical right shift of `x` by `distance`.
@@ -92,7 +85,7 @@ namespace Int64 {
      * of sign extension.
      */
     def logicalRightShift(x: Int64, distance: Int32): Int64 =
-        if (x < zero() && distance % size() != 0)
+        if (x < 0i64 && distance % size() != 0)
             ((x >> 1) & maxValue()) >> (distance - 1)
         else
             x >> distance
@@ -102,9 +95,9 @@ namespace Int64 {
      * representation of `x`
      */
     def bitCount(x: Int64): Int32 = switch {
-        case x == zero()            => 0
-        case x % two() != zero()    => bitCount(logicalRightShift(x, 1)) + 1
-        case x % two() == zero()    => bitCount(logicalRightShift(x, 1))
+        case x == 0i64          => 0
+        case x % 2i64 != 0i64   => bitCount(logicalRightShift(x, 1)) + 1
+        case x % 2i64 == 0i64   => bitCount(logicalRightShift(x, 1))
     }
 
     /**
@@ -174,9 +167,9 @@ namespace Int64 {
      * Returns 0 if `position` is outside the range 0-31 inclusive
      */
     def bitPositionToInt(position: Int32): Int64 = switch {
-        case position < 0 || position > size() - 1  => zero()
+        case position < 0 || position > size() - 1  => 0i64
         case position == size() - 1                 => minValue()
-        case position != size() - 1                 => one() << position
+        case position != size() - 1                 => 1i64 << position
     }
 
     /**
@@ -185,7 +178,7 @@ namespace Int64 {
      * Returns 64 if x=0.
      */
     def numberOfLeadingZeros(x: Int64): Int32 =
-        if (x == zero()) size() else size() - 1 - highestOneBitPosition(x)
+        if (x == 0i64) size() else size() - 1 - highestOneBitPosition(x)
 
     /**
      * Returns the number of zero bits following the
@@ -193,7 +186,7 @@ namespace Int64 {
      * Returns 64 if x=0.
      */
     def numberOfTrailingZeros(x: Int64): Int32 =
-        if (x == zero()) size() else lowestOneBitPosition(x)
+        if (x == 0i64) size() else lowestOneBitPosition(x)
 
     /**
      * Returns the bit of `x` at `position` (either 0 or 1).
@@ -201,5 +194,5 @@ namespace Int64 {
      * The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
      */
     def bit(x: Int64, position: Int32): Int32 =
-        if ((x >> position) % two() == zero()) 0 else 1
+        if ((x >> position) % 2i64 == 0i64) 0 else 1
 }
