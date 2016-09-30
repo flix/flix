@@ -374,6 +374,104 @@ class TestParser extends FunSuite with TestUtils {
     }
   }
 
+  test("Declaration.Fact.01") {
+    val input =
+      """
+        |rel R(a: Int)
+        |R(42).
+      """.stripMargin
+    run(input)
+  }
+
+  test("Declaration.Fact.02") {
+    val input =
+      """
+        |rel R(a: Char, b: Int)
+        |R('a', 42).
+      """.stripMargin
+    run(input)
+  }
+
+  test("Declaration.Fact.03") {
+    val input =
+      """
+        |rel R(a: Int8, b: Int16, c: Int32, d: Int64)
+        |R(1i8, 2i16, 3i32, 4i64).
+      """.stripMargin
+    run(input)
+  }
+
+  test("Declaration.Rule.01") {
+    val input =
+      """
+        |rel R(a: Int)
+        |
+        |R(x) :- R(x).
+      """.stripMargin
+    run(input)
+  }
+
+  test("Declaration.Rule.02") {
+    val input =
+      """
+        |rel R(a: Int)
+        |
+        |R(x) :- R(x), R(x), R(x).
+      """.stripMargin
+    run(input)
+  }
+
+  test("Declaration.Rule.03") {
+    val input =
+      """
+        |rel R(a: Int, b: Int)
+        |
+        |R(x, y) :- R(x, y), R(y, x).
+      """.stripMargin
+    run(input)
+  }
+
+  test("Declaration.Rule.04") {
+    val input =
+      """def f: Int = 42
+        |
+        |rel R(a: Int)
+        |
+        |R(f()).
+      """.stripMargin
+    run(input)
+  }
+
+  test("Declaration.Fact.Head.True") {
+    val input = "true."
+    run(input)
+  }
+
+  test("Declaration.Fact.Head.False") {
+    intercept[RuleException] {
+      val input = "false."
+      run(input)
+    }
+  }
+
+  test("Declaration.Rule.Head.True") {
+    val input =
+      """rel R(a: Int, b: Int)
+        |
+        |true :- R(x, y).
+      """.stripMargin
+    run(input)
+  }
+
+  test("Declaration.Rule.Head.False") {
+    val input =
+      """rel R(a: Int, b: Int)
+        |
+        |false :- R(x, y).
+      """.stripMargin
+    run(input)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
@@ -2196,101 +2294,6 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Facts and Rules                                                         //
-  /////////////////////////////////////////////////////////////////////////////
-  test("Declaration.Fact.01") {
-    val input =
-      """rel R(a: Int)
-        |R(42).
-      """.stripMargin
-    run(input)
-  }
-
-  test("Declaration.Fact.02") {
-    val input =
-      """rel R(a: Char, b: Int)
-        |R('a', 42).
-      """.stripMargin
-    run(input)
-  }
-
-  test("Declaration.Fact.03") {
-    val input =
-      """rel R(a: Int8, b: Int16, c: Int32, d: Int64)
-        |R(1i8, 2i16, 3i32, 4i64).
-      """.stripMargin
-    run(input)
-  }
-
-  test("Declaration.Rule.01") {
-    val input =
-      """rel R(a: Int)
-        |
-        |R(x) :- R(x).
-      """.stripMargin
-    run(input)
-  }
-
-  test("Declaration.Rule.02") {
-    val input =
-      """rel R(a: Int)
-        |
-        |R(x) :- R(x), R(x), R(x).
-      """.stripMargin
-    run(input)
-  }
-
-  test("Declaration.Rule.03") {
-    val input =
-      """rel R(a: Int, b: Int)
-        |
-        |R(x, y) :- R(x, y), R(y, x).
-      """.stripMargin
-    run(input)
-  }
-
-  test("Declaration.Fact.Head.True") {
-    val input = "true."
-    run(input)
-  }
-
-  test("Declaration.Fact.Head.False") {
-    intercept[RuleException] {
-      val input = "false."
-      run(input)
-    }
-  }
-
-  test("Declaration.Rule.Head.True") {
-    val input =
-      """rel R(a: Int, b: Int)
-        |
-        |true :- R(x, y).
-      """.stripMargin
-    run(input)
-  }
-
-  test("Declaration.Rule.Head.False") {
-    val input =
-      """rel R(a: Int, b: Int)
-        |
-        |false :- R(x, y).
-      """.stripMargin
-    run(input)
-  }
-
-  test("Declaration.Rule.04") {
-    val input =
-      """def f: Int = 42
-        |
-        |rel R(a: Int)
-        |
-        |R(f()).
-      """.stripMargin
-    run(input)
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   test("Type.Unit.01") {
@@ -2375,22 +2378,17 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   test("Type.Lambda.01") {
-    val input = "def f: Bool -> Int = ???"
+    val input = "def f: Bool -> Int = x -> 42"
     run(input)
   }
 
   test("Type.Lambda.02") {
-    val input = "def f: (Bool, Char, Int) -> Str = ???"
+    val input = "def f: (Bool, Char, Int) -> Str = (x,y, z) -> \"a\""
     run(input)
   }
 
   test("Type.Lambda.03") {
-    val input = "def f(g: Bool -> Int): Int = g(true)"
-    run(input)
-  }
-
-  test("Type.Lambda.04") {
-    val input = "def f(g: (Bool, Char, Int) -> Str): Str = g(true, 'a', 42)"
+    val input = "def f: Str -> (Bool, Char, Int) = x -> (true, 'a', 42)"
     run(input)
   }
 
