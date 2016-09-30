@@ -649,7 +649,7 @@ object Namer {
         NamedAst.Predicate.Body.NotEqual(env0(ident1.name), env0(ident2.name), loc).toSuccess
       case WeededAst.Predicate.Body.Loop(ident, term, loc) =>
         Expressions.namer(term, env0, tenv0) map {
-          case t => NamedAst.Predicate.Body.Loop(ident, t, loc)
+          case t => NamedAst.Predicate.Body.Loop(env0(ident.name), t, loc)
         }
     }
 

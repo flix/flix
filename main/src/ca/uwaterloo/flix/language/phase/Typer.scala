@@ -318,7 +318,7 @@ object Typer {
           case NamedAst.Attribute(ident, tpe, loc) =>
             // Resolve the declared type.
             Disambiguation.resolve(tpe, ns, program) map {
-              case resolvedType => TypedAst.Attribute(ident, resolvedType)
+              case resolvedType => TypedAst.Attribute(ident, resolvedType, loc)
             }
         }
 

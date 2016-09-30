@@ -248,7 +248,7 @@ object NamedAst {
 
       case class NotEqual(sym1: Symbol.VarSym, sym2: Symbol.VarSym, loc: SourceLocation) extends NamedAst.Predicate.Body
 
-      case class Loop(ident: Name.Ident, term: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Loop(sym: Symbol.VarSym, term: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
     }
 

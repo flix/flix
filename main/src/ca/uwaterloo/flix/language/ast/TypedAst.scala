@@ -287,13 +287,13 @@ object TypedAst {
 
       case class NotEqual(sym1: Symbol.VarSym, sym2: Symbol.VarSym, loc: SourceLocation) extends TypedAst.Predicate.Body
 
-      case class Loop(ident: Name.Ident, term: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Loop(sym: Symbol.VarSym, term: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Predicate.Body
 
     }
 
   }
 
-  case class Attribute(ident: Name.Ident, tpe: Type) extends TypedAst
+  case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst
 
   case class FormalParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst
 
