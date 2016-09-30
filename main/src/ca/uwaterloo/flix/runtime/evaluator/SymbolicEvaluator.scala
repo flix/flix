@@ -728,7 +728,7 @@ object SymbolicEvaluator {
         */
       case Expression.Tag(enum, tag, exp, _, _) =>
         eval(pc0, exp, env0) flatMap {
-          case (pc, v) => lift(pc, SymVal.Tag(tag.name, v))
+          case (pc, v) => lift(pc, SymVal.Tag(tag, v))
         }
 
       /**
@@ -745,7 +745,7 @@ object SymbolicEvaluator {
       case Expression.CheckTag(tag, exp, _) =>
         eval(pc0, exp, env0) flatMap {
           case (pc, SymVal.Tag(tag2, _)) =>
-            if (tag.name == tag2)
+            if (tag == tag2)
               lift(pc, SymVal.True)
             else
               lift(pc, SymVal.False)

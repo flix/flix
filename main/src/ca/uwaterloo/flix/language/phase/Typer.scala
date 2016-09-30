@@ -950,7 +950,7 @@ object Typer {
           Disambiguation.lookupEnumByTag(qname, tag, ns0, program) match {
             case Ok(enum) =>
               val e = visitExp(exp, subst0)
-              TypedAst.Expression.Tag(enum.sym, tag, e, subst0(tvar), loc)
+              TypedAst.Expression.Tag(enum.sym, tag.name, e, subst0(tvar), loc)
             case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
           }
 
@@ -1076,7 +1076,7 @@ object Typer {
         case NamedAst.Pattern.Str(lit, loc) => TypedAst.Pattern.Str(lit, loc)
         case NamedAst.Pattern.Tag(qname, tag, pat, tvar, loc) =>
           Disambiguation.lookupEnumByTag(qname, tag, ns0, program) match {
-            case Ok(enum) => TypedAst.Pattern.Tag(enum.sym, tag, visitPat(pat), subst0(tvar), loc)
+            case Ok(enum) => TypedAst.Pattern.Tag(enum.sym, tag.name, visitPat(pat), subst0(tvar), loc)
             case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
           }
         case NamedAst.Pattern.Tuple(elms, tvar, loc) => TypedAst.Pattern.Tuple(elms map visitPat, subst0(tvar), loc)

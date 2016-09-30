@@ -482,12 +482,12 @@ object ExecutableAst {
       * @param exp the tag expression to check.
       * @param loc the source location of the expression.
       */
-    case class CheckTag(tag: Name.Ident,
+    case class CheckTag(tag: String,
                         exp: ExecutableAst.Expression,
                         loc: SourceLocation) extends ExecutableAst.Expression {
       final val tpe: Type = Type.Bool
 
-      override def toString: String = "CheckTag(" + tag.name + ", " + exp + ")"
+      override def toString: String = "CheckTag(" + tag + ", " + exp + ")"
     }
 
     /**
@@ -498,7 +498,7 @@ object ExecutableAst {
       * @param tpe the type of the inner tag value.
       * @param loc the source location of the expression.
       */
-    case class GetTagValue(tag: Name.Ident,
+    case class GetTagValue(tag: String,
                            exp: ExecutableAst.Expression,
                            tpe: Type,
                            loc: SourceLocation) extends ExecutableAst.Expression {
@@ -515,7 +515,7 @@ object ExecutableAst {
       * @param loc  The source location of the tag.
       */
     case class Tag(enum: Symbol.Resolved,
-                   tag: Name.Ident,
+                   tag: String,
                    exp: ExecutableAst.Expression,
                    tpe: Type,
                    loc: SourceLocation) extends ExecutableAst.Expression {
@@ -524,7 +524,7 @@ object ExecutableAst {
           case Expression.Unit => ""
           case _ => s"($exp)"
         }
-        tag.name + inner
+        tag + inner
       }
     }
 

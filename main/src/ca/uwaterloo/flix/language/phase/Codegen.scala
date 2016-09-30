@@ -513,7 +513,7 @@ object Codegen {
       // Get the tag string of `exp` (compiled as a tag) and compare to `tag.name`.
       compileExpression(ctx, visitor, entryPoint)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), method1.getName, asm.Type.getMethodDescriptor(method1), false)
-      visitor.visitLdcInsn(tag.name)
+      visitor.visitLdcInsn(tag)
       visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz2), method2.getName, asm.Type.getMethodDescriptor(method2), false)
 
     case Expression.GetTagValue(tag, exp, tpe, _) =>
@@ -529,7 +529,7 @@ object Codegen {
     case Expression.Tag(enum, tag, exp, _, _) =>
       // Load the Value singleton object, then the arguments (tag.name, boxing if necessary), and finally call `Value.mkTag`.
       Constants.loadValueObject(visitor)
-      visitor.visitLdcInsn(tag.name)
+      visitor.visitLdcInsn(tag)
       compileBoxedExpr(ctx, visitor, entryPoint)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkTag", "(Ljava/lang/String;Ljava/lang/Object;)Lca/uwaterloo/flix/runtime/Value$Tag;", false)
 

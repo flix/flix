@@ -489,14 +489,14 @@ object SimplifiedAst {
       * @param exp the tag expression to check.
       * @param loc the source location of the expression.
       */
-    case class CheckTag(tag: Name.Ident,
+    case class CheckTag(tag: String,
                         exp: SimplifiedAst.Expression,
                         loc: SourceLocation) extends SimplifiedAst.Expression {
       final val tpe: Type = Type.Bool
 
       assert(exp.tpe.isInstanceOf[Type.Enum], s"CheckTag expects an expression if Type.Enum, but got '${exp.tpe}'.")
 
-      override def toString: String = "CheckTag(" + tag.name + ", " + exp + ")"
+      override def toString: String = "CheckTag(" + tag + ", " + exp + ")"
     }
 
     /**
@@ -507,12 +507,12 @@ object SimplifiedAst {
       * @param tpe the type of the inner tag value.
       * @param loc the source location of the expression.
       */
-    case class GetTagValue(tag: Name.Ident,
+    case class GetTagValue(tag: String,
                            exp: SimplifiedAst.Expression,
                            tpe: Type,
                            loc: SourceLocation) extends SimplifiedAst.Expression {
 
-      override def toString: String = "GetTagValue(" + tag.name + ", " + exp + ")"
+      override def toString: String = "GetTagValue(" + tag + ", " + exp + ")"
     }
 
     /**
@@ -525,7 +525,7 @@ object SimplifiedAst {
       * @param loc  The source location of the tag.
       */
     case class Tag(enum: Symbol.Resolved,
-                   tag: Name.Ident,
+                   tag: String,
                    exp: SimplifiedAst.Expression,
                    tpe: Type,
                    loc: SourceLocation) extends SimplifiedAst.Expression {
@@ -534,7 +534,7 @@ object SimplifiedAst {
           case Expression.Unit => ""
           case _ => s"($exp)"
         }
-        tag.name + inner
+        tag + inner
       }
     }
 
