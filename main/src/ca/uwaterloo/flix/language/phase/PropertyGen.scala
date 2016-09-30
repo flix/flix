@@ -471,7 +471,7 @@ object PropertyGen {
       val Type.Apply(Type.Arrow(l), ts) = defn.tpe
       val (targs, tresult) = (ts.take(l - 1), ts.last)
 
-      val r = Expression.Ref(defn.name, defn.tpe, SourceLocation.Unknown)
+      val r = Expression.Ref(defn.sym, defn.tpe, SourceLocation.Unknown)
       Expression.Apply(r, List(e1), tresult, SourceLocation.Unknown)
     }
 
@@ -479,7 +479,7 @@ object PropertyGen {
       val Type.Apply(Type.Arrow(l), ts) = defn.tpe
       val (targs, tresult) = (ts.take(l - 1), ts.last)
 
-      val r = Expression.Ref(defn.name, defn.tpe, SourceLocation.Unknown)
+      val r = Expression.Ref(defn.sym, defn.tpe, SourceLocation.Unknown)
       Expression.Apply(r, List(e1, e2), tresult, SourceLocation.Unknown)
     }
   }

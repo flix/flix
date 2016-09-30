@@ -115,14 +115,14 @@ object Typer {
         *
         * Returns [[Err]] if a definition fails to type check.
         */
-      def typecheck(program: Program)(implicit genSym: GenSym): Result[Map[Symbol.Resolved, TypedAst.Declaration.Definition], TypeError] = {
+      def typecheck(program: Program)(implicit genSym: GenSym): Result[Map[Symbol.DefnSym, TypedAst.Declaration.Definition], TypeError] = {
         /**
           * Performs type inference and reassembly on the given definition `defn` in the given namespace `ns`.
           */
-        def visitDefn(defn: NamedAst.Declaration.Definition, ns: Name.NName): Result[(Symbol.Resolved, TypedAst.Declaration.Definition), TypeError] = defn match {
+        def visitDefn(defn: NamedAst.Declaration.Definition, ns: Name.NName): Result[(Symbol.DefnSym, TypedAst.Declaration.Definition), TypeError] = defn match {
           case NamedAst.Declaration.Definition(sym, tparams, params, exp, ann, tpe, loc) =>
             infer(defn, ns, program) map {
-              case d => sym.toResolvedTemporaryHelperMethod -> d
+              case d => sym -> d
             }
         }
 
@@ -173,7 +173,7 @@ object Typer {
                     TypedAst.FormalParam(sym, subst0(sym.tvar), sym.loc)
                 }
 
-                Ok(TypedAst.Declaration.Definition(defn0.ann, defn0.sym.toResolvedTemporaryHelperMethod, formals, exp, resultType, defn0.loc))
+                Ok(TypedAst.Declaration.Definition(defn0.ann, defn0.sym, formals, exp, resultType, defn0.loc))
 
               case Err(e) => Err(e)
             }
@@ -860,7 +860,7 @@ object Typer {
         case NamedAst.Expression.Var(sym, loc) =>
           val qname = Name.mkQName(sym.text)
           Disambiguation.lookupRef(qname, ns0, program) match {
-            case Ok(RefTarget.Defn(ns, defn)) => TypedAst.Expression.Ref(defn.sym.toResolvedTemporaryHelperMethod, subst0(sym.tvar), loc)
+            case Ok(RefTarget.Defn(ns, defn)) => TypedAst.Expression.Ref(defn.sym, subst0(sym.tvar), loc)
             case Ok(RefTarget.Hook(hook)) => TypedAst.Expression.Hook(hook, subst0(sym.tvar), loc)
             case Err(e) => TypedAst.Expression.Var(sym, subst0(sym.tvar), loc)
           }
@@ -870,7 +870,7 @@ object Typer {
          */
         case NamedAst.Expression.Ref(qname, tvar, loc) =>
           Disambiguation.lookupRef(qname, ns0, program).get match {
-            case RefTarget.Defn(ns, defn) => TypedAst.Expression.Ref(defn.sym.toResolvedTemporaryHelperMethod, subst0(tvar), loc)
+            case RefTarget.Defn(ns, defn) => TypedAst.Expression.Ref(defn.sym, subst0(tvar), loc)
             case RefTarget.Hook(hook) => TypedAst.Expression.Hook(hook, hook.tpe, loc)
           }
 
@@ -1258,7 +1258,7 @@ object Typer {
         Disambiguation.lookupRef(qname, ns0, program) match {
           case Ok(RefTarget.Defn(ns, defn)) =>
             val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
-            TypedAst.Predicate.Body.ApplyFilter(defn.sym.toResolvedTemporaryHelperMethod, ts, loc)
+            TypedAst.Predicate.Body.ApplyFilter(defn.sym, ts, loc)
           case Ok(RefTarget.Hook(hook)) =>
             val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
             TypedAst.Predicate.Body.ApplyHookFilter(hook, ts, loc)

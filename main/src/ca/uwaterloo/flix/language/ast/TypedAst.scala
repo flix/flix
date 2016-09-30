@@ -20,15 +20,13 @@ sealed trait TypedAst
 
 object TypedAst {
 
-  // TODO: Get rid of Symbol.Resolved and Name.Ident
-
-  case class Root(definitions: Map[Symbol.Resolved, TypedAst.Declaration.Definition],
+  case class Root(definitions: Map[Symbol.DefnSym, TypedAst.Declaration.Definition],
                   lattices: Map[Type, TypedAst.Declaration.BoundedLattice],
                   tables: Map[Symbol.TableSym, TypedAst.Table],
                   indexes: Map[Symbol.TableSym, TypedAst.Declaration.Index],
                   facts: List[TypedAst.Declaration.Fact],
                   rules: List[TypedAst.Declaration.Rule],
-                  hooks: Map[Symbol.Resolved, Ast.Hook],
+                  hooks: Map[Symbol.Resolved, Ast.Hook], // TODO:  Symbol.Res
                   properties: List[TypedAst.Property],
                   time: Time) extends TypedAst
 
@@ -38,7 +36,7 @@ object TypedAst {
 
   object Declaration {
 
-    case class Definition(ann: Ast.Annotations, name: Symbol.Resolved, formals: List[TypedAst.FormalParam], exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Declaration
+    case class Definition(ann: Ast.Annotations, sym: Symbol.DefnSym, formals: List[TypedAst.FormalParam], exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Declaration
 
     case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends TypedAst.Declaration
 
@@ -126,7 +124,7 @@ object TypedAst {
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Ref(name: Symbol.Resolved, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Ref(name: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -284,7 +282,7 @@ object TypedAst {
 
       case class Table(sym: Symbol.TableSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
 
-      case class ApplyFilter(name: Symbol.Resolved, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class ApplyFilter(name: Symbol.DefnSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
 
       case class ApplyHookFilter(hook: Ast.Hook, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
 

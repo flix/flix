@@ -32,7 +32,7 @@ object Simplifier {
   def simplify(tast: TypedAst.Root)(implicit genSym: GenSym): SimplifiedAst.Root = {
     val t = System.nanoTime()
 
-    val constants = tast.definitions.map { case (k, v) => k -> Definition.simplify(v) }
+    val constants = tast.definitions.map { case (k, v) => k.toResolvedTemporaryHelperMethod -> Definition.simplify(v) }
     val lattices = tast.lattices.map { case (k, v) => k -> Definition.simplify(v) }
     val collections = tast.tables.map { case (k, v) => k -> Table.simplify(v) }
     val indexes = tast.indexes.map { case (k, v) => k -> Definition.simplify(v) }
@@ -65,7 +65,7 @@ object Simplifier {
       val formals = tast.formals.map {
         case TypedAst.FormalParam(sym, tpe, loc) => SimplifiedAst.FormalArg(sym.toIdent, tpe)
       }
-      SimplifiedAst.Definition.Constant(tast.ann, tast.name, formals, Expression.simplify(tast.exp), isSynthetic = false, tast.tpe, tast.loc)
+      SimplifiedAst.Definition.Constant(tast.ann, tast.sym.toResolvedTemporaryHelperMethod, formals, Expression.simplify(tast.exp), isSynthetic = false, tast.tpe, tast.loc)
     }
 
     def simplify(tast: TypedAst.Declaration.Index)(implicit genSym: GenSym): SimplifiedAst.Definition.Index =
@@ -97,7 +97,7 @@ object Simplifier {
       case TypedAst.Expression.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
       case TypedAst.Expression.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
       case TypedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Expression.Var(sym.toIdent, -1, tpe, loc)
-      case TypedAst.Expression.Ref(name, tpe, loc) => SimplifiedAst.Expression.Ref(name, tpe, loc)
+      case TypedAst.Expression.Ref(sym, tpe, loc) => SimplifiedAst.Expression.Ref(sym.toResolvedTemporaryHelperMethod, tpe, loc)
       case TypedAst.Expression.Hook(hook, tpe, loc) => SimplifiedAst.Expression.Hook(hook, tpe, loc)
       case TypedAst.Expression.Lambda(args, body, tpe, loc) =>
         SimplifiedAst.Expression.Lambda(args map Simplifier.simplify, simplify(body), tpe, loc)
@@ -380,8 +380,8 @@ object Simplifier {
       def simplify(tast: TypedAst.Predicate.Body)(implicit genSym: GenSym): SimplifiedAst.Predicate.Body = tast match {
         case TypedAst.Predicate.Body.Table(sym, terms, loc) =>
           SimplifiedAst.Predicate.Body.Table(sym, terms map Term.simplifyBody, loc)
-        case TypedAst.Predicate.Body.ApplyFilter(name, terms, loc) =>
-          SimplifiedAst.Predicate.Body.ApplyFilter(name, terms map Term.simplifyBody, loc)
+        case TypedAst.Predicate.Body.ApplyFilter(sym, terms, loc) =>
+          SimplifiedAst.Predicate.Body.ApplyFilter(sym.toResolvedTemporaryHelperMethod, terms map Term.simplifyBody, loc)
         case TypedAst.Predicate.Body.ApplyHookFilter(hook, terms, loc) =>
           SimplifiedAst.Predicate.Body.ApplyHookFilter(hook, terms map Term.simplifyBody, loc)
         case TypedAst.Predicate.Body.NotEqual(sym1, sym2, loc) =>
@@ -398,9 +398,9 @@ object Simplifier {
     def simplifyHead(e: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Term.Head = e match {
       case TypedAst.Expression.Var(sym, tpe, loc) =>
         SimplifiedAst.Term.Head.Var(sym.toIdent, tpe, loc)
-      case TypedAst.Expression.Apply(TypedAst.Expression.Ref(name, _, _), args, tpe, loc) =>
+      case TypedAst.Expression.Apply(TypedAst.Expression.Ref(sym, _, _), args, tpe, loc) =>
         val as = args map simplifyHead
-        SimplifiedAst.Term.Head.Apply(name, as, tpe, loc)
+        SimplifiedAst.Term.Head.Apply(sym.toResolvedTemporaryHelperMethod, as, tpe, loc)
       case TypedAst.Expression.Apply(TypedAst.Expression.Hook(hook, _, _), args, tpe, loc) =>
         val as = args map simplifyHead
         SimplifiedAst.Term.Head.ApplyHook(hook, as, tpe, loc)
