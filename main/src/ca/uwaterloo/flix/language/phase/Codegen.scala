@@ -577,7 +577,8 @@ object Codegen {
 
     case Expression.FNil(tpe, loc) =>
       // Call the static method ca.uwaterloo.flix.runtime.value.FNil.get().
-      ???
+      val name = "ca/uwaterloo/flix/runtime/value/FNil"
+      visitor.visitMethodInsn(INVOKESTATIC, name, "getSingleton", "()Lca/uwaterloo/flix/runtime/value/FNil;", false);
 
     case Expression.FList(hd, tl, tpe, loc) =>
       // Generate code for hd and tl.
