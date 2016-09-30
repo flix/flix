@@ -229,12 +229,13 @@ object Codegen {
     }
 
     tpe match {
+      case Type.Var(id, kind) => mv.visitInsn(ARETURN)  // TODO: Assumes that generics are boxed.
       case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => mv.visitInsn(IRETURN)
       case Type.Int64 => mv.visitInsn(LRETURN)
       case Type.Float32 => mv.visitInsn(FRETURN)
       case Type.Float64 => mv.visitInsn(DRETURN)
       case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) |
-           Type.Apply(Type.FSet, _) => mv.visitInsn(ARETURN)
+           Type.Apply(_, _) => mv.visitInsn(ARETURN)
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
 
@@ -281,6 +282,7 @@ object Codegen {
     case store: StoreExpression => compileStoreExpr(ctx, visitor, entryPoint)(store)
 
     case Expression.Var(ident, offset, tpe, _) => tpe match {
+      case Type.Var(id, kind) => visitor.visitVarInsn(ALOAD, offset)  // TODO: Assumes that generics are boxed.
       case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ILOAD, offset)
       case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
       case Type.Float32 => visitor.visitVarInsn(FLOAD, offset)
@@ -488,6 +490,7 @@ object Codegen {
     case Expression.Let(ident, offset, exp1, exp2, _, _) =>
       compileExpression(ctx, visitor, entryPoint)(exp1)
       exp1.tpe match {
+        case Type.Var(id, kind) => visitor.visitVarInsn(ASTORE, offset) // TODO: Assumes that generics are boxed.
         case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ISTORE, offset)
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
         case Type.Float32 => visitor.visitVarInsn(FSTORE, offset)
@@ -579,29 +582,45 @@ object Codegen {
     case Expression.FList(hd, tl, tpe, loc) =>
       // Generate code for hd and tl.
       // Call the constructor of ca.uwaterloo.flix.runtime.value.FList(hd, tl).
-      ???
+      val name = "ca/uwaterloo/flix/runtime/value/FList"
+      val ctor = "(Ljava/lang/Object;Ljava/lang/Object;)V"
+      visitor.visitTypeInsn(NEW, name)
+      visitor.visitInsn(DUP)
+      compileExpression(ctx, visitor, entryPoint)(hd)
+      compileExpression(ctx, visitor, entryPoint)(tl)
+      visitor.visitMethodInsn(INVOKESPECIAL, name, "<init>", ctor, false)
 
     case Expression.IsNil(exp, loc) =>
       // Generate code for exp.
       // Perform INSTANCEOF for ca.uwaterloo.flix.runtime.value.FNil.
-      ???
+      val name = "ca/uwaterloo/flix/runtime/value/FNil"
+      compileExpression(ctx, visitor, entryPoint)(exp)
+      visitor.visitTypeInsn(INSTANCEOF, name)
 
     case Expression.IsList(exp, loc) =>
       // Generate code for exp.
       // Perform INSTANCEOF for ca.uwaterloo.flix.runtime.value.FList.
-      ???
+      val name = "ca/uwaterloo/flix/runtime/value/FList"
+      compileExpression(ctx, visitor, entryPoint)(exp)
+      visitor.visitTypeInsn(INSTANCEOF, name)
 
     case Expression.GetHead(exp, tpe, loc) =>
       // Generate code for exp.
       // Cast the result to ca.uwaterloo.flix.runtime.value.FList
       // Call the INSTANCE method ca.uwaterloo.flix.runtime.value.FList.getHd
-      ???
+      val name = "ca/uwaterloo/flix/runtime/value/FList"
+      compileExpression(ctx, visitor, entryPoint)(exp)
+      visitor.visitTypeInsn(CHECKCAST, name)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, name, "getHd", "()Ljava/lang/Object;", false)
 
     case Expression.GetTail(exp, tpe, loc) =>
       // Generate code for exp.
       // Cast the result to ca.uwaterloo.flix.runtime.value.FList
       // Call the INSTANCE method ca.uwaterloo.flix.runtime.value.FList.getTl
-      ???
+      val name = "ca/uwaterloo/flix/runtime/value/FList"
+      compileExpression(ctx, visitor, entryPoint)(exp)
+      visitor.visitTypeInsn(CHECKCAST, name)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, name, "getTl", "()Ljava/lang/Object;", false)
 
     case Expression.FSet(elms, _, _) =>
       // First create a scala.immutable.Set

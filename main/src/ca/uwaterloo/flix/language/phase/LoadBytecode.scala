@@ -142,6 +142,7 @@ object LoadBytecode {
     * Used for reflection. Note that this method depends on the generated and loaded functional interfaces.
     */
   private def toJavaClass(tpe: Type, interfaces: Map[Type, Class[_]]): Class[_] = tpe match {
+    case Type.Var(id, kind) => classOf[java.lang.Object] // TODO: Assumes that generics are boxed.
     case Type.Unit => Value.Unit.getClass
     case Type.Bool => classOf[Boolean]
     case Type.Char => classOf[Char]
@@ -157,6 +158,7 @@ object LoadBytecode {
     case Type.Enum(_, _) => classOf[Value.Tag]
     case Type.Apply(Type.FTuple(l), _) => classOf[Value.Tuple]
     case Type.Apply(Type.Arrow(l), _) => interfaces(tpe)
+    case Type.Apply(Type.FList, _) => classOf[java.lang.Object]
     case Type.FSet => classOf[scala.collection.immutable.Set[AnyRef]]
     case _ if tpe.isTuple => classOf[Value.Tuple]
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
