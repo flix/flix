@@ -102,7 +102,7 @@ object Indexer {
   private def var2offset(varName: String, attributes: Array[ExecutableAst.Attribute]): Int = {
     var i = 0
     while (i < attributes.length) {
-      if (varName == attributes(i).ident.name) return i
+      if (varName == attributes(i).name) return i
       i = i + 1
     }
     throw new RuntimeException // TODO

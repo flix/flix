@@ -323,7 +323,7 @@ object CreateExecutableAst {
   }
 
   def toExecutable(sast: SimplifiedAst.Attribute): ExecutableAst.Attribute =
-    ExecutableAst.Attribute(sast.ident, sast.tpe)
+    ExecutableAst.Attribute(sast.name, sast.tpe)
 
   def toExecutable(sast: SimplifiedAst.FormalArg): ExecutableAst.FormalArg =
     ExecutableAst.FormalArg(sast.ident, sast.tpe)

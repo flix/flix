@@ -715,7 +715,7 @@ object SimplifiedAst {
 
   }
 
-  case class Attribute(ident: Name.Ident, tpe: Type) extends SimplifiedAst
+  case class Attribute(name: String, tpe: Type) extends SimplifiedAst
 
   case class FormalArg(ident: Name.Ident, tpe: Type) extends SimplifiedAst
 

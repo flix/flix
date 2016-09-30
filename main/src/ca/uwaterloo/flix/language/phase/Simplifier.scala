@@ -416,7 +416,7 @@ object Simplifier {
   }
 
   def simplify(tast: TypedAst.Attribute)(implicit genSym: GenSym): SimplifiedAst.Attribute =
-    SimplifiedAst.Attribute(tast.ident, tast.tpe)
+    SimplifiedAst.Attribute(tast.name, tast.tpe)
 
   def simplify(tast: TypedAst.FormalParam)(implicit genSym: GenSym): SimplifiedAst.FormalArg =
     SimplifiedAst.FormalArg(tast.sym.toIdent, tast.tpe)

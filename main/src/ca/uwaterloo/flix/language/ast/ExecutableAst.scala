@@ -705,7 +705,7 @@ object ExecutableAst {
 
   }
 
-  case class Attribute(ident: Name.Ident, tpe: Type) extends ExecutableAst
+  case class Attribute(name: String, tpe: Type) extends ExecutableAst
 
   case class FormalArg(ident: Name.Ident, tpe: Type) extends ExecutableAst
 

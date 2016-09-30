@@ -293,7 +293,7 @@ object TypedAst {
 
   }
 
-  case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst
+  case class Attribute(name: String, tpe: Type, loc: SourceLocation) extends TypedAst
 
   case class FormalParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst
 
