@@ -221,11 +221,11 @@ object Simplifier {
       case TypedAst.Expression.GetIndex(e1, e2, tpe, loc) => ??? // TODO
       case TypedAst.Expression.PutIndex(e1, e2, e3, tpe, loc) => ??? // TODO
       case TypedAst.Expression.Existential(params, exp, loc) =>
-        val ps = params.map(p => Ast.FormalParam(p.sym.toIdent, p.tpe))
+        val ps = params.map(p => SimplifiedAst.FormalArg(p.sym.toIdent, p.tpe))
       val e = simplify(exp)
         SimplifiedAst.Expression.Existential(ps, e, loc)
       case TypedAst.Expression.Universal(params, exp, loc) =>
-        val ps = params.map(p => Ast.FormalParam(p.sym.toIdent, p.tpe))
+        val ps = params.map(p => SimplifiedAst.FormalArg(p.sym.toIdent, p.tpe))
       val e = simplify(exp)
         SimplifiedAst.Expression.Universal(ps, e, loc)
       case TypedAst.Expression.UserError(tpe, loc) =>

@@ -146,15 +146,6 @@ object Ast {
   }
 
   /**
-    * Formal Parameter.
-    *
-    * @param ident the name of the argument.
-    * @param tpe   the type of the argument.
-    */
-  // TODO: Remove
-  case class FormalParam(ident: Name.Ident, tpe: Type)
-
-  /**
     * A common super-type for hooks.
     */
   sealed trait Hook {

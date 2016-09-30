@@ -577,11 +577,11 @@ object SimplifiedAst {
                     tpe: Type,
                     loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class Existential(params: List[Ast.FormalParam], exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
+    case class Existential(params: List[SimplifiedAst.FormalArg], exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Bool
     }
 
-    case class Universal(params: List[Ast.FormalParam], exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
+    case class Universal(params: List[SimplifiedAst.FormalArg], exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Bool
     }
 

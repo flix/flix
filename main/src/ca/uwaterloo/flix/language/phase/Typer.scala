@@ -432,6 +432,7 @@ object Typer {
          * Unary expression.
          */
         case NamedAst.Expression.Unary(op, exp1, tvar, loc) => op match {
+            // TODO: Must unify tvar
           case UnaryOperator.LogicalNot =>
             for (
               tpe1 <- visitExp(exp1);
@@ -439,16 +440,19 @@ object Typer {
             ) yield res
 
           case UnaryOperator.Plus =>
+            // TODO: Must unify tvar
             for (
               tpe1 <- visitExp(exp1)
             ) yield tpe1
 
           case UnaryOperator.Minus =>
+            // TODO: Must unify tvar
             for (
               tpe1 <- visitExp(exp1)
             ) yield tpe1
 
           case UnaryOperator.BitwiseNegate =>
+            // TODO: Must unify tvar
             for (
               inferredType <- visitExp(exp1)
             ) yield inferredType

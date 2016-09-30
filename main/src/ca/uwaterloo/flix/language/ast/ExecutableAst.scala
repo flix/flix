@@ -112,7 +112,7 @@ object ExecutableAst {
       */
     def getQuantifiers: List[Expression.Var] = this match {
       case Expression.Universal(params, _, _) => params.map {
-        case Ast.FormalParam(ident, tpe) => Expression.Var(ident, -1, tpe, SourceLocation.Unknown)
+        case ExecutableAst.FormalArg(ident, tpe) => Expression.Var(ident, -1, tpe, SourceLocation.Unknown)
       }
       case _ => Nil
     }
@@ -576,11 +576,11 @@ object ExecutableAst {
                     tpe: Type,
                     loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class Existential(params: List[Ast.FormalParam], exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
+    case class Existential(params: List[ExecutableAst.FormalArg], exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
       def tpe: Type = Type.Bool
     }
 
-    case class Universal(params: List[Ast.FormalParam], exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
+    case class Universal(params: List[ExecutableAst.FormalArg], exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
       def tpe: Type = Type.Bool
     }
 

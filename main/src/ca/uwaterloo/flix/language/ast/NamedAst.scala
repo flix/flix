@@ -44,11 +44,11 @@ object NamedAst {
 
     case class Definition(sym: Symbol.DefnSym, tparams: List[ast.Type.Var], params: List[NamedAst.FormalParam], exp: NamedAst.Expression, ann: Ast.Annotations, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
-    case class Signature(ident: Name.Ident, params: List[Ast.FormalParam], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
+    case class Signature(ident: Name.Ident, params: List[NamedAst.FormalParam], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
-    case class External(ident: Name.Ident, params: List[Ast.FormalParam], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
+    case class External(ident: Name.Ident, params: List[NamedAst.FormalParam], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
-    case class Law(ident: Name.Ident, tparams: List[ParsedAst.ContextBound], params: List[Ast.FormalParam], tpe: NamedAst.Type, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Declaration
+    case class Law(ident: Name.Ident, tparams: List[ParsedAst.ContextBound], params: List[NamedAst.FormalParam], tpe: NamedAst.Type, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Declaration
 
     case class Enum(sym: Symbol.EnumSym, cases: Map[String, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 

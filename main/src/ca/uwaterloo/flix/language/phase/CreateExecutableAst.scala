@@ -233,9 +233,15 @@ object CreateExecutableAst {
         val elmsArray = elms.map(toExecutable).toArray
         ExecutableAst.Expression.FSet(elmsArray, tpe, loc)
       case SimplifiedAst.Expression.Existential(params, exp, loc) =>
-        ExecutableAst.Expression.Existential(params, toExecutable(exp), loc)
+        val ps = params map {
+          case SimplifiedAst.FormalArg(ident, tpe) => ExecutableAst.FormalArg(ident, tpe)
+        }
+        ExecutableAst.Expression.Existential(ps, toExecutable(exp), loc)
       case SimplifiedAst.Expression.Universal(params, exp, loc) =>
-        ExecutableAst.Expression.Universal(params, toExecutable(exp), loc)
+        val ps = params map {
+          case SimplifiedAst.FormalArg(ident, tpe) => ExecutableAst.FormalArg(ident, tpe)
+        }
+        ExecutableAst.Expression.Universal(ps, toExecutable(exp), loc)
       case SimplifiedAst.Expression.UserError(tpe, loc) => ExecutableAst.Expression.UserError(tpe, loc)
       case SimplifiedAst.Expression.MatchError(tpe, loc) => ExecutableAst.Expression.MatchError(tpe, loc)
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => ExecutableAst.Expression.SwitchError(tpe, loc)

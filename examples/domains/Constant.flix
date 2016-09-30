@@ -126,15 +126,16 @@ namespace Constant {
         case _                                      => Constant.Top
     }
 
-    /**
-     * Over-approximates `bitwise negation`.
-     */
-    @strict @monotone
-    def negate(e: Constant): Constant = match e with {
-        case Constant.Bot       => Constant.Bot
-        case Constant.Cst(n)    => Constant.Cst(~ n)
-        case Constant.Top       => Constant.Top
-    }
+// TODO
+//    /**
+//     * Over-approximates `bitwise negation`.
+//     */
+//    @strict @monotone
+//    def negate(e: Constant): Constant = match e with {
+//        case Constant.Bot       => Constant.Bot
+//        case Constant.Cst(n)    => Constant.Cst(~ n)
+//        case Constant.Top       => Constant.Top
+//    }
 
     /**
       * Over-approximates `bitwise and`.
