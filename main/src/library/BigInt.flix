@@ -29,10 +29,7 @@ namespace BigInt {
     /**
      * Returns the absolute value of `x`.
      */
-    def abs(x: BigInt): BigInt = switch {
-        case x >= 0ii   => x
-        case x < 0ii    => -x
-    }
+    def abs(x: BigInt): BigInt = if (x >= 0ii) x else -x
 
     /**
      * Returns the distance between `x` and `y`.
@@ -54,4 +51,32 @@ namespace BigInt {
      * This sign of x
      */
     def signum(x: BigInt): Int32 = compare(x, 0ii)
+
+    /**
+     * Returns the bit of `x` at `position` (either 0 or 1).
+     * Considers the 5 rightmost bits of `position` (`position` mod 32).
+     * The bits of x have positions: 0 (rightmost bit), 1, ...
+     */
+    def bit(x: BigInt, position: Int32): Int32 =
+        if ((x >> position) % 2ii == 0ii) 0 else 1
+
+    /**
+     * Returns the greatest common non-negative divisor of `x` and `y`.
+     */
+    def gcd(x: BigInt, y: BigInt): BigInt = if (y == 0ii) abs(x) else gcd(y, x % y)
+
+    /**
+     * Returns `x` with the bit at position `position` set (to 1).
+     */
+    def setBit(x: BigInt, position: Int32): BigInt = x | (1ii << position)
+
+    /**
+     * Returns `x` with the bit at position `position` cleared (to 0).
+     */
+    def clearBit(x: BigInt, position: Int32): BigInt = x & ~(1ii << position)
+
+    /**
+     * Returns `x` with the bit at position `position` flipped.
+     */
+    def flipBit(x: BigInt, position: Int32): BigInt = x ^ (1ii << position)
 }
