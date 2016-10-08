@@ -58,8 +58,16 @@ match_rules : match_rule (WS? match_rule)*;
 switch_rule : 'case' WS expression WS? '=>' WS? expression;
 switch_rules : switch_rule (WS? switch_rule)*;
 
+typeparam : Ident (WS? ':' WS? type)?;
+typeparams : typeparam (WS? ',' WS? typeparam)*;
 
+class_typeparams : type (WS? ',' WS? type)*;
 
+contextBound : Ident '[' WS? class_typeparams WS? ']';
+contextBounds : contextBound (WS? ',' WS? contextBound)*;
+contextBoundsList : ('<=' WS? contextBounds WS?)?
+
+functions : decls_function (WS decls_function)*
 
 //Imports
 imports : 	import_wildcard |
@@ -76,10 +84,16 @@ import_namespace : 'import' WS nname optSC;
 decls : decls_namespace |
 		decls_enum |
 		decls_relation |
+		decls_lattice |
 		decls_index |
 		decls_signature |
 		decls_external |
-		decls_function;
+		decls_function |
+		decls_law |
+		decls_class |
+		decls_fact |
+		decls_rule |
+		decls_letlattice;
 
 decls_namespace : 'namespace' WS nname WS? '{' WS? decls* WS? '}' optSC;
 
@@ -97,6 +111,19 @@ decls_signature : 'def' WS Ident WS? params WS? ':' WS? type optSC;
 decls_external : 'external' WS? 'def' WS Ident WS? params WS? ':' WS? type optSC;
 
 decls_function : (annotation (WS annotation)*)? WS? 'def' WS Ident WS? params WS? ':' WS? type WS? '=' WS? expression optSC;
+
+decls_law : 'law' WS Ident WS? '[' WS? typeparams WS? ']' WS? params WS? ':' WS? type WS? '=' WS? expression optSC;
+
+decls_class : 'class' WS Ident '[' WS? class_typeparams WS? ']' WS? contextBoundsList WS? class_body;
+
+class_body : '{' WS? functions? WS? '}';
+
+decls_fact : predicate WS? '.';
+
+decls_rule : predicate WS? ':-' WS? predicates WS? '.';
+
+elms : expressions;
+decls_letlattice : 'let' WS? type '<>' WS? '=' WS? '(' WS? elms WS? ')'
 
 
 //Expressions
@@ -176,18 +203,19 @@ chars : '\'' . '\'';
 strs : '"' .*? '"';
 
 Digits : [0-9]+;
+negative : '-';
 
-float32 : addve_ops? Digits '.' Digits 'f32';
-float64 : addve_ops? Digits '.' Digits 'f64';
-floatDefault : addve_ops? Digits '.' Digits;
+float32 : negative? Digits '.' Digits 'f32';
+float64 : negative? Digits '.' Digits 'f64';
+floatDefault : negative? Digits '.' Digits;
 floats : float32 | float64 | floatDefault;
 
-int8 : addve_ops? Digits 'i8';
-int16 : addve_ops? Digits 'i16';
-int32 : addve_ops? Digits 'i32';
-int64 : addve_ops? Digits 'i64';
-bigInt : addve_ops? Digits 'ii';
-intDefault : addve_ops? Digits;
+int8 : negative? Digits 'i8';
+int16 : negative? Digits 'i16';
+int32 : negative? Digits 'i32';
+int64 : negative? Digits 'i64';
+bigInt : negative? Digits 'ii';
+intDefault : negative? Digits;
 ints : int8 | int16 | int32 | int64 | bigInt | intDefault;
 
 literals : bools | chars | floats | ints | strs;
@@ -220,3 +248,18 @@ comparison_ops : ('<=' | '>=' | '<' | '>' |
 multipve_ops : ('**' | '*' | '/' | '%');
 addve_ops : ('+' | '-');
 extbin_ops : ('⊑' | '⊔' | '⊓' | '▽' | '△');
+
+
+
+//Predicates
+predicate : pred_true | pred_false | pred_ambiguous |
+			pred_notequal | pred_equal | pred_loop;
+predicates : predicate (WS? ',' WS? predicate)*;
+
+
+pred_true : 'true';
+pred_false : 'false';
+pred_ambiguous : qname WS? '(' expressions ')';
+pred_equal : Ident WS? ':=' WS? Ident;
+pred_notequal : Ident WS? '!=' WS? Ident;
+pred_loop : Ident WS? '<-' WS? expression;
