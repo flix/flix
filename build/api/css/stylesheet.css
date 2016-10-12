@@ -18,7 +18,7 @@ body {
     height: 100vh;
 
     background-color: #eadfda;
-    box-shadow: 3px 0px 3px 0px rgba(0, 0, 0, 0.15);
+    box-shadow: 4px 0 4px 0 rgba(0, 0, 0, 0.15);
     padding-left: 3vw;
     padding-right: 3vw;
 
@@ -138,7 +138,7 @@ h1 {
 h2 {
     font-size: 1.1rem;
     font-weight: bold;
-    margin-left: 2rem;
+    margin-left: 0.5rem;
 }
 
 /**
