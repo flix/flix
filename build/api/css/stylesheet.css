@@ -1,14 +1,20 @@
+/**
+ * Page body.
+ */
 body {
     background-color: #fcfcfc;
     margin: 0;
     padding: 0;
 }
 
+/**
+ * Navigation bar.
+ */
 .navbar {
     position: fixed;
     top: 0;
     left: 0;
-    width: 15vw;
+    width: 13vw;
     height: 100vh;
 
     background-color: #eadfda;
@@ -35,11 +41,14 @@ body {
     padding: 0;
 }
 
+/**
+ * Page content.
+ */
 .pagecontent {
     padding-left: 2.5vw;
     padding-right: 2.5vw;
 
-    margin-left: 21vw;
+    margin-left: 19vw; /* 13 + 3 + 3 = 19 */
 }
 
 /**
@@ -99,6 +108,14 @@ body {
 }
 
 /**
+ * Anchor associated with a declaration.
+ */
+.anchor {
+    float: right;
+    vertical-align: bottom;
+}
+
+/**
  * Types.
  */
 .type {
@@ -133,4 +150,12 @@ a:link, a:visited {
 
 a:hover, a:active {
     color: #d21230;
+}
+
+/**
+ * Material Icons.
+ */
+.material-icons.md-18 {
+    font-size: 18px;
+    color: lightgrey;
 }

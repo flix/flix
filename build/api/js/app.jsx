@@ -1,3 +1,17 @@
+/**
+ * Build instructions:
+ *
+ * Run the following command to install all the build dependencies:
+ *
+ *  $ npm install --save-dev react react-dom babel babel-preset-es2015 babel-preset-react babelify browserify
+ *
+ * Then run:
+ *
+ *  $ browserify -t babelify app.jsx -o bundle.js
+ *
+ * To compile the JSX file.
+ */
+
 var React = require('react');
 var ReactDOM = require('react-dom');
 
@@ -77,10 +91,13 @@ var TypeBox = React.createClass({
         var name = this.props.decl.name;
         var comment = this.props.decl.comment;
         return (
-            <div className="type-decl">
+            <div id={name} className="type-decl">
                 <div className="signature">
                     <span className="keyword">enum</span>
                     <span className="name">{name}</span>
+                    <span className="anchor">
+                        <a href={'#' + name}><i className="material-icons md-18">link</i></a>
+                    </span>
                 </div>
                 <div className="comment">
                     {comment}
@@ -97,7 +114,7 @@ var DefinitionList = React.createClass({
     render: function () {
         var definitionList = this.props.decls.map(d => <DefinitionBox key={d.name} decl={d}/>);
         if (definitionList.length == 0)
-            return null
+            return null;
         return (
             <div className="definition-list">
                 <h2>Definitions</h2>
@@ -123,13 +140,16 @@ var DefinitionBox = React.createClass({
         var result = this.props.decl.result;
         var comment = this.props.decl.comment;
         return (
-            <div className="definition-decl">
+            <div id={name} className="definition-decl">
                 <div className="signature">
                     <span className="keyword">def</span>
                     <span className="name">{name}</span>
                     <span className="tparams">{tparams}</span>
                     <span className="fparams">{fparams}</span>
                     <span className="result">: <span className="type">{result}</span></span>
+                    <span className="anchor">
+                        <a href={'#' + name}><i className="material-icons md-18">link</i></a>
+                    </span>
                 </div>
                 <div className="comment">
                     {comment}
@@ -167,11 +187,14 @@ var RelationBox = React.createClass({
         ), ", "), "(", ")");
         var comment = this.props.decl.comment;
         return (
-            <div className="relation-decl">
+            <div id={name} className="relation-decl">
                 <div className="signature">
                     <span className="keyword">rel</span>
                     <span className="name">{name}</span>
                     <span className="attributes">{attributes}</span>
+                    <span className="anchor">
+                        <a href={'#' + name}><i className="material-icons md-18">link</i></a>
+                    </span>
                 </div>
                 <div className="comment">{comment}</div>
             </div>
@@ -186,7 +209,7 @@ var LatticeList = React.createClass({
     render: function () {
         var latticeList = this.props.decls.map(d => <LatticeBox key={d.name} decl={d}/>);
         if (latticeList.length == 0)
-            return null
+            return null;
         return (
             <div className="lattice-list">
                 <h2>Lattices</h2>
@@ -207,11 +230,14 @@ var LatticeBox = React.createClass({
         ), ", "), "(", ")");
         var comment = this.props.decl.comment;
         return (
-            <div className="lattice-decl">
+            <div id={name} className="lattice-decl">
                 <div className="signature">
                     <span className="keyword">rel</span>
                     <span className="name">{name}</span>
                     <span className="attributes">{attributes}</span>
+                    <span className="anchor">
+                        <a href={'#' + name}><i className="material-icons md-18">link</i></a>
+                    </span>
                 </div>
                 <div className="comment">{comment}</div>
             </div>
@@ -247,7 +273,7 @@ function intersperse(arr, sep) {
         return [];
     }
 
-    return arr.slice(1).reduce(function (xs, x, i) {
+    return arr.slice(1).reduce(function (xs, x) {
         return xs.concat([sep, x]);
     }, [arr[0]]);
 }
