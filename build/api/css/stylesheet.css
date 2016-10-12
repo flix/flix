@@ -1,0 +1,44 @@
+body {
+    background-color: #f6f5ea;
+    margin: 0;
+    padding: 0;
+
+    font-family: "Source Code Pro", monospace;
+}
+
+.app {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+}
+
+.nav {
+    background-color: #f6be78;
+    width: 15%;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    font-size: 0.9rem;
+}
+
+.nav .title {
+    font-family: "Arial", sans-serif;
+    font-weight: bold;
+    font-size: 1.2rem;
+
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.nav ul {
+    margin: 0;
+    padding: 0;
+}
+
+.members {
+
+}
+
+.types {
+    background: blue;
+}
+
