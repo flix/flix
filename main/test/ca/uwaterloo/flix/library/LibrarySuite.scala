@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2016 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,18 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix
+package ca.uwaterloo.flix.library
 
-import ca.uwaterloo.flix.language.LanguageSuite
-import ca.uwaterloo.flix.library.LibrarySuite
-import ca.uwaterloo.flix.runtime.RuntimeSuite
-import ca.uwaterloo.flix.util.UtilSuite
 import org.scalatest.{ParallelTestExecution, Suites}
 
-class TestAll extends Suites(
-  new LanguageSuite,
-  new RuntimeSuite,
-  new LibrarySuite,
-  new UtilSuite,
-  new TestMain,
-  new TestExamples,
-  new TestTutorials
+class LibrarySuite extends Suites(
+  new TestBigInt,
+  new TestFloat32,
+  new TestFloat64,
+  new TestInt8,
+  new TestInt16,
+  new TestInt32,
+  new TestInt64
 ) with ParallelTestExecution {
   /* left empty */
 }
