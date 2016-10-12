@@ -75,8 +75,12 @@ var DefinitionList = React.createClass({
 var DefinitionBox = React.createClass({
     render: function () {
         var name = this.props.d.name;
-        var tparams = this.props.d.params.map(kv => <span>{kv.name}</span>);
-        var fparams = this.props.d.params.map(kv => <span>{kv.name}</span>);
+        var tparams = surround(intersperse(this.props.d.tparams.map(
+            tparam => <span>{tparam.name}</span>
+        ), ", "), "[", "]");
+        var fparams = surround(intersperse(this.props.d.fparams.map(
+            fparam => <span>{fparam.name}: <span className="type">{fparam.tpe}</span></span>
+        ), ", "), "(", ")");
         var result = this.props.d.result;
         var comment = this.props.d.comment;
         return (
@@ -119,16 +123,16 @@ var RelationList = React.createClass({
 var RelationBox = React.createClass({
     render: function () {
         var name = this.props.r.name;
-        var attributes = intersperse(this.props.r.attributes.map(
+        var attributes = surround(intersperse(this.props.r.attributes.map(
             attr => <span>{attr.name}: <span className="type">{attr.tpe}</span></span>
-        ), ", ");
+        ), ", "), "(", ")");
         var comment = this.props.r.comment;
         return (
             <div className="relation">
                 <div className="signature">
                     <span className="keyword">rel</span>
                     <span className="name">{name}</span>
-                    <span className="attributes">({attributes})</span>
+                    <span className="attributes">{attributes}</span>
                 </div>
                 <div className="comment">{comment}</div>
             </div>
@@ -153,7 +157,7 @@ function getData() {
                     {name: "a"},
                     {name: "b"}
                 ],
-                "params": [
+                "fparams": [
                     {name: "f", tpe: "a -> b"},
                     {name: "xs", tpe: "List[a]"}
                 ],
@@ -163,35 +167,35 @@ function getData() {
             {
                 "name": "minValue",
                 "tparams": [],
-                "params": [],
+                "fparams": [],
                 "result": "Int",
                 "comment": "Returns the minimum number representable by an Int32."
             },
             {
                 "name": "maxValue",
                 "tparams": [],
-                "params": [],
+                "fparams": [],
                 "result": "Int",
                 "comment": "Returns the maximum number representable by an Int32."
             },
             {
                 "name": "min",
                 "tparams": [],
-                "params": [{name: "x", tpe: "Int"}, {name: "y", tpe: "Int"}],
+                "fparams": [{name: "x", tpe: "Int"}, {name: "y", tpe: "Int"}],
                 "result": "Int",
                 "comment": "Returns the smaller of `x` and `y`."
             },
             {
                 "name": "max",
                 "tparams": [],
-                "params": [],
+                "fparams": [],
                 "result": "Int",
                 "comment": " Returns the larger of `x` and `y`."
             },
             {
                 "name": "abs",
                 "tparams": [],
-                "params": [],
+                "fparams": [],
                 "result": "Int",
                 "comment": "Returns the absolute value of `x`. If the absolute value exceeds maxValue(), -1 is returned."
             }
@@ -246,7 +250,22 @@ function getData() {
 }
 
 /**
- *  intersperse: Return an array with the separator interspersed between each element of the input array.
+ * Returns the given array of elements surrounded by parenthesis (if non-empty).
+ */
+function surround(arr, b, e) {
+    if (arr.length == 0)
+        return arr;
+
+    var result = [];
+    result.push(b);
+    arr.forEach(item => result.push(item));
+    result.push(e);
+
+    return result;
+}
+
+/**
+ *  Return an array with the separator interspersed between each element of the input array.
  *
  * > _([1,2,3]).intersperse(0)
  * [1,0,2,0,3]
