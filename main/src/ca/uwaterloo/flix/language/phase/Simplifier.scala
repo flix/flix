@@ -84,6 +84,7 @@ object Simplifier {
 
   object Expression {
     def simplify(tast: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Expression = tast match {
+      case TypedAst.Expression.Wild(tpe, loc) => ??? // TODO
       case TypedAst.Expression.Unit(loc) => SimplifiedAst.Expression.Unit
       case TypedAst.Expression.True(loc) => SimplifiedAst.Expression.True
       case TypedAst.Expression.False(loc) => SimplifiedAst.Expression.False
