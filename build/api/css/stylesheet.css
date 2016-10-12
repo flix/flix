@@ -2,8 +2,6 @@ body {
     background-color: #f6f5ea;
     margin: 0;
     padding: 0;
-
-    font-family: "Source Code Pro", monospace;
 }
 
 .app {
@@ -17,7 +15,9 @@ body {
     width: 15%;
     padding-left: 2rem;
     padding-right: 2rem;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+
+    font-family: "Source Code Pro", monospace;
 
     box-shadow: 3px 0px 3px 0px rgb(215, 215, 215);
 }
@@ -39,17 +39,40 @@ body {
 .members {
     padding-left: 2rem;
     padding-right: 2rem;
+
+    width: 80%;
 }
 
-.types {
+.types, .definitions, .relations, .lattices {
+    margin-bottom: 2rem;
 }
 
-.relation .keyword {
-
+.type, .definition, .relation, .lattice {
+    background-color: #ffffff;
+    border-radius: 0.1rem;
+    padding: 0.5rem 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.1);
 }
 
-.relation .name {
+.signature {
+    font-family: "Source Code Pro", monospace;
+    font-size: 0.85rem;
+    margin-bottom: 0.4rem;
+}
+
+.keyword {
+    padding-right: 0.4rem;
+}
+
+.name {
     font-weight: bold;
+}
+
+.comment {
+    font-family: "Arial", sans-serif;
+    font-size: 0.75rem;
+    color: darkgray;
 }
 
 .type {
@@ -65,8 +88,9 @@ h1 {
 }
 
 h2 {
-    font-size: 1.1em;
+    font-size: 1.1rem;
     font-weight: bold;
+    margin-left: 2rem;
 }
 
 a:link, a:visited {

@@ -38,7 +38,7 @@ var MembersBox = React.createClass({
                 <h1>Root</h1>
 
                 <TypesBox/>
-                <DefinitionsBox/>
+                <DefinitionList/>
                 <RelationList/>
                 <h2>Lattices</h2>
             </div>
@@ -57,7 +57,7 @@ var TypesBox = React.createClass({
     }
 });
 
-var DefinitionsBox = React.createClass({
+var DefinitionList = React.createClass({
     render: function () {
         return (
             <div className="definitions">
@@ -65,24 +65,30 @@ var DefinitionsBox = React.createClass({
                 <h2>Definitions</h2>
 
                 {getData().definitions.map(d =>
-                    <DefinitionItem d={d}/>
+                    <DefinitionBox d={d}/>
                 )}
             </div>
         );
     }
 });
 
-var DefinitionItem = React.createClass({
+var DefinitionBox = React.createClass({
     render: function () {
         var name = this.props.d.name;
-        var params = this.props.d.params.map(kv => <span>{kv.name}</span>);
+        var tparams = this.props.d.params.map(kv => <span>{kv.name}</span>);
+        var fparams = this.props.d.params.map(kv => <span>{kv.name}</span>);
+        var result = "todo";
         var comment = this.props.d.comment;
         return (
             <div className="definition">
-
-                <b>def</b> {name} {params}
-
-                <div>
+                <div className="signature">
+                    <span className="keyword">def</span>
+                    <span className="name">{name}</span>
+                    <span className="tparams">{tparams}</span>
+                    <span className="fparams">{fparams}</span>
+                    <span className="result">{result}</span>
+                </div>
+                <div className="comment">
                     {comment}
                 </div>
             </div>
@@ -92,7 +98,7 @@ var DefinitionItem = React.createClass({
 
 
 /**
- * Renders a list of relation boxes.
+ * Renders a list of relations.
  */
 var RelationList = React.createClass({
     render: function () {
@@ -108,7 +114,7 @@ var RelationList = React.createClass({
 });
 
 /**
- * Renders a box for a single relation.
+ * Renders a relation in a single box.
  */
 var RelationBox = React.createClass({
     render: function () {
@@ -119,9 +125,11 @@ var RelationBox = React.createClass({
         var comment = this.props.r.comment;
         return (
             <div className="relation">
-                <span className="keyword">rel</span>
-                <span className="name">{name}</span>
-                <span className="attributes">({attributes})</span>
+                <div className="signature">
+                    <span className="keyword">rel</span>
+                    <span className="name">{name}</span>
+                    <span className="attributes">({attributes})</span>
+                </div>
                 <div className="comment">{comment}</div>
             </div>
         );
@@ -166,7 +174,7 @@ function getData() {
                 "name": "abs",
                 "tparams": [],
                 "params": [],
-                "comment": "Returns the absolute value of `x`. If the absolute value exceeds maxValue(), -1 is returned"
+                "comment": "Returns the absolute value of `x`. If the absolute value exceeds maxValue(), -1 is returned."
             }
         ],
         "relations": [
