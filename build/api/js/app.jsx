@@ -129,7 +129,7 @@ var DefinitionBox = React.createClass({
                     <span className="name">{name}</span>
                     <span className="tparams">{tparams}</span>
                     <span className="fparams">{fparams}</span>
-                    <span className="result">: {result}</span>
+                    <span className="result">: <span className="type">{result}</span></span>
                 </div>
                 <div className="comment">
                     {comment}
