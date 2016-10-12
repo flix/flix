@@ -89,6 +89,16 @@ class TestInt32 extends FunSuite {
     runTest(input, 0)
   }
 
+  test("abs.04") {
+    val input = "def r: Int32 = Int32/abs(-2147483648)"
+    runTest(input, -1)
+  }
+
+  test("abs.05") {
+    val input = "def r: Int32 = Int32/abs(2147483647)"
+    runTest(input, Int.MaxValue)
+  }
+
   test("dist.01") {
     val input = "def r: Int32 = Int32/dist(31, -7)"
     runTest(input, 38)
