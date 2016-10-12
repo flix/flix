@@ -44,11 +44,11 @@ body {
     width: 80%;
 }
 
-.types, .definitions, .relations, .lattices {
+.type-list, .definition-list, .relations, .lattices {
     margin-bottom: 2rem;
 }
 
-.type, .definition, .relation, .lattice {
+.type-decl, .definition-decl, .relation, .lattice {
     background-color: #ffffff;
     border-radius: 0.1rem;
     padding: 0.5rem 1rem;

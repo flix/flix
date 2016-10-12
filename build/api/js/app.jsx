@@ -4,8 +4,7 @@ var ReactDOM = require('react-dom');
 /**
  * Main entry point.
  *
- * The flixdoc website consists of a navigation bar
- * on the left and the page content on the right.
+ * Renders the left navigation bar and the page content.
  */
 var App = React.createClass({
     render: function () {
@@ -19,7 +18,7 @@ var App = React.createClass({
 });
 
 /**
- * The left navigation bar lists all the namespaces in the library.
+ * Renders the navigation bar which shows the list of namespaces in the library.
  */
 var LeftNavigationBar = React.createClass({
     render: function () {
@@ -37,16 +36,15 @@ var LeftNavigationBar = React.createClass({
 });
 
 /**
- * The page content contains the declared types, definitions,
- * relations, and lattices for the current namespace.
+ * Renders the types, definitions, relations, and lattices declared in the current namespace.
  */
 var PageContent = React.createClass({
     render: function () {
         return (
             <div className="pagecontent">
                 <h1>{this.props.namespace}</h1>
-                <TypeList/>
-                <DefinitionList/>
+                <TypeList decls={getData().types}/>
+                <DefinitionList decls={getData().definitions}/>
                 <RelationList/>
                 <LatticeList/>
             </div>
@@ -54,32 +52,30 @@ var PageContent = React.createClass({
     }
 });
 
+/**
+ * Renders a list of type declarations.
+ */
 var TypeList = React.createClass({
     render: function () {
+        var typeList = this.props.decls.map(d => <TypeBox key={d.name} decl={d}/>);
         return (
-            <div className="types">
+            <div className="type-list">
                 <h2>Types</h2>
-                {getData().types.map(d =>
-                    <TypeBox d={d}/>
-                )}
+                {typeList}
             </div>
         );
     }
 });
 
+/**
+ * Renders a single type declaration.
+ */
 var TypeBox = React.createClass({
     render: function () {
-        var name = this.props.d.name;
-        // var tparams = surround(intersperse(this.props.d.tparams.map(
-        //     tparam => <span>{tparam.name}</span>
-        // ), ", "), "[", "]");
-        // var fparams = surround(intersperse(this.props.d.fparams.map(
-        //     fparam => <span>{fparam.name}: <span className="type">{fparam.tpe}</span></span>
-        // ), ", "), "(", ")");
-        // var result = this.props.d.result;
-        var comment = this.props.d.comment;
+        var name = this.props.decl.name;
+        var comment = this.props.decl.comment;
         return (
-            <div className="definition">
+            <div className="type-decl">
                 <div className="signature">
                     <span className="keyword">enum</span>
                     <span className="name">{name}</span>
@@ -92,32 +88,38 @@ var TypeBox = React.createClass({
     }
 });
 
+/**
+ * Renders a list of definition declarations.
+ */
 var DefinitionList = React.createClass({
     render: function () {
+        var definitionList = this.props.decls.map(d => <DefinitionBox key={d.name} decl={d}/>);
         return (
-            <div className="definitions">
+            <div className="definition-list">
                 <h2>Definitions</h2>
-                {getData().definitions.map(d =>
-                    <DefinitionBox d={d}/>
-                )}
+                {definitionList}
             </div>
         );
     }
 });
 
+/**
+ * Renders a single definition declaration.
+ */
 var DefinitionBox = React.createClass({
     render: function () {
-        var name = this.props.d.name;
-        var tparams = surround(intersperse(this.props.d.tparams.map(
-            tparam => <span>{tparam.name}</span>
+        var name = this.props.decl.name;
+        var tparams = surround(intersperse(this.props.decl.tparams.map(
+            tparam => <span key={Math.random()}>{tparam.name}</span>
         ), ", "), "[", "]");
-        var fparams = surround(intersperse(this.props.d.fparams.map(
-            fparam => <span>{fparam.name}: <span className="type">{fparam.tpe}</span></span>
+        var fparams = surround(intersperse(this.props.decl.fparams.map(
+            fparam => <span key={Math.random()}>{fparam.name}: <span key={Math.random()}
+                                                                     className="type">{fparam.tpe}</span></span>
         ), ", "), "(", ")");
-        var result = this.props.d.result;
-        var comment = this.props.d.comment;
+        var result = this.props.decl.result;
+        var comment = this.props.decl.comment;
         return (
-            <div className="definition">
+            <div className="definition-decl">
                 <div className="signature">
                     <span className="keyword">def</span>
                     <span className="name">{name}</span>
@@ -133,9 +135,8 @@ var DefinitionBox = React.createClass({
     }
 });
 
-
 /**
- * Renders a list of relations.
+ * Renders a list of relation declarations.
  */
 var RelationList = React.createClass({
     render: function () {
