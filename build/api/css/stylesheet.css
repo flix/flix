@@ -10,7 +10,7 @@ body {
     height: 100vh;
 }
 
-.nav {
+.navbar {
     background-color: #f6be78;
     width: 15%;
     padding-left: 2rem;
@@ -22,7 +22,7 @@ body {
     box-shadow: 3px 0px 3px 0px rgb(215, 215, 215);
 }
 
-.nav .title {
+.navbar .title {
     font-family: "Arial", sans-serif;
     font-weight: bold;
     font-size: 1.2rem;
@@ -32,12 +32,12 @@ body {
     margin-bottom: 1rem;
 }
 
-.nav ul {
+.navbar ul {
     margin: 0;
     padding: 0;
 }
 
-.members {
+.pagecontent {
     padding-left: 2rem;
     padding-right: 2rem;
 

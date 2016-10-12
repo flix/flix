@@ -1,42 +1,50 @@
 var React = require('react');
 var ReactDOM = require('react-dom');
 
+/**
+ * Main entry point.
+ *
+ * The flixdoc website consists of a navigation bar
+ * on the left and the page content on the right.
+ */
 var App = React.createClass({
     render: function () {
         return (
             <div className="app">
-                <Nav/>
-                <MembersBox/>
+                <LeftNavigationBar/>
+                <PageContent namespace={getData().namespace}/>
             </div>
         );
     }
 });
 
-var Nav = React.createClass({
+/**
+ * The left navigation bar lists all the namespaces in the library.
+ */
+var LeftNavigationBar = React.createClass({
     render: function () {
+        // Construct a list item for each namespace in the library.
+        var menu = getData().namespaces.map(
+            namespace => <li key={namespace.name}><a href="#">{namespace.name}</a></li>
+        );
         return (
-            <div className="nav">
+            <div className="navbar">
                 <div className="title">Flix Standard Library</div>
-                <ul>
-                    <li><a href="#">BigInt</a></li>
-                    <li><a href="#">Float32</a></li>
-                    <li><a href="#">Float64</a></li>
-                    <li><a href="#">Int8</a></li>
-                    <li><a href="#">Int16</a></li>
-                    <li><a href="#">Int32</a></li>
-                    <li><a href="#">Int64</a></li>
-                </ul>
+                <ul>{menu}</ul>
             </div>
         );
     }
 });
 
-var MembersBox = React.createClass({
+/**
+ * The page content contains the declared types, definitions,
+ * relations, and lattices for the current namespace.
+ */
+var PageContent = React.createClass({
     render: function () {
         return (
-            <div className="members">
-                <h1>Root</h1>
-
+            <div className="pagecontent">
+                <h1>{this.props.namespace}</h1>
                 <TypeList/>
                 <DefinitionList/>
                 <RelationList/>
@@ -207,6 +215,18 @@ ReactDOM.render(
 function getData() {
 
     return {
+        namespace: "Root",
+
+        namespaces: [
+            {name: "BigInt"},
+            {name: "Float32"},
+            {name: "Float64"},
+            {name: "Int8"},
+            {name: "Int16"},
+            {name: "Int32"},
+            {name: "Int64"}
+        ],
+
         types: [
             {
                 name: "Color",
