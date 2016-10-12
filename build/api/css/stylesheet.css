@@ -44,11 +44,11 @@ body {
     width: 80%;
 }
 
-.type-list, .definition-list, .relations, .lattices {
+.type-list, .definition-list, .relation-list, .lattice-list {
     margin-bottom: 2rem;
 }
 
-.type-decl, .definition-decl, .relation, .lattice {
+.type-decl, .definition-decl, .relation-decl, .lattice-decl {
     background-color: #ffffff;
     border-radius: 0.1rem;
     padding: 0.5rem 1rem;
@@ -83,10 +83,6 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
     font-family: "Arial", sans-serif;
-}
-
-h1 {
-
 }
 
 h2 {

@@ -45,8 +45,8 @@ var PageContent = React.createClass({
                 <h1>{this.props.namespace}</h1>
                 <TypeList decls={getData().types}/>
                 <DefinitionList decls={getData().definitions}/>
-                <RelationList/>
-                <LatticeList/>
+                <RelationList decls={getData().relations}/>
+                <LatticeList decls={getData().lattices}/>
             </div>
         );
     }
@@ -140,29 +140,28 @@ var DefinitionBox = React.createClass({
  */
 var RelationList = React.createClass({
     render: function () {
+        var relationList = this.props.decls.map(d => <RelationBox key={d.name} decl={d}/>);
         return (
-            <div className="relations">
+            <div className="relation-list">
                 <h2>Relations</h2>
-                {getData().relations.map(r =>
-                    <RelationBox r={r}/>
-                )}
+                {relationList}
             </div>
         );
     }
 });
 
 /**
- * Renders a relation in a single box.
+ * Renders a single relation declaration.
  */
 var RelationBox = React.createClass({
     render: function () {
-        var name = this.props.r.name;
-        var attributes = surround(intersperse(this.props.r.attributes.map(
-            attr => <span>{attr.name}: <span className="type">{attr.tpe}</span></span>
+        var name = this.props.decl.name;
+        var attributes = surround(intersperse(this.props.decl.attributes.map(
+            attr => <span key={Math.random()}>{attr.name}: <span key={Math.random()} className="type">{attr.tpe}</span></span>
         ), ", "), "(", ")");
-        var comment = this.props.r.comment;
+        var comment = this.props.decl.comment;
         return (
-            <div className="relation">
+            <div className="relation-decl">
                 <div className="signature">
                     <span className="keyword">rel</span>
                     <span className="name">{name}</span>
@@ -174,28 +173,33 @@ var RelationBox = React.createClass({
     }
 });
 
+/**
+ * Renders a list of lattice declarations.
+ */
 var LatticeList = React.createClass({
     render: function () {
+        var latticeList = this.props.decls.map(d => <LatticeBox key={d.name} decl={d}/>);
         return (
-            <div className="lattices">
+            <div className="lattice-list">
                 <h2>Lattices</h2>
-                {getData().relations.map(r =>
-                    <LatticeBox r={r}/>
-                )}
+                {latticeList}
             </div>
         );
     }
 });
 
+/**
+ * Renders a single lattice declaration.
+ */
 var LatticeBox = React.createClass({
     render: function () {
-        var name = this.props.r.name;
-        var attributes = surround(intersperse(this.props.r.attributes.map(
-            attr => <span>{attr.name}: <span className="type">{attr.tpe}</span></span>
+        var name = this.props.decl.name;
+        var attributes = surround(intersperse(this.props.decl.attributes.map(
+            attr => <span key={Math.random()}>{attr.name}: <span key={Math.random()} className="type">{attr.tpe}</span></span>
         ), ", "), "(", ")");
-        var comment = this.props.r.comment;
+        var comment = this.props.decl.comment;
         return (
-            <div className="lattice">
+            <div className="lattice-decl">
                 <div className="signature">
                     <span className="keyword">rel</span>
                     <span className="name">{name}</span>
@@ -207,11 +211,46 @@ var LatticeBox = React.createClass({
     }
 });
 
-ReactDOM.render(
-    <App />,
-    document.getElementById('body')
-);
+/**
+ * Render the page.
+ */
+ReactDOM.render(<App />, document.getElementById('body'));
 
+/**
+ * Returns the given array of elements surrounded by parenthesis (if non-empty).
+ */
+function surround(arr, b, e) {
+    if (arr.length == 0)
+        return arr;
+
+    var result = [];
+    result.push(b);
+    arr.forEach(item => result.push(item));
+    result.push(e);
+
+    return result;
+}
+
+/**
+ *  Return an array with the separator interspersed between each element of the input array.
+ *
+ * > _([1,2,3]).intersperse(0)
+ * [1,0,2,0,3]
+ *
+ * http://stackoverflow.com/questions/23618744/rendering-comma-separated-list-of-links
+ */
+function intersperse(arr, sep) {
+    if (arr.length === 0) {
+        return [];
+    }
+
+    return arr.slice(1).reduce(function (xs, x, i) {
+        return xs.concat([sep, x]);
+    }, [arr[0]]);
+}
+
+
+// STUB DATA:
 
 function getData() {
 
@@ -337,37 +376,4 @@ function getData() {
         ]
     }
 
-}
-
-/**
- * Returns the given array of elements surrounded by parenthesis (if non-empty).
- */
-function surround(arr, b, e) {
-    if (arr.length == 0)
-        return arr;
-
-    var result = [];
-    result.push(b);
-    arr.forEach(item => result.push(item));
-    result.push(e);
-
-    return result;
-}
-
-/**
- *  Return an array with the separator interspersed between each element of the input array.
- *
- * > _([1,2,3]).intersperse(0)
- * [1,0,2,0,3]
- *
- * http://stackoverflow.com/questions/23618744/rendering-comma-separated-list-of-links
- */
-function intersperse(arr, sep) {
-    if (arr.length === 0) {
-        return [];
-    }
-
-    return arr.slice(1).reduce(function (xs, x, i) {
-        return xs.concat([sep, x]);
-    }, [arr[0]]);
 }
