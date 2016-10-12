@@ -58,6 +58,8 @@ var PageContent = React.createClass({
 var TypeList = React.createClass({
     render: function () {
         var typeList = this.props.decls.map(d => <TypeBox key={d.name} decl={d}/>);
+        if (typeList.length == 0)
+            return null;
         return (
             <div className="type-list">
                 <h2>Types</h2>
@@ -94,6 +96,8 @@ var TypeBox = React.createClass({
 var DefinitionList = React.createClass({
     render: function () {
         var definitionList = this.props.decls.map(d => <DefinitionBox key={d.name} decl={d}/>);
+        if (definitionList.length == 0)
+            return null
         return (
             <div className="definition-list">
                 <h2>Definitions</h2>
@@ -141,6 +145,8 @@ var DefinitionBox = React.createClass({
 var RelationList = React.createClass({
     render: function () {
         var relationList = this.props.decls.map(d => <RelationBox key={d.name} decl={d}/>);
+        if (relationList.length == 0)
+            return null;
         return (
             <div className="relation-list">
                 <h2>Relations</h2>
@@ -179,6 +185,8 @@ var RelationBox = React.createClass({
 var LatticeList = React.createClass({
     render: function () {
         var latticeList = this.props.decls.map(d => <LatticeBox key={d.name} decl={d}/>);
+        if (latticeList.length == 0)
+            return null
         return (
             <div className="lattice-list">
                 <h2>Lattices</h2>
@@ -362,18 +370,7 @@ function getData() {
                 comment: "The promise `o` is in promise state `t` with value `v` at statement `s` in context `c`."
             }
         ],
-        "lattices": [
-            {
-                name: "Val",
-                attributes: [
-                    {name: "c", tpe: "Ctx"},
-                    {name: "s", tpe: "Stm"},
-                    {name: "x", tpe: "Var"},
-                    {name: "o", tpe: "Obj"}
-                ],
-                comment: "Var `v` points-to object `o` at statement `s` in context `c`."
-            },
-        ]
+        "lattices": []
     }
 
 }

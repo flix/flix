@@ -81,8 +81,16 @@ body {
     color: darkblue;
 }
 
-h1, h2, h3, h4, h5, h6 {
+/**
+ * Headings.
+ */
+h1, h2, h3 {
     font-family: "Arial", sans-serif;
+}
+
+h1 {
+    font-size: 2rem;
+    font-weight: bold;
 }
 
 h2 {
@@ -91,14 +99,13 @@ h2 {
     margin-left: 2rem;
 }
 
+/**
+ * Links.
+ */
 a:link, a:visited {
     color: #326585;
 }
 
-a:hover {
+a:hover, a:active {
     color: #3298ca;
-}
-
-a:active {
-    color: #ff0000;
 }
