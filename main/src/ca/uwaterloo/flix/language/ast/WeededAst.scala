@@ -40,7 +40,7 @@ object WeededAst {
 
     case class Law(ident: Name.Ident, tparams: List[ParsedAst.ContextBound], params: List[WeededAst.FormalParam], tpe: WeededAst.Type, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Enum(ident: Name.Ident, cases: Map[String, WeededAst.Case], loc: SourceLocation) extends WeededAst.Declaration
+    case class Enum(ident: Name.Ident, tparams: List[Name.Ident], cases: Map[String, WeededAst.Case], loc: SourceLocation) extends WeededAst.Declaration
 
     case class Class(ident: Name.Ident, tparams: List[WeededAst.Type], /* bounds: List[ContextBound],*/ decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 

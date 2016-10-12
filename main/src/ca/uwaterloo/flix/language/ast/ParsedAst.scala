@@ -153,12 +153,13 @@ object ParsedAst {
     /**
       * Enum Declaration.
       *
-      * @param sp1   the position of the first character in the declaration.
-      * @param ident the name of the enum.
-      * @param cases the cases of the enum.
-      * @param sp2   the position of the last character in the declaration.
+      * @param sp1     the position of the first character in the declaration.
+      * @param ident   the name of the enum.
+      * @param tparams the type parameters.
+      * @param cases   the cases of the enum.
+      * @param sp2     the position of the last character in the declaration.
       */
-    case class Enum(sp1: SourcePosition, ident: Name.Ident, cases: Seq[ParsedAst.Case], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Enum(sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], cases: Seq[ParsedAst.Case], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Class Declaration (type class signature).

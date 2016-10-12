@@ -186,7 +186,7 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Declaration.Enum0.1") {
+  test("Declaration.Enum.01") {
     val input =
       """enum A {
         |  case B
@@ -210,6 +210,27 @@ class TestParser extends FunSuite with TestUtils {
         |  case B,
         |  case C(Int),
         |  case D(Bool, Int, Str)
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Declaration.Enum.04") {
+    val input =
+      """enum A[a] {
+        |  case B
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Declaration.Enum.05") {
+    val input =
+      """enum A[a, b, c] {
+        |  case A(a),
+        |  case B(b),
+        |  case C(c),
+        |  case D(a, b, c)
         |}
       """.stripMargin
     run(input)

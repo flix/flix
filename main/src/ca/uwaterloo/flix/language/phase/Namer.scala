@@ -137,7 +137,7 @@ object Namer {
       /*
        * Enum.
        */
-      case WeededAst.Declaration.Enum(ident, cases, loc) =>
+      case WeededAst.Declaration.Enum(ident, tparams, cases, loc) =>
         // check if the enum already exists.
         prog0.enums.get(ns0) match {
           case None =>

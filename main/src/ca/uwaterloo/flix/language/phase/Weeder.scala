@@ -142,7 +142,8 @@ object Weeder {
           }
         }
 
-      case ParsedAst.Declaration.Enum(sp1, ident, cases, sp2) =>
+      case ParsedAst.Declaration.Enum(sp1, ident, tparams0, cases, sp2) =>
+        val tparams = tparams0.toList.map(_.ident)
         /*
          * Check for `DuplicateTag`.
          */
@@ -154,7 +155,7 @@ object Weeder {
               case Some(otherTag) => DuplicateTag(tag, otherTag.tag.loc, mkSL(caze.sp1, caze.sp2)).toFailure
             }
         } map {
-          case m => WeededAst.Declaration.Enum(ident, m, mkSL(sp1, sp2))
+          case m => WeededAst.Declaration.Enum(ident, tparams, m, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Declaration.Class(sp1, ident, tparams, bounds, decls, sp2) =>
