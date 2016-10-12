@@ -16,7 +16,7 @@ var Nav = React.createClass({
     render: function () {
         return (
             <div className="nav">
-                <div className="title">Flix Library</div>
+                <div className="title">Flix Standard Library</div>
                 <ul>
                     <li><a href="#">BigInt</a></li>
                     <li><a href="#">Float32</a></li>
@@ -35,12 +35,12 @@ var MembersBox = React.createClass({
     render: function () {
         return (
             <div className="members">
+                <h1>Root</h1>
+
                 <TypesBox/>
                 <DefinitionsBox/>
-                <div>
-                    <h2>Relations</h2>
-                    <h2>Lattices</h2>
-                </div>
+                <RelationList/>
+                <h2>Lattices</h2>
             </div>
         );
     }
@@ -61,10 +61,11 @@ var DefinitionsBox = React.createClass({
     render: function () {
         return (
             <div className="definitions">
+
                 <h2>Definitions</h2>
+
                 {getData().definitions.map(d =>
-                    <DefinitionItem name={d.name}
-                                    d={d}/>
+                    <DefinitionItem d={d}/>
                 )}
             </div>
         );
@@ -73,9 +74,55 @@ var DefinitionsBox = React.createClass({
 
 var DefinitionItem = React.createClass({
     render: function () {
+        var name = this.props.d.name;
+        var params = this.props.d.params.map(kv => <span>{kv.name}</span>);
+        var comment = this.props.d.comment;
         return (
-            <div>
-                <b>def</b> {this.props.name} {this.props.d.params.map(kv => <span>{kv.name}</span>)}
+            <div className="definition">
+
+                <b>def</b> {name} {params}
+
+                <div>
+                    {comment}
+                </div>
+            </div>
+        );
+    }
+});
+
+
+/**
+ * Renders a list of relation boxes.
+ */
+var RelationList = React.createClass({
+    render: function () {
+        return (
+            <div className="Relations">
+                <h2>Relations</h2>
+                {getData().relations.map(r =>
+                    <RelationBox r={r}/>
+                )}
+            </div>
+        );
+    }
+});
+
+/**
+ * Renders a box for a single relation.
+ */
+var RelationBox = React.createClass({
+    render: function () {
+        var name = this.props.r.name;
+        var attributes = this.props.r.attributes.map(
+            attr => <span>{attr.name}: <span className="type">{attr.tpe}</span></span>
+        );
+        var comment = this.props.r.comment;
+        return (
+            <div className="relation">
+                <span className="keyword">rel</span>
+                <span className="name">{name}</span>
+                <span className="attributes">({attributes})</span>
+                <div className="comment">{comment}</div>
             </div>
         );
     }
@@ -121,7 +168,20 @@ function getData() {
                 "params": [],
                 "comment": "Returns the absolute value of `x`. If the absolute value exceeds maxValue(), -1 is returned"
             }
-        ]
+        ],
+        "relations": [
+            {
+                name: "VarPointsTo",
+                attributes: [
+                    {name: "c", tpe: "Ctx"},
+                    {name: "s", tpe: "Stm"},
+                    {name: "x", tpe: "Var"},
+                    {name: "o", tpe: "Obj"}
+                ],
+                comment: "Var `v` points-to object `o` at statement `s` in context `c`."
+            }
+        ],
+        "lattices": []
     }
 
 }

@@ -18,6 +18,8 @@ body {
     padding-left: 2rem;
     padding-right: 2rem;
     font-size: 0.9rem;
+
+    box-shadow: 3px 0px 3px 0px rgb(215, 215, 215);
 }
 
 .nav .title {
@@ -35,10 +37,46 @@ body {
 }
 
 .members {
-
+    padding-left: 2rem;
+    padding-right: 2rem;
 }
 
 .types {
-    background: blue;
 }
 
+.relation .keyword {
+
+}
+
+.relation .name {
+    font-weight: bold;
+}
+
+.type {
+    color: darkblue;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: "Arial", sans-serif;
+}
+
+h1 {
+
+}
+
+h2 {
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+a:link, a:visited {
+    color: #326585;
+}
+
+a:hover {
+    color: #3298ca;
+}
+
+a:active {
+    color: #ff0000;
+}
