@@ -77,7 +77,7 @@ var DefinitionBox = React.createClass({
         var name = this.props.d.name;
         var tparams = this.props.d.params.map(kv => <span>{kv.name}</span>);
         var fparams = this.props.d.params.map(kv => <span>{kv.name}</span>);
-        var result = "todo";
+        var result = this.props.d.result;
         var comment = this.props.d.comment;
         return (
             <div className="definition">
@@ -86,7 +86,7 @@ var DefinitionBox = React.createClass({
                     <span className="name">{name}</span>
                     <span className="tparams">{tparams}</span>
                     <span className="fparams">{fparams}</span>
-                    <span className="result">{result}</span>
+                    <span className="result">: {result}</span>
                 </div>
                 <div className="comment">
                     {comment}
@@ -119,9 +119,9 @@ var RelationList = React.createClass({
 var RelationBox = React.createClass({
     render: function () {
         var name = this.props.r.name;
-        var attributes = this.props.r.attributes.map(
+        var attributes = intersperse(this.props.r.attributes.map(
             attr => <span>{attr.name}: <span className="type">{attr.tpe}</span></span>
-        );
+        ), ", ");
         var comment = this.props.r.comment;
         return (
             <div className="relation">
@@ -145,35 +145,54 @@ ReactDOM.render(
 function getData() {
 
     return {
+        types: [],
         "definitions": [
+            {
+                "name": "flatMap",
+                "tparams": [
+                    {name: "a"},
+                    {name: "b"}
+                ],
+                "params": [
+                    {name: "f", tpe: "a -> b"},
+                    {name: "xs", tpe: "List[a]"}
+                ],
+                "result": "List[b]",
+                "comment": "Applies the function f ..."
+            },
             {
                 "name": "minValue",
                 "tparams": [],
                 "params": [],
+                "result": "Int",
                 "comment": "Returns the minimum number representable by an Int32."
             },
             {
                 "name": "maxValue",
                 "tparams": [],
                 "params": [],
+                "result": "Int",
                 "comment": "Returns the maximum number representable by an Int32."
             },
             {
                 "name": "min",
                 "tparams": [],
                 "params": [{name: "x", tpe: "Int"}, {name: "y", tpe: "Int"}],
+                "result": "Int",
                 "comment": "Returns the smaller of `x` and `y`."
             },
             {
                 "name": "max",
                 "tparams": [],
                 "params": [],
+                "result": "Int",
                 "comment": " Returns the larger of `x` and `y`."
             },
             {
                 "name": "abs",
                 "tparams": [],
                 "params": [],
+                "result": "Int",
                 "comment": "Returns the absolute value of `x`. If the absolute value exceeds maxValue(), -1 is returned."
             }
         ],
@@ -187,9 +206,59 @@ function getData() {
                     {name: "o", tpe: "Obj"}
                 ],
                 comment: "Var `v` points-to object `o` at statement `s` in context `c`."
+            },
+            {
+                name: "HeapPointsToIn",
+                attributes: [
+                    {name: "c", tpe: "Ctx"},
+                    {name: "s", tpe: "Stm"},
+                    {name: "o1", tpe: "Obj"},
+                    {name: "f", tpe: "Field"},
+                    {name: "o2", tpe: "Obj"}
+                ],
+                comment: "Field `f` of object `o1` points-to object `o2` at statement `s` in context `c`."
+            },
+            {
+                name: "PromiseStateIn",
+                attributes: [
+                    {name: "c", tpe: "Ctx"},
+                    {name: "s", tpe: "Stm"},
+                    {name: "t", tpe: "State"},
+                    {name: "v", tpe: "Obj"}
+                ],
+                comment: "The promise `o` is in promise state `t` with value `v` at statement `s` in context `c`."
             }
         ],
-        "lattices": []
+        "lattices": [
+            {
+                name: "Val",
+                attributes: [
+                    {name: "c", tpe: "Ctx"},
+                    {name: "s", tpe: "Stm"},
+                    {name: "x", tpe: "Var"},
+                    {name: "o", tpe: "Obj"}
+                ],
+                comment: "Var `v` points-to object `o` at statement `s` in context `c`."
+            },
+        ]
     }
 
+}
+
+/**
+ *  intersperse: Return an array with the separator interspersed between each element of the input array.
+ *
+ * > _([1,2,3]).intersperse(0)
+ * [1,0,2,0,3]
+ *
+ * http://stackoverflow.com/questions/23618744/rendering-comma-separated-list-of-links
+ */
+function intersperse(arr, sep) {
+    if (arr.length === 0) {
+        return [];
+    }
+
+    return arr.slice(1).reduce(function (xs, x, i) {
+        return xs.concat([sep, x]);
+    }, [arr[0]]);
 }
