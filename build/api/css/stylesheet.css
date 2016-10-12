@@ -1,5 +1,5 @@
 body {
-    background-color: #FDEECD;
+    background-color: #fcfcfc;
     margin: 0;
     padding: 0;
 }
@@ -11,7 +11,7 @@ body {
 }
 
 .navbar {
-    background-color: #f6be78;
+    background-color: #eadfda;
     width: 15%;
     padding-left: 2rem;
     padding-right: 2rem;
@@ -19,7 +19,7 @@ body {
 
     font-family: "Source Code Pro", monospace;
 
-    box-shadow: 3px 0px 3px 0px rgba(73, 56, 49, 0.32);
+    box-shadow: 3px 0px 3px 0px rgba(0, 0, 0, 0.15);
 }
 
 .navbar .title {
@@ -64,11 +64,12 @@ body {
 
 .keyword {
     padding-right: 0.4rem;
+    color: #000000;
 }
 
 .name {
     font-weight: bold;
-    color: #D24858;
+    color: #B12250;
 }
 
 .comment {
@@ -79,7 +80,7 @@ body {
 }
 
 .type {
-    color: #EAB05E;
+    color: #441ed4;
 }
 
 /**
@@ -105,9 +106,9 @@ h2 {
  * Links.
  */
 a:link, a:visited {
-    color: #D24858;
+    color: black;
 }
 
 a:hover, a:active {
-    color: #D24858;
+    color: #d21230;
 }
