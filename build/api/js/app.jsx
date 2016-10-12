@@ -37,21 +37,48 @@ var MembersBox = React.createClass({
             <div className="members">
                 <h1>Root</h1>
 
-                <TypesBox/>
+                <TypeList/>
                 <DefinitionList/>
                 <RelationList/>
-                <h2>Lattices</h2>
+                <LatticeList/>
             </div>
         );
     }
 });
 
-var TypesBox = React.createClass({
+var TypeList = React.createClass({
     render: function () {
         return (
             <div className="types">
                 <h2>Types</h2>
-                ...
+                {getData().types.map(d =>
+                    <TypeBox d={d}/>
+                )}
+            </div>
+        );
+    }
+});
+
+var TypeBox = React.createClass({
+    render: function () {
+        var name = this.props.d.name;
+        // var tparams = surround(intersperse(this.props.d.tparams.map(
+        //     tparam => <span>{tparam.name}</span>
+        // ), ", "), "[", "]");
+        // var fparams = surround(intersperse(this.props.d.fparams.map(
+        //     fparam => <span>{fparam.name}: <span className="type">{fparam.tpe}</span></span>
+        // ), ", "), "(", ")");
+        // var result = this.props.d.result;
+        var comment = this.props.d.comment;
+        return (
+            <div className="definition">
+                <div className="signature">
+                    <span className="keyword">enum</span>
+                    <span className="name">{name}</span>
+                </div>
+                <div className="comment">
+                    {comment}
+                </div>
             </div>
         );
     }
@@ -61,9 +88,7 @@ var DefinitionList = React.createClass({
     render: function () {
         return (
             <div className="definitions">
-
                 <h2>Definitions</h2>
-
                 {getData().definitions.map(d =>
                     <DefinitionBox d={d}/>
                 )}
@@ -107,7 +132,7 @@ var DefinitionBox = React.createClass({
 var RelationList = React.createClass({
     render: function () {
         return (
-            <div className="Relations">
+            <div className="relations">
                 <h2>Relations</h2>
                 {getData().relations.map(r =>
                     <RelationBox r={r}/>
@@ -140,6 +165,39 @@ var RelationBox = React.createClass({
     }
 });
 
+var LatticeList = React.createClass({
+    render: function () {
+        return (
+            <div className="lattices">
+                <h2>Lattices</h2>
+                {getData().relations.map(r =>
+                    <LatticeBox r={r}/>
+                )}
+            </div>
+        );
+    }
+});
+
+var LatticeBox = React.createClass({
+    render: function () {
+        var name = this.props.r.name;
+        var attributes = surround(intersperse(this.props.r.attributes.map(
+            attr => <span>{attr.name}: <span className="type">{attr.tpe}</span></span>
+        ), ", "), "(", ")");
+        var comment = this.props.r.comment;
+        return (
+            <div className="lattice">
+                <div className="signature">
+                    <span className="keyword">rel</span>
+                    <span className="name">{name}</span>
+                    <span className="attributes">{attributes}</span>
+                </div>
+                <div className="comment">{comment}</div>
+            </div>
+        );
+    }
+});
+
 ReactDOM.render(
     <App />,
     document.getElementById('body')
@@ -149,7 +207,18 @@ ReactDOM.render(
 function getData() {
 
     return {
-        types: [],
+        types: [
+            {
+                name: "Color",
+                cases: [{name: "Red", tpe: "Unit"}, {name: "Green", tpe: "Unit"}, {name: "Blue", tpe: "Unit"}],
+                comment: "The colors of the rainbow."
+            },
+            {
+                name: "Shape",
+                cases: [{name: "Rectangle", tpe: "(Int, Int)"}, {name: "Circle", tpe: "Int"}],
+                comment: "Different two-dimensional shapes."
+            }
+        ],
         "definitions": [
             {
                 "name": "flatMap",
