@@ -220,11 +220,6 @@ var LatticeBox = React.createClass({
 });
 
 /**
- * Render the page.
- */
-ReactDOM.render(<App />, document.getElementById('body'));
-
-/**
  * Returns the given array of elements surrounded by parenthesis (if non-empty).
  */
 function surround(arr, b, e) {
@@ -256,6 +251,11 @@ function intersperse(arr, sep) {
         return xs.concat([sep, x]);
     }, [arr[0]]);
 }
+
+/**
+ * Render the page.
+ */
+ReactDOM.render(<App />, document.getElementById("app"));
 
 
 // STUB DATA:

@@ -1,5 +1,5 @@
 body {
-    background-color: #f6f5ea;
+    background-color: #FDEECD;
     margin: 0;
     padding: 0;
 }
@@ -19,7 +19,7 @@ body {
 
     font-family: "Source Code Pro", monospace;
 
-    box-shadow: 3px 0px 3px 0px rgb(215, 215, 215);
+    box-shadow: 3px 0px 3px 0px rgba(73, 56, 49, 0.32);
 }
 
 .navbar .title {
@@ -68,6 +68,7 @@ body {
 
 .name {
     font-weight: bold;
+    color: #D24858;
 }
 
 .comment {
@@ -78,7 +79,7 @@ body {
 }
 
 .type {
-    color: darkblue;
+    color: #EAB05E;
 }
 
 /**
@@ -86,6 +87,7 @@ body {
  */
 h1, h2, h3 {
     font-family: "Arial", sans-serif;
+    color: #493831;
 }
 
 h1 {
@@ -103,9 +105,9 @@ h2 {
  * Links.
  */
 a:link, a:visited {
-    color: #326585;
+    color: #D24858;
 }
 
 a:hover, a:active {
-    color: #3298ca;
+    color: #D24858;
 }
