@@ -264,7 +264,7 @@ object NamedAst {
 
     case class Ref(name: Name.QName, loc: SourceLocation) extends NamedAst.Type
 
-    case class Enum(name: Symbol.EnumSym, cases: Map[String, NamedAst.Type]) extends NamedAst.Type
+    case class Enum(name: Symbol.EnumSym, tparams: List[Name.Ident], cases: Map[String, NamedAst.Type]) extends NamedAst.Type
 
     case class Tuple(elms: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
 

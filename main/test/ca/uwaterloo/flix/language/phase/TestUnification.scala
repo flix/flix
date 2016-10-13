@@ -296,14 +296,14 @@ class TestUnification extends FunSuite {
   test("Unify.Enum.01") {
     val sym = Symbol.mkEnumSym("Color")
     val cases = Map.empty[String, Type]
-    val result = Unification.unify(Type.Enum(sym, cases), Type.Enum(sym, cases), SourceLocation.Unknown)
+    val result = Unification.unify(Type.Enum(sym, cases, Kind.Star), Type.Enum(sym, cases, Kind.Star), SourceLocation.Unknown)
     assert(result.isOk)
   }
 
   test("Unify.Enum.02") {
     val sym = Symbol.mkEnumSym("Color")
     val cases = Map("Red" -> Type.Unit, "Green" -> Type.Unit, "Blue" -> Type.Unit)
-    val result = Unification.unify(Type.Enum(sym, cases), Type.Enum(sym, cases), SourceLocation.Unknown)
+    val result = Unification.unify(Type.Enum(sym, cases, Kind.Star), Type.Enum(sym, cases, Kind.Star), SourceLocation.Unknown)
     assert(result.isOk)
   }
 
@@ -322,7 +322,7 @@ class TestUnification extends FunSuite {
       "Green" -> B,
       "Blue" -> C
     )
-    val result = Unification.unify(Type.Enum(sym, cases1), Type.Enum(sym, cases2), SourceLocation.Unknown).get
+    val result = Unification.unify(Type.Enum(sym, cases1, Kind.Star), Type.Enum(sym, cases2, Kind.Star), SourceLocation.Unknown).get
     assertResult(Type.Bool)(result(A))
     assertResult(Type.Char)(result(B))
     assertResult(Type.Int8)(result(C))

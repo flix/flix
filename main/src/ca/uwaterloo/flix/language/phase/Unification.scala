@@ -73,9 +73,9 @@ object Unification {
       case Type.FVec => Type.FVec
       case Type.FSet => Type.FSet
       case Type.FMap => Type.FMap
-      case Type.Enum(name, cases) => Type.Enum(name, cases.foldLeft(Map.empty[String, Type]) {
+      case Type.Enum(name, cases, kind) => Type.Enum(name, cases.foldLeft(Map.empty[String, Type]) {
         case (macc, (tag, t)) => macc + (tag -> apply(t))
-      })
+      }, kind)
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
       case Type.Forall(quantifiers, base) =>
         // Remove all quantifiers from the substitution and apply it to the base type.
@@ -156,7 +156,7 @@ object Unification {
       case (Type.FVec, Type.FVec) => Result.Ok(Substitution.empty)
       case (Type.FSet, Type.FSet) => Result.Ok(Substitution.empty)
       case (Type.FMap, Type.FMap) => Result.Ok(Substitution.empty)
-      case (Type.Enum(name1, cases1), Type.Enum(name2, cases2)) if name1 == name2 =>
+      case (Type.Enum(name1, cases1, kind1), Type.Enum(name2, cases2, kind2)) if name1 == name2 =>
         val ts1 = cases1.values.toList
         val ts2 = cases2.values.toList
         unifyAll(ts1, ts2)

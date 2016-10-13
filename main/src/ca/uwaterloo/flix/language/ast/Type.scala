@@ -54,7 +54,7 @@ sealed trait Type {
     case Type.FVec => Set.empty
     case Type.FSet => Set.empty
     case Type.FMap => Set.empty
-    case Type.Enum(enumName, cases) => cases.flatMap {
+    case Type.Enum(enumName, cases, kind) => cases.flatMap {
       case (tagName, tpe) => tpe.typeVars
     }.toSet
     case Type.Apply(t, ts) => t.typeVars ++ ts.flatMap(_.typeVars)
@@ -96,7 +96,7 @@ sealed trait Type {
     case Type.FMap => "Map"
     case Type.Apply(Type.Arrow(l), ts) => ts.mkString(" -> ")
     case Type.Apply(t, ts) => s"$t[${ts.mkString(", ")}]"
-    case Type.Enum(enum, cases) => enum.toString
+    case Type.Enum(enum, cases, kind) => enum.toString
     case Type.Forall(quantifiers, base) => s"∀(${quantifiers.mkString(", ")}). $base"
   }
 }
@@ -250,10 +250,9 @@ object Type {
     *
     * @param sym   the symbol of the enum.
     * @param cases a map from tag names to tag types.
+    * @param kind  the kind of the enum.
     */
-  case class Enum(sym: Symbol.EnumSym, cases: immutable.Map[String, Type]) extends Type {
-    def kind: Kind = Kind.Star
-  }
+  case class Enum(sym: Symbol.EnumSym, cases: immutable.Map[String, Type], kind: Kind) extends Type
 
   /**
     * A type expression that represents the application of `ts` to `t`.
@@ -379,9 +378,9 @@ object Type {
       case Type.FSet => Type.FSet
       case Type.FMap => Type.FMap
       case Type.Apply(t, ts) => Type.Apply(visit(t), ts map visit)
-      case Type.Enum(enum, cases) => Type.Enum(enum, cases map {
+      case Type.Enum(enum, cases, kind) => Type.Enum(enum, cases map {
         case (k, v) => k -> visit(v)
-      })
+      }, kind)
       case Type.Forall(quantifiers, base) => Type.Forall(quantifiers, visit(base))
     }
 

@@ -293,15 +293,17 @@ object Namer {
     /**
       * Returns the scheme corresponding to the given cases of an enum.
       */
-    def schemeOf(sym: Symbol.EnumSym, tparams: List[Name.Ident], cases: Map[String, WeededAst.Case])(implicit genSym: GenSym): NamedAst.Scheme = {
+    def schemeOf(sym: Symbol.EnumSym, tparams: List[Name.Ident], cases0: Map[String, WeededAst.Case])(implicit genSym: GenSym): NamedAst.Scheme = {
       // Compute the type environment from the quantifier type parameters.
       val tenv0 = tparams.map(ident => ident.name -> Type.freshTypeVar())
 
-      val tpe = NamedAst.Type.Enum(sym, cases.foldLeft(Map.empty[String, NamedAst.Type]) {
+      // Perform naming on each case.
+      val cases = cases0.foldLeft(Map.empty[String, NamedAst.Type]) {
         case (macc, (tag, WeededAst.Case(enumName, tagName, t))) => macc + (tag -> Types.namer(t, tenv0.toMap))
-      })
+      }
+      val base = NamedAst.Type.Enum(sym, tparams, cases)
 
-      NamedAst.Scheme(tenv0.map(_._2), tpe)
+      NamedAst.Scheme(tenv0.map(_._2), base)
     }
 
   }

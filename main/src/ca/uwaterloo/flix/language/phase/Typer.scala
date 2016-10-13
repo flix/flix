@@ -767,7 +767,7 @@ object Typer {
             case Ok(decl) => Disambiguation.resolve(decl.sc, ns0, program) match {
               case Ok(scheme) =>
                 val enumType = scheme.base // TODO
-                val cazeType = enumType.asInstanceOf[Type.Enum].cases(tag.name)
+                val cazeType = enumType.asInstanceOf[Type.Enum].cases(tag.name) // TODO: Brittle
                 for (
                   innerType <- visitPat(pat);
                   _________ <- unifyM(innerType, cazeType, loc);

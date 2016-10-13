@@ -341,7 +341,7 @@ class Flix {
         macc + (tag -> tpe.asInstanceOf[WrappedType].tpe)
     }
 
-    new WrappedType(Type.Enum(Symbol.mkEnumSym(fqn), cases))
+    new WrappedType(Type.Enum(Symbol.mkEnumSym(fqn), cases, Kind.Star))
   }
 
   /**
