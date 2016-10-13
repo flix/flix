@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
-import ca.uwaterloo.flix.language.ast.{Ast, Name, NamedAst, Type}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.errors.TypeError.UnresolvedRef
 import ca.uwaterloo.flix.util.Result
@@ -183,7 +183,7 @@ object Disambiguation {
         val decls = program.enums.getOrElse(ns0, Map.empty)
         decls.get(typeName) match {
           case None => Err(TypeError.UnresolvedType(qname, ns0, loc))
-          case Some(enum) => resolve(enum.tpe, ns0, program)
+          case Some(enum) => resolve(enum.sc.base, ns0, program)
         }
     }
     case NamedAst.Type.Ref(qname, loc) if qname.isQualified =>
@@ -191,7 +191,7 @@ object Disambiguation {
       val decls = program.enums.getOrElse(qname.namespace, Map.empty)
       decls.get(qname.ident.name) match {
         case None => Err(TypeError.UnresolvedType(qname, ns0, loc))
-        case Some(enum) => resolve(enum.tpe, qname.namespace, program)
+        case Some(enum) => resolve(enum.sc.base, qname.namespace, program)
       }
     case NamedAst.Type.Enum(sym, cases) =>
       val asList = cases.toList
@@ -219,6 +219,15 @@ object Disambiguation {
         case tpe => Type.Forall(quantifiers, tpe)
       }
 
+  }
+
+  /**
+    * Resolves the given scheme `sc0` in the given namespace `ns0`.
+    */
+  def resolve(sc0: NamedAst.Scheme, ns0: Name.NName, program: Program): Result[Scheme, TypeError] = {
+    resolve(sc0.base, ns0, program) map {
+      case base => Scheme(sc0.quantifiers, base)
+    }
   }
 
   /**

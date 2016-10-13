@@ -584,8 +584,9 @@ object Typer {
          */
         case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
           Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
-            case Ok(decl) => Disambiguation.resolve(decl.tpe, ns0, program) match {
-              case Ok(enumType) =>
+            case Ok(decl) => Disambiguation.resolve(decl.sc, ns0, program) match {
+              case Ok(scheme) =>
+                val enumType = scheme.base // TODO
                 val cazeType = enumType.asInstanceOf[Type.Enum].cases(tag.name)
                 for (
                   innerType <- visitExp(exp);
@@ -763,8 +764,9 @@ object Typer {
         case NamedAst.Pattern.Str(s, loc) => liftM(Type.Str)
         case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
           Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
-            case Ok(decl) => Disambiguation.resolve(decl.tpe, ns0, program) match {
-              case Ok(enumType) =>
+            case Ok(decl) => Disambiguation.resolve(decl.sc, ns0, program) match {
+              case Ok(scheme) =>
+                val enumType = scheme.base // TODO
                 val cazeType = enumType.asInstanceOf[Type.Enum].cases(tag.name)
                 for (
                   innerType <- visitPat(pat);

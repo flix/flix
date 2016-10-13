@@ -16,6 +16,17 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.phase.GenSym
+
+object Scheme {
+
+  /**
+    * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
+    */
+  def instantiate(sc: Scheme)(implicit genSym: GenSym): Type = Type.refreshTypeVars(sc.quantifiers, sc.base)
+
+}
+
 /**
   * Representation of polytypes.
   */

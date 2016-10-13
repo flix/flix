@@ -275,6 +275,7 @@ object Type {
     * A universally quantified type expression.
     */
   // TODO: Move into Scheme.
+  //TODO: Deprecated
   case class Forall(quantifiers: List[Type.Var], base: Type) extends Type {
     def kind: Kind = base.kind
   }
@@ -332,11 +333,13 @@ object Type {
     *
     * Returns the base type if the given list of quantifiers is empty.
     */
+  //TODO: Deprecated
   def mkForall(quantifiers: List[Type.Var], base: Type): Type = if (quantifiers.isEmpty) base else Type.Forall(quantifiers, base)
 
   /**
     * Instantiates the given type `tpe` by replacing all quantified type variables with fresh type variables.
     */
+  //TODO: Deprecated
   def instantiate(tpe: Type)(implicit genSym: GenSym): Type = tpe match {
     case Type.Forall(quantifiers, base) => refreshTypeVars(quantifiers, base)
     case _ => tpe

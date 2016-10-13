@@ -138,27 +138,17 @@ object Namer {
        * Enum.
        */
       case WeededAst.Declaration.Enum(ident, tparams, cases, loc) =>
-        // check if the enum already exists.
-        prog0.enums.get(ns0) match {
+        val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
+        enums0.get(ident.name) match {
           case None =>
-            // Case 1: The namespace does not yet exist. So the enum does not yet exist.
+            // Case 2.1: The enum does not exist in the namespace. Update it.
             val sym = Symbol.mkEnumSym(ns0, ident)
-            val enum = NamedAst.Declaration.Enum(sym, casesOf(cases, Map.empty), typeOf(sym, cases, Map.empty), loc)
-            val enums = Map(ident.name -> enum)
+            val enum = NamedAst.Declaration.Enum(sym, casesOf(cases, Map.empty), schemeOf(sym, tparams, cases), loc)
+            val enums = enums0 + (ident.name -> enum)
             prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
-          case Some(enums0) =>
-            // Case 2: The namespace exists. Lookup the enum.
-            enums0.get(ident.name) match {
-              case None =>
-                // Case 2.1: The enum does not exist in the namespace. Update it.
-                val sym = Symbol.mkEnumSym(ns0, ident)
-                val enum = NamedAst.Declaration.Enum(sym, casesOf(cases, Map.empty), typeOf(sym, cases, Map.empty), loc)
-                val enums = enums0 + (ident.name -> enum)
-                prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
-              case Some(enum) =>
-                // Case 2.2: Duplicate definition.
-                DuplicateDefinition(ident.name, enum.loc, ident.loc).toFailure
-            }
+          case Some(enum) =>
+            // Case 2.2: Duplicate definition.
+            DuplicateDefinition(ident.name, enum.loc, ident.loc).toFailure
         }
 
       /*
@@ -301,11 +291,18 @@ object Namer {
     }
 
     /**
-      * Returns the type corresponding to the given cases of an enum.
+      * Returns the scheme corresponding to the given cases of an enum.
       */
-    def typeOf(sym: Symbol.EnumSym, cases: Map[String, WeededAst.Case], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.Type.Enum = NamedAst.Type.Enum(sym, cases.foldLeft(Map.empty[String, NamedAst.Type]) {
-      case (macc, (tag, WeededAst.Case(enumName, tagName, tpe))) => macc + (tag -> Types.namer(tpe, tenv0))
-    })
+    def schemeOf(sym: Symbol.EnumSym, tparams: List[Name.Ident], cases: Map[String, WeededAst.Case])(implicit genSym: GenSym): NamedAst.Scheme = {
+      // Compute the type environment from the quantifier type parameters.
+      val tenv0 = tparams.map(ident => ident.name -> Type.freshTypeVar())
+
+      val tpe = NamedAst.Type.Enum(sym, cases.foldLeft(Map.empty[String, NamedAst.Type]) {
+        case (macc, (tag, WeededAst.Case(enumName, tagName, t))) => macc + (tag -> Types.namer(t, tenv0.toMap))
+      })
+
+      NamedAst.Scheme(tenv0.map(_._2), tpe)
+    }
 
   }
 
