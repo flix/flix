@@ -415,30 +415,29 @@ object Typer {
          * Unary expression.
          */
         case NamedAst.Expression.Unary(op, exp1, tvar, loc) => op match {
-          // TODO: Must unify tvar
           case UnaryOperator.LogicalNot =>
             for (
-              tpe1 <- visitExp(exp1);
-              res <- unifyM(tvar, tpe1, Type.Bool, loc)
+              tpe <- visitExp(exp1);
+              res <- unifyM(tvar, tpe, Type.Bool, loc)
             ) yield res
 
           case UnaryOperator.Plus =>
-            // TODO: Must unify tvar
             for (
-              tpe1 <- visitExp(exp1)
-            ) yield tpe1
+              tpe <- visitExp(exp1);
+              res <- unifyM(tvar, tpe, loc)
+            ) yield res
 
           case UnaryOperator.Minus =>
-            // TODO: Must unify tvar
             for (
-              tpe1 <- visitExp(exp1)
-            ) yield tpe1
+              tpe <- visitExp(exp1);
+              res <- unifyM(tvar, tpe, loc)
+            ) yield res
 
           case UnaryOperator.BitwiseNegate =>
-            // TODO: Must unify tvar
             for (
-              inferredType <- visitExp(exp1)
-            ) yield inferredType
+              tpe <- visitExp(exp1);
+              res <- unifyM(tvar, tpe, loc)
+            ) yield res
         }
 
         /*
@@ -449,42 +448,42 @@ object Typer {
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2), loc)
+              resultType <- unifyM(tvar, tpe1, tpe2, loc)
             ) yield resultType
 
           case BinaryOperator.Minus =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2), loc)
+              resultType <- unifyM(tvar, tpe1, tpe2, loc)
             ) yield resultType
 
           case BinaryOperator.Times =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2), loc)
+              resultType <- unifyM(tvar, tpe1, tpe2, loc)
             ) yield resultType
 
           case BinaryOperator.Divide =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2), loc)
+              resultType <- unifyM(tvar, tpe1, tpe2, loc)
             ) yield resultType
 
           case BinaryOperator.Modulo =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2), loc)
+              resultType <- unifyM(tvar, tpe1, tpe2, loc)
             ) yield resultType
 
           case BinaryOperator.Exponentiate =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2), loc)
+              resultType <- unifyM(tvar, tpe1, tpe2, loc)
             ) yield resultType
 
           case BinaryOperator.Equal | BinaryOperator.NotEqual =>
@@ -514,7 +513,7 @@ object Typer {
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2), loc)
+              resultType <- unifyM(tvar, tpe1, tpe2, loc)
             ) yield resultType
 
           case BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift =>
@@ -533,6 +532,7 @@ object Typer {
           for (
             tpe1 <- visitExp(exp1);
             tpe2 <- visitExp(exp2);
+            boundVar <- unifyM(sym.tvar, tpe1, loc);
             resultVar <- unifyM(tvar, tpe2, loc)
           ) yield resultVar
 
