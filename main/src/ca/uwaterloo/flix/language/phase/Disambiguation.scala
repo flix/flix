@@ -219,10 +219,6 @@ object Disambiguation {
         baseType <- resolve(base0, ns0, program);
         argTypes <- seqM(tparams0.map(tpe => resolve(tpe, ns0, program)))
       ) yield Type.Apply(baseType, argTypes)
-    case NamedAst.Type.Forall(quantifiers, base, loc) =>
-      resolve(base, ns0, program) map {
-        case tpe => Type.Forall(quantifiers, tpe)
-      }
 
   }
 

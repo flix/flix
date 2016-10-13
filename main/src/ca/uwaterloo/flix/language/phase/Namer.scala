@@ -89,9 +89,8 @@ object Namer {
             // Case 1: The definition does not already exist. Update it.
 
             // Compute the type environment from the formal type parameters.
-            val tenv0 = tparams0.foldLeft(Map.empty[String, Type.Var]) {
-              case (macc, name) => macc + (name.name -> Type.freshTypeVar())
-            }
+            val tvars = tparams0.map(x => x.name -> Type.freshTypeVar())
+            val tenv0 = tvars.toMap
 
             // Introduce a variable symbols for each formal parameter.
             var pms0 = List.empty[NamedAst.FormalParam]
@@ -105,13 +104,8 @@ object Namer {
             Expressions.namer(exp, env0, tenv0) map {
               case e =>
                 val sym = Symbol.mkDefnSym(ns0, ident)
-                // Qualify the type of the definition it its type parameters.
-                val quantifiedType =
-                if (tenv0.isEmpty)
-                  Types.namer(tpe, tenv0)
-                else
-                  NamedAst.Type.Forall(tenv0.values.toList, Types.namer(tpe, tenv0), loc)
-                val defn = NamedAst.Declaration.Definition(sym, tenv0.values.toList, pms0.reverse, e, ann, quantifiedType, loc)
+                val sc = NamedAst.Scheme(tvars.map(_._2), Types.namer(tpe, tenv0))
+                val defn = NamedAst.Declaration.Definition(sym, tenv0.values.toList, pms0.reverse, e, ann, sc, loc)
                 prog0.copy(definitions = prog0.definitions + (ns0 -> (defns + (ident.name -> defn))))
             }
           case Some(defn) =>

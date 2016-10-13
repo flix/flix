@@ -77,9 +77,6 @@ object Unification {
         case (macc, (tag, t)) => macc + (tag -> apply(t))
       }, kind)
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
-      case Type.Forall(quantifiers, base) =>
-        // Remove all quantifiers from the substitution and apply it to the base type.
-        Type.Forall(quantifiers, Substitution(m.filterKeys(tvar => !(quantifiers contains tvar)))(base))
     }
 
     /**

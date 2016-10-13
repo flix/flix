@@ -141,9 +141,9 @@ object Typer {
         */
       // TODO: Cleanup
       def infer(defn0: NamedAst.Declaration.Definition, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): Result[TypedAst.Declaration.Definition, TypeError] = {
-        // Resolve the declared type.
-        val declaredType = Disambiguation.resolve(defn0.tpe, ns0, program) match {
-          case Ok(tpe) => tpe
+        // Resolve the declared scheme.
+        val declaredScheme = Disambiguation.resolve(defn0.sc, ns0, program) match {
+          case Ok(scheme) => scheme
           case Err(e) => return Err(e)
         }
 
@@ -155,7 +155,7 @@ object Typer {
 
         val result = for (
           resultType <- Expressions.infer(defn0.exp, ns0, program);
-          unifiedType <- unifyM(Type.instantiate(declaredType), Type.mkArrow(argumentTypes, resultType), defn0.loc)
+          unifiedType <- unifyM(Scheme.instantiate(declaredScheme), Type.mkArrow(argumentTypes, resultType), defn0.loc)
         ) yield unifiedType
 
         // TODO: See if this can be rewritten nicer
@@ -365,8 +365,8 @@ object Typer {
         case NamedAst.Expression.Ref(ref, tvar, loc) =>
           Disambiguation.lookupRef(ref, ns0, program) match {
             case Ok(RefTarget.Defn(ns, defn)) =>
-              Disambiguation.resolve(defn.tpe, ns, program) match {
-                case Ok(declaredType) => unifyM(tvar, Type.instantiate(declaredType), loc)
+              Disambiguation.resolve(defn.sc, ns, program) match {
+                case Ok(scheme) => unifyM(tvar, Scheme.instantiate(scheme), loc)
                 case Err(e) => failM(e)
               }
             case Ok(RefTarget.Hook(hook)) => liftM(hook.tpe)

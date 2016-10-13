@@ -108,7 +108,7 @@ object Codegen {
         case Type.BigInt => asm.Type.getDescriptor(Constants.bigIntegerClass)
         case Type.Str => asm.Type.getDescriptor(Constants.stringClass)
         case Type.Native => asm.Type.getDescriptor(Constants.objectClass)
-        case Type.Enum(_, _) => asm.Type.getDescriptor(Constants.tagClass)
+        case Type.Enum(_, _, _) => asm.Type.getDescriptor(Constants.tagClass)
         case Type.Apply(Type.Arrow(l), _) => s"L${decorate(interfaces(tpe))};"
         case Type.Apply(Type.FTuple(l), _) => asm.Type.getDescriptor(Constants.tupleClass)
         case Type.Apply(Type.FList, _) => asm.Type.getDescriptor(Constants.objectClass)
@@ -234,7 +234,7 @@ object Codegen {
       case Type.Int64 => mv.visitInsn(LRETURN)
       case Type.Float32 => mv.visitInsn(FRETURN)
       case Type.Float64 => mv.visitInsn(DRETURN)
-      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) |
+      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) |
            Type.Apply(_, _) => mv.visitInsn(ARETURN)
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
@@ -287,7 +287,7 @@ object Codegen {
       case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
       case Type.Float32 => visitor.visitVarInsn(FLOAD, offset)
       case Type.Float64 => visitor.visitVarInsn(DLOAD, offset)
-      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.Arrow(_), _) |
+      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _, _) | Type.Apply(Type.Arrow(_), _) |
            Type.Apply(Type.FList, _) | Type.Apply(Type.FSet, _) => visitor.visitVarInsn(ALOAD, offset)
       case _ if tpe.isTuple => visitor.visitVarInsn(ALOAD, offset)
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
@@ -375,7 +375,7 @@ object Codegen {
           case Type.Int64 => globalOffset += 2
           case Type.Float32 => globalOffset += 1
           case Type.Float64 => globalOffset += 2
-          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) => globalOffset += 1
+          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) => globalOffset += 1
           case tpe => throw InternalCompilerException(s"Unexpected type '$tpe'.")
         }
       }
@@ -398,7 +398,7 @@ object Codegen {
           case Type.Float64 =>
             offset -= 2
             visitor.visitVarInsn(DSTORE, offset)
-          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) =>
+          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) =>
             offset -= 1
             visitor.visitVarInsn(ASTORE, offset)
           case _ => throw InternalCompilerException(s"Not yet implemented.") // TODO
@@ -495,7 +495,7 @@ object Codegen {
         case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
         case Type.Float32 => visitor.visitVarInsn(FSTORE, offset)
         case Type.Float64 => visitor.visitVarInsn(DSTORE, offset)
-        case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) => visitor.visitVarInsn(ASTORE, offset)
+        case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) => visitor.visitVarInsn(ASTORE, offset)
         case Type.Apply(_, _) => visitor.visitVarInsn(ASTORE, offset)
         case tpe => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
@@ -729,7 +729,7 @@ object Codegen {
       compileExpression(ctx, visitor, entryPoint)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkInt64", "(J)Ljava/lang/Object;", false)
 
-    case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) |
+    case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) |
          Type.Apply(Type.FSet, _) => compileExpression(ctx, visitor, entryPoint)(exp)
 
     case tpe => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
@@ -762,11 +762,11 @@ object Codegen {
       visitor.visitTypeInsn(CHECKCAST, name)
       visitor.visitMethodInsn(INVOKEVIRTUAL, name, methodName, desc, false)
 
-    case Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Apply(Type.Arrow(_), _) | Type.Apply(Type.FSet, _) =>
+    case Type.BigInt | Type.Str | Type.Enum(_, _, _) | Type.Apply(Type.Arrow(_), _) | Type.Apply(Type.FSet, _) =>
       val name = tpe match {
         case Type.BigInt => asm.Type.getInternalName(Constants.bigIntegerClass)
         case Type.Str => asm.Type.getInternalName(Constants.stringClass)
-        case Type.Enum(_, _) => asm.Type.getInternalName(Constants.tagClass)
+        case Type.Enum(_, _, _) => asm.Type.getInternalName(Constants.tagClass)
         case Type.Apply(Type.Arrow(l), _) =>
           // TODO: Is this correct? Need to write a test when we can write lambda expressions.
           decorate(ctx.interfaces(tpe))
@@ -1119,7 +1119,7 @@ object Codegen {
   private def compileComparisonExpr(ctx: Context, visitor: MethodVisitor, entryPoint: Label)
                                    (o: ComparisonOperator, e1: Expression, e2: Expression): Unit = {
     e1.tpe match {
-      case Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.FSet, _) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
+      case Type.Enum(_, _, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.FSet, _) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
         (e1.tpe: @unchecked) match {
           case Type.Apply(Type.FTuple(_), _) =>
             // Value.Tuple.elms() method
@@ -1136,7 +1136,7 @@ object Codegen {
             compileExpression(ctx, visitor, entryPoint)(e2)
             visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), method1.getName, asm.Type.getMethodDescriptor(method1), false)
             visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(clazz2), method2.getName, asm.Type.getMethodDescriptor(method2), false)
-          case Type.Enum(_, _) | Type.Apply(Type.FSet, _) =>
+          case Type.Enum(_, _, _) | Type.Apply(Type.FSet, _) =>
             // java.lang.Object.equals(Object) method
             val clazz = Constants.objectClass
             val method = clazz.getMethod("equals", Constants.objectClass)

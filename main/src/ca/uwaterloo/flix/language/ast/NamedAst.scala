@@ -42,7 +42,7 @@ object NamedAst {
 
   object Declaration {
 
-    case class Definition(sym: Symbol.DefnSym, tparams: List[ast.Type.Var], params: List[NamedAst.FormalParam], exp: NamedAst.Expression, ann: Ast.Annotations, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
+    case class Definition(sym: Symbol.DefnSym, tparams: List[ast.Type.Var], params: List[NamedAst.FormalParam], exp: NamedAst.Expression, ann: Ast.Annotations, sc: NamedAst.Scheme, loc: SourceLocation) extends NamedAst.Declaration
 
     case class Signature(ident: Name.Ident, params: List[NamedAst.FormalParam], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
@@ -271,8 +271,6 @@ object NamedAst {
     case class Arrow(params: List[NamedAst.Type], ret: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Apply(base: NamedAst.Type, tparams: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
-
-    case class Forall(quantifiers: List[ast.Type.Var], base: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
   }
 

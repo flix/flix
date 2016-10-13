@@ -58,7 +58,6 @@ sealed trait Type {
       case (tagName, tpe) => tpe.typeVars
     }.toSet
     case Type.Apply(t, ts) => t.typeVars ++ ts.flatMap(_.typeVars)
-    case Type.Forall(quantifiers, base) => base.typeVars -- quantifiers
   }
 
   /**
@@ -97,7 +96,6 @@ sealed trait Type {
     case Type.Apply(Type.Arrow(l), ts) => ts.mkString(" -> ")
     case Type.Apply(t, ts) => s"$t[${ts.mkString(", ")}]"
     case Type.Enum(enum, cases, kind) => enum.toString
-    case Type.Forall(quantifiers, base) => s"∀(${quantifiers.mkString(", ")}). $base"
   }
 }
 
@@ -270,15 +268,6 @@ object Type {
     }
   }
 
-  /**
-    * A universally quantified type expression.
-    */
-  // TODO: Move into Scheme.
-  //TODO: Deprecated
-  case class Forall(quantifiers: List[Type.Var], base: Type) extends Type {
-    def kind: Kind = base.kind
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // Helper Functions                                                        //
   /////////////////////////////////////////////////////////////////////////////
@@ -328,23 +317,6 @@ object Type {
   def mkFMap(k: Type, v: Type): Type = Apply(FMap, List(k, v))
 
   /**
-    * Constructors the universally quantified type ∀(xs...) base.
-    *
-    * Returns the base type if the given list of quantifiers is empty.
-    */
-  //TODO: Deprecated
-  def mkForall(quantifiers: List[Type.Var], base: Type): Type = if (quantifiers.isEmpty) base else Type.Forall(quantifiers, base)
-
-  /**
-    * Instantiates the given type `tpe` by replacing all quantified type variables with fresh type variables.
-    */
-  //TODO: Deprecated
-  def instantiate(tpe: Type)(implicit genSym: GenSym): Type = tpe match {
-    case Type.Forall(quantifiers, base) => refreshTypeVars(quantifiers, base)
-    case _ => tpe
-  }
-
-  /**
     * Replaces every free occurrence of a type variable in `typeVars`
     * with a fresh type variable in the given type `tpe`.
     */
@@ -381,7 +353,6 @@ object Type {
       case Type.Enum(enum, cases, kind) => Type.Enum(enum, cases map {
         case (k, v) => k -> visit(v)
       }, kind)
-      case Type.Forall(quantifiers, base) => Type.Forall(quantifiers, visit(base))
     }
 
     visit(tpe)
