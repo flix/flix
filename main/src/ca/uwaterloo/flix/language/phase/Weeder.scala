@@ -791,6 +791,7 @@ object Weeder {
       past.name match {
         case "associative" => Ast.Annotation.Associative(loc).toSuccess
         case "commutative" => Ast.Annotation.Commutative(loc).toSuccess
+        case "internal" => Ast.Annotation.Internal(loc).toSuccess
         case "monotone" => Ast.Annotation.Monotone(loc).toSuccess
         case "strict" => Ast.Annotation.Strict(loc).toSuccess
         case "unchecked" => Ast.Annotation.Unchecked(loc).toSuccess

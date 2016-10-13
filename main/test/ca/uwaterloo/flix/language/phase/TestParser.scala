@@ -2777,34 +2777,66 @@ class TestParser extends FunSuite with TestUtils {
   /////////////////////////////////////////////////////////////////////////////
   // Annotations                                                             //
   /////////////////////////////////////////////////////////////////////////////
-  test("Annotation.01") {
+  test("Annotation.@associative") {
     val input =
-      """@strict @unchecked
-        |def f(x: Int): Int = x
+      """@associative
+        |def f(x: Int, y: Int): Int = 21
       """.stripMargin
     run(input)
   }
 
-  test("Annotation.02") {
+  test("Annotation.@commutative") {
+    val input =
+      """@commutative
+        |def f(x: Int, y: Int): Int = 21
+      """.stripMargin
+    run(input)
+  }
+
+  test("Annotation.@internal") {
+    val input =
+      """@internal
+        |def f(x: Int, y: Int): Int = 21
+      """.stripMargin
+    run(input)
+  }
+
+  test("Annotation.@monotone") {
     val input =
       """@monotone @unchecked
-        |def f(x: Int): Int = x
+        |def f(x: Int, y: Int): Int = 21
       """.stripMargin
     run(input)
   }
 
-  test("Annotation.03") {
+  test("Annotation.@strict") {
+    val input =
+      """@strict @unchecked
+        |def f(x: Int, y: Int): Int = 21
+      """.stripMargin
+    run(input)
+  }
+
+  test("Annotation.@unchecked") {
+    val input =
+      """@unchecked
+        |def f(x: Int, y: Int): Int = 21
+      """.stripMargin
+    run(input)
+  }
+
+  test("Annotation.@unsafe") {
+    val input =
+      """@unsafe
+        |def f(x: Int, y: Int): Int = 21
+      """.stripMargin
+    run(input)
+  }
+
+  test("Annotation.@strict @monotone @unchecked") {
     val input =
       """@strict @monotone @unchecked
-        |def f(x: Int): Int = x
-      """.stripMargin
-    run(input)
-  }
-
-  test("Annotation.04") {
-    val input =
-      """@strict @monotone @commutative @associative @unsafe @unchecked
-        |def f(x: Int): Int = x
+        |def f(x: Int, y: Int): Int = 21
       """.stripMargin
     run(input)
   }

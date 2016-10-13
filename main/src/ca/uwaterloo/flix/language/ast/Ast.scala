@@ -57,6 +57,17 @@ object Ast {
     }
 
     /**
+      * An AST node that represents an `@internal` annotation.
+      *
+      * An `internal` function is a non-public function hidden from view.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Internal(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@commutative"
+    }
+
+    /**
       * An AST node that represents a `@monotone` annotation.
       *
       * A `monotone` function is an order-preserving function between lattice elements.
