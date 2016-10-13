@@ -832,16 +832,6 @@ object ParsedAst {
     case class Ambiguous(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate
 
     /**
-      * Equal Predicate.
-      *
-      * @param sp1   the position of the first character in the predicate.
-      * @param ident the name of the variable.
-      * @param term  the term.
-      * @param sp2   the position of the last character in the predicate.
-      */
-    case class Equal(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate
-
-    /**
       * NotEqual Predicate.
       *
       * @param sp1    the position of the first character in the predicate.

@@ -913,7 +913,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("UnresolvedDefinition01") {
     val input = "def f: Int = x"
     val result = new Flix().addStr(input).compile()
-    assertError[TypeError.UnresolvedRef](result)
+    expectError[TypeError.UnresolvedRef](result)
   }
 
   test("UnresolvedDefinition02") {
@@ -924,13 +924,13 @@ class TestTyper extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[TypeError.UnresolvedRef](result)
+    expectError[TypeError.UnresolvedRef](result)
   }
 
   test("UnresolvedTable01") {
     val input = "VarPointsTo(1, 2)."
     val result = new Flix().addStr(input).compile()
-    assertError[TypeError.UnresolvedTable](result)
+    expectError[TypeError.UnresolvedTable](result)
   }
 
   test("UnresolvedTable02") {
@@ -940,13 +940,13 @@ class TestTyper extends FunSuite with TestUtils {
           |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[TypeError.UnresolvedTable](result)
+    expectError[TypeError.UnresolvedTable](result)
   }
 
   test("UnresolvedTable03") {
     val input = "index AddrOf({foo, bar})"
     val result = new Flix().addStr(input).compile()
-    assertError[TypeError.UnresolvedTable](result)
+    expectError[TypeError.UnresolvedTable](result)
   }
 
 }

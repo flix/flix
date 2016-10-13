@@ -30,7 +30,7 @@ class TestNamer extends FunSuite with TestUtils {
          |def f: Int = 21
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.DuplicateDefinition](result)
+    expectError[NameError.DuplicateDefinition](result)
   }
 
   test("DuplicateDefinition02") {
@@ -41,7 +41,7 @@ class TestNamer extends FunSuite with TestUtils {
          |def f: Int = 11
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.DuplicateDefinition](result)
+    expectError[NameError.DuplicateDefinition](result)
   }
 
   test("DuplicateDefinition03") {
@@ -52,7 +52,7 @@ class TestNamer extends FunSuite with TestUtils {
          |def f(x: Int): Int = 11
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.DuplicateDefinition](result)
+    expectError[NameError.DuplicateDefinition](result)
   }
 
   test("DuplicateDefinition04") {
@@ -63,7 +63,7 @@ class TestNamer extends FunSuite with TestUtils {
          |def f(x: Bool, y: Int, z: String): Int = 11
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.DuplicateDefinition](result)
+    expectError[NameError.DuplicateDefinition](result)
   }
 
   test("DuplicateDefinition05") {
@@ -78,7 +78,7 @@ class TestNamer extends FunSuite with TestUtils {
          |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.DuplicateDefinition](result)
+    expectError[NameError.DuplicateDefinition](result)
   }
 
   test("DuplicateDefinition06") {
@@ -97,13 +97,13 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.DuplicateDefinition](result)
+    expectError[NameError.DuplicateDefinition](result)
   }
 
   test("IllegalDefinitionName01") {
     val input = "def F: Int = 42"
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.IllegalDefinitionName](result)
+    expectError[NameError.IllegalDefinitionName](result)
   }
 
   test("IllegalDefinitionName02") {
@@ -114,7 +114,7 @@ class TestNamer extends FunSuite with TestUtils {
          |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.IllegalDefinitionName](result)
+    expectError[NameError.IllegalDefinitionName](result)
   }
 
   test("IllegalDefinitionName03") {
@@ -125,7 +125,7 @@ class TestNamer extends FunSuite with TestUtils {
          |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.IllegalDefinitionName](result)
+    expectError[NameError.IllegalDefinitionName](result)
   }
 
   test("IllegalDefinitionName04") {
@@ -136,43 +136,43 @@ class TestNamer extends FunSuite with TestUtils {
          |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.IllegalDefinitionName](result)
+    expectError[NameError.IllegalDefinitionName](result)
   }
 
   test("IllegalRelationName01") {
     val input = "rel f(x: Int)"
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.IllegalTableName](result)
+    expectError[NameError.IllegalTableName](result)
   }
 
   test("IllegalRelationName02") {
     val input = "rel foo(x: Int)"
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.IllegalTableName](result)
+    expectError[NameError.IllegalTableName](result)
   }
 
   test("IllegalRelationName03") {
     val input = "rel fOO(x: Int)"
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.IllegalTableName](result)
+    expectError[NameError.IllegalTableName](result)
   }
 
   test("IllegalLatticeName01") {
     val input = "lat f(x: Int)"
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.IllegalTableName](result)
+    expectError[NameError.IllegalTableName](result)
   }
 
   test("IllegalLatticeName02") {
     val input = "lat foo(x: Int)"
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.IllegalTableName](result)
+    expectError[NameError.IllegalTableName](result)
   }
 
   test("IllegalLatticeName03") {
     val input = "lat fOO(x: Int)"
     val result = new Flix().addStr(input).compile()
-    assertError[NameError.IllegalTableName](result)
+    expectError[NameError.IllegalTableName](result)
   }
 
   test("UnresolvedEnum01") {
@@ -183,7 +183,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[TypeError.UnresolvedTag](result)
+    expectError[TypeError.UnresolvedTag](result)
   }
 
   test("UnresolvedEnum02") {
@@ -194,7 +194,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[TypeError.UnresolvedTag](result)
+    expectError[TypeError.UnresolvedTag](result)
   }
 
   test("UnresolvedTag01") {
@@ -208,7 +208,7 @@ class TestNamer extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[TypeError.UnresolvedTag](result)
+    expectError[TypeError.UnresolvedTag](result)
   }
 
   test("UnresolvedTag02") {
@@ -224,7 +224,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[TypeError.UnresolvedTag](result)
+    expectError[TypeError.UnresolvedTag](result)
   }
 
   test("UnresolvedTag03") {
@@ -242,13 +242,13 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[TypeError.UnresolvedTag](result)
+    expectError[TypeError.UnresolvedTag](result)
   }
 
   test("UnresolvedType01") {
     val input = "def x: Foo = 42"
     val result = new Flix().addStr(input).compile()
-    assertError[TypeError.UnresolvedType](result)
+    expectError[TypeError.UnresolvedType](result)
   }
 
   test("UnresolvedType02") {
@@ -258,7 +258,7 @@ class TestNamer extends FunSuite with TestUtils {
           |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[TypeError.UnresolvedType](result)
+    expectError[TypeError.UnresolvedType](result)
   }
 
   test("Expression.Hook01") {

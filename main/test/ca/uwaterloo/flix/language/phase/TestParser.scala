@@ -253,12 +253,12 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Lattice.01") {
     val input = "lat L(a: A)"
-    assertError[TypeError.UnresolvedType](new Flix().addStr(input).compile())
+    expectError[TypeError.UnresolvedType](new Flix().addStr(input).compile())
   }
 
   test("Lattice.02") {
     val input = "lat L(a: A, b: B, c: C)"
-    assertError[TypeError.UnresolvedType](new Flix().addStr(input).compile())
+    expectError[TypeError.UnresolvedType](new Flix().addStr(input).compile())
   }
 
   test("Declaration.Index.01") {

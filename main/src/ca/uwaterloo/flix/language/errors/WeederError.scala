@@ -30,31 +30,11 @@ object WeederError {
   implicit val consoleCtx = Compiler.ConsoleCtx
 
   /**
-    * An error raised to indicate that the alias `name` was defined multiple times.
-    *
-    * @param name the name of the variable.
-    * @param loc1 the location of the first declaration.
-    * @param loc2 the location of the second declaration.
-    */
-  case class DuplicateAlias(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
-         |
-         |${consoleCtx.red(s">> Duplicate definition of the variable '$name'.")}
-         |
-         |First definition was here:
-         |${loc1.highlight}
-         |Second definition was here:
-         |${loc2.highlight}
-         """.stripMargin
-  }
-
-  /**
     * An error raised to indicate that the annotation `name` was used multiple times.
     *
     * @param name the name of the attribute.
-    * @param loc1 the location of the first use.
-    * @param loc2 the location of the second use.
+    * @param loc1 the location of the first annotation.
+    * @param loc2 the location of the second annotation.
     */
   case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val message =
@@ -73,8 +53,8 @@ object WeederError {
     * An error raised to indicate that the attribute `name` was declared multiple times.
     *
     * @param name the name of the attribute.
-    * @param loc1 the location of the first declaration.
-    * @param loc2 the location of the second declaration.
+    * @param loc1 the location of the first attribute.
+    * @param loc2 the location of the second attribute.
     */
   case class DuplicateAttribute(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val message =
@@ -92,15 +72,15 @@ object WeederError {
   /**
     * An error raised to indicate that the formal parameter `name` was declared multiple times.
     *
-    * @param name the name of the argument.
-    * @param loc1 the location of the first declaration.
-    * @param loc2 the location of the second declaration.
+    * @param name the name of the parameter.
+    * @param loc1 the location of the first parameter.
+    * @param loc2 the location of the second parameter.
     */
   case class DuplicateFormal(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
          |
-         |${consoleCtx.red(s">> Duplicate formal argument '$name'.")}
+         |${consoleCtx.red(s">> Duplicate formal parameter '$name'.")}
          |
          |First definition was here:
          |${loc1.highlight}
@@ -113,14 +93,14 @@ object WeederError {
     * An error raised to indicate that the tag `name` was declared multiple times.
     *
     * @param name the name of the tag.
-    * @param loc1 the location of the first declaration.
-    * @param loc2 the location of the second declaration.
+    * @param loc1 the location of the first tag.
+    * @param loc2 the location of the second tag.
     */
   case class DuplicateTag(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
          |
-         |${consoleCtx.red(s">> Duplicate tag name '$name'.")}
+         |${consoleCtx.red(s">> Duplicate tag '$name'.")}
          |
          |First declaration was here:
          |${loc1.highlight}
@@ -153,7 +133,7 @@ object WeederError {
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-         |${consoleCtx.red(s">> A relation must have at least one attribute (column).")}
+         |${consoleCtx.red(s">> A relation must have at least one attribute.")}
          |
          |${loc.highlight}
          """.stripMargin
@@ -168,23 +148,7 @@ object WeederError {
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-         |${consoleCtx.red(s">> A lattice must have at least one attribute (column).")}
-         |
-         |${loc.highlight}
-         """.stripMargin
-  }
-
-  /**
-    * An error raised to indicate the presence of an illegal annotation.
-    *
-    * @param name the name of the illegal annotation.
-    * @param loc  the location of the annotation.
-    */
-  case class IllegalAnnotation(name: String, loc: SourceLocation) extends WeederError {
-    val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Illegal annotation '$name'.")}
+         |${consoleCtx.red(s">> A lattice must have at least one attribute.")}
          |
          |${loc.highlight}
          """.stripMargin
@@ -193,20 +157,17 @@ object WeederError {
   /**
     * An error raised to indicate an illegal existential quantification expression.
     *
-    * @param msg the error message.
     * @param loc the location where the illegal expression occurs.
     */
-  case class IllegalExistential(msg: String, loc: SourceLocation) extends WeederError {
+  case class IllegalExistential(loc: SourceLocation) extends WeederError {
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-         |${consoleCtx.red(s">> Illegal existential quantification.")}
+         |${consoleCtx.red(s">> An existential quantifier must have at least one parameter.")}
          |
          |${loc.highlight}
-         |$msg
          """.stripMargin
   }
-
 
   /**
     * An error raised to indicate that an float is out of bounds.
@@ -307,24 +268,22 @@ object WeederError {
   /**
     * An error raised to indicate an illegal universal quantification expression.
     *
-    * @param msg the error message.
     * @param loc the location where the illegal expression occurs.
     */
-  case class IllegalUniversal(msg: String, loc: SourceLocation) extends WeederError {
+  case class IllegalUniversal(loc: SourceLocation) extends WeederError {
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
          |
-         |${consoleCtx.red(s">> Illegal universal quantification.")}
+         |${consoleCtx.red(s">> A universal quantifier must have at least one parameter.")}
          |
          |${loc.highlight}
-         |$msg
          """.stripMargin
   }
 
   /**
     * An error raised to indicate an illegal wildcard in an expression.
     *
-    * @param loc the location where the illegal definition occurs.
+    * @param loc the location where the illegal wildcard occurs.
     */
   case class IllegalWildcard(loc: SourceLocation) extends WeederError {
     val message =
@@ -369,6 +328,22 @@ object WeederError {
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
          |
          |${consoleCtx.red(s">> $msg")}
+         |
+         |${loc.highlight}
+         """.stripMargin
+  }
+
+  /**
+    * An error raised to indicate an undefined annotation.
+    *
+    * @param name the name of the undefined annotation.
+    * @param loc  the location of the annotation.
+    */
+  case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
+    val message =
+      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
+         |
+         |${consoleCtx.red(s">> Undefined annotation '$name'.")}
          |
          |${loc.highlight}
          """.stripMargin

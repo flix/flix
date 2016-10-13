@@ -647,7 +647,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Predicates                                                              //
   /////////////////////////////////////////////////////////////////////////////
   def Predicate: Rule1[ParsedAst.Predicate] = rule {
-    Predicates.True | Predicates.False | Predicates.Ambiguous | Predicates.NotEqual | Predicates.Equal | Predicates.Loop
+    Predicates.True | Predicates.False | Predicates.Ambiguous | Predicates.NotEqual | Predicates.Loop
   }
 
   object Predicates {
@@ -661,10 +661,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Ambiguous: Rule1[ParsedAst.Predicate.Ambiguous] = rule {
       SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Ambiguous
-    }
-
-    def Equal: Rule1[ParsedAst.Predicate.Equal] = rule {
-      SP ~ Ident ~ optWS ~ atomic(":=") ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Equal
     }
 
     def NotEqual: Rule1[ParsedAst.Predicate.NotEqual] = rule {

@@ -30,7 +30,7 @@ trait TestUtils {
   /**
     * Asserts that the validation is a failure with a value of the parametric type `T`.
     */
-  def assertError[T](result: Validation[ExecutableAst, CompilationError])(implicit classTag: ClassTag[T]): Unit = result match {
+  def expectError[T](result: Validation[ExecutableAst, CompilationError])(implicit classTag: ClassTag[T]): Unit = result match {
     case Validation.Success(_, _) => fail(s"Expected Failure, but got Success.")
     case Validation.Failure(errors) =>
       val expected = classTag.runtimeClass
