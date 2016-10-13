@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.{Flix, RuleException}
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{InternalCompilerException, Options}
 import org.scalatest.FunSuite
 
 class TestParser extends FunSuite with TestUtils {
@@ -751,7 +751,7 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  ignore("Expression.Block.04") {
+  test("Expression.Block.04") {
     val input =
       """
         |def f: Int = {
@@ -1199,14 +1199,18 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  ignore("Expression.ListList.02") {
+  test("Expression.ListList.02") {
     val input = "def f: List[List[Int]] = (1 :: Nil) :: Nil"
-    run(input)
+    intercept[InternalCompilerException] {
+      run(input)
+    }
   }
 
-  ignore("Expression.ListList.03") {
+  test("Expression.ListList.03") {
     val input = "def f: List[List[Int]] = (Nil) :: (1 :: Nil) :: (2 :: 3 :: 4 :: Nil) :: Nil"
-    run(input)
+    intercept[InternalCompilerException] {
+      run(input)
+    }
   }
 
   test("Expression.Vec.01") {
@@ -1785,85 +1789,85 @@ class TestParser extends FunSuite with TestUtils {
     }
   }
 
-  ignore("Pattern.List.01") {
+  test("Pattern.List.01") {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case Nil => 0
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.List.02") {
+  test("Pattern.List.02") {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case 1 :: Nil => 0
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.List.03") {
+  test("Pattern.List.03") {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case 1 :: 2 :: Nil => 0
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.List.04") {
+  test("Pattern.List.04") {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case 1 :: 2 :: 3 :: Nil => 0
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.List.05") {
+  test("Pattern.List.05") {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case x :: Nil => x
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.List.06") {
+  test("Pattern.List.06") {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case x :: y :: Nil => x + y
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.List.07") {
+  test("Pattern.List.07") {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case Nil => 0
         |  case x :: rs => 1 + f(rs)
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.List.08") {
+  test("Pattern.List.08") {
     val input =
       """def f(xs: List[Int]): Bool = match xs with {
         |  case Nil => true
@@ -1871,12 +1875,12 @@ class TestParser extends FunSuite with TestUtils {
         |  case _ => false
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.List.09") {
+  test("Pattern.List.09") {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case Nil => 0
@@ -1885,12 +1889,12 @@ class TestParser extends FunSuite with TestUtils {
         |  case xs => 42
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.List.10") {
+  test("Pattern.List.10") {
     val input =
       """def f(xs: List[(Char, Int)]): Int = match xs with {
         |  case Nil => 0
@@ -1898,12 +1902,12 @@ class TestParser extends FunSuite with TestUtils {
         |  case (c1, i1) :: (c2, i2) :: Nil => i1 + i2
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.List.11") {
+  test("Pattern.List.11") {
     val input =
       """def f(xs: List[(Char, Int)]): Int = match xs with {
         |  case Nil => 0
@@ -1911,43 +1915,43 @@ class TestParser extends FunSuite with TestUtils {
         |  case ('a', i1) :: (c2, 21) :: Nil => 2
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.ListList.01") {
+  test("Pattern.ListList.01") {
     val input =
       """def f(xs: List[List[Int]]): Int = match xs with {
         |  case Nil => 0
         |  case (x :: Nil) :: (y :: Nil) :: Nil => x + y
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.ListList.02") {
+  test("Pattern.ListList.02") {
     val input =
       """def f(xs: List[List[Int]]): Int = match xs with {
         |  case Nil => 0
         |  case (x :: y :: Nil) :: (z :: w :: Nil) :: Nil => x + y + z + w
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.ListList.03") {
+  test("Pattern.ListList.03") {
     val input =
       """def f(xs: List[List[Int]]): Int = match xs with {
         |  case Nil => 0
         |  case (x :: xs) :: (y :: ys) :: (z :: zs) :: Nil => x + y + z
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }

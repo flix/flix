@@ -818,7 +818,7 @@ class TestBackend extends FunSuite {
 
   test("Expression.Lambda.04") {
     val input =
-      """def f(x: Int64, y: Int64): Int64 = (x: Int64) * y - 6i64 // TODO: Added ascription to help the type system.
+      """def f(x: Int64, y: Int64): Int64 = x * y - 6i64
         |def g: Int64 = f(3i64, 42i64)
       """.stripMargin
     val t = new Tester(input)
@@ -835,7 +835,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt32(0), "C/h")
   }
 
-  ignore("Expression.Lambda.06") {
+  test("Expression.Lambda.06") {
     val input =
       """def f(x: Int16): Int16 = g(x + 1i16)
         |def g(x: Int16): Int16 = h(x + 10i16)
@@ -846,7 +846,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt32(196), "x")
   }
 
-  ignore("Expression.Lambda.07") {
+  test("Expression.Lambda.07") {
     val input =
       """def f(x: Int8, y: Int8): Int8 = (x: Int8) - y
         |def g(x: Int8): Int8 = x * 3i8
@@ -926,8 +926,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkTag("Val", Value.mkInt32(111)), "g")
   }
 
-  // TODO: Codegen
-  ignore("Expression.Lambda.14") {
+  test("Expression.Lambda.14") {
     val input =
       """def f(a: Int, b: Int, c: Str, d: Int, e: Bool, f: ()): (Int, Int, Str, Int, Bool, ()) = (a, b, c, d, e, f)
         |def g: (Int, Int, Str, Int, Bool, ()) = f(24, 53, "qwertyuiop", 9978, false, ())
@@ -956,7 +955,7 @@ class TestBackend extends FunSuite {
 
   test("Expression.Lambda.17") {
     val input =
-      """def f(a: Float32, b: Float32): Float32 = (a: Float32) + b // TODO: Added ascription to help the type system.
+      """def f(a: Float32, b: Float32): Float32 = a + b
         |def g: Float32 = f(1.2f32, 2.1f32)
       """.stripMargin
     val t = new Tester(input)
@@ -965,7 +964,7 @@ class TestBackend extends FunSuite {
 
   test("Expression.Lambda.18") {
     val input =
-      """def f(a: Float64, b: Float64): Float64 = (a: Float64) + b // TODO: Added ascription to help the type system.
+      """def f(a: Float64, b: Float64): Float64 = a + b
         |def g: Float64 = f(1.2f64, 2.1f64)
       """.stripMargin
     val t = new Tester(input)
@@ -974,7 +973,7 @@ class TestBackend extends FunSuite {
 
   test("Expression.Lambda.19") {
     val input =
-      """def f(a: BigInt, b: BigInt): BigInt = (a: BigInt) + b // TODO: Added ascription to help the type system.
+      """def f(a: BigInt, b: BigInt): BigInt = a + b
         |def g: BigInt = f(1ii, 9223372036854775808ii)
       """.stripMargin
     val t = new Tester(input)
@@ -1073,7 +1072,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt16(196), "x")
   }
 
-  ignore("Expression.Hook - Hook.Safe.07") {
+  test("Expression.Hook - Hook.Safe.07") {
     import HookSafeHelpers._
     val input = "def x: Int8 = let x = 7i8 in f(g(3i8), h(h(x)))"
     val t = new Tester(input, solve = false)
@@ -1384,7 +1383,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt16(196), "x")
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.07") {
+  test("Expression.Hook - Hook.Unsafe.07") {
     import HookUnsafeHelpers._
     val input = "def x: Int8 = let x = 7i8 in f(g(3i8), h(h(x)))"
     val t = new Tester(input, solve = false)
