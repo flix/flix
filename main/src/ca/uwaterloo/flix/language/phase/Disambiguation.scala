@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.errors.TypeError.UnresolvedRef
-import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.Result._
 
 import scala.collection.mutable
@@ -183,7 +183,11 @@ object Disambiguation {
         val decls = program.enums.getOrElse(ns0, Map.empty)
         decls.get(typeName) match {
           case None => Err(TypeError.UnresolvedType(qname, ns0, loc))
-          case Some(enum) => resolve(enum.sc.base, ns0, program)
+          case Some(enum) => enum.sc.base match {
+            case t: NamedAst.Type.Enum => resolve(t, ns0, program)
+            case NamedAst.Type.Apply(t: NamedAst.Type.Enum, _, _) => resolve(t, ns0, program)
+            case tpe => throw InternalCompilerException(s"Unexpected type `$tpe'.")
+          }
         }
     }
     case NamedAst.Type.Ref(qname, loc) if qname.isQualified =>

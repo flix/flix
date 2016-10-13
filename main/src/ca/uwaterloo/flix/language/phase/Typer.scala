@@ -586,8 +586,8 @@ object Typer {
           Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
             case Ok(decl) => Disambiguation.resolve(decl.sc, ns0, program) match {
               case Ok(scheme) =>
-                val enumType = scheme.base // TODO
-                val cazeType = enumType.asInstanceOf[Type.Enum].cases(tag.name)
+                val enumType = Scheme.instantiate(scheme)
+                val cazeType = getEnumType(enumType).cases(tag.name)
                 for (
                   innerType <- visitExp(exp);
                   _________ <- unifyM(innerType, cazeType, loc);
@@ -766,8 +766,8 @@ object Typer {
           Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
             case Ok(decl) => Disambiguation.resolve(decl.sc, ns0, program) match {
               case Ok(scheme) =>
-                val enumType = scheme.base // TODO
-                val cazeType = enumType.asInstanceOf[Type.Enum].cases(tag.name) // TODO: Brittle
+                val enumType = Scheme.instantiate(scheme)
+                val cazeType = getEnumType(enumType).cases(tag.name)
                 for (
                   innerType <- visitPat(pat);
                   _________ <- unifyM(innerType, cazeType, loc);
@@ -1262,6 +1262,15 @@ object Typer {
         TypedAst.Predicate.Body.Loop(sym, t, loc)
     }
 
+  }
+
+  /**
+    * Returns the underlying enum type of `tpe`.
+    */
+  def getEnumType(tpe: Type): Type.Enum = tpe match {
+    case t: Type.Enum => t
+    case Type.Apply(t: Type.Enum, _) => t
+    case _ => throw InternalCompilerException(s"Unexpected type `$tpe'.")
   }
 
   /**

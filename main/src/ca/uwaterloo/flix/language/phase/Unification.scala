@@ -125,9 +125,11 @@ object Unification {
       if (tpe.typeVars contains x) {
         return Result.Err(TypeError.OccursCheck())
       }
-      if (x.kind != tpe.kind) {
-        return Result.Err(TypeError.KindError())
-      }
+      // TODO: Kinds disabled for now. Requires changed to the
+      // previous phase to associated type variables with their kinds.
+      //if (x.kind != tpe.kind) {
+      //  return Result.Err(TypeError.KindError())
+      //}
       Result.Ok(Substitution.singleton(x, tpe))
     }
 

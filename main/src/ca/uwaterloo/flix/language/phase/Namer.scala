@@ -301,9 +301,14 @@ object Namer {
       val cases = cases0.foldLeft(Map.empty[String, NamedAst.Type]) {
         case (macc, (tag, WeededAst.Case(enumName, tagName, t))) => macc + (tag -> Types.namer(t, tenv0.toMap))
       }
+      val tvars = tenv0.map(_._2)
       val base = NamedAst.Type.Enum(sym, tparams, cases)
-
-      NamedAst.Scheme(tenv0.map(_._2), base)
+      val enumType =
+        if (tvars.isEmpty)
+          base
+        else
+          NamedAst.Type.Apply(base, tvars.map(x => NamedAst.Type.Var(x, sym.loc)), sym.loc)
+      NamedAst.Scheme(tvars, enumType)
     }
 
   }
