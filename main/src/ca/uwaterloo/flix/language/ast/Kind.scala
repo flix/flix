@@ -41,6 +41,8 @@ object Kind {
   /**
     * The kind of type expressions that take a sequence of kinds `kparams` to a kind `kr`.
     */
-  case class Arrow(kparams: List[Kind], kr: Kind) extends Kind
+  case class Arrow(kparams: List[Kind], kr: Kind) extends Kind {
+    assert(kparams.nonEmpty)
+  }
 
 }

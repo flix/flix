@@ -197,7 +197,7 @@ object Disambiguation {
       val asList = cases.toList
       val tags = asList.map(_._1)
       val tpes = asList.map(_._2)
-      val kind = Kind.Arrow(tparams.map(_ => Kind.Star), Kind.Star)
+      val kind = if (tparams.isEmpty) Kind.Star else Kind.Arrow(tparams.map(_ => Kind.Star), Kind.Star)
       seqM(tpes.map(tpe => resolve(tpe, ns0, program))) map {
         case rtpes => Type.Enum(sym, (tags zip rtpes).toMap, kind)
       }
