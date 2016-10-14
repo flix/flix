@@ -713,6 +713,30 @@ class TestTyper extends FunSuite with TestUtils {
     result.get
   }
 
+  test("Expression.Tag05") {
+    val input =
+      """enum Foo[a] {
+        |  case Foo(a)
+        |}
+        |
+        |def f(x: Int): Foo[Int] = Foo.Foo(x)
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Tag06") {
+    val input =
+      """enum Foo[a, b, c] {
+        |  case Foo(a, b, c)
+        |}
+        |
+        |def f(x: Bool, y: Char, z: Int): Foo[Bool, Char, Int] = Foo.Foo(x, y, z)
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Tuple (Positive)                                                        //
   /////////////////////////////////////////////////////////////////////////////

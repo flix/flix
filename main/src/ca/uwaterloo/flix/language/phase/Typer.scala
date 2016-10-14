@@ -219,8 +219,6 @@ object Typer {
           }
         }
 
-        // TODO: Duplicate indexes.
-
         // Sequence the results and convert them back to a map.
         Result.seqM(result).map(_.toMap)
       }
@@ -816,10 +814,10 @@ object Typer {
               } yield unifiedType
           }
         case NamedAst.Pattern.FSet(elms, rest, tvar, loc) =>
-          ???
+          ??? // TODO: FSet
 
         case NamedAst.Pattern.FMap(elms, rest, tvar, loc) =>
-          ???
+          ??? // TODO: FMap
       }
 
       visitExp(exp0)
@@ -842,7 +840,7 @@ object Typer {
          * Variable expression.
          */
         case NamedAst.Expression.Var(sym, loc) =>
-          // TODO: This should be taken into account during type inference.
+          // TODO: Need better strategy for when to resolve free variables.
           if (!resolveFreeVars) {
             TypedAst.Expression.Var(sym, subst0(sym.tvar), loc)
           } else {
@@ -1292,35 +1290,6 @@ object Typer {
             macc ++ Substitution.singleton(sym.tvar, declaredType)
         }
     }
-  }
-
-  /**
-    * A temporary hack which "guesses" the type of an arithmetic operation based on one of its arguments.
-    */
-  // TODO: Hack to be removed once type classes are implemented.
-  def guesstimateType(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
-    case (Type.Float32, _) => Type.Float32
-    case (_, Type.Float32) => Type.Float32
-
-    case (Type.Float64, _) => Type.Float64
-    case (_, Type.Float64) => Type.Float64
-
-    case (Type.Int8, _) => Type.Int8
-    case (_, Type.Int8) => Type.Int8
-
-    case (Type.Int16, _) => Type.Int16
-    case (_, Type.Int16) => Type.Int16
-
-    case (Type.Int32, _) => Type.Int32
-    case (_, Type.Int32) => Type.Int32
-
-    case (Type.Int64, _) => Type.Int64
-    case (_, Type.Int64) => Type.Int64
-
-    case (Type.BigInt, _) => Type.BigInt
-    case (_, Type.BigInt) => Type.BigInt
-
-    case _ => Type.Int32
   }
 
 }

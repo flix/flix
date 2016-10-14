@@ -61,11 +61,20 @@ sealed trait Type {
   }
 
   /**
+    * Returns `true` if `this` type is an enum type.
+    */
+  def isEnum: Boolean = this match {
+    case Type.Enum(sym, cases, kind) => true
+    case Type.Apply(t, ts) => t.isEnum
+    case _ => false
+  }
+
+  /**
     * Returns `true` if `this` type is a tuple type.
     */
   def isTuple: Boolean = this match {
-    case Type.FTuple(_) => true
-    case Type.Apply(t1, t2) => t1.isTuple
+    case Type.FTuple(l) => true
+    case Type.Apply(t, ts) => t.isTuple
     case _ => false
   }
 

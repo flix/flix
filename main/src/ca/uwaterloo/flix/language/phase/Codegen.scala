@@ -108,12 +108,11 @@ object Codegen {
         case Type.BigInt => asm.Type.getDescriptor(Constants.bigIntegerClass)
         case Type.Str => asm.Type.getDescriptor(Constants.stringClass)
         case Type.Native => asm.Type.getDescriptor(Constants.objectClass)
-        case Type.Enum(_, _, _) => asm.Type.getDescriptor(Constants.tagClass)
         case Type.Apply(Type.Arrow(l), _) => s"L${decorate(interfaces(tpe))};"
         case Type.Apply(Type.FTuple(l), _) => asm.Type.getDescriptor(Constants.tupleClass)
         case Type.Apply(Type.FList, _) => asm.Type.getDescriptor(Constants.objectClass)
         case Type.Apply(Type.FSet, _) => asm.Type.getDescriptor(Constants.setClass)
-        case Type.Apply(_, _) => ??? // TODO
+        case _ if tpe.isEnum => asm.Type.getDescriptor(Constants.tagClass)
         case _ if tpe.isTuple => asm.Type.getDescriptor(Constants.tupleClass)
         case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
