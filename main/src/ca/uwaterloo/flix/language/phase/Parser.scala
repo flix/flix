@@ -60,11 +60,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Decls: Rule1[Seq[ParsedAst.Declaration]] = rule {
-      zeroOrMore(Declaration).separatedBy(optWS)
+      zeroOrMore(Declaration)
     }
 
     rule {
-      optWS ~ Imports ~ optWS ~ Decls ~ optWS ~ EOI ~> ParsedAst.Root
+      Imports ~ Decls ~ optWS ~ EOI ~> ParsedAst.Root
     }
   }
 
@@ -114,7 +114,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   object Declarations {
 
     def Namespace: Rule1[ParsedAst.Declaration.Namespace] = rule {
-      SP ~ atomic("namespace") ~ WS ~ NName ~ optWS ~ '{' ~ optWS ~ zeroOrMore(Declaration).separatedBy(optWS) ~ optWS ~ '}' ~ SP ~ optSC ~> ParsedAst.Declaration.Namespace
+      optWS ~ SP ~ atomic("namespace") ~ WS ~ NName ~ optWS ~ '{' ~ optWS ~ zeroOrMore(Declaration) ~ optWS ~ '}' ~ SP ~ optSC ~> ParsedAst.Declaration.Namespace
     }
 
     def Definition: Rule1[ParsedAst.Declaration.Definition] = {
@@ -123,20 +123,20 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        Annotations ~ optWS ~ SP ~ atomic("def") ~ WS ~ Ident ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Declaration.Definition
+        optional(Comments.DocComment) ~ optWS ~ Annotations ~ optWS ~ SP ~ atomic("def") ~ WS ~ Ident ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Declaration.Definition
       }
     }
 
     def Signature: Rule1[ParsedAst.Declaration.Signature] = rule {
-      SP ~ atomic("def") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC ~> ParsedAst.Declaration.Signature
+      optWS ~ SP ~ atomic("def") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC ~> ParsedAst.Declaration.Signature
     }
 
     def External: Rule1[ParsedAst.Declaration.External] = rule {
-      SP ~ atomic("external") ~ optWS ~ atomic("def") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC ~> ParsedAst.Declaration.External
+      optWS ~ SP ~ atomic("external") ~ optWS ~ atomic("def") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC ~> ParsedAst.Declaration.External
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
-      SP ~ atomic("law") ~ WS ~ Ident ~ optWS ~ TypeParams ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Declaration.Law
+      optWS ~ SP ~ atomic("law") ~ WS ~ Ident ~ optWS ~ TypeParams ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Declaration.Law
     }
 
     def Enum: Rule1[ParsedAst.Declaration.Enum] = {
@@ -155,7 +155,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ atomic("enum") ~ WS ~ Ident ~ TypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~ optSC ~> ParsedAst.Declaration.Enum
+        optWS ~ SP ~ atomic("enum") ~ WS ~ Ident ~ TypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~ optSC ~> ParsedAst.Declaration.Enum
       }
     }
 
@@ -182,7 +182,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ atomic("class") ~ WS ~ Ident ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ClassBody ~ SP ~> ParsedAst.Declaration.Class
+        optWS ~ SP ~ atomic("class") ~ WS ~ Ident ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ClassBody ~ SP ~> ParsedAst.Declaration.Class
       }
     }
 
@@ -209,16 +209,16 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ atomic("impl") ~ WS ~ Ident ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ImplBody ~ SP ~> ParsedAst.Declaration.Impl
+        optWS ~ SP ~ atomic("impl") ~ WS ~ Ident ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ImplBody ~ SP ~> ParsedAst.Declaration.Impl
       }
     }
 
     def Relation: Rule1[ParsedAst.Declaration.Relation] = rule {
-      SP ~ atomic("rel") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Relation
+      optWS ~ SP ~ atomic("rel") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Relation
     }
 
     def Lattice: Rule1[ParsedAst.Declaration.Lattice] = rule {
-      SP ~ atomic("lat") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Lattice
+      optWS ~ SP ~ atomic("lat") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Lattice
     }
 
     def Index: Rule1[ParsedAst.Declaration.Index] = {
@@ -227,17 +227,17 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ atomic("index") ~ WS ~ QName ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Indexes).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Index
+        optWS ~ SP ~ atomic("index") ~ WS ~ QName ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Indexes).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Index
       }
     }
 
     // TODO: It would be faster to parse Facts and Rules together.
     def Fact: Rule1[ParsedAst.Declaration.Fact] = rule {
-      SP ~ Predicate ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Fact
+      optWS ~ SP ~ Predicate ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Fact
     }
 
     def Rule: Rule1[ParsedAst.Declaration.Rule] = rule {
-      SP ~ Predicate ~ optWS ~ ":-" ~ optWS ~ oneOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Rule
+      optWS ~ SP ~ Predicate ~ optWS ~ ":-" ~ optWS ~ oneOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Rule
     }
 
     def LetLattice: Rule1[ParsedAst.Declaration] = {
@@ -246,7 +246,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ atomic("let") ~ optWS ~ Type ~ atomic("<>") ~ optWS ~ "=" ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.BoundedLattice
+        optWS ~ SP ~ atomic("let") ~ optWS ~ Type ~ atomic("<>") ~ optWS ~ "=" ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.BoundedLattice
       }
     }
 
@@ -861,6 +861,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     // Otherwise the parser makes no progress and loops.
     def MultiLineComment: Rule0 = rule {
       "/*" ~ zeroOrMore(!"*/" ~ ANY) ~ "*/"
+    }
+
+    def DocComment: Rule1[ParsedAst.Comment.DocComment] = rule {
+      SP ~ oneOrMore("///" ~ capture(zeroOrMore(!NewLine ~ ANY)) ~ (NewLine | EOI)) ~ SP ~> ParsedAst.Comment.DocComment
     }
   }
 

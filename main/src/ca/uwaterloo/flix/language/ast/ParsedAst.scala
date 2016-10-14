@@ -104,6 +104,7 @@ object ParsedAst {
     /**
       * Definition Declaration (top-level function or expression).
       *
+      * @param doc        the optional comment associated with the definition.
       * @param ann        the associated annotations.
       * @param sp1        the position of the first character in the declaration.
       * @param ident      the name of the definition.
@@ -113,7 +114,7 @@ object ParsedAst {
       * @param exp        the expression.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Definition(ann: Seq[ParsedAst.Annotation], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Option[Seq[ParsedAst.FormalParam]], tpe: ParsedAst.Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Definition(doc: Option[ParsedAst.Comment], ann: Seq[ParsedAst.Annotation], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Option[Seq[ParsedAst.FormalParam]], tpe: ParsedAst.Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Signature Declaration (top-level function or expression signature).
@@ -869,6 +870,24 @@ object ParsedAst {
       * @param sp2     the position of the last character in the type.
       */
     case class Apply(sp1: SourcePosition, base: ParsedAst.Type, tparams: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
+
+  }
+
+  /**
+    * A common super-type for comments.
+    */
+  sealed trait Comment extends ParsedAst
+
+  object Comment {
+
+    /**
+      * Api Comment
+      *
+      * @param sp1  the position of the first character in the comment.
+      * @param text the text of the comment.
+      * @param sp2  the position of the last character in the comment.
+      */
+    case class DocComment(sp1: SourcePosition, text: Seq[String], sp2: SourcePosition) extends ParsedAst.Comment
 
   }
 

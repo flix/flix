@@ -224,8 +224,7 @@ object Documentor {
   private def mkHtmlPage(ns: List[String]): String = {
     // Compute the relative path path to the JSON file.
     val path = if (ns.isEmpty) "./index.json" else "./" + ns.mkString(".") + ".json"
-    s"""
-       |<!DOCTYPE html>
+    s"""<!DOCTYPE html>
        |<html lang="en">
        |<head>
        |    <meta charset="UTF-8">
