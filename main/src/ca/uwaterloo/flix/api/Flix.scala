@@ -212,6 +212,9 @@ class Flix {
 
     Compiler.compile(getSourceInputs, hooks.toMap).flatMap {
       case tast =>
+        if (options.documentor) {
+          Documentor.document(tast)
+        }
         val ast = PropertyGen.collectProperties(tast)
         val sast = Simplifier.simplify(ast)
         val lifted = Tailrec.tailrec(LambdaLift.lift(sast))

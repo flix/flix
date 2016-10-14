@@ -24,8 +24,8 @@ var App = React.createClass({
     render: function () {
         return (
             <div className="app">
-                <LeftNavigationBar/>
-                <PageContent namespace={getData().namespace}/>
+                <LeftNavigationBar namespaces={this.props.namespaces}/>
+                <PageContent namespace={this.props.data.namespace} data={this.props.data}/>
             </div>
         );
     }
@@ -37,7 +37,7 @@ var App = React.createClass({
 var LeftNavigationBar = React.createClass({
     render: function () {
         // Construct a list item for each namespace in the library.
-        var menu = getData().namespaces.map(
+        var menu = this.props.namespaces.map(
             namespace => <li key={namespace.name}><a href="#">{namespace.name}</a></li>
         );
         return (
@@ -57,10 +57,10 @@ var PageContent = React.createClass({
         return (
             <div className="pagecontent">
                 <h1>{this.props.namespace}</h1>
-                <TypeList decls={getData().types}/>
-                <DefinitionList decls={getData().definitions}/>
-                <RelationList decls={getData().relations}/>
-                <LatticeList decls={getData().lattices}/>
+                <TypeList decls={this.props.data.types}/>
+                <DefinitionList decls={this.props.data.definitions}/>
+                <RelationList decls={this.props.data.relations}/>
+                <LatticeList decls={this.props.data.lattices}/>
             </div>
         );
     }
@@ -279,124 +279,36 @@ function intersperse(arr, sep) {
 }
 
 /**
- * Render the page.
+ * Retrieve a JSON object from the given URL.
+ *
+ * http://stackoverflow.com/questions/12460378/how-to-get-json-from-url-in-javascript
  */
-ReactDOM.render(<App />, document.getElementById("app"));
+var getJSON = function (url, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("get", url, true);
+    xhr.responseType = "json";
+    xhr.onload = function () {
+        var status = xhr.status;
+        if (status == 200) {
+            callback(xhr.response, null);
+        } else {
+            callback(null, status);
+        }
+    };
+    xhr.send();
+};
 
-
-// STUB DATA:
-
-function getData() {
-
-    return {
-        namespace: "Root",
-
-        namespaces: [
-            {name: "BigInt"},
-            {name: "Float32"},
-            {name: "Float64"},
-            {name: "Int8"},
-            {name: "Int16"},
-            {name: "Int32"},
-            {name: "Int64"}
-        ],
-
-        types: [
-            {
-                name: "Color",
-                cases: [{name: "Red", tpe: "Unit"}, {name: "Green", tpe: "Unit"}, {name: "Blue", tpe: "Unit"}],
-                comment: "The colors of the rainbow."
-            },
-            {
-                name: "Shape",
-                cases: [{name: "Rectangle", tpe: "(Int, Int)"}, {name: "Circle", tpe: "Int"}],
-                comment: "Different two-dimensional shapes."
-            }
-        ],
-        "definitions": [
-            {
-                "name": "flatMap",
-                "tparams": [
-                    {name: "a"},
-                    {name: "b"}
-                ],
-                "fparams": [
-                    {name: "f", tpe: "a -> b"},
-                    {name: "xs", tpe: "List[a]"}
-                ],
-                "result": "List[b]",
-                "comment": "Applies the function f ..."
-            },
-            {
-                "name": "minValue",
-                "tparams": [],
-                "fparams": [],
-                "result": "Int",
-                "comment": "Returns the minimum number representable by an Int32."
-            },
-            {
-                "name": "maxValue",
-                "tparams": [],
-                "fparams": [],
-                "result": "Int",
-                "comment": "Returns the maximum number representable by an Int32."
-            },
-            {
-                "name": "min",
-                "tparams": [],
-                "fparams": [{name: "x", tpe: "Int"}, {name: "y", tpe: "Int"}],
-                "result": "Int",
-                "comment": "Returns the smaller of `x` and `y`."
-            },
-            {
-                "name": "max",
-                "tparams": [],
-                "fparams": [],
-                "result": "Int",
-                "comment": " Returns the larger of `x` and `y`."
-            },
-            {
-                "name": "abs",
-                "tparams": [],
-                "fparams": [],
-                "result": "Int",
-                "comment": "Returns the absolute value of `x`. If the absolute value exceeds maxValue(), -1 is returned."
-            }
-        ],
-        "relations": [
-            {
-                name: "VarPointsTo",
-                attributes: [
-                    {name: "c", tpe: "Ctx"},
-                    {name: "s", tpe: "Stm"},
-                    {name: "x", tpe: "Var"},
-                    {name: "o", tpe: "Obj"}
-                ],
-                comment: "Var `v` points-to object `o` at statement `s` in context `c`."
-            },
-            {
-                name: "HeapPointsToIn",
-                attributes: [
-                    {name: "c", tpe: "Ctx"},
-                    {name: "s", tpe: "Stm"},
-                    {name: "o1", tpe: "Obj"},
-                    {name: "f", tpe: "Field"},
-                    {name: "o2", tpe: "Obj"}
-                ],
-                comment: "Field `f` of object `o1` points-to object `o2` at statement `s` in context `c`."
-            },
-            {
-                name: "PromiseStateIn",
-                attributes: [
-                    {name: "c", tpe: "Ctx"},
-                    {name: "s", tpe: "Stm"},
-                    {name: "t", tpe: "State"},
-                    {name: "v", tpe: "Obj"}
-                ],
-                comment: "The promise `o` is in promise state `t` with value `v` at statement `s` in context `c`."
-            }
-        ],
-        "lattices": []
+/**
+ * Retrieve the data and show it.
+ */
+getJSON("./js/__menu__.json", function (namespaces, err) {
+    if (err) {
+        console.log("Unable to get namespaces: " + err);
     }
-
-}
+    getJSON("./js/Int32.json", function (data, err) {
+        if (err) {
+            console.log("Unable to get page data: " + err);
+        }
+        ReactDOM.render(<App namespaces={namespaces} data={data}/>, document.getElementById("app"));
+    });
+});
