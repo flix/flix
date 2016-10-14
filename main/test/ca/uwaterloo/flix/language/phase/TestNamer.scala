@@ -217,6 +217,75 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.IllegalTableName](result)
   }
 
+  test("UnsafeFact.01") {
+    val input =
+      s"""
+         |rel R(x: Int)
+         |
+         |R(x).
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[TypeError.UnresolvedRef](result)
+  }
+
+  test("UnsafeFact.02") {
+    val input =
+      s"""
+         |rel R(x: Int, y: Int)
+         |
+         |R(42, x).
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[TypeError.UnresolvedRef](result)
+  }
+
+  test("UnsafeFact.03") {
+    val input =
+      s"""
+         |rel R(x: Int, y: Int, z: Int)
+         |
+         |R(42, x, 21).
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[TypeError.UnresolvedRef](result)
+  }
+
+  // TODO
+  ignore("UnsafeRule.01") {
+    val input =
+      s"""
+         |rel R(x: Int)
+         |
+         |R(x) :- R(y).
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[TypeError.UnresolvedRef](result)
+  }
+
+  // TODO
+  ignore("UnsafeRule.02") {
+    val input =
+      s"""
+         |rel R(x: Int, y: Int)
+         |
+         |R(x, y) :- R(x, z).
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[TypeError.UnresolvedRef](result)
+  }
+
+  // TODO
+  ignore("UnsafeRule.03") {
+    val input =
+      s"""
+         |rel R(x: Int, y: Int, z: Int)
+         |
+         |R(x, y, z) :- R(x, w, z).
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[TypeError.UnresolvedRef](result)
+  }
+
   test("UnresolvedEnum.01") {
     val input =
       s"""

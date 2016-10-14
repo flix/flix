@@ -159,8 +159,6 @@ object Namer {
        * Fact.
        */
       case WeededAst.Declaration.Fact(h, loc) =>
-        // TODO: Check that there are no free variables in a fact.
-
         // Perform naming on the head predicate under the computed environment of free variables.
         Predicates.namer(h, Map.empty[String, Symbol.VarSym], Map.empty[String, Type.Var]) map {
           case head =>
