@@ -492,19 +492,19 @@ class TestTyper extends FunSuite with TestUtils {
   // Let (Positive)                                                          //
   /////////////////////////////////////////////////////////////////////////////
   test("Expression.Let01") {
-    val input = "def f: Int = let x = 42 in x"
+    val input = "def f: Int = let x = 42; x"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Let02") {
-    val input = "def f(x: Int): Int = let y = 42 in x + y"
+    val input = "def f(x: Int): Int = let y = 42; x + y"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Let03") {
-    val input = "def f(x: Bool): Int = let x = 42 in x"
+    val input = "def f(x: Bool): Int = let x = 42; x"
     val result = new Flix().addStr(input).compile()
     result.get
   }
@@ -513,13 +513,13 @@ class TestTyper extends FunSuite with TestUtils {
   // LetMatch (Positive)                                                     //
   /////////////////////////////////////////////////////////////////////////////
   test("Expression.LetMatch01") {
-    val input = "def f: Int = let (x, y) = (1, 2) in x + y"
+    val input = "def f: Int = let (x, y) = (1, 2); x + y"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.LetMatch02") {
-    val input = "def f: Int8 = let (x, (y, z, w)) = (true, ('a', 1i8, 2i8)) in z + w"
+    val input = "def f: Int8 = let (x, (y, z, w)) = (true, ('a', 1i8, 2i8)); z + w"
     val result = new Flix().addStr(input).compile()
     result.get
   }
@@ -532,8 +532,8 @@ class TestTyper extends FunSuite with TestUtils {
         |  case C(Int)
         |}
         |
-        |def f(e: E): Bool = let E.A(b) = e in b
-        |def g(e: E): Char = let E.B(c) = e in c
+        |def f(e: E): Bool = let E.A(b) = e; b
+        |def g(e: E): Char = let E.B(c) = e; c
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get
@@ -546,7 +546,7 @@ class TestTyper extends FunSuite with TestUtils {
         |  case B
         |}
         |
-        |def f(e: E): Int8 = let E.A(true, 'a', i) = e in i
+        |def f(e: E): Int8 = let E.A(true, 'a', i) = e; i
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get

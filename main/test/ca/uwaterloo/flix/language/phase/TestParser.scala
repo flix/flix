@@ -852,7 +852,8 @@ class TestParser extends FunSuite with TestUtils {
     val input =
       """
         |def f: Int =
-        |  let x = 42 in x
+        |  let x = 42;
+        |    x
         | """.stripMargin
     run(input)
   }
@@ -861,7 +862,7 @@ class TestParser extends FunSuite with TestUtils {
     val input =
       """
         |def f: Int =
-        |  let (x, y) = (42, 21) in
+        |  let (x, y) = (42, 21);
         |    x + y
         | """.stripMargin
     run(input)
@@ -871,9 +872,9 @@ class TestParser extends FunSuite with TestUtils {
     val input =
       """
         |def f: Int =
-        |  let x = 1 in
-        |  let y = 2 in
-        |  let z = 3 in
+        |  let x = 1;
+        |  let y = 2;
+        |  let z = 3;
         |    x + y + z
       """.stripMargin
     run(input)
@@ -884,33 +885,33 @@ class TestParser extends FunSuite with TestUtils {
     val input =
     """
       |def f: Int =
-      |    let x1 = 1 in
-      |    let x2 = 1 in
-      |    let x3 = 1 in
-      |    let x4 = 1 in
-      |    let x5 = 1 in
-      |    let x6 = 1 in
-      |    let x7 = 1 in
-      |    let x8 = 1 in
-      |    let x9 = 1 in
-      |    let y1 = 1 in
-      |    let y2 = 1 in
-      |    let y3 = 1 in
-      |    let y4 = 1 in
-      |    let y5 = 1 in
-      |    let y6 = 1 in
-      |    let y7 = 1 in
-      |    let y8 = 1 in
-      |    let y9 = 1 in
-      |    let z1 = 1 in
-      |    let z2 = 1 in
-      |    let z3 = 1 in
-      |    let z4 = 1 in
-      |    let z5 = 1 in
-      |    let z6 = 1 in
-      |    let z7 = 1 in
-      |    let z8 = 1 in
-      |    let z9 = 1 in
+      |    let x1 = 1;
+      |    let x2 = 1;
+      |    let x3 = 1;
+      |    let x4 = 1;
+      |    let x5 = 1;
+      |    let x6 = 1;
+      |    let x7 = 1;
+      |    let x8 = 1;
+      |    let x9 = 1;
+      |    let y1 = 1;
+      |    let y2 = 1;
+      |    let y3 = 1;
+      |    let y4 = 1;
+      |    let y5 = 1;
+      |    let y6 = 1;
+      |    let y7 = 1;
+      |    let y8 = 1;
+      |    let y9 = 1;
+      |    let z1 = 1;
+      |    let z2 = 1;
+      |    let z3 = 1;
+      |    let z4 = 1;
+      |    let z5 = 1;
+      |    let z6 = 1;
+      |    let z7 = 1;
+      |    let z8 = 1;
+      |    let z9 = 1;
       |        1
     """.stripMargin
     run(input)

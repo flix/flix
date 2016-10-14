@@ -426,14 +426,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ atomic("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ WS ~ atomic("else") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.IfThenElse
     }
 
-    def LetMatch: Rule1[ParsedAst.Expression.LetMatch] = {
-      def InOrSC: Rule0 = rule {
-        (WS ~ atomic("in") ~ WS) | (optWS ~ ";" ~ optWS)
-      }
-
-      rule {
-        SP ~ atomic("let") ~ WS ~ Pattern ~ optWS ~ "=" ~ optWS ~ Expression ~ InOrSC ~ Expression ~ SP ~> ParsedAst.Expression.LetMatch
-      }
+    def LetMatch: Rule1[ParsedAst.Expression.LetMatch] = rule {
+      SP ~ atomic("let") ~ WS ~ Pattern ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.LetMatch
     }
 
     def Match: Rule1[ParsedAst.Expression.Match] = {
