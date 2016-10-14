@@ -35,7 +35,6 @@ object NameError {
     * @param loc1 the location of the first definition.
     * @param loc2 the location of the second definition.
     */
-  // TODO: Use sym, and/or namespace?
   case class DuplicateDefinition(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     val message =
       s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc1.source.format}")}
@@ -50,10 +49,30 @@ object NameError {
   }
 
   /**
+    * An error raised to indicate that an index is defined multiple times for the same relation/lattice.
+    *
+    * @param name the name.
+    * @param loc1 the location of the first definition.
+    * @param loc2 the location of the second definition.
+    */
+  case class DuplicateIndex(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+    val message =
+      s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc1.source.format}")}
+         |
+         |${consoleCtx.red(s">> Duplicate index for relation/lattice '$name'.")}
+         |
+         |First definition was here:
+         |${loc1.highlight}
+         |Second definition was here:
+         |${loc2.highlight}
+         """.stripMargin
+  }
+
+  /**
     * An error raised to indicate that a definition name must be lowercase.
     *
-    * @param name the invalid name.
-    * @param loc  the location of the name.
+    * @param name the name.
+    * @param loc  the location.
     */
   case class IllegalDefinitionName(name: String, loc: SourceLocation) extends NameError {
     val message =
@@ -69,8 +88,8 @@ object NameError {
   /**
     * An error raised to indicate that the given table name must be uppercase.
     *
-    * @param name the invalid name.
-    * @param loc  the location of the name.
+    * @param name the name.
+    * @param loc  the location.
     */
   case class IllegalTableName(name: String, loc: SourceLocation) extends NameError {
     val message =

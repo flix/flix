@@ -23,7 +23,7 @@ import org.scalatest.FunSuite
 
 class TestNamer extends FunSuite with TestUtils {
 
-  test("DuplicateDefinition01") {
+  test("DuplicateDefinition.01") {
     val input =
       s"""
          |def f: Int = 42
@@ -33,7 +33,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateDefinition](result)
   }
 
-  test("DuplicateDefinition02") {
+  test("DuplicateDefinition.02") {
     val input =
       s"""
          |def f: Int = 42
@@ -44,7 +44,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateDefinition](result)
   }
 
-  test("DuplicateDefinition03") {
+  test("DuplicateDefinition.03") {
     val input =
       s"""
          |def f(x: Int): Int = 42
@@ -55,7 +55,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateDefinition](result)
   }
 
-  test("DuplicateDefinition04") {
+  test("DuplicateDefinition.04") {
     val input =
       s"""
          |def f: Int = 42
@@ -66,7 +66,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateDefinition](result)
   }
 
-  test("DuplicateDefinition05") {
+  test("DuplicateDefinition.05") {
     val input =
       s"""
          |namespace A {
@@ -81,7 +81,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateDefinition](result)
   }
 
-  test("DuplicateDefinition06") {
+  test("DuplicateDefinition.06") {
     val input =
       s"""
          |namespace A.B.C {
@@ -100,13 +100,55 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateDefinition](result)
   }
 
-  test("IllegalDefinitionName01") {
+  test("DuplicateIndex.01") {
+    val input =
+      s"""
+         |rel R(x: Int)
+         |
+         |index R({x})
+         |index R({x})
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateIndex](result)
+  }
+
+  test("DuplicateIndex.02") {
+    val input =
+      s"""
+         |namespace a {
+         |  rel R(x: Int)
+         |
+         |  index R({x})
+         |  index R({x})
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateIndex](result)
+  }
+
+  // TODO: DuplicateIndex in different namespaces.
+  ignore("DuplicateIndex.03") {
+    val input =
+      s"""
+         |namespace a {
+         |  rel R(x: Int)
+         |
+         |  index R({x})
+         |}
+         |
+         |index a/R({x})
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateIndex](result)
+  }
+
+  test("IllegalDefinitionName.01") {
     val input = "def F: Int = 42"
     val result = new Flix().addStr(input).compile()
     expectError[NameError.IllegalDefinitionName](result)
   }
 
-  test("IllegalDefinitionName02") {
+  test("IllegalDefinitionName.02") {
     val input =
       s"""
          |namespace A {
@@ -117,7 +159,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.IllegalDefinitionName](result)
   }
 
-  test("IllegalDefinitionName03") {
+  test("IllegalDefinitionName.03") {
     val input =
       s"""
          |namespace A {
@@ -128,7 +170,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.IllegalDefinitionName](result)
   }
 
-  test("IllegalDefinitionName04") {
+  test("IllegalDefinitionName.04") {
     val input =
       s"""
          |namespace A {
@@ -139,43 +181,43 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.IllegalDefinitionName](result)
   }
 
-  test("IllegalRelationName01") {
+  test("IllegalRelationName.01") {
     val input = "rel f(x: Int)"
     val result = new Flix().addStr(input).compile()
     expectError[NameError.IllegalTableName](result)
   }
 
-  test("IllegalRelationName02") {
+  test("IllegalRelationName.02") {
     val input = "rel foo(x: Int)"
     val result = new Flix().addStr(input).compile()
     expectError[NameError.IllegalTableName](result)
   }
 
-  test("IllegalRelationName03") {
+  test("IllegalRelationName.03") {
     val input = "rel fOO(x: Int)"
     val result = new Flix().addStr(input).compile()
     expectError[NameError.IllegalTableName](result)
   }
 
-  test("IllegalLatticeName01") {
+  test("IllegalLatticeName.01") {
     val input = "lat f(x: Int)"
     val result = new Flix().addStr(input).compile()
     expectError[NameError.IllegalTableName](result)
   }
 
-  test("IllegalLatticeName02") {
+  test("IllegalLatticeName.02") {
     val input = "lat foo(x: Int)"
     val result = new Flix().addStr(input).compile()
     expectError[NameError.IllegalTableName](result)
   }
 
-  test("IllegalLatticeName03") {
+  test("IllegalLatticeName.03") {
     val input = "lat fOO(x: Int)"
     val result = new Flix().addStr(input).compile()
     expectError[NameError.IllegalTableName](result)
   }
 
-  test("UnresolvedEnum01") {
+  test("UnresolvedEnum.01") {
     val input =
       s"""
          |namespace A {
@@ -186,7 +228,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[TypeError.UnresolvedTag](result)
   }
 
-  test("UnresolvedEnum02") {
+  test("UnresolvedEnum.02") {
     val input =
       s"""
          |namespace A {
@@ -197,7 +239,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[TypeError.UnresolvedTag](result)
   }
 
-  test("UnresolvedTag01") {
+  test("UnresolvedTag.01") {
     val input =
       s"""
          |enum A {
@@ -211,7 +253,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[TypeError.UnresolvedTag](result)
   }
 
-  test("UnresolvedTag02") {
+  test("UnresolvedTag.02") {
     val input =
       s"""
          |namespace A {
@@ -227,7 +269,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[TypeError.UnresolvedTag](result)
   }
 
-  test("UnresolvedTag03") {
+  test("UnresolvedTag.03") {
     val input =
       s"""
          |namespace A {
@@ -245,13 +287,13 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[TypeError.UnresolvedTag](result)
   }
 
-  test("UnresolvedType01") {
+  test("UnresolvedType.01") {
     val input = "def x: Foo = 42"
     val result = new Flix().addStr(input).compile()
     expectError[TypeError.UnresolvedType](result)
   }
 
-  test("UnresolvedType02") {
+  test("UnresolvedType.02") {
     val input =
       s"""namespace A {
           |  def foo(bar: Baz, baz: Baz): Qux = bar;
@@ -261,7 +303,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[TypeError.UnresolvedType](result)
   }
 
-  test("Expression.Hook01") {
+  test("Expression.Hook.01") {
     val input =
       s"""namespace A {
           |  def f(x: Int): Bool = g(x)
@@ -277,7 +319,7 @@ class TestNamer extends FunSuite with TestUtils {
     flix.compile().get
   }
 
-  test("Expression.Hook02") {
+  test("Expression.Hook.02") {
     val input =
       s"""namespace A {
           |  def f(x: Bool, y: Int, z: Str): Bool = g(x, y, z)
@@ -293,7 +335,7 @@ class TestNamer extends FunSuite with TestUtils {
     flix.compile().get
   }
 
-  test("Expression.HookFilter01") {
+  test("Expression.HookFilter.01") {
     val input =
       s"""namespace A {
           |  rel R(a: Bool, b: Int, c: Str);
@@ -312,7 +354,7 @@ class TestNamer extends FunSuite with TestUtils {
     assert(result.isSuccess)
   }
 
-  test("Expression.HookApply01") {
+  test("Expression.HookApply.01") {
     val input =
       s"""namespace A {
           |  rel R(a: Bool, b: Int, c: Str);

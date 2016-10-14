@@ -116,17 +116,17 @@ object Namer {
       /*
        * Signature.
        */
-      case WeededAst.Declaration.Signature(ident, params, tpe, loc) => ??? // TODO: Signature
+      case WeededAst.Declaration.Signature(ident, params, tpe, loc) => ??? // TODO: Add support for signature in Namer.
 
       /*
        * External.
        */
-      case WeededAst.Declaration.External(ident, params, tpe, loc) => ??? // TODO: External
+      case WeededAst.Declaration.External(ident, params, tpe, loc) => ??? // TODO: Add support for external in Namer.
 
       /*
        * Law.
        */
-      case WeededAst.Declaration.Law(ident, tparams, params, tpe, exp, loc) => ??? // TODO: Law
+      case WeededAst.Declaration.Law(ident, tparams, params, tpe, exp, loc) => ??? // TODO: Add support for law in Namer.
 
       /*
        * Enum.
@@ -148,12 +148,12 @@ object Namer {
       /*
        * Class.
        */
-      case WeededAst.Declaration.Class(ident, tparams, decls, loc) => ??? // TODO: Class
+      case WeededAst.Declaration.Class(ident, tparams, decls, loc) => ??? // TODO: Add support for class in Namer.
 
       /*
        * Impl.
        */
-      case WeededAst.Declaration.Impl(ident, tparams, decls, loc) => ??? // TODO: Impl
+      case WeededAst.Declaration.Impl(ident, tparams, decls, loc) => ??? // TODO: Add support for impl in Namer.
 
       /*
        * Fact.
@@ -193,11 +193,13 @@ object Namer {
        * Index.
        */
       case WeededAst.Declaration.Index(qname, indexes, loc) =>
-        // TODO: Duplicate indexes in the same namespace.
         val name = qname.ident.name
         val index = NamedAst.Declaration.Index(qname, indexes.map(_.toList), loc)
         val decls = prog0.indexes.getOrElse(ns0, Map.empty)
-        prog0.copy(indexes = prog0.indexes + (ns0 -> (decls + (name -> index)))).toSuccess
+        decls.get(name) match {
+          case None => prog0.copy(indexes = prog0.indexes + (ns0 -> (decls + (name -> index)))).toSuccess
+          case Some(idx) => NameError.DuplicateIndex(name, idx.loc, loc).toFailure
+        }
 
       /*
        * BoundedLattice (deprecated).
@@ -684,7 +686,6 @@ object Namer {
       def visit(tpe: WeededAst.Type, env: Map[String, Type.Var]): NamedAst.Type = tpe match {
         case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc)
         case WeededAst.Type.VarOrRef(qname, loc) =>
-          // TODO: Look into ways to improve this.
           if (qname.isUnqualified && qname.ident.name.head.isLower)
             env.get(qname.ident.name) match {
               case None => NamedAst.Type.Ref(qname, loc)
