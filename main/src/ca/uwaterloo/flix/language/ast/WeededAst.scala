@@ -124,10 +124,6 @@ object WeededAst {
 
     case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class FNone(loc: SourceLocation) extends WeededAst.Expression
-
-    case class FSome(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
     case class FNil(loc: SourceLocation) extends WeededAst.Expression
 
     case class FList(hd: WeededAst.Expression, tl: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
@@ -189,10 +185,6 @@ object WeededAst {
     case class Tag(enum: Option[Name.QName], tag: Name.Ident, pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
 
     case class Tuple(elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
-
-    case class FNone(loc: SourceLocation) extends WeededAst.Pattern
-
-    case class FSome(pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
 
     case class FNil(loc: SourceLocation) extends WeededAst.Pattern
 

@@ -416,12 +416,6 @@ object Namer {
           case es => NamedAst.Expression.Tuple(es, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.FNone(loc) => NamedAst.Expression.FNone(Type.freshTypeVar(), loc).toSuccess
-
-      case WeededAst.Expression.FSome(exp, loc) => namer(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.FSome(e, Type.freshTypeVar(), loc)
-      }
-
       case WeededAst.Expression.FNil(loc) => NamedAst.Expression.FNil(Type.freshTypeVar(), loc).toSuccess
 
       case WeededAst.Expression.FList(hd, tl, loc) =>
@@ -520,8 +514,6 @@ object Namer {
       }
       case WeededAst.Expression.Tag(enum, tag, exp, loc) => freeVars(exp)
       case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
-      case WeededAst.Expression.FNone(loc) => Nil
-      case WeededAst.Expression.FSome(exp, loc) => freeVars(exp)
       case WeededAst.Expression.FNil(loc) => Nil
       case WeededAst.Expression.FList(hd, tl, loc) => freeVars(hd) ++ freeVars(tl)
       case WeededAst.Expression.FVec(elms, loc) => elms flatMap freeVars
@@ -557,8 +549,6 @@ object Namer {
       case WeededAst.Pattern.Str(lit, loc) => Nil
       case WeededAst.Pattern.Tag(enumName, tagName, p, loc) => freeVars(p)
       case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
-      case WeededAst.Pattern.FNone(loc) => Nil
-      case WeededAst.Pattern.FSome(p, loc) => freeVars(p)
       case WeededAst.Pattern.FNil(loc) => Nil
       case WeededAst.Pattern.FList(hd, tl, loc) => freeVars(hd) ++ freeVars(tl)
       case WeededAst.Pattern.FVec(elms, rest, loc) => elms.flatMap(freeVars) ++ rest.map(freeVars).getOrElse(Nil)
@@ -605,8 +595,6 @@ object Namer {
         case WeededAst.Pattern.Str(lit, loc) => NamedAst.Pattern.Str(lit, loc)
         case WeededAst.Pattern.Tag(enum, tag, pat, loc) => NamedAst.Pattern.Tag(enum, tag, visit(pat), Type.freshTypeVar(), loc)
         case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
-        case WeededAst.Pattern.FNone(loc) => NamedAst.Pattern.FNone(Type.freshTypeVar(), loc)
-        case WeededAst.Pattern.FSome(pat, loc) => NamedAst.Pattern.FSome(visit(pat), Type.freshTypeVar(), loc)
         case WeededAst.Pattern.FNil(loc) => NamedAst.Pattern.FNil(Type.freshTypeVar(), loc)
         case WeededAst.Pattern.FList(hd, tl, loc) => NamedAst.Pattern.FList(visit(hd), visit(tl), Type.freshTypeVar(), loc)
         case WeededAst.Pattern.FVec(elms, rest, loc) => NamedAst.Pattern.FVec(elms map visit, rest map visit, Type.freshTypeVar(), loc)

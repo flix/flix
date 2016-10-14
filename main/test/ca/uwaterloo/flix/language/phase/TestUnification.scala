@@ -65,24 +65,18 @@ class TestUnification extends FunSuite {
   }
 
   test("Substitution.Singleton.03") {
-    val tpe = Type.mkFOpt(Type.Var(1, Kind.Star))
-    val subst = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
-    assertResult(Type.mkFOpt(Type.Bool))(subst(tpe))
-  }
-
-  test("Substitution.Singleton.04") {
     val tpe = Type.mkFMap(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
     val subst = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
     assertResult(Type.mkFMap(Type.Bool, Type.Var(2, Kind.Star)), Type.Var(2, Kind.Star))(subst(tpe))
   }
 
-  test("Substitution.Singleton.05") {
+  test("Substitution.Singleton.04") {
     val tpe = Type.mkFMap(Type.Var(1, Kind.Star), Type.Var(1, Kind.Star))
     val subst = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
     assertResult(Type.mkFMap(Type.Bool, Type.Bool))(subst(tpe))
   }
 
-  test("Substitution.Singleton.06") {
+  test("Substitution.Singleton.05") {
     val tpe = Type.Var(1, Kind.Star)
     val subst = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
     assertResult(Type.Var(2, Kind.Star))(subst(tpe))
@@ -243,16 +237,6 @@ class TestUnification extends FunSuite {
     assert(result.isOk)
   }
 
-  test("Unify.FOpt.01") {
-    val result = Unification.unify(Type.FOpt, Type.FOpt, SourceLocation.Unknown)
-    assert(result.isOk)
-  }
-
-  test("Unify.FOpt.02") {
-    val result = Unification.unify(Type.mkFOpt(Type.Bool), Type.mkFOpt(Type.Bool), SourceLocation.Unknown)
-    assert(result.isOk)
-  }
-
   test("Unify.FList.01") {
     val result = Unification.unify(Type.FList, Type.FList, SourceLocation.Unknown)
     assert(result.isOk)
@@ -344,37 +328,21 @@ class TestUnification extends FunSuite {
 
   test("Unify.03") {
     val A = Type.Var(1, Kind.Star)
-    val tpe1 = Type.mkFOpt(A)
-    val tpe2 = Type.mkFOpt(Type.Bool)
+    val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
+    val tpe2 = Type.mkArrow(Type.Bool, A)
     val result = Unification.unify(tpe1, tpe2, SourceLocation.Unknown).get
-    assertResult(Type.Bool)(result(A))
+    assertResult(Type.Char)(result(A))
   }
 
   test("Unify.04") {
     val A = Type.Var(1, Kind.Star)
-    val tpe1 = Type.mkFOpt(Type.Bool)
-    val tpe2 = Type.mkFOpt(A)
+    val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
+    val tpe2 = Type.mkArrow(Type.Bool, A)
     val result = Unification.unify(tpe1, tpe2, SourceLocation.Unknown).get
-    assertResult(Type.Bool)(result(A))
+    assertResult(Type.Char)(result(A))
   }
 
   test("Unify.05") {
-    val A = Type.Var(1, Kind.Star)
-    val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
-    val tpe2 = Type.mkArrow(Type.Bool, A)
-    val result = Unification.unify(tpe1, tpe2, SourceLocation.Unknown).get
-    assertResult(Type.Char)(result(A))
-  }
-
-  test("Unify.06") {
-    val A = Type.Var(1, Kind.Star)
-    val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
-    val tpe2 = Type.mkArrow(Type.Bool, A)
-    val result = Unification.unify(tpe1, tpe2, SourceLocation.Unknown).get
-    assertResult(Type.Char)(result(A))
-  }
-
-  test("Unify.07") {
     val A = Type.Var(1, Kind.Star)
     val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
     val tpe2 = A
@@ -382,7 +350,7 @@ class TestUnification extends FunSuite {
     assertResult(tpe1)(result(A))
   }
 
-  test("Unify.08") {
+  test("Unify.06") {
     val A = Type.Var(1, Kind.Star)
     val tpe1 = A
     val tpe2 = Type.mkArrow(Type.Bool, Type.Char)
@@ -390,7 +358,7 @@ class TestUnification extends FunSuite {
     assertResult(tpe2)(result(A))
   }
 
-  test("Unify.09") {
+  test("Unify.07") {
     val A = Type.Var(1, Kind.Star)
     val tpe1 = Type.mkArrow(A, Type.Bool)
     val tpe2 = Type.mkArrow(Type.Bool, A)
@@ -398,7 +366,7 @@ class TestUnification extends FunSuite {
     assertResult(Type.Bool)(result(A))
   }
 
-  test("Unify.10") {
+  test("Unify.08") {
     val A = Type.Var(1, Kind.Star)
     val B = Type.Var(2, Kind.Star)
     val tpe1 = Type.mkArrow(A, B)
@@ -408,7 +376,7 @@ class TestUnification extends FunSuite {
     assertResult(Type.Char)(result(B))
   }
 
-  test("Unify.11") {
+  test("Unify.09") {
     val A = Type.Var(1, Kind.Star)
     val B = Type.Var(2, Kind.Star)
     val tpe1 = Type.mkArrow(Type.Bool, Type.Char)
@@ -418,7 +386,7 @@ class TestUnification extends FunSuite {
     assertResult(Type.Char)(result(B))
   }
 
-  test("Unify.12") {
+  test("Unify.10") {
     val A = Type.Var(1, Kind.Star)
     val B = Type.Var(2, Kind.Star)
     val tpe1 = Type.mkArrow(A, Type.Char)
@@ -428,7 +396,7 @@ class TestUnification extends FunSuite {
     assertResult(Type.Char)(result(B))
   }
 
-  test("Unify.13") {
+  test("Unify.11") {
     val A = Type.Var(1, Kind.Star)
     val B = Type.Var(2, Kind.Star)
     val C = Type.Var(3, Kind.Star)
@@ -437,17 +405,6 @@ class TestUnification extends FunSuite {
     val result = Unification.unify(tpe1, tpe2, SourceLocation.Unknown).get
     assertResult(Type.Bool)(result(B))
     assertResult(C)(result(A))
-  }
-
-  test("Unify.14") {
-    val A = Type.Var(1, Kind.Star)
-    val B = Type.Var(2, Kind.Star)
-    val C = Type.Var(3, Kind.Star)
-    val tpe1 = Type.mkArrow(Type.mkFOpt(A), B)
-    val tpe2 = Type.mkArrow(C, Type.mkFList(Type.Bool))
-    val result = Unification.unify(tpe1, tpe2, SourceLocation.Unknown).get
-    assertResult(Type.mkFList(Type.Bool))(result(B))
-    assertResult(Type.mkFOpt(A))(result(C))
   }
 
   test("liftM.01") {

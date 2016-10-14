@@ -462,14 +462,6 @@ object Weeder {
             case xs => WeededAst.Expression.Tuple(xs, mkSL(sp1, sp2))
           }
 
-        case ParsedAst.Expression.FNone(sp1, sp2) =>
-          WeededAst.Expression.FNone(mkSL(sp1, sp2)).toSuccess
-
-        case ParsedAst.Expression.FSome(sp1, exp, sp2) =>
-          visit(exp) map {
-            case e => WeededAst.Expression.FSome(e, mkSL(sp1, sp2))
-          }
-
         case ParsedAst.Expression.FNil(sp1, sp2) =>
           WeededAst.Expression.FNil(mkSL(sp1, sp2)).toSuccess
 
@@ -659,14 +651,6 @@ object Weeder {
             case Nil => WeededAst.Pattern.Unit(mkSL(sp1, sp2))
             case x :: Nil => x
             case xs => WeededAst.Pattern.Tuple(xs, mkSL(sp1, sp2))
-          }
-
-        case ParsedAst.Pattern.FNone(sp1, sp2) =>
-          WeededAst.Pattern.FNone(mkSL(sp1, sp2)).toSuccess
-
-        case ParsedAst.Pattern.FSome(sp1, pat, sp2) =>
-          visit(pat) map {
-            case p => WeededAst.Pattern.FSome(p, mkSL(sp1, sp2))
           }
 
         case ParsedAst.Pattern.FNil(sp1, sp2) =>
@@ -910,8 +894,6 @@ object Weeder {
     case ParsedAst.Expression.Switch(sp1, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
-    case ParsedAst.Expression.FNone(sp1, _) => sp1
-    case ParsedAst.Expression.FSome(sp1, _, _) => sp1
     case ParsedAst.Expression.FNil(sp1, _) => sp1
     case ParsedAst.Expression.FList(hd, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FVec(sp1, _, _) => sp1

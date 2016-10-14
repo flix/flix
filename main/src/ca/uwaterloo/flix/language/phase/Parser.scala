@@ -414,7 +414,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetMatch | IfThenElse | Match | Switch | Tag | Lambda | Tuple | FNil | FNone | FSome | FVec | FSet | FMap | Literal |
+      LetMatch | IfThenElse | Match | Switch | Tag | Lambda | Tuple | FNil | FVec | FSet | FMap | Literal |
         Existential | Universal | Bot | Top | UnaryLambda | Wild | VarOrRef | UserError
     }
 
@@ -466,14 +466,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Tuple: Rule1[ParsedAst.Expression] = rule {
       SP ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Tuple
-    }
-
-    def FNone: Rule1[ParsedAst.Expression.FNone] = rule {
-      SP ~ atomic("None") ~ SP ~> ParsedAst.Expression.FNone
-    }
-
-    def FSome: Rule1[ParsedAst.Expression.FSome] = rule {
-      SP ~ atomic("Some") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.FSome
     }
 
     def FNil: Rule1[ParsedAst.Expression.FNil] = rule {
@@ -555,7 +547,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   object Patterns {
 
     def Simple: Rule1[ParsedAst.Pattern] = rule {
-      FNil | FNone | FSome | Tag | Literal | Tuple | FVec | FSet | FMap | Wildcard | Variable
+      FNil | Tag | Literal | Tuple | FVec | FSet | FMap | Wildcard | Variable
     }
 
     def Wildcard: Rule1[ParsedAst.Pattern.Wild] = rule {
@@ -576,14 +568,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Tuple: Rule1[ParsedAst.Pattern.Tuple] = rule {
       SP ~ "(" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Pattern.Tuple
-    }
-
-    def FNone: Rule1[ParsedAst.Pattern.FNone] = rule {
-      SP ~ atomic("None") ~ SP ~> ParsedAst.Pattern.FNone
-    }
-
-    def FSome: Rule1[ParsedAst.Pattern.FSome] = rule {
-      SP ~ atomic("Some") ~ optWS ~ "(" ~ optWS ~ Pattern ~ optWS ~ ")" ~ SP ~> ParsedAst.Pattern.FSome
     }
 
     def FNil: Rule1[ParsedAst.Pattern.FNil] = rule {

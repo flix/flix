@@ -606,21 +606,6 @@ object Typer {
           ) yield resultType
 
         /*
-         * None expression.
-         */
-        case NamedAst.Expression.FNone(tvar, loc) =>
-          liftM(Type.mkFOpt(tvar))
-
-        /*
-         * Some expression.
-         */
-        case NamedAst.Expression.FSome(exp, tvar, loc) =>
-          for (
-            innerType <- visitExp(exp);
-            resultType <- unifyM(tvar, Type.mkFOpt(innerType), loc)
-          ) yield resultType
-
-        /*
          * Nil expression.
          */
         case NamedAst.Expression.FNil(tvar, loc) =>
@@ -780,10 +765,6 @@ object Typer {
             elementTypes <- seqM(elms map visitPat);
             resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
           ) yield resultType
-        case NamedAst.Pattern.FNone(tvar, loc) => liftM(Type.mkFOpt(tvar))
-        case NamedAst.Pattern.FSome(pat, tvar, loc) =>
-          for (inferredType <- visitPat(pat))
-            yield Type.mkFOpt(inferredType)
         case NamedAst.Pattern.FNil(tvar, loc) => liftM(Type.mkFList(tvar))
         case NamedAst.Pattern.FList(hd, tl, tvar, loc) =>
           for {
@@ -966,19 +947,6 @@ object Typer {
           TypedAst.Expression.Tuple(es, subst0(tvar), loc)
 
         /*
-         * None expression.
-         */
-        case NamedAst.Expression.FNone(tvar, loc) =>
-          TypedAst.Expression.FNone(subst0(tvar), loc)
-
-        /*
-         * Some expression.
-         */
-        case NamedAst.Expression.FSome(exp, tvar, loc) =>
-          val e = visitExp(exp, subst0)
-          TypedAst.Expression.FSome(e, subst0(tvar), loc)
-
-        /*
          * Nil expression.
          */
         case NamedAst.Expression.FNil(tvar, loc) =>
@@ -1084,8 +1052,6 @@ object Typer {
             case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
           }
         case NamedAst.Pattern.Tuple(elms, tvar, loc) => TypedAst.Pattern.Tuple(elms map visitPat, subst0(tvar), loc)
-        case NamedAst.Pattern.FNone(tvar, loc) => TypedAst.Pattern.FNone(subst0(tvar), loc)
-        case NamedAst.Pattern.FSome(pat, tvar, loc) => TypedAst.Pattern.FSome(visitPat(pat), subst0(tvar), loc)
         case NamedAst.Pattern.FNil(tvar, loc) => TypedAst.Pattern.FNil(subst0(tvar), loc)
         case NamedAst.Pattern.FList(hd, tl, tvar, loc) => TypedAst.Pattern.FList(visitPat(hd), visitPat(tl), subst0(tvar), loc)
         case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => TypedAst.Pattern.FVec(elms map visitPat, rest.map(visitPat), subst0(tvar), loc)

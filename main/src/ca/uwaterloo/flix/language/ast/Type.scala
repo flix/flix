@@ -49,7 +49,6 @@ sealed trait Type {
     case Type.Native => Set.empty
     case Type.Arrow(l) => Set.empty
     case Type.FTuple(l) => Set.empty
-    case Type.FOpt => Set.empty
     case Type.FList => Set.empty
     case Type.FVec => Set.empty
     case Type.FSet => Set.empty
@@ -97,7 +96,6 @@ sealed trait Type {
     case Type.Native => "Native"
     case Type.Arrow(l) => "Arrow"
     case Type.FTuple(l) => "Tuple"
-    case Type.FOpt => "Opt"
     case Type.FList => "List"
     case Type.FVec => "Vec"
     case Type.FSet => "Set"
@@ -218,13 +216,6 @@ object Type {
   }
 
   /**
-    * A type constructor that represents options.
-    */
-  case object FOpt extends Type {
-    def kind: Kind = Kind.Arrow(List(Kind.Star), Kind.Star)
-  }
-
-  /**
     * A type constructor that represents list values.
     */
   case object FList extends Type {
@@ -296,11 +287,6 @@ object Type {
   def mkArrow(as: List[Type], b: Type): Type = Apply(Arrow(as.length + 1), as ::: b :: Nil)
 
   /**
-    * Constructs the type Opt[A] where `A` is the given type `tpe`.
-    */
-  def mkFOpt(a: Type): Type = Apply(FOpt, List(a))
-
-  /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
   def mkFTuple(ts: List[Type]): Type = Apply(FTuple(ts.length), ts)
@@ -353,7 +339,6 @@ object Type {
       case Type.Native => Type.Native
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.FTuple(l) => Type.FTuple(l)
-      case Type.FOpt => Type.FOpt
       case Type.FList => Type.FList
       case Type.FVec => Type.FVec
       case Type.FSet => Type.FSet

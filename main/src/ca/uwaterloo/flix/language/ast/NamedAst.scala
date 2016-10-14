@@ -140,10 +140,6 @@ object NamedAst {
 
     case class Tuple(elms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FNone(tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
-    case class FSome(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
     case class FNil(tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class FList(hd: NamedAst.Expression, tl: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
@@ -205,10 +201,6 @@ object NamedAst {
     case class Tag(enum: Option[Name.QName], tag: Name.Ident, pat: NamedAst.Pattern, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
     case class Tuple(elms: scala.List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
-
-    case class FNone(tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
-
-    case class FSome(pat: NamedAst.Pattern, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
     case class FNil(tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
