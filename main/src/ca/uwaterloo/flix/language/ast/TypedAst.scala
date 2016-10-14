@@ -36,7 +36,7 @@ object TypedAst {
 
   object Declaration {
 
-    case class Definition(ann: Ast.Annotations, sym: Symbol.DefnSym, formals: List[TypedAst.FormalParam], exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Declaration
+    case class Definition(ann: Ast.Annotations, sym: Symbol.DefnSym, tparams: List[TypedAst.TypeParam], formals: List[TypedAst.FormalParam], exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Declaration
 
     case class Enum(sym: Symbol.EnumSym, cases: Map[String, TypedAst.Case], sc: Scheme, loc: SourceLocation) extends TypedAst.Declaration
 
@@ -293,6 +293,8 @@ object TypedAst {
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends TypedAst
 
   case class FormalParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst
+
+  case class TypeParam(name: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst
 
   case class Property(law: Law, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst
 

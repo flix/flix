@@ -42,7 +42,7 @@ object NamedAst {
 
   object Declaration {
 
-    case class Definition(sym: Symbol.DefnSym, tparams: List[ast.Type.Var], params: List[NamedAst.FormalParam], exp: NamedAst.Expression, ann: Ast.Annotations, sc: NamedAst.Scheme, loc: SourceLocation) extends NamedAst.Declaration
+    case class Definition(sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], params: List[NamedAst.FormalParam], exp: NamedAst.Expression, ann: Ast.Annotations, sc: NamedAst.Scheme, loc: SourceLocation) extends NamedAst.Declaration
 
     case class Signature(ident: Name.Ident, params: List[NamedAst.FormalParam], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
@@ -50,7 +50,7 @@ object NamedAst {
 
     case class Law(ident: Name.Ident, tparams: List[ParsedAst.ContextBound], params: List[NamedAst.FormalParam], tpe: NamedAst.Type, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Declaration
 
-    case class Enum(sym: Symbol.EnumSym, cases: Map[String, NamedAst.Case], sc: NamedAst.Scheme, loc: SourceLocation) extends NamedAst.Declaration
+    case class Enum(sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], sc: NamedAst.Scheme, loc: SourceLocation) extends NamedAst.Declaration
 
     case class Class(ident: Name.Ident, tparams: List[NamedAst.Type], /* bounds: List[ContextBound],*/ decls: List[NamedAst.Declaration], loc: SourceLocation) extends NamedAst.Declaration
 
@@ -273,5 +273,7 @@ object NamedAst {
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: NamedAst.Type) extends NamedAst
 
   case class FormalParam(sym: Symbol.VarSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
+
+  case class TypeParam(name: Name.Ident, tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst
 
 }

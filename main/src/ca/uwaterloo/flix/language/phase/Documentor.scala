@@ -19,9 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
 
-import ca.uwaterloo.flix.language.ast.Symbol.TableSym
-import ca.uwaterloo.flix.language.ast.TypedAst.Table.Relation
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Type, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.JsonAST._
@@ -32,28 +30,32 @@ object Documentor {
   /**
     * Generates documentation for the given program `p`.
     */
-  def document(p: TypedAst.Root): Unit = {
-
+  def document(p: Root): Unit = {
+    // Group definitions, enums, and tables by their namespace.
     val defnsByNS = p.definitions.groupBy(_._1.namespace)
     val enumsByNS = p.enums.groupBy(_._1.namespace)
     val tablesByNS = p.tables.groupBy(_._1.namespace)
+
+    // Collect the relations.
     val relationsByNS = tablesByNS.map {
       case (ns, m) => ns -> m.collect {
-        case (sym, t: TypedAst.Table.Relation) => t
+        case (sym, t: Table.Relation) => t
       }.toList
     }
+    // Collect the lattices.
     val latticesByNS = tablesByNS.map {
       case (ns, m) => ns -> m.collect {
-        case (sym, t: TypedAst.Table.Lattice) => t
+        case (sym, t: Table.Lattice) => t
       }.toList
     }
 
-    val namespaces = defnsByNS.keySet
+    // Compute the set of all available namespaces.
+    val namespaces = defnsByNS.keySet ++ enumsByNS.keySet ++ tablesByNS.keySet
 
-    // Compute the data object for each namespace.
+    // Process each namespace.
     val data = namespaces map {
       case ns =>
-
+        val defns = defnsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
         val enums = enumsByNS.getOrElse(ns, Nil).toList.map(kv => mkEnum(kv._2))
         val relations = relationsByNS.getOrElse(ns, Nil) map mkRelation
         val lattices = latticesByNS.getOrElse(ns, Nil) map mkLattice
@@ -61,22 +63,20 @@ object Documentor {
         ns -> JObject(
           JField("namespace", JString(ns.mkString("."))),
           JField("types", JArray(enums)),
-          JField("definitions", mkDefinitions(defnsByNS(ns))),
+          JField("definitions", JArray(defns)),
           JField("relations", JArray(relations)),
           JField("lattices", JArray(lattices))
         )
-
     }
 
     // Process the menu.
     writeJSON(mkMenu(namespaces), getMenuPath)
 
-    // Process each namespace.
+    // Write the result for each namespace.
     for ((ns, json) <- data) {
       writeString(mkHtmlPage(ns), getHtmlPath(ns))
       writeJSON(json, getJsonPath(ns))
     }
-
   }
 
   /**
@@ -87,32 +87,36 @@ object Documentor {
   })
 
   /**
-    * Returns a JSON object of all the given definitions.
+    * Returns the given definition `d` as a JSON object.
     */
-  private def mkDefinitions(m: Map[Symbol.DefnSym, Declaration.Definition]): JArray = JArray(
-    m.map {
-      case (sym, defn) =>
+  def mkDefn(d: Declaration.Definition): JObject = {
+    // Process type parameters.
+    val tparams = d.tparams.map {
+      case TypeParam(ident, tpe, loc) => JObject(List(
+        JField("name", JString(ident.name))
+      ))
+    }
 
-        val fparams = defn.formals.map {
-          case TypedAst.FormalParam(psym, tpe, loc) =>
-            JObject(
-              JField("name", JString(psym.text)),
-              JField("tpe", JString(prettyType(tpe)))
-            )
-        }
+    // Process formal parameters.
+    val fparams = d.formals.map {
+      case FormalParam(psym, tpe, loc) => JObject(
+        JField("name", JString(psym.text)),
+        JField("tpe", JString(prettify(tpe)))
+      )
+    }
 
-        // TODO: tparams
-        //val tparams = defn.
+    // Compute return type.
+    val returnType = prettify(getReturnType(d.tpe))
 
-        JObject(List(
-          JField("name", JString(sym.name)),
-          JField("tparams", JArray(List(JObject(JField("name", JString("a")))))),
-          JField("fparams", JArray(fparams)),
-          JField("result", JString(prettyType(getReturnType(defn.tpe)))),
-          JField("comment", JString("A nice comment"))
-        ))
-    }.toList
-  )
+    JObject(List(
+      JField("name", JString(d.sym.name)),
+      JField("tparams", JArray(tparams)),
+      JField("fparams", JArray(fparams)),
+      JField("result", JString(returnType)),
+      JField("comment", JString("A nice comment"))
+    ))
+
+  }
 
   /**
     * Returns the given enum `e` as a JSON object.
@@ -129,9 +133,9 @@ object Documentor {
     */
   def mkRelation(r: Table.Relation): JObject = {
     val attributes = r.attributes.map {
-      case TypedAst.Attribute(name, tpe, loc) => JObject(List(
+      case Attribute(name, tpe, loc) => JObject(List(
         JField("name", JString(name)),
-        JField("tpe", JString(prettyType(tpe)))
+        JField("tpe", JString(prettify(tpe)))
       ))
     }
 
@@ -147,9 +151,9 @@ object Documentor {
     */
   def mkLattice(l: Table.Lattice): JObject = {
     val attributes = (l.keys ::: l.value :: Nil).map {
-      case TypedAst.Attribute(name, tpe, loc) => JObject(List(
+      case Attribute(name, tpe, loc) => JObject(List(
         JField("name", JString(name)),
-        JField("tpe", JString(prettyType(tpe)))
+        JField("tpe", JString(prettify(tpe)))
       ))
     }
 
@@ -204,7 +208,7 @@ object Documentor {
   /**
     * Converts the given type into a pretty string.
     */
-  private def prettyType(t: Type): String = t.toString
+  private def prettify(t: Type): String = t.toString
 
   /**
     * Extracts the return type of the given arrow type `tpe`.

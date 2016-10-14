@@ -76,7 +76,7 @@ object Namer {
       /*
        * Definition.
        */
-      case WeededAst.Declaration.Definition(ann, ident, tparams0, params0, exp, tpe, loc) =>
+      case WeededAst.Declaration.Definition(ann, ident, tparams0, fparams0, exp, tpe, loc) =>
         // check if the name is legal.
         if (ident.name.head.isUpper) {
           return IllegalDefinitionName(ident.name, loc).toFailure
@@ -89,13 +89,15 @@ object Namer {
             // Case 1: The definition does not already exist. Update it.
 
             // Compute the type environment from the formal type parameters.
-            val tvars = tparams0.map(x => x.name -> Type.freshTypeVar())
-            val tenv0 = tvars.toMap
+            val tparams = tparams0.map {
+              case p => NamedAst.TypeParam(p, Type.freshTypeVar(), p.loc)
+            }
+            val tenv0 = tparams.map(p => p.name.name -> p.tpe).toMap
 
             // Introduce a variable symbols for each formal parameter.
             var pms0 = List.empty[NamedAst.FormalParam]
             var env0 = Map.empty[String, Symbol.VarSym]
-            for (WeededAst.FormalParam(ident, tpe, loc) <- params0) {
+            for (WeededAst.FormalParam(ident, tpe, loc) <- fparams0) {
               val sym = Symbol.freshVarSym(ident)
               pms0 = NamedAst.FormalParam(sym, Types.namer(tpe, tenv0), loc) :: pms0
               env0 = env0 + (ident.name -> sym)
@@ -104,8 +106,8 @@ object Namer {
             Expressions.namer(exp, env0, tenv0) map {
               case e =>
                 val sym = Symbol.mkDefnSym(ns0, ident)
-                val sc = NamedAst.Scheme(tvars.map(_._2), Types.namer(tpe, tenv0))
-                val defn = NamedAst.Declaration.Definition(sym, tenv0.values.toList, pms0.reverse, e, ann, sc, loc)
+                val sc = NamedAst.Scheme(tparams.map(_.tpe), Types.namer(tpe, tenv0))
+                val defn = NamedAst.Declaration.Definition(sym, tparams, pms0.reverse, e, ann, sc, loc)
                 prog0.copy(definitions = prog0.definitions + (ns0 -> (defns + (ident.name -> defn))))
             }
           case Some(defn) =>
@@ -131,13 +133,17 @@ object Namer {
       /*
        * Enum.
        */
-      case WeededAst.Declaration.Enum(ident, tparams, cases, loc) =>
+      case WeededAst.Declaration.Enum(ident, tparams0, cases, loc) =>
         val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
         enums0.get(ident.name) match {
           case None =>
             // Case 2.1: The enum does not exist in the namespace. Update it.
             val sym = Symbol.mkEnumSym(ns0, ident)
-            val enum = NamedAst.Declaration.Enum(sym, casesOf(cases, Map.empty), schemeOf(sym, tparams, cases), loc)
+            val tparams = tparams0 map {
+              case p => NamedAst.TypeParam(p, Type.freshTypeVar(), loc)
+            }
+            val tenv = tparams.map(kv => kv.name.name -> kv.tpe).toMap
+            val enum = NamedAst.Declaration.Enum(sym, tparams, casesOf(cases, tenv), schemeOf(sym, tparams0, cases), loc)
             val enums = enums0 + (ident.name -> enum)
             prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
           case Some(enum) =>

@@ -167,13 +167,18 @@ object Typer {
               case Ok((subst0, resultType)) =>
                 val exp = Expressions.reassemble(defn0.exp, ns0, program, subst0)
 
+                val tparams = defn0.tparams.map {
+                  case NamedAst.TypeParam(name, tpe, loc) =>
+                    TypedAst.TypeParam(name, tpe, loc)
+                }
+
                 // Translate the named formals into typed formals.
                 val formals = defn0.params.map {
                   case NamedAst.FormalParam(sym, tpe, loc) =>
                     TypedAst.FormalParam(sym, subst0(sym.tvar), sym.loc)
                 }
 
-                Ok(TypedAst.Declaration.Definition(defn0.ann, defn0.sym, formals, exp, resultType, defn0.loc))
+                Ok(TypedAst.Declaration.Definition(defn0.ann, defn0.sym, tparams, formals, exp, resultType, defn0.loc))
 
               case Err(e) => Err(e)
             }
@@ -191,7 +196,7 @@ object Typer {
           * Performs type resolution on the given enum and its cases.
           */
         def visitEnum(enum: NamedAst.Declaration.Enum, ns: Name.NName): Result[(Symbol.EnumSym, TypedAst.Declaration.Enum), TypeError] = enum match {
-          case NamedAst.Declaration.Enum(sym, cases0, scheme0, loc) =>
+          case NamedAst.Declaration.Enum(sym, tparams, cases0, scheme0, loc) =>
             val casesResult = cases0 map {
               case (name, NamedAst.Case(enumName, tagName, tpe)) =>
                 Disambiguation.resolve(tpe, ns, program).map {
