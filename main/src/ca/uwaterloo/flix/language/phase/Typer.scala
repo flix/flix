@@ -35,6 +35,7 @@ object Typer {
 
     val result = for {
       definitions <- Declarations.Definitions.typecheck(program)
+      enums <- Declarations.Enums.typecheck(program)
       lattices <- Declarations.Lattices.typecheck(program)
       tables <- Declarations.Tables.typecheck(program)
       indexes <- Declarations.Indexes.typecheck(program)
@@ -43,7 +44,7 @@ object Typer {
     } yield {
       val currentTime = System.nanoTime()
       val time = program.time.copy(typer = currentTime - startTime)
-      TypedAst.Root(definitions, lattices, tables, indexes, facts, rules, Nil, time)
+      TypedAst.Root(definitions, enums, lattices, tables, indexes, facts, rules, Nil, time)
     }
 
     result match {
@@ -179,6 +180,41 @@ object Typer {
         }
       }
 
+    }
+
+    object Enums {
+      /**
+        * Performs type inference and reassembly on all enums in the given program.
+        */
+      def typecheck(program: Program): Result[Map[Symbol.EnumSym, TypedAst.Declaration.Enum], TypeError] = {
+        /**
+          * Performs type resolution on the given enum and its cases.
+          */
+        def visitEnum(enum: NamedAst.Declaration.Enum, ns: Name.NName): Result[(Symbol.EnumSym, TypedAst.Declaration.Enum), TypeError] = enum match {
+          case NamedAst.Declaration.Enum(sym, cases0, scheme0, loc) =>
+            val casesResult = cases0 map {
+              case (name, NamedAst.Case(enumName, tagName, tpe)) =>
+                Disambiguation.resolve(tpe, ns, program).map {
+                  case t => name -> TypedAst.Case(enumName, tagName, t)
+                }
+            }
+
+            for {
+              cases <- Result.seqM(casesResult.toList)
+              scheme <- Disambiguation.resolve(scheme0, ns, program)
+            } yield sym -> TypedAst.Declaration.Enum(sym, cases.toMap, scheme, loc)
+        }
+
+        // Visit every enum in the program.
+        val result = program.enums.toList.flatMap {
+          case (ns, enums) => enums.map {
+            case (name, enum) => visitEnum(enum, ns)
+          }
+        }
+
+        // Sequence the results and convert them back to a map.
+        Result.seqM(result).map(_.toMap)
+      }
     }
 
     object Indexes {

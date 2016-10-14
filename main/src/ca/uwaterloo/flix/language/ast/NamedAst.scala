@@ -24,8 +24,8 @@ trait NamedAst
 
 object NamedAst {
 
-  case class Program(enums: Map[Name.NName, Map[String, NamedAst.Declaration.Enum]],
-                     definitions: Map[Name.NName, Map[String, NamedAst.Declaration.Definition]],
+  case class Program(definitions: Map[Name.NName, Map[String, NamedAst.Declaration.Definition]],
+                     enums: Map[Name.NName, Map[String, NamedAst.Declaration.Enum]],
                      classes: Map[Symbol.ClassSym, NamedAst.Declaration.Class],
                      impls: Map[Symbol.ImplSym, NamedAst.Declaration.Impl],
                      lattices: Map[NamedAst.Type, NamedAst.Declaration.BoundedLattice],

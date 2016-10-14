@@ -35,6 +35,7 @@ object Documentor {
   def document(p: TypedAst.Root): Unit = {
 
     val defnsByNS = p.definitions.groupBy(_._1.namespace)
+    val enumsByNS = p.enums.groupBy(_._1.namespace)
     val tablesByNS = p.tables.groupBy(_._1.namespace)
     val relationsByNS = tablesByNS.map {
       case (ns, m) => ns -> m.collect {
@@ -53,12 +54,13 @@ object Documentor {
     val data = namespaces map {
       case ns =>
 
+        val enums = enumsByNS.getOrElse(ns, Nil).toList.map(kv => mkEnum(kv._2))
         val relations = relationsByNS.getOrElse(ns, Nil) map mkRelation
         val lattices = latticesByNS.getOrElse(ns, Nil) map mkLattice
 
         ns -> JObject(
           JField("namespace", JString(ns.mkString("."))),
-          JField("types", JArray(List())),
+          JField("types", JArray(enums)),
           JField("definitions", mkDefinitions(defnsByNS(ns))),
           JField("relations", JArray(relations)),
           JField("lattices", JArray(lattices))
@@ -111,6 +113,16 @@ object Documentor {
         ))
     }.toList
   )
+
+  /**
+    * Returns the given enum `e` as a JSON object.
+    */
+  def mkEnum(e: Declaration.Enum): JObject = {
+    JObject(List(
+      JField("name", JString(e.sym.name)),
+      JField("comment", JString("Some comment"))
+    ))
+  }
 
   /**
     * Returns the given relation `r` as a JSON object.

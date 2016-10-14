@@ -21,6 +21,7 @@ sealed trait TypedAst
 object TypedAst {
 
   case class Root(definitions: Map[Symbol.DefnSym, TypedAst.Declaration.Definition],
+                  enums: Map[Symbol.EnumSym, TypedAst.Declaration.Enum],
                   lattices: Map[Type, TypedAst.Declaration.BoundedLattice],
                   tables: Map[Symbol.TableSym, TypedAst.Table],
                   indexes: Map[Symbol.TableSym, TypedAst.Declaration.Index],
@@ -36,6 +37,8 @@ object TypedAst {
   object Declaration {
 
     case class Definition(ann: Ast.Annotations, sym: Symbol.DefnSym, formals: List[TypedAst.FormalParam], exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Declaration
+
+    case class Enum(sym: Symbol.EnumSym, cases: Map[String, TypedAst.Case], sc: Scheme, loc: SourceLocation) extends TypedAst.Declaration
 
     case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends TypedAst.Declaration
 
@@ -286,6 +289,8 @@ object TypedAst {
   }
 
   case class Attribute(name: String, tpe: Type, loc: SourceLocation) extends TypedAst
+
+  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends TypedAst
 
   case class FormalParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst
 
