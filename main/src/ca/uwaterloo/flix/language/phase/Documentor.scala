@@ -19,8 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
 
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
@@ -32,18 +31,17 @@ object Documentor {
     */
   def document(p: TypedAst.Root): Unit = {
 
-    // Retrieve each definition by its namespace.
-    val definitionsByNamespace = p.definitions.groupBy(_._1.namespace)
+    val defnsByNS = p.definitions.groupBy(_._1.namespace)
+    //val relationsByNS = p.
 
-    // Compute the set of all namespaces.
-    val namespaces = definitionsByNamespace.keySet
+    val namespaces = defnsByNS.keySet
 
     // Compute the data object for each namespace.
     val data = namespaces map {
       case ns => ns -> JObject(
         JField("namespace", JString(ns.mkString("."))),
         JField("types", JArray(List())),
-        JField("definitions", mkDefinitions(definitionsByNamespace(ns))),
+        JField("definitions", mkDefinitions(defnsByNS(ns))),
         JField("relations", JArray(List())),
         JField("lattices", JArray(List()))
       )
@@ -68,33 +66,63 @@ object Documentor {
     case ns => JObject(JField("name", JString(ns.mkString("."))))
   })
 
+  /**
+    * Returns a JSON object of all the given definitions.
+    */
   private def mkDefinitions(m: Map[Symbol.DefnSym, Declaration.Definition]): JArray = JArray(
     m.map {
       case (sym, defn) =>
+
+        val fparams = defn.formals.map {
+          case TypedAst.FormalParam(psym, tpe, loc) =>
+            JObject(
+              JField("name", JString(psym.text)),
+              JField("tpe", JString(prettyType(tpe)))
+            )
+        }
+
+        // TODO: tparams
+        //val tparams = defn.
+
         JObject(List(
           JField("name", JString(sym.name)),
           JField("tparams", JArray(List(JObject(JField("name", JString("a")))))),
-          JField("fparams", JArray(List(JObject(JField("name", JString("a")), JField("tpe", JString("someType")))))),
-          JField("result", JString("result")),
+          JField("fparams", JArray(fparams)),
+          JField("result", JString(prettyType(defn.tpe))),
           JField("comment", JString("A nice comment"))
         ))
     }.toList
   )
 
   /**
+    * Converts the given type into a pretty string.
+    */
+  def prettyType(t: Type): String = t.toString
+
+  /**
     * Returns the path where the JSON menu file should be stored.
     */
-  def getMenuPath: Path = Paths.get("./build/api/__menu__.json")
+  private def getMenuPath: Path = Paths.get("./build/api/__menu__.json")
 
   /**
     * Returns the path where the JSON file, for the given namespace, should be stored.
     */
-  private def getJsonPath(ns: List[String]): Path = Paths.get("./build/api/" + ns.mkString(".") + ".json")
+  private def getJsonPath(ns: List[String]): Path = {
+    if (ns.isEmpty)
+      Paths.get("./build/api/index.json")
+    else
+      Paths.get("./build/api/" + ns.mkString(".") + ".json")
+  }
 
   /**
     * Returns the path where the HTML file, for the given namespace, should be stored.
     */
-  private def getHtmlPath(ns: List[String]): Path = Paths.get("./build/api/" + ns.mkString(".") + ".html")
+  private def getHtmlPath(ns: List[String]): Path = {
+    if (ns.isEmpty)
+      Paths.get("./build/api/index.html")
+    else
+      Paths.get("./build/api/" + ns.mkString(".") + ".html")
+  }
 
   /**
     * Writes the given JSON value `v` to the given path `p`.
