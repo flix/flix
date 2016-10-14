@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
 
-import ca.uwaterloo.flix.language.ast.{Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.JsonAST._
@@ -70,7 +70,7 @@ object Documentor {
     }
 
     // Process the menu.
-    writeJSON(mkMenu(namespaces), getMenuPath)
+    writeJSON(JArray(mkMenu(namespaces.filter(_.nonEmpty))), getMenuPath)
 
     // Write the result for each namespace.
     for ((ns, json) <- data) {
@@ -82,14 +82,14 @@ object Documentor {
   /**
     * Returns a JSON object of the available namespaces for the menu.
     */
-  private def mkMenu(xs: Set[List[String]]): JArray = JArray(xs.toList.map {
+  private def mkMenu(xs: Set[List[String]]): List[JObject] = xs.toList.map {
     case ns => JObject(JField("name", JString(ns.mkString("."))))
-  })
+  }
 
   /**
     * Returns the given definition `d` as a JSON object.
     */
-  def mkDefn(d: Declaration.Definition): JObject = {
+  private def mkDefn(d: Declaration.Definition): JObject = {
     // Process type parameters.
     val tparams = d.tparams.map {
       case TypeParam(ident, tpe, loc) => JObject(List(
@@ -121,7 +121,7 @@ object Documentor {
   /**
     * Returns the given enum `e` as a JSON object.
     */
-  def mkEnum(e: Declaration.Enum): JObject = {
+  private def mkEnum(e: Declaration.Enum): JObject = {
     JObject(List(
       JField("name", JString(e.sym.name)),
       JField("comment", JString("Some comment"))
@@ -131,7 +131,7 @@ object Documentor {
   /**
     * Returns the given relation `r` as a JSON object.
     */
-  def mkRelation(r: Table.Relation): JObject = {
+  private def mkRelation(r: Table.Relation): JObject = {
     val attributes = r.attributes.map {
       case Attribute(name, tpe, loc) => JObject(List(
         JField("name", JString(name)),
@@ -149,7 +149,7 @@ object Documentor {
   /**
     * Returns the given lattice `l` as a JSON object.
     */
-  def mkLattice(l: Table.Lattice): JObject = {
+  private def mkLattice(l: Table.Lattice): JObject = {
     val attributes = (l.keys ::: l.value :: Nil).map {
       case Attribute(name, tpe, loc) => JObject(List(
         JField("name", JString(name)),
@@ -222,6 +222,8 @@ object Documentor {
     * Returns the HTML fragment to use for the given namespace `ns`.
     */
   private def mkHtmlPage(ns: List[String]): String = {
+    // Compute the relative path path to the JSON file.
+    val path = if (ns.isEmpty) "./index.json" else "./" + ns.mkString(".") + ".json"
     s"""
        |<!DOCTYPE html>
        |<html lang="en">
@@ -236,7 +238,7 @@ object Documentor {
        |<div id="app"></div>
        |<script src="js/bundle.js"></script>
        |<script type="application/ecmascript">
-       |    bootstrap("./${ns.mkString(".")}.json");
+       |    bootstrap("$path");
        |</script>
        |</body>
        |</html>

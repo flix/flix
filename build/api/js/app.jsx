@@ -317,6 +317,17 @@ function bootstrap(page) {
                 console.log("Unable to get page data: " + err);
             }
             ReactDOM.render(<App namespaces={namespaces} data={data}/>, document.getElementById("app"));
+
+            // Trigger jump to anchor (if any).
+            if (window.location.hash) {
+                var id = window.location.hash.substr(1);
+                if (id) {
+                    var elm = document.getElementById(id);
+                    if (elm) {
+                        elm.scrollIntoView({behavior: "smooth"});
+                    }
+                }
+            }
         });
     });
 }
