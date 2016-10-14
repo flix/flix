@@ -3,7 +3,7 @@
  *
  * Run the following command to install all the build dependencies:
  *
- *  $ npm install --save-dev react react-dom babel babel-preset-es2015 babel-preset-react babelify browserify
+ *  $ npm install --save-dev react react-dom babel babel-preset-es2015 babel-preset-react babelify browserify uglify-js
  *
  * Then run:
  *
@@ -36,8 +36,11 @@ var App = React.createClass({
  */
 var LeftNavigationBar = React.createClass({
     render: function () {
+        // Retrieve and sort the namespaces.
+        var namespaces = this.props.namespaces.sort((a, b) => a.name.localeCompare(b.name));
+
         // Construct a list item for each namespace in the library.
-        var menu = this.props.namespaces.map(
+        var menu = namespaces.map(
             namespace => <li key={namespace.name}><a href={namespace.name + ".html"}>{namespace.name}</a></li>
         );
         return (
@@ -112,7 +115,8 @@ var TypeBox = React.createClass({
  */
 var DefinitionList = React.createClass({
     render: function () {
-        var definitionList = this.props.decls.map(d => <DefinitionBox key={d.name} decl={d}/>);
+        var decls = this.props.decls.sort((a, b) => a.name.localeCompare(b.name));
+        var definitionList = decls.map(d => <DefinitionBox key={d.name} decl={d}/>);
         if (definitionList.length == 0)
             return null;
         return (
@@ -164,7 +168,8 @@ var DefinitionBox = React.createClass({
  */
 var RelationList = React.createClass({
     render: function () {
-        var relationList = this.props.decls.map(d => <RelationBox key={d.name} decl={d}/>);
+        var decls = this.props.decls.sort((a, b) => a.name.localeCompare(b.name));
+        var relationList = decls.map(d => <RelationBox key={d.name} decl={d}/>);
         if (relationList.length == 0)
             return null;
         return (
@@ -207,7 +212,8 @@ var RelationBox = React.createClass({
  */
 var LatticeList = React.createClass({
     render: function () {
-        var latticeList = this.props.decls.map(d => <LatticeBox key={d.name} decl={d}/>);
+        var decls = this.props.decls.sort((a, b) => a.name.localeCompare(b.name));
+        var latticeList = decls.map(d => <LatticeBox key={d.name} decl={d}/>);
         if (latticeList.length == 0)
             return null;
         return (

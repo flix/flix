@@ -19,8 +19,11 @@ package ca.uwaterloo.flix.language.phase
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
 
+import ca.uwaterloo.flix.language.ast.Symbol.TableSym
+import ca.uwaterloo.flix.language.ast.TypedAst.Table.Relation
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
 
@@ -32,19 +35,34 @@ object Documentor {
   def document(p: TypedAst.Root): Unit = {
 
     val defnsByNS = p.definitions.groupBy(_._1.namespace)
-    //val relationsByNS = p.
+    val tablesByNS = p.tables.groupBy(_._1.namespace)
+    val relationsByNS = tablesByNS.map {
+      case (ns, m) => ns -> m.collect {
+        case (sym, t: TypedAst.Table.Relation) => t
+      }.toList
+    }
+    val latticesByNS = tablesByNS.map {
+      case (ns, m) => ns -> m.collect {
+        case (sym, t: TypedAst.Table.Lattice) => t
+      }.toList
+    }
 
     val namespaces = defnsByNS.keySet
 
     // Compute the data object for each namespace.
     val data = namespaces map {
-      case ns => ns -> JObject(
-        JField("namespace", JString(ns.mkString("."))),
-        JField("types", JArray(List())),
-        JField("definitions", mkDefinitions(defnsByNS(ns))),
-        JField("relations", JArray(List())),
-        JField("lattices", JArray(List()))
-      )
+      case ns =>
+
+        val relations = relationsByNS.getOrElse(ns, Nil) map mkRelation
+        val lattices = latticesByNS.getOrElse(ns, Nil) map mkLattice
+
+        ns -> JObject(
+          JField("namespace", JString(ns.mkString("."))),
+          JField("types", JArray(List())),
+          JField("definitions", mkDefinitions(defnsByNS(ns))),
+          JField("relations", JArray(relations)),
+          JField("lattices", JArray(lattices))
+        )
 
     }
 
@@ -88,16 +106,47 @@ object Documentor {
           JField("name", JString(sym.name)),
           JField("tparams", JArray(List(JObject(JField("name", JString("a")))))),
           JField("fparams", JArray(fparams)),
-          JField("result", JString(prettyType(defn.tpe))),
+          JField("result", JString(prettyType(getReturnType(defn.tpe)))),
           JField("comment", JString("A nice comment"))
         ))
     }.toList
   )
 
   /**
-    * Converts the given type into a pretty string.
+    * Returns the given relation `r` as a JSON object.
     */
-  def prettyType(t: Type): String = t.toString
+  def mkRelation(r: Table.Relation): JObject = {
+    val attributes = r.attributes.map {
+      case TypedAst.Attribute(name, tpe, loc) => JObject(List(
+        JField("name", JString(name)),
+        JField("tpe", JString(prettyType(tpe)))
+      ))
+    }
+
+    JObject(List(
+      JField("name", JString(r.sym.name)),
+      JField("attributes", JArray(attributes)),
+      JField("comment", JString("Some comment"))
+    ))
+  }
+
+  /**
+    * Returns the given lattice `l` as a JSON object.
+    */
+  def mkLattice(l: Table.Lattice): JObject = {
+    val attributes = (l.keys ::: l.value :: Nil).map {
+      case TypedAst.Attribute(name, tpe, loc) => JObject(List(
+        JField("name", JString(name)),
+        JField("tpe", JString(prettyType(tpe)))
+      ))
+    }
+
+    JObject(List(
+      JField("name", JString(l.sym.name)),
+      JField("attributes", JArray(attributes)),
+      JField("comment", JString("Some comment"))
+    ))
+  }
 
   /**
     * Returns the path where the JSON menu file should be stored.
@@ -138,6 +187,19 @@ object Documentor {
     writer.close()
   } catch {
     case ex: IOException => throw new RuntimeException(s"Unable to write JSON to path '$p'.", ex)
+  }
+
+  /**
+    * Converts the given type into a pretty string.
+    */
+  private def prettyType(t: Type): String = t.toString
+
+  /**
+    * Extracts the return type of the given arrow type `tpe`.
+    */
+  private def getReturnType(tpe: Type): Type = tpe match {
+    case Type.Apply(Type.Arrow(l), ts) => ts.last
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
   /**
