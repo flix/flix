@@ -86,8 +86,8 @@ object LoadBytecode {
     // 1. Group constants and transform non-functions.
     val constantsMap: Map[List[String], List[Definition.Constant]] = root.constants.values.map { f =>
       f.tpe match {
-        case _: Type.Lambda => f
-        case t => f.copy(tpe = Type.Lambda(List(), t))
+        case Type.Apply(Type.Arrow(l), _) => f
+        case t => f.copy(tpe = Type.mkArrow(List(), t))
       }
     }.toList.groupBy(_.name.prefix)
     val constantsList: List[Definition.Constant] = constantsMap.values.flatten.toList
@@ -120,8 +120,11 @@ object LoadBytecode {
 
     // 5. Load the methods.
     for ((prefix, consts) <- constantsMap; const <- consts) {
+      val Type.Apply(Type.Arrow(l), ts) = const.tpe
+      val targs = ts.take(l - 1)
+
       val clazz = loadedClasses(prefix)
-      val argTpes = const.tpe.asInstanceOf[Type.Lambda].args.map(t => toJavaClass(t, loadedInterfaces))
+      val argTpes = targs.map(t => toJavaClass(t, loadedInterfaces))
       // Note: Update the original constant in root.constants, not the temporary one in constantsMap!
       root.constants(const.name).method = clazz.getMethod(const.name.suffix, argTpes: _*)
     }
@@ -139,6 +142,7 @@ object LoadBytecode {
     * Used for reflection. Note that this method depends on the generated and loaded functional interfaces.
     */
   private def toJavaClass(tpe: Type, interfaces: Map[Type, Class[_]]): Class[_] = tpe match {
+    case Type.Var(id, kind) => classOf[java.lang.Object] // TODO: Assumes that generics are boxed.
     case Type.Unit => Value.Unit.getClass
     case Type.Bool => classOf[Boolean]
     case Type.Char => classOf[Char]
@@ -151,19 +155,13 @@ object LoadBytecode {
     case Type.BigInt => classOf[java.math.BigInteger]
     case Type.Str => classOf[java.lang.String]
     case Type.Native => classOf[java.lang.Object]
-    case Type.Enum(_, _) => classOf[Value.Tag]
-    case Type.Tuple(elms) => classOf[Value.Tuple]
-    case Type.Lambda(_, _) => interfaces(tpe)
-    case Type.Parametric(_, _) => ??? // TODO: How to handle?
-    case Type.FOpt(_) => ??? // TODO
-    case Type.FList(_) => ??? // TODO
-    case Type.FVec(_) => ??? // TODO
-    case Type.FSet(_) => classOf[scala.collection.immutable.Set[AnyRef]]
-    case Type.FMap(_, _) => ??? // TODO
-    case Type.Predicate(_) => ??? // TODO: How to handle?
-    case Type.Unresolved(_) | Type.Abs(_, _) | Type.Any => ??? // TODO: Deprecated
-    case Type.Var(_) | Type.Prop => throw InternalCompilerException(s"Value of $tpe should never be compiled.")
-    case Type.Tag(_, _, _) => throw InternalCompilerException(s"No corresponding JVM type for $tpe.")
+    case Type.Enum(_, _, _) => classOf[Value.Tag]
+    case Type.Apply(Type.FTuple(l), _) => classOf[Value.Tuple]
+    case Type.Apply(Type.Arrow(l), _) => interfaces(tpe)
+    case Type.Apply(Type.FList, _) => classOf[java.lang.Object]
+    case Type.FSet => classOf[scala.collection.immutable.Set[AnyRef]]
+    case _ if tpe.isTuple => classOf[Value.Tuple]
+    case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }
 
   /**
@@ -207,8 +205,12 @@ object LoadBytecode {
       case Expression.Tag(enum, tag, exp, tpe, loc) => visit(exp)
       case Expression.GetTupleIndex(base, offset, tpe, loc) => visit(base)
       case Expression.Tuple(elms, tpe, loc) => elms.flatMap(visit).toSet
-      case Expression.CheckNil(exp, loc) => visit(exp)
-      case Expression.CheckCons(exp, loc) => visit(exp)
+      case Expression.FNil(tpe, loc) => Set.empty
+      case Expression.FList(hd, tl, tpe, loc) => visit(hd) ++ visit(tl)
+      case Expression.IsNil(exp, loc) => visit(exp)
+      case Expression.IsList(exp, loc) => visit(exp)
+      case Expression.GetHead(exp, tpe, loc) => visit(exp)
+      case Expression.GetTail(exp, tpe, loc) => visit(exp)
       case Expression.FSet(elms, tpe, loc) => elms.flatMap(visit).toSet
       case Expression.Existential(params, exp, loc) =>
         throw InternalCompilerException(s"Unexpected expression: '$e' at ${loc.source.format}.")

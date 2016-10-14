@@ -236,7 +236,7 @@ class RestServer(solver: Solver) {
     */
   class ListRelation(relation: IndexedRelation[AnyRef]) extends JsonHandler {
     def json: JValue = JObject(
-      JField("cols", JArray(relation.relation.attributes.toList.map(a => JString(a.ident.name)))),
+      JField("cols", JArray(relation.relation.attributes.toList.map(a => JString(a.name)))),
       JField("rows", JArray(relation.scan.toList.map {
         case row => JArray(row.toList.map(e => JString(Value.pretty(e))))
       })))
@@ -249,7 +249,7 @@ class RestServer(solver: Solver) {
     */
   class ListLattice(lattice: IndexedLattice[AnyRef]) extends JsonHandler {
     def json: JValue = JObject(
-      JField("cols", JArray(lattice.lattice.keys.toList.map(a => JString(a.ident.name)) ::: JString(lattice.lattice.value.ident.name) :: Nil)),
+      JField("cols", JArray(lattice.lattice.keys.toList.map(a => JString(a.name)) ::: JString(lattice.lattice.value.name) :: Nil)),
       JField("rows", JArray(lattice.scan.toList.map {
         case (key, elm) => JArray(key.toArray.map(k => JString(Value.pretty(k))).toList ::: JString(Value.pretty(elm)) :: Nil)
       })))

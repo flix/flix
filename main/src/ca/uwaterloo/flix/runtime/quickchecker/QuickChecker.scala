@@ -297,15 +297,15 @@ object QuickChecker {
       case Type.BigInt => ArbBigInt.gen
       case Type.Str => ArbStr.gen
 
-      case Type.Enum(name, cases) =>
-        val elms = cases.values.map(
-          t => new Generator[SymVal] {
-            def mk(r: Random): SymVal = SymVal.Tag(t.tag.name, new ArbSymVal(t.tpe).gen.mk(r))
+      case Type.Enum(name, cases, kind) =>
+        val elms = cases.map {
+          case (tag, innerType) => new Generator[SymVal] {
+            def mk(r: Random): SymVal = SymVal.Tag(tag, new ArbSymVal(innerType).gen.mk(r))
           }
-        )
+        }
         oneOf(elms.toArray: _*)
 
-      case Type.Tuple(elms) => new Generator[SymVal] {
+      case Type.Apply(Type.FTuple(l), elms) => new Generator[SymVal] {
         def mk(r: Random): SymVal = {
           val vals = elms.map(t => new ArbSymVal(t).gen.mk(r))
           SymVal.Tuple(vals)

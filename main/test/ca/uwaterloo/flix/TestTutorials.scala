@@ -14,18 +14,26 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix
 
-import org.scalatest.{ParallelTestExecution, Suites}
+import ca.uwaterloo.flix.api.{Flix, RuleException}
+import ca.uwaterloo.flix.util.Options
+import org.scalatest.FunSuite
 
-class PhaseSuite extends Suites(
-  new TestOptimizer,
-  new TestParser,
-  new TestNamer,
-  new TestTailrec,
-  new TestTyper,
-  new TestUnification,
-  new TestWeeder
-) with ParallelTestExecution {
-  /* left empty */
+class TestTutorials extends FunSuite {
+
+  val opts = Options.DefaultTest
+
+  test("introduction.flix") {
+    val path = "main/src/tutorials/introduction.flix"
+    new Flix().setOptions(opts).addPath(path).solve().get
+  }
+
+  test("delta-debugging.flix") {
+    intercept[RuleException] {
+      val path = "main/src/tutorials/delta-debugging.flix"
+      new Flix().setOptions(opts).addPath(path).solve().get
+    }
+  }
+
 }

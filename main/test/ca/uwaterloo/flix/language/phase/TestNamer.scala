@@ -16,22 +16,24 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.{Flix, IValue, Invokable}
+import ca.uwaterloo.flix.language.errors.{NameError, TypeError}
 import org.scalatest.FunSuite
 
-class TestResolver extends FunSuite {
+class TestNamer extends FunSuite with TestUtils {
 
-  test("DuplicateDefinition01") {
+  test("DuplicateDefinition.01") {
     val input =
       s"""
          |def f: Int = 42
          |def f: Int = 21
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
+    expectError[NameError.DuplicateDefinition](result)
   }
 
-  test("DuplicateDefinition02") {
+  test("DuplicateDefinition.02") {
     val input =
       s"""
          |def f: Int = 42
@@ -39,10 +41,10 @@ class TestResolver extends FunSuite {
          |def f: Int = 11
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
+    expectError[NameError.DuplicateDefinition](result)
   }
 
-  test("DuplicateDefinition03") {
+  test("DuplicateDefinition.03") {
     val input =
       s"""
          |def f(x: Int): Int = 42
@@ -50,10 +52,10 @@ class TestResolver extends FunSuite {
          |def f(x: Int): Int = 11
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
+    expectError[NameError.DuplicateDefinition](result)
   }
 
-  test("DuplicateDefinition04") {
+  test("DuplicateDefinition.04") {
     val input =
       s"""
          |def f: Int = 42
@@ -61,10 +63,10 @@ class TestResolver extends FunSuite {
          |def f(x: Bool, y: Int, z: String): Int = 11
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
+    expectError[NameError.DuplicateDefinition](result)
   }
 
-  test("DuplicateDefinition05") {
+  test("DuplicateDefinition.05") {
     val input =
       s"""
          |namespace A {
@@ -76,10 +78,10 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
+    expectError[NameError.DuplicateDefinition](result)
   }
 
-  test("DuplicateDefinition06") {
+  test("DuplicateDefinition.06") {
     val input =
       s"""
          |namespace A.B.C {
@@ -95,16 +97,58 @@ class TestResolver extends FunSuite {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.DuplicateDefinition])
+    expectError[NameError.DuplicateDefinition](result)
   }
 
-  test("IllegalConstantName01") {
+  test("DuplicateIndex.01") {
+    val input =
+      s"""
+         |rel R(x: Int)
+         |
+         |index R({x})
+         |index R({x})
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateIndex](result)
+  }
+
+  test("DuplicateIndex.02") {
+    val input =
+      s"""
+         |namespace a {
+         |  rel R(x: Int)
+         |
+         |  index R({x})
+         |  index R({x})
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateIndex](result)
+  }
+
+  // TODO: DuplicateIndex in different namespaces.
+  ignore("DuplicateIndex.03") {
+    val input =
+      s"""
+         |namespace a {
+         |  rel R(x: Int)
+         |
+         |  index R({x})
+         |}
+         |
+         |index a/R({x})
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateIndex](result)
+  }
+
+  test("IllegalDefinitionName.01") {
     val input = "def F: Int = 42"
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
+    expectError[NameError.IllegalDefinitionName](result)
   }
 
-  test("IllegalConstantName02") {
+  test("IllegalDefinitionName.02") {
     val input =
       s"""
          |namespace A {
@@ -112,10 +156,10 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
+    expectError[NameError.IllegalDefinitionName](result)
   }
 
-  test("IllegalConstantName03") {
+  test("IllegalDefinitionName.03") {
     val input =
       s"""
          |namespace A {
@@ -123,10 +167,10 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
+    expectError[NameError.IllegalDefinitionName](result)
   }
 
-  test("IllegalConstantName04") {
+  test("IllegalDefinitionName.04") {
     val input =
       s"""
          |namespace A {
@@ -134,65 +178,115 @@ class TestResolver extends FunSuite {
          |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalConstantName])
+    expectError[NameError.IllegalDefinitionName](result)
   }
 
-  test("IllegalRelationName01") {
+  test("IllegalRelationName.01") {
+    val input = "rel f(x: Int)"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.IllegalTableName](result)
+  }
+
+  test("IllegalRelationName.02") {
+    val input = "rel foo(x: Int)"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.IllegalTableName](result)
+  }
+
+  test("IllegalRelationName.03") {
+    val input = "rel fOO(x: Int)"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.IllegalTableName](result)
+  }
+
+  test("IllegalLatticeName.01") {
+    val input = "lat f(x: Int)"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.IllegalTableName](result)
+  }
+
+  test("IllegalLatticeName.02") {
+    val input = "lat foo(x: Int)"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.IllegalTableName](result)
+  }
+
+  test("IllegalLatticeName.03") {
+    val input = "lat fOO(x: Int)"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.IllegalTableName](result)
+  }
+
+  test("UnsafeFact.01") {
     val input =
       s"""
-         |namespace A {
-         |  rel f(x: Int)
-         |}
+         |rel R(x: Int)
+         |
+         |R(x).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalRelationName])
+    expectError[TypeError.UnresolvedRef](result)
   }
 
-  test("IllegalRelationName02") {
+  test("UnsafeFact.02") {
     val input =
       s"""
-         |namespace A {
-         |  rel foo(x: Int)
-         |}
+         |rel R(x: Int, y: Int)
+         |
+         |R(42, x).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalRelationName])
+    expectError[TypeError.UnresolvedRef](result)
   }
 
-  test("IllegalRelationName03") {
+  test("UnsafeFact.03") {
     val input =
       s"""
-         |namespace A {
-         |  rel fOO(x: Int)
-         |}
+         |rel R(x: Int, y: Int, z: Int)
+         |
+         |R(42, x, 21).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.IllegalRelationName])
+    expectError[TypeError.UnresolvedRef](result)
   }
 
-  test("UnresolvedConstantReference01") {
+  // TODO
+  ignore("UnsafeRule.01") {
     val input =
       s"""
-         |namespace A {
-         |  def f: Int = x;
-         |}
+         |rel R(x: Int)
+         |
+         |R(x) :- R(y).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedConstantReference])
+    expectError[TypeError.UnresolvedRef](result)
   }
 
-  test("UnresolvedConstantReference02") {
+  // TODO
+  ignore("UnsafeRule.02") {
     val input =
       s"""
-         |namespace A {
-         |  def f(x: Int, y: Int): Int = x + y + z;
-         |}
+         |rel R(x: Int, y: Int)
+         |
+         |R(x, y) :- R(x, z).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedConstantReference])
+    expectError[TypeError.UnresolvedRef](result)
   }
 
-  test("UnresolvedEnumReference01") {
+  // TODO
+  ignore("UnsafeRule.03") {
+    val input =
+      s"""
+         |rel R(x: Int, y: Int, z: Int)
+         |
+         |R(x, y, z) :- R(x, w, z).
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[TypeError.UnresolvedRef](result)
+  }
+
+  test("UnresolvedEnum.01") {
     val input =
       s"""
          |namespace A {
@@ -200,10 +294,10 @@ class TestResolver extends FunSuite {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedEnumReference])
+    expectError[TypeError.UnresolvedTag](result)
   }
 
-  test("UnresolvedEnumReference02") {
+  test("UnresolvedEnum.02") {
     val input =
       s"""
          |namespace A {
@@ -211,26 +305,24 @@ class TestResolver extends FunSuite {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedEnumReference])
+    expectError[TypeError.UnresolvedTag](result)
   }
 
-  test("UnresolvedTagReference01") {
+  test("UnresolvedTag.01") {
     val input =
       s"""
-         |namespace A {
-         |  enum B {
-         |    case Foo,
-         |    case Bar
-         |  }
-         |
-         |  def f: B = B.Qux;
+         |enum A {
+         |  case Foo
          |}
+         |
+         |def f: A = A.Qux;
+         |
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
+    expectError[TypeError.UnresolvedTag](result)
   }
 
-  test("UnresolvedTagReference02") {
+  test("UnresolvedTag.02") {
     val input =
       s"""
          |namespace A {
@@ -243,10 +335,10 @@ class TestResolver extends FunSuite {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
+    expectError[TypeError.UnresolvedTag](result)
   }
 
-  test("UnresolvedTagReference03") {
+  test("UnresolvedTag.03") {
     val input =
       s"""
          |namespace A {
@@ -261,50 +353,30 @@ class TestResolver extends FunSuite {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTagReference])
+    expectError[TypeError.UnresolvedTag](result)
   }
 
-  test("UnresolvedRelationReference01") {
-    val input =
-      s"""namespace A {
-          |  VarPointsTo(1, 2).
-          |};
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedRelationReference])
-  }
-
-  test("UnresolvedRelationReference02") {
-    val input =
-      s"""namespace A {
-          |  VarPointsTo(1, 2).
-          |};
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedRelationReference])
-  }
-
-  test("UnresolvedTypeReference01") {
+  test("UnresolvedType.01") {
     val input = "def x: Foo = 42"
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTypeReference])
+    expectError[TypeError.UnresolvedType](result)
   }
 
-  test("UnresolvedTypeReference02") {
+  test("UnresolvedType.02") {
     val input =
       s"""namespace A {
           |  def foo(bar: Baz, baz: Baz): Qux = bar;
           |};
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Resolver.ResolverError.UnresolvedTypeReference])
+    expectError[TypeError.UnresolvedType](result)
   }
 
-  test("Expression.Hook01") {
+  test("Expression.Hook.01") {
     val input =
       s"""namespace A {
           |  def f(x: Int): Bool = g(x)
-          |};
+          |}
        """.stripMargin
     val flix = new Flix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType)
@@ -316,11 +388,11 @@ class TestResolver extends FunSuite {
     flix.compile().get
   }
 
-  test("Expression.Hook02") {
+  test("Expression.Hook.02") {
     val input =
       s"""namespace A {
           |  def f(x: Bool, y: Int, z: Str): Bool = g(x, y, z)
-          |};
+          |}
        """.stripMargin
     val flix = new Flix()
     val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkInt32Type, flix.mkStrType), flix.mkBoolType)
@@ -332,13 +404,13 @@ class TestResolver extends FunSuite {
     flix.compile().get
   }
 
-  test("Expression.HookFilter01") {
+  test("Expression.HookFilter.01") {
     val input =
       s"""namespace A {
           |  rel R(a: Bool, b: Int, c: Str);
           |
           |  R(x, y, z) :- f(x, y, z), R(x, y, z).
-          |};
+          |}
        """.stripMargin
     val flix = new Flix()
     val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkInt32Type, flix.mkStrType), flix.mkBoolType)
@@ -351,13 +423,13 @@ class TestResolver extends FunSuite {
     assert(result.isSuccess)
   }
 
-  test("Expression.HookApply01") {
+  test("Expression.HookApply.01") {
     val input =
       s"""namespace A {
           |  rel R(a: Bool, b: Int, c: Str);
           |
           |  R(x, y, f(x, y, z)) :- R(x, y, z).
-          |};
+          |}
        """.stripMargin
     val flix = new Flix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkStrType), flix.mkStrType)

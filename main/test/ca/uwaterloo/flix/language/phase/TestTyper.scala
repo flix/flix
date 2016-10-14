@@ -16,24 +16,12 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.errors.TypeError
 import org.scalatest.FunSuite
 
-class TestTyper extends FunSuite {
-
-  // TODO: Consider using real syntax?
-  def ident(s: String): Name.Ident = Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
-
-  @deprecated
-  val SL = SourceLocation.Unknown
-  @deprecated
-  val Root = ResolvedAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty, Map.empty, Time.Default)
-  @deprecated
-  val Ident = ident("x")
-  @deprecated
-  val RName = Symbol.Resolved.mk(List("foo", "bar"))
+class TestTyper extends FunSuite with TestUtils {
 
   /////////////////////////////////////////////////////////////////////////////
   // POSITIVE TEST CASES                                                     //
@@ -96,8 +84,6 @@ class TestTyper extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
-  // TODO: Sort
-
   test("Expression.Bool.True") {
     val input = "def f: Bool = true"
     val result = new Flix().addStr(input).compile()
@@ -168,90 +154,48 @@ class TestTyper extends FunSuite {
   }
 
   test("Expression.Lambda01") {
-    val x = ident("x")
-
-    val rast = ResolvedAst.Expression.Lambda(
-      formals = List(ResolvedAst.FormalArg(x, Type.Int32)),
-      retTpe = Type.Unit,
-      body = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit(SL), SL)
-      , SL)
-
-    val expectedType = Type.Lambda(List(Type.Int32), Type.Unit)
-    val actualType = Typer.Expression.typer(rast, Root).get.tpe
-    assertResult(expectedType)(actualType)
+    val input =
+      """
+        |def f(g: Int -> Bool): Bool = g(42)
+        |
+        |def r: Bool = f(x -> x == 21)
+        |
+      """.stripMargin
+    new Flix().addStr(input).solve().get
   }
 
   test("Expression.Lambda02") {
-    val x = ident("x")
-    val y = ident("y")
-    val z = ident("z")
-    val w = ident("w")
-
-    val rast = ResolvedAst.Expression.Lambda(
-      formals = List(
-        ResolvedAst.FormalArg(x, Type.Unit),
-        ResolvedAst.FormalArg(y, Type.Bool),
-        ResolvedAst.FormalArg(z, Type.Int32),
-        ResolvedAst.FormalArg(w, Type.Str)
-      ),
-      retTpe = Type.Str,
-      body = ResolvedAst.Expression.Var(w, SL)
-      , SL)
-
-    val expectedType = Type.Lambda(
-      args = List(
-        Type.Unit,
-        Type.Bool,
-        Type.Int32,
-        Type.Str
-      ), retTpe = Type.Str)
-    val actualType = Typer.Expression.typer(rast, Root).get.tpe
-    assertResult(expectedType)(actualType)
+    val input =
+      """
+        |def f(g: (Bool, Char, Int) -> Bool): Bool = g(true, 'a', 42)
+        |
+        |def r: Bool = f((x, y, z) -> z == 21)
+        |
+      """.stripMargin
+    new Flix().addStr(input).solve().get
   }
 
-
-
-  test("Expression.Apply01") {
-    val x = ident("x")
-    val rast = ResolvedAst.Expression.Apply(
-      lambda =
-        ResolvedAst.Expression.Lambda(
-          formals = List(ResolvedAst.FormalArg(x, Type.Int32)),
-          retTpe = Type.Unit,
-          body = ResolvedAst.Expression.Lit(ResolvedAst.Literal.Unit(SL), SL)
-          , SL),
-      args = List(ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int32(42, SL), SL)), SL)
-
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Unit)(result.get.tpe)
+  test("Expression.Lambda03") {
+    val input =
+      """
+        |def f(w: Int): Int -> Bool = x -> x == w
+        |
+        |def r: Int -> Bool = f(42)
+        |
+      """.stripMargin
+    new Flix().addStr(input).solve().get
   }
 
-  test("Expression.Apply02") {
-    val x = ident("x")
-    val y = ident("y")
-    val z = ident("z")
-
-    val rast = ResolvedAst.Expression.Apply(
-      lambda =
-        ResolvedAst.Expression.Lambda(
-          formals = List(
-            ResolvedAst.FormalArg(x, Type.Bool),
-            ResolvedAst.FormalArg(y, Type.Int32),
-            ResolvedAst.FormalArg(z, Type.Str)
-          ),
-          retTpe = Type.Int32,
-          body = ResolvedAst.Expression.Var(y, SL)
-          , SL),
-      args = List(
-        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL),
-        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int32(42, SL), SL),
-        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo", SL), SL)
-      ), SL)
-
-    val result = Typer.Expression.typer(rast, Root)
-    assertResult(Type.Int32)(result.get.tpe)
+  test("Expression.Lambda04") {
+    val input =
+      """
+        |def f(w: Int): (Bool, Int, Char) -> Bool = (x, y, z) -> y == w
+        |
+        |def r: (Bool, Int, Char) -> Bool = f(42)
+        |
+      """.stripMargin
+    new Flix().addStr(input).solve().get
   }
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Unary (Positive)                                                        //
@@ -769,6 +713,30 @@ class TestTyper extends FunSuite {
     result.get
   }
 
+  test("Expression.Tag05") {
+    val input =
+      """enum Foo[a] {
+        |  case Foo(a)
+        |}
+        |
+        |def f(x: Int): Foo[Int] = Foo.Foo(x)
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Tag06") {
+    val input =
+      """enum Foo[a, b, c] {
+        |  case Foo(a, b, c)
+        |}
+        |
+        |def f(x: Bool, y: Char, z: Int): Foo[Bool, Char, Int] = Foo.Foo(x, y, z)
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Tuple (Positive)                                                        //
   /////////////////////////////////////////////////////////////////////////////
@@ -803,6 +771,21 @@ class TestTyper extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // UserError (Positive)                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Expression.UserError.01") {
+    val input = "def f: Unit = ???"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.UserError.02") {
+    val input = "def f: Int = ???"
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Ascribe (Positive)                                                      //
   /////////////////////////////////////////////////////////////////////////////
   test("Expression.Ascribe01") {
@@ -822,31 +805,6 @@ class TestTyper extends FunSuite {
     val result = new Flix().addStr(input).compile()
     result.get
   }
-
-  test("NoSuchLattice01") {
-    val input =
-      s"""namespace A {
-          |  lat A(x: Int, y: Int);
-          |};
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError.NoSuchLattice])
-  }
-
-  test("NoSuchLattice02") {
-    val input =
-      s"""namespace A {
-          |  enum Elm {
-          |    case Foo
-          |  }
-          |
-         |  lat A(x: Int, y: Elm);
-          |};
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError.NoSuchLattice])
-  }
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
@@ -906,79 +864,24 @@ class TestTyper extends FunSuite {
     result.get
   }
 
-
   test("Definition.BoundedLattice.TypeError01") {
     val input =
       """let Int<> = (0, 1, 2, 3, 4);
       """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+    assert(result.errors.head.isInstanceOf[TypeError])
   }
 
   test("Definition.BoundedLattice.TypeError02") {
     val input =
-      """|def leq(x: Int, y: Int): Bool = true;
+      """def leq(x: Int, y: Int): Bool = true;
         |def lub(x: Int, y: Int): Int = 42;
         |def glb(x: Int, y: Int): Int = 21;
         |
         |let Int<> = (0, 1, lub, leq, glb);
       """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError])
-  }
-
-  test("Expression.Lambda.TypeError") {
-    val x = ident("x")
-    val y = ident("y")
-    val z = ident("z")
-    val w = ident("w")
-
-    val rast = ResolvedAst.Expression.Lambda(
-      formals = List(
-        ResolvedAst.FormalArg(x, Type.Unit),
-        ResolvedAst.FormalArg(y, Type.Bool),
-        ResolvedAst.FormalArg(z, Type.Int32),
-        ResolvedAst.FormalArg(w, Type.Str)
-      ),
-      retTpe = Type.Unit,
-      body = ResolvedAst.Expression.Var(w, SL)
-      , SL)
-
-    val result = Typer.Expression.typer(rast, Root)
-    assert(result.isFailure)
-  }
-
-
-  test("Pattern.TypeError") {
-    val rast = ResolvedAst.Pattern.Lit(ResolvedAst.Literal.Unit(SL), SL)
-    val tpe = Type.Bool
-    val result = Typer.Pattern.typer(rast, tpe, Root)
-    assert(result.isFailure)
-  }
-  test("Expression.Apply.TypeError.IllegalArgumentType") {
-    val x = ident("x")
-    val y = ident("y")
-    val z = ident("z")
-
-    val rast = ResolvedAst.Expression.Apply(
-      lambda =
-        ResolvedAst.Expression.Lambda(
-          formals = List(
-            ResolvedAst.FormalArg(x, Type.Bool),
-            ResolvedAst.FormalArg(y, Type.Int32),
-            ResolvedAst.FormalArg(z, Type.Str)
-          ),
-          retTpe = Type.Int32,
-          body = ResolvedAst.Expression.Var(y, SL), SL
-        ),
-      args = List(
-        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Str("foo", SL), SL),
-        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Int32(42, SL), SL),
-        ResolvedAst.Expression.Lit(ResolvedAst.Literal.Bool(true, SL), SL)
-      ), SL)
-
-    val result = Typer.Expression.typer(rast, Root)
-    assert(result.isFailure)
+    assert(result.errors.head.isInstanceOf[TypeError])
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -991,25 +894,25 @@ class TestTyper extends FunSuite {
   test("Expression.Unary.LogicalNot.TypeError") {
     val input = "def f: Bool = !42"
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+    assert(result.errors.head.isInstanceOf[TypeError])
   }
 
   test("Expression.Unary.Plus.TypeError") {
     val input = "def f: Int = +true"
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+    assert(result.errors.head.isInstanceOf[TypeError])
   }
 
   test("Expression.Unary.Minus.TypeError") {
     val input = "def f: Int = -true"
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+    assert(result.errors.head.isInstanceOf[TypeError])
   }
 
   test("Expression.Unary.BitwiseNegate.TypeError") {
     val input = "def f: Int = ~true"
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+    assert(result.errors.head.isInstanceOf[TypeError])
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1018,13 +921,56 @@ class TestTyper extends FunSuite {
   test("Expression.IfThenElse.TypeError.NonBooleanCondition") {
     val input = "def f: Int = if (42) 1 else 2"
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+    assert(result.errors.head.isInstanceOf[TypeError])
   }
 
   test("Expression.IfThenElse.TypeError.MismatchedBranches") {
     val input = "def f: Int = if (true) true else 1234"
     val result = new Flix().addStr(input).compile()
-    assert(result.errors.head.isInstanceOf[Typer.TypeError])
+    assert(result.errors.head.isInstanceOf[TypeError])
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Unresolved Symbols                                                      //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("UnresolvedDefinition01") {
+    val input = "def f: Int = x"
+    val result = new Flix().addStr(input).compile()
+    expectError[TypeError.UnresolvedRef](result)
+  }
+
+  test("UnresolvedDefinition02") {
+    val input =
+      s"""
+         |namespace A {
+         |  def f(x: Int, y: Int): Int = x + y + z;
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[TypeError.UnresolvedRef](result)
+  }
+
+  test("UnresolvedTable01") {
+    val input = "VarPointsTo(1, 2)."
+    val result = new Flix().addStr(input).compile()
+    expectError[TypeError.UnresolvedTable](result)
+  }
+
+  test("UnresolvedTable02") {
+    val input =
+      s"""namespace A {
+          |  VarPointsTo(1, 2).
+          |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[TypeError.UnresolvedTable](result)
+  }
+
+  test("UnresolvedTable03") {
+    val input = "index AddrOf({foo, bar})"
+    val result = new Flix().addStr(input).compile()
+    expectError[TypeError.UnresolvedTable](result)
   }
 
 }

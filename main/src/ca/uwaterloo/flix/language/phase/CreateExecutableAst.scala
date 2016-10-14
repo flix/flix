@@ -55,7 +55,7 @@ object CreateExecutableAst {
 
       for (rule <- rules) {
         rule.head match {
-          case ExecutableAst.Predicate.Head.Table(sym, _, _, _) => result.update(sym, Set.empty)
+          case ExecutableAst.Predicate.Head.Table(sym, _, _) => result.update(sym, Set.empty)
           case _ => // nop
         }
       }
@@ -221,15 +221,27 @@ object CreateExecutableAst {
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
         val elmsArray = elms.map(toExecutable).toArray
         ExecutableAst.Expression.Tuple(elmsArray, tpe, loc)
-      case SimplifiedAst.Expression.CheckNil(exp, loc) => ExecutableAst.Expression.CheckNil(toExecutable(exp), loc)
-      case SimplifiedAst.Expression.CheckCons(exp, loc) => ExecutableAst.Expression.CheckCons(toExecutable(exp), loc)
+      case SimplifiedAst.Expression.FNil(tpe, loc) =>
+        ExecutableAst.Expression.FNil(tpe, loc)
+      case SimplifiedAst.Expression.FList(hd, tl, tpe, loc) =>
+        ExecutableAst.Expression.FList(toExecutable(hd), toExecutable(tl), tpe, loc)
+      case SimplifiedAst.Expression.IsNil(exp, loc) => ExecutableAst.Expression.IsNil(toExecutable(exp), loc)
+      case SimplifiedAst.Expression.IsList(exp, loc) => ExecutableAst.Expression.IsList(toExecutable(exp), loc)
+      case SimplifiedAst.Expression.GetHead(exp, tpe, loc) => ExecutableAst.Expression.GetHead(toExecutable(exp), tpe, loc)
+      case SimplifiedAst.Expression.GetTail(exp, tpe, loc) => ExecutableAst.Expression.GetTail(toExecutable(exp), tpe, loc)
       case SimplifiedAst.Expression.FSet(elms, tpe, loc) =>
         val elmsArray = elms.map(toExecutable).toArray
         ExecutableAst.Expression.FSet(elmsArray, tpe, loc)
       case SimplifiedAst.Expression.Existential(params, exp, loc) =>
-        ExecutableAst.Expression.Existential(params, toExecutable(exp), loc)
+        val ps = params map {
+          case SimplifiedAst.FormalArg(ident, tpe) => ExecutableAst.FormalArg(ident, tpe)
+        }
+        ExecutableAst.Expression.Existential(ps, toExecutable(exp), loc)
       case SimplifiedAst.Expression.Universal(params, exp, loc) =>
-        ExecutableAst.Expression.Universal(params, toExecutable(exp), loc)
+        val ps = params map {
+          case SimplifiedAst.FormalArg(ident, tpe) => ExecutableAst.FormalArg(ident, tpe)
+        }
+        ExecutableAst.Expression.Universal(ps, toExecutable(exp), loc)
       case SimplifiedAst.Expression.UserError(tpe, loc) => ExecutableAst.Expression.UserError(tpe, loc)
       case SimplifiedAst.Expression.MatchError(tpe, loc) => ExecutableAst.Expression.MatchError(tpe, loc)
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => ExecutableAst.Expression.SwitchError(tpe, loc)
@@ -242,8 +254,8 @@ object CreateExecutableAst {
       def toExecutable(sast: SimplifiedAst.Predicate.Head): ExecutableAst.Predicate.Head = sast match {
         case SimplifiedAst.Predicate.Head.True(loc) => ExecutableAst.Predicate.Head.True(loc)
         case SimplifiedAst.Predicate.Head.False(loc) => ExecutableAst.Predicate.Head.False(loc)
-        case SimplifiedAst.Predicate.Head.Table(name, terms, tpe, loc) =>
-          ExecutableAst.Predicate.Head.Table(name, terms.map(Term.toExecutable).toArray, tpe, loc)
+        case SimplifiedAst.Predicate.Head.Table(name, terms, loc) =>
+          ExecutableAst.Predicate.Head.Table(name, terms.map(Term.toExecutable).toArray, loc)
       }
     }
 
@@ -257,7 +269,7 @@ object CreateExecutableAst {
       }
 
       def toExecutable(sast: SimplifiedAst.Predicate.Body): ExecutableAst.Predicate.Body = sast match {
-        case SimplifiedAst.Predicate.Body.Table(sym, terms, tpe, loc) =>
+        case SimplifiedAst.Predicate.Body.Table(sym, terms, loc) =>
           val termsArray = terms.map(Term.toExecutable).toArray
           val index2var: Array[String] = {
             val r = new Array[String](termsArray.length)
@@ -272,19 +284,19 @@ object CreateExecutableAst {
             }
             r
           }
-          ExecutableAst.Predicate.Body.Table(sym, termsArray, index2var, freeVars(terms), tpe, loc)
-        case SimplifiedAst.Predicate.Body.ApplyFilter(name, terms, tpe, loc) =>
+          ExecutableAst.Predicate.Body.Table(sym, termsArray, index2var, freeVars(terms), loc)
+        case SimplifiedAst.Predicate.Body.ApplyFilter(name, terms, loc) =>
           val termsArray = terms.map(Term.toExecutable).toArray
-          ExecutableAst.Predicate.Body.ApplyFilter(name, termsArray, freeVars(terms), tpe, loc)
-        case SimplifiedAst.Predicate.Body.ApplyHookFilter(hook, terms, tpe, loc) =>
+          ExecutableAst.Predicate.Body.ApplyFilter(name, termsArray, freeVars(terms), loc)
+        case SimplifiedAst.Predicate.Body.ApplyHookFilter(hook, terms, loc) =>
           val termsArray = terms.map(Term.toExecutable).toArray
-          ExecutableAst.Predicate.Body.ApplyHookFilter(hook, termsArray, freeVars(terms), tpe, loc)
-        case SimplifiedAst.Predicate.Body.NotEqual(ident1, ident2, tpe, loc) =>
+          ExecutableAst.Predicate.Body.ApplyHookFilter(hook, termsArray, freeVars(terms), loc)
+        case SimplifiedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
           val freeVars = Set(ident1.name, ident2.name)
-          ExecutableAst.Predicate.Body.NotEqual(ident1, ident2, freeVars, tpe, loc)
-        case SimplifiedAst.Predicate.Body.Loop(ident, term, tpe, loc) =>
+          ExecutableAst.Predicate.Body.NotEqual(ident1, ident2, freeVars, loc)
+        case SimplifiedAst.Predicate.Body.Loop(ident, term, loc) =>
           val freeVars = Set.empty[String] // TODO
-          ExecutableAst.Predicate.Body.Loop(ident, Term.toExecutable(term), freeVars, tpe, loc)
+          ExecutableAst.Predicate.Body.Loop(ident, Term.toExecutable(term), freeVars, loc)
       }
     }
 
@@ -311,7 +323,7 @@ object CreateExecutableAst {
   }
 
   def toExecutable(sast: SimplifiedAst.Attribute): ExecutableAst.Attribute =
-    ExecutableAst.Attribute(sast.ident, sast.tpe)
+    ExecutableAst.Attribute(sast.name, sast.tpe)
 
   def toExecutable(sast: SimplifiedAst.FormalArg): ExecutableAst.FormalArg =
     ExecutableAst.FormalArg(sast.ident, sast.tpe)

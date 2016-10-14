@@ -112,7 +112,7 @@ object ExecutableAst {
       */
     def getQuantifiers: List[Expression.Var] = this match {
       case Expression.Universal(params, _, _) => params.map {
-        case Ast.FormalParam(ident, tpe) => Expression.Var(ident, -1, tpe, SourceLocation.Unknown)
+        case ExecutableAst.FormalArg(ident, tpe) => Expression.Var(ident, -1, tpe, SourceLocation.Unknown)
       }
       case _ => Nil
     }
@@ -349,7 +349,7 @@ object ExecutableAst {
       */
     case class MkClosureRef(ref: ExecutableAst.Expression.Ref,
                             freeVars: Array[FreeVar],
-                            tpe: Type.Lambda,
+                            tpe: Type,
                             loc: SourceLocation) extends ExecutableAst.Expression
 
     /**
@@ -368,11 +368,11 @@ object ExecutableAst {
     /**
       * A typed AST node representing a tail recursive call.
       *
-      * @param name the name of the function being called.
+      * @param name    the name of the function being called.
       * @param formals the formal parameters.
       * @param actuals the actual parameters.
-      * @param tpe  the return type of the function.
-      * @param loc  the source location of the expression.
+      * @param tpe     the return type of the function.
+      * @param loc     the source location of the expression.
       */
     case class ApplyTail(name: Symbol.Resolved,
                          formals: List[ExecutableAst.FormalArg],
@@ -482,12 +482,12 @@ object ExecutableAst {
       * @param exp the tag expression to check.
       * @param loc the source location of the expression.
       */
-    case class CheckTag(tag: Name.Ident,
+    case class CheckTag(tag: String,
                         exp: ExecutableAst.Expression,
                         loc: SourceLocation) extends ExecutableAst.Expression {
       final val tpe: Type = Type.Bool
 
-      override def toString: String = "CheckTag(" + tag.name + ", " + exp + ")"
+      override def toString: String = "CheckTag(" + tag + ", " + exp + ")"
     }
 
     /**
@@ -498,7 +498,7 @@ object ExecutableAst {
       * @param tpe the type of the inner tag value.
       * @param loc the source location of the expression.
       */
-    case class GetTagValue(tag: Name.Ident,
+    case class GetTagValue(tag: String,
                            exp: ExecutableAst.Expression,
                            tpe: Type,
                            loc: SourceLocation) extends ExecutableAst.Expression {
@@ -515,16 +515,16 @@ object ExecutableAst {
       * @param loc  The source location of the tag.
       */
     case class Tag(enum: Symbol.Resolved,
-                   tag: Name.Ident,
+                   tag: String,
                    exp: ExecutableAst.Expression,
-                   tpe: Type.Enum,
+                   tpe: Type,
                    loc: SourceLocation) extends ExecutableAst.Expression {
       override def toString: String = {
         val inner = exp match {
           case Expression.Unit => ""
           case _ => s"($exp)"
         }
-        tag.name + inner
+        tag + inner
       }
     }
 
@@ -556,23 +556,31 @@ object ExecutableAst {
       override def toString: String = "(" + elms.mkString(", ") + ")"
     }
 
-    case class CheckNil(exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
+    case class FNil(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class FList(hd: ExecutableAst.Expression, tl: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class IsNil(exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
       final val tpe: Type = Type.Bool
     }
 
-    case class CheckCons(exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
+    case class IsList(exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
       final val tpe: Type = Type.Bool
     }
+
+    case class GetHead(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class GetTail(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class FSet(elms: Array[ExecutableAst.Expression],
-                    tpe: Type.FSet,
+                    tpe: Type,
                     loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class Existential(params: List[Ast.FormalParam], exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
+    case class Existential(params: List[ExecutableAst.FormalArg], exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
       def tpe: Type = Type.Bool
     }
 
-    case class Universal(params: List[Ast.FormalParam], exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
+    case class Universal(params: List[ExecutableAst.FormalArg], exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
       def tpe: Type = Type.Bool
     }
 
@@ -585,8 +593,6 @@ object ExecutableAst {
   }
 
   sealed trait Predicate extends ExecutableAst {
-    def tpe: Type
-
     def loc: SourceLocation
   }
 
@@ -596,17 +602,12 @@ object ExecutableAst {
 
     object Head {
 
-      case class True(loc: SourceLocation) extends ExecutableAst.Predicate.Head {
-        def tpe: Type = Type.Predicate(Nil)
-      }
+      case class True(loc: SourceLocation) extends ExecutableAst.Predicate.Head
 
-      case class False(loc: SourceLocation) extends ExecutableAst.Predicate.Head {
-        def tpe: Type = Type.Predicate(Nil)
-      }
+      case class False(loc: SourceLocation) extends ExecutableAst.Predicate.Head
 
       case class Table(sym: Symbol.TableSym,
                        terms: Array[ExecutableAst.Term.Head],
-                       tpe: Type.Predicate,
                        loc: SourceLocation) extends ExecutableAst.Predicate.Head {
         /**
           * Returns the arity of the predicate.
@@ -629,7 +630,6 @@ object ExecutableAst {
                        terms: Array[ExecutableAst.Term.Body],
                        index2var: Array[String],
                        freeVars: Set[String],
-                       tpe: Type.Predicate,
                        loc: SourceLocation) extends ExecutableAst.Predicate.Body {
         /**
           * Returns the arity of this table predicate.
@@ -640,25 +640,21 @@ object ExecutableAst {
       case class ApplyFilter(name: Symbol.Resolved,
                              terms: Array[ExecutableAst.Term.Body],
                              freeVars: Set[String],
-                             tpe: Type.Lambda,
                              loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
       case class ApplyHookFilter(hook: Ast.Hook,
                                  terms: Array[ExecutableAst.Term.Body],
                                  freeVars: Set[String],
-                                 tpe: Type.Lambda,
                                  loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
       case class NotEqual(ident1: Name.Ident,
                           ident2: Name.Ident,
                           freeVars: Set[String],
-                          tpe: Type,
                           loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
       case class Loop(ident: Name.Ident,
                       term: ExecutableAst.Term.Head,
                       freeVars: Set[String],
-                      tpe: Type,
                       loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
     }
@@ -709,7 +705,7 @@ object ExecutableAst {
 
   }
 
-  case class Attribute(ident: Name.Ident, tpe: Type) extends ExecutableAst
+  case class Attribute(name: String, tpe: Type) extends ExecutableAst
 
   case class FormalArg(ident: Name.Ident, tpe: Type) extends ExecutableAst
 

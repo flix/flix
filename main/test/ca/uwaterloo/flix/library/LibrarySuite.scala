@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2016 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,18 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.library
+package ca.uwaterloo.flix.library
 
-package object combinators {
+import org.scalatest.{ParallelTestExecution, Suites}
 
-  /**
-    * TODO: Implement lattice combinators and find use cases.
-    *
-    * - The power set lattice.
-    * - The flat lattice.
-    * - Lifting a lattice over an element.
-    * - The product lattice.
-    * - The lexicographic product lattice.
-    * - The "sublattice" lattice.
-    * - ...
-    */
-
+class LibrarySuite extends Suites(
+  new TestBigInt,
+  new TestFloat32,
+  new TestFloat64,
+  new TestInt8,
+  new TestInt16,
+  new TestInt32,
+  new TestInt64
+) with ParallelTestExecution {
+  /* left empty */
 }

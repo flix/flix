@@ -21,7 +21,24 @@ object Name {
   /**
     * The root namespace.
     */
-  val RootNS = new NName(SourcePosition.Unknown, Nil, SourcePosition.Unknown)
+  val RootNS = NName(SourcePosition.Unknown, Nil, SourcePosition.Unknown)
+
+  /**
+    * Returns the given string `fqn` as a qualified name.
+    */
+  def mkQName(fqn: String): QName = {
+    val sp = SourcePosition.Unknown
+
+    if (!fqn.contains('/'))
+      return QName(sp, Name.RootNS, Ident(sp, fqn, sp), sp)
+
+    val index = fqn.indexOf('/')
+    val parts = fqn.substring(0, index).split('.').toList
+    val name = fqn.substring(index + 1, fqn.length)
+    val nname = NName(sp, parts.map(t => Name.Ident(sp, t, sp)), sp)
+    val ident = Ident(sp, name, sp)
+    QName(sp, nname, ident, sp)
+  }
 
   /**
     * Identifier.
@@ -93,6 +110,10 @@ object Name {
     * @param sp2       the position of the last character in the qualified name.
     */
   case class QName(sp1: SourcePosition, namespace: NName, ident: Ident, sp2: SourcePosition) {
+
+    // TODO: Temporary convenience method.
+    def toResolved: Symbol.Resolved = Symbol.Resolved.mk(namespace.parts ::: ident.name :: Nil)
+
     /**
       * Returns `true` if this name is qualified by a namespace.
       */
@@ -104,6 +125,16 @@ object Name {
     def isUnqualified: Boolean = !isQualified
 
     /**
+      * Returns `true` if the name of `this` qualified name is lowercase.
+      */
+    def isLowerCase: Boolean = ident.name.head.isLower
+
+    /**
+      * Returns `true` if the name of `this` qualified name is uppercase.
+      */
+    def isUpperCase: Boolean = ident.name.head.isUpper
+
+    /**
       * The source location of the name.
       */
     def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
@@ -111,8 +142,7 @@ object Name {
     /**
       * Human readable representation.
       */
-    override def toString: String =
-      if (isUnqualified) ident.toString else namespace.toString + "/" + ident
+    override def toString: String = if (isUnqualified) ident.toString else namespace.toString + "/" + ident
   }
 
 }

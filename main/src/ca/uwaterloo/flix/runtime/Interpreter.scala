@@ -97,9 +97,9 @@ object Interpreter {
     case Expression.Let(ident, _, exp1, exp2, _, _) =>
       val newEnv = env0 + (ident.name -> eval(exp1, root, env0))
       eval(exp2, root, newEnv)
-    case Expression.CheckTag(tag, exp, _) => Value.mkBool(Value.cast2tag(eval(exp, root, env0)).tag == tag.name)
+    case Expression.CheckTag(tag, exp, _) => Value.mkBool(Value.cast2tag(eval(exp, root, env0)).tag == tag)
     case Expression.GetTagValue(tag, exp, _, _) => Value.cast2tag(eval(exp, root, env0)).value
-    case Expression.Tag(name, ident, exp, _, _) => Value.mkTag(ident.name, eval(exp, root, env0))
+    case Expression.Tag(name, tag, exp, _, _) => Value.mkTag(tag, eval(exp, root, env0))
     case Expression.GetTupleIndex(base, offset, _, _) => Value.cast2tuple(eval(base, root, env0))(offset)
     case Expression.Tuple(elms, _, _) =>
       val evalElms = new Array[AnyRef](elms.length)
@@ -109,11 +109,35 @@ object Interpreter {
         i = i + 1
       }
       Value.Tuple(evalElms)
-    case Expression.CheckNil(exp, _) => ???
-    case Expression.CheckCons(exp, _) => ???
+    case Expression.FNil(tpe, loc) =>
+      value.FNil.getSingleton()
+    case Expression.FList(hd, tl, tpe, loc) =>
+      val h = eval(hd, root, env0)
+      val t = eval(tl, root, env0)
+      new value.FList(h, t)
+    case Expression.IsNil(exp, loc) =>
+      eval(exp, root, env0) match {
+        case v: value.FNil => java.lang.Boolean.TRUE
+        case _ => java.lang.Boolean.FALSE
+      }
+    case Expression.IsList(exp, loc) =>
+      eval(exp, root, env0) match {
+        case v: value.FList => java.lang.Boolean.TRUE
+        case _ => java.lang.Boolean.FALSE
+      }
+    case Expression.GetHead(exp, tpe, loc) =>
+      eval(exp, root, env0) match {
+        case v: value.FList => v.getHd
+        case v => throw InternalRuntimeException(s"Type Error: non-list value '$v'.")
+      }
+    case Expression.GetTail(exp, tpe, loc) =>
+      eval(exp, root, env0) match {
+        case v: value.FList => v.getTl
+        case v => throw InternalRuntimeException(s"Type Error: Unknown non-list value '$v'.")
+      }
     case Expression.FSet(elms, _, _) => Value.mkSet(elms.map(e => eval(e, root, env0)).toSet)
-    case Expression.Existential(params, exp, loc) => new InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
-    case Expression.Universal(params, exp, loc) => new InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
+    case Expression.Existential(params, exp, loc) => InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
+    case Expression.Universal(params, exp, loc) => InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
     case Expression.UserError(_, loc) => throw UserException("User exception.", loc)
     case Expression.MatchError(_, loc) => throw MatchException("Non-exhaustive match expression.", loc)
     case Expression.SwitchError(_, loc) => throw SwitchException("Non-exhaustive switch expression.", loc)
