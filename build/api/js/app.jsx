@@ -38,7 +38,7 @@ var LeftNavigationBar = React.createClass({
     render: function () {
         // Construct a list item for each namespace in the library.
         var menu = this.props.namespaces.map(
-            namespace => <li key={namespace.name}><a href="#">{namespace.name}</a></li>
+            namespace => <li key={namespace.name}><a href={namespace.name + ".html"}>{namespace.name}</a></li>
         );
         return (
             <div className="navbar">
@@ -299,16 +299,21 @@ var getJSON = function (url, callback) {
 };
 
 /**
- * Retrieve the data and show it.
+ * Boot the application.
  */
-getJSON("./js/__menu__.json", function (namespaces, err) {
-    if (err) {
-        console.log("Unable to get namespaces: " + err);
-    }
-    getJSON("./js/Int32.json", function (data, err) {
+function bootstrap(page) {
+    getJSON("./__menu__.json", function (namespaces, err) {
         if (err) {
-            console.log("Unable to get page data: " + err);
+            console.log("Unable to get namespaces: " + err);
         }
-        ReactDOM.render(<App namespaces={namespaces} data={data}/>, document.getElementById("app"));
+        getJSON(page, function (data, err) {
+            if (err) {
+                console.log("Unable to get page data: " + err);
+            }
+            ReactDOM.render(<App namespaces={namespaces} data={data}/>, document.getElementById("app"));
+        });
     });
-});
+}
+
+// Export the bootstrap function to the global window object.
+window.bootstrap = bootstrap;
