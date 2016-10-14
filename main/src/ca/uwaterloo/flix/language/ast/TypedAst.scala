@@ -147,10 +147,6 @@ object TypedAst {
 
     case class Tuple(elms: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class FNone(tpe: Type, loc: SourceLocation) extends TypedAst.Expression
-
-    case class FSome(exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
-
     case class FNil(tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class FList(hd: TypedAst.Expression, tl: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
@@ -240,10 +236,6 @@ object TypedAst {
     case class Tag(sym: Symbol.EnumSym, tag: String, pat: TypedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
     case class Tuple(elms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
-
-    case class FNone(tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
-
-    case class FSome(pat: TypedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
     case class FNil(tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 

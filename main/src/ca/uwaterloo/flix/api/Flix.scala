@@ -356,16 +356,6 @@ class Flix {
   }
 
   /**
-    * Returns the opt type parameterized by the given type `tpe`.
-    */
-  def mkOptType(tpe: IType): IType = {
-    if (tpe == null)
-      throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
-
-    new WrappedType(Type.mkFOpt(tpe.asInstanceOf[WrappedType].tpe))
-  }
-
-  /**
     * Returns the list type parameterized by the given type `tpe`.
     */
   def mkListType(tpe: IType): IType = {

@@ -68,7 +68,6 @@ object Unification {
       case Type.Native => Type.Native
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.FTuple(l) => Type.FTuple(l)
-      case Type.FOpt => Type.FOpt
       case Type.FList => Type.FList
       case Type.FVec => Type.FVec
       case Type.FSet => Type.FSet
@@ -150,7 +149,6 @@ object Unification {
       case (Type.Native, Type.Native) => Result.Ok(Substitution.empty)
       case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
       case (Type.FTuple(l1), Type.FTuple(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
-      case (Type.FOpt, Type.FOpt) => Result.Ok(Substitution.empty)
       case (Type.FList, Type.FList) => Result.Ok(Substitution.empty)
       case (Type.FVec, Type.FVec) => Result.Ok(Substitution.empty)
       case (Type.FSet, Type.FSet) => Result.Ok(Substitution.empty)

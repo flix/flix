@@ -1127,48 +1127,6 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Expression.Opt.01") {
-    val input = "def f: Opt[Char] = None"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Expression.Opt.02") {
-    val input = "def f: Opt[Int] = None"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Expression.Opt.03") {
-    val input = "def f: Opt[Char] = Some('a')"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Expression.Opt.04") {
-    val input = "def f: Opt[Int] = Some(42)"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Expression.Opt.05") {
-    val input = "def f: Opt[(Char, Int)] = None"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Expression.Opt.06") {
-    val input = "def f: Opt[(Char, Int)] = Some(('a', 42))"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
   test("Expression.List.01") {
     val input = "def f: List[Int] = Nil"
     run(input)
@@ -1747,46 +1705,6 @@ class TestParser extends FunSuite with TestUtils {
         |}
       """.stripMargin
     run(input)
-  }
-
-  test("Pattern.Opt.01") {
-    val input =
-      """def f(o: Opt[Int]): Int = match o with {
-        |  case None => 0
-        |  case Some(x) => x
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Pattern.Opt.02") {
-    val input =
-      """def f(o: Opt[Int]): Int = match o with {
-        |  case None => 0
-        |  case Some(1) => 1
-        |  case Some(2) => 2
-        |  case Some(x) => x + x
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Pattern.Opt.03") {
-    val input =
-      """def f(o: Opt[Char]): Int = match o with {
-        |  case None => 0
-        |  case Some('a') => 1
-        |  case Some('b') => 2
-        |  case Some(c)   => 3
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
   }
 
   test("Pattern.List.01") {
@@ -2399,13 +2317,6 @@ class TestParser extends FunSuite with TestUtils {
   test("Type.Lambda.03") {
     val input = "def f: Str -> (Bool, Char, Int) = x -> (true, 'a', 42)"
     run(input)
-  }
-
-  test("Type.Opt.01") {
-    val input = "def f: Opt[Int] = None"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
   }
 
   test("Type.List.01") {

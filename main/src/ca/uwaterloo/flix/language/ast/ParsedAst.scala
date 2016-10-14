@@ -521,23 +521,6 @@ object ParsedAst {
     case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * None Expression (None is value of type Opt[A]).
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class FNone(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Some Expression (Some(v) is value of type Opt[A]).
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the value expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class FSome(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Nil Expression (Nil is the empty list of type List[A]).
       *
       * @param sp1 the position of the first character in the expression.
@@ -671,8 +654,6 @@ object ParsedAst {
       case Pattern.Lit(sp1, _, _) => sp1
       case Pattern.Tag(sp1, _, _, _, _) => sp1
       case Pattern.Tuple(sp1, _, _) => sp1
-      case Pattern.FNone(sp1, _) => sp1
-      case Pattern.FSome(sp1, _, _) => sp1
       case Pattern.FNil(sp1, sp2) => sp1
       case Pattern.FList(hd, _, _) => hd.leftMostSourcePosition
       case Pattern.FVec(sp1, _, _, _) => sp1
@@ -731,23 +712,6 @@ object ParsedAst {
       * @param sp2  the position of the last character in the pattern.
       */
     case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
-
-    /**
-      * None Pattern (None is of type Opt[A]).
-      *
-      * @param sp1 the position of the first character in the pattern.
-      * @param sp2 the position of the last character in the pattern.
-      */
-    case class FNone(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Pattern
-
-    /**
-      * Some Pattern (Some(v) is of type Opt[A]).
-      *
-      * @param sp1 the position of the first character in the pattern.
-      * @param pat the value pattern.
-      * @param sp2 the position of the last character in the pattern.
-      */
-    case class FSome(sp1: SourcePosition, pat: ParsedAst.Pattern, sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * Nil Pattern (the empty list pattern).

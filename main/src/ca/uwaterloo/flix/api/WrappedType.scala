@@ -68,11 +68,6 @@ final class WrappedType(val tpe: Type) extends IType {
     case _ => false
   }
 
-  def isOpt: Boolean = tpe match {
-    case Type.Apply(Type.FOpt, _) => true
-    case _ => false
-  }
-
   def isList: Boolean = tpe match {
     case Type.Apply(Type.FList, _) => true
     case _ => false
@@ -95,11 +90,6 @@ final class WrappedType(val tpe: Type) extends IType {
 
   def getTupleParams: Array[IType] = tpe match {
     case Type.Apply(Type.FTuple(l), elms) => elms.map(t => new WrappedType(t)).toArray
-    case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
-  }
-
-  def getOptParam: IType = tpe match {
-    case Type.Apply(Type.FOpt, List(elm)) => new WrappedType(elm)
     case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 

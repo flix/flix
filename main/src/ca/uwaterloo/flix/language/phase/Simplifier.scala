@@ -211,8 +211,6 @@ object Simplifier {
         SimplifiedAst.Expression.Tag(sym.toResolved, tag, simplify(e), tpe, loc)
       case TypedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
-      case TypedAst.Expression.FNone(tpe, loc) => ??? // TODO
-      case TypedAst.Expression.FSome(e, tpe, loc) => ??? // TODO
       case TypedAst.Expression.FNil(tpe, loc) => SimplifiedAst.Expression.FNil(tpe, loc)
       case TypedAst.Expression.FList(hd, tl, tpe, loc) => SimplifiedAst.Expression.FList(simplify(hd), simplify(tl), tpe, loc)
       case TypedAst.Expression.FVec(elms, tpe, loc) => ??? // TODO
@@ -320,10 +318,6 @@ object Simplifier {
           case (((pat, name), idx), exp) =>
             SExp.Let(name, -1, SExp.GetTupleIndex(SExp.Var(v, -1, tpe, loc), idx, pat.tpe, loc), exp, succ.tpe, loc)
         }
-
-      case (FNone(tpe, loc) :: ps, v :: vs) => ???
-
-      case (FSome(pat, tpe, loc) :: ps, v :: vs) => ???
 
       /**
         * Matching Nil may succeed or fail.
