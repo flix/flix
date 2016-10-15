@@ -16,12 +16,20 @@
 
 package ca.uwaterloo.flix.language
 
+import java.nio.charset.Charset
+import java.nio.file.Files
+import java.util.zip.ZipFile
+
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
+import ca.uwaterloo.flix.util.StreamOps
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{AnsiConsole, Validation}
 
-import scala.util.{Failure, Success}
+import org.antlr.v4.runtime.ANTLRInputStream
+import org.antlr.v4.runtime.CommonTokenStream
+
+import scala.util.{Try,Failure, Success}
 
 /**
   * A compiler's primary function is to compile, organize the compilation, and go right back to compiling.
@@ -57,14 +65,34 @@ object Compiler {
     */
   implicit val ConsoleCtx = new AnsiConsole()
 
+  /*
+    * Implicitly assumed default charset.
+    */
+  val DefaultCharset = Charset.forName("UTF-8")
+
   /**
     * Returns the abstract syntax tree of the given string `input`.
     */
   def parse(source: SourceInput): Validation[ParsedAst.Root, CompilationError] = {
-    val parser = new Parser(source)
-    parser.Root.run() match {
-      case Success(ast) => ast.toSuccess
-      case Failure(e: org.parboiled2.ParseError) => ParseError(parser.formatError(e), source).toFailure
+
+    val input: String = source match {
+      case SourceInput.Str(str) => str
+      case SourceInput.TxtFile(path) =>
+        new String(Files.readAllBytes(path), DefaultCharset)
+      case SourceInput.ZipFile(path) =>
+        val file = new ZipFile(path.toFile)
+        val entry = file.entries().nextElement()
+        val inputStream = file.getInputStream(entry)
+        new String(StreamOps.readAllBytes(inputStream), DefaultCharset)
+    }
+
+    val inputstream = new ANTLRInputStream(input)
+    val lexer = new FlixLexer(inputstream)
+    val tokens = new CommonTokenStream(lexer)
+    val parser = new FlixParser(tokens)
+    val visitor = new AST_FlixVisitor()
+    Try(parser.start()) match {
+      case Success(tree) => visitor.visitStart(tree).toSuccess
       case Failure(e) => ParseError(e.getMessage, source).toFailure
     }
   }

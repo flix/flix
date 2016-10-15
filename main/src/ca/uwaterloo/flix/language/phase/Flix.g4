@@ -6,7 +6,9 @@ Daniel Ohashi 2016
 
 grammar Flix;
 
-
+@header {
+package ca.uwaterloo.flix.language.phase;
+}
 
 //General purpose tokens
 fragment NewLine : [\n\r];
@@ -16,7 +18,7 @@ fragment MultiLineComment : '/*' .*? '*/';
 WS : (' ' | '\t' | NewLine | Comment)+;
 SC : ';';
 Comment : SingleLineComment | MultiLineComment;
-Ident : [a-zA-z⊥⊤⊑⊔⊓▽△⊡][a-zA-Z0-9_$⊥⊑]*;
+Ident : [a-zA-Z⊥⊤⊑⊔⊓▽△⊡][a-zA-Z0-9_$⊥⊑]*;
 
 //Keywords/symbols that always evaluate to one token
 FNone : 'None' ;
@@ -28,7 +30,7 @@ UserError : '???';
 
 
 //Root rule
-start : WS? (imports WS)* (decls WS)*;
+start : WS? s_imports? WS? decls? WS?;
 
 optSC : (WS? SC)?;
 
@@ -55,7 +57,7 @@ idents : Ident (WS? ',' WS? Ident)*;
 match_rule : 'case' WS pattern WS? '=>' WS? expression SC?;
 match_rules : match_rule (WS? match_rule)*;
 
-switch_rule : 'case' WS expression WS? '=>' WS? expression;
+switch_rule : 'case' WS expression WS? '=>' WS? expression SC?;
 switch_rules : switch_rule (WS? switch_rule)*;
 
 typeparam : Ident (WS? ':' WS? type)?;
@@ -65,14 +67,15 @@ class_typeparams : type (WS? ',' WS? type)*;
 
 contextBound : Ident '[' WS? class_typeparams WS? ']';
 contextBounds : contextBound (WS? ',' WS? contextBound)*;
-contextBoundsList : ('<=' WS? contextBounds WS?)?
+contextBoundsList : ('<=' WS? contextBounds WS?)?;
 
-functions : decls_function (WS decls_function)*
+functions : decls_function (WS decls_function)*;
 
 //Imports
-imports : 	import_wildcard |
+s_import : 	import_wildcard |
 			import_definition |
 			import_namespace;
+s_imports : s_import (WS? s_import)*;
 
 import_wildcard : 'import' WS nname '/' Wild optSC;
 import_definition : 'import' WS nname '/' Ident optSC;
@@ -81,7 +84,7 @@ import_namespace : 'import' WS nname optSC;
 
 
 //Declarations
-decls : decls_namespace |
+decl : decls_namespace |
 		decls_enum |
 		decls_relation |
 		decls_lattice |
@@ -94,8 +97,10 @@ decls : decls_namespace |
 		decls_fact |
 		decls_rule |
 		decls_letlattice;
+decls : decl (WS? decl)*;
 
-decls_namespace : 'namespace' WS nname WS? '{' WS? decls* WS? '}' optSC;
+
+decls_namespace : 'namespace' WS nname WS? '{' WS? decls? WS? '}' optSC;
 
 decls_enum : 'enum' WS Ident WS? '{' WS? cases WS? (',' WS? cases WS?)* '}' optSC;
 cases : 'case' WS Ident tuple?;
@@ -123,7 +128,7 @@ decls_fact : predicate WS? '.';
 decls_rule : predicate WS? ':-' WS? predicates WS? '.';
 
 elms : expressions;
-decls_letlattice : 'let' WS? type '<>' WS? '=' WS? '(' WS? elms WS? ')'
+decls_letlattice : 'let' WS? type '<>' WS? '=' WS? '(' WS? elms WS? ')' optSC;
 
 
 //Expressions
@@ -198,9 +203,9 @@ p_fMap : '@{' WS? p_keyValues? (WS? ',' WS? '...')? WS? '}';
 //Literals
 bools : 'true' | 'false';
 
-chars : '\'' . '\'';
+Chars : '\'' . '\'';
 
-strs : '"' .*? '"';
+Strs : '"' ( '\"' | ~( '"' | '\n' | '\r' ) )* '"';
 
 Digits : [0-9]+;
 negative : '-';
@@ -218,7 +223,7 @@ bigInt : negative? Digits 'ii';
 intDefault : negative? Digits;
 ints : int8 | int16 | int32 | int64 | bigInt | intDefault;
 
-literals : bools | chars | floats | ints | strs;
+literals : bools | Chars | floats | ints | Strs;
 
  
 

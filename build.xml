@@ -49,13 +49,18 @@
             <include name="**/*.scala"/>
         </scalac>
 
+        <!-- Compile java sources. (Antlr4) -->
+        <javac srcdir="${src.dir}" destdir="${out.dir}/classes" classpathref="classpath" fork="true" includeantruntime="false">
+            <include name="**/*.java"/>
+        </javac>
+
         <scalac srcdir="${test.dir}" destdir="${out.dir}/classes" classpathref="classpath" fork="true">
             <include name="**/*.scala"/>
         </scalac>
 
         <!-- Copy resources. -->
         <copy todir="${out.dir}/classes">
-            <fileset dir="${src.dir}" excludes="**/*.scala"/>
+            <fileset dir="${src.dir}" excludes="**/*.scala,**/*.java"/>
         </copy>
     </target>
 
