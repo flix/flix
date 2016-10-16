@@ -180,28 +180,13 @@ object Documentor {
   }
 
   /**
-    * Returns the path where the JSON menu file should be stored.
-    */
-  private def getMenuPath: Path = Paths.get("./build/api/__menu__.json")
-
-  /**
-    * Returns the path where the JSON file, for the given namespace, should be stored.
-    */
-  private def getJsonPath(ns: List[String]): Path = {
-    if (ns.isEmpty)
-      Paths.get("./build/api/index.json")
-    else
-      Paths.get("./build/api/" + ns.mkString(".") + ".json")
-  }
-
-  /**
     * Returns the path where the HTML file, for the given namespace, should be stored.
     */
   private def getHtmlPath(ns: List[String]): Path = {
     if (ns.isEmpty)
-      Paths.get("./build/api/index.html")
+      OutputDirectory.resolve("index.html")
     else
-      Paths.get("./build/api/" + ns.mkString(".") + ".html")
+      OutputDirectory.resolve(ns.mkString(".") + ".html")
   }
 
   /**
@@ -240,6 +225,12 @@ object Documentor {
     * Returns the HTML fragment to use for the given namespace `ns`.
     */
   private def mkHtmlPage(ns: List[String], menu: JValue, page: JValue): String = {
+    // Compute the page title (if any).
+    val title = if (ns.isEmpty)
+      "Flix Standard Library"
+    else
+      "Flix Standard Library: " + ns.mkString(".")
+
     // Render the menu JSON data into a string.
     val menuStr = JsonMethods.pretty(JsonMethods.render(menu))
 
@@ -252,7 +243,7 @@ object Documentor {
         |<html lang="en">
         |<head>
         |    <meta charset="UTF-8">
-        |    <title>Flix Standard Library</title>
+        |    <title>$title</title>
         |    <link href="__app__.css" rel="stylesheet" type="text/css"/>
         |    <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet">
         |    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
