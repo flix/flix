@@ -196,7 +196,7 @@ object Typer {
           * Performs type resolution on the given enum and its cases.
           */
         def visitEnum(enum: NamedAst.Declaration.Enum, ns: Name.NName): Result[(Symbol.EnumSym, TypedAst.Declaration.Enum), TypeError] = enum match {
-          case NamedAst.Declaration.Enum(sym, tparams, cases0, scheme0, loc) =>
+          case NamedAst.Declaration.Enum(doc, sym, tparams, cases0, scheme0, loc) =>
             val casesResult = cases0 map {
               case (name, NamedAst.Case(enumName, tagName, tpe)) =>
                 Disambiguation.resolve(tpe, ns, program).map {
@@ -207,7 +207,7 @@ object Typer {
             for {
               cases <- Result.seqM(casesResult.toList)
               scheme <- Disambiguation.resolve(scheme0, ns, program)
-            } yield sym -> TypedAst.Declaration.Enum(sym, cases.toMap, scheme, loc)
+            } yield sym -> TypedAst.Declaration.Enum(doc, sym, cases.toMap, scheme, loc)
         }
 
         // Visit every enum in the program.
@@ -340,14 +340,14 @@ object Typer {
           * Returns [[Err]] if a type is unresolved.
           */
         def visitTable(table: NamedAst.Table, ns: Name.NName): Result[(Symbol.TableSym, TypedAst.Table), TypeError] = table match {
-          case NamedAst.Table.Relation(sym, attr, loc) =>
+          case NamedAst.Table.Relation(doc, sym, attr, loc) =>
             for (typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a, ns))))
-              yield sym -> TypedAst.Table.Relation(sym, typedAttributes, loc)
-          case NamedAst.Table.Lattice(sym, keys, value, loc) =>
+              yield sym -> TypedAst.Table.Relation(doc, sym, typedAttributes, loc)
+          case NamedAst.Table.Lattice(doc, sym, keys, value, loc) =>
             for {
               typedKeys <- Result.seqM(keys.map(a => visitAttribute(a, ns)))
               typedVal <- visitAttribute(value, ns)
-            } yield sym -> TypedAst.Table.Lattice(sym, typedKeys, typedVal, loc)
+            } yield sym -> TypedAst.Table.Lattice(doc, sym, typedKeys, typedVal, loc)
         }
 
         /**
@@ -1161,8 +1161,8 @@ object Typer {
       case NamedAst.Predicate.Head.False(loc) => Unification.liftM(Nil)
       case NamedAst.Predicate.Head.Table(qname, terms, loc) =>
         val declaredTypes = Disambiguation.lookupTable(qname, ns, program) match {
-          case Ok(NamedAst.Table.Relation(sym, attr, _)) => attr.map(_.tpe)
-          case Ok(NamedAst.Table.Lattice(sym, keys, value, _)) => keys.map(_.tpe) ::: value.tpe :: Nil
+          case Ok(NamedAst.Table.Relation(doc, sym, attr, _)) => attr.map(_.tpe)
+          case Ok(NamedAst.Table.Lattice(doc, sym, keys, value, _)) => keys.map(_.tpe) ::: value.tpe :: Nil
           case Err(e) => return failM(e)
         }
 
@@ -1182,8 +1182,8 @@ object Typer {
     def infer(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = body0 match {
       case NamedAst.Predicate.Body.Table(qname, terms, loc) =>
         val declaredTypes = Disambiguation.lookupTable(qname, ns0, program) match {
-          case Ok(NamedAst.Table.Relation(sym, attr, _)) => attr.map(_.tpe)
-          case Ok(NamedAst.Table.Lattice(sym, keys, value, _)) => keys.map(_.tpe) ::: value.tpe :: Nil
+          case Ok(NamedAst.Table.Relation(doc, sym, attr, _)) => attr.map(_.tpe)
+          case Ok(NamedAst.Table.Lattice(doc, sym, keys, value, _)) => keys.map(_.tpe) ::: value.tpe :: Nil
           case Err(e) => return failM(e)
         }
         val expectedTypes = Disambiguation.resolve(declaredTypes, ns0, program) match {
@@ -1226,10 +1226,10 @@ object Typer {
       case NamedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
       case NamedAst.Predicate.Head.Table(qname, terms, loc) =>
         Disambiguation.lookupTable(qname, ns0, program) match {
-          case Ok(NamedAst.Table.Relation(sym, _, _)) =>
+          case Ok(NamedAst.Table.Relation(_, sym, _, _)) =>
             val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
             TypedAst.Predicate.Head.Table(sym, ts, loc)
-          case Ok(NamedAst.Table.Lattice(sym, _, _, _)) =>
+          case Ok(NamedAst.Table.Lattice(_, sym, _, _, _)) =>
             val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
             TypedAst.Predicate.Head.Table(sym, ts, loc)
           case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
@@ -1242,8 +1242,8 @@ object Typer {
     def reassemble(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
       case NamedAst.Predicate.Body.Table(qname, terms, loc) =>
         Disambiguation.lookupTable(qname, ns0, program) match {
-          case Ok(NamedAst.Table.Relation(sym, _, _)) => TypedAst.Predicate.Body.Table(sym, terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true)), loc)
-          case Ok(NamedAst.Table.Lattice(sym, _, _, _)) =>
+          case Ok(NamedAst.Table.Relation(_, sym, _, _)) => TypedAst.Predicate.Body.Table(sym, terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true)), loc)
+          case Ok(NamedAst.Table.Lattice(_, sym, _, _, _)) =>
             val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
             TypedAst.Predicate.Body.Table(sym, ts, loc)
           case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")

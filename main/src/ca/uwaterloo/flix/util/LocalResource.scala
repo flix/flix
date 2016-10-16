@@ -23,6 +23,14 @@ object LocalResource {
 
   val RootPath = "main/src"
 
+  object Documentation {
+
+    def JavaScript: InputStream = getInputStream("/resources/documentation/app.js")
+
+    def StyleSheet: InputStream = getInputStream("/resources/documentation/app.css")
+
+  }
+
   object Tutorials {
 
     def DeltaDebugging: InputStream = getInputStream("/tutorials/delta-debugging.flix")
@@ -43,7 +51,7 @@ object LocalResource {
       getClass.getResourceAsStream(relativePath)
 
     if (inputStream == null) {
-      throw new RuntimeException("Tutorial not found. Corrupted JAR?")
+      throw new RuntimeException(s"Resource: '$relativePath' not found. Corrupted JAR?")
     }
     inputStream
   }

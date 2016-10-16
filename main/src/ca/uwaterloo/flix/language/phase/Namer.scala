@@ -133,7 +133,7 @@ object Namer {
       /*
        * Enum.
        */
-      case WeededAst.Declaration.Enum(ident, tparams0, cases, loc) =>
+      case WeededAst.Declaration.Enum(doc, ident, tparams0, cases, loc) =>
         val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
         enums0.get(ident.name) match {
           case None =>
@@ -143,7 +143,7 @@ object Namer {
               case p => NamedAst.TypeParam(p, Type.freshTypeVar(), loc)
             }
             val tenv = tparams.map(kv => kv.name.name -> kv.tpe).toMap
-            val enum = NamedAst.Declaration.Enum(sym, tparams, casesOf(cases, tenv), schemeOf(sym, tparams0, cases), loc)
+            val enum = NamedAst.Declaration.Enum(doc, sym, tparams, casesOf(cases, tenv), schemeOf(sym, tparams0, cases), loc)
             val enums = enums0 + (ident.name -> enum)
             prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
           case Some(enum) =>
@@ -224,7 +224,7 @@ object Namer {
       /*
        * Relation.
        */
-      case WeededAst.Table.Relation(ident, attr, loc) =>
+      case WeededAst.Table.Relation(doc, ident, attr, loc) =>
         // check if the name is legal.
         if (ident.name.head.isLower) {
           return IllegalTableName(ident.name, loc).toFailure
@@ -234,7 +234,7 @@ object Namer {
         prog0.tables.get(ns0) match {
           case None =>
             // Case 1: The namespace does not yet exist. So the table does not yet exist.
-            val table = NamedAst.Table.Relation(Symbol.mkTableSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
+            val table = NamedAst.Table.Relation(doc, Symbol.mkTableSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
             val tables = Map(ident.name -> table)
             prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
           case Some(tables0) =>
@@ -242,7 +242,7 @@ object Namer {
             tables0.get(ident.name) match {
               case None =>
                 // Case 2.1: The table does not exist in the namespace. Update it.
-                val table = NamedAst.Table.Relation(Symbol.mkTableSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
+                val table = NamedAst.Table.Relation(doc, Symbol.mkTableSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
                 val tables = tables0 + (ident.name -> table)
                 prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
               case Some(table) =>
@@ -254,7 +254,7 @@ object Namer {
       /*
        * Lattice.
        */
-      case WeededAst.Table.Lattice(ident, keys, value, loc) =>
+      case WeededAst.Table.Lattice(doc, ident, keys, value, loc) =>
         // check if the name is legal.
         if (ident.name.head.isLower) {
           return IllegalTableName(ident.name, loc).toFailure
@@ -264,7 +264,7 @@ object Namer {
         prog0.tables.get(ns0) match {
           case None =>
             // Case 1: The namespace does not yet exist. So the table does not yet exist.
-            val table = NamedAst.Table.Lattice(Symbol.mkTableSym(ns0, ident), keys.map(k => Attributes.namer(k, Map.empty)), Attributes.namer(value, Map.empty), loc)
+            val table = NamedAst.Table.Lattice(doc, Symbol.mkTableSym(ns0, ident), keys.map(k => Attributes.namer(k, Map.empty)), Attributes.namer(value, Map.empty), loc)
             val tables = Map(ident.name -> table)
             prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
           case Some(tables0) =>
@@ -272,7 +272,7 @@ object Namer {
             tables0.get(ident.name) match {
               case None =>
                 // Case 2.1: The table does not exist in the namespace. Update it.
-                val table = NamedAst.Table.Lattice(Symbol.mkTableSym(ns0, ident), keys.map(k => Attributes.namer(k, Map.empty)), Attributes.namer(value, Map.empty), loc)
+                val table = NamedAst.Table.Lattice(doc, Symbol.mkTableSym(ns0, ident), keys.map(k => Attributes.namer(k, Map.empty)), Attributes.namer(value, Map.empty), loc)
                 val tables = tables0 + (ident.name -> table)
                 prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
               case Some(table) =>

@@ -143,7 +143,8 @@ object Weeder {
           }
         }
 
-      case ParsedAst.Declaration.Enum(sp1, ident, tparams0, cases, sp2) =>
+      case ParsedAst.Declaration.Enum(docOpt, sp1, ident, tparams0, cases, sp2) =>
+        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
         val tparams = tparams0.toList.map(_.ident)
         /*
          * Check for `DuplicateTag`.
@@ -156,7 +157,7 @@ object Weeder {
               case Some(otherTag) => DuplicateTag(tag, otherTag.tag.loc, mkSL(caze.sp1, caze.sp2)).toFailure
             }
         } map {
-          case m => WeededAst.Declaration.Enum(ident, tparams, m, mkSL(sp1, sp2))
+          case m => WeededAst.Declaration.Enum(doc, ident, tparams, m, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Declaration.Class(sp1, ident, tparams, bounds, decls, sp2) =>
@@ -169,7 +170,9 @@ object Weeder {
           case ds => WeededAst.Declaration.Impl(ident, tparams.toList.map(Types.weed), ds, mkSL(sp1, sp2))
         }
 
-      case ParsedAst.Declaration.Relation(sp1, ident, attrs, sp2) =>
+      case ParsedAst.Declaration.Relation(docOpt, sp1, ident, attrs, sp2) =>
+        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
+
         /*
          * Check for `EmptyRelation`
          */
@@ -180,10 +183,12 @@ object Weeder {
          * Check for `DuplicateAttribute`.
          */
         checkDuplicateAttribute(attrs) map {
-          case as => WeededAst.Table.Relation(ident, as, mkSL(sp1, sp2))
+          case as => WeededAst.Table.Relation(doc, ident, as, mkSL(sp1, sp2))
         }
 
-      case ParsedAst.Declaration.Lattice(sp1, ident, attrs, sp2) =>
+      case ParsedAst.Declaration.Lattice(docOpt, sp1, ident, attrs, sp2) =>
+        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
+
         /*
          * Check for `EmptyLattice`.
          */
@@ -196,7 +201,7 @@ object Weeder {
         checkDuplicateAttribute(attrs) map {
           case as =>
             // Split the attributes into keys and element.
-            WeededAst.Table.Lattice(ident, as.init, as.last, mkSL(sp1, sp2))
+            WeededAst.Table.Lattice(doc, ident, as.init, as.last, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Declaration.Fact(sp1, head, sp2) =>

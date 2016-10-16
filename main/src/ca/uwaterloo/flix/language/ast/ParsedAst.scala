@@ -154,7 +154,7 @@ object ParsedAst {
     /**
       * Enum Declaration.
       *
-      * @param doc        the optional comment associated with the definition.
+      * @param doc     the optional comment associated with the definition.
       * @param sp1     the position of the first character in the declaration.
       * @param ident   the name of the enum.
       * @param tparams the type parameters.
@@ -188,22 +188,24 @@ object ParsedAst {
     /**
       * Relation Declaration.
       *
+      * @param doc     the optional comment associated with the definition.
       * @param sp1   the position of the first character in the declaration.
       * @param ident the name of the relation.
       * @param attr  the attributes (columns) of the relation.
       * @param sp2   the position of the last character in the declaration.
       */
-    case class Relation(sp1: SourcePosition, ident: Name.Ident, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Relation(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, ident: Name.Ident, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Lattice Declaration.
       *
+      * @param doc     the optional comment associated with the definition.
       * @param sp1   the position of the first character in the declaration.
       * @param ident the name of the lattice.
       * @param attr  the attributes (columns) of the relation.
       * @param sp2   the position of the last character in the declaration.
       */
-    case class Lattice(sp1: SourcePosition, ident: Name.Ident, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Lattice(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, ident: Name.Ident, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Index Declaration.

@@ -214,11 +214,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Relation: Rule1[ParsedAst.Declaration.Relation] = rule {
-      optWS ~ SP ~ atomic("rel") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Relation
+      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("rel") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Relation
     }
 
     def Lattice: Rule1[ParsedAst.Declaration.Lattice] = rule {
-      optWS ~ SP ~ atomic("lat") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Lattice
+      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("lat") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Lattice
     }
 
     def Index: Rule1[ParsedAst.Declaration.Index] = {

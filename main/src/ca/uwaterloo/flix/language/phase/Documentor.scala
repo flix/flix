@@ -21,11 +21,16 @@ import java.nio.file.{Files, Path, Paths}
 
 import ca.uwaterloo.flix.language.ast.{Ast, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource, StreamOps}
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
 
 object Documentor {
+
+  /**
+    * The directory where to write the generated HTML documentation (and its resources).
+    */
+  val OutputDirectory = Paths.get("./build/api")
 
   /**
     * Generates documentation for the given program `p`.
@@ -69,10 +74,21 @@ object Documentor {
         )
     }
 
-    // Process the menu.
+    // Create the output directory (and its parent directories).
+    Files.createDirectories(OutputDirectory)
+
+    // Copy the JavaScript resource.
+    val javaScriptPath = OutputDirectory.resolve("__app__.js")
+    StreamOps.writeAll(LocalResource.Documentation.JavaScript, javaScriptPath)
+
+    // Copy the StyleSheet resource.
+    val styleSheetPath = OutputDirectory.resolve("__app__.css")
+    StreamOps.writeAll(LocalResource.Documentation.StyleSheet, styleSheetPath)
+
+    // Generate JSON for the menu.
     writeJSON(JArray(mkMenu(namespaces.filter(_.nonEmpty))), getMenuPath)
 
-    // Write the result for each namespace.
+    // Generate HTML and JSON files for each namespace.
     for ((ns, json) <- data) {
       writeString(mkHtmlPage(ns), getHtmlPath(ns))
       writeJSON(json, getJsonPath(ns))
@@ -124,7 +140,7 @@ object Documentor {
   private def mkEnum(e: Declaration.Enum): JObject = {
     JObject(List(
       JField("name", JString(e.sym.name)),
-      JField("comment", JString("Some comment"))
+      JField("comment", JString(getComment(e.doc)))
     ))
   }
 
@@ -142,7 +158,7 @@ object Documentor {
     JObject(List(
       JField("name", JString(r.sym.name)),
       JField("attributes", JArray(attributes)),
-      JField("comment", JString("Some comment"))
+      JField("comment", JString(getComment(r.doc)))
     ))
   }
 
@@ -160,7 +176,7 @@ object Documentor {
     JObject(List(
       JField("name", JString(l.sym.name)),
       JField("attributes", JArray(attributes)),
-      JField("comment", JString("Some comment"))
+      JField("comment", JString(getComment(l.doc)))
     ))
   }
 
@@ -237,13 +253,13 @@ object Documentor {
         |<head>
         |    <meta charset="UTF-8">
         |    <title>Flix Standard Library</title>
-        |    <link href="css/stylesheet.css" rel="stylesheet" type="text/css"/>
+        |    <link href="__app__.css" rel="stylesheet" type="text/css"/>
         |    <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet">
         |    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
         |</head>
         |<body>
         |<div id="app"></div>
-        |<script src="js/bundle.js"></script>
+        |<script src="__app__.js"></script>
         |<script type="application/ecmascript">
         |    bootstrap("$path");
         |</script>

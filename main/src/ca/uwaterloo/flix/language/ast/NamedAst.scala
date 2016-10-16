@@ -50,7 +50,7 @@ object NamedAst {
 
     case class Law(ident: Name.Ident, tparams: List[ParsedAst.ContextBound], params: List[NamedAst.FormalParam], tpe: NamedAst.Type, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Declaration
 
-    case class Enum(sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], sc: NamedAst.Scheme, loc: SourceLocation) extends NamedAst.Declaration
+    case class Enum(doc: Option[Ast.Documentation], sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], sc: NamedAst.Scheme, loc: SourceLocation) extends NamedAst.Declaration
 
     case class Class(ident: Name.Ident, tparams: List[NamedAst.Type], /* bounds: List[ContextBound],*/ decls: List[NamedAst.Declaration], loc: SourceLocation) extends NamedAst.Declaration
 
@@ -76,9 +76,9 @@ object NamedAst {
 
   object Table {
 
-    case class Relation(sym: Symbol.TableSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst.Table
+    case class Relation(doc: Option[Ast.Documentation], sym: Symbol.TableSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst.Table
 
-    case class Lattice(sym: Symbol.TableSym, keys: List[NamedAst.Attribute], value: NamedAst.Attribute, loc: SourceLocation) extends NamedAst.Table {
+    case class Lattice(doc: Option[Ast.Documentation], sym: Symbol.TableSym, keys: List[NamedAst.Attribute], value: NamedAst.Attribute, loc: SourceLocation) extends NamedAst.Table {
       def attr: List[NamedAst.Attribute] = keys ::: value :: Nil
     }
 

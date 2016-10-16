@@ -38,7 +38,7 @@ object TypedAst {
 
     case class Definition(doc: Option[Ast.Documentation], ann: Ast.Annotations, sym: Symbol.DefnSym, tparams: List[TypedAst.TypeParam], formals: List[TypedAst.FormalParam], exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Declaration
 
-    case class Enum(sym: Symbol.EnumSym, cases: Map[String, TypedAst.Case], sc: Scheme, loc: SourceLocation) extends TypedAst.Declaration
+    case class Enum(doc: Option[Ast.Documentation], sym: Symbol.EnumSym, cases: Map[String, TypedAst.Case], sc: Scheme, loc: SourceLocation) extends TypedAst.Declaration
 
     case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends TypedAst.Declaration
 
@@ -60,9 +60,9 @@ object TypedAst {
 
   object Table {
 
-    case class Relation(sym: Symbol.TableSym, attributes: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Table
+    case class Relation(doc: Option[Ast.Documentation], sym: Symbol.TableSym, attributes: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Table
 
-    case class Lattice(sym: Symbol.TableSym, keys: List[TypedAst.Attribute], value: TypedAst.Attribute, loc: SourceLocation) extends TypedAst.Table
+    case class Lattice(doc: Option[Ast.Documentation], sym: Symbol.TableSym, keys: List[TypedAst.Attribute], value: TypedAst.Attribute, loc: SourceLocation) extends TypedAst.Table
 
   }
 
