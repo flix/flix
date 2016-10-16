@@ -87,12 +87,10 @@ object Documentor {
 
     // Generate JSON for the menu.
     val menu = JArray(mkMenu(namespaces.filter(_.nonEmpty)))
-    writeJSON(menu, getMenuPath)
 
     // Generate HTML and JSON files for each namespace.
     for ((ns, page) <- data) {
       writeString(mkHtmlPage(ns, menu, page), getHtmlPath(ns))
-      writeJSON(page, getJsonPath(ns))
     }
   }
 
@@ -207,11 +205,6 @@ object Documentor {
   }
 
   /**
-    * Writes the given JSON value `v` to the given path `p`.
-    */
-  private def writeJSON(v: JValue, p: Path): Unit = writeString(JsonMethods.pretty(JsonMethods.render(v)), p)
-
-  /**
     * Writes the given string `s` to the given path `p`.
     */
   private def writeString(s: String, p: Path): Unit = try {
@@ -267,7 +260,9 @@ object Documentor {
         |<body>
         |
         |<!-- Application Element -->
-        |<div id="app"></div>
+        |<div id="app">
+        |  <div id="navbar"></div>
+        |</div>
         |
         |<!-- Menu Data -->
         |<script type="application/ecmascript">
@@ -276,7 +271,7 @@ object Documentor {
         |
         |<!-- Page Data -->
         |<script type="application/ecmascript">
-        |window.data = $pageStr;
+        |window.page = $pageStr;
         |</script>
         |
         |<!-- JavaScript Resource -->

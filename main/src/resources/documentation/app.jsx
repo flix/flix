@@ -7,7 +7,7 @@
  *
  * Then run:
  *
- *  $ browserify -t babelify app.jsx -o bundle.js
+ *  $ browserify -t babelify app.jsx -o app.js
  *
  * To compile the JSX file.
  */
