@@ -5,9 +5,9 @@
  */
 namespace Type {
 
-    /**
-     * The elements of the type lattice.
-     */
+    ///
+    /// The elements of the type lattice.
+    ///
     enum Type {
                    case Err,
 
@@ -16,9 +16,9 @@ namespace Type {
                    case Bot
     }
 
-    /**
-     * Returns `true` iff `e1` is less than or equal to `e2`.
-     */
+    ///
+    /// Returns `true` iff `e1` is less than or equal to `e2`.
+    ///
     def leq(e1: Type, e2: Type): Bool = match (e1, e2) with {
         case (Type.Bot, _)              => true
         case (Type.Bool, Type.Bool)     => true
@@ -28,9 +28,9 @@ namespace Type {
         case _                          => false
     }
 
-    /**
-     * Returns the least upper bound of `e1` and `e2`.
-     */
+    ///
+    /// Returns the least upper bound of `e1` and `e2`.
+    ///
     @commutative @associative
     def lub(e1: Type, e2: Type): Type = match (e1, e2) with {
         case (Type.Bot, _)              => e2
@@ -41,9 +41,9 @@ namespace Type {
         case _                          => Type.Err
     }
 
-    /**
-     * Returns the greatest lower bound of `e1` and `e2`.
-     */
+    ///
+    /// Returns the greatest lower bound of `e1` and `e2`.
+    ///
     @commutative @associative
     def glb(e1: Type, e2: Type): Type = match (e1, e2) with {
         case (Type.Err, _)              => e2
@@ -54,9 +54,9 @@ namespace Type {
         case _                          => Type.Bot
     }
 
-    /**
-      * Returns the type of the sum of two operands with the given types `e1` and `e2`.
-      */
+    ///
+    /// Returns the type of the sum of two operands with the given types `e1` and `e2`.
+    ///
     @strict @monotone @commutative @associative
     def sum(e1: Type, e2: Type): Type = match (e1, e2) with {
         case (Type.Bot, _)              => Type.Bot
@@ -73,10 +73,10 @@ namespace Type {
         case _                          => Type.Err
     }
 
-    /**
-     * Returns the type of the less-than-equal comparison of
-     * two operands with the given types `e1` and `e2`.
-     */
+    ///
+    /// Returns the type of the less-than-equal comparison of
+    /// two operands with the given types `e1` and `e2`.
+    ///
     @strict @monotone
     def lessEqual(e1: Type, e2: Type): Type = match (e1, e2) with {
         case (Type.Bot, _)              => Type.Bot
