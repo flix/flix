@@ -285,51 +285,22 @@ function intersperse(arr, sep) {
 }
 
 /**
- * Retrieve a JSON object from the given URL.
- *
- * http://stackoverflow.com/questions/12460378/how-to-get-json-from-url-in-javascript
- */
-var getJSON = function (url, callback) {
-    var xhr = new XMLHttpRequest();
-    xhr.open("get", url, true);
-    xhr.responseType = "json";
-    xhr.onload = function () {
-        var status = xhr.status;
-        if (status == 200) {
-            callback(xhr.response, null);
-        } else {
-            callback(null, status);
-        }
-    };
-    xhr.send();
-};
-
-/**
  * Boot the application.
  */
-function bootstrap(page) {
-    getJSON("./__menu__.json", function (namespaces, err) {
-        if (err) {
-            console.log("Unable to get namespaces: " + err);
-        }
-        getJSON(page, function (data, err) {
-            if (err) {
-                console.log("Unable to get page data: " + err);
-            }
-            ReactDOM.render(<App namespaces={namespaces} data={data}/>, document.getElementById("app"));
+function bootstrap() {
+    // Render application.
+    ReactDOM.render(<App namespaces={window.menu} data={window.page}/>, document.getElementById("app"));
 
-            // Trigger jump to anchor (if any).
-            if (window.location.hash) {
-                var id = window.location.hash.substr(1);
-                if (id) {
-                    var elm = document.getElementById(id);
-                    if (elm) {
-                        elm.scrollIntoView({behavior: "smooth"});
-                    }
-                }
+    // Trigger jump to anchor (if any).
+    if (window.location.hash) {
+        var id = window.location.hash.substr(1);
+        if (id) {
+            var elm = document.getElementById(id);
+            if (elm) {
+                elm.scrollIntoView({behavior: "smooth"});
             }
-        });
-    });
+        }
+    }
 }
 
 // Export the bootstrap function to the global window object.

@@ -86,12 +86,13 @@ object Documentor {
     StreamOps.writeAll(LocalResource.Documentation.StyleSheet, styleSheetPath)
 
     // Generate JSON for the menu.
-    writeJSON(JArray(mkMenu(namespaces.filter(_.nonEmpty))), getMenuPath)
+    val menu = JArray(mkMenu(namespaces.filter(_.nonEmpty)))
+    writeJSON(menu, getMenuPath)
 
     // Generate HTML and JSON files for each namespace.
-    for ((ns, json) <- data) {
-      writeString(mkHtmlPage(ns), getHtmlPath(ns))
-      writeJSON(json, getJsonPath(ns))
+    for ((ns, page) <- data) {
+      writeString(mkHtmlPage(ns, menu, page), getHtmlPath(ns))
+      writeJSON(page, getJsonPath(ns))
     }
   }
 
@@ -245,7 +246,13 @@ object Documentor {
   /**
     * Returns the HTML fragment to use for the given namespace `ns`.
     */
-  private def mkHtmlPage(ns: List[String]): String = {
+  private def mkHtmlPage(ns: List[String], menu: JValue, page: JValue): String = {
+    // Render the menu JSON data into a string.
+    val menuStr = JsonMethods.pretty(JsonMethods.render(menu))
+
+    // Render the page JSON data into a string.
+    val pageStr = JsonMethods.pretty(JsonMethods.render(page))
+
     // Compute the relative path path to the JSON file.
     val path = if (ns.isEmpty) "./index.json" else "./" + ns.mkString(".") + ".json"
     s"""<!DOCTYPE html>
@@ -258,11 +265,29 @@ object Documentor {
         |    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
         |</head>
         |<body>
+        |
+        |<!-- Application Element -->
         |<div id="app"></div>
-        |<script src="__app__.js"></script>
+        |
+        |<!-- Menu Data -->
+        |<script type="application/ecmascript">
+        |window.menu = $menuStr;
+        |</script>
+        |
+        |<!-- Page Data -->
+        |<script type="application/ecmascript">
+        |window.data = $pageStr;
+        |</script>
+        |
+        |<!-- JavaScript Resource -->
+        |<script src="__app__.js" type="application/ecmascript">
+        |</script>
+        |
+        |<!-- Trigger Boot -->
         |<script type="application/ecmascript">
         |    bootstrap("$path");
         |</script>
+        |
         |</body>
         |</html>
    """.stripMargin
