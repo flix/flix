@@ -114,7 +114,7 @@ object ParsedAst {
       * @param exp        the expression.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Definition(doc: Option[ParsedAst.Comment], ann: Seq[ParsedAst.Annotation], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Option[Seq[ParsedAst.FormalParam]], tpe: ParsedAst.Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Definition(doc: Option[ParsedAst.Documentation], ann: Seq[ParsedAst.Annotation], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Option[Seq[ParsedAst.FormalParam]], tpe: ParsedAst.Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Signature Declaration (top-level function or expression signature).
@@ -874,24 +874,6 @@ object ParsedAst {
   }
 
   /**
-    * A common super-type for comments.
-    */
-  sealed trait Comment extends ParsedAst
-
-  object Comment {
-
-    /**
-      * Api Comment
-      *
-      * @param sp1  the position of the first character in the comment.
-      * @param text the text of the comment.
-      * @param sp2  the position of the last character in the comment.
-      */
-    case class DocComment(sp1: SourcePosition, text: Seq[String], sp2: SourcePosition) extends ParsedAst.Comment
-
-  }
-
-  /**
     * Attribute.
     *
     * @param sp1   the position of the first character in the attribute.
@@ -919,6 +901,15 @@ object ParsedAst {
     * @param sp2   the position of the last character in the case declaration.
     */
   case class Case(sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst
+
+  /**
+    * Documentation.
+    *
+    * @param sp1  the position of the first character in the comment.
+    * @param text the text of the comment.
+    * @param sp2  the position of the last character in the comment.
+    */
+  case class Documentation(sp1: SourcePosition, text: Seq[String], sp2: SourcePosition) extends ParsedAst
 
   /**
     * Context Bound.

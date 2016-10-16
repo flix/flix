@@ -42,7 +42,7 @@ object NamedAst {
 
   object Declaration {
 
-    case class Definition(sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], params: List[NamedAst.FormalParam], exp: NamedAst.Expression, ann: Ast.Annotations, sc: NamedAst.Scheme, loc: SourceLocation) extends NamedAst.Declaration
+    case class Definition(doc: Option[Ast.Documentation], ann: Ast.Annotations, sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], params: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, loc: SourceLocation) extends NamedAst.Declaration
 
     case class Signature(ident: Name.Ident, params: List[NamedAst.FormalParam], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 

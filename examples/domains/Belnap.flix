@@ -14,9 +14,9 @@ namespace Belnap {
                   case Bot
     }
 
-    /**
-     * Returns `true` iff `e1` is less than or equal to `e2`.
-     */
+    ///
+    /// Returns `true` iff `e1` is less than or equal to `e2`.
+    ///
     def leq(e1: Belnap, e2: Belnap): Bool = match (e1, e2) with {
         case (Belnap.Bot, _)                => true
         case (Belnap.True, Belnap.True)     => true
@@ -25,9 +25,9 @@ namespace Belnap {
         case _                              => false
     }
 
-    /**
-     * Returns the least upper bound of `e1` and `e2`.
-     */
+    ///
+    /// Returns the least upper bound of `e1` and `e2`.
+    ///
     @commutative @associative
     def lub(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, x)                => x

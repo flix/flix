@@ -157,6 +157,14 @@ object Ast {
   }
 
   /**
+    * Documentation.
+    *
+    * @param text the text of the documentation comment.
+    * @param loc  the source location of the comment.
+    */
+  case class Documentation(text: String, loc: SourceLocation)
+
+  /**
     * A common super-type for hooks.
     */
   sealed trait Hook {

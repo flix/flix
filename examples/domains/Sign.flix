@@ -343,4 +343,6 @@ namespace Sign {
 
     let Sign<> = (Sign.Bot, Sign.Top, leq, lub, glb)
 
+    def id[a](a: a): a = ???
+
 }

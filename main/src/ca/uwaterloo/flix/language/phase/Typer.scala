@@ -120,7 +120,7 @@ object Typer {
           * Performs type inference and reassembly on the given definition `defn` in the given namespace `ns`.
           */
         def visitDefn(defn: NamedAst.Declaration.Definition, ns: Name.NName): Result[(Symbol.DefnSym, TypedAst.Declaration.Definition), TypeError] = defn match {
-          case NamedAst.Declaration.Definition(sym, tparams, params, exp, ann, tpe, loc) =>
+          case NamedAst.Declaration.Definition(doc, ann, sym, tparams, params, exp, tpe, loc) =>
             infer(defn, ns, program) map {
               case d => sym -> d
             }
@@ -178,7 +178,7 @@ object Typer {
                     TypedAst.FormalParam(sym, subst0(sym.tvar), sym.loc)
                 }
 
-                Ok(TypedAst.Declaration.Definition(defn0.ann, defn0.sym, tparams, formals, exp, resultType, defn0.loc))
+                Ok(TypedAst.Declaration.Definition(defn0.doc, defn0.ann, defn0.sym, tparams, formals, exp, resultType, defn0.loc))
 
               case Err(e) => Err(e)
             }

@@ -123,7 +123,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        optional(Comments.DocComment) ~ optWS ~ Annotations ~ optWS ~ SP ~ atomic("def") ~ WS ~ Ident ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Declaration.Definition
+        optional(Comments.TripleSlash) ~ optWS ~ Annotations ~ optWS ~ SP ~ atomic("def") ~ WS ~ Ident ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Declaration.Definition
       }
     }
 
@@ -853,18 +853,27 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   object Comments {
     // Note: We must use ANY to match (consume) whatever character which is not a newline.
     // Otherwise the parser makes no progress and loops.
+    def TripleSlash: Rule1[ParsedAst.Documentation] = {
+      def PureWS: Rule0 = rule {
+        zeroOrMore(" " | "\t" | NewLine)
+      }
+
+      // TODO: need to improve source locations.
+      rule {
+        SP ~ oneOrMore(PureWS ~ "///" ~ capture(zeroOrMore(!NewLine ~ ANY)) ~ (NewLine | EOI)) ~ SP ~> ParsedAst.Documentation
+      }
+    }
+
+    // Note: We must use ANY to match (consume) whatever character which is not a newline.
+    // Otherwise the parser makes no progress and loops.
     def SingleLineComment: Rule0 = rule {
-      "//" ~ zeroOrMore(!NewLine ~ ANY) ~ (NewLine | EOI)
+      !"///" ~ "//" ~ zeroOrMore(!NewLine ~ ANY) ~ (NewLine | EOI)
     }
 
     // Note: We must use ANY to match (consume) whatever character which is not a "*/".
     // Otherwise the parser makes no progress and loops.
     def MultiLineComment: Rule0 = rule {
       "/*" ~ zeroOrMore(!"*/" ~ ANY) ~ "*/"
-    }
-
-    def DocComment: Rule1[ParsedAst.Comment.DocComment] = rule {
-      SP ~ oneOrMore("///" ~ capture(zeroOrMore(!NewLine ~ ANY)) ~ (NewLine | EOI)) ~ SP ~> ParsedAst.Comment.DocComment
     }
   }
 

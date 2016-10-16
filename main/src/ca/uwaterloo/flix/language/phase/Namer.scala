@@ -76,7 +76,7 @@ object Namer {
       /*
        * Definition.
        */
-      case WeededAst.Declaration.Definition(ann, ident, tparams0, fparams0, exp, tpe, loc) =>
+      case WeededAst.Declaration.Definition(doc, ann, ident, tparams0, fparams0, exp, tpe, loc) =>
         // check if the name is legal.
         if (ident.name.head.isUpper) {
           return IllegalDefinitionName(ident.name, loc).toFailure
@@ -107,7 +107,7 @@ object Namer {
               case e =>
                 val sym = Symbol.mkDefnSym(ns0, ident)
                 val sc = NamedAst.Scheme(tparams.map(_.tpe), Types.namer(tpe, tenv0))
-                val defn = NamedAst.Declaration.Definition(sym, tparams, pms0.reverse, e, ann, sc, loc)
+                val defn = NamedAst.Declaration.Definition(doc, ann, sym, tparams, pms0.reverse, e, sc, loc)
                 prog0.copy(definitions = prog0.definitions + (ns0 -> (defns + (ident.name -> defn))))
             }
           case Some(defn) =>

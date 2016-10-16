@@ -64,7 +64,8 @@ object Weeder {
           case ds => WeededAst.Declaration.Namespace(name, ds, mkSL(sp1, sp2))
         }
 
-      case ParsedAst.Declaration.Definition(doc, ann, sp1, ident, tparams0, paramsOpt, tpe, exp, sp2) =>
+      case ParsedAst.Declaration.Definition(docOpt, ann, sp1, ident, tparams0, paramsOpt, tpe, exp, sp2) =>
+        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
         val sl = mkSL(ident.sp1, ident.sp2)
         val annVal = Annotations.weed(ann)
         val expVal = Expressions.weed(exp)
@@ -77,7 +78,7 @@ object Weeder {
           case None => @@(annVal, expVal) flatMap {
             case (as, e) =>
               val t = WeededAst.Type.Arrow(Nil, Types.weed(tpe), sl)
-              WeededAst.Declaration.Definition(as, ident, tparams, Nil, e, t, sl).toSuccess
+              WeededAst.Declaration.Definition(doc, as, ident, tparams, Nil, e, t, sl).toSuccess
           }
           case Some(Nil) => IllegalParameterList(sl).toFailure
           case Some(params) =>
@@ -88,7 +89,7 @@ object Weeder {
             @@(annVal, formalsVal, expVal) map {
               case (as, fs, e) =>
                 val t = WeededAst.Type.Arrow(fs map (_.tpe), Types.weed(tpe), sl)
-                WeededAst.Declaration.Definition(as, ident, tparams, fs, e, t, sl)
+                WeededAst.Declaration.Definition(doc, as, ident, tparams, fs, e, t, sl)
             }
         }
 

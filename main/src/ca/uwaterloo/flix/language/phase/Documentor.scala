@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
 
-import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.{Ast, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.json4s.JsonAST._
@@ -113,7 +113,7 @@ object Documentor {
       JField("tparams", JArray(tparams)),
       JField("fparams", JArray(fparams)),
       JField("result", JString(returnType)),
-      JField("comment", JString("A nice comment"))
+      JField("comment", JString(getComment(d.doc)))
     ))
 
   }
@@ -211,6 +211,14 @@ object Documentor {
   private def prettify(t: Type): String = t.toString
 
   /**
+    * Extract the comment from the given optional documentation.
+    */
+  private def getComment(o: Option[Ast.Documentation]): String = o match {
+    case None => ""
+    case Some(doc) => doc.text
+  }
+
+  /**
     * Extracts the return type of the given arrow type `tpe`.
     */
   private def getReturnType(tpe: Type): Type = tpe match {
@@ -225,22 +233,22 @@ object Documentor {
     // Compute the relative path path to the JSON file.
     val path = if (ns.isEmpty) "./index.json" else "./" + ns.mkString(".") + ".json"
     s"""<!DOCTYPE html>
-       |<html lang="en">
-       |<head>
-       |    <meta charset="UTF-8">
-       |    <title>Flix Standard Library</title>
-       |    <link href="css/stylesheet.css" rel="stylesheet" type="text/css"/>
-       |    <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet">
-       |    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-       |</head>
-       |<body>
-       |<div id="app"></div>
-       |<script src="js/bundle.js"></script>
-       |<script type="application/ecmascript">
-       |    bootstrap("$path");
-       |</script>
-       |</body>
-       |</html>
+        |<html lang="en">
+        |<head>
+        |    <meta charset="UTF-8">
+        |    <title>Flix Standard Library</title>
+        |    <link href="css/stylesheet.css" rel="stylesheet" type="text/css"/>
+        |    <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet">
+        |    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        |</head>
+        |<body>
+        |<div id="app"></div>
+        |<script src="js/bundle.js"></script>
+        |<script type="application/ecmascript">
+        |    bootstrap("$path");
+        |</script>
+        |</body>
+        |</html>
    """.stripMargin
   }
 
