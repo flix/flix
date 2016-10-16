@@ -155,7 +155,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        optWS ~ SP ~ atomic("enum") ~ WS ~ Ident ~ TypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~ optSC ~> ParsedAst.Declaration.Enum
+        optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("enum") ~ WS ~ Ident ~ TypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~ optSC ~> ParsedAst.Declaration.Enum
       }
     }
 
