@@ -524,6 +524,58 @@ class Flix {
   }
 
   /**
+    * Returns the value `None`.
+    */
+  def mkNone: IValue = mkTag("None", mkUnit)
+
+  /**
+    * Returns the value `Some(v)`.
+    */
+  def mkSome(v: IValue): IValue = {
+    if (v == null)
+      throw new IllegalArgumentException("Argument 'v' must be non-null.")
+
+    mkTag("Some", v)
+  }
+
+  /**
+    * Returns the value `Ok(v)`.
+    */
+  def mkOk(v: IValue): IValue = {
+    if (v == null)
+      throw new IllegalArgumentException("Argument 'v' must be non-null.")
+
+    mkTag("Ok", v)
+  }
+
+  /**
+    * Returns the value `Err(v)`.
+    */
+  def mkErr(v: IValue): IValue = {
+    if (v == null)
+      throw new IllegalArgumentException("Argument 'v' must be non-null.")
+
+    mkTag("Err", v)
+  }
+
+  /**
+    * Returns the value `Nil`.
+    */
+  def mkNil: IValue = mkTag("Nil", mkUnit)
+
+  /**
+    * Returns the value `v :: vs`.
+    */
+  def mkCons(v: IValue, vs: IValue): IValue = {
+    if (v == null)
+      throw new IllegalArgumentException("Argument 'v' must be non-null.")
+    if (vs == null)
+      throw new IllegalArgumentException("Argument 'v' must be non-null.")
+
+    mkTag("Cons", mkTuple(Array(v, vs)))
+  }
+
+  /**
     * Returns the tuple corresponding to the given array.
     */
   def mkTuple(tuple: Array[IValue]): IValue = {
@@ -541,9 +593,9 @@ class Flix {
       throw new IllegalArgumentException("Argument 'o' must be non-null.")
 
     if (!o.isPresent)
-      new WrappedValue(Value.mkNone)
+      mkNone
     else
-      new WrappedValue(Value.mkSome(o.get()))
+      mkSome(o.get())
   }
 
   /**
@@ -554,8 +606,8 @@ class Flix {
       throw new IllegalArgumentException("Argument 'o' must be non-null.")
 
     o match {
-      case None => new WrappedValue(Value.mkNone)
-      case Some(v) => new WrappedValue(Value.mkSome(v))
+      case None => mkNone
+      case Some(v) => mkSome(v)
     }
   }
 
@@ -566,7 +618,11 @@ class Flix {
     if (l == null)
       throw new IllegalArgumentException("Argument 'l' must be non-null.")
 
-    new WrappedValue(Value.mkList(l.toList.map(_.getUnsafeRef)))
+    val xs = l.foldRight(mkNil) {
+      case (v, vs) => mkCons(v, vs)
+    }
+
+    new WrappedValue(xs)
   }
 
   /**
@@ -575,9 +631,8 @@ class Flix {
   def mkList(l: java.util.List[IValue]): IValue = {
     if (l == null)
       throw new IllegalArgumentException("Argument 'l' must be non-null.")
-
     import scala.collection.JavaConversions._
-    new WrappedValue(Value.mkList(l.toList.map(_.getUnsafeRef)))
+    mkList(l.toList)
   }
 
   /**
@@ -586,8 +641,7 @@ class Flix {
   def mkList(l: scala.Seq[IValue]): IValue = {
     if (l == null)
       throw new IllegalArgumentException("Argument 'l' must be non-null.")
-
-    new WrappedValue(Value.mkList(l.toList.map(_.getUnsafeRef)))
+    mkList(l.toList)
   }
 
   /**

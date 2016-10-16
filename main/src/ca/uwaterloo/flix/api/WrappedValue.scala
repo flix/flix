@@ -63,26 +63,32 @@ final class WrappedValue(val ref: AnyRef) extends IValue {
 
   def getNativeRef: AnyRef = ref
 
-  def getJavaOpt: java.util.Optional[IValue] = Value.cast2opt(ref) match {
-    case null => java.util.Optional.empty()
-    case o => java.util.Optional.of(new WrappedValue(o))
-  }
+  def getJavaOpt: java.util.Optional[IValue] = ??? // TODO
+  //    Value.cast2opt(ref) match {
+  //    case null => java.util.Optional.empty()
+  //    case o => java.util.Optional.of(new WrappedValue(o))
+  //  }
 
-  def getScalaOpt: scala.Option[IValue] = Value.cast2opt(ref) match {
-    case null => scala.None
-    case o => scala.Some(new WrappedValue(o))
-  }
+  def getScalaOpt: scala.Option[IValue] = ??? // TODO
+  //    Value.cast2opt(ref) match {
+  //    case null => scala.None
+  //    case o => scala.Some(new WrappedValue(o))
+  //  }
 
-  def getJavaList: java.util.List[IValue] = {
-    val xs = Value.cast2list(ref)
-    val r = new java.util.LinkedList[IValue]
-    for (x <- xs) {
-      r.add(new WrappedValue(x))
-    }
-    r
-  }
+  def getScalaEither: Either[IValue, IValue] = ??? // TODO: Not yet implemented
 
-  def getScalaList: immutable.List[IValue] = Value.cast2list(ref).map(e => new WrappedValue(e))
+  def getJavaList: java.util.List[IValue] = ??? // TODO
+  //  {
+  //    val xs = Value.cast2list(ref)
+  //    val r = new java.util.LinkedList[IValue]
+  //    for (x <- xs) {
+  //      r.add(new WrappedValue(x))
+  //    }
+  //    r
+  //  }
+
+  def getScalaList: immutable.List[IValue] = ??? // TODO
+  // Value.cast2list(ref).map(e => new WrappedValue(e))
 
   def getJavaSet: java.util.Set[IValue] = {
     val xs = Value.cast2set(ref)

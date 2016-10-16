@@ -172,24 +172,34 @@ trait IValue {
   def getNativeRef: AnyRef
 
   /////////////////////////////////////////////////////////////////////////////
-  // Opts                                                                    //
+  // Option                                                                  //
   /////////////////////////////////////////////////////////////////////////////
   /**
     * Returns the option represented by `this` value.
     *
-    * @throws UnsupportedOperationException if `this` value is not of opt type.
+    * @throws UnsupportedOperationException if `this` value is not of option type.
     */
   def getJavaOpt: java.util.Optional[IValue]
 
   /**
     * Returns the option represented by `this` value.
     *
-    * @throws UnsupportedOperationException if `this` value is not of opt type.
+    * @throws UnsupportedOperationException if `this` value is not of option type.
     */
   def getScalaOpt: scala.Option[IValue]
 
   /////////////////////////////////////////////////////////////////////////////
-  // Lists                                                                   //
+  // Result                                                                  //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Returns the result represented by `this` value.
+    *
+    * @throws UnsupportedOperationException if `this` value is not of result type.
+    */
+  def getScalaEither: Either[IValue, IValue]
+
+  /////////////////////////////////////////////////////////////////////////////
+  // List                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   /**
     * Returns the list represented by `this` value.
