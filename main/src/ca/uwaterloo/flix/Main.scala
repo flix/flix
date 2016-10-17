@@ -162,7 +162,7 @@ object Main {
 
       // Doc.
       opt[Unit]("doc").action((_, c) => c.copy(documentor = true)).
-        text("runs the documentor on the program.")
+        text("generates HTML documentation.")
 
       // Delta.
       opt[File]("delta").action((f, c) => c.copy(delta = Some(f))).

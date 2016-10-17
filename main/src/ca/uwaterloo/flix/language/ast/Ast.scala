@@ -159,8 +159,8 @@ object Ast {
   /**
     * Documentation.
     *
-    * @param text the text of the documentation comment.
-    * @param loc  the source location of the comment.
+    * @param text the text of the documentation.
+    * @param loc  the source location of the text.
     */
   case class Documentation(text: String, loc: SourceLocation)
 

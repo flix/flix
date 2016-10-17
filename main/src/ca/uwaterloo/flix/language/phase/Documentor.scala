@@ -88,7 +88,7 @@ object Documentor {
     // Generate JSON for the menu.
     val menu = JArray(mkMenu(namespaces.filter(_.nonEmpty)))
 
-    // Generate HTML and JSON files for each namespace.
+    // Generate HTML files for each namespace.
     for ((ns, page) <- data) {
       writeString(mkHtmlPage(ns, menu, page), getHtmlPath(ns))
     }
@@ -197,7 +197,7 @@ object Documentor {
     writer.write(s)
     writer.close()
   } catch {
-    case ex: IOException => throw new RuntimeException(s"Unable to write JSON to path '$p'.", ex)
+    case ex: IOException => throw new RuntimeException(s"Unable to write to path '$p'.", ex)
   }
 
   /**
@@ -246,6 +246,7 @@ object Documentor {
         |    <title>$title</title>
         |    <link href="__app__.css" rel="stylesheet" type="text/css"/>
         |    <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet">
+        |    <link href="https://fonts.googleapis.com/css?family=Droid+Sans+Mono" rel="stylesheet">
         |    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
         |</head>
         |<body>
