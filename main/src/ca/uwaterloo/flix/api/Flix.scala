@@ -570,7 +570,7 @@ class Flix {
     if (v == null)
       throw new IllegalArgumentException("Argument 'v' must be non-null.")
     if (vs == null)
-      throw new IllegalArgumentException("Argument 'v' must be non-null.")
+      throw new IllegalArgumentException("Argument 'vs' must be non-null.")
 
     mkTag("Cons", mkTuple(Array(v, vs)))
   }
