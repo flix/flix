@@ -118,17 +118,17 @@ object Namer {
       /*
        * Signature.
        */
-      case WeededAst.Declaration.Signature(ident, params, tpe, loc) => ??? // TODO: Add support for signature in Namer.
+      case WeededAst.Declaration.Signature(doc, ident, params, tpe, loc) => ??? // TODO: Add support for signature in Namer.
 
       /*
        * External.
        */
-      case WeededAst.Declaration.External(ident, params, tpe, loc) => ??? // TODO: Add support for external in Namer.
+      case WeededAst.Declaration.External(doc, ident, params, tpe, loc) => ??? // TODO: Add support for external in Namer.
 
       /*
        * Law.
        */
-      case WeededAst.Declaration.Law(ident, tparams, params, tpe, exp, loc) => ??? // TODO: Add support for law in Namer.
+      case WeededAst.Declaration.Law(doc, ident, tparams, params, tpe, exp, loc) => ??? // TODO: Add support for law in Namer.
 
       /*
        * Enum.
@@ -154,12 +154,12 @@ object Namer {
       /*
        * Class.
        */
-      case WeededAst.Declaration.Class(ident, tparams, decls, loc) => ??? // TODO: Add support for class in Namer.
+      case WeededAst.Declaration.Class(doc, ident, tparams, decls, loc) => ??? // TODO: Add support for class in Namer.
 
       /*
        * Impl.
        */
-      case WeededAst.Declaration.Impl(ident, tparams, decls, loc) => ??? // TODO: Add support for impl in Namer.
+      case WeededAst.Declaration.Impl(doc, ident, tparams, decls, loc) => ??? // TODO: Add support for impl in Namer.
 
       /*
        * Fact.

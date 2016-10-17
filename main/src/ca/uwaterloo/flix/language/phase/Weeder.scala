@@ -93,52 +93,58 @@ object Weeder {
             }
         }
 
-      case ParsedAst.Declaration.Signature(sp1, ident, paramsOpt, tpe, sp2) =>
+      case ParsedAst.Declaration.Signature(docOpt, sp1, ident, paramsOpt, tpe, sp2) =>
+        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
+
         /*
          * Check for `IllegalParameterList`.
          */
         paramsOpt match {
-          case None => WeededAst.Declaration.Signature(ident, Nil, Types.weed(tpe), mkSL(sp1, sp2)).toSuccess
+          case None => WeededAst.Declaration.Signature(doc, ident, Nil, Types.weed(tpe), mkSL(sp1, sp2)).toSuccess
           case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
           case Some(params) =>
             /*
              * Check for `DuplicateFormal`.
              */
             checkDuplicateFormal(params) map {
-              case ps => WeededAst.Declaration.Signature(ident, ps, Types.weed(tpe), mkSL(sp1, sp2))
+              case ps => WeededAst.Declaration.Signature(doc, ident, ps, Types.weed(tpe), mkSL(sp1, sp2))
             }
         }
 
-      case ParsedAst.Declaration.External(sp1, ident, paramsOpt, tpe, sp2) =>
+      case ParsedAst.Declaration.External(docOpt, sp1, ident, paramsOpt, tpe, sp2) =>
+        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
+
         /*
          * Check for `IllegalParameterList`.
          */
         paramsOpt match {
-          case None => WeededAst.Declaration.External(ident, Nil, Types.weed(tpe), mkSL(sp1, sp2)).toSuccess
+          case None => WeededAst.Declaration.External(doc, ident, Nil, Types.weed(tpe), mkSL(sp1, sp2)).toSuccess
           case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
           case Some(params) =>
             /*
              * Check for `DuplicateFormal`.
              */
             checkDuplicateFormal(params) map {
-              case ps => WeededAst.Declaration.External(ident, ps, Types.weed(tpe), mkSL(sp1, sp2))
+              case ps => WeededAst.Declaration.External(doc, ident, ps, Types.weed(tpe), mkSL(sp1, sp2))
             }
         }
 
-      case ParsedAst.Declaration.Law(sp1, ident, tparams, paramsOpt, tpe, exp, sp2) =>
+      case ParsedAst.Declaration.Law(docOpt, sp1, ident, tparams, paramsOpt, tpe, exp, sp2) =>
+        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
+
         /*
          * Check for `IllegalParameterList`.
          */
         Expressions.weed(exp) flatMap {
           case e => paramsOpt match {
-            case None => WeededAst.Declaration.Law(ident, tparams.toList, Nil, Types.weed(tpe), e, mkSL(sp1, sp2)).toSuccess
+            case None => WeededAst.Declaration.Law(doc, ident, tparams.toList, Nil, Types.weed(tpe), e, mkSL(sp1, sp2)).toSuccess
             case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
             case Some(params) =>
               /*
                * Check for `DuplicateFormal`.
                */
               checkDuplicateFormal(params) map {
-                case ps => WeededAst.Declaration.Law(ident, tparams.toList, ps, Types.weed(tpe), e, mkSL(sp1, sp2))
+                case ps => WeededAst.Declaration.Law(doc, ident, tparams.toList, ps, Types.weed(tpe), e, mkSL(sp1, sp2))
               }
           }
         }
@@ -160,14 +166,16 @@ object Weeder {
           case m => WeededAst.Declaration.Enum(doc, ident, tparams, m, mkSL(sp1, sp2))
         }
 
-      case ParsedAst.Declaration.Class(sp1, ident, tparams, bounds, decls, sp2) =>
+      case ParsedAst.Declaration.Class(docOpt, sp1, ident, tparams, bounds, decls, sp2) =>
+        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
         @@(decls.map(weed)) map {
-          case ds => WeededAst.Declaration.Class(ident, tparams.toList.map(Types.weed), ds, mkSL(sp1, sp2))
+          case ds => WeededAst.Declaration.Class(doc, ident, tparams.toList.map(Types.weed), ds, mkSL(sp1, sp2))
         }
 
-      case ParsedAst.Declaration.Impl(sp1, ident, tparams, bounds, decls, sp2) =>
+      case ParsedAst.Declaration.Impl(docOpt, sp1, ident, tparams, bounds, decls, sp2) =>
+        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
         @@(decls.map(weed)) map {
-          case ds => WeededAst.Declaration.Impl(ident, tparams.toList.map(Types.weed), ds, mkSL(sp1, sp2))
+          case ds => WeededAst.Declaration.Impl(doc, ident, tparams.toList.map(Types.weed), ds, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Declaration.Relation(docOpt, sp1, ident, attrs, sp2) =>
