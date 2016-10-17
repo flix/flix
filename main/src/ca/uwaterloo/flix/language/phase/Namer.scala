@@ -76,7 +76,7 @@ object Namer {
       /*
        * Definition.
        */
-      case WeededAst.Declaration.Definition(ann, ident, tparams0, params0, exp, tpe, loc) =>
+      case WeededAst.Declaration.Definition(doc, ann, ident, tparams0, fparams0, exp, tpe, loc) =>
         // check if the name is legal.
         if (ident.name.head.isUpper) {
           return IllegalDefinitionName(ident.name, loc).toFailure
@@ -89,13 +89,15 @@ object Namer {
             // Case 1: The definition does not already exist. Update it.
 
             // Compute the type environment from the formal type parameters.
-            val tvars = tparams0.map(x => x.name -> Type.freshTypeVar())
-            val tenv0 = tvars.toMap
+            val tparams = tparams0.map {
+              case p => NamedAst.TypeParam(p, Type.freshTypeVar(), p.loc)
+            }
+            val tenv0 = tparams.map(p => p.name.name -> p.tpe).toMap
 
             // Introduce a variable symbols for each formal parameter.
             var pms0 = List.empty[NamedAst.FormalParam]
             var env0 = Map.empty[String, Symbol.VarSym]
-            for (WeededAst.FormalParam(ident, tpe, loc) <- params0) {
+            for (WeededAst.FormalParam(ident, tpe, loc) <- fparams0) {
               val sym = Symbol.freshVarSym(ident)
               pms0 = NamedAst.FormalParam(sym, Types.namer(tpe, tenv0), loc) :: pms0
               env0 = env0 + (ident.name -> sym)
@@ -104,8 +106,8 @@ object Namer {
             Expressions.namer(exp, env0, tenv0) map {
               case e =>
                 val sym = Symbol.mkDefnSym(ns0, ident)
-                val sc = NamedAst.Scheme(tvars.map(_._2), Types.namer(tpe, tenv0))
-                val defn = NamedAst.Declaration.Definition(sym, tenv0.values.toList, pms0.reverse, e, ann, sc, loc)
+                val sc = NamedAst.Scheme(tparams.map(_.tpe), Types.namer(tpe, tenv0))
+                val defn = NamedAst.Declaration.Definition(doc, ann, sym, tparams, pms0.reverse, e, sc, loc)
                 prog0.copy(definitions = prog0.definitions + (ns0 -> (defns + (ident.name -> defn))))
             }
           case Some(defn) =>
@@ -116,28 +118,32 @@ object Namer {
       /*
        * Signature.
        */
-      case WeededAst.Declaration.Signature(ident, params, tpe, loc) => ??? // TODO: Add support for signature in Namer.
+      case WeededAst.Declaration.Signature(doc, ident, params, tpe, loc) => ??? // TODO: Add support for signature in Namer.
 
       /*
        * External.
        */
-      case WeededAst.Declaration.External(ident, params, tpe, loc) => ??? // TODO: Add support for external in Namer.
+      case WeededAst.Declaration.External(doc, ident, params, tpe, loc) => ??? // TODO: Add support for external in Namer.
 
       /*
        * Law.
        */
-      case WeededAst.Declaration.Law(ident, tparams, params, tpe, exp, loc) => ??? // TODO: Add support for law in Namer.
+      case WeededAst.Declaration.Law(doc, ident, tparams, params, tpe, exp, loc) => ??? // TODO: Add support for law in Namer.
 
       /*
        * Enum.
        */
-      case WeededAst.Declaration.Enum(ident, tparams, cases, loc) =>
+      case WeededAst.Declaration.Enum(doc, ident, tparams0, cases, loc) =>
         val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
         enums0.get(ident.name) match {
           case None =>
             // Case 2.1: The enum does not exist in the namespace. Update it.
             val sym = Symbol.mkEnumSym(ns0, ident)
-            val enum = NamedAst.Declaration.Enum(sym, casesOf(cases, Map.empty), schemeOf(sym, tparams, cases), loc)
+            val tparams = tparams0 map {
+              case p => NamedAst.TypeParam(p, Type.freshTypeVar(), loc)
+            }
+            val tenv = tparams.map(kv => kv.name.name -> kv.tpe).toMap
+            val enum = NamedAst.Declaration.Enum(doc, sym, tparams, casesOf(cases, tenv), schemeOf(sym, tparams0, cases), loc)
             val enums = enums0 + (ident.name -> enum)
             prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
           case Some(enum) =>
@@ -148,12 +154,12 @@ object Namer {
       /*
        * Class.
        */
-      case WeededAst.Declaration.Class(ident, tparams, decls, loc) => ??? // TODO: Add support for class in Namer.
+      case WeededAst.Declaration.Class(doc, ident, tparams, decls, loc) => ??? // TODO: Add support for class in Namer.
 
       /*
        * Impl.
        */
-      case WeededAst.Declaration.Impl(ident, tparams, decls, loc) => ??? // TODO: Add support for impl in Namer.
+      case WeededAst.Declaration.Impl(doc, ident, tparams, decls, loc) => ??? // TODO: Add support for impl in Namer.
 
       /*
        * Fact.
@@ -218,7 +224,7 @@ object Namer {
       /*
        * Relation.
        */
-      case WeededAst.Table.Relation(ident, attr, loc) =>
+      case WeededAst.Table.Relation(doc, ident, attr, loc) =>
         // check if the name is legal.
         if (ident.name.head.isLower) {
           return IllegalTableName(ident.name, loc).toFailure
@@ -228,7 +234,7 @@ object Namer {
         prog0.tables.get(ns0) match {
           case None =>
             // Case 1: The namespace does not yet exist. So the table does not yet exist.
-            val table = NamedAst.Table.Relation(Symbol.mkTableSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
+            val table = NamedAst.Table.Relation(doc, Symbol.mkTableSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
             val tables = Map(ident.name -> table)
             prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
           case Some(tables0) =>
@@ -236,7 +242,7 @@ object Namer {
             tables0.get(ident.name) match {
               case None =>
                 // Case 2.1: The table does not exist in the namespace. Update it.
-                val table = NamedAst.Table.Relation(Symbol.mkTableSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
+                val table = NamedAst.Table.Relation(doc, Symbol.mkTableSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
                 val tables = tables0 + (ident.name -> table)
                 prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
               case Some(table) =>
@@ -248,7 +254,7 @@ object Namer {
       /*
        * Lattice.
        */
-      case WeededAst.Table.Lattice(ident, keys, value, loc) =>
+      case WeededAst.Table.Lattice(doc, ident, keys, value, loc) =>
         // check if the name is legal.
         if (ident.name.head.isLower) {
           return IllegalTableName(ident.name, loc).toFailure
@@ -258,7 +264,7 @@ object Namer {
         prog0.tables.get(ns0) match {
           case None =>
             // Case 1: The namespace does not yet exist. So the table does not yet exist.
-            val table = NamedAst.Table.Lattice(Symbol.mkTableSym(ns0, ident), keys.map(k => Attributes.namer(k, Map.empty)), Attributes.namer(value, Map.empty), loc)
+            val table = NamedAst.Table.Lattice(doc, Symbol.mkTableSym(ns0, ident), keys.map(k => Attributes.namer(k, Map.empty)), Attributes.namer(value, Map.empty), loc)
             val tables = Map(ident.name -> table)
             prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
           case Some(tables0) =>
@@ -266,7 +272,7 @@ object Namer {
             tables0.get(ident.name) match {
               case None =>
                 // Case 2.1: The table does not exist in the namespace. Update it.
-                val table = NamedAst.Table.Lattice(Symbol.mkTableSym(ns0, ident), keys.map(k => Attributes.namer(k, Map.empty)), Attributes.namer(value, Map.empty), loc)
+                val table = NamedAst.Table.Lattice(doc, Symbol.mkTableSym(ns0, ident), keys.map(k => Attributes.namer(k, Map.empty)), Attributes.namer(value, Map.empty), loc)
                 val tables = tables0 + (ident.name -> table)
                 prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
               case Some(table) =>

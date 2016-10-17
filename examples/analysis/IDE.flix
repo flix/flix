@@ -57,8 +57,8 @@ namespace IDE {
       Transformer.NonBotTrans(a1*a2, (a1*b2)+b1, lub(sum(prod(c2, a1), b1), c1))
   }
 
-    //// from paper: f = \l. a*l+b meet c; f(Top) = Top
-    //// paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
+    // from paper: f = \l. a*l+b meet c; f(Top) = Top
+    // paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
     def apply(t: Transformer, l: Value): Value = match t with {
         case Transformer.BotTrans => Value.Bot
         case Transformer.NonBotTrans(a, b, c) => if(l==Value.Bot) Value.Bot else lub(sum(prod(l,a),b),c)
@@ -85,45 +85,45 @@ namespace IDE {
 
     let Transformer<> = (Transformer.BotTrans, ???: Transformer, transleq, translub, transglb);
 
-    //// Inputs
+    // Inputs
     lat EshIntra(node: Str, infact: Str, outfact: Str, transformer: Transformer);
     lat EshCallStart(node: Str, infact: Str, proc: Str, outfact: Str, transformer: Transformer);
     lat EshEndReturn(proc: Str, infact: Str, node: Str, outfact: Str, transformer: Transformer);
 
-    //// Call-to-Return edges should be included above in EshIntra
+    // Call-to-Return edges should be included above in EshIntra
     rel CFG(src: Str, dst: Str);
     rel CallGraph(callsite: Str, proc: Str);
     rel StartNode(proc: Str, node: Str);
     rel EndNode(proc: Str, node: Str);
 
-    //// Internal lattices
+    // Internal lattices
     lat JumpFn(infact: Str, node: Str, outfact: Str, transformer: Transformer);
     lat SummaryFn(node: Str, infact: Str, outfact: Str, transformer: Transformer);
     lat ResultProc(proc: Str, fact: Str, value: Value);
     rel InProc(proc: Str, node: Str);
 
-    //// Output
+    // Output
     lat Result(node: Str, fact: Str, value: Value);
 
-    //// Rules
+    // Rules
 
-    //// nodes in a given procedure
+    // nodes in a given procedure
     InProc(p,start) :- StartNode(p, start).
     InProc(p,m) :- InProc(p,n), CFG(n,m).
 
-    //// intraproc
+    // intraproc
     JumpFn(d1,m,d3,compose(long,short)) :-
         CFG(n,m),
         JumpFn(d1,n,d2,long),
         EshIntra(n,d2,d3,short).
 
-    //// use summary
+    // use summary
     JumpFn(d1,m,d3,compose(caller,summary)) :-
         CFG(n,m),
         JumpFn(d1,n,d2,caller),
         SummaryFn(n,d2,d3,summary).
 
-    //// call-to-start
+    // call-to-start
     def nonbottom(t: Transformer): Bool = t != Transformer.BotTrans
 
     JumpFn(d3,start,d3,id()) :-
@@ -134,7 +134,7 @@ namespace IDE {
         nonbottom(nonbottom1),
         nonbottom(nonbottom2).
 
-    //// compute summary
+    // compute summary
     SummaryFn(call,d4,d5,compose(compose(cs,se),er)) :-
         CallGraph(call,target),
         StartNode(target,start),
@@ -143,7 +143,7 @@ namespace IDE {
         JumpFn(d1,end,d2,se),
         EshEndReturn(target,d2,call,d5,er).
 
-    //// tabulate result
+    // tabulate result
     Result(n,d,apply(fn,vp)) :-
         ResultProc(proc,dp,vp),
         InProc(proc,n),
@@ -153,7 +153,7 @@ namespace IDE {
         Result(call,d,v),
         EshCallStart(call,d,proc,dp,cs).
 
-    //// Rules for Example (constant propagation) from IDE paper
+    // Rules for Example (constant propagation) from IDE paper
     def id: Transformer = Transformer.NonBotTrans(1,0,Value.Bot)
 
     CFG("smain","n1").
@@ -209,7 +209,7 @@ namespace IDE {
     EshCallStart("n6","x","p","x",id()).
     EshEndReturn("p","x","n6","x",id()).
 
-    //// Entrypoint
+    // Entrypoint
     JumpFn("zero","smain","zero",id()).
     ResultProc("main","zero",Value.Top).
 
