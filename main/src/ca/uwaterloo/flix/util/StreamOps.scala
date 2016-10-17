@@ -39,6 +39,13 @@ object StreamOps {
   }
 
   /**
+    * Reads the `inputStream` into a string.
+    */
+  def readAll(inputStream: InputStream): String = {
+    readAll(new BufferedReader(new InputStreamReader(inputStream)))
+  }
+
+  /**
     * Reads the `reader` into a string.
     */
   def readAll(reader: BufferedReader): String = {

@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.{DeltaSolver, Model, Solver, Value}
-import ca.uwaterloo.flix.util.{Options, Validation}
+import ca.uwaterloo.flix.util.{LocalResource, Options, StreamOps, Validation}
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
@@ -44,6 +44,13 @@ class Flix {
     * A sequence of paths to be parsed into Flix ASTs.
     */
   private val paths = ListBuffer.empty[Path]
+
+  /**
+    * A sequence of internal inputs to be parsed into Flix ASTs.
+    */
+  private val internals = List(
+    "Prelude.flix" -> StreamOps.readAll(LocalResource.Library.Prelude)
+  )
 
   /**
     * A map of hooks to JVM invokable methods.
@@ -261,6 +268,7 @@ class Flix {
     val si1 = strings.foldLeft(List.empty[SourceInput]) {
       case (xs, s) => SourceInput.Str(s) :: xs
     }
+
     val si2 = paths.foldLeft(List.empty[SourceInput]) {
       case (xs, p) if p.getFileName.toString.endsWith(".flix") => SourceInput.TxtFile(p) :: xs
       case (xs, p) if p.getFileName.toString.endsWith(".flix.zip") => SourceInput.ZipFile(p) :: xs
@@ -268,7 +276,11 @@ class Flix {
       case (_, p) => throw new IllegalStateException(s"Unknown file type '${p.getFileName}'.")
     }
 
-    si1 ::: si2
+    val si3 = internals.foldLeft(List.empty[SourceInput]) {
+      case (xs, (name, text)) => SourceInput.Internal(name, text) :: xs
+    }
+    
+    si1 ::: si2 ::: si3
   }
 
   /////////////////////////////////////////////////////////////////////////////

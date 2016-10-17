@@ -6017,15 +6017,15 @@ class TestBackend extends FunSuite {
 
   test("Match.Tag.05") {
     val input =
-      """enum Val { case Nil, case Val((Str, Int)) }
+      """enum Val { case Nip, case Val((Str, Int)) }
         |def f(x: Val): Int = match x with {
-        |  case Val.Nil => 0
+        |  case Val.Nip => 0
         |  case Val.Val(v) => match v with {
         |    case ("x", y) => -1
         |    case (_, y) => y
         |  }
         |}
-        |def g01: Int = f(Val.Nil)
+        |def g01: Int = f(Val.Nip)
         |def g02: Int = f(Val.Val(("a", 1)))
         |def g03: Int = f(Val.Val(("b", 2)))
         |def g04: Int = f(Val.Val(("x", 3)))
@@ -6039,9 +6039,9 @@ class TestBackend extends FunSuite {
 
   test("Match.Tag.06") {
     val input =
-      """enum Val { case Nil, case Val((Str, Int)) }
+      """enum Val { case Nip, case Val((Str, Int)) }
         |def f(x: Val): Int = match x with {
-        |  case Val.Nil => 0
+        |  case Val.Nip => 0
         |  case Val.Val(v) => match v with {
         |    case (x, y) => match x with {
         |      case "x" => -1
@@ -6051,7 +6051,7 @@ class TestBackend extends FunSuite {
         |    }
         |  }
         |}
-        |def g01: Int = f(Val.Nil)
+        |def g01: Int = f(Val.Nip)
         |def g02: Int = f(Val.Val(("a", 1)))
         |def g03: Int = f(Val.Val(("b", 2)))
         |def g04: Int = f(Val.Val(("x", 3)))
@@ -6099,12 +6099,12 @@ class TestBackend extends FunSuite {
 
   test("Match.Tag.08") {
     val input =
-      """enum Val { case Nil, case Val(Set[Int]) }
+      """enum Val { case Nip, case Val(Set[Int]) }
         |def f(x: Val): Set[Int] = match x with {
-        |  case Val.Nil => #{0}
+        |  case Val.Nip => #{0}
         |  case Val.Val(s) => s
         |}
-        |def g01: Set[Int] = f(Val.Nil)
+        |def g01: Set[Int] = f(Val.Nip)
         |def g02: Set[Int] = f(Val.Val(#{1, 2, 3}))
       """.stripMargin
     val t = new Tester(input)

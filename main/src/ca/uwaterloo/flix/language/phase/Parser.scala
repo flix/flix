@@ -41,6 +41,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
    * Initialize parser input.
    */
   override val input: ParserInput = source match {
+    case SourceInput.Internal(name, text) => text
     case SourceInput.Str(str) => str
     case SourceInput.TxtFile(path) =>
       new String(Files.readAllBytes(path), DefaultCharset)

@@ -31,6 +31,12 @@ object LocalResource {
 
   }
 
+  object Library {
+
+    def Prelude: InputStream = getInputStream("/library/Prelude.flix")
+
+  }
+
   object Tutorials {
 
     def DeltaDebugging: InputStream = getInputStream("/tutorials/delta-debugging.flix")
