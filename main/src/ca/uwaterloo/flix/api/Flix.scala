@@ -371,16 +371,6 @@ class Flix {
   }
 
   /**
-    * Returns the list type parameterized by the given type `tpe`.
-    */
-  def mkListType(tpe: IType): IType = {
-    if (tpe == null)
-      throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
-
-    new WrappedType(Type.mkFList(tpe.asInstanceOf[WrappedType].tpe))
-  }
-
-  /**
     * Returns the set type parameterized by the given type `tpe`.
     */
   def mkSetType(tpe: IType): IType = {

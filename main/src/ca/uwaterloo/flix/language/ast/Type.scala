@@ -49,7 +49,6 @@ sealed trait Type {
     case Type.Native => Set.empty
     case Type.Arrow(l) => Set.empty
     case Type.FTuple(l) => Set.empty
-    case Type.FList => Set.empty
     case Type.FVec => Set.empty
     case Type.FSet => Set.empty
     case Type.FMap => Set.empty
@@ -96,7 +95,6 @@ sealed trait Type {
     case Type.Native => "Native"
     case Type.Arrow(l) => "Arrow"
     case Type.FTuple(l) => "Tuple"
-    case Type.FList => "List"
     case Type.FVec => "Vec"
     case Type.FSet => "Set"
     case Type.FMap => "Map"

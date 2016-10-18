@@ -110,7 +110,6 @@ object Codegen {
         case Type.Native => asm.Type.getDescriptor(Constants.objectClass)
         case Type.Apply(Type.Arrow(l), _) => s"L${decorate(interfaces(tpe))};"
         case Type.Apply(Type.FTuple(l), _) => asm.Type.getDescriptor(Constants.tupleClass)
-        case Type.Apply(Type.FList, _) => asm.Type.getDescriptor(Constants.objectClass)
         case Type.Apply(Type.FSet, _) => asm.Type.getDescriptor(Constants.setClass)
         case _ if tpe.isEnum => asm.Type.getDescriptor(Constants.tagClass)
         case _ if tpe.isTuple => asm.Type.getDescriptor(Constants.tupleClass)
@@ -287,7 +286,7 @@ object Codegen {
       case Type.Float32 => visitor.visitVarInsn(FLOAD, offset)
       case Type.Float64 => visitor.visitVarInsn(DLOAD, offset)
       case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _, _) | Type.Apply(Type.Arrow(_), _) |
-           Type.Apply(Type.FList, _) | Type.Apply(Type.FSet, _) => visitor.visitVarInsn(ALOAD, offset)
+           Type.Apply(Type.FSet, _) => visitor.visitVarInsn(ALOAD, offset)
       case _ if tpe.isTuple => visitor.visitVarInsn(ALOAD, offset)
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }

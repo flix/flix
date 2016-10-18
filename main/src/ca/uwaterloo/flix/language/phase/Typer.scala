@@ -963,20 +963,6 @@ object Typer {
           TypedAst.Expression.Tuple(es, subst0(tvar), loc)
 
         /*
-         * Nil expression.
-         */
-        case NamedAst.Expression.FNil(tvar, loc) =>
-          TypedAst.Expression.FNil(subst0(tvar), loc)
-
-        /*
-         * List expression.
-         */
-        case NamedAst.Expression.FList(hd, tl, tvar, loc) =>
-          val e1 = visitExp(hd, subst0)
-          val e2 = visitExp(tl, subst0)
-          TypedAst.Expression.FList(e1, e2, subst0(tvar), loc)
-
-        /*
          * Vec expression.
          */
         case NamedAst.Expression.FVec(elms, tvar, loc) =>

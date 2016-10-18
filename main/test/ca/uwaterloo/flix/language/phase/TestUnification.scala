@@ -237,16 +237,6 @@ class TestUnification extends FunSuite {
     assert(result.isOk)
   }
 
-  test("Unify.FList.01") {
-    val result = Unification.unify(Type.FList, Type.FList, SourceLocation.Unknown)
-    assert(result.isOk)
-  }
-
-  test("Unify.FList.02") {
-    val result = Unification.unify(Type.mkFList(Type.Bool), Type.mkFList(Type.Bool), SourceLocation.Unknown)
-    assert(result.isOk)
-  }
-
   test("Unify.FVec.01") {
     val result = Unification.unify(Type.FVec, Type.FVec, SourceLocation.Unknown)
     assert(result.isOk)
