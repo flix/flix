@@ -1714,9 +1714,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case Nil => 0
         |}
       """.stripMargin
-    intercept[VerifyError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Pattern.List.02") {
@@ -1725,9 +1723,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case 1 :: Nil => 0
         |}
       """.stripMargin
-    intercept[VerifyError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Pattern.List.03") {
@@ -1736,9 +1732,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case 1 :: 2 :: Nil => 0
         |}
       """.stripMargin
-    intercept[VerifyError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Pattern.List.04") {
@@ -1747,9 +1741,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case 1 :: 2 :: 3 :: Nil => 0
         |}
       """.stripMargin
-    intercept[VerifyError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Pattern.List.05") {
@@ -1758,9 +1750,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case x :: Nil => x
         |}
       """.stripMargin
-    intercept[VerifyError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Pattern.List.06") {
@@ -1769,9 +1759,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case x :: y :: Nil => x + y
         |}
       """.stripMargin
-    intercept[VerifyError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Pattern.List.07") {
@@ -1781,9 +1769,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case x :: rs => 1 + f(rs)
         |}
       """.stripMargin
-    intercept[VerifyError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Pattern.List.08") {
@@ -1794,9 +1780,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case _ => false
         |}
       """.stripMargin
-    intercept[VerifyError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Pattern.List.09") {
@@ -1808,9 +1792,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case xs => 42
         |}
       """.stripMargin
-    intercept[VerifyError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Pattern.List.10") {
@@ -1821,9 +1803,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case (c1, i1) :: (c2, i2) :: Nil => i1 + i2
         |}
       """.stripMargin
-    intercept[VerifyError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Pattern.List.11") {
@@ -1834,9 +1814,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case ('a', i1) :: (c2, 21) :: Nil => 2
         |}
       """.stripMargin
-    intercept[VerifyError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Pattern.ListList.01") {
@@ -1846,9 +1824,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case (x :: Nil) :: (y :: Nil) :: Nil => x + y
         |}
       """.stripMargin
-    intercept[VerifyError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Pattern.ListList.02") {
@@ -1858,9 +1834,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case (x :: y :: Nil) :: (z :: w :: Nil) :: Nil => x + y + z + w
         |}
       """.stripMargin
-    intercept[VerifyError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Pattern.ListList.03") {
@@ -1870,9 +1844,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case (x :: xs) :: (y :: ys) :: (z :: zs) :: Nil => x + y + z
         |}
       """.stripMargin
-    intercept[VerifyError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Pattern.Vec.01") {
