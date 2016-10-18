@@ -712,11 +712,11 @@ object Codegen {
       visitor.visitTypeInsn(CHECKCAST, name)
       visitor.visitMethodInsn(INVOKEVIRTUAL, name, methodName, desc, false)
 
-    case Type.BigInt | Type.Str | Type.Enum(_, _, _) | Type.Apply(Type.Arrow(_), _) | Type.Apply(Type.FSet, _) =>
+    case Type.BigInt | Type.Str | Type.Enum(_, _, _) | Type.Apply(Type.Arrow(_), _) | Type.Apply(Type.FSet, _) | Type.Apply(Type.Enum(_, _, _), _) =>
       val name = tpe match {
         case Type.BigInt => asm.Type.getInternalName(Constants.bigIntegerClass)
         case Type.Str => asm.Type.getInternalName(Constants.stringClass)
-        case Type.Enum(_, _, _) => asm.Type.getInternalName(Constants.tagClass)
+        case Type.Enum(_, _, _) | Type.Apply(Type.Enum(_, _, _), _) => asm.Type.getInternalName(Constants.tagClass)
         case Type.Apply(Type.Arrow(l), _) =>
           // TODO: Is this correct? Need to write a test when we can write lambda expressions.
           decorate(ctx.interfaces(tpe))

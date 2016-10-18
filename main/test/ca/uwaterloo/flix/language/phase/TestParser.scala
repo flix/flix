@@ -1160,16 +1160,12 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Expression.ListList.02") {
     val input = "def f: List[List[Int]] = (1 :: Nil) :: Nil"
-    intercept[InternalCompilerException] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Expression.ListList.03") {
     val input = "def f: List[List[Int]] = (Nil) :: (1 :: Nil) :: (2 :: 3 :: 4 :: Nil) :: Nil"
-    intercept[InternalCompilerException] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Expression.Vec.01") {
