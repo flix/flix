@@ -170,7 +170,6 @@ object Disambiguation {
       case "Native" => Ok(Type.Native)
 
       // Higher-Kinded Types.
-      case "List" => Ok(Type.FList)
       case "Vec" => Ok(Type.FVec)
       case "Set" => Ok(Type.FSet)
       case "Map" => Ok(Type.FMap)

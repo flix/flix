@@ -771,58 +771,6 @@ object SymbolicEvaluator {
         }
 
       /**
-        * FNil.
-        */
-      case Expression.FNil(tpe, loc) =>
-        lift(pc0, SymVal.FNil)
-
-      /**
-        * FList.
-        */
-      case Expression.FList(hd, tl, _, _) =>
-        eval2(pc0, hd, tl, env0) flatMap {
-          case (pc, (v1, v2)) => lift(pc, SymVal.FList(v1, v2))
-        }
-
-      /**
-        * IsNil.
-        */
-      case Expression.IsNil(exp, _) =>
-        eval(pc0, exp, env0) flatMap {
-          case (pc, SymVal.FNil) => lift(pc, SymVal.True)
-          case (pc, SymVal.FList(hd, tl)) => lift(pc, SymVal.False)
-          case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
-        }
-
-      /**
-        * IsList.
-        */
-      case Expression.IsList(exp, _) =>
-        eval(pc0, exp, env0) flatMap {
-          case (pc, SymVal.FNil) => lift(pc, SymVal.False)
-          case (pc, SymVal.FList(hd, tl)) => lift(pc, SymVal.True)
-          case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
-        }
-
-      /**
-        * GetHead.
-        */
-      case Expression.GetHead(exp, _, _) =>
-        eval(pc0, exp, env0) flatMap {
-          case (pc, SymVal.FList(hd, tl)) => lift(pc, hd)
-          case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
-        }
-
-      /**
-        * GetTail.
-        */
-      case Expression.GetTail(exp, _, _) =>
-        eval(pc0, exp, env0) flatMap {
-          case (pc, SymVal.FList(hd, tl)) => lift(pc, tl)
-          case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
-        }
-
-      /**
         * User Error.
         */
       case Expression.UserError(tpe, loc) => throw new UserException("User Error.", loc)

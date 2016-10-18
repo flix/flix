@@ -647,23 +647,6 @@ object Typer {
           ) yield resultType
 
         /*
-         * Nil expression.
-         */
-        case NamedAst.Expression.FNil(tvar, loc) =>
-          val freshElmVar = Type.freshTypeVar()
-          unifyM(Type.mkFList(freshElmVar), tvar, loc)
-
-        /*
-         * List expression.
-         */
-        case NamedAst.Expression.FList(head, tail, tvar, loc) =>
-          for (
-            headType <- visitExp(head);
-            tailType <- visitExp(tail);
-            resultType <- unifyM(tvar, Type.mkFList(headType), tailType, loc)
-          ) yield resultType
-
-        /*
          * Vector expression.
          */
         case NamedAst.Expression.FVec(elms, tvar, loc) =>
@@ -806,14 +789,6 @@ object Typer {
             elementTypes <- seqM(elms map visitPat);
             resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
           ) yield resultType
-        case NamedAst.Pattern.FNil(tvar, loc) => liftM(Type.mkFList(tvar))
-        case NamedAst.Pattern.FList(hd, tl, tvar, loc) =>
-          for {
-            inferredHeadType <- visitPat(hd)
-            inferredTailType <- visitPat(tl)
-            inferredListType <- unifyM(Type.mkFList(inferredHeadType), inferredTailType, loc)
-            resultType <- unifyM(tvar, inferredListType, loc)
-          } yield resultType
         case NamedAst.Pattern.FVec(elms, rest, tvar, loc) =>
           // Introduce a fresh type variable for the type of the elements in the vector.
           val elementType = Type.freshTypeVar()
@@ -1093,8 +1068,6 @@ object Typer {
             case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
           }
         case NamedAst.Pattern.Tuple(elms, tvar, loc) => TypedAst.Pattern.Tuple(elms map visitPat, subst0(tvar), loc)
-        case NamedAst.Pattern.FNil(tvar, loc) => TypedAst.Pattern.FNil(subst0(tvar), loc)
-        case NamedAst.Pattern.FList(hd, tl, tvar, loc) => TypedAst.Pattern.FList(visitPat(hd), visitPat(tl), subst0(tvar), loc)
         case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => TypedAst.Pattern.FVec(elms map visitPat, rest.map(visitPat), subst0(tvar), loc)
         case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => TypedAst.Pattern.FSet(elms map visitPat, rest.map(visitPat), subst0(tvar), loc)
         case NamedAst.Pattern.FMap(elms, rest, tvar, loc) =>

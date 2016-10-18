@@ -574,54 +574,6 @@ object Codegen {
       // Finally, call the constructor, which pops the reference (tuple) and argument (array).
       visitor.visitMethodInsn(INVOKESPECIAL, name, "<init>", asm.Type.getConstructorDescriptor(ctor), false)
 
-    case Expression.FNil(tpe, loc) =>
-      // Call the static method ca.uwaterloo.flix.runtime.value.FNil.get().
-      val name = "ca/uwaterloo/flix/runtime/value/FNil"
-      visitor.visitMethodInsn(INVOKESTATIC, name, "getSingleton", "()Lca/uwaterloo/flix/runtime/value/FNil;", false);
-
-    case Expression.FList(hd, tl, tpe, loc) =>
-      // Generate code for hd and tl.
-      // Call the constructor of ca.uwaterloo.flix.runtime.value.FList(hd, tl).
-      val name = "ca/uwaterloo/flix/runtime/value/FList"
-      val ctor = "(Ljava/lang/Object;Ljava/lang/Object;)V"
-      visitor.visitTypeInsn(NEW, name)
-      visitor.visitInsn(DUP)
-      compileBoxedExpr(ctx, visitor, entryPoint)(hd)
-      compileExpression(ctx, visitor, entryPoint)(tl)
-      visitor.visitMethodInsn(INVOKESPECIAL, name, "<init>", ctor, false)
-
-    case Expression.IsNil(exp, loc) =>
-      // Generate code for exp.
-      // Perform INSTANCEOF for ca.uwaterloo.flix.runtime.value.FNil.
-      val name = "ca/uwaterloo/flix/runtime/value/FNil"
-      compileExpression(ctx, visitor, entryPoint)(exp)
-      visitor.visitTypeInsn(INSTANCEOF, name)
-
-    case Expression.IsList(exp, loc) =>
-      // Generate code for exp.
-      // Perform INSTANCEOF for ca.uwaterloo.flix.runtime.value.FList.
-      val name = "ca/uwaterloo/flix/runtime/value/FList"
-      compileExpression(ctx, visitor, entryPoint)(exp)
-      visitor.visitTypeInsn(INSTANCEOF, name)
-
-    case Expression.GetHead(exp, tpe, loc) =>
-      // Generate code for exp.
-      // Cast the result to ca.uwaterloo.flix.runtime.value.FList
-      // Call the INSTANCE method ca.uwaterloo.flix.runtime.value.FList.getHd
-      val name = "ca/uwaterloo/flix/runtime/value/FList"
-      compileExpression(ctx, visitor, entryPoint)(exp)
-      visitor.visitTypeInsn(CHECKCAST, name)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, name, "getHd", "()Ljava/lang/Object;", false)
-
-    case Expression.GetTail(exp, tpe, loc) =>
-      // Generate code for exp.
-      // Cast the result to ca.uwaterloo.flix.runtime.value.FList
-      // Call the INSTANCE method ca.uwaterloo.flix.runtime.value.FList.getTl
-      val name = "ca/uwaterloo/flix/runtime/value/FList"
-      compileExpression(ctx, visitor, entryPoint)(exp)
-      visitor.visitTypeInsn(CHECKCAST, name)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, name, "getTl", "()Ljava/lang/Object;", false)
-
     case Expression.FSet(elms, _, _) =>
       // First create a scala.immutable.Set
       visitor.visitFieldInsn(GETSTATIC, Constants.scalaPredef, "MODULE$", s"L${Constants.scalaPredef};")

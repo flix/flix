@@ -211,8 +211,6 @@ object Simplifier {
         SimplifiedAst.Expression.Tag(sym.toResolved, tag, simplify(e), tpe, loc)
       case TypedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
-      case TypedAst.Expression.FNil(tpe, loc) => SimplifiedAst.Expression.FNil(tpe, loc)
-      case TypedAst.Expression.FList(hd, tl, tpe, loc) => SimplifiedAst.Expression.FList(simplify(hd), simplify(tl), tpe, loc)
       case TypedAst.Expression.FVec(elms, tpe, loc) => ??? // TODO
       case TypedAst.Expression.FSet(elms, tpe, loc) =>
         SimplifiedAst.Expression.FSet(elms map simplify, tpe, loc)
@@ -318,35 +316,6 @@ object Simplifier {
           case (((pat, name), idx), exp) =>
             SExp.Let(name, -1, SExp.GetTupleIndex(SExp.Var(v, -1, tpe, loc), idx, pat.tpe, loc), exp, succ.tpe, loc)
         }
-
-      /**
-        * Matching Nil may succeed or fail.
-        *
-        * // TODO
-        */
-      case (FNil(tpe, loc) :: ps, v :: vs) =>
-        val cond = SExp.IsNil(SExp.Var(v, -1, tpe, loc), loc)
-        val consequent = simplify(ps, vs, succ, fail)
-        val alternative = fail
-        SExp.IfThenElse(cond, consequent, alternative, succ.tpe, loc)
-
-      /**
-        * Matching a list may succeed or fail.
-        *
-        * TODO
-        */
-      case (FList(hd, tl, tpe, loc) :: ps, v :: vs) =>
-        // TODO: need to fix the types.
-        val listVar = SExp.Var(v, -1, tpe, loc)
-        val freshHeadVar = genSym.fresh2()
-        val freshTailVar = genSym.fresh2()
-        val cond = SExp.IsList(listVar, loc)
-        val inner = simplify(hd :: tl :: ps, freshHeadVar :: freshTailVar :: vs, succ, fail)
-        val consequent = SExp.Let(freshHeadVar, -1,
-          SExp.GetHead(listVar, tpe, loc),
-          SExp.Let(freshTailVar, -1,
-            SExp.GetTail(listVar, tpe, loc), inner, succ.tpe, loc), succ.tpe, loc)
-        SExp.IfThenElse(cond, consequent, fail, succ.tpe, loc)
 
       case (FVec(elms, rest, tpe, loc) :: ps, v :: vs) => ???
 

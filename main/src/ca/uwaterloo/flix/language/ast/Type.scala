@@ -216,13 +216,6 @@ object Type {
   }
 
   /**
-    * A type constructor that represents list values.
-    */
-  case object FList extends Type {
-    def kind: Kind = Kind.Arrow(List(Kind.Star), Kind.Star)
-  }
-
-  /**
     * A type constructor that represents vector values
     */
   case object FVec extends Type {
@@ -292,11 +285,6 @@ object Type {
   def mkFTuple(ts: List[Type]): Type = Apply(FTuple(ts.length), ts)
 
   /**
-    * Constructs the type List[A] where `A` is the given type `tpe`.
-    */
-  def mkFList(a: Type): Type = Apply(FList, List(a))
-
-  /**
     * Constructs the type Vec[A] where `A` is the given type `tpe`.
     */
   def mkFVec(a: Type): Type = Apply(FVec, List(a))
@@ -339,7 +327,6 @@ object Type {
       case Type.Native => Type.Native
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.FTuple(l) => Type.FTuple(l)
-      case Type.FList => Type.FList
       case Type.FVec => Type.FVec
       case Type.FSet => Type.FSet
       case Type.FMap => Type.FMap

@@ -556,22 +556,6 @@ object ExecutableAst {
       override def toString: String = "(" + elms.mkString(", ") + ")"
     }
 
-    case class FNil(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
-
-    case class FList(hd: ExecutableAst.Expression, tl: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
-
-    case class IsNil(exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
-      final val tpe: Type = Type.Bool
-    }
-
-    case class IsList(exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
-      final val tpe: Type = Type.Bool
-    }
-
-    case class GetHead(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
-
-    case class GetTail(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
-
     case class FSet(elms: Array[ExecutableAst.Expression],
                     tpe: Type,
                     loc: SourceLocation) extends ExecutableAst.Expression

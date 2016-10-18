@@ -188,7 +188,7 @@ object ParsedAst {
     /**
       * Relation Declaration.
       *
-      * @param doc     the optional comment associated with the definition.
+      * @param doc   the optional comment associated with the definition.
       * @param sp1   the position of the first character in the declaration.
       * @param ident the name of the relation.
       * @param attr  the attributes (columns) of the relation.
@@ -199,7 +199,7 @@ object ParsedAst {
     /**
       * Lattice Declaration.
       *
-      * @param doc     the optional comment associated with the definition.
+      * @param doc   the optional comment associated with the definition.
       * @param sp1   the position of the first character in the declaration.
       * @param ident the name of the lattice.
       * @param attr  the attributes (columns) of the relation.
@@ -525,7 +525,7 @@ object ParsedAst {
     case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Nil Expression (Nil is the empty list of type List[A]).
+      * Nil Expression (of list).
       *
       * @param sp1 the position of the first character in the expression.
       * @param sp2 the position of the last character in the expression.
@@ -533,13 +533,13 @@ object ParsedAst {
     case class FNil(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * List Expression (cons cell).
+      * Cons expression (of list).
       *
       * @param hd  the head of the list.
       * @param tl  the tail of the list.
       * @param sp2 the position of the last character in the expression.
       */
-    case class FList(hd: ParsedAst.Expression, tl: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FCons(hd: ParsedAst.Expression, tl: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Vector Expression.
@@ -659,7 +659,7 @@ object ParsedAst {
       case Pattern.Tag(sp1, _, _, _, _) => sp1
       case Pattern.Tuple(sp1, _, _) => sp1
       case Pattern.FNil(sp1, sp2) => sp1
-      case Pattern.FList(hd, _, _) => hd.leftMostSourcePosition
+      case Pattern.FCons(hd, _, _) => hd.leftMostSourcePosition
       case Pattern.FVec(sp1, _, _, _) => sp1
       case Pattern.FSet(sp1, _, _, _) => sp1
       case Pattern.FMap(sp1, _, _, _) => sp1
@@ -718,7 +718,7 @@ object ParsedAst {
     case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
-      * Nil Pattern (the empty list pattern).
+      * Nil Pattern (of list).
       *
       * @param sp1 the position of the first character in the pattern.
       * @param sp2 the position of the last character in the pattern.
@@ -726,13 +726,13 @@ object ParsedAst {
     case class FNil(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
-      * List Pattern (cons cell).
+      * Cons Pattern (of list).
       *
       * @param hd  the head pattern.
       * @param tl  the tail pattern.
       * @param sp2 the position of the last character in the pattern.
       */
-    case class FList(hd: ParsedAst.Pattern, tl: ParsedAst.Pattern, sp2: SourcePosition) extends ParsedAst.Pattern
+    case class FCons(hd: ParsedAst.Pattern, tl: ParsedAst.Pattern, sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * Vector Pattern.

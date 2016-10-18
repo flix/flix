@@ -555,22 +555,6 @@ object SimplifiedAst {
 
     case class Tuple(elms: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class FNil(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class FList(hd: SimplifiedAst.Expression, tl: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class IsNil(exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
-      final val tpe: Type = Type.Bool
-    }
-
-    case class IsList(exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
-      final val tpe: Type = Type.Bool
-    }
-
-    case class GetHead(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class GetTail(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
     case class FSet(elms: List[SimplifiedAst.Expression],
                     tpe: Type,
                     loc: SourceLocation) extends SimplifiedAst.Expression

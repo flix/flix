@@ -477,12 +477,23 @@ object Weeder {
           }
 
         case ParsedAst.Expression.FNil(sp1, sp2) =>
-          WeededAst.Expression.FNil(mkSL(sp1, sp2)).toSuccess
+          /*
+           * Rewrites a `FNil` expression into a tag expression.
+           */
+          val tag = Name.Ident(sp1, "Nil", sp2)
+          val exp = WeededAst.Expression.Unit(mkSL(sp1, sp2))
+          WeededAst.Expression.Tag(None, tag, exp, mkSL(sp1, sp2)).toSuccess
 
-        case ParsedAst.Expression.FList(hd, tl, sp2) =>
+        case ParsedAst.Expression.FCons(hd, tl, sp2) =>
+          /*
+           * Rewrites a `FCons` pattern into a tag pattern.
+           */
           val sp1 = leftMostSourcePosition(hd)
           @@(visit(hd), visit(tl)) map {
-            case (e1, e2) => WeededAst.Expression.FList(e1, e2, mkSL(sp1, sp2))
+            case (e1, e2) =>
+              val tag = Name.Ident(sp1, "Cons", sp2)
+              val exp = WeededAst.Expression.Tuple(List(e1, e2), mkSL(sp1, sp2))
+              WeededAst.Expression.Tag(None, tag, exp, mkSL(sp1, sp2))
           }
 
         case ParsedAst.Expression.FVec(sp1, elms, sp2) =>
@@ -668,11 +679,23 @@ object Weeder {
           }
 
         case ParsedAst.Pattern.FNil(sp1, sp2) =>
-          WeededAst.Pattern.FNil(mkSL(sp1, sp2)).toSuccess
+          /*
+           * Rewrites a `FNil` pattern into a tag pattern.
+           */
+          val tag = Name.Ident(sp1, "Nil", sp2)
+          val pat = WeededAst.Pattern.Unit(mkSL(sp1, sp2))
+          WeededAst.Pattern.Tag(None, tag, pat, mkSL(sp1, sp2)).toSuccess
 
-        case ParsedAst.Pattern.FList(pat1, pat2, sp2) =>
+        case ParsedAst.Pattern.FCons(pat1, pat2, sp2) =>
+          /*
+           * Rewrites a `FCons` pattern into a tag pattern.
+           */
+          val sp1 = pat1.leftMostSourcePosition
           @@(weed(pat1), weed(pat2)) map {
-            case (hd, tl) => WeededAst.Pattern.FList(hd, tl, mkSL(pat1.leftMostSourcePosition, sp2))
+            case (hd, tl) =>
+              val tag = Name.Ident(sp1, "Cons", sp2)
+              val pat = WeededAst.Pattern.Tuple(List(hd, tl), mkSL(sp1, sp2))
+              WeededAst.Pattern.Tag(None, tag, pat, mkSL(sp1, sp2))
           }
 
         case ParsedAst.Pattern.FVec(sp1, elms, rest, sp2) =>
@@ -909,7 +932,7 @@ object Weeder {
     case ParsedAst.Expression.Tag(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
     case ParsedAst.Expression.FNil(sp1, _) => sp1
-    case ParsedAst.Expression.FList(hd, _, _) => leftMostSourcePosition(hd)
+    case ParsedAst.Expression.FCons(hd, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FVec(sp1, _, _) => sp1
     case ParsedAst.Expression.FSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FMap(sp1, _, _) => sp1
