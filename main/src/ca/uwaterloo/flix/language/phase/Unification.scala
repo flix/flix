@@ -136,6 +136,8 @@ object Unification {
       case (x: Type.Var, _) => unifyVar(x, tpe2)
       case (_, x: Type.Var) => unifyVar(x, tpe1)
       case (Type.Ref(sym1, k1), Type.Ref(sym2, k2)) => Result.Ok(Substitution.empty)
+      case (Type.Ref(sym1, k1), Type.Enum(sym2, _, _)) if sym1 == sym2 => Result.Ok(Substitution.empty)
+      case (Type.Enum(sym2, _, _), Type.Ref(sym1, k1)) if sym1 == sym2 => Result.Ok(Substitution.empty)
       case (Type.Unit, Type.Unit) => Result.Ok(Substitution.empty)
       case (Type.Bool, Type.Bool) => Result.Ok(Substitution.empty)
       case (Type.Char, Type.Char) => Result.Ok(Substitution.empty)

@@ -286,7 +286,7 @@ object Codegen {
       case Type.Float32 => visitor.visitVarInsn(FLOAD, offset)
       case Type.Float64 => visitor.visitVarInsn(DLOAD, offset)
       case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _, _) | Type.Apply(Type.Arrow(_), _) |
-           Type.Apply(Type.FSet, _) => visitor.visitVarInsn(ALOAD, offset)
+           Type.Apply(Type.FSet, _) | Type.Apply(Type.Enum(_, _, _), _) => visitor.visitVarInsn(ALOAD, offset)
       case _ if tpe.isTuple => visitor.visitVarInsn(ALOAD, offset)
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
@@ -680,7 +680,7 @@ object Codegen {
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkInt64", "(J)Ljava/lang/Object;", false)
 
     case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) |
-         Type.Apply(Type.FSet, _) => compileExpression(ctx, visitor, entryPoint)(exp)
+         Type.Apply(Type.FSet, _) | Type.Apply(Type.Enum(_, _, _), _) => compileExpression(ctx, visitor, entryPoint)(exp)
 
     case tpe => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }
@@ -1069,7 +1069,7 @@ object Codegen {
   private def compileComparisonExpr(ctx: Context, visitor: MethodVisitor, entryPoint: Label)
                                    (o: ComparisonOperator, e1: Expression, e2: Expression): Unit = {
     e1.tpe match {
-      case Type.Enum(_, _, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.FSet, _) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
+      case Type.Enum(_, _, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.FSet, _) | Type.Apply(Type.Enum(_, _, _), _) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
         (e1.tpe: @unchecked) match {
           case Type.Apply(Type.FTuple(_), _) =>
             // Value.Tuple.elms() method
@@ -1086,7 +1086,7 @@ object Codegen {
             compileExpression(ctx, visitor, entryPoint)(e2)
             visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), method1.getName, asm.Type.getMethodDescriptor(method1), false)
             visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(clazz2), method2.getName, asm.Type.getMethodDescriptor(method2), false)
-          case Type.Enum(_, _, _) | Type.Apply(Type.FSet, _) =>
+          case Type.Enum(_, _, _) | Type.Apply(Type.FSet, _) | Type.Apply(Type.Enum(_, _, _), _) =>
             // java.lang.Object.equals(Object) method
             val clazz = Constants.objectClass
             val method = clazz.getMethod("equals", Constants.objectClass)
