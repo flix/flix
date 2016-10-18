@@ -35,6 +35,7 @@ sealed trait Type {
     */
   def typeVars: Set[Type.Var] = this match {
     case x: Type.Var => Set(x)
+    case Type.Ref(sym, kind) => Set.empty
     case Type.Unit => Set.empty
     case Type.Bool => Set.empty
     case Type.Char => Set.empty
@@ -81,6 +82,7 @@ sealed trait Type {
     */
   override def toString: String = this match {
     case Type.Var(x, k) => "'" + x
+    case Type.Ref(sym, k) => s"Ref($sym)"
     case Type.Unit => "Unit"
     case Type.Bool => "Bool"
     case Type.Char => "Char"
@@ -114,6 +116,11 @@ object Type {
     * A type variable expression.
     */
   case class Var(id: Int, kind: Kind) extends Type
+
+  /**
+    * A type reference expression.
+    */
+  case class Ref(sym: Symbol.EnumSym, kind: Kind) extends Type
 
   /**
     * A type constructor that represents the unit value.
@@ -311,6 +318,7 @@ object Type {
       */
     def visit(t0: Type): Type = t0 match {
       case Type.Var(x, k) => freshVars.getOrElse(x, t0)
+      case Type.Ref(sym, kind) => Type.Ref(sym, kind)
       case Type.Unit => Type.Unit
       case Type.Bool => Type.Bool
       case Type.Char => Type.Char
