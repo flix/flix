@@ -1651,6 +1651,21 @@ class TestParser extends FunSuite with TestUtils {
         |}
         |
         |def f(x: Color): Int = match x with {
+        |  case Red => 1
+        |  case Blu => 2
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Pattern.Enum.02") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Blu
+        |}
+        |
+        |def f(x: Color): Int = match x with {
         |  case Color.Red => 1
         |  case Color.Blu => 2
         |}
@@ -1658,7 +1673,22 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Pattern.Enum.02") {
+  test("Pattern.Enum.03") {
+    val input =
+      """enum Shape {
+        |  case Circle(Int),
+        |  case Rectangle(Int, Int)
+        |}
+        |
+        |def f(x: Shape): Int = match x with {
+        |  case Circle(r) => r
+        |  case Rectangle(h, w) => h * w
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Pattern.Enum.04") {
     val input =
       """enum Shape {
         |  case Circle(Int),

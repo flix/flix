@@ -415,8 +415,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetMatch | IfThenElse | Match | Switch | Tag | Lambda | Tuple | FNil | FVec | FSet | FMap | Literal |
-        Existential | Universal | Bot | Top | UnaryLambda | Wild | VarOrRef | UserError
+      LetMatch | IfThenElse | Match | Switch | Lambda | Tuple | FNil | FVec | FSet | FMap | Literal |
+        Existential | Universal | UnaryLambda | Ref | Wild | Tag | VarOrRef | UserError
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -456,7 +456,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Tag: Rule1[ParsedAst.Expression.Tag] = rule {
-      SP ~ Names.QType ~ "." ~ Names.Tag ~ optional(optWS ~ Tuple) ~ SP ~> ParsedAst.Expression.Tag
+      SP ~ optional(Names.QType ~ ".") ~ Names.Tag ~ optional(optWS ~ Tuple) ~ SP ~> ParsedAst.Expression.Tag
     }
 
     def Tuple: Rule1[ParsedAst.Expression] = rule {
@@ -489,20 +489,16 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
     }
 
-    def Bot: Rule1[ParsedAst.Expression.Bot] = rule {
-      SP ~ "⊥" ~ SP ~> ParsedAst.Expression.Bot
-    }
-
-    def Top: Rule1[ParsedAst.Expression.Top] = rule {
-      SP ~ "⊤" ~ SP ~> ParsedAst.Expression.Top
-    }
-
     def Wild: Rule1[ParsedAst.Expression.Wild] = rule {
       SP ~ atomic("_") ~ SP ~> ParsedAst.Expression.Wild
     }
 
     def VarOrRef: Rule1[ParsedAst.Expression.VarOrRef] = rule {
-      SP ~ Names.QDefinition ~ SP ~> ParsedAst.Expression.VarOrRef
+      SP ~ Names.Variable ~ SP ~> ParsedAst.Expression.VarOrRef
+    }
+
+    def Ref: Rule1[ParsedAst.Expression.Ref] = rule {
+      SP ~ Names.QDefinition ~ SP ~> ParsedAst.Expression.Ref
     }
 
     def UnaryLambda: Rule1[ParsedAst.Expression.Lambda] = rule {
@@ -558,7 +554,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Tag: Rule1[ParsedAst.Pattern.Tag] = rule {
-      SP ~ Names.QType ~ "." ~ Names.Tag ~ optional(optWS ~ Pattern) ~ SP ~> ParsedAst.Pattern.Tag
+      SP ~ optional(Names.QType ~ ".") ~ Names.Tag ~ optional(optWS ~ Pattern) ~ SP ~> ParsedAst.Pattern.Tag
     }
 
     def Tuple: Rule1[ParsedAst.Pattern.Tuple] = rule {
