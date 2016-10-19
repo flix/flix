@@ -77,11 +77,6 @@ object Namer {
        * Definition.
        */
       case WeededAst.Declaration.Definition(doc, ann, ident, tparams0, fparams0, exp, tpe, loc) =>
-        // check if the name is legal.
-        if (ident.name.head.isUpper) {
-          return IllegalDefinitionName(ident.name, loc).toFailure
-        }
-
         // check if the definition already exists.
         val defns = prog0.definitions.getOrElse(ns0, Map.empty)
         defns.get(ident.name) match {
@@ -225,11 +220,6 @@ object Namer {
        * Relation.
        */
       case WeededAst.Table.Relation(doc, ident, attr, loc) =>
-        // check if the name is legal.
-        if (ident.name.head.isLower) {
-          return IllegalTableName(ident.name, loc).toFailure
-        }
-
         // check if the table already exists.
         prog0.tables.get(ns0) match {
           case None =>
@@ -255,11 +245,6 @@ object Namer {
        * Lattice.
        */
       case WeededAst.Table.Lattice(doc, ident, keys, value, loc) =>
-        // check if the name is legal.
-        if (ident.name.head.isLower) {
-          return IllegalTableName(ident.name, loc).toFailure
-        }
-
         // check if the table already exists.
         prog0.tables.get(ns0) match {
           case None =>

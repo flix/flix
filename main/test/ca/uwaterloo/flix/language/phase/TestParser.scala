@@ -1459,31 +1459,6 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Expression.Bot.01") {
-    val input = "def ⊥: Int = 42"
-    run(input)
-  }
-
-  test("Expression.Top.01") {
-    val input = "def ⊤: Int = 42"
-    run(input)
-  }
-
-  test("Expression.Leq.01") {
-    val input = "def ⊑: Int = 42"
-    run(input)
-  }
-
-  test("Expression.Lub.01") {
-    val input = "def ⊔: Int = 42"
-    run(input)
-  }
-
-  test("Expression.Glb.01") {
-    val input = "def ⊓: Int = 42"
-    run(input)
-  }
-
   test("Expression.Existential.01") {
     val input = "def f: Bool = ∃(x: Bool). true"
     intercept[scala.NotImplementedError] {
