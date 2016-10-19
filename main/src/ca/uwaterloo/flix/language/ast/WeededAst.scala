@@ -32,19 +32,19 @@ object WeededAst {
 
     case class Namespace(name: Name.NName, decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Definition(ann: Ast.Annotations, ident: Name.Ident, tparams: List[Name.Ident], params: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
+    case class Definition(doc: Option[Ast.Documentation], ann: Ast.Annotations, ident: Name.Ident, tparams: List[Name.Ident], params: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Signature(ident: Name.Ident, params: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
+    case class Signature(doc: Option[Ast.Documentation], ident: Name.Ident, params: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class External(ident: Name.Ident, params: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
+    case class External(doc: Option[Ast.Documentation], ident: Name.Ident, params: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Law(ident: Name.Ident, tparams: List[ParsedAst.ContextBound], params: List[WeededAst.FormalParam], tpe: WeededAst.Type, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
+    case class Law(doc: Option[Ast.Documentation], ident: Name.Ident, tparams: List[ParsedAst.ContextBound], params: List[WeededAst.FormalParam], tpe: WeededAst.Type, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Enum(ident: Name.Ident, tparams: List[Name.Ident], cases: Map[String, WeededAst.Case], loc: SourceLocation) extends WeededAst.Declaration
+    case class Enum(doc: Option[Ast.Documentation], ident: Name.Ident, tparams: List[Name.Ident], cases: Map[String, WeededAst.Case], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Class(ident: Name.Ident, tparams: List[WeededAst.Type], /* bounds: List[ContextBound],*/ decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
+    case class Class(doc: Option[Ast.Documentation], ident: Name.Ident, tparams: List[WeededAst.Type], /* bounds: List[ContextBound],*/ decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Impl(ident: Name.Ident, tparams: List[WeededAst.Type], /*bounds: List[ContextBound],*/ decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
+    case class Impl(doc: Option[Ast.Documentation], ident: Name.Ident, tparams: List[WeededAst.Type], /*bounds: List[ContextBound],*/ decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
     case class Fact(head: WeededAst.Predicate.Head, loc: SourceLocation) extends WeededAst.Declaration
 
@@ -64,9 +64,9 @@ object WeededAst {
 
   object Table {
 
-    case class Relation(ident: Name.Ident, attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Table
+    case class Relation(doc: Option[Ast.Documentation], ident: Name.Ident, attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Table
 
-    case class Lattice(ident: Name.Ident, keys: List[WeededAst.Attribute], value: WeededAst.Attribute, loc: SourceLocation) extends WeededAst.Table
+    case class Lattice(doc: Option[Ast.Documentation], ident: Name.Ident, keys: List[WeededAst.Attribute], value: WeededAst.Attribute, loc: SourceLocation) extends WeededAst.Table
 
   }
 
@@ -123,10 +123,6 @@ object WeededAst {
     case class Tag(enum: Option[Name.QName], tag: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
-
-    case class FNone(loc: SourceLocation) extends WeededAst.Expression
-
-    case class FSome(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class FNil(loc: SourceLocation) extends WeededAst.Expression
 
@@ -190,10 +186,6 @@ object WeededAst {
 
     case class Tuple(elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
 
-    case class FNone(loc: SourceLocation) extends WeededAst.Pattern
-
-    case class FSome(pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
-
     case class FNil(loc: SourceLocation) extends WeededAst.Pattern
 
     case class FList(hd: WeededAst.Pattern, tl: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
@@ -254,10 +246,10 @@ object WeededAst {
 
   }
 
-  case class Attribute(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation)
+  case class Attribute(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst
 
-  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: WeededAst.Type)
+  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: WeededAst.Type) extends WeededAst
 
-  case class FormalParam(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation)
+  case class FormalParam(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst
 
 }

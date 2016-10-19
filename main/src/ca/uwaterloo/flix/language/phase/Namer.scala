@@ -76,7 +76,7 @@ object Namer {
       /*
        * Definition.
        */
-      case WeededAst.Declaration.Definition(ann, ident, tparams0, params0, exp, tpe, loc) =>
+      case WeededAst.Declaration.Definition(doc, ann, ident, tparams0, fparams0, exp, tpe, loc) =>
         // check if the name is legal.
         if (ident.name.head.isUpper) {
           return IllegalDefinitionName(ident.name, loc).toFailure
@@ -89,14 +89,15 @@ object Namer {
             // Case 1: The definition does not already exist. Update it.
 
             // Compute the type environment from the formal type parameters.
-            val tenv0 = tparams0.foldLeft(Map.empty[String, Type.Var]) {
-              case (macc, name) => macc + (name.name -> Type.freshTypeVar())
+            val tparams = tparams0.map {
+              case p => NamedAst.TypeParam(p, Type.freshTypeVar(), p.loc)
             }
+            val tenv0 = tparams.map(p => p.name.name -> p.tpe).toMap
 
             // Introduce a variable symbols for each formal parameter.
             var pms0 = List.empty[NamedAst.FormalParam]
             var env0 = Map.empty[String, Symbol.VarSym]
-            for (WeededAst.FormalParam(ident, tpe, loc) <- params0) {
+            for (WeededAst.FormalParam(ident, tpe, loc) <- fparams0) {
               val sym = Symbol.freshVarSym(ident)
               pms0 = NamedAst.FormalParam(sym, Types.namer(tpe, tenv0), loc) :: pms0
               env0 = env0 + (ident.name -> sym)
@@ -105,13 +106,8 @@ object Namer {
             Expressions.namer(exp, env0, tenv0) map {
               case e =>
                 val sym = Symbol.mkDefnSym(ns0, ident)
-                // Qualify the type of the definition it its type parameters.
-                val quantifiedType =
-                if (tenv0.isEmpty)
-                  Types.namer(tpe, tenv0)
-                else
-                  NamedAst.Type.Forall(tenv0.values.toList, Types.namer(tpe, tenv0), loc)
-                val defn = NamedAst.Declaration.Definition(sym, tenv0.values.toList, pms0.reverse, e, ann, quantifiedType, loc)
+                val sc = NamedAst.Scheme(tparams.map(_.tpe), Types.namer(tpe, tenv0))
+                val defn = NamedAst.Declaration.Definition(doc, ann, sym, tparams, pms0.reverse, e, sc, loc)
                 prog0.copy(definitions = prog0.definitions + (ns0 -> (defns + (ident.name -> defn))))
             }
           case Some(defn) =>
@@ -122,61 +118,53 @@ object Namer {
       /*
        * Signature.
        */
-      case WeededAst.Declaration.Signature(ident, params, tpe, loc) => ??? // TODO: Signature
+      case WeededAst.Declaration.Signature(doc, ident, params, tpe, loc) => ??? // TODO: Add support for signature in Namer.
 
       /*
        * External.
        */
-      case WeededAst.Declaration.External(ident, params, tpe, loc) => ??? // TODO: External
+      case WeededAst.Declaration.External(doc, ident, params, tpe, loc) => ??? // TODO: Add support for external in Namer.
 
       /*
        * Law.
        */
-      case WeededAst.Declaration.Law(ident, tparams, params, tpe, exp, loc) => ??? // TODO: Law
+      case WeededAst.Declaration.Law(doc, ident, tparams, params, tpe, exp, loc) => ??? // TODO: Add support for law in Namer.
 
       /*
        * Enum.
        */
-      case WeededAst.Declaration.Enum(ident, tparams, cases, loc) =>
-        // check if the enum already exists.
-        prog0.enums.get(ns0) match {
+      case WeededAst.Declaration.Enum(doc, ident, tparams0, cases, loc) =>
+        val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
+        enums0.get(ident.name) match {
           case None =>
-            // Case 1: The namespace does not yet exist. So the enum does not yet exist.
+            // Case 2.1: The enum does not exist in the namespace. Update it.
             val sym = Symbol.mkEnumSym(ns0, ident)
-            val enum = NamedAst.Declaration.Enum(sym, casesOf(cases, Map.empty), typeOf(sym, cases, Map.empty), loc)
-            val enums = Map(ident.name -> enum)
-            prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
-          case Some(enums0) =>
-            // Case 2: The namespace exists. Lookup the enum.
-            enums0.get(ident.name) match {
-              case None =>
-                // Case 2.1: The enum does not exist in the namespace. Update it.
-                val sym = Symbol.mkEnumSym(ns0, ident)
-                val enum = NamedAst.Declaration.Enum(sym, casesOf(cases, Map.empty), typeOf(sym, cases, Map.empty), loc)
-                val enums = enums0 + (ident.name -> enum)
-                prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
-              case Some(enum) =>
-                // Case 2.2: Duplicate definition.
-                DuplicateDefinition(ident.name, enum.loc, ident.loc).toFailure
+            val tparams = tparams0 map {
+              case p => NamedAst.TypeParam(p, Type.freshTypeVar(), loc)
             }
+            val tenv = tparams.map(kv => kv.name.name -> kv.tpe).toMap
+            val enum = NamedAst.Declaration.Enum(doc, sym, tparams, casesOf(cases, tenv), schemeOf(sym, tparams0, cases), loc)
+            val enums = enums0 + (ident.name -> enum)
+            prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
+          case Some(enum) =>
+            // Case 2.2: Duplicate definition.
+            DuplicateDefinition(ident.name, enum.loc, ident.loc).toFailure
         }
 
       /*
        * Class.
        */
-      case WeededAst.Declaration.Class(ident, tparams, decls, loc) => ??? // TODO: Class
+      case WeededAst.Declaration.Class(doc, ident, tparams, decls, loc) => ??? // TODO: Add support for class in Namer.
 
       /*
        * Impl.
        */
-      case WeededAst.Declaration.Impl(ident, tparams, decls, loc) => ??? // TODO: Impl
+      case WeededAst.Declaration.Impl(doc, ident, tparams, decls, loc) => ??? // TODO: Add support for impl in Namer.
 
       /*
        * Fact.
        */
       case WeededAst.Declaration.Fact(h, loc) =>
-        // TODO: Check that there are no free variables in a fact.
-
         // Perform naming on the head predicate under the computed environment of free variables.
         Predicates.namer(h, Map.empty[String, Symbol.VarSym], Map.empty[String, Type.Var]) map {
           case head =>
@@ -209,11 +197,13 @@ object Namer {
        * Index.
        */
       case WeededAst.Declaration.Index(qname, indexes, loc) =>
-        // TODO: Duplicate indexes in the same namespace.
         val name = qname.ident.name
         val index = NamedAst.Declaration.Index(qname, indexes.map(_.toList), loc)
         val decls = prog0.indexes.getOrElse(ns0, Map.empty)
-        prog0.copy(indexes = prog0.indexes + (ns0 -> (decls + (name -> index)))).toSuccess
+        decls.get(name) match {
+          case None => prog0.copy(indexes = prog0.indexes + (ns0 -> (decls + (name -> index)))).toSuccess
+          case Some(idx) => NameError.DuplicateIndex(name, idx.loc, loc).toFailure
+        }
 
       /*
        * BoundedLattice (deprecated).
@@ -234,7 +224,7 @@ object Namer {
       /*
        * Relation.
        */
-      case WeededAst.Table.Relation(ident, attr, loc) =>
+      case WeededAst.Table.Relation(doc, ident, attr, loc) =>
         // check if the name is legal.
         if (ident.name.head.isLower) {
           return IllegalTableName(ident.name, loc).toFailure
@@ -244,7 +234,7 @@ object Namer {
         prog0.tables.get(ns0) match {
           case None =>
             // Case 1: The namespace does not yet exist. So the table does not yet exist.
-            val table = NamedAst.Table.Relation(Symbol.mkTableSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
+            val table = NamedAst.Table.Relation(doc, Symbol.mkTableSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
             val tables = Map(ident.name -> table)
             prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
           case Some(tables0) =>
@@ -252,7 +242,7 @@ object Namer {
             tables0.get(ident.name) match {
               case None =>
                 // Case 2.1: The table does not exist in the namespace. Update it.
-                val table = NamedAst.Table.Relation(Symbol.mkTableSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
+                val table = NamedAst.Table.Relation(doc, Symbol.mkTableSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
                 val tables = tables0 + (ident.name -> table)
                 prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
               case Some(table) =>
@@ -264,7 +254,7 @@ object Namer {
       /*
        * Lattice.
        */
-      case WeededAst.Table.Lattice(ident, keys, value, loc) =>
+      case WeededAst.Table.Lattice(doc, ident, keys, value, loc) =>
         // check if the name is legal.
         if (ident.name.head.isLower) {
           return IllegalTableName(ident.name, loc).toFailure
@@ -274,7 +264,7 @@ object Namer {
         prog0.tables.get(ns0) match {
           case None =>
             // Case 1: The namespace does not yet exist. So the table does not yet exist.
-            val table = NamedAst.Table.Lattice(Symbol.mkTableSym(ns0, ident), keys.map(k => Attributes.namer(k, Map.empty)), Attributes.namer(value, Map.empty), loc)
+            val table = NamedAst.Table.Lattice(doc, Symbol.mkTableSym(ns0, ident), keys.map(k => Attributes.namer(k, Map.empty)), Attributes.namer(value, Map.empty), loc)
             val tables = Map(ident.name -> table)
             prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
           case Some(tables0) =>
@@ -282,7 +272,7 @@ object Namer {
             tables0.get(ident.name) match {
               case None =>
                 // Case 2.1: The table does not exist in the namespace. Update it.
-                val table = NamedAst.Table.Lattice(Symbol.mkTableSym(ns0, ident), keys.map(k => Attributes.namer(k, Map.empty)), Attributes.namer(value, Map.empty), loc)
+                val table = NamedAst.Table.Lattice(doc, Symbol.mkTableSym(ns0, ident), keys.map(k => Attributes.namer(k, Map.empty)), Attributes.namer(value, Map.empty), loc)
                 val tables = tables0 + (ident.name -> table)
                 prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
               case Some(table) =>
@@ -301,11 +291,25 @@ object Namer {
     }
 
     /**
-      * Returns the type corresponding to the given cases of an enum.
+      * Returns the scheme corresponding to the given cases of an enum.
       */
-    def typeOf(sym: Symbol.EnumSym, cases: Map[String, WeededAst.Case], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.Type.Enum = NamedAst.Type.Enum(sym, cases.foldLeft(Map.empty[String, NamedAst.Type]) {
-      case (macc, (tag, WeededAst.Case(enumName, tagName, tpe))) => macc + (tag -> Types.namer(tpe, tenv0))
-    })
+    def schemeOf(sym: Symbol.EnumSym, tparams: List[Name.Ident], cases0: Map[String, WeededAst.Case])(implicit genSym: GenSym): NamedAst.Scheme = {
+      // Compute the type environment from the quantifier type parameters.
+      val tenv0 = tparams.map(ident => ident.name -> Type.freshTypeVar())
+
+      // Perform naming on each case.
+      val cases = cases0.foldLeft(Map.empty[String, NamedAst.Type]) {
+        case (macc, (tag, WeededAst.Case(enumName, tagName, t))) => macc + (tag -> Types.namer(t, tenv0.toMap))
+      }
+      val tvars = tenv0.map(_._2)
+      val base = NamedAst.Type.Enum(sym, tparams, cases)
+      val enumType =
+        if (tvars.isEmpty)
+          base
+        else
+          NamedAst.Type.Apply(base, tvars.map(x => NamedAst.Type.Var(x, sym.loc)), sym.loc)
+      NamedAst.Scheme(tvars, enumType)
+    }
 
   }
 
@@ -418,12 +422,6 @@ object Namer {
           case es => NamedAst.Expression.Tuple(es, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.FNone(loc) => NamedAst.Expression.FNone(Type.freshTypeVar(), loc).toSuccess
-
-      case WeededAst.Expression.FSome(exp, loc) => namer(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.FSome(e, Type.freshTypeVar(), loc)
-      }
-
       case WeededAst.Expression.FNil(loc) => NamedAst.Expression.FNil(Type.freshTypeVar(), loc).toSuccess
 
       case WeededAst.Expression.FList(hd, tl, loc) =>
@@ -522,8 +520,6 @@ object Namer {
       }
       case WeededAst.Expression.Tag(enum, tag, exp, loc) => freeVars(exp)
       case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
-      case WeededAst.Expression.FNone(loc) => Nil
-      case WeededAst.Expression.FSome(exp, loc) => freeVars(exp)
       case WeededAst.Expression.FNil(loc) => Nil
       case WeededAst.Expression.FList(hd, tl, loc) => freeVars(hd) ++ freeVars(tl)
       case WeededAst.Expression.FVec(elms, loc) => elms flatMap freeVars
@@ -559,8 +555,6 @@ object Namer {
       case WeededAst.Pattern.Str(lit, loc) => Nil
       case WeededAst.Pattern.Tag(enumName, tagName, p, loc) => freeVars(p)
       case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
-      case WeededAst.Pattern.FNone(loc) => Nil
-      case WeededAst.Pattern.FSome(p, loc) => freeVars(p)
       case WeededAst.Pattern.FNil(loc) => Nil
       case WeededAst.Pattern.FList(hd, tl, loc) => freeVars(hd) ++ freeVars(tl)
       case WeededAst.Pattern.FVec(elms, rest, loc) => elms.flatMap(freeVars) ++ rest.map(freeVars).getOrElse(Nil)
@@ -607,8 +601,6 @@ object Namer {
         case WeededAst.Pattern.Str(lit, loc) => NamedAst.Pattern.Str(lit, loc)
         case WeededAst.Pattern.Tag(enum, tag, pat, loc) => NamedAst.Pattern.Tag(enum, tag, visit(pat), Type.freshTypeVar(), loc)
         case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
-        case WeededAst.Pattern.FNone(loc) => NamedAst.Pattern.FNone(Type.freshTypeVar(), loc)
-        case WeededAst.Pattern.FSome(pat, loc) => NamedAst.Pattern.FSome(visit(pat), Type.freshTypeVar(), loc)
         case WeededAst.Pattern.FNil(loc) => NamedAst.Pattern.FNil(Type.freshTypeVar(), loc)
         case WeededAst.Pattern.FList(hd, tl, loc) => NamedAst.Pattern.FList(visit(hd), visit(tl), Type.freshTypeVar(), loc)
         case WeededAst.Pattern.FVec(elms, rest, loc) => NamedAst.Pattern.FVec(elms map visit, rest map visit, Type.freshTypeVar(), loc)
@@ -686,7 +678,6 @@ object Namer {
       def visit(tpe: WeededAst.Type, env: Map[String, Type.Var]): NamedAst.Type = tpe match {
         case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc)
         case WeededAst.Type.VarOrRef(qname, loc) =>
-          // TODO: Look into ways to improve this.
           if (qname.isUnqualified && qname.ident.name.head.isLower)
             env.get(qname.ident.name) match {
               case None => NamedAst.Type.Ref(qname, loc)

@@ -17,10 +17,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
-import ca.uwaterloo.flix.language.ast.{Ast, Name, NamedAst, Type}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.errors.TypeError.UnresolvedRef
-import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.Result._
 
 import scala.collection.mutable
@@ -170,7 +170,6 @@ object Disambiguation {
       case "Native" => Ok(Type.Native)
 
       // Higher-Kinded Types.
-      case "Opt" => Ok(Type.FOpt)
       case "List" => Ok(Type.FList)
       case "Vec" => Ok(Type.FVec)
       case "Set" => Ok(Type.FSet)
@@ -183,7 +182,11 @@ object Disambiguation {
         val decls = program.enums.getOrElse(ns0, Map.empty)
         decls.get(typeName) match {
           case None => Err(TypeError.UnresolvedType(qname, ns0, loc))
-          case Some(enum) => resolve(enum.tpe, ns0, program)
+          case Some(enum) => enum.sc.base match {
+            case t: NamedAst.Type.Enum => resolve(t, ns0, program)
+            case NamedAst.Type.Apply(t: NamedAst.Type.Enum, _, _) => resolve(t, ns0, program)
+            case tpe => throw InternalCompilerException(s"Unexpected type `$tpe'.")
+          }
         }
     }
     case NamedAst.Type.Ref(qname, loc) if qname.isQualified =>
@@ -191,14 +194,15 @@ object Disambiguation {
       val decls = program.enums.getOrElse(qname.namespace, Map.empty)
       decls.get(qname.ident.name) match {
         case None => Err(TypeError.UnresolvedType(qname, ns0, loc))
-        case Some(enum) => resolve(enum.tpe, qname.namespace, program)
+        case Some(enum) => resolve(enum.sc.base, qname.namespace, program)
       }
-    case NamedAst.Type.Enum(sym, cases) =>
+    case NamedAst.Type.Enum(sym, tparams, cases) =>
       val asList = cases.toList
       val tags = asList.map(_._1)
       val tpes = asList.map(_._2)
+      val kind = if (tparams.isEmpty) Kind.Star else Kind.Arrow(tparams.map(_ => Kind.Star), Kind.Star)
       seqM(tpes.map(tpe => resolve(tpe, ns0, program))) map {
-        case rtpes => Type.Enum(sym, (tags zip rtpes).toMap)
+        case rtpes => Type.Enum(sym, (tags zip rtpes).toMap, kind)
       }
     case NamedAst.Type.Tuple(elms0, loc) =>
       for (
@@ -214,11 +218,16 @@ object Disambiguation {
         baseType <- resolve(base0, ns0, program);
         argTypes <- seqM(tparams0.map(tpe => resolve(tpe, ns0, program)))
       ) yield Type.Apply(baseType, argTypes)
-    case NamedAst.Type.Forall(quantifiers, base, loc) =>
-      resolve(base, ns0, program) map {
-        case tpe => Type.Forall(quantifiers, tpe)
-      }
 
+  }
+
+  /**
+    * Resolves the given scheme `sc0` in the given namespace `ns0`.
+    */
+  def resolve(sc0: NamedAst.Scheme, ns0: Name.NName, program: Program): Result[Scheme, TypeError] = {
+    resolve(sc0.base, ns0, program) map {
+      case base => Scheme(sc0.quantifiers, base)
+    }
   }
 
   /**

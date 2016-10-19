@@ -297,7 +297,7 @@ object QuickChecker {
       case Type.BigInt => ArbBigInt.gen
       case Type.Str => ArbStr.gen
 
-      case Type.Enum(name, cases) =>
+      case Type.Enum(name, cases, kind) =>
         val elms = cases.map {
           case (tag, innerType) => new Generator[SymVal] {
             def mk(r: Random): SymVal = SymVal.Tag(tag, new ArbSymVal(innerType).gen.mk(r))

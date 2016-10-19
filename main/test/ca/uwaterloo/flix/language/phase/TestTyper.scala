@@ -492,19 +492,19 @@ class TestTyper extends FunSuite with TestUtils {
   // Let (Positive)                                                          //
   /////////////////////////////////////////////////////////////////////////////
   test("Expression.Let01") {
-    val input = "def f: Int = let x = 42 in x"
+    val input = "def f: Int = let x = 42; x"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Let02") {
-    val input = "def f(x: Int): Int = let y = 42 in x + y"
+    val input = "def f(x: Int): Int = let y = 42; x + y"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Let03") {
-    val input = "def f(x: Bool): Int = let x = 42 in x"
+    val input = "def f(x: Bool): Int = let x = 42; x"
     val result = new Flix().addStr(input).compile()
     result.get
   }
@@ -513,13 +513,13 @@ class TestTyper extends FunSuite with TestUtils {
   // LetMatch (Positive)                                                     //
   /////////////////////////////////////////////////////////////////////////////
   test("Expression.LetMatch01") {
-    val input = "def f: Int = let (x, y) = (1, 2) in x + y"
+    val input = "def f: Int = let (x, y) = (1, 2); x + y"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.LetMatch02") {
-    val input = "def f: Int8 = let (x, (y, z, w)) = (true, ('a', 1i8, 2i8)) in (z: Int8) + w"  // TODO: Added ascription to help the type system.
+    val input = "def f: Int8 = let (x, (y, z, w)) = (true, ('a', 1i8, 2i8)); z + w"
     val result = new Flix().addStr(input).compile()
     result.get
   }
@@ -532,8 +532,8 @@ class TestTyper extends FunSuite with TestUtils {
         |  case C(Int)
         |}
         |
-        |def f(e: E): Bool = let E.A(b) = e in b
-        |def g(e: E): Char = let E.B(c) = e in c
+        |def f(e: E): Bool = let E.A(b) = e; b
+        |def g(e: E): Char = let E.B(c) = e; c
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get
@@ -546,7 +546,7 @@ class TestTyper extends FunSuite with TestUtils {
         |  case B
         |}
         |
-        |def f(e: E): Int8 = let E.A(true, 'a', i) = e in i
+        |def f(e: E): Int8 = let E.A(true, 'a', i) = e; i
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get
@@ -713,6 +713,30 @@ class TestTyper extends FunSuite with TestUtils {
     result.get
   }
 
+  test("Expression.Tag05") {
+    val input =
+      """enum Foo[a] {
+        |  case Foo(a)
+        |}
+        |
+        |def f(x: Int): Foo[Int] = Foo.Foo(x)
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Tag06") {
+    val input =
+      """enum Foo[a, b, c] {
+        |  case Foo(a, b, c)
+        |}
+        |
+        |def f(x: Bool, y: Char, z: Int): Foo[Bool, Char, Int] = Foo.Foo(x, y, z)
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Tuple (Positive)                                                        //
   /////////////////////////////////////////////////////////////////////////////
@@ -787,25 +811,25 @@ class TestTyper extends FunSuite with TestUtils {
   /////////////////////////////////////////////////////////////////////////////
 
   test("Type.Int8.Plus") {
-    val input = "def f(x: Int8, y: Int8): Int8 = (x: Int8) + y" // TODO: Added ascription to help the type system.
+    val input = "def f(x: Int8, y: Int8): Int8 = x + y"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Type.Int8.Times") {
-    val input = "def f(x: Int8, y: Int8): Int8 = (x: Int8) * y" // TODO: Added ascription to help the type system.
+    val input = "def f(x: Int8, y: Int8): Int8 = x * y"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Type.Int16.Plus") {
-    val input = "def f(x: Int16, y: Int16): Int16 = (x: Int16) + y" // TODO: Added ascription to help the type system.
+    val input = "def f(x: Int16, y: Int16): Int16 = x + y"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Type.Int16.Times") {
-    val input = "def f(x: Int16, y: Int16): Int16 = (x: Int16) * y" // TODO: Added ascription to help the type system.
+    val input = "def f(x: Int16, y: Int16): Int16 = x * y"
     val result = new Flix().addStr(input).compile()
     result.get
   }
@@ -829,17 +853,16 @@ class TestTyper extends FunSuite with TestUtils {
   }
 
   test("Type.Int64.Plus") {
-    val input = "def f(x: Int64, y: Int64): Int64 = (x: Int64) + y" // TODO: Added ascription to help the type system.
+    val input = "def f(x: Int64, y: Int64): Int64 = x + y"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Type.Int64.Times") {
-    val input = "def f(x: Int64, y: Int64): Int64 = (x: Int64) * y" // TODO: Added ascription to help the type system.
+    val input = "def f(x: Int64, y: Int64): Int64 = x * y"
     val result = new Flix().addStr(input).compile()
     result.get
   }
-
 
   test("Definition.BoundedLattice.TypeError01") {
     val input =
@@ -914,7 +937,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("UnresolvedDefinition01") {
     val input = "def f: Int = x"
     val result = new Flix().addStr(input).compile()
-    assertError[TypeError.UnresolvedRef](result)
+    expectError[TypeError.UnresolvedRef](result)
   }
 
   test("UnresolvedDefinition02") {
@@ -925,13 +948,13 @@ class TestTyper extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[TypeError.UnresolvedRef](result)
+    expectError[TypeError.UnresolvedRef](result)
   }
 
   test("UnresolvedTable01") {
     val input = "VarPointsTo(1, 2)."
     val result = new Flix().addStr(input).compile()
-    assertError[TypeError.UnresolvedTable](result)
+    expectError[TypeError.UnresolvedTable](result)
   }
 
   test("UnresolvedTable02") {
@@ -941,13 +964,13 @@ class TestTyper extends FunSuite with TestUtils {
           |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    assertError[TypeError.UnresolvedTable](result)
+    expectError[TypeError.UnresolvedTable](result)
   }
 
   test("UnresolvedTable03") {
     val input = "index AddrOf({foo, bar})"
     val result = new Flix().addStr(input).compile()
-    assertError[TypeError.UnresolvedTable](result)
+    expectError[TypeError.UnresolvedTable](result)
   }
 
 }

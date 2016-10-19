@@ -21,6 +21,7 @@ sealed trait TypedAst
 object TypedAst {
 
   case class Root(definitions: Map[Symbol.DefnSym, TypedAst.Declaration.Definition],
+                  enums: Map[Symbol.EnumSym, TypedAst.Declaration.Enum],
                   lattices: Map[Type, TypedAst.Declaration.BoundedLattice],
                   tables: Map[Symbol.TableSym, TypedAst.Table],
                   indexes: Map[Symbol.TableSym, TypedAst.Declaration.Index],
@@ -35,7 +36,9 @@ object TypedAst {
 
   object Declaration {
 
-    case class Definition(ann: Ast.Annotations, sym: Symbol.DefnSym, formals: List[TypedAst.FormalParam], exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Declaration
+    case class Definition(doc: Option[Ast.Documentation], ann: Ast.Annotations, sym: Symbol.DefnSym, tparams: List[TypedAst.TypeParam], formals: List[TypedAst.FormalParam], exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Declaration
+
+    case class Enum(doc: Option[Ast.Documentation], sym: Symbol.EnumSym, cases: Map[String, TypedAst.Case], sc: Scheme, loc: SourceLocation) extends TypedAst.Declaration
 
     case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends TypedAst.Declaration
 
@@ -57,9 +60,9 @@ object TypedAst {
 
   object Table {
 
-    case class Relation(sym: Symbol.TableSym, attributes: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Table
+    case class Relation(doc: Option[Ast.Documentation], sym: Symbol.TableSym, attributes: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Table
 
-    case class Lattice(sym: Symbol.TableSym, keys: List[TypedAst.Attribute], value: TypedAst.Attribute, loc: SourceLocation) extends TypedAst.Table
+    case class Lattice(doc: Option[Ast.Documentation], sym: Symbol.TableSym, keys: List[TypedAst.Attribute], value: TypedAst.Attribute, loc: SourceLocation) extends TypedAst.Table
 
   }
 
@@ -146,10 +149,6 @@ object TypedAst {
     case class Tag(sym: Symbol.EnumSym, tag: String, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Tuple(elms: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
-
-    case class FNone(tpe: Type, loc: SourceLocation) extends TypedAst.Expression
-
-    case class FSome(exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class FNil(tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -241,10 +240,6 @@ object TypedAst {
 
     case class Tuple(elms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
-    case class FNone(tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
-
-    case class FSome(pat: TypedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
-
     case class FNil(tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
     case class FList(hd: TypedAst.Pattern, tl: TypedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
@@ -295,7 +290,11 @@ object TypedAst {
 
   case class Attribute(name: String, tpe: Type, loc: SourceLocation) extends TypedAst
 
+  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends TypedAst
+
   case class FormalParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst
+
+  case class TypeParam(name: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst
 
   case class Property(law: Law, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst
 

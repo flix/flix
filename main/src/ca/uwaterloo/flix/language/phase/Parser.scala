@@ -41,6 +41,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
    * Initialize parser input.
    */
   override val input: ParserInput = source match {
+    case SourceInput.Internal(name, text) => text
     case SourceInput.Str(str) => str
     case SourceInput.TxtFile(path) =>
       new String(Files.readAllBytes(path), DefaultCharset)
@@ -60,11 +61,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Decls: Rule1[Seq[ParsedAst.Declaration]] = rule {
-      zeroOrMore(Declaration).separatedBy(optWS)
+      zeroOrMore(Declaration)
     }
 
     rule {
-      optWS ~ Imports ~ optWS ~ Decls ~ optWS ~ EOI ~> ParsedAst.Root
+      Imports ~ Decls ~ optWS ~ EOI ~> ParsedAst.Root
     }
   }
 
@@ -114,7 +115,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   object Declarations {
 
     def Namespace: Rule1[ParsedAst.Declaration.Namespace] = rule {
-      SP ~ atomic("namespace") ~ WS ~ NName ~ optWS ~ '{' ~ optWS ~ zeroOrMore(Declaration).separatedBy(optWS) ~ optWS ~ '}' ~ SP ~ optSC ~> ParsedAst.Declaration.Namespace
+      optWS ~ SP ~ atomic("namespace") ~ WS ~ NName ~ optWS ~ '{' ~ optWS ~ zeroOrMore(Declaration) ~ optWS ~ '}' ~ SP ~ optSC ~> ParsedAst.Declaration.Namespace
     }
 
     def Definition: Rule1[ParsedAst.Declaration.Definition] = {
@@ -123,20 +124,20 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        Annotations ~ optWS ~ SP ~ atomic("def") ~ WS ~ Ident ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Declaration.Definition
+        optional(Comments.TripleSlash) ~ optWS ~ Annotations ~ optWS ~ SP ~ atomic("def") ~ WS ~ Ident ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Declaration.Definition
       }
     }
 
     def Signature: Rule1[ParsedAst.Declaration.Signature] = rule {
-      SP ~ atomic("def") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC ~> ParsedAst.Declaration.Signature
+      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("def") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC ~> ParsedAst.Declaration.Signature
     }
 
     def External: Rule1[ParsedAst.Declaration.External] = rule {
-      SP ~ atomic("external") ~ optWS ~ atomic("def") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC ~> ParsedAst.Declaration.External
+      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("external") ~ optWS ~ atomic("def") ~ WS ~ Ident ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC ~> ParsedAst.Declaration.External
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
-      SP ~ atomic("law") ~ WS ~ Ident ~ optWS ~ TypeParams ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Declaration.Law
+      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("law") ~ WS ~ Ident ~ optWS ~ TypeParams ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Declaration.Law
     }
 
     def Enum: Rule1[ParsedAst.Declaration.Enum] = {
@@ -155,7 +156,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ atomic("enum") ~ WS ~ Ident ~ TypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~ optSC ~> ParsedAst.Declaration.Enum
+        optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("enum") ~ WS ~ Ident ~ TypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~ optSC ~> ParsedAst.Declaration.Enum
       }
     }
 
@@ -182,7 +183,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ atomic("class") ~ WS ~ Ident ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ClassBody ~ SP ~> ParsedAst.Declaration.Class
+        optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("class") ~ WS ~ Ident ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ClassBody ~ SP ~> ParsedAst.Declaration.Class
       }
     }
 
@@ -209,16 +210,16 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ atomic("impl") ~ WS ~ Ident ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ImplBody ~ SP ~> ParsedAst.Declaration.Impl
+        optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("impl") ~ WS ~ Ident ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ImplBody ~ SP ~> ParsedAst.Declaration.Impl
       }
     }
 
     def Relation: Rule1[ParsedAst.Declaration.Relation] = rule {
-      SP ~ atomic("rel") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Relation
+      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("rel") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Relation
     }
 
     def Lattice: Rule1[ParsedAst.Declaration.Lattice] = rule {
-      SP ~ atomic("lat") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Lattice
+      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("lat") ~ WS ~ Ident ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Lattice
     }
 
     def Index: Rule1[ParsedAst.Declaration.Index] = {
@@ -227,17 +228,17 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ atomic("index") ~ WS ~ QName ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Indexes).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Index
+        optWS ~ SP ~ atomic("index") ~ WS ~ QName ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Indexes).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Index
       }
     }
 
     // TODO: It would be faster to parse Facts and Rules together.
     def Fact: Rule1[ParsedAst.Declaration.Fact] = rule {
-      SP ~ Predicate ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Fact
+      optWS ~ SP ~ Predicate ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Fact
     }
 
     def Rule: Rule1[ParsedAst.Declaration.Rule] = rule {
-      SP ~ Predicate ~ optWS ~ ":-" ~ optWS ~ oneOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Rule
+      optWS ~ SP ~ Predicate ~ optWS ~ ":-" ~ optWS ~ oneOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Rule
     }
 
     def LetLattice: Rule1[ParsedAst.Declaration] = {
@@ -246,7 +247,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ atomic("let") ~ optWS ~ Type ~ atomic("<>") ~ optWS ~ "=" ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.BoundedLattice
+        optWS ~ SP ~ atomic("let") ~ optWS ~ Type ~ atomic("<>") ~ optWS ~ "=" ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.BoundedLattice
       }
     }
 
@@ -414,7 +415,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetMatch | IfThenElse | Match | Switch | Tag | Lambda | Tuple | FNil | FNone | FSome | FVec | FSet | FMap | Literal |
+      LetMatch | IfThenElse | Match | Switch | Tag | Lambda | Tuple | FNil | FVec | FSet | FMap | Literal |
         Existential | Universal | Bot | Top | UnaryLambda | Wild | VarOrRef | UserError
     }
 
@@ -426,14 +427,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ atomic("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ WS ~ atomic("else") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.IfThenElse
     }
 
-    def LetMatch: Rule1[ParsedAst.Expression.LetMatch] = {
-      def InOrSC: Rule0 = rule {
-        (WS ~ atomic("in") ~ WS) | (optWS ~ ";" ~ optWS)
-      }
-
-      rule {
-        SP ~ atomic("let") ~ WS ~ Pattern ~ optWS ~ "=" ~ optWS ~ Expression ~ InOrSC ~ Expression ~ SP ~> ParsedAst.Expression.LetMatch
-      }
+    def LetMatch: Rule1[ParsedAst.Expression.LetMatch] = rule {
+      SP ~ atomic("let") ~ WS ~ Pattern ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.LetMatch
     }
 
     def Match: Rule1[ParsedAst.Expression.Match] = {
@@ -466,14 +461,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Tuple: Rule1[ParsedAst.Expression] = rule {
       SP ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Tuple
-    }
-
-    def FNone: Rule1[ParsedAst.Expression.FNone] = rule {
-      SP ~ atomic("None") ~ SP ~> ParsedAst.Expression.FNone
-    }
-
-    def FSome: Rule1[ParsedAst.Expression.FSome] = rule {
-      SP ~ atomic("Some") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.FSome
     }
 
     def FNil: Rule1[ParsedAst.Expression.FNil] = rule {
@@ -555,7 +542,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   object Patterns {
 
     def Simple: Rule1[ParsedAst.Pattern] = rule {
-      FNil | FNone | FSome | Tag | Literal | Tuple | FVec | FSet | FMap | Wildcard | Variable
+      FNil | Tag | Literal | Tuple | FVec | FSet | FMap | Wildcard | Variable
     }
 
     def Wildcard: Rule1[ParsedAst.Pattern.Wild] = rule {
@@ -576,14 +563,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Tuple: Rule1[ParsedAst.Pattern.Tuple] = rule {
       SP ~ "(" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Pattern.Tuple
-    }
-
-    def FNone: Rule1[ParsedAst.Pattern.FNone] = rule {
-      SP ~ atomic("None") ~ SP ~> ParsedAst.Pattern.FNone
-    }
-
-    def FSome: Rule1[ParsedAst.Pattern.FSome] = rule {
-      SP ~ atomic("Some") ~ optWS ~ "(" ~ optWS ~ Pattern ~ optWS ~ ")" ~ SP ~> ParsedAst.Pattern.FSome
     }
 
     def FNil: Rule1[ParsedAst.Pattern.FNil] = rule {
@@ -647,7 +626,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Predicates                                                              //
   /////////////////////////////////////////////////////////////////////////////
   def Predicate: Rule1[ParsedAst.Predicate] = rule {
-    Predicates.True | Predicates.False | Predicates.Ambiguous | Predicates.NotEqual | Predicates.Equal | Predicates.Loop
+    Predicates.True | Predicates.False | Predicates.Ambiguous | Predicates.NotEqual | Predicates.Loop
   }
 
   object Predicates {
@@ -661,10 +640,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Ambiguous: Rule1[ParsedAst.Predicate.Ambiguous] = rule {
       SP ~ QName ~ optWS ~ "(" ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Ambiguous
-    }
-
-    def Equal: Rule1[ParsedAst.Predicate.Equal] = rule {
-      SP ~ Ident ~ optWS ~ atomic(":=") ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Equal
     }
 
     def NotEqual: Rule1[ParsedAst.Predicate.NotEqual] = rule {
@@ -879,8 +854,21 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   object Comments {
     // Note: We must use ANY to match (consume) whatever character which is not a newline.
     // Otherwise the parser makes no progress and loops.
+    def TripleSlash: Rule1[ParsedAst.Documentation] = {
+      def PureWS: Rule0 = rule {
+        zeroOrMore(" " | "\t" | NewLine)
+      }
+
+      // TODO: need to improve source locations.
+      rule {
+        SP ~ oneOrMore(PureWS ~ "///" ~ capture(zeroOrMore(!NewLine ~ ANY)) ~ (NewLine | EOI)) ~ SP ~> ParsedAst.Documentation
+      }
+    }
+
+    // Note: We must use ANY to match (consume) whatever character which is not a newline.
+    // Otherwise the parser makes no progress and loops.
     def SingleLineComment: Rule0 = rule {
-      "//" ~ zeroOrMore(!NewLine ~ ANY) ~ (NewLine | EOI)
+      !"///" ~ "//" ~ zeroOrMore(!NewLine ~ ANY) ~ (NewLine | EOI)
     }
 
     // Note: We must use ANY to match (consume) whatever character which is not a "*/".

@@ -57,6 +57,17 @@ object Ast {
     }
 
     /**
+      * An AST node that represents an `@internal` annotation.
+      *
+      * An `internal` function is a non-public function hidden from view.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Internal(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@commutative"
+    }
+
+    /**
       * An AST node that represents a `@monotone` annotation.
       *
       * A `monotone` function is an order-preserving function between lattice elements.
@@ -144,6 +155,14 @@ object Ast {
       */
     def isUnsafe: Boolean = annotations exists (_.isInstanceOf[Annotation.Unsafe])
   }
+
+  /**
+    * Documentation.
+    *
+    * @param text the text of the documentation.
+    * @param loc  the source location of the text.
+    */
+  case class Documentation(text: String, loc: SourceLocation)
 
   /**
     * A common super-type for hooks.

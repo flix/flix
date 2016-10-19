@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.{DeltaSolver, Model, Solver, Value}
-import ca.uwaterloo.flix.util.{Options, Validation}
+import ca.uwaterloo.flix.util.{LocalResource, Options, StreamOps, Validation}
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
@@ -44,6 +44,13 @@ class Flix {
     * A sequence of paths to be parsed into Flix ASTs.
     */
   private val paths = ListBuffer.empty[Path]
+
+  /**
+    * A sequence of internal inputs to be parsed into Flix ASTs.
+    */
+  private val internals = List(
+    "Prelude.flix" -> StreamOps.readAll(LocalResource.Library.Prelude)
+  )
 
   /**
     * A map of hooks to JVM invokable methods.
@@ -212,6 +219,9 @@ class Flix {
 
     Compiler.compile(getSourceInputs, hooks.toMap).flatMap {
       case tast =>
+        if (options.documentor) {
+          Documentor.document(tast)
+        }
         val ast = PropertyGen.collectProperties(tast)
         val sast = Simplifier.simplify(ast)
         val lifted = Tailrec.tailrec(LambdaLift.lift(sast))
@@ -258,6 +268,7 @@ class Flix {
     val si1 = strings.foldLeft(List.empty[SourceInput]) {
       case (xs, s) => SourceInput.Str(s) :: xs
     }
+
     val si2 = paths.foldLeft(List.empty[SourceInput]) {
       case (xs, p) if p.getFileName.toString.endsWith(".flix") => SourceInput.TxtFile(p) :: xs
       case (xs, p) if p.getFileName.toString.endsWith(".flix.zip") => SourceInput.ZipFile(p) :: xs
@@ -265,7 +276,11 @@ class Flix {
       case (_, p) => throw new IllegalStateException(s"Unknown file type '${p.getFileName}'.")
     }
 
-    si1 ::: si2
+    val si3 = internals.foldLeft(List.empty[SourceInput]) {
+      case (xs, (name, text)) => SourceInput.Internal(name, text) :: xs
+    }
+    
+    si1 ::: si2 ::: si3
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -341,7 +356,7 @@ class Flix {
         macc + (tag -> tpe.asInstanceOf[WrappedType].tpe)
     }
 
-    new WrappedType(Type.Enum(Symbol.mkEnumSym(fqn), cases))
+    new WrappedType(Type.Enum(Symbol.mkEnumSym(fqn), cases, Kind.Star))
   }
 
   /**
@@ -353,16 +368,6 @@ class Flix {
 
     val elms = types.toList.map(_.asInstanceOf[WrappedType].tpe)
     new WrappedType(Type.Apply(Type.FTuple(elms.length), elms))
-  }
-
-  /**
-    * Returns the opt type parameterized by the given type `tpe`.
-    */
-  def mkOptType(tpe: IType): IType = {
-    if (tpe == null)
-      throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
-
-    new WrappedType(Type.mkFOpt(tpe.asInstanceOf[WrappedType].tpe))
   }
 
   /**
@@ -534,6 +539,58 @@ class Flix {
   }
 
   /**
+    * Returns the value `None`.
+    */
+  def mkNone: IValue = mkTag("None", mkUnit)
+
+  /**
+    * Returns the value `Some(v)`.
+    */
+  def mkSome(v: IValue): IValue = {
+    if (v == null)
+      throw new IllegalArgumentException("Argument 'v' must be non-null.")
+
+    mkTag("Some", v)
+  }
+
+  /**
+    * Returns the value `Ok(v)`.
+    */
+  def mkOk(v: IValue): IValue = {
+    if (v == null)
+      throw new IllegalArgumentException("Argument 'v' must be non-null.")
+
+    mkTag("Ok", v)
+  }
+
+  /**
+    * Returns the value `Err(v)`.
+    */
+  def mkErr(v: IValue): IValue = {
+    if (v == null)
+      throw new IllegalArgumentException("Argument 'v' must be non-null.")
+
+    mkTag("Err", v)
+  }
+
+  /**
+    * Returns the value `Nil`.
+    */
+  def mkNil: IValue = mkTag("Nil", mkUnit)
+
+  /**
+    * Returns the value `v :: vs`.
+    */
+  def mkCons(v: IValue, vs: IValue): IValue = {
+    if (v == null)
+      throw new IllegalArgumentException("Argument 'v' must be non-null.")
+    if (vs == null)
+      throw new IllegalArgumentException("Argument 'vs' must be non-null.")
+
+    mkTag("Cons", mkTuple(Array(v, vs)))
+  }
+
+  /**
     * Returns the tuple corresponding to the given array.
     */
   def mkTuple(tuple: Array[IValue]): IValue = {
@@ -551,9 +608,9 @@ class Flix {
       throw new IllegalArgumentException("Argument 'o' must be non-null.")
 
     if (!o.isPresent)
-      new WrappedValue(Value.mkNone)
+      mkNone
     else
-      new WrappedValue(Value.mkSome(o.get()))
+      mkSome(o.get())
   }
 
   /**
@@ -564,8 +621,8 @@ class Flix {
       throw new IllegalArgumentException("Argument 'o' must be non-null.")
 
     o match {
-      case None => new WrappedValue(Value.mkNone)
-      case Some(v) => new WrappedValue(Value.mkSome(v))
+      case None => mkNone
+      case Some(v) => mkSome(v)
     }
   }
 
@@ -576,7 +633,11 @@ class Flix {
     if (l == null)
       throw new IllegalArgumentException("Argument 'l' must be non-null.")
 
-    new WrappedValue(Value.mkList(l.toList.map(_.getUnsafeRef)))
+    val xs = l.foldRight(mkNil) {
+      case (v, vs) => mkCons(v, vs)
+    }
+
+    new WrappedValue(xs)
   }
 
   /**
@@ -585,9 +646,8 @@ class Flix {
   def mkList(l: java.util.List[IValue]): IValue = {
     if (l == null)
       throw new IllegalArgumentException("Argument 'l' must be non-null.")
-
     import scala.collection.JavaConversions._
-    new WrappedValue(Value.mkList(l.toList.map(_.getUnsafeRef)))
+    mkList(l.toList)
   }
 
   /**
@@ -596,8 +656,7 @@ class Flix {
   def mkList(l: scala.Seq[IValue]): IValue = {
     if (l == null)
       throw new IllegalArgumentException("Argument 'l' must be non-null.")
-
-    new WrappedValue(Value.mkList(l.toList.map(_.getUnsafeRef)))
+    mkList(l.toList)
   }
 
   /**

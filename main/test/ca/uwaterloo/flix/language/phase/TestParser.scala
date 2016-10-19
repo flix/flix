@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.{Flix, RuleException}
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{InternalCompilerException, Options}
 import org.scalatest.FunSuite
 
 class TestParser extends FunSuite with TestUtils {
@@ -253,12 +253,12 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Lattice.01") {
     val input = "lat L(a: A)"
-    assertError[TypeError.UnresolvedType](new Flix().addStr(input).compile())
+    expectError[TypeError.UnresolvedType](new Flix().addStr(input).compile())
   }
 
   test("Lattice.02") {
     val input = "lat L(a: A, b: B, c: C)"
-    assertError[TypeError.UnresolvedType](new Flix().addStr(input).compile())
+    expectError[TypeError.UnresolvedType](new Flix().addStr(input).compile())
   }
 
   test("Declaration.Index.01") {
@@ -751,7 +751,7 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  ignore("Expression.Block.04") {
+  test("Expression.Block.04") {
     val input =
       """
         |def f: Int = {
@@ -852,7 +852,8 @@ class TestParser extends FunSuite with TestUtils {
     val input =
       """
         |def f: Int =
-        |  let x = 42 in x
+        |  let x = 42;
+        |    x
         | """.stripMargin
     run(input)
   }
@@ -861,7 +862,7 @@ class TestParser extends FunSuite with TestUtils {
     val input =
       """
         |def f: Int =
-        |  let (x, y) = (42, 21) in
+        |  let (x, y) = (42, 21);
         |    x + y
         | """.stripMargin
     run(input)
@@ -871,9 +872,9 @@ class TestParser extends FunSuite with TestUtils {
     val input =
       """
         |def f: Int =
-        |  let x = 1 in
-        |  let y = 2 in
-        |  let z = 3 in
+        |  let x = 1;
+        |  let y = 2;
+        |  let z = 3;
         |    x + y + z
       """.stripMargin
     run(input)
@@ -884,33 +885,33 @@ class TestParser extends FunSuite with TestUtils {
     val input =
     """
       |def f: Int =
-      |    let x1 = 1 in
-      |    let x2 = 1 in
-      |    let x3 = 1 in
-      |    let x4 = 1 in
-      |    let x5 = 1 in
-      |    let x6 = 1 in
-      |    let x7 = 1 in
-      |    let x8 = 1 in
-      |    let x9 = 1 in
-      |    let y1 = 1 in
-      |    let y2 = 1 in
-      |    let y3 = 1 in
-      |    let y4 = 1 in
-      |    let y5 = 1 in
-      |    let y6 = 1 in
-      |    let y7 = 1 in
-      |    let y8 = 1 in
-      |    let y9 = 1 in
-      |    let z1 = 1 in
-      |    let z2 = 1 in
-      |    let z3 = 1 in
-      |    let z4 = 1 in
-      |    let z5 = 1 in
-      |    let z6 = 1 in
-      |    let z7 = 1 in
-      |    let z8 = 1 in
-      |    let z9 = 1 in
+      |    let x1 = 1;
+      |    let x2 = 1;
+      |    let x3 = 1;
+      |    let x4 = 1;
+      |    let x5 = 1;
+      |    let x6 = 1;
+      |    let x7 = 1;
+      |    let x8 = 1;
+      |    let x9 = 1;
+      |    let y1 = 1;
+      |    let y2 = 1;
+      |    let y3 = 1;
+      |    let y4 = 1;
+      |    let y5 = 1;
+      |    let y6 = 1;
+      |    let y7 = 1;
+      |    let y8 = 1;
+      |    let y9 = 1;
+      |    let z1 = 1;
+      |    let z2 = 1;
+      |    let z3 = 1;
+      |    let z4 = 1;
+      |    let z5 = 1;
+      |    let z6 = 1;
+      |    let z7 = 1;
+      |    let z8 = 1;
+      |    let z9 = 1;
       |        1
     """.stripMargin
     run(input)
@@ -1127,48 +1128,6 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Expression.Opt.01") {
-    val input = "def f: Opt[Char] = None"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Expression.Opt.02") {
-    val input = "def f: Opt[Int] = None"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Expression.Opt.03") {
-    val input = "def f: Opt[Char] = Some('a')"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Expression.Opt.04") {
-    val input = "def f: Opt[Int] = Some(42)"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Expression.Opt.05") {
-    val input = "def f: Opt[(Char, Int)] = None"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Expression.Opt.06") {
-    val input = "def f: Opt[(Char, Int)] = Some(('a', 42))"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
   test("Expression.List.01") {
     val input = "def f: List[Int] = Nil"
     run(input)
@@ -1199,14 +1158,18 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  ignore("Expression.ListList.02") {
+  test("Expression.ListList.02") {
     val input = "def f: List[List[Int]] = (1 :: Nil) :: Nil"
-    run(input)
+    intercept[InternalCompilerException] {
+      run(input)
+    }
   }
 
-  ignore("Expression.ListList.03") {
+  test("Expression.ListList.03") {
     val input = "def f: List[List[Int]] = (Nil) :: (1 :: Nil) :: (2 :: 3 :: 4 :: Nil) :: Nil"
-    run(input)
+    intercept[InternalCompilerException] {
+      run(input)
+    }
   }
 
   test("Expression.Vec.01") {
@@ -1745,125 +1708,85 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Pattern.Opt.01") {
-    val input =
-      """def f(o: Opt[Int]): Int = match o with {
-        |  case None => 0
-        |  case Some(x) => x
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Pattern.Opt.02") {
-    val input =
-      """def f(o: Opt[Int]): Int = match o with {
-        |  case None => 0
-        |  case Some(1) => 1
-        |  case Some(2) => 2
-        |  case Some(x) => x + x
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Pattern.Opt.03") {
-    val input =
-      """def f(o: Opt[Char]): Int = match o with {
-        |  case None => 0
-        |  case Some('a') => 1
-        |  case Some('b') => 2
-        |  case Some(c)   => 3
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  ignore("Pattern.List.01") {
+  test("Pattern.List.01") {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case Nil => 0
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.List.02") {
+  test("Pattern.List.02") {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case 1 :: Nil => 0
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.List.03") {
+  test("Pattern.List.03") {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case 1 :: 2 :: Nil => 0
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.List.04") {
+  test("Pattern.List.04") {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case 1 :: 2 :: 3 :: Nil => 0
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.List.05") {
+  test("Pattern.List.05") {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case x :: Nil => x
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.List.06") {
+  test("Pattern.List.06") {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case x :: y :: Nil => x + y
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.List.07") {
+  test("Pattern.List.07") {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case Nil => 0
         |  case x :: rs => 1 + f(rs)
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.List.08") {
+  test("Pattern.List.08") {
     val input =
       """def f(xs: List[Int]): Bool = match xs with {
         |  case Nil => true
@@ -1871,12 +1794,12 @@ class TestParser extends FunSuite with TestUtils {
         |  case _ => false
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.List.09") {
+  test("Pattern.List.09") {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case Nil => 0
@@ -1885,12 +1808,12 @@ class TestParser extends FunSuite with TestUtils {
         |  case xs => 42
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.List.10") {
+  test("Pattern.List.10") {
     val input =
       """def f(xs: List[(Char, Int)]): Int = match xs with {
         |  case Nil => 0
@@ -1898,12 +1821,12 @@ class TestParser extends FunSuite with TestUtils {
         |  case (c1, i1) :: (c2, i2) :: Nil => i1 + i2
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.List.11") {
+  test("Pattern.List.11") {
     val input =
       """def f(xs: List[(Char, Int)]): Int = match xs with {
         |  case Nil => 0
@@ -1911,43 +1834,43 @@ class TestParser extends FunSuite with TestUtils {
         |  case ('a', i1) :: (c2, 21) :: Nil => 2
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.ListList.01") {
+  test("Pattern.ListList.01") {
     val input =
       """def f(xs: List[List[Int]]): Int = match xs with {
         |  case Nil => 0
         |  case (x :: Nil) :: (y :: Nil) :: Nil => x + y
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.ListList.02") {
+  test("Pattern.ListList.02") {
     val input =
       """def f(xs: List[List[Int]]): Int = match xs with {
         |  case Nil => 0
         |  case (x :: y :: Nil) :: (z :: w :: Nil) :: Nil => x + y + z + w
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
 
-  ignore("Pattern.ListList.03") {
+  test("Pattern.ListList.03") {
     val input =
       """def f(xs: List[List[Int]]): Int = match xs with {
         |  case Nil => 0
         |  case (x :: xs) :: (y :: ys) :: (z :: zs) :: Nil => x + y + z
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
+    intercept[VerifyError] {
       run(input)
     }
   }
@@ -2397,13 +2320,6 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Type.Opt.01") {
-    val input = "def f: Opt[Int] = None"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
   test("Type.List.01") {
     val input = "def f: List[Int] = Nil"
     run(input)
@@ -2773,34 +2689,66 @@ class TestParser extends FunSuite with TestUtils {
   /////////////////////////////////////////////////////////////////////////////
   // Annotations                                                             //
   /////////////////////////////////////////////////////////////////////////////
-  test("Annotation.01") {
+  test("Annotation.@associative") {
     val input =
-      """@strict @unchecked
-        |def f(x: Int): Int = x
+      """@associative
+        |def f(x: Int, y: Int): Int = 21
       """.stripMargin
     run(input)
   }
 
-  test("Annotation.02") {
+  test("Annotation.@commutative") {
+    val input =
+      """@commutative
+        |def f(x: Int, y: Int): Int = 21
+      """.stripMargin
+    run(input)
+  }
+
+  test("Annotation.@internal") {
+    val input =
+      """@internal
+        |def f(x: Int, y: Int): Int = 21
+      """.stripMargin
+    run(input)
+  }
+
+  test("Annotation.@monotone") {
     val input =
       """@monotone @unchecked
-        |def f(x: Int): Int = x
+        |def f(x: Int, y: Int): Int = 21
       """.stripMargin
     run(input)
   }
 
-  test("Annotation.03") {
+  test("Annotation.@strict") {
+    val input =
+      """@strict @unchecked
+        |def f(x: Int, y: Int): Int = 21
+      """.stripMargin
+    run(input)
+  }
+
+  test("Annotation.@unchecked") {
+    val input =
+      """@unchecked
+        |def f(x: Int, y: Int): Int = 21
+      """.stripMargin
+    run(input)
+  }
+
+  test("Annotation.@unsafe") {
+    val input =
+      """@unsafe
+        |def f(x: Int, y: Int): Int = 21
+      """.stripMargin
+    run(input)
+  }
+
+  test("Annotation.@strict @monotone @unchecked") {
     val input =
       """@strict @monotone @unchecked
-        |def f(x: Int): Int = x
-      """.stripMargin
-    run(input)
-  }
-
-  test("Annotation.04") {
-    val input =
-      """@strict @monotone @commutative @associative @unsafe @unchecked
-        |def f(x: Int): Int = x
+        |def f(x: Int, y: Int): Int = 21
       """.stripMargin
     run(input)
   }

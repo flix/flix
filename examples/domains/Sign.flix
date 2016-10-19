@@ -5,11 +5,11 @@
  */
 namespace Sign {
 
-    /**
-     * The elements of the sign lattice.
-     *
-     * Notice that Neg and Pos implicitly includes zero.
-     */
+    ///
+    ///The elements of the sign lattice.
+    ///
+    /// Notice that Neg and Pos implicitly includes zero.
+    ///
     enum Sign {
                   case Top,
 
@@ -20,9 +20,9 @@ namespace Sign {
                   case Bot
     }
 
-    /**
-     * Returns `true` iff `e1` is less than or equal to `e2`.
-     */
+    ///
+    /// Returns `true` iff `e1` is less than or equal to `e2`.
+    ///
     def leq(e1: Sign, e2: Sign): Bool = match (e1, e2) with {
         case (Sign.Bot, _)          => true
         case (Sign.Zer, Sign.Zer)   => true
@@ -34,9 +34,9 @@ namespace Sign {
         case _                      => false
     }
 
-    /**
-     * Returns the least upper bound of `e1` and `e2`.
-     */
+    ///
+    /// Returns the least upper bound of `e1` and `e2`.
+    ///
     @commutative @associative
     def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Sign.Bot, x)          => x
@@ -51,9 +51,9 @@ namespace Sign {
         case _                      => Sign.Top
     }
 
-    /**
-     * Returns the greatest lower bound of `e1` and `e2`.
-     */
+    ///
+    /// Returns the greatest lower bound of `e1` and `e2`.
+    ///
     @commutative @associative
     def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Sign.Top, x)          => x
@@ -72,18 +72,18 @@ namespace Sign {
         case _                      => Sign.Bot
     }
 
-    /**
-     * Abstracts a concrete number into the (alternative) sign domain.
-     */
+    ///
+    /// Abstracts a concrete number into the (alternative) sign domain.
+    ///
     def alpha(i: Int): Sign = switch {
         case i < 0  => Sign.Neg
         case i > 0  => Sign.Pos
         case true   => Sign.Zer
     }
 
-    /**
-     * Over-approximates integer `increment`.
-     */
+    ///
+    /// Over-approximates integer `increment`.
+    ///
     @strict @monotone
     def inc(e: Sign): Sign = match e with {
         case Sign.Bot => Sign.Bot
@@ -93,9 +93,9 @@ namespace Sign {
         case Sign.Top => Sign.Top
     }
 
-    /**
-     * Over-approximates integer `decrement`.
-     */
+    ///
+    /// Over-approximates integer `decrement`.
+    ///
     @strict @monotone
     def dec(e: Sign): Sign = match e with {
         case Sign.Bot => Sign.Bot
@@ -105,9 +105,9 @@ namespace Sign {
         case Sign.Top => Sign.Top
     }
 
-    /**
-     * Over-approximates integer `addition`.
-     */
+    ///
+    /// Over-approximates integer `addition`.
+    ///
     @strict @monotone @commutative @associative
     def plus(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Sign.Bot, _)          => Sign.Bot
@@ -124,9 +124,9 @@ namespace Sign {
         case  _                     => Sign.Top
     }
 
-    /**
-     * Over-approximates integer `subtraction`.
-     */
+    ///
+    /// Over-approximates integer `subtraction`.
+    ///
     @strict @monotone
     def minus(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Sign.Bot, _)          => Sign.Bot
@@ -143,9 +143,9 @@ namespace Sign {
         case  _                     => Sign.Top
     }
 
-    /**
-     * Over-approximates integer `multiplication`.
-     */
+    ///
+    /// Over-approximates integer `multiplication`.
+    ///
     @strict @monotone
     def times(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Sign.Bot, _)          => Sign.Bot
@@ -162,9 +162,9 @@ namespace Sign {
         case  _                     => Sign.Top
     }
 
-    /**
-     * Over-approximates integer `division`.
-     */
+    ///
+    /// Over-approximates integer `division`.
+    ///
     @strict @monotone
     def divide(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Sign.Bot, _)          => Sign.Bot
@@ -181,9 +181,9 @@ namespace Sign {
         case  _                     => Sign.Top
     }
 
-    /**
-     * Over-approximates integer `modulus`.
-     */
+    ///
+    /// Over-approximates integer `modulus`.
+    ///
     @strict @monotone
     def modulo(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Sign.Bot, _)          => Sign.Bot
@@ -200,9 +200,9 @@ namespace Sign {
         case  _                     => Sign.Top
     }
 
-    /**
-     * Over-approximates `bitwise negation`.
-     */
+    ///
+    /// Over-approximates `bitwise negation`.
+    ///
     @strict @monotone
     def negate(e: Sign): Sign = match e with {
         case Sign.Bot => Sign.Bot
@@ -212,9 +212,9 @@ namespace Sign {
         case Sign.Top => Sign.Top
     }
 
-    /**
-      * Over-approximates `bitwise and`.
-      */
+    ///
+    /// Over-approximates `bitwise and`.
+    ///
     @strict @monotone @commutative @associative
     def and(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Sign.Bot, _)          => Sign.Bot
@@ -231,9 +231,9 @@ namespace Sign {
         case  _                     => Sign.Top
     }
 
-    /**
-      * Over-approximates `bitwise or`.
-      */
+    ///
+    /// Over-approximates `bitwise or`.
+    ///
     @strict @monotone @commutative @associative
     def or(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Sign.Bot, _)          => Sign.Bot
@@ -250,9 +250,9 @@ namespace Sign {
         case  _                     => Sign.Top
     }
 
-    /**
-      * Over-approximates `bitwise xor`.
-      */
+    ///
+    /// Over-approximates `bitwise xor`.
+    ///
     @strict @monotone @commutative @associative
     def xor(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Sign.Bot, _)          => Sign.Bot
@@ -269,9 +269,9 @@ namespace Sign {
         case  _                     => Sign.Top
     }
 
-    /**
-      * Over-approximates `bitwise left shift`.
-      */
+    ///
+    /// Over-approximates `bitwise left shift`.
+    ///
     @strict @monotone
     def leftShift(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
        case (Sign.Bot, _)          => Sign.Bot
@@ -288,9 +288,9 @@ namespace Sign {
        case  _                     => Sign.Top
    }
 
-    /**
-     * Over-approximates `bitwise right shift`.
-     */
+    ///
+    /// Over-approximates `bitwise right shift`.
+    ///
     @strict @monotone
     def rightShift(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Sign.Bot, _)          => Sign.Bot
@@ -307,9 +307,9 @@ namespace Sign {
         case  _                     => Sign.Top
     }
 
-    /**
-     * Over-approximates `equal`.
-     */
+    ///
+    /// Over-approximates `equal`.
+    ///
     @strict @monotone @commutative
     def eq(e1: Sign, e2: Sign): Belnap/Belnap = match (e1, e2) with {
         case (Sign.Bot, _)          => Belnap/Belnap.Bot
@@ -318,15 +318,15 @@ namespace Sign {
         case _                      => Belnap/Belnap.Top
     }
 
-    /**
-     * Over-approximates `not equal`.
-     */
+    ///
+    /// Over-approximates `not equal`.
+    ///
     @strict @monotone @commutative
     def neq(e1: Sign, e2: Sign): Belnap/Belnap = Belnap/not(eq(e1, e2))
 
-    /**
-     * Over-approximates `less than`.
-     */
+    ///
+    /// Over-approximates `less than`.
+    ///
     @strict @monotone
     def less(e1: Sign, e2: Sign): Belnap/Belnap = match (e1, e2) with {
         case (Sign.Bot, _)          => Belnap/Belnap.Bot
@@ -335,9 +335,9 @@ namespace Sign {
         case _                      => Belnap/Belnap.Top
     }
 
-    /**
-     * Over-approximates `less than or equal`.
-     */
+    ///
+    /// Over-approximates `less than or equal`.
+    ///
     @strict @monotone
     def lessEqual(e1: Sign, e2: Sign): Belnap/Belnap = Belnap/or(e1 `less` e2, e1 `eq` e2)
 

@@ -96,11 +96,6 @@ trait IType {
   def isTuple: Boolean
 
   /**
-    * Returns `true` if `this` type is the opt type.
-    */
-  def isOpt: Boolean
-
-  /**
     * Returns `true` if `this` type is the list type.
     */
   def isList: Boolean
@@ -130,13 +125,6 @@ trait IType {
     * @throws UnsupportedOperationException if `this` type is not a tuple.
     */
   def getTupleParams: Array[IType]
-
-  /**
-    * Returns the parametric type of `this` opt type.
-    *
-    * @throws UnsupportedOperationException if `this` type is not an opt.
-    */
-  def getOptParam: IType
 
   /**
     * Returns the parametric type of `this` list type.

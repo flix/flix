@@ -346,26 +346,6 @@ object Value {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-    * Constructs the `None` value.
-    */
-  @inline
-  def mkNone: AnyRef = null
-
-  /**
-    * Constructs the `Some` value for the given `ref`.
-    */
-  @inline
-  def mkSome(ref: AnyRef): AnyRef = ref
-
-  /**
-    * Constructs the Flix representation of a list for the given `ref`.
-    */
-  def mkList(ref: AnyRef): AnyRef = ref match {
-    case o: immutable.List[_] => o
-    case _ => throw new InternalRuntimeException(s"Unexpected non-list value: '$ref'.")
-  }
-
-  /**
     * Constructs the Flix representation of a set for the given `ref`.
     */
   @inline
@@ -381,21 +361,6 @@ object Value {
   def mkMap(ref: AnyRef): AnyRef = ref match {
     case o: immutable.Map[_, _] => o
     case _ => throw new InternalRuntimeException(s"Unexpected non-map value: '$ref'.")
-  }
-
-  /**
-    * Casts the given `ref` to a Flix opt value.
-    */
-  @inline
-  def cast2opt(ref: AnyRef): AnyRef = ref
-
-  /**
-    * Casts the given `ref` to a Flix list value.
-    */
-  @inline
-  def cast2list(ref: AnyRef): immutable.List[AnyRef] = ref match {
-    case o: immutable.List[AnyRef]@unchecked => o
-    case _ => throw new InternalRuntimeException(s"Unexpected non-list value: '$ref'.")
   }
 
   /**

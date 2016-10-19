@@ -25,7 +25,7 @@ import org.scalatest.{ParallelTestExecution, Suites}
 class TestAll extends Suites(
   new LanguageSuite,
   new RuntimeSuite,
-  // new LibrarySuite, // TODO
+  new LibrarySuite,
   new UtilSuite,
   new TestMain,
   new TestExamples,

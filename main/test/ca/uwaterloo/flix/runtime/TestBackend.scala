@@ -818,7 +818,7 @@ class TestBackend extends FunSuite {
 
   test("Expression.Lambda.04") {
     val input =
-      """def f(x: Int64, y: Int64): Int64 = (x: Int64) * y - 6i64 // TODO: Added ascription to help the type system.
+      """def f(x: Int64, y: Int64): Int64 = x * y - 6i64
         |def g: Int64 = f(3i64, 42i64)
       """.stripMargin
     val t = new Tester(input)
@@ -827,7 +827,7 @@ class TestBackend extends FunSuite {
 
   test("Expression.Lambda.05") {
     val input =
-      """namespace A { def f(x: Int32): Int32 = let y = B/g(x + 1i32) in y * y }
+      """namespace A { def f(x: Int32): Int32 = let y = B/g(x + 1i32); y * y }
         |namespace B { def g(x: Int32): Int32 = x - 4i32 }
         |namespace C { def h: Int32 = A/f(5i32) + B/g(0i32) }
       """.stripMargin
@@ -835,7 +835,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt32(0), "C/h")
   }
 
-  ignore("Expression.Lambda.06") {
+  test("Expression.Lambda.06") {
     val input =
       """def f(x: Int16): Int16 = g(x + 1i16)
         |def g(x: Int16): Int16 = h(x + 10i16)
@@ -846,12 +846,12 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt32(196), "x")
   }
 
-  ignore("Expression.Lambda.07") {
+  test("Expression.Lambda.07") {
     val input =
       """def f(x: Int8, y: Int8): Int8 = (x: Int8) - y
         |def g(x: Int8): Int8 = x * 3i8
         |def h(x: Int8): Int8 = g(x - 1i8)
-        |def x: Int8 = let x = 7i8 in f(g(3i8), h(h(x)))
+        |def x: Int8 = let x = 7i8; f(g(3i8), h(h(x)))
       """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt32(-42), "x")
@@ -926,8 +926,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkTag("Val", Value.mkInt32(111)), "g")
   }
 
-  // TODO: Codegen
-  ignore("Expression.Lambda.14") {
+  test("Expression.Lambda.14") {
     val input =
       """def f(a: Int, b: Int, c: Str, d: Int, e: Bool, f: ()): (Int, Int, Str, Int, Bool, ()) = (a, b, c, d, e, f)
         |def g: (Int, Int, Str, Int, Bool, ()) = f(24, 53, "qwertyuiop", 9978, false, ())
@@ -956,7 +955,7 @@ class TestBackend extends FunSuite {
 
   test("Expression.Lambda.17") {
     val input =
-      """def f(a: Float32, b: Float32): Float32 = (a: Float32) + b // TODO: Added ascription to help the type system.
+      """def f(a: Float32, b: Float32): Float32 = a + b
         |def g: Float32 = f(1.2f32, 2.1f32)
       """.stripMargin
     val t = new Tester(input)
@@ -965,7 +964,7 @@ class TestBackend extends FunSuite {
 
   test("Expression.Lambda.18") {
     val input =
-      """def f(a: Float64, b: Float64): Float64 = (a: Float64) + b // TODO: Added ascription to help the type system.
+      """def f(a: Float64, b: Float64): Float64 = a + b
         |def g: Float64 = f(1.2f64, 2.1f64)
       """.stripMargin
     val t = new Tester(input)
@@ -974,7 +973,7 @@ class TestBackend extends FunSuite {
 
   test("Expression.Lambda.19") {
     val input =
-      """def f(a: BigInt, b: BigInt): BigInt = (a: BigInt) + b // TODO: Added ascription to help the type system.
+      """def f(a: BigInt, b: BigInt): BigInt = a + b
         |def g: BigInt = f(1ii, 9223372036854775808ii)
       """.stripMargin
     val t = new Tester(input)
@@ -1073,9 +1072,9 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt16(196), "x")
   }
 
-  ignore("Expression.Hook - Hook.Safe.07") {
+  test("Expression.Hook - Hook.Safe.07") {
     import HookSafeHelpers._
-    val input = "def x: Int8 = let x = 7i8 in f(g(3i8), h(h(x)))"
+    val input = "def x: Int8 = let x = 7i8; f(g(3i8), h(h(x)))"
     val t = new Tester(input, solve = false)
     val flix = t.flix
 
@@ -1384,9 +1383,9 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt16(196), "x")
   }
 
-  ignore("Expression.Hook - Hook.Unsafe.07") {
+  test("Expression.Hook - Hook.Unsafe.07") {
     import HookUnsafeHelpers._
-    val input = "def x: Int8 = let x = 7i8 in f(g(3i8), h(h(x)))"
+    val input = "def x: Int8 = let x = 7i8; f(g(3i8), h(h(x)))"
     val t = new Tester(input, solve = false)
     val flix = t.flix
 
@@ -4821,31 +4820,31 @@ class TestBackend extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
 
   test("Expression.Let.01") {
-    val input = "def f: Int = let x = true in 42"
+    val input = "def f: Int = let x = true; 42"
     val t = new Tester(input)
     t.runTest(Value.mkInt32(42), "f")
   }
 
   test("Expression.Let.02") {
-    val input = "def f: Int8 = let x = 42i8 in x"
+    val input = "def f: Int8 = let x = 42i8; x"
     val t = new Tester(input)
     t.runTest(Value.mkInt32(42), "f")
   }
 
   test("Expression.Let.03") {
-    val input = "def f: Int16 = let x = 1i16 in x + 2i16"
+    val input = "def f: Int16 = let x = 1i16; x + 2i16"
     val t = new Tester(input)
     t.runTest(Value.mkInt32(3), "f")
   }
 
   test("Expression.Let.04") {
-    val input = """def f: Str = let x = false in if (x) "abz" else "xyz""""
+    val input = """def f: Str = let x = false; if (x) "abz" else "xyz""""
     val t = new Tester(input)
     t.runTest(Value.mkStr("xyz"), "f")
   }
 
   test("Expression.Let.05") {
-    val input = "def f: Int = let x = 14 - 3 in x + 2"
+    val input = "def f: Int = let x = 14 - 3; x + 2"
     val t = new Tester(input)
     t.runTest(Value.mkInt32(13), "f")
   }
@@ -4853,9 +4852,9 @@ class TestBackend extends FunSuite {
   test("Expression.Let.06") {
     val input =
       """def f: Int =
-        |  let x = 14 - 3 in
-        |    let y = 2 * 4 in
-        |      x + y
+        |  let x = 14 - 3;
+        |  let y = 2 * 4;
+        |    x + y
       """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt32(19), "f")
@@ -4864,10 +4863,10 @@ class TestBackend extends FunSuite {
   test("Expression.Let.07") {
     val input =
       """def f: Int =
-        |  let x = 1 in
-        |    let y = x + 2 in
-        |      let z = y + 3 in
-        |        z
+        |  let x = 1;
+        |  let y = x + 2;
+        |  let z = y + 3;
+        |    z
       """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt32(6), "f")
@@ -4876,10 +4875,10 @@ class TestBackend extends FunSuite {
   test("Expression.Let.08") {
     val input =
       """def f(a: Int, b: Int, c: Int): Int =
-        |  let x = 1337 in
-        |    let y = -101010 in
-        |      let z = 42 in
-        |        y
+        |  let x = 1337;
+        |  let y = -101010;
+        |  let z = 42;
+        |    y
         |def g: Int = f(-1337, 101010, -42)
       """.stripMargin
     val t = new Tester(input)
@@ -4889,10 +4888,10 @@ class TestBackend extends FunSuite {
   test("Expression.Let.09") {
     val input =
       """def f(a: Int, b: Int, c: Int): Int =
-        |  let x = 1337 in
-        |    let y = -101010 in
-        |      let z = 42 in
-        |        b
+        |  let x = 1337;
+        |  let y = -101010;
+        |  let z = 42;
+        |    b
         |def g: Int = f(-1337, 101010, -42)
       """.stripMargin
     val t = new Tester(input)
@@ -4900,7 +4899,7 @@ class TestBackend extends FunSuite {
   }
 
   test("Expression.Let.10") {
-    val input = "def f: Int64 = let x = 0i64 in x"
+    val input = "def f: Int64 = let x = 0i64; x"
     val t = new Tester(input)
     t.runTest(Value.mkInt64(0), "f")
   }
@@ -4908,10 +4907,10 @@ class TestBackend extends FunSuite {
   test("Expression.Let.11") {
     val input =
       """def f: Int64 =
-        |  let x = 1337i64 in
-        |    let y = -101010i64 in
-        |      let z = 42i64 in
-        |        y
+        |  let x = 1337i64;
+        |  let y = -101010i64;
+        |  let z = 42i64;
+        |    y
       """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt64(-101010), "f")
@@ -4920,10 +4919,10 @@ class TestBackend extends FunSuite {
   test("Expression.Let.12") {
     val input =
       """def f: Int64 =
-        |  let x = 1337i64 in
-        |    let y = -101010i64 in
-        |      let z = 42i64 in
-        |        y
+        |  let x = 1337i64;
+        |  let y = -101010i64;
+        |  let z = 42i64;
+        |    y
       """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt64(-101010), "f")
@@ -4932,10 +4931,10 @@ class TestBackend extends FunSuite {
   test("Expression.Let.13") {
     val input =
       """def f(a: Int64, b: Int64, c: Int64): Int64 =
-        |  let x = 1337i64 in
-        |    let y = -101010i64 in
-        |      let z = 42i64 in
-        |        y
+        |  let x = 1337i64;
+        |  let y = -101010i64;
+        |  let z = 42i64;
+        |    y
         |def g: Int64 = f(-1337i64, 101010i64, -42i64)
       """.stripMargin
     val t = new Tester(input)
@@ -4945,10 +4944,10 @@ class TestBackend extends FunSuite {
   test("Expression.Let.14") {
     val input =
       """def f(a: Int32, b: Int64, c: Int64): Int64 =
-        |  let x = 1337i32 in
-        |    let y = -101010i64 in
-        |      let z = 42i64 in
-        |        y
+        |  let x = 1337i32;
+        |  let y = -101010i64;
+        |  let z = 42i64;
+        |    y
         |def g: Int64 = f(-1337i32, 101010i64, -42i64)
       """.stripMargin
     val t = new Tester(input)
@@ -4958,10 +4957,10 @@ class TestBackend extends FunSuite {
   test("Expression.Let.15") {
     val input =
       """def f(a: Int64, b: Int64, c: Int64): Int64 =
-        |  let x = 1337i64 in
-        |    let y = -101010i64 in
-        |      let z = 42i64 in
-        |        b
+        |  let x = 1337i64;
+        |  let y = -101010i64;
+        |  let z = 42i64;
+        |    b
         |def g: Int64 = f(-1337i64, 101010i64, -42i64)
       """.stripMargin
     val t = new Tester(input)
@@ -4971,10 +4970,10 @@ class TestBackend extends FunSuite {
   test("Expression.Let.16") {
     val input =
       """def f(a: Int32, b: Int64, c: Int64): Int64 =
-        |  let x = 1337i32 in
-        |    let y = -101010i64 in
-        |      let z = 42i64 in
-        |        b
+        |  let x = 1337i32;
+        |  let y = -101010i64;
+        |  let z = 42i64;
+        |    b
         |def g: Int64 = f(-1337i32, 101010i64, -42i64)
       """.stripMargin
     val t = new Tester(input)
@@ -4984,32 +4983,32 @@ class TestBackend extends FunSuite {
   test("Expression.Let.17") {
     val input =
       """enum ConstProp { case Top, case Val(Int), case Bot }
-        |def f: ConstProp = let x = ConstProp.Val(42) in x
+        |def f: ConstProp = let x = ConstProp.Val(42); x
       """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkTag("Val", Value.mkInt32(42)), "f")
   }
 
   test("Expression.Let.18") {
-    val input = "def f: () = let x = () in x"
+    val input = "def f: () = let x = (); x"
     val t = new Tester(input)
     t.runTest(Value.Unit, "f")
   }
 
   test("Expression.Let.19") {
-    val input = """def f: Str = let x = "helloworld" in x"""
+    val input = """def f: Str = let x = "helloworld"; x"""
     val t = new Tester(input)
     t.runTest(Value.mkStr("helloworld"), "f")
   }
 
   test("Expression.Let.20") {
-    val input = "def f: (Int, Int) = let x = (123, 456) in x"
+    val input = "def f: (Int, Int) = let x = (123, 456); x"
     val t = new Tester(input)
     t.runTest(Value.Tuple(Array(123, 456).map(Value.mkInt32)), "f")
   }
 
   test("Expression.Let.21") {
-    val input = "def f: Set[Int] = let x = #{9, 99, 999} in x"
+    val input = "def f: Set[Int] = let x = #{9, 99, 999}; x"
     val t = new Tester(input)
     t.runTest(Value.mkSet(Set(9, 99, 999).map(Value.mkInt32)), "f")
   }
@@ -5017,9 +5016,9 @@ class TestBackend extends FunSuite {
   test("Expression.Let.22") {
     val input =
       """def f: Char =
-        |  let x = 'a' in
-        |    let y = 'b' in
-        |      y
+        |  let x = 'a';
+        |  let y = 'b';
+        |    y
       """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkChar('b'), "f")
@@ -5028,9 +5027,9 @@ class TestBackend extends FunSuite {
   test("Expression.Let.23") {
     val input =
       """def f: Float32 =
-        |  let x = 1.2f32 in
-        |    let y = 3.4f32 in
-        |      y
+        |  let x = 1.2f32;
+        |  let y = 3.4f32;
+        |    y
       """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkFloat32(3.4f), "f")
@@ -5039,9 +5038,9 @@ class TestBackend extends FunSuite {
   test("Expression.Let.24") {
     val input =
       """def f: Float64 =
-        |  let x = 1.2f64 in
-        |    let y = 3.4f64 in
-        |      y
+        |  let x = 1.2f64;
+        |  let y = 3.4f64;
+        |    y
       """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkFloat64(3.4d), "f")
@@ -5050,9 +5049,9 @@ class TestBackend extends FunSuite {
   test("Expression.Let.25") {
     val input =
       """def f(x: Int): Int32 =
-        |  let x = x + 1 in
-        |    let x = x + 2 in
-        |      x + 3
+        |  let x = x + 1;
+        |  let x = x + 2;
+        |    x + 3
         |def g: Int = f(0)
       """.stripMargin
     val t = new Tester(input)
@@ -5062,10 +5061,10 @@ class TestBackend extends FunSuite {
   test("Expression.Let.26") {
     val input =
       """def f(x: Int): Int64 =
-        |  let x = x + 1 in
-        |    let x = 40i64 in
-        |      let x = x + 2i64 in
-        |        x
+        |  let x = x + 1;
+        |  let x = 40i64;
+        |  let x = x + 2i64;
+        |    x
         |def g: Int64 = f(0)
       """.stripMargin
     val t = new Tester(input)
@@ -5075,9 +5074,9 @@ class TestBackend extends FunSuite {
   test("Expression.Let.27") {
     val input =
       """def f: BigInt =
-        |  let x = 12345678901234567890ii in
-        |    let y = 98765432109876543210ii in
-        |      y
+        |  let x = 12345678901234567890ii;
+        |  let y = 98765432109876543210ii;
+        |    y
       """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkBigInt("98765432109876543210"), "f")
@@ -5943,7 +5942,7 @@ class TestBackend extends FunSuite {
     val input =
       """enum NameAndAge { case T(Str,Int) }
         |def f(x: NameAndAge): Int =
-        |  let NameAndAge.T(_, age) = x in
+        |  let NameAndAge.T(_, age) = x;
         |    age
         |def g01: Int = f(NameAndAge.T("James", 42))
         |def g02: Int = f(NameAndAge.T("John", 21))
@@ -6018,15 +6017,15 @@ class TestBackend extends FunSuite {
 
   test("Match.Tag.05") {
     val input =
-      """enum Val { case Nil, case Val((Str, Int)) }
+      """enum Val { case Nip, case Val((Str, Int)) }
         |def f(x: Val): Int = match x with {
-        |  case Val.Nil => 0
+        |  case Val.Nip => 0
         |  case Val.Val(v) => match v with {
         |    case ("x", y) => -1
         |    case (_, y) => y
         |  }
         |}
-        |def g01: Int = f(Val.Nil)
+        |def g01: Int = f(Val.Nip)
         |def g02: Int = f(Val.Val(("a", 1)))
         |def g03: Int = f(Val.Val(("b", 2)))
         |def g04: Int = f(Val.Val(("x", 3)))
@@ -6040,9 +6039,9 @@ class TestBackend extends FunSuite {
 
   test("Match.Tag.06") {
     val input =
-      """enum Val { case Nil, case Val((Str, Int)) }
+      """enum Val { case Nip, case Val((Str, Int)) }
         |def f(x: Val): Int = match x with {
-        |  case Val.Nil => 0
+        |  case Val.Nip => 0
         |  case Val.Val(v) => match v with {
         |    case (x, y) => match x with {
         |      case "x" => -1
@@ -6052,7 +6051,7 @@ class TestBackend extends FunSuite {
         |    }
         |  }
         |}
-        |def g01: Int = f(Val.Nil)
+        |def g01: Int = f(Val.Nip)
         |def g02: Int = f(Val.Val(("a", 1)))
         |def g03: Int = f(Val.Val(("b", 2)))
         |def g04: Int = f(Val.Val(("x", 3)))
@@ -6100,12 +6099,12 @@ class TestBackend extends FunSuite {
 
   test("Match.Tag.08") {
     val input =
-      """enum Val { case Nil, case Val(Set[Int]) }
+      """enum Val { case Nip, case Val(Set[Int]) }
         |def f(x: Val): Set[Int] = match x with {
-        |  case Val.Nil => #{0}
+        |  case Val.Nip => #{0}
         |  case Val.Val(s) => s
         |}
-        |def g01: Set[Int] = f(Val.Nil)
+        |def g01: Set[Int] = f(Val.Nip)
         |def g02: Set[Int] = f(Val.Val(#{1, 2, 3}))
       """.stripMargin
     val t = new Tester(input)
@@ -6204,7 +6203,8 @@ class TestBackend extends FunSuite {
   test("Match.Tuple.01") {
     val input =
       """def f(x: Int, y: Int): Int =
-        |  let (a, b) = (x, y) in a + b
+        |  let (a, b) = (x, y);
+        |    a + b
         |def g01: Int = f(5, 6)
         |def g02: Int = f(6, 5)
         |def g03: Int = f(100, 23)
@@ -6339,7 +6339,7 @@ class TestBackend extends FunSuite {
     import HookUnsafeHelpers._
     val input =
       """def fst(t: (Native, Native)): Native =
-        |  let (x, _) = t in x
+        |  let (x, _) = t; x
         |def g: (Native, Native) = f(12)
         |def h: Native = fst(g())
       """.stripMargin
@@ -6357,7 +6357,7 @@ class TestBackend extends FunSuite {
     import HookUnsafeHelpers._
     val input =
       """def fst(t: (Native, Native)): Native =
-        |  let (x, _) = t in x
+        |  let (x, _) = t; x
         |def g: (Native, Native) = f(12)
         |def h: Native = fst(g())
       """.stripMargin
@@ -6375,7 +6375,7 @@ class TestBackend extends FunSuite {
     import HookUnsafeHelpers._
     val input =
       """def fst(t: (Int, Str)): Int =
-        |  let (x, _) = t in x
+        |  let (x, _) = t; x
         |def g: (Int, Str) = f(12)
         |def h: Int = fst(g())
       """.stripMargin

@@ -49,24 +49,31 @@ sealed trait Type {
     case Type.Native => Set.empty
     case Type.Arrow(l) => Set.empty
     case Type.FTuple(l) => Set.empty
-    case Type.FOpt => Set.empty
     case Type.FList => Set.empty
     case Type.FVec => Set.empty
     case Type.FSet => Set.empty
     case Type.FMap => Set.empty
-    case Type.Enum(enumName, cases) => cases.flatMap {
+    case Type.Enum(enumName, cases, kind) => cases.flatMap {
       case (tagName, tpe) => tpe.typeVars
     }.toSet
     case Type.Apply(t, ts) => t.typeVars ++ ts.flatMap(_.typeVars)
-    case Type.Forall(quantifiers, base) => base.typeVars -- quantifiers
+  }
+
+  /**
+    * Returns `true` if `this` type is an enum type.
+    */
+  def isEnum: Boolean = this match {
+    case Type.Enum(sym, cases, kind) => true
+    case Type.Apply(t, ts) => t.isEnum
+    case _ => false
   }
 
   /**
     * Returns `true` if `this` type is a tuple type.
     */
   def isTuple: Boolean = this match {
-    case Type.FTuple(_) => true
-    case Type.Apply(t1, t2) => t1.isTuple
+    case Type.FTuple(l) => true
+    case Type.Apply(t, ts) => t.isTuple
     case _ => false
   }
 
@@ -89,15 +96,13 @@ sealed trait Type {
     case Type.Native => "Native"
     case Type.Arrow(l) => "Arrow"
     case Type.FTuple(l) => "Tuple"
-    case Type.FOpt => "Opt"
     case Type.FList => "List"
     case Type.FVec => "Vec"
     case Type.FSet => "Set"
     case Type.FMap => "Map"
     case Type.Apply(Type.Arrow(l), ts) => ts.mkString(" -> ")
     case Type.Apply(t, ts) => s"$t[${ts.mkString(", ")}]"
-    case Type.Enum(enum, cases) => enum.toString
-    case Type.Forall(quantifiers, base) => s"∀(${quantifiers.mkString(", ")}). $base"
+    case Type.Enum(enum, cases, kind) => enum.toString
   }
 }
 
@@ -211,13 +216,6 @@ object Type {
   }
 
   /**
-    * A type constructor that represents options.
-    */
-  case object FOpt extends Type {
-    def kind: Kind = Kind.Arrow(List(Kind.Star), Kind.Star)
-  }
-
-  /**
     * A type constructor that represents list values.
     */
   case object FList extends Type {
@@ -250,10 +248,9 @@ object Type {
     *
     * @param sym   the symbol of the enum.
     * @param cases a map from tag names to tag types.
+    * @param kind  the kind of the enum.
     */
-  case class Enum(sym: Symbol.EnumSym, cases: immutable.Map[String, Type]) extends Type {
-    def kind: Kind = Kind.Star
-  }
+  case class Enum(sym: Symbol.EnumSym, cases: immutable.Map[String, Type], kind: Kind) extends Type
 
   /**
     * A type expression that represents the application of `ts` to `t`.
@@ -269,14 +266,6 @@ object Type {
       case Kind.Star => throw InternalCompilerException("Illegal kind.")
       case Kind.Arrow(_, k) => k
     }
-  }
-
-  /**
-    * A universally quantified type expression.
-    */
-  // TODO: Move into Scheme.
-  case class Forall(quantifiers: List[Type.Var], base: Type) extends Type {
-    def kind: Kind = base.kind
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -296,11 +285,6 @@ object Type {
     * Constructs the function type [A] -> B where `A` is the given sequence of types `as` and `B` is the given type `b`.
     */
   def mkArrow(as: List[Type], b: Type): Type = Apply(Arrow(as.length + 1), as ::: b :: Nil)
-
-  /**
-    * Constructs the type Opt[A] where `A` is the given type `tpe`.
-    */
-  def mkFOpt(a: Type): Type = Apply(FOpt, List(a))
 
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
@@ -326,21 +310,6 @@ object Type {
     * Constructs the type Map[K, V] where `K` is the given type `k` and `V` is the given type `v`.
     */
   def mkFMap(k: Type, v: Type): Type = Apply(FMap, List(k, v))
-
-  /**
-    * Constructors the universally quantified type ∀(xs...) base.
-    *
-    * Returns the base type if the given list of quantifiers is empty.
-    */
-  def mkForall(quantifiers: List[Type.Var], base: Type): Type = if (quantifiers.isEmpty) base else Type.Forall(quantifiers, base)
-
-  /**
-    * Instantiates the given type `tpe` by replacing all quantified type variables with fresh type variables.
-    */
-  def instantiate(tpe: Type)(implicit genSym: GenSym): Type = tpe match {
-    case Type.Forall(quantifiers, base) => refreshTypeVars(quantifiers, base)
-    case _ => tpe
-  }
 
   /**
     * Replaces every free occurrence of a type variable in `typeVars`
@@ -370,16 +339,14 @@ object Type {
       case Type.Native => Type.Native
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.FTuple(l) => Type.FTuple(l)
-      case Type.FOpt => Type.FOpt
       case Type.FList => Type.FList
       case Type.FVec => Type.FVec
       case Type.FSet => Type.FSet
       case Type.FMap => Type.FMap
       case Type.Apply(t, ts) => Type.Apply(visit(t), ts map visit)
-      case Type.Enum(enum, cases) => Type.Enum(enum, cases map {
+      case Type.Enum(enum, cases, kind) => Type.Enum(enum, cases map {
         case (k, v) => k -> visit(v)
-      })
-      case Type.Forall(quantifiers, base) => Type.Forall(quantifiers, visit(base))
+      }, kind)
     }
 
     visit(tpe)

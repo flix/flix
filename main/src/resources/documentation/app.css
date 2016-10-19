@@ -1,0 +1,161 @@
+/**
+ * Page body.
+ */
+body {
+    background-color: #fcfcfc;
+    margin: 0;
+    padding: 0;
+}
+
+/**
+ * Navigation bar.
+ */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 13vw;
+    height: 100vh;
+
+    background-color: #eadfda;
+    box-shadow: 2px 0 2px 0 rgba(0, 0, 0, 0.15);
+    padding-left: 3vw;
+    padding-right: 3vw;
+
+    font-family: "Droid Sans Mono", monospace;
+    font-size: 0.85rem;
+}
+
+.navbar .title {
+    font-family: "Arial", sans-serif;
+    font-weight: bold;
+    font-size: 1.2rem;
+    text-align: center;
+
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.navbar ul {
+    margin: 0;
+    padding: 0;
+}
+
+/**
+ * Page content.
+ */
+.pagecontent {
+    padding-left: 2.5vw;
+    padding-right: 2.5vw;
+
+    margin-left: 19vw; /* 13 + 3 + 3 = 19 */
+}
+
+/**
+ * Lists of different kinds declarations.
+ */
+.type-list, .definition-list, .relation-list, .lattice-list {
+    margin-bottom: 1.5rem;
+}
+
+/**
+ * Box associated with a declaration.
+ */
+.type-decl, .definition-decl, .relation-decl, .lattice-decl {
+    background-color: #ffffff;
+    border-radius: 0.1rem;
+    padding: 0.5rem 1rem;
+    margin-bottom: 0.8rem;
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+}
+
+/**
+ * Signature block associated with a declaration.
+ */
+.signature {
+    font-family: "Source Code Pro", monospace;
+    font-size: 0.85rem;
+    margin-bottom: 0.4rem;
+}
+
+/**
+ * Comment associated with a declaration.
+ */
+.comment {
+    font-family: "Arial", sans-serif;
+    font-size: 0.75rem;
+    color: #8f8f8f;
+    margin-left: 2.5rem;
+}
+
+/**
+ * Keyword associated with a declaration.
+ */
+.keyword {
+    display: inline-block;
+    width: 2rem;
+    color: #000000;
+    text-align: right;
+    padding-right: 0.5rem;
+}
+
+/**
+ * Name associated with a declaration.
+ */
+.name {
+    font-weight: bold;
+    color: #B12250;
+}
+
+/**
+ * Anchor associated with a declaration.
+ */
+.anchor {
+    float: right;
+    vertical-align: bottom;
+}
+
+/**
+ * Types.
+ */
+.type {
+    color: #441ed4;
+}
+
+/**
+ * Headings.
+ */
+h1, h2 {
+    font-family: "Arial", sans-serif;
+    color: #000000;
+}
+
+h1 {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+h2 {
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin-left: 0.5rem;
+}
+
+/**
+ * Links.
+ */
+a:link, a:visited {
+    color: black;
+}
+
+a:hover, a:active {
+    color: #d21230;
+}
+
+/**
+ * Material Icons.
+ */
+.material-icons.md-18 {
+    font-size: 18px;
+    color: lightgrey;
+}

@@ -232,7 +232,7 @@ object Verifier {
       case Type.Int64 => List(SymVal.AtomicVar(genSym.fresh2()))
       case Type.BigInt => List(SymVal.AtomicVar(genSym.fresh2()))
       case Type.Str => List(SymVal.AtomicVar(genSym.fresh2()))
-      case Type.Enum(name, cases) =>
+      case Type.Enum(name, cases, kind) =>
         val r = cases flatMap {
           case (tag, innerType) =>
             visit(innerType) map {

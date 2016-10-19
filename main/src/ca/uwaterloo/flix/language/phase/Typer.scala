@@ -35,6 +35,7 @@ object Typer {
 
     val result = for {
       definitions <- Declarations.Definitions.typecheck(program)
+      enums <- Declarations.Enums.typecheck(program)
       lattices <- Declarations.Lattices.typecheck(program)
       tables <- Declarations.Tables.typecheck(program)
       indexes <- Declarations.Indexes.typecheck(program)
@@ -43,7 +44,7 @@ object Typer {
     } yield {
       val currentTime = System.nanoTime()
       val time = program.time.copy(typer = currentTime - startTime)
-      TypedAst.Root(definitions, lattices, tables, indexes, facts, rules, Nil, time)
+      TypedAst.Root(definitions, enums, lattices, tables, indexes, facts, rules, Nil, time)
     }
 
     result match {
@@ -119,7 +120,7 @@ object Typer {
           * Performs type inference and reassembly on the given definition `defn` in the given namespace `ns`.
           */
         def visitDefn(defn: NamedAst.Declaration.Definition, ns: Name.NName): Result[(Symbol.DefnSym, TypedAst.Declaration.Definition), TypeError] = defn match {
-          case NamedAst.Declaration.Definition(sym, tparams, params, exp, ann, tpe, loc) =>
+          case NamedAst.Declaration.Definition(doc, ann, sym, tparams, params, exp, tpe, loc) =>
             infer(defn, ns, program) map {
               case d => sym -> d
             }
@@ -141,9 +142,9 @@ object Typer {
         */
       // TODO: Cleanup
       def infer(defn0: NamedAst.Declaration.Definition, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): Result[TypedAst.Declaration.Definition, TypeError] = {
-        // Resolve the declared type.
-        val declaredType = Disambiguation.resolve(defn0.tpe, ns0, program) match {
-          case Ok(tpe) => tpe
+        // Resolve the declared scheme.
+        val declaredScheme = Disambiguation.resolve(defn0.sc, ns0, program) match {
+          case Ok(scheme) => scheme
           case Err(e) => return Err(e)
         }
 
@@ -155,7 +156,7 @@ object Typer {
 
         val result = for (
           resultType <- Expressions.infer(defn0.exp, ns0, program);
-          unifiedType <- unifyM(Type.instantiate(declaredType), Type.mkArrow(argumentTypes, resultType), defn0.loc)
+          unifiedType <- unifyM(Scheme.instantiate(declaredScheme), Type.mkArrow(argumentTypes, resultType), defn0.loc)
         ) yield unifiedType
 
         // TODO: See if this can be rewritten nicer
@@ -166,19 +167,59 @@ object Typer {
               case Ok((subst0, resultType)) =>
                 val exp = Expressions.reassemble(defn0.exp, ns0, program, subst0)
 
+                val tparams = defn0.tparams.map {
+                  case NamedAst.TypeParam(name, tpe, loc) =>
+                    TypedAst.TypeParam(name, tpe, loc)
+                }
+
                 // Translate the named formals into typed formals.
                 val formals = defn0.params.map {
                   case NamedAst.FormalParam(sym, tpe, loc) =>
                     TypedAst.FormalParam(sym, subst0(sym.tvar), sym.loc)
                 }
 
-                Ok(TypedAst.Declaration.Definition(defn0.ann, defn0.sym, formals, exp, resultType, defn0.loc))
+                Ok(TypedAst.Declaration.Definition(defn0.doc, defn0.ann, defn0.sym, tparams, formals, exp, resultType, defn0.loc))
 
               case Err(e) => Err(e)
             }
         }
       }
 
+    }
+
+    object Enums {
+      /**
+        * Performs type inference and reassembly on all enums in the given program.
+        */
+      def typecheck(program: Program): Result[Map[Symbol.EnumSym, TypedAst.Declaration.Enum], TypeError] = {
+        /**
+          * Performs type resolution on the given enum and its cases.
+          */
+        def visitEnum(enum: NamedAst.Declaration.Enum, ns: Name.NName): Result[(Symbol.EnumSym, TypedAst.Declaration.Enum), TypeError] = enum match {
+          case NamedAst.Declaration.Enum(doc, sym, tparams, cases0, scheme0, loc) =>
+            val casesResult = cases0 map {
+              case (name, NamedAst.Case(enumName, tagName, tpe)) =>
+                Disambiguation.resolve(tpe, ns, program).map {
+                  case t => name -> TypedAst.Case(enumName, tagName, t)
+                }
+            }
+
+            for {
+              cases <- Result.seqM(casesResult.toList)
+              scheme <- Disambiguation.resolve(scheme0, ns, program)
+            } yield sym -> TypedAst.Declaration.Enum(doc, sym, cases.toMap, scheme, loc)
+        }
+
+        // Visit every enum in the program.
+        val result = program.enums.toList.flatMap {
+          case (ns, enums) => enums.map {
+            case (name, enum) => visitEnum(enum, ns)
+          }
+        }
+
+        // Sequence the results and convert them back to a map.
+        Result.seqM(result).map(_.toMap)
+      }
     }
 
     object Indexes {
@@ -218,8 +259,6 @@ object Typer {
             case (name, index) => visitIndex(index, ns)
           }
         }
-
-        // TODO: Duplicate indexes.
 
         // Sequence the results and convert them back to a map.
         Result.seqM(result).map(_.toMap)
@@ -301,14 +340,14 @@ object Typer {
           * Returns [[Err]] if a type is unresolved.
           */
         def visitTable(table: NamedAst.Table, ns: Name.NName): Result[(Symbol.TableSym, TypedAst.Table), TypeError] = table match {
-          case NamedAst.Table.Relation(sym, attr, loc) =>
+          case NamedAst.Table.Relation(doc, sym, attr, loc) =>
             for (typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a, ns))))
-              yield sym -> TypedAst.Table.Relation(sym, typedAttributes, loc)
-          case NamedAst.Table.Lattice(sym, keys, value, loc) =>
+              yield sym -> TypedAst.Table.Relation(doc, sym, typedAttributes, loc)
+          case NamedAst.Table.Lattice(doc, sym, keys, value, loc) =>
             for {
               typedKeys <- Result.seqM(keys.map(a => visitAttribute(a, ns)))
               typedVal <- visitAttribute(value, ns)
-            } yield sym -> TypedAst.Table.Lattice(sym, typedKeys, typedVal, loc)
+            } yield sym -> TypedAst.Table.Lattice(doc, sym, typedKeys, typedVal, loc)
         }
 
         /**
@@ -365,8 +404,8 @@ object Typer {
         case NamedAst.Expression.Ref(ref, tvar, loc) =>
           Disambiguation.lookupRef(ref, ns0, program) match {
             case Ok(RefTarget.Defn(ns, defn)) =>
-              Disambiguation.resolve(defn.tpe, ns, program) match {
-                case Ok(declaredType) => unifyM(tvar, Type.instantiate(declaredType), loc)
+              Disambiguation.resolve(defn.sc, ns, program) match {
+                case Ok(scheme) => unifyM(tvar, Scheme.instantiate(scheme), loc)
                 case Err(e) => failM(e)
               }
             case Ok(RefTarget.Hook(hook)) => liftM(hook.tpe)
@@ -415,30 +454,29 @@ object Typer {
          * Unary expression.
          */
         case NamedAst.Expression.Unary(op, exp1, tvar, loc) => op match {
-          // TODO: Must unify tvar
           case UnaryOperator.LogicalNot =>
             for (
-              tpe1 <- visitExp(exp1);
-              res <- unifyM(tvar, tpe1, Type.Bool, loc)
+              tpe <- visitExp(exp1);
+              res <- unifyM(tvar, tpe, Type.Bool, loc)
             ) yield res
 
           case UnaryOperator.Plus =>
-            // TODO: Must unify tvar
             for (
-              tpe1 <- visitExp(exp1)
-            ) yield tpe1
+              tpe <- visitExp(exp1);
+              res <- unifyM(tvar, tpe, loc)
+            ) yield res
 
           case UnaryOperator.Minus =>
-            // TODO: Must unify tvar
             for (
-              tpe1 <- visitExp(exp1)
-            ) yield tpe1
+              tpe <- visitExp(exp1);
+              res <- unifyM(tvar, tpe, loc)
+            ) yield res
 
           case UnaryOperator.BitwiseNegate =>
-            // TODO: Must unify tvar
             for (
-              inferredType <- visitExp(exp1)
-            ) yield inferredType
+              tpe <- visitExp(exp1);
+              res <- unifyM(tvar, tpe, loc)
+            ) yield res
         }
 
         /*
@@ -449,42 +487,42 @@ object Typer {
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2), loc)
+              resultType <- unifyM(tvar, tpe1, tpe2, loc)
             ) yield resultType
 
           case BinaryOperator.Minus =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2), loc)
+              resultType <- unifyM(tvar, tpe1, tpe2, loc)
             ) yield resultType
 
           case BinaryOperator.Times =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2), loc)
+              resultType <- unifyM(tvar, tpe1, tpe2, loc)
             ) yield resultType
 
           case BinaryOperator.Divide =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2), loc)
+              resultType <- unifyM(tvar, tpe1, tpe2, loc)
             ) yield resultType
 
           case BinaryOperator.Modulo =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2), loc)
+              resultType <- unifyM(tvar, tpe1, tpe2, loc)
             ) yield resultType
 
           case BinaryOperator.Exponentiate =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2), loc)
+              resultType <- unifyM(tvar, tpe1, tpe2, loc)
             ) yield resultType
 
           case BinaryOperator.Equal | BinaryOperator.NotEqual =>
@@ -514,7 +552,7 @@ object Typer {
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);
-              resultType <- unifyM(tvar, tpe1, tpe2, guesstimateType(tpe1, tpe2), loc)
+              resultType <- unifyM(tvar, tpe1, tpe2, loc)
             ) yield resultType
 
           case BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift =>
@@ -533,6 +571,7 @@ object Typer {
           for (
             tpe1 <- visitExp(exp1);
             tpe2 <- visitExp(exp2);
+            boundVar <- unifyM(sym.tvar, tpe1, loc);
             resultVar <- unifyM(tvar, tpe2, loc)
           ) yield resultVar
 
@@ -584,9 +623,10 @@ object Typer {
          */
         case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
           Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
-            case Ok(decl) => Disambiguation.resolve(decl.tpe, ns0, program) match {
-              case Ok(enumType) =>
-                val cazeType = enumType.asInstanceOf[Type.Enum].cases(tag.name)
+            case Ok(decl) => Disambiguation.resolve(decl.sc, ns0, program) match {
+              case Ok(scheme) =>
+                val enumType = Scheme.instantiate(scheme)
+                val cazeType = getEnumType(enumType).cases(tag.name)
                 for (
                   innerType <- visitExp(exp);
                   _________ <- unifyM(innerType, cazeType, loc);
@@ -604,21 +644,6 @@ object Typer {
           for (
             elementTypes <- seqM(elms.map(visitExp));
             resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
-          ) yield resultType
-
-        /*
-         * None expression.
-         */
-        case NamedAst.Expression.FNone(tvar, loc) =>
-          liftM(Type.mkFOpt(tvar))
-
-        /*
-         * Some expression.
-         */
-        case NamedAst.Expression.FSome(exp, tvar, loc) =>
-          for (
-            innerType <- visitExp(exp);
-            resultType <- unifyM(tvar, Type.mkFOpt(innerType), loc)
           ) yield resultType
 
         /*
@@ -763,9 +788,10 @@ object Typer {
         case NamedAst.Pattern.Str(s, loc) => liftM(Type.Str)
         case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
           Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
-            case Ok(decl) => Disambiguation.resolve(decl.tpe, ns0, program) match {
-              case Ok(enumType) =>
-                val cazeType = enumType.asInstanceOf[Type.Enum].cases(tag.name)
+            case Ok(decl) => Disambiguation.resolve(decl.sc, ns0, program) match {
+              case Ok(scheme) =>
+                val enumType = Scheme.instantiate(scheme)
+                val cazeType = getEnumType(enumType).cases(tag.name)
                 for (
                   innerType <- visitPat(pat);
                   _________ <- unifyM(innerType, cazeType, loc);
@@ -780,10 +806,6 @@ object Typer {
             elementTypes <- seqM(elms map visitPat);
             resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
           ) yield resultType
-        case NamedAst.Pattern.FNone(tvar, loc) => liftM(Type.mkFOpt(tvar))
-        case NamedAst.Pattern.FSome(pat, tvar, loc) =>
-          for (inferredType <- visitPat(pat))
-            yield Type.mkFOpt(inferredType)
         case NamedAst.Pattern.FNil(tvar, loc) => liftM(Type.mkFList(tvar))
         case NamedAst.Pattern.FList(hd, tl, tvar, loc) =>
           for {
@@ -814,10 +836,10 @@ object Typer {
               } yield unifiedType
           }
         case NamedAst.Pattern.FSet(elms, rest, tvar, loc) =>
-          ???
+          ??? // TODO: FSet
 
         case NamedAst.Pattern.FMap(elms, rest, tvar, loc) =>
-          ???
+          ??? // TODO: FMap
       }
 
       visitExp(exp0)
@@ -840,7 +862,7 @@ object Typer {
          * Variable expression.
          */
         case NamedAst.Expression.Var(sym, loc) =>
-          // TODO: This should be taken into account during type inference.
+          // TODO: Need better strategy for when to resolve free variables.
           if (!resolveFreeVars) {
             TypedAst.Expression.Var(sym, subst0(sym.tvar), loc)
           } else {
@@ -966,19 +988,6 @@ object Typer {
           TypedAst.Expression.Tuple(es, subst0(tvar), loc)
 
         /*
-         * None expression.
-         */
-        case NamedAst.Expression.FNone(tvar, loc) =>
-          TypedAst.Expression.FNone(subst0(tvar), loc)
-
-        /*
-         * Some expression.
-         */
-        case NamedAst.Expression.FSome(exp, tvar, loc) =>
-          val e = visitExp(exp, subst0)
-          TypedAst.Expression.FSome(e, subst0(tvar), loc)
-
-        /*
          * Nil expression.
          */
         case NamedAst.Expression.FNil(tvar, loc) =>
@@ -1084,8 +1093,6 @@ object Typer {
             case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
           }
         case NamedAst.Pattern.Tuple(elms, tvar, loc) => TypedAst.Pattern.Tuple(elms map visitPat, subst0(tvar), loc)
-        case NamedAst.Pattern.FNone(tvar, loc) => TypedAst.Pattern.FNone(subst0(tvar), loc)
-        case NamedAst.Pattern.FSome(pat, tvar, loc) => TypedAst.Pattern.FSome(visitPat(pat), subst0(tvar), loc)
         case NamedAst.Pattern.FNil(tvar, loc) => TypedAst.Pattern.FNil(subst0(tvar), loc)
         case NamedAst.Pattern.FList(hd, tl, tvar, loc) => TypedAst.Pattern.FList(visitPat(hd), visitPat(tl), subst0(tvar), loc)
         case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => TypedAst.Pattern.FVec(elms map visitPat, rest.map(visitPat), subst0(tvar), loc)
@@ -1154,8 +1161,8 @@ object Typer {
       case NamedAst.Predicate.Head.False(loc) => Unification.liftM(Nil)
       case NamedAst.Predicate.Head.Table(qname, terms, loc) =>
         val declaredTypes = Disambiguation.lookupTable(qname, ns, program) match {
-          case Ok(NamedAst.Table.Relation(sym, attr, _)) => attr.map(_.tpe)
-          case Ok(NamedAst.Table.Lattice(sym, keys, value, _)) => keys.map(_.tpe) ::: value.tpe :: Nil
+          case Ok(NamedAst.Table.Relation(doc, sym, attr, _)) => attr.map(_.tpe)
+          case Ok(NamedAst.Table.Lattice(doc, sym, keys, value, _)) => keys.map(_.tpe) ::: value.tpe :: Nil
           case Err(e) => return failM(e)
         }
 
@@ -1175,8 +1182,8 @@ object Typer {
     def infer(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = body0 match {
       case NamedAst.Predicate.Body.Table(qname, terms, loc) =>
         val declaredTypes = Disambiguation.lookupTable(qname, ns0, program) match {
-          case Ok(NamedAst.Table.Relation(sym, attr, _)) => attr.map(_.tpe)
-          case Ok(NamedAst.Table.Lattice(sym, keys, value, _)) => keys.map(_.tpe) ::: value.tpe :: Nil
+          case Ok(NamedAst.Table.Relation(doc, sym, attr, _)) => attr.map(_.tpe)
+          case Ok(NamedAst.Table.Lattice(doc, sym, keys, value, _)) => keys.map(_.tpe) ::: value.tpe :: Nil
           case Err(e) => return failM(e)
         }
         val expectedTypes = Disambiguation.resolve(declaredTypes, ns0, program) match {
@@ -1219,10 +1226,10 @@ object Typer {
       case NamedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
       case NamedAst.Predicate.Head.Table(qname, terms, loc) =>
         Disambiguation.lookupTable(qname, ns0, program) match {
-          case Ok(NamedAst.Table.Relation(sym, _, _)) =>
+          case Ok(NamedAst.Table.Relation(_, sym, _, _)) =>
             val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
             TypedAst.Predicate.Head.Table(sym, ts, loc)
-          case Ok(NamedAst.Table.Lattice(sym, _, _, _)) =>
+          case Ok(NamedAst.Table.Lattice(_, sym, _, _, _)) =>
             val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
             TypedAst.Predicate.Head.Table(sym, ts, loc)
           case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
@@ -1235,8 +1242,8 @@ object Typer {
     def reassemble(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
       case NamedAst.Predicate.Body.Table(qname, terms, loc) =>
         Disambiguation.lookupTable(qname, ns0, program) match {
-          case Ok(NamedAst.Table.Relation(sym, _, _)) => TypedAst.Predicate.Body.Table(sym, terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true)), loc)
-          case Ok(NamedAst.Table.Lattice(sym, _, _, _)) =>
+          case Ok(NamedAst.Table.Relation(_, sym, _, _)) => TypedAst.Predicate.Body.Table(sym, terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true)), loc)
+          case Ok(NamedAst.Table.Lattice(_, sym, _, _, _)) =>
             val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
             TypedAst.Predicate.Body.Table(sym, ts, loc)
           case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
@@ -1263,6 +1270,15 @@ object Typer {
   }
 
   /**
+    * Returns the underlying enum type of `tpe`.
+    */
+  def getEnumType(tpe: Type): Type.Enum = tpe match {
+    case t: Type.Enum => t
+    case Type.Apply(t: Type.Enum, _) => t
+    case _ => throw InternalCompilerException(s"Unexpected type `$tpe'.")
+  }
+
+  /**
     * Returns a substitution from formal parameters to their declared types.
     *
     * Performs type resolution of the declared type of each formal parameters.
@@ -1281,35 +1297,6 @@ object Typer {
             macc ++ Substitution.singleton(sym.tvar, declaredType)
         }
     }
-  }
-
-  /**
-    * A temporary hack which "guesses" the type of an arithmetic operation based on one of its arguments.
-    */
-  // TODO: Hack to be removed once type classes are implemented.
-  def guesstimateType(tpe1: Type, tpe2: Type): Type = (tpe1, tpe2) match {
-    case (Type.Float32, _) => Type.Float32
-    case (_, Type.Float32) => Type.Float32
-
-    case (Type.Float64, _) => Type.Float64
-    case (_, Type.Float64) => Type.Float64
-
-    case (Type.Int8, _) => Type.Int8
-    case (_, Type.Int8) => Type.Int8
-
-    case (Type.Int16, _) => Type.Int16
-    case (_, Type.Int16) => Type.Int16
-
-    case (Type.Int32, _) => Type.Int32
-    case (_, Type.Int32) => Type.Int32
-
-    case (Type.Int64, _) => Type.Int64
-    case (_, Type.Int64) => Type.Int64
-
-    case (Type.BigInt, _) => Type.BigInt
-    case (_, Type.BigInt) => Type.BigInt
-
-    case _ => Type.Int32
   }
 
 }
