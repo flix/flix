@@ -767,12 +767,12 @@ object Weeder {
 
       // loop through each annotation.
       val result = xs.toList map {
-        case x => seen.get(x.name) match {
+        case x => seen.get(x.ident.name) match {
           case None =>
-            seen += (x.name -> x)
+            seen += (x.ident.name -> x)
             Annotations.weed(x)
           case Some(otherAnn) =>
-            DuplicateAnnotation(x.name, mkSL(otherAnn.sp1, otherAnn.sp2), mkSL(x.sp1, x.sp2)).toFailure
+            DuplicateAnnotation(x.ident.name, mkSL(otherAnn.sp1, otherAnn.sp2), mkSL(x.sp1, x.sp2)).toFailure
         }
       }
       @@(result) map Ast.Annotations
@@ -786,7 +786,7 @@ object Weeder {
        * Check for `UndefinedAnnotation`.
        */
       val loc = mkSL(past.sp1, past.sp2)
-      past.name match {
+      past.ident.name match {
         case "associative" => Ast.Annotation.Associative(loc).toSuccess
         case "commutative" => Ast.Annotation.Commutative(loc).toSuccess
         case "internal" => Ast.Annotation.Internal(loc).toSuccess
@@ -794,7 +794,7 @@ object Weeder {
         case "strict" => Ast.Annotation.Strict(loc).toSuccess
         case "unchecked" => Ast.Annotation.Unchecked(loc).toSuccess
         case "unsafe" => Ast.Annotation.Unsafe(loc).toSuccess
-        case _ => UndefinedAnnotation(past.name, loc).toFailure
+        case _ => UndefinedAnnotation(past.ident.name, loc).toFailure
       }
     }
   }

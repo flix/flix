@@ -188,7 +188,7 @@ object ParsedAst {
     /**
       * Relation Declaration.
       *
-      * @param doc     the optional comment associated with the definition.
+      * @param doc   the optional comment associated with the definition.
       * @param sp1   the position of the first character in the declaration.
       * @param ident the name of the relation.
       * @param attr  the attributes (columns) of the relation.
@@ -199,7 +199,7 @@ object ParsedAst {
     /**
       * Lattice Declaration.
       *
-      * @param doc     the optional comment associated with the definition.
+      * @param doc   the optional comment associated with the definition.
       * @param sp1   the position of the first character in the declaration.
       * @param ident the name of the lattice.
       * @param attr  the attributes (columns) of the relation.
@@ -889,11 +889,11 @@ object ParsedAst {
   /**
     * Annotation.
     *
-    * @param sp1  the position of the first character in the annotation.
-    * @param name the name of the annotation.
-    * @param sp2  the position of the last character in the annotation.
+    * @param sp1   the position of the first character in the annotation.
+    * @param ident the name of the annotation.
+    * @param sp2   the position of the last character in the annotation.
     */
-  case class Annotation(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst
+  case class Annotation(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst
 
   /**
     * Case (member of an enum).
