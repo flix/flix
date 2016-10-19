@@ -156,7 +156,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("enum") ~ WS ~ Names.Enum ~ TypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~ optSC ~> ParsedAst.Declaration.Enum
+        optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("enum") ~ WS ~ Names.Type ~ TypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~ optSC ~> ParsedAst.Declaration.Enum
       }
     }
 
@@ -228,7 +228,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        optWS ~ SP ~ atomic("index") ~ WS ~ (QNames.QRelation | QNames.QLattice) ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Indexes).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Index
+        optWS ~ SP ~ atomic("index") ~ WS ~ (Names.QRelation | Names.QLattice) ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Indexes).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Index
       }
     }
 
@@ -399,7 +399,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Infix: Rule1[ParsedAst.Expression] = rule {
-      Extended ~ optional(optWS ~ "`" ~ QNames.QDefinition ~ "`" ~ optWS ~ Extended ~ SP ~> ParsedAst.Expression.Infix)
+      Extended ~ optional(optWS ~ "`" ~ Names.QDefinition ~ "`" ~ optWS ~ Extended ~ SP ~> ParsedAst.Expression.Infix)
     }
 
     def Extended: Rule1[ParsedAst.Expression] = rule {
@@ -456,7 +456,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Tag: Rule1[ParsedAst.Expression.Tag] = rule {
-      SP ~ QNames.QEnum ~ "." ~ Names.Tag ~ optional(optWS ~ Tuple) ~ SP ~> ParsedAst.Expression.Tag
+      SP ~ Names.QType ~ "." ~ Names.Tag ~ optional(optWS ~ Tuple) ~ SP ~> ParsedAst.Expression.Tag
     }
 
     def Tuple: Rule1[ParsedAst.Expression] = rule {
@@ -502,7 +502,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def VarOrRef: Rule1[ParsedAst.Expression.VarOrRef] = rule {
-      SP ~ QNames.QDefinition ~ SP ~> ParsedAst.Expression.VarOrRef
+      SP ~ Names.QDefinition ~ SP ~> ParsedAst.Expression.VarOrRef
     }
 
     def UnaryLambda: Rule1[ParsedAst.Expression.Lambda] = rule {
@@ -558,7 +558,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Tag: Rule1[ParsedAst.Pattern.Tag] = rule {
-      SP ~ QNames.QEnum ~ "." ~ Names.Tag ~ optional(optWS ~ Pattern) ~ SP ~> ParsedAst.Pattern.Tag
+      SP ~ Names.QType ~ "." ~ Names.Tag ~ optional(optWS ~ Pattern) ~ SP ~> ParsedAst.Pattern.Tag
     }
 
     def Tuple: Rule1[ParsedAst.Pattern.Tuple] = rule {
@@ -640,7 +640,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     // TODO: We can simplify this now...
     def Ambiguous: Rule1[ParsedAst.Predicate.Ambiguous] = rule {
-      SP ~ (QNames.LowerCaseQName | QNames.UpperCaseQName) ~ optWS ~ "(" ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Ambiguous
+      SP ~ (Names.LowerCaseQName | Names.UpperCaseQName) ~ optWS ~ "(" ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Ambiguous
     }
 
     def NotEqual: Rule1[ParsedAst.Predicate.NotEqual] = rule {
@@ -668,7 +668,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def VarOrRef: Rule1[ParsedAst.Type] = rule {
       // TODO: Refactor
-      SP ~ (QNames.UpperCaseQName | QNames.LowerCaseQName) ~ SP ~> ParsedAst.Type.VarOrRef
+      SP ~ (Names.UpperCaseQName | Names.LowerCaseQName) ~ SP ~> ParsedAst.Type.VarOrRef
     }
 
     def Tuple: Rule1[ParsedAst.Type] = {
@@ -718,7 +718,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Identifiers & Names                                                     //
+  // Names                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   object Names {
 
@@ -737,10 +737,32 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     /**
+      * A lowercase qualified name is a namespace followed by a lowercase name.
+      */
+    def LowerCaseQName: Rule1[Name.QName] = rule {
+      SP ~ optional(Namespace ~ "/") ~ LowerCaseName ~ SP ~>
+        ((sp1: SourcePosition, nsOpt: Option[Name.NName], ident: Name.Ident, sp2: SourcePosition) => nsOpt match {
+          case None => Name.QName(sp1, Name.NName(sp1, List.empty, sp2), ident, sp2)
+          case Some(ns) => Name.QName(sp1, ns, ident, sp2)
+        })
+    }
+
+    /**
+      * An uppercase qualified name is a namespace followed by an uppercase name.
+      */
+    def UpperCaseQName: Rule1[Name.QName] = rule {
+      SP ~ optional(Namespace ~ "/") ~ UpperCaseName ~ SP ~>
+        ((sp1: SourcePosition, nsOpt: Option[Name.NName], ident: Name.Ident, sp2: SourcePosition) => nsOpt match {
+          case None => Name.QName(sp1, Name.NName(sp1, List.empty, sp2), ident, sp2)
+          case Some(ns) => Name.QName(sp1, ns, ident, sp2)
+        })
+    }
+
+    /**
       * Namespaces are lower or uppercase.
       */
     // TODO: In the future we should restrict namespaces to either lower/upper case.
-    // In Java/C++ namespaces are lower. In Haskell they are upper.
+    // TODO: In Java/C++ namespaces are lower. In Haskell they are upper.
     def Namespace: Rule1[Name.NName] = rule {
       SP ~ oneOrMore(LowerCaseName | UpperCaseName).separatedBy(".") ~ SP ~>
         ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
@@ -762,19 +784,22 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     def Class: Rule1[Name.Ident] = UpperCaseName
 
     /**
-      * Variable names are lowercase.
-      */
-    def Variable: Rule1[Name.Ident] = LowerCaseName
-
-    /**
       * Definition names are lowercase.
       */
     def Definition: Rule1[Name.Ident] = LowerCaseName
+    def QDefinition: Rule1[Name.QName] = LowerCaseQName
 
     /**
-      * Enum names are uppercase.
+      * Lattice names are uppercase.
       */
-    def Enum: Rule1[Name.Ident] = UpperCaseName
+    def Lattice: Rule1[Name.Ident] = UpperCaseName
+    def QLattice: Rule1[Name.QName] = UpperCaseQName
+
+    /**
+      * Relation names are uppercase.
+      */
+    def Relation: Rule1[Name.Ident] = UpperCaseName
+    def QRelation: Rule1[Name.QName] = UpperCaseQName
 
     /**
       * Tag names are uppercase.
@@ -782,60 +807,15 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     def Tag: Rule1[Name.Ident] = UpperCaseName
 
     /**
-      * Relation names are uppercase.
+      * Type names are uppercase.
       */
-    def Relation: Rule1[Name.Ident] = UpperCaseName
+    def Type: Rule1[Name.Ident] = UpperCaseName
+    def QType: Rule1[Name.QName] = UpperCaseQName
 
     /**
-      * Lattice names are uppercase.
+      * Variable names are lowercase.
       */
-    def Lattice: Rule1[Name.Ident] = UpperCaseName
-
-  }
-
-  object QNames {
-
-    /**
-      * A lowercase qualified name is a namespace followed by a lowercase name.
-      */
-    def LowerCaseQName: Rule1[Name.QName] = rule {
-      SP ~ optional(Names.Namespace ~ "/") ~ Names.LowerCaseName ~ SP ~>
-        ((sp1: SourcePosition, nsOpt: Option[Name.NName], ident: Name.Ident, sp2: SourcePosition) => nsOpt match {
-          case None => Name.QName(sp1, Name.NName(sp1, List.empty, sp2), ident, sp2)
-          case Some(ns) => Name.QName(sp1, ns, ident, sp2)
-        })
-    }
-
-    /**
-      * An uppercase qualified name is a namespace followed by an uppercase name.
-      */
-    def UpperCaseQName: Rule1[Name.QName] = rule {
-      SP ~ optional(Names.Namespace ~ "/") ~ Names.UpperCaseName ~ SP ~>
-        ((sp1: SourcePosition, nsOpt: Option[Name.NName], ident: Name.Ident, sp2: SourcePosition) => nsOpt match {
-          case None => Name.QName(sp1, Name.NName(sp1, List.empty, sp2), ident, sp2)
-          case Some(ns) => Name.QName(sp1, ns, ident, sp2)
-        })
-    }
-
-    /**
-      * Qualified definition names are lowercase.
-      */
-    def QDefinition: Rule1[Name.QName] = LowerCaseQName
-
-    /**
-      * Qualified enum names are uppercase.
-      */
-    def QEnum: Rule1[Name.QName] = UpperCaseQName
-
-    /**
-      * Qualified lattice names are uppercase.
-      */
-    def QLattice: Rule1[Name.QName] = UpperCaseQName
-
-    /**
-      * Qualified relation names are uppercase.
-      */
-    def QRelation: Rule1[Name.QName] = UpperCaseQName
+    def Variable: Rule1[Name.Ident] = LowerCaseName
 
   }
 
