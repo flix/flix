@@ -244,7 +244,7 @@ class TestExamples extends FunSuite {
 
   test("Parity.flix") {
     val input =
-      """namespace Parity {
+      """namespace domains.parity {
         |    let Parity<> = (Parity.Bot, Parity.Top, leq, lub, glb);
         |    lat A(k: Int, v: Parity);
         |
@@ -276,14 +276,14 @@ class TestExamples extends FunSuite {
     val Evn = Value.mkTag("Even", Value.Unit)
     val Top = Value.mkTag("Top", Value.Unit)
 
-    t.checkValue(Odd, "Parity/A", List(Value.mkInt32(1)))
-    t.checkValue(Evn, "Parity/A", List(Value.mkInt32(2)))
-    t.checkValue(Top, "Parity/A", List(Value.mkInt32(3)))
-    t.checkNone("Parity/A", List(Value.mkInt32(4)))
-    t.checkValue(Odd, "Parity/A", List(Value.mkInt32(5)))
-    t.checkValue(Evn, "Parity/A", List(Value.mkInt32(6)))
-    t.checkValue(Evn, "Parity/A", List(Value.mkInt32(7)))
-    t.checkValue(Odd, "Parity/A", List(Value.mkInt32(8)))
+    t.checkValue(Odd, "domains.parity/A", List(Value.mkInt32(1)))
+    t.checkValue(Evn, "domains.parity/A", List(Value.mkInt32(2)))
+    t.checkValue(Top, "domains.parity/A", List(Value.mkInt32(3)))
+    t.checkNone("domains.parity/A", List(Value.mkInt32(4)))
+    t.checkValue(Odd, "domains.parity/A", List(Value.mkInt32(5)))
+    t.checkValue(Evn, "domains.parity/A", List(Value.mkInt32(6)))
+    t.checkValue(Evn, "domains.parity/A", List(Value.mkInt32(7)))
+    t.checkValue(Odd, "domains.parity/A", List(Value.mkInt32(8)))
   }
 
   test("ParitySign.flix") {
