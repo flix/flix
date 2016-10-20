@@ -738,22 +738,14 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       * A lowercase qualified name is a namespace followed by a lowercase name.
       */
     def LowerCaseQName: Rule1[Name.QName] = rule {
-      SP ~ optional(Namespace ~ "/") ~ LowerCaseName ~ SP ~>
-        ((sp1: SourcePosition, nsOpt: Option[Name.NName], ident: Name.Ident, sp2: SourcePosition) => nsOpt match {
-          case None => Name.QName(sp1, Name.NName(sp1, List.empty, sp2), ident, sp2)
-          case Some(ns) => Name.QName(sp1, ns, ident, sp2)
-        })
+      SP ~ optional(Namespace ~ "/") ~ LowerCaseName ~ SP ~> Name.QName.mk _
     }
 
     /**
       * An uppercase qualified name is a namespace followed by an uppercase name.
       */
     def UpperCaseQName: Rule1[Name.QName] = rule {
-      SP ~ optional(Namespace ~ "/") ~ UpperCaseName ~ SP ~>
-        ((sp1: SourcePosition, nsOpt: Option[Name.NName], ident: Name.Ident, sp2: SourcePosition) => nsOpt match {
-          case None => Name.QName(sp1, Name.NName(sp1, List.empty, sp2), ident, sp2)
-          case Some(ns) => Name.QName(sp1, ns, ident, sp2)
-        })
+      SP ~ optional(Namespace ~ "/") ~ UpperCaseName ~ SP ~> Name.QName.mk _
     }
 
     /**
@@ -766,53 +758,30 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
         ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
     }
 
-    /**
-      * Annotation names are lowercase.
-      */
     def Annotation: Rule1[Name.Ident] = LowerCaseName
 
-    /**
-      * Attribute names are lowercase.
-      */
     def Attribute: Rule1[Name.Ident] = LowerCaseName
 
-    /**
-      * Class names are uppercase.
-      */
     def Class: Rule1[Name.Ident] = UpperCaseName
 
-    /**
-      * Definition names are lowercase.
-      */
     def Definition: Rule1[Name.Ident] = LowerCaseName
+
     def QDefinition: Rule1[Name.QName] = LowerCaseQName
 
-    /**
-      * Lattice names are uppercase.
-      */
     def Lattice: Rule1[Name.Ident] = UpperCaseName
+
     def QLattice: Rule1[Name.QName] = UpperCaseQName
 
-    /**
-      * Relation names are uppercase.
-      */
     def Relation: Rule1[Name.Ident] = UpperCaseName
+
     def QRelation: Rule1[Name.QName] = UpperCaseQName
 
-    /**
-      * Tag names are uppercase.
-      */
     def Tag: Rule1[Name.Ident] = UpperCaseName
 
-    /**
-      * Type names are uppercase.
-      */
     def Type: Rule1[Name.Ident] = UpperCaseName
+
     def QType: Rule1[Name.QName] = UpperCaseQName
 
-    /**
-      * Variable names are lowercase.
-      */
     def Variable: Rule1[Name.Ident] = LowerCaseName
 
   }

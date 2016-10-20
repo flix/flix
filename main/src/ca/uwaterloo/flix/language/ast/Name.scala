@@ -102,6 +102,19 @@ object Name {
   }
 
   /**
+    * Companion object for the [[QName]] class.
+    */
+  object QName {
+    /**
+      * Returns the qualified name for the given optional namespace `nsOpt` and identifier `ident`.
+      */
+    def mk(sp1: SourcePosition, nsOpt: Option[NName], ident: Ident, sp2: SourcePosition): QName = nsOpt match {
+      case None => Name.QName(sp1, Name.NName(sp1, List.empty, sp2), ident, sp2)
+      case Some(ns) => Name.QName(sp1, ns, ident, sp2)
+    }
+  }
+
+  /**
     * Qualified Name.
     *
     * @param sp1       the position of the first character in the qualified name.
