@@ -108,7 +108,23 @@ class TestTyper extends FunSuite with TestUtils {
     result.get
   }
 
-  test("Expression.Tag") {
+  test("Expression.Tag.01") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Green,
+        |  case Blue
+        |}
+        |
+        |def f: Color = Red
+        |def g: Color = Green
+        |def h: Color = Blue
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Tag.02") {
     val input =
       """enum Color {
         |  case Red,
@@ -117,6 +133,30 @@ class TestTyper extends FunSuite with TestUtils {
         |}
         |
         |def f: Color = Color.Red
+        |def g: Color = Color.Green
+        |def h: Color = Color.Blue
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Tag.03") {
+    val input =
+      """enum A {
+        |  case X
+        |}
+        |
+        |enum B {
+        |  case X
+        |}
+        |
+        |enum C {
+        |  case X
+        |}
+        |
+        |def f: A = A.X
+        |def g: B = B.X
+        |def h: C = C.X
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get

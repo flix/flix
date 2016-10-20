@@ -77,11 +77,6 @@ object Namer {
        * Definition.
        */
       case WeededAst.Declaration.Definition(doc, ann, ident, tparams0, fparams0, exp, tpe, loc) =>
-        // check if the name is legal.
-        if (ident.name.head.isUpper) {
-          return IllegalDefinitionName(ident.name, loc).toFailure
-        }
-
         // check if the definition already exists.
         val defns = prog0.definitions.getOrElse(ns0, Map.empty)
         defns.get(ident.name) match {
@@ -225,11 +220,6 @@ object Namer {
        * Relation.
        */
       case WeededAst.Table.Relation(doc, ident, attr, loc) =>
-        // check if the name is legal.
-        if (ident.name.head.isLower) {
-          return IllegalTableName(ident.name, loc).toFailure
-        }
-
         // check if the table already exists.
         prog0.tables.get(ns0) match {
           case None =>
@@ -255,11 +245,6 @@ object Namer {
        * Lattice.
        */
       case WeededAst.Table.Lattice(doc, ident, keys, value, loc) =>
-        // check if the name is legal.
-        if (ident.name.head.isLower) {
-          return IllegalTableName(ident.name, loc).toFailure
-        }
-
         // check if the table already exists.
         prog0.tables.get(ns0) match {
           case None =>
@@ -677,8 +662,9 @@ object Namer {
         */
       def visit(tpe: WeededAst.Type, env: Map[String, Type.Var]): NamedAst.Type = tpe match {
         case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc)
-        case WeededAst.Type.VarOrRef(qname, loc) =>
-          if (qname.isUnqualified && qname.ident.name.head.isLower)
+        case WeededAst.Type.Var(ident, loc) => NamedAst.Type.Var(env(ident.name), loc)
+        case WeededAst.Type.Ref(qname, loc) =>
+          if (qname.isUnqualified)
             env.get(qname.ident.name) match {
               case None => NamedAst.Type.Ref(qname, loc)
               case Some(tvar) => NamedAst.Type.Var(tvar, loc)
