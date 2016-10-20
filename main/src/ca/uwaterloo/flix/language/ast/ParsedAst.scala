@@ -797,14 +797,24 @@ object ParsedAst {
     case class False(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Predicate
 
     /**
-      * Ambiguous Predicate.
+      * Filter Predicate.
       *
       * @param sp1   the position of the first character in the predicate.
-      * @param name  the unresolved name of the predicate.
+      * @param name  the qualified name of the filter function.
       * @param terms the terms of the predicate.
       * @param sp2   the position of the last character in the predicate.
       */
-    case class Ambiguous(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate
+    case class Filter(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate
+
+    /**
+      * Table Predicate.
+      *
+      * @param sp1   the position of the first character in the predicate.
+      * @param name  the qualified name of the table.
+      * @param terms the terms of the predicate.
+      * @param sp2   the position of the last character in the predicate.
+      */
+    case class Table(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate
 
     /**
       * NotEqual Predicate.

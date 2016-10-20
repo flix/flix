@@ -720,7 +720,8 @@ object Weeder {
       def weed(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Head, WeederError] = past match {
         case ParsedAst.Predicate.True(sp1, sp2) => WeededAst.Predicate.Head.True(mkSL(sp1, sp2)).toSuccess
         case ParsedAst.Predicate.False(sp1, sp2) => WeededAst.Predicate.Head.False(mkSL(sp1, sp2)).toSuccess
-        case ParsedAst.Predicate.Ambiguous(sp1, qname, terms, sp2) =>
+        case ParsedAst.Predicate.Filter(sp1, qname, term, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
+        case ParsedAst.Predicate.Table(sp1, qname, terms, sp2) =>
           @@(terms.toList.map(t => Expressions.weed(t))) flatMap {
             case ts =>
               if (qname.isUpperCase)
@@ -742,14 +743,15 @@ object Weeder {
       def weed(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] = past match {
         case ParsedAst.Predicate.True(sp1, sp2) => IllegalSyntax("A true predicate is not allowed in the body of a rule.", mkSL(sp1, sp2)).toFailure
         case ParsedAst.Predicate.False(sp1, sp2) => IllegalSyntax("A false predicate is not allowed in the body of a rule.", mkSL(sp1, sp2)).toFailure
-        case ParsedAst.Predicate.Ambiguous(sp1, qname, terms, sp2) =>
+        case ParsedAst.Predicate.Filter(sp1, qname, terms, sp2) =>
           val loc = mkSL(sp1, sp2)
           @@(terms.map(t => Expressions.weed(exp0 = t, allowWildcards = true))) map {
-            case ts =>
-              if (qname.isUpperCase)
-                WeededAst.Predicate.Body.Table(qname, ts, loc)
-              else
-                WeededAst.Predicate.Body.Filter(qname, ts, loc)
+            case ts => WeededAst.Predicate.Body.Filter(qname, ts, loc)
+          }
+        case ParsedAst.Predicate.Table(sp1, qname, terms, sp2) =>
+          val loc = mkSL(sp1, sp2)
+          @@(terms.map(t => Expressions.weed(exp0 = t, allowWildcards = true))) map {
+            case ts => WeededAst.Predicate.Body.Table(qname, ts, loc)
           }
         case ParsedAst.Predicate.NotEqual(sp1, ident1, ident2, sp2) =>
           WeededAst.Predicate.Body.NotEqual(ident1, ident2, mkSL(sp1, sp2)).toSuccess

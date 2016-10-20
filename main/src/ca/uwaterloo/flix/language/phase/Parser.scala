@@ -622,7 +622,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Predicates                                                              //
   /////////////////////////////////////////////////////////////////////////////
   def Predicate: Rule1[ParsedAst.Predicate] = rule {
-    Predicates.True | Predicates.False | Predicates.Ambiguous | Predicates.NotEqual | Predicates.Loop
+    Predicates.True | Predicates.False | Predicates.Filter | Predicates.Table | Predicates.NotEqual | Predicates.Loop
   }
 
   object Predicates {
@@ -634,9 +634,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ atomic("false") ~ SP ~> ParsedAst.Predicate.False
     }
 
-    // TODO: We can simplify this now...
-    def Ambiguous: Rule1[ParsedAst.Predicate.Ambiguous] = rule {
-      SP ~ (Names.LowerCaseQName | Names.UpperCaseQName) ~ optWS ~ "(" ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Ambiguous
+    def Filter: Rule1[ParsedAst.Predicate.Filter] = rule {
+      SP ~ Names.QDefinition ~ optWS ~ "(" ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Filter
+    }
+
+    def Table: Rule1[ParsedAst.Predicate.Table] = rule {
+      SP ~ (Names.QRelation | Names.QLattice) ~ optWS ~ "(" ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Table
     }
 
     def NotEqual: Rule1[ParsedAst.Predicate.NotEqual] = rule {
