@@ -662,8 +662,9 @@ object Namer {
         */
       def visit(tpe: WeededAst.Type, env: Map[String, Type.Var]): NamedAst.Type = tpe match {
         case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc)
-        case WeededAst.Type.VarOrRef(qname, loc) =>
-          if (qname.isUnqualified && qname.ident.name.head.isLower)
+        case WeededAst.Type.Var(ident, loc) => NamedAst.Type.Var(env(ident.name), loc)
+        case WeededAst.Type.Ref(qname, loc) =>
+          if (qname.isUnqualified)
             env.get(qname.ident.name) match {
               case None => NamedAst.Type.Ref(qname, loc)
               case Some(tvar) => NamedAst.Type.Var(tvar, loc)

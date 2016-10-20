@@ -319,11 +319,11 @@ object Weeder {
           else
             IllegalWildcard(mkSL(sp1, sp2)).toFailure
 
-        case ParsedAst.Expression.VarOrRef(sp1, ident, sp2) =>
+        case ParsedAst.Expression.SName(sp1, ident, sp2) =>
           val qname = Name.QName(sp1, Name.RootNS, ident, sp2)
           WeededAst.Expression.VarOrRef(qname, mkSL(sp1, sp2)).toSuccess
 
-        case ParsedAst.Expression.Ref(sp1, qname, sp2) =>
+        case ParsedAst.Expression.QName(sp1, qname, sp2) =>
           WeededAst.Expression.VarOrRef(qname, mkSL(sp1, sp2)).toSuccess
 
         case ParsedAst.Expression.Lit(sp1, lit, sp2) => toExp(lit)
@@ -810,7 +810,8 @@ object Weeder {
       */
     def weed(tpe: ParsedAst.Type): WeededAst.Type = tpe match {
       case ParsedAst.Type.Unit(sp1, sp2) => WeededAst.Type.Unit(mkSL(sp1, sp2))
-      case ParsedAst.Type.VarOrRef(sp1, name, sp2) => WeededAst.Type.VarOrRef(name, mkSL(sp1, sp2))
+      case ParsedAst.Type.Var(sp1, ident, sp2) => WeededAst.Type.Var(ident, mkSL(sp1, sp2))
+      case ParsedAst.Type.Ref(sp1, qname, sp2) => WeededAst.Type.Ref(qname, mkSL(sp1, sp2))
       case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(weed), mkSL(sp1, sp2))
       case ParsedAst.Type.Arrow(sp1, tparams, tresult, sp2) => WeededAst.Type.Arrow(tparams.toList.map(weed), weed(tresult), mkSL(sp1, sp2))
       case ParsedAst.Type.Apply(sp1, base, tparams, sp2) => WeededAst.Type.Apply(weed(base), tparams.toList.map(weed), mkSL(sp1, sp2))
@@ -898,8 +899,8 @@ object Weeder {
     */
   private def leftMostSourcePosition(e: ParsedAst.Expression): SourcePosition = e match {
     case ParsedAst.Expression.Wild(sp1, _) => sp1
-    case ParsedAst.Expression.VarOrRef(sp1, _, _) => sp1
-    case ParsedAst.Expression.Ref(sp1, _, _) => sp1
+    case ParsedAst.Expression.SName(sp1, _, _) => sp1
+    case ParsedAst.Expression.QName(sp1, _, _) => sp1
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1
     case ParsedAst.Expression.Apply(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Infix(e1, _, _, _) => leftMostSourcePosition(e1)

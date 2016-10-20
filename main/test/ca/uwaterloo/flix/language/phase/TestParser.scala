@@ -1085,12 +1085,38 @@ class TestParser extends FunSuite with TestUtils {
         |  case Blue
         |}
         |
-        |def f: Color = Color.Red
+        |def f: Color = Red
       """.stripMargin
     run(input)
   }
 
   test("Expression.Enum.02") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Green,
+        |  case Blue
+        |}
+        |
+        |def f: Color = Color.Red
+      """.stripMargin
+    run(input)
+  }
+
+  test("Expression.Enum.03") {
+    val input =
+      """enum Shape {
+        |  case Circle(Int),
+        |  case Square(Int, Int)
+        |}
+        |
+        |def f: Shape = Circle(42)
+        |def g: Shape = Square(21, 42)
+      """.stripMargin
+    run(input)
+  }
+
+  test("Expression.Enum.04") {
     val input =
       """enum Shape {
         |  case Circle(Int),

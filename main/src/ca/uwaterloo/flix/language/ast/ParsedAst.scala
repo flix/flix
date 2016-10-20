@@ -383,21 +383,25 @@ object ParsedAst {
     case class Wild(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Name Expression (either a variable or reference expression).
+      * Simple Name Expression (either a variable or reference expression).
       *
       * @param sp1  the position of the first character in the expression.
       * @param name the name.
       * @param sp2  the position of the last character in the expression.
       */
-    case class VarOrRef(sp1: SourcePosition, name: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
+    case class SName(sp1: SourcePosition, name: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
 
-    // TODO: DOC
-    case class Ref(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
+    /**
+      * Qualified Name Expression (reference expression).
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param name the name.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class QName(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Literal Expression.
-      *
-      * Inlined by the Weeder.
       *
       * @param sp1 the position of the first character in the expression.
       * @param lit the literal.
@@ -840,13 +844,22 @@ object ParsedAst {
     case class Unit(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Type Variable or Type Reference.
+      * Type Variable.
+      *
+      * @param sp1   the position of the first character in the type.
+      * @param ident the variable name.
+      * @param sp2   the position of the last character in the type.
+      */
+    case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * Type reference.
       *
       * @param sp1   the position of the first character in the type.
       * @param qname the qualified name of the type.
       * @param sp2   the position of the last character in the type.
       */
-    case class VarOrRef(sp1: SourcePosition, qname: Name.QName, sp2: SourcePosition) extends ParsedAst.Type
+    case class Ref(sp1: SourcePosition, qname: Name.QName, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Tuple type.

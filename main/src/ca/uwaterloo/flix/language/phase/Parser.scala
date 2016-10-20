@@ -493,12 +493,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ atomic("_") ~ SP ~> ParsedAst.Expression.Wild
     }
 
-    def VarOrRef: Rule1[ParsedAst.Expression.VarOrRef] = rule {
-      SP ~ Names.Variable ~ SP ~> ParsedAst.Expression.VarOrRef
+    def VarOrRef: Rule1[ParsedAst.Expression.SName] = rule {
+      SP ~ Names.Variable ~ SP ~> ParsedAst.Expression.SName
     }
 
-    def Ref: Rule1[ParsedAst.Expression.Ref] = rule {
-      SP ~ Names.QDefinition ~ SP ~> ParsedAst.Expression.Ref
+    def Ref: Rule1[ParsedAst.Expression.QName] = rule {
+      SP ~ Names.QDefinition ~ SP ~> ParsedAst.Expression.QName
     }
 
     def UnaryLambda: Rule1[ParsedAst.Expression.Lambda] = rule {
@@ -659,12 +659,15 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   object Types {
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Tuple | Apply | VarOrRef
+      Arrow | Tuple | Apply | Var | Ref
     }
 
-    def VarOrRef: Rule1[ParsedAst.Type] = rule {
-      // TODO: Refactor
-      SP ~ (Names.UpperCaseQName | Names.LowerCaseQName) ~ SP ~> ParsedAst.Type.VarOrRef
+    def Var: Rule1[ParsedAst.Type] = rule {
+      SP ~ Names.Variable ~ SP ~> ParsedAst.Type.Var
+    }
+
+    def Ref: Rule1[ParsedAst.Type] = rule {
+      SP ~ Names.QType ~ SP ~> ParsedAst.Type.Ref
     }
 
     def Tuple: Rule1[ParsedAst.Type] = {
@@ -696,9 +699,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.Arrow
     }
 
-    // TODO: Allow a more general base type.
     def Apply: Rule1[ParsedAst.Type] = rule {
-      SP ~ VarOrRef ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~ optWS ~> ParsedAst.Type.Apply
+      SP ~ Ref ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~ optWS ~> ParsedAst.Type.Apply
     }
   }
 
