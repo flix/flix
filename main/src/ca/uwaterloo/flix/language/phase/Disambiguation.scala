@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.errors.TypeError.UnresolvedRef
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.Result._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.collection.mutable
 
@@ -119,8 +119,18 @@ object Disambiguation {
       return Err(TypeError.UnresolvedTag(tag, ns, tag.loc))
     }
 
-    // Case 2.3: Multiple matches found in namespace...
-    ???
+    // Case 2.3: Multiple matches found in namespace and no enum name.
+    if (qname.isEmpty) {
+      return Err(TypeError.UnresolvedTag(tag, ns, tag.loc))
+    }
+
+    // Case 2.4: Multiple matches found in namespace and an enum name is available.
+    val filteredMatches = namespaceMatches.filter(_.sym.name == qname.get.ident.name)
+    if (filteredMatches.size == 1) {
+      return Ok(filteredMatches.head)
+    }
+
+    Err(TypeError.UnresolvedTag(tag, ns, tag.loc))
   }
 
   /**

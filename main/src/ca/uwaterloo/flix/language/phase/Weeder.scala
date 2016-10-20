@@ -319,8 +319,12 @@ object Weeder {
           else
             IllegalWildcard(mkSL(sp1, sp2)).toFailure
 
-        case ParsedAst.Expression.VarOrRef(sp1, name, sp2) =>
-          WeededAst.Expression.VarOrRef(name, mkSL(sp1, sp2)).toSuccess
+        case ParsedAst.Expression.SName(sp1, ident, sp2) =>
+          val qname = Name.QName(sp1, Name.RootNS, ident, sp2)
+          WeededAst.Expression.VarOrRef(qname, mkSL(sp1, sp2)).toSuccess
+
+        case ParsedAst.Expression.QName(sp1, qname, sp2) =>
+          WeededAst.Expression.VarOrRef(qname, mkSL(sp1, sp2)).toSuccess
 
         case ParsedAst.Expression.Lit(sp1, lit, sp2) => toExp(lit)
 
@@ -458,9 +462,9 @@ object Weeder {
             case None =>
               val loc = mkSL(sp1, sp2)
               val exp = WeededAst.Expression.Unit(loc)
-              WeededAst.Expression.Tag(Some(enum), tag, exp, loc).toSuccess
+              WeededAst.Expression.Tag(enum, tag, exp, loc).toSuccess
             case Some(exp) => visit(exp) map {
-              case e => WeededAst.Expression.Tag(Some(enum), tag, e, mkSL(sp1, sp2))
+              case e => WeededAst.Expression.Tag(enum, tag, e, mkSL(sp1, sp2))
             }
           }
 
@@ -651,9 +655,9 @@ object Weeder {
             case None =>
               val loc = mkSL(sp1, sp2)
               val lit = WeededAst.Pattern.Unit(loc)
-              WeededAst.Pattern.Tag(Some(enum), tag, lit, loc).toSuccess
+              WeededAst.Pattern.Tag(enum, tag, lit, loc).toSuccess
             case Some(pat) => visit(pat) map {
-              case p => WeededAst.Pattern.Tag(Some(enum), tag, p, mkSL(sp1, sp2))
+              case p => WeededAst.Pattern.Tag(enum, tag, p, mkSL(sp1, sp2))
             }
           }
 
@@ -716,7 +720,8 @@ object Weeder {
       def weed(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Head, WeederError] = past match {
         case ParsedAst.Predicate.True(sp1, sp2) => WeededAst.Predicate.Head.True(mkSL(sp1, sp2)).toSuccess
         case ParsedAst.Predicate.False(sp1, sp2) => WeededAst.Predicate.Head.False(mkSL(sp1, sp2)).toSuccess
-        case ParsedAst.Predicate.Ambiguous(sp1, qname, terms, sp2) =>
+        case ParsedAst.Predicate.Filter(sp1, qname, term, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
+        case ParsedAst.Predicate.Table(sp1, qname, terms, sp2) =>
           @@(terms.toList.map(t => Expressions.weed(t))) flatMap {
             case ts =>
               if (qname.isUpperCase)
@@ -738,14 +743,15 @@ object Weeder {
       def weed(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Body, WeederError] = past match {
         case ParsedAst.Predicate.True(sp1, sp2) => IllegalSyntax("A true predicate is not allowed in the body of a rule.", mkSL(sp1, sp2)).toFailure
         case ParsedAst.Predicate.False(sp1, sp2) => IllegalSyntax("A false predicate is not allowed in the body of a rule.", mkSL(sp1, sp2)).toFailure
-        case ParsedAst.Predicate.Ambiguous(sp1, qname, terms, sp2) =>
+        case ParsedAst.Predicate.Filter(sp1, qname, terms, sp2) =>
           val loc = mkSL(sp1, sp2)
           @@(terms.map(t => Expressions.weed(exp0 = t, allowWildcards = true))) map {
-            case ts =>
-              if (qname.isUpperCase)
-                WeededAst.Predicate.Body.Table(qname, ts, loc)
-              else
-                WeededAst.Predicate.Body.Filter(qname, ts, loc)
+            case ts => WeededAst.Predicate.Body.Filter(qname, ts, loc)
+          }
+        case ParsedAst.Predicate.Table(sp1, qname, terms, sp2) =>
+          val loc = mkSL(sp1, sp2)
+          @@(terms.map(t => Expressions.weed(exp0 = t, allowWildcards = true))) map {
+            case ts => WeededAst.Predicate.Body.Table(qname, ts, loc)
           }
         case ParsedAst.Predicate.NotEqual(sp1, ident1, ident2, sp2) =>
           WeededAst.Predicate.Body.NotEqual(ident1, ident2, mkSL(sp1, sp2)).toSuccess
@@ -767,12 +773,12 @@ object Weeder {
 
       // loop through each annotation.
       val result = xs.toList map {
-        case x => seen.get(x.name) match {
+        case x => seen.get(x.ident.name) match {
           case None =>
-            seen += (x.name -> x)
+            seen += (x.ident.name -> x)
             Annotations.weed(x)
           case Some(otherAnn) =>
-            DuplicateAnnotation(x.name, mkSL(otherAnn.sp1, otherAnn.sp2), mkSL(x.sp1, x.sp2)).toFailure
+            DuplicateAnnotation(x.ident.name, mkSL(otherAnn.sp1, otherAnn.sp2), mkSL(x.sp1, x.sp2)).toFailure
         }
       }
       @@(result) map Ast.Annotations
@@ -786,7 +792,7 @@ object Weeder {
        * Check for `UndefinedAnnotation`.
        */
       val loc = mkSL(past.sp1, past.sp2)
-      past.name match {
+      past.ident.name match {
         case "associative" => Ast.Annotation.Associative(loc).toSuccess
         case "commutative" => Ast.Annotation.Commutative(loc).toSuccess
         case "internal" => Ast.Annotation.Internal(loc).toSuccess
@@ -794,7 +800,7 @@ object Weeder {
         case "strict" => Ast.Annotation.Strict(loc).toSuccess
         case "unchecked" => Ast.Annotation.Unchecked(loc).toSuccess
         case "unsafe" => Ast.Annotation.Unsafe(loc).toSuccess
-        case _ => UndefinedAnnotation(past.name, loc).toFailure
+        case _ => UndefinedAnnotation(past.ident.name, loc).toFailure
       }
     }
   }
@@ -806,7 +812,8 @@ object Weeder {
       */
     def weed(tpe: ParsedAst.Type): WeededAst.Type = tpe match {
       case ParsedAst.Type.Unit(sp1, sp2) => WeededAst.Type.Unit(mkSL(sp1, sp2))
-      case ParsedAst.Type.VarOrRef(sp1, name, sp2) => WeededAst.Type.VarOrRef(name, mkSL(sp1, sp2))
+      case ParsedAst.Type.Var(sp1, ident, sp2) => WeededAst.Type.Var(ident, mkSL(sp1, sp2))
+      case ParsedAst.Type.Ref(sp1, qname, sp2) => WeededAst.Type.Ref(qname, mkSL(sp1, sp2))
       case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(weed), mkSL(sp1, sp2))
       case ParsedAst.Type.Arrow(sp1, tparams, tresult, sp2) => WeededAst.Type.Arrow(tparams.toList.map(weed), weed(tresult), mkSL(sp1, sp2))
       case ParsedAst.Type.Apply(sp1, base, tparams, sp2) => WeededAst.Type.Apply(weed(base), tparams.toList.map(weed), mkSL(sp1, sp2))
@@ -894,7 +901,8 @@ object Weeder {
     */
   private def leftMostSourcePosition(e: ParsedAst.Expression): SourcePosition = e match {
     case ParsedAst.Expression.Wild(sp1, _) => sp1
-    case ParsedAst.Expression.VarOrRef(sp1, _, _) => sp1
+    case ParsedAst.Expression.SName(sp1, _, _) => sp1
+    case ParsedAst.Expression.QName(sp1, _, _) => sp1
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1
     case ParsedAst.Expression.Apply(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Infix(e1, _, _, _) => leftMostSourcePosition(e1)

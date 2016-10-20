@@ -68,38 +68,4 @@ object NameError {
          """.stripMargin
   }
 
-  /**
-    * An error raised to indicate that a definition name must be lowercase.
-    *
-    * @param name the name.
-    * @param loc  the location.
-    */
-  case class IllegalDefinitionName(name: String, loc: SourceLocation) extends NameError {
-    val message =
-      s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Illegal uppercase name '$name'.")}
-         |
-         |${loc.highlight}
-         |A function definition must start with a lowercase letter.
-         """.stripMargin
-  }
-
-  /**
-    * An error raised to indicate that the given table name must be uppercase.
-    *
-    * @param name the name.
-    * @param loc  the location.
-    */
-  case class IllegalTableName(name: String, loc: SourceLocation) extends NameError {
-    val message =
-      s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Illegal lowercase name '$name'.")}
-         |
-         |${loc.highlight}
-         |A relation or lattice definition must start with an uppercase letter.
-         """.stripMargin
-  }
-
 }
