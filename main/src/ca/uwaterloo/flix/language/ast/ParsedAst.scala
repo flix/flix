@@ -383,18 +383,25 @@ object ParsedAst {
     case class Wild(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Variable or Reference Expression.
+      * Simple Name Expression (either a variable or reference expression).
       *
       * @param sp1  the position of the first character in the expression.
-      * @param name the ambiguous name.
+      * @param name the name.
       * @param sp2  the position of the last character in the expression.
       */
-    case class VarOrRef(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
+    case class SName(sp1: SourcePosition, name: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Qualified Name Expression (reference expression).
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param name the name.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class QName(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Literal Expression.
-      *
-      * Inlined by the Weeder.
       *
       * @param sp1 the position of the first character in the expression.
       * @param lit the literal.
@@ -508,12 +515,12 @@ object ParsedAst {
       * Tag Expression.
       *
       * @param sp1  the position of the first character in the expression.
-      * @param enum the enum name.
+      * @param enum the optional enum name.
       * @param tag  the tag name.
       * @param exp  the optional value expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Tag(sp1: SourcePosition, enum: Name.QName, tag: Name.Ident, exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Tag(sp1: SourcePosition, enum: Option[Name.QName], tag: Name.Ident, exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Tuple Expression.
@@ -701,12 +708,12 @@ object ParsedAst {
       * Tag Pattern.
       *
       * @param sp1  the position of the first character in the pattern.
-      * @param enum the enum name.
+      * @param enum the optional enum name.
       * @param tag  the tag name.
       * @param pat  the optional value pattern.
       * @param sp2  the position of the last character in the pattern.
       */
-    case class Tag(sp1: SourcePosition, enum: Name.QName, tag: Name.Ident, pat: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
+    case class Tag(sp1: SourcePosition, enum: Option[Name.QName], tag: Name.Ident, pat: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * Tuple Pattern.
@@ -790,14 +797,24 @@ object ParsedAst {
     case class False(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Predicate
 
     /**
-      * Ambiguous Predicate.
+      * Filter Predicate.
       *
       * @param sp1   the position of the first character in the predicate.
-      * @param name  the unresolved name of the predicate.
+      * @param name  the qualified name of the filter function.
       * @param terms the terms of the predicate.
       * @param sp2   the position of the last character in the predicate.
       */
-    case class Ambiguous(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate
+    case class Filter(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate
+
+    /**
+      * Table Predicate.
+      *
+      * @param sp1   the position of the first character in the predicate.
+      * @param name  the qualified name of the table.
+      * @param terms the terms of the predicate.
+      * @param sp2   the position of the last character in the predicate.
+      */
+    case class Table(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate
 
     /**
       * NotEqual Predicate.
@@ -837,13 +854,22 @@ object ParsedAst {
     case class Unit(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Type Variable or Type Reference.
+      * Type Variable.
+      *
+      * @param sp1   the position of the first character in the type.
+      * @param ident the variable name.
+      * @param sp2   the position of the last character in the type.
+      */
+    case class Var(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * Type reference.
       *
       * @param sp1   the position of the first character in the type.
       * @param qname the qualified name of the type.
       * @param sp2   the position of the last character in the type.
       */
-    case class VarOrRef(sp1: SourcePosition, qname: Name.QName, sp2: SourcePosition) extends ParsedAst.Type
+    case class Ref(sp1: SourcePosition, qname: Name.QName, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Tuple type.
@@ -889,11 +915,11 @@ object ParsedAst {
   /**
     * Annotation.
     *
-    * @param sp1  the position of the first character in the annotation.
-    * @param name the name of the annotation.
-    * @param sp2  the position of the last character in the annotation.
+    * @param sp1   the position of the first character in the annotation.
+    * @param ident the name of the annotation.
+    * @param sp2   the position of the last character in the annotation.
     */
-  case class Annotation(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst
+  case class Annotation(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst
 
   /**
     * Case (member of an enum).
