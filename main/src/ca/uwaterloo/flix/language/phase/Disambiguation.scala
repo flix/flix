@@ -149,7 +149,7 @@ object Disambiguation {
   /**
     * Resolves the given type `tpe0` in the given namespace `ns0`.
     */
-  def resolve(tpe0: NamedAst.Type, ns0: Name.NName, program: Program, seen: Set[(Symbol.EnumSym, Kind)] = Set.empty): Result[Type, TypeError] = tpe0 match {
+  def resolve(tpe0: NamedAst.Type, ns0: Name.NName, program: Program): Result[Type, TypeError] = tpe0 match {
     case NamedAst.Type.Var(tvar, loc) => Ok(tvar)
     case NamedAst.Type.Unit(loc) => Ok(Type.Unit)
     case NamedAst.Type.Ref(qname, loc) if qname.isUnqualified => qname.ident.name match {
@@ -176,22 +176,12 @@ object Disambiguation {
 
       // Enum Types.
       case typeName =>
-        // Check if we have already seen the enum.
-        val e = seen.find(kv => kv._1.name == typeName)
-        if (e.nonEmpty) {
-          return Ok(Type.Ref(e.get._1, e.get._2))
-        }
-
         // Lookup the enum in the current namespace.
         // If the namespace doesn't even exist, just use an empty map.
         val decls = program.enums.getOrElse(ns0, Map.empty)
         decls.get(typeName) match {
           case None => Err(TypeError.UnresolvedType(qname, ns0, loc))
-          case Some(enum) => enum.sc.base match {
-            case t: NamedAst.Type.Enum => resolve(t, ns0, program, seen)
-            case NamedAst.Type.Apply(t: NamedAst.Type.Enum, _, _) => resolve(t, ns0, program, seen)
-            case tpe => throw InternalCompilerException(s"Unexpected type `$tpe'.")
-          }
+          case Some(enum) => Ok(Type.Enum(enum.sym, Kind.Star /* TODO: Kind */))
         }
     }
     case NamedAst.Type.Ref(qname, loc) if qname.isQualified =>
@@ -199,29 +189,24 @@ object Disambiguation {
       val decls = program.enums.getOrElse(qname.namespace, Map.empty)
       decls.get(qname.ident.name) match {
         case None => Err(TypeError.UnresolvedType(qname, ns0, loc))
-        case Some(enum) => resolve(enum.sc.base, qname.namespace, program, seen)
+        case Some(enum) => Ok(Type.Enum(enum.sym, Kind.Star /* TODO: Kind */))
       }
     case NamedAst.Type.Enum(sym, tparams, cases) =>
-      val asList = cases.toList
-      val tags = asList.map(_._1)
-      val tpes = asList.map(_._2)
       val kind = if (tparams.isEmpty) Kind.Star else Kind.Arrow(tparams.map(_ => Kind.Star), Kind.Star)
-      seqM(tpes.map(tpe => resolve(tpe, ns0, program, seen + ((sym, kind))))) map {
-        case rtpes => Type.Enum(sym, (tags zip rtpes).toMap, kind)
-      }
+      Ok(Type.Enum(sym, kind))
     case NamedAst.Type.Tuple(elms0, loc) =>
       for (
-        elms <- seqM(elms0.map(tpe => resolve(tpe, ns0, program, seen)))
+        elms <- seqM(elms0.map(tpe => resolve(tpe, ns0, program)))
       ) yield Type.mkFTuple(elms)
     case NamedAst.Type.Arrow(tparams0, tresult0, loc) =>
       for (
-        tparams <- seqM(tparams0.map(tpe => resolve(tpe, ns0, program, seen)));
-        tresult <- resolve(tresult0, ns0, program, seen)
+        tparams <- seqM(tparams0.map(tpe => resolve(tpe, ns0, program)));
+        tresult <- resolve(tresult0, ns0, program)
       ) yield Type.mkArrow(tparams, tresult)
     case NamedAst.Type.Apply(base0, tparams0, loc) =>
       for (
-        baseType <- resolve(base0, ns0, program, seen);
-        argTypes <- seqM(tparams0.map(tpe => resolve(tpe, ns0, program, seen)))
+        baseType <- resolve(base0, ns0, program);
+        argTypes <- seqM(tparams0.map(tpe => resolve(tpe, ns0, program)))
       ) yield Type.Apply(baseType, argTypes)
 
   }

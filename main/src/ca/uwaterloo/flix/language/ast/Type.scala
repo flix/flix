@@ -35,7 +35,6 @@ sealed trait Type {
     */
   def typeVars: Set[Type.Var] = this match {
     case x: Type.Var => Set(x)
-    case Type.Ref(sym, kind) => Set.empty
     case Type.Unit => Set.empty
     case Type.Bool => Set.empty
     case Type.Char => Set.empty
@@ -53,9 +52,7 @@ sealed trait Type {
     case Type.FVec => Set.empty
     case Type.FSet => Set.empty
     case Type.FMap => Set.empty
-    case Type.Enum(enumName, cases, kind) => cases.flatMap {
-      case (tagName, tpe) => tpe.typeVars
-    }.toSet
+    case Type.Enum(enumName,  kind) => Set.empty
     case Type.Apply(t, ts) => t.typeVars ++ ts.flatMap(_.typeVars)
   }
 
@@ -63,7 +60,7 @@ sealed trait Type {
     * Returns `true` if `this` type is an enum type.
     */
   def isEnum: Boolean = this match {
-    case Type.Enum(sym, cases, kind) => true
+    case Type.Enum(sym, kind) => true
     case Type.Apply(t, ts) => t.isEnum
     case _ => false
   }
@@ -82,7 +79,6 @@ sealed trait Type {
     */
   override def toString: String = this match {
     case Type.Var(x, k) => "'" + x
-    case Type.Ref(sym, k) => s"Ref($sym)"
     case Type.Unit => "Unit"
     case Type.Bool => "Bool"
     case Type.Char => "Char"
@@ -102,7 +98,7 @@ sealed trait Type {
     case Type.FMap => "Map"
     case Type.Apply(Type.Arrow(l), ts) => ts.mkString(" -> ")
     case Type.Apply(t, ts) => s"$t[${ts.mkString(", ")}]"
-    case Type.Enum(enum, cases, kind) => enum.toString
+    case Type.Enum(enum, kind) => enum.toString
   }
 }
 
@@ -116,11 +112,6 @@ object Type {
     * A type variable expression.
     */
   case class Var(id: Int, kind: Kind) extends Type
-
-  /**
-    * A type reference expression.
-    */
-  case class Ref(sym: Symbol.EnumSym, kind: Kind) extends Type
 
   /**
     * A type constructor that represents the unit value.
@@ -244,11 +235,10 @@ object Type {
   /**
     * A type constructor that represents enums.
     *
-    * @param sym   the symbol of the enum.
-    * @param cases a map from tag names to tag types.
-    * @param kind  the kind of the enum.
+    * @param sym  the symbol of the enum.
+    * @param kind the kind of the enum.
     */
-  case class Enum(sym: Symbol.EnumSym, cases: immutable.Map[String, Type], kind: Kind) extends Type
+  case class Enum(sym: Symbol.EnumSym, kind: Kind) extends Type
 
   /**
     * A type expression that represents the application of `ts` to `t`.
@@ -318,7 +308,6 @@ object Type {
       */
     def visit(t0: Type): Type = t0 match {
       case Type.Var(x, k) => freshVars.getOrElse(x, t0)
-      case Type.Ref(sym, kind) => Type.Ref(sym, kind)
       case Type.Unit => Type.Unit
       case Type.Bool => Type.Bool
       case Type.Char => Type.Char
@@ -337,9 +326,7 @@ object Type {
       case Type.FSet => Type.FSet
       case Type.FMap => Type.FMap
       case Type.Apply(t, ts) => Type.Apply(visit(t), ts map visit)
-      case Type.Enum(enum, cases, kind) => Type.Enum(enum, cases map {
-        case (k, v) => k -> visit(v)
-      }, kind)
+      case Type.Enum(enum, kind) => Type.Enum(enum, kind)
     }
 
     visit(tpe)

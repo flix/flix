@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.ast.NamedAst.Scheme
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation
@@ -143,7 +144,9 @@ object Namer {
               case p => NamedAst.TypeParam(p, Type.freshTypeVar(), loc)
             }
             val tenv = tparams.map(kv => kv.name.name -> kv.tpe).toMap
-            val enum = NamedAst.Declaration.Enum(doc, sym, tparams, casesOf(cases, tenv), schemeOf(sym, tparams0, cases), loc)
+            val quantifiers = tparams.map(_.tpe)
+            val tpe = if (quantifiers.isEmpty) Type.Enum(sym, Kind.Star) else Type.Apply(Type.Enum(sym, Kind.Star /* TODO: Kind */), quantifiers)
+            val enum = NamedAst.Declaration.Enum(doc, sym, tparams, casesOf(cases, quantifiers, tenv), tpe, loc)
             val enums = enums0 + (ident.name -> enum)
             prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
           case Some(enum) =>
@@ -286,29 +289,10 @@ object Namer {
     /**
       * Performs naming on the given `cases` map.
       */
-    def casesOf(cases: Map[String, WeededAst.Case], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Map[String, NamedAst.Case] = cases.foldLeft(Map.empty[String, NamedAst.Case]) {
-      case (macc, (name, WeededAst.Case(enum, tag, tpe))) => macc + (name -> NamedAst.Case(enum, tag, Types.namer(tpe, tenv0)))
-    }
-
-    /**
-      * Returns the scheme corresponding to the given cases of an enum.
-      */
-    def schemeOf(sym: Symbol.EnumSym, tparams: List[Name.Ident], cases0: Map[String, WeededAst.Case])(implicit genSym: GenSym): NamedAst.Scheme = {
-      // Compute the type environment from the quantifier type parameters.
-      val tenv0 = tparams.map(ident => ident.name -> Type.freshTypeVar())
-
-      // Perform naming on each case.
-      val cases = cases0.foldLeft(Map.empty[String, NamedAst.Type]) {
-        case (macc, (tag, WeededAst.Case(enumName, tagName, t))) => macc + (tag -> Types.namer(t, tenv0.toMap))
-      }
-      val tvars = tenv0.map(_._2)
-      val base = NamedAst.Type.Enum(sym, tparams, cases)
-      val enumType =
-        if (tvars.isEmpty)
-          base
-        else
-          NamedAst.Type.Apply(base, tvars.map(x => NamedAst.Type.Var(x, sym.loc)), sym.loc)
-      NamedAst.Scheme(tvars, enumType)
+    def casesOf(cases: Map[String, WeededAst.Case], quantifiers: List[Type.Var], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Map[String, NamedAst.Case] = cases.foldLeft(Map.empty[String, NamedAst.Case]) {
+      case (macc, (name, WeededAst.Case(enum, tag, tpe))) =>
+        macc + (name -> NamedAst.Case(enum, tag, NamedAst.Scheme(quantifiers, Types.namer(tpe, tenv0))
+        ))
     }
 
   }
