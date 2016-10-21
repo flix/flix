@@ -21,7 +21,7 @@ import java.math.BigInteger
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression.Var
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, Property, Root}
-import ca.uwaterloo.flix.language.ast.{PropertyError, Type}
+import ca.uwaterloo.flix.language.ast.{ExecutableAst, PropertyError, Scheme, Type}
 import ca.uwaterloo.flix.language.phase.GenSym
 import ca.uwaterloo.flix.runtime.evaluator.SymVal.{Char, Unit}
 import ca.uwaterloo.flix.runtime.evaluator.{SymVal, SymbolicEvaluator}
@@ -166,7 +166,7 @@ object QuickChecker {
       /*
        * Generate random parameter values in an environment.
        */
-      val env = randomEnv(exp0.getQuantifiers)
+      val env = randomEnv(exp0.getQuantifiers, root)
 
       /*
        * Run the symbolic evaluator on the generated environment.
@@ -214,9 +214,9 @@ object QuickChecker {
   /**
     * Generates a random environment for the given list of quantifiers.
     */
-  private def randomEnv(quantifiers: List[Var])(implicit random: Random): Map[String, SymVal] = {
+  private def randomEnv(quantifiers: List[Var], root: Root)(implicit random: Random): Map[String, SymVal] = {
     quantifiers.foldLeft(Map.empty[String, SymVal]) {
-      case (macc, Var(ident, offset, tpe, loc)) => macc + (ident.name -> new ArbSymVal(tpe).gen.mk(random))
+      case (macc, Var(ident, offset, tpe, loc)) => macc + (ident.name -> new ArbSymVal(tpe, root).gen.mk(random))
     }
   }
 
@@ -283,7 +283,7 @@ object QuickChecker {
   /**
     * An arbitrary for symbolic values based on the given type `tpe`.
     */
-  class ArbSymVal(tpe: Type) extends Arbitrary[SymVal] {
+  class ArbSymVal(tpe: Type, root: Root) extends Arbitrary[SymVal] {
     def gen: Generator[SymVal] = tpe match {
       case Type.Unit => ArbUnit.gen
       case Type.Bool => ArbBool.gen
@@ -297,17 +297,20 @@ object QuickChecker {
       case Type.BigInt => ArbBigInt.gen
       case Type.Str => ArbStr.gen
 
-      case Type.Enum(name, cases, kind) =>
-        val elms = cases.map {
-          case (tag, innerType) => new Generator[SymVal] {
-            def mk(r: Random): SymVal = SymVal.Tag(tag, new ArbSymVal(innerType).gen.mk(r))
-          }
+      case Type.Enum(sym, cases, kind) =>
+        val decl = root.enums(sym)
+        val elms = decl.cases.map {
+          case (tag, caze) =>
+            val innerType = caze.sc.base // TODO: Assumes that the enum is non-polymorphic.
+            new Generator[SymVal] {
+              def mk(r: Random): SymVal = SymVal.Tag(tag, new ArbSymVal(innerType, root).gen.mk(r))
+            }
         }
         oneOf(elms.toArray: _*)
 
       case Type.Apply(Type.FTuple(l), elms) => new Generator[SymVal] {
         def mk(r: Random): SymVal = {
-          val vals = elms.map(t => new ArbSymVal(t).gen.mk(r))
+          val vals = elms.map(t => new ArbSymVal(t, root).gen.mk(r))
           SymVal.Tuple(vals)
         }
       }
