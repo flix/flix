@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.runtime.verifier
 
 import ca.uwaterloo.flix.language._
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression._
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, Property}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, Property, Root}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.GenSym
 import ca.uwaterloo.flix.runtime.evaluator.{SmtExpr, SymVal, SymbolicEvaluator}
@@ -154,7 +154,7 @@ object Verifier {
     val exp0 = property.exp
 
     // a sequence of environments under which the base expression must hold.
-    val envs = enumerate(exp0.getQuantifiers)
+    val envs = enumerate(exp0.getQuantifiers, root)
 
     // the number of paths explored by the symbolic evaluator.
     var paths = 0
@@ -216,7 +216,7 @@ object Verifier {
   /**
     * Enumerates all possible environments of the given universally quantified variables.
     */
-  def enumerate(q: List[Var])(implicit genSym: GenSym): List[Map[String, SymVal]] = {
+  def enumerate(q: List[Var], root: Root)(implicit genSym: GenSym): List[Map[String, SymVal]] = {
     /*
      * Local visitor. Enumerates the symbolic values of a type.
      */
@@ -233,13 +233,13 @@ object Verifier {
       case Type.BigInt => List(SymVal.AtomicVar(genSym.fresh2(), Type.BigInt))
       case Type.Str => List(SymVal.AtomicVar(genSym.fresh2(), Type.Str))
       case Type.Enum(sym, cases, kind) =>
-        val r = cases flatMap {
-          case (tag, innerType) =>
-            visit(innerType) map {
-              case e => SymVal.Tag(tag, e)
-            }
-        }
-        r.toList
+        val decl = root.enums(sym)
+        decl.cases.flatMap {
+          // TODO: Assumes non-polymorphic type.
+          case (tag, caze) => visit(caze.sc.base) map {
+            case e => SymVal.Tag(tag, e)
+          }
+        }.toList
       case Type.Apply(Type.FTuple(_), elms) =>
         def visitn(xs: List[Type]): List[List[SymVal]] = xs match {
           case Nil => List(Nil)
