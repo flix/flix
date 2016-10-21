@@ -297,7 +297,7 @@ object QuickChecker {
       case Type.BigInt => ArbBigInt.gen
       case Type.Str => ArbStr.gen
 
-      case Type.Enum(sym, cases, kind) =>
+      case Type.Enum(sym, kind) =>
         val decl = root.enums(sym)
         val elms = decl.cases.map {
           case (tag, caze) =>

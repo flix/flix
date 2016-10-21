@@ -232,7 +232,7 @@ object Verifier {
       case Type.Int64 => List(SymVal.AtomicVar(genSym.fresh2(), Type.Int64))
       case Type.BigInt => List(SymVal.AtomicVar(genSym.fresh2(), Type.BigInt))
       case Type.Str => List(SymVal.AtomicVar(genSym.fresh2(), Type.Str))
-      case Type.Enum(sym, cases, kind) =>
+      case Type.Enum(sym, kind) =>
         val decl = root.enums(sym)
         decl.cases.flatMap {
           // TODO: Assumes non-polymorphic type.
