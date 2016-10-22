@@ -38,7 +38,7 @@ object Indexer {
       // iterate through each table predicate in the body.
       for (body <- constraint.body) {
         body match {
-          case Predicate.Body.Table(name, pterms, _, _, _, _) =>
+          case Predicate.Body.Table(name, pterms, _, _, _) =>
             // determine the terms usable for indexing based on whether the predicate refers to a relation or lattice.
             val terms = root.tables(name) match {
               case r: ExecutableAst.Table.Relation => pterms
@@ -102,7 +102,7 @@ object Indexer {
   private def var2offset(varName: String, attributes: Array[ExecutableAst.Attribute]): Int = {
     var i = 0
     while (i < attributes.length) {
-      if (varName == attributes(i).ident.name) return i
+      if (varName == attributes(i).name) return i
       i = i + 1
     }
     throw new RuntimeException // TODO

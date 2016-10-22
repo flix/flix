@@ -16,60 +16,19 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.phase.Resolver.ResolverError
+import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.api.{Flix, RuleException}
+import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.util.{InternalCompilerException, Options}
 import org.scalatest.FunSuite
 
-class TestParser extends FunSuite {
+class TestParser extends FunSuite with TestUtils {
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Root                                                                    //
-  /////////////////////////////////////////////////////////////////////////////
-  test("Root.01") {
-    val input = ""
-    new Flix().addStr(input).compile().get
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Imports                                                                 //
-  /////////////////////////////////////////////////////////////////////////////
-  test("Import.Wildcard.01") {
-    val input1 =
-      """namespace a.b.c {
-        |  def f: Int = 42
-        |}
-      """.stripMargin
-    val input2 =
-      """import a.b.c/_
-        |def g: Int = f() + 42
-      """.stripMargin
-    new Flix().addStr(input1).addStr(input2).compile().errors.head.isInstanceOf[ResolverError]
-  }
-
-  test("Import.Definition.01") {
-    val input1 =
-      """namespace a.b.c {
-        |  def f: Int = 42
-        |}
-      """.stripMargin
-    val input2 =
-      """import a.b.c/f
-        |def g: Int = f() + 42
-      """.stripMargin
-    new Flix().addStr(input1).addStr(input2).compile().errors.head.isInstanceOf[ResolverError]
-  }
-
-  test("Import.Namespace.01") {
-    val input1 =
-      """namespace a.b.c {
-        |  def f: Int = 42
-        |}
-      """.stripMargin
-    val input2 =
-      """import a.b.c
-        |def g: Int = c/f() + 42
-      """.stripMargin
-    new Flix().addStr(input1).addStr(input2).compile().errors.head.isInstanceOf[ResolverError]
+  /**
+    * Runs Flix on the given input string `s`.
+    */
+  def run(s: String): Unit = {
+    new Flix().setOptions(Options.DefaultTest).addStr(s).solve().get
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -81,7 +40,7 @@ class TestParser extends FunSuite {
         |  // comment
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Declaration.Namespace.02") {
@@ -90,7 +49,7 @@ class TestParser extends FunSuite {
         |  // comment
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Declaration.Namespace.03") {
@@ -103,7 +62,7 @@ class TestParser extends FunSuite {
         |  }
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Declaration.Namespace.04") {
@@ -116,7 +75,7 @@ class TestParser extends FunSuite {
         |  }
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Declaration.Namespace.05") {
@@ -133,7 +92,7 @@ class TestParser extends FunSuite {
         |
         |def g: Int = a.b.c.a.b.c/f(21)
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Declaration.Namespace.06") {
@@ -150,7 +109,7 @@ class TestParser extends FunSuite {
         |
         |def j: Int = a.b.c.d.e.f.g/h(21)
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Declaration.Namespace.07") {
@@ -167,7 +126,7 @@ class TestParser extends FunSuite {
         |  def g: Int = f(21)
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Declaration.Namespace.08") {
@@ -181,7 +140,7 @@ class TestParser extends FunSuite {
         |  }
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Declaration.Namespace.09") {
@@ -204,31 +163,36 @@ class TestParser extends FunSuite {
         |
         |def r: Int = a.b.c/u(1) + a.b.c/v(2) + a.b.c/w(3)
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Declaration.Definition.01") {
     val input = "def f: Int = 42"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Declaration.Definition.02") {
     val input = "def f(x: Int): Int = x + 42"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Declaration.Definition.03") {
-    val input = "def f(x: Int, y: Int, z: Int): Int = x + y + z + 42"
-    new Flix().addStr(input).compile().get
+    val input = "def f(x: Int, y: Int): Int = x + y + 42"
+    run(input)
   }
 
-  test("Declaration.Enum0.1") {
+  test("Declaration.Definition.04") {
+    val input = "def f(x: Int, y: Int, z: Int): Int = x + y + z + 42"
+    run(input)
+  }
+
+  test("Declaration.Enum.01") {
     val input =
       """enum A {
         |  case B
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Declaration.Enum.02") {
@@ -237,7 +201,7 @@ class TestParser extends FunSuite {
         |  case B(Int)
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Declaration.Enum.03") {
@@ -248,32 +212,53 @@ class TestParser extends FunSuite {
         |  case D(Bool, Int, Str)
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
+  }
+
+  test("Declaration.Enum.04") {
+    val input =
+      """enum A[a] {
+        |  case B
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Declaration.Enum.05") {
+    val input =
+      """enum A[a, b, c] {
+        |  case A(a),
+        |  case B(b),
+        |  case C(c),
+        |  case D(a, b, c)
+        |}
+      """.stripMargin
+    run(input)
   }
 
   test("Declaration.Relation.01") {
     val input = "rel R(a: Int)"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Declaration.Relation.02") {
     val input = "rel R(a: Char, b: Int, c: Str)"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Declaration.Relation.03") {
     val input = "rel R(a: Int8, b: Int16, c: Int32, d: Int64)"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Lattice.01") {
     val input = "lat L(a: A)"
-    new Flix().addStr(input).compile().errors.head.isInstanceOf[ResolverError]
+    expectError[TypeError.UnresolvedType](new Flix().addStr(input).compile())
   }
 
   test("Lattice.02") {
     val input = "lat L(a: A, b: B, c: C)"
-    new Flix().addStr(input).compile().errors.head.isInstanceOf[ResolverError]
+    expectError[TypeError.UnresolvedType](new Flix().addStr(input).compile())
   }
 
   test("Declaration.Index.01") {
@@ -281,7 +266,7 @@ class TestParser extends FunSuite {
       """rel R(a: Int)
         |index R({a});
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Declaration.Index.02") {
@@ -289,7 +274,7 @@ class TestParser extends FunSuite {
       """rel R(a: Char, b: Int)
         |index R({a}, {b});
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Declaration.Index.03") {
@@ -297,7 +282,7 @@ class TestParser extends FunSuite {
       """rel R(a: Int8, b: Int16, c: Int32, d: Int64)
         |index R({a}, {a, b}, {a, c}, {a, d}, {b, c}, {b, d}, {c, d}, {a, b, c}, {a, b, c, d});
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Declaration.Class.01") {
@@ -307,7 +292,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -318,7 +303,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -330,7 +315,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -341,28 +326,28 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Declaration.Law.01") {
     val input = "law f: Bool = true"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Declaration.Law.02") {
     val input = "law f(x: Int): Bool = x % 2 == 0"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Declaration.Law.03") {
     val input = "law f(x: Int, y: Int): Bool = x > y"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -373,7 +358,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -384,7 +369,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -395,7 +380,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -406,8 +391,106 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
+  }
+
+  test("Declaration.Fact.01") {
+    val input =
+      """
+        |rel R(a: Int)
+        |R(42).
+      """.stripMargin
+    run(input)
+  }
+
+  test("Declaration.Fact.02") {
+    val input =
+      """
+        |rel R(a: Char, b: Int)
+        |R('a', 42).
+      """.stripMargin
+    run(input)
+  }
+
+  test("Declaration.Fact.03") {
+    val input =
+      """
+        |rel R(a: Int8, b: Int16, c: Int32, d: Int64)
+        |R(1i8, 2i16, 3i32, 4i64).
+      """.stripMargin
+    run(input)
+  }
+
+  test("Declaration.Rule.01") {
+    val input =
+      """
+        |rel R(a: Int)
+        |
+        |R(x) :- R(x).
+      """.stripMargin
+    run(input)
+  }
+
+  test("Declaration.Rule.02") {
+    val input =
+      """
+        |rel R(a: Int)
+        |
+        |R(x) :- R(x), R(x), R(x).
+      """.stripMargin
+    run(input)
+  }
+
+  test("Declaration.Rule.03") {
+    val input =
+      """
+        |rel R(a: Int, b: Int)
+        |
+        |R(x, y) :- R(x, y), R(y, x).
+      """.stripMargin
+    run(input)
+  }
+
+  test("Declaration.Rule.04") {
+    val input =
+      """def f: Int = 42
+        |
+        |rel R(a: Int)
+        |
+        |R(f()).
+      """.stripMargin
+    run(input)
+  }
+
+  test("Declaration.Fact.Head.True") {
+    val input = "true."
+    run(input)
+  }
+
+  test("Declaration.Fact.Head.False") {
+    intercept[RuleException] {
+      val input = "false."
+      run(input)
+    }
+  }
+
+  test("Declaration.Rule.Head.True") {
+    val input =
+      """rel R(a: Int, b: Int)
+        |
+        |true :- R(x, y).
+      """.stripMargin
+    run(input)
+  }
+
+  test("Declaration.Rule.Head.False") {
+    val input =
+      """rel R(a: Int, b: Int)
+        |
+        |false :- R(x, y).
+      """.stripMargin
+    run(input)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -415,137 +498,197 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   test("Expression.Unit.01") {
     val input = "def f: Unit = ()"
-    new Flix().addStr(input).compile().get
+    run(input)
+  }
+
+  test("Expression.Bool.01") {
+    val input = "def f: Bool = true"
+    run(input)
+  }
+
+  test("Expression.Bool.02") {
+    val input = "def f: Bool = false"
+    run(input)
   }
 
   test("Expression.Char.01") {
     val input = "def f: Char = 'a'"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Char.02") {
     val input = "def f: Char = 'x'"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Float32.01") {
     val input = "def f: Float32 = 123.456f32"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Float32.02") {
     val input = "def f: Float32 = -123.456f32"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Float64.01") {
     val input = "def f: Float64 = 123.456f64"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Float64.02") {
     val input = "def f: Float64 = -123.456f64"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Int8.01") {
     val input = "def f: Int8 = 123i8"
-    new Flix().addStr(input).compile().get
+    run(input)
+  }
+
+  test("Expression.Int8.02") {
+    val input = "def f: Int8 = -123i8"
+    run(input)
   }
 
   test("Expression.Int16.01") {
     val input = "def f: Int16 = 123i16"
-    new Flix().addStr(input).compile().get
+    run(input)
+  }
+
+  test("Expression.Int16.02") {
+    val input = "def f: Int16 = -123i16"
+    run(input)
   }
 
   test("Expression.Int32.01") {
     val input = "def f: Int32 = 123i32"
-    new Flix().addStr(input).compile().get
+    run(input)
+  }
+
+  test("Expression.Int32.02") {
+    val input = "def f: Int32 = -123i32"
+    run(input)
   }
 
   test("Expression.Int64.01") {
     val input = "def f: Int64 = 123i64"
-    new Flix().addStr(input).compile().get
+    run(input)
+  }
+
+  test("Expression.Int64.02") {
+    val input = "def f: Int64 = -123i64"
+    run(input)
   }
 
   test("Expression.BigInt.01") {
     val input = "def f: BigInt = 123ii"
-    new Flix().addStr(input).compile().get
+    run(input)
+  }
+
+  test("Expression.BigInt.02") {
+    val input = "def f: BigInt = -123ii"
+    run(input)
+  }
+
+  test("Expression.Str.01") {
+    val input = "def f: Str = \"\""
+    run(input)
+  }
+
+  test("Expression.Str.02") {
+    val input = "def f: Str = \"a\""
+    run(input)
+  }
+
+  test("Expression.Str.03") {
+    val input = "def f: Str = \"0\""
+    run(input)
+  }
+
+  test("Expression.Str.04") {
+    val input = "def f: Str = \"abc\""
+    run(input)
+  }
+
+  test("Expression.Str.05") {
+    val input = "def f: Str = \"abc123'!@#$%^&*()\""
+    run(input)
   }
 
   test("Expression.LogicalExp.01") {
     val input = "def f: Bool = true && false"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.LogicalExp.02") {
     val input = "def f: Bool = true || false"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.LogicalExp.03") {
     val input = "def f: Bool = 1 < 2 && 3 < 4"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.ComparisonExp.01") {
     val input = "def f: Bool = 1 < 2"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.ComparisonExp.02") {
     val input = "def f: Bool = 1 + 2 > 3"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.ComparisonExp.03") {
     val input = "def f: Bool = 1 + 2 > 3 + 4"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.MultiplicativeExp.01") {
     val input = "def f: Int = 1 * 2"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.MultiplicativeExp.02") {
     val input = "def f: Int = 1 * 2 * 3"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.MultiplicativeExp.03") {
     val input = "def f: Int = 1 * 2 + 3"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.MultiplicativeExp.04") {
     val input = "def f: Int = 1 + 2 * 3"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.AdditiveExp.01") {
     val input = "def f: Int = 1 + 2"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.AdditiveExp.02") {
     val input = "def f: Int = 1 + 2 + 3"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.AdditiveExp.03") {
     val input = "def f: Int = 1 - 2"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.AdditiveExp.04") {
     val input = "def f: Int = 1 - 2 - 3"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.AdditiveExp.05") {
     val input = "def f: Int = 1 + 2 - 3 + 4 - 5 + 6"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Infix.01") {
@@ -554,7 +697,7 @@ class TestParser extends FunSuite {
         |
         |def f: Int = 1 `plus` 2
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Infix.02") {
@@ -565,53 +708,176 @@ class TestParser extends FunSuite {
         |
         |def f: Int = 1 `a.b.c/plus` 2
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.UnaryExp.01") {
     val input = "def f: Int = +1"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.UnaryExp.02") {
     val input = "def f: Int = -1"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.UnaryExp.03") {
     val input = "def f: Int = ~1"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.UnaryExp.04") {
     val input = "def f: Bool = !!true"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Ascribe.01") {
     val input = "def f: Bool = true: Bool"
-    new Flix().addStr(input).compile().get
+    run(input)
+  }
+
+  test("Expression.Block.01") {
+    val input = "def f: Int = {42}"
+    run(input)
+  }
+
+  test("Expression.Block.02") {
+    val input = "def f: Int = {{42}}"
+    run(input)
+  }
+
+  test("Expression.Block.03") {
+    val input = "def f: Int = {{{42}}}"
+    run(input)
+  }
+
+  test("Expression.Block.04") {
+    val input =
+      """
+        |def f: Int = {
+        |  let x = {
+        |    let y = 42;
+        |    y
+        |  };
+        |  x + 1
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Expression.Block.05") {
+    val input =
+      """
+        |def f: Int = {
+        |  let x = {
+        |    let y = 42;
+        |    let z = 21;
+        |    y + z
+        |  };
+        |  x + 1
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Expression.Block.06") {
+    val input =
+      """
+        |def f: Int = {
+        |  let x = {
+        |    let y = 42;
+        |    let z = 21;
+        |    y + z
+        |  };
+        |  let w = {
+        |    let y = 84;
+        |    let z = 11;
+        |    y + z
+        |  };
+        |  x + w
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Expression.Block.07") {
+    val input =
+      """
+        |def f: Int = {
+        |  let x = {42};
+        |  let y = {21};
+        |  x + y
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Expression.Block.08") {
+    val input =
+      """
+        |def f: Int = {
+        |  let x = {42};
+        |  let y = {
+        |    let z = 21;
+        |    let w = {11};
+        |      z + w
+        |  };
+        |  x + y
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Expression.Block.09") {
+    val input =
+      """
+        |def f: Int = {
+        |  let x = {42};
+        |  let y = {
+        |    let z = 21;
+        |    let w = {
+        |      let q = 11;
+        |      let u = 5;
+        |      q + u
+        |    };
+        |    z + w
+        |  };
+        |  x + y
+        |}
+      """.stripMargin
+    run(input)
   }
 
   test("Expression.LetMatch.01") {
-    val input = "def f: Int = let x = 42 in x"
-    new Flix().addStr(input).compile().get
+    val input =
+      """
+        |def f: Int =
+        |  let x = 42;
+        |    x
+        | """.stripMargin
+    run(input)
   }
 
   test("Expression.LetMatch.02") {
-    val input = "def f: Int = let (x, y) = (42, 21) in x + y"
-    new Flix().addStr(input).compile().get
+    val input =
+      """
+        |def f: Int =
+        |  let (x, y) = (42, 21);
+        |    x + y
+        | """.stripMargin
+    run(input)
   }
 
   test("Expression.LetMatch.03") {
     val input =
-      """def f: Int =
-        |  let x = 1 in
-        |  let y = 2 in
-        |  let z = 3 in
-        |    42
+      """
+        |def f: Int =
+        |  let x = 1;
+        |  let y = 2;
+        |  let z = 3;
+        |    x + y + z
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.LetMatch.04") {
@@ -619,51 +885,84 @@ class TestParser extends FunSuite {
     val input =
     """
       |def f: Int =
-      |    let x1 = 1 in
-      |    let x2 = 1 in
-      |    let x3 = 1 in
-      |    let x4 = 1 in
-      |    let x5 = 1 in
-      |    let x6 = 1 in
-      |    let x7 = 1 in
-      |    let x8 = 1 in
-      |    let x9 = 1 in
-      |    let y1 = 1 in
-      |    let y2 = 1 in
-      |    let y3 = 1 in
-      |    let y4 = 1 in
-      |    let y5 = 1 in
-      |    let y6 = 1 in
-      |    let y7 = 1 in
-      |    let y8 = 1 in
-      |    let y9 = 1 in
-      |    let z1 = 1 in
-      |    let z2 = 1 in
-      |    let z3 = 1 in
-      |    let z4 = 1 in
-      |    let z5 = 1 in
-      |    let z6 = 1 in
-      |    let z7 = 1 in
-      |    let z8 = 1 in
-      |    let z9 = 1 in
+      |    let x1 = 1;
+      |    let x2 = 1;
+      |    let x3 = 1;
+      |    let x4 = 1;
+      |    let x5 = 1;
+      |    let x6 = 1;
+      |    let x7 = 1;
+      |    let x8 = 1;
+      |    let x9 = 1;
+      |    let y1 = 1;
+      |    let y2 = 1;
+      |    let y3 = 1;
+      |    let y4 = 1;
+      |    let y5 = 1;
+      |    let y6 = 1;
+      |    let y7 = 1;
+      |    let y8 = 1;
+      |    let y9 = 1;
+      |    let z1 = 1;
+      |    let z2 = 1;
+      |    let z3 = 1;
+      |    let z4 = 1;
+      |    let z5 = 1;
+      |    let z6 = 1;
+      |    let z7 = 1;
+      |    let z8 = 1;
+      |    let z9 = 1;
       |        1
     """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
+  }
+
+  test("Expression.LetMatch.05") {
+    val input =
+      """
+        |def f: Int =
+        |  let x = 42;
+        |    x
+        | """.stripMargin
+    run(input)
+  }
+
+  test("Expression.LetMatch.06") {
+    val input =
+      """
+        |def f: Int =
+        |  let x = 42;
+        |  let y = 21;
+        |    x + y
+        | """.stripMargin
+    run(input)
+  }
+
+  test("Expression.LetMatch.07") {
+    val input =
+      """
+        |def f: Int =
+        |  let x = 1;
+        |  let y = 2;
+        |  let z = 3;
+        |    x + y + z
+      """.stripMargin
+    run(input)
   }
 
   test("Expression.IfThenElse.01") {
     val input = "def f: Int = if (true) 42 else 21"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.IfThenElse.02") {
     val input = "def f: Int = if ((true)) (1) else (2)"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.IfThenElse.03") {
     val input = "def f: (Int, Int) = if (true || false) (1, 2) else (3, 4)"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Switch.01") {
@@ -672,7 +971,7 @@ class TestParser extends FunSuite {
         |  case true  => 1
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Switch.02") {
@@ -681,7 +980,7 @@ class TestParser extends FunSuite {
         |  case x < 0  => 1
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Switch.03") {
@@ -692,7 +991,7 @@ class TestParser extends FunSuite {
         |  case x == 0 => 3
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Match.01") {
@@ -701,7 +1000,7 @@ class TestParser extends FunSuite {
         |  case 2 => 3
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Match.02") {
@@ -711,7 +1010,7 @@ class TestParser extends FunSuite {
         |  case 4 => 5
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Match.03") {
@@ -723,7 +1022,7 @@ class TestParser extends FunSuite {
         |  case 6 => 7
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Match.04") {
@@ -735,7 +1034,7 @@ class TestParser extends FunSuite {
         |    case 4 => 5
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Apply.01") {
@@ -743,7 +1042,7 @@ class TestParser extends FunSuite {
       """def f: Int = 42
         |def g: Int = f()
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Apply.02") {
@@ -751,7 +1050,7 @@ class TestParser extends FunSuite {
       """def f(x: Int): Int = x
         |def g: Int = f(42)
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Apply.03") {
@@ -759,7 +1058,7 @@ class TestParser extends FunSuite {
       """def f(x: Int, y: Int): Int = x + y
         |def g: Int = f(1, 2)
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Apply.04") {
@@ -767,7 +1066,7 @@ class TestParser extends FunSuite {
       """def f(x: Int, y: Int): Int = x + y
         |def g: Int = f(1, f(2, 3))
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Apply.05") {
@@ -775,7 +1074,7 @@ class TestParser extends FunSuite {
       """def f(x: Int, y: Int): Int = x + y
         |def g: Int = f(f(1, 2), f(3, 4))
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Enum.01") {
@@ -786,12 +1085,38 @@ class TestParser extends FunSuite {
         |  case Blue
         |}
         |
-        |def f: Color = Color.Red
+        |def f: Color = Red
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Enum.02") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Green,
+        |  case Blue
+        |}
+        |
+        |def f: Color = Color.Red
+      """.stripMargin
+    run(input)
+  }
+
+  test("Expression.Enum.03") {
+    val input =
+      """enum Shape {
+        |  case Circle(Int),
+        |  case Square(Int, Int)
+        |}
+        |
+        |def f: Shape = Circle(42)
+        |def g: Shape = Square(21, 42)
+      """.stripMargin
+    run(input)
+  }
+
+  test("Expression.Enum.04") {
     val input =
       """enum Shape {
         |  case Circle(Int),
@@ -801,557 +1126,418 @@ class TestParser extends FunSuite {
         |def f: Shape = Shape.Circle(42)
         |def g: Shape = Shape.Square(21, 42)
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Tuple.01") {
     val input = "def f: Unit = ()"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Tuple.02") {
     val input = "def f: Int = (42)"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Tuple.03") {
     val input = "def f: (Int, Int) = (42, 21)"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Tuple.04") {
     val input = "def f(x: Int): (Int, Int, Int) = (42, x, 21)"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Tuple.05") {
     val input = "def f(x: Int): (Int, (Int, Int), Int) = (42, (x, x), 21)"
-    new Flix().addStr(input).compile().get
-  }
-
-  test("Expression.Opt.01") {
-    val input = "def f: Opt[Char] = None"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
-  }
-
-  test("Expression.Opt.02") {
-    val input = "def f: Opt[Int] = None"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
-  }
-
-  test("Expression.Opt.03") {
-    val input = "def f: Opt[Char] = Some('a')"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
-  }
-
-  test("Expression.Opt.04") {
-    val input = "def f: Opt[Int] = Some(42)"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
-  }
-
-  test("Expression.Opt.05") {
-    val input = "def f: Opt[(Char, Int)] = None"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
-  }
-
-  test("Expression.Opt.06") {
-    val input = "def f: Opt[(Char, Int)] = Some(('a', 42))"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
+    run(input)
   }
 
   test("Expression.List.01") {
     val input = "def f: List[Int] = Nil"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
+    run(input)
   }
 
   test("Expression.List.02") {
     val input = "def f: List[Int] = 1 :: Nil"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
+    run(input)
   }
 
   test("Expression.List.03") {
     val input = "def f: List[Int] = 1 :: 2 :: Nil"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
+    run(input)
   }
 
   test("Expression.List.04") {
     val input = "def f: List[(Int, Int)] = Nil"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
+    run(input)
   }
 
   test("Expression.List.05") {
     val input = "def f: List[(Int, Int)] = (1, 2) :: (3, 4) :: Nil"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
+    run(input)
   }
 
   test("Expression.ListList.01") {
     val input = "def f: List[List[Int]] = Nil"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
+    run(input)
   }
 
   test("Expression.ListList.02") {
     val input = "def f: List[List[Int]] = (1 :: Nil) :: Nil"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+    intercept[InternalCompilerException] {
+      run(input)
     }
   }
 
   test("Expression.ListList.03") {
     val input = "def f: List[List[Int]] = (Nil) :: (1 :: Nil) :: (2 :: 3 :: 4 :: Nil) :: Nil"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+    intercept[InternalCompilerException] {
+      run(input)
     }
   }
 
   test("Expression.Vec.01") {
     val input = "def f: Vec[Int] = #[]"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.Vec.02") {
     val input = "def f: Vec[Int] = #[1]"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.Vec.03") {
     val input = "def f: Vec[Int] = #[1, 2]"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.Vec.04") {
     val input = "def f: Vec[Int] = #[1, 2, 3]"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.Vec.05") {
     val input = "def f: Vec[(Char, Int)] = #[]"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.Vec.06") {
     val input = "def f: Vec[(Char, Int)] = #[('a', 21), ('b', 42)]"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.VecVec.01") {
     val input = "def f: Vec[Vec[Int]] = #[]"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.VecVec.03") {
     val input = "def f: Vec[Vec[Int]] = #[#[], #[1], #[1, 2, 3]]"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.Set.01") {
-    // TODO: Pending new type system.
-    intercept[AssertionError] {
-      val input = "def f: Set[Int] = #{}"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Set[Int] = #{}"
+    run(input)
   }
 
   test("Expression.Set.02") {
     val input = "def f: Set[Int] = #{1}"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Set.03") {
     val input = "def f: Set[Int] = #{1, 2}"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Set.04") {
     val input = "def f: Set[Int] = #{1, 2, 3}"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Set.05") {
     val input = "def f: Set[(Int, Int)] = #{(1, 2)}"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Set.06") {
     val input = "def f: Set[(Int, Int)] = #{(1, 2), (3, 4)}"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Set.07") {
     val input = "def f: Set[Int] = #{1 + 2, 3 + 4, 5 + 6}"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.SetSet.01") {
-    // TODO: Pending new type system.
-    intercept[AssertionError] {
-      val input = "def f: Set[Set[Int]] = #{}"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Set[Set[Int]] = #{}"
+    run(input)
   }
 
   test("Expression.SetSet.02") {
-    // TODO: Pending new type system.
-    intercept[AssertionError] {
-      val input = "def f: Set[Set[Int]] = #{#{}}"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Set[Set[Int]] = #{#{}}"
+    run(input)
   }
 
   test("Expression.SetSet.03") {
     val input = "def f: Set[Set[Int]] = #{#{1, 2}, #{3, 4}, #{5, 6}}"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Map.01") {
     val input = "def f: Map[Char, Int] = @{}"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.Map.02") {
     val input = "def f: Map[Char, Int] = @{'a' -> 1}"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.Map.03") {
     val input = "def f: Map[Char, Int] = @{'a' -> 1, 'b' -> 2}"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.Map.04") {
     val input = "def f: Map[Char, Int] = @{'a' -> 1, 'b' -> 2, 'c' -> 3}"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.Map.05") {
     val input = "def f: Map[(Int8, Int16), (Int32, Int64)] = @{}"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.Map.06") {
     val input = "def f: Map[(Int8, Int16), (Int32, Int64)] = @{(1i8, 2i16) -> (3i32, 4i64)}"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.MapMap.01") {
     val input = "def f: Map[Int, Map[Int, Char]] = @{}"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.MapMap.02") {
     val input = "def f: Map[Int, Map[Int, Char]] = @{1 -> @{}}"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.MapMap.03") {
     val input = "def f: Map[Int, Map[Int, Char]] = @{1 -> @{}, 2 -> @{3 -> 'a', 4 -> 'b'}}"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.MapList.01") {
     val input = "def f: Map[Int, List[Int]] = @{1 -> 2 :: 3 :: Nil, 4 -> 5 :: 6 :: Nil}"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.MapListSet.01") {
     val input = "def f: Map[Int, List[Set[Int]]] = @{}"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.MapListSet.02") {
     val input = "def f: Map[Int, List[Set[Int]]] = @{1 -> Nil}"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.MapListSet.04") {
     val input = "def f: Map[Int, List[Set[Int]]] = @{1 -> #{1, 2, 3} :: #{4, 5, 6} :: Nil}"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.Var.01") {
     val input = "def f(x: Int): Int = x"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Expression.Lambda.01") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: Int -> Int = x -> x"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Int -> Int = x -> x"
+    run(input)
   }
 
   test("Expression.Lambda.02") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: Int -> Int = (x) -> x"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Int -> Int = (x) -> x"
+    run(input)
   }
 
   test("Expression.Lambda.03") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: (Bool, Char) -> Int = (x, y) -> 42"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: (Bool, Char) -> Int = (x, y) -> 42"
+    run(input)
   }
 
   test("Expression.Lambda.04") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: (Bool, Char, Int) -> Int = (x, y, z) -> 42"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: (Bool, Char, Int) -> Int = (x, y, z) -> 42"
+    run(input)
   }
 
   test("Expression.Lambda.05") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: (Int8, Int16, Int32, Int64) -> Int32 = (x, y, z, w) -> z"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: (Int8, Int16, Int32, Int64) -> Int32 = (x, y, z, w) -> z"
+    run(input)
   }
 
   test("Expression.Lambda.06") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: Int -> (Bool, Char) = x -> (true, 'a')"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Int -> (Bool, Char) = x -> (true, 'a')"
+    run(input)
   }
 
   test("Expression.Lambda.07") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: Int -> (Bool, Char, Int) = x -> (true, 'a', 42)"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Int -> (Bool, Char, Int) = x -> (true, 'a', 42)"
+    run(input)
   }
 
   test("Expression.Lambda.08") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: (Bool, Char) -> (Char, Bool) = (x, y) -> (y, x)"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: (Bool, Char) -> (Char, Bool) = (x, y) -> (y, x)"
+    run(input)
   }
 
   test("Expression.Lambda.09") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: (Bool, Char, Int) -> (Int, Char, Bool) = (x, y, z) -> (z, y, x)"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: (Bool, Char, Int) -> (Int, Char, Bool) = (x, y, z) -> (z, y, x)"
+    run(input)
   }
 
   test("Expression.Lambda.10") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: ((Bool, Char), Int) -> (Bool, Char) = (x, y) -> x"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: ((Bool, Char), Int) -> (Bool, Char) = (x, y) -> x"
+    run(input)
   }
 
   test("Expression.Lambda.11") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: (Bool, (Char, Int)) -> (Char, Int) = (x, y) -> y"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: (Bool, (Char, Int)) -> (Char, Int) = (x, y) -> y"
+    run(input)
   }
 
   test("Expression.Lambda.12") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: (Int, Int) -> ((Int, Int), (Int, Int)) = x -> (x, x)"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: (Int, Int) -> ((Int, Int), (Int, Int)) = (x, y) -> ((x, y), (y, x))"
+    run(input)
   }
 
   test("Expression.Lambda.13") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: Bool -> Char -> Int = x -> (y -> 42)"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Bool -> Char -> Int = x -> (y -> 42)"
+    run(input)
   }
 
   test("Expression.Lambda.14") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: (Bool, Bool) -> Char -> Int = (x1, x2) -> (y -> 42)"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: (Bool, Bool) -> Char -> Int = (x1, x2) -> (y -> 42)"
+    run(input)
   }
 
   test("Expression.Lambda.15") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: Bool -> (Char, Char) -> Int = x -> ((y1, y2) -> 42)"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Bool -> (Char, Char) -> Int = x -> ((y1, y2) -> 42)"
+    run(input)
   }
 
   test("Expression.Lambda.16") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: Bool -> Char -> (Int, Int) = x -> (y -> (21, 42))"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Bool -> Char -> (Int, Int) = x -> (y -> (21, 42))"
+    run(input)
   }
 
   test("Expression.Lambda.17") {
-    // TODO: Pending new type system.
-    intercept[NotImplementedError] {
-      val input = "def f: (Bool, Bool) -> (Char, Char) -> (Int, Int) = (x1, x2) -> ((y1, y2) -> (21, 42))"
-      new Flix().addStr(input).compile().get
-    }
-  }
-
-  test("Expression.Bot.01") {
-    val input = "def ⊥: Int = 42"
-    new Flix().addStr(input).compile().get
-  }
-
-  test("Expression.Top.01") {
-    val input = "def ⊤: Int = 42"
-    new Flix().addStr(input).compile().get
-  }
-
-  test("Expression.Leq.01") {
-    val input = "def ⊑: Int = 42"
-    new Flix().addStr(input).compile().get
-  }
-
-  test("Expression.Lub.01") {
-    val input = "def ⊔: Int = 42"
-    new Flix().addStr(input).compile().get
-  }
-
-  test("Expression.Glb.01") {
-    val input = "def ⊓: Int = 42"
-    new Flix().addStr(input).compile().get
+    val input = "def f: (Bool, Bool) -> (Char, Char) -> (Int, Int) = (x1, x2) -> ((y1, y2) -> (21, 42))"
+    run(input)
   }
 
   test("Expression.Existential.01") {
-    val input = "def f: Prop = ∃(x: Bool). true"
+    val input = "def f: Bool = ∃(x: Bool). true"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.Existential.02") {
-    val input = "def f: Prop = ∃(x: Int, y: Int). x == y"
+    val input = "def f: Bool = ∃(x: Int, y: Int). x == y"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.Existential.03") {
-    val input = "def f: Prop = \\exists(x: Bool). true"
+    val input = "def f: Bool = \\exists(x: Bool). true"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.Existential.04") {
-    val input = "def f: Prop = \\exists(x: Int, y: Int). x == y"
+    val input = "def f: Bool = \\exists(x: Int, y: Int). x == y"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.Universal.01") {
-    val input = "def f: Prop = ∀(x: Bool). true"
+    val input = "def f: Bool = ∀(x: Bool). true"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.Universal.02") {
-    val input = "def f: Prop = ∀(x: Int, y: Int). x == y"
+    val input = "def f: Bool = ∀(x: Int, y: Int). x == y"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.Universal.03") {
-    val input = "def f: Prop = \\forall(x: Bool). true"
+    val input = "def f: Bool = \\forall(x: Bool). true"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Expression.Universal.04") {
-    val input = "def f: Prop = \\forall(x: Int, y: Int). x == y"
+    val input = "def f: Bool = \\forall(x: Int, y: Int). x == y"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1364,7 +1550,7 @@ class TestParser extends FunSuite {
         |  case _ => 42
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Pattern.Var.01") {
@@ -1373,7 +1559,7 @@ class TestParser extends FunSuite {
         |  case x => x
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Pattern.Literal.Unit.01") {
@@ -1382,7 +1568,7 @@ class TestParser extends FunSuite {
         |  case () => 42
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Pattern.Literal.Bool.01") {
@@ -1392,7 +1578,7 @@ class TestParser extends FunSuite {
         |  case false => 21
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Pattern.Literal.Char.01") {
@@ -1403,21 +1589,43 @@ class TestParser extends FunSuite {
         |  case 'c' => 3
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
-  test("Pattern.Literal.Int.01") {
+  test("Pattern.Literal.Float32.01") {
     val input =
-      """def f(x: Int): Int = match x with {
-        |  case 1 => 1
-        |  case 2 => 2
-        |  case 3 => 3
+      """def f(x: Float32): Int = match x with {
+        |  case 1.0f32 => 1
+        |  case 2.0f32 => 2
+        |  case 3.0f32 => 3
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
-  test("Pattern.Literal.Int.02") {
+  test("Pattern.Literal.Float64.01") {
+    val input =
+      """def f(x: Float64): Int = match x with {
+        |  case 1.0f64 => 1
+        |  case 2.0f64 => 2
+        |  case 3.0f64 => 3
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Pattern.Literal.Int8.01") {
+    val input =
+      """def f(x: Int8): Int = match x with {
+        |  case 1i8 => 1
+        |  case 2i8 => 2
+        |  case 3i8 => 3
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Pattern.Literal.Int16.01") {
     val input =
       """def f(x: Int16): Int = match x with {
         |  case 1i16 => 1
@@ -1425,7 +1633,29 @@ class TestParser extends FunSuite {
         |  case 3i16 => 3
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
+  }
+
+  test("Pattern.Literal.Int32.01") {
+    val input =
+      """def f(x: Int): Int = match x with {
+        |  case 1 => 1
+        |  case 2 => 2
+        |  case 3 => 3
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Pattern.Literal.Int64.01") {
+    val input =
+      """def f(x: Int64): Int = match x with {
+        |  case 1i64 => 1
+        |  case 2i64 => 2
+        |  case 3i64 => 3
+        |}
+      """.stripMargin
+    run(input)
   }
 
   test("Pattern.Literal.Str.01") {
@@ -1436,10 +1666,25 @@ class TestParser extends FunSuite {
         |  case "baz" => 3
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Pattern.Enum.01") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Blu
+        |}
+        |
+        |def f(x: Color): Int = match x with {
+        |  case Red => 1
+        |  case Blu => 2
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Pattern.Enum.02") {
     val input =
       """enum Color {
         |  case Red,
@@ -1451,10 +1696,25 @@ class TestParser extends FunSuite {
         |  case Color.Blu => 2
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
-  test("Pattern.Enum.02") {
+  test("Pattern.Enum.03") {
+    val input =
+      """enum Shape {
+        |  case Circle(Int),
+        |  case Rectangle(Int, Int)
+        |}
+        |
+        |def f(x: Shape): Int = match x with {
+        |  case Circle(r) => r
+        |  case Rectangle(h, w) => h * w
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Pattern.Enum.04") {
     val input =
       """enum Shape {
         |  case Circle(Int),
@@ -1466,7 +1726,7 @@ class TestParser extends FunSuite {
         |  case Shape.Rectangle(h, w) => h * w
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Pattern.Tuple.01") {
@@ -1476,47 +1736,7 @@ class TestParser extends FunSuite {
         |  case (false, 'b', 21) => 2
         |}
       """.stripMargin
-    new Flix().addStr(input).compile().get
-  }
-
-  test("Pattern.Opt.01") {
-    val input =
-      """def f(o: Opt[Int]): Int = match o with {
-        |  case None => 0
-        |  case Some(x) => x
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
-  }
-
-  test("Pattern.Opt.02") {
-    val input =
-      """def f(o: Opt[Int]): Int = match o with {
-        |  case None => 0
-        |  case Some(1) => 1
-        |  case Some(2) => 2
-        |  case Some(x) => x + x
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
-  }
-
-  test("Pattern.Opt.03") {
-    val input =
-      """def f(o: Opt[Char]): Int = match o with {
-        |  case None => 0
-        |  case Some('a') => 1
-        |  case Some('b') => 2
-        |  case Some(c)   => 3
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
+    run(input)
   }
 
   test("Pattern.List.01") {
@@ -1525,8 +1745,8 @@ class TestParser extends FunSuite {
         |  case Nil => 0
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+    intercept[VerifyError] {
+      run(input)
     }
   }
 
@@ -1536,8 +1756,8 @@ class TestParser extends FunSuite {
         |  case 1 :: Nil => 0
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+    intercept[VerifyError] {
+      run(input)
     }
   }
 
@@ -1547,8 +1767,8 @@ class TestParser extends FunSuite {
         |  case 1 :: 2 :: Nil => 0
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+    intercept[VerifyError] {
+      run(input)
     }
   }
 
@@ -1558,8 +1778,8 @@ class TestParser extends FunSuite {
         |  case 1 :: 2 :: 3 :: Nil => 0
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+    intercept[VerifyError] {
+      run(input)
     }
   }
 
@@ -1569,8 +1789,8 @@ class TestParser extends FunSuite {
         |  case x :: Nil => x
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+    intercept[VerifyError] {
+      run(input)
     }
   }
 
@@ -1580,8 +1800,8 @@ class TestParser extends FunSuite {
         |  case x :: y :: Nil => x + y
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+    intercept[VerifyError] {
+      run(input)
     }
   }
 
@@ -1592,8 +1812,8 @@ class TestParser extends FunSuite {
         |  case x :: rs => 1 + f(rs)
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+    intercept[VerifyError] {
+      run(input)
     }
   }
 
@@ -1605,8 +1825,8 @@ class TestParser extends FunSuite {
         |  case _ => false
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+    intercept[VerifyError] {
+      run(input)
     }
   }
 
@@ -1619,8 +1839,8 @@ class TestParser extends FunSuite {
         |  case xs => 42
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+    intercept[VerifyError] {
+      run(input)
     }
   }
 
@@ -1632,8 +1852,8 @@ class TestParser extends FunSuite {
         |  case (c1, i1) :: (c2, i2) :: Nil => i1 + i2
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+    intercept[VerifyError] {
+      run(input)
     }
   }
 
@@ -1645,8 +1865,8 @@ class TestParser extends FunSuite {
         |  case ('a', i1) :: (c2, 21) :: Nil => 2
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+    intercept[VerifyError] {
+      run(input)
     }
   }
 
@@ -1657,8 +1877,8 @@ class TestParser extends FunSuite {
         |  case (x :: Nil) :: (y :: Nil) :: Nil => x + y
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+    intercept[VerifyError] {
+      run(input)
     }
   }
 
@@ -1669,8 +1889,8 @@ class TestParser extends FunSuite {
         |  case (x :: y :: Nil) :: (z :: w :: Nil) :: Nil => x + y + z + w
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+    intercept[VerifyError] {
+      run(input)
     }
   }
 
@@ -1681,8 +1901,8 @@ class TestParser extends FunSuite {
         |  case (x :: xs) :: (y :: ys) :: (z :: zs) :: Nil => x + y + z
         |}
       """.stripMargin
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+    intercept[VerifyError] {
+      run(input)
     }
   }
 
@@ -1693,7 +1913,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1704,7 +1924,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1715,7 +1935,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1726,7 +1946,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1737,7 +1957,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1748,7 +1968,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1759,7 +1979,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1770,7 +1990,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1781,7 +2001,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1792,7 +2012,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1803,7 +2023,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1814,7 +2034,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1825,7 +2045,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1836,7 +2056,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1847,7 +2067,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1858,7 +2078,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1869,7 +2089,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1880,7 +2100,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1892,7 +2112,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1905,7 +2125,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1916,7 +2136,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1927,7 +2147,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1938,7 +2158,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1949,7 +2169,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1960,7 +2180,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1971,7 +2191,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1982,7 +2202,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -1993,7 +2213,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -2004,7 +2224,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -2015,7 +2235,7 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -2028,101 +2248,8 @@ class TestParser extends FunSuite {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Facts and Rules                                                         //
-  /////////////////////////////////////////////////////////////////////////////
-  test("Declaration.Fact.01") {
-    val input =
-      """rel R(a: Int)
-        |R(42).
-      """.stripMargin
-    new Flix().addStr(input).compile().get
-  }
-
-  test("Declaration.Fact.02") {
-    val input =
-      """rel R(a: Char, b: Int)
-        |R('a', 42).
-      """.stripMargin
-    new Flix().addStr(input).compile().get
-  }
-
-  test("Declaration.Fact.03") {
-    val input =
-      """rel R(a: Int8, b: Int16, c: Int32, d: Int64)
-        |R(1i8, 2i16, 3i32, 4i64).
-      """.stripMargin
-    new Flix().addStr(input).compile().get
-  }
-
-  test("Declaration.Rule.01") {
-    val input =
-      """rel R(a: Int)
-        |
-        |R(x) :- R(x).
-      """.stripMargin
-    new Flix().addStr(input).compile().get
-  }
-
-  test("Declaration.Rule.02") {
-    val input =
-      """rel R(a: Int)
-        |
-        |R(x) :- R(x), R(x), R(x).
-      """.stripMargin
-    new Flix().addStr(input).compile().get
-  }
-
-  test("Declaration.Rule.03") {
-    val input =
-      """rel R(a: Int, b: Int)
-        |
-        |R(x, y) :- R(x, y), R(y, x).
-      """.stripMargin
-    new Flix().addStr(input).compile().get
-  }
-
-  test("Declaration.Fact.Head.True") {
-    val input = "true."
-    new Flix().addStr(input).compile().get
-  }
-
-  test("Declaration.Fact.Head.False") {
-    val input = "false."
-    new Flix().addStr(input).compile().get
-  }
-
-  test("Declaration.Rule.Head.True") {
-    val input =
-      """rel R(a: Int, b: Int)
-        |
-        |true :- R(x, y).
-      """.stripMargin
-    new Flix().addStr(input).compile().get
-  }
-
-  test("Declaration.Rule.Head.False") {
-    val input =
-      """rel R(a: Int, b: Int)
-        |
-        |false :- R(x, y).
-      """.stripMargin
-    new Flix().addStr(input).compile().get
-  }
-
-  test("Declaration.Rule.04") {
-    val input =
-      """def f: Int = 42
-        |
-        |rel R(a: Int)
-        |
-        |R(f()).
-      """.stripMargin
-    new Flix().addStr(input).compile().get
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -2130,62 +2257,62 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   test("Type.Unit.01") {
     val input = "def f: Unit = ()"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Type.Bool.01") {
     val input = "def f: Bool = true"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Type.Bool.02") {
     val input = "def f: Bool = false"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Type.Char.01") {
     val input = "def f: Char = 'a'"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Type.Float32.01") {
     val input = "def f: Float32 = 0.0f32"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Type.Float64.01") {
     val input = "def f: Float64 = 0.0f64"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Type.Int8.01") {
     val input = "def f: Int8 = 0i8"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Type.Int16.01") {
     val input = "def f: Int16 = 0i16"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Type.Int32.01") {
     val input = "def f: Int32 = 0i32"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Type.Int64.01") {
     val input = "def f: Int64 = 0i64"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Type.BigInt.01") {
     val input = "def f: BigInt = 0ii"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Type.Str.01") {
     val input = "def f: Str = \"foobar\""
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Type.Enum.01") {
@@ -2196,65 +2323,55 @@ class TestParser extends FunSuite {
         |
         |def f: Color = Color.Red
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Type.Tuple.01") {
     val input = "def f: (Int, Int) = (1, 2)"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Type.Tuple.02") {
     val input = "def f: (Unit, Bool, Char, Int) = ((), true, 'a', 42)"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Type.Lambda.01") {
-    intercept[NotImplementedError] {
-      val input = "def f: Int = (x -> x + 1)(42)"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Bool -> Int = x -> 42"
+    run(input)
   }
 
   test("Type.Lambda.02") {
-    intercept[NotImplementedError] {
-      val input = "def f: Int = ((x, y) -> x + y)(21, 42)"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: (Bool, Char, Int) -> Str = (x,y, z) -> \"a\""
+    run(input)
   }
 
-  test("Type.Opt.01") {
-    val input = "def f: Opt[Int] = None"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
+  test("Type.Lambda.03") {
+    val input = "def f: Str -> (Bool, Char, Int) = x -> (true, 'a', 42)"
+    run(input)
   }
 
   test("Type.List.01") {
     val input = "def f: List[Int] = Nil"
-    intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
-    }
+    run(input)
   }
 
   test("Type.Vec.01") {
     val input = "def f: Vec[Int] = #[]"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
   test("Type.Set.01") {
-    intercept[AssertionError] {
-      val input = "def f: Set[Int] = #{}"
-      new Flix().addStr(input).compile().get
-    }
+    val input = "def f: Set[Int] = #{}"
+    run(input)
   }
 
   test("Type.Map.01") {
     val input = "def f: Map[Int, Int] = @{}"
     intercept[scala.NotImplementedError] {
-      new Flix().addStr(input).compile().get
+      run(input)
     }
   }
 
@@ -2263,52 +2380,52 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   test("Ident.01") {
     val input = "def x: Int = 42"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Ident.02") {
     val input = "def xx: Int = 42"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Ident.03") {
     val input = "def xxx: Int = 42"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Ident.04") {
     val input = "def xY: Int = 42"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Ident.05") {
     val input = "def xxxYyy: Int = 42"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Ident.06") {
     val input = "def xxxYyyZzz: Int = 42"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Ident.07") {
     val input = "def x0: Int = 42"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Ident.08") {
     val input = "def x0123: Int = 42"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Ident.09") {
     val input = "def x_y_z: Int = 42"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Ident.10") {
     val input = "def x_Y32Y_15zz: Int = 42"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -2316,127 +2433,127 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   test("Literal.Unit.01") {
     val input = "def f: Unit = ()"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.True.01") {
     val input = "def f: Bool = true"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.False.01") {
     val input = "def f: Bool = false"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.Char.01") {
     val input = "def f: Char = 'a'"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.Float32.01") {
     val input = "def f: Float32 = 123.456f32"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.Float32.02") {
     val input = "def f: Float32 = +123.456f32"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.Float32.03") {
     val input = "def f: Float32 = -123.456f32"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.Float64.01") {
     val input = "def f: Float64 = 123.456f64"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.Float64.02") {
     val input = "def f: Float64 = +123.456f64"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.Float64.03") {
     val input = "def f: Float64 = -123.456f64"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.Int8.01") {
     val input = "def f: Int8 = 123i8"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.Int8.02") {
     val input = "def f: Int8 = +123i8"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.Int8.03") {
     val input = "def f: Int8 = -123i8"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.Int16.01") {
     val input = "def f: Int16 = 123i16"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.Int16.02") {
     val input = "def f: Int16 = +123i16"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.Int16.03") {
     val input = "def f: Int16 = -123i16"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.Int32.01") {
     val input = "def f: Int32 = 123i32"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.Int32.02") {
     val input = "def f: Int32 = +123i32"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.Int32.03") {
     val input = "def f: Int32 = -123i32"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.Int64.01") {
     val input = "def f: Int64 = 123i64"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.Int64.02") {
     val input = "def f: Int64 = +123i64"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.Int64.03") {
     val input = "def f: Int64 = -123i64"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.BigInt.01") {
     val input = "def f: BigInt = 123ii"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.BigInt.02") {
     val input = "def f: BigInt = +123ii"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Literal.BigInt.03") {
     val input = "def f: BigInt = -123ii"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -2444,127 +2561,127 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   test("Operator.Unary !") {
     val input = "def f(b: Bool): Bool = !b"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Unary +") {
     val input = "def f(i: Int): Int = +i"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Unary -") {
     val input = "def f(i: Int): Int = -i"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Unary ~") {
     val input = "def f(i: Int): Int = ~i"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.LogicalOp &&") {
     val input = "def f(x: Bool, y: Bool): Bool = x && y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.LogicalOp ||") {
     val input = "def f(x: Bool, y: Bool): Bool = x || y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.LogicalOp ==>") {
     val input = "def f(x: Bool, y: Bool): Bool = x ==> y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.LogicalOp <==>") {
     val input = "def f(x: Bool, y: Bool): Bool = x <==> y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.Bitwise &") {
     val input = "def f(x: Int, y: Int): Int = x & y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.Bitwise |") {
     val input = "def f(x: Int, y: Int): Int = x | y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.Bitwise ^") {
     val input = "def f(x: Int, y: Int): Int = x ^ y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.Bitwise <<") {
     val input = "def f(x: Int, y: Int): Int = x << y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.Bitwise >>") {
     val input = "def f(x: Int, y: Int): Int = x >> y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.ComparisonOp <") {
     val input = "def f(x: Int, y: Int): Bool = x < y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.ComparisonOp <=") {
     val input = "def f(x: Int, y: Int): Bool = x <= y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.ComparisonOp >") {
     val input = "def f(x: Int, y: Int): Bool = x > y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.ComparisonOp >=") {
     val input = "def f(x: Int, y: Int): Bool = x >= y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.ComparisonOp ==") {
     val input = "def f(x: Int, y: Int): Bool = x == y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.ComparisonOp !=") {
     val input = "def f(x: Int, y: Int): Bool = x != y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.MultiplicativeOp *") {
     val input = "def f(x: Int, y: Int): Int = x * y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.MultiplicativeOp /") {
     val input = "def f(x: Int, y: Int): Int = x / y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.MultiplicativeOp %") {
     val input = "def f(x: Int, y: Int): Int = x % y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.MultiplicativeOp **") {
     val input = "def f(x: Int, y: Int): Int = x ** y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.AdditiveOp +") {
     val input = "def f(x: Int, y: Int): Int = x + y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.AdditiveOp -") {
     val input = "def f(x: Int, y: Int): Int = x - y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -2572,95 +2689,137 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   test("Operator.Unary.UTF8-Negation") {
     val input = "def f(b: Bool): Bool = ¬b"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.UTF8-Equal") {
     val input = "def f(x: Int, y: Int): Bool = x ≡ y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.UTF8-Conjunction") {
     val input = "def f(x: Bool, y: Bool): Bool = x ∧ y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.UTF8-Disjunction") {
     val input = "def f(x: Bool, y: Bool): Bool = x ∨ y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.UTF8-Implication") {
     val input = "def f(x: Bool, y: Bool): Bool = x → y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Operator.Binary.UTF8-Biconditional") {
     val input = "def f(x: Bool, y: Bool): Bool = x ↔ y"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Annotations                                                             //
   /////////////////////////////////////////////////////////////////////////////
-  test("Annotation.01") {
+  test("Annotation.@associative") {
     val input =
-      """@strict @unchecked
-        |def f(x: Int): Int = x
+      """@associative
+        |def f(x: Int, y: Int): Int = 21
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
-  test("Annotation.02") {
+  test("Annotation.@commutative") {
+    val input =
+      """@commutative
+        |def f(x: Int, y: Int): Int = 21
+      """.stripMargin
+    run(input)
+  }
+
+  test("Annotation.@internal") {
+    val input =
+      """@internal
+        |def f(x: Int, y: Int): Int = 21
+      """.stripMargin
+    run(input)
+  }
+
+  test("Annotation.@monotone") {
     val input =
       """@monotone @unchecked
-        |def f(x: Int): Int = x
+        |def f(x: Int, y: Int): Int = 21
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
-  test("Annotation.03") {
+  test("Annotation.@strict") {
+    val input =
+      """@strict @unchecked
+        |def f(x: Int, y: Int): Int = 21
+      """.stripMargin
+    run(input)
+  }
+
+  test("Annotation.@unchecked") {
+    val input =
+      """@unchecked
+        |def f(x: Int, y: Int): Int = 21
+      """.stripMargin
+    run(input)
+  }
+
+  test("Annotation.@unsafe") {
+    val input =
+      """@unsafe
+        |def f(x: Int, y: Int): Int = 21
+      """.stripMargin
+    run(input)
+  }
+
+  test("Annotation.@strict @monotone @unchecked") {
     val input =
       """@strict @monotone @unchecked
-        |def f(x: Int): Int = x
+        |def f(x: Int, y: Int): Int = 21
       """.stripMargin
-    new Flix().addStr(input).compile().get
-  }
-
-  test("Annotation.04") {
-    val input =
-      """@strict @monotone @commutative @associative @unsafe @unchecked
-        |def f(x: Int): Int = x
-      """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Whitespace                                                              //
   /////////////////////////////////////////////////////////////////////////////
   test("WhiteSpace.01") {
-    val input = " "
-    new Flix().addStr(input).compile().get
+    val input = ""
+    run(input)
   }
 
   test("WhiteSpace.02") {
-    val input = "    "
-    new Flix().addStr(input).compile().get
+    val input = " "
+    run(input)
   }
 
   test("WhiteSpace.03") {
+    val input = "    "
+    run(input)
+  }
+
+  test("WhiteSpace.04") {
     val input = "\t"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
-  test("WhiteSpace.NewLine.Unix") {
+  test("WhiteSpace.NewLine.01") {
     val input = "\n"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
-  test("WhiteSpace.NewLine.Windows") {
+  test("WhiteSpace.NewLine.02") {
+    val input = "\r"
+    run(input)
+  }
+
+  test("WhiteSpace.NewLine.03") {
     val input = "\r\n"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -2668,7 +2827,7 @@ class TestParser extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
   test("SingleLineComment.01") {
     val input = "// a comment"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("SingleLineComment.02") {
@@ -2677,12 +2836,12 @@ class TestParser extends FunSuite {
         |// another comment
         |// and yet another
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("MultiLineComment.01") {
     val input = "/* a comment */"
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("MultiLineComment.02") {
@@ -2691,7 +2850,7 @@ class TestParser extends FunSuite {
         |a comment
         |*/
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Comment.01") {
@@ -2704,7 +2863,7 @@ class TestParser extends FunSuite {
         |
         |
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
   test("Comment.02") {
@@ -2718,7 +2877,7 @@ class TestParser extends FunSuite {
         |
         |
       """.stripMargin
-    new Flix().addStr(input).compile().get
+    run(input)
   }
 
 }

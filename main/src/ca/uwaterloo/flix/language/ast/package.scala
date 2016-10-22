@@ -30,6 +30,7 @@ package object ast {
     */
   sealed trait SourceInput {
     def format: String = this match {
+      case SourceInput.Internal(name, str) => name
       case SourceInput.TxtFile(p) => p.getFileName.toString
       case SourceInput.ZipFile(p) => p.getFileName.toString
       case SourceInput.Str(_) => "???"
@@ -39,17 +40,22 @@ package object ast {
   object SourceInput {
 
     /**
-      * An source that is backed by a regular string.
+      * A source that is backed by an internal resource.
+      */
+    case class Internal(name: String, str: String) extends SourceInput
+
+    /**
+      * A source that is backed by a regular string.
       */
     case class Str(str: String) extends SourceInput
 
     /**
-      * An source that is backed by a regular file.
+      * A source that is backed by a regular file.
       */
     case class TxtFile(path: Path) extends SourceInput
 
     /**
-      * An source that is backed by a zip file.
+      * A source that is backed by a zip file.
       */
     case class ZipFile(path: Path) extends SourceInput
 

@@ -39,7 +39,7 @@ object PrettyPrint {
       case None => // nop
       case Some(xs) =>
         val r = model.getRoot.tables(sym).asInstanceOf[ExecutableAst.Table.Relation]
-        val cols = r.attributes.map(_.ident.name)
+        val cols = r.attributes.map(_.name)
         val ascii = new AsciiTable().withCols(cols: _*)
         for (row <- xs.toSeq.sortBy(_.head.toString)) {
           ascii.mkRow(row.toList map Value.pretty)
@@ -56,7 +56,7 @@ object PrettyPrint {
       case None => // nop
       case Some(xs) =>
         val l = model.getRoot.tables(sym).asInstanceOf[ExecutableAst.Table.Lattice]
-        val cols = l.keys.map(_.ident.name).toList ::: l.value.ident.name :: Nil
+        val cols = l.keys.map(_.name).toList ::: l.value.name :: Nil
         val ascii = new AsciiTable().withCols(cols: _*)
         for ((keys, elm) <- xs.toSeq.sortBy(_._1.head.toString)) {
           ascii.mkRow((keys map Value.pretty) ++ List(Value.pretty(elm)))

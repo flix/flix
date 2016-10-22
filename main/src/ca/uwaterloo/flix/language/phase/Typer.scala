@@ -16,891 +16,1287 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.{CompilationError, Compiler}
-import ca.uwaterloo.flix.util.Validation
-import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.phase.Disambiguation.RefTarget
+import ca.uwaterloo.flix.language.phase.Unification._
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 object Typer {
 
-  // TODO: when to use inner visit?
-  // TODO: use pattern match on rast
-  // TODO: Probably need to rewrite this to be unification based.
-  // TODO: Check that lattice variables are not bound multiple times.
-  // TODO: https://flockler.com/thumbs/1992/truthy_s830x0_q80_noupscale.png
-
-  import TypeError._
-
   /**
-    * A common super-type for type errors.
+    * Type checks the given program.
     */
-  sealed trait TypeError extends CompilationError
+  def typer(program: NamedAst.Program)(implicit genSym: GenSym): Validation[TypedAst.Root, TypeError] = {
+    val startTime = System.nanoTime()
 
-  object TypeError {
-
-    implicit val consoleCtx = Compiler.ConsoleCtx
-
-    /**
-      * An error raised to indicate a type mismatch between an `expected` and an `actual` type.
-      *
-      * @param expected the expected type.
-      * @param actual   the actual type.
-      * @param loc      the source location.
-      */
-    case class ExpectedType(expected: Type, actual: Type, loc: SourceLocation) extends TypeError {
-      val message =
-        s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-            |${consoleCtx.red(s">> Expected type '${prettyPrint(expected)}' but actual type is '${prettyPrint(actual)}'.")}
-           |
-            |${loc.highlight}
-         """.stripMargin
+    val result = for {
+      definitions <- Declarations.Definitions.typecheck(program)
+      enums <- Declarations.Enums.typecheck(program)
+      lattices <- Declarations.Lattices.typecheck(program)
+      tables <- Declarations.Tables.typecheck(program)
+      indexes <- Declarations.Indexes.typecheck(program)
+      facts <- Declarations.Constraints.typecheckFacts(program)
+      rules <- Declarations.Constraints.typecheckRules(program)
+    } yield {
+      val currentTime = System.nanoTime()
+      val time = program.time.copy(typer = currentTime - startTime)
+      TypedAst.Root(definitions, enums, lattices, tables, indexes, facts, rules, Nil, time)
     }
 
-    /**
-      * An error raised to indicate that the two given types `tpe1` and `tpe2` were expected to be equal.
-      *
-      * @param tpe1 the first type.
-      * @param tpe2 the second type.
-      * @param loc1 the source location of the first type.
-      * @param loc2 the source location of the second type.
-      */
-    case class ExpectedEqualTypes(tpe1: Type, tpe2: Type, loc1: SourceLocation, loc2: SourceLocation) extends TypeError {
-      val message =
-        s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc1.source.format}")}
-           |
-           |${consoleCtx.red(s">> Expected equal types '${prettyPrint(tpe1)}' and '${prettyPrint(tpe2)}'.")}
-           |
-           |the type '${consoleCtx.magenta(prettyPrint(tpe1))}' was inferred for the expression:
-           |
-           |${loc1.highlight}
-           |
-           |the type '${consoleCtx.magenta(prettyPrint(tpe2))}' was inferred for the expression:
-           |
-           |${loc2.highlight}
-         """.stripMargin
-    }
-
-    /**
-      * An error raised to indicate that the given type `tpe` was expected to be a function type.
-      *
-      * @param tpe the erroneous type.
-      * @param loc the source location.
-      */
-    // TODO: Pretty print
-    case class IllegalApply(tpe: Type, loc: SourceLocation) extends TypeError {
-      val message = s"Type Error: The type '${prettyPrint(tpe)}' is not a function type at ${loc.format}.\n"
-    }
-
-    /**
-      * An error raised to indicate a type mismatch between a pattern `pat` and an expected type `tpe`.
-      *
-      * @param pat the pattern.
-      * @param tpe the type.
-      * @param loc the source location.
-      */
-    // TODO: Pretty print
-    case class IllegalPattern(pat: ResolvedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypeError {
-      val message = s"Type Error: Pattern '${prettyPrint(pat)}' does not match expected type '${prettyPrint(tpe)}' at ${loc.format}.\n"
-    }
-
-    // TODO: Check arity of function calls, predicates, etc.
-
-    /**
-      * An error raised to indicate that a type has no associated lattice.
-      *
-      * @param tpe the type that has no lattice.
-      * @param loc the source location.
-      */
-    case class NoSuchLattice(tpe: Type, loc: SourceLocation) extends TypeError {
-      val message =
-        s"""${consoleCtx.blue(s"-- TYPE ERROR -------------------------------------------------- ${loc.source.format}")}
-           |
-            |${consoleCtx.red(s">> No lattice declared for '${prettyPrint(tpe)}'.")}
-           |
-            |${loc.highlight}
-           |Tip: Associate a lattice with the type.
-         """.stripMargin
-    }
-
-  }
-
-  /**
-    * Runs the typer on the entire given AST `rast`.
-    */
-  def typecheck(root: ResolvedAst.Root): Validation[TypedAst.Root, TypeError] = {
-    val b = System.nanoTime()
-
-    // constants
-    val constantsVal = Validation.fold(root.constants) {
-      case (name, constant) => Definition.typer(constant, root) map (defn => name -> defn)
-    }
-
-    // lattices
-    val latticesVal = Validation.fold(root.lattices) {
-      case (tpe, lattice) => Definition.typer(lattice, root) map (defn => tpe -> defn)
-    }
-
-    // relations
-    val relationsVal = Validation.fold(root.tables) {
-      case (name, relation) => Definition.typer(relation, root) map (defn => name -> defn)
-    }
-
-    // indexes
-    val indexesVal = Validation.fold(root.indexes) {
-      case (name, index) => Definition.typer(index, root) map (defn => name -> defn)
-    }
-
-    // facts and rules
-    val factsVal = @@(root.facts.map(fact => Constraint.typer(fact, root)))
-    val rulesVal = @@(root.rules.map(rule => Constraint.typer(rule, root)))
-
-    // putting it all together
-    @@(constantsVal, latticesVal, relationsVal, indexesVal, factsVal, rulesVal) map {
-      case (constants, lattices, relations, indexes, facts, rules) =>
-        val e = System.nanoTime()
-        TypedAst.Root(constants, lattices, relations, indexes, facts, rules, root.hooks, Nil, root.time.copy(typer = e - b))
+    result match {
+      case Ok(p) => p.toSuccess
+      case Err(e) => e.toFailure
     }
   }
 
-  object Definition {
-    /**
-      * Types the given constant definition `rast` under the given AST `root`.
-      */
-    def typer(rast: ResolvedAst.Definition.Constant, root: ResolvedAst.Root): Validation[TypedAst.Definition.Constant, TypeError] = {
-      val formals = rast.formals.map {
-        case ResolvedAst.FormalArg(ident, tpe) => TypedAst.FormalArg(ident, tpe)
-      }
+  object Declarations {
 
-      val env = rast.formals.foldLeft(Map.empty[String, Type]) {
-        case (macc, ResolvedAst.FormalArg(ident, tpe)) => macc + (ident.name -> tpe)
-      }
+    object Constraints {
 
-      Expression.typer(rast.exp, root, env) flatMap {
-        case e =>
-          if (rast.formals.isEmpty) {
-            expect(rast.tpe, Type.Lambda(Nil, e.tpe), rast.loc) map {
-              case tpe => TypedAst.Definition.Constant(rast.ann, rast.name, formals, e, tpe, rast.loc)
-            }
-          } else {
-            val lambdaTpe = Type.Lambda(rast.formals.map(_.tpe), e.tpe)
-            expect(rast.tpe, lambdaTpe, rast.loc) map {
-              case tpe => TypedAst.Definition.Constant(rast.ann, rast.name, formals, e, tpe, rast.loc)
-            }
-          }
-      }
-    }
+      /**
+        * Performs type inference and reassembly on all facts in the given program.
+        *
+        * Returns [[Err]] if the head predicate fails to type check.
+        */
+      def typecheckFacts(program: Program)(implicit genSym: GenSym): Result[List[TypedAst.Declaration.Fact], TypeError] = {
 
-    /**
-      * Types the given lattice definition `rast` under the given AST `root`.
-      */
-    def typer(rast: ResolvedAst.Definition.BoundedLattice, root: ResolvedAst.Root): Validation[TypedAst.Definition.BoundedLattice, TypeError] = {
-      val tpe = rast.tpe
-      val leqType = Type.Lambda(args = List(tpe, tpe), retTpe = Type.Bool)
-      val lubType = Type.Lambda(args = List(tpe, tpe), retTpe = tpe)
-      val glbType = Type.Lambda(args = List(tpe, tpe), retTpe = tpe)
-
-      val botVal = Expression.typer(rast.bot, root) flatMap {
-        case e => expect(tpe, e.tpe, rast.bot.loc) map (_ => e)
-      }
-      val topVal = Expression.typer(rast.top, root) flatMap {
-        case e => expect(tpe, e.tpe, rast.top.loc) map (_ => e)
-      }
-      val leqVal = Expression.typer(rast.leq, root) flatMap {
-        case e => expect(leqType, e.tpe, rast.leq.loc) map (_ => e)
-      }
-      val lubVal = Expression.typer(rast.lub, root) flatMap {
-        case e => expect(lubType, e.tpe, rast.lub.loc) map (_ => e)
-      }
-      val glbVal = Expression.typer(rast.glb, root) flatMap {
-        case e => expect(glbType, e.tpe, rast.glb.loc) map (_ => e)
-      }
-
-      @@(leqVal, botVal, topVal, lubVal, glbVal) map {
-        case (leq, bot, top, lub, glb) => TypedAst.Definition.BoundedLattice(tpe, bot, top, leq, lub, glb, rast.loc)
-      }
-    }
-
-
-    /**
-      * Types the given table definition `rast` under the given AST `root`.
-      */
-    def typer(rast: ResolvedAst.Table, root: ResolvedAst.Root): Validation[TypedAst.Table, TypeError] = rast match {
-      case d: ResolvedAst.Table.Relation => typer2(d, root)
-      case d: ResolvedAst.Table.Lattice => typer2(d, root)
-    }
-
-    /**
-      * Types the given relation definition `rast` under the given AST `root`.
-      */
-    def typer2(rast: ResolvedAst.Table.Relation, root: ResolvedAst.Root): Validation[TypedAst.Table.Relation, TypeError] = {
-      val attributes = rast.attributes map {
-        case ResolvedAst.Attribute(ident, tpe) => TypedAst.Attribute(ident, tpe)
-      }
-      TypedAst.Table.Relation(rast.sym, attributes, rast.loc).toSuccess
-    }
-
-    /**
-      * Types the given lattice definition `rast` under the given AST `root`.
-      */
-    def typer2(rast: ResolvedAst.Table.Lattice, root: ResolvedAst.Root): Validation[TypedAst.Table.Lattice, TypeError] = {
-      val keys = rast.keys map {
-        case ResolvedAst.Attribute(ident, tpe) => TypedAst.Attribute(ident, tpe)
-      }
-
-      val a = rast.value
-      val valueVal = root.lattices.get(a.tpe) match {
-        case None => NoSuchLattice(a.tpe, a.ident.loc).toFailure
-        case Some(_) => TypedAst.Attribute(a.ident, a.tpe).toSuccess
-      }
-
-      valueVal map {
-        case value => TypedAst.Table.Lattice(rast.sym, keys, value, rast.loc)
-      }
-    }
-
-    /**
-      * Types the given index definition `rast` under the given AST `root`.
-      */
-    def typer(rast: ResolvedAst.Definition.Index, root: ResolvedAst.Root): Validation[TypedAst.Definition.Index, TypeError] = {
-      // TODO: any checks?
-      TypedAst.Definition.Index(rast.sym, rast.indexes, rast.loc).toSuccess
-    }
-
-  }
-
-  object Constraint {
-
-    /**
-      * Types the given fact `rast` under the given AST `root`.
-      */
-    def typer(rast: ResolvedAst.Constraint.Fact, root: ResolvedAst.Root): Validation[TypedAst.Constraint.Fact, TypeError] = {
-      Predicate.Head.typer(rast.head, root) map TypedAst.Constraint.Fact
-    }
-
-    /**
-      * Types the given rule `rast` under the given AST `root`.
-      */
-    def typer(rast: ResolvedAst.Constraint.Rule, root: ResolvedAst.Root): Validation[TypedAst.Constraint.Rule, TypeError] = {
-      val headVal = Predicate.Head.typer(rast.head, root)
-      // TODO: Should check that variables have consistent types?
-      val bodyVal = @@(rast.body map (p => Predicate.Body.typer(p, root)))
-
-      @@(headVal, bodyVal) map {
-        case (head, body) => TypedAst.Constraint.Rule(head, body)
-      }
-    }
-  }
-
-  object Literal {
-
-    /**
-      * Types the given resolved literal `rast`.
-      */
-    def typer(rast: ResolvedAst.Literal, root: ResolvedAst.Root): TypedAst.Literal = {
-      def visit(rast: ResolvedAst.Literal): TypedAst.Literal = rast match {
-        case ResolvedAst.Literal.Unit(loc) => TypedAst.Literal.Unit(loc)
-        case ResolvedAst.Literal.Bool(b, loc) => TypedAst.Literal.Bool(b, loc)
-        case ResolvedAst.Literal.Char(c, loc) => TypedAst.Literal.Char(c, loc)
-        case ResolvedAst.Literal.Float32(f, loc) => TypedAst.Literal.Float32(f, loc)
-        case ResolvedAst.Literal.Float64(f, loc) => TypedAst.Literal.Float64(f, loc)
-        case ResolvedAst.Literal.Int8(i, loc) => TypedAst.Literal.Int8(i, loc)
-        case ResolvedAst.Literal.Int16(i, loc) => TypedAst.Literal.Int16(i, loc)
-        case ResolvedAst.Literal.Int32(i, loc) => TypedAst.Literal.Int32(i, loc)
-        case ResolvedAst.Literal.Int64(i, loc) => TypedAst.Literal.Int64(i, loc)
-        case ResolvedAst.Literal.BigInt(i, loc) => TypedAst.Literal.BigInt(i, loc)
-        case ResolvedAst.Literal.Str(s, loc) => TypedAst.Literal.Str(s, loc)
-      }
-
-      visit(rast)
-    }
-  }
-
-  object Expression {
-
-    /**
-      * Types the given resolved expression `rast` under the given ast `root` and local environment `env`.
-      */
-    def typer(rast: ResolvedAst.Expression, root: ResolvedAst.Root, env: Map[String, Type] = Map.empty): Validation[TypedAst.Expression, TypeError] = {
-      def visit(rast: ResolvedAst.Expression, env: Map[String, Type]): Validation[TypedAst.Expression, TypeError] = rast match {
-        case ResolvedAst.Expression.Var(ident, loc) =>
-          val tpe = env(ident.name)
-          TypedAst.Expression.Var(ident, tpe, loc).toSuccess
-
-        case ResolvedAst.Expression.Ref(name, loc) =>
-          val constant = root.constants(name)
-          TypedAst.Expression.Ref(name, constant.tpe, loc).toSuccess
-
-        case ResolvedAst.Expression.HookRef(hook, loc) =>
-          val tpe = hook.tpe
-          TypedAst.Expression.Hook(hook, tpe, loc).toSuccess
-
-        case ResolvedAst.Expression.Lit(rlit, loc) =>
-          val lit = Literal.typer(rlit, root)
-          TypedAst.Expression.Lit(lit, lit.tpe, loc).toSuccess
-
-        // TODO: Peer review
-        case ResolvedAst.Expression.Lambda(rargs, rtpe, rbody, loc) =>
-          // compile formal arguments
-          val args = rargs map {
-            case ResolvedAst.FormalArg(ident, t) => TypedAst.FormalArg(ident, t)
-          }
-          // return type
-          // create extended environment
-          val env1 = args.foldLeft(env) {
-            case (m, TypedAst.FormalArg(ident, t)) => m + (ident.name -> t)
-          }
-
-          // type body
-          visit(rbody, env1) flatMap {
-            case body => expect(rtpe, body.tpe, loc) map {
-              case _ => TypedAst.Expression.Lambda(args, body, Type.Lambda(args map (_.tpe), rtpe), loc)
-            }
-          }
-
-        // TODO: Peer review
-        case ResolvedAst.Expression.Apply(re, rargs, loc) =>
-          val lambdaVal = visit(re, env)
-          val argsVal = @@(rargs map (arg => visit(arg, env)))
-
-          @@(lambdaVal, argsVal) flatMap {
-            case (lambda, args) => lambda.tpe match {
-              case Type.Lambda(targs, retTpe) =>
-                val argsVal = (targs zip args) map {
-                  case (formalType, actualExp) => expect(formalType, actualExp.tpe, actualExp.loc)
-                }
-
-                @@(argsVal) map {
-                  case _ => TypedAst.Expression.Apply(lambda, args, retTpe, loc)
-                }
-              case tpe => IllegalApply(tpe, loc).toFailure
-            }
-          }
-
-        case ResolvedAst.Expression.Unary(op, re, loc) => op match {
-          case UnaryOperator.LogicalNot =>
-            visit(re, env) flatMap {
-              case e => expect(Type.Bool, e.tpe, loc) map {
-                case tpe => TypedAst.Expression.Unary(op, e, tpe, loc)
-              }
-            }
-          case UnaryOperator.Plus | UnaryOperator.Minus =>
-            visit(re, env) flatMap {
-              case e => e.tpe match {
-                case Type.Float32 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
-                case Type.Float64 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
-                case Type.Int8 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
-                case Type.Int16 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
-                case Type.Int32 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
-                case Type.Int64 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
-                case Type.BigInt => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
-                case _ => TypeError.ExpectedType(Type.Int32, e.tpe, e.loc).toFailure // TODO: Need more generic error message.
-              }
-            }
-          case UnaryOperator.BitwiseNegate =>
-            visit(re, env) flatMap {
-              case e =>
-                e.tpe match {
-                  case Type.Int8 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
-                  case Type.Int16 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
-                  case Type.Int32 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
-                  case Type.Int64 => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
-                  case Type.BigInt => TypedAst.Expression.Unary(op, e, e.tpe, loc).toSuccess
-                  case _ => TypeError.ExpectedType(Type.Int32, e.tpe, e.loc).toFailure // TODO: Need more generic error message.
-                }
+        /**
+          * Performs type checking on the given `fact` in the given namespace `ns`.
+          */
+        def visitFact(fact: NamedAst.Declaration.Fact, ns: Name.NName): Result[TypedAst.Declaration.Fact, TypeError] = fact match {
+          case NamedAst.Declaration.Fact(head, loc) =>
+            Predicates.typecheck(head, ns, program) map {
+              case h => TypedAst.Declaration.Fact(h, loc)
             }
         }
 
-        case ResolvedAst.Expression.Binary(op, re1, re2, loc) => op match {
-          case _: ArithmeticOperator =>
-            @@(visit(re1, env), visit(re2, env)) flatMap {
-              case (e1, e2) => (e1.tpe, e2.tpe) match {
-                case (Type.Float32, Type.Float32) => TypedAst.Expression.Binary(op, e1, e2, Type.Float32, loc).toSuccess
-                case (Type.Float64, Type.Float64) => TypedAst.Expression.Binary(op, e1, e2, Type.Float64, loc).toSuccess
-                case (Type.Int8, Type.Int8) => TypedAst.Expression.Binary(op, e1, e2, Type.Int8, loc).toSuccess
-                case (Type.Int16, Type.Int16) => TypedAst.Expression.Binary(op, e1, e2, Type.Int16, loc).toSuccess
-                case (Type.Int32, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Int32, loc).toSuccess
-                case (Type.Int64, Type.Int64) => TypedAst.Expression.Binary(op, e1, e2, Type.Int64, loc).toSuccess
-                case (Type.BigInt, Type.BigInt) => TypedAst.Expression.Binary(op, e1, e2, Type.BigInt, loc).toSuccess
-                case (t1, t2) => TypeError.ExpectedEqualTypes(t1, t2, e1.loc, e2.loc).toFailure
-              }
-            }
-          case _: EqualityOperator =>
-            @@(visit(re1, env), visit(re2, env)) flatMap {
-              case (e1, e2) => expectEqual(e1.tpe, e2.tpe, e1.loc, e2.loc) map {
-                case tpe => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc)
-              }
-            }
-          case _: ComparisonOperator =>
-            @@(visit(re1, env), visit(re2, env)) flatMap {
-              case (e1, e2) => (e1.tpe, e2.tpe) match {
-                case (Type.Char, Type.Char) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess
-                case (Type.Float32, Type.Float32) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess
-                case (Type.Float64, Type.Float64) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess
-                case (Type.Int8, Type.Int8) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess
-                case (Type.Int16, Type.Int16) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess
-                case (Type.Int32, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess
-                case (Type.Int64, Type.Int64) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess
-                case (Type.BigInt, Type.BigInt) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc).toSuccess
-                case (t1, t2) => TypeError.ExpectedEqualTypes(t1, t2, e1.loc, e2.loc).toFailure
-              }
-            }
-          case _: LogicalOperator =>
-            @@(visit(re1, env), visit(re2, env)) flatMap {
-              case (e1, e2) => @@(expect(Type.Bool, e1.tpe, e1.loc), expect(Type.Bool, e2.tpe, e2.loc)) map {
-                case (tpe1, tpe2) => TypedAst.Expression.Binary(op, e1, e2, Type.Bool, loc)
-              }
-            }
-          case _: BitwiseOperator =>
-            if (op == BinaryOperator.BitwiseLeftShift || op == BinaryOperator.BitwiseRightShift) {
-              // The shift is always Int32.
-              @@(visit(re1, env), visit(re2, env)) flatMap {
-                case (e1, e2) => (e1.tpe, e2.tpe) match {
-                  case (Type.Int8, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Int8, loc).toSuccess
-                  case (Type.Int16, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Int16, loc).toSuccess
-                  case (Type.Int32, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Int32, loc).toSuccess
-                  case (Type.Int64, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Int64, loc).toSuccess
-                  case (Type.BigInt, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.BigInt, loc).toSuccess
-                  case (t1, t2) => TypeError.ExpectedEqualTypes(t1, t2, e1.loc, e2.loc).toFailure // TODO: Wrong error message.
-                }
-              }
-            } else {
-              @@(visit(re1, env), visit(re2, env)) flatMap {
-                case (e1, e2) => (e1.tpe, e2.tpe) match {
-                  case (Type.Int8, Type.Int8) => TypedAst.Expression.Binary(op, e1, e2, Type.Int8, loc).toSuccess
-                  case (Type.Int16, Type.Int16) => TypedAst.Expression.Binary(op, e1, e2, Type.Int16, loc).toSuccess
-                  case (Type.Int32, Type.Int32) => TypedAst.Expression.Binary(op, e1, e2, Type.Int32, loc).toSuccess
-                  case (Type.Int64, Type.Int64) => TypedAst.Expression.Binary(op, e1, e2, Type.Int64, loc).toSuccess
-                  case (Type.BigInt, Type.BigInt) => TypedAst.Expression.Binary(op, e1, e2, Type.BigInt, loc).toSuccess
-                  case (t1, t2) => TypeError.ExpectedEqualTypes(t1, t2, e1.loc, e2.loc).toFailure // TODO: Wrong error message.
-                }
-              }
-            }
+        // Visit every fact in the program.
+        val result = program.facts.toList.flatMap {
+          case (ns, facts) => facts.map(f => visitFact(f, ns))
         }
 
-        case ResolvedAst.Expression.IfThenElse(re1, re2, re3, loc) =>
-          @@(visit(re1, env), visit(re2, env), visit(re3, env)) flatMap {
-            case (e1, e2, e3) =>
-              val conditionType = expect(Type.Bool, e1.tpe, e1.loc)
-              val expressionType = expectEqual(e2.tpe, e3.tpe, e2.loc, e3.loc)
-              #@(conditionType, expressionType) map {
-                case tpe => TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, loc)
-              }
-          }
+        // Sequence the results and convert them back to a map.
+        Result.seqM(result)
+      }
 
-        case ResolvedAst.Expression.Switch(rules, loc) =>
-          val (rconds, rbodies) = rules.unzip
-          // type the conditions against bool
-          val condsVal = @@(rconds map {
-            case cond => visit(cond, env) flatMap {
-              case e => expect(Type.Bool, e.tpe, e.loc) map {
-                case tpe => e
-              }
-            }
-          })
-
-          val bodiesVal = @@(rbodies map {
-            case body => visit(body, env)
-          })
-
-          @@(condsVal, bodiesVal) flatMap {
-            case (conds, bodies) =>
-              expectEqual(bodies.map(body => (body.tpe, body.loc))) map {
-                case tpe => TypedAst.Expression.Switch(conds zip bodies, tpe, loc)
-              }
-          }
-
-        case ResolvedAst.Expression.Let(ident, rvalue, rbody, loc) =>
-          visit(rvalue, env) flatMap {
-            case value => visit(rbody, env + (ident.name -> value.tpe)) map {
-              case body => TypedAst.Expression.Let(ident, value, body, body.tpe, loc)
-            }
-          }
-
-        // TODO: Peer review
-        case ResolvedAst.Expression.Match(re, rs, loc) =>
-          visit(re, env) flatMap {
-            case matchValue =>
-              val rulesVal = rs map {
-                case (pat, body) =>
-                  // type the pattern of the rule against the type of the match value.
-                  Pattern.typer(pat, matchValue.tpe, root) flatMap {
-                    // type the body of the rule under the extended environment provided by the pattern.
-                    case typedPat => visit(body, env ++ typedPat.freeVars) map {
-                      case typedBody => (typedPat, typedBody)
+      // TODO: DOC
+      def typecheckRules(program: Program)(implicit genSym: GenSym): Result[List[TypedAst.Declaration.Rule], TypeError] = {
+        val rules = program.rules.flatMap {
+          case (ns, rs) => rs map {
+            case NamedAst.Declaration.Rule(head0, body0, loc) =>
+              Predicates.infer(head0, ns, program) match {
+                case InferMonad(run1) =>
+                  val (subst, _) = run1(Substitution.empty).get
+                  val head = Predicates.reassemble(head0, ns, program, subst)
+                  val body = body0.map {
+                    case b => Predicates.infer(b, ns, program) match {
+                      case InferMonad(run2) =>
+                        val (subst2, _) = run2(Substitution.empty).get
+                        Predicates.reassemble(b, ns, program, subst2)
                     }
                   }
+                  TypedAst.Declaration.Rule(head, body, loc)
               }
-              @@(rulesVal) flatMap {
-                case rules =>
-                  // ensure that the body of every rule has the same type.
-                  expectEqual(rules.map(p => (p._2.tpe, p._2.loc))) map {
-                    case tpe => TypedAst.Expression.Match(matchValue, rules, tpe, loc)
+          }
+        }
+        Ok(rules.toList)
+      }
+
+    }
+
+    object Definitions {
+
+      /**
+        * Performs type inference and reassembly on all definitions in the given program.
+        *
+        * Returns [[Err]] if a definition fails to type check.
+        */
+      def typecheck(program: Program)(implicit genSym: GenSym): Result[Map[Symbol.DefnSym, TypedAst.Declaration.Definition], TypeError] = {
+        /**
+          * Performs type inference and reassembly on the given definition `defn` in the given namespace `ns`.
+          */
+        def visitDefn(defn: NamedAst.Declaration.Definition, ns: Name.NName): Result[(Symbol.DefnSym, TypedAst.Declaration.Definition), TypeError] = defn match {
+          case NamedAst.Declaration.Definition(doc, ann, sym, tparams, params, exp, tpe, loc) =>
+            infer(defn, ns, program) map {
+              case d => sym -> d
+            }
+        }
+
+        // Visit every definition in the program.
+        val result = program.definitions.toList.flatMap {
+          case (ns, defns) => defns.map {
+            case (name, defn) => visitDefn(defn, ns)
+          }
+        }
+
+        // Sequence the results and convert them back to a map.
+        Result.seqM(result).map(_.toMap)
+      }
+
+      /**
+        * Infers the type of the given definition `defn0` in the given namespace `ns0`.
+        */
+      // TODO: Cleanup
+      def infer(defn0: NamedAst.Declaration.Definition, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): Result[TypedAst.Declaration.Definition, TypeError] = {
+        // Resolve the declared scheme.
+        val declaredScheme = Disambiguation.resolve(defn0.sc, ns0, program) match {
+          case Ok(scheme) => scheme
+          case Err(e) => return Err(e)
+        }
+
+        // TODO: Some duplication
+        val argumentTypes = Disambiguation.resolve(defn0.params.map(_.tpe), ns0, program) match {
+          case Ok(tpes) => tpes
+          case Err(e) => return Err(e)
+        }
+
+        val result = for (
+          resultType <- Expressions.infer(defn0.exp, ns0, program);
+          unifiedType <- unifyM(Scheme.instantiate(declaredScheme), Type.mkArrow(argumentTypes, resultType), defn0.loc)
+        ) yield unifiedType
+
+        // TODO: See if this can be rewritten nicer
+        result match {
+          case InferMonad(run) =>
+            val subst = getSubstFromParams(defn0.params, ns0, program).get
+            run(subst) match {
+              case Ok((subst0, resultType)) =>
+                val exp = Expressions.reassemble(defn0.exp, ns0, program, subst0)
+
+                val tparams = defn0.tparams.map {
+                  case NamedAst.TypeParam(name, tpe, loc) =>
+                    TypedAst.TypeParam(name, tpe, loc)
+                }
+
+                // Translate the named formals into typed formals.
+                val formals = defn0.params.map {
+                  case NamedAst.FormalParam(sym, tpe, loc) =>
+                    TypedAst.FormalParam(sym, subst0(sym.tvar), sym.loc)
+                }
+
+                Ok(TypedAst.Declaration.Definition(defn0.doc, defn0.ann, defn0.sym, tparams, formals, exp, resultType, defn0.loc))
+
+              case Err(e) => Err(e)
+            }
+        }
+      }
+
+    }
+
+    object Enums {
+      /**
+        * Performs type inference and reassembly on all enums in the given program.
+        */
+      def typecheck(program: Program): Result[Map[Symbol.EnumSym, TypedAst.Declaration.Enum], TypeError] = {
+        /**
+          * Performs type resolution on the given enum and its cases.
+          */
+        def visitEnum(enum: NamedAst.Declaration.Enum, ns: Name.NName): Result[(Symbol.EnumSym, TypedAst.Declaration.Enum), TypeError] = enum match {
+          case NamedAst.Declaration.Enum(doc, sym, tparams, cases0, scheme0, loc) =>
+            val casesResult = cases0 map {
+              case (name, NamedAst.Case(enumName, tagName, tpe)) =>
+                Disambiguation.resolve(tpe, ns, program).map {
+                  case t => name -> TypedAst.Case(enumName, tagName, t)
+                }
+            }
+
+            for {
+              cases <- Result.seqM(casesResult.toList)
+              scheme <- Disambiguation.resolve(scheme0, ns, program)
+            } yield sym -> TypedAst.Declaration.Enum(doc, sym, cases.toMap, scheme, loc)
+        }
+
+        // Visit every enum in the program.
+        val result = program.enums.toList.flatMap {
+          case (ns, enums) => enums.map {
+            case (name, enum) => visitEnum(enum, ns)
+          }
+        }
+
+        // Sequence the results and convert them back to a map.
+        Result.seqM(result).map(_.toMap)
+      }
+    }
+
+    object Indexes {
+
+      /**
+        * Performs type inference and reassembly on all indexes in the given program.
+        *
+        * Returns [[Err]] if an index refers to a non-existent table or a non-existent attribute in a table.
+        */
+      def typecheck(program: Program): Result[Map[Symbol.TableSym, TypedAst.Declaration.Index], TypeError] = {
+
+        /**
+          * Checks that the referenced table exists and that every attribute used by the index exists.
+          */
+        def visitIndex(index: NamedAst.Declaration.Index, ns: Name.NName): Result[(Symbol.TableSym, TypedAst.Declaration.Index), TypeError] = index match {
+          case NamedAst.Declaration.Index(qname, indexes, loc) =>
+            // Lookup the referenced table.
+            Disambiguation.lookupTable(qname, ns, program) flatMap {
+              case table =>
+                val declaredAttributes = table.attr.map(_.ident.name)
+                // Iterate through every index in the declaration.
+                for (index <- indexes) {
+                  // Iterate through every attribute name in the current index.
+                  for (referencedAttribute <- index) {
+                    if (!(declaredAttributes contains referencedAttribute.name)) {
+                      return Err(TypeError.UnresolvedAttribute(referencedAttribute, referencedAttribute.loc))
+                    }
                   }
+                }
+                Ok(table.sym -> TypedAst.Declaration.Index(table.sym, indexes, loc))
+            }
+        }
+
+        // Visit every index in the program.
+        val result = program.indexes.toList.flatMap {
+          case (ns, indexes) => indexes.map {
+            case (name, index) => visitIndex(index, ns)
+          }
+        }
+
+        // Sequence the results and convert them back to a map.
+        Result.seqM(result).map(_.toMap)
+      }
+
+    }
+
+    object Lattices {
+
+      /**
+        * Performs type inference and reassembly on all lattices in the given program.
+        *
+        * Returns [[Err]] if a type error occurs.
+        */
+      def typecheck(program: Program)(implicit genSym: GenSym): Result[Map[Type, TypedAst.Declaration.BoundedLattice], TypeError] = {
+
+        /**
+          * Performs type inference and reassembly on the given `lattice`.
+          */
+        def visitLattice(lattice: NamedAst.Declaration.BoundedLattice): Result[(Type, TypedAst.Declaration.BoundedLattice), TypeError] = lattice match {
+          case NamedAst.Declaration.BoundedLattice(tpe, e1, e2, e3, e4, e5, ns, loc) =>
+            // Perform type resolution on the declared type.
+            Disambiguation.resolve(tpe, ns, program) flatMap {
+              case declaredType =>
+
+                // Perform type inference on each of the lattice components.
+                val m = for {
+                  botType <- Expressions.infer(e1, ns, program)
+                  topType <- Expressions.infer(e2, ns, program)
+                  leqType <- Expressions.infer(e3, ns, program)
+                  lubType <- Expressions.infer(e4, ns, program)
+                  glbType <- Expressions.infer(e5, ns, program)
+                  _______ <- unifyM(botType, declaredType, loc)
+                  _______ <- unifyM(topType, declaredType, loc)
+                  _______ <- unifyM(leqType, Type.mkArrow(List(declaredType, declaredType), Type.Bool), loc)
+                  _______ <- unifyM(lubType, Type.mkArrow(List(declaredType, declaredType), declaredType), loc)
+                  _______ <- unifyM(glbType, Type.mkArrow(List(declaredType, declaredType), declaredType), loc)
+                } yield declaredType
+
+                // Evaluate the type inference monad with the empty substitution
+                m.run(Substitution.empty) map {
+                  case (subst, _) =>
+                    // Reassemble the lattice components.
+                    val bot = Expressions.reassemble(e1, ns, program, subst)
+                    val top = Expressions.reassemble(e2, ns, program, subst)
+                    val leq = Expressions.reassemble(e3, ns, program, subst)
+                    val lub = Expressions.reassemble(e4, ns, program, subst)
+                    val glb = Expressions.reassemble(e5, ns, program, subst)
+
+                    declaredType -> TypedAst.Declaration.BoundedLattice(declaredType, bot, top, leq, lub, glb, loc)
+                }
+            }
+        }
+
+
+        // Visit every lattice in the program.
+        val result = program.lattices.toList.map {
+          case (_, lattice) => visitLattice(lattice)
+        }
+
+        // Sequence the results and convert them back to a map.
+        Result.seqM(result).map(_.toMap)
+      }
+
+    }
+
+    object Tables {
+
+      /**
+        * Performs type inference and reassembly on all tables in the given program.
+        *
+        * Returns [[Err]] if type resolution fails.
+        */
+      def typecheck(program: Program): Result[Map[Symbol.TableSym, TypedAst.Table], TypeError] = {
+
+        /**
+          * Performs type resolution on the given `table` declared in the namespace `ns`.
+          *
+          * Returns [[Err]] if a type is unresolved.
+          */
+        def visitTable(table: NamedAst.Table, ns: Name.NName): Result[(Symbol.TableSym, TypedAst.Table), TypeError] = table match {
+          case NamedAst.Table.Relation(doc, sym, attr, loc) =>
+            for (typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a, ns))))
+              yield sym -> TypedAst.Table.Relation(doc, sym, typedAttributes, loc)
+          case NamedAst.Table.Lattice(doc, sym, keys, value, loc) =>
+            for {
+              typedKeys <- Result.seqM(keys.map(a => visitAttribute(a, ns)))
+              typedVal <- visitAttribute(value, ns)
+            } yield sym -> TypedAst.Table.Lattice(doc, sym, typedKeys, typedVal, loc)
+        }
+
+        /**
+          * Performs type resolution on the given attribute `attr` declared in the namespace `ns`.
+          */
+        def visitAttribute(attr: NamedAst.Attribute, ns: Name.NName): Result[TypedAst.Attribute, TypeError] = attr match {
+          case NamedAst.Attribute(ident, tpe, loc) =>
+            // Resolve the declared type.
+            Disambiguation.resolve(tpe, ns, program) map {
+              case resolvedType => TypedAst.Attribute(ident.name, resolvedType, loc)
+            }
+        }
+
+        // Visit every table in the program.
+        val result = program.tables.toList.flatMap {
+          case (ns, tables) => tables.map {
+            case (name, table) => visitTable(table, ns)
+          }
+        }
+
+        // Sequence the results and convert them back to a map.
+        Result.seqM(result).map(_.toMap)
+      }
+
+    }
+
+  }
+
+  object Expressions {
+
+    /**
+      * Infers the type of the given expression `exp0` in the namespace `ns0` and `program`.
+      */
+    def infer(exp0: NamedAst.Expression, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = {
+
+      /**
+        * Infers the type of the given expression `exp0` inside the inference monad.
+        */
+      def visitExp(e0: NamedAst.Expression): InferMonad[Type] = e0 match {
+
+        /*
+         * Wildcard expression.
+         */
+        case NamedAst.Expression.Wild(tpe, loc) => liftM(tpe)
+
+        /*
+         * Variable expression.
+         */
+        case NamedAst.Expression.Var(sym, loc) => liftM(sym.tvar)
+
+        /*
+         * Reference expression.
+         */
+        case NamedAst.Expression.Ref(ref, tvar, loc) =>
+          Disambiguation.lookupRef(ref, ns0, program) match {
+            case Ok(RefTarget.Defn(ns, defn)) =>
+              Disambiguation.resolve(defn.sc, ns, program) match {
+                case Ok(scheme) => unifyM(tvar, Scheme.instantiate(scheme), loc)
+                case Err(e) => failM(e)
               }
+            case Ok(RefTarget.Hook(hook)) => liftM(hook.tpe)
+            case Err(e) => failM(e)
           }
 
-        case ResolvedAst.Expression.Tag(enumName, tagName, re, loc) =>
-          visit(re, env) flatMap {
-            case e =>
-              val enum = root.enums(enumName)
-              val cases = enum.cases.map { case (k, v) => k -> v.asInstanceOf[Type.Tag] }
-              val caze = cases(tagName.name)
-              expect(caze.tpe, e.tpe, e.loc) map {
-                _ => TypedAst.Expression.Tag(enumName, tagName, e, Type.Enum(enumName, cases), loc)
-              }
+        /*
+         * Literal expression.
+         */
+        case NamedAst.Expression.Unit(loc) => liftM(Type.Unit)
+        case NamedAst.Expression.True(loc) => liftM(Type.Bool)
+        case NamedAst.Expression.False(loc) => liftM(Type.Bool)
+        case NamedAst.Expression.Char(lit, loc) => liftM(Type.Char)
+        case NamedAst.Expression.Float32(lit, loc) => liftM(Type.Float32)
+        case NamedAst.Expression.Float64(lit, loc) => liftM(Type.Float64)
+        case NamedAst.Expression.Int8(lit, loc) => liftM(Type.Int8)
+        case NamedAst.Expression.Int16(lit, loc) => liftM(Type.Int16)
+        case NamedAst.Expression.Int32(lit, loc) => liftM(Type.Int32)
+        case NamedAst.Expression.Int64(lit, loc) => liftM(Type.Int64)
+        case NamedAst.Expression.BigInt(lit, loc) => liftM(Type.BigInt)
+        case NamedAst.Expression.Str(lit, loc) => liftM(Type.Str)
+
+        /*
+         * Lambda expression.
+         */
+        case NamedAst.Expression.Lambda(args, body, tvar, loc) =>
+          val argumentTypes = args.map(_.tvar)
+          for (
+            inferredBodyType <- visitExp(body);
+            resultType <- unifyM(tvar, Type.mkArrow(argumentTypes, inferredBodyType), loc)
+          ) yield resultType
+
+        /*
+         * Apply expression.
+         */
+        case NamedAst.Expression.Apply(lambda, actuals, tvar, loc) =>
+          val freshResultType = Type.freshTypeVar()
+          for (
+            inferredLambdaType <- visitExp(lambda);
+            inferredArgumentTypes <- seqM(actuals.map(visitExp));
+            expectedLambdaType <- unifyM(inferredLambdaType, Type.mkArrow(inferredArgumentTypes, freshResultType), loc);
+            resultType <- unifyM(freshResultType, tvar, loc)
+          ) yield resultType
+
+        /*
+         * Unary expression.
+         */
+        case NamedAst.Expression.Unary(op, exp1, tvar, loc) => op match {
+          case UnaryOperator.LogicalNot =>
+            for (
+              tpe <- visitExp(exp1);
+              res <- unifyM(tvar, tpe, Type.Bool, loc)
+            ) yield res
+
+          case UnaryOperator.Plus =>
+            for (
+              tpe <- visitExp(exp1);
+              res <- unifyM(tvar, tpe, loc)
+            ) yield res
+
+          case UnaryOperator.Minus =>
+            for (
+              tpe <- visitExp(exp1);
+              res <- unifyM(tvar, tpe, loc)
+            ) yield res
+
+          case UnaryOperator.BitwiseNegate =>
+            for (
+              tpe <- visitExp(exp1);
+              res <- unifyM(tvar, tpe, loc)
+            ) yield res
+        }
+
+        /*
+         * Binary expression.
+         */
+        case NamedAst.Expression.Binary(op, exp1, exp2, tvar, loc) => op match {
+          case BinaryOperator.Plus =>
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              resultType <- unifyM(tvar, tpe1, tpe2, loc)
+            ) yield resultType
+
+          case BinaryOperator.Minus =>
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              resultType <- unifyM(tvar, tpe1, tpe2, loc)
+            ) yield resultType
+
+          case BinaryOperator.Times =>
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              resultType <- unifyM(tvar, tpe1, tpe2, loc)
+            ) yield resultType
+
+          case BinaryOperator.Divide =>
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              resultType <- unifyM(tvar, tpe1, tpe2, loc)
+            ) yield resultType
+
+          case BinaryOperator.Modulo =>
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              resultType <- unifyM(tvar, tpe1, tpe2, loc)
+            ) yield resultType
+
+          case BinaryOperator.Exponentiate =>
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              resultType <- unifyM(tvar, tpe1, tpe2, loc)
+            ) yield resultType
+
+          case BinaryOperator.Equal | BinaryOperator.NotEqual =>
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              ____ <- unifyM(tpe1, tpe2, loc);
+              resultType <- unifyM(tvar, Type.Bool, loc)
+            ) yield resultType
+
+          case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual =>
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              ____ <- unifyM(tpe1, tpe2, loc);
+              resultType <- unifyM(tvar, Type.Bool, loc)
+            ) yield resultType
+
+          case BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr | BinaryOperator.Implication | BinaryOperator.Biconditional =>
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              resultType <- unifyM(tvar, tpe1, tpe2, Type.Bool, loc)
+            ) yield resultType
+
+          case BinaryOperator.BitwiseAnd | BinaryOperator.BitwiseOr | BinaryOperator.BitwiseXor =>
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              resultType <- unifyM(tvar, tpe1, tpe2, loc)
+            ) yield resultType
+
+          case BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift =>
+            for (
+              tpe1 <- visitExp(exp1);
+              tpe2 <- visitExp(exp2);
+              lhsType <- unifyM(tvar, tpe1, loc);
+              rhsType <- unifyM(tpe2, Type.Int32, loc)
+            ) yield lhsType
+        }
+
+        /*
+         * Let expression.
+         */
+        case NamedAst.Expression.Let(sym, exp1, exp2, tvar, loc) =>
+          for (
+            tpe1 <- visitExp(exp1);
+            tpe2 <- visitExp(exp2);
+            boundVar <- unifyM(sym.tvar, tpe1, loc);
+            resultVar <- unifyM(tvar, tpe2, loc)
+          ) yield resultVar
+
+        /*
+         * If-then-else expression.
+         */
+        case NamedAst.Expression.IfThenElse(exp1, exp2, exp3, tvar, loc) =>
+          for (
+            tpe1 <- visitExp(exp1);
+            tpe2 <- visitExp(exp2);
+            tpe3 <- visitExp(exp3);
+            ____ <- unifyM(Type.Bool, tpe1, loc);
+            rtpe <- unifyM(tvar, tpe2, tpe3, loc)
+          ) yield rtpe
+
+        /*
+         * Match expression.
+         */
+        case NamedAst.Expression.Match(exp1, rules, tvar, loc) =>
+          assert(rules.nonEmpty)
+          val patterns = rules.map(_._1)
+          val bodies = rules.map(_._2)
+          for {
+            matchType <- visitExp(exp1)
+            patternTypes <- seqM(patterns map visitPat)
+            patternType <- unifyM(patternTypes, loc)
+            ___________ <- unifyM(matchType, patternType, loc)
+            actualBodyTypes <- seqM(bodies map visitExp)
+            resultType <- unifyM(tvar :: actualBodyTypes, loc)
+          } yield resultType
+
+        /*
+           * Switch expression.
+           */
+        case NamedAst.Expression.Switch(rules, tvar, loc) =>
+          assert(rules.nonEmpty)
+          val condExps = rules.map(_._1)
+          val bodyExps = rules.map(_._2)
+          for (
+            actualCondTypes <- seqM(condExps map visitExp);
+            actualBodyTypes <- seqM(bodyExps map visitExp);
+            unifiedCondTypes <- unifyM(Type.Bool :: actualCondTypes, loc);
+            unifiedBodyType <- unifyM(actualBodyTypes, loc);
+            resultType <- unifyM(tvar, unifiedBodyType, loc)
+          ) yield resultType
+
+        /*
+         * Tag expression.
+         */
+        case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
+          Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
+            case Ok(decl) => Disambiguation.resolve(decl.sc, ns0, program) match {
+              case Ok(scheme) =>
+                val enumType = Scheme.instantiate(scheme)
+                val cazeType = getEnumType(enumType).cases(tag.name)
+                for (
+                  innerType <- visitExp(exp);
+                  _________ <- unifyM(innerType, cazeType, loc);
+                  resultType <- unifyM(tvar, enumType, loc)
+                ) yield resultType
+              case Err(e) => failM(e)
+            }
+            case Err(e) => failM(e)
           }
 
-        case ResolvedAst.Expression.Tuple(relms, loc) =>
-          @@(relms map (e => visit(e, env))) map {
-            case elms => TypedAst.Expression.Tuple(elms, Type.Tuple(elms map (_.tpe)), loc)
+        /*
+         * Tuple expression.
+         */
+        case NamedAst.Expression.Tuple(elms, tvar, loc) =>
+          for (
+            elementTypes <- seqM(elms.map(visitExp));
+            resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
+          ) yield resultType
+
+        /*
+         * Nil expression.
+         */
+        case NamedAst.Expression.FNil(tvar, loc) =>
+          val freshElmVar = Type.freshTypeVar()
+          unifyM(Type.mkFList(freshElmVar), tvar, loc)
+
+        /*
+         * List expression.
+         */
+        case NamedAst.Expression.FList(head, tail, tvar, loc) =>
+          for (
+            headType <- visitExp(head);
+            tailType <- visitExp(tail);
+            resultType <- unifyM(tvar, Type.mkFList(headType), tailType, loc)
+          ) yield resultType
+
+        /*
+         * Vector expression.
+         */
+        case NamedAst.Expression.FVec(elms, tvar, loc) =>
+          val elementType = Type.freshTypeVar()
+          for (
+            actualTypes <- seqM(elms map visitExp);
+            unifiedType <- unifyM(elementType :: actualTypes, loc);
+            resultType <- unifyM(tvar, Type.mkFVec(unifiedType), loc)
+          ) yield resultType
+
+        /*
+         * Set expression.
+         */
+        case NamedAst.Expression.FSet(elms, tvar, loc) =>
+          val elementType = Type.freshTypeVar()
+          for (
+            actualTypes <- seqM(elms map visitExp);
+            unifiedType <- unifyM(elementType :: actualTypes, loc);
+            resultType <- unifyM(tvar, Type.mkFSet(unifiedType), loc)
+          ) yield resultType
+
+        /*
+         * Map expression.
+         */
+        case NamedAst.Expression.FMap(elms, tvar, loc) =>
+          val keyType = Type.freshTypeVar()
+          val valType = Type.freshTypeVar()
+
+          val keys = elms.map(_._1)
+          val vals = elms.map(_._2)
+
+          for (
+            actualKeyTypes <- seqM(keys map visitExp);
+            actualValTypes <- seqM(vals map visitExp);
+            unifiedKeyType <- unifyM(keyType :: actualKeyTypes, loc);
+            unifiedValType <- unifyM(valType :: actualValTypes, loc);
+            resultType <- unifyM(tvar, Type.mkFMap(unifiedKeyType, unifiedValType), loc)
+          ) yield resultType
+
+        /*
+         * GetIndex expression.
+         */
+        case NamedAst.Expression.GetIndex(exp1, exp2, tvar, loc) =>
+          for (
+            tpe1 <- visitExp(exp1);
+            tpe2 <- visitExp(exp2);
+            ____ <- unifyM(tpe1, Type.mkFVec(tvar), loc);
+            ____ <- unifyM(tpe2, Type.Int32, loc)
+          ) yield tvar
+
+        /*
+         * PutIndex expression.
+         */
+        case NamedAst.Expression.PutIndex(exp1, exp2, exp3, tvar, loc) =>
+          val elementType = Type.freshTypeVar()
+          for (
+            tpe1 <- visitExp(exp1);
+            tpe2 <- visitExp(exp2);
+            tpe3 <- visitExp(exp3);
+            ____ <- unifyM(tpe2, Type.Int32, loc);
+            ____ <- unifyM(tpe3, elementType, loc);
+            resultType <- unifyM(tvar, tpe1, Type.mkFVec(elementType), loc)
+          ) yield resultType
+
+        /*
+         * Existential expression.
+         */
+        case NamedAst.Expression.Existential(params, exp, loc) =>
+          // NB: An existential behaves very much like a lambda.
+          for {
+            bodyType <- visitExp(exp)
+            resultType <- unifyM(bodyType, Type.Bool, loc)
+          } yield resultType
+
+        /*
+         * Universal expression.
+         */
+        case NamedAst.Expression.Universal(params, exp, loc) =>
+          // NB: An existential behaves very much like a lambda.
+          for {
+            bodyType <- visitExp(exp)
+            resultType <- unifyM(bodyType, Type.Bool, loc)
+          } yield resultType
+
+        /*
+         * Ascribe expression.
+         */
+        case NamedAst.Expression.Ascribe(exp, expectedType, loc) =>
+          Disambiguation.resolve(expectedType, ns0, program) match {
+            case Ok(resolvedType) =>
+              for (
+                actualType <- visitExp(exp);
+                resultType <- unifyM(actualType, resolvedType, loc)
+              ) yield resultType
+            case Err(e) => failM(e)
           }
 
-        case ResolvedAst.Expression.Set(relms, loc) =>
-          @@(relms map (e => visit(e, env))) flatMap {
-            case elms =>
-              val tpes = elms.map(e => (e.tpe, e.loc))
-              expectEqual(tpes) map {
-                case tpe => TypedAst.Expression.FSet(elms, Type.FSet(tpe), loc)
-              }
-          }
+        /*
+         * User Error expression.
+         */
+        case NamedAst.Expression.UserError(tvar, loc) => liftM(tvar)
 
-        case ResolvedAst.Expression.Ascribe(re, tpe, loc) =>
-          visit(re, env) flatMap {
-            case e => expect(tpe, e.tpe, loc) map {
-              case _ => e
+      }
+
+      /**
+        * Infers the type of the given pattern `pat0`.
+        */
+      def visitPat(pat0: NamedAst.Pattern): InferMonad[Type] = pat0 match {
+        case NamedAst.Pattern.Wild(tvar, loc) => liftM(tvar)
+        case NamedAst.Pattern.Var(sym, tvar, loc) => unifyM(sym.tvar, tvar, loc)
+        case NamedAst.Pattern.Unit(loc) => liftM(Type.Unit)
+        case NamedAst.Pattern.True(loc) => liftM(Type.Bool)
+        case NamedAst.Pattern.False(loc) => liftM(Type.Bool)
+        case NamedAst.Pattern.Char(c, loc) => liftM(Type.Char)
+        case NamedAst.Pattern.Float32(i, loc) => liftM(Type.Float32)
+        case NamedAst.Pattern.Float64(i, loc) => liftM(Type.Float64)
+        case NamedAst.Pattern.Int8(i, loc) => liftM(Type.Int8)
+        case NamedAst.Pattern.Int16(i, loc) => liftM(Type.Int16)
+        case NamedAst.Pattern.Int32(i, loc) => liftM(Type.Int32)
+        case NamedAst.Pattern.Int64(i, loc) => liftM(Type.Int64)
+        case NamedAst.Pattern.BigInt(i, loc) => liftM(Type.BigInt)
+        case NamedAst.Pattern.Str(s, loc) => liftM(Type.Str)
+        case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
+          Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
+            case Ok(decl) => Disambiguation.resolve(decl.sc, ns0, program) match {
+              case Ok(scheme) =>
+                val enumType = Scheme.instantiate(scheme)
+                val cazeType = getEnumType(enumType).cases(tag.name)
+                for (
+                  innerType <- visitPat(pat);
+                  _________ <- unifyM(innerType, cazeType, loc);
+                  resultType <- unifyM(tvar, enumType, loc)
+                ) yield resultType
+              case Err(e) => failM(e)
+            }
+            case Err(e) => failM(e)
+          }
+        case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
+          for (
+            elementTypes <- seqM(elms map visitPat);
+            resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
+          ) yield resultType
+        case NamedAst.Pattern.FNil(tvar, loc) => liftM(Type.mkFList(tvar))
+        case NamedAst.Pattern.FList(hd, tl, tvar, loc) =>
+          for {
+            inferredHeadType <- visitPat(hd)
+            inferredTailType <- visitPat(tl)
+            inferredListType <- unifyM(Type.mkFList(inferredHeadType), inferredTailType, loc)
+            resultType <- unifyM(tvar, inferredListType, loc)
+          } yield resultType
+        case NamedAst.Pattern.FVec(elms, rest, tvar, loc) =>
+          // Introduce a fresh type variable for the type of the elements in the vector.
+          val elementType = Type.freshTypeVar()
+
+          // Perform type inference for the elements.
+          val m = for {
+            inferredElementTypes <- seqM(elms.map(visitPat))
+            unifiedElementType <- unifyM(elementType :: inferredElementTypes, loc)
+            resultType <- unifyM(tvar, Type.mkFVec(elementType), loc)
+          } yield resultType
+
+          // Check if there is a rest, if so unify it with the result type.
+          rest match {
+            case None => m
+            case Some(remainder) =>
+              for {
+                resultType <- m
+                inferredRemainderType <- visitPat(remainder)
+                unifiedType <- unifyM(inferredRemainderType, resultType, loc)
+              } yield unifiedType
+          }
+        case NamedAst.Pattern.FSet(elms, rest, tvar, loc) =>
+          ??? // TODO: FSet
+
+        case NamedAst.Pattern.FMap(elms, rest, tvar, loc) =>
+          ??? // TODO: FMap
+      }
+
+      visitExp(exp0)
+    }
+
+    /**
+      * Applies the given substitution `subst0` to the given expression `exp0` in the given namespace `ns0`.
+      */
+    def reassemble(exp0: NamedAst.Expression, ns0: Name.NName, program: Program, subst0: Substitution, resolveFreeVars: Boolean = false): TypedAst.Expression = {
+      /**
+        * Applies the given substitution `subst0` to the given expression `exp0`.
+        */
+      def visitExp(exp0: NamedAst.Expression, subst0: Substitution): TypedAst.Expression = exp0 match {
+        /*
+         * Wildcard expression.
+         */
+        case NamedAst.Expression.Wild(tvar, loc) => TypedAst.Expression.Wild(subst0(tvar), loc)
+
+        /*
+         * Variable expression.
+         */
+        case NamedAst.Expression.Var(sym, loc) =>
+          // TODO: Need better strategy for when to resolve free variables.
+          if (!resolveFreeVars) {
+            TypedAst.Expression.Var(sym, subst0(sym.tvar), loc)
+          } else {
+            val qname = Name.mkQName(sym.text)
+            Disambiguation.lookupRef(qname, ns0, program) match {
+              case Ok(RefTarget.Defn(ns, defn)) => TypedAst.Expression.Ref(defn.sym, subst0(sym.tvar), loc)
+              case Ok(RefTarget.Hook(hook)) => TypedAst.Expression.Hook(hook, subst0(sym.tvar), loc)
+              case Err(e) => TypedAst.Expression.Var(sym, subst0(sym.tvar), loc)
             }
           }
 
-        case ResolvedAst.Expression.Error(tpe, loc) =>
-          TypedAst.Expression.Error(tpe, loc).toSuccess
+        /*
+         * Reference expression.
+         */
+        case NamedAst.Expression.Ref(qname, tvar, loc) =>
+          Disambiguation.lookupRef(qname, ns0, program).get match {
+            case RefTarget.Defn(ns, defn) => TypedAst.Expression.Ref(defn.sym, subst0(tvar), loc)
+            case RefTarget.Hook(hook) => TypedAst.Expression.Hook(hook, hook.tpe, loc)
+          }
 
+        /*
+         * Literal expression.
+         */
+        case NamedAst.Expression.Unit(loc) => TypedAst.Expression.Unit(loc)
+        case NamedAst.Expression.True(loc) => TypedAst.Expression.True(loc)
+        case NamedAst.Expression.False(loc) => TypedAst.Expression.False(loc)
+        case NamedAst.Expression.Char(lit, loc) => TypedAst.Expression.Char(lit, loc)
+        case NamedAst.Expression.Float32(lit, loc) => TypedAst.Expression.Float32(lit, loc)
+        case NamedAst.Expression.Float64(lit, loc) => TypedAst.Expression.Float64(lit, loc)
+        case NamedAst.Expression.Int8(lit, loc) => TypedAst.Expression.Int8(lit, loc)
+        case NamedAst.Expression.Int16(lit, loc) => TypedAst.Expression.Int16(lit, loc)
+        case NamedAst.Expression.Int32(lit, loc) => TypedAst.Expression.Int32(lit, loc)
+        case NamedAst.Expression.Int64(lit, loc) => TypedAst.Expression.Int64(lit, loc)
+        case NamedAst.Expression.BigInt(lit, loc) => TypedAst.Expression.BigInt(lit, loc)
+        case NamedAst.Expression.Str(lit, loc) => TypedAst.Expression.Str(lit, loc)
+
+        /*
+         * Apply expression.
+         */
+        case NamedAst.Expression.Apply(lambda, actuals, tvar, loc) =>
+          val l = visitExp(lambda, subst0)
+          val as = actuals.map(e => visitExp(e, subst0))
+          TypedAst.Expression.Apply(l, as, subst0(tvar), loc)
+
+        /*
+         * Lambda expression.
+         */
+        case NamedAst.Expression.Lambda(params, exp, tvar, loc) =>
+          val lambdaArgs = params map {
+            case sym => TypedAst.FormalParam(sym, subst0(sym.tvar), sym.loc)
+          }
+          val lambdaBody = visitExp(exp, subst0)
+          val lambdaType = subst0(tvar)
+          TypedAst.Expression.Lambda(lambdaArgs, lambdaBody, lambdaType, loc)
+
+        /*
+         * Unary expression.
+         */
+        case NamedAst.Expression.Unary(op, exp, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.Unary(op, e, subst0(tvar), loc)
+
+        /*
+         * Binary expression.
+         */
+        case NamedAst.Expression.Binary(op, exp1, exp2, tvar, loc) =>
+          val e1 = visitExp(exp1, subst0)
+          val e2 = visitExp(exp2, subst0)
+          TypedAst.Expression.Binary(op, e1, e2, subst0(tvar), loc)
+
+        /*
+         * If-then-else expression.
+         */
+        case NamedAst.Expression.IfThenElse(exp1, exp2, exp3, tvar, loc) =>
+          val e1 = visitExp(exp1, subst0)
+          val e2 = visitExp(exp2, subst0)
+          val e3 = visitExp(exp3, subst0)
+          TypedAst.Expression.IfThenElse(e1, e2, e3, subst0(tvar), loc)
+
+        /*
+         * Let expression.
+         */
+        case NamedAst.Expression.Let(sym, exp1, exp2, tvar, loc) =>
+          val e1 = visitExp(exp1, subst0)
+          val e2 = visitExp(exp2, subst0)
+          TypedAst.Expression.Let(sym, e1, e2, subst0(tvar), loc)
+
+        /*
+         * Match expression.
+         */
+        case NamedAst.Expression.Match(exp1, rules, tvar, loc) =>
+          val e1 = visitExp(exp1, subst0)
+          val rs = rules map {
+            case (pat, exp) => visitPat(pat) -> visitExp(exp, subst0)
+          }
+          TypedAst.Expression.Match(e1, rs, subst0(tvar), loc)
+
+        /*
+         * Switch expression.
+         */
+        case NamedAst.Expression.Switch(rules, tvar, loc) =>
+          val rs = rules.map {
+            case (cond, body) => (visitExp(cond, subst0), visitExp(body, subst0))
+          }
+          TypedAst.Expression.Switch(rs, subst0(tvar), loc)
+
+        /*
+         * Tag expression.
+         */
+        case NamedAst.Expression.Tag(qname, tag, exp, tvar, loc) =>
+          Disambiguation.lookupEnumByTag(qname, tag, ns0, program) match {
+            case Ok(enum) =>
+              val e = visitExp(exp, subst0)
+              TypedAst.Expression.Tag(enum.sym, tag.name, e, subst0(tvar), loc)
+            case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
+          }
+
+        /*
+         * Tuple expression.
+         */
+        case NamedAst.Expression.Tuple(elms, tvar, loc) =>
+          val es = elms.map(e => visitExp(e, subst0))
+          TypedAst.Expression.Tuple(es, subst0(tvar), loc)
+
+        /*
+         * Nil expression.
+         */
+        case NamedAst.Expression.FNil(tvar, loc) =>
+          TypedAst.Expression.FNil(subst0(tvar), loc)
+
+        /*
+         * List expression.
+         */
+        case NamedAst.Expression.FList(hd, tl, tvar, loc) =>
+          val e1 = visitExp(hd, subst0)
+          val e2 = visitExp(tl, subst0)
+          TypedAst.Expression.FList(e1, e2, subst0(tvar), loc)
+
+        /*
+         * Vec expression.
+         */
+        case NamedAst.Expression.FVec(elms, tvar, loc) =>
+          val es = elms.map(e => visitExp(e, subst0))
+          TypedAst.Expression.FVec(es, subst0(tvar), loc)
+
+        /*
+         * Set expression.
+         */
+        case NamedAst.Expression.FSet(elms, tvar, loc) =>
+          val es = elms.map(e => visitExp(e, subst0))
+          TypedAst.Expression.FSet(es, subst0(tvar), loc)
+
+        /*
+         * Map expression.
+         */
+        case NamedAst.Expression.FMap(elms, tvar, loc) =>
+          val es = elms map {
+            case (key, value) => (visitExp(key, subst0), visitExp(value, subst0))
+          }
+          TypedAst.Expression.FMap(es, subst0(tvar), loc)
+
+        /*
+         * GetIndex expression.
+         */
+        case NamedAst.Expression.GetIndex(exp1, exp2, tvar, loc) =>
+          val e1 = visitExp(exp1, subst0)
+          val e2 = visitExp(exp2, subst0)
+          TypedAst.Expression.GetIndex(e1, e2, subst0(tvar), loc)
+
+        /*
+         * PutIndex expression.
+         */
+        case NamedAst.Expression.PutIndex(exp1, exp2, exp3, tvar, loc) =>
+          val e1 = visitExp(exp1, subst0)
+          val e2 = visitExp(exp2, subst0)
+          val e3 = visitExp(exp3, subst0)
+          TypedAst.Expression.PutIndex(e1, e2, e3, subst0(tvar), loc)
+
+        /*
+         * Existential expression.
+         */
+        case NamedAst.Expression.Existential(params, exp, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.Existential(visitParams(params), e, loc)
+
+        /*
+         * Universal expression.
+         */
+        case NamedAst.Expression.Universal(params, exp, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.Universal(visitParams(params), e, loc)
+
+        /*
+         * Ascribe expression.
+         */
+        case NamedAst.Expression.Ascribe(exp, tpe, loc) =>
+          // simply reassemble the nested expression.
+          visitExp(exp, subst0)
+
+        /*
+         * User Error expression.
+         */
+        case NamedAst.Expression.UserError(tvar, loc) =>
+          TypedAst.Expression.UserError(subst0(tvar), loc)
       }
 
-      visit(rast, env)
-    }
+      /**
+        * Applies the substitution to the given pattern `pat0`.
+        */
+      def visitPat(pat0: NamedAst.Pattern): TypedAst.Pattern = pat0 match {
+        case NamedAst.Pattern.Wild(tvar, loc) => TypedAst.Pattern.Wild(subst0(tvar), loc)
+        case NamedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(sym, subst0(tvar), loc)
+        case NamedAst.Pattern.Unit(loc) => TypedAst.Pattern.Unit(loc)
+        case NamedAst.Pattern.True(loc) => TypedAst.Pattern.True(loc)
+        case NamedAst.Pattern.False(loc) => TypedAst.Pattern.False(loc)
+        case NamedAst.Pattern.Char(lit, loc) => TypedAst.Pattern.Char(lit, loc)
+        case NamedAst.Pattern.Float32(lit, loc) => TypedAst.Pattern.Float32(lit, loc)
+        case NamedAst.Pattern.Float64(lit, loc) => TypedAst.Pattern.Float64(lit, loc)
+        case NamedAst.Pattern.Int8(lit, loc) => TypedAst.Pattern.Int8(lit, loc)
+        case NamedAst.Pattern.Int16(lit, loc) => TypedAst.Pattern.Int16(lit, loc)
+        case NamedAst.Pattern.Int32(lit, loc) => TypedAst.Pattern.Int32(lit, loc)
+        case NamedAst.Pattern.Int64(lit, loc) => TypedAst.Pattern.Int64(lit, loc)
+        case NamedAst.Pattern.BigInt(lit, loc) => TypedAst.Pattern.BigInt(lit, loc)
+        case NamedAst.Pattern.Str(lit, loc) => TypedAst.Pattern.Str(lit, loc)
+        case NamedAst.Pattern.Tag(qname, tag, pat, tvar, loc) =>
+          Disambiguation.lookupEnumByTag(qname, tag, ns0, program) match {
+            case Ok(enum) => TypedAst.Pattern.Tag(enum.sym, tag.name, visitPat(pat), subst0(tvar), loc)
+            case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
+          }
+        case NamedAst.Pattern.Tuple(elms, tvar, loc) => TypedAst.Pattern.Tuple(elms map visitPat, subst0(tvar), loc)
+        case NamedAst.Pattern.FNil(tvar, loc) => TypedAst.Pattern.FNil(subst0(tvar), loc)
+        case NamedAst.Pattern.FList(hd, tl, tvar, loc) => TypedAst.Pattern.FList(visitPat(hd), visitPat(tl), subst0(tvar), loc)
+        case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => TypedAst.Pattern.FVec(elms map visitPat, rest.map(visitPat), subst0(tvar), loc)
+        case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => TypedAst.Pattern.FSet(elms map visitPat, rest.map(visitPat), subst0(tvar), loc)
+        case NamedAst.Pattern.FMap(elms, rest, tvar, loc) =>
+          val es = elms map {
+            case (k, v) => (visitPat(k), visitPat(v))
+          }
+          TypedAst.Pattern.FMap(es, rest.map(visitPat), subst0(tvar), loc)
+      }
 
-  }
-
-  object Pattern {
-    /**
-      * Types the given resolved pattern `rast` against the given type `tpe`.
-      *
-      * NB: The Weeder ensures that a variable occurs at most once in a pattern.
-      */
-    def typer(rast: ResolvedAst.Pattern, tpe: Type, root: ResolvedAst.Root): Validation[TypedAst.Pattern, TypeError] = rast match {
-      case ResolvedAst.Pattern.Wildcard(loc) =>
-        TypedAst.Pattern.Wildcard(tpe, loc).toSuccess
-      case ResolvedAst.Pattern.Var(ident, loc) =>
-        TypedAst.Pattern.Var(ident, tpe, loc).toSuccess
-      case ResolvedAst.Pattern.Lit(rlit, loc) =>
-        val lit = Literal.typer(rlit, root)
-        expect(tpe, lit.tpe, loc) map {
-          case _ => TypedAst.Pattern.Lit(lit, tpe, loc)
-        }
-      case ResolvedAst.Pattern.Tag(enumName, tagName, rpat, loc) => tpe match {
-        case enum@Type.Enum(name, cases) => cases.get(tagName.name) match {
-          case Some(tag) if enumName == tag.enum => {
-            typer(rpat, tag.tpe, root) map {
-              case pat => TypedAst.Pattern.Tag(enumName, tagName, pat, enum, loc)
+      /**
+        * Applies the substitution to the given list of formal parameters.
+        */
+      def visitParams(xs: List[NamedAst.FormalParam]): List[TypedAst.FormalParam] = {
+        xs map {
+          case NamedAst.FormalParam(sym, tpe, loc) =>
+            Disambiguation.resolve(tpe, ns0, program) match {
+              case Ok(resolvedType) => TypedAst.FormalParam(sym, subst0(resolvedType), loc)
+              case Err(e) => throw InternalCompilerException("Never happens. Resolution should have failed during type inference.")
             }
-          }
-          case _ => IllegalPattern(rast, tpe, loc).toFailure
         }
-        case _ => IllegalPattern(rast, tpe, loc).toFailure
       }
-      case ResolvedAst.Pattern.Tuple(relms, loc) => tpe match {
-        case Type.Tuple(telms) if relms.length == telms.length =>
-          val elmsVal = (relms zip telms) map {
-            case (rp, tp) => typer(rp, tp, root)
-          }
-          @@(elmsVal) map {
-            case elms => TypedAst.Pattern.Tuple(elms, Type.Tuple(elms map (_.tpe)), loc)
-          }
-        case _ => IllegalPattern(rast, tpe, loc).toFailure
-      }
+
+      visitExp(exp0, subst0)
     }
   }
 
-  object Predicate {
-
-    object Head {
-
-      /**
-        * Types the given head predicate `rast` under the given AST `root`.
-        */
-      def typer(rast: ResolvedAst.Predicate.Head, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Head, TypeError] = rast match {
-        case ResolvedAst.Predicate.Head.True(loc) => TypedAst.Predicate.Head.True(loc).toSuccess
-        case ResolvedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc).toSuccess
-        case ResolvedAst.Predicate.Head.Table(name, rterms, loc) =>
-          // lookup the collection.
-          root.tables(name) match {
-            case ResolvedAst.Table.Relation(_, attributes, _) =>
-              // type check the terms against the attributes.
-              val termsVal = (rterms zip attributes) map {
-                case (term, ResolvedAst.Attribute(_, tpe)) => Term.typer(term, tpe, root)
-              }
-
-              @@(termsVal) map {
-                case terms =>
-                  TypedAst.Predicate.Head.Table(name, terms, Type.Predicate(terms map (_.tpe)), loc)
-              }
-
-            case ResolvedAst.Table.Lattice(_, keys, value, _) =>
-              // type check the terms against the keys and values.
-              // TODO: More checks?
-              val termsVal = (rterms zip (keys ::: value :: Nil)) map {
-                case (term, ResolvedAst.Attribute(_, tpe)) => Term.typer(term, tpe, root)
-              }
-
-              @@(termsVal) map {
-                case terms =>
-                  TypedAst.Predicate.Head.Table(name, terms, Type.Predicate(terms map (_.tpe)), loc)
-              }
-          }
-
-      }
-    }
-
-    object Body {
-      /**
-        * Types the given body predicate `rast` under the given AST `root`.
-        */
-      def typer(rast: ResolvedAst.Predicate.Body, root: ResolvedAst.Root): Validation[TypedAst.Predicate.Body, TypeError] = rast match {
-        case ResolvedAst.Predicate.Body.Table(sym, rterms, loc) =>
-          // lookup the collection.
-          root.tables(sym) match {
-            case ResolvedAst.Table.Relation(_, attributes, _) =>
-              // type check the terms against the attributes.
-              val termsVal = (rterms zip attributes) map {
-                case (term, ResolvedAst.Attribute(_, tpe)) => Term.typer(term, tpe, root)
-              }
-
-              @@(termsVal) map {
-                case terms => TypedAst.Predicate.Body.Table(sym, terms, Type.Predicate(terms map (_.tpe)), loc)
-              }
-            case ResolvedAst.Table.Lattice(_, keys, value, _) =>
-              // type check the terms against the attributes.
-              // TODO: more checks?
-              val termsVal = (rterms zip (keys ::: value :: Nil)) map {
-                case (term, ResolvedAst.Attribute(_, tpe)) => Term.typer(term, tpe, root)
-              }
-
-              @@(termsVal) map {
-                case terms => TypedAst.Predicate.Body.Table(sym, terms, Type.Predicate(terms map (_.tpe)), loc)
-              }
-          }
-
-        case ResolvedAst.Predicate.Body.ApplyFilter(name, rterms, loc) =>
-          val constant = root.constants(name)
-          // TODO: Check that result type is bool.
-          // TODO: Improve the cast here
-          val termsVal = (rterms zip constant.tpe.asInstanceOf[Type.Lambda].args) map {
-            case (term, tpe) => Term.typer(term, tpe, root)
-          }
-
-          @@(termsVal) map {
-            case terms => TypedAst.Predicate.Body.ApplyFilter(name, terms, Type.Lambda(terms map (_.tpe), Type.Bool), loc) // TODO Type
-          }
-
-        case ResolvedAst.Predicate.Body.ApplyHookFilter(hook, rterms, loc) =>
-          // TODO: Check that result type is bool.
-          // TODO: Improve the cast here
-          val termsVal = (rterms zip hook.tpe.asInstanceOf[Type.Lambda].args) map {
-            case (term, tpe) => Term.typer(term, tpe, root)
-          }
-
-          @@(termsVal) map {
-            case terms => TypedAst.Predicate.Body.ApplyHookFilter(hook, terms, Type.Lambda(terms map (_.tpe), Type.Bool), loc) // TODO Type
-          }
-
-
-        case ResolvedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
-          TypedAst.Predicate.Body.NotEqual(ident1, ident2, Type.Bool, loc).toSuccess
-
-        case ResolvedAst.Predicate.Body.Loop(ident, rterm, loc) =>
-          Term.typer(rterm, Type.Any, root) map {
-            case term => TypedAst.Predicate.Body.Loop(ident, term, Type.Bool, loc) // TODO: Type
-          }
-
-      }
-    }
-
-  }
-
-  object Term {
-    // TODO: Introduce head/body.
+  object Predicates {
 
     /**
-      * Types the given head term `rast` according to the (declared) type `tpe` under the given AST `root`.
+      * Performs type inference and reassembly on the given predicate `head` in the given namespace `ns`.
       */
-    def typer(rast: ResolvedAst.Term.Head, tpe: Type, root: ResolvedAst.Root): Validation[TypedAst.Term.Head, TypeError] = rast match {
-      case ResolvedAst.Term.Head.Var(ident, loc) => TypedAst.Term.Head.Var(ident, tpe, loc).toSuccess
-      case ResolvedAst.Term.Head.Lit(rlit, loc) =>
-        val lit = Literal.typer(rlit, root)
-        expect(tpe, lit.tpe, loc) map {
-          case _ => TypedAst.Term.Head.Lit(lit, lit.tpe, loc)
-        }
+    def typecheck(head: NamedAst.Predicate.Head, ns: Name.NName, program: Program)(implicit genSym: GenSym): Result[TypedAst.Predicate.Head, TypeError] = head match {
+      case NamedAst.Predicate.Head.True(loc) => Ok(TypedAst.Predicate.Head.True(loc))
+      case NamedAst.Predicate.Head.False(loc) => Ok(TypedAst.Predicate.Head.False(loc))
+      case NamedAst.Predicate.Head.Table(qname, terms, loc) =>
+        // Lookup the table associated with the predicate to find the declared types of the terms.
+        Disambiguation.lookupTable(qname, ns, program) flatMap {
+          table =>
+            // Resolve the declared types.
+            Disambiguation.resolve(table.attr.map(_.tpe), ns, program) flatMap {
+              case expectedTypes =>
+                // Compute the inferred types of the terms and unify them with the declared types.
+                val result = for (
+                  inferredTypes <- seqM(terms.map(t => Expressions.infer(t, ns, program)));
+                  unifiedTypes <- unifyM(expectedTypes, inferredTypes, loc)
+                ) yield unifiedTypes
 
-      case ResolvedAst.Term.Head.Tag(enum, tag, term, loc) =>
-        val inner = tpe.asInstanceOf[Type.Enum]
-        Term.typer(term, inner.cases(tag.name).tpe, root) map {
-          case t => TypedAst.Term.Head.Tag(enum, tag, t, tpe.asInstanceOf[Type.Enum], loc)
-        }
-
-      case ResolvedAst.Term.Head.Tuple(relms, loc) =>
-        val telms = tpe.asInstanceOf[Type.Tuple].elms
-        val inner = (relms zip telms) map {
-          case (e, t) => Term.typer(e, t, root)
-        }
-
-        @@(inner) map {
-          case elms => TypedAst.Term.Head.Tuple(elms, tpe.asInstanceOf[Type.Tuple], loc)
-        }
-
-      case ResolvedAst.Term.Head.Apply(name, actuals, loc) =>
-        // TODO: This needs to be rewritten
-
-        val constant = root.constants(name)
-        // TODO: This might actually be slightly problematic, since not every constant may be a fully evalauted lambda.
-        // Instead we should focus on the type of the constant, which should be Function.
-
-        // type arguments with the declared formals.
-        val argsVal = (actuals zip constant.formals) map {
-          case (term, ResolvedAst.FormalArg(_, termType)) => Term.typer(term, termType, root)
-        }
-        // put everything together and check the return type.
-        @@(@@(argsVal), expect(tpe, tpe, constant.exp.loc)) map {
-          // TODO: Hack
-          case (args, returnType) => TypedAst.Term.Head.Apply(name, args, returnType, constant.exp.loc)
-        }
-
-      case ResolvedAst.Term.Head.ApplyHook(hook, actuals, loc) =>
-        val formals = hook.tpe.args
-        // type arguments with the declared formals.
-        val argsVal = (actuals zip formals) map {
-          case (term, termType) => Term.typer(term, termType, root)
-        }
-        // put everything together and check the return type.
-        @@(@@(argsVal), expect(tpe, hook.tpe.retTpe, loc)) map {
-          case (args, returnType) => TypedAst.Term.Head.ApplyHook(hook, args, returnType, loc)
+                // Evaluate the monad with the empty substitution.
+                result.run(Substitution.empty) map {
+                  case (subst, _) =>
+                    // Reassemble the expressions and predicate.
+                    val ts = terms.map(t => Expressions.reassemble(t, ns, program, subst, resolveFreeVars = true))
+                    TypedAst.Predicate.Head.Table(table.sym, ts, loc)
+                }
+            }
         }
     }
 
     /**
-      * Types the given body term `rast` according to the given type `tpe`. under the given AST `root`.
+      * Infers the type of the given head predicate.
       */
-    def typer(rast: ResolvedAst.Term.Body, tpe: Type, root: ResolvedAst.Root): Validation[TypedAst.Term.Body, TypeError] = rast match {
-      case ResolvedAst.Term.Body.Wildcard(loc) => TypedAst.Term.Body.Wildcard(tpe, loc).toSuccess
-      case ResolvedAst.Term.Body.Var(ident, loc) => TypedAst.Term.Body.Var(ident, tpe, loc).toSuccess
-      case ResolvedAst.Term.Body.Lit(rlit, loc) =>
-        val lit = Literal.typer(rlit, root)
-        expect(tpe, lit.tpe, loc) map {
-          case _ => TypedAst.Term.Body.Lit(lit, lit.tpe, loc)
+    def infer(head: NamedAst.Predicate.Head, ns: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = head match {
+      case NamedAst.Predicate.Head.True(loc) => Unification.liftM(Nil)
+      case NamedAst.Predicate.Head.False(loc) => Unification.liftM(Nil)
+      case NamedAst.Predicate.Head.Table(qname, terms, loc) =>
+        val declaredTypes = Disambiguation.lookupTable(qname, ns, program) match {
+          case Ok(NamedAst.Table.Relation(doc, sym, attr, _)) => attr.map(_.tpe)
+          case Ok(NamedAst.Table.Lattice(doc, sym, keys, value, _)) => keys.map(_.tpe) ::: value.tpe :: Nil
+          case Err(e) => return failM(e)
         }
-      case ResolvedAst.Term.Body.Ascribe(rterm, rtpe, loc) =>
-        val ascribedType = rtpe
-        typer(rterm, ascribedType, root)
+
+        Disambiguation.resolve(declaredTypes, ns, program) match {
+          case Ok(expectedTypes) =>
+            for (
+              actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns, program)));
+              unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes, loc)
+            ) yield unifiedTypes
+          case Err(e) => failM(e)
+        }
+    }
+
+    /**
+      * Infers the type of the given body predicate.
+      */
+    def infer(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = body0 match {
+      case NamedAst.Predicate.Body.Table(qname, terms, loc) =>
+        val declaredTypes = Disambiguation.lookupTable(qname, ns0, program) match {
+          case Ok(NamedAst.Table.Relation(doc, sym, attr, _)) => attr.map(_.tpe)
+          case Ok(NamedAst.Table.Lattice(doc, sym, keys, value, _)) => keys.map(_.tpe) ::: value.tpe :: Nil
+          case Err(e) => return failM(e)
+        }
+        val expectedTypes = Disambiguation.resolve(declaredTypes, ns0, program) match {
+          case Ok(tpes) => tpes
+          case Err(e) => return failM(e)
+        }
+        for (
+          actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns0, program)));
+          unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes, loc)
+        ) yield unifiedTypes
+      case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
+        Disambiguation.lookupRef(qname, ns0, program) match {
+          case Ok(RefTarget.Defn(ns, defn)) =>
+            val expectedTypes = Disambiguation.resolve(defn.params.map(_.tpe), ns, program) match {
+              case Ok(tpes) => tpes
+              case Err(e) => return failM(e)
+            }
+            for (
+              actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns0, program)));
+              unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes, loc)
+            ) yield unifiedTypes
+          case Ok(RefTarget.Hook(hook)) =>
+            val Type.Apply(Type.Arrow(l), ts) = hook.tpe
+            val declaredTypes = ts.take(l - 1)
+            for (
+              actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns0, program)));
+              unifiedTypes <- Unification.unifyM(declaredTypes, actualTypes, loc)
+            ) yield unifiedTypes
+          case Err(e) => failM(e)
+        }
+      case NamedAst.Predicate.Body.NotEqual(sym1, sym2, loc) => Unification.liftM(Nil) // TODO
+      case NamedAst.Predicate.Body.Loop(sym, term, loc) => Unification.liftM(Nil) // TODO
+    }
+
+    /**
+      * Applies the given substitution `subst0` to the given head predicate `head0` in the given namespace `ns0`.
+      */
+    def reassemble(head0: NamedAst.Predicate.Head, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
+      case NamedAst.Predicate.Head.True(loc) => TypedAst.Predicate.Head.True(loc)
+      case NamedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
+      case NamedAst.Predicate.Head.Table(qname, terms, loc) =>
+        Disambiguation.lookupTable(qname, ns0, program) match {
+          case Ok(NamedAst.Table.Relation(_, sym, _, _)) =>
+            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
+            TypedAst.Predicate.Head.Table(sym, ts, loc)
+          case Ok(NamedAst.Table.Lattice(_, sym, _, _, _)) =>
+            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
+            TypedAst.Predicate.Head.Table(sym, ts, loc)
+          case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
+        }
+    }
+
+    /**
+      * Applies the given substitution `subst0` to the given body predicate `body0` in the given namespace `ns0`.
+      */
+    def reassemble(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
+      case NamedAst.Predicate.Body.Table(qname, terms, loc) =>
+        Disambiguation.lookupTable(qname, ns0, program) match {
+          case Ok(NamedAst.Table.Relation(_, sym, _, _)) => TypedAst.Predicate.Body.Table(sym, terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true)), loc)
+          case Ok(NamedAst.Table.Lattice(_, sym, _, _, _)) =>
+            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
+            TypedAst.Predicate.Body.Table(sym, ts, loc)
+          case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
+        }
+      case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
+        Disambiguation.lookupRef(qname, ns0, program) match {
+          case Ok(RefTarget.Defn(ns, defn)) =>
+            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
+            TypedAst.Predicate.Body.ApplyFilter(defn.sym, ts, loc)
+          case Ok(RefTarget.Hook(hook)) =>
+            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
+            TypedAst.Predicate.Body.ApplyHookFilter(hook, ts, loc)
+          case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
+        }
+      case NamedAst.Predicate.Body.NotEqual(sym1, sym2, loc) =>
+        // TODO: Need to retrieve the symbol...
+        TypedAst.Predicate.Body.NotEqual(sym1, sym2, loc)
+      case NamedAst.Predicate.Body.Loop(sym, term, loc) =>
+        // TODO: Need to retrieve the symbol...
+        val t = Expressions.reassemble(term, ns0, program, subst0, resolveFreeVars = true)
+        TypedAst.Predicate.Body.Loop(sym, t, loc)
     }
 
   }
 
   /**
-    * Returns the given `expected` type wrapped in [[Success]] if it matches the given `actual` type.
-    *
-    * @param expected the expected type.
-    * @param actual   the actual type.
-    * @param loc      the source location.
+    * Returns the underlying enum type of `tpe`.
     */
-  def expect(expected: Type, actual: Type, loc: SourceLocation): Validation[Type, TypeError] =
-    if (expected == Type.Any)
-      actual.toSuccess
-    else if (actual == Type.Any)
-      actual.toSuccess
-    else if (expected == actual)
-      actual.toSuccess
-    else
-      ExpectedType(expected, actual, loc).toFailure
+  def getEnumType(tpe: Type): Type.Enum = tpe match {
+    case t: Type.Enum => t
+    case Type.Apply(t: Type.Enum, _) => t
+    case _ => throw InternalCompilerException(s"Unexpected type `$tpe'.")
+  }
 
   /**
-    * Returns the given `tpe` type wrapped in [[Success]] if it matches the given `tpe2` type.
+    * Returns a substitution from formal parameters to their declared types.
     *
-    * @param tpe1 the first type.
-    * @param tpe2 the second type.
-    * @param loc1 the source location of the first type.
-    * @param loc2 the source location of the second type.
+    * Performs type resolution of the declared type of each formal parameters.
+    *
+    * @param params  the formal parameters.
+    * @param ns0     the current namespace.
+    * @param program the program.
     */
-  def expectEqual(tpe1: Type, tpe2: Type, loc1: SourceLocation, loc2: SourceLocation): Validation[Type, TypeError] =
-    if (tpe1 == Type.Any)
-      tpe2.toSuccess
-    else if (tpe2 == Type.Any)
-      tpe1.toSuccess
-    else if (tpe1 == tpe2)
-      tpe1.toSuccess
-    else
-      ExpectedEqualTypes(tpe1, tpe2, loc1, loc2).toFailure
-
-  /**
-    * Returns a type wrapped in [[Success]] if all the given `types` are equal.
-    */
-  def expectEqual(types: List[(Type, SourceLocation)]): Validation[Type, TypeError] = {
-    assert(types.nonEmpty)
-    val (tpe1, loc1) = types.head
-    if (types.forall(t => t._1 == tpe1)) {
-      tpe1.toSuccess
-    } else {
-      val (tpe2, loc2) = types.find(t => t._1 != tpe1 && tpe1 != Type.Any && t._1 != Type.Any).get
-      ExpectedEqualTypes(tpe1, tpe2, loc1, loc2).toFailure
+  def getSubstFromParams(params: List[NamedAst.FormalParam], ns0: Name.NName, program: Program): Result[Unification.Substitution, TypeError] = {
+    // Perform type resolution on each parameter.
+    Disambiguation.resolve(params.map(_.tpe), ns0, program) map {
+      case declaredTypes =>
+        // Compute the substitution by mapping the symbol of each parameter to its declared type.
+        (params zip declaredTypes).foldLeft(Substitution.empty) {
+          case (macc, (NamedAst.FormalParam(sym, _, _), declaredType)) =>
+            macc ++ Substitution.singleton(sym.tvar, declaredType)
+        }
     }
   }
 
-  /**
-    * Returns a human readable string representation of the given type `tpe`.
-    */
-  // TODO: Remove this.
-  private def prettyPrint(tpe: Type): String = tpe match {
-    case Type.Any => "Any"
-    case Type.Var(x) => s"Var($x)"
-    case Type.Unit => s"()"
-    case Type.Bool => s"Bool"
-    case Type.Char => s"Char"
-    case Type.Float32 => s"Float32"
-    case Type.Float64 => s"Float64"
-    case Type.Int8 => s"Int8"
-    case Type.Int16 => s"Int16"
-    case Type.Int32 => s"Int32"
-    case Type.Int64 => s"Int64"
-    case Type.BigInt => "BigInt"
-    case Type.Prop => s"Prop"
-    case Type.Str => s"Str"
-    case Type.Tag(enumName, tagName, t) =>
-      val enumAndTag = enumName.fqn + "." + tagName.name
-      val nested = s"(${prettyPrint(t)}})"
-      enumAndTag + nested
-    case Type.Enum(name, cases) =>
-      s"Enum(${cases.head._2.enum})"
-    case Type.Tuple(elms) => "(" + elms.map(prettyPrint).mkString(", ") + ")"
-    case Type.FSet(elms) => "Set(" + prettyPrint(elms) + ")"
-    case Type.Lambda(args, retTpe) =>
-      "(" + args.map(prettyPrint).mkString(", ") + ") -> " + prettyPrint(retTpe)
-    case Type.Predicate(terms) => s"Predicate(${terms map prettyPrint})"
-    case Type.Native => s"native"
-    case Type.Abs(name, tpe) => s"Abs($name)"
-    case Type.FOpt(tpe) => s"FOpt($tpe)"
-    case Type.FList(tpe) => s"FList($tpe)"
-    case Type.FVec(tpe) =>  s"FVec($tpe)"
-    case Type.FMap(k, v) => s"FMap($k, $v)"
-    case Type.Parametric(name, elms) => s"$name[$elms]"
-    case Type.Unresolved(name) => name.toString
-  }
-
-  private def prettyPrint(pat: ResolvedAst.Pattern): String = pat match {
-    case ResolvedAst.Pattern.Wildcard(loc) => "_"
-    case ResolvedAst.Pattern.Var(ident, loc) => ident.name
-    case ResolvedAst.Pattern.Lit(lit, loc) => lit.toString
-    case ResolvedAst.Pattern.Tag(enumName, tagName, pat, loc) =>
-      enumName + "." + tagName.name + "(" + prettyPrint(pat) + ")"
-    case ResolvedAst.Pattern.Tuple(elms, loc) =>
-      "(" + elms.map(prettyPrint).mkString(", ") + ")"
-  }
 }

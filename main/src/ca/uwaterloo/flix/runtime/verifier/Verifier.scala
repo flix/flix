@@ -232,15 +232,15 @@ object Verifier {
       case Type.Int64 => List(SymVal.AtomicVar(genSym.fresh2()))
       case Type.BigInt => List(SymVal.AtomicVar(genSym.fresh2()))
       case Type.Str => List(SymVal.AtomicVar(genSym.fresh2()))
-      case Type.Enum(name, cases) =>
+      case Type.Enum(name, cases, kind) =>
         val r = cases flatMap {
-          case (tag, tagType) =>
-            visit(tagType.tpe) map {
+          case (tag, innerType) =>
+            visit(innerType) map {
               case e => SymVal.Tag(tag, e)
             }
         }
         r.toList
-      case Type.Tuple(elms) =>
+      case Type.Apply(Type.FTuple(_), elms) =>
         def visitn(xs: List[Type]): List[List[SymVal]] = xs match {
           case Nil => List(Nil)
           case t :: ts => visitn(ts) flatMap {

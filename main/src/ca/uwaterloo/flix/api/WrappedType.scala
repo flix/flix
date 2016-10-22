@@ -54,37 +54,32 @@ final class WrappedType(val tpe: Type) extends IType {
     tpe == Type.Str
 
   def isEnum: Boolean = tpe match {
-    case Type.Enum(name, cases) => true
+    case Type.Enum(name, cases, kind) => true
     case _ => false
   }
 
   def isFunction: Boolean = tpe match {
-    case Type.Lambda(args, retTpe) => true
+    case Type.Apply(Type.Arrow(l), _) => true
     case _ => false
   }
 
   def isTuple: Boolean = tpe match {
-    case Type.Tuple(elms) => true
-    case _ => false
-  }
-
-  def isOpt: Boolean = tpe match {
-    case Type.FOpt(elm) => true
+    case Type.Apply(Type.FTuple(l), _) => true
     case _ => false
   }
 
   def isList: Boolean = tpe match {
-    case Type.FList(elm) => true
+    case Type.Apply(Type.FList, _) => true
     case _ => false
   }
 
   def isSet: Boolean = tpe match {
-    case Type.FSet(elm) => true
+    case Type.Apply(Type.FSet, _) => true
     case _ => false
   }
 
   def isMap: Boolean = tpe match {
-    case Type.FMap(keys, values) => true
+    case Type.Apply(Type.Apply(Type.FMap, _), _) => true
     case _ => false
   }
 
@@ -94,32 +89,27 @@ final class WrappedType(val tpe: Type) extends IType {
   }
 
   def getTupleParams: Array[IType] = tpe match {
-    case Type.Tuple(elms) => elms.map(t => new WrappedType(t)).toArray
-    case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
-  }
-
-  def getOptParam: IType = tpe match {
-    case Type.FOpt(elm) => new WrappedType(elm)
+    case Type.Apply(Type.FTuple(l), elms) => elms.map(t => new WrappedType(t)).toArray
     case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 
   def getListParam: IType = tpe match {
-    case Type.FList(elm) => new WrappedType(elm)
+    case Type.Apply(Type.FList, List(elm)) => new WrappedType(elm)
     case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 
   def getSetParam: IType = tpe match {
-    case Type.FSet(elm) => new WrappedType(elm)
+    case Type.Apply(Type.FSet, List(elm)) => new WrappedType(elm)
     case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 
   def getMapKeyParam: IType = tpe match {
-    case Type.FMap(k, v) => new WrappedType(k)
+    case Type.Apply(Type.FMap, List(k, v)) => new WrappedType(k)
     case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 
   def getMapValueParam: IType = tpe match {
-    case Type.FMap(k, v) => new WrappedType(v)
+    case Type.Apply(Type.FMap, List(k, v)) => new WrappedType(v)
     case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 

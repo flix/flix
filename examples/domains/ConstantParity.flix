@@ -3,9 +3,9 @@
  */
 namespace ConstantParity {
 
-    /**
-     * The elements of the constant-parity lattice.
-     */
+    ///
+    /// The elements of the constant-parity lattice.
+    ///
     enum ConstParity {
                   case Top,
 
@@ -16,9 +16,9 @@ namespace ConstantParity {
                   case Bot
     }
 
-    /**
-     * Returns `true` iff `e1` is less than or equal to `e2`.
-     */
+    ///
+    /// Returns `true` iff `e1` is less than or equal to `e2`.
+    ///
     def leq(e1: ConstParity, e2: ConstParity): Bool = match (e1, e2) with {
         case (ConstParity.Bot, _)                       => true
         case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => n1 == n2
@@ -30,9 +30,9 @@ namespace ConstantParity {
         case _                                          => false
     }
 
-    /**
-     * Returns the least upper bound of `e1` and `e2`.
-     */
+    ///
+    /// Returns the least upper bound of `e1` and `e2`.
+    ///
     @commutative @associative
     def lub(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
         case (ConstParity.Bot, x)                       => x
@@ -52,9 +52,9 @@ namespace ConstantParity {
         case _                                          => ConstParity.Top
     }
 
-    /**
-     * Returns the greatest lower bound of `e1` and `e2`.
-     */
+    ///
+    /// Returns the greatest lower bound of `e1` and `e2`.
+    ///
     @commutative @associative
     def glb(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
         case (ConstParity.Top, x)                         => x
@@ -69,9 +69,9 @@ namespace ConstantParity {
         case _ => ConstParity.Bot
     }
 
-    /**
-     * Over-approximates integer `increment`.
-     */
+    ///
+    /// Over-approximates integer `increment`.
+    ///
     @strict @monotone
     def inc(e: ConstParity): ConstParity = match e with {
         case ConstParity.Bot    => ConstParity.Bot
@@ -81,9 +81,9 @@ namespace ConstantParity {
         case ConstParity.Top    => ConstParity.Top
     }
 
-    /**
-     * Over-approximates integer `decrement`.
-     */
+    ///
+    /// Over-approximates integer `decrement`.
+    ///
     @strict @monotone
     def dec(e: ConstParity): ConstParity = match e with {
         case ConstParity.Bot    => ConstParity.Bot
@@ -93,14 +93,14 @@ namespace ConstantParity {
         case ConstParity.Top    => ConstParity.Top
     }
 
-    /**
-     * Over-approximates integer `addition`.
-     */
+    ///
+    /// Over-approximates integer `addition`.
+    ///
     @strict @monotone @commutative
     def plus(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
         case (ConstParity.Bot, _)                       => ConstParity.Bot
         case (_, ConstParity.Bot)                       => ConstParity.Bot
-        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst(n1 + n2)
+        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst((n1: BigInt) + n2) // TODO: Added ascription to help type system
         case (ConstParity.Cst(n), ConstParity.Odd)      => if (isOdd(n))  ConstParity.Even else ConstParity.Odd
         case (ConstParity.Odd, ConstParity.Cst(n))      => if (isOdd(n))  ConstParity.Even else ConstParity.Odd
         case (ConstParity.Cst(n), ConstParity.Even)     => if (isEven(n)) ConstParity.Even else ConstParity.Odd
@@ -112,14 +112,14 @@ namespace ConstantParity {
         case _                                          => ConstParity.Top
     }
 
-    /**
-     * Over-approximates integer `subtraction`.
-     */
+    ///
+    /// Over-approximates integer `subtraction`.
+    ///
     @strict @monotone
     def minus(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
         case (ConstParity.Bot, _)                       => ConstParity.Bot
         case (_, ConstParity.Bot)                       => ConstParity.Bot
-        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst(n1 - n2)
+        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst((n1: BigInt) - n2) // TODO: Added ascription to help type system
         case (ConstParity.Cst(n), ConstParity.Odd)      => if (isOdd(n))  ConstParity.Even else ConstParity.Odd
         case (ConstParity.Odd, ConstParity.Cst(n))      => if (isOdd(n))  ConstParity.Even else ConstParity.Odd
         case (ConstParity.Cst(n), ConstParity.Even)     => if (isEven(n)) ConstParity.Even else ConstParity.Odd
@@ -131,15 +131,14 @@ namespace ConstantParity {
         case _                                          => ConstParity.Top
     }
 
-    /**
-     * Over-approximates integer `multiplication`.
-     */
-    // NB: @monotone annotation removed since Z3 reports unknown.
-    @strict
+    ///
+    /// Over-approximates integer `multiplication`.
+    ///
+    @strict  // NB: @monotone annotation removed since Z3 reports unknown.
     def times(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
         case (ConstParity.Bot, _)                       => ConstParity.Bot
         case (_, ConstParity.Bot)                       => ConstParity.Bot
-        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst(n1 * n2)
+        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst((n1: BigInt) * n2) // TODO: Added ascription to help type system
         case (ConstParity.Cst(n), ConstParity.Odd)      => if (isOdd(n)) ConstParity.Odd else ConstParity.Even
         case (ConstParity.Odd, ConstParity.Cst(n))      => if (isOdd(n)) ConstParity.Odd else ConstParity.Even
         case (ConstParity.Cst(_), ConstParity.Even)     => ConstParity.Even
@@ -151,28 +150,27 @@ namespace ConstantParity {
         case _                                          => ConstParity.Top
     }
 
-    /**
-     * Over-approximates integer `division`.
-     */
+    ///
+    /// Over-approximates integer `division`.
+    ///
     @strict @monotone
     def divide(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
         case (ConstParity.Bot, _)                       => ConstParity.Bot
         case (_, ConstParity.Bot)                       => ConstParity.Bot
         case (_, ConstParity.Cst(0ii))                  => ConstParity.Bot
-        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst(n1 / n2)
+        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst((n1: BigInt) / n2) // TODO: Added ascription to help type system
         case _                                          => ConstParity.Top
     }
 
-    /**
-     * Over-approximates integer `modulus`.
-     */
-    // NB: @monotone annotation removed since Z3 reports unknown.
-    @strict
+    ///
+    /// Over-approximates integer `modulus`.
+    ///
+    @strict // NB: @monotone annotation removed since Z3 reports unknown.
     def modulo(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
         case (ConstParity.Bot, _)                       => ConstParity.Bot
         case (_, ConstParity.Bot)                       => ConstParity.Bot
         case (_, ConstParity.Cst(0ii))                  => ConstParity.Bot
-        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst(n1 % n2)
+        case (ConstParity.Cst(n1), ConstParity.Cst(n2)) => ConstParity.Cst((n1: BigInt) % n2) // TODO: Added ascription to help type system
         case (ConstParity.Cst(n), ConstParity.Even)     => if (isOdd(n)) ConstParity.Odd else ConstParity.Even
         case (ConstParity.Odd, ConstParity.Cst(n))      => if (isEven(n)) ConstParity.Odd else ConstParity.Top
         case (ConstParity.Even, ConstParity.Cst(n))     => if (isEven(n)) ConstParity.Even else ConstParity.Top
@@ -181,9 +179,9 @@ namespace ConstantParity {
         case _                                          => ConstParity.Top
     }
 
-    /**
-      * Over-approximates `equal`.
-      */
+    ///
+    /// Over-approximates `equal`.
+    ///
     @strict @monotone @commutative
     def eq(e1: ConstParity, e2: ConstParity): Belnap/Belnap = match (e1, e2) with {
         case (ConstParity.Bot, _)                       => Belnap/Belnap.Bot
@@ -196,15 +194,15 @@ namespace ConstantParity {
         case _                                          => Belnap/Belnap.Top
     }
 
-    /**
-      * Over-approximates `not equal`.
-      */
+    ///
+    /// Over-approximates `not equal`.
+    ///
     @strict @monotone @commutative
     def neq(e1: ConstParity, e2: ConstParity): Belnap/Belnap = Belnap/not(eq(e1, e2))
 
-    /**
-      * Over-approximates `less than`.
-      */
+    ///
+    /// Over-approximates `less than`.
+    ///
     @strict @monotone
     def less(e1: ConstParity, e2: ConstParity): Belnap/Belnap = match (e1, e2) with {
         case (ConstParity.Bot, _)                       => Belnap/Belnap.Bot
@@ -213,21 +211,20 @@ namespace ConstantParity {
         case _                                          => Belnap/Belnap.Top
     }
 
-    /**
-      * Over-approximates `less than or equal`.
-      */
+    ///
+    /// Over-approximates `less than or equal`.
+    ///
     @strict @monotone
     def lessEqual(e1: ConstParity, e2: ConstParity): Belnap/Belnap = Belnap/or(e1 `less` e2, e1 `eq` e2)
 
-
-    /**
-     * Returns `true` iff the given number `n` is odd.
-     */
+    ///
+    /// Returns `true` iff the given number `n` is odd.
+    ///
     def isOdd(n: BigInt): Bool = (n % 2ii) != 0ii
 
-    /**
-     * Returns `true` iff the given number `n` is even.
-     */
+    ///
+    /// Returns `true` iff the given number `n` is even.
+    ///
     def isEven(n: BigInt): Bool = !isOdd(n)
 
     let ConstParity<> = (ConstParity.Bot, ConstParity.Top, leq, lub, glb)

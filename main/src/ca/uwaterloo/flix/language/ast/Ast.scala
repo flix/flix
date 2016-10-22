@@ -57,6 +57,17 @@ object Ast {
     }
 
     /**
+      * An AST node that represents an `@internal` annotation.
+      *
+      * An `internal` function is a non-public function hidden from view.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Internal(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@commutative"
+    }
+
+    /**
       * An AST node that represents a `@monotone` annotation.
       *
       * A `monotone` function is an order-preserving function between lattice elements.
@@ -146,21 +157,12 @@ object Ast {
   }
 
   /**
-    * Attribute (column of a relation or lattice).
+    * Documentation.
     *
-    * @param ident the name of the attribute.
-    * @param tpe   the type of the attribute.
+    * @param text the text of the documentation.
+    * @param loc  the source location of the text.
     */
-  case class Attribute(ident: Name.Ident, tpe: Type)
-
-  /**
-    * Formal Parameter.
-    *
-    * @param ident the name of the argument.
-    * @param tpe   the type of the argument.
-    */
-  // TODO: consider whether this should be moved?
-  case class FormalParam(ident: Name.Ident, tpe: Type)
+  case class Documentation(text: String, loc: SourceLocation)
 
   /**
     * A common super-type for hooks.
@@ -174,7 +176,7 @@ object Ast {
     /**
       * Returns the type of the hook.
       */
-    def tpe: Type.Lambda
+    def tpe: Type
   }
 
   object Hook {
@@ -186,7 +188,7 @@ object Ast {
       * @param inv  the functional object.
       * @param tpe  the type of the function.
       */
-    case class Safe(name: Symbol.Resolved, inv: Invokable, tpe: Type.Lambda) extends Hook
+    case class Safe(name: Symbol.Resolved, inv: Invokable, tpe: Type) extends Hook
 
     /**
       * A reference to an implementation of the [[InvokableUnsafe]] interface.
@@ -195,7 +197,7 @@ object Ast {
       * @param inv  the functional object.
       * @param tpe  the type of the function.
       */
-    case class Unsafe(name: Symbol.Resolved, inv: InvokableUnsafe, tpe: Type.Lambda) extends Hook
+    case class Unsafe(name: Symbol.Resolved, inv: InvokableUnsafe, tpe: Type) extends Hook
 
   }
 

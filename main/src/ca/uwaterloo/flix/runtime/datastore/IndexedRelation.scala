@@ -84,7 +84,7 @@ final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relatio
   def getIndexHits: Map[Seq[String], Int] = indexHits.toMap.map {
     case (idx, count) =>
       val columns = (0 until 31).filter(n => BitOps.getBit(vec = idx, bit = n))
-      val names = columns map (column => relation.attributes(column).ident.name)
+      val names = columns map (column => relation.attributes(column).name)
       names -> count
   }
 
@@ -94,7 +94,7 @@ final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relatio
   def getIndexMisses: Map[Seq[String], Int] = indexMisses.toMap.map {
     case (idx, count) =>
       val columns = (0 until 31).filter(n => BitOps.getBit(vec = idx, bit = n))
-      val names = columns map (column => relation.attributes(column).ident.name)
+      val names = columns map (column => relation.attributes(column).name)
       names -> count
   }
 

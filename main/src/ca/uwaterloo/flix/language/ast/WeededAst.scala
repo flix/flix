@@ -16,14 +16,11 @@
 
 package ca.uwaterloo.flix.language.ast
 
-// TODO: Why are there seq here?
-import scala.collection.immutable.Seq
-
 trait WeededAst
 
 object WeededAst {
 
-  case class Program(roots: List[WeededAst.Root], hooks: Map[Symbol.Resolved, Ast.Hook], time: Time) extends WeededAst
+  case class Program(roots: List[WeededAst.Root], hooks: Map[Name.NName, Map[String, Ast.Hook]], time: Time) extends WeededAst
 
   case class Root(decls: List[WeededAst.Declaration]) extends WeededAst
 
@@ -35,28 +32,27 @@ object WeededAst {
 
     case class Namespace(name: Name.NName, decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Definition(ann: Ast.Annotations, ident: Name.Ident, params: List[Ast.FormalParam], exp: WeededAst.Expression, tpe: Type, loc: SourceLocation) extends WeededAst.Declaration
+    case class Definition(doc: Option[Ast.Documentation], ann: Ast.Annotations, ident: Name.Ident, tparams: List[Name.Ident], params: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Signature(ident: Name.Ident, params: Seq[Ast.FormalParam], tpe: Type, loc: SourceLocation) extends WeededAst.Declaration
+    case class Signature(doc: Option[Ast.Documentation], ident: Name.Ident, params: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class External(ident: Name.Ident, params: Seq[Ast.FormalParam], tpe: Type, loc: SourceLocation) extends WeededAst.Declaration
+    case class External(doc: Option[Ast.Documentation], ident: Name.Ident, params: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Law(ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], params: Seq[Ast.FormalParam], tpe: Type, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
+    case class Law(doc: Option[Ast.Documentation], ident: Name.Ident, tparams: List[ParsedAst.ContextBound], params: List[WeededAst.FormalParam], tpe: WeededAst.Type, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Enum(ident: Name.Ident, cases: Map[String, WeededAst.Case], loc: SourceLocation) extends WeededAst.Declaration
+    case class Enum(doc: Option[Ast.Documentation], ident: Name.Ident, tparams: List[Name.Ident], cases: Map[String, WeededAst.Case], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Class(ident: Name.Ident, tparams: Seq[Type], /* bounds: Seq[ContextBound],*/ decls: Seq[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
+    case class Class(doc: Option[Ast.Documentation], ident: Name.Ident, tparams: List[WeededAst.Type], /* bounds: List[ContextBound],*/ decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Impl(ident: Name.Ident, tparams: Seq[Type], /*bounds: Seq[ContextBound],*/ decls: Seq[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
+    case class Impl(doc: Option[Ast.Documentation], ident: Name.Ident, tparams: List[WeededAst.Type], /*bounds: List[ContextBound],*/ decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
     case class Fact(head: WeededAst.Predicate.Head, loc: SourceLocation) extends WeededAst.Declaration
 
     case class Rule(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Index(ident: Name.Ident, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends WeededAst.Declaration
+    case class Index(qname: Name.QName, indexes: List[List[Name.Ident]], loc: SourceLocation) extends WeededAst.Declaration
 
-    @deprecated("Will be replaced by type classes", "0.1.0")
-    case class BoundedLattice(tpe: Type, bot: WeededAst.Expression, top: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, glb: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
+    case class BoundedLattice(tpe: WeededAst.Type, bot: WeededAst.Expression, top: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, glb: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
   }
 
@@ -68,42 +64,9 @@ object WeededAst {
 
   object Table {
 
-    case class Relation(ident: Name.Ident, attr: List[Ast.Attribute], loc: SourceLocation) extends WeededAst.Table
+    case class Relation(doc: Option[Ast.Documentation], ident: Name.Ident, attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Table
 
-    case class Lattice(ident: Name.Ident, keys: List[Ast.Attribute], value: Ast.Attribute, loc: SourceLocation) extends WeededAst.Table
-
-  }
-
-  // TODO: Deprecated to be removed once terms are removed.
-  sealed trait Literal extends WeededAst {
-    def loc: SourceLocation
-  }
-
-  object Literal {
-
-    case class Unit(loc: SourceLocation) extends WeededAst.Literal
-
-    case class True(loc: SourceLocation) extends WeededAst.Literal
-
-    case class False(loc: SourceLocation) extends WeededAst.Literal
-
-    case class Char(lit: scala.Char, loc: SourceLocation) extends WeededAst.Literal
-
-    case class Float32(lit: scala.Float, loc: SourceLocation) extends WeededAst.Literal
-
-    case class Float64(lit: scala.Double, loc: SourceLocation) extends WeededAst.Literal
-
-    case class Int8(lit: scala.Byte, loc: SourceLocation) extends WeededAst.Literal
-
-    case class Int16(lit: scala.Short, loc: SourceLocation) extends WeededAst.Literal
-
-    case class Int32(lit: scala.Int, loc: SourceLocation) extends WeededAst.Literal
-
-    case class Int64(lit: scala.Long, loc: SourceLocation) extends WeededAst.Literal
-
-    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends WeededAst.Literal
-
-    case class Str(lit: java.lang.String, loc: SourceLocation) extends WeededAst.Literal
+    case class Lattice(doc: Option[Ast.Documentation], ident: Name.Ident, keys: List[WeededAst.Attribute], value: WeededAst.Attribute, loc: SourceLocation) extends WeededAst.Table
 
   }
 
@@ -115,7 +78,7 @@ object WeededAst {
 
     case class Wild(loc: SourceLocation) extends WeededAst.Expression
 
-    case class Var(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
+    case class VarOrRef(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
     case class Unit(loc: SourceLocation) extends WeededAst.Expression
 
@@ -157,33 +120,29 @@ object WeededAst {
 
     case class Switch(rules: List[(WeededAst.Expression, WeededAst.Expression)], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Tag(enum: Name.QName, tag: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class Tag(enum: Option[Name.QName], tag: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
-
-    case class FNone(loc: SourceLocation) extends WeededAst.Expression
-
-    case class FSome(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class FNil(loc: SourceLocation) extends WeededAst.Expression
 
     case class FList(hd: WeededAst.Expression, tl: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class FVec(elms: Seq[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+    case class FVec(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class FSet(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class FMap(elms: Seq[(WeededAst.Expression, WeededAst.Expression)], loc: SourceLocation) extends WeededAst.Expression
+    case class FMap(elms: List[(WeededAst.Expression, WeededAst.Expression)], loc: SourceLocation) extends WeededAst.Expression
 
     case class GetIndex(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class PutIndex(exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Existential(params: Seq[Ast.FormalParam], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class Existential(params: List[WeededAst.FormalParam], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Universal(params: Seq[Ast.FormalParam], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class Universal(params: List[WeededAst.FormalParam], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Ascribe(exp: WeededAst.Expression, tpe: Type, loc: SourceLocation) extends WeededAst.Expression
+    case class Ascribe(exp: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 
     case class UserError(loc: SourceLocation) extends WeededAst.Expression
 
@@ -223,13 +182,9 @@ object WeededAst {
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends WeededAst.Pattern
 
-    case class Tag(enum: Name.QName, tag: Name.Ident, pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
+    case class Tag(enum: Option[Name.QName], tag: Name.Ident, pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
 
     case class Tuple(elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
-
-    case class FNone(loc: SourceLocation) extends WeededAst.Pattern
-
-    case class FSome(pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
 
     case class FNil(loc: SourceLocation) extends WeededAst.Pattern
 
@@ -255,7 +210,7 @@ object WeededAst {
 
       case class False(loc: SourceLocation) extends WeededAst.Predicate.Head
 
-      case class Table(name: Name.QName, terms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Predicate.Head
+      case class Table(name: Name.QName, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
 
     }
 
@@ -263,54 +218,40 @@ object WeededAst {
 
     object Body {
 
-      case class Ambiguous(name: Name.QName, terms: List[WeededAst.Term.Body], loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Table(name: Name.QName, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Body
+
+      case class Filter(name: Name.QName, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Body
 
       case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, loc: SourceLocation) extends WeededAst.Predicate.Body
 
-      case class Loop(ident: Name.Ident, term: WeededAst.Term.Head, loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Loop(ident: Name.Ident, term: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
 
     }
 
   }
 
-  // TODO: Deprecated and to be replaced by expressions.
-  sealed trait Term extends WeededAst {
-    def loc: SourceLocation
-  }
+  sealed trait Type extends WeededAst
 
-  object Term {
+  object Type {
 
-    sealed trait Head extends WeededAst.Term
+    case class Unit(loc: SourceLocation) extends WeededAst.Type
 
-    object Head {
+    case class Var(qname: Name.Ident, loc: SourceLocation) extends WeededAst.Type
 
-      case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Term.Head
+    case class Ref(qname: Name.QName, loc: SourceLocation) extends WeededAst.Type
 
-      case class Lit(lit: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Term.Head
+    case class Tuple(elms: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
 
-      case class Tag(enumName: Name.QName, tagName: Name.Ident, t: WeededAst.Term.Head, loc: SourceLocation) extends WeededAst.Term.Head
+    case class Arrow(tparams: List[WeededAst.Type], retType: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-      case class Tuple(elms: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Term.Head
-
-      case class Apply(name: Name.QName, args: List[WeededAst.Term.Head], loc: SourceLocation) extends WeededAst.Term.Head
-
-    }
-
-    sealed trait Body extends WeededAst.Term
-
-    object Body {
-
-      case class Wild(loc: SourceLocation) extends WeededAst.Term.Body
-
-      case class Var(ident: Name.Ident, loc: SourceLocation) extends WeededAst.Term.Body
-
-      case class Lit(lit: WeededAst.Literal, loc: SourceLocation) extends WeededAst.Term.Body
-
-    }
+    case class Apply(base: WeededAst.Type, tparams: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
 
   }
 
-  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type)
+  case class Attribute(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst
 
+  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: WeededAst.Type) extends WeededAst
+
+  case class FormalParam(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst
 
 }

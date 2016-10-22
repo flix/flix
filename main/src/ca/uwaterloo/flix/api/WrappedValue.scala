@@ -63,26 +63,50 @@ final class WrappedValue(val ref: AnyRef) extends IValue {
 
   def getNativeRef: AnyRef = ref
 
-  def getJavaOpt: java.util.Optional[IValue] = Value.cast2opt(ref) match {
-    case null => java.util.Optional.empty()
-    case o => java.util.Optional.of(new WrappedValue(o))
+  def getJavaOpt: java.util.Optional[IValue] = ref match {
+    case o: Value.Tag => o.tag match {
+      case "None" => java.util.Optional.empty()
+      case "Some" => java.util.Optional.of(new WrappedValue(o.value))
+      case tag => throw new RuntimeException(s"Unexpected non-option tag: '$tag'.")
+    }
+    case _ => throw new RuntimeException(s"Unexpected non-option value: '$ref'.")
   }
 
-  def getScalaOpt: scala.Option[IValue] = Value.cast2opt(ref) match {
-    case null => scala.None
-    case o => scala.Some(new WrappedValue(o))
+  def getScalaOpt: scala.Option[IValue] = ref match {
+    case o: Value.Tag => o.tag match {
+      case "None" => scala.None
+      case "Some" => scala.Some(new WrappedValue(o.value))
+      case tag => throw new RuntimeException(s"Unexpected non-option tag: '$tag'.")
+    }
+    case _ => throw new RuntimeException(s"Unexpected non-option value: '$ref'.")
+  }
+
+  def getScalaEither: Either[IValue, IValue] = ref match {
+    case o: Value.Tag => o.tag match {
+      case "Ok" => Right(new WrappedValue(o.value))
+      case "Err" => Left(new WrappedValue(o.value))
+      case tag => throw new RuntimeException(s"Unexpected non-result tag: '$tag'.")
+    }
+    case _ => throw new RuntimeException(s"Unexpected non-result value: '$ref'.")
   }
 
   def getJavaList: java.util.List[IValue] = {
-    val xs = Value.cast2list(ref)
-    val r = new java.util.LinkedList[IValue]
-    for (x <- xs) {
-      r.add(new WrappedValue(x))
-    }
-    r
+    import scala.collection.JavaConversions._
+    seqAsJavaList(getScalaList)
   }
 
-  def getScalaList: immutable.List[IValue] = Value.cast2list(ref).map(e => new WrappedValue(e))
+  def getScalaList: immutable.List[IValue] = ref match {
+    case o: Value.Tag => o.tag match {
+      case "Nil" => Nil
+      case "Cons" =>
+        val tuple = o.value.asInstanceOf[Value.Tuple]
+        val hd = tuple.elms(0)
+        val tl = tuple.elms(1)
+        new WrappedValue(hd) :: new WrappedValue(tl).getScalaList
+      case tag => throw new RuntimeException(s"Unexpected non-list tag: '$tag'.")
+    }
+    case _ => throw new RuntimeException(s"Unexpected non-list value: '$ref'.")
+  }
 
   def getJavaSet: java.util.Set[IValue] = {
     val xs = Value.cast2set(ref)

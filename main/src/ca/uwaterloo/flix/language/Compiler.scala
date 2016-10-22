@@ -100,7 +100,7 @@ object Compiler {
   /**
     * Returns the typed AST corresponding to the given `inputs`.
     */
-  def compile(inputs: List[SourceInput], hooks: Map[Symbol.Resolved, Ast.Hook])(implicit genSym: GenSym): Validation[TypedAst.Root, CompilationError] = {
+  def compile(inputs: List[SourceInput], hooks: Map[Name.NName, Map[String, Ast.Hook]])(implicit genSym: GenSym): Validation[TypedAst.Root, CompilationError] = {
     val t = System.nanoTime()
     val pasts = @@(inputs.map(parse))
     val e = System.nanoTime() - t
@@ -109,19 +109,12 @@ object Compiler {
       case asts => ParsedAst.Program(asts, Time.Default.copy(parser = e))
     }
 
-    root flatMap {
-      case past => Weeder.weed(past, hooks) flatMap {
-        case wast =>
-          // TODO
-          //Namer.namer(wast) map {
-          //  case nast => Typer2.typer(nast)
-          //}
-
-          Resolver.resolve(wast) flatMap {
-          case rast => Typer.typecheck(rast)
-        }
-      }
-    }
+    for (
+      parsedAst <- root;
+      weededAst <- Weeder.weed(parsedAst, hooks);
+      namedAst <- Namer.namer(weededAst);
+      typedAst <- Typer.typer(namedAst)
+    ) yield typedAst
   }
 
 }

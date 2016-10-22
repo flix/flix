@@ -218,9 +218,33 @@ class TestExamples extends FunSuite {
     t.checkValue(One, "ConstantSign/A", List(Value.mkInt32(9)))
   }
 
+  test("ConstantParity.flix") {
+    val input = ""
+
+    val t = new Tester()
+      .addPath("./examples/domains/Belnap.flix")
+      .addPath("./examples/domains/ConstantParity.flix")
+      .addStr(input)
+      .run()
+
+    // TODO: Exercise lattice.
+  }
+
+  test("Mod3.flix") {
+    val input = ""
+
+    val t = new Tester()
+      .addPath("./examples/domains/Belnap.flix")
+      .addPath("./examples/domains/Mod3.flix")
+      .addStr(input)
+      .run()
+
+    // TODO: Exercise lattice.
+  }
+
   test("Parity.flix") {
     val input =
-      """namespace Parity {
+      """namespace domains.parity {
         |    let Parity<> = (Parity.Bot, Parity.Top, leq, lub, glb);
         |    lat A(k: Int, v: Parity);
         |
@@ -252,14 +276,50 @@ class TestExamples extends FunSuite {
     val Evn = Value.mkTag("Even", Value.Unit)
     val Top = Value.mkTag("Top", Value.Unit)
 
-    t.checkValue(Odd, "Parity/A", List(Value.mkInt32(1)))
-    t.checkValue(Evn, "Parity/A", List(Value.mkInt32(2)))
-    t.checkValue(Top, "Parity/A", List(Value.mkInt32(3)))
-    t.checkNone("Parity/A", List(Value.mkInt32(4)))
-    t.checkValue(Odd, "Parity/A", List(Value.mkInt32(5)))
-    t.checkValue(Evn, "Parity/A", List(Value.mkInt32(6)))
-    t.checkValue(Evn, "Parity/A", List(Value.mkInt32(7)))
-    t.checkValue(Odd, "Parity/A", List(Value.mkInt32(8)))
+    t.checkValue(Odd, "domains.parity/A", List(Value.mkInt32(1)))
+    t.checkValue(Evn, "domains.parity/A", List(Value.mkInt32(2)))
+    t.checkValue(Top, "domains.parity/A", List(Value.mkInt32(3)))
+    t.checkNone("domains.parity/A", List(Value.mkInt32(4)))
+    t.checkValue(Odd, "domains.parity/A", List(Value.mkInt32(5)))
+    t.checkValue(Evn, "domains.parity/A", List(Value.mkInt32(6)))
+    t.checkValue(Evn, "domains.parity/A", List(Value.mkInt32(7)))
+    t.checkValue(Odd, "domains.parity/A", List(Value.mkInt32(8)))
+  }
+
+  test("ParitySign.flix") {
+    val input = ""
+
+    val t = new Tester()
+      .addPath("./examples/domains/Belnap.flix")
+      .addPath("./examples/domains/ParitySign.flix")
+      .addStr(input)
+      .run()
+
+    // TODO: Exercise lattice.
+  }
+
+  test("PrefixSuffix.flix") {
+    val input = ""
+
+    val t = new Tester()
+      .addPath("./examples/domains/Belnap.flix")
+      .addPath("./examples/domains/PrefixSuffix.flix")
+      .addStr(input)
+      .run()
+
+    // TODO: Exercise lattice.
+  }
+
+  test("Sign.flix") {
+    val input = ""
+
+    val t = new Tester()
+      .addPath("./examples/domains/Belnap.flix")
+      .addPath("./examples/domains/Sign.flix")
+      .addStr(input)
+      .run()
+
+    // TODO: Exercise lattice.
   }
 
   test("StrictSign.flix") {
@@ -310,6 +370,27 @@ class TestExamples extends FunSuite {
 
   test("Type.flix") {
     val t = new Tester().addPath("./examples/domains/Type.flix")
+    t.checkSuccess()
+  }
+
+  test("IFDS.flix") {
+    val t = new Tester()
+      .addPath("./examples/analysis/IFDS.flix")
+      .run()
+    t.checkSuccess()
+  }
+
+  test("IDE.flix") {
+    val t = new Tester()
+      .addPath("./examples/analysis/IDE.flix")
+      .run()
+    t.checkSuccess()
+  }
+
+  test("SUOpt.flix") {
+    val t = new Tester()
+      .addPath("./examples/analysis/SUopt.flix")
+      .run()
     t.checkSuccess()
   }
 

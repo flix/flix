@@ -45,8 +45,10 @@
         <mkdir dir="${out.dir}/classes"/>
 
         <!-- Compile scala sources. -->
-        <scalac srcdir="${src.dir}" destdir="${out.dir}/classes" classpathref="classpath" fork="true">
+        <!-- NB: Never fork scalac: doing so will cause memory issues. -->
+        <scalac srcdir="${src.dir}" destdir="${out.dir}/classes" classpathref="classpath" fork="false">
             <include name="**/*.scala"/>
+            <include name="**/*.java"/>
         </scalac>
 
         <!-- Compile java sources. (Antlr4) -->
@@ -109,6 +111,7 @@
     <!-- Run scalatest.                                           -->
     <!-- ======================================================== -->
     <target name="test" depends="build-all">
+        <!-- NB: Must fork tests due to class loader in Flix -->
         <java classname="org.scalatest.tools.Runner" fork="true" failonerror="true">
             <classpath>
                 <pathelement location="${out.dir}/flix.jar"/>

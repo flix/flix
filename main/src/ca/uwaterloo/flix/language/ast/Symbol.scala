@@ -24,8 +24,30 @@ object Symbol {
   /**
     * Returns a fresh variable symbol for the given identifier.
     */
-  def mkVarSym(ident: Name.Ident)(implicit genSym: GenSym): VarSym = {
-    new VarSym(genSym.freshId(), ident.name, ident.loc)
+  def freshVarSym(ident: Name.Ident)(implicit genSym: GenSym): VarSym = {
+    new VarSym(genSym.freshId(), ident.name, Type.freshTypeVar(), ident.loc)
+  }
+
+  /**
+    * Returns the definition symbol for the given name `ident` in the given namespace `ns`.
+    */
+  def mkDefnSym(ns: NName, ident: Ident): DefnSym = {
+    new DefnSym(ns.parts, ident.name, ident.loc)
+  }
+
+  /**
+    * Returns the enum symbol for the given name `ident` in the given namespace `ns`.
+    */
+  def mkEnumSym(ns: NName, ident: Ident): EnumSym = {
+    new EnumSym(ns.parts, ident.name, ident.loc)
+  }
+
+  /**
+    * Returns the enum symbol for the given fully qualified name.
+    */
+  def mkEnumSym(fqn: String): EnumSym = split(fqn) match {
+    case None => new EnumSym(Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new EnumSym(ns, name, SourceLocation.Unknown)
   }
 
   /**
@@ -52,25 +74,20 @@ object Symbol {
   /**
     * Returns the table symbol for the given fully qualified name.
     */
-  def mkTableSym(fqn: String): TableSym = {
-    if (!fqn.contains('/'))
-      return new TableSym(List.empty, fqn, SourceLocation.Unknown)
-
-    val index = fqn.indexOf('/')
-    val namespace = fqn.substring(0, index).split('.').toList
-    val name = fqn.substring(index + 1, fqn.length)
-    new TableSym(namespace, name, SourceLocation.Unknown)
+  def mkTableSym(fqn: String): TableSym = split(fqn) match {
+    case None => new TableSym(Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new TableSym(ns, name, SourceLocation.Unknown)
   }
-
 
   /**
     * Variable Symbol.
     *
     * @param id   the globally unique name of the symbol.
     * @param text the original name, as it appears in the source code, of the symbol
+    * @param tvar the type variable associated with the symbol.
     * @param loc  the source location associated with the symbol.
     */
-  final class VarSym(val id: Int, val text: String, val loc: SourceLocation) {
+  final class VarSym(val id: Int, val text: String, val tvar: Type.Var, val loc: SourceLocation) {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -88,6 +105,69 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = text + "$" + id
+
+    // TODO: Temporary convenience method.
+    def toIdent: Name.Ident = {
+      val sp1 = SourcePosition(loc.source, loc.beginLine, loc.beginCol, None)
+      val sp2 = SourcePosition(loc.source, loc.endLine, loc.endCol, None)
+      Name.Ident(sp1, text + "$" + id, sp2)
+    }
+  }
+
+  /**
+    * Definition Symbol.
+    */
+  final class DefnSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
+
+    // TODO: Temporary convenience method.
+    def toResolvedTemporaryHelperMethod: Symbol.Resolved = {
+      Symbol.Resolved.mk(namespace ::: name :: Nil)
+    }
+
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: DefnSym => this.namespace == that.namespace && this.name == that.name
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = 7 * namespace.hashCode() + 11 * name.hashCode
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "/" + name
+  }
+
+
+  /**
+    * Enum Symbol.
+    */
+  final class EnumSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: EnumSym => this.namespace == that.namespace && this.name == that.name
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = 7 * namespace.hashCode() + 11 * name.hashCode
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = name
+
+    // TODO: Remove
+    def toResolved: Symbol.Resolved = Symbol.Resolved.mk(namespace ::: name :: Nil)
   }
 
   /**
@@ -227,6 +307,21 @@ object Symbol {
       * Human readable representation.
       */
     override val toString: String = fqn
+  }
+
+  /**
+    * Optionally returns the namespace part and name of the given fully qualified string `fqn`.
+    *
+    * Returns `None` if the `fqn` is not qualified.
+    */
+  private def split(fqn: String): Option[(List[String], String)] = {
+    if (!fqn.contains('/'))
+      return None
+
+    val index = fqn.indexOf('/')
+    val namespace = fqn.substring(0, index).split('.').toList
+    val name = fqn.substring(index + 1, fqn.length)
+    Some((namespace, name))
   }
 
 }

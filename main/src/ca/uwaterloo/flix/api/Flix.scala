@@ -19,14 +19,13 @@ package ca.uwaterloo.flix.api
 import java.nio.file.{Files, Path, Paths}
 
 import ca.uwaterloo.flix.language.ast.Ast.Hook
-import ca.uwaterloo.flix.language.ast.Type.Lambda
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.{DeltaSolver, Model, Solver, Value}
-import ca.uwaterloo.flix.util.{Options, Validation}
+import ca.uwaterloo.flix.util.{LocalResource, Options, StreamOps, Validation}
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
@@ -47,9 +46,16 @@ class Flix {
   private val paths = ListBuffer.empty[Path]
 
   /**
+    * A sequence of internal inputs to be parsed into Flix ASTs.
+    */
+  private val internals = List(
+    "Prelude.flix" -> StreamOps.readAll(LocalResource.Library.Prelude)
+  )
+
+  /**
     * A map of hooks to JVM invokable methods.
     */
-  private val hooks = mutable.Map.empty[Symbol.Resolved, Ast.Hook]
+  private val hooks = mutable.Map.empty[Name.NName, Map[String, Ast.Hook]]
 
   /**
     * The current Flix options.
@@ -115,14 +121,11 @@ class Flix {
     if (!tpe.isFunction)
       throw new IllegalArgumentException("'tpe' must be a function type.")
 
-    val rname = Symbol.Resolved.mk(name)
-    hooks.get(rname) match {
-      case None =>
-        val typ = tpe.asInstanceOf[WrappedType].tpe.asInstanceOf[Lambda]
-        hooks += (rname -> Ast.Hook.Safe(rname, inv, typ))
-      case Some(otherHook) =>
-        throw new IllegalStateException(s"Another hook already exists for the given '$name'.")
-    }
+    val qname = Name.mkQName(name)
+    val hook = Ast.Hook.Safe(qname.toResolved, inv, tpe.asInstanceOf[WrappedType].tpe)
+    val entries = hooks.getOrElse(qname.namespace, Map.empty)
+    hooks += (qname.namespace -> (entries + (qname.ident.name -> hook)))
+
     this
   }
 
@@ -143,14 +146,11 @@ class Flix {
     if (!tpe.isFunction)
       throw new IllegalArgumentException("'tpe' must be a function type.")
 
-    val rname = Symbol.Resolved.mk(name)
-    hooks.get(rname) match {
-      case None =>
-        val typ = tpe.asInstanceOf[WrappedType].tpe.asInstanceOf[Lambda]
-        hooks += (rname -> Ast.Hook.Unsafe(rname, inv, typ))
-      case Some(otherHook) =>
-        throw new IllegalStateException(s"Another hook already exists for the given '$name'.")
-    }
+    val qname = Name.mkQName(name)
+    val hook = Ast.Hook.Unsafe(qname.toResolved, inv, tpe.asInstanceOf[WrappedType].tpe)
+    val entries = hooks.getOrElse(qname.namespace, Map.empty)
+    hooks += (qname.namespace -> (entries + (qname.ident.name -> hook)))
+
     this
   }
 
@@ -166,8 +166,10 @@ class Flix {
     if (args == null)
       throw new IllegalArgumentException("'args' must be non-null.")
 
-    val rname = Symbol.Resolved.mk(name)
-    hooks.get(rname) match {
+    val qname = Name.mkQName(name)
+    val hook = hooks.get(qname.namespace).flatMap(_.get(qname.ident.name))
+
+    hook match {
       case None => throw new NoSuchElementException(s"Hook '$name' does not exist.")
       case Some(_: Hook.Unsafe) => throw new RuntimeException(s"Trying to invoke a safe hook but '$name' is an unsafe hook.")
       case Some(hook: Hook.Safe) => hook.inv(args)
@@ -186,8 +188,10 @@ class Flix {
     if (args == null)
       throw new IllegalArgumentException("'args' must be non-null.")
 
-    val rname = Symbol.Resolved.mk(name)
-    hooks.get(rname) match {
+    val qname = Name.mkQName(name)
+    val hook = hooks.get(qname.namespace).flatMap(_.get(qname.ident.name))
+
+    hook match {
       case None => throw new NoSuchElementException(s"Hook '$name' does not exist.")
       case Some(_: Hook.Safe) => throw new RuntimeException(s"Trying to invoke an unsafe hook but '$name' is a safe hook.")
       case Some(hook: Hook.Unsafe) => hook.inv(args)
@@ -215,6 +219,9 @@ class Flix {
 
     Compiler.compile(getSourceInputs, hooks.toMap).flatMap {
       case tast =>
+        if (options.documentor) {
+          Documentor.document(tast)
+        }
         val ast = PropertyGen.collectProperties(tast)
         val sast = Simplifier.simplify(ast)
         val lifted = Tailrec.tailrec(LambdaLift.lift(sast))
@@ -261,6 +268,7 @@ class Flix {
     val si1 = strings.foldLeft(List.empty[SourceInput]) {
       case (xs, s) => SourceInput.Str(s) :: xs
     }
+
     val si2 = paths.foldLeft(List.empty[SourceInput]) {
       case (xs, p) if p.getFileName.toString.endsWith(".flix") => SourceInput.TxtFile(p) :: xs
       case (xs, p) if p.getFileName.toString.endsWith(".flix.zip") => SourceInput.ZipFile(p) :: xs
@@ -268,7 +276,11 @@ class Flix {
       case (_, p) => throw new IllegalStateException(s"Unknown file type '${p.getFileName}'.")
     }
 
-    si1 ::: si2
+    val si3 = internals.foldLeft(List.empty[SourceInput]) {
+      case (xs, (name, text)) => SourceInput.Internal(name, text) :: xs
+    }
+    
+    si1 ::: si2 ::: si3
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -330,38 +342,21 @@ class Flix {
   def mkStrType: IType = new WrappedType(Type.Str)
 
   /**
-    * Returns the Tag type for the given `enumName` with the `tagName` and nested type `tpe`.
+    * Returns the enum with the given `fqn` and `tags`.
     */
-  def mkTagType(enumName: String, tagName: String, tpe: IType): IType = {
-    if (enumName == null)
-      throw new IllegalArgumentException("Argument 'enumName' must be non-null.")
-    if (tagName == null)
-      throw new IllegalArgumentException("Argument 'tagName' must be non-null.")
-    if (tpe == null)
-      throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
-
-    val enum = Symbol.Resolved.mk(enumName)
-    val tag = Name.Ident(SourcePosition.Unknown, tagName, SourcePosition.Unknown)
-    new WrappedType(new Type.Tag(enum, tag, tpe.asInstanceOf[WrappedType].tpe))
-  }
-
-  /**
-    * Returns the enum with the given `enumName` and `tags`.
-    */
-  def mkEnumType(enumName: String, tags: Array[IType]): IType = {
-    if (enumName == null)
+  def mkEnumType(fqn: String, tags: java.util.Map[String, IType]): IType = {
+    if (fqn == null)
       throw new IllegalArgumentException("Argument 'enumName' must be non-null.")
     if (tags == null)
       throw new IllegalArgumentException("Argument 'tags' must be non-null.")
 
-    val cases = tags.foldLeft(Map.empty[String, Type.Tag]) {
-      case (macc, tpe) =>
-        val tag = tpe.asInstanceOf[WrappedType].tpe.asInstanceOf[Type.Tag]
-        val tagName = tag.tag.name
-        macc + (tagName -> tag)
+    import collection.JavaConverters._
+    val cases = tags.asScala.foldLeft(Map.empty[String, Type]) {
+      case (macc, (tag, tpe)) =>
+        macc + (tag -> tpe.asInstanceOf[WrappedType].tpe)
     }
 
-    new WrappedType(new Type.Enum(Symbol.Resolved.mk(enumName), cases))
+    new WrappedType(Type.Enum(Symbol.mkEnumSym(fqn), cases, Kind.Star))
   }
 
   /**
@@ -372,17 +367,7 @@ class Flix {
       throw new IllegalArgumentException("Argument 'types' must be non-null.")
 
     val elms = types.toList.map(_.asInstanceOf[WrappedType].tpe)
-    new WrappedType(Type.Tuple(elms))
-  }
-
-  /**
-    * Returns the opt type parameterized by the given type `tpe`.
-    */
-  def mkOptType(tpe: IType): IType = {
-    if (tpe == null)
-      throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
-
-    new WrappedType(Type.FOpt(tpe.asInstanceOf[WrappedType].tpe))
+    new WrappedType(Type.Apply(Type.FTuple(elms.length), elms))
   }
 
   /**
@@ -392,7 +377,7 @@ class Flix {
     if (tpe == null)
       throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
 
-    new WrappedType(Type.FList(tpe.asInstanceOf[WrappedType].tpe))
+    new WrappedType(Type.mkFList(tpe.asInstanceOf[WrappedType].tpe))
   }
 
   /**
@@ -402,7 +387,7 @@ class Flix {
     if (tpe == null)
       throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
 
-    new WrappedType(Type.FSet(tpe.asInstanceOf[WrappedType].tpe))
+    new WrappedType(Type.mkFSet(tpe.asInstanceOf[WrappedType].tpe))
   }
 
   /**
@@ -414,7 +399,7 @@ class Flix {
     if (value == null)
       throw new IllegalArgumentException("Argument 'value' must be non-null.")
 
-    new WrappedType(Type.FMap(key.asInstanceOf[WrappedType].tpe, value.asInstanceOf[WrappedType].tpe))
+    new WrappedType(Type.mkFMap(key.asInstanceOf[WrappedType].tpe, value.asInstanceOf[WrappedType].tpe))
   }
 
   /**
@@ -435,7 +420,7 @@ class Flix {
 
     val args = arguments.toList.map(_.asInstanceOf[WrappedType].tpe)
     val retTpe = returnType.asInstanceOf[WrappedType].tpe
-    new WrappedType(Type.Lambda(args, retTpe))
+    new WrappedType(Type.mkArrow(args, retTpe))
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -554,6 +539,58 @@ class Flix {
   }
 
   /**
+    * Returns the value `None`.
+    */
+  def mkNone: IValue = mkTag("None", mkUnit)
+
+  /**
+    * Returns the value `Some(v)`.
+    */
+  def mkSome(v: IValue): IValue = {
+    if (v == null)
+      throw new IllegalArgumentException("Argument 'v' must be non-null.")
+
+    mkTag("Some", v)
+  }
+
+  /**
+    * Returns the value `Ok(v)`.
+    */
+  def mkOk(v: IValue): IValue = {
+    if (v == null)
+      throw new IllegalArgumentException("Argument 'v' must be non-null.")
+
+    mkTag("Ok", v)
+  }
+
+  /**
+    * Returns the value `Err(v)`.
+    */
+  def mkErr(v: IValue): IValue = {
+    if (v == null)
+      throw new IllegalArgumentException("Argument 'v' must be non-null.")
+
+    mkTag("Err", v)
+  }
+
+  /**
+    * Returns the value `Nil`.
+    */
+  def mkNil: IValue = mkTag("Nil", mkUnit)
+
+  /**
+    * Returns the value `v :: vs`.
+    */
+  def mkCons(v: IValue, vs: IValue): IValue = {
+    if (v == null)
+      throw new IllegalArgumentException("Argument 'v' must be non-null.")
+    if (vs == null)
+      throw new IllegalArgumentException("Argument 'vs' must be non-null.")
+
+    mkTag("Cons", mkTuple(Array(v, vs)))
+  }
+
+  /**
     * Returns the tuple corresponding to the given array.
     */
   def mkTuple(tuple: Array[IValue]): IValue = {
@@ -571,9 +608,9 @@ class Flix {
       throw new IllegalArgumentException("Argument 'o' must be non-null.")
 
     if (!o.isPresent)
-      new WrappedValue(Value.mkNone)
+      mkNone
     else
-      new WrappedValue(Value.mkSome(o.get()))
+      mkSome(o.get())
   }
 
   /**
@@ -584,8 +621,8 @@ class Flix {
       throw new IllegalArgumentException("Argument 'o' must be non-null.")
 
     o match {
-      case None => new WrappedValue(Value.mkNone)
-      case Some(v) => new WrappedValue(Value.mkSome(v))
+      case None => mkNone
+      case Some(v) => mkSome(v)
     }
   }
 
@@ -596,7 +633,11 @@ class Flix {
     if (l == null)
       throw new IllegalArgumentException("Argument 'l' must be non-null.")
 
-    new WrappedValue(Value.mkList(l.toList.map(_.getUnsafeRef)))
+    val xs = l.foldRight(mkNil) {
+      case (v, vs) => mkCons(v, vs)
+    }
+
+    new WrappedValue(xs)
   }
 
   /**
@@ -605,9 +646,8 @@ class Flix {
   def mkList(l: java.util.List[IValue]): IValue = {
     if (l == null)
       throw new IllegalArgumentException("Argument 'l' must be non-null.")
-
     import scala.collection.JavaConversions._
-    new WrappedValue(Value.mkList(l.toList.map(_.getUnsafeRef)))
+    mkList(l.toList)
   }
 
   /**
@@ -616,8 +656,7 @@ class Flix {
   def mkList(l: scala.Seq[IValue]): IValue = {
     if (l == null)
       throw new IllegalArgumentException("Argument 'l' must be non-null.")
-
-    new WrappedValue(Value.mkList(l.toList.map(_.getUnsafeRef)))
+    mkList(l.toList)
   }
 
   /**

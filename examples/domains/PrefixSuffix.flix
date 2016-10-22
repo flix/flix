@@ -3,9 +3,9 @@
  */
 namespace PrefixSuffix {
 
-    /**
-     * The elements of the prefix lattice.
-     */
+    ///
+    /// The elements of the prefix lattice.
+    ///
     enum PS {
                    case Top,
 
@@ -16,9 +16,9 @@ namespace PrefixSuffix {
                    case Bot
     }
 
-    /**
-     * Returns `true` iff `e1` is less than or equal to `e2`.
-     */
+    ///
+    /// Returns `true` iff `e1` is less than or equal to `e2`.
+    ///
     def leq(e1: PS, e2: PS): Bool = match (e1, e2) with {
         case (PS.Bot, _)                            => true
         case (PS.PreSuf(p1, s1), PS.PreSuf(p2, s2)) => p1 == p2 && s1 == s2
@@ -30,9 +30,9 @@ namespace PrefixSuffix {
         case _                                      => false
     }
 
-    /**
-     * Returns the least upper bound of `e1` and `e2`.
-     */
+    ///
+    /// Returns the least upper bound of `e1` and `e2`.
+    ///
     @commutative @associative
     def lub(e1: PS, e2: PS): PS = match (e1, e2) with {
         case (PS.Bot, x)                        => x
@@ -52,9 +52,9 @@ namespace PrefixSuffix {
         case _                                  => PS.Top
     }
 
-    /**
-     * Returns the greatest lower bound of `e1` and `e2`.
-     */
+    ///
+    /// Returns the greatest lower bound of `e1` and `e2`.
+    ///
     @commutative @associative
     def glb(e1: PS, e2: PS): PS = match (e1, e2) with {
         case (PS.Top, x)                        => x
@@ -72,9 +72,9 @@ namespace PrefixSuffix {
         case _                                  => PS.Bot
     }
 
-    /**
-      * Over-approximates `concatenate`.
-      */
+    ///
+    /// Over-approximates `concatenate`.
+    ///
     @strict @monotone @associative
     def concatenate(e1: PS, e2: PS): PS = match (e1, e2) with {
         case (PS.Bot, _)                            => PS.Bot
@@ -95,9 +95,9 @@ namespace PrefixSuffix {
         case _                                      => PS.Top
     }
 
-    /**
-      * Over-approximates `equal`.
-      */
+    ///
+    /// Over-approximates `equal`.
+    ///
     @strict @monotone @commutative
     def eq(e1: PS, e2: PS): Belnap/Belnap = match (e1, e2) with {
         case (PS.Bot, _)            => Belnap/Belnap.Bot
@@ -116,9 +116,9 @@ namespace PrefixSuffix {
         case _                                  => Belnap/Belnap.Top
     }
 
-    /**
-      * Over-approximates `not equal`.
-      */
+    ///
+    /// Over-approximates `not equal`.
+    ///
     @strict @monotone @commutative
     def neq(e1: PS, e2: PS): Belnap/Belnap = Belnap/not(eq(e1, e2))
 

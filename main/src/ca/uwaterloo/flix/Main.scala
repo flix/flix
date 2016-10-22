@@ -55,6 +55,7 @@ object Main {
     // construct flix options.
     val options = Options.Default.copy(
       debug = cmdOpts.xdebug,
+      documentor = cmdOpts.documentor,
       evaluation = if (cmdOpts.xinterpreter) Evaluation.Interpreted else Evaluation.Compiled,
       optimize = cmdOpts.optimize,
       monitor = cmdOpts.monitor,
@@ -132,6 +133,7 @@ object Main {
     * A case class representing the parsed command line options.
     */
   case class CmdOpts(delta: Option[File] = None,
+                     documentor: Boolean = false,
                      monitor: Boolean = false,
                      optimize: Boolean = false,
                      pipe: Boolean = false,
@@ -157,6 +159,10 @@ object Main {
 
       // Head
       head("The Flix Programming Language", Version.CurrentVersion.toString)
+
+      // Doc.
+      opt[Unit]("doc").action((_, c) => c.copy(documentor = true)).
+        text("generates HTML documentation.")
 
       // Delta.
       opt[File]("delta").action((f, c) => c.copy(delta = Some(f))).

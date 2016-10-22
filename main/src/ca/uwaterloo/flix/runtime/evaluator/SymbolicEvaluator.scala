@@ -728,7 +728,7 @@ object SymbolicEvaluator {
         */
       case Expression.Tag(enum, tag, exp, _, _) =>
         eval(pc0, exp, env0) flatMap {
-          case (pc, v) => lift(pc, SymVal.Tag(tag.name, v))
+          case (pc, v) => lift(pc, SymVal.Tag(tag, v))
         }
 
       /**
@@ -745,7 +745,7 @@ object SymbolicEvaluator {
       case Expression.CheckTag(tag, exp, _) =>
         eval(pc0, exp, env0) flatMap {
           case (pc, SymVal.Tag(tag2, _)) =>
-            if (tag.name == tag2)
+            if (tag == tag2)
               lift(pc, SymVal.True)
             else
               lift(pc, SymVal.False)
@@ -771,6 +771,58 @@ object SymbolicEvaluator {
         }
 
       /**
+        * FNil.
+        */
+      case Expression.FNil(tpe, loc) =>
+        lift(pc0, SymVal.FNil)
+
+      /**
+        * FList.
+        */
+      case Expression.FList(hd, tl, _, _) =>
+        eval2(pc0, hd, tl, env0) flatMap {
+          case (pc, (v1, v2)) => lift(pc, SymVal.FList(v1, v2))
+        }
+
+      /**
+        * IsNil.
+        */
+      case Expression.IsNil(exp, _) =>
+        eval(pc0, exp, env0) flatMap {
+          case (pc, SymVal.FNil) => lift(pc, SymVal.True)
+          case (pc, SymVal.FList(hd, tl)) => lift(pc, SymVal.False)
+          case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
+        }
+
+      /**
+        * IsList.
+        */
+      case Expression.IsList(exp, _) =>
+        eval(pc0, exp, env0) flatMap {
+          case (pc, SymVal.FNil) => lift(pc, SymVal.False)
+          case (pc, SymVal.FList(hd, tl)) => lift(pc, SymVal.True)
+          case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
+        }
+
+      /**
+        * GetHead.
+        */
+      case Expression.GetHead(exp, _, _) =>
+        eval(pc0, exp, env0) flatMap {
+          case (pc, SymVal.FList(hd, tl)) => lift(pc, hd)
+          case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
+        }
+
+      /**
+        * GetTail.
+        */
+      case Expression.GetTail(exp, _, _) =>
+        eval(pc0, exp, env0) flatMap {
+          case (pc, SymVal.FList(hd, tl)) => lift(pc, tl)
+          case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
+        }
+
+      /**
         * User Error.
         */
       case Expression.UserError(tpe, loc) => throw new UserException("User Error.", loc)
@@ -787,8 +839,6 @@ object SymbolicEvaluator {
 
       // NB: Not yet fully implemented in the backend.
       case e: Expression.FSet => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.CheckNil => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.CheckCons => throw InternalCompilerException(s"Unsupported expression: '$e'.")
 
       /**
         * Unsupported expressions.
@@ -939,8 +989,8 @@ object SymbolicEvaluator {
         */
       case (SymVal.Tag(tag1, v1), SymVal.Tag(tag2, v2)) =>
         if (tag1 == tag2) {
-          val innerTpe = tpe.asInstanceOf[Type.Enum]
-          eq(pc0, v1, v2, innerTpe.cases(tag1).tpe)
+          val innerType = tpe.asInstanceOf[Type.Enum]
+          eq(pc0, v1, v2, innerType.cases(tag1))
         } else {
           lift(pc0, SymVal.False)
         }
@@ -961,7 +1011,7 @@ object SymbolicEvaluator {
           }
         }
         val elms = elms1 zip elms2
-        val types = tpe.asInstanceOf[Type.Tuple].elms
+        val types = tpe.asInstanceOf[Type.Apply].ts
         visit(pc0, elms, types)
 
       case _ => throw InternalCompilerException(s"Unexpected values: '$x' and '$y'.")

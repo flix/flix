@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.language.ast.{Name, SourcePosition, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Name, SourcePosition, Symbol}
 
 package object phase {
 
@@ -24,10 +24,11 @@ package object phase {
 
   class GenSym() {
 
-    def freshTypeVar(): Type.Var = ???
-
     private var number: Int = 0
 
+    /**
+      * Returns a freshly generated unique id.
+      */
     def freshId(): Int = {
       number = number + 1
       number
@@ -44,7 +45,6 @@ package object phase {
       number = number + 1
       Name.Ident(SourcePosition.Unknown, prefix + "$" + number, SourcePosition.Unknown)
     }
-
   }
 
 }
