@@ -196,7 +196,7 @@ object Typer {
           * Performs type resolution on the given enum and its cases.
           */
         def visitEnum(enum: NamedAst.Declaration.Enum, ns: Name.NName): Result[(Symbol.EnumSym, TypedAst.Declaration.Enum), TypeError] = enum match {
-          case NamedAst.Declaration.Enum(doc, sym, tparams, cases0, scheme0, loc) =>
+          case NamedAst.Declaration.Enum(doc, sym, tparams, cases0, tpe, loc) =>
             val casesResult = cases0 map {
               case (name, NamedAst.Case(enumName, tagName, tpe)) =>
                 Disambiguation.resolve(tpe, ns, program).map {
@@ -206,8 +206,7 @@ object Typer {
 
             for {
               cases <- Result.seqM(casesResult.toList)
-              scheme <- Disambiguation.resolve(scheme0, ns, program)
-            } yield sym -> TypedAst.Declaration.Enum(doc, sym, cases.toMap, scheme, loc)
+            } yield sym -> TypedAst.Declaration.Enum(doc, sym, cases.toMap, tpe, loc)
         }
 
         // Visit every enum in the program.
@@ -623,17 +622,18 @@ object Typer {
          */
         case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
           Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
-            case Ok(decl) => Disambiguation.resolve(decl.sc, ns0, program) match {
-              case Ok(scheme) =>
-                val enumType = Scheme.instantiate(scheme)
-                val cazeType = getEnumType(enumType).cases(tag.name)
-                for (
-                  innerType <- visitExp(exp);
-                  _________ <- unifyM(innerType, cazeType, loc);
-                  resultType <- unifyM(tvar, enumType, loc)
-                ) yield resultType
-              case Err(e) => failM(e)
-            }
+            case Ok(decl) =>
+              val caseScheme = decl.cases(tag.name).sc
+              Disambiguation.resolve(caseScheme, ns0, program) match {
+                case Ok(scheme) =>
+                  val caseType = Scheme.instantiate(scheme)
+                  for (
+                    innerType <- visitExp(exp);
+                    _________ <- unifyM(innerType, caseType, loc);
+                    resultType <- unifyM(tvar, decl.tpe, loc)
+                  ) yield resultType
+                case Err(e) => failM(e)
+              }
             case Err(e) => failM(e)
           }
 
@@ -644,23 +644,6 @@ object Typer {
           for (
             elementTypes <- seqM(elms.map(visitExp));
             resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
-          ) yield resultType
-
-        /*
-         * Nil expression.
-         */
-        case NamedAst.Expression.FNil(tvar, loc) =>
-          val freshElmVar = Type.freshTypeVar()
-          unifyM(Type.mkFList(freshElmVar), tvar, loc)
-
-        /*
-         * List expression.
-         */
-        case NamedAst.Expression.FList(head, tail, tvar, loc) =>
-          for (
-            headType <- visitExp(head);
-            tailType <- visitExp(tail);
-            resultType <- unifyM(tvar, Type.mkFList(headType), tailType, loc)
           ) yield resultType
 
         /*
@@ -788,17 +771,18 @@ object Typer {
         case NamedAst.Pattern.Str(s, loc) => liftM(Type.Str)
         case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
           Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
-            case Ok(decl) => Disambiguation.resolve(decl.sc, ns0, program) match {
-              case Ok(scheme) =>
-                val enumType = Scheme.instantiate(scheme)
-                val cazeType = getEnumType(enumType).cases(tag.name)
-                for (
-                  innerType <- visitPat(pat);
-                  _________ <- unifyM(innerType, cazeType, loc);
-                  resultType <- unifyM(tvar, enumType, loc)
-                ) yield resultType
-              case Err(e) => failM(e)
-            }
+            case Ok(decl) =>
+              val caseScheme = decl.cases(tag.name).sc
+              Disambiguation.resolve(caseScheme, ns0, program) match {
+                case Ok(scheme) =>
+                  val caseType = Scheme.instantiate(scheme)
+                  for (
+                    innerType <- visitPat(pat);
+                    _________ <- unifyM(innerType, caseType, loc);
+                    resultType <- unifyM(tvar, decl.tpe, loc)
+                  ) yield resultType
+                case Err(e) => failM(e)
+              }
             case Err(e) => failM(e)
           }
         case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
@@ -806,14 +790,6 @@ object Typer {
             elementTypes <- seqM(elms map visitPat);
             resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
           ) yield resultType
-        case NamedAst.Pattern.FNil(tvar, loc) => liftM(Type.mkFList(tvar))
-        case NamedAst.Pattern.FList(hd, tl, tvar, loc) =>
-          for {
-            inferredHeadType <- visitPat(hd)
-            inferredTailType <- visitPat(tl)
-            inferredListType <- unifyM(Type.mkFList(inferredHeadType), inferredTailType, loc)
-            resultType <- unifyM(tvar, inferredListType, loc)
-          } yield resultType
         case NamedAst.Pattern.FVec(elms, rest, tvar, loc) =>
           // Introduce a fresh type variable for the type of the elements in the vector.
           val elementType = Type.freshTypeVar()
@@ -988,20 +964,6 @@ object Typer {
           TypedAst.Expression.Tuple(es, subst0(tvar), loc)
 
         /*
-         * Nil expression.
-         */
-        case NamedAst.Expression.FNil(tvar, loc) =>
-          TypedAst.Expression.FNil(subst0(tvar), loc)
-
-        /*
-         * List expression.
-         */
-        case NamedAst.Expression.FList(hd, tl, tvar, loc) =>
-          val e1 = visitExp(hd, subst0)
-          val e2 = visitExp(tl, subst0)
-          TypedAst.Expression.FList(e1, e2, subst0(tvar), loc)
-
-        /*
          * Vec expression.
          */
         case NamedAst.Expression.FVec(elms, tvar, loc) =>
@@ -1093,8 +1055,6 @@ object Typer {
             case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
           }
         case NamedAst.Pattern.Tuple(elms, tvar, loc) => TypedAst.Pattern.Tuple(elms map visitPat, subst0(tvar), loc)
-        case NamedAst.Pattern.FNil(tvar, loc) => TypedAst.Pattern.FNil(subst0(tvar), loc)
-        case NamedAst.Pattern.FList(hd, tl, tvar, loc) => TypedAst.Pattern.FList(visitPat(hd), visitPat(tl), subst0(tvar), loc)
         case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => TypedAst.Pattern.FVec(elms map visitPat, rest.map(visitPat), subst0(tvar), loc)
         case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => TypedAst.Pattern.FSet(elms map visitPat, rest.map(visitPat), subst0(tvar), loc)
         case NamedAst.Pattern.FMap(elms, rest, tvar, loc) =>
@@ -1267,15 +1227,6 @@ object Typer {
         TypedAst.Predicate.Body.Loop(sym, t, loc)
     }
 
-  }
-
-  /**
-    * Returns the underlying enum type of `tpe`.
-    */
-  def getEnumType(tpe: Type): Type.Enum = tpe match {
-    case t: Type.Enum => t
-    case Type.Apply(t: Type.Enum, _) => t
-    case _ => throw InternalCompilerException(s"Unexpected type `$tpe'.")
   }
 
   /**

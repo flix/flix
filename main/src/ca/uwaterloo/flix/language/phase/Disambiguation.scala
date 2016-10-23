@@ -180,7 +180,6 @@ object Disambiguation {
       case "Native" => Ok(Type.Native)
 
       // Higher-Kinded Types.
-      case "List" => Ok(Type.FList)
       case "Vec" => Ok(Type.FVec)
       case "Set" => Ok(Type.FSet)
       case "Map" => Ok(Type.FMap)
@@ -192,11 +191,7 @@ object Disambiguation {
         val decls = program.enums.getOrElse(ns0, Map.empty)
         decls.get(typeName) match {
           case None => Err(TypeError.UnresolvedType(qname, ns0, loc))
-          case Some(enum) => enum.sc.base match {
-            case t: NamedAst.Type.Enum => resolve(t, ns0, program)
-            case NamedAst.Type.Apply(t: NamedAst.Type.Enum, _, _) => resolve(t, ns0, program)
-            case tpe => throw InternalCompilerException(s"Unexpected type `$tpe'.")
-          }
+          case Some(enum) => Ok(Type.Enum(enum.sym, Kind.Star /* TODO: Kind */))
         }
     }
     case NamedAst.Type.Ref(qname, loc) if qname.isQualified =>
@@ -204,16 +199,11 @@ object Disambiguation {
       val decls = program.enums.getOrElse(qname.namespace, Map.empty)
       decls.get(qname.ident.name) match {
         case None => Err(TypeError.UnresolvedType(qname, ns0, loc))
-        case Some(enum) => resolve(enum.sc.base, qname.namespace, program)
+        case Some(enum) => Ok(Type.Enum(enum.sym, Kind.Star /* TODO: Kind */))
       }
     case NamedAst.Type.Enum(sym, tparams, cases) =>
-      val asList = cases.toList
-      val tags = asList.map(_._1)
-      val tpes = asList.map(_._2)
       val kind = if (tparams.isEmpty) Kind.Star else Kind.Arrow(tparams.map(_ => Kind.Star), Kind.Star)
-      seqM(tpes.map(tpe => resolve(tpe, ns0, program))) map {
-        case rtpes => Type.Enum(sym, (tags zip rtpes).toMap, kind)
-      }
+      Ok(Type.Enum(sym, kind))
     case NamedAst.Type.Tuple(elms0, loc) =>
       for (
         elms <- seqM(elms0.map(tpe => resolve(tpe, ns0, program)))

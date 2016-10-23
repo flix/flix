@@ -38,7 +38,7 @@ object TypedAst {
 
     case class Definition(doc: Option[Ast.Documentation], ann: Ast.Annotations, sym: Symbol.DefnSym, tparams: List[TypedAst.TypeParam], formals: List[TypedAst.FormalParam], exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Declaration
 
-    case class Enum(doc: Option[Ast.Documentation], sym: Symbol.EnumSym, cases: Map[String, TypedAst.Case], sc: Scheme, loc: SourceLocation) extends TypedAst.Declaration
+    case class Enum(doc: Option[Ast.Documentation], sym: Symbol.EnumSym, cases: Map[String, TypedAst.Case], tpe: Type, loc: SourceLocation) extends TypedAst.Declaration
 
     case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends TypedAst.Declaration
 
@@ -150,10 +150,6 @@ object TypedAst {
 
     case class Tuple(elms: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class FNil(tpe: Type, loc: SourceLocation) extends TypedAst.Expression
-
-    case class FList(hd: TypedAst.Expression, tl: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
-
     case class FVec(elms: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class FSet(elms: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
@@ -240,10 +236,6 @@ object TypedAst {
 
     case class Tuple(elms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
-    case class FNil(tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
-
-    case class FList(hd: TypedAst.Pattern, tl: TypedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
-
     case class FVec(elms: List[TypedAst.Pattern], rest: Option[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
     case class FSet(elms: List[TypedAst.Pattern], rest: Option[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
@@ -290,7 +282,7 @@ object TypedAst {
 
   case class Attribute(name: String, tpe: Type, loc: SourceLocation) extends TypedAst
 
-  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends TypedAst
+  case class Case(enum: Name.Ident, tag: Name.Ident, sc: Scheme) extends TypedAst
 
   case class FormalParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst
 
