@@ -79,15 +79,15 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   object Imports {
 
     def Wildcard: Rule1[ParsedAst.Import.Wild] = rule {
-      SP ~ atomic("import") ~ WS ~ Parser.this.Namespace ~ "/" ~ "_" ~ optSC ~ SP ~> ParsedAst.Import.Wild
+      SP ~ atomic("import") ~ WS ~ Parser.this.Namespace ~ "/" ~ "_" ~ SP ~> ParsedAst.Import.Wild
     }
 
     def Definition: Rule1[ParsedAst.Import.Definition] = rule {
-      SP ~ atomic("import") ~ WS ~ Parser.this.Namespace ~ "/" ~ DefinitionName ~ optSC ~ SP ~> ParsedAst.Import.Definition
+      SP ~ atomic("import") ~ WS ~ Parser.this.Namespace ~ "/" ~ DefinitionName ~ SP ~> ParsedAst.Import.Definition
     }
 
     def Namespace: Rule1[ParsedAst.Import.Namespace] = rule {
-      SP ~ atomic("import") ~ WS ~ Parser.this.Namespace ~ optSC ~ SP ~> ParsedAst.Import.Namespace
+      SP ~ atomic("import") ~ WS ~ Parser.this.Namespace ~ SP ~> ParsedAst.Import.Namespace
     }
 
   }
@@ -115,7 +115,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   object Declarations {
 
     def Namespace: Rule1[ParsedAst.Declaration.Namespace] = rule {
-      optWS ~ SP ~ atomic("namespace") ~ WS ~ Parser.this.Namespace ~ optWS ~ '{' ~ optWS ~ zeroOrMore(Declaration) ~ optWS ~ '}' ~ SP ~ optSC ~> ParsedAst.Declaration.Namespace
+      optWS ~ SP ~ atomic("namespace") ~ WS ~ Parser.this.Namespace ~ optWS ~ '{' ~ optWS ~ zeroOrMore(Declaration) ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
     }
 
     def Definition: Rule1[ParsedAst.Declaration.Definition] = {
@@ -124,20 +124,20 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        optional(Comments.TripleSlash) ~ optWS ~ Annotations ~ optWS ~ SP ~ atomic("def") ~ WS ~ DefinitionName ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Declaration.Definition
+        optional(Comments.TripleSlash) ~ optWS ~ Annotations ~ optWS ~ SP ~ atomic("def") ~ WS ~ DefinitionName ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Definition
       }
     }
 
     def Signature: Rule1[ParsedAst.Declaration.Signature] = rule {
-      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("def") ~ WS ~ DefinitionName ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC ~> ParsedAst.Declaration.Signature
+      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("def") ~ WS ~ DefinitionName ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.Signature
     }
 
     def External: Rule1[ParsedAst.Declaration.External] = rule {
-      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("external") ~ optWS ~ atomic("def") ~ WS ~ DefinitionName ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~ optSC ~> ParsedAst.Declaration.External
+      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("external") ~ optWS ~ atomic("def") ~ WS ~ DefinitionName ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.External
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
-      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("law") ~ WS ~ DefinitionName ~ optWS ~ TypeParams ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~ optSC ~> ParsedAst.Declaration.Law
+      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("law") ~ WS ~ DefinitionName ~ optWS ~ TypeParams ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Law
     }
 
     def Enum: Rule1[ParsedAst.Declaration.Enum] = {
@@ -156,7 +156,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("enum") ~ WS ~ TypeName ~ TypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~ optSC ~> ParsedAst.Declaration.Enum
+        optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("enum") ~ WS ~ TypeName ~ TypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Enum
       }
     }
 
@@ -215,11 +215,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Relation: Rule1[ParsedAst.Declaration.Relation] = rule {
-      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("rel") ~ WS ~ TableName ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Relation
+      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("rel") ~ WS ~ TableName ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~> ParsedAst.Declaration.Relation
     }
 
     def Lattice: Rule1[ParsedAst.Declaration.Lattice] = rule {
-      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("lat") ~ WS ~ TableName ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Lattice
+      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("lat") ~ WS ~ TableName ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~> ParsedAst.Declaration.Lattice
     }
 
     def Index: Rule1[ParsedAst.Declaration.Index] = {
@@ -228,7 +228,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        optWS ~ SP ~ atomic("index") ~ WS ~ QualifiedTableName ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Indexes).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.Index
+        optWS ~ SP ~ atomic("index") ~ WS ~ QualifiedTableName ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Indexes).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Declaration.Index
       }
     }
 
@@ -247,7 +247,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        optWS ~ SP ~ atomic("let") ~ optWS ~ Type ~ atomic("<>") ~ optWS ~ "=" ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ SP ~ optSC ~> ParsedAst.Declaration.BoundedLattice
+        optWS ~ SP ~ atomic("let") ~ optWS ~ Type ~ atomic("<>") ~ optWS ~ "=" ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ SP ~> ParsedAst.Declaration.BoundedLattice
       }
     }
 
@@ -433,7 +433,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Match: Rule1[ParsedAst.Expression.Match] = {
       def Rule: Rule1[(ParsedAst.Pattern, ParsedAst.Expression)] = rule {
-        atomic("case") ~ WS ~ Pattern ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~ optSC ~> ((p: ParsedAst.Pattern, e: ParsedAst.Expression) => (p, e))
+        atomic("case") ~ WS ~ Pattern ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~> ((p: ParsedAst.Pattern, e: ParsedAst.Expression) => (p, e))
       }
 
       rule {
@@ -875,10 +875,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   def optWS: Rule0 = rule {
     optional(WS)
-  }
-
-  def optSC: Rule0 = rule {
-    optional(optWS ~ ";")
   }
 
   def NewLine: Rule0 = rule {

@@ -906,7 +906,7 @@ class TestTyper extends FunSuite with TestUtils {
 
   test("Definition.BoundedLattice.TypeError01") {
     val input =
-      """let Int<> = (0, 1, 2, 3, 4);
+      """let Int<> = (0, 1, 2, 3, 4)
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[TypeError])
@@ -914,11 +914,11 @@ class TestTyper extends FunSuite with TestUtils {
 
   test("Definition.BoundedLattice.TypeError02") {
     val input =
-      """def leq(x: Int, y: Int): Bool = true;
-        |def lub(x: Int, y: Int): Int = 42;
-        |def glb(x: Int, y: Int): Int = 21;
+      """def leq(x: Int, y: Int): Bool = true
+        |def lub(x: Int, y: Int): Int = 42
+        |def glb(x: Int, y: Int): Int = 21
         |
-        |let Int<> = (0, 1, lub, leq, glb);
+        |let Int<> = (0, 1, lub, leq, glb)
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[TypeError])
@@ -984,7 +984,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  def f(x: Int, y: Int): Int = x + y + z;
+         |  def f(x: Int, y: Int): Int = x + y + z
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
