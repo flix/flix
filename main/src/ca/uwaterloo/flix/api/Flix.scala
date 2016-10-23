@@ -350,13 +350,7 @@ class Flix {
     if (tags == null)
       throw new IllegalArgumentException("Argument 'tags' must be non-null.")
 
-    import collection.JavaConverters._
-    val cases = tags.asScala.foldLeft(Map.empty[String, Type]) {
-      case (macc, (tag, tpe)) =>
-        macc + (tag -> tpe.asInstanceOf[WrappedType].tpe)
-    }
-
-    new WrappedType(Type.Enum(Symbol.mkEnumSym(fqn), cases, Kind.Star))
+    new WrappedType(Type.Enum(Symbol.mkEnumSym(fqn), Kind.Star))
   }
 
   /**
@@ -368,16 +362,6 @@ class Flix {
 
     val elms = types.toList.map(_.asInstanceOf[WrappedType].tpe)
     new WrappedType(Type.Apply(Type.FTuple(elms.length), elms))
-  }
-
-  /**
-    * Returns the list type parameterized by the given type `tpe`.
-    */
-  def mkListType(tpe: IType): IType = {
-    if (tpe == null)
-      throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
-
-    new WrappedType(Type.mkFList(tpe.asInstanceOf[WrappedType].tpe))
   }
 
   /**

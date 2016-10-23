@@ -142,18 +142,6 @@ object ClosureConv {
       SimplifiedAst.Expression.GetTupleIndex(convert(e), offset, tpe, loc)
     case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
       SimplifiedAst.Expression.Tuple(elms.map(convert), tpe, loc)
-    case SimplifiedAst.Expression.FNil(tpe, loc) =>
-      SimplifiedAst.Expression.FNil(tpe, loc)
-    case SimplifiedAst.Expression.FList(hd, tl, tpe, loc) =>
-      SimplifiedAst.Expression.FList(convert(hd), convert(tl), tpe, loc)
-    case SimplifiedAst.Expression.IsNil(e, loc) =>
-      SimplifiedAst.Expression.IsNil(convert(e), loc)
-    case SimplifiedAst.Expression.IsList(e, loc) =>
-      SimplifiedAst.Expression.IsList(convert(e), loc)
-    case SimplifiedAst.Expression.GetHead(e, tpe, loc) =>
-      SimplifiedAst.Expression.GetHead(convert(e), tpe, loc)
-    case SimplifiedAst.Expression.GetTail(e, tpe, loc) =>
-      SimplifiedAst.Expression.GetTail(convert(e), tpe, loc)
     case SimplifiedAst.Expression.FSet(elms, tpe, loc) =>
       SimplifiedAst.Expression.FSet(elms.map(convert), tpe, loc)
     case SimplifiedAst.Expression.Existential(params, e, loc) =>
@@ -218,12 +206,6 @@ object ClosureConv {
     case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) => freeVariables(exp)
     case SimplifiedAst.Expression.GetTupleIndex(base, offset, tpe, loc) => freeVariables(base)
     case SimplifiedAst.Expression.Tuple(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
-    case SimplifiedAst.Expression.FNil(tpe, loc) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.FList(hd, tl, tpe, loc) => freeVariables(hd) ++ freeVariables(tl)
-    case SimplifiedAst.Expression.IsNil(exp, loc) => freeVariables(exp)
-    case SimplifiedAst.Expression.IsList(exp, loc) => freeVariables(exp)
-    case SimplifiedAst.Expression.GetHead(exp, tpe, loc) => freeVariables(exp)
-    case SimplifiedAst.Expression.GetTail(exp, tpe, loc) => freeVariables(exp)
     case SimplifiedAst.Expression.FSet(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
     case SimplifiedAst.Expression.Existential(params, exp, loc) =>
       val bound = params.map(_.ident.name)

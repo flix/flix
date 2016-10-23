@@ -468,7 +468,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def FList: Rule1[ParsedAst.Expression] = rule {
-      Apply ~ optional(optWS ~ atomic("::") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.FList)
+      Apply ~ optional(optWS ~ atomic("::") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.FCons)
     }
 
     def FVec: Rule1[ParsedAst.Expression.FVec] = rule {
@@ -566,7 +566,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def FList: Rule1[ParsedAst.Pattern] = rule {
-      Simple ~ optional(optWS ~ atomic("::") ~ optWS ~ Pattern ~ SP ~> ParsedAst.Pattern.FList)
+      Simple ~ optional(optWS ~ atomic("::") ~ optWS ~ Pattern ~ SP ~> ParsedAst.Pattern.FCons)
     }
 
     def FVec: Rule1[ParsedAst.Pattern.FVec] = {

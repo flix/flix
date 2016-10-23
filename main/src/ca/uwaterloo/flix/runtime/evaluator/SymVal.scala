@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.runtime.evaluator
 
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
-import ca.uwaterloo.flix.language.ast.Name
+import ca.uwaterloo.flix.language.ast.{Name, Type}
 import com.microsoft.z3.Model
 
 import scala.collection.immutable.SortedMap
@@ -33,8 +33,9 @@ object SymVal {
     * An atomic symbolic variable.
     *
     * @param ident the identifier.
+    * @param tpe   the type of the variable.
     */
-  case class AtomicVar(ident: Name.Ident) extends SymVal
+  case class AtomicVar(ident: Name.Ident, tpe: Type) extends SymVal
 
   /**
     * The `Unit` value.
@@ -152,7 +153,7 @@ object SymVal {
     */
   def mkModel(env: Map[String, SymVal], model: Option[Model]): Map[String, String] = {
     def visit(e0: SymVal): String = e0 match {
-      case SymVal.AtomicVar(id) => model match {
+      case SymVal.AtomicVar(id, tpe) => model match {
         case None => "?"
         case Some(m) => getConstant(id, m)
       }

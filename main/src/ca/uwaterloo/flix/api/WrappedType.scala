@@ -54,7 +54,7 @@ final class WrappedType(val tpe: Type) extends IType {
     tpe == Type.Str
 
   def isEnum: Boolean = tpe match {
-    case Type.Enum(name, cases, kind) => true
+    case Type.Enum(name, kind) => true
     case _ => false
   }
 
@@ -65,11 +65,6 @@ final class WrappedType(val tpe: Type) extends IType {
 
   def isTuple: Boolean = tpe match {
     case Type.Apply(Type.FTuple(l), _) => true
-    case _ => false
-  }
-
-  def isList: Boolean = tpe match {
-    case Type.Apply(Type.FList, _) => true
     case _ => false
   }
 
@@ -90,11 +85,6 @@ final class WrappedType(val tpe: Type) extends IType {
 
   def getTupleParams: Array[IType] = tpe match {
     case Type.Apply(Type.FTuple(l), elms) => elms.map(t => new WrappedType(t)).toArray
-    case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
-  }
-
-  def getListParam: IType = tpe match {
-    case Type.Apply(Type.FList, List(elm)) => new WrappedType(elm)
     case _ => throw new UnsupportedOperationException(s"Unexpected type: '$tpe'.")
   }
 
