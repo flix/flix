@@ -825,6 +825,17 @@ class TestTyper extends FunSuite with TestUtils {
     result.get
   }
 
+  test("Expression.List.05") {
+    val input =
+      """
+        |def f(xs: List[Int], ys: List[Int]): Int = match (xs, ys) with {
+        |  case (42 :: xss, y :: yss) => f(xss, y :: yss)
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Tuple (Positive)                                                        //
   /////////////////////////////////////////////////////////////////////////////
