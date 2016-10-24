@@ -57,7 +57,7 @@ class TestMain extends FunSuite {
   }
 
   test("--main foo") {
-    val args = Array("--main", "p.flix")
+    val args = Array("--main", "foo", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assertResult(Some("foo"))(opts.main)
   }
