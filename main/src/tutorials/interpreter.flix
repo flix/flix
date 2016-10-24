@@ -83,7 +83,7 @@ def evalBExp(e: BExp): Bool = match e with {
 }
 
 ///
-/// We test each interpreter by writing some small test.
+/// We test each interpreter by writing some small tests.
 ///
 /// You can run these functions by passing the `--main` argument to Flix, e.g.
 ///   $ flix --main testEvalAExp1
@@ -99,7 +99,7 @@ def testEvalBExp1: Bool = evalBExp(True)
 def testEvalBExp2: Bool = evalBExp(Not(True))
 def testEvalBExp3: Bool = evalBExp(Conj(True, False))
 def testEvalBExp4: Bool = evalBExp(Disj(True, False))
-def testEvalBExp5: Bool = evalBExp(Eq(Cst(1), Cst(2)))
+def testEvalBExp5: Bool = evalBExp(Neq(Cst(1), Cst(2)))
 
 ///
 /// We now write two small compilers that translate arithmetic and boolean
@@ -198,14 +198,31 @@ def compileBExp(e: BExp): List[Inst] = match e with {
 }
 
 ///
-/// Here are some of the helper functions we used.
+/// We test each compiler by writing some small tests.
+///
+def testCompileAExp1: List[Inst] = compileAExp(Cst(42))
+def testCompileAExp2: List[Inst] = compileAExp(Plus(Cst(42), Cst(21)))
+def testCompileAExp3: List[Inst] = compileAExp(Minus(Cst(42), Cst(21)))
+def testCompileAExp4: List[Inst] = compileAExp(IfThenElse(True, Cst(1), Cst(2)))
+def testCompileAExp5: List[Inst] = compileAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21)))
+
+def testCompileBExp1: List[Inst] = compileBExp(True)
+def testCompileBExp2: List[Inst] = compileBExp(Not(True))
+def testCompileBExp3: List[Inst] = compileBExp(Conj(True, False))
+def testCompileBExp4: List[Inst] = compileBExp(Disj(True, False))
+def testCompileBExp5: List[Inst] = compileBExp(Neq(Cst(1), Cst(2)))
+
+///
+/// And finally, we can write an interpreter for the instruction language.
+///
+def evalInst(is: List[Inst], st: List[Int]): Int = match (is, st) with {
+    case (Nil, Nil) => 42
+}
+
+///
+/// Here is the append helper function we used earlier.
 ///
 def append(xs: List[Inst], ys: List[Inst]): List[Inst] = match xs with {
     case Nil => ys
     case z :: zs => z :: append(zs, ys)
 }
-
-///
-/// We test each compiler by writing some small test.
-///
-def testCompileAExp1: List[Inst] = compileAExp(Plus(Cst(1), Cst(2)))
