@@ -52,7 +52,7 @@ enum BExp {
     case Eq(AExp, AExp),
 
     // an inequality of expression: e1 != e2.
-    case NEq(AExp, AExp)
+    case Neq(AExp, AExp)
 }
 
 ///
@@ -64,13 +64,23 @@ def evalAExp(e: AExp): Int = match e with {
     case Minus(e1, e2)          => evalAExp(e1) - evalAExp(e2)
     case Times(e1, e2)          => evalAExp(e1) * evalAExp(e2)
     case Divide(e1, e2)         => evalAExp(e1) / evalAExp(e2)
-    case IfThenElse(e1, e2, e3) => ??? // TODO
+    case IfThenElse(e1, e2, e3) =>
+        let cond = evalBExp(e1);
+            if (cond) evalAExp(e2) else evalAExp(e3)
 }
 
 ///
 /// And here is the small interpreter for boolean expressions.
 ///
-
+def evalBExp(e: BExp): Bool = match e with {
+    case True           => true
+    case False          => false
+    case Not(e)         => !evalBExp(e)
+    case Conj(e1, e2)   => evalBExp(e1) && evalBExp(e2)
+    case Disj(e1, e2)   => evalBExp(e1) || evalBExp(e2)
+    case Eq(e1, e2)     => evalAExp(e1) == evalAExp(e2)
+    case Neq(e1,e2)     => evalAExp(e1) != evalAExp(e2)
+}
 
 ///
 /// We test each interpreter by writing some small test.
@@ -80,8 +90,58 @@ def evalAExp(e: AExp): Int = match e with {
 ///
 
 def testEvalAExp1: Int = evalAExp(Cst(42))
-def testEvalAExp2: Int = evalAExp(Cst(42))
-def testEvalAExp3: Int = evalAExp(Cst(42))
-def testEvalAExp4: Int = evalAExp(Cst(42))
-def testEvalAExp5: Int = evalAExp(Cst(42))
+def testEvalAExp2: Int = evalAExp(Plus(Cst(42), Cst(21)))
+def testEvalAExp3: Int = evalAExp(Minus(Cst(42), Cst(21)))
+def testEvalAExp4: Int = evalAExp(IfThenElse(True, Cst(1), Cst(2)))
+def testEvalAExp5: Int = evalAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21)))
 
+def testEvalBExp1: Bool = evalBExp(True)
+def testEvalBExp2: Bool = evalBExp(Not(True))
+def testEvalBExp3: Bool = evalBExp(Conj(True, False))
+def testEvalBExp4: Bool = evalBExp(Disj(True, False))
+def testEvalBExp5: Bool = evalBExp(Eq(Cst(1), Cst(2)))
+
+///
+/// We now write two small compilers that translate arithmetic and boolean
+/// expression into a sequence of instructions.
+///
+
+///
+/// We define an enum to capture the syntax of instructions.
+///
+enum Inst {
+
+    // an instruction which pushes the constant integer on the stack.
+    case Push(Int),
+
+    // an instruction which adds the two top operands on the stack.
+    case Add,
+
+    // an instruction which substracts the two top operands on the stack.
+    case Sub,
+
+    // an instruction which multiplies the two top operands on the stack.
+    case Mul,
+
+    // an instruction which divides the two top operands on the stack.
+    case Div,
+
+    // an instruction which negates the top operand on the stack.
+    case Neg,
+
+    // an instruction which computes the logical and of the two top operands on the stack.
+    case And,
+
+    // an instruction which computes the logical or of the two top operands on the stack.
+    case Or,
+
+    // an instruction which branches based on the top operand on the stack.
+    case Branch(List[Inst], List[Inst])
+}
+
+///
+/// Compiles the given arithmetic expression to a sequence of instructions.
+///
+def compileAExp(e: AExp): List[Inst] = match e with {
+    case Cst(i) => Push(i) :: Nil
+}
