@@ -97,6 +97,13 @@ object Main {
         case Validation.Success(model, errors) =>
           errors.foreach(e => println(e.message))
 
+          val main = cmdOpts.main
+          if (main.nonEmpty) {
+            val name = main.get
+            val result = model.getConstant(name)
+            Console.println(s"$name returned `$result'.")
+          }
+
           val print = cmdOpts.print
           for (name <- print) {
             PrettyPrint.print(name, model)
@@ -134,6 +141,7 @@ object Main {
     */
   case class CmdOpts(delta: Option[File] = None,
                      documentor: Boolean = false,
+                     main: Option[String] = None,
                      monitor: Boolean = false,
                      optimize: Boolean = false,
                      pipe: Boolean = false,
@@ -171,6 +179,11 @@ object Main {
 
       // Help.
       help("help").text("prints this usage information.")
+
+      // Main.
+      opt[String]("main").action((s, c) => c.copy(main = Some(s))).
+        valueName("<name>").
+        text("evaluates the <name> function.")
 
       // Monitor.
       opt[Unit]("monitor").action((_, c) => c.copy(monitor = true)).
