@@ -129,11 +129,14 @@ enum Inst {
     // an instruction which negates the top operand on the stack.
     case Neg,
 
-    // an instruction which computes the logical and of the two top operands on the stack.
+    // an instruction which computes the logical-and of the two top operands on the stack.
     case And,
 
-    // an instruction which computes the logical or of the two top operands on the stack.
+    // an instruction which computes the logical-or of the two top operands on the stack.
     case Or,
+
+    // an instruction which computes equality of the two top operands on the stack.
+    case Cmp,
 
     // an instruction which branches based on the top operand on the stack.
     case Branch(List[Inst], List[Inst])
@@ -143,5 +146,66 @@ enum Inst {
 /// Compiles the given arithmetic expression to a sequence of instructions.
 ///
 def compileAExp(e: AExp): List[Inst] = match e with {
-    case Cst(i) => Push(i) :: Nil
+    case Cst(i)         => Push(i) :: Nil
+    case Plus(e1, e2)   =>
+        let is1 = compileAExp(e1);
+        let is2 = compileAExp(e2);
+            append(append(is1, is2), (Add :: Nil))
+    case Minus(e1, e2)  =>
+        let is1 = compileAExp(e1);
+        let is2 = compileAExp(e2);
+            append(append(is1, is2), (Sub :: Nil))
+    case Times(e1, e2)  =>
+        let is1 = compileAExp(e1);
+        let is2 = compileAExp(e2);
+            append(append(is1, is2), (Mul :: Nil))
+    case Divide(e1, e2)  =>
+        let is1 = compileAExp(e1);
+        let is2 = compileAExp(e2);
+            append(append(is1, is2), (Div :: Nil))
+    case IfThenElse(e1, e2, e3)  =>
+        let is1 = compileBExp(e1);
+        let is2 = compileAExp(e2);
+        let is3 = compileAExp(e3);
+            append(is1, Branch(is2, is3) :: Nil)
 }
+
+///
+/// Compiles the given boolean expression to a sequence of instructions.
+///
+def compileBExp(e: BExp): List[Inst] = match e with {
+    case True           => Push(1) :: Nil
+    case False          => Push(0) :: Nil
+    case Not(e)         =>
+        let is = compileBExp(e);
+            append(is, Neg :: Nil)
+    case Conj(e1, e2)   =>
+        let is1 = compileBExp(e1);
+        let is2 = compileBExp(e2);
+            append(append(is1, is2), And :: Nil)
+    case Disj(e1, e2)   =>
+        let is1 = compileBExp(e1);
+        let is2 = compileBExp(e2);
+            append(append(is1, is2), Or :: Nil)
+    case Eq(e1, e2)     =>
+        let is1 = compileAExp(e1);
+        let is2 = compileAExp(e2);
+            append(append(is1, is2), Cmp :: Nil)
+    case Neq(e1, e2)    =>
+        let is1 = compileAExp(e1);
+        let is2 = compileAExp(e2);
+            append(append(is1, is2), Neg :: Cmp :: Nil)
+}
+
+///
+/// Here are some of the helper functions we used.
+///
+def append(xs: List[Inst], ys: List[Inst]): List[Inst] = match xs with {
+    case Nil => ys
+    case z :: zs => z :: append(zs, ys)
+}
+
+///
+/// We test each compiler by writing some small test.
+///
+def testCompileAExp1: List[Inst] = compileAExp(Plus(Cst(1), Cst(2)))

@@ -19,6 +19,7 @@ package ca.uwaterloo.flix
 import java.io.File
 
 import ca.uwaterloo.flix.api._
+import ca.uwaterloo.flix.runtime.Value
 import ca.uwaterloo.flix.util._
 
 import scala.concurrent.duration.Duration
@@ -101,7 +102,7 @@ object Main {
           if (main.nonEmpty) {
             val name = main.get
             val result = model.getConstant(name)
-            Console.println(s"$name returned `$result'.")
+            Console.println(s"$name returned `${Value.pretty(result)}'.")
           }
 
           val print = cmdOpts.print
