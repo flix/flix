@@ -2807,7 +2807,7 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  ignore("SingleLineComment.03") {
+  test("SingleLineComment.03") {
     val input =
       """//////////////////////////////////////////////////////////////////////
         |//////////////////////////////////////////////////////////////////////
@@ -2830,7 +2830,7 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  ignore("TripleSlashComment.01") {
+  test("TripleSlashComment.01") {
     val input = "/// a comment"
     run(input)
   }

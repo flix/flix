@@ -115,7 +115,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   object Declarations {
 
     def Namespace: Rule1[ParsedAst.Declaration.Namespace] = rule {
-      optWS ~ SP ~ atomic("namespace") ~ WS ~ Parser.this.Namespace ~ optWS ~ '{' ~ optWS ~ zeroOrMore(Declaration) ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
+      optWS ~ SP ~ atomic("namespace") ~ WS ~ Parser.this.Namespace ~ optWS ~ '{' ~ zeroOrMore(Declaration) ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
     }
 
     def Definition: Rule1[ParsedAst.Declaration.Definition] = {
@@ -124,20 +124,20 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        optional(Comments.TripleSlash) ~ optWS ~ Annotations ~ optWS ~ SP ~ atomic("def") ~ WS ~ DefinitionName ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Definition
+        Documentation ~ Annotations ~ optWS ~ SP ~ atomic("def") ~ WS ~ DefinitionName ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Definition
       }
     }
 
     def Signature: Rule1[ParsedAst.Declaration.Signature] = rule {
-      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("def") ~ WS ~ DefinitionName ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.Signature
+      Documentation ~ SP ~ atomic("def") ~ WS ~ DefinitionName ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.Signature
     }
 
     def External: Rule1[ParsedAst.Declaration.External] = rule {
-      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("external") ~ optWS ~ atomic("def") ~ WS ~ DefinitionName ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.External
+      Documentation ~ SP ~ atomic("external") ~ optWS ~ atomic("def") ~ WS ~ DefinitionName ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.External
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
-      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("law") ~ WS ~ DefinitionName ~ optWS ~ TypeParams ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Law
+      Documentation ~ SP ~ atomic("law") ~ WS ~ DefinitionName ~ optWS ~ TypeParams ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Law
     }
 
     def Enum: Rule1[ParsedAst.Declaration.Enum] = {
@@ -156,7 +156,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("enum") ~ WS ~ TypeName ~ TypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Enum
+        Documentation ~ SP ~ atomic("enum") ~ WS ~ TypeName ~ TypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Enum
       }
     }
 
@@ -183,7 +183,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("class") ~ WS ~ ClassName ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ClassBody ~ SP ~> ParsedAst.Declaration.Class
+        Documentation ~ SP ~ atomic("class") ~ WS ~ ClassName ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ClassBody ~ SP ~> ParsedAst.Declaration.Class
       }
     }
 
@@ -210,16 +210,16 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("impl") ~ WS ~ ClassName ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ImplBody ~ SP ~> ParsedAst.Declaration.Impl
+        Documentation ~ SP ~ atomic("impl") ~ WS ~ ClassName ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ImplBody ~ SP ~> ParsedAst.Declaration.Impl
       }
     }
 
     def Relation: Rule1[ParsedAst.Declaration.Relation] = rule {
-      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("rel") ~ WS ~ TableName ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~> ParsedAst.Declaration.Relation
+      Documentation ~ SP ~ atomic("rel") ~ WS ~ TableName ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~> ParsedAst.Declaration.Relation
     }
 
     def Lattice: Rule1[ParsedAst.Declaration.Lattice] = rule {
-      optional(Comments.TripleSlash) ~ optWS ~ SP ~ atomic("lat") ~ WS ~ TableName ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~> ParsedAst.Declaration.Lattice
+      Documentation ~ SP ~ atomic("lat") ~ WS ~ TableName ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~> ParsedAst.Declaration.Lattice
     }
 
     def Index: Rule1[ParsedAst.Declaration.Index] = {
@@ -882,6 +882,29 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Documentation                                                           //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Optionally a parses a documentation comment.
+    */
+  def Documentation: Rule1[Option[ParsedAst.Documentation]] = {
+    // Matches real whitespace.
+    def PureWS: Rule0 = rule {
+      zeroOrMore(" " | "\t" | NewLine)
+    }
+
+    // Matches triple dashed comments.
+    def TripleSlash: Rule1[ParsedAst.Documentation] = rule {
+      SP ~ oneOrMore(PureWS ~ "///" ~ capture(zeroOrMore(!NewLine ~ ANY)) ~ (NewLine | EOI)) ~ SP ~> ParsedAst.Documentation
+    }
+
+    // Optionally matches a triple dashed comment and then any whitespace.
+    rule {
+      optional(TripleSlash) ~ optWS
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Comments                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Comment: Rule0 = rule {
@@ -889,27 +912,16 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   object Comments {
-    // Note: We must use ANY to match (consume) whatever character which is not a newline.
-    // Otherwise the parser makes no progress and loops.
-    def TripleSlash: Rule1[ParsedAst.Documentation] = {
-      def PureWS: Rule0 = rule {
-        zeroOrMore(" " | "\t" | NewLine)
-      }
-
-      // TODO: need to improve source locations.
-      rule {
-        SP ~ oneOrMore(PureWS ~ "///" ~ capture(zeroOrMore(!NewLine ~ ANY)) ~ (NewLine | EOI)) ~ SP ~> ParsedAst.Documentation
-      }
-    }
-
-    // Note: We must use ANY to match (consume) whatever character which is not a newline.
-    // Otherwise the parser makes no progress and loops.
+    /**
+      * Parses a single line comment.
+      */
     def SingleLineComment: Rule0 = rule {
-      !"///" ~ "//" ~ zeroOrMore(!NewLine ~ ANY) ~ (NewLine | EOI)
+      "//" ~ zeroOrMore(!NewLine ~ ANY) ~ (NewLine | EOI)
     }
 
-    // Note: We must use ANY to match (consume) whatever character which is not a "*/".
-    // Otherwise the parser makes no progress and loops.
+    /**
+      * Parses a multi line start comment.
+      */
     def MultiLineComment: Rule0 = rule {
       "/*" ~ zeroOrMore(!"*/" ~ ANY) ~ "*/"
     }
