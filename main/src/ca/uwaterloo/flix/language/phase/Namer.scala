@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.NamedAst.Scheme
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
@@ -141,7 +142,8 @@ object Namer {
             val tenv = tparams.map(kv => kv.name.name -> kv.tpe).toMap
             val quantifiers = tparams.map(_.tpe)
             val tpe = if (quantifiers.isEmpty) Type.Enum(sym, Kind.Star) else Type.Apply(Type.Enum(sym, Kind.Star /* TODO: Kind */), quantifiers)
-            val enum = NamedAst.Declaration.Enum(doc, sym, tparams, casesOf(cases, quantifiers, tenv), tpe, loc)
+            val enumScheme = ast.Scheme(quantifiers, tpe)
+            val enum = NamedAst.Declaration.Enum(doc, sym, tparams, casesOf(cases, quantifiers, tenv), enumScheme, loc)
             val enums = enums0 + (ident.name -> enum)
             prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
           case Some(enum) =>

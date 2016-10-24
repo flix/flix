@@ -191,12 +191,13 @@ object Typer {
       /**
         * Performs type inference and reassembly on all enums in the given program.
         */
-      def typecheck(program: Program): Result[Map[Symbol.EnumSym, TypedAst.Declaration.Enum], TypeError] = {
+      def typecheck(program: Program)(implicit genSym: GenSym): Result[Map[Symbol.EnumSym, TypedAst.Declaration.Enum], TypeError] = {
         /**
           * Performs type resolution on the given enum and its cases.
           */
         def visitEnum(enum: NamedAst.Declaration.Enum, ns: Name.NName): Result[(Symbol.EnumSym, TypedAst.Declaration.Enum), TypeError] = enum match {
-          case NamedAst.Declaration.Enum(doc, sym, tparams, cases0, tpe, loc) =>
+          case NamedAst.Declaration.Enum(doc, sym, tparams, cases0, enumScheme, loc) =>
+            val enumType = Scheme.instantiate(enumScheme)
             val casesResult = cases0 map {
               case (name, NamedAst.Case(enumName, tagName, tpe)) =>
                 Disambiguation.resolve(tpe, ns, program).map {
@@ -206,7 +207,7 @@ object Typer {
 
             for {
               cases <- Result.seqM(casesResult.toList)
-            } yield sym -> TypedAst.Declaration.Enum(doc, sym, cases.toMap, tpe, loc)
+            } yield sym -> TypedAst.Declaration.Enum(doc, sym, cases.toMap, enumType, loc) // TODO: Should we pass the scheme instead?
         }
 
         // Visit every enum in the program.
@@ -623,6 +624,7 @@ object Typer {
         case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
           Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
             case Ok(decl) =>
+              val enumType = Scheme.instantiate(decl.sc)
               val caseScheme = decl.cases(tag.name).sc
               Disambiguation.resolve(caseScheme, ns0, program) match {
                 case Ok(scheme) =>
@@ -630,7 +632,7 @@ object Typer {
                   for (
                     innerType <- visitExp(exp);
                     _________ <- unifyM(innerType, caseType, loc);
-                    resultType <- unifyM(tvar, decl.tpe, loc)
+                    resultType <- unifyM(tvar, enumType, loc)
                   ) yield resultType
                 case Err(e) => failM(e)
               }
@@ -772,6 +774,7 @@ object Typer {
         case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
           Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
             case Ok(decl) =>
+              val enumType = Scheme.instantiate(decl.sc)
               val caseScheme = decl.cases(tag.name).sc
               Disambiguation.resolve(caseScheme, ns0, program) match {
                 case Ok(scheme) =>
@@ -779,7 +782,7 @@ object Typer {
                   for (
                     innerType <- visitPat(pat);
                     _________ <- unifyM(innerType, caseType, loc);
-                    resultType <- unifyM(tvar, decl.tpe, loc)
+                    resultType <- unifyM(tvar, enumType, loc)
                   ) yield resultType
                 case Err(e) => failM(e)
               }

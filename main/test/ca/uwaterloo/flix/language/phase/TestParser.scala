@@ -1184,12 +1184,12 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  ignore("Expression.ListList.02") {
+  test("Expression.ListList.02") {
     val input = "def f: List[List[Int]] = (1 :: Nil) :: Nil"
     run(input)
   }
 
-  ignore("Expression.ListList.03") {
+  test("Expression.ListList.03") {
     val input = "def f: List[List[Int]] = (Nil) :: (1 :: Nil) :: (2 :: 3 :: 4 :: Nil) :: Nil"
     run(input)
   }
@@ -1844,7 +1844,7 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  ignore("Pattern.ListList.01") {
+  test("Pattern.ListList.01") {
     val input =
       """def f(xs: List[List[Int]]): Int = match xs with {
         |  case Nil => 0
@@ -1854,7 +1854,7 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  ignore("Pattern.ListList.02") {
+  test("Pattern.ListList.02") {
     val input =
       """def f(xs: List[List[Int]]): Int = match xs with {
         |  case Nil => 0
@@ -1864,7 +1864,7 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  ignore("Pattern.ListList.03") {
+  test("Pattern.ListList.03") {
     val input =
       """def f(xs: List[List[Int]]): Int = match xs with {
         |  case Nil => 0
