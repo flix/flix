@@ -774,6 +774,8 @@ object Typer {
         case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
           Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
             case Ok(decl) =>
+              // TODO: Remove Scheme. Add typevars to enum decl.
+              // Refresh typevars ONCE and use in BOTH enumType and caseType.
               val enumType = Scheme.instantiate(decl.sc)
               val caseScheme = decl.cases(tag.name).sc
               Disambiguation.resolve(caseScheme, ns0, program) match {
