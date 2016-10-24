@@ -19,15 +19,15 @@
 // Indexes
 // =========
   index AddrOf({variable, object})
-  index Copy({to, from}, {from});
-  index Store({label, to, from}, {to}, {from});
-  index Load({label, to, from}, {label}, {from});
-  index CFG({label, to}, {label}, {to});
-  index FIStore({to}, {from});
-  index FILoad({from});
+  index Copy({to, from}, {from})
+  index Store({label, to, from}, {to}, {from})
+  index Load({label, to, from}, {label}, {from})
+  index CFG({label, to}, {label}, {to})
+  index FIStore({to}, {from})
+  index FILoad({from})
 
-  index Pt({variable, target}, {variable});
-  index PtH({object, target}, {object});
+  index Pt({variable, target}, {variable})
+  index PtH({object, target}, {object})
 
 // Other types
 // =========
@@ -38,24 +38,24 @@
   }
 
   def leq(e1: SULattice, e2: SULattice): Bool = match (e1, e2) with {
-    case (SULattice.Bottom, _) => true;
-    case (_, SULattice.Top) => true;
-    case (SULattice.Single(s1), SULattice.Single(s2)) => s1 == s2;
-    case _ => false;
+    case (SULattice.Bottom, _) => true
+    case (_, SULattice.Top) => true
+    case (SULattice.Single(s1), SULattice.Single(s2)) => s1 == s2
+    case _ => false
   }
   def lub(e1: SULattice, e2: SULattice): SULattice = match (e1, e2) with {
-    case (SULattice.Bottom, e2) => e2;
-    case (e1, SULattice.Bottom) => e1;
-    case (SULattice.Single(s1), SULattice.Single(s2)) => if (s1 == s2) SULattice.Single(s1) else SULattice.Top;
-    case _ => SULattice.Top;
+    case (SULattice.Bottom, e2) => e2
+    case (e1, SULattice.Bottom) => e1
+    case (SULattice.Single(s1), SULattice.Single(s2)) => if (s1 == s2) SULattice.Single(s1) else SULattice.Top
+    case _ => SULattice.Top
   }
   def glb(e1: SULattice, e2: SULattice): SULattice = match (e1, e2) with {
-    case (SULattice.Top, e2) => e2;
-    case (e1, SULattice.Top) => e1;
-    case (SULattice.Single(s1), SULattice.Single(s2)) => if (s1 == s2) SULattice.Single(s1) else SULattice.Bottom;
-    case _ => SULattice.Bottom;
+    case (SULattice.Top, e2) => e2
+    case (e1, SULattice.Top) => e1
+    case (SULattice.Single(s1), SULattice.Single(s2)) => if (s1 == s2) SULattice.Single(s1) else SULattice.Bottom
+    case _ => SULattice.Bottom
   }
-  let SULattice<> = (SULattice.Bottom, SULattice.Top, leq, lub, glb);
+  let SULattice<> = (SULattice.Bottom, SULattice.Top, leq, lub, glb)
 
   lat SU(location: Str, object: Str, target: SULattice)
 
@@ -113,7 +113,7 @@ SU(l,a,f(b)) :- Clear(l), PtH(a,b).
 
 // Kill
 // ---------
-def top(e: Int): SULattice = SULattice.Top;
+def top(e: Int): SULattice = SULattice.Top
 Kill(l,f(b)) :- Store(l,p,q), Pt(p,b).
 Kill(l, top(42)) :- Phi(l,_,_).
 

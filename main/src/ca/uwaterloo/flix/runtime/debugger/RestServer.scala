@@ -95,7 +95,7 @@ class RestServer(solver: Solver) {
           if (Files.exists(localPath))
             Files.newInputStream(localPath)
           else
-            getClass.getResourceAsStream(path)
+            getClass.getResourceAsStream("/ca/uwaterloo/flix/runtime/debugger" + path)
 
         if (inputStream == null) {
           throw new IOException(s"Unable to load static resource '$path'.")

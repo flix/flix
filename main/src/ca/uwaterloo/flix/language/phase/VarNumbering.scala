@@ -144,18 +144,6 @@ object VarNumbering {
         SimplifiedAst.Expression.GetTupleIndex(visit(m, exp), offset, tpe, loc)
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms.map(visit(m, _)), tpe, loc)
-      case SimplifiedAst.Expression.FNil(tpe, loc) =>
-        SimplifiedAst.Expression.FNil(tpe, loc)
-      case SimplifiedAst.Expression.FList(hd, tl, tpe, loc) =>
-        SimplifiedAst.Expression.FList(visit(m, hd), visit(m, tl), tpe, loc)
-      case SimplifiedAst.Expression.IsNil(exp, loc) =>
-        SimplifiedAst.Expression.IsNil(visit(m, exp), loc)
-      case SimplifiedAst.Expression.IsList(exp, loc) =>
-        SimplifiedAst.Expression.IsList(visit(m, exp), loc)
-      case SimplifiedAst.Expression.GetHead(exp, tpe, loc) =>
-        SimplifiedAst.Expression.GetHead(visit(m, exp), tpe, loc)
-      case SimplifiedAst.Expression.GetTail(exp, tpe, loc) =>
-        SimplifiedAst.Expression.GetTail(visit(m, exp), tpe, loc)
       case SimplifiedAst.Expression.FSet(elms, tpe, loc) =>
         SimplifiedAst.Expression.FSet(elms.map(visit(m, _)), tpe, loc)
       case SimplifiedAst.Expression.Existential(params, exp, loc) => ???

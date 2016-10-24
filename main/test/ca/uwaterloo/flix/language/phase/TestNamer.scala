@@ -75,7 +75,7 @@ class TestNamer extends FunSuite with TestUtils {
          |
          |namespace A {
          |  def f: Int = 21
-         |};
+         |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     expectError[NameError.DuplicateDefinition](result)
@@ -240,7 +240,7 @@ class TestNamer extends FunSuite with TestUtils {
          |  case Foo
          |}
          |
-         |def f: A = A.Qux;
+         |def f: A = A.Qux
          |
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -256,7 +256,7 @@ class TestNamer extends FunSuite with TestUtils {
          |    case Bar
          |  }
          |
-         |  def f: B = B.Qux(1 + 2);
+         |  def f: B = B.Qux(1 + 2)
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -273,7 +273,7 @@ class TestNamer extends FunSuite with TestUtils {
          |  }
          |
          |  def f(b: B): Int = match b with {
-         |    case B.Qux => 42;
+         |    case B.Qux => 42
          |  }
          |}
        """.stripMargin
@@ -290,8 +290,8 @@ class TestNamer extends FunSuite with TestUtils {
   test("UnresolvedType.02") {
     val input =
       s"""namespace A {
-          |  def foo(bar: Baz, baz: Baz): Qux = bar;
-          |};
+          |  def foo(bar: Baz, baz: Baz): Qux = bar
+          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     expectError[TypeError.UnresolvedType](result)
@@ -332,7 +332,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("Expression.HookFilter.01") {
     val input =
       s"""namespace A {
-          |  rel R(a: Bool, b: Int, c: Str);
+          |  rel R(a: Bool, b: Int, c: Str)
           |
           |  R(x, y, z) :- f(x, y, z), R(x, y, z).
           |}
@@ -351,7 +351,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("Expression.HookApply.01") {
     val input =
       s"""namespace A {
-          |  rel R(a: Bool, b: Int, c: Str);
+          |  rel R(a: Bool, b: Int, c: Str)
           |
           |  R(x, y, f(x, y, z)) :- R(x, y, z).
           |}
