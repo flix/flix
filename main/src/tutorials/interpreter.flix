@@ -215,8 +215,9 @@ def testCompileBExp5: List[Inst] = compileBExp(Neq(Cst(1), Cst(2)))
 ///
 /// And finally, we can write an interpreter for the instruction language.
 ///
-def evalInst(is: List[Inst], st: List[Int]): Int = match (is, st) with {
-    case (Nil, Nil) => 42
+def evalInst(instructions: List[Inst], stack: List[Int]): Int = match (instructions, stack) with {
+    case (Nil, x :: _) => x
+    case (Add :: rs, i1 :: i2 :: st) => evalInst(rs, (i1 + i2) :: st)
 }
 
 ///
