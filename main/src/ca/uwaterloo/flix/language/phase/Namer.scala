@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.NamedAst.Scheme
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation
@@ -139,9 +138,12 @@ object Namer {
               case p => NamedAst.TypeParam(p, Type.freshTypeVar(), loc)
             }
             val tenv = tparams.map(kv => kv.name.name -> kv.tpe).toMap
-            val quantifiers = tparams.map(_.tpe)
-            val tpe = if (quantifiers.isEmpty) Type.Enum(sym, Kind.Star) else Type.Apply(Type.Enum(sym, Kind.Star /* TODO: Kind */), quantifiers)
-            val enum = NamedAst.Declaration.Enum(doc, sym, tparams, casesOf(cases, quantifiers, tenv), tpe, loc)
+            val quantifiers = tparams.map(_.tpe).map(x => NamedAst.Type.Var(x, loc))
+            val enumType = if (quantifiers.isEmpty)
+              NamedAst.Type.Enum(sym)
+            else
+              NamedAst.Type.Apply(NamedAst.Type.Enum(sym), quantifiers, loc)
+            val enum = NamedAst.Declaration.Enum(doc, sym, tparams, casesOf(cases, tenv), enumType, loc)
             val enums = enums0 + (ident.name -> enum)
             prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
           case Some(enum) =>
@@ -274,10 +276,9 @@ object Namer {
     /**
       * Performs naming on the given `cases` map.
       */
-    def casesOf(cases: Map[String, WeededAst.Case], quantifiers: List[Type.Var], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Map[String, NamedAst.Case] = cases.foldLeft(Map.empty[String, NamedAst.Case]) {
+    def casesOf(cases: Map[String, WeededAst.Case], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Map[String, NamedAst.Case] = cases.foldLeft(Map.empty[String, NamedAst.Case]) {
       case (macc, (name, WeededAst.Case(enum, tag, tpe))) =>
-        macc + (name -> NamedAst.Case(enum, tag, NamedAst.Scheme(quantifiers, Types.namer(tpe, tenv0))
-        ))
+        macc + (name -> NamedAst.Case(enum, tag, Types.namer(tpe, tenv0)))
     }
 
   }

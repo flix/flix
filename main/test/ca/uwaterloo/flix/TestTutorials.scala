@@ -29,6 +29,11 @@ class TestTutorials extends FunSuite {
     new Flix().setOptions(opts).addPath(path).solve().get
   }
 
+  test("interpreter.flix") {
+    val path = "main/src/tutorials/interpreter.flix"
+    new Flix().setOptions(opts).addPath(path).solve().get
+  }
+
   test("delta-debugging.flix") {
     intercept[RuleException] {
       val path = "main/src/tutorials/delta-debugging.flix"

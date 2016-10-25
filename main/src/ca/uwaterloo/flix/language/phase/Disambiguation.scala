@@ -201,9 +201,8 @@ object Disambiguation {
         case None => Err(TypeError.UnresolvedType(qname, ns0, loc))
         case Some(enum) => Ok(Type.Enum(enum.sym, Kind.Star /* TODO: Kind */))
       }
-    case NamedAst.Type.Enum(sym, tparams, cases) =>
-      val kind = if (tparams.isEmpty) Kind.Star else Kind.Arrow(tparams.map(_ => Kind.Star), Kind.Star)
-      Ok(Type.Enum(sym, kind))
+    case NamedAst.Type.Enum(sym) =>
+      Ok(Type.Enum(sym, Kind.Star /* TODO: Kind */))
     case NamedAst.Type.Tuple(elms0, loc) =>
       for (
         elms <- seqM(elms0.map(tpe => resolve(tpe, ns0, program)))

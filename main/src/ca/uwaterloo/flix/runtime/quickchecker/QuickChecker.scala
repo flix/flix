@@ -301,7 +301,7 @@ object QuickChecker {
         val decl = root.enums(sym)
         val elms = decl.cases.map {
           case (tag, caze) =>
-            val innerType = caze.sc.base // TODO: Assumes that the enum is non-polymorphic.
+            val innerType = caze.tpe // TODO: Assumes that the enum is non-polymorphic.
             new Generator[SymVal] {
               def mk(r: Random): SymVal = SymVal.Tag(tag, new ArbSymVal(innerType, root).gen.mk(r))
             }

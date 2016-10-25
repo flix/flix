@@ -694,7 +694,7 @@ object ExecutableAst {
 
   case class Attribute(name: String, tpe: Type) extends ExecutableAst
 
-  case class Case(enum: Name.Ident, tag: Name.Ident, sc: Scheme) extends ExecutableAst
+  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends ExecutableAst
 
   case class FormalArg(ident: Name.Ident, tpe: Type) extends ExecutableAst
 
