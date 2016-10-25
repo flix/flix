@@ -1,6 +1,7 @@
 # Changelog
 
 HEAD:
+    - Added interpreter tutorial.
     - Added polymorphic types.
     - Added unification-based type system.
     - Added quick checker.
