@@ -150,19 +150,19 @@ def compileAExp(e: AExp): List[Inst] = match e with {
     case Plus(e1, e2)   =>
         let is1 = compileAExp(e1);
         let is2 = compileAExp(e2);
-            append(append(is1, is2), (Add :: Nil))
+            append(append(is2, is1), (Add :: Nil))
     case Minus(e1, e2)  =>
         let is1 = compileAExp(e1);
         let is2 = compileAExp(e2);
-            append(append(is1, is2), (Sub :: Nil))
+            append(append(is2, is1), (Sub :: Nil))
     case Times(e1, e2)  =>
         let is1 = compileAExp(e1);
         let is2 = compileAExp(e2);
-            append(append(is1, is2), (Mul :: Nil))
+            append(append(is2, is1), (Mul :: Nil))
     case Divide(e1, e2)  =>
         let is1 = compileAExp(e1);
         let is2 = compileAExp(e2);
-            append(append(is1, is2), (Div :: Nil))
+            append(append(is2, is1), (Div :: Nil))
     case IfThenElse(e1, e2, e3)  =>
         let is1 = compileBExp(e1);
         let is2 = compileAExp(e2);
@@ -182,19 +182,19 @@ def compileBExp(e: BExp): List[Inst] = match e with {
     case Conj(e1, e2)   =>
         let is1 = compileBExp(e1);
         let is2 = compileBExp(e2);
-            append(append(is1, is2), And :: Nil)
+            append(append(is2, is1), And :: Nil)
     case Disj(e1, e2)   =>
         let is1 = compileBExp(e1);
         let is2 = compileBExp(e2);
-            append(append(is1, is2), Or :: Nil)
+            append(append(is2, is1), Or :: Nil)
     case Eq(e1, e2)     =>
         let is1 = compileAExp(e1);
         let is2 = compileAExp(e2);
-            append(append(is1, is2), Cmp :: Nil)
+            append(append(is2, is1), Cmp :: Nil)
     case Neq(e1, e2)    =>
         let is1 = compileAExp(e1);
         let is2 = compileAExp(e2);
-            append(append(is1, is2), Neg :: Cmp :: Nil)
+            append(append(is2, is1), Neg :: Cmp :: Nil)
 }
 
 //
