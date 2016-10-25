@@ -270,6 +270,7 @@ object Main {
     val inputStream = name match {
       case "delta-debugging" => LocalResource.Tutorials.DeltaDebugging
       case "introduction" => LocalResource.Tutorials.Introduction
+      case "interpreter" => LocalResource.Tutorials.Interpreter
       case _ =>
         Console.println("No match. Available tutorials:")
         Console.println("  introduction")
