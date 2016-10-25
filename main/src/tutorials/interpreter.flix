@@ -1,9 +1,7 @@
 //
 // In this tutorial we demonstrate the functional language in Flix.
 //
-// We will write some interpreters and compilers for a small toy programming language.
-//
-// We begin by defining the data types we will be working with.
+// We write some interpreters and compilers for a small toy programming language.
 //
 
 //
@@ -16,7 +14,7 @@ enum AExp {
     // a binary addition expression: e1 + e2.
     case Plus(AExp, AExp),
 
-    // a binary substraction expression: e1 - e2.
+    // a binary subtraction expression: e1 - e2.
     case Minus(AExp, AExp),
 
     // a binary multiplication expression: e1 * e2.
@@ -25,7 +23,7 @@ enum AExp {
     // a binary division expression: e1 / e2.
     case Divide(AExp, AExp),
 
-    // a if-then-else expression: if (e1) e2 else e3.
+    //n a if-then-else expression: if (e1) e2 else e3.
     case IfThenElse(BExp, AExp, AExp)
 }
 
@@ -56,7 +54,7 @@ enum BExp {
 }
 
 //
-// We can now define a small interpreter for arithmetic expressions.
+// We now define a small interpreter for arithmetic expressions.
 //
 def evalAExp(e: AExp): Int = match e with {
     case Cst(i)                 => i
@@ -70,7 +68,7 @@ def evalAExp(e: AExp): Int = match e with {
 }
 
 //
-// And here is the small interpreter for boolean expressions.
+// and here is the small interpreter for boolean expressions.
 //
 def evalBExp(e: BExp): Bool = match e with {
     case True           => true
@@ -83,10 +81,10 @@ def evalBExp(e: BExp): Bool = match e with {
 }
 
 //
-// We test each interpreter by writing some small tests.
+// We test each interpreter by writing some tests.
 //
 // You can run these functions by passing the `--main` argument to Flix, e.g.
-//   $ flix --main testEvalAExp1
+//   $ flix <file> --main testEvalAExp1
 //
 
 def testEvalAExp1: Int = evalAExp(Cst(42))
@@ -102,8 +100,8 @@ def testEvalBExp4: Bool = evalBExp(Disj(True, False))
 def testEvalBExp5: Bool = evalBExp(Neq(Cst(1), Cst(2)))
 
 //
-// We now write two small compilers that translate arithmetic and boolean
-// expression into a sequence of instructions.
+// We now write two compilers that translate arithmetic and boolean expressions
+// into a stack-based language.
 //
 
 //
@@ -111,39 +109,41 @@ def testEvalBExp5: Bool = evalBExp(Neq(Cst(1), Cst(2)))
 //
 enum Inst {
 
-    // an instruction which pushes the constant integer on the stack.
+    // an instruction that pushes the constant integer on the stack.
     case Push(Int),
 
-    // an instruction which adds the two top operands on the stack.
+    // an instruction that adds the top two operands on the stack.
     case Add,
 
-    // an instruction which substracts the two top operands on the stack.
+    // an instruction that substracts the top two operands on the stack.
     case Sub,
 
-    // an instruction which multiplies the two top operands on the stack.
+    // an instruction that multiplies the top two operands on the stack.
     case Mul,
 
-    // an instruction which divides the two top operands on the stack.
+    // an instruction that divides the top two operands on the stack.
     case Div,
 
-    // an instruction which negates the top operand on the stack.
+    // an instruction that negates the top operand on the stack.
     case Neg,
 
-    // an instruction which computes the logical-and of the two top operands on the stack.
+    // an instruction that computes the logical-and of the top two operands on the stack.
     case And,
 
-    // an instruction which computes the logical-or of the two top operands on the stack.
+    // an instruction that computes the logical-or of the top two operands on the stack.
     case Or,
 
-    // an instruction which computes equality of the two top operands on the stack.
+    // an instruction that computes equality of the top two operands on the stack.
     case Cmp,
 
-    // an instruction which branches based on the top operand on the stack.
+    // an instruction that branches based on the top operand on the stack.
     case Branch(List[Inst], List[Inst])
 }
 
 //
-// Compiles the given arithmetic expression to a sequence of instructions.
+// We then write a compiler from arithmetic expressions to a list of instructions:
+//
+// The append function appends two lists and is defined in the bottom of this file.
 //
 def compileAExp(e: AExp): List[Inst] = match e with {
     case Cst(i)         => Push(i) :: Nil
@@ -171,7 +171,7 @@ def compileAExp(e: AExp): List[Inst] = match e with {
 }
 
 //
-// Compiles the given boolean expression to a sequence of instructions.
+// and a compiler for boolean expressions:
 //
 def compileBExp(e: BExp): List[Inst] = match e with {
     case True           => Push(1) :: Nil
@@ -198,7 +198,7 @@ def compileBExp(e: BExp): List[Inst] = match e with {
 }
 
 //
-// We test each compiler by writing some small tests.
+// We test each compiler by writing some tests:
 //
 def testCompileAExp1: List[Inst] = compileAExp(Cst(42))
 def testCompileAExp2: List[Inst] = compileAExp(Plus(Cst(42), Cst(21)))
@@ -213,7 +213,7 @@ def testCompileBExp4: List[Inst] = compileBExp(Disj(True, False))
 def testCompileBExp5: List[Inst] = compileBExp(Neq(Cst(1), Cst(2)))
 
 //
-// And finally, we can write an interpreter for the instruction language.
+// Finally, we write an interpreter for the stack-based language:
 //
 def evalInst(instructions: List[Inst], stack: List[Int]): Int = match (instructions, stack) with {
     case (Nil, x :: _) => x
@@ -250,7 +250,7 @@ def evalInst(instructions: List[Inst], stack: List[Int]): Int = match (instructi
 }
 
 //
-// We can now test the compiler and instruction-level interpreter.
+// and we can test the compiler and interpreter:
 //
 def testCompileAndEval1: Int = evalInst(compileAExp(Cst(42)), Nil)
 def testCompileAndEval2: Int = evalInst(compileAExp(Plus(Cst(42), Cst(21))), Nil)
@@ -259,7 +259,7 @@ def testCompileAndEval4: Int = evalInst(compileAExp(IfThenElse(True, Cst(1), Cst
 def testCompileAndEval5: Int = evalInst(compileAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21))), Nil)
 
 //
-// Here is the append helper function we used earlier.
+// Here is the append function used earlier:
 //
 def append(xs: List[Inst], ys: List[Inst]): List[Inst] = match xs with {
     case Nil => ys
