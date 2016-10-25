@@ -196,18 +196,18 @@ object Typer {
           * Performs type resolution on the given enum and its cases.
           */
         def visitEnum(enum: NamedAst.Declaration.Enum, ns: Name.NName): Result[(Symbol.EnumSym, TypedAst.Declaration.Enum), TypeError] = enum match {
-          case NamedAst.Declaration.Enum(doc, sym, tparams, cases0, enumScheme, loc) =>
-            val enumType = Scheme.instantiate(enumScheme)
+          case NamedAst.Declaration.Enum(doc, sym, tparams, cases0, tpe, loc) =>
             val casesResult = cases0 map {
-              case (name, NamedAst.Case(enumName, tagName, tpe)) =>
-                Disambiguation.resolve(tpe, ns, program).map {
+              case (name, NamedAst.Case(enumName, tagName, caseType)) =>
+                Disambiguation.resolve(caseType, ns, program).map {
                   case t => name -> TypedAst.Case(enumName, tagName, t)
                 }
             }
 
             for {
+              enumType <- Disambiguation.resolve(tpe, ns, program)
               cases <- Result.seqM(casesResult.toList)
-            } yield sym -> TypedAst.Declaration.Enum(doc, sym, cases.toMap, enumType, loc) // TODO: Should we pass the scheme instead?
+            } yield sym -> TypedAst.Declaration.Enum(doc, sym, cases.toMap, enumType, loc)
         }
 
         // Visit every enum in the program.
@@ -624,16 +624,28 @@ object Typer {
         case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
           Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
             case Ok(decl) =>
-              val enumType = Scheme.instantiate(decl.sc)
-              val caseScheme = decl.cases(tag.name).sc
-              Disambiguation.resolve(caseScheme, ns0, program) match {
-                case Ok(scheme) =>
-                  val caseType = Scheme.instantiate(scheme)
-                  for (
-                    innerType <- visitExp(exp);
-                    _________ <- unifyM(innerType, caseType, loc);
-                    resultType <- unifyM(tvar, enumType, loc)
-                  ) yield resultType
+              // Generate a fresh type variable for each type parameters.
+              val subst = Substitution(decl.tparams.map {
+                case param => param.tpe -> Type.freshTypeVar()
+              }.toMap)
+
+              // Resolve the enum type.
+              Disambiguation.resolve(decl.tpe, ns0, program) match {
+                case Ok(enumType) =>
+                  // Substitute the fresh type variables into the enum type.
+                  val freshEnumType = subst(enumType)
+                  // Resolve the case type.
+                  Disambiguation.resolve(decl.cases(tag.name).tpe, ns0, program) match {
+                    case Ok(caseType) =>
+                      // Substitute the fresh type variables into the case type.
+                      val freshCaseType = subst(caseType)
+                      for (
+                        innerType <- visitExp(exp);
+                        _________ <- unifyM(innerType, freshCaseType, loc);
+                        resultType <- unifyM(tvar, freshEnumType, loc)
+                      ) yield resultType
+                    case Err(e) => failM(e)
+                  }
                 case Err(e) => failM(e)
               }
             case Err(e) => failM(e)
@@ -774,18 +786,28 @@ object Typer {
         case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
           Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
             case Ok(decl) =>
-              // TODO: Remove Scheme. Add typevars to enum decl.
-              // Refresh typevars ONCE and use in BOTH enumType and caseType.
-              val enumType = Scheme.instantiate(decl.sc)
-              val caseScheme = decl.cases(tag.name).sc
-              Disambiguation.resolve(caseScheme, ns0, program) match {
-                case Ok(scheme) =>
-                  val caseType = Scheme.instantiate(scheme)
-                  for (
-                    innerType <- visitPat(pat);
-                    _________ <- unifyM(innerType, caseType, loc);
-                    resultType <- unifyM(tvar, enumType, loc)
-                  ) yield resultType
+              // Generate a fresh type variable for each type parameters.
+              val subst = Substitution(decl.tparams.map {
+                case param => param.tpe -> Type.freshTypeVar()
+              }.toMap)
+
+              // Resolve the enum type.
+              Disambiguation.resolve(decl.tpe, ns0, program) match {
+                case Ok(enumType) =>
+                  // Substitute the fresh type variables into the enum type.
+                  val freshEnumType = subst(enumType)
+                  // Resolve the case type.
+                  Disambiguation.resolve(decl.cases(tag.name).tpe, ns0, program) match {
+                    case Ok(caseType) =>
+                      // Substitute the fresh type variables into the case type.
+                      val freshCaseType = subst(caseType)
+                      for (
+                        innerType <- visitPat(pat);
+                        _________ <- unifyM(innerType, freshCaseType, loc);
+                        resultType <- unifyM(tvar, freshEnumType, loc)
+                      ) yield resultType
+                    case Err(e) => failM(e)
+                  }
                 case Err(e) => failM(e)
               }
             case Err(e) => failM(e)

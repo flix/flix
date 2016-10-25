@@ -36,7 +36,7 @@ object Simplifier {
     val enums = tast.enums.map {
       case (k, TypedAst.Declaration.Enum(doc, sym, cases0, sc, loc)) =>
         val cases = cases0 map {
-          case (tag, TypedAst.Case(enum, tagName, sc)) => tag -> SimplifiedAst.Case(enum, tagName, sc)
+          case (tag, TypedAst.Case(enum, tagName, tpe)) => tag -> SimplifiedAst.Case(enum, tagName, tpe)
         }
         k -> SimplifiedAst.Definition.Enum(sym, cases, loc)
     }

@@ -45,7 +45,7 @@ object CreateExecutableAst {
     val enums = sast.enums.map {
       case (sym, SimplifiedAst.Definition.Enum(_, cases0, loc)) =>
         val cases = cases0.map {
-          case (tag, SimplifiedAst.Case(enumName, tagName, sc)) => tag -> ExecutableAst.Case(enumName, tagName, sc)
+          case (tag, SimplifiedAst.Case(enumName, tagName, tpe)) => tag -> ExecutableAst.Case(enumName, tagName, tpe)
         }
         sym -> ExecutableAst.Definition.Enum(sym, cases, loc)
     }

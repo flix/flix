@@ -236,7 +236,7 @@ object Verifier {
         val decl = root.enums(sym)
         decl.cases.flatMap {
           // TODO: Assumes non-polymorphic type.
-          case (tag, caze) => visit(caze.sc.base) map {
+          case (tag, caze) => visit(caze.tpe) map {
             case e => SymVal.Tag(tag, e)
           }
         }.toList
