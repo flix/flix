@@ -333,7 +333,7 @@ PromiseLinkOut(c, s, o1, o2) :-
 ///////////////////////////////////////////////////////////////////////////////
 
 //
-// Resolve Edges: baseVar.resolve(valueVar) ===> valueObj -> promiseObj
+// Resolve Edges: baseVar.resolve(valueVar) becomes an edge: valueObj -> promiseObj
 //
 ResolveEdge(valueObj, promiseObj) :-
     Resolve(s, baseVar, valueVar),
@@ -342,21 +342,35 @@ ResolveEdge(valueObj, promiseObj) :-
     Reachable(c, s).
 
 //
-// Resolve Edges: baseVar.resolve(valueVar) ===> valueObj -> promiseObj
+// Resolve Edges: baseVar.resolve(valueVar) becomes an edge: valueObj -> promiseObj
+//
+RejectEdge(valueObj, promiseObj) :-
+    Reject(s, baseVar, valueVar),
+    VarPointsToIn(c, s, baseVar, promiseObj),
+    VarPointsToIn(c, s, valueVar, valueObj),
+    Reachable(c, s).
+
+//
+// OnResolve Edges: baseVar.onResolve(lambdaVar) becomes an edge: promiseObj -> lambdaObj.
 //
 
-///// Models `reject` edges from `value` objects to `promise` objects.
-//rel RejectEdge(value: Obj, promise: Obj)
-
-
+// TODO
 
 //
+// OnReject Edges: baseVar.onReject(lambdaVar) becomes an edge: promiseObj -> lambdaObj.
+//
+
+// TODO
+
+
 ///// Models `onResolve` edges from `promise` objects to `lambda` function objects.
 //rel OnResolveEdge(promise: Obj, lambda: Obj)
 //
 ///// Models `onReject` edges from `promise` objects to `lambda` function objects.
 //rel OnRejectEdge(p: Obj, m: Obj)
-//
+
+
+
 ///// Models `link` edges from `parent` promise objects to `child` promise objects.
 //rel LinkEdge(parent: Obj, child: Obj)
 
