@@ -69,11 +69,11 @@ rel Resolve(s: Stm, v1: Var, v2: Var)
 // Reject promise expression: s: v1.reject(v2)
 rel Reject(s: Stm, v1: Var, v2: Var)
 
-// On resolve expression: s: v1.onResolve(v2)
-rel OnResolve(s: Stm, v1: Var, v2: Var)
+// On resolve expression: s: v1 = v2.onResolve(v3)
+rel OnResolve(s: Stm, v1: Var, v2: Var, v3: Var)
 
-// On reject expression: s: v1.onReject(v2)
-rel OnReject(s: Stm, v1: Var, v2: Var)
+// On reject expression: s: v1 = v2.onReject(v3)
+rel OnReject(s: Stm, v1: Var, v2: Var, v3: Var)
 
 // Promise link expression: s: v1.link(v2)
 rel Link(s: Stm, v1: Var, v2: Var)
@@ -187,21 +187,22 @@ PromiseStateOut(c, s, o, Pending, Obj("undef")) :-
     Reachable(c, s).
 
 /*
- * E-OnResolve-Pending: v1.onResolve(v2).
+ * E-OnResolve-Pending: v1 = v2.onResolve(v3).
  */
-// 1. Set the state of the child promise to pending.
+// 1. Allocate a child promise.
+VarPointsToOut(c, s, v1, mkObj(s)) :-
+    OnResolve(s, v1, _, _),
+    Reachable(c, s).
 
-// TODO
-//PromiseStateOut(c, s, o, State.Pending, Obj.Obj("null")) :- OnResolve(s, v1, v2),
-//                                                            VarPointsToIn(c, s, v1, p),
-//                                                            VarPointsToIn(c, s, v2, l)
+// 2. Set the state of the child promise to pending.
+PromiseStateOut(c, s, mkObj(s), Pending, Obj("undef")) :-
+    OnResolve(s, v1, _, _),
+    Reachable(c, s).
 
-// 2. Add the fulfill reaction on the promise.
-
-// 3. Return the child promise.
+// 3. Add the fulfill reaction on the promise.
 
 /*
- * E-OnResolve-Fulfilled: v1.onResolve(v2).
+ * E-OnResolve-Fulfilled: v1 = v2.onResolve(v3).
  */
 
 /*
@@ -285,8 +286,12 @@ PromiseLinkOut(c, s, o1, o2) :-
 ///////////////////////////////////////////////////////////////////////////////
 
 
-
-
+///////////////////////////////////////////////////////////////////////////////
+// Helper Functions                                                          //
+///////////////////////////////////////////////////////////////////////////////
+def mkObj(s: Stm): Obj = match s with {
+    case Stm(x) => Obj(x)
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Example Program                                                           //
@@ -322,7 +327,7 @@ Promisify(Stm("line5"), Var("p1")).
 Promisify(Stm("line6"), Var("p2")).
 
 // l7: var p3 = p2.onResolve(l);
-OnResolve(Stm("line7"), Var.Var("p3"), Var("l")).
+OnResolve(Stm("line7"), Var("p3"), Var("p2"), Var("l")).
 
 // l8: p1.link(p2);
 Link(Stm("line8"), Var("p1"), Var("p2")).
