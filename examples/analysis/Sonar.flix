@@ -124,21 +124,20 @@ rel Queue(c: Ctx, s: Stm, t: State, v: Obj, l: Obj, o: Obj)
 // Declarations: Promise Graph                                               //
 ///////////////////////////////////////////////////////////////////////////////
 
-// A resolve edge o -> p from a value `o` to a promise `p`.
-rel ResolveEdge(o: Obj, p: Obj)
+/// Models `resolve` edges from `value` objects to `promise` objects.
+rel ResolveEdge(value: Obj, promise: Obj)
 
-// A reject edge o -> p from a value `o` to a promise `p`.
-rel RejectEdge(o: Obj, p: Obj)
+/// Models `reject` edges from `value` objects to `promise` objects.
+rel RejectEdge(value: Obj, promise: Obj)
 
-// An onResolve edge p -> m from a promise `o` to a function `m`.
-rel OnResolveEdge(o: Obj, m: Obj)
+/// Models `onResolve` edges from `promise` objects to `lambda` function objects.
+rel OnResolveEdge(promise: Obj, lambda: Obj)
 
-// An onReject edge p -> m from a promise `o` to a function `m`.
+/// Models `onReject` edges from `promise` objects to `lambda` function objects.
 rel OnRejectEdge(p: Obj, m: Obj)
 
-// A promise link edge p1 -> p2 from one promise `p1` to another promise `p2`.
-rel LinkEdge(p1: Obj, p2: Obj)
-
+/// Models `link` edges from `parent` promise objects to `child` promise objects.
+rel LinkEdge(parent: Obj, child: Obj)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Semantics: Core Expressions                                               //
@@ -278,10 +277,12 @@ PromiseLinkOut(c, s, o1, o2) :-
 /*
  * E-Loop.
  */
+// TODO
 
 /*
  * E-Job-Fulfilled.
  */
+// TODO
 
 ///////////////////////////////////////////////////////////////////////////////
 // Semantics: Confluence Rules                                               //
@@ -330,6 +331,34 @@ PromiseLinkOut(c, s, o1, o2) :-
 ///////////////////////////////////////////////////////////////////////////////
 // Semantics: Promise Graph                                                  //
 ///////////////////////////////////////////////////////////////////////////////
+
+//
+// Resolve Edges: baseVar.resolve(valueVar) ===> valueObj -> promiseObj
+//
+ResolveEdge(valueObj, promiseObj) :-
+    Resolve(s, baseVar, valueVar),
+    VarPointsToIn(c, s, baseVar, promiseObj),
+    VarPointsToIn(c, s, valueVar, valueObj),
+    Reachable(c, s).
+
+//
+// Resolve Edges: baseVar.resolve(valueVar) ===> valueObj -> promiseObj
+//
+
+///// Models `reject` edges from `value` objects to `promise` objects.
+//rel RejectEdge(value: Obj, promise: Obj)
+
+
+
+//
+///// Models `onResolve` edges from `promise` objects to `lambda` function objects.
+//rel OnResolveEdge(promise: Obj, lambda: Obj)
+//
+///// Models `onReject` edges from `promise` objects to `lambda` function objects.
+//rel OnRejectEdge(p: Obj, m: Obj)
+//
+///// Models `link` edges from `parent` promise objects to `child` promise objects.
+//rel LinkEdge(parent: Obj, child: Obj)
 
 
 ///////////////////////////////////////////////////////////////////////////////
