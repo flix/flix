@@ -104,13 +104,13 @@ rel PromiseStateOut(c: Ctx, s: Stm, o: Obj, t: State, v: Obj)
 // TODO: Consider better naming of attributes?
 // rel PromiseStateOut(ctx: Ctx, stm: Stm, baseObj: Obj, promiseState: State, promiseValue: Obj)
 
-// The promise `o` has `r` registered as a fulfill reaction at statement `s` in context `c`.
-rel FulfillReactionIn(c: Ctx, s: Stm, o: Obj, r: Obj)
-rel FulfillReactionOut(c: Ctx, s: Stm, o: Obj, r: Obj)
+// The promise `o1` has `r` registered as a fulfill reaction at statement `s` in context `c` with child promise `o2`.
+rel FulfillReactionIn(c: Ctx, s: Stm, o1: Obj, r: Obj, o2: Obj)
+rel FulfillReactionOut(c: Ctx, s: Stm, o1: Obj, r: Obj, o2: Obj)
 
-// The promise `o` has `r` registered as a reject reaction at statement `s` in context `c`.
-rel RejectReactionIn(c: Ctx, s: Stm, o: Obj, r: Obj)
-rel RejectReactionOut(c: Ctx, s: Stm, o: Obj, r: Obj)
+// The promise `o1` has `r` registered as a reject reaction at statement `s` in context `c` with child promise `o2`.
+rel RejectReactionIn(c: Ctx, s: Stm, o1: Obj, r: Obj, o2: Obj)
+rel RejectReactionOut(c: Ctx, s: Stm, o1: Obj, r: Obj, o2: Obj)
 
 // The promise `o1` is linked to `o2` at statement `s` in context `c`.
 // If `o1` is linked to `o2` then when `o1` is resolved/rejected so is `o2`.
@@ -204,7 +204,7 @@ PromiseStateOut(c, s, mkObj(s), Pending, Obj("undef")) :-
     Reachable(c, s).
 
 // 3. Add the fulfill reaction on the promise.
-FulfillReactionOut(c, s, baseObj, lambdaObj) :-
+FulfillReactionOut(c, s, baseObj, lambdaObj, mkObj(s)) :-
     OnResolve(s, _, v2, v3),
     VarPointsToIn(c, s, v2, baseObj),
     VarPointsToIn(c, s, v3, lambdaObj),
@@ -235,6 +235,8 @@ Queue(c, s, Fulfilled, promiseValue, lambdaObj, mkObj(s)) :-
     VarPointsToIn(c, s, v3, lambdaObj),
     PromiseStateIn(c, s, baseObj, Fulfilled, promiseValue),
     Reachable(c, s).
+
+// TODO E-OnReject-Pending and E-OnReject-Rejected
 
 /*
  * E-Resolve-Settled: v1.resolve(v2).
@@ -305,12 +307,12 @@ PromiseStateOut(c, s, baseObj, promiseState, promiseValue) :-
     PromiseStateIn(c, s, baseObj, promiseState, promiseValue).
 
 // Propagate FullfillReaction along the control-flow graph.
-FulfillReactionIn(c, s2, o, r) :-
+FulfillReactionIn(c, s2, o1, r, o2) :-
     CFG(s1, s2),
     Reachable(c, s2),
-    FulfillReactionOut(c, s1, o, r).
-FulfillReactionOut(c, s, o, r) :-
-    FulfillReactionIn(c, s, o, r).
+    FulfillReactionOut(c, s1, o1, r, o2).
+FulfillReactionOut(c, s, o1, r, o2) :-
+    FulfillReactionIn(c, s, o1, r, o2).
 
 // Propagate PromiseLink along the control-flow graph.
 PromiseLinkIn(c, s2, o1, o2) :-
