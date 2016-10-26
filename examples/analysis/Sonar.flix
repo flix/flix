@@ -261,6 +261,9 @@ Queue(c, s, Fulfilled, argVal, lambdaObj, childObj) :-
     FulfillReactionIn(c, s, promiseObj, lambdaObj, childObj),
     Reachable(c, s).
 
+// TODO: Deal with links
+
+
 /*
  * E-Link: v1.link(v2).
  */
@@ -269,6 +272,8 @@ PromiseLinkOut(c, s, o1, o2) :-
     VarPointsToIn(c, s, v1, o1),
     VarPointsToIn(c, s, v2, o2),
     Reachable(c, s).
+
+// TODO: Semantics of linking a resolved promise?
 
 /*
  * E-Loop.
