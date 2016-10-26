@@ -200,6 +200,11 @@ PromiseStateOut(c, s, mkObj(s), Pending, Obj("undef")) :-
     Reachable(c, s).
 
 // 3. Add the fulfill reaction on the promise.
+FulfillReactionOut(c, s, baseObj, lambdaObj) :-
+    OnResolve(s, _, v2, v3),
+    VarPointsToIn(c, s, v2, baseObj),
+    VarPointsToIn(c, s, v3, lambdaObj),
+    Reachable(c, s).
 
 /*
  * E-OnResolve-Fulfilled: v1 = v2.onResolve(v3).
@@ -272,6 +277,14 @@ PromiseStateIn(c, s2, baseObj, promiseState, promiseValue) :-
     PromiseStateOut(c, s1, baseObj, promiseState, promiseValue).
 PromiseStateOut(c, s, baseObj, promiseState, promiseValue) :-
     PromiseStateIn(c, s, baseObj, promiseState, promiseValue).
+
+// Propagate FullfillReaction along the control-flow graph.
+FulfillReactionIn(c, s2, o, r) :-
+    CFG(s1, s2),
+    Reachable(c, s2),
+    FulfillReactionOut(c, s1, o, r).
+FulfillReactionOut(c, s, o, r) :-
+    FulfillReactionIn(c, s, o, r).
 
 // Propagate PromiseLink along the control-flow graph.
 PromiseLinkIn(c, s2, o1, o2) :-
