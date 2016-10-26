@@ -11,7 +11,7 @@ enum Var { case Var(Str) }
 enum Stm { case Stm(Str)}
 
 enum Ctx {
-    case None
+    case EmptyCtx
 }
 
 enum State {
@@ -101,6 +101,9 @@ rel HeapPointsToOut(c: Ctx, s: Stm, o1: Obj, f: Field, o2: Obj)
 rel PromiseStateIn(c: Ctx, s: Stm, o: Obj, t: State, v: Obj)
 rel PromiseStateOut(c: Ctx, s: Stm, o: Obj, t: State, v: Obj)
 
+// TODO: Consider better naming of attributes?
+// rel PromiseStateOut(ctx: Ctx, stm: Stm, baseObj: Obj, promiseState: State, promiseValue: Obj)
+
 // The promise `o` has `r` registered as a fulfill reaction at statement `s` in context `c`.
 rel FulfillReactionIn(c: Ctx, s: Stm, o: Obj, r: Obj)
 rel FulfillReactionOut(c: Ctx, s: Stm, o: Obj, r: Obj)
@@ -142,38 +145,48 @@ rel LinkEdge(p1: Obj, p2: Obj)
 ///////////////////////////////////////////////////////////////////////////////
 
 // NewObj Rule: s: v = new Obj()
-VarPointsToOut(c, s, v, o) :- NewObj(s, v, o),
-                              Reachable(c, s).
+VarPointsToOut(c, s, v, o) :-
+    NewObj(s, v, o),
+    Reachable(c, s).
 
 // Assign Rule: s: v1 = v2
-VarPointsToOut(c, s, v1, o) :- Assign(s, v1, v2),
-                               VarPointsToIn(c, s, v2, o),
-                               Reachable(c, s).
+VarPointsToOut(c, s, v1, o) :-
+    Assign(s, v1, v2),
+    VarPointsToIn(c, s, v2, o),
+    Reachable(c, s).
 
 // Load rule: v1 = v2.f
-VarPointsToOut(c, s, v1, o2) :- Load(s, v1, v2, f),
-                                VarPointsToIn(c, s, v2, o1),
-                                HeapPointsToIn(c, s, o1, f, o2),
-                                Reachable(c, s).
+VarPointsToOut(c, s, v1, o2) :-
+    Load(s, v1, v2, f),
+    VarPointsToIn(c, s, v2, o1),
+    HeapPointsToIn(c, s, o1, f, o2),
+    Reachable(c, s).
 
 // Store rule: v1.f = v2
-HeapPointsToOut(c, s, o1, f, o2) :- Store(s, v1, f, v2),
-                                    VarPointsToIn(c, s, v1, o1),
-                                    VarPointsToIn(c, s, v2, o2),
-                                    Reachable(c, s).
-
-// Mark the entry point as reachable.
-Reachable(Ctx.None, Stm.Stm("l1")).
+HeapPointsToOut(c, s, o1, f, o2) :-
+    Store(s, v1, f, v2),
+    VarPointsToIn(c, s, v1, o1),
+    VarPointsToIn(c, s, v2, o2),
+    Reachable(c, s).
 
 // Propagate reachability along the control-flow graph.
-Reachable(c, s2) :- CFG(s1, s2), Reachable(c, s1).
+Reachable(c, s2) :-
+    CFG(s1, s2),
+    Reachable(c, s1).
 
-// Propagate dataflow along the control-flow graph.
-VarPointsToIn(c, s2, v, o) :- CFG(s1, s2), VarPointsToOut(c, s1, v, o).
-VarPointsToOut(c, s, v, o) :- VarPointsToIn(c, s, v, o).
+// Propagate VarPointsTo along the control-flow graph.
+VarPointsToIn(c, s2, v, o) :-
+    CFG(s1, s2),
+    VarPointsToOut(c, s1, v, o).
+VarPointsToOut(c, s, v, o) :-
+    VarPointsToIn(c, s, v, o).
 
-HeapPointsToIn(c, s2, o1, f, o2) :- CFG(s1, s2), HeapPointsToOut(c, s1, o1, f, o2).
-HeapPointsToOut(c, s, o1, f, o2) :- HeapPointsToIn(c, s, o1, f, o2).
+// Propagate HeapPointsTo along the control-flow graph.
+HeapPointsToIn(c, s2, o1, f, o2) :-
+    CFG(s1, s2),
+    HeapPointsToOut(c, s1, o1, f, o2).
+HeapPointsToOut(c, s, o1, f, o2) :-
+    HeapPointsToIn(c, s, o1, f, o2).
 
 ///////////////////////////////////////////////////////////////////////////////
 // Semantics: Promise Expressions                                            //
@@ -182,7 +195,7 @@ HeapPointsToOut(c, s, o1, f, o2) :- HeapPointsToIn(c, s, o1, f, o2).
 /*
  * E-Promisify: s: promisify(v).
  */
-PromiseStateOut(c, s, o, State.Pending, Obj.Obj("null")) :-
+PromiseStateOut(c, s, o, Pending, Obj("undef")) :-
     Promisify(s, v),
     VarPointsToIn(c, s, v, o),
     Reachable(c, s).
@@ -260,40 +273,53 @@ Queue(c, s, State.Fulfilled, argVal, lambdaObj, childObj) :-
 // Example Program                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-// TODO: Need to allocate objects before use...
-
 // Input program
-// var p1 = {};
-// var p2 = {};
-// var lambda = ...
-// var arg = ...
-// promisify(o1);
-// promisify(o2);
-// var p3 = p2.onResolve(lambda);
-// p1.link(p2);
-// p1.resolve(42);
+// line1: var p1 = {};
+// line2: var p2 = {};
+// line3: var l = {};
+// line4: var x = {};
+// line5: promisify(p1);
+// line6: promisify(p2);
+// line7: var p3 = p2.onResolve(l);
+// line8: p1.link(p2);
+// line9: p1.resolve(x);
 
+// l1: var p1 = {};
+NewObj(Stm("line1"), Var("p1"), Obj("promise1")).
 
-// var p1 = {};
+// l2: var p2 = {};
+NewObj(Stm("line2"), Var("p2"), Obj("promise2")).
 
-// var p2 = {};
+// l3: var l = {};
+NewObj(Stm("line3"), Var("l"), Obj("lambda")).
 
-// l1: var p1 = promisify ({});
-NewObj(Stm.Stm("l1"), Var.Var("p1"), Obj.Obj("line1")).
-Promisify(Stm.Stm("l1"), Var.Var("p1")).
-CFG(Stm.Stm("l1"), Stm.Stm("l2")).
+// l4: var x = {};
+NewObj(Stm("line4"), Var("x"), Obj("value")).
 
-// l2: var p2 = promisify ({});
-NewObj(Stm.Stm("l2"), Var.Var("p2"), Obj.Obj("line2")).
-Promisify(Stm.Stm("l2"), Var.Var("p2")).
-CFG(Stm.Stm("l2"), Stm.Stm("l3")).
+// l5: promisify(p1);
+Promisify(Stm("line5"), Var("p1")).
 
-// var p3 = p2.onResolve(x => x);
-NewObj(Stm.Stm("l3"), Var.Var("lambda"), Obj.Obj("lambda")).
-OnResolve(Stm.Stm("l3"), Var.Var("p2"), Var.Var("lambda")).
-CFG(Stm.Stm("l3"), Stm.Stm("l4")).
+// l6: promisify(p2);
+Promisify(Stm("line6"), Var("p2")).
 
-// p1.link(p2);
+// l7: var p3 = p2.onResolve(l);
+OnResolve(Stm("line7"), Var.Var("p3"), Var("l")).
 
+// l8: p1.link(p2);
+Link(Stm("line8"), Var("p1"), Var("p2")).
 
-// p1.resolve(42);
+// l9: p1.resolve(x);
+Resolve(Stm("line9"), Var("p1"), Var("x")).
+
+// CFG edges
+CFG(Stm("line1"), Stm("line2")).
+CFG(Stm("line2"), Stm("line3")).
+CFG(Stm("line3"), Stm("line4")).
+CFG(Stm("line4"), Stm("line5")).
+CFG(Stm("line5"), Stm("line6")).
+CFG(Stm("line6"), Stm("line7")).
+CFG(Stm("line7"), Stm("line8")).
+CFG(Stm("line8"), Stm("line9")).
+
+// Mark the entry point as reachable.
+Reachable(EmptyCtx, Stm("line1")).
