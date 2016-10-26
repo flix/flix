@@ -214,17 +214,35 @@ FulfillReactionOut(c, s, baseObj, lambdaObj) :-
 /*
  * E-OnResolve-Fulfilled: v1 = v2.onResolve(v3).
  */
+// 1. Allocate a child promise.
+VarPointsToOut(c, s, v1, mkObj(s)) :-
+    OnResolve(s, v1, v2, _),
+    VarPointsToIn(c, s, v2, baseObj),
+    PromiseStateIn(c, s, baseObj, Fulfilled, _),
+    Reachable(c, s).
 
+// 2. Set the state of the child promise to fulfilled and retrieve the promise value.
+PromiseStateOut(c, s, mkObj(s), Fulfilled, promiseValue) :-
+    OnResolve(s, v1, v2, _),
+    VarPointsToIn(c, s, v2, baseObj),
+    PromiseStateIn(c, s, baseObj, Fulfilled, promiseValue),
+    Reachable(c, s).
 
-
+// 3. Add the fulfill reaction to the queue.
+Queue(c, s, Fulfilled, promiseValue, lambdaObj, mkObj(s)) :-
+    OnResolve(s, v1, v2, v3),
+    VarPointsToIn(c, s, v2, baseObj),
+    VarPointsToIn(c, s, v3, lambdaObj),
+    PromiseStateIn(c, s, baseObj, Fulfilled, promiseValue),
+    Reachable(c, s).
 
 /*
- * E-Resolved-Settled: v1.resolve(v2).
+ * E-Resolve-Settled: v1.resolve(v2).
  */
 // No-op actually does not do anything.
 
 /*
- * E-Resolved-Pending: v1.resolve(v2).
+ * E-Resolve-Pending: v1.resolve(v2).
  */
 // 1. Set the state of the promise to fulfilled.
 PromiseStateOut(c, s, o, State.Fulfilled, r) :-
