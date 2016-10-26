@@ -138,7 +138,12 @@ object Namer {
               case p => NamedAst.TypeParam(p, Type.freshTypeVar(), loc)
             }
             val tenv = tparams.map(kv => kv.name.name -> kv.tpe).toMap
-            val enum = NamedAst.Declaration.Enum(doc, sym, tparams, casesOf(cases, tenv), schemeOf(sym, tparams0, cases), loc)
+            val quantifiers = tparams.map(_.tpe).map(x => NamedAst.Type.Var(x, loc))
+            val enumType = if (quantifiers.isEmpty)
+              NamedAst.Type.Enum(sym)
+            else
+              NamedAst.Type.Apply(NamedAst.Type.Enum(sym), quantifiers, loc)
+            val enum = NamedAst.Declaration.Enum(doc, sym, tparams, casesOf(cases, tenv), enumType, loc)
             val enums = enums0 + (ident.name -> enum)
             prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
           case Some(enum) =>
@@ -272,28 +277,8 @@ object Namer {
       * Performs naming on the given `cases` map.
       */
     def casesOf(cases: Map[String, WeededAst.Case], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Map[String, NamedAst.Case] = cases.foldLeft(Map.empty[String, NamedAst.Case]) {
-      case (macc, (name, WeededAst.Case(enum, tag, tpe))) => macc + (name -> NamedAst.Case(enum, tag, Types.namer(tpe, tenv0)))
-    }
-
-    /**
-      * Returns the scheme corresponding to the given cases of an enum.
-      */
-    def schemeOf(sym: Symbol.EnumSym, tparams: List[Name.Ident], cases0: Map[String, WeededAst.Case])(implicit genSym: GenSym): NamedAst.Scheme = {
-      // Compute the type environment from the quantifier type parameters.
-      val tenv0 = tparams.map(ident => ident.name -> Type.freshTypeVar())
-
-      // Perform naming on each case.
-      val cases = cases0.foldLeft(Map.empty[String, NamedAst.Type]) {
-        case (macc, (tag, WeededAst.Case(enumName, tagName, t))) => macc + (tag -> Types.namer(t, tenv0.toMap))
-      }
-      val tvars = tenv0.map(_._2)
-      val base = NamedAst.Type.Enum(sym, tparams, cases)
-      val enumType =
-        if (tvars.isEmpty)
-          base
-        else
-          NamedAst.Type.Apply(base, tvars.map(x => NamedAst.Type.Var(x, sym.loc)), sym.loc)
-      NamedAst.Scheme(tvars, enumType)
+      case (macc, (name, WeededAst.Case(enum, tag, tpe))) =>
+        macc + (name -> NamedAst.Case(enum, tag, Types.namer(tpe, tenv0)))
     }
 
   }
@@ -407,13 +392,6 @@ object Namer {
           case es => NamedAst.Expression.Tuple(es, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.FNil(loc) => NamedAst.Expression.FNil(Type.freshTypeVar(), loc).toSuccess
-
-      case WeededAst.Expression.FList(hd, tl, loc) =>
-        @@(namer(hd, env0, tenv0), namer(tl, env0, tenv0)) map {
-          case (e1, e2) => NamedAst.Expression.FList(e1, e2, Type.freshTypeVar(), loc)
-        }
-
       case WeededAst.Expression.FVec(elms, loc) =>
         @@(elms map (e => namer(e, env0, tenv0))) map {
           case es => NamedAst.Expression.FVec(es, Type.freshTypeVar(), loc)
@@ -505,8 +483,6 @@ object Namer {
       }
       case WeededAst.Expression.Tag(enum, tag, exp, loc) => freeVars(exp)
       case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
-      case WeededAst.Expression.FNil(loc) => Nil
-      case WeededAst.Expression.FList(hd, tl, loc) => freeVars(hd) ++ freeVars(tl)
       case WeededAst.Expression.FVec(elms, loc) => elms flatMap freeVars
       case WeededAst.Expression.FSet(elms, loc) => elms flatMap freeVars
       case WeededAst.Expression.FMap(elms, loc) => elms flatMap {
@@ -540,8 +516,6 @@ object Namer {
       case WeededAst.Pattern.Str(lit, loc) => Nil
       case WeededAst.Pattern.Tag(enumName, tagName, p, loc) => freeVars(p)
       case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
-      case WeededAst.Pattern.FNil(loc) => Nil
-      case WeededAst.Pattern.FList(hd, tl, loc) => freeVars(hd) ++ freeVars(tl)
       case WeededAst.Pattern.FVec(elms, rest, loc) => elms.flatMap(freeVars) ++ rest.map(freeVars).getOrElse(Nil)
       case WeededAst.Pattern.FSet(elms, rest, loc) => elms.flatMap(freeVars) ++ rest.map(freeVars).getOrElse(Nil)
       case WeededAst.Pattern.FMap(elms, rest, loc) => (elms flatMap {
@@ -586,8 +560,6 @@ object Namer {
         case WeededAst.Pattern.Str(lit, loc) => NamedAst.Pattern.Str(lit, loc)
         case WeededAst.Pattern.Tag(enum, tag, pat, loc) => NamedAst.Pattern.Tag(enum, tag, visit(pat), Type.freshTypeVar(), loc)
         case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
-        case WeededAst.Pattern.FNil(loc) => NamedAst.Pattern.FNil(Type.freshTypeVar(), loc)
-        case WeededAst.Pattern.FList(hd, tl, loc) => NamedAst.Pattern.FList(visit(hd), visit(tl), Type.freshTypeVar(), loc)
         case WeededAst.Pattern.FVec(elms, rest, loc) => NamedAst.Pattern.FVec(elms map visit, rest map visit, Type.freshTypeVar(), loc)
         case WeededAst.Pattern.FSet(elms, rest, loc) => NamedAst.Pattern.FSet(elms map visit, rest map visit, Type.freshTypeVar(), loc)
         case WeededAst.Pattern.FMap(elms, rest, loc) =>

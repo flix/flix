@@ -23,6 +23,7 @@ object SimplifiedAst {
   // TODO: Order of elements.
 
   case class Root(constants: Map[Symbol.Resolved, SimplifiedAst.Definition.Constant],
+                  enums: Map[Symbol.EnumSym, SimplifiedAst.Definition.Enum],
                   lattices: Map[Type, SimplifiedAst.Definition.Lattice],
                   tables: Map[Symbol.TableSym, SimplifiedAst.Table],
                   indexes: Map[Symbol.TableSym, SimplifiedAst.Definition.Index],
@@ -42,6 +43,8 @@ object SimplifiedAst {
                         isSynthetic: Boolean,
                         tpe: Type,
                         loc: SourceLocation) extends SimplifiedAst.Definition
+
+    case class Enum(sym: Symbol.EnumSym, cases: Map[String, SimplifiedAst.Case], loc: SourceLocation) extends SimplifiedAst.Definition
 
     case class Lattice(tpe: Type,
                        bot: SimplifiedAst.Expression,
@@ -555,22 +558,6 @@ object SimplifiedAst {
 
     case class Tuple(elms: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class FNil(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class FList(hd: SimplifiedAst.Expression, tl: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class IsNil(exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
-      final val tpe: Type = Type.Bool
-    }
-
-    case class IsList(exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
-      final val tpe: Type = Type.Bool
-    }
-
-    case class GetHead(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class GetTail(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
     case class FSet(elms: List[SimplifiedAst.Expression],
                     tpe: Type,
                     loc: SourceLocation) extends SimplifiedAst.Expression
@@ -714,6 +701,8 @@ object SimplifiedAst {
   }
 
   case class Attribute(name: String, tpe: Type) extends SimplifiedAst
+
+  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends SimplifiedAst
 
   case class FormalArg(ident: Name.Ident, tpe: Type) extends SimplifiedAst
 

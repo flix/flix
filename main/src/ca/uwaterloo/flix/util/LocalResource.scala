@@ -43,6 +43,8 @@ object LocalResource {
 
     def Introduction: InputStream = getInputStream("/tutorials/introduction.flix")
 
+    def Interpreter: InputStream = getInputStream("/tutorials/interpreter.flix")
+
   }
 
   /**

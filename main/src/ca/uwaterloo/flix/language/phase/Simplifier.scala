@@ -33,6 +33,13 @@ object Simplifier {
     val t = System.nanoTime()
 
     val constants = tast.definitions.map { case (k, v) => k.toResolvedTemporaryHelperMethod -> Definition.simplify(v) }
+    val enums = tast.enums.map {
+      case (k, TypedAst.Declaration.Enum(doc, sym, cases0, sc, loc)) =>
+        val cases = cases0 map {
+          case (tag, TypedAst.Case(enum, tagName, tpe)) => tag -> SimplifiedAst.Case(enum, tagName, tpe)
+        }
+        k -> SimplifiedAst.Definition.Enum(sym, cases, loc)
+    }
     val lattices = tast.lattices.map { case (k, v) => k -> Definition.simplify(v) }
     val collections = tast.tables.map { case (k, v) => k -> Table.simplify(v) }
     val indexes = tast.indexes.map { case (k, v) => k -> Definition.simplify(v) }
@@ -42,7 +49,7 @@ object Simplifier {
     val time = tast.time
 
     val e = System.nanoTime() - t
-    SimplifiedAst.Root(constants, lattices, collections, indexes, facts, rules, properties, time.copy(simplifier = e))
+    SimplifiedAst.Root(constants, enums, lattices, collections, indexes, facts, rules, properties, time.copy(simplifier = e))
   }
 
   object Table {
@@ -211,8 +218,6 @@ object Simplifier {
         SimplifiedAst.Expression.Tag(sym.toResolved, tag, simplify(e), tpe, loc)
       case TypedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
-      case TypedAst.Expression.FNil(tpe, loc) => SimplifiedAst.Expression.FNil(tpe, loc)
-      case TypedAst.Expression.FList(hd, tl, tpe, loc) => SimplifiedAst.Expression.FList(simplify(hd), simplify(tl), tpe, loc)
       case TypedAst.Expression.FVec(elms, tpe, loc) => ??? // TODO
       case TypedAst.Expression.FSet(elms, tpe, loc) =>
         SimplifiedAst.Expression.FSet(elms map simplify, tpe, loc)
@@ -221,11 +226,11 @@ object Simplifier {
       case TypedAst.Expression.PutIndex(e1, e2, e3, tpe, loc) => ??? // TODO
       case TypedAst.Expression.Existential(params, exp, loc) =>
         val ps = params.map(p => SimplifiedAst.FormalArg(p.sym.toIdent, p.tpe))
-      val e = simplify(exp)
+        val e = simplify(exp)
         SimplifiedAst.Expression.Existential(ps, e, loc)
       case TypedAst.Expression.Universal(params, exp, loc) =>
         val ps = params.map(p => SimplifiedAst.FormalArg(p.sym.toIdent, p.tpe))
-      val e = simplify(exp)
+        val e = simplify(exp)
         SimplifiedAst.Expression.Universal(ps, e, loc)
       case TypedAst.Expression.UserError(tpe, loc) =>
         SimplifiedAst.Expression.UserError(tpe, loc)
@@ -318,35 +323,6 @@ object Simplifier {
           case (((pat, name), idx), exp) =>
             SExp.Let(name, -1, SExp.GetTupleIndex(SExp.Var(v, -1, tpe, loc), idx, pat.tpe, loc), exp, succ.tpe, loc)
         }
-
-      /**
-        * Matching Nil may succeed or fail.
-        *
-        * // TODO
-        */
-      case (FNil(tpe, loc) :: ps, v :: vs) =>
-        val cond = SExp.IsNil(SExp.Var(v, -1, tpe, loc), loc)
-        val consequent = simplify(ps, vs, succ, fail)
-        val alternative = fail
-        SExp.IfThenElse(cond, consequent, alternative, succ.tpe, loc)
-
-      /**
-        * Matching a list may succeed or fail.
-        *
-        * TODO
-        */
-      case (FList(hd, tl, tpe, loc) :: ps, v :: vs) =>
-        // TODO: need to fix the types.
-        val listVar = SExp.Var(v, -1, tpe, loc)
-        val freshHeadVar = genSym.fresh2()
-        val freshTailVar = genSym.fresh2()
-        val cond = SExp.IsList(listVar, loc)
-        val inner = simplify(hd :: tl :: ps, freshHeadVar :: freshTailVar :: vs, succ, fail)
-        val consequent = SExp.Let(freshHeadVar, -1,
-          SExp.GetHead(listVar, tpe, loc),
-          SExp.Let(freshTailVar, -1,
-            SExp.GetTail(listVar, tpe, loc), inner, succ.tpe, loc), succ.tpe, loc)
-        SExp.IfThenElse(cond, consequent, fail, succ.tpe, loc)
 
       case (FVec(elms, rest, tpe, loc) :: ps, v :: vs) => ???
 

@@ -109,32 +109,6 @@ object Interpreter {
         i = i + 1
       }
       Value.Tuple(evalElms)
-    case Expression.FNil(tpe, loc) =>
-      value.FNil.getSingleton()
-    case Expression.FList(hd, tl, tpe, loc) =>
-      val h = eval(hd, root, env0)
-      val t = eval(tl, root, env0)
-      new value.FList(h, t)
-    case Expression.IsNil(exp, loc) =>
-      eval(exp, root, env0) match {
-        case v: value.FNil => java.lang.Boolean.TRUE
-        case _ => java.lang.Boolean.FALSE
-      }
-    case Expression.IsList(exp, loc) =>
-      eval(exp, root, env0) match {
-        case v: value.FList => java.lang.Boolean.TRUE
-        case _ => java.lang.Boolean.FALSE
-      }
-    case Expression.GetHead(exp, tpe, loc) =>
-      eval(exp, root, env0) match {
-        case v: value.FList => v.getHd
-        case v => throw InternalRuntimeException(s"Type Error: non-list value '$v'.")
-      }
-    case Expression.GetTail(exp, tpe, loc) =>
-      eval(exp, root, env0) match {
-        case v: value.FList => v.getTl
-        case v => throw InternalRuntimeException(s"Type Error: Unknown non-list value '$v'.")
-      }
     case Expression.FSet(elms, _, _) => Value.mkSet(elms.map(e => eval(e, root, env0)).toSet)
     case Expression.Existential(params, exp, loc) => InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
     case Expression.Universal(params, exp, loc) => InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")

@@ -41,6 +41,15 @@ object CreateExecutableAst {
     val m: TopLevel = mutable.Map.empty
 
     val constants = sast.constants.map { case (k, v) => k -> Definition.toExecutable(v) }
+
+    val enums = sast.enums.map {
+      case (sym, SimplifiedAst.Definition.Enum(_, cases0, loc)) =>
+        val cases = cases0.map {
+          case (tag, SimplifiedAst.Case(enumName, tagName, tpe)) => tag -> ExecutableAst.Case(enumName, tagName, tpe)
+        }
+        sym -> ExecutableAst.Definition.Enum(sym, cases, loc)
+    }
+
     // Converting lattices to ExecutableAst will create new top-level definitions in the map `m`.
     val lattices = sast.lattices.map { case (k, v) => k -> Definition.toExecutable(v, m) }
     val tables = sast.tables.map { case (k, v) => k -> Table.toExecutable(v) }
@@ -77,7 +86,7 @@ object CreateExecutableAst {
       result.toMap
     }
 
-    ExecutableAst.Root(constants ++ m, lattices, tables, indexes, facts, rules, properties, time, dependenciesOf)
+    ExecutableAst.Root(constants ++ m, enums, lattices, tables, indexes, facts, rules, properties, time, dependenciesOf)
   }
 
   object Definition {
@@ -221,14 +230,6 @@ object CreateExecutableAst {
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
         val elmsArray = elms.map(toExecutable).toArray
         ExecutableAst.Expression.Tuple(elmsArray, tpe, loc)
-      case SimplifiedAst.Expression.FNil(tpe, loc) =>
-        ExecutableAst.Expression.FNil(tpe, loc)
-      case SimplifiedAst.Expression.FList(hd, tl, tpe, loc) =>
-        ExecutableAst.Expression.FList(toExecutable(hd), toExecutable(tl), tpe, loc)
-      case SimplifiedAst.Expression.IsNil(exp, loc) => ExecutableAst.Expression.IsNil(toExecutable(exp), loc)
-      case SimplifiedAst.Expression.IsList(exp, loc) => ExecutableAst.Expression.IsList(toExecutable(exp), loc)
-      case SimplifiedAst.Expression.GetHead(exp, tpe, loc) => ExecutableAst.Expression.GetHead(toExecutable(exp), tpe, loc)
-      case SimplifiedAst.Expression.GetTail(exp, tpe, loc) => ExecutableAst.Expression.GetTail(toExecutable(exp), tpe, loc)
       case SimplifiedAst.Expression.FSet(elms, tpe, loc) =>
         val elmsArray = elms.map(toExecutable).toArray
         ExecutableAst.Expression.FSet(elmsArray, tpe, loc)

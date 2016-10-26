@@ -777,6 +777,65 @@ class TestTyper extends FunSuite with TestUtils {
     result.get
   }
 
+  test("Expression.List.01") {
+    val input =
+      """
+         def f: List[Int] = Nil
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.List.02") {
+    val input =
+      """
+        |def f: List[Int] = {
+        |  let x = Nil;
+        |  let y = Nil;
+        |    x
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.List.03") {
+    val input =
+      """
+        |def f(xs: List[Int], ys: List[Int]): Int = match (xs, ys) with {
+        |  case (Nil, Nil) => 1
+        |  case (Nil, _)   => 2
+        |  case (_, Nil)   => 3
+        |  case _          => 4
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.List.04") {
+    val input =
+      """
+        |def f(xs: List[Int8], ys: List[Int16], zs: List[Int32], ws: List[Int64]): Int8 = match (xs, ys, zs, ws) with {
+        |  case (x, Nil, Nil, Nil) => 42i8
+        |  case _                  => 21i8
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.List.05") {
+    val input =
+      """
+        |def f(xs: List[Int], ys: List[Int]): Int = match (xs, ys) with {
+        |  case (42 :: xss, y :: yss) => f(xss, y :: yss)
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Tuple (Positive)                                                        //
   /////////////////////////////////////////////////////////////////////////////
@@ -906,7 +965,7 @@ class TestTyper extends FunSuite with TestUtils {
 
   test("Definition.BoundedLattice.TypeError01") {
     val input =
-      """let Int<> = (0, 1, 2, 3, 4);
+      """let Int<> = (0, 1, 2, 3, 4)
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[TypeError])
@@ -914,11 +973,11 @@ class TestTyper extends FunSuite with TestUtils {
 
   test("Definition.BoundedLattice.TypeError02") {
     val input =
-      """def leq(x: Int, y: Int): Bool = true;
-        |def lub(x: Int, y: Int): Int = 42;
-        |def glb(x: Int, y: Int): Int = 21;
+      """def leq(x: Int, y: Int): Bool = true
+        |def lub(x: Int, y: Int): Int = 42
+        |def glb(x: Int, y: Int): Int = 21
         |
-        |let Int<> = (0, 1, lub, leq, glb);
+        |let Int<> = (0, 1, lub, leq, glb)
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[TypeError])
@@ -984,7 +1043,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  def f(x: Int, y: Int): Int = x + y + z;
+         |  def f(x: Int, y: Int): Int = x + y + z
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()

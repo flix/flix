@@ -1,6 +1,10 @@
 # Changelog
 
 HEAD:
+    
+
+2016-10-25:
+    - Added interpreter tutorial.
     - Added polymorphic types.
     - Added unification-based type system.
     - Added quick checker.

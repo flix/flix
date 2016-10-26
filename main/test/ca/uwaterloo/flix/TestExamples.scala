@@ -89,8 +89,8 @@ class TestExamples extends FunSuite {
   test("Belnap.flix") {
     val input =
       """namespace Belnap {
-        |    let Belnap<> = (Belnap.Bot, Belnap.Top, leq, lub, glb);
-        |    lat A(k: Int, v: Belnap);
+        |    let Belnap<> = (Belnap.Bot, Belnap.Top, leq, lub, glb)
+        |    lat A(k: Int, v: Belnap)
         |
         |    A(1, Belnap.True).
         |    A(2, Belnap.False).
@@ -132,8 +132,8 @@ class TestExamples extends FunSuite {
   test("Constant.flix") {
     val input =
       """namespace Constant {
-        |    let Constant<> = (Constant.Bot, Constant.Top, leq, lub, glb);
-        |    lat A(k: Int, v: Constant);
+        |    let Constant<> = (Constant.Bot, Constant.Top, leq, lub, glb)
+        |    lat A(k: Int, v: Constant)
         |
         |    A(0, Constant.Cst(0)).
         |    A(1, Constant.Cst(1)).
@@ -173,8 +173,8 @@ class TestExamples extends FunSuite {
   test("ConstantSign.flix") {
     val input =
       """namespace ConstantSign {
-        |    let ConstSign<> = (ConstSign.Bot, ConstSign.Top, leq, lub, glb);
-        |    lat A(k: Int, v: ConstSign);
+        |    let ConstSign<> = (ConstSign.Bot, ConstSign.Top, leq, lub, glb)
+        |    lat A(k: Int, v: ConstSign)
         |
         |    A(1, ConstSign.Cst(-1ii)).
         |    A(2, ConstSign.Cst(0ii)).
@@ -245,8 +245,8 @@ class TestExamples extends FunSuite {
   test("Parity.flix") {
     val input =
       """namespace domains.parity {
-        |    let Parity<> = (Parity.Bot, Parity.Top, leq, lub, glb);
-        |    lat A(k: Int, v: Parity);
+        |    let Parity<> = (Parity.Bot, Parity.Top, leq, lub, glb)
+        |    lat A(k: Int, v: Parity)
         |
         |    A(1, Parity.Odd).
         |    A(2, Parity.Even).
@@ -325,8 +325,8 @@ class TestExamples extends FunSuite {
   test("StrictSign.flix") {
     val input =
       """namespace StrictSign {
-        |    let Sign<> = (Sign.Bot, Sign.Top, leq, lub, glb);
-        |    lat A(k: Int, v: Sign);
+        |    let Sign<> = (Sign.Bot, Sign.Top, leq, lub, glb)
+        |    lat A(k: Int, v: Sign)
         |
         |    A(1, Sign.Neg).
         |    A(2, Sign.Zer).
