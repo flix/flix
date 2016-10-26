@@ -174,22 +174,6 @@ Reachable(c, s2) :-
     CFG(s1, s2),
     Reachable(c, s1).
 
-// Propagate VarPointsTo along the control-flow graph.
-VarPointsToIn(c, s2, v, o) :-
-    CFG(s1, s2),
-    Reachable(c, s2),
-    VarPointsToOut(c, s1, v, o).
-VarPointsToOut(c, s, v, o) :-
-    VarPointsToIn(c, s, v, o).
-
-// Propagate HeapPointsTo along the control-flow graph.
-HeapPointsToIn(c, s2, o1, f, o2) :-
-    CFG(s1, s2),
-    Reachable(c, s2),
-    HeapPointsToOut(c, s1, o1, f, o2).
-HeapPointsToOut(c, s, o1, f, o2) :-
-    HeapPointsToIn(c, s, o1, f, o2).
-
 ///////////////////////////////////////////////////////////////////////////////
 // Semantics: Promise Expressions                                            //
 ///////////////////////////////////////////////////////////////////////////////
@@ -201,14 +185,6 @@ PromiseStateOut(c, s, o, Pending, Obj("undef")) :-
     Promisify(s, v),
     VarPointsToIn(c, s, v, o),
     Reachable(c, s).
-
-// Propagate PromiseState along the control-flow graph.
-PromiseStateIn(c, s2, baseObj, promiseState, promiseValue) :-
-    CFG(s1, s2),
-    Reachable(c, s2),
-    PromiseStateOut(c, s1, baseObj, promiseState, promiseValue).
-PromiseStateOut(c, s, baseObj, promiseState, promiseValue) :-
-    PromiseStateIn(c, s, baseObj, promiseState, promiseValue).
 
 /*
  * E-OnResolve-Pending: v1.onResolve(v2).
@@ -237,14 +213,6 @@ PromiseLinkOut(c, s, o1, o2) :-
     VarPointsToIn(c, s, v2, o2),
     Reachable(c, s).
 
-// Propagate PromiseLink along the control-flow graph.
-PromiseLinkIn(c, s2, o1, o2) :-
-    CFG(s1, s2),
-    Reachable(c, s1),
-    PromiseLinkOut(c, s1, o1, o2).
-PromiseLinkOut(c, s, o1, o2) :-
-    PromiseLinkIn(c, s, o1, o2).
-
 /*
  * E-Resolved-Settled: v1.resolve(v2).
  */
@@ -254,10 +222,11 @@ PromiseLinkOut(c, s, o1, o2) :-
  * E-Resolved-Pending: v1.resolve(v2).
  */
 // 1. Set the state of the promise to fulfilled.
-PromiseStateOut(c, s, o, State.Fulfilled, r) :- Resolve(s, v1, v2),
-                                                VarPointsToIn(c, s, v1, o),
-                                                VarPointsToIn(c, s, v2, r),
-                                                Reachable(c, s).
+PromiseStateOut(c, s, o, State.Fulfilled, r) :-
+    Resolve(s, v1, v2),
+    VarPointsToIn(c, s, v1, o),
+    VarPointsToIn(c, s, v2, r),
+    Reachable(c, s).
 
 // 2. Add all fulfill reactions to the queue.
 Queue(c, s, State.Fulfilled, argVal, lambdaObj, childObj) :-
@@ -274,6 +243,42 @@ Queue(c, s, State.Fulfilled, argVal, lambdaObj, childObj) :-
 /*
  * E-Job-Fulfilled.
  */
+
+///////////////////////////////////////////////////////////////////////////////
+// Semantics: Confluence Rules                                               //
+///////////////////////////////////////////////////////////////////////////////
+
+// Propagate VarPointsTo along the control-flow graph.
+VarPointsToIn(c, s2, v, o) :-
+    CFG(s1, s2),
+    Reachable(c, s2),
+    VarPointsToOut(c, s1, v, o).
+VarPointsToOut(c, s, v, o) :-
+    VarPointsToIn(c, s, v, o).
+
+// Propagate HeapPointsTo along the control-flow graph.
+HeapPointsToIn(c, s2, o1, f, o2) :-
+    CFG(s1, s2),
+    Reachable(c, s2),
+    HeapPointsToOut(c, s1, o1, f, o2).
+HeapPointsToOut(c, s, o1, f, o2) :-
+    HeapPointsToIn(c, s, o1, f, o2).
+
+// Propagate PromiseState along the control-flow graph.
+PromiseStateIn(c, s2, baseObj, promiseState, promiseValue) :-
+    CFG(s1, s2),
+    Reachable(c, s2),
+    PromiseStateOut(c, s1, baseObj, promiseState, promiseValue).
+PromiseStateOut(c, s, baseObj, promiseState, promiseValue) :-
+    PromiseStateIn(c, s, baseObj, promiseState, promiseValue).
+
+// Propagate PromiseLink along the control-flow graph.
+PromiseLinkIn(c, s2, o1, o2) :-
+    CFG(s1, s2),
+    Reachable(c, s1),
+    PromiseLinkOut(c, s1, o1, o2).
+PromiseLinkOut(c, s, o1, o2) :-
+    PromiseLinkIn(c, s, o1, o2).
 
 ///////////////////////////////////////////////////////////////////////////////
 // Semantics: Promise Graph                                                  //
