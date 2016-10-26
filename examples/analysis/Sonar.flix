@@ -191,12 +191,16 @@ PromiseStateOut(c, s, o, Pending, Obj("undef")) :-
  */
 // 1. Allocate a child promise.
 VarPointsToOut(c, s, v1, mkObj(s)) :-
-    OnResolve(s, v1, _, _),
+    OnResolve(s, v1, v2, _),
+    VarPointsToIn(c, s, v2, baseObj),
+    PromiseStateIn(c, s, baseObj, Pending, _),
     Reachable(c, s).
 
 // 2. Set the state of the child promise to pending.
 PromiseStateOut(c, s, mkObj(s), Pending, Obj("undef")) :-
-    OnResolve(s, v1, _, _),
+    OnResolve(s, v1, v2, _),
+    VarPointsToIn(c, s, v2, baseObj),
+    PromiseStateIn(c, s, baseObj, Pending, _),
     Reachable(c, s).
 
 // 3. Add the fulfill reaction on the promise.
@@ -204,20 +208,15 @@ FulfillReactionOut(c, s, baseObj, lambdaObj) :-
     OnResolve(s, _, v2, v3),
     VarPointsToIn(c, s, v2, baseObj),
     VarPointsToIn(c, s, v3, lambdaObj),
+    PromiseStateIn(c, s, baseObj, Pending, _),
     Reachable(c, s).
 
 /*
  * E-OnResolve-Fulfilled: v1 = v2.onResolve(v3).
  */
 
-/*
- * E-Link: v1.link(v2).
- */
-PromiseLinkOut(c, s, o1, o2) :-
-    Link(s, v1, v2),
-    VarPointsToIn(c, s, v1, o1),
-    VarPointsToIn(c, s, v2, o2),
-    Reachable(c, s).
+
+
 
 /*
  * E-Resolved-Settled: v1.resolve(v2).
@@ -235,11 +234,20 @@ PromiseStateOut(c, s, o, State.Fulfilled, r) :-
     Reachable(c, s).
 
 // 2. Add all fulfill reactions to the queue.
-Queue(c, s, State.Fulfilled, argVal, lambdaObj, childObj) :-
+Queue(c, s, Fulfilled, argVal, lambdaObj, childObj) :-
     Resolve(s, baseVar, argVar),
     VarPointsToIn(c, s, baseVar, promiseObj),
     VarPointsToIn(c, s, argVar, argVal),
     FulfillReactionIn(c, s, promiseObj, lambdaObj, childObj),
+    Reachable(c, s).
+
+/*
+ * E-Link: v1.link(v2).
+ */
+PromiseLinkOut(c, s, o1, o2) :-
+    Link(s, v1, v2),
+    VarPointsToIn(c, s, v1, o1),
+    VarPointsToIn(c, s, v2, o2),
     Reachable(c, s).
 
 /*
