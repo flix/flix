@@ -62,43 +62,43 @@ class TestWeeder extends FunSuite with TestUtils {
   test("DuplicateFormal.01") {
     val input = "def f(x: Int, x: Int): Int = 42"
     val result = new Flix().addStr(input).compile()
-    expectError[WeederError.DuplicateFormal](result)
+    expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.02") {
     val input = "def f(x: Int, y: Int, x: Int): Int = 42"
     val result = new Flix().addStr(input).compile()
-    expectError[WeederError.DuplicateFormal](result)
+    expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.03") {
     val input = "def f(x: Bool, x: Int, x: Str): Int = 42"
     val result = new Flix().addStr(input).compile()
-    expectError[WeederError.DuplicateFormal](result)
+    expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.04") {
     val input = "def f: (Int, Int) -> Int = (x, x) -> x"
     val result = new Flix().addStr(input).compile()
-    expectError[WeederError.DuplicateFormal](result)
+    expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.05") {
     val input = "def f: (Int, Int, Int) -> Int = (x, y, x) -> x"
     val result = new Flix().addStr(input).compile()
-    expectError[WeederError.DuplicateFormal](result)
+    expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.06") {
     val input = "def f: Bool = ∀(x: E, x: E). true"
     val result = new Flix().addStr(input).compile()
-    expectError[WeederError.DuplicateFormal](result)
+    expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateFormal.07") {
     val input = "def f: Bool = ∃(x: E, x: E). true"
     val result = new Flix().addStr(input).compile()
-    expectError[WeederError.DuplicateFormal](result)
+    expectError[WeederError.DuplicateFormalParam](result)
   }
 
   test("DuplicateTag.01") {

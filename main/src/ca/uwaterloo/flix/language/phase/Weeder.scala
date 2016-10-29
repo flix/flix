@@ -188,7 +188,7 @@ object Weeder {
          * Check for `EmptyRelation`
          */
         if (attrs.isEmpty)
-          return EmptyRelation(mkSL(sp1, sp2)).toFailure
+          return EmptyRelation(ident.name, mkSL(sp1, sp2)).toFailure
 
         /*
          * Check for `DuplicateAttribute`.
@@ -204,7 +204,7 @@ object Weeder {
          * Check for `EmptyLattice`.
          */
         if (attrs.isEmpty)
-          return EmptyLattice(mkSL(sp1, sp2)).toFailure
+          return EmptyLattice(ident.name, mkSL(sp1, sp2)).toFailure
 
         /*
          * Check for `DuplicateAttribute`.
@@ -753,6 +753,7 @@ object Weeder {
               if (qname.isUpperCase)
                 WeededAst.Predicate.Head.Table(qname, ts, mkSL(sp1, sp2)).toSuccess
               else
+              // TODO: Is this not enforced by the parser now?
                 IllegalSyntax("A head predicate must be uppercase and refer to a relation or lattice.", mkSL(sp1, sp2)).toFailure
           }
         case ParsedAst.Predicate.Loop(sp1, ident, term, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
@@ -988,7 +989,7 @@ object Weeder {
         case Some(otherParam) =>
           val loc1 = mkSL(otherParam.sp1, otherParam.sp2)
           val loc2 = mkSL(param.sp1, param.sp2)
-          DuplicateFormal(ident.name, loc1, loc2).toFailure
+          DuplicateFormalParam(ident.name, loc1, loc2).toFailure
       }
     })
   }
@@ -1004,7 +1005,7 @@ object Weeder {
           seen += (ident.name -> ident)
           ident.toSuccess
         case Some(otherIdent) =>
-          DuplicateFormal(ident.name, otherIdent.loc, ident.loc).toFailure
+          DuplicateFormalParam(ident.name, otherIdent.loc, ident.loc).toFailure
       }
     })
   }
