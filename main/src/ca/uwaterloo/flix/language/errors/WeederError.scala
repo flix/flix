@@ -19,11 +19,14 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.util.Highlight._
 
 /**
   * A common super-type for weeding errors.
   */
-sealed trait WeederError extends CompilationError
+sealed trait WeederError extends CompilationError {
+  val kind = "Syntax Error"
+}
 
 object WeederError {
 
@@ -37,10 +40,9 @@ object WeederError {
     * @param loc2 the location of the second annotation.
     */
   case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+    val source = loc1.source
     val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
-         |
-         |${consoleCtx.red(s">> Duplicate annotation '$name'.")}
+      hl"""${Red(s">> Duplicate annotation '$name'.")}
          |
          |First definition was here:
          |${loc1.highlight}
@@ -57,6 +59,7 @@ object WeederError {
     * @param loc2 the location of the second attribute.
     */
   case class DuplicateAttribute(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+    val source = loc1.source
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
          |
@@ -77,6 +80,7 @@ object WeederError {
     * @param loc2 the location of the second parameter.
     */
   case class DuplicateFormal(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+    val source = loc1.source
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
          |
@@ -97,6 +101,7 @@ object WeederError {
     * @param loc2 the location of the second tag.
     */
   case class DuplicateTag(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+    val source = loc1.source
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
          |
@@ -115,6 +120,7 @@ object WeederError {
     * @param loc the location where the declaration occurs.
     */
   case class EmptyIndex(loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -130,6 +136,7 @@ object WeederError {
     * @param loc the location of the declaration.
     */
   case class EmptyRelation(loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -145,6 +152,7 @@ object WeederError {
     * @param loc the location of the declaration.
     */
   case class EmptyLattice(loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -160,6 +168,7 @@ object WeederError {
     * @param loc the location where the illegal expression occurs.
     */
   case class IllegalExistential(loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -175,6 +184,7 @@ object WeederError {
     * @param loc the location where the illegal float occurs.
     */
   case class IllegalFloat(loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -190,6 +200,7 @@ object WeederError {
     * @param loc the location where the illegal index occurs.
     */
   case class IllegalIndex(loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -205,6 +216,7 @@ object WeederError {
     * @param loc the location where the illegal predicate occurs.
     */
   case class IllegalHeadPredicate(loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -220,6 +232,7 @@ object WeederError {
     * @param loc the location where the illegal int occurs.
     */
   case class IllegalInt(loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -235,6 +248,7 @@ object WeederError {
     * @param loc the location where the illegal definition occurs.
     */
   case class IllegalLattice(loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -255,6 +269,7 @@ object WeederError {
     * @param loc the location where the illegal parameter list occurs.
     */
   case class IllegalParameterList(loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -271,6 +286,7 @@ object WeederError {
     * @param loc the location where the illegal expression occurs.
     */
   case class IllegalUniversal(loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -286,6 +302,7 @@ object WeederError {
     * @param loc the location where the illegal wildcard occurs.
     */
   case class IllegalWildcard(loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -303,6 +320,7 @@ object WeederError {
     * @param loc2 the location of the second use of the variable.
     */
   case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+    val source = loc1.source
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
          |
@@ -324,6 +342,7 @@ object WeederError {
     * @param loc the location of the syntax error.
     */
   case class IllegalSyntax(msg: String, loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -340,6 +359,7 @@ object WeederError {
     * @param loc  the location of the annotation.
     */
   case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
          |

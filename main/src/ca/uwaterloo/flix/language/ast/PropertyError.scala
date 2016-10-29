@@ -22,7 +22,9 @@ import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 /**
   * A common super-type for verification errors.
   */
-sealed trait PropertyError extends CompilationError
+sealed trait PropertyError extends CompilationError {
+  val kind = "Verifier Error"
+}
 
 object PropertyError {
 
@@ -53,6 +55,7 @@ object PropertyError {
     * An error raised to indicate that a function is not associative.
     */
   case class AssociativityError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -69,6 +72,7 @@ object PropertyError {
     * An error raised to indicate that a function is not commutative.
     */
   case class CommutativityError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -85,6 +89,7 @@ object PropertyError {
     * An error raised to indicate that a partial order is not reflexive.
     */
   case class ReflexivityError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -101,6 +106,7 @@ object PropertyError {
     * An error raised to indicate that a partial order is not anti-symmetric.
     */
   case class AntiSymmetryError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -117,6 +123,7 @@ object PropertyError {
     * An error raised to indicate that a partial order is not transitive.
     */
   case class TransitivityError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -133,6 +140,7 @@ object PropertyError {
     * An error raised to indicate that the least element is not smallest.
     */
   case class LeastElementError(loc: SourceLocation) extends PropertyError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -147,6 +155,7 @@ object PropertyError {
     * An error raised to indicate that the lub is not an upper bound.
     */
   case class UpperBoundError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -163,6 +172,7 @@ object PropertyError {
     * An error raised to indicate that the lub is not a least upper bound.
     */
   case class LeastUpperBoundError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -179,6 +189,7 @@ object PropertyError {
     * An error raised to indicate that the greatest element is not the largest.
     */
   case class GreatestElementError(loc: SourceLocation) extends PropertyError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -193,6 +204,7 @@ object PropertyError {
     * An error raised to indicate that the glb is not a lower bound.
     */
   case class LowerBoundError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -209,6 +221,7 @@ object PropertyError {
     * An error raised to indicate that the glb is not the greatest lower bound.
     */
   case class GreatestLowerBoundError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -225,6 +238,7 @@ object PropertyError {
     * An error raised to indicate that the function is not strict.
     */
   case class StrictError(loc: SourceLocation) extends PropertyError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -239,6 +253,7 @@ object PropertyError {
     * An error raised to indicate that the function is not monotone.
     */
   case class MonotoneError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -256,6 +271,7 @@ object PropertyError {
     * An error raised to indicate that the height function may be negative.
     */
   case class HeightNonNegativeError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |
@@ -272,6 +288,7 @@ object PropertyError {
     * An error raised to indicate that the height function is not strictly decreasing.
     */
   case class HeightStrictlyDecreasingError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
          |

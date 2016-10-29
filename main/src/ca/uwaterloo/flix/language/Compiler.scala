@@ -41,14 +41,16 @@ object Compiler {
   /**
     * An error raised to indicate a parse error.
     *
-    * @param msg the error message.
+    * @param text the error message.
     * @param src the source input.
     */
-  case class ParseError(msg: String, src: SourceInput) extends CompilationError {
+  case class ParseError(text: String, src: SourceInput) extends CompilationError {
+    val kind = "Parse Error"
+    val source = src
     val message =
       s"""${ConsoleCtx.blue(s"-- PARSE ERROR ------------------------------------------------- ${src.format}")}
          |
-         |${ConsoleCtx.red(msg)}
+         |${ConsoleCtx.red(text)}
          """.stripMargin
   }
 

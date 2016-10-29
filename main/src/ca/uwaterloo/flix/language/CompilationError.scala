@@ -16,12 +16,48 @@
 
 package ca.uwaterloo.flix.language
 
+import ca.uwaterloo.flix.language.ast.SourceInput
+
 /**
   * A common super-type for compilation errors.
   */
 trait CompilationError {
+
+  /**
+    * The kind of the error message, e.g. "Syntax Error" or "Type Error".
+    */
+  def kind: String
+
+
+  /**
+    * TODO DOC
+    *
+    * @return
+    */
+  def source: SourceInput
+
+
   /**
     * The error message.
     */
   def message: String
+
+
+  // TODO: Explaination.
+
+  def explanation: String = ""
+
+  /**
+    * TODO: DOC
+    *
+    * @return
+    */
+  def render: String = {
+    // TODO
+    implicit val consoleCtx = Compiler.ConsoleCtx
+
+    s"""${consoleCtx.blue(s"-- ${kind} -------------------------------------------------- ${source}\n")}""" + message
+  }
+
+
 }

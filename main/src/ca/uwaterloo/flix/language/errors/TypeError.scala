@@ -36,6 +36,8 @@ object TypeError {
     * @param loc the location where the error occurred.
     */
   case class AmbiguousRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
+    val kind = "Disambiguation Error"
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
          |
@@ -52,6 +54,8 @@ object TypeError {
     * @param loc  the location where the error occurred.
     */
   case class UnresolvedAttribute(name: Name.Ident, loc: SourceLocation) extends TypeError {
+    val kind = "Disambiguation Error"
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
          |
@@ -69,6 +73,8 @@ object TypeError {
     * @param loc the location where the error occurred.
     */
   case class UnresolvedRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
+    val kind = "Disambiguation Error"
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
          |
@@ -86,6 +92,8 @@ object TypeError {
     * @param loc the location where the error occurred.
     */
   case class UnresolvedTable(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
+    val kind = "Disambiguation Error"
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
          |
@@ -103,6 +111,8 @@ object TypeError {
     * @param loc the location where the error occurred.
     */
   case class UnresolvedTag(tag: Name.Ident, ns: Name.NName, loc: SourceLocation) extends TypeError {
+    val kind = "Disambiguation Error"
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
          |
@@ -120,6 +130,8 @@ object TypeError {
     * @param loc the location where the error occurred.
     */
   case class UnresolvedType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
+    val kind = "Disambiguation Error"
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
          |
@@ -137,6 +149,8 @@ object TypeError {
     * @param loc  the location where the error occurred.
     */
   case class UnificationError(tpe1: Type, tpe2: Type, loc: SourceLocation) extends TypeError {
+    val kind = "Type Error"
+    val source = loc.source
     val message =
       s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
          |
@@ -151,13 +165,9 @@ object TypeError {
 
   // TODO
   case class OccursCheck() extends TypeError {
+    val kind = "Type Error"
+    val source = null // TODO
     val message = "OccursCheck" // TODO
   }
-
-  // TODO
-  case class KindError() extends TypeError {
-    val message = "KindError" // TODO
-  }
-
 
 }

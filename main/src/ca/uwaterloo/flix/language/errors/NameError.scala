@@ -22,7 +22,9 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 /**
   * A common super-type for naming errors.
   */
-sealed trait NameError extends CompilationError
+sealed trait NameError extends CompilationError {
+  val kind = "Name Error"
+}
 
 object NameError {
 
@@ -36,6 +38,7 @@ object NameError {
     * @param loc2 the location of the second definition.
     */
   case class DuplicateDefinition(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+    val source = loc1.source
     val message =
       s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc1.source.format}")}
          |
@@ -56,6 +59,7 @@ object NameError {
     * @param loc2 the location of the second definition.
     */
   case class DuplicateIndex(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+    val source = loc1.source
     val message =
       s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc1.source.format}")}
          |

@@ -84,10 +84,10 @@ object Main {
     if (cmdOpts.delta.nonEmpty) {
       flix.deltaSolve(cmdOpts.delta.get.toPath) match {
         case Validation.Success(_, errors) =>
-          errors.foreach(e => println(e.message))
+          errors.foreach(e => println(e.render))
           System.exit(0)
         case Validation.Failure(errors) =>
-          errors.foreach(e => println(e.message))
+          errors.foreach(e => println(e.render))
           System.exit(1)
       }
     }
@@ -96,7 +96,7 @@ object Main {
     try {
       flix.solve() match {
         case Validation.Success(model, errors) =>
-          errors.foreach(e => println(e.message))
+          errors.foreach(e => println(e.render))
 
           val main = cmdOpts.main
           if (main.nonEmpty) {
@@ -110,7 +110,7 @@ object Main {
             PrettyPrint.print(name, model)
           }
         case Validation.Failure(errors) =>
-          errors.foreach(e => println(e.message))
+          errors.foreach(e => println(e.render))
       }
     } catch {
       case UserException(msg, loc) =>
