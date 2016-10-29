@@ -16,8 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.Compiler
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Highlight._
 
@@ -42,12 +41,16 @@ object WeederError {
   case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val source = loc1.source
     val message =
-      hl"""${Red(s">> Duplicate annotation '$name'.")}
+      hl"""${Red(s">> Multiple occurrence of the '@$name' annotation.")}
          |
-         |First definition was here:
-         |${loc1.highlight}
-         |Second definition was here:
-         |${loc2.highlight}
+         |The first occurrence was here:
+         |
+         |${Code(loc1)}
+         |and the second occurrence was here:
+         |
+         |${Code(loc2)}
+         |
+         |${Underline("Tip")}: Remove one of the annotations.
          """.stripMargin
   }
 

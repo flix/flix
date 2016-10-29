@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.util
 
+import ca.uwaterloo.flix.language.ast.SourceLocation
+
 /**
   * Inspired by Dotty.
   *
@@ -42,6 +44,46 @@ object Highlight {
     override def toString: String = color + text + Console.RESET
   }
 
+  case class Code(loc: SourceLocation) {
+    // TODO: Refactor
+    val beginLine = loc.beginLine
+    val beginCol = loc.beginCol
+    val endLine = loc.endLine
+    val endCol = loc.endCol
+    val lineAt = loc.lineAt
+
+    /**
+      * Returns this line of code with the source location underlined.
+      */
+    override def toString: String = if (beginLine == endLine) underline else leftline
+
+    /**
+      * Highlights this source location with red arrows under the text.
+      */
+    private def underline: String = {
+      val lineNo = beginLine.toString + "| "
+      val line1 = lineNo + lineAt(beginLine) + "\n"
+      val line2 = " " * (beginCol + lineNo.length - 1) + Red("^" * (endCol - beginCol))
+      line1 + line2
+    }
+
+    /**
+      * Highlights this source location with red arrows left of the text.
+      */
+    private def leftline: String = {
+      val sb = new StringBuilder()
+      for (lineNo <- beginLine to endLine) {
+        val currentLine = lineAt(lineNo)
+        sb.
+          append(lineNo).append("|").
+          append(Red(">")).
+          append(currentLine).
+          append("\n")
+      }
+      sb.toString()
+    }
+  }
+
   case class Red(text: String) extends Highlight(Console.RED)
   case class Blue(text: String) extends Highlight(Console.BLUE)
   case class Cyan(text: String) extends Highlight(Console.CYAN)
@@ -59,5 +101,8 @@ object Highlight {
   case class WhiteB(text: String) extends Highlight(Console.WHITE_B)
   case class YellowB(text: String) extends Highlight(Console.YELLOW_B)
   case class MagentaB(text: String) extends Highlight(Console.MAGENTA_B)
+
+  case class Bold(text: String) extends Highlight(Console.BOLD)
+  case class Underline(text: String) extends Highlight(Console.UNDERLINED)
 
 }

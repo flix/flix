@@ -125,6 +125,7 @@ package object ast {
     /**
       * Returns this line of code with the source location underlined.
       */
+    @deprecated("now", "now")
     def highlight(implicit consoleCtx: ConsoleCtx): String = if (beginLine == endLine) underline else leftline
 
     /**

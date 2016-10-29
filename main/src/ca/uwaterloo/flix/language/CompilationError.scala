@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.language.ast.SourceInput
+import ca.uwaterloo.flix.util.Highlight._
 
 /**
   * A common super-type for compilation errors.
@@ -42,11 +43,6 @@ trait CompilationError {
     */
   def message: String
 
-
-  // TODO: Explaination.
-
-  def explanation: String = ""
-
   /**
     * TODO: DOC
     *
@@ -54,9 +50,10 @@ trait CompilationError {
     */
   def render: String = {
     // TODO
-    implicit val consoleCtx = Compiler.ConsoleCtx
-
-    s"""${consoleCtx.blue(s"-- ${kind} -------------------------------------------------- ${source}\n")}""" + message
+    hl"""|${Blue(s"-- $kind -------------------------------------------------- ${source.format}")}
+         |
+         |$message
+      """.stripMargin
   }
 
 
