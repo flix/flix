@@ -76,6 +76,7 @@ object Compiler {
   def parse(source: SourceInput): Validation[ParsedAst.Root, CompilationError] = {
 
     val input: String = source match {
+      case SourceInput.Internal(name,text) => text
       case SourceInput.Str(str) => str
       case SourceInput.TxtFile(path) =>
         new String(Files.readAllBytes(path), DefaultCharset)

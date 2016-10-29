@@ -4,27 +4,29 @@ import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import scala.collection.immutable.Seq;
 import collection.JavaConversions._;
 
-class AST_FlixVisitor{
+class AST_FlixVisitor extends FlixVisitor[Object]{
 
+	//ROOT NODE
 	def visitStart(ctx: FlixParser.StartContext): ParsedAst.Root = ParsedAst.Root(
-			visitS_imports(ctx.s_imports()),
-			visitDecls(ctx.decls())
+			ctx.s_import().map(visitS_import).toList.toSeq,
+			ctx.decl().map(visitDecl).toList.toSeq
 		)
 
-	def visitS_imports(ctx: FlixParser.S_importsContext): Seq[ParsedAst.Import] = ctx.s_import().toSeq() map visitS_import _
-
+	//IMPORT RULES
 	def visitS_import(ctx: FlixParser.S_importContext): ParsedAst.Import =  ctx.getChild(0) match {
-			case x: Import_wildcardContext => visitImport_wildcard(x)
-			case x: Import_definitionContext => visitImport_definition(x)
-			case x: Import_namespaceContext =>  visitImport_namespace(x)
+			case x: FlixParser.Import_wildcardContext => visitImport_wildcard(x)
+			case x: FlixParser.Import_definitionContext => visitImport_definition(x)
+			case x: FlixParser.Import_namespaceContext =>  visitImport_namespace(x)
 		}
 
-	def visitImport_wildcard(ctx: FlixParser.Import_wildcardContext) = println("wild")
+	def visitImport_wildcard(ctx: FlixParser.Import_wildcardContext) = ParsedAst.Import.Wild
 
-	def visitImport_definition(ctx: FlixParser.Import_definitionContext) =println("definition")
+	def visitImport_definition(ctx: FlixParser.Import_definitionContext) = ParsedAst.Import.Definition
 
-	def visitImport_namespace(ctx: FlixParser.Import_namespaceContext) =println("namespace")
+	def visitImport_namespace(ctx: FlixParser.Import_namespaceContext) =ParsedAst.Import.Namespace
 
-	def visitDecls(ctx: FlixParser.DeclsContext): Seq[ParsedAst.Declaration] = Seq()
+
+	//DECLARATION RULES
+	def visitDecl(ctx: FlixParser.DeclContext): ParsedAst.Declaration = ParsedAst.Declaration
 
 }
