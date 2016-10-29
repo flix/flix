@@ -155,7 +155,7 @@ object LoadBytecode {
     case Type.BigInt => classOf[java.math.BigInteger]
     case Type.Str => classOf[java.lang.String]
     case Type.Native => classOf[java.lang.Object]
-    case Type.Enum(_, _, _) | Type.Apply(Type.Enum(_, _, _), _) => classOf[Value.Tag]
+    case Type.Enum(_, _) | Type.Apply(Type.Enum(_, _), _) => classOf[Value.Tag]
     case Type.Apply(Type.FTuple(l), _) => classOf[Value.Tuple]
     case Type.Apply(Type.Arrow(l), _) => interfaces(tpe)
     case Type.FSet => classOf[scala.collection.immutable.Set[AnyRef]]

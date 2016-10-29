@@ -6406,8 +6406,8 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Var.01") {
     val input =
-      """rel A(x: Bool);
-        |rel B(x: Bool);
+      """rel A(x: Bool)
+        |rel B(x: Bool)
         |
         |A(true).
         |
@@ -6419,8 +6419,8 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Var.02") {
     val input =
-      """rel A(x: Int);
-        |rel B(x: Int);
+      """rel A(x: Int)
+        |rel B(x: Int)
         |
         |A(1).
         |A(2).
@@ -6434,8 +6434,8 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Var.03") {
     val input =
-      """rel A(x: Str);
-        |rel B(x: Str);
+      """rel A(x: Str)
+        |rel B(x: Str)
         |
         |A("one").
         |A("two").
@@ -6453,7 +6453,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Exp.01") {
     val input =
-      """rel A(x: Unit);
+      """rel A(x: Unit)
         |
         |A(()).
       """.stripMargin
@@ -6463,7 +6463,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Exp.02") {
     val input =
-      """rel A(x: Bool);
+      """rel A(x: Bool)
         |
         |A(true).
         |A(false).
@@ -6474,7 +6474,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Exp.03") {
     val input =
-      """rel A(x: Int8);
+      """rel A(x: Int8)
         |
         |A(1i8).
         |A(2i8).
@@ -6486,7 +6486,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Exp.04") {
     val input =
-      """rel A(x: Int16);
+      """rel A(x: Int16)
         |
         |A(1i16).
         |A(2i16).
@@ -6498,7 +6498,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Exp.05") {
     val input =
-      """rel A(x: Int32);
+      """rel A(x: Int32)
         |
         |A(1i32).
         |A(2i32).
@@ -6510,7 +6510,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Exp.06") {
     val input =
-      """rel A(x: Int64);
+      """rel A(x: Int64)
         |
         |A(1i64).
         |A(2i64).
@@ -6522,7 +6522,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Exp.07") {
     val input =
-      """rel A(x: Str);
+      """rel A(x: Str)
         |
         |A("one").
         |A("two").
@@ -6534,7 +6534,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Exp.08") {
     val input =
-      """rel A(x: (Int, Str));
+      """rel A(x: (Int, Str))
         |
         |A((1, "one")).
       """.stripMargin
@@ -6545,7 +6545,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.Exp.09") {
     val input =
       """enum Foo { case Foo(Int,Str) }
-        |rel A(x: Foo);
+        |rel A(x: Foo)
         |
         |A(Foo.Foo(1, "one")).
       """.stripMargin
@@ -6555,7 +6555,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Exp.10") {
     val input =
-      """rel A(x: (Int, Int));
+      """rel A(x: (Int, Int))
         |
         |A((1, 2)).
       """.stripMargin
@@ -6565,7 +6565,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Exp.11") {
     val input =
-      """rel A(x: Char);
+      """rel A(x: Char)
         |
         |A('a').
         |A('b').
@@ -6577,7 +6577,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Exp.12") {
     val input =
-      """rel A(x: Float32);
+      """rel A(x: Float32)
         |
         |A(1.0f32).
         |A(2.0f32).
@@ -6589,7 +6589,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Exp.13") {
     val input =
-      """rel A(x: Float64);
+      """rel A(x: Float64)
         |
         |A(1.0f64).
         |A(2.0f64).
@@ -6601,7 +6601,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Exp.14") {
     val input =
-      """rel A(x: BigInt);
+      """rel A(x: BigInt)
         |
         |A(1ii).
         |A(2ii).
@@ -6618,7 +6618,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Apply.01") {
     val input =
-      """rel A(x: ());
+      """rel A(x: ())
         |def f(x: Int): () = ()
         |
         |A(f(0)).
@@ -6629,7 +6629,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Apply.02") {
     val input =
-      """rel A(x: Bool);
+      """rel A(x: Bool)
         |def f(x: Int): Bool = x == 0
         |
         |A(f(0)).
@@ -6641,7 +6641,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Apply.03") {
     val input =
-      """rel A(x: Int8);
+      """rel A(x: Int8)
         |def f(x: Int8): Int8 = x + 1i8
         |
         |A(f(0i8)).
@@ -6654,7 +6654,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Apply.04") {
     val input =
-      """rel A(x: Int16);
+      """rel A(x: Int16)
         |def f(x: Int16): Int16 = x + 1i16
         |
         |A(f(0i16)).
@@ -6667,7 +6667,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Apply.05") {
     val input =
-      """rel A(x: Int32);
+      """rel A(x: Int32)
         |def f(x: Int32): Int32 = x + 1i32
         |
         |A(f(0i32)).
@@ -6680,7 +6680,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Apply.06") {
     val input =
-      """rel A(x: Int64);
+      """rel A(x: Int64)
         |def f(x: Int64): Int64 = x + 1i64
         |
         |A(f(0i64)).
@@ -6693,7 +6693,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Apply.07") {
     val input =
-      """rel A(x: Str);
+      """rel A(x: Str)
         |def f(x: Str): Str = x
         |
         |A(f("one")).
@@ -6706,7 +6706,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Apply.08") {
     val input =
-      """rel A(x: (Int, Str));
+      """rel A(x: (Int, Str))
         |def f(x: Int): (Int, Str) = (x, "one")
         |
         |A(f(1)).
@@ -6718,7 +6718,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.Apply.09") {
     val input =
       """enum Foo { case Foo(Int,Str) }
-        |rel A(x: Foo);
+        |rel A(x: Foo)
         |def f(x: Str): Foo = Foo.Foo(1, x)
         |
         |A(f("one")).
@@ -6729,7 +6729,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Apply.10") {
     val input =
-      """rel A(x: (Int, Int));
+      """rel A(x: (Int, Int))
         |def f(x: Int, y: Int): (Int, Int) = (x, y)
         |
         |A(f(1, 2)).
@@ -6740,7 +6740,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Apply.11") {
     val input =
-      """rel A(x: Char);
+      """rel A(x: Char)
         |def f(x: Char): Char = x
         |
         |A(f('a')).
@@ -6753,7 +6753,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Apply.12") {
     val input =
-      """rel A(x: Float32);
+      """rel A(x: Float32)
         |def f(x: Float32): Float32 = x
         |
         |A(f(1.0f32)).
@@ -6766,7 +6766,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Apply.13") {
     val input =
-      """rel A(x: Float64);
+      """rel A(x: Float64)
         |def f(x: Float64): Float64 = x
         |
         |A(f(1.0f64)).
@@ -6779,7 +6779,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Head.Apply.14") {
     val input =
-      """rel A(x: BigInt);
+      """rel A(x: BigInt)
         |def f(x: BigInt): BigInt = x + 1ii
         |
         |A(f(0ii)).
@@ -6799,7 +6799,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Safe.01") {
     import HookSafeHelpers._
     val input =
-      """rel A(x: ());
+      """rel A(x: ())
         |
         |A(f(0)).
       """.stripMargin
@@ -6816,7 +6816,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Safe.02") {
     import HookSafeHelpers._
     val input =
-      """rel A(x: Bool);
+      """rel A(x: Bool)
         |
         |A(f(0)).
         |A(f(1)).
@@ -6834,7 +6834,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Safe.03") {
     import HookSafeHelpers._
     val input =
-      """rel A(x: Int8);
+      """rel A(x: Int8)
         |
         |A(f(0i8)).
         |A(f(1i8)).
@@ -6853,7 +6853,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Safe.04") {
     import HookSafeHelpers._
     val input =
-      """rel A(x: Int16);
+      """rel A(x: Int16)
         |
         |A(f(0i16)).
         |A(f(1i16)).
@@ -6872,7 +6872,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Safe.05") {
     import HookSafeHelpers._
     val input =
-      """rel A(x: Int32);
+      """rel A(x: Int32)
         |
         |A(f(0i32)).
         |A(f(1i32)).
@@ -6891,7 +6891,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Safe.06") {
     import HookSafeHelpers._
     val input =
-      """rel A(x: Int64);
+      """rel A(x: Int64)
         |
         |A(f(0i64)).
         |A(f(1i64)).
@@ -6910,7 +6910,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Safe.07") {
     import HookSafeHelpers._
     val input =
-      """rel A(x: Str);
+      """rel A(x: Str)
         |
         |A(f("one")).
         |A(f("two")).
@@ -6929,7 +6929,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Safe.08") {
     import HookSafeHelpers._
     val input =
-      """rel A(x: (Int, Str));
+      """rel A(x: (Int, Str))
         |
         |A(f(1)).
       """.stripMargin
@@ -6968,7 +6968,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Safe.10") {
     import HookSafeHelpers._
     val input =
-      """rel A(x: (Int, Int));
+      """rel A(x: (Int, Int))
         |
         |A(f(1, 2)).
       """.stripMargin
@@ -6985,7 +6985,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Safe.11") {
     import HookSafeHelpers._
     val input =
-      """rel A(x: Char);
+      """rel A(x: Char)
         |
         |A(f('a')).
         |A(f('b')).
@@ -7004,7 +7004,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Safe.12") {
     import HookSafeHelpers._
     val input =
-      """rel A(x: Float32);
+      """rel A(x: Float32)
         |
         |A(f(1.0f32)).
         |A(f(2.0f32)).
@@ -7023,7 +7023,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Safe.13") {
     import HookSafeHelpers._
     val input =
-      """rel A(x: Float64);
+      """rel A(x: Float64)
         |
         |A(f(1.0f64)).
         |A(f(2.0f64)).
@@ -7042,7 +7042,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Safe.14") {
     import HookSafeHelpers._
     val input =
-      """rel A(x: BigInt);
+      """rel A(x: BigInt)
         |
         |A(f(0ii)).
         |A(f(1ii)).
@@ -7061,7 +7061,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Safe.15") {
     import HookSafeHelpers._
     val input =
-      """rel A(x: Native);
+      """rel A(x: Native)
         |
         |A(f(1)).
         |A(f(2)).
@@ -7088,7 +7088,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Unsafe.01") {
     import HookUnsafeHelpers._
     val input =
-      """rel A(x: ());
+      """rel A(x: ())
         |
         |A(f(0)).
       """.stripMargin
@@ -7105,7 +7105,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Unsafe.02") {
     import HookUnsafeHelpers._
     val input =
-      """rel A(x: Bool);
+      """rel A(x: Bool)
         |
         |A(f(0)).
         |A(f(1)).
@@ -7123,7 +7123,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Unsafe.03") {
     import HookUnsafeHelpers._
     val input =
-      """rel A(x: Int8);
+      """rel A(x: Int8)
         |
         |A(f(0i8)).
         |A(f(1i8)).
@@ -7142,7 +7142,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Unsafe.04") {
     import HookUnsafeHelpers._
     val input =
-      """rel A(x: Int16);
+      """rel A(x: Int16)
         |
         |A(f(0i16)).
         |A(f(1i16)).
@@ -7161,7 +7161,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Unsafe.05") {
     import HookUnsafeHelpers._
     val input =
-      """rel A(x: Int32);
+      """rel A(x: Int32)
         |
         |A(f(0i32)).
         |A(f(1i32)).
@@ -7180,7 +7180,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Unsafe.06") {
     import HookUnsafeHelpers._
     val input =
-      """rel A(x: Int64);
+      """rel A(x: Int64)
         |
         |A(f(0i64)).
         |A(f(1i64)).
@@ -7199,7 +7199,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Unsafe.07") {
     import HookUnsafeHelpers._
     val input =
-      """rel A(x: Str);
+      """rel A(x: Str)
         |
         |A(f("one")).
         |A(f("two")).
@@ -7218,7 +7218,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Unsafe.08") {
     import HookUnsafeHelpers._
     val input =
-      """rel A(x: (Int, Str));
+      """rel A(x: (Int, Str))
         |
         |A(f(1)).
       """.stripMargin
@@ -7238,7 +7238,7 @@ class TestBackend extends FunSuite {
     import HookUnsafeHelpers._
     val input =
       """enum Foo { case Foo(Int,Str) }
-        |rel A(x: Foo);
+        |rel A(x: Foo)
         |
         |A(f("one")).
       """.stripMargin
@@ -7257,7 +7257,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Unsafe.10") {
     import HookUnsafeHelpers._
     val input =
-      """rel A(x: (Int, Int));
+      """rel A(x: (Int, Int))
         |
         |A(f(1, 2)).
       """.stripMargin
@@ -7274,7 +7274,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Unsafe.11") {
     import HookUnsafeHelpers._
     val input =
-      """rel A(x: Char);
+      """rel A(x: Char)
         |
         |A(f('a')).
         |A(f('b')).
@@ -7293,7 +7293,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Unsafe.12") {
     import HookUnsafeHelpers._
     val input =
-      """rel A(x: Float32);
+      """rel A(x: Float32)
         |
         |A(f(1.0f32)).
         |A(f(2.0f32)).
@@ -7312,7 +7312,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Unsafe.13") {
     import HookUnsafeHelpers._
     val input =
-      """rel A(x: Float64);
+      """rel A(x: Float64)
         |
         |A(f(1.0f64)).
         |A(f(2.0f64)).
@@ -7331,7 +7331,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Unsafe.14") {
     import HookUnsafeHelpers._
     val input =
-      """rel A(x: BigInt);
+      """rel A(x: BigInt)
         |
         |A(f(0ii)).
         |A(f(1ii)).
@@ -7350,7 +7350,7 @@ class TestBackend extends FunSuite {
   test("Term.Head.ApplyHook - Hook.Unsafe.15") {
     import HookUnsafeHelpers._
     val input =
-      """rel A(x: Native);
+      """rel A(x: Native)
         |
         |A(f(1)).
         |A(f(2)).
@@ -7378,8 +7378,8 @@ class TestBackend extends FunSuite {
 
   test("Term.Body.Var.01") {
     val input =
-      """rel A(x: Bool, y: Bool);
-        |rel B(x: Bool);
+      """rel A(x: Bool, y: Bool)
+        |rel B(x: Bool)
         |def f(x: Bool): Bool = x
         |
         |A(true, true).
@@ -7393,8 +7393,8 @@ class TestBackend extends FunSuite {
 
   test("Term.Body.Var.02") {
     val input =
-      """rel A(x: Int);
-        |rel B(x: Int);
+      """rel A(x: Int)
+        |rel B(x: Int)
         |def f(x: Int): Bool = x % 2 == 0
         |
         |A(0).
@@ -7414,7 +7414,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Body.Exp.01") {
     val input =
-      """rel A(x: Int);
+      """rel A(x: Int)
         |def f(x: Bool): Bool = x
         |
         |A(1) :- f(true).
@@ -7429,7 +7429,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Body.Exp.02") {
     val input =
-      """rel A(x: Int);
+      """rel A(x: Int)
         |def f(x: Int8): Bool = x >= 0i8
         |
         |A(1) :- f(0i8).
@@ -7443,7 +7443,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Body.Exp.03") {
     val input =
-      """rel A(x: Int);
+      """rel A(x: Int)
         |def f(x: Int16): Bool = x >= 0i16
         |
         |A(1) :- f(0i16).
@@ -7457,7 +7457,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Body.Exp.04") {
     val input =
-      """rel A(x: Int);
+      """rel A(x: Int)
         |def f(x: Int32): Bool = x >= 0i32
         |
         |A(1) :- f(0i32).
@@ -7471,7 +7471,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Body.Exp.05") {
     val input =
-      """rel A(x: Int);
+      """rel A(x: Int)
         |def f(x: Int64): Bool = x >= 0i64
         |
         |A(1) :- f(0i64).
@@ -7485,7 +7485,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Body.Exp.06") {
     val input =
-      """rel A(x: Int);
+      """rel A(x: Int)
         |def f(x: Str): Bool = true
         |
         |A(1) :- f("foo").
@@ -7498,7 +7498,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Body.Exp.09") {
     val input =
-      """rel A(x: Int);
+      """rel A(x: Int)
         |def f(x: Char): Bool = x >= 'b'
         |
         |A(1) :- f('b').
@@ -7512,7 +7512,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Body.Exp.10") {
     val input =
-      """rel A(x: Int);
+      """rel A(x: Int)
         |def f(x: Float32): Bool = x >= 0.0f32
         |
         |A(1) :- f(0.0f32).
@@ -7526,7 +7526,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Body.Exp.11") {
     val input =
-      """rel A(x: Int);
+      """rel A(x: Int)
         |def f(x: Float64): Bool = x >= 0.0f64
         |
         |A(1) :- f(0.0f64).
@@ -7540,7 +7540,7 @@ class TestBackend extends FunSuite {
 
   test("Term.Body.Exp.12") {
     val input =
-      """rel A(x: Int);
+      """rel A(x: Int)
         |def f(x: BigInt): Bool = x >= 0ii
         |
         |A(1) :- f(0ii).

@@ -312,7 +312,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Prints debugging information.
     */
   private def printDebug(): Unit = {
-    if (options.verbosity != Verbosity.Silent) {
+    if (options.verbosity == Verbosity.Verbose) {
       val solverTime = totalTime / 1000000
       val initMiliSeconds = initTime / 1000000
       val readersMiliSeconds = readersTime / 1000000

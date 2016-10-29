@@ -41,6 +41,15 @@ object CreateExecutableAst {
     val m: TopLevel = mutable.Map.empty
 
     val constants = sast.constants.map { case (k, v) => k -> Definition.toExecutable(v) }
+
+    val enums = sast.enums.map {
+      case (sym, SimplifiedAst.Definition.Enum(_, cases0, loc)) =>
+        val cases = cases0.map {
+          case (tag, SimplifiedAst.Case(enumName, tagName, tpe)) => tag -> ExecutableAst.Case(enumName, tagName, tpe)
+        }
+        sym -> ExecutableAst.Definition.Enum(sym, cases, loc)
+    }
+
     // Converting lattices to ExecutableAst will create new top-level definitions in the map `m`.
     val lattices = sast.lattices.map { case (k, v) => k -> Definition.toExecutable(v, m) }
     val tables = sast.tables.map { case (k, v) => k -> Table.toExecutable(v) }
@@ -77,7 +86,7 @@ object CreateExecutableAst {
       result.toMap
     }
 
-    ExecutableAst.Root(constants ++ m, lattices, tables, indexes, facts, rules, properties, time, dependenciesOf)
+    ExecutableAst.Root(constants ++ m, enums, lattices, tables, indexes, facts, rules, properties, time, dependenciesOf)
   }
 
   object Definition {

@@ -54,7 +54,6 @@ object Unification {
           case Some(y) if x.kind == tpe.kind => y
           case Some(y) if x.kind != tpe.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${tpe.kind}'.")
         }
-      case Type.Ref(sym, kind) => Type.Ref(sym, kind)
       case Type.Unit => Type.Unit
       case Type.Bool => Type.Bool
       case Type.Char => Type.Char
@@ -72,9 +71,7 @@ object Unification {
       case Type.FVec => Type.FVec
       case Type.FSet => Type.FSet
       case Type.FMap => Type.FMap
-      case Type.Enum(name, cases, kind) => Type.Enum(name, cases.foldLeft(Map.empty[String, Type]) {
-        case (macc, (tag, t)) => macc + (tag -> apply(t))
-      }, kind)
+      case Type.Enum(name, kind) => Type.Enum(name, kind)
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
     }
 
@@ -135,9 +132,6 @@ object Unification {
     def unifyTypes(tpe1: Type, tpe2: Type): Result[Substitution, TypeError] = (tpe1, tpe2) match {
       case (x: Type.Var, _) => unifyVar(x, tpe2)
       case (_, x: Type.Var) => unifyVar(x, tpe1)
-      case (Type.Ref(sym1, k1), Type.Ref(sym2, k2)) => Result.Ok(Substitution.empty)
-      case (Type.Ref(sym1, k1), Type.Enum(sym2, _, _)) if sym1 == sym2 => Result.Ok(Substitution.empty)
-      case (Type.Enum(sym2, _, _), Type.Ref(sym1, k1)) if sym1 == sym2 => Result.Ok(Substitution.empty)
       case (Type.Unit, Type.Unit) => Result.Ok(Substitution.empty)
       case (Type.Bool, Type.Bool) => Result.Ok(Substitution.empty)
       case (Type.Char, Type.Char) => Result.Ok(Substitution.empty)
@@ -155,10 +149,7 @@ object Unification {
       case (Type.FVec, Type.FVec) => Result.Ok(Substitution.empty)
       case (Type.FSet, Type.FSet) => Result.Ok(Substitution.empty)
       case (Type.FMap, Type.FMap) => Result.Ok(Substitution.empty)
-      case (Type.Enum(name1, cases1, kind1), Type.Enum(name2, cases2, kind2)) if name1 == name2 =>
-        val ts1 = cases1.values.toList
-        val ts2 = cases2.values.toList
-        unifyAll(ts1, ts2)
+      case (Type.Enum(name1, kind1), Type.Enum(name2, kind2)) if name1 == name2 => Result.Ok(Substitution.empty)
       case (Type.Apply(t1, ts1), Type.Apply(t2, ts2)) =>
         unifyTypes(t1, t2) match {
           case Result.Ok(subst1) => unifyAll(subst1(ts1), subst1(ts2)) match {

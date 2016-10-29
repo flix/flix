@@ -350,13 +350,7 @@ class Flix {
     if (tags == null)
       throw new IllegalArgumentException("Argument 'tags' must be non-null.")
 
-    import collection.JavaConverters._
-    val cases = tags.asScala.foldLeft(Map.empty[String, Type]) {
-      case (macc, (tag, tpe)) =>
-        macc + (tag -> tpe.asInstanceOf[WrappedType].tpe)
-    }
-
-    new WrappedType(Type.Enum(Symbol.mkEnumSym(fqn), cases, Kind.Star))
+    new WrappedType(Type.Enum(Symbol.mkEnumSym(fqn), Kind.Star))
   }
 
   /**

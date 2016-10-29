@@ -15,7 +15,7 @@ namespace IDE {
 
     def leq(e1: Value, e2: Value): Bool = match (e1, e2) with {
         case (Value.Bot, _) => true
-        case (Value.Cst(n1), Value.Cst(n2)) => n1 == n2;
+        case (Value.Cst(n1), Value.Cst(n2)) => n1 == n2
         case (_, Value.Top) => true
         case _ => false
     }
@@ -29,7 +29,7 @@ namespace IDE {
         case (Value.Cst(n), _) => Value.Cst(n*e2)
         case (Value.Bot, _) => Value.Bot
         case (_, zero) => if(zero == 0) Value.Cst(0) else e1
-        case _ => e1;
+        case _ => e1
     }
 
     def glb(e1: Value, e2: Value): Value = match (e1, e2) with {
@@ -39,7 +39,7 @@ namespace IDE {
         case _ => Value.Bot
     }
 
-    let Value<> = (Value.Bot, Value.Top, leq, lub, glb);
+    let Value<> = (Value.Bot, Value.Top, leq, lub, glb)
 
     enum Transformer {
         case BotTrans,
@@ -83,27 +83,27 @@ namespace IDE {
 
     def transglb(e1: Transformer, e2: Transformer): Transformer = ???: Transformer
 
-    let Transformer<> = (Transformer.BotTrans, ???: Transformer, transleq, translub, transglb);
+    let Transformer<> = (Transformer.BotTrans, ???: Transformer, transleq, translub, transglb)
 
     // Inputs
-    lat EshIntra(node: Str, infact: Str, outfact: Str, transformer: Transformer);
-    lat EshCallStart(node: Str, infact: Str, proc: Str, outfact: Str, transformer: Transformer);
-    lat EshEndReturn(proc: Str, infact: Str, node: Str, outfact: Str, transformer: Transformer);
+    lat EshIntra(node: Str, infact: Str, outfact: Str, transformer: Transformer)
+    lat EshCallStart(node: Str, infact: Str, proc: Str, outfact: Str, transformer: Transformer)
+    lat EshEndReturn(proc: Str, infact: Str, node: Str, outfact: Str, transformer: Transformer)
 
     // Call-to-Return edges should be included above in EshIntra
-    rel CFG(src: Str, dst: Str);
-    rel CallGraph(callsite: Str, proc: Str);
-    rel StartNode(proc: Str, node: Str);
-    rel EndNode(proc: Str, node: Str);
+    rel CFG(src: Str, dst: Str)
+    rel CallGraph(callsite: Str, proc: Str)
+    rel StartNode(proc: Str, node: Str)
+    rel EndNode(proc: Str, node: Str)
 
     // Internal lattices
-    lat JumpFn(infact: Str, node: Str, outfact: Str, transformer: Transformer);
-    lat SummaryFn(node: Str, infact: Str, outfact: Str, transformer: Transformer);
-    lat ResultProc(proc: Str, fact: Str, value: Value);
-    rel InProc(proc: Str, node: Str);
+    lat JumpFn(infact: Str, node: Str, outfact: Str, transformer: Transformer)
+    lat SummaryFn(node: Str, infact: Str, outfact: Str, transformer: Transformer)
+    lat ResultProc(proc: Str, fact: Str, value: Value)
+    rel InProc(proc: Str, node: Str)
 
     // Output
-    lat Result(node: Str, fact: Str, value: Value);
+    lat Result(node: Str, fact: Str, value: Value)
 
     // Rules
 

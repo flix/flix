@@ -33,6 +33,13 @@ object Simplifier {
     val t = System.nanoTime()
 
     val constants = tast.definitions.map { case (k, v) => k.toResolvedTemporaryHelperMethod -> Definition.simplify(v) }
+    val enums = tast.enums.map {
+      case (k, TypedAst.Declaration.Enum(doc, sym, cases0, sc, loc)) =>
+        val cases = cases0 map {
+          case (tag, TypedAst.Case(enum, tagName, tpe)) => tag -> SimplifiedAst.Case(enum, tagName, tpe)
+        }
+        k -> SimplifiedAst.Definition.Enum(sym, cases, loc)
+    }
     val lattices = tast.lattices.map { case (k, v) => k -> Definition.simplify(v) }
     val collections = tast.tables.map { case (k, v) => k -> Table.simplify(v) }
     val indexes = tast.indexes.map { case (k, v) => k -> Definition.simplify(v) }
@@ -42,7 +49,7 @@ object Simplifier {
     val time = tast.time
 
     val e = System.nanoTime() - t
-    SimplifiedAst.Root(constants, lattices, collections, indexes, facts, rules, properties, time.copy(simplifier = e))
+    SimplifiedAst.Root(constants, enums, lattices, collections, indexes, facts, rules, properties, time.copy(simplifier = e))
   }
 
   object Table {
@@ -219,11 +226,11 @@ object Simplifier {
       case TypedAst.Expression.PutIndex(e1, e2, e3, tpe, loc) => ??? // TODO
       case TypedAst.Expression.Existential(params, exp, loc) =>
         val ps = params.map(p => SimplifiedAst.FormalArg(p.sym.toIdent, p.tpe))
-      val e = simplify(exp)
+        val e = simplify(exp)
         SimplifiedAst.Expression.Existential(ps, e, loc)
       case TypedAst.Expression.Universal(params, exp, loc) =>
         val ps = params.map(p => SimplifiedAst.FormalArg(p.sym.toIdent, p.tpe))
-      val e = simplify(exp)
+        val e = simplify(exp)
         SimplifiedAst.Expression.Universal(ps, e, loc)
       case TypedAst.Expression.UserError(tpe, loc) =>
         SimplifiedAst.Expression.UserError(tpe, loc)

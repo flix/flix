@@ -11,7 +11,7 @@ enum Var { case Var(Str) }
 enum Stm { case Stm(Str)}
 
 enum Ctx {
-    case None
+    case EmptyCtx
 }
 
 enum State {
@@ -69,11 +69,11 @@ rel Resolve(s: Stm, v1: Var, v2: Var)
 // Reject promise expression: s: v1.reject(v2)
 rel Reject(s: Stm, v1: Var, v2: Var)
 
-// On resolve expression: s: v1.onResolve(v2)
-rel OnResolve(s: Stm, v1: Var, v2: Var)
+// On resolve expression: s: v1 = v2.onResolve(v3)
+rel OnResolve(s: Stm, v1: Var, v2: Var, v3: Var)
 
-// On reject expression: s: v1.onReject(v2)
-rel OnReject(s: Stm, v1: Var, v2: Var)
+// On reject expression: s: v1 = v2.onReject(v3)
+rel OnReject(s: Stm, v1: Var, v2: Var, v3: Var)
 
 // Promise link expression: s: v1.link(v2)
 rel Link(s: Stm, v1: Var, v2: Var)
@@ -101,13 +101,16 @@ rel HeapPointsToOut(c: Ctx, s: Stm, o1: Obj, f: Field, o2: Obj)
 rel PromiseStateIn(c: Ctx, s: Stm, o: Obj, t: State, v: Obj)
 rel PromiseStateOut(c: Ctx, s: Stm, o: Obj, t: State, v: Obj)
 
-// The promise `o` has `r` registered as a fulfill reaction at statement `s` in context `c`.
-rel FulfillReactionIn(c: Ctx, s: Stm, o: Obj, r: Obj)
-rel FulfillReactionOut(c: Ctx, s: Stm, o: Obj, r: Obj)
+// TODO: Consider better naming of attributes?
+// rel PromiseStateOut(ctx: Ctx, stm: Stm, baseObj: Obj, promiseState: State, promiseValue: Obj)
 
-// The promise `o` has `r` registered as a reject reaction at statement `s` in context `c`.
-rel RejectReactionIn(c: Ctx, s: Stm, o: Obj, r: Obj)
-rel RejectReactionOut(c: Ctx, s: Stm, o: Obj, r: Obj)
+// The promise `o1` has `r` registered as a fulfill reaction at statement `s` in context `c` with child promise `o2`.
+rel FulfillReactionIn(c: Ctx, s: Stm, o1: Obj, r: Obj, o2: Obj)
+rel FulfillReactionOut(c: Ctx, s: Stm, o1: Obj, r: Obj, o2: Obj)
+
+// The promise `o1` has `r` registered as a reject reaction at statement `s` in context `c` with child promise `o2`.
+rel RejectReactionIn(c: Ctx, s: Stm, o1: Obj, r: Obj, o2: Obj)
+rel RejectReactionOut(c: Ctx, s: Stm, o1: Obj, r: Obj, o2: Obj)
 
 // The promise `o1` is linked to `o2` at statement `s` in context `c`.
 // If `o1` is linked to `o2` then when `o1` is resolved/rejected so is `o2`.
@@ -142,38 +145,34 @@ rel LinkEdge(p1: Obj, p2: Obj)
 ///////////////////////////////////////////////////////////////////////////////
 
 // NewObj Rule: s: v = new Obj()
-VarPointsToOut(c, s, v, o) :- NewObj(s, v, o),
-                              Reachable(c, s).
+VarPointsToOut(c, s, v, o) :-
+    NewObj(s, v, o),
+    Reachable(c, s).
 
 // Assign Rule: s: v1 = v2
-VarPointsToOut(c, s, v1, o) :- Assign(s, v1, v2),
-                               VarPointsToIn(c, s, v2, o),
-                               Reachable(c, s).
+VarPointsToOut(c, s, v1, o) :-
+    Assign(s, v1, v2),
+    VarPointsToIn(c, s, v2, o),
+    Reachable(c, s).
 
 // Load rule: v1 = v2.f
-VarPointsToOut(c, s, v1, o2) :- Load(s, v1, v2, f),
-                                VarPointsToIn(c, s, v2, o1),
-                                HeapPointsToIn(c, s, o1, f, o2),
-                                Reachable(c, s).
+VarPointsToOut(c, s, v1, o2) :-
+    Load(s, v1, v2, f),
+    VarPointsToIn(c, s, v2, o1),
+    HeapPointsToIn(c, s, o1, f, o2),
+    Reachable(c, s).
 
 // Store rule: v1.f = v2
-HeapPointsToOut(c, s, o1, f, o2) :- Store(s, v1, f, v2),
-                                    VarPointsToIn(c, s, v1, o1),
-                                    VarPointsToIn(c, s, v2, o2),
-                                    Reachable(c, s).
-
-// Mark the entry point as reachable.
-Reachable(Ctx.None, Stm.Stm("l1")).
+HeapPointsToOut(c, s, o1, f, o2) :-
+    Store(s, v1, f, v2),
+    VarPointsToIn(c, s, v1, o1),
+    VarPointsToIn(c, s, v2, o2),
+    Reachable(c, s).
 
 // Propagate reachability along the control-flow graph.
-Reachable(c, s2) :- CFG(s1, s2), Reachable(c, s1).
-
-// Propagate dataflow along the control-flow graph.
-VarPointsToIn(c, s2, v, o) :- CFG(s1, s2), VarPointsToOut(c, s1, v, o).
-VarPointsToOut(c, s, v, o) :- VarPointsToIn(c, s, v, o).
-
-HeapPointsToIn(c, s2, o1, f, o2) :- CFG(s1, s2), HeapPointsToOut(c, s1, o1, f, o2).
-HeapPointsToOut(c, s, o1, f, o2) :- HeapPointsToIn(c, s, o1, f, o2).
+Reachable(c, s2) :-
+    CFG(s1, s2),
+    Reachable(c, s1).
 
 ///////////////////////////////////////////////////////////////////////////////
 // Semantics: Promise Expressions                                            //
@@ -182,28 +181,88 @@ HeapPointsToOut(c, s, o1, f, o2) :- HeapPointsToIn(c, s, o1, f, o2).
 /*
  * E-Promisify: s: promisify(v).
  */
-PromiseStateOut(c, s, o, State.Pending, Obj.Obj("null")) :-
+PromiseStateOut(c, s, o, Pending, Obj("undef")) :-
     Promisify(s, v),
     VarPointsToIn(c, s, v, o),
     Reachable(c, s).
 
 /*
- * E-OnResolve-Pending: v1.onResolve(v2).
+ * E-OnResolve-Pending: v1 = v2.onResolve(v3).
  */
-// 1. Set the state of the child promise to pending.
+// 1. Allocate a child promise.
+VarPointsToOut(c, s, v1, mkObj(s)) :-
+    OnResolve(s, v1, v2, _),
+    VarPointsToIn(c, s, v2, baseObj),
+    PromiseStateIn(c, s, baseObj, Pending, _),
+    Reachable(c, s).
 
-// TODO
-//PromiseStateOut(c, s, o, State.Pending, Obj.Obj("null")) :- OnResolve(s, v1, v2),
-//                                                            VarPointsToIn(c, s, v1, p),
-//                                                            VarPointsToIn(c, s, v2, l)
+// 2. Set the state of the child promise to pending.
+PromiseStateOut(c, s, mkObj(s), Pending, Obj("undef")) :-
+    OnResolve(s, v1, v2, _),
+    VarPointsToIn(c, s, v2, baseObj),
+    PromiseStateIn(c, s, baseObj, Pending, _),
+    Reachable(c, s).
 
-// 2. Add the fulfill reaction on the promise.
-
-// 3. Return the child promise.
+// 3. Add the fulfill reaction on the promise.
+FulfillReactionOut(c, s, baseObj, lambdaObj, mkObj(s)) :-
+    OnResolve(s, _, v2, v3),
+    VarPointsToIn(c, s, v2, baseObj),
+    VarPointsToIn(c, s, v3, lambdaObj),
+    PromiseStateIn(c, s, baseObj, Pending, _),
+    Reachable(c, s).
 
 /*
- * E-OnResolve-Fulfilled: v1.onResolve(v2).
+ * E-OnResolve-Fulfilled: v1 = v2.onResolve(v3).
  */
+// 1. Allocate a child promise.
+VarPointsToOut(c, s, v1, mkObj(s)) :-
+    OnResolve(s, v1, v2, _),
+    VarPointsToIn(c, s, v2, baseObj),
+    PromiseStateIn(c, s, baseObj, Fulfilled, _),
+    Reachable(c, s).
+
+// 2. Set the state of the child promise to fulfilled and retrieve the promise value.
+PromiseStateOut(c, s, mkObj(s), Fulfilled, promiseValue) :-
+    OnResolve(s, v1, v2, _),
+    VarPointsToIn(c, s, v2, baseObj),
+    PromiseStateIn(c, s, baseObj, Fulfilled, promiseValue),
+    Reachable(c, s).
+
+// 3. Add the fulfill reaction to the queue.
+Queue(c, s, Fulfilled, promiseValue, lambdaObj, mkObj(s)) :-
+    OnResolve(s, v1, v2, v3),
+    VarPointsToIn(c, s, v2, baseObj),
+    VarPointsToIn(c, s, v3, lambdaObj),
+    PromiseStateIn(c, s, baseObj, Fulfilled, promiseValue),
+    Reachable(c, s).
+
+// TODO E-OnReject-Pending and E-OnReject-Rejected
+
+/*
+ * E-Resolve-Settled: v1.resolve(v2).
+ */
+// No-op actually does not do anything.
+
+/*
+ * E-Resolve-Pending: v1.resolve(v2).
+ */
+// 1. Set the state of the promise to fulfilled.
+PromiseStateOut(c, s, o, State.Fulfilled, r) :-
+    Resolve(s, v1, v2),
+    VarPointsToIn(c, s, v1, o),
+    VarPointsToIn(c, s, v2, r),
+    Reachable(c, s).
+
+// 2. Add all fulfill reactions to the queue.
+Queue(c, s, Fulfilled, argVal, lambdaObj, childObj) :-
+    Resolve(s, baseVar, argVar),
+    VarPointsToIn(c, s, baseVar, promiseObj),
+    VarPointsToIn(c, s, argVar, argVal),
+    FulfillReactionIn(c, s, promiseObj, lambdaObj, childObj),
+    Reachable(c, s).
+
+// TODO: Deal with links
+
 
 /*
  * E-Link: v1.link(v2).
@@ -214,31 +273,7 @@ PromiseLinkOut(c, s, o1, o2) :-
     VarPointsToIn(c, s, v2, o2),
     Reachable(c, s).
 
-// Propagate dataflow.
-PromiseLinkIn(c, s2, o1, o2) :- CFG(s1, s2), Reachable(c, s1), PromiseLinkOut(c, s1, o1, o2).
-PromiseLinkOut(c, s, o1, o2) :- PromiseLinkIn(c, s, o1, o2).
-
-/*
- * E-Resolved-Settled: v1.resolve(v2).
- */
-// No-op actually does not do anything.
-
-/*
- * E-Resolved-Pending: v1.resolve(v2).
- */
-// 1. Set the state of the promise to fulfilled.
-PromiseStateOut(c, s, o, State.Fulfilled, r) :- Resolve(s, v1, v2),
-                                                VarPointsToIn(c, s, v1, o),
-                                                VarPointsToIn(c, s, v2, r),
-                                                Reachable(c, s).
-
-// 2. Add all fulfill reactions to the queue.
-Queue(c, s, State.Fulfilled, argVal, lambdaObj, childObj) :-
-    Resolve(s, baseVar, argVar),
-    VarPointsToIn(c, s, baseVar, promiseObj),
-    VarPointsToIn(c, s, argVar, argVal),
-    FulfillReactionIn(c, s, promiseObj, lambdaObj, childObj),
-    Reachable(c, s).
+// TODO: Semantics of linking a resolved promise?
 
 /*
  * E-Loop.
@@ -249,51 +284,112 @@ Queue(c, s, State.Fulfilled, argVal, lambdaObj, childObj) :-
  */
 
 ///////////////////////////////////////////////////////////////////////////////
+// Semantics: Confluence Rules                                               //
+///////////////////////////////////////////////////////////////////////////////
+
+// Propagate VarPointsTo along the control-flow graph.
+VarPointsToIn(c, s2, v, o) :-
+    CFG(s1, s2),
+    Reachable(c, s2),
+    VarPointsToOut(c, s1, v, o).
+VarPointsToOut(c, s, v, o) :-
+    VarPointsToIn(c, s, v, o).
+
+// Propagate HeapPointsTo along the control-flow graph.
+HeapPointsToIn(c, s2, o1, f, o2) :-
+    CFG(s1, s2),
+    Reachable(c, s2),
+    HeapPointsToOut(c, s1, o1, f, o2).
+HeapPointsToOut(c, s, o1, f, o2) :-
+    HeapPointsToIn(c, s, o1, f, o2).
+
+// Propagate PromiseState along the control-flow graph.
+PromiseStateIn(c, s2, baseObj, promiseState, promiseValue) :-
+    CFG(s1, s2),
+    Reachable(c, s2),
+    PromiseStateOut(c, s1, baseObj, promiseState, promiseValue).
+PromiseStateOut(c, s, baseObj, promiseState, promiseValue) :-
+    PromiseStateIn(c, s, baseObj, promiseState, promiseValue).
+
+// Propagate FullfillReaction along the control-flow graph.
+FulfillReactionIn(c, s2, o1, r, o2) :-
+    CFG(s1, s2),
+    Reachable(c, s2),
+    FulfillReactionOut(c, s1, o1, r, o2).
+FulfillReactionOut(c, s, o1, r, o2) :-
+    FulfillReactionIn(c, s, o1, r, o2).
+
+// Propagate PromiseLink along the control-flow graph.
+PromiseLinkIn(c, s2, o1, o2) :-
+    CFG(s1, s2),
+    Reachable(c, s1),
+    PromiseLinkOut(c, s1, o1, o2).
+PromiseLinkOut(c, s, o1, o2) :-
+    PromiseLinkIn(c, s, o1, o2).
+
+///////////////////////////////////////////////////////////////////////////////
 // Semantics: Promise Graph                                                  //
 ///////////////////////////////////////////////////////////////////////////////
 
 
-
-
+///////////////////////////////////////////////////////////////////////////////
+// Helper Functions                                                          //
+///////////////////////////////////////////////////////////////////////////////
+def mkObj(s: Stm): Obj = match s with {
+    case Stm(x) => Obj(x)
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Example Program                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-// TODO: Need to allocate objects before use...
-
 // Input program
-// var p1 = {};
-// var p2 = {};
-// var lambda = ...
-// var arg = ...
-// promisify(o1);
-// promisify(o2);
-// var p3 = p2.onResolve(lambda);
-// p1.link(p2);
-// p1.resolve(42);
+// line1: var p1 = {};
+// line2: var p2 = {};
+// line3: var l = {};
+// line4: var x = {};
+// line5: promisify(p1);
+// line6: promisify(p2);
+// line7: var p3 = p2.onResolve(l);
+// line8: p1.link(p2);
+// line9: p1.resolve(x);
 
+// l1: var p1 = {};
+NewObj(Stm("line1"), Var("p1"), Obj("promise1")).
 
-// var p1 = {};
+// l2: var p2 = {};
+NewObj(Stm("line2"), Var("p2"), Obj("promise2")).
 
-// var p2 = {};
+// l3: var l = {};
+NewObj(Stm("line3"), Var("l"), Obj("lambda")).
 
-// l1: var p1 = promisify ({});
-NewObj(Stm.Stm("l1"), Var.Var("p1"), Obj.Obj("line1")).
-Promisify(Stm.Stm("l1"), Var.Var("p1")).
-CFG(Stm.Stm("l1"), Stm.Stm("l2")).
+// l4: var x = {};
+NewObj(Stm("line4"), Var("x"), Obj("value")).
 
-// l2: var p2 = promisify ({});
-NewObj(Stm.Stm("l2"), Var.Var("p2"), Obj.Obj("line2")).
-Promisify(Stm.Stm("l2"), Var.Var("p2")).
-CFG(Stm.Stm("l2"), Stm.Stm("l3")).
+// l5: promisify(p1);
+Promisify(Stm("line5"), Var("p1")).
 
-// var p3 = p2.onResolve(x => x);
-NewObj(Stm.Stm("l3"), Var.Var("lambda"), Obj.Obj("lambda")).
-OnResolve(Stm.Stm("l3"), Var.Var("p2"), Var.Var("lambda")).
-CFG(Stm.Stm("l3"), Stm.Stm("l4")).
+// l6: promisify(p2);
+Promisify(Stm("line6"), Var("p2")).
 
-// p1.link(p2);
+// l7: var p3 = p2.onResolve(l);
+OnResolve(Stm("line7"), Var("p3"), Var("p2"), Var("l")).
 
+// l8: p1.link(p2);
+Link(Stm("line8"), Var("p1"), Var("p2")).
 
-// p1.resolve(42);
+// l9: p1.resolve(x);
+Resolve(Stm("line9"), Var("p1"), Var("x")).
+
+// CFG edges
+CFG(Stm("line1"), Stm("line2")).
+CFG(Stm("line2"), Stm("line3")).
+CFG(Stm("line3"), Stm("line4")).
+CFG(Stm("line4"), Stm("line5")).
+CFG(Stm("line5"), Stm("line6")).
+CFG(Stm("line6"), Stm("line7")).
+CFG(Stm("line7"), Stm("line8")).
+CFG(Stm("line8"), Stm("line9")).
+
+// Mark the entry point as reachable.
+Reachable(EmptyCtx, Stm("line1")).

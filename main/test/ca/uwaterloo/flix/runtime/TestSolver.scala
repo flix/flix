@@ -38,57 +38,57 @@ class TestSolver extends FunSuite {
         |                  case Top,
         |        case Odd,          case Even,
         |                  case Bot
-        |    };
+        |    }
         |
         |    def leq(e1: Parity, e2: Parity): Bool = match (e1, e2) with {
-        |        case (Parity.Bot, _)              => true;
-        |        case (Parity.Odd, Parity.Odd)     => true;
-        |        case (Parity.Even, Parity.Even)   => true;
-        |        case (_, Parity.Top)              => true;
-        |        case _                            => false;
-        |    };
+        |        case (Parity.Bot, _)              => true
+        |        case (Parity.Odd, Parity.Odd)     => true
+        |        case (Parity.Even, Parity.Even)   => true
+        |        case (_, Parity.Top)              => true
+        |        case _                            => false
+        |    }
         |
         |    def lub(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
-        |        case (Parity.Bot, _)              => e2;
-        |        case (_, Parity.Bot)              => e1;
-        |        case (Parity.Odd, Parity.Odd)     => Parity.Odd;
-        |        case (Parity.Even, Parity.Even)   => Parity.Even;
-        |        case _                            => Parity.Top;
-        |    };
+        |        case (Parity.Bot, _)              => e2
+        |        case (_, Parity.Bot)              => e1
+        |        case (Parity.Odd, Parity.Odd)     => Parity.Odd
+        |        case (Parity.Even, Parity.Even)   => Parity.Even
+        |        case _                            => Parity.Top
+        |    }
         |
         |    def glb(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
-        |        case (Parity.Top, _) => e2;
-        |        case (_, Parity.Top) => e1;
-        |        case (Parity.Odd, Parity.Odd) => Parity.Odd;
-        |        case (Parity.Even, Parity.Even) => Parity.Even;
-        |        case _ => Parity.Bot;
+        |        case (Parity.Top, _) => e2
+        |        case (_, Parity.Top) => e1
+        |        case (Parity.Odd, Parity.Odd) => Parity.Odd
+        |        case (Parity.Even, Parity.Even) => Parity.Even
+        |        case _ => Parity.Bot
         |    }
         |
         |    def plus(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
-        |        case (_, Parity.Bot)              => Parity.Bot;
-        |        case (Parity.Bot, _)              => Parity.Bot;
-        |        case (Parity.Odd, Parity.Odd)     => Parity.Even;
-        |        case (Parity.Odd, Parity.Even)    => Parity.Odd;
-        |        case (Parity.Even, Parity.Odd)    => Parity.Odd;
-        |        case (Parity.Even, Parity.Even)   => Parity.Even;
-        |        case _                            => Parity.Top;
-        |    };
+        |        case (_, Parity.Bot)              => Parity.Bot
+        |        case (Parity.Bot, _)              => Parity.Bot
+        |        case (Parity.Odd, Parity.Odd)     => Parity.Even
+        |        case (Parity.Odd, Parity.Even)    => Parity.Odd
+        |        case (Parity.Even, Parity.Odd)    => Parity.Odd
+        |        case (Parity.Even, Parity.Even)   => Parity.Even
+        |        case _                            => Parity.Top
+        |    }
         |
         |    def isMaybeZero(e: Parity): Bool = match e with {
-        |        case Parity.Bot    => false;
-        |        case Parity.Odd    => false;
-        |        case Parity.Even   => true;
-        |        case Parity.Top    => true;
-        |    };
+        |        case Parity.Bot    => false
+        |        case Parity.Odd    => false
+        |        case Parity.Even   => true
+        |        case Parity.Top    => true
+        |    }
         |
-        |    let Parity<> = (Parity.Bot, Parity.Top, leq, lub, glb);
+        |    let Parity<> = (Parity.Bot, Parity.Top, leq, lub, glb)
       """.stripMargin
 
   }
 
   test("Cross01") {
     val s =
-      """rel A(x: Int, y: Int);
+      """rel A(x: Int, y: Int)
         |
         |A(1, 2).
         |A(2, 3).
@@ -103,7 +103,7 @@ class TestSolver extends FunSuite {
 
   test("Cross02") {
     val s =
-      """rel A(x: Int, y: Int);
+      """rel A(x: Int, y: Int)
         |
         |A(1, 2).
         |A(2, 3).
@@ -121,7 +121,7 @@ class TestSolver extends FunSuite {
 
   test("Cross03") {
     val s =
-      """rel A(x: Int, y: Int);
+      """rel A(x: Int, y: Int)
         |
         |A(1, 2).
         |A(2, 3).
@@ -137,7 +137,7 @@ class TestSolver extends FunSuite {
 
   test("Cross04") {
     val s =
-      """rel A(x: Int, y: Str, z: Int);
+      """rel A(x: Int, y: Str, z: Int)
         |
         |A(1, "a", 2).
         |A(2, "a", 3).
@@ -153,7 +153,7 @@ class TestSolver extends FunSuite {
 
   test("Cross05") {
     val s =
-      """rel A(x: Int, y: Str, z: Int);
+      """rel A(x: Int, y: Str, z: Int)
         |
         |A(1, "a", 2).
         |A(2, "a", 3).
@@ -170,7 +170,7 @@ class TestSolver extends FunSuite {
 
   test("Cross06") {
     val s =
-      """rel A(x: Int, y: Str, z: Int);
+      """rel A(x: Int, y: Str, z: Int)
         |
         |A(1, "a", 2).
         |A(2, "a", 3).
@@ -186,7 +186,7 @@ class TestSolver extends FunSuite {
 
   test("Cross07") {
     val s =
-      """rel A(x: Int, y: Str, z: Int);
+      """rel A(x: Int, y: Str, z: Int)
         |
         |A(1, "a", 2).
         |A(2, "a", 3).
@@ -202,9 +202,9 @@ class TestSolver extends FunSuite {
 
   test("Cross08") {
     val s =
-      """rel A(x: Int);
-        |rel B(x: Int);
-        |rel R(x: Int);
+      """rel A(x: Int)
+        |rel B(x: Int)
+        |rel R(x: Int)
         |
         |A(1). A(2).
         |B(2). B(3).
@@ -219,11 +219,11 @@ class TestSolver extends FunSuite {
 
   test("Cross09") {
     val s =
-      """rel A(x: Int);
-        |rel B(x: Int);
-        |rel C(x: Int);
+      """rel A(x: Int)
+        |rel B(x: Int)
+        |rel C(x: Int)
         |
-        |rel R(x: Int);
+        |rel R(x: Int)
         |
         |A(1). A(2). A(3).
         |B(2). B(3).
@@ -239,11 +239,11 @@ class TestSolver extends FunSuite {
 
   test("Cross10") {
     val s =
-      """rel A(x: Int);
-        |rel B(x: Int);
-        |rel C(x: Int);
+      """rel A(x: Int)
+        |rel B(x: Int)
+        |rel C(x: Int)
         |
-        |rel R(x: Int);
+        |rel R(x: Int)
         |
         |A(1). A(2). A(3).
         |B(2). B(3).
@@ -259,10 +259,10 @@ class TestSolver extends FunSuite {
 
   test("Cross11") {
     val s =
-      """rel A(x: Int, y: Int);
-        |rel B(x: Int, y: Int);
+      """rel A(x: Int, y: Int)
+        |rel B(x: Int, y: Int)
         |
-        |rel R(x: Int, y: Int);
+        |rel R(x: Int, y: Int)
         |
         |A(1, 2). A(3, 4).
         |B(2, 3). B(4, 5).
@@ -277,11 +277,11 @@ class TestSolver extends FunSuite {
 
   test("Cross12") {
     val s =
-      """rel A(x: Int, y: Int);
-        |rel B(x: Int, y: Int);
-        |rel C(x: Int, y: Int);
+      """rel A(x: Int, y: Int)
+        |rel B(x: Int, y: Int)
+        |rel C(x: Int, y: Int)
         |
-        |rel R(x: Int, y: Int);
+        |rel R(x: Int, y: Int)
         |
         |A(1, 2). A(3, 4).
         |B(2, 3). B(4, 5).
@@ -297,9 +297,9 @@ class TestSolver extends FunSuite {
 
   test("Cross13") {
     val s =
-      """rel A(x: Int, y: Int);
-        |rel B(x: Int, y: Int);
-        |rel C(x: Int, y: Int);
+      """rel A(x: Int, y: Int)
+        |rel B(x: Int, y: Int)
+        |rel C(x: Int, y: Int)
         |
         |A(1, 2). A(7, 1).
         |B(2, 3). B(3, 5).
@@ -322,11 +322,11 @@ class TestSolver extends FunSuite {
 
   test("Cross14") {
     val s =
-      """rel A(x: Int);
-        |rel B(y: Int);
-        |rel C(z: Int);
+      """rel A(x: Int)
+        |rel B(y: Int)
+        |rel C(z: Int)
         |
-        |rel R(x: Int);
+        |rel R(x: Int)
         |
         |A(1). A(2).
         |// B empty
@@ -342,9 +342,9 @@ class TestSolver extends FunSuite {
 
   test("Wildcard01") {
     val s =
-      """rel A(x: Int, y: Int);
-        |rel B(x: Int, y: Int);
-        |rel C(x: Int, y: Int);
+      """rel A(x: Int, y: Int)
+        |rel B(x: Int, y: Int)
+        |rel C(x: Int, y: Int)
         |
         |A(1, 2).
         |A(3, 4).
@@ -365,7 +365,7 @@ class TestSolver extends FunSuite {
 
   test("Lattice01") {
     val s =
-      """lat A(x: Int, v: Parity);
+      """lat A(x: Int, v: Parity)
         |
         |A(1, Parity.Odd).
         |A(2, Parity.Even).
@@ -382,7 +382,7 @@ class TestSolver extends FunSuite {
 
   test("Lattice02") {
     val s =
-      """lat A(x: Int, v: Parity);
+      """lat A(x: Int, v: Parity)
         |
         |A(1, Parity.Odd).
         |A(1, Parity.Even).
@@ -396,7 +396,7 @@ class TestSolver extends FunSuite {
 
   test("Lattice03") {
     val s =
-      """lat A(x: Int, v: Parity);
+      """lat A(x: Int, v: Parity)
         |
         |A(1, Parity.Odd).
         |A(2, Parity.Even).
@@ -412,8 +412,8 @@ class TestSolver extends FunSuite {
 
   test("NotEqual01") {
     val s =
-      """rel A(x: Int);
-        |rel B(x: Int, y: Int);
+      """rel A(x: Int)
+        |rel B(x: Int, y: Int)
         |
         |A(1). A(2). A(3). A(4).
         |
@@ -434,8 +434,8 @@ class TestSolver extends FunSuite {
 
   test("NotEqual02") {
     val s =
-      """rel A(x: Int, y: Int);
-        |rel B(x: Int, y: Int);
+      """rel A(x: Int, y: Int)
+        |rel B(x: Int, y: Int)
         |
         |A(1, 2).
         |A(2, 2).
@@ -451,8 +451,8 @@ class TestSolver extends FunSuite {
 
   test("NotEqual03") {
     val s =
-      """rel A(x: Int, y: Int);
-        |rel B(x: Int, y: Int);
+      """rel A(x: Int, y: Int)
+        |rel B(x: Int, y: Int)
         |
         |A(1, 2).
         |A(2, 1).
@@ -469,8 +469,8 @@ class TestSolver extends FunSuite {
 
   test("FilterHook01") {
     val s =
-      """rel A(x: Int);
-        |rel B(x: Int);
+      """rel A(x: Int)
+        |rel B(x: Int)
         |
         |A(1).
         |A(2).
@@ -509,7 +509,7 @@ class TestSolver extends FunSuite {
 
   test("Transfer01") {
     val s =
-      """rel A(x: Int);
+      """rel A(x: Int)
         |
         |def f: Int = 42
         |
@@ -525,7 +525,7 @@ class TestSolver extends FunSuite {
 
   test("Transfer02") {
     val s =
-      """rel A(x: Int, y: Int);
+      """rel A(x: Int, y: Int)
         |
         |def f: Int = 42
         |def g(x: Int): Int = 21 + x
@@ -542,7 +542,7 @@ class TestSolver extends FunSuite {
 
   test("Transfer03") {
     val s =
-      """rel A(x: Int, y: Int, z: Int);
+      """rel A(x: Int, y: Int, z: Int)
         |
         |def f: Int = 42
         |def g(x: Int): Int = 21 + x

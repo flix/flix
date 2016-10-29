@@ -24,6 +24,7 @@ sealed trait ExecutableAst
 object ExecutableAst {
 
   case class Root(constants: Map[Symbol.Resolved, ExecutableAst.Definition.Constant],
+                  enums: Map[Symbol.EnumSym, ExecutableAst.Definition.Enum],
                   lattices: Map[Type, ExecutableAst.Definition.Lattice],
                   tables: Map[Symbol.TableSym, ExecutableAst.Table],
                   indexes: Map[Symbol.TableSym, ExecutableAst.Definition.Index],
@@ -45,6 +46,8 @@ object ExecutableAst {
                         loc: SourceLocation) extends ExecutableAst.Definition {
       var method: Method = null
     }
+
+    case class Enum(sym: Symbol.EnumSym, cases: Map[String, ExecutableAst.Case], loc: SourceLocation) extends ExecutableAst.Definition
 
     case class Lattice(tpe: Type,
                        bot: Symbol.Resolved,
@@ -690,6 +693,8 @@ object ExecutableAst {
   }
 
   case class Attribute(name: String, tpe: Type) extends ExecutableAst
+
+  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends ExecutableAst
 
   case class FormalArg(ident: Name.Ident, tpe: Type) extends ExecutableAst
 

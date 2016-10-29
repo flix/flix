@@ -264,7 +264,7 @@ class TestParser extends FunSuite with TestUtils {
   test("Declaration.Index.01") {
     val input =
       """rel R(a: Int)
-        |index R({a});
+        |index R({a})
       """.stripMargin
     run(input)
   }
@@ -272,7 +272,7 @@ class TestParser extends FunSuite with TestUtils {
   test("Declaration.Index.02") {
     val input =
       """rel R(a: Char, b: Int)
-        |index R({a}, {b});
+        |index R({a}, {b})
       """.stripMargin
     run(input)
   }
@@ -280,7 +280,7 @@ class TestParser extends FunSuite with TestUtils {
   test("Declaration.Index.03") {
     val input =
       """rel R(a: Int8, b: Int16, c: Int32, d: Int64)
-        |index R({a}, {a, b}, {a, c}, {a, d}, {b, c}, {b, d}, {c, d}, {a, b, c}, {a, b, c, d});
+        |index R({a}, {a, b}, {a, c}, {a, d}, {b, c}, {b, d}, {c, d}, {a, b, c}, {a, b, c, d})
       """.stripMargin
     run(input)
   }
@@ -2807,6 +2807,15 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
+  test("SingleLineComment.03") {
+    val input =
+      """//////////////////////////////////////////////////////////////////////
+        |//////////////////////////////////////////////////////////////////////
+        |//////////////////////////////////////////////////////////////////////
+      """.stripMargin
+    run(input)
+  }
+
   test("MultiLineComment.01") {
     val input = "/* a comment */"
     run(input)
@@ -2818,6 +2827,11 @@ class TestParser extends FunSuite with TestUtils {
         |a comment
         |*/
       """.stripMargin
+    run(input)
+  }
+
+  test("TripleSlashComment.01") {
+    val input = "/// a comment"
     run(input)
   }
 
