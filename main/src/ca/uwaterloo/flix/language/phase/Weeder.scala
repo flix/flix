@@ -157,10 +157,13 @@ object Weeder {
          */
         Validation.fold[ParsedAst.Case, Map[String, WeededAst.Case], WeederError](cases, Map.empty) {
           case (macc, caze: ParsedAst.Case) =>
-            val tag = caze.ident.name
-            macc.get(tag) match {
-              case None => (macc + (tag -> WeededAst.Case(ident, caze.ident, Types.weed(caze.tpe)))).toSuccess
-              case Some(otherTag) => DuplicateTag(tag, otherTag.tag.loc, mkSL(caze.sp1, caze.sp2)).toFailure
+            val tagName = caze.ident.name
+            macc.get(tagName) match {
+              case None => (macc + (tagName -> WeededAst.Case(ident, caze.ident, Types.weed(caze.tpe)))).toSuccess
+              case Some(otherTag) =>
+                val loc1 = otherTag.tag.loc
+                val loc2 = mkSL(caze.ident.sp1, caze.ident.sp2)
+                DuplicateTag(ident.name, tagName, loc1, loc2).toFailure
             }
         } map {
           case m => WeededAst.Declaration.Enum(doc, ident, tparams, m, mkSL(sp1, sp2))

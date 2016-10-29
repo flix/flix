@@ -106,21 +106,25 @@ object WeederError {
   /**
     * An error raised to indicate that the tag `name` was declared multiple times.
     *
-    * @param name the name of the tag.
-    * @param loc1 the location of the first tag.
-    * @param loc2 the location of the second tag.
+    * @param enumName the name of the enum.
+    * @param tagName  the name of the tag.
+    * @param loc1     the location of the first tag.
+    * @param loc2     the location of the second tag.
     */
-  case class DuplicateTag(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+  case class DuplicateTag(enumName: String, tagName: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val source = loc1.source
     val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
+      s"""${Red(s">> Multiple declarations of the tag named '$tagName' in the enum '$enumName'.")}
          |
-         |${consoleCtx.red(s">> Duplicate tag '$name'.")}
+         |The first declaration was here:
          |
-         |First declaration was here:
-         |${loc1.highlight}
-         |Second declaration was here:
-         |${loc2.highlight}
+         |${Code(loc1)}
+         |
+         |and the second declaration was here:
+         |
+         |${Code(loc2)}
+         |
+         |${Underline("Tip")}: Remove or rename one of the formal parameters to avoid the name clash.
          """.stripMargin
   }
 
