@@ -16,8 +16,9 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.{CompilationError, Compiler}
+import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.util.Highlight._
 
 /**
   * A common super-type for naming errors.
@@ -27,8 +28,6 @@ sealed trait NameError extends CompilationError {
 }
 
 object NameError {
-
-  implicit val consoleCtx = Compiler.ConsoleCtx
 
   /**
     * An error raised to indicate that the given definition `name` is defined multiple times.
@@ -40,15 +39,14 @@ object NameError {
   case class DuplicateDefinition(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     val source = loc1.source
     val message =
-      s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc1.source.format}")}
-         |
-         |${consoleCtx.red(s">> Duplicate definition of '$name'.")}
-         |
-         |First definition was here:
-         |${loc1.highlight}
-         |Second definition was here:
-         |${loc2.highlight}
-         """.stripMargin
+      hl"""|>> Duplicate definition of '${Red(name)}'.
+           |
+           |${Code(loc1, "the first definition was here.")}
+           |
+           |${Code(loc2, "the second definition was here.")}
+           |
+           |${Underline("Tip")}: Remove or rename one of the definitions.
+        """.stripMargin
   }
 
   /**
@@ -61,15 +59,14 @@ object NameError {
   case class DuplicateIndex(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     val source = loc1.source
     val message =
-      s"""${consoleCtx.blue(s"-- NAMING ERROR -------------------------------------------------- ${loc1.source.format}")}
-         |
-         |${consoleCtx.red(s">> Duplicate index for relation/lattice '$name'.")}
-         |
-         |First definition was here:
-         |${loc1.highlight}
-         |Second definition was here:
-         |${loc2.highlight}
-         """.stripMargin
+      hl"""|>> Duplicate index for table '${Red(name)}'.
+           |
+           |${Code(loc1, "the first declaration was here.")}
+           |
+           |${Code(loc2, "the second declaration was here.")}
+           |
+           |${Underline("Tip")}: Remove one of the index declarations.
+        """.stripMargin
   }
 
 }
