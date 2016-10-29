@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 /**
   * A common super-type for type errors.
   */
-sealed trait TypeError extends CompilationError
+trait TypeError extends CompilationError // TODO: Make sealed
 
 object TypeError {
 
@@ -48,24 +48,6 @@ object TypeError {
   }
 
   /**
-    * Unresolved Attribute Error.
-    *
-    * @param name the unresolved attribute name.
-    * @param loc  the location where the error occurred.
-    */
-  case class UnresolvedAttribute(name: Name.Ident, loc: SourceLocation) extends TypeError {
-    val kind = "Disambiguation Error"
-    val source = loc.source
-    val message =
-      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Unknown attribute '$name'.")}
-         |
-         |${loc.highlight}
-         """.stripMargin
-  }
-
-  /**
     * Unresolved Reference Error.
     *
     * @param qn  the unresolved reference name.
@@ -79,25 +61,6 @@ object TypeError {
       s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
          |
          |${consoleCtx.red(s">> Unknown definition '$qn' (in namespace '$ns').")}
-         |
-         |${loc.highlight}
-         """.stripMargin
-  }
-
-  /**
-    * Unresolved Table Error.
-    *
-    * @param qn  the unresolved table name.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
-  case class UnresolvedTable(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
-    val kind = "Disambiguation Error"
-    val source = loc.source
-    val message =
-      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Unknown relation or lattice '$qn' (in namespace '$ns').")}
          |
          |${loc.highlight}
          """.stripMargin

@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.util
 
+// TODO: TO REMOVE
 trait ConsoleCtx {
 
   def blue(s: String): String

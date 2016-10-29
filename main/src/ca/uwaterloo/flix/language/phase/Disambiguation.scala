@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
 import ca.uwaterloo.flix.language.errors.TypeError.UnresolvedRef
 import ca.uwaterloo.flix.util.Result._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -136,21 +136,21 @@ object Disambiguation {
   /**
     * Finds the table of the given `qname` in the namespace `ns`.
     *
-    * Returns [[Err]] of [[TypeError.UnresolvedTable]] if the table does not exist.
+    * Returns [[Err]] of [[ResolutionError.UndefinedTable]] if the table does not exist.
     */
   def lookupTable(qname: Name.QName, ns: Name.NName, program: Program): Result[NamedAst.Table, TypeError] = {
     if (qname.isUnqualified) {
       // Lookup in the current namespace.
       val tables = program.tables.getOrElse(ns, Map.empty)
       tables.get(qname.ident.name) match {
-        case None => Err(TypeError.UnresolvedTable(qname, ns, qname.loc))
+        case None => Err(ResolutionError.UndefinedTable(qname, ns, qname.loc))
         case Some(table) => Ok(table)
       }
     } else {
       // Lookup in the qualified namespace.
       val tables = program.tables.getOrElse(qname.namespace, Map.empty)
       tables.get(qname.ident.name) match {
-        case None => Err(TypeError.UnresolvedTable(qname, qname.namespace, qname.loc))
+        case None => Err(ResolutionError.UndefinedTable(qname, qname.namespace, qname.loc))
         case Some(table) => Ok(table)
       }
     }

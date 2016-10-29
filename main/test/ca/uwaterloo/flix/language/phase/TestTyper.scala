@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
 import org.scalatest.FunSuite
 
 class TestTyper extends FunSuite with TestUtils {
@@ -1053,7 +1053,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("UnresolvedTable01") {
     val input = "VarPointsTo(1, 2)."
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedTable](result)
+    expectError[ResolutionError.UndefinedTable](result)
   }
 
   test("UnresolvedTable02") {
@@ -1063,13 +1063,13 @@ class TestTyper extends FunSuite with TestUtils {
           |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedTable](result)
+    expectError[ResolutionError.UndefinedTable](result)
   }
 
   test("UnresolvedTable03") {
     val input = "index AddrOf({foo, bar})"
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedTable](result)
+    expectError[ResolutionError.UndefinedTable](result)
   }
 
 }
