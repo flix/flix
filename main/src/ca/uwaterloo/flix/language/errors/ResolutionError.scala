@@ -47,6 +47,24 @@ object ResolutionError {
   }
 
   /**
+    * Unresolved Reference Error.
+    *
+    * @param qn  the unresolved reference name.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    val source = loc.source
+    val message =
+      hl"""|>> Undefined reference '${Red(qn.toString)}'.
+           |
+           |${Code(loc, "reference does not exist.")}
+           |
+           |${Underline("Tip")}: Possible typo or non-existent definition?
+        """.stripMargin
+  }
+
+  /**
     * Undefined Table Error.
     *
     * @param qn  the table name.

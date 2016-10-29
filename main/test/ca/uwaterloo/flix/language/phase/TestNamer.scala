@@ -152,7 +152,7 @@ class TestNamer extends FunSuite with TestUtils {
          |R(x).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedRef](result)
+    expectError[ResolutionError.UndefinedRef](result)
   }
 
   test("UnsafeFact.02") {
@@ -163,7 +163,7 @@ class TestNamer extends FunSuite with TestUtils {
          |R(42, x).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedRef](result)
+    expectError[ResolutionError.UndefinedRef](result)
   }
 
   test("UnsafeFact.03") {
@@ -174,7 +174,7 @@ class TestNamer extends FunSuite with TestUtils {
          |R(42, x, 21).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedRef](result)
+    expectError[ResolutionError.UndefinedRef](result)
   }
 
   // TODO
@@ -186,7 +186,7 @@ class TestNamer extends FunSuite with TestUtils {
          |R(x) :- R(y).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedRef](result)
+    expectError[ResolutionError.UndefinedRef](result)
   }
 
   // TODO
@@ -198,7 +198,7 @@ class TestNamer extends FunSuite with TestUtils {
          |R(x, y) :- R(x, z).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedRef](result)
+    expectError[ResolutionError.UndefinedRef](result)
   }
 
   // TODO
@@ -210,7 +210,7 @@ class TestNamer extends FunSuite with TestUtils {
          |R(x, y, z) :- R(x, w, z).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedRef](result)
+    expectError[ResolutionError.UndefinedRef](result)
   }
 
   test("UnresolvedEnum.01") {

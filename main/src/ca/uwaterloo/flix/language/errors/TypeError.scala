@@ -48,25 +48,6 @@ object TypeError {
   }
 
   /**
-    * Unresolved Reference Error.
-    *
-    * @param qn  the unresolved reference name.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
-  case class UnresolvedRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
-    val kind = "Disambiguation Error"
-    val source = loc.source
-    val message =
-      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Unknown definition '$qn' (in namespace '$ns').")}
-         |
-         |${loc.highlight}
-         """.stripMargin
-  }
-
-  /**
     * Unresolved Type Error.
     *
     * @param qn  the unresolved name.

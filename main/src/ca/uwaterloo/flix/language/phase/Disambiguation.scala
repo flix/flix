@@ -19,9 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
-import ca.uwaterloo.flix.language.errors.TypeError.UnresolvedRef
 import ca.uwaterloo.flix.util.Result._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.Result
 
 import scala.collection.mutable
 
@@ -53,7 +52,7 @@ object Disambiguation {
       (defnOpt, hookOpt) match {
         case (Some(defn), None) => Ok(RefTarget.Defn(ns0, defn))
         case (None, Some(hook)) => Ok(RefTarget.Hook(hook))
-        case (None, None) => Err(UnresolvedRef(qname, ns0, qname.loc))
+        case (None, None) => Err(ResolutionError.UndefinedRef(qname, ns0, qname.loc))
         case (Some(defn), Some(hook)) => Err(TypeError.AmbiguousRef(qname, ns0, qname.loc))
       }
     } else {
@@ -64,7 +63,7 @@ object Disambiguation {
       (defnOpt, hookOpt) match {
         case (Some(defn), None) => Ok(RefTarget.Defn(qname.namespace, defn))
         case (None, Some(hook)) => Ok(RefTarget.Hook(hook))
-        case (None, None) => Err(UnresolvedRef(qname, ns0, qname.loc))
+        case (None, None) => Err(ResolutionError.UndefinedRef(qname, ns0, qname.loc))
         case (Some(defn), Some(hook)) => Err(TypeError.AmbiguousRef(qname, ns0, qname.loc))
       }
     }
