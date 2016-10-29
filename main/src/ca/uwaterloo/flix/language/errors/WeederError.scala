@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.{CompilationError, Compiler}
 import ca.uwaterloo.flix.util.Highlight._
 
 /**
@@ -46,6 +46,7 @@ object WeederError {
          |The first occurrence was here:
          |
          |${Code(loc1)}
+         |
          |and the second occurrence was here:
          |
          |${Code(loc2)}
@@ -64,14 +65,17 @@ object WeederError {
   case class DuplicateAttribute(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val source = loc1.source
     val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
+      s"""${Red(s">> Multiple declarations of the attribute named '$name'.")}
          |
-         |${consoleCtx.red(s">> Duplicate attribute name '$name'.")}
+         |The first declaration was here:
          |
-         |First definition was here:
-         |${loc1.highlight}
-         |Second definition was here:
-         |${loc2.highlight}
+         |${Code(loc1)}
+         |
+         |and the second declaration was here:
+         |
+         |${Code(loc2)}
+         |
+         |${Underline("Tip")}: Remove or rename one of the attributes to avoid the name clash.
          """.stripMargin
   }
 
@@ -85,14 +89,17 @@ object WeederError {
   case class DuplicateFormal(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val source = loc1.source
     val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
+      s"""${Red(s">> Multiple declarations of the formal parameter named '$name'.")}
          |
-         |${consoleCtx.red(s">> Duplicate formal parameter '$name'.")}
+         |The first declaration was here:
          |
-         |First definition was here:
-         |${loc1.highlight}
-         |Second definition was here:
-         |${loc2.highlight}
+         |${Code(loc1)}
+         |
+         |and the second declaration was here:
+         |
+         |${Code(loc2)}
+         |
+         |${Underline("Tip")}: Remove or rename one of the formal parameters to avoid the name clash.
          """.stripMargin
   }
 

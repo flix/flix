@@ -958,14 +958,16 @@ object Weeder {
     * Checks that no attributes are repeated.
     */
   private def checkDuplicateAttribute(attrs: Seq[ParsedAst.Attribute]): Validation[List[WeededAst.Attribute], WeederError] = {
-    val seen = mutable.Map.empty[String, Name.Ident]
+    val seen = mutable.Map.empty[String, ParsedAst.Attribute]
     @@(attrs.map {
       case attr@ParsedAst.Attribute(sp1, ident, tpe, sp2) => seen.get(ident.name) match {
         case None =>
-          seen += (ident.name -> ident)
+          seen += (ident.name -> attr)
           WeededAst.Attribute(ident, Types.weed(tpe), mkSL(sp1, sp2)).toSuccess
-        case Some(otherIdent) =>
-          DuplicateAttribute(ident.name, otherIdent.loc, ident.loc).toFailure
+        case Some(otherAttr) =>
+          val loc1 = mkSL(otherAttr.sp1, otherAttr.sp2)
+          val loc2 = mkSL(attr.sp1, attr.sp2)
+          DuplicateAttribute(ident.name, loc1, loc2).toFailure
       }
     })
   }
@@ -974,14 +976,16 @@ object Weeder {
     * Checks that no formal parameters are repeated.
     */
   private def checkDuplicateFormal(params: Seq[ParsedAst.FormalParam]): Validation[List[WeededAst.FormalParam], WeederError] = {
-    val seen = mutable.Map.empty[String, Name.Ident]
+    val seen = mutable.Map.empty[String, ParsedAst.FormalParam]
     @@(params.map {
-      case formal@ParsedAst.FormalParam(sp1, ident, tpe, sp2) => seen.get(ident.name) match {
+      case param@ParsedAst.FormalParam(sp1, ident, tpe, sp2) => seen.get(ident.name) match {
         case None =>
-          seen += (ident.name -> ident)
+          seen += (ident.name -> param)
           WeededAst.FormalParam(ident, Types.weed(tpe), mkSL(sp1, sp2)).toSuccess
-        case Some(otherIdent) =>
-          DuplicateFormal(ident.name, otherIdent.loc, ident.loc).toFailure
+        case Some(otherParam) =>
+          val loc1 = mkSL(otherParam.sp1, otherParam.sp2)
+          val loc2 = mkSL(param.sp1, param.sp2)
+          DuplicateFormal(ident.name, loc1, loc2).toFailure
       }
     })
   }
