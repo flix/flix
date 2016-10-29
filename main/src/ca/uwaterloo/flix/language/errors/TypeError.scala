@@ -67,25 +67,6 @@ object TypeError {
   }
 
   /**
-    * Unresolved Tag Error.
-    *
-    * @param tag the tag name.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
-  case class UnresolvedTag(tag: Name.Ident, ns: Name.NName, loc: SourceLocation) extends TypeError {
-    val kind = "Disambiguation Error"
-    val source = loc.source
-    val message =
-      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Unknown tag '${tag.name}'.")}
-         |
-         |${loc.highlight}
-         """.stripMargin
-  }
-
-  /**
     * Unresolved Type Error.
     *
     * @param qn  the unresolved name.

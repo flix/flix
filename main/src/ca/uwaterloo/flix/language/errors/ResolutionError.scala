@@ -64,4 +64,23 @@ object ResolutionError {
         """.stripMargin
   }
 
+  /**
+    * Undefined Tag Error.
+    *
+    * @param tag the tag.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    val source = loc.source
+    val message =
+      hl"""|>> Undefined tag '${Red(tag)}'.
+           |
+           |${Code(loc, "tag does not exist.")}
+           |
+           |${Underline("Tip")}: Possible typo or non-existent tag?
+        """.stripMargin
+  }
+
+
 }

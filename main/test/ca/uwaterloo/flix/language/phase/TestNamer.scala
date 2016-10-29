@@ -18,10 +18,12 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.{Flix, IValue, Invokable}
-import ca.uwaterloo.flix.language.errors.{NameError, TypeError}
+import ca.uwaterloo.flix.language.errors.{NameError, ResolutionError, TypeError}
 import org.scalatest.FunSuite
 
 class TestNamer extends FunSuite with TestUtils {
+
+  // TODO SPlit into TestNamer and TestResolver
 
   test("DuplicateDefinition.01") {
     val input =
@@ -219,7 +221,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedTag](result)
+    expectError[ResolutionError.UndefinedTag](result)
   }
 
   test("UnresolvedEnum.02") {
@@ -230,7 +232,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedTag](result)
+    expectError[ResolutionError.UndefinedTag](result)
   }
 
   test("UnresolvedTag.01") {
@@ -244,7 +246,7 @@ class TestNamer extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedTag](result)
+    expectError[ResolutionError.UndefinedTag](result)
   }
 
   test("UnresolvedTag.02") {
@@ -260,7 +262,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedTag](result)
+    expectError[ResolutionError.UndefinedTag](result)
   }
 
   test("UnresolvedTag.03") {
@@ -278,7 +280,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedTag](result)
+    expectError[ResolutionError.UndefinedTag](result)
   }
 
   test("UnresolvedType.01") {

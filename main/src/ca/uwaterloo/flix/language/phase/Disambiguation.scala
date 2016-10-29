@@ -116,12 +116,12 @@ object Disambiguation {
 
     // Case 2.2: No matches found in namespace.
     if (namespaceMatches.isEmpty) {
-      return Err(TypeError.UnresolvedTag(tag, ns, tag.loc))
+      return Err(ResolutionError.UndefinedTag(tag.name, ns, tag.loc))
     }
 
     // Case 2.3: Multiple matches found in namespace and no enum name.
     if (qname.isEmpty) {
-      return Err(TypeError.UnresolvedTag(tag, ns, tag.loc))
+      return Err(ResolutionError.UndefinedTag(tag.name, ns, tag.loc))
     }
 
     // Case 2.4: Multiple matches found in namespace and an enum name is available.
@@ -130,7 +130,7 @@ object Disambiguation {
       return Ok(filteredMatches.head)
     }
 
-    Err(TypeError.UnresolvedTag(tag, ns, tag.loc))
+    Err(ResolutionError.UndefinedTag(tag.name, ns, tag.loc))
   }
 
   /**
