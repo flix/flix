@@ -234,7 +234,7 @@ object Weeder {
          */
         val sl = mkSL(sp1, sp2)
         if (indexes.isEmpty)
-          EmptyIndex(sl).toFailure
+          EmptyIndex(qname.ident.name, sl).toFailure
         else if (indexes.exists(_.isEmpty))
           IllegalIndex(sl).toFailure
         else
@@ -749,12 +749,7 @@ object Weeder {
         case ParsedAst.Predicate.Filter(sp1, qname, term, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
         case ParsedAst.Predicate.Table(sp1, qname, terms, sp2) =>
           @@(terms.toList.map(t => Expressions.weed(t))) flatMap {
-            case ts =>
-              if (qname.isUpperCase)
-                WeededAst.Predicate.Head.Table(qname, ts, mkSL(sp1, sp2)).toSuccess
-              else
-              // TODO: Is this not enforced by the parser now?
-                IllegalSyntax("A head predicate must be uppercase and refer to a relation or lattice.", mkSL(sp1, sp2)).toFailure
+            case ts => WeededAst.Predicate.Head.Table(qname, ts, mkSL(sp1, sp2)).toSuccess
           }
         case ParsedAst.Predicate.Loop(sp1, ident, term, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
         case ParsedAst.Predicate.NotEqual(sp1, ident1, ident2, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure

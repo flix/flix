@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.{CompilationError, Compiler}
+import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.util.Highlight._
 
 /**
@@ -28,8 +28,6 @@ sealed trait WeederError extends CompilationError {
 }
 
 object WeederError {
-
-  implicit val consoleCtx = Compiler.ConsoleCtx
 
   /**
     * An error raised to indicate that the annotation `name` was used multiple times.
@@ -85,9 +83,7 @@ object WeederError {
            |
            |${Code(loc1, "the first declaration was here.")}
            |
-           |
            |${Code(loc2, "the second declaration was here.")}
-           |
            |
            |${Underline("Tip")}: Remove or rename one of the formal parameters to avoid the name clash.
          """.stripMargin
@@ -117,12 +113,13 @@ object WeederError {
   /**
     * An error raised to indicate that an index declaration declares no indexes.
     *
-    * @param loc the location where the declaration occurs.
+    * @param name the name of the table.
+    * @param loc  the location where the declaration occurs.
     */
-  case class EmptyIndex(loc: SourceLocation) extends WeederError {
+  case class EmptyIndex(name: String, loc: SourceLocation) extends WeederError {
     val source = loc.source
     val message =
-      hl"""|>> Empty index.
+      hl"""|>> The index for table '${Red(name)}' does not declare any attribute groups.
            |
            |${Code(loc, "an index must declare at least one group of attributes.")}
            |
@@ -141,7 +138,7 @@ object WeederError {
   case class EmptyRelation(name: String, loc: SourceLocation) extends WeederError {
     val source = loc.source
     val message =
-      s"""|>> The relation named '${Red(name)}' does not declare any attributes.
+      s"""|>> The relation '${Red(name)}' does not declare any attributes.
           |
           |${Code(loc, "a relation must declare at least one attribute.")}
           |
@@ -159,7 +156,7 @@ object WeederError {
   case class EmptyLattice(name: String, loc: SourceLocation) extends WeederError {
     val source = loc.source
     val message =
-      s"""|>> The lattice named '${Red(name)}' does not declare any attributes.
+      s"""|>> The lattice '${Red(name)}' does not declare any attributes.
           |
           |${Code(loc, "a lattice must declare at least one attribute.")}
           |
@@ -240,7 +237,7 @@ object WeederError {
   case class IllegalIndex(loc: SourceLocation) extends WeederError {
     val source = loc.source
     val message =
-      s"""|>> Illegal index attribute group.
+      s"""|>> The attribute group does not declare any attributes.
           |
           |${Code(loc, "an attribute group must contain at least one attribute.")}
           """.stripMargin
@@ -254,7 +251,7 @@ object WeederError {
   case class IllegalHeadPredicate(loc: SourceLocation) extends WeederError {
     val source = loc.source
     val message =
-      s"""|>> Illegal head predicate.
+      s"""|>> Predicate is not allowed in the head of a rule.
           |
           |${Code(loc, "must not occur in the head of a rule.")}
           """.stripMargin
