@@ -93,15 +93,6 @@ object Highlight {
   case class Yellow(text: String) extends Highlight(Console.YELLOW)
   case class Magenta(text: String) extends Highlight(Console.MAGENTA)
 
-  case class RedB(text: String) extends Highlight(Console.RED_B)
-  case class BlueB(text: String) extends Highlight(Console.BLUE_B)
-  case class CyanB(text: String) extends Highlight(Console.CYAN_B)
-  case class BlackB(text: String) extends Highlight(Console.BLACK_B)
-  case class GreenB(text: String) extends Highlight(Console.GREEN_B)
-  case class WhiteB(text: String) extends Highlight(Console.WHITE_B)
-  case class YellowB(text: String) extends Highlight(Console.YELLOW_B)
-  case class MagentaB(text: String) extends Highlight(Console.MAGENTA_B)
-
   case class Bold(text: String) extends Highlight(Console.BOLD)
   case class Underline(text: String) extends Highlight(Console.UNDERLINED)
 

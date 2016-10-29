@@ -114,7 +114,7 @@ object WeederError {
   case class DuplicateTag(enumName: String, tagName: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val source = loc1.source
     val message =
-      s"""${Red(s">> Multiple declarations of the tag named '$tagName' in the enum '$enumName'.")}
+      s""">> Multiple declarations of the tag named '${Red(tagName)}' in the enum '${Cyan(enumName)}'.
          |
          |The first declaration was here:
          |
