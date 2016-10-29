@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 object Highlight {
 
   implicit class Helper(val sc: StringContext) extends AnyVal {
+    // TODO: Change any signature
     def hl(args: Any*): String = {
       val strings = sc.parts.iterator
       val expressions = args.iterator
@@ -38,13 +39,15 @@ object Highlight {
     }
   }
 
+  // TODO: Introduce common super-type
   abstract class Highlight(color: String) {
     def text: String
 
     override def toString: String = color + text + Console.RESET
   }
 
-  case class Code(loc: SourceLocation) {
+  // TODO: Introduce common super-type
+  case class Code(loc: SourceLocation, msg: String) {
     // TODO: Refactor
     val beginLine = loc.beginLine
     val beginCol = loc.beginCol
@@ -63,8 +66,9 @@ object Highlight {
     private def underline: String = {
       val lineNo = beginLine.toString + "| "
       val line1 = lineNo + lineAt(beginLine) + "\n"
-      val line2 = " " * (beginCol + lineNo.length - 1) + Red("^" * (endCol - beginCol))
-      line1 + line2
+      val line2 = " " * (beginCol + lineNo.length - 1) + Red("^" * (endCol - beginCol)) + "\n"
+      val line3 = " " * (beginCol + lineNo.length - 1) + msg
+      line1 + line2 + line3
     }
 
     /**

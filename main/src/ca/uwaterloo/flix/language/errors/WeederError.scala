@@ -41,15 +41,11 @@ object WeederError {
   case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val source = loc1.source
     val message =
-      hl"""${Red(s">> Multiple occurrence of the '@$name' annotation.")}
+      hl"""|>> Multiple occurrence of the '${Red("@" + name)}' annotation.
          |
-         |The first occurrence was here:
+         |${Code(loc1, "the first occurrence was here.")}
          |
-         |${Code(loc1)}
-         |
-         |and the second occurrence was here:
-         |
-         |${Code(loc2)}
+         |${Code(loc2, "the second occurrence was here.")}
          |
          |${Underline("Tip")}: Remove one of the annotations.
          """.stripMargin
@@ -65,15 +61,11 @@ object WeederError {
   case class DuplicateAttribute(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val source = loc1.source
     val message =
-      s"""${Red(s">> Multiple declarations of the attribute named '$name'.")}
+      hl"""${Red(s">> Multiple declarations of the attribute named '$name'.")}
          |
-         |The first declaration was here:
+         |${Code(loc1, "the first declaration was here.")}
          |
-         |${Code(loc1)}
-         |
-         |and the second declaration was here:
-         |
-         |${Code(loc2)}
+         |${Code(loc2, "the second declaration was here.")}
          |
          |${Underline("Tip")}: Remove or rename one of the attributes to avoid the name clash.
          """.stripMargin
@@ -89,15 +81,13 @@ object WeederError {
   case class DuplicateFormal(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val source = loc1.source
     val message =
-      s"""${Red(s">> Multiple declarations of the formal parameter named '$name'.")}
+      hl"""${Red(s">> Multiple declarations of the formal parameter named '$name'.")}
          |
-         |The first declaration was here:
+         |${Code(loc1, "the first declaration was here.")}
          |
-         |${Code(loc1)}
          |
-         |and the second declaration was here:
+         |${Code(loc2, "the second declaration was here.")}
          |
-         |${Code(loc2)}
          |
          |${Underline("Tip")}: Remove or rename one of the formal parameters to avoid the name clash.
          """.stripMargin
@@ -114,16 +104,12 @@ object WeederError {
   case class DuplicateTag(enumName: String, tagName: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val source = loc1.source
     val message =
-      s""">> Multiple declarations of the tag named '${Red(tagName)}' in the enum '${Cyan(enumName)}'.
-         |
-         |The first declaration was here:
-         |
-         |${Code(loc1)}
-         |
-         |and the second declaration was here:
-         |
-         |${Code(loc2)}
-         |
+      hl"""|>> Multiple declarations of the tag named '${Red(tagName)}' in the enum '${Cyan(enumName)}'.
+           |
+         |${Code(loc1, "the first declaration was here.")}
+           |
+         |${Code(loc2, "the second declaration was here.")}
+           |
          |${Underline("Tip")}: Remove or rename one of the formal parameters to avoid the name clash.
          """.stripMargin
   }
@@ -136,7 +122,7 @@ object WeederError {
   case class EmptyIndex(loc: SourceLocation) extends WeederError {
     val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
+      hl"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
          |
          |${consoleCtx.red(s">> An index must declare at least one group of attributes.")}
          |
