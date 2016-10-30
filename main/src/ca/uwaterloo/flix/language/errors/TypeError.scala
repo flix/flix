@@ -42,7 +42,7 @@ object TypeError {
     val kind = "Type Error"
     val source = loc.source
     val message =
-      hl"""|>> Unable to unify '${Red(tpe1.toString)}' and '${Cyan(tpe2.toString)}'.
+      hl"""|>> Unable to unify '${Red(tpe1.toString)}' and '${Red(tpe2.toString)}'.
            |
            |${Code(loc, "mismatched types.")}
         """.stripMargin
