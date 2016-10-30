@@ -233,13 +233,16 @@ object Unification {
     * associated substitution into the type inference monad.
     */
   def unifyM(tpe1: Type, tpe2: Type, loc: SourceLocation): InferMonad[Type] = {
-    InferMonad((s: Substitution) =>
-      unify(s(tpe1), s(tpe2), loc) match {
+    InferMonad((s: Substitution) => {
+      val type1 = s(tpe1)
+      val type2 = s(tpe2)
+      unify(type1, type2, loc) match {
         case Result.Ok(s1) =>
           val subst = s1 @@ s
           Ok(subst, subst(tpe1))
-        case Result.Err(e) => Err(e)
+        case Result.Err(e) => Err(TypeError.UnificationError(type1, type2, loc)) // TODO: Pass in all the types.
       }
+    }
     )
   }
 

@@ -45,6 +45,8 @@ object TypeError {
       hl"""|>> Unable to unify '${Red(tpe1.toString)}' and '${Red(tpe2.toString)}'.
            |
            |${Code(loc, "mismatched types.")}
+           |
+           |The inferred types are:
         """.stripMargin
   }
 
@@ -53,6 +55,10 @@ object TypeError {
     val kind = ???
     val source = ???
     val message = ???
+  }
+
+  private def typeDiff(tpe1: Type, tpe2: Type): String = (tpe1, tpe2) match {
+    case (Type.Var(x1, k1), Type.Var(x2, k2)) => ???
   }
 
 }
