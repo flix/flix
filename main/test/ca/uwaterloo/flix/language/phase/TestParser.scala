@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.{Flix, RuleException}
-import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Options}
 import org.scalatest.FunSuite
 
@@ -253,12 +253,12 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Lattice.01") {
     val input = "lat L(a: A)"
-    expectError[TypeError.UnresolvedType](new Flix().addStr(input).compile())
+    expectError[ResolutionError.UndefinedType](new Flix().addStr(input).compile())
   }
 
   test("Lattice.02") {
     val input = "lat L(a: A, b: B, c: C)"
-    expectError[TypeError.UnresolvedType](new Flix().addStr(input).compile())
+    expectError[ResolutionError.UndefinedType](new Flix().addStr(input).compile())
   }
 
   test("Declaration.Index.01") {

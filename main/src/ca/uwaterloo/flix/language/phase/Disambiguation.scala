@@ -53,7 +53,7 @@ object Disambiguation {
         case (Some(defn), None) => Ok(RefTarget.Defn(ns0, defn))
         case (None, Some(hook)) => Ok(RefTarget.Hook(hook))
         case (None, None) => Err(ResolutionError.UndefinedRef(qname, ns0, qname.loc))
-        case (Some(defn), Some(hook)) => Err(TypeError.AmbiguousRef(qname, ns0, qname.loc))
+        case (Some(defn), Some(hook)) => Err(ResolutionError.AmbiguousRef(qname, ns0, qname.loc))
       }
     } else {
       // Case 2: Qualified. Lookup both the definition and the hook.
@@ -64,7 +64,7 @@ object Disambiguation {
         case (Some(defn), None) => Ok(RefTarget.Defn(qname.namespace, defn))
         case (None, Some(hook)) => Ok(RefTarget.Hook(hook))
         case (None, None) => Err(ResolutionError.UndefinedRef(qname, ns0, qname.loc))
-        case (Some(defn), Some(hook)) => Err(TypeError.AmbiguousRef(qname, ns0, qname.loc))
+        case (Some(defn), Some(hook)) => Err(ResolutionError.AmbiguousRef(qname, ns0, qname.loc))
       }
     }
   }
@@ -189,7 +189,7 @@ object Disambiguation {
         // If the namespace doesn't even exist, just use an empty map.
         val decls = program.enums.getOrElse(ns0, Map.empty)
         decls.get(typeName) match {
-          case None => Err(TypeError.UnresolvedType(qname, ns0, loc))
+          case None => Err(ResolutionError.UndefinedType(qname, ns0, loc))
           case Some(enum) => Ok(Type.Enum(enum.sym, Kind.Star /* TODO: Kind */))
         }
     }
@@ -197,7 +197,7 @@ object Disambiguation {
       // Lookup the enum using the namespace.
       val decls = program.enums.getOrElse(qname.namespace, Map.empty)
       decls.get(qname.ident.name) match {
-        case None => Err(TypeError.UnresolvedType(qname, ns0, loc))
+        case None => Err(ResolutionError.UndefinedType(qname, ns0, loc))
         case Some(enum) => Ok(Type.Enum(enum.sym, Kind.Star /* TODO: Kind */))
       }
     case NamedAst.Type.Enum(sym) =>

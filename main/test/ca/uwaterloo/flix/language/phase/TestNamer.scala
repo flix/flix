@@ -286,7 +286,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("UnresolvedType.01") {
     val input = "def x: Foo = 42"
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedType](result)
+    expectError[ResolutionError.UndefinedType](result)
   }
 
   test("UnresolvedType.02") {
@@ -296,7 +296,7 @@ class TestNamer extends FunSuite with TestUtils {
           |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedType](result)
+    expectError[ResolutionError.UndefinedType](result)
   }
 
   test("Expression.Hook.01") {

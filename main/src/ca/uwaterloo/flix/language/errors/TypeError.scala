@@ -29,44 +29,6 @@ object TypeError {
   implicit val consoleCtx = Compiler.ConsoleCtx
 
   /**
-    * Ambiguous Reference Error.
-    *
-    * @param qn  the ambiguous name.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
-  case class AmbiguousRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
-    val kind = "Disambiguation Error"
-    val source = loc.source
-    val message =
-      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Ambiguous reference '$qn' (in namespace '$ns').")}
-         |
-         |${loc.highlight}
-         """.stripMargin
-  }
-
-  /**
-    * Unresolved Type Error.
-    *
-    * @param qn  the unresolved name.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
-  case class UnresolvedType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
-    val kind = "Disambiguation Error"
-    val source = loc.source
-    val message =
-      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Unknown type '$qn' (in namespace '$ns').")}
-         |
-         |${loc.highlight}
-         """.stripMargin
-  }
-
-  /**
     * Unification Error.
     *
     * @param tpe1 the first type.
@@ -85,14 +47,11 @@ object TypeError {
          """.stripMargin
   }
 
-
-  // TODO -----------------------------------------------------------------------
-
   // TODO
   case class OccursCheck() extends TypeError {
-    val kind = "Type Error"
-    val source = null // TODO
-    val message = "OccursCheck" // TODO
+    val kind = ???
+    val source = ???
+    val message = ???
   }
 
 }

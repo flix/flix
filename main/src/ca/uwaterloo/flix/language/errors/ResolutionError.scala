@@ -30,6 +30,24 @@ sealed trait ResolutionError extends TypeError {
 object ResolutionError {
 
   /**
+    * Ambiguous Reference Error.
+    *
+    * @param qn  the ambiguous name.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
+    */
+  // TODO: Replace by DuplicateDefinition during naming!
+  case class AmbiguousRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    val source = loc.source
+    val message =
+      hl"""|>> Ambiguous reference '${Red(qn.toString)}'.
+           |
+           |${Code(loc, "ambiguous reference.")}
+           |
+        """.stripMargin
+  }
+
+  /**
     * Undefined Attribute Error.
     *
     * @param attribute the attribute name.
@@ -40,7 +58,7 @@ object ResolutionError {
     val message =
       hl"""|>> Undefined attribute '${Red(attribute)}' in table '${Cyan(table)}'.
            |
-           |${Code(loc, "attribute does not exist.")}
+           |${Code(loc, "attribute not found.")}
            |
            |${Underline("Tip")}: Possible typo or non-existent attribute?
         """.stripMargin
@@ -58,7 +76,7 @@ object ResolutionError {
     val message =
       hl"""|>> Undefined reference '${Red(qn.toString)}'.
            |
-           |${Code(loc, "reference does not exist.")}
+           |${Code(loc, "name not found.")}
            |
            |${Underline("Tip")}: Possible typo or non-existent definition?
         """.stripMargin
@@ -76,7 +94,7 @@ object ResolutionError {
     val message =
       hl"""|>> Undefined table '${Red(qn.toString)}'.
            |
-           |${Code(loc, "table does not exist.")}
+           |${Code(loc, "table not found.")}
            |
            |${Underline("Tip")}: Possible typo or non-existent table?
         """.stripMargin
@@ -94,9 +112,27 @@ object ResolutionError {
     val message =
       hl"""|>> Undefined tag '${Red(tag)}'.
            |
-           |${Code(loc, "tag does not exist.")}
+           |${Code(loc, "tag not found.")}
            |
            |${Underline("Tip")}: Possible typo or non-existent tag?
+        """.stripMargin
+  }
+
+  /**
+    * Undefined Type Error.
+    *
+    * @param qn  the name.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    val source = loc.source
+    val message =
+      hl"""|>> Undefined type '${Red(qn.toString)}'.
+           |
+           |${Code(loc, "type not found.")}
+           |
+           |${Underline("Tip")}: Possible typo or non-existent type?
         """.stripMargin
   }
 
