@@ -26,12 +26,11 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 object Highlight {
 
   implicit class Helper(val sc: StringContext) extends AnyVal {
-    // TODO: Change any signature
     def hl(args: Any*): String = {
       val strings = sc.parts.iterator
       val expressions = args.iterator
       val buf = new StringBuffer(strings.next)
-      while(strings.hasNext) {
+      while (strings.hasNext) {
         buf append expressions.next
         buf append strings.next
       }
@@ -39,21 +38,18 @@ object Highlight {
     }
   }
 
-  // TODO: Introduce common super-type
   abstract class Highlight(color: String) {
     def text: String
 
     override def toString: String = color + text + Console.RESET
   }
 
-  // TODO: Introduce common super-type
   case class Code(loc: SourceLocation, msg: String) {
-    // TODO: Refactor
-    val beginLine = loc.beginLine
-    val beginCol = loc.beginCol
-    val endLine = loc.endLine
-    val endCol = loc.endCol
-    val lineAt = loc.lineAt
+    private val beginLine = loc.beginLine
+    private val beginCol = loc.beginCol
+    private val endLine = loc.endLine
+    private val endCol = loc.endCol
+    private val lineAt = loc.lineAt
 
     /**
       * Returns this line of code with the source location underlined.
@@ -89,15 +85,23 @@ object Highlight {
   }
 
   case class Red(text: String) extends Highlight(Console.RED)
+
   case class Blue(text: String) extends Highlight(Console.BLUE)
+
   case class Cyan(text: String) extends Highlight(Console.CYAN)
+
   case class Black(text: String) extends Highlight(Console.BLACK)
+
   case class Green(text: String) extends Highlight(Console.GREEN)
+
   case class White(text: String) extends Highlight(Console.WHITE)
+
   case class Yellow(text: String) extends Highlight(Console.YELLOW)
+
   case class Magenta(text: String) extends Highlight(Console.MAGENTA)
 
   case class Bold(text: String) extends Highlight(Console.BOLD)
+
   case class Underline(text: String) extends Highlight(Console.UNDERLINED)
 
 }

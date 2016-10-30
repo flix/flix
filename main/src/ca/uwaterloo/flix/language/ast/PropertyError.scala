@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Property
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
+import ca.uwaterloo.flix.util.Highlight._
 
 /**
   * A common super-type for verification errors.
@@ -57,15 +58,12 @@ object PropertyError {
   case class AssociativityError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
     val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> The function is not associative.")}
-         |
-         |Counter-example: ${m.mkString(", ")}
-         |
-         |The function was defined here:
-         |${loc.highlight}
-         """.stripMargin
+      hl"""|>> The function is not associative.
+           |
+           |Counter-example: ${Red(m.mkString(", "))}
+           |
+           |${Code(loc, "is not associative.")}
+        """.stripMargin
   }
 
   /**
@@ -74,15 +72,12 @@ object PropertyError {
   case class CommutativityError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
     val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> The function is not commutative.")}
-         |
-         |Counter-example: ${m.mkString(", ")}
-         |
-         |The function was defined here:
-         |${loc.highlight}
-         """.stripMargin
+      hl"""|>> The function is not commutative.
+           |
+           |Counter-example: ${Red(m.mkString(", "))}
+           |
+           |${Code(loc, "is not commutative.")}
+        """.stripMargin
   }
 
   /**
@@ -91,15 +86,12 @@ object PropertyError {
   case class ReflexivityError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
     val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> The partial order is not reflexive.")}
-         |
-         |Counter-example: ${m.mkString(", ")}
-         |
-         |The partial order was defined here:
-         |${loc.highlight}
-         """.stripMargin
+      hl"""|>> The partial order is not reflexive.
+           |
+           |Counter-example: ${Red(m.mkString(", "))}
+           |
+           |${Code(loc, "is not reflexive.")}
+        """.stripMargin
   }
 
   /**
@@ -108,15 +100,12 @@ object PropertyError {
   case class AntiSymmetryError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
     val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> The partial order is not anti-symmetric.")}
-         |
-         |Counter-example: ${m.mkString(", ")}
-         |
-         |The partial order was defined here:
-         |${loc.highlight}
-         """.stripMargin
+      hl"""|>> The partial order is not anti-symmetric.
+           |
+           |Counter-example: ${Red(m.mkString(", "))}
+           |
+           |${Code(loc, "is not anti-symmetric.")}
+        """.stripMargin
   }
 
   /**
@@ -125,15 +114,12 @@ object PropertyError {
   case class TransitivityError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
     val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> The partial order is not transitive.")}
-         |
-         |Counter-example: ${m.mkString(", ")}
-         |
-         |The partial order was defined here:
-         |${loc.highlight}
-         """.stripMargin
+      hl"""|>> The partial order is not transitive.
+           |
+           |Counter-example: ${Red(m.mkString(", "))}
+           |
+           |${Code(loc, "is not transitive.")}
+        """.stripMargin
   }
 
   /**
@@ -142,13 +128,10 @@ object PropertyError {
   case class LeastElementError(loc: SourceLocation) extends PropertyError {
     val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> The least element is not the smallest.")}
-         |
-         |The partial order was defined here:
-         |${loc.highlight}
-         """.stripMargin
+      hl"""|>> The least element is not the smallest element.
+           |
+           |${Code(loc, "is not the smallest element.")}
+        """.stripMargin
   }
 
   /**
@@ -157,15 +140,12 @@ object PropertyError {
   case class UpperBoundError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
     val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> The lub is not an upper bound.")}
-         |
-         |Counter-example: ${m.mkString(", ")}
-         |
-         |The lub was defined here:
-         |${loc.highlight}
-         """.stripMargin
+      hl"""|>> The lub is not an upper bound.
+           |
+           |Counter-example: ${Red(m.mkString(", "))}
+           |
+           |${Code(loc, "is not an upper bound.")}
+        """.stripMargin
   }
 
   /**
@@ -174,15 +154,12 @@ object PropertyError {
   case class LeastUpperBoundError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
     val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> The lub is not a least upper bound.")}
-         |
-         |Counter-example: ${m.mkString(", ")}
-         |
-         |The lub was defined here:
-         |${loc.highlight}
-         """.stripMargin
+      hl"""|>> The lub is not the least upper bound.
+           |
+           |Counter-example: ${Red(m.mkString(", "))}
+           |
+           |${Code(loc, "is not the least upper bound.")}
+        """.stripMargin
   }
 
   /**
@@ -191,13 +168,10 @@ object PropertyError {
   case class GreatestElementError(loc: SourceLocation) extends PropertyError {
     val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> The greatest element is not the largest.")}
-         |
-         |The partial order was defined here:
-         |${loc.highlight}
-         """.stripMargin
+      hl"""|>> The greatest element is not the largest element.
+           |
+           |${Code(loc, "is not the largest element.")}
+        """.stripMargin
   }
 
   /**
@@ -206,15 +180,12 @@ object PropertyError {
   case class LowerBoundError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
     val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> The glb is not a lower bound.")}
-         |
-         |Counter-example: ${m.mkString(", ")}
-         |
-         |The glb was defined here:
-         |${loc.highlight}
-         """.stripMargin
+      hl"""|>> The glb is not a lower bound.
+           |
+           |Counter-example: ${Red(m.mkString(", "))}
+           |
+           |${Code(loc, "is not a lower bound.")}
+        """.stripMargin
   }
 
   /**
@@ -223,15 +194,12 @@ object PropertyError {
   case class GreatestLowerBoundError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
     val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> The glb is not a greatest lower bound.")}
-         |
-         |Counter-example: ${m.mkString(", ")}
-         |
-         |The glb was defined here:
-         |${loc.highlight}
-         """.stripMargin
+      hl"""|>> The glb is not the greatest lower bound.
+           |
+           |Counter-example: ${Red(m.mkString(", "))}
+           |
+           |${Code(loc, "is not the greatest lower bound.")}
+        """.stripMargin
   }
 
   /**
@@ -240,13 +208,10 @@ object PropertyError {
   case class StrictError(loc: SourceLocation) extends PropertyError {
     val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> The function is not strict.")}
-         |
-         |The function was defined here:
-         |${loc.highlight}
-         """.stripMargin
+      hl"""|>> The function is not strict.
+           |
+           |${Code(loc, "is not strict.")}
+        """.stripMargin
   }
 
   /**
@@ -255,15 +220,12 @@ object PropertyError {
   case class MonotoneError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
     val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> The function is not monotone.")}
-         |
-         |Counter-example: ${m.mkString(", ")}
-         |
-         |The function was defined here:
-         |${loc.highlight}
-         """.stripMargin
+      hl"""|>> The function is not monotone.
+           |
+           |Counter-example: ${m.mkString(", ")}
+           |
+           |${Code(loc, "is not monotone.")}
+        """.stripMargin
   }
 
 
@@ -273,15 +235,12 @@ object PropertyError {
   case class HeightNonNegativeError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
     val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> The height function is not non-negative.")}
-         |
-         |Counter-example: ${m.mkString(", ")}
-         |
-         |The height function was defined here:
-         |${loc.highlight}
-         """.stripMargin
+      hl"""|>> The height function is not non-negative.
+           |
+           |Counter-example: ${m.mkString(", ")}
+           |
+           |${Code(loc, "is not non-negative.")}
+        """.stripMargin
   }
 
   /**
@@ -290,15 +249,12 @@ object PropertyError {
   case class HeightStrictlyDecreasingError(m: Map[String, String], loc: SourceLocation) extends PropertyError {
     val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- VERIFIER ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> The height function is not strictly decreasing.")}
-         |
-         |Counter-example: ${m.mkString(", ")}
-         |
-         |The height function was defined here:
-         |${loc.highlight}
-         """.stripMargin
+      hl"""|>> The height function is not strictly decreasing.
+           |
+           |Counter-example: ${m.mkString(", ")}
+           |
+           |${Code(loc, "is not strictly decreasing.")}
+        """.stripMargin
   }
 
 }

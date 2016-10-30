@@ -122,38 +122,6 @@ package object ast {
       */
     def format: String = s"${source.format}:$beginLine:$beginCol"
 
-    /**
-      * Returns this line of code with the source location underlined.
-      */
-    @deprecated("now", "now")
-    def highlight(implicit consoleCtx: ConsoleCtx): String = if (beginLine == endLine) underline else leftline
-
-    /**
-      * Highlights this source location with red arrows under the text.
-      */
-    private def underline(implicit consoleCtx: ConsoleCtx): String = {
-      val lineNo = beginLine.toString + "|"
-      val line1 = lineNo + lineAt(beginLine) + "\n"
-      val line2 = " " * (beginCol + lineNo.length - 1) + consoleCtx.red("^" * (endCol - beginCol))
-      line1 + line2
-    }
-
-    /**
-      * Highlights this source location with red arrows left of the text.
-      */
-    private def leftline(implicit consoleCtx: ConsoleCtx): String = {
-      val sb = new StringBuilder()
-      for (lineNo <- beginLine to endLine) {
-        val currentLine = lineAt(lineNo)
-        sb.
-          append(lineNo).append("|").
-          append(consoleCtx.red(">")).
-          append(currentLine).
-          append("\n")
-      }
-      sb.toString()
-    }
-
   }
 
   object Time {

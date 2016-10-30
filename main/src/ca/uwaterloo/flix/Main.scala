@@ -20,6 +20,7 @@ import java.io.File
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.runtime.Value
+import ca.uwaterloo.flix.util.Highlight.Code
 import ca.uwaterloo.flix.util._
 
 import scala.concurrent.duration.Duration
@@ -116,22 +117,22 @@ object Main {
       case UserException(msg, loc) =>
         Console.err.println("User error " + loc.format)
         Console.err.println()
-        Console.err.println(loc.highlight(new AnsiConsole))
+        Console.err.println(Code(loc, msg))
         System.exit(1)
       case MatchException(msg, loc) =>
         Console.err.println("Non-exhaustive match " + loc.format)
         Console.err.println()
-        Console.err.println(loc.highlight(new AnsiConsole))
+        Console.err.println(Code(loc, msg))
         System.exit(1)
       case SwitchException(msg, loc) =>
         Console.err.println("Non-exhaustive switch " + loc.format)
         Console.err.println()
-        Console.err.println(loc.highlight(new AnsiConsole))
+        Console.err.println(Code(loc, msg))
         System.exit(1)
       case RuleException(msg, loc) =>
         Console.err.println("Integrity rule violated " + loc.format)
         Console.err.println()
-        Console.err.println(loc.highlight(new AnsiConsole))
+        Console.err.println(Code(loc, msg))
         System.exit(1)
     }
 
