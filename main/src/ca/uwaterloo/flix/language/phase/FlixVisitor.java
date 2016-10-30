@@ -19,12 +19,6 @@ public interface FlixVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitTscomment(FlixParser.TscommentContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link FlixParser#sp}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitSp(FlixParser.SpContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link FlixParser#start}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -684,18 +678,6 @@ public interface FlixVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitBools(FlixParser.BoolsContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link FlixParser#chars}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitChars(FlixParser.CharsContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link FlixParser#strs}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitStrs(FlixParser.StrsContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link FlixParser#negative}.
 	 * @param ctx the parse tree

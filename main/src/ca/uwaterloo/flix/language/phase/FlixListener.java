@@ -20,16 +20,6 @@ public interface FlixListener extends ParseTreeListener {
 	 */
 	void exitTscomment(FlixParser.TscommentContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link FlixParser#sp}.
-	 * @param ctx the parse tree
-	 */
-	void enterSp(FlixParser.SpContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link FlixParser#sp}.
-	 * @param ctx the parse tree
-	 */
-	void exitSp(FlixParser.SpContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link FlixParser#start}.
 	 * @param ctx the parse tree
 	 */
@@ -1129,26 +1119,6 @@ public interface FlixListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitBools(FlixParser.BoolsContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link FlixParser#chars}.
-	 * @param ctx the parse tree
-	 */
-	void enterChars(FlixParser.CharsContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link FlixParser#chars}.
-	 * @param ctx the parse tree
-	 */
-	void exitChars(FlixParser.CharsContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link FlixParser#strs}.
-	 * @param ctx the parse tree
-	 */
-	void enterStrs(FlixParser.StrsContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link FlixParser#strs}.
-	 * @param ctx the parse tree
-	 */
-	void exitStrs(FlixParser.StrsContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link FlixParser#negative}.
 	 * @param ctx the parse tree

@@ -91,7 +91,7 @@ object Compiler {
     val lexer = new FlixLexer(inputstream)
     val tokens = new CommonTokenStream(lexer)
     val parser = new FlixParser(tokens)
-    val visitor = new AST_FlixVisitor()
+    val visitor = new AST_FlixVisitor(source,input)
     Try(parser.start()) match {
       case Success(tree) => visitor.visitStart(tree).toSuccess
       case Failure(e) => ParseError(e.getMessage, source).toFailure

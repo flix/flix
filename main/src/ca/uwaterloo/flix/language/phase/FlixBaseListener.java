@@ -30,18 +30,6 @@ public class FlixBaseListener implements FlixListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSp(FlixParser.SpContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitSp(FlixParser.SpContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterStart(FlixParser.StartContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -1357,30 +1345,6 @@ public class FlixBaseListener implements FlixListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitBools(FlixParser.BoolsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterChars(FlixParser.CharsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitChars(FlixParser.CharsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterStrs(FlixParser.StrsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitStrs(FlixParser.StrsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
