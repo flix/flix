@@ -18,10 +18,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.errors.TypeError.UnresolvedRef
+import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
 import ca.uwaterloo.flix.util.Result._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.Result
 
 import scala.collection.mutable
 
@@ -53,8 +52,8 @@ object Disambiguation {
       (defnOpt, hookOpt) match {
         case (Some(defn), None) => Ok(RefTarget.Defn(ns0, defn))
         case (None, Some(hook)) => Ok(RefTarget.Hook(hook))
-        case (None, None) => Err(UnresolvedRef(qname, ns0, qname.loc))
-        case (Some(defn), Some(hook)) => Err(TypeError.AmbiguousRef(qname, ns0, qname.loc))
+        case (None, None) => Err(ResolutionError.UndefinedRef(qname, ns0, qname.loc))
+        case (Some(defn), Some(hook)) => Err(ResolutionError.AmbiguousRef(qname, ns0, qname.loc))
       }
     } else {
       // Case 2: Qualified. Lookup both the definition and the hook.
@@ -64,8 +63,8 @@ object Disambiguation {
       (defnOpt, hookOpt) match {
         case (Some(defn), None) => Ok(RefTarget.Defn(qname.namespace, defn))
         case (None, Some(hook)) => Ok(RefTarget.Hook(hook))
-        case (None, None) => Err(UnresolvedRef(qname, ns0, qname.loc))
-        case (Some(defn), Some(hook)) => Err(TypeError.AmbiguousRef(qname, ns0, qname.loc))
+        case (None, None) => Err(ResolutionError.UndefinedRef(qname, ns0, qname.loc))
+        case (Some(defn), Some(hook)) => Err(ResolutionError.AmbiguousRef(qname, ns0, qname.loc))
       }
     }
   }
@@ -116,12 +115,12 @@ object Disambiguation {
 
     // Case 2.2: No matches found in namespace.
     if (namespaceMatches.isEmpty) {
-      return Err(TypeError.UnresolvedTag(tag, ns, tag.loc))
+      return Err(ResolutionError.UndefinedTag(tag.name, ns, tag.loc))
     }
 
     // Case 2.3: Multiple matches found in namespace and no enum name.
     if (qname.isEmpty) {
-      return Err(TypeError.UnresolvedTag(tag, ns, tag.loc))
+      return Err(ResolutionError.UndefinedTag(tag.name, ns, tag.loc))
     }
 
     // Case 2.4: Multiple matches found in namespace and an enum name is available.
@@ -130,27 +129,27 @@ object Disambiguation {
       return Ok(filteredMatches.head)
     }
 
-    Err(TypeError.UnresolvedTag(tag, ns, tag.loc))
+    Err(ResolutionError.UndefinedTag(tag.name, ns, tag.loc))
   }
 
   /**
     * Finds the table of the given `qname` in the namespace `ns`.
     *
-    * Returns [[Err]] of [[TypeError.UnresolvedTable]] if the table does not exist.
+    * Returns [[Err]] of [[ResolutionError.UndefinedTable]] if the table does not exist.
     */
   def lookupTable(qname: Name.QName, ns: Name.NName, program: Program): Result[NamedAst.Table, TypeError] = {
     if (qname.isUnqualified) {
       // Lookup in the current namespace.
       val tables = program.tables.getOrElse(ns, Map.empty)
       tables.get(qname.ident.name) match {
-        case None => Err(TypeError.UnresolvedTable(qname, ns, qname.loc))
+        case None => Err(ResolutionError.UndefinedTable(qname, ns, qname.loc))
         case Some(table) => Ok(table)
       }
     } else {
       // Lookup in the qualified namespace.
       val tables = program.tables.getOrElse(qname.namespace, Map.empty)
       tables.get(qname.ident.name) match {
-        case None => Err(TypeError.UnresolvedTable(qname, qname.namespace, qname.loc))
+        case None => Err(ResolutionError.UndefinedTable(qname, qname.namespace, qname.loc))
         case Some(table) => Ok(table)
       }
     }
@@ -190,7 +189,7 @@ object Disambiguation {
         // If the namespace doesn't even exist, just use an empty map.
         val decls = program.enums.getOrElse(ns0, Map.empty)
         decls.get(typeName) match {
-          case None => Err(TypeError.UnresolvedType(qname, ns0, loc))
+          case None => Err(ResolutionError.UndefinedType(qname, ns0, loc))
           case Some(enum) => Ok(Type.Enum(enum.sym, Kind.Star /* TODO: Kind */))
         }
     }
@@ -198,7 +197,7 @@ object Disambiguation {
       // Lookup the enum using the namespace.
       val decls = program.enums.getOrElse(qname.namespace, Map.empty)
       decls.get(qname.ident.name) match {
-        case None => Err(TypeError.UnresolvedType(qname, ns0, loc))
+        case None => Err(ResolutionError.UndefinedType(qname, ns0, loc))
         case Some(enum) => Ok(Type.Enum(enum.sym, Kind.Star /* TODO: Kind */))
       }
     case NamedAst.Type.Enum(sym) =>

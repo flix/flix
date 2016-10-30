@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.errors.{ResolutionError, ResolutionError$, TypeError}
 import ca.uwaterloo.flix.language.phase.Disambiguation.RefTarget
 import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -245,7 +245,7 @@ object Typer {
                   // Iterate through every attribute name in the current index.
                   for (referencedAttribute <- index) {
                     if (!(declaredAttributes contains referencedAttribute.name)) {
-                      return Err(TypeError.UnresolvedAttribute(referencedAttribute, referencedAttribute.loc))
+                      return Err(ResolutionError.UndefinedAttribute(table.sym.name, referencedAttribute.name, referencedAttribute.loc))
                     }
                   }
                 }

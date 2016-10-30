@@ -16,18 +16,18 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.Compiler
-import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.util.Highlight._
 
 /**
   * A common super-type for weeding errors.
   */
-sealed trait WeederError extends CompilationError
+sealed trait WeederError extends CompilationError {
+  val kind = "Syntax Error"
+}
 
 object WeederError {
-
-  implicit val consoleCtx = Compiler.ConsoleCtx
 
   /**
     * An error raised to indicate that the annotation `name` was used multiple times.
@@ -37,16 +37,16 @@ object WeederError {
     * @param loc2 the location of the second annotation.
     */
   case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+    val source = loc1.source
     val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
-         |
-         |${consoleCtx.red(s">> Duplicate annotation '$name'.")}
-         |
-         |First definition was here:
-         |${loc1.highlight}
-         |Second definition was here:
-         |${loc2.highlight}
-         """.stripMargin
+      hl"""|>> Multiple occurrence of the '${Red("@" + name)}' annotation.
+           |
+           |${Code(loc1, "the first occurrence was here.")}
+           |
+           |${Code(loc2, "the second occurrence was here.")}
+           |
+           |${Underline("Tip")}: Remove one of the annotations.
+        """.stripMargin
   }
 
   /**
@@ -57,16 +57,16 @@ object WeederError {
     * @param loc2 the location of the second attribute.
     */
   case class DuplicateAttribute(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+    val source = loc1.source
     val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
-         |
-         |${consoleCtx.red(s">> Duplicate attribute name '$name'.")}
-         |
-         |First definition was here:
-         |${loc1.highlight}
-         |Second definition was here:
-         |${loc2.highlight}
-         """.stripMargin
+      hl"""|>> Multiple declarations of the attribute named '${Red(name)}'.
+           |
+           |${Code(loc1, "the first declaration was here.")}
+           |
+           |${Code(loc2, "the second declaration was here.")}
+           |
+           |${Underline("Tip")}: Remove or rename one of the attributes to avoid the name clash.
+        """.stripMargin
   }
 
   /**
@@ -76,82 +76,93 @@ object WeederError {
     * @param loc1 the location of the first parameter.
     * @param loc2 the location of the second parameter.
     */
-  case class DuplicateFormal(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+  case class DuplicateFormalParam(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+    val source = loc1.source
     val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
-         |
-         |${consoleCtx.red(s">> Duplicate formal parameter '$name'.")}
-         |
-         |First definition was here:
-         |${loc1.highlight}
-         |Second definition was here:
-         |${loc2.highlight}
+      hl"""|>> Multiple declarations of the formal parameter named '${Red(name)}'.
+           |
+           |${Code(loc1, "the first declaration was here.")}
+           |
+           |${Code(loc2, "the second declaration was here.")}
+           |
+           |${Underline("Tip")}: Remove or rename one of the formal parameters to avoid the name clash.
          """.stripMargin
   }
 
   /**
     * An error raised to indicate that the tag `name` was declared multiple times.
     *
-    * @param name the name of the tag.
-    * @param loc1 the location of the first tag.
-    * @param loc2 the location of the second tag.
+    * @param enumName the name of the enum.
+    * @param tagName  the name of the tag.
+    * @param loc1     the location of the first tag.
+    * @param loc2     the location of the second tag.
     */
-  case class DuplicateTag(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+  case class DuplicateTag(enumName: String, tagName: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+    val source = loc1.source
     val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
-         |
-         |${consoleCtx.red(s">> Duplicate tag '$name'.")}
-         |
-         |First declaration was here:
-         |${loc1.highlight}
-         |Second declaration was here:
-         |${loc2.highlight}
-         """.stripMargin
+      hl"""|>> Multiple declarations of the tag named '${Red(tagName)}' in the enum '${Cyan(enumName)}'.
+           |
+           |${Code(loc1, "the first declaration was here.")}
+           |
+           |${Code(loc2, "the second declaration was here.")}
+           |
+           |${Underline("Tip")}: Remove or rename one of the formal parameters to avoid the name clash.
+           """.stripMargin
   }
 
   /**
     * An error raised to indicate that an index declaration declares no indexes.
     *
-    * @param loc the location where the declaration occurs.
+    * @param name the name of the table.
+    * @param loc  the location where the declaration occurs.
     */
-  case class EmptyIndex(loc: SourceLocation) extends WeederError {
+  case class EmptyIndex(name: String, loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> An index must declare at least one group of attributes.")}
-         |
-         |${loc.highlight}
-         """.stripMargin
+      hl"""|>> The index for table '${Red(name)}' does not declare any attribute groups.
+           |
+           |${Code(loc, "an index must declare at least one group of attributes.")}
+           |
+           |${Underline("Tip")}: Add an index on at least one attribute, e.g:
+           |
+           |     index TableName({attributeName})
+           """.stripMargin
   }
 
   /**
     * An error raised to indicate that a relation declares no attributes.
     *
-    * @param loc the location of the declaration.
+    * @param name the name of the relation.
+    * @param loc  the location of the declaration.
     */
-  case class EmptyRelation(loc: SourceLocation) extends WeederError {
+  case class EmptyRelation(name: String, loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> A relation must have at least one attribute.")}
-         |
-         |${loc.highlight}
-         """.stripMargin
+      s"""|>> The relation '${Red(name)}' does not declare any attributes.
+          |
+          |${Code(loc, "a relation must declare at least one attribute.")}
+          |
+          |${Underline("Tip")}: For example, a relation could be declared as:
+          |     rel TableName(attributeOne: Int, attributeTwo: Str)
+          """.stripMargin
   }
 
   /**
     * An error raised to indicate that a lattice declares no attributes.
     *
-    * @param loc the location of the declaration.
+    * @param name the name of the lattice.
+    * @param loc  the location of the declaration.
     */
-  case class EmptyLattice(loc: SourceLocation) extends WeederError {
+  case class EmptyLattice(name: String, loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> A lattice must have at least one attribute.")}
-         |
-         |${loc.highlight}
-         """.stripMargin
+      s"""|>> The lattice '${Red(name)}' does not declare any attributes.
+          |
+          |${Code(loc, "a lattice must declare at least one attribute.")}
+          |
+          |${Underline("Tip")}: For example, a lattice could be declared as:
+          |     lat TableName(attributeOne: Int, attributeTwo: Str)
+          """.stripMargin
   }
 
   /**
@@ -160,13 +171,30 @@ object WeederError {
     * @param loc the location where the illegal expression occurs.
     */
   case class IllegalExistential(loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> An existential quantifier must have at least one parameter.")}
-         |
-         |${loc.highlight}
-         """.stripMargin
+      s"""|>> Existential quantifier does not declare any formal parameters.
+          |
+          |${Code(loc, "quantifier must declare at least one parameter.")}
+          |
+          |${Underline("Tip")}: Add a formal parameter or remove the quantifier.
+          """.stripMargin
+  }
+
+  /**
+    * An error raised to indicate an illegal universal quantification expression.
+    *
+    * @param loc the location where the illegal expression occurs.
+    */
+  case class IllegalUniversal(loc: SourceLocation) extends WeederError {
+    val source = loc.source
+    val message =
+      s"""|>> Universal quantifier does not declare any formal parameters.
+          |
+          |${Code(loc, "quantifier must declare at least one parameter.")}
+          |
+          |${Underline("Tip")}: Add a formal parameter or remove the quantifier.
+          """.stripMargin
   }
 
   /**
@@ -175,42 +203,13 @@ object WeederError {
     * @param loc the location where the illegal float occurs.
     */
   case class IllegalFloat(loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Illegal float.")}
-         |
-         |${loc.highlight}
-         """.stripMargin
-  }
-
-  /**
-    * An error raised to indicate that an index declaration defines an index on zero attributes.
-    *
-    * @param loc the location where the illegal index occurs.
-    */
-  case class IllegalIndex(loc: SourceLocation) extends WeederError {
-    val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Illegal index. An index must select at least one attribute.")}
-         |
-         |${loc.highlight}
-         """.stripMargin
-  }
-
-  /**
-    * An error raised to indicate that a predicate is not allowed in the head of a fact/rule.
-    *
-    * @param loc the location where the illegal predicate occurs.
-    */
-  case class IllegalHeadPredicate(loc: SourceLocation) extends WeederError {
-    val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Illegal predicate in the head of a fact/rule.")}
-         |
-         |${loc.highlight}
+      s"""|>> Illegal float.
+          |
+          |${Code(loc, "illegal float.")}
+          |
+          |${Underline("Tip")}: Ensure that the literal is within bounds.
          """.stripMargin
   }
 
@@ -220,13 +219,42 @@ object WeederError {
     * @param loc the location where the illegal int occurs.
     */
   case class IllegalInt(loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Illegal int.")}
-         |
-         |${loc.highlight}
+      s"""|>> Illegal int.
+          |
+          |${Code(loc, "illegal int.")}
+          |
+          |${Underline("Tip")}: Ensure that the literal is within bounds.
          """.stripMargin
+  }
+
+  /**
+    * An error raised to indicate that an index declaration defines an index on zero attributes.
+    *
+    * @param loc the location where the illegal index occurs.
+    */
+  case class IllegalIndex(loc: SourceLocation) extends WeederError {
+    val source = loc.source
+    val message =
+      s"""|>> The attribute group does not declare any attributes.
+          |
+          |${Code(loc, "an attribute group must contain at least one attribute.")}
+          """.stripMargin
+  }
+
+  /**
+    * An error raised to indicate that a predicate is not allowed in the head of a fact/rule.
+    *
+    * @param loc the location where the illegal predicate occurs.
+    */
+  case class IllegalHeadPredicate(loc: SourceLocation) extends WeederError {
+    val source = loc.source
+    val message =
+      s"""|>> Predicate is not allowed in the head of a rule.
+          |
+          |${Code(loc, "must not occur in the head of a rule.")}
+          """.stripMargin
   }
 
   /**
@@ -235,18 +263,18 @@ object WeederError {
     * @param loc the location where the illegal definition occurs.
     */
   case class IllegalLattice(loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Lattice definition must have exactly five components: bot, top, leq, lub and glb.")}
-         |
-         |${loc.highlight}
-         |the 1st component must be the bottom element,
-         |the 2nd component must be the top element,
-         |the 3rd component must be the partial order function,
-         |the 4th component must be the least upper bound function, and
-         |the 5th component must be the greatest upper bound function.
-         """.stripMargin
+      s"""|>> A lattice definition must have exactly five components: bot, top, leq, lub and glb.
+          |
+          |${Code(loc, "illegal definition.")}
+          |
+          |the 1st component must be the bottom element,
+          |the 2nd component must be the top element,
+          |the 3rd component must be the partial order function,
+          |the 4th component must be the least upper bound function, and
+          |the 5th component must be the greatest upper bound function.
+          """.stripMargin
   }
 
   /**
@@ -255,29 +283,14 @@ object WeederError {
     * @param loc the location where the illegal parameter list occurs.
     */
   case class IllegalParameterList(loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Illegal parameter list.")}
-         |
-         |${loc.highlight}
-         |A parameter list must contain at least one parameter or be omitted.
-         """.stripMargin
-  }
-
-  /**
-    * An error raised to indicate an illegal universal quantification expression.
-    *
-    * @param loc the location where the illegal expression occurs.
-    */
-  case class IllegalUniversal(loc: SourceLocation) extends WeederError {
-    val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> A universal quantifier must have at least one parameter.")}
-         |
-         |${loc.highlight}
-         """.stripMargin
+      s"""|>> A parameter list must contain at least one parameter or be omitted.
+          |
+          |${Code(loc, "empty parameter list.")}
+          |
+          |${Underline("Tip")}: Remove the parenthesis or add a parameter.
+          """.stripMargin
   }
 
   /**
@@ -286,13 +299,12 @@ object WeederError {
     * @param loc the location where the illegal wildcard occurs.
     */
   case class IllegalWildcard(loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Illegal wildcard in expression.")}
-         |
-         |${loc.highlight}
-         """.stripMargin
+      s"""|>> Wildcard not allowed here.
+          |
+          |${Code(loc, "illegal wildcard.")}
+          """.stripMargin
   }
 
   /**
@@ -303,18 +315,16 @@ object WeederError {
     * @param loc2 the location of the second use of the variable.
     */
   case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+    val source = loc1.source
     val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc1.source.format}")}
-         |
-         |${consoleCtx.red(s">> Duplicate definition of the same variable '$name' in pattern.")}
-         |
-         |First definition was here:
-         |${loc1.highlight}
-         |Second definition was here:
-         |${loc2.highlight}
-         |
-         |A variable must only occurs once in a pattern.
-         """.stripMargin
+      hl"""|>> Multiple occurrence of '${Red(name)}' in a pattern match.
+           |
+           |${Code(loc1, "the first occurrence was here.")}
+           |
+           |${Code(loc2, "the second occurrence was here.")}
+           |
+           |${Underline("Tip")}: A variable may only occur *once* in a pattern.
+        """.stripMargin
   }
 
   /**
@@ -324,13 +334,12 @@ object WeederError {
     * @param loc the location of the syntax error.
     */
   case class IllegalSyntax(msg: String, loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> $msg")}
-         |
-         |${loc.highlight}
-         """.stripMargin
+      s"""|>> Illegal syntax.
+          |
+          |${Code(loc, msg)}
+          """.stripMargin
   }
 
   /**
@@ -340,13 +349,12 @@ object WeederError {
     * @param loc  the location of the annotation.
     */
   case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
+    val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- SYNTAX ERROR -------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Undefined annotation '$name'.")}
-         |
-         |${loc.highlight}
-         """.stripMargin
+      s"""|>> Undefined annotation named '${Red(name)}'.
+          |
+          |${Code(loc, "undefined annotation.")}
+          """.stripMargin
   }
 
 }

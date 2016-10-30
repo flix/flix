@@ -16,148 +16,109 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Type}
-import ca.uwaterloo.flix.language.{CompilationError, Compiler}
+import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
+import ca.uwaterloo.flix.util.Highlight._
 
 /**
   * A common super-type for type errors.
   */
-sealed trait TypeError extends CompilationError
+// TODO: Make sealed
+trait TypeError extends CompilationError
 
 object TypeError {
-
-  implicit val consoleCtx = Compiler.ConsoleCtx
-
-  /**
-    * Ambiguous Reference Error.
-    *
-    * @param qn  the ambiguous name.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
-  case class AmbiguousRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
-    val message =
-      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Ambiguous reference '$qn' (in namespace '$ns').")}
-         |
-         |${loc.highlight}
-         """.stripMargin
-  }
-
-  /**
-    * Unresolved Attribute Error.
-    *
-    * @param name the unresolved attribute name.
-    * @param loc  the location where the error occurred.
-    */
-  case class UnresolvedAttribute(name: Name.Ident, loc: SourceLocation) extends TypeError {
-    val message =
-      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Unknown attribute '$name'.")}
-         |
-         |${loc.highlight}
-         """.stripMargin
-  }
-
-  /**
-    * Unresolved Reference Error.
-    *
-    * @param qn  the unresolved reference name.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
-  case class UnresolvedRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
-    val message =
-      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Unknown definition '$qn' (in namespace '$ns').")}
-         |
-         |${loc.highlight}
-         """.stripMargin
-  }
-
-  /**
-    * Unresolved Table Error.
-    *
-    * @param qn  the unresolved table name.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
-  case class UnresolvedTable(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
-    val message =
-      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Unknown relation or lattice '$qn' (in namespace '$ns').")}
-         |
-         |${loc.highlight}
-         """.stripMargin
-  }
-
-  /**
-    * Unresolved Tag Error.
-    *
-    * @param tag the tag name.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
-  case class UnresolvedTag(tag: Name.Ident, ns: Name.NName, loc: SourceLocation) extends TypeError {
-    val message =
-      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Unknown tag '${tag.name}'.")}
-         |
-         |${loc.highlight}
-         """.stripMargin
-  }
-
-  /**
-    * Unresolved Type Error.
-    *
-    * @param qn  the unresolved name.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
-  case class UnresolvedType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends TypeError {
-    val message =
-      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Unknown type '$qn' (in namespace '$ns').")}
-         |
-         |${loc.highlight}
-         """.stripMargin
-  }
 
   /**
     * Unification Error.
     *
-    * @param tpe1 the first type.
-    * @param tpe2 the second type.
-    * @param loc  the location where the error occurred.
+    * @param baseType1 the first base type.
+    * @param baseType2 the second base type.
+    * @param fullType1 the first full type.
+    * @param fullType2 the second full type.
+    * @param loc       the location where the error occurred.
     */
-  case class UnificationError(tpe1: Type, tpe2: Type, loc: SourceLocation) extends TypeError {
+  case class UnificationError(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
+    val kind = "Type Error"
+    val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Unable to unify '$tpe1' and '$tpe2'.")}
-         |
-         |${loc.highlight}
-         """.stripMargin
+      hl"""|>> Unable to unify '${Red(baseType1.toString)}' and '${Red(baseType2.toString)}'.
+           |
+           |${Code(loc, "mismatched types.")}
+           |
+           |Type One: ${pretty(diff(fullType1, fullType2))(Cyan)}
+           |Type Two: ${pretty(diff(fullType2, fullType1))(Magenta)}
+        """.stripMargin
   }
 
-
-  // TODO -----------------------------------------------------------------------
-
-  // TODO
-  case class OccursCheck() extends TypeError {
-    val message = "OccursCheck" // TODO
+  /**
+    * Returns a string that represents the type difference between the two given types.
+    */
+  private def diff(tpe1: Type, tpe2: Type): TypeDiff = (tpe1, tpe2) match {
+    case (Type.Var(_, _), _) => TypeDiff.Star
+    case (_, Type.Var(_, _)) => TypeDiff.Star
+    case (Type.Unit, Type.Unit) => TypeDiff.Star
+    case (Type.Bool, Type.Bool) => TypeDiff.Star
+    case (Type.Char, Type.Char) => TypeDiff.Star
+    case (Type.Float32, Type.Float32) => TypeDiff.Star
+    case (Type.Float64, Type.Float64) => TypeDiff.Star
+    case (Type.Int8, Type.Int8) => TypeDiff.Star
+    case (Type.Int16, Type.Int16) => TypeDiff.Star
+    case (Type.Int32, Type.Int32) => TypeDiff.Star
+    case (Type.Int64, Type.Int64) => TypeDiff.Star
+    case (Type.BigInt, Type.BigInt) => TypeDiff.Star
+    case (Type.Str, Type.Str) => TypeDiff.Star
+    case (Type.Native, Type.Native) => TypeDiff.Star
+    case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => TypeDiff.Star
+    case (Type.FTuple(l1), Type.FTuple(l2)) if l1 == l2 => TypeDiff.Star
+    case (Type.FVec, Type.FVec) => TypeDiff.Star
+    case (Type.FSet, Type.FSet) => TypeDiff.Star
+    case (Type.FMap, Type.FMap) => TypeDiff.Star
+    case (Type.Enum(name1, kind1), Type.Enum(name2, kind2)) if name1 == name2 => TypeDiff.Star
+    case (Type.Apply(Type.Arrow(l1), ts1), Type.Apply(Type.Arrow(l2), ts2)) =>
+      TypeDiff.Arrow(diffAll(ts1, ts2))
+    case (Type.Apply(Type.FTuple(l1), ts1), Type.Apply(Type.FTuple(l2), ts2)) =>
+      TypeDiff.Tuple(diffAll(ts1, ts2))
+    case _ => TypeDiff.Error(tpe1, tpe2)
   }
 
-  // TODO
-  case class KindError() extends TypeError {
-    val message = "KindError" // TODO
+  /**
+    * Returns a string that represents the type difference between the two given type lists.
+    */
+  private def diffAll(ts1: List[Type], ts2: List[Type]): List[TypeDiff] = (ts1, ts2) match {
+    case (Nil, Nil) => Nil
+    case (Nil, rs2) => Nil
+    case (rs1, Nil) => rs1.map(_ => TypeDiff.Missing)
+    case (t1 :: rs1, t2 :: rs2) => diff(t1, t2) :: diffAll(rs1, rs2)
   }
 
+  /**
+    * A common super-type for type differences.
+    */
+  sealed trait TypeDiff
+
+  object TypeDiff {
+
+    case object Star extends TypeDiff
+
+    case object Missing extends TypeDiff
+
+    case class Arrow(ts: List[TypeDiff]) extends TypeDiff
+
+    case class Tuple(ts: List[TypeDiff]) extends TypeDiff
+
+    case class Error(tpe1: Type, tpe2: Type) extends TypeDiff
+
+  }
+
+  /**
+    * Returns a human readable representation of the given type difference.
+    */
+  private def pretty(td: TypeDiff)(implicit color: String => Highlight): String = td match {
+    case TypeDiff.Star => "..."
+    case TypeDiff.Missing => "???"
+    case TypeDiff.Arrow(xs) => "(" + xs.init.map(pretty).mkString(", ") + ") -> " + pretty(xs.last)
+    case TypeDiff.Tuple(xs) => "(" + xs.map(pretty).mkString(", ") + ")"
+    case TypeDiff.Error(tpe1, tpe2) => color(tpe1.toString).toString
+  }
 
 }
