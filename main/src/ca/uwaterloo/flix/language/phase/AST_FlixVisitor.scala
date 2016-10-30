@@ -19,8 +19,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) /*extends FlixVisitor[
 	//ROOT NODE
 	def visitStart(ctx: FlixParser.StartContext): ParsedAst.Root = ParsedAst.Root(
 			ctx.s_import().map(visitS_import).toList.toSeq,
-			Nil
-			//ctx.decl().map(visitDecl).toList.toSeq
+			ctx.decl().map(visitDecl).toList.toSeq
 		)
 
 	//NAME RULES
@@ -64,7 +63,59 @@ class AST_FlixVisitor(source: SourceInput, input: String) /*extends FlixVisitor[
 
 
 	//DECLARATION RULES
-	// def visitDecl(ctx: FlixParser.DeclContext): ParsedAst.Declaration = ParsedAst.Declaration
+	def visitDecl(ctx: FlixParser.DeclContext): ParsedAst.Declaration = ctx.getChild(0) match {
+			case x: FlixParser.Decls_namespaceContext => visitDecls_namespace(x)
+			case x: FlixParser.Decls_enumContext => visitDecls_enum(x)
+			case x: FlixParser.Decls_relationContext => visitDecls_relation(x)
+			case x: FlixParser.Decls_latticeContext => visitDecls_lattice(x)
+			case x: FlixParser.Decls_indexContext => visitDecls_index(x)
+			case x: FlixParser.Decls_signatureContext => visitDecls_signature(x)
+			case x: FlixParser.Decls_externalContext => visitDecls_external(x)
+			case x: FlixParser.Decls_definitionContext => visitDecls_definition(x)
+			case x: FlixParser.Decls_lawContext => visitDecls_law(x)
+			case x: FlixParser.Decls_classContext => visitDecls_class(x)
+			case x: FlixParser.Decls_factContext => visitDecls_fact(x)
+			case x: FlixParser.Decls_ruleContext => visitDecls_rule(x)
+			case x: FlixParser.Decls_letlatticeContext => visitDecls_letlattice(x)
+		}
 
-
-}
+	def visitDecls_namespace(FlixParser.Decls_namespaceContext ctx) = ParsedAst.Declaration.Namespace(
+			visitSp(ctx.getStart()),
+			visitNname(ctx.nname()),
+			ctx.decl().map(visitDecl).toList.toSeq
+			visitSp(ctx.getStop())
+		)
+	
+	def visitDecls_enum(FlixParser.Decls_enumContext ctx);
+	
+	def visitDcases(FlixParser.DcasesContext ctx);
+	
+	def visitDcase(FlixParser.DcaseContext ctx);
+	
+	def visitDecls_relation(FlixParser.Decls_relationContext ctx);
+	
+	def visitDecls_lattice(FlixParser.Decls_latticeContext ctx);
+	
+	def visitDecls_index(FlixParser.Decls_indexContext ctx);
+	
+	def visitDecls_signature(FlixParser.Decls_signatureContext ctx);
+	
+	def visitDecls_external(FlixParser.Decls_externalContext ctx);
+	
+	def visitDecls_definition(FlixParser.Decls_definitionContext ctx);
+	
+	def visitDecls_law(FlixParser.Decls_lawContext ctx);
+	
+	def visitDecls_class(FlixParser.Decls_classContext ctx);
+	
+	def visitClass_body(FlixParser.Class_bodyContext ctx);
+	
+	def visitDecls_fact(FlixParser.Decls_factContext ctx);
+	
+	def visitDecls_rule(FlixParser.Decls_ruleContext ctx);
+	
+	def visitElms(FlixParser.ElmsContext ctx);
+	
+	def visitDecls_letlattice(FlixParser.Decls_letlatticeContext ctx);
+	
+	def visitDecls_impl(FlixParser.Decls_implContext ctx);
