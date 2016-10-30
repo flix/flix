@@ -25,36 +25,28 @@ import ca.uwaterloo.flix.util.Highlight._
 trait CompilationError {
 
   /**
-    * The kind of the error message, e.g. "Syntax Error" or "Type Error".
+    * Returns the kind of error message, e.g. "Syntax Error" or "Type Error".
     */
   def kind: String
 
-
   /**
-    * TODO DOC
-    *
-    * @return
+    * Returns the input source of the error message.
     */
   def source: SourceInput
 
-
   /**
-    * The error message.
+    * Returns the error message text.
     */
   def message: String
 
   /**
-    * TODO: DOC
-    *
-    * @return
+    * Returns a pretty-printed version of the error message.
     */
   def render: String = {
-    // TODO
     hl"""|${Blue(s"-- $kind -------------------------------------------------- ${source.format}")}
          |
          |$message
       """.stripMargin
   }
-
 
 }

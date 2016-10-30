@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, Property, Root}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.GenSym
 import ca.uwaterloo.flix.runtime.evaluator.{SmtExpr, SymVal, SymbolicEvaluator}
+import ca.uwaterloo.flix.util.Highlight.{Blue, Cyan, Red}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
 import com.microsoft.z3._
@@ -466,8 +467,7 @@ object Verifier {
     * Prints verbose results.
     */
   def printVerbose(results: List[PropertyResult]): Unit = {
-    implicit val consoleCtx = Compiler.ConsoleCtx
-    Console.println(consoleCtx.blue(s"-- VERIFIER RESULTS --------------------------------------------------"))
+    Console.println(Blue(s"-- VERIFIER RESULTS --------------------------------------------------"))
 
     for ((source, properties) <- results.groupBy(_.property.loc.source)) {
 
@@ -478,13 +478,13 @@ object Verifier {
       for (result <- properties.sortBy(_.property.loc)) {
         result match {
           case PropertyResult.Success(property, paths, queries, elapsed) =>
-            Console.println("  " + consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + " seconds.)")
+            Console.println("  " + Cyan("✓ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + " seconds.)")
 
           case PropertyResult.Failure(property, paths, queries, elapsed, error) =>
-            Console.println("  " + consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + ") seconds.")
+            Console.println("  " + Red("✗ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + ") seconds.")
 
           case PropertyResult.Unknown(property, paths, queries, elapsed, error) =>
-            Console.println("  " + consoleCtx.red("? ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + ") seconds.")
+            Console.println("  " + Red("? ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + ") seconds.")
         }
       }
 

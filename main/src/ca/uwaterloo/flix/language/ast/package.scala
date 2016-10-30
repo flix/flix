@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language
 
 import java.nio.file.Path
 
-import ca.uwaterloo.flix.util.ConsoleCtx
 import org.parboiled2.ParserInput
 
 package object ast {

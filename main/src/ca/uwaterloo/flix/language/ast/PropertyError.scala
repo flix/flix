@@ -29,8 +29,6 @@ sealed trait PropertyError extends CompilationError {
 
 object PropertyError {
 
-  implicit val consoleCtx = Compiler.ConsoleCtx
-
   /**
     * Returns a property error for the given property `prop` under the given environment `env`.
     */
