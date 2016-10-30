@@ -16,13 +16,16 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.language.{CompilationError, Compiler}
+import ca.uwaterloo.flix.util.Highlight._
 
 /**
   * A common super-type for type errors.
   */
-trait TypeError extends CompilationError // TODO: Make sealed
+trait TypeError extends CompilationError
+
+// TODO: Make sealed
 
 object TypeError {
 
@@ -39,15 +42,13 @@ object TypeError {
     val kind = "Type Error"
     val source = loc.source
     val message =
-      s"""${consoleCtx.blue(s"-- TYPER ERROR --------------------------------------------------- ${loc.source.format}")}
-         |
-         |${consoleCtx.red(s">> Unable to unify '$tpe1' and '$tpe2'.")}
-         |
-         |${loc.highlight}
-         """.stripMargin
+      hl"""|>> Unable to unify '${Red(tpe1.toString)}' and '${Cyan(tpe2.toString)}'.
+           |
+           |${Code(loc, "mismatched types.")}
+        """.stripMargin
   }
 
-  // TODO
+  // TODO: Need test case.
   case class OccursCheck() extends TypeError {
     val kind = ???
     val source = ???
