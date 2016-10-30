@@ -60,7 +60,7 @@ object Highlight {
       * Highlights this source location with red arrows under the text.
       */
     private def underline: String = {
-      val lineNo = beginLine.toString + "| "
+      val lineNo = beginLine.toString + " | "
       val line1 = lineNo + lineAt(beginLine) + "\n"
       val line2 = " " * (beginCol + lineNo.length - 1) + Red("^" * (endCol - beginCol)) + "\n"
       val line3 = " " * (beginCol + lineNo.length - 1) + msg
@@ -75,11 +75,13 @@ object Highlight {
       for (lineNo <- beginLine to endLine) {
         val currentLine = lineAt(lineNo)
         sb.
-          append(lineNo).append("|").
-          append(Red(">")).
+          append(lineNo).append(" |").
+          append(Red(">") + " ").
           append(currentLine).
           append("\n")
       }
+      sb.append("\n")
+      sb.append(msg)
       sb.toString()
     }
   }
