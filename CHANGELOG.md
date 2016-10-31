@@ -1,7 +1,7 @@
 # Changelog
 
 HEAD:
-    
+    - Improved error messages.
 
 2016-10-25:
     - Added interpreter tutorial.

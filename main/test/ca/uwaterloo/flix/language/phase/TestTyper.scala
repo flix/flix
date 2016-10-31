@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
 import org.scalatest.FunSuite
 
 class TestTyper extends FunSuite with TestUtils {
@@ -1033,12 +1033,14 @@ class TestTyper extends FunSuite with TestUtils {
   // Unresolved Symbols                                                      //
   /////////////////////////////////////////////////////////////////////////////
 
+  // TODO: Move into other test suite
   test("UnresolvedDefinition01") {
     val input = "def f: Int = x"
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedRef](result)
+    expectError[ResolutionError.UndefinedRef](result)
   }
 
+  // TODO: Move into other test suite
   test("UnresolvedDefinition02") {
     val input =
       s"""
@@ -1047,15 +1049,17 @@ class TestTyper extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedRef](result)
+    expectError[ResolutionError.UndefinedRef](result)
   }
 
+  // TODO: Move into other test suite
   test("UnresolvedTable01") {
     val input = "VarPointsTo(1, 2)."
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedTable](result)
+    expectError[ResolutionError.UndefinedTable](result)
   }
 
+  // TODO: Move into other test suite
   test("UnresolvedTable02") {
     val input =
       s"""namespace A {
@@ -1063,13 +1067,14 @@ class TestTyper extends FunSuite with TestUtils {
           |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedTable](result)
+    expectError[ResolutionError.UndefinedTable](result)
   }
 
+  // TODO: Move into other test suite
   test("UnresolvedTable03") {
     val input = "index AddrOf({foo, bar})"
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedTable](result)
+    expectError[ResolutionError.UndefinedTable](result)
   }
 
 }

@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
+import ca.uwaterloo.flix.util.Highlight._
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{AnsiConsole, Validation}
 
 import scala.util.{Failure, Success}
 
@@ -45,17 +46,14 @@ object Compiler {
     * @param src the source input.
     */
   case class ParseError(msg: String, src: SourceInput) extends CompilationError {
+    val kind = "Parse Error"
+    val source = src
     val message =
-      s"""${ConsoleCtx.blue(s"-- PARSE ERROR ------------------------------------------------- ${src.format}")}
-         |
-         |${ConsoleCtx.red(msg)}
-         """.stripMargin
+      s"""|>> Parse Error:
+          |
+          |${Red(msg)}
+          """.stripMargin
   }
-
-  /**
-    * The console context used to format error messages.
-    */
-  implicit val ConsoleCtx = new AnsiConsole()
 
   /**
     * Returns the abstract syntax tree of the given string `input`.

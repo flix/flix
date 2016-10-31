@@ -16,12 +16,37 @@
 
 package ca.uwaterloo.flix.language
 
+import ca.uwaterloo.flix.language.ast.SourceInput
+import ca.uwaterloo.flix.util.Highlight._
+
 /**
   * A common super-type for compilation errors.
   */
 trait CompilationError {
+
   /**
-    * The error message.
+    * Returns the kind of error message, e.g. "Syntax Error" or "Type Error".
+    */
+  def kind: String
+
+  /**
+    * Returns the input source of the error message.
+    */
+  def source: SourceInput
+
+  /**
+    * Returns the error message text.
     */
   def message: String
+
+  /**
+    * Returns a pretty-printed version of the error message.
+    */
+  def render: String = {
+    hl"""|${Blue(s"-- $kind -------------------------------------------------- ${source.format}")}
+         |
+         |$message
+      """.stripMargin
+  }
+
 }

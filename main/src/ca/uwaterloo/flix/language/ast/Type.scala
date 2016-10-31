@@ -19,8 +19,6 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.phase.GenSym
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-import scala.collection.immutable
-
 /**
   * Representation of monotypes.
   */
@@ -52,7 +50,7 @@ sealed trait Type {
     case Type.FVec => Set.empty
     case Type.FSet => Set.empty
     case Type.FMap => Set.empty
-    case Type.Enum(enumName,  kind) => Set.empty
+    case Type.Enum(enumName, kind) => Set.empty
     case Type.Apply(t, ts) => t.typeVars ++ ts.flatMap(_.typeVars)
   }
 
@@ -91,11 +89,12 @@ sealed trait Type {
     case Type.BigInt => "BigInt"
     case Type.Str => "Str"
     case Type.Native => "Native"
-    case Type.Arrow(l) => "Arrow"
-    case Type.FTuple(l) => "Tuple"
+    case Type.Arrow(l) => s"Arrow($l)"
+    case Type.FTuple(l) => s"Tuple($l)"
     case Type.FVec => "Vec"
     case Type.FSet => "Set"
     case Type.FMap => "Map"
+    case Type.Apply(Type.FTuple(l), ts) => "(" + ts.mkString(", ") + ")"
     case Type.Apply(Type.Arrow(l), ts) => ts.mkString(" -> ")
     case Type.Apply(t, ts) => s"$t[${ts.mkString(", ")}]"
     case Type.Enum(enum, kind) => enum.toString

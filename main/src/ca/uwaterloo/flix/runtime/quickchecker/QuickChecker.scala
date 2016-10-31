@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.ast.{ExecutableAst, PropertyError, Scheme, Typ
 import ca.uwaterloo.flix.language.phase.GenSym
 import ca.uwaterloo.flix.runtime.evaluator.SymVal.{Char, Unit}
 import ca.uwaterloo.flix.runtime.evaluator.{SymVal, SymbolicEvaluator}
+import ca.uwaterloo.flix.util.Highlight.{Blue, Cyan, Red}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
 
@@ -224,8 +225,7 @@ object QuickChecker {
     * Prints verbose results.
     */
   private def printVerbose(results: List[PropertyResult]): Unit = {
-    implicit val consoleCtx = Compiler.ConsoleCtx
-    Console.println(consoleCtx.blue(s"-- QUICK CHECKER RESULTS ---------------------------------------------"))
+    Console.println(Blue(s"-- QUICK CHECKER RESULTS ---------------------------------------------"))
 
     for ((source, properties) <- results.groupBy(_.property.loc.source)) {
 
@@ -236,10 +236,10 @@ object QuickChecker {
       for (result <- properties.sortBy(_.property.loc)) {
         result match {
           case PropertyResult.Success(property, tests, elapsed) =>
-            Console.println("  " + consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ") (" + tests + " tests, " + TimeOps.toSeconds(elapsed) + " seconds.)")
+            Console.println("  " + Cyan("✓ ") + property.law + " (" + property.loc.format + ") (" + tests + " tests, " + TimeOps.toSeconds(elapsed) + " seconds.)")
 
           case PropertyResult.Failure(property, success, failure, elapsed, error) =>
-            Console.println("  " + consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ") (" + success + " SUCCESS, " + failure + " FAILED, " + TimeOps.toSeconds(elapsed) + " seconds.)")
+            Console.println("  " + Red("✗ ") + property.law + " (" + property.loc.format + ") (" + success + " SUCCESS, " + failure + " FAILED, " + TimeOps.toSeconds(elapsed) + " seconds.)")
         }
       }
 

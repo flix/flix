@@ -18,10 +18,12 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.{Flix, IValue, Invokable}
-import ca.uwaterloo.flix.language.errors.{NameError, TypeError}
+import ca.uwaterloo.flix.language.errors.{NameError, ResolutionError, TypeError}
 import org.scalatest.FunSuite
 
 class TestNamer extends FunSuite with TestUtils {
+
+  // TODO SPlit into TestNamer and TestResolver
 
   test("DuplicateDefinition.01") {
     val input =
@@ -150,7 +152,7 @@ class TestNamer extends FunSuite with TestUtils {
          |R(x).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedRef](result)
+    expectError[ResolutionError.UndefinedRef](result)
   }
 
   test("UnsafeFact.02") {
@@ -161,7 +163,7 @@ class TestNamer extends FunSuite with TestUtils {
          |R(42, x).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedRef](result)
+    expectError[ResolutionError.UndefinedRef](result)
   }
 
   test("UnsafeFact.03") {
@@ -172,7 +174,7 @@ class TestNamer extends FunSuite with TestUtils {
          |R(42, x, 21).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedRef](result)
+    expectError[ResolutionError.UndefinedRef](result)
   }
 
   // TODO
@@ -184,7 +186,7 @@ class TestNamer extends FunSuite with TestUtils {
          |R(x) :- R(y).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedRef](result)
+    expectError[ResolutionError.UndefinedRef](result)
   }
 
   // TODO
@@ -196,7 +198,7 @@ class TestNamer extends FunSuite with TestUtils {
          |R(x, y) :- R(x, z).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedRef](result)
+    expectError[ResolutionError.UndefinedRef](result)
   }
 
   // TODO
@@ -208,7 +210,7 @@ class TestNamer extends FunSuite with TestUtils {
          |R(x, y, z) :- R(x, w, z).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedRef](result)
+    expectError[ResolutionError.UndefinedRef](result)
   }
 
   test("UnresolvedEnum.01") {
@@ -219,7 +221,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedTag](result)
+    expectError[ResolutionError.UndefinedTag](result)
   }
 
   test("UnresolvedEnum.02") {
@@ -230,7 +232,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedTag](result)
+    expectError[ResolutionError.UndefinedTag](result)
   }
 
   test("UnresolvedTag.01") {
@@ -244,7 +246,7 @@ class TestNamer extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedTag](result)
+    expectError[ResolutionError.UndefinedTag](result)
   }
 
   test("UnresolvedTag.02") {
@@ -260,7 +262,7 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedTag](result)
+    expectError[ResolutionError.UndefinedTag](result)
   }
 
   test("UnresolvedTag.03") {
@@ -278,13 +280,13 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedTag](result)
+    expectError[ResolutionError.UndefinedTag](result)
   }
 
   test("UnresolvedType.01") {
     val input = "def x: Foo = 42"
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedType](result)
+    expectError[ResolutionError.UndefinedType](result)
   }
 
   test("UnresolvedType.02") {
@@ -294,7 +296,7 @@ class TestNamer extends FunSuite with TestUtils {
           |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[TypeError.UnresolvedType](result)
+    expectError[ResolutionError.UndefinedType](result)
   }
 
   test("Expression.Hook.01") {
