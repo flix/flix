@@ -16,58 +16,58 @@
 
 namespace Float32 {
 
-    /**
-     * Returns the number of bits used to represent an `Float32`.
-     */
+    ///
+    /// Returns the number of bits used to represent a `Float32`.
+    ///
     def size: Int32 = 32
 
-    /**
-     * Returns the maximum exponent that a `Float32` may have.
-     */
+    ///
+    /// Returns the maximum exponent that a `Float32` may have.
+    ///
     def maxExponent: Int32 = 127
 
-    /**
-     * Returns the minimum exponent that a `Float32` may have.
-     */
+    ///
+    /// Returns the minimum exponent that a `Float32` may have.
+    ///
     def minExponent: Int32 = -126
 
-    /**
-     * Returns the maximum number representable by an `Float32`.
-     */
+    ///
+    /// Returns the maximum number representable by a `Float32`.
+    ///
     def maxValue: Float32 = (2.0f32 - 2.0f32 ** -23.0f32) * (2.0f32 ** 127.0f32)
 
-    /**
-     * Returns the minimum number representable by an `Float32`.
-     */
+    ///
+    /// Returns the minimum number representable by a `Float32`.
+    ///
     def minValue: Float32 = -maxValue()
 
-    /**
-     * Returns the minimum positive number representable by an `Float32`.
-     */
+    ///
+    /// Returns the minimum positive number representable by a `Float32`.
+    ///
     def minPositiveValue: Float32 = 2.0f32 ** -149.0f32
 
-    /**
-     * Returns the NaN (not a number) value of type `Float32`.
-     */
+    ///
+    /// Returns the NaN (not a number) value of type `Float32`.
+    ///
     def undefined: Float32 = 0.0f32 / 0.0f32
 
-    /**
-     * Returns the positive infinity value of type `Float32`.
-     */
+    ///
+    /// Returns the positive infinity value of type `Float32`.
+    ///
     def positiveInfinity: Float32 = 1.0f32 / 0.0f32
 
-    /**
-     * Returns the negative infinity value of type `Float32`.
-     */
+    ///
+    /// Returns the negative infinity value of type `Float32`.
+    ///
     def negativeInfinity: Float32 = -1.0f32 / 0.0f32
 
-    /**
-     * Returns the smaller of `x` and `y`.
-     */
+    ///
+    /// Returns the smaller of `x` and `y`.
+    ///
     def min(x: Float32, y: Float32): Float32 = if (x <= y) x else y
 
-    /**
-     * Returns the larger of `x` and `y`.
-     */
+    ///
+    /// Returns the larger of `x` and `y`.
+    ///
     def max(x: Float32, y: Float32): Float32 = if (x >= y) x else y
 }
