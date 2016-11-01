@@ -43,7 +43,7 @@ namespace Int8 {
 
     ///
     /// Returns the absolute value of `x`.
-    /// If the absolute value exceeds maxValue(), -1 is returned
+    /// If the absolute value exceeds maxValue(), -1 is returned.
     ///
     def abs(x: Int8): Int8 = switch {
         case x >= 0i8           => x
@@ -53,7 +53,7 @@ namespace Int8 {
 
     ///
     /// Returns the distance between `x` and `y`.
-    /// If this distance exceeds maxValue(), -1 is returned
+    /// If this distance exceeds maxValue(), -1 is returned.
     ///
     def dist(x: Int8, y: Int8): Int8 = switch {
         case x >= 0i8 && y >= 0i8                   => abs(x - y)
@@ -65,7 +65,7 @@ namespace Int8 {
 
     ///
     /// Returns 1 if x > y, -1 if x < y, and 0 if x = y.
-    /// The sign of x - y
+    /// The sign of x - y.
     ///
     def compare(x: Int8, y: Int8): Int32 = switch {
         case x == y  => 0
@@ -75,12 +75,12 @@ namespace Int8 {
 
     ///
     /// Returns 1 if x > 0, -1 if x < 0, and 0 if x = 0.
-    /// This sign of x
+    /// The sign of x.
     ///
     def signum(x: Int8): Int32 = compare(x, 0i8)
 
     ///
-    /// Returns the position of the highest-order/leftmost one-bit in `x`
+    /// Returns the position of the highest-order/leftmost one-bit in `x`.
     /// Possible return values: 0 (rightmost bit) - 7 (leftmost bit)
     ///                         -1 if x = 0
     ///
@@ -89,7 +89,7 @@ namespace Int8 {
         oneBitPositionHelper(x, size() - 1, -1)
 
     ///
-    /// Returns the position of the lowest-order/rightmost one-bit in `x`
+    /// Returns the position of the lowest-order/rightmost one-bit in `x`.
     /// Possible return values: 0 (rightmost bit) - 7 (leftmost bit)
     ///                         -1 if x = 0
     ///
@@ -98,9 +98,9 @@ namespace Int8 {
         oneBitPositionHelper(x, 0, 1)
 
     ///
-    /// Helper function for highestOneBitPosition and lowestOneBitPosition
-    /// If `x` has a one-bit at `position`, return that position
-    /// Otherwise recursively check the next bit in the same way
+    /// Helper function for highestOneBitPosition and lowestOneBitPosition.
+    /// If `x` has a one-bit at `position`, return that position.
+    /// Otherwise recursively check the next bit in the same way.
     ///
     @internal
     def oneBitPositionHelper(x: Int8, position: Int32, delta: Int32): Int32 = switch {
@@ -113,24 +113,24 @@ namespace Int8 {
 
     ///
     /// Returns a value with at most a single one-bit, in the position
-    /// of the highest-order/leftmost one-bit in `x`
-    /// Returns 0 if x=0
+    /// of the highest-order/leftmost one-bit in `x`.
+    /// Returns 0 if x=0.
     ///
     def highestOneBit(x: Int8): Int8 =
         bitPositionToInt(highestOneBitPosition(x))
 
     ///
     /// Returns a value with at most a single one-bit, in the position
-    /// of the highest-order/leftmost one-bit in `x`
-    /// Returns 0 if x=0
+    /// of the highest-order/leftmost one-bit in `x`.
+    /// Returns 0 if x=0.
     ///
     def lowestOneBit(x: Int8): Int8 =
         bitPositionToInt(lowestOneBitPosition(x))
 
     ///
-    /// Helper function for highestOneBit and lowestOneBit
-    /// Returns a value with a single one-bit at bit number `position`
-    /// Returns 0 if `position` is outside the range 0-7 inclusive
+    /// Helper function for highestOneBit and lowestOneBit.
+    /// Returns a value with a single one-bit at bit number `position`.
+    /// Returns 0 if `position` is outside the range 0-7 inclusive.
     ///
     def bitPositionToInt(position: Int32): Int8 = switch {
         case position < 0 || position > size() - 1  => 0i8
@@ -141,7 +141,7 @@ namespace Int8 {
     ///
     /// Returns the number of zero bits preceding the
     /// highest-order/leftmost one-bit in `x`.
-    /// Returns 16 if x=0.
+    /// Returns 8 if x=0.
     ///
     def numberOfLeadingZeros(x: Int8): Int32 =
         if (x == 0i8) size() else size() - 1 - highestOneBitPosition(x)
@@ -149,14 +149,14 @@ namespace Int8 {
     ///
     /// Returns the number of zero bits following the
     /// lowest-order/rightmost one-bit in `x`.
-    /// Returns 16 if x=0.
+    /// Returns 8 if x=0.
     ///
     def numberOfTrailingZeros(x: Int8): Int32 =
         if (x == 0i8) size() else lowestOneBitPosition(x)
 
     ///
     /// Returns the bit of `x` at `position` (either 0 or 1).
-    /// Considers the 6 rightmost bits of `position` (`position` mod 64).
+    /// Considers the 5 rightmost bits of `position` (`position` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
     def bit(x: Int8, position: Int32): Int32 =
