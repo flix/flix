@@ -16,14 +16,15 @@
 
 package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 
 package object phase {
 
-  // TODO: Cleanup, possibly unify with the Flix class?
-
   class GenSym() {
 
+    /**
+      * An internal counter.
+      */
     private var number: Int = 0
 
     /**
@@ -34,7 +35,7 @@ package object phase {
       number
     }
 
-    // TODO: change arguments and require source location?
+    // TODO: deprecated
     def freshDefn(parts: List[String]): Symbol.DefnSym = {
       number = number + 1
       val namespace = if (parts.isEmpty) Nil else parts.init
@@ -42,14 +43,6 @@ package object phase {
       new Symbol.DefnSym(namespace, name, SourceLocation.Unknown)
     }
 
-    // TODO: Deprecated
-    def fresh2(): Name.Ident = fresh2("tmp")
-
-    // TODO: Deprecated
-    private def fresh2(prefix: String): Name.Ident = {
-      number = number + 1
-      Name.Ident(SourcePosition.Unknown, prefix + "$" + number, SourcePosition.Unknown)
-    }
   }
 
 }

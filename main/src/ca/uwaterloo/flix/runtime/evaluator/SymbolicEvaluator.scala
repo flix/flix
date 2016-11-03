@@ -243,7 +243,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case SymVal.AtomicVar(id, tpe) =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Minus(zeroOf(exp.tpe), SmtExpr.Var(id, exp.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, tpe))
 
@@ -263,7 +263,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics
               case SymVal.AtomicVar(id, tpe) =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.BitwiseNegate(SmtExpr.Var(id, exp.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, tpe))
 
@@ -293,7 +293,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Plus(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -311,7 +311,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Minus(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -329,7 +329,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Times(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -347,7 +347,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Divide(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -365,7 +365,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Modulo(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -383,7 +383,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Exponentiate(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -401,7 +401,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, Type.Bool), SmtExpr.Less(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -419,7 +419,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, Type.Bool), SmtExpr.LessEqual(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -437,7 +437,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, Type.Bool), SmtExpr.Greater(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -455,7 +455,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, Type.Bool), SmtExpr.GreaterEqual(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -617,7 +617,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.BitwiseAnd(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -635,7 +635,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.BitwiseOr(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -653,7 +653,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.BitwiseXor(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -671,7 +671,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.BitwiseLeftShift(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -689,7 +689,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.BitwiseRightShift(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }

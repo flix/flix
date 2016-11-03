@@ -22,6 +22,13 @@ import ca.uwaterloo.flix.language.phase.GenSym
 object Symbol {
 
   /**
+    * Returns a fresh variable symbol with no additional information.
+    */
+  def freshVarSym()(implicit genSym: GenSym): VarSym = {
+    new VarSym(genSym.freshId(), "tmp", Type.freshTypeVar(), SourceLocation.Unknown)
+  }
+
+  /**
     * Returns a fresh variable symbol for the given identifier.
     */
   def freshVarSym(ident: Name.Ident)(implicit genSym: GenSym): VarSym = {

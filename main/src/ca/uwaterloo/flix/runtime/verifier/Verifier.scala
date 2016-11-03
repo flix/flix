@@ -16,18 +16,16 @@
 
 package ca.uwaterloo.flix.runtime.verifier
 
-import ca.uwaterloo.flix.language._
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression._
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, Property, Root}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.GenSym
 import ca.uwaterloo.flix.runtime.evaluator.{SmtExpr, SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.Highlight.{Blue, Cyan, Red}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
 import com.microsoft.z3._
-
-import scala.collection.immutable.SortedMap
 
 object Verifier {
 
@@ -224,15 +222,15 @@ object Verifier {
     def visit(tpe: Type): List[SymVal] = tpe match {
       case Type.Unit => List(SymVal.Unit)
       case Type.Bool => List(SymVal.True, SymVal.False)
-      case Type.Char => List(SymVal.AtomicVar(genSym.fresh2(), Type.Char))
-      case Type.Float32 => List(SymVal.AtomicVar(genSym.fresh2(), Type.Float32))
-      case Type.Float64 => List(SymVal.AtomicVar(genSym.fresh2(), Type.Float64))
-      case Type.Int8 => List(SymVal.AtomicVar(genSym.fresh2(), Type.Int8))
-      case Type.Int16 => List(SymVal.AtomicVar(genSym.fresh2(), Type.Int16))
-      case Type.Int32 => List(SymVal.AtomicVar(genSym.fresh2(), Type.Int32))
-      case Type.Int64 => List(SymVal.AtomicVar(genSym.fresh2(), Type.Int64))
-      case Type.BigInt => List(SymVal.AtomicVar(genSym.fresh2(), Type.BigInt))
-      case Type.Str => List(SymVal.AtomicVar(genSym.fresh2(), Type.Str))
+      case Type.Char => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Char))
+      case Type.Float32 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Float32))
+      case Type.Float64 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Float64))
+      case Type.Int8 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Int8))
+      case Type.Int16 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Int16))
+      case Type.Int32 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Int32))
+      case Type.Int64 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Int64))
+      case Type.BigInt => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.BigInt))
+      case Type.Str => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Str))
       case Type.Enum(sym, kind) =>
         val decl = root.enums(sym)
         decl.cases.flatMap {
@@ -303,7 +301,7 @@ object Verifier {
     */
   private def visitArithExpr(exp0: SmtExpr, ctx: Context): ArithExpr = exp0 match {
     case SmtExpr.BigInt(lit) => ctx.mkInt(lit.longValueExact())
-    case SmtExpr.Var(id, tpe) => ctx.mkIntConst(id.name)
+    case SmtExpr.Var(sym, tpe) => ctx.mkIntConst(sym.toString)
     case SmtExpr.Plus(e1, e2) => ctx.mkAdd(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
     case SmtExpr.Minus(e1, e2) => ctx.mkSub(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
     case SmtExpr.Times(e1, e2) => ctx.mkMul(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
@@ -323,7 +321,7 @@ object Verifier {
     * Translates the given SMT expression `exp0` into a Z3 boolean expression.
     */
   private def visitBoolExpr(exp0: SmtExpr, ctx: Context): BoolExpr = exp0 match {
-    case SmtExpr.Var(id, tpe) => ctx.mkBoolConst(id.name)
+    case SmtExpr.Var(sym, tpe) => ctx.mkBoolConst(sym.toString)
     case SmtExpr.Not(e) => ctx.mkNot(visitBoolExpr(e, ctx))
     case SmtExpr.LogicalAnd(e1, e2) => ctx.mkAnd(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
     case SmtExpr.LogicalOr(e1, e2) => ctx.mkOr(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
@@ -372,11 +370,11 @@ object Verifier {
     case SmtExpr.Int16(i) => ctx.mkBV(i, 16)
     case SmtExpr.Int32(i) => ctx.mkBV(i, 32)
     case SmtExpr.Int64(i) => ctx.mkBV(i, 64)
-    case SmtExpr.Var(id, tpe) => tpe match {
-      case Type.Int8 => ctx.mkBVConst(id.name, 8)
-      case Type.Int16 => ctx.mkBVConst(id.name, 16)
-      case Type.Int32 => ctx.mkBVConst(id.name, 32)
-      case Type.Int64 => ctx.mkBVConst(id.name, 64)
+    case SmtExpr.Var(sym, tpe) => tpe match {
+      case Type.Int8 => ctx.mkBVConst(sym.toString, 8)
+      case Type.Int16 => ctx.mkBVConst(sym.toString, 16)
+      case Type.Int32 => ctx.mkBVConst(sym.toString, 32)
+      case Type.Int64 => ctx.mkBVConst(sym.toString, 64)
       case _ => throw InternalCompilerException(s"Unexpected non-int type: '$tpe'.")
     }
     case SmtExpr.Plus(e1, e2) => ctx.mkBVAdd(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
@@ -399,8 +397,8 @@ object Verifier {
     */
   private def visitIntExpr(exp0: SmtExpr, ctx: Context): IntExpr = exp0 match {
     case SmtExpr.BigInt(i) => ctx.mkInt(i.longValueExact())
-    case SmtExpr.Var(id, tpe) => tpe match {
-      case Type.BigInt => ctx.mkIntConst(id.name)
+    case SmtExpr.Var(sym, tpe) => tpe match {
+      case Type.BigInt => ctx.mkIntConst(sym.toString)
       case _ => throw InternalCompilerException(s"Unexpected non-int type: '$tpe'.")
     }
     case _ => throw InternalCompilerException(s"Unexpected SMT expression: '$exp0'.")

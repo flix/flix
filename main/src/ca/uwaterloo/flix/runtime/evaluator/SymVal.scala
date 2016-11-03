@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.runtime.evaluator
 
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
-import ca.uwaterloo.flix.language.ast.{Name, Type}
+import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type}
 import com.microsoft.z3.Model
 
 import scala.collection.immutable.SortedMap
@@ -32,11 +32,10 @@ object SymVal {
   /**
     * An atomic symbolic variable.
     *
-    * @param ident the identifier.
-    * @param tpe   the type of the variable.
+    * @param sym the identifier.
+    * @param tpe the type of the variable.
     */
-  // TODO: Use VarSym
-  case class AtomicVar(ident: Name.Ident, tpe: Type) extends SymVal
+  case class AtomicVar(sym: Symbol.VarSym, tpe: Type) extends SymVal
 
   /**
     * The `Unit` value.
@@ -184,12 +183,11 @@ object SymVal {
   }
 
   /**
-    * Returns a string representation of the given constant `id` in the Z3 model `m`.
+    * Returns a string representation of the given constant `sym` in the Z3 model `m`.
     */
-  // TODO: Use VarSym
-  private def getConstant(id: Name.Ident, m: Model): String = {
+  private def getConstant(sym: Symbol.VarSym, m: Model): String = {
     for (decl <- m.getConstDecls) {
-      if (id.name == decl.getName.toString) {
+      if (sym.toString == decl.getName.toString) {
         return m.getConstInterp(decl).toString
       }
     }
