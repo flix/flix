@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -112,8 +113,8 @@ object CreateExecutableAst {
           * Note that all of this code will eventually be replaced by typeclasses.
           */
 
-        val botSym = genSym.freshDefn(List("bot"))
-        val topSym = genSym.freshDefn(List("top"))
+        val botSym = Symbol.freshDefnSym("bot")
+        val topSym = Symbol.freshDefnSym("top")
 
         val botConst = ExecutableAst.Definition.Constant(botSym, formals = Array(), t(bot), isSynthetic = true, bot.tpe, bot.loc)
         val topConst = ExecutableAst.Definition.Constant(topSym, formals = Array(), t(top), isSynthetic = true, top.tpe, top.loc)

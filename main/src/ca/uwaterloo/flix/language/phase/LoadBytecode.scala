@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import java.nio.file.{Files, Paths}
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression}
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol, Type}
 import ca.uwaterloo.flix.runtime.Value

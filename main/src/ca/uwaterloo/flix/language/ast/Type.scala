@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.phase.GenSym
+import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**

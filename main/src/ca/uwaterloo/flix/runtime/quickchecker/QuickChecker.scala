@@ -18,11 +18,10 @@ package ca.uwaterloo.flix.runtime.quickchecker
 
 import java.math.BigInteger
 
-import ca.uwaterloo.flix.language.Compiler
+import ca.uwaterloo.flix.language.{Compiler, GenSym}
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression.Var
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, Property, Root}
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, PropertyError, Scheme, Type}
-import ca.uwaterloo.flix.language.phase.GenSym
 import ca.uwaterloo.flix.runtime.evaluator.SymVal.{Char, Unit}
 import ca.uwaterloo.flix.runtime.evaluator.{SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.Highlight.{Blue, Cyan, Red}

@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.{Ast, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -109,7 +110,7 @@ object LambdaLift {
         val exp = visit(body)
 
         // Then, generate a fresh name for the lifted lambda.
-        val name = genSym.freshDefn(nameHint)
+        val name = Symbol.freshDefnSym(nameHint.mkString("."))
 
         // Create a new top-level definition, using the fresh name and lifted body.
         val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), name, args, exp, isSynthetic = true, tpe, loc)

@@ -14,27 +14,22 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.ast
+package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.language.GenSym
+import java.util.concurrent.atomic.AtomicInteger
 
-object Scheme {
-
-  /**
-    * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
-    */
-  def instantiate(sc: Scheme)(implicit genSym: GenSym): Type = Type.refreshTypeVars(sc.quantifiers, sc.base)
-
-}
-
-/**
-  * Representation of polytypes.
-  */
-case class Scheme(quantifiers: List[Type.Var], base: Type) {
+class GenSym() {
 
   /**
-    * Returns a human readable representation of the polytype.
+    * An internal counter.
     */
-  override def toString: String = s"∀(${quantifiers.mkString(", ")}). $base"
+  private val counter: AtomicInteger = new AtomicInteger(0)
+
+  /**
+    * Returns a freshly generated unique id.
+    */
+  def freshId(): Int = {
+    counter.getAndIncrement()
+  }
 
 }

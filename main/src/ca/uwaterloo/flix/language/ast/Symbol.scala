@@ -16,10 +16,17 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
-import ca.uwaterloo.flix.language.phase.GenSym
 
 object Symbol {
+
+  /**
+    * Returns a fresh definition symbol with the given text.
+    */
+  def freshDefnSym(text: String): DefnSym = {
+    new DefnSym(Nil, text, SourceLocation.Unknown)
+  }
 
   /**
     * Returns a fresh variable symbol with no additional information.
