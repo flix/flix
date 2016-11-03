@@ -264,9 +264,10 @@ object CreateExecutableAst {
     object Body {
       // TODO: Should we move this to the Indexer (the only place that accesses freeVars)?
       // Also, figure out the actual implementation for Predicate.Body.Loop
+      // TODO: Should not return strings!
       private def freeVars(terms: List[SimplifiedAst.Term.Body]): Set[String] = terms.foldLeft(Set.empty[String]) {
         case (xs, t: SimplifiedAst.Term.Body.Wildcard) => xs
-        case (xs, t: SimplifiedAst.Term.Body.Var) => xs + t.ident.name
+        case (xs, t: SimplifiedAst.Term.Body.Var) => xs + t.sym.toString
         case (xs, t: SimplifiedAst.Term.Body.Exp) => xs
       }
 
@@ -279,7 +280,7 @@ object CreateExecutableAst {
             while (i < r.length) {
               termsArray(i) match {
                 case ExecutableAst.Term.Body.Var(ident, _, _, _) =>
-                  r(i) = ident.name
+                  r(i) = ident.toString
                 case _ => // nop
               }
               i = i + 1
@@ -293,12 +294,12 @@ object CreateExecutableAst {
         case SimplifiedAst.Predicate.Body.ApplyHookFilter(hook, terms, loc) =>
           val termsArray = terms.map(Term.toExecutable).toArray
           ExecutableAst.Predicate.Body.ApplyHookFilter(hook, termsArray, freeVars(terms), loc)
-        case SimplifiedAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
-          val freeVars = Set(ident1.name, ident2.name)
-          ExecutableAst.Predicate.Body.NotEqual(ident1, ident2, freeVars, loc)
-        case SimplifiedAst.Predicate.Body.Loop(ident, term, loc) =>
+        case SimplifiedAst.Predicate.Body.NotEqual(sym1, sym2, loc) =>
+          val freeVars = Set(sym1.toString, sym2.toString)
+          ExecutableAst.Predicate.Body.NotEqual(sym1, sym2, freeVars, loc)
+        case SimplifiedAst.Predicate.Body.Loop(sym, term, loc) =>
           val freeVars = Set.empty[String] // TODO
-          ExecutableAst.Predicate.Body.Loop(ident, Term.toExecutable(term), freeVars, loc)
+          ExecutableAst.Predicate.Body.Loop(sym, Term.toExecutable(term), freeVars, loc)
       }
     }
 

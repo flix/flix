@@ -332,7 +332,7 @@ object Interpreter {
     * Evaluates the given head term `t` under the given environment `env0`
     */
   def evalHeadTerm(t: Term.Head, root: Root, env: Map[String, AnyRef]): AnyRef = t match {
-    case Term.Head.Var(x, _, _) => env(x.name)
+    case Term.Head.Var(x, _, _) => env(x.toString)
     case Term.Head.Exp(e, _, _) => eval(e, root, env)
     case Term.Head.Apply(name, args, _, _) =>
       val defn = root.definitions(name)
@@ -361,7 +361,7 @@ object Interpreter {
 
   def evalBodyTerm(t: Term.Body, root: Root, env: Map[String, AnyRef]): AnyRef = t match {
     case Term.Body.Wildcard(_, _) => ???
-    case Term.Body.Var(x, _, _, _) => env(x.name)
+    case Term.Body.Var(x, _, _, _) => env(x.toString)
     case Term.Body.Exp(e, _, _) => eval(e, root, env)
   }
 

@@ -57,7 +57,7 @@ object LambdaLift {
     */
   private def lift(decl: SimplifiedAst.Definition.Constant, m: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant = {
     val convExp = ClosureConv.convert(decl.exp)
-    val liftExp = lift(convExp, decl.sym.namespace, m)
+    val liftExp = lift(convExp, m, Some(decl.sym))
     decl.copy(exp = liftExp)
   }
 
@@ -69,7 +69,7 @@ object LambdaLift {
     */
   private def lift(prop: SimplifiedAst.Property, m: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Property = {
     val convExp = ClosureConv.convert(prop.exp)
-    val liftExp = lift(convExp, List(prop.law.toString), m)
+    val liftExp = lift(convExp, m, None)
     prop.copy(exp = liftExp)
   }
 
@@ -78,7 +78,7 @@ object LambdaLift {
     *
     * Adds new top-level definitions to the mutable map `m`.
     */
-  private def lift(exp0: Expression, nameHint: List[String], m: TopLevel)(implicit genSym: GenSym): Expression = {
+  private def lift(exp0: Expression, m: TopLevel, symOpt: Option[Symbol.DefnSym])(implicit genSym: GenSym): Expression = {
     def visit(e: Expression): Expression = e match {
       case Expression.Unit => e
       case Expression.True => e
@@ -110,7 +110,10 @@ object LambdaLift {
         val exp = visit(body)
 
         // Then, generate a fresh name for the lifted lambda.
-        val name = Symbol.freshDefnSym(nameHint.mkString("."))
+        val name = symOpt match {
+          case None => Symbol.freshDefnSym("none")
+          case Some(oldSym) => Symbol.freshDefnSym(oldSym)
+        }
 
         // Create a new top-level definition, using the fresh name and lifted body.
         val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), name, args, exp, isSynthetic = true, tpe, loc)

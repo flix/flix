@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object Symbol {
 
@@ -25,7 +26,18 @@ object Symbol {
     * Returns a fresh definition symbol with the given text.
     */
   def freshDefnSym(text: String): DefnSym = {
+    if (text.isEmpty) throw InternalCompilerException("Illegal argument 'text' must be non-empty.")
+
     new DefnSym(Nil, text, SourceLocation.Unknown)
+  }
+
+  /**
+    * Returns a fresh definition symbol based on the given symbol.
+    */
+  def freshDefnSym(sym: DefnSym)(implicit genSym: GenSym): DefnSym = {
+    val id = genSym.freshId()
+    val name = sym.name + "$" + id
+    new DefnSym(sym.namespace, name, SourceLocation.Unknown)
   }
 
   /**
@@ -117,6 +129,30 @@ object Symbol {
     * @param loc  the source location associated with the symbol.
     */
   final class VarSym(val id: Int, val text: String, val tvar: Type.Var, val loc: SourceLocation) {
+
+    /**
+      * The internal stack offset. Computed during variable numbering.
+      */
+    private var stackOffset: Option[Int] = None
+
+    /**
+      * Returns the stack offset of `this` variable symbol.
+      *
+      * Throws [[InternalCompilerException]] if the stack offset has not been set.
+      */
+    def getStackOffset: Int = stackOffset match {
+      case None => throw InternalCompilerException(s"Unknown stack offset for variable symbol $toString.")
+      case Some(offset) => offset
+    }
+
+    /**
+      * Sets the internal stack offset to given argument.
+      */
+    def setStackOffset(offset: Int): Unit = stackOffset match {
+      case None => stackOffset = Some(offset)
+      case Some(_) => throw InternalCompilerException(s"Offset already computed for variable symbol $toString.")
+    }
+
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -134,13 +170,6 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = text + "$" + id
-
-    // TODO: Temporary convenience method.
-    def toIdent: Name.Ident = {
-      val sp1 = SourcePosition(loc.source, loc.beginLine, loc.beginCol, None)
-      val sp2 = SourcePosition(loc.source, loc.endLine, loc.endCol, None)
-      Name.Ident(sp1, text + "$" + id, sp2)
-    }
   }
 
   /**

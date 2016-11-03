@@ -357,9 +357,9 @@ object Simplifier {
         case TypedAst.Predicate.Body.ApplyHookFilter(hook, terms, loc) =>
           SimplifiedAst.Predicate.Body.ApplyHookFilter(hook, terms map Term.simplifyBody, loc)
         case TypedAst.Predicate.Body.NotEqual(sym1, sym2, loc) =>
-          SimplifiedAst.Predicate.Body.NotEqual(sym1.toIdent, sym2.toIdent, loc)
+          SimplifiedAst.Predicate.Body.NotEqual(sym1, sym2, loc)
         case TypedAst.Predicate.Body.Loop(sym, term, loc) =>
-          SimplifiedAst.Predicate.Body.Loop(sym.toIdent, Term.simplifyHead(term), loc)
+          SimplifiedAst.Predicate.Body.Loop(sym, Term.simplifyHead(term), loc)
       }
     }
 
@@ -369,7 +369,7 @@ object Simplifier {
 
     def simplifyHead(e: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Term.Head = e match {
       case TypedAst.Expression.Var(sym, tpe, loc) =>
-        SimplifiedAst.Term.Head.Var(sym.toIdent, tpe, loc)
+        SimplifiedAst.Term.Head.Var(sym, tpe, loc)
       case TypedAst.Expression.Apply(TypedAst.Expression.Ref(sym, _, _), args, tpe, loc) =>
         val as = args map simplifyHead
         SimplifiedAst.Term.Head.Apply(sym, as, tpe, loc)
@@ -381,7 +381,7 @@ object Simplifier {
 
     def simplifyBody(e: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Term.Body = e match {
       case TypedAst.Expression.Wild(tpe, loc) => SimplifiedAst.Term.Body.Wildcard(tpe, loc)
-      case TypedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Term.Body.Var(sym.toIdent, -1, tpe, loc)
+      case TypedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Term.Body.Var(sym, -1, tpe, loc)
       case _ => SimplifiedAst.Term.Body.Exp(Expression.simplify(e), e.tpe, e.loc)
     }
 

@@ -628,12 +628,12 @@ object ExecutableAst {
                                  freeVars: Set[String],
                                  loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
-      case class NotEqual(ident1: Name.Ident,
-                          ident2: Name.Ident,
+      case class NotEqual(sym1: Symbol.VarSym,
+                          sym2: Symbol.VarSym,
                           freeVars: Set[String],
                           loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
-      case class Loop(ident: Name.Ident,
+      case class Loop(sym: Symbol.VarSym,
                       term: ExecutableAst.Term.Head,
                       freeVars: Set[String],
                       loc: SourceLocation) extends ExecutableAst.Predicate.Body
@@ -652,7 +652,7 @@ object ExecutableAst {
 
     object Head {
 
-      case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
+      case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
       case class Exp(e: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
@@ -678,7 +678,7 @@ object ExecutableAst {
 
       case class Wildcard(tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
-      case class Var(ident: Name.Ident, v: scala.Int, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
+      case class Var(sym: Symbol.VarSym, v: scala.Int, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
       case class Exp(e: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 

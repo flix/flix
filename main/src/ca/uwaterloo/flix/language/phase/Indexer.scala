@@ -49,7 +49,7 @@ object Indexer {
             val determinate = terms.zipWithIndex.foldLeft(Seq.empty[Int]) {
               case (xs, (t: Term.Body.Wildcard, i)) => xs
               case (xs, (t: Term.Body.Var, i)) =>
-                if (bound contains t.ident.name)
+                if (bound contains t.sym.text) // TODO: Correctness
                   xs :+ i
                 else
                   xs

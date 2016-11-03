@@ -870,7 +870,7 @@ object Typer {
           if (!resolveFreeVars) {
             TypedAst.Expression.Var(sym, subst0(sym.tvar), loc)
           } else {
-            val qname = Name.mkQName(sym.text)
+            val qname = Name.mkQName(sym.text) // TODO
             Disambiguation.lookupRef(qname, ns0, program) match {
               case Ok(RefTarget.Defn(ns, defn)) => TypedAst.Expression.Ref(defn.sym, subst0(sym.tvar), loc)
               case Ok(RefTarget.Hook(hook)) => TypedAst.Expression.Hook(hook, subst0(sym.tvar), loc)

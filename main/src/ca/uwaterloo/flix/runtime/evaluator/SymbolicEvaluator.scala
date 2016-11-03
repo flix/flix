@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.runtime.evaluator
 
 import ca.uwaterloo.flix.api.{MatchException, SwitchException, UserException}
+import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.phase.GenSym
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
