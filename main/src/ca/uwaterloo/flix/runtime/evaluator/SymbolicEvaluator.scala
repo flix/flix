@@ -128,7 +128,7 @@ object SymbolicEvaluator {
         */
       case Expression.Ref(name, tpe, loc) =>
         // Lookup and evaluate the definition.
-        root.constants.get(name) match {
+        root.definitions.get(name) match {
           case None => throw InternalCompilerException(s"Type Error: Unresolved reference '$name'.")
           case Some(defn) => eval(pc0, defn.exp, env0)
         }
@@ -149,7 +149,7 @@ object SymbolicEvaluator {
         */
       case Expression.ApplyRef(name, args, _, _) =>
         // Lookup the reference.
-        val defn = root.constants(name)
+        val defn = root.definitions(name)
         // Evaluate all the arguments.
         evaln(pc0, args, env0) flatMap {
           case (pc, as) =>
@@ -166,7 +166,7 @@ object SymbolicEvaluator {
         */
       case Expression.ApplyTail(name, _, args, _, _) =>
         // Lookup the reference.
-        val defn = root.constants(name)
+        val defn = root.definitions(name)
         // Evaluate all the arguments.
         evaln(pc0, args, env0) flatMap {
           case (pc, as) =>
@@ -187,7 +187,7 @@ object SymbolicEvaluator {
         eval(pc0, exp, env0) flatMap {
           case (pc, SymVal.Closure(ref, bindings)) =>
             // Lookup the definition
-            val defn = root.constants(ref.name)
+            val defn = root.definitions(ref.sym)
             // Evaluate all the arguments.
             evaln(pc, args, env0) flatMap {
               case (pc1, actuals) =>

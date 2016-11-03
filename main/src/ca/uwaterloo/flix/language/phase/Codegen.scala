@@ -77,7 +77,7 @@ object Codegen {
 
   case class Context(prefix: List[String],
                      functions: List[Definition.Constant],
-                     declarations: Map[Symbol.Resolved, Type],
+                     declarations: Map[Symbol.DefnSym, Type],
                      interfaces: Map[Type, List[String]]) {
 
     /*
@@ -213,7 +213,7 @@ object Codegen {
    */
   private def compileFunction(ctx: Context, visitor: ClassVisitor)(function: Definition.Constant): Unit = {
     val flags = if (function.isSynthetic) ACC_PUBLIC + ACC_STATIC + ACC_SYNTHETIC else ACC_PUBLIC + ACC_STATIC
-    val mv = visitor.visitMethod(flags, function.name.suffix, ctx.descriptor(function.tpe), null, null)
+    val mv = visitor.visitMethod(flags, function.sym.suffix, ctx.descriptor(function.tpe), null, null)
     mv.visitCode()
 
     val entryPoint = new Label()
@@ -223,7 +223,7 @@ object Codegen {
 
     val tpe = function.tpe match {
       case Type.Apply(Type.Arrow(l), ts) => ts.last
-      case _ => throw InternalCompilerException(s"Constant ${function.name} should have been converted to a function.")
+      case _ => throw InternalCompilerException(s"Constant ${function.sym} should have been converted to a function.")
     }
 
     tpe match {
@@ -344,7 +344,7 @@ object Codegen {
       // object, while implMethod takes a descriptor string and represents the implementation method's type (that is,
       // with the capture variables included in the arguments list).
       val samMethodType = asm.Type.getType(ctx.descriptor(tpe))
-      val implMethod = new Handle(H_INVOKESTATIC, decorate(ref.name.prefix), ref.name.suffix, ctx.descriptor(ref.tpe))
+      val implMethod = new Handle(H_INVOKESTATIC, decorate(ref.sym.prefix), ref.sym.suffix, ctx.descriptor(ref.tpe))
       val instantiatedMethodType = asm.Type.getType(ctx.descriptor(tpe))
       val bsmArgs = Array(samMethodType, implMethod, instantiatedMethodType)
 
@@ -418,7 +418,7 @@ object Codegen {
       visitor.visitFieldInsn(GETSTATIC, decorate(ctx.prefix), flixObject, asm.Type.getDescriptor(clazz))
 
       // Next we load the arguments for the invoke/invokeUnsafe virtual call, starting with the name of the hook.
-      visitor.visitLdcInsn(hook.name.toString)
+      visitor.visitLdcInsn(hook.sym.toString)
 
       // Create the arguments array.
       compileInt(visitor)(args.length)

@@ -23,7 +23,7 @@ sealed trait ExecutableAst
 
 object ExecutableAst {
 
-  case class Root(constants: Map[Symbol.Resolved, ExecutableAst.Definition.Constant],
+  case class Root(definitions: Map[Symbol.DefnSym, ExecutableAst.Definition.Constant],
                   enums: Map[Symbol.EnumSym, ExecutableAst.Definition.Enum],
                   lattices: Map[Type, ExecutableAst.Definition.Lattice],
                   tables: Map[Symbol.TableSym, ExecutableAst.Table],
@@ -38,7 +38,7 @@ object ExecutableAst {
 
   object Definition {
 
-    case class Constant(name: Symbol.Resolved,
+    case class Constant(sym: Symbol.DefnSym,
                         formals: Array[ExecutableAst.FormalArg],
                         exp: ExecutableAst.Expression,
                         isSynthetic: Boolean,
@@ -50,11 +50,11 @@ object ExecutableAst {
     case class Enum(sym: Symbol.EnumSym, cases: Map[String, ExecutableAst.Case], loc: SourceLocation) extends ExecutableAst.Definition
 
     case class Lattice(tpe: Type,
-                       bot: Symbol.Resolved,
-                       top: Symbol.Resolved,
-                       leq: Symbol.Resolved,
-                       lub: Symbol.Resolved,
-                       glb: Symbol.Resolved,
+                       bot: Symbol.DefnSym,
+                       top: Symbol.DefnSym,
+                       leq: Symbol.DefnSym,
+                       lub: Symbol.DefnSym,
+                       glb: Symbol.DefnSym,
                        loc: SourceLocation) extends ExecutableAst.Definition
 
     case class Index(name: Symbol.TableSym,
@@ -333,13 +333,11 @@ object ExecutableAst {
     /**
       * A typed AST node representing a reference to a top-level definition.
       *
-      * @param name the name of the reference.
-      * @param tpe  the type of the reference.
-      * @param loc  the source location of the reference.
+      * @param sym the name of the reference.
+      * @param tpe the type of the reference.
+      * @param loc the source location of the reference.
       */
-    case class Ref(name: Symbol.Resolved, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression {
-      override def toString: String = "Ref(" + name.fqn + ")"
-    }
+    case class Ref(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     /**
       * A typed AST node representing the creation of a closure. Free variables are computed at compile time and bound
@@ -358,12 +356,12 @@ object ExecutableAst {
     /**
       * A typed AST node representing a function call.
       *
-      * @param name the name of the function being called.
+      * @param sym  the name of the function being called.
       * @param args the function arguments.
       * @param tpe  the return type of the function.
       * @param loc  the source location of the expression.
       */
-    case class ApplyRef(name: Symbol.Resolved,
+    case class ApplyRef(sym: Symbol.DefnSym,
                         args: Array[ExecutableAst.Expression],
                         tpe: Type,
                         loc: SourceLocation) extends ExecutableAst.Expression
@@ -377,7 +375,7 @@ object ExecutableAst {
       * @param tpe     the return type of the function.
       * @param loc     the source location of the expression.
       */
-    case class ApplyTail(name: Symbol.Resolved,
+    case class ApplyTail(name: Symbol.DefnSym,
                          formals: List[ExecutableAst.FormalArg],
                          actuals: List[ExecutableAst.Expression],
                          tpe: Type,
@@ -511,13 +509,13 @@ object ExecutableAst {
     /**
       * A typed AST node representing a tagged expression.
       *
-      * @param enum the name of the enum.
-      * @param tag  the name of the tag.
-      * @param exp  the expression.
-      * @param tpe  the type of the expression.
-      * @param loc  The source location of the tag.
+      * @param sym the name of the enum.
+      * @param tag the name of the tag.
+      * @param exp the expression.
+      * @param tpe the type of the expression.
+      * @param loc The source location of the tag.
       */
-    case class Tag(enum: Symbol.Resolved,
+    case class Tag(sym: Symbol.EnumSym,
                    tag: String,
                    exp: ExecutableAst.Expression,
                    tpe: Type,
@@ -624,7 +622,7 @@ object ExecutableAst {
         val arity: Int = terms.length
       }
 
-      case class ApplyFilter(name: Symbol.Resolved,
+      case class ApplyFilter(sym: Symbol.DefnSym,
                              terms: Array[ExecutableAst.Term.Body],
                              freeVars: Set[String],
                              loc: SourceLocation) extends ExecutableAst.Predicate.Body
@@ -662,7 +660,7 @@ object ExecutableAst {
 
       case class Exp(e: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
-      case class Apply(name: Symbol.Resolved,
+      case class Apply(sym: Symbol.DefnSym,
                        args: Array[ExecutableAst.Term.Head],
                        tpe: Type,
                        loc: SourceLocation) extends ExecutableAst.Term.Head

@@ -27,7 +27,7 @@ object LambdaLift {
   /**
     * Mutable map of top level definitions.
     */
-  private type TopLevel = mutable.Map[Symbol.Resolved, SimplifiedAst.Definition.Constant]
+  private type TopLevel = mutable.Map[Symbol.DefnSym, SimplifiedAst.Definition.Constant]
 
   /**
     * Performs lambda lifting on all definitions in the AST.
@@ -38,14 +38,14 @@ object LambdaLift {
     // A mutable map to hold lambdas that are lifted to the top level.
     val m: TopLevel = mutable.Map.empty
 
-    val definitions = root.constants.map {
+    val definitions = root.definitions.map {
       case (name, decl) => name -> lift(decl, m)
     }
     val properties = root.properties.map(p => lift(p, m))
 
     // Return the updated AST root.
     val e = System.nanoTime() - t
-    root.copy(constants = definitions ++ m, properties = properties, time = root.time.copy(lambdaLift = e))
+    root.copy(definitions = definitions ++ m, properties = properties, time = root.time.copy(lambdaLift = e))
   }
 
   /**
@@ -56,7 +56,7 @@ object LambdaLift {
     */
   private def lift(decl: SimplifiedAst.Definition.Constant, m: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant = {
     val convExp = ClosureConv.convert(decl.exp)
-    val liftExp = lift(convExp, decl.name.parts, m)
+    val liftExp = lift(convExp, decl.sym.namespace, m)
     decl.copy(exp = liftExp)
   }
 

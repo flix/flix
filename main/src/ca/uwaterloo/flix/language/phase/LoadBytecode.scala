@@ -84,16 +84,16 @@ object LoadBytecode {
     val loader = new Loader()
 
     // 1. Group constants and transform non-functions.
-    val constantsMap: Map[List[String], List[Definition.Constant]] = root.constants.values.map { f =>
+    val constantsMap: Map[List[String], List[Definition.Constant]] = root.definitions.values.map { f =>
       f.tpe match {
         case Type.Apply(Type.Arrow(l), _) => f
         case t => f.copy(tpe = Type.mkArrow(List(), t))
       }
-    }.toList.groupBy(_.name.prefix)
+    }.toList.groupBy(_.sym.prefix)
     val constantsList: List[Definition.Constant] = constantsMap.values.flatten.toList
 
     // 2. Create the declarations map.
-    val declarations: Map[Symbol.Resolved, Type] = constantsList.map(f => f.name -> f.tpe).toMap
+    val declarations: Map[Symbol.DefnSym, Type] = constantsList.map(f => f.sym -> f.tpe).toMap
 
     // 3. Generate functional interfaces.
     val interfaces: Map[Type, List[String]] = generateInterfaceNames(constantsList)
@@ -126,7 +126,7 @@ object LoadBytecode {
       val clazz = loadedClasses(prefix)
       val argTpes = targs.map(t => toJavaClass(t, loadedInterfaces))
       // Note: Update the original constant in root.constants, not the temporary one in constantsMap!
-      root.constants(const.name).method = clazz.getMethod(const.name.suffix, argTpes: _*)
+      root.definitions(const.sym).method = clazz.getMethod(const.sym.suffix, argTpes: _*)
     }
 
     val e = System.nanoTime() - t

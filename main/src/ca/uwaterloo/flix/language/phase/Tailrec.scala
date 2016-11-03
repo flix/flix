@@ -30,10 +30,10 @@ object Tailrec {
     * Identifies tail recursive calls in the given AST `root`.
     */
   def tailrec(root: SimplifiedAst.Root): SimplifiedAst.Root = {
-    val defns = root.constants.map {
+    val defns = root.definitions.map {
       case (sym, defn) => sym -> tailrec(defn)
     }
-    root.copy(constants = defns)
+    root.copy(definitions = defns)
   }
 
   /**
@@ -67,7 +67,7 @@ object Tailrec {
        * ApplyRef: Check if the `ApplyRef` is a tail recursive call.
        */
       case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
-        if (defn.name == name) {
+        if (defn.sym == name) {
           // Case 1: Tail-recursive call. Replace node.
           SimplifiedAst.Expression.ApplyTail(name, defn.formals, args, tpe, loc)
         } else {

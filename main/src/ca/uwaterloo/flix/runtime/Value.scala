@@ -249,7 +249,7 @@ object Value {
   /**
     * Flix internal representation of closures.
     */
-  final case class Closure(name: Symbol.Resolved, bindings: Array[AnyRef])
+  final case class Closure(name: Symbol.DefnSym, bindings: Array[AnyRef])
 
   // TODO: Introduce make function and make Closure constructor private.
 

@@ -60,7 +60,7 @@ object Interpreter {
       case None => throw InternalRuntimeException(s"Key '${ident.name}' not found in environment: '${env0.mkString(",")}'.")
       case Some(v) => v
     }
-    case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env0)
+    case Expression.Ref(name, _, _) => eval(root.definitions(name).exp, root, env0)
     case Expression.MkClosureRef(ref, freeVars, _, _) =>
       // Save the values of the free variables in the Value.Closure structure.
       // When the closure is called, these values will be provided at the beginning of the argument list.
@@ -70,13 +70,13 @@ object Interpreter {
         bindings(i) = env0(freeVars(i).ident.name)
         i = i + 1
       }
-      Value.Closure(ref.name, bindings)
+      Value.Closure(ref.sym, bindings)
     case Expression.ApplyRef(name, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
-      evalCall(root.constants(name), args, root, env0)
+      evalCall(root.definitions(name), args, root, env0)
     case Expression.ApplyTail(name, _, args0, _, _) =>
       val args = evalArgs(args0.toArray, root, env0)
-      evalCall(root.constants(name), args, root, env0)
+      evalCall(root.definitions(name), args, root, env0)
     case Expression.ApplyHook(hook, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
       evalHook(hook, args, root, env0)
@@ -333,7 +333,7 @@ object Interpreter {
     case Term.Head.Var(x, _, _) => env(x.name)
     case Term.Head.Exp(e, _, _) => eval(e, root, env)
     case Term.Head.Apply(name, args, _, _) =>
-      val defn = root.constants(name)
+      val defn = root.definitions(name)
       val evalArgs = new Array[AnyRef](args.length)
       var i = 0
       while (i < evalArgs.length) {
@@ -391,7 +391,7 @@ object Interpreter {
 
   private def evalClosure(function: Value.Closure, args: Array[AnyRef], root: Root, env: Map[String, AnyRef]): AnyRef = {
     val Value.Closure(name, bindings) = function
-    val constant = root.constants(name)
+    val constant = root.definitions(name)
 
     // Bindings for the capture variables are passed as arguments.
     val env1 = constant.formals.take(bindings.length).zip(bindings).foldLeft(env) {

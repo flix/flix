@@ -53,9 +53,9 @@ object VarNumbering {
     */
   def number(root: SimplifiedAst.Root): SimplifiedAst.Root = {
     val t = System.nanoTime()
-    val defs = root.constants.map { case (name, defn) => name -> number(defn) }
+    val defs = root.definitions.map { case (name, defn) => name -> number(defn) }
     val e = System.nanoTime() - t
-    root.copy(constants = defs, time = root.time.copy(varNumbering = e))
+    root.copy(definitions = defs, time = root.time.copy(varNumbering = e))
   }
 
   /**
@@ -163,7 +163,7 @@ object VarNumbering {
     val numbered = visit(m, decl.exp)
 
     // Update and return the top-level definition
-    SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), decl.name, decl.formals, numbered, decl.isSynthetic, decl.tpe, decl.loc)
+    SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), decl.sym, decl.formals, numbered, decl.isSynthetic, decl.tpe, decl.loc)
   }
 
 }

@@ -22,7 +22,7 @@ object SimplifiedAst {
 
   // TODO: Order of elements.
 
-  case class Root(constants: Map[Symbol.Resolved, SimplifiedAst.Definition.Constant],
+  case class Root(definitions: Map[Symbol.DefnSym, SimplifiedAst.Definition.Constant],
                   enums: Map[Symbol.EnumSym, SimplifiedAst.Definition.Enum],
                   lattices: Map[Type, SimplifiedAst.Definition.Lattice],
                   tables: Map[Symbol.TableSym, SimplifiedAst.Table],
@@ -37,7 +37,7 @@ object SimplifiedAst {
   object Definition {
 
     case class Constant(ann: Ast.Annotations,
-                        name: Symbol.Resolved,
+                        sym: Symbol.DefnSym,
                         formals: List[SimplifiedAst.FormalArg],
                         exp: SimplifiedAst.Expression,
                         isSynthetic: Boolean,
@@ -292,13 +292,11 @@ object SimplifiedAst {
     /**
       * A typed AST node representing a reference to a top-level definition.
       *
-      * @param name the name of the reference.
-      * @param tpe  the type of the reference.
-      * @param loc  the source location of the reference.
+      * @param sym the name of the reference.
+      * @param tpe the type of the reference.
+      * @param loc the source location of the reference.
       */
-    case class Ref(name: Symbol.Resolved, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression {
-      override def toString: String = "Ref(" + name.fqn + ")"
-    }
+    case class Ref(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
       * A typed AST node representing a lambda function.
@@ -362,12 +360,12 @@ object SimplifiedAst {
     /**
       * A typed AST node representing a function call.
       *
-      * @param name the name of the function being called.
+      * @param sym  the name of the function being called.
       * @param args the function arguments.
       * @param tpe  the return type of the function.
       * @param loc  the source location of the expression.
       */
-    case class ApplyRef(name: Symbol.Resolved,
+    case class ApplyRef(sym: Symbol.DefnSym,
                         args: List[SimplifiedAst.Expression],
                         tpe: Type,
                         loc: SourceLocation) extends SimplifiedAst.Expression
@@ -375,13 +373,13 @@ object SimplifiedAst {
     /**
       * A typed AST node representing a tail recursive call.
       *
-      * @param name    the name of the function being called.
+      * @param sym     the name of the function being called.
       * @param formals the formal parameters.
       * @param actuals the actual parameters.
       * @param tpe     the return type of the function.
       * @param loc     the source location of the expression.
       */
-    case class ApplyTail(name: Symbol.Resolved,
+    case class ApplyTail(sym: Symbol.DefnSym,
                          formals: List[SimplifiedAst.FormalArg],
                          actuals: List[SimplifiedAst.Expression],
                          tpe: Type,
@@ -519,13 +517,13 @@ object SimplifiedAst {
     /**
       * A typed AST node representing a tagged expression.
       *
-      * @param enum the name of the enum.
-      * @param tag  the name of the tag.
-      * @param exp  the expression.
-      * @param tpe  the type of the expression.
-      * @param loc  The source location of the tag.
+      * @param sym the name of the enum.
+      * @param tag the name of the tag.
+      * @param exp the expression.
+      * @param tpe the type of the expression.
+      * @param loc The source location of the tag.
       */
-    case class Tag(enum: Symbol.Resolved,
+    case class Tag(sym: Symbol.EnumSym,
                    tag: String,
                    exp: SimplifiedAst.Expression,
                    tpe: Type,
@@ -630,7 +628,7 @@ object SimplifiedAst {
                        terms: List[SimplifiedAst.Term.Body],
                        loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
-      case class ApplyFilter(name: Symbol.Resolved,
+      case class ApplyFilter(name: Symbol.DefnSym, // TODO: Rename
                              terms: List[SimplifiedAst.Term.Body],
                              loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
@@ -666,7 +664,7 @@ object SimplifiedAst {
       case class Exp(literal: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head
 
       // TODO: Can we get rid of this?
-      case class Apply(name: Symbol.Resolved,
+      case class Apply(sym: Symbol.DefnSym,
                        args: List[SimplifiedAst.Term.Head],
                        tpe: Type,
                        loc: SourceLocation) extends SimplifiedAst.Term.Head {

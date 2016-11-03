@@ -409,7 +409,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       // filter with hook functions
       evalFilterHook(rule, rule.filterHooks, env, interp)
     case (pred: Predicate.Body.ApplyFilter) :: xs =>
-      val defn = root.constants(pred.name)
+      val defn = root.definitions(pred.sym)
       val args = new Array[AnyRef](pred.terms.length)
       var i = 0
       while (i < args.length) {
@@ -636,12 +636,12 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   private def mkModel(elapsed: Long): Model = {
     // construct the model.
-    val definitions = root.constants.foldLeft(Map.empty[Symbol.Resolved, () => AnyRef]) {
+    val definitions = root.definitions.foldLeft(Map.empty[Symbol.DefnSym, () => AnyRef]) {
       case (macc, (sym, defn)) =>
         if (defn.formals.isEmpty)
           macc + (sym -> (() => Interpreter.evalCall(defn, Array.empty, root)))
         else
-          macc + (sym -> (() => throw new InternalRuntimeException("Unable to evalaute non-constant top-level definition.")))
+          macc + (sym -> (() => throw InternalRuntimeException("Unable to evalaute non-constant top-level definition.")))
     }
 
     val relations = dataStore.relations.foldLeft(Map.empty[Symbol.TableSym, Iterable[List[AnyRef]]]) {

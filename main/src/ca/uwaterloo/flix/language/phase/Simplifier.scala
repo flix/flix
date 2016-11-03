@@ -32,7 +32,7 @@ object Simplifier {
   def simplify(tast: TypedAst.Root)(implicit genSym: GenSym): SimplifiedAst.Root = {
     val t = System.nanoTime()
 
-    val constants = tast.definitions.map { case (k, v) => k.toResolvedTemporaryHelperMethod -> Definition.simplify(v) }
+    val constants = tast.definitions.map { case (k, v) => k -> Definition.simplify(v) }
     val enums = tast.enums.map {
       case (k, TypedAst.Declaration.Enum(doc, sym, cases0, sc, loc)) =>
         val cases = cases0 map {
@@ -72,7 +72,7 @@ object Simplifier {
       val formals = tast.formals.map {
         case TypedAst.FormalParam(sym, tpe, loc) => SimplifiedAst.FormalArg(sym.toIdent, tpe)
       }
-      SimplifiedAst.Definition.Constant(tast.ann, tast.sym.toResolvedTemporaryHelperMethod, formals, Expression.simplify(tast.exp), isSynthetic = false, tast.tpe, tast.loc)
+      SimplifiedAst.Definition.Constant(tast.ann, tast.sym, formals, Expression.simplify(tast.exp), isSynthetic = false, tast.tpe, tast.loc)
     }
 
     def simplify(tast: TypedAst.Declaration.Index)(implicit genSym: GenSym): SimplifiedAst.Definition.Index =
@@ -105,7 +105,7 @@ object Simplifier {
       case TypedAst.Expression.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
       case TypedAst.Expression.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
       case TypedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Expression.Var(sym.toIdent, -1, tpe, loc)
-      case TypedAst.Expression.Ref(sym, tpe, loc) => SimplifiedAst.Expression.Ref(sym.toResolvedTemporaryHelperMethod, tpe, loc)
+      case TypedAst.Expression.Ref(sym, tpe, loc) => SimplifiedAst.Expression.Ref(sym, tpe, loc)
       case TypedAst.Expression.Hook(hook, tpe, loc) => SimplifiedAst.Expression.Hook(hook, tpe, loc)
       case TypedAst.Expression.Lambda(args, body, tpe, loc) =>
         SimplifiedAst.Expression.Lambda(args map Simplifier.simplify, simplify(body), tpe, loc)
@@ -215,7 +215,7 @@ object Simplifier {
         SExp.Let(matchVar, -1, matchExp, inner, tpe, loc)
 
       case TypedAst.Expression.Tag(sym, tag, e, tpe, loc) =>
-        SimplifiedAst.Expression.Tag(sym.toResolved, tag, simplify(e), tpe, loc)
+        SimplifiedAst.Expression.Tag(sym, tag, simplify(e), tpe, loc)
       case TypedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
       case TypedAst.Expression.FVec(elms, tpe, loc) => ??? // TODO
@@ -352,7 +352,7 @@ object Simplifier {
         case TypedAst.Predicate.Body.Table(sym, terms, loc) =>
           SimplifiedAst.Predicate.Body.Table(sym, terms map Term.simplifyBody, loc)
         case TypedAst.Predicate.Body.ApplyFilter(sym, terms, loc) =>
-          SimplifiedAst.Predicate.Body.ApplyFilter(sym.toResolvedTemporaryHelperMethod, terms map Term.simplifyBody, loc)
+          SimplifiedAst.Predicate.Body.ApplyFilter(sym, terms map Term.simplifyBody, loc)
         case TypedAst.Predicate.Body.ApplyHookFilter(hook, terms, loc) =>
           SimplifiedAst.Predicate.Body.ApplyHookFilter(hook, terms map Term.simplifyBody, loc)
         case TypedAst.Predicate.Body.NotEqual(sym1, sym2, loc) =>
@@ -371,7 +371,7 @@ object Simplifier {
         SimplifiedAst.Term.Head.Var(sym.toIdent, tpe, loc)
       case TypedAst.Expression.Apply(TypedAst.Expression.Ref(sym, _, _), args, tpe, loc) =>
         val as = args map simplifyHead
-        SimplifiedAst.Term.Head.Apply(sym.toResolvedTemporaryHelperMethod, as, tpe, loc)
+        SimplifiedAst.Term.Head.Apply(sym, as, tpe, loc)
       case TypedAst.Expression.Apply(TypedAst.Expression.Hook(hook, _, _), args, tpe, loc) =>
         val as = args map simplifyHead
         SimplifiedAst.Term.Head.ApplyHook(hook, as, tpe, loc)
@@ -434,7 +434,7 @@ object Simplifier {
     case TypedAst.Pattern.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
     case TypedAst.Pattern.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
     case TypedAst.Pattern.Tag(sym, tag, p, tpe, loc) =>
-      SimplifiedAst.Expression.Tag(sym.toResolved, tag, lit2exp(p), tpe, loc)
+      SimplifiedAst.Expression.Tag(sym, tag, lit2exp(p), tpe, loc)
     case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
       SimplifiedAst.Expression.Tuple(elms map lit2exp, tpe, loc)
     case _ => throw InternalCompilerException(s"Unexpected non-literal pattern $pat.")

@@ -34,13 +34,13 @@ object CreateExecutableAst {
   /**
     * Mutable map of top level definitions.
     */
-  private type TopLevel = mutable.Map[Symbol.Resolved, ExecutableAst.Definition.Constant]
+  private type TopLevel = mutable.Map[Symbol.DefnSym, ExecutableAst.Definition.Constant]
 
   def toExecutable(sast: SimplifiedAst.Root)(implicit genSym: GenSym): ExecutableAst.Root = {
     // A mutable map to hold top-level definitions created by lifting lattice expressions.
     val m: TopLevel = mutable.Map.empty
 
-    val constants = sast.constants.map { case (k, v) => k -> Definition.toExecutable(v) }
+    val constants = sast.definitions.map { case (k, v) => k -> Definition.toExecutable(v) }
 
     val enums = sast.enums.map {
       case (sym, SimplifiedAst.Definition.Enum(_, cases0, loc)) =>
@@ -95,7 +95,7 @@ object CreateExecutableAst {
         case SimplifiedAst.FormalArg(ident, tpe) => ExecutableAst.FormalArg(ident, tpe)
       }.toArray
 
-      ExecutableAst.Definition.Constant(sast.name, formals, Expression.toExecutable(sast.exp), sast.isSynthetic, sast.tpe, sast.loc)
+      ExecutableAst.Definition.Constant(sast.sym, formals, Expression.toExecutable(sast.exp), sast.isSynthetic, sast.tpe, sast.loc)
     }
 
     def toExecutable(sast: SimplifiedAst.Definition.Lattice, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Definition.Lattice = sast match {
@@ -122,9 +122,9 @@ object CreateExecutableAst {
         m ++= Map(botSym -> botConst, topSym -> topConst)
 
         // Extract the symbols for leq/lub/glb
-        val leqSym = t(leq).asInstanceOf[ExecutableAst.Expression.Ref].name
-        val lubSym = t(lub).asInstanceOf[ExecutableAst.Expression.Ref].name
-        val glbSym = t(glb).asInstanceOf[ExecutableAst.Expression.Ref].name
+        val leqSym = t(leq).asInstanceOf[ExecutableAst.Expression.Ref].sym
+        val lubSym = t(lub).asInstanceOf[ExecutableAst.Expression.Ref].sym
+        val glbSym = t(glb).asInstanceOf[ExecutableAst.Expression.Ref].sym
 
         ExecutableAst.Definition.Lattice(tpe, botSym, topSym, leqSym, lubSym, glbSym, loc)
     }

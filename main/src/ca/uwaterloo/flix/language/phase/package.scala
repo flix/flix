@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.language.ast.{Name, SourcePosition, Symbol}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol}
 
 package object phase {
 
@@ -34,9 +34,12 @@ package object phase {
       number
     }
 
-    def freshDefn(ns: List[String]): Symbol.Resolved = {
+    // TODO: change arguments and require source location?
+    def freshDefn(parts: List[String]): Symbol.DefnSym = {
       number = number + 1
-      Symbol.Resolved.mk(ns.init ::: ns.last + "$" + number :: Nil)
+      val namespace = if (parts.isEmpty) Nil else parts.init
+      val name = if (parts.isEmpty) "$" + number else parts.last + "$" + number
+      new Symbol.DefnSym(namespace, name, SourceLocation.Unknown)
     }
 
     def fresh2(): Name.Ident = fresh2("tmp")

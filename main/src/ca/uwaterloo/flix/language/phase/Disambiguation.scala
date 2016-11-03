@@ -47,7 +47,7 @@ object Disambiguation {
     if (qname.isUnqualified) {
       // Case 1: Unqualified reference. Lookup both the definition and the hook.
       val defnOpt = program.definitions.getOrElse(ns0, Map.empty).get(qname.ident.name)
-      val hookOpt = program.hooks.getOrElse(ns0, Map.empty).get(qname.ident.name)
+      val hookOpt = program.hooks.get(Symbol.mkDefnSym(ns0, qname.ident))
 
       (defnOpt, hookOpt) match {
         case (Some(defn), None) => Ok(RefTarget.Defn(ns0, defn))
@@ -58,7 +58,7 @@ object Disambiguation {
     } else {
       // Case 2: Qualified. Lookup both the definition and the hook.
       val defnOpt = program.definitions.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
-      val hookOpt = program.hooks.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+      val hookOpt = program.hooks.get(Symbol.mkDefnSym(qname.namespace, qname.ident))
 
       (defnOpt, hookOpt) match {
         case (Some(defn), None) => Ok(RefTarget.Defn(qname.namespace, defn))

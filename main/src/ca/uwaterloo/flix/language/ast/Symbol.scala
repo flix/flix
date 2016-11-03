@@ -36,6 +36,14 @@ object Symbol {
   }
 
   /**
+    * Returns the definition symbol for the given fully qualified name.
+    */
+  def mkDefnSym(fqn: String): DefnSym = split(fqn) match {
+    case None => new DefnSym(Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new DefnSym(ns, name, SourceLocation.Unknown)
+  }
+
+  /**
     * Returns the enum symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkEnumSym(ns: NName, ident: Ident): EnumSym = {
@@ -119,10 +127,23 @@ object Symbol {
     */
   final class DefnSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
 
-    // TODO: Temporary convenience method.
-    def toResolvedTemporaryHelperMethod: Symbol.Resolved = {
-      Symbol.Resolved.mk(namespace ::: name :: Nil)
+    /**
+      * Returns the prefix as a list of strings.
+      * For example, the prefix of the symbol "A.B.C/f" is List("A", "B", "C").
+      * A symbol "f" corresponds to "Root/f", so its prefix is List("Root").
+      */
+    // TODO: Possibly remove?
+    def prefix: List[String] = namespace match {
+      case Nil => List("Root")
+      case xs => xs
     }
+
+    /**
+      * Returns the suffix as a string.
+      * For example, the suffix of the symbol "A.B.C/f" is "f".
+      */
+    // TODO: Possibly remove?
+    def suffix: String = name
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
@@ -165,9 +186,6 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = name
-
-    // TODO: Remove
-    def toResolved: Symbol.Resolved = Symbol.Resolved.mk(namespace ::: name :: Nil)
   }
 
   /**
@@ -237,76 +255,6 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "/" + name
-  }
-
-
-  /**
-    * Companion object for the [[Resolved]] class.
-    */
-  // TODO: deprecated
-  object Resolved {
-
-    def mk(name: String): Resolved = {
-      if (name.contains("/")) {
-        val index = name.indexOf("/")
-        val (ns, ident) = name.splitAt(index)
-        mk(ns.split("\\.").toList ::: ident.substring(1) :: Nil)
-      } else
-        mk(List(name))
-    }
-
-    def mk(parts: List[String]): Resolved = new Resolved(parts)
-  }
-
-  /**
-    * Represents a resolved name.
-    *
-    * @param parts the parts of the name.
-    */
-  // TODO: deprecated
-  final class Resolved private(val parts: List[String]) {
-
-    /**
-      * Returns the fully qualified name of `this` as a string.
-      */
-    def fqn: String = parts match {
-      case x :: Nil => x
-      case xs => xs.init.mkString(".") + "/" + xs.last
-    }
-
-    /**
-      * Returns the prefix as a list of strings.
-      * For example, the prefix of the symbol "A.B.C/f" is List("A", "B", "C").
-      * A symbol "f" corresponds to "Root/f", so its prefix is List("Root").
-      */
-    def prefix: List[String] = parts match {
-      case x :: Nil => List("Root")
-      case xs => xs.init
-    }
-
-    /**
-      * Returns the suffix as a string.
-      * For example, the suffix of the symbol "A.B.C/f" is "f".
-      */
-    def suffix: String = parts.last
-
-    /**
-      * Returns `true` if this resolved name is equal to `obj` resolved name.
-      */
-    override def equals(obj: scala.Any): Boolean = obj match {
-      case that: Resolved => this.parts == that.parts
-      case _ => false
-    }
-
-    /**
-      * Returns the hash code of this resolved name.
-      */
-    override val hashCode: Int = parts.hashCode()
-
-    /**
-      * Human readable representation.
-      */
-    override val toString: String = fqn
   }
 
   /**

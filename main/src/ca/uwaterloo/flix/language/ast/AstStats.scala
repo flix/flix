@@ -112,7 +112,7 @@ object AstStats {
     /**
       * Visit each definition.
       */
-    root.constants.foldLeft(AstStats()) {
+    root.definitions.foldLeft(AstStats()) {
       case (acc, defn) => acc + visitExp(defn._2.exp)
     }
   }
