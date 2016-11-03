@@ -36,7 +36,7 @@ object SimplifiedAst {
 
     case class Constant(ann: Ast.Annotations,
                         sym: Symbol.DefnSym,
-                        formals: List[SimplifiedAst.FormalArg],
+                        formals: List[SimplifiedAst.FormalParam],
                         exp: SimplifiedAst.Expression,
                         isSynthetic: Boolean,
                         tpe: Type,
@@ -264,11 +264,10 @@ object SimplifiedAst {
       * A typed AST node representing a local variable expression (i.e. a parameter or let-bound variable).
       *
       * @param sym    the name of the variable.
-      * @param offset the (0-based) index of the variable.
       * @param tpe    the type of the variable.
       * @param loc    the source location of the variable.
       */
-    case class Var(sym: Symbol.VarSym, offset: scala.Int /* TODO: Remove offset */ , tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
       * A typed AST node representing a reference to a top-level definition.
@@ -290,7 +289,7 @@ object SimplifiedAst {
       * @param tpe  the type of the lambda.
       * @param loc  the source location of the lambda.
       */
-    case class Lambda(args: List[SimplifiedAst.FormalArg], body: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class Lambda(args: List[SimplifiedAst.FormalParam], body: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
       * A typed AST node representing a hook (native function).
@@ -346,7 +345,7 @@ object SimplifiedAst {
       * @param tpe     the return type of the function.
       * @param loc     the source location of the expression.
       */
-    case class ApplyTail(sym: Symbol.DefnSym, formals: List[SimplifiedAst.FormalArg], actuals: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class ApplyTail(sym: Symbol.DefnSym, formals: List[SimplifiedAst.FormalParam], actuals: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
       * A typed AST node representing a function call.
@@ -404,13 +403,12 @@ object SimplifiedAst {
       * A typed AST node representing a let expression.
       *
       * @param sym    the name of the bound variable.
-      * @param offset the (0-based) index of the bound variable.
       * @param exp1   the value of the bound variable.
       * @param exp2   the body expression in which the bound variable is visible.
       * @param tpe    the type of the expression (which is equivalent to the type of the body expression).
       * @param loc    the source location of the expression.
       */
-    case class Let(sym: Symbol.VarSym, offset: scala.Int, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class Let(sym: Symbol.VarSym, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
       * A typed AST node representing a check-tag expression, i.e. check if the tag expression matches the given tag
@@ -455,16 +453,15 @@ object SimplifiedAst {
       */
     case class GetTupleIndex(base: SimplifiedAst.Expression, offset: scala.Int, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-
     case class Tuple(elms: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class FSet(elms: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class Existential(params: List[SimplifiedAst.FormalArg], exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
+    case class Existential(params: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Bool
     }
 
-    case class Universal(params: List[SimplifiedAst.FormalArg], exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
+    case class Universal(params: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Bool
     }
 
@@ -560,9 +557,9 @@ object SimplifiedAst {
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends SimplifiedAst
 
-  case class FormalArg(sym: Symbol.VarSym, tpe: Type) extends SimplifiedAst
+  case class FormalParam(sym: Symbol.VarSym, tpe: Type) extends SimplifiedAst
 
-  case class FreeVar(sym: Symbol.VarSym, offset: Int, tpe: Type) extends SimplifiedAst
+  case class FreeVar(sym: Symbol.VarSym, tpe: Type) extends SimplifiedAst
 
   case class Property(law: Law, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst
 

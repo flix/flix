@@ -58,8 +58,8 @@ object Interpreter {
       val v = Value.cast2int64(eval(store.v, root, env0))
       val result = (e & store.targetMask) | ((v & store.mask) << store.offset)
       Value.mkInt64(result)
-    case Expression.Var(ident, _, _, loc) => env0.get(ident.toString) match {
-      case None => throw InternalRuntimeException(s"Key '${ident.toString}' not found in environment: '${env0.mkString(",")}'.")
+    case Expression.Var(sym, _, loc) => env0.get(sym.toString) match {
+      case None => throw InternalRuntimeException(s"Key '${sym.toString}' not found in environment: '${env0.mkString(",")}'.")
       case Some(v) => v
     }
     case Expression.Ref(name, _, _) => eval(root.definitions(name).exp, root, env0)
@@ -96,8 +96,8 @@ object Interpreter {
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
       val cond = Value.cast2bool(eval(exp1, root, env0))
       if (cond) eval(exp2, root, env0) else eval(exp3, root, env0)
-    case Expression.Let(ident, _, exp1, exp2, _, _) =>
-      val newEnv = env0 + (ident.toString -> eval(exp1, root, env0))
+    case Expression.Let(sym, exp1, exp2, _, _) =>
+      val newEnv = env0 + (sym.toString -> eval(exp1, root, env0))
       eval(exp2, root, newEnv)
     case Expression.CheckTag(tag, exp, _) => Value.mkBool(Value.cast2tag(eval(exp, root, env0)).tag == tag)
     case Expression.GetTagValue(tag, exp, _, _) => Value.cast2tag(eval(exp, root, env0)).value

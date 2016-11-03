@@ -48,7 +48,7 @@ object ClosureConv {
     case SimplifiedAst.Expression.StoreInt8(b, o, v) => exp
     case SimplifiedAst.Expression.StoreInt16(b, o, v) => exp
     case SimplifiedAst.Expression.StoreInt32(b, o, v) => exp
-    case SimplifiedAst.Expression.Var(ident, o, tpe, loc) => exp
+    case SimplifiedAst.Expression.Var(sym, tpe, loc) => exp
 
     case e: SimplifiedAst.Expression.Ref =>
       // If we encounter a Ref that has a lambda type (and is not being called in an Apply),
@@ -72,7 +72,7 @@ object ClosureConv {
 
       // We prepend the free variables to the arguments list. Thus all variables within the lambda body will be treated
       // uniformly. The implementation will supply values for the free variables, without any effort from the caller.
-      val newArgs = freeVars.map { case (n, t) => SimplifiedAst.FormalArg(n, t) } ++ args
+      val newArgs = freeVars.map { case (sym, ptype) => SimplifiedAst.FormalParam(sym, ptype) } ++ args
 
       // Update the lambda type.
       val argTpes = freeVars.map(_._2) ++ targs
@@ -91,7 +91,7 @@ object ClosureConv {
       // bound values are passed as arguments.
       // Note that MkClosure keeps the old lambda type.
       // In a later phase, we will lift the lambda to a top-level definition.
-      SimplifiedAst.Expression.MkClosure(lambda, freeVars.map(v => SimplifiedAst.FreeVar(v._1, -1, v._2)), tpe, loc)
+      SimplifiedAst.Expression.MkClosure(lambda, freeVars.map(v => SimplifiedAst.FreeVar(v._1, v._2)), tpe, loc)
 
     case SimplifiedAst.Expression.Hook(hook, tpe, loc) =>
       // Retrieve the type of the function.
@@ -99,8 +99,8 @@ object ClosureConv {
       val (targs, tresult) = (ts.take(l - 1), ts.last)
 
       // Wrap the hook inside a lambda, so we can create a closure.
-      val args = targs.map { t => SimplifiedAst.FormalArg(Symbol.freshVarSym("arg"), t) }
-      val hookArgs = args.map { f => SimplifiedAst.Expression.Var(f.sym, -1, f.tpe, loc) }
+      val args = targs.map { t => SimplifiedAst.FormalParam(Symbol.freshVarSym("hookArg"), t) }
+      val hookArgs = args.map { f => SimplifiedAst.Expression.Var(f.sym, f.tpe, loc) }
       val body = SimplifiedAst.Expression.ApplyHook(hook, hookArgs, tresult, loc)
       val lambda = SimplifiedAst.Expression.Lambda(args, body, hook.tpe, loc)
 
@@ -131,8 +131,8 @@ object ClosureConv {
       SimplifiedAst.Expression.Binary(op, convert(e1), convert(e2), tpe, loc)
     case SimplifiedAst.Expression.IfThenElse(e1, e2, e3, tpe, loc) =>
       SimplifiedAst.Expression.IfThenElse(convert(e1), convert(e2), convert(e3), tpe, loc)
-    case SimplifiedAst.Expression.Let(ident, offset, e1, e2, tpe, loc) =>
-      SimplifiedAst.Expression.Let(ident, offset, convert(e1), convert(e2), tpe, loc)
+    case SimplifiedAst.Expression.Let(sym, e1, e2, tpe, loc) =>
+      SimplifiedAst.Expression.Let(sym, convert(e1), convert(e2), tpe, loc)
     case SimplifiedAst.Expression.CheckTag(tag, e, loc) =>
       SimplifiedAst.Expression.CheckTag(tag, convert(e), loc)
     case SimplifiedAst.Expression.GetTagValue(tag, e, tpe, loc) =>
@@ -180,7 +180,7 @@ object ClosureConv {
     case SimplifiedAst.Expression.StoreInt8(b, o, v) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.StoreInt16(b, o, v) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.StoreInt32(b, o, v) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.Var(ident, o, tpe, loc) => mutable.LinkedHashSet((ident, tpe))
+    case SimplifiedAst.Expression.Var(sym, tpe, loc) => mutable.LinkedHashSet((sym, tpe))
     case SimplifiedAst.Expression.Ref(name, tpe, loc) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
       val bound = args.map(_.sym)
@@ -200,8 +200,8 @@ object ClosureConv {
       freeVariables(exp1) ++ freeVariables(exp2)
     case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       freeVariables(exp1) ++ freeVariables(exp2) ++ freeVariables(exp3)
-    case SimplifiedAst.Expression.Let(ident, offset, exp1, exp2, tpe, loc) =>
-      val bound = ident
+    case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
+      val bound = sym
       freeVariables(exp1) ++ freeVariables(exp2).filterNot { v => bound == v._1 }
     case SimplifiedAst.Expression.CheckTag(tag, exp, loc) => freeVariables(exp)
     case SimplifiedAst.Expression.GetTagValue(tag, exp, tpe, loc) => freeVariables(exp)

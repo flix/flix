@@ -50,9 +50,9 @@ object Tailrec {
        * Let: The body expression is in tail position.
        * (The value expression is *not* in tail position).
        */
-      case SimplifiedAst.Expression.Let(ident, offset, exp1, exp2, tpe, loc) =>
+      case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
         val e2 = visit(exp2)
-        SimplifiedAst.Expression.Let(ident, offset, exp1, e2, tpe, loc)
+        SimplifiedAst.Expression.Let(sym, exp1, e2, tpe, loc)
 
       /*
        * If-Then-Else: Consequent and alternative are both in tail position.

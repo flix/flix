@@ -122,7 +122,7 @@ object SymbolicEvaluator {
       /**
         * Local Variable.
         */
-      case Expression.Var(sym, _, tpe, loc) => lift(pc0, env0(sym.toString))
+      case Expression.Var(sym, tpe, loc) => lift(pc0, env0(sym.toString))
 
       /**
         * Reference.
@@ -716,7 +716,7 @@ object SymbolicEvaluator {
       /**
         * Let-binding.
         */
-      case Expression.Let(sym, _, exp1, exp2, _, _) =>
+      case Expression.Let(sym, exp1, exp2, _, _) =>
         eval(pc0, exp1, env0) flatMap {
           case (pc, v1) =>
             // Bind the variable to the value of `exp1` which is `v1`.

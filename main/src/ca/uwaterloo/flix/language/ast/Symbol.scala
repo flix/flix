@@ -48,6 +48,13 @@ object Symbol {
   }
 
   /**
+    * Returns a fresh variable symbol based on the given symbol.
+    */
+  def freshVarSym(sym: VarSym)(implicit genSym: GenSym): VarSym = {
+    new VarSym(genSym.freshId(), sym.text, sym.tvar, sym.loc)
+  }
+
+  /**
     * Returns a fresh variable symbol for the given identifier.
     */
   def freshVarSym(ident: Name.Ident)(implicit genSym: GenSym): VarSym = {
@@ -141,7 +148,7 @@ object Symbol {
       * Throws [[InternalCompilerException]] if the stack offset has not been set.
       */
     def getStackOffset: Int = stackOffset match {
-      case None => throw InternalCompilerException(s"Unknown stack offset for variable symbol $toString.")
+      case None => throw InternalCompilerException(s"Unknown offset for variable symbol $toString.")
       case Some(offset) => offset
     }
 
@@ -150,7 +157,8 @@ object Symbol {
       */
     def setStackOffset(offset: Int): Unit = stackOffset match {
       case None => stackOffset = Some(offset)
-      case Some(_) => throw InternalCompilerException(s"Offset already computed for variable symbol $toString.")
+      case Some(_) =>
+        throw InternalCompilerException(s"Offset already set for variable symbol $toString.")
     }
 
     /**

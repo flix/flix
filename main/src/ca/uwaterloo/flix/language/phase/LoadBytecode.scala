@@ -38,41 +38,41 @@ object LoadBytecode {
     * There are a number of steps we take before and after the actual code generation.
     *
     * 1. Group constants and transform non-functions.
-    *    We group all constants by their prefixes to determine which methods are compiled into which classes. Also, we
-    *    transform all non-function constants into 0-arg functions, since codegen only compiles methods.
-    *    Example 1: given a root with constants A.B.C/f, A.B/g, A.B.C/h, we want to generate two classes, A.B.C
-    *    (containing methods f and h) and A.B (containing method g).
-    *    Example 2: (in pseudocode) the constant `def x = UserError` is converted to `def x() = UserError`.
+    * We group all constants by their prefixes to determine which methods are compiled into which classes. Also, we
+    * transform all non-function constants into 0-arg functions, since codegen only compiles methods.
+    * Example 1: given a root with constants A.B.C/f, A.B/g, A.B.C/h, we want to generate two classes, A.B.C
+    * (containing methods f and h) and A.B (containing method g).
+    * Example 2: (in pseudocode) the constant `def x = UserError` is converted to `def x() = UserError`.
     *
     * 2. Create a declarations map of names to types.
-    *    We need to know the type of function f in order to generate code that calls f.
+    * We need to know the type of function f in order to generate code that calls f.
     *
     * 3. Generate functional interfaces.
-    *    Our implementation of closures requires the lambda function to be called through an interface (which is
-    *    annotated with @FunctionalInterface). Instead of using functional interfaces provided by Java or Scala (which
-    *    are too specific or too general), we create our own.
-    *    In this step, we generate names for the functional interfaces, placing each interface in the package
+    * Our implementation of closures requires the lambda function to be called through an interface (which is
+    * annotated with @FunctionalInterface). Instead of using functional interfaces provided by Java or Scala (which
+    * are too specific or too general), we create our own.
+    * In this step, we generate names for the functional interfaces, placing each interface in the package
     *    ca.uwaterloo.flix.runtime. We iterate over the entire AST to determine which function types are used in
-    *    MkClosureRef, remove duplicate types, and then generate names. We want the type of MkClosureRef, which is the
-    *    type of the closure, not the type of the lambda, since its underlying implementation method will have its
-    *    argument list modified for capture variables.
-    *    Note that this includes synthetic functions that were lambda lifted, as well as user-defined functions being
-    *    passed around as closures.
-    *    Finally, we generate bytecode for each name. We keep the types and names in an interfaces map, so that given
-    *    a closure's signature, we can lookup the functional interface it's called through.
+    * MkClosureRef, remove duplicate types, and then generate names. We want the type of MkClosureRef, which is the
+    * type of the closure, not the type of the lambda, since its underlying implementation method will have its
+    * argument list modified for capture variables.
+    * Note that this includes synthetic functions that were lambda lifted, as well as user-defined functions being
+    * passed around as closures.
+    * Finally, we generate bytecode for each name. We keep the types and names in an interfaces map, so that given
+    * a closure's signature, we can lookup the functional interface it's called through.
     *
     * 4. Generate and load bytecode.
-    *    As of this step, we have grouped the constants into separate classes, transformed non-functions into 0-arg
-    *    functions, collected all the declarations in a map, and created and loaded functional interfaces and collected
-    *    them in a map.
-    *    Now, for each class, we generate and load the bytecode. We also initialize the static Flix field to point to
-    *    `this`.
+    * As of this step, we have grouped the constants into separate classes, transformed non-functions into 0-arg
+    * functions, collected all the declarations in a map, and created and loaded functional interfaces and collected
+    * them in a map.
+    * Now, for each class, we generate and load the bytecode. We also initialize the static Flix field to point to
+    * `this`.
     *
     * 5. Load the methods.
-    *    For each constant, we use reflection to get the corresponding java.lang.reflect.Method object.
-    *    This is actually a bit tricky. We need the rewritten lambda types (non-functions -> 0-arg functions, free
-    *    variables eliminated) to perform the reflection lookup, so we iterate over constantsMap. However, we want to
-    *    mutate the original constant from root.constants, not the one in constantsMap (which will get GC'd).
+    * For each constant, we use reflection to get the corresponding java.lang.reflect.Method object.
+    * This is actually a bit tricky. We need the rewritten lambda types (non-functions -> 0-arg functions, free
+    * variables eliminated) to perform the reflection lookup, so we iterate over constantsMap. However, we want to
+    * mutate the original constant from root.constants, not the one in constantsMap (which will get GC'd).
     */
   def load(flix: Flix, root: ExecutableAst.Root, options: Options)(implicit genSym: GenSym): ExecutableAst.Root = {
     val t = System.nanoTime()
@@ -189,7 +189,7 @@ object LoadBytecode {
       case Expression.StoreInt8(b, o, v) => Set.empty
       case Expression.StoreInt16(b, o, v) => Set.empty
       case Expression.StoreInt32(b, o, v) => Set.empty
-      case Expression.Var(ident, o, tpe, loc) => Set.empty
+      case Expression.Var(sym, tpe, loc) => Set.empty
       case Expression.Ref(name, tpe, loc) => Set.empty
       case Expression.MkClosureRef(ref, freeVars, tpe, loc) => Set(tpe)
       case Expression.ApplyRef(name, args, tpe, loc) => args.flatMap(visit).toSet
@@ -199,7 +199,7 @@ object LoadBytecode {
       case Expression.Unary(op, exp, tpe, loc) => visit(exp)
       case Expression.Binary(op, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => visit(exp1) ++ visit(exp2) ++ visit(exp3)
-      case Expression.Let(ident, offset, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
+      case Expression.Let(sym, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
       case Expression.CheckTag(tag, exp, loc) => visit(exp)
       case Expression.GetTagValue(tag, exp, tpe, loc) => visit(exp)
       case Expression.Tag(enum, tag, exp, tpe, loc) => visit(exp)

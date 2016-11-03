@@ -91,9 +91,7 @@ object VarNumbering {
       case SimplifiedAst.Expression.StoreInt16(b, o, v) => e
       case SimplifiedAst.Expression.StoreInt32(b, o, v) => e
 
-      case SimplifiedAst.Expression.Var(sym, o, tpe, loc) =>
-        // A variable use, so lookup the variable offset and update the AST node.
-        SimplifiedAst.Expression.Var(sym, m.get(sym.toString), tpe, loc)
+      case SimplifiedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Expression.Var(sym, tpe, loc)
 
       case SimplifiedAst.Expression.Ref(name, tpe, loc) => e
       case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
@@ -101,7 +99,7 @@ object VarNumbering {
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
       case mkClosure@SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
         val numberedFreeVars = freeVars.map {
-          case SimplifiedAst.FreeVar(v, _, t) => SimplifiedAst.FreeVar(v, m.get(v.toString), t)
+          case SimplifiedAst.FreeVar(sym, tpe) => SimplifiedAst.FreeVar(sym, tpe)
         }
         mkClosure.copy(freeVars = numberedFreeVars)
       case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
@@ -121,18 +119,21 @@ object VarNumbering {
       case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         SimplifiedAst.Expression.IfThenElse(visit(m, exp1), visit(m, exp2), visit(m, exp3), tpe, loc)
 
-      case SimplifiedAst.Expression.Let(sym, offset, exp1, exp2, tpe, loc) =>
-        // First we number the variables in `exp1`.
+      case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
+        // First we number the variables in `exp1`. // TODO: No particular reason to do this first...
         val e1 = visit(m, exp1)
 
         // The let-binding introduces a new variable, so we need to add a new variable/offset to the map.
         val offset = m.set(sym.toString, exp1.tpe)
 
+        // Update the stack offset for the symbol.
+        sym.setStackOffset(offset)
+
         // Then we can use the updated map to number the variables in `exp2`.
         val e2 = visit(m, exp2)
 
         // Finally we return the updated Let expression.
-        SimplifiedAst.Expression.Let(sym, offset, e1, e2, tpe, loc)
+        SimplifiedAst.Expression.Let(sym, e1, e2, tpe, loc)
 
       case SimplifiedAst.Expression.CheckTag(tag, exp, loc) =>
         SimplifiedAst.Expression.CheckTag(tag, visit(m, exp), loc)
@@ -157,7 +158,10 @@ object VarNumbering {
     val m = new NumberingsMap
 
     // First, we number the parameters
-    decl.formals.foreach(f => m.set(f.sym.toString, f.tpe))
+    for (SimplifiedAst.FormalParam(sym, tpe) <- decl.formals) {
+      val offset = m.set(sym.toString, tpe)
+      sym.setStackOffset(offset)
+    }
 
     // Now we can number the body of the declaration
     val numbered = visit(m, decl.exp)

@@ -93,7 +93,7 @@ object CreateExecutableAst {
   object Definition {
     def toExecutable(sast: SimplifiedAst.Definition.Constant): ExecutableAst.Definition.Constant = {
       val formals = sast.formals.map {
-        case SimplifiedAst.FormalArg(ident, tpe) => ExecutableAst.FormalArg(ident, tpe)
+        case SimplifiedAst.FormalParam(ident, tpe) => ExecutableAst.FormalArg(ident, tpe)
       }.toArray
 
       ExecutableAst.Definition.Constant(sast.sym, formals, Expression.toExecutable(sast.exp), sast.isSynthetic, sast.tpe, sast.loc)
@@ -188,8 +188,8 @@ object CreateExecutableAst {
         ExecutableAst.Expression.StoreInt16(toExecutable(e), offset, toExecutable(v))
       case SimplifiedAst.Expression.StoreInt32(e, offset, v) =>
         ExecutableAst.Expression.StoreInt32(toExecutable(e), offset, toExecutable(v))
-      case SimplifiedAst.Expression.Var(ident, offset, tpe, loc) =>
-        ExecutableAst.Expression.Var(ident, offset, tpe, loc)
+      case SimplifiedAst.Expression.Var(sym, tpe, loc) =>
+        ExecutableAst.Expression.Var(sym, tpe, loc)
       case SimplifiedAst.Expression.Ref(name, tpe, loc) => ExecutableAst.Expression.Ref(name, tpe, loc)
       case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
         throw InternalCompilerException("Lambdas should have been converted to closures and lifted.")
@@ -218,8 +218,8 @@ object CreateExecutableAst {
         ExecutableAst.Expression.Binary(op, toExecutable(exp1), toExecutable(exp2), tpe, loc)
       case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         ExecutableAst.Expression.IfThenElse(toExecutable(exp1), toExecutable(exp2), toExecutable(exp3), tpe, loc)
-      case SimplifiedAst.Expression.Let(sym, offset, exp1, exp2, tpe, loc) =>
-        ExecutableAst.Expression.Let(sym, offset, toExecutable(exp1), toExecutable(exp2), tpe, loc)
+      case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
+        ExecutableAst.Expression.Let(sym, toExecutable(exp1), toExecutable(exp2), tpe, loc)
       case SimplifiedAst.Expression.CheckTag(tag, exp, loc) =>
         ExecutableAst.Expression.CheckTag(tag, toExecutable(exp), loc)
       case SimplifiedAst.Expression.GetTagValue(tag, exp, tpe, loc) =>
@@ -236,12 +236,12 @@ object CreateExecutableAst {
         ExecutableAst.Expression.FSet(elmsArray, tpe, loc)
       case SimplifiedAst.Expression.Existential(params, exp, loc) =>
         val ps = params map {
-          case SimplifiedAst.FormalArg(ident, tpe) => ExecutableAst.FormalArg(ident, tpe)
+          case SimplifiedAst.FormalParam(ident, tpe) => ExecutableAst.FormalArg(ident, tpe)
         }
         ExecutableAst.Expression.Existential(ps, toExecutable(exp), loc)
       case SimplifiedAst.Expression.Universal(params, exp, loc) =>
         val ps = params map {
-          case SimplifiedAst.FormalArg(ident, tpe) => ExecutableAst.FormalArg(ident, tpe)
+          case SimplifiedAst.FormalParam(ident, tpe) => ExecutableAst.FormalArg(ident, tpe)
         }
         ExecutableAst.Expression.Universal(ps, toExecutable(exp), loc)
       case SimplifiedAst.Expression.UserError(tpe, loc) => ExecutableAst.Expression.UserError(tpe, loc)
@@ -328,11 +328,11 @@ object CreateExecutableAst {
   def toExecutable(sast: SimplifiedAst.Attribute): ExecutableAst.Attribute =
     ExecutableAst.Attribute(sast.name, sast.tpe)
 
-  def toExecutable(sast: SimplifiedAst.FormalArg): ExecutableAst.FormalArg =
+  def toExecutable(sast: SimplifiedAst.FormalParam): ExecutableAst.FormalArg =
     ExecutableAst.FormalArg(sast.sym, sast.tpe)
 
   def toExecutable(sast: SimplifiedAst.FreeVar): ExecutableAst.FreeVar =
-    ExecutableAst.FreeVar(sast.sym, sast.offset, sast.tpe)
+    ExecutableAst.FreeVar(sast.sym, sast.tpe)
 
   def toExecutable(sast: SimplifiedAst.Property): ExecutableAst.Property =
     ExecutableAst.Property(sast.law, Expression.toExecutable(sast.exp), sast.loc)

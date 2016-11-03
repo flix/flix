@@ -216,7 +216,7 @@ object QuickChecker {
     */
   private def randomEnv(quantifiers: List[Var], root: Root)(implicit random: Random): Map[String, SymVal] = {
     quantifiers.foldLeft(Map.empty[String, SymVal]) {
-      case (macc, Var(sym, offset, tpe, loc)) => macc + (sym.toString -> new ArbSymVal(tpe, root).gen.mk(random))
+      case (macc, Var(sym, tpe, loc)) => macc + (sym.toString -> new ArbSymVal(tpe, root).gen.mk(random))
     }
   }
 
