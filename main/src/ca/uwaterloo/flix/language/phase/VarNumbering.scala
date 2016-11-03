@@ -16,158 +16,150 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.{Ast, SimplifiedAst, Type}
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
+import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-import scala.collection.mutable
-
+/**
+  * Assigns stack offsets to each variable symbol in the program.
+  *
+  * On the JVM, each method has a local variable array, and each variable is referenced by a 0-based offset. The first
+  * few slots in the array are initialized to the values of the parameters. Normally each value takes up a single
+  * slot, but longs and doubles require two consecutive slots. Thus, the n-th variable may not necessarily be the
+  * n-th slot. This phase computes the specific offsets used by each formal parameter and local variable.
+  */
 object VarNumbering {
 
   /**
-    * A wrapper for the map of variable names to variable offsets.
-    *
-    * The wrapper provides `get` and `set` methods for looking up or adding new variable numbers.
-    * Internally, this class also tracks the next offset to be assigned, incrementing it by 1 (2 for Int64 and Float64)
-    * for every new variable added.
-    */
-  class NumberingsMap {
-    private[this] val map: mutable.Map[String, Int] = mutable.Map.empty
-    private[this] var offset = 0
-
-    def get(s: String): Int = map(s)
-
-    // Returns the offset that was just added.
-    def set(s: String, t: Type): Int = {
-      map(s) = offset
-      val old = offset
-      t match {
-        case Type.Int64 | Type.Float64 => offset += 2
-        case _ => offset += 1
-      }
-      old
-    }
-  }
-
-  /**
-    * Iterate over all top-level definitions and number all variables
+    * Assigns a stack offset to each variable symbol in the program.
     */
   def number(root: SimplifiedAst.Root): SimplifiedAst.Root = {
     val t = System.nanoTime()
-    val defs = root.definitions.map { case (name, defn) => name -> number(defn) }
+
+    // Compute stack offset for each definition.
+    for ((sym, defn) <- root.definitions) {
+      number(defn)
+    }
+
+    // TODO: Compute stack offsets for each fact and rule.
+
     val e = System.nanoTime() - t
-    root.copy(definitions = defs, time = root.time.copy(varNumbering = e))
+    root.copy(time = root.time.copy(varNumbering = e))
   }
 
   /**
-    * Numbers each variable with an offset so that we can generate code.
+    * Assigns stack offsets to the given definition.
     *
-    * On the JVM, each method has a local variable array, and each variable is referenced by a 0-based offset. The first
-    * few slots in the array are initialized to the values of the parameters. Normally each value takes up a single
-    * slot, but longs and doubles require two consecutive slots. Thus, the n-th variable may not necessarily be the
-    * n-th slot.
-    *
-    * This phase assumes closures have already been converted and lambdas have been lifted.
+    * Returns Unit since the variable symbols are mutated to store their stack offsets.
     */
-  def number(decl: SimplifiedAst.Definition.Constant): SimplifiedAst.Definition.Constant = {
-    def visit(m: NumberingsMap, e: SimplifiedAst.Expression): SimplifiedAst.Expression = e match {
-      case SimplifiedAst.Expression.Unit => e
-      case SimplifiedAst.Expression.True => e
-      case SimplifiedAst.Expression.False => e
-      case SimplifiedAst.Expression.Char(lit) => e
-      case SimplifiedAst.Expression.Float32(lit) => e
-      case SimplifiedAst.Expression.Float64(lit) => e
-      case SimplifiedAst.Expression.Int8(lit) => e
-      case SimplifiedAst.Expression.Int16(lit) => e
-      case SimplifiedAst.Expression.Int32(lit) => e
-      case SimplifiedAst.Expression.Int64(lit) => e
-      case SimplifiedAst.Expression.BigInt(lit) => e
-      case SimplifiedAst.Expression.Str(lit) => e
-      case SimplifiedAst.Expression.LoadBool(n, o) => e
-      case SimplifiedAst.Expression.LoadInt8(b, o) => e
-      case SimplifiedAst.Expression.LoadInt16(b, o) => e
-      case SimplifiedAst.Expression.LoadInt32(b, o) => e
-      case SimplifiedAst.Expression.StoreBool(b, o, v) => e
-      case SimplifiedAst.Expression.StoreInt8(b, o, v) => e
-      case SimplifiedAst.Expression.StoreInt16(b, o, v) => e
-      case SimplifiedAst.Expression.StoreInt32(b, o, v) => e
+  def number(defn: SimplifiedAst.Definition.Constant): Unit = {
+    /**
+      * Returns the next available stack offset.
+      *
+      * @param e0 the current expression.
+      * @param i0 the current stack offset.
+      */
+    def visitExp(e0: Expression, i0: Int): Int = e0 match {
+      case Expression.Unit => i0
+      case Expression.True => i0
+      case Expression.False => i0
+      case Expression.Char(lit) => i0
+      case Expression.Float32(lit) => i0
+      case Expression.Float64(lit) => i0
+      case Expression.Int8(lit) => i0
+      case Expression.Int16(lit) => i0
+      case Expression.Int32(lit) => i0
+      case Expression.Int64(lit) => i0
+      case Expression.BigInt(lit) => i0
+      case Expression.Str(lit) => i0
+      case Expression.LoadBool(n, o) => i0
+      case Expression.LoadInt8(b, o) => i0
+      case Expression.LoadInt16(b, o) => i0
+      case Expression.LoadInt32(b, o) => i0
+      case Expression.StoreBool(b, o, v) => i0
+      case Expression.StoreInt8(b, o, v) => i0
+      case Expression.StoreInt16(b, o, v) => i0
+      case Expression.StoreInt32(b, o, v) => i0
+      case Expression.Var(sym, tpe, loc) => i0
+      case Expression.Ref(name, tpe, loc) => i0
+      case Expression.Hook(hook, tpe, loc) => i0
+      case Expression.MkClosureRef(ref, freeVars, tpe, loc) => i0
+      case Expression.ApplyRef(name, args, tpe, loc) => visitExps(args, i0)
+      case Expression.ApplyTail(name, formals, args, tpe, loc) => visitExps(args, i0)
+      case Expression.ApplyHook(hook, args, tpe, loc) => visitExps(args, i0)
+      case Expression.Apply(exp, args, tpe, loc) =>
+        val i = visitExp(exp, i0)
+        visitExps(args, i)
+      case Expression.Unary(op, exp, tpe, loc) => visitExp(exp, i0)
+      case Expression.Binary(op, exp1, exp2, tpe, loc) =>
+        val i1 = visitExp(exp1, i0)
+        visitExp(exp2, i1)
+      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+        val i1 = visitExp(exp1, i0)
+        val i2 = visitExp(exp2, i1)
+        visitExp(exp3, i2)
+      case Expression.Let(sym, exp1, exp2, tpe, loc) =>
+        // Set the stack offset for the symbol.
+        sym.setStackOffset(i0)
 
-      case SimplifiedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Expression.Var(sym, tpe, loc)
+        // Compute the next free stack offset.
+        val i1 = i0 + getStackSize(exp1.tpe)
 
-      case SimplifiedAst.Expression.Ref(name, tpe, loc) => e
-      case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
+        // Visit the let-bound value expression.
+        val i2 = visitExp(exp1, i1)
+
+        // Visit the let-body expression.
+        visitExp(exp2, i2)
+      case Expression.CheckTag(tag, exp, loc) => visitExp(exp, i0)
+      case Expression.GetTagValue(tag, exp, tpe, loc) => visitExp(exp, i0)
+      case Expression.Tag(enum, tag, exp, tpe, loc) => visitExp(exp, i0)
+      case Expression.GetTupleIndex(exp, index, tpe, loc) => visitExp(exp, i0)
+      case Expression.Tuple(elms, tpe, loc) => visitExps(elms, i0)
+      case Expression.FSet(elms, tpe, loc) => visitExps(elms, i0)
+      case Expression.Existential(params, exp, loc) => ??? // TODO
+      case Expression.Universal(params, exp, loc) => ??? // TODO
+      case Expression.UserError(tpe, loc) => i0
+      case Expression.MatchError(tpe, loc) => i0
+      case Expression.SwitchError(tpe, loc) => i0
+      case Expression.Lambda(args, body, tpe, loc) =>
         throw InternalCompilerException("Lambdas should have been converted to closures and lifted.")
-      case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
-      case mkClosure@SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
-        val numberedFreeVars = freeVars.map {
-          case SimplifiedAst.FreeVar(sym, tpe) => SimplifiedAst.FreeVar(sym, tpe)
-        }
-        mkClosure.copy(freeVars = numberedFreeVars)
-      case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
+      case Expression.MkClosure(lambda, freeVars, tpe, loc) =>
         throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
-      case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
-        SimplifiedAst.Expression.ApplyRef(name, args.map(visit(m, _)), tpe, loc)
-      case SimplifiedAst.Expression.ApplyTail(name, formals, actuals, tpe, loc) =>
-        SimplifiedAst.Expression.ApplyTail(name, formals, actuals.map(visit(m, _)), tpe, loc)
-      case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) =>
-        SimplifiedAst.Expression.ApplyHook(hook, args.map(visit(m, _)), tpe, loc)
-      case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
-        SimplifiedAst.Expression.Apply(visit(m, exp), args.map(visit(m, _)), tpe, loc)
-      case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) =>
-        SimplifiedAst.Expression.Unary(op, visit(m, exp), tpe, loc)
-      case SimplifiedAst.Expression.Binary(op, exp1, exp2, tpe, loc) =>
-        SimplifiedAst.Expression.Binary(op, visit(m, exp1), visit(m, exp2), tpe, loc)
-      case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-        SimplifiedAst.Expression.IfThenElse(visit(m, exp1), visit(m, exp2), visit(m, exp3), tpe, loc)
-
-      case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
-        // First we number the variables in `exp1`. // TODO: No particular reason to do this first...
-        val e1 = visit(m, exp1)
-
-        // The let-binding introduces a new variable, so we need to add a new variable/offset to the map.
-        val offset = m.set(sym.toString, exp1.tpe)
-
-        // Update the stack offset for the symbol.
-        sym.setStackOffset(offset)
-
-        // Then we can use the updated map to number the variables in `exp2`.
-        val e2 = visit(m, exp2)
-
-        // Finally we return the updated Let expression.
-        SimplifiedAst.Expression.Let(sym, e1, e2, tpe, loc)
-
-      case SimplifiedAst.Expression.CheckTag(tag, exp, loc) =>
-        SimplifiedAst.Expression.CheckTag(tag, visit(m, exp), loc)
-      case SimplifiedAst.Expression.GetTagValue(tag, exp, tpe, loc) =>
-        SimplifiedAst.Expression.GetTagValue(tag, visit(m, exp), tpe, loc)
-      case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) =>
-        SimplifiedAst.Expression.Tag(enum, tag, visit(m, exp), tpe, loc)
-      case SimplifiedAst.Expression.GetTupleIndex(exp, offset, tpe, loc) =>
-        SimplifiedAst.Expression.GetTupleIndex(visit(m, exp), offset, tpe, loc)
-      case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
-        SimplifiedAst.Expression.Tuple(elms.map(visit(m, _)), tpe, loc)
-      case SimplifiedAst.Expression.FSet(elms, tpe, loc) =>
-        SimplifiedAst.Expression.FSet(elms.map(visit(m, _)), tpe, loc)
-      case SimplifiedAst.Expression.Existential(params, exp, loc) => ???
-      case SimplifiedAst.Expression.Universal(params, exp, loc) => ???
-      case SimplifiedAst.Expression.UserError(tpe, loc) => e
-      case SimplifiedAst.Expression.MatchError(tpe, loc) => e
-      case SimplifiedAst.Expression.SwitchError(tpe, loc) => e
     }
 
-    // Construct a numbering map to record the offsets
-    val m = new NumberingsMap
+    /**
+      * Returns the next available stack offset.
+      */
+    def visitExps(es: List[Expression], i: Int): Int = es match {
+      case Nil => i
+      case x :: xs =>
+        val i2 = visitExp(x, i)
+        visitExps(xs, i2)
+    }
 
-    // First, we number the parameters
-    for (SimplifiedAst.FormalParam(sym, tpe) <- decl.formals) {
-      val offset = m.set(sym.toString, tpe)
+    // Compute the stack offset for each formal parameter.
+    var offset = 0
+    for (SimplifiedAst.FormalParam(sym, tpe) <- defn.formals) {
+      // Set the stack offset for the symbol.
       sym.setStackOffset(offset)
+
+      // Update the next available stack offset.
+      offset += getStackSize(tpe)
     }
 
-    // Now we can number the body of the declaration
-    val numbered = visit(m, decl.exp)
+    // Compute stack offset for the body.
+    visitExp(defn.exp, offset)
+  }
 
-    // Update and return the top-level definition
-    SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), decl.sym, decl.formals, numbered, decl.isSynthetic, decl.tpe, decl.loc)
+  /**
+    * Returns the stack size used by the given type.
+    *
+    * A double or float uses two slots on the stack.
+    * Everything else uses one slot.
+    */
+  private def getStackSize(tpe: Type): Int = tpe match {
+    case Type.Int64 | Type.Float64 => 2
+    case _ => 1
   }
 
 }
