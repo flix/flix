@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -72,14 +73,21 @@ object ClosureConv {
 
       // We prepend the free variables to the arguments list. Thus all variables within the lambda body will be treated
       // uniformly. The implementation will supply values for the free variables, without any effort from the caller.
-      val newArgs = freeVars.map { case (sym, ptype) => SimplifiedAst.FormalParam(sym, ptype) } ++ args
+      // We introduce new symbols for each introduced parameter and replace their occurence in the body.
+      val subst = mutable.Map.empty[Symbol.VarSym, Symbol.VarSym]
+      val newArgs = freeVars.map {
+        case (oldSym, ptype) =>
+          val newSym = Symbol.freshVarSym(oldSym)
+          subst += (oldSym -> newSym)
+          SimplifiedAst.FormalParam(newSym, ptype)
+      } ++ args
 
       // Update the lambda type.
       val argTpes = freeVars.map(_._2) ++ targs
       val newTpe = Type.mkArrow(argTpes, tresult)
 
       // We rewrite the lambda with its new arguments list and new body, with any nested lambdas also converted.
-      val lambda = SimplifiedAst.Expression.Lambda(newArgs, convert(body), newTpe, loc)
+      val lambda = SimplifiedAst.Expression.Lambda(newArgs, convert(replace(body, subst.toMap)), newTpe, loc)
 
       // At this point, `lambda` is the original lambda expression, but with all free variables converted to new
       // arguments, prepended to the original arguments list. Additionally, any lambdas within the body have also been
@@ -218,6 +226,122 @@ object ClosureConv {
     case SimplifiedAst.Expression.UserError(tpe, loc) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.SwitchError(tpe, loc) => mutable.LinkedHashSet.empty
+  }
+
+  /**
+    * Applies the given substitution map `subst` to the given expression `e`.
+    */
+  private def replace(e0: Expression, subst: Map[Symbol.VarSym, Symbol.VarSym]): Expression = {
+    def visit(e: Expression): Expression = e match {
+      case Expression.Unit => e
+      case Expression.True => e
+      case Expression.False => e
+      case Expression.Char(lit) => e
+      case Expression.Float32(lit) => e
+      case Expression.Float64(lit) => e
+      case Expression.Int8(lit) => e
+      case Expression.Int16(lit) => e
+      case Expression.Int32(lit) => e
+      case Expression.Int64(lit) => e
+      case Expression.BigInt(lit) => e
+      case Expression.Str(lit) => e
+      case Expression.LoadBool(n, o) => e
+      case Expression.LoadInt8(b, o) => e
+      case Expression.LoadInt16(b, o) => e
+      case Expression.LoadInt32(b, o) => e
+      case Expression.StoreBool(b, o, v) => e
+      case Expression.StoreInt8(b, o, v) => e
+      case Expression.StoreInt16(b, o, v) => e
+      case Expression.StoreInt32(b, o, v) => e
+      case Expression.Var(sym, tpe, loc) => subst.get(sym) match {
+        case None => Expression.Var(sym, tpe, loc)
+        case Some(newSym) => Expression.Var(newSym, tpe, loc)
+      }
+      case Expression.Ref(name, tpe, loc) => e
+      case Expression.Lambda(fparams, exp, tpe, loc) =>
+        val fs = replace(fparams, subst)
+        val e = visit(exp)
+        Expression.Lambda(fs, e, tpe, loc)
+      case Expression.Hook(hook, tpe, loc) => e
+      case Expression.MkClosureRef(ref, freeVars, tpe, loc) => e
+      case Expression.MkClosure(exp, freeVars, tpe, loc) =>
+        val e = visit(exp).asInstanceOf[Expression.Lambda]
+        Expression.MkClosure(e, freeVars, tpe, loc)
+      case Expression.ApplyRef(sym, args, tpe, loc) =>
+        val as = args map visit
+        Expression.ApplyRef(sym, as, tpe, loc)
+      case Expression.ApplyTail(sym, fparams, args, tpe, loc) =>
+        val as = args map visit
+        Expression.ApplyTail(sym, fparams, as, tpe, loc)
+      case Expression.ApplyHook(hook, args, tpe, loc) =>
+        val as = args map visit
+        Expression.ApplyHook(hook, as, tpe, loc)
+      case Expression.Apply(exp, args, tpe, loc) =>
+        val e = visit(exp)
+        val as = args map visit
+        Expression.Apply(e, as, tpe, loc)
+      case Expression.Unary(op, exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.Unary(op, e, tpe, loc)
+      case Expression.Binary(op, exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        Expression.Binary(op, e1, e2, tpe, loc)
+      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        val e3 = visit(exp3)
+        Expression.IfThenElse(e1, e2, e3, tpe, loc)
+      case Expression.Let(sym, exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        subst.get(sym) match {
+          case None => Expression.Let(sym, e1, e2, tpe, loc)
+          case Some(newSym) => Expression.Let(newSym, e1, e2, tpe, loc)
+        }
+      case Expression.CheckTag(tag, exp, loc) =>
+        val e = visit(exp)
+        Expression.CheckTag(tag, e, loc)
+      case Expression.GetTagValue(tag, exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.GetTagValue(tag, e, tpe, loc)
+      case Expression.Tag(enum, tag, exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.Tag(enum, tag, e, tpe, loc)
+      case Expression.GetTupleIndex(exp, offset, tpe, loc) =>
+        val e = visit(exp)
+        Expression.GetTupleIndex(e, offset, tpe, loc)
+      case Expression.Tuple(elms, tpe, loc) =>
+        val es = elms map visit
+        Expression.Tuple(es, tpe, loc)
+      case Expression.FSet(elms, tpe, loc) =>
+        val es = elms map visit
+        Expression.FSet(es, tpe, loc)
+      case Expression.Existential(fparams, exp, loc) =>
+        val fs = replace(fparams, subst)
+        val e = visit(exp)
+        Expression.Existential(fs, e, loc)
+      case Expression.Universal(fparams, exp, loc) =>
+        val fs = replace(fparams, subst)
+        val e = visit(exp)
+        Expression.Universal(fs, e, loc)
+      case Expression.UserError(tpe, loc) => e
+      case Expression.MatchError(tpe, loc) => e
+      case Expression.SwitchError(tpe, loc) => e
+    }
+
+    visit(e0)
+  }
+
+  /**
+    * Applies the given substitution map `subst` to the given formal parameters `fs`.
+    */
+  private def replace(fs: List[SimplifiedAst.FormalParam], subst: Map[Symbol.VarSym, Symbol.VarSym]): List[SimplifiedAst.FormalParam] = fs map {
+    case SimplifiedAst.FormalParam(sym, tpe) =>
+      subst.get(sym) match {
+        case None => SimplifiedAst.FormalParam(sym, tpe)
+        case Some(newSym) => SimplifiedAst.FormalParam(newSym, tpe)
+      }
   }
 
 }

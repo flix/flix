@@ -6312,8 +6312,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt32(-1), "g07")
   }
 
-  // TODO
-  ignore("Match.Tuple.06") {
+  test("Match.Tuple.06") {
     val input =
       """def f(x: Int, y: Int): Int = match (x, y) with {
         |  case (x, y) => match x with {
