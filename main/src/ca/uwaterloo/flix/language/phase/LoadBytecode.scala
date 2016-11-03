@@ -216,7 +216,7 @@ object LoadBytecode {
 
     val types = consts.flatMap(x => visit(x.exp)).toSet
     types.map { t =>
-      val name = genSym.fresh2("FnItf").name
+      val name = Symbol.freshVarSym("FnItf").toString
       val prefix = List("ca", "uwaterloo", "flix", "runtime", name)
       t -> prefix
     }.toMap

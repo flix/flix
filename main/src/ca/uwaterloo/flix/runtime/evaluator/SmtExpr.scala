@@ -66,6 +66,7 @@ object SmtExpr {
   /**
     * Variable.
     */
+  // TODO: Use Symbol.VarSym?
   case class Var(ident: Name.Ident, tpe: Type) extends SmtExpr
 
   /**

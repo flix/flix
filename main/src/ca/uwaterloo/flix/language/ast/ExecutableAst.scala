@@ -84,7 +84,6 @@ object ExecutableAst {
 
     case class Fact(head: ExecutableAst.Predicate.Head) extends ExecutableAst.Constraint
 
-    // TODO(magnus): Change lists to arrays
     case class Rule(head: ExecutableAst.Predicate.Head,
                     body: List[ExecutableAst.Predicate.Body],
                     tables: List[ExecutableAst.Predicate.Body.Table],
@@ -115,7 +114,7 @@ object ExecutableAst {
       */
     def getQuantifiers: List[Expression.Var] = this match {
       case Expression.Universal(params, _, _) => params.map {
-        case ExecutableAst.FormalArg(ident, tpe) => Expression.Var(ident, -1, tpe, SourceLocation.Unknown)
+        case ExecutableAst.FormalArg(sym, tpe) => Expression.Var(sym, -1, tpe, SourceLocation.Unknown)
       }
       case _ => Nil
     }
@@ -319,13 +318,12 @@ object ExecutableAst {
     /**
       * A typed AST node representing a local variable expression (i.e. a parameter or let-bound variable).
       *
-      * @param ident  the name of the variable.
+      * @param sym    the name of the variable.
       * @param offset the (0-based) index of the variable.
       * @param tpe    the type of the variable.
       * @param loc    the source location of the variable.
       */
-    // TODO: Rename to LocalVar
-    case class Var(ident: Name.Ident,
+    case class Var(sym: Symbol.VarSym,
                    offset: scala.Int,
                    tpe: Type,
                    loc: SourceLocation) extends ExecutableAst.Expression
@@ -459,21 +457,19 @@ object ExecutableAst {
     /**
       * A typed AST node representing a let expression.
       *
-      * @param ident  the name of the bound variable.
+      * @param sym    the name of the bound variable.
       * @param offset the (0-based) index of the bound variable.
       * @param exp1   the value of the bound variable.
       * @param exp2   the body expression in which the bound variable is visible.
       * @param tpe    the type of the expression (which is equivalent to the type of the body expression).
       * @param loc    the source location of the expression.
       */
-    case class Let(ident: Name.Ident,
+    case class Let(sym: Symbol.VarSym,
                    offset: scala.Int,
                    exp1: ExecutableAst.Expression,
                    exp2: ExecutableAst.Expression,
                    tpe: Type,
-                   loc: SourceLocation) extends ExecutableAst.Expression {
-      override def toString: String = "Let(" + ident.name + " = " + exp1 + " in " + exp2 + ")"
-    }
+                   loc: SourceLocation) extends ExecutableAst.Expression
 
     /**
       * A typed AST node representing a check-tag expression, i.e. check if the tag expression matches the given tag
@@ -694,9 +690,9 @@ object ExecutableAst {
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends ExecutableAst
 
-  case class FormalArg(ident: Name.Ident, tpe: Type) extends ExecutableAst
+  case class FormalArg(sym: Symbol.VarSym, tpe: Type) extends ExecutableAst
 
-  case class FreeVar(ident: Name.Ident, offset: Int, tpe: Type) extends ExecutableAst
+  case class FreeVar(sym: Symbol.VarSym, offset: Int, tpe: Type) extends ExecutableAst
 
   case class Property(law: Law, exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst
 

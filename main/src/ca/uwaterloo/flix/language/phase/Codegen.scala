@@ -309,7 +309,7 @@ object Codegen {
       // instruction (i.e. the arguments to the lambda object constructor).
       // We construct Expression.Var nodes and compile them as expected.
       for (f <- freeVars) {
-        val v = Expression.Var(f.ident, f.offset, f.tpe, loc)
+        val v = Expression.Var(f.sym, f.offset, f.tpe, loc)
         compileExpression(ctx, visitor, entryPoint)(v)
       }
 

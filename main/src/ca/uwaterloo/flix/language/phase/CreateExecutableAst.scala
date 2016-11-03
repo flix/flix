@@ -217,8 +217,8 @@ object CreateExecutableAst {
         ExecutableAst.Expression.Binary(op, toExecutable(exp1), toExecutable(exp2), tpe, loc)
       case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         ExecutableAst.Expression.IfThenElse(toExecutable(exp1), toExecutable(exp2), toExecutable(exp3), tpe, loc)
-      case SimplifiedAst.Expression.Let(ident, offset, exp1, exp2, tpe, loc) =>
-        ExecutableAst.Expression.Let(ident, offset, toExecutable(exp1), toExecutable(exp2), tpe, loc)
+      case SimplifiedAst.Expression.Let(sym, offset, exp1, exp2, tpe, loc) =>
+        ExecutableAst.Expression.Let(sym, offset, toExecutable(exp1), toExecutable(exp2), tpe, loc)
       case SimplifiedAst.Expression.CheckTag(tag, exp, loc) =>
         ExecutableAst.Expression.CheckTag(tag, toExecutable(exp), loc)
       case SimplifiedAst.Expression.GetTagValue(tag, exp, tpe, loc) =>
@@ -327,10 +327,10 @@ object CreateExecutableAst {
     ExecutableAst.Attribute(sast.name, sast.tpe)
 
   def toExecutable(sast: SimplifiedAst.FormalArg): ExecutableAst.FormalArg =
-    ExecutableAst.FormalArg(sast.ident, sast.tpe)
+    ExecutableAst.FormalArg(sast.sym, sast.tpe)
 
   def toExecutable(sast: SimplifiedAst.FreeVar): ExecutableAst.FreeVar =
-    ExecutableAst.FreeVar(sast.ident, sast.offset, sast.tpe)
+    ExecutableAst.FreeVar(sast.sym, sast.offset, sast.tpe)
 
   def toExecutable(sast: SimplifiedAst.Property): ExecutableAst.Property =
     ExecutableAst.Property(sast.law, Expression.toExecutable(sast.exp), sast.loc)

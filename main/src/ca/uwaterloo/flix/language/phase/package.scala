@@ -42,9 +42,11 @@ package object phase {
       new Symbol.DefnSym(namespace, name, SourceLocation.Unknown)
     }
 
+    // TODO: Deprecated
     def fresh2(): Name.Ident = fresh2("tmp")
 
-    def fresh2(prefix: String): Name.Ident = {
+    // TODO: Deprecated
+    private def fresh2(prefix: String): Name.Ident = {
       number = number + 1
       Name.Ident(SourcePosition.Unknown, prefix + "$" + number, SourcePosition.Unknown)
     }

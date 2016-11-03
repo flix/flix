@@ -29,6 +29,13 @@ object Symbol {
   }
 
   /**
+    * Returns a fresh variable symbol with the given text.
+    */
+  def freshVarSym(text: String)(implicit genSym: GenSym): VarSym = {
+    new VarSym(genSym.freshId(), text, Type.freshTypeVar(), SourceLocation.Unknown)
+  }
+
+  /**
     * Returns the definition symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkDefnSym(ns: NName, ident: Ident): DefnSym = {

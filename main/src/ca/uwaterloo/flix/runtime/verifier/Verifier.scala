@@ -264,7 +264,7 @@ object Verifier {
     }
 
     val result = q map {
-      case quantifier => quantifier.ident.name -> visit(quantifier.tpe)
+      case quantifier => quantifier.sym.toString -> visit(quantifier.tpe)
     }
 
     expand(result)

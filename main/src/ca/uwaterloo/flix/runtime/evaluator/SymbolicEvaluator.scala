@@ -40,6 +40,7 @@ object SymbolicEvaluator {
     *
     * An environment is map from variables names to symbolic values.
     */
+  // TODO: Consider using Symbol.VarSym
   type Environment = Map[String, SymVal]
 
   /**
@@ -121,7 +122,7 @@ object SymbolicEvaluator {
       /**
         * Local Variable.
         */
-      case Expression.Var(ident, _, tpe, loc) => lift(pc0, env0(ident.name))
+      case Expression.Var(sym, _, tpe, loc) => lift(pc0, env0(sym.toString))
 
       /**
         * Reference.
@@ -139,7 +140,7 @@ object SymbolicEvaluator {
       case Expression.MkClosureRef(ref, freeVars, _, _) =>
         // Save the values of the free variables in a list.
         // When the closure is called, these values will be provided at the beginning of the argument list.
-        val env = freeVars.toList.map(f => env0(f.ident.name))
+        val env = freeVars.toList.map(f => env0(f.sym.toString))
         // Construct the closure.
         val clo = SymVal.Closure(ref, env)
         lift(pc0, clo)
@@ -155,7 +156,7 @@ object SymbolicEvaluator {
           case (pc, as) =>
             // Bind the actual arguments to the formal variables.
             val newEnv = (defn.formals zip as).foldLeft(Map.empty[String, SymVal]) {
-              case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
+              case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
             }
             // Evaluate the body under the new environment.
             eval(pc, defn.exp, newEnv)
@@ -172,7 +173,7 @@ object SymbolicEvaluator {
           case (pc, as) =>
             // Bind the actual arguments to the formal variables.
             val newEnv = (defn.formals zip as).foldLeft(Map.empty[String, SymVal]) {
-              case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
+              case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
             }
             // Evaluate the body under the new environment.
             eval(pc, defn.exp, newEnv)
@@ -194,7 +195,7 @@ object SymbolicEvaluator {
                 // Construct the environment
                 val newArgs = bindings ++ actuals
                 val newEnv = (defn.formals zip newArgs).foldLeft(Map.empty[String, SymVal]) {
-                  case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
+                  case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
                 }
                 eval(pc1, defn.exp, newEnv)
             }
@@ -715,11 +716,11 @@ object SymbolicEvaluator {
       /**
         * Let-binding.
         */
-      case Expression.Let(ident, _, exp1, exp2, _, _) =>
+      case Expression.Let(sym, _, exp1, exp2, _, _) =>
         eval(pc0, exp1, env0) flatMap {
           case (pc, v1) =>
             // Bind the variable to the value of `exp1` which is `v1`.
-            val newEnv = env0 + (ident.name -> v1)
+            val newEnv = env0 + (sym.toString -> v1)
             eval(pc, exp2, newEnv)
         }
 

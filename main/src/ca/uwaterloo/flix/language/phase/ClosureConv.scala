@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.{Name, SimplifiedAst, Type}
+import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
@@ -98,8 +98,8 @@ object ClosureConv {
       val (targs, tresult) = (ts.take(l - 1), ts.last)
 
       // Wrap the hook inside a lambda, so we can create a closure.
-      val args = targs.map { t => SimplifiedAst.FormalArg(genSym.fresh2("arg"), t) }
-      val hookArgs = args.map { f => SimplifiedAst.Expression.Var(f.ident, -1, f.tpe, loc) }
+      val args = targs.map { t => SimplifiedAst.FormalArg(Symbol.freshVarSym("arg"), t) }
+      val hookArgs = args.map { f => SimplifiedAst.Expression.Var(f.sym, -1, f.tpe, loc) }
       val body = SimplifiedAst.Expression.ApplyHook(hook, hookArgs, tresult, loc)
       val lambda = SimplifiedAst.Expression.Lambda(args, body, hook.tpe, loc)
 
@@ -157,7 +157,8 @@ object ClosureConv {
     * Returns the free variables in the given expression `exp`.
     * Does a left-to-right traversal of the AST, collecting free variables in order, in a LinkedHashSet.
     */
-  def freeVariables(e: SimplifiedAst.Expression): mutable.LinkedHashSet[(Name.Ident, Type)] = e match {
+  // TODO: Use immutable, but sorted data structure?
+  def freeVariables(e: SimplifiedAst.Expression): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = e match {
     case SimplifiedAst.Expression.Unit => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.True => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.False => mutable.LinkedHashSet.empty
@@ -181,8 +182,8 @@ object ClosureConv {
     case SimplifiedAst.Expression.Var(ident, o, tpe, loc) => mutable.LinkedHashSet((ident, tpe))
     case SimplifiedAst.Expression.Ref(name, tpe, loc) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
-      val bound = args.map(_.ident.name)
-      freeVariables(body).filterNot { v => bound.contains(v._1.name) }
+      val bound = args.map(_.sym)
+      freeVariables(body).filterNot { v => bound.contains(v._1) }
     case SimplifiedAst.Expression.Hook(hook, tpe, loc) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$e'.")
@@ -199,8 +200,8 @@ object ClosureConv {
     case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       freeVariables(exp1) ++ freeVariables(exp2) ++ freeVariables(exp3)
     case SimplifiedAst.Expression.Let(ident, offset, exp1, exp2, tpe, loc) =>
-      val bound = ident.name
-      freeVariables(exp1) ++ freeVariables(exp2).filterNot { v => bound == v._1.name }
+      val bound = ident
+      freeVariables(exp1) ++ freeVariables(exp2).filterNot { v => bound == v._1 }
     case SimplifiedAst.Expression.CheckTag(tag, exp, loc) => freeVariables(exp)
     case SimplifiedAst.Expression.GetTagValue(tag, exp, tpe, loc) => freeVariables(exp)
     case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) => freeVariables(exp)
@@ -208,11 +209,11 @@ object ClosureConv {
     case SimplifiedAst.Expression.Tuple(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
     case SimplifiedAst.Expression.FSet(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
     case SimplifiedAst.Expression.Existential(params, exp, loc) =>
-      val bound = params.map(_.ident.name)
-      freeVariables(exp).filterNot { v => bound.contains(v._1.name) }
+      val bound = params.map(_.sym)
+      freeVariables(exp).filterNot { v => bound.contains(v._1) }
     case SimplifiedAst.Expression.Universal(params, exp, loc) =>
-      val bound = params.map(_.ident.name)
-      freeVariables(exp).filterNot { v => bound.contains(v._1.name) }
+      val bound = params.map(_.sym)
+      freeVariables(exp).filterNot { v => bound.contains(v._1) }
     case SimplifiedAst.Expression.UserError(tpe, loc) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.SwitchError(tpe, loc) => mutable.LinkedHashSet.empty
