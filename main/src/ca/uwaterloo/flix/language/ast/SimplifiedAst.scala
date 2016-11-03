@@ -628,7 +628,7 @@ object SimplifiedAst {
                        terms: List[SimplifiedAst.Term.Body],
                        loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
-      case class ApplyFilter(name: Symbol.DefnSym, // TODO: Rename
+      case class ApplyFilter(sym: Symbol.DefnSym,
                              terms: List[SimplifiedAst.Term.Body],
                              loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
