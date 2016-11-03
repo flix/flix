@@ -111,7 +111,7 @@ object LambdaLift {
 
         // Then, generate a fresh name for the lifted lambda.
         val name = symOpt match {
-          case None => Symbol.freshDefnSym("none")
+          case None => Symbol.freshDefnSym("none") // TODO: This seems suspicious.
           case Some(oldSym) => Symbol.freshDefnSym(oldSym)
         }
 

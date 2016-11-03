@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language
 
 import java.util.concurrent.atomic.AtomicInteger
 
-class GenSym() {
+final class GenSym() {
 
   /**
     * An internal counter.
