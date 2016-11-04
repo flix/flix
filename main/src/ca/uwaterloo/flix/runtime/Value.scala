@@ -305,6 +305,31 @@ object Value {
   def mkTag(t: java.lang.String, v: AnyRef): Value.Tag = new Value.Tag(t, v)
 
   /**
+    * Constructs a tag for the List type.
+    */
+  def mkNil(): Value.Tag = mkTag("Nil", Unit)
+
+  def mkCons(v: AnyRef, vs: AnyRef): Value.Tag = mkTag("Cons", Tuple(Array(v,vs)))
+
+  def mkList(as: List[AnyRef]): Value.Tag = as.foldRight(mkNil()) {
+    case (a, l) => mkCons(a, l)
+  }
+
+  /**
+    * Constructs a tag for the Option type.
+    */
+  def mkNone(): Value.Tag = mkTag("None", Unit)
+
+  def mkSome(v: AnyRef): Value.Tag = mkTag("Some", v)
+
+  /**
+    * Constructs a tag for the Result type.
+    */
+  def mkOk(v: AnyRef): Value.Tag = mkTag("Ok", v)
+
+  def mkErr(v: AnyRef): Value.Tag = mkTag("Err", v)
+
+  /**
     * Casts the given reference `ref` to a tag.
     */
   @inline
