@@ -631,7 +631,7 @@ class Flix {
     if (l == null)
       throw new IllegalArgumentException("Argument 'l' must be non-null.")
     import scala.collection.JavaConversions._
-    mkList(l.toList)
+    mkList(l.toList.toArray)
   }
 
   /**
@@ -640,7 +640,7 @@ class Flix {
   def mkList(l: scala.Seq[IValue]): IValue = {
     if (l == null)
       throw new IllegalArgumentException("Argument 'l' must be non-null.")
-    mkList(l.toList)
+    mkList(l.toArray)
   }
 
   /**
