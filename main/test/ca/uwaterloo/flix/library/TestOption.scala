@@ -273,7 +273,7 @@ class TestOption extends FunSuite {
 
   test("toList.01") {
     val input = "def r: List[Int32] = toList(None)"
-    runAnyTest(input, Value.mkList(List()))
+    runAnyTest(input, Value.mkNil)
   }
 
   test("toList.02") {

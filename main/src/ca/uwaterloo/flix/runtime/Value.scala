@@ -305,28 +305,40 @@ object Value {
   def mkTag(t: java.lang.String, v: AnyRef): Value.Tag = new Value.Tag(t, v)
 
   /**
-    * Constructs a tag for the List type.
+    * Returns the Nil element of a list.
     */
-  def mkNil(): Value.Tag = mkTag("Nil", Unit)
+  def mkNil: Value.Tag = mkTag("Nil", Unit)
 
+  /**
+    * Returns the list `vs` with the element `v` prepended.
+    */
   def mkCons(v: AnyRef, vs: AnyRef): Value.Tag = mkTag("Cons", Tuple(Array(v,vs)))
 
-  def mkList(as: List[AnyRef]): Value.Tag = as.foldRight(mkNil()) {
+  /**
+    * Returns the given Scala list `as` as a Flix list.
+    */
+  def mkList(as: List[AnyRef]): Value.Tag = as.foldRight(mkNil) {
     case (a, l) => mkCons(a, l)
   }
 
   /**
-    * Constructs a tag for the Option type.
+    * Returns the None element of a Flix Option.
     */
   def mkNone(): Value.Tag = mkTag("None", Unit)
 
+  /**
+    * Returns `Some(v)` of the given value `v`.
+    */
   def mkSome(v: AnyRef): Value.Tag = mkTag("Some", v)
 
   /**
-    * Constructs a tag for the Result type.
+    * Returns `Ok(v)` of the given value `v`.
     */
   def mkOk(v: AnyRef): Value.Tag = mkTag("Ok", v)
 
+  /**
+    * Returns `Err(v)` of the given value `v`.
+    */
   def mkErr(v: AnyRef): Value.Tag = mkTag("Err", v)
 
   /**

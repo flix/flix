@@ -1,5 +1,3 @@
-// TODO: List[A] vs List[a] vs List[Color] ...
-
 
     ///
     /// Returns `true` iff `o` is `None`.
@@ -25,17 +23,18 @@
     }
 
     ///
-    /// Returns the value of `f(v)` if `o` is `Some(v)`. Otherwise returns `false`.
+    /// Returns `true` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `false`.
     ///
     def exists[a](f: a -> Bool, o: Option[a]): Bool = getWithDefault(map(f, o), false)
 
     ///
-    /// Returns the value of `f(v)` if `o` is `Some(v)`. Otherwise returns `true`.
+    /// Returns `true` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true` or if `o` is `None`.
+    /// Otherwise returns `false`.
     ///
     def forall[a](f: a -> Bool, o: Option[a]): Bool = getWithDefault(map(f, o), true)
 
     ///
-    /// Returns `o` if `o` is `Some(v)` and `f(v)` is true. Otherwise returns `None`.
+    /// Returns `o` if `o` is `Some(v)` and the predicate `f(v)` is true. Otherwise returns `None`.
     ///
     def filter[a](f: a -> Bool, o: Option[a]): Option[a] = match o with {
         case None => None
