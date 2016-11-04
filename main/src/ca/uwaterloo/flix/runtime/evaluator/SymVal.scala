@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.runtime.evaluator
 
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
-import ca.uwaterloo.flix.language.ast.{Name, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import com.microsoft.z3.Model
 
 import scala.collection.immutable.SortedMap
@@ -151,7 +151,7 @@ object SymVal {
     * Returns a stringified model of `env` where all free variables have been
     * replaced by their corresponding values from the Z3 model `model`.
     */
-  def mkModel(env: Map[String, SymVal], model: Option[Model]): Map[String, String] = {
+  def mkModel(env: Map[Symbol.VarSym, SymVal], model: Option[Model]): Map[String, String] = {
     def visit(e0: SymVal): String = e0 match {
       case SymVal.AtomicVar(id, tpe) => model match {
         case None => "?"
@@ -178,7 +178,7 @@ object SymVal {
     }
 
     env.foldLeft(SortedMap.empty[String, String]) {
-      case (macc, (key, value)) => macc + (key -> visit(value))
+      case (macc, (key, value)) => macc + (key.text -> visit(value))
     }
   }
 

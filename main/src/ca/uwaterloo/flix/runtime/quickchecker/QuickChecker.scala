@@ -18,10 +18,10 @@ package ca.uwaterloo.flix.runtime.quickchecker
 
 import java.math.BigInteger
 
-import ca.uwaterloo.flix.language.{Compiler, GenSym}
+import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression.Var
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, Property, Root}
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, PropertyError, Scheme, Type}
+import ca.uwaterloo.flix.language.ast.{PropertyError, Symbol, Type}
 import ca.uwaterloo.flix.runtime.evaluator.SymVal.{Char, Unit}
 import ca.uwaterloo.flix.runtime.evaluator.{SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.Highlight.{Blue, Cyan, Red}
@@ -202,7 +202,7 @@ object QuickChecker {
   /**
     * Evaluates the given expression `exp0` to a boolean value under the given environment `env0`.
     */
-  private def eval(exp0: Expression, env0: Map[String, SymVal], root: Root)(implicit genSym: GenSym): Boolean = {
+  private def eval(exp0: Expression, env0: Map[Symbol.VarSym, SymVal], root: Root)(implicit genSym: GenSym): Boolean = {
     val result = SymbolicEvaluator.eval(exp0.peelQuantifiers, env0, root)
     result match {
       case List((Nil, SymVal.True)) => true
@@ -214,9 +214,9 @@ object QuickChecker {
   /**
     * Generates a random environment for the given list of quantifiers.
     */
-  private def randomEnv(quantifiers: List[Var], root: Root)(implicit random: Random): Map[String, SymVal] = {
-    quantifiers.foldLeft(Map.empty[String, SymVal]) {
-      case (macc, Var(sym, tpe, loc)) => macc + (sym.toString -> new ArbSymVal(tpe, root).gen.mk(random))
+  private def randomEnv(quantifiers: List[Var], root: Root)(implicit random: Random): Map[Symbol.VarSym, SymVal] = {
+    quantifiers.foldLeft(Map.empty[Symbol.VarSym, SymVal]) {
+      case (macc, Var(sym, tpe, loc)) => macc + (sym -> new ArbSymVal(tpe, root).gen.mk(random))
     }
   }
 

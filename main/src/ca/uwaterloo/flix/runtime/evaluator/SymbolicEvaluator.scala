@@ -38,10 +38,9 @@ object SymbolicEvaluator {
   /**
     * The type of environments.
     *
-    * An environment is map from variables names to symbolic values.
+    * An environment is map from variable symbols to symbolic values.
     */
-  // TODO: Consider using Symbol.VarSym
-  type Environment = Map[String, SymVal]
+  type Environment = Map[Symbol.VarSym, SymVal]
 
   /**
     * The type of contexts.
@@ -54,7 +53,7 @@ object SymbolicEvaluator {
   /**
     * Evaluates the given expression `exp0` under the given environment `env0`.
     */
-  def eval(exp0: Expression, env0: Map[String, SymVal], root: ExecutableAst.Root)(implicit genSym: GenSym): Context = {
+  def eval(exp0: Expression, env0: Environment, root: ExecutableAst.Root)(implicit genSym: GenSym): Context = {
     /*
       * Local visitor.
       */
@@ -122,7 +121,7 @@ object SymbolicEvaluator {
       /**
         * Local Variable.
         */
-      case Expression.Var(sym, tpe, loc) => lift(pc0, env0(sym.toString))
+      case Expression.Var(sym, tpe, loc) => lift(pc0, env0(sym))
 
       /**
         * Reference.
@@ -140,7 +139,7 @@ object SymbolicEvaluator {
       case Expression.MkClosureRef(ref, freeVars, _, _) =>
         // Save the values of the free variables in a list.
         // When the closure is called, these values will be provided at the beginning of the argument list.
-        val env = freeVars.toList.map(f => env0(f.sym.toString))
+        val env = freeVars.toList.map(f => env0(f.sym))
         // Construct the closure.
         val clo = SymVal.Closure(ref, env)
         lift(pc0, clo)
@@ -155,8 +154,8 @@ object SymbolicEvaluator {
         evaln(pc0, args, env0) flatMap {
           case (pc, as) =>
             // Bind the actual arguments to the formal variables.
-            val newEnv = (defn.formals zip as).foldLeft(Map.empty[String, SymVal]) {
-              case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
+            val newEnv = (defn.formals zip as).foldLeft(Map.empty: Environment) {
+              case (macc, (formal, actual)) => macc + (formal.sym -> actual)
             }
             // Evaluate the body under the new environment.
             eval(pc, defn.exp, newEnv)
@@ -172,8 +171,8 @@ object SymbolicEvaluator {
         evaln(pc0, args, env0) flatMap {
           case (pc, as) =>
             // Bind the actual arguments to the formal variables.
-            val newEnv = (defn.formals zip as).foldLeft(Map.empty[String, SymVal]) {
-              case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
+            val newEnv = (defn.formals zip as).foldLeft(Map.empty: Environment) {
+              case (macc, (formal, actual)) => macc + (formal.sym -> actual)
             }
             // Evaluate the body under the new environment.
             eval(pc, defn.exp, newEnv)
@@ -194,8 +193,8 @@ object SymbolicEvaluator {
               case (pc1, actuals) =>
                 // Construct the environment
                 val newArgs = bindings ++ actuals
-                val newEnv = (defn.formals zip newArgs).foldLeft(Map.empty[String, SymVal]) {
-                  case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
+                val newEnv = (defn.formals zip newArgs).foldLeft(Map.empty: Environment) {
+                  case (macc, (formal, actual)) => macc + (formal.sym -> actual)
                 }
                 eval(pc1, defn.exp, newEnv)
             }
@@ -720,7 +719,7 @@ object SymbolicEvaluator {
         eval(pc0, exp1, env0) flatMap {
           case (pc, v1) =>
             // Bind the variable to the value of `exp1` which is `v1`.
-            val newEnv = env0 + (sym.toString -> v1)
+            val newEnv = env0 + (sym -> v1)
             eval(pc, exp2, newEnv)
         }
 
@@ -1002,8 +1001,7 @@ object SymbolicEvaluator {
   /**
     * Returns the symbolic value corresponding to the given boolean `b`.
     */
-  private def toBool(b: Boolean): SymVal =
-  if (b) SymVal.True else SymVal.False
+  private def toBool(b: Boolean): SymVal = if (b) SymVal.True else SymVal.False
 
   /**
     * Converts the given value `v` to an expression.

@@ -215,7 +215,7 @@ object Verifier {
   /**
     * Enumerates all possible environments of the given universally quantified variables.
     */
-  def enumerate(q: List[Var], root: Root)(implicit genSym: GenSym): List[Map[String, SymVal]] = {
+  def enumerate(q: List[Var], root: Root)(implicit genSym: GenSym): List[Map[Symbol.VarSym, SymVal]] = {
     /*
      * Local visitor. Enumerates the symbolic values of a type.
      */
@@ -252,7 +252,7 @@ object Verifier {
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
 
-    def expand(rs: List[(String, List[SymVal])]): List[Map[String, SymVal]] = rs match {
+    def expand(rs: List[(Symbol.VarSym, List[SymVal])]): List[Map[Symbol.VarSym, SymVal]] = rs match {
       case Nil => List(Map.empty)
       case (quantifier, expressions) :: xs => expressions flatMap {
         case expression => expand(xs) map {
@@ -262,7 +262,7 @@ object Verifier {
     }
 
     val result = q map {
-      case quantifier => quantifier.sym.toString -> visit(quantifier.tpe)
+      case quantifier => quantifier.sym -> visit(quantifier.tpe)
     }
 
     expand(result)
@@ -271,7 +271,7 @@ object Verifier {
   /**
     * Optionally returns a verifier error if the given path constraint `pc` is satisfiable.
     */
-  private def assertUnsatisfiable(p: Property, expr: SmtExpr, env0: Map[String, SymVal]): PathResult = {
+  private def assertUnsatisfiable(p: Property, expr: SmtExpr, env0: Map[Symbol.VarSym, SymVal]): PathResult = {
     SmtSolver.withContext(ctx => {
       val query = visitBoolExpr(expr, ctx)
       SmtSolver.checkSat(query, ctx) match {

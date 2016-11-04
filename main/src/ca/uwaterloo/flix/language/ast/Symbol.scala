@@ -172,7 +172,7 @@ object Symbol {
     /**
       * Returns the hash code of this symbol.
       */
-    override val hashCode: Int = id.hashCode()
+    override val hashCode: Int = id
 
     /**
       * Human readable representation.
