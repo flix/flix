@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.runtime.evaluator
 
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
-import ca.uwaterloo.flix.language.ast.{Name, Type}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import com.microsoft.z3.Model
 
 import scala.collection.immutable.SortedMap
@@ -32,10 +32,10 @@ object SymVal {
   /**
     * An atomic symbolic variable.
     *
-    * @param ident the identifier.
-    * @param tpe   the type of the variable.
+    * @param sym the identifier.
+    * @param tpe the type of the variable.
     */
-  case class AtomicVar(ident: Name.Ident, tpe: Type) extends SymVal
+  case class AtomicVar(sym: Symbol.VarSym, tpe: Type) extends SymVal
 
   /**
     * The `Unit` value.
@@ -151,7 +151,7 @@ object SymVal {
     * Returns a stringified model of `env` where all free variables have been
     * replaced by their corresponding values from the Z3 model `model`.
     */
-  def mkModel(env: Map[String, SymVal], model: Option[Model]): Map[String, String] = {
+  def mkModel(env: Map[Symbol.VarSym, SymVal], model: Option[Model]): Map[String, String] = {
     def visit(e0: SymVal): String = e0 match {
       case SymVal.AtomicVar(id, tpe) => model match {
         case None => "?"
@@ -178,16 +178,16 @@ object SymVal {
     }
 
     env.foldLeft(SortedMap.empty[String, String]) {
-      case (macc, (key, value)) => macc + (key -> visit(value))
+      case (macc, (key, value)) => macc + (key.text -> visit(value))
     }
   }
 
   /**
-    * Returns a string representation of the given constant `id` in the Z3 model `m`.
+    * Returns a string representation of the given constant `sym` in the Z3 model `m`.
     */
-  private def getConstant(id: Name.Ident, m: Model): String = {
+  private def getConstant(sym: Symbol.VarSym, m: Model): String = {
     for (decl <- m.getConstDecls) {
-      if (id.name == decl.getName.toString) {
+      if (sym.toString == decl.getName.toString) {
         return m.getConstInterp(decl).toString
       }
     }

@@ -20,7 +20,7 @@ trait WeededAst
 
 object WeededAst {
 
-  case class Program(roots: List[WeededAst.Root], hooks: Map[Name.NName, Map[String, Ast.Hook]], time: Time) extends WeededAst
+  case class Program(roots: List[WeededAst.Root], hooks: Map[Symbol.DefnSym, Ast.Hook], time: Time) extends WeededAst
 
   case class Root(decls: List[WeededAst.Declaration]) extends WeededAst
 

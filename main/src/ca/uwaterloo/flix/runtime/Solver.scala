@@ -391,11 +391,11 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   private def evalLoop(rule: Rule, ps: List[Predicate.Body.Loop], env: Env, interp: Interpretation): Unit = ps match {
     case Nil => evalFilter(rule, rule.filters, env, interp)
-    case Predicate.Body.Loop(name, term, _, _) :: rest =>
+    case Predicate.Body.Loop(sym, term, _, _) :: rest =>
       val value = Value.cast2set(Interpreter.evalHeadTerm(term, root, env.toMap))
       for (x <- value) {
         val newRow = env.clone()
-        newRow.update(name.name, Value.cast2flix(x))
+        newRow.update(sym.toString, Value.cast2flix(x))
         evalLoop(rule, rest, newRow, interp)
       }
   }
@@ -409,7 +409,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       // filter with hook functions
       evalFilterHook(rule, rule.filterHooks, env, interp)
     case (pred: Predicate.Body.ApplyFilter) :: xs =>
-      val defn = root.constants(pred.name)
+      val defn = root.definitions(pred.sym)
       val args = new Array[AnyRef](pred.terms.length)
       var i = 0
       while (i < args.length) {
@@ -463,9 +463,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     case Nil =>
       // rule body complete, evaluate the head.
       evalHead(rule.head, env, interp)
-    case Predicate.Body.NotEqual(ident1, ident2, _, _) :: xs =>
-      val value1 = env(ident1.name)
-      val value2 = env(ident2.name)
+    case Predicate.Body.NotEqual(sym1, sym2, _, _) :: xs =>
+      val value1 = env(sym1.toString)
+      val value2 = env(sym2.toString)
       if (value1 != value2) {
         evalDisjoint(rule, xs, env, interp)
       }
@@ -526,7 +526,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   private def evalTerm(t: ExecutableAst.Term.Body, env: Env): AnyRef = t match {
     case t: ExecutableAst.Term.Body.Wildcard => null
-    case t: ExecutableAst.Term.Body.Var => env.getOrElse(t.ident.name, null)
+    case t: ExecutableAst.Term.Body.Var => env.getOrElse(t.sym.toString, null)
     case t: ExecutableAst.Term.Body.Exp => Interpreter.eval(t.e, root, env.toMap)
   }
 
@@ -636,12 +636,12 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   private def mkModel(elapsed: Long): Model = {
     // construct the model.
-    val definitions = root.constants.foldLeft(Map.empty[Symbol.Resolved, () => AnyRef]) {
+    val definitions = root.definitions.foldLeft(Map.empty[Symbol.DefnSym, () => AnyRef]) {
       case (macc, (sym, defn)) =>
         if (defn.formals.isEmpty)
           macc + (sym -> (() => Interpreter.evalCall(defn, Array.empty, root)))
         else
-          macc + (sym -> (() => throw new InternalRuntimeException("Unable to evalaute non-constant top-level definition.")))
+          macc + (sym -> (() => throw InternalRuntimeException("Unable to evalaute non-constant top-level definition.")))
     }
 
     val relations = dataStore.relations.foldLeft(Map.empty[Symbol.TableSym, Iterable[List[AnyRef]]]) {
