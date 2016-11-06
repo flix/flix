@@ -98,6 +98,10 @@ class AST_FlixVisitor(source: SourceInput, input: String) /*extends FlixVisitor[
 
 	//RULES FOR LISTS
 
+	def visitIndex(ctx: FlixParser.IndexContext) = ctx.attributeName().map(visitAttributeName).toList.toSeq
+	def visitIndexes(ctx: FlixParser.IndexesContext) = ctx.index().map(visitIndex).toList.toSeq
+	
+
 	def visitAttribute(ctx: FlixParser.AttributeContext) = ParsedAst.Attribute(
 			visitStartSp(ctx.getStart()),
 			visitAttributeName(ctx.attributeName()),
@@ -216,7 +220,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) /*extends FlixVisitor[
 			visitTscomment(ctx.tscomment().toList.toSeq),
 			visitStartSp(ctx.REL().getSymbol()),
 			visitTableName(ctx.tableName()),
-			if (ctx.attributes()) visitAttributes(ctx.attributes()) else Seq(),
+			if (ctx.attributes()!=null) visitAttributes(ctx.attributes()) else Seq(),
 			visitStopSp(ctx.getStop())
 		)
 	
@@ -224,15 +228,14 @@ class AST_FlixVisitor(source: SourceInput, input: String) /*extends FlixVisitor[
 			visitTscomment(ctx.tscomment().toList.toSeq),
 			visitStartSp(ctx.LAT().getSymbol()),
 			visitTableName(ctx.tableName()),
-			if (ctx.attributes()) visitAttributes(ctx.attributes()) else Seq(),
+			if (ctx.attributes()!=null) visitAttributes(ctx.attributes()) else Seq(),
 			visitStopSp(ctx.getStop())
 		)
 	
 	def visitDecls_index(ctx: FlixParser.Decls_indexContext) = ParsedAst.Declaration.Index(
-			visitTscomment(ctx.tscomment().toList.toSeq),
 			visitStartSp(ctx.INDEX().getSymbol()),
 			visitQualifiedTableName(ctx.qualifiedTableName()),
-			if (ctx.indexes()) visitIndexes(ctx.indexes()) else Seq(),
+			if (ctx.indexes()!=null) visitIndexes(ctx.indexes()) else Seq(),
 			visitStopSp(ctx.getStop())
 		)
 	
