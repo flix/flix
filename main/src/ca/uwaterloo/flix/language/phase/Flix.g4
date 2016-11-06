@@ -20,12 +20,33 @@ fragment MultiLineComment : '/*' .*? '*/';
 WS : (' ' | '\t' | NewLine | Comment)+;
 SC : ';';
 Comment : SingleLineComment | MultiLineComment;
+
+//Keywords/symbols that always evaluate to one token
+ENUM : 'enum';
+NAMESPACE : 'namespace';
+REL : 'rel';
+LAT : 'lat';
+INDEX : 'index';
+DEF : 'def';
+EXTERNAL : 'external';
+LAW : 'law';
+CLASS : 'class';
+LET : 'let';
+IMPL : 'imple';
+FNIL : 'Nil';
+SWITCH : 'switch';
+MATCH : 'match';
+WITH : 'with';
+WILD : '_';
+CASE : 'case';
+IF : 'if';
+ELSE : 'else';
+IMPORT : 'import';
+
 LowerIdent : [a-z][a-zA-Z0-9_"'"]*;
 UpperIdent : [A-Z][a-zA-Z0-9_"'"]*;
 
-//Keywords/symbols that always evaluate to one token
-FNil : 'Nil';
-Wild : '_';
+
 
 //Root rule
 start : s_import* decl* WS? EOF;
@@ -67,10 +88,10 @@ indexes : index (WS? ',' WS? index)*;
 
 idents : ident (WS? ',' WS? ident)*;
 
-match_rule : 'case' WS pattern WS? '=>' WS? expression SC?;
+match_rule : CASE WS pattern WS? '=>' WS? expression SC?;
 match_rules : match_rule (WS? match_rule)*;
 
-switch_rule : 'case' WS expression WS? '=>' WS? expression SC?;
+switch_rule : CASE WS expression WS? '=>' WS? expression SC?;
 switch_rules : switch_rule (WS? switch_rule)*;
 
 typeparam : variableName (WS? ':' WS? type)?;
@@ -90,9 +111,9 @@ s_import : 	WS? (import_wildcard |
 			import_definition |
 			import_namespace);
 
-import_wildcard : 'import' WS nname '/' Wild optSC;
-import_definition : 'import' WS nname '/' ident optSC;
-import_namespace : 'import' WS nname optSC;
+import_wildcard : IMPORT WS nname '/' WILD optSC;
+import_definition : IMPORT WS nname '/' ident optSC;
+import_namespace : IMPORT WS nname optSC;
 
 
 //Declarations
@@ -111,27 +132,27 @@ decl : decls_namespace |
 		decls_letlattice;
 
 
-decls_namespace : WS? 'namespace' WS nname WS? '{' WS? decl* WS? '}' optSC;
+decls_namespace : WS? NAMESPACE WS nname WS? '{' WS? decl* WS? '}' optSC;
 
-decls_enum : (WS? tscomment)* WS? 'enum' WS typeName typeparams WS? '{' WS? dcases WS? '}' optSC;
+decls_enum : (WS? tscomment)* WS? ENUM WS typeName typeparams WS? '{' WS? dcases WS? '}' optSC;
 dcases : dcase (WS? ',' WS? dcase)*;
-dcase : 'case' WS tagName tuple?;
+dcase : CASE WS tagName tuple?;
 
-decls_relation : (WS? tscomment)* WS? 'rel' WS tableName WS? '(' WS? attributes? WS? ')' optSC;
+decls_relation : (WS? tscomment)* WS? REL WS tableName WS? '(' WS? attributes? WS? ')' optSC;
 
-decls_lattice : (WS? tscomment)* WS? 'lat' WS tableName WS? '(' WS? attributes? WS? ')' optSC;
+decls_lattice : (WS? tscomment)* WS? LAT WS tableName WS? '(' WS? attributes? WS? ')' optSC;
 
-decls_index : WS? 'index' WS qualifiedTableName WS? '(' WS? indexes? WS? ')' optSC;
+decls_index : WS? INDEX WS qualifiedTableName WS? '(' WS? indexes? WS? ')' optSC;
 
-decls_signature : (WS? tscomment)* WS? 'def' WS definitionName WS? formalparams WS? ':' WS? type optSC;
+decls_signature : (WS? tscomment)* WS? DEF WS definitionName WS? formalparams WS? ':' WS? type optSC;
 
-decls_external : (WS? tscomment)* WS? 'external' WS? 'def' WS definitionName WS? formalparams WS? ':' WS? type optSC;
+decls_external : (WS? tscomment)* WS? EXTERNAL WS? DEF WS definitionName WS? formalparams WS? ':' WS? type optSC;
 
-decls_definition : (WS? tscomment)* WS? annotations? WS? 'def' WS definitionName WS? typeparams formalparams WS? ':' WS? type WS? '=' WS? expression optSC;
+decls_definition : (WS? tscomment)* WS? annotations? WS? DEF WS definitionName WS? typeparams formalparams WS? ':' WS? type WS? '=' WS? expression optSC;
 
-decls_law : (WS? tscomment)* WS? 'law' WS definitionName WS? typeparams WS? formalparams  WS? ':' WS? type WS? '=' WS? expression optSC;
+decls_law : (WS? tscomment)* WS? LAW WS definitionName WS? typeparams WS? formalparams  WS? ':' WS? type WS? '=' WS? expression optSC;
 
-decls_class : (WS? tscomment)* WS? 'class' WS className class_typeparams WS? contextBoundsList WS? class_body;
+decls_class : (WS? tscomment)* WS? CLASS WS className class_typeparams WS? contextBoundsList WS? class_body;
 
 class_body : '{' WS? ((decls_definition | decls_signature | decls_law) WS?) '}';
 
@@ -140,9 +161,9 @@ decls_fact : WS? predicate WS? '.';
 decls_rule : WS? predicate WS? ':-' WS? predicates WS? '.';
 
 elms : expressions;
-decls_letlattice : WS? 'let' WS? type '<>' WS? '=' WS? '(' WS? elms WS? ')' optSC;
+decls_letlattice : WS? LET WS? type '<>' WS? '=' WS? '(' WS? elms WS? ')' optSC;
 
-decls_impl : (WS? tscomment)* WS? 'impl' WS className class_typeparams WS? contextBoundsList WS? decls_impl_body;
+decls_impl : (WS? tscomment)* WS? IMPL WS className class_typeparams WS? contextBoundsList WS? decls_impl_body;
 decls_impl_body : '{' WS? decls_definition* WS? '}';
 
 //Expressions
@@ -165,10 +186,10 @@ e_primary : e_letMatch | e_ifThenElse | e_match | e_switch |
 				existential | universal  | e_qname |
 				e_unaryLambda | e_wild | e_sname | e_userError;
 
-e_letMatch : 'let' WS pattern WS? '=' WS? expression WS? ';' WS? expression;
-e_ifThenElse : 'if' WS? '(' WS? expression WS? ')' WS? expression WS 'else' WS expression;
-e_match : 'match' WS expression WS 'with' WS '{' WS? match_rules WS? '}';
-e_switch : 'switch' WS '{' WS? switch_rules WS?'}';
+e_letMatch : LET WS pattern WS? '=' WS? expression WS? ';' WS? expression;
+e_ifThenElse : IF WS? '(' WS? expression WS? ')' WS? expression WS ELSE WS expression;
+e_match : MATCH WS expression WS WITH WS '{' WS? match_rules WS? '}';
+e_switch : SWITCH WS '{' WS? switch_rules WS?'}';
 
 e_apply : e_primary (WS? '(' WS? expressions? WS? ')')?;
 
@@ -181,8 +202,8 @@ e_keyValue : expression WS? '->' WS? expression;
 e_keyValues : e_keyValue (WS? ',' WS? e_keyValue)*;
 
 e_userError : '???';
-e_wild : Wild;
-e_fNil : FNil;
+e_wild : WILD;
+e_fNil : FNIL;
 e_fList : e_apply (WS? '::' WS? expression)?;
 e_fVec : '#[' WS? expressions? WS? ']';
 e_fSet : '#{' WS? expressions? WS? '}';
@@ -200,7 +221,7 @@ universal : ('∀' | '\\forall') WS? formalparams WS? '.' WS? expression;
 pattern : simple (WS? '::' WS? pattern)?;
 patterns : pattern (WS? ',' WS? pattern)*;
 simple : p_fNil | literal | p_variable |
-		Wild | p_tag | p_tuple | p_fVec | p_fSet | p_fMap;
+		WILD | p_tag | p_tuple | p_fVec | p_fSet | p_fMap;
 
 p_keyValue : pattern WS? '->' WS? pattern;
 p_keyValues : p_keyValue (WS? ',' WS? p_keyValue)*;
@@ -208,8 +229,8 @@ p_keyValues : p_keyValue (WS? ',' WS? p_keyValue)*;
 p_tag : (qualifiedTypeName '.')? tagName (WS? pattern)?;
 p_tuple : '(' WS? patterns? WS? ')';
 
-p_wild : Wild;
-p_fNil : FNil;
+p_wild : WILD;
+p_fNil : FNIL;
 p_variable : ident;
 p_fVec : '#[' WS? patterns? (WS? ',' WS? '...')? WS? ']';
 p_fSet : '#{' WS? patterns? (WS? ',' WS? '...')? WS? '}';
