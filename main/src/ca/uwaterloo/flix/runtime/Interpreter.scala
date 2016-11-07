@@ -26,6 +26,8 @@ import ca.uwaterloo.flix.util.InternalRuntimeException
 
 object Interpreter {
 
+  // TODO: Change environments to use
+
   /**
     * Evaluates the given expression `exp0` under the given environment `env0`.
     */
@@ -56,27 +58,27 @@ object Interpreter {
       val v = Value.cast2int64(eval(store.v, root, env0))
       val result = (e & store.targetMask) | ((v & store.mask) << store.offset)
       Value.mkInt64(result)
-    case Expression.Var(ident, _, _, loc) => env0.get(ident.name) match {
-      case None => throw InternalRuntimeException(s"Key '${ident.name}' not found in environment: '${env0.mkString(",")}'.")
+    case Expression.Var(sym, _, loc) => env0.get(sym.toString) match {
+      case None => throw InternalRuntimeException(s"Key '${sym.toString}' not found in environment: '${env0.mkString(",")}'.")
       case Some(v) => v
     }
-    case Expression.Ref(name, _, _) => eval(root.constants(name).exp, root, env0)
+    case Expression.Ref(name, _, _) => eval(root.definitions(name).exp, root, env0)
     case Expression.MkClosureRef(ref, freeVars, _, _) =>
       // Save the values of the free variables in the Value.Closure structure.
       // When the closure is called, these values will be provided at the beginning of the argument list.
       val bindings = new Array[AnyRef](freeVars.length)
       var i = 0
       while (i < bindings.length) {
-        bindings(i) = env0(freeVars(i).ident.name)
+        bindings(i) = env0(freeVars(i).sym.toString)
         i = i + 1
       }
-      Value.Closure(ref.name, bindings)
+      Value.Closure(ref.sym, bindings)
     case Expression.ApplyRef(name, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
-      evalCall(root.constants(name), args, root, env0)
+      evalCall(root.definitions(name), args, root, env0)
     case Expression.ApplyTail(name, _, args0, _, _) =>
       val args = evalArgs(args0.toArray, root, env0)
-      evalCall(root.constants(name), args, root, env0)
+      evalCall(root.definitions(name), args, root, env0)
     case Expression.ApplyHook(hook, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
       evalHook(hook, args, root, env0)
@@ -94,8 +96,8 @@ object Interpreter {
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
       val cond = Value.cast2bool(eval(exp1, root, env0))
       if (cond) eval(exp2, root, env0) else eval(exp3, root, env0)
-    case Expression.Let(ident, _, exp1, exp2, _, _) =>
-      val newEnv = env0 + (ident.name -> eval(exp1, root, env0))
+    case Expression.Let(sym, exp1, exp2, _, _) =>
+      val newEnv = env0 + (sym.toString -> eval(exp1, root, env0))
       eval(exp2, root, newEnv)
     case Expression.CheckTag(tag, exp, _) => Value.mkBool(Value.cast2tag(eval(exp, root, env0)).tag == tag)
     case Expression.GetTagValue(tag, exp, _, _) => Value.cast2tag(eval(exp, root, env0)).value
@@ -330,10 +332,10 @@ object Interpreter {
     * Evaluates the given head term `t` under the given environment `env0`
     */
   def evalHeadTerm(t: Term.Head, root: Root, env: Map[String, AnyRef]): AnyRef = t match {
-    case Term.Head.Var(x, _, _) => env(x.name)
+    case Term.Head.Var(x, _, _) => env(x.toString)
     case Term.Head.Exp(e, _, _) => eval(e, root, env)
     case Term.Head.Apply(name, args, _, _) =>
-      val defn = root.constants(name)
+      val defn = root.definitions(name)
       val evalArgs = new Array[AnyRef](args.length)
       var i = 0
       while (i < evalArgs.length) {
@@ -359,14 +361,14 @@ object Interpreter {
 
   def evalBodyTerm(t: Term.Body, root: Root, env: Map[String, AnyRef]): AnyRef = t match {
     case Term.Body.Wildcard(_, _) => ???
-    case Term.Body.Var(x, _, _, _) => env(x.name)
+    case Term.Body.Var(x, _, _, _) => env(x.toString)
     case Term.Body.Exp(e, _, _) => eval(e, root, env)
   }
 
   def evalCall(defn: Constant, args: Array[AnyRef], root: Root, env0: Map[String, AnyRef] = Map.empty): AnyRef = {
     if (defn.method == null) {
       val env = defn.formals.zip(args).foldLeft(env0) {
-        case (macc, (ExecutableAst.FormalArg(name, tpe), actual)) => macc + (name.name -> actual)
+        case (macc, (ExecutableAst.FormalArg(name, tpe), actual)) => macc + (name.toString -> actual)
       }
       eval(defn.exp, root, env)
     } else {
@@ -391,16 +393,16 @@ object Interpreter {
 
   private def evalClosure(function: Value.Closure, args: Array[AnyRef], root: Root, env: Map[String, AnyRef]): AnyRef = {
     val Value.Closure(name, bindings) = function
-    val constant = root.constants(name)
+    val constant = root.definitions(name)
 
     // Bindings for the capture variables are passed as arguments.
     val env1 = constant.formals.take(bindings.length).zip(bindings).foldLeft(env) {
-      case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
+      case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
     }
 
     // Now pass the actual arguments supplied by the caller.
     val env2 = constant.formals.drop(bindings.length).zip(args).foldLeft(env1) {
-      case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
+      case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
     }
 
     eval(constant.exp, root, env2)

@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.runtime.evaluator
 
 import ca.uwaterloo.flix.api.{MatchException, SwitchException, UserException}
+import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.phase.GenSym
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -38,9 +38,9 @@ object SymbolicEvaluator {
   /**
     * The type of environments.
     *
-    * An environment is map from variables names to symbolic values.
+    * An environment is map from variable symbols to symbolic values.
     */
-  type Environment = Map[String, SymVal]
+  type Environment = Map[Symbol.VarSym, SymVal]
 
   /**
     * The type of contexts.
@@ -53,7 +53,7 @@ object SymbolicEvaluator {
   /**
     * Evaluates the given expression `exp0` under the given environment `env0`.
     */
-  def eval(exp0: Expression, env0: Map[String, SymVal], root: ExecutableAst.Root)(implicit genSym: GenSym): Context = {
+  def eval(exp0: Expression, env0: Environment, root: ExecutableAst.Root)(implicit genSym: GenSym): Context = {
     /*
       * Local visitor.
       */
@@ -121,14 +121,14 @@ object SymbolicEvaluator {
       /**
         * Local Variable.
         */
-      case Expression.Var(ident, _, tpe, loc) => lift(pc0, env0(ident.name))
+      case Expression.Var(sym, tpe, loc) => lift(pc0, env0(sym))
 
       /**
         * Reference.
         */
       case Expression.Ref(name, tpe, loc) =>
         // Lookup and evaluate the definition.
-        root.constants.get(name) match {
+        root.definitions.get(name) match {
           case None => throw InternalCompilerException(s"Type Error: Unresolved reference '$name'.")
           case Some(defn) => eval(pc0, defn.exp, env0)
         }
@@ -139,7 +139,7 @@ object SymbolicEvaluator {
       case Expression.MkClosureRef(ref, freeVars, _, _) =>
         // Save the values of the free variables in a list.
         // When the closure is called, these values will be provided at the beginning of the argument list.
-        val env = freeVars.toList.map(f => env0(f.ident.name))
+        val env = freeVars.toList.map(f => env0(f.sym))
         // Construct the closure.
         val clo = SymVal.Closure(ref, env)
         lift(pc0, clo)
@@ -149,13 +149,13 @@ object SymbolicEvaluator {
         */
       case Expression.ApplyRef(name, args, _, _) =>
         // Lookup the reference.
-        val defn = root.constants(name)
+        val defn = root.definitions(name)
         // Evaluate all the arguments.
         evaln(pc0, args, env0) flatMap {
           case (pc, as) =>
             // Bind the actual arguments to the formal variables.
-            val newEnv = (defn.formals zip as).foldLeft(Map.empty[String, SymVal]) {
-              case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
+            val newEnv = (defn.formals zip as).foldLeft(Map.empty: Environment) {
+              case (macc, (formal, actual)) => macc + (formal.sym -> actual)
             }
             // Evaluate the body under the new environment.
             eval(pc, defn.exp, newEnv)
@@ -166,13 +166,13 @@ object SymbolicEvaluator {
         */
       case Expression.ApplyTail(name, _, args, _, _) =>
         // Lookup the reference.
-        val defn = root.constants(name)
+        val defn = root.definitions(name)
         // Evaluate all the arguments.
         evaln(pc0, args, env0) flatMap {
           case (pc, as) =>
             // Bind the actual arguments to the formal variables.
-            val newEnv = (defn.formals zip as).foldLeft(Map.empty[String, SymVal]) {
-              case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
+            val newEnv = (defn.formals zip as).foldLeft(Map.empty: Environment) {
+              case (macc, (formal, actual)) => macc + (formal.sym -> actual)
             }
             // Evaluate the body under the new environment.
             eval(pc, defn.exp, newEnv)
@@ -187,14 +187,14 @@ object SymbolicEvaluator {
         eval(pc0, exp, env0) flatMap {
           case (pc, SymVal.Closure(ref, bindings)) =>
             // Lookup the definition
-            val defn = root.constants(ref.name)
+            val defn = root.definitions(ref.sym)
             // Evaluate all the arguments.
             evaln(pc, args, env0) flatMap {
               case (pc1, actuals) =>
                 // Construct the environment
                 val newArgs = bindings ++ actuals
-                val newEnv = (defn.formals zip newArgs).foldLeft(Map.empty[String, SymVal]) {
-                  case (macc, (formal, actual)) => macc + (formal.ident.name -> actual)
+                val newEnv = (defn.formals zip newArgs).foldLeft(Map.empty: Environment) {
+                  case (macc, (formal, actual)) => macc + (formal.sym -> actual)
                 }
                 eval(pc1, defn.exp, newEnv)
             }
@@ -242,7 +242,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case SymVal.AtomicVar(id, tpe) =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Minus(zeroOf(exp.tpe), SmtExpr.Var(id, exp.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, tpe))
 
@@ -262,7 +262,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics
               case SymVal.AtomicVar(id, tpe) =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.BitwiseNegate(SmtExpr.Var(id, exp.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, tpe))
 
@@ -292,7 +292,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Plus(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -310,7 +310,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Minus(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -328,7 +328,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Times(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -346,7 +346,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Divide(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -364,7 +364,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Modulo(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -382,7 +382,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Exponentiate(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -400,7 +400,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, Type.Bool), SmtExpr.Less(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -418,7 +418,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, Type.Bool), SmtExpr.LessEqual(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -436,7 +436,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, Type.Bool), SmtExpr.Greater(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -454,7 +454,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, Type.Bool), SmtExpr.GreaterEqual(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -616,7 +616,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.BitwiseAnd(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -634,7 +634,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.BitwiseOr(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -652,7 +652,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.BitwiseXor(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -670,7 +670,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.BitwiseLeftShift(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -688,7 +688,7 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case _ =>
-                val newVar = genSym.fresh2()
+                val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.BitwiseRightShift(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, SymVal.AtomicVar(newVar, exp0.tpe))
             }
@@ -715,11 +715,11 @@ object SymbolicEvaluator {
       /**
         * Let-binding.
         */
-      case Expression.Let(ident, _, exp1, exp2, _, _) =>
+      case Expression.Let(sym, exp1, exp2, _, _) =>
         eval(pc0, exp1, env0) flatMap {
           case (pc, v1) =>
             // Bind the variable to the value of `exp1` which is `v1`.
-            val newEnv = env0 + (ident.name -> v1)
+            val newEnv = env0 + (sym -> v1)
             eval(pc, exp2, newEnv)
         }
 
@@ -1001,8 +1001,7 @@ object SymbolicEvaluator {
   /**
     * Returns the symbolic value corresponding to the given boolean `b`.
     */
-  private def toBool(b: Boolean): SymVal =
-  if (b) SymVal.True else SymVal.False
+  private def toBool(b: Boolean): SymVal = if (b) SymVal.True else SymVal.False
 
   /**
     * Converts the given value `v` to an expression.

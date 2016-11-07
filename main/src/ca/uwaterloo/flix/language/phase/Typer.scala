@@ -16,9 +16,10 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.errors.{ResolutionError, ResolutionError$, TypeError}
+import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
 import ca.uwaterloo.flix.language.phase.Disambiguation.RefTarget
 import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -869,7 +870,7 @@ object Typer {
           if (!resolveFreeVars) {
             TypedAst.Expression.Var(sym, subst0(sym.tvar), loc)
           } else {
-            val qname = Name.mkQName(sym.text)
+            val qname = Name.mkQName(sym.text) // TODO
             Disambiguation.lookupRef(qname, ns0, program) match {
               case Ok(RefTarget.Defn(ns, defn)) => TypedAst.Expression.Ref(defn.sym, subst0(sym.tvar), loc)
               case Ok(RefTarget.Hook(hook)) => TypedAst.Expression.Hook(hook, subst0(sym.tvar), loc)

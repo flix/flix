@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.ast.{Time, ExecutableAst, Symbol}
   */
 class Model(root: ExecutableAst.Root,
             time: Time,
-            definitions: Map[Symbol.Resolved, () => AnyRef],
+            definitions: Map[Symbol.DefnSym, () => AnyRef],
             relations: Map[Symbol.TableSym, Iterable[List[AnyRef]]],
             lattices: Map[Symbol.TableSym, Iterable[(List[AnyRef], AnyRef)]]) {
 
@@ -36,9 +36,9 @@ class Model(root: ExecutableAst.Root,
 
   def getTime: Time = time
 
-  def getConstant(sym: Symbol.Resolved): AnyRef = definitions(sym)()
+  def getConstant(sym: Symbol.DefnSym): AnyRef = definitions(sym)()
 
-  def getConstant(name: String): AnyRef = getConstant(Symbol.Resolved.mk(name))
+  def getConstant(name: String): AnyRef = getConstant(Symbol.mkDefnSym(name))
 
   def getRelation(name: String): Iterable[List[AnyRef]] =
     getRelationOpt(name).get

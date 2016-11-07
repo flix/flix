@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.BinaryOperator.Equal
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -32,7 +33,7 @@ object Simplifier {
   def simplify(tast: TypedAst.Root)(implicit genSym: GenSym): SimplifiedAst.Root = {
     val t = System.nanoTime()
 
-    val constants = tast.definitions.map { case (k, v) => k.toResolvedTemporaryHelperMethod -> Definition.simplify(v) }
+    val constants = tast.definitions.map { case (k, v) => k -> Definition.simplify(v) }
     val enums = tast.enums.map {
       case (k, TypedAst.Declaration.Enum(doc, sym, cases0, sc, loc)) =>
         val cases = cases0 map {
@@ -70,9 +71,9 @@ object Simplifier {
 
     def simplify(tast: TypedAst.Declaration.Definition)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant = {
       val formals = tast.formals.map {
-        case TypedAst.FormalParam(sym, tpe, loc) => SimplifiedAst.FormalArg(sym.toIdent, tpe)
+        case TypedAst.FormalParam(sym, tpe, loc) => SimplifiedAst.FormalParam(sym, tpe)
       }
-      SimplifiedAst.Definition.Constant(tast.ann, tast.sym.toResolvedTemporaryHelperMethod, formals, Expression.simplify(tast.exp), isSynthetic = false, tast.tpe, tast.loc)
+      SimplifiedAst.Definition.Constant(tast.ann, tast.sym, formals, Expression.simplify(tast.exp), isSynthetic = false, tast.tpe, tast.loc)
     }
 
     def simplify(tast: TypedAst.Declaration.Index)(implicit genSym: GenSym): SimplifiedAst.Definition.Index =
@@ -104,8 +105,8 @@ object Simplifier {
       case TypedAst.Expression.Int64(lit, loc) => SimplifiedAst.Expression.Int64(lit)
       case TypedAst.Expression.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
       case TypedAst.Expression.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
-      case TypedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Expression.Var(sym.toIdent, -1, tpe, loc)
-      case TypedAst.Expression.Ref(sym, tpe, loc) => SimplifiedAst.Expression.Ref(sym.toResolvedTemporaryHelperMethod, tpe, loc)
+      case TypedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Expression.Var(sym, tpe, loc)
+      case TypedAst.Expression.Ref(sym, tpe, loc) => SimplifiedAst.Expression.Ref(sym, tpe, loc)
       case TypedAst.Expression.Hook(hook, tpe, loc) => SimplifiedAst.Expression.Hook(hook, tpe, loc)
       case TypedAst.Expression.Lambda(args, body, tpe, loc) =>
         SimplifiedAst.Expression.Lambda(args map Simplifier.simplify, simplify(body), tpe, loc)
@@ -126,7 +127,7 @@ object Simplifier {
             SimplifiedAst.Expression.IfThenElse(cond, body, acc, tpe, loc)
         }
       case TypedAst.Expression.Let(sym, e1, e2, tpe, loc) =>
-        SimplifiedAst.Expression.Let(sym.toIdent, -1, simplify(e1), simplify(e2), tpe, loc)
+        SimplifiedAst.Expression.Let(sym, simplify(e1), simplify(e2), tpe, loc)
 
       case TypedAst.Expression.Match(exp0, rules, tpe, loc) =>
         import SimplifiedAst.{Expression => SExp}
@@ -159,15 +160,15 @@ object Simplifier {
           *
           * The `matchVar` is used by every case in the pattern match to test the value.
           */
-        val matchVar = genSym.fresh2("matchVar")
+        val matchVar = Symbol.freshVarSym("matchVar")
         val matchExp = simplify(exp0)
-        val fallthrough = genSym.fresh2("case")
+        val fallthrough = Symbol.freshVarSym("case")
 
         /**
           * Second, we generate a fresh variable name for each case, as well as a fresh variable name for the
           * fallthrough case (which matches anything and throws a match error).
           */
-        val vars = rules.map(_ => genSym.fresh2("case"))
+        val vars = rules.map(_ => Symbol.freshVarSym("case"))
         val cases = rules
 
         /**
@@ -175,12 +176,12 @@ object Simplifier {
           * the recursion easier, the initial call reverses `names` and `cases`, since we're building the let-bindings
           * outside-in (from the last case to the first case).
           */
-        def recur(names: List[Name.Ident],
+        def recur(names: List[Symbol.VarSym],
                   cases: List[(TypedAst.Pattern, TypedAst.Expression)],
-                  next: Name.Ident): SExp = ((names, cases): @unchecked) match {
+                  next: Symbol.VarSym): SExp = ((names, cases): @unchecked) match {
           case (Nil, Nil) =>
             // Base case: simply call the function representing the first case, to start the pattern match.
-            SExp.Apply(SExp.Var(vars.head, -1, Type.mkArrow(List(), tpe), loc), List(), tpe, loc)
+            SExp.Apply(SExp.Var(vars.head, Type.mkArrow(List(), tpe), loc), List(), tpe, loc)
           case (n :: ns, (pat, body) :: cs) =>
             // Construct the lambda that represents the current case:
             //   fn() = if `matchVar` matches `pat`, return `body`, else call `next()`
@@ -190,14 +191,14 @@ object Simplifier {
                 xs = List(pat),
                 ys = List(matchVar),
                 succ = simplify(body),
-                fail = SExp.Apply(SExp.Var(next, -1, Type.mkArrow(List(), tpe), loc), List(), tpe, loc)
+                fail = SExp.Apply(SExp.Var(next, Type.mkArrow(List(), tpe), loc), List(), tpe, loc)
               ),
               Type.mkArrow(List(), tpe), loc)
 
             // Construct the let-expression, binding the lambda to the current case's `name`.
             // Recursively construct the body of the let-expression, on the remaining names and cases.
             // In the recursive call, the `next` name is `n`, the name of the case we just processed.
-            SExp.Let(n, -1, lambda, recur(ns, cs, n), tpe, loc)
+            SExp.Let(n, lambda, recur(ns, cs, n), tpe, loc)
         }
 
         val patterns = recur(vars.reverse, cases.reverse, fallthrough)
@@ -207,15 +208,15 @@ object Simplifier {
           * be wrapped in a function call, to defer its evaluation.
           */
         val error = SExp.Lambda(List(), SExp.MatchError(tpe, loc), Type.mkArrow(List(), tpe), loc)
-        val inner = SExp.Let(fallthrough, -1, error, patterns, tpe, loc)
+        val inner = SExp.Let(fallthrough, error, patterns, tpe, loc)
 
         /**
           * Finally, we generate the outermost let-binding, which binds the `matchExp` to `matchVar`.
           */
-        SExp.Let(matchVar, -1, matchExp, inner, tpe, loc)
+        SExp.Let(matchVar, matchExp, inner, tpe, loc)
 
       case TypedAst.Expression.Tag(sym, tag, e, tpe, loc) =>
-        SimplifiedAst.Expression.Tag(sym.toResolved, tag, simplify(e), tpe, loc)
+        SimplifiedAst.Expression.Tag(sym, tag, simplify(e), tpe, loc)
       case TypedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
       case TypedAst.Expression.FVec(elms, tpe, loc) => ??? // TODO
@@ -225,11 +226,11 @@ object Simplifier {
       case TypedAst.Expression.GetIndex(e1, e2, tpe, loc) => ??? // TODO
       case TypedAst.Expression.PutIndex(e1, e2, e3, tpe, loc) => ??? // TODO
       case TypedAst.Expression.Existential(params, exp, loc) =>
-        val ps = params.map(p => SimplifiedAst.FormalArg(p.sym.toIdent, p.tpe))
+        val ps = params.map(p => SimplifiedAst.FormalParam(p.sym, p.tpe))
         val e = simplify(exp)
         SimplifiedAst.Expression.Existential(ps, e, loc)
       case TypedAst.Expression.Universal(params, exp, loc) =>
-        val ps = params.map(p => SimplifiedAst.FormalArg(p.sym.toIdent, p.tpe))
+        val ps = params.map(p => SimplifiedAst.FormalParam(p.sym, p.tpe))
         val e = simplify(exp)
         SimplifiedAst.Expression.Universal(ps, e, loc)
       case TypedAst.Expression.UserError(tpe, loc) =>
@@ -248,7 +249,7 @@ object Simplifier {
       * Eliminates pattern matching.
       */
     def simplify(xs: List[TypedAst.Pattern],
-                 ys: List[Name.Ident],
+                 ys: List[Symbol.VarSym],
                  succ: SExp,
                  fail: SExp)(implicit genSym: GenSym): SExp = ((xs, ys): @unchecked) match {
       /**
@@ -276,7 +277,7 @@ object Simplifier {
         */
       case (Var(sym, tpe, loc) :: ps, v :: vs) =>
         val exp = simplify(ps, vs, succ, fail)
-        SExp.Let(sym.toIdent, -1, SExp.Var(v, -1, tpe, loc), exp, succ.tpe, loc)
+        SExp.Let(sym, SExp.Var(v, tpe, loc), exp, succ.tpe, loc)
 
       /**
         * Matching a literal may succeed or fail.
@@ -289,7 +290,7 @@ object Simplifier {
         */
       case (lit :: ps, v :: vs) if isLiteral(lit) =>
         val exp = simplify(ps, vs, succ, fail)
-        val cond = SExp.Binary(Equal, lit2exp(lit), SExp.Var(v, -1, lit.tpe, lit.loc), Type.Bool, lit.loc)
+        val cond = SExp.Binary(Equal, lit2exp(lit), SExp.Var(v, lit.tpe, lit.loc), Type.Bool, lit.loc)
         SExp.IfThenElse(cond, exp, fail, succ.tpe, lit.loc)
 
       /**
@@ -303,10 +304,10 @@ object Simplifier {
         * the value of the tag.
         */
       case (Tag(enum, tag, pat, tpe, loc) :: ps, v :: vs) =>
-        val cond = SExp.CheckTag(tag, SExp.Var(v, -1, tpe, loc), loc)
-        val freshVar = genSym.fresh2()
+        val cond = SExp.CheckTag(tag, SExp.Var(v, tpe, loc), loc)
+        val freshVar = Symbol.freshVarSym("innerTag")
         val inner = simplify(pat :: ps, freshVar :: vs, succ, fail)
-        val consequent = SExp.Let(freshVar, -1, SExp.GetTagValue(tag, SExp.Var(v, -1, tpe, loc), pat.tpe, loc), inner, succ.tpe, loc)
+        val consequent = SExp.Let(freshVar, SExp.GetTagValue(tag, SExp.Var(v, tpe, loc), pat.tpe, loc), inner, succ.tpe, loc)
         SExp.IfThenElse(cond, consequent, fail, succ.tpe, loc)
 
       /**
@@ -317,11 +318,11 @@ object Simplifier {
         * variables.
         */
       case (Tuple(elms, tpe, loc) :: ps, v :: vs) =>
-        val freshVars = elms.map(_ => genSym.fresh2())
+        val freshVars = elms.map(_ => Symbol.freshVarSym("innerElm"))
         val zero = simplify(elms ::: ps, freshVars ::: vs, succ, fail)
         elms.zip(freshVars).zipWithIndex.foldRight(zero) {
           case (((pat, name), idx), exp) =>
-            SExp.Let(name, -1, SExp.GetTupleIndex(SExp.Var(v, -1, tpe, loc), idx, pat.tpe, loc), exp, succ.tpe, loc)
+            SExp.Let(name, SExp.GetTupleIndex(SExp.Var(v, tpe, loc), idx, pat.tpe, loc), exp, succ.tpe, loc)
         }
 
       case (FVec(elms, rest, tpe, loc) :: ps, v :: vs) => ???
@@ -352,13 +353,13 @@ object Simplifier {
         case TypedAst.Predicate.Body.Table(sym, terms, loc) =>
           SimplifiedAst.Predicate.Body.Table(sym, terms map Term.simplifyBody, loc)
         case TypedAst.Predicate.Body.ApplyFilter(sym, terms, loc) =>
-          SimplifiedAst.Predicate.Body.ApplyFilter(sym.toResolvedTemporaryHelperMethod, terms map Term.simplifyBody, loc)
+          SimplifiedAst.Predicate.Body.ApplyFilter(sym, terms map Term.simplifyBody, loc)
         case TypedAst.Predicate.Body.ApplyHookFilter(hook, terms, loc) =>
           SimplifiedAst.Predicate.Body.ApplyHookFilter(hook, terms map Term.simplifyBody, loc)
         case TypedAst.Predicate.Body.NotEqual(sym1, sym2, loc) =>
-          SimplifiedAst.Predicate.Body.NotEqual(sym1.toIdent, sym2.toIdent, loc)
+          SimplifiedAst.Predicate.Body.NotEqual(sym1, sym2, loc)
         case TypedAst.Predicate.Body.Loop(sym, term, loc) =>
-          SimplifiedAst.Predicate.Body.Loop(sym.toIdent, Term.simplifyHead(term), loc)
+          SimplifiedAst.Predicate.Body.Loop(sym, Term.simplifyHead(term), loc)
       }
     }
 
@@ -368,10 +369,10 @@ object Simplifier {
 
     def simplifyHead(e: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Term.Head = e match {
       case TypedAst.Expression.Var(sym, tpe, loc) =>
-        SimplifiedAst.Term.Head.Var(sym.toIdent, tpe, loc)
+        SimplifiedAst.Term.Head.Var(sym, tpe, loc)
       case TypedAst.Expression.Apply(TypedAst.Expression.Ref(sym, _, _), args, tpe, loc) =>
         val as = args map simplifyHead
-        SimplifiedAst.Term.Head.Apply(sym.toResolvedTemporaryHelperMethod, as, tpe, loc)
+        SimplifiedAst.Term.Head.Apply(sym, as, tpe, loc)
       case TypedAst.Expression.Apply(TypedAst.Expression.Hook(hook, _, _), args, tpe, loc) =>
         val as = args map simplifyHead
         SimplifiedAst.Term.Head.ApplyHook(hook, as, tpe, loc)
@@ -380,7 +381,7 @@ object Simplifier {
 
     def simplifyBody(e: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Term.Body = e match {
       case TypedAst.Expression.Wild(tpe, loc) => SimplifiedAst.Term.Body.Wildcard(tpe, loc)
-      case TypedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Term.Body.Var(sym.toIdent, -1, tpe, loc)
+      case TypedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Term.Body.Var(sym, -1, tpe, loc)
       case _ => SimplifiedAst.Term.Body.Exp(Expression.simplify(e), e.tpe, e.loc)
     }
 
@@ -389,8 +390,8 @@ object Simplifier {
   def simplify(tast: TypedAst.Attribute)(implicit genSym: GenSym): SimplifiedAst.Attribute =
     SimplifiedAst.Attribute(tast.name, tast.tpe)
 
-  def simplify(tast: TypedAst.FormalParam)(implicit genSym: GenSym): SimplifiedAst.FormalArg =
-    SimplifiedAst.FormalArg(tast.sym.toIdent, tast.tpe)
+  def simplify(tast: TypedAst.FormalParam)(implicit genSym: GenSym): SimplifiedAst.FormalParam =
+    SimplifiedAst.FormalParam(tast.sym, tast.tpe)
 
   def simplify(tast: TypedAst.Property)(implicit genSym: GenSym): SimplifiedAst.Property =
     SimplifiedAst.Property(tast.law, Expression.simplify(tast.exp), tast.loc)
@@ -434,7 +435,7 @@ object Simplifier {
     case TypedAst.Pattern.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
     case TypedAst.Pattern.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
     case TypedAst.Pattern.Tag(sym, tag, p, tpe, loc) =>
-      SimplifiedAst.Expression.Tag(sym.toResolved, tag, lit2exp(p), tpe, loc)
+      SimplifiedAst.Expression.Tag(sym, tag, lit2exp(p), tpe, loc)
     case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
       SimplifiedAst.Expression.Tuple(elms map lit2exp, tpe, loc)
     case _ => throw InternalCompilerException(s"Unexpected non-literal pattern $pat.")

@@ -77,7 +77,7 @@ object Codegen {
 
   case class Context(prefix: List[String],
                      functions: List[Definition.Constant],
-                     declarations: Map[Symbol.Resolved, Type],
+                     declarations: Map[Symbol.DefnSym, Type],
                      interfaces: Map[Type, List[String]]) {
 
     /*
@@ -213,7 +213,7 @@ object Codegen {
    */
   private def compileFunction(ctx: Context, visitor: ClassVisitor)(function: Definition.Constant): Unit = {
     val flags = if (function.isSynthetic) ACC_PUBLIC + ACC_STATIC + ACC_SYNTHETIC else ACC_PUBLIC + ACC_STATIC
-    val mv = visitor.visitMethod(flags, function.name.suffix, ctx.descriptor(function.tpe), null, null)
+    val mv = visitor.visitMethod(flags, function.sym.suffix, ctx.descriptor(function.tpe), null, null)
     mv.visitCode()
 
     val entryPoint = new Label()
@@ -223,7 +223,7 @@ object Codegen {
 
     val tpe = function.tpe match {
       case Type.Apply(Type.Arrow(l), ts) => ts.last
-      case _ => throw InternalCompilerException(s"Constant ${function.name} should have been converted to a function.")
+      case _ => throw InternalCompilerException(s"Constant ${function.sym} should have been converted to a function.")
     }
 
     tpe match {
@@ -279,15 +279,15 @@ object Codegen {
     case load: LoadExpression => compileLoadExpr(ctx, visitor, entryPoint)(load)
     case store: StoreExpression => compileStoreExpr(ctx, visitor, entryPoint)(store)
 
-    case Expression.Var(ident, offset, tpe, _) => tpe match {
-      case Type.Var(id, kind) => visitor.visitVarInsn(ALOAD, offset)  // TODO: Assumes that generics are boxed.
-      case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ILOAD, offset)
-      case Type.Int64 => visitor.visitVarInsn(LLOAD, offset)
-      case Type.Float32 => visitor.visitVarInsn(FLOAD, offset)
-      case Type.Float64 => visitor.visitVarInsn(DLOAD, offset)
+    case Expression.Var(sym, tpe, _) => tpe match {
+      case Type.Var(id, kind) => visitor.visitVarInsn(ALOAD, sym.getStackOffset)  // TODO: Assumes that generics are boxed.
+      case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ILOAD, sym.getStackOffset)
+      case Type.Int64 => visitor.visitVarInsn(LLOAD, sym.getStackOffset)
+      case Type.Float32 => visitor.visitVarInsn(FLOAD, sym.getStackOffset)
+      case Type.Float64 => visitor.visitVarInsn(DLOAD, sym.getStackOffset)
       case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.Arrow(_), _) |
-           Type.Apply(Type.FSet, _) | Type.Apply(Type.Enum(_, _), _) => visitor.visitVarInsn(ALOAD, offset)
-      case _ if tpe.isTuple => visitor.visitVarInsn(ALOAD, offset)
+           Type.Apply(Type.FSet, _) | Type.Apply(Type.Enum(_, _), _) => visitor.visitVarInsn(ALOAD, sym.getStackOffset)
+      case _ if tpe.isTuple => visitor.visitVarInsn(ALOAD, sym.getStackOffset)
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
 
@@ -309,7 +309,7 @@ object Codegen {
       // instruction (i.e. the arguments to the lambda object constructor).
       // We construct Expression.Var nodes and compile them as expected.
       for (f <- freeVars) {
-        val v = Expression.Var(f.ident, f.offset, f.tpe, loc)
+        val v = Expression.Var(f.sym, f.tpe, loc)
         compileExpression(ctx, visitor, entryPoint)(v)
       }
 
@@ -344,7 +344,7 @@ object Codegen {
       // object, while implMethod takes a descriptor string and represents the implementation method's type (that is,
       // with the capture variables included in the arguments list).
       val samMethodType = asm.Type.getType(ctx.descriptor(tpe))
-      val implMethod = new Handle(H_INVOKESTATIC, decorate(ref.name.prefix), ref.name.suffix, ctx.descriptor(ref.tpe))
+      val implMethod = new Handle(H_INVOKESTATIC, decorate(ref.sym.prefix), ref.sym.suffix, ctx.descriptor(ref.tpe))
       val instantiatedMethodType = asm.Type.getType(ctx.descriptor(tpe))
       val bsmArgs = Array(samMethodType, implMethod, instantiatedMethodType)
 
@@ -418,7 +418,7 @@ object Codegen {
       visitor.visitFieldInsn(GETSTATIC, decorate(ctx.prefix), flixObject, asm.Type.getDescriptor(clazz))
 
       // Next we load the arguments for the invoke/invokeUnsafe virtual call, starting with the name of the hook.
-      visitor.visitLdcInsn(hook.name.toString)
+      visitor.visitLdcInsn(hook.sym.toString)
 
       // Create the arguments array.
       compileInt(visitor)(args.length)
@@ -485,16 +485,16 @@ object Codegen {
       compileExpression(ctx, visitor, entryPoint)(exp3)
       visitor.visitLabel(ifEnd)
 
-    case Expression.Let(ident, offset, exp1, exp2, _, _) =>
+    case Expression.Let(sym, exp1, exp2, _, _) =>
       compileExpression(ctx, visitor, entryPoint)(exp1)
       exp1.tpe match {
-        case Type.Var(id, kind) => visitor.visitVarInsn(ASTORE, offset) // TODO: Assumes that generics are boxed.
-        case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ISTORE, offset)
-        case Type.Int64 => visitor.visitVarInsn(LSTORE, offset)
-        case Type.Float32 => visitor.visitVarInsn(FSTORE, offset)
-        case Type.Float64 => visitor.visitVarInsn(DSTORE, offset)
-        case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) => visitor.visitVarInsn(ASTORE, offset)
-        case Type.Apply(_, _) => visitor.visitVarInsn(ASTORE, offset)
+        case Type.Var(id, kind) => visitor.visitVarInsn(ASTORE, sym.getStackOffset) // TODO: Assumes that generics are boxed.
+        case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ISTORE, sym.getStackOffset)
+        case Type.Int64 => visitor.visitVarInsn(LSTORE, sym.getStackOffset)
+        case Type.Float32 => visitor.visitVarInsn(FSTORE, sym.getStackOffset)
+        case Type.Float64 => visitor.visitVarInsn(DSTORE, sym.getStackOffset)
+        case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) => visitor.visitVarInsn(ASTORE, sym.getStackOffset)
+        case Type.Apply(_, _) => visitor.visitVarInsn(ASTORE, sym.getStackOffset)
         case tpe => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
       compileExpression(ctx, visitor, entryPoint)(exp2)

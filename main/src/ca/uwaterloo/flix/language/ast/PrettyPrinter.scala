@@ -51,7 +51,7 @@ object PrettyPrinter {
     * Returns a string representation of the given term.
     */
   def fmt(t: ExecutableAst.Term.Head, sb: StringBuilder): StringBuilder = t match {
-    case ExecutableAst.Term.Head.Var(ident, tpe, loc) => sb.append(ident.name)
+    case ExecutableAst.Term.Head.Var(sym, tpe, loc) => sb.append(sym.toString)
     case ExecutableAst.Term.Head.Exp(e, tpe, loc) => fmt(e, sb)
     case ExecutableAst.Term.Head.Apply(name, args, tpe, loc) => ???
     case ExecutableAst.Term.Head.ApplyHook(hook, args, tpe, loc) => ???

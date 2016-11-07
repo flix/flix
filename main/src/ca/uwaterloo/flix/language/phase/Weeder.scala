@@ -35,7 +35,7 @@ object Weeder {
   /**
     * Weeds the whole program.
     */
-  def weed(program: ParsedAst.Program, hooks: Map[Name.NName, Map[String, Ast.Hook]]): Validation[WeededAst.Program, WeederError] = {
+  def weed(program: ParsedAst.Program, hooks: Map[Symbol.DefnSym, Ast.Hook]): Validation[WeededAst.Program, WeederError] = {
     val b = System.nanoTime()
     @@(program.roots map weed) map {
       case roots =>

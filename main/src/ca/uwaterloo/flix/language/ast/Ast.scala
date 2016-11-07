@@ -169,9 +169,9 @@ object Ast {
     */
   sealed trait Hook {
     /**
-      * Returns the fully qualified name of the hook.
+      * Returns the symbol of the hook.
       */
-    def name: Symbol.Resolved
+    def sym: Symbol.DefnSym
 
     /**
       * Returns the type of the hook.
@@ -184,20 +184,20 @@ object Ast {
     /**
       * A reference to an implementation of the [[Invokable]] interface.
       *
-      * @param name the fully qualified name.
-      * @param inv  the functional object.
-      * @param tpe  the type of the function.
+      * @param sym the symbol of the hook.
+      * @param inv the functional object.
+      * @param tpe the type of the function.
       */
-    case class Safe(name: Symbol.Resolved, inv: Invokable, tpe: Type) extends Hook
+    case class Safe(sym: Symbol.DefnSym, inv: Invokable, tpe: Type) extends Hook
 
     /**
       * A reference to an implementation of the [[InvokableUnsafe]] interface.
       *
-      * @param name the fully qualified name.
-      * @param inv  the functional object.
-      * @param tpe  the type of the function.
+      * @param sym the symbol of the hook.
+      * @param inv the functional object.
+      * @param tpe the type of the function.
       */
-    case class Unsafe(name: Symbol.Resolved, inv: InvokableUnsafe, tpe: Type) extends Hook
+    case class Unsafe(sym: Symbol.DefnSym, inv: InvokableUnsafe, tpe: Type) extends Hook
 
   }
 

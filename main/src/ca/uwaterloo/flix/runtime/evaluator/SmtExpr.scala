@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.evaluator
 
-import ca.uwaterloo.flix.language.ast.{Name, Type}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -66,7 +66,7 @@ object SmtExpr {
   /**
     * Variable.
     */
-  case class Var(ident: Name.Ident, tpe: Type) extends SmtExpr
+  case class Var(sym: Symbol.VarSym, tpe: Type) extends SmtExpr
 
   /**
     * Addition.
@@ -279,10 +279,10 @@ object SmtExpr {
     * Asserts that the two given types `tpe1` and `tpe2` are the same. Returns the type.
     */
   private def assertEq(tpe1: Type, tpe2: Type): Type =
-    if (tpe1 == tpe2)
-      tpe1
-    else
-      throw InternalCompilerException(s"Unexpected non-equal types: '$tpe1' and '$tpe2'.")
+  if (tpe1 == tpe2)
+    tpe1
+  else
+    throw InternalCompilerException(s"Unexpected non-equal types: '$tpe1' and '$tpe2'.")
 
   /**
     * Asserts that the given type `type` is a numeric type, i.e. a float or an int.

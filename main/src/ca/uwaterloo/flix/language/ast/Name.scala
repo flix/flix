@@ -124,9 +124,6 @@ object Name {
     */
   case class QName(sp1: SourcePosition, namespace: NName, ident: Ident, sp2: SourcePosition) {
 
-    // TODO: Temporary convenience method.
-    def toResolved: Symbol.Resolved = Symbol.Resolved.mk(namespace.parts ::: ident.name :: Nil)
-
     /**
       * Returns `true` if this name is qualified by a namespace.
       */

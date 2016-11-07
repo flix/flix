@@ -21,7 +21,7 @@ import java.nio.file.{Files, Path, Paths}
 import ca.uwaterloo.flix.language.ast.Ast.Hook
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
-import ca.uwaterloo.flix.language.{CompilationError, Compiler}
+import ca.uwaterloo.flix.language.{CompilationError, Compiler, GenSym}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.{DeltaSolver, Model, Solver, Value}
@@ -55,7 +55,7 @@ class Flix {
   /**
     * A map of hooks to JVM invokable methods.
     */
-  private val hooks = mutable.Map.empty[Name.NName, Map[String, Ast.Hook]]
+  private val hooks = mutable.Map.empty[Symbol.DefnSym, Ast.Hook]
 
   /**
     * The current Flix options.
@@ -107,12 +107,12 @@ class Flix {
   /**
     * Adds the given invokable `inv` with the given `name.`
     *
-    * @param name the fully qualified name for the invokable.
-    * @param tpe  the Flix type of the invokable.
-    * @param inv  the invokable method.
+    * @param fqn the fully qualified name for the invokable.
+    * @param tpe the Flix type of the invokable.
+    * @param inv the invokable method.
     */
-  def addHook(name: String, tpe: IType, inv: Invokable): Flix = {
-    if (name == null)
+  def addHook(fqn: String, tpe: IType, inv: Invokable): Flix = {
+    if (fqn == null)
       throw new IllegalArgumentException("'name' must be non-null.")
     if (inv == null)
       throw new IllegalArgumentException("'inv' must be non-null.")
@@ -121,10 +121,12 @@ class Flix {
     if (!tpe.isFunction)
       throw new IllegalArgumentException("'tpe' must be a function type.")
 
-    val qname = Name.mkQName(name)
-    val hook = Ast.Hook.Safe(qname.toResolved, inv, tpe.asInstanceOf[WrappedType].tpe)
-    val entries = hooks.getOrElse(qname.namespace, Map.empty)
-    hooks += (qname.namespace -> (entries + (qname.ident.name -> hook)))
+    val sym = Symbol.mkDefnSym(fqn)
+    val hook = Ast.Hook.Safe(sym, inv, tpe.asInstanceOf[WrappedType].tpe)
+    if (hooks contains sym) {
+      throw new IllegalArgumentException("Hook already registered for that name.")
+    }
+    hooks += (sym -> hook)
 
     this
   }
@@ -132,12 +134,12 @@ class Flix {
   /**
     * Adds the given unsafe invokable `inv` with the given `name.`
     *
-    * @param name the fully qualified name for the invokable.
-    * @param tpe  the Flix type of the invokable.
-    * @param inv  the invokable method.
+    * @param fqn the fully qualified name for the invokable.
+    * @param tpe the Flix type of the invokable.
+    * @param inv the invokable method.
     */
-  def addHookUnsafe(name: String, tpe: IType, inv: InvokableUnsafe): Flix = {
-    if (name == null)
+  def addHookUnsafe(fqn: String, tpe: IType, inv: InvokableUnsafe): Flix = {
+    if (fqn == null)
       throw new IllegalArgumentException("'name' must be non-null.")
     if (inv == null)
       throw new IllegalArgumentException("'inv' must be non-null.")
@@ -146,10 +148,12 @@ class Flix {
     if (!tpe.isFunction)
       throw new IllegalArgumentException("'tpe' must be a function type.")
 
-    val qname = Name.mkQName(name)
-    val hook = Ast.Hook.Unsafe(qname.toResolved, inv, tpe.asInstanceOf[WrappedType].tpe)
-    val entries = hooks.getOrElse(qname.namespace, Map.empty)
-    hooks += (qname.namespace -> (entries + (qname.ident.name -> hook)))
+    val sym = Symbol.mkDefnSym(fqn)
+    val hook = Ast.Hook.Unsafe(sym, inv, tpe.asInstanceOf[WrappedType].tpe)
+    if (hooks contains sym) {
+      throw new IllegalArgumentException("Hook already registered for that name.")
+    }
+    hooks += (sym -> hook)
 
     this
   }
@@ -157,21 +161,19 @@ class Flix {
   /**
     * Calls the invokable with the given name `name`, passing the given `args.`
     *
-    * @param name the fully qualified name for the invokable.
+    * @param fqn  the fully qualified name for the invokable.
     * @param args the array of arguments passed to the invokable.
     */
-  def invoke(name: String, args: Array[IValue]): IValue = {
-    if (name == null)
+  def invoke(fqn: String, args: Array[IValue]): IValue = {
+    if (fqn == null)
       throw new IllegalArgumentException("'name' must be non-null.")
     if (args == null)
       throw new IllegalArgumentException("'args' must be non-null.")
 
-    val qname = Name.mkQName(name)
-    val hook = hooks.get(qname.namespace).flatMap(_.get(qname.ident.name))
-
-    hook match {
-      case None => throw new NoSuchElementException(s"Hook '$name' does not exist.")
-      case Some(_: Hook.Unsafe) => throw new RuntimeException(s"Trying to invoke a safe hook but '$name' is an unsafe hook.")
+    val sym = Symbol.mkDefnSym(fqn)
+    hooks.get(sym) match {
+      case None => throw new NoSuchElementException(s"Hook '$fqn' does not exist.")
+      case Some(_: Hook.Unsafe) => throw new RuntimeException(s"Trying to invoke a safe hook but '$fqn' is an unsafe hook.")
       case Some(hook: Hook.Safe) => hook.inv(args)
     }
   }
@@ -179,21 +181,19 @@ class Flix {
   /**
     * Calls the unsafe invokable with the given name `name`, passing the given `args.`
     *
-    * @param name the fully qualified name for the invokable.
+    * @param fqn  the fully qualified name for the invokable.
     * @param args the array of arguments passed to the invokable.
     */
-  def invokeUnsafe(name: String, args: Array[AnyRef]): AnyRef = {
-    if (name == null)
+  def invokeUnsafe(fqn: String, args: Array[AnyRef]): AnyRef = {
+    if (fqn == null)
       throw new IllegalArgumentException("'name' must be non-null.")
     if (args == null)
       throw new IllegalArgumentException("'args' must be non-null.")
 
-    val qname = Name.mkQName(name)
-    val hook = hooks.get(qname.namespace).flatMap(_.get(qname.ident.name))
-
-    hook match {
-      case None => throw new NoSuchElementException(s"Hook '$name' does not exist.")
-      case Some(_: Hook.Safe) => throw new RuntimeException(s"Trying to invoke an unsafe hook but '$name' is a safe hook.")
+    val sym = Symbol.mkDefnSym(fqn)
+    hooks.get(sym) match {
+      case None => throw new NoSuchElementException(s"Hook '$fqn' does not exist.")
+      case Some(_: Hook.Safe) => throw new RuntimeException(s"Trying to invoke an unsafe hook but '$fqn' is a safe hook.")
       case Some(hook: Hook.Unsafe) => hook.inv(args)
     }
   }
@@ -279,7 +279,7 @@ class Flix {
     val si3 = internals.foldLeft(List.empty[SourceInput]) {
       case (xs, (name, text)) => SourceInput.Internal(name, text) :: xs
     }
-    
+
     si1 ::: si2 ::: si3
   }
 
