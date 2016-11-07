@@ -187,9 +187,15 @@ object Disambiguation {
       case typeName =>
         // Lookup the enum in the current namespace.
         // If the namespace doesn't even exist, just use an empty map.
-        val decls = program.enums.getOrElse(ns0, Map.empty)
-        decls.get(typeName) match {
-          case None => Err(ResolutionError.UndefinedType(qname, ns0, loc))
+        val namespaceDecls = program.enums.getOrElse(ns0, Map.empty)
+        namespaceDecls.get(typeName) match {
+          case None =>
+            // The enum was not found in the current namespace. Try the root namespace.
+            val rootDecls = program.enums.getOrElse(Name.RootNS, Map.empty)
+            rootDecls.get(typeName) match {
+              case None => Err(ResolutionError.UndefinedType(qname, ns0, loc))
+              case Some(enum) => Ok(Type.Enum(enum.sym, Kind.Star /* TODO: Kind */))
+            }
           case Some(enum) => Ok(Type.Enum(enum.sym, Kind.Star /* TODO: Kind */))
         }
     }
