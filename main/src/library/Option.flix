@@ -192,7 +192,7 @@ namespace Option {
     }
 
     ///
-    /// Returns `(Some(v1), Some(v2))` if `o` is `Some((v1, v2))`. Otherwise returns `None`.
+    /// Returns `(Some(v1), Some(v2))` if `o` is `Some((v1, v2))`. Otherwise returns `(None, None)`.
     ///
     def unzip[a, b](o: Option[(a, b)]): (Option[a], Option[b]) = match o with {
         case None => (None, None)
