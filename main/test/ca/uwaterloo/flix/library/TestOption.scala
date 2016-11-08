@@ -43,54 +43,54 @@ class TestOption extends FunSuite {
   }
 
   test("null.01") {
-    val input = "def r: Bool = null(None)"
+    val input = "def r: Bool = Option/null(None)"
     runBoolTest(input, true)
   }
 
   test("null.02") {
-    val input = "def r: Bool = null(Some(32))"
+    val input = "def r: Bool = Option/null(Some(32))"
     runBoolTest(input, false)
   }
 
   test("null.03") {
-    val input = "def r: Bool = null(Some(888ii))"
+    val input = "def r: Bool = Option/null(Some(888ii))"
     runBoolTest(input, false)
   }
 
   test("get.01") {
-    val input = "def r: Int32 = get(Some(32))"
+    val input = "def r: Int32 = Option/get(Some(32))"
     runTest(input, 32)
   }
 
   test("get.02") {
-    val input = "def r: BigInt = get(Some(32ii))"
+    val input = "def r: BigInt = Option/get(Some(32ii))"
     runAnyTest(input, Value.mkBigInt(32))
   }
 
   test("getWithDefault.01") {
-    val input = "def r: Int32 = getWithDefault(None, 32)"
+    val input = "def r: Int32 = Option/getWithDefault(None, 32)"
     runTest(input, 32)
   }
 
   test("getWithDefault.02") {
-    val input = "def r: Int32 = getWithDefault(Some(30), 32)"
+    val input = "def r: Int32 = Option/getWithDefault(Some(30), 32)"
     runTest(input, 30)
   }
 
   test("getWithDefault.03") {
-    val input = "def r: BigInt = getWithDefault(None, 32ii)"
+    val input = "def r: BigInt = Option/getWithDefault(None, 32ii)"
     runAnyTest(input, Value.mkBigInt(32))
   }
 
   test("getWithDefault.04") {
-    val input = "def r: BigInt = getWithDefault(Some(30ii), 32ii)"
+    val input = "def r: BigInt = Option/getWithDefault(Some(30ii), 32ii)"
     runAnyTest(input, Value.mkBigInt(30))
   }
 
   test("exists.01") {
     val input =
       """def f(i: Int32): Bool = if (i == 2) true else false
-        |def r: Bool = exists(f, None)
+        |def r: Bool = Option/exists(f, None)
       """.stripMargin
     runBoolTest(input, false)
   }
@@ -98,7 +98,7 @@ class TestOption extends FunSuite {
   test("exists.02") {
     val input =
       """def f(i: Int32): Bool = if (i == 2) true else false
-        |def r: Bool = exists(f, Some(1))
+        |def r: Bool = Option/exists(f, Some(1))
       """.stripMargin
     runBoolTest(input, false)
   }
@@ -106,7 +106,7 @@ class TestOption extends FunSuite {
   test("exists.03") {
     val input =
       """def f(i: Int32): Bool = if (i == 2) true else false
-        |def r: Bool = exists(f, Some(2))
+        |def r: Bool = Option/exists(f, Some(2))
       """.stripMargin
     runBoolTest(input, true)
   }
@@ -114,7 +114,7 @@ class TestOption extends FunSuite {
   test("forall.01") {
     val input =
       """def f(i: Int32): Bool = if (i == 2) true else false
-        |def r: Bool = forall(f, None)
+        |def r: Bool = Option/forall(f, None)
       """.stripMargin
     runBoolTest(input, true)
   }
@@ -122,7 +122,7 @@ class TestOption extends FunSuite {
   test("forall.02") {
     val input =
       """def f(i: Int32): Bool = if (i == 2) true else false
-        |def r: Bool = forall(f, Some(1))
+        |def r: Bool = Option/forall(f, Some(1))
       """.stripMargin
     runBoolTest(input, false)
   }
@@ -130,7 +130,7 @@ class TestOption extends FunSuite {
   test("forall.03") {
     val input =
       """def f(i: Int32): Bool = if (i == 2) true else false
-        |def r: Bool = forall(f, Some(2))
+        |def r: Bool = Option/forall(f, Some(2))
       """.stripMargin
     runBoolTest(input, true)
   }
@@ -138,7 +138,7 @@ class TestOption extends FunSuite {
   test("filter.01") {
     val input =
       """def f(i: Int32): Bool = if (i == 2) true else false
-        |def r: Option[Int32] = filter(f, None)
+        |def r: Option[Int32] = Option/filter(f, None)
       """.stripMargin
     runAnyTest(input, Value.mkNone())
   }
@@ -146,7 +146,7 @@ class TestOption extends FunSuite {
   test("filter.02") {
     val input =
       """def f(i: Int32): Bool = if (i == 2) true else false
-        |def r: Option[Int32] = filter(f, Some(3))
+        |def r: Option[Int32] = Option/filter(f, Some(3))
       """.stripMargin
     runAnyTest(input, Value.mkNone())
   }
@@ -154,7 +154,7 @@ class TestOption extends FunSuite {
   test("filter.03") {
     val input =
       """def f(i: Int32): Bool = if (i == 2) true else false
-        |def r: Option[Int32] = filter(f, Some(2))
+        |def r: Option[Int32] = Option/filter(f, Some(2))
       """.stripMargin
     runAnyTest(input, Value.mkSome(new Integer(2)))
   }
@@ -162,7 +162,7 @@ class TestOption extends FunSuite {
   test("map.01") {
     val input =
       """def f(i: Int32): Int32 = 2*i
-        |def r: Option[Int32] = map(f, None)
+        |def r: Option[Int32] = Option/map(f, None)
       """.stripMargin
     runAnyTest(input, Value.mkNone())
   }
@@ -170,7 +170,7 @@ class TestOption extends FunSuite {
   test("map.02") {
     val input =
       """def f(i: Int32): Int32 = 2*i
-        |def r: Option[Int32] = map(f, Some(2))
+        |def r: Option[Int32] = Option/map(f, Some(2))
       """.stripMargin
     runAnyTest(input, Value.mkSome(new Integer(4)))
   }
@@ -178,7 +178,7 @@ class TestOption extends FunSuite {
   test("map.03") {
     val input =
       """def f(i: Int32): Bool = true
-        |def r: Option[Bool] = map(f, Some(2))
+        |def r: Option[Bool] = Option/map(f, Some(2))
       """.stripMargin
     runAnyTest(input, Value.mkSome(new Boolean(true)))
   }
@@ -186,7 +186,7 @@ class TestOption extends FunSuite {
   test("map2.01") {
     val input =
       """def f(i: Int32, b: Bool): Int32 = if (b) 2*i else 3*i
-        |def r: Option[Int32] = map2(f, None, Some(true))
+        |def r: Option[Int32] = Option/map2(f, None, Some(true))
       """.stripMargin
     runAnyTest(input, Value.mkNone())
   }
@@ -194,7 +194,7 @@ class TestOption extends FunSuite {
   test("map2.02") {
     val input =
       """def f(i: Int32, b: Bool): Int32 = if (b) 2*i else 3*i
-        |def r: Option[Int32] = map2(f, Some(1), None)
+        |def r: Option[Int32] = Option/map2(f, Some(1), None)
       """.stripMargin
     runAnyTest(input, Value.mkNone())
   }
@@ -202,7 +202,7 @@ class TestOption extends FunSuite {
   test("map2.03") {
     val input =
       """def f(i: Int32, b: Bool): Int32 = if (b) 2*i else 3*i
-        |def r: Option[Int32] = map2(f, Some(1), Some(true))
+        |def r: Option[Int32] = Option/map2(f, Some(1), Some(true))
       """.stripMargin
     runAnyTest(input, Value.mkSome(new Integer(2)))
   }
@@ -210,7 +210,7 @@ class TestOption extends FunSuite {
   test("map2.04") {
     val input =
       """def f(i: Int32, b: Bool): Int32 = if (b) 2*i else 3*i
-        |def r: Option[Int32] = map2(f, Some(1), Some(false))
+        |def r: Option[Int32] = Option/map2(f, Some(1), Some(false))
       """.stripMargin
     runAnyTest(input, Value.mkSome(new Integer(3)))
   }
@@ -218,7 +218,7 @@ class TestOption extends FunSuite {
   test("flatMap.01") {
     val input =
       """def f(i: Int32): Option[Int32] = if (i == 0) None else Some(2*i)
-        |def r: Option[Int32] = flatMap(f, None)
+        |def r: Option[Int32] = Option/flatMap(f, None)
       """.stripMargin
     runAnyTest(input, Value.mkNone())
   }
@@ -226,7 +226,7 @@ class TestOption extends FunSuite {
   test("flatMap.02") {
     val input =
       """def f(i: Int32): Option[Int32] = if (i == 0) None else Some(2*i)
-        |def r: Option[Int32] = flatMap(f, Some(0))
+        |def r: Option[Int32] = Option/flatMap(f, Some(0))
       """.stripMargin
     runAnyTest(input, Value.mkNone())
   }
@@ -234,7 +234,7 @@ class TestOption extends FunSuite {
   test("flatMap.03") {
     val input =
       """def f(i: Int32): Option[Int32] = if (i == 0) None else Some(2*i)
-        |def r: Option[Int32] = flatMap(f, Some(2))
+        |def r: Option[Int32] = Option/flatMap(f, Some(2))
       """.stripMargin
     runAnyTest(input, Value.mkSome(new Integer(4)))
   }
@@ -242,7 +242,7 @@ class TestOption extends FunSuite {
   test("flatMap2.01") {
     val input =
       """def f(i: Int32, b: Bool): Option[Int32] = if (b) Some(i) else None
-        |def r: Option[Int32] = flatMap2(f, None, Some(true))
+        |def r: Option[Int32] = Option/flatMap2(f, None, Some(true))
       """.stripMargin
     runAnyTest(input, Value.mkNone())
   }
@@ -250,7 +250,7 @@ class TestOption extends FunSuite {
   test("flatMap2.02") {
     val input =
       """def f(i: Int32, b: Bool): Option[Int32] = if (b) Some(i) else None
-        |def r: Option[Int32] = flatMap2(f, Some(1), None)
+        |def r: Option[Int32] = Option/flatMap2(f, Some(1), None)
       """.stripMargin
     runAnyTest(input, Value.mkNone())
   }
@@ -258,7 +258,7 @@ class TestOption extends FunSuite {
   test("flatMap2.03") {
     val input =
       """def f(i: Int32, b: Bool): Option[Int32] = if (b) Some(i) else None
-        |def r: Option[Int32] = flatMap2(f, Some(5), Some(false))
+        |def r: Option[Int32] = Option/flatMap2(f, Some(5), Some(false))
       """.stripMargin
     runAnyTest(input, Value.mkNone())
   }
@@ -266,53 +266,224 @@ class TestOption extends FunSuite {
   test("flatMap2.04") {
     val input =
       """def f(i: Int32, b: Bool): Option[Int32] = if (b) Some(i) else None
-        |def r: Option[Int32] = flatMap2(f, Some(5), Some(true))
+        |def r: Option[Int32] = Option/flatMap2(f, Some(5), Some(true))
       """.stripMargin
     runAnyTest(input, Value.mkSome(new Integer(5)))
   }
 
   test("toList.01") {
-    val input = "def r: List[Int32] = toList(None)"
+    val input = "def r: List[Int32] = Option/toList(None)"
     runAnyTest(input, Value.mkNil)
   }
 
   test("toList.02") {
-    val input = "def r: List[Int32] = toList(Some(11))"
+    val input = "def r: List[Int32] = Option/toList(Some(11))"
     runAnyTest(input, Value.mkList(List(new Integer(11))))
   }
 
   test("toSet.01") {
-    val input = "def r: Set[Int32] = toSet(None)"
+    val input = "def r: Set[Int32] = Option/toSet(None)"
     runAnyTest(input, Set())
   }
 
   test("toSet.02") {
-    val input = "def r: Set[Int32] = toSet(Some(4))"
+    val input = "def r: Set[Int32] = Option/toSet(Some(4))"
     runAnyTest(input, Set(4))
   }
 
   test("withDefault.01") {
-    val input = "def r: Option[Int32] = withDefault(None, None)"
+    val input = "def r: Option[Int32] = Option/withDefault(None, None)"
     runAnyTest(input, Value.mkNone())
   }
 
   test("withDefault.02") {
-    val input = "def r: Option[Int32] = withDefault(None, Some(4))"
+    val input = "def r: Option[Int32] = Option/withDefault(None, Some(4))"
     runAnyTest(input, Value.mkSome(new Integer(4)))
   }
 
   test("withDefault.03") {
-    val input = "def r: Option[Int32] = withDefault(Some(2), Some(4))"
+    val input = "def r: Option[Int32] = Option/withDefault(Some(2), Some(4))"
     runAnyTest(input, Value.mkSome(new Integer(2)))
   }
 
-  test("toResult.01") {
-    val input = "def r: Result[Int32, Bool] = toResult(None, false)"
-    runAnyTest(input, Value.mkErr(new Boolean(false)))
+  test("toOk.01") {
+    val input = "def r: Result[Bool, Int32] = Option/toOk(None, false)"
+    runAnyTest(input, Value.mkOk(new Boolean(false)))
   }
 
-  test("toResult.02") {
-    val input = "def r: Result[Int32, Bool] = toResult(Some(5), false)"
-    runAnyTest(input, Value.mkOk(new Integer(5)))
+  test("toOk.02") {
+    val input = "def r: Result[Bool, Int32] = Option/toOk(Some(true), false)"
+    runAnyTest(input, Value.mkOk(new Boolean(true)))
+  }
+
+  test("toErr.01") {
+    val input = "def r: Result[Bool, Int32] = Option/toErr(None, 1)"
+    runAnyTest(input, Value.mkErr(new Integer(1)))
+  }
+
+  test("toErr.02") {
+    val input = "def r: Result[Bool, Int32] = Option/toErr(Some(2), 1)"
+    runAnyTest(input, Value.mkErr(new Integer(2)))
+  }
+
+  test("count.01") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Int32 = Option/count(f, None)
+      """.stripMargin
+    runTest(input, 0)
+  }
+
+  test("count.02") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Int32 = Option/count(f, Some(1))
+      """.stripMargin
+    runTest(input, 0)
+  }
+
+  test("count.03") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Int32 = Option/count(f, Some(2))
+      """.stripMargin
+    runTest(input, 1)
+  }
+
+  test("find.01") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Option[Int32] = Option/find(f, None)
+      """.stripMargin
+    runAnyTest(input, Value.mkNone())
+  }
+
+  test("find.02") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Option[Int32] = Option/find(f, Some(1))
+      """.stripMargin
+    runAnyTest(input, Value.mkNone())
+  }
+
+  test("find.03") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Option[Int32] = Option/find(f, Some(2))
+      """.stripMargin
+    runAnyTest(input, Value.mkSome(new Integer(2)))
+  }
+
+  test("flatten.01") {
+    val input = "def r: Option[Int32] = Option/flatten(None)"
+    runAnyTest(input, Value.mkNone())
+  }
+
+  test("flatten.02") {
+    val input = "def r: Option[Int32] = Option/flatten(Some(None))"
+    runAnyTest(input, Value.mkNone())
+  }
+
+  test("flatten.03") {
+    val input = "def r: Option[Int32] = Option/flatten(Some(Some(1)))"
+    runAnyTest(input, Value.mkSome(new Integer(1)))
+  }
+
+  test("foldLeft.01") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Bool = Option/foldLeft(f, false, None)
+      """.stripMargin
+    runBoolTest(input, false)
+  }
+
+  test("foldLeft.02") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Bool = Option/foldLeft(f, false, Some(1))
+      """.stripMargin
+    runBoolTest(input, false)
+  }
+
+  test("foldLeft.03") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Bool = Option/foldLeft(f, false, Some(2))
+      """.stripMargin
+    runBoolTest(input, true)
+  }
+
+  test("foldRight.01") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Bool = Option/foldRight(f, None, false)
+      """.stripMargin
+    runBoolTest(input, false)
+  }
+
+  test("foldRight.02") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Bool = Option/foldRight(f, Some(1), false)
+      """.stripMargin
+    runBoolTest(input, false)
+  }
+
+  test("foldRight.03") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Bool = Option/foldRight(f, Some(2), false)
+      """.stripMargin
+    runBoolTest(input, true)
+  }
+
+  test("isNone.01") {
+    val input = "def r: Bool = Option/isNone(None)"
+    runBoolTest(input, true)
+  }
+
+  test("isNone.02") {
+    val input = "def r: Bool = Option/isNone(Some(1))"
+    runBoolTest(input, false)
+  }
+
+  test("isSome.01") {
+    val input = "def r: Bool = Option/isSome(None)"
+    runBoolTest(input, false)
+  }
+
+  test("isSome.02") {
+    val input = "def r: Bool = Option/isSome(Some(1))"
+    runBoolTest(input, true)
+  }
+
+  test("zip.01") {
+    val input = "def r: Option[(Int32, Bool)] = Option/zip(None, None)"
+    runAnyTest(input, Value.mkNone())
+  }
+
+  test("zip.02") {
+    val input = "def r: Option[(Int32, Bool)] = Option/zip(None, Some(true))"
+    runAnyTest(input, Value.mkNone())
+  }
+
+  test("zip.03") {
+    val input = "def r: Option[(Int32, Bool)] = Option/zip(Some(1), None)"
+    runAnyTest(input, Value.mkNone())
+  }
+
+  test("zip.04") {
+    val input = "def r: Option[(Int32, Int32)] = Option/zip(Some(1), Some(2))"
+    runAnyTest(input, Value.mkSome(Value.Tuple(Array(new Integer(1), new Integer(2)))))
+  }
+
+  test("unzip.01") {
+    val input = "def r: (Option[Int32], Option[Bool]) = Option/unzip(None)"
+    runAnyTest(input, Value.Tuple(Array(Value.mkNone(), Value.mkNone())))
+  }
+
+  test("unzip.02") {
+    val input = "def r: (Option[Int32], Option[Bool]) = Option/unzip(Some((1, true)))"
+    runAnyTest(input, Value.Tuple(Array(Value.mkSome(new Integer(1)), Value.mkSome(new Boolean(true)))))
   }
 }

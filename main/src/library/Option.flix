@@ -1,3 +1,20 @@
+/*
+ * Copyright 2016 Liam Palmer
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+namespace Option {
 
     ///
     /// Returns `true` iff `o` is `None`.
@@ -100,9 +117,85 @@
     }
 
     ///
-    /// Returns `Ok(v)` if `o` is `Some(v)`. Otherwise returns `Err(e)`.
+    /// Returns `Ok(v)` if `o` is `Some(v)`. Otherwise returns `Ok(d)`.
     ///
-    def toResult[a,b](o: Option[a], e: b): Result[a,b] = match o with {
-        case None => Err(e)
-        case Some(v) => Ok(v)
+    def toOk[a,b](o: Option[a], d: a): Result[a,b] = Ok(getWithDefault(o, d))
+
+    ///
+    /// Returns `Err(v)` if `o` is `Some(v)`. Otherwise returns `Err(d)`.
+    ///
+    def toErr[a,b](o: Option[b], d: b): Result[a,b] = Err(getWithDefault(o, d))
+
+    ///
+    /// Returns `1` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `0`.
+    ///
+    def count[a](f: a -> Bool, o: Option[a]): Int32 = match o with {
+        case None => 0
+        case Some(v) => if (f(v)) 1 else 0
     }
+
+    ///
+    /// Returns `o` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `None`.
+    ///
+    def find[a](f: a -> Bool, o: Option[a]): Option[a] = match o with {
+        case None => None
+        case Some(v) => if (f(v)) o else None
+    }
+
+    ///
+    /// Returns `v` if `o` is `Some(v)`. Otherwise returns `None`.
+    ///
+    def flatten[a](o: Option[Option[a]]): Option[a] = match o with {
+        case None => None
+        case Some(v) => v
+    }
+
+    ///
+    /// Returns `f(v)` if `o` is `Some(v)`. Otherwise returns `z`.
+    ///
+    def foldLeft[a, b](f: a -> b, z: b, o: Option[a]): b = match o with {
+        case None => z
+        case Some(v) => f(v)
+    }
+
+    ///
+    /// Returns `f(v)` if `o` is `Some(v)`. Otherwise returns `z`.
+    ///
+    def foldRight[a, b](f: a -> b, o: Option[a], z: b): b = match o with {
+        case None => z
+        case Some(v) => f(v)
+    }
+
+    ///
+    /// Returns `true` iff `o` is `None`.
+    ///
+    def isNone[a](o: Option[a]): Bool = match o with {
+        case None => true
+        case Some(v) => false
+    }
+
+    ///
+    /// Returns `true` iff `o` is `Some(v)`.
+    ///
+    def isSome[a](o: Option[a]): Bool = match o with {
+        case None => false
+        case Some(v) => true
+    }
+
+    ///
+    /// Returns `Some((v1, v2))` if `o1` is `Some(v1)` and `o2` is `Some(v2)`. Otherwise returns `None`.
+    ///
+    def zip[a, b](o1: Option[a], o2: Option[b]): Option[(a, b)] = match (o1, o2) with {
+        case (None, _) => None
+        case (_, None) => None
+        case (Some(v1), Some(v2)) => Some((v1, v2))
+    }
+
+    ///
+    /// Returns `(Some(v1), Some(v2))` if `o` is `Some((v1, v2))`. Otherwise returns `None`.
+    ///
+    def unzip[a, b](o: Option[(a, b)]): (Option[a], Option[b]) = match o with {
+        case None => (None, None)
+        case Some((v1, v2)) => (Some(v1), Some(v2))
+    }
+}
