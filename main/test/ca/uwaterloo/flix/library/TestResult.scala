@@ -62,82 +62,62 @@ class TestResult extends FunSuite {
     runBoolTest(input, true)
   }
 
-  test("ok.01") {
-    val input = "def r: Int32 = Result/ok(Ok(1))"
+  test("withDefault.01") {
+    val input = "def r: Int32 = Result/withDefault(Ok(1), 2)"
     runTest(input, 1)
   }
 
-  test("err.01") {
-    val input = "def r: Int32 = Result/err(Err(0))"
-    runTest(input, 0)
-  }
-
-  test("okWithDefault.01") {
-    val input = "def r: Int32 = Result/okWithDefault(Ok(1), 2)"
-    runTest(input, 1)
-  }
-
-  test("okWithDefault.02") {
-    val input = "def r: Int32 = Result/okWithDefault(Err(1), 2)"
+  test("withDefault.02") {
+    val input = "def r: Int32 = Result/withDefault(Err(1), 2)"
     runTest(input, 2)
   }
 
-  test("errWithDefault.01") {
-    val input = "def r: Int32 = Result/errWithDefault(Ok(1), 2)"
-    runTest(input, 2)
-  }
-
-  test("errWithDefault.02") {
-    val input = "def r: Int32 = Result/errWithDefault(Err(1), 2)"
-    runTest(input, 1)
-  }
-
-  test("mapOk.01") {
+  test("map.01") {
     val input =
       """def f(i: Int32): Bool = if (i == 2) true else false
-        |def r: Result[Bool, Int32] = Result/mapOk(Err(0), f)
+        |def r: Result[Bool, Int32] = Result/map(f, Err(0))
       """.stripMargin
     runAnyTest(input, Value.mkErr(new Integer(0)))
   }
 
-  test("mapOk.02") {
+  test("map.02") {
     val input =
       """def f(i: Int32): Bool = if (i == 2) true else false
-        |def r: Result[Bool, Int32] = Result/mapOk(Ok(1), f)
+        |def r: Result[Bool, Int32] = Result/map(f, Ok(1))
       """.stripMargin
     runAnyTest(input, Value.mkOk(new Boolean(false)))
   }
 
-  test("mapOk.03") {
+  test("map.03") {
     val input =
       """def f(i: Int32): Bool = if (i == 2) true else false
-        |def r: Result[Bool, Int32] = Result/mapOk(Ok(2), f)
+        |def r: Result[Bool, Int32] = Result/map(f, Ok(2))
       """.stripMargin
     runAnyTest(input, Value.mkOk(new Boolean(true)))
   }
 
-  test("mapErr.01") {
+  test("flatMap.01") {
     val input =
-      """def f(i: Int32): Bool = if (i == 2) true else false
-        |def r: Result[Int32, Bool] = Result/mapErr(Ok(0), f)
-      """.stripMargin
-    runAnyTest(input, Value.mkOk(new Integer(0)))
-  }
-
-  test("mapErr.02") {
-    val input =
-      """def f(i: Int32): Bool = if (i == 2) true else false
-        |def r: Result[Int32, Bool] = Result/mapErr(Err(1), f)
+      """def f(i: Int32): Result[Bool, Bool] = if (i > 0) Ok(true) else Err(false)
+        |def r: Result[Bool, Bool] = Result/flatMap(f, Err(false))
       """.stripMargin
     runAnyTest(input, Value.mkErr(new Boolean(false)))
   }
 
-  test("mapErr.03") {
+  test("flatMap.02") {
     val input =
-      """def f(i: Int32): Bool = if (i == 2) true else false
-        |def r: Result[Int32, Bool] = Result/mapErr(Err(2), f)
+      """def f(i: Int32): Result[Bool, Bool] = if (i > 0) Ok(true) else Err(false)
+        |def r: Result[Bool, Bool] = Result/flatMap(f, Ok(0))
       """.stripMargin
-    runAnyTest(input, Value.mkErr(new Boolean(true)))
+    runAnyTest(input, Value.mkErr(new Boolean(false)))
+  }
+
+  test("flatMap.03") {
+    val input =
+      """def f(i: Int32): Result[Bool, Bool] = if (i > 0) Ok(true) else Err(false)
+        |def r: Result[Bool, Bool] = Result/flatMap(f, Ok(1))
+      """.stripMargin
+    runAnyTest(input, Value.mkOk(new Boolean(true)))
   }
 
   test("and.01") {
@@ -206,7 +186,7 @@ class TestResult extends FunSuite {
 
   test("foldLeft.01") {
     val input =
-      """def f(i: Int32): Bool = if (i == 2) true else false
+      """def f(b: Bool, i: Int32): Bool = if (i == 2 && b) true else false
         |def r: Bool = Result/foldLeft(f, false, Err(0))
       """.stripMargin
     runBoolTest(input, false)
@@ -214,7 +194,7 @@ class TestResult extends FunSuite {
 
   test("foldLeft.02") {
     val input =
-      """def f(i: Int32): Bool = if (i == 2) true else false
+      """def f(b: Bool, i: Int32): Bool = if (i == 2 && b) true else false
         |def r: Bool = Result/foldLeft(f, false, Ok(1))
       """.stripMargin
     runBoolTest(input, false)
@@ -222,15 +202,31 @@ class TestResult extends FunSuite {
 
   test("foldLeft.03") {
     val input =
-      """def f(i: Int32): Bool = if (i == 2) true else false
+      """def f(b: Bool, i: Int32): Bool = if (i == 2 && b) true else false
+        |def r: Bool = Result/foldLeft(f, true, Ok(1))
+      """.stripMargin
+    runBoolTest(input, false)
+  }
+
+  test("foldLeft.04") {
+    val input =
+      """def f(b: Bool, i: Int32): Bool = if (i == 2 && b) true else false
         |def r: Bool = Result/foldLeft(f, false, Ok(2))
+      """.stripMargin
+    runBoolTest(input, false)
+  }
+
+  test("foldLeft.05") {
+    val input =
+      """def f(b: Bool, i: Int32): Bool = if (i == 2 && b) true else false
+        |def r: Bool = Result/foldLeft(f, true, Ok(2))
       """.stripMargin
     runBoolTest(input, true)
   }
 
   test("foldRight.01") {
     val input =
-      """def f(i: Int32): Bool = if (i == 2) true else false
+      """def f(i: Int32, b: Bool): Bool = if (i == 2 && b) true else false
         |def r: Bool = Result/foldRight(f, Err(0), false)
       """.stripMargin
     runBoolTest(input, false)
@@ -238,7 +234,7 @@ class TestResult extends FunSuite {
 
   test("foldRight.02") {
     val input =
-      """def f(i: Int32): Bool = if (i == 2) true else false
+      """def f(i: Int32, b: Bool): Bool = if (i == 2 && b) true else false
         |def r: Bool = Result/foldRight(f, Ok(1), false)
       """.stripMargin
     runBoolTest(input, false)
@@ -246,8 +242,24 @@ class TestResult extends FunSuite {
 
   test("foldRight.03") {
     val input =
-      """def f(i: Int32): Bool = if (i == 2) true else false
+      """def f(i: Int32, b: Bool): Bool = if (i == 2 && b) true else false
+        |def r: Bool = Result/foldRight(f, Ok(1), true)
+      """.stripMargin
+    runBoolTest(input, false)
+  }
+
+  test("foldRight.04") {
+    val input =
+      """def f(i: Int32, b: Bool): Bool = if (i == 2 && b) true else false
         |def r: Bool = Result/foldRight(f, Ok(2), false)
+      """.stripMargin
+    runBoolTest(input, false)
+  }
+
+  test("foldRight.05") {
+    val input =
+      """def f(i: Int32, b: Bool): Bool = if (i == 2 && b) true else false
+        |def r: Bool = Result/foldRight(f, Ok(2), true)
       """.stripMargin
     runBoolTest(input, true)
   }

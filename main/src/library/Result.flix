@@ -19,102 +19,80 @@ namespace Result {
     ///
     /// Returns `true` iff `r` is `Ok(v)`.
     ///
-    def isOk[a, b](r: Result[a, b]): Bool = match r with {
+    def isOk[t, e](r: Result[t, e]): Bool = match r with {
         case Ok(v) => true
-        case Err(e) => false
+        case Err(w) => false
     }
 
     ///
-    /// Returns `true` iff `r` is `Err(e)`.
+    /// Returns `true` iff `r` is `Err(w)`.
     ///
-    def isErr[a, b](r: Result[a, b]): Bool = match r with {
+    def isErr[t, e](r: Result[t, e]): Bool = match r with {
         case Ok(v) => false
-        case Err(e) => true
-    }
-
-    ///
-    /// Returns `v` if `r` is `Ok(v)`. Undefined semantics if `r` is `Err(e)`.
-    ///
-    def ok[a, b](r: Result[a, b]): a = match r with {
-        case Ok(v) => v
-    }
-
-    ///
-    /// Returns `e` if `r` is `Err(e)`. Undefined semantics if `r` is `Ok(v)`.
-    ///
-    def err[a, b](r: Result[a, b]): b = match r with {
-        case Err(e) => e
+        case Err(w) => true
     }
 
     ///
     /// Returns `v` if `r` is `Ok(v)`. Otherwise returns `d`.
     ///
-    def okWithDefault[a, b](r: Result[a, b], d: a): a = match r with {
+    def withDefault[t, e](r: Result[t, e], d: t): t = match r with {
         case Ok(v) => v
-        case Err(e) => d
+        case Err(w) => d
     }
 
     ///
-    /// Returns `e` if `r` is `Err(e)`. Otherwise returns `d`.
+    /// Returns `Ok(f(v))` if `r` is `Ok(v)`. Otherwise returns `r`.
     ///
-    def errWithDefault[a, b](r: Result[a, b], d: b): b = match r with {
-        case Ok(v) => d
-        case Err(e) => e
-    }
-
-    ///
-    /// Returns `Ok(f(v))` if `r` is `Ok(v)`.  Otherwise returns `r`.
-    ///
-    def mapOk[a, b, c](r: Result[a, b], f: a -> c): Result[c, b] = match r with {
+    def map[t1, t2, e](f: t1 -> t2, r: Result[t1, e]): Result[t2, e] = match r with {
         case Ok(v) => Ok(f(v))
-        case Err(e) => r
+        case Err(w) => r
     }
 
     ///
-    /// Returns `Err(f(e))` if `r` is `Err(e)`.  Otherwise returns `r`.
+    /// Returns `f(v)` if `r` is `Ok(v)`. Otherwise returns `r`.
     ///
-    def mapErr[a, b, c](r: Result[a, b], f: b -> c): Result[a, c] = match r with {
-        case Ok(v) => r
-        case Err(e) => Err(f(e))
+    def flatMap[t1, t2, e](f: t1 -> Result[t2, e], r: Result[t1, e]): Result[t2, e] = match r with {
+        case Ok(v) => f(v)
+        case Err(w) => r
     }
 
     ///
-    /// Returns `r2` if `r1` is `Ok(v)`.  Otherwise returns `r1`.
+    /// Returns `r2` if `r1` is `Ok(v)`. Otherwise returns `r1`.
     ///
-    def and[a, b](r1: Result[a, b], r2: Result[a, b]): Result[a, b] = match r1 with {
+    def and[t, e](r1: Result[t, e], r2: Result[t, e]): Result[t, e] = match r1 with {
         case Ok(v) => r2
-        case Err(e) => r1
+        case Err(w) => r1
     }
 
     ///
-    /// Returns `r1` if `r1` is `Ok(v)`.  Otherwise returns `r2`.
+    /// Returns `r1` if `r1` is `Ok(v)`. Otherwise returns `r2`.
     ///
-    def or[a, b](r1: Result[a, b], r2: Result[a, b]): Result[a, b] = match r1 with {
+    def or[t, e](r1: Result[t, e], r2: Result[t, e]): Result[t, e] = match r1 with {
         case Ok(v) => r1
-        case Err(e) => r2
+        case Err(w) => r2
     }
 
     ///
     /// Returns `1` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `0`.
     ///
-    def count[a, b](f: a -> Bool, r: Result[a, b]): Int32 = match r with {
+    def count[t, e](f: t -> Bool, r: Result[t, e]): Int32 = match r with {
         case Ok(v) => if (f(v)) 1 else 0
-        case Err(e) => 0
+        case Err(w) => 0
     }
 
     ///
-    /// Returns `f(v)` if `r` is `Ok(v)`. Otherwise returns `z`.
+    /// Returns `f(z, v)` if `r` is `Ok(v)`. Otherwise returns `z`.
     ///
-    def foldLeft[a, b, c](f: a -> b, z: b, r: Result[a, c]): b = match r with {
-        case Ok(v) => f(v)
-        case Err(e) => z
+    def foldLeft[t, e, a](f: (a, t) -> a, z: a, r: Result[t, e]): a = match r with {
+        case Ok(v) => f(z, v)
+        case Err(w) => z
     }
 
     ///
-    /// Returns `f(v)` if `r` is `Ok(v)`. Otherwise returns `z`.
+    /// Returns `f(v, z)` if `r` is `Ok(v)`. Otherwise returns `z`.
     ///
-    def foldRight[a, b, c](f: a -> b, r: Result[a, c], z: b): b = match r with {
-        case Ok(v) => f(v)
-        case Err(e) => z
+    def foldRight[t, e, a](f: (t, a) -> a, r: Result[t, e], z: a): a = match r with {
+        case Ok(v) => f(v, z)
+        case Err(w) => z
     }
 }
