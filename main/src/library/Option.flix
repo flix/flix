@@ -117,14 +117,20 @@ namespace Option {
     }
 
     ///
-    /// Returns `Ok(v)` if `o` is `Some(v)`. Otherwise returns `Ok(d)`.
+    /// Returns `Ok(v)` if `o` is `Some(v)`. Otherwise returns `Err(e)`.
     ///
-    def toOk[a,b](o: Option[a], d: a): Result[a,b] = Ok(getWithDefault(o, d))
+    def toOk[a, b](o: Option[a], e: b): Result[a, b] = match o with {
+        case None => Err(e)
+        case Some(v) => Ok(v)
+    }
 
     ///
-    /// Returns `Err(v)` if `o` is `Some(v)`. Otherwise returns `Err(d)`.
+    /// Returns `Err(v)` if `o` is `Some(v)`. Otherwise returns `Ok(t)`.
     ///
-    def toErr[a,b](o: Option[b], d: b): Result[a,b] = Err(getWithDefault(o, d))
+    def toErr[a,b](o: Option[b], t: a): Result[a,b] = match o with {
+        case None => Ok(t)
+        case Some(v) => Err(v)
+    }
 
     ///
     /// Returns `1` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `0`.
@@ -151,19 +157,19 @@ namespace Option {
     }
 
     ///
-    /// Returns `f(v)` if `o` is `Some(v)`. Otherwise returns `z`.
+    /// Returns `f(z, v)` if `o` is `Some(v)`. Otherwise returns `z`.
     ///
-    def foldLeft[a, b](f: a -> b, z: b, o: Option[a]): b = match o with {
+    def foldLeft[a, b](f: (b, a) -> b, z: b, o: Option[a]): b = match o with {
         case None => z
-        case Some(v) => f(v)
+        case Some(v) => f(z, v)
     }
 
     ///
-    /// Returns `f(v)` if `o` is `Some(v)`. Otherwise returns `z`.
+    /// Returns `f(v, z)` if `o` is `Some(v)`. Otherwise returns `z`.
     ///
-    def foldRight[a, b](f: a -> b, o: Option[a], z: b): b = match o with {
+    def foldRight[a, b](f: (a, b) -> b, o: Option[a], z: b): b = match o with {
         case None => z
-        case Some(v) => f(v)
+        case Some(v) => f(v, z)
     }
 
     ///

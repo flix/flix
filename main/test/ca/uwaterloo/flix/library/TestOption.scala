@@ -307,22 +307,22 @@ class TestOption extends FunSuite {
   }
 
   test("toOk.01") {
-    val input = "def r: Result[Bool, Int32] = Option/toOk(None, false)"
-    runAnyTest(input, Value.mkOk(new Boolean(false)))
+    val input = "def r: Result[Bool, Int32] = Option/toOk(None, 3)"
+    runAnyTest(input, Value.mkErr(new Integer(3)))
   }
 
   test("toOk.02") {
-    val input = "def r: Result[Bool, Int32] = Option/toOk(Some(true), false)"
+    val input = "def r: Result[Bool, Int32] = Option/toOk(Some(true), 3)"
     runAnyTest(input, Value.mkOk(new Boolean(true)))
   }
 
   test("toErr.01") {
-    val input = "def r: Result[Bool, Int32] = Option/toErr(None, 1)"
-    runAnyTest(input, Value.mkErr(new Integer(1)))
+    val input = "def r: Result[Bool, Int32] = Option/toErr(None, true)"
+    runAnyTest(input, Value.mkOk(new Boolean(true)))
   }
 
   test("toErr.02") {
-    val input = "def r: Result[Bool, Int32] = Option/toErr(Some(2), 1)"
+    val input = "def r: Result[Bool, Int32] = Option/toErr(Some(2), true)"
     runAnyTest(input, Value.mkErr(new Integer(2)))
   }
 
@@ -391,7 +391,7 @@ class TestOption extends FunSuite {
 
   test("foldLeft.01") {
     val input =
-      """def f(i: Int32): Bool = if (i == 2) true else false
+      """def f(b: Bool, i: Int32): Bool = if (i == 2 && b) true else false
         |def r: Bool = Option/foldLeft(f, false, None)
       """.stripMargin
     runBoolTest(input, false)
@@ -399,7 +399,7 @@ class TestOption extends FunSuite {
 
   test("foldLeft.02") {
     val input =
-      """def f(i: Int32): Bool = if (i == 2) true else false
+      """def f(b: Bool, i: Int32): Bool = if (i == 2 && b) true else false
         |def r: Bool = Option/foldLeft(f, false, Some(1))
       """.stripMargin
     runBoolTest(input, false)
@@ -407,15 +407,31 @@ class TestOption extends FunSuite {
 
   test("foldLeft.03") {
     val input =
-      """def f(i: Int32): Bool = if (i == 2) true else false
+      """def f(b: Bool, i: Int32): Bool = if (i == 2 && b) true else false
         |def r: Bool = Option/foldLeft(f, false, Some(2))
+      """.stripMargin
+    runBoolTest(input, false)
+  }
+
+  test("foldLeft.04") {
+    val input =
+      """def f(b: Bool, i: Int32): Bool = if (i == 2 && b) true else false
+        |def r: Bool = Option/foldLeft(f, true, Some(1))
+      """.stripMargin
+    runBoolTest(input, false)
+  }
+
+  test("foldLeft.05") {
+    val input =
+      """def f(b: Bool, i: Int32): Bool = if (i == 2 && b) true else false
+        |def r: Bool = Option/foldLeft(f, true, Some(2))
       """.stripMargin
     runBoolTest(input, true)
   }
 
   test("foldRight.01") {
     val input =
-      """def f(i: Int32): Bool = if (i == 2) true else false
+      """def f(i: Int32, b: Bool): Bool = if (i == 2 && b) true else false
         |def r: Bool = Option/foldRight(f, None, false)
       """.stripMargin
     runBoolTest(input, false)
@@ -423,7 +439,7 @@ class TestOption extends FunSuite {
 
   test("foldRight.02") {
     val input =
-      """def f(i: Int32): Bool = if (i == 2) true else false
+      """def f(i: Int32, b: Bool): Bool = if (i == 2 && b) true else false
         |def r: Bool = Option/foldRight(f, Some(1), false)
       """.stripMargin
     runBoolTest(input, false)
@@ -431,8 +447,24 @@ class TestOption extends FunSuite {
 
   test("foldRight.03") {
     val input =
-      """def f(i: Int32): Bool = if (i == 2) true else false
+      """def f(i: Int32, b: Bool): Bool = if (i == 2 && b) true else false
         |def r: Bool = Option/foldRight(f, Some(2), false)
+      """.stripMargin
+    runBoolTest(input, false)
+  }
+
+  test("foldRight.04") {
+    val input =
+      """def f(i: Int32, b: Bool): Bool = if (i == 2 && b) true else false
+        |def r: Bool = Option/foldRight(f, Some(1), true)
+      """.stripMargin
+    runBoolTest(input, false)
+  }
+
+  test("foldRight.05") {
+    val input =
+      """def f(i: Int32, b: Bool): Bool = if (i == 2 && b) true else false
+        |def r: Bool = Option/foldRight(f, Some(2), true)
       """.stripMargin
     runBoolTest(input, true)
   }
