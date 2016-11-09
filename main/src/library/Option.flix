@@ -55,7 +55,7 @@ namespace Option {
     ///
     def filter[a](f: a -> Bool, o: Option[a]): Option[a] = match o with {
         case None => None
-        case Some(v) => if (f(v)) Some(v) else None
+        case Some(v) => if (f(v)) o else None
     }
 
     ///
