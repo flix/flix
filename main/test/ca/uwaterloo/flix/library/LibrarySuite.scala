@@ -25,7 +25,8 @@ class LibrarySuite extends Suites(
   new TestInt8,
   new TestInt16,
   new TestInt32,
-  new TestInt64
+  new TestInt64,
+  new TestOption
 ) with ParallelTestExecution {
   /* left empty */
 }
