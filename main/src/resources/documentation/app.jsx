@@ -37,7 +37,7 @@ var App = React.createClass({
 var LeftNavigationBar = React.createClass({
     render: function () {
         // Retrieve and sort the namespaces.
-        var namespaces = this.props.namespaces.sort((a, b) => a.name.localeCompare(b.name));
+        var namespaces = this.props.namespaces.sort(lexicographic);
 
         // Construct a list item for each namespace in the library.
         var menu = namespaces.map(
@@ -115,7 +115,7 @@ var TypeBox = React.createClass({
  */
 var DefinitionList = React.createClass({
     render: function () {
-        var decls = this.props.decls.sort((a, b) => a.name.localeCompare(b.name));
+        var decls = this.props.decls.sort(lexicographic);
         var definitionList = decls.map(d => <DefinitionBox key={d.name} decl={d}/>);
         if (definitionList.length == 0)
             return null;
@@ -168,7 +168,7 @@ var DefinitionBox = React.createClass({
  */
 var RelationList = React.createClass({
     render: function () {
-        var decls = this.props.decls.sort((a, b) => a.name.localeCompare(b.name));
+        var decls = this.props.decls.sort(lexicographic);
         var relationList = decls.map(d => <RelationBox key={d.name} decl={d}/>);
         if (relationList.length == 0)
             return null;
@@ -212,7 +212,7 @@ var RelationBox = React.createClass({
  */
 var LatticeList = React.createClass({
     render: function () {
-        var decls = this.props.decls.sort((a, b) => a.name.localeCompare(b.name));
+        var decls = this.props.decls.sort(lexicographic);
         var latticeList = decls.map(d => <LatticeBox key={d.name} decl={d}/>);
         if (latticeList.length == 0)
             return null;
@@ -282,6 +282,19 @@ function intersperse(arr, sep) {
     return arr.slice(1).reduce(function (xs, x) {
         return xs.concat([sep, x]);
     }, [arr[0]]);
+}
+
+/**
+ * Lexicographically compares the name field of the two given objects.
+ */
+function lexicographic(a, b) {
+    var x = a.name;
+    var y = b.name;
+    var cmp = x.localeCompare(y);
+    if (cmp < 0) {
+        return x.length - y.length;
+    }
+    return cmp;
 }
 
 /**
