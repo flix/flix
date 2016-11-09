@@ -117,18 +117,18 @@ namespace Option {
     }
 
     ///
-    /// Returns `Ok(v)` if `o` is `Some(v)`. Otherwise returns `Err(e)`.
+    /// Returns `Ok(v)` if `o` is `Some(v)`. Otherwise returns `Err(z)`.
     ///
-    def toOk[a, b](o: Option[a], e: b): Result[a, b] = match o with {
-        case None => Err(e)
+    def toOk[t, e](o: Option[t], z: e): Result[t, e] = match o with {
+        case None => Err(z)
         case Some(v) => Ok(v)
     }
 
     ///
-    /// Returns `Err(v)` if `o` is `Some(v)`. Otherwise returns `Ok(t)`.
+    /// Returns `Err(v)` if `o` is `Some(v)`. Otherwise returns `Ok(z)`.
     ///
-    def toErr[a,b](o: Option[b], t: a): Result[a,b] = match o with {
-        case None => Ok(t)
+    def toErr[t,e](o: Option[e], z: t): Result[t,e] = match o with {
+        case None => Ok(z)
         case Some(v) => Err(v)
     }
 
