@@ -41,7 +41,7 @@ var LeftNavigationBar = React.createClass({
 
         // Construct a list item for each namespace in the library.
         var menu = namespaces.map(
-            namespace => <li key={namespace.name}><a href={namespace.name + ".html"}>{namespace.name}</a></li>
+            namespace => <li key={namespace.name}><a href={namespace.link}>{namespace.name}</a></li>
         );
         return (
             <div className="navbar">
