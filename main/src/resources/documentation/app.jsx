@@ -45,7 +45,11 @@ var LeftNavigationBar = React.createClass({
         );
         return (
             <div className="navbar">
-                <div className="title">Flix Standard Library</div>
+                <div className="title">
+                    <a href="index.html">
+                        Flix Standard Library
+                    </a>
+                </div>
                 <ul>{menu}</ul>
             </div>
         );

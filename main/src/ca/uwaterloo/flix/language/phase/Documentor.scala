@@ -247,6 +247,7 @@ object Documentor {
         |    <link href="__app__.css" rel="stylesheet" type="text/css"/>
         |    <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet">
         |    <link href="https://fonts.googleapis.com/css?family=Droid+Sans+Mono" rel="stylesheet">
+        |    <link href="https://fonts.googleapis.com/css?family=Oswald" rel="stylesheet">
         |    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
         |</head>
         |<body>
