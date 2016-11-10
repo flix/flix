@@ -62,14 +62,111 @@ class TestResult extends FunSuite {
     runBoolTest(input, true)
   }
 
-  test("withDefault.01") {
-    val input = "def r: Int32 = Result/withDefault(Ok(1), 2)"
+  test("get.01") {
+    val input = "def r: Int32 = Result/get(Ok(1))"
     runTest(input, 1)
   }
 
-  test("withDefault.02") {
-    val input = "def r: Int32 = Result/withDefault(Err(1), 2)"
+  test("getWithDefault.01") {
+    val input = "def r: Int32 = Result/getWithDefault(Ok(1), 2)"
+    runTest(input, 1)
+  }
+
+  test("getWithDefault.02") {
+    val input = "def r: Int32 = Result/getWithDefault(Err(1), 2)"
     runTest(input, 2)
+  }
+
+  test("withDefault.01") {
+    val input = "def r: Result[Int32, BigInt] = Result/withDefault(Ok(1), Ok(2))"
+    runAnyTest(input, Value.mkOk(new Integer(1)))
+  }
+
+  test("withDefault.02") {
+    val input = "def r: Result[Int32, BigInt] = Result/withDefault(Ok(1), Err(2ii))"
+    runAnyTest(input, Value.mkOk(new Integer(1)))
+  }
+
+  test("withDefault.03") {
+    val input = "def r: Result[Int32, BigInt] = Result/withDefault(Err(true), Ok(2))"
+    runAnyTest(input, Value.mkOk(new Integer(2)))
+  }
+
+  test("withDefault.04") {
+    val input = "def r: Result[Int32, BigInt] = Result/withDefault(Err(true), Err(2ii))"
+    runAnyTest(input, Value.mkErr(Value.mkBigInt(2)))
+  }
+
+  test("exists.01") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Bool = Result/exists(f, Err(false))
+      """.stripMargin
+    runBoolTest(input, false)
+  }
+
+  test("exists.02") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Bool = Result/exists(f, Ok(1))
+      """.stripMargin
+    runBoolTest(input, false)
+  }
+
+  test("exists.03") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Bool = Result/exists(f, Ok(2))
+      """.stripMargin
+    runBoolTest(input, true)
+  }
+
+  test("forall.01") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Bool = Result/forall(f, Err(false))
+      """.stripMargin
+    runBoolTest(input, true)
+  }
+
+  test("forall.02") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Bool = Result/forall(f, Ok(1))
+      """.stripMargin
+    runBoolTest(input, false)
+  }
+
+  test("forall.03") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Bool = Result/forall(f, Ok(2))
+      """.stripMargin
+    runBoolTest(input, true)
+  }
+
+  test("filter.01") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Result[Int32, Bool] = Result/filter(f, Err(true), false)
+      """.stripMargin
+    runAnyTest(input, Value.mkErr(new Boolean(false)))
+  }
+
+  test("filter.02") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Result[Int32, Bool] = Result/filter(f, Ok(1), false)
+      """.stripMargin
+    runAnyTest(input, Value.mkErr(new Boolean(false)))
+  }
+
+  test("filter.03") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Result[Int32, Bool] = Result/filter(f, Ok(2), false)
+      """.stripMargin
+    runAnyTest(input, Value.mkOk(new Integer(2)))
   }
 
   test("map.01") {
@@ -96,6 +193,62 @@ class TestResult extends FunSuite {
     runAnyTest(input, Value.mkOk(new Boolean(true)))
   }
 
+  test("map2.01") {
+    val input =
+      """def f(i: Int32, x: BigInt): Bool = if (i == 2 && x == 2ii) true else false
+        |def r: Result[Bool, Int32] = Result/map2(f, Err(0), Err(-1))
+      """.stripMargin
+    runAnyTest(input, Value.mkErr(new Integer(0)))
+  }
+
+  test("map2.02") {
+    val input =
+      """def f(i: Int32, x: BigInt): Bool = if (i == 2 && x == 2ii) true else false
+        |def r: Result[Bool, Int32] = Result/map2(f, Err(0), Ok(2ii))
+      """.stripMargin
+    runAnyTest(input, Value.mkErr(new Integer(0)))
+  }
+
+  test("map2.03") {
+    val input =
+      """def f(i: Int32, x: BigInt): Bool = if (i == 2 && x == 2ii) true else false
+        |def r: Result[Bool, Int32] = Result/map2(f, Ok(2), Err(-1))
+      """.stripMargin
+    runAnyTest(input, Value.mkErr(new Integer(-1)))
+  }
+
+  test("map2.04") {
+    val input =
+      """def f(i: Int32, x: BigInt): Bool = if (i == 2 && x == 2ii) true else false
+        |def r: Result[Bool, Int32] = Result/map2(f, Ok(2), Ok(2ii))
+      """.stripMargin
+    runAnyTest(input, Value.mkOk(new Boolean(true)))
+  }
+
+  test("map2.05") {
+    val input =
+      """def f(i: Int32, x: BigInt): Bool = if (i == 2 && x == 2ii) true else false
+        |def r: Result[Bool, Int32] = Result/map2(f, Ok(0), Ok(2ii))
+      """.stripMargin
+    runAnyTest(input, Value.mkOk(new Boolean(false)))
+  }
+
+  test("map2.06") {
+    val input =
+      """def f(i: Int32, x: BigInt): Bool = if (i == 2 && x == 2ii) true else false
+        |def r: Result[Bool, Int32] = Result/map2(f, Ok(2), Ok(0ii))
+      """.stripMargin
+    runAnyTest(input, Value.mkOk(new Boolean(false)))
+  }
+
+  test("map2.07") {
+    val input =
+      """def f(i: Int32, x: BigInt): Bool = if (i == 2 && x == 2ii) true else false
+        |def r: Result[Bool, Int32] = Result/map2(f, Ok(0), Ok(0ii))
+      """.stripMargin
+    runAnyTest(input, Value.mkOk(new Boolean(false)))
+  }
+
   test("flatMap.01") {
     val input =
       """def f(i: Int32): Result[Bool, Bool] = if (i > 0) Ok(true) else Err(false)
@@ -118,6 +271,62 @@ class TestResult extends FunSuite {
         |def r: Result[Bool, Bool] = Result/flatMap(f, Ok(1))
       """.stripMargin
     runAnyTest(input, Value.mkOk(new Boolean(true)))
+  }
+
+  test("flatMap2.01") {
+    val input =
+      """def f(i: Int32, x: BigInt): Result[Bool, Int32] = if (i == 2 && x == 2ii) Ok(true) else Err(-1)
+        |def r: Result[Bool, Int32] = Result/flatMap2(f, Err(0), Err(-1))
+      """.stripMargin
+    runAnyTest(input, Value.mkErr(new Integer(0)))
+  }
+
+  test("flatMap2.02") {
+    val input =
+      """def f(i: Int32, x: BigInt): Result[Bool, Int32] = if (i == 2 && x == 2ii) Ok(true) else Err(-1)
+        |def r: Result[Bool, Int32] = Result/flatMap2(f, Ok(2), Err(-1))
+      """.stripMargin
+    runAnyTest(input, Value.mkErr(new Integer(-1)))
+  }
+
+  test("flatMap2.03") {
+    val input =
+      """def f(i: Int32, x: BigInt): Result[Bool, Int32] = if (i == 2 && x == 2ii) Ok(true) else Err(-1)
+        |def r: Result[Bool, Int32] = Result/flatMap2(f, Err(0), Ok(2ii))
+      """.stripMargin
+    runAnyTest(input, Value.mkErr(new Integer(0)))
+  }
+
+  test("flatMap2.04") {
+    val input =
+      """def f(i: Int32, x: BigInt): Result[Bool, Int32] = if (i == 2 && x == 2ii) Ok(true) else Err(-1)
+        |def r: Result[Bool, Int32] = Result/flatMap2(f, Ok(2), Ok(2ii))
+      """.stripMargin
+    runAnyTest(input, Value.mkOk(new Boolean(true)))
+  }
+
+  test("flatMap2.05") {
+    val input =
+      """def f(i: Int32, x: BigInt): Result[Bool, Int32] = if (i == 2 && x == 2ii) Ok(true) else Err(-1)
+        |def r: Result[Bool, Int32] = Result/flatMap2(f, Ok(1), Ok(2ii))
+      """.stripMargin
+    runAnyTest(input, Value.mkErr(new Integer(-1)))
+  }
+
+  test("flatMap2.06") {
+    val input =
+      """def f(i: Int32, x: BigInt): Result[Bool, Int32] = if (i == 2 && x == 2ii) Ok(true) else Err(-1)
+        |def r: Result[Bool, Int32] = Result/flatMap2(f, Ok(2), Ok(1ii))
+      """.stripMargin
+    runAnyTest(input, Value.mkErr(new Integer(-1)))
+  }
+
+  test("flatMap2.07") {
+    val input =
+      """def f(i: Int32, x: BigInt): Result[Bool, Int32] = if (i == 2 && x == 2ii) Ok(true) else Err(-1)
+        |def r: Result[Bool, Int32] = Result/flatMap2(f, Ok(1), Ok(1ii))
+      """.stripMargin
+    runAnyTest(input, Value.mkErr(new Integer(-1)))
   }
 
   test("and.01") {
@@ -182,6 +391,30 @@ class TestResult extends FunSuite {
         |def r: Int32 = Result/count(f, Ok(2))
       """.stripMargin
     runTest(input, 1)
+  }
+
+  test("find.01") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Result[Int32, Bool] = Result/find(f, Err(true), false)
+      """.stripMargin
+    runAnyTest(input, Value.mkErr(new Boolean(false)))
+  }
+
+  test("find.02") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Result[Int32, Bool] = Result/find(f, Ok(1), false)
+      """.stripMargin
+    runAnyTest(input, Value.mkErr(new Boolean(false)))
+  }
+
+  test("find.03") {
+    val input =
+      """def f(i: Int32): Bool = if (i == 2) true else false
+        |def r: Result[Int32, Bool] = Result/find(f, Ok(2), false)
+      """.stripMargin
+    runAnyTest(input, Value.mkOk(new Integer(2)))
   }
 
   test("foldLeft.01") {
@@ -263,4 +496,66 @@ class TestResult extends FunSuite {
       """.stripMargin
     runBoolTest(input, true)
   }
+
+  test("toList.01") {
+    val input = "def r: List[Int32] = Result/toList(Err(0))"
+    runAnyTest(input, Value.mkNil)
+  }
+
+  test("toList.02") {
+    val input = "def r: List[Int32] = Result/toList(Ok(11))"
+    runAnyTest(input, Value.mkList(List(new Integer(11))))
+  }
+
+  test("toSet.01") {
+    val input = "def r: Set[Int32] = Result/toSet(Err(0))"
+    runAnyTest(input, Set())
+  }
+
+  test("toSet.02") {
+    val input = "def r: Set[Int32] = Result/toSet(Ok(4))"
+    runAnyTest(input, Set(4))
+  }
+
+  test("toOption.01") {
+    val input = "def r: Option[Int32] = Result/toOption(Err(0))"
+    runAnyTest(input, Value.mkNone())
+  }
+
+  test("toOption.02") {
+    val input = "def r: Option[Int32] = Result/toOption(Ok(5))"
+    runAnyTest(input, Value.mkSome(new Integer(5)))
+  }
+
+/*
+  test("zip.01") {
+    val input = "def r: Result[(Int32, Bool), BigInt] = Result/zip(Err(-1ii), Err(0ii))"
+    runAnyTest(input, Value.mkErr(Value.mkBigInt(-1)))
+  }
+
+  test("zip.02") {
+    val input = "def r: Result[(Int32, Bool), BigInt] = Result/zip(Err(-1ii), Ok(true))"
+    runAnyTest(input, Value.mkErr(Value.mkBigInt(-1)))
+  }
+
+  test("zip.03") {
+    val input = "def r: Result[(Int32, Bool), BigInt] = Result/zip(Ok(1), Err(0ii))"
+    runAnyTest(input, Value.mkErr(Value.mkBigInt(0)))
+  }
+
+  test("zip.04") {
+    val input = "def r: Result[(Int32, Int32), BigInt] = Result/zip(Ok(1), Ok(2))"
+    runAnyTest(input, Value.mkOk(Value.Tuple(Array(new Integer(1), new Integer(2)))))
+  }
+
+  test("unzip.01") {
+    val input = "def r: (Result[Int32, BigInt], Result[Bool, BigInt]) = Result/unzip(Err(2ii))"
+    runAnyTest(input, Value.Tuple(Array(Value.mkErr(Value.mkBigInt(2)), Value.mkErr(Value.mkBigInt(2)))))
+  }
+
+  test("unzip.02") {
+    val input = "def r: (Result[Int32, BigInt], Result[Bool, BigInt]) = Result/unzip(Ok((1, true)))"
+    runAnyTest(input, Value.Tuple(Array(Value.mkOk(new Integer(1)), Value.mkOk(new Boolean(true)))))
+  }
+  */
 }

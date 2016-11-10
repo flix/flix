@@ -157,7 +157,7 @@ namespace Option {
     }
 
     ///
-    /// Returns a one-element list of the value `v` if o is `Some(v)`. Otherwise returns the empty list.
+    /// Returns a one-element list of the value `v` if `o` is `Some(v)`. Otherwise returns the empty list.
     ///
     def toList[a](o: Option[a]): List[a] = match o with {
         case None => Nil
