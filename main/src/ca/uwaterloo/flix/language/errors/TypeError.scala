@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.util.Highlight._
   * A common super-type for type errors.
   */
 // TODO: Make sealed
+// TODO: Move kind here.
 trait TypeError extends CompilationError
 
 object TypeError {
@@ -42,6 +43,29 @@ object TypeError {
     val source = loc.source
     val message =
       hl"""|>> Unable to unify '${Red(baseType1.toString)}' and '${Red(baseType2.toString)}'.
+           |
+           |${Code(loc, "mismatched types.")}
+           |
+           |Type One: ${pretty(diff(fullType1, fullType2))(Cyan)}
+           |Type Two: ${pretty(diff(fullType2, fullType1))(Magenta)}
+        """.stripMargin
+  }
+
+  /**
+    * OccursCheck Error.
+    *
+    * @param baseVar   the base type variable.
+    * @param baseType  the base type.
+    * @param fullType1 the first full type.
+    * @param fullType2 the second full type.
+    * @param loc       the location where the error occurred.
+    */
+  case class OccursCheckError(baseVar: Type.Var, baseType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
+    val kind = "Type Error"
+    val source = loc.source
+    val message =
+      hl"""|>> Unable to unify the type variable ${Red(baseVar.toString)} with the type '${Red(baseType.toString)}' due to
+           |>> a recursive occurrence of the type variable in the type.
            |
            |${Code(loc, "mismatched types.")}
            |

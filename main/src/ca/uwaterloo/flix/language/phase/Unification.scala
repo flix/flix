@@ -106,26 +106,27 @@ object Unification {
   object UnificationError {
 
     /**
-      * An unification error which represents a mismatch of the two types `tpe1` and `tpe2`.
+      * An unification error due to a mismatch between `tpe1` and `tpe2`.
       *
       * @param tpe1 the first type.
       * @param tpe2 the second type.
-      * @param loc  the source location.
       */
-    // TODO: Can we remove location from here and unify?
-    case class Mismatch(tpe1: Type, tpe2: Type, loc: SourceLocation) extends UnificationError
+    case class Mismatch(tpe1: Type, tpe2: Type) extends UnificationError
 
     /**
-      * A unification error which represents an occurs check.
+      * An unification error due to an occurrence of `tvar` in `tpe`.
+      *
+      * @param tvar the type variable.
+      * @param tpe  the type.
       */
-    case class OccursCheck() extends UnificationError
+    case class OccursCheck(tvar: Type.Var, tpe: Type) extends UnificationError
 
   }
 
   /**
     * Returns the most general unifier of the two given types `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type, loc: SourceLocation): Result[Substitution, UnificationError] = {
+  def unify(tpe1: Type, tpe2: Type): Result[Substitution, UnificationError] = {
 
     // NB: Uses a closure to capture the source location `loc`.
 
@@ -139,7 +140,7 @@ object Unification {
         return Result.Ok(Substitution.empty)
       }
       if (tpe.typeVars contains x) {
-        return Result.Err(UnificationError.OccursCheck())
+        return Result.Err(UnificationError.OccursCheck(x, tpe))
       }
       // TODO: Kinds disabled for now. Requires changed to the
       // previous phase to associated type variables with their kinds.
@@ -181,7 +182,7 @@ object Unification {
           }
           case Result.Err(e) => Result.Err(e)
         }
-      case _ => Result.Err(UnificationError.Mismatch(tpe1, tpe2, loc))
+      case _ => Result.Err(UnificationError.Mismatch(tpe1, tpe2))
     }
 
     /**
@@ -259,14 +260,14 @@ object Unification {
     InferMonad((s: Substitution) => {
       val type1 = s(tpe1)
       val type2 = s(tpe2)
-      unify(type1, type2, loc) match {
+      unify(type1, type2) match {
         case Result.Ok(s1) =>
           val subst = s1 @@ s
           Ok(subst, subst(tpe1))
-        case Result.Err(UnificationError.Mismatch(baseType1, baseType2, _)) =>
+        case Result.Err(UnificationError.Mismatch(baseType1, baseType2)) =>
           Err(TypeError.UnificationError(baseType1, baseType2, type1, type2, loc))
-        case Result.Err(UnificationError.OccursCheck()) =>
-          throw InternalCompilerException(s"OccursCheck: $loc") // TODO
+        case Result.Err(UnificationError.OccursCheck(baseType1, baseType2)) =>
+          Err(TypeError.OccursCheckError(baseType1, baseType2, type1, type2, loc))
       }
     }
     )
