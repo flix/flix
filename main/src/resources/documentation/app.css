@@ -17,7 +17,7 @@ body {
     width: 13vw;
     height: 100vh;
 
-    background-color: #75acc1;
+    background-color: #4687a0;
     box-shadow: 2px 0 2px 0 rgba(0, 0, 0, 0.15);
     padding-left: 3vw;
     padding-right: 3vw;
@@ -29,7 +29,6 @@ body {
 .navbar .title {
     font-family: "Oswald", sans-serif;
     font-size: 1.2rem;
-    font-weight: bold;
     text-align: center;
 
     margin-top: 1rem;
@@ -39,6 +38,7 @@ body {
 }
 
 .navbar .title a {
+    color: #ffffff;
     text-decoration: none;
 }
 
@@ -105,7 +105,7 @@ body {
 .comment {
     font-family: "Arial", sans-serif;
     font-size: 0.75rem;
-    color: #8f8f8f;
+    color: #000000;
     margin-left: 2.5rem;
 }
 
