@@ -15,6 +15,7 @@ body {
     top: 0;
     left: 0;
     width: 13vw;
+    max-width: 12rem;
     height: 100vh;
 
     background-color: #4687a0;
