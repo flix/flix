@@ -397,12 +397,6 @@ public interface FlixVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitExpression(FlixParser.ExpressionContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link FlixParser#block}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitBlock(FlixParser.BlockContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link FlixParser#logical}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -654,6 +648,12 @@ public interface FlixVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitP_variable(FlixParser.P_variableContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link FlixParser#p_fList}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitP_fList(FlixParser.P_fListContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link FlixParser#p_fVec}.
 	 * @param ctx the parse tree

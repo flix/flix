@@ -24,7 +24,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) /*extends FlixVisitor[
 		)
 
 	//=====================
-	//Triple Slash Comments
+	//TRIPLE SLASH COMMENTS
 	//=====================
 	def visitTscomment(ctxs: Seq[FlixParser.TscommentContext]) = 
 		if (ctxs.isEmpty) Option(null)
@@ -106,6 +106,8 @@ class AST_FlixVisitor(source: SourceInput, input: String) /*extends FlixVisitor[
 	//===============
 	//RULES FOR LISTS
 	//===============
+
+	def visitVariableNames(ctx: FlixParser.VariableNamesContext) = ctx.variableName().map(visitVariableName).toList.toSeq
 
 	def visitArgument(ctx : FlixParser.ArgumentContext) = ParsedAst.FormalParam(
 			visitStartSp(ctx.getStart()),
@@ -218,7 +220,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) /*extends FlixVisitor[
 	//=================
 	//DECLARATION RULES
 	//=================
-
+	//fix stop SP
 	def visitDecl(ctx: FlixParser.DeclContext): ParsedAst.Declaration = ctx.getChild(0) match {
 			case x: FlixParser.Decls_namespaceContext => visitDecls_namespace(x)
 			case x: FlixParser.Decls_enumContext => visitDecls_enum(x)
@@ -344,8 +346,371 @@ class AST_FlixVisitor(source: SourceInput, input: String) /*extends FlixVisitor[
 	def visitDecls_impl(ctx: FlixParser.Decls_implContext);
 
 
+
+
+
+	//===========
+	//EXPRESSIONS
+	//===========
+
+
+	def visitExpression(ctx: FlixParser.ExpressionContext) = ctx.logical() match {
+			case  null => visitExpression(ctx.expression())
+			case x : FlixParser.LogicalContext => visitLogical(x);
+		}
+
+	def visitExpressions(ctx: FlixParser.ExpressionsContext) = ctx.expression().map(visitExpression).toList.toSeq
+
+	def visitLogical(ctx: FlixParser.LogicalContext) = ctx.getChildCount match {
+			case 1 => visitComparison(ctx.comparison(0))
+			case _ => ParsedAst.Expression.Binary(
+					visitComparison(ctx.comparison(0)),
+					visitLogical_ops(ctx.logical_ops()),
+					visitComparison(ctx.comparison(1)),
+					visitStopSp(ctx.getStop())
+				)
+		}
+
+	def visitComparison(ctx: FlixParser.ComparisonContext) = ctx.getChildCount match {
+			case 1 => visitAdditive(ctx.additive(0))
+			case _ => ParsedAst.Expression.Binary(
+					visitAdditive(ctx.additive(0)),
+					visitComparison_ops(ctx.comparison_ops()),
+					visitAdditive(ctx.additive(1)),
+					visitStopSp(ctx.getStop())
+				)
+		}
+
+	//REVISIT for more than 2 multiplicatives
+	def visitAdditive(ctx: FlixParser.AdditiveContext) = ctx.getChildCount match {
+			case 1 => visitMultiplicative(ctx.multiplicative(0))
+			case _ => ParsedAst.Expression.Binary(
+					visitMultiplicative(ctx.multiplicative(0)),
+					visitAddve_ops(ctx.addve_ops()),
+					visitMultiplicative(ctx.multiplicative(1)),
+					visitStopSp(ctx.getStop())
+				)
+		}
+
+	//REVISIT for more than 2 infixes
+	def visitMultiplicative(ctx: FlixParser.MultiplicativeContext)  = ctx.getChildCount match {
+			case 1 => visitInfix(ctx.infix(0))
+			case _ => ParsedAst.Expression.Binary(
+					visitInfix(ctx.infix(0)),
+					visitMultipve_ops(ctx.multipve_ops()),
+					visitInfix(ctx.infix(1)),
+					visitStopSp(ctx.getStop())
+				)
+		}
+
+	def visitInfix(ctx: FlixParser.InfixContext) = ctx.getChildCount match {
+			case 1 => visitExtended(ctx.extended(0))
+			case _ => ParsedAst.Expression.Infix(
+					visitExtended(ctx.extended(0)),
+					visitQualifiedDefinitionName(ctx.qualifiedDefinitionName()),
+					visitExtended(ctx.extended(1)),
+					visitStopSp(ctx.getStop())
+				)
+		}
+
+	def visitExtended(ctx: FlixParser.ExtendedContext) = ctx.getChildCount match {
+			case 1 => visitUnary(ctx.unary(0))
+			case _ => ParsedAst.Expression.ExtendedBinary(
+					visitUnary(ctx.unary(0)),
+					visitExtbin_ops(ctx.extbin_ops()),
+					visitUnary(ctx.unary(1)),
+					visitStopSp(ctx.getStop())
+				)
+		}
+
+	def visitUnary(ctx: FlixParser.UnaryContext) = ctx.getChildCount match {
+			case 1 => visitAscribe(ctx.ascribe(0))
+			case _ => ParsedAst.Expression.Unary(
+					visitUnary_ops(ctx.unary_ops()),
+					visitUnary(ctx.unary()),
+					visitStopSp(ctx.getStop())
+				)
+		}
+
+	def visitAscribe(ctx: FlixParser.AscribeContext) = ctx.getChildCount match {
+			case 1 => visitE_fList(ctx.e_fList())
+			case _ => ParsedAst.Expression.Ascribe(
+					visitE_fList(ctx.e_fList()),
+					visitType(ctx.`type`()),
+					visitStopSp(ctx.getStop())
+				)
+		}
+
+	def visitE_primary(ctx: FlixParser.E_primaryContext)  = ctx.getChild(0) match {
+			case x: FlixParser.E_letMatchContext => visitE_letMatch(x)
+			case x: FlixParser.E_ifThenElseContext => visitE_ifThenElse(x)
+			case x: FlixParser.E_matchContext => visitE_match(x)
+			case x: FlixParser.E_switchContext => visitE_switch(x)
+			case x: FlixParser.E_tagContext => visitE_tag(x)
+			case x: FlixParser.E_lambdaContext => visitE_lambda(x)
+			case x: FlixParser.E_tupleContext => visitE_tuple(x)
+			case x: FlixParser.E_fNilContext => visitE_fNil(x)
+			case x: FlixParser.E_fVecContext => visitE_fVec(x)
+			case x: FlixParser.E_fSetContext => visitE_fSet(x)
+			case x: FlixParser.E_fMapContext => visitE_fMap(x)
+			case x: FlixParser.LiteralContext => visitLiteral(x)
+			case x: FlixParser.ExistentialContext => visitExistential(x)
+			case x: FlixParser.UniversalContext => visitUniversal(x)
+			case x: FlixParser.E_qnameContext => visitE_qname(x)
+			case x: FlixParser.E_unaryLambdaContext => visitE_unaryLambda(x)
+			case x: FlixParser.E_wildContext => visitE_wild(x)
+			case x: FlixParser.E_snameContext => visitE_sname(x)
+			case x: FlixParser.E_userErrorContext => visitE_userError(x)
+		}
+
+	def visitE_letMatch(ctx: FlixParser.E_letMatchContext) = ParsedAst.Expression.LetMatch(
+			visitStartSp(ctx.getStart()),
+			visitPattern(ctx.pattern()),
+			visitExpression(ctx.expression(0)),
+			visitExpression(ctx.expression(1)),
+			visitStopSp(ctx.getStop())
+		)
+	def visitE_ifThenElse(ctx: FlixParser.E_ifThenElseContext) = ParsedAst.Expression.IfThenElse(
+			visitStartSp(ctx.getStart()),
+			visitExpression(ctx.expression(0)),
+			visitExpression(ctx.expression(1)),
+			visitExpression(ctx.expression(2)),
+			visitStopSp(ctx.getStop())
+		)
+
+	def visitMatch_rule(ctx: FlixParser.Match_ruleContext) = (
+			visitPattern(ctx.pattern()),
+			visitExpression(ctx.expression())
+		)
+
+	def visitMatch_rules(ctx: FlixParser.Match_rulesContext) = ctx.match_rule().map(visitMatch_rule).toList.toSeq
+
+	def visitE_match(ctx: FlixParser.E_matchContext) = ParsedAst.Expression.Match(
+			visitStartSp(ctx.getStart()),
+			visitExpression(ctx.expression(0)),
+			visitMatch_rules(ctx.match_rules()),
+			visitStopSp(ctx.getStop())
+		)
+
+	def visitSwitch_rule(ctx: FlixParser.Switch_ruleContext) = (
+			visitExpression(ctx.expression(0)),
+			visitExpression(ctx.expression(1))
+		)
+
+	def visitSwitch_rules(ctx: FlixParser.Switch_rulesContext) = ctx.switch_rule().map(visitSwitch_rule).toList.toSeq
+
+	def visitE_switch(ctx: FlixParser.E_switchContext) = ParsedAst.Expression.Switch(
+			visitStartSp(ctx.getStart()),
+			visitSwitch_rules(ctx.switch_rules()),
+			visitStopSp(ctx.getStop())
+		)
+	def visitE_apply(ctx: FlixParser.E_applyContext) = ParsedAst.Expression.Apply(
+			visitE_primary(ctx.e_primary()),
+			if (ctx.expressions()!=null) visitExpressions(ctx.expressions()) else Seq(),
+			visitStopSp(ctx.getStop())
+		)
+
+	def visitE_sname(ctx: FlixParser.E_snameContext) = ParsedAst.Expression.SName(
+			visitStartSp(ctx.getStart()),
+			visitVariableName(ctx.variableName()),
+			visitStopSp(ctx.getStop())
+		)
+
+	def visitE_qname(ctx: FlixParser.E_qnameContext) = ParsedAst.Expression.QName(
+			visitStartSp(ctx.getStart()),
+			visitQualifiedDefinitionName(ctx.qualifiedDefinitionName()),
+			visitStopSp(ctx.getStop())
+		)
+
+	def visitE_tag(ctx: FlixParser.E_tagContext)  = ParsedAst.Expression.Tag(
+			visitStartSp(ctx.getStart()),
+
+			if(ctx.qualifiedTypeName()!=null)
+				Option(visitQualifiedTypeName(ctx.qualifiedTypeName()))
+			else Option(null),
+
+			visitTagName(ctx.tagName()),
+
+			if(ctx.e_tuple()!=null)
+				Option(visitE_tuple(ctx.e_tuple()))
+			else Option(null),
+
+			visitStopSp(ctx.getStop())
+		)
+
+	def visitE_tuple(ctx: FlixParser.E_tupleContext) = ParsedAst.Expression.Tuple(
+			visitStartSp(ctx.getStart()),
+
+			if(ctx.expressions()!=null) visitExpressions(ctx.expressions())
+			else Seq(),
+			
+			visitStopSp(ctx.getStop())
+		)
+
+	def visitE_keyValue(ctx: FlixParser.E_keyValueContext) = ( visitExpression(ctx.expression(0)),visitExpression(ctx.expression(1)) );
+
+	def visitE_keyValues(ctx: FlixParser.E_keyValuesContext) = ctx.e_keyValue().map(visitE_keyValue).toList.toSeq
+
+	def visitE_userError(ctx: FlixParser.E_userErrorContext) = ParsedAst.Expression.UserError( visitStartSp(ctx.getStart()),visitStopSp(ctx.getStop()) )
+
+	def visitE_wild(ctx: FlixParser.E_wildContext) = ParsedAst.Expression.Wild( visitStartSp(ctx.getStart()),visitStopSp(ctx.getStop()) )
+
+	def visitE_fNil(ctx: FlixParser.E_fNilContext) = ParsedAst.Expression.FNil( visitStartSp(ctx.getStart()),visitStopSp(ctx.getStop()) )
+
+	def visitE_fList(ctx: FlixParser.E_fListContext) = 
+		if ( ctx.expression() != null )
+			ParsedAst.Expression.FList(
+				visitE_apply(ctx.e_apply()),
+				visitExpression(ctx.expression()),
+				visitStopSp(ctx.getStop())
+			)
+		else visitE_apply(ctx.e_apply())
+
+	def visitE_fVec(ctx: FlixParser.E_fVecContext) = ParsedAst.Expression.FVec(
+			visitStartSp(ctx.getStart()),
+			if (ctx.expressions() != null) visitExpressions(ctx.expressions())
+			else Seq(),
+			visitStopSp(ctx.getStop())
+		)
+
+	def visitE_fSet(ctx: FlixParser.E_fSetContext) = ParsedAst.Expression.FSet(
+			visitStartSp(ctx.getStart()),
+			if (ctx.expressions() != null) visitExpressions(ctx.expressions())
+			else Seq(),
+			visitStopSp(ctx.getStop())
+		)
+	def visitE_fMap(ctx: FlixParser.E_fMapContext) = ParsedAst.Expression.FMap(
+			visitStartSp(ctx.getStart()),
+			if (ctx.e_keyValues() != null) visitE_keyValues(ctx.e_keyValues())
+			else Seq(),
+			visitStopSp(ctx.getStop())
+		)
+
+	def visitE_unaryLambda(ctx: FlixParser.E_unaryLambdaContext) = ParsedAst.Expression.Lambda(
+			visitStartSp(ctx.getStart()),
+			Seq( visitVariableName(ctx.variableName()) ),
+			visitExpression(ctx.expression()),
+			visitStopSp(ctx.getStop())
+		)
+
+	def visitE_lambda(ctx: FlixParser.E_lambdaContext) = ParsedAst.Expression.Lambda(
+			visitStartSp(ctx.getStart()),
+			visitVariableNames(ctx.variableNames()),
+			visitExpression(ctx.expression()),
+			visitStopSp(ctx.getStop())
+		)
+
+	def visitExistential(ctx: FlixParser.ExistentialContext) = ParsedAst.Expression.Existential(
+			visitStartSp(ctx.getStart()),
+			visitFormalparams(ctx.formalparams()),
+			visitExpression(ctx.expression()),
+			visitStopSp(ctx.getStop())
+		)
+
+	def visitUniversal(ctx: FlixParser.UniversalContext) = ParsedAst.Expression.Universal(
+			visitStartSp(ctx.getStart()),
+			visitFormalparams(ctx.formalparams()),
+			visitExpression(ctx.expression()),
+			visitStopSp(ctx.getStop())
+		)
+
+
+	//========
+	//PATTERNS
+	//========
+
+
+	def visitPattern(ctx: FlixParser.PatternContext) = visitP_fList(ctx.p_fList())
+
+	def visitPatterns(ctx: FlixParser.PatternsContext) = ctx.pattern().map(visitPattern).toList.toSeq
+
+	def visitSimple(ctx: FlixParser.SimpleContext)  = ctx.getChild(0) match {
+			case x: FlixParser.P_fNil => visitP_fNil(x)
+			case x: FlixParser.Literal => visitLiteral(x)
+			case x: FlixParser.P_variable => visitP_variable(x)
+			case x: FlixParser.WILD => visitWILD(x)
+			case x: FlixParser.P_tag => visitP_tag(x)
+			case x: FlixParser.P_tuple => visitP_tuple(x)
+			case x: FlixParser.P_fVec => visitP_fVec(x)
+			case x: FlixParser.P_fSet => visitP_fSet(x)
+			case x: FlixParser.P_fMap => visitP_fMap(x)
+		}
+
+	def visitP_keyValue(ctx: FlixParser.P_keyValueContext) = ( visitPattern(ctx.pattern(0)),visitPattern(ctx.pattern(1)) );
+
+	def visitP_keyValues(ctx: FlixParser.P_keyValuesContext) = ctx.p_keyValue().map(visitP_keyValue).toList.toSeq
+
+	def visitP_tag(ctx: FlixParser.P_tagContext) = ParsedAst.Pattern.Tag(
+			visitStartSp(ctx.getStart()),
+
+			if(ctx.qualifiedTypeName()!=null)
+				Option( visitQualifiedTypeName(ctx.qualifiedTypeName()) )
+			else Option(null),
+
+			visitTagName(ctx.tagName()),
+
+			if(ctx.pattern()!=null)
+				Option( visitPattern(ctx.pattern()) )
+			else Option(null),
+
+			visitStopSp(ctx.getStop())
+		)
+
+	def visitP_tuple(ctx: FlixParser.P_tupleContext) = ParsedAst.Pattern.Tuple(
+			visitStartSp(ctx.getStart()),
+
+			if( ctx.patterns()!=null ) visitPatterns(ctx.patterns())
+			else Seq(),
+			
+			visitStopSp(ctx.getStop())
+		)
+
+	def visitP_wild(ctx: FlixParser.P_wildContext) = ParsedAst.Pattern.Wild( visitStartSp(ctx.getStart()),visitStopSp(ctx.getStop()) )
+
+	def visitP_fNil(ctx: FlixParser.P_fNilContext) = ParsedAst.Pattern.FNil( visitStartSp(ctx.getStart()),visitStopSp(ctx.getStop()) )
+
+	def visitP_variable(ctx: FlixParser.P_variableContext) = visitVariableName(ctx.variableName())
+
+	def visitP_fList(ctx: FlixParser.P_fListContext) = 
+		if ( ctx.expression() != null )
+			ParsedAst.Pattern.FList(
+				visitSimple(ctx.simple()),
+				visitPattern(ctx.pattern()),
+				visitStopSp(ctx.getStop())
+			)
+		else visitSimple(ctx.simple())
+
+	def visitP_fVec(ctx: FlixParser.P_fVecContext) = ParsedAst.Pattern.FVec(
+			visitStartSp(ctx.getStart()),
+			if (ctx.patterns() != null) visitPatterns(ctx.patterns())
+			else Seq(),
+			if( ctx.pattern() != null ) Option( visitPattern(ctx.pattern()) )
+			else Option(null),
+			visitStopSp(ctx.getStop())
+		)
+
+	def visitP_fSet(ctx: FlixParser.P_fSetContext) = ParsedAst.Pattern.FSet(
+			visitStartSp(ctx.getStart()),
+			if (ctx.patterns() != null) visitPatterns(ctx.patterns())
+			else Seq(),
+			if( ctx.pattern() != null ) Option( visitPattern(ctx.pattern()) )
+			else Option(null),
+			visitStopSp(ctx.getStop())
+		)
+
+	def visitP_fMap(ctx: FlixParser.P_fMapContext) = ParsedAst.Pattern.FMap(
+			visitStartSp(ctx.getStart()),
+			if (ctx.p_keyValues() != null) visitP_keyValues(ctx.p_keyValues())
+			else Seq(),
+			if( ctx.pattern() != null ) Option( visitPattern(ctx.pattern()) )
+			else Option(null),
+			visitStopSp(ctx.getStop())
+		)
+
+
+
 	//=====
-	//Types
+	//TYPES
 	//=====
 	
 	def visitPrimary(ctx: FlixParser.PrimaryContext) = ctx.getChild(0) match {
@@ -414,6 +779,66 @@ class AST_FlixVisitor(source: SourceInput, input: String) /*extends FlixVisitor[
 			)
 		}
 
+
+	//=========
+	//OPERATORS
+	//=========
+
+
+	def visitUnary_ops(ctx: FlixParser.Unary_opsContext) = ctx.getText() match {
+			case "+" => UnaryOperator.Plus
+			case "-" => UnaryOperator.Minus
+			case "~" => UnaryOperator.BitwiseNegate
+			case "¬" => UnaryOperator.LogicalNot
+			case "!" => UnaryOperator.LogicalNot
+		}
+
+	def visitLogical_ops(ctx: FlixParser.Logical_opsContext) = ctx.getText() match {
+			case "&&" => BinaryOperator.LogicalAnd
+			case "||" => BinaryOperator.LogicalOr
+			case "&" => BinaryOperator.BitwiseAnd
+			case "|" => BinaryOperator.BitwiseOr
+			case "==>" => BinaryOperator.Implication
+			case "<==>" => BinaryOperator.Biconditional
+			case "^" => BinaryOperator.BitwiseXor
+			case "<<" => BinaryOperator.BitwiseLeftShift
+			case ">>" => BinaryOperator.BitwiseRightShift
+			case "∧" => BinaryOperator.LogicalAnd
+			case "∨" => BinaryOperator.LogicalOr
+			case "→" => BinaryOperator.Implication
+			case "↔" => BinaryOperator.Biconditional
+		}
+
+	def visitComparison_ops(ctx: FlixParser.Comparison_opsContext) = ctx.getText() match {
+			case "<=" => BinaryOperator.LessEqual
+			case ">=" => BinaryOperator.GreaterEqual
+			case "<" => BinaryOperator.Less
+			case ">" => BinaryOperator.Greater
+			case "==" => BinaryOperator.Equal
+			case "!=" => BinaryOperator.NotEqual
+			case "≡" => BinaryOperator.Equal
+		}
+
+	def visitMultipve_ops(ctx: FlixParser.Multipve_opsContext) = ctx.getText() match {
+			case "**" => BinaryOperator.Exponentiate
+			case "*" => BinaryOperator.Times
+			case "/" => BinaryOperator.Divide
+			case "%" => BinaryOperator.Modulo
+		}
+
+	def visitAddve_ops(ctx: FlixParser.Addve_opsContext) = ctx.getText() match {
+			case "+" => BinaryOperator.Plus
+			case "-" => BinaryOperator.Minus
+		}
+
+	def visitExtbin_ops(ctx: FlixParser.Extbin_opsContext) = ctx.getText() match {
+			case "⊑" => ExtBinaryOperator.Leq
+			case "⊔" => ExtBinaryOperator.Lub
+			case "⊓" => ExtBinaryOperator.Glb
+			case "▽" => ExtBinaryOperator.Widen
+			case "△" => ExtBinaryOperator.Narrow
+		}
+
 	//==========
 	//PREDICATES
 	//==========
@@ -428,17 +853,37 @@ class AST_FlixVisitor(source: SourceInput, input: String) /*extends FlixVisitor[
 
 	def visitPredicates(ctx: FlixParser.PredicatesContext) = ctx.predicate().map(visitPredicate).toList.toSeq
 
-	def visitPred_true(ctx: FlixParser.Pred_trueContext);
+	def visitPred_true(ctx: FlixParser.Pred_trueContext) = ParsedAst.Predicate.True(visitStartSp(ctx.getStart()),visitStopSp(ctx.getStop()))
 
-	def visitPred_false(ctx: FlixParser.Pred_falseContext);
+	def visitPred_false(ctx: FlixParser.Pred_falseContext) = ParsedAst.Predicate.False(visitStartSp(ctx.getStart()),visitStopSp(ctx.getStop()))
 
-	def visitPred_filter(ctx: FlixParser.Pred_filterContext);
+	def visitPred_filter(ctx: FlixParser.Pred_filterContext) = ParsedAst.Predicate.Filter(
+			visitStartSp(ctx.getStart()),
+			visitQualifiedDefinitionName(ctx.qualifiedDefinitionName()),
+			visitExpressions(ctx.expressions()),
+			visitStopSp(ctx.getStop())
+		)
 
-	def visitPred_table(ctx: FlixParser.Pred_tableContext);
+	def visitPred_table(ctx: FlixParser.Pred_tableContext) = ParsedAst.Predicate.Table(
+			visitStartSp(ctx.getStart()),
+			visitQualifiedTableName(ctx.qualifiedTableName()),
+			visitExpressions(ctx.expressions()),
+			visitStopSp(ctx.getStop())
+		)
 
-	def visitPred_notequal(ctx: FlixParser.Pred_notequalContext);
+	def visitPred_notequal(ctx: FlixParser.Pred_notequalContext) = ParsedAst.Predicate.NotEqual(
+			visitStartSp(ctx.getStart()),
+			visitVariableName(ctx.variableName(0)),
+			visitVariableName(ctx.variableName(1)),
+			visitStopSp(ctx.getStop())
+		)
 
-	def visitPred_loop(ctx: FlixParser.Pred_loopContext);
+	def visitPred_loop(ctx: FlixParser.Pred_loopContext) = ParsedAst.Predicate.Loop(
+			visitStartSp(ctx.getStart()),
+			visitVariableName(ctx.variableName()),
+			visitExpression(ctx.expression()),
+			visitStopSp(ctx.getStop())
+		)
 
 
 }//class AST_FlixVisitor

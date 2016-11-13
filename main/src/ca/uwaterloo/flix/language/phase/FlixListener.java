@@ -650,16 +650,6 @@ public interface FlixListener extends ParseTreeListener {
 	 */
 	void exitExpression(FlixParser.ExpressionContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link FlixParser#block}.
-	 * @param ctx the parse tree
-	 */
-	void enterBlock(FlixParser.BlockContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link FlixParser#block}.
-	 * @param ctx the parse tree
-	 */
-	void exitBlock(FlixParser.BlockContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link FlixParser#logical}.
 	 * @param ctx the parse tree
 	 */
@@ -1079,6 +1069,16 @@ public interface FlixListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitP_variable(FlixParser.P_variableContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FlixParser#p_fList}.
+	 * @param ctx the parse tree
+	 */
+	void enterP_fList(FlixParser.P_fListContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FlixParser#p_fList}.
+	 * @param ctx the parse tree
+	 */
+	void exitP_fList(FlixParser.P_fListContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link FlixParser#p_fVec}.
 	 * @param ctx the parse tree

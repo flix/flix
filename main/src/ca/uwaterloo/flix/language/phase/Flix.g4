@@ -167,8 +167,7 @@ decls_impl : (WS? tscomment)* WS? IMPL WS className class_typeparams WS? context
 decls_impl_body : '{' WS? decls_definition* WS? '}';
 
 //Expressions
-expression : block;
-block : ('{' WS? expression WS? '}' WS?) | logical;
+expression : ('{' WS? expression WS? '}' WS?) | logical;
 logical : comparison (WS? logical_ops WS? comparison)?;
 expressions : expression (WS? ',' WS? expression)*;
 
@@ -218,7 +217,7 @@ universal : ('∀' | '\\forall') WS? formalparams WS? '.' WS? expression;
 
 
 //Patterns
-pattern : simple (WS? '::' WS? pattern)?;
+pattern : p_fList;
 patterns : pattern (WS? ',' WS? pattern)*;
 simple : p_fNil | literal | p_variable |
 		WILD | p_tag | p_tuple | p_fVec | p_fSet | p_fMap;
@@ -231,10 +230,11 @@ p_tuple : '(' WS? patterns? WS? ')';
 
 p_wild : WILD;
 p_fNil : FNIL;
-p_variable : ident;
-p_fVec : '#[' WS? patterns? (WS? ',' WS? '...')? WS? ']';
-p_fSet : '#{' WS? patterns? (WS? ',' WS? '...')? WS? '}';
-p_fMap : '@{' WS? p_keyValues? (WS? ',' WS? '...')? WS? '}';
+p_variable : variableName;
+p_fList : simple (WS? '::' WS? pattern)?;
+p_fVec : '#[' WS? patterns? (WS? ',' WS? pattern '...')? WS? ']';
+p_fSet : '#{' WS? patterns? (WS? ',' WS? pattern '...')? WS? '}';
+p_fMap : '@{' WS? p_keyValues? (WS? ',' WS? pattern '...')? WS? '}';
 
 
 

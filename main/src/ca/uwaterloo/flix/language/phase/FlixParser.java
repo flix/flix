@@ -51,18 +51,18 @@ public class FlixParser extends Parser {
 		RULE_decls_signature = 51, RULE_decls_external = 52, RULE_decls_definition = 53, 
 		RULE_decls_law = 54, RULE_decls_class = 55, RULE_class_body = 56, RULE_decls_fact = 57, 
 		RULE_decls_rule = 58, RULE_elms = 59, RULE_decls_letlattice = 60, RULE_decls_impl = 61, 
-		RULE_decls_impl_body = 62, RULE_expression = 63, RULE_block = 64, RULE_logical = 65, 
-		RULE_expressions = 66, RULE_comparison = 67, RULE_additive = 68, RULE_multiplicative = 69, 
-		RULE_infix = 70, RULE_extended = 71, RULE_unary = 72, RULE_ascribe = 73, 
-		RULE_e_primary = 74, RULE_e_letMatch = 75, RULE_e_ifThenElse = 76, RULE_e_match = 77, 
-		RULE_e_switch = 78, RULE_e_apply = 79, RULE_e_sname = 80, RULE_e_qname = 81, 
-		RULE_e_tag = 82, RULE_e_tuple = 83, RULE_e_keyValue = 84, RULE_e_keyValues = 85, 
-		RULE_e_userError = 86, RULE_e_wild = 87, RULE_e_fNil = 88, RULE_e_fList = 89, 
-		RULE_e_fVec = 90, RULE_e_fSet = 91, RULE_e_fMap = 92, RULE_e_unaryLambda = 93, 
-		RULE_e_lambda = 94, RULE_existential = 95, RULE_universal = 96, RULE_pattern = 97, 
-		RULE_patterns = 98, RULE_simple = 99, RULE_p_keyValue = 100, RULE_p_keyValues = 101, 
-		RULE_p_tag = 102, RULE_p_tuple = 103, RULE_p_wild = 104, RULE_p_fNil = 105, 
-		RULE_p_variable = 106, RULE_p_fVec = 107, RULE_p_fSet = 108, RULE_p_fMap = 109, 
+		RULE_decls_impl_body = 62, RULE_expression = 63, RULE_logical = 64, RULE_expressions = 65, 
+		RULE_comparison = 66, RULE_additive = 67, RULE_multiplicative = 68, RULE_infix = 69, 
+		RULE_extended = 70, RULE_unary = 71, RULE_ascribe = 72, RULE_e_primary = 73, 
+		RULE_e_letMatch = 74, RULE_e_ifThenElse = 75, RULE_e_match = 76, RULE_e_switch = 77, 
+		RULE_e_apply = 78, RULE_e_sname = 79, RULE_e_qname = 80, RULE_e_tag = 81, 
+		RULE_e_tuple = 82, RULE_e_keyValue = 83, RULE_e_keyValues = 84, RULE_e_userError = 85, 
+		RULE_e_wild = 86, RULE_e_fNil = 87, RULE_e_fList = 88, RULE_e_fVec = 89, 
+		RULE_e_fSet = 90, RULE_e_fMap = 91, RULE_e_unaryLambda = 92, RULE_e_lambda = 93, 
+		RULE_existential = 94, RULE_universal = 95, RULE_pattern = 96, RULE_patterns = 97, 
+		RULE_simple = 98, RULE_p_keyValue = 99, RULE_p_keyValues = 100, RULE_p_tag = 101, 
+		RULE_p_tuple = 102, RULE_p_wild = 103, RULE_p_fNil = 104, RULE_p_variable = 105, 
+		RULE_p_fList = 106, RULE_p_fVec = 107, RULE_p_fSet = 108, RULE_p_fMap = 109, 
 		RULE_bools = 110, RULE_negative = 111, RULE_float32 = 112, RULE_float64 = 113, 
 		RULE_floatDefault = 114, RULE_floats = 115, RULE_int8 = 116, RULE_int16 = 117, 
 		RULE_int32 = 118, RULE_int64 = 119, RULE_bigInt = 120, RULE_intDefault = 121, 
@@ -87,20 +87,20 @@ public class FlixParser extends Parser {
 		"dcase", "decls_relation", "decls_lattice", "decls_index", "decls_signature", 
 		"decls_external", "decls_definition", "decls_law", "decls_class", "class_body", 
 		"decls_fact", "decls_rule", "elms", "decls_letlattice", "decls_impl", 
-		"decls_impl_body", "expression", "block", "logical", "expressions", "comparison", 
+		"decls_impl_body", "expression", "logical", "expressions", "comparison", 
 		"additive", "multiplicative", "infix", "extended", "unary", "ascribe", 
 		"e_primary", "e_letMatch", "e_ifThenElse", "e_match", "e_switch", "e_apply", 
 		"e_sname", "e_qname", "e_tag", "e_tuple", "e_keyValue", "e_keyValues", 
 		"e_userError", "e_wild", "e_fNil", "e_fList", "e_fVec", "e_fSet", "e_fMap", 
 		"e_unaryLambda", "e_lambda", "existential", "universal", "pattern", "patterns", 
 		"simple", "p_keyValue", "p_keyValues", "p_tag", "p_tuple", "p_wild", "p_fNil", 
-		"p_variable", "p_fVec", "p_fSet", "p_fMap", "bools", "negative", "float32", 
-		"float64", "floatDefault", "floats", "int8", "int16", "int32", "int64", 
-		"bigInt", "intDefault", "ints", "literal", "primary", "var", "ref", "type", 
-		"arrow", "tuple_unit", "tuple_singleton", "tuple_multi", "tuple", "apply", 
-		"unary_ops", "logical_ops", "comparison_ops", "multipve_ops", "addve_ops", 
-		"extbin_ops", "predicate", "predicates", "pred_true", "pred_false", "pred_filter", 
-		"pred_table", "pred_notequal", "pred_loop"
+		"p_variable", "p_fList", "p_fVec", "p_fSet", "p_fMap", "bools", "negative", 
+		"float32", "float64", "floatDefault", "floats", "int8", "int16", "int32", 
+		"int64", "bigInt", "intDefault", "ints", "literal", "primary", "var", 
+		"ref", "type", "arrow", "tuple_unit", "tuple_singleton", "tuple_multi", 
+		"tuple", "apply", "unary_ops", "logical_ops", "comparison_ops", "multipve_ops", 
+		"addve_ops", "extbin_ops", "predicate", "predicates", "pred_true", "pred_false", 
+		"pred_filter", "pred_table", "pred_notequal", "pred_loop"
 	};
 
 	private static final String[] _LITERAL_NAMES = {
@@ -191,6 +191,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitTscomment(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitTscomment(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final TscommentContext tscomment() throws RecognitionException {
@@ -240,6 +245,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitStart(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitStart(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -322,6 +332,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitOptSC(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitOptSC(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final OptSCContext optSC() throws RecognitionException {
@@ -378,6 +393,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitIdent(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitIdent(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final IdentContext ident() throws RecognitionException {
@@ -425,6 +445,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitNname(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitNname(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -483,6 +508,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitLowerqname(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitLowerqname(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final LowerqnameContext lowerqname() throws RecognitionException {
@@ -535,6 +565,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitUpperqname(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitUpperqname(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final UpperqnameContext upperqname() throws RecognitionException {
@@ -584,6 +619,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitAnnotationName(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitAnnotationName(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final AnnotationNameContext annotationName() throws RecognitionException {
@@ -620,6 +660,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitAttributeName(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitAttributeName(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -658,6 +703,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitClassName(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitClassName(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ClassNameContext className() throws RecognitionException {
@@ -694,6 +744,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitDefinitionName(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitDefinitionName(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -734,6 +789,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitQualifiedDefinitionName(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitQualifiedDefinitionName(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final QualifiedDefinitionNameContext qualifiedDefinitionName() throws RecognitionException {
@@ -770,6 +830,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitTableName(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitTableName(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -810,6 +875,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitQualifiedTableName(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitQualifiedTableName(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final QualifiedTableNameContext qualifiedTableName() throws RecognitionException {
@@ -847,6 +917,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitTagName(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitTagName(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final TagNameContext tagName() throws RecognitionException {
@@ -883,6 +958,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitTypeName(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitTypeName(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -923,6 +1003,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitQualifiedTypeName(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitQualifiedTypeName(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final QualifiedTypeNameContext qualifiedTypeName() throws RecognitionException {
@@ -959,6 +1044,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitVariableName(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitVariableName(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1005,6 +1095,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitVariableNames(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitVariableNames(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1074,6 +1169,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitArgument(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitArgument(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ArgumentContext argument() throws RecognitionException {
@@ -1133,6 +1233,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitArguments(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitArguments(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1214,6 +1319,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitFormalparams(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitFormalparams(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1299,6 +1409,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitAttribute(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitAttribute(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final AttributeContext attribute() throws RecognitionException {
@@ -1367,6 +1482,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitAttributes(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitAttributes(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1451,6 +1571,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitIndex(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitIndex(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1566,6 +1691,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitIndexes(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitIndexes(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final IndexesContext indexes() throws RecognitionException {
@@ -1650,6 +1780,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitIdents(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitIdents(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final IdentsContext idents() throws RecognitionException {
@@ -1733,6 +1868,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitMatch_rule(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitMatch_rule(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Match_ruleContext match_rule() throws RecognitionException {
@@ -1815,6 +1955,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitMatch_rules(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitMatch_rules(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Match_rulesContext match_rules() throws RecognitionException {
@@ -1889,6 +2034,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitSwitch_rule(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitSwitch_rule(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1972,6 +2122,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitSwitch_rules(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitSwitch_rules(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Switch_rulesContext switch_rules() throws RecognitionException {
@@ -2044,6 +2199,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitTypeparam(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitTypeparam(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -2121,6 +2281,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitTypeparams(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitTypeparams(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -2223,6 +2388,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitClass_typeparams(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitClass_typeparams(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Class_typeparamsContext class_typeparams() throws RecognitionException {
@@ -2304,6 +2474,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitContextBound(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitContextBound(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ContextBoundContext contextBound() throws RecognitionException {
@@ -2351,6 +2526,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitContextBounds(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitContextBounds(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -2433,6 +2613,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitContextBoundsList(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitContextBoundsList(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ContextBoundsListContext contextBoundsList() throws RecognitionException {
@@ -2511,6 +2696,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitAnnotation(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitAnnotation(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final AnnotationContext annotation() throws RecognitionException {
@@ -2558,6 +2748,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitAnnotations(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitAnnotations(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -2623,6 +2818,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitS_import(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitS_import(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -2699,6 +2899,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitImport_wildcard(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitImport_wildcard(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Import_wildcardContext import_wildcard() throws RecognitionException {
@@ -2756,6 +2961,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitImport_definition(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitImport_definition(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Import_definitionContext import_definition() throws RecognitionException {
@@ -2809,6 +3019,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitImport_namespace(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitImport_namespace(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -2890,6 +3105,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitDecl(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitDecl(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -3034,6 +3254,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitDecls_namespace(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitDecls_namespace(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Decls_namespaceContext decls_namespace() throws RecognitionException {
@@ -3158,6 +3383,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitDecls_enum(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitDecls_enum(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Decls_enumContext decls_enum() throws RecognitionException {
@@ -3281,6 +3511,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitDcases(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitDcases(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final DcasesContext dcases() throws RecognitionException {
@@ -3363,6 +3598,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitDcase(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitDcase(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final DcaseContext dcase() throws RecognitionException {
@@ -3432,6 +3672,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitDecls_relation(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitDecls_relation(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -3572,6 +3817,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitDecls_lattice(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitDecls_lattice(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Decls_latticeContext decls_lattice() throws RecognitionException {
@@ -3705,6 +3955,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitDecls_index(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitDecls_index(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Decls_indexContext decls_index() throws RecognitionException {
@@ -3820,6 +4075,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitDecls_signature(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitDecls_signature(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -3956,6 +4216,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitDecls_external(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitDecls_external(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -4111,6 +4376,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitDecls_definition(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitDecls_definition(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -4296,6 +4566,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitDecls_law(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitDecls_law(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Decls_lawContext decls_law() throws RecognitionException {
@@ -4465,6 +4740,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitDecls_class(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitDecls_class(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Decls_classContext decls_class() throws RecognitionException {
@@ -4579,6 +4859,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitClass_body(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitClass_body(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Class_bodyContext class_body() throws RecognitionException {
@@ -4668,6 +4953,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitDecls_fact(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitDecls_fact(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Decls_factContext decls_fact() throws RecognitionException {
@@ -4734,6 +5024,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitDecls_rule(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitDecls_rule(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -4817,6 +5112,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitElms(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitElms(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ElmsContext elms() throws RecognitionException {
@@ -4866,6 +5166,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitDecls_letlattice(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitDecls_letlattice(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -4995,6 +5300,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitDecls_impl(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitDecls_impl(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Decls_implContext decls_impl() throws RecognitionException {
@@ -5106,6 +5416,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitDecls_impl_body(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitDecls_impl_body(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Decls_impl_bodyContext decls_impl_body() throws RecognitionException {
@@ -5169,8 +5484,15 @@ public class FlixParser extends Parser {
 	}
 
 	public static class ExpressionContext extends ParserRuleContext {
-		public BlockContext block() {
-			return getRuleContext(BlockContext.class,0);
+		public ExpressionContext expression() {
+			return getRuleContext(ExpressionContext.class,0);
+		}
+		public List<TerminalNode> WS() { return getTokens(FlixParser.WS); }
+		public TerminalNode WS(int i) {
+			return getToken(FlixParser.WS, i);
+		}
+		public LogicalContext logical() {
+			return getRuleContext(LogicalContext.class,0);
 		}
 		public ExpressionContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -5184,95 +5506,54 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitExpression(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitExpression(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ExpressionContext expression() throws RecognitionException {
 		ExpressionContext _localctx = new ExpressionContext(_ctx, getState());
 		enterRule(_localctx, 126, RULE_expression);
-		try {
-			enterOuterAlt(_localctx, 1);
-			{
-			setState(1109);
-			block();
-			}
-		}
-		catch (RecognitionException re) {
-			_localctx.exception = re;
-			_errHandler.reportError(this, re);
-			_errHandler.recover(this, re);
-		}
-		finally {
-			exitRule();
-		}
-		return _localctx;
-	}
-
-	public static class BlockContext extends ParserRuleContext {
-		public ExpressionContext expression() {
-			return getRuleContext(ExpressionContext.class,0);
-		}
-		public List<TerminalNode> WS() { return getTokens(FlixParser.WS); }
-		public TerminalNode WS(int i) {
-			return getToken(FlixParser.WS, i);
-		}
-		public LogicalContext logical() {
-			return getRuleContext(LogicalContext.class,0);
-		}
-		public BlockContext(ParserRuleContext parent, int invokingState) {
-			super(parent, invokingState);
-		}
-		@Override public int getRuleIndex() { return RULE_block; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof FlixListener ) ((FlixListener)listener).enterBlock(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitBlock(this);
-		}
-	}
-
-	public final BlockContext block() throws RecognitionException {
-		BlockContext _localctx = new BlockContext(_ctx, getState());
-		enterRule(_localctx, 128, RULE_block);
 		int _la;
 		try {
-			setState(1124);
+			setState(1122);
 			switch (_input.LA(1)) {
 			case T__6:
 				enterOuterAlt(_localctx, 1);
 				{
 				{
-				setState(1111);
+				setState(1109);
 				match(T__6);
+				setState(1111);
+				_la = _input.LA(1);
+				if (_la==WS) {
+					{
+					setState(1110);
+					match(WS);
+					}
+				}
+
 				setState(1113);
-				_la = _input.LA(1);
-				if (_la==WS) {
-					{
-					setState(1112);
-					match(WS);
-					}
-				}
-
-				setState(1115);
 				expression();
-				setState(1117);
+				setState(1115);
 				_la = _input.LA(1);
 				if (_la==WS) {
 					{
-					setState(1116);
+					setState(1114);
 					match(WS);
 					}
 				}
 
-				setState(1119);
+				setState(1117);
 				match(T__7);
-				setState(1121);
+				setState(1119);
 				_errHandler.sync(this);
 				switch ( getInterpreter().adaptivePredict(_input,163,_ctx) ) {
 				case 1:
 					{
-					setState(1120);
+					setState(1118);
 					match(WS);
 					}
 					break;
@@ -5309,7 +5590,7 @@ public class FlixParser extends Parser {
 			case Digits:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(1123);
+				setState(1121);
 				logical();
 				}
 				break;
@@ -5354,43 +5635,48 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitLogical(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitLogical(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final LogicalContext logical() throws RecognitionException {
 		LogicalContext _localctx = new LogicalContext(_ctx, getState());
-		enterRule(_localctx, 130, RULE_logical);
+		enterRule(_localctx, 128, RULE_logical);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1126);
+			setState(1124);
 			comparison();
-			setState(1136);
+			setState(1134);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,167,_ctx) ) {
 			case 1:
 				{
+				setState(1126);
+				_la = _input.LA(1);
+				if (_la==WS) {
+					{
+					setState(1125);
+					match(WS);
+					}
+				}
+
 				setState(1128);
-				_la = _input.LA(1);
-				if (_la==WS) {
-					{
-					setState(1127);
-					match(WS);
-					}
-				}
-
-				setState(1130);
 				logical_ops();
-				setState(1132);
+				setState(1130);
 				_la = _input.LA(1);
 				if (_la==WS) {
 					{
-					setState(1131);
+					setState(1129);
 					match(WS);
 					}
 				}
 
-				setState(1134);
+				setState(1132);
 				comparison();
 				}
 				break;
@@ -5431,51 +5717,56 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitExpressions(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitExpressions(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ExpressionsContext expressions() throws RecognitionException {
 		ExpressionsContext _localctx = new ExpressionsContext(_ctx, getState());
-		enterRule(_localctx, 132, RULE_expressions);
+		enterRule(_localctx, 130, RULE_expressions);
 		int _la;
 		try {
 			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1138);
+			setState(1136);
 			expression();
-			setState(1149);
+			setState(1147);
 			_errHandler.sync(this);
 			_alt = getInterpreter().adaptivePredict(_input,170,_ctx);
 			while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER ) {
 				if ( _alt==1 ) {
 					{
 					{
+					setState(1138);
+					_la = _input.LA(1);
+					if (_la==WS) {
+						{
+						setState(1137);
+						match(WS);
+						}
+					}
+
 					setState(1140);
-					_la = _input.LA(1);
-					if (_la==WS) {
-						{
-						setState(1139);
-						match(WS);
-						}
-					}
-
-					setState(1142);
 					match(T__2);
-					setState(1144);
+					setState(1142);
 					_la = _input.LA(1);
 					if (_la==WS) {
 						{
-						setState(1143);
+						setState(1141);
 						match(WS);
 						}
 					}
 
-					setState(1146);
+					setState(1144);
 					expression();
 					}
 					} 
 				}
-				setState(1151);
+				setState(1149);
 				_errHandler.sync(this);
 				_alt = getInterpreter().adaptivePredict(_input,170,_ctx);
 			}
@@ -5518,43 +5809,48 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitComparison(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitComparison(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ComparisonContext comparison() throws RecognitionException {
 		ComparisonContext _localctx = new ComparisonContext(_ctx, getState());
-		enterRule(_localctx, 134, RULE_comparison);
+		enterRule(_localctx, 132, RULE_comparison);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1152);
+			setState(1150);
 			additive();
-			setState(1162);
+			setState(1160);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,173,_ctx) ) {
 			case 1:
 				{
+				setState(1152);
+				_la = _input.LA(1);
+				if (_la==WS) {
+					{
+					setState(1151);
+					match(WS);
+					}
+				}
+
 				setState(1154);
-				_la = _input.LA(1);
-				if (_la==WS) {
-					{
-					setState(1153);
-					match(WS);
-					}
-				}
-
-				setState(1156);
 				comparison_ops();
-				setState(1158);
+				setState(1156);
 				_la = _input.LA(1);
 				if (_la==WS) {
 					{
-					setState(1157);
+					setState(1155);
 					match(WS);
 					}
 				}
 
-				setState(1160);
+				setState(1158);
 				additive();
 				}
 				break;
@@ -5601,51 +5897,56 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitAdditive(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitAdditive(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final AdditiveContext additive() throws RecognitionException {
 		AdditiveContext _localctx = new AdditiveContext(_ctx, getState());
-		enterRule(_localctx, 136, RULE_additive);
+		enterRule(_localctx, 134, RULE_additive);
 		int _la;
 		try {
 			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1164);
+			setState(1162);
 			multiplicative();
-			setState(1176);
+			setState(1174);
 			_errHandler.sync(this);
 			_alt = getInterpreter().adaptivePredict(_input,176,_ctx);
 			while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER ) {
 				if ( _alt==1 ) {
 					{
 					{
+					setState(1164);
+					_la = _input.LA(1);
+					if (_la==WS) {
+						{
+						setState(1163);
+						match(WS);
+						}
+					}
+
 					setState(1166);
-					_la = _input.LA(1);
-					if (_la==WS) {
-						{
-						setState(1165);
-						match(WS);
-						}
-					}
-
-					setState(1168);
 					addve_ops();
-					setState(1170);
+					setState(1168);
 					_la = _input.LA(1);
 					if (_la==WS) {
 						{
-						setState(1169);
+						setState(1167);
 						match(WS);
 						}
 					}
 
-					setState(1172);
+					setState(1170);
 					multiplicative();
 					}
 					} 
 				}
-				setState(1178);
+				setState(1176);
 				_errHandler.sync(this);
 				_alt = getInterpreter().adaptivePredict(_input,176,_ctx);
 			}
@@ -5691,51 +5992,56 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitMultiplicative(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitMultiplicative(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final MultiplicativeContext multiplicative() throws RecognitionException {
 		MultiplicativeContext _localctx = new MultiplicativeContext(_ctx, getState());
-		enterRule(_localctx, 138, RULE_multiplicative);
+		enterRule(_localctx, 136, RULE_multiplicative);
 		int _la;
 		try {
 			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1179);
+			setState(1177);
 			infix();
-			setState(1191);
+			setState(1189);
 			_errHandler.sync(this);
 			_alt = getInterpreter().adaptivePredict(_input,179,_ctx);
 			while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER ) {
 				if ( _alt==1 ) {
 					{
 					{
+					setState(1179);
+					_la = _input.LA(1);
+					if (_la==WS) {
+						{
+						setState(1178);
+						match(WS);
+						}
+					}
+
 					setState(1181);
-					_la = _input.LA(1);
-					if (_la==WS) {
-						{
-						setState(1180);
-						match(WS);
-						}
-					}
-
-					setState(1183);
 					multipve_ops();
-					setState(1185);
+					setState(1183);
 					_la = _input.LA(1);
 					if (_la==WS) {
 						{
-						setState(1184);
+						setState(1182);
 						match(WS);
 						}
 					}
 
-					setState(1187);
+					setState(1185);
 					infix();
 					}
 					} 
 				}
-				setState(1193);
+				setState(1191);
 				_errHandler.sync(this);
 				_alt = getInterpreter().adaptivePredict(_input,179,_ctx);
 			}
@@ -5778,47 +6084,52 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitInfix(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitInfix(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final InfixContext infix() throws RecognitionException {
 		InfixContext _localctx = new InfixContext(_ctx, getState());
-		enterRule(_localctx, 140, RULE_infix);
+		enterRule(_localctx, 138, RULE_infix);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1194);
+			setState(1192);
 			extended();
-			setState(1206);
+			setState(1204);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,182,_ctx) ) {
 			case 1:
 				{
-				setState(1196);
+				setState(1194);
 				_la = _input.LA(1);
 				if (_la==WS) {
 					{
-					setState(1195);
+					setState(1193);
 					match(WS);
 					}
 				}
 
+				setState(1196);
+				match(T__16);
+				setState(1197);
+				qualifiedDefinitionName();
 				setState(1198);
 				match(T__16);
-				setState(1199);
-				qualifiedDefinitionName();
 				setState(1200);
-				match(T__16);
-				setState(1202);
 				_la = _input.LA(1);
 				if (_la==WS) {
 					{
-					setState(1201);
+					setState(1199);
 					match(WS);
 					}
 				}
 
-				setState(1204);
+				setState(1202);
 				extended();
 				}
 				break;
@@ -5862,43 +6173,48 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitExtended(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitExtended(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ExtendedContext extended() throws RecognitionException {
 		ExtendedContext _localctx = new ExtendedContext(_ctx, getState());
-		enterRule(_localctx, 142, RULE_extended);
+		enterRule(_localctx, 140, RULE_extended);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1208);
+			setState(1206);
 			unary();
-			setState(1218);
+			setState(1216);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,185,_ctx) ) {
 			case 1:
 				{
+				setState(1208);
+				_la = _input.LA(1);
+				if (_la==WS) {
+					{
+					setState(1207);
+					match(WS);
+					}
+				}
+
 				setState(1210);
-				_la = _input.LA(1);
-				if (_la==WS) {
-					{
-					setState(1209);
-					match(WS);
-					}
-				}
-
-				setState(1212);
 				extbin_ops();
-				setState(1214);
+				setState(1212);
 				_la = _input.LA(1);
 				if (_la==WS) {
 					{
-					setState(1213);
+					setState(1211);
 					match(WS);
 					}
 				}
 
-				setState(1216);
+				setState(1214);
 				unary();
 				}
 				break;
@@ -5939,32 +6255,37 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitUnary(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitUnary(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final UnaryContext unary() throws RecognitionException {
 		UnaryContext _localctx = new UnaryContext(_ctx, getState());
-		enterRule(_localctx, 144, RULE_unary);
+		enterRule(_localctx, 142, RULE_unary);
 		int _la;
 		try {
-			setState(1227);
+			setState(1225);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,187,_ctx) ) {
 			case 1:
 				enterOuterAlt(_localctx, 1);
 				{
 				{
-				setState(1220);
+				setState(1218);
 				unary_ops();
-				setState(1222);
+				setState(1220);
 				_la = _input.LA(1);
 				if (_la==WS) {
 					{
-					setState(1221);
+					setState(1219);
 					match(WS);
 					}
 				}
 
-				setState(1224);
+				setState(1222);
 				unary();
 				}
 				}
@@ -5972,7 +6293,7 @@ public class FlixParser extends Parser {
 			case 2:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(1226);
+				setState(1224);
 				ascribe();
 				}
 				break;
@@ -6012,43 +6333,48 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitAscribe(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitAscribe(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final AscribeContext ascribe() throws RecognitionException {
 		AscribeContext _localctx = new AscribeContext(_ctx, getState());
-		enterRule(_localctx, 146, RULE_ascribe);
+		enterRule(_localctx, 144, RULE_ascribe);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1229);
+			setState(1227);
 			e_fList();
-			setState(1238);
+			setState(1236);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,190,_ctx) ) {
 			case 1:
 				{
+				setState(1229);
+				_la = _input.LA(1);
+				if (_la==WS) {
+					{
+					setState(1228);
+					match(WS);
+					}
+				}
+
 				setState(1231);
-				_la = _input.LA(1);
-				if (_la==WS) {
-					{
-					setState(1230);
-					match(WS);
-					}
-				}
-
-				setState(1233);
 				match(T__3);
-				setState(1235);
+				setState(1233);
 				_la = _input.LA(1);
 				if (_la==WS) {
 					{
-					setState(1234);
+					setState(1232);
 					match(WS);
 					}
 				}
 
-				setState(1237);
+				setState(1235);
 				type();
 				}
 				break;
@@ -6136,145 +6462,150 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitE_primary(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitE_primary(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final E_primaryContext e_primary() throws RecognitionException {
 		E_primaryContext _localctx = new E_primaryContext(_ctx, getState());
-		enterRule(_localctx, 148, RULE_e_primary);
+		enterRule(_localctx, 146, RULE_e_primary);
 		try {
-			setState(1259);
+			setState(1257);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,191,_ctx) ) {
 			case 1:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(1240);
+				setState(1238);
 				e_letMatch();
 				}
 				break;
 			case 2:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(1241);
+				setState(1239);
 				e_ifThenElse();
 				}
 				break;
 			case 3:
 				enterOuterAlt(_localctx, 3);
 				{
-				setState(1242);
+				setState(1240);
 				e_match();
 				}
 				break;
 			case 4:
 				enterOuterAlt(_localctx, 4);
 				{
-				setState(1243);
+				setState(1241);
 				e_switch();
 				}
 				break;
 			case 5:
 				enterOuterAlt(_localctx, 5);
 				{
-				setState(1244);
+				setState(1242);
 				e_tag();
 				}
 				break;
 			case 6:
 				enterOuterAlt(_localctx, 6);
 				{
-				setState(1245);
+				setState(1243);
 				e_lambda();
 				}
 				break;
 			case 7:
 				enterOuterAlt(_localctx, 7);
 				{
-				setState(1246);
+				setState(1244);
 				e_tuple();
 				}
 				break;
 			case 8:
 				enterOuterAlt(_localctx, 8);
 				{
-				setState(1247);
+				setState(1245);
 				e_fNil();
 				}
 				break;
 			case 9:
 				enterOuterAlt(_localctx, 9);
 				{
-				setState(1248);
+				setState(1246);
 				e_fVec();
 				}
 				break;
 			case 10:
 				enterOuterAlt(_localctx, 10);
 				{
-				setState(1249);
+				setState(1247);
 				e_fSet();
 				}
 				break;
 			case 11:
 				enterOuterAlt(_localctx, 11);
 				{
-				setState(1250);
+				setState(1248);
 				e_fMap();
 				}
 				break;
 			case 12:
 				enterOuterAlt(_localctx, 12);
 				{
-				setState(1251);
+				setState(1249);
 				literal();
 				}
 				break;
 			case 13:
 				enterOuterAlt(_localctx, 13);
 				{
-				setState(1252);
+				setState(1250);
 				existential();
 				}
 				break;
 			case 14:
 				enterOuterAlt(_localctx, 14);
 				{
-				setState(1253);
+				setState(1251);
 				universal();
 				}
 				break;
 			case 15:
 				enterOuterAlt(_localctx, 15);
 				{
-				setState(1254);
+				setState(1252);
 				e_qname();
 				}
 				break;
 			case 16:
 				enterOuterAlt(_localctx, 16);
 				{
-				setState(1255);
+				setState(1253);
 				e_unaryLambda();
 				}
 				break;
 			case 17:
 				enterOuterAlt(_localctx, 17);
 				{
-				setState(1256);
+				setState(1254);
 				e_wild();
 				}
 				break;
 			case 18:
 				enterOuterAlt(_localctx, 18);
 				{
-				setState(1257);
+				setState(1255);
 				e_sname();
 				}
 				break;
 			case 19:
 				enterOuterAlt(_localctx, 19);
 				{
-				setState(1258);
+				setState(1256);
 				e_userError();
 				}
 				break;
@@ -6318,64 +6649,69 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitE_letMatch(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitE_letMatch(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final E_letMatchContext e_letMatch() throws RecognitionException {
 		E_letMatchContext _localctx = new E_letMatchContext(_ctx, getState());
-		enterRule(_localctx, 150, RULE_e_letMatch);
+		enterRule(_localctx, 148, RULE_e_letMatch);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1261);
+			setState(1259);
 			match(LET);
-			setState(1262);
+			setState(1260);
 			match(WS);
-			setState(1263);
+			setState(1261);
 			pattern();
+			setState(1263);
+			_la = _input.LA(1);
+			if (_la==WS) {
+				{
+				setState(1262);
+				match(WS);
+				}
+			}
+
 			setState(1265);
-			_la = _input.LA(1);
-			if (_la==WS) {
-				{
-				setState(1264);
-				match(WS);
-				}
-			}
-
-			setState(1267);
 			match(T__13);
+			setState(1267);
+			_la = _input.LA(1);
+			if (_la==WS) {
+				{
+				setState(1266);
+				match(WS);
+				}
+			}
+
 			setState(1269);
-			_la = _input.LA(1);
-			if (_la==WS) {
-				{
-				setState(1268);
-				match(WS);
-				}
-			}
-
-			setState(1271);
 			expression();
+			setState(1271);
+			_la = _input.LA(1);
+			if (_la==WS) {
+				{
+				setState(1270);
+				match(WS);
+				}
+			}
+
 			setState(1273);
-			_la = _input.LA(1);
-			if (_la==WS) {
-				{
-				setState(1272);
-				match(WS);
-				}
-			}
-
-			setState(1275);
 			match(SC);
-			setState(1277);
+			setState(1275);
 			_la = _input.LA(1);
 			if (_la==WS) {
 				{
-				setState(1276);
+				setState(1274);
 				match(WS);
 				}
 			}
 
-			setState(1279);
+			setState(1277);
 			expression();
 			}
 		}
@@ -6415,68 +6751,73 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitE_ifThenElse(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitE_ifThenElse(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final E_ifThenElseContext e_ifThenElse() throws RecognitionException {
 		E_ifThenElseContext _localctx = new E_ifThenElseContext(_ctx, getState());
-		enterRule(_localctx, 152, RULE_e_ifThenElse);
+		enterRule(_localctx, 150, RULE_e_ifThenElse);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1281);
+			setState(1279);
 			match(IF);
+			setState(1281);
+			_la = _input.LA(1);
+			if (_la==WS) {
+				{
+				setState(1280);
+				match(WS);
+				}
+			}
+
 			setState(1283);
-			_la = _input.LA(1);
-			if (_la==WS) {
-				{
-				setState(1282);
-				match(WS);
-				}
-			}
-
-			setState(1285);
 			match(T__4);
+			setState(1285);
+			_la = _input.LA(1);
+			if (_la==WS) {
+				{
+				setState(1284);
+				match(WS);
+				}
+			}
+
 			setState(1287);
-			_la = _input.LA(1);
-			if (_la==WS) {
-				{
-				setState(1286);
-				match(WS);
-				}
-			}
-
+			expression();
 			setState(1289);
-			expression();
+			_la = _input.LA(1);
+			if (_la==WS) {
+				{
+				setState(1288);
+				match(WS);
+				}
+			}
+
 			setState(1291);
-			_la = _input.LA(1);
-			if (_la==WS) {
-				{
-				setState(1290);
-				match(WS);
-				}
-			}
-
-			setState(1293);
 			match(T__5);
-			setState(1295);
+			setState(1293);
 			_la = _input.LA(1);
 			if (_la==WS) {
 				{
-				setState(1294);
+				setState(1292);
 				match(WS);
 				}
 			}
 
-			setState(1297);
+			setState(1295);
 			expression();
+			setState(1296);
+			match(WS);
+			setState(1297);
+			match(ELSE);
 			setState(1298);
 			match(WS);
 			setState(1299);
-			match(ELSE);
-			setState(1300);
-			match(WS);
-			setState(1301);
 			expression();
 			}
 		}
@@ -6516,50 +6857,55 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitE_match(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitE_match(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final E_matchContext e_match() throws RecognitionException {
 		E_matchContext _localctx = new E_matchContext(_ctx, getState());
-		enterRule(_localctx, 154, RULE_e_match);
+		enterRule(_localctx, 152, RULE_e_match);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1303);
+			setState(1301);
 			match(MATCH);
+			setState(1302);
+			match(WS);
+			setState(1303);
+			expression();
 			setState(1304);
 			match(WS);
 			setState(1305);
-			expression();
+			match(WITH);
 			setState(1306);
 			match(WS);
 			setState(1307);
-			match(WITH);
-			setState(1308);
-			match(WS);
-			setState(1309);
 			match(T__6);
+			setState(1309);
+			_la = _input.LA(1);
+			if (_la==WS) {
+				{
+				setState(1308);
+				match(WS);
+				}
+			}
+
 			setState(1311);
-			_la = _input.LA(1);
-			if (_la==WS) {
-				{
-				setState(1310);
-				match(WS);
-				}
-			}
-
-			setState(1313);
 			match_rules();
-			setState(1315);
+			setState(1313);
 			_la = _input.LA(1);
 			if (_la==WS) {
 				{
-				setState(1314);
+				setState(1312);
 				match(WS);
 				}
 			}
 
-			setState(1317);
+			setState(1315);
 			match(T__7);
 			}
 		}
@@ -6595,42 +6941,47 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitE_switch(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitE_switch(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final E_switchContext e_switch() throws RecognitionException {
 		E_switchContext _localctx = new E_switchContext(_ctx, getState());
-		enterRule(_localctx, 156, RULE_e_switch);
+		enterRule(_localctx, 154, RULE_e_switch);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1319);
+			setState(1317);
 			match(SWITCH);
-			setState(1320);
+			setState(1318);
 			match(WS);
-			setState(1321);
+			setState(1319);
 			match(T__6);
+			setState(1321);
+			_la = _input.LA(1);
+			if (_la==WS) {
+				{
+				setState(1320);
+				match(WS);
+				}
+			}
+
 			setState(1323);
-			_la = _input.LA(1);
-			if (_la==WS) {
-				{
-				setState(1322);
-				match(WS);
-				}
-			}
-
-			setState(1325);
 			switch_rules();
-			setState(1327);
+			setState(1325);
 			_la = _input.LA(1);
 			if (_la==WS) {
 				{
-				setState(1326);
+				setState(1324);
 				match(WS);
 				}
 			}
 
-			setState(1329);
+			setState(1327);
 			match(T__7);
 			}
 		}
@@ -6668,62 +7019,67 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitE_apply(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitE_apply(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final E_applyContext e_apply() throws RecognitionException {
 		E_applyContext _localctx = new E_applyContext(_ctx, getState());
-		enterRule(_localctx, 158, RULE_e_apply);
+		enterRule(_localctx, 156, RULE_e_apply);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1331);
+			setState(1329);
 			e_primary();
-			setState(1346);
+			setState(1344);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,208,_ctx) ) {
 			case 1:
 				{
-				setState(1333);
+				setState(1331);
 				_la = _input.LA(1);
 				if (_la==WS) {
 					{
-					setState(1332);
+					setState(1330);
 					match(WS);
 					}
 				}
 
-				setState(1335);
+				setState(1333);
 				match(T__4);
-				setState(1337);
+				setState(1335);
 				_errHandler.sync(this);
 				switch ( getInterpreter().adaptivePredict(_input,205,_ctx) ) {
 				case 1:
 					{
-					setState(1336);
+					setState(1334);
 					match(WS);
 					}
 					break;
 				}
-				setState(1340);
+				setState(1338);
 				_la = _input.LA(1);
 				if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__4) | (1L << T__6) | (1L << T__18) | (1L << T__20) | (1L << T__21) | (1L << T__22) | (1L << T__23) | (1L << T__24) | (1L << T__25) | (1L << T__26) | (1L << T__28) | (1L << T__29) | (1L << T__30) | (1L << T__38) | (1L << T__39) | (1L << T__40) | (1L << T__41))) != 0) || ((((_la - 84)) & ~0x3f) == 0 && ((1L << (_la - 84)) & ((1L << (LET - 84)) | (1L << (FNIL - 84)) | (1L << (SWITCH - 84)) | (1L << (MATCH - 84)) | (1L << (WILD - 84)) | (1L << (IF - 84)) | (1L << (LowerIdent - 84)) | (1L << (UpperIdent - 84)) | (1L << (Chars - 84)) | (1L << (Strs - 84)) | (1L << (Digits - 84)))) != 0)) {
 					{
-					setState(1339);
+					setState(1337);
 					expressions();
 					}
 				}
 
-				setState(1343);
+				setState(1341);
 				_la = _input.LA(1);
 				if (_la==WS) {
 					{
-					setState(1342);
+					setState(1340);
 					match(WS);
 					}
 				}
 
-				setState(1345);
+				setState(1343);
 				match(T__5);
 				}
 				break;
@@ -6757,15 +7113,20 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitE_sname(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitE_sname(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final E_snameContext e_sname() throws RecognitionException {
 		E_snameContext _localctx = new E_snameContext(_ctx, getState());
-		enterRule(_localctx, 160, RULE_e_sname);
+		enterRule(_localctx, 158, RULE_e_sname);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1348);
+			setState(1346);
 			variableName();
 			}
 		}
@@ -6796,15 +7157,20 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitE_qname(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitE_qname(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final E_qnameContext e_qname() throws RecognitionException {
 		E_qnameContext _localctx = new E_qnameContext(_ctx, getState());
-		enterRule(_localctx, 162, RULE_e_qname);
+		enterRule(_localctx, 160, RULE_e_qname);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1350);
+			setState(1348);
 			qualifiedDefinitionName();
 			}
 		}
@@ -6842,44 +7208,49 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitE_tag(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitE_tag(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final E_tagContext e_tag() throws RecognitionException {
 		E_tagContext _localctx = new E_tagContext(_ctx, getState());
-		enterRule(_localctx, 164, RULE_e_tag);
+		enterRule(_localctx, 162, RULE_e_tag);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1355);
+			setState(1353);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,209,_ctx) ) {
 			case 1:
 				{
-				setState(1352);
+				setState(1350);
 				qualifiedTypeName();
-				setState(1353);
+				setState(1351);
 				match(T__0);
 				}
 				break;
 			}
-			setState(1357);
+			setState(1355);
 			tagName();
-			setState(1362);
+			setState(1360);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,211,_ctx) ) {
 			case 1:
 				{
-				setState(1359);
+				setState(1357);
 				_la = _input.LA(1);
 				if (_la==WS) {
 					{
-					setState(1358);
+					setState(1356);
 					match(WS);
 					}
 				}
 
-				setState(1361);
+				setState(1359);
 				e_tuple();
 				}
 				break;
@@ -6917,46 +7288,51 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitE_tuple(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitE_tuple(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final E_tupleContext e_tuple() throws RecognitionException {
 		E_tupleContext _localctx = new E_tupleContext(_ctx, getState());
-		enterRule(_localctx, 166, RULE_e_tuple);
+		enterRule(_localctx, 164, RULE_e_tuple);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1364);
+			setState(1362);
 			match(T__4);
-			setState(1366);
+			setState(1364);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,212,_ctx) ) {
 			case 1:
 				{
-				setState(1365);
+				setState(1363);
 				match(WS);
 				}
 				break;
 			}
-			setState(1369);
+			setState(1367);
 			_la = _input.LA(1);
 			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__4) | (1L << T__6) | (1L << T__18) | (1L << T__20) | (1L << T__21) | (1L << T__22) | (1L << T__23) | (1L << T__24) | (1L << T__25) | (1L << T__26) | (1L << T__28) | (1L << T__29) | (1L << T__30) | (1L << T__38) | (1L << T__39) | (1L << T__40) | (1L << T__41))) != 0) || ((((_la - 84)) & ~0x3f) == 0 && ((1L << (_la - 84)) & ((1L << (LET - 84)) | (1L << (FNIL - 84)) | (1L << (SWITCH - 84)) | (1L << (MATCH - 84)) | (1L << (WILD - 84)) | (1L << (IF - 84)) | (1L << (LowerIdent - 84)) | (1L << (UpperIdent - 84)) | (1L << (Chars - 84)) | (1L << (Strs - 84)) | (1L << (Digits - 84)))) != 0)) {
 				{
-				setState(1368);
+				setState(1366);
 				expressions();
 				}
 			}
 
-			setState(1372);
+			setState(1370);
 			_la = _input.LA(1);
 			if (_la==WS) {
 				{
-				setState(1371);
+				setState(1369);
 				match(WS);
 				}
 			}
 
-			setState(1374);
+			setState(1372);
 			match(T__5);
 			}
 		}
@@ -6994,38 +7370,43 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitE_keyValue(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitE_keyValue(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final E_keyValueContext e_keyValue() throws RecognitionException {
 		E_keyValueContext _localctx = new E_keyValueContext(_ctx, getState());
-		enterRule(_localctx, 168, RULE_e_keyValue);
+		enterRule(_localctx, 166, RULE_e_keyValue);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1376);
+			setState(1374);
 			expression();
+			setState(1376);
+			_la = _input.LA(1);
+			if (_la==WS) {
+				{
+				setState(1375);
+				match(WS);
+				}
+			}
+
 			setState(1378);
-			_la = _input.LA(1);
-			if (_la==WS) {
-				{
-				setState(1377);
-				match(WS);
-				}
-			}
-
-			setState(1380);
 			match(T__17);
-			setState(1382);
+			setState(1380);
 			_la = _input.LA(1);
 			if (_la==WS) {
 				{
-				setState(1381);
+				setState(1379);
 				match(WS);
 				}
 			}
 
-			setState(1384);
+			setState(1382);
 			expression();
 			}
 		}
@@ -7063,51 +7444,56 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitE_keyValues(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitE_keyValues(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final E_keyValuesContext e_keyValues() throws RecognitionException {
 		E_keyValuesContext _localctx = new E_keyValuesContext(_ctx, getState());
-		enterRule(_localctx, 170, RULE_e_keyValues);
+		enterRule(_localctx, 168, RULE_e_keyValues);
 		int _la;
 		try {
 			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1386);
+			setState(1384);
 			e_keyValue();
-			setState(1397);
+			setState(1395);
 			_errHandler.sync(this);
 			_alt = getInterpreter().adaptivePredict(_input,219,_ctx);
 			while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER ) {
 				if ( _alt==1 ) {
 					{
 					{
+					setState(1386);
+					_la = _input.LA(1);
+					if (_la==WS) {
+						{
+						setState(1385);
+						match(WS);
+						}
+					}
+
 					setState(1388);
-					_la = _input.LA(1);
-					if (_la==WS) {
-						{
-						setState(1387);
-						match(WS);
-						}
-					}
-
-					setState(1390);
 					match(T__2);
-					setState(1392);
+					setState(1390);
 					_la = _input.LA(1);
 					if (_la==WS) {
 						{
-						setState(1391);
+						setState(1389);
 						match(WS);
 						}
 					}
 
-					setState(1394);
+					setState(1392);
 					e_keyValue();
 					}
 					} 
 				}
-				setState(1399);
+				setState(1397);
 				_errHandler.sync(this);
 				_alt = getInterpreter().adaptivePredict(_input,219,_ctx);
 			}
@@ -7137,15 +7523,20 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitE_userError(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitE_userError(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final E_userErrorContext e_userError() throws RecognitionException {
 		E_userErrorContext _localctx = new E_userErrorContext(_ctx, getState());
-		enterRule(_localctx, 172, RULE_e_userError);
+		enterRule(_localctx, 170, RULE_e_userError);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1400);
+			setState(1398);
 			match(T__18);
 			}
 		}
@@ -7174,15 +7565,20 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitE_wild(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitE_wild(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final E_wildContext e_wild() throws RecognitionException {
 		E_wildContext _localctx = new E_wildContext(_ctx, getState());
-		enterRule(_localctx, 174, RULE_e_wild);
+		enterRule(_localctx, 172, RULE_e_wild);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1402);
+			setState(1400);
 			match(WILD);
 			}
 		}
@@ -7211,15 +7607,20 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitE_fNil(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitE_fNil(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final E_fNilContext e_fNil() throws RecognitionException {
 		E_fNilContext _localctx = new E_fNilContext(_ctx, getState());
-		enterRule(_localctx, 176, RULE_e_fNil);
+		enterRule(_localctx, 174, RULE_e_fNil);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1404);
+			setState(1402);
 			match(FNIL);
 			}
 		}
@@ -7257,43 +7658,48 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitE_fList(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitE_fList(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final E_fListContext e_fList() throws RecognitionException {
 		E_fListContext _localctx = new E_fListContext(_ctx, getState());
-		enterRule(_localctx, 178, RULE_e_fList);
+		enterRule(_localctx, 176, RULE_e_fList);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1406);
+			setState(1404);
 			e_apply();
-			setState(1415);
+			setState(1413);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,222,_ctx) ) {
 			case 1:
 				{
+				setState(1406);
+				_la = _input.LA(1);
+				if (_la==WS) {
+					{
+					setState(1405);
+					match(WS);
+					}
+				}
+
 				setState(1408);
-				_la = _input.LA(1);
-				if (_la==WS) {
-					{
-					setState(1407);
-					match(WS);
-					}
-				}
-
-				setState(1410);
 				match(T__19);
-				setState(1412);
+				setState(1410);
 				_la = _input.LA(1);
 				if (_la==WS) {
 					{
-					setState(1411);
+					setState(1409);
 					match(WS);
 					}
 				}
 
-				setState(1414);
+				setState(1412);
 				expression();
 				}
 				break;
@@ -7331,46 +7737,51 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitE_fVec(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitE_fVec(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final E_fVecContext e_fVec() throws RecognitionException {
 		E_fVecContext _localctx = new E_fVecContext(_ctx, getState());
-		enterRule(_localctx, 180, RULE_e_fVec);
+		enterRule(_localctx, 178, RULE_e_fVec);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1417);
+			setState(1415);
 			match(T__20);
-			setState(1419);
+			setState(1417);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,223,_ctx) ) {
 			case 1:
 				{
-				setState(1418);
+				setState(1416);
 				match(WS);
 				}
 				break;
 			}
-			setState(1422);
+			setState(1420);
 			_la = _input.LA(1);
 			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__4) | (1L << T__6) | (1L << T__18) | (1L << T__20) | (1L << T__21) | (1L << T__22) | (1L << T__23) | (1L << T__24) | (1L << T__25) | (1L << T__26) | (1L << T__28) | (1L << T__29) | (1L << T__30) | (1L << T__38) | (1L << T__39) | (1L << T__40) | (1L << T__41))) != 0) || ((((_la - 84)) & ~0x3f) == 0 && ((1L << (_la - 84)) & ((1L << (LET - 84)) | (1L << (FNIL - 84)) | (1L << (SWITCH - 84)) | (1L << (MATCH - 84)) | (1L << (WILD - 84)) | (1L << (IF - 84)) | (1L << (LowerIdent - 84)) | (1L << (UpperIdent - 84)) | (1L << (Chars - 84)) | (1L << (Strs - 84)) | (1L << (Digits - 84)))) != 0)) {
 				{
-				setState(1421);
+				setState(1419);
 				expressions();
 				}
 			}
 
-			setState(1425);
+			setState(1423);
 			_la = _input.LA(1);
 			if (_la==WS) {
 				{
-				setState(1424);
+				setState(1422);
 				match(WS);
 				}
 			}
 
-			setState(1427);
+			setState(1425);
 			match(T__10);
 			}
 		}
@@ -7405,46 +7816,51 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitE_fSet(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitE_fSet(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final E_fSetContext e_fSet() throws RecognitionException {
 		E_fSetContext _localctx = new E_fSetContext(_ctx, getState());
-		enterRule(_localctx, 182, RULE_e_fSet);
+		enterRule(_localctx, 180, RULE_e_fSet);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1429);
+			setState(1427);
 			match(T__21);
-			setState(1431);
+			setState(1429);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,226,_ctx) ) {
 			case 1:
 				{
-				setState(1430);
+				setState(1428);
 				match(WS);
 				}
 				break;
 			}
-			setState(1434);
+			setState(1432);
 			_la = _input.LA(1);
 			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__4) | (1L << T__6) | (1L << T__18) | (1L << T__20) | (1L << T__21) | (1L << T__22) | (1L << T__23) | (1L << T__24) | (1L << T__25) | (1L << T__26) | (1L << T__28) | (1L << T__29) | (1L << T__30) | (1L << T__38) | (1L << T__39) | (1L << T__40) | (1L << T__41))) != 0) || ((((_la - 84)) & ~0x3f) == 0 && ((1L << (_la - 84)) & ((1L << (LET - 84)) | (1L << (FNIL - 84)) | (1L << (SWITCH - 84)) | (1L << (MATCH - 84)) | (1L << (WILD - 84)) | (1L << (IF - 84)) | (1L << (LowerIdent - 84)) | (1L << (UpperIdent - 84)) | (1L << (Chars - 84)) | (1L << (Strs - 84)) | (1L << (Digits - 84)))) != 0)) {
 				{
-				setState(1433);
+				setState(1431);
 				expressions();
 				}
 			}
 
-			setState(1437);
+			setState(1435);
 			_la = _input.LA(1);
 			if (_la==WS) {
 				{
-				setState(1436);
+				setState(1434);
 				match(WS);
 				}
 			}
 
-			setState(1439);
+			setState(1437);
 			match(T__7);
 			}
 		}
@@ -7479,46 +7895,51 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitE_fMap(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitE_fMap(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final E_fMapContext e_fMap() throws RecognitionException {
 		E_fMapContext _localctx = new E_fMapContext(_ctx, getState());
-		enterRule(_localctx, 184, RULE_e_fMap);
+		enterRule(_localctx, 182, RULE_e_fMap);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1441);
+			setState(1439);
 			match(T__22);
-			setState(1443);
+			setState(1441);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,229,_ctx) ) {
 			case 1:
 				{
-				setState(1442);
+				setState(1440);
 				match(WS);
 				}
 				break;
 			}
-			setState(1446);
+			setState(1444);
 			_la = _input.LA(1);
 			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__4) | (1L << T__6) | (1L << T__18) | (1L << T__20) | (1L << T__21) | (1L << T__22) | (1L << T__23) | (1L << T__24) | (1L << T__25) | (1L << T__26) | (1L << T__28) | (1L << T__29) | (1L << T__30) | (1L << T__38) | (1L << T__39) | (1L << T__40) | (1L << T__41))) != 0) || ((((_la - 84)) & ~0x3f) == 0 && ((1L << (_la - 84)) & ((1L << (LET - 84)) | (1L << (FNIL - 84)) | (1L << (SWITCH - 84)) | (1L << (MATCH - 84)) | (1L << (WILD - 84)) | (1L << (IF - 84)) | (1L << (LowerIdent - 84)) | (1L << (UpperIdent - 84)) | (1L << (Chars - 84)) | (1L << (Strs - 84)) | (1L << (Digits - 84)))) != 0)) {
 				{
-				setState(1445);
+				setState(1443);
 				e_keyValues();
 				}
 			}
 
-			setState(1449);
+			setState(1447);
 			_la = _input.LA(1);
 			if (_la==WS) {
 				{
-				setState(1448);
+				setState(1446);
 				match(WS);
 				}
 			}
 
-			setState(1451);
+			setState(1449);
 			match(T__7);
 			}
 		}
@@ -7556,38 +7977,43 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitE_unaryLambda(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitE_unaryLambda(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final E_unaryLambdaContext e_unaryLambda() throws RecognitionException {
 		E_unaryLambdaContext _localctx = new E_unaryLambdaContext(_ctx, getState());
-		enterRule(_localctx, 186, RULE_e_unaryLambda);
+		enterRule(_localctx, 184, RULE_e_unaryLambda);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1453);
+			setState(1451);
 			variableName();
+			setState(1453);
+			_la = _input.LA(1);
+			if (_la==WS) {
+				{
+				setState(1452);
+				match(WS);
+				}
+			}
+
 			setState(1455);
-			_la = _input.LA(1);
-			if (_la==WS) {
-				{
-				setState(1454);
-				match(WS);
-				}
-			}
-
-			setState(1457);
 			match(T__17);
-			setState(1459);
+			setState(1457);
 			_la = _input.LA(1);
 			if (_la==WS) {
 				{
-				setState(1458);
+				setState(1456);
 				match(WS);
 				}
 			}
 
-			setState(1461);
+			setState(1459);
 			expression();
 			}
 		}
@@ -7625,60 +8051,65 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitE_lambda(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitE_lambda(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final E_lambdaContext e_lambda() throws RecognitionException {
 		E_lambdaContext _localctx = new E_lambdaContext(_ctx, getState());
-		enterRule(_localctx, 188, RULE_e_lambda);
+		enterRule(_localctx, 186, RULE_e_lambda);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1463);
+			setState(1461);
 			match(T__4);
+			setState(1463);
+			_la = _input.LA(1);
+			if (_la==WS) {
+				{
+				setState(1462);
+				match(WS);
+				}
+			}
+
 			setState(1465);
-			_la = _input.LA(1);
-			if (_la==WS) {
-				{
-				setState(1464);
-				match(WS);
-				}
-			}
-
-			setState(1467);
 			variableNames();
+			setState(1467);
+			_la = _input.LA(1);
+			if (_la==WS) {
+				{
+				setState(1466);
+				match(WS);
+				}
+			}
+
 			setState(1469);
-			_la = _input.LA(1);
-			if (_la==WS) {
-				{
-				setState(1468);
-				match(WS);
-				}
-			}
-
-			setState(1471);
 			match(T__5);
+			setState(1471);
+			_la = _input.LA(1);
+			if (_la==WS) {
+				{
+				setState(1470);
+				match(WS);
+				}
+			}
+
 			setState(1473);
-			_la = _input.LA(1);
-			if (_la==WS) {
-				{
-				setState(1472);
-				match(WS);
-				}
-			}
-
-			setState(1475);
 			match(T__17);
-			setState(1477);
+			setState(1475);
 			_la = _input.LA(1);
 			if (_la==WS) {
 				{
-				setState(1476);
+				setState(1474);
 				match(WS);
 				}
 			}
 
-			setState(1479);
+			setState(1477);
 			expression();
 			}
 		}
@@ -7716,55 +8147,60 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitExistential(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitExistential(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ExistentialContext existential() throws RecognitionException {
 		ExistentialContext _localctx = new ExistentialContext(_ctx, getState());
-		enterRule(_localctx, 190, RULE_existential);
+		enterRule(_localctx, 188, RULE_existential);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1481);
+			setState(1479);
 			_la = _input.LA(1);
 			if ( !(_la==T__23 || _la==T__24) ) {
 			_errHandler.recoverInline(this);
 			} else {
 				consume();
 			}
-			setState(1483);
+			setState(1481);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,238,_ctx) ) {
 			case 1:
 				{
-				setState(1482);
+				setState(1480);
 				match(WS);
 				}
 				break;
 			}
-			setState(1485);
+			setState(1483);
 			formalparams();
+			setState(1485);
+			_la = _input.LA(1);
+			if (_la==WS) {
+				{
+				setState(1484);
+				match(WS);
+				}
+			}
+
 			setState(1487);
-			_la = _input.LA(1);
-			if (_la==WS) {
-				{
-				setState(1486);
-				match(WS);
-				}
-			}
-
-			setState(1489);
 			match(T__0);
-			setState(1491);
+			setState(1489);
 			_la = _input.LA(1);
 			if (_la==WS) {
 				{
-				setState(1490);
+				setState(1488);
 				match(WS);
 				}
 			}
 
-			setState(1493);
+			setState(1491);
 			expression();
 			}
 		}
@@ -7802,55 +8238,60 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitUniversal(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitUniversal(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final UniversalContext universal() throws RecognitionException {
 		UniversalContext _localctx = new UniversalContext(_ctx, getState());
-		enterRule(_localctx, 192, RULE_universal);
+		enterRule(_localctx, 190, RULE_universal);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1495);
+			setState(1493);
 			_la = _input.LA(1);
 			if ( !(_la==T__25 || _la==T__26) ) {
 			_errHandler.recoverInline(this);
 			} else {
 				consume();
 			}
-			setState(1497);
+			setState(1495);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,241,_ctx) ) {
 			case 1:
 				{
-				setState(1496);
+				setState(1494);
 				match(WS);
 				}
 				break;
 			}
-			setState(1499);
+			setState(1497);
 			formalparams();
+			setState(1499);
+			_la = _input.LA(1);
+			if (_la==WS) {
+				{
+				setState(1498);
+				match(WS);
+				}
+			}
+
 			setState(1501);
-			_la = _input.LA(1);
-			if (_la==WS) {
-				{
-				setState(1500);
-				match(WS);
-				}
-			}
-
-			setState(1503);
 			match(T__0);
-			setState(1505);
+			setState(1503);
 			_la = _input.LA(1);
 			if (_la==WS) {
 				{
-				setState(1504);
+				setState(1502);
 				match(WS);
 				}
 			}
 
-			setState(1507);
+			setState(1505);
 			expression();
 			}
 		}
@@ -7866,15 +8307,8 @@ public class FlixParser extends Parser {
 	}
 
 	public static class PatternContext extends ParserRuleContext {
-		public SimpleContext simple() {
-			return getRuleContext(SimpleContext.class,0);
-		}
-		public PatternContext pattern() {
-			return getRuleContext(PatternContext.class,0);
-		}
-		public List<TerminalNode> WS() { return getTokens(FlixParser.WS); }
-		public TerminalNode WS(int i) {
-			return getToken(FlixParser.WS, i);
+		public P_fListContext p_fList() {
+			return getRuleContext(P_fListContext.class,0);
 		}
 		public PatternContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -7888,47 +8322,21 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitPattern(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitPattern(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final PatternContext pattern() throws RecognitionException {
 		PatternContext _localctx = new PatternContext(_ctx, getState());
-		enterRule(_localctx, 194, RULE_pattern);
-		int _la;
+		enterRule(_localctx, 192, RULE_pattern);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1509);
-			simple();
-			setState(1518);
-			_errHandler.sync(this);
-			switch ( getInterpreter().adaptivePredict(_input,246,_ctx) ) {
-			case 1:
-				{
-				setState(1511);
-				_la = _input.LA(1);
-				if (_la==WS) {
-					{
-					setState(1510);
-					match(WS);
-					}
-				}
-
-				setState(1513);
-				match(T__19);
-				setState(1515);
-				_la = _input.LA(1);
-				if (_la==WS) {
-					{
-					setState(1514);
-					match(WS);
-					}
-				}
-
-				setState(1517);
-				pattern();
-				}
-				break;
-			}
+			setState(1507);
+			p_fList();
 			}
 		}
 		catch (RecognitionException re) {
@@ -7965,53 +8373,58 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitPatterns(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitPatterns(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final PatternsContext patterns() throws RecognitionException {
 		PatternsContext _localctx = new PatternsContext(_ctx, getState());
-		enterRule(_localctx, 196, RULE_patterns);
+		enterRule(_localctx, 194, RULE_patterns);
 		int _la;
 		try {
 			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1520);
+			setState(1509);
 			pattern();
-			setState(1531);
+			setState(1520);
 			_errHandler.sync(this);
-			_alt = getInterpreter().adaptivePredict(_input,249,_ctx);
+			_alt = getInterpreter().adaptivePredict(_input,246,_ctx);
 			while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER ) {
 				if ( _alt==1 ) {
 					{
 					{
-					setState(1522);
+					setState(1511);
 					_la = _input.LA(1);
 					if (_la==WS) {
 						{
-						setState(1521);
+						setState(1510);
 						match(WS);
 						}
 					}
 
-					setState(1524);
+					setState(1513);
 					match(T__2);
-					setState(1526);
+					setState(1515);
 					_la = _input.LA(1);
 					if (_la==WS) {
 						{
-						setState(1525);
+						setState(1514);
 						match(WS);
 						}
 					}
 
-					setState(1528);
+					setState(1517);
 					pattern();
 					}
 					} 
 				}
-				setState(1533);
+				setState(1522);
 				_errHandler.sync(this);
-				_alt = getInterpreter().adaptivePredict(_input,249,_ctx);
+				_alt = getInterpreter().adaptivePredict(_input,246,_ctx);
 			}
 			}
 		}
@@ -8064,75 +8477,80 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitSimple(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitSimple(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final SimpleContext simple() throws RecognitionException {
 		SimpleContext _localctx = new SimpleContext(_ctx, getState());
-		enterRule(_localctx, 198, RULE_simple);
+		enterRule(_localctx, 196, RULE_simple);
 		try {
-			setState(1543);
+			setState(1532);
 			_errHandler.sync(this);
-			switch ( getInterpreter().adaptivePredict(_input,250,_ctx) ) {
+			switch ( getInterpreter().adaptivePredict(_input,247,_ctx) ) {
 			case 1:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(1534);
+				setState(1523);
 				p_fNil();
 				}
 				break;
 			case 2:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(1535);
+				setState(1524);
 				literal();
 				}
 				break;
 			case 3:
 				enterOuterAlt(_localctx, 3);
 				{
-				setState(1536);
+				setState(1525);
 				p_variable();
 				}
 				break;
 			case 4:
 				enterOuterAlt(_localctx, 4);
 				{
-				setState(1537);
+				setState(1526);
 				match(WILD);
 				}
 				break;
 			case 5:
 				enterOuterAlt(_localctx, 5);
 				{
-				setState(1538);
+				setState(1527);
 				p_tag();
 				}
 				break;
 			case 6:
 				enterOuterAlt(_localctx, 6);
 				{
-				setState(1539);
+				setState(1528);
 				p_tuple();
 				}
 				break;
 			case 7:
 				enterOuterAlt(_localctx, 7);
 				{
-				setState(1540);
+				setState(1529);
 				p_fVec();
 				}
 				break;
 			case 8:
 				enterOuterAlt(_localctx, 8);
 				{
-				setState(1541);
+				setState(1530);
 				p_fSet();
 				}
 				break;
 			case 9:
 				enterOuterAlt(_localctx, 9);
 				{
-				setState(1542);
+				setState(1531);
 				p_fMap();
 				}
 				break;
@@ -8172,38 +8590,43 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitP_keyValue(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitP_keyValue(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final P_keyValueContext p_keyValue() throws RecognitionException {
 		P_keyValueContext _localctx = new P_keyValueContext(_ctx, getState());
-		enterRule(_localctx, 200, RULE_p_keyValue);
+		enterRule(_localctx, 198, RULE_p_keyValue);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1545);
+			setState(1534);
 			pattern();
-			setState(1547);
+			setState(1536);
 			_la = _input.LA(1);
 			if (_la==WS) {
 				{
-				setState(1546);
+				setState(1535);
 				match(WS);
 				}
 			}
 
-			setState(1549);
+			setState(1538);
 			match(T__17);
-			setState(1551);
+			setState(1540);
 			_la = _input.LA(1);
 			if (_la==WS) {
 				{
-				setState(1550);
+				setState(1539);
 				match(WS);
 				}
 			}
 
-			setState(1553);
+			setState(1542);
 			pattern();
 			}
 		}
@@ -8241,53 +8664,58 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitP_keyValues(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitP_keyValues(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final P_keyValuesContext p_keyValues() throws RecognitionException {
 		P_keyValuesContext _localctx = new P_keyValuesContext(_ctx, getState());
-		enterRule(_localctx, 202, RULE_p_keyValues);
+		enterRule(_localctx, 200, RULE_p_keyValues);
 		int _la;
 		try {
 			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1555);
+			setState(1544);
 			p_keyValue();
-			setState(1566);
+			setState(1555);
 			_errHandler.sync(this);
-			_alt = getInterpreter().adaptivePredict(_input,255,_ctx);
+			_alt = getInterpreter().adaptivePredict(_input,252,_ctx);
 			while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER ) {
 				if ( _alt==1 ) {
 					{
 					{
-					setState(1557);
+					setState(1546);
 					_la = _input.LA(1);
 					if (_la==WS) {
 						{
-						setState(1556);
+						setState(1545);
 						match(WS);
 						}
 					}
 
-					setState(1559);
+					setState(1548);
 					match(T__2);
-					setState(1561);
+					setState(1550);
 					_la = _input.LA(1);
 					if (_la==WS) {
 						{
-						setState(1560);
+						setState(1549);
 						match(WS);
 						}
 					}
 
-					setState(1563);
+					setState(1552);
 					p_keyValue();
 					}
 					} 
 				}
-				setState(1568);
+				setState(1557);
 				_errHandler.sync(this);
-				_alt = getInterpreter().adaptivePredict(_input,255,_ctx);
+				_alt = getInterpreter().adaptivePredict(_input,252,_ctx);
 			}
 			}
 		}
@@ -8325,44 +8753,49 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitP_tag(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitP_tag(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final P_tagContext p_tag() throws RecognitionException {
 		P_tagContext _localctx = new P_tagContext(_ctx, getState());
-		enterRule(_localctx, 204, RULE_p_tag);
+		enterRule(_localctx, 202, RULE_p_tag);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1572);
+			setState(1561);
 			_errHandler.sync(this);
-			switch ( getInterpreter().adaptivePredict(_input,256,_ctx) ) {
+			switch ( getInterpreter().adaptivePredict(_input,253,_ctx) ) {
 			case 1:
 				{
-				setState(1569);
+				setState(1558);
 				qualifiedTypeName();
-				setState(1570);
+				setState(1559);
 				match(T__0);
 				}
 				break;
 			}
-			setState(1574);
+			setState(1563);
 			tagName();
-			setState(1579);
+			setState(1568);
 			_errHandler.sync(this);
-			switch ( getInterpreter().adaptivePredict(_input,258,_ctx) ) {
+			switch ( getInterpreter().adaptivePredict(_input,255,_ctx) ) {
 			case 1:
 				{
-				setState(1576);
+				setState(1565);
 				_la = _input.LA(1);
 				if (_la==WS) {
 					{
-					setState(1575);
+					setState(1564);
 					match(WS);
 					}
 				}
 
-				setState(1578);
+				setState(1567);
 				pattern();
 				}
 				break;
@@ -8400,46 +8833,51 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitP_tuple(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitP_tuple(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final P_tupleContext p_tuple() throws RecognitionException {
 		P_tupleContext _localctx = new P_tupleContext(_ctx, getState());
-		enterRule(_localctx, 206, RULE_p_tuple);
+		enterRule(_localctx, 204, RULE_p_tuple);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1581);
+			setState(1570);
 			match(T__4);
-			setState(1583);
+			setState(1572);
 			_errHandler.sync(this);
-			switch ( getInterpreter().adaptivePredict(_input,259,_ctx) ) {
+			switch ( getInterpreter().adaptivePredict(_input,256,_ctx) ) {
 			case 1:
 				{
-				setState(1582);
+				setState(1571);
 				match(WS);
 				}
 				break;
 			}
-			setState(1586);
+			setState(1575);
 			_la = _input.LA(1);
 			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__4) | (1L << T__20) | (1L << T__21) | (1L << T__22) | (1L << T__28) | (1L << T__29) | (1L << T__30))) != 0) || ((((_la - 86)) & ~0x3f) == 0 && ((1L << (_la - 86)) & ((1L << (FNIL - 86)) | (1L << (WILD - 86)) | (1L << (LowerIdent - 86)) | (1L << (UpperIdent - 86)) | (1L << (Chars - 86)) | (1L << (Strs - 86)) | (1L << (Digits - 86)))) != 0)) {
 				{
-				setState(1585);
+				setState(1574);
 				patterns();
 				}
 			}
 
-			setState(1589);
+			setState(1578);
 			_la = _input.LA(1);
 			if (_la==WS) {
 				{
-				setState(1588);
+				setState(1577);
 				match(WS);
 				}
 			}
 
-			setState(1591);
+			setState(1580);
 			match(T__5);
 			}
 		}
@@ -8468,15 +8906,20 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitP_wild(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitP_wild(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final P_wildContext p_wild() throws RecognitionException {
 		P_wildContext _localctx = new P_wildContext(_ctx, getState());
-		enterRule(_localctx, 208, RULE_p_wild);
+		enterRule(_localctx, 206, RULE_p_wild);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1593);
+			setState(1582);
 			match(WILD);
 			}
 		}
@@ -8505,15 +8948,20 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitP_fNil(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitP_fNil(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final P_fNilContext p_fNil() throws RecognitionException {
 		P_fNilContext _localctx = new P_fNilContext(_ctx, getState());
-		enterRule(_localctx, 210, RULE_p_fNil);
+		enterRule(_localctx, 208, RULE_p_fNil);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1595);
+			setState(1584);
 			match(FNIL);
 			}
 		}
@@ -8544,16 +8992,103 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitP_variable(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitP_variable(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final P_variableContext p_variable() throws RecognitionException {
 		P_variableContext _localctx = new P_variableContext(_ctx, getState());
-		enterRule(_localctx, 212, RULE_p_variable);
+		enterRule(_localctx, 210, RULE_p_variable);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(1597);
+			setState(1586);
 			ident();
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			_errHandler.reportError(this, re);
+			_errHandler.recover(this, re);
+		}
+		finally {
+			exitRule();
+		}
+		return _localctx;
+	}
+
+	public static class P_fListContext extends ParserRuleContext {
+		public SimpleContext simple() {
+			return getRuleContext(SimpleContext.class,0);
+		}
+		public PatternContext pattern() {
+			return getRuleContext(PatternContext.class,0);
+		}
+		public List<TerminalNode> WS() { return getTokens(FlixParser.WS); }
+		public TerminalNode WS(int i) {
+			return getToken(FlixParser.WS, i);
+		}
+		public P_fListContext(ParserRuleContext parent, int invokingState) {
+			super(parent, invokingState);
+		}
+		@Override public int getRuleIndex() { return RULE_p_fList; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof FlixListener ) ((FlixListener)listener).enterP_fList(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitP_fList(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitP_fList(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+
+	public final P_fListContext p_fList() throws RecognitionException {
+		P_fListContext _localctx = new P_fListContext(_ctx, getState());
+		enterRule(_localctx, 212, RULE_p_fList);
+		int _la;
+		try {
+			enterOuterAlt(_localctx, 1);
+			{
+			setState(1588);
+			simple();
+			setState(1597);
+			_errHandler.sync(this);
+			switch ( getInterpreter().adaptivePredict(_input,261,_ctx) ) {
+			case 1:
+				{
+				setState(1590);
+				_la = _input.LA(1);
+				if (_la==WS) {
+					{
+					setState(1589);
+					match(WS);
+					}
+				}
+
+				setState(1592);
+				match(T__19);
+				setState(1594);
+				_la = _input.LA(1);
+				if (_la==WS) {
+					{
+					setState(1593);
+					match(WS);
+					}
+				}
+
+				setState(1596);
+				pattern();
+				}
+				break;
+			}
 			}
 		}
 		catch (RecognitionException re) {
@@ -8586,6 +9121,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitP_fVec(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitP_fVec(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -8691,6 +9231,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitP_fSet(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitP_fSet(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final P_fSetContext p_fSet() throws RecognitionException {
@@ -8795,6 +9340,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitP_fMap(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitP_fMap(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final P_fMapContext p_fMap() throws RecognitionException {
@@ -8892,6 +9442,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitBools(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitBools(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final BoolsContext bools() throws RecognitionException {
@@ -8933,6 +9488,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitNegative(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitNegative(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -8976,6 +9536,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitFloat32(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitFloat32(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -9036,6 +9601,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitFloat64(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitFloat64(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Float64Context float64() throws RecognitionException {
@@ -9095,6 +9665,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitFloatDefault(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitFloatDefault(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final FloatDefaultContext floatDefault() throws RecognitionException {
@@ -9153,6 +9728,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitFloats(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitFloats(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -9214,6 +9794,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitInt8(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitInt8(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Int8Context int8() throws RecognitionException {
@@ -9265,6 +9850,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitInt16(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitInt16(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -9318,6 +9908,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitInt32(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitInt32(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Int32Context int32() throws RecognitionException {
@@ -9369,6 +9964,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitInt64(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitInt64(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -9422,6 +10022,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitBigInt(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitBigInt(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final BigIntContext bigInt() throws RecognitionException {
@@ -9473,6 +10078,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitIntDefault(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitIntDefault(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -9537,6 +10147,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitInts(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitInts(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -9626,6 +10241,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitLiteral(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitLiteral(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final LiteralContext literal() throws RecognitionException {
@@ -9709,6 +10329,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitPrimary(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitPrimary(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final PrimaryContext primary() throws RecognitionException {
@@ -9782,6 +10407,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitVar(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitVar(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final VarContext var() throws RecognitionException {
@@ -9820,6 +10450,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitRef(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitRef(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -9866,6 +10501,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitType(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitType(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -9943,6 +10583,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitArrow(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitArrow(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -10062,6 +10707,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitTuple_unit(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitTuple_unit(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Tuple_unitContext tuple_unit() throws RecognitionException {
@@ -10106,6 +10756,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitTuple_singleton(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitTuple_singleton(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -10175,6 +10830,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitTuple_multi(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitTuple_multi(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -10285,6 +10945,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitTuple(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitTuple(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final TupleContext tuple() throws RecognitionException {
@@ -10353,6 +11018,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitApply(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitApply(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -10471,6 +11141,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitUnary_ops(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitUnary_ops(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Unary_opsContext unary_ops() throws RecognitionException {
@@ -10512,6 +11187,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitLogical_ops(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitLogical_ops(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -10555,6 +11235,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitComparison_ops(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitComparison_ops(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Comparison_opsContext comparison_ops() throws RecognitionException {
@@ -10596,6 +11281,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitMultipve_ops(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitMultipve_ops(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -10639,6 +11329,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitAddve_ops(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitAddve_ops(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Addve_opsContext addve_ops() throws RecognitionException {
@@ -10680,6 +11375,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitExtbin_ops(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitExtbin_ops(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -10740,6 +11440,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitPredicate(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitPredicate(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -10828,6 +11533,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitPredicates(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitPredicates(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final PredicatesContext predicates() throws RecognitionException {
@@ -10902,6 +11612,11 @@ public class FlixParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitPred_true(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitPred_true(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final Pred_trueContext pred_true() throws RecognitionException {
@@ -10937,6 +11652,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitPred_false(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitPred_false(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -10980,6 +11700,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitPred_filter(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitPred_filter(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -11039,6 +11764,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitPred_table(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitPred_table(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -11101,6 +11831,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitPred_notequal(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitPred_notequal(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -11170,6 +11905,11 @@ public class FlixParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof FlixListener ) ((FlixListener)listener).exitPred_loop(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof FlixVisitor ) return ((FlixVisitor<? extends T>)visitor).visitPred_loop(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -11300,37 +12040,37 @@ public class FlixParser extends Parser {
 		"\u0427\n>\3>\3>\5>\u042b\n>\3>\3>\3>\3?\5?\u0431\n?\3?\7?\u0434\n?\f?"+
 		"\16?\u0437\13?\3?\5?\u043a\n?\3?\3?\3?\3?\3?\5?\u0441\n?\3?\3?\5?\u0445"+
 		"\n?\3?\3?\3@\3@\5@\u044b\n@\3@\7@\u044e\n@\f@\16@\u0451\13@\3@\5@\u0454"+
-		"\n@\3@\3@\3A\3A\3B\3B\5B\u045c\nB\3B\3B\5B\u0460\nB\3B\3B\5B\u0464\nB"+
-		"\3B\5B\u0467\nB\3C\3C\5C\u046b\nC\3C\3C\5C\u046f\nC\3C\3C\5C\u0473\nC"+
-		"\3D\3D\5D\u0477\nD\3D\3D\5D\u047b\nD\3D\7D\u047e\nD\fD\16D\u0481\13D\3"+
-		"E\3E\5E\u0485\nE\3E\3E\5E\u0489\nE\3E\3E\5E\u048d\nE\3F\3F\5F\u0491\n"+
-		"F\3F\3F\5F\u0495\nF\3F\3F\7F\u0499\nF\fF\16F\u049c\13F\3G\3G\5G\u04a0"+
-		"\nG\3G\3G\5G\u04a4\nG\3G\3G\7G\u04a8\nG\fG\16G\u04ab\13G\3H\3H\5H\u04af"+
-		"\nH\3H\3H\3H\3H\5H\u04b5\nH\3H\3H\5H\u04b9\nH\3I\3I\5I\u04bd\nI\3I\3I"+
-		"\5I\u04c1\nI\3I\3I\5I\u04c5\nI\3J\3J\5J\u04c9\nJ\3J\3J\3J\5J\u04ce\nJ"+
-		"\3K\3K\5K\u04d2\nK\3K\3K\5K\u04d6\nK\3K\5K\u04d9\nK\3L\3L\3L\3L\3L\3L"+
-		"\3L\3L\3L\3L\3L\3L\3L\3L\3L\3L\3L\3L\3L\5L\u04ee\nL\3M\3M\3M\3M\5M\u04f4"+
-		"\nM\3M\3M\5M\u04f8\nM\3M\3M\5M\u04fc\nM\3M\3M\5M\u0500\nM\3M\3M\3N\3N"+
-		"\5N\u0506\nN\3N\3N\5N\u050a\nN\3N\3N\5N\u050e\nN\3N\3N\5N\u0512\nN\3N"+
-		"\3N\3N\3N\3N\3N\3O\3O\3O\3O\3O\3O\3O\3O\5O\u0522\nO\3O\3O\5O\u0526\nO"+
-		"\3O\3O\3P\3P\3P\3P\5P\u052e\nP\3P\3P\5P\u0532\nP\3P\3P\3Q\3Q\5Q\u0538"+
-		"\nQ\3Q\3Q\5Q\u053c\nQ\3Q\5Q\u053f\nQ\3Q\5Q\u0542\nQ\3Q\5Q\u0545\nQ\3R"+
-		"\3R\3S\3S\3T\3T\3T\5T\u054e\nT\3T\3T\5T\u0552\nT\3T\5T\u0555\nT\3U\3U"+
-		"\5U\u0559\nU\3U\5U\u055c\nU\3U\5U\u055f\nU\3U\3U\3V\3V\5V\u0565\nV\3V"+
-		"\3V\5V\u0569\nV\3V\3V\3W\3W\5W\u056f\nW\3W\3W\5W\u0573\nW\3W\7W\u0576"+
-		"\nW\fW\16W\u0579\13W\3X\3X\3Y\3Y\3Z\3Z\3[\3[\5[\u0583\n[\3[\3[\5[\u0587"+
-		"\n[\3[\5[\u058a\n[\3\\\3\\\5\\\u058e\n\\\3\\\5\\\u0591\n\\\3\\\5\\\u0594"+
-		"\n\\\3\\\3\\\3]\3]\5]\u059a\n]\3]\5]\u059d\n]\3]\5]\u05a0\n]\3]\3]\3^"+
-		"\3^\5^\u05a6\n^\3^\5^\u05a9\n^\3^\5^\u05ac\n^\3^\3^\3_\3_\5_\u05b2\n_"+
-		"\3_\3_\5_\u05b6\n_\3_\3_\3`\3`\5`\u05bc\n`\3`\3`\5`\u05c0\n`\3`\3`\5`"+
-		"\u05c4\n`\3`\3`\5`\u05c8\n`\3`\3`\3a\3a\5a\u05ce\na\3a\3a\5a\u05d2\na"+
-		"\3a\3a\5a\u05d6\na\3a\3a\3b\3b\5b\u05dc\nb\3b\3b\5b\u05e0\nb\3b\3b\5b"+
-		"\u05e4\nb\3b\3b\3c\3c\5c\u05ea\nc\3c\3c\5c\u05ee\nc\3c\5c\u05f1\nc\3d"+
-		"\3d\5d\u05f5\nd\3d\3d\5d\u05f9\nd\3d\7d\u05fc\nd\fd\16d\u05ff\13d\3e\3"+
-		"e\3e\3e\3e\3e\3e\3e\3e\5e\u060a\ne\3f\3f\5f\u060e\nf\3f\3f\5f\u0612\n"+
-		"f\3f\3f\3g\3g\5g\u0618\ng\3g\3g\5g\u061c\ng\3g\7g\u061f\ng\fg\16g\u0622"+
-		"\13g\3h\3h\3h\5h\u0627\nh\3h\3h\5h\u062b\nh\3h\5h\u062e\nh\3i\3i\5i\u0632"+
-		"\ni\3i\5i\u0635\ni\3i\5i\u0638\ni\3i\3i\3j\3j\3k\3k\3l\3l\3m\3m\5m\u0644"+
+		"\n@\3@\3@\3A\3A\5A\u045a\nA\3A\3A\5A\u045e\nA\3A\3A\5A\u0462\nA\3A\5A"+
+		"\u0465\nA\3B\3B\5B\u0469\nB\3B\3B\5B\u046d\nB\3B\3B\5B\u0471\nB\3C\3C"+
+		"\5C\u0475\nC\3C\3C\5C\u0479\nC\3C\7C\u047c\nC\fC\16C\u047f\13C\3D\3D\5"+
+		"D\u0483\nD\3D\3D\5D\u0487\nD\3D\3D\5D\u048b\nD\3E\3E\5E\u048f\nE\3E\3"+
+		"E\5E\u0493\nE\3E\3E\7E\u0497\nE\fE\16E\u049a\13E\3F\3F\5F\u049e\nF\3F"+
+		"\3F\5F\u04a2\nF\3F\3F\7F\u04a6\nF\fF\16F\u04a9\13F\3G\3G\5G\u04ad\nG\3"+
+		"G\3G\3G\3G\5G\u04b3\nG\3G\3G\5G\u04b7\nG\3H\3H\5H\u04bb\nH\3H\3H\5H\u04bf"+
+		"\nH\3H\3H\5H\u04c3\nH\3I\3I\5I\u04c7\nI\3I\3I\3I\5I\u04cc\nI\3J\3J\5J"+
+		"\u04d0\nJ\3J\3J\5J\u04d4\nJ\3J\5J\u04d7\nJ\3K\3K\3K\3K\3K\3K\3K\3K\3K"+
+		"\3K\3K\3K\3K\3K\3K\3K\3K\3K\3K\5K\u04ec\nK\3L\3L\3L\3L\5L\u04f2\nL\3L"+
+		"\3L\5L\u04f6\nL\3L\3L\5L\u04fa\nL\3L\3L\5L\u04fe\nL\3L\3L\3M\3M\5M\u0504"+
+		"\nM\3M\3M\5M\u0508\nM\3M\3M\5M\u050c\nM\3M\3M\5M\u0510\nM\3M\3M\3M\3M"+
+		"\3M\3M\3N\3N\3N\3N\3N\3N\3N\3N\5N\u0520\nN\3N\3N\5N\u0524\nN\3N\3N\3O"+
+		"\3O\3O\3O\5O\u052c\nO\3O\3O\5O\u0530\nO\3O\3O\3P\3P\5P\u0536\nP\3P\3P"+
+		"\5P\u053a\nP\3P\5P\u053d\nP\3P\5P\u0540\nP\3P\5P\u0543\nP\3Q\3Q\3R\3R"+
+		"\3S\3S\3S\5S\u054c\nS\3S\3S\5S\u0550\nS\3S\5S\u0553\nS\3T\3T\5T\u0557"+
+		"\nT\3T\5T\u055a\nT\3T\5T\u055d\nT\3T\3T\3U\3U\5U\u0563\nU\3U\3U\5U\u0567"+
+		"\nU\3U\3U\3V\3V\5V\u056d\nV\3V\3V\5V\u0571\nV\3V\7V\u0574\nV\fV\16V\u0577"+
+		"\13V\3W\3W\3X\3X\3Y\3Y\3Z\3Z\5Z\u0581\nZ\3Z\3Z\5Z\u0585\nZ\3Z\5Z\u0588"+
+		"\nZ\3[\3[\5[\u058c\n[\3[\5[\u058f\n[\3[\5[\u0592\n[\3[\3[\3\\\3\\\5\\"+
+		"\u0598\n\\\3\\\5\\\u059b\n\\\3\\\5\\\u059e\n\\\3\\\3\\\3]\3]\5]\u05a4"+
+		"\n]\3]\5]\u05a7\n]\3]\5]\u05aa\n]\3]\3]\3^\3^\5^\u05b0\n^\3^\3^\5^\u05b4"+
+		"\n^\3^\3^\3_\3_\5_\u05ba\n_\3_\3_\5_\u05be\n_\3_\3_\5_\u05c2\n_\3_\3_"+
+		"\5_\u05c6\n_\3_\3_\3`\3`\5`\u05cc\n`\3`\3`\5`\u05d0\n`\3`\3`\5`\u05d4"+
+		"\n`\3`\3`\3a\3a\5a\u05da\na\3a\3a\5a\u05de\na\3a\3a\5a\u05e2\na\3a\3a"+
+		"\3b\3b\3c\3c\5c\u05ea\nc\3c\3c\5c\u05ee\nc\3c\7c\u05f1\nc\fc\16c\u05f4"+
+		"\13c\3d\3d\3d\3d\3d\3d\3d\3d\3d\5d\u05ff\nd\3e\3e\5e\u0603\ne\3e\3e\5"+
+		"e\u0607\ne\3e\3e\3f\3f\5f\u060d\nf\3f\3f\5f\u0611\nf\3f\7f\u0614\nf\f"+
+		"f\16f\u0617\13f\3g\3g\3g\5g\u061c\ng\3g\3g\5g\u0620\ng\3g\5g\u0623\ng"+
+		"\3h\3h\5h\u0627\nh\3h\5h\u062a\nh\3h\5h\u062d\nh\3h\3h\3i\3i\3j\3j\3k"+
+		"\3k\3l\3l\5l\u0639\nl\3l\3l\5l\u063d\nl\3l\5l\u0640\nl\3m\3m\5m\u0644"+
 		"\nm\3m\5m\u0647\nm\3m\5m\u064a\nm\3m\3m\5m\u064e\nm\3m\5m\u0651\nm\3m"+
 		"\5m\u0654\nm\3m\3m\3n\3n\5n\u065a\nn\3n\5n\u065d\nn\3n\5n\u0660\nn\3n"+
 		"\3n\5n\u0664\nn\3n\5n\u0667\nn\3n\5n\u066a\nn\3n\3n\3o\3o\5o\u0670\no"+
@@ -11389,19 +12129,19 @@ public class FlixParser extends Parser {
 		"d\u030f\3\2\2\2f\u0329\3\2\2\2h\u0344\3\2\2\2j\u0361\3\2\2\2l\u0382\3"+
 		"\2\2\2n\u03ae\3\2\2\2p\u03d7\3\2\2\2r\u03ea\3\2\2\2t\u03f9\3\2\2\2v\u0402"+
 		"\3\2\2\2x\u0412\3\2\2\2z\u0415\3\2\2\2|\u0435\3\2\2\2~\u0448\3\2\2\2\u0080"+
-		"\u0457\3\2\2\2\u0082\u0466\3\2\2\2\u0084\u0468\3\2\2\2\u0086\u0474\3\2"+
-		"\2\2\u0088\u0482\3\2\2\2\u008a\u048e\3\2\2\2\u008c\u049d\3\2\2\2\u008e"+
-		"\u04ac\3\2\2\2\u0090\u04ba\3\2\2\2\u0092\u04cd\3\2\2\2\u0094\u04cf\3\2"+
-		"\2\2\u0096\u04ed\3\2\2\2\u0098\u04ef\3\2\2\2\u009a\u0503\3\2\2\2\u009c"+
-		"\u0519\3\2\2\2\u009e\u0529\3\2\2\2\u00a0\u0535\3\2\2\2\u00a2\u0546\3\2"+
-		"\2\2\u00a4\u0548\3\2\2\2\u00a6\u054d\3\2\2\2\u00a8\u0556\3\2\2\2\u00aa"+
-		"\u0562\3\2\2\2\u00ac\u056c\3\2\2\2\u00ae\u057a\3\2\2\2\u00b0\u057c\3\2"+
-		"\2\2\u00b2\u057e\3\2\2\2\u00b4\u0580\3\2\2\2\u00b6\u058b\3\2\2\2\u00b8"+
-		"\u0597\3\2\2\2\u00ba\u05a3\3\2\2\2\u00bc\u05af\3\2\2\2\u00be\u05b9\3\2"+
-		"\2\2\u00c0\u05cb\3\2\2\2\u00c2\u05d9\3\2\2\2\u00c4\u05e7\3\2\2\2\u00c6"+
-		"\u05f2\3\2\2\2\u00c8\u0609\3\2\2\2\u00ca\u060b\3\2\2\2\u00cc\u0615\3\2"+
-		"\2\2\u00ce\u0626\3\2\2\2\u00d0\u062f\3\2\2\2\u00d2\u063b\3\2\2\2\u00d4"+
-		"\u063d\3\2\2\2\u00d6\u063f\3\2\2\2\u00d8\u0641\3\2\2\2\u00da\u0657\3\2"+
+		"\u0464\3\2\2\2\u0082\u0466\3\2\2\2\u0084\u0472\3\2\2\2\u0086\u0480\3\2"+
+		"\2\2\u0088\u048c\3\2\2\2\u008a\u049b\3\2\2\2\u008c\u04aa\3\2\2\2\u008e"+
+		"\u04b8\3\2\2\2\u0090\u04cb\3\2\2\2\u0092\u04cd\3\2\2\2\u0094\u04eb\3\2"+
+		"\2\2\u0096\u04ed\3\2\2\2\u0098\u0501\3\2\2\2\u009a\u0517\3\2\2\2\u009c"+
+		"\u0527\3\2\2\2\u009e\u0533\3\2\2\2\u00a0\u0544\3\2\2\2\u00a2\u0546\3\2"+
+		"\2\2\u00a4\u054b\3\2\2\2\u00a6\u0554\3\2\2\2\u00a8\u0560\3\2\2\2\u00aa"+
+		"\u056a\3\2\2\2\u00ac\u0578\3\2\2\2\u00ae\u057a\3\2\2\2\u00b0\u057c\3\2"+
+		"\2\2\u00b2\u057e\3\2\2\2\u00b4\u0589\3\2\2\2\u00b6\u0595\3\2\2\2\u00b8"+
+		"\u05a1\3\2\2\2\u00ba\u05ad\3\2\2\2\u00bc\u05b7\3\2\2\2\u00be\u05c9\3\2"+
+		"\2\2\u00c0\u05d7\3\2\2\2\u00c2\u05e5\3\2\2\2\u00c4\u05e7\3\2\2\2\u00c6"+
+		"\u05fe\3\2\2\2\u00c8\u0600\3\2\2\2\u00ca\u060a\3\2\2\2\u00cc\u061b\3\2"+
+		"\2\2\u00ce\u0624\3\2\2\2\u00d0\u0630\3\2\2\2\u00d2\u0632\3\2\2\2\u00d4"+
+		"\u0634\3\2\2\2\u00d6\u0636\3\2\2\2\u00d8\u0641\3\2\2\2\u00da\u0657\3\2"+
 		"\2\2\u00dc\u066d\3\2\2\2\u00de\u0683\3\2\2\2\u00e0\u0685\3\2\2\2\u00e2"+
 		"\u0688\3\2\2\2\u00e4\u0690\3\2\2\2\u00e6\u0698\3\2\2\2\u00e8\u06a1\3\2"+
 		"\2\2\u00ea\u06a4\3\2\2\2\u00ec\u06aa\3\2\2\2\u00ee\u06b0\3\2\2\2\u00f0"+
@@ -11476,7 +12216,7 @@ public class FlixParser extends Parser {
 		"\u01e1\3\2\2\2\u01e2\u01e3\3\2\2\2\u01e3\u01e4\3\2\2\2\u01e4\u01e6\5\b"+
 		"\5\2\u01e5\u01de\3\2\2\2\u01e6\u01e9\3\2\2\2\u01e7\u01e5\3\2\2\2\u01e7"+
 		"\u01e8\3\2\2\2\u01e8\67\3\2\2\2\u01e9\u01e7\3\2\2\2\u01ea\u01eb\7]\2\2"+
-		"\u01eb\u01ec\7J\2\2\u01ec\u01ee\5\u00c4c\2\u01ed\u01ef\7J\2\2\u01ee\u01ed"+
+		"\u01eb\u01ec\7J\2\2\u01ec\u01ee\5\u00c2b\2\u01ed\u01ef\7J\2\2\u01ee\u01ed"+
 		"\3\2\2\2\u01ee\u01ef\3\2\2\2\u01ef\u01f0\3\2\2\2\u01f0\u01f2\7\13\2\2"+
 		"\u01f1\u01f3\7J\2\2\u01f2\u01f1\3\2\2\2\u01f2\u01f3\3\2\2\2\u01f3\u01f4"+
 		"\3\2\2\2\u01f4\u01f6\5\u0080A\2\u01f5\u01f7\7K\2\2\u01f6\u01f5\3\2\2\2"+
@@ -11664,7 +12404,7 @@ public class FlixParser extends Parser {
 		"\u0409\u040b\7J\2\2\u040a\u0409\3\2\2\2\u040a\u040b\3\2\2\2\u040b\u040c"+
 		"\3\2\2\2\u040c\u040e\5\u011c\u008f\2\u040d\u040f\7J\2\2\u040e\u040d\3"+
 		"\2\2\2\u040e\u040f\3\2\2\2\u040f\u0410\3\2\2\2\u0410\u0411\7\3\2\2\u0411"+
-		"w\3\2\2\2\u0412\u0413\5\u0086D\2\u0413y\3\2\2\2\u0414\u0416\7J\2\2\u0415"+
+		"w\3\2\2\2\u0412\u0413\5\u0084C\2\u0413y\3\2\2\2\u0414\u0416\7J\2\2\u0415"+
 		"\u0414\3\2\2\2\u0415\u0416\3\2\2\2\u0416\u0417\3\2\2\2\u0417\u0419\7V"+
 		"\2\2\u0418\u041a\7J\2\2\u0419\u0418\3\2\2\2\u0419\u041a\3\2\2\2\u041a"+
 		"\u041b\3\2\2\2\u041b\u041c\5\u0100\u0081\2\u041c\u041e\7\22\2\2\u041d"+
@@ -11687,334 +12427,335 @@ public class FlixParser extends Parser {
 		"\u044c\3\2\2\2\u044e\u0451\3\2\2\2\u044f\u044d\3\2\2\2\u044f\u0450\3\2"+
 		"\2\2\u0450\u0453\3\2\2\2\u0451\u044f\3\2\2\2\u0452\u0454\7J\2\2\u0453"+
 		"\u0452\3\2\2\2\u0453\u0454\3\2\2\2\u0454\u0455\3\2\2\2\u0455\u0456\7\n"+
-		"\2\2\u0456\177\3\2\2\2\u0457\u0458\5\u0082B\2\u0458\u0081\3\2\2\2\u0459"+
-		"\u045b\7\t\2\2\u045a\u045c\7J\2\2\u045b\u045a\3\2\2\2\u045b\u045c\3\2"+
-		"\2\2\u045c\u045d\3\2\2\2\u045d\u045f\5\u0080A\2\u045e\u0460\7J\2\2\u045f"+
-		"\u045e\3\2\2\2\u045f\u0460\3\2\2\2\u0460\u0461\3\2\2\2\u0461\u0463\7\n"+
-		"\2\2\u0462\u0464\7J\2\2\u0463\u0462\3\2\2\2\u0463\u0464\3\2\2\2\u0464"+
-		"\u0467\3\2\2\2\u0465\u0467\5\u0084C\2\u0466\u0459\3\2\2\2\u0466\u0465"+
-		"\3\2\2\2\u0467\u0083\3\2\2\2\u0468\u0472\5\u0088E\2\u0469\u046b\7J\2\2"+
-		"\u046a\u0469\3\2\2\2\u046a\u046b\3\2\2\2\u046b\u046c\3\2\2\2\u046c\u046e"+
-		"\5\u0110\u0089\2\u046d\u046f\7J\2\2\u046e\u046d\3\2\2\2\u046e\u046f\3"+
-		"\2\2\2\u046f\u0470\3\2\2\2\u0470\u0471\5\u0088E\2\u0471\u0473\3\2\2\2"+
-		"\u0472\u046a\3\2\2\2\u0472\u0473\3\2\2\2\u0473\u0085\3\2\2\2\u0474\u047f"+
-		"\5\u0080A\2\u0475\u0477\7J\2\2\u0476\u0475\3\2\2\2\u0476\u0477\3\2\2\2"+
-		"\u0477\u0478\3\2\2\2\u0478\u047a\7\5\2\2\u0479\u047b\7J\2\2\u047a\u0479"+
-		"\3\2\2\2\u047a\u047b\3\2\2\2\u047b\u047c\3\2\2\2\u047c\u047e\5\u0080A"+
-		"\2\u047d\u0476\3\2\2\2\u047e\u0481\3\2\2\2\u047f\u047d\3\2\2\2\u047f\u0480"+
-		"\3\2\2\2\u0480\u0087\3\2\2\2\u0481\u047f\3\2\2\2\u0482\u048c\5\u008aF"+
-		"\2\u0483\u0485\7J\2\2\u0484\u0483\3\2\2\2\u0484\u0485\3\2\2\2\u0485\u0486"+
-		"\3\2\2\2\u0486\u0488\5\u0112\u008a\2\u0487\u0489\7J\2\2\u0488\u0487\3"+
-		"\2\2\2\u0488\u0489\3\2\2\2\u0489\u048a\3\2\2\2\u048a\u048b\5\u008aF\2"+
-		"\u048b\u048d\3\2\2\2\u048c\u0484\3\2\2\2\u048c\u048d\3\2\2\2\u048d\u0089"+
-		"\3\2\2\2\u048e\u049a\5\u008cG\2\u048f\u0491\7J\2\2\u0490\u048f\3\2\2\2"+
-		"\u0490\u0491\3\2\2\2\u0491\u0492\3\2\2\2\u0492\u0494\5\u0116\u008c\2\u0493"+
-		"\u0495\7J\2\2\u0494\u0493\3\2\2\2\u0494\u0495\3\2\2\2\u0495\u0496\3\2"+
-		"\2\2\u0496\u0497\5\u008cG\2\u0497\u0499\3\2\2\2\u0498\u0490\3\2\2\2\u0499"+
-		"\u049c\3\2\2\2\u049a\u0498\3\2\2\2\u049a\u049b\3\2\2\2\u049b\u008b\3\2"+
-		"\2\2\u049c\u049a\3\2\2\2\u049d\u04a9\5\u008eH\2\u049e\u04a0\7J\2\2\u049f"+
-		"\u049e\3\2\2\2\u049f\u04a0\3\2\2\2\u04a0\u04a1\3\2\2\2\u04a1\u04a3\5\u0114"+
-		"\u008b\2\u04a2\u04a4\7J\2\2\u04a3\u04a2\3\2\2\2\u04a3\u04a4\3\2\2\2\u04a4"+
-		"\u04a5\3\2\2\2\u04a5\u04a6\5\u008eH\2\u04a6\u04a8\3\2\2\2\u04a7\u049f"+
-		"\3\2\2\2\u04a8\u04ab\3\2\2\2\u04a9\u04a7\3\2\2\2\u04a9\u04aa\3\2\2\2\u04aa"+
-		"\u008d\3\2\2\2\u04ab\u04a9\3\2\2\2\u04ac\u04b8\5\u0090I\2\u04ad\u04af"+
-		"\7J\2\2\u04ae\u04ad\3\2\2\2\u04ae\u04af\3\2\2\2\u04af\u04b0\3\2\2\2\u04b0"+
-		"\u04b1\7\23\2\2\u04b1\u04b2\5\30\r\2\u04b2\u04b4\7\23\2\2\u04b3\u04b5"+
-		"\7J\2\2\u04b4\u04b3\3\2\2\2\u04b4\u04b5\3\2\2\2\u04b5\u04b6\3\2\2\2\u04b6"+
-		"\u04b7\5\u0090I\2\u04b7\u04b9\3\2\2\2\u04b8\u04ae\3\2\2\2\u04b8\u04b9"+
-		"\3\2\2\2\u04b9\u008f\3\2\2\2\u04ba\u04c4\5\u0092J\2\u04bb\u04bd\7J\2\2"+
-		"\u04bc\u04bb\3\2\2\2\u04bc\u04bd\3\2\2\2\u04bd\u04be\3\2\2\2\u04be\u04c0"+
-		"\5\u0118\u008d\2\u04bf\u04c1\7J\2\2\u04c0\u04bf\3\2\2\2\u04c0\u04c1\3"+
-		"\2\2\2\u04c1\u04c2\3\2\2\2\u04c2\u04c3\5\u0092J\2\u04c3\u04c5\3\2\2\2"+
-		"\u04c4\u04bc\3\2\2\2\u04c4\u04c5\3\2\2\2\u04c5\u0091\3\2\2\2\u04c6\u04c8"+
-		"\5\u010e\u0088\2\u04c7\u04c9\7J\2\2\u04c8\u04c7\3\2\2\2\u04c8\u04c9\3"+
-		"\2\2\2\u04c9\u04ca\3\2\2\2\u04ca\u04cb\5\u0092J\2\u04cb\u04ce\3\2\2\2"+
-		"\u04cc\u04ce\5\u0094K\2\u04cd\u04c6\3\2\2\2\u04cd\u04cc\3\2\2\2\u04ce"+
-		"\u0093\3\2\2\2\u04cf\u04d8\5\u00b4[\2\u04d0\u04d2\7J\2\2\u04d1\u04d0\3"+
-		"\2\2\2\u04d1\u04d2\3\2\2\2\u04d2\u04d3\3\2\2\2\u04d3\u04d5\7\6\2\2\u04d4"+
-		"\u04d6\7J\2\2\u04d5\u04d4\3\2\2\2\u04d5\u04d6\3\2\2\2\u04d6\u04d7\3\2"+
-		"\2\2\u04d7\u04d9\5\u0100\u0081\2\u04d8\u04d1\3\2\2\2\u04d8\u04d9\3\2\2"+
-		"\2\u04d9\u0095\3\2\2\2\u04da\u04ee\5\u0098M\2\u04db\u04ee\5\u009aN\2\u04dc"+
-		"\u04ee\5\u009cO\2\u04dd\u04ee\5\u009eP\2\u04de\u04ee\5\u00a6T\2\u04df"+
-		"\u04ee\5\u00be`\2\u04e0\u04ee\5\u00a8U\2\u04e1\u04ee\5\u00b2Z\2\u04e2"+
-		"\u04ee\5\u00b6\\\2\u04e3\u04ee\5\u00b8]\2\u04e4\u04ee\5\u00ba^\2\u04e5"+
-		"\u04ee\5\u00f8}\2\u04e6\u04ee\5\u00c0a\2\u04e7\u04ee\5\u00c2b\2\u04e8"+
-		"\u04ee\5\u00a4S\2\u04e9\u04ee\5\u00bc_\2\u04ea\u04ee\5\u00b0Y\2\u04eb"+
-		"\u04ee\5\u00a2R\2\u04ec\u04ee\5\u00aeX\2\u04ed\u04da\3\2\2\2\u04ed\u04db"+
-		"\3\2\2\2\u04ed\u04dc\3\2\2\2\u04ed\u04dd\3\2\2\2\u04ed\u04de\3\2\2\2\u04ed"+
-		"\u04df\3\2\2\2\u04ed\u04e0\3\2\2\2\u04ed\u04e1\3\2\2\2\u04ed\u04e2\3\2"+
-		"\2\2\u04ed\u04e3\3\2\2\2\u04ed\u04e4\3\2\2\2\u04ed\u04e5\3\2\2\2\u04ed"+
-		"\u04e6\3\2\2\2\u04ed\u04e7\3\2\2\2\u04ed\u04e8\3\2\2\2\u04ed\u04e9\3\2"+
-		"\2\2\u04ed\u04ea\3\2\2\2\u04ed\u04eb\3\2\2\2\u04ed\u04ec\3\2\2\2\u04ee"+
-		"\u0097\3\2\2\2\u04ef\u04f0\7V\2\2\u04f0\u04f1\7J\2\2\u04f1\u04f3\5\u00c4"+
-		"c\2\u04f2\u04f4\7J\2\2\u04f3\u04f2\3\2\2\2\u04f3\u04f4\3\2\2\2\u04f4\u04f5"+
-		"\3\2\2\2\u04f5\u04f7\7\20\2\2\u04f6\u04f8\7J\2\2\u04f7\u04f6\3\2\2\2\u04f7"+
-		"\u04f8\3\2\2\2\u04f8\u04f9\3\2\2\2\u04f9\u04fb\5\u0080A\2\u04fa\u04fc"+
-		"\7J\2\2\u04fb\u04fa\3\2\2\2\u04fb\u04fc\3\2\2\2\u04fc\u04fd\3\2\2\2\u04fd"+
-		"\u04ff\7K\2\2\u04fe\u0500\7J\2\2\u04ff\u04fe\3\2\2\2\u04ff\u0500\3\2\2"+
-		"\2\u0500\u0501\3\2\2\2\u0501\u0502\5\u0080A\2\u0502\u0099\3\2\2\2\u0503"+
-		"\u0505\7^\2\2\u0504\u0506\7J\2\2\u0505\u0504\3\2\2\2\u0505\u0506\3\2\2"+
-		"\2\u0506\u0507\3\2\2\2\u0507\u0509\7\7\2\2\u0508\u050a\7J\2\2\u0509\u0508"+
-		"\3\2\2\2\u0509\u050a\3\2\2\2\u050a\u050b\3\2\2\2\u050b\u050d\5\u0080A"+
-		"\2\u050c\u050e\7J\2\2\u050d\u050c\3\2\2\2\u050d\u050e\3\2\2\2\u050e\u050f"+
-		"\3\2\2\2\u050f\u0511\7\b\2\2\u0510\u0512\7J\2\2\u0511\u0510\3\2\2\2\u0511"+
-		"\u0512\3\2\2\2\u0512\u0513\3\2\2\2\u0513\u0514\5\u0080A\2\u0514\u0515"+
-		"\7J\2\2\u0515\u0516\7_\2\2\u0516\u0517\7J\2\2\u0517\u0518\5\u0080A\2\u0518"+
-		"\u009b\3\2\2\2\u0519\u051a\7Z\2\2\u051a\u051b\7J\2\2\u051b\u051c\5\u0080"+
-		"A\2\u051c\u051d\7J\2\2\u051d\u051e\7[\2\2\u051e\u051f\7J\2\2\u051f\u0521"+
-		"\7\t\2\2\u0520\u0522\7J\2\2\u0521\u0520\3\2\2\2\u0521\u0522\3\2\2\2\u0522"+
-		"\u0523\3\2\2\2\u0523\u0525\5:\36\2\u0524\u0526\7J\2\2\u0525\u0524\3\2"+
-		"\2\2\u0525\u0526\3\2\2\2\u0526\u0527\3\2\2\2\u0527\u0528\7\n\2\2\u0528"+
-		"\u009d\3\2\2\2\u0529\u052a\7Y\2\2\u052a\u052b\7J\2\2\u052b\u052d\7\t\2"+
-		"\2\u052c\u052e\7J\2\2\u052d\u052c\3\2\2\2\u052d\u052e\3\2\2\2\u052e\u052f"+
-		"\3\2\2\2\u052f\u0531\5> \2\u0530\u0532\7J\2\2\u0531\u0530\3\2\2\2\u0531"+
-		"\u0532\3\2\2\2\u0532\u0533\3\2\2\2\u0533\u0534\7\n\2\2\u0534\u009f\3\2"+
-		"\2\2\u0535\u0544\5\u0096L\2\u0536\u0538\7J\2\2\u0537\u0536\3\2\2\2\u0537"+
-		"\u0538\3\2\2\2\u0538\u0539\3\2\2\2\u0539\u053b\7\7\2\2\u053a\u053c\7J"+
-		"\2\2\u053b\u053a\3\2\2\2\u053b\u053c\3\2\2\2\u053c\u053e\3\2\2\2\u053d"+
-		"\u053f\5\u0086D\2\u053e\u053d\3\2\2\2\u053e\u053f\3\2\2\2\u053f\u0541"+
-		"\3\2\2\2\u0540\u0542\7J\2\2\u0541\u0540\3\2\2\2\u0541\u0542\3\2\2\2\u0542"+
-		"\u0543\3\2\2\2\u0543\u0545\7\b\2\2\u0544\u0537\3\2\2\2\u0544\u0545\3\2"+
-		"\2\2\u0545\u00a1\3\2\2\2\u0546\u0547\5$\23\2\u0547\u00a3\3\2\2\2\u0548"+
-		"\u0549\5\30\r\2\u0549\u00a5\3\2\2\2\u054a\u054b\5\"\22\2\u054b\u054c\7"+
-		"\3\2\2\u054c\u054e\3\2\2\2\u054d\u054a\3\2\2\2\u054d\u054e\3\2\2\2\u054e"+
-		"\u054f\3\2\2\2\u054f\u0554\5\36\20\2\u0550\u0552\7J\2\2\u0551\u0550\3"+
-		"\2\2\2\u0551\u0552\3\2\2\2\u0552\u0553\3\2\2\2\u0553\u0555\5\u00a8U\2"+
-		"\u0554\u0551\3\2\2\2\u0554\u0555\3\2\2\2\u0555\u00a7\3\2\2\2\u0556\u0558"+
-		"\7\7\2\2\u0557\u0559\7J\2\2\u0558\u0557\3\2\2\2\u0558\u0559\3\2\2\2\u0559"+
-		"\u055b\3\2\2\2\u055a\u055c\5\u0086D\2\u055b\u055a\3\2\2\2\u055b\u055c"+
-		"\3\2\2\2\u055c\u055e\3\2\2\2\u055d\u055f\7J\2\2\u055e\u055d\3\2\2\2\u055e"+
-		"\u055f\3\2\2\2\u055f\u0560\3\2\2\2\u0560\u0561\7\b\2\2\u0561\u00a9\3\2"+
-		"\2\2\u0562\u0564\5\u0080A\2\u0563\u0565\7J\2\2\u0564\u0563\3\2\2\2\u0564"+
-		"\u0565\3\2\2\2\u0565\u0566\3\2\2\2\u0566\u0568\7\24\2\2\u0567\u0569\7"+
-		"J\2\2\u0568\u0567\3\2\2\2\u0568\u0569\3\2\2\2\u0569\u056a\3\2\2\2\u056a"+
-		"\u056b\5\u0080A\2\u056b\u00ab\3\2\2\2\u056c\u0577\5\u00aaV\2\u056d\u056f"+
-		"\7J\2\2\u056e\u056d\3\2\2\2\u056e\u056f\3\2\2\2\u056f\u0570\3\2\2\2\u0570"+
-		"\u0572\7\5\2\2\u0571\u0573\7J\2\2\u0572\u0571\3\2\2\2\u0572\u0573\3\2"+
-		"\2\2\u0573\u0574\3\2\2\2\u0574\u0576\5\u00aaV\2\u0575\u056e\3\2\2\2\u0576"+
-		"\u0579\3\2\2\2\u0577\u0575\3\2\2\2\u0577\u0578\3\2\2\2\u0578\u00ad\3\2"+
-		"\2\2\u0579\u0577\3\2\2\2\u057a\u057b\7\25\2\2\u057b\u00af\3\2\2\2\u057c"+
-		"\u057d\7\\\2\2\u057d\u00b1\3\2\2\2\u057e\u057f\7X\2\2\u057f\u00b3\3\2"+
-		"\2\2\u0580\u0589\5\u00a0Q\2\u0581\u0583\7J\2\2\u0582\u0581\3\2\2\2\u0582"+
-		"\u0583\3\2\2\2\u0583\u0584\3\2\2\2\u0584\u0586\7\26\2\2\u0585\u0587\7"+
-		"J\2\2\u0586\u0585\3\2\2\2\u0586\u0587\3\2\2\2\u0587\u0588\3\2\2\2\u0588"+
-		"\u058a\5\u0080A\2\u0589\u0582\3\2\2\2\u0589\u058a\3\2\2\2\u058a\u00b5"+
-		"\3\2\2\2\u058b\u058d\7\27\2\2\u058c\u058e\7J\2\2\u058d\u058c\3\2\2\2\u058d"+
-		"\u058e\3\2\2\2\u058e\u0590\3\2\2\2\u058f\u0591\5\u0086D\2\u0590\u058f"+
-		"\3\2\2\2\u0590\u0591\3\2\2\2\u0591\u0593\3\2\2\2\u0592\u0594\7J\2\2\u0593"+
-		"\u0592\3\2\2\2\u0593\u0594\3\2\2\2\u0594\u0595\3\2\2\2\u0595\u0596\7\r"+
-		"\2\2\u0596\u00b7\3\2\2\2\u0597\u0599\7\30\2\2\u0598\u059a\7J\2\2\u0599"+
-		"\u0598\3\2\2\2\u0599\u059a\3\2\2\2\u059a\u059c\3\2\2\2\u059b\u059d\5\u0086"+
-		"D\2\u059c\u059b\3\2\2\2\u059c\u059d\3\2\2\2\u059d\u059f\3\2\2\2\u059e"+
-		"\u05a0\7J\2\2\u059f\u059e\3\2\2\2\u059f\u05a0\3\2\2\2\u05a0\u05a1\3\2"+
-		"\2\2\u05a1\u05a2\7\n\2\2\u05a2\u00b9\3\2\2\2\u05a3\u05a5\7\31\2\2\u05a4"+
-		"\u05a6\7J\2\2\u05a5\u05a4\3\2\2\2\u05a5\u05a6\3\2\2\2\u05a6\u05a8\3\2"+
-		"\2\2\u05a7\u05a9\5\u00acW\2\u05a8\u05a7\3\2\2\2\u05a8\u05a9\3\2\2\2\u05a9"+
-		"\u05ab\3\2\2\2\u05aa\u05ac\7J\2\2\u05ab\u05aa\3\2\2\2\u05ab\u05ac\3\2"+
-		"\2\2\u05ac\u05ad\3\2\2\2\u05ad\u05ae\7\n\2\2\u05ae\u00bb\3\2\2\2\u05af"+
-		"\u05b1\5$\23\2\u05b0\u05b2\7J\2\2\u05b1\u05b0\3\2\2\2\u05b1\u05b2\3\2"+
-		"\2\2\u05b2\u05b3\3\2\2\2\u05b3\u05b5\7\24\2\2\u05b4\u05b6\7J\2\2\u05b5"+
-		"\u05b4\3\2\2\2\u05b5\u05b6\3\2\2\2\u05b6\u05b7\3\2\2\2\u05b7\u05b8\5\u0080"+
-		"A\2\u05b8\u00bd\3\2\2\2\u05b9\u05bb\7\7\2\2\u05ba\u05bc\7J\2\2\u05bb\u05ba"+
-		"\3\2\2\2\u05bb\u05bc\3\2\2\2\u05bc\u05bd\3\2\2\2\u05bd\u05bf\5&\24\2\u05be"+
-		"\u05c0\7J\2\2\u05bf\u05be\3\2\2\2\u05bf\u05c0\3\2\2\2\u05c0\u05c1\3\2"+
-		"\2\2\u05c1\u05c3\7\b\2\2\u05c2\u05c4\7J\2\2\u05c3\u05c2\3\2\2\2\u05c3"+
-		"\u05c4\3\2\2\2\u05c4\u05c5\3\2\2\2\u05c5\u05c7\7\24\2\2\u05c6\u05c8\7"+
-		"J\2\2\u05c7\u05c6\3\2\2\2\u05c7\u05c8\3\2\2\2\u05c8\u05c9\3\2\2\2\u05c9"+
-		"\u05ca\5\u0080A\2\u05ca\u00bf\3\2\2\2\u05cb\u05cd\t\3\2\2\u05cc\u05ce"+
-		"\7J\2\2\u05cd\u05cc\3\2\2\2\u05cd\u05ce\3\2\2\2\u05ce\u05cf\3\2\2\2\u05cf"+
-		"\u05d1\5,\27\2\u05d0\u05d2\7J\2\2\u05d1\u05d0\3\2\2\2\u05d1\u05d2\3\2"+
-		"\2\2\u05d2\u05d3\3\2\2\2\u05d3\u05d5\7\3\2\2\u05d4\u05d6\7J\2\2\u05d5"+
-		"\u05d4\3\2\2\2\u05d5\u05d6\3\2\2\2\u05d6\u05d7\3\2\2\2\u05d7\u05d8\5\u0080"+
-		"A\2\u05d8\u00c1\3\2\2\2\u05d9\u05db\t\4\2\2\u05da\u05dc\7J\2\2\u05db\u05da"+
-		"\3\2\2\2\u05db\u05dc\3\2\2\2\u05dc\u05dd\3\2\2\2\u05dd\u05df\5,\27\2\u05de"+
-		"\u05e0\7J\2\2\u05df\u05de\3\2\2\2\u05df\u05e0\3\2\2\2\u05e0\u05e1\3\2"+
-		"\2\2\u05e1\u05e3\7\3\2\2\u05e2\u05e4\7J\2\2\u05e3\u05e2\3\2\2\2\u05e3"+
-		"\u05e4\3\2\2\2\u05e4\u05e5\3\2\2\2\u05e5\u05e6\5\u0080A\2\u05e6\u00c3"+
-		"\3\2\2\2\u05e7\u05f0\5\u00c8e\2\u05e8\u05ea\7J\2\2\u05e9\u05e8\3\2\2\2"+
-		"\u05e9\u05ea\3\2\2\2\u05ea\u05eb\3\2\2\2\u05eb\u05ed\7\26\2\2\u05ec\u05ee"+
-		"\7J\2\2\u05ed\u05ec\3\2\2\2\u05ed\u05ee\3\2\2\2\u05ee\u05ef\3\2\2\2\u05ef"+
-		"\u05f1\5\u00c4c\2\u05f0\u05e9\3\2\2\2\u05f0\u05f1\3\2\2\2\u05f1\u00c5"+
-		"\3\2\2\2\u05f2\u05fd\5\u00c4c\2\u05f3\u05f5\7J\2\2\u05f4\u05f3\3\2\2\2"+
-		"\u05f4\u05f5\3\2\2\2\u05f5\u05f6\3\2\2\2\u05f6\u05f8\7\5\2\2\u05f7\u05f9"+
-		"\7J\2\2\u05f8\u05f7\3\2\2\2\u05f8\u05f9\3\2\2\2\u05f9\u05fa\3\2\2\2\u05fa"+
-		"\u05fc\5\u00c4c\2\u05fb\u05f4\3\2\2\2\u05fc\u05ff\3\2\2\2\u05fd\u05fb"+
-		"\3\2\2\2\u05fd\u05fe\3\2\2\2\u05fe\u00c7\3\2\2\2\u05ff\u05fd\3\2\2\2\u0600"+
-		"\u060a\5\u00d4k\2\u0601\u060a\5\u00f8}\2\u0602\u060a\5\u00d6l\2\u0603"+
-		"\u060a\7\\\2\2\u0604\u060a\5\u00ceh\2\u0605\u060a\5\u00d0i\2\u0606\u060a"+
-		"\5\u00d8m\2\u0607\u060a\5\u00dan\2\u0608\u060a\5\u00dco\2\u0609\u0600"+
-		"\3\2\2\2\u0609\u0601\3\2\2\2\u0609\u0602\3\2\2\2\u0609\u0603\3\2\2\2\u0609"+
-		"\u0604\3\2\2\2\u0609\u0605\3\2\2\2\u0609\u0606\3\2\2\2\u0609\u0607\3\2"+
-		"\2\2\u0609\u0608\3\2\2\2\u060a\u00c9\3\2\2\2\u060b\u060d\5\u00c4c\2\u060c"+
-		"\u060e\7J\2\2\u060d\u060c\3\2\2\2\u060d\u060e\3\2\2\2\u060e\u060f\3\2"+
-		"\2\2\u060f\u0611\7\24\2\2\u0610\u0612\7J\2\2\u0611\u0610\3\2\2\2\u0611"+
-		"\u0612\3\2\2\2\u0612\u0613\3\2\2\2\u0613\u0614\5\u00c4c\2\u0614\u00cb"+
-		"\3\2\2\2\u0615\u0620\5\u00caf\2\u0616\u0618\7J\2\2\u0617\u0616\3\2\2\2"+
-		"\u0617\u0618\3\2\2\2\u0618\u0619\3\2\2\2\u0619\u061b\7\5\2\2\u061a\u061c"+
-		"\7J\2\2\u061b\u061a\3\2\2\2\u061b\u061c\3\2\2\2\u061c\u061d\3\2\2\2\u061d"+
-		"\u061f\5\u00caf\2\u061e\u0617\3\2\2\2\u061f\u0622\3\2\2\2\u0620\u061e"+
-		"\3\2\2\2\u0620\u0621\3\2\2\2\u0621\u00cd\3\2\2\2\u0622\u0620\3\2\2\2\u0623"+
-		"\u0624\5\"\22\2\u0624\u0625\7\3\2\2\u0625\u0627\3\2\2\2\u0626\u0623\3"+
-		"\2\2\2\u0626\u0627\3\2\2\2\u0627\u0628\3\2\2\2\u0628\u062d\5\36\20\2\u0629"+
-		"\u062b\7J\2\2\u062a\u0629\3\2\2\2\u062a\u062b\3\2\2\2\u062b\u062c\3\2"+
-		"\2\2\u062c\u062e\5\u00c4c\2\u062d\u062a\3\2\2\2\u062d\u062e\3\2\2\2\u062e"+
-		"\u00cf\3\2\2\2\u062f\u0631\7\7\2\2\u0630\u0632\7J\2\2\u0631\u0630\3\2"+
-		"\2\2\u0631\u0632\3\2\2\2\u0632\u0634\3\2\2\2\u0633\u0635\5\u00c6d\2\u0634"+
-		"\u0633\3\2\2\2\u0634\u0635\3\2\2\2\u0635\u0637\3\2\2\2\u0636\u0638\7J"+
-		"\2\2\u0637\u0636\3\2\2\2\u0637\u0638\3\2\2\2\u0638\u0639\3\2\2\2\u0639"+
-		"\u063a\7\b\2\2\u063a\u00d1\3\2\2\2\u063b\u063c\7\\\2\2\u063c\u00d3\3\2"+
-		"\2\2\u063d\u063e\7X\2\2\u063e\u00d5\3\2\2\2\u063f\u0640\5\b\5\2\u0640"+
-		"\u00d7\3\2\2\2\u0641\u0643\7\27\2\2\u0642\u0644\7J\2\2\u0643\u0642\3\2"+
-		"\2\2\u0643\u0644\3\2\2\2\u0644\u0646\3\2\2\2\u0645\u0647\5\u00c6d\2\u0646"+
-		"\u0645\3\2\2\2\u0646\u0647\3\2\2\2\u0647\u0650\3\2\2\2\u0648\u064a\7J"+
-		"\2\2\u0649\u0648\3\2\2\2\u0649\u064a\3\2\2\2\u064a\u064b\3\2\2\2\u064b"+
-		"\u064d\7\5\2\2\u064c\u064e\7J\2\2\u064d\u064c\3\2\2\2\u064d\u064e\3\2"+
-		"\2\2\u064e\u064f\3\2\2\2\u064f\u0651\7\36\2\2\u0650\u0649\3\2\2\2\u0650"+
-		"\u0651\3\2\2\2\u0651\u0653\3\2\2\2\u0652\u0654\7J\2\2\u0653\u0652\3\2"+
-		"\2\2\u0653\u0654\3\2\2\2\u0654\u0655\3\2\2\2\u0655\u0656\7\r\2\2\u0656"+
-		"\u00d9\3\2\2\2\u0657\u0659\7\30\2\2\u0658\u065a\7J\2\2\u0659\u0658\3\2"+
-		"\2\2\u0659\u065a\3\2\2\2\u065a\u065c\3\2\2\2\u065b\u065d\5\u00c6d\2\u065c"+
-		"\u065b\3\2\2\2\u065c\u065d\3\2\2\2\u065d\u0666\3\2\2\2\u065e\u0660\7J"+
-		"\2\2\u065f\u065e\3\2\2\2\u065f\u0660\3\2\2\2\u0660\u0661\3\2\2\2\u0661"+
-		"\u0663\7\5\2\2\u0662\u0664\7J\2\2\u0663\u0662\3\2\2\2\u0663\u0664\3\2"+
-		"\2\2\u0664\u0665\3\2\2\2\u0665\u0667\7\36\2\2\u0666\u065f\3\2\2\2\u0666"+
-		"\u0667\3\2\2\2\u0667\u0669\3\2\2\2\u0668\u066a\7J\2\2\u0669\u0668\3\2"+
-		"\2\2\u0669\u066a\3\2\2\2\u066a\u066b\3\2\2\2\u066b\u066c\7\n\2\2\u066c"+
-		"\u00db\3\2\2\2\u066d\u066f\7\31\2\2\u066e\u0670\7J\2\2\u066f\u066e\3\2"+
-		"\2\2\u066f\u0670\3\2\2\2\u0670\u0672\3\2\2\2\u0671\u0673\5\u00ccg\2\u0672"+
-		"\u0671\3\2\2\2\u0672\u0673\3\2\2\2\u0673\u067c\3\2\2\2\u0674\u0676\7J"+
-		"\2\2\u0675\u0674\3\2\2\2\u0675\u0676\3\2\2\2\u0676\u0677\3\2\2\2\u0677"+
-		"\u0679\7\5\2\2\u0678\u067a\7J\2\2\u0679\u0678\3\2\2\2\u0679\u067a\3\2"+
-		"\2\2\u067a\u067b\3\2\2\2\u067b\u067d\7\36\2\2\u067c\u0675\3\2\2\2\u067c"+
-		"\u067d\3\2\2\2\u067d\u067f\3\2\2\2\u067e\u0680\7J\2\2\u067f\u067e\3\2"+
-		"\2\2\u067f\u0680\3\2\2\2\u0680\u0681\3\2\2\2\u0681\u0682\7\n\2\2\u0682"+
-		"\u00dd\3\2\2\2\u0683\u0684\t\5\2\2\u0684\u00df\3\2\2\2\u0685\u0686\7!"+
-		"\2\2\u0686\u00e1\3\2\2\2\u0687\u0689\5\u00e0q\2\u0688\u0687\3\2\2\2\u0688"+
-		"\u0689\3\2\2\2\u0689\u068a\3\2\2\2\u068a\u068b\7e\2\2\u068b\u068c\7\3"+
-		"\2\2\u068c\u068d\7e\2\2\u068d\u068e\7\"\2\2\u068e\u00e3\3\2\2\2\u068f"+
-		"\u0691\5\u00e0q\2\u0690\u068f\3\2\2\2\u0690\u0691\3\2\2\2\u0691\u0692"+
-		"\3\2\2\2\u0692\u0693\7e\2\2\u0693\u0694\7\3\2\2\u0694\u0695\7e\2\2\u0695"+
-		"\u0696\7#\2\2\u0696\u00e5\3\2\2\2\u0697\u0699\5\u00e0q\2\u0698\u0697\3"+
-		"\2\2\2\u0698\u0699\3\2\2\2\u0699\u069a\3\2\2\2\u069a\u069b\7e\2\2\u069b"+
-		"\u069c\7\3\2\2\u069c\u069d\7e\2\2\u069d\u00e7\3\2\2\2\u069e\u06a2\5\u00e2"+
-		"r\2\u069f\u06a2\5\u00e4s\2\u06a0\u06a2\5\u00e6t\2\u06a1\u069e\3\2\2\2"+
-		"\u06a1\u069f\3\2\2\2\u06a1\u06a0\3\2\2\2\u06a2\u00e9\3\2\2\2\u06a3\u06a5"+
-		"\5\u00e0q\2\u06a4\u06a3\3\2\2\2\u06a4\u06a5\3\2\2\2\u06a5\u06a6\3\2\2"+
-		"\2\u06a6\u06a7\7e\2\2\u06a7\u06a8\7$\2\2\u06a8\u00eb\3\2\2\2\u06a9\u06ab"+
-		"\5\u00e0q\2\u06aa\u06a9\3\2\2\2\u06aa\u06ab\3\2\2\2\u06ab\u06ac\3\2\2"+
-		"\2\u06ac\u06ad\7e\2\2\u06ad\u06ae\7%\2\2\u06ae\u00ed\3\2\2\2\u06af\u06b1"+
-		"\5\u00e0q\2\u06b0\u06af\3\2\2\2\u06b0\u06b1\3\2\2\2\u06b1\u06b2\3\2\2"+
-		"\2\u06b2\u06b3\7e\2\2\u06b3\u06b4\7&\2\2\u06b4\u00ef\3\2\2\2\u06b5\u06b7"+
-		"\5\u00e0q\2\u06b6\u06b5\3\2\2\2\u06b6\u06b7\3\2\2\2\u06b7\u06b8\3\2\2"+
-		"\2\u06b8\u06b9\7e\2\2\u06b9\u06ba\7\'\2\2\u06ba\u00f1\3\2\2\2\u06bb\u06bd"+
-		"\5\u00e0q\2\u06bc\u06bb\3\2\2\2\u06bc\u06bd\3\2\2\2\u06bd\u06be\3\2\2"+
-		"\2\u06be\u06bf\7e\2\2\u06bf\u06c0\7(\2\2\u06c0\u00f3\3\2\2\2\u06c1\u06c3"+
-		"\5\u00e0q\2\u06c2\u06c1\3\2\2\2\u06c2\u06c3\3\2\2\2\u06c3\u06c4\3\2\2"+
-		"\2\u06c4\u06c5\7e\2\2\u06c5\u00f5\3\2\2\2\u06c6\u06cd\5\u00eav\2\u06c7"+
-		"\u06cd\5\u00ecw\2\u06c8\u06cd\5\u00eex\2\u06c9\u06cd\5\u00f0y\2\u06ca"+
-		"\u06cd\5\u00f2z\2\u06cb\u06cd\5\u00f4{\2\u06cc\u06c6\3\2\2\2\u06cc\u06c7"+
-		"\3\2\2\2\u06cc\u06c8\3\2\2\2\u06cc\u06c9\3\2\2\2\u06cc\u06ca\3\2\2\2\u06cc"+
-		"\u06cb\3\2\2\2\u06cd\u00f7\3\2\2\2\u06ce\u06d4\5\u00dep\2\u06cf\u06d4"+
-		"\7c\2\2\u06d0\u06d4\5\u00e8u\2\u06d1\u06d4\5\u00f6|\2\u06d2\u06d4\7d\2"+
-		"\2\u06d3\u06ce\3\2\2\2\u06d3\u06cf\3\2\2\2\u06d3\u06d0\3\2\2\2\u06d3\u06d1"+
-		"\3\2\2\2\u06d3\u06d2\3\2\2\2\u06d4\u00f9\3\2\2\2\u06d5\u06db\5\u0102\u0082"+
-		"\2\u06d6\u06db\5\u010a\u0086\2\u06d7\u06db\5\u010c\u0087\2\u06d8\u06db"+
-		"\5\u00fc\177\2\u06d9\u06db\5\u00fe\u0080\2\u06da\u06d5\3\2\2\2\u06da\u06d6"+
-		"\3\2\2\2\u06da\u06d7\3\2\2\2\u06da\u06d8\3\2\2\2\u06da\u06d9\3\2\2\2\u06db"+
-		"\u00fb\3\2\2\2\u06dc\u06dd\5$\23\2\u06dd\u00fd\3\2\2\2\u06de\u06df\5\""+
-		"\22\2\u06df\u00ff\3\2\2\2\u06e0\u06e9\5\u00fa~\2\u06e1\u06e3\7J\2\2\u06e2"+
-		"\u06e1\3\2\2\2\u06e2\u06e3\3\2\2\2\u06e3\u06e4\3\2\2\2\u06e4\u06e6\7\24"+
-		"\2\2\u06e5\u06e7\7J\2\2\u06e6\u06e5\3\2\2\2\u06e6\u06e7\3\2\2\2\u06e7"+
-		"\u06e8\3\2\2\2\u06e8\u06ea\5\u0100\u0081\2\u06e9\u06e2\3\2\2\2\u06e9\u06ea"+
-		"\3\2\2\2\u06ea\u0101\3\2\2\2\u06eb\u06ed\7\7\2\2\u06ec\u06ee\7J\2\2\u06ed"+
-		"\u06ec\3\2\2\2\u06ed\u06ee\3\2\2\2\u06ee\u06ef\3\2\2\2\u06ef\u06fa\5\u0100"+
-		"\u0081\2\u06f0\u06f2\7J\2\2\u06f1\u06f0\3\2\2\2\u06f1\u06f2\3\2\2\2\u06f2"+
-		"\u06f3\3\2\2\2\u06f3\u06f5\7\5\2\2\u06f4\u06f6\7J\2\2\u06f5\u06f4\3\2"+
-		"\2\2\u06f5\u06f6\3\2\2\2\u06f6\u06f7\3\2\2\2\u06f7\u06f9\5\u0100\u0081"+
-		"\2\u06f8\u06f1\3\2\2\2\u06f9\u06fc\3\2\2\2\u06fa\u06f8\3\2\2\2\u06fa\u06fb"+
-		"\3\2\2\2\u06fb\u06fe\3\2\2\2\u06fc\u06fa\3\2\2\2\u06fd\u06ff\7J\2\2\u06fe"+
-		"\u06fd\3\2\2\2\u06fe\u06ff\3\2\2\2\u06ff\u0700\3\2\2\2\u0700\u0702\7\b"+
-		"\2\2\u0701\u0703\7J\2\2\u0702\u0701\3\2\2\2\u0702\u0703\3\2\2\2\u0703"+
-		"\u0704\3\2\2\2\u0704\u0706\7\24\2\2\u0705\u0707\7J\2\2\u0706\u0705\3\2"+
-		"\2\2\u0706\u0707\3\2\2\2\u0707\u0708\3\2\2\2\u0708\u0709\5\u0100\u0081"+
-		"\2\u0709\u0103\3\2\2\2\u070a\u070b\7\7\2\2\u070b\u070c\7\b\2\2\u070c\u0105"+
-		"\3\2\2\2\u070d\u070f\7\7\2\2\u070e\u0710\7J\2\2\u070f\u070e\3\2\2\2\u070f"+
-		"\u0710\3\2\2\2\u0710\u0711\3\2\2\2\u0711\u0713\5\u0100\u0081\2\u0712\u0714"+
-		"\7J\2\2\u0713\u0712\3\2\2\2\u0713\u0714\3\2\2\2\u0714\u0715\3\2\2\2\u0715"+
-		"\u0716\7\b\2\2\u0716\u0107\3\2\2\2\u0717\u0719\7\7\2\2\u0718\u071a\7J"+
-		"\2\2\u0719\u0718\3\2\2\2\u0719\u071a\3\2\2\2\u071a\u071b\3\2\2\2\u071b"+
-		"\u0724\5\u0100\u0081\2\u071c\u071e\7J\2\2\u071d\u071c\3\2\2\2\u071d\u071e"+
-		"\3\2\2\2\u071e\u071f\3\2\2\2\u071f\u0721\7\5\2\2\u0720\u0722\7J\2\2\u0721"+
-		"\u0720\3\2\2\2\u0721\u0722\3\2\2\2\u0722\u0723\3\2\2\2\u0723\u0725\5\u0100"+
-		"\u0081\2\u0724\u071d\3\2\2\2\u0725\u0726\3\2\2\2\u0726\u0724\3\2\2\2\u0726"+
-		"\u0727\3\2\2\2\u0727\u0729\3\2\2\2\u0728\u072a\7J\2\2\u0729\u0728\3\2"+
-		"\2\2\u0729\u072a\3\2\2\2\u072a\u072b\3\2\2\2\u072b\u072c\7\b\2\2\u072c"+
-		"\u0109\3\2\2\2\u072d\u0731\5\u0104\u0083\2\u072e\u0731\5\u0106\u0084\2"+
-		"\u072f\u0731\5\u0108\u0085\2\u0730\u072d\3\2\2\2\u0730\u072e\3\2\2\2\u0730"+
-		"\u072f\3\2\2\2\u0731\u010b\3\2\2\2\u0732\u0734\5\u00fe\u0080\2\u0733\u0735"+
-		"\7J\2\2\u0734\u0733\3\2\2\2\u0734\u0735\3\2\2\2\u0735\u0736\3\2\2\2\u0736"+
-		"\u0738\7\f\2\2\u0737\u0739\7J\2\2\u0738\u0737\3\2\2\2\u0738\u0739\3\2"+
-		"\2\2\u0739\u073a\3\2\2\2\u073a\u0745\5\u0100\u0081\2\u073b\u073d\7J\2"+
-		"\2\u073c\u073b\3\2\2\2\u073c\u073d\3\2\2\2\u073d\u073e\3\2\2\2\u073e\u0740"+
-		"\7\5\2\2\u073f\u0741\7J\2\2\u0740\u073f\3\2\2\2\u0740\u0741\3\2\2\2\u0741"+
-		"\u0742\3\2\2\2\u0742\u0744\5\u0100\u0081\2\u0743\u073c\3\2\2\2\u0744\u0747"+
-		"\3\2\2\2\u0745\u0743\3\2\2\2\u0745\u0746\3\2\2\2\u0746\u0749\3\2\2\2\u0747"+
-		"\u0745\3\2\2\2\u0748\u074a\7J\2\2\u0749\u0748\3\2\2\2\u0749\u074a\3\2"+
-		"\2\2\u074a\u074b\3\2\2\2\u074b\u074d\7\r\2\2\u074c\u074e\7J\2\2\u074d"+
-		"\u074c\3\2\2\2\u074d\u074e\3\2\2\2\u074e\u010d\3\2\2\2\u074f\u0750\t\6"+
-		"\2\2\u0750\u010f\3\2\2\2\u0751\u0752\t\7\2\2\u0752\u0111\3\2\2\2\u0753"+
-		"\u0754\t\b\2\2\u0754\u0113\3\2\2\2\u0755\u0756\t\t\2\2\u0756\u0115\3\2"+
-		"\2\2\u0757\u0758\t\n\2\2\u0758\u0117\3\2\2\2\u0759\u075a\t\13\2\2\u075a"+
-		"\u0119\3\2\2\2\u075b\u0762\5\u011e\u0090\2\u075c\u0762\5\u0120\u0091\2"+
-		"\u075d\u0762\5\u0122\u0092\2\u075e\u0762\5\u0126\u0094\2\u075f\u0762\5"+
-		"\u0124\u0093\2\u0760\u0762\5\u0128\u0095\2\u0761\u075b\3\2\2\2\u0761\u075c"+
-		"\3\2\2\2\u0761\u075d\3\2\2\2\u0761\u075e\3\2\2\2\u0761\u075f\3\2\2\2\u0761"+
-		"\u0760\3\2\2\2\u0762\u011b\3\2\2\2\u0763\u076e\5\u011a\u008e\2\u0764\u0766"+
-		"\7J\2\2\u0765\u0764\3\2\2\2\u0765\u0766\3\2\2\2\u0766\u0767\3\2\2\2\u0767"+
-		"\u0769\7\5\2\2\u0768\u076a\7J\2\2\u0769\u0768\3\2\2\2\u0769\u076a\3\2"+
-		"\2\2\u076a\u076b\3\2\2\2\u076b\u076d\5\u011a\u008e\2\u076c\u0765\3\2\2"+
-		"\2\u076d\u0770\3\2\2\2\u076e\u076c\3\2\2\2\u076e\u076f\3\2\2\2\u076f\u011d"+
-		"\3\2\2\2\u0770\u076e\3\2\2\2\u0771\u0772\7\37\2\2\u0772\u011f\3\2\2\2"+
-		"\u0773\u0774\7 \2\2\u0774\u0121\3\2\2\2\u0775\u0777\5\30\r\2\u0776\u0778"+
-		"\7J\2\2\u0777\u0776\3\2\2\2\u0777\u0778\3\2\2\2\u0778\u0779\3\2\2\2\u0779"+
-		"\u077a\7\7\2\2\u077a\u077b\5\u0086D\2\u077b\u077c\7\b\2\2\u077c\u0123"+
-		"\3\2\2\2\u077d\u077f\5\34\17\2\u077e\u0780\7J\2\2\u077f\u077e\3\2\2\2"+
-		"\u077f\u0780\3\2\2\2\u0780\u0781\3\2\2\2\u0781\u0782\7\7\2\2\u0782\u0783"+
-		"\5\u0086D\2\u0783\u0784\7\b\2\2\u0784\u0125\3\2\2\2\u0785\u0787\5$\23"+
-		"\2\u0786\u0788\7J\2\2\u0787\u0786\3\2\2\2\u0787\u0788\3\2\2\2\u0788\u0789"+
-		"\3\2\2\2\u0789\u078b\7>\2\2\u078a\u078c\7J\2\2\u078b\u078a\3\2\2\2\u078b"+
-		"\u078c\3\2\2\2\u078c\u078d\3\2\2\2\u078d\u078e\5$\23\2\u078e\u0127\3\2"+
-		"\2\2\u078f\u0791\5$\23\2\u0790\u0792\7J\2\2\u0791\u0790\3\2\2\2\u0791"+
-		"\u0792\3\2\2\2\u0792\u0793\3\2\2\2\u0793\u0795\7H\2\2\u0794\u0796\7J\2"+
-		"\2\u0795\u0794\3\2\2\2\u0795\u0796\3\2\2\2\u0796\u0797\3\2\2\2\u0797\u0798"+
-		"\5\u0080A\2\u0798\u0129\3\2\2\2\u014a\u012f\u0135\u0139\u013e\u0141\u014a"+
-		"\u0150\u0157\u0173\u0177\u017e\u0184\u0188\u018d\u0192\u0195\u0198\u019b"+
-		"\u019f\u01a3\u01a9\u01ad\u01b2\u01b7\u01bb\u01bf\u01c4\u01c7\u01ca\u01d0"+
-		"\u01d4\u01d9\u01de\u01e2\u01e7\u01ee\u01f2\u01f6\u01fa\u01ff\u0206\u020a"+
-		"\u020e\u0212\u0217\u021c\u0220\u0223\u0227\u022b\u022f\u0234\u0239\u023e"+
-		"\u0242\u0247\u0251\u0255\u025a\u025e\u0262\u0266\u0268\u0272\u0276\u027b"+
-		"\u029d\u02a0\u02a6\u02aa\u02af\u02b3\u02b9\u02be\u02c2\u02c9\u02cd\u02d1"+
-		"\u02d8\u02dc\u02e1\u02e8\u02eb\u02f0\u02f4\u02fa\u02fe\u0301\u0304\u030a"+
-		"\u030f\u0313\u0319\u031d\u0320\u0323\u0329\u032f\u0333\u0336\u0339\u033f"+
-		"\u0344\u0348\u034e\u0352\u0356\u035c\u0361\u0365\u0369\u036f\u0373\u0377"+
-		"\u037d\u0382\u0386\u0389\u038c\u0392\u0397\u039b\u039f\u03a3\u03a9\u03ae"+
-		"\u03b2\u03b8\u03bc\u03c0\u03c4\u03c8\u03cc\u03d2\u03d7\u03db\u03e2\u03e6"+
-		"\u03ec\u03f1\u03f4\u03f9\u03fd\u0402\u0406\u040a\u040e\u0415\u0419\u041e"+
-		"\u0422\u0426\u042a\u0430\u0435\u0439\u0440\u0444\u044a\u044f\u0453\u045b"+
-		"\u045f\u0463\u0466\u046a\u046e\u0472\u0476\u047a\u047f\u0484\u0488\u048c"+
-		"\u0490\u0494\u049a\u049f\u04a3\u04a9\u04ae\u04b4\u04b8\u04bc\u04c0\u04c4"+
-		"\u04c8\u04cd\u04d1\u04d5\u04d8\u04ed\u04f3\u04f7\u04fb\u04ff\u0505\u0509"+
-		"\u050d\u0511\u0521\u0525\u052d\u0531\u0537\u053b\u053e\u0541\u0544\u054d"+
-		"\u0551\u0554\u0558\u055b\u055e\u0564\u0568\u056e\u0572\u0577\u0582\u0586"+
-		"\u0589\u058d\u0590\u0593\u0599\u059c\u059f\u05a5\u05a8\u05ab\u05b1\u05b5"+
-		"\u05bb\u05bf\u05c3\u05c7\u05cd\u05d1\u05d5\u05db\u05df\u05e3\u05e9\u05ed"+
-		"\u05f0\u05f4\u05f8\u05fd\u0609\u060d\u0611\u0617\u061b\u0620\u0626\u062a"+
-		"\u062d\u0631\u0634\u0637\u0643\u0646\u0649\u064d\u0650\u0653\u0659\u065c"+
-		"\u065f\u0663\u0666\u0669\u066f\u0672\u0675\u0679\u067c\u067f\u0688\u0690"+
-		"\u0698\u06a1\u06a4\u06aa\u06b0\u06b6\u06bc\u06c2\u06cc\u06d3\u06da\u06e2"+
-		"\u06e6\u06e9\u06ed\u06f1\u06f5\u06fa\u06fe\u0702\u0706\u070f\u0713\u0719"+
-		"\u071d\u0721\u0726\u0729\u0730\u0734\u0738\u073c\u0740\u0745\u0749\u074d"+
-		"\u0761\u0765\u0769\u076e\u0777\u077f\u0787\u078b\u0791\u0795";
+		"\2\2\u0456\177\3\2\2\2\u0457\u0459\7\t\2\2\u0458\u045a\7J\2\2\u0459\u0458"+
+		"\3\2\2\2\u0459\u045a\3\2\2\2\u045a\u045b\3\2\2\2\u045b\u045d\5\u0080A"+
+		"\2\u045c\u045e\7J\2\2\u045d\u045c\3\2\2\2\u045d\u045e\3\2\2\2\u045e\u045f"+
+		"\3\2\2\2\u045f\u0461\7\n\2\2\u0460\u0462\7J\2\2\u0461\u0460\3\2\2\2\u0461"+
+		"\u0462\3\2\2\2\u0462\u0465\3\2\2\2\u0463\u0465\5\u0082B\2\u0464\u0457"+
+		"\3\2\2\2\u0464\u0463\3\2\2\2\u0465\u0081\3\2\2\2\u0466\u0470\5\u0086D"+
+		"\2\u0467\u0469\7J\2\2\u0468\u0467\3\2\2\2\u0468\u0469\3\2\2\2\u0469\u046a"+
+		"\3\2\2\2\u046a\u046c\5\u0110\u0089\2\u046b\u046d\7J\2\2\u046c\u046b\3"+
+		"\2\2\2\u046c\u046d\3\2\2\2\u046d\u046e\3\2\2\2\u046e\u046f\5\u0086D\2"+
+		"\u046f\u0471\3\2\2\2\u0470\u0468\3\2\2\2\u0470\u0471\3\2\2\2\u0471\u0083"+
+		"\3\2\2\2\u0472\u047d\5\u0080A\2\u0473\u0475\7J\2\2\u0474\u0473\3\2\2\2"+
+		"\u0474\u0475\3\2\2\2\u0475\u0476\3\2\2\2\u0476\u0478\7\5\2\2\u0477\u0479"+
+		"\7J\2\2\u0478\u0477\3\2\2\2\u0478\u0479\3\2\2\2\u0479\u047a\3\2\2\2\u047a"+
+		"\u047c\5\u0080A\2\u047b\u0474\3\2\2\2\u047c\u047f\3\2\2\2\u047d\u047b"+
+		"\3\2\2\2\u047d\u047e\3\2\2\2\u047e\u0085\3\2\2\2\u047f\u047d\3\2\2\2\u0480"+
+		"\u048a\5\u0088E\2\u0481\u0483\7J\2\2\u0482\u0481\3\2\2\2\u0482\u0483\3"+
+		"\2\2\2\u0483\u0484\3\2\2\2\u0484\u0486\5\u0112\u008a\2\u0485\u0487\7J"+
+		"\2\2\u0486\u0485\3\2\2\2\u0486\u0487\3\2\2\2\u0487\u0488\3\2\2\2\u0488"+
+		"\u0489\5\u0088E\2\u0489\u048b\3\2\2\2\u048a\u0482\3\2\2\2\u048a\u048b"+
+		"\3\2\2\2\u048b\u0087\3\2\2\2\u048c\u0498\5\u008aF\2\u048d\u048f\7J\2\2"+
+		"\u048e\u048d\3\2\2\2\u048e\u048f\3\2\2\2\u048f\u0490\3\2\2\2\u0490\u0492"+
+		"\5\u0116\u008c\2\u0491\u0493\7J\2\2\u0492\u0491\3\2\2\2\u0492\u0493\3"+
+		"\2\2\2\u0493\u0494\3\2\2\2\u0494\u0495\5\u008aF\2\u0495\u0497\3\2\2\2"+
+		"\u0496\u048e\3\2\2\2\u0497\u049a\3\2\2\2\u0498\u0496\3\2\2\2\u0498\u0499"+
+		"\3\2\2\2\u0499\u0089\3\2\2\2\u049a\u0498\3\2\2\2\u049b\u04a7\5\u008cG"+
+		"\2\u049c\u049e\7J\2\2\u049d\u049c\3\2\2\2\u049d\u049e\3\2\2\2\u049e\u049f"+
+		"\3\2\2\2\u049f\u04a1\5\u0114\u008b\2\u04a0\u04a2\7J\2\2\u04a1\u04a0\3"+
+		"\2\2\2\u04a1\u04a2\3\2\2\2\u04a2\u04a3\3\2\2\2\u04a3\u04a4\5\u008cG\2"+
+		"\u04a4\u04a6\3\2\2\2\u04a5\u049d\3\2\2\2\u04a6\u04a9\3\2\2\2\u04a7\u04a5"+
+		"\3\2\2\2\u04a7\u04a8\3\2\2\2\u04a8\u008b\3\2\2\2\u04a9\u04a7\3\2\2\2\u04aa"+
+		"\u04b6\5\u008eH\2\u04ab\u04ad\7J\2\2\u04ac\u04ab\3\2\2\2\u04ac\u04ad\3"+
+		"\2\2\2\u04ad\u04ae\3\2\2\2\u04ae\u04af\7\23\2\2\u04af\u04b0\5\30\r\2\u04b0"+
+		"\u04b2\7\23\2\2\u04b1\u04b3\7J\2\2\u04b2\u04b1\3\2\2\2\u04b2\u04b3\3\2"+
+		"\2\2\u04b3\u04b4\3\2\2\2\u04b4\u04b5\5\u008eH\2\u04b5\u04b7\3\2\2\2\u04b6"+
+		"\u04ac\3\2\2\2\u04b6\u04b7\3\2\2\2\u04b7\u008d\3\2\2\2\u04b8\u04c2\5\u0090"+
+		"I\2\u04b9\u04bb\7J\2\2\u04ba\u04b9\3\2\2\2\u04ba\u04bb\3\2\2\2\u04bb\u04bc"+
+		"\3\2\2\2\u04bc\u04be\5\u0118\u008d\2\u04bd\u04bf\7J\2\2\u04be\u04bd\3"+
+		"\2\2\2\u04be\u04bf\3\2\2\2\u04bf\u04c0\3\2\2\2\u04c0\u04c1\5\u0090I\2"+
+		"\u04c1\u04c3\3\2\2\2\u04c2\u04ba\3\2\2\2\u04c2\u04c3\3\2\2\2\u04c3\u008f"+
+		"\3\2\2\2\u04c4\u04c6\5\u010e\u0088\2\u04c5\u04c7\7J\2\2\u04c6\u04c5\3"+
+		"\2\2\2\u04c6\u04c7\3\2\2\2\u04c7\u04c8\3\2\2\2\u04c8\u04c9\5\u0090I\2"+
+		"\u04c9\u04cc\3\2\2\2\u04ca\u04cc\5\u0092J\2\u04cb\u04c4\3\2\2\2\u04cb"+
+		"\u04ca\3\2\2\2\u04cc\u0091\3\2\2\2\u04cd\u04d6\5\u00b2Z\2\u04ce\u04d0"+
+		"\7J\2\2\u04cf\u04ce\3\2\2\2\u04cf\u04d0\3\2\2\2\u04d0\u04d1\3\2\2\2\u04d1"+
+		"\u04d3\7\6\2\2\u04d2\u04d4\7J\2\2\u04d3\u04d2\3\2\2\2\u04d3\u04d4\3\2"+
+		"\2\2\u04d4\u04d5\3\2\2\2\u04d5\u04d7\5\u0100\u0081\2\u04d6\u04cf\3\2\2"+
+		"\2\u04d6\u04d7\3\2\2\2\u04d7\u0093\3\2\2\2\u04d8\u04ec\5\u0096L\2\u04d9"+
+		"\u04ec\5\u0098M\2\u04da\u04ec\5\u009aN\2\u04db\u04ec\5\u009cO\2\u04dc"+
+		"\u04ec\5\u00a4S\2\u04dd\u04ec\5\u00bc_\2\u04de\u04ec\5\u00a6T\2\u04df"+
+		"\u04ec\5\u00b0Y\2\u04e0\u04ec\5\u00b4[\2\u04e1\u04ec\5\u00b6\\\2\u04e2"+
+		"\u04ec\5\u00b8]\2\u04e3\u04ec\5\u00f8}\2\u04e4\u04ec\5\u00be`\2\u04e5"+
+		"\u04ec\5\u00c0a\2\u04e6\u04ec\5\u00a2R\2\u04e7\u04ec\5\u00ba^\2\u04e8"+
+		"\u04ec\5\u00aeX\2\u04e9\u04ec\5\u00a0Q\2\u04ea\u04ec\5\u00acW\2\u04eb"+
+		"\u04d8\3\2\2\2\u04eb\u04d9\3\2\2\2\u04eb\u04da\3\2\2\2\u04eb\u04db\3\2"+
+		"\2\2\u04eb\u04dc\3\2\2\2\u04eb\u04dd\3\2\2\2\u04eb\u04de\3\2\2\2\u04eb"+
+		"\u04df\3\2\2\2\u04eb\u04e0\3\2\2\2\u04eb\u04e1\3\2\2\2\u04eb\u04e2\3\2"+
+		"\2\2\u04eb\u04e3\3\2\2\2\u04eb\u04e4\3\2\2\2\u04eb\u04e5\3\2\2\2\u04eb"+
+		"\u04e6\3\2\2\2\u04eb\u04e7\3\2\2\2\u04eb\u04e8\3\2\2\2\u04eb\u04e9\3\2"+
+		"\2\2\u04eb\u04ea\3\2\2\2\u04ec\u0095\3\2\2\2\u04ed\u04ee\7V\2\2\u04ee"+
+		"\u04ef\7J\2\2\u04ef\u04f1\5\u00c2b\2\u04f0\u04f2\7J\2\2\u04f1\u04f0\3"+
+		"\2\2\2\u04f1\u04f2\3\2\2\2\u04f2\u04f3\3\2\2\2\u04f3\u04f5\7\20\2\2\u04f4"+
+		"\u04f6\7J\2\2\u04f5\u04f4\3\2\2\2\u04f5\u04f6\3\2\2\2\u04f6\u04f7\3\2"+
+		"\2\2\u04f7\u04f9\5\u0080A\2\u04f8\u04fa\7J\2\2\u04f9\u04f8\3\2\2\2\u04f9"+
+		"\u04fa\3\2\2\2\u04fa\u04fb\3\2\2\2\u04fb\u04fd\7K\2\2\u04fc\u04fe\7J\2"+
+		"\2\u04fd\u04fc\3\2\2\2\u04fd\u04fe\3\2\2\2\u04fe\u04ff\3\2\2\2\u04ff\u0500"+
+		"\5\u0080A\2\u0500\u0097\3\2\2\2\u0501\u0503\7^\2\2\u0502\u0504\7J\2\2"+
+		"\u0503\u0502\3\2\2\2\u0503\u0504\3\2\2\2\u0504\u0505\3\2\2\2\u0505\u0507"+
+		"\7\7\2\2\u0506\u0508\7J\2\2\u0507\u0506\3\2\2\2\u0507\u0508\3\2\2\2\u0508"+
+		"\u0509\3\2\2\2\u0509\u050b\5\u0080A\2\u050a\u050c\7J\2\2\u050b\u050a\3"+
+		"\2\2\2\u050b\u050c\3\2\2\2\u050c\u050d\3\2\2\2\u050d\u050f\7\b\2\2\u050e"+
+		"\u0510\7J\2\2\u050f\u050e\3\2\2\2\u050f\u0510\3\2\2\2\u0510\u0511\3\2"+
+		"\2\2\u0511\u0512\5\u0080A\2\u0512\u0513\7J\2\2\u0513\u0514\7_\2\2\u0514"+
+		"\u0515\7J\2\2\u0515\u0516\5\u0080A\2\u0516\u0099\3\2\2\2\u0517\u0518\7"+
+		"Z\2\2\u0518\u0519\7J\2\2\u0519\u051a\5\u0080A\2\u051a\u051b\7J\2\2\u051b"+
+		"\u051c\7[\2\2\u051c\u051d\7J\2\2\u051d\u051f\7\t\2\2\u051e\u0520\7J\2"+
+		"\2\u051f\u051e\3\2\2\2\u051f\u0520\3\2\2\2\u0520\u0521\3\2\2\2\u0521\u0523"+
+		"\5:\36\2\u0522\u0524\7J\2\2\u0523\u0522\3\2\2\2\u0523\u0524\3\2\2\2\u0524"+
+		"\u0525\3\2\2\2\u0525\u0526\7\n\2\2\u0526\u009b\3\2\2\2\u0527\u0528\7Y"+
+		"\2\2\u0528\u0529\7J\2\2\u0529\u052b\7\t\2\2\u052a\u052c\7J\2\2\u052b\u052a"+
+		"\3\2\2\2\u052b\u052c\3\2\2\2\u052c\u052d\3\2\2\2\u052d\u052f\5> \2\u052e"+
+		"\u0530\7J\2\2\u052f\u052e\3\2\2\2\u052f\u0530\3\2\2\2\u0530\u0531\3\2"+
+		"\2\2\u0531\u0532\7\n\2\2\u0532\u009d\3\2\2\2\u0533\u0542\5\u0094K\2\u0534"+
+		"\u0536\7J\2\2\u0535\u0534\3\2\2\2\u0535\u0536\3\2\2\2\u0536\u0537\3\2"+
+		"\2\2\u0537\u0539\7\7\2\2\u0538\u053a\7J\2\2\u0539\u0538\3\2\2\2\u0539"+
+		"\u053a\3\2\2\2\u053a\u053c\3\2\2\2\u053b\u053d\5\u0084C\2\u053c\u053b"+
+		"\3\2\2\2\u053c\u053d\3\2\2\2\u053d\u053f\3\2\2\2\u053e\u0540\7J\2\2\u053f"+
+		"\u053e\3\2\2\2\u053f\u0540\3\2\2\2\u0540\u0541\3\2\2\2\u0541\u0543\7\b"+
+		"\2\2\u0542\u0535\3\2\2\2\u0542\u0543\3\2\2\2\u0543\u009f\3\2\2\2\u0544"+
+		"\u0545\5$\23\2\u0545\u00a1\3\2\2\2\u0546\u0547\5\30\r\2\u0547\u00a3\3"+
+		"\2\2\2\u0548\u0549\5\"\22\2\u0549\u054a\7\3\2\2\u054a\u054c\3\2\2\2\u054b"+
+		"\u0548\3\2\2\2\u054b\u054c\3\2\2\2\u054c\u054d\3\2\2\2\u054d\u0552\5\36"+
+		"\20\2\u054e\u0550\7J\2\2\u054f\u054e\3\2\2\2\u054f\u0550\3\2\2\2\u0550"+
+		"\u0551\3\2\2\2\u0551\u0553\5\u00a6T\2\u0552\u054f\3\2\2\2\u0552\u0553"+
+		"\3\2\2\2\u0553\u00a5\3\2\2\2\u0554\u0556\7\7\2\2\u0555\u0557\7J\2\2\u0556"+
+		"\u0555\3\2\2\2\u0556\u0557\3\2\2\2\u0557\u0559\3\2\2\2\u0558\u055a\5\u0084"+
+		"C\2\u0559\u0558\3\2\2\2\u0559\u055a\3\2\2\2\u055a\u055c\3\2\2\2\u055b"+
+		"\u055d\7J\2\2\u055c\u055b\3\2\2\2\u055c\u055d\3\2\2\2\u055d\u055e\3\2"+
+		"\2\2\u055e\u055f\7\b\2\2\u055f\u00a7\3\2\2\2\u0560\u0562\5\u0080A\2\u0561"+
+		"\u0563\7J\2\2\u0562\u0561\3\2\2\2\u0562\u0563\3\2\2\2\u0563\u0564\3\2"+
+		"\2\2\u0564\u0566\7\24\2\2\u0565\u0567\7J\2\2\u0566\u0565\3\2\2\2\u0566"+
+		"\u0567\3\2\2\2\u0567\u0568\3\2\2\2\u0568\u0569\5\u0080A\2\u0569\u00a9"+
+		"\3\2\2\2\u056a\u0575\5\u00a8U\2\u056b\u056d\7J\2\2\u056c\u056b\3\2\2\2"+
+		"\u056c\u056d\3\2\2\2\u056d\u056e\3\2\2\2\u056e\u0570\7\5\2\2\u056f\u0571"+
+		"\7J\2\2\u0570\u056f\3\2\2\2\u0570\u0571\3\2\2\2\u0571\u0572\3\2\2\2\u0572"+
+		"\u0574\5\u00a8U\2\u0573\u056c\3\2\2\2\u0574\u0577\3\2\2\2\u0575\u0573"+
+		"\3\2\2\2\u0575\u0576\3\2\2\2\u0576\u00ab\3\2\2\2\u0577\u0575\3\2\2\2\u0578"+
+		"\u0579\7\25\2\2\u0579\u00ad\3\2\2\2\u057a\u057b\7\\\2\2\u057b\u00af\3"+
+		"\2\2\2\u057c\u057d\7X\2\2\u057d\u00b1\3\2\2\2\u057e\u0587\5\u009eP\2\u057f"+
+		"\u0581\7J\2\2\u0580\u057f\3\2\2\2\u0580\u0581\3\2\2\2\u0581\u0582\3\2"+
+		"\2\2\u0582\u0584\7\26\2\2\u0583\u0585\7J\2\2\u0584\u0583\3\2\2\2\u0584"+
+		"\u0585\3\2\2\2\u0585\u0586\3\2\2\2\u0586\u0588\5\u0080A\2\u0587\u0580"+
+		"\3\2\2\2\u0587\u0588\3\2\2\2\u0588\u00b3\3\2\2\2\u0589\u058b\7\27\2\2"+
+		"\u058a\u058c\7J\2\2\u058b\u058a\3\2\2\2\u058b\u058c\3\2\2\2\u058c\u058e"+
+		"\3\2\2\2\u058d\u058f\5\u0084C\2\u058e\u058d\3\2\2\2\u058e\u058f\3\2\2"+
+		"\2\u058f\u0591\3\2\2\2\u0590\u0592\7J\2\2\u0591\u0590\3\2\2\2\u0591\u0592"+
+		"\3\2\2\2\u0592\u0593\3\2\2\2\u0593\u0594\7\r\2\2\u0594\u00b5\3\2\2\2\u0595"+
+		"\u0597\7\30\2\2\u0596\u0598\7J\2\2\u0597\u0596\3\2\2\2\u0597\u0598\3\2"+
+		"\2\2\u0598\u059a\3\2\2\2\u0599\u059b\5\u0084C\2\u059a\u0599\3\2\2\2\u059a"+
+		"\u059b\3\2\2\2\u059b\u059d\3\2\2\2\u059c\u059e\7J\2\2\u059d\u059c\3\2"+
+		"\2\2\u059d\u059e\3\2\2\2\u059e\u059f\3\2\2\2\u059f\u05a0\7\n\2\2\u05a0"+
+		"\u00b7\3\2\2\2\u05a1\u05a3\7\31\2\2\u05a2\u05a4\7J\2\2\u05a3\u05a2\3\2"+
+		"\2\2\u05a3\u05a4\3\2\2\2\u05a4\u05a6\3\2\2\2\u05a5\u05a7\5\u00aaV\2\u05a6"+
+		"\u05a5\3\2\2\2\u05a6\u05a7\3\2\2\2\u05a7\u05a9\3\2\2\2\u05a8\u05aa\7J"+
+		"\2\2\u05a9\u05a8\3\2\2\2\u05a9\u05aa\3\2\2\2\u05aa\u05ab\3\2\2\2\u05ab"+
+		"\u05ac\7\n\2\2\u05ac\u00b9\3\2\2\2\u05ad\u05af\5$\23\2\u05ae\u05b0\7J"+
+		"\2\2\u05af\u05ae\3\2\2\2\u05af\u05b0\3\2\2\2\u05b0\u05b1\3\2\2\2\u05b1"+
+		"\u05b3\7\24\2\2\u05b2\u05b4\7J\2\2\u05b3\u05b2\3\2\2\2\u05b3\u05b4\3\2"+
+		"\2\2\u05b4\u05b5\3\2\2\2\u05b5\u05b6\5\u0080A\2\u05b6\u00bb\3\2\2\2\u05b7"+
+		"\u05b9\7\7\2\2\u05b8\u05ba\7J\2\2\u05b9\u05b8\3\2\2\2\u05b9\u05ba\3\2"+
+		"\2\2\u05ba\u05bb\3\2\2\2\u05bb\u05bd\5&\24\2\u05bc\u05be\7J\2\2\u05bd"+
+		"\u05bc\3\2\2\2\u05bd\u05be\3\2\2\2\u05be\u05bf\3\2\2\2\u05bf\u05c1\7\b"+
+		"\2\2\u05c0\u05c2\7J\2\2\u05c1\u05c0\3\2\2\2\u05c1\u05c2\3\2\2\2\u05c2"+
+		"\u05c3\3\2\2\2\u05c3\u05c5\7\24\2\2\u05c4\u05c6\7J\2\2\u05c5\u05c4\3\2"+
+		"\2\2\u05c5\u05c6\3\2\2\2\u05c6\u05c7\3\2\2\2\u05c7\u05c8\5\u0080A\2\u05c8"+
+		"\u00bd\3\2\2\2\u05c9\u05cb\t\3\2\2\u05ca\u05cc\7J\2\2\u05cb\u05ca\3\2"+
+		"\2\2\u05cb\u05cc\3\2\2\2\u05cc\u05cd\3\2\2\2\u05cd\u05cf\5,\27\2\u05ce"+
+		"\u05d0\7J\2\2\u05cf\u05ce\3\2\2\2\u05cf\u05d0\3\2\2\2\u05d0\u05d1\3\2"+
+		"\2\2\u05d1\u05d3\7\3\2\2\u05d2\u05d4\7J\2\2\u05d3\u05d2\3\2\2\2\u05d3"+
+		"\u05d4\3\2\2\2\u05d4\u05d5\3\2\2\2\u05d5\u05d6\5\u0080A\2\u05d6\u00bf"+
+		"\3\2\2\2\u05d7\u05d9\t\4\2\2\u05d8\u05da\7J\2\2\u05d9\u05d8\3\2\2\2\u05d9"+
+		"\u05da\3\2\2\2\u05da\u05db\3\2\2\2\u05db\u05dd\5,\27\2\u05dc\u05de\7J"+
+		"\2\2\u05dd\u05dc\3\2\2\2\u05dd\u05de\3\2\2\2\u05de\u05df\3\2\2\2\u05df"+
+		"\u05e1\7\3\2\2\u05e0\u05e2\7J\2\2\u05e1\u05e0\3\2\2\2\u05e1\u05e2\3\2"+
+		"\2\2\u05e2\u05e3\3\2\2\2\u05e3\u05e4\5\u0080A\2\u05e4\u00c1\3\2\2\2\u05e5"+
+		"\u05e6\5\u00d6l\2\u05e6\u00c3\3\2\2\2\u05e7\u05f2\5\u00c2b\2\u05e8\u05ea"+
+		"\7J\2\2\u05e9\u05e8\3\2\2\2\u05e9\u05ea\3\2\2\2\u05ea\u05eb\3\2\2\2\u05eb"+
+		"\u05ed\7\5\2\2\u05ec\u05ee\7J\2\2\u05ed\u05ec\3\2\2\2\u05ed\u05ee\3\2"+
+		"\2\2\u05ee\u05ef\3\2\2\2\u05ef\u05f1\5\u00c2b\2\u05f0\u05e9\3\2\2\2\u05f1"+
+		"\u05f4\3\2\2\2\u05f2\u05f0\3\2\2\2\u05f2\u05f3\3\2\2\2\u05f3\u00c5\3\2"+
+		"\2\2\u05f4\u05f2\3\2\2\2\u05f5\u05ff\5\u00d2j\2\u05f6\u05ff\5\u00f8}\2"+
+		"\u05f7\u05ff\5\u00d4k\2\u05f8\u05ff\7\\\2\2\u05f9\u05ff\5\u00ccg\2\u05fa"+
+		"\u05ff\5\u00ceh\2\u05fb\u05ff\5\u00d8m\2\u05fc\u05ff\5\u00dan\2\u05fd"+
+		"\u05ff\5\u00dco\2\u05fe\u05f5\3\2\2\2\u05fe\u05f6\3\2\2\2\u05fe\u05f7"+
+		"\3\2\2\2\u05fe\u05f8\3\2\2\2\u05fe\u05f9\3\2\2\2\u05fe\u05fa\3\2\2\2\u05fe"+
+		"\u05fb\3\2\2\2\u05fe\u05fc\3\2\2\2\u05fe\u05fd\3\2\2\2\u05ff\u00c7\3\2"+
+		"\2\2\u0600\u0602\5\u00c2b\2\u0601\u0603\7J\2\2\u0602\u0601\3\2\2\2\u0602"+
+		"\u0603\3\2\2\2\u0603\u0604\3\2\2\2\u0604\u0606\7\24\2\2\u0605\u0607\7"+
+		"J\2\2\u0606\u0605\3\2\2\2\u0606\u0607\3\2\2\2\u0607\u0608\3\2\2\2\u0608"+
+		"\u0609\5\u00c2b\2\u0609\u00c9\3\2\2\2\u060a\u0615\5\u00c8e\2\u060b\u060d"+
+		"\7J\2\2\u060c\u060b\3\2\2\2\u060c\u060d\3\2\2\2\u060d\u060e\3\2\2\2\u060e"+
+		"\u0610\7\5\2\2\u060f\u0611\7J\2\2\u0610\u060f\3\2\2\2\u0610\u0611\3\2"+
+		"\2\2\u0611\u0612\3\2\2\2\u0612\u0614\5\u00c8e\2\u0613\u060c\3\2\2\2\u0614"+
+		"\u0617\3\2\2\2\u0615\u0613\3\2\2\2\u0615\u0616\3\2\2\2\u0616\u00cb\3\2"+
+		"\2\2\u0617\u0615\3\2\2\2\u0618\u0619\5\"\22\2\u0619\u061a\7\3\2\2\u061a"+
+		"\u061c\3\2\2\2\u061b\u0618\3\2\2\2\u061b\u061c\3\2\2\2\u061c\u061d\3\2"+
+		"\2\2\u061d\u0622\5\36\20\2\u061e\u0620\7J\2\2\u061f\u061e\3\2\2\2\u061f"+
+		"\u0620\3\2\2\2\u0620\u0621\3\2\2\2\u0621\u0623\5\u00c2b\2\u0622\u061f"+
+		"\3\2\2\2\u0622\u0623\3\2\2\2\u0623\u00cd\3\2\2\2\u0624\u0626\7\7\2\2\u0625"+
+		"\u0627\7J\2\2\u0626\u0625\3\2\2\2\u0626\u0627\3\2\2\2\u0627\u0629\3\2"+
+		"\2\2\u0628\u062a\5\u00c4c\2\u0629\u0628\3\2\2\2\u0629\u062a\3\2\2\2\u062a"+
+		"\u062c\3\2\2\2\u062b\u062d\7J\2\2\u062c\u062b\3\2\2\2\u062c\u062d\3\2"+
+		"\2\2\u062d\u062e\3\2\2\2\u062e\u062f\7\b\2\2\u062f\u00cf\3\2\2\2\u0630"+
+		"\u0631\7\\\2\2\u0631\u00d1\3\2\2\2\u0632\u0633\7X\2\2\u0633\u00d3\3\2"+
+		"\2\2\u0634\u0635\5\b\5\2\u0635\u00d5\3\2\2\2\u0636\u063f\5\u00c6d\2\u0637"+
+		"\u0639\7J\2\2\u0638\u0637\3\2\2\2\u0638\u0639\3\2\2\2\u0639\u063a\3\2"+
+		"\2\2\u063a\u063c\7\26\2\2\u063b\u063d\7J\2\2\u063c\u063b\3\2\2\2\u063c"+
+		"\u063d\3\2\2\2\u063d\u063e\3\2\2\2\u063e\u0640\5\u00c2b\2\u063f\u0638"+
+		"\3\2\2\2\u063f\u0640\3\2\2\2\u0640\u00d7\3\2\2\2\u0641\u0643\7\27\2\2"+
+		"\u0642\u0644\7J\2\2\u0643\u0642\3\2\2\2\u0643\u0644\3\2\2\2\u0644\u0646"+
+		"\3\2\2\2\u0645\u0647\5\u00c4c\2\u0646\u0645\3\2\2\2\u0646\u0647\3\2\2"+
+		"\2\u0647\u0650\3\2\2\2\u0648\u064a\7J\2\2\u0649\u0648\3\2\2\2\u0649\u064a"+
+		"\3\2\2\2\u064a\u064b\3\2\2\2\u064b\u064d\7\5\2\2\u064c\u064e\7J\2\2\u064d"+
+		"\u064c\3\2\2\2\u064d\u064e\3\2\2\2\u064e\u064f\3\2\2\2\u064f\u0651\7\36"+
+		"\2\2\u0650\u0649\3\2\2\2\u0650\u0651\3\2\2\2\u0651\u0653\3\2\2\2\u0652"+
+		"\u0654\7J\2\2\u0653\u0652\3\2\2\2\u0653\u0654\3\2\2\2\u0654\u0655\3\2"+
+		"\2\2\u0655\u0656\7\r\2\2\u0656\u00d9\3\2\2\2\u0657\u0659\7\30\2\2\u0658"+
+		"\u065a\7J\2\2\u0659\u0658\3\2\2\2\u0659\u065a\3\2\2\2\u065a\u065c\3\2"+
+		"\2\2\u065b\u065d\5\u00c4c\2\u065c\u065b\3\2\2\2\u065c\u065d\3\2\2\2\u065d"+
+		"\u0666\3\2\2\2\u065e\u0660\7J\2\2\u065f\u065e\3\2\2\2\u065f\u0660\3\2"+
+		"\2\2\u0660\u0661\3\2\2\2\u0661\u0663\7\5\2\2\u0662\u0664\7J\2\2\u0663"+
+		"\u0662\3\2\2\2\u0663\u0664\3\2\2\2\u0664\u0665\3\2\2\2\u0665\u0667\7\36"+
+		"\2\2\u0666\u065f\3\2\2\2\u0666\u0667\3\2\2\2\u0667\u0669\3\2\2\2\u0668"+
+		"\u066a\7J\2\2\u0669\u0668\3\2\2\2\u0669\u066a\3\2\2\2\u066a\u066b\3\2"+
+		"\2\2\u066b\u066c\7\n\2\2\u066c\u00db\3\2\2\2\u066d\u066f\7\31\2\2\u066e"+
+		"\u0670\7J\2\2\u066f\u066e\3\2\2\2\u066f\u0670\3\2\2\2\u0670\u0672\3\2"+
+		"\2\2\u0671\u0673\5\u00caf\2\u0672\u0671\3\2\2\2\u0672\u0673\3\2\2\2\u0673"+
+		"\u067c\3\2\2\2\u0674\u0676\7J\2\2\u0675\u0674\3\2\2\2\u0675\u0676\3\2"+
+		"\2\2\u0676\u0677\3\2\2\2\u0677\u0679\7\5\2\2\u0678\u067a\7J\2\2\u0679"+
+		"\u0678\3\2\2\2\u0679\u067a\3\2\2\2\u067a\u067b\3\2\2\2\u067b\u067d\7\36"+
+		"\2\2\u067c\u0675\3\2\2\2\u067c\u067d\3\2\2\2\u067d\u067f\3\2\2\2\u067e"+
+		"\u0680\7J\2\2\u067f\u067e\3\2\2\2\u067f\u0680\3\2\2\2\u0680\u0681\3\2"+
+		"\2\2\u0681\u0682\7\n\2\2\u0682\u00dd\3\2\2\2\u0683\u0684\t\5\2\2\u0684"+
+		"\u00df\3\2\2\2\u0685\u0686\7!\2\2\u0686\u00e1\3\2\2\2\u0687\u0689\5\u00e0"+
+		"q\2\u0688\u0687\3\2\2\2\u0688\u0689\3\2\2\2\u0689\u068a\3\2\2\2\u068a"+
+		"\u068b\7e\2\2\u068b\u068c\7\3\2\2\u068c\u068d\7e\2\2\u068d\u068e\7\"\2"+
+		"\2\u068e\u00e3\3\2\2\2\u068f\u0691\5\u00e0q\2\u0690\u068f\3\2\2\2\u0690"+
+		"\u0691\3\2\2\2\u0691\u0692\3\2\2\2\u0692\u0693\7e\2\2\u0693\u0694\7\3"+
+		"\2\2\u0694\u0695\7e\2\2\u0695\u0696\7#\2\2\u0696\u00e5\3\2\2\2\u0697\u0699"+
+		"\5\u00e0q\2\u0698\u0697\3\2\2\2\u0698\u0699\3\2\2\2\u0699\u069a\3\2\2"+
+		"\2\u069a\u069b\7e\2\2\u069b\u069c\7\3\2\2\u069c\u069d\7e\2\2\u069d\u00e7"+
+		"\3\2\2\2\u069e\u06a2\5\u00e2r\2\u069f\u06a2\5\u00e4s\2\u06a0\u06a2\5\u00e6"+
+		"t\2\u06a1\u069e\3\2\2\2\u06a1\u069f\3\2\2\2\u06a1\u06a0\3\2\2\2\u06a2"+
+		"\u00e9\3\2\2\2\u06a3\u06a5\5\u00e0q\2\u06a4\u06a3\3\2\2\2\u06a4\u06a5"+
+		"\3\2\2\2\u06a5\u06a6\3\2\2\2\u06a6\u06a7\7e\2\2\u06a7\u06a8\7$\2\2\u06a8"+
+		"\u00eb\3\2\2\2\u06a9\u06ab\5\u00e0q\2\u06aa\u06a9\3\2\2\2\u06aa\u06ab"+
+		"\3\2\2\2\u06ab\u06ac\3\2\2\2\u06ac\u06ad\7e\2\2\u06ad\u06ae\7%\2\2\u06ae"+
+		"\u00ed\3\2\2\2\u06af\u06b1\5\u00e0q\2\u06b0\u06af\3\2\2\2\u06b0\u06b1"+
+		"\3\2\2\2\u06b1\u06b2\3\2\2\2\u06b2\u06b3\7e\2\2\u06b3\u06b4\7&\2\2\u06b4"+
+		"\u00ef\3\2\2\2\u06b5\u06b7\5\u00e0q\2\u06b6\u06b5\3\2\2\2\u06b6\u06b7"+
+		"\3\2\2\2\u06b7\u06b8\3\2\2\2\u06b8\u06b9\7e\2\2\u06b9\u06ba\7\'\2\2\u06ba"+
+		"\u00f1\3\2\2\2\u06bb\u06bd\5\u00e0q\2\u06bc\u06bb\3\2\2\2\u06bc\u06bd"+
+		"\3\2\2\2\u06bd\u06be\3\2\2\2\u06be\u06bf\7e\2\2\u06bf\u06c0\7(\2\2\u06c0"+
+		"\u00f3\3\2\2\2\u06c1\u06c3\5\u00e0q\2\u06c2\u06c1\3\2\2\2\u06c2\u06c3"+
+		"\3\2\2\2\u06c3\u06c4\3\2\2\2\u06c4\u06c5\7e\2\2\u06c5\u00f5\3\2\2\2\u06c6"+
+		"\u06cd\5\u00eav\2\u06c7\u06cd\5\u00ecw\2\u06c8\u06cd\5\u00eex\2\u06c9"+
+		"\u06cd\5\u00f0y\2\u06ca\u06cd\5\u00f2z\2\u06cb\u06cd\5\u00f4{\2\u06cc"+
+		"\u06c6\3\2\2\2\u06cc\u06c7\3\2\2\2\u06cc\u06c8\3\2\2\2\u06cc\u06c9\3\2"+
+		"\2\2\u06cc\u06ca\3\2\2\2\u06cc\u06cb\3\2\2\2\u06cd\u00f7\3\2\2\2\u06ce"+
+		"\u06d4\5\u00dep\2\u06cf\u06d4\7c\2\2\u06d0\u06d4\5\u00e8u\2\u06d1\u06d4"+
+		"\5\u00f6|\2\u06d2\u06d4\7d\2\2\u06d3\u06ce\3\2\2\2\u06d3\u06cf\3\2\2\2"+
+		"\u06d3\u06d0\3\2\2\2\u06d3\u06d1\3\2\2\2\u06d3\u06d2\3\2\2\2\u06d4\u00f9"+
+		"\3\2\2\2\u06d5\u06db\5\u0102\u0082\2\u06d6\u06db\5\u010a\u0086\2\u06d7"+
+		"\u06db\5\u010c\u0087\2\u06d8\u06db\5\u00fc\177\2\u06d9\u06db\5\u00fe\u0080"+
+		"\2\u06da\u06d5\3\2\2\2\u06da\u06d6\3\2\2\2\u06da\u06d7\3\2\2\2\u06da\u06d8"+
+		"\3\2\2\2\u06da\u06d9\3\2\2\2\u06db\u00fb\3\2\2\2\u06dc\u06dd\5$\23\2\u06dd"+
+		"\u00fd\3\2\2\2\u06de\u06df\5\"\22\2\u06df\u00ff\3\2\2\2\u06e0\u06e9\5"+
+		"\u00fa~\2\u06e1\u06e3\7J\2\2\u06e2\u06e1\3\2\2\2\u06e2\u06e3\3\2\2\2\u06e3"+
+		"\u06e4\3\2\2\2\u06e4\u06e6\7\24\2\2\u06e5\u06e7\7J\2\2\u06e6\u06e5\3\2"+
+		"\2\2\u06e6\u06e7\3\2\2\2\u06e7\u06e8\3\2\2\2\u06e8\u06ea\5\u0100\u0081"+
+		"\2\u06e9\u06e2\3\2\2\2\u06e9\u06ea\3\2\2\2\u06ea\u0101\3\2\2\2\u06eb\u06ed"+
+		"\7\7\2\2\u06ec\u06ee\7J\2\2\u06ed\u06ec\3\2\2\2\u06ed\u06ee\3\2\2\2\u06ee"+
+		"\u06ef\3\2\2\2\u06ef\u06fa\5\u0100\u0081\2\u06f0\u06f2\7J\2\2\u06f1\u06f0"+
+		"\3\2\2\2\u06f1\u06f2\3\2\2\2\u06f2\u06f3\3\2\2\2\u06f3\u06f5\7\5\2\2\u06f4"+
+		"\u06f6\7J\2\2\u06f5\u06f4\3\2\2\2\u06f5\u06f6\3\2\2\2\u06f6\u06f7\3\2"+
+		"\2\2\u06f7\u06f9\5\u0100\u0081\2\u06f8\u06f1\3\2\2\2\u06f9\u06fc\3\2\2"+
+		"\2\u06fa\u06f8\3\2\2\2\u06fa\u06fb\3\2\2\2\u06fb\u06fe\3\2\2\2\u06fc\u06fa"+
+		"\3\2\2\2\u06fd\u06ff\7J\2\2\u06fe\u06fd\3\2\2\2\u06fe\u06ff\3\2\2\2\u06ff"+
+		"\u0700\3\2\2\2\u0700\u0702\7\b\2\2\u0701\u0703\7J\2\2\u0702\u0701\3\2"+
+		"\2\2\u0702\u0703\3\2\2\2\u0703\u0704\3\2\2\2\u0704\u0706\7\24\2\2\u0705"+
+		"\u0707\7J\2\2\u0706\u0705\3\2\2\2\u0706\u0707\3\2\2\2\u0707\u0708\3\2"+
+		"\2\2\u0708\u0709\5\u0100\u0081\2\u0709\u0103\3\2\2\2\u070a\u070b\7\7\2"+
+		"\2\u070b\u070c\7\b\2\2\u070c\u0105\3\2\2\2\u070d\u070f\7\7\2\2\u070e\u0710"+
+		"\7J\2\2\u070f\u070e\3\2\2\2\u070f\u0710\3\2\2\2\u0710\u0711\3\2\2\2\u0711"+
+		"\u0713\5\u0100\u0081\2\u0712\u0714\7J\2\2\u0713\u0712\3\2\2\2\u0713\u0714"+
+		"\3\2\2\2\u0714\u0715\3\2\2\2\u0715\u0716\7\b\2\2\u0716\u0107\3\2\2\2\u0717"+
+		"\u0719\7\7\2\2\u0718\u071a\7J\2\2\u0719\u0718\3\2\2\2\u0719\u071a\3\2"+
+		"\2\2\u071a\u071b\3\2\2\2\u071b\u0724\5\u0100\u0081\2\u071c\u071e\7J\2"+
+		"\2\u071d\u071c\3\2\2\2\u071d\u071e\3\2\2\2\u071e\u071f\3\2\2\2\u071f\u0721"+
+		"\7\5\2\2\u0720\u0722\7J\2\2\u0721\u0720\3\2\2\2\u0721\u0722\3\2\2\2\u0722"+
+		"\u0723\3\2\2\2\u0723\u0725\5\u0100\u0081\2\u0724\u071d\3\2\2\2\u0725\u0726"+
+		"\3\2\2\2\u0726\u0724\3\2\2\2\u0726\u0727\3\2\2\2\u0727\u0729\3\2\2\2\u0728"+
+		"\u072a\7J\2\2\u0729\u0728\3\2\2\2\u0729\u072a\3\2\2\2\u072a\u072b\3\2"+
+		"\2\2\u072b\u072c\7\b\2\2\u072c\u0109\3\2\2\2\u072d\u0731\5\u0104\u0083"+
+		"\2\u072e\u0731\5\u0106\u0084\2\u072f\u0731\5\u0108\u0085\2\u0730\u072d"+
+		"\3\2\2\2\u0730\u072e\3\2\2\2\u0730\u072f\3\2\2\2\u0731\u010b\3\2\2\2\u0732"+
+		"\u0734\5\u00fe\u0080\2\u0733\u0735\7J\2\2\u0734\u0733\3\2\2\2\u0734\u0735"+
+		"\3\2\2\2\u0735\u0736\3\2\2\2\u0736\u0738\7\f\2\2\u0737\u0739\7J\2\2\u0738"+
+		"\u0737\3\2\2\2\u0738\u0739\3\2\2\2\u0739\u073a\3\2\2\2\u073a\u0745\5\u0100"+
+		"\u0081\2\u073b\u073d\7J\2\2\u073c\u073b\3\2\2\2\u073c\u073d\3\2\2\2\u073d"+
+		"\u073e\3\2\2\2\u073e\u0740\7\5\2\2\u073f\u0741\7J\2\2\u0740\u073f\3\2"+
+		"\2\2\u0740\u0741\3\2\2\2\u0741\u0742\3\2\2\2\u0742\u0744\5\u0100\u0081"+
+		"\2\u0743\u073c\3\2\2\2\u0744\u0747\3\2\2\2\u0745\u0743\3\2\2\2\u0745\u0746"+
+		"\3\2\2\2\u0746\u0749\3\2\2\2\u0747\u0745\3\2\2\2\u0748\u074a\7J\2\2\u0749"+
+		"\u0748\3\2\2\2\u0749\u074a\3\2\2\2\u074a\u074b\3\2\2\2\u074b\u074d\7\r"+
+		"\2\2\u074c\u074e\7J\2\2\u074d\u074c\3\2\2\2\u074d\u074e\3\2\2\2\u074e"+
+		"\u010d\3\2\2\2\u074f\u0750\t\6\2\2\u0750\u010f\3\2\2\2\u0751\u0752\t\7"+
+		"\2\2\u0752\u0111\3\2\2\2\u0753\u0754\t\b\2\2\u0754\u0113\3\2\2\2\u0755"+
+		"\u0756\t\t\2\2\u0756\u0115\3\2\2\2\u0757\u0758\t\n\2\2\u0758\u0117\3\2"+
+		"\2\2\u0759\u075a\t\13\2\2\u075a\u0119\3\2\2\2\u075b\u0762\5\u011e\u0090"+
+		"\2\u075c\u0762\5\u0120\u0091\2\u075d\u0762\5\u0122\u0092\2\u075e\u0762"+
+		"\5\u0126\u0094\2\u075f\u0762\5\u0124\u0093\2\u0760\u0762\5\u0128\u0095"+
+		"\2\u0761\u075b\3\2\2\2\u0761\u075c\3\2\2\2\u0761\u075d\3\2\2\2\u0761\u075e"+
+		"\3\2\2\2\u0761\u075f\3\2\2\2\u0761\u0760\3\2\2\2\u0762\u011b\3\2\2\2\u0763"+
+		"\u076e\5\u011a\u008e\2\u0764\u0766\7J\2\2\u0765\u0764\3\2\2\2\u0765\u0766"+
+		"\3\2\2\2\u0766\u0767\3\2\2\2\u0767\u0769\7\5\2\2\u0768\u076a\7J\2\2\u0769"+
+		"\u0768\3\2\2\2\u0769\u076a\3\2\2\2\u076a\u076b\3\2\2\2\u076b\u076d\5\u011a"+
+		"\u008e\2\u076c\u0765\3\2\2\2\u076d\u0770\3\2\2\2\u076e\u076c\3\2\2\2\u076e"+
+		"\u076f\3\2\2\2\u076f\u011d\3\2\2\2\u0770\u076e\3\2\2\2\u0771\u0772\7\37"+
+		"\2\2\u0772\u011f\3\2\2\2\u0773\u0774\7 \2\2\u0774\u0121\3\2\2\2\u0775"+
+		"\u0777\5\30\r\2\u0776\u0778\7J\2\2\u0777\u0776\3\2\2\2\u0777\u0778\3\2"+
+		"\2\2\u0778\u0779\3\2\2\2\u0779\u077a\7\7\2\2\u077a\u077b\5\u0084C\2\u077b"+
+		"\u077c\7\b\2\2\u077c\u0123\3\2\2\2\u077d\u077f\5\34\17\2\u077e\u0780\7"+
+		"J\2\2\u077f\u077e\3\2\2\2\u077f\u0780\3\2\2\2\u0780\u0781\3\2\2\2\u0781"+
+		"\u0782\7\7\2\2\u0782\u0783\5\u0084C\2\u0783\u0784\7\b\2\2\u0784\u0125"+
+		"\3\2\2\2\u0785\u0787\5$\23\2\u0786\u0788\7J\2\2\u0787\u0786\3\2\2\2\u0787"+
+		"\u0788\3\2\2\2\u0788\u0789\3\2\2\2\u0789\u078b\7>\2\2\u078a\u078c\7J\2"+
+		"\2\u078b\u078a\3\2\2\2\u078b\u078c\3\2\2\2\u078c\u078d\3\2\2\2\u078d\u078e"+
+		"\5$\23\2\u078e\u0127\3\2\2\2\u078f\u0791\5$\23\2\u0790\u0792\7J\2\2\u0791"+
+		"\u0790\3\2\2\2\u0791\u0792\3\2\2\2\u0792\u0793\3\2\2\2\u0793\u0795\7H"+
+		"\2\2\u0794\u0796\7J\2\2\u0795\u0794\3\2\2\2\u0795\u0796\3\2\2\2\u0796"+
+		"\u0797\3\2\2\2\u0797\u0798\5\u0080A\2\u0798\u0129\3\2\2\2\u014a\u012f"+
+		"\u0135\u0139\u013e\u0141\u014a\u0150\u0157\u0173\u0177\u017e\u0184\u0188"+
+		"\u018d\u0192\u0195\u0198\u019b\u019f\u01a3\u01a9\u01ad\u01b2\u01b7\u01bb"+
+		"\u01bf\u01c4\u01c7\u01ca\u01d0\u01d4\u01d9\u01de\u01e2\u01e7\u01ee\u01f2"+
+		"\u01f6\u01fa\u01ff\u0206\u020a\u020e\u0212\u0217\u021c\u0220\u0223\u0227"+
+		"\u022b\u022f\u0234\u0239\u023e\u0242\u0247\u0251\u0255\u025a\u025e\u0262"+
+		"\u0266\u0268\u0272\u0276\u027b\u029d\u02a0\u02a6\u02aa\u02af\u02b3\u02b9"+
+		"\u02be\u02c2\u02c9\u02cd\u02d1\u02d8\u02dc\u02e1\u02e8\u02eb\u02f0\u02f4"+
+		"\u02fa\u02fe\u0301\u0304\u030a\u030f\u0313\u0319\u031d\u0320\u0323\u0329"+
+		"\u032f\u0333\u0336\u0339\u033f\u0344\u0348\u034e\u0352\u0356\u035c\u0361"+
+		"\u0365\u0369\u036f\u0373\u0377\u037d\u0382\u0386\u0389\u038c\u0392\u0397"+
+		"\u039b\u039f\u03a3\u03a9\u03ae\u03b2\u03b8\u03bc\u03c0\u03c4\u03c8\u03cc"+
+		"\u03d2\u03d7\u03db\u03e2\u03e6\u03ec\u03f1\u03f4\u03f9\u03fd\u0402\u0406"+
+		"\u040a\u040e\u0415\u0419\u041e\u0422\u0426\u042a\u0430\u0435\u0439\u0440"+
+		"\u0444\u044a\u044f\u0453\u0459\u045d\u0461\u0464\u0468\u046c\u0470\u0474"+
+		"\u0478\u047d\u0482\u0486\u048a\u048e\u0492\u0498\u049d\u04a1\u04a7\u04ac"+
+		"\u04b2\u04b6\u04ba\u04be\u04c2\u04c6\u04cb\u04cf\u04d3\u04d6\u04eb\u04f1"+
+		"\u04f5\u04f9\u04fd\u0503\u0507\u050b\u050f\u051f\u0523\u052b\u052f\u0535"+
+		"\u0539\u053c\u053f\u0542\u054b\u054f\u0552\u0556\u0559\u055c\u0562\u0566"+
+		"\u056c\u0570\u0575\u0580\u0584\u0587\u058b\u058e\u0591\u0597\u059a\u059d"+
+		"\u05a3\u05a6\u05a9\u05af\u05b3\u05b9\u05bd\u05c1\u05c5\u05cb\u05cf\u05d3"+
+		"\u05d9\u05dd\u05e1\u05e9\u05ed\u05f2\u05fe\u0602\u0606\u060c\u0610\u0615"+
+		"\u061b\u061f\u0622\u0626\u0629\u062c\u0638\u063c\u063f\u0643\u0646\u0649"+
+		"\u064d\u0650\u0653\u0659\u065c\u065f\u0663\u0666\u0669\u066f\u0672\u0675"+
+		"\u0679\u067c\u067f\u0688\u0690\u0698\u06a1\u06a4\u06aa\u06b0\u06b6\u06bc"+
+		"\u06c2\u06cc\u06d3\u06da\u06e2\u06e6\u06e9\u06ed\u06f1\u06f5\u06fa\u06fe"+
+		"\u0702\u0706\u070f\u0713\u0719\u071d\u0721\u0726\u0729\u0730\u0734\u0738"+
+		"\u073c\u0740\u0745\u0749\u074d\u0761\u0765\u0769\u076e\u0777\u077f\u0787"+
+		"\u078b\u0791\u0795";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {
