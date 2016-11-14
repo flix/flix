@@ -330,18 +330,6 @@ public class FlixBaseListener implements FlixListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterIdents(FlixParser.IdentsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitIdents(FlixParser.IdentsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterMatch_rule(FlixParser.Match_ruleContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -702,6 +690,18 @@ public class FlixBaseListener implements FlixListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterClass_decl(FlixParser.Class_declContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitClass_decl(FlixParser.Class_declContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterDecls_fact(FlixParser.Decls_factContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -961,6 +961,18 @@ public class FlixBaseListener implements FlixListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitE_apply(FlixParser.E_applyContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterE_literal(FlixParser.E_literalContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitE_literal(FlixParser.E_literalContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -1230,6 +1242,18 @@ public class FlixBaseListener implements FlixListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterP_literal(FlixParser.P_literalContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitP_literal(FlixParser.P_literalContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterP_tag(FlixParser.P_tagContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -1345,6 +1369,30 @@ public class FlixBaseListener implements FlixListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitBools(FlixParser.BoolsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterChars(FlixParser.CharsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitChars(FlixParser.CharsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterStrs(FlixParser.StrsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitStrs(FlixParser.StrsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

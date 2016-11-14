@@ -270,16 +270,6 @@ public interface FlixListener extends ParseTreeListener {
 	 */
 	void exitIndexes(FlixParser.IndexesContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link FlixParser#idents}.
-	 * @param ctx the parse tree
-	 */
-	void enterIdents(FlixParser.IdentsContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link FlixParser#idents}.
-	 * @param ctx the parse tree
-	 */
-	void exitIdents(FlixParser.IdentsContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link FlixParser#match_rule}.
 	 * @param ctx the parse tree
 	 */
@@ -580,6 +570,16 @@ public interface FlixListener extends ParseTreeListener {
 	 */
 	void exitClass_body(FlixParser.Class_bodyContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link FlixParser#class_decl}.
+	 * @param ctx the parse tree
+	 */
+	void enterClass_decl(FlixParser.Class_declContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FlixParser#class_decl}.
+	 * @param ctx the parse tree
+	 */
+	void exitClass_decl(FlixParser.Class_declContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link FlixParser#decls_fact}.
 	 * @param ctx the parse tree
 	 */
@@ -799,6 +799,16 @@ public interface FlixListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitE_apply(FlixParser.E_applyContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FlixParser#e_literal}.
+	 * @param ctx the parse tree
+	 */
+	void enterE_literal(FlixParser.E_literalContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FlixParser#e_literal}.
+	 * @param ctx the parse tree
+	 */
+	void exitE_literal(FlixParser.E_literalContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link FlixParser#e_sname}.
 	 * @param ctx the parse tree
@@ -1020,6 +1030,16 @@ public interface FlixListener extends ParseTreeListener {
 	 */
 	void exitP_keyValues(FlixParser.P_keyValuesContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link FlixParser#p_literal}.
+	 * @param ctx the parse tree
+	 */
+	void enterP_literal(FlixParser.P_literalContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FlixParser#p_literal}.
+	 * @param ctx the parse tree
+	 */
+	void exitP_literal(FlixParser.P_literalContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link FlixParser#p_tag}.
 	 * @param ctx the parse tree
 	 */
@@ -1119,6 +1139,26 @@ public interface FlixListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitBools(FlixParser.BoolsContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FlixParser#chars}.
+	 * @param ctx the parse tree
+	 */
+	void enterChars(FlixParser.CharsContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FlixParser#chars}.
+	 * @param ctx the parse tree
+	 */
+	void exitChars(FlixParser.CharsContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FlixParser#strs}.
+	 * @param ctx the parse tree
+	 */
+	void enterStrs(FlixParser.StrsContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FlixParser#strs}.
+	 * @param ctx the parse tree
+	 */
+	void exitStrs(FlixParser.StrsContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link FlixParser#negative}.
 	 * @param ctx the parse tree

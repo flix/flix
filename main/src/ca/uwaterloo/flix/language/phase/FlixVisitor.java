@@ -169,12 +169,6 @@ public interface FlixVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitIndexes(FlixParser.IndexesContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link FlixParser#idents}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitIdents(FlixParser.IdentsContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link FlixParser#match_rule}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -355,6 +349,12 @@ public interface FlixVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitClass_body(FlixParser.Class_bodyContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link FlixParser#class_decl}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitClass_decl(FlixParser.Class_declContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link FlixParser#decls_fact}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -486,6 +486,12 @@ public interface FlixVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitE_apply(FlixParser.E_applyContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link FlixParser#e_literal}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitE_literal(FlixParser.E_literalContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link FlixParser#e_sname}.
 	 * @param ctx the parse tree
@@ -619,6 +625,12 @@ public interface FlixVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitP_keyValues(FlixParser.P_keyValuesContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link FlixParser#p_literal}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitP_literal(FlixParser.P_literalContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link FlixParser#p_tag}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -678,6 +690,18 @@ public interface FlixVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitBools(FlixParser.BoolsContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link FlixParser#chars}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitChars(FlixParser.CharsContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link FlixParser#strs}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitStrs(FlixParser.StrsContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link FlixParser#negative}.
 	 * @param ctx the parse tree

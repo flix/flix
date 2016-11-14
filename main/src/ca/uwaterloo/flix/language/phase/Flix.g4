@@ -86,8 +86,6 @@ attributes : attribute (WS? ',' WS? attribute)*;
 index : '{' WS? (attributeName (WS? ',' WS? attributeName)*)? WS? '}';
 indexes : index (WS? ',' WS? index)*;
 
-idents : ident (WS? ',' WS? ident)*;
-
 match_rule : CASE WS pattern WS? '=>' WS? expression SC?;
 match_rules : match_rule (WS? match_rule)*;
 
@@ -154,7 +152,8 @@ decls_law : (WS? tscomment)* WS? LAW WS definitionName WS? typeparams WS? formal
 
 decls_class : (WS? tscomment)* WS? CLASS WS className class_typeparams WS? contextBoundsList WS? class_body;
 
-class_body : '{' WS? ((decls_definition | decls_signature | decls_law) WS?) '}';
+class_body : '{' WS? (class_decl WS?)* '}';
+class_decl : decls_definition | decls_signature | decls_law ;
 
 decls_fact : WS? predicate WS? '.';
 
@@ -172,8 +171,8 @@ logical : comparison (WS? logical_ops WS? comparison)?;
 expressions : expression (WS? ',' WS? expression)*;
 
 comparison : additive (WS? comparison_ops WS? additive)?;
-additive : multiplicative (WS? addve_ops WS? multiplicative)*;
-multiplicative : infix (WS? multipve_ops WS? infix)*;
+additive : multiplicative (WS? addve_ops WS? additive)?;
+multiplicative : infix (WS? multipve_ops WS? multiplicative)?;
 infix : extended (WS? '`' qualifiedDefinitionName  '`' WS? extended)?;
 extended : unary (WS? extbin_ops WS? unary)?;
 unary : (unary_ops WS? unary) | ascribe;
@@ -181,7 +180,7 @@ ascribe : e_fList (WS? ':' WS? type)?;
 
 e_primary : e_letMatch | e_ifThenElse | e_match | e_switch |
 				e_tag | e_lambda | e_tuple | e_fNil |
-				 e_fVec | e_fSet | e_fMap | literal |
+				 e_fVec | e_fSet | e_fMap | e_literal |
 				existential | universal  | e_qname |
 				e_unaryLambda | e_wild | e_sname | e_userError;
 
@@ -192,6 +191,7 @@ e_switch : SWITCH WS '{' WS? switch_rules WS?'}';
 
 e_apply : e_primary (WS? '(' WS? expressions? WS? ')')?;
 
+e_literal : literal;
 e_sname : variableName;
 e_qname : qualifiedDefinitionName;
 e_tag : (qualifiedTypeName '.')? tagName (WS? e_tuple)?;
@@ -219,12 +219,13 @@ universal : ('∀' | '\\forall') WS? formalparams WS? '.' WS? expression;
 //Patterns
 pattern : p_fList;
 patterns : pattern (WS? ',' WS? pattern)*;
-simple : p_fNil | literal | p_variable |
-		WILD | p_tag | p_tuple | p_fVec | p_fSet | p_fMap;
+simple : p_fNil | p_literal | p_variable |
+		p_wild | p_tag | p_tuple | p_fVec | p_fSet | p_fMap;
 
 p_keyValue : pattern WS? '->' WS? pattern;
 p_keyValues : p_keyValue (WS? ',' WS? p_keyValue)*;
 
+p_literal : literal;
 p_tag : (qualifiedTypeName '.')? tagName (WS? pattern)?;
 p_tuple : '(' WS? patterns? WS? ')';
 
@@ -242,9 +243,10 @@ p_fMap : '@{' WS? p_keyValues? (WS? ',' WS? pattern '...')? WS? '}';
 bools : ('true' | 'false');
 
 Chars : '\'' . '\'';
+chars : Chars;
 
 Strs : '"' ~['"'\n\r]* '"';
-
+strs : Strs;
 Digits : [0-9]+;
 negative : '-';
 
@@ -261,7 +263,7 @@ bigInt : negative? Digits 'ii';
 intDefault : negative? Digits;
 ints : int8 | int16 | int32 | int64 | bigInt | intDefault;
 
-literal : (bools | Chars | floats | ints | Strs);
+literal : (bools | chars | floats | ints | strs);
 
  
 
