@@ -48,10 +48,10 @@ namespace Result {
     }
 
     ///
-    /// Returns `r1` if it is `Ok(v)`. Otherwise returns `r2`.
+    /// Returns `Ok(v)` if `r1` is `Ok(v)`. Otherwise returns `r2`.
     ///
     def withDefault[t, e1, e2](r1: Result[t, e1], r2: Result[t, e2]): Result[t, e2] = match r1 with {
-        case Ok(v) => r1
+        case Ok(v) => Ok(v)
         case Err(w) => r2
     }
 
@@ -67,47 +67,19 @@ namespace Result {
     def forall[t, e](f: t -> Bool, r: Result[t, e]): Bool = getWithDefault(map(f, r), true)
 
     ///
-    /// Returns `r` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to true. Otherwise returns `Err(d)`.
-    ///
-    def filter[t, e](f: t -> Bool, r: Result[t, e], d: e): Result[t, e] = match r with {
-        case Ok(v) => if (f(v)) r else Err(d)
-        case Err(w) => Err(d)
-    }
-
-    ///
-    /// Returns `Ok(f(v))` if `r` is `Ok(v)`. Otherwise returns `r`.
+    /// Returns `Ok(f(v))` if `r` is `Ok(v)`. Returns `Err(w)` if `r` is `Err(w)`.
     ///
     def map[t1, t2, e](f: t1 -> t2, r: Result[t1, e]): Result[t2, e] = match r with {
         case Ok(v) => Ok(f(v))
-        case Err(w) => r
+        case Err(w) => Err(w)
     }
 
     ///
-    /// Returns `Ok(f(v1, v2))` if `r1` is `Ok(v1)` and `r2` is `Ok(v2)`.
-    /// Otherwise returns the first of `r1` and `r2` that is `Err(w)`.
-    ///
-    def map2[t1, t2, t3, e](f: (t1, t2) -> t3, r1: Result[t1, e], r2: Result[t2, e]): Result[t3, e] = match (r1, r2) with {
-        case (Err(w1), _) => r1
-        case (_, Err(w2)) => r2
-        case (Ok(v1), Ok(v2)) => Ok(f(v1, v2))
-    }
-
-    ///
-    /// Returns `f(v)` if `r` is `Ok(v)`. Otherwise returns `r`.
+    /// Returns `f(v)` if `r` is `Ok(v)`. Returns `Err(w)` if `r` is `Err(w)`.
     ///
     def flatMap[t1, t2, e](f: t1 -> Result[t2, e], r: Result[t1, e]): Result[t2, e] = match r with {
         case Ok(v) => f(v)
-        case Err(w) => r
-    }
-
-    ///
-    /// Returns `f(v1, v2)` if `r1` is `Ok(v1)` and `r2` is `Ok(v2)`.
-    /// Otherwise returns the first of `r1` and `r2` that is `Err(w)`.
-    ///
-    def flatMap2[t1, t2, t3, e](f: (t1, t2) -> Result[t3, e], r1: Result[t1, e], r2: Result[t2, e]): Result[t3, e] = match (r1, r2) with {
-        case (Err(w1), _) => r1
-        case (_, Err(w2)) => r2
-        case (Ok(v1), Ok(v2)) => f(v1, v2)
+        case Err(w) => Err(w)
     }
 
     ///
@@ -135,11 +107,11 @@ namespace Result {
     }
 
     ///
-    /// Returns `r` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `Err(d)`.
+    /// Returns `Some(v)` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `None`.
     ///
-    def find[t, e](f: t -> Bool, r: Result[t, e], d: e): Result[t, e] = match r with {
-        case Ok(v) => if (f(v)) r else Err(d)
-        case Err(w) => Err(d)
+    def find[t, e](f: t -> Bool, r: Result[t, e]): Option[t] = match r with {
+        case Ok(v) => if (f(v)) Some(v) else None
+        case Err(w) => None
     }
 
     ///
@@ -181,22 +153,4 @@ namespace Result {
         case Ok(v) => Some(v)
         case Err(w) => None
     }
-
-    ///
-    /// Returns `Ok((v1, v2))` if `r1` is `Ok(v1)` and `r2` is `Ok(v2)`.
-    /// Otherwise returns the first of `r1` and `r2` that is `Err(w)`.
-    ///
-//    def zip[t1, t2, e](r1: Result[t1, e], r2: Result[t2, e]): Result[(t1, t2), e] = match (r1, r2) with {
-//        case (Err(w1), _) => r1
-//        case (_, Err(w2)) => r2
-//        case (Ok(v1), Ok(v2)) => Ok((v1, v2))
-//    }
-
-    ///
-    /// Returns `(Ok(v1), Ok(v2))` if `r` is `Ok((v1, v2))`. Otherwise returns `(r, r)`.
-    ///
-//    def unzip[t1, t2, e](r: Result[(t1, t2), e]): (Result[t1, e], Result[t2, e]) = match r with {
-//        case Ok((v1, v2)) => (Ok(v1), Ok(v2))
-//        case Err(w) => (r, r)
-//    }
 }
