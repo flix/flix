@@ -9,11 +9,6 @@
 //      x = y + z    [addition statement]
 //      x = y / z    [division statement]
 //
-//
-// We begin by defining a namespace for all our declarations. We could have
-// used the root namespace, but to avoid clashes with other examples we
-// create a new namespace.
-//
 
 //
 // We will represent the program-under-analysis using three input
