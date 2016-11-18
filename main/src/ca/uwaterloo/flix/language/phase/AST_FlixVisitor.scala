@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import scala.collection.immutable.Seq;
 import collection.JavaConversions._;
-import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.{Token,ParserRuleContext};
 import org.antlr.v4.runtime.tree.{ParseTree,RuleNode,ErrorNode,TerminalNode};
 
 class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Object]{
@@ -62,6 +62,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 			ctx.getChild(0).getText(),
 			visitStopSp(ctx.getStop())
 		)
+
 	def visitUpperLowerIdent(tk: Token) = Name.Ident(
 			visitStartSp(tk),
 			tk.getText(),
@@ -78,13 +79,13 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 			case null => Name.QName(
 				visitStartSp(ctx.getStart()),
 				Name.RootNS,
-				visitUpperLowerIdent(ctx.LowerIdent().getSymbol()),
+				visitUpperLowerIdent(ctx.getStop()),
 				visitStopSp(ctx.getStop())
 			)
 			case x: FlixParser.NnameContext =>Name.QName(
 				visitStartSp(ctx.getStart()),
 				visitNname(ctx.nname()),
-				visitUpperLowerIdent(ctx.LowerIdent().getSymbol()),
+				visitUpperLowerIdent(ctx.getStop()),
 				visitStopSp(ctx.getStop())
 			)
 		}
@@ -92,28 +93,28 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 			case null => Name.QName(
 				visitStartSp(ctx.getStart()),
 				Name.RootNS,
-				visitUpperLowerIdent(ctx.UpperIdent().getSymbol()),
+				visitUpperLowerIdent(ctx.getStop()),
 				visitStopSp(ctx.getStop())
 			)
 			case x: FlixParser.NnameContext =>Name.QName(
 				visitStartSp(ctx.getStart()),
 				visitNname(ctx.nname()),
-				visitUpperLowerIdent(ctx.UpperIdent().getSymbol()),
+				visitUpperLowerIdent(ctx.getStop()),
 				visitStopSp(ctx.getStop())
 			)
 		}
 		
-	def visitAnnotationName(ctx: FlixParser.AnnotationNameContext) = visitUpperLowerIdent(ctx.LowerIdent().getSymbol())
-	def visitAttributeName(ctx: FlixParser.AttributeNameContext) = visitUpperLowerIdent(ctx.LowerIdent().getSymbol())
-	def visitClassName(ctx: FlixParser.ClassNameContext) = visitUpperLowerIdent(ctx.UpperIdent().getSymbol())
-	def visitDefinitionName(ctx: FlixParser.DefinitionNameContext) = visitUpperLowerIdent(ctx.LowerIdent().getSymbol())
+	def visitAnnotationName(ctx: FlixParser.AnnotationNameContext) = visitUpperLowerIdent(ctx.getStop())
+	def visitAttributeName(ctx: FlixParser.AttributeNameContext) = visitUpperLowerIdent(ctx.getStop())
+	def visitClassName(ctx: FlixParser.ClassNameContext) = visitUpperLowerIdent(ctx.getStop())
+	def visitDefinitionName(ctx: FlixParser.DefinitionNameContext) = visitUpperLowerIdent(ctx.getStop())
 	def visitQualifiedDefinitionName(ctx: FlixParser.QualifiedDefinitionNameContext) = visitLowerqname(ctx.lowerqname());
-	def visitTableName(ctx: FlixParser.TableNameContext) = visitUpperLowerIdent(ctx.UpperIdent().getSymbol())
+	def visitTableName(ctx: FlixParser.TableNameContext) = visitUpperLowerIdent(ctx.getStop())
 	def visitQualifiedTableName(ctx: FlixParser.QualifiedTableNameContext) = visitUpperqname(ctx.upperqname());
-	def visitTagName(ctx: FlixParser.TagNameContext) = visitUpperLowerIdent(ctx.UpperIdent().getSymbol())
-	def visitTypeName(ctx: FlixParser.TypeNameContext) = visitUpperLowerIdent(ctx.UpperIdent().getSymbol())
+	def visitTagName(ctx: FlixParser.TagNameContext) = visitUpperLowerIdent(ctx.getStop())
+	def visitTypeName(ctx: FlixParser.TypeNameContext) = visitUpperLowerIdent(ctx.getStop())
 	def visitQualifiedTypeName(ctx: FlixParser.QualifiedTypeNameContext) = visitUpperqname(ctx.upperqname())
-	def visitVariableName(ctx: FlixParser.VariableNameContext) = visitUpperLowerIdent(ctx.LowerIdent().getSymbol())
+	def visitVariableName(ctx: FlixParser.VariableNameContext) = visitUpperLowerIdent(ctx.getStop())
 
 	//===============
 	//RULES FOR LISTS
