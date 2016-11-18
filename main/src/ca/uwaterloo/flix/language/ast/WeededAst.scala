@@ -20,7 +20,7 @@ trait WeededAst
 
 object WeededAst {
 
-  case class Program(roots: List[WeededAst.Root], hooks: Map[Name.NName, Map[String, Ast.Hook]], time: Time) extends WeededAst
+  case class Program(roots: List[WeededAst.Root], hooks: Map[Symbol.DefnSym, Ast.Hook], time: Time) extends WeededAst
 
   case class Root(decls: List[WeededAst.Declaration]) extends WeededAst
 
@@ -124,10 +124,6 @@ object WeededAst {
 
     case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class FNil(loc: SourceLocation) extends WeededAst.Expression
-
-    case class FList(hd: WeededAst.Expression, tl: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
     case class FVec(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class FSet(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
@@ -185,10 +181,6 @@ object WeededAst {
     case class Tag(enum: Option[Name.QName], tag: Name.Ident, pat: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
 
     case class Tuple(elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
-
-    case class FNil(loc: SourceLocation) extends WeededAst.Pattern
-
-    case class FList(hd: WeededAst.Pattern, tl: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
 
     case class FVec(elms: List[WeededAst.Pattern], rest: Option[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
 

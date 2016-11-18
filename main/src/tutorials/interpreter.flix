@@ -1,0 +1,267 @@
+//
+// In this tutorial we demonstrate the functional language in Flix.
+//
+// We write some interpreters and compilers for a small toy programming language.
+//
+
+//
+// We define an enum to capture the syntax of arithmetic expressions.
+//
+enum AExp {
+    // a literal integer constant.
+    case Cst(Int),
+
+    // a binary addition expression: e1 + e2.
+    case Plus(AExp, AExp),
+
+    // a binary subtraction expression: e1 - e2.
+    case Minus(AExp, AExp),
+
+    // a binary multiplication expression: e1 * e2.
+    case Times(AExp, AExp),
+
+    // a binary division expression: e1 / e2.
+    case Divide(AExp, AExp),
+
+    //n a if-then-else expression: if (e1) e2 else e3.
+    case IfThenElse(BExp, AExp, AExp)
+}
+
+//
+// We then define an enum to capture the syntax of boolean expressions.
+//
+enum BExp {
+    // the true boolean literal.
+    case True,
+
+    // the false boolean literal.
+    case False,
+
+    // a logical negation expression: !e.
+    case Not(BExp),
+
+    // a logical conjunction expression: e1 && e2.
+    case Conj(BExp, BExp),
+
+    // a logical disjunction expression: e1 || e2.
+    case Disj(BExp, BExp),
+
+    // an equality of expression: e1 == e2.
+    case Eq(AExp, AExp),
+
+    // an inequality of expression: e1 != e2.
+    case Neq(AExp, AExp)
+}
+
+//
+// We now define a small interpreter for arithmetic expressions.
+//
+def evalAExp(e: AExp): Int = match e with {
+    case Cst(i)                 => i
+    case Plus(e1, e2)           => evalAExp(e1) + evalAExp(e2)
+    case Minus(e1, e2)          => evalAExp(e1) - evalAExp(e2)
+    case Times(e1, e2)          => evalAExp(e1) * evalAExp(e2)
+    case Divide(e1, e2)         => evalAExp(e1) / evalAExp(e2)
+    case IfThenElse(e1, e2, e3) =>
+        let cond = evalBExp(e1);
+            if (cond) evalAExp(e2) else evalAExp(e3)
+}
+
+//
+// and here is the small interpreter for boolean expressions.
+//
+def evalBExp(e: BExp): Bool = match e with {
+    case True           => true
+    case False          => false
+    case Not(e)         => !evalBExp(e)
+    case Conj(e1, e2)   => evalBExp(e1) && evalBExp(e2)
+    case Disj(e1, e2)   => evalBExp(e1) || evalBExp(e2)
+    case Eq(e1, e2)     => evalAExp(e1) == evalAExp(e2)
+    case Neq(e1,e2)     => evalAExp(e1) != evalAExp(e2)
+}
+
+//
+// We test each interpreter by writing some tests.
+//
+// You can run these functions by passing the `--main` argument to Flix, e.g.
+//   $ flix <file> --main testEvalAExp1
+//
+
+def testEvalAExp1: Int = evalAExp(Cst(42))
+def testEvalAExp2: Int = evalAExp(Plus(Cst(42), Cst(21)))
+def testEvalAExp3: Int = evalAExp(Minus(Cst(42), Cst(21)))
+def testEvalAExp4: Int = evalAExp(IfThenElse(True, Cst(1), Cst(2)))
+def testEvalAExp5: Int = evalAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21)))
+
+def testEvalBExp1: Bool = evalBExp(True)
+def testEvalBExp2: Bool = evalBExp(Not(True))
+def testEvalBExp3: Bool = evalBExp(Conj(True, False))
+def testEvalBExp4: Bool = evalBExp(Disj(True, False))
+def testEvalBExp5: Bool = evalBExp(Neq(Cst(1), Cst(2)))
+
+//
+// We now write two compilers that translate arithmetic and boolean expressions
+// into a stack-based language.
+//
+
+//
+// We define an enum to capture the syntax of instructions.
+//
+enum Inst {
+
+    // an instruction that pushes the constant integer on the stack.
+    case Push(Int),
+
+    // an instruction that adds the top two operands on the stack.
+    case Add,
+
+    // an instruction that substracts the top two operands on the stack.
+    case Sub,
+
+    // an instruction that multiplies the top two operands on the stack.
+    case Mul,
+
+    // an instruction that divides the top two operands on the stack.
+    case Div,
+
+    // an instruction that negates the top operand on the stack.
+    case Neg,
+
+    // an instruction that computes the logical-and of the top two operands on the stack.
+    case And,
+
+    // an instruction that computes the logical-or of the top two operands on the stack.
+    case Or,
+
+    // an instruction that computes equality of the top two operands on the stack.
+    case Cmp,
+
+    // an instruction that branches based on the top operand on the stack.
+    case Branch(List[Inst], List[Inst])
+}
+
+//
+// We then write a compiler from arithmetic expressions to a list of instructions:
+//
+// The append function appends two lists and is defined in the bottom of this file.
+//
+def compileAExp(e: AExp): List[Inst] = match e with {
+    case Cst(i)         => Push(i) :: Nil
+    case Plus(e1, e2)   =>
+        let is1 = compileAExp(e1);
+        let is2 = compileAExp(e2);
+            append(append(is2, is1), (Add :: Nil))
+    case Minus(e1, e2)  =>
+        let is1 = compileAExp(e1);
+        let is2 = compileAExp(e2);
+            append(append(is2, is1), (Sub :: Nil))
+    case Times(e1, e2)  =>
+        let is1 = compileAExp(e1);
+        let is2 = compileAExp(e2);
+            append(append(is2, is1), (Mul :: Nil))
+    case Divide(e1, e2)  =>
+        let is1 = compileAExp(e1);
+        let is2 = compileAExp(e2);
+            append(append(is2, is1), (Div :: Nil))
+    case IfThenElse(e1, e2, e3)  =>
+        let is1 = compileBExp(e1);
+        let is2 = compileAExp(e2);
+        let is3 = compileAExp(e3);
+            append(is1, Branch(is2, is3) :: Nil)
+}
+
+//
+// and a compiler for boolean expressions:
+//
+def compileBExp(e: BExp): List[Inst] = match e with {
+    case True           => Push(1) :: Nil
+    case False          => Push(0) :: Nil
+    case Not(e)         =>
+        let is = compileBExp(e);
+            append(is, Neg :: Nil)
+    case Conj(e1, e2)   =>
+        let is1 = compileBExp(e1);
+        let is2 = compileBExp(e2);
+            append(append(is2, is1), And :: Nil)
+    case Disj(e1, e2)   =>
+        let is1 = compileBExp(e1);
+        let is2 = compileBExp(e2);
+            append(append(is2, is1), Or :: Nil)
+    case Eq(e1, e2)     =>
+        let is1 = compileAExp(e1);
+        let is2 = compileAExp(e2);
+            append(append(is2, is1), Cmp :: Nil)
+    case Neq(e1, e2)    =>
+        let is1 = compileAExp(e1);
+        let is2 = compileAExp(e2);
+            append(append(is2, is1), Neg :: Cmp :: Nil)
+}
+
+//
+// We test each compiler by writing some tests:
+//
+def testCompileAExp1: List[Inst] = compileAExp(Cst(42))
+def testCompileAExp2: List[Inst] = compileAExp(Plus(Cst(42), Cst(21)))
+def testCompileAExp3: List[Inst] = compileAExp(Minus(Cst(42), Cst(21)))
+def testCompileAExp4: List[Inst] = compileAExp(IfThenElse(True, Cst(1), Cst(2)))
+def testCompileAExp5: List[Inst] = compileAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21)))
+
+def testCompileBExp1: List[Inst] = compileBExp(True)
+def testCompileBExp2: List[Inst] = compileBExp(Not(True))
+def testCompileBExp3: List[Inst] = compileBExp(Conj(True, False))
+def testCompileBExp4: List[Inst] = compileBExp(Disj(True, False))
+def testCompileBExp5: List[Inst] = compileBExp(Neq(Cst(1), Cst(2)))
+
+//
+// Finally, we write an interpreter for the stack-based language:
+//
+def evalInst(instructions: List[Inst], stack: List[Int]): Int = match (instructions, stack) with {
+    case (Nil, x :: _) => x
+    case ((Push(i)) :: rs, st) => evalInst(rs, i :: st)
+    case (Add :: rs, i1 :: i2 :: st) => evalInst(rs, (i1 + i2) :: st)
+    case (Sub :: rs, i1 :: i2 :: st) => evalInst(rs, (i1 - i2) :: st)
+    case (Mul :: rs, i1 :: i2 :: st) => evalInst(rs, (i1 * i2) :: st)
+    case (Div :: rs, i1 :: i2 :: st) => evalInst(rs, (i1 / i2) :: st)
+    case (Neg :: rs, i :: st) =>
+        if (i == 0)
+            evalInst(rs, 1 :: st)
+        else
+            evalInst(rs, 0 :: st)
+    case (And :: rs, i1 :: i2 :: st) =>
+        if (i1 != 0 && i2 != 0)
+            evalInst(rs, 1 :: st)
+        else
+            evalInst(rs, 0 :: st)
+    case (Or :: rs, i1 :: i2 :: st) =>
+        if (i1 != 0 || i2 != 0)
+            evalInst(rs, 1 :: st)
+        else
+            evalInst(rs, 0 :: st)
+    case (Cmp :: rs, i1 :: i2 :: st) =>
+        if (i1 == i2)
+            evalInst(rs, 1 :: st)
+        else
+            evalInst(rs, 0 :: st)
+    case ((Branch(is1, is2)) :: rs, i :: st) =>
+        if (i != 0)
+            evalInst(is1, st)
+        else
+            evalInst(is2, st)
+}
+
+//
+// and we can test the compiler and interpreter:
+//
+def testCompileAndEval1: Int = evalInst(compileAExp(Cst(42)), Nil)
+def testCompileAndEval2: Int = evalInst(compileAExp(Plus(Cst(42), Cst(21))), Nil)
+def testCompileAndEval3: Int = evalInst(compileAExp(Minus(Cst(42), Cst(21))), Nil)
+def testCompileAndEval4: Int = evalInst(compileAExp(IfThenElse(True, Cst(1), Cst(2))), Nil)
+def testCompileAndEval5: Int = evalInst(compileAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21))), Nil)
+
+//
+// Here is the append function used earlier:
+//
+def append(xs: List[Inst], ys: List[Inst]): List[Inst] = match xs with {
+    case Nil => ys
+    case z :: zs => z :: append(zs, ys)
+}

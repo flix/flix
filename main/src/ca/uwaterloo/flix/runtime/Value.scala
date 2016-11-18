@@ -249,7 +249,7 @@ object Value {
   /**
     * Flix internal representation of closures.
     */
-  final case class Closure(name: Symbol.Resolved, bindings: Array[AnyRef])
+  final case class Closure(name: Symbol.DefnSym, bindings: Array[AnyRef])
 
   // TODO: Introduce make function and make Closure constructor private.
 
@@ -303,6 +303,43 @@ object Value {
     * Constructs the tag for the given tag `t` and value `v`.
     */
   def mkTag(t: java.lang.String, v: AnyRef): Value.Tag = new Value.Tag(t, v)
+
+  /**
+    * Returns the Nil element of a list.
+    */
+  def mkNil: Value.Tag = mkTag("Nil", Unit)
+
+  /**
+    * Returns the list `vs` with the element `v` prepended.
+    */
+  def mkCons(v: AnyRef, vs: AnyRef): Value.Tag = mkTag("Cons", Tuple(Array(v,vs)))
+
+  /**
+    * Returns the given Scala list `as` as a Flix list.
+    */
+  def mkList(as: List[AnyRef]): Value.Tag = as.foldRight(mkNil) {
+    case (a, l) => mkCons(a, l)
+  }
+
+  /**
+    * Returns the None element of a Flix Option.
+    */
+  def mkNone(): Value.Tag = mkTag("None", Unit)
+
+  /**
+    * Returns `Some(v)` of the given value `v`.
+    */
+  def mkSome(v: AnyRef): Value.Tag = mkTag("Some", v)
+
+  /**
+    * Returns `Ok(v)` of the given value `v`.
+    */
+  def mkOk(v: AnyRef): Value.Tag = mkTag("Ok", v)
+
+  /**
+    * Returns `Err(v)` of the given value `v`.
+    */
+  def mkErr(v: AnyRef): Value.Tag = mkTag("Err", v)
 
   /**
     * Casts the given reference `ref` to a tag.

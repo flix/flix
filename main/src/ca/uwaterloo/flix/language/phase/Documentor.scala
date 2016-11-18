@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
 
-import ca.uwaterloo.flix.language.ast.{Ast, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.{Ast, Type}
 import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource, StreamOps}
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
@@ -97,8 +97,20 @@ object Documentor {
   /**
     * Returns a JSON object of the available namespaces for the menu.
     */
-  private def mkMenu(xs: Set[List[String]]): List[JObject] = xs.toList.map {
-    case ns => JObject(JField("name", JString(ns.mkString("."))))
+  private def mkMenu(xs: Set[List[String]]): List[JObject] = {
+    val prelude = JObject(List(
+      JField("name", JString("Prelude")),
+      JField("link", JString("index.html"))
+    ))
+
+    val namespaces = xs map {
+      case ns => JObject(List(
+        JField("name", JString(ns.mkString("."))),
+        JField("link", JString(ns.mkString(".") + ".html"))
+      ))
+    }
+
+    prelude :: namespaces.toList
   }
 
   /**
@@ -247,6 +259,7 @@ object Documentor {
         |    <link href="__app__.css" rel="stylesheet" type="text/css"/>
         |    <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet">
         |    <link href="https://fonts.googleapis.com/css?family=Droid+Sans+Mono" rel="stylesheet">
+        |    <link href="https://fonts.googleapis.com/css?family=Oswald" rel="stylesheet">
         |    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
         |</head>
         |<body>

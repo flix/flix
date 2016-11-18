@@ -19,6 +19,8 @@ package ca.uwaterloo.flix
 import java.io.File
 
 import ca.uwaterloo.flix.api._
+import ca.uwaterloo.flix.runtime.Value
+import ca.uwaterloo.flix.util.Highlight.Code
 import ca.uwaterloo.flix.util._
 
 import scala.concurrent.duration.Duration
@@ -83,10 +85,10 @@ object Main {
     if (cmdOpts.delta.nonEmpty) {
       flix.deltaSolve(cmdOpts.delta.get.toPath) match {
         case Validation.Success(_, errors) =>
-          errors.foreach(e => println(e.message))
+          errors.foreach(e => println(e.render))
           System.exit(0)
         case Validation.Failure(errors) =>
-          errors.foreach(e => println(e.message))
+          errors.foreach(e => println(e.render))
           System.exit(1)
       }
     }
@@ -95,35 +97,42 @@ object Main {
     try {
       flix.solve() match {
         case Validation.Success(model, errors) =>
-          errors.foreach(e => println(e.message))
+          errors.foreach(e => println(e.render))
+
+          val main = cmdOpts.main
+          if (main.nonEmpty) {
+            val name = main.get
+            val result = model.getConstant(name)
+            Console.println(s"$name returned `${Value.pretty(result)}'.")
+          }
 
           val print = cmdOpts.print
           for (name <- print) {
             PrettyPrint.print(name, model)
           }
         case Validation.Failure(errors) =>
-          errors.foreach(e => println(e.message))
+          errors.foreach(e => println(e.render))
       }
     } catch {
       case UserException(msg, loc) =>
         Console.err.println("User error " + loc.format)
         Console.err.println()
-        Console.err.println(loc.highlight(new AnsiConsole))
+        Console.err.println(Code(loc, msg))
         System.exit(1)
       case MatchException(msg, loc) =>
         Console.err.println("Non-exhaustive match " + loc.format)
         Console.err.println()
-        Console.err.println(loc.highlight(new AnsiConsole))
+        Console.err.println(Code(loc, msg))
         System.exit(1)
       case SwitchException(msg, loc) =>
         Console.err.println("Non-exhaustive switch " + loc.format)
         Console.err.println()
-        Console.err.println(loc.highlight(new AnsiConsole))
+        Console.err.println(Code(loc, msg))
         System.exit(1)
       case RuleException(msg, loc) =>
         Console.err.println("Integrity rule violated " + loc.format)
         Console.err.println()
-        Console.err.println(loc.highlight(new AnsiConsole))
+        Console.err.println(Code(loc, msg))
         System.exit(1)
     }
 
@@ -134,6 +143,7 @@ object Main {
     */
   case class CmdOpts(delta: Option[File] = None,
                      documentor: Boolean = false,
+                     main: Option[String] = None,
                      monitor: Boolean = false,
                      optimize: Boolean = false,
                      pipe: Boolean = false,
@@ -171,6 +181,11 @@ object Main {
 
       // Help.
       help("help").text("prints this usage information.")
+
+      // Main.
+      opt[String]("main").action((s, c) => c.copy(main = Some(s))).
+        valueName("<name>").
+        text("evaluates the <name> function.")
 
       // Monitor.
       opt[Unit]("monitor").action((_, c) => c.copy(monitor = true)).
@@ -256,6 +271,7 @@ object Main {
     val inputStream = name match {
       case "delta-debugging" => LocalResource.Tutorials.DeltaDebugging
       case "introduction" => LocalResource.Tutorials.Introduction
+      case "interpreter" => LocalResource.Tutorials.Interpreter
       case _ =>
         Console.println("No match. Available tutorials:")
         Console.println("  introduction")

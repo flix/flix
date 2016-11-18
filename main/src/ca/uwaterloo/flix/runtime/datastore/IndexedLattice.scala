@@ -47,22 +47,22 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   /**
     * The Bot function definition.
     */
-  private val BotDefn: ExecutableAst.Definition.Constant = root.constants(latticeOps.bot)
+  private val BotDefn: ExecutableAst.Definition.Constant = root.definitions(latticeOps.bot)
 
   /**
     * The Leq function definition.
     */
-  private val LeqDefn: ExecutableAst.Definition.Constant = root.constants(latticeOps.leq)
+  private val LeqDefn: ExecutableAst.Definition.Constant = root.definitions(latticeOps.leq)
 
   /**
     * The Lub function definition.
     */
-  private val LubDefn: ExecutableAst.Definition.Constant = root.constants(latticeOps.lub)
+  private val LubDefn: ExecutableAst.Definition.Constant = root.definitions(latticeOps.lub)
 
   /**
     * The Glb function definition.
     */
-  private val GlbDefn: ExecutableAst.Definition.Constant = root.constants(latticeOps.glb)
+  private val GlbDefn: ExecutableAst.Definition.Constant = root.definitions(latticeOps.glb)
 
   /**
     * The bottom element.

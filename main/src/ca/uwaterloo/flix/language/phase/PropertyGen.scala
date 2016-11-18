@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.Ast.Annotation
 import ca.uwaterloo.flix.language.ast.TypedAst.Declaration.BoundedLattice
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression

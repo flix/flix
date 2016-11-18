@@ -18,9 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result._
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 object Unification {
 
@@ -68,13 +67,10 @@ object Unification {
       case Type.Native => Type.Native
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.FTuple(l) => Type.FTuple(l)
-      case Type.FList => Type.FList
       case Type.FVec => Type.FVec
       case Type.FSet => Type.FSet
       case Type.FMap => Type.FMap
-      case Type.Enum(name, cases, kind) => Type.Enum(name, cases.foldLeft(Map.empty[String, Type]) {
-        case (macc, (tag, t)) => macc + (tag -> apply(t))
-      }, kind)
+      case Type.Enum(name, kind) => Type.Enum(name, kind)
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
     }
 
@@ -103,9 +99,34 @@ object Unification {
   }
 
   /**
+    * A common super-type for unification errors.
+    */
+  sealed trait UnificationError
+
+  object UnificationError {
+
+    /**
+      * An unification error due to a mismatch between `tpe1` and `tpe2`.
+      *
+      * @param tpe1 the first type.
+      * @param tpe2 the second type.
+      */
+    case class Mismatch(tpe1: Type, tpe2: Type) extends UnificationError
+
+    /**
+      * An unification error due to an occurrence of `tvar` in `tpe`.
+      *
+      * @param tvar the type variable.
+      * @param tpe  the type.
+      */
+    case class OccursCheck(tvar: Type.Var, tpe: Type) extends UnificationError
+
+  }
+
+  /**
     * Returns the most general unifier of the two given types `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type, loc: SourceLocation): Result[Substitution, TypeError] = {
+  def unify(tpe1: Type, tpe2: Type): Result[Substitution, UnificationError] = {
 
     // NB: Uses a closure to capture the source location `loc`.
 
@@ -114,12 +135,12 @@ object Unification {
       *
       * Performs the so-called occurs-check to ensure that the substitution is kind-preserving.
       */
-    def unifyVar(x: Type.Var, tpe: Type): Result[Substitution, TypeError] = {
+    def unifyVar(x: Type.Var, tpe: Type): Result[Substitution, UnificationError] = {
       if (x == tpe) {
         return Result.Ok(Substitution.empty)
       }
       if (tpe.typeVars contains x) {
-        return Result.Err(TypeError.OccursCheck())
+        return Result.Err(UnificationError.OccursCheck(x, tpe))
       }
       // TODO: Kinds disabled for now. Requires changed to the
       // previous phase to associated type variables with their kinds.
@@ -132,7 +153,7 @@ object Unification {
     /**
       * Unifies the two given types `tpe1` and `tpe2`.
       */
-    def unifyTypes(tpe1: Type, tpe2: Type): Result[Substitution, TypeError] = (tpe1, tpe2) match {
+    def unifyTypes(tpe1: Type, tpe2: Type): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
       case (x: Type.Var, _) => unifyVar(x, tpe2)
       case (_, x: Type.Var) => unifyVar(x, tpe1)
       case (Type.Unit, Type.Unit) => Result.Ok(Substitution.empty)
@@ -149,14 +170,10 @@ object Unification {
       case (Type.Native, Type.Native) => Result.Ok(Substitution.empty)
       case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
       case (Type.FTuple(l1), Type.FTuple(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
-      case (Type.FList, Type.FList) => Result.Ok(Substitution.empty)
       case (Type.FVec, Type.FVec) => Result.Ok(Substitution.empty)
       case (Type.FSet, Type.FSet) => Result.Ok(Substitution.empty)
       case (Type.FMap, Type.FMap) => Result.Ok(Substitution.empty)
-      case (Type.Enum(name1, cases1, kind1), Type.Enum(name2, cases2, kind2)) if name1 == name2 =>
-        val ts1 = cases1.values.toList
-        val ts2 = cases2.values.toList
-        unifyAll(ts1, ts2)
+      case (Type.Enum(name1, kind1), Type.Enum(name2, kind2)) if name1 == name2 => Result.Ok(Substitution.empty)
       case (Type.Apply(t1, ts1), Type.Apply(t2, ts2)) =>
         unifyTypes(t1, t2) match {
           case Result.Ok(subst1) => unifyAll(subst1(ts1), subst1(ts2)) match {
@@ -165,13 +182,13 @@ object Unification {
           }
           case Result.Err(e) => Result.Err(e)
         }
-      case _ => Result.Err(TypeError.UnificationError(tpe1, tpe2, loc))
+      case _ => Result.Err(UnificationError.Mismatch(tpe1, tpe2))
     }
 
     /**
       * Unifies the two given lists of types `ts1` and `ts2`.
       */
-    def unifyAll(ts1: List[Type], ts2: List[Type]): Result[Substitution, TypeError] = (ts1, ts2) match {
+    def unifyAll(ts1: List[Type], ts2: List[Type]): Result[Substitution, UnificationError] = (ts1, ts2) match {
       case (Nil, Nil) => Result.Ok(Substitution.empty)
       case (t1 :: rs1, t2 :: rs2) => unifyTypes(t1, t2) match {
         case Result.Ok(subst1) => unifyAll(subst1(rs1), subst1(rs2)) match {
@@ -240,13 +257,19 @@ object Unification {
     * associated substitution into the type inference monad.
     */
   def unifyM(tpe1: Type, tpe2: Type, loc: SourceLocation): InferMonad[Type] = {
-    InferMonad((s: Substitution) =>
-      unify(s(tpe1), s(tpe2), loc) match {
+    InferMonad((s: Substitution) => {
+      val type1 = s(tpe1)
+      val type2 = s(tpe2)
+      unify(type1, type2) match {
         case Result.Ok(s1) =>
           val subst = s1 @@ s
           Ok(subst, subst(tpe1))
-        case Result.Err(e) => Err(e)
+        case Result.Err(UnificationError.Mismatch(baseType1, baseType2)) =>
+          Err(TypeError.UnificationError(baseType1, baseType2, type1, type2, loc))
+        case Result.Err(UnificationError.OccursCheck(baseType1, baseType2)) =>
+          Err(TypeError.OccursCheckError(baseType1, baseType2, type1, type2, loc))
       }
+    }
     )
   }
 

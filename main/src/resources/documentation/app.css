@@ -15,9 +15,10 @@ body {
     top: 0;
     left: 0;
     width: 13vw;
+    max-width: 12rem;
     height: 100vh;
 
-    background-color: #eadfda;
+    background-color: #4687a0;
     box-shadow: 2px 0 2px 0 rgba(0, 0, 0, 0.15);
     padding-left: 3vw;
     padding-right: 3vw;
@@ -27,18 +28,39 @@ body {
 }
 
 .navbar .title {
-    font-family: "Arial", sans-serif;
-    font-weight: bold;
+    font-family: "Oswald", sans-serif;
     font-size: 1.2rem;
     text-align: center;
 
     margin-top: 1rem;
     margin-bottom: 1rem;
+
+    color: #ffffff;
+}
+
+.navbar .title a {
+    color: #ffffff;
+    text-decoration: none;
 }
 
 .navbar ul {
     margin: 0;
     padding: 0;
+}
+
+.navbar ul li {
+    color: #000000;
+    margin: 0.1rem 0;
+}
+
+.navbar ul li a:link, .navbar ul li a:visited {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.navbar ul li a:hover, .navbar ul li a:active {
+    color: #000000;
+    text-decoration: underline;
 }
 
 /**
@@ -84,7 +106,7 @@ body {
 .comment {
     font-family: "Arial", sans-serif;
     font-size: 0.75rem;
-    color: #8f8f8f;
+    color: #000000;
     margin-left: 2.5rem;
 }
 
@@ -126,16 +148,20 @@ body {
  * Headings.
  */
 h1, h2 {
-    font-family: "Arial", sans-serif;
     color: #000000;
 }
 
 h1 {
+    font-family: "Oswald", sans-serif;
     font-size: 2rem;
     font-weight: bold;
+
+    padding-bottom: 2px;
+    border-bottom: 2px solid #efefef;
 }
 
 h2 {
+    font-family: "Arial", sans-serif;
     font-size: 1.1rem;
     font-weight: bold;
     margin-left: 0.5rem;

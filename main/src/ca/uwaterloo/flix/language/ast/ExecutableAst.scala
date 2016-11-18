@@ -23,7 +23,8 @@ sealed trait ExecutableAst
 
 object ExecutableAst {
 
-  case class Root(constants: Map[Symbol.Resolved, ExecutableAst.Definition.Constant],
+  case class Root(definitions: Map[Symbol.DefnSym, ExecutableAst.Definition.Constant],
+                  enums: Map[Symbol.EnumSym, ExecutableAst.Definition.Enum],
                   lattices: Map[Type, ExecutableAst.Definition.Lattice],
                   tables: Map[Symbol.TableSym, ExecutableAst.Table],
                   indexes: Map[Symbol.TableSym, ExecutableAst.Definition.Index],
@@ -37,21 +38,21 @@ object ExecutableAst {
 
   object Definition {
 
-    case class Constant(name: Symbol.Resolved,
-                        formals: Array[ExecutableAst.FormalArg],
-                        exp: ExecutableAst.Expression,
-                        isSynthetic: Boolean,
-                        tpe: Type,
-                        loc: SourceLocation) extends ExecutableAst.Definition {
+    case class Constant(sym: Symbol.DefnSym, formals: Array[ExecutableAst.FormalArg], exp: ExecutableAst.Expression, isSynthetic: Boolean, tpe: Type, loc: SourceLocation) extends ExecutableAst.Definition {
+      /**
+        * Pointer to generated code.
+        */
       var method: Method = null
     }
 
+    case class Enum(sym: Symbol.EnumSym, cases: Map[String, ExecutableAst.Case], loc: SourceLocation) extends ExecutableAst.Definition
+
     case class Lattice(tpe: Type,
-                       bot: Symbol.Resolved,
-                       top: Symbol.Resolved,
-                       leq: Symbol.Resolved,
-                       lub: Symbol.Resolved,
-                       glb: Symbol.Resolved,
+                       bot: Symbol.DefnSym,
+                       top: Symbol.DefnSym,
+                       leq: Symbol.DefnSym,
+                       lub: Symbol.DefnSym,
+                       glb: Symbol.DefnSym,
                        loc: SourceLocation) extends ExecutableAst.Definition
 
     case class Index(name: Symbol.TableSym,
@@ -81,7 +82,6 @@ object ExecutableAst {
 
     case class Fact(head: ExecutableAst.Predicate.Head) extends ExecutableAst.Constraint
 
-    // TODO(magnus): Change lists to arrays
     case class Rule(head: ExecutableAst.Predicate.Head,
                     body: List[ExecutableAst.Predicate.Body],
                     tables: List[ExecutableAst.Predicate.Body.Table],
@@ -112,7 +112,7 @@ object ExecutableAst {
       */
     def getQuantifiers: List[Expression.Var] = this match {
       case Expression.Universal(params, _, _) => params.map {
-        case ExecutableAst.FormalArg(ident, tpe) => Expression.Var(ident, -1, tpe, SourceLocation.Unknown)
+        case ExecutableAst.FormalArg(sym, tpe) => Expression.Var(sym, tpe, SourceLocation.Unknown)
       }
       case _ => Nil
     }
@@ -153,22 +153,16 @@ object ExecutableAst {
     case object Unit extends ExecutableAst.Expression {
       final val tpe = Type.Unit
       final val loc = SourceLocation.Unknown
-
-      override def toString: String = "#U"
     }
 
     case object True extends ExecutableAst.Expression {
       final val tpe = Type.Bool
       final val loc = SourceLocation.Unknown
-
-      override def toString: String = "#t"
     }
 
     case object False extends ExecutableAst.Expression {
       final val tpe = Type.Bool
       final val loc = SourceLocation.Unknown
-
-      override def toString: String = "#f"
     }
 
     case class Char(lit: scala.Char) extends ExecutableAst.Expression {
@@ -316,27 +310,22 @@ object ExecutableAst {
     /**
       * A typed AST node representing a local variable expression (i.e. a parameter or let-bound variable).
       *
-      * @param ident  the name of the variable.
-      * @param offset the (0-based) index of the variable.
-      * @param tpe    the type of the variable.
-      * @param loc    the source location of the variable.
+      * @param sym the name of the variable.
+      * @param tpe the type of the variable.
+      * @param loc the source location of the variable.
       */
-    // TODO: Rename to LocalVar
-    case class Var(ident: Name.Ident,
-                   offset: scala.Int,
+    case class Var(sym: Symbol.VarSym,
                    tpe: Type,
                    loc: SourceLocation) extends ExecutableAst.Expression
 
     /**
       * A typed AST node representing a reference to a top-level definition.
       *
-      * @param name the name of the reference.
-      * @param tpe  the type of the reference.
-      * @param loc  the source location of the reference.
+      * @param sym the name of the reference.
+      * @param tpe the type of the reference.
+      * @param loc the source location of the reference.
       */
-    case class Ref(name: Symbol.Resolved, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression {
-      override def toString: String = "Ref(" + name.fqn + ")"
-    }
+    case class Ref(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     /**
       * A typed AST node representing the creation of a closure. Free variables are computed at compile time and bound
@@ -355,12 +344,12 @@ object ExecutableAst {
     /**
       * A typed AST node representing a function call.
       *
-      * @param name the name of the function being called.
+      * @param sym  the name of the function being called.
       * @param args the function arguments.
       * @param tpe  the return type of the function.
       * @param loc  the source location of the expression.
       */
-    case class ApplyRef(name: Symbol.Resolved,
+    case class ApplyRef(sym: Symbol.DefnSym,
                         args: Array[ExecutableAst.Expression],
                         tpe: Type,
                         loc: SourceLocation) extends ExecutableAst.Expression
@@ -374,7 +363,7 @@ object ExecutableAst {
       * @param tpe     the return type of the function.
       * @param loc     the source location of the expression.
       */
-    case class ApplyTail(name: Symbol.Resolved,
+    case class ApplyTail(name: Symbol.DefnSym,
                          formals: List[ExecutableAst.FormalArg],
                          actuals: List[ExecutableAst.Expression],
                          tpe: Type,
@@ -458,21 +447,17 @@ object ExecutableAst {
     /**
       * A typed AST node representing a let expression.
       *
-      * @param ident  the name of the bound variable.
-      * @param offset the (0-based) index of the bound variable.
-      * @param exp1   the value of the bound variable.
-      * @param exp2   the body expression in which the bound variable is visible.
-      * @param tpe    the type of the expression (which is equivalent to the type of the body expression).
-      * @param loc    the source location of the expression.
+      * @param sym  the name of the bound variable.
+      * @param exp1 the value of the bound variable.
+      * @param exp2 the body expression in which the bound variable is visible.
+      * @param tpe  the type of the expression (which is equivalent to the type of the body expression).
+      * @param loc  the source location of the expression.
       */
-    case class Let(ident: Name.Ident,
-                   offset: scala.Int,
+    case class Let(sym: Symbol.VarSym,
                    exp1: ExecutableAst.Expression,
                    exp2: ExecutableAst.Expression,
                    tpe: Type,
-                   loc: SourceLocation) extends ExecutableAst.Expression {
-      override def toString: String = "Let(" + ident.name + " = " + exp1 + " in " + exp2 + ")"
-    }
+                   loc: SourceLocation) extends ExecutableAst.Expression
 
     /**
       * A typed AST node representing a check-tag expression, i.e. check if the tag expression matches the given tag
@@ -508,13 +493,13 @@ object ExecutableAst {
     /**
       * A typed AST node representing a tagged expression.
       *
-      * @param enum the name of the enum.
-      * @param tag  the name of the tag.
-      * @param exp  the expression.
-      * @param tpe  the type of the expression.
-      * @param loc  The source location of the tag.
+      * @param sym the name of the enum.
+      * @param tag the name of the tag.
+      * @param exp the expression.
+      * @param tpe the type of the expression.
+      * @param loc The source location of the tag.
       */
-    case class Tag(enum: Symbol.Resolved,
+    case class Tag(sym: Symbol.EnumSym,
                    tag: String,
                    exp: ExecutableAst.Expression,
                    tpe: Type,
@@ -552,25 +537,7 @@ object ExecutableAst {
       */
     case class Tuple(elms: Array[ExecutableAst.Expression],
                      tpe: Type,
-                     loc: SourceLocation) extends ExecutableAst.Expression {
-      override def toString: String = "(" + elms.mkString(", ") + ")"
-    }
-
-    case class FNil(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
-
-    case class FList(hd: ExecutableAst.Expression, tl: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
-
-    case class IsNil(exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
-      final val tpe: Type = Type.Bool
-    }
-
-    case class IsList(exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
-      final val tpe: Type = Type.Bool
-    }
-
-    case class GetHead(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
-
-    case class GetTail(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+                     loc: SourceLocation) extends ExecutableAst.Expression
 
     case class FSet(elms: Array[ExecutableAst.Expression],
                     tpe: Type,
@@ -637,7 +604,7 @@ object ExecutableAst {
         val arity: Int = terms.length
       }
 
-      case class ApplyFilter(name: Symbol.Resolved,
+      case class ApplyFilter(sym: Symbol.DefnSym,
                              terms: Array[ExecutableAst.Term.Body],
                              freeVars: Set[String],
                              loc: SourceLocation) extends ExecutableAst.Predicate.Body
@@ -647,12 +614,12 @@ object ExecutableAst {
                                  freeVars: Set[String],
                                  loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
-      case class NotEqual(ident1: Name.Ident,
-                          ident2: Name.Ident,
+      case class NotEqual(sym1: Symbol.VarSym,
+                          sym2: Symbol.VarSym,
                           freeVars: Set[String],
                           loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
-      case class Loop(ident: Name.Ident,
+      case class Loop(sym: Symbol.VarSym,
                       term: ExecutableAst.Term.Head,
                       freeVars: Set[String],
                       loc: SourceLocation) extends ExecutableAst.Predicate.Body
@@ -671,11 +638,11 @@ object ExecutableAst {
 
     object Head {
 
-      case class Var(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
+      case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
       case class Exp(e: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
-      case class Apply(name: Symbol.Resolved,
+      case class Apply(sym: Symbol.DefnSym,
                        args: Array[ExecutableAst.Term.Head],
                        tpe: Type,
                        loc: SourceLocation) extends ExecutableAst.Term.Head
@@ -697,7 +664,7 @@ object ExecutableAst {
 
       case class Wildcard(tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
-      case class Var(ident: Name.Ident, v: scala.Int, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
+      case class Var(sym: Symbol.VarSym, v: scala.Int, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
       case class Exp(e: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
@@ -707,9 +674,11 @@ object ExecutableAst {
 
   case class Attribute(name: String, tpe: Type) extends ExecutableAst
 
-  case class FormalArg(ident: Name.Ident, tpe: Type) extends ExecutableAst
+  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends ExecutableAst
 
-  case class FreeVar(ident: Name.Ident, offset: Int, tpe: Type) extends ExecutableAst
+  case class FormalArg(sym: Symbol.VarSym, tpe: Type) extends ExecutableAst
+
+  case class FreeVar(sym: Symbol.VarSym, tpe: Type) extends ExecutableAst
 
   case class Property(law: Law, exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst
 

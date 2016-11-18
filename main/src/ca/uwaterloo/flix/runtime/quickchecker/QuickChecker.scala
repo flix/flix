@@ -18,13 +18,13 @@ package ca.uwaterloo.flix.runtime.quickchecker
 
 import java.math.BigInteger
 
-import ca.uwaterloo.flix.language.Compiler
+import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression.Var
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, Property, Root}
-import ca.uwaterloo.flix.language.ast.{PropertyError, Type}
-import ca.uwaterloo.flix.language.phase.GenSym
+import ca.uwaterloo.flix.language.ast.{PropertyError, Symbol, Type}
 import ca.uwaterloo.flix.runtime.evaluator.SymVal.{Char, Unit}
 import ca.uwaterloo.flix.runtime.evaluator.{SymVal, SymbolicEvaluator}
+import ca.uwaterloo.flix.util.Highlight.{Blue, Cyan, Red}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
 
@@ -166,7 +166,7 @@ object QuickChecker {
       /*
        * Generate random parameter values in an environment.
        */
-      val env = randomEnv(exp0.getQuantifiers)
+      val env = randomEnv(exp0.getQuantifiers, root)
 
       /*
        * Run the symbolic evaluator on the generated environment.
@@ -202,7 +202,7 @@ object QuickChecker {
   /**
     * Evaluates the given expression `exp0` to a boolean value under the given environment `env0`.
     */
-  private def eval(exp0: Expression, env0: Map[String, SymVal], root: Root)(implicit genSym: GenSym): Boolean = {
+  private def eval(exp0: Expression, env0: Map[Symbol.VarSym, SymVal], root: Root)(implicit genSym: GenSym): Boolean = {
     val result = SymbolicEvaluator.eval(exp0.peelQuantifiers, env0, root)
     result match {
       case List((Nil, SymVal.True)) => true
@@ -214,9 +214,9 @@ object QuickChecker {
   /**
     * Generates a random environment for the given list of quantifiers.
     */
-  private def randomEnv(quantifiers: List[Var])(implicit random: Random): Map[String, SymVal] = {
-    quantifiers.foldLeft(Map.empty[String, SymVal]) {
-      case (macc, Var(ident, offset, tpe, loc)) => macc + (ident.name -> new ArbSymVal(tpe).gen.mk(random))
+  private def randomEnv(quantifiers: List[Var], root: Root)(implicit random: Random): Map[Symbol.VarSym, SymVal] = {
+    quantifiers.foldLeft(Map.empty[Symbol.VarSym, SymVal]) {
+      case (macc, Var(sym, tpe, loc)) => macc + (sym -> new ArbSymVal(tpe, root).gen.mk(random))
     }
   }
 
@@ -224,8 +224,7 @@ object QuickChecker {
     * Prints verbose results.
     */
   private def printVerbose(results: List[PropertyResult]): Unit = {
-    implicit val consoleCtx = Compiler.ConsoleCtx
-    Console.println(consoleCtx.blue(s"-- QUICK CHECKER RESULTS ---------------------------------------------"))
+    Console.println(Blue(s"-- QUICK CHECKER RESULTS ---------------------------------------------"))
 
     for ((source, properties) <- results.groupBy(_.property.loc.source)) {
 
@@ -236,10 +235,10 @@ object QuickChecker {
       for (result <- properties.sortBy(_.property.loc)) {
         result match {
           case PropertyResult.Success(property, tests, elapsed) =>
-            Console.println("  " + consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ") (" + tests + " tests, " + TimeOps.toSeconds(elapsed) + " seconds.)")
+            Console.println("  " + Cyan("✓ ") + property.law + " (" + property.loc.format + ") (" + tests + " tests, " + TimeOps.toSeconds(elapsed) + " seconds.)")
 
           case PropertyResult.Failure(property, success, failure, elapsed, error) =>
-            Console.println("  " + consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ") (" + success + " SUCCESS, " + failure + " FAILED, " + TimeOps.toSeconds(elapsed) + " seconds.)")
+            Console.println("  " + Red("✗ ") + property.law + " (" + property.loc.format + ") (" + success + " SUCCESS, " + failure + " FAILED, " + TimeOps.toSeconds(elapsed) + " seconds.)")
         }
       }
 
@@ -283,7 +282,7 @@ object QuickChecker {
   /**
     * An arbitrary for symbolic values based on the given type `tpe`.
     */
-  class ArbSymVal(tpe: Type) extends Arbitrary[SymVal] {
+  class ArbSymVal(tpe: Type, root: Root) extends Arbitrary[SymVal] {
     def gen: Generator[SymVal] = tpe match {
       case Type.Unit => ArbUnit.gen
       case Type.Bool => ArbBool.gen
@@ -297,17 +296,20 @@ object QuickChecker {
       case Type.BigInt => ArbBigInt.gen
       case Type.Str => ArbStr.gen
 
-      case Type.Enum(name, cases, kind) =>
-        val elms = cases.map {
-          case (tag, innerType) => new Generator[SymVal] {
-            def mk(r: Random): SymVal = SymVal.Tag(tag, new ArbSymVal(innerType).gen.mk(r))
-          }
+      case Type.Enum(sym, kind) =>
+        val decl = root.enums(sym)
+        val elms = decl.cases.map {
+          case (tag, caze) =>
+            val innerType = caze.tpe // TODO: Assumes that the enum is non-polymorphic.
+            new Generator[SymVal] {
+              def mk(r: Random): SymVal = SymVal.Tag(tag, new ArbSymVal(innerType, root).gen.mk(r))
+            }
         }
         oneOf(elms.toArray: _*)
 
       case Type.Apply(Type.FTuple(l), elms) => new Generator[SymVal] {
         def mk(r: Random): SymVal = {
-          val vals = elms.map(t => new ArbSymVal(t).gen.mk(r))
+          val vals = elms.map(t => new ArbSymVal(t, root).gen.mk(r))
           SymVal.Tuple(vals)
         }
       }

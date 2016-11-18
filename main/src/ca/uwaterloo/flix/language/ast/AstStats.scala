@@ -47,7 +47,7 @@ object AstStats {
       case ExecutableAst.Expression.StoreInt8(exp1, _, exp2) => (visitExp(exp1) + visitExp(exp2)).incStoreInt8
       case ExecutableAst.Expression.StoreInt16(exp1, _, exp2) => (visitExp(exp1) + visitExp(exp2)).incStoreInt16
       case ExecutableAst.Expression.StoreInt32(exp1, _, exp2) => (visitExp(exp1) + visitExp(exp2)).incStoreInt32
-      case ExecutableAst.Expression.Var(ident, _, tpe, loc) => AstStats(varExpressions = 1)
+      case ExecutableAst.Expression.Var(sym, tpe, loc) => AstStats(varExpressions = 1)
       case ExecutableAst.Expression.Ref(name, tpe, loc) => AstStats(refExpressions = 1)
       case ExecutableAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) => AstStats(mkClosureRefExpressions = 1)
       case ExecutableAst.Expression.ApplyClosure(exp, args, tpe, loc) =>
@@ -88,7 +88,7 @@ object AstStats {
       }
       case ExecutableAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         (visitExp(exp1) + visitExp(exp2) + visitExp(exp3)).incIfThenElse
-      case ExecutableAst.Expression.Let(ident, offset, exp1, exp2, tpe, loc) =>
+      case ExecutableAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
         (visitExp(exp1) + visitExp(exp2)).incLet
       case ExecutableAst.Expression.CheckTag(tag, exp, loc) =>
         visitExp(exp).incCheckTag
@@ -112,7 +112,7 @@ object AstStats {
     /**
       * Visit each definition.
       */
-    root.constants.foldLeft(AstStats()) {
+    root.definitions.foldLeft(AstStats()) {
       case (acc, defn) => acc + visitExp(defn._2.exp)
     }
   }

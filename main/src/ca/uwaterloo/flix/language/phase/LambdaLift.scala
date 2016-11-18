@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.{Ast, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -27,7 +28,7 @@ object LambdaLift {
   /**
     * Mutable map of top level definitions.
     */
-  private type TopLevel = mutable.Map[Symbol.Resolved, SimplifiedAst.Definition.Constant]
+  private type TopLevel = mutable.Map[Symbol.DefnSym, SimplifiedAst.Definition.Constant]
 
   /**
     * Performs lambda lifting on all definitions in the AST.
@@ -38,14 +39,14 @@ object LambdaLift {
     // A mutable map to hold lambdas that are lifted to the top level.
     val m: TopLevel = mutable.Map.empty
 
-    val definitions = root.constants.map {
+    val definitions = root.definitions.map {
       case (name, decl) => name -> lift(decl, m)
     }
     val properties = root.properties.map(p => lift(p, m))
 
     // Return the updated AST root.
     val e = System.nanoTime() - t
-    root.copy(constants = definitions ++ m, properties = properties, time = root.time.copy(lambdaLift = e))
+    root.copy(definitions = definitions ++ m, properties = properties, time = root.time.copy(lambdaLift = e))
   }
 
   /**
@@ -56,7 +57,7 @@ object LambdaLift {
     */
   private def lift(decl: SimplifiedAst.Definition.Constant, m: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant = {
     val convExp = ClosureConv.convert(decl.exp)
-    val liftExp = lift(convExp, decl.name.parts, m)
+    val liftExp = lift(convExp, m, Some(decl.sym))
     decl.copy(exp = liftExp)
   }
 
@@ -68,7 +69,7 @@ object LambdaLift {
     */
   private def lift(prop: SimplifiedAst.Property, m: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Property = {
     val convExp = ClosureConv.convert(prop.exp)
-    val liftExp = lift(convExp, List(prop.law.toString), m)
+    val liftExp = lift(convExp, m, None)
     prop.copy(exp = liftExp)
   }
 
@@ -77,7 +78,7 @@ object LambdaLift {
     *
     * Adds new top-level definitions to the mutable map `m`.
     */
-  private def lift(exp0: Expression, nameHint: List[String], m: TopLevel)(implicit genSym: GenSym): Expression = {
+  private def lift(exp0: Expression, m: TopLevel, symOpt: Option[Symbol.DefnSym])(implicit genSym: GenSym): Expression = {
     def visit(e: Expression): Expression = e match {
       case Expression.Unit => e
       case Expression.True => e
@@ -99,26 +100,29 @@ object LambdaLift {
       case Expression.StoreInt8(b, o, v) => e
       case Expression.StoreInt16(b, o, v) => e
       case Expression.StoreInt32(b, o, v) => e
-      case Expression.Var(ident, o, tpe, loc) => e
+      case Expression.Var(sym, tpe, loc) => e
       case Expression.Ref(name, tpe, loc) => e
 
-      case Expression.Lambda(args, body, tpe, loc) =>
+      case Expression.Lambda(fparams, body, tpe, loc) =>
         // Lift the lambda to a top-level definition, and replacing the Lambda expression with a Ref.
 
         // First, recursively visit the lambda body, lifting any inner lambdas.
-        val exp = visit(body)
+        val liftedBody = visit(body)
 
-        // Then, generate a fresh name for the lifted lambda.
-        val name = genSym.freshDefn(nameHint)
+        // Generate a fresh symbol for the definition.
+        val freshSymbol = symOpt match {
+          case None => Symbol.freshDefnSym("none") // TODO: This seems suspicious.
+          case Some(oldSym) => Symbol.freshDefnSym(oldSym)
+        }
 
         // Create a new top-level definition, using the fresh name and lifted body.
-        val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), name, args, exp, isSynthetic = true, tpe, loc)
+        val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), freshSymbol, fparams, liftedBody, isSynthetic = true, tpe, loc)
 
         // Update the map that holds newly-generated definitions
-        m += (name -> defn)
+        m += (freshSymbol -> defn)
 
         // Finally, replace this current Lambda node with a Ref to the newly-generated name.
-        SimplifiedAst.Expression.Ref(name, tpe, loc)
+        SimplifiedAst.Expression.Ref(freshSymbol, tpe, loc)
 
       case Expression.Hook(hook, tpe, loc) => e
       case Expression.MkClosureRef(ref, freeVars, tpe, loc) => e
@@ -133,8 +137,8 @@ object LambdaLift {
 
       case Expression.ApplyRef(name, args, tpe, loc) =>
         Expression.ApplyRef(name, args.map(visit), tpe, loc)
-      case Expression.ApplyTail(name, formals, actuals, tpe, loc) =>
-        Expression.ApplyTail(name, formals, actuals.map(visit), tpe, loc)
+      case Expression.ApplyTail(name, formals, args, tpe, loc) =>
+        Expression.ApplyTail(name, formals, args.map(visit), tpe, loc)
       case Expression.ApplyHook(hook, args, tpe, loc) =>
         Expression.ApplyHook(hook, args.map(visit), tpe, loc)
       case Expression.Apply(exp, args, tpe, loc) =>
@@ -145,8 +149,8 @@ object LambdaLift {
         Expression.Binary(op, visit(exp1), visit(exp2), tpe, loc)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         Expression.IfThenElse(visit(exp1), visit(exp2), visit(exp3), tpe, loc)
-      case Expression.Let(ident, offset, exp1, exp2, tpe, loc) =>
-        Expression.Let(ident, offset, visit(exp1), visit(exp2), tpe, loc)
+      case Expression.Let(sym, exp1, exp2, tpe, loc) =>
+        Expression.Let(sym, visit(exp1), visit(exp2), tpe, loc)
       case Expression.CheckTag(tag, exp, loc) =>
         Expression.CheckTag(tag, visit(exp), loc)
       case Expression.GetTagValue(tag, exp, tpe, loc) =>
@@ -157,18 +161,6 @@ object LambdaLift {
         Expression.GetTupleIndex(visit(exp), offset, tpe, loc)
       case Expression.Tuple(elms, tpe, loc) =>
         Expression.Tuple(elms.map(visit), tpe, loc)
-      case Expression.FNil(tpe, loc) =>
-        Expression.FNil(tpe, loc)
-      case Expression.FList(hd, tl, tpe, loc) =>
-        Expression.FList(visit(hd), visit(tl), tpe, loc)
-      case Expression.IsNil(exp, loc) =>
-        Expression.IsNil(visit(exp), loc)
-      case Expression.IsList(exp, loc) =>
-        Expression.IsList(visit(exp), loc)
-      case Expression.GetHead(exp, tpe, loc) =>
-        Expression.GetHead(visit(exp), tpe, loc)
-      case Expression.GetTail(exp, tpe, loc) =>
-        Expression.GetTail(visit(exp), tpe, loc)
       case Expression.FSet(elms, tpe, loc) =>
         Expression.FSet(elms.map(visit), tpe, loc)
       case Expression.Existential(params, exp, loc) =>

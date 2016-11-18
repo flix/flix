@@ -37,15 +37,19 @@ var App = React.createClass({
 var LeftNavigationBar = React.createClass({
     render: function () {
         // Retrieve and sort the namespaces.
-        var namespaces = this.props.namespaces.sort((a, b) => a.name.localeCompare(b.name));
+        var namespaces = this.props.namespaces.sort(lexicographic);
 
         // Construct a list item for each namespace in the library.
         var menu = namespaces.map(
-            namespace => <li key={namespace.name}><a href={namespace.name + ".html"}>{namespace.name}</a></li>
+            namespace => <li key={namespace.name}><a href={namespace.link}>{namespace.name}</a></li>
         );
         return (
             <div className="navbar">
-                <div className="title">Flix Standard Library</div>
+                <div className="title">
+                    <a href="index.html">
+                        Flix Standard Library
+                    </a>
+                </div>
                 <ul>{menu}</ul>
             </div>
         );
@@ -115,7 +119,7 @@ var TypeBox = React.createClass({
  */
 var DefinitionList = React.createClass({
     render: function () {
-        var decls = this.props.decls.sort((a, b) => a.name.localeCompare(b.name));
+        var decls = this.props.decls.sort(lexicographic);
         var definitionList = decls.map(d => <DefinitionBox key={d.name} decl={d}/>);
         if (definitionList.length == 0)
             return null;
@@ -168,7 +172,7 @@ var DefinitionBox = React.createClass({
  */
 var RelationList = React.createClass({
     render: function () {
-        var decls = this.props.decls.sort((a, b) => a.name.localeCompare(b.name));
+        var decls = this.props.decls.sort(lexicographic);
         var relationList = decls.map(d => <RelationBox key={d.name} decl={d}/>);
         if (relationList.length == 0)
             return null;
@@ -212,7 +216,7 @@ var RelationBox = React.createClass({
  */
 var LatticeList = React.createClass({
     render: function () {
-        var decls = this.props.decls.sort((a, b) => a.name.localeCompare(b.name));
+        var decls = this.props.decls.sort(lexicographic);
         var latticeList = decls.map(d => <LatticeBox key={d.name} decl={d}/>);
         if (latticeList.length == 0)
             return null;
@@ -282,6 +286,64 @@ function intersperse(arr, sep) {
     return arr.slice(1).reduce(function (xs, x) {
         return xs.concat([sep, x]);
     }, [arr[0]]);
+}
+
+/**
+ * Lexicographically compares the name field of the two given objects.
+ */
+function lexicographic(a, b) {
+    var x = a.name;
+    var y = b.name;
+    return naturalSort(x, y);
+}
+
+/**
+ * Natural Sort algorithm for Javascript - Version 0.7 - Released under MIT license
+ * Author: Jim Palmer (based on chunking idea from Dave Koelle)
+ */
+function naturalSort(a, b, options) {
+    var re = /(^-?[0-9]+(\.?[0-9]*)[df]?e?[0-9]?$|^0x[0-9a-f]+$|[0-9]+)/gi,
+        sre = /(^[ ]*|[ ]*$)/g,
+        dre = /(^([\w ]+,?[\w ]+)?[\w ]+,?[\w ]+\d+:\d+(:\d+)?[\w ]?|^\d{1,4}[\/\-]\d{1,4}[\/\-]\d{1,4}|^\w+, \w+ \d+, \d{4})/,
+        hre = /^0x[0-9a-f]+$/i,
+        ore = /^0/,
+        options = options || {},
+        i = function (s) {
+            return options.insensitive && ('' + s).toLowerCase() || '' + s
+        },
+        // convert all to strings strip whitespace
+        x = i(a).replace(sre, '') || '',
+        y = i(b).replace(sre, '') || '',
+        // chunk/tokenize
+        xN = x.replace(re, '\0$1\0').replace(/\0$/, '').replace(/^\0/, '').split('\0'),
+        yN = y.replace(re, '\0$1\0').replace(/\0$/, '').replace(/^\0/, '').split('\0'),
+        // numeric, hex or date detection
+        xD = parseInt(x.match(hre)) || (xN.length !== 1 && x.match(dre) && Date.parse(x)),
+        yD = parseInt(y.match(hre)) || xD && y.match(dre) && Date.parse(y) || null,
+        oFxNcL, oFyNcL,
+        mult = options.desc ? -1 : 1;
+    // first try and sort Hex codes or Dates
+    if (yD)
+        if (xD < yD) return -1 * mult;
+        else if (xD > yD) return 1 * mult;
+    // natural sorting through split numeric strings and default strings
+    for (var cLoc = 0, numS = Math.max(xN.length, yN.length); cLoc < numS; cLoc++) {
+        // find floats not starting with '0', string or 0 if not defined (Clint Priest)
+        oFxNcL = !(xN[cLoc] || '').match(ore) && parseFloat(xN[cLoc]) || xN[cLoc] || 0;
+        oFyNcL = !(yN[cLoc] || '').match(ore) && parseFloat(yN[cLoc]) || yN[cLoc] || 0;
+        // handle numeric vs string comparison - number < string - (Kyle Adams)
+        if (isNaN(oFxNcL) !== isNaN(oFyNcL)) {
+            return (isNaN(oFxNcL) ? 1 : -1) * mult;
+        }
+        // rely on string comparison if different types - i.e. '02' < 2 != '02' < '2'
+        else if (typeof oFxNcL !== typeof oFyNcL) {
+            oFxNcL += '';
+            oFyNcL += '';
+        }
+        if (oFxNcL < oFyNcL) return -1 * mult;
+        if (oFxNcL > oFyNcL) return 1 * mult;
+    }
+    return 0;
 }
 
 /**

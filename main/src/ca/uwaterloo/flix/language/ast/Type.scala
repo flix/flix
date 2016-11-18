@@ -16,10 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.phase.GenSym
+import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.util.InternalCompilerException
-
-import scala.collection.immutable
 
 /**
   * Representation of monotypes.
@@ -49,13 +47,10 @@ sealed trait Type {
     case Type.Native => Set.empty
     case Type.Arrow(l) => Set.empty
     case Type.FTuple(l) => Set.empty
-    case Type.FList => Set.empty
     case Type.FVec => Set.empty
     case Type.FSet => Set.empty
     case Type.FMap => Set.empty
-    case Type.Enum(enumName, cases, kind) => cases.flatMap {
-      case (tagName, tpe) => tpe.typeVars
-    }.toSet
+    case Type.Enum(enumName, kind) => Set.empty
     case Type.Apply(t, ts) => t.typeVars ++ ts.flatMap(_.typeVars)
   }
 
@@ -63,7 +58,7 @@ sealed trait Type {
     * Returns `true` if `this` type is an enum type.
     */
   def isEnum: Boolean = this match {
-    case Type.Enum(sym, cases, kind) => true
+    case Type.Enum(sym, kind) => true
     case Type.Apply(t, ts) => t.isEnum
     case _ => false
   }
@@ -94,15 +89,15 @@ sealed trait Type {
     case Type.BigInt => "BigInt"
     case Type.Str => "Str"
     case Type.Native => "Native"
-    case Type.Arrow(l) => "Arrow"
-    case Type.FTuple(l) => "Tuple"
-    case Type.FList => "List"
+    case Type.Arrow(l) => s"Arrow($l)"
+    case Type.FTuple(l) => s"Tuple($l)"
     case Type.FVec => "Vec"
     case Type.FSet => "Set"
     case Type.FMap => "Map"
+    case Type.Apply(Type.FTuple(l), ts) => "(" + ts.mkString(", ") + ")"
     case Type.Apply(Type.Arrow(l), ts) => ts.mkString(" -> ")
     case Type.Apply(t, ts) => s"$t[${ts.mkString(", ")}]"
-    case Type.Enum(enum, cases, kind) => enum.toString
+    case Type.Enum(enum, kind) => enum.toString
   }
 }
 
@@ -216,13 +211,6 @@ object Type {
   }
 
   /**
-    * A type constructor that represents list values.
-    */
-  case object FList extends Type {
-    def kind: Kind = Kind.Arrow(List(Kind.Star), Kind.Star)
-  }
-
-  /**
     * A type constructor that represents vector values
     */
   case object FVec extends Type {
@@ -246,11 +234,10 @@ object Type {
   /**
     * A type constructor that represents enums.
     *
-    * @param sym   the symbol of the enum.
-    * @param cases a map from tag names to tag types.
-    * @param kind  the kind of the enum.
+    * @param sym  the symbol of the enum.
+    * @param kind the kind of the enum.
     */
-  case class Enum(sym: Symbol.EnumSym, cases: immutable.Map[String, Type], kind: Kind) extends Type
+  case class Enum(sym: Symbol.EnumSym, kind: Kind) extends Type
 
   /**
     * A type expression that represents the application of `ts` to `t`.
@@ -290,11 +277,6 @@ object Type {
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
   def mkFTuple(ts: List[Type]): Type = Apply(FTuple(ts.length), ts)
-
-  /**
-    * Constructs the type List[A] where `A` is the given type `tpe`.
-    */
-  def mkFList(a: Type): Type = Apply(FList, List(a))
 
   /**
     * Constructs the type Vec[A] where `A` is the given type `tpe`.
@@ -339,14 +321,11 @@ object Type {
       case Type.Native => Type.Native
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.FTuple(l) => Type.FTuple(l)
-      case Type.FList => Type.FList
       case Type.FVec => Type.FVec
       case Type.FSet => Type.FSet
       case Type.FMap => Type.FMap
       case Type.Apply(t, ts) => Type.Apply(visit(t), ts map visit)
-      case Type.Enum(enum, cases, kind) => Type.Enum(enum, cases map {
-        case (k, v) => k -> visit(v)
-      }, kind)
+      case Type.Enum(enum, kind) => Type.Enum(enum, kind)
     }
 
     visit(tpe)

@@ -16,17 +16,16 @@
 
 package ca.uwaterloo.flix.runtime.verifier
 
-import ca.uwaterloo.flix.language._
+import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression._
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, Property}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.phase.GenSym
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.evaluator.{SmtExpr, SymVal, SymbolicEvaluator}
+import ca.uwaterloo.flix.util.Highlight.{Blue, Cyan, Red}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
 import com.microsoft.z3._
-
-import scala.collection.immutable.SortedMap
 
 object Verifier {
 
@@ -154,7 +153,7 @@ object Verifier {
     val exp0 = property.exp
 
     // a sequence of environments under which the base expression must hold.
-    val envs = enumerate(exp0.getQuantifiers)
+    val envs = enumerate(exp0.getQuantifiers, root)
 
     // the number of paths explored by the symbolic evaluator.
     var paths = 0
@@ -183,7 +182,7 @@ object Verifier {
               // If the path condition is satisfiable then the property *does not* hold.
               queries += 1
               assertUnsatisfiable(property, and(pc), env0)
-            case SymVal.AtomicVar(id) =>
+            case SymVal.AtomicVar(id, _) =>
               // Case 3.3: The property holds iff the atomic variable is never `false`.
               queries += 1
               assertUnsatisfiable(property, SmtExpr.Not(and(pc)), env0)
@@ -216,30 +215,30 @@ object Verifier {
   /**
     * Enumerates all possible environments of the given universally quantified variables.
     */
-  def enumerate(q: List[Var])(implicit genSym: GenSym): List[Map[String, SymVal]] = {
+  def enumerate(q: List[Var], root: Root)(implicit genSym: GenSym): List[Map[Symbol.VarSym, SymVal]] = {
     /*
      * Local visitor. Enumerates the symbolic values of a type.
      */
     def visit(tpe: Type): List[SymVal] = tpe match {
       case Type.Unit => List(SymVal.Unit)
       case Type.Bool => List(SymVal.True, SymVal.False)
-      case Type.Char => List(SymVal.AtomicVar(genSym.fresh2()))
-      case Type.Float32 => List(SymVal.AtomicVar(genSym.fresh2()))
-      case Type.Float64 => List(SymVal.AtomicVar(genSym.fresh2()))
-      case Type.Int8 => List(SymVal.AtomicVar(genSym.fresh2()))
-      case Type.Int16 => List(SymVal.AtomicVar(genSym.fresh2()))
-      case Type.Int32 => List(SymVal.AtomicVar(genSym.fresh2()))
-      case Type.Int64 => List(SymVal.AtomicVar(genSym.fresh2()))
-      case Type.BigInt => List(SymVal.AtomicVar(genSym.fresh2()))
-      case Type.Str => List(SymVal.AtomicVar(genSym.fresh2()))
-      case Type.Enum(name, cases, kind) =>
-        val r = cases flatMap {
-          case (tag, innerType) =>
-            visit(innerType) map {
-              case e => SymVal.Tag(tag, e)
-            }
-        }
-        r.toList
+      case Type.Char => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Char))
+      case Type.Float32 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Float32))
+      case Type.Float64 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Float64))
+      case Type.Int8 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Int8))
+      case Type.Int16 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Int16))
+      case Type.Int32 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Int32))
+      case Type.Int64 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Int64))
+      case Type.BigInt => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.BigInt))
+      case Type.Str => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Str))
+      case Type.Enum(sym, kind) =>
+        val decl = root.enums(sym)
+        decl.cases.flatMap {
+          // TODO: Assumes non-polymorphic type.
+          case (tag, caze) => visit(caze.tpe) map {
+            case e => SymVal.Tag(tag, e)
+          }
+        }.toList
       case Type.Apply(Type.FTuple(_), elms) =>
         def visitn(xs: List[Type]): List[List[SymVal]] = xs match {
           case Nil => List(Nil)
@@ -253,7 +252,7 @@ object Verifier {
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
 
-    def expand(rs: List[(String, List[SymVal])]): List[Map[String, SymVal]] = rs match {
+    def expand(rs: List[(Symbol.VarSym, List[SymVal])]): List[Map[Symbol.VarSym, SymVal]] = rs match {
       case Nil => List(Map.empty)
       case (quantifier, expressions) :: xs => expressions flatMap {
         case expression => expand(xs) map {
@@ -263,7 +262,7 @@ object Verifier {
     }
 
     val result = q map {
-      case quantifier => quantifier.ident.name -> visit(quantifier.tpe)
+      case quantifier => quantifier.sym -> visit(quantifier.tpe)
     }
 
     expand(result)
@@ -272,7 +271,7 @@ object Verifier {
   /**
     * Optionally returns a verifier error if the given path constraint `pc` is satisfiable.
     */
-  private def assertUnsatisfiable(p: Property, expr: SmtExpr, env0: Map[String, SymVal]): PathResult = {
+  private def assertUnsatisfiable(p: Property, expr: SmtExpr, env0: Map[Symbol.VarSym, SymVal]): PathResult = {
     SmtSolver.withContext(ctx => {
       val query = visitBoolExpr(expr, ctx)
       SmtSolver.checkSat(query, ctx) match {
@@ -302,7 +301,7 @@ object Verifier {
     */
   private def visitArithExpr(exp0: SmtExpr, ctx: Context): ArithExpr = exp0 match {
     case SmtExpr.BigInt(lit) => ctx.mkInt(lit.longValueExact())
-    case SmtExpr.Var(id, tpe) => ctx.mkIntConst(id.name)
+    case SmtExpr.Var(sym, tpe) => ctx.mkIntConst(sym.toString)
     case SmtExpr.Plus(e1, e2) => ctx.mkAdd(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
     case SmtExpr.Minus(e1, e2) => ctx.mkSub(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
     case SmtExpr.Times(e1, e2) => ctx.mkMul(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
@@ -322,7 +321,7 @@ object Verifier {
     * Translates the given SMT expression `exp0` into a Z3 boolean expression.
     */
   private def visitBoolExpr(exp0: SmtExpr, ctx: Context): BoolExpr = exp0 match {
-    case SmtExpr.Var(id, tpe) => ctx.mkBoolConst(id.name)
+    case SmtExpr.Var(sym, tpe) => ctx.mkBoolConst(sym.toString)
     case SmtExpr.Not(e) => ctx.mkNot(visitBoolExpr(e, ctx))
     case SmtExpr.LogicalAnd(e1, e2) => ctx.mkAnd(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
     case SmtExpr.LogicalOr(e1, e2) => ctx.mkOr(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
@@ -371,11 +370,11 @@ object Verifier {
     case SmtExpr.Int16(i) => ctx.mkBV(i, 16)
     case SmtExpr.Int32(i) => ctx.mkBV(i, 32)
     case SmtExpr.Int64(i) => ctx.mkBV(i, 64)
-    case SmtExpr.Var(id, tpe) => tpe match {
-      case Type.Int8 => ctx.mkBVConst(id.name, 8)
-      case Type.Int16 => ctx.mkBVConst(id.name, 16)
-      case Type.Int32 => ctx.mkBVConst(id.name, 32)
-      case Type.Int64 => ctx.mkBVConst(id.name, 64)
+    case SmtExpr.Var(sym, tpe) => tpe match {
+      case Type.Int8 => ctx.mkBVConst(sym.toString, 8)
+      case Type.Int16 => ctx.mkBVConst(sym.toString, 16)
+      case Type.Int32 => ctx.mkBVConst(sym.toString, 32)
+      case Type.Int64 => ctx.mkBVConst(sym.toString, 64)
       case _ => throw InternalCompilerException(s"Unexpected non-int type: '$tpe'.")
     }
     case SmtExpr.Plus(e1, e2) => ctx.mkBVAdd(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
@@ -398,8 +397,8 @@ object Verifier {
     */
   private def visitIntExpr(exp0: SmtExpr, ctx: Context): IntExpr = exp0 match {
     case SmtExpr.BigInt(i) => ctx.mkInt(i.longValueExact())
-    case SmtExpr.Var(id, tpe) => tpe match {
-      case Type.BigInt => ctx.mkIntConst(id.name)
+    case SmtExpr.Var(sym, tpe) => tpe match {
+      case Type.BigInt => ctx.mkIntConst(sym.toString)
       case _ => throw InternalCompilerException(s"Unexpected non-int type: '$tpe'.")
     }
     case _ => throw InternalCompilerException(s"Unexpected SMT expression: '$exp0'.")
@@ -466,8 +465,7 @@ object Verifier {
     * Prints verbose results.
     */
   def printVerbose(results: List[PropertyResult]): Unit = {
-    implicit val consoleCtx = Compiler.ConsoleCtx
-    Console.println(consoleCtx.blue(s"-- VERIFIER RESULTS --------------------------------------------------"))
+    Console.println(Blue(s"-- VERIFIER RESULTS --------------------------------------------------"))
 
     for ((source, properties) <- results.groupBy(_.property.loc.source)) {
 
@@ -478,13 +476,13 @@ object Verifier {
       for (result <- properties.sortBy(_.property.loc)) {
         result match {
           case PropertyResult.Success(property, paths, queries, elapsed) =>
-            Console.println("  " + consoleCtx.cyan("✓ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + " seconds.)")
+            Console.println("  " + Cyan("✓ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + " seconds.)")
 
           case PropertyResult.Failure(property, paths, queries, elapsed, error) =>
-            Console.println("  " + consoleCtx.red("✗ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + ") seconds.")
+            Console.println("  " + Red("✗ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + ") seconds.")
 
           case PropertyResult.Unknown(property, paths, queries, elapsed, error) =>
-            Console.println("  " + consoleCtx.red("? ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + ") seconds.")
+            Console.println("  " + Red("? ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + ") seconds.")
         }
       }
 

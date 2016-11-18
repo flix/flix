@@ -23,8 +23,9 @@ import java.util.zip.ZipFile
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.util.StreamOps
+import ca.uwaterloo.flix.util.Highlight._
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{AnsiConsole, Validation}
 
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
@@ -53,18 +54,16 @@ object Compiler {
     * @param src the source input.
     */
   case class ParseError(msg: String, src: SourceInput) extends CompilationError {
+    val kind = "Parse Error"
+    val source = src
     val message =
-      s"""${ConsoleCtx.blue(s"-- PARSE ERROR ------------------------------------------------- ${src.format}")}
-         |
-         |${ConsoleCtx.red(msg)}
-         """.stripMargin
+      s"""|>> Parse Error:
+          |
+          |${Red(msg)}
+          """.stripMargin
   }
 
-  /**
-    * The console context used to format error messages.
-    */
-  implicit val ConsoleCtx = new AnsiConsole()
-
+  
   /*
     * Implicitly assumed default charset.
     */
@@ -101,7 +100,7 @@ object Compiler {
   /**
     * Returns the typed AST corresponding to the given `inputs`.
     */
-  def compile(inputs: List[SourceInput], hooks: Map[Name.NName, Map[String, Ast.Hook]])(implicit genSym: GenSym): Validation[TypedAst.Root, CompilationError] = {
+  def compile(inputs: List[SourceInput], hooks:  Map[Symbol.DefnSym, Ast.Hook])(implicit genSym: GenSym): Validation[TypedAst.Root, CompilationError] = {
     val t = System.nanoTime()
     val pasts = @@(inputs.map(parse))
     val e = System.nanoTime() - t
