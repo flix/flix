@@ -107,6 +107,106 @@ class TestList extends FunSuite {
     runTest(input, 3)
   }
 
+  test("prefix.01") {
+    val input = "def r: List[Int32] = List/prefix(0, Nil)"
+    runAnyTest(input, mkNil)
+  }
+
+  test("prefix.02") {
+    val input = "def r: List[Int32] = List/prefix(0, 1 :: Nil)"
+    runAnyTest(input, mkNil)
+  }
+
+  test("prefix.03") {
+    val input = "def r: List[Int32] = List/prefix(1, 1 :: Nil)"
+    runAnyTest(input, mkList(List(1)))
+  }
+
+  test("prefix.04") {
+    val input = "def r: List[Int32] = List/prefix(0, 1 :: 2 :: Nil)"
+    runAnyTest(input, mkNil)
+  }
+
+  test("prefix.05") {
+    val input = "def r: List[Int32] = List/prefix(1, 1 :: 2 :: Nil)"
+    runAnyTest(input, mkList(List(1)))
+  }
+
+  test("prefix.06") {
+    val input = "def r: List[Int32] = List/prefix(2, 1 :: 2 :: Nil)"
+    runAnyTest(input, mkList(List(1, 2)))
+  }
+
+  test("prefix.07") {
+    val input = "def r: List[Int32] = List/prefix(0, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkNil)
+  }
+
+  test("prefix.08") {
+    val input = "def r: List[Int32] = List/prefix(1, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(1)))
+  }
+
+  test("prefix.09") {
+    val input = "def r: List[Int32] = List/prefix(2, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(1, 2)))
+  }
+
+  test("prefix.10") {
+    val input = "def r: List[Int32] = List/prefix(3, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(1, 2, 3)))
+  }
+
+  test("suffix.01") {
+    val input = "def r: List[Int32] = List/suffix(0, Nil)"
+    runAnyTest(input, mkNil)
+  }
+
+  test("suffix.02") {
+    val input = "def r: List[Int32] = List/suffix(0, 1 :: Nil)"
+    runAnyTest(input, mkNil)
+  }
+
+  test("suffix.03") {
+    val input = "def r: List[Int32] = List/suffix(1, 1 :: Nil)"
+    runAnyTest(input, mkList(List(1)))
+  }
+
+  test("suffix.04") {
+    val input = "def r: List[Int32] = List/suffix(0, 1 :: 2 :: Nil)"
+    runAnyTest(input, mkNil)
+  }
+
+  test("suffix.05") {
+    val input = "def r: List[Int32] = List/suffix(1, 1 :: 2 :: Nil)"
+    runAnyTest(input, mkList(List(2)))
+  }
+
+  test("suffix.06") {
+    val input = "def r: List[Int32] = List/suffix(2, 1 :: 2 :: Nil)"
+    runAnyTest(input, mkList(List(1, 2)))
+  }
+
+  test("suffix.07") {
+    val input = "def r: List[Int32] = List/suffix(0, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkNil)
+  }
+
+  test("suffix.08") {
+    val input = "def r: List[Int32] = List/suffix(1, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(3)))
+  }
+
+  test("suffix.09") {
+    val input = "def r: List[Int32] = List/suffix(2, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(2, 3)))
+  }
+
+  test("suffix.10") {
+    val input = "def r: List[Int32] = List/suffix(3, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(1, 2, 3)))
+  }
+
   test("length.01") {
     val input = "def r: Int32 = List/length(Nil)"
     runTest(input, 0)
@@ -755,5 +855,200 @@ class TestList extends FunSuite {
   test("reverse.08") {
     val input = "def r: List[Bool] = List/reverse(true :: false :: false :: Nil)"
     runAnyTest(input, mkBoolList(List(false, false, true)))
+  }
+
+  test("rotateLeft.01") {
+    val input = "def r: List[Int32] = List/rotateLeft(0, Nil)"
+    runAnyTest(input, mkNil)
+  }
+
+  test("rotateLeft.02") {
+    val input = "def r: List[Int32] = List/rotateLeft(0, 1 :: Nil)"
+    runAnyTest(input, mkList(List(1)))
+  }
+
+  test("rotateLeft.03") {
+    val input = "def r: List[Int32] = List/rotateLeft(1, 1 :: Nil)"
+    runAnyTest(input, mkList(List(1)))
+  }
+
+  test("rotateLeft.04") {
+    val input = "def r: List[Int32] = List/rotateLeft(0, 1 :: 2 :: Nil)"
+    runAnyTest(input, mkList(List(1, 2)))
+  }
+
+  test("rotateLeft.05") {
+    val input = "def r: List[Int32] = List/rotateLeft(1, 1 :: 2 :: Nil)"
+    runAnyTest(input, mkList(List(2, 1)))
+  }
+
+  test("rotateLeft.06") {
+    val input = "def r: List[Int32] = List/rotateLeft(2, 1 :: 2 :: Nil)"
+    runAnyTest(input, mkList(List(1, 2)))
+  }
+
+  test("rotateLeft.07") {
+    val input = "def r: List[Int32] = List/rotateLeft(0, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(1, 2, 3)))
+  }
+
+  test("rotateLeft.08") {
+    val input = "def r: List[Int32] = List/rotateLeft(1, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(2, 3, 1)))
+  }
+
+  test("rotateLeft.09") {
+    val input = "def r: List[Int32] = List/rotateLeft(2, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(3, 1, 2)))
+  }
+
+  test("rotateLeft.10") {
+    val input = "def r: List[Int32] = List/rotateLeft(3, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(1, 2, 3)))
+  }
+
+  test("rotateRight.01") {
+    val input = "def r: List[Int32] = List/rotateRight(0, Nil)"
+    runAnyTest(input, mkNil)
+  }
+
+  test("rotateRight.02") {
+    val input = "def r: List[Int32] = List/rotateRight(0, 1 :: Nil)"
+    runAnyTest(input, mkList(List(1)))
+  }
+
+  test("rotateRight.03") {
+    val input = "def r: List[Int32] = List/rotateRight(1, 1 :: Nil)"
+    runAnyTest(input, mkList(List(1)))
+  }
+
+  test("rotateRight.04") {
+    val input = "def r: List[Int32] = List/rotateRight(0, 1 :: 2 :: Nil)"
+    runAnyTest(input, mkList(List(1, 2)))
+  }
+
+  test("rotateRight.05") {
+    val input = "def r: List[Int32] = List/rotateRight(1, 1 :: 2 :: Nil)"
+    runAnyTest(input, mkList(List(2, 1)))
+  }
+
+  test("rotateRight.06") {
+    val input = "def r: List[Int32] = List/rotateRight(2, 1 :: 2 :: Nil)"
+    runAnyTest(input, mkList(List(1, 2)))
+  }
+
+  test("rotateRight.07") {
+    val input = "def r: List[Int32] = List/rotateRight(0, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(1, 2, 3)))
+  }
+
+  test("rotateRight.08") {
+    val input = "def r: List[Int32] = List/rotateRight(1, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(3, 1, 2)))
+  }
+
+  test("rotateRight.09") {
+    val input = "def r: List[Int32] = List/rotateRight(2, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(2, 3, 1)))
+  }
+
+  test("rotateRight.10") {
+    val input = "def r: List[Int32] = List/rotateRight(3, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(1, 2, 3)))
+  }
+
+  test("replace.01") {
+    val input = "def r: List[Int32] = List/replace(0, 2, 1 :: Nil)"
+    runAnyTest(input, mkList(List(2)))
+  }
+
+  test("replace.02") {
+    val input = "def r: List[Int32] = List/replace(0, 3, 1 :: 2 :: Nil)"
+    runAnyTest(input, mkList(List(3, 2)))
+  }
+
+  test("replace.03") {
+    val input = "def r: List[Int32] = List/replace(1, 3, 1 :: 2 :: Nil)"
+    runAnyTest(input, mkList(List(1, 3)))
+  }
+
+  test("replace.04") {
+    val input = "def r: List[Int32] = List/replace(0, 4, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(4, 2, 3)))
+  }
+
+  test("replace.05") {
+    val input = "def r: List[Int32] = List/replace(1, 4, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(1, 4, 3)))
+  }
+
+  test("replace.06") {
+    val input = "def r: List[Int32] = List/replace(2, 4, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(1, 2, 4)))
+  }
+
+  test("patch.01") {
+    val input = "def r: List[Int32] = List/patch(0, 0, Nil, Nil)"
+    runAnyTest(input, mkNil)
+  }
+
+  test("patch.02") {
+    val input = "def r: List[Int32] = List/patch(0, 0, Nil, 1 :: Nil)"
+    runAnyTest(input, mkList(List(1)))
+  }
+
+  test("patch.03") {
+    val input = "def r: List[Int32] = List/patch(1, 0, 2 :: Nil, 1 :: Nil)"
+    runAnyTest(input, mkList(List(1)))
+  }
+
+  test("patch.04") {
+    val input = "def r: List[Int32] = List/patch(0, 1, 3 :: Nil, 1 :: 2 :: Nil)"
+    runAnyTest(input, mkList(List(3, 2)))
+  }
+
+  test("patch.05") {
+    val input = "def r: List[Int32] = List/patch(1, 1, 3 :: Nil, 1 :: 2 :: Nil)"
+    runAnyTest(input, mkList(List(1, 3)))
+  }
+
+  test("patch.06") {
+    val input = "def r: List[Int32] = List/patch(0, 1, 4 :: Nil, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(4, 2, 3)))
+  }
+
+  test("patch.07") {
+    val input = "def r: List[Int32] = List/patch(1, 1, 4 :: Nil, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(1, 4, 3)))
+  }
+
+  test("patch.08") {
+    val input = "def r: List[Int32] = List/patch(2, 1, 4 :: Nil, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(1, 2, 4)))
+  }
+
+  test("patch.09") {
+    val input = "def r: List[Int32] = List/patch(0, 2, 4 :: 5 :: Nil, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(4, 5, 3)))
+  }
+
+  test("patch.10") {
+    val input = "def r: List[Int32] = List/patch(1, 2, 4 :: 5 :: Nil, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(1, 4, 5)))
+  }
+
+  test("patch.11") {
+    val input = "def r: List[Int32] = List/patch(0, 2, 4 :: 5 :: 6 :: Nil, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(4, 5, 3)))
+  }
+
+  test("patch.13") {
+    val input = "def r: List[Int32] = List/patch(0, 3, 4 :: 5 :: 6 :: Nil, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(4, 5, 6)))
+  }
+
+  test("patch.14") {
+    val input = "def r: List[Int32] = List/patch(2, 4, 14 :: 15 :: 16 :: 17 :: Nil, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: Nil)"
+    runAnyTest(input, mkList(List(1, 2, 14, 15, 16, 17, 7)))
   }
 }

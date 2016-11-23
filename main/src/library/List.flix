@@ -59,6 +59,24 @@ namespace List {
     }
 
     ///
+    /// Returns the first `n` elements of `xs` in a list.
+    /// If `n < 0` or `n > length(xs)` the semantics are undefined.
+    ///
+    def prefix[a](n: Int32, xs: List[a]): List[a] = match (n, xs) with {
+        case (0, _) => Nil
+        case (i, x :: rs) => x :: prefix(i-1, rs)
+    }
+
+    ///
+    /// Returns the last `n` elements of `xs` in a list.
+    /// If `n < 0` or `n > length(xs)` the semantics are undefined.
+    ///
+    def suffix[a](n: Int32, xs: List[a]): List[a] = match (length(xs) - n, xs) with {
+        case (0, _) => xs
+        case (_, x :: rs) => suffix(n, rs)
+    }
+
+    ///
     /// Returns the length of `xs`.
     ///
     def length[a](xs: List[a]): Int32 = match xs with {
@@ -67,7 +85,7 @@ namespace List {
     }
 
     ///
-    /// Appends `ys` to `xs`.
+    /// Returns `ys` appended to `xs`.
     ///
     def append[a](xs: List[a], ys: List[a]): List[a] = match xs with {
         case Nil => ys
@@ -225,23 +243,52 @@ namespace List {
     ///
     /// Returns the reverse of `xs`.
     ///
-    def reverse[a](xs: List[a]): List[a] = match xs with {
-        case Nil => Nil
-        case _ => last(xs) :: reverse(init(xs))
+    def reverse[a](xs: List[a]): List[a] = reverseHelper(xs, Nil)
+
+    ///
+    /// Helper function for `reverse`.
+    /// Returns `acc` appended to the reverse of `xs`.
+    /// reverse(xs) = reverseHelper(xs, Nil).
+    ///
+    def reverseHelper[a](xs: List[a], acc: List[a]): List[a] = match xs with {
+        case Nil => acc
+        case x :: rs => reverseHelper(rs, x :: acc)
     }
 
+    ///
+    /// Returns `xs` with its elements rotated `n` positions to the left.
+    /// That is, returns a new list where the first `n` elements in `xs` are the last `n` elements of the new list.
+    /// If `n < 0` or `n > length(xs)` the semantics are undefined.
+    ///
+    def rotateLeft[a](n: Int32, xs: List[a]): List[a] = append(suffix(length(xs)-n, xs), prefix(n, xs))
 
-////- **reverse(xs: List[A]): List[A]**
-////    - Returns the reversed list.
-////- **rotateLeft(n: Int, xs: List[A]): List[A]**
-////    - Rotates the elements of the list n positions to left. That is, returns a new list where the first n elements in the original list are the last n elements of the new list.
-////- **rotateRight(n: Int, xs: List[A]): List[A]**
-////    - Similar to rotateLeft, but rotates to the right.
-////- **replace(i: Int, x: A, xs: List[A]): List[A]**
-////    - Replaces the element at position i with the element x in the list xs.
-////    - If the position i does not exist in the list the semantics are undefined.
-////- **patch(i: Int, n: Int, xs: List[A], ys: List[A]): List[A]**
-////    - Replaces n elements at position i in ys with elements from xs.
+    ///
+    /// Returns `xs` with its elements rotated `n` positions to the right.
+    /// That is, returns a new list where the last `n` elements in `xs` are the first `n` elements of the new list.
+    /// If `n < 0` or `n > length(xs)` the semantics are undefined.
+    ///
+    def rotateRight[a](n: Int32, xs: List[a]): List[a] = append(suffix(n, xs), prefix(length(xs)-n, xs))
+
+    ///
+    /// Returns `xs` with the element at position `p` replaced by `x`.
+    /// If `p < 0` or `p > length(xs)-1` the semantics are undefined.
+    ///
+    def replace[a](p: Int32, x: a, xs: List[a]): List[a] = match (p, xs) with {
+        case (0, r :: rs) => x :: rs
+        case (i, r :: rs) => r :: replace(i-1, x, rs)
+    }
+
+    ///
+    /// Returns `ys` with the `n` elements starting at position `p` replaced with elements from `xs`.
+    /// If `n = 0` then `ys` is returned.
+    /// Otherwise, if `n < 0` or `p < 0` or `p + n > length(xs)` the semantics are undefined.
+    ///
+    def patch[a](p: Int32, n: Int32, xs: List[a], ys: List[a]): List[a] = match (p, n, xs, ys) with {
+        case (_, 0, _, _) => ys
+        case (0, _, x :: qs, y :: rs) => x :: patch(0, n-1, qs, rs)
+        case (l, _, _, y :: rs) => y :: patch(l-1, n, xs, rs)
+    }
+
 ////- **permutations(xs: List[A]): List[List[A]]**
 ////    - Returns all permutations of the list.
 ////- **subsequences(xs: List[A]): List[List[A]]**
