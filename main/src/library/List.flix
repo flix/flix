@@ -102,6 +102,15 @@ namespace List {
     }
 
     ///
+    /// Returns `xs` with the element at position `p` removed.
+    /// If `p` < 0 or `p` > length(xs)-1 the semantics are undefined.
+    ///
+    def remove[a](p: Int32, xs: List[a]): List[a] = match (p, xs) with {
+        case (0, x :: rs) => rs
+        case (i, x :: rs) => x :: remove(i - 1, rs)
+    }
+
+    ///
     /// Returns true iff `xs` contains the element `x`.
     ///
     def memberOf[a](x: a, xs: List[a]): Bool = match xs with {
@@ -289,10 +298,49 @@ namespace List {
         case (l, _, _, y :: rs) => y :: patch(l-1, n, xs, rs)
     }
 
-////- **permutations(xs: List[A]): List[List[A]]**
-////    - Returns all permutations of the list.
-////- **subsequences(xs: List[A]): List[List[A]]**
-////    - Returns all subsequences of the list.
+    ///
+    /// Returns all permutations of `xs` in lexicographical order by element indices in `xs`.
+    /// That is, `xs` is the first permutation and `reverse(xs)` is the last permutation.
+    ///
+    def permutations[a](xs: List[a]): List[List[a]] = match xs with {
+        case Nil => Nil :: Nil
+        case _ => permutationHelper(0, xs)
+    }
+
+    ///
+    /// Helper function for `permutations`.
+    /// Returns all permutations of `xs` starting with an element at or after position `p`.
+    ///
+    def permutationHelper[a](p: Int32, xs: List[a]): List[List[a]] =
+        if (p == length(xs)) Nil
+        else append(apply(at(p, xs), permutations(remove(p, xs))), permutationHelper(p+1, xs))
+
+    ///
+    /// Returns all subsequences of `xs` in lexicographical order by element indices in `xs`.
+    /// That is, `xs` is the first subsequence and `Nil` is the last subsequence.
+    ///
+    def subsequences[a](xs: List[a]): List[List[a]] = match xs with {
+        case Nil => Nil :: Nil
+        case x :: rs => append(apply(x, subsequences(rs)), subsequences(rs))
+    }
+
+    ///
+    /// Helper function for `permutations` and `subsequences`.
+    /// Returns `xs` with `x` added to the beginning of each element of `xs`.
+    ///
+    def apply[a](x: a, ps: List[List[a]]): List[List[a]] = match ps with {
+        case Nil => Nil
+        case p :: rs => (x :: p) :: apply(x, rs)
+    }
+
+    ///
+    /// Returns `xs` with `x` inserted between every two adjacent elements.
+    ///
+    def intersperse[a](x: a, xs: List[a]): List[a] = match xs with {
+        case x1 :: x2 :: rs => x1 :: x :: intersperse(x, x2 :: rs)
+        case _ => xs
+    }
+
 ////- **intersperse(x: A, xs: List[A]): List[A]**
 ////    - Returns the list with the element x inserted between every element.
 ////- **intercalate(xs: List[A], ys: List[List[A]]): List[A]**

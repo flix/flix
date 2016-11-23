@@ -45,6 +45,8 @@ class TestList extends FunSuite {
   def mkList(xs: List[Int]): AnyRef = Value.mkList(xs.map(x => new Integer(x)))
   def mkBoolList(xs: List[Boolean]): AnyRef = Value.mkList(xs.map(x => new Boolean(x)))
   def mkBigIntList(xs: List[Int]): AnyRef = Value.mkList(xs.map(x => Value.mkBigInt(x)))
+  def mkAnyList(xs: List[AnyRef]): AnyRef = Value.mkList(xs)
+  def mkPermutationList(xs: List[Int]): AnyRef = Value.mkList(xs.permutations.toList.map(x => mkList(x)))
   def mkNil: AnyRef = Value.mkNil
 
   test("null.01") {
@@ -275,6 +277,36 @@ class TestList extends FunSuite {
   test("at.03") {
     val input = "def r: Int32 = List/at(2, 1 :: 2 :: 3 :: Nil)"
     runTest(input, 3)
+  }
+
+  test("remove.01") {
+    val input = "def r: List[Int32] = List/remove(0, 1 :: Nil)"
+    runAnyTest(input, mkNil)
+  }
+
+  test("remove.02") {
+    val input = "def r: List[Int32] = List/remove(0, 1 :: 2 :: Nil)"
+    runAnyTest(input, mkList(List(2)))
+  }
+
+  test("remove.03") {
+    val input = "def r: List[Int32] = List/remove(1, 1 :: 2 :: Nil)"
+    runAnyTest(input, mkList(List(1)))
+  }
+
+  test("remove.04") {
+    val input = "def r: List[Int32] = List/remove(0, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(2, 3)))
+  }
+
+  test("remove.05") {
+    val input = "def r: List[Int32] = List/remove(1, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(1, 3)))
+  }
+
+  test("remove.06") {
+    val input = "def r: List[Int32] = List/remove(2, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(1, 2)))
   }
 
   test("memberOf.01") {
@@ -1050,5 +1082,92 @@ class TestList extends FunSuite {
   test("patch.14") {
     val input = "def r: List[Int32] = List/patch(2, 4, 14 :: 15 :: 16 :: 17 :: Nil, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: Nil)"
     runAnyTest(input, mkList(List(1, 2, 14, 15, 16, 17, 7)))
+  }
+
+  test("permutations.01") {
+    val input = "def r: List[List[Int32]] = List/permutations(Nil)"
+    runAnyTest(input, mkPermutationList(List()))
+  }
+
+  test("permutations.02") {
+    val input = "def r: List[List[Int32]] = List/permutations(1 :: Nil)"
+    runAnyTest(input, mkPermutationList(List(1)))
+  }
+
+  test("permutations.03") {
+    val input = "def r: List[List[Int32]] = List/permutations(1 :: 2 :: Nil)"
+    runAnyTest(input, mkPermutationList(List(1, 2)))
+  }
+
+  test("permutations.04") {
+    val input = "def r: List[List[Int32]] = List/permutations(1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkPermutationList(List(1, 2, 3)))
+  }
+
+  test("permutations.05") {
+    val input = "def r: List[List[Int32]] = List/permutations(1 :: 2 :: 3 :: 4 :: Nil)"
+    runAnyTest(input, mkPermutationList(List(1, 2, 3, 4)))
+  }
+
+  test("permutations.06") {
+    val input = "def r: List[List[Int32]] = List/permutations(5 :: 4 :: 3 :: 2 :: 1 :: Nil)"
+    runAnyTest(input, mkPermutationList(List(5, 4, 3, 2, 1)))
+  }
+
+  test("permutations.07") {
+    val input = "def r: List[List[Int32]] = List/permutations(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)"
+    runAnyTest(input, mkPermutationList(List(5, 4, 3, 2, 1, 0)))
+  }
+
+  test("subsequences.01") {
+    val input = "def r: List[List[Int32]] = List/subsequences(Nil)"
+    runAnyTest(input, mkAnyList(List(mkNil)))
+  }
+
+  test("subsequences.02") {
+    val input = "def r: List[List[Int32]] = List/subsequences(1 :: Nil)"
+    runAnyTest(input, mkAnyList(List(mkList(List(1)), mkNil)))
+  }
+
+  test("subsequences.03") {
+    val input = "def r: List[List[Int32]] = List/subsequences(1 :: 2 :: Nil)"
+    runAnyTest(input, mkAnyList(List(mkList(List(1, 2)), mkList(List(1)), mkList(List(2)), mkNil)))
+  }
+
+  test("subsequences.04") {
+    val input = "def r: List[List[Int32]] = List/subsequences(1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkAnyList(List(mkList(List(1, 2, 3)), mkList(List(1, 2)), mkList(List(1, 3)),
+                                     mkList(List(1)), mkList(List(2, 3)), mkList(List(2)),
+                                     mkList(List(3)), mkNil)))
+  }
+
+  test("intersperse.01") {
+    val input = "def r: List[Int32] = List/intersperse(11, Nil)"
+    runAnyTest(input, mkNil)
+  }
+
+  test("intersperse.02") {
+    val input = "def r: List[Int32] = List/intersperse(11, 1 :: Nil)"
+    runAnyTest(input, mkList(List(1)))
+  }
+
+  test("intersperse.03") {
+    val input = "def r: List[Int32] = List/intersperse(11, 1 :: 2 :: Nil)"
+    runAnyTest(input, mkList(List(1, 11, 2)))
+  }
+
+  test("intersperse.04") {
+    val input = "def r: List[Int32] = List/intersperse(11, 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkList(List(1, 11, 2, 11, 3)))
+  }
+
+  test("intersperse.05") {
+    val input = "def r: List[Int32] = List/intersperse(11, 1 :: 2 :: 3 :: 4 :: Nil)"
+    runAnyTest(input, mkList(List(1, 11, 2, 11, 3, 11, 4)))
+  }
+
+  test("intersperse.06") {
+    val input = "def r: List[Int32] = List/intersperse(11, 1 :: 2 :: 3 :: 4 :: 5 :: Nil)"
+    runAnyTest(input, mkList(List(1, 11, 2, 11, 3, 11, 4, 11, 5)))
   }
 }
