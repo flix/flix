@@ -48,11 +48,10 @@
         <!-- NB: Never fork scalac: doing so will cause memory issues. -->
         <scalac srcdir="${src.dir}" destdir="${out.dir}/classes" classpathref="classpath" fork="false">
             <include name="**/*.scala"/>
-            <include name="**/*.java"/>
         </scalac>
 
         <!-- Compile java sources. (Antlr4) -->
-        <javac srcdir="${src.dir}" destdir="${out.dir}/classes" classpathref="classpath" fork="true" includeantruntime="false">
+         <javac srcdir="${src.dir}" destdir="${out.dir}/classes" classpathref="classpath" fork="true" includeantruntime="false">
             <include name="**/*.java"/>
         </javac>
 
