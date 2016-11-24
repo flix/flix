@@ -136,17 +136,25 @@ object Unification {
       * Performs the so-called occurs-check to ensure that the substitution is kind-preserving.
       */
     def unifyVar(x: Type.Var, tpe: Type): Result[Substitution, UnificationError] = {
+      // The type variable and type are in fact the same.
       if (x == tpe) {
         return Result.Ok(Substitution.empty)
       }
+
+      // The type variable occurs inside the type.
       if (tpe.typeVars contains x) {
         return Result.Err(UnificationError.OccursCheck(x, tpe))
       }
-      // TODO: Kinds disabled for now. Requires changed to the
-      // previous phase to associated type variables with their kinds.
+
+      // TODO: Kinds disabled for now. Requires changed to the previous phase to associated type variables with their kinds.
       //if (x.kind != tpe.kind) {
       //  return Result.Err(TypeError.KindError())
       //}
+
+      // We can substitute `x` for `tpe`. Update the textual name of `tpe`.
+      if (x.getText.nonEmpty && tpe.isInstanceOf[Type.Var]) {
+        tpe.asInstanceOf[Type.Var].setText(x.getText.get)
+      }
       Result.Ok(Substitution.singleton(x, tpe))
     }
 
