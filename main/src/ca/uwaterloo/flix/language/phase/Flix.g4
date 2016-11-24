@@ -67,7 +67,7 @@ definitionName : LowerIdent;
 qualifiedDefinitionName : lowerqname;
 tableName : UpperIdent;
 qualifiedTableName : upperqname;
-tagName : UpperIdent;
+tagName : UpperIdent | FNIL;
 typeName : UpperIdent;
 qualifiedTypeName : upperqname;
 variableName : LowerIdent;
