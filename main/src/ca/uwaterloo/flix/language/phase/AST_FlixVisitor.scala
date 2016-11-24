@@ -64,7 +64,6 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 		)
 
 	def visitUpperLowerIdent(tk: Token): Name.Ident = {
-		println("'" + tk.getText() + "'");
 		return Name.Ident(
 			visitStartSp(tk),
 			tk.getText(),
