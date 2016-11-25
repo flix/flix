@@ -76,7 +76,7 @@ sealed trait Type {
     * Returns a human readable string representation of `this` type.
     */
   override def toString: String = this match {
-    case Type.Var(x, k) => "'" + x
+    case tvar@Type.Var(x, k) => tvar.getText.getOrElse("'" + x)
     case Type.Unit => "Unit"
     case Type.Bool => "Bool"
     case Type.Char => "Char"
@@ -110,7 +110,24 @@ object Type {
   /**
     * A type variable expression.
     */
-  case class Var(id: Int, kind: Kind) extends Type
+  case class Var(id: Int, kind: Kind) extends Type {
+    /**
+      * The optional textual name of `this` type variable.
+      */
+    private var text: Option[String] = None
+
+    /**
+      * Optionally returns the textual name of `this` type variable.
+      */
+    def getText: Option[String] = text
+
+    /**
+      * Sets the textual name of `this` type variable.
+      */
+    def setText(s: String): Unit = {
+      text = Some(s)
+    }
+  }
 
   /**
     * A type constructor that represents the unit value.

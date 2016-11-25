@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.language.ast.Type.Var
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation
@@ -86,7 +87,12 @@ object Namer {
 
             // Compute the type environment from the formal type parameters.
             val tparams = tparams0.map {
-              case p => NamedAst.TypeParam(p, Type.freshTypeVar(), p.loc)
+              case p =>
+                // Generate a fresh type variable for the type parameter.
+                val tvar = Type.freshTypeVar()
+                // Remember the original textual name.
+                tvar.setText(p.name)
+                NamedAst.TypeParam(p, tvar, p.loc)
             }
             val tenv0 = tparams.map(p => p.name.name -> p.tpe).toMap
 
