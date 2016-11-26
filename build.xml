@@ -51,7 +51,7 @@
         </scalac>
 
         <!-- Compile java sources. (Antlr4) -->
-         <javac srcdir="${src.dir}" destdir="${out.dir}/classes" classpathref="classpath" fork="true" includeantruntime="false">
+         <javac srcdir="${src.dir}" destdir="${out.dir}/classes" classpathref="classpath" fork="false" includeantruntime="false">
             <include name="**/*.java"/>
         </javac>
 

@@ -370,6 +370,16 @@ public interface FlixListener extends ParseTreeListener {
 	 */
 	void exitContextBoundsList(FlixParser.ContextBoundsListContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link FlixParser#implContextBoundsList}.
+	 * @param ctx the parse tree
+	 */
+	void enterImplContextBoundsList(FlixParser.ImplContextBoundsListContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FlixParser#implContextBoundsList}.
+	 * @param ctx the parse tree
+	 */
+	void exitImplContextBoundsList(FlixParser.ImplContextBoundsListContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link FlixParser#annotation}.
 	 * @param ctx the parse tree
 	 */
@@ -800,6 +810,26 @@ public interface FlixListener extends ParseTreeListener {
 	 */
 	void exitE_apply(FlixParser.E_applyContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link FlixParser#e_unaryLambda}.
+	 * @param ctx the parse tree
+	 */
+	void enterE_unaryLambda(FlixParser.E_unaryLambdaContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FlixParser#e_unaryLambda}.
+	 * @param ctx the parse tree
+	 */
+	void exitE_unaryLambda(FlixParser.E_unaryLambdaContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FlixParser#e_lambda}.
+	 * @param ctx the parse tree
+	 */
+	void enterE_lambda(FlixParser.E_lambdaContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FlixParser#e_lambda}.
+	 * @param ctx the parse tree
+	 */
+	void exitE_lambda(FlixParser.E_lambdaContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link FlixParser#e_literal}.
 	 * @param ctx the parse tree
 	 */
@@ -939,26 +969,6 @@ public interface FlixListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitE_fMap(FlixParser.E_fMapContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link FlixParser#e_unaryLambda}.
-	 * @param ctx the parse tree
-	 */
-	void enterE_unaryLambda(FlixParser.E_unaryLambdaContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link FlixParser#e_unaryLambda}.
-	 * @param ctx the parse tree
-	 */
-	void exitE_unaryLambda(FlixParser.E_unaryLambdaContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link FlixParser#e_lambda}.
-	 * @param ctx the parse tree
-	 */
-	void enterE_lambda(FlixParser.E_lambdaContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link FlixParser#e_lambda}.
-	 * @param ctx the parse tree
-	 */
-	void exitE_lambda(FlixParser.E_lambdaContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link FlixParser#existential}.
 	 * @param ctx the parse tree

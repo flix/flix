@@ -229,6 +229,12 @@ public interface FlixVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitContextBoundsList(FlixParser.ContextBoundsListContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link FlixParser#implContextBoundsList}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitImplContextBoundsList(FlixParser.ImplContextBoundsListContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link FlixParser#annotation}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -487,6 +493,18 @@ public interface FlixVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitE_apply(FlixParser.E_applyContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link FlixParser#e_unaryLambda}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitE_unaryLambda(FlixParser.E_unaryLambdaContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link FlixParser#e_lambda}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitE_lambda(FlixParser.E_lambdaContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link FlixParser#e_literal}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -570,18 +588,6 @@ public interface FlixVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitE_fMap(FlixParser.E_fMapContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link FlixParser#e_unaryLambda}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitE_unaryLambda(FlixParser.E_unaryLambdaContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link FlixParser#e_lambda}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitE_lambda(FlixParser.E_lambdaContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link FlixParser#existential}.
 	 * @param ctx the parse tree

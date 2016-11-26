@@ -450,6 +450,18 @@ public class FlixBaseListener implements FlixListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterImplContextBoundsList(FlixParser.ImplContextBoundsListContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitImplContextBoundsList(FlixParser.ImplContextBoundsListContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterAnnotation(FlixParser.AnnotationContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -966,6 +978,30 @@ public class FlixBaseListener implements FlixListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterE_unaryLambda(FlixParser.E_unaryLambdaContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitE_unaryLambda(FlixParser.E_unaryLambdaContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterE_lambda(FlixParser.E_lambdaContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitE_lambda(FlixParser.E_lambdaContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterE_literal(FlixParser.E_literalContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -1129,30 +1165,6 @@ public class FlixBaseListener implements FlixListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitE_fMap(FlixParser.E_fMapContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterE_unaryLambda(FlixParser.E_unaryLambdaContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitE_unaryLambda(FlixParser.E_unaryLambdaContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterE_lambda(FlixParser.E_lambdaContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitE_lambda(FlixParser.E_lambdaContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

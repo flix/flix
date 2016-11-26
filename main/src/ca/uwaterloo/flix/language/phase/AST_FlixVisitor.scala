@@ -36,9 +36,9 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 	//TRIPLE SLASH COMMENTS
 	//=====================
 
-	def visitTscomment(ctx: FlixParser.TscommentContext) = ctx.TripleSlashComment().getText()
+	def visitTscomment(ctx: FlixParser.TscommentContext) = ctx.TripleSlashComment().getText().trim.substring(3)
 
-	def visitTscommentHelper(ctxs: Seq[FlixParser.TscommentContext]) = 
+	def visitTscommentHelper(ctxs: Vector[FlixParser.TscommentContext]) = 
 		if (ctxs.isEmpty) Option(null)
 		else Option(ParsedAst.Documentation(
 			visitStartSp(ctxs.head.getStart()),
@@ -50,8 +50,8 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 	//ROOT NODE
 	//=========
 	def visitStart(ctx: FlixParser.StartContext): ParsedAst.Root = ParsedAst.Root(
-			if ( ctx.s_import() != null) ctx.s_import().map(visitS_import).toList.toSeq else Seq(),
-			if ( ctx.decl() != null) ctx.decl().map(visitDecl).toList.toSeq else Seq()
+			if ( ctx.s_import() != null) ctx.s_import().map(visitS_import).toList.toVector else Vector(),
+			if ( ctx.decl() != null) ctx.decl().map(visitDecl).toList.toVector else Vector()
 		)
 	//==========
 	//NAME RULES
@@ -121,7 +121,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 	//RULES FOR LISTS
 	//===============
 
-	def visitVariableNames(ctx: FlixParser.VariableNamesContext) : Seq[Name.Ident] = if ( ctx.variableName() != null) ctx.variableName().map(visitVariableName).toList.toSeq else Seq()
+	def visitVariableNames(ctx: FlixParser.VariableNamesContext) : Vector[Name.Ident] = if ( ctx.variableName() != null) ctx.variableName().map(visitVariableName).toList.toVector else Vector()
 
 	def visitArgument(ctx : FlixParser.ArgumentContext) = ParsedAst.FormalParam(
 			visitStartSp(ctx.getStart()),
@@ -130,15 +130,19 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 			visitStopSp(ctx.getStop())
 		)
 
-	def visitArguments(ctx : FlixParser.ArgumentsContext) : Seq[ParsedAst.FormalParam] = if ( ctx.argument() != null) ctx.argument().map(visitArgument).toList.toSeq else Seq()
+	def visitArguments(ctx : FlixParser.ArgumentsContext) : Vector[ParsedAst.FormalParam] = if ( ctx.argument() != null) ctx.argument().map(visitArgument).toList.toVector else Vector()
 
-	def visitFormalparams(ctx : FlixParser.FormalparamsContext) : Option[Seq[ParsedAst.FormalParam]] = ctx.arguments match{
-			case null => Option(null)
-			case x: FlixParser.ArgumentsContext => Option(visitArguments(x))
+	def visitFormalparams(ctx : FlixParser.FormalparamsContext) : Option[Vector[ParsedAst.FormalParam]] = ctx.getChildCount() match{
+			case 0 => Option(null)
+			case _ => ctx.arguments() match{
+				case null => Option(Vector())
+				case x: FlixParser.ArgumentsContext => Option(visitArguments(x))
+			}
 		}
+		
 
-	def visitIndex(ctx: FlixParser.IndexContext) : Seq[Name.Ident] = if ( ctx.attributeName() != null) ctx.attributeName().map(visitAttributeName).toList.toSeq else Seq()
-	def visitIndexes(ctx: FlixParser.IndexesContext) : Seq[Seq[Name.Ident]] = if ( ctx.index() != null) ctx.index().map(visitIndex).toList.toSeq else Seq()
+	def visitIndex(ctx: FlixParser.IndexContext) : Vector[Name.Ident] = if ( ctx.attributeName() != null) ctx.attributeName().map(visitAttributeName).toList.toVector else Vector()
+	def visitIndexes(ctx: FlixParser.IndexesContext) : Vector[Vector[Name.Ident]] = if ( ctx.index() != null) ctx.index().map(visitIndex).toList.toVector else Vector()
 	
 
 	def visitAttribute(ctx: FlixParser.AttributeContext) = ParsedAst.Attribute(
@@ -147,7 +151,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 			visitType(ctx.`type`()),
 			visitStopSp(ctx.getStop())
 		)
-	def visitAttributes(ctx: FlixParser.AttributesContext) : Seq[ParsedAst.Attribute] = if ( ctx.attribute() != null) ctx.attribute().map(visitAttribute).toList.toSeq else Seq()
+	def visitAttributes(ctx: FlixParser.AttributesContext) : Vector[ParsedAst.Attribute] = if ( ctx.attribute() != null) ctx.attribute().map(visitAttribute).toList.toVector else Vector()
 
 
 	def visitContextBound(ctx: FlixParser.ContextBoundContext) = ParsedAst.ContextBound(
@@ -157,20 +161,25 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 			visitStopSp(ctx.getStop())
 		)
 
-	def visitContextBounds(ctx: FlixParser.ContextBoundsContext) : Seq[ParsedAst.ContextBound] = if ( ctx.contextBound() != null) ctx.contextBound().map(visitContextBound).toList.toSeq else Seq()
+	def visitContextBounds(ctx: FlixParser.ContextBoundsContext) : Vector[ParsedAst.ContextBound] = if ( ctx.contextBound() != null) ctx.contextBound().map(visitContextBound).toList.toVector else Vector()
 
-	def visitContextBoundsList(ctx: FlixParser.ContextBoundsListContext) : Seq[ParsedAst.ContextBound] = 
+	def visitContextBoundsList(ctx: FlixParser.ContextBoundsListContext) : Vector[ParsedAst.ContextBound] = 
 		if ( ctx.contextBounds() != null )
 			visitContextBounds(ctx.contextBounds())
-		else Seq()
+		else Vector()
 
-	def visitClass_typeparams(ctx: FlixParser.Class_typeparamsContext) = ctx.`type`().map(visitType).toList.toSeq
+	def visitImplContextBoundsList(ctx: FlixParser.ImplContextBoundsListContext) : Vector[ParsedAst.ContextBound] = 
+		if ( ctx.contextBounds() != null )
+			visitContextBounds(ctx.contextBounds())
+		else Vector()
+
+	def visitClass_typeparams(ctx: FlixParser.Class_typeparamsContext) = ctx.`type`().map(visitType).toList.toVector
 
 	def visitTypeparam(ctx: FlixParser.TypeparamContext) : ParsedAst.ContextBound = ctx.`type`() match {
 			case null => ParsedAst.ContextBound(
 				visitStartSp(ctx.getStart()),
 				visitVariableName(ctx.variableName()),
-				Seq(),
+				Vector(),
 				visitStopSp(ctx.getStop())
 				)
 			case x: FlixParser.TypeContext => ParsedAst.ContextBound(
@@ -181,7 +190,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 				)
 		}
 
-	def visitTypeparams(ctx: FlixParser.TypeparamsContext) : Seq[ParsedAst.ContextBound] = if ( ctx.typeparam() != null) ctx.typeparam().map(visitTypeparam).toList.toSeq else Seq()
+	def visitTypeparams(ctx: FlixParser.TypeparamsContext) : Vector[ParsedAst.ContextBound] = if ( ctx.typeparam() != null) ctx.typeparam().map(visitTypeparam).toList.toVector else Vector()
 
 	def visitDcase(ctx: FlixParser.DcaseContext) : ParsedAst.Case = ctx.tuple() match {
 			case null => ParsedAst.Case(
@@ -198,7 +207,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 					visitStopSp(ctx.getStop())
 				)
 		}
-	def visitDcases(ctx: FlixParser.DcasesContext) : Seq[ParsedAst.Case] = if ( ctx.dcase() != null) ctx.dcase().map(visitDcase).toList.toSeq else Seq()
+	def visitDcases(ctx: FlixParser.DcasesContext) : Vector[ParsedAst.Case] = if ( ctx.dcase() != null) ctx.dcase().map(visitDcase).toList.toVector else Vector()
 
 	def visitAnnotation(ctx: FlixParser.AnnotationContext) = ParsedAst.Annotation(
 			visitStartSp(ctx.getStart()),
@@ -206,7 +215,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 			visitStopSp(ctx.getStop())
 		)
 
-	def visitAnnotations(ctx: FlixParser.AnnotationsContext) : Seq[ParsedAst.Annotation] = if ( ctx.annotation() != null) ctx.annotation().map(visitAnnotation).toList.toSeq else Seq()
+	def visitAnnotations(ctx: FlixParser.AnnotationsContext) : Vector[ParsedAst.Annotation] = if ( ctx.annotation() != null) ctx.annotation().map(visitAnnotation).toList.toVector else Vector()
 	
 	//============
 	//IMPORT RULES
@@ -254,18 +263,19 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 			case x: FlixParser.Decls_classContext => visitDecls_class(x)
 			case x: FlixParser.Decls_factContext => visitDecls_fact(x)
 			case x: FlixParser.Decls_ruleContext => visitDecls_rule(x)
+			case x: FlixParser.Decls_implContext => visitDecls_impl(x)
 			case x: FlixParser.Decls_letlatticeContext => visitDecls_letlattice(x)
 		}
 
 	def visitDecls_namespace(ctx: FlixParser.Decls_namespaceContext) = ParsedAst.Declaration.Namespace(
 			visitStartSp(ctx.getStart()),
 			visitNname(ctx.nname()),
-			if ( ctx.decl() != null) ctx.decl().map(visitDecl).toList.toSeq else Seq(),
+			if ( ctx.decl() != null) ctx.decl().map(visitDecl).toList.toVector else Vector(),
 			visitStopSp(ctx.getStop())
 		)
 	
 	def visitDecls_enum(ctx: FlixParser.Decls_enumContext) = ParsedAst.Declaration.Enum(
-			visitTscommentHelper(ctx.tscomment().toList.toSeq),
+			visitTscommentHelper(ctx.tscomment().toList.toVector),
 			visitStartSp(ctx.ENUM().getSymbol()),
 			visitTypeName(ctx.typeName()),
 			visitTypeparams(ctx.typeparams()),
@@ -274,30 +284,30 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 		)
 	
 	def visitDecls_relation(ctx: FlixParser.Decls_relationContext) = ParsedAst.Declaration.Relation(
-			visitTscommentHelper(ctx.tscomment().toList.toSeq),
+			visitTscommentHelper(ctx.tscomment().toList.toVector),
 			visitStartSp(ctx.REL().getSymbol()),
 			visitTableName(ctx.tableName()),
-			if (ctx.attributes()!=null) visitAttributes(ctx.attributes()) else Seq(),
+			if (ctx.attributes()!=null) visitAttributes(ctx.attributes()) else Vector(),
 			visitStopSp(ctx.getStop())
 		)
 	
 	def visitDecls_lattice(ctx: FlixParser.Decls_latticeContext) = ParsedAst.Declaration.Lattice(
-			visitTscommentHelper(ctx.tscomment().toList.toSeq),
+			visitTscommentHelper(ctx.tscomment().toList.toVector),
 			visitStartSp(ctx.LAT().getSymbol()),
 			visitTableName(ctx.tableName()),
-			if (ctx.attributes()!=null) visitAttributes(ctx.attributes()) else Seq(),
+			if (ctx.attributes()!=null) visitAttributes(ctx.attributes()) else Vector(),
 			visitStopSp(ctx.getStop())
 		)
 	
 	def visitDecls_index(ctx: FlixParser.Decls_indexContext) = ParsedAst.Declaration.Index(
 			visitStartSp(ctx.INDEX().getSymbol()),
 			visitQualifiedTableName(ctx.qualifiedTableName()),
-			if (ctx.indexes()!=null) visitIndexes(ctx.indexes()) else Seq(),
+			if (ctx.indexes()!=null) visitIndexes(ctx.indexes()) else Vector(),
 			visitStopSp(ctx.getStop())
 		)
 	
 	def visitDecls_signature(ctx: FlixParser.Decls_signatureContext) = ParsedAst.Declaration.Signature(
-			visitTscommentHelper(ctx.tscomment().toList.toSeq),
+			visitTscommentHelper(ctx.tscomment().toList.toVector),
 			visitStartSp(ctx.DEF().getSymbol()),
 			visitDefinitionName(ctx.definitionName()),
 			visitFormalparams(ctx.formalparams),
@@ -306,7 +316,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 		)
 	
 	def visitDecls_external(ctx: FlixParser.Decls_externalContext) = ParsedAst.Declaration.External(
-			visitTscommentHelper(ctx.tscomment().toList.toSeq),
+			visitTscommentHelper(ctx.tscomment().toList.toVector),
 			visitStartSp(ctx.EXTERNAL().getSymbol()),
 			visitDefinitionName(ctx.definitionName()),
 			visitFormalparams(ctx.formalparams),
@@ -315,8 +325,8 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 		)
 	
 	def visitDecls_definition(ctx: FlixParser.Decls_definitionContext) = ParsedAst.Declaration.Definition(
-			visitTscommentHelper(ctx.tscomment().toList.toSeq),
-			if (ctx.annotations()!=null) visitAnnotations(ctx.annotations()) else Seq(),
+			visitTscommentHelper(ctx.tscomment().toList.toVector),
+			if (ctx.annotations()!=null) visitAnnotations(ctx.annotations()) else Vector(),
 			visitStartSp(ctx.DEF().getSymbol()),
 			visitDefinitionName(ctx.definitionName()),
 			visitTypeparams(ctx.typeparams),
@@ -327,7 +337,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 		)
 	
 	def visitDecls_law(ctx: FlixParser.Decls_lawContext) = ParsedAst.Declaration.Law(
-			visitTscommentHelper(ctx.tscomment().toList.toSeq),
+			visitTscommentHelper(ctx.tscomment().toList.toVector),
 			visitStartSp(ctx.LAW().getSymbol()),
 			visitDefinitionName(ctx.definitionName()),
 			visitTypeparams(ctx.typeparams),
@@ -338,7 +348,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 		)
 	
 	def visitDecls_class(ctx: FlixParser.Decls_classContext) = ParsedAst.Declaration.Class(
-			visitTscommentHelper(ctx.tscomment().toList.toSeq),
+			visitTscommentHelper(ctx.tscomment().toList.toVector),
 			visitStartSp(ctx.CLASS().getSymbol()),
 			visitClassName(ctx.className()),
 			visitClass_typeparams(ctx.class_typeparams()),
@@ -347,7 +357,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 			visitStopSp(ctx.getStop())
 		)
 	
-	def visitClass_body(ctx: FlixParser.Class_bodyContext) : Seq[ParsedAst.Declaration] = if ( ctx.class_decl() != null) ctx.class_decl().map(visitClass_decl).toList.toSeq else Seq()
+	def visitClass_body(ctx: FlixParser.Class_bodyContext) : Vector[ParsedAst.Declaration] = if ( ctx.class_decl() != null) ctx.class_decl().map(visitClass_decl).toList.toVector else Vector()
 
 	def visitClass_decl(ctx: FlixParser.Class_declContext) : ParsedAst.Declaration = ctx.getChild(0) match{
 			case x: FlixParser.Decls_definitionContext => visitDecls_definition(x)
@@ -377,17 +387,17 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 			visitStopSp(ctx.getStop())
 		)
 
-	def visitDecls_impl_body(ctx: FlixParser.Decls_impl_bodyContext) : Seq[ParsedAst.Declaration.Definition] = 
+	def visitDecls_impl_body(ctx: FlixParser.Decls_impl_bodyContext) : Vector[ParsedAst.Declaration.Definition] = 
 		if ( ctx.decls_definition() != null )
-			ctx.decls_definition().map(visitDecls_definition).toList.toSeq
-		else Seq()
+			ctx.decls_definition().map(visitDecls_definition).toList.toVector
+		else Vector()
 	
 	def visitDecls_impl(ctx: FlixParser.Decls_implContext) = ParsedAst.Declaration.Impl(
-			visitTscommentHelper(ctx.tscomment().toList.toSeq),
+			visitTscommentHelper(ctx.tscomment().toList.toVector),
 			visitStartSp(ctx.IMPL().getSymbol()),
 			visitClassName(ctx.className()),
 			visitClass_typeparams(ctx.class_typeparams()),
-			visitContextBoundsList(ctx.contextBoundsList),
+			visitImplContextBoundsList(ctx.implContextBoundsList()),
 			visitDecls_impl_body(ctx.decls_impl_body()),
 			visitStopSp(ctx.getStop())
 		)
@@ -406,7 +416,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 			case x : FlixParser.LogicalContext => visitLogical(x);
 		}
 
-	def visitExpressions(ctx: FlixParser.ExpressionsContext) : Seq[ParsedAst.Expression] = if ( ctx.expression() != null) ctx.expression().map(visitExpression).toList.toSeq else Seq()
+	def visitExpressions(ctx: FlixParser.ExpressionsContext) : Vector[ParsedAst.Expression] = if ( ctx.expression() != null) ctx.expression().map(visitExpression).toList.toVector else Vector()
 
 	def visitLogical(ctx: FlixParser.LogicalContext) : ParsedAst.Expression = ctx.getChildCount() match {
 			case 1 => visitComparison(ctx.comparison(0))
@@ -531,7 +541,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 			visitExpression(ctx.expression())
 		)
 
-	def visitMatch_rules(ctx: FlixParser.Match_rulesContext) : Seq[(ParsedAst.Pattern,ParsedAst.Expression)] = if ( ctx.match_rule() != null) ctx.match_rule().map(visitMatch_rule).toList.toSeq else Seq()
+	def visitMatch_rules(ctx: FlixParser.Match_rulesContext) : Vector[(ParsedAst.Pattern,ParsedAst.Expression)] = if ( ctx.match_rule() != null) ctx.match_rule().map(visitMatch_rule).toList.toVector else Vector()
 
 	def visitE_match(ctx: FlixParser.E_matchContext) = ParsedAst.Expression.Match(
 			visitStartSp(ctx.getStart()),
@@ -545,18 +555,31 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 			visitExpression(ctx.expression(1))
 		)
 
-	def visitSwitch_rules(ctx: FlixParser.Switch_rulesContext) : Seq[(ParsedAst.Expression,ParsedAst.Expression)] = if ( ctx.switch_rule() != null) ctx.switch_rule().map(visitSwitch_rule).toList.toSeq else Seq()
+	def visitSwitch_rules(ctx: FlixParser.Switch_rulesContext) : Vector[(ParsedAst.Expression,ParsedAst.Expression)] = if ( ctx.switch_rule() != null) ctx.switch_rule().map(visitSwitch_rule).toList.toVector else Vector()
 
 	def visitE_switch(ctx: FlixParser.E_switchContext) = ParsedAst.Expression.Switch(
 			visitStartSp(ctx.getStart()),
 			visitSwitch_rules(ctx.switch_rules()),
 			visitStopSp(ctx.getStop())
 		)
-	def visitE_apply(ctx: FlixParser.E_applyContext) = ParsedAst.Expression.Apply(
-			visitE_primary(ctx.e_primary()),
-			if (ctx.expressions()!=null) visitExpressions(ctx.expressions()) else Seq(),
-			visitStopSp(ctx.getStop())
-		)
+	def visitE_apply(ctx: FlixParser.E_applyContext) : ParsedAst.Expression = ctx.getChildCount() match{
+			case 1 => visitE_primary(ctx.e_primary())
+			case _ => ctx.expressions() match {
+				case null => ParsedAst.Expression.Apply(
+						visitE_primary(ctx.e_primary()),
+						Vector(),
+						visitStopSp(ctx.getStop())
+					)
+				case x: FlixParser.ExpressionsContext => 
+					ParsedAst.Expression.Apply(
+						visitE_primary(ctx.e_primary()),
+						visitExpressions(ctx.expressions()),
+						visitStopSp(ctx.getStop())
+					)
+			}
+		}
+
+	
 
 	def visitE_literal(ctx: FlixParser.E_literalContext) = ParsedAst.Expression.Lit(
 			visitStartSp(ctx.getStart()),
@@ -596,14 +619,14 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 			visitStartSp(ctx.getStart()),
 
 			if(ctx.expressions()!=null) visitExpressions(ctx.expressions())
-			else Seq(),
+			else Vector(),
 			
 			visitStopSp(ctx.getStop())
 		)
 
 	def visitE_keyValue(ctx: FlixParser.E_keyValueContext) = ( visitExpression(ctx.expression(0)),visitExpression(ctx.expression(1)) );
 
-	def visitE_keyValues(ctx: FlixParser.E_keyValuesContext): Seq[(ParsedAst.Expression,ParsedAst.Expression)] = if ( ctx.e_keyValue() != null) ctx.e_keyValue().map(visitE_keyValue).toList.toSeq else Seq()
+	def visitE_keyValues(ctx: FlixParser.E_keyValuesContext): Vector[(ParsedAst.Expression,ParsedAst.Expression)] = if ( ctx.e_keyValue() != null) ctx.e_keyValue().map(visitE_keyValue).toList.toVector else Vector()
 
 	def visitE_userError(ctx: FlixParser.E_userErrorContext) = ParsedAst.Expression.UserError( visitStartSp(ctx.getStart()),visitStopSp(ctx.getStop()) )
 
@@ -623,20 +646,20 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 	def visitE_fVec(ctx: FlixParser.E_fVecContext) = ParsedAst.Expression.FVec(
 			visitStartSp(ctx.getStart()),
 			if (ctx.expressions() != null) visitExpressions(ctx.expressions())
-			else Seq(),
+			else Vector(),
 			visitStopSp(ctx.getStop())
 		)
 
 	def visitE_fSet(ctx: FlixParser.E_fSetContext) = ParsedAst.Expression.FSet(
 			visitStartSp(ctx.getStart()),
 			if (ctx.expressions() != null) visitExpressions(ctx.expressions())
-			else Seq(),
+			else Vector(),
 			visitStopSp(ctx.getStop())
 		)
 	def visitE_fMap(ctx: FlixParser.E_fMapContext) = ParsedAst.Expression.FMap(
 			visitStartSp(ctx.getStart()),
 			if (ctx.e_keyValues() != null) visitE_keyValues(ctx.e_keyValues())
-			else Seq(),
+			else Vector(),
 			visitStopSp(ctx.getStop())
 		)
 
@@ -676,7 +699,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 
 	def visitPattern(ctx: FlixParser.PatternContext) : ParsedAst.Pattern = visitP_fList(ctx.p_fList())
 
-	def visitPatterns(ctx: FlixParser.PatternsContext) : Seq[ParsedAst.Pattern] = if ( ctx.pattern() != null) ctx.pattern().map(visitPattern).toList.toSeq else Seq()
+	def visitPatterns(ctx: FlixParser.PatternsContext) : Vector[ParsedAst.Pattern] = if ( ctx.pattern() != null) ctx.pattern().map(visitPattern).toList.toVector else Vector()
 
 	def visitSimple(ctx: FlixParser.SimpleContext) : ParsedAst.Pattern = ctx.getChild(0) match {
 			case x: FlixParser.P_fNilContext => visitP_fNil(x)
@@ -692,7 +715,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 
 	def visitP_keyValue(ctx: FlixParser.P_keyValueContext) = ( visitPattern(ctx.pattern(0)),visitPattern(ctx.pattern(1)) );
 
-	def visitP_keyValues(ctx: FlixParser.P_keyValuesContext) : Seq[(ParsedAst.Pattern,ParsedAst.Pattern)] = if ( ctx.p_keyValue() != null) ctx.p_keyValue().map(visitP_keyValue).toList.toSeq else Seq()
+	def visitP_keyValues(ctx: FlixParser.P_keyValuesContext) : Vector[(ParsedAst.Pattern,ParsedAst.Pattern)] = if ( ctx.p_keyValue() != null) ctx.p_keyValue().map(visitP_keyValue).toList.toVector else Vector()
 
 
 	def visitP_literal(ctx: FlixParser.P_literalContext) = ParsedAst.Pattern.Lit(
@@ -721,7 +744,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 			visitStartSp(ctx.getStart()),
 
 			if( ctx.patterns()!=null ) visitPatterns(ctx.patterns())
-			else Seq(),
+			else Vector(),
 			
 			visitStopSp(ctx.getStop())
 		)
@@ -748,7 +771,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 	def visitP_fVec(ctx: FlixParser.P_fVecContext) = ParsedAst.Pattern.FVec(
 			visitStartSp(ctx.getStart()),
 			if (ctx.patterns() != null) visitPatterns(ctx.patterns())
-			else Seq(),
+			else Vector(),
 			if( ctx.pattern() != null ) Option( visitPattern(ctx.pattern()) )
 			else Option(null),
 			visitStopSp(ctx.getStop())
@@ -757,7 +780,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 	def visitP_fSet(ctx: FlixParser.P_fSetContext) = ParsedAst.Pattern.FSet(
 			visitStartSp(ctx.getStart()),
 			if (ctx.patterns() != null) visitPatterns(ctx.patterns())
-			else Seq(),
+			else Vector(),
 			if( ctx.pattern() != null ) Option( visitPattern(ctx.pattern()) )
 			else Option(null),
 			visitStopSp(ctx.getStop())
@@ -766,7 +789,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 	def visitP_fMap(ctx: FlixParser.P_fMapContext) = ParsedAst.Pattern.FMap(
 			visitStartSp(ctx.getStart()),
 			if (ctx.p_keyValues() != null) visitP_keyValues(ctx.p_keyValues())
-			else Seq(),
+			else Vector(),
 			if( ctx.pattern() != null ) Option( visitPattern(ctx.pattern()) )
 			else Option(null),
 			visitStopSp(ctx.getStop())
@@ -898,7 +921,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 
 	def visitArrow(ctx: FlixParser.ArrowContext) = ParsedAst.Type.Arrow(
 			visitStartSp(ctx.getStart()),
-			ctx.`type`().dropRight(1).map(visitType).toList.toSeq,
+			ctx.`type`().dropRight(1).map(visitType).toList.toVector,
 			visitType(ctx.`type`().last),
 			visitStopSp(ctx.getStop())
 		)
@@ -908,15 +931,11 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 			visitStopSp(ctx.getStop())
 		)
 
-	def visitTuple_singleton(ctx: FlixParser.Tuple_singletonContext) =ParsedAst.Type.Tuple(
-			visitStartSp(ctx.getStart()),
-			Seq( visitType(ctx.`type`()) ),
-			visitStopSp(ctx.getStop())
-		)
+	def visitTuple_singleton(ctx: FlixParser.Tuple_singletonContext) = visitType(ctx.`type`())
 
 	def visitTuple_multi(ctx: FlixParser.Tuple_multiContext) = ParsedAst.Type.Tuple(
 			visitStartSp(ctx.getStart()),
-			ctx.`type`().map(visitType).toList.toSeq,
+			ctx.`type`().map(visitType).toList.toVector,
 			visitStopSp(ctx.getStop())
 		)
 	def visitTuple(ctx: FlixParser.TupleContext) : ParsedAst.Type = ctx.getChild(0) match{
@@ -928,7 +947,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 	def visitApply(ctx: FlixParser.ApplyContext) = ParsedAst.Type.Apply(
 			visitStartSp(ctx.getStart()),
 			visitRef(ctx.ref()),
-			ctx.`type`().map(visitType).toList.toSeq,
+			ctx.`type`().map(visitType).toList.toVector,
 			visitStopSp(ctx.getStop())
 		)
 
@@ -1026,7 +1045,7 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 			case x: FlixParser.Pred_loopContext => visitPred_loop(x)
 		}
 
-	def visitPredicates(ctx: FlixParser.PredicatesContext) : Seq[ParsedAst.Predicate] = if ( ctx.predicate() != null) ctx.predicate().map(visitPredicate).toList.toSeq else Seq()
+	def visitPredicates(ctx: FlixParser.PredicatesContext) : Vector[ParsedAst.Predicate] = if ( ctx.predicate() != null) ctx.predicate().map(visitPredicate).toList.toVector else Vector()
 
 	def visitPred_true(ctx: FlixParser.Pred_trueContext) = ParsedAst.Predicate.True(visitStartSp(ctx.getStart()),visitStopSp(ctx.getStop()))
 

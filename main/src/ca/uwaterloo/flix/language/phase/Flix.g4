@@ -32,7 +32,7 @@ EXTERNAL : 'external';
 LAW : 'law';
 CLASS : 'class';
 LET : 'let';
-IMPL : 'imple';
+IMPL : 'impl';
 FNIL : 'Nil';
 SWITCH : 'switch';
 MATCH : 'match';
@@ -74,7 +74,7 @@ variableName : LowerIdent;
 
 
 //Arguments/lists
-variableNames : variableName (WS? ',' WS? variableName);
+variableNames : variableName (WS? ',' WS? variableName)*;
 
 argument : variableName ':' WS? type;
 arguments : argument (WS? ',' WS? argument)*;
@@ -99,7 +99,8 @@ class_typeparams : '[' type (WS? ',' WS? type)* ']';
 
 contextBound : className class_typeparams;
 contextBounds : contextBound (WS? ',' WS? contextBound)*;
-contextBoundsList : (WS? '<=' WS? contextBounds WS?)?;
+contextBoundsList : (WS? '=>' WS? contextBounds)?;
+implContextBoundsList : (WS? '<=' WS? contextBounds)?;
 
 annotation : '@' annotationName;
 annotations : annotation (WS annotation)*;
@@ -127,6 +128,7 @@ decl : decls_namespace |
 		decls_class |
 		decls_fact |
 		decls_rule |
+		decls_impl |
 		decls_letlattice;
 
 
@@ -150,7 +152,7 @@ decls_definition : (WS? tscomment)* WS? annotations? WS? DEF WS definitionName W
 
 decls_law : (WS? tscomment)* WS? LAW WS definitionName WS? typeparams WS? formalparams  WS? ':' WS? type WS? '=' WS? expression optSC;
 
-decls_class : (WS? tscomment)* WS? CLASS WS className class_typeparams WS? contextBoundsList WS? class_body;
+decls_class : (WS? tscomment)* WS? CLASS WS className class_typeparams contextBoundsList WS? class_body;
 
 class_body : '{' WS? (class_decl WS?)* '}';
 class_decl : decls_definition | decls_signature | decls_law ;
@@ -162,7 +164,7 @@ decls_rule : WS? predicate WS? ':-' WS? predicates WS? '.';
 elms : expressions;
 decls_letlattice : WS? LET WS? type '<>' WS? '=' WS? '(' WS? elms WS? ')' optSC;
 
-decls_impl : (WS? tscomment)* WS? IMPL WS className class_typeparams WS? contextBoundsList WS? decls_impl_body;
+decls_impl : (WS? tscomment)* WS? IMPL WS className class_typeparams WS? implContextBoundsList WS? decls_impl_body;
 decls_impl_body : '{' WS? decls_definition* WS? '}';
 
 //Expressions
@@ -172,10 +174,16 @@ expressions : expression (WS? ',' WS? expression)*;
 
 comparison : additive (WS? comparison_ops WS? additive)?;
 additive : multiplicative (WS? addve_ops WS? additive)?;
-multiplicative : infix (WS? multipve_ops WS? multiplicative)?;
+multiplicative : {!( _input.LT(2).getText().equals("/") && //Make sure we aren't accessing a namespace
+						Character.isLetter(_input.LT(3).getText().charAt(0)) )}?
+				infix WS? multipve_ops WS? multiplicative
+				| infix;
 infix : extended (WS? '`' qualifiedDefinitionName  '`' WS? extended)?;
 extended : unary (WS? extbin_ops WS? unary)?;
-unary : (unary_ops WS? unary) | ascribe;
+
+unary : {!( _input.LT(1).getText().equals("-") && //Make sure this isn't just a negative number
+		Character.isDigit(_input.LT(2).getText().charAt(0)) )}? (unary_ops WS? unary) 
+		| ascribe;
 ascribe : e_fList (WS? ':' WS? type)?;
 
 e_primary : e_letMatch | e_ifThenElse | e_match | e_switch |
@@ -190,6 +198,9 @@ e_match : MATCH WS expression WS WITH WS '{' WS? match_rules WS? '}';
 e_switch : SWITCH WS '{' WS? switch_rules WS?'}';
 
 e_apply : e_primary (WS? '(' WS? expressions? WS? ')')?;
+
+e_unaryLambda : variableName WS? '->' WS? expression;
+e_lambda : '(' WS? variableNames WS? ')' WS? '->' WS? expression;
 
 e_literal : literal;
 e_sname : variableName;
@@ -207,9 +218,6 @@ e_fList : e_apply (WS? '::' WS? expression)?;
 e_fVec : '#[' WS? expressions? WS? ']';
 e_fSet : '#{' WS? expressions? WS? '}';
 e_fMap : '@{' WS? e_keyValues? WS? '}';
-
-e_unaryLambda : variableName WS? '->' WS? expression;
-e_lambda : '(' WS? variableNames WS? ')' WS? '->' WS? expression;
 
 existential : ('∃' | '\\exists') WS? formalparams WS? '.' WS? expression;
 universal : ('∀' | '\\forall') WS? formalparams WS? '.' WS? expression;
@@ -245,7 +253,7 @@ bools : ('true' | 'false');
 Chars : '\'' . '\'';
 chars : Chars;
 
-Strs : '"' ~['"'\n\r]* '"';
+Strs : '"' ~[\n\r]*? '"';
 strs : Strs;
 Digits : [0-9]+;
 negative : '-';
