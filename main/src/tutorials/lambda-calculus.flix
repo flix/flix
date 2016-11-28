@@ -8,9 +8,9 @@
 /// The type of expressions:
 ///
 enum Expr {
-    case Var(Str),
+    case Var(Int),
     case App(Expr, Expr),
-    case Lam(Str, Expr)
+    case Lam(Int, Expr)
 }
 
 ///
@@ -43,4 +43,8 @@ def subst(e: Expr, x: Str, v: Expr): Expr = match e with {
     case Var(y) =>  ???
     case App(e1, e2) => ???
     case Lam(y, e) =>  ???
+}
+
+def alphaRename(e: Expr, c: Int): Expr = match e with {
+    case Var(x) =>
 }
