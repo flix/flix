@@ -543,10 +543,21 @@ object ParsedAst {
       * Cons expression (of list).
       *
       * @param hd  the head of the list.
+      * @param sp1 the position of the first character in the :: operator.
+      * @param sp2 the position of the last character in the :: operator.
       * @param tl  the tail of the list.
-      * @param sp2 the position of the last character in the expression.
       */
-    case class FCons(hd: ParsedAst.Expression, tl: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FCons(hd: ParsedAst.Expression, sp1: SourcePosition, sp2: SourcePosition, tl: ParsedAst.Expression) extends ParsedAst.Expression
+
+    /**
+      * Append expression (of list).
+      *
+      * @param fst the first list.
+      * @param sp1 the position of the first character in the operator @@.
+      * @param sp2 the position of the last character in the operator @@.
+      * @param snd the second list.
+      */
+    case class FAppend(fst: ParsedAst.Expression, sp1: SourcePosition, sp2: SourcePosition, snd: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
       * Vector Expression.
@@ -665,8 +676,8 @@ object ParsedAst {
       case Pattern.Lit(sp1, _, _) => sp1
       case Pattern.Tag(sp1, _, _, _, _) => sp1
       case Pattern.Tuple(sp1, _, _) => sp1
-      case Pattern.FNil(sp1, sp2) => sp1
-      case Pattern.FCons(hd, _, _) => hd.leftMostSourcePosition
+      case Pattern.FNil(sp1, _) => sp1
+      case Pattern.FCons(hd, _, _, _) => hd.leftMostSourcePosition
       case Pattern.FVec(sp1, _, _, _) => sp1
       case Pattern.FSet(sp1, _, _, _) => sp1
       case Pattern.FMap(sp1, _, _, _) => sp1
@@ -736,10 +747,11 @@ object ParsedAst {
       * Cons Pattern (of list).
       *
       * @param hd  the head pattern.
+      * @param sp1 the position of the first character in the :: operator.
+      * @param sp2 the position of the last character in the :: operator.
       * @param tl  the tail pattern.
-      * @param sp2 the position of the last character in the pattern.
       */
-    case class FCons(hd: ParsedAst.Pattern, tl: ParsedAst.Pattern, sp2: SourcePosition) extends ParsedAst.Pattern
+    case class FCons(hd: ParsedAst.Pattern, sp1: SourcePosition, sp2: SourcePosition, tl: ParsedAst.Pattern) extends ParsedAst.Pattern
 
     /**
       * Vector Pattern.
