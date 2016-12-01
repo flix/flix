@@ -173,10 +173,9 @@ logical : comparison (WS? logical_ops WS? comparison)?;
 expressions : expression (WS? ',' WS? expression)*;
 
 comparison : additive (WS? comparison_ops WS? additive)?;
-additive : multiplicative (WS? addve_ops WS? additive)?;
-multiplicative : {!( _input.LT(2).getText().equals("/") && //Make sure we aren't accessing a namespace
-						Character.isLetter(_input.LT(3).getText().charAt(0)) )}?
-				infix WS? multipve_ops WS? multiplicative
+additive :  additive WS? addve_ops WS? multiplicative |
+			multiplicative;
+multiplicative : multiplicative WS? multipve_ops WS? infix
 				| infix;
 infix : extended (WS? '`' qualifiedDefinitionName  '`' WS? extended)?;
 extended : unary (WS? extbin_ops WS? unary)?;
@@ -187,9 +186,9 @@ unary : {!( _input.LT(1).getText().equals("-") && //Make sure this isn't just a 
 ascribe : e_fList (WS? ':' WS? type)?;
 
 e_primary : e_letMatch | e_ifThenElse | e_match | e_switch |
-				e_tag | e_lambda | e_tuple | e_fNil |
+				e_qname | e_tag | e_lambda | e_tuple | e_fNil |
 				 e_fVec | e_fSet | e_fMap | e_literal |
-				existential | universal  | e_qname |
+				existential | universal  |
 				e_unaryLambda | e_wild | e_sname | e_userError;
 
 e_letMatch : LET WS pattern WS? '=' WS? expression WS? ';' WS? expression;

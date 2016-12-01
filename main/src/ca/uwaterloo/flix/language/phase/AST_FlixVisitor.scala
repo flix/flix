@@ -442,9 +442,9 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 	def visitAdditive(ctx: FlixParser.AdditiveContext) : ParsedAst.Expression = ctx.getChildCount() match {
 			case 1 => visitMultiplicative(ctx.multiplicative())
 			case _ => ParsedAst.Expression.Binary(
-					visitMultiplicative(ctx.multiplicative()),
-					visitAddve_ops(ctx.addve_ops()),
 					visitAdditive(ctx.additive()),
+					visitAddve_ops(ctx.addve_ops()),
+					visitMultiplicative(ctx.multiplicative()),
 					visitStopSp(ctx.getStop())
 				)
 		}
@@ -453,9 +453,9 @@ class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Ob
 	def visitMultiplicative(ctx: FlixParser.MultiplicativeContext) : ParsedAst.Expression  = ctx.getChildCount() match {
 			case 1 => visitInfix(ctx.infix())
 			case _ => ParsedAst.Expression.Binary(
-					visitInfix(ctx.infix()),
-					visitMultipve_ops(ctx.multipve_ops()),
 					visitMultiplicative(ctx.multiplicative()),
+					visitMultipve_ops(ctx.multipve_ops()),
+					visitInfix(ctx.infix()),
 					visitStopSp(ctx.getStop())
 				)
 		}
