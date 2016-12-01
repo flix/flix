@@ -20,6 +20,16 @@ public interface FlixListener extends ParseTreeListener {
 	 */
 	void exitTscomment(FlixParser.TscommentContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link FlixParser#ws}.
+	 * @param ctx the parse tree
+	 */
+	void enterWs(FlixParser.WsContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FlixParser#ws}.
+	 * @param ctx the parse tree
+	 */
+	void exitWs(FlixParser.WsContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link FlixParser#start}.
 	 * @param ctx the parse tree
 	 */

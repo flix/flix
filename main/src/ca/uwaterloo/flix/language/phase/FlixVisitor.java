@@ -19,6 +19,12 @@ public interface FlixVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitTscomment(FlixParser.TscommentContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link FlixParser#ws}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitWs(FlixParser.WsContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link FlixParser#start}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

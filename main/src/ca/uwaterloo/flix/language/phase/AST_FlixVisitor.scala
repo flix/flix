@@ -9,6 +9,7 @@ import org.antlr.v4.runtime.tree.{ParseTree,RuleNode,ErrorNode,TerminalNode};
 class AST_FlixVisitor(source: SourceInput, input: String) extends FlixVisitor[Object]{
 
 	//Satisfy visitor interface.
+	def visitWs(ctx: FlixParser.WsContext) = None
 	def visitNegative(ctx: FlixParser.NegativeContext) = None
 	def visitOptSC(ctx: FlixParser.OptSCContext) = None
 	def visit(pt: ParseTree) = None

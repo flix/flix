@@ -28,7 +28,7 @@ public class FlixLexer extends Lexer {
 		T__45=46, T__46=47, T__47=48, T__48=49, T__49=50, T__50=51, T__51=52, 
 		T__52=53, T__53=54, T__54=55, T__55=56, T__56=57, T__57=58, T__58=59, 
 		T__59=60, T__60=61, T__61=62, T__62=63, T__63=64, T__64=65, T__65=66, 
-		T__66=67, T__67=68, T__68=69, T__69=70, TripleSlashComment=71, WS=72, 
+		T__66=67, T__67=68, T__68=69, T__69=70, TripleSlashComment=71, PWS=72, 
 		SC=73, Comment=74, ENUM=75, NAMESPACE=76, REL=77, LAT=78, INDEX=79, DEF=80, 
 		EXTERNAL=81, LAW=82, CLASS=83, LET=84, IMPL=85, FNIL=86, SWITCH=87, MATCH=88, 
 		WITH=89, WILD=90, CASE=91, IF=92, ELSE=93, IMPORT=94, LowerIdent=95, UpperIdent=96, 
@@ -47,7 +47,7 @@ public class FlixLexer extends Lexer {
 		"T__49", "T__50", "T__51", "T__52", "T__53", "T__54", "T__55", "T__56", 
 		"T__57", "T__58", "T__59", "T__60", "T__61", "T__62", "T__63", "T__64", 
 		"T__65", "T__66", "T__67", "T__68", "T__69", "NewLine", "SingleLineComment", 
-		"TripleSlashComment", "MultiLineComment", "WS", "SC", "Comment", "ENUM", 
+		"TripleSlashComment", "MultiLineComment", "PWS", "SC", "Comment", "ENUM", 
 		"NAMESPACE", "REL", "LAT", "INDEX", "DEF", "EXTERNAL", "LAW", "CLASS", 
 		"LET", "IMPL", "FNIL", "SWITCH", "MATCH", "WITH", "WILD", "CASE", "IF", 
 		"ELSE", "IMPORT", "LowerIdent", "UpperIdent", "Chars", "Strs", "Digits"
@@ -73,7 +73,7 @@ public class FlixLexer extends Lexer {
 		null, null, null, null, null, null, null, null, null, null, null, null, 
 		null, null, null, null, null, null, null, null, null, null, null, null, 
 		null, null, null, null, null, null, null, null, null, null, null, "TripleSlashComment", 
-		"WS", "SC", "Comment", "ENUM", "NAMESPACE", "REL", "LAT", "INDEX", "DEF", 
+		"PWS", "SC", "Comment", "ENUM", "NAMESPACE", "REL", "LAT", "INDEX", "DEF", 
 		"EXTERNAL", "LAW", "CLASS", "LET", "IMPL", "FNIL", "SWITCH", "MATCH", 
 		"WITH", "WILD", "CASE", "IF", "ELSE", "IMPORT", "LowerIdent", "UpperIdent", 
 		"Chars", "Strs", "Digits"

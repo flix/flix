@@ -17,7 +17,9 @@ TripleSlashComment : '///' .*? (NewLine | EOF);
 tscomment : TripleSlashComment;
 fragment MultiLineComment : '/*' .*? '*/';
 
-WS : (' ' | '\t' | NewLine | Comment)+;
+PWS : (' ' | '\t' | NewLine | Comment)+;
+ws : (PWS | TripleSlashComment)+;
+
 SC : ';';
 Comment : SingleLineComment | MultiLineComment;
 
@@ -49,9 +51,9 @@ UpperIdent : [A-Z][a-zA-Z0-9_"'"]*;
 
 
 //Root rule
-start : s_import* decl* WS? EOF;
+start : s_import* decl* ws? EOF;
 
-optSC : (WS? SC)?;
+optSC : (ws? SC)?;
 
 //Names & Identifiers
 ident : (UpperIdent | LowerIdent);
@@ -74,45 +76,45 @@ variableName : LowerIdent;
 
 
 //Arguments/lists
-variableNames : variableName (WS? ',' WS? variableName)*;
+variableNames : variableName (ws? ',' ws? variableName)*;
 
-argument : variableName ':' WS? type;
-arguments : argument (WS? ',' WS? argument)*;
-formalparams : ('(' WS? arguments? WS? ')' )?;
+argument : variableName ':' ws? type;
+arguments : argument (ws? ',' ws? argument)*;
+formalparams : ('(' ws? arguments? ws? ')' )?;
 
-attribute : attributeName WS? ':' WS? type;
-attributes : attribute (WS? ',' WS? attribute)*;
+attribute : attributeName ws? ':' ws? type;
+attributes : attribute (ws? ',' ws? attribute)*;
 
-index : '{' WS? (attributeName (WS? ',' WS? attributeName)*)? WS? '}';
-indexes : index (WS? ',' WS? index)*;
+index : '{' ws? (attributeName (ws? ',' ws? attributeName)*)? ws? '}';
+indexes : index (ws? ',' ws? index)*;
 
-match_rule : CASE WS pattern WS? '=>' WS? expression SC?;
-match_rules : match_rule (WS? match_rule)*;
+match_rule : CASE ws pattern ws? '=>' ws? expression SC?;
+match_rules : match_rule (ws? match_rule)*;
 
-switch_rule : CASE WS expression WS? '=>' WS? expression SC?;
-switch_rules : switch_rule (WS? switch_rule)*;
+switch_rule : CASE ws expression ws? '=>' ws? expression SC?;
+switch_rules : switch_rule (ws? switch_rule)*;
 
-typeparam : variableName (WS? ':' WS? type)?;
-typeparams : ('[' WS? typeparam (WS? ',' WS? typeparam)* ']')?;
+typeparam : variableName (ws? ':' ws? type)?;
+typeparams : ('[' ws? typeparam (ws? ',' ws? typeparam)* ']')?;
 
-class_typeparams : '[' type (WS? ',' WS? type)* ']';
+class_typeparams : '[' type (ws? ',' ws? type)* ']';
 
 contextBound : className class_typeparams;
-contextBounds : contextBound (WS? ',' WS? contextBound)*;
-contextBoundsList : (WS? '=>' WS? contextBounds)?;
-implContextBoundsList : (WS? '<=' WS? contextBounds)?;
+contextBounds : contextBound (ws? ',' ws? contextBound)*;
+contextBoundsList : (ws? '=>' ws? contextBounds)?;
+implContextBoundsList : (ws? '<=' ws? contextBounds)?;
 
 annotation : '@' annotationName;
-annotations : annotation (WS annotation)*;
+annotations : annotation (ws annotation)*;
 
 //Imports
-s_import : 	WS? (import_wildcard |
+s_import : 	ws? (import_wildcard |
 			import_definition |
 			import_namespace);
 
-import_wildcard : IMPORT WS nname '/' WILD optSC;
-import_definition : IMPORT WS nname '/' ident optSC;
-import_namespace : IMPORT WS nname optSC;
+import_wildcard : IMPORT ws nname '/' WILD optSC;
+import_definition : IMPORT ws nname '/' ident optSC;
+import_namespace : IMPORT ws nname optSC;
 
 
 //Declarations
@@ -132,58 +134,58 @@ decl : decls_namespace |
 		decls_letlattice;
 
 
-decls_namespace : WS? NAMESPACE WS nname WS? '{' WS? decl* WS? '}' optSC;
+decls_namespace : ws? NAMESPACE ws nname ws? '{' ws? decl* ws? '}' optSC;
 
-decls_enum : (WS? tscomment)* WS? ENUM WS typeName typeparams WS? '{' WS? dcases WS? '}' optSC;
-dcases : dcase (WS? ',' WS? dcase)*;
-dcase : CASE WS tagName tuple?;
+decls_enum : (PWS? tscomment)* ws? ENUM ws typeName typeparams ws? '{' ws? dcases ws? '}' optSC;
+dcases : dcase (ws? ',' ws? dcase)*;
+dcase : CASE ws tagName tuple?;
 
-decls_relation : (WS? tscomment)* WS? REL WS tableName WS? '(' WS? attributes? WS? ')' optSC;
+decls_relation : (PWS? tscomment)* ws? REL ws tableName ws? '(' ws? attributes? ws? ')' optSC;
 
-decls_lattice : (WS? tscomment)* WS? LAT WS tableName WS? '(' WS? attributes? WS? ')' optSC;
+decls_lattice : (PWS? tscomment)* ws? LAT ws tableName ws? '(' ws? attributes? ws? ')' optSC;
 
-decls_index : WS? INDEX WS qualifiedTableName WS? '(' WS? indexes? WS? ')' optSC;
+decls_index : ws? INDEX ws qualifiedTableName ws? '(' ws? indexes? ws? ')' optSC;
 
-decls_signature : (WS? tscomment)* WS? DEF WS definitionName WS? formalparams WS? ':' WS? type optSC;
+decls_signature : (PWS? tscomment)* ws? DEF ws definitionName ws? formalparams ws? ':' ws? type optSC;
 
-decls_external : (WS? tscomment)* WS? EXTERNAL WS? DEF WS definitionName WS? formalparams WS? ':' WS? type optSC;
+decls_external : (PWS? tscomment)* ws? EXTERNAL ws? DEF ws definitionName ws? formalparams ws? ':' ws? type optSC;
 
-decls_definition : (WS? tscomment)* WS? annotations? WS? DEF WS definitionName WS? typeparams formalparams WS? ':' WS? type WS? '=' WS? expression optSC;
+decls_definition : (PWS? tscomment)* ws? annotations? ws? DEF ws definitionName ws? typeparams formalparams ws? ':' ws? type ws? '=' ws? expression optSC;
 
-decls_law : (WS? tscomment)* WS? LAW WS definitionName WS? typeparams WS? formalparams  WS? ':' WS? type WS? '=' WS? expression optSC;
+decls_law : (PWS? tscomment)* ws? LAW ws definitionName ws? typeparams ws? formalparams  ws? ':' ws? type ws? '=' ws? expression optSC;
 
-decls_class : (WS? tscomment)* WS? CLASS WS className class_typeparams contextBoundsList WS? class_body;
+decls_class : (PWS? tscomment)* ws? CLASS ws className class_typeparams contextBoundsList ws? class_body;
 
-class_body : '{' WS? (class_decl WS?)* '}';
+class_body : '{' ws? (class_decl ws?)* '}';
 class_decl : decls_definition | decls_signature | decls_law ;
 
-decls_fact : WS? predicate WS? '.';
+decls_fact : ws? predicate ws? '.';
 
-decls_rule : WS? predicate WS? ':-' WS? predicates WS? '.';
+decls_rule : ws? predicate ws? ':-' ws? predicates ws? '.';
 
 elms : expressions;
-decls_letlattice : WS? LET WS? type '<>' WS? '=' WS? '(' WS? elms WS? ')' optSC;
+decls_letlattice : ws? LET ws? type '<>' ws? '=' ws? '(' ws? elms ws? ')' optSC;
 
-decls_impl : (WS? tscomment)* WS? IMPL WS className class_typeparams WS? implContextBoundsList WS? decls_impl_body;
-decls_impl_body : '{' WS? decls_definition* WS? '}';
+decls_impl : (PWS? tscomment)* ws? IMPL ws className class_typeparams ws? implContextBoundsList ws? decls_impl_body;
+decls_impl_body : '{' ws? decls_definition* ws? '}';
 
 //Expressions
-expression : ('{' WS? expression WS? '}' WS?) | logical;
-logical : comparison (WS? logical_ops WS? comparison)?;
-expressions : expression (WS? ',' WS? expression)*;
+expression : ('{' ws? expression ws? '}' ws?) | logical;
+logical : comparison (ws? logical_ops ws? comparison)?;
+expressions : expression (ws? ',' ws? expression)*;
 
-comparison : additive (WS? comparison_ops WS? additive)?;
-additive :  additive WS? addve_ops WS? multiplicative |
+comparison : additive (ws? comparison_ops ws? additive)?;
+additive :  additive ws? addve_ops ws? multiplicative |
 			multiplicative;
-multiplicative : multiplicative WS? multipve_ops WS? infix
+multiplicative : multiplicative ws? multipve_ops ws? infix
 				| infix;
-infix : extended (WS? '`' qualifiedDefinitionName  '`' WS? extended)?;
-extended : unary (WS? extbin_ops WS? unary)?;
+infix : extended (ws? '`' qualifiedDefinitionName  '`' ws? extended)?;
+extended : unary (ws? extbin_ops ws? unary)?;
 
 unary : {!( _input.LT(1).getText().equals("-") && //Make sure this isn't just a negative number
-		Character.isDigit(_input.LT(2).getText().charAt(0)) )}? (unary_ops WS? unary) 
+		Character.isDigit(_input.LT(2).getText().charAt(0)) )}? (unary_ops ws? unary) 
 		| ascribe;
-ascribe : e_fList (WS? ':' WS? type)?;
+ascribe : e_fList (ws? ':' ws? type)?;
 
 e_primary : e_letMatch | e_ifThenElse | e_match | e_switch |
 				e_qname | e_tag | e_lambda | e_tuple | e_fNil |
@@ -191,58 +193,58 @@ e_primary : e_letMatch | e_ifThenElse | e_match | e_switch |
 				existential | universal  |
 				e_unaryLambda | e_wild | e_sname | e_userError;
 
-e_letMatch : LET WS pattern WS? '=' WS? expression WS? ';' WS? expression;
-e_ifThenElse : IF WS? '(' WS? expression WS? ')' WS? expression WS ELSE WS expression;
-e_match : MATCH WS expression WS WITH WS '{' WS? match_rules WS? '}';
-e_switch : SWITCH WS '{' WS? switch_rules WS?'}';
+e_letMatch : LET ws pattern ws? '=' ws? expression ws? ';' ws? expression;
+e_ifThenElse : IF ws? '(' ws? expression ws? ')' ws? expression ws ELSE ws expression;
+e_match : MATCH ws expression ws WITH ws '{' ws? match_rules ws? '}';
+e_switch : SWITCH ws '{' ws? switch_rules ws?'}';
 
-e_apply : e_primary (WS? '(' WS? expressions? WS? ')')?;
+e_apply : e_primary (ws? '(' ws? expressions? ws? ')')?;
 
-e_unaryLambda : variableName WS? '->' WS? expression;
-e_lambda : '(' WS? variableNames WS? ')' WS? '->' WS? expression;
+e_unaryLambda : variableName ws? '->' ws? expression;
+e_lambda : '(' ws? variableNames ws? ')' ws? '->' ws? expression;
 
 e_literal : literal;
 e_sname : variableName;
 e_qname : qualifiedDefinitionName;
-e_tag : (qualifiedTypeName '.')? tagName (WS? e_tuple)?;
-e_tuple : '(' WS? expressions? WS? ')';
+e_tag : (qualifiedTypeName '.')? tagName (ws? e_tuple)?;
+e_tuple : '(' ws? expressions? ws? ')';
 
-e_keyValue : expression WS? '->' WS? expression;
-e_keyValues : e_keyValue (WS? ',' WS? e_keyValue)*;
+e_keyValue : expression ws? '->' ws? expression;
+e_keyValues : e_keyValue (ws? ',' ws? e_keyValue)*;
 
 e_userError : '???';
 e_wild : WILD;
 e_fNil : FNIL;
-e_fList : e_apply (WS? '::' WS? expression)?;
-e_fVec : '#[' WS? expressions? WS? ']';
-e_fSet : '#{' WS? expressions? WS? '}';
-e_fMap : '@{' WS? e_keyValues? WS? '}';
+e_fList : e_apply (ws? '::' ws? expression)?;
+e_fVec : '#[' ws? expressions? ws? ']';
+e_fSet : '#{' ws? expressions? ws? '}';
+e_fMap : '@{' ws? e_keyValues? ws? '}';
 
-existential : ('∃' | '\\exists') WS? formalparams WS? '.' WS? expression;
-universal : ('∀' | '\\forall') WS? formalparams WS? '.' WS? expression;
+existential : ('∃' | '\\exists') ws? formalparams ws? '.' ws? expression;
+universal : ('∀' | '\\forall') ws? formalparams ws? '.' ws? expression;
 
 
 
 //Patterns
 pattern : p_fList;
-patterns : pattern (WS? ',' WS? pattern)*;
+patterns : pattern (ws? ',' ws? pattern)*;
 simple : p_fNil | p_literal | p_variable |
 		p_wild | p_tag | p_tuple | p_fVec | p_fSet | p_fMap;
 
-p_keyValue : pattern WS? '->' WS? pattern;
-p_keyValues : p_keyValue (WS? ',' WS? p_keyValue)*;
+p_keyValue : pattern ws? '->' ws? pattern;
+p_keyValues : p_keyValue (ws? ',' ws? p_keyValue)*;
 
 p_literal : literal;
-p_tag : (qualifiedTypeName '.')? tagName (WS? pattern)?;
-p_tuple : '(' WS? patterns? WS? ')';
+p_tag : (qualifiedTypeName '.')? tagName (ws? pattern)?;
+p_tuple : '(' ws? patterns? ws? ')';
 
 p_wild : WILD;
 p_fNil : FNIL;
 p_variable : variableName;
-p_fList : simple (WS? '::' WS? pattern)?;
-p_fVec : '#[' WS? patterns? (WS? ',' WS? pattern '...')? WS? ']';
-p_fSet : '#{' WS? patterns? (WS? ',' WS? pattern '...')? WS? '}';
-p_fMap : '@{' WS? p_keyValues? (WS? ',' WS? pattern '...')? WS? '}';
+p_fList : simple (ws? '::' ws? pattern)?;
+p_fVec : '#[' ws? patterns? (ws? ',' ws? pattern '...')? ws? ']';
+p_fSet : '#{' ws? patterns? (ws? ',' ws? pattern '...')? ws? '}';
+p_fMap : '@{' ws? p_keyValues? (ws? ',' ws? pattern '...')? ws? '}';
 
 
 
@@ -280,16 +282,16 @@ primary : arrow | tuple | apply | var | ref;
 var : variableName;
 ref : qualifiedTypeName;
 
-type : primary (WS? '->' WS? type)?;
-arrow : '(' WS? type (WS? ',' WS? type)* WS? ')' WS? '->' WS? type;
+type : primary (ws? '->' ws? type)?;
+arrow : '(' ws? type (ws? ',' ws? type)* ws? ')' ws? '->' ws? type;
 
 tuple_unit : '(' ')';
-tuple_singleton : '(' WS? type WS? ')';
-tuple_multi : '(' WS? type (WS? ',' WS? type)+ WS? ')';
+tuple_singleton : '(' ws? type ws? ')';
+tuple_multi : '(' ws? type (ws? ',' ws? type)+ ws? ')';
 tuple : tuple_unit | tuple_singleton | tuple_multi;
 
 
-apply : ref WS? '[' WS? type (WS? ',' WS? type)* WS? ']' WS?;
+apply : ref ws? '[' ws? type (ws? ',' ws? type)* ws? ']' ws?;
 
 //Operators
 unary_ops : ('+' | '-' | '¬' | '~' | '!');
@@ -308,12 +310,12 @@ extbin_ops : ('⊑' | '⊔' | '⊓' | '▽' | '△');
 //Predicates
 predicate : pred_true | pred_false | pred_filter |
 			pred_notequal | pred_table | pred_loop;
-predicates : predicate (WS? ',' WS? predicate)*;
+predicates : predicate (ws? ',' ws? predicate)*;
 
 
 pred_true : 'true';
 pred_false : 'false';
-pred_filter : qualifiedDefinitionName WS? '(' expressions ')';
-pred_table : qualifiedTableName WS? '(' expressions ')';
-pred_notequal : variableName WS? '!=' WS? variableName;
-pred_loop : variableName WS? '<-' WS? expression;
+pred_filter : qualifiedDefinitionName ws? '(' expressions ')';
+pred_table : qualifiedTableName ws? '(' expressions ')';
+pred_notequal : variableName ws? '!=' ws? variableName;
+pred_loop : variableName ws? '<-' ws? expression;
