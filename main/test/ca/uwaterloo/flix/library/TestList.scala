@@ -1871,4 +1871,428 @@ class TestList extends FunSuite {
     val input = "def r: Bool = List/isSuffixOf(2 :: 2 :: 43 :: Nil, 1 :: 2 :: 3 :: Nil)"
     runBoolTest(input, false)
   }
+
+  test("fold.01") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Int32 = List/fold(f, 1, Nil)
+      """.stripMargin
+    runTest(input, 1)
+  }
+
+  test("fold.02") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Int32 = List/fold(f, 1, 2 :: Nil)
+      """.stripMargin
+    runTest(input, 3)
+  }
+
+  test("fold.03") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Int32 = List/fold(f, 1, 2 :: 3 :: Nil)
+      """.stripMargin
+    runTest(input, 6)
+  }
+
+  test("fold.04") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Int32 = List/fold(f, 1, 2 :: 3 :: 4 :: Nil)
+      """.stripMargin
+    runTest(input, 10)
+  }
+
+  test("fold.05") {
+    val input =
+      """def f(i: Int32, b: Bool): Int32 = if (b) i+1 else i*2
+        |def r: Int32 = List/fold(f, 1, Nil)
+      """.stripMargin
+    runTest(input, 1)
+  }
+
+  test("fold.06") {
+    val input =
+      """def f(i: Int32, b: Bool): Int32 = if (b) i+1 else i*2
+        |def r: Int32 = List/fold(f, 1, true :: Nil)
+      """.stripMargin
+    runTest(input, 2)
+  }
+
+  test("fold.07") {
+    val input =
+      """def f(i: Int32, b: Bool): Int32 = if (b) i+1 else i*2
+        |def r: Int32 = List/fold(f, 1, true :: true :: Nil)
+      """.stripMargin
+    runTest(input, 3)
+  }
+
+  test("fold.08") {
+    val input =
+      """def f(i: Int32, b: Bool): Int32 = if (b) i+1 else i*2
+        |def r: Int32 = List/fold(f, 1, true :: true :: false :: Nil)
+      """.stripMargin
+    runTest(input, 6)
+  }
+
+  test("fold.09") {
+    val input =
+      """def f(i: Int32, b: Bool): Int32 = if (b) i+1 else i*2
+        |def r: Int32 = List/fold(f, 1, true :: true :: false :: false :: Nil)
+      """.stripMargin
+    runTest(input, 12)
+  }
+
+  test("foldLeft.01") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Int32 = List/foldLeft(f, 1, Nil)
+      """.stripMargin
+    runTest(input, 1)
+  }
+
+  test("foldLeft.02") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Int32 = List/foldLeft(f, 1, 2 :: Nil)
+      """.stripMargin
+    runTest(input, 3)
+  }
+
+  test("foldLeft.03") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Int32 = List/foldLeft(f, 1, 2 :: 3 :: Nil)
+      """.stripMargin
+    runTest(input, 6)
+  }
+
+  test("foldLeft.04") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Int32 = List/foldLeft(f, 1, 2 :: 3 :: 4 :: Nil)
+      """.stripMargin
+    runTest(input, 10)
+  }
+
+  test("foldLeft.05") {
+    val input =
+      """def f(i: Int32, b: Bool): Int32 = if (b) i+1 else i*2
+        |def r: Int32 = List/foldLeft(f, 1, Nil)
+      """.stripMargin
+    runTest(input, 1)
+  }
+
+  test("foldLeft.06") {
+    val input =
+      """def f(i: Int32, b: Bool): Int32 = if (b) i+1 else i*2
+        |def r: Int32 = List/foldLeft(f, 1, true :: Nil)
+      """.stripMargin
+    runTest(input, 2)
+  }
+
+  test("foldLeft.07") {
+    val input =
+      """def f(i: Int32, b: Bool): Int32 = if (b) i+1 else i*2
+        |def r: Int32 = List/foldLeft(f, 1, true :: true :: Nil)
+      """.stripMargin
+    runTest(input, 3)
+  }
+
+  test("foldLeft.08") {
+    val input =
+      """def f(i: Int32, b: Bool): Int32 = if (b) i+1 else i*2
+        |def r: Int32 = List/foldLeft(f, 1, true :: true :: false :: Nil)
+      """.stripMargin
+    runTest(input, 6)
+  }
+
+  test("foldLeft.09") {
+    val input =
+      """def f(i: Int32, b: Bool): Int32 = if (b) i+1 else i*2
+        |def r: Int32 = List/foldLeft(f, 1, true :: true :: false :: false :: Nil)
+      """.stripMargin
+    runTest(input, 12)
+  }
+
+  test("foldRight.01") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Int32 = List/foldRight(f, 1, Nil)
+      """.stripMargin
+    runTest(input, 1)
+  }
+
+  test("foldRight.02") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Int32 = List/foldRight(f, 1, 2 :: Nil)
+      """.stripMargin
+    runTest(input, 3)
+  }
+
+  test("foldRight.03") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Int32 = List/foldRight(f, 1, 2 :: 3 :: Nil)
+      """.stripMargin
+    runTest(input, 6)
+  }
+
+  test("foldRight.04") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Int32 = List/foldRight(f, 1, 2 :: 3 :: 4 :: Nil)
+      """.stripMargin
+    runTest(input, 10)
+  }
+
+  test("foldRight.05") {
+    val input =
+      """def f(b: Bool, i: Int32): Int32 = if (b) i+1 else i*2
+        |def r: Int32 = List/foldRight(f, 1, Nil)
+      """.stripMargin
+    runTest(input, 1)
+  }
+
+  test("foldRight.06") {
+    val input =
+      """def f(b: Bool, i: Int32): Int32 = if (b) i+1 else i*2
+        |def r: Int32 = List/foldRight(f, 1, true :: Nil)
+      """.stripMargin
+    runTest(input, 2)
+  }
+
+  test("foldRight.07") {
+    val input =
+      """def f(b: Bool, i: Int32): Int32 = if (b) i+1 else i*2
+        |def r: Int32 = List/foldRight(f, 1, true :: true :: Nil)
+      """.stripMargin
+    runTest(input, 3)
+  }
+
+  test("foldRight.08") {
+    val input =
+      """def f(b: Bool, i: Int32): Int32 = if (b) i+1 else i*2
+        |def r: Int32 = List/foldRight(f, 1, true :: true :: false :: Nil)
+      """.stripMargin
+    runTest(input, 4)
+  }
+
+  test("foldRight.09") {
+    val input =
+      """def f(b: Bool, i: Int32): Int32 = if (b) i+1 else i*2
+        |def r: Int32 = List/foldRight(f, 1, true :: true :: false :: false :: Nil)
+      """.stripMargin
+    runTest(input, 6)
+  }
+
+  test("reduceOpt.01") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Option[Int32] = List/reduceOpt(f, Nil)
+      """.stripMargin
+    runAnyTest(input, mkNone)
+  }
+
+  test("reduceOpt.02") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Option[Int32] = List/reduceOpt(f, 1 :: Nil)
+      """.stripMargin
+    runAnyTest(input, mkSome(1))
+  }
+
+  test("reduceOpt.03") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Option[Int32] = List/reduceOpt(f, 1 :: 2 :: Nil)
+      """.stripMargin
+    runAnyTest(input, mkSome(3))
+  }
+
+  test("reduceOpt.04") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Option[Int32] = List/reduceOpt(f, 1 :: 2 :: 3 :: Nil)
+      """.stripMargin
+    runAnyTest(input, mkSome(6))
+  }
+
+  test("reduceOpt.05") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Option[Int32] = List/reduceOpt(f, 1 :: 2 :: 3 :: 4 :: Nil)
+      """.stripMargin
+    runAnyTest(input, mkSome(10))
+  }
+
+  test("reduceLeftOpt.01") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Option[Int32] = List/reduceLeftOpt(f, Nil)
+      """.stripMargin
+    runAnyTest(input, mkNone)
+  }
+
+  test("reduceLeftOpt.02") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Option[Int32] = List/reduceLeftOpt(f, 1 :: Nil)
+      """.stripMargin
+    runAnyTest(input, mkSome(1))
+  }
+
+  test("reduceLeftOpt.03") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Option[Int32] = List/reduceLeftOpt(f, 1 :: 2 :: Nil)
+      """.stripMargin
+    runAnyTest(input, mkSome(3))
+  }
+
+  test("reduceLeftOpt.04") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Option[Int32] = List/reduceLeftOpt(f, 1 :: 2 :: 3 :: Nil)
+      """.stripMargin
+    runAnyTest(input, mkSome(6))
+  }
+
+  test("reduceLeftOpt.05") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Option[Int32] = List/reduceLeftOpt(f, 1 :: 2 :: 3 :: 4 :: Nil)
+      """.stripMargin
+    runAnyTest(input, mkSome(10))
+  }
+
+  test("reduceRightOpt.01") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Option[Int32] = List/reduceRightOpt(f, Nil)
+      """.stripMargin
+    runAnyTest(input, mkNone)
+  }
+
+  test("reduceRightOpt.02") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Option[Int32] = List/reduceRightOpt(f, 1 :: Nil)
+      """.stripMargin
+    runAnyTest(input, mkSome(1))
+  }
+
+  test("reduceRightOpt.03") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Option[Int32] = List/reduceRightOpt(f, 1 :: 2 :: Nil)
+      """.stripMargin
+    runAnyTest(input, mkSome(3))
+  }
+
+  test("reduceRightOpt.04") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Option[Int32] = List/reduceRightOpt(f, 1 :: 2 :: 3 :: Nil)
+      """.stripMargin
+    runAnyTest(input, mkSome(6))
+  }
+
+  test("reduceRightOpt.05") {
+    val input =
+      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
+        |def r: Option[Int32] = List/reduceRightOpt(f, 1 :: 2 :: 3 :: 4 :: Nil)
+      """.stripMargin
+    runAnyTest(input, mkSome(10))
+  }
+
+  test("count.01") {
+    val input =
+      """def f(i: Int32): Bool = i == 3
+        |def r: Int32 = List/count(f, Nil)
+      """.stripMargin
+    runTest(input, 0)
+  }
+
+  test("count.02") {
+    val input =
+      """def f(i: Int32): Bool = i == 3
+        |def r: Int32 = List/count(f, 2 :: Nil)
+      """.stripMargin
+    runTest(input, 0)
+  }
+
+  test("count.03") {
+    val input =
+      """def f(i: Int32): Bool = i == 3
+        |def r: Int32 = List/count(f, 2 :: 5 :: Nil)
+      """.stripMargin
+    runTest(input, 0)
+  }
+
+  test("count.04") {
+    val input =
+      """def f(i: Int32): Bool = i == 3
+        |def r: Int32 = List/count(f, 3 :: Nil)
+      """.stripMargin
+    runTest(input, 1)
+  }
+
+  test("count.05") {
+    val input =
+      """def f(i: Int32): Bool = i == 3
+        |def r: Int32 = List/count(f, 3 :: 4 :: 2 :: Nil)
+      """.stripMargin
+    runTest(input, 1)
+  }
+
+  test("count.06") {
+    val input =
+      """def f(i: Int32): Bool = i == 3
+        |def r: Int32 = List/count(f, 1 :: 3 :: 4 :: 2 :: Nil)
+      """.stripMargin
+    runTest(input, 1)
+  }
+
+  test("count.07") {
+    val input =
+      """def f(i: Int32): Bool = i == 3
+        |def r: Int32 = List/count(f, 3 :: 3 :: Nil)
+      """.stripMargin
+    runTest(input, 2)
+  }
+
+  test("count.08") {
+    val input =
+      """def f(i: Int32): Bool = i == 3
+        |def r: Int32 = List/count(f, 1 :: 6 :: 3 :: 3 :: Nil)
+      """.stripMargin
+    runTest(input, 2)
+  }
+
+  test("count.09") {
+    val input =
+      """def f(i: Int32): Bool = i == 3
+        |def r: Int32 = List/count(f, 3 :: 3 :: 8 :: 88 :: Nil)
+      """.stripMargin
+    runTest(input, 2)
+  }
+
+  test("count.10") {
+    val input =
+      """def f(i: Int32): Bool = i == 3
+        |def r: Int32 = List/count(f, 5 :: 2 :: 3 :: 1 :: 67 :: 3 :: 0 :: -6 :: -3 :: Nil)
+      """.stripMargin
+    runTest(input, 2)
+  }
+
+  test("count.11") {
+    val input =
+      """def f(i: Int32): Bool = i == 3
+        |def r: Int32 = List/count(f, 3 :: 2 :: 3 :: 1 :: 67 :: 3 :: 0 :: -6 :: -3 :: 3 :: 3 :: Nil)
+      """.stripMargin
+    runTest(input, 5)
+  }
 }

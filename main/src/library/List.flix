@@ -401,40 +401,73 @@ namespace List {
     ///
     def isSuffixOf[a](xs: List[a], ys: List[a]): Bool = isPrefixOf(reverse(xs), reverse(ys))
 
-//    //
-//    // ## Fold And Reduce
-//    //
-//
-//    /**
-//     *  Alias of foldLeft.
-//     */
-//    def fold(f: (B, A) -> B, b: B, xs: List[A]): B = foldLeft(f, b, xs)
-//
-//    /**
-//     *  Left-associative fold of the list xs.
-//     */
-//    def foldLeft(f: (B, A) -> B, b: B, xs: List[A]): B = ??? : B
-//
-//    //- **foldRight(f: (A, B) => B, b: B, xs: List[A]): B**
-//    //    - Right-associative fold of the list xs.
-//    //- **reduce(f: (A, A) => A, xs: List[A]): A**
-//    //    - Alias for reduceLeft.
-//    //- **reduceLeft(f: (A, A) => A, xs: List[A]): A**
-//    //    - Left-associative reduce of the list xs.
-//    //    - If the list is empty the semantics are undefined.
-//    //- **reduceOpt(f: (A, A) => A, xs: List[A]): Opt[A]**
-//    //    - Alias for reduceLeftOpt.
-//    //- **reduceLeftOpt(f: (A, A) => A, xs: List[A]): Opt[A]**
-//    //    - Safe variant of reduceLeft that returns None if the list is empty.
-//    //- **reduceRight(f: (A, A) => A, xs: List[A]): A**
-//    //    - Right-associative reduce of the list xs.
-//    //    - If the list is empty the semantics are undefined.
-//    //- **reduceRightOpt(f: (A, A) => A, xs: List[A]): Opt[A]**
-//    //    - Safe variant of reduceRight that returns None if the list is empty.
-////
-////## Special Folds
-////- **count(f: A => Bool, xs: List[A]): Int**
-////    - Returns the number of elements in the list that satisfy the predicate f.
+    //
+    // ## Fold And Reduce
+    //
+
+    ///
+    /// Alias for foldLeft.
+    ///
+    def fold[a,b](f: (b, a) -> b, s: b, xs: List[a]): b = foldLeft(f, s, xs)
+
+    ///
+    /// Applies `f` to a start value `s` and all elements of `xs` going from left to right.
+    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
+    ///
+    def foldLeft[a,b](f: (b, a) -> b, s: b, xs: List[a]): b = match xs with {
+        case Nil => s
+        case x :: rs => foldLeft(f, f(s, x), rs)
+    }
+
+    ///
+    /// Applies `f` to a start value `s` and all elements of `xs` going from right to left.
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    def foldRight[a,b](f: (a, b) -> b, s: b, xs: List[a]): b = match xs with {
+        case Nil => s
+        case x :: rs => f(x, foldRight(f, s, rs))
+    }
+
+    ///
+    /// Alias for reduceLeftOpt.
+    ///
+    def reduceOpt[a](f: (a, a) -> a, xs: List[a]): Option[a] = reduceLeftOpt(f, xs)
+
+    ///
+    /// Applies `f` to all elements of `xs` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
+    /// Returns `None` is `xs` is empty.
+    ///
+    def reduceLeftOpt[a](f: (a, a) -> a, xs: List[a]): Option[a] = match xs with {
+        case Nil => None
+        case x :: rs => Some(foldLeft(f, x, rs))
+    }
+
+    ///
+    /// Applies `f` to all elements of `xs` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
+    /// Returns `None` is `xs` is empty.
+    ///
+    def reduceRightOpt[a](f: (a, a) -> a, xs: List[a]): Option[a] = match xs with {
+        case Nil => None
+        case x :: rs => match reduceRightOpt(f, rs) with {
+            case None => Some(x)
+            case Some(v) => Some(f(x, v))
+        }
+    }
+
+    //
+    // ## Special Folds
+    //
+
+    ///
+    /// Returns the number of elements in `xs` that satisfy the predicate `f`.
+    ///
+    def count[a](f: a -> Bool, xs: List[a]): Int32 = match xs with {
+        case Nil => 0
+        case x :: rs => (if (f(x)) 1 else 0) + count(f, rs)
+    }
+
 ////- **concat(xs: List[List[A]]): List[A]**
 ////    - Returns the concatenation of the lists in the list xs.
 ////- **exists(f: A => Bool, xs: List[A]): Bool**
