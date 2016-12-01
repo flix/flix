@@ -19,61 +19,28 @@ namespace List {
     ///
     /// Returns true iff `xs` is the empty list, i.e. `Nil`.
     ///
-    def null[a](xs: List[a]): Bool = match xs with {
+    def isEmpty[a](xs: List[a]): Bool = match xs with {
         case Nil => true
         case _ => false
     }
 
     ///
-    /// Returns the first element of `xs`.
-    /// If `xs` is empty the semantics are undefined.
+    /// Returns `Some(x)` if `x` is the first element of `xs`.
+    /// Returns `None` if `xs` is empty.
     ///
-    def head[a](xs: List[a]): a = match xs with {
-        case x :: _ => x
+    def headOpt[a](xs: List[a]): Option[a] = match xs with {
+        case Nil => None
+        case x :: _ => Some(x)
     }
 
     ///
-    /// Returns the last element of `xs`.
-    /// If `xs` is empty the semantics are undefined.
+    /// Returns `Some(x)` if `x` is the last element of `xs`.
+    /// Returns `None` if `xs` is empty.
     ///
-    def last[a](xs: List[a]): a = match xs with {
-        case x :: Nil => x
-        case x :: rs => last(rs)
-    }
-
-    ///
-    /// Returns the list consisting of every element of `xs` except the last element.
-    /// If `xs` is empty the semantics are undefined.
-    ///
-    def init[a](xs: List[a]): List[a] = match xs with {
-        case x :: Nil => Nil
-        case x :: rs => x :: init(rs)
-    }
-
-    ///
-    /// Returns the list consisting of every element of `xs` except the first element.
-    /// If `xs` is empty the semantics are undefined.
-    ///
-    def tail[a](xs: List[a]): List[a] = match xs with {
-        case _ :: rs => rs
-    }
-
-    ///
-    /// Returns the first `n` elements of `xs` in a list.
-    /// If `n < 0` or `n > length(xs)` the semantics are undefined.
-    ///
-    def prefix[a](n: Int32, xs: List[a]): List[a] = match (n, xs) with {
-        case (0, _) => Nil
-        case (i, x :: rs) => x :: prefix(i-1, rs)
-    }
-
-    ///
-    /// Returns the last `n` elements of `xs` in a list.
-    /// If `n < 0` or `n > length(xs)` the semantics are undefined.
-    ///
-    def suffix[a](n: Int32, xs: List[a]): List[a] = match (length(xs) - n, xs) with {
-        case (0, _) => xs
-        case (_, x :: rs) => suffix(n, rs)
+    def lastOpt[a](xs: List[a]): Option[a] = match xs with {
+        case Nil => None
+        case x :: Nil => Some(x)
+        case x :: rs => lastOpt(rs)
     }
 
     ///
@@ -93,21 +60,31 @@ namespace List {
     }
 
     ///
-    /// Returns the element at position `p` in `xs`.
-    /// If `p` < 0 or `p` > length(xs)-1 the semantics are undefined.
+    /// Returns the element at index `i` in `xs`.
+    /// If `i < 0` or `i > length(xs)-1` the semantics are undefined.
     ///
-    def at[a](p: Int32, xs: List[a]): a = match (p, xs) with {
+    def at[a](i: Int32, xs: List[a]): a = match (i, xs) with {
         case (0, x :: _) => x
-        case (i, x :: rs) => at(i - 1, rs)
+        case (p, x :: rs) => at(p - 1, rs)
     }
 
     ///
-    /// Returns `xs` with the element at position `p` removed.
-    /// If `p` < 0 or `p` > length(xs)-1 the semantics are undefined.
+    /// Returns `xs` with the first occurrence of `x` removed.
+    /// Returns `xs` if `x` does not exist in `xs`.
     ///
-    def remove[a](p: Int32, xs: List[a]): List[a] = match (p, xs) with {
+    def remove[a](x: a, xs: List[a]): List[a] = match xs with {
+        case Nil => Nil
+        case y :: rs => if (x == y) rs else y :: remove(x, rs)
+    }
+
+    ///
+    /// Returns `xs` with the element at index `i` removed.
+    /// Returns `xs` if `i < 0` or `i > length(xs)-1`.
+    ///
+    def removeIndex[a](i: Int32, xs: List[a]): List[a] = match (i, xs) with {
+        case (_, Nil) => xs
         case (0, x :: rs) => rs
-        case (i, x :: rs) => x :: remove(i - 1, rs)
+        case (p, x :: rs) => x :: removeIndex(p - 1, rs)
     }
 
     ///
@@ -120,10 +97,16 @@ namespace List {
 
     ///
     /// Returns the position of `x` in `xs`.
-    /// If `x` does not exist in `xs` the semantics are undefined.
+    /// Returns -1 if `x` does not exist in `xs`.
     ///
-    def indexOf[a](x: a, xs: List[a]): Int32 = match xs with {
-        case y :: rs => if (x == y) 0 else 1 + indexOf(x, rs)
+    def indexOf[a](x: a, xs: List[a]): Int32 = indexOfHelper(x, xs, 0)
+
+    ///
+    /// Helper function for `indexOf`.
+    ///
+    def indexOfHelper[a](x: a, xs: List[a], acc: Int32): Int32 = match xs with {
+        case Nil => -1
+        case y :: rs => if (x == y) acc else indexOfHelper(x, rs, acc+1)
     }
 
     ///
@@ -144,6 +127,8 @@ namespace List {
     ///
     def findRight[a](f: a -> Bool, xs: List[a]): Option[a] = match xs with {
         case Nil => None
+        // Unable to add this now, I'm unsure how to access the Option namespace.
+        // case x :: rs => Option/withDefault(findRight(f, rs), if (f(x)) Some(x) else None)
         case x :: rs => match findRight(f, rs) with {
             case None => if (f(x)) Some(x) else None
             case Some(v) => Some(v)
@@ -157,20 +142,12 @@ namespace List {
     ///
     /// Returns a list of all integers between `b` (inclusive) and `e` (exclusive).
     ///
-    def range(b: Int32, e: Int32): List[Int32] =
-        if (b >= e)
-            Nil
-        else
-            b :: range(b + 1, e)
+    def range(b: Int32, e: Int32): List[Int32] = if (b >= e) Nil else b :: range(b + 1, e)
 
     ///
     /// Returns a list with the element `x` repeated `n` times.
     ///
-    def repeat[a](x: a, n: Int32): List[a] =
-        if (n == 0)
-            Nil
-        else
-            x :: repeat(x, n - 1)
+    def repeat[a](x: a, n: Int32): List[a] = if (n <= 0) Nil else x :: repeat(x, n - 1)
 
     ///
     /// Alias for `scanLeft`.
@@ -236,13 +213,6 @@ namespace List {
 
     ///
     /// Returns the result of applying `f` to every element in `xs` and concatenating the results.
-    /// Alias for `flatMap`.
-    ///
-    def concatMap[a,b](f: a -> List[b], xs: List[a]): List[b] = flatMap(f, xs)
-
-    ///
-    /// Returns the result of applying `f` to every element in `xs` and concatenating the results.
-    /// Aliased as concatMap.
     ///
     def flatMap[a,b](f: a -> List[b], xs: List[a]): List[b] = match xs with {
         case Nil => Nil
@@ -266,36 +236,48 @@ namespace List {
 
     ///
     /// Returns `xs` with its elements rotated `n` positions to the left.
-    /// That is, returns a new list where the first `n` elements in `xs` are the last `n` elements of the new list.
-    /// If `n < 0` or `n > length(xs)` the semantics are undefined.
+    /// That is, returns a new list where the first `n mod length(xs)` elements in `xs`
+    /// are the last `n mod length(xs)` elements of the new list.
     ///
-    def rotateLeft[a](n: Int32, xs: List[a]): List[a] = append(suffix(length(xs)-n, xs), prefix(n, xs))
+    def rotateLeft[a](n: Int32, xs: List[a]): List[a] =
+        let len = length(xs);
+        if (len == 0) xs else
+            let rem = n % len;
+            let rotate = if (rem < 0) rem + len else rem;
+            append(drop(rotate, xs), take(rotate, xs))
 
     ///
     /// Returns `xs` with its elements rotated `n` positions to the right.
-    /// That is, returns a new list where the last `n` elements in `xs` are the first `n` elements of the new list.
-    /// If `n < 0` or `n > length(xs)` the semantics are undefined.
+    /// That is, returns a new list where the last `n mod length(xs)` elements in `xs`
+    /// are the first `n mod length(xs)` elements of the new list.
     ///
-    def rotateRight[a](n: Int32, xs: List[a]): List[a] = append(suffix(n, xs), prefix(length(xs)-n, xs))
+    def rotateRight[a](n: Int32, xs: List[a]): List[a] = rotateLeft(-n, xs)
 
     ///
-    /// Returns `xs` with the element at position `p` replaced by `x`.
-    /// If `p < 0` or `p > length(xs)-1` the semantics are undefined.
+    /// Returns `xs` with the element at index `i` replaced by `x`.
+    /// Returns `xs` if `i < 0` or `i > length(xs)-1`.
     ///
-    def replace[a](p: Int32, x: a, xs: List[a]): List[a] = match (p, xs) with {
+    def replace[a](i: Int32, x: a, xs: List[a]): List[a] = match (i, xs) with {
+        case (_, Nil) => xs
         case (0, r :: rs) => x :: rs
-        case (i, r :: rs) => r :: replace(i-1, x, rs)
+        case (p, r :: rs) => r :: replace(p-1, x, rs)
     }
 
     ///
-    /// Returns `ys` with the `n` elements starting at position `p` replaced with elements from `xs`.
-    /// If `n = 0` then `ys` is returned.
-    /// Otherwise, if `n < 0` or `p < 0` or `p + n > length(xs)` the semantics are undefined.
+    /// Returns `ys` with the `n` elements starting at index `i` replaced with the elements of `xs`.
+    /// If any of the indices `i, i+1, i+2, ... , i+n-1` are out of range in `ys` then no patching is done at these indices.
+    /// If `xs` becomes depleted then no further patching is done.
+    /// If patching occurs at index `i+j` in `ys`, then the element at index `j` in `xs` is used.
     ///
-    def patch[a](p: Int32, n: Int32, xs: List[a], ys: List[a]): List[a] = match (p, n, xs, ys) with {
-        case (_, 0, _, _) => ys
-        case (0, _, x :: qs, y :: rs) => x :: patch(0, n-1, qs, rs)
-        case (l, _, _, y :: rs) => y :: patch(l-1, n, xs, rs)
+    def patch[a](i: Int32, n: Int32, xs: List[a], ys: List[a]): List[a] = patchHelper(i, n, drop(-i, xs), ys, 0)
+
+    ///
+    /// Helper function for `patch`.
+    ///
+    def patchHelper[a](i: Int32, n: Int32, xs: List[a], ys: List[a], c: Int32): List[a] = match (xs, ys) with {
+        case (_, Nil) => ys
+        case (Nil, _) => ys
+        case (x :: qs, y :: rs) => if (c >= i && c < i+n) x :: patchHelper(i, n, qs, rs, c+1) else y :: patchHelper(i, n, xs, rs, c+1)
     }
 
     ///
@@ -309,11 +291,11 @@ namespace List {
 
     ///
     /// Helper function for `permutations`.
-    /// Returns all permutations of `xs` starting with an element at or after position `p`.
+    /// Returns all permutations of `xs` starting with an element at or after index `i`.
     ///
-    def permutationHelper[a](p: Int32, xs: List[a]): List[List[a]] =
-        if (p == length(xs)) Nil
-        else append(apply(at(p, xs), permutations(remove(p, xs))), permutationHelper(p+1, xs))
+    def permutationHelper[a](i: Int32, xs: List[a]): List[List[a]] =
+        if (i == length(xs)) Nil
+        else append(applyHelper(at(i, xs), permutations(removeIndex(i, xs))), permutationHelper(i+1, xs))
 
     ///
     /// Returns all subsequences of `xs` in lexicographical order by element indices in `xs`.
@@ -321,16 +303,16 @@ namespace List {
     ///
     def subsequences[a](xs: List[a]): List[List[a]] = match xs with {
         case Nil => Nil :: Nil
-        case x :: rs => append(apply(x, subsequences(rs)), subsequences(rs))
+        case x :: rs => append(applyHelper(x, subsequences(rs)), subsequences(rs))
     }
 
     ///
     /// Helper function for `permutations` and `subsequences`.
     /// Returns `xs` with `x` added to the beginning of each element of `xs`.
     ///
-    def apply[a](x: a, ps: List[List[a]]): List[List[a]] = match ps with {
+    def applyHelper[a](x: a, ps: List[List[a]]): List[List[a]] = match ps with {
         case Nil => Nil
-        case p :: rs => (x :: p) :: apply(x, rs)
+        case p :: rs => (x :: p) :: applyHelper(x, rs)
     }
 
     ///
@@ -341,38 +323,84 @@ namespace List {
         case _ => xs
     }
 
-////- **intersperse(x: A, xs: List[A]): List[A]**
-////    - Returns the list with the element x inserted between every element.
-////- **intercalate(xs: List[A], ys: List[List[A]]): List[A]**
-////    - Returns the concatenation of the list ys with the list xs inserted between every element.
-////- **transpose(xs: List[List[A]]): List[List[A]]**
-////    - Returns the transpose of the list.
-////    - If the dimensions of the lists are mismatched the semantics are undefined.
-////
-//
-//    //
-//    // ## List Predicates
-//    //
-//
-//    /**
-//     *  Returns `true` if the list `xs` is a prefix of the list `ys`.
-//     */
-//    def isPrefixOf(xs: List[A], ys: List[B]): Bool = match (xs, ys) with {
-//        case (Nil, _) => true
-//        case (_, Nil) => false
-//        case (x :: xs1, y :: ys1) => if (x == y) isPrefixOf(xs1, ys1) else false
-//    }
-//
-//    /**
-//     *  Returns `true` if the list `xs` is an infix of the list `ys`.
-//     */
-//    def isInfixOf(xs: List[A], ys: List[B]): Bool = ??? : Bool // TODO
-//
-//    /**
-//     *  Returns `true` if the list `xs` is a suffix of the list `ys`.
-//     */
-//    def isSuffixOf(xs: List[A], ys: List[B]): Bool = isPrefixOf(reverse(xs), reverse(ys))
-//
+    ///
+    /// Returns the concatenation of the elements in `ys` with the elements of `xs` inserted between every two adjacent elements.
+    /// That is, returns y1 + x + y2 + x + ... + x + yn.
+    ///
+    def intercalate[a](xs: List[a], ys: List[List[a]]): List[a] = match ys with {
+        case Nil => Nil
+        case y :: Nil => y
+        case y1 :: y2 :: rs => append(append(y1, xs), intercalate(xs, y2 :: rs))
+    }
+
+    ///
+    /// Returns the transpose of `xs`.
+    /// Returns `xs` if the dimensions of the elements of `xs` are mismatched.
+    ///
+    def transpose[a](xs: List[List[a]]): List[List[a]] = if (!uniformHelper(xs)) xs else match xs with {
+        case Nil => Nil
+        case x :: rs => if (length(x) == 0) xs else transposeHelper(xs, length(x))
+    }
+
+    ///
+    /// Helper function for `transpose`.
+    ///
+    def uniformHelper[a](xs: List[List[a]]): Bool = match xs with {
+        case Nil => true
+        case x :: rs => uniformHelperHelper(xs, length(x))
+    }
+
+    ///
+    /// Helper function for `transpose`.
+    ///
+    def uniformHelperHelper[a](xs: List[List[a]], l: Int32): Bool = match xs with {
+        case Nil => true
+        case x :: rs => if (length(x) == l) uniformHelperHelper(rs, l) else false
+    }
+
+    ///
+    /// Helper function for `transpose`.
+    ///
+    def transposeHelper[a](xs: List[List[a]], l: Int32): List[List[a]] = match xs with {
+        case Nil => repeat(Nil, l)
+        case x :: rs => applyListHelper(x, transposeHelper(rs, l))
+    }
+
+    ///
+    /// Helper function for `transpose`.
+    ///
+    def applyListHelper[a](xs: List[a], ys: List[List[a]]): List[List[a]] = match (xs, ys) with {
+        case (Nil, Nil) => Nil
+        case (x :: rs, y :: qs) => (x :: y) :: applyListHelper(rs, qs)
+    }
+
+    //
+    // ## List Predicates
+    //
+
+    ///
+    /// Returns `true` iff `xs` is a prefix of `ys`.
+    ///
+    def isPrefixOf[a](xs: List[a], ys: List[a]): Bool = match (xs, ys) with {
+        case (Nil, _) => true
+        case (_, Nil) => false
+        case (x :: qs, y :: rs) => if (x == y) isPrefixOf(qs, rs) else false
+    }
+
+    ///
+    /// Returns `true` iff `xs` is an infix of `ys`.
+    ///
+    def isInfixOf[a](xs: List[a], ys: List[a]): Bool = match (xs, ys) with {
+        case (Nil, _) => true
+        case (_, Nil) => false
+        case (_, y :: rs) => if (isPrefixOf(xs, ys)) true else isInfixOf(xs, rs)
+    }
+
+    ///
+    /// Returns `true` iff `xs` is a suffix of `ys`.
+    ///
+    def isSuffixOf[a](xs: List[a], ys: List[a]): Bool = isPrefixOf(reverse(xs), reverse(ys))
+
 //    //
 //    // ## Fold And Reduce
 //    //
@@ -429,11 +457,35 @@ namespace List {
 ////    - Returns a pair of lists (ys, zs) where are the elements in xs are those that satisfy the predicate f and the elements in zs are those that do not.
 ////- **span(f: A => Bool, xs: List[A]): (List[A], List[A])**
 ////    - Returns a pair of lists (ys, zs) where ys is the longest prefix of xs that satisfies the predicate f and zs is the remainder of xs. Functionally equivalent to (takeWhile(f, xs), dropWhile(f, xs)).
+
+    ///
+    /// Returns `xs` with the first `n` elements removed`.
+    /// Returns `Nil` if `n > length(xs)`.
+    /// Returns `xs` if `n < 0`.
+    ///
+    def drop[a](n: Int32, xs: List[a]): List[a] = if (n < 0) xs else match (n, xs) with {
+        case (_, Nil) => Nil
+        case (0, _) => xs
+        case (i, x :: rs) => drop(i-1, rs)
+    }
+
 ////- **drop(n: Int, xs: List[A]): List[A]**
 ////    - Returns the list except for the first n elements.
 ////    - Returns the empty list if n is larger than the length of the list.
 ////- **dropWhile(f: A => Bool, xs: List[A]): List[A]**
 ////    - Returns the list except for the longest prefix that satisfy the predicate f.
+
+    ///
+    /// Returns the first `n` elements of `xs`.
+    /// Returns `xs` if `n > length(xs)`.
+    /// Returns `Nil` if `n < 0`.
+    ///
+    def take[a](n: Int32, xs: List[a]): List[a] = if (n < 0) Nil else match (n, xs) with {
+        case (_, Nil) => Nil
+        case (0, _) => Nil
+        case (i, x :: rs) => x :: take(i-1, rs)
+    }
+
 ////- **take(n: Int, xs: List[A]): List[A]**
 ////    - Returns the first n elements of xs.
 ////    - Returns the entire list if n is larger than the length of the list.
