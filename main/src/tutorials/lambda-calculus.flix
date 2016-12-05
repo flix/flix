@@ -83,7 +83,7 @@ def recompose(ec0: EvaluationContext, e0: Expression): Expression = match ec0 wi
 /// Reduces a single contractum.
 ///
 def reduce(e: Expression): Expression = match e with {
-    case App(Abs(x, e1), e2) => subst(e1, x, alphaRename(e2, 0))
+    case App(Abs(x, e1), e2) => substitute(e1, x, alphaRename(e2, 0))
     case _ => e
 }
 
@@ -104,11 +104,15 @@ def loop(e0: Expression): Expression =
         if (e == e0) e else loop(e)
 
 
-def subst(e: Expression, x: Int, v: Expression): Expression = match e with {
-    case Var(y) =>  ???
-    case App(e1, e2) => ???
-//    case Lam(y, e) =>  ???
+///
+/// Replaces every occurence of the variable `x` in the expression `e0` with the expression `r0`.
+///
+def substitute(e0: Expression, x: Int, r0: Expression): Expression = match e0 with {
+    case Var(y) => if (x == y) r0 else Var(y)
+    case Abs(y, e) => if (x == y) Abs(y, e) else Abs(y, substitute(e, x, r0))
+    case App(e1, e2) => App(substitute(e1, x, r0), substitute(e2, x, r0))
 }
+
 
 def alphaRename(e: Expression, c: Int): Expression = match e with {
     case Var(x) => ???
