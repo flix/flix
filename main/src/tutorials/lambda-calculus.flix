@@ -96,6 +96,13 @@ def step(e0: Expression): Expression = match redex(e0) with {
     case Some((e, ec)) => recompose(ec, reduce(e0))
 }
 
+///
+/// Repeatedly performs one-step reduction until a fixed point is reached.
+///
+def loop(e0: Expression): Expression =
+    let e = step(e0);
+        if (e == e0) e else loop(e)
+
 
 def subst(e: Expression, x: Int, v: Expression): Expression = match e with {
     case Var(y) =>  ???
@@ -109,7 +116,7 @@ def alphaRename(e: Expression, c: Int): Expression = match e with {
 
 
 def main: Expression = {
-    step(App(
+    loop(App(
          Abs(0, Var(0)),
          Abs(1, Var(1))
         ))
