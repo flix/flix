@@ -49,6 +49,7 @@ def nonValue(e: Expression): Bool = !isValue(e)
 def redex(e: Expression): Option[(Expression, EvaluationContext)] = match e with {
     case Var(x) => None
     case Abs(x, e) => None
+    // TODO: Add if guards to case statements?
     case App(e1, e2) =>
         // TODO: Add syntactic sugar for paired functions?
         if (nonValue(e1))
@@ -56,11 +57,16 @@ def redex(e: Expression): Option[(Expression, EvaluationContext)] = match e with
                 case None => None
                 case Some((e, ec)) => Some((e, App1(ec, e2)))
             }
-        else
-            match redex(e2) with {
-                case None => None
-                case Some((e, ec)) => Some((e, App2(e1, ec)))
+        else {
+            if (isValue(e2))
+                Some(e, Hole)
+            else {
+                match redex(e2) with {
+                    case None => None
+                    case Some((e, ec)) => Some((e, App2(e1, ec)))
+                }
             }
+        }
 }
 
 ///
@@ -102,8 +108,8 @@ def alphaRename(e: Expression, c: Int): Expression = match e with {
 }
 
 
-def main: Option[(Expression, EvaluationContext)] = {
-    redex(App(
+def main: Expression = {
+    step(App(
          Abs(0, Var(0)),
          Abs(1, Var(1))
         ))
