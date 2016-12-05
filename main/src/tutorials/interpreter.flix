@@ -150,24 +150,24 @@ def compileAExp(e: AExp): List[Inst] = match e with {
     case Plus(e1, e2)   =>
         let is1 = compileAExp(e1);
         let is2 = compileAExp(e2);
-            append(append(is2, is1), (Add :: Nil))
+            is2 ::: is1 ::: Add :: Nil
     case Minus(e1, e2)  =>
         let is1 = compileAExp(e1);
         let is2 = compileAExp(e2);
-            append(append(is2, is1), (Sub :: Nil))
+            is2 ::: is1 ::: Sub :: Nil
     case Times(e1, e2)  =>
         let is1 = compileAExp(e1);
         let is2 = compileAExp(e2);
-            append(append(is2, is1), (Mul :: Nil))
+            is2 ::: is1 ::: Mul :: Nil
     case Divide(e1, e2)  =>
         let is1 = compileAExp(e1);
         let is2 = compileAExp(e2);
-            append(append(is2, is1), (Div :: Nil))
+            is2 ::: is1 ::: Div :: Nil
     case IfThenElse(e1, e2, e3)  =>
         let is1 = compileBExp(e1);
         let is2 = compileAExp(e2);
         let is3 = compileAExp(e3);
-            append(is1, Branch(is2, is3) :: Nil)
+            is1 ::: Branch(is2, is3) :: Nil
 }
 
 //
@@ -178,23 +178,23 @@ def compileBExp(e: BExp): List[Inst] = match e with {
     case False          => Push(0) :: Nil
     case Not(e)         =>
         let is = compileBExp(e);
-            append(is, Neg :: Nil)
+            is ::: Neg :: Nil
     case Conj(e1, e2)   =>
         let is1 = compileBExp(e1);
         let is2 = compileBExp(e2);
-            append(append(is2, is1), And :: Nil)
+            is2 ::: is1 ::: And :: Nil
     case Disj(e1, e2)   =>
         let is1 = compileBExp(e1);
         let is2 = compileBExp(e2);
-            append(append(is2, is1), Or :: Nil)
+            is2 ::: is1 ::: Or :: Nil
     case Eq(e1, e2)     =>
         let is1 = compileAExp(e1);
         let is2 = compileAExp(e2);
-            append(append(is2, is1), Cmp :: Nil)
+            is2 ::: is1 ::: Cmp :: Nil
     case Neq(e1, e2)    =>
         let is1 = compileAExp(e1);
         let is2 = compileAExp(e2);
-            append(append(is2, is1), Neg :: Cmp :: Nil)
+            is2 ::: is1 ::: Neg :: Cmp :: Nil
 }
 
 //
@@ -259,9 +259,13 @@ def testCompileAndEval4: Int = evalInst(compileAExp(IfThenElse(True, Cst(1), Cst
 def testCompileAndEval5: Int = evalInst(compileAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21))), Nil)
 
 //
-// Here is the append function used earlier:
+// In case the standard library is not included, we need to define list/append:
 //
-def append(xs: List[Inst], ys: List[Inst]): List[Inst] = match xs with {
-    case Nil => ys
-    case z :: zs => z :: append(zs, ys)
+namespace list {
+
+    def append(xs: List[Inst], ys: List[Inst]): List[Inst] = match xs with {
+        case Nil => ys
+        case z :: zs => z :: append(zs, ys)
+    }
+
 }

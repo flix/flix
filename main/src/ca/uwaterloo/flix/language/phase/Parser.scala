@@ -468,7 +468,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def FAppend: Rule1[ParsedAst.Expression] = rule {
-      FList ~ optional(optWS ~ SP ~ atomic("@@") ~ SP ~ optWS ~ Expression ~> ParsedAst.Expression.FAppend)
+      FList ~ optional(optWS ~ SP ~ atomic(":::") ~ SP ~ optWS ~ Expression ~> ParsedAst.Expression.FAppend)
     }
 
     def FList: Rule1[ParsedAst.Expression] = rule {

@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.{Flix, RuleException}
-import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Options}
+import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestParser extends FunSuite with TestUtils {
@@ -1195,45 +1195,87 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   test("Expression.Append.01") {
-    intercept[RuntimeException] {
-      val input = "def f: List[Int] = Nil @@ Nil"
-      run(input)
-    }
+    // TODO: Once list is included by default this can be improved.
+    val append =
+      """
+        |namespace list {
+        |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
+        |}
+        |
+      """.stripMargin
+
+    val input = "def f: List[Int] = Nil ::: Nil"
+    run(input + append)
   }
 
   test("Expression.Append.02") {
-    intercept[RuntimeException] {
-      val input = "def f: List[Int] = 1 :: Nil @@ 1 :: Nil"
-      run(input)
-    }
+    // TODO: Once list is included by default this can be improved.
+    val append =
+      """
+        |namespace list {
+        |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
+        |}
+        |
+      """.stripMargin
+
+    val input = "def f: List[Int] = 1 :: Nil ::: 1 :: Nil"
+    run(input + append)
   }
 
   test("Expression.Append.03") {
-    intercept[RuntimeException] {
-      val input = "def f: List[Int] = 1 :: Nil @@ 1 :: 2 :: Nil"
-      run(input)
-    }
+    // TODO: Once list is included by default this can be improved.
+    val append =
+      """
+        |namespace list {
+        |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
+        |}
+        |
+      """.stripMargin
+
+    val input = "def f: List[Int] = 1 :: Nil ::: 1 :: 2 :: Nil"
+    run(input + append)
   }
 
   test("Expression.Append.04") {
-    intercept[RuntimeException] {
-      val input = "def f: List[Int] = 1 :: 2 :: Nil @@ 1 :: 2 :: Nil"
-      run(input)
-    }
+    // TODO: Once list is included by default this can be improved.
+    val append =
+      """
+        |namespace list {
+        |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
+        |}
+        |
+      """.stripMargin
+
+    val input = "def f: List[Int] = 1 :: 2 :: Nil ::: 1 :: 2 :: Nil"
+    run(input + append)
   }
 
   test("Expression.Append.05") {
-    intercept[RuntimeException] {
-      val input = "def f: List[Int] = Nil @@ Nil @@ Nil"
-      run(input)
-    }
+    // TODO: Once list is included by default this can be improved.
+    val append =
+      """
+        |namespace list {
+        |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
+        |}
+        |
+      """.stripMargin
+
+    val input = "def f: List[Int] = Nil ::: Nil ::: Nil"
+    run(input + append)
   }
 
   test("Expression.Append.06") {
-    intercept[RuntimeException] {
-      val input = "def f: List[Int] = 1 :: Nil @@ 2 :: Nil @@ 3 :: Nil"
-      run(input)
-    }
+    // TODO: Once list is included by default this can be improved.
+    val append =
+      """
+        |namespace list {
+        |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
+        |}
+        |
+      """.stripMargin
+
+    val input = "def f: List[Int] = 1 :: Nil ::: 2 :: Nil ::: 3 :: Nil"
+    run(input + append)
   }
 
   test("Expression.Vec.01") {
