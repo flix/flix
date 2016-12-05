@@ -8,3 +8,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Ming-Ho Yee](https://github.com/mhyee) ([website](http://mhyee.com))
 - [Paul Phillips](https://github.com/paulp)
 - [Liam Palmer](https://github.com/liampalmer43)
+- [Daniel Ohashi](https://github.com/ohashd)
