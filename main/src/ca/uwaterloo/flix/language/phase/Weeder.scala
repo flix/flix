@@ -511,7 +511,7 @@ object Weeder {
               // NB: We painstakingly construct the qualified name
               // to ensure that source locations are available.
               val loc = mkSL(sp1, sp2)
-              val namespace = List(Name.Ident(sp1, "list", sp2))
+              val namespace = List(Name.Ident(sp1, "List", sp2))
               val ident = Name.Ident(sp1, "append", sp2)
               val qname = Name.QName(sp1, Name.NName(sp1, namespace, sp2), ident, sp2)
               val lambda = WeededAst.Expression.VarOrRef(qname, loc)

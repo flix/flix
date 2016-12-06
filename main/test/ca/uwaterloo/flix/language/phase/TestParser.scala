@@ -1198,7 +1198,7 @@ class TestParser extends FunSuite with TestUtils {
     // TODO: Once list is included by default this can be improved.
     val append =
       """
-        |namespace list {
+        |namespace List {
         |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
         |}
         |
@@ -1212,7 +1212,7 @@ class TestParser extends FunSuite with TestUtils {
     // TODO: Once list is included by default this can be improved.
     val append =
       """
-        |namespace list {
+        |namespace List {
         |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
         |}
         |
@@ -1226,7 +1226,7 @@ class TestParser extends FunSuite with TestUtils {
     // TODO: Once list is included by default this can be improved.
     val append =
       """
-        |namespace list {
+        |namespace List {
         |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
         |}
         |
@@ -1240,7 +1240,7 @@ class TestParser extends FunSuite with TestUtils {
     // TODO: Once list is included by default this can be improved.
     val append =
       """
-        |namespace list {
+        |namespace List {
         |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
         |}
         |
@@ -1254,7 +1254,7 @@ class TestParser extends FunSuite with TestUtils {
     // TODO: Once list is included by default this can be improved.
     val append =
       """
-        |namespace list {
+        |namespace List {
         |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
         |}
         |
@@ -1268,7 +1268,7 @@ class TestParser extends FunSuite with TestUtils {
     // TODO: Once list is included by default this can be improved.
     val append =
       """
-        |namespace list {
+        |namespace List {
         |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
         |}
         |

@@ -261,7 +261,7 @@ def testCompileAndEval5: Int = evalInst(compileAExp(IfThenElse(Neq(Cst(1), Cst(2
 //
 // In case the standard library is not included, we need to define list/append:
 //
-namespace list {
+namespace List {
 
     def append(xs: List[Inst], ys: List[Inst]): List[Inst] = match xs with {
         case Nil => ys
