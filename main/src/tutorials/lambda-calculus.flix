@@ -1,72 +1,90 @@
 //
 // In this tutorial we will write a interpreter for the lambda calculus!
 //
+// The interpreter will be based on evaluation contexts and operate in a redex-reduce-recompose loop.
+//
 
 ///
 /// The expressions of the lambda calculus are: variables, lambda abstractions, and applications.
 ///
 enum Expression {
-    // a variable expression.
+    // A variable expression. A variable is represented by an integer.
     case Var(Int),
 
-    // a lambda abstraction expression.
+    // A lambda abstraction expression. A variable is represented by an integer.
     case Abs(Int, Expression),
 
-    // a function application expression.
+    // A function application expression.
     case App(Expression, Expression)
 }
 
 ///
-/// The evaluation contexts of lambda calculus describe the location of the next redex.
+/// The evaluation contexts of lambda calculus describe the location of the next redex,
+/// i.e. the next sub-expression which we can reduce in one-step.
 ///
 enum EvaluationContext {
-    // represents the redex in the context.
+    // Represents the redex in the context.
     case Hole,
 
-    // represents an application e1 e2 where evaluation should continue in e1.
+    // Represents an application e1 e2 where evaluation should continue in e1.
     case App1(EvaluationContext, Expression),
 
-    // represents an application v e where evaluation should continue in e2.
+    // Represents an application v e where evaluation should continue in e2.
     case App2(Expression, EvaluationContext)
 }
 
 ///
-/// Returns `true` if the given expression `e` is a value.
+/// Returns `true` if the given expression `e0` is a value.
 ///
-def isValue(e: Expression): Bool = match e with {
+def isValue(e0: Expression): Bool = match e0 with {
     case Abs(x, e) => true
     case _         => false
 }
 
 ///
-/// Returns `true` if the given expression `e` is not a value.
+/// Returns `true` if the given expression `e0` is not a value.
 ///
-def nonValue(e: Expression): Bool = !isValue(e)
+def nonValue(e0: Expression): Bool = !isValue(e0)
 
 ///
-/// Optionally returns a pair of the next redex: the expression to reduce and its evaluation context.
+/// Optionally returns a pair of a redex and its evaluation context for the given expression `e0`.
 ///
-def redex(e: Expression): Option[(Expression, EvaluationContext)] = match e with {
-    case Var(x) => None
-    case Abs(x, e) => None
-    // TODO: Add if guards to case statements?
-    case App(e1, e2) =>
-        // TODO: Add syntactic sugar for paired functions?
-        if (nonValue(e1))
+/// The evaluation context is a representation of the expression "inside-out" allowing us to recompose
+/// the expression after the redex has been reduced (contracted).
+///
+def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 with {
+    case Var(x) =>
+        // A variable cannot be reduced.
+        None
+    case Abs(x, e) =>
+        // An abstraction cannot be reduced.
+        None
+    case App(e1, e2) => switch {
+        case isValue(e1) && isValue(e2) =>
+            // An application where both arguments are values can be reduced.
+            // Return the expression and the hole evaluation context.
+            Some((e0, Hole))
+        case nonValue(e1) =>
+            // An application where the first argument is *NOT* a value.
+            // Reduction should continue in the first argument.
             match redex(e1) with {
                 case None => None
-                case Some((e, ec)) => Some((e, App1(ec, e2)))
+                case Some((e, ec)) =>
+                    // The first argument has a redex `e` in evaluation context `ec`.
+                    // Extend the evaluation context with `e2`.
+                    Some((e, App1(ec, e2)))
             }
-        else {
-            if (isValue(e2))
-                Some(e, Hole)
-            else {
-                match redex(e2) with {
-                    case None => None
-                    case Some((e, ec)) => Some((e, App2(e1, ec)))
-                }
+        case isValue(e1) =>
+            // An application where the first argument is a value.
+            // Reduction should continue in the second argument.
+            match redex(e2) with {
+                case None => None
+                case Some((e, ec)) =>
+                    // The second argument has a redex `e` in evaluation context `ec`.
+                    // Extend the evaluation context with `e1`.
+                    Some((e, App2(e1, ec)))
             }
-        }
+    }
 }
 
 ///
@@ -80,16 +98,18 @@ def recompose(ec0: EvaluationContext, e0: Expression): Expression = match ec0 wi
 }
 
 ///
-/// Reduces a single contractum.
+/// Reduces the redex `e0` with a single application of beta-reduction.
 ///
 def reduce(e: Expression): Expression = match e with {
-    case App(Abs(x, e1), e2) => substitute(e1, x, alphaRename(e2, 0))
+    case App(Abs(x, e1), e2) =>
+        // Perform beta-reduction: Use alpha-renaming to avoid capture.
+        substitute(e1, x, alpha(e2, 0))
     case _ => e
 }
 
 ///
-/// Performs a one-step reduction of the given expression `e0`
-/// by finding a redex, reducing it, and recomposing the expression.
+/// Performs a single step reduction of the given expression `e0`,
+/// i.e. performs a single redex-reduce-recompose step.
 ///
 def step(e0: Expression): Expression = match redex(e0) with {
     case None => e0
@@ -97,7 +117,7 @@ def step(e0: Expression): Expression = match redex(e0) with {
 }
 
 ///
-/// Repeatedly performs one-step reduction until a fixed point is reached.
+/// Repeatedly performs one-step reductions until a fixed point.
 ///
 def loop(e0: Expression): Expression =
     let e = step(e0);
@@ -114,7 +134,7 @@ def substitute(e0: Expression, x: Int, r0: Expression): Expression = match e0 wi
 }
 
 
-def alphaRename(e: Expression, c: Int): Expression = match e with {
+def alpha(e: Expression, c: Int): Expression = match e with {
     case Var(x) => ???
 }
 
@@ -127,3 +147,8 @@ def main: Expression = {
 }
 
 // TODO: Variable naming with e and e0
+
+
+// TODO: Add if guards to case statements?
+// TODO: Add syntactic sugar for paired functions?
+// TODO: Add Flix test.
