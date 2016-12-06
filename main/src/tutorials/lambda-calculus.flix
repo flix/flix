@@ -103,7 +103,7 @@ def recompose(ec0: EvaluationContext, e0: Expression): Expression = match ec0 wi
 def reduce(e: Expression): Expression = match e with {
     case App(Abs(x, e1), e2) =>
         // Perform beta-reduction: Use alpha-renaming to avoid capture.
-        substitute(e1, x, alpha(e2, 0))
+        substitute(e1, x, alpha(e2, Map/empty(), 0))
     case _ => e
 }
 
@@ -134,8 +134,18 @@ def substitute(e0: Expression, x: Int, r0: Expression): Expression = match e0 wi
 }
 
 
-def alpha(e: Expression, c: Int): Expression = match e with {
-    case Var(x) => ???
+///
+/// Performs alpha conversion by introducing fresh variables for all variables in the given expression `e0`.
+///
+def alpha(e0: Expression, m: Map2[Int, Int], c: Int): Expression = match e0 with {
+    case Var(x) => match Map/get(x, m) with {
+        case None    => ???
+        case Some(y) => ???
+    }
+    case Abs(x, e) =>
+        let y = c + 1;
+        Abs(y, alpha(e, m, y)) // TODO: Need to extend environment.
+    case App(e1, e2) => ???
 }
 
 
@@ -152,3 +162,22 @@ def main: Expression = {
 // TODO: Add if guards to case statements?
 // TODO: Add syntactic sugar for paired functions?
 // TODO: Add Flix test.
+
+
+// TODO: Helper functions until we get maps.
+
+enum Map2[k, v] {
+    case Map2(List[(k, v)])
+}
+
+namespace Map {
+
+    def empty: Map2[Int, Int] = Map2(Nil)
+
+    def get[k, v](k: k, m: Map2[k, v]): Option[v] =  ???
+
+    def getHelper[k, v](xs: List[k, v]): Option[v] = ???
+
+
+
+}
