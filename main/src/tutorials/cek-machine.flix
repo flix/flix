@@ -21,18 +21,30 @@ enum Expression {
 }
 
 ///
+/// An environment is a map from variables (integers) to a (value, environment)-pair.
+///
+enum Environment {
+    // NB: We use Expression here since there is no explicit syntactic category for values.
+    case Environment(Map2[Int, (Expression, Environment)])
+}
+
+///
 /// The CEK-machine operates based on continuations derived
 //  from the evaluation contexts of the language.
 ///
 enum Kontinuation {
-    // Represents the empty evaluation context.
-    case Empty,
+    // Represents the empty evaluation context (named `mt` in the paper).
+    case Halt,
 
-    // Represents the evaluation context ([] e).
-    case App1(Expression),
+    // Represents the evaluation context ([] e) with continuation κ
+    // where the environment ρ closes the expression e.
+    // NB: In the paper this constructor is named `ar`.
+    case App1(Expression, Environment, Kontinuation),
 
-    //
-    case App2(Expression)
+    // Represents the evaluation context (v []) with continuation κ
+    // where the environment ρ closes the the value v.
+    // NB: In the paper this constructor is named `fn`.
+    case App2(Expression, Environment, Kontinuation)
 }
 
 ///
@@ -48,7 +60,35 @@ def isValue(e0: Expression): Bool = match e0 with {
 ///
 def nonValue(e0: Expression): Bool = !isValue(e0)
 
+///
+/// Returns the initial state of the CEK-machine for the given expression `e0`.
+///
+def inject(e0: Expression): (Expression, Environment, Kontinuation) =
+    (e0, Env/empty(), Halt)
 
+
+///
+/// Returns the next state of the given machine `m`.
+///
+/// Returns the same state if no further transition is possible.
+///
+/// (See Figure 1 in the paper)
+///
+def step(m: (Expression, Environment, Kontinuation)): (Expression, Environment, Kontinuation) = match m with {
+    case (Var(x), env, kont) => ???
+}
+
+
+def eval(e0: Expression): Option[Expression] = ???
+
+
+
+
+namespace Env {
+
+    def empty: Environment = Environment(Map2(Nil): Map2[Int, (Expression, Environment)])
+
+}
 
 
 //
@@ -60,7 +100,6 @@ enum Map2[k, v] {
     case Map2(List[(k, v)])
 }
 namespace Map {
-    def empty: Map2[Int, Int] = Map2(Nil)
 
     def insert(k: Int, v: Int, m: Map2[Int, Int]): Map2[Int, Int] =
         let Map2(xs) = m;
