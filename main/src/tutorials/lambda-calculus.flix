@@ -103,8 +103,37 @@ def recompose(ec0: EvaluationContext, e0: Expression): Expression = match ec0 wi
 def reduce(e: Expression): Expression = match e with {
     case App(Abs(x, e1), e2) =>
         // Perform beta-reduction: Use alpha-renaming to avoid capture.
-        substitute(e1, x, alpha(e2, Map/empty(), 0))
+        substitute(e1, x, alpha(e2, Map/empty()))
     case _ => e
+}
+
+///
+/// Replaces every occurrence of the variable `x` in the expression `e0` with the expression `r0`.
+///
+def substitute(e0: Expression, x: Int, r0: Expression): Expression = match e0 with {
+    case Var(y) => if (x == y) r0 else Var(y)
+    case Abs(y, e) => if (x == y) Abs(y, e) else Abs(y, substitute(e, x, r0))
+    case App(e1, e2) => App(substitute(e1, x, r0), substitute(e2, x, r0))
+}
+
+///
+/// Performs alpha conversion by introducing fresh variables for all variables in the given expression `e0`.
+///
+def alpha(e0: Expression, m: Map2[Int, Int]): Expression = match e0 with {
+    case Var(x) =>
+        // Check if we need to rename the variable.
+        match Map/get(x, m) with {
+            case None    => Var(x)
+            case Some(y) => Var(y)
+        }
+    case Abs(x, e) =>
+        // Generate a fresh variable name for `x`.
+        let y = freshVar();
+        Abs(y, alpha(e, Map/insert(y, x, m)))
+
+    case App(e1, e2) =>
+        // Recursively perform alpha conversion on each expression.
+        App(alpha(e1, m), alpha(e2, m))
 }
 
 ///
@@ -124,60 +153,44 @@ def loop(e0: Expression): Expression =
         if (e == e0) e else loop(e)
 
 
+//
+// We can now test our lambda interpreter!
+//
+def testLoop1: Expression = loop(Var(0))                                        // x
+def testLoop2: Expression = loop(Abs(0, Var(0)))                                // λx. x
+def testLoop3: Expression = loop(Abs(0, Abs(1, Var(0))))                        // λx. λy. x
+def testLoop4: Expression = loop(App(Abs(0, Var(0)), Abs(1, Var(1))))           // (λx. x) (λy. y)
+def testLoop5: Expression = loop(App(Abs(0, Abs(1, Var(0))), Abs(2, Var(2))))   // (λx. λy. x) (λz. z)
+
+//
+// Here is the omega-combinator: (λx. x x) (λx. x x)
+//
+// If you run this, Flix will loop forever.
+//
+def testOmega: Expression = loop(
+    App(
+        Abs(0, App(Var(0), Var(0))),
+        Abs(0, App(Var(0), Var(0)))))
+
+
+
 ///
-/// Replaces every occurence of the variable `x` in the expression `e0` with the expression `r0`.
+/// Returns a fresh variable name.
+/// (Relies on an unsafe and impure built-in Flix function!).
 ///
-def substitute(e0: Expression, x: Int, r0: Expression): Expression = match e0 with {
-    case Var(y) => if (x == y) r0 else Var(y)
-    case Abs(y, e) => if (x == y) Abs(y, e) else Abs(y, substitute(e, x, r0))
-    case App(e1, e2) => App(substitute(e1, x, r0), substitute(e2, x, r0))
-}
+def freshVar: Int = ???
 
 
-///
-/// Performs alpha conversion by introducing fresh variables for all variables in the given expression `e0`.
-///
-def alpha(e0: Expression, m: Map2[Int, Int], c: Int): Expression = match e0 with {
-    case Var(x) => match Map/get(x, m) with {
-        case None    => ???
-        case Some(y) => ???
-    }
-    case Abs(x, e) =>
-        let y = c + 1;
-        Abs(y, alpha(e, m, y)) // TODO: Need to extend environment.
-    case App(e1, e2) => ???
-}
-
-
-def main: Expression = {
-    loop(App(
-         Abs(0, Var(0)),
-         Abs(1, Var(1))
-        ))
-}
-
-// TODO: Variable naming with e and e0
-
-
-// TODO: Add if guards to case statements?
-// TODO: Add syntactic sugar for paired functions?
-// TODO: Add Flix test.
-
-
-// TODO: Helper functions until we get maps.
-
+// TODO: replace by library maps.
 enum Map2[k, v] {
     case Map2(List[(k, v)])
 }
-
 namespace Map {
-
     def empty: Map2[Int, Int] = Map2(Nil)
+
+    def insert(k: Int, v: Int, m: Map2[Int, Int]): Map2[Int, Int] = ???
 
     def get[k, v](k: k, m: Map2[k, v]): Option[v] =  ???
 
     def getHelper[k, v](xs: List[k, v]): Option[v] = ???
-
-
-
 }
