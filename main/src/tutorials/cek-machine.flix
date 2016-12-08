@@ -86,9 +86,20 @@ def step(m: (Expression, Environment, Kontinuation)): (Expression, Environment, 
 ///
 /// TODO: Should step be partial or not?
 ///
-def eval(e0: Expression): Expression = ???
+def eval(m0: (Expression, Environment, Kontinuation)): (Expression, Environment) =
+    // Perform a single transition step.
+    let m1 = step(m0);
+    let (e, env, kont) = m1;
+        // Check if the machine is halted with a value.
+        // If so, return the value and environment, otherwise continue evaluation.
+        if (isValue(e) && kont == Halt)
+            (e, env)
+        else
+            eval(m1)
 
-
+/// TODO: Return a value instead by appling env to expr?
+def run(e0: Expression): (Expression, Environment) =
+    eval(inject(e0))
 
 
 namespace Env {
@@ -97,6 +108,8 @@ namespace Env {
 
 }
 
+
+// TODO: Allow greek letters?
 
 //
 // ----------------------------------------------------------------------------
