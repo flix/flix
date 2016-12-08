@@ -70,16 +70,23 @@ def inject(e0: Expression): (Expression, Environment, Kontinuation) =
 ///
 /// Returns the next state of the given machine `m`.
 ///
-/// Returns the same state if no further transition is possible.
+/// NB: Returns the same state if no further transition is possible.
 ///
-/// (See Figure 1 in the paper)
+/// (The transition rules are described in Figure 1 in the paper.)
 ///
 def step(m: (Expression, Environment, Kontinuation)): (Expression, Environment, Kontinuation) = match m with {
-    case (Var(x), env, kont) => ???
+    case (Var(x), env0, kont) =>
+        // Lookups the variable x in the environment and swaps the environmen
+        ???
+
+    case _                   => m
 }
 
 
-def eval(e0: Expression): Option[Expression] = ???
+///
+/// TODO: Should step be partial or not?
+///
+def eval(e0: Expression): Expression = ???
 
 
 
