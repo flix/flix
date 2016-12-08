@@ -92,7 +92,7 @@ def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 wi
 /// with the given expression `e0` replacing the hole in the context.
 ///
 def recompose(ec0: EvaluationContext, e0: Expression): Expression = match ec0 with {
-    case Hole => e0
+    case Hole        => e0
     case App1(ec, e) => App(recompose(ec, e0), e)
     case App2(v, ec) => App(v, recompose(ec, e0))
 }
@@ -111,8 +111,8 @@ def reduce(e: Expression): Expression = match e with {
 /// Replaces every occurrence of the variable `x` in the expression `e0` with the expression `r0`.
 ///
 def substitute(e0: Expression, x: Int, r0: Expression): Expression = match e0 with {
-    case Var(y) => if (x == y) r0 else Var(y)
-    case Abs(y, e) => if (x == y) Abs(y, e) else Abs(y, substitute(e, x, r0))
+    case Var(y)      => if (x == y) r0 else Var(y)
+    case Abs(y, e)   => if (x == y) Abs(y, e) else Abs(y, substitute(e, x, r0))
     case App(e1, e2) => App(substitute(e1, x, r0), substitute(e2, x, r0))
 }
 
