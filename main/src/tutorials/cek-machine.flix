@@ -84,27 +84,64 @@ def step(m: (Expression, Environment, Kontinuation)): (Expression, Environment, 
 
 
 ///
-/// TODO: Should step be partial or not?
+/// Repeteatedly performs single-step transitions in the given machine `m0` until the machine halts with a value.
 ///
 def eval(m0: (Expression, Environment, Kontinuation)): (Expression, Environment) =
     // Perform a single transition step.
     let m1 = step(m0);
+    // Unpack the components of the machine.
     let (e, env, kont) = m1;
         // Check if the machine is halted with a value.
-        // If so, return the value and environment, otherwise continue evaluation.
+        // If so, return the value and environment, otherwise take another transition.
         if (isValue(e) && kont == Halt)
             (e, env)
         else
             eval(m1)
 
-/// TODO: Return a value instead by appling env to expr?
-def run(e0: Expression): (Expression, Environment) =
-    eval(inject(e0))
+
+///
+/// Evaluates the given expression to a (value, environment)-pair by injecting it into the initial state
+/// of the CEK machine and repeatedly performing a transition until the machine halts with a value.
+///
+def run(e0: Expression): Expression =
+    let (v, env) = eval(inject(e0));
+        substitute(v, env)
+
+///
+/// Substitutes every free variable in the given expression `e0` for the value in the given environment `env0`.
+///
+def substitute(e0: Expression, env0: Environment): Expression = match e0 with {
+    case Var(x)         => ???
+    case Abs(x, e)      => ???
+    case App(e1, e2)    => App(substitute(e1, env0), substitute(e2, env0))
+}
+
+
+
+
+// TODO: Use greek letters?
 
 
 namespace Env {
 
     def empty: Environment = Environment(Map2(Nil): Map2[Int, (Expression, Environment)])
+
+    def lookup(k: Int, env: Environment): (Expression, Environment) = match env with {
+        case Environment(m) =>
+            // Assume that the value exists
+            let Some(v) = Map/get(k, m);
+                v
+    }
+
+    def insert(k: Int, v: (Expression, Environment), env: Environment): Environment = match env with {
+        case Environment(m) =>
+            Environment(Map/insert(k, v, m))
+    }
+
+    def remove(k: Int, env: Environment): Environment = match env with {
+        case Environment(m) =>
+            Environment(Map/remove(k, m))
+    }
 
 }
 
@@ -121,7 +158,7 @@ enum Map2[k, v] {
 }
 namespace Map {
 
-    def insert(k: Int, v: Int, m: Map2[Int, Int]): Map2[Int, Int] =
+    def insert(k: Int, v: (Expression, Environment), m: Map2[Int, (Expression, Environment)]): Map2[Int, (Expression, Environment)] =
         let Map2(xs) = m;
             Map2((k, v) :: xs)
 
@@ -133,5 +170,7 @@ namespace Map {
         case Nil => None
         case (y, v) :: ys => if (k == y) Some(v) else getHelper(k, ys)
     }
+
+    def remove(k: Int, m: Map2[Int, (Expression, Environment)]): Map2[Int, (Expression, Environment)] = ??? // TODO
 
 }
