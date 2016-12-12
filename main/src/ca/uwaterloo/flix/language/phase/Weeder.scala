@@ -359,9 +359,17 @@ object Weeder {
               }
           }
 
-        case ParsedAst.Expression.Unary(sp1, op, exp, sp2) => visit(exp) map {
-          case e => WeededAst.Expression.Unary(op, e, mkSL(sp1, sp2))
-        }
+        case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
+          val loc = mkSL(sp1, sp2)
+          visit(exp) map {
+            case e => op match {
+              case "!" => WeededAst.Expression.Unary(UnaryOperator.LogicalNot, e, loc)
+              case "+" => WeededAst.Expression.Unary(UnaryOperator.Plus, e, loc)
+              case "-" => WeededAst.Expression.Unary(UnaryOperator.Minus, e, loc)
+              case "~" => WeededAst.Expression.Unary(UnaryOperator.BitwiseNegate, e, loc)
+              case _ => ??? // TODO
+            }
+          }
 
         case ParsedAst.Expression.Binary(exp1, op, exp2, sp2) =>
           val loc = mkSL(leftMostSourcePosition(exp1), sp2)
@@ -400,7 +408,7 @@ object Weeder {
             case (e1, e2) =>
               val sp1 = leftMostSourcePosition(exp1)
               val loc = mkSL(sp1, sp2)
-              val ident = Name.Ident(sp1, op.op, sp2)
+              val ident = Name.Ident(sp1, op, sp2)
               val namespace = Name.NName(sp1, List.empty, sp2)
               val name = Name.QName(sp1, namespace, ident, sp2)
               val lambda = WeededAst.Expression.VarOrRef(name, loc)

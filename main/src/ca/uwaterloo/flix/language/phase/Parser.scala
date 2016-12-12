@@ -25,7 +25,6 @@ import ca.uwaterloo.flix.util.StreamOps
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
-import scala.io.Source
 
 /**
   * A parser for the Flix language.
@@ -380,64 +379,148 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       "{" ~ optWS ~ Expression ~ optWS ~ "}" ~ optWS | Bicondition
     }
 
-    def Bicondition: Rule1[ParsedAst.Expression] = rule {
-      Implication ~ optional(optWS ~ capture(atomic("<==>")) ~ optWS ~ Implication ~ SP ~> ParsedAst.Expression.Binary)
+    def Bicondition: Rule1[ParsedAst.Expression] = {
+      def Op: Rule1[String] = rule {
+        capture(atomic("<==>"))
+      }
+
+      rule {
+        Implication ~ optional(optWS ~ Op ~ optWS ~ Implication ~ SP ~> ParsedAst.Expression.Binary)
+      }
     }
 
-    def Implication: Rule1[ParsedAst.Expression] = rule {
-      LogicalOr ~ optional(optWS ~ capture(atomic("==>")) ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.Binary)
+    def Implication: Rule1[ParsedAst.Expression] = {
+      def Op: Rule1[String] = rule {
+        capture(atomic("==>"))
+      }
+
+      rule {
+        LogicalOr ~ optional(optWS ~ Op ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.Binary)
+      }
     }
 
-    def LogicalOr: Rule1[ParsedAst.Expression] = rule {
-      LogicalAnd ~ zeroOrMore(optWS ~ capture(atomic("||")) ~ optWS ~ LogicalAnd ~ SP ~> ParsedAst.Expression.Binary)
+    def LogicalOr: Rule1[ParsedAst.Expression] = {
+      def Op: Rule1[String] = rule {
+        capture(atomic("||"))
+      }
+
+      rule {
+        LogicalAnd ~ zeroOrMore(optWS ~ Op ~ optWS ~ LogicalAnd ~ SP ~> ParsedAst.Expression.Binary)
+      }
     }
 
-    def LogicalAnd: Rule1[ParsedAst.Expression] = rule {
-      BitwiseOr ~ zeroOrMore(optWS ~ capture(atomic("&&")) ~ optWS ~ BitwiseOr ~ SP ~> ParsedAst.Expression.Binary)
+    def LogicalAnd: Rule1[ParsedAst.Expression] = {
+      def Op: Rule1[String] = rule {
+        capture(atomic("&&"))
+      }
+
+      rule {
+        BitwiseOr ~ zeroOrMore(optWS ~ Op ~ optWS ~ BitwiseOr ~ SP ~> ParsedAst.Expression.Binary)
+      }
     }
 
-    def BitwiseOr: Rule1[ParsedAst.Expression] = rule {
-      BitwiseXOr ~ zeroOrMore(optWS ~ capture(atomic("|")) ~ optWS ~ BitwiseXOr ~ SP ~> ParsedAst.Expression.Binary)
+    def BitwiseOr: Rule1[ParsedAst.Expression] = {
+      def Op: Rule1[String] = rule {
+        capture(atomic("|"))
+      }
+
+      rule {
+        BitwiseXOr ~ zeroOrMore(optWS ~ Op ~ optWS ~ BitwiseXOr ~ SP ~> ParsedAst.Expression.Binary)
+      }
     }
 
-    def BitwiseXOr: Rule1[ParsedAst.Expression] = rule {
-      BitwiseAnd ~ zeroOrMore(optWS ~ capture(atomic("^")) ~ optWS ~ BitwiseAnd ~ SP ~> ParsedAst.Expression.Binary)
+    def BitwiseXOr: Rule1[ParsedAst.Expression] = {
+      def Op: Rule1[String] = rule {
+        capture(atomic("^"))
+      }
+
+      rule {
+        BitwiseAnd ~ zeroOrMore(optWS ~ Op ~ optWS ~ BitwiseAnd ~ SP ~> ParsedAst.Expression.Binary)
+      }
     }
 
-    def BitwiseAnd: Rule1[ParsedAst.Expression] = rule {
-      Equality ~ zeroOrMore(optWS ~ capture(atomic("&")) ~ optWS ~ Equality ~ SP ~> ParsedAst.Expression.Binary)
+    def BitwiseAnd: Rule1[ParsedAst.Expression] = {
+      def Op: Rule1[String] = rule {
+        capture(atomic("&"))
+      }
+
+      rule {
+        Equality ~ zeroOrMore(optWS ~ Op ~ optWS ~ Equality ~ SP ~> ParsedAst.Expression.Binary)
+      }
     }
 
-    def Equality: Rule1[ParsedAst.Expression] = rule {
-      Relational ~ optional(optWS ~ capture(atomic("==") | atomic("!=")) ~ optWS ~ Relational ~ SP ~> ParsedAst.Expression.Binary)
+    def Equality: Rule1[ParsedAst.Expression] = {
+      def Op: Rule1[String] = rule {
+        capture(atomic("==") | atomic("!="))
+      }
+
+      rule {
+        Relational ~ optional(optWS ~ Op ~ optWS ~ Relational ~ SP ~> ParsedAst.Expression.Binary)
+      }
     }
 
-    def Relational: Rule1[ParsedAst.Expression] = rule {
-      Shift ~ optional(optWS ~ capture(atomic("<=") | atomic(">=") | atomic("<") | atomic(">")) ~ optWS ~ Shift ~ SP ~> ParsedAst.Expression.Binary)
+    def Relational: Rule1[ParsedAst.Expression] = {
+      def Op: Rule1[String] = rule {
+        capture(atomic("<=") | atomic(">=") | atomic("<") | atomic(">"))
+      }
+
+      rule {
+        Shift ~ optional(optWS ~ Op ~ optWS ~ Shift ~ SP ~> ParsedAst.Expression.Binary)
+      }
     }
 
-    def Shift: Rule1[ParsedAst.Expression] = rule {
-      Additive ~ optional(optWS ~ capture(atomic("<<") | atomic(">>")) ~ optWS ~ Additive ~ SP ~> ParsedAst.Expression.Binary)
+    def Shift: Rule1[ParsedAst.Expression] = {
+      def Op: Rule1[String] = rule {
+        capture(atomic("<<") | atomic(">>"))
+      }
+
+      rule {
+        Additive ~ optional(optWS ~ Op ~ optWS ~ Additive ~ SP ~> ParsedAst.Expression.Binary)
+      }
     }
 
-    def Additive: Rule1[ParsedAst.Expression] = rule {
-      Multiplicative ~ zeroOrMore(optWS ~ capture(atomic("+") | atomic("-")) ~ optWS ~ Multiplicative ~ SP ~> ParsedAst.Expression.Binary)
+    def Additive: Rule1[ParsedAst.Expression] = {
+      def Op: Rule1[String] = rule {
+        capture(atomic("+") | atomic("-"))
+      }
+
+      rule {
+        Multiplicative ~ zeroOrMore(optWS ~ Op ~ optWS ~ Multiplicative ~ SP ~> ParsedAst.Expression.Binary)
+      }
     }
 
-    def Multiplicative: Rule1[ParsedAst.Expression] = rule {
-      Infix ~ zeroOrMore(optWS ~ capture(atomic("**") | atomic("*") | atomic("/") | atomic("%")) ~ optWS ~ Infix ~ SP ~> ParsedAst.Expression.Binary)
+    def Multiplicative: Rule1[ParsedAst.Expression] = {
+      def Op: Rule1[String] = rule {
+        capture(atomic("**") | atomic("*") | atomic("/") | atomic("%"))
+      }
+
+      rule {
+        Infix ~ zeroOrMore(optWS ~ Op ~ optWS ~ Infix ~ SP ~> ParsedAst.Expression.Binary)
+      }
     }
 
     def Infix: Rule1[ParsedAst.Expression] = rule {
       Math ~ optional(optWS ~ "`" ~ Names.QualifiedDefinition ~ "`" ~ optWS ~ Math ~ SP ~> ParsedAst.Expression.Infix)
     }
 
-    def Math: Rule1[ParsedAst.Expression] = rule {
-      Unary ~ optional(optWS ~ Operators.MathOperator ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.BinaryMathOperator)
+    def Math: Rule1[ParsedAst.Expression] = {
+      def Op: Rule1[String] = rule {
+        capture(Names.MathOperator | Names.MathArrow)
+      }
+
+      rule {
+        Unary ~ optional(optWS ~ Op ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.BinaryMathOperator)
+      }
     }
 
-    def Unary: Rule1[ParsedAst.Expression] = rule {
-      !Literal ~ (SP ~ Operators.UnaryOp ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ascribe
+    def Unary: Rule1[ParsedAst.Expression] = {
+      def Op: Rule1[String] = rule {
+        capture(atomic("!") | atomic("+") | atomic("-") | atomic("~"))
+      }
+
+      rule {
+        !Literal ~ (SP ~ Op ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ascribe
+      }
     }
 
     def Ascribe: Rule1[ParsedAst.Expression] = rule {
@@ -852,35 +935,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     def Variable: Rule1[Name.Ident] = LowerCaseName
 
   }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Operators                                                               //
-  /////////////////////////////////////////////////////////////////////////////
-  object Operators {
-
-    // TODO: Move
-
-    /**
-      * Parses a unary operator.
-      */
-    def UnaryOp: Rule1[UnaryOperator] = rule {
-      atomic("!") ~> (() => UnaryOperator.LogicalNot) |
-        atomic("+") ~> (() => UnaryOperator.Plus) |
-        atomic("-") ~> (() => UnaryOperator.Minus) |
-        atomic("~") ~> (() => UnaryOperator.BitwiseNegate)
-    }
-
-    // TODO: Move
-
-    /**
-      * Parses a mathematical operator.
-      */
-    def MathOperator: Rule1[CustomOperator] = rule {
-      capture(Names.MathOperator | Names.MathArrow) ~> CustomOperator
-    }
-
-  }
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Whitespace                                                              //

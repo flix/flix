@@ -189,7 +189,3 @@ object BinaryOperator {
 
 }
 
-/**
-  * A custom operator.
-  */
-case class CustomOperator(op: String) extends Operator
