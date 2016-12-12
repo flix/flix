@@ -461,16 +461,6 @@ object ParsedAst {
     case class Binary(exp1: ParsedAst.Expression, op: String, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Binary Math Operator Expression.
-      *
-      * @param exp1 the left expression.
-      * @param op   the extended binary operator.
-      * @param exp2 the right expression.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class BinaryMathOperator(exp1: ParsedAst.Expression, op: String, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * If-then-else Expression.
       *
       * @param sp1  the position of the first character in the expression.

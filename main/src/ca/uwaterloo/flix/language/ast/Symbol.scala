@@ -201,7 +201,12 @@ object Symbol {
       * For example, the suffix of the symbol "A.B.C/f" is "f".
       */
     // TODO: Possibly remove?
-    def suffix: String = name
+    // TODO: Rest, and move somewhere?
+    def suffix: String = name.
+      replace("|", "bar").
+      replace(">", "ge").
+      replace("<", "lt")
+
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.

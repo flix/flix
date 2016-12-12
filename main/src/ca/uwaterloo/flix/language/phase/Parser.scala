@@ -500,41 +500,30 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Infix: Rule1[ParsedAst.Expression] = rule {
-      Math ~ optional(optWS ~ "`" ~ Names.QualifiedDefinition ~ "`" ~ optWS ~ Math ~ SP ~> ParsedAst.Expression.Infix)
+      Special ~ optional(optWS ~ "`" ~ Names.QualifiedDefinition ~ "`" ~ optWS ~ Special ~ SP ~> ParsedAst.Expression.Infix)
     }
 
-    def Math: Rule1[ParsedAst.Expression] = {
+    def Special: Rule1[ParsedAst.Expression] = {
 
-      def Reserved1: Rule1[String] = rule {
-        capture("+" | "-" | "*" | "/" | "%" | "<" | ">" | "&" | "|" | "^")
-      }
-
+      // TODO: Remove ==> and <==>
       def Reserved2: Rule1[String] = rule {
         capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "<<" | ">>" | "=>" | "->")
-      }
-
-      def Reserved3: Rule1[String] = rule {
-        capture("==>")
-      }
-
-      def Reserved4: Rule1[String] = rule {
-        capture("<==>")
       }
 
       def UserOp2: Rule1[String] = rule {
         !Reserved2 ~ capture(Names.OperatorLetter ~ Names.OperatorLetter)
       }
 
-      def UserOp: Rule1[String] = rule {
-        UserOp2
+      def UserOpN: Rule1[String] = rule {
+        capture(Names.OperatorLetter ~ Names.OperatorLetter ~ oneOrMore(Names.OperatorLetter))
       }
 
       def MathOp: Rule1[String] = rule {
-        capture(Names.MathOperator | Names.MathArrow)
+        capture(Names.MathLetter)
       }
 
       rule {
-        Unary ~ zeroOrMore(optWS ~ (UserOp | MathOp) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.BinaryMathOperator)
+        Unary ~ zeroOrMore(optWS ~ (UserOpN | UserOp2 | MathOp) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Binary)
       }
     }
 
@@ -885,14 +874,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     def GreekLetter: CharPredicate = CharPredicate('\u0370' to '\u03FF')
 
     /**
-      * A mathematical operator.
+      * A mathematical operator or arrow.
       */
-    def MathOperator: CharPredicate = CharPredicate('\u2200' to '\u22FF')
-
-    /**
-      * A mathematical arrow.
-      */
-    def MathArrow: CharPredicate = CharPredicate('\u2190' to '\u21FF')
+    def MathLetter: CharPredicate =
+      CharPredicate('\u2200' to '\u22FF') ++ // Mathematical Operator
+        CharPredicate('\u2190' to '\u21FF') // Mathematical Arrow
 
     /**
       * An operator letter.
@@ -902,20 +888,20 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     /**
       * a (upper/lower case) letter, numeral, greek letter, or other legal character.
       */
-    def LegalChar: CharPredicate = CharPredicate.AlphaNum ++ GreekLetter ++ "_" ++ "'"
+    def LegalLetter: CharPredicate = CharPredicate.AlphaNum ++ "_" ++ "'"
 
     /**
       * A lowercase identifier is a lowercase letter optionally followed by any letter, underscore, or prime.
       */
     def LowerCaseName: Rule1[Name.Ident] = rule {
-      SP ~ capture((LowerLetter | GreekLetter | MathOperator | MathArrow) ~ zeroOrMore(LegalChar)) ~ SP ~> Name.Ident
+      SP ~ capture(LowerLetter ~ zeroOrMore(LegalLetter)) ~ SP ~> Name.Ident
     }
 
     /**
       * An uppercase identifier is an uppercase letter optionally followed by any letter, underscore, or prime.
       */
     def UpperCaseName: Rule1[Name.Ident] = rule {
-      SP ~ capture(UpperLetter ~ zeroOrMore(LegalChar)) ~ SP ~> Name.Ident
+      SP ~ capture(UpperLetter ~ zeroOrMore(LegalLetter)) ~ SP ~> Name.Ident
     }
 
     /**
@@ -933,10 +919,24 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     /**
-      * TODO
+      * A greek identifier.
+      */
+    def GreekName: Rule1[Name.Ident] = rule {
+      SP ~ capture(oneOrMore(GreekLetter)) ~ SP ~> Name.Ident
+    }
+
+    /**
+      * A math identifier.
+      */
+    def MathName: Rule1[Name.Ident] = rule {
+      SP ~ capture(oneOrMore(MathLetter)) ~ SP ~> Name.Ident
+    }
+
+    /**
+      * An operator identifier.
       */
     def OperatorName: Rule1[Name.Ident] = rule {
-      SP ~ capture(zeroOrMore(OperatorLetter)) ~ SP ~> Name.Ident
+      SP ~ capture(oneOrMore(OperatorLetter)) ~ SP ~> Name.Ident
     }
 
     /**
@@ -956,10 +956,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     def Class: Rule1[Name.Ident] = UpperCaseName
 
     def Definition: Rule1[Name.Ident] = rule {
-      LowerCaseName | OperatorName
+      LowerCaseName | GreekName | MathName | OperatorName
     }
 
-    def QualifiedDefinition: Rule1[Name.QName] = LowerCaseQName
+    def QualifiedDefinition: Rule1[Name.QName] = LowerCaseQName // TODO: Greek letters?
 
     def Table: Rule1[Name.Ident] = UpperCaseName
 
@@ -971,7 +971,9 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def QualifiedType: Rule1[Name.QName] = UpperCaseQName
 
-    def Variable: Rule1[Name.Ident] = LowerCaseName
+    def Variable: Rule1[Name.Ident] = rule {
+      LowerCaseName | GreekName | MathName
+    }
 
   }
 

@@ -401,16 +401,6 @@ object Weeder {
             }
           }
 
-        case ParsedAst.Expression.BinaryMathOperator(exp1, op, exp2, sp2) =>
-          /*
-           * Rewrites the binary expression to an apply expression.
-           */
-          @@(visit(exp1), visit(exp2)) map {
-            case (e1, e2) =>
-              val sp1 = leftMostSourcePosition(exp1)
-              mkApply(op, List(e1, e2), sp1, sp2)
-          }
-
         case ParsedAst.Expression.IfThenElse(sp1, exp1, exp2, exp3, sp2) =>
           @@(visit(exp1), visit(exp2), visit(exp3)) map {
             case (e1, e2, e3) => WeededAst.Expression.IfThenElse(e1, e2, e3, mkSL(sp1, sp2))
@@ -933,7 +923,6 @@ object Weeder {
     case ParsedAst.Expression.Lambda(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Unary(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Binary(e1, _, _, _) => leftMostSourcePosition(e1)
-    case ParsedAst.Expression.BinaryMathOperator(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
