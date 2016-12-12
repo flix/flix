@@ -367,12 +367,13 @@ object Weeder {
               case "+" => WeededAst.Expression.Unary(UnaryOperator.Plus, e, loc)
               case "-" => WeededAst.Expression.Unary(UnaryOperator.Minus, e, loc)
               case "~" => WeededAst.Expression.Unary(UnaryOperator.BitwiseNegate, e, loc)
-              case _ => ??? // TODO
+              case _ => mkApply(op, List(e), sp1, sp2)
             }
           }
 
         case ParsedAst.Expression.Binary(exp1, op, exp2, sp2) =>
-          val loc = mkSL(leftMostSourcePosition(exp1), sp2)
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
           @@(visit(exp1), visit(exp2)) map {
             case (e1, e2) => op match {
               case "+" => WeededAst.Expression.Binary(BinaryOperator.Plus, e1, e2, loc)
@@ -396,7 +397,7 @@ object Weeder {
               case "^" => WeededAst.Expression.Binary(BinaryOperator.BitwiseXor, e1, e2, loc)
               case "<<" => WeededAst.Expression.Binary(BinaryOperator.BitwiseLeftShift, e1, e2, loc)
               case ">>" => WeededAst.Expression.Binary(BinaryOperator.BitwiseRightShift, e1, e2, loc)
-              case _ => ??? // TODO
+              case _ => mkApply(op, List(e1, e2), sp1, sp2)
             }
           }
 
@@ -407,12 +408,7 @@ object Weeder {
           @@(visit(exp1), visit(exp2)) map {
             case (e1, e2) =>
               val sp1 = leftMostSourcePosition(exp1)
-              val loc = mkSL(sp1, sp2)
-              val ident = Name.Ident(sp1, op, sp2)
-              val namespace = Name.NName(sp1, List.empty, sp2)
-              val name = Name.QName(sp1, namespace, ident, sp2)
-              val lambda = WeededAst.Expression.VarOrRef(name, loc)
-              WeededAst.Expression.Apply(lambda, List(e1, e2), loc)
+              mkApply(op, List(e1, e2), sp1, sp2)
           }
 
         case ParsedAst.Expression.IfThenElse(sp1, exp1, exp2, exp3, sp2) =>
@@ -835,6 +831,18 @@ object Weeder {
       case ParsedAst.Type.Apply(sp1, base, tparams, sp2) => WeededAst.Type.Apply(weed(base), tparams.toList.map(weed), mkSL(sp1, sp2))
     }
 
+  }
+
+  /**
+    * Returns an apply expression for the given textual name `text` with the given arguments `args`.
+    */
+  def mkApply(text: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
+    val loc = mkSL(sp1, sp2)
+    val ident = Name.Ident(sp1, text, sp2)
+    val namespace = Name.NName(sp1, List.empty, sp2)
+    val name = Name.QName(sp1, namespace, ident, sp2)
+    val lambda = WeededAst.Expression.VarOrRef(name, loc)
+    WeededAst.Expression.Apply(lambda, args, loc)
   }
 
   /**
