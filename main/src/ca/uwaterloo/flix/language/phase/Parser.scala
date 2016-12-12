@@ -504,12 +504,37 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Math: Rule1[ParsedAst.Expression] = {
-      def Op: Rule1[String] = rule {
+
+      def Reserved1: Rule1[String] = rule {
+        capture("+" | "-" | "*" | "/" | "%" | "<" | ">" | "&" | "|" | "^")
+      }
+
+      def Reserved2: Rule1[String] = rule {
+        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "<<" | ">>" | "=>" | "->")
+      }
+
+      def Reserved3: Rule1[String] = rule {
+        capture("==>")
+      }
+
+      def Reserved4: Rule1[String] = rule {
+        capture("<==>")
+      }
+
+      def UserOp2: Rule1[String] = rule {
+        !Reserved2 ~ capture(Names.OperatorLetter ~ Names.OperatorLetter)
+      }
+
+      def UserOp: Rule1[String] = rule {
+        UserOp2
+      }
+
+      def MathOp: Rule1[String] = rule {
         capture(Names.MathOperator | Names.MathArrow)
       }
 
       rule {
-        Unary ~ optional(optWS ~ Op ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.BinaryMathOperator)
+        Unary ~ zeroOrMore(optWS ~ (UserOp | MathOp) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.BinaryMathOperator)
       }
     }
 
@@ -870,6 +895,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     def MathArrow: CharPredicate = CharPredicate('\u2190' to '\u21FF')
 
     /**
+      * An operator letter.
+      */
+    def OperatorLetter: CharPredicate = CharPredicate("+-*<>=!&|^")
+
+    /**
       * a (upper/lower case) letter, numeral, greek letter, or other legal character.
       */
     def LegalChar: CharPredicate = CharPredicate.AlphaNum ++ GreekLetter ++ "_" ++ "'"
@@ -903,6 +933,13 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     /**
+      * TODO
+      */
+    def OperatorName: Rule1[Name.Ident] = rule {
+      SP ~ capture(zeroOrMore(OperatorLetter)) ~ SP ~> Name.Ident
+    }
+
+    /**
       * Namespaces are lower or uppercase.
       */
     // TODO: In the future we should restrict namespaces to either lower/upper case.
@@ -918,7 +955,9 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Class: Rule1[Name.Ident] = UpperCaseName
 
-    def Definition: Rule1[Name.Ident] = LowerCaseName
+    def Definition: Rule1[Name.Ident] = rule {
+      LowerCaseName | OperatorName
+    }
 
     def QualifiedDefinition: Rule1[Name.QName] = LowerCaseQName
 
