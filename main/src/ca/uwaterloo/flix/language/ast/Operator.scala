@@ -190,37 +190,6 @@ object BinaryOperator {
 }
 
 /**
-  * A common super-type for extended binary operators.
+  * A custom operator.
   */
-sealed trait ExtBinaryOperator
-
-object ExtBinaryOperator {
-
-  /**
-    * The partial order operator ⊑.
-    */
-  case object Leq extends ExtBinaryOperator
-
-  /**
-    * The least upper bound operator ⊔.
-    */
-  case object Lub extends ExtBinaryOperator
-
-  /**
-    * The greatest lower bound operator ⊓.
-    */
-  case object Glb extends ExtBinaryOperator
-
-  /**
-    * The widening operator ▽.
-    */
-  // TODO: Remove?
-  case object Widen extends ExtBinaryOperator
-
-  /**
-    * The narrowing operator △.
-    */
-  // TODO: Remove?
-  case object Narrow extends ExtBinaryOperator
-
-}
+case class CustomOperator(op: String) extends Operator

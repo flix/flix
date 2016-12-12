@@ -399,11 +399,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Infix: Rule1[ParsedAst.Expression] = rule {
-      Extended ~ optional(optWS ~ "`" ~ Names.QualifiedDefinition ~ "`" ~ optWS ~ Extended ~ SP ~> ParsedAst.Expression.Infix)
+      Math ~ optional(optWS ~ "`" ~ Names.QualifiedDefinition ~ "`" ~ optWS ~ Math ~ SP ~> ParsedAst.Expression.Infix)
     }
 
-    def Extended: Rule1[ParsedAst.Expression] = rule {
-      Unary ~ optional(optWS ~ Operators.ExtBinaryOpt ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.ExtendedBinary)
+    def Math: Rule1[ParsedAst.Expression] = rule {
+      Unary ~ optional(optWS ~ Operators.MathOperator ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.BinaryMathOperator)
     }
 
     def Unary: Rule1[ParsedAst.Expression] = rule {
@@ -747,6 +747,16 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     def GreekLetter: CharPredicate = CharPredicate('\u0370' to '\u03FF')
 
     /**
+      * A mathematical operator.
+      */
+    def MathOperator: CharPredicate = CharPredicate('\u2200' to '\u22FF')
+
+    /**
+      * A mathematical arrow.
+      */
+    def MathArrow: CharPredicate = CharPredicate('\u2190' to '\u21FF')
+
+    /**
       * a (upper/lower case) letter, numeral, greek letter, or other legal character.
       */
     def LegalChar: CharPredicate = CharPredicate.AlphaNum ++ GreekLetter ++ "_" ++ "'"
@@ -755,7 +765,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       * A lowercase identifier is a lowercase letter optionally followed by any letter, underscore, or prime.
       */
     def LowerCaseName: Rule1[Name.Ident] = rule {
-      SP ~ capture((LowerLetter | GreekLetter) ~ zeroOrMore(LegalChar)) ~ SP ~> Name.Ident
+      SP ~ capture((LowerLetter | GreekLetter | MathOperator | MathArrow) ~ zeroOrMore(LegalChar)) ~ SP ~> Name.Ident
     }
 
     /**
@@ -810,7 +820,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     def QualifiedType: Rule1[Name.QName] = UpperCaseQName
 
     def Variable: Rule1[Name.Ident] = LowerCaseName
-    
+
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -825,8 +835,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       atomic("!") ~> (() => UnaryOperator.LogicalNot) |
         atomic("+") ~> (() => UnaryOperator.Plus) |
         atomic("-") ~> (() => UnaryOperator.Minus) |
-        atomic("~") ~> (() => UnaryOperator.BitwiseNegate) |
-        atomic("¬") ~> (() => UnaryOperator.LogicalNot)
+        atomic("~") ~> (() => UnaryOperator.BitwiseNegate)
     }
 
     /**
@@ -841,11 +850,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
         atomic("<==>") ~> (() => BinaryOperator.Biconditional) |
         atomic("^") ~> (() => BinaryOperator.BitwiseXor) |
         atomic("<<") ~> (() => BinaryOperator.BitwiseLeftShift) |
-        atomic(">>") ~> (() => BinaryOperator.BitwiseRightShift) |
-        atomic("∧") ~> (() => BinaryOperator.LogicalAnd) |
-        atomic("∨") ~> (() => BinaryOperator.LogicalOr) |
-        atomic("→") ~> (() => BinaryOperator.Implication) |
-        atomic("↔") ~> (() => BinaryOperator.Biconditional)
+        atomic(">>") ~> (() => BinaryOperator.BitwiseRightShift)
     }
 
     /**
@@ -857,8 +862,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
         atomic("<") ~> (() => BinaryOperator.Less) |
         atomic(">") ~> (() => BinaryOperator.Greater) |
         atomic("==") ~> (() => BinaryOperator.Equal) |
-        atomic("!=") ~> (() => BinaryOperator.NotEqual) |
-        atomic("≡") ~> (() => BinaryOperator.Equal)
+        atomic("!=") ~> (() => BinaryOperator.NotEqual)
     }
 
     /**
@@ -880,14 +884,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     /**
-      * Parses an extended binary operator.
+      * Parses a mathematical operator.
       */
-    def ExtBinaryOpt: Rule1[ExtBinaryOperator] = rule {
-      atomic("⊑") ~> (() => ExtBinaryOperator.Leq) |
-        atomic("⊔") ~> (() => ExtBinaryOperator.Lub) |
-        atomic("⊓") ~> (() => ExtBinaryOperator.Glb) |
-        atomic("▽") ~> (() => ExtBinaryOperator.Widen) |
-        atomic("△") ~> (() => ExtBinaryOperator.Narrow)
+    def MathOperator: Rule1[CustomOperator] = rule {
+      capture(Names.MathOperator | Names.MathArrow) ~> CustomOperator
     }
 
   }
