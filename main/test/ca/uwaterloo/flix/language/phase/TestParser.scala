@@ -2481,6 +2481,50 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Names                                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Names.Variable.Greek.01") {
+    val input = "def f(α: Int): Int = α"
+    run(input)
+  }
+
+  test("Names.Variable.Greek.02") {
+    val input = "def f(β: Int): Int = β"
+    run(input)
+  }
+
+  test("Names.Variable.Greek.03") {
+    val input = "def f(ε: Int): Int = ε"
+    run(input)
+  }
+
+  test("Names.Variable.Greek.04") {
+    val input = "def f(κ: Int): Int = κ"
+    run(input)
+  }
+
+  test("Names.Variable.Greek.05") {
+    val input = "def f(σ: Int): Int = σ"
+    run(input)
+  }
+
+  test("Names.Variable.Greek.06") {
+    val input = "def f(Γ: Int): Int = Γ"
+    run(input)
+  }
+
+  test("Names.Variable.Greek.07") {
+    val input = "def f(Δ: Int): Int = Δ"
+    run(input)
+  }
+
+  test("Names.Variable.Greek.08") {
+    val input = "def f(Σ: Int): Int = Σ"
+    run(input)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   test("Literal.Unit.01") {
