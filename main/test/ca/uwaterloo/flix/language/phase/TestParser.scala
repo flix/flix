@@ -2524,6 +2524,71 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
+  test("Names.MathOperator.⊥") {
+    val input = "def ⊥: Int = ???"
+    run(input)
+  }
+
+  test("Names.MathOperator.⊤") {
+    val input = "def ⊤: Int = ???"
+    run(input)
+  }
+
+  test("Names.MathOperator.⊑") {
+    val input = "def ⊑(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.MathOperator.⊔") {
+    val input = "def ⊔(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.MathOperator.⊓") {
+    val input = "def ⊓(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.MathOperator.∇") {
+    val input = "def ∇(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.MathOperator.∆") {
+    val input = "def ∆(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.MathOperator.⊡") {
+    val input = "def ⊡(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.MathOperator.∈") {
+    val input = "def ∈(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.MathOperator.⊕") {
+    val input = "def ⊕(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.MathOperator.⊗") {
+    val input = "def ⊗(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.MathArrow.↪") {
+    val input = "def ↪(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.MathArrow.⇥") {
+    val input = "def ⇥(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
@@ -2780,36 +2845,68 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // UTF8 Operators                                                          //
-  /////////////////////////////////////////////////////////////////////////////
-  test("Operator.Unary.UTF8-Negation") {
-    val input = "def f(b: Bool): Bool = ¬b"
+  test("Operator.Binary.MathOperator.⊥") {
+    val input = "def ⊥: Int = ⊥()"
     run(input)
   }
 
-  test("Operator.Binary.UTF8-Equal") {
-    val input = "def f(x: Int, y: Int): Bool = x ≡ y"
+  test("Operator.Binary.MathOperator.⊤") {
+    val input = "def ⊤: Int = ⊤()"
     run(input)
   }
 
-  test("Operator.Binary.UTF8-Conjunction") {
-    val input = "def f(x: Bool, y: Bool): Bool = x ∧ y"
+  test("Operator.Binary.MathOperator.⊑") {
+    val input = "def ⊑(x: Int, y: Int): Int = x ⊑ y"
     run(input)
   }
 
-  test("Operator.Binary.UTF8-Disjunction") {
-    val input = "def f(x: Bool, y: Bool): Bool = x ∨ y"
+  test("Operator.Binary.MathOperator.⊔") {
+    val input = "def ⊔(x: Int, y: Int): Int = x ⊔ y"
     run(input)
   }
 
-  test("Operator.Binary.UTF8-Implication") {
-    val input = "def f(x: Bool, y: Bool): Bool = x → y"
+  test("Operator.Binary.MathOperator.⊓") {
+    val input = "def ⊓(x: Int, y: Int): Int = x ⊓ y"
     run(input)
   }
 
-  test("Operator.Binary.UTF8-Biconditional") {
-    val input = "def f(x: Bool, y: Bool): Bool = x ↔ y"
+  test("Operator.Binary.MathOperator.∇") {
+    val input = "def ∇(x: Int, y: Int): Int = x ∇ y"
+    run(input)
+  }
+
+  test("Operator.Binary.MathOperator.∆") {
+    val input = "def ∆(x: Int, y: Int): Int = x ∆ y"
+    run(input)
+  }
+
+  test("Operator.Binary.MathOperator.⊡") {
+    val input = "def ⊡(x: Int, y: Int): Int = x ⊡ y"
+    run(input)
+  }
+
+  test("Operator.Binary.MathOperator.∈") {
+    val input = "def ∈(x: Int, y: Int): Int = x ∈ y"
+    run(input)
+  }
+
+  test("Operator.Binary.MathOperator.⊕") {
+    val input = "def ⊕(x: Int, y: Int): Int = x ⊕ y"
+    run(input)
+  }
+
+  test("Operator.Binary.MathOperator.⊗") {
+    val input = "def ⊗(x: Int, y: Int): Int = x ⊗ y"
+    run(input)
+  }
+
+  test("Operator.Binary.MathArrow.↪") {
+    val input = "def ↪(x: Int, y: Int): Int = x ↪ y"
+    run(input)
+  }
+
+  test("Operator.Binary.MathArrow.↝") {
+    val input = "def ↝(x: Int, y: Int): Int = x ↝ y"
     run(input)
   }
 

@@ -32,3 +32,23 @@ enum List[t] {
     case Nil,
     case Cons(t, List[t])
 }
+
+///
+/// Alias for logical conjunction.
+///
+def ∧(x: Bool, y: Bool): Bool = x && y
+
+///
+/// Alias for logical disjunction.
+///
+def ∨(x: Bool, y: Bool): Bool = x || y
+
+///
+/// Alias for logical implication.
+///
+def →(x: Bool, y: Bool): Bool = !x ∨ y
+
+///
+/// Alias for logical biconditional.
+///
+def ↔(x: Bool, y: Bool): Bool = (x → y) ∧ (y → x)
