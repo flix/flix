@@ -458,7 +458,7 @@ object ParsedAst {
       * @param exp2 the right expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Binary(exp1: ParsedAst.Expression, op: BinaryOperator, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Binary(exp1: ParsedAst.Expression, op: String, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Binary Math Operator Expression.

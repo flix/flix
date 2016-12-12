@@ -364,8 +364,32 @@ object Weeder {
         }
 
         case ParsedAst.Expression.Binary(exp1, op, exp2, sp2) =>
+          val loc = mkSL(leftMostSourcePosition(exp1), sp2)
           @@(visit(exp1), visit(exp2)) map {
-            case (e1, e2) => WeededAst.Expression.Binary(op, e1, e2, mkSL(leftMostSourcePosition(exp1), sp2))
+            case (e1, e2) => op match {
+              case "+" => WeededAst.Expression.Binary(BinaryOperator.Plus, e1, e2, loc)
+              case "-" => WeededAst.Expression.Binary(BinaryOperator.Minus, e1, e2, loc)
+              case "*" => WeededAst.Expression.Binary(BinaryOperator.Times, e1, e2, loc)
+              case "/" => WeededAst.Expression.Binary(BinaryOperator.Divide, e1, e2, loc)
+              case "%" => WeededAst.Expression.Binary(BinaryOperator.Modulo, e1, e2, loc)
+              case "**" => WeededAst.Expression.Binary(BinaryOperator.Exponentiate, e1, e2, loc)
+              case "<" => WeededAst.Expression.Binary(BinaryOperator.Less, e1, e2, loc)
+              case "<=" => WeededAst.Expression.Binary(BinaryOperator.LessEqual, e1, e2, loc)
+              case ">" => WeededAst.Expression.Binary(BinaryOperator.Greater, e1, e2, loc)
+              case ">=" => WeededAst.Expression.Binary(BinaryOperator.GreaterEqual, e1, e2, loc)
+              case "==" => WeededAst.Expression.Binary(BinaryOperator.Equal, e1, e2, loc)
+              case "!=" => WeededAst.Expression.Binary(BinaryOperator.NotEqual, e1, e2, loc)
+              case "&&" => WeededAst.Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, loc)
+              case "||" => WeededAst.Expression.Binary(BinaryOperator.LogicalOr, e1, e2, loc)
+              case "==>" => WeededAst.Expression.Binary(BinaryOperator.Implication, e1, e2, loc)
+              case "<==>" => WeededAst.Expression.Binary(BinaryOperator.Biconditional, e1, e2, loc)
+              case "&" => WeededAst.Expression.Binary(BinaryOperator.BitwiseAnd, e1, e2, loc)
+              case "|" => WeededAst.Expression.Binary(BinaryOperator.BitwiseOr, e1, e2, loc)
+              case "^" => WeededAst.Expression.Binary(BinaryOperator.BitwiseXor, e1, e2, loc)
+              case "<<" => WeededAst.Expression.Binary(BinaryOperator.BitwiseLeftShift, e1, e2, loc)
+              case ">>" => WeededAst.Expression.Binary(BinaryOperator.BitwiseRightShift, e1, e2, loc)
+              case _ => ??? // TODO
+            }
           }
 
         case ParsedAst.Expression.BinaryMathOperator(exp1, op, exp2, sp2) =>

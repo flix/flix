@@ -377,25 +377,55 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   object Expressions {
 
     def Block: Rule1[ParsedAst.Expression] = rule {
-      "{" ~ optWS ~ Expression ~ optWS ~ "}" ~ optWS | Logical
+      "{" ~ optWS ~ Expression ~ optWS ~ "}" ~ optWS | Bicondition
     }
 
-    // TODO: Improve parsing of operator precedence.
-
-    def Logical: Rule1[ParsedAst.Expression] = rule {
-      Comparison ~ optional(optWS ~ Operators.LogicalOp ~ optWS ~ Comparison ~ SP ~> ParsedAst.Expression.Binary)
+    def Bicondition: Rule1[ParsedAst.Expression] = rule {
+      Implication ~ optional(optWS ~ capture(atomic("<==>")) ~ optWS ~ Implication ~ SP ~> ParsedAst.Expression.Binary)
     }
 
-    def Comparison: Rule1[ParsedAst.Expression] = rule {
-      Additive ~ optional(optWS ~ Operators.ComparisonOp ~ optWS ~ Additive ~ SP ~> ParsedAst.Expression.Binary)
+    def Implication: Rule1[ParsedAst.Expression] = rule {
+      LogicalOr ~ optional(optWS ~ capture(atomic("==>")) ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.Binary)
+    }
+
+    def LogicalOr: Rule1[ParsedAst.Expression] = rule {
+      LogicalAnd ~ zeroOrMore(optWS ~ capture(atomic("||")) ~ optWS ~ LogicalAnd ~ SP ~> ParsedAst.Expression.Binary)
+    }
+
+    def LogicalAnd: Rule1[ParsedAst.Expression] = rule {
+      BitwiseOr ~ zeroOrMore(optWS ~ capture(atomic("&&")) ~ optWS ~ BitwiseOr ~ SP ~> ParsedAst.Expression.Binary)
+    }
+
+    def BitwiseOr: Rule1[ParsedAst.Expression] = rule {
+      BitwiseXOr ~ zeroOrMore(optWS ~ capture(atomic("|")) ~ optWS ~ BitwiseXOr ~ SP ~> ParsedAst.Expression.Binary)
+    }
+
+    def BitwiseXOr: Rule1[ParsedAst.Expression] = rule {
+      BitwiseAnd ~ zeroOrMore(optWS ~ capture(atomic("^")) ~ optWS ~ BitwiseAnd ~ SP ~> ParsedAst.Expression.Binary)
+    }
+
+    def BitwiseAnd: Rule1[ParsedAst.Expression] = rule {
+      Equality ~ zeroOrMore(optWS ~ capture(atomic("&")) ~ optWS ~ Equality ~ SP ~> ParsedAst.Expression.Binary)
+    }
+
+    def Equality: Rule1[ParsedAst.Expression] = rule {
+      Relational ~ optional(optWS ~ capture(atomic("==") | atomic("!=")) ~ optWS ~ Relational ~ SP ~> ParsedAst.Expression.Binary)
+    }
+
+    def Relational: Rule1[ParsedAst.Expression] = rule {
+      Shift ~ optional(optWS ~ capture(atomic("<=") | atomic(">=") | atomic("<") | atomic(">")) ~ optWS ~ Shift ~ SP ~> ParsedAst.Expression.Binary)
+    }
+
+    def Shift: Rule1[ParsedAst.Expression] = rule {
+      Additive ~ optional(optWS ~ capture(atomic("<<") | atomic(">>")) ~ optWS ~ Additive ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Additive: Rule1[ParsedAst.Expression] = rule {
-      Multiplicative ~ zeroOrMore(optWS ~ Operators.AdditiveOp ~ optWS ~ Multiplicative ~ SP ~> ParsedAst.Expression.Binary)
+      Multiplicative ~ zeroOrMore(optWS ~ capture(atomic("+") | atomic("-")) ~ optWS ~ Multiplicative ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Multiplicative: Rule1[ParsedAst.Expression] = rule {
-      Infix ~ zeroOrMore(optWS ~ Operators.MultiplicativeOp ~ optWS ~ Infix ~ SP ~> ParsedAst.Expression.Binary)
+      Infix ~ zeroOrMore(optWS ~ capture(atomic("**") | atomic("*") | atomic("/") | atomic("%")) ~ optWS ~ Infix ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Infix: Rule1[ParsedAst.Expression] = rule {
@@ -828,6 +858,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   object Operators {
 
+    // TODO: Move
+
     /**
       * Parses a unary operator.
       */
@@ -838,50 +870,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
         atomic("~") ~> (() => UnaryOperator.BitwiseNegate)
     }
 
-    /**
-      * Parses a logical operator.
-      */
-    def LogicalOp: Rule1[BinaryOperator] = rule {
-      atomic("&&") ~> (() => BinaryOperator.LogicalAnd) |
-        atomic("||") ~> (() => BinaryOperator.LogicalOr) |
-        atomic("&") ~> (() => BinaryOperator.BitwiseAnd) |
-        atomic("|") ~> (() => BinaryOperator.BitwiseOr) |
-        atomic("==>") ~> (() => BinaryOperator.Implication) |
-        atomic("<==>") ~> (() => BinaryOperator.Biconditional) |
-        atomic("^") ~> (() => BinaryOperator.BitwiseXor) |
-        atomic("<<") ~> (() => BinaryOperator.BitwiseLeftShift) |
-        atomic(">>") ~> (() => BinaryOperator.BitwiseRightShift)
-    }
-
-    /**
-      * Parses a comparison operator.
-      */
-    def ComparisonOp: Rule1[BinaryOperator] = rule {
-      atomic("<=") ~> (() => BinaryOperator.LessEqual) |
-        atomic(">=") ~> (() => BinaryOperator.GreaterEqual) |
-        atomic("<") ~> (() => BinaryOperator.Less) |
-        atomic(">") ~> (() => BinaryOperator.Greater) |
-        atomic("==") ~> (() => BinaryOperator.Equal) |
-        atomic("!=") ~> (() => BinaryOperator.NotEqual)
-    }
-
-    /**
-      * Parses a multiplicative operator.
-      */
-    def MultiplicativeOp: Rule1[BinaryOperator] = rule {
-      atomic("**") ~> (() => BinaryOperator.Exponentiate) |
-        atomic("*") ~> (() => BinaryOperator.Times) |
-        atomic("/") ~> (() => BinaryOperator.Divide) |
-        atomic("%") ~> (() => BinaryOperator.Modulo)
-    }
-
-    /**
-      * Parses an additive operator.
-      */
-    def AdditiveOp: Rule1[BinaryOperator] = rule {
-      atomic("+") ~> (() => BinaryOperator.Plus) |
-        atomic("-") ~> (() => BinaryOperator.Minus)
-    }
+    // TODO: Move
 
     /**
       * Parses a mathematical operator.
