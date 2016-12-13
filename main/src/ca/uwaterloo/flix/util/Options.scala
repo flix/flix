@@ -26,6 +26,7 @@ object Options {
     debug = false,
     documentor = false,
     evaluation = Evaluation.Compiled,
+    impure = false,
     invariants = false,
     monitor = false,
     optimize = false,
@@ -39,25 +40,26 @@ object Options {
   /**
     * Default test options.
     */
-  val DefaultTest = Default.copy(verbosity = Verbosity.Silent)
+  val DefaultTest: Options = Default.copy(verbosity = Verbosity.Silent)
 }
 
 /**
   * General Flix options.
   *
-  * @param debug         enables the emission of debugging information.
-  * @param documentor enables generation of flixdoc.
-  * @param evaluation    selects the evaluation strategy.
-  * @param invariants    enables checking of compiler invariants.
-  * @param optimize      enables compiler optimizations.
-  * @param monitor       enables the debugger and profiler.
-  * @param quickchecker  enables the quickchecker.
-  * @param timeout       selects the solver timeout.
-  * @param threads       selects the number of threads to use.
-  * @param verbosity     selects the level of verbosity.
-  * @param verifier      enables the verifier.
+  * @param debug        enables the emission of debugging information.
+  * @param documentor   enables generation of flixdoc.
+  * @param evaluation   selects the evaluation strategy.
+  * @param impure       enables impure functions.
+  * @param invariants   enables checking of compiler invariants.
+  * @param optimize     enables compiler optimizations.
+  * @param monitor      enables the debugger and profiler.
+  * @param quickchecker enables the quickchecker.
+  * @param timeout      selects the solver timeout.
+  * @param threads      selects the number of threads to use.
+  * @param verbosity    selects the level of verbosity.
+  * @param verifier     enables the verifier.
   */
-case class Options(debug: Boolean, documentor: Boolean, evaluation: Evaluation, invariants: Boolean, optimize: Boolean, monitor: Boolean, quickchecker: Boolean, timeout: Duration, threads: Int, verbosity: Verbosity, verifier: Boolean)
+case class Options(debug: Boolean, documentor: Boolean, evaluation: Evaluation, impure: Boolean, invariants: Boolean, optimize: Boolean, monitor: Boolean, quickchecker: Boolean, timeout: Duration, threads: Int, verbosity: Verbosity, verifier: Boolean)
 
 /**
   * An option to control the level of verbosity.
