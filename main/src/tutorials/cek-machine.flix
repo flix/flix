@@ -83,7 +83,7 @@ def step(m: (Expression, Environment, Kontinuation)): (Expression, Environment, 
     case (App(e1, e2), env0, kont) =>
         // Case 2: The expression is an application.
         // Use the lambda as the expression and move the argument into the continuation.
-        (e1, env0, App1(e1, env0, kont))
+        (e1, env0, App1(e2, env0, kont))
     case (e, env0, App1(e1, env1, kont)) =>
         // Check if the expression is a value. Otherwise the machine is stuck.
         if (nonValue(e)) m else {
@@ -136,7 +136,7 @@ def substitute(e0: Expression, env0: Environment): Expression = match e0 with {
                 case None => Var(x)
                 case Some((e, env)) => substitute(e, env)
             }
-    case Abs(x, e)      => Abs(x, substitute(e, env0))
+    case Abs(x, e)      => Abs(x, substitute(e, Env/remove(x, env0)))
     case App(e1, e2)    => App(substitute(e1, env0), substitute(e2, env0))
 }
 
@@ -151,6 +151,27 @@ def testEval2: Expression = run(Abs(0, Var(0)))                                 
 def testEval3: Expression = run(Abs(0, Abs(1, Var(0))))                         // λx. λy. x
 def testEval4: Expression = run(App(Abs(0, Var(0)), Abs(1, Var(1))))            // (λx. x) (λy. y)
 def testEval5: Expression = run(App(Abs(0, Abs(1, Var(0))), Abs(2, Var(2))))    // (λx. λy. x) (λz. z)
+
+//
+// Here is the omega-combinator: (λx. x x) (λx. x x)
+//
+def testOmega: Expression = run(
+    App(
+        Abs(0, App(Var(0), Var(0))),
+        Abs(0, App(Var(0), Var(0)))))
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -205,6 +226,13 @@ namespace Map {
         case (y, v) :: ys => if (k == y) Some(v) else getHelper(k, ys)
     }
 
-    def remove(k: Int, m: Map2[Int, (Expression, Environment)]): Map2[Int, (Expression, Environment)] = ??? // TODO
+    def remove(k: Int, m: Map2[Int, (Expression, Environment)]): Map2[Int, (Expression, Environment)] =
+        let Map2(xs) = m;
+            Map2(removeHelper(k, xs))
+
+    def removeHelper[k, v](k: k, xs: List[(k, v)]): List[(k, v)] = match xs with {
+        case Nil => Nil
+        case (y, v) :: ys => if (k == y) removeHelper(k,  ys) else (y, v) :: removeHelper(k, ys)
+    }
 
 }
