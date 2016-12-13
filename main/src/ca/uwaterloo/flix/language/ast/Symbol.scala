@@ -201,12 +201,27 @@ object Symbol {
       * For example, the suffix of the symbol "A.B.C/f" is "f".
       */
     // TODO: Possibly remove?
-    // TODO: Rest, and move somewhere?
     def suffix: String = name.
-      replace("|", "bar").
-      replace(">", "ge").
-      replace("<", "lt")
-
+      // Mangle the name w.r.t Java conventions.
+      replace("+", "$plus").
+      replace("-", "$minus").
+      replace("*", "$times").
+      replace("/", "$divide").
+      replace("%", "$modulo").
+      replace("**", "$exponentiate").
+      replace("<", "$lt").
+      replace("<=", "$le").
+      replace(">", "$gt").
+      replace(">=", "$ge").
+      replace("==", "$eq").
+      replace("!=", "$neq").
+      replace("&&", "$land").
+      replace("||", "$lor").
+      replace("&", "$band").
+      replace("|", "$bor").
+      replace("^", "$bxor").
+      replace("<<", "$lshift").
+      replace(">>", "$rshift")
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
