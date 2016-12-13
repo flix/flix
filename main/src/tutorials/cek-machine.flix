@@ -76,11 +76,30 @@ def inject(e0: Expression): (Expression, Environment, Kontinuation) =
 ///
 def step(m: (Expression, Environment, Kontinuation)): (Expression, Environment, Kontinuation) = match m with {
     case (Var(x), env0, kont) =>
-        // Lookups the variable x in the environment and swaps the environmen
-        ???
-
-    case _                   => m
+        // Case 1: The expression is a variable. Look it up in the environment.
+        // TODO: What should happen if the variable  does not exist? Probably the machine should be stuck.
+        let (v, env1) = Env/lookup(x, env0);
+            (v, env1, kont)
+    case (App(e1, e2), env0, kont) =>
+        // Case 2: The expression is an application.
+        // Use the lambda as the expression and move the argument into the continuation.
+        (e1, env0, App1(e1, env0, kont))
+    case (e, env0, App1(e1, env1, kont)) =>
+        // Check if the expression is a value. Otherwise the machine is stuck.
+        if (nonValue(e)) m else {
+            (e1, env1, App2(e, env0, kont))
+        }
+    case (e, env0, App2(e1, env1, kont)) =>
+        // Check if the expression is a value. Otherwise the machine is stuck.
+        if (nonValue(e)) m else {
+            // We know that e1 is a value (and in particular a lambda abstration).
+            let Abs(x, body) = e1;
+                (body, Env/insert(x, (e, env0), env1), kont)
+        }
+     case _ => m
 }
+
+// TODO: Use greek letters?
 
 
 ///
@@ -111,21 +130,35 @@ def run(e0: Expression): Expression =
 /// Substitutes every free variable in the given expression `e0` for the value in the given environment `env0`.
 ///
 def substitute(e0: Expression, env0: Environment): Expression = match e0 with {
-    case Var(x)         => ???
-    case Abs(x, e)      => ???
+    case Var(x)         =>
+        let Environment(m) = env0;
+            match Map/get(x, m) with {
+                case None => Var(x)
+                case Some((e, env)) => substitute(e, env)
+            }
+    case Abs(x, e)      => Abs(x, substitute(e, env0))
     case App(e1, e2)    => App(substitute(e1, env0), substitute(e2, env0))
 }
 
 
+// TODO: Where is the use of gensym in the machine?
 
+//
+// We can now test our CEK machine!
+//
+def testEval1: Expression = run(Var(0))                                         // x
+def testEval2: Expression = run(Abs(0, Var(0)))                                 // λx. x
+def testEval3: Expression = run(Abs(0, Abs(1, Var(0))))                         // λx. λy. x
+def testEval4: Expression = run(App(Abs(0, Var(0)), Abs(1, Var(1))))            // (λx. x) (λy. y)
+def testEval5: Expression = run(App(Abs(0, Abs(1, Var(0))), Abs(2, Var(2))))    // (λx. λy. x) (λz. z)
 
-// TODO: Use greek letters?
 
 
 namespace Env {
 
     def empty: Environment = Environment(Map2(Nil): Map2[Int, (Expression, Environment)])
 
+    // TODO: Signature
     def lookup(k: Int, env: Environment): (Expression, Environment) = match env with {
         case Environment(m) =>
             // Assume that the value exists
@@ -162,6 +195,7 @@ namespace Map {
         let Map2(xs) = m;
             Map2((k, v) :: xs)
 
+    // TODO: Signature and name
     def get[k, v](k: k, m: Map2[k, v]): Option[v] =
         let Map2(xs) = m;
             getHelper(k, xs)
