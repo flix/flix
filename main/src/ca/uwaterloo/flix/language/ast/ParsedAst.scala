@@ -419,7 +419,7 @@ object ParsedAst {
     case class Apply(lambda: ParsedAst.Expression, args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Infix Expression (function call).
+      * Infix Apply.
       *
       * Replaced with Apply by Weeder.
       *
@@ -429,6 +429,18 @@ object ParsedAst {
       * @param sp2  the position of the last character in the expression.
       */
     case class Infix(e1: ParsedAst.Expression, name: Name.QName, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Postfix Apply.
+      *
+      * Replaced with Apply by Weeder.
+      *
+      * @param e    the first argument expression.
+      * @param name the name of the function.
+      * @param es   the the remaining arguments.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Postfix(e: ParsedAst.Expression, name: Name.Ident, es: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Lambda Expression.
