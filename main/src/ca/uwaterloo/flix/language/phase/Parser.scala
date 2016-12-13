@@ -376,27 +376,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   object Expressions {
 
     def Block: Rule1[ParsedAst.Expression] = rule {
-      "{" ~ optWS ~ Expression ~ optWS ~ "}" ~ optWS | Bicondition
-    }
-
-    def Bicondition: Rule1[ParsedAst.Expression] = {
-      def Op: Rule1[String] = rule {
-        capture(atomic("<==>"))
-      }
-
-      rule {
-        Implication ~ optional(optWS ~ Op ~ optWS ~ Implication ~ SP ~> ParsedAst.Expression.Binary)
-      }
-    }
-
-    def Implication: Rule1[ParsedAst.Expression] = {
-      def Op: Rule1[String] = rule {
-        capture(atomic("==>"))
-      }
-
-      rule {
-        LogicalOr ~ optional(optWS ~ Op ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.Binary)
-      }
+      "{" ~ optWS ~ Expression ~ optWS ~ "}" ~ optWS | LogicalOr
     }
 
     def LogicalOr: Rule1[ParsedAst.Expression] = {

@@ -542,7 +542,7 @@ object Typer {
               resultType <- unifyM(tvar, Type.Bool, loc)
             ) yield resultType
 
-          case BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr | BinaryOperator.Implication | BinaryOperator.Biconditional =>
+          case BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr =>
             for (
               tpe1 <- visitExp(exp1);
               tpe2 <- visitExp(exp2);

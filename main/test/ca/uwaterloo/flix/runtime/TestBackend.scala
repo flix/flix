@@ -4161,66 +4161,6 @@ class TestBackend extends FunSuite {
     t.runInterceptTest[UserException]("f")
   }
 
-  test("Expression.Binary - BinaryOperator.Implication.01") {
-    val input = "def f: Bool = true ==> true"
-    val t = new Tester(input)
-    t.runTest(Value.True, "f")
-  }
-
-  test("Expression.Binary - BinaryOperator.Implication.02") {
-    val input = "def f: Bool = true ==> false"
-    val t = new Tester(input)
-    t.runTest(Value.False, "f")
-  }
-
-  test("Expression.Binary - BinaryOperator.Implication.03") {
-    val input = "def f: Bool = false ==> false"
-    val t = new Tester(input)
-    t.runTest(Value.True, "f")
-  }
-
-  test("Expression.Binary - BinaryOperator.Implication.04") {
-    val input = "def f: Bool = false ==> true"
-    val t = new Tester(input)
-    t.runTest(Value.True, "f")
-  }
-
-  test("Expression.Binary - BinaryOperator.Implication.05") {
-    val input = "def f: Bool = false ==> ???"
-    val t = new Tester(input)
-    t.runTest(Value.True, "f")
-  }
-
-  test("Expression.Binary - BinaryOperator.Implication.06") {
-    val input = "def f: Bool = true ==> ???"
-    val t = new Tester(input)
-    t.runInterceptTest[UserException]("f")
-  }
-
-  test("Expression.Binary - BinaryOperator.Biconditional.01") {
-    val input = "def f: Bool = true <==> true"
-    val t = new Tester(input)
-    t.runTest(Value.True, "f")
-  }
-
-  test("Expression.Binary - BinaryOperator.Biconditional.02") {
-    val input = "def f: Bool = true <==> false"
-    val t = new Tester(input)
-    t.runTest(Value.False, "f")
-  }
-
-  test("Expression.Binary - BinaryOperator.Biconditional.03") {
-    val input = "def f: Bool = false <==> false"
-    val t = new Tester(input)
-    t.runTest(Value.True, "f")
-  }
-
-  test("Expression.Binary - BinaryOperator.Biconditional.04") {
-    val input = "def f: Bool = false <==> true"
-    val t = new Tester(input)
-    t.runTest(Value.False, "f")
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // Expression.Binary (Bitwise)                                             //
   // BinaryOperator.{BitwiseAnd,BitwiseOr,BitwiseXor}                        //

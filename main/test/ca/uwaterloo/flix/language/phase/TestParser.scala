@@ -2795,16 +2795,6 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Operator.Binary.LogicalOp ==>") {
-    val input = "def f(x: Bool, y: Bool): Bool = x ==> y"
-    run(input)
-  }
-
-  test("Operator.Binary.LogicalOp <==>") {
-    val input = "def f(x: Bool, y: Bool): Bool = x <==> y"
-    run(input)
-  }
-
   test("Operator.Binary.Bitwise &") {
     val input = "def f(x: Int, y: Int): Int = x & y"
     run(input)

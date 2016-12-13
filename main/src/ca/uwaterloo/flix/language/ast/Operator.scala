@@ -153,16 +153,6 @@ object BinaryOperator {
   case object LogicalOr extends LogicalOperator
 
   /**
-    * Logical implication.
-    */
-  case object Implication extends LogicalOperator
-
-  /**
-    * Logical Biconditional.
-    */
-  case object Biconditional extends LogicalOperator
-
-  /**
     * Bitwise and.
     */
   case object BitwiseAnd extends BitwiseOperator

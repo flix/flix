@@ -390,8 +390,6 @@ object Weeder {
               case "!=" => WeededAst.Expression.Binary(BinaryOperator.NotEqual, e1, e2, loc)
               case "&&" => WeededAst.Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, loc)
               case "||" => WeededAst.Expression.Binary(BinaryOperator.LogicalOr, e1, e2, loc)
-              case "==>" => WeededAst.Expression.Binary(BinaryOperator.Implication, e1, e2, loc)
-              case "<==>" => WeededAst.Expression.Binary(BinaryOperator.Biconditional, e1, e2, loc)
               case "&" => WeededAst.Expression.Binary(BinaryOperator.BitwiseAnd, e1, e2, loc)
               case "|" => WeededAst.Expression.Binary(BinaryOperator.BitwiseOr, e1, e2, loc)
               case "^" => WeededAst.Expression.Binary(BinaryOperator.BitwiseXor, e1, e2, loc)

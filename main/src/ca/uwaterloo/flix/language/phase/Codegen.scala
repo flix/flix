@@ -1185,13 +1185,6 @@ object Codegen {
       visitor.visitLabel(orFalseBranch)
       visitor.visitInsn(ICONST_0)
       visitor.visitLabel(orEnd)
-    case BinaryOperator.Implication =>
-      // (e1 ==> e2) === (!e1 || e2)
-      val notExp = Expression.Unary(UnaryOperator.LogicalNot, e1, Type.Bool, e1.loc)
-      compileLogicalExpr(ctx, visitor, entryPoint)(BinaryOperator.LogicalOr, notExp, e2)
-    case BinaryOperator.Biconditional =>
-      // (e1 <==> e2) === (e1 == e2)
-      compileComparisonExpr(ctx, visitor, entryPoint)(BinaryOperator.Equal, e1, e2)
   }
 
   /*
