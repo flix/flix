@@ -665,6 +665,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   object Types {
 
+    def Infix: Rule1[ParsedAst.Type] = rule {
+      Primary ~ optional(optWS ~ "`" ~ Ref ~ "`" ~ optWS ~ Primary ~ SP ~> ParsedAst.Type.Infix)
+    }
+
     def Primary: Rule1[ParsedAst.Type] = rule {
       Arrow | Tuple | Apply | Var | Ref
     }
@@ -696,7 +700,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def UnaryArrow: Rule1[ParsedAst.Type] = rule {
-      SP ~ Primary ~ optional(optWS ~ atomic("->") ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, t: ParsedAst.Type, o: Option[ParsedAst.Type], sp2: SourcePosition) => o match {
+      SP ~ Infix ~ optional(optWS ~ atomic("->") ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, t: ParsedAst.Type, o: Option[ParsedAst.Type], sp2: SourcePosition) => o match {
         case None => t
         case Some(r) => ParsedAst.Type.Arrow(sp1, List(t), r, sp2) // TODO: Maybe need to reverse order???
       })

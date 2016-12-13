@@ -2427,6 +2427,20 @@ class TestParser extends FunSuite with TestUtils {
     }
   }
 
+  test("Type.Infix.01") {
+    val input = "def f: Char `Map` Int = @{}"
+    intercept[scala.NotImplementedError] {
+      run(input)
+    }
+  }
+
+  test("Type.Infix.02") {
+    val input = "def f: Int `Map` Str = @{}"
+    intercept[scala.NotImplementedError] {
+      run(input)
+    }
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Identifiers & Names                                                     //
   /////////////////////////////////////////////////////////////////////////////
