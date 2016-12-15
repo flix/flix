@@ -806,7 +806,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     /**
       * a (upper/lower case) letter, numeral, greek letter, or other legal character.
       */
-    def LegalLetter: CharPredicate = CharPredicate.AlphaNum ++ "_" ++ "'"
+    def LegalLetter: CharPredicate = CharPredicate.AlphaNum ++ "_" ++ "'" ++ "!"
 
     /**
       * A lowercase identifier is a lowercase letter optionally followed by any letter, underscore, or prime.
