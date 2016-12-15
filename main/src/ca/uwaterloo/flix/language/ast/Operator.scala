@@ -153,16 +153,6 @@ object BinaryOperator {
   case object LogicalOr extends LogicalOperator
 
   /**
-    * Logical implication.
-    */
-  case object Implication extends LogicalOperator
-
-  /**
-    * Logical Biconditional.
-    */
-  case object Biconditional extends LogicalOperator
-
-  /**
     * Bitwise and.
     */
   case object BitwiseAnd extends BitwiseOperator
@@ -189,38 +179,3 @@ object BinaryOperator {
 
 }
 
-/**
-  * A common super-type for extended binary operators.
-  */
-sealed trait ExtBinaryOperator
-
-object ExtBinaryOperator {
-
-  /**
-    * The partial order operator ⊑.
-    */
-  case object Leq extends ExtBinaryOperator
-
-  /**
-    * The least upper bound operator ⊔.
-    */
-  case object Lub extends ExtBinaryOperator
-
-  /**
-    * The greatest lower bound operator ⊓.
-    */
-  case object Glb extends ExtBinaryOperator
-
-  /**
-    * The widening operator ▽.
-    */
-  // TODO: Remove?
-  case object Widen extends ExtBinaryOperator
-
-  /**
-    * The narrowing operator △.
-    */
-  // TODO: Remove?
-  case object Narrow extends ExtBinaryOperator
-
-}

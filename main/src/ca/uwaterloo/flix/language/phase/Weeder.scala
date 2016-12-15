@@ -344,8 +344,21 @@ object Weeder {
           @@(visit(exp1), visit(exp2)) map {
             case (e1, e2) =>
               val loc = mkSL(leftMostSourcePosition(exp1), sp2)
-              val e3 = WeededAst.Expression.VarOrRef(name, loc)
-              WeededAst.Expression.Apply(e3, List(e1, e2), loc)
+              val lambda = WeededAst.Expression.VarOrRef(name, loc)
+              WeededAst.Expression.Apply(lambda, List(e1, e2), loc)
+          }
+
+        case ParsedAst.Expression.Postfix(exp, name, exps, sp2) =>
+          /*
+           * Rewrites postfix expressions to apply expressions.
+           */
+          @@(visit(exp), @@(exps map visit)) map {
+            case (e, es) =>
+              val sp1 = leftMostSourcePosition(exp)
+              val loc = mkSL(sp1, sp2)
+              val qname = Name.QName(sp1, Name.RootNS, name, sp2)
+              val lambda = WeededAst.Expression.VarOrRef(qname, loc)
+              WeededAst.Expression.Apply(lambda, e :: es, loc)
           }
 
         case ParsedAst.Expression.Lambda(sp1, params, exp, sp2) =>
@@ -359,67 +372,44 @@ object Weeder {
               }
           }
 
-        case ParsedAst.Expression.Unary(sp1, op, exp, sp2) => visit(exp) map {
-          case e => WeededAst.Expression.Unary(op, e, mkSL(sp1, sp2))
-        }
-
-        case ParsedAst.Expression.Binary(exp1, op, exp2, sp2) =>
-          @@(visit(exp1), visit(exp2)) map {
-            case (e1, e2) => WeededAst.Expression.Binary(op, e1, e2, mkSL(leftMostSourcePosition(exp1), sp2))
+        case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
+          val loc = mkSL(sp1, sp2)
+          visit(exp) map {
+            case e => op match {
+              case "!" => WeededAst.Expression.Unary(UnaryOperator.LogicalNot, e, loc)
+              case "+" => WeededAst.Expression.Unary(UnaryOperator.Plus, e, loc)
+              case "-" => WeededAst.Expression.Unary(UnaryOperator.Minus, e, loc)
+              case "~" => WeededAst.Expression.Unary(UnaryOperator.BitwiseNegate, e, loc)
+              case _ => mkApply(op, List(e), sp1, sp2)
+            }
           }
 
-        case ParsedAst.Expression.ExtendedBinary(exp1, op, exp2, sp2) =>
-          /*
-           * Rewrites extended binary expressions to apply expressions.
-           */
+        case ParsedAst.Expression.Binary(exp1, op, exp2, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
           @@(visit(exp1), visit(exp2)) map {
-            case (e1, e2) =>
-              op match {
-                case ExtBinaryOperator.Leq =>
-                  val sp1 = leftMostSourcePosition(exp1)
-                  val loc = mkSL(sp1, sp2)
-                  val ident = Name.Ident(sp1, "⊑", sp2)
-                  val namespace = Name.NName(sp1, List.empty, sp2)
-                  val name = Name.QName(sp1, namespace, ident, sp2)
-                  val lambda = WeededAst.Expression.VarOrRef(name, loc)
-                  WeededAst.Expression.Apply(lambda, List(e1, e2), loc)
-
-                case ExtBinaryOperator.Lub =>
-                  val sp1 = leftMostSourcePosition(exp1)
-                  val loc = mkSL(sp1, sp2)
-                  val ident = Name.Ident(sp1, "⊔", sp2)
-                  val namespace = Name.NName(sp1, List.empty, sp2)
-                  val name = Name.QName(sp1, namespace, ident, sp2)
-                  val lambda = WeededAst.Expression.VarOrRef(name, loc)
-                  WeededAst.Expression.Apply(lambda, List(e1, e2), loc)
-
-                case ExtBinaryOperator.Glb =>
-                  val sp1 = leftMostSourcePosition(exp1)
-                  val loc = mkSL(sp1, sp2)
-                  val ident = Name.Ident(sp1, "⊓", sp2)
-                  val namespace = Name.NName(sp1, List.empty, sp2)
-                  val name = Name.QName(sp1, namespace, ident, sp2)
-                  val lambda = WeededAst.Expression.VarOrRef(name, loc)
-                  WeededAst.Expression.Apply(lambda, List(e1, e2), loc)
-
-                case ExtBinaryOperator.Widen =>
-                  val sp1 = leftMostSourcePosition(exp1)
-                  val loc = mkSL(sp1, sp2)
-                  val ident = Name.Ident(sp1, "▽", sp2)
-                  val namespace = Name.NName(sp1, List.empty, sp2)
-                  val name = Name.QName(sp1, namespace, ident, sp2)
-                  val lambda = WeededAst.Expression.VarOrRef(name, loc)
-                  WeededAst.Expression.Apply(lambda, List(e1, e2), loc)
-
-                case ExtBinaryOperator.Narrow =>
-                  val sp1 = leftMostSourcePosition(exp1)
-                  val loc = mkSL(sp1, sp2)
-                  val ident = Name.Ident(sp1, "△", sp2)
-                  val namespace = Name.NName(sp1, List.empty, sp2)
-                  val name = Name.QName(sp1, namespace, ident, sp2)
-                  val lambda = WeededAst.Expression.VarOrRef(name, loc)
-                  WeededAst.Expression.Apply(lambda, List(e1, e2), loc)
-              }
+            case (e1, e2) => op match {
+              case "+" => WeededAst.Expression.Binary(BinaryOperator.Plus, e1, e2, loc)
+              case "-" => WeededAst.Expression.Binary(BinaryOperator.Minus, e1, e2, loc)
+              case "*" => WeededAst.Expression.Binary(BinaryOperator.Times, e1, e2, loc)
+              case "/" => WeededAst.Expression.Binary(BinaryOperator.Divide, e1, e2, loc)
+              case "%" => WeededAst.Expression.Binary(BinaryOperator.Modulo, e1, e2, loc)
+              case "**" => WeededAst.Expression.Binary(BinaryOperator.Exponentiate, e1, e2, loc)
+              case "<" => WeededAst.Expression.Binary(BinaryOperator.Less, e1, e2, loc)
+              case "<=" => WeededAst.Expression.Binary(BinaryOperator.LessEqual, e1, e2, loc)
+              case ">" => WeededAst.Expression.Binary(BinaryOperator.Greater, e1, e2, loc)
+              case ">=" => WeededAst.Expression.Binary(BinaryOperator.GreaterEqual, e1, e2, loc)
+              case "==" => WeededAst.Expression.Binary(BinaryOperator.Equal, e1, e2, loc)
+              case "!=" => WeededAst.Expression.Binary(BinaryOperator.NotEqual, e1, e2, loc)
+              case "&&" => WeededAst.Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, loc)
+              case "||" => WeededAst.Expression.Binary(BinaryOperator.LogicalOr, e1, e2, loc)
+              case "&" => WeededAst.Expression.Binary(BinaryOperator.BitwiseAnd, e1, e2, loc)
+              case "|" => WeededAst.Expression.Binary(BinaryOperator.BitwiseOr, e1, e2, loc)
+              case "^" => WeededAst.Expression.Binary(BinaryOperator.BitwiseXor, e1, e2, loc)
+              case "<<" => WeededAst.Expression.Binary(BinaryOperator.BitwiseLeftShift, e1, e2, loc)
+              case ">>" => WeededAst.Expression.Binary(BinaryOperator.BitwiseRightShift, e1, e2, loc)
+              case _ => mkApply(op, List(e1, e2), sp1, sp2)
+            }
           }
 
         case ParsedAst.Expression.IfThenElse(sp1, exp1, exp2, exp3, sp2) =>
@@ -491,16 +481,31 @@ object Weeder {
           val exp = WeededAst.Expression.Unit(mkSL(sp1, sp2))
           WeededAst.Expression.Tag(None, tag, exp, mkSL(sp1, sp2)).toSuccess
 
-        case ParsedAst.Expression.FCons(hd, tl, sp2) =>
+        case ParsedAst.Expression.FCons(hd, sp1, sp2, tl) =>
           /*
-           * Rewrites a `FCons` pattern into a tag pattern.
+           * Rewrites a `FCons` expression into a tag expression.
            */
-          val sp1 = leftMostSourcePosition(hd)
           @@(visit(hd), visit(tl)) map {
             case (e1, e2) =>
               val tag = Name.Ident(sp1, "Cons", sp2)
               val exp = WeededAst.Expression.Tuple(List(e1, e2), mkSL(sp1, sp2))
               WeededAst.Expression.Tag(None, tag, exp, mkSL(sp1, sp2))
+          }
+
+        case ParsedAst.Expression.FAppend(fst, sp1, sp2, snd) =>
+          /*
+           * Rewrites a `FAppend` expression into a call to `list/append`.
+           */
+          @@(visit(fst), visit(snd)) map {
+            case (e1, e2) =>
+              // NB: We painstakingly construct the qualified name
+              // to ensure that source locations are available.
+              val loc = mkSL(sp1, sp2)
+              val namespace = List(Name.Ident(sp1, "List", sp2))
+              val ident = Name.Ident(sp1, "append", sp2)
+              val qname = Name.QName(sp1, Name.NName(sp1, namespace, sp2), ident, sp2)
+              val lambda = WeededAst.Expression.VarOrRef(qname, loc)
+              WeededAst.Expression.Apply(lambda, List(e1, e2), loc)
           }
 
         case ParsedAst.Expression.FVec(sp1, elms, sp2) =>
@@ -575,21 +580,8 @@ object Weeder {
 
         case ParsedAst.Expression.UserError(sp1, sp2) =>
           WeededAst.Expression.UserError(mkSL(sp1, sp2)).toSuccess
-
-        case ParsedAst.Expression.Bot(sp1, sp2) =>
-          val ident = Name.Ident(sp1, "⊥", sp2)
-          val namespace = Name.NName(sp1, List.empty, sp2)
-          val name = Name.QName(sp1, namespace, ident, sp2)
-          val lambda = WeededAst.Expression.VarOrRef(name, mkSL(sp1, sp2))
-          WeededAst.Expression.Apply(lambda, List(), mkSL(sp1, sp2)).toSuccess
-
-        case ParsedAst.Expression.Top(sp1, sp2) =>
-          val ident = Name.Ident(sp1, "⊤", sp2)
-          val namespace = Name.NName(sp1, List.empty, sp2)
-          val name = Name.QName(sp1, namespace, ident, sp2)
-          val lambda = WeededAst.Expression.VarOrRef(name, mkSL(sp1, sp2))
-          WeededAst.Expression.Apply(lambda, List(), mkSL(sp1, sp2)).toSuccess
       }
+
       visit(exp0)
     }
   }
@@ -693,11 +685,10 @@ object Weeder {
           val pat = WeededAst.Pattern.Unit(mkSL(sp1, sp2))
           WeededAst.Pattern.Tag(None, tag, pat, mkSL(sp1, sp2)).toSuccess
 
-        case ParsedAst.Pattern.FCons(pat1, pat2, sp2) =>
+        case ParsedAst.Pattern.FCons(pat1, sp1, sp2, pat2) =>
           /*
            * Rewrites a `FCons` pattern into a tag pattern.
            */
-          val sp1 = pat1.leftMostSourcePosition
           @@(weed(pat1), weed(pat2)) map {
             case (hd, tl) =>
               val tag = Name.Ident(sp1, "Cons", sp2)
@@ -838,9 +829,27 @@ object Weeder {
       case ParsedAst.Type.Ref(sp1, qname, sp2) => WeededAst.Type.Ref(qname, mkSL(sp1, sp2))
       case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(weed), mkSL(sp1, sp2))
       case ParsedAst.Type.Arrow(sp1, tparams, tresult, sp2) => WeededAst.Type.Arrow(tparams.toList.map(weed), weed(tresult), mkSL(sp1, sp2))
+      case ParsedAst.Type.Infix(tpe1, base, tpe2, sp2) =>
+        /*
+         * Rewrites infix type applications to regular type applications.
+         */
+        WeededAst.Type.Apply(weed(base), List(weed(tpe1), weed(tpe2)), mkSL(leftMostSourcePosition(tpe1), sp2))
+
       case ParsedAst.Type.Apply(sp1, base, tparams, sp2) => WeededAst.Type.Apply(weed(base), tparams.toList.map(weed), mkSL(sp1, sp2))
     }
 
+  }
+
+  /**
+    * Returns an apply expression for the given textual name `text` with the given arguments `args`.
+    */
+  def mkApply(text: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
+    val loc = mkSL(sp1, sp2)
+    val ident = Name.Ident(sp1, text, sp2)
+    val namespace = Name.NName(sp1, List.empty, sp2)
+    val name = Name.QName(sp1, namespace, ident, sp2)
+    val lambda = WeededAst.Expression.VarOrRef(name, loc)
+    WeededAst.Expression.Apply(lambda, args, loc)
   }
 
   /**
@@ -928,10 +937,10 @@ object Weeder {
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1
     case ParsedAst.Expression.Apply(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Infix(e1, _, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.Postfix(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Lambda(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Unary(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Binary(e1, _, _, _) => leftMostSourcePosition(e1)
-    case ParsedAst.Expression.ExtendedBinary(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
@@ -939,7 +948,8 @@ object Weeder {
     case ParsedAst.Expression.Tag(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
     case ParsedAst.Expression.FNil(sp1, _) => sp1
-    case ParsedAst.Expression.FCons(hd, _, _) => leftMostSourcePosition(hd)
+    case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
+    case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)
     case ParsedAst.Expression.FVec(sp1, _, _) => sp1
     case ParsedAst.Expression.FSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FMap(sp1, _, _) => sp1
@@ -949,8 +959,19 @@ object Weeder {
     case ParsedAst.Expression.Universal(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Ascribe(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.UserError(sp1, _) => sp1
-    case ParsedAst.Expression.Bot(sp1, sp2) => sp1
-    case ParsedAst.Expression.Top(sp1, sp2) => sp1
+  }
+
+  /**
+    * Returns the left most source position in the sub-tree of the type `tpe`.
+    */
+  private def leftMostSourcePosition(tpe: ParsedAst.Type): SourcePosition = tpe match {
+    case ParsedAst.Type.Unit(sp1, _) => sp1
+    case ParsedAst.Type.Var(sp1, _, _) => sp1
+    case ParsedAst.Type.Ref(sp1, _, _) => sp1
+    case ParsedAst.Type.Tuple(sp1, _, _) => sp1
+    case ParsedAst.Type.Arrow(sp1, _, _, _) => sp1
+    case ParsedAst.Type.Infix(tpe1, _, _, _) => leftMostSourcePosition(tpe1)
+    case ParsedAst.Type.Apply(sp1, _, _, _) => sp1
   }
 
   /**

@@ -419,7 +419,7 @@ object ParsedAst {
     case class Apply(lambda: ParsedAst.Expression, args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Infix Expression (function call).
+      * Infix Apply.
       *
       * Replaced with Apply by Weeder.
       *
@@ -429,6 +429,18 @@ object ParsedAst {
       * @param sp2  the position of the last character in the expression.
       */
     case class Infix(e1: ParsedAst.Expression, name: Name.QName, e2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Postfix Apply.
+      *
+      * Replaced with Apply by Weeder.
+      *
+      * @param e    the first argument expression.
+      * @param name the name of the function.
+      * @param es   the the remaining arguments.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Postfix(e: ParsedAst.Expression, name: Name.Ident, es: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Lambda Expression.
@@ -448,7 +460,7 @@ object ParsedAst {
       * @param exp the expression.
       * @param sp2 the position of the last character in the expression.
       */
-    case class Unary(sp1: SourcePosition, op: UnaryOperator, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Unary(sp1: SourcePosition, op: String, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Binary Expression.
@@ -458,17 +470,7 @@ object ParsedAst {
       * @param exp2 the right expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Binary(exp1: ParsedAst.Expression, op: BinaryOperator, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Extended Binary Expression.
-      *
-      * @param exp1 the left expression.
-      * @param op   the extended binary operator.
-      * @param exp2 the right expression.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class ExtendedBinary(exp1: ParsedAst.Expression, op: ExtBinaryOperator, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Binary(exp1: ParsedAst.Expression, op: String, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * If-then-else Expression.
@@ -543,10 +545,21 @@ object ParsedAst {
       * Cons expression (of list).
       *
       * @param hd  the head of the list.
+      * @param sp1 the position of the first character in the :: operator.
+      * @param sp2 the position of the last character in the :: operator.
       * @param tl  the tail of the list.
-      * @param sp2 the position of the last character in the expression.
       */
-    case class FCons(hd: ParsedAst.Expression, tl: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FCons(hd: ParsedAst.Expression, sp1: SourcePosition, sp2: SourcePosition, tl: ParsedAst.Expression) extends ParsedAst.Expression
+
+    /**
+      * Append expression (of list).
+      *
+      * @param fst the first list.
+      * @param sp1 the position of the first character in the operator @@.
+      * @param sp2 the position of the last character in the operator @@.
+      * @param snd the second list.
+      */
+    case class FAppend(fst: ParsedAst.Expression, sp1: SourcePosition, sp2: SourcePosition, snd: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
       * Vector Expression.
@@ -633,22 +646,6 @@ object ParsedAst {
       */
     case class UserError(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
 
-    /**
-      * Bot Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Bot(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Top Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Top(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
-
   }
 
   /**
@@ -665,8 +662,8 @@ object ParsedAst {
       case Pattern.Lit(sp1, _, _) => sp1
       case Pattern.Tag(sp1, _, _, _, _) => sp1
       case Pattern.Tuple(sp1, _, _) => sp1
-      case Pattern.FNil(sp1, sp2) => sp1
-      case Pattern.FCons(hd, _, _) => hd.leftMostSourcePosition
+      case Pattern.FNil(sp1, _) => sp1
+      case Pattern.FCons(hd, _, _, _) => hd.leftMostSourcePosition
       case Pattern.FVec(sp1, _, _, _) => sp1
       case Pattern.FSet(sp1, _, _, _) => sp1
       case Pattern.FMap(sp1, _, _, _) => sp1
@@ -736,10 +733,11 @@ object ParsedAst {
       * Cons Pattern (of list).
       *
       * @param hd  the head pattern.
+      * @param sp1 the position of the first character in the :: operator.
+      * @param sp2 the position of the last character in the :: operator.
       * @param tl  the tail pattern.
-      * @param sp2 the position of the last character in the pattern.
       */
-    case class FCons(hd: ParsedAst.Pattern, tl: ParsedAst.Pattern, sp2: SourcePosition) extends ParsedAst.Pattern
+    case class FCons(hd: ParsedAst.Pattern, sp1: SourcePosition, sp2: SourcePosition, tl: ParsedAst.Pattern) extends ParsedAst.Pattern
 
     /**
       * Vector Pattern.
@@ -891,7 +889,17 @@ object ParsedAst {
     case class Arrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], tresult: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Parametric type.
+      * Infix type application.
+      *
+      * @param tpe1 the first type parameter.
+      * @param base the base type.
+      * @param tpe2 the second type parameter.
+      * @param sp2  the position of the last character in the type.
+      */
+    case class Infix(tpe1: ParsedAst.Type, base: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * Regular type application.
       *
       * @param sp1     the position of the first character in the type.
       * @param base    the base type.

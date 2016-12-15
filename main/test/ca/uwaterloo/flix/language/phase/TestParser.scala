@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.{Flix, RuleException}
-import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Options}
+import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.runtime.Model
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestParser extends FunSuite with TestUtils {
@@ -27,7 +28,7 @@ class TestParser extends FunSuite with TestUtils {
   /**
     * Runs Flix on the given input string `s`.
     */
-  def run(s: String): Unit = {
+  def run(s: String): Model = {
     new Flix().setOptions(Options.DefaultTest).addStr(s).solve().get
   }
 
@@ -693,20 +694,89 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Expression.Infix.01") {
     val input =
-      """def plus(x: Int, y: Int): Int =  x + y
+      """def add(x: Int, y: Int): Int = x + y
         |
-        |def f: Int = 1 `plus` 2
+        |def f: Int = 1 `add` 2
       """.stripMargin
-    run(input)
+    val model = run(input)
+    assertResult(3)(model.getConstant("f"))
   }
 
-  test("Expression.Infix.02") {
+  // TODO
+  ignore("Expression.Infix.02") {
     val input =
-      """namespace a.b.c {
-        |  def plus(x: Int, y: Int): Int =  x + y
-        |}
+      """def add(x: Int, y: Int): Int = x + y
+        |def sub(x: Int, y: Int): Int = x - y
+        |def mul(x: Int, y: Int): Int = x * y
         |
-        |def f: Int = 1 `a.b.c/plus` 2
+        |def f: Int = 1 `add` 2 `sub` 3 `mul` 4
+      """.stripMargin
+    val model = run(input)
+    assertResult(0)(model.getConstant("f"))
+  }
+
+  test("Expression.Postfix.01") {
+    val input =
+      """def abs(x: Int): Int = if(x >= 0) x else -x
+        |
+        |def f: Int = 1.abs()
+      """.stripMargin
+    val model = run(input)
+    assertResult(1)(model.getConstant("f"))
+  }
+
+  test("Expression.Postfix.02") {
+    val input =
+      """def abs(x: Int): Int = if(x >= 0) x else -x
+        |def inc(x: Int): Int = x + 1
+        |def dec(x: Int): Int = x - 1
+        |
+        |def f: Int = 1.abs().inc().dec()
+      """.stripMargin
+    val model = run(input)
+    assertResult(1)(model.getConstant("f"))
+  }
+
+  test("Expression.Postfix.03") {
+    val input =
+      """def add(x: Int, y: Int): Int = x + y
+        |
+        |def f: Int = 1.add(2)
+      """.stripMargin
+    val model = run(input)
+    assertResult(3)(model.getConstant("f"))
+  }
+
+  test("Expression.Postfix.04") {
+    val input =
+      """def add(x: Int, y: Int): Int = x + y
+        |def sub(x: Int, y: Int): Int = x - y
+        |def mul(x: Int, y: Int): Int = x * y
+        |
+        |def f: Int = 1.add(2).sub(3).mul(4)
+      """.stripMargin
+    run(input)
+    val model = run(input)
+    assertResult(0)(model.getConstant("f"))
+  }
+
+  test("Expression.Postfix.05") {
+    val input =
+      """def add(x: Int, y: Int, z: Int): Int = x + y + z
+        |
+        |def f: Int = 1.add(2, 3)
+      """.stripMargin
+    val model = run(input)
+    assertResult(6)(model.getConstant("f"))
+  }
+
+  test("Expression.Postfix.06") {
+    val input =
+      """def add(x: Int, y: Int, z: Int): Int = x + y + z
+        |def sub(x: Int, y: Int, z: Int): Int = x - y - z
+        |def mul(x: Int, y: Int, z: Int): Int = x * y * z
+        |
+        |def f: Int = 1.add(2, 3).sub(4, 5).mul(6, 7)
       """.stripMargin
     run(input)
   }
@@ -883,37 +953,37 @@ class TestParser extends FunSuite with TestUtils {
   test("Expression.LetMatch.04") {
     // Note: This is to test the performance of deeply nested lets.
     val input =
-    """
-      |def f: Int =
-      |    let x1 = 1;
-      |    let x2 = 1;
-      |    let x3 = 1;
-      |    let x4 = 1;
-      |    let x5 = 1;
-      |    let x6 = 1;
-      |    let x7 = 1;
-      |    let x8 = 1;
-      |    let x9 = 1;
-      |    let y1 = 1;
-      |    let y2 = 1;
-      |    let y3 = 1;
-      |    let y4 = 1;
-      |    let y5 = 1;
-      |    let y6 = 1;
-      |    let y7 = 1;
-      |    let y8 = 1;
-      |    let y9 = 1;
-      |    let z1 = 1;
-      |    let z2 = 1;
-      |    let z3 = 1;
-      |    let z4 = 1;
-      |    let z5 = 1;
-      |    let z6 = 1;
-      |    let z7 = 1;
-      |    let z8 = 1;
-      |    let z9 = 1;
-      |        1
-    """.stripMargin
+      """
+        |def f: Int =
+        |    let x1 = 1;
+        |    let x2 = 1;
+        |    let x3 = 1;
+        |    let x4 = 1;
+        |    let x5 = 1;
+        |    let x6 = 1;
+        |    let x7 = 1;
+        |    let x8 = 1;
+        |    let x9 = 1;
+        |    let y1 = 1;
+        |    let y2 = 1;
+        |    let y3 = 1;
+        |    let y4 = 1;
+        |    let y5 = 1;
+        |    let y6 = 1;
+        |    let y7 = 1;
+        |    let y8 = 1;
+        |    let y9 = 1;
+        |    let z1 = 1;
+        |    let z2 = 1;
+        |    let z3 = 1;
+        |    let z4 = 1;
+        |    let z5 = 1;
+        |    let z6 = 1;
+        |    let z7 = 1;
+        |    let z8 = 1;
+        |    let z9 = 1;
+        |        1
+      """.stripMargin
     run(input)
   }
 
@@ -1192,6 +1262,90 @@ class TestParser extends FunSuite with TestUtils {
   test("Expression.ListList.03") {
     val input = "def f: List[List[Int]] = (Nil) :: (1 :: Nil) :: (2 :: 3 :: 4 :: Nil) :: Nil"
     run(input)
+  }
+
+  test("Expression.Append.01") {
+    // TODO: Once list is included by default this can be improved.
+    val append =
+      """
+        |namespace List {
+        |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
+        |}
+        |
+      """.stripMargin
+
+    val input = "def f: List[Int] = Nil ::: Nil"
+    run(input + append)
+  }
+
+  test("Expression.Append.02") {
+    // TODO: Once list is included by default this can be improved.
+    val append =
+      """
+        |namespace List {
+        |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
+        |}
+        |
+      """.stripMargin
+
+    val input = "def f: List[Int] = 1 :: Nil ::: 1 :: Nil"
+    run(input + append)
+  }
+
+  test("Expression.Append.03") {
+    // TODO: Once list is included by default this can be improved.
+    val append =
+      """
+        |namespace List {
+        |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
+        |}
+        |
+      """.stripMargin
+
+    val input = "def f: List[Int] = 1 :: Nil ::: 1 :: 2 :: Nil"
+    run(input + append)
+  }
+
+  test("Expression.Append.04") {
+    // TODO: Once list is included by default this can be improved.
+    val append =
+      """
+        |namespace List {
+        |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
+        |}
+        |
+      """.stripMargin
+
+    val input = "def f: List[Int] = 1 :: 2 :: Nil ::: 1 :: 2 :: Nil"
+    run(input + append)
+  }
+
+  test("Expression.Append.05") {
+    // TODO: Once list is included by default this can be improved.
+    val append =
+      """
+        |namespace List {
+        |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
+        |}
+        |
+      """.stripMargin
+
+    val input = "def f: List[Int] = Nil ::: Nil ::: Nil"
+    run(input + append)
+  }
+
+  test("Expression.Append.06") {
+    // TODO: Once list is included by default this can be improved.
+    val append =
+      """
+        |namespace List {
+        |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
+        |}
+        |
+      """.stripMargin
+
+    val input = "def f: List[Int] = 1 :: Nil ::: 2 :: Nil ::: 3 :: Nil"
+    run(input + append)
   }
 
   test("Expression.Vec.01") {
@@ -2343,6 +2497,20 @@ class TestParser extends FunSuite with TestUtils {
     }
   }
 
+  test("Type.Infix.01") {
+    val input = "def f: Char `Map` Int = @{}"
+    intercept[scala.NotImplementedError] {
+      run(input)
+    }
+  }
+
+  test("Type.Infix.02") {
+    val input = "def f: Int `Map` Str = @{}"
+    intercept[scala.NotImplementedError] {
+      run(input)
+    }
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Identifiers & Names                                                     //
   /////////////////////////////////////////////////////////////////////////////
@@ -2393,6 +2561,160 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Ident.10") {
     val input = "def x_Y32Y_15zz: Int = 42"
+    run(input)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Names                                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+
+  test("Names.Variable.Greek.01") {
+    val input = "def f(α: Int): Int = α"
+    run(input)
+  }
+
+  test("Names.Variable.Greek.02") {
+    val input = "def f(β: Int): Int = β"
+    run(input)
+  }
+
+  test("Names.Variable.Greek.03") {
+    val input = "def f(ε: Int): Int = ε"
+    run(input)
+  }
+
+  test("Names.Variable.Greek.04") {
+    val input = "def f(κ: Int): Int = κ"
+    run(input)
+  }
+
+  test("Names.Variable.Greek.05") {
+    val input = "def f(σ: Int): Int = σ"
+    run(input)
+  }
+
+  test("Names.Variable.Greek.06") {
+    val input = "def f(Γ: Int): Int = Γ"
+    run(input)
+  }
+
+  test("Names.Variable.Greek.07") {
+    val input = "def f(Δ: Int): Int = Δ"
+    run(input)
+  }
+
+  test("Names.Variable.Greek.08") {
+    val input = "def f(Σ: Int): Int = Σ"
+    run(input)
+  }
+
+  test("Names.Math.⊥") {
+    val input = "def ⊥: Int = ???"
+    run(input)
+  }
+
+  test("Names.Math.⊤") {
+    val input = "def ⊤: Int = ???"
+    run(input)
+  }
+
+  test("Names.Math.⊑") {
+    val input = "def ⊑(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Math.⊔") {
+    val input = "def ⊔(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Math.⊓") {
+    val input = "def ⊓(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Math.∇") {
+    val input = "def ∇(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Math.∆") {
+    val input = "def ∆(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Math.⊡") {
+    val input = "def ⊡(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Math.∈") {
+    val input = "def ∈(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Math.⊕") {
+    val input = "def ⊕(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Math.⊗") {
+    val input = "def ⊗(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Math.↪") {
+    val input = "def ↪(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Math.⇥") {
+    val input = "def ⇥(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Operator.++") {
+    val input = "def ++(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Operator.--") {
+    val input = "def --(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Operator.|>") {
+    val input = "def |>(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Operator.<|") {
+    val input = "def <|(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Operator.<*>") {
+    val input = "def <*>(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Operator.<**>") {
+    val input = "def <**>(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Operator.*>") {
+    val input = "def *>(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Operator.<*") {
+    val input = "def <*(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Operator.|+|") {
+    val input = "def |+|(x: Int, y: Int): Int = ???"
     run(input)
   }
 
@@ -2557,16 +2879,6 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Operator.Binary.LogicalOp ==>") {
-    val input = "def f(x: Bool, y: Bool): Bool = x ==> y"
-    run(input)
-  }
-
-  test("Operator.Binary.LogicalOp <==>") {
-    val input = "def f(x: Bool, y: Bool): Bool = x <==> y"
-    run(input)
-  }
-
   test("Operator.Binary.Bitwise &") {
     val input = "def f(x: Int, y: Int): Int = x & y"
     run(input)
@@ -2652,36 +2964,113 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // UTF8 Operators                                                          //
-  /////////////////////////////////////////////////////////////////////////////
-  test("Operator.Unary.UTF8-Negation") {
-    val input = "def f(b: Bool): Bool = ¬b"
+  test("Operator.Binary.Math.⊥") {
+    val input = "def ⊥: Int = ⊥()"
     run(input)
   }
 
-  test("Operator.Binary.UTF8-Equal") {
-    val input = "def f(x: Int, y: Int): Bool = x ≡ y"
+  test("Operator.Binary.Math.⊤") {
+    val input = "def ⊤: Int = ⊤()"
     run(input)
   }
 
-  test("Operator.Binary.UTF8-Conjunction") {
-    val input = "def f(x: Bool, y: Bool): Bool = x ∧ y"
+  test("Operator.Binary.Math.⊑") {
+    val input = "def ⊑(x: Int, y: Int): Int = x ⊑ y"
     run(input)
   }
 
-  test("Operator.Binary.UTF8-Disjunction") {
-    val input = "def f(x: Bool, y: Bool): Bool = x ∨ y"
+  test("Operator.Binary.Math.⊔") {
+    val input = "def ⊔(x: Int, y: Int): Int = x ⊔ y"
     run(input)
   }
 
-  test("Operator.Binary.UTF8-Implication") {
-    val input = "def f(x: Bool, y: Bool): Bool = x → y"
+  test("Operator.Binary.Math.⊓") {
+    val input = "def ⊓(x: Int, y: Int): Int = x ⊓ y"
     run(input)
   }
 
-  test("Operator.Binary.UTF8-Biconditional") {
-    val input = "def f(x: Bool, y: Bool): Bool = x ↔ y"
+  test("Operator.Binary.Math.∇") {
+    val input = "def ∇(x: Int, y: Int): Int = x ∇ y"
+    run(input)
+  }
+
+  test("Operator.Binary.Math.∆") {
+    val input = "def ∆(x: Int, y: Int): Int = x ∆ y"
+    run(input)
+  }
+
+  test("Operator.Binary.Math.⊡") {
+    val input = "def ⊡(x: Int, y: Int): Int = x ⊡ y"
+    run(input)
+  }
+
+  test("Operator.Binary.Math.∈") {
+    val input = "def ∈(x: Int, y: Int): Int = x ∈ y"
+    run(input)
+  }
+
+  test("Operator.Binary.Math.⊕") {
+    val input = "def ⊕(x: Int, y: Int): Int = x ⊕ y"
+    run(input)
+  }
+
+  test("Operator.Binary.Math.⊗") {
+    val input = "def ⊗(x: Int, y: Int): Int = x ⊗ y"
+    run(input)
+  }
+
+  test("Operator.Binary.Math.↪") {
+    val input = "def ↪(x: Int, y: Int): Int = x ↪ y"
+    run(input)
+  }
+
+  test("Operator.Binary.Math.↝") {
+    val input = "def ↝(x: Int, y: Int): Int = x ↝ y"
+    run(input)
+  }
+
+  test("Operator.Binary.++") {
+    val input = "def ++(x: Int, y: Int): Int = x ++ y"
+    run(input)
+  }
+
+  test("Operator.Binary.--") {
+    val input = "def --(x: Int, y: Int): Int = x -- y"
+    run(input)
+  }
+
+  test("Operator.Binary.|>") {
+    val input = "def |>(x: Int, y: Int): Int = x |> y"
+    run(input)
+  }
+
+  test("Operator.Binary.<|") {
+    val input = "def <|(x: Int, y: Int): Int = x <| y"
+    run(input)
+  }
+
+  test("Operator.Binary.<*>") {
+    val input = "def <*>(x: Int, y: Int): Int = x <*> y"
+    run(input)
+  }
+
+  test("Operator.Binary.<**>") {
+    val input = "def <**>(x: Int, y: Int): Int = x <**> y"
+    run(input)
+  }
+
+  test("Operator.Binary.*>") {
+    val input = "def *>(x: Int, y: Int): Int = x *> y"
+    run(input)
+  }
+
+  test("Operator.Binary.<*") {
+    val input = "def <*(x: Int, y: Int): Int = x <* y"
+    run(input)
+  }
+
+  test("Operator.Binary.|+|") {
+    val input = "def |+|(x: Int, y: Int): Int = x |+| y"
     run(input)
   }
 

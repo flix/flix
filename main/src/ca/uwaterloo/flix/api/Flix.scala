@@ -217,6 +217,11 @@ class Flix {
 
     implicit val _ = genSym
 
+    // Add built-in hooks.
+    if (options.impure) {
+      addGenSymHook()
+    }
+
     Compiler.compile(getSourceInputs, hooks.toMap).flatMap {
       case tast =>
         if (options.documentor) {
@@ -229,9 +234,10 @@ class Flix {
         val east = CreateExecutableAst.toExecutable(numbered)
         val compiled = LoadBytecode.load(this, east, options)
         QuickChecker.quickCheck(compiled, options) flatMap {
-          r => Verifier.verify(r, options) map {
-            case root => root
-          }
+          r =>
+            Verifier.verify(r, options) map {
+              case root => root
+            }
         }
     }
   }
@@ -705,6 +711,24 @@ class Flix {
       throw new IllegalArgumentException("Argument 'o' must be non-null.")
 
     new WrappedValue(o)
+  }
+
+  /**
+    * Adds a hook for the built-in `genSym!` function.
+    */
+  private def addGenSymHook(): Unit = {
+    // Instantiate a fresh gen sym for the Flix program itself.
+    val gen = new GenSym()
+
+    // Symbol, type, and hook.
+    val sym = Symbol.mkDefnSym("genSym") // TODO: Impure functions should have a name ending with !
+    val tpe = Type.mkArrow(Nil, Type.Int32)
+    val inv = new InvokableUnsafe {
+      def apply(args: Array[AnyRef]): AnyRef = new java.lang.Integer(gen.freshId())
+    }
+
+    // Add the function to the hooks.
+    hooks.put(sym, Ast.Hook.Unsafe(sym, inv, tpe))
   }
 
 }

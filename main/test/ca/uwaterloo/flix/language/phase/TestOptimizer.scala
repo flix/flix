@@ -34,12 +34,6 @@ class TestOptimizer extends FunSuite {
     assertResult(2)(s.plusExpressions) // TODO: Change to zero for when the optimizer is enabled.
   }
 
-  test("ConstantFold.And.01") {
-    val input = "def f: Bool = true && false"
-    val s = statsOf(input)
-    assertResult(1)(s.logicalAndExpressions) // TODO: Change to zero for when the optimizer is enabled.
-  }
-
   private def statsOf(input: String): AstStats = new Flix().addStr(input).setOptions(opts).astStats().get
 
 }

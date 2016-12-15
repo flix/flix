@@ -269,13 +269,6 @@ object Interpreter {
       if (Value.cast2bool(eval(e1, root, env))) eval(e2, root, env) else Value.False
     case BinaryOperator.LogicalOr =>
       if (Value.cast2bool(eval(e1, root, env))) Value.True else eval(e2, root, env)
-    case BinaryOperator.Implication =>
-      // (e1 ==> e2) === (!e1 || e2)
-      val notExp = Expression.Unary(UnaryOperator.LogicalNot, e1, Type.Bool, e1.loc)
-      evalLogical(BinaryOperator.LogicalOr, notExp, e2, root, env)
-    case BinaryOperator.Biconditional =>
-      // (e1 <==> e2) === (e1 == e2)
-      evalComparison(BinaryOperator.Equal, e1, e2, root, env)
   }
 
   private def evalBitwise(o: BitwiseOperator, e1: Expression, e2: Expression, root: Root, env: Map[String, AnyRef]): AnyRef = {

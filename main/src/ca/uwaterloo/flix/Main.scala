@@ -59,6 +59,7 @@ object Main {
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
       evaluation = if (cmdOpts.xinterpreter) Evaluation.Interpreted else Evaluation.Compiled,
+      impure = cmdOpts.ximpure,
       optimize = cmdOpts.optimize,
       monitor = cmdOpts.monitor,
       quickchecker = cmdOpts.quickchecker,
@@ -155,6 +156,7 @@ object Main {
                      verbose: Boolean = false,
                      verifier: Boolean = false,
                      xdebug: Boolean = false,
+                     ximpure: Boolean = false,
                      xinterpreter: Boolean = false,
                      xinvariants: Boolean = false,
                      files: Seq[File] = Seq())
@@ -242,6 +244,10 @@ object Main {
       // Xdebug.
       opt[Unit]("Xdebug").action((_, c) => c.copy(xdebug = true)).
         text("[experimental] enables output of debugging information.")
+
+      // Ximpure.
+      opt[Unit]("Ximpure").action((_, c) => c.copy(ximpure = true)).
+        text("[experimental] enables impure functions.")
 
       // Xinterpreter.
       opt[Unit]("Xinterpreter").action((_, c) => c.copy(xinterpreter = true)).

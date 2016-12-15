@@ -153,6 +153,12 @@ class TestMain extends FunSuite {
     assert(opts.xdebug)
   }
 
+  test("--Ximpure") {
+    val args = Array("--Ximpure", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.ximpure)
+  }
+
   test("--Xinterpreter") {
     val args = Array("--Xinterpreter", "p.flix")
     val opts = Main.parseCmdOpts(args).get
