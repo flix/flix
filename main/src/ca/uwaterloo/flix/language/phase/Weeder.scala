@@ -372,28 +372,44 @@ object Weeder {
               }
           }
 
-        case ParsedAst.Expression.Unary(sp1, op, exp, sp2) => visit(exp) map {
-          case e => WeededAst.Expression.Unary(op, e, mkSL(sp1, sp2))
-        }
-
-        case ParsedAst.Expression.Binary(exp1, op, exp2, sp2) =>
-          @@(visit(exp1), visit(exp2)) map {
-            case (e1, e2) => WeededAst.Expression.Binary(op, e1, e2, mkSL(leftMostSourcePosition(exp1), sp2))
+        case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
+          val loc = mkSL(sp1, sp2)
+          visit(exp) map {
+            case e => op match {
+              case "!" => WeededAst.Expression.Unary(UnaryOperator.LogicalNot, e, loc)
+              case "+" => WeededAst.Expression.Unary(UnaryOperator.Plus, e, loc)
+              case "-" => WeededAst.Expression.Unary(UnaryOperator.Minus, e, loc)
+              case "~" => WeededAst.Expression.Unary(UnaryOperator.BitwiseNegate, e, loc)
+              case _ => mkApply(op, List(e), sp1, sp2)
+            }
           }
 
-        case ParsedAst.Expression.BinaryMathOperator(exp1, op, exp2, sp2) =>
-          /*
-           * Rewrites the binary expression to an apply expression.
-           */
+        case ParsedAst.Expression.Binary(exp1, op, exp2, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
           @@(visit(exp1), visit(exp2)) map {
-            case (e1, e2) =>
-              val sp1 = leftMostSourcePosition(exp1)
-              val loc = mkSL(sp1, sp2)
-              val ident = Name.Ident(sp1, op.op, sp2)
-              val namespace = Name.NName(sp1, List.empty, sp2)
-              val name = Name.QName(sp1, namespace, ident, sp2)
-              val lambda = WeededAst.Expression.VarOrRef(name, loc)
-              WeededAst.Expression.Apply(lambda, List(e1, e2), loc)
+            case (e1, e2) => op match {
+              case "+" => WeededAst.Expression.Binary(BinaryOperator.Plus, e1, e2, loc)
+              case "-" => WeededAst.Expression.Binary(BinaryOperator.Minus, e1, e2, loc)
+              case "*" => WeededAst.Expression.Binary(BinaryOperator.Times, e1, e2, loc)
+              case "/" => WeededAst.Expression.Binary(BinaryOperator.Divide, e1, e2, loc)
+              case "%" => WeededAst.Expression.Binary(BinaryOperator.Modulo, e1, e2, loc)
+              case "**" => WeededAst.Expression.Binary(BinaryOperator.Exponentiate, e1, e2, loc)
+              case "<" => WeededAst.Expression.Binary(BinaryOperator.Less, e1, e2, loc)
+              case "<=" => WeededAst.Expression.Binary(BinaryOperator.LessEqual, e1, e2, loc)
+              case ">" => WeededAst.Expression.Binary(BinaryOperator.Greater, e1, e2, loc)
+              case ">=" => WeededAst.Expression.Binary(BinaryOperator.GreaterEqual, e1, e2, loc)
+              case "==" => WeededAst.Expression.Binary(BinaryOperator.Equal, e1, e2, loc)
+              case "!=" => WeededAst.Expression.Binary(BinaryOperator.NotEqual, e1, e2, loc)
+              case "&&" => WeededAst.Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, loc)
+              case "||" => WeededAst.Expression.Binary(BinaryOperator.LogicalOr, e1, e2, loc)
+              case "&" => WeededAst.Expression.Binary(BinaryOperator.BitwiseAnd, e1, e2, loc)
+              case "|" => WeededAst.Expression.Binary(BinaryOperator.BitwiseOr, e1, e2, loc)
+              case "^" => WeededAst.Expression.Binary(BinaryOperator.BitwiseXor, e1, e2, loc)
+              case "<<" => WeededAst.Expression.Binary(BinaryOperator.BitwiseLeftShift, e1, e2, loc)
+              case ">>" => WeededAst.Expression.Binary(BinaryOperator.BitwiseRightShift, e1, e2, loc)
+              case _ => mkApply(op, List(e1, e2), sp1, sp2)
+            }
           }
 
         case ParsedAst.Expression.IfThenElse(sp1, exp1, exp2, exp3, sp2) =>
@@ -825,6 +841,18 @@ object Weeder {
   }
 
   /**
+    * Returns an apply expression for the given textual name `text` with the given arguments `args`.
+    */
+  def mkApply(text: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
+    val loc = mkSL(sp1, sp2)
+    val ident = Name.Ident(sp1, text, sp2)
+    val namespace = Name.NName(sp1, List.empty, sp2)
+    val name = Name.QName(sp1, namespace, ident, sp2)
+    val lambda = WeededAst.Expression.VarOrRef(name, loc)
+    WeededAst.Expression.Apply(lambda, args, loc)
+  }
+
+  /**
     * Attempts to parse the given float32 with `sign` digits `before` and `after` the comma.
     */
   def toFloat32(sign: Boolean, before: String, after: String, loc: SourceLocation): Validation[Float, WeederError] = try {
@@ -913,7 +941,6 @@ object Weeder {
     case ParsedAst.Expression.Lambda(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Unary(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Binary(e1, _, _, _) => leftMostSourcePosition(e1)
-    case ParsedAst.Expression.BinaryMathOperator(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1

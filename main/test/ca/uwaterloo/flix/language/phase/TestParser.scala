@@ -2608,68 +2608,113 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Names.MathOperator.⊥") {
+  test("Names.Math.⊥") {
     val input = "def ⊥: Int = ???"
     run(input)
   }
 
-  test("Names.MathOperator.⊤") {
+  test("Names.Math.⊤") {
     val input = "def ⊤: Int = ???"
     run(input)
   }
 
-  test("Names.MathOperator.⊑") {
+  test("Names.Math.⊑") {
     val input = "def ⊑(x: Int, y: Int): Int = ???"
     run(input)
   }
 
-  test("Names.MathOperator.⊔") {
+  test("Names.Math.⊔") {
     val input = "def ⊔(x: Int, y: Int): Int = ???"
     run(input)
   }
 
-  test("Names.MathOperator.⊓") {
+  test("Names.Math.⊓") {
     val input = "def ⊓(x: Int, y: Int): Int = ???"
     run(input)
   }
 
-  test("Names.MathOperator.∇") {
+  test("Names.Math.∇") {
     val input = "def ∇(x: Int, y: Int): Int = ???"
     run(input)
   }
 
-  test("Names.MathOperator.∆") {
+  test("Names.Math.∆") {
     val input = "def ∆(x: Int, y: Int): Int = ???"
     run(input)
   }
 
-  test("Names.MathOperator.⊡") {
+  test("Names.Math.⊡") {
     val input = "def ⊡(x: Int, y: Int): Int = ???"
     run(input)
   }
 
-  test("Names.MathOperator.∈") {
+  test("Names.Math.∈") {
     val input = "def ∈(x: Int, y: Int): Int = ???"
     run(input)
   }
 
-  test("Names.MathOperator.⊕") {
+  test("Names.Math.⊕") {
     val input = "def ⊕(x: Int, y: Int): Int = ???"
     run(input)
   }
 
-  test("Names.MathOperator.⊗") {
+  test("Names.Math.⊗") {
     val input = "def ⊗(x: Int, y: Int): Int = ???"
     run(input)
   }
 
-  test("Names.MathArrow.↪") {
+  test("Names.Math.↪") {
     val input = "def ↪(x: Int, y: Int): Int = ???"
     run(input)
   }
 
-  test("Names.MathArrow.⇥") {
+  test("Names.Math.⇥") {
     val input = "def ⇥(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Operator.++") {
+    val input = "def ++(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Operator.--") {
+    val input = "def --(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Operator.|>") {
+    val input = "def |>(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Operator.<|") {
+    val input = "def <|(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Operator.<*>") {
+    val input = "def <*>(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Operator.<**>") {
+    val input = "def <**>(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Operator.*>") {
+    val input = "def *>(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Operator.<*") {
+    val input = "def <*(x: Int, y: Int): Int = ???"
+    run(input)
+  }
+
+  test("Names.Operator.|+|") {
+    val input = "def |+|(x: Int, y: Int): Int = ???"
     run(input)
   }
 
@@ -2834,16 +2879,6 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Operator.Binary.LogicalOp ==>") {
-    val input = "def f(x: Bool, y: Bool): Bool = x ==> y"
-    run(input)
-  }
-
-  test("Operator.Binary.LogicalOp <==>") {
-    val input = "def f(x: Bool, y: Bool): Bool = x <==> y"
-    run(input)
-  }
-
   test("Operator.Binary.Bitwise &") {
     val input = "def f(x: Int, y: Int): Int = x & y"
     run(input)
@@ -2929,68 +2964,113 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Operator.Binary.MathOperator.⊥") {
+  test("Operator.Binary.Math.⊥") {
     val input = "def ⊥: Int = ⊥()"
     run(input)
   }
 
-  test("Operator.Binary.MathOperator.⊤") {
+  test("Operator.Binary.Math.⊤") {
     val input = "def ⊤: Int = ⊤()"
     run(input)
   }
 
-  test("Operator.Binary.MathOperator.⊑") {
+  test("Operator.Binary.Math.⊑") {
     val input = "def ⊑(x: Int, y: Int): Int = x ⊑ y"
     run(input)
   }
 
-  test("Operator.Binary.MathOperator.⊔") {
+  test("Operator.Binary.Math.⊔") {
     val input = "def ⊔(x: Int, y: Int): Int = x ⊔ y"
     run(input)
   }
 
-  test("Operator.Binary.MathOperator.⊓") {
+  test("Operator.Binary.Math.⊓") {
     val input = "def ⊓(x: Int, y: Int): Int = x ⊓ y"
     run(input)
   }
 
-  test("Operator.Binary.MathOperator.∇") {
+  test("Operator.Binary.Math.∇") {
     val input = "def ∇(x: Int, y: Int): Int = x ∇ y"
     run(input)
   }
 
-  test("Operator.Binary.MathOperator.∆") {
+  test("Operator.Binary.Math.∆") {
     val input = "def ∆(x: Int, y: Int): Int = x ∆ y"
     run(input)
   }
 
-  test("Operator.Binary.MathOperator.⊡") {
+  test("Operator.Binary.Math.⊡") {
     val input = "def ⊡(x: Int, y: Int): Int = x ⊡ y"
     run(input)
   }
 
-  test("Operator.Binary.MathOperator.∈") {
+  test("Operator.Binary.Math.∈") {
     val input = "def ∈(x: Int, y: Int): Int = x ∈ y"
     run(input)
   }
 
-  test("Operator.Binary.MathOperator.⊕") {
+  test("Operator.Binary.Math.⊕") {
     val input = "def ⊕(x: Int, y: Int): Int = x ⊕ y"
     run(input)
   }
 
-  test("Operator.Binary.MathOperator.⊗") {
+  test("Operator.Binary.Math.⊗") {
     val input = "def ⊗(x: Int, y: Int): Int = x ⊗ y"
     run(input)
   }
 
-  test("Operator.Binary.MathArrow.↪") {
+  test("Operator.Binary.Math.↪") {
     val input = "def ↪(x: Int, y: Int): Int = x ↪ y"
     run(input)
   }
 
-  test("Operator.Binary.MathArrow.↝") {
+  test("Operator.Binary.Math.↝") {
     val input = "def ↝(x: Int, y: Int): Int = x ↝ y"
+    run(input)
+  }
+
+  test("Operator.Binary.++") {
+    val input = "def ++(x: Int, y: Int): Int = x ++ y"
+    run(input)
+  }
+
+  test("Operator.Binary.--") {
+    val input = "def --(x: Int, y: Int): Int = x -- y"
+    run(input)
+  }
+
+  test("Operator.Binary.|>") {
+    val input = "def |>(x: Int, y: Int): Int = x |> y"
+    run(input)
+  }
+
+  test("Operator.Binary.<|") {
+    val input = "def <|(x: Int, y: Int): Int = x <| y"
+    run(input)
+  }
+
+  test("Operator.Binary.<*>") {
+    val input = "def <*>(x: Int, y: Int): Int = x <*> y"
+    run(input)
+  }
+
+  test("Operator.Binary.<**>") {
+    val input = "def <**>(x: Int, y: Int): Int = x <**> y"
+    run(input)
+  }
+
+  test("Operator.Binary.*>") {
+    val input = "def *>(x: Int, y: Int): Int = x *> y"
+    run(input)
+  }
+
+  test("Operator.Binary.<*") {
+    val input = "def <*(x: Int, y: Int): Int = x <* y"
+    run(input)
+  }
+
+  test("Operator.Binary.|+|") {
+    val input = "def |+|(x: Int, y: Int): Int = x |+| y"
     run(input)
   }
 

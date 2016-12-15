@@ -435,30 +435,6 @@ class TestTyper extends FunSuite with TestUtils {
     result.get
   }
 
-  test("Expression.Binary.Implication01") {
-    val input = "def f: Bool = true ==> false"
-    val result = new Flix().addStr(input).compile()
-    result.get
-  }
-
-  test("Expression.Binary.Implication02") {
-    val input = "def f(x: Bool, y: Bool): Bool = x ==> y"
-    val result = new Flix().addStr(input).compile()
-    result.get
-  }
-
-  test("Expression.Binary.Biconditional01") {
-    val input = "def f: Bool = true <==> false"
-    val result = new Flix().addStr(input).compile()
-    result.get
-  }
-
-  test("Expression.Binary.Biconditional02") {
-    val input = "def f(x: Bool, y: Bool): Bool = x <==> y"
-    val result = new Flix().addStr(input).compile()
-    result.get
-  }
-
   test("Expression.Binary.BitwiseAnd01") {
     val input = "def f: Int = 1 & 2"
     val result = new Flix().addStr(input).compile()

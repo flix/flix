@@ -25,7 +25,6 @@ import ca.uwaterloo.flix.util.StreamOps
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
-import scala.io.Source
 
 /**
   * A parser for the Flix language.
@@ -377,37 +376,83 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   object Expressions {
 
     def Block: Rule1[ParsedAst.Expression] = rule {
-      "{" ~ optWS ~ Expression ~ optWS ~ "}" ~ optWS | Logical
+      "{" ~ optWS ~ Expression ~ optWS ~ "}" ~ optWS | LogicalOr
     }
 
-    // TODO: Improve parsing of operator precedence.
-
-    def Logical: Rule1[ParsedAst.Expression] = rule {
-      Comparison ~ optional(optWS ~ Operators.LogicalOp ~ optWS ~ Comparison ~ SP ~> ParsedAst.Expression.Binary)
+    def LogicalOr: Rule1[ParsedAst.Expression] = rule {
+      LogicalAnd ~ zeroOrMore(optWS ~ capture(atomic("||")) ~ optWS ~ LogicalAnd ~ SP ~> ParsedAst.Expression.Binary)
     }
 
-    def Comparison: Rule1[ParsedAst.Expression] = rule {
-      Additive ~ optional(optWS ~ Operators.ComparisonOp ~ optWS ~ Additive ~ SP ~> ParsedAst.Expression.Binary)
+    def LogicalAnd: Rule1[ParsedAst.Expression] = rule {
+      BitwiseOr ~ zeroOrMore(optWS ~ capture(atomic("&&")) ~ optWS ~ BitwiseOr ~ SP ~> ParsedAst.Expression.Binary)
+    }
+
+    def BitwiseOr: Rule1[ParsedAst.Expression] = rule {
+      BitwiseXOr ~ zeroOrMore(optWS ~ capture(atomic("|")) ~ optWS ~ BitwiseXOr ~ SP ~> ParsedAst.Expression.Binary)
+    }
+
+    def BitwiseXOr: Rule1[ParsedAst.Expression] = rule {
+      BitwiseAnd ~ zeroOrMore(optWS ~ capture(atomic("^")) ~ optWS ~ BitwiseAnd ~ SP ~> ParsedAst.Expression.Binary)
+    }
+
+    def BitwiseAnd: Rule1[ParsedAst.Expression] = rule {
+      Equality ~ zeroOrMore(optWS ~ capture(atomic("&")) ~ optWS ~ Equality ~ SP ~> ParsedAst.Expression.Binary)
+    }
+
+    def Equality: Rule1[ParsedAst.Expression] = rule {
+      Relational ~ optional(optWS ~ capture(atomic("==") | atomic("!=")) ~ optWS ~ Relational ~ SP ~> ParsedAst.Expression.Binary)
+    }
+
+    def Relational: Rule1[ParsedAst.Expression] = rule {
+      Shift ~ optional(optWS ~ capture(atomic("<=") | atomic(">=") | atomic("<") | atomic(">")) ~ optWS ~ Shift ~ SP ~> ParsedAst.Expression.Binary)
+    }
+
+    def Shift: Rule1[ParsedAst.Expression] = rule {
+      Additive ~ optional(optWS ~ capture(atomic("<<") | atomic(">>")) ~ optWS ~ Additive ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Additive: Rule1[ParsedAst.Expression] = rule {
-      Multiplicative ~ zeroOrMore(optWS ~ Operators.AdditiveOp ~ optWS ~ Multiplicative ~ SP ~> ParsedAst.Expression.Binary)
+      Multiplicative ~ zeroOrMore(optWS ~ capture(atomic("+") | atomic("-")) ~ optWS ~ Multiplicative ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Multiplicative: Rule1[ParsedAst.Expression] = rule {
-      Infix ~ zeroOrMore(optWS ~ Operators.MultiplicativeOp ~ optWS ~ Infix ~ SP ~> ParsedAst.Expression.Binary)
+      Infix ~ zeroOrMore(optWS ~ capture(atomic("**") | atomic("*") | atomic("/") | atomic("%")) ~ optWS ~ Infix ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Infix: Rule1[ParsedAst.Expression] = rule {
-      Math ~ optional(optWS ~ "`" ~ Names.QualifiedDefinition ~ "`" ~ optWS ~ Math ~ SP ~> ParsedAst.Expression.Infix)
+      Special ~ zeroOrMore(optWS ~ "`" ~ Names.QualifiedDefinition ~ "`" ~ optWS ~ Special ~ SP ~> ParsedAst.Expression.Infix)
     }
 
-    def Math: Rule1[ParsedAst.Expression] = rule {
-      Unary ~ optional(optWS ~ Operators.MathOperator ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.BinaryMathOperator)
+    def Special: Rule1[ParsedAst.Expression] = {
+
+      // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
+      def Reserved2: Rule1[String] = rule {
+        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "<<" | ">>" | "=>" | "->")
+      }
+
+      // Match any two character operator which is not reserved.
+      def UserOp2: Rule1[String] = rule {
+        !Reserved2 ~ capture(Names.OperatorLetter ~ Names.OperatorLetter)
+      }
+
+      // Match any operator which has at least three characters.
+      def UserOpN: Rule1[String] = rule {
+        capture(Names.OperatorLetter ~ Names.OperatorLetter ~ oneOrMore(Names.OperatorLetter))
+      }
+
+      // Match any mathematical operator or symbol.
+      def MathOp: Rule1[String] = rule {
+        capture(Names.MathLetter)
+      }
+
+      rule {
+        // NB: UserOpN must occur before UserOp2.
+        Unary ~ zeroOrMore(optWS ~ (UserOpN | UserOp2 | MathOp) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Binary)
+      }
     }
 
     def Unary: Rule1[ParsedAst.Expression] = rule {
-      !Literal ~ (SP ~ Operators.UnaryOp ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ascribe
+      !Literal ~ (SP ~ capture(atomic("!") | atomic("+") | atomic("-") | atomic("~")) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ascribe
     }
 
     def Ascribe: Rule1[ParsedAst.Expression] = rule {
@@ -755,32 +800,34 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     def GreekLetter: CharPredicate = CharPredicate('\u0370' to '\u03FF')
 
     /**
-      * A mathematical operator.
+      * A mathematical operator or arrow.
       */
-    def MathOperator: CharPredicate = CharPredicate('\u2200' to '\u22FF')
+    def MathLetter: CharPredicate =
+      CharPredicate('\u2200' to '\u22FF') ++ // Mathematical Operator
+        CharPredicate('\u2190' to '\u21FF') // Mathematical Arrow
 
     /**
-      * A mathematical arrow.
+      * An operator letter.
       */
-    def MathArrow: CharPredicate = CharPredicate('\u2190' to '\u21FF')
+    def OperatorLetter: CharPredicate = CharPredicate("+-*<>=!&|^")
 
     /**
       * a (upper/lower case) letter, numeral, greek letter, or other legal character.
       */
-    def LegalChar: CharPredicate = CharPredicate.AlphaNum ++ GreekLetter ++ "_" ++ "'"
+    def LegalLetter: CharPredicate = CharPredicate.AlphaNum ++ "_" ++ "'" ++ "!"
 
     /**
       * A lowercase identifier is a lowercase letter optionally followed by any letter, underscore, or prime.
       */
     def LowerCaseName: Rule1[Name.Ident] = rule {
-      SP ~ capture((LowerLetter | GreekLetter | MathOperator | MathArrow) ~ zeroOrMore(LegalChar)) ~ SP ~> Name.Ident
+      SP ~ capture(LowerLetter ~ zeroOrMore(LegalLetter)) ~ SP ~> Name.Ident
     }
 
     /**
       * An uppercase identifier is an uppercase letter optionally followed by any letter, underscore, or prime.
       */
     def UpperCaseName: Rule1[Name.Ident] = rule {
-      SP ~ capture(UpperLetter ~ zeroOrMore(LegalChar)) ~ SP ~> Name.Ident
+      SP ~ capture(UpperLetter ~ zeroOrMore(LegalLetter)) ~ SP ~> Name.Ident
     }
 
     /**
@@ -795,6 +842,27 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       */
     def UpperCaseQName: Rule1[Name.QName] = rule {
       SP ~ optional(Namespace ~ "/") ~ UpperCaseName ~ SP ~> Name.QName.mk _
+    }
+
+    /**
+      * A greek identifier.
+      */
+    def GreekName: Rule1[Name.Ident] = rule {
+      SP ~ capture(oneOrMore(GreekLetter)) ~ SP ~> Name.Ident
+    }
+
+    /**
+      * A math identifier.
+      */
+    def MathName: Rule1[Name.Ident] = rule {
+      SP ~ capture(oneOrMore(MathLetter)) ~ SP ~> Name.Ident
+    }
+
+    /**
+      * An operator identifier.
+      */
+    def OperatorName: Rule1[Name.Ident] = rule {
+      SP ~ capture(oneOrMore(OperatorLetter)) ~ SP ~> Name.Ident
     }
 
     /**
@@ -813,9 +881,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Class: Rule1[Name.Ident] = UpperCaseName
 
-    def Definition: Rule1[Name.Ident] = LowerCaseName
+    def Definition: Rule1[Name.Ident] = rule {
+      LowerCaseName | GreekName | MathName | OperatorName
+    }
 
-    def QualifiedDefinition: Rule1[Name.QName] = LowerCaseQName
+    def QualifiedDefinition: Rule1[Name.QName] = LowerCaseQName // TODO: Greek letters?
 
     def Table: Rule1[Name.Ident] = UpperCaseName
 
@@ -827,79 +897,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def QualifiedType: Rule1[Name.QName] = UpperCaseQName
 
-    def Variable: Rule1[Name.Ident] = LowerCaseName
-
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Operators                                                               //
-  /////////////////////////////////////////////////////////////////////////////
-  object Operators {
-
-    /**
-      * Parses a unary operator.
-      */
-    def UnaryOp: Rule1[UnaryOperator] = rule {
-      atomic("!") ~> (() => UnaryOperator.LogicalNot) |
-        atomic("+") ~> (() => UnaryOperator.Plus) |
-        atomic("-") ~> (() => UnaryOperator.Minus) |
-        atomic("~") ~> (() => UnaryOperator.BitwiseNegate)
-    }
-
-    /**
-      * Parses a logical operator.
-      */
-    def LogicalOp: Rule1[BinaryOperator] = rule {
-      atomic("&&") ~> (() => BinaryOperator.LogicalAnd) |
-        atomic("||") ~> (() => BinaryOperator.LogicalOr) |
-        atomic("&") ~> (() => BinaryOperator.BitwiseAnd) |
-        atomic("|") ~> (() => BinaryOperator.BitwiseOr) |
-        atomic("==>") ~> (() => BinaryOperator.Implication) |
-        atomic("<==>") ~> (() => BinaryOperator.Biconditional) |
-        atomic("^") ~> (() => BinaryOperator.BitwiseXor) |
-        atomic("<<") ~> (() => BinaryOperator.BitwiseLeftShift) |
-        atomic(">>") ~> (() => BinaryOperator.BitwiseRightShift)
-    }
-
-    /**
-      * Parses a comparison operator.
-      */
-    def ComparisonOp: Rule1[BinaryOperator] = rule {
-      atomic("<=") ~> (() => BinaryOperator.LessEqual) |
-        atomic(">=") ~> (() => BinaryOperator.GreaterEqual) |
-        atomic("<") ~> (() => BinaryOperator.Less) |
-        atomic(">") ~> (() => BinaryOperator.Greater) |
-        atomic("==") ~> (() => BinaryOperator.Equal) |
-        atomic("!=") ~> (() => BinaryOperator.NotEqual)
-    }
-
-    /**
-      * Parses a multiplicative operator.
-      */
-    def MultiplicativeOp: Rule1[BinaryOperator] = rule {
-      atomic("**") ~> (() => BinaryOperator.Exponentiate) |
-        atomic("*") ~> (() => BinaryOperator.Times) |
-        atomic("/") ~> (() => BinaryOperator.Divide) |
-        atomic("%") ~> (() => BinaryOperator.Modulo)
-    }
-
-    /**
-      * Parses an additive operator.
-      */
-    def AdditiveOp: Rule1[BinaryOperator] = rule {
-      atomic("+") ~> (() => BinaryOperator.Plus) |
-        atomic("-") ~> (() => BinaryOperator.Minus)
-    }
-
-    /**
-      * Parses a mathematical operator.
-      */
-    def MathOperator: Rule1[CustomOperator] = rule {
-      capture(Names.MathOperator | Names.MathArrow) ~> CustomOperator
+    def Variable: Rule1[Name.Ident] = rule {
+      LowerCaseName | GreekName | MathName
     }
 
   }
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Whitespace                                                              //
