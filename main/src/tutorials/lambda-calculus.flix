@@ -129,7 +129,7 @@ def alpha(e0: Expression, m: Map2[Int, Int]): Expression = match e0 with {
     case Abs(x, e) =>
         // Generate a fresh variable name for `x`.
         let y = freshVar();
-        Abs(y, alpha(e, Map/insert(y, x, m)))
+        Abs(y, alpha(e, Map/insert(x, y, m)))
 
     case App(e1, e2) =>
         // Recursively perform alpha conversion on each expression.
@@ -146,51 +146,61 @@ def step(e0: Expression): Expression = match redex(e0) with {
 }
 
 ///
-/// Repeatedly performs one-step reductions until a fixed point.
+/// Repeatedly performs one-step reductions until the expression `e0` has been reduced to a value.
 ///
-def loop(e0: Expression): Expression =
+def eval(e0: Expression): Expression =
     let e = step(e0);
-        if (e == e0) e else loop(e)
+        if (isValue(e)) e else eval(e)
 
 
 //
 // We can now test our lambda interpreter!
 //
-def testLoop1: Expression = loop(Var(0))                                        // x
-def testLoop2: Expression = loop(Abs(0, Var(0)))                                // λx. x
-def testLoop3: Expression = loop(Abs(0, Abs(1, Var(0))))                        // λx. λy. x
-def testLoop4: Expression = loop(App(Abs(0, Var(0)), Abs(1, Var(1))))           // (λx. x) (λy. y)
-def testLoop5: Expression = loop(App(Abs(0, Abs(1, Var(0))), Abs(2, Var(2))))   // (λx. λy. x) (λz. z)
+def testEval1: Expression = eval(Var(0))                                        // x
+def testEval2: Expression = eval(Abs(0, Var(0)))                                // λx. x
+def testEval3: Expression = eval(Abs(0, Abs(1, Var(0))))                        // λx. λy. x
+def testEval4: Expression = eval(App(Abs(0, Var(0)), Abs(1, Var(1))))           // (λx. x) (λy. y)
+def testEval5: Expression = eval(App(Abs(0, Abs(1, Var(0))), Abs(2, Var(2))))   // (λx. λy. x) (λz. z)
 
 //
 // Here is the omega-combinator: (λx. x x) (λx. x x)
 //
 // If you run this, Flix will loop forever.
 //
-def testOmega: Expression = loop(
+def testOmega: Expression = eval(
     App(
         Abs(0, App(Var(0), Var(0))),
         Abs(0, App(Var(0), Var(0)))))
-
 
 
 ///
 /// Returns a fresh variable name.
 /// (Relies on an unsafe and impure built-in Flix function!).
 ///
-def freshVar: Int = ???
+def freshVar: Int = ??? // TODO
 
 
-// TODO: replace by library maps.
+//
+// ----------------------------------------------------------------------------
+// TODO: Replace by functions from the standard library.
+// ----------------------------------------------------------------------------
 enum Map2[k, v] {
     case Map2(List[(k, v)])
 }
 namespace Map {
     def empty: Map2[Int, Int] = Map2(Nil)
 
-    def insert(k: Int, v: Int, m: Map2[Int, Int]): Map2[Int, Int] = ???
+    def insert(k: Int, v: Int, m: Map2[Int, Int]): Map2[Int, Int] =
+        let Map2(xs) = m;
+            Map2((k, v) :: xs)
 
-    def get[k, v](k: k, m: Map2[k, v]): Option[v] =  ???
+    def get[k, v](k: k, m: Map2[k, v]): Option[v] =
+        let Map2(xs) = m;
+            getHelper(k, xs)
 
-    def getHelper[k, v](xs: List[k, v]): Option[v] = ???
+    def getHelper[k, v](k: k, xs: List[(k, v)]): Option[v] = match xs with {
+        case Nil => None
+        case (y, v) :: ys => if (k == y) Some(v) else getHelper(k, ys)
+    }
+
 }
