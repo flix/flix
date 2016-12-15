@@ -344,8 +344,21 @@ object Weeder {
           @@(visit(exp1), visit(exp2)) map {
             case (e1, e2) =>
               val loc = mkSL(leftMostSourcePosition(exp1), sp2)
-              val e3 = WeededAst.Expression.VarOrRef(name, loc)
-              WeededAst.Expression.Apply(e3, List(e1, e2), loc)
+              val lambda = WeededAst.Expression.VarOrRef(name, loc)
+              WeededAst.Expression.Apply(lambda, List(e1, e2), loc)
+          }
+
+        case ParsedAst.Expression.Postfix(exp, name, exps, sp2) =>
+          /*
+           * Rewrites postfix expressions to apply expressions.
+           */
+          @@(visit(exp), @@(exps map visit)) map {
+            case (e, es) =>
+              val sp1 = leftMostSourcePosition(exp)
+              val loc = mkSL(sp1, sp2)
+              val qname = Name.QName(sp1, Name.RootNS, name, sp2)
+              val lambda = WeededAst.Expression.VarOrRef(qname, loc)
+              WeededAst.Expression.Apply(lambda, e :: es, loc)
           }
 
         case ParsedAst.Expression.Lambda(sp1, params, exp, sp2) =>
@@ -896,6 +909,7 @@ object Weeder {
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1
     case ParsedAst.Expression.Apply(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Infix(e1, _, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.Postfix(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Lambda(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Unary(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Binary(e1, _, _, _) => leftMostSourcePosition(e1)

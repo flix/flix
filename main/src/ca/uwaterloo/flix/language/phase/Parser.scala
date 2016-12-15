@@ -452,7 +452,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Apply: Rule1[ParsedAst.Expression] = rule {
-      Primary ~ optional(optWS ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Apply)
+      Postfix ~ optional(optWS ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Apply)
+    }
+
+    def Postfix: Rule1[ParsedAst.Expression] = rule {
+      Primary ~ zeroOrMore(optWS ~ "." ~ Names.Definition ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Postfix)
     }
 
     def Tag: Rule1[ParsedAst.Expression.Tag] = rule {
