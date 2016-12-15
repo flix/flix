@@ -34,7 +34,7 @@ enum Environment {
 ///
 enum Kontinuation {
     // Represents the empty evaluation context (named `mt` in the paper).
-    case Halt,
+    case Empty,
 
     // Represents the evaluation context ([] e) with continuation κ
     // where the environment ρ closes the expression e.
@@ -64,8 +64,7 @@ def nonValue(e0: Expression): Bool = !isValue(e0)
 /// Returns the initial state of the CEK-machine for the given expression `e0`.
 ///
 def inject(e0: Expression): (Expression, Environment, Kontinuation) =
-    (e0, Env/empty(), Halt)
-
+    (e0, Env/empty(), Empty)
 
 ///
 /// Returns the next state of the given machine `m`.
@@ -77,9 +76,10 @@ def inject(e0: Expression): (Expression, Environment, Kontinuation) =
 def step(m: (Expression, Environment, Kontinuation)): (Expression, Environment, Kontinuation) = match m with {
     case (Var(x), env0, kont) =>
         // Case 1: The expression is a variable. Look it up in the environment.
-        // TODO: What should happen if the variable  does not exist? Probably the machine should be stuck.
-        let (v, env1) = Env/lookup(x, env0);
-            (v, env1, kont)
+         match Env/lookup(x, env0) with {
+            case None => m
+            case Some((v, env1)) => (v, env1, kont)
+         }
     case (App(e1, e2), env0, kont) =>
         // Case 2: The expression is an application.
         // Use the lambda as the expression and move the argument into the continuation.
@@ -92,18 +92,15 @@ def step(m: (Expression, Environment, Kontinuation)): (Expression, Environment, 
     case (e, env0, App2(e1, env1, kont)) =>
         // Check if the expression is a value. Otherwise the machine is stuck.
         if (nonValue(e)) m else {
-            // We know that e1 is a value (and in particular a lambda abstration).
+            // We know that e1 is a value (and in particular a lambda abstraction).
             let Abs(x, body) = e1;
                 (body, Env/insert(x, (e, env0), env1), kont)
         }
      case _ => m
 }
 
-// TODO: Use greek letters?
-
-
 ///
-/// Repeteatedly performs single-step transitions in the given machine `m0` until the machine halts with a value.
+/// Repeatedly performs single-step transitions in the given machine `m0` until the machine halts with a value.
 ///
 def eval(m0: (Expression, Environment, Kontinuation)): (Expression, Environment) =
     // Perform a single transition step.
@@ -112,7 +109,7 @@ def eval(m0: (Expression, Environment, Kontinuation)): (Expression, Environment)
     let (e, env, kont) = m1;
         // Check if the machine is halted with a value.
         // If so, return the value and environment, otherwise take another transition.
-        if (isValue(e) && kont == Halt)
+        if (isValue(e) && kont == Empty)
             (e, env)
         else
             eval(m1)
@@ -139,9 +136,6 @@ def substitute(e0: Expression, env0: Environment): Expression = match e0 with {
     case Abs(x, e)      => Abs(x, substitute(e, Env/remove(x, env0)))
     case App(e1, e2)    => App(substitute(e1, env0), substitute(e2, env0))
 }
-
-
-// TODO: Where is the use of gensym in the machine?
 
 //
 // We can now test our CEK machine!
@@ -174,17 +168,15 @@ def testOmega: Expression = run(
 
 
 
+// TODO: Where is the use of gensym in the machine?
+
 
 namespace Env {
 
     def empty: Environment = Environment(Map2(Nil): Map2[Int, (Expression, Environment)])
 
-    // TODO: Signature
-    def lookup(k: Int, env: Environment): (Expression, Environment) = match env with {
-        case Environment(m) =>
-            // Assume that the value exists
-            let Some(v) = Map/get(k, m);
-                v
+    def lookup(k: Int, env: Environment): Option[(Expression, Environment)] = match env with {
+        case Environment(m) => Map/get(k, m)
     }
 
     def insert(k: Int, v: (Expression, Environment), env: Environment): Environment = match env with {
@@ -198,9 +190,6 @@ namespace Env {
     }
 
 }
-
-
-// TODO: Allow greek letters?
 
 //
 // ----------------------------------------------------------------------------
