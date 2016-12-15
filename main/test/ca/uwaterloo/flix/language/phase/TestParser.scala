@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.{Flix, RuleException}
 import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.runtime.Model
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
@@ -27,7 +28,7 @@ class TestParser extends FunSuite with TestUtils {
   /**
     * Runs Flix on the given input string `s`.
     */
-  def run(s: String): Unit = {
+  def run(s: String): Model = {
     new Flix().setOptions(Options.DefaultTest).addStr(s).solve().get
   }
 
@@ -693,20 +694,89 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Expression.Infix.01") {
     val input =
-      """def plus(x: Int, y: Int): Int =  x + y
+      """def add(x: Int, y: Int): Int = x + y
         |
-        |def f: Int = 1 `plus` 2
+        |def f: Int = 1 `add` 2
       """.stripMargin
-    run(input)
+    val model = run(input)
+    assertResult(3)(model.getConstant("f"))
   }
 
-  test("Expression.Infix.02") {
+  // TODO
+  ignore("Expression.Infix.02") {
     val input =
-      """namespace a.b.c {
-        |  def plus(x: Int, y: Int): Int =  x + y
-        |}
+      """def add(x: Int, y: Int): Int = x + y
+        |def sub(x: Int, y: Int): Int = x - y
+        |def mul(x: Int, y: Int): Int = x * y
         |
-        |def f: Int = 1 `a.b.c/plus` 2
+        |def f: Int = 1 `add` 2 `sub` 3 `mul` 4
+      """.stripMargin
+    val model = run(input)
+    assertResult(0)(model.getConstant("f"))
+  }
+
+  test("Expression.Postfix.01") {
+    val input =
+      """def abs(x: Int): Int = if(x >= 0) x else -x
+        |
+        |def f: Int = 1.abs()
+      """.stripMargin
+    val model = run(input)
+    assertResult(1)(model.getConstant("f"))
+  }
+
+  test("Expression.Postfix.02") {
+    val input =
+      """def abs(x: Int): Int = if(x >= 0) x else -x
+        |def inc(x: Int): Int = x + 1
+        |def dec(x: Int): Int = x - 1
+        |
+        |def f: Int = 1.abs().inc().dec()
+      """.stripMargin
+    val model = run(input)
+    assertResult(1)(model.getConstant("f"))
+  }
+
+  test("Expression.Postfix.03") {
+    val input =
+      """def add(x: Int, y: Int): Int = x + y
+        |
+        |def f: Int = 1.add(2)
+      """.stripMargin
+    val model = run(input)
+    assertResult(3)(model.getConstant("f"))
+  }
+
+  test("Expression.Postfix.04") {
+    val input =
+      """def add(x: Int, y: Int): Int = x + y
+        |def sub(x: Int, y: Int): Int = x - y
+        |def mul(x: Int, y: Int): Int = x * y
+        |
+        |def f: Int = 1.add(2).sub(3).mul(4)
+      """.stripMargin
+    run(input)
+    val model = run(input)
+    assertResult(0)(model.getConstant("f"))
+  }
+
+  test("Expression.Postfix.05") {
+    val input =
+      """def add(x: Int, y: Int, z: Int): Int = x + y + z
+        |
+        |def f: Int = 1.add(2, 3)
+      """.stripMargin
+    val model = run(input)
+    assertResult(6)(model.getConstant("f"))
+  }
+
+  test("Expression.Postfix.06") {
+    val input =
+      """def add(x: Int, y: Int, z: Int): Int = x + y + z
+        |def sub(x: Int, y: Int, z: Int): Int = x - y - z
+        |def mul(x: Int, y: Int, z: Int): Int = x * y * z
+        |
+        |def f: Int = 1.add(2, 3).sub(4, 5).mul(6, 7)
       """.stripMargin
     run(input)
   }
