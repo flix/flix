@@ -35,9 +35,6 @@ enum Expression {
     // Promises Extensions:
     //
 
-    // TODO: Event Loop
-    // TODO: Mini event loop
-
     // A promisify expression: promisify(e).
     case Promisify(Expression),
 
@@ -59,22 +56,64 @@ enum Expression {
 /// The evaluation contexts of lambda calculus describe the location of the next redex,
 /// i.e. the next sub-expression which we can reduce in one-step.
 ///
+// TODO: Rename to EApp, EOnResolve etc?
 enum EvaluationContext {
-    // Represents the redex in the context.
+    // Represents the hole in the context.
     case Hole,
 
-    // Represents an application e1 e2 where evaluation should continue in e1.
+    // Represents the context: E e.
     case App1(EvaluationContext, Expression),
 
-    // Represents an application v e where evaluation should continue in e2.
-    case App2(Expression, EvaluationContext)
+    // Represents the context: v E.
+    case App2(Expression, EvaluationContext),
+
+    // Represents the context: ref E.
+    case Ref1(EvaluationContext),
+
+    // Represents the context: deref E.
+    case Deref1(EvaluationContext),
+
+    // Represents the context: E ; e
+    case Seq1(EvaluationContext, Expression),
+
+    // Represents the context: v ; E
+    case Seq2(Expression, EvaluationContext),
+
+    // Represents the context: promisify(E).
+    case Promisify1(EvaluationContext),
+
+    // Represents the context: E.resolve(e).
+    case Resolve1(EvaluationContext, Expression),
+
+    // Represents the context: v.resolve(E).
+    case Resolve2(Expression, EvaluationContext),
+
+    // Represents the context: E.onResolve(e).
+    case OnResolve1(EvaluationContext, Expression),
+
+    // Represents the context: v.onResolve(E).
+    case OnResolve2(Expression, EvaluationContext),
+
+    // Represents the context: E.onReject(e).
+    case OnReject1(EvaluationContext, Expression),
+
+    // Represents the context: v.onReject(E).
+    case OnReject2(Expression, EvaluationContext),
+
+    // Represents the context: E.link(e).
+    case Link1(EvaluationContext, Expression),
+
+    // Represents the context: v.link(E).
+    case Link2(Expression, EvaluationContext)
 }
+
 
 ///
 /// Returns `true` if the given expression `e0` is a value.
 ///
 def isValue(e0: Expression): Bool = match e0 with {
     case Abs(x, e) => true
+    case Addr(a)   => true
     case _         => false
 }
 
@@ -96,6 +135,21 @@ def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 wi
     case Abs(x, e) =>
         // An abstraction cannot be reduced.
         None
+    case Addr(a) =>
+        // An address cannot be reduced.
+        None
+    case Ref(e) =>
+        if (e.isValue())
+            // The ref expression is a redex.
+            Some((e0, Hole))
+        else
+            // The redex is beneath the ref expression.
+            match redex(e) with {
+                case None => None
+                case Some((rx, ec)) => Some((rx, Ref1(ec)))
+            }
+    // TODO ...
+
     case App(e1, e2) => switch {
         case isValue(e1) && isValue(e2) =>
             // An application where both arguments are values can be reduced.

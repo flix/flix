@@ -23,13 +23,13 @@ enum Expression {
 /// i.e. the next sub-expression which we can reduce in one-step.
 ///
 enum EvaluationContext {
-    // Represents the redex in the context.
+    // Represents the hole in the context.
     case Hole,
 
-    // Represents an application e1 e2 where evaluation should continue in e1.
+    // Represents the context: E e.
     case App1(EvaluationContext, Expression),
 
-    // Represents an application v e where evaluation should continue in e2.
+    // Represents the context: v E.
     case App2(Expression, EvaluationContext)
 }
 
