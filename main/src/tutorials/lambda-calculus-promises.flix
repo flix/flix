@@ -19,11 +19,17 @@ enum Expression {
     // General Extensions:
     //
 
-    // TODO: Integers
+    // A heap address.
+    case Addr(Int),
 
-    // TODO: Sequence
-    // TODO: Ref/deref
+    // A heap reference expression: ref e.
+    case Ref(Expression),
 
+    // A heap de-reference expression: deref e.
+    case Deref(Expression),
+
+    // A sequence expression: e1; e2.
+    case Seq(Expression, Expression),
 
     //
     // Promises Extensions:
@@ -42,13 +48,10 @@ enum Expression {
     case Reject(Expression, Expression),
 
     // An onResolve expression: e1.onResolve(e2).
-    case OnResolve(Expression, Expression)
+    case OnResolve(Expression, Expression),
 
-    // TODO: onResolve
-    // TODO: onReject
-    // TODO: link
-
-
+    // A link expression: e1.link(e2).
+    case Link(Expression, Expression)
 
 }
 
