@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.FlixException
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.util.Highlight.{Cyan, Green, Magenta, Red}
+import ca.uwaterloo.flix.util.Highlight.{Blue, Green, Magenta, Red}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
 import scala.collection.mutable
@@ -67,21 +67,24 @@ object Tester {
 
         // Evaluate the test function and catch any potential exception.
         val outcome = try {
+          // NB: IntellijIDEA warns about unrelated types. This is not a problem.
           val result = defn()
           if (result == java.lang.Boolean.TRUE)
-            Ok("Success")
+            Ok("Returned true.")
+          else if (result == java.lang.Boolean.FALSE)
+            Err("Returned false.")
           else
-            Err("Non-boolean test.")
+            Err(s"Returned non-boolean value: '${Value.pretty(result)}'.")
         } catch {
           case ex: FlixException => Err(ex.getMessage)
         }
 
         // Print test information.
         outcome match {
-          case Ok(msg) =>
+          case Ok(_) =>
             Console.println(s"  ${Green("✓")} ${sym.name}")
           case Err(msg) =>
-            Console.println(s"  ${Red("✗")} ${Red(sym.name)}: ${msg} (${sym.loc.format})")
+            Console.println(s"  ${Red("✗")} ${Red(sym.name)}: $msg (at ${Blue(sym.loc.format)})")
         }
       }
 
