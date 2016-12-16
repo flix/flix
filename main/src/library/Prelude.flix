@@ -52,3 +52,17 @@ def →(x: Bool, y: Bool): Bool = !x ∨ y
 /// Alias for logical biconditional.
 ///
 def ↔(x: Bool, y: Bool): Bool = (x → y) ∧ (y → x)
+
+
+///
+/// Asserts that the given boolean `b` is `true`.
+///
+def assert!(b: Bool): Bool =
+    if (b) b else ???
+
+///
+/// Asserts that the given values `x` and `y` are equal.
+///
+// TODO: Must be generic, but that requires mono-morphization.
+def assertEq!(x: Bool, y: Bool): Bool = if (x == y) true else ???
+

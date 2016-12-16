@@ -2,96 +2,61 @@
 // Logical And                                                             //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def testAnd01: Bool = true ∧ true
+def testMathAnd01: Bool = (true ∧ true) `assertEq!` true
+
+@test
+def testMathAnd02: Bool = (true ∧ false) `assertEq!` false
+
+@test
+def testMathAnd03: Bool = (false ∧ true) `assertEq!` false
+
+@test
+def testMathAnd04: Bool = (false ∧ false) `assertEq!` false
 
 
-//
+/////////////////////////////////////////////////////////////////////////////
+// Logical Or                                                              //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def testMathOr01: Bool = (true ∨ true) `assertEq!` true
 
-//  test("∧.01") {
-//    val input = "def r: Bool = true ∧ true"
-//    runTest(input, Value.True)
-//  }
-//
-//  test("∧.02") {
-//    val input = "def r: Bool = true ∧ false"
-//    runTest(input, Value.False)
-//  }
-//
-//  test("∧.03") {
-//    val input = "def r: Bool = false ∧ true"
-//    runTest(input, Value.False)
-//  }
-//
-//  test("∧.04") {
-//    val input = "def r: Bool = false ∧ false"
-//    runTest(input, Value.False)
-//  }
-//
-//  /////////////////////////////////////////////////////////////////////////////
-//  // Logical Or                                                              //
-//  /////////////////////////////////////////////////////////////////////////////
-//  test("∨.01") {
-//    val input = "def r: Bool = true ∨ true"
-//    runTest(input, Value.True)
-//  }
-//
-//  test("∨.02") {
-//    val input = "def r: Bool = true ∨ false"
-//    runTest(input, Value.True)
-//  }
-//
-//  test("∨.03") {
-//    val input = "def r: Bool = false ∨ true"
-//    runTest(input, Value.True)
-//  }
-//
-//  test("∨.04") {
-//    val input = "def r: Bool = false ∨ false"
-//    runTest(input, Value.False)
-//  }
-//
-//  /////////////////////////////////////////////////////////////////////////////
-//  // Logical Implication                                                     //
-//  /////////////////////////////////////////////////////////////////////////////
-//  test("→.01") {
-//    val input = "def r: Bool = true → true"
-//    runTest(input, Value.True)
-//  }
-//
-//  test("→.02") {
-//    val input = "def r: Bool = true → false"
-//    runTest(input, Value.False)
-//  }
-//
-//  test("→.03") {
-//    val input = "def r: Bool = false → true"
-//    runTest(input, Value.True)
-//  }
-//
-//  test("→.04") {
-//    val input = "def r: Bool = false → false"
-//    runTest(input, Value.True)
-//  }
-//
-//  /////////////////////////////////////////////////////////////////////////////
-//  // Logical Biconditional                                                   //
-//  /////////////////////////////////////////////////////////////////////////////
-//  test("↔.01") {
-//    val input = "def r: Bool = true ↔ true"
-//    runTest(input, Value.True)
-//  }
-//
-//  test("↔.02") {
-//    val input = "def r: Bool = true ↔ false"
-//    runTest(input, Value.False)
-//  }
-//
-//  test("↔.03") {
-//    val input = "def r: Bool = false ↔ true"
-//    runTest(input, Value.False)
-//  }
-//
-//  test("↔.04") {
-//    val input = "def r: Bool = false ↔ false"
-//    runTest(input, Value.True)
-//  }
+@test
+def testMathOr02: Bool = (true ∨ false) `assertEq!` true
+
+@test
+def testMathOr03: Bool = (false ∨ true) `assertEq!` true
+
+@test
+def testMathOr04: Bool = (false ∨ false) `assertEq!` false
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Logical Implication                                                     //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def testMathImplication01: Bool = (true → true) `assertEq!` true
+
+@test
+def testMathImplication02: Bool = (true → false) `assertEq!` false
+
+@test
+def testMathImplication03: Bool = (false → true) `assertEq!` true
+
+@test
+def testMathImplication04: Bool = (false → false) `assertEq!` true
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Logical Biconditional                                                   //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def testMathBiconditional01: Bool = (true ↔ true) `assertEq!` true
+
+@test
+def testMathBiconditional02: Bool = (true ↔ false) `assertEq!` false
+
+@test
+def testMathBiconditional03: Bool = (false ↔ true) `assertEq!` false
+
+@test
+def testMathBiconditional04: Bool = (false ↔ false) `assertEq!` true
