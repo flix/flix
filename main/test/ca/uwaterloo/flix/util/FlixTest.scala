@@ -23,31 +23,49 @@ class FlixTest(name: String, path: String) extends FunSuite {
 
   override def suiteName: String = name
 
+  /*
+   * Include the standard library.
+   */
   val Library: List[String] = List(
     "main/src/library/Option.flix",
     "main/src/library/Result.flix"
   )
 
   {
+    // Use the default Flix test options, but run in interpreted mode.
     val opts = Options.DefaultTest.copy(evaluation = Evaluation.Interpreted)
     val flix = new Flix().setOptions(opts)
 
+    // Add the given path.
     flix.addPath(path)
+    // ... and the library paths.
     for (path <- Library)
       flix.addPath(path)
 
-
+    // Evaluate the program to obtain the model.
     val model = flix.solve().get
 
-    for ((sym, fn) <- model.getTests.toList.sortBy(_._1.toString)) {
-      test(sym.name) {
-        withClue(sym.loc.format) {
-          val result = fn()
-          assertResult(true)(result)
+    // Group the tests by namespace.
+    val testsByNamespace = model.getTests.groupBy(_._1.namespace)
+
+    // Iterate through each namespace.
+    for ((_, tests) <- testsByNamespace) {
+      // Sort the tests by name.
+      val testsByName = tests.toList.sortBy(_._1.name)
+
+      // Evaluate each tests with a clue of its source location.
+      for ((sym, defn) <- testsByName) {
+        test(sym.name) {
+          withClue(sym.loc.format) {
+            // Evaluate the function.
+            val result = defn()
+            // Expect the true value.
+            assertResult(true)(result)
+          }
         }
+
       }
     }
   }
-
 
 }
