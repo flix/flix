@@ -461,7 +461,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetMatch | IfThenElse | Match | Switch | Lambda | Tuple | FNil | FVec | FSet | FMap | Literal |
-        Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | UserError
+        Existential | Universal | LambdaMatch | UnaryLambda | QName | Wild | Tag | SName | UserError
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -554,6 +554,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ Names.QualifiedDefinition ~ SP ~> ParsedAst.Expression.QName
     }
 
+    // TODO: Is this made obsolete by LambdaMatch?
     def UnaryLambda: Rule1[ParsedAst.Expression.Lambda] = rule {
       SP ~ Names.Variable ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ((sp1: SourcePosition, arg: Name.Ident, body: ParsedAst.Expression, sp2: SourcePosition) =>
         ParsedAst.Expression.Lambda(sp1, Seq(arg), body, sp2))
@@ -561,6 +562,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Lambda: Rule1[ParsedAst.Expression.Lambda] = rule {
       SP ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Lambda
+    }
+
+    def LambdaMatch: Rule1[ParsedAst.Expression.LambdaMatch] = rule {
+      SP ~ atomic("match") ~ optWS ~ Pattern ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.LambdaMatch
     }
 
     def UserError: Rule1[ParsedAst.Expression] = rule {

@@ -453,6 +453,16 @@ object ParsedAst {
     case class Lambda(sp1: SourcePosition, fparams: Seq[Name.Ident], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Lambda Match Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param pat the pattern.
+      * @param exp the body expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class LambdaMatch(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Unary Expression.
       *
       * @param sp1 the position of the first character in the expression.
