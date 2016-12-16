@@ -96,7 +96,7 @@ object CreateExecutableAst {
         case SimplifiedAst.FormalParam(ident, tpe) => ExecutableAst.FormalArg(ident, tpe)
       }.toArray
 
-      ExecutableAst.Definition.Constant(sast.sym, formals, Expression.toExecutable(sast.exp), sast.isSynthetic, sast.tpe, sast.loc)
+      ExecutableAst.Definition.Constant(sast.ann, sast.sym, formals, Expression.toExecutable(sast.exp), sast.isSynthetic, sast.tpe, sast.loc)
     }
 
     def toExecutable(sast: SimplifiedAst.Definition.Lattice, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Definition.Lattice = sast match {
@@ -116,8 +116,8 @@ object CreateExecutableAst {
         val botSym = Symbol.freshDefnSym("bot")
         val topSym = Symbol.freshDefnSym("top")
 
-        val botConst = ExecutableAst.Definition.Constant(botSym, formals = Array(), t(bot), isSynthetic = true, bot.tpe, bot.loc)
-        val topConst = ExecutableAst.Definition.Constant(topSym, formals = Array(), t(top), isSynthetic = true, top.tpe, top.loc)
+        val botConst = ExecutableAst.Definition.Constant(Ast.Annotations(Nil), botSym, formals = Array(), t(bot), isSynthetic = true, bot.tpe, bot.loc)
+        val topConst = ExecutableAst.Definition.Constant(Ast.Annotations(Nil),topSym, formals = Array(), t(top), isSynthetic = true, top.tpe, top.loc)
 
         // Update the map of definitions
         m ++= Map(botSym -> botConst, topSym -> topConst)

@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.ast.{Time, ExecutableAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol, Time}
 
 /**
   * A class representing the minimal model.
@@ -33,6 +33,12 @@ class Model(root: ExecutableAst.Root,
             lattices: Map[Symbol.TableSym, Iterable[(List[AnyRef], AnyRef)]]) {
 
   def getRoot: ExecutableAst.Root = root
+
+  def getTests: Map[Symbol.DefnSym, () => AnyRef] = {
+    definitions filter {
+      case (sym, _) => root.definitions(sym).ann.isTest
+    }
+  }
 
   def getTime: Time = time
 
