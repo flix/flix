@@ -554,7 +554,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ Names.QualifiedDefinition ~ SP ~> ParsedAst.Expression.QName
     }
 
-    // TODO: Is this made obsolete by LambdaMatch?
     def UnaryLambda: Rule1[ParsedAst.Expression.Lambda] = rule {
       SP ~ Names.Variable ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ((sp1: SourcePosition, arg: Name.Ident, body: ParsedAst.Expression, sp2: SourcePosition) =>
         ParsedAst.Expression.Lambda(sp1, Seq(arg), body, sp2))
