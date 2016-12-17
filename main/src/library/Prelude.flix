@@ -52,3 +52,18 @@ def →(x: Bool, y: Bool): Bool = !x ∨ y
 /// Alias for logical biconditional.
 ///
 def ↔(x: Bool, y: Bool): Bool = (x → y) ∧ (y → x)
+
+///
+/// Returns a freshly generated integer. (NB: Requires the --Ximpure feature flag.)
+///
+def genSym!: Int = genSymHook()
+
+///
+/// Prints the given value `a`. (NB: Requires the --Ximpure feature flag.)
+///
+def print![a](a: a): a = printHook(a)
+
+///
+/// Prints the given value `a` on a new line. (NB: Requires the --Ximpure feature flag.)
+///
+def println![a](a: a): a = printlnHook(a)

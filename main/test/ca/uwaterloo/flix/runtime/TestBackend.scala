@@ -7521,17 +7521,4 @@ class TestBackend extends FunSuite {
     t.checkModel(Set(("b", "b"), ("p", "c"), ("d", "b")).map { case (x,y) => List(Value.mkStr(x), Value.mkStr(y)) }, "Pt")
   }
 
-  test("Hook.Builtin.genSym!.01") {
-    val input = "def r: Int = genSym()"
-    val flix = new Flix().addStr(input).setOptions(Options.Default.copy(impure = true))
-    val model = flix.solve().get
-  }
-
-  test("Hook.Builtin.genSym!.02") {
-    val input = "def r: Bool = genSym() != genSym()"
-    val flix = new Flix().addStr(input).setOptions(Options.Default.copy(impure = true))
-    val model = flix.solve().get
-    assertResult(true)(model.getConstant("r"))
-  }
-
 }
