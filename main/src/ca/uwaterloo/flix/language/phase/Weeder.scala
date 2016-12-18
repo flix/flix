@@ -811,6 +811,7 @@ object Weeder {
         case "internal" => Ast.Annotation.Internal(loc).toSuccess
         case "monotone" => Ast.Annotation.Monotone(loc).toSuccess
         case "strict" => Ast.Annotation.Strict(loc).toSuccess
+        case "test" => Ast.Annotation.Test(loc).toSuccess
         case "unchecked" => Ast.Annotation.Unchecked(loc).toSuccess
         case "unsafe" => Ast.Annotation.Unsafe(loc).toSuccess
         case _ => UndefinedAnnotation(past.ident.name, loc).toFailure

@@ -38,7 +38,7 @@ object ExecutableAst {
 
   object Definition {
 
-    case class Constant(sym: Symbol.DefnSym, formals: Array[ExecutableAst.FormalArg], exp: ExecutableAst.Expression, isSynthetic: Boolean, tpe: Type, loc: SourceLocation) extends ExecutableAst.Definition {
+    case class Constant(ann: Ast.Annotations, sym: Symbol.DefnSym, formals: Array[ExecutableAst.FormalArg], exp: ExecutableAst.Expression, isSynthetic: Boolean, tpe: Type, loc: SourceLocation) extends ExecutableAst.Definition {
       /**
         * Pointer to generated code.
         */

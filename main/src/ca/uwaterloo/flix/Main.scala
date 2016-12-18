@@ -19,7 +19,7 @@ package ca.uwaterloo.flix
 import java.io.File
 
 import ca.uwaterloo.flix.api._
-import ca.uwaterloo.flix.runtime.Value
+import ca.uwaterloo.flix.runtime.{Tester, Value}
 import ca.uwaterloo.flix.util.Highlight.Code
 import ca.uwaterloo.flix.util._
 
@@ -107,6 +107,10 @@ object Main {
             Console.println(s"$name returned `${Value.pretty(result)}'.")
           }
 
+          if (cmdOpts.test) {
+            Tester.test(model)
+          }
+
           val print = cmdOpts.print
           for (name <- print) {
             PrettyPrint.print(name, model)
@@ -151,6 +155,7 @@ object Main {
                      print: Seq[String] = Seq(),
                      quickchecker: Boolean = false,
                      threads: Int = -1,
+                     test: Boolean = false,
                      timeout: Duration = Duration.Inf,
                      tutorial: String = null,
                      verbose: Boolean = false,
@@ -209,6 +214,10 @@ object Main {
       // Quickchecker.
       opt[Unit]("quickchecker").action((_, c) => c.copy(quickchecker = true)).
         text("enables the quickchecker.")
+
+      // Test.
+      opt[Unit]("test").action((_, c) => c.copy(test = true)).
+        text("runs unit tests.")
 
       // Timeout
       opt[Duration]("timeout").action((d, c) => c.copy(timeout = d)).
