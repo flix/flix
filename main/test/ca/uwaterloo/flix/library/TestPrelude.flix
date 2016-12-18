@@ -2,61 +2,58 @@
 // Logical And                                                             //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def testMathAnd01: Bool = (true ∧ true) `assertEq!` true
+def mathAnd01: Bool = (true ∧ true) `assertEq!` true
 
 @test
-def testMathAnd02: Bool = (true ∧ false) `assertEq!` false
+def mathAnd02: Bool = (true ∧ false) `assertEq!` false
 
 @test
-def testMathAnd03: Bool = (false ∧ true) `assertEq!` false
+def mathAnd03: Bool = (false ∧ true) `assertEq!` false
 
 @test
-def testMathAnd04: Bool = (false ∧ false) `assertEq!` false
-
+def mathAnd04: Bool = (false ∧ false) `assertEq!` false
 
 /////////////////////////////////////////////////////////////////////////////
 // Logical Or                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def testMathOr01: Bool = (true ∨ true) `assertEq!` true
+def mathOr01: Bool = (true ∨ true) `assertEq!` true
 
 @test
-def testMathOr02: Bool = (true ∨ false) `assertEq!` true
+def mathOr02: Bool = (true ∨ false) `assertEq!` true
 
 @test
-def testMathOr03: Bool = (false ∨ true) `assertEq!` true
+def mathOr03: Bool = (false ∨ true) `assertEq!` true
 
 @test
-def testMathOr04: Bool = (false ∨ false) `assertEq!` false
-
+def mathOr04: Bool = (false ∨ false) `assertEq!` false
 
 /////////////////////////////////////////////////////////////////////////////
 // Logical Implication                                                     //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def testMathImplication01: Bool = (true → true) `assertEq!` true
+def mathImplication01: Bool = (true → true) `assertEq!` true
 
 @test
-def testMathImplication02: Bool = (true → false) `assertEq!` false
+def mathImplication02: Bool = (true → false) `assertEq!` false
 
 @test
-def testMathImplication03: Bool = (false → true) `assertEq!` true
+def mathImplication03: Bool = (false → true) `assertEq!` true
 
 @test
-def testMathImplication04: Bool = (false → false) `assertEq!` true
-
+def mathImplication04: Bool = (false → false) `assertEq!` true
 
 /////////////////////////////////////////////////////////////////////////////
 // Logical Biconditional                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def testMathBiconditional01: Bool = (true ↔ true) `assertEq!` true
+def mathBiconditional01: Bool = (true ↔ true) `assertEq!` true
 
 @test
-def testMathBiconditional02: Bool = (true ↔ false) `assertEq!` false
+def mathBiconditional02: Bool = (true ↔ false) `assertEq!` false
 
 @test
-def testMathBiconditional03: Bool = (false ↔ true) `assertEq!` false
+def mathBiconditional03: Bool = (false ↔ true) `assertEq!` false
 
 @test
-def testMathBiconditional04: Bool = (false ↔ false) `assertEq!` true
+def mathBiconditional04: Bool = (false ↔ false) `assertEq!` true
