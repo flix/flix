@@ -1635,6 +1635,51 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
+  test("Expression.MatchLambda.01") {
+    val input = "def f: Int -> Int = match x -> x"
+    run(input)
+  }
+
+  test("Expression.MatchLambda.02") {
+    val input = "def f: ((Int, Int)) -> Int = match (x, y) -> x + y"
+    run(input)
+  }
+
+  test("Expression.MatchLambda.03") {
+    val input = "def f: ((Int, Int, Int)) -> Int = match (x, y, z) -> x + y + z"
+    run(input)
+  }
+
+  test("Expression.MatchLambda.04") {
+    val input = "def f: (((Int, Int), (Int, Int))) -> Int = match ((x, y), (z, w)) -> x + y + z + w"
+    run(input)
+  }
+
+  test("Expression.MatchLambda.05") {
+    val input = "def f: Option[Int] -> Int = match None -> 42"
+    run(input)
+  }
+
+  test("Expression.MatchLambda.06") {
+    val input = "def f: Option[Int] -> Int = match Some(x) -> x"
+    run(input)
+  }
+
+  test("Expression.MatchLambda.07") {
+    val input = "def f: List[Int] -> Int = match Nil -> 42"
+    run(input)
+  }
+
+  test("Expression.MatchLambda.08") {
+    val input = "def f: List[Int] -> Int = match x :: Nil -> x"
+    run(input)
+  }
+
+  test("Expression.MatchLambda.09") {
+    val input = "def f: List[Int] -> Int = match x :: y :: Nil -> x + y"
+    run(input)
+  }
+
   test("Expression.Existential.01") {
     val input = "def f: Bool = ∃(x: Bool). true"
     intercept[scala.NotImplementedError] {
