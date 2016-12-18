@@ -374,13 +374,15 @@ object Weeder {
 
         case ParsedAst.Expression.LambdaMatch(sp1, pat, exp, sp2) =>
           /*
-           * Rewrites lambda pattern match expressions.
+           * Rewrites lambda pattern match expressions into a lambda expression with a nested pattern match.
            */
           @@(Patterns.weed(pat), Expressions.weed(exp)) map {
             case (p, e) =>
               val loc = mkSL(sp1, sp2)
+              // The name of the lambda parameter.
               val ident = Name.Ident(sp1, "pat$0", sp2)
               val qname = Name.QName(sp1, Name.RootNS, ident, sp2)
+              // Construct the body of the lambda expression.
               val varOrRef = WeededAst.Expression.VarOrRef(qname, loc)
               val body = WeededAst.Expression.Match(varOrRef, List(p -> e), loc)
               WeededAst.Expression.Lambda(List(ident), body, loc)

@@ -460,8 +460,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetMatch | IfThenElse | Match | Switch | Lambda | Tuple | FNil | FVec | FSet | FMap | Literal |
-        Existential | Universal | LambdaMatch | UnaryLambda | QName | Wild | Tag | SName | UserError
+      LetMatch | IfThenElse | Match | LambdaMatch | Switch | Lambda | Tuple | FNil | FVec | FSet | FMap | Literal |
+        Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | UserError
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {

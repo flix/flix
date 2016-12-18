@@ -457,7 +457,7 @@ object ParsedAst {
       *
       * @param sp1 the position of the first character in the expression.
       * @param pat the pattern.
-      * @param exp the body expression.
+      * @param exp the body.
       * @param sp2 the position of the last character in the expression.
       */
     case class LambdaMatch(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
