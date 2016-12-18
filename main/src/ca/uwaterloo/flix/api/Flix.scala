@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.{CompilationError, Compiler, GenSym}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.{DeltaSolver, Model, Solver, Value}
+import ca.uwaterloo.flix.util.Highlight.Blue
 import ca.uwaterloo.flix.util.{LocalResource, Options, StreamOps, Validation}
 
 import scala.collection.mutable.ListBuffer
@@ -218,9 +219,9 @@ class Flix {
     implicit val _ = genSym
 
     // Add built-in hooks.
-    if (options.impure) {
-      addGenSymHook()
-    }
+    addGenSymHook()
+    addPrintHook()
+    addPrintlnHook()
 
     Compiler.compile(getSourceInputs, hooks.toMap).flatMap {
       case tast =>
@@ -714,17 +715,63 @@ class Flix {
   }
 
   /**
-    * Adds a hook for the built-in `genSym!` function.
+    * Adds a hook for the built-in `genSym` function.
     */
-  private def addGenSymHook(): Unit = {
+  private def addGenSymHook()(implicit genSym: GenSym): Unit = {
     // Instantiate a fresh gen sym for the Flix program itself.
     val gen = new GenSym()
 
     // Symbol, type, and hook.
-    val sym = Symbol.mkDefnSym("genSym") // TODO: Impure functions should have a name ending with !
+    val sym = Symbol.mkDefnSym("genSymHook")
     val tpe = Type.mkArrow(Nil, Type.Int32)
     val inv = new InvokableUnsafe {
-      def apply(args: Array[AnyRef]): AnyRef = new java.lang.Integer(gen.freshId())
+      def apply(args: Array[AnyRef]): AnyRef = {
+        if (!options.impure)
+          throw new IllegalStateException("Illegal call to impure function. Requires --Ximpure.")
+        new java.lang.Integer(gen.freshId())
+      }
+    }
+
+    // Add the function to the hooks.
+    hooks.put(sym, Ast.Hook.Unsafe(sym, inv, tpe))
+  }
+
+  /**
+    * Adds a hook for the built-in `print` function.
+    */
+  private def addPrintHook()(implicit genSym: GenSym): Unit = {
+    // Symbol, type, and hook.
+    val sym = Symbol.mkDefnSym("printHook")
+    val tpe = Type.mkArrow(Type.freshTypeVar(), Type.Int32)
+    val inv = new InvokableUnsafe {
+      def apply(args: Array[AnyRef]): AnyRef = {
+        if (!options.impure)
+          throw new IllegalStateException("Illegal call to impure function. Requires --Ximpure.")
+        val value = args(0)
+        Console.print(Blue(Value.pretty(value)))
+        value
+      }
+    }
+
+    // Add the function to the hooks.
+    hooks.put(sym, Ast.Hook.Unsafe(sym, inv, tpe))
+  }
+
+  /**
+    * Adds a hook for the built-in `println` function.
+    */
+  private def addPrintlnHook()(implicit genSym: GenSym): Unit = {
+    // Symbol, type, and hook.
+    val sym = Symbol.mkDefnSym("printlnHook")
+    val tpe = Type.mkArrow(Type.freshTypeVar(), Type.Int32)
+    val inv = new InvokableUnsafe {
+      def apply(args: Array[AnyRef]): AnyRef = {
+        if (!options.impure)
+          throw new IllegalStateException("Illegal call to impure function. Requires --Ximpure.")
+        val value = args(0)
+        Console.println(Blue(Value.pretty(value)))
+        value
+      }
     }
 
     // Add the function to the hooks.
