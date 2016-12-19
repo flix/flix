@@ -265,10 +265,24 @@ def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 wi
 /// with the given expression `e0` replacing the hole in the context.
 ///
 def recompose(ec0: EvaluationContext, e0: Expression): Expression = match ec0 with {
-    case Hole        => e0
-    case EApp1(ec, e) => App(recompose(ec, e0), e)
-    case EApp2(v, ec) => App(v, recompose(ec, e0))
-
+    case Hole               => e0
+    case EApp1(ec, e)       => App(recompose(ec, e0), e)
+    case EApp2(v, ec)       => App(v, recompose(ec, e0))
+    case ERef(ec)           => Ref(recompose(ec, e0))
+    case EDeref(ec)         => Deref(recompose(ec, e0))
+    case ESeq1(ec, e)       => Seq(recompose(ec, e0), e)
+    case ESeq2(e, ec)       => Seq(e, recompose(ec, e0))
+    case EPromisify(ec)     => Promisify(recompose(ec, e0))
+    case EResolve1(ec, e)   => Resolve(recompose(ec, e0), e)
+    case EResolve2(e, ec)   => Resolve(e, recompose(ec, e0))
+    case EReject1(ec, e)    => Reject(recompose(ec, e0), e)
+    case EReject2(e, ec)    => Reject(e, recompose(ec, e0))
+    case EOnResolve1(ec, e) => OnResolve(recompose(ec, e0), e)
+    case EOnResolve2(e, ec) => OnResolve(e, recompose(ec, e0))
+    case EOnReject1(ec, e)  => OnReject(recompose(ec, e0), e)
+    case EOnReject2(e, ec)  => OnReject(e, recompose(ec, e0))
+    case ELink1(ec, e)      => Link(recompose(ec, e0), e)
+    case ELink2(e, ec)      => Link(e, recompose(ec, e0))
 }
 
 ///
@@ -278,6 +292,9 @@ def reduce(e: Expression): Expression = match e with {
     case App(Abs(x, e1), e2) =>
         // Perform beta-reduction: Use alpha-renaming to avoid capture.
         substitute(e1, x, alpha(e2, Map/empty()))
+
+
+
     case _ => e
 }
 
@@ -308,6 +325,8 @@ def alpha(e0: Expression, m: Map2[Int, Int]): Expression = match e0 with {
     case App(e1, e2) =>
         // Recursively perform alpha conversion on each expression.
         App(alpha(e1, m), alpha(e2, m))
+
+
 }
 
 ///
