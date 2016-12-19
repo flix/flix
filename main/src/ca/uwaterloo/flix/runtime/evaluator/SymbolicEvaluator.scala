@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.runtime.evaluator
 
 import ca.uwaterloo.flix.api.{MatchException, SwitchException, UserException}
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, Root}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -724,8 +724,17 @@ object SymbolicEvaluator {
         * Unsupported expressions.
         */
       case e: Expression.ApplyHook => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.Universal => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.Existential => throw InternalCompilerException(s"Unsupported expression: '$e'.")
+      case e: Expression.Existential => throw InternalCompilerException(s"Unsupported expression: '$e'.") // TODO
+      case Expression.Universal(fparams, exp, _) =>
+        // Enumerate the values of the universal parameters.
+        val envs = enumerate(fparams.map(param => (param.sym, param.tpe)), root)
+        // Evaluate the body under the current environment extended with each of the new environment.
+        envs flatMap {
+          case env1 =>
+            val extendedEnv = env0 ++ env1
+            eval(pc0, exp, extendedEnv)
+        }
+
       case e: Expression.LoadBool => throw InternalCompilerException(s"Unsupported expression: '$e'.")
       case e: Expression.LoadInt8 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
       case e: Expression.LoadInt16 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
@@ -888,6 +897,7 @@ object SymbolicEvaluator {
             case (_, v) => throw InternalCompilerException(s"Type Error: Unexpected value '$v'.")
           }
         }
+
         val elms = elms1 zip elms2
         visit(pc0, elms)
 
@@ -900,11 +910,11 @@ object SymbolicEvaluator {
       * Evaluates `x` first and then `y` second.
       */
     def eval2(pc0: PathConstraint, x: Expression, y: Expression, env0: Environment): List[(PathConstraint, (SymVal, SymVal))] =
-    eval(pc0, x, env0) flatMap {
-      case (pcx, vx) => eval(pcx, y, env0) map {
-        case (pcy, vy) => pcy -> ((vx, vy))
+      eval(pc0, x, env0) flatMap {
+        case (pcx, vx) => eval(pcx, y, env0) map {
+          case (pcy, vy) => pcy -> ((vx, vy))
+        }
       }
-    }
 
     /**
       * Evaluates the list of expressions `xs` under the path constraint `pc` and environment `env0`.
@@ -958,6 +968,63 @@ object SymbolicEvaluator {
     case Type.Int64 => SmtExpr.Int64(0)
     case Type.BigInt => SmtExpr.BigInt(java.math.BigInteger.ZERO)
     case _ => throw InternalCompilerException(s"Unexpected non-numeric type '$tpe'.")
+  }
+
+  /**
+    * Enumerates all possible environments of the given universally quantified variables.
+    */
+  private def enumerate(q: List[(Symbol.VarSym, Type)], root: Root)(implicit genSym: GenSym): List[Map[Symbol.VarSym, SymVal]] = {
+    /*
+     * Local visitor. Enumerates the symbolic values of a type.
+     */
+    def visit(tpe: Type): List[SymVal] = tpe match {
+      case Type.Unit => List(SymVal.Unit)
+      case Type.Bool => List(SymVal.True, SymVal.False)
+      case Type.Char => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Char))
+      case Type.Float32 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Float32))
+      case Type.Float64 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Float64))
+      case Type.Int8 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Int8))
+      case Type.Int16 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Int16))
+      case Type.Int32 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Int32))
+      case Type.Int64 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Int64))
+      case Type.BigInt => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.BigInt))
+      case Type.Str => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Str))
+      case Type.Enum(sym, kind) =>
+        val decl = root.enums(sym)
+        decl.cases.flatMap {
+          // TODO: Assumes non-polymorphic type.
+          case (tag, caze) => visit(caze.tpe) map {
+            case e => SymVal.Tag(tag, e)
+          }
+        }.toList
+      case Type.Apply(Type.FTuple(_), elms) =>
+        def visitn(xs: List[Type]): List[List[SymVal]] = xs match {
+          case Nil => List(Nil)
+          case t :: ts => visitn(ts) flatMap {
+            case ls => visit(t) map {
+              case l => l :: ls
+            }
+          }
+        }
+
+        visitn(elms).map(es => SymVal.Tuple(es))
+      case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+    }
+
+    def expand(rs: List[(Symbol.VarSym, List[SymVal])]): List[Map[Symbol.VarSym, SymVal]] = rs match {
+      case Nil => List(Map.empty)
+      case (quantifier, expressions) :: xs => expressions flatMap {
+        case expression => expand(xs) map {
+          case m => m + (quantifier -> expression)
+        }
+      }
+    }
+
+    val result = q map {
+      case (sym, tpe) => sym -> visit(tpe)
+    }
+
+    expand(result)
   }
 
 }

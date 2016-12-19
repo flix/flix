@@ -825,6 +825,7 @@ object Weeder {
         case "associative" => Ast.Annotation.Associative(loc).toSuccess
         case "commutative" => Ast.Annotation.Commutative(loc).toSuccess
         case "internal" => Ast.Annotation.Internal(loc).toSuccess
+        case "law" => Ast.Annotation.Law(loc).toSuccess
         case "monotone" => Ast.Annotation.Monotone(loc).toSuccess
         case "strict" => Ast.Annotation.Strict(loc).toSuccess
         case "test" => Ast.Annotation.Test(loc).toSuccess

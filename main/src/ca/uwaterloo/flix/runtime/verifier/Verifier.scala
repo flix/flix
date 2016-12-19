@@ -110,10 +110,19 @@ object Verifier {
       return root.toSuccess
     }
 
+    // TODO: Cleanup
+    /*
+     * Find all properties.
+     */
+    val props = root.definitions.collect {
+      case (sym, defn) if defn.ann.isLaw && defn.formals.isEmpty => // TODO: Fix cond
+        sym -> verifyProperty(defn, root)
+    }
+
     /*
      * Verify each property.
      */
-    val results = root.properties.map(p => verifyProperty(p, root))
+    val results = props.values.toList
 
     /*
      * Print verbose information (if enabled).
@@ -140,26 +149,29 @@ object Verifier {
   }
 
   /**
-    * Attempts to verify the given `property`.
+    * Attempts to verify the given `defn`.
     *
     * Returns `None` if the property is satisfied.
     * Otherwise returns `Some` containing the verification error.
     */
-  def verifyProperty(property: Property, root: ExecutableAst.Root)(implicit genSym: GenSym): PropertyResult = {
+  def verifyProperty(defn: ExecutableAst.Definition.Constant, root: ExecutableAst.Root)(implicit genSym: GenSym): PropertyResult = {
     // start the clock.
     val t = System.nanoTime()
 
     // the base expression.
-    val exp0 = property.exp
+    val exp0 = defn.exp
 
     // a sequence of environments under which the base expression must hold.
-    val envs = enumerate(exp0.getQuantifiers, root)
+    val envs = List(Map.empty: SymbolicEvaluator.Environment) // TODO
 
     // the number of paths explored by the symbolic evaluator.
     var paths = 0
 
     // the number of queries issued to the SMT solver.
     var queries = 0
+
+    // TODO: TMP dummy property
+    val dummyProperty = Property(Law.HeightStrictlyDecreasing, defn.exp, defn.loc)
 
     // attempt to verify that the property holds under each environment.
     val pathResults = envs flatMap {
@@ -181,11 +193,11 @@ object Verifier {
               // Case 3.2: The property *does not* hold under some path condition.
               // If the path condition is satisfiable then the property *does not* hold.
               queries += 1
-              assertUnsatisfiable(property, and(pc), env0)
+              assertUnsatisfiable(dummyProperty, and(pc), env0)
             case SymVal.AtomicVar(id, _) =>
               // Case 3.3: The property holds iff the atomic variable is never `false`.
               queries += 1
-              assertUnsatisfiable(property, SmtExpr.Not(and(pc)), env0)
+              assertUnsatisfiable(dummyProperty, SmtExpr.Not(and(pc)), env0)
             case _ => throw InternalCompilerException(s"Unexpected value: '$v'.")
           }
         }
@@ -203,69 +215,13 @@ object Verifier {
     }
 
     if (failures.isEmpty && unknowns.isEmpty) {
-      PropertyResult.Success(property, paths, queries, e)
+      PropertyResult.Success(dummyProperty, paths, queries, e)
     } else if (failures.nonEmpty) {
-      PropertyResult.Failure(property, paths, queries, e, PropertyError.mk(property, failures.head.model))
+      PropertyResult.Failure(dummyProperty, paths, queries, e, PropertyError.mk(dummyProperty, failures.head.model))
     } else {
-      PropertyResult.Unknown(property, paths, queries, e, PropertyError.mk(property, unknowns.head.model))
+      PropertyResult.Unknown(dummyProperty, paths, queries, e, PropertyError.mk(dummyProperty, unknowns.head.model))
     }
 
-  }
-
-  /**
-    * Enumerates all possible environments of the given universally quantified variables.
-    */
-  def enumerate(q: List[Var], root: Root)(implicit genSym: GenSym): List[Map[Symbol.VarSym, SymVal]] = {
-    /*
-     * Local visitor. Enumerates the symbolic values of a type.
-     */
-    def visit(tpe: Type): List[SymVal] = tpe match {
-      case Type.Unit => List(SymVal.Unit)
-      case Type.Bool => List(SymVal.True, SymVal.False)
-      case Type.Char => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Char))
-      case Type.Float32 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Float32))
-      case Type.Float64 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Float64))
-      case Type.Int8 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Int8))
-      case Type.Int16 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Int16))
-      case Type.Int32 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Int32))
-      case Type.Int64 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Int64))
-      case Type.BigInt => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.BigInt))
-      case Type.Str => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Str))
-      case Type.Enum(sym, kind) =>
-        val decl = root.enums(sym)
-        decl.cases.flatMap {
-          // TODO: Assumes non-polymorphic type.
-          case (tag, caze) => visit(caze.tpe) map {
-            case e => SymVal.Tag(tag, e)
-          }
-        }.toList
-      case Type.Apply(Type.FTuple(_), elms) =>
-        def visitn(xs: List[Type]): List[List[SymVal]] = xs match {
-          case Nil => List(Nil)
-          case t :: ts => visitn(ts) flatMap {
-            case ls => visit(t) map {
-              case l => l :: ls
-            }
-          }
-        }
-        visitn(elms).map(es => SymVal.Tuple(es))
-      case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-    }
-
-    def expand(rs: List[(Symbol.VarSym, List[SymVal])]): List[Map[Symbol.VarSym, SymVal]] = rs match {
-      case Nil => List(Map.empty)
-      case (quantifier, expressions) :: xs => expressions flatMap {
-        case expression => expand(xs) map {
-          case m => m + (quantifier -> expression)
-        }
-      }
-    }
-
-    val result = q map {
-      case quantifier => quantifier.sym -> visit(quantifier.tpe)
-    }
-
-    expand(result)
   }
 
   /**

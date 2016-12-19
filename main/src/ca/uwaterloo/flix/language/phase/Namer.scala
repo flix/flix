@@ -448,7 +448,7 @@ object Namer {
           case (macc, NamedAst.FormalParam(sym, tpe, _)) => macc + (sym.text -> sym)
         }
         namer(exp, env1, tenv0) map {
-          case e => NamedAst.Expression.Existential(ps, e, loc)
+          case e => NamedAst.Expression.Universal(ps, e, loc)
         }
 
       case WeededAst.Expression.Ascribe(exp, tpe, loc) => namer(exp, env0, tenv0) map {

@@ -68,6 +68,17 @@ object Ast {
     }
 
     /**
+      * An AST node that represents a `@law` annotation.
+      *
+      * A `law` function is a property (theorem) about the behaviour of one or more functions.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Law(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@law"
+    }
+
+    /**
       * An AST node that represents a `@monotone` annotation.
       *
       * A `monotone` function is an order-preserving function between lattice elements.
@@ -145,6 +156,11 @@ object Ast {
       * Returns `true` if `this` sequence contains the `@commutative` annotation.
       */
     def isCommutative: Boolean = annotations exists (_.isInstanceOf[Annotation.Commutative])
+
+    /**
+      * Returns `true` if `this` sequence contains the `@law` annotation.
+      */
+    def isLaw: Boolean = annotations exists (_.isInstanceOf[Annotation.Law])
 
     /**
       * Returns `true` if `this` sequence contains the `@monotone` annotation.

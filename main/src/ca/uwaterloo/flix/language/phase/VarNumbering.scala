@@ -116,8 +116,8 @@ object VarNumbering {
       case Expression.GetTupleIndex(exp, index, tpe, loc) => visitExp(exp, i0)
       case Expression.Tuple(elms, tpe, loc) => visitExps(elms, i0)
       case Expression.FSet(elms, tpe, loc) => visitExps(elms, i0)
-      case Expression.Existential(params, exp, loc) => ??? // TODO
-      case Expression.Universal(params, exp, loc) => ??? // TODO
+      case Expression.Existential(params, exp, loc) => visitExp(exp, i0)
+      case Expression.Universal(params, exp, loc) => visitExp(exp, i0)
       case Expression.UserError(tpe, loc) => i0
       case Expression.MatchError(tpe, loc) => i0
       case Expression.SwitchError(tpe, loc) => i0
