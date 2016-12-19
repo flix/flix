@@ -342,10 +342,46 @@ def reduce(e: Expression): Expression = match e with {
     case App(Abs(x, e1), e2) =>
         // Apply beta-reduction: Use alpha-renaming to avoid capture.
         substitute(e1, x, alpha(e2, Map/empty()))
-
-    // TODO: Rules
-
+    case Seq(e1, e2) => if (isValue(e1)) e2 else Seq(e1, e2)
     case _ => e
+}
+
+enum State {
+    case State(Store, PromiseState, FulfillReactions, RejectReactions, PromiseLinks, Queue, Expression)
+}
+
+///
+/// TODO: DOC
+///
+def reduce2(m0: State): State = {
+    let State(h0, s0, f0, r0, l0, q0, e0) = m0;
+        match e0 with {
+
+            // TODO: Deal with App and Seq here?
+
+            case Ref(v) =>
+                let a = freshAddr();
+                let h1 = ???; // TODO
+                let e1 = Addr(a);
+                    State(h1, s0, f0, r0, l0, q0, e1)
+
+            case Deref(e) => ???
+
+            case Promisify(e) =>
+
+                ???
+
+            case Resolve(e1, e2) => ???
+
+            case Reject(e1, e2) => ???
+
+            case OnResolve(e1, e2) => ???
+
+            case OnReject(e1, e2) => ???
+
+            case Link(e1, e2) => ???
+
+        }
 }
 
 ///
@@ -424,13 +460,14 @@ def testEval3: Expression = eval(App(Abs(0, Var(0)), Abs(1, Var(1))))           
 def testEval4: Expression = eval(App(Abs(0, Abs(1, Var(0))), Abs(2, Var(2))))   // (λx. λy. x) (λz. z)
 
 ///
-/// Returns a fresh variable name.
-/// (Relies on an unsafe and impure built-in Flix function!).
+/// Returns a fresh address.
+///
+def freshAddr: Int = genSym!()
+
+///
+/// Returns a fresh variable.
 ///
 def freshVar: Int = genSym!()
-
-
-
 
 
 
