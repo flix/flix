@@ -302,9 +302,21 @@ def reduce(e: Expression): Expression = match e with {
 /// Replaces every occurrence of the variable `x` in the expression `e0` with the expression `r0`.
 ///
 def substitute(e0: Expression, x: Int, r0: Expression): Expression = match e0 with {
-    case Var(y)      => if (x == y) r0 else Var(y)
-    case Abs(y, e)   => if (x == y) Abs(y, e) else Abs(y, substitute(e, x, r0))
-    case App(e1, e2) => App(substitute(e1, x, r0), substitute(e2, x, r0))
+    case Var(y)             => if (x == y) r0 else Var(y)
+    case Abs(y, e)          => if (x == y) Abs(y, e) else Abs(y, substitute(e, x, r0))
+    case App(e1, e2)        => App(substitute(e1, x, r0), substitute(e2, x, r0))
+
+    case Addr(a)            => Addr(a)
+    case Ref(e)             => Ref(substitute(e, x, r0))
+    case Deref(e)           => Deref(substitute(e, x, r0))
+    case Seq(e1, e2)        => Seq(substitute(e1, x, r0), substitute(e2, x, r0))
+
+    case Promisify(e)       => Promisify(substitute(e, x, r0))
+    case Resolve(e1, e2)    => Resolve(substitute(e1, x, r0), substitute(e2, x, r0))
+    case Reject(e1, e2)     => Reject(substitute(e1, x, r0), substitute(e2, x, r0))
+    case OnResolve(e1, e2)  => OnResolve(substitute(e1, x, r0), substitute(e2, x, r0))
+    case OnReject(e1, e2)   => OnReject(substitute(e1, x, r0), substitute(e2, x, r0))
+    case Link(e1, e2)       => Link(substitute(e1, x, r0), substitute(e2, x, r0))
 }
 
 ///
@@ -322,10 +334,7 @@ def alpha(e0: Expression, m: Map2[Int, Int]): Expression = match e0 with {
         let y = freshVar();
         Abs(y, alpha(e, Map/insert(x, y, m)))
 
-    case App(e1, e2) =>
-        // Recursively perform alpha conversion on each expression.
-        App(alpha(e1, m), alpha(e2, m))
-
+    case App(e1, e2) => App(alpha(e1, m), alpha(e2, m))
 
 }
 
