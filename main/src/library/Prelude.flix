@@ -57,7 +57,13 @@ def ↔(x: Bool, y: Bool): Bool = (x → y) ∧ (y → x)
 /// Asserts that the given boolean `b` is `true`.
 ///
 def assert!(b: Bool): Bool =
-    if (b) b else ???
+    if (b) true else ???
+
+///
+/// Asserts that the given boolean `b` is `false`.
+///
+def assertNot!(b: Bool): Bool =
+    if (!b) true else ???
 
 ///
 /// Asserts that the given values `x` and `y` are equal.
