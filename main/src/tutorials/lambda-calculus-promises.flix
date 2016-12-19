@@ -115,6 +115,56 @@ enum EvaluationContext {
     case ELink2(Expression, EvaluationContext)
 }
 
+///
+/// The store maps addresses to values.
+///
+enum Store {
+    case Store(Map2[Int, Expression])
+}
+
+///
+/// The promise state maps addresses to promise values.
+///
+enum PromiseState {
+    case PromiseState(Map2[Int, PromiseValue])
+}
+
+///
+/// The fulfill reactions map addresses to a list of (Lam, Addr)-pairs.
+///
+enum FulfillReactions {
+    case FulfillReactions(Map2[Int, List[(Expression, Int)]])
+}
+
+///
+/// The reject reactions map addresses to a list of (Lam, Addr)-pairs.
+///
+enum RejectReactions {
+    case RejectReactions(Map2[Int, List[(Expression, Int)]])
+}
+
+///
+/// The promise links map addresses to a list of addresses.
+///
+enum PromiseLinks {
+    case PromiseLinks(Map2[Int, List[Int]])
+}
+
+///
+/// The queue is a list of (PromiseValue, Lam, Addr)-triples.
+///
+enum Queue {
+    case Queue(List[(PromiseValue, Expression, Int)])
+}
+
+///
+/// A promise is in one of three states: Pending, fulfilled (with a value), or rejected (with a value).
+///
+enum PromiseValue {
+    case Pending,
+    case Fulfilled(Expression),
+    case Rejected(Expression)
+}
 
 ///
 /// Returns `true` if the given expression `e0` is a value.
@@ -286,14 +336,14 @@ def recompose(ec0: EvaluationContext, e0: Expression): Expression = match ec0 wi
 }
 
 ///
-/// Reduces the redex `e0` with a single application of beta-reduction.
+/// Reduces the redex `e0`.
 ///
 def reduce(e: Expression): Expression = match e with {
     case App(Abs(x, e1), e2) =>
-        // Perform beta-reduction: Use alpha-renaming to avoid capture.
+        // Apply beta-reduction: Use alpha-renaming to avoid capture.
         substitute(e1, x, alpha(e2, Map/empty()))
 
-
+    // TODO: Rules
 
     case _ => e
 }
