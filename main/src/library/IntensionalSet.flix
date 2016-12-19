@@ -5,19 +5,24 @@ enum IntensionalSet[a] {
 namespace IntensionalSet {
 
     ///
+    /// Returns an intensional set of the given predicate `f`.
+    ///
+    def of[a](f: a -> Bool): IntensionalSet[a] = IntensionalSet(f)
+
+    ///
     /// Returns the empty set.
     ///
     def empty[a]: IntensionalSet[a] = IntensionalSet(x -> false)
 
     ///
+    /// Returns the full set.
+    ///
+    def full[a]: IntensionalSet[a] = IntensionalSet(x -> true)
+
+    ///
     /// Returns the singleton set of `x`.
     ///
     def singleton[a](x: a): IntensionalSet[a] = IntensionalSet(y -> y == x)
-
-    ///
-    /// Returns an intensional set of the given predicate `f`.
-    ///
-    def of[a](f: a -> Bool): IntensionalSet[a] = IntensionalSet(f)
 
     ///
     /// Adds `x` to the set `s`.
@@ -41,13 +46,47 @@ namespace IntensionalSet {
             f(a)
 
 
+
+    //
+    //## Elementary Set Operations
+    //- **union(xs: Set[A], ys: Set[A]): Set[A]**
+    //    - Returns a new set of the union of xs and ys.
+    //- **intersection(xs: Set[A], ys: Set[A]): Set[A]**
+    //    - Returns a new set of the intersection of xs and ys.
+    //- **difference(xs: Set[A], ys: Set[A]): Set[A]**
+    //    - Returns a new set of the difference of xs and ys.
+    //- **subsets(xs: Set[A]): Set[Set[A]]**
+    //    - Returns the subsets of the set xs.
+    //
+    //## Set Transformation
+    //- **filter(f: A => Bool, xs: Set[A]): Set[A]**
+    //    - Returns the subset of xs where the elements satisfy the predicate f.
+    //- **map(f: A => B, xs: Set[A]): Set[B]**
+    //    - Returns the result of applying the function f to every element in the set.
+    //    - Note: The returned set may be smaller than the given set.
+    //- **flatMap(f: A => Set[B], xs: Set[A]): Set[B]**
+    //    - Returns the result of applying the function f to every element in the set and taking the union of the result.
+    //
+
 }
 
 
 namespace IntensionalSet {
 
     @test
+    def testOf01: Bool = assert!(42 `memberOf` of(x -> x == 42))
+
+    @test
+    def testOf02: Bool = assert!(42 `memberOf` of(x -> x % 2 == 0))
+
+    @test
+    def testOf03: Bool = assertNot!(21 `memberOf` of(x -> x % 2 == 0))
+
+    @test
     def testEmpty01: Bool = assertNot!(42 `memberOf` empty())
+
+    @test
+    def testFull01: Bool = assert!(42 `memberOf` full())
 
     @test
     def testSingleton01: Bool = assert!(42 `memberOf` singleton(42))
@@ -71,34 +110,3 @@ namespace IntensionalSet {
     def testDelete03: Bool = assert!(42 `memberOf` insert(42, delete(42, singleton(42))))
 
 }
-
-//
-//## Set Predicates
-//- **null(xs: Set[A]): Bool**
-//    - Returns true if the set is empty.
-//- **memberOf(x: A, xs: Set[A]): Bool**
-//    - Returns true if x is a member of the set xs.
-//- **isSubsetOf(xs: Set[A], ys: Set[A]): Bool**
-//    - Returns true if every element in xs appears in ys.
-//- **isProperSubsetOf(xs: Set[A], ys: Set[A]): Bool**
-//    - Returns true if every element in xs appears in ys and xs != ys.
-//
-//## Elementary Set Operations
-//- **union(xs: Set[A], ys: Set[A]): Set[A]**
-//    - Returns a new set of the union of xs and ys.
-//- **intersection(xs: Set[A], ys: Set[A]): Set[A]**
-//    - Returns a new set of the intersection of xs and ys.
-//- **difference(xs: Set[A], ys: Set[A]): Set[A]**
-//    - Returns a new set of the difference of xs and ys.
-//- **subsets(xs: Set[A]): Set[Set[A]]**
-//    - Returns the subsets of the set xs.
-//
-//## Set Transformation
-//- **filter(f: A => Bool, xs: Set[A]): Set[A]**
-//    - Returns the subset of xs where the elements satisfy the predicate f.
-//- **map(f: A => B, xs: Set[A]): Set[B]**
-//    - Returns the result of applying the function f to every element in the set.
-//    - Note: The returned set may be smaller than the given set.
-//- **flatMap(f: A => Set[B], xs: Set[A]): Set[B]**
-//    - Returns the result of applying the function f to every element in the set and taking the union of the result.
-//
