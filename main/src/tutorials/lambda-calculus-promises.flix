@@ -333,9 +333,19 @@ def alpha(e0: Expression, m: Map2[Int, Int]): Expression = match e0 with {
         // Generate a fresh variable name for `x`.
         let y = freshVar();
         Abs(y, alpha(e, Map/insert(x, y, m)))
-
     case App(e1, e2) => App(alpha(e1, m), alpha(e2, m))
 
+    case Addr(a)            => Addr(a)
+    case Ref(e)             => Ref(alpha(e, m))
+    case Deref(e)           => Deref(alpha(e, m))
+    case Seq(e1, e2)        => Seq(alpha(e1, m), alpha(e2, m))
+
+    case Promisify(e)       => Promisify(alpha(e, m))
+    case Resolve(e1, e2)    => Resolve(alpha(e1, m), alpha(e2, m))
+    case Reject(e1, e2)     => Reject(alpha(e1, m), alpha(e2, m))
+    case OnResolve(e1, e2)  => OnResolve(alpha(e1, m), alpha(e2, m))
+    case OnReject(e1, e2)   => OnReject(alpha(e1, m), alpha(e2, m))
+    case Link(e1, e2)       => Link(alpha(e1, m), alpha(e2, m))
 }
 
 ///
