@@ -47,6 +47,9 @@ enum Expression {
     // An onResolve expression: e1.onResolve(e2).
     case OnResolve(Expression, Expression),
 
+    // An onReject expression: e1.onReject(e2).
+    case OnReject(Expression, Expression),
+
     // A link expression: e1.link(e2).
     case Link(Expression, Expression)
 
@@ -86,6 +89,12 @@ enum EvaluationContext {
 
     // Represents the context: v.resolve(E).
     case EResolve2(Expression, EvaluationContext),
+
+    // Represents the context: E.reject(e).
+    case EReject1(EvaluationContext, Expression),
+
+    // Represents the context: v.reject(E).
+    case EReject2(Expression, EvaluationContext),
 
     // Represents the context: E.onResolve(e).
     case EOnResolve1(EvaluationContext, Expression),
@@ -136,6 +145,19 @@ def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 wi
         // An abstraction cannot be reduced.
         None
 
+    // TODO: Data type like: Both(V, V), One(V), Zilch ?
+    case App(e1, e2) => switch {
+        case isValue(e1) && isValue(e2) =>
+            // The expression is a redex.
+            Some((e0, Hole))
+        case nonValue(e1) =>
+            // Continue reduction in e1.
+            Option/map(match (rdx, ec) -> (rdx, EApp1(ec, e2)), redex(e1))
+        case isValue(e1) =>
+            // Continue reduction in e2.
+            Option/map(match (rdx, ec) -> (rdx, EApp2(e1, ec)), redex(e2))
+    }
+
     case Addr(a) =>
         // An address cannot be reduced.
         None
@@ -149,21 +171,93 @@ def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 wi
             Option/map(match (rdx, ec) -> (rdx, ERef(ec)), redex(e))
 
     case Deref(e) =>
-        ???
+        if (isValue(e))
+            // The expression is a redex.
+            Some((e0, Hole))
+        else
+            // The redex is in the expression e.
+            Option/map(match (rdx, ec) -> (rdx, EDeref(ec)), redex(e))
 
-    case App(e1, e2) => switch {
+    case Seq(e1, e2) => switch {
         case isValue(e1) && isValue(e2) =>
             // The expression is a redex.
             Some((e0, Hole))
         case nonValue(e1) =>
-            // An application where the first argument is *NOT* a value.
-            // Reduction should continue in the first argument.
-            Option/map(match (rdx, ec) -> (rdx, EApp1(ec, e2)), redex(e1))
+            // Continue reduction in e1.
+            Option/map(match (rdx, ec) -> (rdx, ESeq1(ec, e2)), redex(e1))
         case isValue(e1) =>
-            // An application where the first argument is a value.
-            // Reduction should continue in the second argument.
-            Option/map(match (rdx, ec) -> (rdx, EApp2(e1, ec)), redex(e2))
+            // Continue reduction in e2.
+            Option/map(match (rdx, ec) -> (rdx, ESeq2(e1, ec)), redex(e2))
     }
+
+    case Promisify(e) =>
+        if (isValue(e))
+            // The expression is a redex.
+            Some((e0), Hole)
+        else
+            // The redex is in the expression e.
+            Option/map(match (rdx, ec) -> (rdx, EPromisify(ec)), redex(e))
+
+    case Resolve(e1, e2) => switch {
+        case isValue(e1) && isValue(e2) =>
+            // The expression is a redex.
+            Some((e0, Hole))
+        case nonValue(e1) =>
+            // Continue reduction in e1.
+            Option/map(match (rdx, ec) -> (rdx, EResolve1(ec, e2)), redex(e1))
+        case isValue(e1) =>
+            // Continue reduction in e2.
+            Option/map(match (rdx, ec) -> (rdx, EResolve2(e1, ec)), redex(e2))
+    }
+
+    case Reject(e1, e2) => switch {
+        case isValue(e1) && isValue(e2) =>
+            // The expression is a redex.
+            Some((e0, Hole))
+        case nonValue(e1) =>
+            // Continue reduction in e1.
+            Option/map(match (rdx, ec) -> (rdx, EReject1(ec, e2)), redex(e1))
+        case isValue(e1) =>
+            // Continue reduction in e2.
+            Option/map(match (rdx, ec) -> (rdx, EReject2(e1, ec)), redex(e2))
+    }
+
+    case OnResolve(e1, e2) => switch {
+        case isValue(e1) && isValue(e2) =>
+            // The expression is a redex.
+            Some((e0, Hole))
+        case nonValue(e1) =>
+            // Continue reduction in e1.
+            Option/map(match (rdx, ec) -> (rdx, EOnResolve1(ec, e2)), redex(e1))
+        case isValue(e1) =>
+            // Continue reduction in e2.
+            Option/map(match (rdx, ec) -> (rdx, EOnResolve2(e1, ec)), redex(e2))
+    }
+
+    case OnReject(e1, e2) => switch {
+        case isValue(e1) && isValue(e2) =>
+            // The expression is a redex.
+            Some((e0, Hole))
+        case nonValue(e1) =>
+            // Continue reduction in e1.
+            Option/map(match (rdx, ec) -> (rdx, EOnReject1(ec, e2)), redex(e1))
+        case isValue(e1) =>
+            // Continue reduction in e2.
+            Option/map(match (rdx, ec) -> (rdx, EOnReject2(e1, ec)), redex(e2))
+    }
+
+    case Link(e1, e2) => switch {
+        case isValue(e1) && isValue(e2) =>
+            // The expression is a redex.
+            Some((e0, Hole))
+        case nonValue(e1) =>
+            // Continue reduction in e1.
+            Option/map(match (rdx, ec) -> (rdx, ELink1(ec, e2)), redex(e1))
+        case isValue(e1) =>
+            // Continue reduction in e2.
+            Option/map(match (rdx, ec) -> (rdx, ELink2(e1, ec)), redex(e2))
+    }
+
 }
 
 ///
@@ -174,6 +268,7 @@ def recompose(ec0: EvaluationContext, e0: Expression): Expression = match ec0 wi
     case Hole        => e0
     case EApp1(ec, e) => App(recompose(ec, e0), e)
     case EApp2(v, ec) => App(v, recompose(ec, e0))
+
 }
 
 ///
