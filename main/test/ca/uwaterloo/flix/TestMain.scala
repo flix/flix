@@ -99,6 +99,12 @@ class TestMain extends FunSuite {
     assert(opts.print.contains("bar"))
   }
 
+  test("--test") {
+    val args = Array("--test", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.test)
+  }
+
   test("--timeout 42ms") {
     val args = Array("--timeout", "42ms", "p.flix")
     val opts = Main.parseCmdOpts(args).get

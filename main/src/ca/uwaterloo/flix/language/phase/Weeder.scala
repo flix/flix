@@ -372,6 +372,22 @@ object Weeder {
               }
           }
 
+        case ParsedAst.Expression.LambdaMatch(sp1, pat, exp, sp2) =>
+          /*
+           * Rewrites lambda pattern match expressions into a lambda expression with a nested pattern match.
+           */
+          @@(Patterns.weed(pat), Expressions.weed(exp)) map {
+            case (p, e) =>
+              val loc = mkSL(sp1, sp2)
+              // The name of the lambda parameter.
+              val ident = Name.Ident(sp1, "pat$0", sp2)
+              val qname = Name.QName(sp1, Name.RootNS, ident, sp2)
+              // Construct the body of the lambda expression.
+              val varOrRef = WeededAst.Expression.VarOrRef(qname, loc)
+              val body = WeededAst.Expression.Match(varOrRef, List(p -> e), loc)
+              WeededAst.Expression.Lambda(List(ident), body, loc)
+          }
+
         case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
           val loc = mkSL(sp1, sp2)
           visit(exp) map {
@@ -811,6 +827,7 @@ object Weeder {
         case "internal" => Ast.Annotation.Internal(loc).toSuccess
         case "monotone" => Ast.Annotation.Monotone(loc).toSuccess
         case "strict" => Ast.Annotation.Strict(loc).toSuccess
+        case "test" => Ast.Annotation.Test(loc).toSuccess
         case "unchecked" => Ast.Annotation.Unchecked(loc).toSuccess
         case "unsafe" => Ast.Annotation.Unsafe(loc).toSuccess
         case _ => UndefinedAnnotation(past.ident.name, loc).toFailure
@@ -939,6 +956,7 @@ object Weeder {
     case ParsedAst.Expression.Infix(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Postfix(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Lambda(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.LambdaMatch(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Unary(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Binary(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1

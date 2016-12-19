@@ -460,7 +460,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetMatch | IfThenElse | Match | Switch | Lambda | Tuple | FNil | FVec | FSet | FMap | Literal |
+      LetMatch | IfThenElse | Match | LambdaMatch | Switch | Lambda | Tuple | FNil | FVec | FSet | FMap | Literal |
         Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | UserError
     }
 
@@ -561,6 +561,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Lambda: Rule1[ParsedAst.Expression.Lambda] = rule {
       SP ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Lambda
+    }
+
+    def LambdaMatch: Rule1[ParsedAst.Expression.LambdaMatch] = rule {
+      SP ~ atomic("match") ~ optWS ~ Pattern ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.LambdaMatch
     }
 
     def UserError: Rule1[ParsedAst.Expression] = rule {

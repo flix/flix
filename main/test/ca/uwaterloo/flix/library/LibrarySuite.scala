@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.library
 
+import ca.uwaterloo.flix.util.FlixTest
 import org.scalatest.{ParallelTestExecution, Suites}
 
 class LibrarySuite extends Suites(
@@ -27,7 +28,8 @@ class LibrarySuite extends Suites(
   new TestInt32,
   new TestInt64,
   new TestOption,
-  new TestPrelude
+  new TestResult,
+  new FlixTest("TestPrelude", "main/test/ca/uwaterloo/flix/library/TestPrelude.flix")
 ) with ParallelTestExecution {
   /* left empty */
 }
