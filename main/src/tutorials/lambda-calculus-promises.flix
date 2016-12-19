@@ -56,55 +56,54 @@ enum Expression {
 /// The evaluation contexts of lambda calculus describe the location of the next redex,
 /// i.e. the next sub-expression which we can reduce in one-step.
 ///
-// TODO: Rename to EApp, EOnResolve etc?
 enum EvaluationContext {
     // Represents the hole in the context.
     case Hole,
 
     // Represents the context: E e.
-    case App1(EvaluationContext, Expression),
+    case EApp1(EvaluationContext, Expression),
 
     // Represents the context: v E.
-    case App2(Expression, EvaluationContext),
+    case EApp2(Expression, EvaluationContext),
 
     // Represents the context: ref E.
-    case Ref1(EvaluationContext),
+    case ERef(EvaluationContext),
 
     // Represents the context: deref E.
-    case Deref1(EvaluationContext),
+    case EDeref(EvaluationContext),
 
     // Represents the context: E ; e
-    case Seq1(EvaluationContext, Expression),
+    case ESeq1(EvaluationContext, Expression),
 
     // Represents the context: v ; E
-    case Seq2(Expression, EvaluationContext),
+    case ESeq2(Expression, EvaluationContext),
 
     // Represents the context: promisify(E).
-    case Promisify1(EvaluationContext),
+    case EPromisify(EvaluationContext),
 
     // Represents the context: E.resolve(e).
-    case Resolve1(EvaluationContext, Expression),
+    case EResolve1(EvaluationContext, Expression),
 
     // Represents the context: v.resolve(E).
-    case Resolve2(Expression, EvaluationContext),
+    case EResolve2(Expression, EvaluationContext),
 
     // Represents the context: E.onResolve(e).
-    case OnResolve1(EvaluationContext, Expression),
+    case EOnResolve1(EvaluationContext, Expression),
 
     // Represents the context: v.onResolve(E).
-    case OnResolve2(Expression, EvaluationContext),
+    case EOnResolve2(Expression, EvaluationContext),
 
     // Represents the context: E.onReject(e).
-    case OnReject1(EvaluationContext, Expression),
+    case EOnReject1(EvaluationContext, Expression),
 
     // Represents the context: v.onReject(E).
-    case OnReject2(Expression, EvaluationContext),
+    case EOnReject2(Expression, EvaluationContext),
 
     // Represents the context: E.link(e).
-    case Link1(EvaluationContext, Expression),
+    case ELink1(EvaluationContext, Expression),
 
     // Represents the context: v.link(E).
-    case Link2(Expression, EvaluationContext)
+    case ELink2(Expression, EvaluationContext)
 }
 
 
@@ -132,49 +131,38 @@ def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 wi
     case Var(x) =>
         // A variable cannot be reduced.
         None
+
     case Abs(x, e) =>
         // An abstraction cannot be reduced.
         None
+
     case Addr(a) =>
         // An address cannot be reduced.
         None
+
     case Ref(e) =>
-        if (e.isValue())
-            // The ref expression is a redex.
+        if (isValue(e))
+            // The expression is a redex.
             Some((e0, Hole))
         else
-            // The redex is beneath the ref expression.
-            match redex(e) with {
-                case None => None
-                case Some((rx, ec)) => Some((rx, Ref1(ec)))
-            }
-    // TODO ...
+            // The redex is in the expression e.
+            Option/map(match (rdx, ec) -> (rdx, ERef(ec)), redex(e))
+
+    case Deref(e) =>
+        ???
 
     case App(e1, e2) => switch {
         case isValue(e1) && isValue(e2) =>
-            // An application where both arguments are values can be reduced.
-            // Return the expression and the hole evaluation context.
+            // The expression is a redex.
             Some((e0, Hole))
         case nonValue(e1) =>
             // An application where the first argument is *NOT* a value.
             // Reduction should continue in the first argument.
-            match redex(e1) with {
-                case None => None
-                case Some((e, ec)) =>
-                    // The first argument has a redex `e` in evaluation context `ec`.
-                    // Extend the evaluation context with `e2`.
-                    Some((e, App1(ec, e2)))
-            }
+            Option/map(match (rdx, ec) -> (rdx, EApp1(ec, e2)), redex(e1))
         case isValue(e1) =>
             // An application where the first argument is a value.
             // Reduction should continue in the second argument.
-            match redex(e2) with {
-                case None => None
-                case Some((e, ec)) =>
-                    // The second argument has a redex `e` in evaluation context `ec`.
-                    // Extend the evaluation context with `e1`.
-                    Some((e, App2(e1, ec)))
-            }
+            Option/map(match (rdx, ec) -> (rdx, EApp2(e1, ec)), redex(e2))
     }
 }
 
@@ -184,8 +172,8 @@ def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 wi
 ///
 def recompose(ec0: EvaluationContext, e0: Expression): Expression = match ec0 with {
     case Hole        => e0
-    case App1(ec, e) => App(recompose(ec, e0), e)
-    case App2(v, ec) => App(v, recompose(ec, e0))
+    case EApp1(ec, e) => App(recompose(ec, e0), e)
+    case EApp2(v, ec) => App(v, recompose(ec, e0))
 }
 
 ///
@@ -247,28 +235,16 @@ def eval(e0: Expression): Expression =
 //
 // We can now test our lambda interpreter!
 //
-def testEval1: Expression = eval(Var(0))                                        // x
-def testEval2: Expression = eval(Abs(0, Var(0)))                                // λx. x
-def testEval3: Expression = eval(Abs(0, Abs(1, Var(0))))                        // λx. λy. x
-def testEval4: Expression = eval(App(Abs(0, Var(0)), Abs(1, Var(1))))           // (λx. x) (λy. y)
-def testEval5: Expression = eval(App(Abs(0, Abs(1, Var(0))), Abs(2, Var(2))))   // (λx. λy. x) (λz. z)
-
-//
-// Here is the omega-combinator: (λx. x x) (λx. x x)
-//
-// If you run this, Flix will loop forever.
-//
-def testOmega: Expression = eval(
-    App(
-        Abs(0, App(Var(0), Var(0))),
-        Abs(0, App(Var(0), Var(0)))))
-
+def testEval1: Expression = eval(Abs(0, Var(0)))                                // λx. x
+def testEval2: Expression = eval(Abs(0, Abs(1, Var(0))))                        // λx. λy. x
+def testEval3: Expression = eval(App(Abs(0, Var(0)), Abs(1, Var(1))))           // (λx. x) (λy. y)
+def testEval4: Expression = eval(App(Abs(0, Abs(1, Var(0))), Abs(2, Var(2))))   // (λx. λy. x) (λz. z)
 
 ///
 /// Returns a fresh variable name.
 /// (Relies on an unsafe and impure built-in Flix function!).
 ///
-def freshVar: Int = genSym()
+def freshVar: Int = genSym!()
 
 
 
