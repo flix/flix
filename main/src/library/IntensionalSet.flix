@@ -25,6 +25,28 @@ namespace IntensionalSet {
     def singleton[a](x: a): IntensionalSet[a] = IntensionalSet(y -> y == x)
 
     ///
+    /// Returns `true` if this set is empty.
+    ///
+    /// NB: This function may be uncomputable.
+    ///
+    def null[a](s: IntensionalSet[a]): Bool =
+        let IntensionalSet(f) = s;
+            ∀(x: a). !f(x)
+
+    ///
+    /// Returns `true` if every element in `s1` appears in `s2`.
+    ///
+    /// NB: This function may be uncomputable.
+    ///
+    def isSubsetOf[a](s1: IntensionalSet[a], s2: IntensionalSet[a]): Bool =
+        let IntensionalSet(f1) = s1;
+        let IntensionalSet(f2) = s2;
+            ∀(x: a). f1(x) → f2(x)
+
+    //- **isProperSubsetOf(xs: Set[A], ys: Set[A]): Bool**
+    //    - Returns true if every element in xs appears in ys and xs != ys.
+
+    ///
     /// Adds `x` to the set `s`.
     ///
     def insert[a](x: a, s: IntensionalSet[a]): IntensionalSet[a] =
@@ -45,18 +67,32 @@ namespace IntensionalSet {
         let IntensionalSet(f) = s;
             f(a)
 
+    ///
+    /// Returns the union of `s1` and `s2`.
+    ///
+    def union[a](s1: IntensionalSet[a], s2: IntensionalSet[a]): IntensionalSet[a] =
+        let IntensionalSet(f1) = s1;
+        let IntensionalSet(f2) = s2;
+            IntensionalSet(y -> f1(y) || f2(y))
+
+    ///
+    /// Returns the intersection of `s1` and `s2`.
+    ///
+    def intersection[a](s1: IntensionalSet[a], s2: IntensionalSet[a]): IntensionalSet[a] =
+        let IntensionalSet(f1) = s1;
+        let IntensionalSet(f2) = s2;
+            IntensionalSet(y -> f1(y) && f2(y))
+
+    ///
+    /// Returns the difference of `s1` and `s2`.
+    ///
+    def difference[a](s1: IntensionalSet[a], s2: IntensionalSet[a]): IntensionalSet[a] =
+        let IntensionalSet(f1) = s1;
+        let IntensionalSet(f2) = s2;
+            IntensionalSet(y -> f1(y) && !f2(y))
 
 
-    //
-    //## Elementary Set Operations
-    //- **union(xs: Set[A], ys: Set[A]): Set[A]**
-    //    - Returns a new set of the union of xs and ys.
-    //- **intersection(xs: Set[A], ys: Set[A]): Set[A]**
-    //    - Returns a new set of the intersection of xs and ys.
-    //- **difference(xs: Set[A], ys: Set[A]): Set[A]**
-    //    - Returns a new set of the difference of xs and ys.
-    //- **subsets(xs: Set[A]): Set[Set[A]]**
-    //    - Returns the subsets of the set xs.
+
     //
     //## Set Transformation
     //- **filter(f: A => Bool, xs: Set[A]): Set[A]**
@@ -108,5 +144,23 @@ namespace IntensionalSet {
 
     @test
     def testDelete03: Bool = assert!(42 `memberOf` insert(42, delete(42, singleton(42))))
+
+    @test
+    def testUnion01: Bool = assert!(21 `memberOf` union(singleton(21), singleton(42)))
+
+    @test
+    def testUnion02: Bool = assert!(42 `memberOf` union(singleton(21), singleton(42)))
+
+    @test
+    def testIntersection01: Bool = assert!(21 `memberOf` intersection(singleton(21), singleton(21)))
+
+    @test
+    def testIntersection02: Bool = assertNot!(21 `memberOf` intersection(singleton(21), singleton(42)))
+
+    @test
+    def testDifference01: Bool = assert!(21 `memberOf` difference(singleton(21), singleton(42)))
+
+    @test
+    def testDifference02: Bool = assertNot!(21 `memberOf` difference(singleton(21), singleton(21)))
 
 }
