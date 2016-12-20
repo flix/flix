@@ -177,13 +177,13 @@ object QuickChecker {
           success += TestResult.Success(property)
         } else {
           // Case 2: The symbolic evaluator disproved the property.
-          val error = PropertyError.mk(property, SymVal.mkModel(env, None))
+          val error = PropertyError.mk(property, SymVal.mkModel(env, Set.empty, None))
           failure += TestResult.Failure(property, error)
         }
       } catch {
         case ex: Exception =>
           // Case 3: The symbolic evaluator failed with an exception.
-          val error = PropertyError.mk(property, SymVal.mkModel(env, None))
+          val error = PropertyError.mk(property, SymVal.mkModel(env, Set.empty, None))
           failure += TestResult.Failure(property, error)
       }
     }

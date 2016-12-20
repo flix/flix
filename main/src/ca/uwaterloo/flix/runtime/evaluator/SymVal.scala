@@ -151,7 +151,7 @@ object SymVal {
     * Returns a stringified model of `env` where all free variables have been
     * replaced by their corresponding values from the Z3 model `model`.
     */
-  def mkModel(env: Map[Symbol.VarSym, SymVal], model: Option[Model]): Map[String, String] = {
+  def mkModel(env: Map[Symbol.VarSym, SymVal], freeVars: Set[Symbol.VarSym], model: Option[Model]): Map[String, String] = {
     def visit(e0: SymVal): String = e0 match {
       case SymVal.AtomicVar(id, tpe) => model match {
         case None => "?"
@@ -177,8 +177,9 @@ object SymVal {
       case SymVal.Closure(_, _) => "<<closure>>"
     }
 
-    env.foldLeft(SortedMap.empty[String, String]) {
-      case (macc, (key, value)) => macc + (key.text -> visit(value))
+    // TODO: hacked
+    freeVars.foldLeft(SortedMap.empty[String, String]) {
+      case (macc, sym) => macc + (sym.toString -> visit(SymVal.AtomicVar(sym, Type.Unit)))
     }
   }
 

@@ -177,13 +177,13 @@ object Verifier {
     val pathResults = envs flatMap {
       case env0 =>
         paths += 1
-        SymbolicEvaluator.eval(exp0.peelQuantifiers, env0, root) map {
+        SymbolicEvaluator.eval(exp0, env0, root) map {
           case (Nil, SymVal.True) =>
             // Case 1: The symbolic evaluator proved the property.
             PathResult.Success
           case (Nil, SymVal.False) =>
             // Case 2: The symbolic evaluator disproved the property.
-            PathResult.Failure(SymVal.mkModel(env0, None))
+            PathResult.Failure(SymVal.mkModel(env0, Set.empty, None))
           case (pc, v) => v match {
             case SymVal.True =>
               // Case 3.1: The property holds under some path condition.
@@ -236,11 +236,11 @@ object Verifier {
           PathResult.Success
         case SmtResult.Satisfiable(model) =>
           // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.
-          PathResult.Failure(SymVal.mkModel(env0, Some(model)))
+          PathResult.Failure(SymVal.mkModel(env0, expr.freeVars, Some(model)))
         case SmtResult.Unknown =>
           // Case 3.3: It is unknown whether the formula has a model.
           // Soundness require us to assume that there is a model.
-          PathResult.Unknown(SymVal.mkModel(env0, None))
+          PathResult.Unknown(SymVal.mkModel(env0, expr.freeVars, None))
       }
     })
   }

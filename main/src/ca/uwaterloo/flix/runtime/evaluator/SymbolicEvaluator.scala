@@ -974,6 +974,7 @@ object SymbolicEvaluator {
     * Enumerates all possible environments of the given universally quantified variables.
     */
   private def enumerate(q: List[(Symbol.VarSym, Type)], root: Root)(implicit genSym: GenSym): List[Map[Symbol.VarSym, SymVal]] = {
+    // TODO: Should only handle one thing at a time, and carry with the name of the variable.
     /*
      * Local visitor. Enumerates the symbolic values of a type.
      */

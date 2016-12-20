@@ -110,6 +110,7 @@ object ExecutableAst {
     /**
       * Returns a list of all the universally quantified variables in this expression.
       */
+    // TODO: Remove?
     def getQuantifiers: List[Expression.Var] = this match {
       case Expression.Universal(params, _, _) => params.map {
         case ExecutableAst.FormalArg(sym, tpe) => Expression.Var(sym, tpe, SourceLocation.Unknown)
@@ -120,6 +121,7 @@ object ExecutableAst {
     /**
       * Returns this expression with all universal quantifiers stripped.
       */
+    // TODO: Remove?
     def peelQuantifiers: Expression = this match {
       case Expression.Existential(params, exp, loc) => exp.peelQuantifiers
       case Expression.Universal(params, exp, loc) => exp.peelQuantifiers

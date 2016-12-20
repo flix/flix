@@ -23,10 +23,27 @@ import ca.uwaterloo.flix.util.InternalCompilerException
   * SMT expressions.
   */
 sealed trait SmtExpr {
+
+  // TODO: DOC + Rest
+  def freeVars: Set[Symbol.VarSym] = this match {
+    case SmtExpr.Var(sym, _) => Set(sym)
+    case SmtExpr.Int32(_) => Set.empty
+    case SmtExpr.Plus(e1, e2) => e1.freeVars ++ e2.freeVars
+    case SmtExpr.Modulo(e1, e2) => e1.freeVars ++ e2.freeVars
+    case SmtExpr.Equal(e1, e2) => e1.freeVars ++ e2.freeVars
+    case SmtExpr.NotEqual(e1, e2) => e1.freeVars ++ e2.freeVars
+    case SmtExpr.LogicalAnd(e1, e2) => e1.freeVars ++ e2.freeVars
+  }
+
   def tpe: Type
 }
 
 object SmtExpr {
+
+  /**
+    * Variable.
+    */
+  case class Var(sym: Symbol.VarSym, tpe: Type) extends SmtExpr
 
   /**
     * An Int8 constant.
@@ -62,11 +79,6 @@ object SmtExpr {
   case class BigInt(lit: java.math.BigInteger) extends SmtExpr {
     def tpe: Type = Type.BigInt
   }
-
-  /**
-    * Variable.
-    */
-  case class Var(sym: Symbol.VarSym, tpe: Type) extends SmtExpr
 
   /**
     * Addition.
