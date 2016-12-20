@@ -9,11 +9,6 @@ namespace IntensionalSet {
     ///
 
     ///
-    /// Returns an intensional set of the given predicate `f`.
-    ///
-    def of[a](f: a -> Bool): IntensionalSet[a] = IntensionalSet(f)
-
-    ///
     /// Returns the empty set.
     ///
     def empty[a]: IntensionalSet[a] = IntensionalSet(x -> false)
@@ -65,7 +60,7 @@ namespace IntensionalSet {
     ///
     /// Returns `true` if every element in `s1` appears in `s2`.
     ///
-    /// NB: This function may be uncomputable.
+    /// NB: This function may not be computable.
     ///
     def isSubsetOf[a](s1: IntensionalSet[a], s2: IntensionalSet[a]): Bool =
         let IntensionalSet(f1) = s1;
@@ -114,30 +109,29 @@ namespace IntensionalSet {
         let IntensionalSet(f) = s;
             IntensionalSet(y -> p(y) && f(y))
 
+    ///
+    /// Returns a set obtained by applying the function `t` to every element of `s`.
+    ///
+    /// NB: This function may not be computable.
+    ///
+    def map[a, b](t: a -> b, s: IntensionalSet[a]): IntensionalSet[b] =
+        let IntensionalSet(f) = s;
+            IntensionalSet(y -> ∃(x: a). f(x) && t(x) == y)
 
+    // TODO: flatMap
 
-    //
-    //## Set Transformation
-    //- **map(f: A => B, xs: Set[A]): Set[B]**
-    //    - Returns the result of applying the function f to every element in the set.
-    //    - Note: The returned set may be smaller than the given set.
-    //- **flatMap(f: A => Set[B], xs: Set[A]): Set[B]**
-    //    - Returns the result of applying the function f to every element in the set and taking the union of the result.
-    //
+    ///
+    /// Returns the result of applying the function `t` to each pair in the cross product of `s1` and `s2`.
+    ///
+    def crossProductWithMap[a, b](t: (a, a) -> b, s1: IntensionalSet[a], s2: IntensionalSet[a]): IntensionalSet[b] =
+        let IntensionalSet(f1) = s1;
+        let IntensionalSet(f2) = s2;
+            IntensionalSet(z -> ∀(x: a, y: a). f1(x) && f2(y) && t(x, y) == z)
 
 }
 
 
 namespace IntensionalSet {
-
-    @test
-    def testOf01: Bool = assert!(42 `memberOf` of(x -> x == 42))
-
-    @test
-    def testOf02: Bool = assert!(42 `memberOf` of(x -> x % 2 == 0))
-
-    @test
-    def testOf03: Bool = assertNot!(21 `memberOf` of(x -> x % 2 == 0))
 
     @test
     def testEmpty01: Bool = assertNot!(42 `memberOf` empty())
