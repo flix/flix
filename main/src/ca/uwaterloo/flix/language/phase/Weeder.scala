@@ -65,8 +65,8 @@ object Weeder {
         }
 
       case ParsedAst.Declaration.Definition(docOpt, ann, sp1, ident, tparams0, paramsOpt, tpe, exp, sp2) =>
-        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
-        val sl = mkSL(ident.sp1, ident.sp2)
+        val loc = mkSL(ident.sp1, ident.sp2)
+        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), loc))
         val annVal = Annotations.weed(ann)
         val expVal = Expressions.weed(exp)
         val tparams = tparams0.toList.map(_.ident)
@@ -77,10 +77,10 @@ object Weeder {
         paramsOpt match {
           case None => @@(annVal, expVal) flatMap {
             case (as, e) =>
-              val t = WeededAst.Type.Arrow(Nil, Types.weed(tpe), sl)
-              WeededAst.Declaration.Definition(doc, as, ident, tparams, Nil, e, t, sl).toSuccess
+              val t = WeededAst.Type.Arrow(Nil, Types.weed(tpe), loc)
+              WeededAst.Declaration.Definition(doc, as, ident, tparams, Nil, e, t, loc).toSuccess
           }
-          case Some(Nil) => IllegalParameterList(sl).toFailure
+          case Some(Nil) => IllegalParameterList(loc).toFailure
           case Some(params) =>
             /*
              * Check for `DuplicateFormal`.
@@ -88,8 +88,8 @@ object Weeder {
             val formalsVal = checkDuplicateFormal(params)
             @@(annVal, formalsVal, expVal) map {
               case (as, fs, e) =>
-                val t = WeededAst.Type.Arrow(fs map (_.tpe), Types.weed(tpe), sl)
-                WeededAst.Declaration.Definition(doc, as, ident, tparams, fs, e, t, sl)
+                val t = WeededAst.Type.Arrow(fs map (_.tpe), Types.weed(tpe), loc)
+                WeededAst.Declaration.Definition(doc, as, ident, tparams, fs, e, t, loc)
             }
         }
 
@@ -130,21 +130,30 @@ object Weeder {
         }
 
       case ParsedAst.Declaration.Law(docOpt, sp1, ident, tparams, paramsOpt, tpe, exp, sp2) =>
-        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
+        val loc = mkSL(sp1, sp2)
+        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), loc))
 
         /*
          * Check for `IllegalParameterList`.
          */
         Expressions.weed(exp) flatMap {
           case e => paramsOpt match {
-            case None => WeededAst.Declaration.Law(doc, ident, tparams.toList, Nil, Types.weed(tpe), e, mkSL(sp1, sp2)).toSuccess
+            case None =>
+              // Rewrite to Definition.
+              val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
+              val t = WeededAst.Type.Arrow(Nil, Types.weed(tpe), loc)
+              WeededAst.Declaration.Definition(doc, ann, ident, tparams.map(_.ident).toList, Nil, e, t, loc).toSuccess
             case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
             case Some(params) =>
               /*
                * Check for `DuplicateFormal`.
                */
               checkDuplicateFormal(params) map {
-                case ps => WeededAst.Declaration.Law(doc, ident, tparams.toList, ps, Types.weed(tpe), e, mkSL(sp1, sp2))
+                case fs =>
+                  // Rewrite to Definition.
+                  val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
+                  val t = WeededAst.Type.Arrow(fs map (_.tpe), Types.weed(tpe), loc)
+                  WeededAst.Declaration.Definition(doc, ann, ident, tparams.map(_.ident).toList, fs, e, t, loc)
               }
           }
         }

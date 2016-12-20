@@ -128,11 +128,6 @@ object Namer {
       case WeededAst.Declaration.External(doc, ident, params, tpe, loc) => ??? // TODO: Add support for external in Namer.
 
       /*
-       * Law.
-       */
-      case WeededAst.Declaration.Law(doc, ident, tparams, params, tpe, exp, loc) => ??? // TODO: Add support for law in Namer.
-
-      /*
        * Enum.
        */
       case WeededAst.Declaration.Enum(doc, ident, tparams0, cases, loc) =>
