@@ -698,8 +698,16 @@ namespace List {
     /// Accumulates the result of applying `f` pairwise to the elements of `xs` and `ys`
     /// starting with the initial value `c` and going from right to left.
     ///
-    def foldRight2[a,b,c](f: (a, b, c) -> c, c: c, xs: List[a], ys: List[b]): c = match (xs, ys) with {
-        case (x :: rs, y :: qs) => foldLeft2(f, f(x, y, c), rs, qs)
+    def foldRight2[a,b,c](f: (a, b, c) -> c, c: c, xs: List[a], ys: List[b]): c =
+        let len1 = length(xs);
+        let len2 = length(ys);
+            foldRight2Helper(f, c, drop(len1-len2, xs), drop(len2-len1, ys))
+
+    ///
+    /// Helper function for `foldRight2`.
+    ///
+    def foldRight2Helper[a,b,c](f: (a, b, c) -> c, c: c, xs: List[a], ys: List[b]): c = match (xs, ys) with {
+        case (x :: rs, y :: qs) => f(x, y, foldRight2(f, c, rs, qs))
         case _ => c
     }
 
