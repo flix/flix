@@ -425,30 +425,20 @@ object Namer {
           case (e1, e2) => NamedAst.Expression.GetIndex(e1, e2, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.Existential(params, exp, loc) =>
-        val ps = params map {
-          case WeededAst.FormalParam(ident, tpe, loc1) =>
-            val sym = Symbol.freshVarSym(ident)
-            NamedAst.FormalParam(sym, Types.namer(tpe, tenv0), loc1)
-        }
-        val env1 = ps.foldLeft(env0) {
-          case (macc, NamedAst.FormalParam(sym, tpe, _)) => macc + (sym.text -> sym)
-        }
-        namer(exp, env1, tenv0) map {
-          case e => NamedAst.Expression.Existential(ps, e, loc)
+      case WeededAst.Expression.Existential(param, exp, loc) =>
+        val sym = Symbol.freshVarSym(param.ident)
+        namer(exp, env0 + (sym.text -> sym), tenv0) map {
+          case e =>
+            val p = NamedAst.FormalParam(sym, Types.namer(param.tpe, tenv0), param.loc)
+            NamedAst.Expression.Existential(p, e, loc)
         }
 
-      case WeededAst.Expression.Universal(params, exp, loc) =>
-        val ps = params map {
-          case WeededAst.FormalParam(ident, tpe, loc1) =>
-            val sym = Symbol.freshVarSym(ident)
-            NamedAst.FormalParam(sym, Types.namer(tpe, tenv0), loc1)
-        }
-        val env1 = ps.foldLeft(env0) {
-          case (macc, NamedAst.FormalParam(sym, tpe, _)) => macc + (sym.text -> sym)
-        }
-        namer(exp, env1, tenv0) map {
-          case e => NamedAst.Expression.Universal(ps, e, loc)
+      case WeededAst.Expression.Universal(param, exp, loc) =>
+        val sym = Symbol.freshVarSym(param.ident)
+        namer(exp, env0 + (sym.text -> sym), tenv0) map {
+          case e =>
+            val p = NamedAst.FormalParam(sym, Types.namer(param.tpe, tenv0), param.loc)
+            NamedAst.Expression.Universal(p, e, loc)
         }
 
       case WeededAst.Expression.Ascribe(exp, tpe, loc) => namer(exp, env0, tenv0) map {
@@ -497,8 +487,8 @@ object Namer {
       }
       case WeededAst.Expression.GetIndex(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
       case WeededAst.Expression.PutIndex(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
-      case WeededAst.Expression.Existential(params, exp, loc) => filterBoundVars(freeVars(exp), params.map(_.ident))
-      case WeededAst.Expression.Universal(params, exp, loc) => filterBoundVars(freeVars(exp), params.map(_.ident))
+      case WeededAst.Expression.Existential(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
+      case WeededAst.Expression.Universal(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
       case WeededAst.Expression.Ascribe(exp, tpe, loc) => freeVars(exp)
       case WeededAst.Expression.UserError(loc) => Nil
     }
@@ -546,6 +536,7 @@ object Namer {
       */
     def namer(pat0: WeededAst.Pattern)(implicit genSym: GenSym): (NamedAst.Pattern, Map[String, Symbol.VarSym]) = {
       val m = mutable.Map.empty[String, Symbol.VarSym]
+
       def visit(p: WeededAst.Pattern): NamedAst.Pattern = p match {
         case WeededAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(Type.freshTypeVar(), loc)
         case WeededAst.Pattern.Var(ident, loc) =>
@@ -654,6 +645,7 @@ object Namer {
         case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams.map(t => visit(t, env)), visit(tresult, env), loc)
         case WeededAst.Type.Apply(base, tparams, loc) => NamedAst.Type.Apply(visit(base, env), tparams.map(t => visit(t, env)), loc)
       }
+
       visit(tpe, tenv0)
     }
 

@@ -150,9 +150,9 @@ object NamedAst {
 
     case class PutIndex(exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Existential(params: List[NamedAst.FormalParam], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class Existential(fparam: NamedAst.FormalParam, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Universal(params: List[NamedAst.FormalParam], exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+    case class Universal(fparam: NamedAst.FormalParam, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Ascribe(exp: NamedAst.Expression, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
 

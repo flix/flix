@@ -558,7 +558,7 @@ object Weeder {
            * Checks for `IllegalExistential`.
            */
           visit(exp) flatMap {
-            case e => paramsOpt match {
+            case body => paramsOpt match {
               case None => IllegalExistential(mkSL(sp1, sp2)).toFailure
               case Some(Nil) => IllegalExistential(mkSL(sp1, sp2)).toFailure
               case Some(params) =>
@@ -566,7 +566,13 @@ object Weeder {
                  * Check for `DuplicateFormal`.
                  */
                 checkDuplicateFormal(params) map {
-                  case ps => WeededAst.Expression.Existential(ps, e, mkSL(sp1, sp2))
+                  case ps =>
+                    /*
+                     * Rewrites the multi-parameter existential to nested single-parameter existentials.
+                     */
+                    ps.foldRight(body) {
+                      case (param, eacc) => WeededAst.Expression.Existential(param, eacc, mkSL(sp1, sp2))
+                    }
                 }
             }
           }
@@ -576,7 +582,7 @@ object Weeder {
            * Checks for `IllegalUniversal`.
            */
           visit(exp) flatMap {
-            case e => paramsOpt match {
+            case body => paramsOpt match {
               case None => IllegalUniversal(mkSL(sp1, sp2)).toFailure
               case Some(Nil) => IllegalUniversal(mkSL(sp1, sp2)).toFailure
               case Some(params) =>
@@ -584,7 +590,13 @@ object Weeder {
                  * Check for `DuplicateFormal`.
                  */
                 checkDuplicateFormal(params) map {
-                  case ps => WeededAst.Expression.Universal(ps, e, mkSL(sp1, sp2))
+                  case ps =>
+                    /*
+                     * Rewrites the multi-parameter universal to nested single-parameter universals.
+                     */
+                    ps.foldRight(body) {
+                      case (param, eacc) => WeededAst.Expression.Universal(param, eacc, mkSL(sp1, sp2))
+                    }
                 }
             }
           }

@@ -225,14 +225,14 @@ object Simplifier {
       case TypedAst.Expression.FMap(elms, tpe, loc) => ??? // TODO
       case TypedAst.Expression.GetIndex(e1, e2, tpe, loc) => ??? // TODO
       case TypedAst.Expression.PutIndex(e1, e2, e3, tpe, loc) => ??? // TODO
-      case TypedAst.Expression.Existential(params, exp, loc) =>
-        val ps = params.map(p => SimplifiedAst.FormalParam(p.sym, p.tpe))
+      case TypedAst.Expression.Existential(fparam, exp, loc) =>
+        val p = SimplifiedAst.FormalParam(fparam.sym, fparam.tpe)
         val e = simplify(exp)
-        SimplifiedAst.Expression.Existential(ps, e, loc)
-      case TypedAst.Expression.Universal(params, exp, loc) =>
-        val ps = params.map(p => SimplifiedAst.FormalParam(p.sym, p.tpe))
+        SimplifiedAst.Expression.Existential(p, e, loc)
+      case TypedAst.Expression.Universal(fparam, exp, loc) =>
+        val p = SimplifiedAst.FormalParam(fparam.sym, fparam.tpe)
         val e = simplify(exp)
-        SimplifiedAst.Expression.Universal(ps, e, loc)
+        SimplifiedAst.Expression.Universal(p, e, loc)
       case TypedAst.Expression.UserError(tpe, loc) =>
         SimplifiedAst.Expression.UserError(tpe, loc)
     }

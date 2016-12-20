@@ -720,14 +720,16 @@ object SymbolicEvaluator {
       // NB: Not yet fully implemented in the backend.
       case e: Expression.FSet => throw InternalCompilerException(s"Unsupported expression: '$e'.")
 
+
+      case e: Expression.Existential =>
+        throw InternalCompilerException(s"Unsupported expression: '$e'.") // TODO
+
       /**
-        * Unsupported expressions.
+        * Universal Quantifier.
         */
-      case e: Expression.ApplyHook => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.Existential => throw InternalCompilerException(s"Unsupported expression: '$e'.") // TODO
-      case Expression.Universal(fparams, exp, _) =>
-        // Enumerate the values of the universal parameters.
-        val envs = enumerate(fparams.map(param => (param.sym, param.tpe)), root)
+      case Expression.Universal(fparam, exp, _) =>
+        // Enumerate the values of the formal parameter.
+        val envs = enumerate(fparam.sym, fparam.tpe, root)
         // Evaluate the body under the current environment extended with each of the new environment.
         envs flatMap {
           case env1 =>
@@ -735,6 +737,10 @@ object SymbolicEvaluator {
             eval(pc0, exp, extendedEnv)
         }
 
+      /**
+        * Unsupported expressions.
+        */
+      case e: Expression.ApplyHook => throw InternalCompilerException(s"Unsupported expression: '$e'.")
       case e: Expression.LoadBool => throw InternalCompilerException(s"Unsupported expression: '$e'.")
       case e: Expression.LoadInt8 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
       case e: Expression.LoadInt16 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
@@ -973,23 +979,24 @@ object SymbolicEvaluator {
   /**
     * Enumerates all possible environments of the given universally quantified variables.
     */
-  private def enumerate(q: List[(Symbol.VarSym, Type)], root: Root)(implicit genSym: GenSym): List[Map[Symbol.VarSym, SymVal]] = {
-    // TODO: Should only handle one thing at a time, and carry with the name of the variable.
+  private def enumerate(sym: Symbol.VarSym, tpe: Type, root: Root)(implicit genSym: GenSym): List[Map[Symbol.VarSym, SymVal]] = {
+    // TODO: See if the symbol can be used for naming...
+
     /*
      * Local visitor. Enumerates the symbolic values of a type.
      */
     def visit(tpe: Type): List[SymVal] = tpe match {
       case Type.Unit => List(SymVal.Unit)
       case Type.Bool => List(SymVal.True, SymVal.False)
-      case Type.Char => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Char))
-      case Type.Float32 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Float32))
-      case Type.Float64 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Float64))
-      case Type.Int8 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Int8))
-      case Type.Int16 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Int16))
-      case Type.Int32 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Int32))
-      case Type.Int64 => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Int64))
-      case Type.BigInt => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.BigInt))
-      case Type.Str => List(SymVal.AtomicVar(Symbol.freshVarSym(), Type.Str))
+      case Type.Char => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Char))
+      case Type.Float32 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Float32))
+      case Type.Float64 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Float64))
+      case Type.Int8 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int8))
+      case Type.Int16 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int16))
+      case Type.Int32 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int32))
+      case Type.Int64 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int64))
+      case Type.BigInt => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.BigInt))
+      case Type.Str => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Str))
       case Type.Enum(sym, kind) =>
         val decl = root.enums(sym)
         decl.cases.flatMap {
@@ -1021,11 +1028,7 @@ object SymbolicEvaluator {
       }
     }
 
-    val result = q map {
-      case (sym, tpe) => sym -> visit(tpe)
-    }
-
-    expand(result)
+    expand(List(sym -> visit(tpe)))
   }
 
 }

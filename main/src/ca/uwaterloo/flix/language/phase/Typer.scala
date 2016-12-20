@@ -1034,16 +1034,16 @@ object Typer {
         /*
          * Existential expression.
          */
-        case NamedAst.Expression.Existential(params, exp, loc) =>
+        case NamedAst.Expression.Existential(fparam, exp, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.Existential(visitParams(params), e, loc)
+          TypedAst.Expression.Existential(visitParam(fparam), e, loc)
 
         /*
          * Universal expression.
          */
-        case NamedAst.Expression.Universal(params, exp, loc) =>
+        case NamedAst.Expression.Universal(fparam, exp, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.Universal(visitParams(params), e, loc)
+          TypedAst.Expression.Universal(visitParam(fparam), e, loc)
 
         /*
          * Ascribe expression.
@@ -1095,13 +1095,10 @@ object Typer {
       /**
         * Applies the substitution to the given list of formal parameters.
         */
-      def visitParams(xs: List[NamedAst.FormalParam]): List[TypedAst.FormalParam] = {
-        xs map {
-          case NamedAst.FormalParam(sym, tpe, loc) =>
-            Disambiguation.resolve(tpe, ns0, program) match {
-              case Ok(resolvedType) => TypedAst.FormalParam(sym, subst0(resolvedType), loc)
-              case Err(e) => throw InternalCompilerException("Never happens. Resolution should have failed during type inference.")
-            }
+      def visitParam(param: NamedAst.FormalParam): TypedAst.FormalParam = {
+        Disambiguation.resolve(param.tpe, ns0, program) match {
+          case Ok(resolvedType) => TypedAst.FormalParam(param.sym, subst0(resolvedType), param.loc)
+          case Err(_) => throw InternalCompilerException("Never happens. Resolution should have failed during type inference.")
         }
       }
 

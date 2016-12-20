@@ -428,7 +428,9 @@ object PropertyGen {
     */
   def ∀(q: Expression.Var*)(e: Expression): TypedAst.Expression = {
     val params = q.toList.map(e => TypedAst.FormalParam(e.sym, e.tpe, e.loc))
-    TypedAst.Expression.Universal(params, e, SourceLocation.Unknown)
+    params.foldRight(e) {
+      case (param, eacc) => TypedAst.Expression.Universal(param, eacc, SourceLocation.Unknown)
+    }
   }
 
   /**

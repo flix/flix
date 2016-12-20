@@ -361,7 +361,7 @@ object Interpreter {
   def evalCall(defn: Constant, args: Array[AnyRef], root: Root, env0: Map[String, AnyRef] = Map.empty): AnyRef = {
     if (defn.method == null) {
       val env = defn.formals.zip(args).foldLeft(env0) {
-        case (macc, (ExecutableAst.FormalArg(name, tpe), actual)) => macc + (name.toString -> actual)
+        case (macc, (ExecutableAst.FormalParam(name, tpe), actual)) => macc + (name.toString -> actual)
       }
       eval(defn.exp, root, env)
     } else {

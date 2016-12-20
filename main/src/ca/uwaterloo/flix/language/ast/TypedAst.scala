@@ -160,11 +160,11 @@ object TypedAst {
 
     case class PutIndex(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Existential(params: List[TypedAst.FormalParam], exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
+    case class Existential(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = Type.Bool
     }
 
-    case class Universal(params: List[TypedAst.FormalParam], exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
+    case class Universal(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = Type.Bool
     }
 
