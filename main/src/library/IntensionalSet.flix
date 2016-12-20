@@ -5,6 +5,10 @@ enum IntensionalSet[a] {
 namespace IntensionalSet {
 
     ///
+    /// # Set Construction
+    ///
+
+    ///
     /// Returns an intensional set of the given predicate `f`.
     ///
     def of[a](f: a -> Bool): IntensionalSet[a] = IntensionalSet(f)
@@ -25,28 +29,6 @@ namespace IntensionalSet {
     def singleton[a](x: a): IntensionalSet[a] = IntensionalSet(y -> y == x)
 
     ///
-    /// Returns `true` if this set is empty.
-    ///
-    /// NB: This function may be uncomputable.
-    ///
-    def null[a](s: IntensionalSet[a]): Bool =
-        let IntensionalSet(f) = s;
-            ∀(x: a). !f(x)
-
-    ///
-    /// Returns `true` if every element in `s1` appears in `s2`.
-    ///
-    /// NB: This function may be uncomputable.
-    ///
-    def isSubsetOf[a](s1: IntensionalSet[a], s2: IntensionalSet[a]): Bool =
-        let IntensionalSet(f1) = s1;
-        let IntensionalSet(f2) = s2;
-            ∀(x: a). f1(x) → f2(x)
-
-    //- **isProperSubsetOf(xs: Set[A], ys: Set[A]): Bool**
-    //    - Returns true if every element in xs appears in ys and xs != ys.
-
-    ///
     /// Adds `x` to the set `s`.
     ///
     def insert[a](x: a, s: IntensionalSet[a]): IntensionalSet[a] =
@@ -61,11 +43,40 @@ namespace IntensionalSet {
             IntensionalSet(y -> y != x && f(y))
 
     ///
+    /// # Set Predicates.
+    ///
+
+    ///
+    /// Returns `true` if this set is empty.
+    ///
+    /// NB: This function may be uncomputable.
+    ///
+    def null[a](s: IntensionalSet[a]): Bool =
+        let IntensionalSet(f) = s;
+            ∀(x: a). !f(x)
+
+    ///
     /// Returns `true` if `a` is a member of the set `s`.
     ///
     def memberOf[a](a: a, s: IntensionalSet[a]): Bool =
         let IntensionalSet(f) = s;
             f(a)
+
+    ///
+    /// Returns `true` if every element in `s1` appears in `s2`.
+    ///
+    /// NB: This function may be uncomputable.
+    ///
+    def isSubsetOf[a](s1: IntensionalSet[a], s2: IntensionalSet[a]): Bool =
+        let IntensionalSet(f1) = s1;
+        let IntensionalSet(f2) = s2;
+            ∀(x: a). f1(x) → f2(x)
+
+    // TODO: isProperSubsetOf
+
+    ///
+    /// # Elementary Set Operations.
+    ///
 
     ///
     /// Returns the union of `s1` and `s2`.
@@ -91,12 +102,22 @@ namespace IntensionalSet {
         let IntensionalSet(f2) = s2;
             IntensionalSet(y -> f1(y) && !f2(y))
 
+    ///
+    /// # Set Transformations.
+    ///
+
+    ///
+    /// Returns the subset of elements that satisfy the predicate `p`.
+    ///
+    // TODO: Use other name for filter?
+    def filter[a](p: a -> Bool, s: IntensionalSet[a]): IntensionalSet[a] =
+        let IntensionalSet(f) = s;
+            IntensionalSet(y -> p(y) && f(y))
+
 
 
     //
     //## Set Transformation
-    //- **filter(f: A => Bool, xs: Set[A]): Set[A]**
-    //    - Returns the subset of xs where the elements satisfy the predicate f.
     //- **map(f: A => B, xs: Set[A]): Set[B]**
     //    - Returns the result of applying the function f to every element in the set.
     //    - Note: The returned set may be smaller than the given set.
@@ -162,5 +183,11 @@ namespace IntensionalSet {
 
     @test
     def testDifference02: Bool = assertNot!(21 `memberOf` difference(singleton(21), singleton(21)))
+
+    @test
+    def testFilter01: Bool = assert!(21 `memberOf` filter(x -> x % 2 != 0, singleton(21)))
+
+    @test
+    def testFilter02: Bool = assertNot!(21 `memberOf` filter(x -> x % 2 == 0, singleton(21)))
 
 }
