@@ -115,6 +115,8 @@ enum EvaluationContext {
     case ELink2(Expression, EvaluationContext)
 }
 
+// TODO: Consider whether to introduce Address constructor.
+
 ///
 /// The store maps addresses to values.
 ///
@@ -346,6 +348,7 @@ def recompose(ec0: EvaluationContext, e0: Expression): Expression = match ec0 wi
 ///
 /// Performs a single reduction step in the given machine `m0`.
 ///
+// TODO: Consider if the expression should be the first component? like in CEK?
 def reduce(m0: State): State = match m0 with {
     case State(h0, s0, f0, r0, l0, q0, App(Abs(x, e1), e2)) =>
         // Apply beta-reduction: Use alpha-renaming to avoid capture.
@@ -368,17 +371,57 @@ def reduce(m0: State): State = match m0 with {
             case Some(v) => State(Heap(h0), s0, f0, r0, l0, q0, v)
         }
 
-    case State(h0, s0, f0, r0, l0, q0, Promisify(Addr(a))) =>
-        ???
+    case State(h0, PromiseState(s0), f0, r0, l0, q0, Promisify(Addr(a))) =>
+        match Map/lookup(a, s0) with {
+            case None =>
+                let s1 = Map/insert(a, Pending, s0);
+                    State(h0, PromiseState(s1), f0, r0, l0, q0, ???) // TODO: Return Undef.
+            case Some(_) => m0
+        }
 
-    case State(h0, s0, f0, r0, l0, q0, Resolve(e1, e2)) =>
-        ???
+    case State(h0, PromiseState(s0), f0, r0, l0, q0, Resolve(Addr(a), v)) =>
+        // Lookup the state of the promise.
+        match Map/lookup(a, s0) with {
+            case None =>
+                // Case 1: The address is not a promise. The evaluation is stuck.
+                m0
+            case Some(Pending) =>
+                // Case 2: The promise is pending.
+                ???  // TODO
+            case Some(Fulfilled(v)) =>
+                // Case 3: The promise has already been fulfilled with the value `v`. The resolve has no effect.
+                State(h0, PromiseState(s0), f0, r0, l0, q0, ???) // TODO: Return Undef
+            case Some(Rejected(v)) =>
+                // Case 4: The promise has already been rejected with the value `v`. The resolve has no effect.
+                State(h0, PromiseState(s0), f0, r0, l0, q0, ???) // TODO: Return Undef
+        }
 
     case State(h0, s0, f0, r0, l0, q0, Reject(e1, e2)) =>
         ???
 
-    case State(h0, s0, f0, r0, l0, q0, OnResolve(e1, e2)) =>
-        ???
+    case State(Heap(h0), PromiseState(s0), FulfillReactions(f0), r0, l0, Queue(q0), OnResolve(Addr(a), lam)) =>
+        // Lookup the state of the promise.
+        match Map/lookup(a, s0) with {
+            case None =>
+                // Case 1: The address is not a promise. The evaluation is stuck.
+                m0
+            case Some(Pending) =>
+                // Case 2: The promise is in the pending state.
+                let reactions = Map/getWithDefault(a, Nil, f0);
+                    ???
+                    // TODO
+            case Some(Fulfilled(v)) =>
+                // Case 3: The promise has been fulfilled.
+                // Allocate a child promise and enqueue the promise reaction `lam` with the resolved value.
+                let childAddr = freshAddr();
+                let job = (Fulfilled(v), lam, childAddr);
+                // case Queue(List[(PromiseValue, Expression, Int)])
+                // TODO
+                ???
+            case Some(Rejected(v)) =>
+                // Case 4: The promise has been rejected.. The onResolve has no effect.
+                State(Heap(h0), PromiseState(s0), FulfillReactions(f0), r0, l0, Queue(q0), ???) // TODO: Return Undef.
+        }
 
     case State(h0, s0, f0, r0, l0, q0, OnReject(e1, e2)) =>
         ???
@@ -492,6 +535,8 @@ namespace Map {
     def lookup[k, v](k: k, m: Map2[k, v]): Option[v] =
         let Map2(xs) = m;
             getHelper(k, xs)
+
+    def getWithDefault[k, v](k: k, d: v, m: Map2[k, v]): v = ???
 
     def getHelper[k, v](k: k, xs: List[(k, v)]): Option[v] = match xs with {
         case Nil => None
