@@ -118,8 +118,8 @@ enum EvaluationContext {
 ///
 /// The store maps addresses to values.
 ///
-enum Store {
-    case Store(Map2[Int, Expression])
+enum Heap {
+    case Heap(Map2[Int, Expression])
 }
 
 ///
@@ -164,6 +164,13 @@ enum PromiseValue {
     case Pending,
     case Fulfilled(Expression),
     case Rejected(Expression)
+}
+
+///
+/// A machine configuration.
+///
+enum State {
+    case State(Heap, PromiseState, FulfillReactions, RejectReactions, PromiseLinks, Queue, Expression)
 }
 
 ///
@@ -335,53 +342,49 @@ def recompose(ec0: EvaluationContext, e0: Expression): Expression = match ec0 wi
     case ELink2(e, ec)      => Link(e, recompose(ec, e0))
 }
 
+
 ///
-/// Reduces the redex `e0`.
+/// Performs a single reduction step in the given machine `m0`.
 ///
-def reduce(e: Expression): Expression = match e with {
-    case App(Abs(x, e1), e2) =>
+def reduce(m0: State): State = match m0 with {
+    case State(h0, s0, f0, r0, l0, q0, App(Abs(x, e1), e2)) =>
         // Apply beta-reduction: Use alpha-renaming to avoid capture.
-        substitute(e1, x, alpha(e2, Map/empty()))
-    case Seq(e1, e2) => if (isValue(e1)) e2 else Seq(e1, e2)
-    case _ => e
-}
+        let e = substitute(e1, x, alpha(e2, Map/empty()));
+            State(h0, s0, f0, r0, l0, q0, e)
 
-enum State {
-    case State(Store, PromiseState, FulfillReactions, RejectReactions, PromiseLinks, Queue, Expression)
-}
+    case State(h0, s0, f0, r0, l0, q0, Seq(v, e)) =>
+        // Discard the value in the sequence.
+        State(h0, s0, f0, r0, l0, q0, e)
 
-///
-/// TODO: DOC
-///
-def reduce2(m0: State): State = {
-    let State(h0, s0, f0, r0, l0, q0, e0) = m0;
-        match e0 with {
+    case State(Heap(h0), s0, f0, r0, l0, q0, Ref(v)) =>
+        let a = freshAddr();
+        let h1 = Map/insert(a, v, h0);
+        let e1 = Addr(a);
+            State(Heap(h1), s0, f0, r0, l0, q0, e1)
 
-            // TODO: Deal with App and Seq here?
-
-            case Ref(v) =>
-                let a = freshAddr();
-                let h1 = ???; // TODO
-                let e1 = Addr(a);
-                    State(h1, s0, f0, r0, l0, q0, e1)
-
-            case Deref(e) => ???
-
-            case Promisify(e) =>
-
-                ???
-
-            case Resolve(e1, e2) => ???
-
-            case Reject(e1, e2) => ???
-
-            case OnResolve(e1, e2) => ???
-
-            case OnReject(e1, e2) => ???
-
-            case Link(e1, e2) => ???
-
+    case State(Heap(h0), s0, f0, r0, l0, q0, Deref(Addr(a))) =>
+        match Map/lookup(a, h0) with {
+            case None => m0
+            case Some(v) => State(Heap(h0), s0, f0, r0, l0, q0, v)
         }
+
+    case State(h0, s0, f0, r0, l0, q0, Promisify(Addr(a))) =>
+        ???
+
+    case State(h0, s0, f0, r0, l0, q0, Resolve(e1, e2)) =>
+        ???
+
+    case State(h0, s0, f0, r0, l0, q0, Reject(e1, e2)) =>
+        ???
+
+    case State(h0, s0, f0, r0, l0, q0, OnResolve(e1, e2)) =>
+        ???
+
+    case State(h0, s0, f0, r0, l0, q0, OnReject(e1, e2)) =>
+        ???
+
+    case State(h0, s0, f0, r0, l0, q0, Link(e1, e2)) =>
+        ???
 }
 
 ///
@@ -411,7 +414,7 @@ def substitute(e0: Expression, x: Int, r0: Expression): Expression = match e0 wi
 def alpha(e0: Expression, m: Map2[Int, Int]): Expression = match e0 with {
     case Var(x) =>
         // Check if we need to rename the variable.
-        match Map/get(x, m) with {
+        match Map/lookup(x, m) with {
             case None    => Var(x)
             case Some(y) => Var(y)
         }
@@ -440,7 +443,7 @@ def alpha(e0: Expression, m: Map2[Int, Int]): Expression = match e0 with {
 ///
 def step(e0: Expression): Expression = match redex(e0) with {
     case None => e0
-    case Some((e, ec)) => recompose(ec, reduce(e0))
+    case Some((e, ec)) => recompose(ec, ???) // TODO
 }
 
 ///
@@ -475,17 +478,18 @@ def freshVar: Int = genSym!()
 // ----------------------------------------------------------------------------
 // TODO: Replace by functions from the standard library.
 // ----------------------------------------------------------------------------
+
 enum Map2[k, v] {
     case Map2(List[(k, v)])
 }
 namespace Map {
     def empty: Map2[Int, Int] = Map2(Nil)
 
-    def insert(k: Int, v: Int, m: Map2[Int, Int]): Map2[Int, Int] =
+    def insert[k, v](k: k, v: v, m: Map2[k, v]): Map2[k, v] =
         let Map2(xs) = m;
             Map2((k, v) :: xs)
 
-    def get[k, v](k: k, m: Map2[k, v]): Option[v] =
+    def lookup[k, v](k: k, m: Map2[k, v]): Option[v] =
         let Map2(xs) = m;
             getHelper(k, xs)
 
