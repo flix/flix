@@ -360,18 +360,21 @@ def reduce(m0: State): State = match m0 with {
         State(h0, s0, f0, r0, l0, q0, e)
 
     case State(Heap(h0), s0, f0, r0, l0, q0, Ref(v)) =>
+        // Allocate a fresh address in the heap and store the value at that address.
         let a = freshAddr();
         let h1 = Map/insert(a, v, h0);
         let e1 = Addr(a);
             State(Heap(h1), s0, f0, r0, l0, q0, e1)
 
     case State(Heap(h0), s0, f0, r0, l0, q0, Deref(Addr(a))) =>
+        // Dereference the address and return its value.
         match Map/lookup(a, h0) with {
             case None => m0
             case Some(v) => State(Heap(h0), s0, f0, r0, l0, q0, v)
         }
 
     case State(h0, PromiseState(s0), f0, r0, l0, q0, Promisify(Addr(a))) =>
+        // Sets the state of an uninitialized promise to pending.
         match Map/lookup(a, s0) with {
             case None =>
                 let s1 = Map/insert(a, Pending, s0);
@@ -399,7 +402,7 @@ def reduce(m0: State): State = match m0 with {
     case State(h0, s0, f0, r0, l0, q0, Reject(e1, e2)) =>
         ???
 
-    case State(Heap(h0), PromiseState(s0), FulfillReactions(f0), r0, l0, Queue(q0), OnResolve(Addr(a), lam)) =>
+    case State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0), OnResolve(Addr(a), lam)) =>
         // Lookup the state of the promise.
         match Map/lookup(a, s0) with {
             case None =>
@@ -412,15 +415,13 @@ def reduce(m0: State): State = match m0 with {
                     // TODO
             case Some(Fulfilled(v)) =>
                 // Case 3: The promise has been fulfilled.
-                // Allocate a child promise and enqueue the promise reaction `lam` with the resolved value.
+                // Allocate a child promise and enqueue the promise reaction `lam` with the resolved value `v`.
                 let childAddr = freshAddr();
                 let job = (Fulfilled(v), lam, childAddr);
-                // case Queue(List[(PromiseValue, Expression, Int)])
-                // TODO
-                ???
+                State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(job :: q0), Addr(childAddr))
             case Some(Rejected(v)) =>
                 // Case 4: The promise has been rejected.. The onResolve has no effect.
-                State(Heap(h0), PromiseState(s0), FulfillReactions(f0), r0, l0, Queue(q0), ???) // TODO: Return Undef.
+                State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0), ???) // TODO: Return Undef.
         }
 
     case State(h0, s0, f0, r0, l0, q0, OnReject(e1, e2)) =>
