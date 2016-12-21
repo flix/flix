@@ -56,12 +56,14 @@ def ↔(x: Bool, y: Bool): Bool = (x → y) ∧ (y → x)
 ///
 /// Asserts that the given boolean `b` is `true`.
 ///
+// TODO: Name?
 def assert!(b: Bool): Bool =
     if (b) true else ???
 
 ///
 /// Asserts that the given boolean `b` is `false`.
 ///
+// TODO: Name?
 def assertNot!(b: Bool): Bool =
     if (!b) true else ???
 
@@ -85,4 +87,15 @@ def print![a](a: a): a = printHook(a)
 /// Prints the given value `a` on a new line. (NB: Requires the --Ximpure feature flag.)
 ///
 def println![a](a: a): a = printlnHook(a)
+
+///
+/// The commutative law asserts that for a binary operator `f` the result of f(x, y) is equal to f(y, x).
+///
+law commutativity[a, b](f: (a, a) -> b): Bool = ∀(x: a, y: a). f(x, y) == f(y, x)
+
+///
+/// The associative law asserts that for a binary operator `f` the result of f(x, f(y, z)) is equal to f(f(x, y), z).
+///
+law associativity[a](f: (a, a) -> a): Bool =
+    ∀(x: a, y: a, z: a). f(x, f(y, z)) == f(f(x, y), z)
 

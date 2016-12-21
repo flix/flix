@@ -1,0 +1,24 @@
+namespace Bounded {
+
+    ///
+    /// The strictness law asserts that a function `f` between two orders must preserve bottoms: `bot` and `cobot`.
+    ///
+    /// NB: This particular law is for unary functions.
+    ///
+    law strict1[a, b](f: a -> b, bot: a, cobot: b): Bool = f(bot) == cobot
+
+    ///
+    /// The strictness law asserts that a function `f` between two orders must preserve bottoms: `bot` and `cobot`.
+    ///
+    /// NB: This particular law is for binary functions.
+    ///
+    law strict2[a, b](f: (a, a) -> b, bot: a, cobot: b): Bool = f(bot, bot) == cobot
+
+    ///
+    /// The strictness law asserts that a function `f` between two orders must preserve bottoms: `bot` and `cobot`.
+    ///
+    /// NB: This particular law is for ternary functions.
+    ///
+    law strict3[a, b](f: (a, a, a) -> b, bot: a, cobot: b): Bool = f(bot, bot, bot) == cobot
+
+}

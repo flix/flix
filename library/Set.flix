@@ -46,17 +46,3 @@
 //    - Returns the set as a list in descending order (w.r.t. its natural order).
 //- **toMap(xs: Set[(A, B)]): Map[A, B]**
 //    - Returns the set of pairs as a map. If the set contains the same mapping multiple times the one with the greatest key (w.r.t. the natural order) takes precedence. Functionally equivalent to List/toMap(Set/toList(xs)).
-//
-//## Order and Lattice Operations
-//- **isAntiChain(xs: Set[A]): Bool**
-//    - Returns true if the set xs is an anti chain. That is, if every element is incomparable every other element.
-//- **join(xs: Set[A]): A**
-//    - Returns the least upper bound of all element in xs.  The bottom element of A is returned if the set is empty.
-//- **meet(xs: Set[A]): A**
-//    - Similar to lub, but with the greatest lower bound and top element.
-//- **widen(xs: Set[A]): A**
-//    - Similar to lub, but with the widening operator.
-//- **narrow(xs: Set[A]): A**
-//    - Similar to lub, but with the narrowing operator.
-
-// TODO: Forall???

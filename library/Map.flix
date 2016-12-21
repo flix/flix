@@ -103,9 +103,3 @@
 //    - Similar to toAscList, but the keys are ordered in descending order.
 //- **toSet(m: Map[K, V]): Set[(K, V)]**
 //    - Returns the map as a set of pairs.
-//
-//## Order and Lattice Operations
-//- **join(m1: Map[K, V], m2: Map[K, V]): Map[K, V]**
-//    - Returns the least upper bound of the two maps.
-//- **meet(m1: Map[K, V], m2: Map[K, V]): Map[K, V]**
-//    - Returns the greatest upper bound of the two maps.

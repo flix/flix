@@ -729,8 +729,9 @@ object Typer {
         /*
          * Existential expression.
          */
-        case NamedAst.Expression.Existential(params, exp, loc) =>
+        case NamedAst.Expression.Existential(fparam, exp, loc) =>
           // NB: An existential behaves very much like a lambda.
+          // TODO: Must check the type of the param.
           for {
             bodyType <- visitExp(exp)
             resultType <- unifyM(bodyType, Type.Bool, loc)
@@ -739,8 +740,9 @@ object Typer {
         /*
          * Universal expression.
          */
-        case NamedAst.Expression.Universal(params, exp, loc) =>
+        case NamedAst.Expression.Universal(fparam, exp, loc) =>
           // NB: An existential behaves very much like a lambda.
+          // TODO: Must check the type of the param.
           for {
             bodyType <- visitExp(exp)
             resultType <- unifyM(bodyType, Type.Bool, loc)
