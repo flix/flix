@@ -1,6 +1,16 @@
 namespace Bounded {
 
     ///
+    /// The least element law asserts that the bottom element `⊥` is the smallest element of a partial order `⊑`.
+    ///
+    law leastElement[e](⊥: e, ⊑: (e, e) -> Bool): Bool = ∀(x: e). ⊥ ⊑ x
+
+    ///
+    /// The greatest element law asserts that the top element `⊤` is the largest element of a partial order `⊑`.
+    ///
+    law greatestElement[e](⊤: e, ⊑: (e, e) -> Bool): Bool = ∀(x: e). x ⊑ ⊤
+
+    ///
     /// The strictness law asserts that a function `f` between two orders must preserve bottoms: `bot` and `cobot`.
     ///
     /// NB: This particular law is for unary functions.
@@ -21,4 +31,4 @@ namespace Bounded {
     ///
     law strict3[a, b](f: (a, a, a) -> b, bot: a, cobot: b): Bool = f(bot, bot, bot) == cobot
 
-}
+

@@ -3,6 +3,8 @@
 ///
 namespace PreOrder {
 
+    // TODO: Do we actually need these laws here when we also have them for partial order?
+
     ///
     /// The reflexivity law asserts that any element is less than or equal to itself.
     ///
