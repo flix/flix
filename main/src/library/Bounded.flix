@@ -31,4 +31,5 @@ namespace Bounded {
     ///
     law strict3[a, b](f: (a, a, a) -> b, bot: a, cobot: b): Bool = f(bot, bot, bot) == cobot
 
+}
 
