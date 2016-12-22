@@ -1407,69 +1407,81 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Expression.Map.01") {
+  // TODO: Requires backend support
+  ignore("Expression.Map.01") {
     val input = "def f: Map[Char, Int] = @{}"
     run(input)
   }
 
   // TODO: Requires backend support
-  test("Expression.Map.02") {
+  ignore("Expression.Map.02") {
     val input = "def f: Map[Char, Int] = @{'a' -> 1}"
     run(input)
   }
 
-  test("Expression.Map.03") {
+  // TODO: Requires backend support
+  ignore("Expression.Map.03") {
     val input = "def f: Map[Char, Int] = @{'a' -> 1, 'b' -> 2}"
     run(input)
   }
 
-  test("Expression.Map.04") {
+  // TODO: Requires backend support
+  ignore("Expression.Map.04") {
     val input = "def f: Map[Char, Int] = @{'a' -> 1, 'b' -> 2, 'c' -> 3}"
     run(input)
   }
 
-  test("Expression.Map.05") {
+  // TODO: Requires backend support
+  ignore("Expression.Map.05") {
     val input = "def f: Map[(Int8, Int16), (Int32, Int64)] = @{}"
     run(input)
   }
 
-  test("Expression.Map.06") {
+  // TODO: Requires backend support
+  ignore("Expression.Map.06") {
     val input = "def f: Map[(Int8, Int16), (Int32, Int64)] = @{(1i8, 2i16) -> (3i32, 4i64)}"
     run(input)
   }
 
-  test("Expression.MapMap.01") {
+  // TODO: Requires backend support
+  ignore("Expression.MapMap.01") {
     val input = "def f: Map[Int, Map[Int, Char]] = @{}"
     run(input)
   }
 
-  test("Expression.MapMap.02") {
+  // TODO: Requires backend support
+  ignore("Expression.MapMap.02") {
     val input = "def f: Map[Int, Map[Int, Char]] = @{1 -> @{}}"
     run(input)
   }
 
-  test("Expression.MapMap.03") {
+  // TODO: Requires backend support
+  ignore("Expression.MapMap.03") {
     val input = "def f: Map[Int, Map[Int, Char]] = @{1 -> @{}, 2 -> @{3 -> 'a', 4 -> 'b'}}"
     run(input)
   }
 
-  test("Expression.MapList.01") {
+  // TODO: Requires backend support
+  ignore("Expression.MapList.01") {
     val input = "def f: Map[Int, List[Int]] = @{1 -> 2 :: 3 :: Nil, 4 -> 5 :: 6 :: Nil}"
     run(input)
   }
 
-  test("Expression.MapListSet.01") {
+  // TODO: Requires backend support
+  ignore("Expression.MapListSet.01") {
     val input = "def f: Map[Int, List[Set[Int]]] = @{}"
     run(input)
   }
 
-  test("Expression.MapListSet.02") {
+  // TODO: Requires backend support
+  ignore("Expression.MapListSet.02") {
     val input = "def f: Map[Int, List[Set[Int]]] = @{1 -> Nil}"
     run(input)
 
   }
 
-  test("Expression.MapListSet.04") {
+  // TODO: Requires backend support
+  ignore("Expression.MapListSet.04") {
     val input = "def f: Map[Int, List[Set[Int]]] = @{1 -> #{1, 2, 3} :: #{4, 5, 6} :: Nil}"
     run(input)
   }
