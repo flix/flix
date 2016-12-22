@@ -110,7 +110,6 @@ object Codegen {
         case Type.Native => asm.Type.getDescriptor(Constants.objectClass)
         case Type.Apply(Type.Arrow(l), _) => s"L${decorate(interfaces(tpe))};"
         case Type.Apply(Type.FTuple(l), _) => asm.Type.getDescriptor(Constants.tupleClass)
-        case Type.Apply(Type.FSet, _) => asm.Type.getDescriptor(Constants.setClass)
         case _ if tpe.isEnum => asm.Type.getDescriptor(Constants.tagClass)
         case _ if tpe.isTuple => asm.Type.getDescriptor(Constants.tupleClass)
         case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
@@ -286,7 +285,7 @@ object Codegen {
       case Type.Float32 => visitor.visitVarInsn(FLOAD, sym.getStackOffset)
       case Type.Float64 => visitor.visitVarInsn(DLOAD, sym.getStackOffset)
       case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.Arrow(_), _) |
-           Type.Apply(Type.FSet, _) | Type.Apply(Type.Enum(_, _), _) => visitor.visitVarInsn(ALOAD, sym.getStackOffset)
+           Type.Apply(Type.Enum(_, _), _) => visitor.visitVarInsn(ALOAD, sym.getStackOffset)
       case _ if tpe.isTuple => visitor.visitVarInsn(ALOAD, sym.getStackOffset)
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
@@ -573,29 +572,6 @@ object Codegen {
       // Finally, call the constructor, which pops the reference (tuple) and argument (array).
       visitor.visitMethodInsn(INVOKESPECIAL, name, "<init>", asm.Type.getConstructorDescriptor(ctor), false)
 
-    case Expression.FSet(elms, _, _) =>
-      // First create a scala.immutable.Set
-      visitor.visitFieldInsn(GETSTATIC, Constants.scalaPredef, "MODULE$", s"L${Constants.scalaPredef};")
-      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.scalaPredef, "Set", "()Lscala/collection/immutable/Set$;", false)
-      visitor.visitFieldInsn(GETSTATIC, Constants.scalaPredef, "MODULE$", s"L${Constants.scalaPredef};")
-
-      // Create an array to hold the set elements
-      compileInt(visitor)(elms.length)
-      visitor.visitTypeInsn(ANEWARRAY, asm.Type.getInternalName(Constants.objectClass))
-
-      // Iterate over elms, boxing them and slotting each one into the array.
-      for ((e, i) <- elms.zipWithIndex) {
-        // Duplicate the array reference, otherwise AASTORE will consume it.
-        visitor.visitInsn(DUP)
-        compileInt(visitor)(i)
-        compileBoxedExpr(ctx, visitor, entryPoint)(e)
-        visitor.visitInsn(AASTORE)
-      }
-
-      // Wrap the array and construct the set
-      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.scalaPredef, "wrapRefArray", "([Ljava/lang/Object;)Lscala/collection/mutable/WrappedArray;", false)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "scala/collection/immutable/Set$", "apply", "(Lscala/collection/Seq;)Lscala/collection/GenTraversable;", false)
-
     case Expression.Existential(params, exp, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$expr' at ${loc.source.format}.")
     case Expression.Universal(params, exp, loc) =>
@@ -680,7 +656,7 @@ object Codegen {
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkInt64", "(J)Ljava/lang/Object;", false)
 
     case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) |
-         Type.Apply(Type.FSet, _) | Type.Apply(Type.Enum(_, _), _) => compileExpression(ctx, visitor, entryPoint)(exp)
+         Type.Apply(Type.Enum(_, _), _) => compileExpression(ctx, visitor, entryPoint)(exp)
 
     case tpe => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }
@@ -712,7 +688,7 @@ object Codegen {
       visitor.visitTypeInsn(CHECKCAST, name)
       visitor.visitMethodInsn(INVOKEVIRTUAL, name, methodName, desc, false)
 
-    case Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Apply(Type.Arrow(_), _) | Type.Apply(Type.FSet, _) | Type.Apply(Type.Enum(_, _), _) =>
+    case Type.BigInt | Type.Str | Type.Enum(_, _) | Type.Apply(Type.Arrow(_), _) | Type.Apply(Type.Enum(_, _), _) =>
       val name = tpe match {
         case Type.BigInt => asm.Type.getInternalName(Constants.bigIntegerClass)
         case Type.Str => asm.Type.getInternalName(Constants.stringClass)
@@ -720,7 +696,6 @@ object Codegen {
         case Type.Apply(Type.Arrow(l), _) =>
           // TODO: Is this correct? Need to write a test when we can write lambda expressions.
           decorate(ctx.interfaces(tpe))
-        case Type.Apply(Type.FSet, _) => asm.Type.getInternalName(Constants.setClass)
         case _ => throw new InternalCompilerException(s"Type $tpe should not be handled in this case.")
       }
       visitor.visitTypeInsn(CHECKCAST, name)
@@ -1069,7 +1044,7 @@ object Codegen {
   private def compileComparisonExpr(ctx: Context, visitor: MethodVisitor, entryPoint: Label)
                                    (o: ComparisonOperator, e1: Expression, e2: Expression): Unit = {
     e1.tpe match {
-      case Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.FSet, _) | Type.Apply(Type.Enum(_, _), _) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
+      case Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Enum(_, _), _) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
         (e1.tpe: @unchecked) match {
           case Type.Apply(Type.FTuple(_), _) =>
             // Value.Tuple.elms() method
@@ -1086,7 +1061,7 @@ object Codegen {
             compileExpression(ctx, visitor, entryPoint)(e2)
             visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), method1.getName, asm.Type.getMethodDescriptor(method1), false)
             visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(clazz2), method2.getName, asm.Type.getMethodDescriptor(method2), false)
-          case Type.Enum(_, _) | Type.Apply(Type.FSet, _) | Type.Apply(Type.Enum(_, _), _) =>
+          case Type.Enum(_, _) | Type.Apply(Type.Enum(_, _), _) =>
             // java.lang.Object.equals(Object) method
             val clazz = Constants.objectClass
             val method = clazz.getMethod("equals", Constants.objectClass)

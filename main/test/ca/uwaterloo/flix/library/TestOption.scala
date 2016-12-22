@@ -281,12 +281,14 @@ class TestOption extends FunSuite {
     runAnyTest(input, Value.mkList(List(new Integer(11))))
   }
 
-  test("toSet.01") {
+  // TODO
+  ignore("toSet.01") {
     val input = "def r: Set[Int32] = Option/toSet(None)"
     runAnyTest(input, Set())
   }
 
-  test("toSet.02") {
+  // TODO
+  ignore("toSet.02") {
     val input = "def r: Set[Int32] = Option/toSet(Some(4))"
     runAnyTest(input, Set(4))
   }

@@ -178,11 +178,6 @@ object Disambiguation {
       case "Str" => Ok(Type.Str)
       case "Native" => Ok(Type.Native)
 
-      // Higher-Kinded Types.
-      case "Vec" => Ok(Type.FVec)
-      case "Set" => Ok(Type.FSet)
-      case "Map" => Ok(Type.FMap)
-
       // Enum Types.
       case typeName =>
         // Lookup the enum in the current namespace.
