@@ -404,7 +404,7 @@ object PropertyGen {
 
     // return all the collected properties.
     // TODO: Sort
-    val properties = partialOrderProperties ++ latticeProperties ++ functionProperties
+    val properties = root.properties ++ partialOrderProperties ++ latticeProperties ++ functionProperties
 
     val e = System.nanoTime() - t
     root.copy(properties = properties, time = root.time.copy(propertyGen = e))

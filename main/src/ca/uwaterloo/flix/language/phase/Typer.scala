@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.language.ast.Ast.Annotation
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
@@ -42,10 +43,11 @@ object Typer {
       indexes <- Declarations.Indexes.typecheck(program)
       facts <- Declarations.Constraints.typecheckFacts(program)
       rules <- Declarations.Constraints.typecheckRules(program)
+      properties <- Declarations.Properties.typecheck(program)
     } yield {
       val currentTime = System.nanoTime()
       val time = program.time.copy(typer = currentTime - startTime)
-      TypedAst.Root(definitions, enums, lattices, tables, indexes, facts, rules, Nil, time)
+      TypedAst.Root(definitions, enums, lattices, tables, indexes, facts, rules, properties, time)
     }
 
     result match {
@@ -375,7 +377,62 @@ object Typer {
 
     }
 
+
+    // TODO: --------------------------------------------------------------------------------------
+    object Properties {
+
+      /**
+        * TODO: DOC
+        */
+      def typecheck(program: Program)(implicit genSym: GenSym): Result[List[TypedAst.Property], TypeError] = {
+
+        val properties = program.definitions.flatMap {
+          case (ns, decls) => decls.flatMap {
+            case (name, defn) =>
+              defn.ann.annotations.collect {
+                case Annotation.User(text, loc) =>
+                  val qname = Name.mkQName(text)
+                  Disambiguation.lookupRef(qname, ns, program) match {
+                    case Ok(RefTarget.Defn(_, law)) =>
+
+                      // TODO: Dont use qnames
+                      val lambda = NamedAst.Expression.Ref(Name.mkQName(law.sym.toString), Type.freshTypeVar(), defn.loc)
+                      val arg = NamedAst.Expression.Ref(Name.mkQName(defn.sym.toString), Type.freshTypeVar(), defn.loc)
+                      val body = NamedAst.Expression.Apply(lambda, List(arg), Type.freshTypeVar(), defn.loc)
+
+                      // TODO: Assert that the return type is bool
+                      val result = Expressions.infer(body, ns, program)
+
+                      result.run(Substitution.empty) match {
+                        case Ok((subst, tpe)) =>
+
+                          val exp = Expressions.reassemble(body, ns, program, subst)
+
+                          TypedAst.Property(Law.HeightStrictlyDecreasing, exp, defn.loc)
+
+                        case Err(e) =>
+                          println(e)
+                          ???
+                      }
+
+                    case Ok(RefTarget.Hook(hook)) => ???
+
+                    case Err(_) => ???
+                  }
+
+              }
+          }
+        }
+
+        Ok(properties.toList)
+
+      }
+
+    }
+
   }
+
+  // TODO: --------------------------------------------------------------------------------------
 
   object Expressions {
 

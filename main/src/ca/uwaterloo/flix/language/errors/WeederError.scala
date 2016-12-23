@@ -342,19 +342,4 @@ object WeederError {
           """.stripMargin
   }
 
-  /**
-    * An error raised to indicate an undefined annotation.
-    *
-    * @param name the name of the undefined annotation.
-    * @param loc  the location of the annotation.
-    */
-  case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
-    val source = loc.source
-    val message =
-      s"""|>> Undefined annotation named '${Red(name)}'.
-          |
-          |${Code(loc, "undefined annotation.")}
-          """.stripMargin
-  }
-
 }

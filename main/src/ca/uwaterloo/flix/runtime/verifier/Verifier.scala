@@ -110,19 +110,12 @@ object Verifier {
       return root.toSuccess
     }
 
-    // TODO: Cleanup
-    /*
-     * Find all properties.
-     */
-    val props = root.definitions.collect {
-      case (sym, defn) if defn.ann.isLaw && defn.formals.isEmpty => // TODO: Fix cond
-        sym -> verifyProperty(defn, root)
-    }
-
     /*
      * Verify each property.
      */
-    val results = props.values.toList
+    val results = root.properties.map {
+      case ExecutableAst.Property(law, exp, loc) => verifyProperty(exp, root)
+    }
 
     /*
      * Print verbose information (if enabled).
@@ -149,17 +142,11 @@ object Verifier {
   }
 
   /**
-    * Attempts to verify the given `defn`.
-    *
-    * Returns `None` if the property is satisfied.
-    * Otherwise returns `Some` containing the verification error.
+    * TODO: DOC
     */
-  def verifyProperty(defn: ExecutableAst.Definition.Constant, root: ExecutableAst.Root)(implicit genSym: GenSym): PropertyResult = {
+  def verifyProperty(exp0: ExecutableAst.Expression, root: ExecutableAst.Root)(implicit genSym: GenSym): PropertyResult = {
     // start the clock.
     val t = System.nanoTime()
-
-    // the base expression.
-    val exp0 = defn.exp
 
     // a sequence of environments under which the base expression must hold.
     val envs = List(Map.empty: SymbolicEvaluator.Environment) // TODO
@@ -171,7 +158,7 @@ object Verifier {
     var queries = 0
 
     // TODO: TMP dummy property
-    val dummyProperty = Property(Law.HeightStrictlyDecreasing, defn.exp, defn.loc)
+    val dummyProperty = Property(Law.HeightStrictlyDecreasing, exp0, exp0.loc)
 
     // attempt to verify that the property holds under each environment.
     val pathResults = envs flatMap {

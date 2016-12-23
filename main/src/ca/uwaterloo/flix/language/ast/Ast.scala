@@ -138,6 +138,13 @@ object Ast {
       override def toString: String = "@unsafe"
     }
 
+    /**
+      * TODO: DOC
+      */
+    case class User(text: String, loc: SourceLocation) extends Annotation {
+      override def toString: String = "@" + text
+    }
+
   }
 
   /**
