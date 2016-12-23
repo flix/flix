@@ -386,46 +386,65 @@ object Typer {
         */
       def typecheck(program: Program)(implicit genSym: GenSym): Result[List[TypedAst.Property], TypeError] = {
 
-        val properties = program.definitions.flatMap {
-          case (ns, decls) => decls.flatMap {
-            case (name, defn) =>
-              defn.ann.annotations.collect {
-                case Annotation.User(text, loc) =>
-                  val qname = Name.mkQName(text)
-                  Disambiguation.lookupRef(qname, ns, program) match {
-                    case Ok(RefTarget.Defn(_, law)) =>
+        /**
+          * Instantiates all laws associated with the given definition `defn0` in the namespace `ns0`.
+          */
+        def mkProperties(defn: NamedAst.Declaration.Definition, ns0: Name.NName): List[Result[TypedAst.Property, TypeError]] = {
+          /*
+           * Loop through every annotation and instantiate each law.
+           */
+          defn.ann.annotations.collect {
+            case Annotation.Property(name, _) =>
+              // TODO: Change grammar to allow an ident/qname here.
+              val qname = Name.mkQName(name)
 
-                      // TODO: Dont use qnames
-                      val lambda = NamedAst.Expression.Ref(Name.mkQName(law.sym.toString), Type.freshTypeVar(), defn.loc)
-                      val arg = NamedAst.Expression.Ref(Name.mkQName(defn.sym.toString), Type.freshTypeVar(), defn.loc)
-                      val body = NamedAst.Expression.Apply(lambda, List(arg), Type.freshTypeVar(), defn.loc)
-
-                      // TODO: Assert that the return type is bool
-                      val result = Expressions.infer(body, ns, program)
-
-                      result.run(Substitution.empty) match {
-                        case Ok((subst, tpe)) =>
-
-                          val exp = Expressions.reassemble(body, ns, program, subst)
-
-                          TypedAst.Property(law.sym, defn.sym, exp)
-
-                        case Err(e) =>
-                          println(e)
-                          ???
-                      }
-
-                    case Ok(RefTarget.Hook(hook)) => ???
-
-                    case Err(_) => ???
-                  }
-
+              // Lookup the law.
+              Disambiguation.lookupRef(qname, ns0, program) flatMap {
+                case RefTarget.Defn(_, law) =>
+                  // Case 1: Law found. Instantiate it.
+                  mkProperty(law, defn, ns0)
+                case RefTarget.Hook(_) =>
+                  // Case 2: Illegal 'hook' law.
+                  throw InternalCompilerException("Annotation references hook.")
               }
           }
         }
 
-        Ok(properties.toList)
+        /**
+          * Instantiates the given `law` for the given definition `defn` in the namespace `ns0`.
+          */
+        def mkProperty(law: NamedAst.Declaration.Definition, defn: NamedAst.Declaration.Definition, ns0: Name.NName): Result[TypedAst.Property, TypeError] = {
+          // TODO: Dont use qnames
+          val lambda = NamedAst.Expression.Ref(Name.mkQName(law.sym.toString), Type.freshTypeVar(), defn.loc)
+          val arg = NamedAst.Expression.Ref(Name.mkQName(defn.sym.toString), Type.freshTypeVar(), defn.loc)
+          val exp = NamedAst.Expression.Apply(lambda, List(arg), Type.freshTypeVar(), defn.loc)
 
+          // Perform type inference on the property expression.
+          val result = for {
+            actualType <- Expressions.infer(exp, ns0, program)
+            resultType <- unifyM(Type.Bool, actualType, defn.loc)
+          } yield resultType
+
+          // Evaluate the type inference monad under the empty substitution.
+          result.run(Substitution.empty) map {
+            case (subst, _) =>
+              // Reassemble the property expression using the type environment.
+              val reassembled = Expressions.reassemble(exp, ns0, program, subst)
+              TypedAst.Property(law.sym, defn.sym, reassembled)
+          }
+        }
+
+        /*
+         * Instantiate all laws associated with all definitions in the program.
+         */
+        val properties = program.definitions.flatMap {
+          case (ns, decls) => decls.flatMap {
+            case (_, defn) => mkProperties(defn, ns)
+          }
+        }
+
+        // Sequence the results.
+        Result.seqM(properties.toList)
       }
 
     }

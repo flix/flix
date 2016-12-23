@@ -39,6 +39,7 @@ object Ast {
       *
       * @param loc the source location of the annotation.
       */
+    // TODO: Remove all of these.
     case class Associative(loc: SourceLocation) extends Annotation {
       override def toString: String = "@associative"
     }
@@ -141,8 +142,9 @@ object Ast {
     /**
       * TODO: DOC
       */
-    case class User(text: String, loc: SourceLocation) extends Annotation {
-      override def toString: String = "@" + text
+    // TODO: DOC
+    case class Property(name: String, loc: SourceLocation) extends Annotation {
+      override def toString: String = "@" + name
     }
 
   }

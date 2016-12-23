@@ -852,7 +852,7 @@ object Weeder {
         case "test" => Ast.Annotation.Test(loc).toSuccess
         case "unchecked" => Ast.Annotation.Unchecked(loc).toSuccess
         case "unsafe" => Ast.Annotation.Unsafe(loc).toSuccess
-        case name => Ast.Annotation.User(name, loc).toSuccess
+        case name => Ast.Annotation.Property(name, loc).toSuccess
       }
     }
   }
