@@ -561,6 +561,6 @@ object SimplifiedAst {
 
   case class FreeVar(sym: Symbol.VarSym, tpe: Type) extends SimplifiedAst
 
-  case class Property(law: Law, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst
+  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: SimplifiedAst.Expression) extends SimplifiedAst
 
 }

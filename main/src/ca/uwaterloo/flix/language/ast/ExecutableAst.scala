@@ -673,6 +673,8 @@ object ExecutableAst {
 
   case class FreeVar(sym: Symbol.VarSym, tpe: Type) extends ExecutableAst
 
-  case class Property(law: Law, exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst
+  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: ExecutableAst.Expression) extends ExecutableAst {
+    def loc: SourceLocation = defn.loc
+  }
 
 }

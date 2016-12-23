@@ -394,7 +394,7 @@ object Simplifier {
     SimplifiedAst.FormalParam(tast.sym, tast.tpe)
 
   def simplify(tast: TypedAst.Property)(implicit genSym: GenSym): SimplifiedAst.Property =
-    SimplifiedAst.Property(tast.law, Expression.simplify(tast.exp), tast.loc)
+    SimplifiedAst.Property(tast.law, tast.defn, Expression.simplify(tast.exp))
 
   /**
     * Returns `true` if the given pattern `pat` is a literal.

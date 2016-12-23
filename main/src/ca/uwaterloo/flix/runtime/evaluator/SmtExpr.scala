@@ -32,6 +32,7 @@ sealed trait SmtExpr {
     case SmtExpr.Modulo(e1, e2) => e1.freeVars ++ e2.freeVars
     case SmtExpr.Equal(e1, e2) => e1.freeVars ++ e2.freeVars
     case SmtExpr.NotEqual(e1, e2) => e1.freeVars ++ e2.freeVars
+    case SmtExpr.LessEqual(e1, e2) => e1.freeVars ++ e2.freeVars
     case SmtExpr.LogicalAnd(e1, e2) => e1.freeVars ++ e2.freeVars
   }
 

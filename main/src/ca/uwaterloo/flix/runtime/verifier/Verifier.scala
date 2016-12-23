@@ -113,9 +113,7 @@ object Verifier {
     /*
      * Verify each property.
      */
-    val results = root.properties.map {
-      case ExecutableAst.Property(law, exp, loc) => verifyProperty(exp, root)
-    }
+    val results = root.properties.map(p => verifyProperty(p, root))
 
     /*
      * Print verbose information (if enabled).
@@ -144,7 +142,7 @@ object Verifier {
   /**
     * TODO: DOC
     */
-  def verifyProperty(exp0: ExecutableAst.Expression, root: ExecutableAst.Root)(implicit genSym: GenSym): PropertyResult = {
+  def verifyProperty(property: Property, root: ExecutableAst.Root)(implicit genSym: GenSym): PropertyResult = {
     // start the clock.
     val t = System.nanoTime()
 
@@ -157,14 +155,11 @@ object Verifier {
     // the number of queries issued to the SMT solver.
     var queries = 0
 
-    // TODO: TMP dummy property
-    val dummyProperty = Property(Law.HeightStrictlyDecreasing, exp0, exp0.loc)
-
     // attempt to verify that the property holds under each environment.
     val pathResults = envs flatMap {
       case env0 =>
         paths += 1
-        SymbolicEvaluator.eval(exp0, env0, root) map {
+        SymbolicEvaluator.eval(property.exp, env0, root) map {
           case (Nil, SymVal.True) =>
             // Case 1: The symbolic evaluator proved the property.
             PathResult.Success
@@ -180,11 +175,11 @@ object Verifier {
               // Case 3.2: The property *does not* hold under some path condition.
               // If the path condition is satisfiable then the property *does not* hold.
               queries += 1
-              assertUnsatisfiable(dummyProperty, and(pc), env0)
+              assertUnsatisfiable(property, and(pc), env0)
             case SymVal.AtomicVar(id, _) =>
               // Case 3.3: The property holds iff the atomic variable is never `false`.
               queries += 1
-              assertUnsatisfiable(dummyProperty, SmtExpr.Not(and(pc)), env0)
+              assertUnsatisfiable(property, SmtExpr.Not(and(pc)), env0)
             case _ => throw InternalCompilerException(s"Unexpected value: '$v'.")
           }
         }
@@ -202,11 +197,11 @@ object Verifier {
     }
 
     if (failures.isEmpty && unknowns.isEmpty) {
-      PropertyResult.Success(dummyProperty, paths, queries, e)
+      PropertyResult.Success(property, paths, queries, e)
     } else if (failures.nonEmpty) {
-      PropertyResult.Failure(dummyProperty, paths, queries, e, PropertyError.mk(dummyProperty, failures.head.model))
+      PropertyResult.Failure(property, paths, queries, e, PropertyError(property, failures.head.model))
     } else {
-      PropertyResult.Unknown(dummyProperty, paths, queries, e, PropertyError.mk(dummyProperty, unknowns.head.model))
+      PropertyResult.Unknown(property, paths, queries, e, PropertyError(property, unknowns.head.model))
     }
 
   }

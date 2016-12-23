@@ -177,13 +177,13 @@ object QuickChecker {
           success += TestResult.Success(property)
         } else {
           // Case 2: The symbolic evaluator disproved the property.
-          val error = PropertyError.mk(property, SymVal.mkModel(env, Set.empty, None))
+          val error = PropertyError(property, SymVal.mkModel(env, Set.empty, None))
           failure += TestResult.Failure(property, error)
         }
       } catch {
         case ex: Exception =>
           // Case 3: The symbolic evaluator failed with an exception.
-          val error = PropertyError.mk(property, SymVal.mkModel(env, Set.empty, None))
+          val error = PropertyError(property, SymVal.mkModel(env, Set.empty, None))
           failure += TestResult.Failure(property, error)
       }
     }
@@ -235,10 +235,10 @@ object QuickChecker {
       for (result <- properties.sortBy(_.property.loc)) {
         result match {
           case PropertyResult.Success(property, tests, elapsed) =>
-            Console.println("  " + Cyan("✓ ") + property.law + " (" + property.loc.format + ") (" + tests + " tests, " + TimeOps.toSeconds(elapsed) + " seconds.)")
+            Console.println("  " + Cyan("✓ ") + property + " (" + property.loc.format + ") (" + tests + " tests, " + TimeOps.toSeconds(elapsed) + " seconds.)")
 
           case PropertyResult.Failure(property, success, failure, elapsed, error) =>
-            Console.println("  " + Red("✗ ") + property.law + " (" + property.loc.format + ") (" + success + " SUCCESS, " + failure + " FAILED, " + TimeOps.toSeconds(elapsed) + " seconds.)")
+            Console.println("  " + Red("✗ ") + property + " (" + property.loc.format + ") (" + success + " SUCCESS, " + failure + " FAILED, " + TimeOps.toSeconds(elapsed) + " seconds.)")
         }
       }
 

@@ -331,6 +331,6 @@ object CreateExecutableAst {
     ExecutableAst.FreeVar(sast.sym, sast.tpe)
 
   def toExecutable(sast: SimplifiedAst.Property): ExecutableAst.Property =
-    ExecutableAst.Property(sast.law, Expression.toExecutable(sast.exp), sast.loc)
+    ExecutableAst.Property(sast.law, sast.defn, Expression.toExecutable(sast.exp))
 
 }

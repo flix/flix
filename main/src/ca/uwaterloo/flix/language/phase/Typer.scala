@@ -408,7 +408,7 @@ object Typer {
 
                           val exp = Expressions.reassemble(body, ns, program, subst)
 
-                          TypedAst.Property(Law.HeightStrictlyDecreasing, exp, defn.loc)
+                          TypedAst.Property(law.sym, defn.sym, exp)
 
                         case Err(e) =>
                           println(e)
