@@ -460,7 +460,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetMatch | IfThenElse | Match | LambdaMatch | Switch | Lambda | Tuple | FNil | FVec | FSet | FMap | Literal |
+      LetMatch | IfThenElse | Match | LambdaMatch | Switch | Lambda | Tuple | FNil | FSet | FMap | Literal |
         Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | UserError
     }
 
@@ -522,10 +522,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def FList: Rule1[ParsedAst.Expression] = rule {
       Apply ~ optional(optWS ~ SP ~ atomic("::") ~ SP ~ optWS ~ Expression ~> ParsedAst.Expression.FCons)
-    }
-
-    def FVec: Rule1[ParsedAst.Expression.FVec] = rule {
-      SP ~ "#[" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.FVec
     }
 
     def FSet: Rule1[ParsedAst.Expression.FSet] = rule {
@@ -595,7 +591,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   object Patterns {
 
     def Simple: Rule1[ParsedAst.Pattern] = rule {
-      FNil | Tag | Literal | Tuple | FVec | FSet | FMap | Wildcard | Variable
+      FNil | Tag | Literal | Tuple | FSet | FMap | Wildcard | Variable
     }
 
     def Wildcard: Rule1[ParsedAst.Pattern.Wild] = rule {
@@ -624,20 +620,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def FList: Rule1[ParsedAst.Pattern] = rule {
       Simple ~ optional(optWS ~ SP ~ atomic("::") ~ SP ~ optWS ~ Pattern ~> ParsedAst.Pattern.FCons)
-    }
-
-    def FVec: Rule1[ParsedAst.Pattern.FVec] = {
-      def DotDotDot: Rule1[Option[ParsedAst.Pattern]] = rule {
-        optional(optWS ~ "," ~ optWS ~ Pattern ~ atomic("..."))
-      }
-
-      def Elements: Rule1[Seq[ParsedAst.Pattern]] = rule {
-        zeroOrMore(!(Pattern ~ atomic("...")) ~ Pattern).separatedBy(optWS ~ "," ~ optWS)
-      }
-
-      rule {
-        SP ~ "#[" ~ optWS ~ Elements ~ DotDotDot ~ optWS ~ "]" ~ SP ~> ParsedAst.Pattern.FVec
-      }
     }
 
     def FSet: Rule1[ParsedAst.Pattern.FSet] = {

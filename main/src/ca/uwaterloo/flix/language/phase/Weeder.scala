@@ -510,47 +510,41 @@ object Weeder {
 
         case ParsedAst.Expression.FAppend(fst, sp1, sp2, snd) =>
           /*
-           * Rewrites a `FAppend` expression into a call to `list/append`.
+           * Rewrites a `FAppend` expression into a call to `List/append`.
            */
           @@(visit(fst), visit(snd)) map {
             case (e1, e2) =>
               // NB: We painstakingly construct the qualified name
               // to ensure that source locations are available.
-              val loc = mkSL(sp1, sp2)
-              val namespace = List(Name.Ident(sp1, "List", sp2))
-              val ident = Name.Ident(sp1, "append", sp2)
-              val qname = Name.QName(sp1, Name.NName(sp1, namespace, sp2), ident, sp2)
-              val lambda = WeededAst.Expression.VarOrRef(qname, loc)
-              WeededAst.Expression.Apply(lambda, List(e1, e2), loc)
-          }
-
-        case ParsedAst.Expression.FVec(sp1, elms, sp2) =>
-          @@(elms map visit) map {
-            case es => WeededAst.Expression.FVec(es, mkSL(sp1, sp2))
+              mkApply("List/append", List(e1, e2), sp1, sp2)
           }
 
         case ParsedAst.Expression.FSet(sp1, elms, sp2) =>
+          /*
+           * Rewrites a `FSet` expression into `Set/empty` and a `Set/insert` calls.
+           */
           @@(elms map visit) map {
-            case es => WeededAst.Expression.FSet(es, mkSL(sp1, sp2))
+            case es =>
+              val empty = mkApply("Set/empty", Nil, sp1, sp2)
+              es.foldLeft(empty) {
+                case (acc, elm) => mkApply("Set/insert", List(elm, acc), sp1, sp2)
+              }
           }
 
         case ParsedAst.Expression.FMap(sp1, elms, sp2) =>
+          /*
+           * Rewrites a `FMap` expression into `Map/empty` and a `Map/insert` calls.
+           */
           val elmsVal = elms map {
             case (key, value) => @@(visit(key), visit(value))
           }
 
           @@(elmsVal) map {
-            case es => WeededAst.Expression.FMap(es, mkSL(sp1, sp2))
-          }
-
-        case ParsedAst.Expression.GetIndex(sp1, exp1, exp2, sp2) =>
-          @@(visit(exp1), visit(exp2)) map {
-            case (e1, e2) => WeededAst.Expression.GetIndex(e1, e2, mkSL(sp1, sp2))
-          }
-
-        case ParsedAst.Expression.PutIndex(sp1, exp1, exp2, exp3, sp2) =>
-          @@(visit(exp1), visit(exp2), visit(exp3)) map {
-            case (e1, e2, e3) => WeededAst.Expression.PutIndex(e1, e2, e3, mkSL(sp1, sp2))
+            case es =>
+              val empty = mkApply("Map/empty", Nil, sp1, sp2)
+              es.foldLeft(empty) {
+                case (acc, (k, v)) => mkApply("Map/insert", List(k, v, acc), sp1, sp2)
+              }
           }
 
         case ParsedAst.Expression.Existential(sp1, paramsOpt, exp, sp2) =>
@@ -712,14 +706,6 @@ object Weeder {
               WeededAst.Pattern.Tag(None, tag, pat, mkSL(sp1, sp2))
           }
 
-        case ParsedAst.Pattern.FVec(sp1, elms, rest, sp2) =>
-          val elmsVal = @@(elms.map(visit))
-          val restVal = @@(rest.map(visit))
-
-          @@(elmsVal, restVal) map {
-            case (es, r) => WeededAst.Pattern.FVec(es, r, mkSL(sp1, sp2))
-          }
-
         case ParsedAst.Pattern.FSet(sp1, elms, rest, sp2) =>
           val elmsVal = @@(elms.map(visit))
           val restVal = @@(rest.map(visit))
@@ -858,15 +844,11 @@ object Weeder {
   }
 
   /**
-    * Returns an apply expression for the given textual name `text` with the given arguments `args`.
+    * Returns an apply expression for the given fully-qualified name `fqn` and the given arguments `args`.
     */
-  def mkApply(text: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-    val loc = mkSL(sp1, sp2)
-    val ident = Name.Ident(sp1, text, sp2)
-    val namespace = Name.NName(sp1, List.empty, sp2)
-    val name = Name.QName(sp1, namespace, ident, sp2)
-    val lambda = WeededAst.Expression.VarOrRef(name, loc)
-    WeededAst.Expression.Apply(lambda, args, loc)
+  def mkApply(fqn: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
+    val lambda = WeededAst.Expression.VarOrRef(Name.mkQName(fqn, sp1, sp2), mkSL(sp1, sp2))
+    WeededAst.Expression.Apply(lambda, args, mkSL(sp1, sp2))
   }
 
   /**
@@ -968,11 +950,8 @@ object Weeder {
     case ParsedAst.Expression.FNil(sp1, _) => sp1
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)
-    case ParsedAst.Expression.FVec(sp1, _, _) => sp1
     case ParsedAst.Expression.FSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FMap(sp1, _, _) => sp1
-    case ParsedAst.Expression.GetIndex(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.PutIndex(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Existential(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Universal(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Ascribe(e1, _, _) => leftMostSourcePosition(e1)

@@ -219,12 +219,6 @@ object Simplifier {
         SimplifiedAst.Expression.Tag(sym, tag, simplify(e), tpe, loc)
       case TypedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
-      case TypedAst.Expression.FVec(elms, tpe, loc) => ??? // TODO
-      case TypedAst.Expression.FSet(elms, tpe, loc) =>
-        SimplifiedAst.Expression.FSet(elms map simplify, tpe, loc)
-      case TypedAst.Expression.FMap(elms, tpe, loc) => ??? // TODO
-      case TypedAst.Expression.GetIndex(e1, e2, tpe, loc) => ??? // TODO
-      case TypedAst.Expression.PutIndex(e1, e2, e3, tpe, loc) => ??? // TODO
       case TypedAst.Expression.Existential(params, exp, loc) =>
         val ps = params.map(p => SimplifiedAst.FormalParam(p.sym, p.tpe))
         val e = simplify(exp)
@@ -324,8 +318,6 @@ object Simplifier {
           case (((pat, name), idx), exp) =>
             SExp.Let(name, SExp.GetTupleIndex(SExp.Var(v, tpe, loc), idx, pat.tpe, loc), exp, succ.tpe, loc)
         }
-
-      case (FVec(elms, rest, tpe, loc) :: ps, v :: vs) => ???
 
       case (FSet(elms, rest, tpe, loc) :: ps, v :: vs) => ???
 

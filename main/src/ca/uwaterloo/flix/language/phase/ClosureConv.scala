@@ -151,8 +151,6 @@ object ClosureConv {
       SimplifiedAst.Expression.GetTupleIndex(convert(e), offset, tpe, loc)
     case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
       SimplifiedAst.Expression.Tuple(elms.map(convert), tpe, loc)
-    case SimplifiedAst.Expression.FSet(elms, tpe, loc) =>
-      SimplifiedAst.Expression.FSet(elms.map(convert), tpe, loc)
     case SimplifiedAst.Expression.Existential(params, e, loc) =>
       SimplifiedAst.Expression.Existential(params, convert(e), loc)
     case SimplifiedAst.Expression.Universal(params, e, loc) =>
@@ -216,7 +214,6 @@ object ClosureConv {
     case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) => freeVariables(exp)
     case SimplifiedAst.Expression.GetTupleIndex(base, offset, tpe, loc) => freeVariables(base)
     case SimplifiedAst.Expression.Tuple(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
-    case SimplifiedAst.Expression.FSet(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
     case SimplifiedAst.Expression.Existential(params, exp, loc) =>
       val bound = params.map(_.sym)
       freeVariables(exp).filterNot { v => bound.contains(v._1) }
@@ -314,9 +311,6 @@ object ClosureConv {
       case Expression.Tuple(elms, tpe, loc) =>
         val es = elms map visit
         Expression.Tuple(es, tpe, loc)
-      case Expression.FSet(elms, tpe, loc) =>
-        val es = elms map visit
-        Expression.FSet(es, tpe, loc)
       case Expression.Existential(fparams, exp, loc) =>
         val fs = replace(fparams, subst)
         val e = visit(exp)

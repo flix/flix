@@ -231,9 +231,6 @@ object CreateExecutableAst {
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
         val elmsArray = elms.map(toExecutable).toArray
         ExecutableAst.Expression.Tuple(elmsArray, tpe, loc)
-      case SimplifiedAst.Expression.FSet(elms, tpe, loc) =>
-        val elmsArray = elms.map(toExecutable).toArray
-        ExecutableAst.Expression.FSet(elmsArray, tpe, loc)
       case SimplifiedAst.Expression.Existential(params, exp, loc) =>
         val ps = params map {
           case SimplifiedAst.FormalParam(ident, tpe) => ExecutableAst.FormalArg(ident, tpe)

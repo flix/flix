@@ -159,7 +159,6 @@ object LoadBytecode {
     case Type.Enum(_, _) | Type.Apply(Type.Enum(_, _), _) => classOf[Value.Tag]
     case Type.Apply(Type.FTuple(l), _) => classOf[Value.Tuple]
     case Type.Apply(Type.Arrow(l), _) => interfaces(tpe)
-    case Type.FSet => classOf[scala.collection.immutable.Set[AnyRef]]
     case _ if tpe.isTuple => classOf[Value.Tuple]
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }
@@ -205,7 +204,6 @@ object LoadBytecode {
       case Expression.Tag(enum, tag, exp, tpe, loc) => visit(exp)
       case Expression.GetTupleIndex(base, offset, tpe, loc) => visit(base)
       case Expression.Tuple(elms, tpe, loc) => elms.flatMap(visit).toSet
-      case Expression.FSet(elms, tpe, loc) => elms.flatMap(visit).toSet
       case Expression.Existential(params, exp, loc) =>
         throw InternalCompilerException(s"Unexpected expression: '$e' at ${loc.source.format}.")
       case Expression.Universal(params, exp, loc) =>

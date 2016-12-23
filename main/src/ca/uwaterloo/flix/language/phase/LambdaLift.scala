@@ -161,8 +161,6 @@ object LambdaLift {
         Expression.GetTupleIndex(visit(exp), offset, tpe, loc)
       case Expression.Tuple(elms, tpe, loc) =>
         Expression.Tuple(elms.map(visit), tpe, loc)
-      case Expression.FSet(elms, tpe, loc) =>
-        Expression.FSet(elms.map(visit), tpe, loc)
       case Expression.Existential(params, exp, loc) =>
         Expression.Existential(params, visit(exp), loc)
       case Expression.Universal(params, exp, loc) =>

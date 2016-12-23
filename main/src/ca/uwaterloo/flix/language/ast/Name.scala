@@ -26,18 +26,16 @@ object Name {
   /**
     * Returns the given string `fqn` as a qualified name.
     */
-  def mkQName(fqn: String): QName = {
-    val sp = SourcePosition.Unknown
-
+  def mkQName(fqn: String, sp1: SourcePosition = SourcePosition.Unknown, sp2: SourcePosition = SourcePosition.Unknown): QName = {
     if (!fqn.contains('/'))
-      return QName(sp, Name.RootNS, Ident(sp, fqn, sp), sp)
+      return QName(sp1, Name.RootNS, Ident(sp1, fqn, sp2), sp2)
 
     val index = fqn.indexOf('/')
     val parts = fqn.substring(0, index).split('.').toList
     val name = fqn.substring(index + 1, fqn.length)
-    val nname = NName(sp, parts.map(t => Name.Ident(sp, t, sp)), sp)
-    val ident = Ident(sp, name, sp)
-    QName(sp, nname, ident, sp)
+    val nname = NName(sp1, parts.map(t => Name.Ident(sp1, t, sp2)), sp2)
+    val ident = Ident(sp1, name, sp2)
+    QName(sp1, nname, ident, sp2)
   }
 
   /**

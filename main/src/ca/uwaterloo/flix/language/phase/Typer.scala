@@ -662,71 +662,6 @@ object Typer {
           ) yield resultType
 
         /*
-         * Vector expression.
-         */
-        case NamedAst.Expression.FVec(elms, tvar, loc) =>
-          val elementType = Type.freshTypeVar()
-          for (
-            actualTypes <- seqM(elms map visitExp);
-            unifiedType <- unifyM(elementType :: actualTypes, loc);
-            resultType <- unifyM(tvar, Type.mkFVec(unifiedType), loc)
-          ) yield resultType
-
-        /*
-         * Set expression.
-         */
-        case NamedAst.Expression.FSet(elms, tvar, loc) =>
-          val elementType = Type.freshTypeVar()
-          for (
-            actualTypes <- seqM(elms map visitExp);
-            unifiedType <- unifyM(elementType :: actualTypes, loc);
-            resultType <- unifyM(tvar, Type.mkFSet(unifiedType), loc)
-          ) yield resultType
-
-        /*
-         * Map expression.
-         */
-        case NamedAst.Expression.FMap(elms, tvar, loc) =>
-          val keyType = Type.freshTypeVar()
-          val valType = Type.freshTypeVar()
-
-          val keys = elms.map(_._1)
-          val vals = elms.map(_._2)
-
-          for (
-            actualKeyTypes <- seqM(keys map visitExp);
-            actualValTypes <- seqM(vals map visitExp);
-            unifiedKeyType <- unifyM(keyType :: actualKeyTypes, loc);
-            unifiedValType <- unifyM(valType :: actualValTypes, loc);
-            resultType <- unifyM(tvar, Type.mkFMap(unifiedKeyType, unifiedValType), loc)
-          ) yield resultType
-
-        /*
-         * GetIndex expression.
-         */
-        case NamedAst.Expression.GetIndex(exp1, exp2, tvar, loc) =>
-          for (
-            tpe1 <- visitExp(exp1);
-            tpe2 <- visitExp(exp2);
-            ____ <- unifyM(tpe1, Type.mkFVec(tvar), loc);
-            ____ <- unifyM(tpe2, Type.Int32, loc)
-          ) yield tvar
-
-        /*
-         * PutIndex expression.
-         */
-        case NamedAst.Expression.PutIndex(exp1, exp2, exp3, tvar, loc) =>
-          val elementType = Type.freshTypeVar()
-          for (
-            tpe1 <- visitExp(exp1);
-            tpe2 <- visitExp(exp2);
-            tpe3 <- visitExp(exp3);
-            ____ <- unifyM(tpe2, Type.Int32, loc);
-            ____ <- unifyM(tpe3, elementType, loc);
-            resultType <- unifyM(tvar, tpe1, Type.mkFVec(elementType), loc)
-          ) yield resultType
-
-        /*
          * Existential expression.
          */
         case NamedAst.Expression.Existential(params, exp, loc) =>
@@ -818,32 +753,10 @@ object Typer {
             elementTypes <- seqM(elms map visitPat);
             resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
           ) yield resultType
-        case NamedAst.Pattern.FVec(elms, rest, tvar, loc) =>
-          // Introduce a fresh type variable for the type of the elements in the vector.
-          val elementType = Type.freshTypeVar()
 
-          // Perform type inference for the elements.
-          val m = for {
-            inferredElementTypes <- seqM(elms.map(visitPat))
-            unifiedElementType <- unifyM(elementType :: inferredElementTypes, loc)
-            resultType <- unifyM(tvar, Type.mkFVec(elementType), loc)
-          } yield resultType
+        case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => ??? // TODO: FSet
 
-          // Check if there is a rest, if so unify it with the result type.
-          rest match {
-            case None => m
-            case Some(remainder) =>
-              for {
-                resultType <- m
-                inferredRemainderType <- visitPat(remainder)
-                unifiedType <- unifyM(inferredRemainderType, resultType, loc)
-              } yield unifiedType
-          }
-        case NamedAst.Pattern.FSet(elms, rest, tvar, loc) =>
-          ??? // TODO: FSet
-
-        case NamedAst.Pattern.FMap(elms, rest, tvar, loc) =>
-          ??? // TODO: FMap
+        case NamedAst.Pattern.FMap(elms, rest, tvar, loc) => ??? // TODO: FMap
       }
 
       visitExp(exp0)
@@ -992,46 +905,6 @@ object Typer {
           TypedAst.Expression.Tuple(es, subst0(tvar), loc)
 
         /*
-         * Vec expression.
-         */
-        case NamedAst.Expression.FVec(elms, tvar, loc) =>
-          val es = elms.map(e => visitExp(e, subst0))
-          TypedAst.Expression.FVec(es, subst0(tvar), loc)
-
-        /*
-         * Set expression.
-         */
-        case NamedAst.Expression.FSet(elms, tvar, loc) =>
-          val es = elms.map(e => visitExp(e, subst0))
-          TypedAst.Expression.FSet(es, subst0(tvar), loc)
-
-        /*
-         * Map expression.
-         */
-        case NamedAst.Expression.FMap(elms, tvar, loc) =>
-          val es = elms map {
-            case (key, value) => (visitExp(key, subst0), visitExp(value, subst0))
-          }
-          TypedAst.Expression.FMap(es, subst0(tvar), loc)
-
-        /*
-         * GetIndex expression.
-         */
-        case NamedAst.Expression.GetIndex(exp1, exp2, tvar, loc) =>
-          val e1 = visitExp(exp1, subst0)
-          val e2 = visitExp(exp2, subst0)
-          TypedAst.Expression.GetIndex(e1, e2, subst0(tvar), loc)
-
-        /*
-         * PutIndex expression.
-         */
-        case NamedAst.Expression.PutIndex(exp1, exp2, exp3, tvar, loc) =>
-          val e1 = visitExp(exp1, subst0)
-          val e2 = visitExp(exp2, subst0)
-          val e3 = visitExp(exp3, subst0)
-          TypedAst.Expression.PutIndex(e1, e2, e3, subst0(tvar), loc)
-
-        /*
          * Existential expression.
          */
         case NamedAst.Expression.Existential(params, exp, loc) =>
@@ -1083,7 +956,6 @@ object Typer {
             case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
           }
         case NamedAst.Pattern.Tuple(elms, tvar, loc) => TypedAst.Pattern.Tuple(elms map visitPat, subst0(tvar), loc)
-        case NamedAst.Pattern.FVec(elms, rest, tvar, loc) => TypedAst.Pattern.FVec(elms map visitPat, rest.map(visitPat), subst0(tvar), loc)
         case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => TypedAst.Pattern.FSet(elms map visitPat, rest.map(visitPat), subst0(tvar), loc)
         case NamedAst.Pattern.FMap(elms, rest, tvar, loc) =>
           val es = elms map {

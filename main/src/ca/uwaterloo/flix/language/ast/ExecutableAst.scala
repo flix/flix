@@ -539,10 +539,6 @@ object ExecutableAst {
                      tpe: Type,
                      loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class FSet(elms: Array[ExecutableAst.Expression],
-                    tpe: Type,
-                    loc: SourceLocation) extends ExecutableAst.Expression
-
     case class Existential(params: List[ExecutableAst.FormalArg], exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
       def tpe: Type = Type.Bool
     }

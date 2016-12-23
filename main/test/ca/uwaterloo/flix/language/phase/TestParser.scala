@@ -1348,201 +1348,142 @@ class TestParser extends FunSuite with TestUtils {
     run(input + append)
   }
 
-  test("Expression.Vec.01") {
-    val input = "def f: Vec[Int] = #[]"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Expression.Vec.02") {
-    val input = "def f: Vec[Int] = #[1]"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Expression.Vec.03") {
-    val input = "def f: Vec[Int] = #[1, 2]"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Expression.Vec.04") {
-    val input = "def f: Vec[Int] = #[1, 2, 3]"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Expression.Vec.05") {
-    val input = "def f: Vec[(Char, Int)] = #[]"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Expression.Vec.06") {
-    val input = "def f: Vec[(Char, Int)] = #[('a', 21), ('b', 42)]"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Expression.VecVec.01") {
-    val input = "def f: Vec[Vec[Int]] = #[]"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Expression.VecVec.03") {
-    val input = "def f: Vec[Vec[Int]] = #[#[], #[1], #[1, 2, 3]]"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
   test("Expression.Set.01") {
     val input = "def f: Set[Int] = #{}"
     run(input)
   }
 
-  test("Expression.Set.02") {
+  // TODO: Requires backend support
+  ignore("Expression.Set.02") {
     val input = "def f: Set[Int] = #{1}"
     run(input)
   }
 
-  test("Expression.Set.03") {
+  // TODO: Requires backend support
+  ignore("Expression.Set.03") {
     val input = "def f: Set[Int] = #{1, 2}"
     run(input)
   }
 
-  test("Expression.Set.04") {
+  // TODO: Requires backend support
+  ignore("Expression.Set.04") {
     val input = "def f: Set[Int] = #{1, 2, 3}"
     run(input)
   }
 
-  test("Expression.Set.05") {
+  // TODO: Requires backend support
+  ignore("Expression.Set.05") {
     val input = "def f: Set[(Int, Int)] = #{(1, 2)}"
     run(input)
   }
 
-  test("Expression.Set.06") {
+  // TODO: Requires backend support
+  ignore("Expression.Set.06") {
     val input = "def f: Set[(Int, Int)] = #{(1, 2), (3, 4)}"
     run(input)
   }
 
-  test("Expression.Set.07") {
+  // TODO: Requires backend support
+  ignore("Expression.Set.07") {
     val input = "def f: Set[Int] = #{1 + 2, 3 + 4, 5 + 6}"
     run(input)
   }
 
-  test("Expression.SetSet.01") {
+  // TODO: Requires backend support
+  ignore("Expression.SetSet.01") {
     val input = "def f: Set[Set[Int]] = #{}"
     run(input)
   }
 
-  test("Expression.SetSet.02") {
+  // TODO: Requires backend support
+  ignore("Expression.SetSet.02") {
     val input = "def f: Set[Set[Int]] = #{#{}}"
     run(input)
   }
 
-  test("Expression.SetSet.03") {
+  // TODO: Requires backend support
+  ignore("Expression.SetSet.03") {
     val input = "def f: Set[Set[Int]] = #{#{1, 2}, #{3, 4}, #{5, 6}}"
     run(input)
   }
 
-  test("Expression.Map.01") {
+  // TODO: Requires backend support
+  ignore("Expression.Map.01") {
     val input = "def f: Map[Char, Int] = @{}"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
-  test("Expression.Map.02") {
+  // TODO: Requires backend support
+  ignore("Expression.Map.02") {
     val input = "def f: Map[Char, Int] = @{'a' -> 1}"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
-  test("Expression.Map.03") {
+  // TODO: Requires backend support
+  ignore("Expression.Map.03") {
     val input = "def f: Map[Char, Int] = @{'a' -> 1, 'b' -> 2}"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
-  test("Expression.Map.04") {
+  // TODO: Requires backend support
+  ignore("Expression.Map.04") {
     val input = "def f: Map[Char, Int] = @{'a' -> 1, 'b' -> 2, 'c' -> 3}"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
-  test("Expression.Map.05") {
+  // TODO: Requires backend support
+  ignore("Expression.Map.05") {
     val input = "def f: Map[(Int8, Int16), (Int32, Int64)] = @{}"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
-  test("Expression.Map.06") {
+  // TODO: Requires backend support
+  ignore("Expression.Map.06") {
     val input = "def f: Map[(Int8, Int16), (Int32, Int64)] = @{(1i8, 2i16) -> (3i32, 4i64)}"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
-  test("Expression.MapMap.01") {
+  // TODO: Requires backend support
+  ignore("Expression.MapMap.01") {
     val input = "def f: Map[Int, Map[Int, Char]] = @{}"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
-  test("Expression.MapMap.02") {
+  // TODO: Requires backend support
+  ignore("Expression.MapMap.02") {
     val input = "def f: Map[Int, Map[Int, Char]] = @{1 -> @{}}"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
-  test("Expression.MapMap.03") {
+  // TODO: Requires backend support
+  ignore("Expression.MapMap.03") {
     val input = "def f: Map[Int, Map[Int, Char]] = @{1 -> @{}, 2 -> @{3 -> 'a', 4 -> 'b'}}"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
-  test("Expression.MapList.01") {
+  // TODO: Requires backend support
+  ignore("Expression.MapList.01") {
     val input = "def f: Map[Int, List[Int]] = @{1 -> 2 :: 3 :: Nil, 4 -> 5 :: 6 :: Nil}"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
-  test("Expression.MapListSet.01") {
+  // TODO: Requires backend support
+  ignore("Expression.MapListSet.01") {
     val input = "def f: Map[Int, List[Set[Int]]] = @{}"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
-  test("Expression.MapListSet.02") {
+  // TODO: Requires backend support
+  ignore("Expression.MapListSet.02") {
     val input = "def f: Map[Int, List[Set[Int]]] = @{1 -> Nil}"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
+
   }
 
-  test("Expression.MapListSet.04") {
+  // TODO: Requires backend support
+  ignore("Expression.MapListSet.04") {
     val input = "def f: Map[Int, List[Set[Int]]] = @{1 -> #{1, 2, 3} :: #{4, 5, 6} :: Nil}"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Expression.Var.01") {
@@ -2073,127 +2014,6 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Pattern.Vec.01") {
-    val input =
-      """def f(xs: Vec[Int]): Int = match xs with {
-        |  case #[] => 0
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Pattern.Vec.02") {
-    val input =
-      """def f(xs: Vec[Int]): Int = match xs with {
-        |  case #[1] => 0
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Pattern.Vec.03") {
-    val input =
-      """def f(xs: Vec[Int]): Int = match xs with {
-        |  case #[1, 2] => 0
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Pattern.Vec.04") {
-    val input =
-      """def f(xs: Vec[Int]): Int = match xs with {
-        |  case #[1, 2, 3] => 0
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Pattern.Vec.05") {
-    val input =
-      """def f(xs: Vec[Int]): Int = match xs with {
-        |  case #[x] => x
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Pattern.Vec.06") {
-    val input =
-      """def f(xs: Vec[Int]): Int = match xs with {
-        |  case #[x, y] => x + y
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Pattern.Vec.07") {
-    val input =
-      """def f(xs: Vec[Int]): Int = match xs with {
-        |  case #[x, y, z] => x + y + z
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Pattern.Vec.08") {
-    val input =
-      """def f(xs: Vec[Int]): Int = match xs with {
-        |  case #[x, y, z, rs...] => x + y + z + f(rs)
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Pattern.VecVec.01") {
-    val input =
-      """def f(xs: Vec[Vec[Int]]): Int = match xs with {
-        |  case #[#[]] => 0
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Pattern.VecVec.02") {
-    val input =
-      """def f(xs: Vec[Vec[Int]]): Int = match xs with {
-        |  case #[#[1, 2, 3], #[4, 5, 6]] => 0
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Pattern.VecVec.03") {
-    val input =
-      """def f(xs: Vec[Vec[Int]]): Int = match xs with {
-        |  case #[#[], #[1], #[1, 2, 3], #[x, y, z], rs...] => x + y + z + f(rs)
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
   test("Pattern.Set.01") {
     val input =
       """def f(xs: Set[Int]): Int = match xs with {
@@ -2523,13 +2343,6 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Type.Vec.01") {
-    val input = "def f: Vec[Int] = #[]"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
   test("Type.Set.01") {
     val input = "def f: Set[Int] = #{}"
     run(input)
@@ -2537,23 +2350,17 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Type.Map.01") {
     val input = "def f: Map[Int, Int] = @{}"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Type.Infix.01") {
     val input = "def f: Char `Map` Int = @{}"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Type.Infix.02") {
     val input = "def f: Int `Map` Str = @{}"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
   /////////////////////////////////////////////////////////////////////////////

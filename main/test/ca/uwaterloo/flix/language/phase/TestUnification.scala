@@ -64,18 +64,6 @@ class TestUnification extends FunSuite {
     assertResult(Type.Bool)(subst(tpe))
   }
 
-  test("Substitution.Singleton.03") {
-    val tpe = Type.mkFMap(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
-    val subst = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
-    assertResult(Type.mkFMap(Type.Bool, Type.Var(2, Kind.Star)), Type.Var(2, Kind.Star))(subst(tpe))
-  }
-
-  test("Substitution.Singleton.04") {
-    val tpe = Type.mkFMap(Type.Var(1, Kind.Star), Type.Var(1, Kind.Star))
-    val subst = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Bool)
-    assertResult(Type.mkFMap(Type.Bool, Type.Bool))(subst(tpe))
-  }
-
   test("Substitution.Singleton.05") {
     val tpe = Type.Var(1, Kind.Star)
     val subst = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
@@ -234,36 +222,6 @@ class TestUnification extends FunSuite {
 
   test("Unify.FTuple") {
     val result = Unification.unify(Type.FTuple(42), Type.FTuple(42))
-    assert(result.isOk)
-  }
-
-  test("Unify.FVec.01") {
-    val result = Unification.unify(Type.FVec, Type.FVec)
-    assert(result.isOk)
-  }
-
-  test("Unify.FVec.02") {
-    val result = Unification.unify(Type.mkFVec(Type.Bool), Type.mkFVec(Type.Bool))
-    assert(result.isOk)
-  }
-
-  test("Unify.FSet.01") {
-    val result = Unification.unify(Type.FSet, Type.FSet)
-    assert(result.isOk)
-  }
-
-  test("Unify.FSet.02") {
-    val result = Unification.unify(Type.mkFSet(Type.Bool), Type.mkFSet(Type.Bool))
-    assert(result.isOk)
-  }
-
-  test("Unify.FMap.01") {
-    val result = Unification.unify(Type.FMap, Type.FMap)
-    assert(result.isOk)
-  }
-
-  test("Unify.FMap.02") {
-    val result = Unification.unify(Type.mkFMap(Type.Bool, Type.Char), Type.mkFMap(Type.Bool, Type.Char))
     assert(result.isOk)
   }
 

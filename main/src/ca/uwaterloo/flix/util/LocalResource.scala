@@ -35,6 +35,10 @@ object LocalResource {
 
     def Prelude: InputStream = getInputStream("/library/Prelude.flix")
 
+    def Set: InputStream = getInputStream("/library/Set.flix")
+
+    def Map: InputStream = getInputStream("/library/Map.flix")
+
   }
 
   object Tutorials {

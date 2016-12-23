@@ -47,9 +47,6 @@ sealed trait Type {
     case Type.Native => Set.empty
     case Type.Arrow(l) => Set.empty
     case Type.FTuple(l) => Set.empty
-    case Type.FVec => Set.empty
-    case Type.FSet => Set.empty
-    case Type.FMap => Set.empty
     case Type.Enum(enumName, kind) => Set.empty
     case Type.Apply(t, ts) => t.typeVars ++ ts.flatMap(_.typeVars)
   }
@@ -91,9 +88,6 @@ sealed trait Type {
     case Type.Native => "Native"
     case Type.Arrow(l) => s"Arrow($l)"
     case Type.FTuple(l) => s"Tuple($l)"
-    case Type.FVec => "Vec"
-    case Type.FSet => "Set"
-    case Type.FMap => "Map"
     case Type.Apply(Type.FTuple(l), ts) => "(" + ts.mkString(", ") + ")"
     case Type.Apply(Type.Arrow(l), ts) => ts.mkString(" -> ")
     case Type.Apply(t, ts) => s"$t[${ts.mkString(", ")}]"
@@ -228,27 +222,6 @@ object Type {
   }
 
   /**
-    * A type constructor that represents vector values
-    */
-  case object FVec extends Type {
-    def kind: Kind = Kind.Arrow(List(Kind.Star), Kind.Star)
-  }
-
-  /**
-    * A type constructor that represents set values.
-    */
-  case object FSet extends Type {
-    def kind: Kind = Kind.Arrow(List(Kind.Star), Kind.Star)
-  }
-
-  /**
-    * A type constructor that represents map values.
-    */
-  case object FMap extends Type {
-    def kind: Kind = Kind.Arrow(List(Kind.Star, Kind.Star), Kind.Star)
-  }
-
-  /**
     * A type constructor that represents enums.
     *
     * @param sym  the symbol of the enum.
@@ -296,21 +269,6 @@ object Type {
   def mkFTuple(ts: List[Type]): Type = Apply(FTuple(ts.length), ts)
 
   /**
-    * Constructs the type Vec[A] where `A` is the given type `tpe`.
-    */
-  def mkFVec(a: Type): Type = Apply(FVec, List(a))
-
-  /**
-    * Constructs the type Set[A] where `A` is the given type `tpe`.
-    */
-  def mkFSet(a: Type): Type = Apply(FSet, List(a))
-
-  /**
-    * Constructs the type Map[K, V] where `K` is the given type `k` and `V` is the given type `v`.
-    */
-  def mkFMap(k: Type, v: Type): Type = Apply(FMap, List(k, v))
-
-  /**
     * Replaces every free occurrence of a type variable in `typeVars`
     * with a fresh type variable in the given type `tpe`.
     */
@@ -338,9 +296,6 @@ object Type {
       case Type.Native => Type.Native
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.FTuple(l) => Type.FTuple(l)
-      case Type.FVec => Type.FVec
-      case Type.FSet => Type.FSet
-      case Type.FMap => Type.FMap
       case Type.Apply(t, ts) => Type.Apply(visit(t), ts map visit)
       case Type.Enum(enum, kind) => Type.Enum(enum, kind)
     }
