@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Highlight._
 
 /**
@@ -339,6 +339,21 @@ object WeederError {
       s"""|>> Illegal syntax.
           |
           |${Code(loc, msg)}
+          """.stripMargin
+  }
+
+  /**
+    * An error raised to indicate an undefined annotation.
+    *
+    * @param name the name of the undefined annotation.
+    * @param loc  the location of the annotation.
+    */
+  case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
+    val source = loc.source
+    val message =
+      s"""|>> Undefined annotation named '${Red(name)}'.
+          |
+          |${Code(loc, "undefined annotation.")}
           """.stripMargin
   }
 

@@ -837,7 +837,7 @@ object Weeder {
         case "test" => Ast.Annotation.Test(loc).toSuccess
         case "unchecked" => Ast.Annotation.Unchecked(loc).toSuccess
         case "unsafe" => Ast.Annotation.Unsafe(loc).toSuccess
-        case _ => ??? // TODO: unknown annotation, copy old code to raise error.
+        case name => WeederError.UndefinedAnnotation(name, loc).toFailure
       }
     }
   }
@@ -849,14 +849,16 @@ object Weeder {
       * @param root
       * @return
       */
-    def weed(root: ParsedAst.Root): Validation[List[WeededAst.Declaration.Property], WeederError] = {
+    def weed(root: ParsedAst.Root): Validation[List[WeededAst.Declaration], WeederError] = {
 
       /**
         * TODO: DOC
         */
-      def visit(decl: ParsedAst.Declaration): Validation[List[WeededAst.Declaration.Property], WeederError] = decl match {
-        case ParsedAst.Declaration.Namespace(_, _, decls, _) =>
-          @@(decls.map(visit)).map(_.flatten)
+      def visit(decl: ParsedAst.Declaration): Validation[List[WeededAst.Declaration], WeederError] = decl match {
+        case ParsedAst.Declaration.Namespace(sp1, name, decls, sp2) =>
+          @@(decls.map(visit)) map {
+            case ds => List(WeededAst.Declaration.Namespace(name, ds.flatten, mkSL(sp1, sp2)))
+          }
 
         case ParsedAst.Declaration.Definition(_, meta, _, defn, _, _, _, _, _) =>
           @@(meta.collect {

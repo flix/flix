@@ -28,7 +28,7 @@ namespace Belnap {
     ///
     /// Returns the least upper bound of `e1` and `e2`.
     ///
-    @commutative @associative
+    #commutative #associative
     def lub(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, x)                => x
         case (x, Belnap.Bot)                => x
@@ -40,7 +40,7 @@ namespace Belnap {
     ///
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
-    @commutative @associative
+    #commutative #associative
     def glb(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Top, x)                => x
         case (x, Belnap.Top)                => x
@@ -58,7 +58,7 @@ namespace Belnap {
     /// Over-approximates the logical `not` operator.
     ///
     #sound1(x -> !x)
-    #strict1 #monotone
+    #strict1 #monotone1
     def not(e: Belnap): Belnap = match e with {
         case Belnap.Bot     => Belnap.Bot
         case Belnap.True    => Belnap.False
@@ -69,8 +69,8 @@ namespace Belnap {
     ///
     /// Over-approximates the logical `and` operator.
     ///
-    @sound2((x, y) -> x && y)
-    @strict2 @monotone @commutative @associative
+    #sound2((x, y) -> x && y)
+    #strict2 #monotone2 #commutative #associative
     def and(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, _)                => Belnap.Bot
         case (_, Belnap.Bot)                => Belnap.Bot
@@ -84,8 +84,8 @@ namespace Belnap {
     ///
     /// Over-approximates the logical `or` operator.
     ///
-    @sound2((x, y) -> x || y)
-    @strict2 @monotone @commutative @associative
+    #sound2((x, y) -> x || y)
+    #strict2 #monotone2 #commutative #associative
     def or(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, _)                => Belnap.Bot
         case (_, Belnap.Bot)                => Belnap.Bot
@@ -99,8 +99,8 @@ namespace Belnap {
     ///
     /// Over-approximates the logical `xor` operator.
     ///
-    @sound2((x, y) -> (x || y) && !(x && y))
-    @strict2 @monotone @commutative @associative
+    #sound2((x, y) -> (x || y) && !(x && y))
+    #strict2 #monotone2 #commutative #associative
     def xor(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, _)                => Belnap.Bot
         case (_, Belnap.Bot)                => Belnap.Bot
@@ -114,8 +114,8 @@ namespace Belnap {
     ///
     /// Over-approximates the logical `implies` operator.
     ///
-    @sound2((x, y) -> !x || y)
-    @strict2 @monotone
+    #sound2((x, y) -> !x || y)
+    #strict2 #monotone2
     def implies(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, _)                => Belnap.Bot
         case (_, Belnap.Bot)                => Belnap.Bot
@@ -129,7 +129,7 @@ namespace Belnap {
     ///
     /// Over-approximates the logical `bicondition` operator.
     ///
-    @strict2 @monotone @commutative @associative
+    #strict2 #monotone2 #commutative #associative
     def bicondition(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, _)                => Belnap.Bot
         case (_, Belnap.Bot)                => Belnap.Bot
@@ -143,7 +143,7 @@ namespace Belnap {
     ///
     /// Over-approximates the logical `nand` operator.
     ///
-    @strict2 @monotone @commutative // NB: Commutative, but not associative!
+    #strict2 #monotone2 #commutative // NB: Commutative, but not associative!
     def nand(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, _)                => Belnap.Bot
         case (_, Belnap.Bot)                => Belnap.Bot
@@ -156,6 +156,13 @@ namespace Belnap {
 
     let Belnap<> = (Belnap.Bot, Belnap.Top, leq, lub, glb)
 
+
+
+    // TODO -------------- refactor below this line:
+
+    law associative(f: (Belnap, Belnap) -> Belnap): Bool =
+        true // TODO
+
     law commutative(f: (Belnap, Belnap) -> Belnap): Bool =
         ∀(x: Belnap, y: Belnap). f(x, y) == f(y, x)
 
@@ -164,6 +171,12 @@ namespace Belnap {
 
     law strict2(f: (Belnap, Belnap) -> Belnap): Bool =
         f(Bot, Bot) == Bot
+
+    law monotone1(f: Belnap -> Belnap): Bool =
+        true // TODO
+
+    law monotone2(f: (Belnap, Belnap) -> Belnap): Bool =
+        true // TODO
 
     law sound1(fa: Belnap -> Belnap, fc: Bool -> Bool): Bool =
         ∀(x: Bool). alpha(fc(x)) `leq` fa(alpha(x))
