@@ -394,7 +394,7 @@ object Typer {
            * Loop through every annotation and instantiate each law.
            */
           defn.ann.annotations.collect {
-            case Annotation.Property(name, _) =>
+            case NamedAst.Property(name, args, _) =>
               // TODO: Change grammar to allow an ident/qname here.
               val qname = Name.mkQName(name)
 
@@ -402,7 +402,7 @@ object Typer {
               Disambiguation.lookupRef(qname, ns0, program) flatMap {
                 case RefTarget.Defn(_, law) =>
                   // Case 1: Law found. Instantiate it.
-                  mkProperty(law, defn, ns0)
+                  mkProperty(law, defn, args, ns0)
                 case RefTarget.Hook(_) =>
                   // Case 2: Illegal 'hook' law.
                   throw InternalCompilerException("Annotation references hook.")
@@ -411,17 +411,17 @@ object Typer {
         }
 
         /**
-          * Instantiates the given `law` for the given definition `defn` in the namespace `ns0`.
+          * Instantiates the given `law` for the given definition `defn` with the given `args` in the namespace `ns0`.
           */
-        def mkProperty(law: NamedAst.Declaration.Definition, defn: NamedAst.Declaration.Definition, ns0: Name.NName): Result[TypedAst.Property, TypeError] = {
+        def mkProperty(law: NamedAst.Declaration.Definition, defn: NamedAst.Declaration.Definition, args: List[NamedAst.Expression], ns0: Name.NName): Result[TypedAst.Property, TypeError] = {
           // TODO: Dont use qnames
           val lambda = NamedAst.Expression.Ref(Name.mkQName(law.sym.toString), Type.freshTypeVar(), defn.loc)
-          val arg = NamedAst.Expression.Ref(Name.mkQName(defn.sym.toString), Type.freshTypeVar(), defn.loc)
-          val exp = NamedAst.Expression.Apply(lambda, List(arg), Type.freshTypeVar(), defn.loc)
+          val fn = NamedAst.Expression.Ref(Name.mkQName(defn.sym.toString), Type.freshTypeVar(), defn.loc)
+          val apply = NamedAst.Expression.Apply(lambda, fn :: args, Type.freshTypeVar(), defn.loc)
 
           // Perform type inference on the property expression.
           val result = for {
-            actualType <- Expressions.infer(exp, ns0, program)
+            actualType <- Expressions.infer(apply, ns0, program)
             resultType <- unifyM(Type.Bool, actualType, defn.loc)
           } yield resultType
 
@@ -429,7 +429,7 @@ object Typer {
           result.run(Substitution.empty) map {
             case (subst, _) =>
               // Reassemble the property expression using the type environment.
-              val reassembled = Expressions.reassemble(exp, ns0, program, subst)
+              val reassembled = Expressions.reassemble(apply, ns0, program, subst)
               TypedAst.Property(law.sym, defn.sym, reassembled)
           }
         }

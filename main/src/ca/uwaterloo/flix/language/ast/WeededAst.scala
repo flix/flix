@@ -244,4 +244,6 @@ object WeededAst {
 
   case class FormalParam(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst
 
+  case class Property(name: String, args: List[WeededAst.Expression], loc: SourceLocation) extends Ast.Annotation
+  
 }

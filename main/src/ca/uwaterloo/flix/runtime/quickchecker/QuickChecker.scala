@@ -21,7 +21,8 @@ import java.math.BigInteger
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression.Var
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, Property, Root}
-import ca.uwaterloo.flix.language.ast.{PropertyError, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.language.errors.PropertyError
 import ca.uwaterloo.flix.runtime.evaluator.SymVal.{Char, Unit}
 import ca.uwaterloo.flix.runtime.evaluator.{SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.Highlight.{Blue, Cyan, Red}

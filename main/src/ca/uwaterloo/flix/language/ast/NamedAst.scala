@@ -264,6 +264,8 @@ object NamedAst {
 
   case class FormalParam(sym: Symbol.VarSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
 
+  case class Property(name: String, args: List[NamedAst.Expression], loc: SourceLocation) extends Ast.Annotation
+
   case class TypeParam(name: Name.Ident, tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst
 
 }

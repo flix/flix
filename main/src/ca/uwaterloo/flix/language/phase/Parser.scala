@@ -771,16 +771,24 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Helpers                                                                 //
   /////////////////////////////////////////////////////////////////////////////
+  // TODO: Rename to FormalParamList?
   def ArgumentList: Rule1[Seq[ParsedAst.FormalParam]] = rule {
     zeroOrMore(Argument).separatedBy(optWS ~ "," ~ optWS)
   }
 
+  // TODO: Rename to FormalParam?
   def Argument: Rule1[ParsedAst.FormalParam] = rule {
     SP ~ Names.Variable ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.FormalParam
   }
 
-  def Annotation: Rule1[ParsedAst.Annotation] = rule {
-    SP ~ atomic("@") ~ Names.Annotation ~ SP ~> ParsedAst.Annotation
+  def Annotation: Rule1[ParsedAst.Annotation] = {
+    def ArgumentList: Rule1[Option[Seq[ParsedAst.Expression]]] = rule {
+      optional(optWS ~ "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")")
+    }
+
+    rule {
+      SP ~ atomic("@") ~ Names.Annotation ~ ArgumentList ~ SP ~> ParsedAst.Annotation
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////

@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.Type.Var
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation
@@ -60,6 +59,29 @@ object Namer {
     }
   }
 
+  object Annotations {
+
+    /**
+      * Performs naming on the given annotations `ann0` in the given namespace `ns0`.
+      */
+    def namer(ann0: Ast.Annotations, ns0: Name.NName)(implicit genSym: GenSym): Validation[Ast.Annotations, NameError] = {
+      // TODO: Decide if property should be split from annotations?
+      val annotations = ann0.annotations.map {
+        case WeededAst.Property(name, args, loc) =>
+          val argsVal = args.map(a => Expressions.namer(a, Map.empty, Map.empty))
+          @@(argsVal).map {
+            case as => NamedAst.Property(name, as, loc)
+          }
+        case ann => ann.toSuccess
+      }
+
+      @@(annotations) map {
+        case as => Ast.Annotations(as)
+      }
+    }
+
+  }
+
   object Declarations {
 
     /**
@@ -78,7 +100,7 @@ object Namer {
       /*
        * Definition.
        */
-      case WeededAst.Declaration.Definition(doc, ann, ident, tparams0, fparams0, exp, tpe, loc) =>
+      case WeededAst.Declaration.Definition(doc, ann0, ident, tparams0, fparams0, exp, tpe, loc) =>
         // check if the definition already exists.
         val defns = prog0.definitions.getOrElse(ns0, Map.empty)
         defns.get(ident.name) match {
@@ -105,8 +127,8 @@ object Namer {
               env0 = env0 + (ident.name -> sym)
             }
 
-            Expressions.namer(exp, env0, tenv0) map {
-              case e =>
+            @@(Annotations.namer(ann0, ns0), Expressions.namer(exp, env0, tenv0)) map {
+              case (ann, e) =>
                 val sym = Symbol.mkDefnSym(ns0, ident)
                 val sc = NamedAst.Scheme(tparams.map(_.tpe), Types.namer(tpe, tenv0))
                 val defn = NamedAst.Declaration.Definition(doc, ann, sym, tparams, pms0.reverse, e, sc, loc)

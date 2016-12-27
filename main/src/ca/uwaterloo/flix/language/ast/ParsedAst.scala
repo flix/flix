@@ -933,11 +933,12 @@ object ParsedAst {
   /**
     * Annotation.
     *
-    * @param sp1   the position of the first character in the annotation.
-    * @param ident the name of the annotation.
-    * @param sp2   the position of the last character in the annotation.
+    * @param sp1     the position of the first character in the annotation.
+    * @param ident   the name of the annotation.
+    * @param optArgs the optional arguments of the annotation.
+    * @param sp2     the position of the last character in the annotation.
     */
-  case class Annotation(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst
+  case class Annotation(sp1: SourcePosition, ident: Name.Ident, optArgs: Option[Seq[ParsedAst.Expression]], sp2: SourcePosition) extends ParsedAst
 
   /**
     * Case (member of an enum).

@@ -26,7 +26,7 @@ object Ast {
   /**
     * A common super type for AST nodes that represent annotations.
     */
-  sealed trait Annotation
+  trait Annotation
 
   object Annotation {
 
@@ -137,14 +137,6 @@ object Ast {
       */
     case class Unsafe(loc: SourceLocation) extends Annotation {
       override def toString: String = "@unsafe"
-    }
-
-    /**
-      * TODO: DOC
-      */
-    // TODO: DOC
-    case class Property(name: String, loc: SourceLocation) extends Annotation {
-      override def toString: String = "@" + name
     }
 
   }

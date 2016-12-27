@@ -68,6 +68,7 @@ namespace Belnap {
     ///
     /// Over-approximates the logical `and` operator.
     ///
+    @sound2((x, y) -> x && y)
     @strict @monotone @commutative @associative
     def and(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Belnap.Bot, _)                => Belnap.Bot
@@ -150,5 +151,8 @@ namespace Belnap {
     }
 
     let Belnap<> = (Belnap.Bot, Belnap.Top, leq, lub, glb)
+
+    law sound2(fa: (Belnap, Belnap) -> Belnap, fc: (Bool, Bool) -> Bool): Bool =
+        ∀(x: Bool, y: Bool). alpha(fc(x, y)) `leq` fa(alpha(x), alpha(y))
 
 }
