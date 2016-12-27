@@ -17,6 +17,7 @@ namespace Belnap {
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
+    #reflexive #antiSymmetric #transitive
     def leq(e1: Belnap, e2: Belnap): Bool = match (e1, e2) with {
         case (Belnap.Bot, _)                => true
         case (Belnap.True, Belnap.True)     => true
@@ -159,6 +160,16 @@ namespace Belnap {
 
 
     // TODO -------------- refactor below this line:
+
+    law reflexive(⊑: (Belnap, Belnap) -> Bool): Bool = ∀(x: Belnap). x ⊑ x
+
+    law antiSymmetric(⊑: (Belnap, Belnap) -> Bool): Bool = ∀(x: Belnap, y: Belnap). ((x ⊑ y) ∧ (y ⊑ x)) → (x == y)
+
+    law transitive(⊑: (Belnap, Belnap) -> Bool): Bool = ∀(x: Belnap, y: Belnap, z: Belnap). ((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z)
+
+
+
+
 
     law associative(f: (Belnap, Belnap) -> Belnap): Bool =
         true // TODO
