@@ -151,7 +151,7 @@ object Verifier {
     val envs = List(Map.empty: SymbolicEvaluator.Environment) // TODO
 
     // the number of paths explored by the symbolic evaluator.
-    var paths = 0
+    var paths = 0 // TODO: Need to compute the number of paths differently...
 
     // the number of queries issued to the SMT solver.
     var queries = 0
@@ -412,16 +412,16 @@ object Verifier {
       Console.println(s"  -- Verification Results for ${source.format} -- ")
       Console.println()
 
-      for (result <- properties.sortBy(_.property.loc)) {
+      for (result <- properties.sortBy(_.property.defn.loc)) {
         result match {
           case PropertyResult.Success(property, paths, queries, elapsed) =>
-            Console.println("  " + Cyan("✓ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + " seconds.)")
+            Console.println("  " + Cyan("✓ ") + property.defn + " satisfies " + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + " seconds.)")
 
-          case PropertyResult.Failure(property, paths, queries, elapsed, error) =>
-            Console.println("  " + Red("✗ ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + ") seconds.")
+          case PropertyResult.Failure(property, paths, queries, elapsed, _) =>
+            Console.println("  " + Red("✗ ") + property.defn + " satisfies " + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + ") seconds.")
 
-          case PropertyResult.Unknown(property, paths, queries, elapsed, error) =>
-            Console.println("  " + Red("? ") + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + ") seconds.")
+          case PropertyResult.Unknown(property, paths, queries, elapsed, _) =>
+            Console.println("  " + Red("? ") + property.defn + " satisfies " + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + ") seconds.")
         }
       }
 

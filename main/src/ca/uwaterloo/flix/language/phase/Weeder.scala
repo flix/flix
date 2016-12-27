@@ -844,11 +844,9 @@ object Weeder {
       val loc = mkSL(past.sp1, past.sp2)
       past.ident.name match {
         case "associative" => Ast.Annotation.Associative(loc).toSuccess
-        case "commutative" => Ast.Annotation.Commutative(loc).toSuccess
         case "internal" => Ast.Annotation.Internal(loc).toSuccess
         case "law" => Ast.Annotation.Law(loc).toSuccess
         case "monotone" => Ast.Annotation.Monotone(loc).toSuccess
-        case "strict" => Ast.Annotation.Strict(loc).toSuccess
         case "test" => Ast.Annotation.Test(loc).toSuccess
         case "unchecked" => Ast.Annotation.Unchecked(loc).toSuccess
         case "unsafe" => Ast.Annotation.Unsafe(loc).toSuccess

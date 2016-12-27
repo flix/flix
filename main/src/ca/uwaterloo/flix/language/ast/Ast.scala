@@ -91,17 +91,6 @@ object Ast {
     }
 
     /**
-      * An AST node that represents a `@strict` annotation.
-      *
-      * A `strict` function is a function that when applied to (any) bottom element yields bottom.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Strict(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@strict"
-    }
-
-    /**
       * An AST node that represents a `@test` annotation.
       *
       * A function marked with `test` is evaluated as part of the test framework.
@@ -167,11 +156,6 @@ object Ast {
       * Returns `true` if `this` sequence contains the `@monotone` annotation.
       */
     def isMonotone: Boolean = annotations exists (_.isInstanceOf[Annotation.Monotone])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@strict` annotation.
-      */
-    def isStrict: Boolean = annotations exists (_.isInstanceOf[Annotation.Strict])
 
     /**
       * Returns `true` if `this` sequence contains the `@test` annotation.
