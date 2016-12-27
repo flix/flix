@@ -57,8 +57,8 @@ namespace Belnap {
     ///
     /// Over-approximates the logical `not` operator.
     ///
-    @sound1(x -> !x)
-    @strict1 @monotone
+    #sound1(x -> !x)
+    #strict1 #monotone
     def not(e: Belnap): Belnap = match e with {
         case Belnap.Bot     => Belnap.Bot
         case Belnap.True    => Belnap.False

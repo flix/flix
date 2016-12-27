@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.Ast.Annotation
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
@@ -377,8 +376,6 @@ object Typer {
 
     }
 
-
-    // TODO: --------------------------------------------------------------------------------------
     object Properties {
 
       /**
@@ -387,71 +384,32 @@ object Typer {
       def typecheck(program: Program)(implicit genSym: GenSym): Result[List[TypedAst.Property], TypeError] = {
 
         /**
-          * Instantiates all laws associated with the given definition `defn0` in the namespace `ns0`.
+          * TODO: DOC
           */
-        def mkProperties(defn: NamedAst.Declaration.Definition, ns0: Name.NName): List[Result[TypedAst.Property, TypeError]] = {
-          /*
-           * Loop through every annotation and instantiate each law.
-           */
-          defn.ann.annotations.collect {
-            case NamedAst.Property(name, args, _) =>
-              // TODO: Change grammar to allow an ident/qname here.
-              val qname = Name.mkQName(name)
+        def visitProperty(p: NamedAst.Property, ns0: Name.NName): Result[TypedAst.Property, TypeError] = p match {
+          case NamedAst.Property(law, defn, exp0, loc) =>
+            val result = Expressions.infer(exp0, ns0, program)
+            result.run(Substitution.empty) map {
+              case (subst, tpe) =>
+                val exp = Expressions.reassemble(exp0, ns0, program, subst)
+                TypedAst.Property(law, defn, exp, loc)
+            }
+        }
 
-              // Lookup the law.
-              Disambiguation.lookupRef(qname, ns0, program) flatMap {
-                case RefTarget.Defn(_, law) =>
-                  // Case 1: Law found. Instantiate it.
-                  mkProperty(law, defn, args, ns0)
-                case RefTarget.Hook(_) =>
-                  // Case 2: Illegal 'hook' law.
-                  throw InternalCompilerException("Annotation references hook.")
-              }
+        // Visit every property in the program.
+        val result = program.properties.toList.flatMap {
+          case (ns, properties) => properties.map {
+            property => visitProperty(property, ns)
           }
         }
 
-        /**
-          * Instantiates the given `law` for the given definition `defn` with the given `args` in the namespace `ns0`.
-          */
-        def mkProperty(law: NamedAst.Declaration.Definition, defn: NamedAst.Declaration.Definition, args: List[NamedAst.Expression], ns0: Name.NName): Result[TypedAst.Property, TypeError] = {
-          // TODO: Dont use qnames
-          val lambda = NamedAst.Expression.Ref(Name.mkQName(law.sym.toString), Type.freshTypeVar(), defn.loc)
-          val fn = NamedAst.Expression.Ref(Name.mkQName(defn.sym.toString), Type.freshTypeVar(), defn.loc)
-          val apply = NamedAst.Expression.Apply(lambda, fn :: args, Type.freshTypeVar(), defn.loc)
-
-          // Perform type inference on the property expression.
-          val result = for {
-            actualType <- Expressions.infer(apply, ns0, program)
-            resultType <- unifyM(Type.Bool, actualType, defn.loc)
-          } yield resultType
-
-          // Evaluate the type inference monad under the empty substitution.
-          result.run(Substitution.empty) map {
-            case (subst, _) =>
-              // Reassemble the property expression using the type environment.
-              val reassembled = Expressions.reassemble(apply, ns0, program, subst)
-              TypedAst.Property(law.sym, defn.sym, reassembled)
-          }
-        }
-
-        /*
-         * Instantiate all laws associated with all definitions in the program.
-         */
-        val properties = program.definitions.flatMap {
-          case (ns, decls) => decls.flatMap {
-            case (_, defn) => mkProperties(defn, ns)
-          }
-        }
-
-        // Sequence the results.
-        Result.seqM(properties.toList)
+        // Sequence the result and convert them back to a map.
+        Result.seqM(result)
       }
 
     }
 
   }
-
-  // TODO: --------------------------------------------------------------------------------------
 
   object Expressions {
 

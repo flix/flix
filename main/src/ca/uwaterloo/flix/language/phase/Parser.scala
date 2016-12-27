@@ -118,8 +118,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Definition: Rule1[ParsedAst.Declaration.Definition] = {
-      def Annotations: Rule1[Seq[ParsedAst.Annotation]] = rule {
-        zeroOrMore(Annotation).separatedBy(WS)
+      def Annotations: Rule1[Seq[ParsedAst.AnnotationOrProperty]] = rule {
+        zeroOrMore(Annotation | Property).separatedBy(WS)
       }
 
       rule {
@@ -277,7 +277,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def FormalParams: Rule1[Option[Seq[ParsedAst.FormalParam]]] = rule {
-    optional("(" ~ optWS ~ ArgumentList ~ optWS ~ ")")
+    optional("(" ~ optWS ~ FormalParamList ~ optWS ~ ")")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -771,23 +771,26 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Helpers                                                                 //
   /////////////////////////////////////////////////////////////////////////////
-  // TODO: Rename to FormalParamList?
-  def ArgumentList: Rule1[Seq[ParsedAst.FormalParam]] = rule {
-    zeroOrMore(Argument).separatedBy(optWS ~ "," ~ optWS)
+  def FormalParamList: Rule1[Seq[ParsedAst.FormalParam]] = rule {
+    zeroOrMore(FormalParam).separatedBy(optWS ~ "," ~ optWS)
   }
 
-  // TODO: Rename to FormalParam?
-  def Argument: Rule1[ParsedAst.FormalParam] = rule {
+  def FormalParam: Rule1[ParsedAst.FormalParam] = rule {
     SP ~ Names.Variable ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.FormalParam
   }
 
-  def Annotation: Rule1[ParsedAst.Annotation] = {
+  def Annotation: Rule1[ParsedAst.AnnotationOrProperty] = rule {
+    SP ~ atomic("@") ~ Names.Annotation ~ SP ~> ParsedAst.Annotation
+  }
+
+  def Property: Rule1[ParsedAst.AnnotationOrProperty] = {
+    // TODO: Introduce expression list.
     def ArgumentList: Rule1[Option[Seq[ParsedAst.Expression]]] = rule {
       optional(optWS ~ "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")")
     }
 
     rule {
-      SP ~ atomic("@") ~ Names.Annotation ~ ArgumentList ~ SP ~> ParsedAst.Annotation
+      SP ~ atomic("#") ~ Names.Definition ~ ArgumentList ~ SP ~> ParsedAst.Property
     }
   }
 

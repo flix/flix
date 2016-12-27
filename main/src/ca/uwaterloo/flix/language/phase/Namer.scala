@@ -39,14 +39,13 @@ object Namer {
     val prog0 = NamedAst.Program(
       enums = Map.empty,
       definitions = Map.empty,
-      classes = Map.empty,
-      impls = Map.empty,
       lattices = Map.empty,
       indexes = Map.empty,
       tables = Map.empty,
       facts = Map.empty,
       rules = Map.empty,
       hooks = program.hooks,
+      properties = Map.empty,
       time = program.time
     )
 
@@ -59,26 +58,27 @@ object Namer {
     }
   }
 
+  // TODO: Rename to properties
   object Annotations {
 
-    /**
-      * Performs naming on the given annotations `ann0` in the given namespace `ns0`.
-      */
-    def namer(ann0: Ast.Annotations, ns0: Name.NName)(implicit genSym: GenSym): Validation[Ast.Annotations, NameError] = {
-      // TODO: Decide if property should be split from annotations?
-      val annotations = ann0.annotations.map {
-        case WeededAst.Property(name, args, loc) =>
-          val argsVal = args.map(a => Expressions.namer(a, Map.empty, Map.empty))
-          @@(argsVal).map {
-            case as => NamedAst.Property(name, as, loc)
-          }
-        case ann => ann.toSuccess
-      }
-
-      @@(annotations) map {
-        case as => Ast.Annotations(as)
-      }
-    }
+    //    /**
+    //      * Performs naming on the given annotations `ann0` in the given namespace `ns0`.
+    //      */
+    //    def namer(ann0: Ast.Annotations, ns0: Name.NName)(implicit genSym: GenSym): Validation[Ast.Annotations, NameError] = {
+    //      // TODO: Decide if property should be split from annotations?
+    //      val annotations = ann0.annotations.map {
+    //        case WeededAst.Property(name, args, loc) =>
+    //          val argsVal = args.map(a => Expressions.namer(a, Map.empty, Map.empty))
+    //          @@(argsVal).map {
+    //            case as => NamedAst.Property(name, as, loc)
+    //          }
+    //        case ann => ann.toSuccess
+    //      }
+    //
+    //      @@(annotations) map {
+    //        case as => Ast.Annotations(as)
+    //      }
+    //    }
 
   }
 
@@ -100,7 +100,7 @@ object Namer {
       /*
        * Definition.
        */
-      case WeededAst.Declaration.Definition(doc, ann0, ident, tparams0, fparams0, exp, tpe, loc) =>
+      case WeededAst.Declaration.Definition(doc, ann, ident, tparams0, fparams0, exp, tpe, loc) =>
         // check if the definition already exists.
         val defns = prog0.definitions.getOrElse(ns0, Map.empty)
         defns.get(ident.name) match {
@@ -127,8 +127,8 @@ object Namer {
               env0 = env0 + (ident.name -> sym)
             }
 
-            @@(Annotations.namer(ann0, ns0), Expressions.namer(exp, env0, tenv0)) map {
-              case (ann, e) =>
+            Expressions.namer(exp, env0, tenv0) map {
+              case e =>
                 val sym = Symbol.mkDefnSym(ns0, ident)
                 val sc = NamedAst.Scheme(tparams.map(_.tpe), Types.namer(tpe, tenv0))
                 val defn = NamedAst.Declaration.Definition(doc, ann, sym, tparams, pms0.reverse, e, sc, loc)
@@ -176,14 +176,17 @@ object Namer {
         }
 
       /*
-       * Class.
+       * Property.
        */
-      case WeededAst.Declaration.Class(doc, ident, tparams, decls, loc) => ??? // TODO: Add support for class in Namer.
-
-      /*
-       * Impl.
-       */
-      case WeededAst.Declaration.Impl(doc, ident, tparams, decls, loc) => ??? // TODO: Add support for impl in Namer.
+      case WeededAst.Declaration.Property(law, defn, exp0, loc) =>
+        Expressions.namer(exp0, Map.empty, Map.empty) map {
+          case exp =>
+            val lawSym = Symbol.mkDefnSym(ns0, law)
+            val defnSym = Symbol.mkDefnSym(ns0, defn)
+            val property = NamedAst.Property(lawSym, defnSym, exp, loc)
+            val properties = prog0.properties.getOrElse(ns0, Nil)
+            prog0.copy(properties = prog0.properties + (ns0 -> (property :: properties)))
+        }
 
       /*
        * Fact.

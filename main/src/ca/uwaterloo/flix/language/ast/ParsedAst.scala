@@ -114,7 +114,7 @@ object ParsedAst {
       * @param exp        the expression.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Definition(doc: Option[ParsedAst.Documentation], ann: Seq[ParsedAst.Annotation], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Option[Seq[ParsedAst.FormalParam]], tpe: ParsedAst.Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Definition(doc: Option[ParsedAst.Documentation], ann: Seq[ParsedAst.AnnotationOrProperty], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Option[Seq[ParsedAst.FormalParam]], tpe: ParsedAst.Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Signature Declaration (top-level function or expression signature).
@@ -931,16 +931,6 @@ object ParsedAst {
   case class Attribute(sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition)
 
   /**
-    * Annotation.
-    *
-    * @param sp1     the position of the first character in the annotation.
-    * @param ident   the name of the annotation.
-    * @param optArgs the optional arguments of the annotation.
-    * @param sp2     the position of the last character in the annotation.
-    */
-  case class Annotation(sp1: SourcePosition, ident: Name.Ident, optArgs: Option[Seq[ParsedAst.Expression]], sp2: SourcePosition) extends ParsedAst
-
-  /**
     * Case (member of an enum).
     *
     * @param sp1   the position of the first character in the case declaration.
@@ -978,5 +968,29 @@ object ParsedAst {
     * @param sp2   the position of the last character in the formal parameter.
     */
   case class FormalParam(sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition)
+
+  /**
+    * A common super-type for annotations or properties.
+    */
+  sealed trait AnnotationOrProperty extends ParsedAst
+
+  /**
+    * Annotation.
+    *
+    * @param sp1     the position of the first character in the annotation.
+    * @param ident   the name of the annotation.
+    * @param sp2     the position of the last character in the annotation.
+    */
+  case class Annotation(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends AnnotationOrProperty
+
+  /**
+    * Property.
+    *
+    * @param sp1  the position of the first character in the property.
+    * @param name the name of the property.
+    * @param args the optional arguments of the property.
+    * @param sp2  the position of the last character in the property.
+    */
+  case class Property(sp1: SourcePosition, name: Name.Ident, args: Option[Seq[ParsedAst.Expression]], sp2: SourcePosition) extends AnnotationOrProperty
 
 }

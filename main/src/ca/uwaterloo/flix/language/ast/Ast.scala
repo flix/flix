@@ -31,33 +31,6 @@ object Ast {
   object Annotation {
 
     /**
-      * An AST node that represents an `@associative` annotation.
-      *
-      * An `associative` function is a function that satisfies the associative property, e.g:
-      *
-      * 1 + (2 + 3) === (1 + 2) + 3.
-      *
-      * @param loc the source location of the annotation.
-      */
-    // TODO: Remove all of these.
-    case class Associative(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@associative"
-    }
-
-    /**
-      * An AST node that represents a `@commutative` annotation.
-      *
-      * A `commutative` function is a function that satisfies the commutative property, e.g:
-      *
-      * f(1, 2) === f(2, 1).
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Commutative(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@commutative"
-    }
-
-    /**
       * An AST node that represents an `@internal` annotation.
       *
       * An `internal` function is a non-public function hidden from view.
@@ -65,7 +38,7 @@ object Ast {
       * @param loc the source location of the annotation.
       */
     case class Internal(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@commutative"
+      override def toString: String = "@internal"
     }
 
     /**
@@ -77,17 +50,6 @@ object Ast {
       */
     case class Law(loc: SourceLocation) extends Annotation {
       override def toString: String = "@law"
-    }
-
-    /**
-      * An AST node that represents a `@monotone` annotation.
-      *
-      * A `monotone` function is an order-preserving function between lattice elements.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Monotone(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@monotone"
     }
 
     /**
@@ -138,24 +100,9 @@ object Ast {
   case class Annotations(annotations: List[Annotation]) {
 
     /**
-      * Returns `true` if `this` sequence contains the `@associative` annotation.
-      */
-    def isAssociative: Boolean = annotations exists (_.isInstanceOf[Annotation.Associative])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@commutative` annotation.
-      */
-    def isCommutative: Boolean = annotations exists (_.isInstanceOf[Annotation.Commutative])
-
-    /**
       * Returns `true` if `this` sequence contains the `@law` annotation.
       */
     def isLaw: Boolean = annotations exists (_.isInstanceOf[Annotation.Law])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@monotone` annotation.
-      */
-    def isMonotone: Boolean = annotations exists (_.isInstanceOf[Annotation.Monotone])
 
     /**
       * Returns `true` if `this` sequence contains the `@test` annotation.

@@ -26,14 +26,13 @@ object NamedAst {
 
   case class Program(definitions: Map[Name.NName, Map[String, NamedAst.Declaration.Definition]],
                      enums: Map[Name.NName, Map[String, NamedAst.Declaration.Enum]],
-                     classes: Map[Symbol.ClassSym, NamedAst.Declaration.Class],
-                     impls: Map[Symbol.ImplSym, NamedAst.Declaration.Impl],
                      lattices: Map[NamedAst.Type, NamedAst.Declaration.BoundedLattice],
                      indexes: Map[Name.NName, Map[String, NamedAst.Declaration.Index]],
                      tables: Map[Name.NName, Map[String, NamedAst.Table]],
                      facts: Map[Name.NName, List[NamedAst.Declaration.Fact]],
                      rules: Map[Name.NName, List[NamedAst.Declaration.Rule]],
                      hooks: Map[Symbol.DefnSym, Ast.Hook],
+                     properties: Map[Name.NName, List[NamedAst.Property]],
                      time: Time) extends NamedAst
 
   sealed trait Declaration extends NamedAst {
@@ -49,10 +48,6 @@ object NamedAst {
     case class External(doc: Option[Ast.Documentation], ident: Name.Ident, params: List[NamedAst.FormalParam], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
     case class Enum(doc: Option[Ast.Documentation], sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
-
-    case class Class(doc: Option[Ast.Documentation], ident: Name.Ident, tparams: List[NamedAst.Type], /* bounds: List[ContextBound],*/ decls: List[NamedAst.Declaration], loc: SourceLocation) extends NamedAst.Declaration
-
-    case class Impl(doc: Option[Ast.Documentation], ident: Name.Ident, tparams: List[NamedAst.Type], /*bounds: List[ContextBound],*/ decls: List[NamedAst.Declaration], loc: SourceLocation) extends NamedAst.Declaration
 
     case class Fact(head: NamedAst.Predicate.Head, loc: SourceLocation) extends NamedAst.Declaration
 
@@ -264,7 +259,7 @@ object NamedAst {
 
   case class FormalParam(sym: Symbol.VarSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
 
-  case class Property(name: String, args: List[NamedAst.Expression], loc: SourceLocation) extends Ast.Annotation
+  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: NamedAst.Expression, loc: SourceLocation) extends Ast.Annotation
 
   case class TypeParam(name: Name.Ident, tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst
 

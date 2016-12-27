@@ -47,9 +47,9 @@ object Weeder {
   /**
     * Weeds the given abstract syntax tree.
     */
-  private def weed(root: ParsedAst.Root): Validation[WeededAst.Root, WeederError] = {
-    @@(root.decls map Declarations.weed) map {
-      case decls => WeededAst.Root(decls)
+  def weed(root: ParsedAst.Root): Validation[WeededAst.Root, WeederError] = {
+    @@(@@(root.decls map Declarations.weed), Properties.weed(root)) map {
+      case (decls1, decls2) => WeededAst.Root(decls1 ++ decls2)
     }
   }
 
@@ -176,18 +176,6 @@ object Weeder {
             }
         } map {
           case m => WeededAst.Declaration.Enum(doc, ident, tparams, m, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Declaration.Class(docOpt, sp1, ident, tparams, bounds, decls, sp2) =>
-        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
-        @@(decls.map(weed)) map {
-          case ds => WeededAst.Declaration.Class(doc, ident, tparams.toList.map(Types.weed), ds, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Declaration.Impl(docOpt, sp1, ident, tparams, bounds, decls, sp2) =>
-        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
-        @@(decls.map(weed)) map {
-          case ds => WeededAst.Declaration.Impl(doc, ident, tparams.toList.map(Types.weed), ds, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Declaration.Relation(docOpt, sp1, ident, attrs, sp2) =>
@@ -813,20 +801,21 @@ object Weeder {
 
   }
 
+
   object Annotations {
     /**
       * Weeds the given sequence of parsed annotation `xs`.
       */
-    def weed(xs: Seq[ParsedAst.Annotation]): Validation[Ast.Annotations, WeederError] = {
+    def weed(xs: Seq[ParsedAst.AnnotationOrProperty]): Validation[Ast.Annotations, WeederError] = {
       // collect seen annotations.
       val seen = mutable.Map.empty[String, ParsedAst.Annotation]
 
       // loop through each annotation.
-      val result = xs.toList map {
-        case x => seen.get(x.ident.name) match {
+      val result = xs.toList.collect {
+        case x: ParsedAst.Annotation => seen.get(x.ident.name) match {
           case None =>
             seen += (x.ident.name -> x)
-            Annotations.weed(x)
+            weed(x)
           case Some(otherAnn) =>
             DuplicateAnnotation(x.ident.name, mkSL(otherAnn.sp1, otherAnn.sp2), mkSL(x.sp1, x.sp2)).toFailure
         }
@@ -843,24 +832,57 @@ object Weeder {
        */
       val loc = mkSL(past.sp1, past.sp2)
       past.ident.name match {
-        case "associative" => Ast.Annotation.Associative(loc).toSuccess
         case "internal" => Ast.Annotation.Internal(loc).toSuccess
         case "law" => Ast.Annotation.Law(loc).toSuccess
-        case "monotone" => Ast.Annotation.Monotone(loc).toSuccess
         case "test" => Ast.Annotation.Test(loc).toSuccess
         case "unchecked" => Ast.Annotation.Unchecked(loc).toSuccess
         case "unsafe" => Ast.Annotation.Unsafe(loc).toSuccess
-        case name =>
-          val argsVal = past.optArgs match {
-            case None => Nil.toSuccess
-            case Some(as) => @@(as.map(e => Expressions.weed(e)))
-          }
-          argsVal map {
-            case es => WeededAst.Property(name, es, loc)
-          }
-
+        case _ => ??? // TODO: unknown annotation, copy old code to raise error.
       }
     }
+  }
+
+  object Properties {
+    /**
+      * TODO: DOC
+      *
+      * @param root
+      * @return
+      */
+    def weed(root: ParsedAst.Root): Validation[List[WeededAst.Declaration.Property], WeederError] = {
+
+      /**
+        * TODO: DOC
+        */
+      def visit(decl: ParsedAst.Declaration): Validation[List[WeededAst.Declaration.Property], WeederError] = decl match {
+        case ParsedAst.Declaration.Namespace(_, _, decls, _) =>
+          @@(decls.map(visit)).map(_.flatten)
+
+        case ParsedAst.Declaration.Definition(_, meta, _, defn, _, _, _, _, _) =>
+          @@(meta.collect {
+            case ParsedAst.Property(sp1, law, args, sp2) =>
+              val loc = mkSL(sp1, sp2)
+
+              // TODO: DOC
+              val argsVal = args match {
+                case None => Nil.toSuccess
+                case Some(es) => @@(es.map(e => Expressions.weed(e)))
+              }
+
+              argsVal map {
+                case as =>
+                  val lam = WeededAst.Expression.VarOrRef(Name.QName(sp1, Name.RootNS, law, sp2), loc)
+                  val fun = WeededAst.Expression.VarOrRef(Name.QName(sp1, Name.RootNS, defn, sp2), loc)
+                  val exp = WeededAst.Expression.Apply(lam, fun :: as, loc)
+                  WeededAst.Declaration.Property(law, defn, exp, loc)
+              }
+          })
+        case _ => Nil.toSuccess
+      }
+
+      @@(root.decls.map(visit)).map(_.flatten)
+    }
+
   }
 
   object Types {
