@@ -286,51 +286,6 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Declaration.Class.01") {
-    val input =
-      """class Eq[A] {
-        |  def eq(x: A, y: B): Bool
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Declaration.Class.02") {
-    val input =
-      """class Coerce[A, B] {
-        |  def coerce(a: A): B
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Declaration.Class.03") {
-    val input =
-      """class Ord[A] => Eq[A] {
-        |  def eq(x: A, y: A): Bool
-        |  def lessEq(x: A, y: A): Bool
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Declaration.Class.04") {
-    val input =
-      """class Eq[A] => PartialOrd[A], PreOrd[A] {
-        |  /* ... */
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
   test("Declaration.Law.01") {
     val input = "law f: Bool = true"
     intercept[scala.NotImplementedError] {
@@ -347,50 +302,6 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Declaration.Law.03") {
     val input = "law f(x: Int, y: Int): Bool = x > y"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Declaration.Impl.01") {
-    val input =
-      """impl Eq[Int] {
-        |  /* ... */
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Declaration.Impl.02") {
-    val input =
-      """impl Eq[(Int, Int)] {
-        |  /* ... */
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Declaration.Impl.03") {
-    val input =
-      """impl Ord[Int] <= Eq[Int] {
-        |  /* ... */
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Declaration.Impl.04") {
-    val input =
-      """impl A[Int, Int] <= B[Int], C[Int] {
-        |  /* ... */
-        |}
-      """.stripMargin
     intercept[scala.NotImplementedError] {
       run(input)
     }
