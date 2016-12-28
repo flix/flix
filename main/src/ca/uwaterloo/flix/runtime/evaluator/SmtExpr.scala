@@ -24,19 +24,40 @@ import ca.uwaterloo.flix.util.InternalCompilerException
   */
 sealed trait SmtExpr {
 
-  // TODO: DOC + Rest
+  /**
+    * Returns all the free variables in `this` SMT expression.
+    */
   def freeVars: Set[Symbol.VarSym] = this match {
     case SmtExpr.Var(sym, _) => Set(sym)
     case SmtExpr.Not(e) => e.freeVars
+    case SmtExpr.Int8(_) => Set.empty
+    case SmtExpr.Int16(_) => Set.empty
     case SmtExpr.Int32(_) => Set.empty
+    case SmtExpr.Int64(_) => Set.empty
+    case SmtExpr.BigInt(_) => Set.empty
     case SmtExpr.Plus(e1, e2) => e1.freeVars ++ e2.freeVars
+    case SmtExpr.Minus(e1, e2) => e1.freeVars ++ e2.freeVars
+    case SmtExpr.Times(e1, e2) => e1.freeVars ++ e2.freeVars
+    case SmtExpr.Divide(e1, e2) => e1.freeVars ++ e2.freeVars
     case SmtExpr.Modulo(e1, e2) => e1.freeVars ++ e2.freeVars
+    case SmtExpr.Exponentiate(e1, e2) => e1.freeVars ++ e2.freeVars
     case SmtExpr.Equal(e1, e2) => e1.freeVars ++ e2.freeVars
     case SmtExpr.NotEqual(e1, e2) => e1.freeVars ++ e2.freeVars
     case SmtExpr.Less(e1, e2) => e1.freeVars ++ e2.freeVars
     case SmtExpr.LessEqual(e1, e2) => e1.freeVars ++ e2.freeVars
     case SmtExpr.Greater(e1, e2) => e1.freeVars ++ e2.freeVars
+    case SmtExpr.GreaterEqual(e1, e2) => e1.freeVars ++ e2.freeVars
     case SmtExpr.LogicalAnd(e1, e2) => e1.freeVars ++ e2.freeVars
+    case SmtExpr.LogicalOr(e1, e2) => e1.freeVars ++ e2.freeVars
+    case SmtExpr.Implication(e1, e2) => e1.freeVars ++ e2.freeVars
+    case SmtExpr.Bicondition(e1, e2) => e1.freeVars ++ e2.freeVars
+    case SmtExpr.BitwiseNegate(e) => e.freeVars
+    case SmtExpr.BitwiseAnd(e1, e2) => e1.freeVars ++ e2.freeVars
+    case SmtExpr.BitwiseOr(e1, e2) => e1.freeVars ++ e2.freeVars
+    case SmtExpr.BitwiseXor(e1, e2) => e1.freeVars ++ e2.freeVars
+    case SmtExpr.BitwiseLeftShift(e1, e2) => e1.freeVars ++ e2.freeVars
+    case SmtExpr.BitwiseRightShift(e1, e2) => e1.freeVars ++ e2.freeVars
+
   }
 
   def tpe: Type
@@ -295,10 +316,10 @@ object SmtExpr {
     * Asserts that the two given types `tpe1` and `tpe2` are the same. Returns the type.
     */
   private def assertEq(tpe1: Type, tpe2: Type): Type =
-  if (tpe1 == tpe2)
-    tpe1
-  else
-    throw InternalCompilerException(s"Unexpected non-equal types: '$tpe1' and '$tpe2'.")
+    if (tpe1 == tpe2)
+      tpe1
+    else
+      throw InternalCompilerException(s"Unexpected non-equal types: '$tpe1' and '$tpe2'.")
 
   /**
     * Asserts that the given type `type` is a numeric type, i.e. a float or an int.
