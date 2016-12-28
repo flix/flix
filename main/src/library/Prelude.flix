@@ -54,6 +54,18 @@ def →(x: Bool, y: Bool): Bool = !x ∨ y
 def ↔(x: Bool, y: Bool): Bool = (x → y) ∧ (y → x)
 
 ///
+/// Alias for exclusive disjunction.
+///
+// TODO: Add test cases
+def ⊕(x: Bool, y: Bool): Bool = (x ∨ y) ∧ !(x ∧ y)
+
+///
+/// Alias for the Sheffer stroke.
+///
+// TODO: Add test cases
+def ↑(x: Bool, y: Bool): Bool = !(x ∧ y)
+
+///
 /// Asserts that the given boolean `b` is `true`.
 ///
 // TODO: Name?
