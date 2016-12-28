@@ -218,11 +218,6 @@ namespace Belnap {
     law approximates2(fa: (Belnap, Belnap) -> Belnap, fc: (Bool, Bool) -> Bool): Bool =
         ∀(x: Bool, y: Bool). alpha(fc(x, y)) `leq` fa(alpha(x), alpha(y))
 
-
-    // TODO: Improve flix doc.
-    @test
-    def foo: Bool = true
-
     // TODO: Paper title: Safe and Sound: ...
 
 }

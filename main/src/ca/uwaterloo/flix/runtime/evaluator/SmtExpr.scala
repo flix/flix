@@ -27,12 +27,15 @@ sealed trait SmtExpr {
   // TODO: DOC + Rest
   def freeVars: Set[Symbol.VarSym] = this match {
     case SmtExpr.Var(sym, _) => Set(sym)
+    case SmtExpr.Not(e) => e.freeVars
     case SmtExpr.Int32(_) => Set.empty
     case SmtExpr.Plus(e1, e2) => e1.freeVars ++ e2.freeVars
     case SmtExpr.Modulo(e1, e2) => e1.freeVars ++ e2.freeVars
     case SmtExpr.Equal(e1, e2) => e1.freeVars ++ e2.freeVars
     case SmtExpr.NotEqual(e1, e2) => e1.freeVars ++ e2.freeVars
+    case SmtExpr.Less(e1, e2) => e1.freeVars ++ e2.freeVars
     case SmtExpr.LessEqual(e1, e2) => e1.freeVars ++ e2.freeVars
+    case SmtExpr.Greater(e1, e2) => e1.freeVars ++ e2.freeVars
     case SmtExpr.LogicalAnd(e1, e2) => e1.freeVars ++ e2.freeVars
   }
 
