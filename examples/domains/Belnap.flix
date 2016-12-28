@@ -29,7 +29,7 @@ namespace Belnap {
     ///
     /// Returns the least upper bound of `e1` and `e2`.
     ///
-    #commutative #associative #upperBound(leq) #leastUpperBound(leq)
+    #commutative #associative #upperBound #leastUpperBound
     def lub(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Bot, x)       => x
         case (x, Bot)       => x
@@ -41,7 +41,7 @@ namespace Belnap {
     ///
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
-    #commutative #associative #lowerBound(leq) #greatestLowerBound(leq)
+    #commutative #associative #lowerBound #greatestLowerBound
     def glb(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Top, x)       => x
         case (x, Top)       => x
@@ -170,17 +170,21 @@ namespace Belnap {
 
     law transitive(⊑: (Belnap, Belnap) -> Bool): Bool = ∀(x: Belnap, y: Belnap, z: Belnap). ((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z) // TODO: Use Prelude
 
-    law upperBound(⊔: (Belnap, Belnap) -> Belnap, ⊑: (Belnap, Belnap) -> Bool): Bool = // TODO: Should call prelude
-        ∀(x: Belnap, y: Belnap). (x ⊑ (x ⊔ y)) ∧ (y ⊑ (x ⊔ y))
+    law upperBound(⊔: (Belnap, Belnap) -> Belnap): Bool = // TODO: Should call prelude
+        let ⊑ = leq;
+            ∀(x: Belnap, y: Belnap). (x ⊑ (x ⊔ y)) ∧ (y ⊑ (x ⊔ y))
 
-    law leastUpperBound(⊔: (Belnap, Belnap) -> Belnap, ⊑: (Belnap, Belnap) -> Bool): Bool =  // TODO: Should call prelude
-        ∀(x: Belnap, y: Belnap, z: Belnap). ((x ⊑ z) ∧ (y ⊑ z)) → ((x ⊔ y) ⊑ z)
+    law leastUpperBound(⊔: (Belnap, Belnap) -> Belnap): Bool =  // TODO: Should call prelude
+        let ⊑ = leq;
+            ∀(x: Belnap, y: Belnap, z: Belnap). ((x ⊑ z) ∧ (y ⊑ z)) → ((x ⊔ y) ⊑ z)
 
-    law lowerBound(⊓: (Belnap, Belnap) -> Belnap, ⊑: (Belnap, Belnap) -> Bool): Bool =  // TODO: Should call prelude
-        ∀(x: Belnap, y: Belnap). ((x ⊓ y) ⊑ x) ∧ ((x ⊓ y) ⊑ y)
+    law lowerBound(⊓: (Belnap, Belnap) -> Belnap): Bool =  // TODO: Should call prelude
+        let ⊑ = leq;
+            ∀(x: Belnap, y: Belnap). ((x ⊓ y) ⊑ x) ∧ ((x ⊓ y) ⊑ y)
 
-    law greatestLowerBound(⊓: (Belnap, Belnap) -> Belnap, ⊑: (Belnap, Belnap) -> Bool): Bool =  // TODO: Should call prelude
-        ∀(x: Belnap, y: Belnap, z: Belnap). ((z ⊑ x) ∧ (z ⊑ y)) → (z ⊑ (x ⊓ y))
+    law greatestLowerBound(⊓: (Belnap, Belnap) -> Belnap): Bool =  // TODO: Should call prelude
+        let ⊑ = leq;
+            ∀(x: Belnap, y: Belnap, z: Belnap). ((z ⊑ x) ∧ (z ⊑ y)) → (z ⊑ (x ⊓ y))
 
     law leastElement(⊑: (Belnap, Belnap) -> Bool, ⊥: Belnap): Bool = ∀(x: Belnap). ⊥ ⊑ x  // TODO: Should call prelude
 
