@@ -170,21 +170,21 @@ namespace Belnap {
 
     law transitive(⊑: (Belnap, Belnap) -> Bool): Bool = ∀(x: Belnap, y: Belnap, z: Belnap). ((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z) // TODO: Use Prelude
 
-    law upperBound(⊔: (Belnap, Belnap) -> Belnap, ⊑: (Belnap, Belnap) -> Bool): Bool =
+    law upperBound(⊔: (Belnap, Belnap) -> Belnap, ⊑: (Belnap, Belnap) -> Bool): Bool = // TODO: Should call prelude
         ∀(x: Belnap, y: Belnap). (x ⊑ (x ⊔ y)) ∧ (y ⊑ (x ⊔ y))
 
-    law leastUpperBound(⊔: (Belnap, Belnap) -> Belnap, ⊑: (Belnap, Belnap) -> Bool): Bool =
+    law leastUpperBound(⊔: (Belnap, Belnap) -> Belnap, ⊑: (Belnap, Belnap) -> Bool): Bool =  // TODO: Should call prelude
         ∀(x: Belnap, y: Belnap, z: Belnap). ((x ⊑ z) ∧ (y ⊑ z)) → ((x ⊔ y) ⊑ z)
 
-    law lowerBound(⊓: (Belnap, Belnap) -> Belnap, ⊑: (Belnap, Belnap) -> Bool): Bool =
+    law lowerBound(⊓: (Belnap, Belnap) -> Belnap, ⊑: (Belnap, Belnap) -> Bool): Bool =  // TODO: Should call prelude
         ∀(x: Belnap, y: Belnap). ((x ⊓ y) ⊑ x) ∧ ((x ⊓ y) ⊑ y)
 
-    law greatestLowerBound(⊓: (Belnap, Belnap) -> Belnap, ⊑: (Belnap, Belnap) -> Bool): Bool =
+    law greatestLowerBound(⊓: (Belnap, Belnap) -> Belnap, ⊑: (Belnap, Belnap) -> Bool): Bool =  // TODO: Should call prelude
         ∀(x: Belnap, y: Belnap, z: Belnap). ((z ⊑ x) ∧ (z ⊑ y)) → (z ⊑ (x ⊓ y))
 
-    law leastElement(⊑: (Belnap, Belnap) -> Bool, ⊥: Belnap): Bool = ∀(x: Belnap). ⊥ ⊑ x
+    law leastElement(⊑: (Belnap, Belnap) -> Bool, ⊥: Belnap): Bool = ∀(x: Belnap). ⊥ ⊑ x  // TODO: Should call prelude
 
-    law greatestElement(⊑: (Belnap, Belnap) -> Bool, ⊤: Belnap): Bool = ∀(x: Belnap). x ⊑ ⊤
+    law greatestElement(⊑: (Belnap, Belnap) -> Bool, ⊤: Belnap): Bool = ∀(x: Belnap). x ⊑ ⊤  // TODO: Should call prelude
 
     law associative(f: (Belnap, Belnap) -> Belnap): Bool = // TODO: Use Prelude
         ∀(x: Belnap, y: Belnap, z: Belnap). f(x, f(y, z)) == f(f(x, y), z)
@@ -192,17 +192,19 @@ namespace Belnap {
     law commutative(f: (Belnap, Belnap) -> Belnap): Bool = // TODO: Use Prelude
         ∀(x: Belnap, y: Belnap). f(x, y) == f(y, x)
 
-    law strict1(f: Belnap -> Belnap): Bool =
+    law strict1(f: Belnap -> Belnap): Bool =  // TODO: Should call prelude
         f(Bot) == Bot
 
-    law strict2(f: (Belnap, Belnap) -> Belnap): Bool =
+    law strict2(f: (Belnap, Belnap) -> Belnap): Bool =  // TODO: Should call prelude
         f(Bot, Bot) == Bot
 
-    law monotone1(f: Belnap -> Belnap): Bool =
-        true // TODO
+    law monotone1(f: Belnap -> Belnap): Bool =  // TODO: Should call prelude
+        let ⊑ = leq;
+            ∀(x: Belnap, y: Belnap). (x ⊑ y) → (f(x) ⊑ f(y))
 
-    law monotone2(f: (Belnap, Belnap) -> Belnap): Bool =
-        true // TODO
+    law monotone2(f: (Belnap, Belnap) -> Belnap): Bool =  // TODO: Should call prelude
+        let ⊑ = leq;
+            ∀(x1: Belnap, x2: Belnap, y1: Belnap, y2: Belnap). ((x1 ⊑ y1) ∧ (x2 ⊑ y2) ) → (f(x1, x2) ⊑ f(y1, y2))
 
     // TODO: Names
     law approximates1(fa: Belnap -> Belnap, fc: Bool -> Bool): Bool =
