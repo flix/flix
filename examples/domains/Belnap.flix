@@ -119,13 +119,13 @@ namespace Belnap {
     #approximates2((x, y) -> x → y)
     #strict2 #monotone2
     def implies(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
-        case (Bot, _)                => Bot
-        case (_, Bot)                => Bot
+        case (Bot, _)         => Bot
+        case (_, Bot)         => Bot
         case (True, True)     => True
         case (True, False)    => False
         case (False, True)    => True
         case (False, False)   => True
-        case _                              => Top
+        case _                => Top
     }
 
     ///
