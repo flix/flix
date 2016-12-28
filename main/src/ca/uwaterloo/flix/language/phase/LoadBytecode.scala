@@ -207,9 +207,9 @@ object LoadBytecode {
       case Expression.GetTupleIndex(base, offset, tpe, loc) => visit(base)
       case Expression.Tuple(elms, tpe, loc) => elms.flatMap(visit).toSet
       case Expression.Existential(params, exp, loc) =>
-        throw InternalCompilerException(s"Unexpected expression: '$e' at ${loc.source.format}.")
+        ???
       case Expression.Universal(params, exp, loc) =>
-        throw InternalCompilerException(s"Unexpected expression: '$e' at ${loc.source.format}.")
+        ???
       case Expression.UserError(tpe, loc) => Set.empty
       case Expression.MatchError(tpe, loc) => Set.empty
       case Expression.SwitchError(tpe, loc) => Set.empty

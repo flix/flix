@@ -288,23 +288,17 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Declaration.Law.01") {
     val input = "law f: Bool = true"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Declaration.Law.02") {
     val input = "law f(x: Int): Bool = x % 2 == 0"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Declaration.Law.03") {
     val input = "law f(x: Int, y: Int): Bool = x > y"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Declaration.Fact.01") {
@@ -2416,11 +2410,6 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Names.Math.⊕") {
-    val input = "def ⊕(x: Int, y: Int): Int = ???"
-    run(input)
-  }
-
   test("Names.Math.⊗") {
     val input = "def ⊗(x: Int, y: Int): Int = ???"
     run(input)
@@ -2772,11 +2761,6 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Operator.Binary.Math.⊕") {
-    val input = "def ⊕(x: Int, y: Int): Int = x ⊕ y"
-    run(input)
-  }
-
   test("Operator.Binary.Math.⊗") {
     val input = "def ⊗(x: Int, y: Int): Int = x ⊗ y"
     run(input)
@@ -2840,22 +2824,6 @@ class TestParser extends FunSuite with TestUtils {
   /////////////////////////////////////////////////////////////////////////////
   // Annotations                                                             //
   /////////////////////////////////////////////////////////////////////////////
-  test("Annotation.@associative") {
-    val input =
-      """@associative
-        |def f(x: Int, y: Int): Int = 21
-      """.stripMargin
-    run(input)
-  }
-
-  test("Annotation.@commutative") {
-    val input =
-      """@commutative
-        |def f(x: Int, y: Int): Int = 21
-      """.stripMargin
-    run(input)
-  }
-
   test("Annotation.@internal") {
     val input =
       """@internal
@@ -2864,18 +2832,10 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Annotation.@monotone") {
+  test("Annotation.@test") {
     val input =
-      """@monotone @unchecked
-        |def f(x: Int, y: Int): Int = 21
-      """.stripMargin
-    run(input)
-  }
-
-  test("Annotation.@strict") {
-    val input =
-      """@strict @unchecked
-        |def f(x: Int, y: Int): Int = 21
+      """@test
+        |def f(x: Int, y: Int): Bool = x + y == 42
       """.stripMargin
     run(input)
   }
@@ -2891,14 +2851,6 @@ class TestParser extends FunSuite with TestUtils {
   test("Annotation.@unsafe") {
     val input =
       """@unsafe
-        |def f(x: Int, y: Int): Int = 21
-      """.stripMargin
-    run(input)
-  }
-
-  test("Annotation.@strict @monotone @unchecked") {
-    val input =
-      """@strict @monotone @unchecked
         |def f(x: Int, y: Int): Int = 21
       """.stripMargin
     run(input)
