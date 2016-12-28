@@ -313,4 +313,22 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.NonLinearPattern](result)
   }
 
+  test("UndefinedAnnotation.01") {
+    val input =
+      """@abc
+        |def foo(x: Int): Int = 42
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[WeederError.UndefinedAnnotation](result)
+  }
+
+  test("UndefinedAnnotation.02") {
+    val input =
+      """@foobarbaz
+        |def foo(x: Int): Int = 42
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[WeederError.UndefinedAnnotation](result)
+  }
+
 }
