@@ -94,9 +94,6 @@ object TypeError {
     case (Type.Native, Type.Native) => TypeDiff.Star
     case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => TypeDiff.Star
     case (Type.FTuple(l1), Type.FTuple(l2)) if l1 == l2 => TypeDiff.Star
-    case (Type.FVec, Type.FVec) => TypeDiff.Star
-    case (Type.FSet, Type.FSet) => TypeDiff.Star
-    case (Type.FMap, Type.FMap) => TypeDiff.Star
     case (Type.Enum(name1, kind1), Type.Enum(name2, kind2)) if name1 == name2 => TypeDiff.Star
     case (Type.Apply(Type.Arrow(l1), ts1), Type.Apply(Type.Arrow(l2), ts2)) =>
       TypeDiff.Arrow(diffAll(ts1, ts2))

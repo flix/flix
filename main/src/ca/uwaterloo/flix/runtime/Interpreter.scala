@@ -111,7 +111,6 @@ object Interpreter {
         i = i + 1
       }
       Value.Tuple(evalElms)
-    case Expression.FSet(elms, _, _) => Value.mkSet(elms.map(e => eval(e, root, env0)).toSet)
     case Expression.Existential(params, exp, loc) => InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
     case Expression.Universal(params, exp, loc) => InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
     case Expression.UserError(_, loc) => throw UserException("User exception.", loc)

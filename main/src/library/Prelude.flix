@@ -34,6 +34,24 @@ enum List[t] {
 }
 
 ///
+/// The Set type.
+///
+/// A set is currently represented internally as a list.
+///
+enum Set[t] {
+    case Set(List[t])
+}
+
+///
+/// The Map type.
+///
+/// A map is currently represented internally as a list.
+///
+enum Map[k, v] {
+    case Map(List[(k, v)])
+}
+
+///
 /// Alias for logical conjunction.
 ///
 def ∧(x: Bool, y: Bool): Bool = x && y

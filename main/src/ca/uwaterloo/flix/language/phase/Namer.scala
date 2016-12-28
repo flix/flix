@@ -419,32 +419,6 @@ object Namer {
           case es => NamedAst.Expression.Tuple(es, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.FVec(elms, loc) =>
-        @@(elms map (e => namer(e, env0, tenv0))) map {
-          case es => NamedAst.Expression.FVec(es, Type.freshTypeVar(), loc)
-        }
-
-      case WeededAst.Expression.FSet(elms, loc) =>
-        @@(elms map (e => namer(e, env0, tenv0))) map {
-          case es => NamedAst.Expression.FSet(es, Type.freshTypeVar(), loc)
-        }
-
-      case WeededAst.Expression.FMap(elms, loc) => @@(elms map {
-        case (key, value) => @@(namer(key, env0, tenv0), namer(value, env0, tenv0))
-      }) map {
-        case es => NamedAst.Expression.FMap(es, Type.freshTypeVar(), loc)
-      }
-
-      case WeededAst.Expression.GetIndex(exp1, exp2, loc) =>
-        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) map {
-          case (e1, e2) => NamedAst.Expression.GetIndex(e1, e2, Type.freshTypeVar(), loc)
-        }
-
-      case WeededAst.Expression.PutIndex(exp1, exp2, exp3, loc) =>
-        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) map {
-          case (e1, e2) => NamedAst.Expression.GetIndex(e1, e2, Type.freshTypeVar(), loc)
-        }
-
       case WeededAst.Expression.Existential(param, exp, loc) =>
         val sym = Symbol.freshVarSym(param.ident)
         namer(exp, env0 + (sym.text -> sym), tenv0) map {
@@ -500,13 +474,6 @@ object Namer {
       }
       case WeededAst.Expression.Tag(enum, tag, exp, loc) => freeVars(exp)
       case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
-      case WeededAst.Expression.FVec(elms, loc) => elms flatMap freeVars
-      case WeededAst.Expression.FSet(elms, loc) => elms flatMap freeVars
-      case WeededAst.Expression.FMap(elms, loc) => elms flatMap {
-        case (k, v) => freeVars(k) ++ freeVars(v)
-      }
-      case WeededAst.Expression.GetIndex(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-      case WeededAst.Expression.PutIndex(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
       case WeededAst.Expression.Existential(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
       case WeededAst.Expression.Universal(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
       case WeededAst.Expression.Ascribe(exp, tpe, loc) => freeVars(exp)
@@ -533,7 +500,6 @@ object Namer {
       case WeededAst.Pattern.Str(lit, loc) => Nil
       case WeededAst.Pattern.Tag(enumName, tagName, p, loc) => freeVars(p)
       case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
-      case WeededAst.Pattern.FVec(elms, rest, loc) => elms.flatMap(freeVars) ++ rest.map(freeVars).getOrElse(Nil)
       case WeededAst.Pattern.FSet(elms, rest, loc) => elms.flatMap(freeVars) ++ rest.map(freeVars).getOrElse(Nil)
       case WeededAst.Pattern.FMap(elms, rest, loc) => (elms flatMap {
         case (k, v) => freeVars(k) ++ freeVars(v)
@@ -578,7 +544,6 @@ object Namer {
         case WeededAst.Pattern.Str(lit, loc) => NamedAst.Pattern.Str(lit, loc)
         case WeededAst.Pattern.Tag(enum, tag, pat, loc) => NamedAst.Pattern.Tag(enum, tag, visit(pat), Type.freshTypeVar(), loc)
         case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
-        case WeededAst.Pattern.FVec(elms, rest, loc) => NamedAst.Pattern.FVec(elms map visit, rest map visit, Type.freshTypeVar(), loc)
         case WeededAst.Pattern.FSet(elms, rest, loc) => NamedAst.Pattern.FSet(elms map visit, rest map visit, Type.freshTypeVar(), loc)
         case WeededAst.Pattern.FMap(elms, rest, loc) =>
           val kvs = elms map {

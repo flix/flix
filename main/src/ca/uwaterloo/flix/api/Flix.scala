@@ -50,7 +50,9 @@ class Flix {
     * A sequence of internal inputs to be parsed into Flix ASTs.
     */
   private val internals = List(
-    "Prelude.flix" -> StreamOps.readAll(LocalResource.Library.Prelude)
+    "Prelude.flix" -> StreamOps.readAll(LocalResource.Library.Prelude),
+    "Set.flix" -> StreamOps.readAll(LocalResource.Library.Set),
+    "Map.flix" -> StreamOps.readAll(LocalResource.Library.Map)
   )
 
   /**
@@ -368,28 +370,6 @@ class Flix {
 
     val elms = types.toList.map(_.asInstanceOf[WrappedType].tpe)
     new WrappedType(Type.Apply(Type.FTuple(elms.length), elms))
-  }
-
-  /**
-    * Returns the set type parameterized by the given type `tpe`.
-    */
-  def mkSetType(tpe: IType): IType = {
-    if (tpe == null)
-      throw new IllegalArgumentException("Argument 'tpe' must be non-null.")
-
-    new WrappedType(Type.mkFSet(tpe.asInstanceOf[WrappedType].tpe))
-  }
-
-  /**
-    * Returns the set type parameterized by the given `key` and `value` types.
-    */
-  def mkMapType(key: IType, value: IType): IType = {
-    if (key == null)
-      throw new IllegalArgumentException("Argument 'key' must be non-null.")
-    if (value == null)
-      throw new IllegalArgumentException("Argument 'value' must be non-null.")
-
-    new WrappedType(Type.mkFMap(key.asInstanceOf[WrappedType].tpe, value.asInstanceOf[WrappedType].tpe))
   }
 
   /**

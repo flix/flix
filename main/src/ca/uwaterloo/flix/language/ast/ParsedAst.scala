@@ -572,15 +572,6 @@ object ParsedAst {
     case class FAppend(fst: ParsedAst.Expression, sp1: SourcePosition, sp2: SourcePosition, snd: ParsedAst.Expression) extends ParsedAst.Expression
 
     /**
-      * Vector Expression.
-      *
-      * @param sp1  the position of the first character in the expression.
-      * @param elms the elements of the vector.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class FVec(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Set Expression.
       *
       * @param sp1  the position of the first character in the expression.
@@ -597,27 +588,6 @@ object ParsedAst {
       * @param sp2  the position of the last character in the expression.
       */
     case class FMap(sp1: SourcePosition, elms: Seq[(ParsedAst.Expression, ParsedAst.Expression)], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Get Index Expression (gets a value from a vector).
-      *
-      * @param sp1  the position of the first character in the expression.
-      * @param exp1 the vector expression.
-      * @param exp2 the index expression.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class GetIndex(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Put Index Expression (puts a value into a vector).
-      *
-      * @param sp1  the position of the first character in the expression.
-      * @param exp1 the vector expression.
-      * @param exp2 the index expression.
-      * @param exp3 the value expression.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class PutIndex(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Existentially Quantified Expression.
@@ -674,7 +644,6 @@ object ParsedAst {
       case Pattern.Tuple(sp1, _, _) => sp1
       case Pattern.FNil(sp1, _) => sp1
       case Pattern.FCons(hd, _, _, _) => hd.leftMostSourcePosition
-      case Pattern.FVec(sp1, _, _, _) => sp1
       case Pattern.FSet(sp1, _, _, _) => sp1
       case Pattern.FMap(sp1, _, _, _) => sp1
     }
@@ -748,16 +717,6 @@ object ParsedAst {
       * @param tl  the tail pattern.
       */
     case class FCons(hd: ParsedAst.Pattern, sp1: SourcePosition, sp2: SourcePosition, tl: ParsedAst.Pattern) extends ParsedAst.Pattern
-
-    /**
-      * Vector Pattern.
-      *
-      * @param sp1  the position of the first character in the pattern.
-      * @param elms the elements of the vector.
-      * @param rest the optional rest pattern.
-      * @param sp2  the position of the last character in the pattern.
-      */
-    case class FVec(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], rest: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * Set Pattern.

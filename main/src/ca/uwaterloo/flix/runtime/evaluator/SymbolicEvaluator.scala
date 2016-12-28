@@ -717,10 +717,6 @@ object SymbolicEvaluator {
         */
       case Expression.SwitchError(tpe, loc) => throw SwitchException("Switch Error", loc)
 
-      // NB: Not yet fully implemented in the backend.
-      case e: Expression.FSet => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-
-
       case e: Expression.Existential =>
         throw InternalCompilerException(s"Unsupported expression: '$e'.") // TODO
 

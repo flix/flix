@@ -96,16 +96,6 @@ trait IType {
   def isTuple: Boolean
 
   /**
-    * Returns `true` if `this` type is the set type.
-    */
-  def isSet: Boolean
-
-  /**
-    * Returns `true` if `this` type is the map type.
-    */
-  def isMap: Boolean
-
-  /**
     * Returns `true` if `this` type is the native type.
     */
   def isNative: Boolean
@@ -120,26 +110,5 @@ trait IType {
     * @throws UnsupportedOperationException if `this` type is not a tuple.
     */
   def getTupleParams: Array[IType]
-
-  /**
-    * Returns the parametric type of `this` set type.
-    *
-    * @throws UnsupportedOperationException if `this` type is not a set.
-    */
-  def getSetParam: IType
-
-  /**
-    * Returns the parametric type of the keys of `this` map type.
-    *
-    * @throws UnsupportedOperationException if `this` type is not a map.
-    */
-  def getMapKeyParam: IType
-
-  /**
-    * Returns the parametric type of the values of `this` map type.
-    *
-    * @throws UnsupportedOperationException if `this` type is not a map.
-    */
-  def getMapValueParam: IType
 
 }
