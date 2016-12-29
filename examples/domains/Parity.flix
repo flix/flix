@@ -1,7 +1,7 @@
 //
 // An implementation of the parity domain.
 //
-namespace Domains.Parity {
+namespace Domain.Parity {
 
     ///
     /// The elements of the parity lattice.
@@ -19,11 +19,11 @@ namespace Domains.Parity {
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
     def leq(e1: Parity, e2: Parity): Bool = match (e1, e2) with {
-        case (Bot, _)     => true
-        case (Odd, Odd)   => true
-        case (Even, Even) => true
-        case (_, Top)     => true
-        case _            => false
+        case (Bot, _)       => true
+        case (Odd, Odd)     => true
+        case (Even, Even)   => true
+        case (_, Top)       => true
+        case _              => false
     }
 
     ///
@@ -31,11 +31,11 @@ namespace Domains.Parity {
     ///
     #commutative #associative #upperBound #leastUpperBound
     def lub(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
-        case (Bot, x)     => x
-        case (x, Bot)     => x
-        case (Odd, Odd)   => Odd
-        case (Even, Even) => Even
-        case _            => Top
+        case (Bot, x)       => x
+        case (x, Bot)       => x
+        case (Odd, Odd)     => Odd
+        case (Even, Even)   => Even
+        case _              => Top
     }
 
     ///
@@ -43,11 +43,11 @@ namespace Domains.Parity {
     ///
     #commutative #associative #lowerBound #greatestLowerBound
     def glb(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
-        case (Top, x)     => x
-        case (x, Top)     => x
-        case (Odd, Odd)   => Odd
-        case (Even, Even) => Even
-        case _            => Bot
+        case (Top, x)       => x
+        case (x, Top)       => x
+        case (Odd, Odd)     => Odd
+        case (Even, Even)   => Even
+        case _              => Bot
     }
 
     ///

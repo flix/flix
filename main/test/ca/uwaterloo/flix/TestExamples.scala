@@ -244,25 +244,25 @@ class TestExamples extends FunSuite {
 
   test("Parity.flix") {
     val input =
-      """namespace domains.parity {
+      """namespace Domain.Parity {
         |    let Parity<> = (Parity.Bot, Parity.Top, leq, lub, glb)
         |    lat A(k: Int, v: Parity)
         |
-        |    A(1, Parity.Odd).
-        |    A(2, Parity.Even).
+        |    A(1, Odd).
+        |    A(2, Even).
         |
-        |    A(3, Parity.Odd).
-        |    A(3, Parity.Even).
+        |    A(3, Odd).
+        |    A(3, Even).
         |
         |    A(4, x) :- A(1, x), A(2, x).
         |
-        |    A(5, plus(Parity.Odd, Parity.Even)).
+        |    A(5, plus(Odd, Even)).
         |
-        |    A(6, plus(Parity.Odd, Parity.Odd)).
+        |    A(6, plus(Odd, Odd)).
         |
-        |    A(7, times(Parity.Odd, Parity.Even)).
+        |    A(7, times(Odd, Even)).
         |
-        |    A(8, times(Parity.Odd, Parity.Odd)).
+        |    A(8, times(Odd, Odd)).
         |}
       """.stripMargin
 
@@ -276,14 +276,14 @@ class TestExamples extends FunSuite {
     val Evn = Value.mkTag("Even", Value.Unit)
     val Top = Value.mkTag("Top", Value.Unit)
 
-    t.checkValue(Odd, "domains.parity/A", List(Value.mkInt32(1)))
-    t.checkValue(Evn, "domains.parity/A", List(Value.mkInt32(2)))
-    t.checkValue(Top, "domains.parity/A", List(Value.mkInt32(3)))
-    t.checkNone("domains.parity/A", List(Value.mkInt32(4)))
-    t.checkValue(Odd, "domains.parity/A", List(Value.mkInt32(5)))
-    t.checkValue(Evn, "domains.parity/A", List(Value.mkInt32(6)))
-    t.checkValue(Evn, "domains.parity/A", List(Value.mkInt32(7)))
-    t.checkValue(Odd, "domains.parity/A", List(Value.mkInt32(8)))
+    t.checkValue(Odd, "Domain.Parity/A", List(Value.mkInt32(1)))
+    t.checkValue(Evn, "Domain.Parity/A", List(Value.mkInt32(2)))
+    t.checkValue(Top, "Domain.Parity/A", List(Value.mkInt32(3)))
+    t.checkNone("Domain.Parity/A", List(Value.mkInt32(4)))
+    t.checkValue(Odd, "Domain.Parity/A", List(Value.mkInt32(5)))
+    t.checkValue(Evn, "Domain.Parity/A", List(Value.mkInt32(6)))
+    t.checkValue(Evn, "Domain.Parity/A", List(Value.mkInt32(7)))
+    t.checkValue(Odd, "Domain.Parity/A", List(Value.mkInt32(8)))
   }
 
   test("ParitySign.flix") {
