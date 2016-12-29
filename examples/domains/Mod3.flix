@@ -58,17 +58,17 @@ namespace Domain.Mod3 {
     ///
     /// Abstracts a concrete integer into the Parity domain.
     ///
-    def alpha(i: Int): Mod3 = switch {
-        case i % 3 == 0 => Zer
-        case i % 3 == 1 => One
-        case i % 3 == 2 => Two
+    def alpha(i: BigInt): Mod3 = switch {
+        case i % 3ii == 0ii => Zer
+        case i % 3ii == 1ii => One
+        case i % 3ii == 2ii => Two
         case true => Bot // TODO: there is some bug here...
     }
 
     ///
     /// Over-approximates integer `increment`.
     ///
-    #approximates1(x -> x + 1)
+    #approximates1(x -> x + 1ii)
     #strict1 #monotone1
     def inc(e: Mod3): Mod3 = match e with {
        case Bot => Bot
@@ -81,7 +81,7 @@ namespace Domain.Mod3 {
     ///
     /// Over-approximates integer `decrement`.
     ///
-    #approximates1(x -> x - 1)
+    #approximates1(x -> x - 1ii)
     #strict1 #monotone1
     def dec(e: Mod3): Mod3 = match e with {
        case Bot => Bot
@@ -94,7 +94,7 @@ namespace Domain.Mod3 {
     ///
     /// Over-approximates integer `addition`.
     ///
-    //#approximates2((x, y) -> x + y) // TODO
+    #approximates2((x, y) -> x + y) // TODO
     #strict2 #monotone2 #commutative #associative
     def plus(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
        case (_, Bot)   => Bot
@@ -252,11 +252,11 @@ namespace Domain.Mod3 {
             ∀(x1: Mod3, x2: Mod3, y1: Mod3, y2: Mod3). ((x1 ⊑ y1) ∧ (x2 ⊑ y2) ) → (f(x1, x2) ⊑ f(y1, y2))
 
     // TODO: Names
-    law approximates1(fa: Mod3 -> Mod3, fc: Int -> Int): Bool =
-        ∀(x: Int). alpha(fc(x)) `leq` fa(alpha(x))
+    law approximates1(fa: Mod3 -> Mod3, fc: BigInt -> BigInt): Bool =
+        ∀(x: BigInt). alpha(fc(x)) `leq` fa(alpha(x))
 
     // TODO: Names
-    law approximates2(fa: (Mod3, Mod3) -> Mod3, fc: (Int, Int) -> Int): Bool =
-        ∀(x: Int, y: Int). alpha(fc(x, y)) `leq` fa(alpha(x), alpha(y))
+    law approximates2(fa: (Mod3, Mod3) -> Mod3, fc: (BigInt, BigInt) -> BigInt): Bool =
+        ∀(x: BigInt, y: BigInt). alpha(fc(x, y)) `leq` fa(alpha(x), alpha(y))
 
 }
