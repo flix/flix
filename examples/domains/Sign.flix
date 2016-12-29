@@ -6,7 +6,7 @@
 namespace Domain.Sign {
 
     ///
-    ///The elements of the sign lattice.
+    /// The elements of the sign lattice.
     ///
     /// Notice that Neg and Pos implicitly includes zero.
     ///
@@ -23,7 +23,7 @@ namespace Domain.Sign {
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
-    #reflexive
+    #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
     def leq(e1: Sign, e2: Sign): Bool = match (e1, e2) with {
         case (Bot, _) => true
         case (Zer, Zer) => true
@@ -38,7 +38,7 @@ namespace Domain.Sign {
     ///
     /// Returns the least upper bound of `e1` and `e2`.
     ///
-    #commutative #associative
+    #commutative #associative #upperBound #leastUpperBound
     def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, x) => x
         case (x, Bot) => x
@@ -55,7 +55,7 @@ namespace Domain.Sign {
     ///
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
-    #commutative #associative
+    #commutative #associative #lowerBound #greatestLowerBound
     def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Top, x) => x
         case (x, Top) => x

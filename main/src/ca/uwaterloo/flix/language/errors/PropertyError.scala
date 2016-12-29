@@ -32,10 +32,5 @@ case class PropertyError(property: ExecutableAst.Property, m: Map[String, String
          |Counter-example: ${m.mkString(", ")}
          |
          |${Code(property.defn.loc, s"violates the law '${Cyan(property.law.toString)}'.")}
-         |
-         |
-         |The law was defined here:
-         |
-         |${Code(property.law.loc, s"violated by the function '${Red(property.defn.toString)}'.")}
         """.stripMargin
 }

@@ -17,8 +17,7 @@
 package ca.uwaterloo.flix.runtime.verifier
 
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression._
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Property
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.errors.PropertyError
