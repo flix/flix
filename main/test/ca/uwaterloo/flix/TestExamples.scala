@@ -368,11 +368,6 @@ class TestExamples extends FunSuite {
     t.checkValue(Pos, "StrictSign/A", List(Value.mkInt32(9)))
   }
 
-  test("Type.flix") {
-    val t = new Tester().addPath("./examples/domains/Type.flix")
-    t.checkSuccess()
-  }
-
   test("IFDS.flix") {
     val t = new Tester()
       .addPath("./examples/analysis/IFDS.flix")

@@ -25,14 +25,14 @@ namespace Domain.Sign {
     ///
     #reflexive
     def leq(e1: Sign, e2: Sign): Bool = match (e1, e2) with {
-        case (Sign.Bot, _)          => true
-        case (Sign.Zer, Sign.Zer)   => true
-        case (Sign.Zer, Sign.Neg)   => true
-        case (Sign.Zer, Sign.Pos)   => true
-        case (Sign.Neg, Sign.Neg)   => true
-        case (Sign.Pos, Sign.Pos)   => true
-        case (_, Sign.Top)          => true
-        case _                      => false
+        case (Bot, _) => true
+        case (Zer, Zer) => true
+        case (Zer, Neg) => true
+        case (Zer, Pos) => true
+        case (Neg, Neg) => true
+        case (Pos, Pos) => true
+        case (_, Top) => true
+        case _          => false
     }
 
     ///
@@ -40,16 +40,16 @@ namespace Domain.Sign {
     ///
     #commutative #associative
     def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-        case (Sign.Bot, x)          => x
-        case (x, Sign.Bot)          => x
-        case (Sign.Zer, Sign.Zer)   => Sign.Zer
-        case (Sign.Zer, Sign.Neg)   => Sign.Neg
-        case (Sign.Neg, Sign.Zer)   => Sign.Neg
-        case (Sign.Zer, Sign.Pos)   => Sign.Pos
-        case (Sign.Pos, Sign.Zer)   => Sign.Pos
-        case (Sign.Neg, Sign.Neg)   => Sign.Neg
-        case (Sign.Pos, Sign.Pos)   => Sign.Pos
-        case _                      => Sign.Top
+        case (Bot, x) => x
+        case (x, Bot) => x
+        case (Zer, Zer) => Zer
+        case (Zer, Neg) => Neg
+        case (Neg, Zer) => Neg
+        case (Zer, Pos) => Pos
+        case (Pos, Zer) => Pos
+        case (Neg, Neg) => Neg
+        case (Pos, Pos) => Pos
+        case _          => Top
     }
 
     ///
@@ -57,29 +57,29 @@ namespace Domain.Sign {
     ///
     #commutative #associative
     def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-        case (Sign.Top, x)          => x
-        case (x, Sign.Top)          => x
-        case (Sign.Zer, Sign.Zer)   => Sign.Zer
-        case (Sign.Neg, Sign.Neg)   => Sign.Neg
-        case (Sign.Pos, Sign.Pos)   => Sign.Pos
-        case (Sign.Zer, Sign.Neg)   => Sign.Zer
-        case (Sign.Neg, Sign.Zer)   => Sign.Zer
-        case (Sign.Zer, Sign.Pos)   => Sign.Zer
-        case (Sign.Pos, Sign.Zer)   => Sign.Zer
-        case (Sign.Neg, Sign.Pos)   => Sign.Zer
-        case (Sign.Pos, Sign.Neg)   => Sign.Zer
-        case (x, Sign.Top)          => x
-        case (Sign.Top, x)          => x
-        case _                      => Sign.Bot
+        case (Top, x) => x
+        case (x, Top) => x
+        case (Zer, Zer) => Zer
+        case (Neg, Neg) => Neg
+        case (Pos, Pos) => Pos
+        case (Zer, Neg) => Zer
+        case (Neg, Zer) => Zer
+        case (Zer, Pos) => Zer
+        case (Pos, Zer) => Zer
+        case (Neg, Pos) => Zer
+        case (Pos, Neg) => Zer
+        case (x, Top) => x
+        case (Top, x) => x
+        case _          => Bot
     }
 
     ///
     /// Abstracts a concrete number into the (alternative) sign domain.
     ///
     def alpha(i: Int): Sign = switch {
-        case i < 0  => Sign.Neg
-        case i > 0  => Sign.Pos
-        case true   => Sign.Zer
+        case i < 0  => Neg
+        case i > 0  => Pos
+        case true   => Zer
     }
 
     ///
@@ -88,11 +88,11 @@ namespace Domain.Sign {
     #approximates1(x -> x + 1)
     #strict1 #monotone1
     def inc(e: Sign): Sign = match e with {
-        case Sign.Bot => Sign.Bot
-        case Sign.Neg => Sign.Top
-        case Sign.Zer => Sign.Pos
-        case Sign.Pos => Sign.Pos
-        case Sign.Top => Sign.Top
+        case Bot => Bot
+        case Neg => Top
+        case Zer => Pos
+        case Pos => Pos
+        case Top => Top
     }
 
     ///
@@ -101,11 +101,11 @@ namespace Domain.Sign {
     #approximates1(x -> x - 1)
     #strict1 #monotone1
     def dec(e: Sign): Sign = match e with {
-        case Sign.Bot => Sign.Bot
-        case Sign.Neg => Sign.Neg
-        case Sign.Zer => Sign.Neg
-        case Sign.Pos => Sign.Top
-        case Sign.Top => Sign.Top
+        case Bot => Bot
+        case Neg => Neg
+        case Zer => Neg
+        case Pos => Top
+        case Top => Top
     }
 
     ///
@@ -114,18 +114,18 @@ namespace Domain.Sign {
     #approximates2((x, y) -> x + y)
     #strict2 #monotone2 #commutative #associative
     def plus(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-        case (Sign.Bot, _)          => Sign.Bot
-        case (_, Sign.Bot)          => Sign.Bot
-        case (Sign.Neg, Sign.Neg)   => Sign.Neg
-        case (Sign.Neg, Sign.Zer)   => Sign.Neg
-        case (Sign.Neg, Sign.Pos)   => Sign.Top
-        case (Sign.Zer, Sign.Neg)   => Sign.Neg
-        case (Sign.Zer, Sign.Zer)   => Sign.Zer
-        case (Sign.Zer, Sign.Pos)   => Sign.Pos
-        case (Sign.Pos, Sign.Neg)   => Sign.Top
-        case (Sign.Pos, Sign.Zer)   => Sign.Pos
-        case (Sign.Pos, Sign.Pos)   => Sign.Pos
-        case  _                     => Sign.Top
+        case (Bot, _) => Bot
+        case (_, Bot) => Bot
+        case (Neg, Neg) => Neg
+        case (Neg, Zer) => Neg
+        case (Neg, Pos) => Top
+        case (Zer, Neg) => Neg
+        case (Zer, Zer) => Zer
+        case (Zer, Pos) => Pos
+        case (Pos, Neg) => Top
+        case (Pos, Zer) => Pos
+        case (Pos, Pos) => Pos
+        case  _                     => Top
     }
 
     ///
@@ -134,18 +134,18 @@ namespace Domain.Sign {
     #approximates2((x, y) -> x - y)
     #strict2 #monotone2
     def minus(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-        case (Sign.Bot, _)          => Sign.Bot
-        case (_, Sign.Bot)          => Sign.Bot
-        case (Sign.Neg, Sign.Neg)   => Sign.Top
-        case (Sign.Neg, Sign.Zer)   => Sign.Neg
-        case (Sign.Neg, Sign.Pos)   => Sign.Neg
-        case (Sign.Zer, Sign.Neg)   => Sign.Pos
-        case (Sign.Zer, Sign.Zer)   => Sign.Zer
-        case (Sign.Zer, Sign.Pos)   => Sign.Neg
-        case (Sign.Pos, Sign.Neg)   => Sign.Pos
-        case (Sign.Pos, Sign.Zer)   => Sign.Pos
-        case (Sign.Pos, Sign.Pos)   => Sign.Top
-        case  _                     => Sign.Top
+        case (Bot, _) => Bot
+        case (_, Bot) => Bot
+        case (Neg, Neg) => Top
+        case (Neg, Zer) => Neg
+        case (Neg, Pos) => Neg
+        case (Zer, Neg) => Pos
+        case (Zer, Zer) => Zer
+        case (Zer, Pos) => Neg
+        case (Pos, Neg) => Pos
+        case (Pos, Zer) => Pos
+        case (Pos, Pos) => Top
+        case  _                     => Top
     }
 
     ///
@@ -154,18 +154,18 @@ namespace Domain.Sign {
     #approximates2((x, y) -> x * y)
     #strict2 #monotone2
     def times(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-        case (Sign.Bot, _)          => Sign.Bot
-        case (_, Sign.Bot)          => Sign.Bot
-        case (Sign.Neg, Sign.Neg)   => Sign.Pos
-        case (Sign.Neg, Sign.Zer)   => Sign.Zer
-        case (Sign.Neg, Sign.Pos)   => Sign.Neg
-        case (Sign.Zer, Sign.Neg)   => Sign.Zer
-        case (Sign.Zer, Sign.Zer)   => Sign.Zer
-        case (Sign.Zer, Sign.Pos)   => Sign.Zer
-        case (Sign.Pos, Sign.Neg)   => Sign.Neg
-        case (Sign.Pos, Sign.Zer)   => Sign.Zer
-        case (Sign.Pos, Sign.Pos)   => Sign.Pos
-        case  _                     => Sign.Top
+        case (Bot, _) => Bot
+        case (_, Bot) => Bot
+        case (Neg, Neg) => Pos
+        case (Neg, Zer) => Zer
+        case (Neg, Pos) => Neg
+        case (Zer, Neg) => Zer
+        case (Zer, Zer) => Zer
+        case (Zer, Pos) => Zer
+        case (Pos, Neg) => Neg
+        case (Pos, Zer) => Zer
+        case (Pos, Pos) => Pos
+        case  _         => Top
     }
 
     ///
@@ -174,18 +174,18 @@ namespace Domain.Sign {
     #approximates2((x, y) -> x / y)
     #strict2 #monotone2
     def divide(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-        case (Sign.Bot, _)          => Sign.Bot
-        case (_, Sign.Bot)          => Sign.Bot
-        case (Sign.Neg, Sign.Neg)   => Sign.Pos
-        case (Sign.Neg, Sign.Zer)   => Sign.Bot
-        case (Sign.Neg, Sign.Pos)   => Sign.Neg
-        case (Sign.Zer, Sign.Neg)   => Sign.Zer
-        case (Sign.Zer, Sign.Zer)   => Sign.Bot
-        case (Sign.Zer, Sign.Pos)   => Sign.Zer
-        case (Sign.Pos, Sign.Neg)   => Sign.Neg
-        case (Sign.Pos, Sign.Zer)   => Sign.Bot
-        case (Sign.Pos, Sign.Pos)   => Sign.Pos
-        case  _                     => Sign.Top
+        case (Bot, _) => Bot
+        case (_, Bot) => Bot
+        case (Neg, Neg) => Pos
+        case (Neg, Zer) => Bot
+        case (Neg, Pos) => Neg
+        case (Zer, Neg) => Zer
+        case (Zer, Zer) => Bot
+        case (Zer, Pos) => Zer
+        case (Pos, Neg) => Neg
+        case (Pos, Zer) => Bot
+        case (Pos, Pos) => Pos
+        case  _         => Top
     }
 
     ///
@@ -194,18 +194,18 @@ namespace Domain.Sign {
     #approximates2((x, y) -> x % y)
     #strict2 #monotone2
     def modulo(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-        case (Sign.Bot, _)          => Sign.Bot
-        case (_, Sign.Bot)          => Sign.Bot
-        case (Sign.Neg, Sign.Neg)   => Sign.Bot
-        case (Sign.Neg, Sign.Zer)   => Sign.Bot
-        case (Sign.Neg, Sign.Pos)   => Sign.Top
-        case (Sign.Zer, Sign.Neg)   => Sign.Bot
-        case (Sign.Zer, Sign.Zer)   => Sign.Bot
-        case (Sign.Zer, Sign.Pos)   => Sign.Pos
-        case (Sign.Pos, Sign.Neg)   => Sign.Top
-        case (Sign.Pos, Sign.Zer)   => Sign.Bot
-        case (Sign.Pos, Sign.Pos)   => Sign.Top
-        case  _                     => Sign.Top
+        case (Bot, _) => Bot
+        case (_, Bot) => Bot
+        case (Neg, Neg) => Bot
+        case (Neg, Zer) => Bot
+        case (Neg, Pos) => Top
+        case (Zer, Neg) => Bot
+        case (Zer, Zer) => Bot
+        case (Zer, Pos) => Pos
+        case (Pos, Neg) => Top
+        case (Pos, Zer) => Bot
+        case (Pos, Pos) => Top
+        case  _         => Top
     }
 
     ///
@@ -214,11 +214,11 @@ namespace Domain.Sign {
     #approximates1(x -> -x)
     #strict1 #monotone1
     def negate(e: Sign): Sign = match e with {
-        case Sign.Bot => Sign.Bot
-        case Sign.Zer => Sign.Neg
-        case Sign.Neg => Sign.Top
-        case Sign.Pos => Sign.Top
-        case Sign.Top => Sign.Top
+        case Bot => Bot
+        case Zer => Neg
+        case Neg => Top
+        case Pos => Top
+        case Top => Top
     }
 
     ///
@@ -227,18 +227,18 @@ namespace Domain.Sign {
     #approximates2((x, y) -> x & y)
     #strict2 #monotone2 #commutative #associative
     def and(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-        case (Sign.Bot, _)          => Sign.Bot
-        case (_, Sign.Bot)          => Sign.Bot
-        case (Sign.Neg, Sign.Neg)   => Sign.Neg
-        case (Sign.Neg, Sign.Zer)   => Sign.Zer
-        case (Sign.Neg, Sign.Pos)   => Sign.Pos
-        case (Sign.Zer, Sign.Neg)   => Sign.Zer
-        case (Sign.Zer, Sign.Zer)   => Sign.Zer
-        case (Sign.Zer, Sign.Pos)   => Sign.Zer
-        case (Sign.Pos, Sign.Neg)   => Sign.Pos
-        case (Sign.Pos, Sign.Zer)   => Sign.Zer
-        case (Sign.Pos, Sign.Pos)   => Sign.Pos
-        case  _                     => Sign.Top
+        case (Bot, _)   => Bot
+        case (_, Bot)   => Bot
+        case (Neg, Neg) => Neg
+        case (Neg, Zer) => Zer
+        case (Neg, Pos) => Pos
+        case (Zer, Neg) => Zer
+        case (Zer, Zer) => Zer
+        case (Zer, Pos) => Zer
+        case (Pos, Neg) => Pos
+        case (Pos, Zer) => Zer
+        case (Pos, Pos) => Pos
+        case  _         => Top
     }
 
     ///
@@ -247,18 +247,18 @@ namespace Domain.Sign {
     #approximates2((x, y) -> x | y)
     #strict2 #monotone2 #commutative #associative
     def or(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-        case (Sign.Bot, _)          => Sign.Bot
-        case (_, Sign.Bot)          => Sign.Bot
-        case (Sign.Neg, Sign.Neg)   => Sign.Neg
-        case (Sign.Neg, Sign.Zer)   => Sign.Neg
-        case (Sign.Neg, Sign.Pos)   => Sign.Top
-        case (Sign.Zer, Sign.Neg)   => Sign.Neg
-        case (Sign.Zer, Sign.Zer)   => Sign.Zer
-        case (Sign.Zer, Sign.Pos)   => Sign.Pos
-        case (Sign.Pos, Sign.Neg)   => Sign.Top
-        case (Sign.Pos, Sign.Zer)   => Sign.Pos
-        case (Sign.Pos, Sign.Pos)   => Sign.Pos
-        case  _                     => Sign.Top
+        case (Bot, _)   => Bot
+        case (_, Bot)   => Bot
+        case (Neg, Neg) => Neg
+        case (Neg, Zer) => Neg
+        case (Neg, Pos) => Top
+        case (Zer, Neg) => Neg
+        case (Zer, Zer) => Zer
+        case (Zer, Pos) => Pos
+        case (Pos, Neg) => Top
+        case (Pos, Zer) => Pos
+        case (Pos, Pos) => Pos
+        case  _         => Top
     }
 
     ///
@@ -267,18 +267,18 @@ namespace Domain.Sign {
     #approximates2((x, y) -> x ^ y)
     #strict2 #monotone2 #commutative #associative
     def xor(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-        case (Sign.Bot, _)          => Sign.Bot
-        case (_, Sign.Bot)          => Sign.Bot
-        case (Sign.Neg, Sign.Neg)   => Sign.Top
-        case (Sign.Neg, Sign.Zer)   => Sign.Neg
-        case (Sign.Neg, Sign.Pos)   => Sign.Top
-        case (Sign.Zer, Sign.Neg)   => Sign.Neg
-        case (Sign.Zer, Sign.Zer)   => Sign.Zer
-        case (Sign.Zer, Sign.Pos)   => Sign.Pos
-        case (Sign.Pos, Sign.Neg)   => Sign.Top
-        case (Sign.Pos, Sign.Zer)   => Sign.Pos
-        case (Sign.Pos, Sign.Pos)   => Sign.Top
-        case  _                     => Sign.Top
+        case (Bot, _)   => Bot
+        case (_, Bot)   => Bot
+        case (Neg, Neg) => Top
+        case (Neg, Zer) => Neg
+        case (Neg, Pos) => Top
+        case (Zer, Neg) => Neg
+        case (Zer, Zer) => Zer
+        case (Zer, Pos) => Pos
+        case (Pos, Neg) => Top
+        case (Pos, Zer) => Pos
+        case (Pos, Pos) => Top
+        case  _         => Top
     }
 
     ///
@@ -287,18 +287,18 @@ namespace Domain.Sign {
     #approximates2((x, y) -> x << y)
     #strict2 #monotone2
     def leftShift(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-       case (Sign.Bot, _)          => Sign.Bot
-       case (_, Sign.Bot)          => Sign.Bot
-       case (Sign.Neg, Sign.Neg)   => Sign.Top
-       case (Sign.Neg, Sign.Zer)   => Sign.Neg
-       case (Sign.Neg, Sign.Pos)   => Sign.Top
-       case (Sign.Zer, Sign.Neg)   => Sign.Top
-       case (Sign.Zer, Sign.Zer)   => Sign.Zer
-       case (Sign.Zer, Sign.Pos)   => Sign.Zer
-       case (Sign.Pos, Sign.Neg)   => Sign.Top
-       case (Sign.Pos, Sign.Zer)   => Sign.Pos
-       case (Sign.Pos, Sign.Pos)   => Sign.Top
-       case  _                     => Sign.Top
+       case (Bot, _)   => Bot
+       case (_, Bot)   => Bot
+       case (Neg, Neg) => Top
+       case (Neg, Zer) => Neg
+       case (Neg, Pos) => Top
+       case (Zer, Neg) => Top
+       case (Zer, Zer) => Zer
+       case (Zer, Pos) => Zer
+       case (Pos, Neg) => Top
+       case (Pos, Zer) => Pos
+       case (Pos, Pos) => Top
+       case  _         => Top
    }
 
     ///
@@ -307,18 +307,18 @@ namespace Domain.Sign {
     #approximates2((x, y) -> x >> y)
     #strict2 #monotone2
     def rightShift(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-        case (Sign.Bot, _)          => Sign.Bot
-        case (_, Sign.Bot)          => Sign.Bot
-        case (Sign.Neg, Sign.Neg)   => Sign.Top
-        case (Sign.Neg, Sign.Zer)   => Sign.Neg
-        case (Sign.Neg, Sign.Pos)   => Sign.Top
-        case (Sign.Zer, Sign.Neg)   => Sign.Top
-        case (Sign.Zer, Sign.Zer)   => Sign.Zer
-        case (Sign.Zer, Sign.Pos)   => Sign.Zer
-        case (Sign.Pos, Sign.Neg)   => Sign.Top
-        case (Sign.Pos, Sign.Zer)   => Sign.Pos
-        case (Sign.Pos, Sign.Pos)   => Sign.Pos
-        case  _                     => Sign.Top
+        case (Bot, _)   => Bot
+        case (_, Bot)   => Bot
+        case (Neg, Neg) => Top
+        case (Neg, Zer) => Neg
+        case (Neg, Pos) => Top
+        case (Zer, Neg) => Top
+        case (Zer, Zer) => Zer
+        case (Zer, Pos) => Zer
+        case (Pos, Neg) => Top
+        case (Pos, Zer) => Pos
+        case (Pos, Pos) => Pos
+        case  _         => Top
     }
 
     ///
@@ -326,10 +326,10 @@ namespace Domain.Sign {
     ///
 //    #strict2 #monotone2 #commutativeB // TODO: Requires more general laws
     def eq(e1: Sign, e2: Sign): Belnap/Belnap = match (e1, e2) with {
-        case (Sign.Bot, _)          => Belnap/Belnap.Bot
-        case (_, Sign.Bot)          => Belnap/Belnap.Bot
-        case (Sign.Zer, Sign.Zer)   => Belnap/Belnap.True
-        case _                      => Belnap/Belnap.Top
+        case (Bot, _)   => Belnap/Belnap.Bot
+        case (_, Bot)   => Belnap/Belnap.Bot
+        case (Zer, Zer) => Belnap/Belnap.True
+        case _          => Belnap/Belnap.Top
     }
 
     ///
@@ -343,10 +343,10 @@ namespace Domain.Sign {
     ///
     // @strict @monotone // TODO
     def less(e1: Sign, e2: Sign): Belnap/Belnap = match (e1, e2) with {
-        case (Sign.Bot, _)          => Belnap/Belnap.Bot
-        case (_, Sign.Bot)          => Belnap/Belnap.Bot
-        case (Sign.Zer, Sign.Zer)   => Belnap/Belnap.False
-        case _                      => Belnap/Belnap.Top
+        case (Bot, _)   => Belnap/Belnap.Bot
+        case (_, Bot)   => Belnap/Belnap.Bot
+        case (Zer, Zer) => Belnap/Belnap.False
+        case _          => Belnap/Belnap.Top
     }
 
     ///
@@ -355,7 +355,7 @@ namespace Domain.Sign {
     // @strict @monotone // TODO
     def lessEqual(e1: Sign, e2: Sign): Belnap/Belnap = Belnap/or(e1 `less` e2, e1 `eq` e2)
 
-    let Sign<> = (Sign.Bot, Sign.Top, leq, lub, glb)
+    let Sign<> = (Bot, Top, leq, lub, glb)
 
     // ------------------------------------------------------------------------
     // TODO: Refactor

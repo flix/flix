@@ -710,9 +710,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def Property: Rule1[ParsedAst.AnnotationOrProperty] = {
-    // TODO: Introduce expression list.
     def ArgumentList: Rule1[Option[Seq[ParsedAst.Expression]]] = rule {
-      optional(optWS ~ "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")")
+      optional("(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")")
     }
 
     rule {
