@@ -131,13 +131,13 @@ class TestExamples extends FunSuite {
 
   test("Constant.flix") {
     val input =
-      """namespace Constant {
+      """namespace Domain.Constant {
         |    let Constant<> = (Constant.Bot, Constant.Top, leq, lub, glb)
         |    lat A(k: Int, v: Constant)
         |
-        |    A(0, Constant.Cst(0)).
-        |    A(1, Constant.Cst(1)).
-        |    A(2, Constant.Cst(2)).
+        |    A(0, Cst(0)).
+        |    A(1, Cst(1)).
+        |    A(2, Cst(2)).
         |
         |    A(3, x) :- A(0, x).
         |    A(3, x) :- A(1, x).
@@ -161,13 +161,13 @@ class TestExamples extends FunSuite {
     val Two = Value.mkTag("Cst", Value.mkInt32(2))
     val Top = Value.mkTag("Top", Value.Unit)
 
-    t.checkValue(Zer, "Constant/A", List(Value.mkInt32(0)))
-    t.checkValue(One, "Constant/A", List(Value.mkInt32(1)))
-    t.checkValue(Two, "Constant/A", List(Value.mkInt32(2)))
-    t.checkValue(Top, "Constant/A", List(Value.mkInt32(3)))
-    t.checkNone("Constant/A", List(Value.mkInt32(4)))
-    t.checkValue(Two, "Constant/A", List(Value.mkInt32(5)))
-    t.checkValue(Two, "Constant/A", List(Value.mkInt32(6)))
+    t.checkValue(Zer, "Domain.Constant/A", List(Value.mkInt32(0)))
+    t.checkValue(One, "Domain.Constant/A", List(Value.mkInt32(1)))
+    t.checkValue(Two, "Domain.Constant/A", List(Value.mkInt32(2)))
+    t.checkValue(Top, "Domain.Constant/A", List(Value.mkInt32(3)))
+    t.checkNone("Domain.Constant/A", List(Value.mkInt32(4)))
+    t.checkValue(Two, "Domain.Constant/A", List(Value.mkInt32(5)))
+    t.checkValue(Two, "Domain.Constant/A", List(Value.mkInt32(6)))
   }
 
   test("ConstantSign.flix") {

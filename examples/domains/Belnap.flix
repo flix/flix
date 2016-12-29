@@ -41,6 +41,9 @@ namespace Belnap {
     ///
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
+
+    // TODO: Should we commutative and associative here, and in what order?
+
     #commutative #associative #lowerBound #greatestLowerBound
     def glb(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Top, x)       => x
