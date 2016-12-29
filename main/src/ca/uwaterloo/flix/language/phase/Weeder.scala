@@ -830,28 +830,27 @@ object Weeder {
 
   object Properties {
     /**
-      * TODO: DOC
-      *
-      * @param root
-      * @return
+      * Weeds all properties in the given AST `root`.
       */
     def weed(root: ParsedAst.Root): Validation[List[WeededAst.Declaration], WeederError] = {
 
       /**
-        * TODO: DOC
+        * Processes a single declaration.
         */
       def visit(decl: ParsedAst.Declaration): Validation[List[WeededAst.Declaration], WeederError] = decl match {
+        // Recurse through the namespace.
         case ParsedAst.Declaration.Namespace(sp1, name, decls, sp2) =>
           @@(decls.map(visit)) map {
             case ds => List(WeededAst.Declaration.Namespace(name, ds.flatten, mkSL(sp1, sp2)))
           }
 
         case ParsedAst.Declaration.Definition(_, meta, _, defn, _, _, _, _, _) =>
+          // Instantiate properties based on the laws referenced by the definition.
           @@(meta.collect {
             case ParsedAst.Property(sp1, law, args, sp2) =>
               val loc = mkSL(sp1, sp2)
 
-              // TODO: DOC
+              // Weeds the arguments of the property.
               val argsVal = args match {
                 case None => Nil.toSuccess
                 case Some(es) => @@(es.map(e => Expressions.weed(e)))
@@ -859,7 +858,7 @@ object Weeder {
 
               argsVal map {
                 case as =>
-                  val lam = WeededAst.Expression.VarOrRef(Name.QName(sp1, Name.RootNS, law, sp2), loc)
+                  val lam = WeededAst.Expression.VarOrRef(law, loc)
                   val fun = WeededAst.Expression.VarOrRef(Name.QName(sp1, Name.RootNS, defn, sp2), loc)
                   val exp = WeededAst.Expression.Apply(lam, fun :: as, loc)
                   WeededAst.Declaration.Property(law, defn, exp, loc)

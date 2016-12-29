@@ -181,7 +181,7 @@ object Namer {
       case WeededAst.Declaration.Property(law, defn, exp0, loc) =>
         Expressions.namer(exp0, Map.empty, Map.empty) map {
           case exp =>
-            val lawSym = Symbol.mkDefnSym(ns0, law)
+            val lawSym = Symbol.mkDefnSym(law.namespace, law.ident)
             val defnSym = Symbol.mkDefnSym(ns0, defn)
             val property = NamedAst.Property(lawSym, defnSym, exp, loc)
             val properties = prog0.properties.getOrElse(ns0, Nil)
