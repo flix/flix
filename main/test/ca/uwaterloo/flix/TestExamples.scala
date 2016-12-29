@@ -324,25 +324,25 @@ class TestExamples extends FunSuite {
 
   test("StrictSign.flix") {
     val input =
-      """namespace StrictSign {
+      """namespace Domain.StrictSign {
         |    let Sign<> = (Sign.Bot, Sign.Top, leq, lub, glb)
         |    lat A(k: Int, v: Sign)
         |
-        |    A(1, Sign.Neg).
-        |    A(2, Sign.Zer).
-        |    A(3, Sign.Pos).
+        |    A(1, Neg).
+        |    A(2, Zer).
+        |    A(3, Pos).
         |
-        |    A(4, Sign.Neg).
-        |    A(4, Sign.Zer).
-        |    A(4, Sign.Pos).
+        |    A(4, Neg).
+        |    A(4, Zer).
+        |    A(4, Pos).
         |
         |    A(5, x) :- A(1, x), A(2, x), A(3, x).
         |
-        |    A(6, plus(Sign.Zer, Sign.Pos)).
-        |    A(7, plus(Sign.Neg, Sign.Pos)).
+        |    A(6, plus(Zer, Pos)).
+        |    A(7, plus(Neg, Pos)).
         |
-        |    A(8, times(Sign.Zer, Sign.Pos)).
-        |    A(9, times(Sign.Neg, Sign.Neg)).
+        |    A(8, times(Zer, Pos)).
+        |    A(9, times(Neg, Neg)).
         |}
       """.stripMargin
 
@@ -357,15 +357,15 @@ class TestExamples extends FunSuite {
     val Pos = Value.mkTag("Pos", Value.Unit)
     val Top = Value.mkTag("Top", Value.Unit)
 
-    t.checkValue(Neg, "StrictSign/A", List(Value.mkInt32(1)))
-    t.checkValue(Zer, "StrictSign/A", List(Value.mkInt32(2)))
-    t.checkValue(Pos, "StrictSign/A", List(Value.mkInt32(3)))
-    t.checkValue(Top, "StrictSign/A", List(Value.mkInt32(4)))
-    t.checkNone("StrictSign/A", List(Value.mkInt32(5)))
-    t.checkValue(Pos, "StrictSign/A", List(Value.mkInt32(6)))
-    t.checkValue(Top, "StrictSign/A", List(Value.mkInt32(7)))
-    t.checkValue(Zer, "StrictSign/A", List(Value.mkInt32(8)))
-    t.checkValue(Pos, "StrictSign/A", List(Value.mkInt32(9)))
+    t.checkValue(Neg, "Domain.StrictSign/A", List(Value.mkInt32(1)))
+    t.checkValue(Zer, "Domain.StrictSign/A", List(Value.mkInt32(2)))
+    t.checkValue(Pos, "Domain.StrictSign/A", List(Value.mkInt32(3)))
+    t.checkValue(Top, "Domain.StrictSign/A", List(Value.mkInt32(4)))
+    t.checkNone("Domain.StrictSign/A", List(Value.mkInt32(5)))
+    t.checkValue(Pos, "Domain.StrictSign/A", List(Value.mkInt32(6)))
+    t.checkValue(Top, "Domain.StrictSign/A", List(Value.mkInt32(7)))
+    t.checkValue(Zer, "Domain.StrictSign/A", List(Value.mkInt32(8)))
+    t.checkValue(Pos, "Domain.StrictSign/A", List(Value.mkInt32(9)))
   }
 
   test("IFDS.flix") {
