@@ -25,13 +25,13 @@ namespace Domain.Sign {
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
     def leq(e1: Sign, e2: Sign): Bool = match (e1, e2) with {
-        case (Bot, _) => true
+        case (Bot, _)   => true
         case (Zer, Zer) => true
         case (Zer, Neg) => true
         case (Zer, Pos) => true
         case (Neg, Neg) => true
         case (Pos, Pos) => true
-        case (_, Top) => true
+        case (_, Top)   => true
         case _          => false
     }
 
@@ -40,8 +40,8 @@ namespace Domain.Sign {
     ///
     #commutative #associative #upperBound #leastUpperBound
     def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-        case (Bot, x) => x
-        case (x, Bot) => x
+        case (Bot, x)   => x
+        case (x, Bot)   => x
         case (Zer, Zer) => Zer
         case (Zer, Neg) => Neg
         case (Neg, Zer) => Neg
@@ -57,8 +57,8 @@ namespace Domain.Sign {
     ///
     #commutative #associative #lowerBound #greatestLowerBound
     def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-        case (Top, x) => x
-        case (x, Top) => x
+        case (Top, x)   => x
+        case (x, Top)   => x
         case (Zer, Zer) => Zer
         case (Neg, Neg) => Neg
         case (Pos, Pos) => Pos
@@ -68,8 +68,8 @@ namespace Domain.Sign {
         case (Pos, Zer) => Zer
         case (Neg, Pos) => Zer
         case (Pos, Neg) => Zer
-        case (x, Top) => x
-        case (Top, x) => x
+        case (x, Top)   => x
+        case (Top, x)   => x
         case _          => Bot
     }
 
@@ -125,7 +125,7 @@ namespace Domain.Sign {
         case (Pos, Neg) => Top
         case (Pos, Zer) => Pos
         case (Pos, Pos) => Pos
-        case  _                     => Top
+        case  _         => Top
     }
 
     ///
@@ -134,8 +134,8 @@ namespace Domain.Sign {
     #approximates2((x, y) -> x - y)
     #strict2 #monotone2
     def minus(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-        case (Bot, _) => Bot
-        case (_, Bot) => Bot
+        case (Bot, _)   => Bot
+        case (_, Bot)   => Bot
         case (Neg, Neg) => Top
         case (Neg, Zer) => Neg
         case (Neg, Pos) => Neg
@@ -145,7 +145,7 @@ namespace Domain.Sign {
         case (Pos, Neg) => Pos
         case (Pos, Zer) => Pos
         case (Pos, Pos) => Top
-        case  _                     => Top
+        case  _         => Top
     }
 
     ///
@@ -154,8 +154,8 @@ namespace Domain.Sign {
     #approximates2((x, y) -> x * y)
     #strict2 #monotone2
     def times(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-        case (Bot, _) => Bot
-        case (_, Bot) => Bot
+        case (Bot, _)   => Bot
+        case (_, Bot)   => Bot
         case (Neg, Neg) => Pos
         case (Neg, Zer) => Zer
         case (Neg, Pos) => Neg
@@ -174,8 +174,8 @@ namespace Domain.Sign {
     #approximates2((x, y) -> x / y)
     #strict2 #monotone2
     def divide(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-        case (Bot, _) => Bot
-        case (_, Bot) => Bot
+        case (Bot, _)   => Bot
+        case (_, Bot)   => Bot
         case (Neg, Neg) => Pos
         case (Neg, Zer) => Bot
         case (Neg, Pos) => Neg
@@ -194,8 +194,8 @@ namespace Domain.Sign {
     #approximates2((x, y) -> x % y)
     #strict2 #monotone2
     def modulo(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
-        case (Bot, _) => Bot
-        case (_, Bot) => Bot
+        case (Bot, _)   => Bot
+        case (_, Bot)   => Bot
         case (Neg, Neg) => Bot
         case (Neg, Zer) => Bot
         case (Neg, Pos) => Top
