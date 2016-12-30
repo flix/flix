@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.runtime.verifier
 
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Property
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.PropertyError
 import ca.uwaterloo.flix.runtime.evaluator.{SmtExpr, SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.Highlight.{Blue, Cyan, Red}
@@ -140,68 +139,64 @@ object Verifier {
   }
 
   /**
-    * TODO: DOC
+    * Attempts the verify that the given property `p` is valid.
     */
-  def verifyProperty(property: Property, root: ExecutableAst.Root)(implicit genSym: GenSym): PropertyResult = {
+  def verifyProperty(p: Property, root: ExecutableAst.Root)(implicit genSym: GenSym): PropertyResult = {
     // start the clock.
     val t = System.nanoTime()
-
-    // a sequence of environments under which the base expression must hold.
-    val envs = List(Map.empty: SymbolicEvaluator.Environment) // TODO
-
-    // the number of paths explored by the symbolic evaluator.
-    var paths = 0 // TODO: Need to compute the number of paths differently...
-
     // the number of queries issued to the SMT solver.
     var queries = 0
 
-    // attempt to verify that the property holds under each environment.
-    val pathResults = envs flatMap {
-      case env0 =>
-        paths += 1
-        SymbolicEvaluator.eval(property.exp, env0, root) map {
-          case (Nil, SymVal.True) =>
-            // Case 1: The symbolic evaluator proved the property.
-            PathResult.Success
-          case (Nil, SymVal.False) =>
-            // Case 2: The symbolic evaluator disproved the property.
-            PathResult.Failure(SymVal.mkModel(env0, Set.empty, None))
-          case (pc, v) => v match {
-            case SymVal.True =>
-              // Case 3.1: The property holds under some path condition.
-              // The property holds regardless of whether the path condition is satisfiable.
-              PathResult.Success
-            case SymVal.False =>
-              // Case 3.2: The property *does not* hold under some path condition.
-              // If the path condition is satisfiable then the property *does not* hold.
-              queries += 1
-              assertUnsatisfiable(property, and(pc), env0)
-            case SymVal.AtomicVar(id, _) =>
-              // Case 3.3: The property holds iff the atomic variable is never `false`.
-              queries += 1
-              assertUnsatisfiable(property, SmtExpr.Not(and(pc)), env0)
-            case _ => throw InternalCompilerException(s"Unexpected value: '$v'.")
-          }
-        }
+    // the initial empty environment.
+    val env0 = Map.empty: SymbolicEvaluator.Environment
+
+    // evaluate the expression under the empty environment.
+    val results = SymbolicEvaluator.eval(p.exp, env0, root) map {
+      case (Nil, SymVal.True) =>
+        // Case 1: The symbolic evaluator proved the property.
+        PathResult.Success
+      case (Nil, SymVal.False) =>
+        // Case 2: The symbolic evaluator disproved the property.
+        PathResult.Failure(SymVal.mkModel(env0, Set.empty, None))
+      case (pc, v) => v match {
+        case SymVal.True =>
+          // Case 3.1: The property holds under some path condition.
+          // The property holds regardless of whether the path condition is satisfiable.
+          PathResult.Success
+        case SymVal.False =>
+          // Case 3.2: The property *does not* hold under some path condition.
+          // If the path condition is satisfiable then the property *does not* hold.
+          queries += 1
+          assertUnsatisfiable(p, and(pc), env0)
+        case SymVal.AtomicVar(id, _) =>
+          // Case 3.3: The property holds iff the atomic variable is never `false`.
+          queries += 1
+          assertUnsatisfiable(p, SmtExpr.Not(and(pc)), env0)
+        case _ => throw InternalCompilerException(s"Unexpected value: '$v'.")
+      }
     }
 
     // stop the clock.
     val e = System.nanoTime() - t
 
-    val failures = pathResults collect {
+    /*
+     * Post-processing.
+     */
+    val paths = results.length
+    val failures = results collect {
       case r: PathResult.Failure => r
     }
-
-    val unknowns = pathResults collect {
+    val unknowns = results collect {
       case r: PathResult.Unknown => r
     }
 
+    // Determine if the property was proved or disproved.
     if (failures.isEmpty && unknowns.isEmpty) {
-      PropertyResult.Success(property, paths, queries, e)
+      PropertyResult.Success(p, paths, queries, e)
     } else if (failures.nonEmpty) {
-      PropertyResult.Failure(property, paths, queries, e, PropertyError(property, failures.head.model))
+      PropertyResult.Failure(p, paths, queries, e, PropertyError(p, failures.head.model))
     } else {
-      PropertyResult.Unknown(property, paths, queries, e, PropertyError(property, unknowns.head.model))
+      PropertyResult.Unknown(p, paths, queries, e, PropertyError(p, unknowns.head.model))
     }
 
   }
@@ -447,12 +442,12 @@ object Verifier {
     * Returns the median of the given list `xs`.
     */
   private def avg(xs: List[Int]): Int =
-  if (xs.isEmpty) 0 else xs.sum / xs.length
+    if (xs.isEmpty) 0 else xs.sum / xs.length
 
   /**
     * Returns the median of the given list `xs`.
     */
   private def avgl(xs: List[Long]): Long =
-  if (xs.isEmpty) 0 else xs.sum / xs.length
+    if (xs.isEmpty) 0 else xs.sum / xs.length
 
 }
