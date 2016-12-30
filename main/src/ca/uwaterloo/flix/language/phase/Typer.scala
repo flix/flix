@@ -379,14 +379,14 @@ object Typer {
     object Properties {
 
       /**
-        * TODO: DOC
+        * Infers the types of all the properties in the given `program`.
         */
       def typecheck(program: Program)(implicit genSym: GenSym): Result[List[TypedAst.Property], TypeError] = {
 
         /**
-          * TODO: DOC
+          * Infers the type of the given property `p0` in the namespace `ns0`.
           */
-        def visitProperty(p: NamedAst.Property, ns0: Name.NName): Result[TypedAst.Property, TypeError] = p match {
+        def visitProperty(p0: NamedAst.Property, ns0: Name.NName): Result[TypedAst.Property, TypeError] = p0 match {
           case NamedAst.Property(law, defn, exp0, loc) =>
             val result = Expressions.infer(exp0, ns0, program)
             result.run(Substitution.empty) map {
@@ -397,14 +397,14 @@ object Typer {
         }
 
         // Visit every property in the program.
-        val result = program.properties.toList.flatMap {
+        val results = program.properties.toList.flatMap {
           case (ns, properties) => properties.map {
             property => visitProperty(property, ns)
           }
         }
 
-        // Sequence the result and convert them back to a map.
-        Result.seqM(result)
+        // Sequence the results and sort the properties by their source location.
+        Result.seqM(results).map(_.sortBy(_.loc))
       }
 
     }

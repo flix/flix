@@ -58,30 +58,6 @@ object Namer {
     }
   }
 
-  // TODO: Rename to properties
-  object Annotations {
-
-    //    /**
-    //      * Performs naming on the given annotations `ann0` in the given namespace `ns0`.
-    //      */
-    //    def namer(ann0: Ast.Annotations, ns0: Name.NName)(implicit genSym: GenSym): Validation[Ast.Annotations, NameError] = {
-    //      // TODO: Decide if property should be split from annotations?
-    //      val annotations = ann0.annotations.map {
-    //        case WeededAst.Property(name, args, loc) =>
-    //          val argsVal = args.map(a => Expressions.namer(a, Map.empty, Map.empty))
-    //          @@(argsVal).map {
-    //            case as => NamedAst.Property(name, as, loc)
-    //          }
-    //        case ann => ann.toSuccess
-    //      }
-    //
-    //      @@(annotations) map {
-    //        case as => Ast.Annotations(as)
-    //      }
-    //    }
-
-  }
-
   object Declarations {
 
     /**
