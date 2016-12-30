@@ -72,7 +72,7 @@ namespace Domain.Interval {
     #strict1 #monotone1
     def inc(e: Interval): Interval = match e with {
         case Bot            => Bot
-        case Range(b, e)    => Range(b + 1ii, e + 1ii)
+        case Range(b, e)    => norm(Range(b + 1ii, e + 1ii))
         case Top            => Top
     }
 
@@ -83,42 +83,47 @@ namespace Domain.Interval {
     #strict1 #monotone1
     def dec(e: Interval): Interval = match e with {
         case Bot            => Bot
-        case Range(b, e)    => Range(b - 1ii, e - 1ii)
+        case Range(b, e)    => norm(Range(b - 1ii, e - 1ii))
         case Top            => Top
     }
 
-    /**
-     * Over-approximates integer `addition`.
-     */
-    //#strict2 #monotone2 #commutative #associative
+    ///
+    /// Over-approximates integer `addition`.
+    ///
+    #approximates2((x, y) -> x + y)
+    #strict2 #monotone2 #commutative #associative
     def plus(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
-        case (Bot, _)                                  => Bot
-        case (_, Bot)                                  => Bot
-        case (Range(b1, e1), Range(b2, e2))   => Range(b1 + b2, e1 + e2)
-        case _                                                  => Top
+        case (Bot, _)                       => Bot
+        case (_, Bot)                       => Bot
+        case (Range(b1, e1), Range(b2, e2)) => norm(Range(b1 + b2, e1 + e2))
+        case _                              => Top
     }
 
-    /**
-     * Over-approximates integer `subtraction`.
-     */
-    //@strict @monotone // TODO
+    ///
+    /// Over-approximates integer `subtraction`.
+    ///
+    #approximates2((x, y) -> x - y)
+    #strict2 #monotone2
     def minus(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
-        case (Bot, _)                                  => Bot
-        case (_, Bot)                                  => Bot
-        case (Range(b1, e1), Range(b2, e2))   => Range(b1 - e2, e1 - b2)
-        case _                                                  => Top
+        case (Bot, _)                       => Bot
+        case (_, Bot)                       => Bot
+        case (Range(b1, e1), Range(b2, e2)) => norm(Range(b1 - e2, e1 - b2))
+        case _                              => Top
     }
 
-    /**
-     * Over-approximates integer `multiplication`.
-     */
-    //@strict @monotone @commutative @associative // TODO
+    ///
+    /// Over-approximates integer `multiplication`.
+    ///
+    #approximates2((x, y) -> x * y)
+    #strict2 #monotone2 #commutative #associative
     def times(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
-        case (Bot, _)                                  => Bot
-        case (_, Bot)                                  => Bot
-        case (Range(b1, e1), Range(b2, e2))   => Range(b1 * b2, e1 * e2)
-        case _                                                  => Top
+        case (Bot, _)                       => Bot
+        case (_, Bot)                       => Bot
+        case (Range(b1, e1), Range(b2, e2)) => norm(Range(b1 * b2, e1 * e2))
+        case _                              => Top
     }
+
+    // TODO: Remaining operations.
 
     /**
      * Over-approximates integer `division`.
