@@ -74,7 +74,7 @@ namespace Domain.Sign {
     }
 
     ///
-    /// Abstracts a concrete number into the (alternative) sign domain.
+    /// Abstracts a concrete number into the sign domain.
     ///
     def alpha(i: Int): Sign = switch {
         case i < 0  => Neg
