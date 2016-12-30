@@ -106,19 +106,6 @@ object ExecutableAst {
   }
 
   sealed trait Expression extends ExecutableAst {
-
-    /**
-      * Returns a list of all the universally quantified variables in this expression.
-      */
-    // TODO: Remove?
-    def getQuantifiers: List[Expression.Var] = ??? // TODO
-
-    /**
-      * Returns this expression with all universal quantifiers stripped.
-      */
-    // TODO: Remove?
-    def peelQuantifiers: Expression = ??? // TODO
-
     def tpe: Type
 
     def loc: SourceLocation
