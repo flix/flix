@@ -273,11 +273,11 @@ namespace Domain.Interval {
 
     // TODO: Names
     law approximates1(fa: Interval -> Interval, fc: BigInt -> BigInt): Bool =
-        ∀(x: Int). alpha(fc(x)) `leq` fa(alpha(x))
+        ∀(x: BigInt). alpha(fc(x)) `leq` fa(alpha(x))
 
     // TODO: Names
     law approximates2(fa: (Interval, Interval) -> Interval, fc: (BigInt, BigInt) -> BigInt): Bool =
-        ∀(x: Int, y: Int). alpha(fc(x, y)) `leq` fa(alpha(x), alpha(y))
+        ∀(x: BigInt, y: BigInt). alpha(fc(x, y)) `leq` fa(alpha(x), alpha(y))
 
 
 
