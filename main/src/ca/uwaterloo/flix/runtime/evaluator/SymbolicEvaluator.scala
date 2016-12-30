@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.runtime.evaluator
 
 import ca.uwaterloo.flix.api.{MatchException, SwitchException, UserException}
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, Root}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -43,17 +43,31 @@ object SymbolicEvaluator {
   type Environment = Map[Symbol.VarSym, SymVal]
 
   /**
+    * The type of instantiated quantified variables.
+    *
+    * A map from symbolic variables to symbolic values.
+    */
+  type Quantifiers = Map[Symbol.VarSym, SymVal]
+
+  /**
     * The type of contexts.
     *
     * A context is a list of (path constraint, symbolic value) pairs.
     * Each pair corresponds to one execution path through the program.
     */
-  type Context = List[(PathConstraint, SymVal)]
+  type Context = List[(PathConstraint, SymVal)] // TODO: Need to add the Quantifiers map here..
+
+  /**
+    * The type of enumerators.
+    *
+    * A function from a (symbol, type)-pair to a a list of symbolic values.
+    */
+  type Enumerator = (Symbol.VarSym, Type) => List[SymVal]
 
   /**
     * Evaluates the given expression `exp0` under the given environment `env0`.
     */
-  def eval(exp0: Expression, env0: Environment, root: ExecutableAst.Root)(implicit genSym: GenSym): Context = {
+  def eval(exp0: Expression, env0: Environment, enumerator: Enumerator, root: ExecutableAst.Root)(implicit genSym: GenSym): Context = {
     /*
       * Local visitor.
       */
@@ -727,9 +741,8 @@ object SymbolicEvaluator {
         */
       case Expression.Universal(fparam, exp, _) =>
         // Enumerate the possible symbolic values of the formal parameter.
-        enumerate(fparam.sym, fparam.tpe, root) flatMap {
-          case (sym, value) =>
-            eval(pc0, exp, env0 + (sym -> value))
+        enumerator(fparam.sym, fparam.tpe) flatMap {
+          case value => eval(pc0, exp, env0 + (fparam.sym -> value))
         }
 
       /**
@@ -969,50 +982,6 @@ object SymbolicEvaluator {
     case Type.Int64 => SmtExpr.Int64(0)
     case Type.BigInt => SmtExpr.BigInt(java.math.BigInteger.ZERO)
     case _ => throw InternalCompilerException(s"Unexpected non-numeric type '$tpe'.")
-  }
-
-  /**
-    * Enumerates all possible environments of the given universally quantified variables.
-    */
-  private def enumerate(sym: Symbol.VarSym, tpe: Type, root: Root)(implicit genSym: GenSym): List[(Symbol.VarSym, SymVal)] = {
-    /*
-     * Local visitor. Enumerates the symbolic values of a type.
-     */
-    def visit(tpe: Type): List[SymVal] = tpe match {
-      case Type.Unit => List(SymVal.Unit)
-      case Type.Bool => List(SymVal.True, SymVal.False)
-      case Type.Char => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Char))
-      case Type.Float32 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Float32))
-      case Type.Float64 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Float64))
-      case Type.Int8 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int8))
-      case Type.Int16 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int16))
-      case Type.Int32 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int32))
-      case Type.Int64 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int64))
-      case Type.BigInt => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.BigInt))
-      case Type.Str => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Str))
-      case Type.Enum(enumSym, kind) =>
-        val decl = root.enums(enumSym)
-        decl.cases.flatMap {
-          // TODO: Assumes non-polymorphic type.
-          case (tag, caze) => visit(caze.tpe) map {
-            case e => SymVal.Tag(tag, e)
-          }
-        }.toList
-      case Type.Apply(Type.FTuple(_), elms) =>
-        def visitn(xs: List[Type]): List[List[SymVal]] = xs match {
-          case Nil => List(Nil)
-          case t :: ts => visitn(ts) flatMap {
-            case ls => visit(t) map {
-              case l => l :: ls
-            }
-          }
-        }
-
-        visitn(elms).map(es => SymVal.Tuple(es))
-      case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-    }
-
-    visit(tpe).map(value => sym -> value)
   }
 
 }

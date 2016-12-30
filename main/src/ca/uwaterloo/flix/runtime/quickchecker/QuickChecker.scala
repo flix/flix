@@ -204,7 +204,7 @@ object QuickChecker {
     * Evaluates the given expression `exp0` to a boolean value under the given environment `env0`.
     */
   private def eval(exp0: Expression, env0: Map[Symbol.VarSym, SymVal], root: Root)(implicit genSym: GenSym): Boolean = {
-    val result = SymbolicEvaluator.eval(exp0.peelQuantifiers, env0, root)
+    val result = SymbolicEvaluator.eval(exp0.peelQuantifiers, env0, /* TODO */ ???, root)
     result match {
       case List((Nil, SymVal.True)) => true
       case List((Nil, SymVal.False)) => false

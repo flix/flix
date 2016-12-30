@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.runtime.verifier
 
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Property
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.PropertyError
 import ca.uwaterloo.flix.runtime.evaluator.{SmtExpr, SymVal, SymbolicEvaluator}
@@ -151,7 +151,7 @@ object Verifier {
     val env0 = Map.empty: SymbolicEvaluator.Environment
 
     // evaluate the expression under the empty environment.
-    val results = SymbolicEvaluator.eval(p.exp, env0, root) map {
+    val results = SymbolicEvaluator.eval(p.exp, env0, enumerate(root, genSym), root) map {
       case (Nil, SymVal.True) =>
         // Case 1: The symbolic evaluator proved the property.
         PathResult.Success
@@ -397,7 +397,7 @@ object Verifier {
   /**
     * Prints verbose results.
     */
-  def printVerbose(results: List[PropertyResult]): Unit = {
+  private def printVerbose(results: List[PropertyResult]): Unit = {
     Console.println(Blue(s"-- VERIFIER RESULTS --------------------------------------------------"))
 
     for ((source, properties) <- results.groupBy(_.property.loc.source)) {
@@ -435,7 +435,6 @@ object Verifier {
 
     }
 
-
   }
 
   /**
@@ -449,5 +448,51 @@ object Verifier {
     */
   private def avgl(xs: List[Long]): Long =
     if (xs.isEmpty) 0 else xs.sum / xs.length
+
+  /**
+    * Enumerates all possible symbolic values of the given type.
+    */
+  private def enumerate(root: Root, genSym: GenSym)(sym: Symbol.VarSym, tpe: Type): List[SymVal] = {
+    implicit val _ = genSym
+
+    /*
+     * Local visitor. Enumerates the symbolic values of a type.
+     */
+    def visit(tpe: Type): List[SymVal] = tpe match {
+      case Type.Unit => List(SymVal.Unit)
+      case Type.Bool => List(SymVal.True, SymVal.False)
+      case Type.Char => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Char))
+      case Type.Float32 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Float32))
+      case Type.Float64 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Float64))
+      case Type.Int8 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int8))
+      case Type.Int16 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int16))
+      case Type.Int32 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int32))
+      case Type.Int64 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int64))
+      case Type.BigInt => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.BigInt))
+      case Type.Str => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Str))
+      case Type.Enum(enumSym, kind) =>
+        val decl = root.enums(enumSym)
+        decl.cases.flatMap {
+          // TODO: Assumes non-polymorphic type.
+          case (tag, caze) => visit(caze.tpe) map {
+            case e => SymVal.Tag(tag, e)
+          }
+        }.toList
+      case Type.Apply(Type.FTuple(_), elms) =>
+        def visitn(xs: List[Type]): List[List[SymVal]] = xs match {
+          case Nil => List(Nil)
+          case t :: ts => visitn(ts) flatMap {
+            case ls => visit(t) map {
+              case l => l :: ls
+            }
+          }
+        }
+
+        visitn(elms).map(es => SymVal.Tuple(es))
+      case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+    }
+
+    visit(tpe)
+  }
 
 }
