@@ -717,20 +717,19 @@ object SymbolicEvaluator {
         */
       case Expression.SwitchError(tpe, loc) => throw SwitchException("Switch Error", loc)
 
-      case e: Expression.Existential =>
-        throw InternalCompilerException(s"Unsupported expression: '$e'.") // TODO
+      /**
+        * Existential Quantifier.
+        */
+      case e: Expression.Existential => throw InternalCompilerException(s"Unsupported expression: '$e'.") // TODO
 
       /**
         * Universal Quantifier.
         */
       case Expression.Universal(fparam, exp, _) =>
-        // Enumerate the values of the formal parameter.
-        val envs = enumerate(fparam.sym, fparam.tpe, root)
-        // Evaluate the body under the current environment extended with each of the new environment.
-        envs flatMap {
-          case env1 =>
-            val extendedEnv = env0 ++ env1
-            eval(pc0, exp, extendedEnv)
+        // Enumerate the possible symbolic values of the formal parameter.
+        enumerate(fparam.sym, fparam.tpe, root) flatMap {
+          case (sym, value) =>
+            eval(pc0, exp, env0 + (sym -> value))
         }
 
       /**
@@ -975,9 +974,7 @@ object SymbolicEvaluator {
   /**
     * Enumerates all possible environments of the given universally quantified variables.
     */
-  private def enumerate(sym: Symbol.VarSym, tpe: Type, root: Root)(implicit genSym: GenSym): List[Map[Symbol.VarSym, SymVal]] = {
-    // TODO: See if the symbol can be used for naming...
-
+  private def enumerate(sym: Symbol.VarSym, tpe: Type, root: Root)(implicit genSym: GenSym): List[(Symbol.VarSym, SymVal)] = {
     /*
      * Local visitor. Enumerates the symbolic values of a type.
      */
@@ -993,8 +990,8 @@ object SymbolicEvaluator {
       case Type.Int64 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int64))
       case Type.BigInt => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.BigInt))
       case Type.Str => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Str))
-      case Type.Enum(sym, kind) =>
-        val decl = root.enums(sym)
+      case Type.Enum(enumSym, kind) =>
+        val decl = root.enums(enumSym)
         decl.cases.flatMap {
           // TODO: Assumes non-polymorphic type.
           case (tag, caze) => visit(caze.tpe) map {
@@ -1015,16 +1012,7 @@ object SymbolicEvaluator {
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
 
-    def expand(rs: List[(Symbol.VarSym, List[SymVal])]): List[Map[Symbol.VarSym, SymVal]] = rs match {
-      case Nil => List(Map.empty)
-      case (quantifier, expressions) :: xs => expressions flatMap {
-        case expression => expand(xs) map {
-          case m => m + (quantifier -> expression)
-        }
-      }
-    }
-
-    expand(List(sym -> visit(tpe)))
+    visit(tpe).map(value => sym -> value)
   }
 
 }
