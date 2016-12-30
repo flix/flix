@@ -7,6 +7,8 @@
 ///
 namespace Domain.Interval {
 
+    // TODO: Add to TestExamples.
+
     ///
     /// The elements of the interval lattice.
     ///
