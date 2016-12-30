@@ -20,8 +20,6 @@ import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import com.microsoft.z3.Model
 
-import scala.collection.immutable.SortedMap
-
 /**
   * Symbolic Values.
   */
@@ -148,11 +146,10 @@ object SymVal {
   case class Closure(exp: Expression.Ref, env: List[SymVal]) extends SymVal
 
   /**
-    * Returns a stringified model of `env` where all free variables have been
-    * replaced by their corresponding values from the Z3 model `model`.
+    * Returns a stringified model of the given quantifier map `qua` with free variables replaced by the optional Z3 model.
     */
-  def mkModel(env: Map[Symbol.VarSym, SymVal], freeVars: Set[Symbol.VarSym], model: Option[Model]): Map[String, String] = {
-    def visit(e0: SymVal): String = e0 match {
+  def mkModel(qua: SymbolicEvaluator.Quantifiers, model: Option[Model]): Map[Symbol.VarSym, String] = {
+    def visit(v0: SymVal): String = v0 match {
       case SymVal.AtomicVar(id, tpe) => model match {
         case None => "?"
         case Some(m) => getConstant(id, m)
@@ -177,9 +174,8 @@ object SymVal {
       case SymVal.Closure(_, _) => "<<closure>>"
     }
 
-    // TODO: hacked
-    freeVars.foldLeft(SortedMap.empty[String, String]) {
-      case (macc, sym) => macc + (sym.toString -> visit(SymVal.AtomicVar(sym, Type.Unit)))
+    qua.m.foldLeft(Map.empty[Symbol.VarSym, String]) {
+      case (macc, (sym, value)) => macc + (sym -> visit(value))
     }
   }
 

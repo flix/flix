@@ -49,7 +49,7 @@ object QuickChecker {
     /**
       * The property was false in the single execution.
       */
-    case class Failure(model: Map[String, String]) extends PathResult
+    case class Failure(model: Map[Symbol.VarSym, String]) extends PathResult
 
   }
 
@@ -189,11 +189,11 @@ object QuickChecker {
      */
     val results = try {
       SymbolicEvaluator.eval(p.exp, env0, enumerate(limit, root, genSym, random), root) map {
-        case (Nil, SymVal.True) =>
+        case (Nil, qua, SymVal.True) =>
           success += PathResult.Success
-        case (Nil, SymVal.False) =>
-          failure += PathResult.Failure(Map.empty) // TODO: Map
-        case (_, v) => throw new IllegalStateException(s"The symbolic evaluator returned a non-boolean value: $v.")
+        case (Nil, qua, SymVal.False) =>
+          failure += PathResult.Failure(SymVal.mkModel(qua, None))
+        case (_, _, v) => throw new IllegalStateException(s"The symbolic evaluator returned a non-boolean value: $v.")
       }
     } catch {
       case ex: Exception => failure += PathResult.Failure(Map.empty) // TODO: Improve exception handling.

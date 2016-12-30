@@ -17,20 +17,25 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, SourceInput}
+import ca.uwaterloo.flix.language.ast.{ExecutableAst, SourceInput, Symbol}
 import ca.uwaterloo.flix.util.Highlight._
 
 /**
   * An error raised to indicate that a property is violated.
   */
-case class PropertyError(property: ExecutableAst.Property, m: Map[String, String]) extends CompilationError {
+case class PropertyError(property: ExecutableAst.Property, m: Map[Symbol.VarSym, String]) extends CompilationError {
   val kind: String = "Property Error"
   val source: SourceInput = property.defn.loc.source
   val message: String =
     hl"""|>> The function '${Red(property.defn.toString)}' does not satisfy the law '${Cyan(property.law.toString)}'.
          |
-         |Counter-example: ${m.mkString(", ")}
+         |Counter-example: ${m.map(p => p._1.text -> p._2).mkString(", ")}
          |
          |${Code(property.defn.loc, s"violates the law '${Cyan(property.law.toString)}'.")}
+         |
+         |
+         |${Underline("Details")}: The universal/existential quantifiers were instantiated as follows:
+         |
+         |${m.map(x => Code(x._1.loc, s"instantiated as '${Magenta(x._2)}'.")).mkString("\n\n")}
         """.stripMargin
 }

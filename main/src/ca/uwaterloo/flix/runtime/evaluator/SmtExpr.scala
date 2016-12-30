@@ -23,43 +23,6 @@ import ca.uwaterloo.flix.util.InternalCompilerException
   * SMT expressions.
   */
 sealed trait SmtExpr {
-
-  /**
-    * Returns all the free variables in `this` SMT expression.
-    */
-  def freeVars: Set[Symbol.VarSym] = this match {
-    case SmtExpr.Var(sym, _) => Set(sym)
-    case SmtExpr.Not(e) => e.freeVars
-    case SmtExpr.Int8(_) => Set.empty
-    case SmtExpr.Int16(_) => Set.empty
-    case SmtExpr.Int32(_) => Set.empty
-    case SmtExpr.Int64(_) => Set.empty
-    case SmtExpr.BigInt(_) => Set.empty
-    case SmtExpr.Plus(e1, e2) => e1.freeVars ++ e2.freeVars
-    case SmtExpr.Minus(e1, e2) => e1.freeVars ++ e2.freeVars
-    case SmtExpr.Times(e1, e2) => e1.freeVars ++ e2.freeVars
-    case SmtExpr.Divide(e1, e2) => e1.freeVars ++ e2.freeVars
-    case SmtExpr.Modulo(e1, e2) => e1.freeVars ++ e2.freeVars
-    case SmtExpr.Exponentiate(e1, e2) => e1.freeVars ++ e2.freeVars
-    case SmtExpr.Equal(e1, e2) => e1.freeVars ++ e2.freeVars
-    case SmtExpr.NotEqual(e1, e2) => e1.freeVars ++ e2.freeVars
-    case SmtExpr.Less(e1, e2) => e1.freeVars ++ e2.freeVars
-    case SmtExpr.LessEqual(e1, e2) => e1.freeVars ++ e2.freeVars
-    case SmtExpr.Greater(e1, e2) => e1.freeVars ++ e2.freeVars
-    case SmtExpr.GreaterEqual(e1, e2) => e1.freeVars ++ e2.freeVars
-    case SmtExpr.LogicalAnd(e1, e2) => e1.freeVars ++ e2.freeVars
-    case SmtExpr.LogicalOr(e1, e2) => e1.freeVars ++ e2.freeVars
-    case SmtExpr.Implication(e1, e2) => e1.freeVars ++ e2.freeVars
-    case SmtExpr.Bicondition(e1, e2) => e1.freeVars ++ e2.freeVars
-    case SmtExpr.BitwiseNegate(e) => e.freeVars
-    case SmtExpr.BitwiseAnd(e1, e2) => e1.freeVars ++ e2.freeVars
-    case SmtExpr.BitwiseOr(e1, e2) => e1.freeVars ++ e2.freeVars
-    case SmtExpr.BitwiseXor(e1, e2) => e1.freeVars ++ e2.freeVars
-    case SmtExpr.BitwiseLeftShift(e1, e2) => e1.freeVars ++ e2.freeVars
-    case SmtExpr.BitwiseRightShift(e1, e2) => e1.freeVars ++ e2.freeVars
-
-  }
-
   def tpe: Type
 }
 

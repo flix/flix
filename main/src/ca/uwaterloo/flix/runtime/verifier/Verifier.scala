@@ -43,12 +43,12 @@ object Verifier {
     /**
       * The property was false in the single execution.
       */
-    case class Failure(model: Map[String, String]) extends PathResult
+    case class Failure(model: Map[Symbol.VarSym, String]) extends PathResult
 
     /**
       * Unknown whether the property was true/false in the single execution.
       */
-    case class Unknown(model: Map[String, String]) extends PathResult
+    case class Unknown(model: Map[Symbol.VarSym, String]) extends PathResult
 
   }
 
@@ -152,13 +152,13 @@ object Verifier {
 
     // evaluate the expression under the empty environment.
     val results = SymbolicEvaluator.eval(p.exp, env0, enumerate(root, genSym), root) map {
-      case (Nil, SymVal.True) =>
+      case (Nil, qua, SymVal.True) =>
         // Case 1: The symbolic evaluator proved the property.
         PathResult.Success
-      case (Nil, SymVal.False) =>
+      case (Nil, qua, SymVal.False) =>
         // Case 2: The symbolic evaluator disproved the property.
-        PathResult.Failure(SymVal.mkModel(env0, Set.empty, None))
-      case (pc, v) => v match {
+        PathResult.Failure(SymVal.mkModel(qua, None))
+      case (pc, qua, v) => v match {
         case SymVal.True =>
           // Case 3.1: The property holds under some path condition.
           // The property holds regardless of whether the path condition is satisfiable.
@@ -167,11 +167,11 @@ object Verifier {
           // Case 3.2: The property *does not* hold under some path condition.
           // If the path condition is satisfiable then the property *does not* hold.
           queries += 1
-          assertUnsatisfiable(p, and(pc), env0)
+          assertUnsatisfiable(p, and(pc), qua)
         case SymVal.AtomicVar(id, _) =>
           // Case 3.3: The property holds iff the atomic variable is never `false`.
           queries += 1
-          assertUnsatisfiable(p, SmtExpr.Not(and(pc)), env0)
+          assertUnsatisfiable(p, SmtExpr.Not(and(pc)), qua)
         case _ => throw InternalCompilerException(s"Unexpected value: '$v'.")
       }
     }
@@ -204,7 +204,7 @@ object Verifier {
   /**
     * Optionally returns a verifier error if the given path constraint `pc` is satisfiable.
     */
-  private def assertUnsatisfiable(p: Property, expr: SmtExpr, env0: Map[Symbol.VarSym, SymVal]): PathResult = {
+  private def assertUnsatisfiable(p: Property, expr: SmtExpr, qua: SymbolicEvaluator.Quantifiers): PathResult = {
     SmtSolver.withContext(ctx => {
       val query = visitBoolExpr(expr, ctx)
       SmtSolver.checkSat(query, ctx) match {
@@ -213,11 +213,11 @@ object Verifier {
           PathResult.Success
         case SmtResult.Satisfiable(model) =>
           // Case 3.2: The formula is SAT, i.e. a counter-example to the property exists.
-          PathResult.Failure(SymVal.mkModel(env0, expr.freeVars, Some(model)))
+          PathResult.Failure(SymVal.mkModel(qua, Some(model)))
         case SmtResult.Unknown =>
           // Case 3.3: It is unknown whether the formula has a model.
           // Soundness require us to assume that there is a model.
-          PathResult.Unknown(SymVal.mkModel(env0, expr.freeVars, None))
+          PathResult.Unknown(SymVal.mkModel(qua, None))
       }
     })
   }
