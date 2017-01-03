@@ -126,7 +126,7 @@ object Monomorph {
         case Expression.Hook(hook, tpe, loc) => Expression.Hook(hook, subst0(tpe), loc)
 
         case Expression.Lambda(fparams, body, tpe, loc) =>
-          val (fs, env1) = freshFormalParams(fparams, subst0)
+          val (fs, env1) = specializeFormalParams(fparams, subst0)
           Expression.Lambda(fs, visitExp(body, env0 ++ env1), subst0(tpe), loc)
 
         case Expression.Apply(exp, args, tpe, loc) =>
@@ -178,11 +178,11 @@ object Monomorph {
           Expression.Tuple(es, subst0(tpe), loc)
 
         case Expression.Existential(fparams, e, loc) =>
-          val (fs, env1) = freshFormalParams(fparams, subst0)
+          val (fs, env1) = specializeFormalParams(fparams, subst0)
           Expression.Existential(fs, visitExp(e, env0 ++ env1), loc)
 
         case Expression.Universal(fparams, e, loc) =>
-          val (fs, env1) = freshFormalParams(fparams, subst0)
+          val (fs, env1) = specializeFormalParams(fparams, subst0)
           Expression.Universal(fs, visitExp(e, env0 ++ env1), loc)
 
         case Expression.UserError(tpe, loc) => UserError(subst0(tpe), loc)
@@ -216,6 +216,7 @@ object Monomorph {
           val ps = es.map(_._1)
           val env1 = es.map(_._2).reduce(_ ++ _)
           (Pattern.Tuple(ps, subst0(tpe), loc), env1)
+
         case Pattern.FSet(_, _, _, _) => ??? // TODO: Unsupported
         case Pattern.FMap(_, _, _, _) => ??? // TODO: Unsupported
       }
@@ -224,17 +225,29 @@ object Monomorph {
     }
 
     /**
-      * TODO: DOC
+      * Specializes the given formal parameters `fparams0` w.r.t. the given substitution `subst0`.
+      *
+      * Returns the new formal parameters and an environment mapping the variable symbol for each parameter to a fresh symbol.
       */
-    def freshFormalParams(fparams: List[TypedAst.FormalParam], subst0: Unification.Substitution): (List[TypedAst.FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
-      val freshSymbols = mutable.Map.empty[Symbol.VarSym, Symbol.VarSym]
-      val fs = fparams.map {
-        case TypedAst.FormalParam(paramSym, paramType, paramLoc) =>
-          val freshSym = Symbol.freshVarSym(paramSym)
-          freshSymbols.put(paramSym, freshSym)
-          TypedAst.FormalParam(freshSym, subst0(paramType), paramLoc)
-      }
-      (fs, freshSymbols.toMap)
+    def specializeFormalParams(fparams0: List[TypedAst.FormalParam], subst0: Unification.Substitution): (List[TypedAst.FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
+      // Return early if there is no formal parameters.
+      if (fparams0.isEmpty)
+        return (Nil, Map.empty)
+
+      // Specialize each formal parameter and recombine the results.
+      val (params, envs) = fparams0.map(p => specializeFormalParam(p, subst0)).unzip
+      (params, envs.reduce(_ ++ _))
+    }
+
+    /**
+      * Specializes the given formal parameter `fparam0` w.r.t. the given substitution `subst0`.
+      *
+      * Returns the new formal parameter and an environment mapping the variable symbol to a fresh variable symbol.
+      */
+    def specializeFormalParam(fparam0: TypedAst.FormalParam, subst0: Unification.Substitution): (TypedAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
+      val TypedAst.FormalParam(sym, tpe, loc) = fparam0
+      val freshSym = Symbol.freshVarSym(sym)
+      (TypedAst.FormalParam(freshSym, subst0(tpe), loc), Map(sym -> freshSym))
     }
 
     /*
@@ -258,8 +271,10 @@ object Monomorph {
       // The net effect is to replace calls to parametric functions with calls to their specialized versions.
       // If a specialized version does not yet exist, it is added to the queue.
       val subst0 = Unification.Substitution.empty
-      val (fs, env) = freshFormalParams(defn.formals, subst0)
+      val (fs, env) = specializeFormalParams(defn.formals, subst0)
       specialized.put(sym, defn.copy(formals = fs, exp = specialize(defn.exp, env, subst0)))
+
+      // TODO: Specialize expressions appearing in other locations.
     }
 
     /*
@@ -268,9 +283,9 @@ object Monomorph {
     while (queue.nonEmpty) {
       // Extract a function from the queue and specializes it w.r.t. its substitution.
       val (freshSym, defn, subst) = queue.dequeue()
-      val (fs, env) = freshFormalParams(defn.formals, subst)
+      val (fs, env) = specializeFormalParams(defn.formals, subst)
       val specializedExp = specialize(defn.exp, env, subst)
-      val specializedDefn = defn.copy(formals = fs, exp = specializedExp, tpe = subst(defn.tpe), tparams = Nil)
+      val specializedDefn = defn.copy(sym = freshSym, formals = fs, exp = specializedExp, tpe = subst(defn.tpe), tparams = Nil)
       specialized.put(freshSym, specializedDefn)
 
       println(s"  Specialize ${defn.sym} w.r.t. ${subst.m}")
