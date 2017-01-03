@@ -205,13 +205,13 @@ object Monomorph {
           val es = elms.map(e => visitExp(e, env0))
           Expression.Tuple(es, subst0(tpe), loc)
 
-        case Expression.Existential(fparams, e, loc) =>
+        case Expression.Existential(fparams, exp, loc) =>
           val (fs, env1) = specializeFormalParams(fparams, subst0)
-          Expression.Existential(fs, visitExp(e, env0 ++ env1), loc)
+          Expression.Existential(fs, visitExp(exp, env0 ++ env1), loc)
 
-        case Expression.Universal(fparams, e, loc) =>
+        case Expression.Universal(fparams, exp, loc) =>
           val (fs, env1) = specializeFormalParams(fparams, subst0)
-          Expression.Universal(fs, visitExp(e, env0 ++ env1), loc)
+          Expression.Universal(fs, visitExp(exp, env0 ++ env1), loc)
 
         case Expression.UserError(tpe, loc) => UserError(subst0(tpe), loc)
       }
@@ -289,7 +289,7 @@ object Monomorph {
      * A map used to collect specialized definitions, etc.
      */
     val specializedDefns: mutable.Map[Symbol.DefnSym, Declaration.Definition] = mutable.Map.empty
-    // TODO: Specialize expressions occuring in other places, e.g facts/rules/properties.
+    // TODO: Specialize expressions occurring in other places, e.g facts/rules/properties.
 
     /*
      * Collect all non-parametric function definitions.
