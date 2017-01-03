@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Magnus Madsen
+ * Copyright 2017 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,31 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{Declaration, Expression, Pattern
 import scala.collection.mutable
 
 /**
-  * TODO: Describe implementation:
+  * Monomorphization is a whole-program compilation strategy that replaces every call to a parametric function with
+  * a call to a non-parametric version (of that function) specialized to the types of the arguments at the call.
   *
-  * Discuss how there is a work list and fixed point computation.
+  * For example, the polymorphic program:
   *
-  * - Find all refs
-  * - Unify infered and declared type
-  * - specialize defn.
+  * -   def fst[a, b](p: (a, b)): a = let (x, y) = p ; x
+  * -   def f: Bool = fst((true, 'a'))
+  * -   def g: Int32 = fst((42, "foo"))
+  *
+  * is roughly speaking translated to:
+  *
+  * -   def fst$1(p: (Bool, Char)): Bool = let (x, y) = p ; x
+  * -   def fst$2(p: (Int32, Str)): Int32 = let (x, y) = p ; x
+  * -   def f: Bool = fst$1((true, 'a'))
+  * -   def g: Bool = fst$2((42, "foo"))
+  *
+  * At a high-level, monomorphization works as follows:
+  *
+  * 1. We maintain a queue of functions and the type it must be specialized to.
+  * 2. We populate the queue by specialization of non-parametric function definitions and other top-level expressions.
+  * 3. We iteratively extract a function from the queue and specialize it.
+  *    a. We replace every type variable appearing anywhere in the definition by its concrete type.
+  *    b. We create new local variable symbols (since the function is being copied).
+  *    c. We enqueue (or re-used) other functions called by the function which require specialization.
+  * 4. We reconstruct the AST from the specialized functions and remove all parametric functions.
   */
 object Monomorph {
 
@@ -51,7 +69,7 @@ object Monomorph {
     val queue: mutable.Queue[(Symbol.DefnSym, Declaration.Definition, Unification.Substitution)] = mutable.Queue.empty
 
     /**
-      * A function-local map from symbols and a specialized type to the symbol for the corresponding specialized version.
+      * A function-local map from a symbol and a type to the fresh symbol for the specialized version of that function.
       *
       * For example, if the function:
       *
@@ -64,16 +82,19 @@ object Monomorph {
     val symbol2symbol: mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym] = mutable.Map.empty
 
     /**
-      * Performs specialization of the given expression `exp0` w.r.t. the given substitution `subst0`.
+      * Performs specialization of the given expression `exp0` under the environment `env0` w.r.t. the given substitution `subst0`.
       *
       * Replaces every call to a parametric function with a call to its specialized version.
       *
-      * If the specialized version does not yet exist, a fresh symbol is created, and the definition is enqueue.
+      * Replaces every local variable symbol with a fresh local variable symbol.
+      *
+      * If a specialized version of a function does not yet exists, a fresh symbol is created for it, and th
+      * definition and substitution is enqueued.
       */
     def specialize(exp0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym], subst0: Unification.Substitution): Expression = {
 
       /**
-        * Specializes the given expression `e0` w.r.t. the current substitution.
+        * Specializes the given expression `e0` under the environment `env0`. w.r.t. the current substitution.
         */
       def visitExp(e0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym]): Expression = e0 match {
         case Expression.Unit(loc) => Expression.Unit(loc)
@@ -92,34 +113,41 @@ object Monomorph {
         case Expression.Var(sym, tpe, loc) => Expression.Var(env0(sym), subst0(tpe), loc)
 
         case Expression.Ref(sym, tpe, loc) =>
-          // Specialize the actual inferred type according to the substitution.
+          /*
+           * !! This is where all the magic happens !!
+           */
+
+          // Apply the current substitution to the type of the reference.
+          // NB: This is to concretize any type variables already captured by the substitution.
           val actualType = subst0(tpe)
 
-          // Lookup the definition of the symbol.
+          // Lookup the definition and its declared type.
           val defn = root.definitions(sym)
           val declaredType = defn.tpe
 
-          // Unify the type of the definition with the actual type of the reference.
+          // Unify the declared and actual type to obtain the substitution map.
           val subst = Unification.unify(declaredType, actualType).get
 
-          // Check if the substitution is empty in which case there is no need for specialization.
+          // Check if the substitution is empty, if so there is no need for specialization.
           if (subst.isEmpty) {
             return Expression.Ref(sym, subst0(tpe), loc)
           }
 
-          // Check if we have already specialized this function.
+          // Check whether the function definition has already been specialized.
           symbol2symbol.get((sym, actualType)) match {
             case None =>
-              // Case 1: The function has not yet been specialized.
-              // Generate a fresh symbol and enqueue the function with its specialized type.
+              // Case 1: The function has not been specialized.
+              // Generate a fresh definition symbol.
               val freshSym = Symbol.freshDefnSym(sym)
 
+              // Enqueue the fresh symbol with the definition and substitution.
               queue.enqueue((freshSym, defn, subst))
 
-              // Refer to the specialized function.
+              // Now simply refer to the freshly generated symbol.
               Expression.Ref(freshSym, subst0(actualType), loc)
             case Some(specializedSym) =>
-              // Case 2: The function has already been specialized. Use the new function.
+              // Case 2: The function has already been specialized.
+              // Simply refer to the already existing specialized symbol.
               Expression.Ref(specializedSym, subst0(actualType), loc)
           }
 
@@ -144,10 +172,10 @@ object Monomorph {
           Expression.Binary(op, e1, e2, subst0(tpe), loc)
 
         case Expression.Let(sym, exp1, exp2, tpe, loc) =>
-          // Generate a fresh symbol.
+          // Generate a fresh symbol for the let-bound variable.
           val freshSym = Symbol.freshVarSym(sym)
-          val extendedEnv = env0 + (sym -> freshSym)
-          Expression.Let(freshSym, visitExp(exp1, extendedEnv), visitExp(exp2, extendedEnv), subst0(tpe), loc)
+          val env1 = env0 + (sym -> freshSym)
+          Expression.Let(freshSym, visitExp(exp1, env1), visitExp(exp2, env1), subst0(tpe), loc)
 
         case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
           val e1 = visitExp(exp1, env0)
@@ -155,13 +183,13 @@ object Monomorph {
           val e3 = visitExp(exp3, env0)
           Expression.IfThenElse(e1, e2, e3, subst0(tpe), loc)
 
-        case Expression.Match(exp, rules, tpe, loc) =>
+        case Expression.Match(matchExp, rules, tpe, loc) =>
           val rs = rules map {
             case (pat, exp) =>
               val (p, e) = visitPat(pat)
               (p, visitExp(exp, env0 ++ e))
           }
-          Expression.Match(visitExp(exp, env0), rs, subst0(tpe), loc)
+          Expression.Match(visitExp(matchExp, env0), rs, subst0(tpe), loc)
 
         case Expression.Switch(rules, tpe, loc) =>
           val rs = rules map {
@@ -190,10 +218,13 @@ object Monomorph {
 
       /**
         * Specializes the given pattern `p0` w.r.t. the current substitution.
+        *
+        * Returns the new pattern and a mapping from variable symbols to fresh variable symbols.
         */
       def visitPat(p0: Pattern): (Pattern, Map[Symbol.VarSym, Symbol.VarSym]) = p0 match {
         case Pattern.Wild(tpe, loc) => (Pattern.Wild(subst0(tpe), loc), Map.empty)
         case Pattern.Var(sym, tpe, loc) =>
+          // Generate a fresh variable symbol for the pattern-bound variable.
           val freshSym = Symbol.freshVarSym(sym)
           (Pattern.Var(freshSym, subst0(tpe), loc), Map(sym -> freshSym))
         case Pattern.Unit(loc) => (Pattern.Unit(loc), Map.empty)
@@ -212,13 +243,12 @@ object Monomorph {
           val (p, env1) = visitPat(pat)
           (Pattern.Tag(sym, tag, p, subst0(tpe), loc), env1)
         case Pattern.Tuple(elms, tpe, loc) =>
-          val es = elms.map(p => visitPat(p))
-          val ps = es.map(_._1)
-          val env1 = es.map(_._2).reduce(_ ++ _)
-          (Pattern.Tuple(ps, subst0(tpe), loc), env1)
+          val (ps, envs) = elms.map(p => visitPat(p)).unzip
+          (Pattern.Tuple(ps, subst0(tpe), loc), envs.reduce(_ ++ _))
 
         case Pattern.FSet(_, _, _, _) => ??? // TODO: Unsupported
         case Pattern.FMap(_, _, _, _) => ??? // TODO: Unsupported
+
       }
 
       visitExp(exp0, env0)
@@ -230,7 +260,7 @@ object Monomorph {
       * Returns the new formal parameters and an environment mapping the variable symbol for each parameter to a fresh symbol.
       */
     def specializeFormalParams(fparams0: List[TypedAst.FormalParam], subst0: Unification.Substitution): (List[TypedAst.FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
-      // Return early if there is no formal parameters.
+      // Return early if there are no formal parameters.
       if (fparams0.isEmpty)
         return (Nil, Map.empty)
 
@@ -249,6 +279,10 @@ object Monomorph {
       val freshSym = Symbol.freshVarSym(sym)
       (TypedAst.FormalParam(freshSym, subst0(tpe), loc), Map(sym -> freshSym))
     }
+
+    /*
+     * We can now use these helper functions to perform specialization of the whole program.
+     */
 
     /*
      * A map to collect all specialized function definitions.
