@@ -283,11 +283,13 @@ object Monomorph {
     /*
      * We can now use these helper functions to perform specialization of the whole program.
      */
+    val t = System.nanoTime()
 
     /*
-     * A map to collect all specialized function definitions.
+     * A map used to collect specialized definitions, etc.
      */
-    val specialized: mutable.Map[Symbol.DefnSym, Declaration.Definition] = mutable.Map.empty
+    val specializedDefns: mutable.Map[Symbol.DefnSym, Declaration.Definition] = mutable.Map.empty
+    // TODO: Specialize expressions occuring in other places, e.g facts/rules/properties.
 
     /*
      * Collect all non-parametric function definitions.
@@ -300,41 +302,47 @@ object Monomorph {
      * Perform specialization of all non-parametric function definitions.
      */
     for ((sym, defn) <- nonParametricDefns) {
-      // Specialize the expression of the function definition.
-
-      // The net effect is to replace calls to parametric functions with calls to their specialized versions.
-      // If a specialized version does not yet exist, it is added to the queue.
+      // Specialize the function definition under the empty substitution (it has no type parameters).
       val subst0 = Unification.Substitution.empty
-      val (fs, env) = specializeFormalParams(defn.formals, subst0)
-      specialized.put(sym, defn.copy(formals = fs, exp = specialize(defn.exp, env, subst0)))
 
-      // TODO: Specialize expressions appearing in other locations.
+      // Specialize the formal parameters to obtain fresh local variable symbols for them.
+      val (fparams, env0) = specializeFormalParams(defn.formals, subst0)
+
+      // Specialize the body expression.
+      val body = specialize(defn.exp, env0, subst0)
+
+      // Reassemble the definition.
+      specializedDefns.put(sym, defn.copy(formals = fparams, exp = body))
     }
 
     /*
-     * Performs specialization until the queue is empty.
+     * Performs function specialization until the queue is empty.
      */
     while (queue.nonEmpty) {
       // Extract a function from the queue and specializes it w.r.t. its substitution.
       val (freshSym, defn, subst) = queue.dequeue()
-      val (fs, env) = specializeFormalParams(defn.formals, subst)
-      val specializedExp = specialize(defn.exp, env, subst)
-      val specializedDefn = defn.copy(sym = freshSym, formals = fs, exp = specializedExp, tpe = subst(defn.tpe), tparams = Nil)
-      specialized.put(freshSym, specializedDefn)
 
-      println(s"  Specialize ${defn.sym} w.r.t. ${subst.m}")
+      // Specialize the formal parameters and introduce fresh local variable symbols.
+      val (fparams, env0) = specializeFormalParams(defn.formals, subst)
+
+      // Specialize the body expression.
+      val specializedExp = specialize(defn.exp, env0, subst)
+
+      // Reassemble the definition.
+      // NB: Removes the type parameters as the function is now monomorphic.
+      val specializedDefn = defn.copy(sym = freshSym, formals = fparams, exp = specializedExp, tpe = subst(defn.tpe), tparams = Nil)
+
+      // Save the specialized function.
+      specializedDefns.put(freshSym, specializedDefn)
     }
 
-    println()
+    // Calculate the elapsed time.
+    val e = System.nanoTime() - t
 
-    for ((sym, defn) <- specialized.toList.sortBy(_._1.loc)) {
-      println(s"${sym} - ${defn.tpe}")
-    }
-
-    println()
-
+    // Reassemble the AST.
     root.copy(
-      definitions = specialized.toMap
+      definitions = specializedDefns.toMap,
+      time = root.time.copy(monomorph = e)
     )
   }
 

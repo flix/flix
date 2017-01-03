@@ -124,7 +124,7 @@ package object ast {
   }
 
   object Time {
-    val Default: Time = Time(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    val Default: Time = Time(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
   }
 
   /**
@@ -134,6 +134,7 @@ package object ast {
                   weeder: Long,
                   resolver: Long,
                   typer: Long,
+                  monomorph: Long,
                   propertyGen: Long,
                   verifier: Long,
                   lambdaLift: Long,
