@@ -19,6 +19,9 @@ enum Expression {
     // General Extensions:
     //
 
+    // A constant string value.
+    case Cst(Str),
+
     // A heap address.
     case Addr(Int),
 
@@ -216,6 +219,10 @@ def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 wi
             // Continue reduction in e2.
             Option/map(match (rdx, ec) -> (rdx, EApp2(e1, ec)), redex(e2))
     }
+
+    case Cst(s) =>
+        // A string cannot be reduced.
+        None
 
     case Addr(a) =>
         // An address cannot be reduced.
@@ -415,7 +422,7 @@ def reduce(m0: State): State = match m0 with {
         }
 
     case State(Reject(e1, e2), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
-        ???
+        ??? // TODO: Similar to Resolve.
 
     case State(OnResolve(Addr(a), lam), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
         // Lookup the state of the promise.
@@ -451,7 +458,7 @@ def reduce(m0: State): State = match m0 with {
         }
 
     case State(OnReject(e1, e2), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
-        ???
+        ??? // TODO: Similar to OnResolve.
 
     case State(Link(Addr(a1), Addr(a2)), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
         // Lookup the list of registered links for a1.
@@ -459,6 +466,8 @@ def reduce(m0: State): State = match m0 with {
         // Append a2 onto the list of registered links.
         let l1 = Map/insert(a1, xs ::: a2 :: Nil, l0);
             State(???, Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l1), Queue(q0)) // TODO: Return Undef
+
+    // TODO: Need case for the event loop.
 
 }
 
@@ -470,6 +479,7 @@ def substitute(e0: Expression, x: Int, r0: Expression): Expression = match e0 wi
     case Abs(y, e)          => if (x == y) Abs(y, e) else Abs(y, substitute(e, x, r0))
     case App(e1, e2)        => App(substitute(e1, x, r0), substitute(e2, x, r0))
 
+    case Cst(s)             => Cst(s)
     case Addr(a)            => Addr(a)
     case Ref(e)             => Ref(substitute(e, x, r0))
     case Deref(e)           => Deref(substitute(e, x, r0))
@@ -499,6 +509,7 @@ def alpha(e0: Expression, m: Map2[Int, Int]): Expression = match e0 with {
         Abs(y, alpha(e, Map/insert(x, y, m)))
     case App(e1, e2) => App(alpha(e1, m), alpha(e2, m))
 
+    case Cst(s)             => Cst(s)
     case Addr(a)            => Addr(a)
     case Ref(e)             => Ref(alpha(e, m))
     case Deref(e)           => Deref(alpha(e, m))
@@ -513,29 +524,49 @@ def alpha(e0: Expression, m: Map2[Int, Int]): Expression = match e0 with {
 }
 
 ///
-/// Performs a single step reduction of the given expression `e0`,
+/// Performs a single step reduction of the given state `m0`,
 /// i.e. performs a single redex-reduce-recompose step.
 ///
-def step(e0: Expression): Expression = match redex(e0) with {
-    case None => e0
-    case Some((e, ec)) => recompose(ec, ???) // TODO
+def step(m0: State): State = match m0 with {
+    case State(e0, h0, s0, f0, r0, l0, q0) =>
+        match redex(e0) with {
+            case None =>
+                // Case 1: No redex found. Return the state unchanged.
+                m0
+            case Some((e0, ec)) =>
+                // Case 2: A redex has been found. Reduce and recompose.
+                let State(e1, h1, s, f1, r1, l1, q1) = reduce(State(e0, h0, s0, f0, r0, l0, q0));
+                let e2 = recompose(ec, e1);
+                    State(e2, h1, s, f1, r1, l1, q1)
+    }
 }
 
 ///
 /// Repeatedly performs one-step reductions until the expression `e0` has been reduced to a value.
 ///
-def eval(e0: Expression): Expression =
-    let e = step(e0);
-        if (isValue(e)) e else eval(e)
+def eval(e0: State): State = // TODO: Generalize
+    ??? // TODO
 
+
+///
+/// Injects the given expression `e0` into the initial state.
+///
+def inject(e0: Expression): State =
+    let h0 = Heap(Map/empty());
+    let s0 = PromiseState(Map/empty());
+    let f0 = FulfillReactions(Map/empty());
+    let r0 = RejectReactions(Map/empty());
+    let l0 = PromiseLinks(Map/empty());
+    let q0 = Queue(Nil);
+        State(e0, h0, s0, f0, r0, l0, q0)
 
 //
 // We can now test our lambda interpreter!
 //
-def testEval1: Expression = eval(Abs(0, Var(0)))                                // λx. x
-def testEval2: Expression = eval(Abs(0, Abs(1, Var(0))))                        // λx. λy. x
-def testEval3: Expression = eval(App(Abs(0, Var(0)), Abs(1, Var(1))))           // (λx. x) (λy. y)
-def testEval4: Expression = eval(App(Abs(0, Abs(1, Var(0))), Abs(2, Var(2))))   // (λx. λy. x) (λz. z)
+def testEval1: State = eval(inject(Abs(0, Var(0))))                                // λx. x
+def testEval2: State = eval(inject(Abs(0, Abs(1, Var(0)))))                        // λx. λy. x
+def testEval3: State = eval(inject(App(Abs(0, Var(0)), Abs(1, Var(1)))))           // (λx. x) (λy. y)
+def testEval4: State = eval(inject(App(Abs(0, Abs(1, Var(0))), Abs(2, Var(2)))))   // (λx. λy. x) (λz. z)
 
 ///
 /// Returns a fresh address.
@@ -558,7 +589,7 @@ enum Map2[k, v] {
     case Map2(List[(k, v)])
 }
 namespace Map {
-    def empty: Map2[Int, Int] = Map2(Nil)
+    def empty[k, v]: Map2[k, v] = Map2(Nil)
 
     def insert[k, v](k: k, v: v, m: Map2[k, v]): Map2[k, v] =
         let Map2(xs) = m;
