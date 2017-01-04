@@ -3,6 +3,7 @@
 //
 
 // TODO: Introduce Address constructor.
+// TODO: Use strings for variables instead of numbers.
 
 ///
 /// The expressions of the lambda calculus are: variables, lambda abstractions, and applications.
@@ -357,7 +358,7 @@ def recompose(ec0: EvaluationContext, e0: Expression): Expression = match ec0 wi
 ///
 /// Performs a single reduction step in the given machine `m0`.
 ///
-def reduce(m0: State): State = match m0 with {
+def reduce(m0: State): State = match m0 with { // TODO: Remove State from here, and list the components explicitely. (or remove expression from the state).
 
     // TODO: Add LinkQueue and check that it is empty.
 
@@ -380,7 +381,7 @@ def reduce(m0: State): State = match m0 with {
     case State(Deref(Addr(a)), Heap(h0), s0, f0, r0, l0, q0) =>
         // Dereference the address and return its value.
         match Map/lookup(a, h0) with {
-            case None => m0
+            case None => m0 // TODO: Change to Result: Ok(nextState | Done(normalform)) or Err(stuckErrorMessage).
             case Some(v) => State(v, Heap(h0), s0, f0, r0, l0, q0)
         }
 
@@ -537,6 +538,11 @@ def step(m0: State): State = match m0 with {
         match redex(e0) with {
             case None =>
                 // Case 1: No redex found. Return the state unchanged.
+
+                // TODO: Perform event loop transition (if possible)
+                // TODO: rewrite semantic rule for E-LOOP.
+
+
                 m0
             case Some((e0, ec)) =>
                 // Case 2: A redex has been found. Reduce and recompose.
@@ -584,7 +590,7 @@ def testEval5: State = eval(inject(
 //
 // Approximately:
 //
-// var x = "Promise1"
+// var x = Ref("Promise1")
 // promisify(x)
 // x.onResolve(y => Ref(y))
 // x.resolve("hello")
