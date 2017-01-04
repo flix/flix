@@ -414,7 +414,7 @@ def reduce(m0: State): State = match m0 with {
                 State(???, Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) // TODO: Return Undef
         }
 
-    case State(Reject(e1, e2), h0, s0, f0, r0, l0, q0) =>
+    case State(Reject(e1, e2), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
         ???
 
     case State(OnResolve(Addr(a), lam), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
@@ -425,9 +425,20 @@ def reduce(m0: State): State = match m0 with {
                 m0
             case Some(Pending) =>
                 // Case 2: The promise is in the pending state.
-                let reactions = Map/getWithDefault(a, Nil, f0);
-                    ???
-                    // TODO
+
+                // Allocate a child promise.
+                let childAddr = freshAddr();
+
+                // TODO: Store something at that address.
+                let h1 = Map/insert(childAddr, ???, h0);
+
+                // Set the promise state to pending.
+                let s1 = Map/insert(a, Pending, s0);
+
+                // Update the fulfill reactions.
+                let fs = Map/getWithDefault(a, Nil, f0);
+                let f1 = Map/insert(a, fs ::: (lam, childAddr) :: Nil, f0);
+                    State(Addr(childAddr), Heap(h1), PromiseState(s1), FulfillReactions(f1), RejectReactions(r0), PromiseLinks(l0), Queue(q0))
             case Some(Fulfilled(v)) =>
                 // Case 3: The promise has been fulfilled.
                 // Allocate a child promise and enqueue the promise reaction `lam` with the resolved value `v`.
@@ -439,15 +450,15 @@ def reduce(m0: State): State = match m0 with {
                 State(???, Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) // TODO: Return Undef.
         }
 
-    case State(OnReject(e1, e2), h0, s0, f0, r0, l0, q0) =>
+    case State(OnReject(e1, e2), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
         ???
 
-    case State(Link(Addr(a1), Addr(a2)), h0, s0, f0, r0, PromiseLinks(l0), q0) =>
+    case State(Link(Addr(a1), Addr(a2)), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
         // Lookup the list of registered links for a1.
         let xs = Map/getWithDefault(a1, Nil, l0);
         // Append a2 onto the list of registered links.
         let l1 = Map/insert(a1, xs ::: a2 :: Nil, l0);
-            State(???, h0, s0, f0, r0, PromiseLinks(l1), q0) // TODO: Return Undef
+            State(???, Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l1), Queue(q0)) // TODO: Return Undef
 
 }
 
