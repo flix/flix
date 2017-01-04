@@ -211,7 +211,7 @@ namespace List {
     ///
     def flatMap[a,b](f: a -> List[b], xs: List[a]): List[b] = match xs with {
         case Nil => Nil
-        case x :: rs => append(f(x), flatMap(f, rs))
+        case x :: rs => f(x) ::: flatMap(f, rs)
     }
 
     ///
@@ -238,7 +238,7 @@ namespace List {
             if (len == 0) xs else
                 let rem = n % len;
                 let rotate = if (rem < 0) rem + len else rem;
-                    append(drop(rotate, xs), take(rotate, xs))
+                    drop(rotate, xs) ::: take(rotate, xs)
 
     ///
     /// Returns `xs` with its elements rotated `n` positions to the right.
@@ -290,7 +290,7 @@ namespace List {
     @internal
     def permutationHelper[a](i: Int32, xs: List[a]): List[List[a]] =
         if (i == length(xs)) Nil
-        else append(applyHelper(at(i, xs), permutations(removeIndex(i, xs))), permutationHelper(i+1, xs))
+        else applyHelper(at(i, xs), permutations(removeIndex(i, xs))) ::: permutationHelper(i+1, xs)
 
     ///
     /// Returns all subsequences of `xs` in lexicographical order by element indices in `xs`.
@@ -298,8 +298,9 @@ namespace List {
     ///
     def subsequences[a](xs: List[a]): List[List[a]] = match xs with {
         case Nil => Nil :: Nil
-        case x :: rs => let r = subsequences(rs);
-                            append(applyHelper(x, r), r)
+        case x :: rs =>
+            let r = subsequences(rs);
+                applyHelper(x, r) ::: r
     }
 
     ///
@@ -327,7 +328,7 @@ namespace List {
     def intercalate[a](xs: List[a], ys: List[List[a]]): List[a] = match ys with {
         case Nil => Nil
         case y :: Nil => y
-        case y1 :: y2 :: rs => append(append(y1, xs), intercalate(xs, y2 :: rs))
+        case y1 :: y2 :: rs => y1 ::: xs ::: intercalate(xs, y2 :: rs)
     }
 
     ///
@@ -336,8 +337,9 @@ namespace List {
     ///
     def transpose[a](xs: List[List[a]]): List[List[a]] = match xs with {
         case Nil => Nil
-        case x :: rs => let len = length(x);
-                            if (!uniformHelper(xs, len) || len == 0) xs else transposeHelper(xs, len)
+        case x :: rs =>
+            let len = length(x);
+                if (!uniformHelper(xs, len) || len == 0) xs else transposeHelper(xs, len)
     }
 
     ///
@@ -458,8 +460,9 @@ namespace List {
     ///
     def count[a](f: a -> Bool, xs: List[a]): Int32 = match xs with {
         case Nil => 0
-        case x :: rs => let r = count(f, rs);
-                            if (f(x)) r+1 else r
+        case x :: rs =>
+            let r = count(f, rs);
+                if (f(x)) r+1 else r
     }
 
     ///
@@ -467,7 +470,7 @@ namespace List {
     ///
     def concat[a](xs: List[List[a]]): List[a] = match xs with {
         case Nil => Nil
-        case x :: rs => append(x, concat(rs))
+        case x :: rs => x ::: concat(rs)
     }
 
     ///
@@ -509,8 +512,9 @@ namespace List {
     ///
     def filter[a](f: a -> Bool, xs: List[a]): List[a] = match xs with {
         case Nil => Nil
-        case x :: rs => let r = filter(f, rs);
-                            if (f(x)) x :: r else r
+        case x :: rs =>
+            let r = filter(f, rs);
+                if (f(x)) x :: r else r
     }
 
     ///
@@ -524,8 +528,9 @@ namespace List {
     @internal
     def sliceHelper[a](b: Int32, e: Int32, xs: List[a], i: Int32): List[a] = match xs with {
         case Nil => Nil
-        case x :: rs => let r = sliceHelper(b, e, rs, i+1);
-                            if (i >= b && i < e) x :: r else r
+        case x :: rs =>
+            let r = sliceHelper(b, e, rs, i+1);
+                if (i >= b && i < e) x :: r else r
     }
 
     ///
@@ -535,8 +540,9 @@ namespace List {
     ///
     def partition[a](f: a -> Bool, xs: List[a]): (List[a], List[a]) = match xs with {
         case Nil => (Nil, Nil)
-        case x :: rs => let (r1, r2) = partition(f, rs);
-                            if (f(x)) (x :: r1, r2) else (r1, x :: r2)
+        case x :: rs =>
+            let (r1, r2) = partition(f, rs);
+                if (f(x)) (x :: r1, r2) else (r1, x :: r2)
     }
 
     ///
@@ -602,8 +608,9 @@ namespace List {
     ///
     def groupBy[a](f: (a, a) -> Bool, xs: List[a]): List[List[a]] = match xs with {
         case Nil => Nil
-        case x :: rs => let (r1, r2) = extractHelper(f, rs, x :: Nil, Nil);
-                            r1 :: groupBy(f, r2)
+        case x :: rs =>
+            let (r1, r2) = extractHelper(f, rs, x :: Nil, Nil);
+                r1 :: groupBy(f, r2)
     }
 
     ///
@@ -654,8 +661,9 @@ namespace List {
     ///
     def unzip[a,b](xs: List[(a,b)]): (List[a], List[b]) = match xs with {
         case Nil => (Nil, Nil)
-        case (x1, x2) :: rs => let (r1, r2) = unzip(rs);
-                                   (x1 :: r1, x2 :: r2)
+        case (x1, x2) :: rs =>
+            let (r1, r2) = unzip(rs);
+                (x1 :: r1, x2 :: r2)
     }
 
     //
@@ -674,7 +682,7 @@ namespace List {
     /// Concatenates the results of applying `f` pairwise to the elements of `xs` and `ys`.
     ///
     def flatMap2[a,b,c](f: (a, b) -> List[c], xs: List[a], ys: List[b]): List[c] = match (xs, ys) with {
-        case (x :: rs, y :: qs) => append(f(x, y), flatMap2(f, rs, qs))
+        case (x :: rs, y :: qs) => f(x, y) ::: flatMap2(f, rs, qs)
         case _ => Nil
     }
 
