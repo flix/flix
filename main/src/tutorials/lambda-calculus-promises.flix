@@ -175,6 +175,7 @@ enum PromiseValue {
 /// A machine configuration.
 ///
 enum State {
+    // TODO: Need to add a component LinkQueue, and rename Queue to MainQueue
     case State(Expression, Heap, PromiseState, FulfillReactions, RejectReactions, PromiseLinks, Queue)
 }
 
@@ -357,6 +358,9 @@ def recompose(ec0: EvaluationContext, e0: Expression): Expression = match ec0 wi
 /// Performs a single reduction step in the given machine `m0`.
 ///
 def reduce(m0: State): State = match m0 with {
+
+    // TODO: Add LinkQueue and check that it is empty.
+
     case State(App(Abs(x, e1), e2), h0, s0, f0, r0, l0, q0) =>
         // Apply beta-reduction: Use alpha-renaming to avoid capture.
         let e = substitute(e1, x, alpha(e2, Map/empty()));
@@ -437,8 +441,8 @@ def reduce(m0: State): State = match m0 with {
                 // Allocate a child promise.
                 let childAddr = freshAddr();
 
-                // TODO: Store something at that address.
-                let h1 = Map/insert(childAddr, ???, h0);
+                // Allocate a fresh "object" in the heap. We use a string instead.
+                let h1 = Map/insert(childAddr, Cst("child"), h0);
 
                 // Set the promise state to pending.
                 let s1 = Map/insert(a, Pending, s0);
@@ -546,7 +550,7 @@ def step(m0: State): State = match m0 with {
 /// Repeatedly performs one-step reductions until the state `s0` reaches a fixed-point.
 ///
 def eval(m0: State): State =
-    let State(e, h, s, f, r, l, q) = step(m0);
+    let State(e, h, s, f, r, l, q) = println!(step(m0)); // TODO: Remove debugging println!
         if (isValue(e))
             State(e, h, s, f, r, l, q)
         else
@@ -577,10 +581,21 @@ def testEval5: State = eval(inject(
     Deref(Ref(Cst("hello")))
 ))
 
+//
+// Approximately:
+//
+// var x = "Promise1"
+// promisify(x)
+// x.onResolve(y => Ref(y))
+// x.resolve("hello")
+//
+
 def testEval6: State = eval(inject(
     App(Abs(0,
         Seq(Promisify(Var(0)),
-            OnResolve(Var(0), Abs(42, Var(42))))
+            Seq(OnResolve(Var(0), Abs(42, Ref(Var(42)))),
+                Resolve(Var(0), Cst("hello"))
+            ))
         ),
         Ref(Cst("Promise1")))
 ))
@@ -617,7 +632,10 @@ namespace Map {
         let Map2(xs) = m;
             getHelper(k, xs)
 
-    def getWithDefault[k, v](k: k, d: v, m: Map2[k, v]): v = ???
+    def getWithDefault[k, v](k: k, d: v, m: Map2[k, v]): v = match lookup(k, m) with {
+        case None => d
+        case Some(v) => v
+    }
 
     def getHelper[k, v](k: k, xs: List[(k, v)]): Option[v] = match xs with {
         case Nil => None
