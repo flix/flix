@@ -2,6 +2,8 @@
 // An extension of the lambda-calculus with promises.
 //
 
+// TODO: Introduce Address constructor.
+
 ///
 /// The expressions of the lambda calculus are: variables, lambda abstractions, and applications.
 ///
@@ -117,8 +119,6 @@ enum EvaluationContext {
     // Represents the context: v.link(E).
     case ELink2(Expression, EvaluationContext)
 }
-
-// TODO: Consider whether to introduce Address constructor.
 
 ///
 /// The store maps addresses to values.
@@ -542,10 +542,14 @@ def step(m0: State): State = match m0 with {
 }
 
 ///
-/// Repeatedly performs one-step reductions until the expression `e0` has been reduced to a value.
+/// Repeatedly performs one-step reductions until the state `s0` reaches a fixed-point.
 ///
-def eval(e0: State): State = // TODO: Generalize
-    ??? // TODO
+def eval(m0: State): State =
+    let State(e, h, s, f, r, l, q) = step(m0);
+        if (isValue(e))
+            State(e, h, s, f, r, l, q)
+        else
+            eval(State(e, h, s, f, r, l, q))
 
 
 ///
