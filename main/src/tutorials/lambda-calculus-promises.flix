@@ -625,8 +625,12 @@ namespace Map {
     def empty[k, v]: Map2[k, v] = Map2(Nil)
 
     def insert[k, v](k: k, v: v, m: Map2[k, v]): Map2[k, v] =
-        let Map2(xs) = m;
+        let Map2(xs) = remove(k, m);
             Map2((k, v) :: xs)
+
+    def remove[k, v](k: k, m: Map2[k, v]): Map2[k, v] =
+        let Map2(xs) = m;
+            Map2(List/filter(match (k1, _) -> k1 != k, xs))
 
     def lookup[k, v](k: k, m: Map2[k, v]): Option[v] =
         let Map2(xs) = m;
@@ -652,6 +656,15 @@ namespace List {
     def append[a](xs: List[a], ys: List[a]): List[a] = match xs with {
         case Nil => ys
         case x :: rs => x :: append(rs, ys)
+    }
+
+    ///
+    /// Returns a list of every element in `xs` that satisfies the predicate `f`.
+    ///
+    def filter[a](f: a -> Bool, xs: List[a]): List[a] = match xs with {
+        case Nil => Nil
+        case x :: rs => let r = filter(f, rs);
+                            if (f(x)) x :: r else r
     }
 
     ///
