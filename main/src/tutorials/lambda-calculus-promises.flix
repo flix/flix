@@ -182,9 +182,10 @@ enum State {
 /// Returns `true` if the given expression `e0` is a value.
 ///
 def isValue(e0: Expression): Bool = match e0 with {
-    case Abs(x, e) => true
-    case Addr(a)   => true
-    case _         => false
+    case Abs(x, e)  => true
+    case Cst(s)     => true
+    case Addr(a)    => true
+    case _          => false
 }
 
 ///
@@ -384,7 +385,7 @@ def reduce(m0: State): State = match m0 with {
         match Map/lookup(a, s0) with {
             case None =>
                 let s1 = Map/insert(a, Pending, s0);
-                    State(???, h0, PromiseState(s1), f0, r0, l0, q0) // TODO: Return Undef.
+                    State(Cst("Undef"), h0, PromiseState(s1), f0, r0, l0, q0)
             case Some(_) => m0
         }
 
@@ -412,13 +413,13 @@ def reduce(m0: State): State = match m0 with {
                 // Retrieve the fulfill reactions and append them to the queue.
                 let rs = Map/getWithDefault(a, Nil, f0);
                 let q1 = q0 ::: List/map(match (lam, addr) -> (Fulfilled(v), lam, addr), rs);
-                    State(???, Heap(h0), PromiseState(s1), FulfillReactions(f1), RejectReactions(r1), PromiseLinks(l1), Queue(q0)) // TODO: Return Undef
+                    State(Cst("Undef"), Heap(h0), PromiseState(s1), FulfillReactions(f1), RejectReactions(r1), PromiseLinks(l1), Queue(q0))
             case Some(Fulfilled(v)) =>
                 // Case 3: The promise has already been fulfilled with the value `v`. The resolve has no effect.
-                State(???, Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) // TODO: Return Undef
+                State(Cst("Undef"), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0))
             case Some(Rejected(v)) =>
                 // Case 4: The promise has already been rejected with the value `v`. The resolve has no effect.
-                State(???, Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) // TODO: Return Undef
+                State(Cst("Undef"), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0))
         }
 
     case State(Reject(e1, e2), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
@@ -454,7 +455,7 @@ def reduce(m0: State): State = match m0 with {
                     State(Addr(childAddr), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(job :: q0))
             case Some(Rejected(v)) =>
                 // Case 4: The promise has been rejected.. The onResolve has no effect.
-                State(???, Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) // TODO: Return Undef.
+                State(Cst("Undef"), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0))
         }
 
     case State(OnReject(e1, e2), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
@@ -465,7 +466,7 @@ def reduce(m0: State): State = match m0 with {
         let xs = Map/getWithDefault(a1, Nil, l0);
         // Append a2 onto the list of registered links.
         let l1 = Map/insert(a1, xs ::: a2 :: Nil, l0);
-            State(???, Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l1), Queue(q0)) // TODO: Return Undef
+            State(Cst("Undef"), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l1), Queue(q0))
 
     // TODO: Need case for the event loop.
 
@@ -571,6 +572,19 @@ def testEval1: State = eval(inject(Abs(0, Var(0))))                             
 def testEval2: State = eval(inject(Abs(0, Abs(1, Var(0)))))                        // λx. λy. x
 def testEval3: State = eval(inject(App(Abs(0, Var(0)), Abs(1, Var(1)))))           // (λx. x) (λy. y)
 def testEval4: State = eval(inject(App(Abs(0, Abs(1, Var(0))), Abs(2, Var(2)))))   // (λx. λy. x) (λz. z)
+
+def testEval5: State = eval(inject(
+    Deref(Ref(Cst("hello")))
+))
+
+def testEval6: State = eval(inject(
+    App(Abs(0,
+        Seq(Promisify(Var(0)),
+            OnResolve(Var(0), Abs(42, Var(42))))
+        ),
+        Ref(Cst("Promise1")))
+))
+
 
 ///
 /// Returns a fresh address.
