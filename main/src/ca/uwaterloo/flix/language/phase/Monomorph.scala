@@ -25,7 +25,7 @@ import scala.collection.mutable
 
 /**
   * Monomorphization is a whole-program compilation strategy that replaces every reference to a parametric function with
-  * a call to a non-parametric version (of that function) specialized to the types of the arguments at the call.
+  * a reference to a non-parametric version (of that function) specialized to the concrete types of the reference.
   *
   * For example, the polymorphic program:
   *
@@ -42,20 +42,20 @@ import scala.collection.mutable
   *
   * At a high-level, monomorphization works as follows:
   *
-  * 1. We maintain a queue of functions and the type it must be specialized to.
+  * 1. We maintain a queue of functions and the types they must be specialized to.
   * 2. We populate the queue by specialization of non-parametric function definitions and other top-level expressions.
-  * 3. We iteratively extract a function from the queue and specialize it.
+  * 3. We iteratively extract a function from the queue and specialize it:
   *    a. We replace every type variable appearing anywhere in the definition by its concrete type.
-  *    b. We create new local variable symbols (since the function is being copied).
-  *    c. We enqueue (or re-used) other functions called by the function which require specialization.
+  *    b. We create new fresh local variable symbols (since the function is effectively being copied).
+  *    c. We enqueue (or re-used) other functions referenced by the current function which require specialization.
   * 4. We reconstruct the AST from the specialized functions and remove all parametric functions.
   */
 object Monomorph {
 
   /**
-    * A strict substitution is similar to a regular substitution except that free type variables are automatically
-    * replaced by the Unit type. In other words, when performing a type substitution if there is no requirement
-    * on a polymorphic type we assume it to be Unit. This is safe since otherwise the type would not be polymorphic.
+    * A strict substitution is similar to a regular substitution except that free type variables are replaced by the
+    * Unit type. In other words, when performing a type substitution if there is no requirement on a polymorphic type
+    * we assume it to be Unit. This is safe since otherwise the type would not be polymorphic.
     */
   case class StrictSubstitution(s: Unification.Substitution) {
     /**
@@ -104,7 +104,7 @@ object Monomorph {
     /**
       * Performs specialization of the given expression `exp0` under the environment `env0` w.r.t. the given substitution `subst0`.
       *
-      * Replaces every call to a parametric function with a call to its specialized version.
+      * Replaces every reference to a parametric function with a reference to its specialized version.
       *
       * Replaces every local variable symbol with a fresh local variable symbol.
       *
@@ -157,7 +157,7 @@ object Monomorph {
           symbol2symbol.get((sym, actualType)) match {
             case None =>
               // Case 1: The function has not been specialized.
-              // Generate a fresh definition symbol.
+              // Generate a fresh specialized definition symbol.
               val freshSym = Symbol.freshDefnSym(sym)
 
               // Enqueue the fresh symbol with the definition and substitution.
@@ -303,6 +303,8 @@ object Monomorph {
     /*
      * We can now use these helper functions to perform specialization of the whole program.
      */
+
+    // Start the timer.
     val t = System.nanoTime()
 
     /*
