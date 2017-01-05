@@ -400,7 +400,7 @@ object Verifier {
   private def printVerbose(results: List[PropertyResult]): Unit = {
     Console.println(Blue(s"-- VERIFIER RESULTS --------------------------------------------------"))
 
-    for ((source, properties) <- results.groupBy(_.property.loc.source)) {
+    for ((source, properties) <- results.groupBy(_.property.loc.source).toList.sortBy(_._1.format)) {
 
       Console.println()
       Console.println(s"  -- Verification Results for ${source.format} -- ")
