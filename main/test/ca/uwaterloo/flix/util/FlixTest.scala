@@ -28,7 +28,8 @@ class FlixTest(name: String, path: String) extends FunSuite {
    */
   val Library: List[String] = List(
     "main/src/library/Option.flix",
-    "main/src/library/Result.flix"
+    "main/src/library/Result.flix",
+    "main/src/library/List.flix"
   )
 
   {

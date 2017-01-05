@@ -81,7 +81,8 @@ def assert!(b: Bool): Bool =
 /// Asserts that the given values `x` and `y` are equal.
 ///
 // TODO: Must be generic, but that requires mono-morphization.
-def assertEq!(x: Bool, y: Bool): Bool = if (x == y) true else ???
+// def assertEq!(x: Bool, y: Bool): Bool = if (x == y) true else ???
+def assertEq![a](x: a, y: a): Bool = if (x == y) true else ???
 
 ///
 /// Returns a freshly generated integer. (NB: Requires the --Ximpure feature flag.)
