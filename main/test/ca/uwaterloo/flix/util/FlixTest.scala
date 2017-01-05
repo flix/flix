@@ -32,8 +32,7 @@ class FlixTest(name: String, path: String) extends FunSuite {
   )
 
   {
-    // Use the default Flix test options, but run in interpreted mode.
-    val opts = Options.DefaultTest.copy(evaluation = Evaluation.Interpreted)
+    val opts = Options.DefaultTest
     val flix = new Flix().setOptions(opts)
 
     // Add the given path.

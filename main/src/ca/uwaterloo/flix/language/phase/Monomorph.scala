@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{Declaration, Expression, Pattern
 import scala.collection.mutable
 
 /**
-  * Monomorphization is a whole-program compilation strategy that replaces every call to a parametric function with
+  * Monomorphization is a whole-program compilation strategy that replaces every reference to a parametric function with
   * a call to a non-parametric version (of that function) specialized to the types of the arguments at the call.
   *
   * For example, the polymorphic program:
@@ -33,7 +33,7 @@ import scala.collection.mutable
   * -   def f: Bool = fst((true, 'a'))
   * -   def g: Int32 = fst((42, "foo"))
   *
-  * is roughly speaking translated to:
+  * is, roughly speaking, translated to:
   *
   * -   def fst$1(p: (Bool, Char)): Bool = let (x, y) = p ; x
   * -   def fst$2(p: (Int32, Str)): Int32 = let (x, y) = p ; x
@@ -53,6 +53,26 @@ import scala.collection.mutable
 object Monomorph {
 
   /**
+    * A strict substitution is similar to a regular substitution except that free type variables are automatically
+    * replaced by the Unit type. In other words, when performing a type substitution if there is no requirement
+    * on a polymorphic type we assume it to be Unit. This is safe since otherwise the type would not be polymorphic.
+    */
+  case class StrictSubstitution(s: Unification.Substitution) {
+    /**
+      * Returns `true` if this substitution is empty.
+      */
+    def isEmpty: Boolean = s.isEmpty
+
+    /**
+      * Applies `this` substitution to the given type `tpe`.
+      */
+    def apply(tpe: Type): Type = s(tpe) match {
+      case Type.Var(_, _) => Type.Unit
+      case result => result
+    }
+  }
+
+  /**
     * Performs monomorphization of the given AST `root`.
     */
   def monomorph(root: Root)(implicit genSym: GenSym): TypedAst.Root = {
@@ -66,7 +86,7 @@ object Monomorph {
       *
       * it means that the function definition f should be specialized w.r.t. the map [a -> Int] under the fresh name f$1.
       */
-    val queue: mutable.Queue[(Symbol.DefnSym, Declaration.Definition, Unification.Substitution)] = mutable.Queue.empty
+    val queue: mutable.Queue[(Symbol.DefnSym, Declaration.Definition, StrictSubstitution)] = mutable.Queue.empty
 
     /**
       * A function-local map from a symbol and a type to the fresh symbol for the specialized version of that function.
@@ -88,10 +108,10 @@ object Monomorph {
       *
       * Replaces every local variable symbol with a fresh local variable symbol.
       *
-      * If a specialized version of a function does not yet exists, a fresh symbol is created for it, and th
+      * If a specialized version of a function does not yet exists, a fresh symbol is created for it, and the
       * definition and substitution is enqueued.
       */
-    def specialize(exp0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym], subst0: Unification.Substitution): Expression = {
+    def specialize(exp0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym], subst0: StrictSubstitution): Expression = {
 
       /**
         * Specializes the given expression `e0` under the environment `env0`. w.r.t. the current substitution.
@@ -126,7 +146,7 @@ object Monomorph {
           val declaredType = defn.tpe
 
           // Unify the declared and actual type to obtain the substitution map.
-          val subst = Unification.unify(declaredType, actualType).get
+          val subst = StrictSubstitution(Unification.unify(declaredType, actualType).get)
 
           // Check if the substitution is empty, if so there is no need for specialization.
           if (subst.isEmpty) {
@@ -259,7 +279,7 @@ object Monomorph {
       *
       * Returns the new formal parameters and an environment mapping the variable symbol for each parameter to a fresh symbol.
       */
-    def specializeFormalParams(fparams0: List[TypedAst.FormalParam], subst0: Unification.Substitution): (List[TypedAst.FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
+    def specializeFormalParams(fparams0: List[TypedAst.FormalParam], subst0: StrictSubstitution): (List[TypedAst.FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
       // Return early if there are no formal parameters.
       if (fparams0.isEmpty)
         return (Nil, Map.empty)
@@ -274,7 +294,7 @@ object Monomorph {
       *
       * Returns the new formal parameter and an environment mapping the variable symbol to a fresh variable symbol.
       */
-    def specializeFormalParam(fparam0: TypedAst.FormalParam, subst0: Unification.Substitution): (TypedAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
+    def specializeFormalParam(fparam0: TypedAst.FormalParam, subst0: StrictSubstitution): (TypedAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
       val TypedAst.FormalParam(sym, tpe, loc) = fparam0
       val freshSym = Symbol.freshVarSym(sym)
       (TypedAst.FormalParam(freshSym, subst0(tpe), loc), Map(sym -> freshSym))
@@ -303,7 +323,7 @@ object Monomorph {
      */
     for ((sym, defn) <- nonParametricDefns) {
       // Specialize the function definition under the empty substitution (it has no type parameters).
-      val subst0 = Unification.Substitution.empty
+      val subst0 = StrictSubstitution(Unification.Substitution.empty)
 
       // Specialize the formal parameters to obtain fresh local variable symbols for them.
       val (fparams, env0) = specializeFormalParams(defn.formals, subst0)
