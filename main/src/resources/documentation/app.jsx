@@ -3,7 +3,7 @@
  *
  * Run the following command to install all the build dependencies:
  *
- *  $ npm install --save-dev react react-dom babel babel-preset-es2015 babel-preset-react babelify browserify uglify-js
+ *  $ npm install --save-dev react react-dom react-string-replace babel babel-preset-es2015 babel-preset-react babelify browserify uglify-js
  *
  * Then run:
  *
@@ -11,16 +11,16 @@
  *
  * To compile the JSX file.
  */
-
-var React = require('react');
-var ReactDOM = require('react-dom');
+const React = require('react');
+const ReactDOM = require('react-dom');
+const reactStringReplace = require('react-string-replace')
 
 /**
  * Main entry point.
  *
  * Renders the left navigation bar and the page content.
  */
-var App = React.createClass({
+export let App = React.createClass({
     render: function () {
         return (
             <div className="app">
@@ -34,13 +34,13 @@ var App = React.createClass({
 /**
  * Renders the navigation bar which shows the list of namespaces in the library.
  */
-var LeftNavigationBar = React.createClass({
+export let LeftNavigationBar = React.createClass({
     render: function () {
         // Retrieve and sort the namespaces.
-        var namespaces = this.props.namespaces.sort(lexicographic);
+        const namespaces = this.props.namespaces.sort(lexicographic);
 
         // Construct a list item for each namespace in the library.
-        var menu = namespaces.map(
+        const menu = namespaces.map(
             namespace => <li key={namespace.name}><a href={namespace.link}>{namespace.name}</a></li>
         );
         return (
@@ -59,13 +59,15 @@ var LeftNavigationBar = React.createClass({
 /**
  * Renders the types, definitions, relations, and lattices declared in the current namespace.
  */
-var PageContent = React.createClass({
+export let PageContent = React.createClass({
     render: function () {
         return (
             <div className="pagecontent">
                 <h1>{this.props.namespace}</h1>
                 <TypeList decls={this.props.data.types}/>
                 <DefinitionList decls={this.props.data.definitions}/>
+                <LawList decls={this.props.data.laws}/>
+                <TestList decls={this.props.data.tests}/>
                 <RelationList decls={this.props.data.relations}/>
                 <LatticeList decls={this.props.data.lattices}/>
             </div>
@@ -76,9 +78,9 @@ var PageContent = React.createClass({
 /**
  * Renders a list of type declarations.
  */
-var TypeList = React.createClass({
+export let TypeList = React.createClass({
     render: function () {
-        var typeList = this.props.decls.map(d => <TypeBox key={d.name} decl={d}/>);
+        const typeList = this.props.decls.map(d => <TypeBox key={d.name} decl={d}/>);
         if (typeList.length == 0)
             return null;
         return (
@@ -93,10 +95,10 @@ var TypeList = React.createClass({
 /**
  * Renders a single type declaration.
  */
-var TypeBox = React.createClass({
+export let TypeBox = React.createClass({
     render: function () {
-        var name = this.props.decl.name;
-        var comment = this.props.decl.comment;
+        const name = this.props.decl.name;
+        const comment = format(this.props.decl.comment);
         return (
             <div id={name} className="type-decl">
                 <div className="signature">
@@ -117,10 +119,10 @@ var TypeBox = React.createClass({
 /**
  * Renders a list of definition declarations.
  */
-var DefinitionList = React.createClass({
+export let DefinitionList = React.createClass({
     render: function () {
-        var decls = this.props.decls.sort(lexicographic);
-        var definitionList = decls.map(d => <DefinitionBox key={d.name} decl={d}/>);
+        const decls = this.props.decls.sort(lexicographic);
+        const definitionList = decls.map(d => <DefinitionBox key={d.name} decl={d}/>);
         if (definitionList.length == 0)
             return null;
         return (
@@ -135,18 +137,18 @@ var DefinitionList = React.createClass({
 /**
  * Renders a single definition declaration.
  */
-var DefinitionBox = React.createClass({
+export let DefinitionBox = React.createClass({
     render: function () {
-        var name = this.props.decl.name;
-        var tparams = surround(intersperse(this.props.decl.tparams.map(
+        const name = this.props.decl.name;
+        const tparams = surround(intersperse(this.props.decl.tparams.map(
             tparam => <span key={Math.random()}>{tparam.name}</span>
         ), ", "), "[", "]");
-        var fparams = surround(intersperse(this.props.decl.fparams.map(
+        const fparams = surround(intersperse(this.props.decl.fparams.map(
             fparam => <span key={Math.random()}>{fparam.name}: <span key={Math.random()}
                                                                      className="type">{fparam.tpe}</span></span>
         ), ", "), "(", ")");
-        var result = this.props.decl.result;
-        var comment = this.props.decl.comment;
+        const result = this.props.decl.result;
+        const comment = format(this.props.decl.comment);
         return (
             <div id={name} className="definition-decl">
                 <div className="signature">
@@ -168,12 +170,48 @@ var DefinitionBox = React.createClass({
 });
 
 /**
+ * Renders a list of law definitions.
+ */
+export let LawList = React.createClass({
+    render: function () {
+        const decls = this.props.decls.sort(lexicographic);
+        const definitionList = decls.map(d => <DefinitionBox key={d.name} decl={d}/>);
+        if (definitionList.length == 0)
+            return null;
+        return (
+            <div className="definition-list">
+                <h2>Laws</h2>
+                {definitionList}
+            </div>
+        );
+    }
+});
+
+/**
+ * Renders a list of test definitions.
+ */
+export let TestList = React.createClass({
+    render: function () {
+        const decls = this.props.decls.sort(lexicographic);
+        const definitionList = decls.map(d => <DefinitionBox key={d.name} decl={d}/>);
+        if (definitionList.length == 0)
+            return null;
+        return (
+            <div className="definition-list">
+                <h2>Tests</h2>
+                {definitionList}
+            </div>
+        );
+    }
+});
+
+/**
  * Renders a list of relation declarations.
  */
-var RelationList = React.createClass({
+export let RelationList = React.createClass({
     render: function () {
-        var decls = this.props.decls.sort(lexicographic);
-        var relationList = decls.map(d => <RelationBox key={d.name} decl={d}/>);
+        const decls = this.props.decls.sort(lexicographic);
+        const relationList = decls.map(d => <RelationBox key={d.name} decl={d}/>);
         if (relationList.length == 0)
             return null;
         return (
@@ -188,13 +226,13 @@ var RelationList = React.createClass({
 /**
  * Renders a single relation declaration.
  */
-var RelationBox = React.createClass({
+export let RelationBox = React.createClass({
     render: function () {
-        var name = this.props.decl.name;
-        var attributes = surround(intersperse(this.props.decl.attributes.map(
+        const name = this.props.decl.name;
+        const attributes = surround(intersperse(this.props.decl.attributes.map(
             attr => <span key={Math.random()}>{attr.name}: <span key={Math.random()} className="type">{attr.tpe}</span></span>
         ), ", "), "(", ")");
-        var comment = this.props.decl.comment;
+        const comment = format(this.props.decl.comment);
         return (
             <div id={name} className="relation-decl">
                 <div className="signature">
@@ -214,10 +252,10 @@ var RelationBox = React.createClass({
 /**
  * Renders a list of lattice declarations.
  */
-var LatticeList = React.createClass({
+export let LatticeList = React.createClass({
     render: function () {
-        var decls = this.props.decls.sort(lexicographic);
-        var latticeList = decls.map(d => <LatticeBox key={d.name} decl={d}/>);
+        const decls = this.props.decls.sort(lexicographic);
+        const latticeList = decls.map(d => <LatticeBox key={d.name} decl={d}/>);
         if (latticeList.length == 0)
             return null;
         return (
@@ -232,13 +270,13 @@ var LatticeList = React.createClass({
 /**
  * Renders a single lattice declaration.
  */
-var LatticeBox = React.createClass({
+export let LatticeBox = React.createClass({
     render: function () {
-        var name = this.props.decl.name;
-        var attributes = surround(intersperse(this.props.decl.attributes.map(
+        const name = this.props.decl.name;
+        const attributes = surround(intersperse(this.props.decl.attributes.map(
             attr => <span key={Math.random()}>{attr.name}: <span key={Math.random()} className="type">{attr.tpe}</span></span>
         ), ", "), "(", ")");
-        var comment = this.props.decl.comment;
+        const comment = format(this.props.decl.comment);
         return (
             <div id={name} className="lattice-decl">
                 <div className="signature">
@@ -256,13 +294,22 @@ var LatticeBox = React.createClass({
 });
 
 /**
+ * Formats the given documentation comment.
+ */
+function format(s) {
+    return reactStringReplace(s, /`([^`]+)`/g, (txt, id) =>
+        <span id={id} className="code">{txt}</span>
+    );
+}
+
+/**
  * Returns the given array of elements surrounded by parenthesis (if non-empty).
  */
 function surround(arr, b, e) {
     if (arr.length == 0)
         return arr;
 
-    var result = [];
+    const result = [];
     result.push(b);
     arr.forEach(item => result.push(item));
     result.push(e);
@@ -292,8 +339,8 @@ function intersperse(arr, sep) {
  * Lexicographically compares the name field of the two given objects.
  */
 function lexicographic(a, b) {
-    var x = a.name;
-    var y = b.name;
+    const x = a.name;
+    const y = b.name;
     return naturalSort(x, y);
 }
 
@@ -355,9 +402,9 @@ function bootstrap() {
 
     // Trigger jump to anchor (if any).
     if (window.location.hash) {
-        var id = window.location.hash.substr(1);
+        const id = window.location.hash.substr(1);
         if (id) {
-            var elm = document.getElementById(id);
+            const elm = document.getElementById(id);
             if (elm) {
                 elm.scrollIntoView({behavior: "smooth"});
             }

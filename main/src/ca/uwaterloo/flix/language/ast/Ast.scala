@@ -100,6 +100,11 @@ object Ast {
   case class Annotations(annotations: List[Annotation]) {
 
     /**
+      * Returns `true` if `this` sequence contains the `@internal` annotation.
+      */
+    def isInternal: Boolean = annotations exists (_.isInstanceOf[Annotation.Internal])
+
+    /**
       * Returns `true` if `this` sequence contains the `@law` annotation.
       */
     def isLaw: Boolean = annotations exists (_.isInstanceOf[Annotation.Law])
