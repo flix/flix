@@ -93,10 +93,7 @@ enum EvaluationContext {
     case EDeref(EvaluationContext),
 
     // Represents the context: E ; e
-    case ESeq1(EvaluationContext, Expression),
-
-    // Represents the context: v ; E
-    case ESeq2(Expression, EvaluationContext),
+    case ESeq(EvaluationContext, Expression),
 
     // Represents the context: promisify(E).
     case EPromisify(EvaluationContext),
@@ -258,18 +255,13 @@ def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 wi
             // The redex is in the expression e.
             Option/map(match (rdx, ec) -> (rdx, EDeref(ec)), redex(e))
 
-    // TODO: Ask Ondrej if this is correct. I feel it should be different.
-    case Seq(e1, e2) => switch {
-        case isValue(e1) && isValue(e2) =>
+    case Seq(e1, e2) =>
+        if (isValue(e1))
             // The expression is a redex.
             Some((e0, Hole))
-        case nonValue(e1) =>
+        else
             // Continue reduction in e1.
-            Option/map(match (rdx, ec) -> (rdx, ESeq1(ec, e2)), redex(e1))
-        case isValue(e1) =>
-            // Continue reduction in e2.
-            Option/map(match (rdx, ec) -> (rdx, ESeq2(e1, ec)), redex(e2))
-    }
+            Option/map(match (rdx, ec) -> (rdx, ESeq(ec, e2)) , redex(e1))
 
     case Promisify(e) =>
         if (isValue(e))
@@ -351,8 +343,7 @@ def recompose(ec0: EvaluationContext, e0: Expression): Expression = match ec0 wi
     case EApp2(v, ec)       => App(v, recompose(ec, e0))
     case ERef(ec)           => Ref(recompose(ec, e0))
     case EDeref(ec)         => Deref(recompose(ec, e0))
-    case ESeq1(ec, e)       => Seq(recompose(ec, e0), e)
-    case ESeq2(e, ec)       => Seq(e, recompose(ec, e0))
+    case ESeq(ec, e)        => Seq(recompose(ec, e0), e)
     case EPromisify(ec)     => Promisify(recompose(ec, e0))
     case EResolve1(ec, e)   => Resolve(recompose(ec, e0), e)
     case EResolve2(e, ec)   => Resolve(e, recompose(ec, e0))
