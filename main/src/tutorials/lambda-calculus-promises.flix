@@ -365,35 +365,48 @@ def recompose(ec0: EvaluationContext, e0: Expression): Expression = match ec0 wi
     case ELink2(e, ec)      => Link(e, recompose(ec, e0))
 }
 
+///
+/// Represents the outcome of a single reduction step.
+///
+enum Outcome {
+    /// Represents the next step of the reduction.
+    case Next(State),
+
+    /// Represents that the reduction aborted.
+    case Abort(Str),
+
+    /// Represents that the reduction is stuck.
+    case Stuck
+}
 
 ///
 /// Performs a single reduction step in the given machine `m0`.
 ///
-def reduce(m0: State): State = match m0 with { // TODO: Remove State from here, and list the components explicitely. (or remove expression from the state).
+def reduce(m0: State): Outcome = match m0 with { // TODO: Remove State from here, and list the components explicitely. (or remove expression from the state).
 
     // TODO: Add LinkQueue and check that it is empty.
 
     case State(App(Abs(x, e1), e2), h0, s0, f0, r0, l0, q0) =>
         // Apply beta-reduction: Use alpha-renaming to avoid capture.
         let e = substitute(e1, x, alpha(e2, Map/empty()));
-            State(e, h0, s0, f0, r0, l0, q0)
+            Next(State(e, h0, s0, f0, r0, l0, q0))
 
     case State(Seq(v, e), h0, s0, f0, r0, l0, q0) =>
         // Discard the value in the sequence.
-        State(e, h0, s0, f0, r0, l0, q0)
+        Next(State(e, h0, s0, f0, r0, l0, q0))
 
     case State(Ref(v), Heap(h0), s0, f0, r0, l0, q0) =>
         // Allocate a fresh address in the heap and store the value at that address.
         let a = freshAddr();
         let h1 = Map/insert(a, v, h0);
         let e1 = Ptr(a);
-            State(e1, Heap(h1), s0, f0, r0, l0, q0)
+            Next(State(e1, Heap(h1), s0, f0, r0, l0, q0))
 
     case State(Deref(Ptr(a)), Heap(h0), s0, f0, r0, l0, q0) =>
         // Dereference the address and return its value.
         match Map/lookup(a, h0) with {
-            case None => m0 // TODO: Change to Result: Ok(nextState | Done(normalform)) or Err(stuckErrorMessage).
-            case Some(v) => State(v, Heap(h0), s0, f0, r0, l0, q0)
+            case None => Abort("Unable to dereference unallocated address!")
+            case Some(v) => Next(State(v, Heap(h0), s0, f0, r0, l0, q0))
         }
 
     case State(Promisify(Ptr(a)), h0, PromiseState(s0), f0, r0, l0, q0) =>
@@ -401,8 +414,8 @@ def reduce(m0: State): State = match m0 with { // TODO: Remove State from here, 
         match Map/lookup(a, s0) with {
             case None =>
                 let s1 = Map/insert(a, Pending, s0);
-                    State(Cst("Undef"), h0, PromiseState(s1), f0, r0, l0, q0)
-            case Some(_) => m0
+                    Next(State(Cst("Undef"), h0, PromiseState(s1), f0, r0, l0, q0))
+            case Some(_) => Next(m0)
         }
 
     case State(Resolve(Ptr(a), v), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
@@ -410,7 +423,7 @@ def reduce(m0: State): State = match m0 with { // TODO: Remove State from here, 
         match Map/lookup(a, s0) with {
             case None =>
                 // Case 1: The address is not a promise. The evaluation is stuck.
-                m0
+                Abort("Unable to resolve non-promise address!")
             case Some(Pending) =>
                 // Case 2: The promise is pending.
 
@@ -429,13 +442,13 @@ def reduce(m0: State): State = match m0 with { // TODO: Remove State from here, 
                 // Retrieve the fulfill reactions and append them to the queue.
                 let rs = Map/getWithDefault(a, Nil, f0);
                 let q1 = q0 ::: List/map(match (lam, addr) -> (Fulfilled(v), lam, addr), rs);
-                    State(Cst("Undef"), Heap(h0), PromiseState(s1), FulfillReactions(f1), RejectReactions(r1), PromiseLinks(l1), Queue(q0))
+                    Next(State(Cst("Undef"), Heap(h0), PromiseState(s1), FulfillReactions(f1), RejectReactions(r1), PromiseLinks(l1), Queue(q0)))
             case Some(Fulfilled(v)) =>
                 // Case 3: The promise has already been fulfilled with the value `v`. The resolve has no effect.
-                State(Cst("Undef"), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0))
+                Next(State(Cst("Undef"), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)))
             case Some(Rejected(v)) =>
                 // Case 4: The promise has already been rejected with the value `v`. The resolve has no effect.
-                State(Cst("Undef"), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0))
+                Next(State(Cst("Undef"), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)))
         }
 
     case State(Reject(e1, e2), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
@@ -446,7 +459,7 @@ def reduce(m0: State): State = match m0 with { // TODO: Remove State from here, 
         match Map/lookup(a, s0) with {
             case None =>
                 // Case 1: The address is not a promise. The evaluation is stuck.
-                m0
+                Abort("Unable to register reaction on non-promise address!")
             case Some(Pending) =>
                 // Case 2: The promise is in the pending state.
 
@@ -462,16 +475,16 @@ def reduce(m0: State): State = match m0 with { // TODO: Remove State from here, 
                 // Update the fulfill reactions.
                 let fs = Map/getWithDefault(a, Nil, f0);
                 let f1 = Map/insert(a, fs ::: (lam, childAddr) :: Nil, f0);
-                    State(Ptr(childAddr), Heap(h1), PromiseState(s1), FulfillReactions(f1), RejectReactions(r0), PromiseLinks(l0), Queue(q0))
+                    Next(State(Ptr(childAddr), Heap(h1), PromiseState(s1), FulfillReactions(f1), RejectReactions(r0), PromiseLinks(l0), Queue(q0)))
             case Some(Fulfilled(v)) =>
                 // Case 3: The promise has been fulfilled.
                 // Allocate a child promise and enqueue the promise reaction `lam` with the resolved value `v`.
                 let childAddr = freshAddr();
                 let job = (Fulfilled(v), lam, childAddr);
-                    State(Ptr(childAddr), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(job :: q0))
+                    Next(State(Ptr(childAddr), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(job :: q0)))
             case Some(Rejected(v)) =>
                 // Case 4: The promise has been rejected.. The onResolve has no effect.
-                State(Cst("Undef"), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0))
+                Next(State(Cst("Undef"), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)))
         }
 
     case State(OnReject(e1, e2), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
@@ -482,9 +495,11 @@ def reduce(m0: State): State = match m0 with { // TODO: Remove State from here, 
         let xs = Map/getWithDefault(a1, Nil, l0);
         // Append a2 onto the list of registered links.
         let l1 = Map/insert(a1, xs ::: a2 :: Nil, l0);
-            State(Cst("Undef"), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l1), Queue(q0))
+            Next(State(Cst("Undef"), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l1), Queue(q0)))
 
     // TODO: Need case for the event loop.
+
+    case _ => Stuck
 
 }
 
@@ -557,9 +572,14 @@ def step(m0: State): State = match m0 with {
                 m0
             case Some((e0, ec)) =>
                 // Case 2: A redex has been found. Reduce and recompose.
-                let State(e1, h1, s, f1, r1, l1, q1) = reduce(State(e0, h0, s0, f0, r0, l0, q0));
-                let e2 = recompose(ec, e1);
-                    State(e2, h1, s, f1, r1, l1, q1)
+                match reduce(State(e0, h0, s0, f0, r0, l0, q0)) with {
+                    case Next(State(e1, h1, s, f1, r1, l1, q1)) =>
+                        let e2 = recompose(ec, e1);
+                            State(e2, h1, s, f1, r1, l1, q1)
+                    case Stuck => ??? // TODO
+                    case Abort(e) => ???
+                }
+
     }
 }
 
