@@ -37,7 +37,7 @@ object Symbol {
   def freshDefnSym(sym: DefnSym)(implicit genSym: GenSym): DefnSym = {
     val id = genSym.freshId()
     val name = sym.name + "$" + id
-    new DefnSym(sym.namespace, name, SourceLocation.Unknown)
+    new DefnSym(sym.namespace, name, sym.loc)
   }
 
   /**
