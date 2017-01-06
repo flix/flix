@@ -44,6 +44,11 @@ object Unification {
   case class Substitution(m: Map[Type.Var, Type]) {
 
     /**
+      * Returns `true` if `this` is the empty substitution.
+      */
+    def isEmpty: Boolean = m.isEmpty
+
+    /**
       * Applies `this` substitution to the given type `tpe`.
       */
     def apply(tpe: Type): Type = tpe match {

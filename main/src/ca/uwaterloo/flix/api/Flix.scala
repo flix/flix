@@ -230,7 +230,8 @@ class Flix {
         if (options.documentor) {
           Documentor.document(tast)
         }
-        val sast = Simplifier.simplify(tast)
+        val mast = Monomorph.monomorph(tast)
+        val sast = Simplifier.simplify(mast)
         val lifted = Tailrec.tailrec(LambdaLift.lift(sast))
         val numbered = VarNumbering.number(lifted)
         val east = CreateExecutableAst.toExecutable(numbered)

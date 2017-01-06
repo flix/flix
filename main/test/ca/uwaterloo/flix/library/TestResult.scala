@@ -25,7 +25,7 @@ import org.scalatest.FunSuite
 
 class TestResult extends FunSuite {
 
-  val options = Options.DefaultTest.copy(evaluation=Evaluation.Interpreted)
+  val options = Options.DefaultTest
 
   def runTest(input: String, output: Int) {
     val flix = new Flix().setOptions(options).addPath("main/src/library/Result.flix").addStr(input)
