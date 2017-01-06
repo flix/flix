@@ -489,6 +489,8 @@ def reduce(m0: State): Outcome = match m0 with { // TODO: Remove State from here
         let l1 = Map/insert(a1, xs ::: a2 :: Nil, l0);
             Next(State(Cst("Undef"), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l1), Queue(q0)))
 
+            //TODO: Consider if we should separate State and Expression and pass in a recompose function?
+
     case _ => Stuck(m0)
 
 }
@@ -588,6 +590,7 @@ def step(m0: State): Outcome = match m0 with {
 ///
 /// Repeatedly performs one-step reductions until the state `s0` reaches a fixed-point.
 ///
+// TODO: Use Result[State, Str] ?
 def eval(m0: State): State =
     let o = println!(step(m0));
         match o with {
