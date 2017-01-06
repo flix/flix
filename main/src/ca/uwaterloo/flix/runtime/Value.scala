@@ -446,16 +446,24 @@ object Value {
     case o: java.lang.Short => o.shortValue().toString
     case o: java.lang.Integer => o.intValue().toString
     case o: java.lang.Long => o.longValue().toString
-    case o: java.lang.String => o
+    case o: java.lang.String => "\"" + o + "\""
     case o: Value.Tag =>
       if (o.tag == "Cons") {
         val e1 = o.value.asInstanceOf[Value.Tuple].elms(0)
         val e2 = o.value.asInstanceOf[Value.Tuple].elms(1)
         s"${pretty(e1)} :: ${pretty(e2)}"
       }
-      else
-        s"${o.tag}(${pretty(o.value)})"
-    case Value.Tuple(elms) => "(" + elms.map(pretty).mkString(",") + ")"
+      else {
+        if (o.value.isInstanceOf[Value.Unit.type]) {
+          s"${o.tag}"
+        } else if (o.value.isInstanceOf[Value.Tuple]) {
+          s"${o.tag}${pretty(o.value)}"
+        } else {
+          s"${o.tag}(${pretty(o.value)})"
+        }
+      }
+
+    case Value.Tuple(elms) => "(" + elms.map(pretty).mkString(", ") + ")"
     case _ => ref.toString
   }
 

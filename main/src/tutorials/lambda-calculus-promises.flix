@@ -258,6 +258,7 @@ def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 wi
             // The redex is in the expression e.
             Option/map(match (rdx, ec) -> (rdx, EDeref(ec)), redex(e))
 
+    // TODO: Ask Ondrej if this is correct. I feel it should be different.
     case Seq(e1, e2) => switch {
         case isValue(e1) && isValue(e2) =>
             // The expression is a redex.
@@ -372,11 +373,11 @@ enum Outcome {
     /// Represents the next step of the reduction.
     case Next(State),
 
-    /// Represents that the reduction aborted.
-    case Abort(Str),
+    /// Represents that the reduction is stuck in the state.
+    case Stuck(State),
 
-    /// Represents that the reduction is stuck.
-    case Stuck
+    /// Represents that the reduction aborted.
+    case Abort(Str)
 }
 
 ///
@@ -442,7 +443,7 @@ def reduce(m0: State): Outcome = match m0 with { // TODO: Remove State from here
                 // Retrieve the fulfill reactions and append them to the queue.
                 let rs = Map/getWithDefault(a, Nil, f0);
                 let q1 = q0 ::: List/map(match (lam, addr) -> (Fulfilled(v), lam, addr), rs);
-                    Next(State(Cst("Undef"), Heap(h0), PromiseState(s1), FulfillReactions(f1), RejectReactions(r1), PromiseLinks(l1), Queue(q0)))
+                    Next(State(Cst("Undef"), Heap(h0), PromiseState(s1), FulfillReactions(f1), RejectReactions(r1), PromiseLinks(l1), Queue(q1)))
             case Some(Fulfilled(v)) =>
                 // Case 3: The promise has already been fulfilled with the value `v`. The resolve has no effect.
                 Next(State(Cst("Undef"), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)))
@@ -497,9 +498,7 @@ def reduce(m0: State): Outcome = match m0 with { // TODO: Remove State from here
         let l1 = Map/insert(a1, xs ::: a2 :: Nil, l0);
             Next(State(Cst("Undef"), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l1), Queue(q0)))
 
-    // TODO: Need case for the event loop.
-
-    case _ => Stuck
+    case _ => Stuck(m0)
 
 }
 
@@ -559,24 +558,36 @@ def alpha(e0: Expression, m: Map2[Variable, Variable]): Expression = match e0 wi
 /// Performs a single step reduction of the given state `m0`,
 /// i.e. performs a single redex-reduce-recompose step.
 ///
-def step(m0: State): State = match m0 with {
+def step(m0: State): Outcome = match m0 with {
     case State(e0, h0, s0, f0, r0, l0, q0) =>
         match redex(e0) with {
             case None =>
-                // Case 1: No redex found. Return the state unchanged.
+                // Case 1: No redex found.
 
-                // TODO: Perform event loop transition (if possible)
-                // TODO: rewrite semantic rule for E-LOOP.
+                // TODO: try to refactor this and move somewhere else?
 
-
-                m0
+                if (nonValue(e0))
+                    Stuck(m0)
+                else
+                    match q0 with {
+                        case Queue(Nil) => Stuck(m0)
+                        case Queue((promiseState, lambda, childPromise) :: rs) =>
+                        // TODO: We should actually add all of these...
+                            match promiseState with {
+                                case Fulfilled(v) =>
+                                    // TODO: What is the child promise used for here?
+                                    let e1 = App(lambda, v);
+                                        Next(State(e1, h0, s0, f0, r0, l0, Queue(rs)))
+                                // TODO: Rest
+                            }
+                    }
             case Some((e0, ec)) =>
                 // Case 2: A redex has been found. Reduce and recompose.
                 match reduce(State(e0, h0, s0, f0, r0, l0, q0)) with {
                     case Next(State(e1, h1, s, f1, r1, l1, q1)) =>
                         let e2 = recompose(ec, e1);
-                            State(e2, h1, s, f1, r1, l1, q1)
-                    case Stuck => ??? // TODO
+                            Next(State(e2, h1, s, f1, r1, l1, q1))
+                    case Stuck(m) => ??? // TODO
                     case Abort(e) => ???
                 }
 
@@ -587,12 +598,12 @@ def step(m0: State): State = match m0 with {
 /// Repeatedly performs one-step reductions until the state `s0` reaches a fixed-point.
 ///
 def eval(m0: State): State =
-    let State(e, h, s, f, r, l, q) = println!(step(m0)); // TODO: Remove debugging println!
-        if (isValue(e))
-            State(e, h, s, f, r, l, q)
-        else
-            eval(State(e, h, s, f, r, l, q))
-
+    let o = println!(step(m0));
+        match o with {
+            case Next(m) => eval(m)
+            case Stuck(m) => m
+            case Abort(e) => ???
+        }
 
 ///
 /// Injects the given expression `e0` into the initial state.
