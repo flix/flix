@@ -72,7 +72,7 @@ object Documentor {
     }
 
     // Compute the set of all available namespaces.
-    val namespaces = defnsByNS.keySet ++ enumsByNS.keySet ++ tablesByNS.keySet
+    val namespaces = defnsByNS.keySet ++ lawsByNS.keySet ++ testsByNS.keySet ++ enumsByNS.keySet ++ tablesByNS.keySet
 
     // Process each namespace.
     val data = namespaces map {
