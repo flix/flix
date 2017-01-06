@@ -2,18 +2,29 @@
 // An extension of the lambda-calculus with promises.
 //
 
-// TODO: Introduce Address constructor.
-// TODO: Use strings for variables instead of numbers.
+///
+/// The type of heap addresses.
+///
+enum Address {
+    case A(Int)
+}
+
+///
+/// The type of variables.
+///
+enum Variable {
+    case V(Int)
+}
 
 ///
 /// The expressions of the lambda calculus are: variables, lambda abstractions, and applications.
 ///
 enum Expression {
     // A variable expression. A variable is represented by an integer.
-    case Var(Int),
+    case Var(Variable),
 
     // A lambda abstraction expression. A variable is represented by an integer.
-    case Abs(Int, Expression),
+    case Abs(Variable, Expression),
 
     // A function application expression.
     case App(Expression, Expression),
@@ -26,7 +37,7 @@ enum Expression {
     case Cst(Str),
 
     // A heap address.
-    case Addr(Int),
+    case Ptr(Address),
 
     // A heap reference expression: ref e.
     case Ref(Expression),
@@ -125,42 +136,42 @@ enum EvaluationContext {
 /// The store maps addresses to values.
 ///
 enum Heap {
-    case Heap(Map2[Int, Expression])
+    case Heap(Map2[Address, Expression])
 }
 
 ///
 /// The promise state maps addresses to promise values.
 ///
 enum PromiseState {
-    case PromiseState(Map2[Int, PromiseValue])
+    case PromiseState(Map2[Address, PromiseValue])
 }
 
 ///
 /// The fulfill reactions map addresses to a list of (Lam, Addr)-pairs.
 ///
 enum FulfillReactions {
-    case FulfillReactions(Map2[Int, List[(Expression, Int)]])
+    case FulfillReactions(Map2[Address, List[(Expression, Address)]])
 }
 
 ///
 /// The reject reactions map addresses to a list of (Lam, Addr)-pairs.
 ///
 enum RejectReactions {
-    case RejectReactions(Map2[Int, List[(Expression, Int)]])
+    case RejectReactions(Map2[Address, List[(Expression, Address)]])
 }
 
 ///
 /// The promise links map addresses to a list of addresses.
 ///
 enum PromiseLinks {
-    case PromiseLinks(Map2[Int, List[Int]])
+    case PromiseLinks(Map2[Address, List[Address]])
 }
 
 ///
 /// The queue is a list of (PromiseValue, Lam, Addr)-triples.
 ///
 enum Queue {
-    case Queue(List[(PromiseValue, Expression, Int)])
+    case Queue(List[(PromiseValue, Expression, Address)])
 }
 
 ///
@@ -186,7 +197,7 @@ enum State {
 def isValue(e0: Expression): Bool = match e0 with {
     case Abs(x, e)  => true
     case Cst(s)     => true
-    case Addr(a)    => true
+    case Ptr(a)     => true
     case _          => false
 }
 
@@ -227,8 +238,8 @@ def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 wi
         // A string cannot be reduced.
         None
 
-    case Addr(a) =>
-        // An address cannot be reduced.
+    case Ptr(a) =>
+        // A pointer cannot be reduced.
         None
 
     case Ref(e) =>
@@ -375,17 +386,17 @@ def reduce(m0: State): State = match m0 with { // TODO: Remove State from here, 
         // Allocate a fresh address in the heap and store the value at that address.
         let a = freshAddr();
         let h1 = Map/insert(a, v, h0);
-        let e1 = Addr(a);
+        let e1 = Ptr(a);
             State(e1, Heap(h1), s0, f0, r0, l0, q0)
 
-    case State(Deref(Addr(a)), Heap(h0), s0, f0, r0, l0, q0) =>
+    case State(Deref(Ptr(a)), Heap(h0), s0, f0, r0, l0, q0) =>
         // Dereference the address and return its value.
         match Map/lookup(a, h0) with {
             case None => m0 // TODO: Change to Result: Ok(nextState | Done(normalform)) or Err(stuckErrorMessage).
             case Some(v) => State(v, Heap(h0), s0, f0, r0, l0, q0)
         }
 
-    case State(Promisify(Addr(a)), h0, PromiseState(s0), f0, r0, l0, q0) =>
+    case State(Promisify(Ptr(a)), h0, PromiseState(s0), f0, r0, l0, q0) =>
         // Sets the state of an uninitialized promise to pending.
         match Map/lookup(a, s0) with {
             case None =>
@@ -394,7 +405,7 @@ def reduce(m0: State): State = match m0 with { // TODO: Remove State from here, 
             case Some(_) => m0
         }
 
-    case State(Resolve(Addr(a), v), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
+    case State(Resolve(Ptr(a), v), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
         // Lookup the state of the promise.
         match Map/lookup(a, s0) with {
             case None =>
@@ -430,7 +441,7 @@ def reduce(m0: State): State = match m0 with { // TODO: Remove State from here, 
     case State(Reject(e1, e2), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
         ??? // TODO: Similar to Resolve.
 
-    case State(OnResolve(Addr(a), lam), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
+    case State(OnResolve(Ptr(a), lam), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
         // Lookup the state of the promise.
         match Map/lookup(a, s0) with {
             case None =>
@@ -451,13 +462,13 @@ def reduce(m0: State): State = match m0 with { // TODO: Remove State from here, 
                 // Update the fulfill reactions.
                 let fs = Map/getWithDefault(a, Nil, f0);
                 let f1 = Map/insert(a, fs ::: (lam, childAddr) :: Nil, f0);
-                    State(Addr(childAddr), Heap(h1), PromiseState(s1), FulfillReactions(f1), RejectReactions(r0), PromiseLinks(l0), Queue(q0))
+                    State(Ptr(childAddr), Heap(h1), PromiseState(s1), FulfillReactions(f1), RejectReactions(r0), PromiseLinks(l0), Queue(q0))
             case Some(Fulfilled(v)) =>
                 // Case 3: The promise has been fulfilled.
                 // Allocate a child promise and enqueue the promise reaction `lam` with the resolved value `v`.
                 let childAddr = freshAddr();
                 let job = (Fulfilled(v), lam, childAddr);
-                    State(Addr(childAddr), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(job :: q0))
+                    State(Ptr(childAddr), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(job :: q0))
             case Some(Rejected(v)) =>
                 // Case 4: The promise has been rejected.. The onResolve has no effect.
                 State(Cst("Undef"), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0))
@@ -466,7 +477,7 @@ def reduce(m0: State): State = match m0 with { // TODO: Remove State from here, 
     case State(OnReject(e1, e2), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
         ??? // TODO: Similar to OnResolve.
 
-    case State(Link(Addr(a1), Addr(a2)), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
+    case State(Link(Ptr(a1), Ptr(a2)), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
         // Lookup the list of registered links for a1.
         let xs = Map/getWithDefault(a1, Nil, l0);
         // Append a2 onto the list of registered links.
@@ -480,13 +491,13 @@ def reduce(m0: State): State = match m0 with { // TODO: Remove State from here, 
 ///
 /// Replaces every occurrence of the variable `x` in the expression `e0` with the expression `r0`.
 ///
-def substitute(e0: Expression, x: Int, r0: Expression): Expression = match e0 with {
+def substitute(e0: Expression, x: Variable, r0: Expression): Expression = match e0 with {
     case Var(y)             => if (x == y) r0 else Var(y)
     case Abs(y, e)          => if (x == y) Abs(y, e) else Abs(y, substitute(e, x, r0))
     case App(e1, e2)        => App(substitute(e1, x, r0), substitute(e2, x, r0))
 
     case Cst(s)             => Cst(s)
-    case Addr(a)            => Addr(a)
+    case Ptr(a)             => Ptr(a)
     case Ref(e)             => Ref(substitute(e, x, r0))
     case Deref(e)           => Deref(substitute(e, x, r0))
     case Seq(e1, e2)        => Seq(substitute(e1, x, r0), substitute(e2, x, r0))
@@ -502,7 +513,7 @@ def substitute(e0: Expression, x: Int, r0: Expression): Expression = match e0 wi
 ///
 /// Performs alpha conversion by introducing fresh variables for all variables in the given expression `e0`.
 ///
-def alpha(e0: Expression, m: Map2[Int, Int]): Expression = match e0 with {
+def alpha(e0: Expression, m: Map2[Variable, Variable]): Expression = match e0 with {
     case Var(x) =>
         // Check if we need to rename the variable.
         match Map/lookup(x, m) with {
@@ -516,7 +527,7 @@ def alpha(e0: Expression, m: Map2[Int, Int]): Expression = match e0 with {
     case App(e1, e2) => App(alpha(e1, m), alpha(e2, m))
 
     case Cst(s)             => Cst(s)
-    case Addr(a)            => Addr(a)
+    case Ptr(a)             => Ptr(a)
     case Ref(e)             => Ref(alpha(e, m))
     case Deref(e)           => Deref(alpha(e, m))
     case Seq(e1, e2)        => Seq(alpha(e1, m), alpha(e2, m))
@@ -576,18 +587,6 @@ def inject(e0: Expression): State =
         State(e0, h0, s0, f0, r0, l0, q0)
 
 //
-// We can now test our lambda interpreter!
-//
-def testEval1: State = eval(inject(Abs(0, Var(0))))                                // λx. x
-def testEval2: State = eval(inject(Abs(0, Abs(1, Var(0)))))                        // λx. λy. x
-def testEval3: State = eval(inject(App(Abs(0, Var(0)), Abs(1, Var(1)))))           // (λx. x) (λy. y)
-def testEval4: State = eval(inject(App(Abs(0, Abs(1, Var(0))), Abs(2, Var(2)))))   // (λx. λy. x) (λz. z)
-
-def testEval5: State = eval(inject(
-    Deref(Ref(Cst("hello")))
-))
-
-//
 // Approximately:
 //
 // var x = Ref("Promise1")
@@ -597,10 +596,10 @@ def testEval5: State = eval(inject(
 //
 
 def testEval6: State = eval(inject(
-    App(Abs(0,
-        Seq(Promisify(Var(0)),
-            Seq(OnResolve(Var(0), Abs(42, Ref(Var(42)))),
-                Resolve(Var(0), Cst("hello"))
+    App(Abs(V(0),
+        Seq(Promisify(Var(V(0))),
+            Seq(OnResolve(Var(V(0)), Abs(V(42), Ref(Var(V(42))))),
+                Resolve(Var(V(0)), Cst("hello"))
             ))
         ),
         Ref(Cst("Promise1")))
@@ -610,12 +609,12 @@ def testEval6: State = eval(inject(
 ///
 /// Returns a fresh address.
 ///
-def freshAddr: Int = genSym!()
+def freshAddr: Address = A(genSym!())
 
 ///
 /// Returns a fresh variable.
 ///
-def freshVar: Int = genSym!()
+def freshVar: Variable = V(genSym!())
 
 
 
