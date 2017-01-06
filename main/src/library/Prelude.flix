@@ -119,12 +119,13 @@ def print![a](a: a): a = printHook(a)
 def println![a](a: a): a = printlnHook(a)
 
 ///
-/// The commutative law asserts that for a binary operator `f` the result of f(x, y) is equal to f(y, x).
+/// The commutative law asserts that for a binary operator `f` the result of `f(x, y)` is equal to `f(y, x)`.
 ///
-law commutativity[a, b](f: (a, a) -> b): Bool = ∀(x: a, y: a). f(x, y) == f(y, x)
+law commutativity[a, b](f: (a, a) -> b): Bool =
+    ∀(x: a, y: a). f(x, y) == f(y, x)
 
 ///
-/// The associative law asserts that for a binary operator `f` the result of f(x, f(y, z)) is equal to f(f(x, y), z).
+/// The associative law asserts that for a binary operator `f` the result of `f(x, f(y, z))` is equal to `f(f(x, y), z)`.
 ///
 law associativity[a](f: (a, a) -> a): Bool =
     ∀(x: a, y: a, z: a). f(x, f(y, z)) == f(f(x, y), z)
