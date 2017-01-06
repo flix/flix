@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.TypedAst.Expression.UserError
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Declaration, Expression, Pattern, Root}
 
@@ -42,7 +41,7 @@ import scala.collection.mutable
   *
   * At a high-level, monomorphization works as follows:
   *
-  * 1. We maintain a queue of functions and the types they must be specialized to.
+  * 1. We maintain a queue of functions and the concrete types they must be specialized to.
   * 2. We populate the queue by specialization of non-parametric function definitions and other top-level expressions.
   * 3. We iteratively extract a function from the queue and specialize it:
   *    a. We replace every type variable appearing anywhere in the definition by its concrete type.
@@ -55,7 +54,7 @@ object Monomorph {
   /**
     * A strict substitution is similar to a regular substitution except that free type variables are replaced by the
     * Unit type. In other words, when performing a type substitution if there is no requirement on a polymorphic type
-    * we assume it to be Unit. This is safe since otherwise the type would not be polymorphic.
+    * we assume it to be Unit. This is safe since otherwise the type would not be polymorphic after type-inference.
     */
   case class StrictSubstitution(s: Unification.Substitution) {
     /**
@@ -89,7 +88,7 @@ object Monomorph {
     val queue: mutable.Queue[(Symbol.DefnSym, Declaration.Definition, StrictSubstitution)] = mutable.Queue.empty
 
     /**
-      * A function-local map from a symbol and a type to the fresh symbol for the specialized version of that function.
+      * A function-local map from a symbol and a concrete type to the fresh symbol for the specialized version of that function.
       *
       * For example, if the function:
       *
@@ -233,7 +232,7 @@ object Monomorph {
           val (fs, env1) = specializeFormalParams(fparams, subst0)
           Expression.Universal(fs, visitExp(exp, env0 ++ env1), loc)
 
-        case Expression.UserError(tpe, loc) => UserError(subst0(tpe), loc)
+        case Expression.UserError(tpe, loc) => Expression.UserError(subst0(tpe), loc)
       }
 
       /**
