@@ -209,7 +209,7 @@ def nonValue(e0: Expression): Bool = !isValue(e0)
 /// The evaluation context is a representation of the expression "inside-out" allowing us to recompose
 /// the expression after the redex has been reduced (contracted).
 ///
-def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 with {
+def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 with { // TODO: Change signature and remove option.
     case Var(x) =>
         // A variable cannot be reduced.
         None
@@ -365,7 +365,7 @@ enum Outcome {
     case Next(State),
 
     /// Represents that the reduction is stuck in the state.
-    case Stuck(State),
+    case Stuck(State), // TODO: Rename Done?
 
     /// Represents that the reduction aborted.
     case Abort(Str)
