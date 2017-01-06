@@ -214,12 +214,10 @@ object ClosureConv {
     case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) => freeVariables(exp)
     case SimplifiedAst.Expression.GetTupleIndex(base, offset, tpe, loc) => freeVariables(base)
     case SimplifiedAst.Expression.Tuple(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
-    case SimplifiedAst.Expression.Existential(params, exp, loc) =>
-      val bound = params.map(_.sym)
-      freeVariables(exp).filterNot { v => bound.contains(v._1) }
-    case SimplifiedAst.Expression.Universal(params, exp, loc) =>
-      val bound = params.map(_.sym)
-      freeVariables(exp).filterNot { v => bound.contains(v._1) }
+    case SimplifiedAst.Expression.Existential(fparam, exp, loc) =>
+      freeVariables(exp).filterNot { v => v._1 == fparam.sym }
+    case SimplifiedAst.Expression.Universal(fparam, exp, loc) =>
+      freeVariables(exp).filterNot { v => v._1 == fparam.sym }
     case SimplifiedAst.Expression.UserError(tpe, loc) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.SwitchError(tpe, loc) => mutable.LinkedHashSet.empty
@@ -256,7 +254,7 @@ object ClosureConv {
       }
       case Expression.Ref(name, tpe, loc) => e
       case Expression.Lambda(fparams, exp, tpe, loc) =>
-        val fs = replace(fparams, subst)
+        val fs = fparams.map(fparam => replace(fparam, subst))
         val e = visit(exp)
         Expression.Lambda(fs, e, tpe, loc)
       case Expression.Hook(hook, tpe, loc) => e
@@ -311,12 +309,12 @@ object ClosureConv {
       case Expression.Tuple(elms, tpe, loc) =>
         val es = elms map visit
         Expression.Tuple(es, tpe, loc)
-      case Expression.Existential(fparams, exp, loc) =>
-        val fs = replace(fparams, subst)
+      case Expression.Existential(fparam, exp, loc) =>
+        val fs = replace(fparam, subst)
         val e = visit(exp)
         Expression.Existential(fs, e, loc)
-      case Expression.Universal(fparams, exp, loc) =>
-        val fs = replace(fparams, subst)
+      case Expression.Universal(fparam, exp, loc) =>
+        val fs = replace(fparam, subst)
         val e = visit(exp)
         Expression.Universal(fs, e, loc)
       case Expression.UserError(tpe, loc) => e
@@ -330,7 +328,7 @@ object ClosureConv {
   /**
     * Applies the given substitution map `subst` to the given formal parameters `fs`.
     */
-  private def replace(fs: List[SimplifiedAst.FormalParam], subst: Map[Symbol.VarSym, Symbol.VarSym]): List[SimplifiedAst.FormalParam] = fs map {
+  private def replace(fparam: SimplifiedAst.FormalParam, subst: Map[Symbol.VarSym, Symbol.VarSym]): SimplifiedAst.FormalParam = fparam match {
     case SimplifiedAst.FormalParam(sym, tpe) =>
       subst.get(sym) match {
         case None => SimplifiedAst.FormalParam(sym, tpe)

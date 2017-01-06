@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Highlight._
 
 /**

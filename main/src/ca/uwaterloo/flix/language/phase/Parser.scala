@@ -106,9 +106,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       Declarations.Relation |
       Declarations.Lattice |
       Declarations.Index |
-      Declarations.Law |
-      Declarations.Class |
-      Declarations.Impl
+      Declarations.Law
   }
 
   object Declarations {
@@ -118,8 +116,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Definition: Rule1[ParsedAst.Declaration.Definition] = {
-      def Annotations: Rule1[Seq[ParsedAst.Annotation]] = rule {
-        zeroOrMore(Annotation).separatedBy(WS)
+      def Annotations: Rule1[Seq[ParsedAst.AnnotationOrProperty]] = rule {
+        zeroOrMore(Annotation | Property).separatedBy(WS)
       }
 
       rule {
@@ -156,60 +154,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
       rule {
         Documentation ~ SP ~ atomic("enum") ~ WS ~ Names.Type ~ TypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Enum
-      }
-    }
-
-    def Class: Rule1[ParsedAst.Declaration.Class] = {
-
-      def TypeParams: Rule1[Seq[ParsedAst.Type]] = rule {
-        "[" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ "]"
-      }
-
-      def ContextBound: Rule1[ParsedAst.ContextBound] = rule {
-        SP ~ Names.Class ~ TypeParams ~ SP ~> ParsedAst.ContextBound
-      }
-
-      def ContextBounds: Rule1[Seq[ParsedAst.ContextBound]] = rule {
-        optional(optWS ~ atomic("=>") ~ optWS ~ oneOrMore(ContextBound).separatedBy(optWS ~ "," ~ optWS) ~ optWS) ~>
-          ((o: Option[Seq[ParsedAst.ContextBound]]) => o match {
-            case None => Seq.empty
-            case Some(xs) => xs
-          })
-      }
-
-      def ClassBody: Rule1[Seq[ParsedAst.Declaration]] = rule {
-        "{" ~ optWS ~ zeroOrMore(Definition | Signature | Law).separatedBy(WS) ~ optWS ~ "}"
-      }
-
-      rule {
-        Documentation ~ SP ~ atomic("class") ~ WS ~ Names.Class ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ClassBody ~ SP ~> ParsedAst.Declaration.Class
-      }
-    }
-
-    def Impl: Rule1[ParsedAst.Declaration.Impl] = {
-
-      def TypeParams: Rule1[Seq[ParsedAst.Type]] = rule {
-        "[" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ "]"
-      }
-
-      def ContextBound: Rule1[ParsedAst.ContextBound] = rule {
-        SP ~ Names.Class ~ TypeParams ~ SP ~> ParsedAst.ContextBound
-      }
-
-      def ContextBounds: Rule1[Seq[ParsedAst.ContextBound]] = rule {
-        optional(optWS ~ atomic("<=") ~ optWS ~ oneOrMore(ContextBound).separatedBy(optWS ~ "," ~ optWS) ~ optWS) ~>
-          ((o: Option[Seq[ParsedAst.ContextBound]]) => o match {
-            case None => Seq.empty
-            case Some(xs) => xs
-          })
-      }
-
-      def ImplBody: Rule1[Seq[ParsedAst.Declaration.Definition]] = rule {
-        "{" ~ optWS ~ zeroOrMore(Definition).separatedBy(WS) ~ optWS ~ "}"
-      }
-
-      rule {
-        Documentation ~ SP ~ atomic("impl") ~ WS ~ Names.Class ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ImplBody ~ SP ~> ParsedAst.Declaration.Impl
       }
     }
 
@@ -277,7 +221,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def FormalParams: Rule1[Option[Seq[ParsedAst.FormalParam]]] = rule {
-    optional("(" ~ optWS ~ ArgumentList ~ optWS ~ ")")
+    optional("(" ~ optWS ~ FormalParamList ~ optWS ~ ")")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -753,16 +697,26 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Helpers                                                                 //
   /////////////////////////////////////////////////////////////////////////////
-  def ArgumentList: Rule1[Seq[ParsedAst.FormalParam]] = rule {
-    zeroOrMore(Argument).separatedBy(optWS ~ "," ~ optWS)
+  def FormalParamList: Rule1[Seq[ParsedAst.FormalParam]] = rule {
+    zeroOrMore(FormalParam).separatedBy(optWS ~ "," ~ optWS)
   }
 
-  def Argument: Rule1[ParsedAst.FormalParam] = rule {
+  def FormalParam: Rule1[ParsedAst.FormalParam] = rule {
     SP ~ Names.Variable ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.FormalParam
   }
 
-  def Annotation: Rule1[ParsedAst.Annotation] = rule {
+  def Annotation: Rule1[ParsedAst.AnnotationOrProperty] = rule {
     SP ~ atomic("@") ~ Names.Annotation ~ SP ~> ParsedAst.Annotation
+  }
+
+  def Property: Rule1[ParsedAst.AnnotationOrProperty] = {
+    def ArgumentList: Rule1[Option[Seq[ParsedAst.Expression]]] = rule {
+      optional("(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")")
+    }
+
+    rule {
+      SP ~ atomic("#") ~ Names.QualifiedDefinition ~ ArgumentList ~ SP ~> ParsedAst.Property
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -864,8 +818,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     def Annotation: Rule1[Name.Ident] = LowerCaseName
 
     def Attribute: Rule1[Name.Ident] = LowerCaseName
-
-    def Class: Rule1[Name.Ident] = UpperCaseName
 
     def Definition: Rule1[Name.Ident] = rule {
       LowerCaseName | GreekName | MathName | OperatorName

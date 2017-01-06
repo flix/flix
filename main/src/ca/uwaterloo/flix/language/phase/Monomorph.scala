@@ -224,13 +224,12 @@ object Monomorph {
           val es = elms.map(e => visitExp(e, env0))
           Expression.Tuple(es, subst0(tpe), loc)
 
-        case Expression.Existential(fparams, exp, loc) =>
-          val (fs, env1) = specializeFormalParams(fparams, subst0)
-          Expression.Existential(fs, visitExp(exp, env0 ++ env1), loc)
-
-        case Expression.Universal(fparams, exp, loc) =>
-          val (fs, env1) = specializeFormalParams(fparams, subst0)
-          Expression.Universal(fs, visitExp(exp, env0 ++ env1), loc)
+        case Expression.Existential(fparam, exp, loc) =>
+          val (param, env1) = specializeFormalParam(fparam, subst0)
+          Expression.Existential(param, visitExp(exp, env0 ++ env1), loc)
+        case Expression.Universal(fparam, exp, loc) =>
+          val (param, env1) = specializeFormalParam(fparam, subst0)
+          Expression.Universal(param, visitExp(exp, env0 ++ env1), loc)
 
         case Expression.UserError(tpe, loc) => Expression.UserError(subst0(tpe), loc)
       }
@@ -310,6 +309,7 @@ object Monomorph {
      * A map used to collect specialized definitions, etc.
      */
     val specializedDefns: mutable.Map[Symbol.DefnSym, Declaration.Definition] = mutable.Map.empty
+    val specializedProperties: mutable.ListBuffer[TypedAst.Property] = mutable.ListBuffer.empty
     // TODO: Specialize expressions occurring in other places, e.g facts/rules/properties.
 
     /*
@@ -334,6 +334,23 @@ object Monomorph {
 
       // Reassemble the definition.
       specializedDefns.put(sym, defn.copy(formals = fparams, exp = body))
+    }
+
+    /*
+     * Perform specialization of all properties.
+     */
+    for (TypedAst.Property(law, defn, exp0, loc) <- root.properties) {
+      // Specialize the property under the empty substitution.
+      val subst0 = StrictSubstitution(Unification.Substitution.empty)
+
+      // A property has no formal parameters and hence the initial environment is empty.
+      val env0 = Map.empty[Symbol.VarSym, Symbol.VarSym]
+
+      // Specialize the expression.
+      val exp = specialize(exp0, env0, subst0)
+
+      // Reassemble the property.
+      specializedProperties += TypedAst.Property(law, defn, exp, loc)
     }
 
     /*
@@ -363,6 +380,7 @@ object Monomorph {
     // Reassemble the AST.
     root.copy(
       definitions = specializedDefns.toMap,
+      properties = specializedProperties.toList,
       time = root.time.copy(monomorph = e)
     )
   }

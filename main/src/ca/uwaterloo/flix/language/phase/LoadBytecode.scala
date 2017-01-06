@@ -91,7 +91,8 @@ object LoadBytecode {
         case t => f.copy(tpe = Type.mkArrow(List(), t))
       }
     }.toList.groupBy(_.sym.prefix)
-    val constantsList: List[Definition.Constant] = constantsMap.values.flatten.toList
+    // TODO: Here we filter laws, since the backend does not support existentials/universals, but could we fix that?
+    val constantsList: List[Definition.Constant] = constantsMap.values.flatten.toList.filterNot(_.ann.isLaw)
 
     // 2. Create the declarations map.
     val declarations: Map[Symbol.DefnSym, Type] = constantsList.map(f => f.sym -> f.tpe).toMap
@@ -120,7 +121,8 @@ object LoadBytecode {
     }.toMap // Despite IDE highlighting, this is actually necessary.
 
     // 5. Load the methods.
-    for ((prefix, consts) <- constantsMap; const <- consts) {
+    // TODO: Here we filter laws, since the backend does not support existentials/universals, but could we fix that?
+    for ((prefix, consts) <- constantsMap; const <- consts; if !const.ann.isLaw) {
       val Type.Apply(Type.Arrow(l), ts) = const.tpe
       val targs = ts.take(l - 1)
 
@@ -205,9 +207,9 @@ object LoadBytecode {
       case Expression.GetTupleIndex(base, offset, tpe, loc) => visit(base)
       case Expression.Tuple(elms, tpe, loc) => elms.flatMap(visit).toSet
       case Expression.Existential(params, exp, loc) =>
-        throw InternalCompilerException(s"Unexpected expression: '$e' at ${loc.source.format}.")
+        ???
       case Expression.Universal(params, exp, loc) =>
-        throw InternalCompilerException(s"Unexpected expression: '$e' at ${loc.source.format}.")
+        ???
       case Expression.UserError(tpe, loc) => Set.empty
       case Expression.MatchError(tpe, loc) => Set.empty
       case Expression.SwitchError(tpe, loc) => Set.empty

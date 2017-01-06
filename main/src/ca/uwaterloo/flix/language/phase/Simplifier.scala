@@ -219,14 +219,14 @@ object Simplifier {
         SimplifiedAst.Expression.Tag(sym, tag, simplify(e), tpe, loc)
       case TypedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
-      case TypedAst.Expression.Existential(params, exp, loc) =>
-        val ps = params.map(p => SimplifiedAst.FormalParam(p.sym, p.tpe))
+      case TypedAst.Expression.Existential(fparam, exp, loc) =>
+        val p = SimplifiedAst.FormalParam(fparam.sym, fparam.tpe)
         val e = simplify(exp)
-        SimplifiedAst.Expression.Existential(ps, e, loc)
-      case TypedAst.Expression.Universal(params, exp, loc) =>
-        val ps = params.map(p => SimplifiedAst.FormalParam(p.sym, p.tpe))
+        SimplifiedAst.Expression.Existential(p, e, loc)
+      case TypedAst.Expression.Universal(fparam, exp, loc) =>
+        val p = SimplifiedAst.FormalParam(fparam.sym, fparam.tpe)
         val e = simplify(exp)
-        SimplifiedAst.Expression.Universal(ps, e, loc)
+        SimplifiedAst.Expression.Universal(p, e, loc)
       case TypedAst.Expression.UserError(tpe, loc) =>
         SimplifiedAst.Expression.UserError(tpe, loc)
     }
@@ -386,7 +386,7 @@ object Simplifier {
     SimplifiedAst.FormalParam(tast.sym, tast.tpe)
 
   def simplify(tast: TypedAst.Property)(implicit genSym: GenSym): SimplifiedAst.Property =
-    SimplifiedAst.Property(tast.law, Expression.simplify(tast.exp), tast.loc)
+    SimplifiedAst.Property(tast.law, tast.defn, Expression.simplify(tast.exp))
 
   /**
     * Returns `true` if the given pattern `pat` is a literal.

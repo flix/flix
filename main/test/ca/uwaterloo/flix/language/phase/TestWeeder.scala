@@ -25,7 +25,7 @@ class TestWeeder extends FunSuite with TestUtils {
 
   test("DuplicateAnnotation.01") {
     val input =
-      """@strict @strict
+      """@test @test
         |def foo(x: Int): Int = 42
       """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -34,7 +34,7 @@ class TestWeeder extends FunSuite with TestUtils {
 
   test("DuplicateAnnotation.02") {
     val input =
-      """@strict @monotone @strict @monotone
+      """@test @internal @test @internal
         |def foo(x: Int): Int = 42
       """.stripMargin
     val result = new Flix().addStr(input).compile()

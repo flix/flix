@@ -168,7 +168,8 @@ object Codegen {
 
     compileStaticFlixField(ctx, visitor)
     compileConstructor(ctx, visitor)
-    ctx.functions.foreach(compileFunction(ctx, visitor))
+    // TODO: Here we filter laws, since the backend does not support existentials/universals, but could we fix that?
+    ctx.functions.filterNot(_.ann.isLaw).foreach(compileFunction(ctx, visitor))
 
     visitor.visitEnd()
 

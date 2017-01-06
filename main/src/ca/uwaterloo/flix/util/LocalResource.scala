@@ -35,6 +35,8 @@ object LocalResource {
 
     def Prelude: InputStream = getInputStream("/library/Prelude.flix")
 
+    def PartialOrder: InputStream = getInputStream("/library/PartialOrder.flix")
+
     def Set: InputStream = getInputStream("/library/Set.flix")
 
     def Map: InputStream = getInputStream("/library/Map.flix")
