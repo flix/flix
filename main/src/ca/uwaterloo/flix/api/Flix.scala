@@ -230,13 +230,13 @@ class Flix {
         if (options.documentor) {
           Documentor.document(tast)
         }
-        val mast = Monomorph.monomorph(tast)
-        val sast = Simplifier.simplify(mast)
-        val lifted = Tailrec.tailrec(LambdaLift.lift(sast))
-        val numbered = VarNumbering.number(lifted)
-        val east = CreateExecutableAst.toExecutable(numbered)
-        val compiled = LoadBytecode.load(this, east, options)
-        QuickChecker.quickCheck(compiled, options) flatMap {
+        val monomorphedAst = Monomorph.monomorph(tast)
+        val simplifiedAst = Simplifier.simplify(monomorphedAst)
+        val lambdaLiftedAst = Tailrec.tailrec(LambdaLift.lift(simplifiedAst))
+        val numberedAst = VarNumbering.number(lambdaLiftedAst)
+        val executableAst = CreateExecutableAst.toExecutable(numberedAst)
+        val compiledAst = LoadBytecode.load(this, executableAst, options)
+        QuickChecker.quickCheck(compiledAst, options) flatMap {
           r =>
             Verifier.verify(r, options) map {
               case root => root
