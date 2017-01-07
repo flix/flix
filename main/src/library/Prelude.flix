@@ -65,7 +65,33 @@ def <<[a, b, c](f: b -> c, g: a -> b): a -> c = x -> f(g(x))
 ///
 def >>[a, b, c](f: a -> b, g: b -> c): a -> c = x -> g(f(x))
 
+///
+/// Pipes the given value `x` into the function `f`.
+///
+/// Given a value `x: a` and a function `f: a -> b` returns `f(x)`.
+///
+def |>[a, b](x: a, f: a -> b): b = f(x)
 
+///
+/// Pipes the given pair `p` into the function `f`.
+///
+/// Given a pair `x: (a1, a1)` and a function `f: ((a1, a2)) -> b` returns `f(x)`.
+///
+def ||>[a1, a2, b](x: (a1, a2), f: ((a1, a2)) -> b): b = f(x)
+
+///
+/// Pipes the given value `x` into the function `f`.
+///
+/// Given a value `x: a` and a function `f: a -> b` returns `f(x)`.
+///
+def <|[a, b](f: a -> b, x: a): b = f(x)
+
+///
+/// Pipes the given pair `p` into the function `f`.
+///
+/// Given a pair `x: (a1, a1)` and a function `f: ((a1, a2)) -> b` returns `f(x)`.
+///
+def <||[a1, a2, b](f: ((a1, a2)) -> b, x: (a1, a2)): b = f(x)
 
 ///
 /// Alias for logical conjunction.
