@@ -52,6 +52,22 @@ enum Map[k, v] {
 }
 
 ///
+/// Backwards function composition. Applies the function on the right first.
+///
+/// Given the functions `f: b -> c` and `g: a -> b` returns a function `a -> c`
+///
+def <<[a, b, c](f: b -> c, g: a -> b): a -> c = x -> f(g(x))
+
+///
+/// Forwards function composition. Applies the function on the left first.
+///
+/// Given the functions `f: a -> b` and `g: b -> c` returns a function `a -> c`
+///
+def >>[a, b, c](f: a -> b, g: b -> c): a -> c = x -> g(f(x))
+
+
+
+///
 /// Alias for logical conjunction.
 ///
 def ∧(x: Bool, y: Bool): Bool = x && y
@@ -100,8 +116,7 @@ def assertNot!(b: Bool): Bool =
 ///
 /// Asserts that the given values `x` and `y` are equal.
 ///
-// TODO: Must be generic, but that requires mono-morphization.
-def assertEq!(x: Bool, y: Bool): Bool = if (x == y) true else ???
+def assertEq![a](x: a, y: a): Bool = if (x == y) true else ???
 
 ///
 /// Returns a freshly generated integer. (NB: Requires the --Ximpure feature flag.)
