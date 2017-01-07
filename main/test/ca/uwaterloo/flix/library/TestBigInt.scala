@@ -18,12 +18,12 @@ package ca.uwaterloo.flix.library
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.Value
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{Evaluation, Options}
 import org.scalatest.FunSuite
 
 class TestBigInt extends FunSuite {
 
-  val options = Options.DefaultTest
+  val options = Options.DefaultTest.copy(evaluation=Evaluation.Interpreted)
 
   def runTest(input: String, output: AnyRef) {
     val flix = new Flix().setOptions(options).addPath("main/src/library/BigInt.flix").addStr(input)

@@ -28,17 +28,17 @@ class TestList extends FunSuite {
   val options = Options.DefaultTest.copy(evaluation=Evaluation.Interpreted)
 
   def runTest(input: String, output: Int) {
-    val flix = new Flix().setOptions(options).addPath("main/src/library/List.flix").addPath("main/src/library/Option.flix").addStr(input)
+    val flix = new Flix().setOptions(options).addStr(input)
     assertResult(output)(flix.solve().get.getConstant("r"))
   }
 
   def runBoolTest(input: String, output: Boolean) {
-    val flix = new Flix().setOptions(options).addPath("main/src/library/List.flix").addPath("main/src/library/Option.flix").addStr(input)
+    val flix = new Flix().setOptions(options).addStr(input)
     assertResult(output)(flix.solve().get.getConstant("r"))
   }
 
   def runAnyTest(input: String, output: AnyRef) {
-    val flix = new Flix().setOptions(options).addPath("main/src/library/List.flix").addPath("main/src/library/Option.flix").addStr(input)
+    val flix = new Flix().setOptions(options).addStr(input)
     assertResult(output)(flix.solve().get.getConstant("r"))
   }
 
@@ -52,6 +52,7 @@ class TestList extends FunSuite {
   def mkSome(x: Int): AnyRef = Value.mkSome(new Integer(x))
   def mkTuple(x: Int, y: Int): AnyRef = Value.Tuple(Array(new Integer(x), new Integer(y)))
   def mkAnyTuple(x: AnyRef, y: AnyRef): AnyRef = Value.Tuple(Array(x, y))
+  def mkSet(xs: List[Int]): AnyRef = Value.mkFlixSet(xs.map(x => new Integer(x)))
 
   test("isEmpty.01") {
     val input = "def r: Bool = List/isEmpty(Nil)"
@@ -3712,8 +3713,6 @@ class TestList extends FunSuite {
     runAnyTest(input, mkList(List(2, 2, 1, 3, 3, 3, 4, 4, 4, 4)))
   }
 
-  //filterMap[a,b](f: a -> Option[b], xs: List[a]): List[b]
-
   test("filterMap.01") {
     val input =
       """def f(i: Int32): Option[Int32] = if (i % 2 == 0) Some(i/2) else None
@@ -3848,5 +3847,50 @@ class TestList extends FunSuite {
         |def r: Option[Int32] = List/findMap(f, 12 :: 3 :: 5 :: 7 :: 87 :: 112 :: 38 :: 37 :: Nil)
       """.stripMargin
     runAnyTest(input, mkSome(6))
+  }
+
+  test("toSet.01") {
+    val input = "def r: Set[Int32] = List/toSet(Nil)"
+    runAnyTest(input, mkSet(List()))
+  }
+
+  test("toSet.02") {
+    val input = "def r: Set[Int32] = List/toSet(1 :: Nil)"
+    runAnyTest(input, mkSet(List(1)))
+  }
+
+  test("toSet.03") {
+    val input = "def r: Set[Int32] = List/toSet(1 :: 2 :: Nil)"
+    runAnyTest(input, mkSet(List(1, 2)))
+  }
+
+  test("toSet.04") {
+    val input = "def r: Set[Int32] = List/toSet(2 :: 1 :: Nil)"
+    runAnyTest(input, mkSet(List(2, 1)))
+  }
+
+  test("toSet.05") {
+    val input = "def r: Set[Int32] = List/toSet(2 :: 2 :: Nil)"
+    runAnyTest(input, mkSet(List(2)))
+  }
+
+  test("toSet.06") {
+    val input = "def r: Set[Int32] = List/toSet(1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkSet(List(1, 2, 3)))
+  }
+
+  test("toSet.07") {
+    val input = "def r: Set[Int32] = List/toSet(2 :: 1 :: 2 :: 3 :: Nil)"
+    runAnyTest(input, mkSet(List(1, 2, 3)))
+  }
+
+  test("toSet.08") {
+    val input = "def r: Set[Int32] = List/toSet(11 :: 9 :: -1 :: 3 :: 2 :: 1 :: 2 :: 3 :: 11 :: Nil)"
+    runAnyTest(input, mkSet(List(9, -1, 1, 2, 3, 11)))
+  }
+
+  test("toSet.09") {
+    val input = "def r: Set[Int32] = List/toSet(4 :: 11 :: 9 :: 3 :: 4 :: 1 :: 9 :: -9 :: Nil)"
+    runAnyTest(input, mkSet(List(11, 3, 4, 1, 9, -9)))
   }
 }

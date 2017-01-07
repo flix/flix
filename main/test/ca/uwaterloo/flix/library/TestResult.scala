@@ -28,17 +28,17 @@ class TestResult extends FunSuite {
   val options = Options.DefaultTest.copy(evaluation=Evaluation.Interpreted)
 
   def runTest(input: String, output: Int) {
-    val flix = new Flix().setOptions(options).addPath("main/src/library/Result.flix").addStr(input)
+    val flix = new Flix().setOptions(options).addStr(input)
     assertResult(output)(flix.solve().get.getConstant("r"))
   }
 
   def runBoolTest(input: String, output: Boolean) {
-    val flix = new Flix().setOptions(options).addPath("main/src/library/Result.flix").addStr(input)
+    val flix = new Flix().setOptions(options).addStr(input)
     assertResult(output)(flix.solve().get.getConstant("r"))
   }
 
   def runAnyTest(input: String, output: AnyRef) {
-    val flix = new Flix().setOptions(options).addPath("main/src/library/Result.flix").addStr(input)
+    val flix = new Flix().setOptions(options).addStr(input)
     assertResult(output)(flix.solve().get.getConstant("r"))
   }
 
@@ -371,16 +371,14 @@ class TestResult extends FunSuite {
     runAnyTest(input, Value.mkList(List(new Integer(11))))
   }
 
-  // TODO
-  ignore("toSet.01") {
+  test("toSet.01") {
     val input = "def r: Set[Int32] = Result/toSet(Err(0))"
-    runAnyTest(input, Set())
+    runAnyTest(input, Value.mkFlixSet(List()))
   }
 
-  // TODO
-  ignore("toSet.02") {
+  test("toSet.02") {
     val input = "def r: Set[Int32] = Result/toSet(Ok(4))"
-    runAnyTest(input, Set(4))
+    runAnyTest(input, Value.mkFlixSet(List(new Integer(4))))
   }
 
   test("toOption.01") {

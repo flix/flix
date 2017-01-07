@@ -526,8 +526,8 @@ object Weeder {
           @@(elms map visit) map {
             case es =>
               val empty = mkApply("Set/empty", Nil, sp1, sp2)
-              es.foldLeft(empty) {
-                case (acc, elm) => mkApply("Set/insert", List(elm, acc), sp1, sp2)
+              es.foldRight(empty) {
+                case (elm, acc) => mkApply("Set/insert", List(elm, acc), sp1, sp2)
               }
           }
 
