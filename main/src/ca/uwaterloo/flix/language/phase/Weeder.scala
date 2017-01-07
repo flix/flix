@@ -392,7 +392,7 @@ object Weeder {
               case "!" => WeededAst.Expression.Unary(UnaryOperator.LogicalNot, e, loc)
               case "+" => WeededAst.Expression.Unary(UnaryOperator.Plus, e, loc)
               case "-" => WeededAst.Expression.Unary(UnaryOperator.Minus, e, loc)
-              case "~" => WeededAst.Expression.Unary(UnaryOperator.BitwiseNegate, e, loc)
+              case "~~~" => WeededAst.Expression.Unary(UnaryOperator.BitwiseNegate, e, loc)
               case _ => mkApply(op, List(e), sp1, sp2)
             }
           }
@@ -416,11 +416,11 @@ object Weeder {
               case "!=" => WeededAst.Expression.Binary(BinaryOperator.NotEqual, e1, e2, loc)
               case "&&" => WeededAst.Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, loc)
               case "||" => WeededAst.Expression.Binary(BinaryOperator.LogicalOr, e1, e2, loc)
-              case "&" => WeededAst.Expression.Binary(BinaryOperator.BitwiseAnd, e1, e2, loc)
-              case "|" => WeededAst.Expression.Binary(BinaryOperator.BitwiseOr, e1, e2, loc)
-              case "^" => WeededAst.Expression.Binary(BinaryOperator.BitwiseXor, e1, e2, loc)
-              case "<<" => WeededAst.Expression.Binary(BinaryOperator.BitwiseLeftShift, e1, e2, loc)
-              case ">>" => WeededAst.Expression.Binary(BinaryOperator.BitwiseRightShift, e1, e2, loc)
+              case "&&&" => WeededAst.Expression.Binary(BinaryOperator.BitwiseAnd, e1, e2, loc)
+              case "|||" => WeededAst.Expression.Binary(BinaryOperator.BitwiseOr, e1, e2, loc)
+              case "^^^" => WeededAst.Expression.Binary(BinaryOperator.BitwiseXor, e1, e2, loc)
+              case "<<<" => WeededAst.Expression.Binary(BinaryOperator.BitwiseLeftShift, e1, e2, loc)
+              case ">>>" => WeededAst.Expression.Binary(BinaryOperator.BitwiseRightShift, e1, e2, loc)
               case _ => mkApply(op, List(e1, e2), sp1, sp2)
             }
           }

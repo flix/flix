@@ -24,12 +24,12 @@ namespace Int8 {
     ///
     /// Returns the minimum number representable by an `Int8`.
     ///
-    def minValue: Int8 = 1i8 << (size() - 1)
+    def minValue: Int8 = 1i8 <<< (size() - 1)
 
     ///
     /// Returns the maximum number representable by an `Int8`.
     ///
-    def maxValue: Int8 = ~minValue()
+    def maxValue: Int8 = ~~~minValue()
 
     ///
     /// Returns the smaller of `x` and `y`.
@@ -135,7 +135,7 @@ namespace Int8 {
     def bitPositionToInt(position: Int32): Int8 = switch {
         case position < 0 || position > size() - 1  => 0i8
         case position == size() - 1                 => minValue()
-        case position != size() - 1                 => 1i8 << position
+        case position != size() - 1                 => 1i8 <<< position
     }
 
     ///
@@ -160,5 +160,5 @@ namespace Int8 {
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
     def bit(x: Int8, position: Int32): Int32 =
-        if ((x >> position) % 2i8 == 0i8) 0 else 1
+        if ((x >>> position) % 2i8 == 0i8) 0 else 1
 }
