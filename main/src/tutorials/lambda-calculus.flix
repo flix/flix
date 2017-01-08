@@ -79,6 +79,7 @@ def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 wi
 /// Returns an expression reconstructed from the given evaluation context `ec0`
 /// with the given expression `e0` replacing the hole in the context.
 ///
+// TODO: Change order of arguments.
 def recompose(ec0: EvaluationContext, e0: Expression): Expression = match ec0 with {
     case Hole         => e0
     case EApp1(ec, e) => App(recompose(ec, e0), e)

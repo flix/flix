@@ -185,7 +185,7 @@ enum PromiseValue {
 ///
 enum State {
     // TODO: Need to add a component LinkQueue, and rename Queue to MainQueue
-    case State(Expression, Heap, PromiseState, FulfillReactions, RejectReactions, PromiseLinks, Queue)
+    case State(Heap, PromiseState, FulfillReactions, RejectReactions, PromiseLinks, Queue)
 }
 
 ///
@@ -209,7 +209,7 @@ def nonValue(e0: Expression): Bool = !isValue(e0)
 /// The evaluation context is a representation of the expression "inside-out" allowing us to recompose
 /// the expression after the redex has been reduced (contracted).
 ///
-def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 with { // TODO: Change signature and remove option.
+def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 with {
     case Var(x) =>
         // A variable cannot be reduced.
         None
@@ -218,7 +218,6 @@ def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 wi
         // An abstraction cannot be reduced.
         None
 
-    // TODO: Data type like: Both(V, V), One(V), Zilch ?
     case App(e1, e2) => switch {
         case isValue(e1) && isValue(e2) =>
             // The expression is a redex.
@@ -337,162 +336,200 @@ def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 wi
 /// Returns an expression reconstructed from the given evaluation context `ec0`
 /// with the given expression `e0` replacing the hole in the context.
 ///
-def recompose(ec0: EvaluationContext, e0: Expression): Expression = match ec0 with {
+def recompose(e0: Expression, ec0: EvaluationContext): Expression = match ec0 with {
     case Hole               => e0
-    case EApp1(ec, e)       => App(recompose(ec, e0), e)
-    case EApp2(v, ec)       => App(v, recompose(ec, e0))
-    case ERef(ec)           => Ref(recompose(ec, e0))
-    case EDeref(ec)         => Deref(recompose(ec, e0))
-    case ESeq(ec, e)        => Seq(recompose(ec, e0), e)
-    case EPromisify(ec)     => Promisify(recompose(ec, e0))
-    case EResolve1(ec, e)   => Resolve(recompose(ec, e0), e)
-    case EResolve2(e, ec)   => Resolve(e, recompose(ec, e0))
-    case EReject1(ec, e)    => Reject(recompose(ec, e0), e)
-    case EReject2(e, ec)    => Reject(e, recompose(ec, e0))
-    case EOnResolve1(ec, e) => OnResolve(recompose(ec, e0), e)
-    case EOnResolve2(e, ec) => OnResolve(e, recompose(ec, e0))
-    case EOnReject1(ec, e)  => OnReject(recompose(ec, e0), e)
-    case EOnReject2(e, ec)  => OnReject(e, recompose(ec, e0))
-    case ELink1(ec, e)      => Link(recompose(ec, e0), e)
-    case ELink2(e, ec)      => Link(e, recompose(ec, e0))
+    case EApp1(ec, e)       => App(recompose(e0, ec), e)
+    case EApp2(v, ec)       => App(v, recompose(e0, ec))
+    case ERef(ec)           => Ref(recompose(e0, ec))
+    case EDeref(ec)         => Deref(recompose(e0, ec))
+    case ESeq(ec, e)        => Seq(recompose(e0, ec), e)
+    case EPromisify(ec)     => Promisify(recompose(e0, ec))
+    case EResolve1(ec, e)   => Resolve(recompose(e0, ec), e)
+    case EResolve2(e, ec)   => Resolve(e, recompose(e0, ec))
+    case EReject1(ec, e)    => Reject(recompose(e0, ec), e)
+    case EReject2(e, ec)    => Reject(e, recompose(e0, ec))
+    case EOnResolve1(ec, e) => OnResolve(recompose(e0, ec), e)
+    case EOnResolve2(e, ec) => OnResolve(e, recompose(e0, ec))
+    case EOnReject1(ec, e)  => OnReject(recompose(e0, ec), e)
+    case EOnReject2(e, ec)  => OnReject(e, recompose(e0, ec))
+    case ELink1(ec, e)      => Link(recompose(e0, ec), e)
+    case ELink2(e, ec)      => Link(e, recompose(e0, ec))
 }
 
 ///
 /// Represents the outcome of a single reduction step.
 ///
 enum Outcome {
-    /// Represents the next step of the reduction.
-    case Next(State),
+    /// Represents that the reduction can make a transition.
+    case Next(Expression, State),
+
+    /// Represents that the reduction is complete for the state.
+    case Done(Expression, State),
 
     /// Represents that the reduction is stuck in the state.
-    case Stuck(State), // TODO: Rename Done?
-
-    /// Represents that the reduction aborted.
     case Abort(Str)
 }
 
 ///
 /// Performs a single reduction step in the given machine `m0`.
 ///
-def reduce(m0: State): Outcome = match m0 with { // TODO: Remove State from here, and list the components explicitely. (or remove expression from the state).
+def reduce(e0: Expression, m0: State): Outcome = match redex(e0) with {
+    /*
+     * The expression `e0` is irreducible.
+     *
+     * Either the evaluation is complete or there is at least one job in the event queue.
+     */
+    case None =>
+        // Check if the expression `e0` is a value.
+        if (isValue(e0))
+            // Case 1: The expression is a value.
+            // Check if the queue is empty.
+            match m0 with {
+                case State(h0, s0, f0, r0, l0, Queue(Nil)) =>
+                    // Case 1.1: The queue is empty. The evaluation is complete.
+                     Done(e0, m0)
 
-    // TODO: Add LinkQueue and check that it is empty.
+                case State(h0, s0, f0, r0, l0, Queue(q0)) =>
+                    // Case 1.2: The queue is non-empty. Evaluate each job in the queue.
+                    let f = (job, rest) -> match job with {
+                        case (Fulfilled(v), lambda, childPromise) => Seq(App(lambda, v), rest) // TODO: What to do with the child promise? Probably onResolve?
+                        case (Rejected(v), lambda, childPromise)  => ??? // NB: Similar to Fulfilled.
+                        case _                                    => ??? // Impossible. The promise should not be pending.
+                    };
+                    let e = List/foldRight(f, Cst("Undef"), q0); // TODO: Figure out whether to use fold Left or Right.
+                        Next(e, State(h0, s0, f0, r0, l0, Queue(Nil)))
+            }
+        else
+            // Case 2: The expression is a non-value, i.e. it is stuck.
+            Done(e0, m0)
 
-    case State(App(Abs(x, e1), e2), h0, s0, f0, r0, l0, q0) =>
-        // Apply beta-reduction: Use alpha-renaming to avoid capture.
-        let e = substitute(e1, x, alpha(e2, Map/empty()));
-            Next(State(e, h0, s0, f0, r0, l0, q0))
+    /*
+     * The expression `e0` contains the redex `rdx` with evaluation context `ec`.
+     *
+     * Apply the appropriate evaluation rule.
+     */
+    case Some((rdx, ec)) => match (rdx, m0) with {
 
-    case State(Seq(v, e), h0, s0, f0, r0, l0, q0) =>
-        // Discard the value in the sequence.
-        Next(State(e, h0, s0, f0, r0, l0, q0))
+        // TODO: Add LinkQueue and check that it is empty.
 
-    case State(Ref(v), Heap(h0), s0, f0, r0, l0, q0) =>
-        // Allocate a fresh address in the heap and store the value at that address.
-        let a = freshAddr();
-        let h1 = Map/insert(a, v, h0);
-        let e1 = Ptr(a);
-            Next(State(e1, Heap(h1), s0, f0, r0, l0, q0))
+        case (App(Abs(x, e1), e2), State(h0, s0, f0, r0, l0, q0)) =>
+            // Apply beta-reduction: Use alpha-renaming to avoid capture.
+            let e = substitute(e1, x, alpha(e2, Map/empty()));
+                Next(recompose(e, ec), State(h0, s0, f0, r0, l0, q0))
 
-    case State(Deref(Ptr(a)), Heap(h0), s0, f0, r0, l0, q0) =>
-        // Dereference the address and return its value.
-        match Map/lookup(a, h0) with {
-            case None => Abort("Unable to dereference unallocated address!")
-            case Some(v) => Next(State(v, Heap(h0), s0, f0, r0, l0, q0))
-        }
+        case (Seq(v, e), State(h0, s0, f0, r0, l0, q0)) =>
+            // Discard the value in the sequence.
+            Next(recompose(e, ec), State(h0, s0, f0, r0, l0, q0))
 
-    case State(Promisify(Ptr(a)), h0, PromiseState(s0), f0, r0, l0, q0) =>
-        // Sets the state of an uninitialized promise to pending.
-        match Map/lookup(a, s0) with {
-            case None =>
-                let s1 = Map/insert(a, Pending, s0);
-                    Next(State(Cst("Undef"), h0, PromiseState(s1), f0, r0, l0, q0))
-            case Some(_) => Next(m0)
-        }
+        case (Ref(v), State(Heap(h0), s0, f0, r0, l0, q0)) =>
+            // Allocate a fresh address in the heap and store the value at that address.
+            let a = freshAddr();
+            let h1 = Map/insert(a, v, h0);
+            let e1 = Ptr(a);
+                Next(recompose(e1, ec), State(Heap(h1), s0, f0, r0, l0, q0))
 
-    case State(Resolve(Ptr(a), v), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
-        // Lookup the state of the promise.
-        match Map/lookup(a, s0) with {
-            case None =>
-                // Case 1: The address is not a promise. The evaluation is stuck.
-                Abort("Unable to resolve non-promise address!")
-            case Some(Pending) =>
-                // Case 2: The promise is pending.
+        case (Deref(Ptr(a)), State(Heap(h0), s0, f0, r0, l0, q0)) =>
+            // Dereference the address and return its value.
+            match Map/lookup(a, h0) with {
+                case None => Abort("Unable to dereference unallocated address!")
+                case Some(v) => Next(recompose(v, ec), State(Heap(h0), s0, f0, r0, l0, q0))
+            }
 
-                // Set the promise state to fulfilled.
-                let s1 = Map/insert(a, Fulfilled(v), s0);
+        case (Promisify(Ptr(a)), State(h0, PromiseState(s0), f0, r0, l0, q0)) =>
+            // Sets the state of an uninitialized promise to pending.
+            match Map/lookup(a, s0) with {
+                case None =>
+                    // Case 1: The address has not yet been promisified. Set the promise state to pending.
+                    let s1 = Map/insert(a, Pending, s0);
+                        Next(recompose(Cst("Undef"), ec), State(h0, PromiseState(s1), f0, r0, l0, q0))
+                case Some(_) =>
+                    // Case 2: The address has *already* been promisified. Simply return undef.
+                    Next(recompose(Cst("Undef"), ec), m0)
+            }
 
-                // Clear out the fulfill reactions.
-                let f1 = Map/insert(a, Nil, f0);
+        case (Resolve(Ptr(a), v), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0))) =>
+            // Lookup the state of the promise.
+            match Map/lookup(a, s0) with {
+                case None =>
+                    // Case 1: The address is not a promise. The evaluation is stuck.
+                    Abort("Unable to resolve non-promise address!")
+                case Some(Pending) =>
+                    // Case 2: The promise is pending.
 
-                // Clear out the rejected reactions.
-                let r1 = Map/insert(a, Nil, r0);
+                    // Set the promise state to fulfilled.
+                    let s1 = Map/insert(a, Fulfilled(v), s0);
 
-                // Clear out the promise links.
-                let l1 = Map/insert(a, Nil, l0);
+                    // Clear out the fulfill reactions.
+                    let f1 = Map/insert(a, Nil, f0);
 
-                // Retrieve the fulfill reactions and append them to the queue.
-                let rs = Map/getWithDefault(a, Nil, f0);
-                let q1 = q0 ::: List/map(match (lam, addr) -> (Fulfilled(v), lam, addr), rs);
-                    Next(State(Cst("Undef"), Heap(h0), PromiseState(s1), FulfillReactions(f1), RejectReactions(r1), PromiseLinks(l1), Queue(q1)))
-            case Some(Fulfilled(v)) =>
-                // Case 3: The promise has already been fulfilled with the value `v`. The resolve has no effect.
-                Next(State(Cst("Undef"), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)))
-            case Some(Rejected(v)) =>
-                // Case 4: The promise has already been rejected with the value `v`. The resolve has no effect.
-                Next(State(Cst("Undef"), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)))
-        }
+                    // Clear out the rejected reactions.
+                    let r1 = Map/insert(a, Nil, r0);
 
-    case State(Reject(e1, e2), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
-        ??? // TODO: Similar to Resolve.
+                    // Clear out the promise links.
+                    let l1 = Map/insert(a, Nil, l0);
 
-    case State(OnResolve(Ptr(a), lam), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
-        // Lookup the state of the promise.
-        match Map/lookup(a, s0) with {
-            case None =>
-                // Case 1: The address is not a promise. The evaluation is stuck.
-                Abort("Unable to register reaction on non-promise address!")
-            case Some(Pending) =>
-                // Case 2: The promise is in the pending state.
+                    // Retrieve the fulfill reactions and append them to the queue.
+                    let rs = Map/getWithDefault(a, Nil, f0);
+                    let q1 = q0 ::: List/map(match (lam, addr) -> (Fulfilled(v), lam, addr), rs);
+                        Next(recompose(Cst("Undef"), ec), State(Heap(h0), PromiseState(s1), FulfillReactions(f1), RejectReactions(r1), PromiseLinks(l1), Queue(q1)))
+                case Some(Fulfilled(v)) =>
+                    // Case 3: The promise has already been fulfilled with the value `v`. The resolve has no effect.
+                    Next(recompose(Cst("Undef"), ec), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)))
+                case Some(Rejected(v)) =>
+                    // Case 4: The promise has already been rejected with the value `v`. The resolve has no effect.
+                    Next(recompose(Cst("Undef"), ec), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)))
+            }
 
-                // Allocate a child promise.
-                let childAddr = freshAddr();
+        case (Reject(e1, e2), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0))) =>
+            ??? // NB: Similiar to Resolve.
 
-                // Allocate a fresh "object" in the heap. We use a string instead.
-                let h1 = Map/insert(childAddr, Cst("child"), h0);
+        case (OnResolve(Ptr(a), lam), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0))) =>
+            // Lookup the state of the promise.
+            match Map/lookup(a, s0) with {
+                case None =>
+                    // Case 1: The address is not a promise. The evaluation is stuck.
+                    Abort("Unable to register reaction on non-promise address!")
+                case Some(Pending) =>
+                    // Case 2: The promise is in the pending state.
 
-                // Set the promise state to pending.
-                let s1 = Map/insert(a, Pending, s0);
+                    // Allocate a child promise.
+                    let childAddr = freshAddr();
 
-                // Update the fulfill reactions.
-                let fs = Map/getWithDefault(a, Nil, f0);
-                let f1 = Map/insert(a, fs ::: (lam, childAddr) :: Nil, f0);
-                    Next(State(Ptr(childAddr), Heap(h1), PromiseState(s1), FulfillReactions(f1), RejectReactions(r0), PromiseLinks(l0), Queue(q0)))
-            case Some(Fulfilled(v)) =>
-                // Case 3: The promise has been fulfilled.
-                // Allocate a child promise and enqueue the promise reaction `lam` with the resolved value `v`.
-                let childAddr = freshAddr();
-                let job = (Fulfilled(v), lam, childAddr);
-                    Next(State(Ptr(childAddr), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(job :: q0)))
-            case Some(Rejected(v)) =>
-                // Case 4: The promise has been rejected.. The onResolve has no effect.
-                Next(State(Cst("Undef"), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)))
-        }
+                    // Allocate a fresh "object" in the heap. We use a string instead.
+                    let h1 = Map/insert(childAddr, Cst("child"), h0);
 
-    case State(OnReject(e1, e2), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
-        ??? // TODO: Similar to OnResolve.
+                    // Set the promise state to pending.
+                    let s1 = Map/insert(a, Pending, s0);
 
-    case State(Link(Ptr(a1), Ptr(a2)), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)) =>
-        // Lookup the list of registered links for a1.
-        let xs = Map/getWithDefault(a1, Nil, l0);
-        // Append a2 onto the list of registered links.
-        let l1 = Map/insert(a1, xs ::: a2 :: Nil, l0);
-            Next(State(Cst("Undef"), Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l1), Queue(q0)))
+                    // Update the fulfill reactions.
+                    let fs = Map/getWithDefault(a, Nil, f0);
+                    let f1 = Map/insert(a, fs ::: (lam, childAddr) :: Nil, f0);
+                        Next(recompose(Ptr(childAddr), ec), State(Heap(h1), PromiseState(s1), FulfillReactions(f1), RejectReactions(r0), PromiseLinks(l0), Queue(q0)))
+                case Some(Fulfilled(v)) =>
+                    // Case 3: The promise has been fulfilled.
+                    // Allocate a child promise and enqueue the promise reaction `lam` with the resolved value `v`.
+                    let childAddr = freshAddr();
+                    let job = (Fulfilled(v), lam, childAddr);
+                        Next(recompose(Ptr(childAddr), ec), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(job :: q0)))
+                case Some(Rejected(v)) =>
+                    // Case 4: The promise has been rejected.. The onResolve has no effect.
+                    Next(recompose(Cst("Undef"), ec), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0)))
+            }
 
-            //TODO: Consider if we should separate State and Expression and pass in a recompose function?
+        case (OnReject(e1, e2), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0))) =>
+            ??? // NB: Similiar to OnResolve.
 
-    case _ => Stuck(m0)
+        case (Link(Ptr(a1), Ptr(a2)), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), Queue(q0))) =>
+            // Lookup the list of registered links for a1.
+            let xs = Map/getWithDefault(a1, Nil, l0);
+            // Append a2 onto the list of registered links.
+            let l1 = Map/insert(a1, xs ::: a2 :: Nil, l0);
+                Next(recompose(Cst("Undef"), ec), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l1), Queue(q0)))
 
+        case _ =>
+            // No transition applies.
+            Done(recompose(e0, ec), m0)
+    }
 }
 
 ///
@@ -548,68 +585,25 @@ def alpha(e0: Expression, m: Map2[Variable, Variable]): Expression = match e0 wi
 }
 
 ///
-/// Performs a single step reduction of the given state `m0`,
-/// i.e. performs a single redex-reduce-recompose step.
-///
-def step(m0: State): Outcome = match m0 with {
-    case State(e0, h0, s0, f0, r0, l0, q0) =>
-        match redex(e0) with {
-            case None =>
-                // Case 1: No redex found.
-
-                // TODO: try to refactor this and move somewhere else?
-
-                if (nonValue(e0))
-                    Stuck(m0)
-                else
-                    match q0 with {
-                        case Queue(Nil) => Stuck(m0)
-                        case Queue((promiseState, lambda, childPromise) :: rs) =>
-                        // TODO: We should actually add all of these...
-                            match promiseState with {
-                                case Fulfilled(v) =>
-                                    // TODO: What is the child promise used for here?
-                                    let e1 = App(lambda, v);
-                                        Next(State(e1, h0, s0, f0, r0, l0, Queue(rs)))
-                                // TODO: Rest
-                            }
-                    }
-            case Some((e0, ec)) =>
-                // Case 2: A redex has been found. Reduce and recompose.
-                match reduce(State(e0, h0, s0, f0, r0, l0, q0)) with {
-                    case Next(State(e1, h1, s, f1, r1, l1, q1)) =>
-                        let e2 = recompose(ec, e1);
-                            Next(State(e2, h1, s, f1, r1, l1, q1))
-                    case Stuck(m) => ??? // TODO
-                    case Abort(e) => ???
-                }
-
-    }
-}
-
-///
 /// Repeatedly performs one-step reductions until the state `s0` reaches a fixed-point.
 ///
-// TODO: Use Result[State, Str] ?
-def eval(m0: State): State =
-    let o = println!(step(m0));
-        match o with {
-            case Next(m) => eval(m)
-            case Stuck(m) => m
-            case Abort(e) => ???
-        }
+def eval(e0: Expression, m0: State): Result[(Expression, State), Str] = match println!(reduce(e0, m0)) with {
+    case Next(e, m) => eval(e, m)
+    case Done(e, m) => Ok((e, m))
+    case Abort(e)   => Err(e)
+}
 
 ///
 /// Injects the given expression `e0` into the initial state.
 ///
-def inject(e0: Expression): State =
+def initialState: State =
     let h0 = Heap(Map/empty());
     let s0 = PromiseState(Map/empty());
     let f0 = FulfillReactions(Map/empty());
     let r0 = RejectReactions(Map/empty());
     let l0 = PromiseLinks(Map/empty());
     let q0 = Queue(Nil);
-        State(e0, h0, s0, f0, r0, l0, q0)
+        State(h0, s0, f0, r0, l0, q0)
 
 //
 // Approximately:
@@ -620,15 +614,16 @@ def inject(e0: Expression): State =
 // x.resolve("hello")
 //
 
-def testEval6: State = eval(inject(
+def testEval6: Result[(Expression, State), Str] = eval(
     App(Abs(V(0),
         Seq(Promisify(Var(V(0))),
             Seq(OnResolve(Var(V(0)), Abs(V(42), Ref(Var(V(42))))),
                 Resolve(Var(V(0)), Cst("hello"))
             ))
         ),
-        Ref(Cst("Promise1")))
-))
+        Ref(Cst("Promise1"))),
+    initialState()
+)
 
 
 ///
@@ -704,6 +699,25 @@ namespace List {
     def map[a,b](f: a -> b, xs: List[a]): List[b] = match xs with {
         case Nil => Nil
         case x :: rs => f(x) :: map(f, rs)
+    }
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
+    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
+    ///
+    def foldLeft[a,b](f: (b, a) -> b, s: b, xs: List[a]): b = match xs with {
+        case Nil => s
+        case x :: rs => foldLeft(f, f(s, x), rs)
+    }
+
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `xs` going from right to left.
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    def foldRight[a,b](f: (a, b) -> b, s: b, xs: List[a]): b = match xs with {
+        case Nil => s
+        case x :: rs => f(x, foldRight(f, s, rs))
     }
 
 }
