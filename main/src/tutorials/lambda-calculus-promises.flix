@@ -460,13 +460,13 @@ def reduce(e0: Expression, m0: State): Outcome = match redex(e0) with {
                     let s1 = Map/insert(a, Fulfilled(v), s0);
 
                     // Clear out the fulfill reactions.
-                    let f1 = Map/insert(a, Nil, f0);
+                    let f1 = Map/remove(a, f0);
 
                     // Clear out the rejected reactions.
-                    let r1 = Map/insert(a, Nil, r0);
+                    let r1 = Map/remove(a, r0);
 
                     // Clear out the promise links.
-                    let l1 = Map/insert(a, Nil, l0);
+                    let l1 = Map/remove(a, l0);
 
                     // Retrieve the fulfill reactions and append them to the queue.
                     let rs = Map/getWithDefault(a, Nil, f0);
