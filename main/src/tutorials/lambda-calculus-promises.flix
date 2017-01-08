@@ -389,15 +389,12 @@ def reduce(e0: Expression, m0: State): Outcome = match redex(e0) with {
                     // Case 1.1: The queue is empty. The evaluation is complete.
                      Done(e0, m0)
 
-                case State(h0, s0, f0, r0, l0, Queue(q0)) =>
-                    // Case 1.2: The queue is non-empty. Evaluate each job in the queue.
-                    let f = (job, rest) -> match job with {
-                        case (Fulfilled(v), lambda, childPromise) => Seq(App(lambda, v), rest) // TODO: What to do with the child promise? Probably onResolve?
-                        case (Rejected(v), lambda, childPromise)  => ??? // NB: Similar to Fulfilled.
-                        case _                                    => ??? // Impossible. The promise should not be pending.
-                    };
-                    let e = List/foldRight(f, Cst("Undef"), q0); // TODO: Figure out whether to use fold Left or Right.
-                        Next(e, State(h0, s0, f0, r0, l0, Queue(Nil)))
+                case State(h0, s0, f0, r0, l0, Queue((Fulfilled(v), lambda, childPromise) :: q1)) =>
+                    // Case 1.2: The queue is non-empty. Evaluate the first job in the queue.
+                    let e = Resolve(Ptr(childPromise), App(lambda, v));
+                        Next(e, State(h0, s0, f0, r0, l0, Queue(q1)))
+
+                // NB: And a similar rule for Rejected promises.
             }
         else
             // Case 2: The expression is a non-value, i.e. it is stuck.
@@ -498,8 +495,8 @@ def reduce(e0: Expression, m0: State): Outcome = match redex(e0) with {
                     // Allocate a fresh "object" in the heap. We use a string instead.
                     let h1 = Map/insert(childAddr, Cst("child"), h0);
 
-                    // Set the promise state to pending.
-                    let s1 = Map/insert(a, Pending, s0);
+                    // Set the child promise state to pending.
+                    let s1 = Map/insert(childAddr, Pending, s0);
 
                     // Update the fulfill reactions.
                     let fs = Map/getWithDefault(a, Nil, f0);
