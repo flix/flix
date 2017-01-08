@@ -2435,16 +2435,6 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Names.Operator.|>") {
-    val input = "def |>(x: Int, y: Int): Int = ???"
-    run(input)
-  }
-
-  test("Names.Operator.<|") {
-    val input = "def <|(x: Int, y: Int): Int = ???"
-    run(input)
-  }
-
   test("Names.Operator.<*>") {
     val input = "def <*>(x: Int, y: Int): Int = ???"
     run(input)
@@ -2783,16 +2773,6 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Operator.Binary.--") {
     val input = "def --(x: Int, y: Int): Int = x -- y"
-    run(input)
-  }
-
-  test("Operator.Binary.|>") {
-    val input = "def |>(x: Int, y: Int): Int = x |> y"
-    run(input)
-  }
-
-  test("Operator.Binary.<|") {
-    val input = "def <|(x: Int, y: Int): Int = x <| y"
     run(input)
   }
 
