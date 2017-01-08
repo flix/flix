@@ -211,7 +211,7 @@ namespace Domain.Sign {
     ///
     /// Over-approximates `bitwise negation`.
     ///
-    #approximates1(x -> -x)
+    #approximates1(x -> ~~~x)
     #strict1 #monotone1
     def negate(e: Sign): Sign = match e with {
         case Bot => Bot
@@ -224,7 +224,7 @@ namespace Domain.Sign {
     ///
     /// Over-approximates `bitwise and`.
     ///
-    #approximates2((x, y) -> x & y)
+    #approximates2((x, y) -> x &&& y)
     #strict2 #monotone2 #commutative #associative
     def and(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
@@ -244,7 +244,7 @@ namespace Domain.Sign {
     ///
     /// Over-approximates `bitwise or`.
     ///
-    #approximates2((x, y) -> x | y)
+    #approximates2((x, y) -> x ||| y)
     #strict2 #monotone2 #commutative #associative
     def or(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
@@ -264,7 +264,7 @@ namespace Domain.Sign {
     ///
     /// Over-approximates `bitwise xor`.
     ///
-    #approximates2((x, y) -> x ^ y)
+    #approximates2((x, y) -> x ^^^ y)
     #strict2 #monotone2 #commutative #associative
     def xor(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
@@ -284,7 +284,7 @@ namespace Domain.Sign {
     ///
     /// Over-approximates `bitwise left shift`.
     ///
-    #approximates2((x, y) -> x << y)
+    #approximates2((x, y) -> x <<< y)
     #strict2 #monotone2
     def leftShift(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
        case (Bot, _)   => Bot
@@ -304,7 +304,7 @@ namespace Domain.Sign {
     ///
     /// Over-approximates `bitwise right shift`.
     ///
-    #approximates2((x, y) -> x >> y)
+    #approximates2((x, y) -> x >>> y)
     #strict2 #monotone2
     def rightShift(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot

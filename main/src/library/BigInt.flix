@@ -57,7 +57,7 @@ namespace BigInt {
     /// The bits of x have positions: 0 (rightmost bit), 1, 2, ...
     ///
     def bit(x: BigInt, position: Int32): Int32 =
-        if ((x >> position) % 2ii == 0ii) 0 else 1
+        if ((x >>> position) % 2ii == 0ii) 0 else 1
 
     ///
     /// Returns the greatest common non-negative divisor of `x` and `y`.
@@ -67,15 +67,15 @@ namespace BigInt {
     ///
     /// Returns `x` with the bit at position `position` set (to 1).
     ///
-    def setBit(x: BigInt, position: Int32): BigInt = x | (1ii << position)
+    def setBit(x: BigInt, position: Int32): BigInt = x ||| (1ii <<< position)
 
     ///
     /// Returns `x` with the bit at position `position` cleared (to 0).
     ///
-    def clearBit(x: BigInt, position: Int32): BigInt = x & ~(1ii << position)
+    def clearBit(x: BigInt, position: Int32): BigInt = x &&& ~~~(1ii <<< position)
 
     ///
     /// Returns `x` with the bit at position `position` flipped.
     ///
-    def flipBit(x: BigInt, position: Int32): BigInt = x ^ (1ii << position)
+    def flipBit(x: BigInt, position: Int32): BigInt = x ^^^ (1ii <<< position)
 }

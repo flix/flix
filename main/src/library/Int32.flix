@@ -24,12 +24,12 @@ namespace Int32 {
     ///
     /// Returns the minimum number representable by an `Int32`.
     ///
-    def minValue: Int32 = 1 << (size() - 1)
+    def minValue: Int32 = 1 <<< (size() - 1)
 
     ///
     /// Returns the maximum number representable by an `Int32`.
     ///
-    def maxValue: Int32 = ~minValue()
+    def maxValue: Int32 = ~~~minValue()
 
     ///
     /// Returns the smaller of `x` and `y`.
@@ -86,9 +86,9 @@ namespace Int32 {
     ///
     def logicalRightShift(x: Int32, distance: Int32): Int32 =
         if (x < 0 && distance % size() != 0)
-            ((x >> 1) & maxValue()) >> (distance - 1)
+            ((x >>> 1) &&& maxValue()) >>> (distance - 1)
         else
-            x >> distance
+            x >>> distance
 
     ///
     /// Returns the number of one-bits in the two's complement binary
@@ -105,14 +105,14 @@ namespace Int32 {
     /// binary representation of `x` right by `distance` bits.
     ///
     def rotateRight(x: Int32, distance: Int32): Int32 =
-        (logicalRightShift(x, distance)) | (x << -distance)
+        (logicalRightShift(x, distance)) ||| (x <<< -distance)
 
     ///
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` left by `distance` bits.
     ///
     def rotateLeft(x: Int32, distance: Int32): Int32 =
-        (logicalRightShift(x, -distance)) | (x << distance)
+        (logicalRightShift(x, -distance)) ||| (x <<< distance)
 
     ///
     /// Returns the position of the highest-order/leftmost one-bit in `x`.
@@ -169,7 +169,7 @@ namespace Int32 {
     def bitPositionToInt(position: Int32): Int32 = switch {
         case position < 0 || position > size() - 1  => 0
         case position == size() - 1                 => minValue()
-        case position != size() - 1                 => 1 << position
+        case position != size() - 1                 => 1 <<< position
     }
 
     ///
@@ -194,5 +194,5 @@ namespace Int32 {
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     def bit(x: Int32, position: Int32): Int32 =
-        if ((x >> position) % 2 == 0) 0 else 1
+        if ((x >>> position) % 2 == 0) 0 else 1
 }

@@ -153,7 +153,7 @@ namespace Domain.Parity {
     ///
     /// Over-approximates `bitwise negation`.
     ///
-    #approximates1(x -> -x)
+    #approximates1(x -> ~~~x)
     #strict1 #monotone1
     // TODO: Bug Found!
     def negate(e: Parity): Parity = match e with {
@@ -166,7 +166,7 @@ namespace Domain.Parity {
     ///
     /// Over-approximates `bitwise and`.
     ///
-    #approximates2((x, y) -> x & y)
+    #approximates2((x, y) -> x &&& y)
     #strict2 #monotone2 #commutative #associative
     def and(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
        case (_, Bot)        => Bot
@@ -181,7 +181,7 @@ namespace Domain.Parity {
     ///
     /// Over-approximates `bitwise or`.
     ///
-    #approximates2((x, y) -> x | y)
+    #approximates2((x, y) -> x ||| y)
     #strict2 #monotone2 #commutative #associative
     def or(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
       case (_, Bot)         => Bot
@@ -196,7 +196,7 @@ namespace Domain.Parity {
     ///
     /// Over-approximates `bitwise xor`.
     ///
-    #approximates2((x, y) -> x ^ y)
+    #approximates2((x, y) -> x ^^^ y)
     #strict2 #monotone2 #commutative #associative
     def xor(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
       case (_, Bot)         => Bot
@@ -211,7 +211,7 @@ namespace Domain.Parity {
     ///
     /// Over-approximates `bitwise left shift`.
     ///
-    #approximates2((x, y) -> x << y)
+    #approximates2((x, y) -> x <<< y)
     #strict2 #monotone2
     def leftShift(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
       case (_, Bot)         => Bot
@@ -226,7 +226,7 @@ namespace Domain.Parity {
     ///
     /// Over-approximates `bitwise right shift`.
     ///
-    #approximates2((x, y) -> x >> y)
+    #approximates2((x, y) -> x >>> y)
     #strict2 #monotone2
     def rightShift(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
       case (_, Bot)     => Bot

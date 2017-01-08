@@ -277,13 +277,13 @@ class TestTyper extends FunSuite with TestUtils {
   }
 
   test("Expression.Unary.BitwiseNegate01") {
-    val input = "def f: Int = ~42"
+    val input = "def f: Int = ~~~42"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Unary.BitwiseNegate02") {
-    val input = "def f(x: Int): Int = ~x"
+    val input = "def f(x: Int): Int = ~~~x"
     val result = new Flix().addStr(input).compile()
     result.get
   }
@@ -436,49 +436,49 @@ class TestTyper extends FunSuite with TestUtils {
   }
 
   test("Expression.Binary.BitwiseAnd01") {
-    val input = "def f: Int = 1 & 2"
+    val input = "def f: Int = 1 &&& 2"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Binary.BitwiseAnd02") {
-    val input = "def f(x: Int, y: Int): Int = x & y"
+    val input = "def f(x: Int, y: Int): Int = x &&& y"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Binary.BitwiseOr01") {
-    val input = "def f: Int = 1 | 2"
+    val input = "def f: Int = 1 ||| 2"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Binary.BitwiseOr02") {
-    val input = "def f(x: Int, y: Int): Int = x | y"
+    val input = "def f(x: Int, y: Int): Int = x ||| y"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Binary.BitwiseXor01") {
-    val input = "def f: Int = 1 ^ 2"
+    val input = "def f: Int = 1 ^^^ 2"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Binary.BitwiseXor02") {
-    val input = "def f(x: Int, y: Int): Int = x ^ y"
+    val input = "def f(x: Int, y: Int): Int = x ^^^ y"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Binary.BitwiseLeftShift") {
-    val input = "def f(x: Int): Int = x << 1"
+    val input = "def f(x: Int): Int = x <<< 1"
     val result = new Flix().addStr(input).compile()
     result.get
   }
 
   test("Expression.Binary.BitwiseRightShift") {
-    val input = "def f(x: Int): Int = x >> 1"
+    val input = "def f(x: Int): Int = x >>> 1"
     val result = new Flix().addStr(input).compile()
     result.get
   }
@@ -985,7 +985,7 @@ class TestTyper extends FunSuite with TestUtils {
   }
 
   test("Expression.Unary.BitwiseNegate.TypeError") {
-    val input = "def f: Int = ~true"
+    val input = "def f: Int = ~~~true"
     val result = new Flix().addStr(input).compile()
     assert(result.errors.head.isInstanceOf[TypeError])
   }

@@ -137,59 +137,59 @@ namespace Domain.Constant {
     ///
     /// Over-approximates `bitwise negation`.
     ///
-    #approximates1(x -> -x)
+    #approximates1(x -> ~~~x)
     #strict1 #monotone1
     def negate(e: Constant): Constant = match e with {
         case Bot       => Bot
-        case Cst(n)    => Cst(~ n)
+        case Cst(n)    => Cst(~~~ n)
         case Top       => Top
     }
 
     ///
     /// Over-approximates `bitwise and`.
     ///
-    #approximates2((x, y) -> x & y)
+    #approximates2((x, y) -> x &&& y)
     #strict2 #monotone2 #commutative #associative
     def and(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 & n2)
+        case (Cst(n1), Cst(n2)) => Cst(n1 &&& n2)
         case _                  => Top
     }
 
     ///
     /// Over-approximates `bitwise or`.
     ///
-    #approximates2((x, y) -> x | y)
+    #approximates2((x, y) -> x ||| y)
     #strict2 #monotone2 #commutative #associative
     def or(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 | n2)
+        case (Cst(n1), Cst(n2)) => Cst(n1 ||| n2)
         case _                  => Top
     }
 
     ///
     /// Over-approximates `bitwise xor`.
     ///
-    #approximates2((x, y) -> x ^ y)
+    #approximates2((x, y) -> x ^^^ y)
     #strict2 #monotone2 #commutative #associative
     def xor(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 ^ n2)
+        case (Cst(n1), Cst(n2)) => Cst(n1 ^^^ n2)
         case _                  => Top
     }
 
     ///
     /// Over-approximates `bitwise left shift`.
     ///
-    #approximates2((x, y) -> x << y)
+    #approximates2((x, y) -> x <<< y)
     #strict2 #monotone2
     def leftShift(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 << n2)
+        case (Cst(n1), Cst(n2)) => Cst(n1 <<< n2)
         case _                  => Top
     }
 
@@ -197,12 +197,12 @@ namespace Domain.Constant {
     /// Over-approximates `bitwise right shift`.
     ///
     ///
-    #approximates2((x, y) -> x >> y)
+    #approximates2((x, y) -> x >>> y)
     #strict2 #monotone2
     def rightShift(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 >> n2)
+        case (Cst(n1), Cst(n2)) => Cst(n1 >>> n2)
         case _                  => Top
     }
 

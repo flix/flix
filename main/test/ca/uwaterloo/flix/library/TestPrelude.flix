@@ -1,4 +1,47 @@
 /////////////////////////////////////////////////////////////////////////////
+// Function Composition                                                    //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def forwardComposition01: Bool =
+    let f = x -> x + 1;
+    let g = x -> x * 2;
+    let h = f >> g;
+        h(0) `assertEq!` 2 // (0 + 1) * 2
+
+@test
+def backwardComposition01: Bool =
+    let f = x -> x + 1;
+    let g = x -> x * 2;
+    let h = f << g;
+        h(0) `assertEq!` 1 // (0 * 2) + 1
+
+@test
+def forwardPipe01: Bool =
+    let f = x -> x + 1;
+    let g = x -> x * 2;
+    let r = 0 |> f |> g;
+        r `assertEq!` 2 // (0 + 1) * 2
+
+@test
+def forwardPipe02: Bool =
+    let f = match (x, y) -> x + y;
+    let r = (1, 2) |> f;
+        r `assertEq!` 3
+
+@test
+def backwardPipe01: Bool =
+    let f = x -> x + 1;
+    let g = x -> x * 2;
+    let r = f <| (g <| 0);
+        r `assertEq!` 1 // (0 * 2) + 1
+
+@test
+def backwardPipe02: Bool =
+    let f = match (x, y) -> x + y;
+    let r = f <| (1, 2);
+        r `assertEq!` 3
+
+/////////////////////////////////////////////////////////////////////////////
 // Logical And                                                             //
 /////////////////////////////////////////////////////////////////////////////
 @test

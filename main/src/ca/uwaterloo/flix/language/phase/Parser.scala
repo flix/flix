@@ -332,15 +332,15 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def BitwiseOr: Rule1[ParsedAst.Expression] = rule {
-      BitwiseXOr ~ zeroOrMore(optWS ~ capture(atomic("|")) ~ optWS ~ BitwiseXOr ~ SP ~> ParsedAst.Expression.Binary)
+      BitwiseXOr ~ zeroOrMore(optWS ~ capture(atomic("|||")) ~ optWS ~ BitwiseXOr ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def BitwiseXOr: Rule1[ParsedAst.Expression] = rule {
-      BitwiseAnd ~ zeroOrMore(optWS ~ capture(atomic("^")) ~ optWS ~ BitwiseAnd ~ SP ~> ParsedAst.Expression.Binary)
+      BitwiseAnd ~ zeroOrMore(optWS ~ capture(atomic("^^^")) ~ optWS ~ BitwiseAnd ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def BitwiseAnd: Rule1[ParsedAst.Expression] = rule {
-      Equality ~ zeroOrMore(optWS ~ capture(atomic("&")) ~ optWS ~ Equality ~ SP ~> ParsedAst.Expression.Binary)
+      Equality ~ zeroOrMore(optWS ~ capture(atomic("&&&")) ~ optWS ~ Equality ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Equality: Rule1[ParsedAst.Expression] = rule {
@@ -352,7 +352,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Shift: Rule1[ParsedAst.Expression] = rule {
-      Additive ~ optional(optWS ~ capture(atomic("<<") | atomic(">>")) ~ optWS ~ Additive ~ SP ~> ParsedAst.Expression.Binary)
+      Additive ~ optional(optWS ~ capture(atomic("<<<") | atomic(">>>")) ~ optWS ~ Additive ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Additive: Rule1[ParsedAst.Expression] = rule {
@@ -371,7 +371,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved2: Rule1[String] = rule {
-        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "<<" | ">>" | "=>" | "->")
+        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "=>" | "->")
+      }
+
+      // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
+      def Reserved3: Rule1[String] = rule {
+        capture("<<<" | ">>>")
       }
 
       // Match any two character operator which is not reserved.
@@ -379,9 +384,14 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
         !Reserved2 ~ capture(Names.OperatorLetter ~ Names.OperatorLetter)
       }
 
+      // Match any three character operator which is not reserved.
+      def UserOp3: Rule1[String] = rule {
+        !Reserved3 ~ capture(Names.OperatorLetter ~ Names.OperatorLetter ~ Names.OperatorLetter)
+      }
+
       // Match any operator which has at least three characters.
       def UserOpN: Rule1[String] = rule {
-        capture(Names.OperatorLetter ~ Names.OperatorLetter ~ oneOrMore(Names.OperatorLetter))
+        capture(Names.OperatorLetter ~ Names.OperatorLetter ~ Names.OperatorLetter ~ oneOrMore(Names.OperatorLetter))
       }
 
       // Match any mathematical operator or symbol.
@@ -391,12 +401,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
       rule {
         // NB: UserOpN must occur before UserOp2.
-        Unary ~ zeroOrMore(optWS ~ (UserOpN | UserOp2 | MathOp) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Binary)
+        Unary ~ zeroOrMore(optWS ~ (UserOpN | UserOp3 | UserOp2 | MathOp) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Binary)
       }
     }
 
     def Unary: Rule1[ParsedAst.Expression] = rule {
-      !Literal ~ (SP ~ capture(atomic("!") | atomic("+") | atomic("-") | atomic("~")) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ascribe
+      !Literal ~ (SP ~ capture(atomic("!") | atomic("+") | atomic("-") | atomic("~~~")) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ascribe
     }
 
     def Ascribe: Rule1[ParsedAst.Expression] = rule {
