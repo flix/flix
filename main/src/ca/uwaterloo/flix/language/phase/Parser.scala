@@ -391,7 +391,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
       // Match any operator which has at least three characters.
       def UserOpN: Rule1[String] = rule {
-        capture(Names.OperatorLetter ~ Names.OperatorLetter ~ oneOrMore(Names.OperatorLetter))
+        capture(Names.OperatorLetter ~ Names.OperatorLetter ~ Names.OperatorLetter ~ oneOrMore(Names.OperatorLetter))
       }
 
       // Match any mathematical operator or symbol.
