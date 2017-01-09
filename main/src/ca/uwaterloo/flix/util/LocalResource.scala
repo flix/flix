@@ -35,7 +35,13 @@ object LocalResource {
 
     def Prelude: InputStream = getInputStream("/library/Prelude.flix")
 
+    def Bounded: InputStream = getInputStream("/library/Bounded.flix")
+
     def PartialOrder: InputStream = getInputStream("/library/PartialOrder.flix")
+
+    def JoinLattice: InputStream = getInputStream("/library/JoinLattice.flix")
+
+    def MeetLattice: InputStream = getInputStream("/library/MeetLattice.flix")
 
     def Set: InputStream = getInputStream("/library/Set.flix")
 
