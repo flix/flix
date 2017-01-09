@@ -171,7 +171,7 @@ namespace Domain.Sign {
     ///
     /// Over-approximates integer `division`.
     ///
-    #safe2((x, y) -> x / y) // TODO
+    /// NB: We cannot prove safety directly because division is not a total function.
     #strict2 #monotone2
     def divide(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
@@ -191,7 +191,7 @@ namespace Domain.Sign {
     ///
     /// Over-approximates integer `modulus`.
     ///
-//     #safe2((x, y) -> x % y) // TODO
+    /// NB: We cannot prove safety directly because modulus is not a total function.
     #strict2 #monotone2
     def modulo(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot

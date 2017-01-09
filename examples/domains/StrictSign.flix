@@ -56,16 +56,16 @@ namespace Domain.StrictSign {
     ///
     /// Abstracts a concrete integer into the Sign domain.
     ///
-    def alpha(i: Int): Sign = switch {
-        case i < 0  => Neg
-        case i > 0  => Pos
-        case true   => Zer
+    def alpha(i: BigInt): Sign = switch {
+        case i < 0ii    => Neg
+        case i > 0ii    => Pos
+        case true       => Zer
     }
 
     ///
     /// Over-approximates integer `increment`.
     ///
-    #approximates1(x -> x + 1)
+    #approximates1(x -> x + 1ii)
     #strict1 #monotone1
     def inc(e: Sign): Sign = match e with {
         case Bot => Bot
@@ -78,7 +78,7 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates integer `decrement`.
     ///
-    #approximates1(x -> x - 1)
+    #approximates1(x -> x - 1ii)
     #strict1 #monotone1
     def dec(e: Sign): Sign = match e with {
         case Bot => Bot
@@ -191,7 +191,7 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates `bitwise negation`.
     ///
-    #approximates1(x -> ~~~x)
+    // #approximates1(x -> ~~~x) // TODO
     #strict1 #monotone1
     def negate(e: Sign): Sign = match e with {
         case Bot => Bot
@@ -204,7 +204,7 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates `bitwise or`.
     ///
-    #approximates2((x, y) -> x ||| y)
+    // #approximates2((x, y) -> x ||| y) // TODO
     #strict2 #monotone2 #commutative #associative
     def or(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
@@ -224,7 +224,7 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates `bitwise and`.
     ///
-    #approximates2((x, y) -> x &&& y)
+    // #approximates2((x, y) -> x &&& y) // TODO
     #strict2 #monotone2 #commutative #associative
     def and(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
@@ -246,7 +246,7 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates `bitwise xor`.
     ///
-    #approximates2((x, y) -> x ^^^ y)
+    // #approximates2((x, y) -> x ^^^ y) TODO
     #strict2 #monotone2 #commutative #associative
     def xor(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
@@ -258,7 +258,7 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates `bitwise left shift`.
     ///
-    #approximates2((x, y) -> x <<< y)
+//    #approximates2((x, y) -> x <<< y) // TODO
     #strict2 #monotone2
     def leftShift(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
@@ -278,7 +278,7 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates `bitwise right shift`.
     ///
-    #approximates2((x, y) -> x >>> y)
+//    #approximates2((x, y) -> x >>> y) // TODO
     #strict2 #monotone2
     def rightShift(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
@@ -344,22 +344,11 @@ namespace Domain.StrictSign {
 
     let Sign<> = (Bot, Top, leq, lub, glb)
 
+    //
+    // ## Specialized Laws
+    //
 
-
-
-    // ------------------------------------------------------------------------
-    // TODO: Refactor
-    // ------------------------------------------------------------------------
-
-    law reflexive(⊑: (Sign, Sign) -> Bool): Bool = ∀(x: Sign). x ⊑ x // TODO: Use Prelude
-
-    law antiSymmetric(⊑: (Sign, Sign) -> Bool): Bool = ∀(x: Sign, y: Sign). ((x ⊑ y) ∧ (y ⊑ x)) → (x == y) // TODO: Use Prelude
-
-    law transitive(⊑: (Sign, Sign) -> Bool): Bool = ∀(x: Sign, y: Sign, z: Sign). ((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z) // TODO: Use Prelude
-
-    law upperBound(⊔: (Sign, Sign) -> Sign): Bool = // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: Sign, y: Sign). (x ⊑ (x ⊔ y)) ∧ (y ⊑ (x ⊔ y))
+    law upperBound(lub: (Sign, Sign) -> Sign): Bool = JoinLattice/upperBound(leq, lub)
 
     law leastUpperBound(⊔: (Sign, Sign) -> Sign): Bool =  // TODO: Should call prelude
         let ⊑ = leq;
@@ -398,11 +387,11 @@ namespace Domain.StrictSign {
             ∀(x1: Sign, x2: Sign, y1: Sign, y2: Sign). ((x1 ⊑ y1) ∧ (x2 ⊑ y2) ) → (f(x1, x2) ⊑ f(y1, y2))
 
     // TODO: Names
-    law approximates1(fa: Sign -> Sign, fc: Int -> Int): Bool =
+    law approximates1(fa: Sign -> Sign, fc: BigInt -> BigInt): Bool =
         ∀(x: Int). alpha(fc(x)) `leq` fa(alpha(x))
 
     // TODO: Names
-    law approximates2(fa: (Sign, Sign) -> Sign, fc: (Int, Int) -> Int): Bool =
+    law approximates2(fa: (Sign, Sign) -> Sign, fc: (BigInt, BigInt) -> BigInt): Bool =
         ∀(x: Int, y: Int). alpha(fc(x, y)) `leq` fa(alpha(x), alpha(y))
 
 
