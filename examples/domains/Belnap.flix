@@ -175,16 +175,16 @@ namespace Belnap {
 
     law greatestElement(leq: (Belnap, Belnap) -> Bool, top: Belnap): Bool = Bounded/greatestElement(top, leq)
 
-    law strict1(f: Belnap -> Belnap): Bool = Bounded/strict1(Bot, f, Bot)
+    law strict1(f: Belnap -> Belnap): Bool = Bounded/strict1(f, Bot, Bot)
 
-    law strict2(f: (Belnap, Belnap) -> Belnap): Bool = Bounded/strict2(Bot, Bot, f, Bot)
+    law strict2(f: (Belnap, Belnap) -> Belnap): Bool = Bounded/strict2(f, Bot, Bot, Bot)
 
-    law monotone1(f: Belnap -> Belnap): Bool =  PartialOrder/monotone1(leq, f, leq)
+    law monotone1(f: Belnap -> Belnap): Bool =  PartialOrder/monotone1(f, leq, leq)
 
-    law monotone2(f: (Belnap, Belnap) -> Belnap): Bool =  PartialOrder/monotone2(leq, leq, f, leq)
+    law monotone2(f: (Belnap, Belnap) -> Belnap): Bool =  PartialOrder/monotone2(f, leq, leq, leq)
 
-    law safe1(fa: Belnap -> Belnap, fc: Bool -> Bool): Bool = PartialOrder/safe1(alpha, leq, fc, fa)
+    law safe1(fa: Belnap -> Belnap, fc: Bool -> Bool): Bool = PartialOrder/safe1(fa, fc, alpha, leq)
 
-    law safe2(fa: (Belnap, Belnap) -> Belnap, fc: (Bool, Bool) -> Bool): Bool = PartialOrder/safe2(alpha, leq, fc, fa)
+    law safe2(fa: (Belnap, Belnap) -> Belnap, fc: (Bool, Bool) -> Bool): Bool = PartialOrder/safe2(fa, fc, alpha, leq)
 
 }
