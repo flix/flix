@@ -30,7 +30,7 @@ namespace Domain.StrictSign {
     ///
     /// Returns the least upper bound of `e1` and `e2`.
     ///
-    #commutative #associative #upperBound #leastUpperBound
+    #upperBound #leastUpperBound #commutative #associative
     def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, x)   => x
         case (x, Bot)   => x
@@ -43,7 +43,7 @@ namespace Domain.StrictSign {
     ///
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
-    #commutative #associative #lowerBound #greatestLowerBound
+    #lowerBound #greatestLowerBound #commutative #associative
     def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Top, x)   => x
         case (x, Top)   => x
