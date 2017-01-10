@@ -6,7 +6,7 @@ namespace Domains.ConstantParity {
     ///
     /// The elements of the constant-parity lattice.
     ///
-    enum ConstantParity { // TODO: Name
+    enum ConstantParity {
                   case Top,
 
         case Odd,          case Even,
