@@ -65,7 +65,7 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates integer `increment`.
     ///
-    #approximates1(x -> x + 1ii)
+    #safe1(x -> x + 1ii)
     #strict1 #monotone1
     def inc(e: Sign): Sign = match e with {
         case Bot => Bot
@@ -78,7 +78,7 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates integer `decrement`.
     ///
-    #approximates1(x -> x - 1ii)
+    #safe1(x -> x - 1ii)
     #strict1 #monotone1
     def dec(e: Sign): Sign = match e with {
         case Bot => Bot
@@ -91,7 +91,7 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates integer `addition`.
     ///
-    #approximates2((x, y) -> x + y)
+    #safe2((x, y) -> x + y)
     #strict2 #monotone2 #commutative #associative
     def plus(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
@@ -111,7 +111,7 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates integer `subtraction`.
     ///
-    #approximates2((x, y) -> x - y)
+    #safe2((x, y) -> x - y)
     #strict2 #monotone2
     def minus(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
@@ -131,7 +131,7 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates integer `multiplication`.
     ///
-    #approximates2((x, y) -> x * y)
+    #safe2((x, y) -> x * y)
     #strict2 #monotone2 #commutative #associative
     def times(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
@@ -151,7 +151,7 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates integer `division`.
     ///
-    #approximates2((x, y) -> x / y)
+    /// NB: We cannot prove safety directly because division is not a total function.
     #strict2 #monotone2
     def divide(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
@@ -171,7 +171,7 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates integer `modulus`.
     ///
-    // #approximates2((x, y) -> x % y) // TODO: Causes timeout ...
+    // #safe2((x, y) -> x % y) // TODO: Causes timeout ...
     #strict2 #monotone2
     def modulo(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
@@ -191,7 +191,7 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates `bitwise negation`.
     ///
-    // #approximates1(x -> ~~~x) // TODO
+    // NB: We cannot verify safety since Z3 does not support bitwise ops on ints.
     #strict1 #monotone1
     def negate(e: Sign): Sign = match e with {
         case Bot => Bot
@@ -204,7 +204,7 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates `bitwise or`.
     ///
-    // #approximates2((x, y) -> x ||| y) // TODO
+    // NB: We cannot verify safety since Z3 does not support bitwise ops on ints.
     #strict2 #monotone2 #commutative #associative
     def or(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
@@ -224,7 +224,7 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates `bitwise and`.
     ///
-    // #approximates2((x, y) -> x &&& y) // TODO
+    // NB: We cannot verify safety since Z3 does not support bitwise ops on ints.
     #strict2 #monotone2 #commutative #associative
     def and(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
@@ -246,7 +246,7 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates `bitwise xor`.
     ///
-    // #approximates2((x, y) -> x ^^^ y) TODO
+    // NB: We cannot verify safety since Z3 does not support bitwise ops on ints.
     #strict2 #monotone2 #commutative #associative
     def xor(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
@@ -258,7 +258,7 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates `bitwise left shift`.
     ///
-//    #approximates2((x, y) -> x <<< y) // TODO
+    // NB: We cannot verify safety since Z3 does not support bitwise ops on ints.
     #strict2 #monotone2
     def leftShift(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
@@ -278,7 +278,7 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates `bitwise right shift`.
     ///
-//    #approximates2((x, y) -> x >>> y) // TODO
+    // NB: We cannot verify safety since Z3 does not support bitwise ops on ints.
     #strict2 #monotone2
     def rightShift(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
@@ -298,7 +298,10 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates `equal`.
     ///
-    // @strict @monotone @commutative // TODO
+    // TODO: Safety property
+    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder/monotone2(leq, leq, Belnap/leq)
+    #commutative
     def eq(e1: Sign, e2: Sign): Belnap/Belnap = match (e1, e2) with {
         case (Bot, _)   => Belnap/Belnap.Bot
         case (_, Bot)   => Belnap/Belnap.Bot
@@ -317,13 +320,18 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates `not equal`.
     ///
-    // @strict @monotone @commutative // TODO
+    // TODO: Safety property
+    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder/monotone2(leq, leq, Belnap/leq)
+    #commutative
     def neq(e1: Sign, e2: Sign): Belnap/Belnap = Belnap/not(eq(e1, e2))
 
     ///
     /// Over-approximates `less than`.
     ///
-    // @strict @monotone // TODO
+    // TODO: Safety property
+    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder/monotone2(leq, leq, Belnap/leq)
     def less(e1: Sign, e2: Sign): Belnap/Belnap = match (e1, e2) with {
         case (Bot, _)   => Belnap/Belnap.Bot
         case (_, Bot)   => Belnap/Belnap.Bot
@@ -339,7 +347,9 @@ namespace Domain.StrictSign {
     ///
     /// Over-approximates `less than or equal`.
     ///
-    // @strict @monotone // TODO
+    // TODO: Safety property
+    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder/monotone2(leq, leq, Belnap/leq)
     def lessEqual(e1: Sign, e2: Sign): Belnap/Belnap = Belnap/or(e1 `less` e2, e1 `eq` e2)
 
     let Sign<> = (Bot, Top, leq, lub, glb)
@@ -350,50 +360,26 @@ namespace Domain.StrictSign {
 
     law upperBound(lub: (Sign, Sign) -> Sign): Bool = JoinLattice/upperBound(leq, lub)
 
-    law leastUpperBound(⊔: (Sign, Sign) -> Sign): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: Sign, y: Sign, z: Sign). ((x ⊑ z) ∧ (y ⊑ z)) → ((x ⊔ y) ⊑ z)
+    law leastUpperBound(⊔: (Sign, Sign) -> Sign): Bool = JoinLattice/leastUpperBound(leq, lub)
 
-    law lowerBound(⊓: (Sign, Sign) -> Sign): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: Sign, y: Sign). ((x ⊓ y) ⊑ x) ∧ ((x ⊓ y) ⊑ y)
+    law lowerBound(glb: (Sign, Sign) -> Sign): Bool = MeetLattice/lowerBound(leq, glb)
 
-    law greatestLowerBound(⊓: (Sign, Sign) -> Sign): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: Sign, y: Sign, z: Sign). ((z ⊑ x) ∧ (z ⊑ y)) → (z ⊑ (x ⊓ y))
+    law greatestLowerBound(glb: (Sign, Sign) -> Sign): Bool = MeetLattice/greatestLowerBound(leq, glb)
 
-    law leastElement(⊑: (Sign, Sign) -> Bool, ⊥: Sign): Bool = ∀(x: Sign). ⊥ ⊑ x  // TODO: Should call prelude
+    law leastElement(leq: (Sign, Sign) -> Bool, bot: Sign): Bool = Bounded/leastElement(bot, leq)
 
-    law greatestElement(⊑: (Sign, Sign) -> Bool, ⊤: Sign): Bool = ∀(x: Sign). x ⊑ ⊤  // TODO: Should call prelude
+    law greatestElement(leq: (Sign, Sign) -> Bool, top: Sign): Bool = Bounded/greatestElement(top, leq)
 
-    law associative(f: (Sign, Sign) -> Sign): Bool = // TODO: Use Prelude
-        ∀(x: Sign, y: Sign, z: Sign). f(x, f(y, z)) == f(f(x, y), z)
+    law strict1(f: Sign -> Sign): Bool = Bounded/strict1(f, Bot, Bot)
 
-    law commutative(f: (Sign, Sign) -> Sign): Bool = // TODO: Use Prelude
-        ∀(x: Sign, y: Sign). f(x, y) == f(y, x)
+    law strict2(f: (Sign, Sign) -> Sign): Bool = Bounded/strict2(f, Bot, Bot, Bot)
 
-    law strict1(f: Sign -> Sign): Bool =  // TODO: Should call prelude
-        f(Bot) == Bot
+    law monotone1(f: Sign -> Sign): Bool = PartialOrder/monotone1(f, leq, leq)
 
-    law strict2(f: (Sign, Sign) -> Sign): Bool =  // TODO: Should call prelude
-        f(Bot, Bot) == Bot
+    law monotone2(f: (Sign, Sign) -> Sign): Bool = PartialOrder/monotone2(f, leq, leq, leq)
 
-    law monotone1(f: Sign -> Sign): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: Sign, y: Sign). (x ⊑ y) → (f(x) ⊑ f(y))
+    law safe1(fa: Sign -> Sign, fc: BigInt -> BigInt): Bool = PartialOrder/safe1(fa, fc, alpha, leq)
 
-    law monotone2(f: (Sign, Sign) -> Sign): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x1: Sign, x2: Sign, y1: Sign, y2: Sign). ((x1 ⊑ y1) ∧ (x2 ⊑ y2) ) → (f(x1, x2) ⊑ f(y1, y2))
-
-    // TODO: Names
-    law approximates1(fa: Sign -> Sign, fc: BigInt -> BigInt): Bool =
-        ∀(x: Int). alpha(fc(x)) `leq` fa(alpha(x))
-
-    // TODO: Names
-    law approximates2(fa: (Sign, Sign) -> Sign, fc: (BigInt, BigInt) -> BigInt): Bool =
-        ∀(x: Int, y: Int). alpha(fc(x, y)) `leq` fa(alpha(x), alpha(y))
-
-
+    law safe2(fa: (Sign, Sign) -> Sign, fc: (BigInt, BigInt) -> BigInt): Bool = PartialOrder/safe2(fa, fc, alpha, leq)
 
 }
