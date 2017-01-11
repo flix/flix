@@ -89,9 +89,8 @@ def recompose(e0: Expression, ec0: EvaluationContext): Expression = match ec0 wi
     case EApp2(v, ec) => App(v, recompose(e0, ec))
 }
 
-
 ///
-/// Performs a single step reduction.
+/// Performs a single reduction step.
 ///
 def step(e0: Expression): Expression = let (rdx, ec) = redex(e0);
     match rdx with {
