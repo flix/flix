@@ -723,7 +723,7 @@ class Flix {
   private def addPrintHook()(implicit genSym: GenSym): Unit = {
     // Symbol, type, and hook.
     val sym = Symbol.mkDefnSym("printHook")
-    val tpe = Type.mkArrow(Type.freshTypeVar(), Type.Int32)
+    val tpe = Type.mkArrow(Type.freshTypeVar(), Type.freshTypeVar())
     val inv = new InvokableUnsafe {
       def apply(args: Array[AnyRef]): AnyRef = {
         if (!options.impure)
@@ -744,7 +744,7 @@ class Flix {
   private def addPrintlnHook()(implicit genSym: GenSym): Unit = {
     // Symbol, type, and hook.
     val sym = Symbol.mkDefnSym("printlnHook")
-    val tpe = Type.mkArrow(Type.freshTypeVar(), Type.Int32)
+    val tpe = Type.mkArrow(Type.freshTypeVar(), Type.freshTypeVar())
     val inv = new InvokableUnsafe {
       def apply(args: Array[AnyRef]): AnyRef = {
         if (!options.impure)

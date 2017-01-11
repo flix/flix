@@ -159,6 +159,9 @@ object Monomorph {
               // Generate a fresh specialized definition symbol.
               val freshSym = Symbol.freshDefnSym(sym)
 
+              // Register the fresh symbol (and actual type) in the symbol2symbol map.
+              symbol2symbol.put((sym, actualType), freshSym)
+
               // Enqueue the fresh symbol with the definition and substitution.
               queue.enqueue((freshSym, defn, subst))
 
