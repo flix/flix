@@ -92,7 +92,8 @@ def recompose(e0: Expression, ec0: EvaluationContext): Expression = match ec0 wi
 ///
 /// Performs a single reduction step.
 ///
-def step(e0: Expression): Expression = let (rdx, ec) = redex(e0);
+def step(e0: Expression): Expression =
+    let (rdx, ec) = redex(e0);
     match rdx with {
         case App(Abs(x, e1), e2) =>
             // Perform beta-reduction: Use alpha-renaming to avoid capture.

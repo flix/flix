@@ -1,5 +1,5 @@
 //
-// An extension of the lambda-calculus with promises.
+// An extension of the lambda calculus with references, sequencing, and promises.
 //
 
 ///
@@ -17,23 +17,23 @@ enum Variable {
 }
 
 ///
-/// The expressions of the lambda calculus are: variables, lambda abstractions, and applications.
+/// The expressions of the lambda calculus extended with references, sequencing, and promises.
 ///
 enum Expression {
-    // A variable expression. A variable is represented by an integer.
+    // A variable expression: x.
     case Var(Variable),
 
-    // A lambda abstraction expression. A variable is represented by an integer.
+    // A lambda abstraction expression : x. e.
     case Abs(Variable, Expression),
 
-    // A function application expression.
+    // A function application expression: e1 e2.
     case App(Expression, Expression),
 
     //
     // General Extensions:
     //
 
-    // A constant string value.
+    // A string value.
     case Cst(Str),
 
     // A heap address.
@@ -144,35 +144,35 @@ enum PromiseState {
 }
 
 ///
-/// The fulfill reactions map addresses to a list of (Lam, Addr)-pairs.
+/// The fulfill reactions map addresses to a list of (Lam, Address)-pairs where the address points-to the child promise.
 ///
 enum FulfillReactions {
     case FulfillReactions(Map2[Address, List[(Expression, Address)]])
 }
 
 ///
-/// The reject reactions map addresses to a list of (Lam, Addr)-pairs.
+/// The reject reactions map addresses to a list of (Lam, Address)-pairs where the address points-to the child promise.
 ///
 enum RejectReactions {
     case RejectReactions(Map2[Address, List[(Expression, Address)]])
 }
 
 ///
-/// The promise links map addresses to a list of addresses.
+/// The promise links map addresses to a list of child promise addresses.
 ///
 enum PromiseLinks {
     case PromiseLinks(Map2[Address, List[Address]])
 }
 
 ///
-/// The link queue is a list of (PromiseValue, Address)-pairs where the address points to the linked promise.
+/// The link queue is a list of (PromiseValue, Address)-pairs where the address points-to the linked promise.
 ///
 enum LinkQueue {
     case LinkQueue(List[(PromiseValue, Address)])
 }
 
 ///
-/// The reaction queue is a list of (PromiseValue, Lam, Addr)-triples where the address points to the child promise.
+/// The reaction queue is a list of (PromiseValue, Lam, Address)-triples where the address points to the child promise.
 ///
 enum ReactionQueue {
     case ReactionQueue(List[(PromiseValue, Expression, Address)])
@@ -188,7 +188,7 @@ enum PromiseValue {
 }
 
 ///
-/// A machine configuration.
+/// A state configuration.
 ///
 enum State {
     case State(Heap, PromiseState, FulfillReactions, RejectReactions, PromiseLinks, LinkQueue, ReactionQueue)
@@ -384,20 +384,21 @@ def recompose(e0: Expression, ec0: EvaluationContext): Expression = match ec0 wi
 /// Represents the outcome of a single reduction step.
 ///
 enum Outcome {
-    /// Represents that the reduction can make a transition.
+    /// Represents the next state.
     case Next(Expression, State),
 
-    /// Represents that the reduction is complete for the state.
+    /// Represents that the reduction is stuck.
     case Done(Expression, State),
 
-    /// Represents that the reduction is stuck in the state.
+    /// Represents that the reduction failed.
     case Abort(Str)
 }
 
 ///
 /// Performs a single reduction step.
 ///
-def step(e0: Expression, m0: State): Outcome = let (rdx, ec) = redex(e0);
+def step(e0: Expression, m0: State): Outcome =
+    let (rdx, ec) = redex(e0);
     match (rdx, m0) with {
         case (e, State(h0, s0, f0, r0, l0, LinkQueue((Fulfilled(v), a) :: lq), q0)) =>
             // The link queue is non-empty. Extract an item and evaluate it.
