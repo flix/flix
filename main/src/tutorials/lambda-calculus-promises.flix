@@ -210,130 +210,148 @@ def isValue(e0: Expression): Bool = match e0 with {
 def nonValue(e0: Expression): Bool = !isValue(e0)
 
 ///
-/// Optionally returns a pair of a redex and its evaluation context for the given expression `e0`.
+/// Returns a pair of a redex and its evaluation context for the given expression `e0`.
 ///
 /// The evaluation context is a representation of the expression "inside-out" allowing us to recompose
 /// the expression after the redex has been reduced (contracted).
 ///
-def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 with {
+/// Returns the expression itself (and the empty evaluation context) if the expression is irreducible.
+///
+def redex(e0: Expression): (Expression, EvaluationContext) = match e0 with {
     case Var(x) =>
         // A variable cannot be reduced.
-        None
+        (Var(x), Hole)
 
     case Abs(x, e) =>
         // An abstraction cannot be reduced.
-        None
+        (Abs(x, e), Hole)
 
     case App(e1, e2) => switch {
         case isValue(e1) && isValue(e2) =>
             // The expression is a redex.
-            Some((e0, Hole))
+            (e0, Hole)
         case nonValue(e1) =>
             // Continue reduction in e1.
-            Option/map(match (rdx, ec) -> (rdx, EApp1(ec, e2)), redex(e1))
+            let (rdx, ec) = redex(e1);
+                (rdx, EApp1(ec, e2))
         case isValue(e1) =>
             // Continue reduction in e2.
-            Option/map(match (rdx, ec) -> (rdx, EApp2(e1, ec)), redex(e2))
+            let (rdx, ec) = redex(e2);
+                (rdx, EApp2(e1, ec))
     }
 
     case Cst(s) =>
         // A string cannot be reduced.
-        None
+        (Cst(s), Hole)
 
     case Ptr(a) =>
         // A pointer cannot be reduced.
-        None
+        (Ptr(a), Hole)
 
     case Ref(e) =>
         if (isValue(e))
             // The expression is a redex.
-            Some((e0, Hole))
+            (e0, Hole)
         else
             // The redex is in the expression e.
-            Option/map(match (rdx, ec) -> (rdx, ERef(ec)), redex(e))
+            let (rdx, ec) = redex(e);
+                (rdx, ERef(ec))
 
     case Deref(e) =>
         if (isValue(e))
             // The expression is a redex.
-            Some((e0, Hole))
+            (e0, Hole)
         else
             // The redex is in the expression e.
-            Option/map(match (rdx, ec) -> (rdx, EDeref(ec)), redex(e))
+            let (rdx, ec) = redex(e);
+                (rdx, EDeref(ec))
 
     case Seq(e1, e2) =>
         if (isValue(e1))
             // The expression is a redex.
-            Some((e0, Hole))
+            (e0, Hole)
         else
             // Continue reduction in e1.
-            Option/map(match (rdx, ec) -> (rdx, ESeq(ec, e2)) , redex(e1))
+            let (rdx, ec) = redex(e1);
+                (rdx, ESeq(ec, e2))
 
     case Promisify(e) =>
         if (isValue(e))
             // The expression is a redex.
-            Some((e0), Hole)
+            (e0, Hole)
         else
             // The redex is in the expression e.
-            Option/map(match (rdx, ec) -> (rdx, EPromisify(ec)), redex(e))
+            let (rdx, ec) = redex(e);
+                (rdx, EPromisify(ec))
 
     case Resolve(e1, e2) => switch {
         case isValue(e1) && isValue(e2) =>
             // The expression is a redex.
-            Some((e0, Hole))
+            (e0, Hole)
         case nonValue(e1) =>
             // Continue reduction in e1.
-            Option/map(match (rdx, ec) -> (rdx, EResolve1(ec, e2)), redex(e1))
+            let (rdx, ec) = redex(e1);
+                (rdx, EResolve1(ec, e2))
         case isValue(e1) =>
             // Continue reduction in e2.
-            Option/map(match (rdx, ec) -> (rdx, EResolve2(e1, ec)), redex(e2))
+            let (rdx, ec) = redex(e2);
+                (rdx, EResolve2(e1, ec))
     }
 
     case Reject(e1, e2) => switch {
         case isValue(e1) && isValue(e2) =>
             // The expression is a redex.
-            Some((e0, Hole))
+            (e0, Hole)
         case nonValue(e1) =>
             // Continue reduction in e1.
-            Option/map(match (rdx, ec) -> (rdx, EReject1(ec, e2)), redex(e1))
+            let (rdx, ec) = redex(e1);
+                (rdx, EReject1(ec, e2))
         case isValue(e1) =>
             // Continue reduction in e2.
-            Option/map(match (rdx, ec) -> (rdx, EReject2(e1, ec)), redex(e2))
+            let (rdx, ec) = redex(e2);
+                (rdx, EReject2(e1, ec))
     }
 
     case OnResolve(e1, e2) => switch {
         case isValue(e1) && isValue(e2) =>
             // The expression is a redex.
-            Some((e0, Hole))
+            (e0, Hole)
         case nonValue(e1) =>
             // Continue reduction in e1.
-            Option/map(match (rdx, ec) -> (rdx, EOnResolve1(ec, e2)), redex(e1))
+            let (rdx, ec) = redex(e1);
+                (rdx, EOnResolve1(ec, e2))
         case isValue(e1) =>
             // Continue reduction in e2.
-            Option/map(match (rdx, ec) -> (rdx, EOnResolve2(e1, ec)), redex(e2))
+            let (rdx, ec) = redex(e2);
+                (rdx, EOnResolve2(e1, ec))
     }
 
     case OnReject(e1, e2) => switch {
         case isValue(e1) && isValue(e2) =>
             // The expression is a redex.
-            Some((e0, Hole))
+            (e0, Hole)
         case nonValue(e1) =>
             // Continue reduction in e1.
-            Option/map(match (rdx, ec) -> (rdx, EOnReject1(ec, e2)), redex(e1))
+            let (rdx, ec) = redex(e1);
+                (rdx, EOnReject1(ec, e2))
         case isValue(e1) =>
             // Continue reduction in e2.
-            Option/map(match (rdx, ec) -> (rdx, EOnReject2(e1, ec)), redex(e2))
+            let (rdx, ec) = redex(e2);
+                (rdx, EOnReject2(e1, ec))
     }
 
     case Link(e1, e2) => switch {
         case isValue(e1) && isValue(e2) =>
             // The expression is a redex.
-            Some((e0, Hole))
+            (e0, Hole)
         case nonValue(e1) =>
             // Continue reduction in e1.
-            Option/map(match (rdx, ec) -> (rdx, ELink1(ec, e2)), redex(e1))
+            let (rdx, ec) = redex(e1);
+                (rdx, ELink1(ec, e2))
         case isValue(e1) =>
             // Continue reduction in e2.
-            Option/map(match (rdx, ec) -> (rdx, ELink2(e1, ec)), redex(e2))
+            let (rdx, ec) = redex(e2);
+                (rdx, ELink2(e1, ec))
     }
 
 }
@@ -379,45 +397,10 @@ enum Outcome {
 ///
 /// Performs a single reduction step in the given machine `m0`.
 ///
-def reduce(e0: Expression, m0: State): Outcome = match redex(e0) with {
-
-    // TODO: Refactor redex to not return an option.
-
-    /*
-     * The expression `e0` is irreducible.
-     *
-     * Either the evaluation is complete or there is at least one job in the event queue.
-     */
-    case None =>
-        // Check if the expression `e0` is a value.
-        if (isValue(e0))
-            // Case 1: The expression is a value.
-            // Check if the reaction queue is empty.
-            match m0 with {
-                case State(h0, s0, f0, r0, l0, w0, ReactionQueue(Nil)) =>
-                    // Case 1.1: The queue is empty. The evaluation is complete.
-                     Done(e0, m0)
-
-                case State(h0, s0, f0, r0, l0, w0, ReactionQueue((Fulfilled(v), lambda, childPromise) :: q1)) =>
-                    // Case 1.2: The queue is non-empty. Evaluate the first job in the queue.
-                    let e = Resolve(Ptr(childPromise), App(lambda, v));
-                        Next(e, State(h0, s0, f0, r0, l0, w0, ReactionQueue(q1)))
-
-                // NB: And a similar rule for Rejected promises.
-            }
-        else
-            // Case 2: The expression is a non-value, i.e. it is stuck.
-            Done(e0, m0)
-
-    /*
-     * The expression `e0` contains the redex `rdx` with evaluation context `ec`.
-     *
-     * Apply the appropriate evaluation rule.
-     */
-    case Some((rdx, ec)) => match (rdx, m0) with {
-
-        // TODO: Move the link rule:
+def reduce(e0: Expression, m0: State): Outcome = let (rdx, ec) = redex(e0);
+    match (rdx, m0) with {
         case (e, State(h0, s0, f0, r0, l0, LinkQueue((Fulfilled(v), a) :: lq), q0)) =>
+            // The link queue is non-empty. Extract an item and evaluate it.
             let e = Seq(Resolve(Ptr(a), v), e);
                 Next(recompose(e, ec), State(h0, s0, f0, r0, l0, LinkQueue(lq), q0))
 
@@ -539,10 +522,18 @@ def reduce(e0: Expression, m0: State): Outcome = match redex(e0) with {
             let l1 = Map/insert(a1, xs ::: a2 :: Nil, l0);
                 Next(recompose(Cst("Undef"), ec), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l1), LinkQueue(w0), ReactionQueue(q0)))
 
-        case _ =>
-            // No transition applies.
-            Done(recompose(e0, ec), m0)
-    }
+        case (e, State(h0, s0, f0, r0, l0, w0, ReactionQueue((Fulfilled(v), lambda, childPromise) :: q1))) =>
+            // The reaction queue contains an item. Check if the expression is a value.
+            if (isValue(e))
+                // The expression is a value. Discard it and evaluate the item from the reaction queue.
+                let e = Resolve(Ptr(childPromise), App(lambda, v));
+                    Next(e, State(h0, s0, f0, r0, l0, w0, ReactionQueue(q1)))
+             else
+                // The expression is a non-value. Evaluation is stuck.
+                Done(e, m0)
+
+        case (e, m) => Done(e, m)
+
 }
 
 ///
