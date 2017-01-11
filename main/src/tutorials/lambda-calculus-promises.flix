@@ -381,7 +381,7 @@ enum Outcome {
 ///
 def reduce(e0: Expression, m0: State): Outcome = match redex(e0) with {
 
-    // TODO: Process LinkQueue.
+    // TODO: Refactor redex to not return an option.
 
     /*
      * The expression `e0` is irreducible.
@@ -392,7 +392,7 @@ def reduce(e0: Expression, m0: State): Outcome = match redex(e0) with {
         // Check if the expression `e0` is a value.
         if (isValue(e0))
             // Case 1: The expression is a value.
-            // Check if the queue is empty.
+            // Check if the reaction queue is empty.
             match m0 with {
                 case State(h0, s0, f0, r0, l0, w0, ReactionQueue(Nil)) =>
                     // Case 1.1: The queue is empty. The evaluation is complete.
@@ -415,6 +415,12 @@ def reduce(e0: Expression, m0: State): Outcome = match redex(e0) with {
      * Apply the appropriate evaluation rule.
      */
     case Some((rdx, ec)) => match (rdx, m0) with {
+
+        // TODO: Move the link rule:
+        case (e, State(h0, s0, f0, r0, l0, LinkQueue((Fulfilled(v), a) :: lq), q0)) =>
+            let e = Seq(Resolve(Ptr(a), v), e);
+                Next(recompose(e, ec), State(h0, s0, f0, r0, l0, LinkQueue(lq), q0))
+
         case (App(Abs(x, e1), e2), State(h0, s0, f0, r0, l0, w0, q0)) =>
             // Apply beta-reduction: Use alpha-renaming to avoid capture.
             let e = substitute(e1, x, alpha(e2, Map/empty()));
@@ -472,8 +478,8 @@ def reduce(e0: Expression, m0: State): Outcome = match redex(e0) with {
                     let l1 = Map/remove(a, l0);
 
                     // Retrieve the promise links and append them to the link queue.
-                    let ls = Map/getWithDefault(a, Nil, l0);
-                    let w1 = w0 ::: List/map(l -> (Fulfilled(v), l), ls);
+                    let lq = Map/getWithDefault(a, Nil, l0);
+                    let w1 = w0 ::: List/map(l -> (Fulfilled(v), l), lq);
 
                     // Retrieve the fulfill reactions and append them to the reaction queue.
                     let rs = Map/getWithDefault(a, Nil, f0);
