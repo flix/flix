@@ -234,8 +234,8 @@ namespace Domain.Mod3 {
 
     law monotone2(f: (Mod3, Mod3) -> Mod3): Bool = PartialOrder/monotone2(f, leq, leq, leq)
 
-    law safe1(fa: Mod3 -> Mod3, fc: BigInt -> BigInt): Bool = PartialOrder/safe1(fa, fc, alpha, leq)
+    law safe1(fa: Mod3 -> Mod3, fc: BigInt -> BigInt): Bool = PartialOrder/safe1(fa, fc, alpha, alpha, leq)
 
-    law safe2(fa: (Mod3, Mod3) -> Mod3, fc: (BigInt, BigInt) -> BigInt): Bool = PartialOrder/safe2(fa, fc, alpha, leq)
+    law safe2(fa: (Mod3, Mod3) -> Mod3, fc: (BigInt, BigInt) -> BigInt): Bool = PartialOrder/safe2(fa, fc, alpha, alpha, leq)
 
 }

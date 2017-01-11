@@ -325,7 +325,7 @@ namespace Domain.Sign {
     ///
     /// Over-approximates `equal`.
     ///
-    // #PartialOrder/safe2((x, y) -> x == y, alpha, Belnap/leq) // TODO: Need super generic law.
+    #PartialOrder/safe2((x, y) -> x == y, alpha, Belnap/alpha, Belnap/leq)
     #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder/monotone2(leq, leq, Belnap/leq)
     #commutative
@@ -339,7 +339,7 @@ namespace Domain.Sign {
     ///
     /// Over-approximates `not equal`.
     ///
-    // TODO: Safety property
+    #PartialOrder/safe2((x, y) -> x != y, alpha, Belnap/alpha, Belnap/leq)
     #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder/monotone2(leq, leq, Belnap/leq)
     #commutative
@@ -348,7 +348,7 @@ namespace Domain.Sign {
     ///
     /// Over-approximates `less than`.
     ///
-    // TODO: Safety property
+    #PartialOrder/safe2((x, y) -> x < y, alpha, Belnap/alpha, Belnap/leq)
     #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder/monotone2(leq, leq, Belnap/leq)
     def less(e1: Sign, e2: Sign): Belnap/Belnap = match (e1, e2) with {
@@ -361,7 +361,7 @@ namespace Domain.Sign {
     ///
     /// Over-approximates `less than or equal`.
     ///
-    // TODO: Safety property
+    #PartialOrder/safe2((x, y) -> x <= y, alpha, Belnap/alpha, Belnap/leq)
     #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder/monotone2(leq, leq, Belnap/leq)
     def lessEqual(e1: Sign, e2: Sign): Belnap/Belnap = Belnap/or(e1 `less` e2, e1 `eq` e2)
@@ -392,8 +392,8 @@ namespace Domain.Sign {
 
     law monotone2(f: (Sign, Sign) -> Sign): Bool = PartialOrder/monotone2(f, leq, leq, leq)
 
-    law safe1(fa: Sign -> Sign, fc: BigInt -> BigInt): Bool = PartialOrder/safe1(fa, fc, alpha, leq)
+    law safe1(fa: Sign -> Sign, fc: BigInt -> BigInt): Bool = PartialOrder/safe1(fa, fc, alpha, alpha, leq)
 
-    law safe2(fa: (Sign, Sign) -> Sign, fc: (BigInt, BigInt) -> BigInt): Bool = PartialOrder/safe2(fa, fc, alpha, leq)
+    law safe2(fa: (Sign, Sign) -> Sign, fc: (BigInt, BigInt) -> BigInt): Bool = PartialOrder/safe2(fa, fc, alpha, alpha, leq)
 
 }

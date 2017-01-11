@@ -275,8 +275,8 @@ namespace Domain.ConstantSign {
 
     law monotone2(f: (ConstantSign, ConstantSign) -> ConstantSign): Bool = PartialOrder/monotone2(f, leq, leq, leq)
 
-    law safe1(fa: ConstantSign -> ConstantSign, fc: BigInt -> BigInt): Bool = PartialOrder/safe1(fa, fc, alpha, leq)
+    law safe1(fa: ConstantSign -> ConstantSign, fc: BigInt -> BigInt): Bool = PartialOrder/safe1(fa, fc, alpha, alpha, leq)
 
-    law safe2(fa: (ConstantSign, ConstantSign) -> ConstantSign, fc: (BigInt, BigInt) -> BigInt): Bool = PartialOrder/safe2(fa, fc, alpha, leq)
+    law safe2(fa: (ConstantSign, ConstantSign) -> ConstantSign, fc: (BigInt, BigInt) -> BigInt): Bool = PartialOrder/safe2(fa, fc, alpha, alpha, leq)
 
 }

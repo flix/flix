@@ -184,8 +184,8 @@ namespace Belnap {
 
     law monotone2(f: (Belnap, Belnap) -> Belnap): Bool =  PartialOrder/monotone2(f, leq, leq, leq)
 
-    law safe1(fa: Belnap -> Belnap, fc: Bool -> Bool): Bool = PartialOrder/safe1(fa, fc, alpha, leq)
+    law safe1(fa: Belnap -> Belnap, fc: Bool -> Bool): Bool = PartialOrder/safe1(fa, fc, alpha, alpha, leq)
 
-    law safe2(fa: (Belnap, Belnap) -> Belnap, fc: (Bool, Bool) -> Bool): Bool = PartialOrder/safe2(fa, fc, alpha, leq)
+    law safe2(fa: (Belnap, Belnap) -> Belnap, fc: (Bool, Bool) -> Bool): Bool = PartialOrder/safe2(fa, fc, alpha, alpha, leq)
 
 }

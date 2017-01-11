@@ -27,16 +27,16 @@ namespace PartialOrder {
     ///
     /// NB: This particular law is for unary functions.
     ///
-    law safe1[a, c](fa: a -> a, fc: c -> c, alpha: c -> a, leq: (a, a) -> Bool): Bool =
-        ∀(x: c). alpha(fc(x)) `leq` fa(alpha(x))
+    law safe1[a1, a2, c1, c2](fa: a1 -> a2, fc: c1 -> c2, alpha1: c1 -> a1, alpha2: c2 -> a2, leq: (a2, a2) -> Bool): Bool =
+        ∀(x: c1). alpha2(fc(x)) `leq` fa(alpha1(x))
 
     ///
     /// The safety law asserts that the abstract function `fa` is an over-approximation of the concrete
-    /// function `fc` according to the partial order `leq` and abstraction function `alpha`.
+    /// function `fc` according to the partial order `leq` and abstraction functions `alpha1` and `alpha2`.
     ///
     /// NB: This particular law is for binary functions.
     ///
-    law safe2[a, c](fa: (a, a) -> a, fc: (c, c) -> c, alpha: c -> a, leq: (a, a) -> Bool): Bool =
-        ∀(x: c, y: c). alpha(fc(x, y)) `leq` fa(alpha(x), alpha(y))
+    law safe2[a1, a2, c1, c2](fa: (a1, a1) -> a2, fc: (c1, c1) -> c2, alpha1: c1 -> a1, alpha2: c2 -> a2, leq: (a2, a2) -> Bool): Bool =
+        ∀(x: c1, y: c1). alpha2(fc(x, y)) `leq` fa(alpha1(x), alpha1(y))
 
 }

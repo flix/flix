@@ -360,7 +360,7 @@ namespace Domain.StrictSign {
 
     law upperBound(lub: (Sign, Sign) -> Sign): Bool = JoinLattice/upperBound(leq, lub)
 
-    law leastUpperBound(⊔: (Sign, Sign) -> Sign): Bool = JoinLattice/leastUpperBound(leq, lub)
+    law leastUpperBound(lub: (Sign, Sign) -> Sign): Bool = JoinLattice/leastUpperBound(leq, lub)
 
     law lowerBound(glb: (Sign, Sign) -> Sign): Bool = MeetLattice/lowerBound(leq, glb)
 
@@ -378,8 +378,8 @@ namespace Domain.StrictSign {
 
     law monotone2(f: (Sign, Sign) -> Sign): Bool = PartialOrder/monotone2(f, leq, leq, leq)
 
-    law safe1(fa: Sign -> Sign, fc: BigInt -> BigInt): Bool = PartialOrder/safe1(fa, fc, alpha, leq)
+    law safe1(fa: Sign -> Sign, fc: BigInt -> BigInt): Bool = PartialOrder/safe1(fa, fc, alpha, alpha, leq)
 
-    law safe2(fa: (Sign, Sign) -> Sign, fc: (BigInt, BigInt) -> BigInt): Bool = PartialOrder/safe2(fa, fc, alpha, leq)
+    law safe2(fa: (Sign, Sign) -> Sign, fc: (BigInt, BigInt) -> BigInt): Bool = PartialOrder/safe2(fa, fc, alpha, alpha, leq)
 
 }

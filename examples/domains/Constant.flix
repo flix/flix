@@ -276,8 +276,8 @@ namespace Domain.Constant {
 
     law monotone2(f: (Constant, Constant) -> Constant): Bool = PartialOrder/monotone2(f, leq, leq, leq)
 
-    law safe1(fa: Constant -> Constant, fc: Int -> Int): Bool = PartialOrder/safe1(fa, fc, alpha, leq)
+    law safe1(fa: Constant -> Constant, fc: Int -> Int): Bool = PartialOrder/safe1(fa, fc, alpha, alpha, leq)
 
-    law safe2(fa: (Constant, Constant) -> Constant, fc: (Int, Int) -> Int): Bool = PartialOrder/safe2(fa, fc, alpha, leq)
+    law safe2(fa: (Constant, Constant) -> Constant, fc: (Int, Int) -> Int): Bool = PartialOrder/safe2(fa, fc, alpha, alpha, leq)
 
 }

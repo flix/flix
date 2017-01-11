@@ -276,8 +276,8 @@ namespace Domain.ConstantParity {
 
     law monotone2(f: (ConstantParity, ConstantParity) -> ConstantParity): Bool = PartialOrder/monotone2(f, leq, leq, leq)
 
-    law safe1(fa: ConstantParity -> ConstantParity, fc: BigInt -> BigInt): Bool = PartialOrder/safe1(fa, fc, alpha, leq)
+    law safe1(fa: ConstantParity -> ConstantParity, fc: BigInt -> BigInt): Bool = PartialOrder/safe1(fa, fc, alpha, alpha, leq)
 
-    law safe2(fa: (ConstantParity, ConstantParity) -> ConstantParity, fc: (BigInt, BigInt) -> BigInt): Bool = PartialOrder/safe2(fa, fc, alpha, leq)
+    law safe2(fa: (ConstantParity, ConstantParity) -> ConstantParity, fc: (BigInt, BigInt) -> BigInt): Bool = PartialOrder/safe2(fa, fc, alpha, alpha, leq)
 
 }
