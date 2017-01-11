@@ -395,9 +395,9 @@ enum Outcome {
 }
 
 ///
-/// Performs a single reduction step in the given machine `m0`.
+/// Performs a single reduction step.
 ///
-def reduce(e0: Expression, m0: State): Outcome = let (rdx, ec) = redex(e0);
+def step(e0: Expression, m0: State): Outcome = let (rdx, ec) = redex(e0);
     match (rdx, m0) with {
         case (e, State(h0, s0, f0, r0, l0, LinkQueue((Fulfilled(v), a) :: lq), q0)) =>
             // The link queue is non-empty. Extract an item and evaluate it.
@@ -591,7 +591,7 @@ def alpha(e0: Expression, m: Map2[Variable, Variable]): Expression = match e0 wi
 ///
 /// Repeatedly performs one-step reductions until the state `s0` reaches a fixed-point.
 ///
-def eval(e0: Expression, m0: State): Result[(Expression, State), Str] = match println!(reduce(e0, m0)) with {
+def eval(e0: Expression, m0: State): Result[(Expression, State), Str] = match println!(step(e0, m0)) with {
     case Next(e, m) => eval(e, m)
     case Done(e, m) => Ok((e, m))
     case Abort(e)   => Err(e)

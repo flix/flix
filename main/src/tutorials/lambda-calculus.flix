@@ -47,31 +47,35 @@ def isValue(e0: Expression): Bool = match e0 with {
 def nonValue(e0: Expression): Bool = !isValue(e0)
 
 ///
-/// Optionally returns a pair of a redex and its evaluation context for the given expression `e0`.
+/// Returns a pair of a redex and its evaluation context for the given expression `e0`.
 ///
 /// The evaluation context is a representation of the expression "inside-out" allowing us to recompose
 /// the expression after the redex has been reduced (contracted).
 ///
-def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 with {
+/// Returns the expression itself (and the empty evaluation context) if the expression is irreducible.
+///
+def redex(e0: Expression): (Expression, EvaluationContext) = match e0 with {
     case Var(x) =>
         // A variable cannot be reduced.
-        None
+        (Var(x), Hole)
     case Abs(x, e) =>
         // An abstraction cannot be reduced.
-        None
+        (Abs(x, e), Hole)
     case App(e1, e2) => switch {
         case isValue(e1) && isValue(e2) =>
             // An application where both arguments are values can be reduced.
             // Return the expression and the hole evaluation context.
-            Some((e0, Hole))
+            (e0, Hole)
         case nonValue(e1) =>
             // An application where the first argument is *NOT* a value.
             // Reduction should continue in the first argument.
-            Option/map(match (rdx, ec) -> (rdx, EApp1(ec, e2)), redex(e1))
+            let (rdx, ec) = redex(e1);
+                (rdx, EApp1(ec, e2))
         case isValue(e1) =>
             // An application where the first argument is a value.
             // Reduction should continue in the second argument.
-            Option/map(match (rdx, ec) -> (rdx, EApp2(e1, ec)), redex(e2))
+            let (rdx, ec) = redex(e1);
+                (rdx, EApp2(e1, ec))
     }
 }
 
@@ -85,15 +89,18 @@ def recompose(e0: Expression, ec0: EvaluationContext): Expression = match ec0 wi
     case EApp2(v, ec) => App(v, recompose(e0, ec))
 }
 
+
 ///
-/// Reduces the redex `e0` with a single application of beta-reduction.
+/// Performs a single step reduction.
 ///
-def reduce(e: Expression): Expression = match e with {
-    case App(Abs(x, e1), e2) =>
-        // Perform beta-reduction: Use alpha-renaming to avoid capture.
-        substitute(e1, x, alpha(e2, Map/empty()))
-    case _ => e
-}
+def step(e0: Expression): Expression = let (rdx, ec) = redex(e0);
+    match rdx with {
+        case App(Abs(x, e1), e2) =>
+            // Perform beta-reduction: Use alpha-renaming to avoid capture.
+            recompose(substitute(e1, x, alpha(e2, Map/empty())), ec)
+         case _ => recompose(rdx, ec)
+
+    }
 
 ///
 /// Replaces every occurrence of the variable `x` in the expression `e0` with the expression `r0`.
@@ -122,15 +129,6 @@ def alpha(e0: Expression, m: Map2[Int, Int]): Expression = match e0 with {
     case App(e1, e2) =>
         // Recursively perform alpha conversion on each expression.
         App(alpha(e1, m), alpha(e2, m))
-}
-
-///
-/// Performs a single step reduction of the given expression `e0`,
-/// i.e. performs a single redex-reduce-recompose step.
-///
-def step(e0: Expression): Expression = match redex(e0) with {
-    case None => e0
-    case Some((e, ec)) => recompose(reduce(e0), ec)
 }
 
 ///
