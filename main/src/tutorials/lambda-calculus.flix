@@ -79,11 +79,10 @@ def redex(e0: Expression): Option[(Expression, EvaluationContext)] = match e0 wi
 /// Returns an expression reconstructed from the given evaluation context `ec0`
 /// with the given expression `e0` replacing the hole in the context.
 ///
-// TODO: Change order of arguments.
-def recompose(ec0: EvaluationContext, e0: Expression): Expression = match ec0 with {
+def recompose(e0: Expression, ec0: EvaluationContext): Expression = match ec0 with {
     case Hole         => e0
-    case EApp1(ec, e) => App(recompose(ec, e0), e)
-    case EApp2(v, ec) => App(v, recompose(ec, e0))
+    case EApp1(ec, e) => App(recompose(e0, ec), e)
+    case EApp2(v, ec) => App(v, recompose(e0, ec))
 }
 
 ///
@@ -131,7 +130,7 @@ def alpha(e0: Expression, m: Map2[Int, Int]): Expression = match e0 with {
 ///
 def step(e0: Expression): Expression = match redex(e0) with {
     case None => e0
-    case Some((e, ec)) => recompose(ec, reduce(e0))
+    case Some((e, ec)) => recompose(reduce(e0), ec)
 }
 
 ///
