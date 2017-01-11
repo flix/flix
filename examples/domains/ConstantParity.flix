@@ -195,7 +195,7 @@ namespace Domain.ConstantParity {
     ///
     /// Over-approximates `equal`.
     ///
-    // TODO: Safety property
+    #PartialOrder/safe2((x, y) -> x == y, alpha, Belnap/alpha, Belnap/leq)
     #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder/monotone2(leq, leq, Belnap/leq)
     #commutative
@@ -213,7 +213,7 @@ namespace Domain.ConstantParity {
     ///
     /// Over-approximates `not equal`.
     ///
-    // TODO: Safety property
+    #PartialOrder/safe2((x, y) -> x != y, alpha, Belnap/alpha, Belnap/leq)
     #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder/monotone2(leq, leq, Belnap/leq)
     #commutative
@@ -222,7 +222,7 @@ namespace Domain.ConstantParity {
     ///
     /// Over-approximates `less than`.
     ///
-    // TODO: Safety property
+    #PartialOrder/safe2((x, y) -> x < y, alpha, Belnap/alpha, Belnap/leq)
     #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder/monotone2(leq, leq, Belnap/leq)
     def less(e1: ConstantParity, e2: ConstantParity): Belnap/Belnap = match (e1, e2) with {
@@ -235,7 +235,7 @@ namespace Domain.ConstantParity {
     ///
     /// Over-approximates `less than or equal`.
     ///
-    // TODO: Safety property
+    #PartialOrder/safe2((x, y) -> x <= y, alpha, Belnap/alpha, Belnap/leq)
     #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder/monotone2(leq, leq, Belnap/leq)
     def lessEqual(e1: ConstantParity, e2: ConstantParity): Belnap/Belnap = Belnap/or(e1 `less` e2, e1 `eq` e2)
