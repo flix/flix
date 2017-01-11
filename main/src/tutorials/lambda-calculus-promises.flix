@@ -618,7 +618,6 @@ def initialState: State =
 // x.onResolve(y => Ref(y))
 // x.resolve("hello")
 //
-
 def testEval1: Result[(Expression, State), Str] = eval(
     App(Abs(V(0),
         Seq(Promisify(Var(V(0))),
@@ -641,7 +640,6 @@ def testEval1: Result[(Expression, State), Str] = eval(
 // y.onResolve(z => Ref(z))
 // x.resolve("hello")
 //
-
 def testEval2: Result[(Expression, State), Str] = eval(
     App(App(Abs(V(0), Abs(V(1),
         Seq(Promisify(Var(V(0))),
