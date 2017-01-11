@@ -400,20 +400,32 @@ enum Outcome {
 def step(e0: Expression, m0: State): Outcome =
     let (rdx, ec) = redex(e0);
     match (rdx, m0) with {
+        //
+        // E-Link-Loop
+        //
         case (e, State(h0, s0, f0, r0, l0, LinkQueue((Fulfilled(v), a) :: lq), q0)) =>
             // The link queue is non-empty. Extract an item and evaluate it.
             let e = Seq(Resolve(Ptr(a), v), e);
                 Next(recompose(e, ec), State(h0, s0, f0, r0, l0, LinkQueue(lq), q0))
 
+        //
+        // E-App
+        //
         case (App(Abs(x, e1), e2), State(h0, s0, f0, r0, l0, w0, q0)) =>
             // Apply beta-reduction: Use alpha-renaming to avoid capture.
             let e = substitute(e1, x, alpha(e2, Map2/empty()));
                 Next(recompose(e, ec), State(h0, s0, f0, r0, l0, w0, q0))
 
+        //
+        // E-Seq
+        //
         case (Seq(v, e), State(h0, s0, f0, r0, l0, w0, q0)) =>
             // Discard the value in the sequence.
             Next(recompose(e, ec), State(h0, s0, f0, r0, l0, w0, q0))
 
+        //
+        //  E-Ref
+        //
         case (Ref(v), State(Heap(h0), s0, f0, r0, l0, w0, q0)) =>
             // Allocate a fresh address in the heap and store the value at that address.
             let a = freshAddr();
@@ -421,6 +433,9 @@ def step(e0: Expression, m0: State): Outcome =
             let e1 = Ptr(a);
                 Next(recompose(e1, ec), State(Heap(h1), s0, f0, r0, l0, w0, q0))
 
+        //
+        //  E-Deref
+        //
         case (Deref(Ptr(a)), State(Heap(h0), s0, f0, r0, l0, w0, q0)) =>
             // Dereference the address and return its value.
             match Map2/lookup(a, h0) with {
@@ -428,6 +443,9 @@ def step(e0: Expression, m0: State): Outcome =
                 case Some(v) => Next(recompose(v, ec), State(Heap(h0), s0, f0, r0, l0, w0, q0))
             }
 
+        //
+        //  E-Promisify
+        //
         case (Promisify(Ptr(a)), State(h0, PromiseState(s0), f0, r0, l0, w0, q0)) =>
             // Sets the state of an uninitialized promise to pending.
             match Map2/lookup(a, s0) with {
@@ -440,6 +458,9 @@ def step(e0: Expression, m0: State): Outcome =
                     Next(recompose(Cst("Undef"), ec), m0)
             }
 
+        //
+        //  E-Resolve-Pending, E-Resolve-Fulfilled, and E-Resolve-Rejected
+        //
         case (Resolve(Ptr(a), v), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0))) =>
             // Lookup the state of the promise.
             match Map2/lookup(a, s0) with {
@@ -477,9 +498,15 @@ def step(e0: Expression, m0: State): Outcome =
                     Next(recompose(Cst("Undef"), ec), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0)))
             }
 
+        //
+        //  E-Reject-Pending, E-Reject-Fulfilled, and E-Reject-Rejected
+        //
         case (Reject(e1, e2), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0))) =>
             ??? // NB: Similiar to Resolve.
 
+        //
+        //  E-OnResolve-Pending, E-OnResolve-Fulfilled, and E-OnResolve-Rejected.
+        //
         case (OnResolve(Ptr(a), lam), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0))) =>
             // Lookup the state of the promise.
             match Map2/lookup(a, s0) with {
@@ -513,9 +540,15 @@ def step(e0: Expression, m0: State): Outcome =
                     Next(recompose(Cst("Undef"), ec), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0)))
             }
 
+        //
+        //  E-OnReject-Pending, E-OnReject-Fulfilled, and E-OnReject-Rejected.
+        //
         case (OnReject(e1, e2), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0))) =>
             ??? // NB: Similiar to OnResolve.
 
+        //
+        //  E-Link
+        //
         case (Link(Ptr(a1), Ptr(a2)), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0))) =>
             // Lookup the list of registered links for a1.
             let xs = Map2/getWithDefault(a1, Nil, l0);
@@ -523,6 +556,9 @@ def step(e0: Expression, m0: State): Outcome =
             let l1 = Map2/insert(a1, xs ::: a2 :: Nil, l0);
                 Next(recompose(Cst("Undef"), ec), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l1), LinkQueue(w0), ReactionQueue(q0)))
 
+        //
+        //  E-Reaction-Loop
+        //
         case (e, State(h0, s0, f0, r0, l0, w0, ReactionQueue((Fulfilled(v), lambda, childPromise) :: q1))) =>
             // The reaction queue contains an item. Check if the expression is a value.
             if (isValue(e))
