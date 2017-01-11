@@ -32,7 +32,7 @@ namespace Domain.Mod3 {
     ///
     /// Returns the least upper bound of `e1` and `e2`.
     ///
-    #commutative #associative #upperBound #leastUpperBound
+    #upperBound #leastUpperBound #commutative #associative
     def lub(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
         case (Bot, x)   => x
         case (x, Bot)   => x
@@ -45,7 +45,7 @@ namespace Domain.Mod3 {
     ///
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
-    #commutative #associative #lowerBound #greatestLowerBound
+    #lowerBound #greatestLowerBound #commutative #associative
     def glb(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
         case (Top, x)   => x
         case (x, Top)   => x
