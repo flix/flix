@@ -1,6 +1,7 @@
 /**
  * An implementation of the four-valued boolean lattice named for Nuel Belnap.
  */
+// TODO: Domain
 namespace Belnap {
 
     ///

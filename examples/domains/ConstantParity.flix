@@ -1,7 +1,7 @@
 /**
  * An implementation of the parity domain lifted over the constant propagation domain.
  */
-namespace Domains.ConstantParity {
+namespace Domain.ConstantParity {
 
     ///
     /// The elements of the constant-parity lattice.
