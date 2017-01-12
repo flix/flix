@@ -59,6 +59,8 @@ object LocalResource {
 
     def Interpreter: InputStream = getInputStream("/tutorials/interpreter.flix")
 
+    // TODO: Add lambda calculus.
+
   }
 
   /**

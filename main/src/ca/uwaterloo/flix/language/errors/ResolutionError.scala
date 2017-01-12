@@ -48,6 +48,28 @@ object ResolutionError {
   }
 
   /**
+    * Ambiguous Tag Error.
+    *
+    * @param tag  the tag.
+    * @param ns   the current namespace.
+    * @param locs the source location of the matched tags.
+    * @param loc  the location where the error occurred.
+    */
+  // TODO: Improve error message.
+  case class AmbiguousTag(tag: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
+    val source = loc.source
+    val message =
+      hl"""|>> Ambiguous tag '${Red(tag)}'.
+           |
+           |${Code(loc, "ambiguous tag name.")}
+           |
+           |Multiple matches found here:
+           |
+           |${locs.map(_.format).mkString("\n")}
+        """.stripMargin
+  }
+
+  /**
     * Undefined Attribute Error.
     *
     * @param attribute the attribute name.

@@ -213,6 +213,40 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedRef](result)
   }
 
+  test("AmbiguousTag.01") {
+    val input =
+      s"""
+         |enum A {
+         |  case Foo
+         |}
+         |
+         |enum B {
+         |  case Foo
+         |}
+         |
+         |def f: A = Foo
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.AmbiguousTag](result)
+  }
+
+  test("AmbiguousTag.02") {
+    val input =
+      s"""
+         |enum A {
+         |  case Foo(Int)
+         |}
+         |
+         |enum B {
+         |  case Foo(Int)
+         |}
+         |
+         |def f: A = Foo(42)
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.AmbiguousTag](result)
+  }
+
   test("UnresolvedEnum.01") {
     val input =
       s"""
