@@ -24,12 +24,12 @@ namespace Int16 {
     ///
     /// Returns the minimum number representable by an `Int16`.
     ///
-    def minValue: Int16 = 1i16 << (size() - 1)
+    def minValue: Int16 = 1i16 <<< (size() - 1)
 
     ///
     /// Returns the maximum number representable by an `Int16`.
     ///
-    def maxValue: Int16 = ~minValue()
+    def maxValue: Int16 = ~~~minValue()
 
     ///
     /// Returns the smaller of `x` and `y`.
@@ -134,7 +134,7 @@ namespace Int16 {
     def bitPositionToInt(position: Int32): Int16 = switch {
         case position < 0 || position > size() - 1  => 0i16
         case position == size() - 1                 => minValue()
-        case position != size() - 1                 => 1i16 << position
+        case position != size() - 1                 => 1i16 <<< position
     }
 
     ///
@@ -159,5 +159,5 @@ namespace Int16 {
     /// The bits of x have positions: 0 (rightmost bit) - 15 (leftmost bit)
     ///
     def bit(x: Int16, position: Int32): Int32 =
-        if ((x >> position) % 2i16 == 0i16) 0 else 1
+        if ((x >>> position) % 2i16 == 0i16) 0 else 1
 }

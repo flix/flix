@@ -19,9 +19,9 @@ package ca.uwaterloo.flix.runtime.quickchecker
 import java.math.BigInteger
 
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression.Var
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, Property, Root}
-import ca.uwaterloo.flix.language.ast.{PropertyError, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.language.errors.PropertyError
 import ca.uwaterloo.flix.runtime.evaluator.SymVal.{Char, Unit}
 import ca.uwaterloo.flix.runtime.evaluator.{SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.Highlight.{Blue, Cyan, Red}
@@ -33,6 +33,25 @@ import scala.language.implicitConversions
 import scala.util.Random
 
 object QuickChecker {
+
+  /**
+    * The result of a single symbolic execution.
+    */
+  sealed trait PathResult
+
+  object PathResult {
+
+    /**
+      * The property was true in the single execution.
+      */
+    case object Success extends PathResult
+
+    /**
+      * The property was false in the single execution.
+      */
+    case class Failure(model: Map[Symbol.VarSym, String]) extends PathResult
+
+  }
 
   /**
     * Represents the result of a single test execution.
@@ -90,7 +109,7 @@ object QuickChecker {
     /**
       * A property that passed the quick checker.
       */
-    case class Success(property: Property, tests: Int, elapsed: Long) extends PropertyResult
+    case class Success(property: Property, success: Int, elapsed: Long) extends PropertyResult
 
     /**
       * A property that failed the quick checker.
@@ -104,9 +123,9 @@ object QuickChecker {
     */
   def quickCheck(root: Root, options: Options)(implicit genSym: GenSym): Validation[Root, PropertyError] = {
     /*
-     * Number of tests to run.
+     * Number of times to instantiate a quantified variable.
      */
-    val Limit = 100
+    val Limit = 10
 
     /*
      * Check if the quick checker is enabled. Otherwise return success immediately.
@@ -148,76 +167,59 @@ object QuickChecker {
   /**
     * Attempts to quick check the given `property`.
     */
-  private def quickCheckProperty(property: Property, limit: Int, root: Root)(implicit genSym: GenSym, random: Random): PropertyResult = {
+  private def quickCheckProperty(p: Property, limit: Int, root: Root)(implicit genSym: GenSym, random: Random): PropertyResult = {
+    /*
+     * Start the clock.
+     */
     val t = System.nanoTime()
-
-    val exp0 = property.exp
 
     /*
      * Accumulate successes and failures.
      */
-    val success = mutable.ListBuffer.empty[TestResult.Success]
-    val failure = mutable.ListBuffer.empty[TestResult.Failure]
+    val success = mutable.ListBuffer.empty[PathResult.Success.type]
+    val failure = mutable.ListBuffer.empty[PathResult.Failure]
 
     /*
-     * Runs as many tests as requested.
+     * The initial empty environment.
      */
-    for (i <- 0 until limit) {
-      /*
-       * Generate random parameter values in an environment.
-       */
-      val env = randomEnv(exp0.getQuantifiers, root)
+    val env0 = Map.empty: SymbolicEvaluator.Environment
 
-      /*
-       * Run the symbolic evaluator on the generated environment.
-       */
-      try {
-        if (eval(exp0.peelQuantifiers, env, root)) {
-          // Case 1: The symbolic evaluator proved the property.
-          success += TestResult.Success(property)
-        } else {
-          // Case 2: The symbolic evaluator disproved the property.
-          val error = PropertyError.mk(property, SymVal.mkModel(env, None))
-          failure += TestResult.Failure(property, error)
-        }
-      } catch {
-        case ex: Exception =>
-          // Case 3: The symbolic evaluator failed with an exception.
-          val error = PropertyError.mk(property, SymVal.mkModel(env, None))
-          failure += TestResult.Failure(property, error)
+    /*
+     * Run the symbolic evaluator on the generated environment.
+     */
+    val results = try {
+      SymbolicEvaluator.eval(p.exp, env0, enumerate(limit, root, genSym, random), root) map {
+        case (Nil, qua, SymVal.True) =>
+          success += PathResult.Success
+        case (Nil, qua, SymVal.False) =>
+          failure += PathResult.Failure(SymVal.mkModel(qua, None))
+        case (_, _, v) => throw new IllegalStateException(s"The symbolic evaluator returned a non-boolean value: $v.")
       }
+    } catch {
+      case ex: Exception => failure += PathResult.Failure(Map.empty) // TODO: Improve exception handling.
     }
 
     /*
-     * Collect the results.
+     * Stop the clock.
      */
     val e = System.nanoTime() - t
+
+    /*
+     * Determine if the property failed any executions.
+     */
     if (failure.isEmpty) {
-      PropertyResult.Success(property, success.size, e)
+      PropertyResult.Success(p, success.size, e)
     } else {
-      PropertyResult.Failure(property, success.size, failure.size, e, failure.head.error)
+      PropertyResult.Failure(p, success.size, failure.size, e, PropertyError(p, failure.head.model))
     }
   }
 
   /**
-    * Evaluates the given expression `exp0` to a boolean value under the given environment `env0`.
+    * Randomly generates a list of symbolic values for the given type.
     */
-  private def eval(exp0: Expression, env0: Map[Symbol.VarSym, SymVal], root: Root)(implicit genSym: GenSym): Boolean = {
-    val result = SymbolicEvaluator.eval(exp0.peelQuantifiers, env0, root)
-    result match {
-      case List((Nil, SymVal.True)) => true
-      case List((Nil, SymVal.False)) => false
-      case List((_, v)) => throw new IllegalStateException(s"The symbolic evaluator returned a non-boolean value: $v.")
-    }
-  }
-
-  /**
-    * Generates a random environment for the given list of quantifiers.
-    */
-  private def randomEnv(quantifiers: List[Var], root: Root)(implicit random: Random): Map[Symbol.VarSym, SymVal] = {
-    quantifiers.foldLeft(Map.empty[Symbol.VarSym, SymVal]) {
-      case (macc, Var(sym, tpe, loc)) => macc + (sym -> new ArbSymVal(tpe, root).gen.mk(random))
-    }
+  private def enumerate(limit: Int, root: Root, genSym: GenSym, random: Random)(sym: Symbol.VarSym, tpe: Type): List[SymVal] = {
+    val arb = new ArbSymVal(tpe, root).gen
+    (1 to limit).toList.map(_ => arb.mk(random))
   }
 
   /**
@@ -226,7 +228,7 @@ object QuickChecker {
   private def printVerbose(results: List[PropertyResult]): Unit = {
     Console.println(Blue(s"-- QUICK CHECKER RESULTS ---------------------------------------------"))
 
-    for ((source, properties) <- results.groupBy(_.property.loc.source)) {
+    for ((source, properties) <- results.groupBy(_.property.loc.source).toList.sortBy(_._1.format)) {
 
       Console.println()
       Console.println(s"  -- Quick Check ${source.format} -- ")
@@ -235,10 +237,10 @@ object QuickChecker {
       for (result <- properties.sortBy(_.property.loc)) {
         result match {
           case PropertyResult.Success(property, tests, elapsed) =>
-            Console.println("  " + Cyan("✓ ") + property.law + " (" + property.loc.format + ") (" + tests + " tests, " + TimeOps.toSeconds(elapsed) + " seconds.)")
+            Console.println("  " + Cyan("✓ ") + property.defn + " satisfies " + property.law + " (" + property.loc.format + ") (" + tests + " tests, " + TimeOps.toSeconds(elapsed) + " seconds.)")
 
           case PropertyResult.Failure(property, success, failure, elapsed, error) =>
-            Console.println("  " + Red("✗ ") + property.law + " (" + property.loc.format + ") (" + success + " SUCCESS, " + failure + " FAILED, " + TimeOps.toSeconds(elapsed) + " seconds.)")
+            Console.println("  " + Red("✗ ") + property.defn + " satisfies " + property.law + " (" + property.loc.format + ") (" + success + " SUCCESS, " + failure + " FAILED, " + TimeOps.toSeconds(elapsed) + " seconds.)")
         }
       }
 

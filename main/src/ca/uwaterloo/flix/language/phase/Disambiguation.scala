@@ -52,7 +52,12 @@ object Disambiguation {
       (defnOpt, hookOpt) match {
         case (Some(defn), None) => Ok(RefTarget.Defn(ns0, defn))
         case (None, Some(hook)) => Ok(RefTarget.Hook(hook))
-        case (None, None) => Err(ResolutionError.UndefinedRef(qname, ns0, qname.loc))
+        case (None, None) =>
+          // Try the global namespace.
+          program.definitions(Name.RootNS).get(qname.ident.name) match {
+            case None => Err(ResolutionError.UndefinedRef(qname, ns0, qname.loc))
+            case Some(defn) => Ok(RefTarget.Defn(Name.RootNS, defn))
+          }
         case (Some(defn), Some(hook)) => Err(ResolutionError.AmbiguousRef(qname, ns0, qname.loc))
       }
     } else {

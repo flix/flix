@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.Type.Var
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation
@@ -40,14 +39,13 @@ object Namer {
     val prog0 = NamedAst.Program(
       enums = Map.empty,
       definitions = Map.empty,
-      classes = Map.empty,
-      impls = Map.empty,
       lattices = Map.empty,
       indexes = Map.empty,
       tables = Map.empty,
       facts = Map.empty,
       rules = Map.empty,
       hooks = program.hooks,
+      properties = Map.empty,
       time = program.time
     )
 
@@ -128,11 +126,6 @@ object Namer {
       case WeededAst.Declaration.External(doc, ident, params, tpe, loc) => ??? // TODO: Add support for external in Namer.
 
       /*
-       * Law.
-       */
-      case WeededAst.Declaration.Law(doc, ident, tparams, params, tpe, exp, loc) => ??? // TODO: Add support for law in Namer.
-
-      /*
        * Enum.
        */
       case WeededAst.Declaration.Enum(doc, ident, tparams0, cases, loc) =>
@@ -159,14 +152,17 @@ object Namer {
         }
 
       /*
-       * Class.
+       * Property.
        */
-      case WeededAst.Declaration.Class(doc, ident, tparams, decls, loc) => ??? // TODO: Add support for class in Namer.
-
-      /*
-       * Impl.
-       */
-      case WeededAst.Declaration.Impl(doc, ident, tparams, decls, loc) => ??? // TODO: Add support for impl in Namer.
+      case WeededAst.Declaration.Property(law, defn, exp0, loc) =>
+        Expressions.namer(exp0, Map.empty, Map.empty) map {
+          case exp =>
+            val lawSym = Symbol.mkDefnSym(law.namespace, law.ident)
+            val defnSym = Symbol.mkDefnSym(ns0, defn)
+            val property = NamedAst.Property(lawSym, defnSym, exp, loc)
+            val properties = prog0.properties.getOrElse(ns0, Nil)
+            prog0.copy(properties = prog0.properties + (ns0 -> (property :: properties)))
+        }
 
       /*
        * Fact.
@@ -399,30 +395,20 @@ object Namer {
           case es => NamedAst.Expression.Tuple(es, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.Existential(params, exp, loc) =>
-        val ps = params map {
-          case WeededAst.FormalParam(ident, tpe, loc1) =>
-            val sym = Symbol.freshVarSym(ident)
-            NamedAst.FormalParam(sym, Types.namer(tpe, tenv0), loc1)
-        }
-        val env1 = ps.foldLeft(env0) {
-          case (macc, NamedAst.FormalParam(sym, tpe, _)) => macc + (sym.text -> sym)
-        }
-        namer(exp, env1, tenv0) map {
-          case e => NamedAst.Expression.Existential(ps, e, loc)
+      case WeededAst.Expression.Existential(param, exp, loc) =>
+        val sym = Symbol.freshVarSym(param.ident)
+        namer(exp, env0 + (sym.text -> sym), tenv0) map {
+          case e =>
+            val p = NamedAst.FormalParam(sym, Types.namer(param.tpe, tenv0), param.loc)
+            NamedAst.Expression.Existential(p, e, loc)
         }
 
-      case WeededAst.Expression.Universal(params, exp, loc) =>
-        val ps = params map {
-          case WeededAst.FormalParam(ident, tpe, loc1) =>
-            val sym = Symbol.freshVarSym(ident)
-            NamedAst.FormalParam(sym, Types.namer(tpe, tenv0), loc1)
-        }
-        val env1 = ps.foldLeft(env0) {
-          case (macc, NamedAst.FormalParam(sym, tpe, _)) => macc + (sym.text -> sym)
-        }
-        namer(exp, env1, tenv0) map {
-          case e => NamedAst.Expression.Existential(ps, e, loc)
+      case WeededAst.Expression.Universal(param, exp, loc) =>
+        val sym = Symbol.freshVarSym(param.ident)
+        namer(exp, env0 + (sym.text -> sym), tenv0) map {
+          case e =>
+            val p = NamedAst.FormalParam(sym, Types.namer(param.tpe, tenv0), param.loc)
+            NamedAst.Expression.Universal(p, e, loc)
         }
 
       case WeededAst.Expression.Ascribe(exp, tpe, loc) => namer(exp, env0, tenv0) map {
@@ -464,8 +450,8 @@ object Namer {
       }
       case WeededAst.Expression.Tag(enum, tag, exp, loc) => freeVars(exp)
       case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
-      case WeededAst.Expression.Existential(params, exp, loc) => filterBoundVars(freeVars(exp), params.map(_.ident))
-      case WeededAst.Expression.Universal(params, exp, loc) => filterBoundVars(freeVars(exp), params.map(_.ident))
+      case WeededAst.Expression.Existential(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
+      case WeededAst.Expression.Universal(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
       case WeededAst.Expression.Ascribe(exp, tpe, loc) => freeVars(exp)
       case WeededAst.Expression.UserError(loc) => Nil
     }
@@ -512,6 +498,7 @@ object Namer {
       */
     def namer(pat0: WeededAst.Pattern)(implicit genSym: GenSym): (NamedAst.Pattern, Map[String, Symbol.VarSym]) = {
       val m = mutable.Map.empty[String, Symbol.VarSym]
+
       def visit(p: WeededAst.Pattern): NamedAst.Pattern = p match {
         case WeededAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(Type.freshTypeVar(), loc)
         case WeededAst.Pattern.Var(ident, loc) =>
@@ -619,6 +606,7 @@ object Namer {
         case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams.map(t => visit(t, env)), visit(tresult, env), loc)
         case WeededAst.Type.Apply(base, tparams, loc) => NamedAst.Type.Apply(visit(base, env), tparams.map(t => visit(t, env)), loc)
       }
+
       visit(tpe, tenv0)
     }
 

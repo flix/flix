@@ -150,11 +150,11 @@ object TypedAst {
 
     case class Tuple(elms: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Existential(params: List[TypedAst.FormalParam], exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
+    case class Existential(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = Type.Bool
     }
 
-    case class Universal(params: List[TypedAst.FormalParam], exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
+    case class Universal(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = Type.Bool
     }
 
@@ -276,6 +276,6 @@ object TypedAst {
 
   case class TypeParam(name: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst
 
-  case class Property(law: Law, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst
+  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst
 
 }

@@ -29,6 +29,11 @@ sealed trait SmtExpr {
 object SmtExpr {
 
   /**
+    * Variable.
+    */
+  case class Var(sym: Symbol.VarSym, tpe: Type) extends SmtExpr
+
+  /**
     * An Int8 constant.
     */
   case class Int8(lit: Byte) extends SmtExpr {
@@ -62,11 +67,6 @@ object SmtExpr {
   case class BigInt(lit: java.math.BigInteger) extends SmtExpr {
     def tpe: Type = Type.BigInt
   }
-
-  /**
-    * Variable.
-    */
-  case class Var(sym: Symbol.VarSym, tpe: Type) extends SmtExpr
 
   /**
     * Addition.
@@ -279,10 +279,10 @@ object SmtExpr {
     * Asserts that the two given types `tpe1` and `tpe2` are the same. Returns the type.
     */
   private def assertEq(tpe1: Type, tpe2: Type): Type =
-  if (tpe1 == tpe2)
-    tpe1
-  else
-    throw InternalCompilerException(s"Unexpected non-equal types: '$tpe1' and '$tpe2'.")
+    if (tpe1 == tpe2)
+      tpe1
+    else
+      throw InternalCompilerException(s"Unexpected non-equal types: '$tpe1' and '$tpe2'.")
 
   /**
     * Asserts that the given type `type` is a numeric type, i.e. a float or an int.

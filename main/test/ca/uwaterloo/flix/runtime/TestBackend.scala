@@ -1906,13 +1906,13 @@ class TestBackend extends FunSuite {
 
   test("Expression.Unary - UnaryOperator.BitwiseNegate.01") {
     val input =
-      s"""def f01: Int = ~0
-         |def f02: Int = ~1
-         |def f03: Int = ~(-1)
-         |def f04: Int = ~36000
-         |def f05: Int = ~(-36000)
-         |def f06: Int = ~${Int.MaxValue}
-         |def f07: Int = ~${Int.MinValue}
+      s"""def f01: Int = ~~~0
+         |def f02: Int = ~~~1
+         |def f03: Int = ~~~(-1)
+         |def f04: Int = ~~~36000
+         |def f05: Int = ~~~(-36000)
+         |def f06: Int = ~~~${Int.MaxValue}
+         |def f07: Int = ~~~${Int.MinValue}
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt32(-1), "f01")
@@ -1926,13 +1926,13 @@ class TestBackend extends FunSuite {
 
   test("Expression.Unary - UnaryOperator.BitwiseNegate.02") {
     val input =
-      s"""def f01: Int8 = ~0i8
-         |def f02: Int8 = ~1i8
-         |def f03: Int8 = ~(-1i8)
-         |def f04: Int8 = ~42i8
-         |def f05: Int8 = ~(-42i8)
-         |def f06: Int8 = ~${Byte.MaxValue}i8
-         |def f07: Int8 = ~${Byte.MinValue}i8
+      s"""def f01: Int8 = ~~~0i8
+         |def f02: Int8 = ~~~1i8
+         |def f03: Int8 = ~~~(-1i8)
+         |def f04: Int8 = ~~~42i8
+         |def f05: Int8 = ~~~(-42i8)
+         |def f06: Int8 = ~~~${Byte.MaxValue}i8
+         |def f07: Int8 = ~~~${Byte.MinValue}i8
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt8(-1), "f01")
@@ -1946,13 +1946,13 @@ class TestBackend extends FunSuite {
 
   test("Expression.Unary - UnaryOperator.BitwiseNegate.03") {
     val input =
-      s"""def f01: Int16 = ~0i16
-         |def f02: Int16 = ~1i16
-         |def f03: Int16 = ~(-1i16)
-         |def f04: Int16 = ~420i16
-         |def f05: Int16 = ~(-420i16)
-         |def f06: Int16 = ~${Short.MaxValue}i16
-         |def f07: Int16 = ~${Short.MinValue}i16
+      s"""def f01: Int16 = ~~~0i16
+         |def f02: Int16 = ~~~1i16
+         |def f03: Int16 = ~~~(-1i16)
+         |def f04: Int16 = ~~~420i16
+         |def f05: Int16 = ~~~(-420i16)
+         |def f06: Int16 = ~~~${Short.MaxValue}i16
+         |def f07: Int16 = ~~~${Short.MinValue}i16
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt16(-1), "f01")
@@ -1966,13 +1966,13 @@ class TestBackend extends FunSuite {
 
   test("Expression.Unary - UnaryOperator.BitwiseNegate.04") {
     val input =
-      s"""def f01: Int32 = ~0i32
-         |def f02: Int32 = ~1i32
-         |def f03: Int32 = ~(-1i32)
-         |def f04: Int32 = ~36000i32
-         |def f05: Int32 = ~(-36000i32)
-         |def f06: Int32 = ~${Int.MaxValue}i32
-         |def f07: Int32 = ~${Int.MinValue}i32
+      s"""def f01: Int32 = ~~~0i32
+         |def f02: Int32 = ~~~1i32
+         |def f03: Int32 = ~~~(-1i32)
+         |def f04: Int32 = ~~~36000i32
+         |def f05: Int32 = ~~~(-36000i32)
+         |def f06: Int32 = ~~~${Int.MaxValue}i32
+         |def f07: Int32 = ~~~${Int.MinValue}i32
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt32(-1), "f01")
@@ -1986,13 +1986,13 @@ class TestBackend extends FunSuite {
 
   test("Expression.Unary - UnaryOperator.BitwiseNegate.05") {
     val input =
-      s"""def f01: Int64 = ~0i64
-         |def f02: Int64 = ~1i64
-         |def f03: Int64 = ~(-1i64)
-         |def f04: Int64 = ~10000000000i64
-         |def f05: Int64 = ~(-10000000000i64)
-         |def f06: Int64 = ~${Long.MaxValue}i64
-         |def f07: Int64 = ~${Long.MinValue}i64
+      s"""def f01: Int64 = ~~~0i64
+         |def f02: Int64 = ~~~1i64
+         |def f03: Int64 = ~~~(-1i64)
+         |def f04: Int64 = ~~~10000000000i64
+         |def f05: Int64 = ~~~(-10000000000i64)
+         |def f06: Int64 = ~~~${Long.MaxValue}i64
+         |def f07: Int64 = ~~~${Long.MinValue}i64
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt64(-1), "f01")
@@ -2006,11 +2006,11 @@ class TestBackend extends FunSuite {
 
   test("Expression.Unary - UnaryOperator.BitwiseNegate.06") {
     val input =
-      s"""def f01: BigInt = ~0ii
-         |def f02: BigInt = ~1ii
-         |def f03: BigInt = ~(-1ii)
-         |def f04: BigInt = ~9223372036854775808ii
-         |def f05: BigInt = ~(-9223372036854775809ii)
+      s"""def f01: BigInt = ~~~0ii
+         |def f02: BigInt = ~~~1ii
+         |def f03: BigInt = ~~~(-1ii)
+         |def f04: BigInt = ~~~9223372036854775808ii
+         |def f05: BigInt = ~~~(-9223372036854775809ii)
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkBigInt(-1), "f01")
@@ -4146,11 +4146,11 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseAnd.01") {
     val input =
-      s"""def f01: Int = 40000 & ${0xFFFFFFFF}
-         |def f02: Int = 40000 & 40000
-         |def f03: Int = 40000 & 0
-         |def f04: Int = ${0xFFFFFFFF} & ${0xFFFFFFFF}
-         |def f05: Int = -1 & -1
+      s"""def f01: Int = 40000 &&& ${0xFFFFFFFF}
+         |def f02: Int = 40000 &&& 40000
+         |def f03: Int = 40000 &&& 0
+         |def f04: Int = ${0xFFFFFFFF} &&& ${0xFFFFFFFF}
+         |def f05: Int = -1 &&& -1
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt32(40000), "f01")
@@ -4162,11 +4162,11 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseAnd.02") {
     val input =
-      s"""def f01: Int8 = 40i8 & ${0xFF.toByte}i8
-         |def f02: Int8 = 40i8 & 40i8
-         |def f03: Int8 = 40i8 & 0i8
-         |def f04: Int8 = ${0xFF.toByte}i8 & ${0xFF.toByte}i8
-         |def f05: Int8 = -1i8 & -1i8
+      s"""def f01: Int8 = 40i8 &&& ${0xFF.toByte}i8
+         |def f02: Int8 = 40i8 &&& 40i8
+         |def f03: Int8 = 40i8 &&& 0i8
+         |def f04: Int8 = ${0xFF.toByte}i8 &&& ${0xFF.toByte}i8
+         |def f05: Int8 = -1i8 &&& -1i8
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt8(40), "f01")
@@ -4178,11 +4178,11 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseAnd.03") {
     val input =
-      s"""def f01: Int16 = 400i16 & ${0xFFFF.toShort}i16
-         |def f02: Int16 = 400i16 & 400i16
-         |def f03: Int16 = 400i16 & 0i16
-         |def f04: Int16 = ${0xFFFF.toShort}i16 & ${0xFFFF.toShort}i16
-         |def f05: Int16 = -1i16 & -1i16
+      s"""def f01: Int16 = 400i16 &&& ${0xFFFF.toShort}i16
+         |def f02: Int16 = 400i16 &&& 400i16
+         |def f03: Int16 = 400i16 &&& 0i16
+         |def f04: Int16 = ${0xFFFF.toShort}i16 &&& ${0xFFFF.toShort}i16
+         |def f05: Int16 = -1i16 &&& -1i16
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt16(400), "f01")
@@ -4194,11 +4194,11 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseAnd.04") {
     val input =
-      s"""def f01: Int32 = 40000i32 & ${0xFFFFFFFF}i32
-         |def f02: Int32 = 40000i32 & 40000i32
-         |def f03: Int32 = 40000i32 & 0i32
-         |def f04: Int32 = ${0xFFFFFFFF}i32 & ${0xFFFFFFFF}i32
-         |def f05: Int32 = -1i32 & -1i32
+      s"""def f01: Int32 = 40000i32 &&& ${0xFFFFFFFF}i32
+         |def f02: Int32 = 40000i32 &&& 40000i32
+         |def f03: Int32 = 40000i32 &&& 0i32
+         |def f04: Int32 = ${0xFFFFFFFF}i32 &&& ${0xFFFFFFFF}i32
+         |def f05: Int32 = -1i32 &&& -1i32
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt32(40000), "f01")
@@ -4210,11 +4210,11 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseAnd.05") {
     val input =
-      s"""def f01: Int64 = 40000000000i64 & ${0xFFFFFFFFFFFFFFFFL}i64
-         |def f02: Int64 = 40000000000i64 & 40000000000i64
-         |def f03: Int64 = 40000000000i64 & 0i64
-         |def f04: Int64 = ${0xFFFFFFFFFFFFFFFFL}i64 & ${0xFFFFFFFFFFFFFFFFL}i64
-         |def f05: Int64 = -1i64 & -1i64
+      s"""def f01: Int64 = 40000000000i64 &&& ${0xFFFFFFFFFFFFFFFFL}i64
+         |def f02: Int64 = 40000000000i64 &&& 40000000000i64
+         |def f03: Int64 = 40000000000i64 &&& 0i64
+         |def f04: Int64 = ${0xFFFFFFFFFFFFFFFFL}i64 &&& ${0xFFFFFFFFFFFFFFFFL}i64
+         |def f05: Int64 = -1i64 &&& -1i64
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt64(40000000000L), "f01")
@@ -4226,11 +4226,11 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseAnd.06") {
     val input =
-      s"""def f01: BigInt = 40000000000000000000ii & ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii
-         |def f02: BigInt = 40000000000000000000ii & 40000000000000000000ii
-         |def f03: BigInt = 40000000000000000000ii & 0ii
-         |def f04: BigInt = ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii & ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii
-         |def f05: BigInt = -1ii & -1ii
+      s"""def f01: BigInt = 40000000000000000000ii &&& ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii
+         |def f02: BigInt = 40000000000000000000ii &&& 40000000000000000000ii
+         |def f03: BigInt = 40000000000000000000ii &&& 0ii
+         |def f04: BigInt = ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii &&& ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii
+         |def f05: BigInt = -1ii &&& -1ii
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkBigInt("40000000000000000000"), "f01")
@@ -4242,11 +4242,11 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseOr.01") {
     val input =
-      s"""def f01: Int = 40000 | ${0xFFFFFFFF}
-         |def f02: Int = 40000 | 40000
-         |def f03: Int = 40000 | 0
-         |def f04: Int = ${0xFFFFFFFF} | ${0xFFFFFFFF}
-         |def f05: Int = -1 | -1
+      s"""def f01: Int = 40000 ||| ${0xFFFFFFFF}
+         |def f02: Int = 40000 ||| 40000
+         |def f03: Int = 40000 ||| 0
+         |def f04: Int = ${0xFFFFFFFF} ||| ${0xFFFFFFFF}
+         |def f05: Int = -1 ||| -1
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt32(0xFFFFFFFF), "f01")
@@ -4258,11 +4258,11 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseOr.02") {
     val input =
-      s"""def f01: Int8 = 40i8 | ${0xFF.toByte}i8
-         |def f02: Int8 = 40i8 | 40i8
-         |def f03: Int8 = 40i8 | 0i8
-         |def f04: Int8 = ${0xFF.toByte}i8 | ${0xFF.toByte}i8
-         |def f05: Int8 = -1i8 | -1i8
+      s"""def f01: Int8 = 40i8 ||| ${0xFF.toByte}i8
+         |def f02: Int8 = 40i8 ||| 40i8
+         |def f03: Int8 = 40i8 ||| 0i8
+         |def f04: Int8 = ${0xFF.toByte}i8 ||| ${0xFF.toByte}i8
+         |def f05: Int8 = -1i8 ||| -1i8
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt8(0xFF.toByte), "f01")
@@ -4274,11 +4274,11 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseOr.03") {
     val input =
-      s"""def f01: Int16 = 400i16 | ${0xFFFF.toShort}i16
-         |def f02: Int16 = 400i16 | 400i16
-         |def f03: Int16 = 400i16 | 0i16
-         |def f04: Int16 = ${0xFFFF.toShort}i16 | ${0xFFFF.toShort}i16
-         |def f05: Int16 = -1i16 | -1i16
+      s"""def f01: Int16 = 400i16 ||| ${0xFFFF.toShort}i16
+         |def f02: Int16 = 400i16 ||| 400i16
+         |def f03: Int16 = 400i16 ||| 0i16
+         |def f04: Int16 = ${0xFFFF.toShort}i16 ||| ${0xFFFF.toShort}i16
+         |def f05: Int16 = -1i16 ||| -1i16
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt16(0xFFFF.toShort), "f01")
@@ -4290,11 +4290,11 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseOr.04") {
     val input =
-      s"""def f01: Int32 = 40000i32 | ${0xFFFFFFFF}i32
-         |def f02: Int32 = 40000i32 | 40000i32
-         |def f03: Int32 = 40000i32 | 0i32
-         |def f04: Int32 = ${0xFFFFFFFF}i32 | ${0xFFFFFFFF}i32
-         |def f05: Int32 = -1i32 | -1i32
+      s"""def f01: Int32 = 40000i32 ||| ${0xFFFFFFFF}i32
+         |def f02: Int32 = 40000i32 ||| 40000i32
+         |def f03: Int32 = 40000i32 ||| 0i32
+         |def f04: Int32 = ${0xFFFFFFFF}i32 ||| ${0xFFFFFFFF}i32
+         |def f05: Int32 = -1i32 ||| -1i32
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt32(0xFFFFFFFF), "f01")
@@ -4306,11 +4306,11 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseOr.05") {
     val input =
-      s"""def f01: Int64 = 40000000000i64 | ${0xFFFFFFFFFFFFFFFFL}i64
-         |def f02: Int64 = 40000000000i64 | 40000000000i64
-         |def f03: Int64 = 40000000000i64 | 0i64
-         |def f04: Int64 = ${0xFFFFFFFFFFFFFFFFL}i64 | ${0xFFFFFFFFFFFFFFFFL}i64
-         |def f05: Int64 = -1i64 | -1i64
+      s"""def f01: Int64 = 40000000000i64 ||| ${0xFFFFFFFFFFFFFFFFL}i64
+         |def f02: Int64 = 40000000000i64 ||| 40000000000i64
+         |def f03: Int64 = 40000000000i64 ||| 0i64
+         |def f04: Int64 = ${0xFFFFFFFFFFFFFFFFL}i64 ||| ${0xFFFFFFFFFFFFFFFFL}i64
+         |def f05: Int64 = -1i64 ||| -1i64
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt64(0xFFFFFFFFFFFFFFFFL), "f01")
@@ -4322,11 +4322,11 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseOr.06") {
     val input =
-      s"""def f01: BigInt = 40000000000000000000ii | ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii
-         |def f02: BigInt = 40000000000000000000ii | 40000000000000000000ii
-         |def f03: BigInt = 40000000000000000000ii | 0ii
-         |def f04: BigInt = ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii | ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii
-         |def f05: BigInt = -1ii | -1ii
+      s"""def f01: BigInt = 40000000000000000000ii ||| ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii
+         |def f02: BigInt = 40000000000000000000ii ||| 40000000000000000000ii
+         |def f03: BigInt = 40000000000000000000ii ||| 0ii
+         |def f04: BigInt = ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii ||| ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii
+         |def f05: BigInt = -1ii ||| -1ii
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkBigInt(new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)), "f01")
@@ -4338,11 +4338,11 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseXor.01") {
     val input =
-      s"""def f01: Int = 40000 ^ ${0xFFFFFFFF}
-         |def f02: Int = 40000 ^ 40000
-         |def f03: Int = 40000 ^ 0
-         |def f04: Int = ${0xFFFFFFFF} ^ ${0xFFFFFFFF}
-         |def f05: Int = -1 ^ -1
+      s"""def f01: Int = 40000 ^^^ ${0xFFFFFFFF}
+         |def f02: Int = 40000 ^^^ 40000
+         |def f03: Int = 40000 ^^^ 0
+         |def f04: Int = ${0xFFFFFFFF} ^^^ ${0xFFFFFFFF}
+         |def f05: Int = -1 ^^^ -1
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt32(-40001), "f01")
@@ -4354,11 +4354,11 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseXor.02") {
     val input =
-      s"""def f01: Int8 = 40i8 ^ ${0xFF.toByte}i8
-         |def f02: Int8 = 40i8 ^ 40i8
-         |def f03: Int8 = 40i8 ^ 0i8
-         |def f04: Int8 = ${0xFF.toByte}i8 ^ ${0xFF.toByte}i8
-         |def f05: Int8 = -1i8 ^ -1i8
+      s"""def f01: Int8 = 40i8 ^^^ ${0xFF.toByte}i8
+         |def f02: Int8 = 40i8 ^^^ 40i8
+         |def f03: Int8 = 40i8 ^^^ 0i8
+         |def f04: Int8 = ${0xFF.toByte}i8 ^^^ ${0xFF.toByte}i8
+         |def f05: Int8 = -1i8 ^^^ -1i8
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt8(-41), "f01")
@@ -4370,11 +4370,11 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseXor.03") {
     val input =
-      s"""def f01: Int16 = 400i16 ^ ${0xFFFF.toShort}i16
-         |def f02: Int16 = 400i16 ^ 400i16
-         |def f03: Int16 = 400i16 ^ 0i16
-         |def f04: Int16 = ${0xFFFF.toShort}i16 ^ ${0xFFFF.toShort}i16
-         |def f05: Int16 = -1i16 ^ -1i16
+      s"""def f01: Int16 = 400i16 ^^^ ${0xFFFF.toShort}i16
+         |def f02: Int16 = 400i16 ^^^ 400i16
+         |def f03: Int16 = 400i16 ^^^ 0i16
+         |def f04: Int16 = ${0xFFFF.toShort}i16 ^^^ ${0xFFFF.toShort}i16
+         |def f05: Int16 = -1i16 ^^^ -1i16
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt16(-401), "f01")
@@ -4386,11 +4386,11 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseXor.04") {
     val input =
-      s"""def f01: Int32 = 40000i32 ^ ${0xFFFFFFFF}i32
-         |def f02: Int32 = 40000i32 ^ 40000i32
-         |def f03: Int32 = 40000i32 ^ 0i32
-         |def f04: Int32 = ${0xFFFFFFFF}i32 ^ ${0xFFFFFFFF}i32
-         |def f05: Int32 = -1i32 ^ -1i32
+      s"""def f01: Int32 = 40000i32 ^^^ ${0xFFFFFFFF}i32
+         |def f02: Int32 = 40000i32 ^^^ 40000i32
+         |def f03: Int32 = 40000i32 ^^^ 0i32
+         |def f04: Int32 = ${0xFFFFFFFF}i32 ^^^ ${0xFFFFFFFF}i32
+         |def f05: Int32 = -1i32 ^^^ -1i32
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt32(-40001), "f01")
@@ -4402,11 +4402,11 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseXor.05") {
     val input =
-      s"""def f01: Int64 = 40000000000i64 ^ ${0xFFFFFFFFFFFFFFFFL}i64
-         |def f02: Int64 = 40000000000i64 ^ 40000000000i64
-         |def f03: Int64 = 40000000000i64 ^ 0i64
-         |def f04: Int64 = ${0xFFFFFFFFFFFFFFFFL}i64 ^ ${0xFFFFFFFFFFFFFFFFL}i64
-         |def f05: Int64 = -1i64 ^ -1i64
+      s"""def f01: Int64 = 40000000000i64 ^^^ ${0xFFFFFFFFFFFFFFFFL}i64
+         |def f02: Int64 = 40000000000i64 ^^^ 40000000000i64
+         |def f03: Int64 = 40000000000i64 ^^^ 0i64
+         |def f04: Int64 = ${0xFFFFFFFFFFFFFFFFL}i64 ^^^ ${0xFFFFFFFFFFFFFFFFL}i64
+         |def f05: Int64 = -1i64 ^^^ -1i64
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt64(-40000000001L), "f01")
@@ -4418,11 +4418,11 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseXor.06") {
     val input =
-      s"""def f01: BigInt = 40000000000000000000ii ^ ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii
-         |def f02: BigInt = 40000000000000000000ii ^ 40000000000000000000ii
-         |def f03: BigInt = 40000000000000000000ii ^ 0ii
-         |def f04: BigInt = ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii ^ ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii
-         |def f05: BigInt = -1ii ^ -1ii
+      s"""def f01: BigInt = 40000000000000000000ii ^^^ ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii
+         |def f02: BigInt = 40000000000000000000ii ^^^ 40000000000000000000ii
+         |def f03: BigInt = 40000000000000000000ii ^^^ 0ii
+         |def f04: BigInt = ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii ^^^ ${new java.math.BigInteger("FFFFFFFFFFFFFFFFF", 16)}ii
+         |def f05: BigInt = -1ii ^^^ -1ii
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkBigInt("255147905179352825855"), "f01")
@@ -4434,10 +4434,10 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseLeftShift.01") {
     val input =
-      s"""def f01: Int = ${0x08} << 0
-         |def f02: Int = ${0x08} << 16
-         |def f03: Int = ${0x08} << 28
-         |def f04: Int = ${0x08} << 29
+      s"""def f01: Int = ${0x08} <<< 0
+         |def f02: Int = ${0x08} <<< 16
+         |def f03: Int = ${0x08} <<< 28
+         |def f04: Int = ${0x08} <<< 29
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt32(0x08), "f01")
@@ -4448,10 +4448,10 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseLeftShift.02") {
     val input =
-      s"""def f01: Int8 = ${0x08}i8 << 0
-         |def f02: Int8 = ${0x08}i8 << 2
-         |def f03: Int8 = ${0x08}i8 << 4
-         |def f04: Int8 = ${0x08}i8 << 5
+      s"""def f01: Int8 = ${0x08}i8 <<< 0
+         |def f02: Int8 = ${0x08}i8 <<< 2
+         |def f03: Int8 = ${0x08}i8 <<< 4
+         |def f04: Int8 = ${0x08}i8 <<< 5
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt8(0x08), "f01")
@@ -4462,10 +4462,10 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseLeftShift.03") {
     val input =
-      s"""def f01: Int16 = ${0x08}i16 << 0
-         |def f02: Int16 = ${0x08}i16 << 8
-         |def f03: Int16 = ${0x08}i16 << 12
-         |def f04: Int16 = ${0x08}i16 << 13
+      s"""def f01: Int16 = ${0x08}i16 <<< 0
+         |def f02: Int16 = ${0x08}i16 <<< 8
+         |def f03: Int16 = ${0x08}i16 <<< 12
+         |def f04: Int16 = ${0x08}i16 <<< 13
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt16(0x08), "f01")
@@ -4476,10 +4476,10 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseLeftShift.04") {
     val input =
-      s"""def f01: Int32 = ${0x08}i32 << 0
-         |def f02: Int32 = ${0x08}i32 << 16
-         |def f03: Int32 = ${0x08}i32 << 28
-         |def f04: Int32 = ${0x08}i32 << 29
+      s"""def f01: Int32 = ${0x08}i32 <<< 0
+         |def f02: Int32 = ${0x08}i32 <<< 16
+         |def f03: Int32 = ${0x08}i32 <<< 28
+         |def f04: Int32 = ${0x08}i32 <<< 29
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt32(0x08), "f01")
@@ -4490,10 +4490,10 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseLeftShift.05") {
     val input =
-      s"""def f01: Int64 = ${0x08}i64 << 0
-         |def f02: Int64 = ${0x08}i64 << 32
-         |def f03: Int64 = ${0x08}i64 << 60
-         |def f04: Int64 = ${0x08}i64 << 61
+      s"""def f01: Int64 = ${0x08}i64 <<< 0
+         |def f02: Int64 = ${0x08}i64 <<< 32
+         |def f03: Int64 = ${0x08}i64 <<< 60
+         |def f04: Int64 = ${0x08}i64 <<< 61
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt64(0x08), "f01")
@@ -4504,9 +4504,9 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseLeftShift.06") {
     val input =
-      s"""def f01: BigInt = ${0x08}ii << 0
-         |def f02: BigInt = ${0x08}ii << 32
-         |def f03: BigInt = ${0x08}ii << 64
+      s"""def f01: BigInt = ${0x08}ii <<< 0
+         |def f02: BigInt = ${0x08}ii <<< 32
+         |def f03: BigInt = ${0x08}ii <<< 64
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkBigInt(0x08), "f01")
@@ -4516,10 +4516,10 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseRightShift.01") {
     val input =
-      s"""def f01: Int = 120000 >> 0
-         |def f02: Int = 120000 >> 2
-         |def f03: Int = 120000 >> 31
-         |def f04: Int = -120000 >> 2
+      s"""def f01: Int = 120000 >>> 0
+         |def f02: Int = 120000 >>> 2
+         |def f03: Int = 120000 >>> 31
+         |def f04: Int = -120000 >>> 2
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt32(120000), "f01")
@@ -4530,10 +4530,10 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseRightShift.02") {
     val input =
-      s"""def f01: Int8 = 120i8 >> 0
-         |def f02: Int8 = 120i8 >> 2
-         |def f03: Int8 = 120i8 >> 7
-         |def f04: Int8 = -120i8 >> 2
+      s"""def f01: Int8 = 120i8 >>> 0
+         |def f02: Int8 = 120i8 >>> 2
+         |def f03: Int8 = 120i8 >>> 7
+         |def f04: Int8 = -120i8 >>> 2
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt8(120), "f01")
@@ -4544,10 +4544,10 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseRightShift.03") {
     val input =
-      s"""def f01: Int16 = 12000i16 >> 0
-         |def f02: Int16 = 12000i16 >> 2
-         |def f03: Int16 = 12000i16 >> 15
-         |def f04: Int16 = -12000i16 >> 2
+      s"""def f01: Int16 = 12000i16 >>> 0
+         |def f02: Int16 = 12000i16 >>> 2
+         |def f03: Int16 = 12000i16 >>> 15
+         |def f04: Int16 = -12000i16 >>> 2
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt16(12000), "f01")
@@ -4558,10 +4558,10 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseRightShift.04") {
     val input =
-      s"""def f01: Int32 = 120000i32 >> 0
-         |def f02: Int32 = 120000i32 >> 2
-         |def f03: Int32 = 120000i32 >> 31
-         |def f04: Int32 = -120000i32 >> 2
+      s"""def f01: Int32 = 120000i32 >>> 0
+         |def f02: Int32 = 120000i32 >>> 2
+         |def f03: Int32 = 120000i32 >>> 31
+         |def f04: Int32 = -120000i32 >>> 2
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt32(120000), "f01")
@@ -4572,10 +4572,10 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseRightShift.05") {
     val input =
-      s"""def f01: Int64 = 12000000000i64 >> 0
-         |def f02: Int64 = 12000000000i64 >> 2
-         |def f03: Int64 = 12000000000i64 >> 63
-         |def f04: Int64 = -12000000000i64 >> 2
+      s"""def f01: Int64 = 12000000000i64 >>> 0
+         |def f02: Int64 = 12000000000i64 >>> 2
+         |def f03: Int64 = 12000000000i64 >>> 63
+         |def f04: Int64 = -12000000000i64 >>> 2
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt64(12000000000L), "f01")
@@ -4586,10 +4586,10 @@ class TestBackend extends FunSuite {
 
   test("Expression.Binary - BinaryOperator.BitwiseRightShift.06") {
     val input =
-      s"""def f01: BigInt = 1200000000000000000000ii >> 0
-         |def f02: BigInt = 1200000000000000000000ii >> 2
-         |def f03: BigInt = 1200000000000000000000ii >> 72
-         |def f04: BigInt = -1200000000000000000000ii >> 2
+      s"""def f01: BigInt = 1200000000000000000000ii >>> 0
+         |def f02: BigInt = 1200000000000000000000ii >>> 2
+         |def f03: BigInt = 1200000000000000000000ii >>> 72
+         |def f04: BigInt = -1200000000000000000000ii >>> 2
        """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkBigInt("1200000000000000000000"), "f01")

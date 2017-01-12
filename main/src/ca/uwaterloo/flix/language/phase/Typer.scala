@@ -42,10 +42,11 @@ object Typer {
       indexes <- Declarations.Indexes.typecheck(program)
       facts <- Declarations.Constraints.typecheckFacts(program)
       rules <- Declarations.Constraints.typecheckRules(program)
+      properties <- Declarations.Properties.typecheck(program)
     } yield {
       val currentTime = System.nanoTime()
       val time = program.time.copy(typer = currentTime - startTime)
-      TypedAst.Root(definitions, enums, lattices, tables, indexes, facts, rules, Nil, time)
+      TypedAst.Root(definitions, enums, lattices, tables, indexes, facts, rules, properties, time)
     }
 
     result match {
@@ -375,6 +376,39 @@ object Typer {
 
     }
 
+    object Properties {
+
+      /**
+        * Infers the types of all the properties in the given `program`.
+        */
+      def typecheck(program: Program)(implicit genSym: GenSym): Result[List[TypedAst.Property], TypeError] = {
+
+        /**
+          * Infers the type of the given property `p0` in the namespace `ns0`.
+          */
+        def visitProperty(p0: NamedAst.Property, ns0: Name.NName): Result[TypedAst.Property, TypeError] = p0 match {
+          case NamedAst.Property(law, defn, exp0, loc) =>
+            val result = Expressions.infer(exp0, ns0, program)
+            result.run(Substitution.empty) map {
+              case (subst, tpe) =>
+                val exp = Expressions.reassemble(exp0, ns0, program, subst)
+                TypedAst.Property(law, defn, exp, loc)
+            }
+        }
+
+        // Visit every property in the program.
+        val results = program.properties.toList.flatMap {
+          case (ns, properties) => properties.map {
+            property => visitProperty(property, ns)
+          }
+        }
+
+        // Sequence the results and sort the properties by their source location.
+        Result.seqM(results).map(_.sortBy(_.loc))
+      }
+
+    }
+
   }
 
   object Expressions {
@@ -664,8 +698,9 @@ object Typer {
         /*
          * Existential expression.
          */
-        case NamedAst.Expression.Existential(params, exp, loc) =>
+        case NamedAst.Expression.Existential(fparam, exp, loc) =>
           // NB: An existential behaves very much like a lambda.
+          // TODO: Must check the type of the param.
           for {
             bodyType <- visitExp(exp)
             resultType <- unifyM(bodyType, Type.Bool, loc)
@@ -674,8 +709,9 @@ object Typer {
         /*
          * Universal expression.
          */
-        case NamedAst.Expression.Universal(params, exp, loc) =>
+        case NamedAst.Expression.Universal(fparam, exp, loc) =>
           // NB: An existential behaves very much like a lambda.
+          // TODO: Must check the type of the param.
           for {
             bodyType <- visitExp(exp)
             resultType <- unifyM(bodyType, Type.Bool, loc)
@@ -907,16 +943,16 @@ object Typer {
         /*
          * Existential expression.
          */
-        case NamedAst.Expression.Existential(params, exp, loc) =>
+        case NamedAst.Expression.Existential(fparam, exp, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.Existential(visitParams(params), e, loc)
+          TypedAst.Expression.Existential(visitParam(fparam), e, loc)
 
         /*
          * Universal expression.
          */
-        case NamedAst.Expression.Universal(params, exp, loc) =>
+        case NamedAst.Expression.Universal(fparam, exp, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.Universal(visitParams(params), e, loc)
+          TypedAst.Expression.Universal(visitParam(fparam), e, loc)
 
         /*
          * Ascribe expression.
@@ -967,13 +1003,10 @@ object Typer {
       /**
         * Applies the substitution to the given list of formal parameters.
         */
-      def visitParams(xs: List[NamedAst.FormalParam]): List[TypedAst.FormalParam] = {
-        xs map {
-          case NamedAst.FormalParam(sym, tpe, loc) =>
-            Disambiguation.resolve(tpe, ns0, program) match {
-              case Ok(resolvedType) => TypedAst.FormalParam(sym, subst0(resolvedType), loc)
-              case Err(e) => throw InternalCompilerException("Never happens. Resolution should have failed during type inference.")
-            }
+      def visitParam(param: NamedAst.FormalParam): TypedAst.FormalParam = {
+        Disambiguation.resolve(param.tpe, ns0, program) match {
+          case Ok(resolvedType) => TypedAst.FormalParam(param.sym, subst0(resolvedType), param.loc)
+          case Err(_) => throw InternalCompilerException("Never happens. Resolution should have failed during type inference.")
         }
       }
 

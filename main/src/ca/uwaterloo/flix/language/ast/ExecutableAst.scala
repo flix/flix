@@ -38,7 +38,7 @@ object ExecutableAst {
 
   object Definition {
 
-    case class Constant(ann: Ast.Annotations, sym: Symbol.DefnSym, formals: Array[ExecutableAst.FormalArg], exp: ExecutableAst.Expression, isSynthetic: Boolean, tpe: Type, loc: SourceLocation) extends ExecutableAst.Definition {
+    case class Constant(ann: Ast.Annotations, sym: Symbol.DefnSym, formals: Array[ExecutableAst.FormalParam], exp: ExecutableAst.Expression, isSynthetic: Boolean, tpe: Type, loc: SourceLocation) extends ExecutableAst.Definition {
       /**
         * Pointer to generated code.
         */
@@ -106,26 +106,6 @@ object ExecutableAst {
   }
 
   sealed trait Expression extends ExecutableAst {
-
-    /**
-      * Returns a list of all the universally quantified variables in this expression.
-      */
-    def getQuantifiers: List[Expression.Var] = this match {
-      case Expression.Universal(params, _, _) => params.map {
-        case ExecutableAst.FormalArg(sym, tpe) => Expression.Var(sym, tpe, SourceLocation.Unknown)
-      }
-      case _ => Nil
-    }
-
-    /**
-      * Returns this expression with all universal quantifiers stripped.
-      */
-    def peelQuantifiers: Expression = this match {
-      case Expression.Existential(params, exp, loc) => exp.peelQuantifiers
-      case Expression.Universal(params, exp, loc) => exp.peelQuantifiers
-      case _ => this
-    }
-
     def tpe: Type
 
     def loc: SourceLocation
@@ -364,7 +344,7 @@ object ExecutableAst {
       * @param loc     the source location of the expression.
       */
     case class ApplyTail(name: Symbol.DefnSym,
-                         formals: List[ExecutableAst.FormalArg],
+                         formals: List[ExecutableAst.FormalParam],
                          actuals: List[ExecutableAst.Expression],
                          tpe: Type,
                          loc: SourceLocation) extends ExecutableAst.Expression
@@ -539,11 +519,11 @@ object ExecutableAst {
                      tpe: Type,
                      loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class Existential(params: List[ExecutableAst.FormalArg], exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
+    case class Existential(fparam: ExecutableAst.FormalParam, exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
       def tpe: Type = Type.Bool
     }
 
-    case class Universal(params: List[ExecutableAst.FormalArg], exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
+    case class Universal(fparam: ExecutableAst.FormalParam, exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
       def tpe: Type = Type.Bool
     }
 
@@ -672,10 +652,12 @@ object ExecutableAst {
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends ExecutableAst
 
-  case class FormalArg(sym: Symbol.VarSym, tpe: Type) extends ExecutableAst
+  case class FormalParam(sym: Symbol.VarSym, tpe: Type) extends ExecutableAst
 
   case class FreeVar(sym: Symbol.VarSym, tpe: Type) extends ExecutableAst
 
-  case class Property(law: Law, exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst
+  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: ExecutableAst.Expression) extends ExecutableAst {
+    def loc: SourceLocation = defn.loc
+  }
 
 }

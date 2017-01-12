@@ -93,7 +93,7 @@ object CreateExecutableAst {
   object Definition {
     def toExecutable(sast: SimplifiedAst.Definition.Constant): ExecutableAst.Definition.Constant = {
       val formals = sast.formals.map {
-        case SimplifiedAst.FormalParam(ident, tpe) => ExecutableAst.FormalArg(ident, tpe)
+        case SimplifiedAst.FormalParam(sym, tpe) => ExecutableAst.FormalParam(sym, tpe)
       }.toArray
 
       ExecutableAst.Definition.Constant(sast.ann, sast.sym, formals, Expression.toExecutable(sast.exp), sast.isSynthetic, sast.tpe, sast.loc)
@@ -231,16 +231,12 @@ object CreateExecutableAst {
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
         val elmsArray = elms.map(toExecutable).toArray
         ExecutableAst.Expression.Tuple(elmsArray, tpe, loc)
-      case SimplifiedAst.Expression.Existential(params, exp, loc) =>
-        val ps = params map {
-          case SimplifiedAst.FormalParam(ident, tpe) => ExecutableAst.FormalArg(ident, tpe)
-        }
-        ExecutableAst.Expression.Existential(ps, toExecutable(exp), loc)
-      case SimplifiedAst.Expression.Universal(params, exp, loc) =>
-        val ps = params map {
-          case SimplifiedAst.FormalParam(ident, tpe) => ExecutableAst.FormalArg(ident, tpe)
-        }
-        ExecutableAst.Expression.Universal(ps, toExecutable(exp), loc)
+      case SimplifiedAst.Expression.Existential(fparam, exp, loc) =>
+        val p = ExecutableAst.FormalParam(fparam.sym, fparam.tpe)
+        ExecutableAst.Expression.Existential(p, toExecutable(exp), loc)
+      case SimplifiedAst.Expression.Universal(fparam, exp, loc) =>
+        val p = ExecutableAst.FormalParam(fparam.sym, fparam.tpe)
+        ExecutableAst.Expression.Universal(p, toExecutable(exp), loc)
       case SimplifiedAst.Expression.UserError(tpe, loc) => ExecutableAst.Expression.UserError(tpe, loc)
       case SimplifiedAst.Expression.MatchError(tpe, loc) => ExecutableAst.Expression.MatchError(tpe, loc)
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => ExecutableAst.Expression.SwitchError(tpe, loc)
@@ -325,13 +321,13 @@ object CreateExecutableAst {
   def toExecutable(sast: SimplifiedAst.Attribute): ExecutableAst.Attribute =
     ExecutableAst.Attribute(sast.name, sast.tpe)
 
-  def toExecutable(sast: SimplifiedAst.FormalParam): ExecutableAst.FormalArg =
-    ExecutableAst.FormalArg(sast.sym, sast.tpe)
+  def toExecutable(sast: SimplifiedAst.FormalParam): ExecutableAst.FormalParam =
+    ExecutableAst.FormalParam(sast.sym, sast.tpe)
 
   def toExecutable(sast: SimplifiedAst.FreeVar): ExecutableAst.FreeVar =
     ExecutableAst.FreeVar(sast.sym, sast.tpe)
 
   def toExecutable(sast: SimplifiedAst.Property): ExecutableAst.Property =
-    ExecutableAst.Property(sast.law, Expression.toExecutable(sast.exp), sast.loc)
+    ExecutableAst.Property(sast.law, sast.defn, Expression.toExecutable(sast.exp))
 
 }

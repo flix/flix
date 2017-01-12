@@ -17,138 +17,210 @@ namespace Belnap {
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
+    #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
     def leq(e1: Belnap, e2: Belnap): Bool = match (e1, e2) with {
-        case (Belnap.Bot, _)                => true
-        case (Belnap.True, Belnap.True)     => true
-        case (Belnap.False, Belnap.False)   => true
-        case (_, Belnap.Top)                => true
-        case _                              => false
+        case (Bot, _)       => true
+        case (True, True)   => true
+        case (False, False) => true
+        case (_, Top)       => true
+        case _              => false
     }
 
     ///
     /// Returns the least upper bound of `e1` and `e2`.
     ///
-    @commutative @associative
+    #commutative #associative #upperBound #leastUpperBound
     def lub(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
-        case (Belnap.Bot, x)                => x
-        case (x, Belnap.Bot)                => x
-        case (Belnap.True, Belnap.True)     => Belnap.True
-        case (Belnap.False, Belnap.False)   => Belnap.False
-        case _                              => Belnap.Top
+        case (Bot, x)       => x
+        case (x, Bot)       => x
+        case (True, True)   => True
+        case (False, False) => False
+        case _              => Top
     }
 
     ///
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
-    @commutative @associative
+
+    // TODO: Should we commutative and associative here, and in what order?
+
+    #commutative #associative #lowerBound #greatestLowerBound
     def glb(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
-        case (Belnap.Top, x)                => x
-        case (x, Belnap.Top)                => x
-        case (Belnap.True, Belnap.True)     => Belnap.True
-        case (Belnap.False, Belnap.False)   => Belnap.False
-        case _                              => Belnap.Bot
+        case (Top, x)       => x
+        case (x, Top)       => x
+        case (True, True)   => True
+        case (False, False) => False
+        case _              => Bot
     }
 
     ///
     /// Abstracts a concrete boolean into the Belnap domain.
     ///
-    def alpha(b: Bool): Belnap = if (b) Belnap.True else Belnap.False
+    // TODO: Need to come up with new name.
+    def alpha(b: Bool): Belnap = if (b) True else False
 
     ///
     /// Over-approximates the logical `not` operator.
     ///
-    @strict @monotone
+    #approximates1(x -> !x)
+    #strict1 #monotone1
     def not(e: Belnap): Belnap = match e with {
-        case Belnap.Bot     => Belnap.Bot
-        case Belnap.True    => Belnap.False
-        case Belnap.False   => Belnap.True
-        case Belnap.Top     => Belnap.Top
+        case Bot    => Bot
+        case True   => False
+        case False  => True
+        case Top    => Top
     }
 
     ///
     /// Over-approximates the logical `and` operator.
     ///
-    @strict @monotone @commutative @associative
+    #approximates2((x, y) -> x && y)
+    #strict2 #monotone2 #commutative #associative
     def and(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
-        case (Belnap.Bot, _)                => Belnap.Bot
-        case (_, Belnap.Bot)                => Belnap.Bot
-        case (Belnap.True, Belnap.True)     => Belnap.True
-        case (Belnap.True, Belnap.False)    => Belnap.False
-        case (Belnap.False, Belnap.True)    => Belnap.False
-        case (Belnap.False, Belnap.False)   => Belnap.False
-        case _                              => Belnap.Top
+        case (Bot, _)       => Bot
+        case (_, Bot)       => Bot
+        case (True, True)   => True
+        case (True, False)  => False
+        case (False, True)  => False
+        case (False, False) => False
+        case _              => Top
     }
 
     ///
     /// Over-approximates the logical `or` operator.
     ///
-    @strict @monotone @commutative @associative
+    #approximates2((x, y) -> x || y)
+    #strict2 #monotone2 #commutative #associative
     def or(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
-        case (Belnap.Bot, _)                => Belnap.Bot
-        case (_, Belnap.Bot)                => Belnap.Bot
-        case (Belnap.True, Belnap.True)     => Belnap.True
-        case (Belnap.True, Belnap.False)    => Belnap.True
-        case (Belnap.False, Belnap.True)    => Belnap.True
-        case (Belnap.False, Belnap.False)   => Belnap.False
-        case _                              => Belnap.Top
+        case (Bot, _)       => Bot
+        case (_, Bot)       => Bot
+        case (True, True)   => True
+        case (True, False)  => True
+        case (False, True)  => True
+        case (False, False) => False
+        case _              => Top
     }
 
     ///
     /// Over-approximates the logical `xor` operator.
     ///
-    @strict @monotone @commutative @associative
+    #approximates2((x, y) -> x ⊕ y)
+    #strict2 #monotone2 #commutative #associative
     def xor(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
-        case (Belnap.Bot, _)                => Belnap.Bot
-        case (_, Belnap.Bot)                => Belnap.Bot
-        case (Belnap.True, Belnap.True)     => Belnap.False
-        case (Belnap.True, Belnap.False)    => Belnap.True
-        case (Belnap.False, Belnap.True)    => Belnap.True
-        case (Belnap.False, Belnap.False)   => Belnap.False
-        case _                              => Belnap.Top
+        case (Bot, _)       => Bot
+        case (_, Bot)       => Bot
+        case (True, True)   => False
+        case (True, False)  => True
+        case (False, True)  => True
+        case (False, False) => False
+        case _              => Top
     }
 
     ///
     /// Over-approximates the logical `implies` operator.
     ///
-    @strict @monotone
+    #approximates2((x, y) -> x → y)
+    #strict2 #monotone2
     def implies(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
-        case (Belnap.Bot, _)                => Belnap.Bot
-        case (_, Belnap.Bot)                => Belnap.Bot
-        case (Belnap.True, Belnap.True)     => Belnap.True
-        case (Belnap.True, Belnap.False)    => Belnap.False
-        case (Belnap.False, Belnap.True)    => Belnap.True
-        case (Belnap.False, Belnap.False)   => Belnap.True
-        case _                              => Belnap.Top
+        case (Bot, _)         => Bot
+        case (_, Bot)         => Bot
+        case (True, True)     => True
+        case (True, False)    => False
+        case (False, True)    => True
+        case (False, False)   => True
+        case _                => Top
     }
 
     ///
     /// Over-approximates the logical `bicondition` operator.
     ///
-    @strict @monotone @commutative @associative
+    #approximates2((x, y) -> x ↔ y)
+    #strict2 #monotone2 #commutative #associative
     def bicondition(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
-        case (Belnap.Bot, _)                => Belnap.Bot
-        case (_, Belnap.Bot)                => Belnap.Bot
-        case (Belnap.True, Belnap.True)     => Belnap.True
-        case (Belnap.True, Belnap.False)    => Belnap.False
-        case (Belnap.False, Belnap.True)    => Belnap.False
-        case (Belnap.False, Belnap.False)   => Belnap.True
-        case _                              => Belnap.Top
+        case (Bot, _)       => Bot
+        case (_, Bot)       => Bot
+        case (True, True)   => True
+        case (True, False)  => False
+        case (False, True)  => False
+        case (False, False) => True
+        case _              => Top
     }
 
     ///
     /// Over-approximates the logical `nand` operator.
     ///
-    @strict @monotone @commutative // NB: Commutative, but not associative!
+    #approximates2((x, y) -> x ↑ y)
+    #strict2 #monotone2 #commutative // NB: Commutative, but not associative!
     def nand(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
-        case (Belnap.Bot, _)                => Belnap.Bot
-        case (_, Belnap.Bot)                => Belnap.Bot
-        case (Belnap.True, Belnap.True)     => Belnap.False
-        case (Belnap.True, Belnap.False)    => Belnap.True
-        case (Belnap.False, Belnap.True)    => Belnap.True
-        case (Belnap.False, Belnap.False)   => Belnap.True
-        case _                              => Belnap.Top
+        case (Bot, _)       => Bot
+        case (_, Bot)       => Bot
+        case (True, True)   => False
+        case (True, False)  => True
+        case (False, True)  => True
+        case (False, False) => True
+        case _              => Top
     }
 
-    let Belnap<> = (Belnap.Bot, Belnap.Top, leq, lub, glb)
+    let Belnap<> = (Bot, Top, leq, lub, glb)
+
+    // ------------------------------------------------------------------------
+    // TODO: Refactor
+    // ------------------------------------------------------------------------
+
+    law reflexive(⊑: (Belnap, Belnap) -> Bool): Bool = ∀(x: Belnap). x ⊑ x // TODO: Use Prelude
+
+    law antiSymmetric(⊑: (Belnap, Belnap) -> Bool): Bool = ∀(x: Belnap, y: Belnap). ((x ⊑ y) ∧ (y ⊑ x)) → (x == y) // TODO: Use Prelude
+
+    law transitive(⊑: (Belnap, Belnap) -> Bool): Bool = ∀(x: Belnap, y: Belnap, z: Belnap). ((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z) // TODO: Use Prelude
+
+    law upperBound(⊔: (Belnap, Belnap) -> Belnap): Bool = // TODO: Should call prelude
+        let ⊑ = leq;
+            ∀(x: Belnap, y: Belnap). (x ⊑ (x ⊔ y)) ∧ (y ⊑ (x ⊔ y))
+
+    law leastUpperBound(⊔: (Belnap, Belnap) -> Belnap): Bool =  // TODO: Should call prelude
+        let ⊑ = leq;
+            ∀(x: Belnap, y: Belnap, z: Belnap). ((x ⊑ z) ∧ (y ⊑ z)) → ((x ⊔ y) ⊑ z)
+
+    law lowerBound(⊓: (Belnap, Belnap) -> Belnap): Bool =  // TODO: Should call prelude
+        let ⊑ = leq;
+            ∀(x: Belnap, y: Belnap). ((x ⊓ y) ⊑ x) ∧ ((x ⊓ y) ⊑ y)
+
+    law greatestLowerBound(⊓: (Belnap, Belnap) -> Belnap): Bool =  // TODO: Should call prelude
+        let ⊑ = leq;
+            ∀(x: Belnap, y: Belnap, z: Belnap). ((z ⊑ x) ∧ (z ⊑ y)) → (z ⊑ (x ⊓ y))
+
+    law leastElement(⊑: (Belnap, Belnap) -> Bool, ⊥: Belnap): Bool = ∀(x: Belnap). ⊥ ⊑ x  // TODO: Should call prelude
+
+    law greatestElement(⊑: (Belnap, Belnap) -> Bool, ⊤: Belnap): Bool = ∀(x: Belnap). x ⊑ ⊤  // TODO: Should call prelude
+
+    law associative(f: (Belnap, Belnap) -> Belnap): Bool = // TODO: Use Prelude
+        ∀(x: Belnap, y: Belnap, z: Belnap). f(x, f(y, z)) == f(f(x, y), z)
+
+    law commutative(f: (Belnap, Belnap) -> Belnap): Bool = // TODO: Use Prelude
+        ∀(x: Belnap, y: Belnap). f(x, y) == f(y, x)
+
+    law strict1(f: Belnap -> Belnap): Bool =  // TODO: Should call prelude
+        f(Bot) == Bot
+
+    law strict2(f: (Belnap, Belnap) -> Belnap): Bool =  // TODO: Should call prelude
+        f(Bot, Bot) == Bot
+
+    law monotone1(f: Belnap -> Belnap): Bool =  // TODO: Should call prelude
+        let ⊑ = leq;
+            ∀(x: Belnap, y: Belnap). (x ⊑ y) → (f(x) ⊑ f(y))
+
+    law monotone2(f: (Belnap, Belnap) -> Belnap): Bool =  // TODO: Should call prelude
+        let ⊑ = leq;
+            ∀(x1: Belnap, x2: Belnap, y1: Belnap, y2: Belnap). ((x1 ⊑ y1) ∧ (x2 ⊑ y2) ) → (f(x1, x2) ⊑ f(y1, y2))
+
+    // TODO: Names
+    law approximates1(fa: Belnap -> Belnap, fc: Bool -> Bool): Bool =
+        ∀(x: Bool). alpha(fc(x)) `leq` fa(alpha(x))
+
+    // TODO: Names
+    law approximates2(fa: (Belnap, Belnap) -> Belnap, fc: (Bool, Bool) -> Bool): Bool =
+        ∀(x: Bool, y: Bool). alpha(fc(x, y)) `leq` fa(alpha(x), alpha(y))
+
+    // TODO: Paper title: Safe and Sound: ...
 
 }

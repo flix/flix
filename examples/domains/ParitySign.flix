@@ -1,13 +1,14 @@
 /**
  * An implementation of the reduced product of the Parity and Sign domains.
  */
-namespace ParitySign {
+namespace Domain.ParitySign {
 
     ///
     /// The elements of the reduced product of the Parity and Sign lattices.
     ///
     /// NB: This figure is slightly misleading, because ONeg !<= ENeg and OPos !<= EPos.
     ///
+    // TODO: Consider how to re-implement this.
     enum ParitySign {
                               case Top,
             // TODO: Introduce Odd/Even and Pos/Neg?
@@ -22,119 +23,101 @@ namespace ParitySign {
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     def leq(x: ParitySign, y: ParitySign): Bool = match (x, y) with {
-        case (ParitySign.Bot, _)                => true
-        case (ParitySign.ONeg, ParitySign.ONeg) => true
-        case (ParitySign.Zer, ParitySign.Zer)   => true
-        case (ParitySign.Zer, ParitySign.ENeg)  => true
-        case (ParitySign.Zer, ParitySign.EPos)  => true
-        case (ParitySign.OPos, ParitySign.OPos) => true
-        case (ParitySign.ENeg, ParitySign.ENeg) => true
-        case (ParitySign.EPos, ParitySign.EPos) => true
-        case (_, ParitySign.Top)                => true
-        case _                                  => false
+        case (Bot, _)       => true
+        case (ONeg, ONeg)   => true
+        case (Zer, Zer)     => true
+        case (Zer, ENeg)    => true
+        case (Zer, EPos)    => true
+        case (OPos, OPos)   => true
+        case (ENeg, ENeg)   => true
+        case (EPos, EPos)   => true
+        case (_, Top)       => true
+        case _              => false
     }
 
     ///
     /// Returns the least upper bound of `e1` and `e2`.
     ///
-    @commutative @associative
     def lub(e1: ParitySign, e2: ParitySign): ParitySign = match (e1, e2) with {
-        case (ParitySign.Bot, x)                => x
-        case (x, ParitySign.Bot)                => x
-        case (ParitySign.ONeg, ParitySign.ONeg) => ParitySign.ONeg
-        case (ParitySign.Zer,  ParitySign.Zer)  => ParitySign.Zer
-        case (ParitySign.Zer,  ParitySign.ENeg) => ParitySign.ENeg
-        case (ParitySign.Zer,  ParitySign.EPos) => ParitySign.EPos
-        case (ParitySign.OPos, ParitySign.OPos) => ParitySign.OPos
-        case (ParitySign.ENeg, ParitySign.ENeg) => ParitySign.ENeg
-        case (ParitySign.ENeg,  ParitySign.Zer) => ParitySign.ENeg
-        case (ParitySign.EPos, ParitySign.EPos) => ParitySign.EPos
-        case (ParitySign.EPos,  ParitySign.Zer) => ParitySign.EPos
-        case _ => ParitySign.Top
+        case (Bot, x)       => x
+        case (x, Bot)       => x
+        case (ONeg, ONeg)   => ONeg
+        case (Zer,  Zer)    => Zer
+        case (Zer,  ENeg)   => ENeg
+        case (Zer,  EPos)   => EPos
+        case (OPos, OPos)   => OPos
+        case (ENeg, ENeg)   => ENeg
+        case (ENeg,  Zer)   => ENeg
+        case (EPos, EPos)   => EPos
+        case (EPos,  Zer)   => EPos
+        case _              => Top
     }
 
     ///
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
-    @commutative @associative
     def glb(e1: ParitySign, e2: ParitySign): ParitySign = match (e1, e2) with {
-        case (ParitySign.Top, x)                => x
-        case (x, ParitySign.Top)                => x
-        case (ParitySign.ONeg, ParitySign.ONeg) => ParitySign.ONeg
-        case (ParitySign.Zer,  ParitySign.Zer)  => ParitySign.Zer
-        case (ParitySign.Zer,  ParitySign.ENeg) => ParitySign.Zer
-        case (ParitySign.Zer,  ParitySign.EPos) => ParitySign.Zer
-        case (ParitySign.OPos, ParitySign.OPos) => ParitySign.OPos
-        case (ParitySign.ENeg, ParitySign.ENeg) => ParitySign.ENeg
-        case (ParitySign.ENeg,  ParitySign.Zer) => ParitySign.Zer
-        case (ParitySign.EPos, ParitySign.EPos) => ParitySign.EPos
-        case (ParitySign.EPos,  ParitySign.Zer) => ParitySign.Zer
-        case (ParitySign.ENeg, ParitySign.EPos) => ParitySign.Zer
-        case (ParitySign.EPos, ParitySign.ENeg) => ParitySign.Zer
-        case _ => ParitySign.Bot
+        case (Top, x)       => x
+        case (x, Top)       => x
+        case (ONeg, ONeg)   => ONeg
+        case (Zer,  Zer)    => Zer
+        case (Zer,  ENeg)   => Zer
+        case (Zer,  EPos)   => Zer
+        case (OPos, OPos)   => OPos
+        case (ENeg, ENeg)   => ENeg
+        case (ENeg,  Zer)   => Zer
+        case (EPos, EPos)   => EPos
+        case (EPos,  Zer)   => Zer
+        case (ENeg, EPos)   => Zer
+        case (EPos, ENeg)   => Zer
+        case _              => Bot
     }
 
     ///
     /// Abstracts a concrete integer into the Parity domain.
     ///
     def alpha(i: Int): ParitySign = switch {
-        case (i == 0) => ParitySign.Zer
-        case (i <= 0) => if (i % 2 != 0) ParitySign.ONeg else ParitySign.ENeg
-        case (i >= 0) => if (i % 2 != 0) ParitySign.OPos else ParitySign.EPos
+        case (i == 0) => Zer
+        case (i <= 0) => if (i % 2 != 0) ONeg else ENeg
+        case (i >= 0) => if (i % 2 != 0) OPos else EPos
     }
 
     ///
     /// Over-approximates integer `increment`.
     ///
-    @strict @monotone
     def inc(e: ParitySign): ParitySign = match e with {
-        case ParitySign.Bot     => ParitySign.Bot
-        case ParitySign.ONeg    => ParitySign.ENeg
-        case ParitySign.Zer     => ParitySign.OPos
-        case ParitySign.OPos    => ParitySign.EPos
-        case ParitySign.ENeg    => ParitySign.Top
-        case ParitySign.EPos    => ParitySign.OPos
-        case _                  => ParitySign.Top
+        case Bot    => Bot
+        case ONeg   => ENeg
+        case Zer    => OPos
+        case OPos   => EPos
+        case ENeg   => Top
+        case EPos   => OPos
+        case _      => Top
     }
 
     ///
     /// Over-approximates integer `decrement`.
     ///
-    @strict @monotone
     def dec(e: ParitySign): ParitySign = match e with {
-        case ParitySign.Bot     => ParitySign.Bot
-        case ParitySign.ONeg    => ParitySign.ENeg
-        case ParitySign.Zer     => ParitySign.ONeg
-        case ParitySign.OPos    => ParitySign.EPos
-        case ParitySign.ENeg    => ParitySign.ONeg
-        case ParitySign.EPos    => ParitySign.Top
-        case _                  => ParitySign.Top
+        case Bot    => Bot
+        case ONeg   => ENeg
+        case Zer    => ONeg
+        case OPos   => EPos
+        case ENeg   => ONeg
+        case EPos   => Top
+        case _      => Top
     }
 
     ///
     /// Over-approximates integer `addition`.
     ///
-    @strict @monotone @commutative @associative
     def plus(e1: ParitySign, e2: ParitySign): ParitySign = match (e1, e2) with {
-        case (ParitySign.Bot, _)                => ParitySign.Bot
-        case (_, ParitySign.Bot)                => ParitySign.Bot
-        // case (ParitySign.ONeg, ParitySign.ONeg) => ParitySign.Even // TODO: Need Even and Odd
-
-
-
-        case _                                  => ParitySign.Top
+        case (Bot, _)   => Bot
+        case (_, Bot)   => Bot
+        // case (ONeg, ONeg) => Even // TODO: Need Even and Odd
+        case _                                  => Top
     }
 
-    ///
-    /// Over-approximates integer `subtraction`.
-    ///
-    @strict @monotone
-    def minus(e1: ParitySign, e2: ParitySign): ParitySign = match (e1, e2) with {
-        case (ParitySign.Bot, _)                => ParitySign.Bot
-        case (_, ParitySign.Bot)                => ParitySign.Bot
-        case _                                  => ParitySign.Top
-    }
-
-    let ParitySign<> = (ParitySign.Bot, ParitySign.Top, leq, lub, glb)
+    let ParitySign<> = (Bot, Top, leq, lub, glb)
 
 }

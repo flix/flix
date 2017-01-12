@@ -30,15 +30,32 @@ object Documentor {
   /**
     * The directory where to write the generated HTML documentation (and its resources).
     */
-  val OutputDirectory = Paths.get("./build/api")
+  val OutputDirectory: Path = Paths.get("./build/api")
 
   /**
     * Generates documentation for the given program `p`.
     */
   def document(p: Root): Unit = {
-    // Group definitions, enums, and tables by their namespace.
-    val defnsByNS = p.definitions.groupBy(_._1.namespace)
+
+    // Collect the definitions.
+    val defnsByNS = p.definitions.filterNot {
+      case (sym, defn) => defn.ann.isLaw || defn.ann.isTest || defn.ann.isInternal
+    }.groupBy(_._1.namespace)
+
+    // Collect the laws.
+    val lawsByNS = p.definitions.filter {
+      case (sym, defn) => defn.ann.isLaw
+    }.groupBy(_._1.namespace)
+
+    // Collect the tests.
+    val testsByNS = p.definitions.filter {
+      case (sym, defn) => defn.ann.isTest
+    }.groupBy(_._1.namespace)
+
+    // Collect the enums.
     val enumsByNS = p.enums.groupBy(_._1.namespace)
+
+    // Collect the tables.
     val tablesByNS = p.tables.groupBy(_._1.namespace)
 
     // Collect the relations.
@@ -55,12 +72,14 @@ object Documentor {
     }
 
     // Compute the set of all available namespaces.
-    val namespaces = defnsByNS.keySet ++ enumsByNS.keySet ++ tablesByNS.keySet
+    val namespaces = defnsByNS.keySet ++ lawsByNS.keySet ++ testsByNS.keySet ++ enumsByNS.keySet ++ tablesByNS.keySet
 
     // Process each namespace.
     val data = namespaces map {
       case ns =>
         val defns = defnsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
+        val laws = lawsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
+        val tests = testsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
         val enums = enumsByNS.getOrElse(ns, Nil).toList.map(kv => mkEnum(kv._2))
         val relations = relationsByNS.getOrElse(ns, Nil) map mkRelation
         val lattices = latticesByNS.getOrElse(ns, Nil) map mkLattice
@@ -69,6 +88,8 @@ object Documentor {
           JField("namespace", JString(ns.mkString("."))),
           JField("types", JArray(enums)),
           JField("definitions", JArray(defns)),
+          JField("laws", JArray(laws)),
+          JField("tests", JArray(tests)),
           JField("relations", JArray(relations)),
           JField("lattices", JArray(lattices))
         )
@@ -252,44 +273,44 @@ object Documentor {
     // Compute the relative path path to the JSON file.
     val path = if (ns.isEmpty) "./index.json" else "./" + ns.mkString(".") + ".json"
     s"""<!DOCTYPE html>
-        |<html lang="en">
-        |<head>
-        |    <meta charset="UTF-8">
-        |    <title>$title</title>
-        |    <link href="__app__.css" rel="stylesheet" type="text/css"/>
-        |    <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet">
-        |    <link href="https://fonts.googleapis.com/css?family=Droid+Sans+Mono" rel="stylesheet">
-        |    <link href="https://fonts.googleapis.com/css?family=Oswald" rel="stylesheet">
-        |    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-        |</head>
-        |<body>
-        |
+       |<html lang="en">
+       |<head>
+       |    <meta charset="UTF-8">
+       |    <title>$title</title>
+       |    <link href="__app__.css" rel="stylesheet" type="text/css"/>
+       |    <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet">
+       |    <link href="https://fonts.googleapis.com/css?family=Droid+Sans+Mono" rel="stylesheet">
+       |    <link href="https://fonts.googleapis.com/css?family=Oswald" rel="stylesheet">
+       |    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+       |</head>
+       |<body>
+       |
         |<!-- Application Element -->
-        |<div id="app">
-        |  <div id="navbar"></div>
-        |</div>
-        |
+       |<div id="app">
+       |  <div id="navbar"></div>
+       |</div>
+       |
         |<!-- Menu Data -->
-        |<script type="application/ecmascript">
-        |window.menu = $menuStr;
-        |</script>
-        |
+       |<script type="application/ecmascript">
+       |window.menu = $menuStr;
+       |</script>
+       |
         |<!-- Page Data -->
-        |<script type="application/ecmascript">
-        |window.page = $pageStr;
-        |</script>
-        |
+       |<script type="application/ecmascript">
+       |window.page = $pageStr;
+       |</script>
+       |
         |<!-- JavaScript Resource -->
-        |<script src="__app__.js" type="application/ecmascript">
-        |</script>
-        |
+       |<script src="__app__.js" type="application/ecmascript">
+       |</script>
+       |
         |<!-- Trigger Boot -->
-        |<script type="application/ecmascript">
-        |    bootstrap("$path");
-        |</script>
-        |
+       |<script type="application/ecmascript">
+       |    bootstrap("$path");
+       |</script>
+       |
         |</body>
-        |</html>
+       |</html>
    """.stripMargin
   }
 

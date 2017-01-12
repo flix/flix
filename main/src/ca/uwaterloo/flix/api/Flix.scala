@@ -54,6 +54,7 @@ class Flix {
     "Option.flix" -> StreamOps.readAll(LocalResource.Library.Option),
     "Result.flix" -> StreamOps.readAll(LocalResource.Library.Result),
     "List.flix" -> StreamOps.readAll(LocalResource.Library.List),
+    "PartialOrder.flix" -> StreamOps.readAll(LocalResource.Library.PartialOrder),
     "Set.flix" -> StreamOps.readAll(LocalResource.Library.Set),
     "Map.flix" -> StreamOps.readAll(LocalResource.Library.Map)
   )
@@ -233,13 +234,13 @@ class Flix {
         if (options.documentor) {
           Documentor.document(tast)
         }
-        val ast = PropertyGen.collectProperties(tast)
-        val sast = Simplifier.simplify(ast)
-        val lifted = Tailrec.tailrec(LambdaLift.lift(sast))
-        val numbered = VarNumbering.number(lifted)
-        val east = CreateExecutableAst.toExecutable(numbered)
-        val compiled = LoadBytecode.load(this, east, options)
-        QuickChecker.quickCheck(compiled, options) flatMap {
+        val monomorphedAst = Monomorph.monomorph(tast)
+        val simplifiedAst = Simplifier.simplify(monomorphedAst)
+        val lambdaLiftedAst = Tailrec.tailrec(LambdaLift.lift(simplifiedAst))
+        val numberedAst = VarNumbering.number(lambdaLiftedAst)
+        val executableAst = CreateExecutableAst.toExecutable(numberedAst)
+        val compiledAst = LoadBytecode.load(this, executableAst, options)
+        QuickChecker.quickCheck(compiledAst, options) flatMap {
           r =>
             Verifier.verify(r, options) map {
               case root => root

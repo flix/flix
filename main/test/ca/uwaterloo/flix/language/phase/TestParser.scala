@@ -286,114 +286,19 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Declaration.Class.01") {
-    val input =
-      """class Eq[A] {
-        |  def eq(x: A, y: B): Bool
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Declaration.Class.02") {
-    val input =
-      """class Coerce[A, B] {
-        |  def coerce(a: A): B
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Declaration.Class.03") {
-    val input =
-      """class Ord[A] => Eq[A] {
-        |  def eq(x: A, y: A): Bool
-        |  def lessEq(x: A, y: A): Bool
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Declaration.Class.04") {
-    val input =
-      """class Eq[A] => PartialOrd[A], PreOrd[A] {
-        |  /* ... */
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
   test("Declaration.Law.01") {
     val input = "law f: Bool = true"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Declaration.Law.02") {
     val input = "law f(x: Int): Bool = x % 2 == 0"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Declaration.Law.03") {
     val input = "law f(x: Int, y: Int): Bool = x > y"
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Declaration.Impl.01") {
-    val input =
-      """impl Eq[Int] {
-        |  /* ... */
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Declaration.Impl.02") {
-    val input =
-      """impl Eq[(Int, Int)] {
-        |  /* ... */
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Declaration.Impl.03") {
-    val input =
-      """impl Ord[Int] <= Eq[Int] {
-        |  /* ... */
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
-  }
-
-  test("Declaration.Impl.04") {
-    val input =
-      """impl A[Int, Int] <= B[Int], C[Int] {
-        |  /* ... */
-        |}
-      """.stripMargin
-    intercept[scala.NotImplementedError] {
-      run(input)
-    }
+    run(input)
   }
 
   test("Declaration.Fact.01") {
@@ -792,7 +697,7 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   test("Expression.UnaryExp.03") {
-    val input = "def f: Int = ~1"
+    val input = "def f: Int = ~~~1"
     run(input)
   }
 
@@ -2505,11 +2410,6 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Names.Math.⊕") {
-    val input = "def ⊕(x: Int, y: Int): Int = ???"
-    run(input)
-  }
-
   test("Names.Math.⊗") {
     val input = "def ⊗(x: Int, y: Int): Int = ???"
     run(input)
@@ -2532,16 +2432,6 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Names.Operator.--") {
     val input = "def --(x: Int, y: Int): Int = ???"
-    run(input)
-  }
-
-  test("Names.Operator.|>") {
-    val input = "def |>(x: Int, y: Int): Int = ???"
-    run(input)
-  }
-
-  test("Names.Operator.<|") {
-    val input = "def <|(x: Int, y: Int): Int = ???"
     run(input)
   }
 
@@ -2717,7 +2607,7 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   test("Operator.Unary ~") {
-    val input = "def f(i: Int): Int = ~i"
+    val input = "def f(i: Int): Int = ~~~i"
     run(input)
   }
 
@@ -2732,27 +2622,27 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   test("Operator.Binary.Bitwise &") {
-    val input = "def f(x: Int, y: Int): Int = x & y"
+    val input = "def f(x: Int, y: Int): Int = x &&& y"
     run(input)
   }
 
   test("Operator.Binary.Bitwise |") {
-    val input = "def f(x: Int, y: Int): Int = x | y"
+    val input = "def f(x: Int, y: Int): Int = x ||| y"
     run(input)
   }
 
   test("Operator.Binary.Bitwise ^") {
-    val input = "def f(x: Int, y: Int): Int = x ^ y"
+    val input = "def f(x: Int, y: Int): Int = x ^^^ y"
     run(input)
   }
 
   test("Operator.Binary.Bitwise <<") {
-    val input = "def f(x: Int, y: Int): Int = x << y"
+    val input = "def f(x: Int, y: Int): Int = x <<< y"
     run(input)
   }
 
   test("Operator.Binary.Bitwise >>") {
-    val input = "def f(x: Int, y: Int): Int = x >> y"
+    val input = "def f(x: Int, y: Int): Int = x >>> y"
     run(input)
   }
 
@@ -2861,11 +2751,6 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Operator.Binary.Math.⊕") {
-    val input = "def ⊕(x: Int, y: Int): Int = x ⊕ y"
-    run(input)
-  }
-
   test("Operator.Binary.Math.⊗") {
     val input = "def ⊗(x: Int, y: Int): Int = x ⊗ y"
     run(input)
@@ -2888,16 +2773,6 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Operator.Binary.--") {
     val input = "def --(x: Int, y: Int): Int = x -- y"
-    run(input)
-  }
-
-  test("Operator.Binary.|>") {
-    val input = "def |>(x: Int, y: Int): Int = x |> y"
-    run(input)
-  }
-
-  test("Operator.Binary.<|") {
-    val input = "def <|(x: Int, y: Int): Int = x <| y"
     run(input)
   }
 
@@ -2929,22 +2804,6 @@ class TestParser extends FunSuite with TestUtils {
   /////////////////////////////////////////////////////////////////////////////
   // Annotations                                                             //
   /////////////////////////////////////////////////////////////////////////////
-  test("Annotation.@associative") {
-    val input =
-      """@associative
-        |def f(x: Int, y: Int): Int = 21
-      """.stripMargin
-    run(input)
-  }
-
-  test("Annotation.@commutative") {
-    val input =
-      """@commutative
-        |def f(x: Int, y: Int): Int = 21
-      """.stripMargin
-    run(input)
-  }
-
   test("Annotation.@internal") {
     val input =
       """@internal
@@ -2953,18 +2812,10 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Annotation.@monotone") {
+  test("Annotation.@test") {
     val input =
-      """@monotone @unchecked
-        |def f(x: Int, y: Int): Int = 21
-      """.stripMargin
-    run(input)
-  }
-
-  test("Annotation.@strict") {
-    val input =
-      """@strict @unchecked
-        |def f(x: Int, y: Int): Int = 21
+      """@test
+        |def f(x: Int, y: Int): Bool = x + y == 42
       """.stripMargin
     run(input)
   }
@@ -2980,14 +2831,6 @@ class TestParser extends FunSuite with TestUtils {
   test("Annotation.@unsafe") {
     val input =
       """@unsafe
-        |def f(x: Int, y: Int): Int = 21
-      """.stripMargin
-    run(input)
-  }
-
-  test("Annotation.@strict @monotone @unchecked") {
-    val input =
-      """@strict @monotone @unchecked
         |def f(x: Int, y: Int): Int = 21
       """.stripMargin
     run(input)

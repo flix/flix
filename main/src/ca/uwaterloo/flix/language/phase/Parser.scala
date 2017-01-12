@@ -106,9 +106,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       Declarations.Relation |
       Declarations.Lattice |
       Declarations.Index |
-      Declarations.Law |
-      Declarations.Class |
-      Declarations.Impl
+      Declarations.Law
   }
 
   object Declarations {
@@ -118,8 +116,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Definition: Rule1[ParsedAst.Declaration.Definition] = {
-      def Annotations: Rule1[Seq[ParsedAst.Annotation]] = rule {
-        zeroOrMore(Annotation).separatedBy(WS)
+      def Annotations: Rule1[Seq[ParsedAst.AnnotationOrProperty]] = rule {
+        zeroOrMore(Annotation | Property).separatedBy(WS)
       }
 
       rule {
@@ -156,60 +154,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
       rule {
         Documentation ~ SP ~ atomic("enum") ~ WS ~ Names.Type ~ TypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Enum
-      }
-    }
-
-    def Class: Rule1[ParsedAst.Declaration.Class] = {
-
-      def TypeParams: Rule1[Seq[ParsedAst.Type]] = rule {
-        "[" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ "]"
-      }
-
-      def ContextBound: Rule1[ParsedAst.ContextBound] = rule {
-        SP ~ Names.Class ~ TypeParams ~ SP ~> ParsedAst.ContextBound
-      }
-
-      def ContextBounds: Rule1[Seq[ParsedAst.ContextBound]] = rule {
-        optional(optWS ~ atomic("=>") ~ optWS ~ oneOrMore(ContextBound).separatedBy(optWS ~ "," ~ optWS) ~ optWS) ~>
-          ((o: Option[Seq[ParsedAst.ContextBound]]) => o match {
-            case None => Seq.empty
-            case Some(xs) => xs
-          })
-      }
-
-      def ClassBody: Rule1[Seq[ParsedAst.Declaration]] = rule {
-        "{" ~ optWS ~ zeroOrMore(Definition | Signature | Law).separatedBy(WS) ~ optWS ~ "}"
-      }
-
-      rule {
-        Documentation ~ SP ~ atomic("class") ~ WS ~ Names.Class ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ClassBody ~ SP ~> ParsedAst.Declaration.Class
-      }
-    }
-
-    def Impl: Rule1[ParsedAst.Declaration.Impl] = {
-
-      def TypeParams: Rule1[Seq[ParsedAst.Type]] = rule {
-        "[" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ "]"
-      }
-
-      def ContextBound: Rule1[ParsedAst.ContextBound] = rule {
-        SP ~ Names.Class ~ TypeParams ~ SP ~> ParsedAst.ContextBound
-      }
-
-      def ContextBounds: Rule1[Seq[ParsedAst.ContextBound]] = rule {
-        optional(optWS ~ atomic("<=") ~ optWS ~ oneOrMore(ContextBound).separatedBy(optWS ~ "," ~ optWS) ~ optWS) ~>
-          ((o: Option[Seq[ParsedAst.ContextBound]]) => o match {
-            case None => Seq.empty
-            case Some(xs) => xs
-          })
-      }
-
-      def ImplBody: Rule1[Seq[ParsedAst.Declaration.Definition]] = rule {
-        "{" ~ optWS ~ zeroOrMore(Definition).separatedBy(WS) ~ optWS ~ "}"
-      }
-
-      rule {
-        Documentation ~ SP ~ atomic("impl") ~ WS ~ Names.Class ~ TypeParams ~ optWS ~ ContextBounds ~ optWS ~ ImplBody ~ SP ~> ParsedAst.Declaration.Impl
       }
     }
 
@@ -277,7 +221,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def FormalParams: Rule1[Option[Seq[ParsedAst.FormalParam]]] = rule {
-    optional("(" ~ optWS ~ ArgumentList ~ optWS ~ ")")
+    optional("(" ~ optWS ~ FormalParamList ~ optWS ~ ")")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -388,15 +332,15 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def BitwiseOr: Rule1[ParsedAst.Expression] = rule {
-      BitwiseXOr ~ zeroOrMore(optWS ~ capture(atomic("|")) ~ optWS ~ BitwiseXOr ~ SP ~> ParsedAst.Expression.Binary)
+      BitwiseXOr ~ zeroOrMore(optWS ~ capture(atomic("|||")) ~ optWS ~ BitwiseXOr ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def BitwiseXOr: Rule1[ParsedAst.Expression] = rule {
-      BitwiseAnd ~ zeroOrMore(optWS ~ capture(atomic("^")) ~ optWS ~ BitwiseAnd ~ SP ~> ParsedAst.Expression.Binary)
+      BitwiseAnd ~ zeroOrMore(optWS ~ capture(atomic("^^^")) ~ optWS ~ BitwiseAnd ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def BitwiseAnd: Rule1[ParsedAst.Expression] = rule {
-      Equality ~ zeroOrMore(optWS ~ capture(atomic("&")) ~ optWS ~ Equality ~ SP ~> ParsedAst.Expression.Binary)
+      Equality ~ zeroOrMore(optWS ~ capture(atomic("&&&")) ~ optWS ~ Equality ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Equality: Rule1[ParsedAst.Expression] = rule {
@@ -408,7 +352,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Shift: Rule1[ParsedAst.Expression] = rule {
-      Additive ~ optional(optWS ~ capture(atomic("<<") | atomic(">>")) ~ optWS ~ Additive ~ SP ~> ParsedAst.Expression.Binary)
+      Additive ~ optional(optWS ~ capture(atomic("<<<") | atomic(">>>")) ~ optWS ~ Additive ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Additive: Rule1[ParsedAst.Expression] = rule {
@@ -427,7 +371,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved2: Rule1[String] = rule {
-        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "<<" | ">>" | "=>" | "->")
+        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "=>" | "->")
+      }
+
+      // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
+      def Reserved3: Rule1[String] = rule {
+        capture("<<<" | ">>>")
       }
 
       // Match any two character operator which is not reserved.
@@ -435,9 +384,14 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
         !Reserved2 ~ capture(Names.OperatorLetter ~ Names.OperatorLetter)
       }
 
+      // Match any three character operator which is not reserved.
+      def UserOp3: Rule1[String] = rule {
+        !Reserved3 ~ capture(Names.OperatorLetter ~ Names.OperatorLetter ~ Names.OperatorLetter)
+      }
+
       // Match any operator which has at least three characters.
       def UserOpN: Rule1[String] = rule {
-        capture(Names.OperatorLetter ~ Names.OperatorLetter ~ oneOrMore(Names.OperatorLetter))
+        capture(Names.OperatorLetter ~ Names.OperatorLetter ~ Names.OperatorLetter ~ oneOrMore(Names.OperatorLetter))
       }
 
       // Match any mathematical operator or symbol.
@@ -447,12 +401,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
       rule {
         // NB: UserOpN must occur before UserOp2.
-        Unary ~ zeroOrMore(optWS ~ (UserOpN | UserOp2 | MathOp) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Binary)
+        Unary ~ zeroOrMore(optWS ~ (UserOpN | UserOp3 | UserOp2 | MathOp) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Binary)
       }
     }
 
     def Unary: Rule1[ParsedAst.Expression] = rule {
-      !Literal ~ (SP ~ capture(atomic("!") | atomic("+") | atomic("-") | atomic("~")) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ascribe
+      !Literal ~ (SP ~ capture(atomic("!") | atomic("+") | atomic("-") | atomic("~~~")) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ascribe
     }
 
     def Ascribe: Rule1[ParsedAst.Expression] = rule {
@@ -753,16 +707,26 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Helpers                                                                 //
   /////////////////////////////////////////////////////////////////////////////
-  def ArgumentList: Rule1[Seq[ParsedAst.FormalParam]] = rule {
-    zeroOrMore(Argument).separatedBy(optWS ~ "," ~ optWS)
+  def FormalParamList: Rule1[Seq[ParsedAst.FormalParam]] = rule {
+    zeroOrMore(FormalParam).separatedBy(optWS ~ "," ~ optWS)
   }
 
-  def Argument: Rule1[ParsedAst.FormalParam] = rule {
+  def FormalParam: Rule1[ParsedAst.FormalParam] = rule {
     SP ~ Names.Variable ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.FormalParam
   }
 
-  def Annotation: Rule1[ParsedAst.Annotation] = rule {
+  def Annotation: Rule1[ParsedAst.AnnotationOrProperty] = rule {
     SP ~ atomic("@") ~ Names.Annotation ~ SP ~> ParsedAst.Annotation
+  }
+
+  def Property: Rule1[ParsedAst.AnnotationOrProperty] = {
+    def ArgumentList: Rule1[Option[Seq[ParsedAst.Expression]]] = rule {
+      optional("(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")")
+    }
+
+    rule {
+      SP ~ atomic("#") ~ Names.QualifiedDefinition ~ ArgumentList ~ SP ~> ParsedAst.Property
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -864,8 +828,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     def Annotation: Rule1[Name.Ident] = LowerCaseName
 
     def Attribute: Rule1[Name.Ident] = LowerCaseName
-
-    def Class: Rule1[Name.Ident] = UpperCaseName
 
     def Definition: Rule1[Name.Ident] = rule {
       LowerCaseName | GreekName | MathName | OperatorName

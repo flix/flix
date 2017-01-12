@@ -26,35 +26,9 @@ object Ast {
   /**
     * A common super type for AST nodes that represent annotations.
     */
-  sealed trait Annotation
+  trait Annotation
 
   object Annotation {
-
-    /**
-      * An AST node that represents an `@associative` annotation.
-      *
-      * An `associative` function is a function that satisfies the associative property, e.g:
-      *
-      * 1 + (2 + 3) === (1 + 2) + 3.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Associative(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@associative"
-    }
-
-    /**
-      * An AST node that represents a `@commutative` annotation.
-      *
-      * A `commutative` function is a function that satisfies the commutative property, e.g:
-      *
-      * f(1, 2) === f(2, 1).
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Commutative(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@commutative"
-    }
 
     /**
       * An AST node that represents an `@internal` annotation.
@@ -64,29 +38,18 @@ object Ast {
       * @param loc the source location of the annotation.
       */
     case class Internal(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@commutative"
+      override def toString: String = "@internal"
     }
 
     /**
-      * An AST node that represents a `@monotone` annotation.
+      * An AST node that represents a `@law` annotation.
       *
-      * A `monotone` function is an order-preserving function between lattice elements.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Monotone(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@monotone"
-    }
-
-    /**
-      * An AST node that represents a `@strict` annotation.
-      *
-      * A `strict` function is a function that when applied to (any) bottom element yields bottom.
+      * A `law` function is a property (theorem) about the behaviour of one or more functions.
       *
       * @param loc the source location of the annotation.
       */
-    case class Strict(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@strict"
+    case class Law(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@law"
     }
 
     /**
@@ -137,24 +100,14 @@ object Ast {
   case class Annotations(annotations: List[Annotation]) {
 
     /**
-      * Returns `true` if `this` sequence contains the `@associative` annotation.
+      * Returns `true` if `this` sequence contains the `@internal` annotation.
       */
-    def isAssociative: Boolean = annotations exists (_.isInstanceOf[Annotation.Associative])
+    def isInternal: Boolean = annotations exists (_.isInstanceOf[Annotation.Internal])
 
     /**
-      * Returns `true` if `this` sequence contains the `@commutative` annotation.
+      * Returns `true` if `this` sequence contains the `@law` annotation.
       */
-    def isCommutative: Boolean = annotations exists (_.isInstanceOf[Annotation.Commutative])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@monotone` annotation.
-      */
-    def isMonotone: Boolean = annotations exists (_.isInstanceOf[Annotation.Monotone])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@strict` annotation.
-      */
-    def isStrict: Boolean = annotations exists (_.isInstanceOf[Annotation.Strict])
+    def isLaw: Boolean = annotations exists (_.isInstanceOf[Annotation.Law])
 
     /**
       * Returns `true` if `this` sequence contains the `@test` annotation.
