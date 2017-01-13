@@ -32,7 +32,7 @@ namespace Domain.Mod3 {
     ///
     /// Returns the least upper bound of `e1` and `e2`.
     ///
-    #commutative #associative #upperBound #leastUpperBound
+    #upperBound #leastUpperBound #commutative #associative
     def lub(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
         case (Bot, x)   => x
         case (x, Bot)   => x
@@ -45,7 +45,7 @@ namespace Domain.Mod3 {
     ///
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
-    #commutative #associative #lowerBound #greatestLowerBound
+    #lowerBound #greatestLowerBound #commutative #associative
     def glb(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
         case (Top, x)   => x
         case (x, Top)   => x
@@ -62,13 +62,13 @@ namespace Domain.Mod3 {
         case i % 3ii == 0ii => Zer
         case i % 3ii == 1ii => One
         case i % 3ii == 2ii => Two
-        case true => Bot // TODO: there is some bug here...
+        case true => Bot // TODO: Why is this required? Related to negative numbers???
     }
 
     ///
     /// Over-approximates integer `increment`.
     ///
-    #approximates1(x -> x + 1ii)
+    #safe1(x -> x + 1ii)
     #strict1 #monotone1
     def inc(e: Mod3): Mod3 = match e with {
        case Bot => Bot
@@ -81,7 +81,7 @@ namespace Domain.Mod3 {
     ///
     /// Over-approximates integer `decrement`.
     ///
-    #approximates1(x -> x - 1ii)
+    #safe1(x -> x - 1ii)
     #strict1 #monotone1
     def dec(e: Mod3): Mod3 = match e with {
        case Bot => Bot
@@ -94,7 +94,7 @@ namespace Domain.Mod3 {
     ///
     /// Over-approximates integer `addition`.
     ///
-    #approximates2((x, y) -> x + y) // TODO
+    #safe2((x, y) -> x + y)
     #strict2 #monotone2 #commutative #associative
     def plus(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
        case (_, Bot)   => Bot
@@ -108,11 +108,10 @@ namespace Domain.Mod3 {
        case _          => Top
     }
 
-    // TODO: Add approximate for the rest.
-
     ///
     /// Over-approximates integer `subtraction`.
     ///
+    #safe2((x, y) -> x - y) // TODO: Check if there is a bug here..
     #strict2 #monotone2
     def minus(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
        case (_, Bot)   => Bot
@@ -129,6 +128,7 @@ namespace Domain.Mod3 {
     ///
     /// Over-approximates integer `multiplication`.
     ///
+    #safe2((x, y) -> x * y)
     #strict2 #monotone2 #commutative #associative
     def times(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
         case (_, Bot) => Bot
@@ -140,6 +140,7 @@ namespace Domain.Mod3 {
     ///
     /// Over-approximates integer `division`.
     ///
+    /// NB: We cannot prove safety directly because division is not a total function.
     #strict2 #monotone2
     def divide(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
         case (_, Bot) => Bot
@@ -151,6 +152,7 @@ namespace Domain.Mod3 {
     ///
     /// Over-approximates integer `modulus`.
     ///
+    /// NB: We cannot prove safety directly because division is not a total function.
     #strict2 #monotone2
     def modulo(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
         case (_, Bot) => Bot
@@ -162,7 +164,10 @@ namespace Domain.Mod3 {
     ///
     /// Over-approximates `equal`.
     ///
-    // #strict2 #monotone2 #commutative // TODO
+    #PartialOrder/safe2((x, y) -> x == y, alpha, Belnap/alpha, Belnap/leq)
+    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder/monotone2(leq, leq, Belnap/leq)
+    #commutative
     def eq(e1: Mod3, e2: Mod3): Belnap/Belnap = match (e1, e2) with {
         case (Bot, _)   => Belnap/Belnap.Bot
         case (_, Bot)   => Belnap/Belnap.Bot
@@ -177,14 +182,18 @@ namespace Domain.Mod3 {
 
     ///
     /// Over-approximates `not equal`.
-    ///
-    // @strict @monotone @commutative // TODO
+    #PartialOrder/safe2((x, y) -> x != y, alpha, Belnap/alpha, Belnap/leq)
+    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder/monotone2(leq, leq, Belnap/leq)
+    #commutative
     def neq(e1: Mod3, e2: Mod3): Belnap/Belnap = Belnap/not(eq(e1, e2))
 
     ///
     /// Over-approximates `less than`.
     ///
-    // @strict @monotone // TODO
+    #PartialOrder/safe2((x, y) -> x < y, alpha, Belnap/alpha, Belnap/leq)
+    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder/monotone2(leq, leq, Belnap/leq)
     def less(e1: Mod3, e2: Mod3): Belnap/Belnap = match (e1, e2) with {
         case (Bot, _) => Belnap/Belnap.Bot
         case (_, Bot) => Belnap/Belnap.Bot
@@ -194,69 +203,39 @@ namespace Domain.Mod3 {
     ///
     /// Over-approximates `less than or equal`.
     ///
-    // @strict @monotone // TODO
+    #PartialOrder/safe2((x, y) -> x <= y, alpha, Belnap/alpha, Belnap/leq)
+    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder/monotone2(leq, leq, Belnap/leq)
     def lessEqual(e1: Mod3, e2: Mod3): Belnap/Belnap = Belnap/or(e1 `less` e2, e1 `eq` e2)
 
     let Mod3<> = (Bot, Top, leq, lub, glb)
 
+    //
+    // ## Specialized Laws
+    //
 
+    law upperBound(lub: (Mod3, Mod3) -> Mod3): Bool = JoinLattice/upperBound(leq, lub)
 
-    // ------------------------------------------------------------------------
-    // TODO: Refactor
-    // ------------------------------------------------------------------------
+    law leastUpperBound(lub: (Mod3, Mod3) -> Mod3): Bool = JoinLattice/leastUpperBound(leq, lub)
 
-    law reflexive(⊑: (Mod3, Mod3) -> Bool): Bool = ∀(x: Mod3). x ⊑ x // TODO: Use Prelude
+    law lowerBound(glb: (Mod3, Mod3) -> Mod3): Bool = MeetLattice/lowerBound(leq, glb)
 
-    law antiSymmetric(⊑: (Mod3, Mod3) -> Bool): Bool = ∀(x: Mod3, y: Mod3). ((x ⊑ y) ∧ (y ⊑ x)) → (x == y) // TODO: Use Prelude
+    law greatestLowerBound(glb: (Mod3, Mod3) -> Mod3): Bool = MeetLattice/greatestLowerBound(leq, glb)
 
-    law transitive(⊑: (Mod3, Mod3) -> Bool): Bool = ∀(x: Mod3, y: Mod3, z: Mod3). ((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z) // TODO: Use Prelude
+    law leastElement(leq: (Mod3, Mod3) -> Bool, bot: Mod3): Bool = Bounded/leastElement(bot, leq)
 
-    law upperBound(⊔: (Mod3, Mod3) -> Mod3): Bool = // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: Mod3, y: Mod3). (x ⊑ (x ⊔ y)) ∧ (y ⊑ (x ⊔ y))
+    law greatestElement(leq: (Mod3, Mod3) -> Bool, top: Mod3): Bool = Bounded/greatestElement(top, leq)
 
-    law leastUpperBound(⊔: (Mod3, Mod3) -> Mod3): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: Mod3, y: Mod3, z: Mod3). ((x ⊑ z) ∧ (y ⊑ z)) → ((x ⊔ y) ⊑ z)
+    law strict1(f: Mod3 -> Mod3): Bool = Bounded/strict1(f, Bot, Bot)
 
-    law lowerBound(⊓: (Mod3, Mod3) -> Mod3): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: Mod3, y: Mod3). ((x ⊓ y) ⊑ x) ∧ ((x ⊓ y) ⊑ y)
+    law strict2(f: (Mod3, Mod3) -> Mod3): Bool = Bounded/strict2(f, Bot, Bot, Bot)
+    
+    law monotone1(f: Mod3 -> Mod3): Bool = PartialOrder/monotone1(f, leq, leq)
 
-    law greatestLowerBound(⊓: (Mod3, Mod3) -> Mod3): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: Mod3, y: Mod3, z: Mod3). ((z ⊑ x) ∧ (z ⊑ y)) → (z ⊑ (x ⊓ y))
+    law monotone2(f: (Mod3, Mod3) -> Mod3): Bool = PartialOrder/monotone2(f, leq, leq, leq)
 
-    law leastElement(⊑: (Mod3, Mod3) -> Bool, ⊥: Mod3): Bool = ∀(x: Mod3). ⊥ ⊑ x  // TODO: Should call prelude
+    law safe1(fa: Mod3 -> Mod3, fc: BigInt -> BigInt): Bool = PartialOrder/safe1(fa, fc, alpha, alpha, leq)
 
-    law greatestElement(⊑: (Mod3, Mod3) -> Bool, ⊤: Mod3): Bool = ∀(x: Mod3). x ⊑ ⊤  // TODO: Should call prelude
-
-    law associative(f: (Mod3, Mod3) -> Mod3): Bool = // TODO: Use Prelude
-        ∀(x: Mod3, y: Mod3, z: Mod3). f(x, f(y, z)) == f(f(x, y), z)
-
-    law commutative(f: (Mod3, Mod3) -> Mod3): Bool = // TODO: Use Prelude
-        ∀(x: Mod3, y: Mod3). f(x, y) == f(y, x)
-
-    law strict1(f: Mod3 -> Mod3): Bool =  // TODO: Should call prelude
-        f(Bot) == Bot
-
-    law strict2(f: (Mod3, Mod3) -> Mod3): Bool =  // TODO: Should call prelude
-        f(Bot, Bot) == Bot
-
-    law monotone1(f: Mod3 -> Mod3): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: Mod3, y: Mod3). (x ⊑ y) → (f(x) ⊑ f(y))
-
-    law monotone2(f: (Mod3, Mod3) -> Mod3): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x1: Mod3, x2: Mod3, y1: Mod3, y2: Mod3). ((x1 ⊑ y1) ∧ (x2 ⊑ y2) ) → (f(x1, x2) ⊑ f(y1, y2))
-
-    // TODO: Names
-    law approximates1(fa: Mod3 -> Mod3, fc: BigInt -> BigInt): Bool =
-        ∀(x: BigInt). alpha(fc(x)) `leq` fa(alpha(x))
-
-    // TODO: Names
-    law approximates2(fa: (Mod3, Mod3) -> Mod3, fc: (BigInt, BigInt) -> BigInt): Bool =
-        ∀(x: BigInt, y: BigInt). alpha(fc(x, y)) `leq` fa(alpha(x), alpha(y))
+    law safe2(fa: (Mod3, Mod3) -> Mod3, fc: (BigInt, BigInt) -> BigInt): Bool = PartialOrder/safe2(fa, fc, alpha, alpha, leq)
 
 }

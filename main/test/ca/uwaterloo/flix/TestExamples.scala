@@ -172,13 +172,13 @@ class TestExamples extends FunSuite {
 
   test("ConstantSign.flix") {
     val input =
-      """namespace ConstantSign {
-        |    let ConstSign<> = (ConstSign.Bot, ConstSign.Top, leq, lub, glb)
-        |    lat A(k: Int, v: ConstSign)
+      """namespace Domain.ConstantSign {
+        |    let ConstantSign<> = (Bot, Top, leq, lub, glb)
+        |    lat A(k: Int, v: ConstantSign)
         |
-        |    A(1, ConstSign.Cst(-1ii)).
-        |    A(2, ConstSign.Cst(0ii)).
-        |    A(3, ConstSign.Cst(1ii)).
+        |    A(1, Cst(-1ii)).
+        |    A(2, Cst(0ii)).
+        |    A(3, Cst(1ii)).
         |
         |    A(4, x) :- A(1, x). // 4 -> top
         |    A(4, x) :- A(2, x). // 4 -> top
@@ -207,15 +207,15 @@ class TestExamples extends FunSuite {
     val Pos = Value.mkTag("Pos", Value.Unit)
     val Top = Value.mkTag("Top", Value.Unit)
 
-    t.checkValue(Zer, "ConstantSign/A", List(Value.mkInt32(2)))
-    t.checkValue(One, "ConstantSign/A", List(Value.mkInt32(3)))
-    t.checkValue(Top, "ConstantSign/A", List(Value.mkInt32(4)))
-    t.checkValue(Top, "ConstantSign/A", List(Value.mkInt32(4)))
-    t.checkValue(Pos, "ConstantSign/A", List(Value.mkInt32(5)))
-    t.checkNone("ConstantSign/A", List(Value.mkInt32(6)))
-    t.checkNone("ConstantSign/A", List(Value.mkInt32(7)))
-    t.checkValue(Pos, "ConstantSign/A", List(Value.mkInt32(8)))
-    t.checkValue(One, "ConstantSign/A", List(Value.mkInt32(9)))
+    t.checkValue(Zer, "Domain.ConstantSign/A", List(Value.mkInt32(2)))
+    t.checkValue(One, "Domain.ConstantSign/A", List(Value.mkInt32(3)))
+    t.checkValue(Top, "Domain.ConstantSign/A", List(Value.mkInt32(4)))
+    t.checkValue(Top, "Domain.ConstantSign/A", List(Value.mkInt32(4)))
+    t.checkValue(Pos, "Domain.ConstantSign/A", List(Value.mkInt32(5)))
+    t.checkNone("Domain.ConstantSign/A", List(Value.mkInt32(6)))
+    t.checkNone("Domain.ConstantSign/A", List(Value.mkInt32(7)))
+    t.checkValue(Pos, "Domain.ConstantSign/A", List(Value.mkInt32(8)))
+    t.checkValue(One, "Domain.ConstantSign/A", List(Value.mkInt32(9)))
   }
 
   test("ConstantParity.flix") {

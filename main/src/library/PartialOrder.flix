@@ -4,24 +4,6 @@
 namespace PartialOrder {
 
     ///
-    /// The reflexivity law asserts that any element is less than or equal to itself.
-    ///
-    law reflexivity[e](⊑: (e, e) -> Bool): Bool = ∀(x: e). x ⊑ x
-
-    ///
-    /// The anti-symmetry law asserts that if `x` is less than or equal to `y` and vice versa then the
-    /// two elements must be equal.
-    ///
-    law antiSymmetry[e](⊑: (e, e) -> Bool): Bool = ∀(x: e, y: e). ((x ⊑ y) ∧ (y ⊑ x)) → (x == y)
-
-    ///
-    /// The transitivity law asserts that if `x` less than or equal to `y` and `y` is less than or equal
-    /// to `z` then `x` must be less than or equal to `z`.
-    ///
-    law transitivity[e](⊑: (e, e) -> Bool): Bool = ∀(x: e, y: e, z: e). ((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z)
-
-
-    ///
     /// The monotonicity law asserts that a function `f` is order-preserving w.r.t.
     /// the partial order `dom` on its domain and the partial order `codom` on its co-domain.
     ///
@@ -36,18 +18,25 @@ namespace PartialOrder {
     ///
     /// NB: This particular law is for binary functions.
     ///
-    law monotone2[a, b](f: (a, a) -> b, dom: (a, a) -> Bool, codom: (b, b) -> Bool): Bool =
-        ∀(x1: a, x2: a, y1: a, y2: a). ((x1 `dom` y1) ∧ (x2 `dom` y2)) → (f(x1, x2) `codom` f(y1, y2))
+    law monotone2[a, b, c](f: (a, b) -> c, dom1: (a, a) -> Bool, dom2: (b, b) -> Bool, codom: (c, c) -> Bool): Bool =
+        ∀(x1: a, x2: a, y1: b, y2: b). ((x1 `dom1` y1) ∧ (x2 `dom2` y2)) → (f(x1, x2) `codom` f(y1, y2))
 
     ///
-    /// The monotonicity law asserts that a function `f` is order-preserving w.r.t.
-    /// the partial order `dom` on its domain and the partial order `codom` on its co-domain.
+    /// The safety law asserts that the abstract function `fa` is an over-approximation of the concrete
+    /// function `fc` according to the partial order `leq` and abstraction function `alpha`.
     ///
-    /// NB: This particular law is for ternary functions.
+    /// NB: This particular law is for unary functions.
     ///
-    law monotone3[a, b](f: (a, a, a) -> b, dom: (a, a) -> Bool, codom: (b, b) -> Bool): Bool =
-        ∀(x1: a, x2: a, x3: a, y1: a, y2: a, y3: a).
-            ((x1 `dom` y1) ∧ (x2 `dom` y2) ∧ (x3 `dom` y3)) → (f(x1, x2, x3) `codom` f(y1, y2, y3))
+    law safe1[a1, a2, c1, c2](fa: a1 -> a2, fc: c1 -> c2, alpha1: c1 -> a1, alpha2: c2 -> a2, leq: (a2, a2) -> Bool): Bool =
+        ∀(x: c1). alpha2(fc(x)) `leq` fa(alpha1(x))
 
+    ///
+    /// The safety law asserts that the abstract function `fa` is an over-approximation of the concrete
+    /// function `fc` according to the partial order `leq` and abstraction functions `alpha1` and `alpha2`.
+    ///
+    /// NB: This particular law is for binary functions.
+    ///
+    law safe2[a1, a2, c1, c2](fa: (a1, a1) -> a2, fc: (c1, c1) -> c2, alpha1: c1 -> a1, alpha2: c2 -> a2, leq: (a2, a2) -> Bool): Bool =
+        ∀(x: c1, y: c1). alpha2(fc(x, y)) `leq` fa(alpha1(x), alpha1(y))
 
 }

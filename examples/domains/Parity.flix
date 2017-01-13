@@ -58,7 +58,7 @@ namespace Domain.Parity {
     ///
     /// Over-approximates integer `increment`.
     ///
-    #approximates1(x -> x + 1)
+    #safe1(x -> x + 1)
     #strict1 #monotone1
     def inc(e: Parity): Parity = match e with {
         case Bot  => Bot
@@ -70,7 +70,7 @@ namespace Domain.Parity {
     ///
     /// Over-approximates integer `decrement`.
     ///
-    #approximates1(x -> x - 1)
+    #safe1(x -> x - 1)
     #strict1 #monotone1
     def dec(e: Parity): Parity = match e with {
         case Bot  => Bot
@@ -82,7 +82,7 @@ namespace Domain.Parity {
     ///
     /// Over-approximates integer `addition`.
     ///
-    #approximates2((x, y) -> x + y)
+    #safe2((x, y) -> x + y)
     #strict2 #monotone2 #commutative #associative
     def plus(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Bot)       => Bot
@@ -97,7 +97,7 @@ namespace Domain.Parity {
     ///
     /// Over-approximates integer `subtraction`.
     ///
-    #approximates2((x, y) -> x - y)
+    #safe2((x, y) -> x - y)
     #strict2 #monotone2
     def minus(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Bot)       => Bot
@@ -112,7 +112,7 @@ namespace Domain.Parity {
     ///
     /// Over-approximates integer `multiplication`.
     ///
-    #approximates2((x, y) -> x * y)
+    #safe2((x, y) -> x * y)
     #strict2 #monotone2 #commutative #associative
     def times(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
         case (_, Bot)       => Bot
@@ -127,7 +127,7 @@ namespace Domain.Parity {
     ///
     /// Over-approximates integer `division`.
     ///
-    #approximates2((x, y) -> x / y)
+    #safe2((x, y) -> x / y)
     #strict2 #monotone2
     def divide(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
        case (_, Bot)    => Bot
@@ -138,7 +138,7 @@ namespace Domain.Parity {
     ///
     /// Over-approximates integer `modulus`.
     ///
-    #approximates2((x, y) -> x % y)
+    #safe2((x, y) -> x % y)
     #strict2 #monotone2
     def modulo(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
        case (_, Bot)        => Bot
@@ -153,7 +153,7 @@ namespace Domain.Parity {
     ///
     /// Over-approximates `bitwise negation`.
     ///
-    #approximates1(x -> ~~~x)
+    #safe1(x -> ~~~x)
     #strict1 #monotone1
     // TODO: Bug Found!
     def negate(e: Parity): Parity = match e with {
@@ -166,7 +166,7 @@ namespace Domain.Parity {
     ///
     /// Over-approximates `bitwise and`.
     ///
-    #approximates2((x, y) -> x &&& y)
+    #safe2((x, y) -> x &&& y)
     #strict2 #monotone2 #commutative #associative
     def and(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
        case (_, Bot)        => Bot
@@ -181,7 +181,7 @@ namespace Domain.Parity {
     ///
     /// Over-approximates `bitwise or`.
     ///
-    #approximates2((x, y) -> x ||| y)
+    #safe2((x, y) -> x ||| y)
     #strict2 #monotone2 #commutative #associative
     def or(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
       case (_, Bot)         => Bot
@@ -196,7 +196,7 @@ namespace Domain.Parity {
     ///
     /// Over-approximates `bitwise xor`.
     ///
-    #approximates2((x, y) -> x ^^^ y)
+    #safe2((x, y) -> x ^^^ y)
     #strict2 #monotone2 #commutative #associative
     def xor(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
       case (_, Bot)         => Bot
@@ -211,7 +211,7 @@ namespace Domain.Parity {
     ///
     /// Over-approximates `bitwise left shift`.
     ///
-    #approximates2((x, y) -> x <<< y)
+    #safe2((x, y) -> x <<< y)
     #strict2 #monotone2
     def leftShift(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
       case (_, Bot)         => Bot
@@ -226,7 +226,7 @@ namespace Domain.Parity {
     ///
     /// Over-approximates `bitwise right shift`.
     ///
-    #approximates2((x, y) -> x >>> y)
+    #safe2((x, y) -> x >>> y)
     #strict2 #monotone2
     def rightShift(e1: Parity, e2: Parity): Parity = match (e1, e2) with {
       case (_, Bot)     => Bot
@@ -237,7 +237,10 @@ namespace Domain.Parity {
     ///
     /// Over-approximates `equal`.
     ///
-//    #strict2 #monotone2 #commutative // TODO
+    #PartialOrder/safe2((x, y) -> x == y, alpha, Belnap/alpha, Belnap/leq)
+    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder/monotone2(leq, leq, Belnap/leq)
+    #commutative
     def eq(e1: Parity, e2: Parity): Belnap/Belnap = match (e1, e2) with {
         case (Bot, _)       => Belnap/Belnap.Bot
         case (_, Bot)       => Belnap/Belnap.Bot
@@ -249,13 +252,18 @@ namespace Domain.Parity {
     ///
     /// Over-approximates `not equal`.
     ///
-//    #strict2 #monotone2 #commutative // TODO
+    #PartialOrder/safe2((x, y) -> x != y, alpha, Belnap/alpha, Belnap/leq)
+    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder/monotone2(leq, leq, Belnap/leq)
+    #commutative
     def neq(e1: Parity, e2: Parity): Belnap/Belnap = Belnap/not(eq(e1, e2))
 
     ///
     /// Over-approximates `less than`.
     ///
-//    #strict2 #monotone2 // TODO
+    #PartialOrder/safe2((x, y) -> x < y, alpha, Belnap/alpha, Belnap/leq)
+    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder/monotone2(leq, leq, Belnap/leq)
     def less(e1: Parity, e2: Parity): Belnap/Belnap = match (e1, e2) with {
         case (Bot, _)   => Belnap/Belnap.Bot
         case (_, Bot)   => Belnap/Belnap.Bot
@@ -265,70 +273,39 @@ namespace Domain.Parity {
     ///
     /// Over-approximates `less than or equal`.
     ///
-//    #strict2 #monotone2 // TODO
+    #PartialOrder/safe2((x, y) -> x <= y, alpha, Belnap/alpha, Belnap/leq)
+    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder/monotone2(leq, leq, Belnap/leq)
     def lessEqual(e1: Parity, e2: Parity): Belnap/Belnap = Belnap/or(e1 `less` e2, e1 `eq` e2)
 
     let Parity<> = (Bot, Top, leq, lub, glb)
 
+    //
+    // ## Specialized Laws
+    //
 
+    law upperBound(lub: (Parity, Parity) -> Parity): Bool = JoinLattice/upperBound(leq, lub)
 
+    law leastUpperBound(lub: (Parity, Parity) -> Parity): Bool = JoinLattice/leastUpperBound(leq, lub)
 
-    // ------------------------------------------------------------------------
-    // TODO: Refactor
-    // ------------------------------------------------------------------------
+    law lowerBound(glb: (Parity, Parity) -> Parity): Bool = MeetLattice/lowerBound(leq, glb)
 
-    law reflexive(⊑: (Parity, Parity) -> Bool): Bool = ∀(x: Parity). x ⊑ x // TODO: Use Prelude
+    law greatestLowerBound(glb: (Parity, Parity) -> Parity): Bool = MeetLattice/greatestLowerBound(leq, glb)
 
-    law antiSymmetric(⊑: (Parity, Parity) -> Bool): Bool = ∀(x: Parity, y: Parity). ((x ⊑ y) ∧ (y ⊑ x)) → (x == y) // TODO: Use Prelude
+    law leastElement(leq: (Parity, Parity) -> Bool, bot: Parity): Bool = Bounded/leastElement(bot, leq)
 
-    law transitive(⊑: (Parity, Parity) -> Bool): Bool = ∀(x: Parity, y: Parity, z: Parity). ((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z) // TODO: Use Prelude
+    law greatestElement(leq: (Parity, Parity) -> Bool, top: Parity): Bool = Bounded/greatestElement(top, leq)
 
-    law upperBound(⊔: (Parity, Parity) -> Parity): Bool = // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: Parity, y: Parity). (x ⊑ (x ⊔ y)) ∧ (y ⊑ (x ⊔ y))
+    law strict1(f: Parity -> Parity): Bool = Bounded/strict1(f, Bot, Bot)
 
-    law leastUpperBound(⊔: (Parity, Parity) -> Parity): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: Parity, y: Parity, z: Parity). ((x ⊑ z) ∧ (y ⊑ z)) → ((x ⊔ y) ⊑ z)
+    law strict2(f: (Parity, Parity) -> Parity): Bool = Bounded/strict2(f, Bot, Bot, Bot)
 
-    law lowerBound(⊓: (Parity, Parity) -> Parity): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: Parity, y: Parity). ((x ⊓ y) ⊑ x) ∧ ((x ⊓ y) ⊑ y)
+    law monotone1(f: Parity -> Parity): Bool = PartialOrder/monotone1(f, leq, leq)
 
-    law greatestLowerBound(⊓: (Parity, Parity) -> Parity): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: Parity, y: Parity, z: Parity). ((z ⊑ x) ∧ (z ⊑ y)) → (z ⊑ (x ⊓ y))
+    law monotone2(f: (Parity, Parity) -> Parity): Bool = PartialOrder/monotone2(f, leq, leq, leq)
 
-    law leastElement(⊑: (Parity, Parity) -> Bool, ⊥: Parity): Bool = ∀(x: Parity). ⊥ ⊑ x  // TODO: Should call prelude
+    law safe1(fa: Parity -> Parity, fc: Int -> Int): Bool = PartialOrder/safe1(fa, fc, alpha, alpha, leq)
 
-    law greatestElement(⊑: (Parity, Parity) -> Bool, ⊤: Parity): Bool = ∀(x: Parity). x ⊑ ⊤  // TODO: Should call prelude
-
-    law associative(f: (Parity, Parity) -> Parity): Bool = // TODO: Use Prelude
-        ∀(x: Parity, y: Parity, z: Parity). f(x, f(y, z)) == f(f(x, y), z)
-
-    law commutative(f: (Parity, Parity) -> Parity): Bool = // TODO: Use Prelude
-        ∀(x: Parity, y: Parity). f(x, y) == f(y, x)
-
-    law strict1(f: Parity -> Parity): Bool =  // TODO: Should call prelude
-        f(Bot) == Bot
-
-    law strict2(f: (Parity, Parity) -> Parity): Bool =  // TODO: Should call prelude
-        f(Bot, Bot) == Bot
-
-    law monotone1(f: Parity -> Parity): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: Parity, y: Parity). (x ⊑ y) → (f(x) ⊑ f(y))
-
-    law monotone2(f: (Parity, Parity) -> Parity): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x1: Parity, x2: Parity, y1: Parity, y2: Parity). ((x1 ⊑ y1) ∧ (x2 ⊑ y2) ) → (f(x1, x2) ⊑ f(y1, y2))
-
-    // TODO: Names
-    law approximates1(fa: Parity -> Parity, fc: Int -> Int): Bool =
-        ∀(x: Int). alpha(fc(x)) `leq` fa(alpha(x))
-
-    // TODO: Names
-    law approximates2(fa: (Parity, Parity) -> Parity, fc: (Int, Int) -> Int): Bool =
-        ∀(x: Int, y: Int). alpha(fc(x, y)) `leq` fa(alpha(x), alpha(y))
+    law safe2(fa: (Parity, Parity) -> Parity, fc: (Int, Int) -> Int): Bool = PartialOrder/safe2(fa, fc, alpha, alpha, leq)
 
 }
