@@ -43,7 +43,7 @@ namespace Domain.Interval {
     ///
     /// Returns the least upper bound of `e1` and `e2`.
     ///
-    #commutative /* slow #associative */ #upperBound #leastUpperBound
+    #upperBound #leastUpperBound #commutative /* slow #associative */
     def lub(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
         case (Bot, x)                       => x
         case (x, Bot)                       => x
@@ -54,7 +54,7 @@ namespace Domain.Interval {
     ///
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
-    #commutative /* slow #associative*/ #lowerBound #greatestLowerBound
+    #lowerBound #greatestLowerBound #commutative /* slow #associative*/
     def glb(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
         case (Top, x)                       => x
         case (x, Top)                       => x

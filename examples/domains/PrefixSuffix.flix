@@ -34,7 +34,7 @@ namespace Domain.PrefixSuffix {
     ///
     /// Returns the least upper bound of `e1` and `e2`.
     ///
-    #commutative /* #associative slow */ #upperBound #leastUpperBound
+    #upperBound #leastUpperBound #commutative /* #associative slow */
     def lub(e1: PrefixSuffix, e2: PrefixSuffix): PrefixSuffix = match (e1, e2) with {
         case (Bot, x)                           => x
         case (x, Bot)                           => x
@@ -56,7 +56,7 @@ namespace Domain.PrefixSuffix {
     ///
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
-    #commutative #associative #lowerBound #greatestLowerBound
+    #lowerBound #greatestLowerBound #commutative #associative
     def glb(e1: PrefixSuffix, e2: PrefixSuffix): PrefixSuffix = match (e1, e2) with {
         case (Top, x)                           => x
         case (x, Top)                           => x
@@ -98,7 +98,9 @@ namespace Domain.PrefixSuffix {
     ///
     /// Over-approximates `equal`.
     ///
-    // TODO @strict2 @monotone @commutative
+    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder/monotone2(leq, leq, Belnap/leq)
+    #commutative
     def eq(e1: PrefixSuffix, e2: PrefixSuffix): Belnap/Belnap = match (e1, e2) with {
         case (Bot, _)            => Belnap/Belnap.Bot
         case (_, Bot)            => Belnap/Belnap.Bot
@@ -119,62 +121,35 @@ namespace Domain.PrefixSuffix {
     ///
     /// Over-approximates `not equal`.
     ///
-    // TODO: @strict @monotone @commutative
+    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder/monotone2(leq, leq, Belnap/leq)
+    #commutative
     def neq(e1: PrefixSuffix, e2: PrefixSuffix): Belnap/Belnap = Belnap/not(eq(e1, e2))
-
-    // TODO: Less equal?
 
     let PrefixSuffix<> = (Bot, Top, leq, lub, glb)
 
+    //
+    // ## Specialized Laws
+    //
 
-    // ------------------------------------------------------------------------
-    // TODO: Refactor
-    // ------------------------------------------------------------------------
+    law upperBound(lub: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = JoinLattice/upperBound(leq, lub)
 
-    law reflexive(⊑: (PrefixSuffix, PrefixSuffix) -> Bool): Bool = ∀(x: PrefixSuffix). x ⊑ x // TODO: Use Prelude
+    law leastUpperBound(lub: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = JoinLattice/leastUpperBound(leq, lub)
 
-    law antiSymmetric(⊑: (PrefixSuffix, PrefixSuffix) -> Bool): Bool = ∀(x: PrefixSuffix, y: PrefixSuffix). ((x ⊑ y) ∧ (y ⊑ x)) → (x == y) // TODO: Use Prelude
+    law lowerBound(glb: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = MeetLattice/lowerBound(leq, glb)
 
-    law transitive(⊑: (PrefixSuffix, PrefixSuffix) -> Bool): Bool = ∀(x: PrefixSuffix, y: PrefixSuffix, z: PrefixSuffix). ((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z) // TODO: Use Prelude
+    law greatestLowerBound(glb: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = MeetLattice/greatestLowerBound(leq, glb)
 
-    law upperBound(⊔: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: PrefixSuffix, y: PrefixSuffix). (x ⊑ (x ⊔ y)) ∧ (y ⊑ (x ⊔ y))
+    law leastElement(leq: (PrefixSuffix, PrefixSuffix) -> Bool, bot: PrefixSuffix): Bool = Bounded/leastElement(bot, leq)
 
-    law leastUpperBound(⊔: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: PrefixSuffix, y: PrefixSuffix, z: PrefixSuffix). ((x ⊑ z) ∧ (y ⊑ z)) → ((x ⊔ y) ⊑ z)
+    law greatestElement(leq: (PrefixSuffix, PrefixSuffix) -> Bool, top: PrefixSuffix): Bool = Bounded/greatestElement(top, leq)
 
-    law lowerBound(⊓: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: PrefixSuffix, y: PrefixSuffix). ((x ⊓ y) ⊑ x) ∧ ((x ⊓ y) ⊑ y)
+    law strict1(f: PrefixSuffix -> PrefixSuffix): Bool = Bounded/strict1(f, Bot, Bot)
 
-    law greatestLowerBound(⊓: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: PrefixSuffix, y: PrefixSuffix, z: PrefixSuffix). ((z ⊑ x) ∧ (z ⊑ y)) → (z ⊑ (x ⊓ y))
+    law strict2(f: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = Bounded/strict2(f, Bot, Bot, Bot)
 
-    law leastElement(⊑: (PrefixSuffix, PrefixSuffix) -> Bool, ⊥: PrefixSuffix): Bool = ∀(x: PrefixSuffix). ⊥ ⊑ x  // TODO: Should call prelude
+    law monotone1(f: PrefixSuffix -> PrefixSuffix): Bool = PartialOrder/monotone1(f, leq, leq)
 
-    law greatestElement(⊑: (PrefixSuffix, PrefixSuffix) -> Bool, ⊤: PrefixSuffix): Bool = ∀(x: PrefixSuffix). x ⊑ ⊤  // TODO: Should call prelude
-
-    law associative(f: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = // TODO: Use Prelude
-        ∀(x: PrefixSuffix, y: PrefixSuffix, z: PrefixSuffix). f(x, f(y, z)) == f(f(x, y), z)
-
-    law commutative(f: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = // TODO: Use Prelude
-        ∀(x: PrefixSuffix, y: PrefixSuffix). f(x, y) == f(y, x)
-
-    law strict1(f: PrefixSuffix -> PrefixSuffix): Bool =  // TODO: Should call prelude
-        f(Bot) == Bot
-
-    law strict2(f: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool =  // TODO: Should call prelude
-        f(Bot, Bot) == Bot
-
-    law monotone1(f: PrefixSuffix -> PrefixSuffix): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: PrefixSuffix, y: PrefixSuffix). (x ⊑ y) → (f(x) ⊑ f(y))
-
-    law monotone2(f: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x1: PrefixSuffix, x2: PrefixSuffix, y1: PrefixSuffix, y2: PrefixSuffix). ((x1 ⊑ y1) ∧ (x2 ⊑ y2) ) → (f(x1, x2) ⊑ f(y1, y2))
+    law monotone2(f: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = PartialOrder/monotone2(f, leq, leq, leq)
 
 }
