@@ -460,10 +460,11 @@ object Weeder {
             case rs => WeededAst.Expression.Switch(rs, mkSL(sp1, sp2))
           }
 
-        case ParsedAst.Expression.Tag(sp1, enum, tag, o, sp2) =>
+        case ParsedAst.Expression.Tag(sp1, qname, o, sp2) =>
           /*
            * Introduce implicit unit, if needed.
            */
+          val (enum, tag) = asTag(qname)
           o match {
             case None =>
               val loc = mkSL(sp1, sp2)
@@ -513,7 +514,7 @@ object Weeder {
             case (e1, e2) =>
               // NB: We painstakingly construct the qualified name
               // to ensure that source locations are available.
-              mkApply("List/append", List(e1, e2), sp1, sp2)
+              mkApply("List.append", List(e1, e2), sp1, sp2)
           }
 
         case ParsedAst.Expression.FSet(sp1, elms, sp2) =>
@@ -522,9 +523,9 @@ object Weeder {
            */
           @@(elms map visit) map {
             case es =>
-              val empty = mkApply("Set/empty", Nil, sp1, sp2)
+              val empty = mkApply("Set.empty", Nil, sp1, sp2)
               es.foldLeft(empty) {
-                case (acc, elm) => mkApply("Set/insert", List(elm, acc), sp1, sp2)
+                case (acc, elm) => mkApply("Set.insert", List(elm, acc), sp1, sp2)
               }
           }
 
@@ -538,9 +539,9 @@ object Weeder {
 
           @@(elmsVal) map {
             case es =>
-              val empty = mkApply("Map/empty", Nil, sp1, sp2)
+              val empty = mkApply("Map.empty", Nil, sp1, sp2)
               es.foldLeft(empty) {
-                case (acc, (k, v)) => mkApply("Map/insert", List(k, v, acc), sp1, sp2)
+                case (acc, (k, v)) => mkApply("Map.insert", List(k, v, acc), sp1, sp2)
               }
           }
 
@@ -672,10 +673,11 @@ object Weeder {
 
         case ParsedAst.Pattern.Lit(sp1, lit, sp2) => weed(lit)
 
-        case ParsedAst.Pattern.Tag(sp1, enum, tag, o, sp2) =>
+        case ParsedAst.Pattern.Tag(sp1, qname, o, sp2) =>
           /*
            * Introduce implicit unit, if needed.
            */
+          val (enum, tag) = asTag(qname)
           o match {
             case None =>
               val loc = mkSL(sp1, sp2)
@@ -996,7 +998,7 @@ object Weeder {
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Switch(sp1, _, _) => sp1
-    case ParsedAst.Expression.Tag(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
     case ParsedAst.Expression.FNil(sp1, _) => sp1
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
@@ -1072,6 +1074,24 @@ object Weeder {
           DuplicateFormalParam(ident.name, otherIdent.loc, ident.loc).toFailure
       }
     })
+  }
+
+  /**
+    * Interprets the given fully-qualified name `qname0` as an optional fully-qualified type named followed by a tag name.
+    *
+    * For example, the name `Foo/Bar/Baz.Qux` is re-interpreted as the type name `Foo/Bar.Baz` and the tag name `Qux`.
+    */
+  private def asTag(qname0: Name.QName): (Option[Name.QName], Name.Ident) = {
+    val tagName = qname0.ident
+    if (qname0.namespace.isRoot) {
+      (None, tagName)
+    } else {
+      // Translates the name Foo/Bar/Baz.Qux into the name Foo/Bar.Baz.
+      val nname = Name.NName(qname0.sp1, qname0.namespace.idents.init, qname0.sp2)
+      val ident = qname0.namespace.idents.last
+      val qname = Name.QName(qname0.sp1, nname, ident, qname0.sp2)
+      (Some(qname), tagName)
+    }
   }
 
 }

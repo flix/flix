@@ -459,7 +459,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Tag: Rule1[ParsedAst.Expression.Tag] = rule {
-      SP ~ optional(Names.QualifiedType ~ ".") ~ Names.Tag ~ optional(optWS ~ Tuple) ~ SP ~> ParsedAst.Expression.Tag
+      SP ~ Names.QualifiedTag ~ optional(optWS ~ Tuple) ~ SP ~> ParsedAst.Expression.Tag
     }
 
     def Tuple: Rule1[ParsedAst.Expression] = rule {
@@ -561,7 +561,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Tag: Rule1[ParsedAst.Pattern.Tag] = rule {
-      SP ~ optional(Names.QualifiedType ~ ".") ~ Names.Tag ~ optional(optWS ~ Pattern) ~ SP ~> ParsedAst.Pattern.Tag
+      SP ~ Names.QualifiedTag ~ optional(optWS ~ Pattern) ~ SP ~> ParsedAst.Pattern.Tag
     }
 
     def Tuple: Rule1[ParsedAst.Pattern.Tuple] = rule {
@@ -784,14 +784,14 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       * A lowercase qualified name is a namespace followed by a lowercase name.
       */
     def LowerCaseQName: Rule1[Name.QName] = rule {
-      SP ~ optional(Namespace ~ "/") ~ LowerCaseName ~ SP ~> Name.QName.mk _
+      SP ~ optional(Namespace ~ ".") ~ LowerCaseName ~ SP ~> Name.QName.mk _
     }
 
     /**
       * An uppercase qualified name is a namespace followed by an uppercase name.
       */
     def UpperCaseQName: Rule1[Name.QName] = rule {
-      SP ~ optional(Namespace ~ "/") ~ UpperCaseName ~ SP ~> Name.QName.mk _
+      SP ~ optional(Namespace ~ ".") ~ UpperCaseName ~ SP ~> Name.QName.mk _
     }
 
     /**
@@ -818,10 +818,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     /**
       * Namespaces are lower or uppercase.
       */
-    // TODO: In the future we should restrict namespaces to either lower/upper case.
-    // TODO: In Java/C++ namespaces are lower. In Haskell they are upper.
     def Namespace: Rule1[Name.NName] = rule {
-      SP ~ oneOrMore(LowerCaseName | UpperCaseName).separatedBy(".") ~ SP ~>
+      SP ~ oneOrMore(UpperCaseName).separatedBy("/") ~ SP ~>
         ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
     }
 
@@ -840,6 +838,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     def QualifiedTable: Rule1[Name.QName] = UpperCaseQName
 
     def Tag: Rule1[Name.Ident] = UpperCaseName
+
+    def QualifiedTag: Rule1[Name.QName] = UpperCaseQName
 
     def Type: Rule1[Name.Ident] = UpperCaseName
 

@@ -36,77 +36,77 @@ class TestFloat64 extends FunSuite {
   }
 
   test("size.01") {
-    val input = "def r: Int32 = Float64/size()"
+    val input = "def r: Int32 = Float64.size()"
     runTest(input, 64)
   }
 
   test("minExponent.01") {
-    val input = "def r: Int32 = Float64/minExponent()"
+    val input = "def r: Int32 = Float64.minExponent()"
     runTest(input, -1022)
   }
 
   test("maxExponent.01") {
-    val input = "def r: Int32 = Float64/maxExponent()"
+    val input = "def r: Int32 = Float64.maxExponent()"
     runTest(input, 1023)
   }
 
   test("maxValue.01") {
-    val input = "def r: Float64 = Float64/maxValue()"
+    val input = "def r: Float64 = Float64.maxValue()"
     runTest(input, Double.MaxValue)
   }
 
   test("minValue.01") {
-    val input = "def r: Float64 = Float64/minValue()"
+    val input = "def r: Float64 = Float64.minValue()"
     runTest(input, Double.MinValue)
   }
 
   test("minPositiveValue.01") {
-    val input = "def r: Float64 = Float64/minPositiveValue()"
+    val input = "def r: Float64 = Float64.minPositiveValue()"
     runTest(input, Double.MinPositiveValue)
   }
 
   test("undefined.01") {
-    val input = "def r: Float64 = Float64/undefined()"
+    val input = "def r: Float64 = Float64.undefined()"
     runEqualsTest(input, Double.NaN)
   }
 
   test("positiveInfinity.01") {
-    val input = "def r: Float64 = Float64/positiveInfinity()"
+    val input = "def r: Float64 = Float64.positiveInfinity()"
     runTest(input, Double.PositiveInfinity)
   }
 
   test("negativeInfinity.01") {
-    val input = "def r: Float64 = Float64/negativeInfinity()"
+    val input = "def r: Float64 = Float64.negativeInfinity()"
     runTest(input, Double.NegativeInfinity)
   }
 
   test("min.01") {
-    val input = "def r: Float64 = Float64/min(1.0f64, 2.0f64)"
+    val input = "def r: Float64 = Float64.min(1.0f64, 2.0f64)"
     runTest(input, 1f)
   }
 
   test("min.02") {
-    val input = "def r: Float64 = Float64/min(2.0f64, -1.0f64)"
+    val input = "def r: Float64 = Float64.min(2.0f64, -1.0f64)"
     runTest(input, -1f)
   }
 
   test("min.03") {
-    val input = "def r: Float64 = Float64/min(-33.0f64, -66.0f64)"
+    val input = "def r: Float64 = Float64.min(-33.0f64, -66.0f64)"
     runTest(input, -66f)
   }
 
   test("max.01") {
-    val input = "def r: Float64 = Float64/max(48.0f64, 49.0f64)"
+    val input = "def r: Float64 = Float64.max(48.0f64, 49.0f64)"
     runTest(input, 49f)
   }
 
   test("max.02") {
-    val input = "def r: Float64 = Float64/max(4.0f64, -16.0f64)"
+    val input = "def r: Float64 = Float64.max(4.0f64, -16.0f64)"
     runTest(input, 4f)
   }
 
   test("max.03") {
-    val input = "def r: Float64 = Float64/max(-34.0f64, -16.0f64)"
+    val input = "def r: Float64 = Float64.max(-34.0f64, -16.0f64)"
     runTest(input, -16f)
   }
 }

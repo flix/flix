@@ -187,7 +187,7 @@ class TestTyper extends FunSuite with TestUtils {
         |  def g: Int = 2
         |}
         |
-        |def h: Int = A/f() + B/g()
+        |def h: Int = A.f() + B.g()
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get

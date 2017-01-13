@@ -86,7 +86,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateDefinition.06") {
     val input =
       s"""
-         |namespace A.B.C {
+         |namespace A/B/C {
          |  def f: Int = 42
          |}
          |
@@ -117,7 +117,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateIndex.02") {
     val input =
       s"""
-         |namespace a {
+         |namespace A {
          |  rel R(x: Int)
          |
          |  index R({x})
@@ -343,7 +343,7 @@ class TestNamer extends FunSuite with TestUtils {
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType)
     flix
       .addStr(input)
-      .addHook("A/g", tpe, new Invokable {
+      .addHook("A.g", tpe, new Invokable {
         def apply(args: Array[IValue]) = flix.mkTrue
       })
     flix.compile().get
@@ -359,7 +359,7 @@ class TestNamer extends FunSuite with TestUtils {
     val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkInt32Type, flix.mkStrType), flix.mkBoolType)
     flix
       .addStr(input)
-      .addHook("A/g", tpe, new Invokable {
+      .addHook("A.g", tpe, new Invokable {
         def apply(args: Array[IValue]) = flix.mkTrue
       })
     flix.compile().get
@@ -377,7 +377,7 @@ class TestNamer extends FunSuite with TestUtils {
     val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkInt32Type, flix.mkStrType), flix.mkBoolType)
     flix
       .addStr(input)
-      .addHook("A/f", tpe, new Invokable {
+      .addHook("A.f", tpe, new Invokable {
         def apply(args: Array[IValue]) = flix.mkTrue
       })
     val result = flix.compile()
