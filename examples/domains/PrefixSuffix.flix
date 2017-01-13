@@ -1,7 +1,7 @@
 /**
  * An implementation of Prefix-Suffix domain.
  */
-namespace Domain.PrefixSuffix {
+namespace Domain/PrefixSuffix {
 
     ///
     /// The elements of the prefix-suffix lattice.
@@ -98,10 +98,10 @@ namespace Domain.PrefixSuffix {
     ///
     /// Over-approximates `equal`.
     ///
-    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
-    #PartialOrder/monotone2(leq, leq, Belnap/leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    def eq(e1: PrefixSuffix, e2: PrefixSuffix): Belnap/Belnap = match (e1, e2) with {
+    def eq(e1: PrefixSuffix, e2: PrefixSuffix): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)            => Belnap/Belnap.Bot
         case (_, Bot)            => Belnap/Belnap.Bot
         case (PreSuf(p1, s1), PreSuf(p2, s2)) => switch {
@@ -121,10 +121,10 @@ namespace Domain.PrefixSuffix {
     ///
     /// Over-approximates `not equal`.
     ///
-    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
-    #PartialOrder/monotone2(leq, leq, Belnap/leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    def neq(e1: PrefixSuffix, e2: PrefixSuffix): Belnap/Belnap = Belnap/not(eq(e1, e2))
+    def neq(e1: PrefixSuffix, e2: PrefixSuffix): Belnap.Belnap = Belnap.not(eq(e1, e2))
 
     let PrefixSuffix<> = (Bot, Top, leq, lub, glb)
 
@@ -132,24 +132,24 @@ namespace Domain.PrefixSuffix {
     // ## Specialized Laws
     //
 
-    law upperBound(lub: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = JoinLattice/upperBound(leq, lub)
+    law upperBound(lub: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = JoinLattice.upperBound(leq, lub)
 
-    law leastUpperBound(lub: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = JoinLattice/leastUpperBound(leq, lub)
+    law leastUpperBound(lub: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = JoinLattice.leastUpperBound(leq, lub)
 
-    law lowerBound(glb: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = MeetLattice/lowerBound(leq, glb)
+    law lowerBound(glb: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = MeetLattice.lowerBound(leq, glb)
 
-    law greatestLowerBound(glb: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = MeetLattice/greatestLowerBound(leq, glb)
+    law greatestLowerBound(glb: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = MeetLattice.greatestLowerBound(leq, glb)
 
-    law leastElement(leq: (PrefixSuffix, PrefixSuffix) -> Bool, bot: PrefixSuffix): Bool = Bounded/leastElement(bot, leq)
+    law leastElement(leq: (PrefixSuffix, PrefixSuffix) -> Bool, bot: PrefixSuffix): Bool = Bounded.leastElement(bot, leq)
 
-    law greatestElement(leq: (PrefixSuffix, PrefixSuffix) -> Bool, top: PrefixSuffix): Bool = Bounded/greatestElement(top, leq)
+    law greatestElement(leq: (PrefixSuffix, PrefixSuffix) -> Bool, top: PrefixSuffix): Bool = Bounded.greatestElement(top, leq)
 
-    law strict1(f: PrefixSuffix -> PrefixSuffix): Bool = Bounded/strict1(f, Bot, Bot)
+    law strict1(f: PrefixSuffix -> PrefixSuffix): Bool = Bounded.strict1(f, Bot, Bot)
 
-    law strict2(f: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = Bounded/strict2(f, Bot, Bot, Bot)
+    law strict2(f: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = Bounded.strict2(f, Bot, Bot, Bot)
 
-    law monotone1(f: PrefixSuffix -> PrefixSuffix): Bool = PartialOrder/monotone1(f, leq, leq)
+    law monotone1(f: PrefixSuffix -> PrefixSuffix): Bool = PartialOrder.monotone1(f, leq, leq)
 
-    law monotone2(f: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = PartialOrder/monotone2(f, leq, leq, leq)
+    law monotone2(f: (PrefixSuffix, PrefixSuffix) -> PrefixSuffix): Bool = PartialOrder.monotone2(f, leq, leq, leq)
 
 }
