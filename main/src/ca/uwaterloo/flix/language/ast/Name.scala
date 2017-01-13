@@ -27,11 +27,11 @@ object Name {
     * Returns the given string `fqn` as a qualified name.
     */
   def mkQName(fqn: String, sp1: SourcePosition = SourcePosition.Unknown, sp2: SourcePosition = SourcePosition.Unknown): QName = {
-    if (!fqn.contains('/'))
+    if (!fqn.contains('.'))
       return QName(sp1, Name.RootNS, Ident(sp1, fqn, sp2), sp2)
 
-    val index = fqn.indexOf('/')
-    val parts = fqn.substring(0, index).split('.').toList
+    val index = fqn.indexOf('.')
+    val parts = fqn.substring(0, index).split('/').toList
     val name = fqn.substring(index + 1, fqn.length)
     val nname = NName(sp1, parts.map(t => Name.Ident(sp1, t, sp2)), sp2)
     val ident = Ident(sp1, name, sp2)
@@ -96,7 +96,7 @@ object Name {
     /**
       * Human readable representation.
       */
-    override def toString: String = idents.mkString(".")
+    override def toString: String = idents.mkString("/")
   }
 
   /**
@@ -150,7 +150,7 @@ object Name {
     /**
       * Human readable representation.
       */
-    override def toString: String = if (isUnqualified) ident.toString else namespace.toString + "/" + ident
+    override def toString: String = if (isUnqualified) ident.toString else namespace.toString + "." + ident
   }
 
 }

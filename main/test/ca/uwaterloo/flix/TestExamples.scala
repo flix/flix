@@ -119,19 +119,19 @@ class TestExamples extends FunSuite {
     val Fls = Value.mkTag("False", Value.Unit)
     val Top = Value.mkTag("Top", Value.Unit)
 
-    t.checkValue(Tru, "Belnap/A", List(Value.mkInt32(1)))
-    t.checkValue(Fls, "Belnap/A", List(Value.mkInt32(2)))
-    t.checkValue(Top, "Belnap/A", List(Value.mkInt32(3)))
-    t.checkNone("Belnap/A", List(Value.mkInt32(4)))
-    t.checkValue(Tru, "Belnap/A", List(Value.mkInt32(5)))
-    t.checkValue(Fls, "Belnap/A", List(Value.mkInt32(6)))
-    t.checkValue(Tru, "Belnap/A", List(Value.mkInt32(7)))
-    t.checkValue(Tru, "Belnap/A", List(Value.mkInt32(8)))
+    t.checkValue(Tru, "Belnap.A", List(Value.mkInt32(1)))
+    t.checkValue(Fls, "Belnap.A", List(Value.mkInt32(2)))
+    t.checkValue(Top, "Belnap.A", List(Value.mkInt32(3)))
+    t.checkNone("Belnap.A", List(Value.mkInt32(4)))
+    t.checkValue(Tru, "Belnap.A", List(Value.mkInt32(5)))
+    t.checkValue(Fls, "Belnap.A", List(Value.mkInt32(6)))
+    t.checkValue(Tru, "Belnap.A", List(Value.mkInt32(7)))
+    t.checkValue(Tru, "Belnap.A", List(Value.mkInt32(8)))
   }
 
   test("Constant.flix") {
     val input =
-      """namespace Domain.Constant {
+      """namespace Domain/Constant {
         |    let Constant<> = (Constant.Bot, Constant.Top, leq, lub, glb)
         |    lat A(k: Int, v: Constant)
         |
@@ -161,18 +161,18 @@ class TestExamples extends FunSuite {
     val Two = Value.mkTag("Cst", Value.mkInt32(2))
     val Top = Value.mkTag("Top", Value.Unit)
 
-    t.checkValue(Zer, "Domain.Constant/A", List(Value.mkInt32(0)))
-    t.checkValue(One, "Domain.Constant/A", List(Value.mkInt32(1)))
-    t.checkValue(Two, "Domain.Constant/A", List(Value.mkInt32(2)))
-    t.checkValue(Top, "Domain.Constant/A", List(Value.mkInt32(3)))
-    t.checkNone("Domain.Constant/A", List(Value.mkInt32(4)))
-    t.checkValue(Two, "Domain.Constant/A", List(Value.mkInt32(5)))
-    t.checkValue(Two, "Domain.Constant/A", List(Value.mkInt32(6)))
+    t.checkValue(Zer, "Domain/Constant.A", List(Value.mkInt32(0)))
+    t.checkValue(One, "Domain/Constant.A", List(Value.mkInt32(1)))
+    t.checkValue(Two, "Domain/Constant.A", List(Value.mkInt32(2)))
+    t.checkValue(Top, "Domain/Constant.A", List(Value.mkInt32(3)))
+    t.checkNone("Domain/Constant.A", List(Value.mkInt32(4)))
+    t.checkValue(Two, "Domain/Constant.A", List(Value.mkInt32(5)))
+    t.checkValue(Two, "Domain/Constant.A", List(Value.mkInt32(6)))
   }
 
   test("ConstantSign.flix") {
     val input =
-      """namespace Domain.ConstantSign {
+      """namespace Domain/ConstantSign {
         |    let ConstantSign<> = (Bot, Top, leq, lub, glb)
         |    lat A(k: Int, v: ConstantSign)
         |
@@ -207,15 +207,15 @@ class TestExamples extends FunSuite {
     val Pos = Value.mkTag("Pos", Value.Unit)
     val Top = Value.mkTag("Top", Value.Unit)
 
-    t.checkValue(Zer, "Domain.ConstantSign/A", List(Value.mkInt32(2)))
-    t.checkValue(One, "Domain.ConstantSign/A", List(Value.mkInt32(3)))
-    t.checkValue(Top, "Domain.ConstantSign/A", List(Value.mkInt32(4)))
-    t.checkValue(Top, "Domain.ConstantSign/A", List(Value.mkInt32(4)))
-    t.checkValue(Pos, "Domain.ConstantSign/A", List(Value.mkInt32(5)))
-    t.checkNone("Domain.ConstantSign/A", List(Value.mkInt32(6)))
-    t.checkNone("Domain.ConstantSign/A", List(Value.mkInt32(7)))
-    t.checkValue(Pos, "Domain.ConstantSign/A", List(Value.mkInt32(8)))
-    t.checkValue(One, "Domain.ConstantSign/A", List(Value.mkInt32(9)))
+    t.checkValue(Zer, "Domain/ConstantSign.A", List(Value.mkInt32(2)))
+    t.checkValue(One, "Domain/ConstantSign.A", List(Value.mkInt32(3)))
+    t.checkValue(Top, "Domain/ConstantSign.A", List(Value.mkInt32(4)))
+    t.checkValue(Top, "Domain/ConstantSign.A", List(Value.mkInt32(4)))
+    t.checkValue(Pos, "Domain/ConstantSign.A", List(Value.mkInt32(5)))
+    t.checkNone("Domain/ConstantSign.A", List(Value.mkInt32(6)))
+    t.checkNone("Domain/ConstantSign.A", List(Value.mkInt32(7)))
+    t.checkValue(Pos, "Domain/ConstantSign.A", List(Value.mkInt32(8)))
+    t.checkValue(One, "Domain/ConstantSign.A", List(Value.mkInt32(9)))
   }
 
   test("ConstantParity.flix") {
@@ -244,7 +244,7 @@ class TestExamples extends FunSuite {
 
   test("Parity.flix") {
     val input =
-      """namespace Domain.Parity {
+      """namespace Domain/Parity {
         |    let Parity<> = (Parity.Bot, Parity.Top, leq, lub, glb)
         |    lat A(k: Int, v: Parity)
         |
@@ -276,14 +276,14 @@ class TestExamples extends FunSuite {
     val Evn = Value.mkTag("Even", Value.Unit)
     val Top = Value.mkTag("Top", Value.Unit)
 
-    t.checkValue(Odd, "Domain.Parity/A", List(Value.mkInt32(1)))
-    t.checkValue(Evn, "Domain.Parity/A", List(Value.mkInt32(2)))
-    t.checkValue(Top, "Domain.Parity/A", List(Value.mkInt32(3)))
-    t.checkNone("Domain.Parity/A", List(Value.mkInt32(4)))
-    t.checkValue(Odd, "Domain.Parity/A", List(Value.mkInt32(5)))
-    t.checkValue(Evn, "Domain.Parity/A", List(Value.mkInt32(6)))
-    t.checkValue(Evn, "Domain.Parity/A", List(Value.mkInt32(7)))
-    t.checkValue(Odd, "Domain.Parity/A", List(Value.mkInt32(8)))
+    t.checkValue(Odd, "Domain/Parity.A", List(Value.mkInt32(1)))
+    t.checkValue(Evn, "Domain/Parity.A", List(Value.mkInt32(2)))
+    t.checkValue(Top, "Domain/Parity.A", List(Value.mkInt32(3)))
+    t.checkNone("Domain/Parity.A", List(Value.mkInt32(4)))
+    t.checkValue(Odd, "Domain/Parity.A", List(Value.mkInt32(5)))
+    t.checkValue(Evn, "Domain/Parity.A", List(Value.mkInt32(6)))
+    t.checkValue(Evn, "Domain/Parity.A", List(Value.mkInt32(7)))
+    t.checkValue(Odd, "Domain/Parity.A", List(Value.mkInt32(8)))
   }
 
   test("ParitySign.flix") {
@@ -324,7 +324,7 @@ class TestExamples extends FunSuite {
 
   test("StrictSign.flix") {
     val input =
-      """namespace Domain.StrictSign {
+      """namespace Domain/StrictSign {
         |    let Sign<> = (Sign.Bot, Sign.Top, leq, lub, glb)
         |    lat A(k: Int, v: Sign)
         |
@@ -357,15 +357,15 @@ class TestExamples extends FunSuite {
     val Pos = Value.mkTag("Pos", Value.Unit)
     val Top = Value.mkTag("Top", Value.Unit)
 
-    t.checkValue(Neg, "Domain.StrictSign/A", List(Value.mkInt32(1)))
-    t.checkValue(Zer, "Domain.StrictSign/A", List(Value.mkInt32(2)))
-    t.checkValue(Pos, "Domain.StrictSign/A", List(Value.mkInt32(3)))
-    t.checkValue(Top, "Domain.StrictSign/A", List(Value.mkInt32(4)))
-    t.checkNone("Domain.StrictSign/A", List(Value.mkInt32(5)))
-    t.checkValue(Pos, "Domain.StrictSign/A", List(Value.mkInt32(6)))
-    t.checkValue(Top, "Domain.StrictSign/A", List(Value.mkInt32(7)))
-    t.checkValue(Zer, "Domain.StrictSign/A", List(Value.mkInt32(8)))
-    t.checkValue(Pos, "Domain.StrictSign/A", List(Value.mkInt32(9)))
+    t.checkValue(Neg, "Domain/StrictSign.A", List(Value.mkInt32(1)))
+    t.checkValue(Zer, "Domain/StrictSign.A", List(Value.mkInt32(2)))
+    t.checkValue(Pos, "Domain/StrictSign.A", List(Value.mkInt32(3)))
+    t.checkValue(Top, "Domain/StrictSign.A", List(Value.mkInt32(4)))
+    t.checkNone("Domain/StrictSign.A", List(Value.mkInt32(5)))
+    t.checkValue(Pos, "Domain/StrictSign.A", List(Value.mkInt32(6)))
+    t.checkValue(Top, "Domain/StrictSign.A", List(Value.mkInt32(7)))
+    t.checkValue(Zer, "Domain/StrictSign.A", List(Value.mkInt32(8)))
+    t.checkValue(Pos, "Domain/StrictSign.A", List(Value.mkInt32(9)))
   }
 
   test("IFDS.flix") {

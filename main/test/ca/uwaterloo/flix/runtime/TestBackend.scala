@@ -696,13 +696,13 @@ class TestBackend extends FunSuite {
 
   test("Expression.Ref.01") {
     val input =
-      """namespace Foo.Bar {
+      """namespace Foo/Bar {
         |  def x: Bool = false
         |  def f: Str = "foo"
         |}
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkStr("foo"), "Foo.Bar/f")
+    t.runTest(Value.mkStr("foo"), "Foo/Bar.f")
   }
 
   test("Expression.Ref.02") {
@@ -713,7 +713,7 @@ class TestBackend extends FunSuite {
         |}
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkInt32(5), "Foo/g")
+    t.runTest(Value.mkInt32(5), "Foo.g")
   }
 
   test("Expression.Ref.03") {
@@ -725,7 +725,7 @@ class TestBackend extends FunSuite {
         |}
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.False, "Foo/f")
+    t.runTest(Value.False, "Foo.f")
   }
 
   test("Expression.Ref.04") {
@@ -734,11 +734,11 @@ class TestBackend extends FunSuite {
         |  def x: Str = "hello"
         |}
         |namespace Bar {
-        |  def x: Str = Foo/x()
+        |  def x: Str = Foo.x()
         |}
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkStr("hello"), "Bar/x")
+    t.runTest(Value.mkStr("hello"), "Bar.x")
   }
 
   test("Expression.Ref.05") {
@@ -749,11 +749,11 @@ class TestBackend extends FunSuite {
 
   test("Expression.Ref.06") {
     val input =
-      """namespace A.B {
+      """namespace A/B {
         |  def a: Bool = false
         |}
         |namespace A {
-        |  def b: Bool = !A.B/a()
+        |  def b: Bool = !A/B.a()
         |}
         |namespace A {
         |  namespace B {
@@ -767,10 +767,10 @@ class TestBackend extends FunSuite {
         |def e: Int = -1
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.False, "A.B/a")
-    t.runTest(Value.True, "A/b")
-    t.runTest(Value.mkInt32(0), "A.B/c")
-    t.runTest(Value.mkInt32(42), "A.B.C/d")
+    t.runTest(Value.False, "A/B.a")
+    t.runTest(Value.True, "A.b")
+    t.runTest(Value.mkInt32(0), "A/B.c")
+    t.runTest(Value.mkInt32(42), "A/B/C.d")
     t.runTest(Value.mkInt32(-1), "e")
   }
 
@@ -787,21 +787,21 @@ class TestBackend extends FunSuite {
 
   test("Expression.Lambda.01") {
     val input =
-      """namespace A.B {
+      """namespace A/B {
         |  def f: Bool = false
         |}
         |namespace A {
-        |  def g: Bool = A.B/f()
+        |  def g: Bool = A/B.f()
         |}
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.False, "A/g")
+    t.runTest(Value.False, "A.g")
   }
 
   test("Expression.Lambda.02") {
     val input =
       """namespace A { def f(x: Int): Int = 24 }
-        |def g: Int = A/f(3)
+        |def g: Int = A.f(3)
       """.stripMargin
     val t = new Tester(input)
     t.runTest(Value.mkInt32(24), "g")
@@ -813,7 +813,7 @@ class TestBackend extends FunSuite {
         |namespace A { def g: Int = f(3) }
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkInt32(3), "A/g")
+    t.runTest(Value.mkInt32(3), "A.g")
   }
 
   test("Expression.Lambda.04") {
@@ -827,12 +827,12 @@ class TestBackend extends FunSuite {
 
   test("Expression.Lambda.05") {
     val input =
-      """namespace A { def f(x: Int32): Int32 = let y = B/g(x + 1i32); y * y }
+      """namespace A { def f(x: Int32): Int32 = let y = B.g(x + 1i32); y * y }
         |namespace B { def g(x: Int32): Int32 = x - 4i32 }
-        |namespace C { def h: Int32 = A/f(5i32) + B/g(0i32) }
+        |namespace C { def h: Int32 = A.f(5i32) + B.g(0i32) }
       """.stripMargin
     val t = new Tester(input)
-    t.runTest(Value.mkInt32(0), "C/h")
+    t.runTest(Value.mkInt32(0), "C.h")
   }
 
   test("Expression.Lambda.06") {
@@ -991,27 +991,27 @@ class TestBackend extends FunSuite {
   // See: https://github.com/magnus-madsen/flix/issues/130#issuecomment-216944729
   test("Expression.Hook - Hook.Safe.01") {
     import HookSafeHelpers._
-    val input = "namespace A { def g: Bool = A.B/f(0) }"
+    val input = "namespace A { def g: Bool = A/B.f(0) }"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
     val x = flix.mkFalse
     def nativeF(dummy: IValue): IValue = x
 
-    t.addHook("A.B/f", flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType), nativeF _).run()
-    t.runTest(Value.False, "A/g")
+    t.addHook("A/B.f", flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType), nativeF _).run()
+    t.runTest(Value.False, "A.g")
   }
 
   test("Expression.Hook - Hook.Safe.02") {
     import HookSafeHelpers._
-    val input = "def g: Int = A/f(3)"
+    val input = "def g: Int = A.f(3)"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
     def nativeF(x: IValue): IValue = flix.mkInt32(24)
 
-    t.addHook("A/f", tpe, nativeF _).run()
+    t.addHook("A.f", tpe, nativeF _).run()
     t.runTest(Value.mkInt32(24), "g")
   }
 
@@ -1024,8 +1024,8 @@ class TestBackend extends FunSuite {
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
     def nativeF(x: IValue): IValue = x
 
-    t.addHook("A/f", tpe, nativeF _).run()
-    t.runTest(Value.mkInt32(3), "A/g")
+    t.addHook("A.f", tpe, nativeF _).run()
+    t.runTest(Value.mkInt32(3), "A.g")
   }
 
   test("Expression.Hook - Hook.Safe.04") {
@@ -1043,7 +1043,7 @@ class TestBackend extends FunSuite {
 
   test("Expression.Hook - Hook.Safe.05") {
     import HookSafeHelpers._
-    val input = "namespace C { def h: Int32 = A/f(5i32) + B/g(0i32) }"
+    val input = "namespace C { def h: Int32 = A.f(5i32) + B.g(0i32) }"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1054,8 +1054,8 @@ class TestBackend extends FunSuite {
     }
     def nativeG(x: IValue): IValue = flix.mkInt32(x.getInt32 - 4)
 
-    t.addHook("A/f", tpe, nativeF _).addHook("B/g", tpe, nativeG _).run()
-    t.runTest(Value.mkInt32(0), "C/h")
+    t.addHook("A.f", tpe, nativeF _).addHook("B.g", tpe, nativeG _).run()
+    t.runTest(Value.mkInt32(0), "C.h")
   }
 
   test("Expression.Hook - Hook.Safe.06") {
@@ -1292,27 +1292,27 @@ class TestBackend extends FunSuite {
   // See: https://github.com/magnus-madsen/flix/issues/130#issuecomment-216944729
   test("Expression.Hook - Hook.Unsafe.01") {
     import HookUnsafeHelpers._
-    val input = "namespace A { def g: Bool = A.B/f(0) }"
+    val input = "namespace A { def g: Bool = A/B.f(0) }"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
     val x = false
     def nativeF(dummy: JInt): JBool = x
 
-    t.addHook("A.B/f", flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType), nativeF _).run()
-    t.runTest(Value.False, "A/g")
+    t.addHook("A/B.f", flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType), nativeF _).run()
+    t.runTest(Value.False, "A.g")
   }
 
   test("Expression.Hook - Hook.Unsafe.02") {
     import HookUnsafeHelpers._
-    val input = "def g: Int = A/f(3)"
+    val input = "def g: Int = A.f(3)"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
     def nativeF(x: JInt): JInt = 24
 
-    t.addHook("A/f", tpe, nativeF _).run()
+    t.addHook("A.f", tpe, nativeF _).run()
     t.runTest(Value.mkInt32(24), "g")
   }
 
@@ -1325,8 +1325,8 @@ class TestBackend extends FunSuite {
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
     def nativeF(x: JInt): JInt = x
 
-    t.addHook("A/f", tpe, nativeF _).run()
-    t.runTest(Value.mkInt32(3), "A/g")
+    t.addHook("A.f", tpe, nativeF _).run()
+    t.runTest(Value.mkInt32(3), "A.g")
   }
 
   test("Expression.Hook - Hook.Unsafe.04") {
@@ -1344,7 +1344,7 @@ class TestBackend extends FunSuite {
 
   test("Expression.Hook - Hook.Unsafe.05") {
     import HookUnsafeHelpers._
-    val input = "namespace C { def h: Int32 = A/f(5i32) + B/g(0i32) }"
+    val input = "namespace C { def h: Int32 = A.f(5i32) + B.g(0i32) }"
     val t = new Tester(input, solve = false)
 
     val flix = t.flix
@@ -1352,8 +1352,8 @@ class TestBackend extends FunSuite {
     def nativeF(x: JInt): JInt = { val y = nativeG(x + 1); y * y }
     def nativeG(x: JInt): JInt = x - 4
 
-    t.addHook("A/f", tpe, nativeF _).addHook("B/g", tpe, nativeG _).run()
-    t.runTest(Value.mkInt32(0), "C/h")
+    t.addHook("A.f", tpe, nativeF _).addHook("B.g", tpe, nativeG _).run()
+    t.runTest(Value.mkInt32(0), "C.h")
   }
 
   test("Expression.Hook - Hook.Unsafe.06") {

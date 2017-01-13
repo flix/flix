@@ -3,7 +3,7 @@
  *
  * Note: The Parity domain (e.g. even and odd) can be viewed as the Mod2 domain.
  */
-namespace Domain.Mod3 {
+namespace Domain/Mod3 {
 
     ///
     /// The elements of the modulo three lattice.
@@ -164,11 +164,11 @@ namespace Domain.Mod3 {
     ///
     /// Over-approximates `equal`.
     ///
-    #PartialOrder/safe2((x, y) -> x == y, alpha, Belnap/alpha, Belnap/leq)
-    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
-    #PartialOrder/monotone2(leq, leq, Belnap/leq)
+    #PartialOrder.safe2((x, y) -> x == y, alpha, Belnap.alpha, Belnap.leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    def eq(e1: Mod3, e2: Mod3): Belnap/Belnap = match (e1, e2) with {
+    def eq(e1: Mod3, e2: Mod3): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)   => Belnap/Belnap.Bot
         case (_, Bot)   => Belnap/Belnap.Bot
         case (Zer, One) => Belnap/Belnap.False
@@ -182,19 +182,19 @@ namespace Domain.Mod3 {
 
     ///
     /// Over-approximates `not equal`.
-    #PartialOrder/safe2((x, y) -> x != y, alpha, Belnap/alpha, Belnap/leq)
-    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
-    #PartialOrder/monotone2(leq, leq, Belnap/leq)
+    #PartialOrder.safe2((x, y) -> x != y, alpha, Belnap.alpha, Belnap.leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    def neq(e1: Mod3, e2: Mod3): Belnap/Belnap = Belnap/not(eq(e1, e2))
+    def neq(e1: Mod3, e2: Mod3): Belnap.Belnap = Belnap.not(eq(e1, e2))
 
     ///
     /// Over-approximates `less than`.
     ///
-    #PartialOrder/safe2((x, y) -> x < y, alpha, Belnap/alpha, Belnap/leq)
-    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
-    #PartialOrder/monotone2(leq, leq, Belnap/leq)
-    def less(e1: Mod3, e2: Mod3): Belnap/Belnap = match (e1, e2) with {
+    #PartialOrder.safe2((x, y) -> x < y, alpha, Belnap.alpha, Belnap.leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
+    def less(e1: Mod3, e2: Mod3): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _) => Belnap/Belnap.Bot
         case (_, Bot) => Belnap/Belnap.Bot
         case _        => Belnap/Belnap.Top
@@ -203,10 +203,10 @@ namespace Domain.Mod3 {
     ///
     /// Over-approximates `less than or equal`.
     ///
-    #PartialOrder/safe2((x, y) -> x <= y, alpha, Belnap/alpha, Belnap/leq)
-    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
-    #PartialOrder/monotone2(leq, leq, Belnap/leq)
-    def lessEqual(e1: Mod3, e2: Mod3): Belnap/Belnap = Belnap/or(e1 `less` e2, e1 `eq` e2)
+    #PartialOrder.safe2((x, y) -> x <= y, alpha, Belnap.alpha, Belnap.leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
+    def lessEqual(e1: Mod3, e2: Mod3): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
     let Mod3<> = (Bot, Top, leq, lub, glb)
 
@@ -214,28 +214,28 @@ namespace Domain.Mod3 {
     // ## Specialized Laws
     //
 
-    law upperBound(lub: (Mod3, Mod3) -> Mod3): Bool = JoinLattice/upperBound(leq, lub)
+    law upperBound(lub: (Mod3, Mod3) -> Mod3): Bool = JoinLattice.upperBound(leq, lub)
 
-    law leastUpperBound(lub: (Mod3, Mod3) -> Mod3): Bool = JoinLattice/leastUpperBound(leq, lub)
+    law leastUpperBound(lub: (Mod3, Mod3) -> Mod3): Bool = JoinLattice.leastUpperBound(leq, lub)
 
-    law lowerBound(glb: (Mod3, Mod3) -> Mod3): Bool = MeetLattice/lowerBound(leq, glb)
+    law lowerBound(glb: (Mod3, Mod3) -> Mod3): Bool = MeetLattice.lowerBound(leq, glb)
 
-    law greatestLowerBound(glb: (Mod3, Mod3) -> Mod3): Bool = MeetLattice/greatestLowerBound(leq, glb)
+    law greatestLowerBound(glb: (Mod3, Mod3) -> Mod3): Bool = MeetLattice.greatestLowerBound(leq, glb)
 
-    law leastElement(leq: (Mod3, Mod3) -> Bool, bot: Mod3): Bool = Bounded/leastElement(bot, leq)
+    law leastElement(leq: (Mod3, Mod3) -> Bool, bot: Mod3): Bool = Bounded.leastElement(bot, leq)
 
-    law greatestElement(leq: (Mod3, Mod3) -> Bool, top: Mod3): Bool = Bounded/greatestElement(top, leq)
+    law greatestElement(leq: (Mod3, Mod3) -> Bool, top: Mod3): Bool = Bounded.greatestElement(top, leq)
 
-    law strict1(f: Mod3 -> Mod3): Bool = Bounded/strict1(f, Bot, Bot)
+    law strict1(f: Mod3 -> Mod3): Bool = Bounded.strict1(f, Bot, Bot)
 
-    law strict2(f: (Mod3, Mod3) -> Mod3): Bool = Bounded/strict2(f, Bot, Bot, Bot)
+    law strict2(f: (Mod3, Mod3) -> Mod3): Bool = Bounded.strict2(f, Bot, Bot, Bot)
     
-    law monotone1(f: Mod3 -> Mod3): Bool = PartialOrder/monotone1(f, leq, leq)
+    law monotone1(f: Mod3 -> Mod3): Bool = PartialOrder.monotone1(f, leq, leq)
 
-    law monotone2(f: (Mod3, Mod3) -> Mod3): Bool = PartialOrder/monotone2(f, leq, leq, leq)
+    law monotone2(f: (Mod3, Mod3) -> Mod3): Bool = PartialOrder.monotone2(f, leq, leq, leq)
 
-    law safe1(fa: Mod3 -> Mod3, fc: BigInt -> BigInt): Bool = PartialOrder/safe1(fa, fc, alpha, alpha, leq)
+    law safe1(fa: Mod3 -> Mod3, fc: BigInt -> BigInt): Bool = PartialOrder.safe1(fa, fc, alpha, alpha, leq)
 
-    law safe2(fa: (Mod3, Mod3) -> Mod3, fc: (BigInt, BigInt) -> BigInt): Bool = PartialOrder/safe2(fa, fc, alpha, alpha, leq)
+    law safe2(fa: (Mod3, Mod3) -> Mod3, fc: (BigInt, BigInt) -> BigInt): Bool = PartialOrder.safe2(fa, fc, alpha, alpha, leq)
 
 }

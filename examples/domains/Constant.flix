@@ -1,7 +1,7 @@
 /**
  * An implementation of the constant propagation lattice.
  */
-namespace Domain.Constant {
+namespace Domain/Constant {
 
     ///
     /// The elements of the constant propagation lattice.
@@ -209,46 +209,46 @@ namespace Domain.Constant {
     ///
     /// Over-approximates `equal`.
     ///
-    #PartialOrder/safe2((x, y) -> x == y, alpha, Belnap/alpha, Belnap/leq)
-    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
-    #PartialOrder/monotone2(leq, leq, Belnap/leq)
+    #PartialOrder.safe2((x, y) -> x == y, alpha, Belnap.alpha, Belnap.leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    def eq(e1: Constant, e2: Constant): Belnap/Belnap = match (e1, e2) with {
+    def eq(e1: Constant, e2: Constant): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)           => Belnap/Belnap.Bot
         case (_, Bot)           => Belnap/Belnap.Bot
-        case (Cst(n1), Cst(n2)) => Belnap/alpha(n1 == n2)
+        case (Cst(n1), Cst(n2)) => Belnap.alpha(n1 == n2)
         case _                  => Belnap/Belnap.Top
     }
 
     ///
     /// Over-approximates `not equal`.
     ///
-    #PartialOrder/safe2((x, y) -> x != y, alpha, Belnap/alpha, Belnap/leq)
-    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
-    #PartialOrder/monotone2(leq, leq, Belnap/leq)
+    #PartialOrder.safe2((x, y) -> x != y, alpha, Belnap.alpha, Belnap.leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    def neq(e1: Constant, e2: Constant): Belnap/Belnap = Belnap/not(eq(e1, e2))
+    def neq(e1: Constant, e2: Constant): Belnap.Belnap = Belnap.not(eq(e1, e2))
 
     ///
     /// Over-approximates `less than`.
     ///
-    #PartialOrder/safe2((x, y) -> x < y, alpha, Belnap/alpha, Belnap/leq)
-    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
-    #PartialOrder/monotone2(leq, leq, Belnap/leq)
-    def less(e1: Constant, e2: Constant): Belnap/Belnap = match (e1, e2) with {
+    #PartialOrder.safe2((x, y) -> x < y, alpha, Belnap.alpha, Belnap.leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
+    def less(e1: Constant, e2: Constant): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)           => Belnap/Belnap.Bot
         case (_, Bot)           => Belnap/Belnap.Bot
-        case (Cst(n1), Cst(n2)) => Belnap/alpha(n1 < n2)
+        case (Cst(n1), Cst(n2)) => Belnap.alpha(n1 < n2)
         case _                  => Belnap/Belnap.Top
     }
 
     ///
     /// Over-approximates `less than or equal`.
     ///
-    #PartialOrder/safe2((x, y) -> x <= y, alpha, Belnap/alpha, Belnap/leq)
-    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
-    #PartialOrder/monotone2(leq, leq, Belnap/leq)
-    def lessEqual(e1: Constant, e2: Constant): Belnap/Belnap = Belnap/or(e1 `less` e2, e1 `eq` e2)
+    #PartialOrder.safe2((x, y) -> x <= y, alpha, Belnap.alpha, Belnap.leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
+    def lessEqual(e1: Constant, e2: Constant): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
     let Constant<> = (Bot, Top, leq, lub, glb)
 
@@ -256,28 +256,28 @@ namespace Domain.Constant {
     // ## Specialized Laws
     //
 
-    law upperBound(lub: (Constant, Constant) -> Constant): Bool = JoinLattice/upperBound(leq, lub)
+    law upperBound(lub: (Constant, Constant) -> Constant): Bool = JoinLattice.upperBound(leq, lub)
 
-    law leastUpperBound(lub: (Constant, Constant) -> Constant): Bool = JoinLattice/leastUpperBound(leq, lub)
+    law leastUpperBound(lub: (Constant, Constant) -> Constant): Bool = JoinLattice.leastUpperBound(leq, lub)
 
-    law lowerBound(glb: (Constant, Constant) -> Constant): Bool = MeetLattice/lowerBound(leq, glb)
+    law lowerBound(glb: (Constant, Constant) -> Constant): Bool = MeetLattice.lowerBound(leq, glb)
 
-    law greatestLowerBound(glb: (Constant, Constant) -> Constant): Bool = MeetLattice/greatestLowerBound(leq, glb)
+    law greatestLowerBound(glb: (Constant, Constant) -> Constant): Bool = MeetLattice.greatestLowerBound(leq, glb)
 
-    law leastElement(leq: (Constant, Constant) -> Bool, bot: Constant): Bool = Bounded/leastElement(bot, leq)
+    law leastElement(leq: (Constant, Constant) -> Bool, bot: Constant): Bool = Bounded.leastElement(bot, leq)
 
-    law greatestElement(leq: (Constant, Constant) -> Bool, top: Constant): Bool = Bounded/greatestElement(top, leq)
+    law greatestElement(leq: (Constant, Constant) -> Bool, top: Constant): Bool = Bounded.greatestElement(top, leq)
 
-    law strict1(f: Constant -> Constant): Bool = Bounded/strict1(f, Bot, Bot)
+    law strict1(f: Constant -> Constant): Bool = Bounded.strict1(f, Bot, Bot)
 
-    law strict2(f: (Constant, Constant) -> Constant): Bool = Bounded/strict2(f, Bot, Bot, Bot)
+    law strict2(f: (Constant, Constant) -> Constant): Bool = Bounded.strict2(f, Bot, Bot, Bot)
 
-    law monotone1(f: Constant -> Constant): Bool = PartialOrder/monotone1(f, leq, leq)
+    law monotone1(f: Constant -> Constant): Bool = PartialOrder.monotone1(f, leq, leq)
 
-    law monotone2(f: (Constant, Constant) -> Constant): Bool = PartialOrder/monotone2(f, leq, leq, leq)
+    law monotone2(f: (Constant, Constant) -> Constant): Bool = PartialOrder.monotone2(f, leq, leq, leq)
 
-    law safe1(fa: Constant -> Constant, fc: Int -> Int): Bool = PartialOrder/safe1(fa, fc, alpha, alpha, leq)
+    law safe1(fa: Constant -> Constant, fc: Int -> Int): Bool = PartialOrder.safe1(fa, fc, alpha, alpha, leq)
 
-    law safe2(fa: (Constant, Constant) -> Constant, fc: (Int, Int) -> Int): Bool = PartialOrder/safe2(fa, fc, alpha, alpha, leq)
+    law safe2(fa: (Constant, Constant) -> Constant, fc: (Int, Int) -> Int): Bool = PartialOrder.safe2(fa, fc, alpha, alpha, leq)
 
 }

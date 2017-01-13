@@ -239,7 +239,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "/" + name
+    override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
   }
 
 
@@ -332,7 +332,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = if (namespace.isEmpty) name else namespace.mkString(".") + "/" + name
+    override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
   }
 
   /**
@@ -341,11 +341,11 @@ object Symbol {
     * Returns `None` if the `fqn` is not qualified.
     */
   private def split(fqn: String): Option[(List[String], String)] = {
-    if (!fqn.contains('/'))
+    if (!fqn.contains('.'))
       return None
 
-    val index = fqn.indexOf('/')
-    val namespace = fqn.substring(0, index).split('.').toList
+    val index = fqn.indexOf('.')
+    val namespace = fqn.substring(0, index).split('/').toList
     val name = fqn.substring(index + 1, fqn.length)
     Some((namespace, name))
   }
