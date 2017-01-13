@@ -1,7 +1,7 @@
 //
 // An implementation of the parity domain.
 //
-namespace Domain.Parity {
+namespace Domain/Parity {
 
     ///
     /// The elements of the parity lattice.
@@ -237,11 +237,11 @@ namespace Domain.Parity {
     ///
     /// Over-approximates `equal`.
     ///
-    #PartialOrder/safe2((x, y) -> x == y, alpha, Belnap/alpha, Belnap/leq)
-    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
-    #PartialOrder/monotone2(leq, leq, Belnap/leq)
+    #PartialOrder.safe2((x, y) -> x == y, alpha, Belnap.alpha, Belnap.leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    def eq(e1: Parity, e2: Parity): Belnap/Belnap = match (e1, e2) with {
+    def eq(e1: Parity, e2: Parity): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)       => Belnap/Belnap.Bot
         case (_, Bot)       => Belnap/Belnap.Bot
         case (Odd, Even)    => Belnap/Belnap.False
@@ -252,19 +252,19 @@ namespace Domain.Parity {
     ///
     /// Over-approximates `not equal`.
     ///
-    #PartialOrder/safe2((x, y) -> x != y, alpha, Belnap/alpha, Belnap/leq)
-    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
-    #PartialOrder/monotone2(leq, leq, Belnap/leq)
+    #PartialOrder.safe2((x, y) -> x != y, alpha, Belnap.alpha, Belnap.leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    def neq(e1: Parity, e2: Parity): Belnap/Belnap = Belnap/not(eq(e1, e2))
+    def neq(e1: Parity, e2: Parity): Belnap.Belnap = Belnap.not(eq(e1, e2))
 
     ///
     /// Over-approximates `less than`.
     ///
-    #PartialOrder/safe2((x, y) -> x < y, alpha, Belnap/alpha, Belnap/leq)
-    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
-    #PartialOrder/monotone2(leq, leq, Belnap/leq)
-    def less(e1: Parity, e2: Parity): Belnap/Belnap = match (e1, e2) with {
+    #PartialOrder.safe2((x, y) -> x < y, alpha, Belnap.alpha, Belnap.leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
+    def less(e1: Parity, e2: Parity): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)   => Belnap/Belnap.Bot
         case (_, Bot)   => Belnap/Belnap.Bot
         case _          => Belnap/Belnap.Top
@@ -273,10 +273,10 @@ namespace Domain.Parity {
     ///
     /// Over-approximates `less than or equal`.
     ///
-    #PartialOrder/safe2((x, y) -> x <= y, alpha, Belnap/alpha, Belnap/leq)
-    #Bounded/strict2(Bot, Bot, Belnap/Belnap.Bot)
-    #PartialOrder/monotone2(leq, leq, Belnap/leq)
-    def lessEqual(e1: Parity, e2: Parity): Belnap/Belnap = Belnap/or(e1 `less` e2, e1 `eq` e2)
+    #PartialOrder.safe2((x, y) -> x <= y, alpha, Belnap.alpha, Belnap.leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
+    def lessEqual(e1: Parity, e2: Parity): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
     let Parity<> = (Bot, Top, leq, lub, glb)
 
@@ -284,28 +284,28 @@ namespace Domain.Parity {
     // ## Specialized Laws
     //
 
-    law upperBound(lub: (Parity, Parity) -> Parity): Bool = JoinLattice/upperBound(leq, lub)
+    law upperBound(lub: (Parity, Parity) -> Parity): Bool = JoinLattice.upperBound(leq, lub)
 
-    law leastUpperBound(lub: (Parity, Parity) -> Parity): Bool = JoinLattice/leastUpperBound(leq, lub)
+    law leastUpperBound(lub: (Parity, Parity) -> Parity): Bool = JoinLattice.leastUpperBound(leq, lub)
 
-    law lowerBound(glb: (Parity, Parity) -> Parity): Bool = MeetLattice/lowerBound(leq, glb)
+    law lowerBound(glb: (Parity, Parity) -> Parity): Bool = MeetLattice.lowerBound(leq, glb)
 
-    law greatestLowerBound(glb: (Parity, Parity) -> Parity): Bool = MeetLattice/greatestLowerBound(leq, glb)
+    law greatestLowerBound(glb: (Parity, Parity) -> Parity): Bool = MeetLattice.greatestLowerBound(leq, glb)
 
-    law leastElement(leq: (Parity, Parity) -> Bool, bot: Parity): Bool = Bounded/leastElement(bot, leq)
+    law leastElement(leq: (Parity, Parity) -> Bool, bot: Parity): Bool = Bounded.leastElement(bot, leq)
 
-    law greatestElement(leq: (Parity, Parity) -> Bool, top: Parity): Bool = Bounded/greatestElement(top, leq)
+    law greatestElement(leq: (Parity, Parity) -> Bool, top: Parity): Bool = Bounded.greatestElement(top, leq)
 
-    law strict1(f: Parity -> Parity): Bool = Bounded/strict1(f, Bot, Bot)
+    law strict1(f: Parity -> Parity): Bool = Bounded.strict1(f, Bot, Bot)
 
-    law strict2(f: (Parity, Parity) -> Parity): Bool = Bounded/strict2(f, Bot, Bot, Bot)
+    law strict2(f: (Parity, Parity) -> Parity): Bool = Bounded.strict2(f, Bot, Bot, Bot)
 
-    law monotone1(f: Parity -> Parity): Bool = PartialOrder/monotone1(f, leq, leq)
+    law monotone1(f: Parity -> Parity): Bool = PartialOrder.monotone1(f, leq, leq)
 
-    law monotone2(f: (Parity, Parity) -> Parity): Bool = PartialOrder/monotone2(f, leq, leq, leq)
+    law monotone2(f: (Parity, Parity) -> Parity): Bool = PartialOrder.monotone2(f, leq, leq, leq)
 
-    law safe1(fa: Parity -> Parity, fc: Int -> Int): Bool = PartialOrder/safe1(fa, fc, alpha, alpha, leq)
+    law safe1(fa: Parity -> Parity, fc: Int -> Int): Bool = PartialOrder.safe1(fa, fc, alpha, alpha, leq)
 
-    law safe2(fa: (Parity, Parity) -> Parity, fc: (Int, Int) -> Int): Bool = PartialOrder/safe2(fa, fc, alpha, alpha, leq)
+    law safe2(fa: (Parity, Parity) -> Parity, fc: (Int, Int) -> Int): Bool = PartialOrder.safe2(fa, fc, alpha, alpha, leq)
 
 }

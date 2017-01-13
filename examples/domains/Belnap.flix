@@ -164,28 +164,28 @@ namespace Belnap {
     // ## Specialized Laws
     //
 
-    law upperBound(lub: (Belnap, Belnap) -> Belnap): Bool = JoinLattice/upperBound(leq, lub)
+    law upperBound(lub: (Belnap, Belnap) -> Belnap): Bool = JoinLattice.upperBound(leq, lub)
 
-    law leastUpperBound(lub: (Belnap, Belnap) -> Belnap): Bool = JoinLattice/leastUpperBound(leq, lub)
+    law leastUpperBound(lub: (Belnap, Belnap) -> Belnap): Bool = JoinLattice.leastUpperBound(leq, lub)
 
-    law lowerBound(glb: (Belnap, Belnap) -> Belnap): Bool = MeetLattice/lowerBound(leq, glb)
+    law lowerBound(glb: (Belnap, Belnap) -> Belnap): Bool = MeetLattice.lowerBound(leq, glb)
 
-    law greatestLowerBound(glb: (Belnap, Belnap) -> Belnap): Bool = MeetLattice/greatestLowerBound(leq, glb)
+    law greatestLowerBound(glb: (Belnap, Belnap) -> Belnap): Bool = MeetLattice.greatestLowerBound(leq, glb)
 
-    law leastElement(leq: (Belnap, Belnap) -> Bool, bot: Belnap): Bool = Bounded/leastElement(bot, leq)
+    law leastElement(leq: (Belnap, Belnap) -> Bool, bot: Belnap): Bool = Bounded.leastElement(bot, leq)
 
-    law greatestElement(leq: (Belnap, Belnap) -> Bool, top: Belnap): Bool = Bounded/greatestElement(top, leq)
+    law greatestElement(leq: (Belnap, Belnap) -> Bool, top: Belnap): Bool = Bounded.greatestElement(top, leq)
 
-    law strict1(f: Belnap -> Belnap): Bool = Bounded/strict1(f, Bot, Bot)
+    law strict1(f: Belnap -> Belnap): Bool = Bounded.strict1(f, Bot, Bot)
 
-    law strict2(f: (Belnap, Belnap) -> Belnap): Bool = Bounded/strict2(f, Bot, Bot, Bot)
+    law strict2(f: (Belnap, Belnap) -> Belnap): Bool = Bounded.strict2(f, Bot, Bot, Bot)
 
-    law monotone1(f: Belnap -> Belnap): Bool =  PartialOrder/monotone1(f, leq, leq)
+    law monotone1(f: Belnap -> Belnap): Bool =  PartialOrder.monotone1(f, leq, leq)
 
-    law monotone2(f: (Belnap, Belnap) -> Belnap): Bool =  PartialOrder/monotone2(f, leq, leq, leq)
+    law monotone2(f: (Belnap, Belnap) -> Belnap): Bool =  PartialOrder.monotone2(f, leq, leq, leq)
 
-    law safe1(fa: Belnap -> Belnap, fc: Bool -> Bool): Bool = PartialOrder/safe1(fa, fc, alpha, alpha, leq)
+    law safe1(fa: Belnap -> Belnap, fc: Bool -> Bool): Bool = PartialOrder.safe1(fa, fc, alpha, alpha, leq)
 
-    law safe2(fa: (Belnap, Belnap) -> Belnap, fc: (Bool, Bool) -> Bool): Bool = PartialOrder/safe2(fa, fc, alpha, alpha, leq)
+    law safe2(fa: (Belnap, Belnap) -> Belnap, fc: (Bool, Bool) -> Bool): Bool = PartialOrder.safe2(fa, fc, alpha, alpha, leq)
 
 }

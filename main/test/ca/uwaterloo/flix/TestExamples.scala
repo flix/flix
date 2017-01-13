@@ -119,14 +119,14 @@ class TestExamples extends FunSuite {
     val Fls = Value.mkTag("False", Value.Unit)
     val Top = Value.mkTag("Top", Value.Unit)
 
-    t.checkValue(Tru, "Belnap/A", List(Value.mkInt32(1)))
-    t.checkValue(Fls, "Belnap/A", List(Value.mkInt32(2)))
-    t.checkValue(Top, "Belnap/A", List(Value.mkInt32(3)))
-    t.checkNone("Belnap/A", List(Value.mkInt32(4)))
-    t.checkValue(Tru, "Belnap/A", List(Value.mkInt32(5)))
-    t.checkValue(Fls, "Belnap/A", List(Value.mkInt32(6)))
-    t.checkValue(Tru, "Belnap/A", List(Value.mkInt32(7)))
-    t.checkValue(Tru, "Belnap/A", List(Value.mkInt32(8)))
+    t.checkValue(Tru, "Belnap.A", List(Value.mkInt32(1)))
+    t.checkValue(Fls, "Belnap.A", List(Value.mkInt32(2)))
+    t.checkValue(Top, "Belnap.A", List(Value.mkInt32(3)))
+    t.checkNone("Belnap.A", List(Value.mkInt32(4)))
+    t.checkValue(Tru, "Belnap.A", List(Value.mkInt32(5)))
+    t.checkValue(Fls, "Belnap.A", List(Value.mkInt32(6)))
+    t.checkValue(Tru, "Belnap.A", List(Value.mkInt32(7)))
+    t.checkValue(Tru, "Belnap.A", List(Value.mkInt32(8)))
   }
 
   test("Constant.flix") {

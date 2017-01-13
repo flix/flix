@@ -5,7 +5,7 @@
 ///
 /// See Cousot & Cousot '77 for details.
 ///
-namespace Domain.Interval {
+namespace Domain/Interval {
 
     // TODO: Add to TestExamples.
 
@@ -47,7 +47,7 @@ namespace Domain.Interval {
     def lub(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
         case (Bot, x)                       => x
         case (x, Bot)                       => x
-        case (Range(b1, e1), Range(b2, e2)) => norm(Range(BigInt/min(b1, b2), BigInt/max(e1, e2)))
+        case (Range(b1, e1), Range(b2, e2)) => norm(Range(BigInt.min(b1, b2), BigInt.max(e1, e2)))
         case _                              => Top
     }
 
@@ -58,7 +58,7 @@ namespace Domain.Interval {
     def glb(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
         case (Top, x)                       => x
         case (x, Top)                       => x
-        case (Range(b1, e1), Range(b2, e2)) => norm(Range(BigInt/max(b1, b2), BigInt/min(e1, e2)))
+        case (Range(b1, e1), Range(b2, e2)) => norm(Range(BigInt.max(b1, b2), BigInt.min(e1, e2)))
         case _                              => Bot
     }
 
@@ -158,7 +158,7 @@ namespace Domain.Interval {
       * Over-approximates `equal`.
       */
     //@strict @monotone @commutative // TODO
-    def eq(e1: Interval, e2: Interval): Belnap/Belnap = match (e1, e2) with {
+    def eq(e1: Interval, e2: Interval): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)                                  => Belnap/Belnap.Bot
         case (_, Bot)                                  => Belnap/Belnap.Bot
         case (Range(b1, e1), Range(b2, e2))   => switch {
@@ -173,13 +173,13 @@ namespace Domain.Interval {
       * Over-approximates `not equal`.
       */
     //@strict @monotone @commutative // TODO
-    def neq(e1: Interval, e2: Interval): Belnap/Belnap = Belnap/not(eq(e1, e2))
+    def neq(e1: Interval, e2: Interval): Belnap.Belnap = Belnap.not(eq(e1, e2))
 
     /**
       * Over-approximates `less than`.
       */
     //@strict @monotone // TODO
-    def less(e1: Interval, e2: Interval): Belnap/Belnap = match (e1, e2) with {
+    def less(e1: Interval, e2: Interval): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)                                  => Belnap/Belnap.Bot
         case (_, Bot)                                  => Belnap/Belnap.Bot
         case (Range(b1, e1), Range(b2, e2))   =>
@@ -198,7 +198,7 @@ namespace Domain.Interval {
       * Over-approximates `less than or equal`.
       */
     //@strict @monotone // TODO
-    def lessEqual(e1: Interval, e2: Interval): Belnap/Belnap = Belnap/or(e1 `less` e2, e1 `eq` e2)
+    def lessEqual(e1: Interval, e2: Interval): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
     let Interval<> = (Bot, Top, leq, lub, glb)
 
