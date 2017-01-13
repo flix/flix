@@ -1077,16 +1077,22 @@ object Weeder {
   }
 
   /**
-    * Interprets the given fully-qualified name `qname0` as an optional fully-qualified type named followed by a tag name.
+    * Re-interprets the given fully-qualified name `qname0` as an optionally fully-qualified type name followed by a tag name.
     *
-    * For example, the name `Foo/Bar/Baz.Qux` is re-interpreted as the type name `Foo/Bar.Baz` and the tag name `Qux`.
+    * For example,
+    * -   the name `Foo` is re-interpreted as the tag name `Foo`.
+    * -   the name `Foo.Bar` is re-interpreted as the type name `Foo` and the tag name `Bar`.
+    * -   the name `Foo/Bar/Baz.Qux` is re-interpreted as the type name `Foo/Bar.Baz` and the tag name `Qux`.
     */
   private def asTag(qname0: Name.QName): (Option[Name.QName], Name.Ident) = {
+    // The tag name is the last identifier in the qualified name.
     val tagName = qname0.ident
+    // Check if there is a namespace.
     if (qname0.namespace.isRoot) {
+      // No namespace, simply return the tag name.
       (None, tagName)
     } else {
-      // Translates the name Foo/Bar/Baz.Qux into the name Foo/Bar.Baz.
+      // Translates the name `Foo/Bar/Baz.Qux` into the name `Foo/Bar.Baz`.
       val nname = Name.NName(qname0.sp1, qname0.namespace.idents.init, qname0.sp2)
       val ident = qname0.namespace.idents.last
       val qname = Name.QName(qname0.sp1, nname, ident, qname0.sp2)
