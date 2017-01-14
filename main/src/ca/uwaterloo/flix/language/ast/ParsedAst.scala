@@ -505,8 +505,7 @@ object ParsedAst {
       * Tag Expression.
       *
       * @param sp1  the position of the first character in the expression.
-      * @param enum the optional enum name.
-      * @param tag  the tag name.
+      * @param name the optionally fully-qualified name of the type and the tag name.
       * @param exp  the optional value expression.
       * @param sp2  the position of the last character in the expression.
       */
@@ -662,8 +661,7 @@ object ParsedAst {
       * Tag Pattern.
       *
       * @param sp1  the position of the first character in the pattern.
-      * @param enum the optional enum name.
-      * @param tag  the tag name.
+      * @param name the optionally fully-qualified name of the type and the tag name.
       * @param pat  the optional value pattern.
       * @param sp2  the position of the last character in the pattern.
       */
