@@ -505,12 +505,11 @@ object ParsedAst {
       * Tag Expression.
       *
       * @param sp1  the position of the first character in the expression.
-      * @param enum the optional enum name.
-      * @param tag  the tag name.
+      * @param name the optionally fully-qualified name of the type and the tag name.
       * @param exp  the optional value expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Tag(sp1: SourcePosition, enum: Option[Name.QName], tag: Name.Ident, exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Tag(sp1: SourcePosition, name: Name.QName, exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Tuple Expression.
@@ -618,7 +617,7 @@ object ParsedAst {
       case Pattern.Wild(sp1, _) => sp1
       case Pattern.Var(sp1, _, _) => sp1
       case Pattern.Lit(sp1, _, _) => sp1
-      case Pattern.Tag(sp1, _, _, _, _) => sp1
+      case Pattern.Tag(sp1, _, _, _) => sp1
       case Pattern.Tuple(sp1, _, _) => sp1
       case Pattern.FNil(sp1, _) => sp1
       case Pattern.FCons(hd, _, _, _) => hd.leftMostSourcePosition
@@ -662,12 +661,11 @@ object ParsedAst {
       * Tag Pattern.
       *
       * @param sp1  the position of the first character in the pattern.
-      * @param enum the optional enum name.
-      * @param tag  the tag name.
+      * @param name the optionally fully-qualified name of the type and the tag name.
       * @param pat  the optional value pattern.
       * @param sp2  the position of the last character in the pattern.
       */
-    case class Tag(sp1: SourcePosition, enum: Option[Name.QName], tag: Name.Ident, pat: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
+    case class Tag(sp1: SourcePosition, name: Name.QName, pat: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * Tuple Pattern.

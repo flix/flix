@@ -1,7 +1,7 @@
 /**
  * An implementation of the reduced product of the Parity and Sign domains.
  */
-namespace Domain.ParitySign {
+namespace Domain/ParitySign {
 
     ///
     /// The elements of the reduced product of the Parity and Sign lattices.

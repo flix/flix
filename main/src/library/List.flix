@@ -128,7 +128,7 @@ namespace List {
     ///
     def findRight[a](f: a -> Bool, xs: List[a]): Option[a] = match xs with {
         case Nil => None
-        case x :: rs => Option/withDefault(findRight(f, rs), if (f(x)) Some(x) else None)
+        case x :: rs => Option.withDefault(findRight(f, rs), if (f(x)) Some(x) else None)
     }
 
     //

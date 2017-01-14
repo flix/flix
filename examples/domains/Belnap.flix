@@ -1,6 +1,7 @@
 /**
  * An implementation of the four-valued boolean lattice named for Nuel Belnap.
  */
+// TODO: Domain
 namespace Belnap {
 
     ///
@@ -29,7 +30,7 @@ namespace Belnap {
     ///
     /// Returns the least upper bound of `e1` and `e2`.
     ///
-    #commutative #associative #upperBound #leastUpperBound
+    #upperBound #leastUpperBound #commutative #associative
     def lub(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Bot, x)       => x
         case (x, Bot)       => x
@@ -41,10 +42,7 @@ namespace Belnap {
     ///
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
-
-    // TODO: Should we commutative and associative here, and in what order?
-
-    #commutative #associative #lowerBound #greatestLowerBound
+    #lowerBound #greatestLowerBound #commutative #associative
     def glb(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Top, x)       => x
         case (x, Top)       => x
@@ -56,13 +54,12 @@ namespace Belnap {
     ///
     /// Abstracts a concrete boolean into the Belnap domain.
     ///
-    // TODO: Need to come up with new name.
     def alpha(b: Bool): Belnap = if (b) True else False
 
     ///
     /// Over-approximates the logical `not` operator.
     ///
-    #approximates1(x -> !x)
+    #safe1(x -> !x)
     #strict1 #monotone1
     def not(e: Belnap): Belnap = match e with {
         case Bot    => Bot
@@ -74,7 +71,7 @@ namespace Belnap {
     ///
     /// Over-approximates the logical `and` operator.
     ///
-    #approximates2((x, y) -> x && y)
+    #safe2((x, y) -> x && y)
     #strict2 #monotone2 #commutative #associative
     def and(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Bot, _)       => Bot
@@ -89,7 +86,7 @@ namespace Belnap {
     ///
     /// Over-approximates the logical `or` operator.
     ///
-    #approximates2((x, y) -> x || y)
+    #safe2((x, y) -> x || y)
     #strict2 #monotone2 #commutative #associative
     def or(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Bot, _)       => Bot
@@ -104,7 +101,7 @@ namespace Belnap {
     ///
     /// Over-approximates the logical `xor` operator.
     ///
-    #approximates2((x, y) -> x ⊕ y)
+    #safe2((x, y) -> x ⊕ y)
     #strict2 #monotone2 #commutative #associative
     def xor(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Bot, _)       => Bot
@@ -119,7 +116,7 @@ namespace Belnap {
     ///
     /// Over-approximates the logical `implies` operator.
     ///
-    #approximates2((x, y) -> x → y)
+    #safe2((x, y) -> x → y)
     #strict2 #monotone2
     def implies(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Bot, _)         => Bot
@@ -134,7 +131,7 @@ namespace Belnap {
     ///
     /// Over-approximates the logical `bicondition` operator.
     ///
-    #approximates2((x, y) -> x ↔ y)
+    #safe2((x, y) -> x ↔ y)
     #strict2 #monotone2 #commutative #associative
     def bicondition(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Bot, _)       => Bot
@@ -149,7 +146,7 @@ namespace Belnap {
     ///
     /// Over-approximates the logical `nand` operator.
     ///
-    #approximates2((x, y) -> x ↑ y)
+    #safe2((x, y) -> x ↑ y)
     #strict2 #monotone2 #commutative // NB: Commutative, but not associative!
     def nand(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Bot, _)       => Bot
@@ -163,64 +160,32 @@ namespace Belnap {
 
     let Belnap<> = (Bot, Top, leq, lub, glb)
 
-    // ------------------------------------------------------------------------
-    // TODO: Refactor
-    // ------------------------------------------------------------------------
+    //
+    // ## Specialized Laws
+    //
 
-    law reflexive(⊑: (Belnap, Belnap) -> Bool): Bool = ∀(x: Belnap). x ⊑ x // TODO: Use Prelude
+    law upperBound(lub: (Belnap, Belnap) -> Belnap): Bool = JoinLattice.upperBound(leq, lub)
 
-    law antiSymmetric(⊑: (Belnap, Belnap) -> Bool): Bool = ∀(x: Belnap, y: Belnap). ((x ⊑ y) ∧ (y ⊑ x)) → (x == y) // TODO: Use Prelude
+    law leastUpperBound(lub: (Belnap, Belnap) -> Belnap): Bool = JoinLattice.leastUpperBound(leq, lub)
 
-    law transitive(⊑: (Belnap, Belnap) -> Bool): Bool = ∀(x: Belnap, y: Belnap, z: Belnap). ((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z) // TODO: Use Prelude
+    law lowerBound(glb: (Belnap, Belnap) -> Belnap): Bool = MeetLattice.lowerBound(leq, glb)
 
-    law upperBound(⊔: (Belnap, Belnap) -> Belnap): Bool = // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: Belnap, y: Belnap). (x ⊑ (x ⊔ y)) ∧ (y ⊑ (x ⊔ y))
+    law greatestLowerBound(glb: (Belnap, Belnap) -> Belnap): Bool = MeetLattice.greatestLowerBound(leq, glb)
 
-    law leastUpperBound(⊔: (Belnap, Belnap) -> Belnap): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: Belnap, y: Belnap, z: Belnap). ((x ⊑ z) ∧ (y ⊑ z)) → ((x ⊔ y) ⊑ z)
+    law leastElement(leq: (Belnap, Belnap) -> Bool, bot: Belnap): Bool = Bounded.leastElement(bot, leq)
 
-    law lowerBound(⊓: (Belnap, Belnap) -> Belnap): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: Belnap, y: Belnap). ((x ⊓ y) ⊑ x) ∧ ((x ⊓ y) ⊑ y)
+    law greatestElement(leq: (Belnap, Belnap) -> Bool, top: Belnap): Bool = Bounded.greatestElement(top, leq)
 
-    law greatestLowerBound(⊓: (Belnap, Belnap) -> Belnap): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: Belnap, y: Belnap, z: Belnap). ((z ⊑ x) ∧ (z ⊑ y)) → (z ⊑ (x ⊓ y))
+    law strict1(f: Belnap -> Belnap): Bool = Bounded.strict1(f, Bot, Bot)
 
-    law leastElement(⊑: (Belnap, Belnap) -> Bool, ⊥: Belnap): Bool = ∀(x: Belnap). ⊥ ⊑ x  // TODO: Should call prelude
+    law strict2(f: (Belnap, Belnap) -> Belnap): Bool = Bounded.strict2(f, Bot, Bot, Bot)
 
-    law greatestElement(⊑: (Belnap, Belnap) -> Bool, ⊤: Belnap): Bool = ∀(x: Belnap). x ⊑ ⊤  // TODO: Should call prelude
+    law monotone1(f: Belnap -> Belnap): Bool =  PartialOrder.monotone1(f, leq, leq)
 
-    law associative(f: (Belnap, Belnap) -> Belnap): Bool = // TODO: Use Prelude
-        ∀(x: Belnap, y: Belnap, z: Belnap). f(x, f(y, z)) == f(f(x, y), z)
+    law monotone2(f: (Belnap, Belnap) -> Belnap): Bool =  PartialOrder.monotone2(f, leq, leq, leq)
 
-    law commutative(f: (Belnap, Belnap) -> Belnap): Bool = // TODO: Use Prelude
-        ∀(x: Belnap, y: Belnap). f(x, y) == f(y, x)
+    law safe1(fa: Belnap -> Belnap, fc: Bool -> Bool): Bool = PartialOrder.safe1(fa, fc, alpha, alpha, leq)
 
-    law strict1(f: Belnap -> Belnap): Bool =  // TODO: Should call prelude
-        f(Bot) == Bot
-
-    law strict2(f: (Belnap, Belnap) -> Belnap): Bool =  // TODO: Should call prelude
-        f(Bot, Bot) == Bot
-
-    law monotone1(f: Belnap -> Belnap): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: Belnap, y: Belnap). (x ⊑ y) → (f(x) ⊑ f(y))
-
-    law monotone2(f: (Belnap, Belnap) -> Belnap): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x1: Belnap, x2: Belnap, y1: Belnap, y2: Belnap). ((x1 ⊑ y1) ∧ (x2 ⊑ y2) ) → (f(x1, x2) ⊑ f(y1, y2))
-
-    // TODO: Names
-    law approximates1(fa: Belnap -> Belnap, fc: Bool -> Bool): Bool =
-        ∀(x: Bool). alpha(fc(x)) `leq` fa(alpha(x))
-
-    // TODO: Names
-    law approximates2(fa: (Belnap, Belnap) -> Belnap, fc: (Bool, Bool) -> Bool): Bool =
-        ∀(x: Bool, y: Bool). alpha(fc(x, y)) `leq` fa(alpha(x), alpha(y))
-
-    // TODO: Paper title: Safe and Sound: ...
+    law safe2(fa: (Belnap, Belnap) -> Belnap, fc: (Bool, Bool) -> Bool): Bool = PartialOrder.safe2(fa, fc, alpha, alpha, leq)
 
 }

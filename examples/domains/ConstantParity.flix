@@ -1,12 +1,12 @@
 /**
  * An implementation of the parity domain lifted over the constant propagation domain.
  */
-namespace Domain.ConstantParity {
+namespace Domain/ConstantParity {
 
     ///
     /// The elements of the constant-parity lattice.
     ///
-    enum ConstParity { // TODO: Name
+    enum ConstantParity {
                   case Top,
 
         case Odd,          case Even,
@@ -20,7 +20,7 @@ namespace Domain.ConstantParity {
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    def leq(e1: ConstParity, e2: ConstParity): Bool = match (e1, e2) with {
+    def leq(e1: ConstantParity, e2: ConstantParity): Bool = match (e1, e2) with {
         case (Bot, _)           => true
         case (Cst(n1), Cst(n2)) => n1 == n2
         case (Cst(n), Odd)      => isOdd(n)
@@ -34,8 +34,8 @@ namespace Domain.ConstantParity {
     ///
     /// Returns the least upper bound of `e1` and `e2`.
     ///
-    #commutative #associative #upperBound #leastUpperBound
-    def lub(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
+    #upperBound #leastUpperBound #commutative #associative
+    def lub(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) with {
         case (Bot, x)           => x
         case (x, Bot)           => x
         case (Cst(n1), Cst(n2)) => switch {
@@ -56,8 +56,8 @@ namespace Domain.ConstantParity {
     ///
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
-    #commutative #associative #lowerBound #greatestLowerBound
-    def glb(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
+    #lowerBound #greatestLowerBound #commutative #associative
+    def glb(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) with {
         case (Top, x)           => x
         case (x, Top)           => x
         case (Cst(n1), Cst(n2)) => if (n1 == n2)  Cst(n1) else Bot
@@ -73,14 +73,14 @@ namespace Domain.ConstantParity {
     ///
     /// Abstracts a concrete number into the constant parity domain.
     ///
-    def alpha(i: BigInt): ConstParity = Cst(i)
+    def alpha(i: BigInt): ConstantParity = Cst(i)
 
     ///
     /// Over-approximates integer `increment`.
     ///
-    #approximates1(x -> x + 1ii)
+    #safe1(x -> x + 1ii)
     #strict1 #monotone1
-    def inc(e: ConstParity): ConstParity = match e with {
+    def inc(e: ConstantParity): ConstantParity = match e with {
         case Bot    => Bot
         case Cst(n) => Cst(n + 1ii)
         case Even   => Odd
@@ -91,9 +91,9 @@ namespace Domain.ConstantParity {
     ///
     /// Over-approximates integer `decrement`.
     ///
-    #approximates1(x -> x - 1ii)
+    #safe1(x -> x - 1ii)
     #strict1 #monotone1
-    def dec(e: ConstParity): ConstParity = match e with {
+    def dec(e: ConstantParity): ConstantParity = match e with {
         case Bot    => Bot
         case Cst(n) => Cst(n - 1ii)
         case Even   => Odd
@@ -104,9 +104,9 @@ namespace Domain.ConstantParity {
     ///
     /// Over-approximates integer `addition`.
     ///
-    #approximates2((x, y) -> x + y)
+    #safe2((x, y) -> x + y)
     #strict2 #monotone2 #commutative
-    def plus(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
+    def plus(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) with {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
         case (Cst(n1), Cst(n2)) => Cst(n1 + n2)
@@ -124,9 +124,9 @@ namespace Domain.ConstantParity {
     ///
     /// Over-approximates integer `subtraction`.
     ///
-    #approximates2((x, y) -> x - y)
+    #safe2((x, y) -> x - y)
     #strict2 #monotone2
-    def minus(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
+    def minus(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) with {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
         case (Cst(n1), Cst(n2)) => Cst(n1 - n2)
@@ -144,9 +144,9 @@ namespace Domain.ConstantParity {
     ///
     /// Over-approximates integer `multiplication`.
     ///
-    #approximates2((x, y) -> x * y)
+    #safe2((x, y) -> x * y)
     #strict2  // NB: @monotone annotation removed since Z3 reports unknown.
-    def times(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
+    def times(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) with {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
         case (Cst(n1), Cst(n2)) => Cst(n1 * n2)
@@ -164,9 +164,9 @@ namespace Domain.ConstantParity {
     ///
     /// Over-approximates integer `division`.
     ///
-    #approximates2((x, y) -> x / y)
+    /// NB: We cannot prove safety directly because modulus is not a total function.
     #strict2 #monotone2
-    def divide(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
+    def divide(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) with {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
         case (_, Cst(0ii))      => Bot
@@ -177,9 +177,9 @@ namespace Domain.ConstantParity {
     ///
     /// Over-approximates integer `modulus`.
     ///
-    #approximates2((x, y) -> x % y)
+    /// NB: We cannot prove safety directly because modulus is not a total function.
     #strict2 // NB: @monotone annotation removed since Z3 reports unknown.
-    def modulo(e1: ConstParity, e2: ConstParity): ConstParity = match (e1, e2) with {
+    def modulo(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) with {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
         case (_, Cst(0ii))      => Bot
@@ -195,11 +195,14 @@ namespace Domain.ConstantParity {
     ///
     /// Over-approximates `equal`.
     ///
-    // @strict @monotone @commutative // TODO
-    def eq(e1: ConstParity, e2: ConstParity): Belnap/Belnap = match (e1, e2) with {
+    #PartialOrder.safe2((x, y) -> x == y, alpha, Belnap.alpha, Belnap.leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
+    #commutative
+    def eq(e1: ConstantParity, e2: ConstantParity): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)           => Belnap/Belnap.Bot
         case (_, Bot)           => Belnap/Belnap.Bot
-        case (Cst(n1), Cst(n2)) => Belnap/alpha(n1 == n2)
+        case (Cst(n1), Cst(n2)) => Belnap.alpha(n1 == n2)
         case (Cst(n), Even)     => if (isOdd(n))  Belnap/Belnap.False else Belnap/Belnap.Top
         case (Even, Cst(n))     => if (isOdd(n))  Belnap/Belnap.False else Belnap/Belnap.Top
         case (Cst(n), Odd)      => if (isEven(n)) Belnap/Belnap.False else Belnap/Belnap.Top
@@ -210,25 +213,32 @@ namespace Domain.ConstantParity {
     ///
     /// Over-approximates `not equal`.
     ///
-    // @strict @monotone @commutative // TODO
-    def neq(e1: ConstParity, e2: ConstParity): Belnap/Belnap = Belnap/not(eq(e1, e2))
+    #PartialOrder.safe2((x, y) -> x != y, alpha, Belnap.alpha, Belnap.leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
+    #commutative
+    def neq(e1: ConstantParity, e2: ConstantParity): Belnap.Belnap = Belnap.not(eq(e1, e2))
 
     ///
     /// Over-approximates `less than`.
     ///
-    // @strict @monotone // TODO
-    def less(e1: ConstParity, e2: ConstParity): Belnap/Belnap = match (e1, e2) with {
+    #PartialOrder.safe2((x, y) -> x < y, alpha, Belnap.alpha, Belnap.leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
+    def less(e1: ConstantParity, e2: ConstantParity): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)           => Belnap/Belnap.Bot
         case (_, Bot)           => Belnap/Belnap.Bot
-        case (Cst(n1), Cst(n2)) => Belnap/alpha(n1 < n2)
+        case (Cst(n1), Cst(n2)) => Belnap.alpha(n1 < n2)
         case _                  => Belnap/Belnap.Top
     }
 
     ///
     /// Over-approximates `less than or equal`.
     ///
-    // @strict @monotone // TODO
-    def lessEqual(e1: ConstParity, e2: ConstParity): Belnap/Belnap = Belnap/or(e1 `less` e2, e1 `eq` e2)
+    #PartialOrder.safe2((x, y) -> x <= y, alpha, Belnap.alpha, Belnap.leq)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #PartialOrder.monotone2(leq, leq, Belnap.leq)
+    def lessEqual(e1: ConstantParity, e2: ConstantParity): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
     ///
     /// Returns `true` iff the given number `n` is odd.
@@ -240,66 +250,34 @@ namespace Domain.ConstantParity {
     ///
     def isEven(n: BigInt): Bool = !isOdd(n)
 
-    let ConstParity<> = (Bot, Top, leq, lub, glb)
+    let ConstantParity<> = (Bot, Top, leq, lub, glb)
 
+    //
+    // ## Specialized Laws
+    //
 
+    law upperBound(lub: (ConstantParity, ConstantParity) -> ConstantParity): Bool = JoinLattice.upperBound(leq, lub)
 
-    // ------------------------------------------------------------------------
-    // TODO: Refactor
-    // ------------------------------------------------------------------------
+    law leastUpperBound(lub: (ConstantParity, ConstantParity) -> ConstantParity): Bool = JoinLattice.leastUpperBound(leq, lub)
 
-    law reflexive(⊑: (ConstParity, ConstParity) -> Bool): Bool = ∀(x: ConstParity). x ⊑ x // TODO: Use Prelude
+    law lowerBound(glb: (ConstantParity, ConstantParity) -> ConstantParity): Bool = MeetLattice.lowerBound(leq, glb)
 
-    law antiSymmetric(⊑: (ConstParity, ConstParity) -> Bool): Bool = ∀(x: ConstParity, y: ConstParity). ((x ⊑ y) ∧ (y ⊑ x)) → (x == y) // TODO: Use Prelude
+    law greatestLowerBound(glb: (ConstantParity, ConstantParity) -> ConstantParity): Bool = MeetLattice.greatestLowerBound(leq, glb)
 
-    law transitive(⊑: (ConstParity, ConstParity) -> Bool): Bool = ∀(x: ConstParity, y: ConstParity, z: ConstParity). ((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z) // TODO: Use Prelude
+    law leastElement(leq: (ConstantParity, ConstantParity) -> Bool, bot: ConstantParity): Bool = Bounded.leastElement(bot, leq)
 
-    law upperBound(⊔: (ConstParity, ConstParity) -> ConstParity): Bool = // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: ConstParity, y: ConstParity). (x ⊑ (x ⊔ y)) ∧ (y ⊑ (x ⊔ y))
+    law greatestElement(leq: (ConstantParity, ConstantParity) -> Bool, top: ConstantParity): Bool = Bounded.greatestElement(top, leq)
 
-    law leastUpperBound(⊔: (ConstParity, ConstParity) -> ConstParity): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: ConstParity, y: ConstParity, z: ConstParity). ((x ⊑ z) ∧ (y ⊑ z)) → ((x ⊔ y) ⊑ z)
+    law strict1(f: ConstantParity -> ConstantParity): Bool = Bounded.strict1(f, Bot, Bot)
 
-    law lowerBound(⊓: (ConstParity, ConstParity) -> ConstParity): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: ConstParity, y: ConstParity). ((x ⊓ y) ⊑ x) ∧ ((x ⊓ y) ⊑ y)
+    law strict2(f: (ConstantParity, ConstantParity) -> ConstantParity): Bool = Bounded.strict2(f, Bot, Bot, Bot)
 
-    law greatestLowerBound(⊓: (ConstParity, ConstParity) -> ConstParity): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: ConstParity, y: ConstParity, z: ConstParity). ((z ⊑ x) ∧ (z ⊑ y)) → (z ⊑ (x ⊓ y))
+    law monotone1(f: ConstantParity -> ConstantParity): Bool = PartialOrder.monotone1(f, leq, leq)
 
-    law leastElement(⊑: (ConstParity, ConstParity) -> Bool, ⊥: ConstParity): Bool = ∀(x: ConstParity). ⊥ ⊑ x  // TODO: Should call prelude
+    law monotone2(f: (ConstantParity, ConstantParity) -> ConstantParity): Bool = PartialOrder.monotone2(f, leq, leq, leq)
 
-    law greatestElement(⊑: (ConstParity, ConstParity) -> Bool, ⊤: ConstParity): Bool = ∀(x: ConstParity). x ⊑ ⊤  // TODO: Should call prelude
+    law safe1(fa: ConstantParity -> ConstantParity, fc: BigInt -> BigInt): Bool = PartialOrder.safe1(fa, fc, alpha, alpha, leq)
 
-    law associative(f: (ConstParity, ConstParity) -> ConstParity): Bool = // TODO: Use Prelude
-        ∀(x: ConstParity, y: ConstParity, z: ConstParity). f(x, f(y, z)) == f(f(x, y), z)
-
-    law commutative(f: (ConstParity, ConstParity) -> ConstParity): Bool = // TODO: Use Prelude
-        ∀(x: ConstParity, y: ConstParity). f(x, y) == f(y, x)
-
-    law strict1(f: ConstParity -> ConstParity): Bool =  // TODO: Should call prelude
-        f(Bot) == Bot
-
-    law strict2(f: (ConstParity, ConstParity) -> ConstParity): Bool =  // TODO: Should call prelude
-        f(Bot, Bot) == Bot
-
-    law monotone1(f: ConstParity -> ConstParity): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x: ConstParity, y: ConstParity). (x ⊑ y) → (f(x) ⊑ f(y))
-
-    law monotone2(f: (ConstParity, ConstParity) -> ConstParity): Bool =  // TODO: Should call prelude
-        let ⊑ = leq;
-            ∀(x1: ConstParity, x2: ConstParity, y1: ConstParity, y2: ConstParity). ((x1 ⊑ y1) ∧ (x2 ⊑ y2) ) → (f(x1, x2) ⊑ f(y1, y2))
-
-    // TODO: Names
-    law approximates1(fa: ConstParity -> ConstParity, fc: BigInt -> BigInt): Bool =
-        ∀(x: BigInt). alpha(fc(x)) `leq` fa(alpha(x))
-
-    // TODO: Names
-    law approximates2(fa: (ConstParity, ConstParity) -> ConstParity, fc: (BigInt, BigInt) -> BigInt): Bool =
-        ∀(x: BigInt, y: BigInt). alpha(fc(x, y)) `leq` fa(alpha(x), alpha(y))
+    law safe2(fa: (ConstantParity, ConstantParity) -> ConstantParity, fc: (BigInt, BigInt) -> BigInt): Bool = PartialOrder.safe2(fa, fc, alpha, alpha, leq)
 
 }

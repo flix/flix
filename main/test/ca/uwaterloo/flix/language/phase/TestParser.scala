@@ -37,7 +37,7 @@ class TestParser extends FunSuite with TestUtils {
   /////////////////////////////////////////////////////////////////////////////
   test("Declaration.Namespace.01") {
     val input =
-      """namespace a {
+      """namespace A {
         |  // comment
         |}
       """.stripMargin
@@ -46,7 +46,7 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Declaration.Namespace.02") {
     val input =
-      """namespace a.b.c {
+      """namespace A/B/C {
         |  // comment
         |}
       """.stripMargin
@@ -55,9 +55,9 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Declaration.Namespace.03") {
     val input =
-      """namespace a {
-        |  namespace b {
-        |    namespace c {
+      """namespace A {
+        |  namespace B {
+        |    namespace C {
         |      // comment
         |    }
         |  }
@@ -68,9 +68,9 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Declaration.Namespace.04") {
     val input =
-      """namespace a.b.c {
-        |  namespace d.e.f {
-        |    namespace h.i.j {
+      """namespace A/B/C {
+        |  namespace D/E/F {
+        |    namespace H/I/J {
         |      // comment
         |    }
         |  }
@@ -81,49 +81,49 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Declaration.Namespace.05") {
     val input =
-      """namespace a {
-        |  namespace b {
-        |    namespace c {
-        |      namespace a.b.c {
+      """namespace A {
+        |  namespace B {
+        |    namespace C {
+        |      namespace A/B/C {
         |        def f(x: Int): Int = x + 42
         |      }
         |    }
         |  }
         |}
         |
-        |def g: Int = a.b.c.a.b.c/f(21)
+        |def g: Int = A/B/C/A/B/C.f(21)
       """.stripMargin
     run(input)
   }
 
   test("Declaration.Namespace.06") {
     val input =
-      """namespace a {
-        |  namespace b.c {
-        |    namespace d {
-        |      namespace e.f.g {
+      """namespace A {
+        |  namespace B/C {
+        |    namespace D {
+        |      namespace E/F/G {
         |        def h(x: Int): Int = x + 42
         |      }
         |    }
         |  }
         |}
         |
-        |def j: Int = a.b.c.d.e.f.g/h(21)
+        |def j: Int = A/B/C/D/E/F/G.h(21)
       """.stripMargin
     run(input)
   }
 
   test("Declaration.Namespace.07") {
     val input =
-      """namespace a {
-        |  namespace b {
-        |    namespace c {
+      """namespace A {
+        |  namespace B {
+        |    namespace C {
         |      def f(x: Int): Int = x + 42
         |    }
         |  }
         |}
         |
-        |namespace a.b.c {
+        |namespace A/B/C {
         |  def g: Int = f(21)
         |}
       """.stripMargin
@@ -132,11 +132,11 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Declaration.Namespace.08") {
     val input =
-      """namespace a {
-        |  namespace b {
-        |    namespace c {
+      """namespace A {
+        |  namespace B {
+        |    namespace C {
         |      def f(x: Int): Int = x + 42
-        |      def g: Int = a.b.c/f(21)
+        |      def g: Int = A/B/C.f(21)
         |    }
         |  }
         |}
@@ -146,23 +146,23 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Declaration.Namespace.09") {
     val input =
-      """namespace a {
-        |  namespace b {
-        |    namespace c {
+      """namespace A {
+        |  namespace B {
+        |    namespace C {
         |      def u(x: Int): Int = x + 42
         |    }
         |  }
         |
-        |  namespace b.c {
+        |  namespace B/C {
         |    def v(x: Int): Int = x + 21
         |  }
         |}
         |
-        |namespace a.b.c {
+        |namespace A/B/C {
         |  def w(x: Int): Int = x + 11
         |}
         |
-        |def r: Int = a.b.c/u(1) + a.b.c/v(2) + a.b.c/w(3)
+        |def r: Int = A/B/C.u(1) + A/B/C.v(2) + A/B/C.w(3)
       """.stripMargin
     run(input)
   }

@@ -97,7 +97,7 @@ def step(e0: Expression): Expression =
     match rdx with {
         case App(Abs(x, e1), e2) =>
             // Perform beta-reduction: Use alpha-renaming to avoid capture.
-            recompose(substitute(e1, x, alpha(e2, Map2/empty())), ec)
+            recompose(substitute(e1, x, alpha(e2, Map2.empty())), ec)
          case _ => recompose(rdx, ec)
 
     }
@@ -117,14 +117,14 @@ def substitute(e0: Expression, x: Int, r0: Expression): Expression = match e0 wi
 def alpha(e0: Expression, m: Map2[Int, Int]): Expression = match e0 with {
     case Var(x) =>
         // Check if we need to rename the variable.
-        match Map2/get(x, m) with {
+        match Map2.get(x, m) with {
             case None    => Var(x)
             case Some(y) => Var(y)
         }
     case Abs(x, e) =>
         // Generate a fresh variable name for `x`.
         let y = freshVar();
-        Abs(y, alpha(e, Map2/insert(x, y, m)))
+        Abs(y, alpha(e, Map2.insert(x, y, m)))
 
     case App(e1, e2) =>
         // Recursively perform alpha conversion on each expression.
