@@ -177,12 +177,12 @@ object Simplifier {
           * outside-in (from the last case to the first case).
           */
         def recur(names: List[Symbol.VarSym],
-                  cases: List[(TypedAst.Pattern, TypedAst.Expression)],
+                  cases: List[TypedAst.MatchRule],
                   next: Symbol.VarSym): SExp = ((names, cases): @unchecked) match {
           case (Nil, Nil) =>
             // Base case: simply call the function representing the first case, to start the pattern match.
             SExp.Apply(SExp.Var(vars.head, Type.mkArrow(List(), tpe), loc), List(), tpe, loc)
-          case (n :: ns, (pat, body) :: cs) =>
+          case (n :: ns, TypedAst.MatchRule(pat, guard, body) :: cs) =>
             // Construct the lambda that represents the current case:
             //   fn() = if `matchVar` matches `pat`, return `body`, else call `next()`
             val lambda = SExp.Lambda(
@@ -190,6 +190,7 @@ object Simplifier {
               body = Pattern.simplify(
                 xs = List(pat),
                 ys = List(matchVar),
+                guard,
                 succ = simplify(body),
                 fail = SExp.Apply(SExp.Var(next, Type.mkArrow(List(), tpe), loc), List(), tpe, loc)
               ),
@@ -244,14 +245,17 @@ object Simplifier {
       */
     def simplify(xs: List[TypedAst.Pattern],
                  ys: List[Symbol.VarSym],
+                 guard: TypedAst.Expression,
                  succ: SExp,
                  fail: SExp)(implicit genSym: GenSym): SExp = ((xs, ys): @unchecked) match {
       /**
         * There are no more patterns and variables to match.
         *
-        * The pattern was match successfully and we simply return the body expression.
+        * The pattern was match successfully. Test the guard.
         */
-      case (Nil, Nil) => succ
+      case (Nil, Nil) =>
+        val g = Expression.simplify(guard)
+        SExp.IfThenElse(g, succ, fail, succ.tpe, g.loc)
 
       /**
         * Matching a wildcard is guaranteed to succeed.
@@ -259,7 +263,7 @@ object Simplifier {
         * We proceed by recursion on the remaining patterns and variables.
         */
       case (Wild(tpe, loc) :: ps, v :: vs) =>
-        simplify(ps, vs, succ, fail)
+        simplify(ps, vs, guard, succ, fail)
 
       /**
         * Matching a variable is guaranteed to succeed.
@@ -270,7 +274,7 @@ object Simplifier {
         * remaining patterns and variables.
         */
       case (Var(sym, tpe, loc) :: ps, v :: vs) =>
-        val exp = simplify(ps, vs, succ, fail)
+        val exp = simplify(ps, vs, guard, succ, fail)
         SExp.Let(sym, SExp.Var(v, tpe, loc), exp, succ.tpe, loc)
 
       /**
@@ -283,7 +287,7 @@ object Simplifier {
         * alternative expression is `fail`.
         */
       case (lit :: ps, v :: vs) if isLiteral(lit) =>
-        val exp = simplify(ps, vs, succ, fail)
+        val exp = simplify(ps, vs, guard, succ, fail)
         val cond = SExp.Binary(Equal, lit2exp(lit), SExp.Var(v, lit.tpe, lit.loc), Type.Bool, lit.loc)
         SExp.IfThenElse(cond, exp, fail, succ.tpe, lit.loc)
 
@@ -300,7 +304,7 @@ object Simplifier {
       case (Tag(enum, tag, pat, tpe, loc) :: ps, v :: vs) =>
         val cond = SExp.CheckTag(tag, SExp.Var(v, tpe, loc), loc)
         val freshVar = Symbol.freshVarSym("innerTag")
-        val inner = simplify(pat :: ps, freshVar :: vs, succ, fail)
+        val inner = simplify(pat :: ps, freshVar :: vs, guard, succ, fail)
         val consequent = SExp.Let(freshVar, SExp.GetTagValue(tag, SExp.Var(v, tpe, loc), pat.tpe, loc), inner, succ.tpe, loc)
         SExp.IfThenElse(cond, consequent, fail, succ.tpe, loc)
 
@@ -313,7 +317,7 @@ object Simplifier {
         */
       case (Tuple(elms, tpe, loc) :: ps, v :: vs) =>
         val freshVars = elms.map(_ => Symbol.freshVarSym("innerElm"))
-        val zero = simplify(elms ::: ps, freshVars ::: vs, succ, fail)
+        val zero = simplify(elms ::: ps, freshVars ::: vs, guard, succ, fail)
         elms.zip(freshVars).zipWithIndex.foldRight(zero) {
           case (((pat, name), idx), exp) =>
             SExp.Let(name, SExp.GetTupleIndex(SExp.Var(v, tpe, loc), idx, pat.tpe, loc), exp, succ.tpe, loc)

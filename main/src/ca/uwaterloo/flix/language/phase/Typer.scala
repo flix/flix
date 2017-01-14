@@ -627,13 +627,18 @@ object Typer {
          */
         case NamedAst.Expression.Match(exp1, rules, tvar, loc) =>
           assert(rules.nonEmpty)
-          val patterns = rules.map(_._1)
-          val bodies = rules.map(_._2)
+          // Extract the patterns, guards, and body expressions of each rule.
+          val patterns = rules.map(_.pat)
+          val guards = rules.map(_.guard)
+          val bodies = rules.map(_.exp)
+
           for {
             matchType <- visitExp(exp1)
             patternTypes <- seqM(patterns map visitPat)
             patternType <- unifyM(patternTypes, loc)
             ___________ <- unifyM(matchType, patternType, loc)
+            guardTypes <- seqM(guards map visitExp)
+            guardType <- unifyM(Type.Bool :: guardTypes, loc)
             actualBodyTypes <- seqM(bodies map visitExp)
             resultType <- unifyM(tvar :: actualBodyTypes, loc)
           } yield resultType
@@ -909,7 +914,8 @@ object Typer {
         case NamedAst.Expression.Match(exp1, rules, tvar, loc) =>
           val e1 = visitExp(exp1, subst0)
           val rs = rules map {
-            case (pat, exp) => visitPat(pat) -> visitExp(exp, subst0)
+            case NamedAst.MatchRule(pat, guard, exp) =>
+              TypedAst.MatchRule(visitPat(pat), visitExp(guard, subst0), visitExp(exp, subst0))
           }
           TypedAst.Expression.Match(e1, rs, subst0(tvar), loc)
 

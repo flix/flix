@@ -142,7 +142,7 @@ object TypedAst {
 
     case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Match(exp: TypedAst.Expression, rules: List[(TypedAst.Pattern, TypedAst.Expression)], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Switch(rules: List[(TypedAst.Expression, TypedAst.Expression)], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -273,6 +273,8 @@ object TypedAst {
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends TypedAst
 
   case class FormalParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst
+
+  case class MatchRule(pat: TypedAst.Pattern, guard: TypedAst.Expression, exp: TypedAst.Expression) extends TypedAst
 
   case class TypeParam(name: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst
 

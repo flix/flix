@@ -125,7 +125,7 @@ object NamedAst {
 
     case class Let(sym: Symbol.VarSym, exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Match(exp: NamedAst.Expression, rules: List[(NamedAst.Pattern, NamedAst.Expression)], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class Match(exp: NamedAst.Expression, rules: List[NamedAst.MatchRule], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Switch(rules: List[(NamedAst.Expression, NamedAst.Expression)], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
@@ -246,6 +246,8 @@ object NamedAst {
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: NamedAst.Type) extends NamedAst
 
   case class FormalParam(sym: Symbol.VarSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
+
+  case class MatchRule(pat: NamedAst.Pattern, guard: NamedAst.Expression, exp: NamedAst.Expression) extends NamedAst
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: NamedAst.Expression, loc: SourceLocation) extends Ast.Annotation
 

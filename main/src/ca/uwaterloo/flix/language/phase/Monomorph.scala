@@ -205,13 +205,16 @@ object Monomorph {
           val e3 = visitExp(exp3, env0)
           Expression.IfThenElse(e1, e2, e3, subst0(tpe), loc)
 
-        case Expression.Match(matchExp, rules, tpe, loc) =>
+        case Expression.Match(exp, rules, tpe, loc) =>
           val rs = rules map {
-            case (pat, exp) =>
-              val (p, e) = visitPat(pat)
-              (p, visitExp(exp, env0 ++ e))
+            case TypedAst.MatchRule(pat, guard, body) =>
+              val (p, env1) = visitPat(pat)
+              val extendedEnv = env0 ++ env1
+              val g = visitExp(guard, extendedEnv)
+              val b = visitExp(body, extendedEnv)
+              TypedAst.MatchRule(p, g, b)
           }
-          Expression.Match(visitExp(matchExp, env0), rs, subst0(tpe), loc)
+          Expression.Match(visitExp(exp, env0), rs, subst0(tpe), loc)
 
         case Expression.Switch(rules, tpe, loc) =>
           val rs = rules map {
