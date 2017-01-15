@@ -372,24 +372,13 @@ class TestResult extends FunSuite {
   }
 
   test("toSet.01") {
-    val input = "def r: Set[Int32] = Result/toSet(Err(0))"
+    val input = "def r: Set[Int32] = Result.toSet(Err(0))"
     runAnyTest(input, Value.mkFlixSet(List()))
   }
 
   test("toSet.02") {
-    val input = "def r: Set[Int32] = Result/toSet(Ok(4))"
-    runAnyTest(input, Value.mkFlixSet(List(new Integer(4))))
-
-  // TODO
-  ignore("toSet.01") {
-    val input = "def r: Set[Int32] = Result.toSet(Err(0))"
-    runAnyTest(input, Set())
-  }
-
-  // TODO
-  ignore("toSet.02") {
     val input = "def r: Set[Int32] = Result.toSet(Ok(4))"
-    runAnyTest(input, Set(4))
+    runAnyTest(input, Value.mkFlixSet(List(new Integer(4))))
   }
 
   test("toOption.01") {

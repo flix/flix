@@ -21,7 +21,7 @@ namespace Set {
     ///
     def size[a](xs: Set[a]): Int32 =
         let Set(s) = xs;
-            List/length(s)
+            List.length(s)
 
     //
     // ## Set Construction
@@ -42,14 +42,14 @@ namespace Set {
     ///
     def insert[a](x: a, xs: Set[a]): Set[a] =
         let Set(s) = xs;
-            if (List/memberOf(x, s)) xs else Set(x :: s)
+            if (List.memberOf(x, s)) xs else Set(x :: s)
 
     ///
     /// Removes `x` from `xs`.
     ///
     def delete[a](x: a, xs: Set[a]): Set[a] =
         let Set(s) = xs;
-            Set(List/remove(x, s))
+            Set(List.remove(x, s))
 
     //
     // ## Set Predicates
@@ -60,14 +60,14 @@ namespace Set {
     ///
     def null[a](xs: Set[a]): Bool =
         let Set(s) = xs;
-            List/isEmpty(s)
+            List.isEmpty(s)
 
     ///
     /// Returns true if and only if `x` is a member of `xs`.
     ///
     def memberOf[a](x: a, xs: Set[a]): Bool =
         let Set(s) = xs;
-            List/memberOf(x, s)
+            List.memberOf(x, s)
 
     ///
     /// Returns true if and only if every element in `xs` appears in `ys`.
@@ -84,14 +84,14 @@ namespace Set {
     ///
     def exists[a](f: a -> Bool, xs: Set[a]): Bool =
         let Set(s) = xs;
-            List/exists(f, s)
+            List.exists(f, s)
 
     ///
     /// Returns `true` if and only if all elements in `xs` satisfy the predicate `f`.
     ///
     def forall[a](f: a -> Bool, xs: Set[a]): Bool =
         let Set(s) = xs;
-            List/forall(f, s)
+            List.forall(f, s)
 
     //
     // ## Elementary Set Operations
@@ -102,28 +102,28 @@ namespace Set {
     ///
     def union[a](xs: Set[a], ys: Set[a]): Set[a] =
         let Set(s) = xs;
-            List/foldRight(insert, ys, s)
+            List.foldRight(insert, ys, s)
 
     ///
     /// Returns the intersection of `xs` and `ys`.
     ///
     def intersection[a](xs: Set[a], ys: Set[a]): Set[a] =
         let Set(s) = xs;
-            List/foldRight((x, y) -> if (memberOf(x, ys)) insert(x, y) else y, empty(), s)
+            List.foldRight((x, y) -> if (memberOf(x, ys)) insert(x, y) else y, empty(), s)
 
     ///
     /// Returns the difference of `xs` and `ys`, i.e. `xs - ys`.
     ///
     def difference[a](xs: Set[a], ys: Set[a]): Set[a] =
         let Set(s) = xs;
-            List/foldRight((x, y) -> if (memberOf(x, ys)) y else insert(x, y), empty(), s)
+            List.foldRight((x, y) -> if (memberOf(x, ys)) y else insert(x, y), empty(), s)
 
     ///
     /// Returns all subsets of `xs`.
     ///
     def subsets[a](xs: Set[a]): Set[Set[a]] =
         let Set(s) = xs;
-            Set(List/map(x -> Set(x), List/subsequences(s)))
+            Set(List.map(x -> Set(x), List.subsequences(s)))
 
     //
     // ## Set Transformations
@@ -134,7 +134,7 @@ namespace Set {
     ///
     def filter[a](f: a -> Bool, xs: Set[a]): Set[a] =
         let Set(s) = xs;
-            Set(List/filter(f, s))
+            Set(List.filter(f, s))
 
     ///
     /// Returns the result of applying `f` to every element in `xs`.
@@ -160,8 +160,13 @@ namespace Set {
     ///
     def partition[a](f: a -> Bool, xs: Set[a]): (Set[a], Set[a]) =
         let Set(s) = xs;
-        let (ys, zs) = List/partition(f, s);
+        let (ys, zs) = List.partition(f, s);
             (Set(ys), Set(zs))
+
+    //
+    // ## Set Equality
+    //
+    def eq[a](xs: Set[a], ys: Set[a]): Bool = isSubsetOf(xs, ys) && size(xs) == size(ys)
 
 // TODO
 //## Set Conversions
@@ -172,7 +177,7 @@ namespace Set {
 //- **toDescList(xs: Set[A]): List[A]**
 //    - Returns the set as a list in descending order (w.r.t. its natural order).
 //- **toMap(xs: Set[(A, B)]): Map[A, B]**
-//    - Returns the set of pairs as a map. If the set contains the same mapping multiple times the one with the greatest key (w.r.t. the natural order) takes precedence. Functionally equivalent to List/toMap(Set/toList(xs)).
+//    - Returns the set of pairs as a map. If the set contains the same mapping multiple times the one with the greatest key (w.r.t. the natural order) takes precedence. Functionally equivalent to List.toMap(Set.toList(xs)).
 //
 //## Order and Lattice Operations
 }
