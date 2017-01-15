@@ -1170,87 +1170,33 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   test("Expression.Append.01") {
-    // TODO: Once list is included by default this can be improved.
-    val append =
-      """
-        |namespace List {
-        |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
-        |}
-        |
-      """.stripMargin
-
     val input = "def f: List[Int] = Nil ::: Nil"
-    run(input + append)
+    run(input)
   }
 
   test("Expression.Append.02") {
-    // TODO: Once list is included by default this can be improved.
-    val append =
-      """
-        |namespace List {
-        |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
-        |}
-        |
-      """.stripMargin
-
     val input = "def f: List[Int] = 1 :: Nil ::: 1 :: Nil"
-    run(input + append)
+    run(input)
   }
 
   test("Expression.Append.03") {
-    // TODO: Once list is included by default this can be improved.
-    val append =
-      """
-        |namespace List {
-        |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
-        |}
-        |
-      """.stripMargin
-
     val input = "def f: List[Int] = 1 :: Nil ::: 1 :: 2 :: Nil"
-    run(input + append)
+    run(input)
   }
 
   test("Expression.Append.04") {
-    // TODO: Once list is included by default this can be improved.
-    val append =
-      """
-        |namespace List {
-        |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
-        |}
-        |
-      """.stripMargin
-
     val input = "def f: List[Int] = 1 :: 2 :: Nil ::: 1 :: 2 :: Nil"
-    run(input + append)
+    run(input)
   }
 
   test("Expression.Append.05") {
-    // TODO: Once list is included by default this can be improved.
-    val append =
-      """
-        |namespace List {
-        |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
-        |}
-        |
-      """.stripMargin
-
     val input = "def f: List[Int] = Nil ::: Nil ::: Nil"
-    run(input + append)
+    run(input)
   }
 
   test("Expression.Append.06") {
-    // TODO: Once list is included by default this can be improved.
-    val append =
-      """
-        |namespace List {
-        |    def append[a](xs: List[a], ys: List[a]): List[a] = ???
-        |}
-        |
-      """.stripMargin
-
     val input = "def f: List[Int] = 1 :: Nil ::: 2 :: Nil ::: 3 :: Nil"
-    run(input + append)
+    run(input)
   }
 
   test("Expression.Set.01") {
