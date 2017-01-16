@@ -112,7 +112,7 @@ object WeededAst {
 
     case class Let(ident: Name.Ident, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Match(exp: WeededAst.Expression, rules: List[(WeededAst.Pattern, WeededAst.Expression)], loc: SourceLocation) extends WeededAst.Expression
+    case class Match(exp: WeededAst.Expression, rules: List[WeededAst.MatchRule], loc: SourceLocation) extends WeededAst.Expression
 
     case class Switch(rules: List[(WeededAst.Expression, WeededAst.Expression)], loc: SourceLocation) extends WeededAst.Expression
 
@@ -229,5 +229,7 @@ object WeededAst {
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: WeededAst.Type) extends WeededAst
 
   case class FormalParam(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst
+
+  case class MatchRule(pat: WeededAst.Pattern, guard: WeededAst.Expression, exp: WeededAst.Expression) extends WeededAst
 
 }

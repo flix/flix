@@ -368,12 +368,13 @@ object Namer {
       case WeededAst.Expression.Match(exp, rules, loc) =>
         val expVal = namer(exp, env0, tenv0)
         val rulesVal = rules map {
-          case (pat, body) =>
+          case WeededAst.MatchRule(pat, guard, body) =>
             // extend the environment with every variable occurring in the pattern
-            // and perform naming on the rule body under the extended environment.
+            // and perform naming on the rule guard and body under the extended environment.
             val (p, env1) = Patterns.namer(pat)
-            namer(body, env0 ++ env1, tenv0) map {
-              case b => p -> b
+            val extendedEnv = env0 ++ env1
+            @@(namer(guard, extendedEnv, tenv0), namer(body, extendedEnv, tenv0)) map {
+              case (g, b) => NamedAst.MatchRule(p, g, b)
             }
         }
         @@(expVal, @@(rulesVal)) map {
@@ -443,7 +444,7 @@ object Namer {
       case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
       case WeededAst.Expression.Let(ident, exp1, exp2, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
       case WeededAst.Expression.Match(exp, rules, loc) => freeVars(exp) ++ rules.flatMap {
-        case (pat, body) => filterBoundVars(freeVars(body), freeVars(pat))
+        case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(freeVars(guard) ++ freeVars(body), freeVars(pat))
       }
       case WeededAst.Expression.Switch(rules, loc) => rules flatMap {
         case (cond, body) => freeVars(cond) ++ freeVars(body)
