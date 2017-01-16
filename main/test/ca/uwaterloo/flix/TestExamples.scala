@@ -31,7 +31,7 @@ class TestExamples extends FunSuite {
     private var compiled: Model = null
 
     private def createFlix(codegen: Boolean = false) = {
-      val options = Options.DefaultTest.copy(evaluation = if (codegen) Evaluation.Compiled else Evaluation.Interpreted)
+      val options = Options.DefaultTest.copy(core = false, evaluation = if (codegen) Evaluation.Compiled else Evaluation.Interpreted)
       new Flix().setOptions(options)
     }
 

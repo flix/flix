@@ -29,8 +29,8 @@ class FlixTest(name: String, path: String) extends FunSuite {
   val Library: List[String] = List()
 
   {
-    val opts = Options.DefaultTest.copy(evaluation=Evaluation.Interpreted)
-    val flix = new Flix().setOptions(opts)
+    val opts = Options.DefaultTest
+    val flix = new Flix().setOptions(opts.copy(core = false))
 
     // Add the given path.
     flix.addPath(path)

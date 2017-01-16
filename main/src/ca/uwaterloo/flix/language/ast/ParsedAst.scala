@@ -487,10 +487,10 @@ object ParsedAst {
       *
       * @param sp1   the position of the first character in the expression.
       * @param exp   the value expression.
-      * @param rules the match rules and their bodies.
+      * @param rules the rules of the pattern match.
       * @param sp2   the position of the last character in the expression.
       */
-    case class Match(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[(ParsedAst.Pattern, ParsedAst.Expression)], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Match(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.MatchRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Switch Expression.
@@ -902,7 +902,16 @@ object ParsedAst {
     * @param tpe   the type of the argument.
     * @param sp2   the position of the last character in the formal parameter.
     */
-  case class FormalParam(sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition)
+  case class FormalParam(sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst
+
+  /**
+    * A pattern match rule consists of a pattern, an optional pattern guard, and a body expression.
+    *
+    * @param pat   the pattern of the rule.
+    * @param guard the optional guard of the rule.
+    * @param exp   the body expression of the rule.
+    */
+  case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression) extends ParsedAst
 
   /**
     * A common super-type for annotations or properties.

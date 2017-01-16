@@ -663,6 +663,42 @@ class TestTyper extends FunSuite with TestUtils {
     result.get
   }
 
+  test("Expression.Match.Guard01") {
+    val input =
+      """enum Color {
+        |  case Red(Int),
+        |  case Green(Int),
+        |  case Blue(Int)
+        |}
+        |
+        |def f(x: Color): Int = match x with {
+        |  case Color.Red(x)   if x == 0  => 1
+        |  case Color.Green(x) if x >= 0  => 2
+        |  case Color.Blue(x)  if x <= 0  => 3
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.Match.Guard02") {
+    val input =
+      """enum Color {
+        |  case Red(Int, Int, Int),
+        |  case Green(Int, Int, Int),
+        |  case Blue(Int, Int, Int)
+        |}
+        |
+        |def f(x: Color): Int = match x with {
+        |  case Color.Red(x, y, z)   if x + y + z == 0  => 1
+        |  case Color.Green(x, y, z) if x + y + z >= 0  => 2
+        |  case Color.Blue(x, y, z)  if x + y + z <= 0  => 3
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Tag (Positive)                                                          //
   /////////////////////////////////////////////////////////////////////////////

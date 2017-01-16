@@ -56,6 +56,7 @@ object Main {
 
     // construct flix options.
     val options = Options.Default.copy(
+      core = cmdOpts.xcore,
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
       evaluation = if (cmdOpts.xinterpreter) Evaluation.Interpreted else Evaluation.Compiled,
@@ -160,6 +161,7 @@ object Main {
                      tutorial: String = null,
                      verbose: Boolean = false,
                      verifier: Boolean = false,
+                     xcore: Boolean = false,
                      xdebug: Boolean = false,
                      ximpure: Boolean = false,
                      xinterpreter: Boolean = false,
@@ -249,6 +251,10 @@ object Main {
       // Experimental options:
       note("")
       note("The following options are experimental:")
+
+      // Xcore.
+      opt[Unit]("Xcore").action((_, c) => c.copy(xcore = true)).
+        text("[experimental] disables loading of all non-essential namespaces.")
 
       // Xdebug.
       opt[Unit]("Xdebug").action((_, c) => c.copy(xdebug = true)).
