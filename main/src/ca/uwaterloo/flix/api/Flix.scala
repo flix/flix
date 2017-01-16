@@ -55,6 +55,7 @@ class Flix {
     "PartialOrder.flix" -> StreamOps.readAll(LocalResource.Library.PartialOrder),
     "JoinLattice.flix" -> StreamOps.readAll(LocalResource.Library.JoinLattice),
     "MeetLattice.flix" -> StreamOps.readAll(LocalResource.Library.MeetLattice),
+    "List.flix" -> StreamOps.readAll(LocalResource.Library.List),
     "Set.flix" -> StreamOps.readAll(LocalResource.Library.Set),
     "Map.flix" -> StreamOps.readAll(LocalResource.Library.Map)
   )

@@ -43,6 +43,8 @@ object LocalResource {
 
     def MeetLattice: InputStream = getInputStream("/library/MeetLattice.flix")
 
+    def List: InputStream = getInputStream("/library/List.flix")
+
     def Set: InputStream = getInputStream("/library/Set.flix")
 
     def Map: InputStream = getInputStream("/library/Map.flix")
