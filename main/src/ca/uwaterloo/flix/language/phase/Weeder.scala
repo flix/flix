@@ -178,6 +178,14 @@ object Weeder {
           case m => WeededAst.Declaration.Enum(doc, ident, tparams, m, mkSL(sp1, sp2))
         }
 
+      case ParsedAst.Declaration.Type(docOpt, sp1, ident, caze, sp2) =>
+        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
+        /*
+         * Rewrites a type alias to a singleton enum declaration.
+         */
+        val cases = Map(caze.ident.name -> WeededAst.Case(ident, caze.ident, Types.weed(caze.tpe)))
+        WeededAst.Declaration.Enum(doc, ident, Nil, cases, mkSL(sp1, sp2)).toSuccess
+
       case ParsedAst.Declaration.Relation(docOpt, sp1, ident, attrs, sp2) =>
         val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
 
