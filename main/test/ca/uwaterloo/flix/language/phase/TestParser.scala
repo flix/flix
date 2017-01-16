@@ -28,8 +28,8 @@ class TestParser extends FunSuite with TestUtils {
   /**
     * Runs Flix on the given input string `s`.
     */
-  def run(s: String): Model = {
-    new Flix().setOptions(Options.DefaultTest).addStr(s).solve().get
+  def run(s: String, core: Boolean = true): Model = {
+    new Flix().setOptions(Options.DefaultTest.copy(core = core)).addStr(s).solve().get
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1131,42 +1131,42 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Expression.List.01") {
     val input = "def f: List[Int] = Nil"
-    run(input)
+    run(input, core = false)
   }
 
   test("Expression.List.02") {
     val input = "def f: List[Int] = 1 :: Nil"
-    run(input)
+    run(input, core = false)
   }
 
   test("Expression.List.03") {
     val input = "def f: List[Int] = 1 :: 2 :: Nil"
-    run(input)
+    run(input, core = false)
   }
 
   test("Expression.List.04") {
     val input = "def f: List[(Int, Int)] = Nil"
-    run(input)
+    run(input, core = false)
   }
 
   test("Expression.List.05") {
     val input = "def f: List[(Int, Int)] = (1, 2) :: (3, 4) :: Nil"
-    run(input)
+    run(input, core = false)
   }
 
   test("Expression.ListList.01") {
     val input = "def f: List[List[Int]] = Nil"
-    run(input)
+    run(input, core = false)
   }
 
   test("Expression.ListList.02") {
     val input = "def f: List[List[Int]] = (1 :: Nil) :: Nil"
-    run(input)
+    run(input, core = false)
   }
 
   test("Expression.ListList.03") {
     val input = "def f: List[List[Int]] = (Nil) :: (1 :: Nil) :: (2 :: 3 :: 4 :: Nil) :: Nil"
-    run(input)
+    run(input, core = false)
   }
 
   test("Expression.Append.01") {
@@ -1180,7 +1180,7 @@ class TestParser extends FunSuite with TestUtils {
       """.stripMargin
 
     val input = "def f: List[Int] = Nil ::: Nil"
-    run(input + append)
+    run(input + append, core = false)
   }
 
   test("Expression.Append.02") {
@@ -1194,7 +1194,7 @@ class TestParser extends FunSuite with TestUtils {
       """.stripMargin
 
     val input = "def f: List[Int] = 1 :: Nil ::: 1 :: Nil"
-    run(input + append)
+    run(input + append, core = false)
   }
 
   test("Expression.Append.03") {
@@ -1208,7 +1208,7 @@ class TestParser extends FunSuite with TestUtils {
       """.stripMargin
 
     val input = "def f: List[Int] = 1 :: Nil ::: 1 :: 2 :: Nil"
-    run(input + append)
+    run(input + append, core = false)
   }
 
   test("Expression.Append.04") {
@@ -1222,7 +1222,7 @@ class TestParser extends FunSuite with TestUtils {
       """.stripMargin
 
     val input = "def f: List[Int] = 1 :: 2 :: Nil ::: 1 :: 2 :: Nil"
-    run(input + append)
+    run(input + append, core = false)
   }
 
   test("Expression.Append.05") {
@@ -1236,7 +1236,7 @@ class TestParser extends FunSuite with TestUtils {
       """.stripMargin
 
     val input = "def f: List[Int] = Nil ::: Nil ::: Nil"
-    run(input + append)
+    run(input + append, core = false)
   }
 
   test("Expression.Append.06") {
@@ -1250,145 +1250,145 @@ class TestParser extends FunSuite with TestUtils {
       """.stripMargin
 
     val input = "def f: List[Int] = 1 :: Nil ::: 2 :: Nil ::: 3 :: Nil"
-    run(input + append)
+    run(input + append, core = false)
   }
 
   test("Expression.Set.01") {
     val input = "def f: Set[Int] = #{}"
-    run(input)
+    run(input, core = false)
   }
 
   // TODO: Requires backend support
   ignore("Expression.Set.02") {
     val input = "def f: Set[Int] = #{1}"
-    run(input)
+    run(input, core = false)
   }
 
   // TODO: Requires backend support
   ignore("Expression.Set.03") {
     val input = "def f: Set[Int] = #{1, 2}"
-    run(input)
+    run(input, core = false)
   }
 
   // TODO: Requires backend support
   ignore("Expression.Set.04") {
     val input = "def f: Set[Int] = #{1, 2, 3}"
-    run(input)
+    run(input, core = false)
   }
 
   // TODO: Requires backend support
   ignore("Expression.Set.05") {
     val input = "def f: Set[(Int, Int)] = #{(1, 2)}"
-    run(input)
+    run(input, core = false)
   }
 
   // TODO: Requires backend support
   ignore("Expression.Set.06") {
     val input = "def f: Set[(Int, Int)] = #{(1, 2), (3, 4)}"
-    run(input)
+    run(input, core = false)
   }
 
   // TODO: Requires backend support
   ignore("Expression.Set.07") {
     val input = "def f: Set[Int] = #{1 + 2, 3 + 4, 5 + 6}"
-    run(input)
+    run(input, core = false)
   }
 
   // TODO: Requires backend support
   ignore("Expression.SetSet.01") {
     val input = "def f: Set[Set[Int]] = #{}"
-    run(input)
+    run(input, core = false)
   }
 
   // TODO: Requires backend support
   ignore("Expression.SetSet.02") {
     val input = "def f: Set[Set[Int]] = #{#{}}"
-    run(input)
+    run(input, core = false)
   }
 
   // TODO: Requires backend support
   ignore("Expression.SetSet.03") {
     val input = "def f: Set[Set[Int]] = #{#{1, 2}, #{3, 4}, #{5, 6}}"
-    run(input)
+    run(input, core = false)
   }
 
   // TODO: Requires backend support
   ignore("Expression.Map.01") {
     val input = "def f: Map[Char, Int] = @{}"
-    run(input)
+    run(input, core = false)
   }
 
   // TODO: Requires backend support
   ignore("Expression.Map.02") {
     val input = "def f: Map[Char, Int] = @{'a' -> 1}"
-    run(input)
+    run(input, core = false)
   }
 
   // TODO: Requires backend support
   ignore("Expression.Map.03") {
     val input = "def f: Map[Char, Int] = @{'a' -> 1, 'b' -> 2}"
-    run(input)
+    run(input, core = false)
   }
 
   // TODO: Requires backend support
   ignore("Expression.Map.04") {
     val input = "def f: Map[Char, Int] = @{'a' -> 1, 'b' -> 2, 'c' -> 3}"
-    run(input)
+    run(input, core = false)
   }
 
   // TODO: Requires backend support
   ignore("Expression.Map.05") {
     val input = "def f: Map[(Int8, Int16), (Int32, Int64)] = @{}"
-    run(input)
+    run(input, core = false)
   }
 
   // TODO: Requires backend support
   ignore("Expression.Map.06") {
     val input = "def f: Map[(Int8, Int16), (Int32, Int64)] = @{(1i8, 2i16) -> (3i32, 4i64)}"
-    run(input)
+    run(input, core = false)
   }
 
   // TODO: Requires backend support
   ignore("Expression.MapMap.01") {
     val input = "def f: Map[Int, Map[Int, Char]] = @{}"
-    run(input)
+    run(input, core = false)
   }
 
   // TODO: Requires backend support
   ignore("Expression.MapMap.02") {
     val input = "def f: Map[Int, Map[Int, Char]] = @{1 -> @{}}"
-    run(input)
+    run(input, core = false)
   }
 
   // TODO: Requires backend support
   ignore("Expression.MapMap.03") {
     val input = "def f: Map[Int, Map[Int, Char]] = @{1 -> @{}, 2 -> @{3 -> 'a', 4 -> 'b'}}"
-    run(input)
+    run(input, core = false)
   }
 
   // TODO: Requires backend support
   ignore("Expression.MapList.01") {
     val input = "def f: Map[Int, List[Int]] = @{1 -> 2 :: 3 :: Nil, 4 -> 5 :: 6 :: Nil}"
-    run(input)
+    run(input, core = false)
   }
 
   // TODO: Requires backend support
   ignore("Expression.MapListSet.01") {
     val input = "def f: Map[Int, List[Set[Int]]] = @{}"
-    run(input)
+    run(input, core = false)
   }
 
   // TODO: Requires backend support
   ignore("Expression.MapListSet.02") {
     val input = "def f: Map[Int, List[Set[Int]]] = @{1 -> Nil}"
-    run(input)
+    run(input, core = false)
 
   }
 
   // TODO: Requires backend support
   ignore("Expression.MapListSet.04") {
     val input = "def f: Map[Int, List[Set[Int]]] = @{1 -> #{1, 2, 3} :: #{4, 5, 6} :: Nil}"
-    run(input)
+    run(input, core = false)
   }
 
   test("Expression.Var.01") {
@@ -1503,27 +1503,27 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Expression.MatchLambda.05") {
     val input = "def f: Option[Int] -> Int = match None -> 42"
-    run(input)
+    run(input, core = false)
   }
 
   test("Expression.MatchLambda.06") {
     val input = "def f: Option[Int] -> Int = match Some(x) -> x"
-    run(input)
+    run(input, core = false)
   }
 
   test("Expression.MatchLambda.07") {
     val input = "def f: List[Int] -> Int = match Nil -> 42"
-    run(input)
+    run(input, core = false)
   }
 
   test("Expression.MatchLambda.08") {
     val input = "def f: List[Int] -> Int = match x :: Nil -> x"
-    run(input)
+    run(input, core = false)
   }
 
   test("Expression.MatchLambda.09") {
     val input = "def f: List[Int] -> Int = match x :: y :: Nil -> x + y"
-    run(input)
+    run(input, core = false)
   }
 
   test("Expression.Existential.01") {
@@ -1786,7 +1786,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case Nil => 0
         |}
       """.stripMargin
-    run(input)
+    run(input, core = false)
   }
 
   test("Pattern.List.02") {
@@ -1795,7 +1795,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case 1 :: Nil => 0
         |}
       """.stripMargin
-    run(input)
+    run(input, core = false)
   }
 
   test("Pattern.List.03") {
@@ -1804,7 +1804,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case 1 :: 2 :: Nil => 0
         |}
       """.stripMargin
-    run(input)
+    run(input, core = false)
   }
 
   test("Pattern.List.04") {
@@ -1813,7 +1813,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case 1 :: 2 :: 3 :: Nil => 0
         |}
       """.stripMargin
-    run(input)
+    run(input, core = false)
   }
 
   test("Pattern.List.05") {
@@ -1822,7 +1822,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case x :: Nil => x
         |}
       """.stripMargin
-    run(input)
+    run(input, core = false)
   }
 
   test("Pattern.List.06") {
@@ -1831,7 +1831,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case x :: y :: Nil => x + y
         |}
       """.stripMargin
-    run(input)
+    run(input, core = false)
   }
 
   test("Pattern.List.07") {
@@ -1841,7 +1841,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case x :: rs => 1 + f(rs)
         |}
       """.stripMargin
-    run(input)
+    run(input, core = false)
   }
 
   test("Pattern.List.08") {
@@ -1852,7 +1852,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case _ => false
         |}
       """.stripMargin
-    run(input)
+    run(input, core = false)
   }
 
   test("Pattern.List.09") {
@@ -1864,7 +1864,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case xs => 42
         |}
       """.stripMargin
-    run(input)
+    run(input, core = false)
   }
 
   test("Pattern.List.10") {
@@ -1875,7 +1875,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case (c1, i1) :: (c2, i2) :: Nil => i1 + i2
         |}
       """.stripMargin
-    run(input)
+    run(input, core = false)
   }
 
   test("Pattern.List.11") {
@@ -1886,7 +1886,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case ('a', i1) :: (c2, 21) :: Nil => 2
         |}
       """.stripMargin
-    run(input)
+    run(input, core = false)
   }
 
   test("Pattern.ListList.01") {
@@ -1896,7 +1896,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case (x :: Nil) :: (y :: Nil) :: Nil => x + y
         |}
       """.stripMargin
-    run(input)
+    run(input, core = false)
   }
 
   test("Pattern.ListList.02") {
@@ -1906,7 +1906,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case (x :: y :: Nil) :: (z :: w :: Nil) :: Nil => x + y + z + w
         |}
       """.stripMargin
-    run(input)
+    run(input, core = false)
   }
 
   test("Pattern.ListList.03") {
@@ -1916,7 +1916,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case (x :: xs) :: (y :: ys) :: (z :: zs) :: Nil => x + y + z
         |}
       """.stripMargin
-    run(input)
+    run(input, core = false)
   }
 
   test("Pattern.Set.01") {
@@ -1926,7 +1926,7 @@ class TestParser extends FunSuite with TestUtils {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      run(input)
+      run(input, core = false)
     }
   }
 
@@ -1937,7 +1937,7 @@ class TestParser extends FunSuite with TestUtils {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      run(input)
+      run(input, core = false)
     }
   }
 
@@ -1948,7 +1948,7 @@ class TestParser extends FunSuite with TestUtils {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      run(input)
+      run(input, core = false)
     }
   }
 
@@ -1959,7 +1959,7 @@ class TestParser extends FunSuite with TestUtils {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      run(input)
+      run(input, core = false)
     }
   }
 
@@ -1970,7 +1970,7 @@ class TestParser extends FunSuite with TestUtils {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      run(input)
+      run(input, core = false)
     }
   }
 
@@ -1981,7 +1981,7 @@ class TestParser extends FunSuite with TestUtils {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      run(input)
+      run(input, core = false)
     }
   }
 
@@ -1992,7 +1992,7 @@ class TestParser extends FunSuite with TestUtils {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      run(input)
+      run(input, core = false)
     }
   }
 
@@ -2004,7 +2004,7 @@ class TestParser extends FunSuite with TestUtils {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      run(input)
+      run(input, core = false)
     }
   }
 
@@ -2017,7 +2017,7 @@ class TestParser extends FunSuite with TestUtils {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      run(input)
+      run(input, core = false)
     }
   }
 
@@ -2028,7 +2028,7 @@ class TestParser extends FunSuite with TestUtils {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      run(input)
+      run(input, core = false)
     }
   }
 
@@ -2039,7 +2039,7 @@ class TestParser extends FunSuite with TestUtils {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      run(input)
+      run(input, core = false)
     }
   }
 
@@ -2050,7 +2050,7 @@ class TestParser extends FunSuite with TestUtils {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      run(input)
+      run(input, core = false)
     }
   }
 
@@ -2061,7 +2061,7 @@ class TestParser extends FunSuite with TestUtils {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      run(input)
+      run(input, core = false)
     }
   }
 
@@ -2072,7 +2072,7 @@ class TestParser extends FunSuite with TestUtils {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      run(input)
+      run(input, core = false)
     }
   }
 
@@ -2083,7 +2083,7 @@ class TestParser extends FunSuite with TestUtils {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      run(input)
+      run(input, core = false)
     }
   }
 
@@ -2094,7 +2094,7 @@ class TestParser extends FunSuite with TestUtils {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      run(input)
+      run(input, core = false)
     }
   }
 
@@ -2105,7 +2105,7 @@ class TestParser extends FunSuite with TestUtils {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      run(input)
+      run(input, core = false)
     }
   }
 
@@ -2116,7 +2116,7 @@ class TestParser extends FunSuite with TestUtils {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      run(input)
+      run(input, core = false)
     }
   }
 
@@ -2127,7 +2127,7 @@ class TestParser extends FunSuite with TestUtils {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      run(input)
+      run(input, core = false)
     }
   }
 
@@ -2140,7 +2140,7 @@ class TestParser extends FunSuite with TestUtils {
         |}
       """.stripMargin
     intercept[scala.NotImplementedError] {
-      run(input)
+      run(input, core = false)
     }
   }
 
@@ -2245,27 +2245,27 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Type.List.01") {
     val input = "def f: List[Int] = Nil"
-    run(input)
+    run(input, core = false)
   }
 
   test("Type.Set.01") {
     val input = "def f: Set[Int] = #{}"
-    run(input)
+    run(input, core = false)
   }
 
   test("Type.Map.01") {
     val input = "def f: Map[Int, Int] = @{}"
-    run(input)
+    run(input, core = false)
   }
 
   test("Type.Infix.01") {
     val input = "def f: Char `Map` Int = @{}"
-    run(input)
+    run(input, core = false)
   }
 
   test("Type.Infix.02") {
     val input = "def f: Int `Map` Str = @{}"
-    run(input)
+    run(input, core = false)
   }
 
   /////////////////////////////////////////////////////////////////////////////
