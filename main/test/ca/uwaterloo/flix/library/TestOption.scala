@@ -25,7 +25,7 @@ import java.lang.Boolean
 
 class TestOption extends FunSuite {
 
-  val options = Options.DefaultTest
+  val options = Options.DefaultTest.copy(core = false)
 
   def runTest(input: String, output: Int) {
     val flix = new Flix().setOptions(options).addPath("main/src/library/Option.flix").addStr(input)

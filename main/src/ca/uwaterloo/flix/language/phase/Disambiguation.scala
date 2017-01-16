@@ -54,7 +54,7 @@ object Disambiguation {
         case (None, Some(hook)) => Ok(RefTarget.Hook(hook))
         case (None, None) =>
           // Try the global namespace.
-          program.definitions(Name.RootNS).get(qname.ident.name) match {
+          program.definitions.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name) match {
             case None => Err(ResolutionError.UndefinedRef(qname, ns0, qname.loc))
             case Some(defn) => Ok(RefTarget.Defn(Name.RootNS, defn))
           }

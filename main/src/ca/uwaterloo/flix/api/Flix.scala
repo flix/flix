@@ -289,9 +289,10 @@ class Flix {
       case (_, p) => throw new IllegalStateException(s"Unknown file type '${p.getFileName}'.")
     }
 
-    val si3 = internals.foldLeft(List.empty[SourceInput]) {
-      case (xs, (name, text)) => SourceInput.Internal(name, text) :: xs
-    }
+    val si3 = if (options.core) Nil else
+      internals.foldLeft(List.empty[SourceInput]) {
+        case (xs, (name, text)) => SourceInput.Internal(name, text) :: xs
+      }
 
     si1 ::: si2 ::: si3
   }

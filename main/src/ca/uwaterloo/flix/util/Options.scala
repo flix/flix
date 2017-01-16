@@ -23,6 +23,7 @@ object Options {
     * Default options.
     */
   val Default = Options(
+    core = false,
     debug = false,
     documentor = false,
     evaluation = Evaluation.Compiled,
@@ -40,12 +41,13 @@ object Options {
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(verbosity = Verbosity.Silent)
+  val DefaultTest: Options = Default.copy(core = true, verbosity = Verbosity.Silent)
 }
 
 /**
   * General Flix options.
   *
+  * @param core         enables loading of only essential namespaces.
   * @param debug        enables the emission of debugging information.
   * @param documentor   enables generation of flixdoc.
   * @param evaluation   selects the evaluation strategy.
@@ -59,7 +61,7 @@ object Options {
   * @param verbosity    selects the level of verbosity.
   * @param verifier     enables the verifier.
   */
-case class Options(debug: Boolean, documentor: Boolean, evaluation: Evaluation, impure: Boolean, invariants: Boolean, optimize: Boolean, monitor: Boolean, quickchecker: Boolean, timeout: Duration, threads: Int, verbosity: Verbosity, verifier: Boolean)
+case class Options(core: Boolean, debug: Boolean, documentor: Boolean, evaluation: Evaluation, impure: Boolean, invariants: Boolean, optimize: Boolean, monitor: Boolean, quickchecker: Boolean, timeout: Duration, threads: Int, verbosity: Verbosity, verifier: Boolean)
 
 /**
   * An option to control the level of verbosity.
