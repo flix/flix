@@ -1,5 +1,5 @@
 @test
-def testGuardedPatternMatch01: Bool =
+def guardedPatternMatch01: Bool =
     let r = match Some('a') with {
         case Some(x) if x == 'a' => 1
         case Some(x) if x == 'b' => 2
@@ -9,7 +9,7 @@ def testGuardedPatternMatch01: Bool =
     r `assertEq!` 1
 
 @test
-def testGuardedPatternMatch02: Bool =
+def guardedPatternMatch02: Bool =
     let r = match Some('b') with {
         case Some(x) if x == 'a' => 1
         case Some(x) if x == 'b' => 2
@@ -19,7 +19,7 @@ def testGuardedPatternMatch02: Bool =
     r `assertEq!` 2
 
 @test
-def testGuardedPatternMatch03: Bool =
+def guardedPatternMatch03: Bool =
     let r = match Some('c') with {
         case Some(x) if x == 'a' => 1
         case Some(x) if x == 'b' => 2
@@ -29,7 +29,7 @@ def testGuardedPatternMatch03: Bool =
     r `assertEq!` 3
 
 @test
-def testGuardedPatternMatch04: Bool =
+def guardedPatternMatch04: Bool =
     let r = match Some('z') with {
         case Some(x) if x == 'a' => 1
         case Some(x) if x == 'b' => 2
@@ -39,7 +39,7 @@ def testGuardedPatternMatch04: Bool =
     r `assertEq!` 42
 
 @test
-def testGuardedPatternMatch05: Bool =
+def guardedPatternMatch05: Bool =
     let r = match None with {
         case Some(x) if x == 'a' => 1
         case Some(x) if x == 'b' => 2
