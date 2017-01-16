@@ -47,7 +47,7 @@ object Options {
 /**
   * General Flix options.
   *
-  * @param core         enables loading of only essential namespaces.
+  * @param core         disables loading of all non-essential namespaces.
   * @param debug        enables the emission of debugging information.
   * @param documentor   enables generation of flixdoc.
   * @param evaluation   selects the evaluation strategy.
