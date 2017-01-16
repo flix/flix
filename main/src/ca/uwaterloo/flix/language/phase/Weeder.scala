@@ -431,18 +431,30 @@ object Weeder {
             case (e1, e2, e3) => WeededAst.Expression.IfThenElse(e1, e2, e3, mkSL(sp1, sp2))
           }
 
-        case ParsedAst.Expression.LetMatch(sp1, pat, exp1, exp2, sp2) =>
+        case ParsedAst.Expression.LetMatch(sp1, pat, tpe, exp1, exp2, sp2) =>
           /*
            * Rewrites a let-match to a regular let-binding or a full-blown pattern match.
            */
           @@(Patterns.weed(pat), visit(exp1), visit(exp2)) map {
             case (WeededAst.Pattern.Var(ident, loc), value, body) =>
-              // Let-binding
-              WeededAst.Expression.Let(ident, value, body, mkSL(sp1, sp2))
+              // Let-binding.
+              // Check if there is a type annotation for the value expression.
+              tpe match {
+                case None => WeededAst.Expression.Let(ident, value, body, mkSL(sp1, sp2))
+                case Some(t) =>
+                  val ascribed = WeededAst.Expression.Ascribe(value, Types.weed(t), value.loc)
+                  WeededAst.Expression.Let(ident, ascribed, body, mkSL(sp1, sp2))
+              }
             case (pattern, value, body) =>
               // Full-blown pattern match.
               val rule = WeededAst.MatchRule(pattern, WeededAst.Expression.True(mkSL(sp1, sp2)), body)
-              WeededAst.Expression.Match(value, List(rule), mkSL(sp1, sp2))
+              // Check if there is a type annotation for the value expression.
+              tpe match {
+                case None => WeededAst.Expression.Match(value, List(rule), mkSL(sp1, sp2))
+                case Some(t) =>
+                  val ascribed = WeededAst.Expression.Ascribe(value, Types.weed(t), value.loc)
+                  WeededAst.Expression.Match(ascribed, List(rule), mkSL(sp1, sp2))
+              }
           }
 
         case ParsedAst.Expression.Match(sp1, exp, rules, sp2) =>
@@ -1003,7 +1015,7 @@ object Weeder {
     case ParsedAst.Expression.Unary(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Binary(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
-    case ParsedAst.Expression.LetMatch(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Switch(sp1, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
