@@ -1,5 +1,5 @@
 //
-// In this tutorial we will implement the Control-Environment-Kontinuation (CEK) machine.
+// In this tutorial we will implement the Control-Environment-Store-Kontinuation (CESK) machine.
 //
 // Be sure to check out the Lambda calculus tutorial before starting this tutorial.
 //
@@ -10,6 +10,11 @@
 /// A variable name is simply an integer.
 ///
 type Variable = V(Int)
+
+///
+/// An address is simply an integer.
+///
+type Address = A(Int)
 
 ///
 /// The expressions of the lambda calculus are: variables, lambda abstractions, and applications.
@@ -39,9 +44,14 @@ def isValue(e0: Expression): Bool = match e0 with {
 def nonValue(e0: Expression): Bool = !isValue(e0)
 
 ///
-/// An environment is a map from variables to a (value, environment)-pair.
+/// An environment is a map from variables to addresses.
 ///
 type Environment = Environment(Map2[Variable, (Expression, Environment)])
+
+///
+/// A store is a map from addresses to addresses to (value, environment)-pairs.
+///
+type Store = Store(Map2[Address, (Expression, Environment)])
 
 ///
 /// The CEK-machine operates based on continuations derived
@@ -63,15 +73,19 @@ enum Kontinuation {
 }
 
 ///
+///
+///
+
+///
 /// A machine state configuration.
 ///
-type State = State(Expression, Environment, Kontinuation)
+type State = State(Expression, Environment, Store, Kontinuation)
 
 ///
 /// Returns the initial state of the CEK-machine for the given expression `e0`.
 ///
 def inject(e0: Expression): State =
-    State(e0, Environment(Map2.empty()), Kontinuation.Empty)
+    State(e0, Environment(Map2.empty()), Store(Map2.empty()), Kontinuation.Empty)
 
 ///
 /// Represents the outcome of a single reduction step.
@@ -93,40 +107,41 @@ enum Outcome {
 /// (The transition rules are described in Figure 1 in the paper.)
 ///
 def step(m0: State): Outcome = match m0 with {
+
     //
     // Variable Expression.
     //
-    case State(Var(x), Environment(env0), kont) =>
+    case State(Var(x), Environment(env0), Store(sto0), kont) =>
         // The expression is a variable. Look it up in the environment.
          match Map2.lookup(x, env0) with {
             case None => Abort("Unbound variable.")
-            case Some((v, env1)) => Next(State(v, env1, kont))
+            case Some((v, env1)) => Next(State(v, env1, Store(sto0), kont))
          }
 
     //
     // Application Expression.
     //
-    case State(App(e1, e2), Environment(env0), kont) =>
+    case State(App(e1, e2), Environment(env0), Store(sto0), kont) =>
         // Continue evaluation of `e1` and store `e2` in a kontinuation.
         let k = App1(e2, Environment(env0), kont);
-            Next(State(e1, Environment(env0), k))
+            Next(State(e1, Environment(env0), Store(sto0), k))
 
     //
     // Application1 Kontinuation.
     //
-    case State(v1, Environment(env0), App1(e2, env2, kont)) if isValue(v1) =>
+    case State(v1, Environment(env0), Store(sto0), App1(e2, env2, kont)) if isValue(v1) =>
         // Continue evaluation of `e2` and store `v1` in a kontinuation.
         let k = App2(v1, Environment(env0), kont);
-            Next(State(e2, env2, k))
+            Next(State(e2, env2, Store(sto0), k))
 
     //
     // Application2 Kontinuation.
     //
-    case State(v2, Environment(env0), App2(v1, Environment(env1), kont)) if isValue(v2) =>
+    case State(v2, Environment(env0), Store(sto0), App2(v1, Environment(env1), kont)) if isValue(v2) =>
         // Evaluate the body of the lambda `v1` with argument `v2`.
         let Abs(x, body) = v1;
         let env2 = Map2.insert(x, (v2, Environment(env0)), env1);
-            Next(State(body, Environment(env2), kont))
+            Next(State(body, Environment(env2), Store(sto0), kont))
 
     //
     // Stuck.
@@ -151,7 +166,7 @@ def eval(m0: State): Result[State, Str] =
 ///
 def run(e0: Expression): Result[Expression, Str] =
     let result = eval(inject(e0));
-        Result.map(match State(exp, env, kont) -> substitute(exp, env), result)
+        Result.map(match State(exp, env, sto, kont) -> substitute(exp, env), result)
 
 ///
 /// Substitutes every free variable in the given expression `e0` for the value in the given environment `env0`.
@@ -204,7 +219,7 @@ enum Map2[k, v] {
 
 namespace Map2 {
 
-    def empty: Map2[Variable, (Expression, Environment)] = Map2(Nil)
+    def empty[k, v]: Map2[k, v] = Map2(Nil)
 
     def insert(k: Variable, v: (Expression, Environment), m: Map2[Variable, (Expression, Environment)]): Map2[Variable, (Expression, Environment)] =
         let Map2(xs) = m;
