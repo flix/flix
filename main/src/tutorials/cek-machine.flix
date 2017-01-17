@@ -7,7 +7,7 @@
 //
 
 ///
-/// We introduce a type for variable names.
+/// A variable name is simply an integer.
 ///
 type Variable = V(Int)
 
@@ -81,7 +81,7 @@ enum Outcome {
     case Next(State),
 
     /// Represents that the reduction is stuck.
-    case Done(Expression, Environment),
+    case Done(State),
 
     /// Represents that the reduction failed.
     case Abort(Str)
@@ -92,8 +92,7 @@ enum Outcome {
 ///
 /// (The transition rules are described in Figure 1 in the paper.)
 ///
-def step(m: State): Outcome = match m with {
-
+def step(m0: State): Outcome = match m0 with {
     //
     // Variable Expression.
     //
@@ -132,17 +131,17 @@ def step(m: State): Outcome = match m with {
     //
     // Stuck.
     //
-    case State(e, env0, k) => Done(e, env0)
+    case _ => Done(m0)
 }
 
 
 ///
 /// Repeatedly performs single-step transitions in the given machine `m0` until the machine halts with a value.
 ///
-def eval(m0: State): Result[(Expression, Environment), Str] =
+def eval(m0: State): Result[State, Str] =
     match println!(step(m0)) with {
         case Next(m)        => eval(m)
-        case Done(exp, env) => Ok((exp, env))
+        case Done(m)        => Ok(m)
         case Abort(e)       => Err(e)
     }
 
@@ -152,7 +151,7 @@ def eval(m0: State): Result[(Expression, Environment), Str] =
 ///
 def run(e0: Expression): Result[Expression, Str] =
     let result = eval(inject(e0));
-        Result.map(match (exp, env) -> substitute(exp, env), result)
+        Result.map(match State(exp, env, _) -> substitute(exp, env), result)
 
 ///
 /// Substitutes every free variable in the given expression `e0` for the value in the given environment `env0`.
