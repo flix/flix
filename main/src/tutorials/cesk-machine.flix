@@ -46,7 +46,7 @@ def nonValue(e0: Expression): Bool = !isValue(e0)
 ///
 /// An environment is a map from variables to addresses.
 ///
-type Environment = Environment(Map2[Variable, (Expression, Environment)])
+type Environment = Environment(Map2[Variable, Address])
 
 ///
 /// A store is a map from addresses to addresses to (value, environment)-pairs.
@@ -115,7 +115,10 @@ def step(m0: State): Outcome = match m0 with {
         // The expression is a variable. Look it up in the environment.
          match Map2.lookup(x, env0) with {
             case None => Abort("Unbound variable.")
-            case Some((v, env1)) => Next(State(v, env1, Store(sto0), kont))
+            case Some(ptr) => match Map2.lookup(ptr, sto0) with {
+                case None => Abort("Unbound address.")
+                case Some((v, env1)) => Next(State(v, env1, Store(sto0), kont))
+            }
          }
 
     //
@@ -140,8 +143,10 @@ def step(m0: State): Outcome = match m0 with {
     case State(v2, Environment(env0), Store(sto0), App2(v1, Environment(env1), kont)) if isValue(v2) =>
         // Evaluate the body of the lambda `v1` with argument `v2`.
         let Abs(x, body) = v1;
-        let env2 = Map2.insert(x, (v2, Environment(env0)), env1);
-            Next(State(body, Environment(env2), Store(sto0), kont))
+        let a = freshAddr();
+        let env2 = Map2.insert(x, a, env1);
+        let sto1 = Map2.insert(a, (v2, Environment(env0)), sto0);
+            Next(State(body, Environment(env2), Store(sto1), kont))
 
     //
     // Stuck.
@@ -166,18 +171,25 @@ def eval(m0: State): Result[State, Str] =
 ///
 def run(e0: Expression): Result[Expression, Str] =
     let result = eval(inject(e0));
-        Result.map(match State(exp, env, sto, kont) -> substitute(exp, env), result)
+        Result.map(match State(exp, env, sto, kont) -> substitute(exp, env, sto), result)
 
 ///
 /// Substitutes every free variable in the given expression `e0` for the value in the given environment `env0`.
 ///
-def substitute(e0: Expression, env0: Environment): Expression = match (e0, env0) with {
-    case (Var(x), Environment(env))     => match Map2.lookup(x, env) with {
+def substitute(e0: Expression, env0: Environment, sto0: Store): Expression = match (e0, env0, sto0) with {
+    case (Var(x), Environment(env), Store(sto)) => match Map2.lookup(x, env) with {
         case None               => Var(x)
-        case Some((e, env1))    => substitute(e, env1)
+        case Some(a)            => match Map2.lookup(a, sto) with {
+            case None => Var(x)
+            case Some((e, env1)) => substitute(e, env1, sto0)
+        }
     }
-    case (Abs(x, e), Environment(env))  => Abs(x, substitute(e, Environment(Map2.remove(x, env))))
-    case (App(e1, e2), _)               => App(substitute(e1, env0), substitute(e2, env0))
+
+    case (Abs(x, e), Environment(env), Store(sto)) =>
+        Abs(x, substitute(e, Environment(Map2.remove(x, env)), sto0))
+
+    case (App(e1, e2), _, _) =>
+        App(substitute(e1, env0, sto0), substitute(e2, env0, sto0))
 }
 
 //
@@ -200,11 +212,10 @@ def testOmega: Result[Expression, Str] = run(
 
 
 
-
-
-
-
-
+///
+/// Returns a fresh address.
+///
+def freshAddr: Address = A(genSym!())
 
 
 //
@@ -221,7 +232,7 @@ namespace Map2 {
 
     def empty[k, v]: Map2[k, v] = Map2(Nil)
 
-    def insert(k: Variable, v: (Expression, Environment), m: Map2[Variable, (Expression, Environment)]): Map2[Variable, (Expression, Environment)] =
+    def insert[k, v](k: k, v: v, m: Map2[k, v]): Map2[k, v] =
         let Map2(xs) = m;
             Map2((k, v) :: xs)
 
@@ -234,7 +245,7 @@ namespace Map2 {
         case (y, v) :: ys => if (k == y) Some(v) else getHelper(k, ys)
     }
 
-    def remove(k: Variable, m: Map2[Variable, (Expression, Environment)]): Map2[Variable, (Expression, Environment)] =
+    def remove[k, v](k: k, m: Map2[k, v]): Map2[k, v] =
         let Map2(xs) = m;
             Map2(removeHelper(k, xs))
 
