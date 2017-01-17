@@ -102,6 +102,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       Declarations.Definition |
       Declarations.External |
       Declarations.Enum |
+      Declarations.TypeDecl |
       Declarations.LetLattice |
       Declarations.Relation |
       Declarations.Lattice |
@@ -154,6 +155,22 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
       rule {
         Documentation ~ SP ~ atomic("enum") ~ WS ~ Names.Type ~ TypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Enum
+      }
+    }
+
+    def TypeDecl: Rule1[ParsedAst.Declaration.Type] = {
+      def UnitCase: Rule1[ParsedAst.Case] = rule {
+        SP ~ Names.Tag ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) =>
+          ParsedAst.Case(sp1, ident, ParsedAst.Type.Unit(sp1, sp2), sp2))
+      }
+
+      def NestedCase: Rule1[ParsedAst.Case] = rule {
+        SP ~ Names.Tag ~ Type ~ SP ~> ParsedAst.Case
+      }
+
+      rule {
+        // NB: NestedCase must be parsed before UnitCase.
+        Documentation ~ SP ~ atomic("type") ~ WS ~ Names.Type ~ WS ~ "=" ~ WS ~ (NestedCase | UnitCase) ~ SP ~> ParsedAst.Declaration.Type
       }
     }
 
