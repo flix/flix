@@ -7,26 +7,41 @@
 //
 
 ///
-/// We begin with the usual expressions of the lambda calculus:
+/// We introduce a type for variable names.
+///
+type Variable = V(Int)
+
+///
+/// The expressions of the lambda calculus are: variables, lambda abstractions, and applications.
 ///
 enum Expression {
-    // A variable expression. A variable is represented by an integer.
-    case Var(Int),
+    // A variable expression.
+    case Var(Variable),
 
-    // A lambda abstraction expression. A variable is represented by an integer.
-    case Abs(Int, Expression),
+    // A lambda abstraction expression.
+    case Abs(Variable, Expression),
 
     // A function application expression.
     case App(Expression, Expression)
 }
 
 ///
-/// An environment is a map from variables (integers) to a (value, environment)-pair.
+/// Returns `true` if the given expression `e0` is a value.
 ///
-enum Environment {
-    // NB: We use Expression here since there is no explicit syntactic category for values.
-    case Environment(Map2[Int, (Expression, Environment)])
+def isValue(e0: Expression): Bool = match e0 with {
+    case Abs(x, e) => true
+    case _         => false
 }
+
+///
+/// Returns `true` if the given expression `e0` is not a value.
+///
+def nonValue(e0: Expression): Bool = !isValue(e0)
+
+///
+/// An environment is a map from variables to a (value, environment)-pair.
+///
+type Environment = Environment(Map2[Variable, (Expression, Environment)])
 
 ///
 /// The CEK-machine operates based on continuations derived
@@ -48,111 +63,125 @@ enum Kontinuation {
 }
 
 ///
-/// Returns `true` if the given expression `e0` is a value.
+/// A machine state configuration.
 ///
-def isValue(e0: Expression): Bool = match e0 with {
-    case Abs(x, e) => true
-    case _         => false
-}
-
-///
-/// Returns `true` if the given expression `e0` is not a value.
-///
-def nonValue(e0: Expression): Bool = !isValue(e0)
+type State = State(Expression, Environment, Kontinuation)
 
 ///
 /// Returns the initial state of the CEK-machine for the given expression `e0`.
 ///
-def inject(e0: Expression): (Expression, Environment, Kontinuation) =
-    (e0, Env/empty(), Empty)
+def inject(e0: Expression): State =
+    State(e0, Environment(Map2.empty()), Kontinuation.Empty)
 
 ///
-/// Returns the next state of the given machine `m`.
+/// Represents the outcome of a single reduction step.
 ///
-/// NB: Returns the same state if no further transition is possible.
+enum Outcome {
+    /// Represents the next state.
+    case Next(State),
+
+    /// Represents that the reduction is stuck.
+    case Done(Expression, Environment),
+
+    /// Represents that the reduction failed.
+    case Abort(Str)
+}
+
+///
+/// Returns the outcome of a single transition for the machine in state `m`.
 ///
 /// (The transition rules are described in Figure 1 in the paper.)
 ///
-def step(m: (Expression, Environment, Kontinuation)): (Expression, Environment, Kontinuation) = match m with {
-    case (Var(x), env0, kont) =>
-        // Case 1: The expression is a variable. Look it up in the environment.
-         match Env/lookup(x, env0) with {
-            case None => m
-            case Some((v, env1)) => (v, env1, kont)
+def step(m: State): Outcome = match m with {
+
+    //
+    // Variable Expression.
+    //
+    case State(Var(x), Environment(env0), kont) =>
+        // The expression is a variable. Look it up in the environment.
+         match Map2.lookup(x, env0) with {
+            case None => Abort("Unbound variable.")
+            case Some((v, env1)) => Next(State(v, env1, kont))
          }
-    case (App(e1, e2), env0, kont) =>
-        // Case 2: The expression is an application.
-        // Use the lambda as the expression and move the argument into the continuation.
-        (e1, env0, App1(e2, env0, kont))
-    case (e, env0, App1(e1, env1, kont)) =>
-        // Check if the expression is a value. Otherwise the machine is stuck.
-        if (nonValue(e)) m else {
-            (e1, env1, App2(e, env0, kont))
-        }
-    case (e, env0, App2(e1, env1, kont)) =>
-        // Check if the expression is a value. Otherwise the machine is stuck.
-        if (nonValue(e)) m else {
-            // We know that e1 is a value (and in particular a lambda abstraction).
-            let Abs(x, body) = e1;
-                (body, Env/insert(x, (e, env0), env1), kont)
-        }
-     case _ => m
+
+    //
+    // Application Expression.
+    //
+    case State(App(e1, e2), Environment(env0), kont) =>
+        // Continue evaluation of `e1` and store `e2` in a kontinuation.
+        let k = App1(e2, Environment(env0), kont);
+            Next(State(e1, Environment(env0), k))
+
+    //
+    // Application1 Kontinuation.
+    //
+    case State(v1, Environment(env0), App1(e2, env2, kont)) if isValue(v1) =>
+        // Continue evaluation of `e2` and store `v1` in a kontinuation.
+        let k = App2(v1, Environment(env0), kont);
+            Next(State(e2, env2, k))
+
+    //
+    // Application2 Kontinuation.
+    //
+    case State(v2, Environment(env0), App2(v1, Environment(env1), kont)) if isValue(v2) =>
+        // Evaluate the body of the lambda `v1` with argument `v2`.
+        let Abs(x, body) = v1;
+        let env2 = Map2.insert(x, (v2, Environment(env0)), env1);
+            Next(State(body, Environment(env2), kont))
+
+    //
+    // Stuck.
+    //
+    case State(e, env0, k) => Done(e, env0)
 }
+
 
 ///
 /// Repeatedly performs single-step transitions in the given machine `m0` until the machine halts with a value.
 ///
-def eval(m0: (Expression, Environment, Kontinuation)): (Expression, Environment) =
-    // Perform a single transition step.
-    let m1 = step(m0);
-    // Unpack the components of the machine.
-    let (e, env, kont) = m1;
-        // Check if the machine is halted with a value.
-        // If so, return the value and environment, otherwise take another transition.
-        if (isValue(e) && kont == Empty)
-            (e, env)
-        else
-            eval(m1)
-
+def eval(m0: State): Result[(Expression, Environment), Str] =
+    match println!(step(m0)) with {
+        case Next(m)        => eval(m)
+        case Done(exp, env) => Ok((exp, env))
+        case Abort(e)       => Err(e)
+    }
 
 ///
-/// Evaluates the given expression to a (value, environment)-pair by injecting it into the initial state
-/// of the CEK machine and repeatedly performing a transition until the machine halts with a value.
+/// Evaluates the given expression to a value by injecting it into the initial state of the CEK machine
+/// and repeatedly performing a transition until the machine halts with a value (or aborts).
 ///
-def run(e0: Expression): Expression =
-    let (v, env) = eval(inject(e0));
-        substitute(v, env)
+def run(e0: Expression): Result[Expression, Str] =
+    let result = eval(inject(e0));
+        Result.map(match (exp, env) -> substitute(exp, env), result)
 
 ///
 /// Substitutes every free variable in the given expression `e0` for the value in the given environment `env0`.
 ///
-def substitute(e0: Expression, env0: Environment): Expression = match e0 with {
-    case Var(x)         =>
-        let Environment(m) = env0;
-            match Map/get(x, m) with {
-                case None => Var(x)
-                case Some((e, env)) => substitute(e, env)
-            }
-    case Abs(x, e)      => Abs(x, substitute(e, Env/remove(x, env0)))
-    case App(e1, e2)    => App(substitute(e1, env0), substitute(e2, env0))
+def substitute(e0: Expression, env0: Environment): Expression = match (e0, env0) with {
+    case (Var(x), Environment(env))     => match Map2.lookup(x, env) with {
+        case None               => Var(x)
+        case Some((e, env1))    => substitute(e, env1)
+    }
+    case (Abs(x, e), Environment(env))  => Abs(x, substitute(e, Environment(Map2.remove(x, env))))
+    case (App(e1, e2), _)               => App(substitute(e1, env0), substitute(e2, env0))
 }
 
 //
 // We can now test our CEK machine!
 //
-def testEval1: Expression = run(Var(0))                                         // x
-def testEval2: Expression = run(Abs(0, Var(0)))                                 // λx. x
-def testEval3: Expression = run(Abs(0, Abs(1, Var(0))))                         // λx. λy. x
-def testEval4: Expression = run(App(Abs(0, Var(0)), Abs(1, Var(1))))            // (λx. x) (λy. y)
-def testEval5: Expression = run(App(Abs(0, Abs(1, Var(0))), Abs(2, Var(2))))    // (λx. λy. x) (λz. z)
+def testEval1: Result[Expression, Str] = run(Var(V(0)))                                                      // x
+def testEval2: Result[Expression, Str] = run(Abs(V(0), Var(V(0))))                                           // λx. x
+def testEval3: Result[Expression, Str] = run(Abs(V(0), Abs(V(1), Var(V(0)))))                                // λx. λy. x
+def testEval4: Result[Expression, Str] = run(App(Abs(V(0), Var(V(0))), Abs(V(1), Var(V(1)))))                // (λx. x) (λy. y)
+def testEval5: Result[Expression, Str] = run(App(Abs(V(0), Abs(V(1), Var(V(0)))), Abs(V(2), Var(V(2)))))     // (λx. λy. x) (λz. z)
 
 //
 // Here is the omega-combinator: (λx. x x) (λx. x x)
 //
-def testOmega: Expression = run(
+def testOmega: Result[Expression, Str] = run(
     App(
-        Abs(0, App(Var(0), Var(0))),
-        Abs(0, App(Var(0), Var(0)))))
+        Abs(V(0), App(Var(V(0)), Var(V(0)))),
+        Abs(V(0), App(Var(V(0)), Var(V(0))))))
 
 
 
@@ -163,50 +192,26 @@ def testOmega: Expression = run(
 
 
 
-
-
-
-
-
-// TODO: Where is the use of gensym in the machine?
-
-
-namespace Env {
-
-    def empty: Environment = Environment(Map2(Nil): Map2[Int, (Expression, Environment)])
-
-    def lookup(k: Int, env: Environment): Option[(Expression, Environment)] = match env with {
-        case Environment(m) => Map/get(k, m)
-    }
-
-    def insert(k: Int, v: (Expression, Environment), env: Environment): Environment = match env with {
-        case Environment(m) =>
-            Environment(Map/insert(k, v, m))
-    }
-
-    def remove(k: Int, env: Environment): Environment = match env with {
-        case Environment(m) =>
-            Environment(Map/remove(k, m))
-    }
-
-}
 
 //
 // ----------------------------------------------------------------------------
 // TODO: Replace by functions from the standard library.
 // ----------------------------------------------------------------------------
 //
+
 enum Map2[k, v] {
     case Map2(List[(k, v)])
 }
-namespace Map {
 
-    def insert(k: Int, v: (Expression, Environment), m: Map2[Int, (Expression, Environment)]): Map2[Int, (Expression, Environment)] =
+namespace Map2 {
+
+    def empty: Map2[Variable, (Expression, Environment)] = Map2(Nil)
+
+    def insert(k: Variable, v: (Expression, Environment), m: Map2[Variable, (Expression, Environment)]): Map2[Variable, (Expression, Environment)] =
         let Map2(xs) = m;
             Map2((k, v) :: xs)
 
-    // TODO: Signature and name
-    def get[k, v](k: k, m: Map2[k, v]): Option[v] =
+    def lookup[k, v](k: k, m: Map2[k, v]): Option[v] =
         let Map2(xs) = m;
             getHelper(k, xs)
 
@@ -215,7 +220,7 @@ namespace Map {
         case (y, v) :: ys => if (k == y) Some(v) else getHelper(k, ys)
     }
 
-    def remove(k: Int, m: Map2[Int, (Expression, Environment)]): Map2[Int, (Expression, Environment)] =
+    def remove(k: Variable, m: Map2[Variable, (Expression, Environment)]): Map2[Variable, (Expression, Environment)] =
         let Map2(xs) = m;
             Map2(removeHelper(k, xs))
 
