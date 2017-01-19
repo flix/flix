@@ -245,6 +245,7 @@ def testEval2: Set2[Outcome] = run(Abs(V(0), Var(V(0))))                        
 def testEval3: Set2[Outcome] = run(Abs(V(0), Abs(V(1), Var(V(0)))))                                // λx. λy. x
 def testEval4: Set2[Outcome] = run(App(Abs(V(0), Var(V(0))), Abs(V(1), Var(V(1)))))                // (λx. x) (λy. y)
 def testEval5: Set2[Outcome] = run(App(Abs(V(0), Abs(V(1), Var(V(0)))), Abs(V(2), Var(V(2)))))     // (λx. λy. x) (λz. z)
+def testEval6: Set2[Outcome] = run(App(App(Abs(V(0), Abs(V(1), App(Var(V(0)), Var(V(1))))), Abs(V(2), Var(V(2)))), Abs(V(3), Var(V(3)))))     // ((λx. λy. x y) (λz. z)) (λw. w)
 
 //
 // Here is the omega-combinator: (λx. x x) (λx. x x)
