@@ -1,5 +1,5 @@
 //
-// In this tutorial we will implement the Control-Environment-Store-Kontinuation-Pointer Time Stamped (CESK*)-TS) machine.
+// In this tutorial we will implement the Control-Environment-Store-Kontinuation-Pointer Time Stamped (CESK*-TS) machine.
 //
 // Be sure to check out the Lambda calculus tutorial before starting this tutorial.
 //
@@ -84,14 +84,14 @@ enum Kontinuation {
 }
 
 ///
-/// The timestamp of a machine configuration.
+/// The timestamp associated with a machine configuration.
 ///
 type Time = Time(Int)
 
 ///
 /// A machine state configuration.
 ///
-/// NB: Note that the last component is a pointer to continuation in the store.
+/// NB: Note that the Address component is a pointer to continuation in the store.
 ///
 type State = State(Expression, Environment, Store, Address, Time)
 
@@ -99,7 +99,7 @@ type State = State(Expression, Environment, Store, Address, Time)
 /// Returns the initial state of the CEK-machine for the given expression `e0`.
 ///
 def inject(e0: Expression): State =
-    // Generate a fresh address where to store the empty continuation.
+    // Save the empty kontinuation into the store.
     let kont = Kontinuation.Empty;
     let kptr = A(0);
     let env0 = Map2.empty();
@@ -108,13 +108,13 @@ def inject(e0: Expression): State =
         State(e0, Environment(env0), Store(sto0), kptr, time)
 
 ///
-/// Returns the next timestamp for the given state `m0` and continuation `k0`.
+/// Returns the next timestamp for the machine in the given state `m0` and continuation `k0`.
 ///
 def tick(m0: State, k0: Kontinuation): Time = match m0 with {
     case State(_, _, _, _, Time(t)) => Time(t + 1)
 }
 
-/// Returns the next address for the given state `m0` and continuation `c0`.
+/// Returns the next address for the machine in the given state `m0` and continuation `c0`.
 ///
 def alloc(m0: State, k0: Kontinuation): Address = match m0 with {
     case State(_, _, _, _, Time(t)) => A(t)
@@ -135,7 +135,7 @@ enum Outcome {
 }
 
 ///
-/// Returns all possible outcomes from the given state `m0` and continuation `k0`.
+/// Returns all possible transitions (outcomes) from the given state `m0` and continuation `k0`.
 ///
 def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
 
@@ -173,7 +173,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     // Application1 Kontinuation.
     //
-    case (State(v1, Environment(env0), Store(sto0), kptr, time), App1(e2, env2, kont)) if isValue(v1) =>
+    case (State(v1, Environment(env0), Store(sto0), _, time), App1(e2, env2, kont)) if isValue(v1) =>
         // Continue evaluation of `e2` and store `v1` in a continuation.
         let k = App2(v1, Environment(env0), kont);
         // Generate a fresh address where to store the continuation.
@@ -188,7 +188,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     // Application2 Kontinuation.
     //
-    case (State(v2, Environment(env0), Store(sto0), kptr, time), App2(v1, Environment(env1), kont)) if isValue(v2) =>
+    case (State(v2, Environment(env0), Store(sto0), _, time), App2(v1, Environment(env1), kont)) if isValue(v2) =>
         // Evaluate the body of the lambda `v1` with argument `v2`.
         let Abs(x, body) = v1;
         let a = alloc(m0, k0);
@@ -206,7 +206,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
 }
 
 ///
-/// Returns all possible outcomes from the given state `m0`.
+/// Returns all possible transitions from the given state `m0`.
 ///
 def stepAll(m0: State): Set2[Outcome] = match m0 with {
     case State(exp0, env0, Store(sto0), kptr, time) =>
@@ -219,7 +219,8 @@ def stepAll(m0: State): Set2[Outcome] = match m0 with {
 }
 
 ///
-/// Repeatedly performs single-step transitions in the given machine `m0` until the machine halts with a value.
+/// Computes the fixed-point of the transition relation defined by `stepAll`
+/// starting from the given machine configuration `m0`.
 ///
 def eval(m0: State): Set2[Outcome] =
     let outcomes = println!(stepAll(m0));
