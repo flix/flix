@@ -101,19 +101,24 @@ type State = State(Expression, Environment, Store, Address, Time)
 def inject(e0: Expression): State =
     // Generate a fresh address where to store the empty continuation.
     let kont = Kontinuation.Empty;
-    let kptr = freshAddr();
+    let kptr = A(0);
     let env0 = Map2.empty();
     let sto0 = Map2.insert(kptr, StoredKont(kont), Map2.empty());
-        State(e0, Environment(env0), Store(sto0), kptr, ???)
+    let time = Time(1);
+        State(e0, Environment(env0), Store(sto0), kptr, time)
 
 ///
 /// Returns the next timestamp.
 ///
-def tick(m0: State): Time = ???
+def tick(m0: State): Time = match m0 with {
+    case State(_, _, _, _, Time(t)) => Time(t + 1)
+}
 
 /// Returns the next address.
 ///
-def alloc(m0: State): Address = ???
+def alloc(m0: State): Address = match m0 with {
+    case State(_, _, _, _, Time(t)) => A(t)
+}
 
 ///
 /// Represents the outcome of a single reduction step.
@@ -146,7 +151,7 @@ def step(m0: State): Outcome = match withKont(m0) with {
             case Some(ptr) => match Map2.lookup(ptr, sto0) with {
                 case None => Abort("Unbound address.")
                 case Some(StoredKont(_)) => Abort("Non-value storable.")
-                case Some(StoredValue(v, env1)) => Next(State(v, env1, Store(sto0), kptr, ???))
+                case Some(StoredValue(v, env1)) => Next(State(v, env1, Store(sto0), kptr, tick(m0)))
             }
          }
 
@@ -157,10 +162,10 @@ def step(m0: State): Outcome = match withKont(m0) with {
         // Continue evaluation of `e1` and store `e2` in a kontinuation.
         let k = App1(e2, Environment(env0), kptr);
         // Generate a fresh address where to store the continuation.
-        let a = freshAddr();
+        let a = alloc(m0);
         // Store the continuation.
         let sto1 = Map2.insert(a, StoredKont(k), sto0);
-            Next(State(e1, Environment(env0), Store(sto1), a, ???))
+            Next(State(e1, Environment(env0), Store(sto1), a, tick(m0)))
 
     //
     // Application1 Kontinuation.
@@ -169,10 +174,10 @@ def step(m0: State): Outcome = match withKont(m0) with {
         // Continue evaluation of `e2` and store `v1` in a continuation.
         let k = App2(v1, Environment(env0), kont);
         // Generate a fresh address where to store the continuation.
-        let a = freshAddr();
+        let a = alloc(m0);
         // Store the continuation.
         let sto1 = Map2.insert(a, StoredKont(k), sto0);
-            Next(State(e2, env2, Store(sto1), a, ???))
+            Next(State(e2, env2, Store(sto1), a, tick(m0)))
 
     //
     // Application2 Kontinuation.
@@ -180,10 +185,10 @@ def step(m0: State): Outcome = match withKont(m0) with {
     case (State(v2, Environment(env0), Store(sto0), kptr, time), Some(App2(v1, Environment(env1), kont))) if isValue(v2) =>
         // Evaluate the body of the lambda `v1` with argument `v2`.
         let Abs(x, body) = v1;
-        let a = freshAddr();
+        let a = alloc(m0);
         let env2 = Map2.insert(x, a, env1);
         let sto1 = Map2.insert(a, StoredValue(v2, Environment(env0)), sto0);
-            Next(State(body, Environment(env2), Store(sto1), kont, ???))
+            Next(State(body, Environment(env2), Store(sto1), kont, tick(m0)))
 
     //
     // Stuck.
@@ -255,14 +260,6 @@ def testOmega: Result[Expression, Str] = run(
     App(
         Abs(V(0), App(Var(V(0)), Var(V(0)))),
         Abs(V(0), App(Var(V(0)), Var(V(0))))))
-
-
-
-
-///
-/// Returns a fresh address.
-///
-def freshAddr: Address = A(genSym!())
 
 
 //
