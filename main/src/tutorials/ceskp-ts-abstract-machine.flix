@@ -108,15 +108,15 @@ def inject(e0: Expression): State =
         State(e0, Environment(env0), Store(sto0), kptr, time)
 
 ///
-/// Returns the next timestamp.
+/// Returns the next timestamp for the given state `m0` and continuation `k0`.
 ///
-def tick(m0: State): Time = match m0 with {
+def tick(m0: State, k0: Kontinuation): Time = match m0 with {
     case State(_, _, _, _, Time(t)) => Time(t + 1)
 }
 
-/// Returns the next address.
+/// Returns the next address for the given state `m0` and continuation `c0`.
 ///
-def alloc(m0: State): Address = match m0 with {
+def alloc(m0: State, k0: Kontinuation): Address = match m0 with {
     case State(_, _, _, _, Time(t)) => A(t)
 }
 
@@ -135,11 +135,9 @@ enum Outcome {
 }
 
 ///
-/// Returns the outcome of a single transition for the machine in state `m`.
+/// Returns all possible outcomes from the given state `m0` and continuation `k0`.
 ///
-/// (The transition rules are described in Figure 1 in the paper.)
-///
-def step(m0: State): Set2[Outcome] = Set2.flatMap(p -> match p with {
+def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
 
     //
     // Variable Expression.
@@ -152,7 +150,7 @@ def step(m0: State): Set2[Outcome] = Set2.flatMap(p -> match p with {
                 let values = Option.getWithDefault(Map2.lookup(ptr, sto0), Set2.empty());
                 let f = storable -> match storable with {
                     case StoredKont(_) => Abort("Non-value storable.")
-                    case StoredValue(v, env1) => Next(State(v, env1, Store(sto0), kptr, tick(m0)))
+                    case StoredValue(v, env1) => Next(State(v, env1, Store(sto0), kptr, tick(m0, k0)))
                 };
                 Set2.map(f, values)
          }
@@ -164,13 +162,13 @@ def step(m0: State): Set2[Outcome] = Set2.flatMap(p -> match p with {
         // Continue evaluation of `e1` and store `e2` in a kontinuation.
         let k = App1(e2, Environment(env0), kptr);
         // Generate a fresh address where to store the continuation.
-        let a = alloc(m0);
+        let a = alloc(m0, k0);
         // Store the continuation.
         let newValue = StoredKont(k);
         let oldValue = Option.getWithDefault(Map2.lookup(a, sto0), Set2.empty());
         let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
         let sto1 = Map2.insert(a, lubValue, sto0);
-            Set2.singleton(Next(State(e1, Environment(env0), Store(sto1), a, tick(m0))))
+            Set2.singleton(Next(State(e1, Environment(env0), Store(sto1), a, tick(m0, k0))))
 
     //
     // Application1 Kontinuation.
@@ -179,13 +177,13 @@ def step(m0: State): Set2[Outcome] = Set2.flatMap(p -> match p with {
         // Continue evaluation of `e2` and store `v1` in a continuation.
         let k = App2(v1, Environment(env0), kont);
         // Generate a fresh address where to store the continuation.
-        let a = alloc(m0);
+        let a = alloc(m0, k0);
         // Store the continuation.
         let newValue = StoredKont(k);
         let oldValue = Option.getWithDefault(Map2.lookup(a, sto0), Set2.empty());
         let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
         let sto1 = Map2.insert(a, lubValue, sto0);
-            Set2.singleton(Next(State(e2, env2, Store(sto1), a, tick(m0))))
+            Set2.singleton(Next(State(e2, env2, Store(sto1), a, tick(m0, k0))))
 
     //
     // Application2 Kontinuation.
@@ -193,28 +191,28 @@ def step(m0: State): Set2[Outcome] = Set2.flatMap(p -> match p with {
     case (State(v2, Environment(env0), Store(sto0), kptr, time), App2(v1, Environment(env1), kont)) if isValue(v2) =>
         // Evaluate the body of the lambda `v1` with argument `v2`.
         let Abs(x, body) = v1;
-        let a = alloc(m0);
+        let a = alloc(m0, k0);
         let env2 = Map2.insert(x, a, env1);
         let newValue = StoredValue(v2, Environment(env0));
         let oldValue = Option.getWithDefault(Map2.lookup(a, sto0), Set2.empty());
         let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
         let sto1 = Map2.insert(a, lubValue, sto0);
-            Set2.singleton(Next(State(body, Environment(env2), Store(sto1), kont, tick(m0))))
+            Set2.singleton(Next(State(body, Environment(env2), Store(sto1), kont, tick(m0, k0))))
 
     //
     // Stuck.
     //
     case _ => Set2.singleton(Done(m0))
-}, withKont(m0))
+}
 
 ///
-/// Returns the given state `m0` paired with the optional continuation.
+/// Returns all possible outcomes from the given state `m0`.
 ///
-def withKont(m0: State): Set2[(State, Kontinuation)] = match m0 with {
+def stepAll(m0: State): Set2[Outcome] = match m0 with {
     case State(exp0, env0, Store(sto0), kptr, time) =>
         let values = Option.getWithDefault(Map2.lookup(kptr, sto0), Set2.empty());
         let f = value -> match value with {
-            case StoredKont(k) => Set2.singleton((m0, k))
+            case StoredKont(k) => step(m0, k)
             case _             => Set2.empty()
         };
         Set2.flatMap(f, values)
@@ -224,13 +222,13 @@ def withKont(m0: State): Set2[(State, Kontinuation)] = match m0 with {
 /// Repeatedly performs single-step transitions in the given machine `m0` until the machine halts with a value.
 ///
 def eval(m0: State): Set2[Outcome] =
-    let outcomes = println!(step(m0));
+    let outcomes = println!(stepAll(m0));
     let f = outcome -> match outcome with {
         case Next(m)        => eval(m)
         case Done(m)        => Set2.singleton(Done(m))
         case Abort(e)       => Set2.singleton(Abort(e))
     };
-    Set2.flatMap(f, outcomes) // TODO: Union with outcomes?
+    Set2.union(outcomes, Set2.flatMap(f, outcomes))
 
 ///
 /// Evaluates the given expression to a value by injecting it into the initial state of the CEK machine
@@ -256,12 +254,14 @@ def testOmega: Set2[Outcome] = run(
         Abs(V(0), App(Var(V(0)), Var(V(0))))))
 
 
+
+
+
 //
 // ----------------------------------------------------------------------------
 // TODO: Replace by functions from the standard library.
 // ----------------------------------------------------------------------------
 //
-
 
 enum Set2[a] {
     case Set2(List[a])
