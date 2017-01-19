@@ -49,9 +49,20 @@ def nonValue(e0: Expression): Bool = !isValue(e0)
 type Environment = Environment(Map2[Variable, Address])
 
 ///
-/// A store is a map from addresses to addresses to (value, environment)-pairs.
+/// The type of storable values.
 ///
-type Store = Store(Map2[Address, (Expression, Environment)])
+enum Storable {
+    /// Represents a stored continuation.
+    case StoredKont(Kontinuation),
+
+    /// Represents a stored value, i.e. an expression and its closing environment.
+    case StoredValue(Expression, Environment)
+}
+
+///
+/// A store is a map from addresses to storables.
+///
+type Store = Store(Map2[Address, Storable])
 
 ///
 /// The CEK-machine operates based on continuations derived
@@ -73,10 +84,6 @@ enum Kontinuation {
 }
 
 ///
-///
-///
-
-///
 /// A machine state configuration.
 ///
 /// NB: Note that the last component is a pointer to continuation in the store.
@@ -87,7 +94,12 @@ type State = State(Expression, Environment, Store, Address)
 /// Returns the initial state of the CEK-machine for the given expression `e0`.
 ///
 def inject(e0: Expression): State =
-    State(e0, Environment(Map2.empty()), Store(Map2.empty()), Kontinuation.Empty)
+    // Generate a fresh address where to store the empty continuation.
+    let kont = Kontinuation.Empty;
+    let kptr = freshAddr();
+    let env0 = Map2.empty();
+    let sto0 = Map2.insert(kptr, StoredKont(kont), Map2.empty());
+        State(e0, Environment(env0), Store(sto0), kptr)
 
 ///
 /// Represents the outcome of a single reduction step.
@@ -108,46 +120,55 @@ enum Outcome {
 ///
 /// (The transition rules are described in Figure 1 in the paper.)
 ///
-def step(m0: State): Outcome = match m0 with {
+def step(m0: State): Outcome = match withKont(m0) with {
 
     //
     // Variable Expression.
     //
-    case State(Var(x), Environment(env0), Store(sto0), kont) =>
+    case (State(Var(x), Environment(env0), Store(sto0), kptr), _) =>
         // The expression is a variable. Look it up in the environment.
          match Map2.lookup(x, env0) with {
             case None => Abort("Unbound variable.")
             case Some(ptr) => match Map2.lookup(ptr, sto0) with {
                 case None => Abort("Unbound address.")
-                case Some((v, env1)) => Next(State(v, env1, Store(sto0), kont))
+                case Some(StoredKont(_)) => Abort("Non-value storable.")
+                case Some(StoredValue(v, env1)) => Next(State(v, env1, Store(sto0), kptr))
             }
          }
 
     //
     // Application Expression.
     //
-    case State(App(e1, e2), Environment(env0), Store(sto0), kont) =>
+    case (State(App(e1, e2), Environment(env0), Store(sto0), kptr), _) =>
         // Continue evaluation of `e1` and store `e2` in a kontinuation.
-        let k = App1(e2, Environment(env0), kont);
-            Next(State(e1, Environment(env0), Store(sto0), k))
+        let k = App1(e2, Environment(env0), kptr);
+        // Generate a fresh address where to store the continuation.
+        let a = freshAddr();
+        // Store the continuation.
+        let sto1 = Map2.insert(a, StoredKont(k), sto0);
+            Next(State(e1, Environment(env0), Store(sto1), a))
 
     //
     // Application1 Kontinuation.
     //
-    case State(v1, Environment(env0), Store(sto0), App1(e2, env2, kont)) if isValue(v1) =>
-        // Continue evaluation of `e2` and store `v1` in a kontinuation.
+    case (State(v1, Environment(env0), Store(sto0), _), Some(App1(e2, env2, kont))) if isValue(v1) =>
+        // Continue evaluation of `e2` and store `v1` in a continuation.
         let k = App2(v1, Environment(env0), kont);
-            Next(State(e2, env2, Store(sto0), k))
+        // Generate a fresh address where to store the continuation.
+        let a = freshAddr();
+        // Store the continuation.
+        let sto1 = Map2.insert(a, StoredKont(k), sto0);
+            Next(State(e2, env2, Store(sto1), a))
 
     //
     // Application2 Kontinuation.
     //
-    case State(v2, Environment(env0), Store(sto0), App2(v1, Environment(env1), kont)) if isValue(v2) =>
+    case (State(v2, Environment(env0), Store(sto0), _), Some(App2(v1, Environment(env1), kont))) if isValue(v2) =>
         // Evaluate the body of the lambda `v1` with argument `v2`.
         let Abs(x, body) = v1;
         let a = freshAddr();
         let env2 = Map2.insert(x, a, env1);
-        let sto1 = Map2.insert(a, (v2, Environment(env0)), sto0);
+        let sto1 = Map2.insert(a, StoredValue(v2, Environment(env0)), sto0);
             Next(State(body, Environment(env2), Store(sto1), kont))
 
     //
@@ -156,6 +177,15 @@ def step(m0: State): Outcome = match m0 with {
     case _ => Done(m0)
 }
 
+///
+/// Returns the given state `m0` paired with the optional continuation.
+///
+def withKont(m0: State): (State, Option[Kontinuation]) = match m0 with {
+    case State(exp0, env0, Store(sto0), kptr) => match Map2.lookup(kptr, sto0) with {
+        case Some(StoredKont(k)) => (m0, Some(k))
+        case _                   => (m0, None)
+    }
+}
 
 ///
 /// Repeatedly performs single-step transitions in the given machine `m0` until the machine halts with a value.
@@ -183,7 +213,7 @@ def substitute(e0: Expression, env0: Environment, sto0: Store): Expression = mat
         case None               => Var(x)
         case Some(a)            => match Map2.lookup(a, sto) with {
             case None => Var(x)
-            case Some((e, env1)) => substitute(e, env1, sto0)
+            case Some(StoredValue(e, env1)) => substitute(e, env1, sto0)
         }
     }
 

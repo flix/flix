@@ -49,7 +49,7 @@ def nonValue(e0: Expression): Bool = !isValue(e0)
 type Environment = Environment(Map2[Variable, Address])
 
 ///
-/// A store is a map from addresses to addresses to (value, environment)-pairs.
+/// A store is a map from addresses to (value, environment)-pairs.
 ///
 type Store = Store(Map2[Address, (Expression, Environment)])
 
@@ -71,10 +71,6 @@ enum Kontinuation {
     // NB: In the paper this constructor is named `fn`.
     case App2(Expression, Environment, Kontinuation)
 }
-
-///
-///
-///
 
 ///
 /// A machine state configuration.
