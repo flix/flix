@@ -99,7 +99,7 @@ type State = State(Expression, Environment, Store, Address, Time)
 /// Returns the initial state of the CEK-machine for the given expression `e0`.
 ///
 def inject(e0: Expression): State =
-    // Save the empty kontinuation into the store.
+    // Save the empty continuation into the store.
     let kont = Kontinuation.Empty;
     let kptr = A(0);
     let env0 = Map2.empty();
@@ -114,6 +114,7 @@ def tick(m0: State, k0: Kontinuation): Time = match m0 with {
     case State(_, _, _, _, Time(t)) => Time(t + 1)
 }
 
+///
 /// Returns the next address for the machine in the given state `m0` and continuation `c0`.
 ///
 def alloc(m0: State, k0: Kontinuation): Address = match m0 with {
@@ -159,7 +160,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     // Application Expression.
     //
     case (State(App(e1, e2), Environment(env0), Store(sto0), kptr, time), _) =>
-        // Continue evaluation of `e1` and store `e2` in a kontinuation.
+        // Continue evaluation of `e1` and store `e2` in a continuation.
         let k = App1(e2, Environment(env0), kptr);
         // Generate a fresh address where to store the continuation.
         let a = alloc(m0, k0);
