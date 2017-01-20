@@ -98,6 +98,8 @@ enum Storable {
     case StoredValue(Expression, Environment)
 }
 
+// TODO: Introduce: Introduce Value as the pair of an expression closed by an environment?
+
 ///
 /// A store is a map from addresses to a set of storables.
 ///
@@ -150,6 +152,45 @@ enum Kontinuation {
 
     // A continuation that represents the `v.link([])` context where the value `e` is closed by the environment.
     case KLink2(Expression, Environment, Address)
+}
+
+///
+/// The promise state maps addresses to promise values.
+///
+type PromiseState = PromiseState(Map2[Address, PromiseValue])
+
+///
+/// The fulfill reactions map addresses to a list of (Lam, Address)-pairs where the address points-to the child promise.
+///
+type FulfillReactions = FulfillReactions(Map2[Address, List[(Expression, Address)]]) // TODO: Should this be a set? // TODO: Does expression need to be paired with an environment?
+
+///
+/// The reject reactions map addresses to a list of (Lam, Address)-pairs where the address points-to the child promise.
+///
+type RejectReactions = RejectReactions(Map2[Address, List[(Expression, Address)]]) // TODO: Should this be a set? // TODO: Does expression need to be paired with an environment?
+
+///
+/// The promise links map addresses to a list of child promise addresses.
+///
+type PromiseLinks = PromiseLinks(Map2[Address, List[Address]]) // TODO: Should this be a set?
+
+///
+/// The link queue is a list of (PromiseValue, Address)-pairs where the address points-to the linked promise.
+///
+type LinkQueue = LinkQueue(List[(PromiseValue, Address)]) // TODO: Should this be a set?
+
+///
+/// The reaction queue is a list of (PromiseValue, Lam, Address)-triples where the address points to the child promise.
+///
+type ReactionQueue = ReactionQueue(List[(PromiseValue, Expression, Address)]) // TODO: Should this be a set? // TODO: Does expression need to be paired with an environment?
+
+///
+/// A promise is in one of three states: Pending, fulfilled (with a value), or rejected (with a value).
+///
+enum PromiseValue {
+    case Pending,
+    case Fulfilled(Expression), // TODO: Need environment to close the expression?
+    case Rejected(Expression)   // TODO: Need environment to close the expression?
 }
 
 ///
