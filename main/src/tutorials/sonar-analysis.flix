@@ -318,6 +318,23 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
             Set2.singleton(Next(State(body, Environment(env2), Store(sto1), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), kont, tick(m0, k0))))
 
     //
+    // Sequence Expression.
+    //
+    case (State(Seq(e1, e2), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
+        // Allocate the `KSeq` continuation in the store.
+        let k = StoredKont(KSeq(e2, env0, kptr));
+        let a = alloc(m0, k0);
+        let sto1 = Store.weakUpdate(a, k, sto0);
+            Set2.singleton(Next(State(e1, env0, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
+
+    //
+    // Sequence Kontinuation.
+    //
+    case (State(e1, env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), KSeq(e2, env2, kont)) if isValue(e1) =>
+        // Discard the value `e1`.
+        Set2.singleton(Next(State(e2, env2, sto0, s0, f0, r0, l0, w0, q0, kont, tick(m0, k0))))
+
+    //
     // Reference Expression.
     //
     case (State(Ref(e), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
@@ -331,17 +348,11 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     // Reference Kontinuation.
     //
     case (State(e, env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), KRef(kont)) if isValue(e) =>
+        // Allocate an address in the heap and store the value at that address.
         let a = alloc(m0, k0);
         let v = StoredValue(e, env0);
         let sto1 = Store.weakUpdate(a, v, sto0);
             Set2.singleton(Next(State(Ptr(a), env0, sto1, s0, f0, r0, l0, w0, q0, kont, tick(m0, k0)))) // TODO: What happens to the environment?
-
-//    case (Ref(v), State(Heap(h0), s0, f0, r0, l0, w0, q0)) =>
-//        // Allocate a fresh address in the heap and store the value at that address.
-//        let a = freshAddr();
-//        let h1 = Map2.insert(a, v, h0);
-//        let e1 = Ptr(a);
-//            Next(recompose(e1, ec), State(Heap(h1), s0, f0, r0, l0, w0, q0))
 
     //
     // Stuck.
