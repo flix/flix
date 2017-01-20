@@ -108,18 +108,48 @@ type Store = Store(Map2[Address, Set2[Storable]])
 //  from the evaluation contexts of the language.
 ///
 enum Kontinuation {
-    // Represents the empty evaluation context (named `mt` in the paper).
+    // A continuation that represents the empty evaluation context.
     case Empty,
 
-    // Represents the evaluation context ([] e) with continuation κ
-    // where the environment ρ closes the expression e.
-    // NB: In the paper this constructor is named `ar`.
-    case App1(Expression, Environment, Address),
+    // A continuation that represents the `[] e` context where the expression `e` is closed by the environment.
+    case KApp1(Expression, Environment, Address),
 
-    // Represents the evaluation context (v []) with continuation κ
-    // where the environment ρ closes the the value v.
-    // NB: In the paper this constructor is named `fn`.
-    case App2(Expression, Environment, Address)
+    // A continuation that represents the `v []` context where the value `v` is closed by the environment.
+    case KApp2(Expression, Environment, Address),
+
+    // A continuation that represents the `Ref []` context.
+    case KRef(Address),
+
+    // A continuation that represents the `Deref []` context.
+    case KDeref(Address),
+
+    // A continuation that represents the `[] ; e` context where the expression `e` is closed by the environment.
+    case KSeq(Expression, Environment, Address),
+
+    // A continuation that represents the `promisify([])` context.
+    case KPromisify(Address),
+
+    // A continuation that represents the `[].resolve(e)` context where the expression `e` is closed by the environment.
+    case KResolve1(Expression, Environment, Address),
+
+    // A continuation that represents the `v.resolve([])` context where the value `e` is closed by the environment.
+    case KResolve2(Expression, Environment, Address),
+
+    // NB: KReject1 and KReject2 are conceptually similar to KResolve1 and KResolve2.
+
+    // A continuation that represents the `[].onResolve(e)` context where the expression `e` is closed by the environment.
+    case KOnResolve1(Expression, Environment, Address),
+
+    // A continuation that represents the `v.onResolve([])` context where the value `e` is closed by the environment.
+    case KOnResolve2(Expression, Environment, Address),
+
+    // NB: KOnReject1 and KOnReject2 are conceptually similar to KOnResolve1 and KOnResolve2.
+
+    // A continuation that represents the `[].link(e)` context where the expression `e` is closed by the environment.
+    case KLink1(Expression, Environment, Address),
+
+    // A continuation that represents the `v.link([])` context where the value `e` is closed by the environment.
+    case KLink2(Expression, Environment, Address)
 }
 
 ///
@@ -200,7 +230,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     case (State(App(e1, e2), Environment(env0), Store(sto0), kptr, time), _) =>
         // Continue evaluation of `e1` and store `e2` in a continuation.
-        let k = App1(e2, Environment(env0), kptr);
+        let k = KApp1(e2, Environment(env0), kptr);
         // Generate a fresh address where to store the continuation.
         let a = alloc(m0, k0);
         // Store the continuation.
@@ -213,9 +243,9 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     // Application1 Kontinuation.
     //
-    case (State(v1, Environment(env0), Store(sto0), _, time), App1(e2, env2, kont)) if isValue(v1) =>
+    case (State(v1, Environment(env0), Store(sto0), _, time), KApp1(e2, env2, kont)) if isValue(v1) =>
         // Continue evaluation of `e2` and store `v1` in a continuation.
-        let k = App2(v1, Environment(env0), kont);
+        let k = KApp2(v1, Environment(env0), kont);
         // Generate a fresh address where to store the continuation.
         let a = alloc(m0, k0);
         // Store the continuation.
@@ -228,7 +258,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     // Application2 Kontinuation.
     //
-    case (State(v2, Environment(env0), Store(sto0), _, time), App2(v1, Environment(env1), kont)) if isValue(v2) =>
+    case (State(v2, Environment(env0), Store(sto0), _, time), KApp2(v1, Environment(env1), kont)) if isValue(v2) =>
         // Evaluate the body of the lambda `v1` with argument `v2`.
         let Abs(x, body) = v1;
         let a = alloc(m0, k0);
