@@ -203,7 +203,7 @@ type Time = Time(Int)
 ///
 /// NB: Note that the Address component is a pointer to continuation in the store.
 ///
-type State = State(Expression, Environment, Store, Address, Time)
+type State = State(Expression, Environment, Store, PromiseState, FulfillReactions, RejectReactions, PromiseLinks, LinkQueue, ReactionQueue, Address, Time)
 
 ///
 /// Returns the initial state of the CEK-machine for the given expression `e0`.
@@ -214,21 +214,27 @@ def inject(e0: Expression): State =
     let kptr = A(0);
     let env0 = Map2.empty();
     let sto0 = Map2.insert(kptr, Set2.singleton(StoredKont(kont)), Map2.empty());
+    let s0 = Map2.empty();
+    let f0 = Map2.empty();
+    let r0 = Map2.empty();
+    let l0 = Map2.empty();
+    let w0 = Nil;
+    let q0 = Nil;
     let time = Time(1);
-        State(e0, Environment(env0), Store(sto0), kptr, time)
+        State(e0, Environment(env0), Store(sto0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), kptr, time)
 
 ///
 /// Returns the next timestamp for the machine in the given state `m0` and continuation `k0`.
 ///
 def tick(m0: State, k0: Kontinuation): Time = match m0 with {
-    case State(_, _, _, _, Time(t)) => Time(t + 1)
+    case State(_, _, _, _, _, _, _, _, _, _, Time(t)) => Time(t + 1)
 }
 
 ///
 /// Returns the next address for the machine in the given state `m0` and continuation `c0`.
 ///
 def alloc(m0: State, k0: Kontinuation): Address = match m0 with {
-    case State(_, _, _, _, Time(t)) => A(t)
+    case State(_, _, _, _, _, _, _, _, _, _, Time(t)) => A(t)
 }
 
 ///
@@ -253,7 +259,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     // Variable Expression.
     //
-    case (State(Var(x), Environment(env0), Store(sto0), kptr, time), _) =>
+    case (State(Var(x), Environment(env0), Store(sto0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), kptr, time), _) =>
         // The expression is a variable. Look it up in the environment.
          match Map2.lookup(x, env0) with {
             case None => Set2(Abort("Unbound variable.") :: Nil)
@@ -261,7 +267,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
                 let values = Option.getWithDefault(Map2.lookup(ptr, sto0), Set2.empty());
                 let f = storable -> match storable with {
                     case StoredKont(_) => Abort("Non-value storable.")
-                    case StoredValue(v, env1) => Next(State(v, env1, Store(sto0), kptr, tick(m0, k0)))
+                    case StoredValue(v, env1) => Next(State(v, env1, Store(sto0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), kptr, tick(m0, k0)))
                 };
                 Set2.map(f, values)
          }
@@ -269,7 +275,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     // Application Expression.
     //
-    case (State(App(e1, e2), Environment(env0), Store(sto0), kptr, time), _) =>
+    case (State(App(e1, e2), Environment(env0), Store(sto0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), kptr, time), _) =>
         // Continue evaluation of `e1` and store `e2` in a continuation.
         let k = KApp1(e2, Environment(env0), kptr);
         // Generate a fresh address where to store the continuation.
@@ -279,12 +285,12 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let oldValue = Option.getWithDefault(Map2.lookup(a, sto0), Set2.empty());
         let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
         let sto1 = Map2.insert(a, lubValue, sto0);
-            Set2.singleton(Next(State(e1, Environment(env0), Store(sto1), a, tick(m0, k0))))
+            Set2.singleton(Next(State(e1, Environment(env0), Store(sto1), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), a, tick(m0, k0))))
 
     //
     // Application1 Kontinuation.
     //
-    case (State(v1, Environment(env0), Store(sto0), _, time), KApp1(e2, env2, kont)) if isValue(v1) =>
+    case (State(v1, Environment(env0), Store(sto0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), _, time), KApp1(e2, env2, kont)) if isValue(v1) =>
         // Continue evaluation of `e2` and store `v1` in a continuation.
         let k = KApp2(v1, Environment(env0), kont);
         // Generate a fresh address where to store the continuation.
@@ -294,12 +300,12 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let oldValue = Option.getWithDefault(Map2.lookup(a, sto0), Set2.empty());
         let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
         let sto1 = Map2.insert(a, lubValue, sto0);
-            Set2.singleton(Next(State(e2, env2, Store(sto1), a, tick(m0, k0))))
+            Set2.singleton(Next(State(e2, env2, Store(sto1), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), a, tick(m0, k0))))
 
     //
     // Application2 Kontinuation.
     //
-    case (State(v2, Environment(env0), Store(sto0), _, time), KApp2(v1, Environment(env1), kont)) if isValue(v2) =>
+    case (State(v2, Environment(env0), Store(sto0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), _, time), KApp2(v1, Environment(env1), kont)) if isValue(v2) =>
         // Evaluate the body of the lambda `v1` with argument `v2`.
         let Abs(x, body) = v1;
         let a = alloc(m0, k0);
@@ -308,7 +314,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let oldValue = Option.getWithDefault(Map2.lookup(a, sto0), Set2.empty());
         let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
         let sto1 = Map2.insert(a, lubValue, sto0);
-            Set2.singleton(Next(State(body, Environment(env2), Store(sto1), kont, tick(m0, k0))))
+            Set2.singleton(Next(State(body, Environment(env2), Store(sto1), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), kont, tick(m0, k0))))
 
     //
     // Stuck.
@@ -320,7 +326,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
 /// Returns all possible transitions from the given state `m0`.
 ///
 def stepAll(m0: State): Set2[Outcome] = match m0 with {
-    case State(exp0, env0, Store(sto0), kptr, time) =>
+    case State(exp0, env0, Store(sto0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), kptr, time) =>
         let values = Option.getWithDefault(Map2.lookup(kptr, sto0), Set2.empty());
         let f = value -> match value with {
             case StoredKont(k) => step(m0, k)
