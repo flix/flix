@@ -254,6 +254,7 @@ enum Outcome {
 ///
 /// Returns all possible transitions (outcomes) from the given state `m0` and continuation `k0`.
 ///
+// TODO: Rename Store to Heap and h0.
 def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
 
     //
@@ -317,9 +318,35 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
             Set2.singleton(Next(State(body, Environment(env2), Store(sto1), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), kont, tick(m0, k0))))
 
     //
+    // Reference Expression.
+    //
+    case (State(Ref(e), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
+        // Allocate the `KRef` continuation in the store.
+        let k = StoredKont(KRef(kptr));
+        let a = alloc(m0, k0);
+        let sto1 = Store.weakUpdate(a, k, sto0);
+            Set2.singleton(Next(State(e, env0, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
+
+    //
+    // Reference Kontinuation.
+    //
+    case (State(e, env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), KRef(kont)) if isValue(e) =>
+        let a = alloc(m0, k0);
+        let v = StoredValue(e, env0);
+        let sto1 = Store.weakUpdate(a, v, sto0);
+            Set2.singleton(Next(State(Ptr(a), env0, sto1, s0, f0, r0, l0, w0, q0, kont, tick(m0, k0)))) // TODO: What happens to the environment?
+
+//    case (Ref(v), State(Heap(h0), s0, f0, r0, l0, w0, q0)) =>
+//        // Allocate a fresh address in the heap and store the value at that address.
+//        let a = freshAddr();
+//        let h1 = Map2.insert(a, v, h0);
+//        let e1 = Ptr(a);
+//            Next(recompose(e1, ec), State(Heap(h1), s0, f0, r0, l0, w0, q0))
+
+    //
     // Stuck.
     //
-    case _ => Set2.singleton(Done(m0))
+    case _ => let foo = println!(k0); Set2.singleton(Done(m0))
 }
 
 ///
@@ -355,26 +382,32 @@ def eval(m0: State): Set2[Outcome] =
 def run(e0: Expression): Set2[Outcome] = eval(inject(e0))
 
 //
-// We can now test our CEK machine!
+// Example 1:
 //
-def testEval1: Set2[Outcome] = run(Var(V(0)))                                                      // x
-def testEval2: Set2[Outcome] = run(Abs(V(0), Var(V(0))))                                           // λx. x
-def testEval3: Set2[Outcome] = run(Abs(V(0), Abs(V(1), Var(V(0)))))                                // λx. λy. x
-def testEval4: Set2[Outcome] = run(App(Abs(V(0), Var(V(0))), Abs(V(1), Var(V(1)))))                // (λx. x) (λy. y)
-def testEval5: Set2[Outcome] = run(App(Abs(V(0), Abs(V(1), Var(V(0)))), Abs(V(2), Var(V(2)))))     // (λx. λy. x) (λz. z)
-def testEval6: Set2[Outcome] = run(App(App(Abs(V(0), Abs(V(1), App(Var(V(0)), Var(V(1))))), Abs(V(2), Var(V(2)))), Abs(V(3), Var(V(3)))))     // ((λx. λy. x y) (λz. z)) (λw. w)
-
+// var x = Ref("Promise1")
+// promisify(x)
+// x.onResolve(y => Ref(y))
+// x.resolve("hello")
 //
-// Here is the omega-combinator: (λx. x x) (λx. x x)
-//
-def testOmega: Set2[Outcome] = run(
-    App(
-        Abs(V(0), App(Var(V(0)), Var(V(0)))),
-        Abs(V(0), App(Var(V(0)), Var(V(0))))))
+def testEval1: Set2[Outcome] = eval(inject(
+    App(Abs(V(0),
+        Seq(Promisify(Var(V(0))),
+            Seq(OnResolve(Var(V(0)), Abs(V(42), Ref(Var(V(42))))),
+                Resolve(Var(V(0)), Cst("hello"))
+            ))
+        ),
+        Ref(Cst("Promise1"))))
+)
 
+namespace Store {
 
+    def weakUpdate(a: Address, newValue: Storable, sto: Store): Store =
+        let Store(sto0) = sto;
+        let oldValue = Option.getWithDefault(Map2.lookup(a, sto0), Set2.empty());
+        let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
+            Store(Map2.insert(a, lubValue, sto0))
 
-
+}
 
 //
 // ----------------------------------------------------------------------------
