@@ -317,22 +317,6 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let sto1 = Map2.insert(a, lubValue, sto0);
             Set2.singleton(Next(State(body, Environment(env2), Store(sto1), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), kont, tick(m0, k0))))
 
-    //
-    // Sequence Expression.
-    //
-    case (State(Seq(e1, e2), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
-        // Allocate the `KSeq` continuation in the store.
-        let k = StoredKont(KSeq(e2, env0, kptr));
-        let a = alloc(m0, k0);
-        let sto1 = Store.weakUpdate(a, k, sto0);
-            Set2.singleton(Next(State(e1, env0, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
-
-    //
-    // Sequence Kontinuation.
-    //
-    case (State(e1, env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), KSeq(e2, env2, kont)) if isValue(e1) =>
-        // Discard the value `e1`.
-        Set2.singleton(Next(State(e2, env2, sto0, s0, f0, r0, l0, w0, q0, kont, tick(m0, k0))))
 
     //
     // Reference Expression.
@@ -353,6 +337,46 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let v = StoredValue(e, env0);
         let sto1 = Store.weakUpdate(a, v, sto0);
             Set2.singleton(Next(State(Ptr(a), env0, sto1, s0, f0, r0, l0, w0, q0, kont, tick(m0, k0)))) // TODO: What happens to the environment?
+
+    //
+    // Dereference Expression.
+    //
+    case (State(Deref(e), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
+        // Allocate the `KDeref` continuation in the store.
+        let k = StoredKont(KDeref(kptr));
+        let a = alloc(m0, k0);
+        let sto1 = Store.weakUpdate(a, k, sto0);
+            Set2.singleton(Next(State(e, env0, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
+
+    //
+    // Dereference Kontinuation.
+    //
+    case (State(Ptr(a), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), KDeref(kont)) =>
+        // Lookup the address `a` in the store.
+        let vs = Store.lookup(a, sto0);
+        let f = s -> match s with {
+            case StoredKont(k)          => Abort("Non-value storable.")
+            case StoredValue(e, env1)   => Next(State(e, env1, sto0, s0, f0, r0, l0, w0, q0, a, tick(m0, k0)))
+        };
+            Set2.map(f, vs)
+
+    //
+    // Sequence Expression.
+    //
+    case (State(Seq(e1, e2), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
+        // Allocate the `KSeq` continuation in the store.
+        let k = StoredKont(KSeq(e2, env0, kptr));
+        let a = alloc(m0, k0);
+        let sto1 = Store.weakUpdate(a, k, sto0);
+            Set2.singleton(Next(State(e1, env0, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
+
+    //
+    // Sequence Kontinuation.
+    //
+    case (State(e1, env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), KSeq(e2, env2, kont)) if isValue(e1) =>
+        // Discard the value `e1`.
+        Set2.singleton(Next(State(e2, env2, sto0, s0, f0, r0, l0, w0, q0, kont, tick(m0, k0))))
+
 
     //
     // Stuck.
@@ -410,8 +434,16 @@ def testEval1: Set2[Outcome] = eval(inject(
         Ref(Cst("Promise1"))))
 )
 
+
+// TODO: Cleanup
 namespace Store {
 
+    // TODO: Cleanup
+    def lookup(a: Address, sto: Store): Set2[Storable] =
+        let Store(sto0) = sto;
+            Option.getWithDefault(Map2.lookup(a, sto0), Set2.empty())
+
+    // TODO: Cleanup
     def weakUpdate(a: Address, newValue: Storable, sto: Store): Store =
         let Store(sto0) = sto;
         let oldValue = Option.getWithDefault(Map2.lookup(a, sto0), Set2.empty());
