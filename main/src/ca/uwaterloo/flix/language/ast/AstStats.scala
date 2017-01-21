@@ -88,10 +88,10 @@ object AstStats {
         (visitExp(exp1) + visitExp(exp2) + visitExp(exp3)).incIfThenElse
       case ExecutableAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
         (visitExp(exp1) + visitExp(exp2)).incLet
-      case ExecutableAst.Expression.CheckTag(tag, exp, loc) =>
+      case ExecutableAst.Expression.Is(exp, tag, loc) =>
         visitExp(exp).incCheckTag
       case ExecutableAst.Expression.Tag(enum, tag, exp, tpe, loc) => visitExp(exp).incTag
-      case ExecutableAst.Expression.GetTagValue(tag, exp, tpe, loc) =>
+      case ExecutableAst.Expression.Untag(tag, exp, tpe, loc) =>
         visitExp(exp).incGetTagValue
       case ExecutableAst.Expression.GetTupleIndex(base, offset, tpe, loc) => visitExp(base)
       case ExecutableAst.Expression.Tuple(elms, tpe, loc) =>

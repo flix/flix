@@ -302,10 +302,10 @@ object Simplifier {
         * the value of the tag.
         */
       case (Tag(enum, tag, pat, tpe, loc) :: ps, v :: vs) =>
-        val cond = SExp.CheckTag(tag, SExp.Var(v, tpe, loc), loc)
+        val cond = SExp.Is(SExp.Var(v, tpe, loc), tag, loc)
         val freshVar = Symbol.freshVarSym("innerTag")
         val inner = simplify(pat :: ps, freshVar :: vs, guard, succ, fail)
-        val consequent = SExp.Let(freshVar, SExp.GetTagValue(tag, SExp.Var(v, tpe, loc), pat.tpe, loc), inner, succ.tpe, loc)
+        val consequent = SExp.Let(freshVar, SExp.Untag(tag, SExp.Var(v, tpe, loc), pat.tpe, loc), inner, succ.tpe, loc)
         SExp.IfThenElse(cond, consequent, fail, succ.tpe, loc)
 
       /**

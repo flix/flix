@@ -151,12 +151,12 @@ object LambdaLift {
         Expression.IfThenElse(visit(exp1), visit(exp2), visit(exp3), tpe, loc)
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
         Expression.Let(sym, visit(exp1), visit(exp2), tpe, loc)
-      case Expression.CheckTag(tag, exp, loc) =>
-        Expression.CheckTag(tag, visit(exp), loc)
-      case Expression.GetTagValue(tag, exp, tpe, loc) =>
-        Expression.GetTagValue(tag, visit(exp), tpe, loc)
+      case Expression.Is(exp, tag, loc) =>
+        Expression.Is(visit(exp), tag, loc)
       case Expression.Tag(enum, tag, exp, tpe, loc) =>
         Expression.Tag(enum, tag, visit(exp), tpe, loc)
+      case Expression.Untag(tag, exp, tpe, loc) =>
+        Expression.Untag(tag, visit(exp), tpe, loc)
       case Expression.GetTupleIndex(exp, offset, tpe, loc) =>
         Expression.GetTupleIndex(visit(exp), offset, tpe, loc)
       case Expression.Tuple(elms, tpe, loc) =>

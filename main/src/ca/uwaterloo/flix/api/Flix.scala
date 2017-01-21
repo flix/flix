@@ -237,7 +237,10 @@ class Flix {
         val monomorphedAst = Monomorph.monomorph(tast)
         val simplifiedAst = Simplifier.simplify(monomorphedAst)
         val lambdaLiftedAst = Tailrec.tailrec(LambdaLift.lift(simplifiedAst))
-        val numberedAst = VarNumbering.number(lambdaLiftedAst)
+        val inlinedAst = Inliner.inline(lambdaLiftedAst)
+        val optimizedAst = Optimizer.optimize(inlinedAst, options)
+        val shakedAst = TreeShaker.shake(optimizedAst)
+        val numberedAst = VarNumbering.number(shakedAst)
         val executableAst = CreateExecutableAst.toExecutable(numberedAst)
         val compiledAst = LoadBytecode.load(this, executableAst, options)
         QuickChecker.quickCheck(compiledAst, options) flatMap {
