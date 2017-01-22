@@ -410,38 +410,13 @@ object SimplifiedAst {
       */
     case class Let(sym: Symbol.VarSym, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    /**
-      * A typed AST node representing a check-tag expression, i.e. check if the tag expression matches the given tag
-      * identifier.
-      *
-      * @param tag the tag identifier.
-      * @param exp the tag expression to check.
-      * @param loc the source location of the expression.
-      */
-    case class CheckTag(tag: String, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
+    case class Is(exp: SimplifiedAst.Expression, tag: String, loc: SourceLocation) extends SimplifiedAst.Expression {
       final val tpe: Type = Type.Bool
     }
 
-    /**
-      * A typed AST node representing a dereference of the inner value of a tag, i.e. destruct a tag.
-      *
-      * @param tag the tag identifier.
-      * @param exp the tag expression to destruct.
-      * @param tpe the type of the inner tag value.
-      * @param loc the source location of the expression.
-      */
-    case class GetTagValue(tag: String, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    /**
-      * A typed AST node representing a tagged expression.
-      *
-      * @param sym the name of the enum.
-      * @param tag the name of the tag.
-      * @param exp the expression.
-      * @param tpe the type of the expression.
-      * @param loc The source location of the tag.
-      */
     case class Tag(sym: Symbol.EnumSym, tag: String, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class Untag(tag: String, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     /**
       * A typed AST node representing an index into a tuple, i.e. destruct a tuple.

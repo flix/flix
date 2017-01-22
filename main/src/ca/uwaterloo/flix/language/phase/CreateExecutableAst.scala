@@ -220,12 +220,12 @@ object CreateExecutableAst {
         ExecutableAst.Expression.IfThenElse(toExecutable(exp1), toExecutable(exp2), toExecutable(exp3), tpe, loc)
       case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
         ExecutableAst.Expression.Let(sym, toExecutable(exp1), toExecutable(exp2), tpe, loc)
-      case SimplifiedAst.Expression.CheckTag(tag, exp, loc) =>
-        ExecutableAst.Expression.CheckTag(tag, toExecutable(exp), loc)
-      case SimplifiedAst.Expression.GetTagValue(tag, exp, tpe, loc) =>
-        ExecutableAst.Expression.GetTagValue(tag, toExecutable(exp), tpe, loc)
+      case SimplifiedAst.Expression.Is(exp, tag, loc) =>
+        ExecutableAst.Expression.Is(toExecutable(exp), tag, loc)
       case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) =>
         ExecutableAst.Expression.Tag(enum, tag, toExecutable(exp), tpe, loc)
+      case SimplifiedAst.Expression.Untag(tag, exp, tpe, loc) =>
+        ExecutableAst.Expression.Untag(tag, toExecutable(exp), tpe, loc)
       case SimplifiedAst.Expression.GetTupleIndex(base, offset, tpe, loc) =>
         ExecutableAst.Expression.GetTupleIndex(toExecutable(base), offset, tpe, loc)
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>

@@ -499,7 +499,7 @@ object Codegen {
       }
       compileExpression(ctx, visitor, entryPoint)(exp2)
 
-    case Expression.CheckTag(tag, exp, _) =>
+    case Expression.Is(exp, tag, _) =>
       // Value.Tag.tag() method
       val clazz1 = Constants.tagClass
       val method1 = clazz1.getMethod("tag")
@@ -514,7 +514,14 @@ object Codegen {
       visitor.visitLdcInsn(tag)
       visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz2), method2.getName, asm.Type.getMethodDescriptor(method2), false)
 
-    case Expression.GetTagValue(tag, exp, tpe, _) =>
+    case Expression.Tag(enum, tag, exp, _, _) =>
+      // Load the Value singleton object, then the arguments (tag.name, boxing if necessary), and finally call `Value.mkTag`.
+      Constants.loadValueObject(visitor)
+      visitor.visitLdcInsn(tag)
+      compileBoxedExpr(ctx, visitor, entryPoint)(exp)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkTag", "(Ljava/lang/String;Ljava/lang/Object;)Lca/uwaterloo/flix/runtime/Value$Tag;", false)
+
+    case Expression.Untag(tag, exp, tpe, _) =>
       // Value.Tag.value() method
       val clazz = Constants.tagClass
       val method = clazz.getMethod("value")
@@ -523,13 +530,6 @@ object Codegen {
       compileExpression(ctx, visitor, entryPoint)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
       compileUnbox(ctx, visitor)(tpe)
-
-    case Expression.Tag(enum, tag, exp, _, _) =>
-      // Load the Value singleton object, then the arguments (tag.name, boxing if necessary), and finally call `Value.mkTag`.
-      Constants.loadValueObject(visitor)
-      visitor.visitLdcInsn(tag)
-      compileBoxedExpr(ctx, visitor, entryPoint)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkTag", "(Ljava/lang/String;Ljava/lang/Object;)Lca/uwaterloo/flix/runtime/Value$Tag;", false)
 
     case Expression.GetTupleIndex(base, offset, tpe, _) =>
       // Load the Value singleton object and base expression, to call `Value.cast2tuple`, to get the elements array.
