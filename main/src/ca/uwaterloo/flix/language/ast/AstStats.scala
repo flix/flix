@@ -89,10 +89,10 @@ object AstStats {
       case ExecutableAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
         (visitExp(exp1) + visitExp(exp2)).incLet
       case ExecutableAst.Expression.Is(exp, tag, loc) =>
-        visitExp(exp).incCheckTag
+        visitExp(exp).incIs
       case ExecutableAst.Expression.Tag(enum, tag, exp, tpe, loc) => visitExp(exp).incTag
       case ExecutableAst.Expression.Untag(tag, exp, tpe, loc) =>
-        visitExp(exp).incGetTagValue
+        visitExp(exp).incUntag
       case ExecutableAst.Expression.GetTupleIndex(base, offset, tpe, loc) => visitExp(base)
       case ExecutableAst.Expression.Tuple(elms, tpe, loc) =>
         val s = elms.foldLeft(AstStats()) {
@@ -173,9 +173,9 @@ case class AstStats(unitLiterals: Int = 0,
                     bitwiseRightShiftExpressions: Int = 0,
                     ifThenElseExpressions: Int = 0,
                     letExpressions: Int = 0,
-                    checkTagExpressions: Int = 0,
-                    getTagValueExpressions: Int = 0,
+                    isExpressions: Int = 0,
                     tagExpressions: Int = 0,
+                    untagExpressions: Int = 0,
                     getTupleIndexExpressions: Int = 0,
                     tupleExpressions: Int = 0,
                     checkNilExpressions: Int = 0,
@@ -241,8 +241,8 @@ case class AstStats(unitLiterals: Int = 0,
     this.bitwiseRightShiftExpressions + that.bitwiseRightShiftExpressions,
     this.ifThenElseExpressions + that.ifThenElseExpressions,
     this.letExpressions + that.letExpressions,
-    this.checkTagExpressions + that.checkTagExpressions,
-    this.getTagValueExpressions + that.getTagValueExpressions,
+    this.isExpressions + that.isExpressions,
+    this.untagExpressions + that.untagExpressions,
     this.tagExpressions + that.tagExpressions,
     this.getTupleIndexExpressions + that.getTupleIndexExpressions,
     this.tupleExpressions + that.tupleExpressions,
@@ -323,13 +323,13 @@ case class AstStats(unitLiterals: Int = 0,
 
   def incLet: AstStats = copy(letExpressions = letExpressions + 1)
 
-  def incCheckTag: AstStats = copy(checkTagExpressions = checkTagExpressions + 1)
-
-  def incGetTagValue: AstStats = copy(getTagValueExpressions = getTagValueExpressions + 1)
-
-  def incIfThenElse: AstStats = copy(ifThenElseExpressions = ifThenElseExpressions + 1)
+  def incIs: AstStats = copy(isExpressions = isExpressions + 1)
 
   def incTag: AstStats = copy(tagExpressions = tagExpressions + 1)
+
+  def incUntag: AstStats = copy(untagExpressions = untagExpressions + 1)
+
+  def incIfThenElse: AstStats = copy(ifThenElseExpressions = ifThenElseExpressions + 1)
 
   def incTuple: AstStats = copy(tupleExpressions = tupleExpressions + 1)
 
