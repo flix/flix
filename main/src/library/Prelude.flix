@@ -52,7 +52,7 @@ enum Map[k, v] {
 }
 
 ///
-/// The identity map.
+/// The identity function.
 ///
 def identity[a](x: a): a = x
 
