@@ -752,10 +752,7 @@ namespace List {
         }
     }
 
-    // ## TODO
-    //
-    // ## List Conversions
-    //
+    def toSet[a](xs: List[a]): Set[a] = foldRight(Set.insert, Set.empty(), xs)
 
     ////- **toMap(xs: List[(A, B)]): Map[A, B]**
     ////    - Returns the association list as a map. If the list contains multiple values for the same key, the value appearing latest in the list is used.

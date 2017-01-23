@@ -1,5 +1,12 @@
 namespace Map {
 
+    ///
+    /// Returns the size of `m`.
+    ///
+    def size[k, v](m: Map[k, v]): Int32 =
+        let Map(xs) = m;
+            List.length(xs)
+
     //
     // ## Map Construction
     //
@@ -29,10 +36,9 @@ namespace Map {
     /// Returns `Some(v)` if `k -> v` is in `m`.
     /// Otherwise returns `None`.
     ///
-    def get[k, v](k: k, m: Map[k, v]): Option[v] = match m with {
-        case Map(Nil) => None
-        case Map((a, b) :: rs) => if (a == k) Some(b) else get(k, Map(rs))
-    }
+    def get[k, v](k: k, m: Map[k, v]): Option[v] =
+        let Map(xs) = m;
+            List.findMap(match (key, v) -> if (key != k) None else Some(v), xs)
 
     ///
     /// Returns `v` if `k -> v` is in `m`.
@@ -56,7 +62,7 @@ namespace Map {
     ///
     def keysOf[k, v](m: Map[k, v]): Set[k] =
         let Map(xs) = m;
-            Set(fst(List.unzip(xs)))
+            List.toSet(fst(List.unzip(xs)))
 
     ///
     /// Returns the values of `m`.
@@ -73,32 +79,14 @@ namespace Map {
     /// Updates `m` with `k -> v`.
     ///
     def insert[k, v](k: k, v: v, m: Map[k, v]): Map[k, v] =
-        let Map(xs) = m;
-            Map(insertHelper(k, v, xs))
-
-    ///
-    /// Helper function for `insert`.
-    ///
-    def insertHelper[k, v](k: k, v: v, xs: List[(k, v)]): List[(k, v)] = match xs with {
-        case Nil => (k, v) :: Nil
-        case (a, b) :: rs => if (k == a) (k, v) :: rs else (a, b) :: insertHelper(k, v, rs)
-    }
+        insertWithKey((k1, v1, v2) -> v1, k, v, m)
 
     ///
     /// Updates `m` with `k -> f(v, v1)` if `k -> v1` is in `m`.
     /// Otherwise, updates `m` with `k -> v`.
     ///
     def insertWith[k, v](f: (v, v) -> v, k: k, v: v, m: Map[k, v]): Map[k, v] =
-        let Map(xs) = m;
-            Map(insertWithHelper(f, k, v, xs))
-
-    ///
-    /// Helper function for `insertWith`.
-    ///
-    def insertWithHelper[k, v](f: (v, v) -> v, k: k, v: v, xs: List[(k, v)]): List[(k, v)] = match xs with {
-        case Nil => (k, v) :: Nil
-        case (a, b) :: rs => if (k == a) (k, f(v, b)) :: rs else (a, b) :: insertWithHelper(f, k, v, rs)
-    }
+        insertWithKey((k1, v1, v2) -> f(v1, v2), k, v, m)
 
     ///
     /// Updates `m` with `k -> f(k, v, v1)` if `k -> v1` is in `m`.
@@ -111,6 +99,7 @@ namespace Map {
     ///
     /// Helper function for `insertWithKey`.
     ///
+    @internal
     def insertWithKeyHelper[k, v](f: (k, v, v) -> v, k: k, v: v, xs: List[(k, v)]): List[(k, v)] = match xs with {
         case Nil => (k, v) :: Nil
         case (a, b) :: rs => if (k == a) (k, f(k, v, b)) :: rs else (a, b) :: insertWithKeyHelper(f, k, v, rs)
@@ -125,16 +114,7 @@ namespace Map {
     /// Otherwise, returns `m`.
     ///
     def adjust[k, v](f: v -> v, k: k, m: Map[k, v]): Map[k, v] =
-        let Map(xs) = m;
-            Map(adjustHelper(f, k, xs))
-
-    ///
-    /// Helper function for `adjust`.
-    ///
-    def adjustHelper[k, v](f: v -> v, k: k, xs: List[(k, v)]): List[(k, v)] = match xs with {
-        case Nil => Nil
-        case (a, b) :: rs => if (k == a) (k, f(b)) :: rs else (a, b) :: adjustHelper(f, k, rs)
-    }
+        adjustWithKey((k1, v1) -> f(v1), k, m)
 
     ///
     /// Updates `m` with `k -> f(k, v)` if `k -> v` is in `m`.
@@ -142,31 +122,14 @@ namespace Map {
     ///
     def adjustWithKey[k, v](f: (k, v) -> v, k: k, m: Map[k, v]): Map[k, v] =
         let Map(xs) = m;
-            Map(adjustWithKeyHelper(f, k, xs))
-
-    ///
-    /// Helper function for `adjustWithKey`.
-    ///
-    def adjustWithKeyHelper[k, v](f: (k, v) -> v, k: k, xs: List[(k, v)]): List[(k, v)] = match xs with {
-        case Nil => Nil
-        case (a, b) :: rs => if (k == a) (k, f(k, b)) :: rs else (a, b) :: adjustWithKeyHelper(f, k, rs)
-    }
+            Map(List.map(match (key, v) -> if (key == k) (k, f(k, v)) else (key, v), xs))
 
     ///
     /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(v) = Some(v1).
     /// Otherwise, returns `m`.
     ///
     def update[k, v](f: v -> Option[v], k: k, m: Map[k, v]): Map[k, v] =
-        let Map(xs) = m;
-            Map(updateHelper(f, k, xs))
-
-    ///
-    /// Helper function for `update`.
-    ///
-    def updateHelper[k, v](f: v -> Option[v], k: k, xs: List[(k, v)]): List[(k, v)] = match xs with {
-        case Nil => Nil
-        case (a, b) :: rs => if (k == a) (k, Option.getWithDefault(f(b), b)) :: rs else (a, b) :: updateHelper(f, k, rs)
-    }
+        updateWithKey((k1, v1) -> f(v1), k, m)
 
     ///
     /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(k, v) = Some(v1).
@@ -174,15 +137,7 @@ namespace Map {
     ///
     def updateWithKey[k, v](f: (k, v) -> Option[v], k: k, m: Map[k, v]): Map[k, v] =
         let Map(xs) = m;
-            Map(updateWithKeyHelper(f, k, xs))
-
-    ///
-    /// Helper function for `updateWithKey`.
-    ///
-    def updateWithKeyHelper[k, v](f: (k, v) -> Option[v], k: k, xs: List[(k, v)]): List[(k, v)] = match xs with {
-        case Nil => Nil
-        case (a, b) :: rs => if (k == a) (k, Option.getWithDefault(f(k, b), b)) :: rs else (a, b) :: updateWithKeyHelper(f, k, rs)
-    }
+            Map(List.map(match (key, v) -> if (key == k) (k, Option.getWithDefault(f(k, v), v)) else (key, v), xs))
 
     //
     // ## Delete
@@ -193,74 +148,190 @@ namespace Map {
     ///
     def delete[k, v](k: k, m: Map[k, v]): Map[k, v] =
         let Map(xs) = m;
-            Map(deleteHelper(k, xs))
+            Map(List.filter(match (key, v) -> key != k, xs))
 
-    ///
-    /// Helper function for `delete`.
-    ///
-    def deleteHelper[k, v](k: k, xs: List[(k, v)]): List[(k, v)] = match xs with {
-        case Nil => Nil
-        case (a, b) :: rs => if (k == a) rs else (a, b) :: deleteHelper(k, rs)
-    }
-
-  //## Map Predicates
-  //- **isSubmapOf(m1: Map[K, V], m2: Map[K, V]): Map[K, V]**
-  //    - Returns true if all (key, value) mappings in m1 occur in m2.
-  //- **isProperSubmapOf(m1: Map[K, V], m2: Map[K, V]): Map[K, V]**
-  //    - Returns true if all (key, value) mappings in m1 occur in m2 and m1 is not equal to m2.
-  //
-  //## Map Transformation
-   //- **filter(f: V => Bool, m: Map[K, V]): Map[K, V]**
-   //    - Returns a map built from m where the values satisfy the predicate f.
-   //- **filterWithKey(f: (K, V) => Bool, m: Map[K, V]): Map[K, V]**
-   //    - Similar to filter but also passes the key to the predicate function.
-   //- **map(f: A => B, m: Map[K, A]): Map[K, B]**
-   //    - Returns a map with the function f applied to all values in m.
-   //- **mapWithKey(f: (K, A) => B, m: Map[K, A]): Map[K, B]**
-   //    - Similar to map but also passes the key to the map function.
-   //
-   //## Fold
-    //- **fold(f: (B, A) => B, b: B, m: Map[K, A]): B**
-    //    - Alias for foldLeft.
-    //- **foldWithKey(f: (K, B, A) => B, b: B, m: Map[K, A]): B**
-    //    - Alias for foldLeftWithKey.
-    //- **foldLeft(f: (B, A) => B, b: B, m: Map[K, A]): B**
-    //    - Left fold of the values in the map m with the fold function f.
-    //- **foldWithKey(f: (K, B, A) => B, b: B, m: Map[K, A]): B**
-    //    - Similar to foldLeft but passes the key to the fold function.
-    //- **foldRight(f: (A, B) => B, b: B, m: Map[K, A]): B**
-    //    - Right fold of the values in the map m with the fold function f.
-    //- **foldRightWithKey(f: (K, A, B) => B, b: B, m: Map[K, A]): B**
-    //    - Similar to foldRight but passes the key to the fold function.
+    //
+    // ## Map Predicates
     //
 
-    //## Combine Two Maps
-     //- **union(m1: Map[K, V], m2: Map[K, V]): Map[K, V]**
-     //    - Returns the left-biased union of m1 and m2. That is, a map with all mappings taken from m1 and m2 and where key collisions are resolved by always taking the mapping from m1.
-     //- **unionWith(f: (V, V) => V, m1: Map[K, V], m2: Map[K, V]): Map[K, V]**
-     //    - Returns the union of the maps m1 and m2 where key collisions are resolved by the merge function f.
-     //- **unionWithKey(f: (K, V, V) => V, m1: Map[K, V], m2: Map[K, V]): Map[K, V]**
-     //    - Similar to unionWith but also passes the key to the merge function.
-     //- **intersection(m1: Map[K, V], m2: Map[K, V]): Map[K, V]**
-     //    - Returns the left-biased intersection of m1 and m2. That is, a map with all mappings taken from m1 where the keys also exist in m2.
-     //- **intersectionWith(f: (V, V) => V,m1: Map[K, V], m2: Map[K, V]): Map[K, V]**
-     //    - Returns the intersection of m1 and m2 using the merge function f to combine values.
-     //- **intersectionWithKey(f: (K, V, V) => V, m1: Map[K, V], m2: Map[K, V]): Map[K, V]**
-     //    - Similar to intersectionWith but also passes the key to the merge function.
-     //- **difference(m1: Map[K, V], m2: Map[K, V]): Map[K, V]**
-     //    - Returns the map m1 with the keys removed that are in m2.
-     //- **differenceWith(f: (V, V) => Opt[V], m1: Map[K, V], m2: Map[K, V]): Map[K, V]**
-     //    - Returns a map with the keys (and values) from m1 that are not in m2. When a key is in both m1 and m2 they are passed to the merge function. If the function returns None the mapping is thrown away.
-     //- **differenceWithKey(f: (K, V, V) => Opt[V], m1: Map[K, V], m2: Map[K, V]): Map[K, V]**
-     //    - Similar to differenceWith but also pases the key to the merge function.
-     
-     //## Map Conversions
-      //- **toList(m: Map[K, V]): List[(K, V)]**
-      //    - Alias for toListAsc.
-      //- **toAscList(m: Map[K, V]): List[(K, V)]**
-      //    - Returns the map as an association list of pairs ordered by the natural order on the keys in ascending order.
-      //- **toDescList(m: Map[K, V]): List[(K, V)]**
-      //    - Similar to toAscList, but the keys are ordered in descending order.
-      //- **toSet(m: Map[K, V]): Set[(K, V)]**
-      //    - Returns the map as a set of pairs.
+    ///
+    /// Returns `true` if and only if all mappings in `m1` occur in `m2`.
+    ///
+    def isSubmapOf[k, v](m1: Map[k, v], m2: Map[k, v]): Bool =
+        let Map(xs) = m1;
+        let Map(ys) = m2;
+            List.forall(x -> List.memberOf(x, ys), xs)
+
+    ///
+    /// Returns `true` if and only if all mappings in `m1` occur in `m2` and `m1 != m2`.
+    ///
+    def isProperSubmapOf[k, v](m1: Map[k, v], m2: Map[k, v]): Bool = isSubmapOf(m1, m2) && size(m1) != size(m2)
+
+    //
+    // ## Map Transformation
+    //
+
+    ///
+    /// Returns a map of all mappings `k -> v` in `m` where `v` satisfies the predicate `f`.
+    ///
+    def filter[k, v](f: v -> Bool, m: Map[k, v]): Map[k, v] = filterWithKey((k, v) -> f(v), m)
+
+    ///
+    /// Returns a map of all mappings `k -> v` in `m` where `(k, v)` satisfies the predicate `f`.
+    ///
+    def filterWithKey[k, v](f: (k, v) -> Bool, m: Map[k, v]): Map[k, v] =
+        let Map(xs) = m;
+            Map(List.filter(x -> f(fst(x), snd(x)), xs))
+
+    ///
+    /// Returns a map with mappings `k -> f(v)` for every `k -> v` in `m`.
+    ///
+    def map[k, v1, v2](f: v1 -> v2, m: Map[k, v1]): Map[k, v2] = mapWithKey((k, v) -> f(v), m)
+
+    ///
+    /// Returns a map with mappings `k -> f(k, v)` for every `k -> v` in `m`.
+    ///
+    def mapWithKey[k, v1, v2](f: (k, v1) -> v2, m: Map[k, v1]): Map[k, v2] =
+        let Map(xs) = m;
+            Map(List.map(match (k, v) -> (k, f(k, v)), xs))
+
+    //
+    // ## Fold
+    //
+
+    ///
+    /// Alias for `foldLeft`.
+    ///
+    def fold[k, v, b](f: (b, v) -> b, s: b, m: Map[k, v]): b = foldLeft(f, s, m)
+
+    ///
+    /// Alias for `foldLeftWithKey`.
+    ///
+    def foldWithKey[k, v, b](f: (k, b, v) -> b, s: b, m: Map[k, v]): b = foldLeftWithKey(f, s, m)
+
+    ///
+    /// Applies `f` to a start value `s` and all values in `m` going from left to right.
+    /// That is, the result is of the form: `f(...f(f(s, v1), v2)..., vn)`.
+    ///
+    def foldLeft[k, v, b](f: (b, v) -> b, s: b, m: Map[k, v]): b = foldLeftWithKey((k, b, v) -> f(b, v), s, m)
+
+    ///
+    /// Applies `f` to a start value `s` and all key-value pairs in `m` going from left to right.
+    /// That is, the result is of the form: `f(...f(k2, f(k1, s, v1), v2)..., vn)`.
+    ///
+    def foldLeftWithKey[k, v, b](f: (k, b, v) -> b, s: b, m: Map[k, v]): b =
+        let Map(xs) = m;
+            List.foldLeft((y, kv) -> f(fst(kv), y, snd(kv)), s, xs)
+
+    ///
+    /// Applies `f` to a start value `s` and all values in `m` going from right to left.
+    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
+    ///
+    def foldRight[k, v, b](f: (v, b) -> b, s: b, m: Map[k, v]): b = foldRightWithKey((k, v, b) -> f(v, b), s, m)
+
+    ///
+    /// Applies `f` to a start value `s` and all values in `m` going from right to left.
+    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
+    ///
+    def foldRightWithKey[k, v, b](f: (k, v, b) -> b, s: b, m: Map[k, v]): b =
+        let Map(xs) = m;
+            List.foldRight((kv, y) -> f(fst(kv), snd(kv), y), s, xs)
+
+    //
+    // ## Combine Two Maps
+    //
+
+    ///
+    /// Returns the left-biased union of `m1` and `m2`.
+    /// That is, key collisions are resolved by taking the mapping from `m1`.
+    ///
+    def union[k, v](m1: Map[k, v], m2: Map[k, v]): Map[k, v] = unionWithKey((k, v1, v2) -> v1, m1, m2)
+
+    ///
+    /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`.
+    ///
+    def unionWith[k, v](f: (v, v) -> v, m1: Map[k, v], m2: Map[k, v]): Map[k, v] = unionWithKey((k, v1, v2) -> f(v1, v2), m1, m2)
+
+    ///
+    /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
+    ///
+    def unionWithKey[k, v](f: (k, v, v) -> v, m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
+        foldRightWithKey((k, v, m) -> insertWithKey((key, v1, v2) -> f(key, v1, v2), k, v, m) , m2, m1)
+
+    ///
+    /// Returns the left-biased intersection of `m1` and `m2`.
+    /// That is, key collisions are resolved by taking the mapping from `m1`.
+    ///
+    def intersection[k, v](m1: Map[k, v], m2: Map[k, v]): Map[k, v] = intersectionWithKey((k, v1, v2) -> v1, m1, m2)
+
+    ///
+    /// Returns the intersection of `m1` and `m2` where key collisions are resolved with the merge function `f`.
+    ///
+    def intersectionWith[k, v](f: (v, v) -> v, m1: Map[k, v], m2: Map[k, v]): Map[k, v] = intersectionWithKey((k, v1, v2) -> f(v1, v2), m1, m2)
+
+    ///
+    /// Returns the intersection of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
+    ///
+    def intersectionWithKey[k, v](f: (k, v, v) -> v, m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
+        let intersect = filterWithKey((k, v) -> memberOf(k, m1), m2);
+        foldRightWithKey((k, v, m) -> adjustWithKey((key, v1) -> f(key, v, v1), k, m), intersect, m1)
+
+    ///
+    /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
+    /// That is, returns the map `m1` with the keys removed that are in `m2`.
+    ///
+    def difference[k, v](m1: Map[k, v], m2: Map[k, v]): Map[k, v] = differenceWithKey((k, v1, v2) -> None, m1, m2)
+
+    ///
+    /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
+    /// When a key `k` is in both `m1` and `m2`, the associated values are passed to the merge function `f`.
+    /// If `f` returns `None` the mapping with `k` is thrown away (proper set difference).
+    /// If `f` returns `Some(v)` the mapping `k -> v` is included in the result.
+    ///
+    def differenceWith[k, v](f: (v, v) -> Option[v], m1: Map[k, v], m2: Map[k, v]): Map[k, v] = differenceWithKey((k, v1, v2) -> f(v1, v2), m1, m2)
+
+    ///
+    /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
+    /// When a key `k` is in both `m1` and `m2`, `k` and the associated values are passed to the merge function `f`.
+    /// If `f` returns `None` the mapping with `k` is thrown away (proper set difference).
+    /// If `f` returns `Some(v)` the mapping `k -> v` is included in the result.
+    ///
+    def differenceWithKey[k, v](f: (k, v, v) -> Option[v], m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
+        let diff = filterWithKey((k, v) -> !memberOf(k, m2), m1);
+        let g = (k, v, m) -> if (memberOf(k, m1))
+                                let Some(v1) = get(k, m1);
+                                match f(k, v1, v) with {
+                                    case None => m
+                                    case Some(w) => insert(k, w, m)
+                                }
+                             else m;
+        foldRightWithKey(g, diff, m2)
+
+    //
+    // ## Map Conversions
+    //
+
+    ///
+    /// Returns the map `m` as a set of key-value pairs.
+    ///
+    def toSet[k, v](m: Map[k, v]): Set[(k, v)] =
+        let Map(xs) = m;
+            List.toSet(xs)
+
+    // TODO:
+    //- **toList(m: Map[K, V]): List[(K, V)]**
+    //    - Alias for toListAsc.
+    //- **toAscList(m: Map[K, V]): List[(K, V)]**
+    //    - Returns the map as an association list of pairs ordered by the natural order on the keys in ascending order.
+    //- **toDescList(m: Map[K, V]): List[(K, V)]**
+    //    - Similar to toAscList, but the keys are ordered in descending order.
+
+    //
+    // ## Map Equality
+    //
+
+    ///
+    /// Returns `true` if and only if `m1` and `m2` and equal, i.e. they have the same mappings.
+    ///
+    def eq[k, v](m1: Map[k, v], m2: Map[k, v]): Bool = isSubmapOf(m1, m2) && size(m1) == size(m2)
 }
