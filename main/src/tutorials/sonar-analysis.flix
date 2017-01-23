@@ -174,12 +174,12 @@ type RejectReactions = RejectReactions(Map2[Address, List[(Expression, Address)]
 ///
 /// The promise links map addresses to a list of child promise addresses.
 ///
-type PromiseLinks = PromiseLinks(Map2[Address, List[Address]]) // TODO: Should this be a set?
+type PromiseLinks = PromiseLinks(Map2[Address, Set2[Address]]) // TODO: Should this be a set?
 
 ///
 /// The link queue is a list of (PromiseValue, Address)-pairs where the address points-to the linked promise.
 ///
-type LinkQueue = LinkQueue(List[(PromiseValue, Address)]) // TODO: Should this be a set?
+type LinkQueue = LinkQueue(Set2[(PromiseValue, Address)]) // TODO: Should this be a set?
 
 ///
 /// The reaction queue is a set of (PromiseValue, Lam, Environment, Address)-tuples where the address points to the child promise.
@@ -220,7 +220,7 @@ def inject(e0: Expression): State =
     let f0 = Map2.empty();
     let r0 = Map2.empty();
     let l0 = Map2.empty();
-    let w0 = Nil;
+    let w0 = Set2.empty();
     let q0 = Set2.empty();
     let time = Time(1);
         State(e0, Environment(env0), Store(sto0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), kptr, time)
@@ -259,6 +259,7 @@ enum Outcome {
 // TODO: Rename Store to Heap and h0.
 def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
 
+// TODO: Link loop
 //        //
 //        // E-Link-Loop
 //        //
@@ -407,52 +408,67 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let s1 = Map2.insert(a, Set2.insert(Pending, promiseStates), s0);
             Set2.singleton(Next(State(Cst("Undef"), env0, sto0, PromiseState(s1), f0, r0, l0, w0, q0, kont, tick(m0, k0))))
 
-
-
-//        //
-//        //  E-Resolve-Pending, E-Resolve-Fulfilled, and E-Resolve-Rejected
-//        //
-//        case (Resolve(Ptr(a), v), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0))) =>
-//            // Lookup the state of the promise.
-//            match Map2.lookup(a, s0) with {
-//                case None =>
-//                    // Case 1: The address is not a promise. The evaluation is stuck.
-//                    Abort("Unable to resolve non-promise address!")
-//                case Some(Pending) =>
-//                    // Case 2: The promise is pending.
-//
-//                    // Set the promise state to fulfilled.
-//                    let s1 = Map2.insert(a, Fulfilled(v), s0);
-//
-//                    // Clear out the fulfill reactions.
-//                    let f1 = Map2.remove(a, f0);
-//
-//                    // Clear out the rejected reactions.
-//                    let r1 = Map2.remove(a, r0);
-//
-//                    // Clear out the promise links.
-//                    let l1 = Map2.remove(a, l0);
-//
-//                    // Retrieve the promise links and append them to the link queue.
-//                    let lq = Map2.getWithDefault(a, Nil, l0);
-//                    let w1 = w0 ::: List.map(l -> (Fulfilled(v), l), lq);
-//
-//                    // Retrieve the fulfill reactions and append them to the reaction queue.
-//                    let rs = Map2.getWithDefault(a, Nil, f0);
-//                    let q1 = q0 ::: List.map(match (lam, addr) -> (Fulfilled(v), lam, addr), rs);
-//                        Next(recompose(Cst("Undef"), ec), State(Heap(h0), PromiseState(s1), FulfillReactions(f1), RejectReactions(r1), PromiseLinks(l1), LinkQueue(w1), ReactionQueue(q1)))
-//                case Some(Fulfilled(v)) =>
-//                    // Case 3: The promise has already been fulfilled with the value `v`. The resolve has no effect.
-//                    Next(recompose(Cst("Undef"), ec), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0)))
-//                case Some(Rejected(v)) =>
-//                    // Case 4: The promise has already been rejected with the value `v`. The resolve has no effect.
-//                    Next(recompose(Cst("Undef"), ec), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0)))
-//            }
-//
     //
-    //  E-Reject-Pending, E-Reject-Fulfilled, and E-Reject-Rejected
+    // Resolve Expression.
     //
-    //  NB: Omitted
+    case (State(Resolve(e1, e2), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
+        // Allocate the `KResolve1` continuation in the store.
+        let a = alloc(m0, k0);
+        let k = StoredKont(KResolve1(e2, env0, kptr));
+        let sto1 = Store.weakUpdate(a, k, sto0);
+            Set2.singleton(Next(State(e1, env0, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
+
+    //
+    //  Resolve1 Kontinuation.
+    //
+    case (State(e1, env0, sto0, s0, f0, r0, l0, w0, q0, _, time), KResolve1(e2, env2, kont)) if isValue(e1) =>
+        // Allocate the `KResolve2` continuation in the store.
+        let a = alloc(m0, k0);
+        let k = StoredKont(KResolve2(e1, env0, kont));
+        let sto1 = Store.weakUpdate(a, k, sto0);
+            Set2.singleton(Next(State(e2, env2, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
+
+    //
+    //  Resolve2 Kontinuation.
+    //
+    case (State(e2, env2, sto0, s0, f0, r0, l0, w0, q0, _, time), KResolve2(Ptr(a), env1, kont)) if isValue(e2) =>
+        let f: PromiseValue -> Set2[Outcome] = pv -> match pv with {
+            case Pending =>
+                // The new promise value.
+                let pv = Fulfilled(e2); // TODO: Add environment to close expression.
+
+                // Set the promise state to fulfilled.
+                let s1 = PromiseState.weakUpdate(a, pv, s0);
+
+                // Clear out the fulfill reactions.
+                // NB: Ignored - requires strong update analysis.
+
+                // Clear out the rejected reactions.
+                // NB: Ignored - requires strong update analysis.
+
+                // Clear out the promise links.
+                // NB: Ignored - requires strong update analysis.
+
+               // Retrieve the promise links and append them to the link queue.
+               let ls = PromiseLinks.lookup(a, l0);
+               let w1 = LinkQueue.weakUpdate(Set2.map(l -> (pv, l), ls), w0);
+
+               // Retrieve the fulfill reactions and append them to the reaction queue.
+               let fr = FulfillReactions.lookup(a, f0);
+               let q1 = ReactionQueue.weakUpdate(Set2.map(match (lam, env, addr) -> (pv, lam, env, addr), fr), q0);
+
+               Set2.singleton(Next(State(Cst("Undef"), Environment(Map2.empty()), sto0, s1, f0, r0, l0, w1, q1, kont, tick(m0, k0))))
+
+            case Fulfilled(v) =>
+                // The promise has already been resolved with the value `v`. The resolve has no effect.
+                Set2.singleton(Next(State(Cst("Undef"), Environment(Map2.empty()), sto0, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
+
+            case Rejected(v) =>
+                // The promise has already been rejected with the value `v`. The resolve has no effect.
+                Set2.singleton(Next(State(Cst("Undef"), Environment(Map2.empty()), sto0, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
+
+        };
+        Set2.flatMap(f, PromiseState.lookup(a, s0))
 
 
     // TODO: Many of these cases seem to use kptr incorrectly? Check up on that.
@@ -476,7 +492,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let a = alloc(m0, k0);
         let k = StoredKont(KOnResolve2(e1, env0, kont));
         let sto1 = Store.weakUpdate(a, k, sto0);
-            Set2.singleton(Next(State(e1, env0, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
+            Set2.singleton(Next(State(e2, env2, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
 
     //
     //  OnResolve2 Kontinuation.
@@ -493,11 +509,12 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
 
                 // Set the child promise state to pending.
                 let s1 = PromiseState.weakUpdate(childAddr, Pending, s0);
-//
-//                    // Update the fulfill reactions.
-//                    let fs = Map2.getWithDefault(a, Nil, f0);
-//                    let f1 = Map2.insert(a, fs ::: (lam, childAddr) :: Nil, f0);
-                ???
+
+                // Update the fulfill reactions.
+                let f1 = FulfillReactions.weakUpdate(a, e2, env2, childAddr, f0);
+
+                Set2.singleton(Next(State(Ptr(childAddr), Environment(Map2.empty()), sto0, s1, f1, r0, l0, w0, ReactionQueue(q0), kont, tick(m0, k0))))
+
             case Fulfilled(v) =>
                 // Allocate a child promise and enqueue the promise reaction `lam` with the resolved value `v`.
                 let childAddr = alloc(m0, k0);
@@ -509,48 +526,6 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
                 ???
         };
         Set2.flatMap(f, PromiseState.lookup(a, s0))
-
-
-//        case (OnResolve(Ptr(a), lam), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0))) =>
-//            // Lookup the state of the promise.
-//            match Map2.lookup(a, s0) with {
-//                case None =>
-//                    // Case 1: The address is not a promise. The evaluation is stuck.
-//                    Abort("Unable to register reaction on non-promise address!")
-//                case Some(Pending) =>
-//                    // Case 2: The promise is in the pending state.
-//
-//                    // Allocate a child promise.
-//                    let childAddr = freshAddr();
-//
-//                    // Allocate a fresh "object" in the heap. We use a string instead.
-//                    let h1 = Map2.insert(childAddr, Cst("child"), h0);
-//
-//                    // Set the child promise state to pending.
-//                    let s1 = Map2.insert(childAddr, Pending, s0);
-//
-//                    // Update the fulfill reactions.
-//                    let fs = Map2.getWithDefault(a, Nil, f0);
-//                    let f1 = Map2.insert(a, fs ::: (lam, childAddr) :: Nil, f0);
-//                        Next(recompose(Ptr(childAddr), ec), State(Heap(h1), PromiseState(s1), FulfillReactions(f1), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0)))
-//                case Some(Fulfilled(v)) =>
-//                    // Case 3: The promise has been fulfilled.
-//                    // Allocate a child promise and enqueue the promise reaction `lam` with the resolved value `v`.
-//                    let childAddr = freshAddr();
-//                    let job = (Fulfilled(v), lam, childAddr);
-//                        Next(recompose(Ptr(childAddr), ec), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(job :: q0)))
-//                case Some(Rejected(v)) =>
-//                    // Case 4: The promise has been rejected. The onResolve has no effect.
-//                    Next(recompose(Cst("Undef"), ec), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0)))
-//            }
-//
-
-
-    //
-    //  E-OnReject-Pending, E-OnReject-Fulfilled, and E-OnReject-Rejected.
-    //
-    //  NB: Omitted
-
 
 
     //
@@ -635,6 +610,7 @@ def testEval1: Set2[Outcome] = eval(inject(
 
 
 // TODO: Cleanup
+// TODO: Order
 
 namespace PromiseState {
 
@@ -650,6 +626,30 @@ namespace PromiseState {
         let oldValue = Option.getWithDefault(Map2.lookup(a, m), Set2.empty());
         let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
             PromiseState(Map2.insert(a, lubValue, m))
+
+}
+
+namespace FulfillReactions {
+
+    def lookup(a: Address, f: FulfillReactions): Set2[(Expression, Environment, Address)] =
+        let FulfillReactions(m) = f;
+            Option.getWithDefault(Map2.lookup(a, m), Set2.empty())
+
+    def weakUpdate(a: Address, lam: Expression, env: Environment, childAddr: Address, r: FulfillReactions): FulfillReactions =
+        let FulfillReactions(m) = r;
+        let newValue = (lam, env, childAddr);
+        let oldValue = Option.getWithDefault(Map2.lookup(a, m), Set2.empty());
+        let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
+            FulfillReactions(Map2.insert(a, lubValue, m))
+
+
+}
+
+namespace PromiseLinks {
+
+    def lookup(a: Address, l: PromiseLinks): Set2[Address] =
+        let PromiseLinks(m) = l;
+            Option.getWithDefault(Map2.lookup(a, m), Set2.empty())
 
 }
 
@@ -669,6 +669,21 @@ namespace Store {
 
 }
 
+namespace LinkQueue {
+
+        def weakUpdate(ls: Set2[(PromiseValue, Address)], w: LinkQueue): LinkQueue =
+            let LinkQueue(w0) = w;
+                LinkQueue(Set2.union(w0, ls))
+
+}
+
+namespace ReactionQueue {
+
+        def weakUpdate(rs: Set2[(PromiseValue, Expression, Environment, Address)], q: ReactionQueue): ReactionQueue =
+            let ReactionQueue(xs) = q;
+                ReactionQueue(Set2.union(rs, xs))
+
+}
 
 
 //
