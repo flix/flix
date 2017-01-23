@@ -113,8 +113,7 @@ namespace Map {
     /// Updates `m` with `k -> f(v)` if `k -> v` is in `m`.
     /// Otherwise, returns `m`.
     ///
-    def adjust[k, v](f: v -> v, k: k, m: Map[k, v]): Map[k, v] =
-        adjustWithKey((k1, v1) -> f(v1), k, m)
+    def adjust[k, v](f: v -> v, k: k, m: Map[k, v]): Map[k, v] = adjustWithKey((k1, v1) -> f(v1), k, m)
 
     ///
     /// Updates `m` with `k -> f(k, v)` if `k -> v` is in `m`.
@@ -128,8 +127,7 @@ namespace Map {
     /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(v) = Some(v1).
     /// Otherwise, returns `m`.
     ///
-    def update[k, v](f: v -> Option[v], k: k, m: Map[k, v]): Map[k, v] =
-        updateWithKey((k1, v1) -> f(v1), k, m)
+    def update[k, v](f: v -> Option[v], k: k, m: Map[k, v]): Map[k, v] = updateWithKey((k1, v1) -> f(v1), k, m)
 
     ///
     /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(k, v) = Some(v1).
