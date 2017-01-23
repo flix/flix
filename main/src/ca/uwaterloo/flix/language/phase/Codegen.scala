@@ -373,7 +373,7 @@ object Codegen {
           case Type.Int64 => globalOffset += 2
           case Type.Float32 => globalOffset += 1
           case Type.Float64 => globalOffset += 2
-          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) => globalOffset += 1
+          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(_, _) => globalOffset += 1
           case tpe => throw InternalCompilerException(s"Unexpected type '$tpe'.")
         }
       }
@@ -396,7 +396,7 @@ object Codegen {
           case Type.Float64 =>
             offset -= 2
             visitor.visitVarInsn(DSTORE, offset)
-          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) =>
+          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(_, _) =>
             offset -= 1
             visitor.visitVarInsn(ASTORE, offset)
           case _ => throw InternalCompilerException(s"Not yet implemented.") // TODO
