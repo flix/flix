@@ -559,6 +559,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     case (State(Ptr(a2), env2, sto0, s0, f0, r0, l0, w0, q0, kptr, time), KLink2(Ptr(a1), env1, kont)) => // TODO: env1 and env2 unused
         let l1 = PromiseLinks.weakUpdate(a1, a2, l0);
+            // TODO: Keep the environment
             Set2.singleton(Next(State(Cst("Undef"), Environment(Map2.empty()), sto0, s0, f0, r0, l1, w0, q0, kont, tick(m0, k0))))
 
     //

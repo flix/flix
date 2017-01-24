@@ -87,6 +87,9 @@ enum Kontinuation {
 /// The timestamp associated with a machine configuration.
 ///
 type Time = Time(Int)
+// TODO: Instantiate with k-cfa like in the paper.
+
+
 
 ///
 /// A machine state configuration.
@@ -223,6 +226,7 @@ def stepAll(m0: State): Set2[Outcome] = match m0 with {
 /// Computes the fixed-point of the transition relation defined by `stepAll`
 /// starting from the given machine configuration `m0`.
 ///
+// TODO: This should terminate by checking the seen state is already accounted for.
 def eval(m0: State): Set2[Outcome] =
     let outcomes = println!(stepAll(m0));
     let f = outcome -> match outcome with {
