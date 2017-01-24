@@ -259,15 +259,22 @@ enum Outcome {
 // TODO: Rename Store to Heap and h0.
 def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
 
-// TODO: Link loop
-//        //
-//        // E-Link-Loop
-//        //
-//        case (e, State(h0, s0, f0, r0, l0, LinkQueue((Fulfilled(v), a) :: lq), q0)) =>
-//            // The link queue is non-empty. Extract an item and evaluate it.
-//            let e = Seq(Resolve(Ptr(a), v), e);
-//                Next(recompose(e, ec), State(h0, s0, f0, r0, l0, LinkQueue(lq), q0))
+    //
+    // Link-Loop.
+    //
+    // NB: This *must* appear here before any other rule has a chance to fire.
+    case (State(exp, env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) if LinkQueue.nonEmpty(w0) =>
+        let f: ((PromiseValue, Address)) -> Outcome = match (pv, a) -> {
+            match pv with {
+                case Fulfilled(v) =>
+                    let e = Seq(Resolve(Ptr(a), v), exp);
+                    let w1 = LinkQueue.strongDelete(pv, a, w0);
+                        Next(State(e, env0, sto0, s0, f0, r0, l0, w1, q0, kptr, tick(m0, k0)))
 
+                // TODO: Other cases.
+            }
+        };
+        LinkQueue.map(f, w0)
 
     //
     // Variable Expression.
@@ -724,9 +731,22 @@ namespace Store {
 
 namespace LinkQueue {
 
+    def nonEmpty(w: LinkQueue): Bool = match w with {
+        case LinkQueue(Set2(Nil)) => false
+        case _                    => true
+    }
+
+    def map(f: ((PromiseValue, Address)) -> Outcome, q: LinkQueue): Set2[Outcome] =
+        let LinkQueue(xs) = q;
+            Set2.map(f, xs)
+
         def weakUpdate(ls: Set2[(PromiseValue, Address)], w: LinkQueue): LinkQueue =
             let LinkQueue(w0) = w;
                 LinkQueue(Set2.union(w0, ls))
+
+    def strongDelete(pv: PromiseValue, a: Address, w: LinkQueue): LinkQueue =
+        let LinkQueue(Set2(xs)) = w;
+            LinkQueue(Set2(List.remove((pv, a), xs)))
 
 }
 
