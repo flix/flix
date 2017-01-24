@@ -539,18 +539,25 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
 //            let l1 = Map2.insert(a1, xs ::: a2 :: Nil, l0);
 //                Next(recompose(Cst("Undef"), ec), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l1), LinkQueue(w0), ReactionQueue(q0)))
 //
-//        //
-//        //  E-Reaction-Loop
-//        //
-//        case (e, State(h0, s0, f0, r0, l0, w0, ReactionQueue((Fulfilled(v), lambda, childPromise) :: q1))) =>
-//            // The reaction queue contains an item. Check if the expression is a value.
-//            if (isValue(e))
-//                // The expression is a value. Discard it and evaluate the item from the reaction queue.
-//                let e = Resolve(Ptr(childPromise), App(lambda, v));
-//                    Next(e, State(h0, s0, f0, r0, l0, w0, ReactionQueue(q1)))
-//             else
-//                // The expression is a non-value. Evaluation is stuck.
-//                Done(e, m0)
+
+    //
+    // Reaction-Loop
+    //
+    case (State(v, env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) if isValue(v) => // TODO: What about the kont?
+        let f: ((PromiseValue, Expression, Environment, Address)) -> Outcome = match (pv, exp, env, childAddr) -> {
+            match pv with {
+                case Fulfilled(v) => // TODO: What environment closes the value???
+                        // Dequeue the item from the queue.
+                        let q1 = ReactionQueue.strongDelete(pv, exp, env, childAddr, q0); // TODO: Soundness?
+
+                        // Construct the expression: childAddr.resolve(exp(v))
+                        let e = Resolve(Ptr(childAddr), App(exp, v));
+                            Next(State(e, /* TODO: What env to use here? */ env, sto0, s0, f0, r0, l0, w0, q1, /* TODO: What kont to use? */ kptr, tick(m0, k0)))
+                case Rejected(v) => ??? // NB: Conceptually similar to the fulfilled case.
+            }
+         };
+
+        ReactionQueue.map(f, q0)
 
     //
     // Stuck.
@@ -679,9 +686,17 @@ namespace LinkQueue {
 
 namespace ReactionQueue {
 
-        def weakUpdate(rs: Set2[(PromiseValue, Expression, Environment, Address)], q: ReactionQueue): ReactionQueue =
-            let ReactionQueue(xs) = q;
-                ReactionQueue(Set2.union(rs, xs))
+    def map(f: ((PromiseValue, Expression, Environment, Address)) -> Outcome, q: ReactionQueue): Set2[Outcome] =
+        let ReactionQueue(xs) = q;
+            Set2.map(f, xs)
+
+    def strongDelete(pv: PromiseValue, e: Expression, env: Environment, a: Address, q: ReactionQueue): ReactionQueue =
+        let ReactionQueue(Set2(xs)) = q;
+            ReactionQueue(Set2(List.remove((pv, e, env, a), xs)))
+
+    def weakUpdate(rs: Set2[(PromiseValue, Expression, Environment, Address)], q: ReactionQueue): ReactionQueue =
+        let ReactionQueue(xs) = q;
+            ReactionQueue(Set2.union(rs, xs))
 
 }
 
