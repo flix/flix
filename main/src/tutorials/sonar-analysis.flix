@@ -527,18 +527,32 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         };
         Set2.flatMap(f, PromiseState.lookup(a, s0))
 
+    //
+    //  Link Expression.
+    //
+    case (State(Link(e1, e2), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
+        // Allocate the `KLink1` continuation in the store.
+        let a = alloc(m0, k0);
+        let k = StoredKont(KLink1(e2, env0, kptr));
+        let sto1 = Store.weakUpdate(a, k, sto0);
+            Set2.singleton(Next(State(e1, env0, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
 
     //
-    //  E-Link
+    //  Link1 Kontinuation.
     //
+    case (State(e1, env0, sto0, s0, f0, r0, l0, w0, q0, _, time), KLink1(e2, env2, kont)) if isValue(e1) =>
+        // Allocate the `KLink2` continuation in the store.
+        let a = alloc(m0, k0);
+        let k = StoredKont(KLink2(e1, env0, kont));
+        let sto1 = Store.weakUpdate(a, k, sto0);
+            Set2.singleton(Next(State(e2, env2, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
 
-//        case (Link(Ptr(a1), Ptr(a2)), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0))) =>
-//            // Lookup the list of registered links for a1.
-//            let xs = Map2.getWithDefault(a1, Nil, l0);
-//            // Append a2 onto the list of registered links.
-//            let l1 = Map2.insert(a1, xs ::: a2 :: Nil, l0);
-//                Next(recompose(Cst("Undef"), ec), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l1), LinkQueue(w0), ReactionQueue(q0)))
-//
+    //
+    //  Link2 Kontinuation.
+    //
+    case (State(Ptr(a2), env2, sto0, s0, f0, r0, l0, w0, q0, kptr, time), KLink2(Ptr(a1), env1, kont)) => // TODO: env1 and env2 unused
+        let l1 = PromiseLinks.weakUpdate(a1, a2, l0);
+            Set2.singleton(Next(State(Cst("Undef"), Environment(Map2.empty()), sto0, s0, f0, r0, l1, w0, q0, kont, tick(m0, k0))))
 
     //
     // Reaction-Loop
@@ -616,6 +630,31 @@ def testEval1: Set2[Outcome] = eval(inject(
 )
 
 
+//
+// Example 2:
+//
+// var x = Ref("Promise1")
+// var y = Ref("Promise2")
+// promisify(x)
+// promisify(y)
+// x.link(y)
+// y.onResolve(z => Ref(z))
+// x.resolve("hello")
+//
+def testEval2: Set2[Outcome] = eval(inject(
+    App(App(Abs(V(0), Abs(V(1),
+        Seq(Promisify(Var(V(0))),
+            Seq(Promisify(Var(V(1))),
+                Seq(Link(Var(V(0)), Var(V(1))),
+                    Seq(OnResolve(Var(V(1)), Abs(V(42), Ref(Var(V(42))))),
+                        Resolve(Var(V(0)), Cst("hello"))
+                    )
+                )
+            )
+        ))),
+        Ref(Cst("Promise1"))), Ref(Cst("Promise2")))))
+
+
 // TODO: Cleanup
 // TODO: Order
 
@@ -657,6 +696,13 @@ namespace PromiseLinks {
     def lookup(a: Address, l: PromiseLinks): Set2[Address] =
         let PromiseLinks(m) = l;
             Option.getWithDefault(Map2.lookup(a, m), Set2.empty())
+
+    def weakUpdate(a1: Address, a2: Address, l: PromiseLinks): PromiseLinks =
+        let PromiseLinks(m) = l;
+        let newValue = Set2.singleton(a2);
+        let oldValue = Option.getWithDefault(Map2.lookup(a1, m), Set2.empty());
+        let lubValue = Set2.union(newValue, oldValue);
+            PromiseLinks(Map2.insert(a1, lubValue, m))
 
 }
 
