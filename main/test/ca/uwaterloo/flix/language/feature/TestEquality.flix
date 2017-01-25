@@ -277,9 +277,61 @@ def neqTuple12: Bool = assert!(((1, 2), (3, 4)) != ((1, 2), (42, 4)))
 @test
 def neqTuple13: Bool = assert!(((1, 2), (3, (4, 5))) != ((1, 2), (3, (42, 5))))
 
-// TODO: Test tag
+//
+// # Tags
+//
 
+@test
+def eqTag01: Bool = assert!(None == None)
 
+@test
+def eqTag02: Bool = assert!(Some(42) == Some(42))
 
-// TODO: Remove Equality tests from other tests in test suite.
+@test
+def eqTag03: Bool = assert!(Ok(42) == Ok(42))
+
+@test
+def eqTag04: Bool = assert!(Err(42) == Err(42))
+
+@test
+def eqTag05: Bool = assert!(Nil == Nil)
+
+@test
+def eqTag06: Bool = assert!((42 :: Nil) == (42 :: Nil))
+
+@test
+def eqTag07: Bool = assert!(Some(Ok(42)) == Some(Ok(42)))
+
+@test
+def eqTag08: Bool = assert!(Ok(Some(42)) == Ok(Some(42)))
+
+@test
+def eqTag09: Bool = assert!(Some((Ok(1) :: Err(2) :: Nil)) == Some((Ok(1) :: Err(2) :: Nil)))
+
+@test
+def neqTag01: Bool = assert!(None != Some(42))
+
+@test
+def neqTag02: Bool = assert!(Some(21) != Some(42))
+
+@test
+def neqTag03: Bool = assert!(Ok(21) != Ok(42))
+
+@test
+def neqTag04: Bool = assert!(Err(21) != Err(42))
+
+@test
+def neqTag05: Bool = assert!(Nil != (42 :: Nil))
+
+@test
+def neqTag06: Bool = assert!((21 :: Nil) != (42 :: Nil))
+
+@test
+def neqTag07: Bool = assert!(Some(Ok(21)) != Some(Err(42)))
+
+@test
+def neqTag08: Bool = assert!(Ok(None) != Ok(Some(42)))
+
+@test
+def neqTag09: Bool = assert!(Some((Ok(1) :: Err(2) :: Nil)) != Some((Err(1) :: Ok(2) :: Nil)))
 
