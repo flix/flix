@@ -40,13 +40,13 @@ object Typer {
       lattices <- Declarations.Lattices.typecheck(program)
       tables <- Declarations.Tables.typecheck(program)
       indexes <- Declarations.Indexes.typecheck(program)
-      facts <- Declarations.Constraints.typecheckFacts(program)
-      rules <- Declarations.Constraints.typecheckRules(program)
+      constraints <- Declarations.Constraints.typecheck(program)
+      rules <- Declarations.Constraints.typecheck(program)
       properties <- Declarations.Properties.typecheck(program)
     } yield {
       val currentTime = System.nanoTime()
       val time = program.time.copy(typer = currentTime - startTime)
-      TypedAst.Root(definitions, enums, lattices, tables, indexes, facts, rules, properties, time)
+      TypedAst.Root(definitions, enums, lattices, tables, indexes, constraints, properties, time)
     }
 
     result match {
@@ -59,53 +59,31 @@ object Typer {
 
     object Constraints {
 
-      /**
-        * Performs type inference and reassembly on all facts in the given program.
-        *
-        * Returns [[Err]] if the head predicate fails to type check.
-        */
-      def typecheckFacts(program: Program)(implicit genSym: GenSym): Result[List[TypedAst.Declaration.Fact], TypeError] = {
-
-        /**
-          * Performs type checking on the given `fact` in the given namespace `ns`.
-          */
-        def visitFact(fact: NamedAst.Declaration.Fact, ns: Name.NName): Result[TypedAst.Declaration.Fact, TypeError] = fact match {
-          case NamedAst.Declaration.Fact(head, loc) =>
-            Predicates.typecheck(head, ns, program) map {
-              case h => TypedAst.Declaration.Fact(h, loc)
-            }
-        }
-
-        // Visit every fact in the program.
-        val result = program.facts.toList.flatMap {
-          case (ns, facts) => facts.map(f => visitFact(f, ns))
-        }
-
-        // Sequence the results and convert them back to a map.
-        Result.seqM(result)
-      }
-
-      // TODO: DOC
-      def typecheckRules(program: Program)(implicit genSym: GenSym): Result[List[TypedAst.Declaration.Rule], TypeError] = {
-        val rules = program.rules.flatMap {
-          case (ns, rs) => rs map {
-            case NamedAst.Declaration.Rule(head0, body0, loc) =>
+      // TODO: Add documentation.
+      // TODO: Ensure that quantified variables are given consistent types.
+      def typecheck(program: Program)(implicit genSym: GenSym): Result[List[TypedAst.Declaration.Constraint], TypeError] = {
+        val constraints = program.constraints.flatMap {
+          case (ns, cs) => cs map {
+            case NamedAst.Declaration.Constraint(head0, body0, loc) =>
               Predicates.infer(head0, ns, program) match {
                 case InferMonad(run1) =>
-                  val (subst, _) = run1(Substitution.empty).get
-                  val head = Predicates.reassemble(head0, ns, program, subst)
-                  val body = body0.map {
-                    case b => Predicates.infer(b, ns, program) match {
-                      case InferMonad(run2) =>
-                        val (subst2, _) = run2(Substitution.empty).get
-                        Predicates.reassemble(b, ns, program, subst2)
-                    }
+                  run1(Substitution.empty) map {
+                    case (subst, _) =>
+                      val head = Predicates.reassemble(head0, ns, program, subst)
+                      val body = body0.map {
+                        case b => Predicates.infer(b, ns, program) match {
+                          case InferMonad(run2) =>
+                            val (subst2, _) = run2(Substitution.empty).get
+                            Predicates.reassemble(b, ns, program, subst2)
+                        }
+                      }
+                      TypedAst.Declaration.Constraint(head, body, loc)
                   }
-                  TypedAst.Declaration.Rule(head, body, loc)
               }
           }
         }
-        Ok(rules.toList)
+
+        Result.seqM(constraints.toList)
       }
 
     }
