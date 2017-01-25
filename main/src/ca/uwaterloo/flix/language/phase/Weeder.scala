@@ -220,17 +220,12 @@ object Weeder {
             WeededAst.Table.Lattice(doc, ident, as.init, as.last, mkSL(sp1, sp2))
         }
 
-      case ParsedAst.Declaration.Fact(sp1, head, sp2) =>
-        Predicate.Head.weed(head) map {
-          case p => WeededAst.Declaration.Fact(p, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Declaration.Rule(sp1, head, body, sp2) =>
+      case ParsedAst.Declaration.Constraint(sp1, head, body, sp2) =>
         val headVal = Predicate.Head.weed(head)
         val bodyVal = @@(body.map(Predicate.Body.weed))
 
         @@(headVal, bodyVal) map {
-          case (h, b) => WeededAst.Declaration.Rule(h, b, mkSL(sp1, sp2))
+          case (h, b) => WeededAst.Declaration.Constraint(h, b, mkSL(sp1, sp2))
         }
 
       case ParsedAst.Declaration.Index(sp1, qname, indexes, sp2) =>

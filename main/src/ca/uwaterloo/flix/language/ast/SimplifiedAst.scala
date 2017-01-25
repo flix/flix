@@ -25,10 +25,17 @@ object SimplifiedAst {
                   lattices: Map[Type, SimplifiedAst.Definition.Lattice],
                   tables: Map[Symbol.TableSym, SimplifiedAst.Table],
                   indexes: Map[Symbol.TableSym, SimplifiedAst.Definition.Index],
-                  facts: List[SimplifiedAst.Constraint.Fact],
-                  rules: List[SimplifiedAst.Constraint.Rule],
+                  constraints: List[SimplifiedAst.Declaration.Constraint],
                   properties: List[SimplifiedAst.Property],
                   time: Time) extends SimplifiedAst
+
+  sealed trait Declaration
+
+  object Declaration {
+
+    case class Constraint(head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body]) extends SimplifiedAst.Declaration
+
+  }
 
   sealed trait Definition
 
@@ -65,16 +72,6 @@ object SimplifiedAst {
     case class Relation(sym: Symbol.TableSym, attributes: List[SimplifiedAst.Attribute], loc: SourceLocation) extends SimplifiedAst.Table
 
     case class Lattice(sym: Symbol.TableSym, keys: List[SimplifiedAst.Attribute], value: SimplifiedAst.Attribute, loc: SourceLocation) extends SimplifiedAst.Table
-
-  }
-
-  sealed trait Constraint extends SimplifiedAst
-
-  object Constraint {
-
-    case class Fact(head: SimplifiedAst.Predicate.Head) extends SimplifiedAst.Constraint
-
-    case class Rule(head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body]) extends SimplifiedAst.Constraint
 
   }
 
@@ -263,9 +260,9 @@ object SimplifiedAst {
     /**
       * A typed AST node representing a local variable expression (i.e. a parameter or let-bound variable).
       *
-      * @param sym    the name of the variable.
-      * @param tpe    the type of the variable.
-      * @param loc    the source location of the variable.
+      * @param sym the name of the variable.
+      * @param tpe the type of the variable.
+      * @param loc the source location of the variable.
       */
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -402,11 +399,11 @@ object SimplifiedAst {
     /**
       * A typed AST node representing a let expression.
       *
-      * @param sym    the name of the bound variable.
-      * @param exp1   the value of the bound variable.
-      * @param exp2   the body expression in which the bound variable is visible.
-      * @param tpe    the type of the expression (which is equivalent to the type of the body expression).
-      * @param loc    the source location of the expression.
+      * @param sym  the name of the bound variable.
+      * @param exp1 the value of the bound variable.
+      * @param exp2 the body expression in which the bound variable is visible.
+      * @param tpe  the type of the expression (which is equivalent to the type of the body expression).
+      * @param loc  the source location of the expression.
       */
     case class Let(sym: Symbol.VarSym, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 

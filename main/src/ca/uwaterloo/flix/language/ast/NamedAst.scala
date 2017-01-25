@@ -29,8 +29,7 @@ object NamedAst {
                      lattices: Map[NamedAst.Type, NamedAst.Declaration.BoundedLattice],
                      indexes: Map[Name.NName, Map[String, NamedAst.Declaration.Index]],
                      tables: Map[Name.NName, Map[String, NamedAst.Table]],
-                     facts: Map[Name.NName, List[NamedAst.Declaration.Fact]],
-                     rules: Map[Name.NName, List[NamedAst.Declaration.Rule]],
+                     constraints: Map[Name.NName, List[NamedAst.Declaration.Constraint]],
                      hooks: Map[Symbol.DefnSym, Ast.Hook],
                      properties: Map[Name.NName, List[NamedAst.Property]],
                      time: Time) extends NamedAst
@@ -49,9 +48,7 @@ object NamedAst {
 
     case class Enum(doc: Option[Ast.Documentation], sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
-    case class Fact(head: NamedAst.Predicate.Head, loc: SourceLocation) extends NamedAst.Declaration
-
-    case class Rule(head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation) extends NamedAst.Declaration
+    case class Constraint(head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation) extends NamedAst.Declaration
 
     case class Index(qname: Name.QName, indexes: List[List[Name.Ident]], loc: SourceLocation) extends NamedAst.Declaration
 
