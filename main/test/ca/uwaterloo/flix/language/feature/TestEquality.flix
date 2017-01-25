@@ -195,3 +195,91 @@ def neqStr01: Bool = assert!("" != "a")
 @test
 def neqStr02: Bool = assert!("a" != "abc")
 
+//
+// # Tuples
+//
+
+@test
+def eqTuple01: Bool = assert!(() == ())
+
+@test
+def eqTuple02: Bool = assert!((1, 2) == (1, 2))
+
+@test
+def eqTuple03: Bool = assert!((1, 2, 3) == (1, 2, 3))
+
+@test
+def eqTuple04: Bool = assert!((1, 2, 3, 4) == (1, 2, 3, 4))
+
+@test
+def eqTuple05: Bool = assert!((1, 2, 3, 4, 5) == (1, 2, 3, 4, 5))
+
+@test
+def eqTuple06: Bool = assert!((true, "foo") == (true, "foo"))
+
+@test
+def eqTuple07: Bool = assert!((true, 'a', "foo") == (true, 'a', "foo"))
+
+@test
+def eqTuple08: Bool = assert!((true, 'a', 42, "foo", ()) == (true, 'a', 42, "foo", ()))
+
+@test
+def eqTuple09: Bool = assert!((1i8, 2i16, 3i32, 4i64, 5.0f32, 6.0f64) == (1i8, 2i16, 3i32, 4i64, 5.0f32, 6.0f64))
+
+@test
+def eqTuple10: Bool = assert!((1, (2, 3)) == (1, (2, 3)))
+
+@test
+def eqTuple11: Bool = assert!((1, (2, (3, 4))) == (1, (2, (3, 4))))
+
+@test
+def eqTuple12: Bool = assert!(((1, 2), (3, 4)) == ((1, 2), (3, 4)))
+
+@test
+def eqTuple13: Bool = assert!(((1, 2), (3, (4, 5))) == ((1, 2), (3, (4, 5))))
+
+@test
+def neqTuple01: Bool = assert!(true)
+
+@test
+def neqTuple02: Bool = assert!((1, 2) != (2, 1))
+
+@test
+def neqTuple03: Bool = assert!((1, 2, 3) != (3, 2, 1))
+
+@test
+def neqTuple04: Bool = assert!((1, 2, 3, 4) != (1, 2, 4, 3))
+
+@test
+def neqTuple05: Bool = assert!((1, 2, 3, 4, 5) != (1, 5, 3, 4, 2))
+
+@test
+def neqTuple06: Bool = assert!((true, "foo") != (false, "foo"))
+
+@test
+def neqTuple07: Bool = assert!((true, 'a', "foo") != (true, 'b', "foo"))
+
+@test
+def neqTuple08: Bool = assert!((true, 'a', 42, "foo", ()) != (true, 'a', 21, "foo", ()))
+
+@test
+def neqTuple09: Bool = assert!((1i8, 2i16, 3i32, 4i64, 5.0f32, 6.0f64) != (1i8, 2i16, 3i32, 4i64, 5.0f32, 42.0f64))
+
+@test
+def neqTuple10: Bool = assert!((1, (2, 3)) != (1, (3, 2)))
+
+@test
+def neqTuple11: Bool = assert!((1, (2, (3, 4))) != (1, (3, (2, 4))))
+
+@test
+def neqTuple12: Bool = assert!(((1, 2), (3, 4)) != ((1, 2), (42, 4)))
+
+@test
+def neqTuple13: Bool = assert!(((1, 2), (3, (4, 5))) != ((1, 2), (3, (42, 5))))
+
+// TODO: Test tag
+
+
+
+// TODO: Remove Equality tests from other tests in test suite.
+
