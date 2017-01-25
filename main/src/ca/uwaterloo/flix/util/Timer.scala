@@ -16,36 +16,84 @@
 
 package ca.uwaterloo.flix.util
 
+/**
+  * A simple class to measure the execution time of a function.
+  */
 class Timer[T](f: => T) {
 
-  private val OneMicroSecond = 1000L
-  private val OneMiliSecond = 1000L * OneMicroSecond
-  private val OneSecond = 1000L * OneMiliSecond
-
+  // Start the clock.
   private val b = System.nanoTime()
+
+  // Evaluate the function.
   private val r = f
+
+  // Stop the clock.
   private val e = System.nanoTime()
+
+  // Compute the duration.
   private val d = e - b
 
+  /**
+    * Returns the result computed by the function `f`.
+    */
   def getResult: T = r
 
-  def format: String = {
+  /**
+    * Returns the elapsed time in nanoseconds.
+    */
+  def nanoseconds: Double = d
+
+  /**
+    * Returns the elapsed time in microseconds.
+    */
+  def microseconds: Double = nanoseconds / 1000.0
+
+  /**
+    * Returns the elapsed time in miliseconds.
+    */
+  def miliseconds: Double = microseconds / 1000.0
+
+  /**
+    * Returns the elapsed time in seconds.
+    */
+  def seconds: Double = miliseconds / 1000.0
+
+  /**
+    * Returns a human readable string of the elapsed time.
+    */
+  def fmt: String = {
+    val OneMicroSecond = 1000L
+    val OneMiliSecond = 1000L * OneMicroSecond
+    val OneSecond = 1000L * OneMiliSecond
+
     if (d < OneMicroSecond)
-      nanoseconds
+      fmtNanoSeconds
     else if (d < OneMiliSecond)
-      microseconds
+      fmtMicroSeconds
     else if (d < OneSecond)
-      miliseconds
+      fmtMiliSeconds
     else
-      seconds
+      fmtSeconds
   }
 
-  def nanoseconds: String = f"$d ns."
+  /**
+    * Returns the elapsed time as a human readable string in nanoseconds.
+    */
+  def fmtNanoSeconds: String = f"$nanoseconds" + "nsec."
 
-  def microseconds: String = f"${d.toDouble / 1000.0}%.1f us."
+  /**
+    * Returns the elapsed time as a human readable string in microseconds.
+    */
+  def fmtMicroSeconds: String = f"$microseconds%.1f" + "usec."
 
-  def miliseconds: String = f"${d.toDouble / 1000000.0}%.1f ms."
+  /**
+    * Returns the elapsed time as a human readable string in miliseconds.
+    */
+  def fmtMiliSeconds: String = f"$miliseconds%.1f" + "msec."
 
-  def seconds: String = f"${d.toDouble / 1000000000.0}%.1f s."
+  /**
+    * Returns the elapsed time as a human readable string in seconds.
+    */
+  def fmtSeconds: String = f"$seconds%.1f" + "sec."
 
 }

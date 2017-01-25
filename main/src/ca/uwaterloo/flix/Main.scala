@@ -105,7 +105,7 @@ object Main {
           if (main.nonEmpty) {
             val name = main.get
             val timer = new Timer(model.getConstant(name))
-            Console.println(s"$name returned `${Value.pretty(timer.getResult)}' (elapsed ${timer.format})")
+            Console.println(s"$name returned `${Value.pretty(timer.getResult)}' (elapsed ${timer.fmt})")
           }
 
           if (cmdOpts.test) {
