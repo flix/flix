@@ -1010,24 +1010,11 @@ object Codegen {
     e1.tpe match {
       case Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Enum(_, _), _) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
         (e1.tpe: @unchecked) match {
-          case Type.Apply(Type.FTuple(_), _) =>
-            // java.util.Arrays.equals(Object[], Object[]) method
-            val clazz = classOf[java.util.Arrays]
-            val method = clazz.getMethod("equals", Constants.arrayObjectClass, Constants.arrayObjectClass)
-
-            // We know it's a tuple, so directly call java.util.Arrays.equals
+          case Type.Apply(Type.FTuple(_), _) | Type.Enum(_, _) | Type.Apply(Type.Enum(_, _), _) =>
+            Constants.loadValueObject(visitor)
             compileExpression(ctx, visitor, entryPoint)(e1)
             compileExpression(ctx, visitor, entryPoint)(e2)
-            visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
-          case Type.Enum(_, _) | Type.Apply(Type.Enum(_, _), _) =>
-            // java.lang.Object.equals(Object) method
-            val clazz = Constants.objectClass
-            val method = clazz.getMethod("equals", Constants.objectClass)
-
-            // Call the general java.lang.Object.equals
-            compileExpression(ctx, visitor, entryPoint)(e1)
-            compileExpression(ctx, visitor, entryPoint)(e2)
-            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "equal", "(Ljava/lang/Object;Ljava/lang/Object;)Z", false)
         }
         if (o == BinaryOperator.NotEqual) {
           val condElse = new Label()

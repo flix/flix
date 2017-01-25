@@ -135,16 +135,6 @@ trait IValue {
   def getStr: String
 
   /////////////////////////////////////////////////////////////////////////////
-  // Tuples                                                                  //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * Returns the tuple represented by `this` value.
-    *
-    * @throws UnsupportedOperationException if `this` value is not of tuple type.
-    */
-  def getTuple: Array[IValue]
-
-  /////////////////////////////////////////////////////////////////////////////
   // Enums                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   /**
@@ -197,23 +187,6 @@ trait IValue {
     * @throws UnsupportedOperationException if `this` value is not of result type.
     */
   def getScalaEither: Either[IValue, IValue]
-
-  /////////////////////////////////////////////////////////////////////////////
-  // List                                                                    //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * Returns the list represented by `this` value.
-    *
-    * @throws UnsupportedOperationException if `this` value is not of list type.
-    */
-  def getJavaList: java.util.List[IValue]
-
-  /**
-    * Returns the list represented by `this` value.
-    *
-    * @throws UnsupportedOperationException if `this` value is not of list type.
-    */
-  def getScalaList: immutable.List[IValue]
 
   /////////////////////////////////////////////////////////////////////////////
   // Sets                                                                    //

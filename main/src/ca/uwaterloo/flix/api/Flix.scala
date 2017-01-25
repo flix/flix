@@ -586,7 +586,7 @@ class Flix {
     if (tuple == null)
       throw new IllegalArgumentException("Argument 'tuple' must be non-null.")
 
-    new WrappedValue(Value.Tuple(tuple.map(_.getUnsafeRef)))
+    new WrappedValue(tuple.map(_.getUnsafeRef))
   }
 
   /**
