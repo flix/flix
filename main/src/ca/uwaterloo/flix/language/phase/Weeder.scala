@@ -773,11 +773,12 @@ object Weeder {
       def weed(past: ParsedAst.Predicate): Validation[WeededAst.Predicate.Head, WeederError] = past match {
         case ParsedAst.Predicate.True(sp1, sp2) => WeededAst.Predicate.Head.True(mkSL(sp1, sp2)).toSuccess
         case ParsedAst.Predicate.False(sp1, sp2) => WeededAst.Predicate.Head.False(mkSL(sp1, sp2)).toSuccess
-        case ParsedAst.Predicate.Filter(sp1, qname, term, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
-        case ParsedAst.Predicate.Table(sp1, qname, terms, sp2) =>
+        case ParsedAst.Predicate.Positive(sp1, qname, terms, sp2) =>
           @@(terms.toList.map(t => Expressions.weed(t))) flatMap {
             case ts => WeededAst.Predicate.Head.Table(qname, ts, mkSL(sp1, sp2)).toSuccess
           }
+
+        case ParsedAst.Predicate.Filter(sp1, qname, term, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
         case ParsedAst.Predicate.Loop(sp1, ident, term, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
         case ParsedAst.Predicate.NotEqual(sp1, ident1, ident2, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure
       }
@@ -797,7 +798,7 @@ object Weeder {
           @@(terms.map(t => Expressions.weed(exp0 = t, allowWildcards = true))) map {
             case ts => WeededAst.Predicate.Body.Filter(qname, ts, loc)
           }
-        case ParsedAst.Predicate.Table(sp1, qname, terms, sp2) =>
+        case ParsedAst.Predicate.Positive(sp1, qname, terms, sp2) =>
           val loc = mkSL(sp1, sp2)
           @@(terms.map(t => Expressions.weed(exp0 = t, allowWildcards = true))) map {
             case ts => WeededAst.Predicate.Body.Table(qname, ts, loc)

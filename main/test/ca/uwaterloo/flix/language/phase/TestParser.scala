@@ -369,6 +369,28 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
+  test("Declaration.Rule.05") {
+    val input =
+      """
+        |rel A(a: Int)
+        |rel B(a: Int)
+        |
+        |B(x) :- !A(x).
+      """.stripMargin
+    run(input)
+  }
+
+  test("Declaration.Rule.06") {
+    val input =
+      """
+        |rel A(a: Int)
+        |rel B(a: Int)
+        |
+        |!B(x) :- A(x).
+      """.stripMargin
+    run(input)
+  }
+
   test("Declaration.Fact.Head.True") {
     val input = "true."
     run(input)

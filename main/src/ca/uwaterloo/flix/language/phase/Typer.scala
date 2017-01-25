@@ -1001,36 +1001,6 @@ object Typer {
   object Predicates {
 
     /**
-      * Performs type inference and reassembly on the given predicate `head` in the given namespace `ns`.
-      */
-    def typecheck(head: NamedAst.Predicate.Head, ns: Name.NName, program: Program)(implicit genSym: GenSym): Result[TypedAst.Predicate.Head, TypeError] = head match {
-      case NamedAst.Predicate.Head.True(loc) => Ok(TypedAst.Predicate.Head.True(loc))
-      case NamedAst.Predicate.Head.False(loc) => Ok(TypedAst.Predicate.Head.False(loc))
-      case NamedAst.Predicate.Head.Table(qname, terms, loc) =>
-        // Lookup the table associated with the predicate to find the declared types of the terms.
-        Disambiguation.lookupTable(qname, ns, program) flatMap {
-          table =>
-            // Resolve the declared types.
-            Disambiguation.resolve(table.attr.map(_.tpe), ns, program) flatMap {
-              case expectedTypes =>
-                // Compute the inferred types of the terms and unify them with the declared types.
-                val result = for (
-                  inferredTypes <- seqM(terms.map(t => Expressions.infer(t, ns, program)));
-                  unifiedTypes <- unifyM(expectedTypes, inferredTypes, loc)
-                ) yield unifiedTypes
-
-                // Evaluate the monad with the empty substitution.
-                result.run(Substitution.empty) map {
-                  case (subst, _) =>
-                    // Reassemble the expressions and predicate.
-                    val ts = terms.map(t => Expressions.reassemble(t, ns, program, subst, resolveFreeVars = true))
-                    TypedAst.Predicate.Head.Table(table.sym, ts, loc)
-                }
-            }
-        }
-    }
-
-    /**
       * Infers the type of the given head predicate.
       */
     def infer(head: NamedAst.Predicate.Head, ns: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = head match {
