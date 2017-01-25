@@ -3733,83 +3733,6 @@ class TestBackend extends FunSuite {
     t.runTest(Value.True, "f03")
   }
 
-  test("Expression.Binary - BinaryOperator.Equal.11") {
-    val input = "def f: Bool = () == ()"
-    val t = new Tester(input)
-    t.runTest(Value.True, "f")
-  }
-
-  test("Expression.Binary - BinaryOperator.Equal.12") {
-    val input =
-      """def f01: Bool = true == true
-        |def f02: Bool = true == false
-        |def f03: Bool = false == false
-        |def f04: Bool = false == true
-      """.stripMargin
-    val t = new Tester(input)
-    t.runTest(Value.True, "f01")
-    t.runTest(Value.False, "f02")
-    t.runTest(Value.True, "f03")
-    t.runTest(Value.False, "f04")
-  }
-
-  test("Expression.Binary - BinaryOperator.Equal.13") {
-    val input =
-      """def f01: Bool = "hello" == "hello"
-        |def f02: Bool = "hello" == "hello!"
-      """.stripMargin
-    val t = new Tester(input)
-    t.runTest(Value.True, "f01")
-    t.runTest(Value.False, "f02")
-  }
-
-  test("Expression.Binary - BinaryOperator.Equal.14") {
-    val input =
-      """enum T { case Top, case Val(Int), case Bot }
-        |def f01: Bool = T.Top == T.Top
-        |def f02: Bool = T.Top == T.Val(0)
-        |def f03: Bool = T.Top == T.Bot
-        |def f04: Bool = T.Val(0) == T.Bot
-        |def f05: Bool = T.Val(0) == T.Val(0)
-        |def f06: Bool = T.Val(1) == T.Val(2)
-      """.stripMargin
-    val t = new Tester(input)
-    t.runTest(Value.True, "f01")
-    t.runTest(Value.False, "f02")
-    t.runTest(Value.False, "f03")
-    t.runTest(Value.False, "f04")
-    t.runTest(Value.True, "f05")
-    t.runTest(Value.False, "f06")
-  }
-
-  test("Expression.Binary - BinaryOperator.Equal.15") {
-    val foo = (1, 2) == (3, 'a')
-    val input =
-      """def f01: Bool = (1, 2, 3) == (1, 2, 3)
-        |def f02: Bool = ('h', 'e', 'l', 'l', 'o') == ('h', 'e', 'l', 'l', 'o')
-        |def f03: Bool = (1, 2, 'a') == (1, 2, 'b')
-      """.stripMargin
-    val t = new Tester(input)
-    t.runTest(Value.True, "f01")
-    t.runTest(Value.True, "f02")
-    t.runTest(Value.False, "f03")
-  }
-
-  // TODO: Requires backend support
-  ignore("Expression.Binary - BinaryOperator.Equal.16") {
-    val input =
-      """def f01: Bool = #{1, 2, 4} == #{4, 2, 1}
-        |def f02: Bool = #{1, 2, 4} == #{0, 1, 2, 4}
-        |def f03: Bool = #{true, true} == #{true, false}
-        |def f04: Bool = #{'a', 'b', 'c'} == #{'c', 'c', 'b', 'b', 'a', 'a'}
-      """.stripMargin
-    val t = new Tester(input)
-    t.runTest(Value.True, "f01")
-    t.runTest(Value.False, "f02")
-    t.runTest(Value.False, "f03")
-    t.runTest(Value.True, "f04")
-  }
-
   test("Expression.Binary - BinaryOperator.NotEqual.01") {
     val input =
       s"""def f01: Bool = 120000 != 30000
@@ -3984,55 +3907,6 @@ class TestBackend extends FunSuite {
     t.runTest(Value.False, "f03")
   }
 
-  test("Expression.Binary - BinaryOperator.NotEqual.11") {
-    val input = "def f: Bool = () != ()"
-    val t = new Tester(input)
-    t.runTest(Value.False, "f")
-  }
-
-  test("Expression.Binary - BinaryOperator.NotEqual.12") {
-    val input =
-      """def f01: Bool = true != true
-        |def f02: Bool = true != false
-        |def f03: Bool = false != false
-        |def f04: Bool = false != true
-      """.stripMargin
-    val t = new Tester(input)
-    t.runTest(Value.False, "f01")
-    t.runTest(Value.True, "f02")
-    t.runTest(Value.False, "f03")
-    t.runTest(Value.True, "f04")
-  }
-
-  test("Expression.Binary - BinaryOperator.NotEqual.13") {
-    val input =
-      """def f01: Bool = "hello" != "hello"
-        |def f02: Bool = "hello" != "hello!"
-      """.stripMargin
-    val t = new Tester(input)
-    t.runTest(Value.False, "f01")
-    t.runTest(Value.True, "f02")
-  }
-
-  test("Expression.Binary - BinaryOperator.NotEqual.14") {
-    val input =
-      """enum T { case Top, case Val(Int), case Bot }
-        |def f01: Bool = T.Top != T.Top
-        |def f02: Bool = T.Top != T.Val(0)
-        |def f03: Bool = T.Top != T.Bot
-        |def f04: Bool = T.Val(0) != T.Bot
-        |def f05: Bool = T.Val(0) != T.Val(0)
-        |def f06: Bool = T.Val(1) != T.Val(2)
-      """.stripMargin
-    val t = new Tester(input)
-    t.runTest(Value.False, "f01")
-    t.runTest(Value.True, "f02")
-    t.runTest(Value.True, "f03")
-    t.runTest(Value.True, "f04")
-    t.runTest(Value.False, "f05")
-    t.runTest(Value.True, "f06")
-  }
-
   test("Expression.Binary - BinaryOperator.NotEqual.15") {
     val foo = (1, 2) == (3, 'a')
     val input =
@@ -4044,21 +3918,6 @@ class TestBackend extends FunSuite {
     t.runTest(Value.False, "f01")
     t.runTest(Value.False, "f02")
     t.runTest(Value.True, "f03")
-  }
-
-  // TODO: Requires backend support
-  ignore("Expression.Binary - BinaryOperator.NotEqual.16") {
-    val input =
-      """def f01: Bool = #{1, 2, 4} != #{4, 2, 1}
-        |def f02: Bool = #{1, 2, 4} != #{0, 1, 2, 4}
-        |def f03: Bool = #{true, true} != #{true, false}
-        |def f04: Bool = #{'a', 'b', 'c'} != #{'c', 'c', 'b', 'b', 'a', 'a'}
-      """.stripMargin
-    val t = new Tester(input)
-    t.runTest(Value.False, "f01")
-    t.runTest(Value.True, "f02")
-    t.runTest(Value.True, "f03")
-    t.runTest(Value.False, "f04")
   }
 
   /////////////////////////////////////////////////////////////////////////////
