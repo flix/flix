@@ -62,7 +62,6 @@ object Codegen {
 
     val unitClass = Value.Unit.getClass
     val tagClass = classOf[Value.Tag]
-    val tupleClass = classOf[Value.Tuple]
 
     val valueObject = "ca/uwaterloo/flix/runtime/Value$"
     val scalaPredef = "scala/Predef$"
@@ -109,9 +108,8 @@ object Codegen {
         case Type.Str => asm.Type.getDescriptor(Constants.stringClass)
         case Type.Native => asm.Type.getDescriptor(Constants.objectClass)
         case Type.Apply(Type.Arrow(l), _) => s"L${decorate(interfaces(tpe))};"
-        case Type.Apply(Type.FTuple(l), _) => asm.Type.getDescriptor(Constants.tupleClass)
+        case Type.Apply(Type.FTuple(l), _) => "[Ljava/lang/Object;"
         case _ if tpe.isEnum => asm.Type.getDescriptor(Constants.tagClass)
-        case _ if tpe.isTuple => asm.Type.getDescriptor(Constants.tupleClass)
         case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
 
@@ -532,27 +530,27 @@ object Codegen {
       compileUnbox(ctx, visitor)(tpe)
 
     case Expression.GetTupleIndex(base, offset, tpe, _) =>
-      // Load the Value singleton object and base expression, to call `Value.cast2tuple`, to get the elements array.
-      Constants.loadValueObject(visitor)
+      // Compile the tuple (array) expression.
       compileExpression(ctx, visitor, entryPoint)(base)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "cast2tuple", "(Ljava/lang/Object;)[Ljava/lang/Object;", false)
 
-      // Now compile the offset and load the array element. Unbox if necessary.
+      // Cast it to an array of objects.
+      visitor.visitTypeInsn(CHECKCAST, "[Ljava/lang/Object;")
+
+      // Compile the array offset.
       compileInt(visitor)(offset)
+
+      // Load the entry from the array.
       visitor.visitInsn(AALOAD)
+
+      // Unbox, if necessary.
       compileUnbox(ctx, visitor)(tpe)
 
     case Expression.Tuple(elms, _, _) =>
-      // Value.Tuple(Object[]) constructor
-      val clazz = Constants.tupleClass
-      val ctor = clazz.getConstructor(Constants.arrayObjectClass)
-      val name = asm.Type.getInternalName(clazz)
-
-      // Create the array to hold the tuple elements.
+      // Allocate an array to hold the elements of the tuple.
       compileInt(visitor)(elms.length)
       visitor.visitTypeInsn(ANEWARRAY, asm.Type.getInternalName(Constants.objectClass))
 
-      // Iterate over elms, boxing them and slotting each one into the array.
+      // Iterate over each element, boxing, them and slotting each one into the array.
       for ((e, i) <- elms.zipWithIndex) {
         // Duplicate the array reference, otherwise AASTORE will consume it.
         visitor.visitInsn(DUP)
@@ -560,18 +558,6 @@ object Codegen {
         compileBoxedExpr(ctx, visitor, entryPoint)(e)
         visitor.visitInsn(AASTORE)
       }
-
-      // Now construct a Value.Tuple: create a reference, load the arguments, and call the constructor.
-      visitor.visitTypeInsn(NEW, name)
-
-      // We use dup_x1 and swap to manipulate the stack so we can avoid using a local variable.
-      // Stack before: array, tuple (top)
-      // Stack after: tuple, tuple, array (top)
-      visitor.visitInsn(DUP_X1)
-      visitor.visitInsn(SWAP)
-
-      // Finally, call the constructor, which pops the reference (tuple) and argument (array).
-      visitor.visitMethodInsn(INVOKESPECIAL, name, "<init>", asm.Type.getConstructorDescriptor(ctor), false)
 
     case Expression.Existential(params, exp, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$expr' at ${loc.source.format}.")
@@ -704,30 +690,7 @@ object Codegen {
     case Type.Native => // Don't need to cast AnyRef to anything
 
     case Type.Apply(Type.FTuple(l), _) =>
-      // This is actually a bit more complicated, since we have multiple representations for a tuple (e.g. Value.Tuple,
-      // Array, scala.TupleN). We have to call `Value.cast2tuple` instead of doing a direct cast.
-
-      // Load the Value singleton object. Do a SWAP to put stack operands in the right order, then call
-      // `Value.cast2tuple`, to get the elements array.
-      Constants.loadValueObject(visitor)
-      visitor.visitInsn(SWAP)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "cast2tuple", "(Ljava/lang/Object;)[Ljava/lang/Object;", false)
-
-      // TODO: Update this when we remove Value.Tuple.
-      // cast2tuple returns an Array, but we expect a Value.Tuple. So we have to construct one.
-      // Create the Value.Tuple reference.
-      visitor.visitTypeInsn(NEW, asm.Type.getInternalName(Constants.tupleClass))
-
-      // We use dup_x1 and swap to manipulate the stack so we can avoid using a local variable.
-      // Stack before: array, tuple (top)
-      // Stack after: tuple, tuple, array (top)
-      visitor.visitInsn(DUP_X1)
-      visitor.visitInsn(SWAP)
-
-      // Finally, call the constructor, which pops the reference (tuple) and argument (array).
-      val clazz = Constants.tupleClass
-      val ctor = clazz.getConstructor(Constants.arrayObjectClass)
-      visitor.visitMethodInsn(INVOKESPECIAL, asm.Type.getInternalName(clazz), "<init>", asm.Type.getConstructorDescriptor(ctor), false)
+      visitor.visitTypeInsn(CHECKCAST, "[Ljava/lang/Object;")
 
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }
@@ -1048,20 +1011,14 @@ object Codegen {
       case Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Enum(_, _), _) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
         (e1.tpe: @unchecked) match {
           case Type.Apply(Type.FTuple(_), _) =>
-            // Value.Tuple.elms() method
-            val clazz1 = Constants.tupleClass
-            val method1 = clazz1.getMethod("elms")
-
             // java.util.Arrays.equals(Object[], Object[]) method
-            val clazz2 = classOf[java.util.Arrays]
-            val method2 = clazz2.getMethod("equals", Constants.arrayObjectClass, Constants.arrayObjectClass)
+            val clazz = classOf[java.util.Arrays]
+            val method = clazz.getMethod("equals", Constants.arrayObjectClass, Constants.arrayObjectClass)
 
             // We know it's a tuple, so directly call java.util.Arrays.equals
             compileExpression(ctx, visitor, entryPoint)(e1)
-            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), method1.getName, asm.Type.getMethodDescriptor(method1), false)
             compileExpression(ctx, visitor, entryPoint)(e2)
-            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), method1.getName, asm.Type.getMethodDescriptor(method1), false)
-            visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(clazz2), method2.getName, asm.Type.getMethodDescriptor(method2), false)
+            visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
           case Type.Enum(_, _) | Type.Apply(Type.Enum(_, _), _) =>
             // java.lang.Object.equals(Object) method
             val clazz = Constants.objectClass

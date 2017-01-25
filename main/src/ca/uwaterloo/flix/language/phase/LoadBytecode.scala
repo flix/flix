@@ -159,7 +159,7 @@ object LoadBytecode {
     case Type.Str => classOf[java.lang.String]
     case Type.Native => classOf[java.lang.Object]
     case Type.Enum(_, _) | Type.Apply(Type.Enum(_, _), _) => classOf[Value.Tag]
-    case Type.Apply(Type.FTuple(l), _) => classOf[Value.Tuple]
+    case Type.Apply(Type.FTuple(l), _) => classOf[Array[Object]]
     case Type.Apply(Type.Arrow(l), _) => interfaces(tpe)
     case _ if tpe.isTuple => classOf[Value.Tuple]
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
