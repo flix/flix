@@ -413,8 +413,7 @@ object Value {
     case _: Array[AnyRef] =>
       val a1 = ref1.asInstanceOf[Array[AnyRef]]
       val a2 = ref2.asInstanceOf[Array[AnyRef]]
-      if (a1.length != a2.length)
-        return false
+      assert(a1.length == a2.length)
       var i = 0
       while (i < a1.length) {
         if (!equal(a1(i), a2(i))) {

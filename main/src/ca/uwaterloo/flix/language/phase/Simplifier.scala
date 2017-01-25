@@ -320,7 +320,7 @@ object Simplifier {
         val zero = simplify(elms ::: ps, freshVars ::: vs, guard, succ, fail)
         elms.zip(freshVars).zipWithIndex.foldRight(zero) {
           case (((pat, name), idx), exp) =>
-            SExp.Let(name, SExp.GetTupleIndex(SExp.Var(v, tpe, loc), idx, pat.tpe, loc), exp, succ.tpe, loc)
+            SExp.Let(name, SExp.Index(SExp.Var(v, tpe, loc), idx, pat.tpe, loc), exp, succ.tpe, loc)
         }
 
       case (FSet(elms, rest, tpe, loc) :: ps, v :: vs) => ???

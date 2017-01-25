@@ -529,33 +529,41 @@ object Codegen {
       visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
       compileUnbox(ctx, visitor)(tpe)
 
-    case Expression.GetTupleIndex(base, offset, tpe, _) =>
-      // Compile the tuple (array) expression.
+    case Expression.Index(base, offset, tpe, _) =>
+      // Emit code for the base (tuple) expression.
       compileExpression(ctx, visitor, entryPoint)(base)
 
-      // Cast it to an array of objects.
+      // A tuple is represented as an array of objects.
       visitor.visitTypeInsn(CHECKCAST, "[Ljava/lang/Object;")
 
-      // Compile the array offset.
+      // Emit code for the array index.
       compileInt(visitor)(offset)
 
-      // Load the entry from the array.
+      // Load the value at the index on the stack.
       visitor.visitInsn(AALOAD)
 
-      // Unbox, if necessary.
+      // Unbox the value, if necessary.
       compileUnbox(ctx, visitor)(tpe)
 
     case Expression.Tuple(elms, _, _) =>
-      // Allocate an array to hold the elements of the tuple.
+      // Push the length of the tuple on the stack.
       compileInt(visitor)(elms.length)
+
+      // Allocate an array of objects to store the elements of the tuple.
       visitor.visitTypeInsn(ANEWARRAY, asm.Type.getInternalName(Constants.objectClass))
 
-      // Iterate over each element, boxing, them and slotting each one into the array.
+      // Emit code for each component of the tuple and store it into the array.
       for ((e, i) <- elms.zipWithIndex) {
-        // Duplicate the array reference, otherwise AASTORE will consume it.
+        // Duplicate the array reference, since AASTORE consumes it.
         visitor.visitInsn(DUP)
+
+        // Push the array index.
         compileInt(visitor)(i)
+
+        // Emit code for the component, box if necessary.
         compileBoxedExpr(ctx, visitor, entryPoint)(e)
+
+        // Store the value into the array.
         visitor.visitInsn(AASTORE)
       }
 
@@ -1011,6 +1019,7 @@ object Codegen {
       case Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Enum(_, _), _) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
         (e1.tpe: @unchecked) match {
           case Type.Apply(Type.FTuple(_), _) | Type.Enum(_, _) | Type.Apply(Type.Enum(_, _), _) =>
+            // Emit code to call Value.equal(Object, Object).
             Constants.loadValueObject(visitor)
             compileExpression(ctx, visitor, entryPoint)(e1)
             compileExpression(ctx, visitor, entryPoint)(e2)

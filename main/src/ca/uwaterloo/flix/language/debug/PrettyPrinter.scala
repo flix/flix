@@ -187,7 +187,7 @@ object PrettyPrinter {
           visitExp(exp)
           o.text(")")
 
-        case Expression.GetTupleIndex(exp, offset, tpe, loc) =>
+        case Expression.Index(exp, offset, tpe, loc) =>
           visitExp(exp)
           o.text("[")
           o.text(offset)

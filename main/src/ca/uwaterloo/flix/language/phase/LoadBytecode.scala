@@ -203,7 +203,7 @@ object LoadBytecode {
       case Expression.Is(exp, tag, loc) => visit(exp)
       case Expression.Tag(enum, tag, exp, tpe, loc) => visit(exp)
       case Expression.Untag(tag, exp, tpe, loc) => visit(exp)
-      case Expression.GetTupleIndex(base, offset, tpe, loc) => visit(base)
+      case Expression.Index(base, offset, tpe, loc) => visit(base)
       case Expression.Tuple(elms, tpe, loc) => elms.flatMap(visit).toSet
       case Expression.Existential(params, exp, loc) =>
         ???

@@ -93,7 +93,7 @@ object AstStats {
       case ExecutableAst.Expression.Tag(enum, tag, exp, tpe, loc) => visitExp(exp).incTag
       case ExecutableAst.Expression.Untag(tag, exp, tpe, loc) =>
         visitExp(exp).incUntag
-      case ExecutableAst.Expression.GetTupleIndex(base, offset, tpe, loc) => visitExp(base)
+      case ExecutableAst.Expression.Index(base, offset, tpe, loc) => visitExp(base)
       case ExecutableAst.Expression.Tuple(elms, tpe, loc) =>
         val s = elms.foldLeft(AstStats()) {
           case (acc, e) => acc + visitExp(e)

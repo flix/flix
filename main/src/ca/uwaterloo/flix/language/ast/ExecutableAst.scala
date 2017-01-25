@@ -447,31 +447,9 @@ object ExecutableAst {
 
     case class Untag(tag: String, exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    /**
-      * A typed AST node representing an index into a tuple, i.e. destruct a tuple.
-      *
-      * @param base   the tuple expression to index into.
-      * @param offset the (0-based) offset of the tuple.
-      * @param tpe    the type of the expression.
-      * @param loc    the source location of the tuple.
-      */
-    case class GetTupleIndex(base: ExecutableAst.Expression,
-                             offset: scala.Int,
-                             tpe: Type,
-                             loc: SourceLocation) extends ExecutableAst.Expression {
-      override def toString: String = base + "[" + offset + "]"
-    }
+    case class Index(base: ExecutableAst.Expression, offset: scala.Int, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    /**
-      * A typed AST node representing a tuple expression.
-      *
-      * @param elms the elements of the tuple.
-      * @param tpe  the type of the tuple.
-      * @param loc  the source location of the tuple.
-      */
-    case class Tuple(elms: Array[ExecutableAst.Expression],
-                     tpe: Type,
-                     loc: SourceLocation) extends ExecutableAst.Expression
+    case class Tuple(elms: Array[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class Existential(fparam: ExecutableAst.FormalParam, exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
       def tpe: Type = Type.Bool

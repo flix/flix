@@ -102,7 +102,7 @@ object Interpreter {
     case Expression.Is(exp, tag, _) => Value.mkBool(Value.cast2tag(eval(exp, root, env0)).tag == tag)
     case Expression.Tag(name, tag, exp, _, _) => Value.mkTag(tag, eval(exp, root, env0))
     case Expression.Untag(tag, exp, _, _) => Value.cast2tag(eval(exp, root, env0)).value
-    case Expression.GetTupleIndex(base, offset, _, _) => eval(base, root, env0).asInstanceOf[Array[AnyRef]](offset)
+    case Expression.Index(base, offset, _, _) => eval(base, root, env0).asInstanceOf[Array[AnyRef]](offset)
     case Expression.Tuple(elms, _, _) =>
       val array = new Array[AnyRef](elms.length)
       var i = 0

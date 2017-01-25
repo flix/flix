@@ -674,14 +674,6 @@ object SymbolicEvaluator {
         }
 
       /**
-        * Tuples.
-        */
-      case Expression.Tuple(elms, _, _) =>
-        evaln(pc0, elms, env0, qua0) flatMap {
-          case (pc, qua, es) => lift(pc, qua, SymVal.Tuple(es))
-        }
-
-      /**
         * Is Tag.
         */
       case Expression.Is(exp, tag, _) =>
@@ -712,9 +704,17 @@ object SymbolicEvaluator {
         }
 
       /**
-        * Get Tuple Index.
+        * Tuple.
         */
-      case Expression.GetTupleIndex(base, offset, _, _) =>
+      case Expression.Tuple(elms, _, _) =>
+        evaln(pc0, elms, env0, qua0) flatMap {
+          case (pc, qua, es) => lift(pc, qua, SymVal.Tuple(es))
+        }
+
+      /**
+        * Index (into tuple).
+        */
+      case Expression.Index(base, offset, _, _) =>
         eval(pc0, base, env0, qua0) flatMap {
           case (pc, qua, SymVal.Tuple(elms)) => lift(pc, qua, elms(offset))
           case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")

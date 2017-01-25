@@ -418,15 +418,7 @@ object SimplifiedAst {
 
     case class Untag(tag: String, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    /**
-      * A typed AST node representing an index into a tuple, i.e. destruct a tuple.
-      *
-      * @param base   the tuple expression to index into.
-      * @param offset the (0-based) offset of the tuple.
-      * @param tpe    the type of the expression.
-      * @param loc    the source location of the tuple.
-      */
-    case class GetTupleIndex(base: SimplifiedAst.Expression, offset: scala.Int, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class Index(base: SimplifiedAst.Expression, offset: scala.Int, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Tuple(elms: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
