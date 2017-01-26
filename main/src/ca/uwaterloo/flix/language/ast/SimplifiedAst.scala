@@ -25,7 +25,7 @@ object SimplifiedAst {
                   lattices: Map[Type, SimplifiedAst.Definition.Lattice],
                   tables: Map[Symbol.TableSym, SimplifiedAst.Table],
                   indexes: Map[Symbol.TableSym, SimplifiedAst.Definition.Index],
-                  constraints: List[SimplifiedAst.Declaration.Constraint],
+                  strata: List[SimplifiedAst.Stratum],
                   properties: List[SimplifiedAst.Property],
                   time: Time) extends SimplifiedAst
 
@@ -457,7 +457,9 @@ object SimplifiedAst {
 
       case class False(loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
-      case class Table(sym: Symbol.TableSym, terms: List[SimplifiedAst.Term.Head], loc: SourceLocation) extends SimplifiedAst.Predicate.Head
+      case class Positive(sym: Symbol.TableSym, terms: List[SimplifiedAst.Term.Head], loc: SourceLocation) extends SimplifiedAst.Predicate.Head
+
+      case class Negative(sym: Symbol.TableSym, terms: List[SimplifiedAst.Term.Head], loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
     }
 
@@ -465,7 +467,9 @@ object SimplifiedAst {
 
     object Body {
 
-      case class Table(sym: Symbol.TableSym, terms: List[SimplifiedAst.Term.Body], loc: SourceLocation) extends SimplifiedAst.Predicate.Body
+      case class Positive(sym: Symbol.TableSym, terms: List[SimplifiedAst.Term.Body], loc: SourceLocation) extends SimplifiedAst.Predicate.Body
+
+      case class Negative(sym: Symbol.TableSym, terms: List[SimplifiedAst.Term.Body], loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
       case class ApplyFilter(sym: Symbol.DefnSym, terms: List[SimplifiedAst.Term.Body], loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
@@ -532,5 +536,7 @@ object SimplifiedAst {
   case class FreeVar(sym: Symbol.VarSym, tpe: Type) extends SimplifiedAst
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: SimplifiedAst.Expression) extends SimplifiedAst
+
+  case class Stratum(constraints: List[SimplifiedAst.Declaration.Constraint]) extends SimplifiedAst
 
 }

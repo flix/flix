@@ -44,9 +44,10 @@ object Typer {
       rules <- Declarations.Constraints.typecheck(program)
       properties <- Declarations.Properties.typecheck(program)
     } yield {
+      val strata = List(TypedAst.Stratum(constraints))
       val currentTime = System.nanoTime()
       val time = program.time.copy(typer = currentTime - startTime)
-      TypedAst.Root(definitions, enums, lattices, tables, indexes, constraints, properties, time)
+      TypedAst.Root(definitions, enums, lattices, tables, indexes, strata, properties, time)
     }
 
     result match {
@@ -1003,22 +1004,17 @@ object Typer {
     /**
       * Infers the type of the given head predicate.
       */
-    def infer(head: NamedAst.Predicate.Head, ns: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = head match {
+    def infer(head: NamedAst.Predicate.Head, ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = head match {
       case NamedAst.Predicate.Head.True(loc) => Unification.liftM(Nil)
       case NamedAst.Predicate.Head.False(loc) => Unification.liftM(Nil)
-      case NamedAst.Predicate.Head.Table(qname, terms, loc) =>
-        val declaredTypes = Disambiguation.lookupTable(qname, ns, program) match {
-          case Ok(NamedAst.Table.Relation(doc, sym, attr, _)) => attr.map(_.tpe)
-          case Ok(NamedAst.Table.Lattice(doc, sym, keys, value, _)) => keys.map(_.tpe) ::: value.tpe :: Nil
-          case Err(e) => return failM(e)
+      case NamedAst.Predicate.Head.Positive(qname, terms, loc) =>
+        getTableSignature(qname, ns0, program) match {
+          case Ok(tpes) => Terms.infer(terms, tpes, loc, ns0, program)
+          case Err(e) => failM(e)
         }
-
-        Disambiguation.resolve(declaredTypes, ns, program) match {
-          case Ok(expectedTypes) =>
-            for (
-              actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns, program)));
-              unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes, loc)
-            ) yield unifiedTypes
+      case NamedAst.Predicate.Head.Negative(qname, terms, loc) =>
+        getTableSignature(qname, ns0, program) match {
+          case Ok(tpes) => Terms.infer(terms, tpes, loc, ns0, program)
           case Err(e) => failM(e)
         }
     }
@@ -1027,20 +1023,16 @@ object Typer {
       * Infers the type of the given body predicate.
       */
     def infer(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = body0 match {
-      case NamedAst.Predicate.Body.Table(qname, terms, loc) =>
-        val declaredTypes = Disambiguation.lookupTable(qname, ns0, program) match {
-          case Ok(NamedAst.Table.Relation(doc, sym, attr, _)) => attr.map(_.tpe)
-          case Ok(NamedAst.Table.Lattice(doc, sym, keys, value, _)) => keys.map(_.tpe) ::: value.tpe :: Nil
-          case Err(e) => return failM(e)
+      case NamedAst.Predicate.Body.Positive(qname, terms, loc) =>
+        getTableSignature(qname, ns0, program) match {
+          case Ok(tpes) => Terms.infer(terms, tpes, loc, ns0, program)
+          case Err(e) => failM(e)
         }
-        val expectedTypes = Disambiguation.resolve(declaredTypes, ns0, program) match {
-          case Ok(tpes) => tpes
-          case Err(e) => return failM(e)
+      case NamedAst.Predicate.Body.Negative(qname, terms, loc) =>
+        getTableSignature(qname, ns0, program) match {
+          case Ok(tpes) => Terms.infer(terms, tpes, loc, ns0, program)
+          case Err(e) => failM(e)
         }
-        for (
-          actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns0, program)));
-          unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes, loc)
-        ) yield unifiedTypes
       case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
         Disambiguation.lookupRef(qname, ns0, program) match {
           case Ok(RefTarget.Defn(ns, defn)) =>
@@ -1071,30 +1063,28 @@ object Typer {
     def reassemble(head0: NamedAst.Predicate.Head, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
       case NamedAst.Predicate.Head.True(loc) => TypedAst.Predicate.Head.True(loc)
       case NamedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
-      case NamedAst.Predicate.Head.Table(qname, terms, loc) =>
-        Disambiguation.lookupTable(qname, ns0, program) match {
-          case Ok(NamedAst.Table.Relation(_, sym, _, _)) =>
-            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
-            TypedAst.Predicate.Head.Table(sym, ts, loc)
-          case Ok(NamedAst.Table.Lattice(_, sym, _, _, _)) =>
-            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
-            TypedAst.Predicate.Head.Table(sym, ts, loc)
-          case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
-        }
+      case NamedAst.Predicate.Head.Positive(qname, terms, loc) =>
+        val sym = Symbols.getTableSym(qname, ns0, program)
+        val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
+        TypedAst.Predicate.Head.Positive(sym, ts, loc)
+      case NamedAst.Predicate.Head.Negative(qname, terms, loc) =>
+        val sym = Symbols.getTableSym(qname, ns0, program)
+        val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
+        TypedAst.Predicate.Head.Negative(sym, ts, loc)
     }
 
     /**
       * Applies the given substitution `subst0` to the given body predicate `body0` in the given namespace `ns0`.
       */
     def reassemble(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
-      case NamedAst.Predicate.Body.Table(qname, terms, loc) =>
-        Disambiguation.lookupTable(qname, ns0, program) match {
-          case Ok(NamedAst.Table.Relation(_, sym, _, _)) => TypedAst.Predicate.Body.Table(sym, terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true)), loc)
-          case Ok(NamedAst.Table.Lattice(_, sym, _, _, _)) =>
-            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
-            TypedAst.Predicate.Body.Table(sym, ts, loc)
-          case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
-        }
+      case NamedAst.Predicate.Body.Positive(qname, terms, loc) =>
+        val sym = Symbols.getTableSym(qname, ns0, program)
+        val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
+        TypedAst.Predicate.Body.Positive(sym, ts, loc)
+      case NamedAst.Predicate.Body.Negative(qname, terms, loc) =>
+        val sym = Symbols.getTableSym(qname, ns0, program)
+        val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
+        TypedAst.Predicate.Body.Negative(sym, ts, loc)
       case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
         Disambiguation.lookupRef(qname, ns0, program) match {
           case Ok(RefTarget.Defn(ns, defn)) =>
@@ -1114,6 +1104,47 @@ object Typer {
         TypedAst.Predicate.Body.Loop(sym, t, loc)
     }
 
+  }
+
+  object Terms {
+
+    /**
+      * Infers the type of the given `terms` and typechecks them against the declared types `ts`.
+      */
+    def infer(terms: List[NamedAst.Expression], ts: List[Type], loc: SourceLocation, ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
+      for (
+        actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns0, program)));
+        unifiedTypes <- Unification.unifyM(ts, actualTypes, loc)
+      ) yield unifiedTypes
+    }
+
+  }
+
+  object Symbols {
+
+    /**
+      * Returns the table symbol of the given fully-qualified name.
+      */
+    def getTableSym(qname: Name.QName, ns0: Name.NName, program: Program): Symbol.TableSym = Disambiguation.lookupTable(qname, ns0, program) match {
+      case Ok(NamedAst.Table.Relation(_, sym, _, _)) => sym
+      case Ok(NamedAst.Table.Lattice(_, sym, _, _, _)) => sym
+      case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
+    }
+
+  }
+
+  /**
+    * Returns the declared types of the terms of the given fully-qualified table name `qname` in the namespace `ns0`.
+    */
+  def getTableSignature(qname: Name.QName, ns0: Name.NName, program: Program): Result[List[Type], TypeError] = {
+    val declaredTypes = Disambiguation.lookupTable(qname, ns0, program) map {
+      case NamedAst.Table.Relation(doc, sym, attr, _) => attr.map(_.tpe)
+      case NamedAst.Table.Lattice(doc, sym, keys, value, _) => keys.map(_.tpe) ::: value.tpe :: Nil
+    }
+
+    declaredTypes flatMap {
+      case tpes => Disambiguation.resolve(tpes, ns0, program)
+    }
   }
 
   /**
