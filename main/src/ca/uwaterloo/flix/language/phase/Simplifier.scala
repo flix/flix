@@ -44,13 +44,12 @@ object Simplifier {
     val lattices = tast.lattices.map { case (k, v) => k -> Definition.simplify(v) }
     val collections = tast.tables.map { case (k, v) => k -> Table.simplify(v) }
     val indexes = tast.indexes.map { case (k, v) => k -> Definition.simplify(v) }
-    val facts = tast.facts.map(Definition.simplify)
-    val rules = tast.rules.map(Definition.simplify)
+    val constraints = tast.constraints.map(Declarations.Constraints.simplify)
     val properties = tast.properties.map { p => simplify(p) }
     val time = tast.time
 
     val e = System.nanoTime() - t
-    SimplifiedAst.Root(constants, enums, lattices, collections, indexes, facts, rules, properties, time.copy(simplifier = e))
+    SimplifiedAst.Root(constants, enums, lattices, collections, indexes, constraints, properties, time.copy(simplifier = e))
   }
 
   object Table {
@@ -60,6 +59,18 @@ object Simplifier {
       case TypedAst.Table.Lattice(doc, name, keys, value, loc) =>
         SimplifiedAst.Table.Lattice(name, keys.map(Simplifier.simplify), Simplifier.simplify(value), loc)
     }
+  }
+
+  object Declarations {
+
+    object Constraints {
+      def simplify(tast: TypedAst.Declaration.Constraint)(implicit genSym: GenSym): SimplifiedAst.Declaration.Constraint = {
+        val head = Predicate.Head.simplify(tast.head)
+        val body = tast.body.map(Predicate.Body.simplify)
+        SimplifiedAst.Declaration.Constraint(head, body)
+      }
+    }
+
   }
 
   object Definition {
@@ -78,15 +89,6 @@ object Simplifier {
 
     def simplify(tast: TypedAst.Declaration.Index)(implicit genSym: GenSym): SimplifiedAst.Definition.Index =
       SimplifiedAst.Definition.Index(tast.sym, tast.indexes, tast.loc)
-
-    def simplify(tast: TypedAst.Declaration.Fact)(implicit genSym: GenSym): SimplifiedAst.Constraint.Fact =
-      SimplifiedAst.Constraint.Fact(Predicate.Head.simplify(tast.head))
-
-    def simplify(tast: TypedAst.Declaration.Rule)(implicit genSym: GenSym): SimplifiedAst.Constraint.Rule = {
-      val head = Predicate.Head.simplify(tast.head)
-      val body = tast.body.map(Predicate.Body.simplify)
-      SimplifiedAst.Constraint.Rule(head, body)
-    }
 
   }
 

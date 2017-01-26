@@ -55,8 +55,8 @@ object CreateExecutableAst {
     val lattices = sast.lattices.map { case (k, v) => k -> Definition.toExecutable(v, m) }
     val tables = sast.tables.map { case (k, v) => k -> Table.toExecutable(v) }
     val indexes = sast.indexes.map { case (k, v) => k -> Definition.toExecutable(v) }
-    val facts = sast.facts.map(Constraint.toExecutable).toArray
-    val rules = sast.rules.map(Constraint.toExecutable).toArray
+    val facts = sast.constraints.filter(_.body.isEmpty).map(Constraint.toFact).toArray
+    val rules = sast.constraints.filter(_.body.nonEmpty).map(Constraint.toRule).toArray
     val properties = sast.properties.map(p => toExecutable(p))
     val time = sast.time
 
@@ -146,12 +146,11 @@ object CreateExecutableAst {
   }
 
   object Constraint {
-    def toExecutable(sast: SimplifiedAst.Constraint.Fact): ExecutableAst.Constraint.Fact =
+    def toFact(sast: SimplifiedAst.Declaration.Constraint): ExecutableAst.Constraint.Fact =
       ExecutableAst.Constraint.Fact(Predicate.Head.toExecutable(sast.head))
 
-    def toExecutable(sast: SimplifiedAst.Constraint.Rule): ExecutableAst.Constraint.Rule = {
+    def toRule(sast: SimplifiedAst.Declaration.Constraint): ExecutableAst.Constraint.Rule = {
       val head = Predicate.Head.toExecutable(sast.head)
-      // TODO(magnus): Convert lists to arrays (and refactor Solver)
       val body = sast.body.map(Predicate.Body.toExecutable)
       val collections = body.collect { case p: ExecutableAst.Predicate.Body.Table => p }
       val filters = body.collect { case p: ExecutableAst.Predicate.Body.ApplyFilter => p }

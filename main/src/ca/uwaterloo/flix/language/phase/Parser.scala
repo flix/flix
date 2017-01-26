@@ -97,8 +97,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // NB: RuleDeclaration must be parsed before FactDeclaration.
   def Declaration: Rule1[ParsedAst.Declaration] = rule {
     Declarations.Namespace |
-      Declarations.Rule |
-      Declarations.Fact |
+      Declarations.Constraint |
       Declarations.Definition |
       Declarations.External |
       Declarations.Enum |
@@ -192,13 +191,17 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
     }
 
-    // TODO: It would be faster to parse Facts and Rules together.
-    def Fact: Rule1[ParsedAst.Declaration.Fact] = rule {
-      optWS ~ SP ~ Predicate ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Fact
-    }
+    def Constraint: Rule1[ParsedAst.Declaration.Constraint] = {
+      def Body: Rule1[Seq[ParsedAst.Predicate]] = rule {
+        optional(optWS ~ ":-" ~ optWS ~ oneOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.Predicate]]) => o match {
+          case None => Seq.empty
+          case Some(xs) => xs
+        })
+      }
 
-    def Rule: Rule1[ParsedAst.Declaration.Rule] = rule {
-      optWS ~ SP ~ Predicate ~ optWS ~ ":-" ~ optWS ~ oneOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Rule
+      rule {
+        optWS ~ SP ~ Predicate ~ Body ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Constraint
+      }
     }
 
     def LetLattice: Rule1[ParsedAst.Declaration] = {

@@ -42,8 +42,7 @@ object Namer {
       lattices = Map.empty,
       indexes = Map.empty,
       tables = Map.empty,
-      facts = Map.empty,
-      rules = Map.empty,
+      constraints = Map.empty,
       hooks = program.hooks,
       properties = Map.empty,
       time = program.time
@@ -165,21 +164,12 @@ object Namer {
         }
 
       /*
-       * Fact.
+       * Constraint.
        */
-      case WeededAst.Declaration.Fact(h, loc) =>
-        // Perform naming on the head predicate under the computed environment of free variables.
-        Predicates.namer(h, Map.empty[String, Symbol.VarSym], Map.empty[String, Type.Var]) map {
-          case head =>
-            val fact = NamedAst.Declaration.Fact(head, loc)
-            val facts = fact :: prog0.facts.getOrElse(ns0, Nil)
-            prog0.copy(facts = prog0.facts + (ns0 -> facts))
-        }
+      case WeededAst.Declaration.Constraint(h, bs, loc) =>
 
-      /*
-       * Rule.
-       */
-      case WeededAst.Declaration.Rule(h, bs, loc) =>
+        // TODO: Correctly handle free and bound variables.
+
         // Introduce a variable symbol for each free variable in the head and body predicates terms.
         val freeVars = Predicates.freeVars(h) ++ bs.flatMap(Predicates.freeVars)
         val env0 = freeVars.foldLeft(Map.empty[String, Symbol.VarSym]) {
@@ -191,9 +181,9 @@ object Namer {
 
         @@(Predicates.namer(h, env0, Map.empty[String, Type.Var]), @@(bs.map(b => Predicates.namer(b, env0, Map.empty[String, Type.Var])))) map {
           case (head, body) =>
-            val rule = NamedAst.Declaration.Rule(head, body, loc)
-            val rules = rule :: prog0.rules.getOrElse(ns0, Nil)
-            prog0.copy(rules = prog0.rules + (ns0 -> rules))
+            val constraint = NamedAst.Declaration.Constraint(head, body, loc)
+            val constraints = constraint :: prog0.constraints.getOrElse(ns0, Nil)
+            prog0.copy(constraints = prog0.constraints + (ns0 -> constraints))
         }
 
       /*

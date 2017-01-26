@@ -244,7 +244,7 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that a predicate is not allowed in the head of a fact/rule.
+    * An error raised to indicate that a predicate is not allowed in the head of a constraint.
     *
     * @param loc the location where the illegal predicate occurs.
     */

@@ -25,8 +25,7 @@ object TypedAst {
                   lattices: Map[Type, TypedAst.Declaration.BoundedLattice],
                   tables: Map[Symbol.TableSym, TypedAst.Table],
                   indexes: Map[Symbol.TableSym, TypedAst.Declaration.Index],
-                  facts: List[TypedAst.Declaration.Fact],
-                  rules: List[TypedAst.Declaration.Rule],
+                  constraints: List[TypedAst.Declaration.Constraint],
                   properties: List[TypedAst.Property],
                   time: Time) extends TypedAst
 
@@ -42,9 +41,7 @@ object TypedAst {
 
     case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends TypedAst.Declaration
 
-    case class Fact(head: TypedAst.Predicate.Head, loc: SourceLocation) extends TypedAst.Declaration
-
-    case class Rule(head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body], loc: SourceLocation) extends TypedAst.Declaration
+    case class Constraint(head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body], loc: SourceLocation) extends TypedAst.Declaration
 
     case class BoundedLattice(tpe: Type,
                               bot: TypedAst.Expression,
