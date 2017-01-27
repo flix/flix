@@ -635,7 +635,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Predicates                                                              //
   /////////////////////////////////////////////////////////////////////////////
   def Predicate: Rule1[ParsedAst.Predicate] = rule {
-    Predicates.True | Predicates.False | Predicates.Filter | Predicates.Table | Predicates.NotEqual | Predicates.Loop
+    Predicates.True | Predicates.False | Predicates.Positive | Predicates.Negative | Predicates.Filter | Predicates.NotEqual | Predicates.Loop
   }
 
   object Predicates {
@@ -647,12 +647,16 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       SP ~ atomic("false") ~ SP ~> ParsedAst.Predicate.False
     }
 
-    def Filter: Rule1[ParsedAst.Predicate.Filter] = rule {
-      SP ~ Names.QualifiedDefinition ~ optWS ~ "(" ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Filter
+    def Positive: Rule1[ParsedAst.Predicate.Positive] = rule {
+      SP ~ Names.QualifiedTable ~ optWS ~ NonEmptyArgumentList ~ SP ~> ParsedAst.Predicate.Positive
     }
 
-    def Table: Rule1[ParsedAst.Predicate.Table] = rule {
-      SP ~ Names.QualifiedTable ~ optWS ~ "(" ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Table
+    def Negative: Rule1[ParsedAst.Predicate.Negative] = rule {
+      SP ~ "!" ~ optWS ~ Names.QualifiedTable ~ optWS ~ NonEmptyArgumentList ~ SP ~> ParsedAst.Predicate.Negative
+    }
+
+    def Filter: Rule1[ParsedAst.Predicate.Filter] = rule {
+      SP ~ Names.QualifiedDefinition ~ optWS ~ NonEmptyArgumentList ~ SP ~> ParsedAst.Predicate.Filter
     }
 
     def NotEqual: Rule1[ParsedAst.Predicate.NotEqual] = rule {
@@ -727,6 +731,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Helpers                                                                 //
   /////////////////////////////////////////////////////////////////////////////
+  def NonEmptyArgumentList: Rule1[Seq[ParsedAst.Expression]] = rule {
+    "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+  }
+
   def FormalParamList: Rule1[Seq[ParsedAst.FormalParam]] = rule {
     zeroOrMore(FormalParam).separatedBy(optWS ~ "," ~ optWS)
   }

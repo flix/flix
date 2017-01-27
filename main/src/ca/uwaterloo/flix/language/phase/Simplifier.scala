@@ -44,12 +44,12 @@ object Simplifier {
     val lattices = tast.lattices.map { case (k, v) => k -> Definition.simplify(v) }
     val collections = tast.tables.map { case (k, v) => k -> Table.simplify(v) }
     val indexes = tast.indexes.map { case (k, v) => k -> Definition.simplify(v) }
-    val constraints = tast.constraints.map(Declarations.Constraints.simplify)
+    val strata = tast.strata.map(simplify)
     val properties = tast.properties.map { p => simplify(p) }
     val time = tast.time
 
     val e = System.nanoTime() - t
-    SimplifiedAst.Root(constants, enums, lattices, collections, indexes, constraints, properties, time.copy(simplifier = e))
+    SimplifiedAst.Root(constants, enums, lattices, collections, indexes, strata, properties, time.copy(simplifier = e))
   }
 
   object Table {
@@ -340,22 +340,38 @@ object Simplifier {
     object Head {
       def simplify(tast: TypedAst.Predicate.Head)(implicit genSym: GenSym): SimplifiedAst.Predicate.Head = tast match {
         case TypedAst.Predicate.Head.True(loc) => SimplifiedAst.Predicate.Head.True(loc)
+
         case TypedAst.Predicate.Head.False(loc) => SimplifiedAst.Predicate.Head.False(loc)
-        case TypedAst.Predicate.Head.Table(sym, terms, loc) =>
-          SimplifiedAst.Predicate.Head.Table(sym, terms map Term.simplifyHead, loc)
+
+        case TypedAst.Predicate.Head.Positive(sym, terms, loc) =>
+          val ts = terms map Term.simplifyHead
+          SimplifiedAst.Predicate.Head.Positive(sym, ts, loc)
+
+        case TypedAst.Predicate.Head.Negative(sym, terms, loc) =>
+          val ts = terms map Term.simplifyHead
+          SimplifiedAst.Predicate.Head.Negative(sym, ts, loc)
       }
     }
 
     object Body {
       def simplify(tast: TypedAst.Predicate.Body)(implicit genSym: GenSym): SimplifiedAst.Predicate.Body = tast match {
-        case TypedAst.Predicate.Body.Table(sym, terms, loc) =>
-          SimplifiedAst.Predicate.Body.Table(sym, terms map Term.simplifyBody, loc)
+        case TypedAst.Predicate.Body.Positive(sym, terms, loc) =>
+          val ts = terms map Term.simplifyBody
+          SimplifiedAst.Predicate.Body.Positive(sym, ts, loc)
+
+        case TypedAst.Predicate.Body.Negative(sym, terms, loc) =>
+          val ts = terms map Term.simplifyBody
+          SimplifiedAst.Predicate.Body.Negative(sym, ts, loc)
+
         case TypedAst.Predicate.Body.ApplyFilter(sym, terms, loc) =>
           SimplifiedAst.Predicate.Body.ApplyFilter(sym, terms map Term.simplifyBody, loc)
+
         case TypedAst.Predicate.Body.ApplyHookFilter(hook, terms, loc) =>
           SimplifiedAst.Predicate.Body.ApplyHookFilter(hook, terms map Term.simplifyBody, loc)
+
         case TypedAst.Predicate.Body.NotEqual(sym1, sym2, loc) =>
           SimplifiedAst.Predicate.Body.NotEqual(sym1, sym2, loc)
+
         case TypedAst.Predicate.Body.Loop(sym, term, loc) =>
           SimplifiedAst.Predicate.Body.Loop(sym, Term.simplifyHead(term), loc)
       }
@@ -393,6 +409,9 @@ object Simplifier {
 
   def simplify(tast: TypedAst.Property)(implicit genSym: GenSym): SimplifiedAst.Property =
     SimplifiedAst.Property(tast.law, tast.defn, Expression.simplify(tast.exp))
+
+  def simplify(s: TypedAst.Stratum)(implicit genSym: GenSym): SimplifiedAst.Stratum =
+    SimplifiedAst.Stratum(s.constraints.map(Declarations.Constraints.simplify))
 
   /**
     * Returns `true` if the given pattern `pat` is a literal.

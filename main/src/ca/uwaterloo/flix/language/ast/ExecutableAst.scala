@@ -32,7 +32,7 @@ object ExecutableAst {
                   rules: Array[ExecutableAst.Constraint.Rule],
                   properties: List[ExecutableAst.Property],
                   time: Time,
-                  dependenciesOf: Map[Symbol.TableSym, Set[(Constraint.Rule, ExecutableAst.Predicate.Body.Table)]]) extends ExecutableAst
+                  dependenciesOf: Map[Symbol.TableSym, Set[(Constraint.Rule, ExecutableAst.Predicate.Body.Positive)]]) extends ExecutableAst
 
   sealed trait Definition
 
@@ -82,9 +82,10 @@ object ExecutableAst {
 
     case class Fact(head: ExecutableAst.Predicate.Head) extends ExecutableAst.Constraint
 
+    // TODO: Re-organize these components.
     case class Rule(head: ExecutableAst.Predicate.Head,
                     body: List[ExecutableAst.Predicate.Body],
-                    tables: List[ExecutableAst.Predicate.Body.Table],
+                    tables: List[ExecutableAst.Predicate.Body],
                     filters: List[ExecutableAst.Predicate.Body.ApplyFilter],
                     filterHooks: List[ExecutableAst.Predicate.Body.ApplyHookFilter],
                     disjoint: List[ExecutableAst.Predicate.Body.NotEqual],
@@ -503,9 +504,14 @@ object ExecutableAst {
 
       case class False(loc: SourceLocation) extends ExecutableAst.Predicate.Head
 
-      case class Table(sym: Symbol.TableSym,
-                       terms: Array[ExecutableAst.Term.Head],
-                       loc: SourceLocation) extends ExecutableAst.Predicate.Head {
+      case class Positive(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Head], loc: SourceLocation) extends ExecutableAst.Predicate.Head {
+        /**
+          * Returns the arity of the predicate.
+          */
+        val arity: Int = terms.length
+      }
+
+      case class Negative(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Head], loc: SourceLocation) extends ExecutableAst.Predicate.Head {
         /**
           * Returns the arity of the predicate.
           */
@@ -523,11 +529,14 @@ object ExecutableAst {
 
     object Body {
 
-      case class Table(sym: Symbol.TableSym,
-                       terms: Array[ExecutableAst.Term.Body],
-                       index2var: Array[String],
-                       freeVars: Set[String],
-                       loc: SourceLocation) extends ExecutableAst.Predicate.Body {
+      case class Positive(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Body], index2var: Array[String], freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
+        /**
+          * Returns the arity of this table predicate.
+          */
+        val arity: Int = terms.length
+      }
+
+      case class Negative(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Body], index2var: Array[String], freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
         /**
           * Returns the arity of this table predicate.
           */

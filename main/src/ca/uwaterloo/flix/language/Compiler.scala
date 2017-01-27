@@ -83,8 +83,9 @@ object Compiler {
       parsedAst <- root;
       weededAst <- Weeder.weed(parsedAst, hooks);
       namedAst <- Namer.namer(weededAst);
-      typedAst <- Typer.typer(namedAst)
-    ) yield typedAst
+      typedAst <- Typer.typer(namedAst);
+      stratifiedAst <- Stratifier.stratify(typedAst)
+    ) yield stratifiedAst
   }
 
 }

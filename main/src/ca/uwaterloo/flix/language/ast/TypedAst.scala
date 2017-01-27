@@ -25,7 +25,7 @@ object TypedAst {
                   lattices: Map[Type, TypedAst.Declaration.BoundedLattice],
                   tables: Map[Symbol.TableSym, TypedAst.Table],
                   indexes: Map[Symbol.TableSym, TypedAst.Declaration.Index],
-                  constraints: List[TypedAst.Declaration.Constraint],
+                  strata: List[TypedAst.Stratum],
                   properties: List[TypedAst.Property],
                   time: Time) extends TypedAst
 
@@ -243,7 +243,9 @@ object TypedAst {
 
       case class False(loc: SourceLocation) extends TypedAst.Predicate.Head
 
-      case class Table(sym: Symbol.TableSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
+      case class Positive(sym: Symbol.TableSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
+
+      case class Negative(sym: Symbol.TableSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
 
     }
 
@@ -251,7 +253,9 @@ object TypedAst {
 
     object Body {
 
-      case class Table(sym: Symbol.TableSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Positive(sym: Symbol.TableSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
+
+      case class Negative(sym: Symbol.TableSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
 
       case class ApplyFilter(name: Symbol.DefnSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
 
@@ -276,5 +280,7 @@ object TypedAst {
   case class TypeParam(name: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst
+
+  case class Stratum(constraints: List[TypedAst.Declaration.Constraint]) extends TypedAst
 
 }
