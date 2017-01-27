@@ -491,12 +491,6 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       interp += ((p.sym, fact))
     case p: Predicate.Head.Negative =>
       val terms = p.terms
-      val fact = new Array[AnyRef](p.arity)
-      var i = 0
-      while (i < fact.length) {
-        fact(i) = Interpreter.evalHeadTerm(terms(i), root, env.toMap)
-        i = i + 1
-      }
       throw InternalRuntimeException("Negation not implemented yet.")
     case Predicate.Head.True(loc) => // nop
     case Predicate.Head.False(loc) => throw RuleException(s"The integrity rule defined at ${loc.format} is violated.", loc)

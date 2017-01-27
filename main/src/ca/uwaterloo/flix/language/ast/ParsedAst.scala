@@ -763,7 +763,7 @@ object ParsedAst {
     case class Positive(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate
 
     /**
-      * Positive Predicate.
+      * Negative Predicate.
       *
       * @param sp1   the position of the first character in the predicate.
       * @param name  the qualified name of the table.

@@ -1009,12 +1009,12 @@ object Typer {
       case NamedAst.Predicate.Head.False(loc) => Unification.liftM(Nil)
       case NamedAst.Predicate.Head.Positive(qname, terms, loc) =>
         getTableSignature(qname, ns0, program) match {
-          case Ok(tpes) => Terms.infer(terms, tpes, loc, ns0, program)
+          case Ok(declaredTypes) => Terms.infer(terms, declaredTypes, loc, ns0, program)
           case Err(e) => failM(e)
         }
       case NamedAst.Predicate.Head.Negative(qname, terms, loc) =>
         getTableSignature(qname, ns0, program) match {
-          case Ok(tpes) => Terms.infer(terms, tpes, loc, ns0, program)
+          case Ok(declaredTypes) => Terms.infer(terms, declaredTypes, loc, ns0, program)
           case Err(e) => failM(e)
         }
     }
@@ -1025,12 +1025,12 @@ object Typer {
     def infer(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = body0 match {
       case NamedAst.Predicate.Body.Positive(qname, terms, loc) =>
         getTableSignature(qname, ns0, program) match {
-          case Ok(tpes) => Terms.infer(terms, tpes, loc, ns0, program)
+          case Ok(declaredTypes) => Terms.infer(terms, declaredTypes, loc, ns0, program)
           case Err(e) => failM(e)
         }
       case NamedAst.Predicate.Body.Negative(qname, terms, loc) =>
         getTableSignature(qname, ns0, program) match {
-          case Ok(tpes) => Terms.infer(terms, tpes, loc, ns0, program)
+          case Ok(declaredTypes) => Terms.infer(terms, declaredTypes, loc, ns0, program)
           case Err(e) => failM(e)
         }
       case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>

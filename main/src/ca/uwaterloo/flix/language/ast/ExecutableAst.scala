@@ -82,6 +82,7 @@ object ExecutableAst {
 
     case class Fact(head: ExecutableAst.Predicate.Head) extends ExecutableAst.Constraint
 
+    // TODO: Re-organize these components.
     case class Rule(head: ExecutableAst.Predicate.Head,
                     body: List[ExecutableAst.Predicate.Body],
                     tables: List[ExecutableAst.Predicate.Body],
