@@ -226,21 +226,18 @@ def stepAll(m0: State): Set2[Outcome] = match m0 with {
 /// Computes the fixed-point of the transition relation defined by `stepAll`
 /// starting from the given machine configuration `m0`.
 ///
-// TODO: This should terminate by checking the seen state is already accounted for.
-def eval(m0: State): Set2[Outcome] =
-    let outcomes = println!(stepAll(m0));
-    let f = outcome -> match outcome with {
-        case Next(m)        => eval(m)
-        case Done(m)        => Set2.singleton(Done(m))
-        case Abort(e)       => Set2.singleton(Abort(e))
-    };
-    Set2.union(outcomes, Set2.flatMap(f, outcomes))
+def eval(states: Set2[State]): Set2[Outcome] =
+    let nextStates = Set2.map(m0 -> stepAll(m0), states);
+        if (nextStates `Set2.subsetOf` states)
+            states
+        else
+            Set2.union(states, nextStates)
 
 ///
 /// Evaluates the given expression to a value by injecting it into the initial state of the CEK machine
 /// and repeatedly performing a transition until the machine halts with a value (or aborts).
 ///
-def run(e0: Expression): Set2[Outcome] = eval(inject(e0))
+def run(e0: Expression): Set2[Outcome] = eval(Set2.singleton(inject(e0)))
 
 //
 // We can now test our CEK machine!
