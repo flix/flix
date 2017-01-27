@@ -774,11 +774,11 @@ object Weeder {
         case ParsedAst.Predicate.True(sp1, sp2) => WeededAst.Predicate.Head.True(mkSL(sp1, sp2)).toSuccess
         case ParsedAst.Predicate.False(sp1, sp2) => WeededAst.Predicate.Head.False(mkSL(sp1, sp2)).toSuccess
         case ParsedAst.Predicate.Positive(sp1, qname, terms, sp2) =>
-          @@(terms.toList.map(t => Expressions.weed(t))) map {
+          @@(terms.map(t => Expressions.weed(t))) map {
             case ts => WeededAst.Predicate.Head.Positive(qname, ts, mkSL(sp1, sp2))
           }
         case ParsedAst.Predicate.Negative(sp1, qname, terms, sp2) =>
-          @@(terms.toList.map(t => Expressions.weed(t))) map {
+          @@(terms.map(t => Expressions.weed(t))) map {
             case ts => WeededAst.Predicate.Head.Negative(qname, ts, mkSL(sp1, sp2))
           }
         case ParsedAst.Predicate.Filter(sp1, qname, term, sp2) => IllegalHeadPredicate(mkSL(sp1, sp2)).toFailure

@@ -248,7 +248,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    Literals.Bool | Literals.Char | Literals.Float | Literals.Int | Literals.Str
+    Literals.Bool | Literals.Char | Literals.Str | Literals.Float | Literals.Int
   }
 
   object Literals {
