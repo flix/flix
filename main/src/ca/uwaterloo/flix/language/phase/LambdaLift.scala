@@ -157,8 +157,8 @@ object LambdaLift {
         Expression.Tag(enum, tag, visit(exp), tpe, loc)
       case Expression.Untag(tag, exp, tpe, loc) =>
         Expression.Untag(tag, visit(exp), tpe, loc)
-      case Expression.GetTupleIndex(exp, offset, tpe, loc) =>
-        Expression.GetTupleIndex(visit(exp), offset, tpe, loc)
+      case Expression.Index(exp, offset, tpe, loc) =>
+        Expression.Index(visit(exp), offset, tpe, loc)
       case Expression.Tuple(elms, tpe, loc) =>
         Expression.Tuple(elms.map(visit), tpe, loc)
       case Expression.Existential(params, exp, loc) =>

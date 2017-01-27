@@ -399,7 +399,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       val value = Value.cast2set(Interpreter.evalHeadTerm(term, root, env.toMap))
       for (x <- value) {
         val newRow = env.clone()
-        newRow.update(sym.toString, Value.cast2flix(x))
+        newRow.update(sym.toString, x)
         evalLoop(rule, rest, newRow, interp)
       }
   }

@@ -228,8 +228,8 @@ object CreateExecutableAst {
         ExecutableAst.Expression.Tag(enum, tag, toExecutable(exp), tpe, loc)
       case SimplifiedAst.Expression.Untag(tag, exp, tpe, loc) =>
         ExecutableAst.Expression.Untag(tag, toExecutable(exp), tpe, loc)
-      case SimplifiedAst.Expression.GetTupleIndex(base, offset, tpe, loc) =>
-        ExecutableAst.Expression.GetTupleIndex(toExecutable(base), offset, tpe, loc)
+      case SimplifiedAst.Expression.Index(base, offset, tpe, loc) =>
+        ExecutableAst.Expression.Index(toExecutable(base), offset, tpe, loc)
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
         val elmsArray = elms.map(toExecutable).toArray
         ExecutableAst.Expression.Tuple(elmsArray, tpe, loc)
