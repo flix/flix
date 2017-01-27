@@ -270,7 +270,7 @@ object Value {
     * Constructs a str from the given string `s`.
     */
   @inline
-  def mkStr(s: String): AnyRef = s.intern()
+  def mkStr(s: String): AnyRef = s
 
   /**
     * Casts the given reference `ref` to a string.

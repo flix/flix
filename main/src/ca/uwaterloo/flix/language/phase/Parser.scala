@@ -765,34 +765,34 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     /**
       * A lowercase letter.
       */
-    def LowerLetter: CharPredicate = CharPredicate.LowerAlpha
+    val LowerLetter: CharPredicate = CharPredicate.LowerAlpha
 
     /**
       * An uppercase letter.
       */
-    def UpperLetter: CharPredicate = CharPredicate.UpperAlpha
+    val UpperLetter: CharPredicate = CharPredicate.UpperAlpha
 
     /**
       * A greek letter.
       */
-    def GreekLetter: CharPredicate = CharPredicate('\u0370' to '\u03FF')
+    val GreekLetter: CharPredicate = CharPredicate('\u0370' to '\u03FF')
 
     /**
       * A mathematical operator or arrow.
       */
-    def MathLetter: CharPredicate =
+    val MathLetter: CharPredicate =
       CharPredicate('\u2200' to '\u22FF') ++ // Mathematical Operator
         CharPredicate('\u2190' to '\u21FF') // Mathematical Arrow
 
     /**
       * An operator letter.
       */
-    def OperatorLetter: CharPredicate = CharPredicate("+-*<>=!&|^")
+    val OperatorLetter: CharPredicate = CharPredicate("+-*<>=!&|^")
 
     /**
       * a (upper/lower case) letter, numeral, greek letter, or other legal character.
       */
-    def LegalLetter: CharPredicate = CharPredicate.AlphaNum ++ "_" ++ "'" ++ "!"
+    val LegalLetter: CharPredicate = CharPredicate.AlphaNum ++ "_" ++ "'" ++ "!"
 
     /**
       * A lowercase identifier is a lowercase letter optionally followed by any letter, underscore, or prime.
