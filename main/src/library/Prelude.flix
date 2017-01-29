@@ -125,6 +125,17 @@ def ⊕(x: Bool, y: Bool): Bool = (x ∨ y) ∧ !(x ∧ y)
 // TODO: Add test cases
 def ↑(x: Bool, y: Bool): Bool = !(x ∧ y)
 
+
+///
+/// Returns `true` iff `x` is equal to `y`.
+///
+def eq[a](x: a, y: a): Bool = x == y
+
+///
+/// Returns `true` iff `x` is not equal to `y`.
+///
+//def neq[a](x: a, y: a): Bool = x != y
+
 ///
 /// Asserts that the given boolean `b` is `true`.
 ///

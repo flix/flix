@@ -39,6 +39,11 @@ object Name {
   }
 
   /**
+    * Returns the given identifier `ident` as qualified name in the root namespace.
+    */
+  def mkQName(ident: Ident): QName = QName(ident.sp1, RootNS, ident, ident.sp2)
+
+  /**
     * Identifier.
     *
     * @param sp1  the position of the first character in the identifier.

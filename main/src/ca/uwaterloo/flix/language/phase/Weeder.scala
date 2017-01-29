@@ -323,7 +323,7 @@ object Weeder {
             IllegalWildcard(mkSL(sp1, sp2)).toFailure
 
         case ParsedAst.Expression.SName(sp1, ident, sp2) =>
-          val qname = Name.QName(sp1, Name.RootNS, ident, sp2)
+          val qname = Name.mkQName(ident)
           WeededAst.Expression.VarOrRef(qname, mkSL(sp1, sp2)).toSuccess
 
         case ParsedAst.Expression.QName(sp1, qname, sp2) =>
@@ -348,7 +348,7 @@ object Weeder {
               WeededAst.Expression.Apply(lambda, List(e1, e2), loc)
           }
 
-        case ParsedAst.Expression.Postfix(exp, name, exps, sp2) =>
+        case ParsedAst.Expression.Postfix(exp, ident, exps, sp2) =>
           /*
            * Rewrites postfix expressions to apply expressions.
            */
@@ -356,7 +356,7 @@ object Weeder {
             case (e, es) =>
               val sp1 = leftMostSourcePosition(exp)
               val loc = mkSL(sp1, sp2)
-              val qname = Name.QName(sp1, Name.RootNS, name, sp2)
+              val qname = Name.mkQName(ident)
               val lambda = WeededAst.Expression.VarOrRef(qname, loc)
               WeededAst.Expression.Apply(lambda, e :: es, loc)
           }
@@ -381,7 +381,7 @@ object Weeder {
               val loc = mkSL(sp1, sp2)
               // The name of the lambda parameter.
               val ident = Name.Ident(sp1, "pat$0", sp2)
-              val qname = Name.QName(sp1, Name.RootNS, ident, sp2)
+              val qname = Name.mkQName(ident)
               // Construct the body of the lambda expression.
               val varOrRef = WeededAst.Expression.VarOrRef(qname, loc)
               val rule = WeededAst.MatchRule(p, WeededAst.Expression.True(loc), e)
@@ -810,7 +810,10 @@ object Weeder {
             case ts => WeededAst.Predicate.Body.Negative(qname, ts, loc)
           }
         case ParsedAst.Predicate.NotEqual(sp1, ident1, ident2, sp2) =>
-          WeededAst.Predicate.Body.NotEqual(ident1, ident2, mkSL(sp1, sp2)).toSuccess
+          val qname = Name.mkQName("neq", sp1, sp2)
+          val t1 = WeededAst.Expression.VarOrRef(Name.mkQName(ident1), mkSL(ident1.sp1, ident1.sp2))
+          val t2 = WeededAst.Expression.VarOrRef(Name.mkQName(ident2), mkSL(ident2.sp1, ident2.sp2))
+          WeededAst.Predicate.Body.Filter(qname, List(t1, t2), mkSL(sp1, sp2)).toSuccess
         case ParsedAst.Predicate.Loop(sp1, ident, term, sp2) => Expressions.weed(term) map {
           case t => WeededAst.Predicate.Body.Loop(ident, t, mkSL(sp1, sp2))
         }
