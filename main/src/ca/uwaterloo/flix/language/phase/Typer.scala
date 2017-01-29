@@ -1053,7 +1053,6 @@ object Typer {
             ) yield unifiedTypes
           case Err(e) => failM(e)
         }
-      case NamedAst.Predicate.Body.NotEqual(sym1, sym2, loc) => Unification.liftM(Nil) // TODO
       case NamedAst.Predicate.Body.Loop(sym, term, loc) => Unification.liftM(Nil) // TODO
     }
 
@@ -1095,9 +1094,6 @@ object Typer {
             TypedAst.Predicate.Body.ApplyHookFilter(hook, ts, loc)
           case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
         }
-      case NamedAst.Predicate.Body.NotEqual(sym1, sym2, loc) =>
-        // TODO: Need to retrieve the symbol...
-        TypedAst.Predicate.Body.NotEqual(sym1, sym2, loc)
       case NamedAst.Predicate.Body.Loop(sym, term, loc) =>
         // TODO: Need to retrieve the symbol...
         val t = Expressions.reassemble(term, ns0, program, subst0, resolveFreeVars = true)

@@ -467,8 +467,6 @@ object SimplifiedAst {
 
       case class ApplyHookFilter(hook: Ast.Hook, terms: List[SimplifiedAst.Term.Body], loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
-      case class NotEqual(sym1: Symbol.VarSym, sym2: Symbol.VarSym, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
-
       case class Loop(sym: Symbol.VarSym, term: SimplifiedAst.Term.Head, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
     }

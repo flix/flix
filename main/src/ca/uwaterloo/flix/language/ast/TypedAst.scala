@@ -261,8 +261,6 @@ object TypedAst {
 
       case class ApplyHookFilter(hook: Ast.Hook, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
 
-      case class NotEqual(sym1: Symbol.VarSym, sym2: Symbol.VarSym, loc: SourceLocation) extends TypedAst.Predicate.Body
-
       case class Loop(sym: Symbol.VarSym, term: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Predicate.Body
 
     }

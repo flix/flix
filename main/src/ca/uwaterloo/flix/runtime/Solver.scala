@@ -431,8 +431,8 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   @tailrec
   private def evalFilterHook(rule: Rule, ps: List[Predicate.Body.ApplyHookFilter], env: Env, interp: Interpretation): Unit = ps match {
     case Nil =>
-      // filter complete, now check disjointness
-      evalDisjoint(rule, rule.disjoint, env, interp)
+      // evaluate the head of the rule.
+      evalHead(rule.head, env, interp)
     case (pred: Predicate.Body.ApplyHookFilter) :: xs =>
 
       val args = new Array[AnyRef](pred.terms.length)
@@ -456,22 +456,6 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
           if (Value.cast2bool(result)) {
             evalFilterHook(rule, xs, env, interp)
           }
-      }
-  }
-
-  /**
-    * Filters the given `env` through all disjointness filters in the body.
-    */
-  @tailrec
-  private def evalDisjoint(rule: Rule, ps: List[Predicate.Body.NotEqual], env: Env, interp: Interpretation): Unit = ps match {
-    case Nil =>
-      // rule body complete, evaluate the head.
-      evalHead(rule.head, env, interp)
-    case Predicate.Body.NotEqual(sym1, sym2, _, _) :: xs =>
-      val value1 = env(sym1.toString)
-      val value2 = env(sym2.toString)
-      if (value1 != value2) {
-        evalDisjoint(rule, xs, env, interp)
       }
   }
 

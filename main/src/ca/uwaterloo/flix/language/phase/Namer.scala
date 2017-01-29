@@ -552,8 +552,6 @@ object Namer {
         @@(terms.map(t => Expressions.namer(t, env0, tenv0))) map {
           case ts => NamedAst.Predicate.Body.Filter(qname, ts, loc)
         }
-      case WeededAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
-        NamedAst.Predicate.Body.NotEqual(env0(ident1.name), env0(ident2.name), loc).toSuccess
       case WeededAst.Predicate.Body.Loop(ident, term, loc) =>
         Expressions.namer(term, env0, tenv0) map {
           case t => NamedAst.Predicate.Body.Loop(env0(ident.name), t, loc)
@@ -577,7 +575,6 @@ object Namer {
       case WeededAst.Predicate.Body.Positive(qname, terms, loc) => terms.flatMap(Expressions.freeVars)
       case WeededAst.Predicate.Body.Negative(qname, terms, loc) => terms.flatMap(Expressions.freeVars)
       case WeededAst.Predicate.Body.Filter(qname, terms, loc) => terms.flatMap(Expressions.freeVars)
-      case WeededAst.Predicate.Body.NotEqual(ident1, ident2, loc) => List(ident1, ident2)
       case WeededAst.Predicate.Body.Loop(ident, term, loc) => List(ident) ++ Expressions.freeVars(term)
     }
 

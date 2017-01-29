@@ -417,6 +417,8 @@ class TestSolver extends FunSuite {
         |
         |A(1). A(2). A(3). A(4).
         |
+        |def neq(x: Int, y: Int): Bool = x != y
+        |
         |B(x, y) :- A(x), A(y), x != y.
       """.stripMargin
 
@@ -440,6 +442,8 @@ class TestSolver extends FunSuite {
         |A(1, 2).
         |A(2, 2).
         |
+        |def neq(x: Int, y: Int): Bool = x != y
+        |
         |B(x, y) :- A(x, y), x != y.
       """.stripMargin
 
@@ -457,6 +461,8 @@ class TestSolver extends FunSuite {
         |A(1, 2).
         |A(2, 1).
         |A(2, 3).
+        |
+        |def neq(x: Int, y: Int): Bool = x != y
         |
         |B(x, z) :- A(x, y), A(y, z), x != z.
       """.stripMargin

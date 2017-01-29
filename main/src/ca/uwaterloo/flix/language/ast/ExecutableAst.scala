@@ -88,7 +88,6 @@ object ExecutableAst {
                     tables: List[ExecutableAst.Predicate.Body],
                     filters: List[ExecutableAst.Predicate.Body.ApplyFilter],
                     filterHooks: List[ExecutableAst.Predicate.Body.ApplyHookFilter],
-                    disjoint: List[ExecutableAst.Predicate.Body.NotEqual],
                     loops: List[ExecutableAst.Predicate.Body.Loop]) extends ExecutableAst.Constraint {
 
 
@@ -530,11 +529,6 @@ object ExecutableAst {
                                  terms: Array[ExecutableAst.Term.Body],
                                  freeVars: Set[String],
                                  loc: SourceLocation) extends ExecutableAst.Predicate.Body
-
-      case class NotEqual(sym1: Symbol.VarSym,
-                          sym2: Symbol.VarSym,
-                          freeVars: Set[String],
-                          loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
       case class Loop(sym: Symbol.VarSym,
                       term: ExecutableAst.Term.Head,
