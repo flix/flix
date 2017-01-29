@@ -212,7 +212,7 @@ object NamedAst {
 
       case class Filter(name: Name.QName, terms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Predicate.Body
 
-      case class Loop(sym: Symbol.VarSym, term: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Loop(pat: NamedAst.Pattern, term: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
     }
 

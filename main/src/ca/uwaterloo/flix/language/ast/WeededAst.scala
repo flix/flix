@@ -200,7 +200,7 @@ object WeededAst {
 
       case class Filter(name: Name.QName, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Body
 
-      case class Loop(ident: Name.Ident, term: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Loop(pat: WeededAst.Pattern, term: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
 
     }
 

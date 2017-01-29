@@ -664,7 +664,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Loop: Rule1[ParsedAst.Predicate.Loop] = rule {
-      SP ~ Names.Variable ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Loop
+      SP ~ Pattern ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Loop
     }
   }
 

@@ -1094,10 +1094,11 @@ object Typer {
             TypedAst.Predicate.Body.ApplyHookFilter(hook, ts, loc)
           case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
         }
-      case NamedAst.Predicate.Body.Loop(sym, term, loc) =>
-        // TODO: Need to retrieve the symbol...
+      case NamedAst.Predicate.Body.Loop(pat, term, loc) =>
+        // TODO: Assumes that the pattern is a single variable.
+        val p = pat.asInstanceOf[NamedAst.Pattern.Var]
         val t = Expressions.reassemble(term, ns0, program, subst0, resolveFreeVars = true)
-        TypedAst.Predicate.Body.Loop(sym, t, loc)
+        TypedAst.Predicate.Body.Loop(p.sym, t, loc)
     }
 
   }
