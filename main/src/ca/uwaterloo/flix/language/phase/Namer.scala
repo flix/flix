@@ -434,7 +434,7 @@ object Namer {
       case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
       case WeededAst.Expression.Let(ident, exp1, exp2, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
       case WeededAst.Expression.Match(exp, rules, loc) => freeVars(exp) ++ rules.flatMap {
-        case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(freeVars(guard) ++ freeVars(body), freeVars(pat))
+        case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(freeVars(guard) ++ freeVars(body), Patterns.freeVars(pat))
       }
       case WeededAst.Expression.Switch(rules, loc) => rules flatMap {
         case (cond, body) => freeVars(cond) ++ freeVars(body)
@@ -445,39 +445,6 @@ object Namer {
       case WeededAst.Expression.Universal(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
       case WeededAst.Expression.Ascribe(exp, tpe, loc) => freeVars(exp)
       case WeededAst.Expression.UserError(loc) => Nil
-    }
-
-    /**
-      * Returns all the free variables in the given pattern `pat0`.
-      */
-    def freeVars(pat0: WeededAst.Pattern): List[Name.Ident] = pat0 match {
-      case WeededAst.Pattern.Var(ident, loc) => List(ident)
-      case WeededAst.Pattern.Wild(loc) => Nil
-      case WeededAst.Pattern.Unit(loc) => Nil
-      case WeededAst.Pattern.True(loc) => Nil
-      case WeededAst.Pattern.False(loc) => Nil
-      case WeededAst.Pattern.Char(lit, loc) => Nil
-      case WeededAst.Pattern.Float32(lit, loc) => Nil
-      case WeededAst.Pattern.Float64(lit, loc) => Nil
-      case WeededAst.Pattern.Int8(lit, loc) => Nil
-      case WeededAst.Pattern.Int16(lit, loc) => Nil
-      case WeededAst.Pattern.Int32(lit, loc) => Nil
-      case WeededAst.Pattern.Int64(lit, loc) => Nil
-      case WeededAst.Pattern.BigInt(lit, loc) => Nil
-      case WeededAst.Pattern.Str(lit, loc) => Nil
-      case WeededAst.Pattern.Tag(enumName, tagName, p, loc) => freeVars(p)
-      case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
-      case WeededAst.Pattern.FSet(elms, rest, loc) => elms.flatMap(freeVars) ++ rest.map(freeVars).getOrElse(Nil)
-      case WeededAst.Pattern.FMap(elms, rest, loc) => (elms flatMap {
-        case (k, v) => freeVars(k) ++ freeVars(v)
-      }) ++ rest.map(freeVars).getOrElse(Nil)
-    }
-
-    /**
-      * Returns the given `freeVars` less the `boundVars`.
-      */
-    def filterBoundVars(freeVars: List[Name.Ident], boundVars: List[Name.Ident]): List[Name.Ident] = {
-      freeVars.filter(n1 => !boundVars.exists(n2 => n1.name == n2.name))
     }
 
   }
@@ -522,6 +489,33 @@ object Namer {
       (visit(pat0), m.toMap)
     }
 
+    /**
+      * Returns all the free variables in the given pattern `pat0`.
+      */
+    def freeVars(pat0: WeededAst.Pattern): List[Name.Ident] = pat0 match {
+      case WeededAst.Pattern.Var(ident, loc) => List(ident)
+      case WeededAst.Pattern.Wild(loc) => Nil
+      case WeededAst.Pattern.Unit(loc) => Nil
+      case WeededAst.Pattern.True(loc) => Nil
+      case WeededAst.Pattern.False(loc) => Nil
+      case WeededAst.Pattern.Char(lit, loc) => Nil
+      case WeededAst.Pattern.Float32(lit, loc) => Nil
+      case WeededAst.Pattern.Float64(lit, loc) => Nil
+      case WeededAst.Pattern.Int8(lit, loc) => Nil
+      case WeededAst.Pattern.Int16(lit, loc) => Nil
+      case WeededAst.Pattern.Int32(lit, loc) => Nil
+      case WeededAst.Pattern.Int64(lit, loc) => Nil
+      case WeededAst.Pattern.BigInt(lit, loc) => Nil
+      case WeededAst.Pattern.Str(lit, loc) => Nil
+      case WeededAst.Pattern.Tag(enumName, tagName, p, loc) => freeVars(p)
+      case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
+      case WeededAst.Pattern.FSet(elms, rest, loc) => elms.flatMap(freeVars) ++ rest.map(freeVars).getOrElse(Nil)
+      case WeededAst.Pattern.FMap(elms, rest, loc) => (elms flatMap {
+        case (k, v) => freeVars(k) ++ freeVars(v)
+      }) ++ rest.map(freeVars).getOrElse(Nil)
+    }
+
+
   }
 
   object Predicates {
@@ -552,9 +546,10 @@ object Namer {
         @@(terms.map(t => Expressions.namer(t, env0, tenv0))) map {
           case ts => NamedAst.Predicate.Body.Filter(qname, ts, loc)
         }
-      case WeededAst.Predicate.Body.Loop(ident, term, loc) =>
+      case WeededAst.Predicate.Body.Loop(pat, term, loc) =>
+        val (p, env) = Patterns.namer(pat)
         Expressions.namer(term, env0, tenv0) map {
-          case t => NamedAst.Predicate.Body.Loop(env0(ident.name), t, loc)
+          case t => NamedAst.Predicate.Body.Loop(p, t, loc)
         }
     }
 
@@ -575,7 +570,7 @@ object Namer {
       case WeededAst.Predicate.Body.Positive(qname, terms, loc) => terms.flatMap(Expressions.freeVars)
       case WeededAst.Predicate.Body.Negative(qname, terms, loc) => terms.flatMap(Expressions.freeVars)
       case WeededAst.Predicate.Body.Filter(qname, terms, loc) => terms.flatMap(Expressions.freeVars)
-      case WeededAst.Predicate.Body.Loop(ident, term, loc) => List(ident) ++ Expressions.freeVars(term)
+      case WeededAst.Predicate.Body.Loop(pat, term, loc) => Patterns.freeVars(pat) ++ Expressions.freeVars(term)
     }
 
   }
@@ -619,6 +614,13 @@ object Namer {
       case WeededAst.Attribute(ident, tpe, loc) => NamedAst.Attribute(ident, Types.namer(tpe, tenv0), loc)
     }
 
+  }
+
+  /**
+    * Returns the given `freeVars` less the `boundVars`.
+    */
+  def filterBoundVars(freeVars: List[Name.Ident], boundVars: List[Name.Ident]): List[Name.Ident] = {
+    freeVars.filter(n1 => !boundVars.exists(n2 => n1.name == n2.name))
   }
 
 }

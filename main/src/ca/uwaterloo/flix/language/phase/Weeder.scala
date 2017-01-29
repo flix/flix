@@ -814,8 +814,9 @@ object Weeder {
           val t1 = WeededAst.Expression.VarOrRef(Name.mkQName(ident1), mkSL(ident1.sp1, ident1.sp2))
           val t2 = WeededAst.Expression.VarOrRef(Name.mkQName(ident2), mkSL(ident2.sp1, ident2.sp2))
           WeededAst.Predicate.Body.Filter(qname, List(t1, t2), mkSL(sp1, sp2)).toSuccess
-        case ParsedAst.Predicate.Loop(sp1, ident, term, sp2) => Expressions.weed(term) map {
-          case t => WeededAst.Predicate.Body.Loop(ident, t, mkSL(sp1, sp2))
+        case ParsedAst.Predicate.Loop(sp1, pat, term, sp2) =>
+          @@(Patterns.weed(pat), Expressions.weed(term)) map {
+          case (p, t) => WeededAst.Predicate.Body.Loop(p, t, mkSL(sp1, sp2))
         }
       }
     }

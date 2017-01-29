@@ -785,12 +785,12 @@ object ParsedAst {
     /**
       * Loop Predicate.
       *
-      * @param sp1   the position of the first character in the predicate.
-      * @param ident the loop variable.
-      * @param term  the set term.
-      * @param sp2   the position of the last character in the predicate.
+      * @param sp1  the position of the first character in the predicate.
+      * @param pat  the loop pattern.
+      * @param term the set term.
+      * @param sp2  the position of the last character in the predicate.
       */
-    case class Loop(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate
+    case class Loop(sp1: SourcePosition, pat: ParsedAst.Pattern, term: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate
 
   }
 
