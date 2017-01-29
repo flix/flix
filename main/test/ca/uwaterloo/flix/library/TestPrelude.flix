@@ -47,8 +47,9 @@ def backwardPipe02: Bool =
 @test
 def eq01: Bool = assert!(eq(42, 42))
 
-@test
-def neq01: Bool = assert!(neq(21, 42))
+// TODO
+//@test
+//def neq01: Bool = assert!(neq(21, 42))
 
 /////////////////////////////////////////////////////////////////////////////
 // Logical And                                                             //

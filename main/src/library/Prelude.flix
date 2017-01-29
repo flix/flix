@@ -134,6 +134,7 @@ def eq[a](x: a, y: a): Bool = x == y
 ///
 /// Returns `true` iff `x` is not equal to `y`.
 ///
+// TODO
 //def neq[a](x: a, y: a): Bool = x != y
 
 ///

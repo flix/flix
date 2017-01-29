@@ -158,9 +158,8 @@ object CreateExecutableAst {
       }
       val filters = body.collect { case p: ExecutableAst.Predicate.Body.ApplyFilter => p }
       val hookFilters = body.collect { case p: ExecutableAst.Predicate.Body.ApplyHookFilter => p }
-      val disjoint = body.collect { case p: ExecutableAst.Predicate.Body.NotEqual => p }
       val loops = body.collect { case p: ExecutableAst.Predicate.Body.Loop => p }
-      ExecutableAst.Constraint.Rule(head, body, collections, filters, hookFilters, disjoint, loops)
+      ExecutableAst.Constraint.Rule(head, body, collections, filters, hookFilters, loops)
     }
   }
 
@@ -314,9 +313,6 @@ object CreateExecutableAst {
         case SimplifiedAst.Predicate.Body.ApplyHookFilter(hook, terms, loc) =>
           val termsArray = terms.map(Term.toExecutable).toArray
           ExecutableAst.Predicate.Body.ApplyHookFilter(hook, termsArray, freeVars(terms), loc)
-        case SimplifiedAst.Predicate.Body.NotEqual(sym1, sym2, loc) =>
-          val freeVars = Set(sym1.toString, sym2.toString)
-          ExecutableAst.Predicate.Body.NotEqual(sym1, sym2, freeVars, loc)
         case SimplifiedAst.Predicate.Body.Loop(sym, term, loc) =>
           val freeVars = Set.empty[String] // TODO
           ExecutableAst.Predicate.Body.Loop(sym, Term.toExecutable(term), freeVars, loc)
