@@ -1,5 +1,5 @@
 // TODO: Add these and other machines to unit tests. Requires Set PR to be merged in.
-// TODO: Consider whether to include a closure expression.
+// TODO: Ondrej: Do we want a closure expression or not?
 
 //
 // Abstract Interpreter for the lambda calculus extended with references, sequencing, and promises.
@@ -266,10 +266,9 @@ enum Outcome {
 ///
 /// Returns all possible transitions (outcomes) from the given state `m0` and continuation `k0`.
 ///
-// TODO: Rename Store to Heap and h0.
 
-    // TODO: Many of these cases seem to use kptr incorrectly? Check up on that.
-    // Essentially kptr should only be used when there is not a specific kontinuation in play.
+// TODO: Many of these cases seem to use kptr incorrectly? Check up on that.
+// Essentially kptr should only be used when there is not a specific kontinuation in play.
 
 def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
 
@@ -280,13 +279,14 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     case (State(exp, env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) if LinkQueue.nonEmpty(w0) =>
         let f: ((PromiseValue, Address)) -> Outcome = match (pv, a) -> {
             match pv with {
+                case Pending => Abort("Non-settled promise in LinkQueue.")
                 case Fulfilled(v) =>
                     let loc = L("LinkLoop");
                     let e = Seq(Resolve(Ptr(a), v, loc), exp, loc);
                     let w1 = LinkQueue.strongDelete(pv, a, w0);
                         Next(State(e, env0, sto0, s0, f0, r0, l0, w1, q0, kptr, tick(m0, k0)))
-
-                // TODO: Other cases.
+                case Rejected(v) =>
+                    ??? // NB: Conceptually similar to the fulfilled case.
             }
         };
         LinkQueue.map(f, w0)
@@ -294,15 +294,15 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     // Variable Expression.
     //
-    case (State(Var(x, loc), Environment(env0), Store(sto0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), kptr, time), _) =>
+    case (State(Var(x, loc), Environment(env0), sto0, s0, f0, r0, l0, w1, q0, kptr, time), _) =>
         // The expression is a variable. Look it up in the environment.
          match Map2.lookup(x, env0) with {
             case None => Set2(Abort("Unbound variable.") :: Nil)
-            case Some(ptr) =>
-                let values = Option.getWithDefault(Map2.lookup(ptr, sto0), Set2.empty());
+            case Some(a) =>
+                let values = Store.lookup(a, sto0);
                 let f = storable -> match storable with {
                     case StoredKont(_) => Abort("Non-value storable.")
-                    case StoredValue(v, env1) => Next(State(v, env1, Store(sto0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), kptr, tick(m0, k0)))
+                    case StoredValue(v, env1) => Next(State(v, env1, sto0, s0, f0, r0, l0, w1, q0, kptr, tick(m0, k0)))
                 };
                 Set2.map(f, values)
          }
@@ -357,10 +357,10 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     case (State(Ref(e, loc), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
         // Allocate the `KRef` continuation in the store.
-        let a = alloc(m0, k0);
-        let k = StoredKont(KRef(kptr));
-        let sto1 = Store.weakUpdate(a, k, sto0);
-            Set2.singleton(Next(State(e, env0, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
+        let kontAddr = alloc(m0, k0);
+        let nextKont = StoredKont(KRef(kptr));
+        let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
+            Set2.singleton(Next(State(e, env0, sto1, s0, f0, r0, l0, w0, q0, kontAddr, tick(m0, k0))))
 
     //
     // Reference Kontinuation.
@@ -479,15 +479,15 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
                let fr = FulfillReactions.lookup(a, f0);
                let q1 = ReactionQueue.weakUpdate(Set2.map(match (lam, env, addr) -> (pv, lam, env, addr), fr), q0);
 
-               Set2.singleton(Next(State(Cst("Undef", L("-")), Environment(Map2.empty()), sto0, s1, f0, r0, l0, w1, q1, kont, tick(m0, k0))))
+               Set2.singleton(Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s1, f0, r0, l0, w1, q1, kont, tick(m0, k0))))
 
             case Fulfilled(v) =>
                 // The promise has already been resolved with the value `v`. The resolve has no effect.
-                Set2.singleton(Next(State(Cst("Undef", L("-")), Environment(Map2.empty()), sto0, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
+                Set2.singleton(Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
 
             case Rejected(v) =>
                 // The promise has already been rejected with the value `v`. The resolve has no effect.
-                Set2.singleton(Next(State(Cst("Undef", L("-")), Environment(Map2.empty()), sto0, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
+                Set2.singleton(Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
 
         };
         Set2.flatMap(f, PromiseState.lookup(a, s0))
@@ -523,7 +523,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
                 let childAddr = alloc(m0, k0);
 
                 // Allocate a fresh "object" in the heap. We use a string instead.
-                let value = StoredValue(Cst("child", L("-")), Environment(Map2.empty()));
+                let value = StoredValue(Cst("child", L("-")), Environment.empty());
                 let sto1 = Store.weakUpdate(childAddr, value, sto0);
 
                 // Set the child promise state to pending.
@@ -532,14 +532,14 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
                 // Update the fulfill reactions.
                 let f1 = FulfillReactions.weakUpdate(a, e2, env2, childAddr, f0);
 
-                Set2.singleton(Next(State(Ptr(childAddr), Environment(Map2.empty()), sto0, s1, f1, r0, l0, w0, ReactionQueue(q0), kont, tick(m0, k0))))
+                Set2.singleton(Next(State(Ptr(childAddr), Environment.empty(), sto0, s1, f1, r0, l0, w0, ReactionQueue(q0), kont, tick(m0, k0))))
 
             case Fulfilled(v) =>
                 // Allocate a child promise and enqueue the promise reaction `lam` with the resolved value `v`.
                 let childAddr = alloc(m0, k0);
                 let job = (Fulfilled(v), e2, env2, childAddr);
                 let q1 = Set2.insert(job, q0);
-                    Set2.singleton(Next(State(Ptr(childAddr), Environment(Map2.empty()), sto0, s0, f0, r0, l0, w0, ReactionQueue(q1), kont, tick(m0, k0))))
+                    Set2.singleton(Next(State(Ptr(childAddr), Environment.empty(), sto0, s0, f0, r0, l0, w0, ReactionQueue(q1), kont, tick(m0, k0))))
             case Rejected(v) =>
                 // NB: Conceptually similar to fulfilled.
                 ???
@@ -569,10 +569,9 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     //  Link2 Kontinuation.
     //
-    case (State(Ptr(a2), _, sto0, s0, f0, r0, l0, w0, q0, kptr, time), KLink2(a1, kont)) => // TODO: env1 and env2 unused
+    case (State(Ptr(a2), _, sto0, s0, f0, r0, l0, w0, q0, kptr, time), KLink2(a1, kont)) => 
         let l1 = PromiseLinks.weakUpdate(a1, a2, l0);
-            // TODO: Keep the environment
-            Set2.singleton(Next(State(Cst("Undef", L("-")), Environment(Map2.empty()), sto0, s0, f0, r0, l1, w0, q0, kont, tick(m0, k0))))
+            Set2.singleton(Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s0, f0, r0, l1, w0, q0, kont, tick(m0, k0))))
 
     //
     // Reaction-Loop
@@ -639,7 +638,16 @@ def run(e0: Expression): Set2[Outcome] = eval(inject(e0))
 ///
 enum Edge {
 
-    case LinkEdge
+    // An edge from value (label where the value is created) to a promise (label of promisify).
+    case ResolveEdge(Label, Label),
+
+    // An edge from value (label where the value is created) to a promise (label of promisify).
+    case RejectEdge(Label, Label),
+
+    // TODO: registration edge.
+
+    // A link edge from a promise label to a promise label.
+    case LinkEdge(Label, Label)
 
 }
 
@@ -671,6 +679,11 @@ namespace State {
 }
 
 namespace Environment {
+
+    ///
+    /// Returns the empty environment.
+    ///
+    def empty: Environment = Environment(Map2.empty())
 
     ///
     /// Returns `true` if the two given environments `env1` and `env2` are equal.
