@@ -148,10 +148,10 @@ object CreateExecutableAst {
   }
 
   object Constraint {
-    def toFact(sast: SimplifiedAst.Declaration.Constraint): ExecutableAst.Constraint.Fact =
+    def toFact(sast: SimplifiedAst.Constraint): ExecutableAst.Constraint.Fact =
       ExecutableAst.Constraint.Fact(Predicate.Head.toExecutable(sast.head))
 
-    def toRule(sast: SimplifiedAst.Declaration.Constraint): ExecutableAst.Constraint.Rule = {
+    def toRule(sast: SimplifiedAst.Constraint): ExecutableAst.Constraint.Rule = {
       val head = Predicate.Head.toExecutable(sast.head)
       val body = sast.body.map(Predicate.Body.toExecutable)
       val cparams = sast.cparams.map {

@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.util.Highlight._
 /**
   * An error raised to indicate that a property is violated.
   */
-case class StratificationError(constraints: List[TypedAst.Declaration.Constraint]) extends CompilationError {
+case class StratificationError(constraints: List[TypedAst.Constraint]) extends CompilationError {
   val kind: String = "Stratification Error"
   val source: SourceInput = constraints.head.loc.source
   val message: String =

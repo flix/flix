@@ -29,13 +29,7 @@ object SimplifiedAst {
                   properties: List[SimplifiedAst.Property],
                   time: Time) extends SimplifiedAst
 
-  sealed trait Declaration
-
-  object Declaration {
-
-    case class Constraint(cparams: List[SimplifiedAst.ConstraintParam], head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body]) extends SimplifiedAst.Declaration
-
-  }
+  case class Constraint(cparams: List[SimplifiedAst.ConstraintParam], head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body]) extends SimplifiedAst
 
   sealed trait Definition
 
@@ -537,6 +531,6 @@ object SimplifiedAst {
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: SimplifiedAst.Expression) extends SimplifiedAst
 
-  case class Stratum(constraints: List[SimplifiedAst.Declaration.Constraint]) extends SimplifiedAst
+  case class Stratum(constraints: List[SimplifiedAst.Constraint]) extends SimplifiedAst
 
 }

@@ -202,7 +202,7 @@ object Namer {
               case (_, sym) => NamedAst.ConstraintParam.RuleParam(sym, sym.tvar, sym.loc)
             }
             val cparams = (headParams ++ ruleParam).toList
-            val constraint = NamedAst.Declaration.Constraint(cparams, head, body, loc)
+            val constraint = NamedAst.Constraint(cparams, head, body, loc)
             val constraints = constraint :: prog0.constraints.getOrElse(ns0, Nil)
             prog0.copy(constraints = prog0.constraints + (ns0 -> constraints))
         }

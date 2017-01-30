@@ -29,6 +29,8 @@ object TypedAst {
                   properties: List[TypedAst.Property],
                   time: Time) extends TypedAst
 
+  case class Constraint(cparams: List[TypedAst.ConstraintParam], head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body], loc: SourceLocation) extends TypedAst
+
   sealed trait Declaration extends TypedAst {
     def loc: SourceLocation
   }
@@ -40,8 +42,6 @@ object TypedAst {
     case class Enum(doc: Option[Ast.Documentation], sym: Symbol.EnumSym, cases: Map[String, TypedAst.Case], tpe: Type, loc: SourceLocation) extends TypedAst.Declaration
 
     case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends TypedAst.Declaration
-
-    case class Constraint(cparams: List[TypedAst.ConstraintParam], head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body], loc: SourceLocation) extends TypedAst.Declaration
 
     case class BoundedLattice(tpe: Type,
                               bot: TypedAst.Expression,
@@ -289,6 +289,6 @@ object TypedAst {
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst
 
-  case class Stratum(constraints: List[TypedAst.Declaration.Constraint]) extends TypedAst
+  case class Stratum(constraints: List[TypedAst.Constraint]) extends TypedAst
 
 }
