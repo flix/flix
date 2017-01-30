@@ -383,8 +383,7 @@ class TestNamer extends FunSuite with TestUtils {
       .addHook("A.f", tpe, new Invokable {
         def apply(args: Array[IValue]) = flix.mkTrue
       })
-    val result = flix.compile()
-    assert(result.isSuccess)
+    val result = flix.compile().get
   }
 
   test("Expression.HookApply.01") {
@@ -396,14 +395,13 @@ class TestNamer extends FunSuite with TestUtils {
           |}
        """.stripMargin
     val flix = new Flix()
-    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type, flix.mkStrType), flix.mkStrType)
+    val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkInt32Type, flix.mkStrType), flix.mkStrType)
     flix
       .addStr(input)
-      .addHook("A/f", tpe, new Invokable {
+      .addHook("A.f", tpe, new Invokable {
         def apply(args: Array[IValue]) = flix.mkStr("foo")
       })
-    val result = flix.compile()
-    assert(result.isSuccess)
+    val result = flix.compile().get
   }
 
 }

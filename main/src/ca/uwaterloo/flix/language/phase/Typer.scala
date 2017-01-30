@@ -65,7 +65,7 @@ object Typer {
       def typecheck(program: Program)(implicit genSym: GenSym): Result[List[TypedAst.Declaration.Constraint], TypeError] = {
         val constraints = program.constraints.flatMap {
           case (ns, cs) => cs map {
-            case NamedAst.Declaration.Constraint(head0, body0, loc) =>
+            case NamedAst.Declaration.Constraint(cparams0, head0, body0, loc) =>
               Predicates.infer(head0, ns, program) match {
                 case InferMonad(run1) =>
                   run1(Substitution.empty) map {
@@ -78,7 +78,15 @@ object Typer {
                             Predicates.reassemble(b, ns, program, subst2)
                         }
                       }
-                      TypedAst.Declaration.Constraint(head, body, loc)
+
+                      val cparams = cparams0.map {
+                        case NamedAst.ConstraintParam.HeadParam(sym, tpe, loc) =>
+                          TypedAst.ConstraintParam.HeadParam(sym, subst(tpe), loc)
+                        case NamedAst.ConstraintParam.RuleParam(sym, tpe, loc) =>
+                          TypedAst.ConstraintParam.RuleParam(sym, subst(tpe), loc)
+                      }
+
+                      TypedAst.Declaration.Constraint(cparams, head, body, loc)
                   }
               }
           }
