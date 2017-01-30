@@ -108,7 +108,7 @@ object Codegen {
         case Type.Str => asm.Type.getDescriptor(Constants.stringClass)
         case Type.Native => asm.Type.getDescriptor(Constants.objectClass)
         case Type.Apply(Type.Arrow(l), _) => s"L${decorate(interfaces(tpe))};"
-        case Type.Apply(Type.FTuple(l), _) => "[Ljava/lang/Object;"
+        case Type.Apply(Type.FTuple(l), _) => asm.Type.getDescriptor(Constants.arrayObjectClass)
         case _ if tpe.isEnum => asm.Type.getDescriptor(Constants.tagClass)
         case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
@@ -534,7 +534,7 @@ object Codegen {
       compileExpression(ctx, visitor, entryPoint)(base)
 
       // A tuple is represented as an array of objects.
-      visitor.visitTypeInsn(CHECKCAST, "[Ljava/lang/Object;")
+      visitor.visitTypeInsn(CHECKCAST, asm.Type.getDescriptor(Constants.arrayObjectClass))
 
       // Emit code for the array index.
       compileInt(visitor)(offset)
@@ -698,7 +698,7 @@ object Codegen {
     case Type.Native => // Don't need to cast AnyRef to anything
 
     case Type.Apply(Type.FTuple(l), _) =>
-      visitor.visitTypeInsn(CHECKCAST, "[Ljava/lang/Object;")
+      visitor.visitTypeInsn(CHECKCAST, asm.Type.getDescriptor(Constants.arrayObjectClass))
 
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }

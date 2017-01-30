@@ -56,7 +56,7 @@ package object datastore {
         a(1) = k.v1
         a(2) = k.v2
         a(3) = k.v3
-        a(4) = k.v3
+        a(4) = k.v4
         a.asInstanceOf[Array[ValueType]]
     }
   }

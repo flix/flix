@@ -393,6 +393,9 @@ object Value {
   /////////////////////////////////////////////////////////////////////////////
   /**
     * Returns `true` if the values of the two given references `ref1` and `ref2` are equal.
+    *
+    * NB: The type system ensures that only values of the same type can be compared.
+    * Hence it is sufficient to only inspect the type of the first argument.
     */
   def equal(ref1: AnyRef, ref2: AnyRef): Boolean = ref1 match {
     case _: Unit.type => ref1 eq ref2
