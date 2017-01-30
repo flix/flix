@@ -1,4 +1,5 @@
-// TODO: Add these and other machines to unit tests. Requires Set PR to be merged in.
+// TODO: Add to unit test (along with other machines).
+
 // TODO: Ondrej: Do we want a closure expression or not?
 
 //
@@ -218,6 +219,28 @@ type Time = Time(Int)
 type State = State(Expression, Environment, Store, PromiseState, FulfillReactions, RejectReactions, PromiseLinks, LinkQueue, ReactionQueue, Address, Time)
 
 ///
+/// The edges of the promise graph.
+///
+enum Edge {
+
+    // A resolve edge from a value allocation site (label) to a promise allocation site (label).
+    case ResolveEdge(Label, Label),
+
+    // A reject edge from a value allocation site (label) to a promise allocation site (label).
+    case RejectEdge(Label, Label),
+
+    // A resolve registration edge from a promise allocation site (label) to lambda (label).
+    case ResolveRegistration(Label, Label),
+
+    // A reject registration edge from a promise allocation site (label) to lambda (label).
+    case RejectRegistration(Label, Label),
+
+    // A link edge from a promise allocation site (label) to a promise allocation site (label).
+    case LinkEdge(Label, Label)
+
+}
+
+///
 /// Returns the initial state of the CEK-machine for the given expression `e0`.
 ///
 def inject(e0: Expression): State =
@@ -267,8 +290,7 @@ enum Outcome {
 /// Returns all possible transitions (outcomes) from the given state `m0` and continuation `k0`.
 ///
 
-// TODO: Many of these cases seem to use kptr incorrectly? Check up on that.
-// Essentially kptr should only be used when there is not a specific kontinuation in play.
+// TODO: Ensure that kptr is used correctly.
 
 def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
 
@@ -457,7 +479,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let f: PromiseValue -> Set2[Outcome] = pv -> match pv with {
             case Pending =>
                 // The new promise value.
-                let pv = Fulfilled(e2); // TODO: Add environment to close expression.
+                let pv = Fulfilled(e2);
 
                 // Set the promise state to fulfilled.
                 let s1 = PromiseState.weakUpdate(a, pv, s0);
@@ -496,12 +518,12 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     //  OnResolve Expression.
     //
-    case (State(OnResolve(e1, e2, loc), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
+    case (State(OnResolve(e1, e2, loc), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), _) =>
         // Allocate the `KOnResolve1` continuation in the store.
-        let a = alloc(m0, k0);
-        let k = StoredKont(KOnResolve1(e2, env0, kptr));
-        let sto1 = Store.weakUpdate(a, k, sto0);
-            Set2.singleton(Next(State(e1, env0, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
+        let kontAddr = alloc(m0, k0);
+        let nextKont = StoredKont(KOnResolve1(e2, env0, kptr));
+        let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
+            Set2.singleton(Next(State(e1, env0, sto1, s0, f0, r0, l0, w0, q0, kontAddr, tick(m0, k0))))
 
     //
     //  OnResolve1 Kontinuation.
@@ -549,12 +571,12 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     //  Link Expression.
     //
-    case (State(Link(e1, e2, loc), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
+    case (State(Link(e1, e2, loc), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), _) =>
         // Allocate the `KLink1` continuation in the store.
-        let a = alloc(m0, k0);
-        let k = StoredKont(KLink1(e2, env0, kptr));
-        let sto1 = Store.weakUpdate(a, k, sto0);
-            Set2.singleton(Next(State(e1, env0, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
+        let kontAddr = alloc(m0, k0);
+        let nextKont = StoredKont(KLink1(e2, env0, kptr));
+        let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
+            Set2.singleton(Next(State(e1, env0, sto1, s0, f0, r0, l0, w0, q0, kontAddr, tick(m0, k0))))
 
     //
     //  Link1 Kontinuation.
@@ -569,24 +591,24 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     //  Link2 Kontinuation.
     //
-    case (State(Ptr(a2), _, sto0, s0, f0, r0, l0, w0, q0, kptr, time), KLink2(a1, kont)) => 
+    case (State(Ptr(a2), _, sto0, s0, f0, r0, l0, w0, q0, _, time), KLink2(a1, kont)) =>
         let l1 = PromiseLinks.weakUpdate(a1, a2, l0);
             Set2.singleton(Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s0, f0, r0, l1, w0, q0, kont, tick(m0, k0))))
 
     //
     // Reaction-Loop
     //
-    case (State(v, env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) if isValue(v) => // TODO: What about the kont?
+    case (State(v, env0, sto0, s0, f0, r0, l0, w0, q0, _, time), KEmpty) if isValue(v) =>
         let f: ((PromiseValue, Expression, Environment, Address)) -> Outcome = match (pv, exp, env, childAddr) -> {
             match pv with {
-                case Fulfilled(v) => // TODO: What environment closes the value???
+                case Fulfilled(v) =>
                         // Dequeue the item from the queue.
-                        let q1 = ReactionQueue.strongDelete(pv, exp, env, childAddr, q0); // TODO: Soundness?
+                        let q1 = ReactionQueue.strongDelete(pv, exp, env, childAddr, q0);
 
                         // Construct the expression: childAddr.resolve(exp(v))
                         let loc = L("ReactionLoop");
                         let e = Resolve(Ptr(childAddr), App(exp, v, loc), loc);
-                            Next(State(e, /* TODO: What env to use here? */ env, sto0, s0, f0, r0, l0, w0, q1, /* TODO: What kont to use? */ kptr, tick(m0, k0)))
+                            Next(State(e, Environment.empty(), sto0, s0, f0, r0, l0, w0, q1, kptr, tick(m0, k0)))
                 case Rejected(v) => ??? // NB: Conceptually similar to the fulfilled case.
             }
          };
@@ -631,30 +653,6 @@ def eval(m0: State): Set2[Outcome] =
 ///
 def run(e0: Expression): Set2[Outcome] = eval(inject(e0))
 
-// TODO: Build promise graph.
-
-///
-/// The edges of the promise graph.
-///
-enum Edge {
-
-    // An edge from value (label where the value is created) to a promise (label of promisify).
-    case ResolveEdge(Label, Label),
-
-    // An edge from value (label where the value is created) to a promise (label of promisify).
-    case RejectEdge(Label, Label),
-
-    // TODO: registration edge.
-
-    // A link edge from a promise label to a promise label.
-    case LinkEdge(Label, Label)
-
-}
-
-///
-/// TODO: DOC
-///
-def build(s: Set2[State]): Set2[Edge] = ??? // TODO
 
 namespace State {
 
@@ -870,16 +868,15 @@ namespace ReactionQueue {
 // x.onResolve(y => Ref(y))
 // x.resolve("hello")
 //
-// TODO: Add source locs
-//def testEval1: Set2[Outcome] = eval(inject(
-//    App(Abs(V(0),
-//        Seq(Promisify(Var(V(0))),
-//            Seq(OnResolve(Var(V(0)), Abs(V(42), Ref(Var(V(42))))),
-//                Resolve(Var(V(0)), Cst("hello"))
-//            ))
-//        ),
-//        Ref(Cst("Promise1"))))
-//)
+def testEval1: Set2[Outcome] = eval(inject(
+    App(Abs(V(0),
+        Seq(Promisify(Var(V(0), L("l2")), L("l2")),
+            Seq(OnResolve(Var(V(0), L("l3")), Abs(V(42), Ref(Var(V(42), L("l3")), L("l3")), L("l3")), L("l3")),
+                Resolve(Var(V(0), L("l4")), Cst("hello", L("l4")), L("l4"))
+            , L("l5")), L("l5"))
+        , L("l6")),
+        Ref(Cst("Promise1", L("l7")), L("l7")), L("l7")))
+)
 
 
 //
