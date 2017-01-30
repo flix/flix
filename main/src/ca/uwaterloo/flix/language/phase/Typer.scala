@@ -793,7 +793,7 @@ object Typer {
     /**
       * Applies the given substitution `subst0` to the given expression `exp0` in the given namespace `ns0`.
       */
-    def reassemble(exp0: NamedAst.Expression, ns0: Name.NName, program: Program, subst0: Substitution, resolveFreeVars: Boolean = false): TypedAst.Expression = {
+    def reassemble(exp0: NamedAst.Expression, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Expression = {
       /**
         * Applies the given substitution `subst0` to the given expression `exp0`.
         */
@@ -806,18 +806,7 @@ object Typer {
         /*
          * Variable expression.
          */
-        case NamedAst.Expression.Var(sym, loc) =>
-          // TODO: Need better strategy for when to resolve free variables.
-          if (!resolveFreeVars) {
-            TypedAst.Expression.Var(sym, subst0(sym.tvar), loc)
-          } else {
-            val qname = Name.mkQName(sym.text) // TODO
-            Disambiguation.lookupRef(qname, ns0, program) match {
-              case Ok(RefTarget.Defn(ns, defn)) => TypedAst.Expression.Ref(defn.sym, subst0(sym.tvar), loc)
-              case Ok(RefTarget.Hook(hook)) => TypedAst.Expression.Hook(hook, subst0(sym.tvar), loc)
-              case Err(e) => TypedAst.Expression.Var(sym, subst0(sym.tvar), loc)
-            }
-          }
+        case NamedAst.Expression.Var(sym, loc) => TypedAst.Expression.Var(sym, subst0(sym.tvar), loc)
 
         /*
          * Reference expression.
@@ -1072,11 +1061,11 @@ object Typer {
       case NamedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
       case NamedAst.Predicate.Head.Positive(qname, terms, loc) =>
         val sym = Symbols.getTableSym(qname, ns0, program)
-        val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
+        val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
         TypedAst.Predicate.Head.Positive(sym, ts, loc)
       case NamedAst.Predicate.Head.Negative(qname, terms, loc) =>
         val sym = Symbols.getTableSym(qname, ns0, program)
-        val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
+        val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
         TypedAst.Predicate.Head.Negative(sym, ts, loc)
     }
 
@@ -1086,26 +1075,26 @@ object Typer {
     def reassemble(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
       case NamedAst.Predicate.Body.Positive(qname, terms, loc) =>
         val sym = Symbols.getTableSym(qname, ns0, program)
-        val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
+        val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
         TypedAst.Predicate.Body.Positive(sym, ts, loc)
       case NamedAst.Predicate.Body.Negative(qname, terms, loc) =>
         val sym = Symbols.getTableSym(qname, ns0, program)
-        val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
+        val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
         TypedAst.Predicate.Body.Negative(sym, ts, loc)
       case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
         Disambiguation.lookupRef(qname, ns0, program) match {
           case Ok(RefTarget.Defn(ns, defn)) =>
-            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
+            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
             TypedAst.Predicate.Body.ApplyFilter(defn.sym, ts, loc)
           case Ok(RefTarget.Hook(hook)) =>
-            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0, resolveFreeVars = true))
+            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
             TypedAst.Predicate.Body.ApplyHookFilter(hook, ts, loc)
           case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
         }
       case NamedAst.Predicate.Body.Loop(pat, term, loc) =>
         // TODO: Assumes that the pattern is a single variable.
         val p = pat.asInstanceOf[NamedAst.Pattern.Var]
-        val t = Expressions.reassemble(term, ns0, program, subst0, resolveFreeVars = true)
+        val t = Expressions.reassemble(term, ns0, program, subst0)
         TypedAst.Predicate.Body.Loop(p.sym, t, loc)
     }
 
