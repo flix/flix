@@ -473,33 +473,6 @@ class TestSolver extends FunSuite {
     assert(!(B contains List(Value.mkInt32(1), Value.mkInt32(1))))
   }
 
-  test("FilterHook01") {
-    val s =
-      """rel A(x: Int)
-        |rel B(x: Int)
-        |
-        |A(1).
-        |A(2).
-        |
-        |B(x) :- f(x), A(x).
-      """.stripMargin
-
-    val flix = new Flix().setOptions(opts)
-    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkStrType)
-    flix
-      .addStr(s)
-      .addHook("f", tpe, new Invokable {
-        override def apply(args: Array[IValue]): IValue = flix.mkBool(args(0) == flix.mkInt32(1))
-      })
-
-    val model = flix.solve()
-      .get
-
-    val B = model.getRelation("B").toSet
-    assert(B contains List(Value.mkInt32(1)))
-    assert(!(B contains List(Value.mkInt32(2))))
-  }
-
   test("Timeout") {
     intercept[TimeoutException] {
       val s =

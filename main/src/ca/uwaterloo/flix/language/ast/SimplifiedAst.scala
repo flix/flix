@@ -29,13 +29,7 @@ object SimplifiedAst {
                   properties: List[SimplifiedAst.Property],
                   time: Time) extends SimplifiedAst
 
-  sealed trait Declaration
-
-  object Declaration {
-
-    case class Constraint(head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body]) extends SimplifiedAst.Declaration
-
-  }
+  case class Constraint(cparams: List[SimplifiedAst.ConstraintParam], head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body]) extends SimplifiedAst
 
   sealed trait Definition
 
@@ -465,8 +459,6 @@ object SimplifiedAst {
 
       case class ApplyFilter(sym: Symbol.DefnSym, terms: List[SimplifiedAst.Term.Body], loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
-      case class ApplyHookFilter(hook: Ast.Hook, terms: List[SimplifiedAst.Term.Body], loc: SourceLocation) extends SimplifiedAst.Predicate.Body
-
       case class Loop(sym: Symbol.VarSym, term: SimplifiedAst.Term.Head, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
     }
@@ -493,9 +485,6 @@ object SimplifiedAst {
 
       }
 
-      // TODO: To be replaced.
-      case class ApplyHook(hook: Ast.Hook, args: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head
-
     }
 
     sealed trait Body extends SimplifiedAst {
@@ -521,12 +510,22 @@ object SimplifiedAst {
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends SimplifiedAst
 
+  sealed trait ConstraintParam
+
+  object ConstraintParam {
+
+    case class HeadParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.ConstraintParam
+
+    case class RuleParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.ConstraintParam
+
+  }
+
   case class FormalParam(sym: Symbol.VarSym, tpe: Type) extends SimplifiedAst
 
   case class FreeVar(sym: Symbol.VarSym, tpe: Type) extends SimplifiedAst
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: SimplifiedAst.Expression) extends SimplifiedAst
 
-  case class Stratum(constraints: List[SimplifiedAst.Declaration.Constraint]) extends SimplifiedAst
+  case class Stratum(constraints: List[SimplifiedAst.Constraint]) extends SimplifiedAst
 
 }

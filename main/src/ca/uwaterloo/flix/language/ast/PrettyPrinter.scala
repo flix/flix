@@ -38,9 +38,9 @@ object PrettyPrinter {
   }
 
   /**
-    * Returns a string representation of the given fact.
+    * Returns a string representation of the given constraint.
     */
-  def fmt(f: ExecutableAst.Constraint.Fact, sb: StringBuilder): StringBuilder = f.head match {
+  def fmt(f: ExecutableAst.Constraint, sb: StringBuilder): StringBuilder = f.head match {
     case ExecutableAst.Predicate.Head.True(loc) => sb.append("true")
     case ExecutableAst.Predicate.Head.False(loc) => sb.append("false")
     case ExecutableAst.Predicate.Head.Positive(sym, terms, loc) =>
@@ -56,7 +56,6 @@ object PrettyPrinter {
     case ExecutableAst.Term.Head.Var(sym, tpe, loc) => sb.append(sym.toString)
     case ExecutableAst.Term.Head.Exp(e, tpe, loc) => fmt(e, sb)
     case ExecutableAst.Term.Head.Apply(name, args, tpe, loc) => ???
-    case ExecutableAst.Term.Head.ApplyHook(hook, args, tpe, loc) => ???
   }
 
 }

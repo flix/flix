@@ -335,20 +335,6 @@ object Interpreter {
         i = i + 1
       }
       evalCall(defn, evalArgs, root, env)
-    case Term.Head.ApplyHook(hook, args, _, _) =>
-      val evalArgs = new Array[AnyRef](args.length)
-      var i = 0
-      while (i < evalArgs.length) {
-        evalArgs(i) = evalHeadTerm(args(i), root, env)
-        i = i + 1
-      }
-      hook match {
-        case Ast.Hook.Safe(name, inv, _) =>
-          val wargs: Array[IValue] = evalArgs.map(new WrappedValue(_))
-          inv(wargs).getUnsafeRef
-        case Ast.Hook.Unsafe(name, inv, _) =>
-          inv(evalArgs)
-      }
   }
 
   def evalBodyTerm(t: Term.Body, root: Root, env: Map[String, AnyRef]): AnyRef = t match {

@@ -28,11 +28,57 @@ object ExecutableAst {
                   lattices: Map[Type, ExecutableAst.Definition.Lattice],
                   tables: Map[Symbol.TableSym, ExecutableAst.Table],
                   indexes: Map[Symbol.TableSym, ExecutableAst.Definition.Index],
-                  facts: Array[ExecutableAst.Constraint.Fact],
-                  rules: Array[ExecutableAst.Constraint.Rule],
+                  constraints: List[ExecutableAst.Constraint],
                   properties: List[ExecutableAst.Property],
                   time: Time,
-                  dependenciesOf: Map[Symbol.TableSym, Set[(Constraint.Rule, ExecutableAst.Predicate.Body.Positive)]]) extends ExecutableAst
+                  dependenciesOf: Map[Symbol.TableSym, Set[(Constraint, ExecutableAst.Predicate.Body.Positive)]]) extends ExecutableAst
+
+
+  case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body]) extends ExecutableAst {
+
+    /**
+      * Returns `true` if the constraint is a fact.
+      */
+    def isFact: Boolean = body.isEmpty
+
+    /**
+      * Returns `true` if the constraint is a rule.
+      */
+    def isRule: Boolean = !isFact
+
+    /**
+      * Returns the tables referenced by the body predicates of the constraint.
+      */
+    val tables: List[ExecutableAst.Predicate.Body] = body.collect {
+      case p: ExecutableAst.Predicate.Body.Positive => p
+      case p: ExecutableAst.Predicate.Body.Negative => p
+    }
+
+    /**
+      * Returns the filter predicates in the body of the constraint.
+      */
+    val filters: List[ExecutableAst.Predicate.Body.ApplyFilter] = body.collect {
+      case p: ExecutableAst.Predicate.Body.ApplyFilter => p
+    }
+
+    /**
+      * Returns the loop predicates in the body of the constraint.
+      */
+    val loops: List[ExecutableAst.Predicate.Body.Loop] = body.collect {
+      case p: ExecutableAst.Predicate.Body.Loop => p
+    }
+
+    /**
+      * Records the number of times this rule has been evaluated.
+      */
+    val hits = new AtomicInteger()
+
+    /**
+      * Records the amount of time spent evaluating this rule.
+      */
+    val time = new AtomicLong()
+
+  }
 
   sealed trait Definition
 
@@ -73,35 +119,6 @@ object ExecutableAst {
                        keys: Array[ExecutableAst.Attribute],
                        value: ExecutableAst.Attribute,
                        loc: SourceLocation) extends ExecutableAst.Table
-
-  }
-
-  sealed trait Constraint extends ExecutableAst
-
-  object Constraint {
-
-    case class Fact(head: ExecutableAst.Predicate.Head) extends ExecutableAst.Constraint
-
-    // TODO: Re-organize these components.
-    case class Rule(head: ExecutableAst.Predicate.Head,
-                    body: List[ExecutableAst.Predicate.Body],
-                    tables: List[ExecutableAst.Predicate.Body],
-                    filters: List[ExecutableAst.Predicate.Body.ApplyFilter],
-                    filterHooks: List[ExecutableAst.Predicate.Body.ApplyHookFilter],
-                    loops: List[ExecutableAst.Predicate.Body.Loop]) extends ExecutableAst.Constraint {
-
-
-      /**
-        * Records the number of times this rule has been evaluated.
-        */
-      val hits = new AtomicInteger()
-
-      /**
-        * Records the amount of time spent evaluating this rule.
-        */
-      val time = new AtomicLong()
-
-    }
 
   }
 
@@ -482,41 +499,26 @@ object ExecutableAst {
       case class False(loc: SourceLocation) extends ExecutableAst.Predicate.Head
 
       case class Positive(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Head], loc: SourceLocation) extends ExecutableAst.Predicate.Head {
-        /**
-          * Returns the arity of the predicate.
-          */
         val arity: Int = terms.length
       }
 
       case class Negative(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Head], loc: SourceLocation) extends ExecutableAst.Predicate.Head {
-        /**
-          * Returns the arity of the predicate.
-          */
         val arity: Int = terms.length
       }
 
     }
 
     sealed trait Body extends ExecutableAst.Predicate {
-      /**
-        * Returns the set of free variables in the term.
-        */
       val freeVars: Set[String]
     }
 
     object Body {
 
       case class Positive(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Body], index2var: Array[String], freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
-        /**
-          * Returns the arity of this table predicate.
-          */
         val arity: Int = terms.length
       }
 
       case class Negative(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Body], index2var: Array[String], freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
-        /**
-          * Returns the arity of this table predicate.
-          */
         val arity: Int = terms.length
       }
 
@@ -524,11 +526,6 @@ object ExecutableAst {
                              terms: Array[ExecutableAst.Term.Body],
                              freeVars: Set[String],
                              loc: SourceLocation) extends ExecutableAst.Predicate.Body
-
-      case class ApplyHookFilter(hook: Ast.Hook,
-                                 terms: Array[ExecutableAst.Term.Body],
-                                 freeVars: Set[String],
-                                 loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
       case class Loop(sym: Symbol.VarSym,
                       term: ExecutableAst.Term.Head,
@@ -558,11 +555,6 @@ object ExecutableAst {
                        tpe: Type,
                        loc: SourceLocation) extends ExecutableAst.Term.Head
 
-      case class ApplyHook(hook: Ast.Hook,
-                           args: Array[ExecutableAst.Term.Head],
-                           tpe: Type,
-                           loc: SourceLocation) extends ExecutableAst.Term.Head
-
     }
 
     sealed trait Body extends ExecutableAst {
@@ -586,6 +578,16 @@ object ExecutableAst {
   case class Attribute(name: String, tpe: Type) extends ExecutableAst
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends ExecutableAst
+
+  sealed trait ConstraintParam
+
+  object ConstraintParam {
+
+    case class HeadParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.ConstraintParam
+
+    case class RuleParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.ConstraintParam
+
+  }
 
   case class FormalParam(sym: Symbol.VarSym, tpe: Type) extends ExecutableAst
 

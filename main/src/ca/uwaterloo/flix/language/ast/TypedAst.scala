@@ -29,6 +29,8 @@ object TypedAst {
                   properties: List[TypedAst.Property],
                   time: Time) extends TypedAst
 
+  case class Constraint(cparams: List[TypedAst.ConstraintParam], head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body], loc: SourceLocation) extends TypedAst
+
   sealed trait Declaration extends TypedAst {
     def loc: SourceLocation
   }
@@ -40,8 +42,6 @@ object TypedAst {
     case class Enum(doc: Option[Ast.Documentation], sym: Symbol.EnumSym, cases: Map[String, TypedAst.Case], tpe: Type, loc: SourceLocation) extends TypedAst.Declaration
 
     case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends TypedAst.Declaration
-
-    case class Constraint(head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body], loc: SourceLocation) extends TypedAst.Declaration
 
     case class BoundedLattice(tpe: Type,
                               bot: TypedAst.Expression,
@@ -259,8 +259,6 @@ object TypedAst {
 
       case class ApplyFilter(name: Symbol.DefnSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
 
-      case class ApplyHookFilter(hook: Ast.Hook, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
-
       case class Loop(sym: Symbol.VarSym, term: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Predicate.Body
 
     }
@@ -271,6 +269,16 @@ object TypedAst {
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends TypedAst
 
+  sealed trait ConstraintParam
+
+  object ConstraintParam {
+
+    case class HeadParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst.ConstraintParam
+
+    case class RuleParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst.ConstraintParam
+
+  }
+
   case class FormalParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst
 
   case class MatchRule(pat: TypedAst.Pattern, guard: TypedAst.Expression, exp: TypedAst.Expression) extends TypedAst
@@ -279,6 +287,6 @@ object TypedAst {
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst
 
-  case class Stratum(constraints: List[TypedAst.Declaration.Constraint]) extends TypedAst
+  case class Stratum(constraints: List[TypedAst.Constraint]) extends TypedAst
 
 }

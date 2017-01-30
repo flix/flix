@@ -32,7 +32,7 @@ object Indexer {
     val indexes = mutable.Map.empty[Symbol.TableSym, Set[Seq[Int]]]
 
     // iterate through each rule.
-    for (constraint <- root.rules) {
+    for (constraint <- root.constraints) {
       // maintain set of bound variables in each rule.
       val bound = mutable.Set.empty[String]
       // iterate through each table predicate in the body.
