@@ -16,69 +16,73 @@ type Variable = V(Int)
 type Address = A(Int)
 
 ///
+/// A (source) location is simply a string label.
+///
+type Label = L(Str)
+
+///
 /// The expressions of the lambda calculus are: variables, lambda abstractions, and applications.
 ///
-// TODO: Add source locations
 enum Expression {
     // A variable expression.
-    case Var(Variable),
+    case Var(Variable, Label),
 
     // A lambda abstraction expression.
-    case Abs(Variable, Expression),
+    case Abs(Variable, Expression, Label),
 
     // A function application expression.
-    case App(Expression, Expression),
+    case App(Expression, Expression, Label),
 
     //
     // General Extensions:
     //
 
     // A string value.
-    case Cst(Str),
+    case Cst(Str, Label),
 
     // A heap address.
-    case Ptr(Address),
+    case Ptr(Address), // TODO: Ondrej: I don't think it makes sense for Ptr to have an address?
 
     // A heap reference expression: ref e.
-    case Ref(Expression),
+    case Ref(Expression, Label),
 
     // A heap de-reference expression: deref e.
-    case Deref(Expression),
+    case Deref(Expression, Label),
 
     // A sequence expression: e1; e2.
-    case Seq(Expression, Expression),
+    case Seq(Expression, Expression, Label),
 
     //
     // Promises Extensions:
     //
 
     // A promisify expression: promisify(e).
-    case Promisify(Expression),
+    case Promisify(Expression, Label),
 
     // A resolve expression: e1.resolve(e2).
-    case Resolve(Expression, Expression),
+    case Resolve(Expression, Expression, Label),
 
     // A reject expression: e1.reject(e2).
-    case Reject(Expression, Expression),
+    case Reject(Expression, Expression, Label),
 
     // An onResolve expression: e1.onResolve(e2).
-    case OnResolve(Expression, Expression),
+    case OnResolve(Expression, Expression, Label),
 
     // An onReject expression: e1.onReject(e2).
-    case OnReject(Expression, Expression),
+    case OnReject(Expression, Expression, Label),
 
     // A link expression: e1.link(e2).
-    case Link(Expression, Expression)
+    case Link(Expression, Expression, Label)
 }
 
 ///
 /// Returns `true` if the given expression `e0` is a value.
 ///
 def isValue(e0: Expression): Bool = match e0 with {
-    case Abs(x, e)  => true
-    case Cst(s)     => true
-    case Ptr(a)     => true
-    case _          => false
+    case Abs(x, e, _)   => true
+    case Cst(s)         => true
+    case Ptr(a)         => true
+    case _              => false
 }
 
 ///
@@ -280,7 +284,8 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let f: ((PromiseValue, Address)) -> Outcome = match (pv, a) -> {
             match pv with {
                 case Fulfilled(v) =>
-                    let e = Seq(Resolve(Ptr(a), v), exp);
+                    let loc = L("LinkLoop");
+                    let e = Seq(Resolve(Ptr(a), v, loc), exp, loc);
                     let w1 = LinkQueue.strongDelete(pv, a, w0);
                         Next(State(e, env0, sto0, s0, f0, r0, l0, w1, q0, kptr, tick(m0, k0)))
 
@@ -292,7 +297,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     // Variable Expression.
     //
-    case (State(Var(x), Environment(env0), Store(sto0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), kptr, time), _) =>
+    case (State(Var(x, loc), Environment(env0), Store(sto0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), kptr, time), _) =>
         // The expression is a variable. Look it up in the environment.
          match Map2.lookup(x, env0) with {
             case None => Set2(Abort("Unbound variable.") :: Nil)
@@ -308,7 +313,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     // Application Expression.
     //
-    case (State(App(e1, e2), Environment(env0), Store(sto0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), kptr, time), _) =>
+    case (State(App(e1, e2, loc), Environment(env0), Store(sto0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), kptr, time), _) =>
         // Generate a fresh address where to store the continuation.
         let a = alloc(m0, k0);
         // Continue evaluation of `e1` and store `e2` in a continuation.
@@ -340,7 +345,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     case (State(v2, Environment(env0), Store(sto0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), _, time), KApp2(v1, Environment(env1), kont)) if isValue(v2) =>
         // Evaluate the body of the lambda `v1` with argument `v2`.
-        let Abs(x, body) = v1;
+        let Abs(x, body, loc) = v1;
         let a = alloc(m0, k0);
         let env2 = Map2.insert(x, a, env1);
         let newValue = StoredValue(v2, Environment(env0));
@@ -353,7 +358,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     // Reference Expression.
     //
-    case (State(Ref(e), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
+    case (State(Ref(e, loc), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
         // Allocate the `KRef` continuation in the store.
         let a = alloc(m0, k0);
         let k = StoredKont(KRef(kptr));
@@ -373,7 +378,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     // Dereference Expression.
     //
-    case (State(Deref(e), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
+    case (State(Deref(e, loc), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
         // Allocate the `KDeref` continuation in the store.
         let a = alloc(m0, k0);
         let k = StoredKont(KDeref(kptr));
@@ -395,9 +400,9 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     // Sequence Expression.
     //
-    case (State(Seq(e1, e2), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
+    case (State(Seq(e1, e2, loc), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
         // Allocate the `KSeq` continuation in the store.
-        let a = alloc(m0, k0);
+        let a = alloc(m0, k0); // TODO: Rename to be consitent.
         let k = StoredKont(KSeq(e2, env0, kptr));
         let sto1 = Store.weakUpdate(a, k, sto0);
             Set2.singleton(Next(State(e1, env0, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
@@ -412,7 +417,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     // Promisify Expression.
     //
-    case (State(Promisify(e), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
+    case (State(Promisify(e, loc), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
         // Allocate the `KPromisify` continuation in the store.
         let a = alloc(m0, k0);
         let k = StoredKont(KPromisify(kptr));
@@ -426,12 +431,12 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         // Weakly update the state of the promise `a` to pending.
         let promiseStates = Option.getWithDefault(Map2.lookup(a, s0), Set2.empty());
         let s1 = Map2.insert(a, Set2.insert(Pending, promiseStates), s0);
-            Set2.singleton(Next(State(Cst("Undef"), env0, sto0, PromiseState(s1), f0, r0, l0, w0, q0, kont, tick(m0, k0))))
+            Set2.singleton(Next(State(Cst("Undef", L("-")), env0, sto0, PromiseState(s1), f0, r0, l0, w0, q0, kont, tick(m0, k0))))
 
     //
     // Resolve Expression.
     //
-    case (State(Resolve(e1, e2), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
+    case (State(Resolve(e1, e2, loc), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
         // Allocate the `KResolve1` continuation in the store.
         let a = alloc(m0, k0);
         let k = StoredKont(KResolve1(e2, env0, kptr));
@@ -477,15 +482,15 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
                let fr = FulfillReactions.lookup(a, f0);
                let q1 = ReactionQueue.weakUpdate(Set2.map(match (lam, env, addr) -> (pv, lam, env, addr), fr), q0);
 
-               Set2.singleton(Next(State(Cst("Undef"), Environment(Map2.empty()), sto0, s1, f0, r0, l0, w1, q1, kont, tick(m0, k0))))
+               Set2.singleton(Next(State(Cst("Undef", L("-")), Environment(Map2.empty()), sto0, s1, f0, r0, l0, w1, q1, kont, tick(m0, k0))))
 
             case Fulfilled(v) =>
                 // The promise has already been resolved with the value `v`. The resolve has no effect.
-                Set2.singleton(Next(State(Cst("Undef"), Environment(Map2.empty()), sto0, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
+                Set2.singleton(Next(State(Cst("Undef", L("-")), Environment(Map2.empty()), sto0, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
 
             case Rejected(v) =>
                 // The promise has already been rejected with the value `v`. The resolve has no effect.
-                Set2.singleton(Next(State(Cst("Undef"), Environment(Map2.empty()), sto0, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
+                Set2.singleton(Next(State(Cst("Undef", L("-")), Environment(Map2.empty()), sto0, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
 
         };
         Set2.flatMap(f, PromiseState.lookup(a, s0))
@@ -494,7 +499,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     //  OnResolve Expression.
     //
-    case (State(OnResolve(e1, e2), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
+    case (State(OnResolve(e1, e2, loc), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
         // Allocate the `KOnResolve1` continuation in the store.
         let a = alloc(m0, k0);
         let k = StoredKont(KOnResolve1(e2, env0, kptr));
@@ -521,7 +526,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
                 let childAddr = alloc(m0, k0);
 
                 // Allocate a fresh "object" in the heap. We use a string instead.
-                let value = StoredValue(Cst("child"), Environment(Map2.empty()));
+                let value = StoredValue(Cst("child", L("-")), Environment(Map2.empty()));
                 let sto1 = Store.weakUpdate(childAddr, value, sto0);
 
                 // Set the child promise state to pending.
@@ -547,7 +552,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     //  Link Expression.
     //
-    case (State(Link(e1, e2), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
+    case (State(Link(e1, e2, loc), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
         // Allocate the `KLink1` continuation in the store.
         let a = alloc(m0, k0);
         let k = StoredKont(KLink1(e2, env0, kptr));
@@ -570,7 +575,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     case (State(Ptr(a2), _, sto0, s0, f0, r0, l0, w0, q0, kptr, time), KLink2(a1, kont)) => // TODO: env1 and env2 unused
         let l1 = PromiseLinks.weakUpdate(a1, a2, l0);
             // TODO: Keep the environment
-            Set2.singleton(Next(State(Cst("Undef"), Environment(Map2.empty()), sto0, s0, f0, r0, l1, w0, q0, kont, tick(m0, k0))))
+            Set2.singleton(Next(State(Cst("Undef", L("-")), Environment(Map2.empty()), sto0, s0, f0, r0, l1, w0, q0, kont, tick(m0, k0))))
 
     //
     // Reaction-Loop
@@ -583,7 +588,8 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
                         let q1 = ReactionQueue.strongDelete(pv, exp, env, childAddr, q0); // TODO: Soundness?
 
                         // Construct the expression: childAddr.resolve(exp(v))
-                        let e = Resolve(Ptr(childAddr), App(exp, v));
+                        let loc = L("ReactionLoop");
+                        let e = Resolve(Ptr(childAddr), App(exp, v, loc), loc);
                             Next(State(e, /* TODO: What env to use here? */ env, sto0, s0, f0, r0, l0, w0, q1, /* TODO: What kont to use? */ kptr, tick(m0, k0)))
                 case Rejected(v) => ??? // NB: Conceptually similar to the fulfilled case.
             }
@@ -794,15 +800,16 @@ namespace ReactionQueue {
 // x.onResolve(y => Ref(y))
 // x.resolve("hello")
 //
-def testEval1: Set2[Outcome] = eval(inject(
-    App(Abs(V(0),
-        Seq(Promisify(Var(V(0))),
-            Seq(OnResolve(Var(V(0)), Abs(V(42), Ref(Var(V(42))))),
-                Resolve(Var(V(0)), Cst("hello"))
-            ))
-        ),
-        Ref(Cst("Promise1"))))
-)
+// TODO: Add source locs
+//def testEval1: Set2[Outcome] = eval(inject(
+//    App(Abs(V(0),
+//        Seq(Promisify(Var(V(0))),
+//            Seq(OnResolve(Var(V(0)), Abs(V(42), Ref(Var(V(42))))),
+//                Resolve(Var(V(0)), Cst("hello"))
+//            ))
+//        ),
+//        Ref(Cst("Promise1"))))
+//)
 
 
 //
@@ -818,16 +825,16 @@ def testEval1: Set2[Outcome] = eval(inject(
 //
 def testEval2: Set2[Outcome] = eval(inject(
     App(App(Abs(V(0), Abs(V(1),
-        Seq(Promisify(Var(V(0))),
-            Seq(Promisify(Var(V(1))),
-                Seq(Link(Var(V(0)), Var(V(1))),
-                    Seq(OnResolve(Var(V(1)), Abs(V(42), Ref(Var(V(42))))),
-                        Resolve(Var(V(0)), Cst("hello"))
-                    )
-                )
-            )
-        ))),
-        Ref(Cst("Promise1"))), Ref(Cst("Promise2")))))
+        Seq(Promisify(Var(V(0), L("l2")), L("l2")),
+            Seq(Promisify(Var(V(1), L("l3")), L("l3")),
+                Seq(Link(Var(V(0), L("l4")), Var(V(1), L("l4")), L("l4")),
+                    Seq(OnResolve(Var(V(1), L("l2")), Abs(V(42), Ref(Var(V(42), L("l5")), L("l5")), L("l5")), L("l5")),
+                        Resolve(Var(V(0), L("l6")), Cst("hello", L("l6")), L("l6"))
+                    , L("l7"))
+                , L("l8"))
+            , L("l9"))
+        , L("l10")), L("l10")), L("l10")),
+        Ref(Cst("Promise1", L("l11")), L("l11")), L("l11")), Ref(Cst("Promise2", L("l11")), L("l11")), L("l11"))))
 
 
 
