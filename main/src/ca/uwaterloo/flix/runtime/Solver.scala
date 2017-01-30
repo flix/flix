@@ -20,7 +20,6 @@ import java.util.ArrayList
 import java.util.concurrent._
 
 import ca.uwaterloo.flix.api.{IValue, RuleException, TimeoutException, WrappedValue}
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Constraint.Rule
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Symbol}
 import ca.uwaterloo.flix.runtime.datastore.DataStore
@@ -58,7 +57,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * A (possibly local) work list is a collection of (rule, env) pairs
     * specifying that the rule must be re-evaluated under the associated environment.
     */
-  type WorkList = mutable.ArrayStack[(Rule, Env)]
+  type WorkList = mutable.ArrayStack[(Constraint, Env)]
 
   /**
     * The type of a (partial) interpretation.
@@ -66,6 +65,12 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * An interpretation is collection of facts (a table symbol associated with an array of facts).
     */
   type Interpretation = mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]
+
+  //
+  // The facts and rules of the program.
+  //
+  val facts: List[Constraint] = root.constraints.filter(_.isFact)
+  val rules: List[Constraint] = root.constraints.filter(_.isRule)
 
   //
   // State of the solver:
@@ -232,8 +237,8 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   def getModel: Model = model
 
-  def getRuleStats: List[(Rule, Int, Long)] =
-    root.rules.toSeq.sortBy(_.time.get()).reverse.map {
+  def getRuleStats: List[(Constraint, Int, Long)] =
+    root.constraints.toSeq.sortBy(_.time.get()).reverse.map {
       case r => (r, r.hits.get(), r.time.get())
     }.toList
 
@@ -260,7 +265,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   private def initDataStore(): Unit = {
     val t = System.nanoTime()
     // iterate through all facts.
-    for (fact <- root.facts) {
+    for (fact <- facts) {
       // evaluate the head of each fact.
       val interp = mkInterpretation()
       evalHead(fact.head, mutable.Map.empty, interp)
@@ -284,7 +289,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   private def initWorkList(): Unit = {
     // add all rules to the worklist (under empty environments).
-    for (rule <- root.rules) {
+    for (rule <- rules) {
       worklist.push((rule, mutable.Map.empty))
     }
   }
@@ -317,7 +322,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       val initMiliSeconds = initTime / 1000000
       val readersMiliSeconds = readersTime / 1000000
       val writersMiliSeconds = writersTime / 1000000
-      val initialFacts = root.facts.length
+      val initialFacts = facts.length
       val totalFacts = dataStore.numberOfFacts
       val throughput = (1000 * totalFacts) / (solverTime + 1)
       Console.println(f"Solved in $solverTime%,d msec. (init: $initMiliSeconds%,d msec, readers: $readersMiliSeconds%,d msec, writers: $writersMiliSeconds%,d msec)")
@@ -331,7 +336,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     *
     * Updates the given interpretation `interp`.
     */
-  private def evalBody(rule: Rule, env: Env): Callable[Interpretation] = new Callable[Interpretation] {
+  private def evalBody(rule: Constraint, env: Env): Callable[Interpretation] = new Callable[Interpretation] {
     def call(): Interpretation = {
       val t = System.nanoTime()
 
@@ -348,7 +353,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Computes the cross product of all collections in the body.
     */
-  private def evalCross(rule: Rule, ps: List[Predicate.Body], env: Env, interp: Interpretation): Unit = ps match {
+  private def evalCross(rule: Constraint, ps: List[Predicate.Body], env: Env, interp: Interpretation): Unit = ps match {
     case Nil =>
       // cross product complete, now filter
       evalLoop(rule, rule.loops, env, interp)
@@ -393,7 +398,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Unfolds the given loop predicates `ps` over the initial `env`.
     */
-  private def evalLoop(rule: Rule, ps: List[Predicate.Body.Loop], env: Env, interp: Interpretation): Unit = ps match {
+  private def evalLoop(rule: Constraint, ps: List[Predicate.Body.Loop], env: Env, interp: Interpretation): Unit = ps match {
     case Nil => evalFilter(rule, rule.filters, env, interp)
     case Predicate.Body.Loop(sym, term, _, _) :: rest =>
       val value = Value.cast2set(Interpreter.evalHeadTerm(term, root, env.toMap))
@@ -408,10 +413,10 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Filters the given `env` through all filter functions in the body.
     */
   @tailrec
-  private def evalFilter(rule: Rule, ps: List[Predicate.Body.ApplyFilter], env: Env, interp: Interpretation): Unit = ps match {
+  private def evalFilter(rule: Constraint, ps: List[Predicate.Body.ApplyFilter], env: Env, interp: Interpretation): Unit = ps match {
     case Nil =>
       // filter with hook functions
-      evalFilterHook(rule, rule.filterHooks, env, interp)
+      evalHead(rule.head, env, interp)
     case (pred: Predicate.Body.ApplyFilter) :: xs =>
       val defn = root.definitions(pred.sym)
       val args = new Array[AnyRef](pred.terms.length)
@@ -423,40 +428,6 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       val result = Interpreter.evalCall(defn, args, root, env.toMap)
       if (Value.cast2bool(result))
         evalFilter(rule, xs, env, interp)
-  }
-
-  /**
-    * Filters the given `env` through all filter hook functions in the body.
-    */
-  @tailrec
-  private def evalFilterHook(rule: Rule, ps: List[Predicate.Body.ApplyHookFilter], env: Env, interp: Interpretation): Unit = ps match {
-    case Nil =>
-      // evaluate the head of the rule.
-      evalHead(rule.head, env, interp)
-    case (pred: Predicate.Body.ApplyHookFilter) :: xs =>
-
-      val args = new Array[AnyRef](pred.terms.length)
-      var i = 0
-      while (i < args.length) {
-        args(i) = Interpreter.evalBodyTerm(pred.terms(i), root, env.toMap)
-        i = i + 1
-      }
-
-      pred.hook match {
-        case Ast.Hook.Safe(name, inv, tpe) =>
-          val wargs = args map {
-            case arg => new WrappedValue(arg): IValue
-          }
-          val result = inv.apply(wargs).getUnsafeRef
-          if (Value.cast2bool(result)) {
-            evalFilterHook(rule, xs, env, interp)
-          }
-        case Ast.Hook.Unsafe(name, inv, tpe) =>
-          val result = inv.apply(args)
-          if (Value.cast2bool(result)) {
-            evalFilterHook(rule, xs, env, interp)
-          }
-      }
   }
 
   /**
@@ -676,7 +647,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Returns a fresh work list.
     */
-  private def mkWorkList(): WorkList = new mutable.ArrayStack[(Rule, Env)]
+  private def mkWorkList(): WorkList = new mutable.ArrayStack[(Constraint, Env)]
 
   /**
     * Returns a fresh (empty) interpretation.

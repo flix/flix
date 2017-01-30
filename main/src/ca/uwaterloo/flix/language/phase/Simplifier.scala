@@ -371,9 +371,6 @@ object Simplifier {
         case TypedAst.Predicate.Body.ApplyFilter(sym, terms, loc) =>
           SimplifiedAst.Predicate.Body.ApplyFilter(sym, terms map Term.simplifyBody, loc)
 
-        case TypedAst.Predicate.Body.ApplyHookFilter(hook, terms, loc) =>
-          SimplifiedAst.Predicate.Body.ApplyHookFilter(hook, terms map Term.simplifyBody, loc)
-
         case TypedAst.Predicate.Body.Loop(sym, term, loc) =>
           SimplifiedAst.Predicate.Body.Loop(sym, Term.simplifyHead(term), loc)
       }
@@ -390,8 +387,7 @@ object Simplifier {
         val as = args map simplifyHead
         SimplifiedAst.Term.Head.Apply(sym, as, tpe, loc)
       case TypedAst.Expression.Apply(TypedAst.Expression.Hook(hook, _, _), args, tpe, loc) =>
-        val as = args map simplifyHead
-        SimplifiedAst.Term.Head.ApplyHook(hook, as, tpe, loc)
+        throw InternalCompilerException("No longer supported.") // TODO
       case _ => SimplifiedAst.Term.Head.Exp(Expression.simplify(e), e.tpe, e.loc)
     }
 

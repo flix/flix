@@ -459,8 +459,6 @@ object SimplifiedAst {
 
       case class ApplyFilter(sym: Symbol.DefnSym, terms: List[SimplifiedAst.Term.Body], loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
-      case class ApplyHookFilter(hook: Ast.Hook, terms: List[SimplifiedAst.Term.Body], loc: SourceLocation) extends SimplifiedAst.Predicate.Body
-
       case class Loop(sym: Symbol.VarSym, term: SimplifiedAst.Term.Head, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
     }
@@ -486,9 +484,6 @@ object SimplifiedAst {
       case class Apply(sym: Symbol.DefnSym, args: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head {
 
       }
-
-      // TODO: To be replaced.
-      case class ApplyHook(hook: Ast.Hook, args: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head
 
     }
 

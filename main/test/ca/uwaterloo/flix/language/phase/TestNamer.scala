@@ -368,40 +368,4 @@ class TestNamer extends FunSuite with TestUtils {
     flix.compile().get
   }
 
-  test("Expression.HookFilter.01") {
-    val input =
-      s"""namespace A {
-          |  rel R(a: Bool, b: Int, c: Str)
-          |
-          |  R(x, y, z) :- f(x, y, z), R(x, y, z).
-          |}
-       """.stripMargin
-    val flix = new Flix()
-    val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkInt32Type, flix.mkStrType), flix.mkBoolType)
-    flix
-      .addStr(input)
-      .addHook("A.f", tpe, new Invokable {
-        def apply(args: Array[IValue]) = flix.mkTrue
-      })
-    val result = flix.compile().get
-  }
-
-  test("Expression.HookApply.01") {
-    val input =
-      s"""namespace A {
-          |  rel R(a: Bool, b: Int, c: Str)
-          |
-          |  R(x, y, f(x, y, z)) :- R(x, y, z).
-          |}
-       """.stripMargin
-    val flix = new Flix()
-    val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkInt32Type, flix.mkStrType), flix.mkStrType)
-    flix
-      .addStr(input)
-      .addHook("A.f", tpe, new Invokable {
-        def apply(args: Array[IValue]) = flix.mkStr("foo")
-      })
-    val result = flix.compile().get
-  }
-
 }

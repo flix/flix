@@ -1099,8 +1099,7 @@ object Typer {
             val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
             TypedAst.Predicate.Body.ApplyFilter(defn.sym, ts, loc)
           case Ok(RefTarget.Hook(hook)) =>
-            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
-            TypedAst.Predicate.Body.ApplyHookFilter(hook, ts, loc)
+            throw InternalCompilerException("No longer supported.") // TODO
           case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
         }
       case NamedAst.Predicate.Body.Loop(pat, term, loc) =>
