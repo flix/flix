@@ -217,9 +217,6 @@ type Time = Time(Int)
 ///
 type State = State(Expression, Environment, Store, PromiseState, FulfillReactions, RejectReactions, PromiseLinks, LinkQueue, ReactionQueue, Address, Time)
 
-
-// TODO: Implemente equality on state.
-
 ///
 /// Returns the initial state of the CEK-machine for the given expression `e0`.
 ///
@@ -649,10 +646,45 @@ enum Edge {
 ///
 /// TODO: DOC
 ///
-def build(s: Set2[State]): Set2[Edge] = ???
+def build(s: Set2[State]): Set2[Edge] = ??? // TODO
 
+namespace State {
+
+    ///
+    /// Returns `true` if the two given states `s1` and `s2` are equal.
+    ///
+    def eq(s1: State, s2: State): Bool =
+        let State(e1, env1, sto1, s1, f1, r1, l1, w1, q1, kptr1, t1) = s1;
+        let State(e2, env2, sto2, s2, f2, r2, l2, w2, q2, kptr2, t2) = s2;
+            e1 == e2 &&
+            Environment.eq(env1, env2) &&
+            Store.eq(sto1, sto2) &&
+            PromiseState.eq(s1, s2) &&
+            FulfillReactions.eq(f1, f2) &&
+            // RejectReactions.eq(r1, r2) && // NB: Not currently in use.
+            PromiseLinks.eq(l1, l2) &&
+            LinkQueue.eq(w1, w2) &&
+            ReactionQueue.eq(q1, q2) &&
+            kptr1 == kptr2 &&
+            t1 == t2
+
+}
+
+namespace Environment {
+
+    ///
+    /// Returns `true` if the two given environments `env1` and `env2` are equal.
+    ///
+    def eq(env1: Environment, env2: Environment): Bool = ???
+
+}
 
 namespace Store {
+
+    ///
+    /// Returns `true` if the two given stores `sto1` and `sto2` are equal.
+    ///
+    def eq(sto1: Store, sto2: Store): Bool = ???
 
     ///
     /// Returns the set of storable values pointed-to by the (abstract) address `a`.
@@ -677,6 +709,11 @@ namespace Store {
 namespace PromiseState {
 
     ///
+    /// Returns `true` if the two given promise states `s1` and `s2` are equal.
+    ///
+    def eq(s1: PromiseState, s2: PromiseState): Bool = ???
+
+    ///
     /// Returns the set of promise values for the given (abstract) address `a`.
     ///
     def lookup(a: Address, s: PromiseState): Set2[PromiseValue] =
@@ -696,6 +733,11 @@ namespace PromiseState {
 }
 
 namespace FulfillReactions {
+
+    ///
+    /// Returns `true` if the two given fullfill reactions `f1` and `f2` are equal.
+    ///
+    def eq(f1: FulfillReactions, f2: FulfillReactions): Bool = ???
 
     ///
     /// Returns the (lambda, environment, childAddr)-triples associated with the given (abstract) address `a`.
@@ -719,6 +761,11 @@ namespace FulfillReactions {
 namespace PromiseLinks {
 
     ///
+    /// Returns `true` if the two given promise links `l1` and `l2` are equal.
+    ///
+    def eq(l1: PromiseLinks, l2: PromiseLinks): Bool = ???
+
+    ///
     /// Returns the set of promise links associated with the given (abstract) address `a`.
     ///
     def lookup(a: Address, l: PromiseLinks): Set2[Address] =
@@ -738,6 +785,11 @@ namespace PromiseLinks {
 }
 
 namespace LinkQueue {
+
+    ///
+    /// Returns `true` if the two given link queues `w1` and `w2` are equal.
+    ///
+    def eq(w1: LinkQueue, w2: LinkQueue): Bool = ???
 
     ///
     /// Returns `true` if the link queue `w` is non empty.
@@ -769,6 +821,11 @@ namespace LinkQueue {
 }
 
 namespace ReactionQueue {
+
+    ///
+    /// Returns `true` if the two given reaction queues `q1` and `q2` are equal.
+    ///
+    def eq(q1: ReactionQueue, q2: ReactionQueue): Bool = ???
 
     ///
     /// Applies the given function `f` to the set (PromiseValue, Lambda, Environment, childAddress)-tuples in the reaction queue `q`.
@@ -857,6 +914,8 @@ namespace Set2 {
     def empty[a]: Set2[a] = Set2(Nil)
 
     def singleton[a](a: a): Set2[a] = Set2(a :: Nil)
+
+     def eq[a](xs: Set2[a], ys: Set2[a]): Bool = ???
 
     ///
      /// Adds `x` to `xs`.
