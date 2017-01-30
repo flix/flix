@@ -33,7 +33,7 @@ object SimplifiedAst {
 
   object Declaration {
 
-    case class Constraint(head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body]) extends SimplifiedAst.Declaration
+    case class Constraint(cparams: List[SimplifiedAst.ConstraintParam], head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body]) extends SimplifiedAst.Declaration
 
   }
 
@@ -520,6 +520,16 @@ object SimplifiedAst {
   case class Attribute(name: String, tpe: Type) extends SimplifiedAst
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends SimplifiedAst
+
+  sealed trait ConstraintParam
+
+  object ConstraintParam {
+
+    case class HeadParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.ConstraintParam
+
+    case class RuleParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.ConstraintParam
+
+  }
 
   case class FormalParam(sym: Symbol.VarSym, tpe: Type) extends SimplifiedAst
 

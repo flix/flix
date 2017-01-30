@@ -67,7 +67,12 @@ object Simplifier {
       def simplify(tast: TypedAst.Declaration.Constraint)(implicit genSym: GenSym): SimplifiedAst.Declaration.Constraint = {
         val head = Predicate.Head.simplify(tast.head)
         val body = tast.body.map(Predicate.Body.simplify)
-        SimplifiedAst.Declaration.Constraint(head, body)
+        val cparams = tast.cparams.map {
+          case TypedAst.ConstraintParam.HeadParam(sym, tpe, loc) => SimplifiedAst.ConstraintParam.HeadParam(sym, tpe, loc)
+          case TypedAst.ConstraintParam.RuleParam(sym, tpe, loc) => SimplifiedAst.ConstraintParam.RuleParam(sym, tpe, loc)
+        }
+
+        SimplifiedAst.Declaration.Constraint(cparams, head, body)
       }
     }
 

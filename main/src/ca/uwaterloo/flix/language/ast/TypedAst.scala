@@ -41,7 +41,7 @@ object TypedAst {
 
     case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends TypedAst.Declaration
 
-    case class Constraint(cparams: List[ConstraintParam], head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body], loc: SourceLocation) extends TypedAst.Declaration
+    case class Constraint(cparams: List[TypedAst.ConstraintParam], head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body], loc: SourceLocation) extends TypedAst.Declaration
 
     case class BoundedLattice(tpe: Type,
                               bot: TypedAst.Expression,

@@ -83,7 +83,8 @@ object ExecutableAst {
     case class Fact(head: ExecutableAst.Predicate.Head) extends ExecutableAst.Constraint
 
     // TODO: Re-organize these components.
-    case class Rule(head: ExecutableAst.Predicate.Head,
+    case class Rule(cparams: List[ExecutableAst.ConstraintParam],
+                    head: ExecutableAst.Predicate.Head,
                     body: List[ExecutableAst.Predicate.Body],
                     tables: List[ExecutableAst.Predicate.Body],
                     filters: List[ExecutableAst.Predicate.Body.ApplyFilter],
@@ -586,6 +587,16 @@ object ExecutableAst {
   case class Attribute(name: String, tpe: Type) extends ExecutableAst
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends ExecutableAst
+
+  sealed trait ConstraintParam
+
+  object ConstraintParam {
+
+    case class HeadParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.ConstraintParam
+
+    case class RuleParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.ConstraintParam
+
+  }
 
   case class FormalParam(sym: Symbol.VarSym, tpe: Type) extends ExecutableAst
 
