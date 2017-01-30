@@ -192,13 +192,14 @@ object Namer {
         // Constraints are non-polymorphic so the type environment is always empty.
         val tenv0 = Map.empty[String, Type.Var]
 
+        // Perform naming on the head and body predicates.
         @@(Predicates.namer(h, headEnv, ruleEnv, tenv0), @@(bs.map(b => Predicates.namer(b, headEnv, ruleEnv, tenv0)))) map {
           case (head, body) =>
             val headParams = headEnv.map {
-              case (_, sym) => NamedAst.ConstraintParam.HeadParam(sym, Type.freshTypeVar(), sym.loc)
+              case (_, sym) => NamedAst.ConstraintParam.HeadParam(sym, sym.tvar, sym.loc)
             }
             val ruleParam = ruleEnv.map {
-              case (_, sym) => NamedAst.ConstraintParam.RuleParam(sym, Type.freshTypeVar(), sym.loc)
+              case (_, sym) => NamedAst.ConstraintParam.RuleParam(sym, sym.tvar, sym.loc)
             }
             val cparams = (headParams ++ ruleParam).toList
             val constraint = NamedAst.Declaration.Constraint(cparams, head, body, loc)
