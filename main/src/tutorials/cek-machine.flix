@@ -49,17 +49,17 @@ type Environment = Environment(Map2[Variable, (Expression, Environment)])
 ///
 enum Kontinuation {
     // Represents the empty evaluation context (named `mt` in the paper).
-    case Empty,
+    case KEmpty,
 
     // Represents the evaluation context ([] e) with continuation κ
     // where the environment ρ closes the expression e.
     // NB: In the paper this constructor is named `ar`.
-    case App1(Expression, Environment, Kontinuation),
+    case KApp1(Expression, Environment, Kontinuation),
 
     // Represents the evaluation context (v []) with continuation κ
     // where the environment ρ closes the the value v.
     // NB: In the paper this constructor is named `fn`.
-    case App2(Expression, Environment, Kontinuation)
+    case KApp2(Expression, Environment, Kontinuation)
 }
 
 ///
@@ -71,7 +71,7 @@ type State = State(Expression, Environment, Kontinuation)
 /// Returns the initial state of the CEK-machine for the given expression `e0`.
 ///
 def inject(e0: Expression): State =
-    State(e0, Environment(Map2.empty()), Kontinuation.Empty)
+    State(e0, Environment(Map2.empty()), Kontinuation.KEmpty)
 
 ///
 /// Represents the outcome of a single reduction step.
@@ -108,21 +108,21 @@ def step(m0: State): Outcome = match m0 with {
     //
     case State(App(e1, e2), Environment(env0), kont) =>
         // Continue evaluation of `e1` and store `e2` in a kontinuation.
-        let k = App1(e2, Environment(env0), kont);
+        let k = KApp1(e2, Environment(env0), kont);
             Next(State(e1, Environment(env0), k))
 
     //
     // Application1 Kontinuation.
     //
-    case State(v1, Environment(env0), App1(e2, env2, kont)) if isValue(v1) =>
+    case State(v1, Environment(env0), KApp1(e2, env2, kont)) if isValue(v1) =>
         // Continue evaluation of `e2` and store `v1` in a kontinuation.
-        let k = App2(v1, Environment(env0), kont);
+        let k = KApp2(v1, Environment(env0), kont);
             Next(State(e2, env2, k))
 
     //
     // Application2 Kontinuation.
     //
-    case State(v2, Environment(env0), App2(v1, Environment(env1), kont)) if isValue(v2) =>
+    case State(v2, Environment(env0), KApp2(v1, Environment(env1), kont)) if isValue(v2) =>
         // Evaluate the body of the lambda `v1` with argument `v2`.
         let Abs(x, body) = v1;
         let env2 = Map2.insert(x, (v2, Environment(env0)), env1);

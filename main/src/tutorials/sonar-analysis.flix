@@ -1,3 +1,6 @@
+// TODO: Add these and other machines to unit tests. Requires Set PR to be merged in.
+// TODO: Consider whether to include a closure expression.
+
 //
 // Abstract Interpreter for the lambda calculus extended with references, sequencing, and promises.
 //
@@ -15,6 +18,7 @@ type Address = A(Int)
 ///
 /// The expressions of the lambda calculus are: variables, lambda abstractions, and applications.
 ///
+// TODO: Add source locations
 enum Expression {
     // A variable expression.
     case Var(Variable),
@@ -98,20 +102,19 @@ enum Storable {
     case StoredValue(Expression, Environment)
 }
 
-// TODO: Introduce: Introduce Value as the pair of an expression closed by an environment?
-
 ///
 /// A store is a map from addresses to a set of storables.
 ///
 type Store = Store(Map2[Address, Set2[Storable]])
 
 ///
-/// The CEK-machine operates based on continuations derived
-//  from the evaluation contexts of the language.
+/// The CEK-machine operates based on continuations derived from the evaluation contexts of the language.
+///
+/// NB: The last Address component is the contination pointer.
 ///
 enum Kontinuation {
     // A continuation that represents the empty evaluation context.
-    case Empty,
+    case KEmpty,
 
     // A continuation that represents the `[] e` context where the expression `e` is closed by the environment.
     case KApp1(Expression, Environment, Address),
@@ -134,27 +137,25 @@ enum Kontinuation {
     // A continuation that represents the `[].resolve(e)` context where the expression `e` is closed by the environment.
     case KResolve1(Expression, Environment, Address),
 
-    // A continuation that represents the `v.resolve([])` context where the value `e` is closed by the environment.
-    case KResolve2(Expression, Environment, Address),
+    // A continuation that represents the `a.resolve([])` context.
+    case KResolve2(Address, Address),
 
     // NB: KReject1 and KReject2 are conceptually similar to KResolve1 and KResolve2.
 
     // A continuation that represents the `[].onResolve(e)` context where the expression `e` is closed by the environment.
     case KOnResolve1(Expression, Environment, Address),
 
-    // A continuation that represents the `v.onResolve([])` context where the value `e` is closed by the environment.
-    case KOnResolve2(Expression, Environment, Address), // TODO: This does not require an environment, since it must be a pointer...
+    // A continuation that represents the `a.onResolve([])` context.
+    case KOnResolve2(Address, Address),
 
     // NB: KOnReject1 and KOnReject2 are conceptually similar to KOnResolve1 and KOnResolve2.
 
     // A continuation that represents the `[].link(e)` context where the expression `e` is closed by the environment.
     case KLink1(Expression, Environment, Address),
 
-    // A continuation that represents the `v.link([])` context where the value `e` is closed by the environment.
-    case KLink2(Expression, Environment, Address)
+    // A continuation that represents the `a.link([])` context.
+    case KLink2(Address, Address)
 }
-// TODO: Rename these constructors in other machines, e.g. cek,cesk
-// TODO: Add these and other machines to unit tests.
 
 ///
 /// The promise state maps addresses to a set of promise values.
@@ -162,37 +163,42 @@ enum Kontinuation {
 type PromiseState = PromiseState(Map2[Address, Set2[PromiseValue]])
 
 ///
-/// The fulfill reactions map addresses to a list of (Lam, Address)-pairs where the address points-to the child promise.
+/// The fulfill reactions map addresses to a set of (Lambda, Environment, Address)-triples where the address points-to the child promise.
 ///
-type FulfillReactions = FulfillReactions(Map2[Address, Set2[(Expression, Environment, Address)]]) // TODO: Should this be a set? // TODO: Does expression need to be paired with an environment?
+type FulfillReactions = FulfillReactions(Map2[Address, Set2[(Expression, Environment, Address)]])
 
 ///
-/// The reject reactions map addresses to a list of (Lam, Address)-pairs where the address points-to the child promise.
+/// The reject reactions map addresses to a set of (Lambda, Environment, Address)-triples where the address points-to the child promise.
 ///
-type RejectReactions = RejectReactions(Map2[Address, List[(Expression, Address)]]) // TODO: Should this be a set? // TODO: Does expression need to be paired with an environment?
+type RejectReactions = RejectReactions(Map2[Address, Set2[(Expression, Address)]])
 
 ///
-/// The promise links map addresses to a list of child promise addresses.
+/// The promise links map addresses to a set of child promise addresses.
 ///
-type PromiseLinks = PromiseLinks(Map2[Address, Set2[Address]]) // TODO: Should this be a set?
+type PromiseLinks = PromiseLinks(Map2[Address, Set2[Address]])
 
 ///
-/// The link queue is a list of (PromiseValue, Address)-pairs where the address points-to the linked promise.
+/// The link queue is a set of (PromiseValue, Address)-pairs where the address points-to the linked promise.
 ///
-type LinkQueue = LinkQueue(Set2[(PromiseValue, Address)]) // TODO: Should this be a set?
+type LinkQueue = LinkQueue(Set2[(PromiseValue, Address)])
 
 ///
-/// The reaction queue is a set of (PromiseValue, Lam, Environment, Address)-tuples where the address points to the child promise.
+/// The reaction queue is a set of (PromiseValue, Lambda, Environment, Address)-tuples where the address points to the child promise.
 ///
-type ReactionQueue = ReactionQueue(Set2[(PromiseValue, Expression, Environment, Address)]) // TODO: Should this be a set? // TODO: Does expression need to be paired with an environment?
+type ReactionQueue = ReactionQueue(Set2[(PromiseValue, Expression, Environment, Address)])
 
 ///
 /// A promise is in one of three states: Pending, fulfilled (with a value), or rejected (with a value).
 ///
 enum PromiseValue {
+    // The promise is pending.
     case Pending,
-    case Fulfilled(Expression), // TODO: Need environment to close the expression?
-    case Rejected(Expression)   // TODO: Need environment to close the expression?
+
+    // The promise has been fulfilled with a value. NB: We assume the value is not a lambda, hence the lack of an environment.
+    case Fulfilled(Expression),
+
+    // The promise has been rejected with a value. NB: We assume the value is not a lambda, hence the lack of an environment.
+    case Rejected(Expression)
 }
 
 ///
@@ -207,12 +213,15 @@ type Time = Time(Int)
 ///
 type State = State(Expression, Environment, Store, PromiseState, FulfillReactions, RejectReactions, PromiseLinks, LinkQueue, ReactionQueue, Address, Time)
 
+
+// TODO: Implemente equality on state.
+
 ///
 /// Returns the initial state of the CEK-machine for the given expression `e0`.
 ///
 def inject(e0: Expression): State =
     // Save the empty continuation into the store.
-    let kont = Kontinuation.Empty;
+    let kont = Kontinuation.KEmpty;
     let kptr = A(0);
     let env0 = Map2.empty();
     let sto0 = Map2.insert(kptr, Set2.singleton(StoredKont(kont)), Map2.empty());
@@ -257,6 +266,10 @@ enum Outcome {
 /// Returns all possible transitions (outcomes) from the given state `m0` and continuation `k0`.
 ///
 // TODO: Rename Store to Heap and h0.
+
+    // TODO: Many of these cases seem to use kptr incorrectly? Check up on that.
+    // Essentially kptr should only be used when there is not a specific kontinuation in play.
+
 def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
 
     //
@@ -428,17 +441,17 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     //  Resolve1 Kontinuation.
     //
-    case (State(e1, env0, sto0, s0, f0, r0, l0, w0, q0, _, time), KResolve1(e2, env2, kont)) if isValue(e1) =>
+    case (State(Ptr(a), env0, sto0, s0, f0, r0, l0, w0, q0, _, time), KResolve1(e2, env2, kont)) =>
         // Allocate the `KResolve2` continuation in the store.
-        let a = alloc(m0, k0);
-        let k = StoredKont(KResolve2(e1, env0, kont));
-        let sto1 = Store.weakUpdate(a, k, sto0);
+        let kontAddr = alloc(m0, k0);
+        let nextKont = StoredKont(KResolve2(a, kont));
+        let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
             Set2.singleton(Next(State(e2, env2, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
 
     //
     //  Resolve2 Kontinuation.
     //
-    case (State(e2, env2, sto0, s0, f0, r0, l0, w0, q0, _, time), KResolve2(Ptr(a), env1, kont)) if isValue(e2) =>
+    case (State(e2, env2, sto0, s0, f0, r0, l0, w0, q0, _, time), KResolve2(a, kont)) if isValue(e2) =>
         let f: PromiseValue -> Set2[Outcome] = pv -> match pv with {
             case Pending =>
                 // The new promise value.
@@ -478,9 +491,6 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         Set2.flatMap(f, PromiseState.lookup(a, s0))
 
 
-    // TODO: Many of these cases seem to use kptr incorrectly? Check up on that.
-    // Essentially kptr should only be used when there is not a specific kontinuation in play.
-
     //
     //  OnResolve Expression.
     //
@@ -494,17 +504,17 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     //  OnResolve1 Kontinuation.
     //
-    case (State(e1, env0, sto0, s0, f0, r0, l0, w0, q0, _, time), KOnResolve1(e2, env2, kont)) if isValue(e1) =>
+    case (State(Ptr(a), env0, sto0, s0, f0, r0, l0, w0, q0, _, time), KOnResolve1(e2, env2, kont)) =>
         // Allocate the `KOnResolve2` continuation in the store.
-        let a = alloc(m0, k0);
-        let k = StoredKont(KOnResolve2(e1, env0, kont));
-        let sto1 = Store.weakUpdate(a, k, sto0);
+        let kontAddr = alloc(m0, k0);
+        let nextKont = StoredKont(KOnResolve2(a, kont));
+        let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
             Set2.singleton(Next(State(e2, env2, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
 
     //
     //  OnResolve2 Kontinuation.
     //
-    case (State(e2, env2, sto0, s0, f0, r0, l0, w0, ReactionQueue(q0), _, time), KOnResolve2(Ptr(a), env1, kont)) if isValue(e2) => // TODO: Enforce that e2 is a lambda?
+    case (State(e2, env2, sto0, s0, f0, r0, l0, w0, ReactionQueue(q0), _, time), KOnResolve2(a, kont)) if isValue(e2) => // TODO: Enforce that e2 is a lambda?
         let f: PromiseValue -> Set2[Outcome] = pv -> match pv with {
             case Pending =>
                 // Allocate a child promise.
@@ -529,7 +539,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
                 let q1 = Set2.insert(job, q0);
                     Set2.singleton(Next(State(Ptr(childAddr), Environment(Map2.empty()), sto0, s0, f0, r0, l0, w0, ReactionQueue(q1), kont, tick(m0, k0))))
             case Rejected(v) =>
-                // TODO: Conceptually similar to fulfilled.
+                // NB: Conceptually similar to fulfilled.
                 ???
         };
         Set2.flatMap(f, PromiseState.lookup(a, s0))
@@ -547,17 +557,17 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     //  Link1 Kontinuation.
     //
-    case (State(e1, env0, sto0, s0, f0, r0, l0, w0, q0, _, time), KLink1(e2, env2, kont)) if isValue(e1) =>
+    case (State(Ptr(a), env0, sto0, s0, f0, r0, l0, w0, q0, _, time), KLink1(e2, env2, kont)) =>
         // Allocate the `KLink2` continuation in the store.
-        let a = alloc(m0, k0);
-        let k = StoredKont(KLink2(e1, env0, kont));
-        let sto1 = Store.weakUpdate(a, k, sto0);
+        let kontAddr = alloc(m0, k0);
+        let nextKont = StoredKont(KLink2(a, kont));
+        let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
             Set2.singleton(Next(State(e2, env2, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
 
     //
     //  Link2 Kontinuation.
     //
-    case (State(Ptr(a2), env2, sto0, s0, f0, r0, l0, w0, q0, kptr, time), KLink2(Ptr(a1), env1, kont)) => // TODO: env1 and env2 unused
+    case (State(Ptr(a2), _, sto0, s0, f0, r0, l0, w0, q0, kptr, time), KLink2(a1, kont)) => // TODO: env1 and env2 unused
         let l1 = PromiseLinks.weakUpdate(a1, a2, l0);
             // TODO: Keep the environment
             Set2.singleton(Next(State(Cst("Undef"), Environment(Map2.empty()), sto0, s0, f0, r0, l1, w0, q0, kont, tick(m0, k0))))
@@ -619,6 +629,163 @@ def eval(m0: State): Set2[Outcome] =
 ///
 def run(e0: Expression): Set2[Outcome] = eval(inject(e0))
 
+// TODO: Build promise graph.
+
+///
+/// The edges of the promise graph.
+///
+enum Edge {
+
+    case LinkEdge
+
+}
+
+///
+/// TODO: DOC
+///
+def build(s: Set2[State]): Set2[Edge] = ???
+
+
+namespace Store {
+
+    ///
+    /// Returns the set of storable values pointed-to by the (abstract) address `a`.
+    ///
+    def lookup(a: Address, sto: Store): Set2[Storable] =
+        let Store(m) = sto;
+            Option.getWithDefault(Map2.lookup(a, m), Set2.empty())
+
+    ///
+    /// Weakly updates the store `sto` with the storable value `v` associated with the (abstract) address `a`.
+    ///
+    def weakUpdate(a: Address, v: Storable, sto: Store): Store =
+        let Store(sto0) = sto;
+        let newValue = v;
+        let oldValue = Option.getWithDefault(Map2.lookup(a, sto0), Set2.empty());
+        let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
+            Store(Map2.insert(a, lubValue, sto0))
+
+}
+
+
+namespace PromiseState {
+
+    ///
+    /// Returns the set of promise values for the given (abstract) address `a`.
+    ///
+    def lookup(a: Address, s: PromiseState): Set2[PromiseValue] =
+        let PromiseState(m) = s;
+            Option.getWithDefault(Map2.lookup(a, m), Set2.empty())
+
+    ///
+    /// Weakly updates the promise states `s` with the promise value `v` for the (abstract) address `a`.
+    ///
+    def weakUpdate(a: Address, v: PromiseValue, s: PromiseState): PromiseState =
+        let PromiseState(m) = s;
+        let newValue = v;
+        let oldValue = Option.getWithDefault(Map2.lookup(a, m), Set2.empty());
+        let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
+            PromiseState(Map2.insert(a, lubValue, m))
+
+}
+
+namespace FulfillReactions {
+
+    ///
+    /// Returns the (lambda, environment, childAddr)-triples associated with the given (abstract) address `a`.
+    ///
+    def lookup(a: Address, f: FulfillReactions): Set2[(Expression, Environment, Address)] =
+        let FulfillReactions(m) = f;
+            Option.getWithDefault(Map2.lookup(a, m), Set2.empty())
+
+    ///
+    /// Weaky updates the fulfillreactions `r` with the (lambda, environment, childAddr)-triple for the given (abstract) address `a`.
+    ///
+    def weakUpdate(a: Address, lam: Expression, env: Environment, childAddr: Address, r: FulfillReactions): FulfillReactions =
+        let FulfillReactions(m) = r;
+        let newValue = (lam, env, childAddr);
+        let oldValue = Option.getWithDefault(Map2.lookup(a, m), Set2.empty());
+        let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
+            FulfillReactions(Map2.insert(a, lubValue, m))
+
+}
+
+namespace PromiseLinks {
+
+    ///
+    /// Returns the set of promise links associated with the given (abstract) address `a`.
+    ///
+    def lookup(a: Address, l: PromiseLinks): Set2[Address] =
+        let PromiseLinks(m) = l;
+            Option.getWithDefault(Map2.lookup(a, m), Set2.empty())
+
+    ///
+    /// Weakly updates the promise links `l` linking the (abstract) address `a1` to the (abstract) address `a2`.
+    ///
+    def weakUpdate(a1: Address, a2: Address, l: PromiseLinks): PromiseLinks =
+        let PromiseLinks(m) = l;
+        let newValue = Set2.singleton(a2);
+        let oldValue = Option.getWithDefault(Map2.lookup(a1, m), Set2.empty());
+        let lubValue = Set2.union(newValue, oldValue);
+            PromiseLinks(Map2.insert(a1, lubValue, m))
+
+}
+
+namespace LinkQueue {
+
+    ///
+    /// Returns `true` if the link queue `w` is non empty.
+    ///
+    def nonEmpty(w: LinkQueue): Bool = match w with {
+        case LinkQueue(Set2(Nil)) => false
+        case _                    => true
+    }
+
+    ///
+    /// Applies the given function `f` to all (promiseValue, promiseAddress)-pairs in the link queue `w`.
+    ///
+    def map(f: ((PromiseValue, Address)) -> Outcome, w: LinkQueue): Set2[Outcome] =
+        let LinkQueue(xs) = w;
+            Set2.map(f, xs)
+
+    ///
+    /// Weakly updates the link queue `w` with the given (promiseValue, promiseAddress)-pair.
+    ///
+    def weakUpdate(ls: Set2[(PromiseValue, Address)], w: LinkQueue): LinkQueue =
+        let LinkQueue(w0) = w;
+            LinkQueue(Set2.union(w0, ls))
+
+    // TODO: Unsound, remove.
+    def strongDelete(pv: PromiseValue, a: Address, w: LinkQueue): LinkQueue =
+        let LinkQueue(Set2(xs)) = w;
+            LinkQueue(Set2(List.remove((pv, a), xs)))
+
+}
+
+namespace ReactionQueue {
+
+    ///
+    /// Applies the given function `f` to the set (PromiseValue, Lambda, Environment, childAddress)-tuples in the reaction queue `q`.
+    ///
+    def map(f: ((PromiseValue, Expression, Environment, Address)) -> Outcome, q: ReactionQueue): Set2[Outcome] =
+        let ReactionQueue(xs) = q;
+            Set2.map(f, xs)
+
+    ///
+    /// Weakly updates the reaction queue `q` with the given (PromiseValue, Lambda, Environment, childAddress)-tuple.
+    ///
+    def weakUpdate(rs: Set2[(PromiseValue, Expression, Environment, Address)], q: ReactionQueue): ReactionQueue =
+        let ReactionQueue(xs) = q;
+            ReactionQueue(Set2.union(rs, xs))
+
+    // TODO: Unsound, remove.
+    def strongDelete(pv: PromiseValue, e: Expression, env: Environment, a: Address, q: ReactionQueue): ReactionQueue =
+        let ReactionQueue(Set2(xs)) = q;
+            ReactionQueue(Set2(List.remove((pv, e, env, a), xs)))
+
+}
+
+
 //
 // Example 1:
 //
@@ -663,109 +830,9 @@ def testEval2: Set2[Outcome] = eval(inject(
         Ref(Cst("Promise1"))), Ref(Cst("Promise2")))))
 
 
-// TODO: Cleanup
-// TODO: Order
-
-namespace PromiseState {
-
-    // TODO: Cleanup
-    def lookup(a: Address, s: PromiseState): Set2[PromiseValue] =
-        let PromiseState(m) = s;
-            Option.getWithDefault(Map2.lookup(a, m), Set2.empty())
-
-    // TODO: Cleanup
-    def weakUpdate(a: Address, v: PromiseValue, s: PromiseState): PromiseState =
-        let PromiseState(m) = s;
-        let newValue = v;
-        let oldValue = Option.getWithDefault(Map2.lookup(a, m), Set2.empty());
-        let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
-            PromiseState(Map2.insert(a, lubValue, m))
-
-}
-
-namespace FulfillReactions {
-
-    def lookup(a: Address, f: FulfillReactions): Set2[(Expression, Environment, Address)] =
-        let FulfillReactions(m) = f;
-            Option.getWithDefault(Map2.lookup(a, m), Set2.empty())
-
-    def weakUpdate(a: Address, lam: Expression, env: Environment, childAddr: Address, r: FulfillReactions): FulfillReactions =
-        let FulfillReactions(m) = r;
-        let newValue = (lam, env, childAddr);
-        let oldValue = Option.getWithDefault(Map2.lookup(a, m), Set2.empty());
-        let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
-            FulfillReactions(Map2.insert(a, lubValue, m))
 
 
-}
 
-namespace PromiseLinks {
-
-    def lookup(a: Address, l: PromiseLinks): Set2[Address] =
-        let PromiseLinks(m) = l;
-            Option.getWithDefault(Map2.lookup(a, m), Set2.empty())
-
-    def weakUpdate(a1: Address, a2: Address, l: PromiseLinks): PromiseLinks =
-        let PromiseLinks(m) = l;
-        let newValue = Set2.singleton(a2);
-        let oldValue = Option.getWithDefault(Map2.lookup(a1, m), Set2.empty());
-        let lubValue = Set2.union(newValue, oldValue);
-            PromiseLinks(Map2.insert(a1, lubValue, m))
-
-}
-
-namespace Store {
-
-    // TODO: Cleanup
-    def lookup(a: Address, sto: Store): Set2[Storable] =
-        let Store(sto0) = sto;
-            Option.getWithDefault(Map2.lookup(a, sto0), Set2.empty())
-
-    // TODO: Cleanup
-    def weakUpdate(a: Address, newValue: Storable, sto: Store): Store =
-        let Store(sto0) = sto;
-        let oldValue = Option.getWithDefault(Map2.lookup(a, sto0), Set2.empty());
-        let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
-            Store(Map2.insert(a, lubValue, sto0))
-
-}
-
-namespace LinkQueue {
-
-    def nonEmpty(w: LinkQueue): Bool = match w with {
-        case LinkQueue(Set2(Nil)) => false
-        case _                    => true
-    }
-
-    def map(f: ((PromiseValue, Address)) -> Outcome, q: LinkQueue): Set2[Outcome] =
-        let LinkQueue(xs) = q;
-            Set2.map(f, xs)
-
-        def weakUpdate(ls: Set2[(PromiseValue, Address)], w: LinkQueue): LinkQueue =
-            let LinkQueue(w0) = w;
-                LinkQueue(Set2.union(w0, ls))
-
-    def strongDelete(pv: PromiseValue, a: Address, w: LinkQueue): LinkQueue =
-        let LinkQueue(Set2(xs)) = w;
-            LinkQueue(Set2(List.remove((pv, a), xs)))
-
-}
-
-namespace ReactionQueue {
-
-    def map(f: ((PromiseValue, Expression, Environment, Address)) -> Outcome, q: ReactionQueue): Set2[Outcome] =
-        let ReactionQueue(xs) = q;
-            Set2.map(f, xs)
-
-    def strongDelete(pv: PromiseValue, e: Expression, env: Environment, a: Address, q: ReactionQueue): ReactionQueue =
-        let ReactionQueue(Set2(xs)) = q;
-            ReactionQueue(Set2(List.remove((pv, e, env, a), xs)))
-
-    def weakUpdate(rs: Set2[(PromiseValue, Expression, Environment, Address)], q: ReactionQueue): ReactionQueue =
-        let ReactionQueue(xs) = q;
-            ReactionQueue(Set2.union(rs, xs))
-
-}
 
 
 //
@@ -843,18 +910,5 @@ namespace Map2 {
         case Nil => Nil
         case (y, v) :: ys => if (k == y) removeHelper(k,  ys) else (y, v) :: removeHelper(k, ys)
     }
-
-}
-
-
-// TODO: need/want?
-
-enum MultiMap[k, v] {
-    case MultiMap(List[(k, Set[v])])
-}
-
-namespace MultiMap {
-
-    def empty[k, v]: MultiMap[k, v] = MultiMap(Nil)
 
 }

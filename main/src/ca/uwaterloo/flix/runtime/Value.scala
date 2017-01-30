@@ -459,6 +459,8 @@ object Value {
           s"${o.tag}(${pretty(o.value)})"
         }
       }
+    case o: Array[AnyRef] =>
+      "(" + o.toList.map(pretty).mkString(", ") + ")"
     case _ => ref.toString
   }
 

@@ -70,26 +70,23 @@ type Store = Store(Map2[Address, Set2[Storable]])
 ///
 enum Kontinuation {
     // Represents the empty evaluation context (named `mt` in the paper).
-    case Empty,
+    case KEmpty,
 
     // Represents the evaluation context ([] e) with continuation κ
     // where the environment ρ closes the expression e.
     // NB: In the paper this constructor is named `ar`.
-    case App1(Expression, Environment, Address),
+    case KApp1(Expression, Environment, Address),
 
     // Represents the evaluation context (v []) with continuation κ
     // where the environment ρ closes the the value v.
     // NB: In the paper this constructor is named `fn`.
-    case App2(Expression, Environment, Address)
+    case KApp2(Expression, Environment, Address)
 }
 
 ///
 /// The timestamp associated with a machine configuration.
 ///
 type Time = Time(Int)
-// TODO: Instantiate with k-cfa like in the paper.
-
-
 
 ///
 /// A machine state configuration.
@@ -98,12 +95,14 @@ type Time = Time(Int)
 ///
 type State = State(Expression, Environment, Store, Address, Time)
 
+// TODO: Implement equality.
+
 ///
 /// Returns the initial state of the CEK-machine for the given expression `e0`.
 ///
 def inject(e0: Expression): State =
     // Save the empty continuation into the store.
-    let kont = Kontinuation.Empty;
+    let kont = Kontinuation.KEmpty;
     let kptr = A(0);
     let env0 = Map2.empty();
     let sto0 = Map2.insert(kptr, Set2.singleton(StoredKont(kont)), Map2.empty());
@@ -164,7 +163,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     case (State(App(e1, e2), Environment(env0), Store(sto0), kptr, time), _) =>
         // Continue evaluation of `e1` and store `e2` in a continuation.
-        let k = App1(e2, Environment(env0), kptr);
+        let k = KApp1(e2, Environment(env0), kptr);
         // Generate a fresh address where to store the continuation.
         let a = alloc(m0, k0);
         // Store the continuation.
@@ -177,9 +176,9 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     // Application1 Kontinuation.
     //
-    case (State(v1, Environment(env0), Store(sto0), _, time), App1(e2, env2, kont)) if isValue(v1) =>
+    case (State(v1, Environment(env0), Store(sto0), _, time), KApp1(e2, env2, kont)) if isValue(v1) =>
         // Continue evaluation of `e2` and store `v1` in a continuation.
-        let k = App2(v1, Environment(env0), kont);
+        let k = KApp2(v1, Environment(env0), kont);
         // Generate a fresh address where to store the continuation.
         let a = alloc(m0, k0);
         // Store the continuation.
@@ -192,7 +191,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     // Application2 Kontinuation.
     //
-    case (State(v2, Environment(env0), Store(sto0), _, time), App2(v1, Environment(env1), kont)) if isValue(v2) =>
+    case (State(v2, Environment(env0), Store(sto0), _, time), KApp2(v1, Environment(env1), kont)) if isValue(v2) =>
         // Evaluate the body of the lambda `v1` with argument `v2`.
         let Abs(x, body) = v1;
         let a = alloc(m0, k0);
@@ -358,18 +357,5 @@ namespace Map2 {
         case Nil => Nil
         case (y, v) :: ys => if (k == y) removeHelper(k,  ys) else (y, v) :: removeHelper(k, ys)
     }
-
-}
-
-
-// TODO: need/want?
-
-enum MultiMap[k, v] {
-    case MultiMap(List[(k, Set[v])])
-}
-
-namespace MultiMap {
-
-    def empty[k, v]: MultiMap[k, v] = MultiMap(Nil)
 
 }
