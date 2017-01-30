@@ -60,39 +60,50 @@ object Typer {
 
     object Constraints {
 
-      // TODO: Add documentation.
-      // TODO: Ensure that quantified variables are given consistent types.
+      /**
+        * Performs type inference and reassembly on all constraints in the given program.
+        *
+        * Returns [[Err]] if a constraint fails to type check.
+        */
       def typecheck(program: Program)(implicit genSym: GenSym): Result[List[TypedAst.Declaration.Constraint], TypeError] = {
-        val constraints = program.constraints.flatMap {
-          case (ns, cs) => cs map {
-            case NamedAst.Declaration.Constraint(cparams0, head0, body0, loc) =>
-              Predicates.infer(head0, ns, program) match {
-                case InferMonad(run1) =>
-                  run1(Substitution.empty) map {
-                    case (subst, _) =>
-                      val head = Predicates.reassemble(head0, ns, program, subst)
-                      val body = body0.map {
-                        case b => Predicates.infer(b, ns, program) match {
-                          case InferMonad(run2) =>
-                            val (subst2, _) = run2(Substitution.empty).get
-                            Predicates.reassemble(b, ns, program, subst2)
-                        }
-                      }
 
-                      val cparams = cparams0.map {
-                        case NamedAst.ConstraintParam.HeadParam(sym, tpe, loc) =>
-                          TypedAst.ConstraintParam.HeadParam(sym, subst(tpe), loc)
-                        case NamedAst.ConstraintParam.RuleParam(sym, tpe, loc) =>
-                          TypedAst.ConstraintParam.RuleParam(sym, subst(tpe), loc)
+        /**
+          * Performs type inference on the given constraint `c` in the give namespace `ns`.
+          */
+        def visitConstraint(c: NamedAst.Declaration.Constraint, ns: Name.NName): Result[TypedAst.Declaration.Constraint, TypeError] = c match {
+          case NamedAst.Declaration.Constraint(cparams0, head0, body0, loc) =>
+            Predicates.infer(head0, ns, program) match {
+              case InferMonad(run1) =>
+                run1(Substitution.empty) map {
+                  case (subst, _) =>
+                    val head = Predicates.reassemble(head0, ns, program, subst)
+                    val body = body0.map {
+                      case b => Predicates.infer(b, ns, program) match {
+                        case InferMonad(run2) =>
+                          val (subst2, _) = run2(Substitution.empty).get
+                          Predicates.reassemble(b, ns, program, subst2)
                       }
+                    }
 
-                      TypedAst.Declaration.Constraint(cparams, head, body, loc)
-                  }
-              }
-          }
+                    val cparams = cparams0.map {
+                      case NamedAst.ConstraintParam.HeadParam(sym, tpe, loc) =>
+                        TypedAst.ConstraintParam.HeadParam(sym, subst(tpe), loc)
+                      case NamedAst.ConstraintParam.RuleParam(sym, tpe, loc) =>
+                        TypedAst.ConstraintParam.RuleParam(sym, subst(tpe), loc)
+                    }
+
+                    TypedAst.Declaration.Constraint(cparams, head, body, loc)
+                }
+            }
         }
 
-        Result.seqM(constraints.toList)
+        // Visit every constraint in the program.
+        val result = program.constraints.toList.flatMap {
+          case (ns, cs) => cs.map(c => visitConstraint(c, ns))
+        }
+
+        // Sequence the results.
+        Result.seqM(result)
       }
 
     }
