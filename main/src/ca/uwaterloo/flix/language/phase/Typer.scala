@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
+import ca.uwaterloo.flix.language.ast.WeededAst.Pattern
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
 import ca.uwaterloo.flix.language.phase.Disambiguation.RefTarget
@@ -633,7 +634,7 @@ object Typer {
 
           for {
             matchType <- visitExp(exp1)
-            patternTypes <- seqM(patterns map visitPat)
+            patternTypes <- Patterns.inferAll(patterns, ns0, program)
             patternType <- unifyM(patternTypes, loc)
             ___________ <- unifyM(matchType, patternType, loc)
             guardTypes <- seqM(guards map visitExp)
@@ -741,64 +742,6 @@ object Typer {
 
       }
 
-      /**
-        * Infers the type of the given pattern `pat0`.
-        */
-      def visitPat(pat0: NamedAst.Pattern): InferMonad[Type] = pat0 match {
-        case NamedAst.Pattern.Wild(tvar, loc) => liftM(tvar)
-        case NamedAst.Pattern.Var(sym, tvar, loc) => unifyM(sym.tvar, tvar, loc)
-        case NamedAst.Pattern.Unit(loc) => liftM(Type.Unit)
-        case NamedAst.Pattern.True(loc) => liftM(Type.Bool)
-        case NamedAst.Pattern.False(loc) => liftM(Type.Bool)
-        case NamedAst.Pattern.Char(c, loc) => liftM(Type.Char)
-        case NamedAst.Pattern.Float32(i, loc) => liftM(Type.Float32)
-        case NamedAst.Pattern.Float64(i, loc) => liftM(Type.Float64)
-        case NamedAst.Pattern.Int8(i, loc) => liftM(Type.Int8)
-        case NamedAst.Pattern.Int16(i, loc) => liftM(Type.Int16)
-        case NamedAst.Pattern.Int32(i, loc) => liftM(Type.Int32)
-        case NamedAst.Pattern.Int64(i, loc) => liftM(Type.Int64)
-        case NamedAst.Pattern.BigInt(i, loc) => liftM(Type.BigInt)
-        case NamedAst.Pattern.Str(s, loc) => liftM(Type.Str)
-        case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
-          Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
-            case Ok(decl) =>
-              // Generate a fresh type variable for each type parameters.
-              val subst = Substitution(decl.tparams.map {
-                case param => param.tpe -> Type.freshTypeVar()
-              }.toMap)
-
-              // Resolve the enum type.
-              Disambiguation.resolve(decl.tpe, ns0, program) match {
-                case Ok(enumType) =>
-                  // Substitute the fresh type variables into the enum type.
-                  val freshEnumType = subst(enumType)
-                  // Resolve the case type.
-                  Disambiguation.resolve(decl.cases(tag.name).tpe, ns0, program) match {
-                    case Ok(caseType) =>
-                      // Substitute the fresh type variables into the case type.
-                      val freshCaseType = subst(caseType)
-                      for (
-                        innerType <- visitPat(pat);
-                        _________ <- unifyM(innerType, freshCaseType, loc);
-                        resultType <- unifyM(tvar, freshEnumType, loc)
-                      ) yield resultType
-                    case Err(e) => failM(e)
-                  }
-                case Err(e) => failM(e)
-              }
-            case Err(e) => failM(e)
-          }
-        case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
-          for (
-            elementTypes <- seqM(elms map visitPat);
-            resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
-          ) yield resultType
-
-        case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => ??? // TODO: FSet
-
-        case NamedAst.Pattern.FMap(elms, rest, tvar, loc) => ??? // TODO: FMap
-      }
-
       visitExp(exp0)
     }
 
@@ -903,7 +846,10 @@ object Typer {
           val e1 = visitExp(exp1, subst0)
           val rs = rules map {
             case NamedAst.MatchRule(pat, guard, exp) =>
-              TypedAst.MatchRule(visitPat(pat), visitExp(guard, subst0), visitExp(exp, subst0))
+              val p = Patterns.reassemble(pat, ns0, program, subst0)
+              val g = visitExp(guard, subst0)
+              val b = visitExp(exp, subst0)
+              TypedAst.MatchRule(p, g, b)
           }
           TypedAst.Expression.Match(e1, rs, subst0(tvar), loc)
 
@@ -963,9 +909,101 @@ object Typer {
       }
 
       /**
-        * Applies the substitution to the given pattern `pat0`.
+        * Applies the substitution to the given list of formal parameters.
         */
-      def visitPat(pat0: NamedAst.Pattern): TypedAst.Pattern = pat0 match {
+      def visitParam(param: NamedAst.FormalParam): TypedAst.FormalParam = {
+        Disambiguation.resolve(param.tpe, ns0, program) match {
+          case Ok(resolvedType) => TypedAst.FormalParam(param.sym, subst0(resolvedType), param.loc)
+          case Err(_) => throw InternalCompilerException("Never happens. Resolution should have failed during type inference.")
+        }
+      }
+
+      visitExp(exp0, subst0)
+    }
+  }
+
+  object Patterns {
+
+    /**
+      * Infers the type of the given pattern `pat0` in the namespace `ns0`.
+      */
+    def infer(pat0: NamedAst.Pattern, ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[Type] = {
+      /**
+        * Local pattern visitor.
+        */
+      def visit(p: NamedAst.Pattern): InferMonad[Type] = p match {
+        case NamedAst.Pattern.Wild(tvar, loc) => liftM(tvar)
+        case NamedAst.Pattern.Var(sym, tvar, loc) => unifyM(sym.tvar, tvar, loc)
+        case NamedAst.Pattern.Unit(loc) => liftM(Type.Unit)
+        case NamedAst.Pattern.True(loc) => liftM(Type.Bool)
+        case NamedAst.Pattern.False(loc) => liftM(Type.Bool)
+        case NamedAst.Pattern.Char(c, loc) => liftM(Type.Char)
+        case NamedAst.Pattern.Float32(i, loc) => liftM(Type.Float32)
+        case NamedAst.Pattern.Float64(i, loc) => liftM(Type.Float64)
+        case NamedAst.Pattern.Int8(i, loc) => liftM(Type.Int8)
+        case NamedAst.Pattern.Int16(i, loc) => liftM(Type.Int16)
+        case NamedAst.Pattern.Int32(i, loc) => liftM(Type.Int32)
+        case NamedAst.Pattern.Int64(i, loc) => liftM(Type.Int64)
+        case NamedAst.Pattern.BigInt(i, loc) => liftM(Type.BigInt)
+        case NamedAst.Pattern.Str(s, loc) => liftM(Type.Str)
+        case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
+          Disambiguation.lookupEnumByTag(enum, tag, ns0, program) match {
+            case Ok(decl) =>
+              // Generate a fresh type variable for each type parameters.
+              val subst = Substitution(decl.tparams.map {
+                case param => param.tpe -> Type.freshTypeVar()
+              }.toMap)
+
+              // Resolve the enum type.
+              Disambiguation.resolve(decl.tpe, ns0, program) match {
+                case Ok(enumType) =>
+                  // Substitute the fresh type variables into the enum type.
+                  val freshEnumType = subst(enumType)
+                  // Resolve the case type.
+                  Disambiguation.resolve(decl.cases(tag.name).tpe, ns0, program) match {
+                    case Ok(caseType) =>
+                      // Substitute the fresh type variables into the case type.
+                      val freshCaseType = subst(caseType)
+                      for (
+                        innerType <- visit(pat);
+                        _________ <- unifyM(innerType, freshCaseType, loc);
+                        resultType <- unifyM(tvar, freshEnumType, loc)
+                      ) yield resultType
+                    case Err(e) => failM(e)
+                  }
+                case Err(e) => failM(e)
+              }
+            case Err(e) => failM(e)
+          }
+        case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
+          for (
+            elementTypes <- seqM(elms map visit);
+            resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
+          ) yield resultType
+
+        case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => ??? // TODO: FSet
+
+        case NamedAst.Pattern.FMap(elms, rest, tvar, loc) => ??? // TODO: FMap
+      }
+
+      visit(pat0)
+    }
+
+    /**
+      * Infers the type of the given patterns `pats0` in the namespace `ns0`.
+      */
+    def inferAll(pats0: List[NamedAst.Pattern], ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
+      seqM(pats0.map(p => infer(p, ns0, program)))
+    }
+
+    /**
+      * Applies the substitution `subst0` to the given pattern `pat0` in the namespace `ns0`.
+      */
+    def reassemble(pat0: NamedAst.Pattern, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Pattern = {
+      /**
+        * Local pattern visitor.
+        */
+      def visit(p: NamedAst.Pattern): TypedAst.Pattern = p match {
         case NamedAst.Pattern.Wild(tvar, loc) => TypedAst.Pattern.Wild(subst0(tvar), loc)
         case NamedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(sym, subst0(tvar), loc)
         case NamedAst.Pattern.Unit(loc) => TypedAst.Pattern.Unit(loc)
@@ -982,30 +1020,21 @@ object Typer {
         case NamedAst.Pattern.Str(lit, loc) => TypedAst.Pattern.Str(lit, loc)
         case NamedAst.Pattern.Tag(qname, tag, pat, tvar, loc) =>
           Disambiguation.lookupEnumByTag(qname, tag, ns0, program) match {
-            case Ok(enum) => TypedAst.Pattern.Tag(enum.sym, tag.name, visitPat(pat), subst0(tvar), loc)
+            case Ok(enum) => TypedAst.Pattern.Tag(enum.sym, tag.name, visit(pat), subst0(tvar), loc)
             case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
           }
-        case NamedAst.Pattern.Tuple(elms, tvar, loc) => TypedAst.Pattern.Tuple(elms map visitPat, subst0(tvar), loc)
-        case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => TypedAst.Pattern.FSet(elms map visitPat, rest.map(visitPat), subst0(tvar), loc)
+        case NamedAst.Pattern.Tuple(elms, tvar, loc) => TypedAst.Pattern.Tuple(elms map visit, subst0(tvar), loc)
+        case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => TypedAst.Pattern.FSet(elms map visit, rest.map(visit), subst0(tvar), loc)
         case NamedAst.Pattern.FMap(elms, rest, tvar, loc) =>
           val es = elms map {
-            case (k, v) => (visitPat(k), visitPat(v))
+            case (k, v) => (visit(k), visit(v))
           }
-          TypedAst.Pattern.FMap(es, rest.map(visitPat), subst0(tvar), loc)
+          TypedAst.Pattern.FMap(es, rest.map(visit), subst0(tvar), loc)
       }
 
-      /**
-        * Applies the substitution to the given list of formal parameters.
-        */
-      def visitParam(param: NamedAst.FormalParam): TypedAst.FormalParam = {
-        Disambiguation.resolve(param.tpe, ns0, program) match {
-          case Ok(resolvedType) => TypedAst.FormalParam(param.sym, subst0(resolvedType), param.loc)
-          case Err(_) => throw InternalCompilerException("Never happens. Resolution should have failed during type inference.")
-        }
-      }
-
-      visitExp(exp0, subst0)
+      visit(pat0)
     }
+
   }
 
   object Predicates {
@@ -1018,12 +1047,12 @@ object Typer {
       case NamedAst.Predicate.Head.False(loc) => Unification.liftM(Nil)
       case NamedAst.Predicate.Head.Positive(qname, terms, loc) =>
         getTableSignature(qname, ns0, program) match {
-          case Ok(declaredTypes) => Terms.infer(terms, declaredTypes, loc, ns0, program)
+          case Ok(declaredTypes) => Terms.Head.typecheck(terms, declaredTypes, loc, ns0, program)
           case Err(e) => failM(e)
         }
       case NamedAst.Predicate.Head.Negative(qname, terms, loc) =>
         getTableSignature(qname, ns0, program) match {
-          case Ok(declaredTypes) => Terms.infer(terms, declaredTypes, loc, ns0, program)
+          case Ok(declaredTypes) => Terms.Head.typecheck(terms, declaredTypes, loc, ns0, program)
           case Err(e) => failM(e)
         }
     }
@@ -1034,12 +1063,12 @@ object Typer {
     def infer(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = body0 match {
       case NamedAst.Predicate.Body.Positive(qname, terms, loc) =>
         getTableSignature(qname, ns0, program) match {
-          case Ok(declaredTypes) => Terms.infer(terms, declaredTypes, loc, ns0, program)
+          case Ok(declaredTypes) => Terms.Body.typecheck(terms, declaredTypes, loc, ns0, program)
           case Err(e) => failM(e)
         }
       case NamedAst.Predicate.Body.Negative(qname, terms, loc) =>
         getTableSignature(qname, ns0, program) match {
-          case Ok(declaredTypes) => Terms.infer(terms, declaredTypes, loc, ns0, program)
+          case Ok(declaredTypes) => Terms.Body.typecheck(terms, declaredTypes, loc, ns0, program)
           case Err(e) => failM(e)
         }
       case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
@@ -1087,17 +1116,17 @@ object Typer {
     def reassemble(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
       case NamedAst.Predicate.Body.Positive(qname, terms, loc) =>
         val sym = Symbols.getTableSym(qname, ns0, program)
-        val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
+        val ts = terms.map(t => Patterns.reassemble(t, ns0, program, subst0))
         TypedAst.Predicate.Body.Positive(sym, ts, loc)
       case NamedAst.Predicate.Body.Negative(qname, terms, loc) =>
         val sym = Symbols.getTableSym(qname, ns0, program)
-        val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
+        val ts = terms.map(t => Patterns.reassemble(t, ns0, program, subst0))
         TypedAst.Predicate.Body.Negative(sym, ts, loc)
       case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
         Disambiguation.lookupRef(qname, ns0, program) match {
           case Ok(RefTarget.Defn(ns, defn)) =>
             val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
-            TypedAst.Predicate.Body.ApplyFilter(defn.sym, ts, loc)
+            TypedAst.Predicate.Body.Filter(defn.sym, ts, loc)
           case Ok(RefTarget.Hook(hook)) =>
             throw InternalCompilerException("No longer supported.") // TODO
           case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
@@ -1113,15 +1142,30 @@ object Typer {
 
   object Terms {
 
-    /**
-      * Infers the type of the given `terms` and typechecks them against the declared types `ts`.
-      */
-    def infer(terms: List[NamedAst.Expression], ts: List[Type], loc: SourceLocation, ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
-      for (
-        actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns0, program)));
-        unifiedTypes <- Unification.unifyM(ts, actualTypes, loc)
-      ) yield unifiedTypes
+    object Head {
+      /**
+        * Infers the type of the given `terms` and checks them against the types `ts`.
+        */
+      def typecheck(terms: List[NamedAst.Expression], ts: List[Type], loc: SourceLocation, ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
+        for (
+          actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns0, program)));
+          unifiedTypes <- Unification.unifyM(ts, actualTypes, loc)
+        ) yield unifiedTypes
+      }
     }
+
+    object Body {
+      /**
+        * Infers the type of the given `terms` and checks them against the types `ts`.
+        */
+      def typecheck(terms: List[NamedAst.Pattern], ts: List[Type], loc: SourceLocation, ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
+        for (
+          actualTypes <- seqM(terms.map(t => Patterns.infer(t, ns0, program)));
+          unifiedTypes <- Unification.unifyM(ts, actualTypes, loc)
+        ) yield unifiedTypes
+      }
+    }
+
 
   }
 

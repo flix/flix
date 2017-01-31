@@ -260,7 +260,7 @@ object CreateExecutableAst {
       // Also, figure out the actual implementation for Predicate.Body.Loop
       // TODO: Should not return strings!
       private def freeVars(terms: List[SimplifiedAst.Term.Body]): Set[String] = terms.foldLeft(Set.empty[String]) {
-        case (xs, t: SimplifiedAst.Term.Body.Wildcard) => xs
+        case (xs, t: SimplifiedAst.Term.Body.Wild) => xs
         case (xs, t: SimplifiedAst.Term.Body.Var) => xs + t.sym.toString
         case (xs, t: SimplifiedAst.Term.Body.Exp) => xs
       }
@@ -273,7 +273,7 @@ object CreateExecutableAst {
             var i = 0
             while (i < r.length) {
               termsArray(i) match {
-                case ExecutableAst.Term.Body.Var(ident, _, _, _) =>
+                case ExecutableAst.Term.Body.Var(ident, _, _) =>
                   r(i) = ident.toString
                 case _ => // nop
               }
@@ -290,7 +290,7 @@ object CreateExecutableAst {
             var i = 0
             while (i < r.length) {
               termsArray(i) match {
-                case ExecutableAst.Term.Body.Var(ident, _, _, _) =>
+                case ExecutableAst.Term.Body.Var(ident, _, _) =>
                   r(i) = ident.toString
                 case _ => // nop
               }
@@ -301,9 +301,9 @@ object CreateExecutableAst {
           ExecutableAst.Predicate.Body.Negative(sym, termsArray, index2var, freeVars(terms), loc)
 
 
-        case SimplifiedAst.Predicate.Body.ApplyFilter(name, terms, loc) =>
+        case SimplifiedAst.Predicate.Body.Filter(name, terms, loc) =>
           val termsArray = terms.map(Term.toExecutable).toArray
-          ExecutableAst.Predicate.Body.ApplyFilter(name, termsArray, freeVars(terms), loc)
+          ExecutableAst.Predicate.Body.Filter(name, termsArray, freeVars(terms), loc)
         case SimplifiedAst.Predicate.Body.Loop(sym, term, loc) =>
           val freeVars = Set.empty[String] // TODO
           ExecutableAst.Predicate.Body.Loop(sym, Term.toExecutable(term), freeVars, loc)
@@ -323,8 +323,8 @@ object CreateExecutableAst {
     }
 
     def toExecutable(sast: SimplifiedAst.Term.Body): ExecutableAst.Term.Body = sast match {
-      case SimplifiedAst.Term.Body.Wildcard(tpe, loc) => ExecutableAst.Term.Body.Wildcard(tpe, loc)
-      case SimplifiedAst.Term.Body.Var(ident, v, tpe, loc) => ExecutableAst.Term.Body.Var(ident, v, tpe, loc)
+      case SimplifiedAst.Term.Body.Wild(tpe, loc) => ExecutableAst.Term.Body.Wild(tpe, loc)
+      case SimplifiedAst.Term.Body.Var(ident, tpe, loc) => ExecutableAst.Term.Body.Var(ident, tpe, loc)
       case SimplifiedAst.Term.Body.Exp(e, tpe, loc) => ExecutableAst.Term.Body.Exp(Expression.toExecutable(e), tpe, loc)
     }
   }

@@ -47,7 +47,7 @@ object Indexer {
 
             // compute the indices of the determinate (i.e. known) terms.
             val determinate = terms.zipWithIndex.foldLeft(Seq.empty[Int]) {
-              case (xs, (t: Term.Body.Wildcard, i)) => xs
+              case (xs, (t: Term.Body.Wild, i)) => xs
               case (xs, (t: Term.Body.Var, i)) =>
                 if (bound contains t.sym.text) // TODO: Correctness
                   xs :+ i

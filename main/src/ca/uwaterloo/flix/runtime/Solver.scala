@@ -413,11 +413,11 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Filters the given `env` through all filter functions in the body.
     */
   @tailrec
-  private def evalFilter(rule: Constraint, ps: List[Predicate.Body.ApplyFilter], env: Env, interp: Interpretation): Unit = ps match {
+  private def evalFilter(rule: Constraint, ps: List[Predicate.Body.Filter], env: Env, interp: Interpretation): Unit = ps match {
     case Nil =>
       // filter with hook functions
       evalHead(rule.head, env, interp)
-    case (pred: Predicate.Body.ApplyFilter) :: xs =>
+    case (pred: Predicate.Body.Filter) :: xs =>
       val defn = root.definitions(pred.sym)
       val args = new Array[AnyRef](pred.terms.length)
       var i = 0
@@ -487,7 +487,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Returns `null` if the term is a free variable.
     */
   private def evalTerm(t: ExecutableAst.Term.Body, env: Env): AnyRef = t match {
-    case t: ExecutableAst.Term.Body.Wildcard => null
+    case t: ExecutableAst.Term.Body.Wild => null
     case t: ExecutableAst.Term.Body.Var => env.getOrElse(t.sym.toString, null)
     case t: ExecutableAst.Term.Body.Exp => Interpreter.eval(t.e, root, env.toMap)
   }

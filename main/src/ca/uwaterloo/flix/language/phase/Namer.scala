@@ -511,6 +511,42 @@ object Namer {
     }
 
     /**
+      * Names the given pattern `pat0` under the given environment `env0`.
+      *
+      * Every variable in the pattern must be bound by the environment.
+      */
+    def namer(pat0: WeededAst.Pattern, env0: Map[String, Symbol.VarSym])(implicit genSym: GenSym): NamedAst.Pattern = {
+      def visit(p: WeededAst.Pattern): NamedAst.Pattern = p match {
+        case WeededAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(Type.freshTypeVar(), loc)
+        case WeededAst.Pattern.Var(ident, loc) =>
+          val sym = env0(ident.name)
+          NamedAst.Pattern.Var(sym, sym.tvar, loc)
+        case WeededAst.Pattern.Unit(loc) => NamedAst.Pattern.Unit(loc)
+        case WeededAst.Pattern.True(loc) => NamedAst.Pattern.True(loc)
+        case WeededAst.Pattern.False(loc) => NamedAst.Pattern.False(loc)
+        case WeededAst.Pattern.Char(lit, loc) => NamedAst.Pattern.Char(lit, loc)
+        case WeededAst.Pattern.Float32(lit, loc) => NamedAst.Pattern.Float32(lit, loc)
+        case WeededAst.Pattern.Float64(lit, loc) => NamedAst.Pattern.Float64(lit, loc)
+        case WeededAst.Pattern.Int8(lit, loc) => NamedAst.Pattern.Int8(lit, loc)
+        case WeededAst.Pattern.Int16(lit, loc) => NamedAst.Pattern.Int16(lit, loc)
+        case WeededAst.Pattern.Int32(lit, loc) => NamedAst.Pattern.Int32(lit, loc)
+        case WeededAst.Pattern.Int64(lit, loc) => NamedAst.Pattern.Int64(lit, loc)
+        case WeededAst.Pattern.BigInt(lit, loc) => NamedAst.Pattern.BigInt(lit, loc)
+        case WeededAst.Pattern.Str(lit, loc) => NamedAst.Pattern.Str(lit, loc)
+        case WeededAst.Pattern.Tag(enum, tag, pat, loc) => NamedAst.Pattern.Tag(enum, tag, visit(pat), Type.freshTypeVar(), loc)
+        case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
+        case WeededAst.Pattern.FSet(elms, rest, loc) => NamedAst.Pattern.FSet(elms map visit, rest map visit, Type.freshTypeVar(), loc)
+        case WeededAst.Pattern.FMap(elms, rest, loc) =>
+          val kvs = elms map {
+            case (k, v) => visit(k) -> visit(v)
+          }
+          NamedAst.Pattern.FMap(kvs, rest map visit, Type.freshTypeVar(), loc)
+      }
+
+      visit(pat0)
+    }
+
+    /**
       * Returns all the free variables in the given pattern `pat0`.
       */
     def freeVars(pat0: WeededAst.Pattern): List[Name.Ident] = pat0 match {
@@ -556,13 +592,13 @@ object Namer {
 
     def namer(body: WeededAst.Predicate.Body, headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Body, NameError] = body match {
       case WeededAst.Predicate.Body.Positive(qname, terms, loc) =>
-        @@(terms.map(t => Expressions.namer(t, ruleEnv0, tenv0))) map {
-          case ts => NamedAst.Predicate.Body.Positive(qname, ts, loc)
-        }
+        val ts = terms.map(t => Patterns.namer(t, ruleEnv0))
+        NamedAst.Predicate.Body.Positive(qname, ts, loc).toSuccess
+
       case WeededAst.Predicate.Body.Negative(qname, terms, loc) =>
-        @@(terms.map(t => Expressions.namer(t, ruleEnv0, tenv0))) map {
-          case ts => NamedAst.Predicate.Body.Negative(qname, ts, loc)
-        }
+        val ts = terms.map(t => Patterns.namer(t, ruleEnv0))
+        NamedAst.Predicate.Body.Negative(qname, ts, loc).toSuccess
+
       case WeededAst.Predicate.Body.Filter(qname, terms, loc) =>
         @@(terms.map(t => Expressions.namer(t, headEnv0 ++ ruleEnv0, tenv0))) map {
           case ts => NamedAst.Predicate.Body.Filter(qname, ts, loc)
@@ -578,8 +614,8 @@ object Namer {
       * Returns the identifiers that are bound in the head scope by the given body predicate `p0`.
       */
     def boundInHeadScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
-      case WeededAst.Predicate.Body.Positive(qname, terms, loc) => terms.flatMap(Expressions.freeVars)
-      case WeededAst.Predicate.Body.Negative(qname, terms, loc) => terms.flatMap(Expressions.freeVars)
+      case WeededAst.Predicate.Body.Positive(qname, terms, loc) => terms.flatMap(Patterns.freeVars)
+      case WeededAst.Predicate.Body.Negative(qname, terms, loc) => terms.flatMap(Patterns.freeVars)
       case WeededAst.Predicate.Body.Filter(qname, terms, loc) => Nil
       case WeededAst.Predicate.Body.Loop(pat, term, loc) => Patterns.freeVars(pat)
     }
@@ -588,8 +624,8 @@ object Namer {
       * Returns the identifiers that are bound in the rule scope by the given body predicate `p0`.
       */
     def boundInRuleScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
-      case WeededAst.Predicate.Body.Positive(qname, terms, loc) => terms.flatMap(Expressions.freeVars)
-      case WeededAst.Predicate.Body.Negative(qname, terms, loc) => terms.flatMap(Expressions.freeVars)
+      case WeededAst.Predicate.Body.Positive(qname, terms, loc) => terms.flatMap(Patterns.freeVars)
+      case WeededAst.Predicate.Body.Negative(qname, terms, loc) => terms.flatMap(Patterns.freeVars)
       case WeededAst.Predicate.Body.Filter(qname, terms, loc) => Nil
       case WeededAst.Predicate.Body.Loop(pat, term, loc) => Nil
     }

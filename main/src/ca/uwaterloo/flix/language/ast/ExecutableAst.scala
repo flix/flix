@@ -57,8 +57,8 @@ object ExecutableAst {
     /**
       * Returns the filter predicates in the body of the constraint.
       */
-    val filters: List[ExecutableAst.Predicate.Body.ApplyFilter] = body.collect {
-      case p: ExecutableAst.Predicate.Body.ApplyFilter => p
+    val filters: List[ExecutableAst.Predicate.Body.Filter] = body.collect {
+      case p: ExecutableAst.Predicate.Body.Filter => p
     }
 
     /**
@@ -522,15 +522,9 @@ object ExecutableAst {
         val arity: Int = terms.length
       }
 
-      case class ApplyFilter(sym: Symbol.DefnSym,
-                             terms: Array[ExecutableAst.Term.Body],
-                             freeVars: Set[String],
-                             loc: SourceLocation) extends ExecutableAst.Predicate.Body
+      case class Filter(sym: Symbol.DefnSym, terms: Array[ExecutableAst.Term.Body], freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
-      case class Loop(sym: Symbol.VarSym,
-                      term: ExecutableAst.Term.Head,
-                      freeVars: Set[String],
-                      loc: SourceLocation) extends ExecutableAst.Predicate.Body
+      case class Loop(sym: Symbol.VarSym, term: ExecutableAst.Term.Head, freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
     }
 
@@ -565,9 +559,9 @@ object ExecutableAst {
 
     object Body {
 
-      case class Wildcard(tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
+      case class Wild(tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
-      case class Var(sym: Symbol.VarSym, v: scala.Int, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
+      case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
       case class Exp(e: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 

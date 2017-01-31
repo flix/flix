@@ -349,11 +349,11 @@ object Simplifier {
         case TypedAst.Predicate.Head.False(loc) => SimplifiedAst.Predicate.Head.False(loc)
 
         case TypedAst.Predicate.Head.Positive(sym, terms, loc) =>
-          val ts = terms map Term.simplifyHead
+          val ts = terms map Term.Head.simplify
           SimplifiedAst.Predicate.Head.Positive(sym, ts, loc)
 
         case TypedAst.Predicate.Head.Negative(sym, terms, loc) =>
-          val ts = terms map Term.simplifyHead
+          val ts = terms map Term.Head.simplify
           SimplifiedAst.Predicate.Head.Negative(sym, ts, loc)
       }
     }
@@ -361,18 +361,18 @@ object Simplifier {
     object Body {
       def simplify(tast: TypedAst.Predicate.Body)(implicit genSym: GenSym): SimplifiedAst.Predicate.Body = tast match {
         case TypedAst.Predicate.Body.Positive(sym, terms, loc) =>
-          val ts = terms map Term.simplifyBody
+          val ts = terms map Term.Body.simplify
           SimplifiedAst.Predicate.Body.Positive(sym, ts, loc)
 
         case TypedAst.Predicate.Body.Negative(sym, terms, loc) =>
-          val ts = terms map Term.simplifyBody
+          val ts = terms map Term.Body.simplify
           SimplifiedAst.Predicate.Body.Negative(sym, ts, loc)
 
-        case TypedAst.Predicate.Body.ApplyFilter(sym, terms, loc) =>
-          SimplifiedAst.Predicate.Body.ApplyFilter(sym, terms map Term.simplifyBody, loc)
+        case TypedAst.Predicate.Body.Filter(sym, terms, loc) =>
+          SimplifiedAst.Predicate.Body.Filter(sym, terms map Term.Body.simplify, loc)
 
         case TypedAst.Predicate.Body.Loop(sym, term, loc) =>
-          SimplifiedAst.Predicate.Body.Loop(sym, Term.simplifyHead(term), loc)
+          SimplifiedAst.Predicate.Body.Loop(sym, Term.Head.simplify(term), loc)
       }
     }
 
@@ -380,21 +380,48 @@ object Simplifier {
 
   object Term {
 
-    def simplifyHead(e: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Term.Head = e match {
-      case TypedAst.Expression.Var(sym, tpe, loc) =>
-        SimplifiedAst.Term.Head.Var(sym, tpe, loc)
-      case TypedAst.Expression.Apply(TypedAst.Expression.Ref(sym, _, _), args, tpe, loc) =>
-        val as = args map simplifyHead
-        SimplifiedAst.Term.Head.Apply(sym, as, tpe, loc)
-      case TypedAst.Expression.Apply(TypedAst.Expression.Hook(hook, _, _), args, tpe, loc) =>
-        throw InternalCompilerException("No longer supported.") // TODO
-      case _ => SimplifiedAst.Term.Head.Exp(Expression.simplify(e), e.tpe, e.loc)
+    object Head {
+      /**
+        * Simplifies the given head term expression `e`.
+        */
+      def simplify(e: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Term.Head = e match {
+        case TypedAst.Expression.Var(sym, tpe, loc) =>
+          SimplifiedAst.Term.Head.Var(sym, tpe, loc)
+
+        case TypedAst.Expression.Apply(TypedAst.Expression.Ref(sym, _, _), args, tpe, loc) =>
+          val as = args map simplify
+          SimplifiedAst.Term.Head.Apply(sym, as, tpe, loc)
+
+        case TypedAst.Expression.Apply(TypedAst.Expression.Hook(hook, _, _), args, tpe, loc) =>
+          throw InternalCompilerException("No longer supported.") // TODO
+
+        case _ => SimplifiedAst.Term.Head.Exp(Expression.simplify(e), e.tpe, e.loc)
+      }
     }
 
-    def simplifyBody(e: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Term.Body = e match {
-      case TypedAst.Expression.Wild(tpe, loc) => SimplifiedAst.Term.Body.Wildcard(tpe, loc)
-      case TypedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Term.Body.Var(sym, -1, tpe, loc)
-      case _ => SimplifiedAst.Term.Body.Exp(Expression.simplify(e), e.tpe, e.loc)
+
+    object Body {
+      /**
+        * Simplifies the given body term pattern `p`.
+        */
+      def simplify(p: TypedAst.Pattern)(implicit genSym: GenSym): SimplifiedAst.Term.Body = p match {
+        case TypedAst.Pattern.Wild(tpe, loc) => SimplifiedAst.Term.Body.Wild(tpe, loc)
+        case TypedAst.Pattern.Var(sym, tpe, loc) => SimplifiedAst.Term.Body.Var(sym, tpe, loc)
+        case _ =>
+          if (isLiteral(p))
+            SimplifiedAst.Term.Body.Exp(lit2exp(p), p.tpe, p.loc)
+          else
+            throw InternalCompilerException(s"Unsupported pattern: $p.") // TODO
+      }
+
+      /**
+        * Simplifies the given body term expression `e`.
+        */
+      def simplify(e: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Term.Body = e match {
+        case TypedAst.Expression.Wild(tpe, loc) => SimplifiedAst.Term.Body.Wild(tpe, loc)
+        case TypedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Term.Body.Var(sym, tpe, loc)
+        case _ => SimplifiedAst.Term.Body.Exp(Expression.simplify(e), e.tpe, e.loc)
+      }
     }
 
   }

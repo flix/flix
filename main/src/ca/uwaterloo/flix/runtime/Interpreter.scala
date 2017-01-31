@@ -338,8 +338,8 @@ object Interpreter {
   }
 
   def evalBodyTerm(t: Term.Body, root: Root, env: Map[String, AnyRef]): AnyRef = t match {
-    case Term.Body.Wildcard(_, _) => ???
-    case Term.Body.Var(x, _, _, _) => env(x.toString)
+    case Term.Body.Wild(_, _) => ???
+    case Term.Body.Var(x, _, _) => env(x.toString)
     case Term.Body.Exp(e, _, _) => eval(e, root, env)
   }
 
