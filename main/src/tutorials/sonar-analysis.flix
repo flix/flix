@@ -340,6 +340,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     // Application1 Kontinuation.
     //
     case (State(v1, env0, sto0, s0, f0, r0, l0, w0, q0, _, time), KApp1(e2, env2, kont)) if isValue(v1) =>
+        // NB: `v1` should be a lambda abstraction.
         // Allocate the `KApp2` continuation in the store.
         let kontAddr = alloc(m0, k0);
         let nextKont = StoredKont(KApp2(v1, env0, kont));
@@ -349,22 +350,20 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     // Application2 Kontinuation.
     //
-    case (State(v2, Environment(env0), Store(sto0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), _, time), KApp2(v1, Environment(env1), kont)) if isValue(v2) =>
+    case (State(v2, Environment(env2), sto0, s0, f0, r0, l0, w0, q0, _, time), KApp2(v1, Environment(env1), kont)) if isValue(v2) =>
+        // NB: `v1` should be an lambda abstraction and `v2` is the argument of the application (closed by env2).
         // Evaluate the body of the lambda `v1` with argument `v2`.
         let Abs(x, body, loc) = v1;
-        let a = alloc(m0, k0);
-        let env2 = Map2.insert(x, a, env1);
-        let newValue = StoredValue(v2, Environment(env0));
-        let oldValue = Option.getWithDefault(Map2.lookup(a, sto0), Set2.empty());
-        let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
-        let sto1 = Map2.insert(a, lubValue, sto0);
-            Set2.singleton(Next(State(body, Environment(env2), Store(sto1), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), kont, tick(m0, k0))))
-
+        let argValue = StoredValue(v2, Environment(env2));
+        let argEnvAddr = alloc(m0, k0);
+        let bodyEnv = Map2.insert(x, argEnvAddr, env1);
+        let sto1 = Store.weakUpdate(argEnvAddr, argValue, sto0);
+            Set2.singleton(Next(State(body, Environment(bodyEnv), sto1, s0, f0, r0, l0, w0, q0, kont, tick(m0, k0))))
 
     //
     // Reference Expression.
     //
-    case (State(Ref(e, loc), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
+    case (State(Ref(e, loc), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), _) =>
         // Allocate the `KRef` continuation in the store.
         let kontAddr = alloc(m0, k0);
         let nextKont = StoredKont(KRef(kptr));
@@ -376,42 +375,42 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     case (State(e, env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), KRef(kont)) if isValue(e) =>
         // Allocate an address in the heap and store the value at that address.
-        let a = alloc(m0, k0);
-        let v = StoredValue(e, env0);
-        let sto1 = Store.weakUpdate(a, v, sto0);
-            Set2.singleton(Next(State(Ptr(a), env0, sto1, s0, f0, r0, l0, w0, q0, kont, tick(m0, k0)))) // TODO: What happens to the environment?
+        let freshAddr = alloc(m0, k0);
+        let value = StoredValue(e, env0);
+        let sto1 = Store.weakUpdate(freshAddr, value, sto0);
+            Set2.singleton(Next(State(Ptr(freshAddr), Environment.empty(), sto1, s0, f0, r0, l0, w0, q0, kont, tick(m0, k0))))
 
     //
     // Dereference Expression.
     //
     case (State(Deref(e, loc), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
         // Allocate the `KDeref` continuation in the store.
-        let a = alloc(m0, k0);
-        let k = StoredKont(KDeref(kptr));
-        let sto1 = Store.weakUpdate(a, k, sto0);
-            Set2.singleton(Next(State(e, env0, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
+        let kontAddr = alloc(m0, k0);
+        let nextKont = StoredKont(KDeref(kptr));
+        let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
+            Set2.singleton(Next(State(e, env0, sto1, s0, f0, r0, l0, w0, q0, kontAddr, tick(m0, k0))))
 
     //
     // Dereference Kontinuation.
     //
     case (State(Ptr(a), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), KDeref(kont)) =>
         // Lookup the address `a` in the store.
-        let vs = Store.lookup(a, sto0);
+        let storables = Store.lookup(a, sto0);
         let f = s -> match s with {
             case StoredKont(k)          => Abort("Non-value storable.")
             case StoredValue(e, env1)   => Next(State(e, env1, sto0, s0, f0, r0, l0, w0, q0, a, tick(m0, k0)))
         };
-            Set2.map(f, vs)
+        Set2.map(f, storables)
 
     //
     // Sequence Expression.
     //
     case (State(Seq(e1, e2, loc), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
         // Allocate the `KSeq` continuation in the store.
-        let a = alloc(m0, k0); // TODO: Rename to be consitent.
-        let k = StoredKont(KSeq(e2, env0, kptr));
-        let sto1 = Store.weakUpdate(a, k, sto0);
-            Set2.singleton(Next(State(e1, env0, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
+        let kontAddr = alloc(m0, k0);
+        let nextKont = StoredKont(KSeq(e2, env0, kptr));
+        let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
+            Set2.singleton(Next(State(e1, env0, sto1, s0, f0, r0, l0, w0, q0, kontAddr, tick(m0, k0))))
 
     //
     // Sequence Kontinuation.
@@ -425,29 +424,28 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     case (State(Promisify(e, loc), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
         // Allocate the `KPromisify` continuation in the store.
-        let a = alloc(m0, k0);
-        let k = StoredKont(KPromisify(kptr));
-        let sto1 = Store.weakUpdate(a, k, sto0);
-            Set2.singleton(Next(State(e, env0, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
+        let kontAddr = alloc(m0, k0);
+        let nextKont = StoredKont(KPromisify(kptr));
+        let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
+            Set2.singleton(Next(State(e, env0, sto1, s0, f0, r0, l0, w0, q0, kontAddr, tick(m0, k0))))
 
     //
     // Promisify Continuation.
     //
-    case (State(Ptr(a), env0, sto0, PromiseState(s0), f0, r0, l0, w0, q0, kptr, time), KPromisify(kont)) =>
+    case (State(Ptr(a), env0, sto0, s0, f0, r0, l0, w0, q0, _, time), KPromisify(kont)) =>
         // Weakly update the state of the promise `a` to pending.
-        let promiseStates = Option.getWithDefault(Map2.lookup(a, s0), Set2.empty());
-        let s1 = Map2.insert(a, Set2.insert(Pending, promiseStates), s0);
-            Set2.singleton(Next(State(Cst("Undef", L("-")), env0, sto0, PromiseState(s1), f0, r0, l0, w0, q0, kont, tick(m0, k0))))
+        let s1 = PromiseState.weakUpdate(a, Pending, s0);
+            Set2.singleton(Next(State(Cst("Undef", L("-")), env0, sto0, s1, f0, r0, l0, w0, q0, kont, tick(m0, k0))))
 
     //
     // Resolve Expression.
     //
-    case (State(Resolve(e1, e2, loc), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), kont) =>
+    case (State(Resolve(e1, e2, loc), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), _) =>
         // Allocate the `KResolve1` continuation in the store.
-        let a = alloc(m0, k0);
-        let k = StoredKont(KResolve1(e2, env0, kptr));
-        let sto1 = Store.weakUpdate(a, k, sto0);
-            Set2.singleton(Next(State(e1, env0, sto1, s0, f0, r0, l0, w0, q0, a, tick(m0, k0))))
+        let kontAddr = alloc(m0, k0);
+        let nextKont = StoredKont(KResolve1(e2, env0, kptr));
+        let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
+            Set2.singleton(Next(State(e1, env0, sto1, s0, f0, r0, l0, w0, q0, kontAddr, tick(m0, k0))))
 
     //
     //  Resolve1 Kontinuation.
@@ -525,7 +523,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     //  OnResolve2 Kontinuation.
     //
-    case (State(e2, env2, sto0, s0, f0, r0, l0, w0, ReactionQueue(q0), _, time), KOnResolve2(a, kont)) if isValue(e2) => // TODO: Enforce that e2 is a lambda?
+    case (State(e2, env2, sto0, s0, f0, r0, l0, w0, q0, _, time), KOnResolve2(a, kont)) if isValue(e2) =>
         let f: PromiseValue -> Set2[Outcome] = pv -> match pv with {
             case Pending =>
                 // Allocate a child promise.
@@ -541,14 +539,14 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
                 // Update the fulfill reactions.
                 let f1 = FulfillReactions.weakUpdate(a, e2, env2, childAddr, f0);
 
-                Set2.singleton(Next(State(Ptr(childAddr), Environment.empty(), sto0, s1, f1, r0, l0, w0, ReactionQueue(q0), kont, tick(m0, k0))))
+                Set2.singleton(Next(State(Ptr(childAddr), Environment.empty(), sto0, s1, f1, r0, l0, w0, q0, kont, tick(m0, k0))))
 
             case Fulfilled(v) =>
                 // Allocate a child promise and enqueue the promise reaction `lam` with the resolved value `v`.
                 let childAddr = alloc(m0, k0);
-                let job = (Fulfilled(v), e2, env2, childAddr);
-                let q1 = Set2.insert(job, q0);
-                    Set2.singleton(Next(State(Ptr(childAddr), Environment.empty(), sto0, s0, f0, r0, l0, w0, ReactionQueue(q1), kont, tick(m0, k0))))
+                let job = Set2.singleton((Fulfilled(v), e2, env2, childAddr));
+                let q1 = ReactionQueue.weakUpdate(job, q0);
+                    Set2.singleton(Next(State(Ptr(childAddr), Environment.empty(), sto0, s0, f0, r0, l0, w0, q1, kont, tick(m0, k0))))
             case Rejected(v) =>
                 // NB: Conceptually similar to fulfilled.
                 ???
