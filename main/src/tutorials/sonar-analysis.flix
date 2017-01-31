@@ -289,9 +289,6 @@ enum Outcome {
 ///
 /// Returns all possible transitions (outcomes) from the given state `m0` and continuation `k0`.
 ///
-
-// TODO: Ensure that kptr is used correctly.
-
 def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
 
     //
@@ -332,32 +329,22 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     // Application Expression.
     //
-    case (State(App(e1, e2, loc), Environment(env0), Store(sto0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), kptr, time), _) =>
-        // Generate a fresh address where to store the continuation.
-        let a = alloc(m0, k0);
-        // Continue evaluation of `e1` and store `e2` in a continuation.
-        let k = KApp1(e2, Environment(env0), kptr);
-        // Store the continuation.
-        let newValue = StoredKont(k);
-        let oldValue = Option.getWithDefault(Map2.lookup(a, sto0), Set2.empty());
-        let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
-        let sto1 = Map2.insert(a, lubValue, sto0);
-            Set2.singleton(Next(State(e1, Environment(env0), Store(sto1), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), a, tick(m0, k0))))
+    case (State(App(e1, e2, loc), env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), _) =>
+        // Allocate the `KApp1` continuation in the store.
+        let kontAddr = alloc(m0, k0);
+        let nextKont = StoredKont(KApp1(e2, env0, kptr));
+        let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
+            Set2.singleton(Next(State(e1, env0, sto1, s0, f0, r0, l0, w0, q0, kontAddr, tick(m0, k0))))
 
     //
     // Application1 Kontinuation.
     //
-    case (State(v1, Environment(env0), Store(sto0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), _, time), KApp1(e2, env2, kont)) if isValue(v1) =>
-        // Generate a fresh address where to store the continuation.
-        let a = alloc(m0, k0);
-        // Continue evaluation of `e2` and store `v1` in a continuation.
-        let k = KApp2(v1, Environment(env0), kont);
-        // Store the continuation.
-        let newValue = StoredKont(k);
-        let oldValue = Option.getWithDefault(Map2.lookup(a, sto0), Set2.empty());
-        let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
-        let sto1 = Map2.insert(a, lubValue, sto0);
-            Set2.singleton(Next(State(e2, env2, Store(sto1), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), PromiseLinks(l0), LinkQueue(w0), ReactionQueue(q0), a, tick(m0, k0))))
+    case (State(v1, env0, sto0, s0, f0, r0, l0, w0, q0, _, time), KApp1(e2, env2, kont)) if isValue(v1) =>
+        // Allocate the `KApp2` continuation in the store.
+        let kontAddr = alloc(m0, k0);
+        let nextKont = StoredKont(KApp2(v1, env0, kont));
+        let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
+            Set2.singleton(Next(State(e2, env0, sto1, s0, f0, r0, l0, w0, q0, kontAddr, tick(m0, k0))))
 
     //
     // Application2 Kontinuation.
@@ -598,7 +585,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     // Reaction-Loop
     //
-    case (State(v, env0, sto0, s0, f0, r0, l0, w0, q0, _, time), KEmpty) if isValue(v) =>
+    case (State(v, env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), KEmpty) if isValue(v) =>
         let f: ((PromiseValue, Expression, Environment, Address)) -> Outcome = match (pv, exp, env, childAddr) -> {
             match pv with {
                 case Fulfilled(v) =>
