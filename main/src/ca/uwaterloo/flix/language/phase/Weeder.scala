@@ -230,10 +230,10 @@ object Weeder {
             headConj flatMap {
               case h =>
                 // Duplicate the constraint for each predicate in a body disjunction.
-                val transposed = bs.foldRight(List(Nil): List[List[WeededAst.Predicate.Body]]) {
-                  case (xs, acc) => xs.map(x => acc.flatMap(ac => x :: ac))
+                val unfolded = bs.foldRight(List(Nil): List[List[WeededAst.Predicate.Body]]) {
+                  case (xs, acc) => xs.map(p => acc.flatMap(rs => p :: rs))
                 }
-                transposed map {
+                unfolded map {
                   case b => WeededAst.Declaration.Constraint(h, b, mkSL(sp1, sp2))
               }
             }
