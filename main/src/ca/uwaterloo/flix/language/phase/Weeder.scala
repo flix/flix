@@ -49,19 +49,19 @@ object Weeder {
     */
   def weed(root: ParsedAst.Root): Validation[WeededAst.Root, WeederError] = {
     @@(@@(root.decls map Declarations.weed), Properties.weed(root)) map {
-      case (decls1, decls2) => WeededAst.Root(decls1 ++ decls2)
+      case (decls1, decls2) => WeededAst.Root(decls1.flatten ++ decls2)
     }
   }
 
   object Declarations {
 
     /**
-      * Compiles the given parsed declaration `past` to a weeded declaration.
+      * Compiles the given parsed declaration `past` to a list of weeded declarations.
       */
-    def weed(decl: ParsedAst.Declaration): Validation[WeededAst.Declaration, WeederError] = decl match {
+    def weed(decl: ParsedAst.Declaration): Validation[List[WeededAst.Declaration], WeederError] = decl match {
       case ParsedAst.Declaration.Namespace(sp1, name, decls, sp2) =>
         @@(decls.map(weed)) map {
-          case ds => WeededAst.Declaration.Namespace(name, ds, mkSL(sp1, sp2))
+          case ds => List(WeededAst.Declaration.Namespace(name, ds.flatten, mkSL(sp1, sp2)))
         }
 
       case ParsedAst.Declaration.Definition(docOpt, ann, sp1, ident, tparams0, paramsOpt, tpe, exp, sp2) =>
@@ -75,10 +75,10 @@ object Weeder {
          * Check for `IllegalParameterList`.
          */
         paramsOpt match {
-          case None => @@(annVal, expVal) flatMap {
+          case None => @@(annVal, expVal) map {
             case (as, e) =>
               val t = WeededAst.Type.Arrow(Nil, Types.weed(tpe), loc)
-              WeededAst.Declaration.Definition(doc, as, ident, tparams, Nil, e, t, loc).toSuccess
+              List(WeededAst.Declaration.Definition(doc, as, ident, tparams, Nil, e, t, loc))
           }
           case Some(Nil) => IllegalParameterList(loc).toFailure
           case Some(params) =>
@@ -89,7 +89,7 @@ object Weeder {
             @@(annVal, formalsVal, expVal) map {
               case (as, fs, e) =>
                 val t = WeededAst.Type.Arrow(fs map (_.tpe), Types.weed(tpe), loc)
-                WeededAst.Declaration.Definition(doc, as, ident, tparams, fs, e, t, loc)
+                List(WeededAst.Declaration.Definition(doc, as, ident, tparams, fs, e, t, loc))
             }
         }
 
@@ -100,14 +100,14 @@ object Weeder {
          * Check for `IllegalParameterList`.
          */
         paramsOpt match {
-          case None => WeededAst.Declaration.Signature(doc, ident, Nil, Types.weed(tpe), mkSL(sp1, sp2)).toSuccess
+          case None => List(WeededAst.Declaration.Signature(doc, ident, Nil, Types.weed(tpe), mkSL(sp1, sp2))).toSuccess
           case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
           case Some(params) =>
             /*
              * Check for `DuplicateFormal`.
              */
             checkDuplicateFormal(params) map {
-              case ps => WeededAst.Declaration.Signature(doc, ident, ps, Types.weed(tpe), mkSL(sp1, sp2))
+              case ps => List(WeededAst.Declaration.Signature(doc, ident, ps, Types.weed(tpe), mkSL(sp1, sp2)))
             }
         }
 
@@ -118,14 +118,14 @@ object Weeder {
          * Check for `IllegalParameterList`.
          */
         paramsOpt match {
-          case None => WeededAst.Declaration.External(doc, ident, Nil, Types.weed(tpe), mkSL(sp1, sp2)).toSuccess
+          case None => List(WeededAst.Declaration.External(doc, ident, Nil, Types.weed(tpe), mkSL(sp1, sp2))).toSuccess
           case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
           case Some(params) =>
             /*
              * Check for `DuplicateFormal`.
              */
             checkDuplicateFormal(params) map {
-              case ps => WeededAst.Declaration.External(doc, ident, ps, Types.weed(tpe), mkSL(sp1, sp2))
+              case ps => List(WeededAst.Declaration.External(doc, ident, ps, Types.weed(tpe), mkSL(sp1, sp2)))
             }
         }
 
@@ -142,7 +142,7 @@ object Weeder {
               // Rewrite to Definition.
               val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
               val t = WeededAst.Type.Arrow(Nil, Types.weed(tpe), loc)
-              WeededAst.Declaration.Definition(doc, ann, ident, tparams.map(_.ident).toList, Nil, e, t, loc).toSuccess
+              List(WeededAst.Declaration.Definition(doc, ann, ident, tparams.map(_.ident).toList, Nil, e, t, loc)).toSuccess
             case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
             case Some(params) =>
               /*
@@ -153,7 +153,7 @@ object Weeder {
                   // Rewrite to Definition.
                   val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
                   val t = WeededAst.Type.Arrow(fs map (_.tpe), Types.weed(tpe), loc)
-                  WeededAst.Declaration.Definition(doc, ann, ident, tparams.map(_.ident).toList, fs, e, t, loc)
+                  List(WeededAst.Declaration.Definition(doc, ann, ident, tparams.map(_.ident).toList, fs, e, t, loc))
               }
           }
         }
@@ -175,7 +175,7 @@ object Weeder {
                 DuplicateTag(ident.name, tagName, loc1, loc2).toFailure
             }
         } map {
-          case m => WeededAst.Declaration.Enum(doc, ident, tparams, m, mkSL(sp1, sp2))
+          case m => List(WeededAst.Declaration.Enum(doc, ident, tparams, m, mkSL(sp1, sp2)))
         }
 
       case ParsedAst.Declaration.Type(docOpt, sp1, ident, caze, sp2) =>
@@ -184,7 +184,7 @@ object Weeder {
          * Rewrites a type alias to a singleton enum declaration.
          */
         val cases = Map(caze.ident.name -> WeededAst.Case(ident, caze.ident, Types.weed(caze.tpe)))
-        WeededAst.Declaration.Enum(doc, ident, Nil, cases, mkSL(sp1, sp2)).toSuccess
+        List(WeededAst.Declaration.Enum(doc, ident, Nil, cases, mkSL(sp1, sp2))).toSuccess
 
       case ParsedAst.Declaration.Relation(docOpt, sp1, ident, attrs, sp2) =>
         val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
@@ -199,7 +199,7 @@ object Weeder {
          * Check for `DuplicateAttribute`.
          */
         checkDuplicateAttribute(attrs) map {
-          case as => WeededAst.Table.Relation(doc, ident, as, mkSL(sp1, sp2))
+          case as => List(WeededAst.Table.Relation(doc, ident, as, mkSL(sp1, sp2)))
         }
 
       case ParsedAst.Declaration.Lattice(docOpt, sp1, ident, attrs, sp2) =>
@@ -217,15 +217,26 @@ object Weeder {
         checkDuplicateAttribute(attrs) map {
           case as =>
             // Split the attributes into keys and element.
-            WeededAst.Table.Lattice(doc, ident, as.init, as.last, mkSL(sp1, sp2))
+            List(WeededAst.Table.Lattice(doc, ident, as.init, as.last, mkSL(sp1, sp2)))
         }
 
       case ParsedAst.Declaration.Constraint(sp1, head, body, sp2) =>
-        val headVal = Predicate.Head.weed(head)
-        val bodyVal = @@(body.map(Predicate.Body.weed))
+        val headVal = @@(head.map(Predicate.Head.weed))
+        val bodyVal = @@(body.map(disj => @@(disj.map(Predicate.Body.weed))))
 
         @@(headVal, bodyVal) map {
-          case (h, b) => WeededAst.Declaration.Constraint(h, b, mkSL(sp1, sp2))
+          case (headConj, bs) =>
+            // Duplicate the constraint for each predicate in the head conjunction.
+            headConj flatMap {
+              case h =>
+                // Duplicate the constraint for each predicate in a body disjunction.
+                val transposed = bs.foldRight(List(Nil): List[List[WeededAst.Predicate.Body]]) {
+                  case (xs, acc) => xs.map(x => acc.flatMap(ac => x :: ac))
+                }
+                transposed map {
+                  case b => WeededAst.Declaration.Constraint(h, b, mkSL(sp1, sp2))
+              }
+            }
         }
 
       case ParsedAst.Declaration.Index(sp1, qname, indexes, sp2) =>
@@ -238,12 +249,12 @@ object Weeder {
         else if (indexes.exists(_.isEmpty))
           IllegalIndex(sl).toFailure
         else
-          WeededAst.Declaration.Index(qname, indexes.toList.map(_.toList), sl).toSuccess
+          List(WeededAst.Declaration.Index(qname, indexes.toList.map(_.toList), sl)).toSuccess
 
       case ParsedAst.Declaration.BoundedLattice(sp1, tpe, elms, sp2) =>
         val elmsVal = @@(elms.toList.map(e => Expressions.weed(e)))
         elmsVal flatMap {
-          case List(bot, top, leq, lub, glb) => WeededAst.Declaration.BoundedLattice(Types.weed(tpe), bot, top, leq, lub, glb, mkSL(sp1, sp2)).toSuccess
+          case List(bot, top, leq, lub, glb) => List(WeededAst.Declaration.BoundedLattice(Types.weed(tpe), bot, top, leq, lub, glb, mkSL(sp1, sp2))).toSuccess
           case _ => IllegalLattice(mkSL(sp1, sp2)).toFailure
         }
 

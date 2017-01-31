@@ -210,11 +210,11 @@ object ParsedAst {
       * Constraint Declaration.
       *
       * @param sp1  the position of the first character in the declaration.
-      * @param head the head predicate.
-      * @param body the body predicates.
+      * @param head the head predicates (a conjunction of predicates).
+      * @param body the body predicates (a sequence of disjunctions of predicates).
       * @param sp2  the position of the last character in the declaration.
       */
-    case class Constraint(sp1: SourcePosition, head: ParsedAst.Predicate, body: Seq[ParsedAst.Predicate], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Constraint(sp1: SourcePosition, head: Seq[ParsedAst.Predicate], body: Seq[Seq[ParsedAst.Predicate]], sp2: SourcePosition) extends ParsedAst.Declaration
 
     case class BoundedLattice(sp1: SourcePosition, tpe: ParsedAst.Type, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration
 
