@@ -192,15 +192,25 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Constraint: Rule1[ParsedAst.Declaration.Constraint] = {
-      def Body: Rule1[Seq[ParsedAst.Predicate]] = rule {
-        optional(optWS ~ ":-" ~ optWS ~ oneOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.Predicate]]) => o match {
+      // A conjunction of head predicates: P(..) && P(..) && ...
+      def HeadConj: Rule1[Seq[ParsedAst.Predicate]] = rule {
+        oneOrMore(Predicate).separatedBy(optWS ~ "&&" ~ optWS)
+      }
+
+      // A disjunction of body predicates: P(..) || P(..) || ...
+      def BodyConj: Rule1[Seq[ParsedAst.Predicate]] = rule {
+        oneOrMore(Predicate).separatedBy(optWS ~ "||" ~ optWS)
+      }
+
+      def Body: Rule1[Seq[Seq[ParsedAst.Predicate]]] = rule {
+        optional(optWS ~ ":-" ~ optWS ~ oneOrMore(BodyConj).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[Seq[ParsedAst.Predicate]]]) => o match {
           case None => Seq.empty
           case Some(xs) => xs
         })
       }
 
       rule {
-        optWS ~ SP ~ Predicate ~ Body ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Constraint
+        optWS ~ SP ~ HeadConj ~ Body ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Constraint
       }
     }
 
