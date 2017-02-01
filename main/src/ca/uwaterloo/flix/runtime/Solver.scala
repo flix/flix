@@ -238,7 +238,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   def getModel: Model = model
 
   def getRuleStats: List[(Constraint, Int, Long)] =
-    root.constraints.toSeq.sortBy(_.time.get()).reverse.map {
+    root.constraints.filter(_.isRule).sortBy(_.time.get()).reverse.map {
       case r => (r, r.hits.get(), r.time.get())
     }.toList
 
