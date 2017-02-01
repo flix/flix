@@ -73,12 +73,12 @@ object Interpreter {
         i = i + 1
       }
       Value.Closure(ref.sym, bindings)
-    case Expression.ApplyRef(name, args0, _, _) =>
+    case Expression.ApplyRef(sym, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
-      evalCall(root.definitions(name), args, root, env0)
-    case Expression.ApplyTail(name, _, args0, _, _) =>
+      Invoker.invoke(sym, args, root, env0)
+    case Expression.ApplyTail(sym, _, args0, _, _) =>
       val args = evalArgs(args0.toArray, root, env0)
-      evalCall(root.definitions(name), args, root, env0)
+      Invoker.invoke(sym, args, root, env0)
     case Expression.ApplyHook(hook, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
       evalHook(hook, args, root, env0)
@@ -326,38 +326,20 @@ object Interpreter {
   def evalHeadTerm(t: Term.Head, root: Root, env: Map[String, AnyRef]): AnyRef = t match {
     case Term.Head.Var(x, _, _) => env(x.toString)
     case Term.Head.Exp(e, _, _) => eval(e, root, env)
-    case Term.Head.Apply(name, args, _, _) =>
-      val defn = root.definitions(name)
+    case Term.Head.Apply(sym, args, _, _) =>
       val evalArgs = new Array[AnyRef](args.length)
       var i = 0
       while (i < evalArgs.length) {
         evalArgs(i) = evalHeadTerm(args(i), root, env)
         i = i + 1
       }
-      evalCall(defn, evalArgs, root, env)
+      Invoker.invoke(sym, evalArgs, root, env)
   }
 
   def evalBodyTerm(t: Term.Body, root: Root, env: Map[String, AnyRef]): AnyRef = t match {
     case Term.Body.Wild(_, _) => ???
     case Term.Body.Var(x, _, _) => env(x.toString)
     case Term.Body.Exp(e, _, _) => eval(e, root, env)
-  }
-
-  def evalCall(defn: Constant, args: Array[AnyRef], root: Root, env0: Map[String, AnyRef] = Map.empty): AnyRef = {
-    if (defn.method == null) {
-      val env = defn.formals.zip(args).foldLeft(env0) {
-        case (macc, (ExecutableAst.FormalParam(name, tpe), actual)) => macc + (name.toString -> actual)
-      }
-      eval(defn.exp, root, env)
-    } else {
-      // TODO: Should the reflection call be here, or moved elsewhere?
-      try {
-        defn.method.invoke(null, args: _*)
-      } catch {
-        // Rethrow the real exception
-        case e: InvocationTargetException => throw e.getTargetException
-      }
-    }
   }
 
   private def evalHook(hook: Ast.Hook, args: Array[AnyRef], root: Root, env: Map[String, AnyRef]): AnyRef =

@@ -418,14 +418,13 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       // filter with hook functions
       evalHead(rule.head, env, interp)
     case (pred: Predicate.Body.Filter) :: xs =>
-      val defn = root.definitions(pred.sym)
       val args = new Array[AnyRef](pred.terms.length)
       var i = 0
       while (i < args.length) {
         args(i) = Interpreter.evalBodyTerm(pred.terms(i), root, env.toMap)
         i = i + 1
       }
-      val result = Interpreter.evalCall(defn, args, root, env.toMap)
+      val result = Invoker.invoke(pred.sym, args, root, env.toMap)
       if (Value.cast2bool(result))
         evalFilter(rule, xs, env, interp)
   }
@@ -601,7 +600,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     val definitions = root.definitions.foldLeft(Map.empty[Symbol.DefnSym, () => AnyRef]) {
       case (macc, (sym, defn)) =>
         if (defn.formals.isEmpty)
-          macc + (sym -> (() => Interpreter.evalCall(defn, Array.empty, root)))
+          macc + (sym -> (() => Invoker.invoke(sym, Array.empty, root)))
         else
           macc + (sym -> (() => throw InternalRuntimeException("Unable to evalaute non-constant top-level definition.")))
     }
