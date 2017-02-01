@@ -457,7 +457,7 @@ object SimplifiedAst {
 
       case class Negative(sym: Symbol.TableSym, terms: List[SimplifiedAst.Term.Body], loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
-      case class ApplyFilter(sym: Symbol.DefnSym, terms: List[SimplifiedAst.Term.Body], loc: SourceLocation) extends SimplifiedAst.Predicate.Body
+      case class Filter(sym: Symbol.DefnSym, terms: List[SimplifiedAst.Term.Body], loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
       case class Loop(sym: Symbol.VarSym, term: SimplifiedAst.Term.Head, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
@@ -495,9 +495,9 @@ object SimplifiedAst {
 
     object Body {
 
-      case class Wildcard(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
+      case class Wild(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
 
-      case class Var(sym: Symbol.VarSym, v: scala.Int, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
+      case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
 
       // TODO: Lambda lift?
       case class Exp(e: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body

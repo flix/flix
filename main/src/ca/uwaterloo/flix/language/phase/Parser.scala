@@ -193,17 +193,17 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Constraint: Rule1[ParsedAst.Declaration.Constraint] = {
       // A conjunction of head predicates: P(..) && P(..) && ...
-      def HeadConj: Rule1[Seq[ParsedAst.Predicate]] = rule {
-        oneOrMore(Predicate).separatedBy(optWS ~ "&&" ~ optWS)
+      def HeadConj: Rule1[Seq[ParsedAst.Predicate.Head]] = rule {
+        oneOrMore(HeadPredicate).separatedBy(optWS ~ "&&" ~ optWS)
       }
 
       // A disjunction of body predicates: P(..) || P(..) || ...
-      def BodyConj: Rule1[Seq[ParsedAst.Predicate]] = rule {
-        oneOrMore(Predicate).separatedBy(optWS ~ "||" ~ optWS)
+      def BodyConj: Rule1[Seq[ParsedAst.Predicate.Body]] = rule {
+        oneOrMore(BodyPredicate).separatedBy(optWS ~ "||" ~ optWS)
       }
 
-      def Body: Rule1[Seq[Seq[ParsedAst.Predicate]]] = rule {
-        optional(optWS ~ ":-" ~ optWS ~ oneOrMore(BodyConj).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[Seq[ParsedAst.Predicate]]]) => o match {
+      def Body: Rule1[Seq[Seq[ParsedAst.Predicate.Body]]] = rule {
+        optional(optWS ~ ":-" ~ optWS ~ oneOrMore(BodyConj).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[Seq[ParsedAst.Predicate.Body]]]) => o match {
           case None => Seq.empty
           case Some(xs) => xs
         })
@@ -644,37 +644,53 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Predicates                                                              //
   /////////////////////////////////////////////////////////////////////////////
-  def Predicate: Rule1[ParsedAst.Predicate] = rule {
-    Predicates.True | Predicates.False | Predicates.Positive | Predicates.Negative | Predicates.Filter | Predicates.NotEqual | Predicates.Loop
+  def HeadPredicate: Rule1[ParsedAst.Predicate.Head] = rule {
+    Predicates.Head.True | Predicates.Head.False | Predicates.Head.Positive | Predicates.Head.Negative
+  }
+
+  def BodyPredicate: Rule1[ParsedAst.Predicate.Body] = rule {
+    Predicates.Body.Positive | Predicates.Body.Negative | Predicates.Body.Filter | Predicates.Body.NotEqual | Predicates.Body.Loop
   }
 
   object Predicates {
-    def True: Rule1[ParsedAst.Predicate.True] = rule {
-      SP ~ atomic("true") ~ SP ~> ParsedAst.Predicate.True
+    object Head {
+      def True: Rule1[ParsedAst.Predicate.Head.True] = rule {
+        SP ~ atomic("true") ~ SP ~> ParsedAst.Predicate.Head.True
+      }
+
+      def False: Rule1[ParsedAst.Predicate.Head.False] = rule {
+        SP ~ atomic("false") ~ SP ~> ParsedAst.Predicate.Head.False
+      }
+
+      def Positive: Rule1[ParsedAst.Predicate.Head.Positive] = rule {
+        SP ~ Names.QualifiedTable ~ optWS ~ NonEmptyArgumentList ~ SP ~> ParsedAst.Predicate.Head.Positive
+      }
+
+      def Negative: Rule1[ParsedAst.Predicate.Head.Negative] = rule {
+        SP ~ "!" ~ optWS ~ Names.QualifiedTable ~ optWS ~ NonEmptyArgumentList ~ SP ~> ParsedAst.Predicate.Head.Negative
+      }
     }
 
-    def False: Rule1[ParsedAst.Predicate.False] = rule {
-      SP ~ atomic("false") ~ SP ~> ParsedAst.Predicate.False
-    }
+    object Body {
+      def Positive: Rule1[ParsedAst.Predicate.Body.Positive] = rule {
+        SP ~ Names.QualifiedTable ~ optWS ~ NonEmptyPatternList ~ SP ~> ParsedAst.Predicate.Body.Positive
+      }
 
-    def Positive: Rule1[ParsedAst.Predicate.Positive] = rule {
-      SP ~ Names.QualifiedTable ~ optWS ~ NonEmptyArgumentList ~ SP ~> ParsedAst.Predicate.Positive
-    }
+      def Negative: Rule1[ParsedAst.Predicate.Body.Negative] = rule {
+        SP ~ "!" ~ optWS ~ Names.QualifiedTable ~ optWS ~ NonEmptyPatternList ~ SP ~> ParsedAst.Predicate.Body.Negative
+      }
 
-    def Negative: Rule1[ParsedAst.Predicate.Negative] = rule {
-      SP ~ "!" ~ optWS ~ Names.QualifiedTable ~ optWS ~ NonEmptyArgumentList ~ SP ~> ParsedAst.Predicate.Negative
-    }
+      def Filter: Rule1[ParsedAst.Predicate.Body.Filter] = rule {
+        SP ~ Names.QualifiedDefinition ~ optWS ~ NonEmptyArgumentList ~ SP ~> ParsedAst.Predicate.Body.Filter
+      }
 
-    def Filter: Rule1[ParsedAst.Predicate.Filter] = rule {
-      SP ~ Names.QualifiedDefinition ~ optWS ~ NonEmptyArgumentList ~ SP ~> ParsedAst.Predicate.Filter
-    }
+      def NotEqual: Rule1[ParsedAst.Predicate.Body.NotEqual] = rule {
+        SP ~ Names.Variable ~ optWS ~ atomic("!=") ~ optWS ~ Names.Variable ~ SP ~> ParsedAst.Predicate.Body.NotEqual
+      }
 
-    def NotEqual: Rule1[ParsedAst.Predicate.NotEqual] = rule {
-      SP ~ Names.Variable ~ optWS ~ atomic("!=") ~ optWS ~ Names.Variable ~ SP ~> ParsedAst.Predicate.NotEqual
-    }
-
-    def Loop: Rule1[ParsedAst.Predicate.Loop] = rule {
-      SP ~ Pattern ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Loop
+      def Loop: Rule1[ParsedAst.Predicate.Body.Loop] = rule {
+        SP ~ Pattern ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Loop
+      }
     }
   }
 
@@ -743,6 +759,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   def NonEmptyArgumentList: Rule1[Seq[ParsedAst.Expression]] = rule {
     "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+  }
+
+  def NonEmptyPatternList: Rule1[Seq[ParsedAst.Pattern]] = rule {
+    "(" ~ optWS ~ oneOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
   }
 
   def FormalParamList: Rule1[Seq[ParsedAst.FormalParam]] = rule {
