@@ -16,17 +16,12 @@
 
 package ca.uwaterloo.flix.runtime
 
-import java.lang.reflect.InvocationTargetException
-
 import ca.uwaterloo.flix.api._
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Definition.Constant
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
 object Interpreter {
-
-  // TODO: Change environments to use
 
   /**
     * Evaluates the given expression `exp0` under the given environment `env0`.
@@ -368,14 +363,17 @@ object Interpreter {
     eval(constant.exp, root, env2)
   }
 
+  /**
+    * Evaluates the given array of arguments `args` to an array of values.
+    */
   private def evalArgs(args: Array[Expression], root: Root, env: Map[String, AnyRef]): Array[AnyRef] = {
-    val evalArgs = new Array[AnyRef](args.length)
+    val values = new Array[AnyRef](args.length)
     var i = 0
-    while (i < evalArgs.length) {
-      evalArgs(i) = eval(args(i), root, env)
+    while (i < values.length) {
+      values(i) = eval(args(i), root, env)
       i = i + 1
     }
-    evalArgs
+    values
   }
 
 }
