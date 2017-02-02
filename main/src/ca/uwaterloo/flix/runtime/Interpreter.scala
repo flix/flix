@@ -70,17 +70,17 @@ object Interpreter {
       Value.Closure(ref.sym, bindings)
     case Expression.ApplyRef(sym, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
-      Invoker.invoke(sym, args, root, env0)
+      Invoker.invoke(sym, args.toArray, root, env0)
     case Expression.ApplyTail(sym, _, args0, _, _) =>
-      val args = evalArgs(args0.toArray, root, env0)
-      Invoker.invoke(sym, args, root, env0)
+      val args = evalArgs(args0, root, env0)
+      Invoker.invoke(sym, args.toArray, root, env0)
     case Expression.ApplyHook(hook, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
-      evalHook(hook, args, root, env0)
+      evalHook(hook, args.toArray, root, env0)
     case Expression.ApplyClosure(exp, args0, tpe, loc) =>
       val func = eval(exp, root, env0).asInstanceOf[Value.Closure]
       val args = evalArgs(args0, root, env0)
-      evalClosure(func, args, root, env0)
+      evalClosure(func, args.toArray, root, env0)
     case Expression.Unary(op, exp, _, _) => evalUnary(op, exp, root, env0)
     case Expression.Binary(op, exp1, exp2, _, _) => op match {
       case o: ArithmeticOperator => evalArithmetic(o, exp1, exp2, root, env0)
@@ -364,16 +364,10 @@ object Interpreter {
   }
 
   /**
-    * Evaluates the given array of arguments `args` to an array of values.
+    * Evaluates the given list of expressions `exps` under the given environment `env` to a list of values.
     */
-  private def evalArgs(args: Array[Expression], root: Root, env: Map[String, AnyRef]): Array[AnyRef] = {
-    val values = new Array[AnyRef](args.length)
-    var i = 0
-    while (i < values.length) {
-      values(i) = eval(args(i), root, env)
-      i = i + 1
-    }
-    values
+  private def evalArgs(exps: List[Expression], root: Root, env: Map[String, AnyRef]): List[AnyRef] = {
+    exps.map(a => eval(a, root, env))
   }
 
 }
