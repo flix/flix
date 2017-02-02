@@ -76,7 +76,13 @@ object Interpreter {
       Invoker.invoke(sym, args.toArray, root, env0)
     case Expression.ApplyHook(hook, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
-      evalHook(hook, args.toArray, root, env0)
+      hook match {
+        case Ast.Hook.Safe(name, inv, _) =>
+          val wargs: Array[IValue] = args.map(new WrappedValue(_)).toArray
+          inv(wargs).getUnsafeRef
+        case Ast.Hook.Unsafe(name, inv, _) =>
+          inv(args.toArray)
+      }
     case Expression.ApplyClosure(exp, args0, tpe, loc) =>
       val func = eval(exp, root, env0).asInstanceOf[Value.Closure]
       val args = evalArgs(args0, root, env0)
@@ -330,21 +336,6 @@ object Interpreter {
       }
       Invoker.invoke(sym, evalArgs, root, env)
   }
-
-  def evalBodyTerm(t: Term.Body, root: Root, env: Map[String, AnyRef]): AnyRef = t match {
-    case Term.Body.Wild(_, _) => ???
-    case Term.Body.Var(x, _, _) => env(x.toString)
-    case Term.Body.Exp(e, _, _) => eval(e, root, env)
-  }
-
-  private def evalHook(hook: Ast.Hook, args: Array[AnyRef], root: Root, env: Map[String, AnyRef]): AnyRef =
-    hook match {
-      case Ast.Hook.Safe(name, inv, _) =>
-        val wargs: Array[IValue] = args.map(new WrappedValue(_))
-        inv(wargs).getUnsafeRef
-      case Ast.Hook.Unsafe(name, inv, _) =>
-        inv(args)
-    }
 
   private def evalClosure(function: Value.Closure, args: Array[AnyRef], root: Root, env: Map[String, AnyRef]): AnyRef = {
     val Value.Closure(name, bindings) = function

@@ -421,7 +421,14 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       val args = new Array[AnyRef](pred.terms.length)
       var i = 0
       while (i < args.length) {
-        args(i) = Interpreter.evalBodyTerm(pred.terms(i), root, env.toMap)
+
+        val value = pred.terms(i) match {
+          case Term.Body.Wild(_, _) => ???
+          case Term.Body.Var(x, _, _) => env(x.toString)
+          case Term.Body.Exp(e, _, _) => Interpreter.eval(e, root, env.toMap)
+        }
+
+        args(i) = value
         i = i + 1
       }
       val result = Invoker.invoke(pred.sym, args, root, env.toMap)
