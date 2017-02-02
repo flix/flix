@@ -368,7 +368,12 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       val pat = new Array[AnyRef](p.arity)
       var i = 0
       while (i < pat.length) {
-        pat(i) = evalTerm(p.terms(i), env)
+        val value = p.terms(i) match {
+          case t: ExecutableAst.Term.Body.Wild => null
+          case t: ExecutableAst.Term.Body.Var => env.getOrElse(t.sym.toString, null)
+          case t: ExecutableAst.Term.Body.Exp => Interpreter.eval(t.e, root, env.toMap)
+        }
+        pat(i) = value
         i = i + 1
       }
 
@@ -501,17 +506,6 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       if (changed) {
         dependencies(l.sym, fact, localWorkList)
       }
-  }
-
-  /**
-    * Evaluates the given body term `t` to a value.
-    *
-    * Returns `null` if the term is a free variable.
-    */
-  private def evalTerm(t: ExecutableAst.Term.Body, env: Env): AnyRef = t match {
-    case t: ExecutableAst.Term.Body.Wild => null
-    case t: ExecutableAst.Term.Body.Var => env.getOrElse(t.sym.toString, null)
-    case t: ExecutableAst.Term.Body.Exp => Interpreter.eval(t.e, root, env.toMap)
   }
 
   /**
