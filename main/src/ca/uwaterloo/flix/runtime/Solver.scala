@@ -401,7 +401,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   private def evalLoop(rule: Constraint, ps: List[Predicate.Body.Loop], env: Env, interp: Interpretation): Unit = ps match {
     case Nil => evalFilter(rule, rule.filters, env, interp)
     case Predicate.Body.Loop(sym, term, _, _) :: rest =>
-      val value = Value.cast2set(Interpreter.evalHeadTerm(term, root, env.toMap))
+      val value = Value.cast2set(evalHeadTerm(term, root, env.toMap))
       for (x <- value) {
         val newRow = env.clone()
         newRow.update(sym.toString, x)
@@ -445,7 +445,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       val fact = new Array[AnyRef](p.arity)
       var i = 0
       while (i < fact.length) {
-        fact(i) = Interpreter.evalHeadTerm(terms(i), root, env.toMap)
+        fact(i) = evalHeadTerm(terms(i), root, env.toMap)
         i = i + 1
       }
 
@@ -455,6 +455,22 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       throw InternalRuntimeException("Negation not implemented yet.")
     case Predicate.Head.True(loc) => // nop
     case Predicate.Head.False(loc) => throw RuleException(s"The integrity rule defined at ${loc.format} is violated.", loc)
+  }
+
+  /**
+    * Evaluates the given head term `t` under the given environment `env0`
+    */
+  def evalHeadTerm(t: Term.Head, root: Root, env: Map[String, AnyRef]): AnyRef = t match {
+    case Term.Head.Var(x, _, _) => env(x.toString)
+    case Term.Head.Exp(e, _, _) => Interpreter.eval(e, root, env)
+    case Term.Head.Apply(sym, args, _, _) =>
+      val evalArgs = new Array[AnyRef](args.length)
+      var i = 0
+      while (i < evalArgs.length) {
+        evalArgs(i) = evalHeadTerm(args(i), root, env)
+        i = i + 1
+      }
+      Invoker.invoke(sym, evalArgs, root, env)
   }
 
   /**
