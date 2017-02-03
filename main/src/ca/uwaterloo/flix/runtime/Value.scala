@@ -457,7 +457,7 @@ object Value {
         if (o.value.isInstanceOf[Value.Unit.type]) {
           s"${o.tag}"
         } else if (o.value.isInstanceOf[Array[AnyRef]]) {
-          s"${o.tag}${o.value.asInstanceOf[Array[AnyRef]].map(pretty).mkString(", ")}"
+          s"${o.tag}(${o.value.asInstanceOf[Array[AnyRef]].map(pretty).mkString(", ")})"
         } else {
           s"${o.tag}(${pretty(o.value)})"
         }

@@ -346,10 +346,7 @@ object ExecutableAst {
       * @param tpe  the return type of the function.
       * @param loc  the source location of the expression.
       */
-    case class ApplyRef(sym: Symbol.DefnSym,
-                        args: Array[ExecutableAst.Expression],
-                        tpe: Type,
-                        loc: SourceLocation) extends ExecutableAst.Expression
+    case class ApplyRef(sym: Symbol.DefnSym, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     /**
       * A typed AST node representing a tail recursive call.
@@ -360,11 +357,7 @@ object ExecutableAst {
       * @param tpe     the return type of the function.
       * @param loc     the source location of the expression.
       */
-    case class ApplyTail(name: Symbol.DefnSym,
-                         formals: List[ExecutableAst.FormalParam],
-                         actuals: List[ExecutableAst.Expression],
-                         tpe: Type,
-                         loc: SourceLocation) extends ExecutableAst.Expression
+    case class ApplyTail(name: Symbol.DefnSym, formals: List[ExecutableAst.FormalParam], actuals: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     /**
       * A typed AST node representing a function call.
@@ -374,10 +367,7 @@ object ExecutableAst {
       * @param tpe  the return type of the function.
       * @param loc  the source location of the expression.
       */
-    case class ApplyHook(hook: Ast.Hook,
-                         args: Array[ExecutableAst.Expression],
-                         tpe: Type,
-                         loc: SourceLocation) extends ExecutableAst.Expression
+    case class ApplyHook(hook: Ast.Hook, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     /**
       * A typed AST node representing a function call.
@@ -387,10 +377,7 @@ object ExecutableAst {
       * @param tpe  the return type of the function.
       * @param loc  the source location of the expression.
       */
-    case class ApplyClosure(exp: ExecutableAst.Expression,
-                            args: Array[ExecutableAst.Expression],
-                            tpe: Type,
-                            loc: SourceLocation) extends ExecutableAst.Expression
+    case class ApplyClosure(exp: ExecutableAst.Expression, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     /**
       * A typed AST node representing a unary expression.
