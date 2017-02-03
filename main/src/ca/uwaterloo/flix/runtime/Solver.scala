@@ -369,9 +369,10 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       var i = 0
       while (i < pat.length) {
         val value = p.terms(i) match {
+            // TODO: Use proper pattern matching
           case t: ExecutableAst.Term.Body.Wild => null
           case t: ExecutableAst.Term.Body.Var => env.getOrElse(t.sym.toString, null)
-          case t: ExecutableAst.Term.Body.Exp => Interpreter.eval(t.e, root, env.toMap)
+          case t: ExecutableAst.Term.Body.Lit => Interpreter.eval(t.exp, root, env.toMap)
         }
         pat(i) = value
         i = i + 1
@@ -430,7 +431,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         val value = pred.terms(i) match {
           case Term.Body.Wild(_, _) => ???
           case Term.Body.Var(x, _, _) => env(x.toString)
-          case Term.Body.Exp(e, _, _) => Interpreter.eval(e, root, env.toMap)
+          case Term.Body.Lit(e, _, _) => Interpreter.eval(e, root, env.toMap)
         }
 
         args(i) = value

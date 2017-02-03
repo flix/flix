@@ -588,7 +588,9 @@ object ExecutableAst {
 
       case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
-      case class Exp(e: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
+      case class Lit(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
+
+      case class Pat(pat: ExecutableAst.Pattern, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
     }
 
