@@ -24,10 +24,12 @@ import ca.uwaterloo.flix.util.InternalRuntimeException
 
 object Invoker {
 
+  // TODO: Rename to Linker, and introduce InvocationTarget(s).
+
   /**
     * Immediately invokes the Flix code corresponding to the given definition symbol `sym`.
     */
-  def invoke(sym: Symbol.DefnSym, args: Array[AnyRef], root: ExecutableAst.Root, env0: Map[String, AnyRef] = Map.empty): AnyRef = {
+  def invoke(sym: Symbol.DefnSym, args: Array[AnyRef], root: ExecutableAst.Root, env0: Map[String, AnyRef] = Map.empty): AnyRef = { // TODO: Remove environment.
     // Lookup the definition symbol in the program.
     root.definitions.get(sym) match {
       case None => throw InternalRuntimeException(s"Undefined symbol: '$sym'.")
@@ -44,7 +46,7 @@ object Invoker {
   /**
     * Invokes the interpreted Flix code.
     */
-  private def invokeInterpreted(defn: ExecutableAst.Definition.Constant, args: Array[AnyRef], root: ExecutableAst.Root, env0: Map[String, AnyRef]): AnyRef = {
+  private def invokeInterpreted(defn: ExecutableAst.Definition.Constant, args: Array[AnyRef], root: ExecutableAst.Root, env0: Map[String, AnyRef]): AnyRef = {  // TODO: Remove environment.
     // Extend the environment with the values of the actual arguments.
     val env = defn.formals.zip(args).foldLeft(env0) {
       case (macc, (ExecutableAst.FormalParam(name, tpe), actual)) => macc + (name.toString -> actual)
