@@ -26,7 +26,7 @@ object Interpreter {
   /**
     * Evaluates the given expression `exp0` under the given environment `env0`.
     */
-  def eval(exp0: Expression, root: Root, env0: Map[String, AnyRef] = Map.empty): AnyRef = exp0 match {
+  def eval(exp0: Expression, root: Root, env0: Map[String, AnyRef]): AnyRef = exp0 match {
     case Expression.Unit => Value.Unit
     case Expression.True => Value.True
     case Expression.False => Value.False
@@ -70,17 +70,33 @@ object Interpreter {
       Value.Closure(ref.sym, bindings)
     case Expression.ApplyRef(sym, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
-      Invoker.invoke(sym, args, root, env0)
+      Invoker.invoke(sym, args.toArray, root, env0)
     case Expression.ApplyTail(sym, _, args0, _, _) =>
-      val args = evalArgs(args0.toArray, root, env0)
-      Invoker.invoke(sym, args, root, env0)
+      val args = evalArgs(args0, root, env0)
+      Invoker.invoke(sym, args.toArray, root, env0)
     case Expression.ApplyHook(hook, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
-      evalHook(hook, args, root, env0)
+      hook match {
+        case Ast.Hook.Safe(name, inv, _) =>
+          val wargs: Array[IValue] = args.map(new WrappedValue(_)).toArray
+          inv(wargs).getUnsafeRef
+        case Ast.Hook.Unsafe(name, inv, _) =>
+          inv(args.toArray)
+      }
     case Expression.ApplyClosure(exp, args0, tpe, loc) =>
-      val func = eval(exp, root, env0).asInstanceOf[Value.Closure]
+      val clo = eval(exp, root, env0).asInstanceOf[Value.Closure]
+      val Value.Closure(name, bindings) = clo
       val args = evalArgs(args0, root, env0)
-      evalClosure(func, args, root, env0)
+      val constant = root.definitions(name)
+      // Bindings for the capture variables are passed as arguments.
+      val env1 = constant.formals.take(bindings.length).zip(bindings).foldLeft(env0) {
+        case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
+      }
+      // Now pass the actual arguments supplied by the caller.
+      val env2 = constant.formals.drop(bindings.length).zip(args).foldLeft(env1) {
+        case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
+      }
+      eval(constant.exp, root, env2)
     case Expression.Unary(op, exp, _, _) => evalUnary(op, exp, root, env0)
     case Expression.Binary(op, exp1, exp2, _, _) => op match {
       case o: ArithmeticOperator => evalArithmetic(o, exp1, exp2, root, env0)
@@ -113,12 +129,15 @@ object Interpreter {
     case Expression.SwitchError(_, loc) => throw SwitchException("Non-exhaustive switch expression.", loc)
   }
 
-  private def evalUnary(op: UnaryOperator, e: Expression, root: Root, env: Map[String, AnyRef]): AnyRef = {
-    val v = eval(e, root, env)
+  /**
+    * Applies the given unary operator `op` to the value of the expression `exp0` under the environment `env0`
+    */
+  private def evalUnary(op: UnaryOperator, exp0: Expression, root: Root, env0: Map[String, AnyRef]): AnyRef = {
+    val v = eval(exp0, root, env0)
     op match {
       case UnaryOperator.LogicalNot => Value.mkBool(!Value.cast2bool(v))
       case UnaryOperator.Plus => v // nop
-      case UnaryOperator.Minus => e.tpe match {
+      case UnaryOperator.Minus => exp0.tpe match {
         case Type.Float32 => Value.mkFloat32(-Value.cast2float32(v))
         case Type.Float64 => Value.mkFloat64(-Value.cast2float64(v))
         case Type.Int8 => Value.mkInt8(-Value.cast2int8(v))
@@ -126,24 +145,27 @@ object Interpreter {
         case Type.Int32 => Value.mkInt32(-Value.cast2int32(v))
         case Type.Int64 => Value.mkInt64(-Value.cast2int64(v))
         case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v).negate)
-        case _ => throw InternalRuntimeException(s"Can't apply UnaryOperator.$op to type ${e.tpe}.")
+        case _ => throw InternalRuntimeException(s"Can't apply UnaryOperator.$op to type ${exp0.tpe}.")
       }
-      case UnaryOperator.BitwiseNegate => e.tpe match {
+      case UnaryOperator.BitwiseNegate => exp0.tpe match {
         case Type.Int8 => Value.mkInt8(~Value.cast2int8(v))
         case Type.Int16 => Value.mkInt16(~Value.cast2int16(v))
         case Type.Int32 => Value.mkInt32(~Value.cast2int32(v))
         case Type.Int64 => Value.mkInt64(~Value.cast2int64(v))
         case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v).not)
-        case _ => throw InternalRuntimeException(s"Can't apply UnaryOperator.$op to type ${e.tpe}.")
+        case _ => throw InternalRuntimeException(s"Can't apply UnaryOperator.$op to type ${exp0.tpe}.")
       }
     }
   }
 
-  private def evalArithmetic(o: ArithmeticOperator, e1: Expression, e2: Expression, root: Root, env: Map[String, AnyRef]): AnyRef = {
-    val v1 = eval(e1, root, env)
-    val v2 = eval(e2, root, env)
-    o match {
-      case BinaryOperator.Plus => e1.tpe match {
+  /**
+    * Applies the given arithmetic operator `op` to the values of the two expressions `exp1` and `exp2` under the environment `env0`
+    */
+  private def evalArithmetic(op: ArithmeticOperator, exp1: Expression, exp2: Expression, root: Root, env0: Map[String, AnyRef]): AnyRef = {
+    val v1 = eval(exp1, root, env0)
+    val v2 = eval(exp2, root, env0)
+    op match {
+      case BinaryOperator.Plus => exp1.tpe match {
         case Type.Float32 => Value.mkFloat32(Value.cast2float32(v1) + Value.cast2float32(v2))
         case Type.Float64 => Value.mkFloat64(Value.cast2float64(v1) + Value.cast2float64(v2))
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) + Value.cast2int8(v2))
@@ -151,9 +173,9 @@ object Interpreter {
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) + Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) + Value.cast2int64(v2))
         case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v1) add Value.cast2bigInt(v2))
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
-      case BinaryOperator.Minus => e1.tpe match {
+      case BinaryOperator.Minus => exp1.tpe match {
         case Type.Float32 => Value.mkFloat32(Value.cast2float32(v1) - Value.cast2float32(v2))
         case Type.Float64 => Value.mkFloat64(Value.cast2float64(v1) - Value.cast2float64(v2))
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) - Value.cast2int8(v2))
@@ -161,9 +183,9 @@ object Interpreter {
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) - Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) - Value.cast2int64(v2))
         case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v1) subtract Value.cast2bigInt(v2))
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
-      case BinaryOperator.Times => e1.tpe match {
+      case BinaryOperator.Times => exp1.tpe match {
         case Type.Float32 => Value.mkFloat32(Value.cast2float32(v1) * Value.cast2float32(v2))
         case Type.Float64 => Value.mkFloat64(Value.cast2float64(v1) * Value.cast2float64(v2))
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) * Value.cast2int8(v2))
@@ -171,9 +193,9 @@ object Interpreter {
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) * Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) * Value.cast2int64(v2))
         case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v1) multiply Value.cast2bigInt(v2))
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
-      case BinaryOperator.Divide => e1.tpe match {
+      case BinaryOperator.Divide => exp1.tpe match {
         case Type.Float32 => Value.mkFloat32(Value.cast2float32(v1) / Value.cast2float32(v2))
         case Type.Float64 => Value.mkFloat64(Value.cast2float64(v1) / Value.cast2float64(v2))
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) / Value.cast2int8(v2))
@@ -181,9 +203,9 @@ object Interpreter {
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) / Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) / Value.cast2int64(v2))
         case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v1) divide Value.cast2bigInt(v2))
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
-      case BinaryOperator.Modulo => e1.tpe match {
+      case BinaryOperator.Modulo => exp1.tpe match {
         case Type.Float32 => Value.mkFloat32(Value.cast2float32(v1) % Value.cast2float32(v2))
         case Type.Float64 => Value.mkFloat64(Value.cast2float64(v1) % Value.cast2float64(v2))
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) % Value.cast2int8(v2))
@@ -191,25 +213,28 @@ object Interpreter {
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) % Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) % Value.cast2int64(v2))
         case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v1) remainder Value.cast2bigInt(v2))
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
-      case BinaryOperator.Exponentiate => e1.tpe match {
+      case BinaryOperator.Exponentiate => exp1.tpe match {
         case Type.Float32 => Value.mkFloat32(math.pow(Value.cast2float32(v1), Value.cast2float32(v2)).toFloat)
         case Type.Float64 => Value.mkFloat64(math.pow(Value.cast2float64(v1), Value.cast2float64(v2)))
         case Type.Int8 => Value.mkInt8(math.pow(Value.cast2int8(v1), Value.cast2int8(v2)).toByte)
         case Type.Int16 => Value.mkInt16(math.pow(Value.cast2int16(v1), Value.cast2int16(v2)).toShort)
         case Type.Int32 => Value.mkInt32(math.pow(Value.cast2int32(v1), Value.cast2int32(v2)).toInt)
         case Type.Int64 => Value.mkInt64(math.pow(Value.cast2int64(v1), Value.cast2int64(v2)).toLong)
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
     }
   }
 
-  private def evalComparison(o: ComparisonOperator, e1: Expression, e2: Expression, root: Root, env: Map[String, AnyRef]): AnyRef = {
-    val v1 = eval(e1, root, env)
-    val v2 = eval(e2, root, env)
-    o match {
-      case BinaryOperator.Less => e1.tpe match {
+  /**
+    * Applies the given comparison operator `op` to the values of the two expressions `exp1` and `exp2` under the environment `env0`
+    */
+  private def evalComparison(op: ComparisonOperator, exp1: Expression, exp2: Expression, root: Root, env0: Map[String, AnyRef]): AnyRef = {
+    val v1 = eval(exp1, root, env0)
+    val v2 = eval(exp2, root, env0)
+    op match {
+      case BinaryOperator.Less => exp1.tpe match {
         case Type.Char => Value.mkBool(Value.cast2char(v1) < Value.cast2char(v2))
         case Type.Float32 => Value.mkBool(Value.cast2float32(v1) < Value.cast2float32(v2))
         case Type.Float64 => Value.mkBool(Value.cast2float64(v1) < Value.cast2float64(v2))
@@ -218,9 +243,9 @@ object Interpreter {
         case Type.Int32 => Value.mkBool(Value.cast2int32(v1) < Value.cast2int32(v2))
         case Type.Int64 => Value.mkBool(Value.cast2int64(v1) < Value.cast2int64(v2))
         case Type.BigInt => Value.mkBool((Value.cast2bigInt(v1) compareTo Value.cast2bigInt(v2)) < 0)
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
-      case BinaryOperator.LessEqual => e1.tpe match {
+      case BinaryOperator.LessEqual => exp1.tpe match {
         case Type.Char => Value.mkBool(Value.cast2char(v1) <= Value.cast2char(v2))
         case Type.Float32 => Value.mkBool(Value.cast2float32(v1) <= Value.cast2float32(v2))
         case Type.Float64 => Value.mkBool(Value.cast2float64(v1) <= Value.cast2float64(v2))
@@ -229,9 +254,9 @@ object Interpreter {
         case Type.Int32 => Value.mkBool(Value.cast2int32(v1) <= Value.cast2int32(v2))
         case Type.Int64 => Value.mkBool(Value.cast2int64(v1) <= Value.cast2int64(v2))
         case Type.BigInt => Value.mkBool((Value.cast2bigInt(v1) compareTo Value.cast2bigInt(v2)) <= 0)
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
-      case BinaryOperator.Greater => e1.tpe match {
+      case BinaryOperator.Greater => exp1.tpe match {
         case Type.Char => Value.mkBool(Value.cast2char(v1) > Value.cast2char(v2))
         case Type.Float32 => Value.mkBool(Value.cast2float32(v1) > Value.cast2float32(v2))
         case Type.Float64 => Value.mkBool(Value.cast2float64(v1) > Value.cast2float64(v2))
@@ -240,9 +265,9 @@ object Interpreter {
         case Type.Int32 => Value.mkBool(Value.cast2int32(v1) > Value.cast2int32(v2))
         case Type.Int64 => Value.mkBool(Value.cast2int64(v1) > Value.cast2int64(v2))
         case Type.BigInt => Value.mkBool((Value.cast2bigInt(v1) compareTo Value.cast2bigInt(v2)) > 0)
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
-      case BinaryOperator.GreaterEqual => e1.tpe match {
+      case BinaryOperator.GreaterEqual => exp1.tpe match {
         case Type.Char => Value.mkBool(Value.cast2char(v1) >= Value.cast2char(v2))
         case Type.Float32 => Value.mkBool(Value.cast2float32(v1) >= Value.cast2float32(v2))
         case Type.Float64 => Value.mkBool(Value.cast2float64(v1) >= Value.cast2float64(v2))
@@ -251,129 +276,78 @@ object Interpreter {
         case Type.Int32 => Value.mkBool(Value.cast2int32(v1) >= Value.cast2int32(v2))
         case Type.Int64 => Value.mkBool(Value.cast2int64(v1) >= Value.cast2int64(v2))
         case Type.BigInt => Value.mkBool((Value.cast2bigInt(v1) compareTo Value.cast2bigInt(v2)) >= 0)
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
       case BinaryOperator.Equal => java.lang.Boolean.valueOf(Value.equal(v1, v2))
       case BinaryOperator.NotEqual => java.lang.Boolean.valueOf(!Value.equal(v1, v2))
     }
   }
 
-  private def evalLogical(o: LogicalOperator, e1: Expression, e2: Expression, root: Root, env: Map[String, AnyRef]): AnyRef = o match {
+  /**
+    * Applies the given logical operator `op` to the values of the two expressions `exp1` and `exp2` under the environment `env0`
+    */
+  private def evalLogical(op: LogicalOperator, exp1: Expression, exp2: Expression, root: Root, env0: Map[String, AnyRef]): AnyRef = op match {
     case BinaryOperator.LogicalAnd =>
-      if (Value.cast2bool(eval(e1, root, env))) eval(e2, root, env) else Value.False
+      if (Value.cast2bool(eval(exp1, root, env0))) eval(exp2, root, env0) else Value.False
     case BinaryOperator.LogicalOr =>
-      if (Value.cast2bool(eval(e1, root, env))) Value.True else eval(e2, root, env)
+      if (Value.cast2bool(eval(exp1, root, env0))) Value.True else eval(exp2, root, env0)
   }
 
-  private def evalBitwise(o: BitwiseOperator, e1: Expression, e2: Expression, root: Root, env: Map[String, AnyRef]): AnyRef = {
-    val v1 = eval(e1, root, env)
-    val v2 = eval(e2, root, env)
-    o match {
-      case BinaryOperator.BitwiseAnd => e1.tpe match {
+  /**
+    * Applies the given bitwise operator `op` to the values of the two expressions `exp1` and `exp2` under the environment `env0`
+    */
+  private def evalBitwise(op: BitwiseOperator, exp1: Expression, exp2: Expression, root: Root, env0: Map[String, AnyRef]): AnyRef = {
+    val v1 = eval(exp1, root, env0)
+    val v2 = eval(exp2, root, env0)
+    op match {
+      case BinaryOperator.BitwiseAnd => exp1.tpe match {
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) & Value.cast2int8(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) & Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) & Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) & Value.cast2int64(v2))
         case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v1) and Value.cast2bigInt(v2))
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
-      case BinaryOperator.BitwiseOr => e1.tpe match {
+      case BinaryOperator.BitwiseOr => exp1.tpe match {
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) | Value.cast2int8(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) | Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) | Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) | Value.cast2int64(v2))
         case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v1) or Value.cast2bigInt(v2))
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
-      case BinaryOperator.BitwiseXor => e1.tpe match {
+      case BinaryOperator.BitwiseXor => exp1.tpe match {
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) ^ Value.cast2int8(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) ^ Value.cast2int16(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) ^ Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) ^ Value.cast2int64(v2))
         case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v1) xor Value.cast2bigInt(v2))
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
-      case BinaryOperator.BitwiseLeftShift => e1.tpe match {
+      case BinaryOperator.BitwiseLeftShift => exp1.tpe match {
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) << Value.cast2int32(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) << Value.cast2int32(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) << Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) << Value.cast2int32(v2))
         case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v1) shiftLeft Value.cast2int32(v2))
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
-      case BinaryOperator.BitwiseRightShift => e1.tpe match {
+      case BinaryOperator.BitwiseRightShift => exp1.tpe match {
         case Type.Int8 => Value.mkInt8(Value.cast2int8(v1) >> Value.cast2int32(v2))
         case Type.Int16 => Value.mkInt16(Value.cast2int16(v1) >> Value.cast2int32(v2))
         case Type.Int32 => Value.mkInt32(Value.cast2int32(v1) >> Value.cast2int32(v2))
         case Type.Int64 => Value.mkInt64(Value.cast2int64(v1) >> Value.cast2int32(v2))
         case Type.BigInt => Value.mkBigInt(Value.cast2bigInt(v1) shiftRight Value.cast2int32(v2))
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$o to type ${e1.tpe}.")
+        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
     }
   }
 
-  // TODO: Need to come up with some more clean interfaces
-  // TODO: Everything below here is really bad and should just be replaced at will.
-
   /**
-    * Evaluates the given head term `t` under the given environment `env0`
+    * Evaluates the given list of expressions `exps` under the given environment `env` to a list of values.
     */
-  def evalHeadTerm(t: Term.Head, root: Root, env: Map[String, AnyRef]): AnyRef = t match {
-    case Term.Head.Var(x, _, _) => env(x.toString)
-    case Term.Head.Exp(e, _, _) => eval(e, root, env)
-    case Term.Head.Apply(sym, args, _, _) =>
-      val evalArgs = new Array[AnyRef](args.length)
-      var i = 0
-      while (i < evalArgs.length) {
-        evalArgs(i) = evalHeadTerm(args(i), root, env)
-        i = i + 1
-      }
-      Invoker.invoke(sym, evalArgs, root, env)
-  }
-
-  def evalBodyTerm(t: Term.Body, root: Root, env: Map[String, AnyRef]): AnyRef = t match {
-    case Term.Body.Wild(_, _) => ???
-    case Term.Body.Var(x, _, _) => env(x.toString)
-    case Term.Body.Exp(e, _, _) => eval(e, root, env)
-  }
-
-  private def evalHook(hook: Ast.Hook, args: Array[AnyRef], root: Root, env: Map[String, AnyRef]): AnyRef =
-    hook match {
-      case Ast.Hook.Safe(name, inv, _) =>
-        val wargs: Array[IValue] = args.map(new WrappedValue(_))
-        inv(wargs).getUnsafeRef
-      case Ast.Hook.Unsafe(name, inv, _) =>
-        inv(args)
-    }
-
-  private def evalClosure(function: Value.Closure, args: Array[AnyRef], root: Root, env: Map[String, AnyRef]): AnyRef = {
-    val Value.Closure(name, bindings) = function
-    val constant = root.definitions(name)
-
-    // Bindings for the capture variables are passed as arguments.
-    val env1 = constant.formals.take(bindings.length).zip(bindings).foldLeft(env) {
-      case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
-    }
-
-    // Now pass the actual arguments supplied by the caller.
-    val env2 = constant.formals.drop(bindings.length).zip(args).foldLeft(env1) {
-      case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
-    }
-
-    eval(constant.exp, root, env2)
-  }
-
-  /**
-    * Evaluates the given array of arguments `args` to an array of values.
-    */
-  private def evalArgs(args: Array[Expression], root: Root, env: Map[String, AnyRef]): Array[AnyRef] = {
-    val values = new Array[AnyRef](args.length)
-    var i = 0
-    while (i < values.length) {
-      values(i) = eval(args(i), root, env)
-      i = i + 1
-    }
-    values
+  private def evalArgs(exps: List[Expression], root: Root, env: Map[String, AnyRef]): List[AnyRef] = {
+    exps.map(a => eval(a, root, env))
   }
 
 }

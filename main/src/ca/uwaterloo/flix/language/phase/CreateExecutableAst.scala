@@ -197,15 +197,15 @@ object CreateExecutableAst {
         val fvs = freeVars.map(CreateExecutableAst.toExecutable).toArray
         ExecutableAst.Expression.MkClosureRef(e.asInstanceOf[ExecutableAst.Expression.Ref], fvs, tpe, loc)
       case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
-        val argsArray = args.map(toExecutable).toArray
+        val argsArray = args.map(toExecutable)
         ExecutableAst.Expression.ApplyRef(name, argsArray, tpe, loc)
       case SimplifiedAst.Expression.ApplyTail(name, formals, actuals, tpe, loc) =>
         ExecutableAst.Expression.ApplyTail(name, formals.map(CreateExecutableAst.toExecutable), actuals.map(toExecutable), tpe, loc)
       case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) =>
-        val argsArray = args.map(toExecutable).toArray
+        val argsArray = args.map(toExecutable)
         ExecutableAst.Expression.ApplyHook(hook, argsArray, tpe, loc)
       case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
-        val argsArray = args.map(toExecutable).toArray
+        val argsArray = args.map(toExecutable)
         ExecutableAst.Expression.ApplyClosure(toExecutable(exp), argsArray, tpe, loc)
       case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) =>
         ExecutableAst.Expression.Unary(op, toExecutable(exp), tpe, loc)
