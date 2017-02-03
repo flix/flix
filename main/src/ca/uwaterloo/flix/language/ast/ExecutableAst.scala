@@ -471,6 +471,44 @@ object ExecutableAst {
 
   }
 
+  sealed trait Pattern extends ExecutableAst
+
+  object Pattern {
+
+    case object Wild extends ExecutableAst.Pattern
+
+    case class Var(sym: Symbol.VarSym) extends ExecutableAst.Pattern
+
+    case object Unit extends ExecutableAst.Pattern
+
+    case object True extends ExecutableAst.Pattern
+
+    case object False extends ExecutableAst.Pattern
+
+    case class Char(lit: scala.Char) extends ExecutableAst.Pattern
+
+    case class Float32(lit: scala.Float) extends ExecutableAst.Pattern
+
+    case class Float64(lit: scala.Double) extends ExecutableAst.Pattern
+
+    case class Int8(lit: scala.Byte) extends ExecutableAst.Pattern
+
+    case class Int16(lit: scala.Short) extends ExecutableAst.Pattern
+
+    case class Int32(lit: scala.Int) extends ExecutableAst.Pattern
+
+    case class Int64(lit: scala.Long) extends ExecutableAst.Pattern
+
+    case class BigInt(lit: java.math.BigInteger) extends ExecutableAst.Pattern
+
+    case class Str(lit: java.lang.String) extends ExecutableAst.Pattern
+
+    case class Tag(sym: Symbol.EnumSym, tag: String, pat: ExecutableAst.Pattern) extends ExecutableAst.Pattern
+
+    case class Tuple(elms: List[ExecutableAst.Pattern]) extends ExecutableAst.Pattern
+
+  }
+
   sealed trait Predicate extends ExecutableAst {
     def loc: SourceLocation
   }
