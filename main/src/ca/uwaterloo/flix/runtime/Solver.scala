@@ -389,12 +389,25 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       // lookup all matching rows.
       for (matchedRow <- table.lookup(pat)) {
         // copy the environment for every row.
-        val newRow = env.clone()
+        var newRow = env.clone()
+
+        // A boolean which controls whether this row should be skipped.
+        var skip = false
 
         var i = 0
         while (i < matchedRow.length) {
 
-          // TODO: Perform unification...
+          // TODO: Ugly implementation of matching values against patterns.
+          if (p.terms(i).isInstanceOf[ExecutableAst.Term.Body.Pat]) {
+            val termAtIndex = p.terms(i).asInstanceOf[ExecutableAst.Term.Body.Pat]
+            val valueAtIndex = matchedRow(i)
+            val extendedEnv = Interpreter.unify(termAtIndex.pat, valueAtIndex, env.toMap)
+            if (extendedEnv == null) {
+              skip = true
+            } else {
+              newRow = newRow ++ extendedEnv
+            }
+          }
 
           val varName = p.index2var(i)
           if (varName != null)
@@ -404,7 +417,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
 
         // compute the cross product of the remaining
         // collections under the new environment.
-        evalCross(rule, xs, newRow, interp)
+        if (!skip) {
+          evalCross(rule, xs, newRow, interp)
+        }
       }
     case (p: Predicate.Body.Negative) :: xs =>
       throw InternalRuntimeException("Negated predicates not yet supported")

@@ -343,7 +343,28 @@ object Simplifier {
       *
       * NB: This function is only used for constraints. Patterns are eliminated for expressions.
       */
-    def translate(pat0: TypedAst.Pattern): SimplifiedAst.Pattern = ???
+    def translate(pat0: TypedAst.Pattern): SimplifiedAst.Pattern = pat0 match {
+      case TypedAst.Pattern.Wild(tpe, loc) => SimplifiedAst.Pattern.Wild(tpe, loc)
+      case TypedAst.Pattern.Var(sym, tpe, loc) => SimplifiedAst.Pattern.Var(sym, tpe, loc)
+      case TypedAst.Pattern.Unit(loc) => SimplifiedAst.Pattern.Unit(loc)
+      case TypedAst.Pattern.True(loc) => SimplifiedAst.Pattern.True(loc)
+      case TypedAst.Pattern.False(loc) => SimplifiedAst.Pattern.False(loc)
+      case TypedAst.Pattern.Char(lit, loc) => SimplifiedAst.Pattern.Char(lit, loc)
+      case TypedAst.Pattern.Float32(lit, loc) => SimplifiedAst.Pattern.Float32(lit, loc)
+      case TypedAst.Pattern.Float64(lit, loc) => SimplifiedAst.Pattern.Float64(lit, loc)
+      case TypedAst.Pattern.Int8(lit, loc) => SimplifiedAst.Pattern.Int8(lit, loc)
+      case TypedAst.Pattern.Int16(lit, loc) => SimplifiedAst.Pattern.Int16(lit, loc)
+      case TypedAst.Pattern.Int32(lit, loc) => SimplifiedAst.Pattern.Int32(lit, loc)
+      case TypedAst.Pattern.Int64(lit, loc) => SimplifiedAst.Pattern.Int64(lit, loc)
+      case TypedAst.Pattern.BigInt(lit, loc) => SimplifiedAst.Pattern.BigInt(lit, loc)
+      case TypedAst.Pattern.Str(lit, loc) => SimplifiedAst.Pattern.Str(lit, loc)
+      case TypedAst.Pattern.Tag(sym, tag, pat, tpe, loc) => SimplifiedAst.Pattern.Tag(sym, tag, translate(pat), tpe, loc)
+      case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
+        val es = elms map translate
+        SimplifiedAst.Pattern.Tuple(es, tpe, loc)
+      case TypedAst.Pattern.FSet(elms, rest, tpe, loc) => ??? // TODO: Unsupported
+      case TypedAst.Pattern.FMap(elms, rest, tpe, loc) => ??? // TODO: Unsupported
+    }
 
   }
 
@@ -426,7 +447,7 @@ object Simplifier {
       def simplify(e: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Term.Body = e match {
         case TypedAst.Expression.Wild(tpe, loc) => SimplifiedAst.Term.Body.Wild(tpe, loc)
         case TypedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Term.Body.Var(sym, tpe, loc)
-        case _ => throw InternalCompilerException(s"Unsupported expression $e") // TODO: Look into when this can happen.
+        case _ => SimplifiedAst.Term.Body.Lit(Expression.simplify(e), e.tpe, e.loc) // TODO: Only certain expressions should be allow here.
       }
     }
 

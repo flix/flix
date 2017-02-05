@@ -241,7 +241,26 @@ object CreateExecutableAst {
 
   object Patterns {
 
-    def toExecutable(pat0: SimplifiedAst.Pattern): ExecutableAst.Pattern = ???
+    def toExecutable(pat0: SimplifiedAst.Pattern): ExecutableAst.Pattern = pat0 match {
+      case SimplifiedAst.Pattern.Wild(tpe, loc) => ExecutableAst.Pattern.Wild
+      case SimplifiedAst.Pattern.Var(sym, tpe, loc) => ExecutableAst.Pattern.Var(sym)
+      case SimplifiedAst.Pattern.Unit(loc) => ExecutableAst.Pattern.Unit
+      case SimplifiedAst.Pattern.True(loc) => ExecutableAst.Pattern.True
+      case SimplifiedAst.Pattern.False(loc) => ExecutableAst.Pattern.False
+      case SimplifiedAst.Pattern.Char(lit, loc) => ExecutableAst.Pattern.Char(lit)
+      case SimplifiedAst.Pattern.Float32(lit, loc) => ExecutableAst.Pattern.Float32(lit)
+      case SimplifiedAst.Pattern.Float64(lit, loc) => ExecutableAst.Pattern.Float64(lit)
+      case SimplifiedAst.Pattern.Int8(lit, loc) => ExecutableAst.Pattern.Int8(lit)
+      case SimplifiedAst.Pattern.Int16(lit, loc) => ExecutableAst.Pattern.Int16(lit)
+      case SimplifiedAst.Pattern.Int32(lit, loc) => ExecutableAst.Pattern.Int32(lit)
+      case SimplifiedAst.Pattern.Int64(lit, loc) => ExecutableAst.Pattern.Int64(lit)
+      case SimplifiedAst.Pattern.BigInt(lit, loc) => ExecutableAst.Pattern.BigInt(lit)
+      case SimplifiedAst.Pattern.Str(lit, loc) => ExecutableAst.Pattern.Str(lit)
+      case SimplifiedAst.Pattern.Tag(sym, tag, pat, tpe, loc) => ExecutableAst.Pattern.Tag(sym, tag, toExecutable(pat))
+      case SimplifiedAst.Pattern.Tuple(elms, tpe, loc) =>
+        val es = elms map toExecutable
+        ExecutableAst.Pattern.Tuple(es)
+    }
 
   }
 
@@ -343,7 +362,7 @@ object CreateExecutableAst {
           // HACK: Unfortunately the interpreter requires an ExecutableAst, which we are currently constructing,
           // HACK: and so is not yet available. Our solution is to pass in an empty AST.
           // HACK: This is okay, since a literal should not reference anything (otherwise it would not be a literal).
-          val fakeRoot =  ExecutableAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty, Time.Default, Map.empty)
+          val fakeRoot = ExecutableAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty, Time.Default, Map.empty)
           val v = Interpreter.eval(Expression.toExecutable(lit), fakeRoot, Map.empty)
           ExecutableAst.Term.Body.Lit(v, tpe, loc)
         case SimplifiedAst.Term.Body.Pat(pat, tpe, loc) => ExecutableAst.Term.Body.Pat(Patterns.toExecutable(pat), tpe, loc)

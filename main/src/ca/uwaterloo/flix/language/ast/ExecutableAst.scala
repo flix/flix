@@ -475,6 +475,8 @@ object ExecutableAst {
 
   object Pattern {
 
+    // TODO: Types and loc?
+
     case object Wild extends ExecutableAst.Pattern
 
     case class Var(sym: Symbol.VarSym) extends ExecutableAst.Pattern

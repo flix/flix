@@ -433,37 +433,37 @@ object SimplifiedAst {
 
   object Pattern {
 
-    case object Wild extends SimplifiedAst.Pattern
+    case class Wild(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Pattern
 
-    case class Var(sym: Symbol.VarSym) extends SimplifiedAst.Pattern
+    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Pattern
 
-    case object Unit extends SimplifiedAst.Pattern
+    case class Unit(loc: SourceLocation) extends SimplifiedAst.Pattern
 
-    case object True extends SimplifiedAst.Pattern
+    case class True(loc: SourceLocation) extends SimplifiedAst.Pattern
 
-    case object False extends SimplifiedAst.Pattern
+    case class False(loc: SourceLocation) extends SimplifiedAst.Pattern
 
-    case class Char(lit: scala.Char) extends SimplifiedAst.Pattern
+    case class Char(lit: scala.Char, loc: SourceLocation) extends SimplifiedAst.Pattern
 
-    case class Float32(lit: scala.Float) extends SimplifiedAst.Pattern
+    case class Float32(lit: scala.Float, loc: SourceLocation) extends SimplifiedAst.Pattern
 
-    case class Float64(lit: scala.Double) extends SimplifiedAst.Pattern
+    case class Float64(lit: scala.Double, loc: SourceLocation) extends SimplifiedAst.Pattern
 
-    case class Int8(lit: scala.Byte) extends SimplifiedAst.Pattern
+    case class Int8(lit: scala.Byte, loc: SourceLocation) extends SimplifiedAst.Pattern
 
-    case class Int16(lit: scala.Short) extends SimplifiedAst.Pattern
+    case class Int16(lit: scala.Short, loc: SourceLocation) extends SimplifiedAst.Pattern
 
-    case class Int32(lit: scala.Int) extends SimplifiedAst.Pattern
+    case class Int32(lit: scala.Int, loc: SourceLocation) extends SimplifiedAst.Pattern
 
-    case class Int64(lit: scala.Long) extends SimplifiedAst.Pattern
+    case class Int64(lit: scala.Long, loc: SourceLocation) extends SimplifiedAst.Pattern
 
-    case class BigInt(lit: java.math.BigInteger) extends SimplifiedAst.Pattern
+    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends SimplifiedAst.Pattern
 
-    case class Str(lit: java.lang.String) extends SimplifiedAst.Pattern
+    case class Str(lit: java.lang.String, loc: SourceLocation) extends SimplifiedAst.Pattern
 
-    case class Tag(sym: Symbol.EnumSym, tag: String, pat: SimplifiedAst.Pattern) extends SimplifiedAst.Pattern
+    case class Tag(sym: Symbol.EnumSym, tag: String, pat: SimplifiedAst.Pattern, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Pattern
 
-    case class Tuple(elms: List[SimplifiedAst.Pattern]) extends SimplifiedAst.Pattern
+    case class Tuple(elms: List[SimplifiedAst.Pattern], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Pattern
 
   }
 

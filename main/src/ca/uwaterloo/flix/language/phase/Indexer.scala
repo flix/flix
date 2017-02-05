@@ -54,6 +54,7 @@ object Indexer {
                 else
                   xs
               case (xs, (t: Term.Body.Lit, i)) => xs :+ i
+              case (xs, (t: Term.Body.Pat, i)) => xs :+ i
             }
 
             // if one or more terms are determinate then an index would be useful.
