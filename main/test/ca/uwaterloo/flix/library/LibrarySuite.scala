@@ -28,6 +28,7 @@ class LibrarySuite extends Suites(
   new TestInt32,
   new TestInt64,
   new FlixTest("TestPrelude", "main/test/ca/uwaterloo/flix/library/TestPrelude.flix"),
+  new FlixTest("TestOption", "main/test/ca/uwaterloo/flix/library/TestOption.flix"),
   new FlixTest("TestSet", "main/test/ca/uwaterloo/flix/library/TestSet.flix")
 ) with ParallelTestExecution {
   /* left empty */
