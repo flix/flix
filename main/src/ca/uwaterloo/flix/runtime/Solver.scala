@@ -391,20 +391,24 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         // copy the environment for every row.
         var newRow = env.clone()
 
-        // A boolean which controls whether this row should be skipped.
+        // A matched row may still fail to unify with a pattern term.
+        // We use this boolean variable to track whether that is the case.
         var skip = false
 
         var i = 0
         while (i < matchedRow.length) {
 
-          // TODO: Ugly implementation of matching values against patterns.
+          // Check if the term is pattern term.
+          // If so, we must checked whether the pattern can be unified with the value.
           if (p.terms(i).isInstanceOf[ExecutableAst.Term.Body.Pat]) {
-            val termAtIndex = p.terms(i).asInstanceOf[ExecutableAst.Term.Body.Pat]
-            val valueAtIndex = matchedRow(i)
-            val extendedEnv = Interpreter.unify(termAtIndex.pat, valueAtIndex, env.toMap)
+            val term = p.terms(i).asInstanceOf[ExecutableAst.Term.Body.Pat]
+            val value = matchedRow(i)
+            val extendedEnv = Interpreter.unify(term.pat, value, env.toMap)
             if (extendedEnv == null) {
+              // Value does not unify with the pattern term. We should skip this row.
               skip = true
             } else {
+              // The value matched, must bind variables in the pattern by extending the environment.
               newRow = newRow ++ extendedEnv
             }
           }
@@ -415,9 +419,10 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
           i = i + 1
         }
 
-        // compute the cross product of the remaining
-        // collections under the new environment.
+        // Check whether to evaluate the rest of the rule.
         if (!skip) {
+          // compute the cross product of the remaining
+          // collections under the new environment.
           evalCross(rule, xs, newRow, interp)
         }
       }
