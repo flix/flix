@@ -25,8 +25,6 @@ class LibrarySuite extends Suites(
   new TestFloat64,
   new TestInt8,
   new TestInt16,
-  new TestInt32,
-  new TestInt64,
   new FlixTest("TestPrelude", "main/test/ca/uwaterloo/flix/library/TestPrelude.flix"),
   new FlixTest("TestMap", "main/test/ca/uwaterloo/flix/library/TestMap.flix"),
   new FlixTest("TestSet", "main/test/ca/uwaterloo/flix/library/TestSet.flix")
