@@ -438,7 +438,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         args(i) = value
         i = i + 1
       }
-      val result = Invoker.invoke(pred.sym, args, root)
+      val result = Linker.link(pred.sym, root).invoke(args)
       if (Value.cast2bool(result))
         evalFilter(rule, xs, env, interp)
   }
@@ -477,7 +477,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         evalArgs(i) = evalHeadTerm(args(i), root, env)
         i = i + 1
       }
-      Invoker.invoke(sym, evalArgs, root)
+      Linker.link(sym, root).invoke(evalArgs)
   }
 
   /**
@@ -619,7 +619,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     val definitions = root.definitions.foldLeft(Map.empty[Symbol.DefnSym, () => AnyRef]) {
       case (macc, (sym, defn)) =>
         if (defn.formals.isEmpty)
-          macc + (sym -> (() => Invoker.invoke(sym, Array.empty, root)))
+          macc + (sym -> (() => Linker.link(sym, root).invoke(Array.empty)))
         else
           macc + (sym -> (() => throw InternalRuntimeException("Unable to evalaute non-constant top-level definition.")))
     }
