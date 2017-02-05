@@ -70,10 +70,10 @@ object Interpreter {
       Value.Closure(ref.sym, bindings)
     case Expression.ApplyRef(sym, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
-      Invoker.invoke(sym, args.toArray, root, env0)
+      Invoker.invoke(sym, args.toArray, root)
     case Expression.ApplyTail(sym, _, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
-      Invoker.invoke(sym, args.toArray, root, env0)
+      Invoker.invoke(sym, args.toArray, root)
     case Expression.ApplyHook(hook, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
       hook match {

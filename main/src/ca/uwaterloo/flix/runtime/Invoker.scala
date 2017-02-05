@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.runtime
 
 import java.lang.reflect.InvocationTargetException
 
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.ExecutableAst
+import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
 object Invoker {
@@ -29,14 +28,14 @@ object Invoker {
   /**
     * Immediately invokes the Flix code corresponding to the given definition symbol `sym`.
     */
-  def invoke(sym: Symbol.DefnSym, args: Array[AnyRef], root: ExecutableAst.Root, env0: Map[String, AnyRef] = Map.empty): AnyRef = { // TODO: Remove environment.
+  def invoke(sym: Symbol.DefnSym, args: Array[AnyRef], root: ExecutableAst.Root): AnyRef = {
     // Lookup the definition symbol in the program.
     root.definitions.get(sym) match {
       case None => throw InternalRuntimeException(s"Undefined symbol: '$sym'.")
       case Some(defn) =>
         // Determine whether to invoke the interpreted or compiled code.
         if (defn.method == null) {
-          invokeInterpreted(defn, args, root, env0)
+          invokeInterpreted(defn, args, root)
         } else {
           invokeCompiled(defn, args)
         }
@@ -46,9 +45,9 @@ object Invoker {
   /**
     * Invokes the interpreted Flix code.
     */
-  private def invokeInterpreted(defn: ExecutableAst.Definition.Constant, args: Array[AnyRef], root: ExecutableAst.Root, env0: Map[String, AnyRef]): AnyRef = {  // TODO: Remove environment.
+  private def invokeInterpreted(defn: ExecutableAst.Definition.Constant, args: Array[AnyRef], root: ExecutableAst.Root): AnyRef = {
     // Extend the environment with the values of the actual arguments.
-    val env = defn.formals.zip(args).foldLeft(env0) {
+    val env = defn.formals.zip(args).foldLeft(Map.empty[String, AnyRef]) {
       case (macc, (ExecutableAst.FormalParam(name, tpe), actual)) => macc + (name.toString -> actual)
     }
     Interpreter.eval(defn.exp, root, env)

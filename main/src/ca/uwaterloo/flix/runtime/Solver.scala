@@ -324,7 +324,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       val writersMiliSeconds = writersTime / 1000000
       val initialFacts = facts.length
       val totalFacts = dataStore.numberOfFacts
-      val throughput = (1000 * totalFacts) / (solverTime + 1)
+      val throughput = ((1000.0 * totalFacts.toDouble) / (solverTime.toDouble + 1.0)).toInt
       Console.println(f"Solved in $solverTime%,d msec. (init: $initMiliSeconds%,d msec, readers: $readersMiliSeconds%,d msec, writers: $writersMiliSeconds%,d msec)")
       Console.println(f"Initial Facts: $initialFacts%,d. Total Facts: $totalFacts%,d.")
       Console.println(f"Throughput: $throughput%,d facts per second.")
@@ -438,7 +438,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         args(i) = value
         i = i + 1
       }
-      val result = Invoker.invoke(pred.sym, args, root, env.toMap)
+      val result = Invoker.invoke(pred.sym, args, root)
       if (Value.cast2bool(result))
         evalFilter(rule, xs, env, interp)
   }
@@ -477,7 +477,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         evalArgs(i) = evalHeadTerm(args(i), root, env)
         i = i + 1
       }
-      Invoker.invoke(sym, evalArgs, root, env)
+      Invoker.invoke(sym, evalArgs, root)
   }
 
   /**
