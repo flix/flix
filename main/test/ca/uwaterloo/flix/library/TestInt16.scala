@@ -17,12 +17,12 @@
 package ca.uwaterloo.flix.library
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.util.{Evaluation, Options}
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestInt16 extends FunSuite {
 
-  val options = Options.DefaultTest.copy(evaluation=Evaluation.Interpreted)
+  val options = Options.DefaultTest
 
   def runTest(input: String, output: Short) {
     val flix = new Flix().setOptions(options).addPath("main/src/library/Int16.flix").addStr(input)
