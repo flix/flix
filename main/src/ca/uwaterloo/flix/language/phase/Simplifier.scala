@@ -194,7 +194,7 @@ object Simplifier {
             //   fn() = if `matchVar` matches `pat`, return `body`, else call `next()`
             val lambda = SExp.Lambda(
               args = List(),
-              body = Pattern.simplify(
+              body = Patterns.simplify(
                 xs = List(pat),
                 ys = List(matchVar),
                 guard,
@@ -240,7 +240,7 @@ object Simplifier {
     }
   }
 
-  object Pattern {
+  object Patterns {
 
     import SimplifiedAst.{Expression => SExp}
     import TypedAst.Pattern._
@@ -295,7 +295,7 @@ object Simplifier {
         */
       case (lit :: ps, v :: vs) if isLiteral(lit) =>
         val exp = simplify(ps, vs, guard, succ, fail)
-        val cond = SExp.Binary(Equal, lit2exp(lit), SExp.Var(v, lit.tpe, lit.loc), Type.Bool, lit.loc)
+        val cond = SExp.Binary(Equal, pat2exp(lit), SExp.Var(v, lit.tpe, lit.loc), Type.Bool, lit.loc)
         SExp.IfThenElse(cond, exp, fail, succ.tpe, lit.loc)
 
       /**
@@ -336,6 +336,34 @@ object Simplifier {
 
       case p => throw InternalCompilerException(s"Unsupported pattern '$p'.")
 
+    }
+
+    /**
+      * Translates the given typed pattern `pat0` into a simplified pattern.
+      *
+      * NB: This function is only used for constraints. Patterns are eliminated for expressions.
+      */
+    def translate(pat0: TypedAst.Pattern): SimplifiedAst.Pattern = pat0 match {
+      case TypedAst.Pattern.Wild(tpe, loc) => SimplifiedAst.Pattern.Wild(tpe, loc)
+      case TypedAst.Pattern.Var(sym, tpe, loc) => SimplifiedAst.Pattern.Var(sym, tpe, loc)
+      case TypedAst.Pattern.Unit(loc) => SimplifiedAst.Pattern.Unit(loc)
+      case TypedAst.Pattern.True(loc) => SimplifiedAst.Pattern.True(loc)
+      case TypedAst.Pattern.False(loc) => SimplifiedAst.Pattern.False(loc)
+      case TypedAst.Pattern.Char(lit, loc) => SimplifiedAst.Pattern.Char(lit, loc)
+      case TypedAst.Pattern.Float32(lit, loc) => SimplifiedAst.Pattern.Float32(lit, loc)
+      case TypedAst.Pattern.Float64(lit, loc) => SimplifiedAst.Pattern.Float64(lit, loc)
+      case TypedAst.Pattern.Int8(lit, loc) => SimplifiedAst.Pattern.Int8(lit, loc)
+      case TypedAst.Pattern.Int16(lit, loc) => SimplifiedAst.Pattern.Int16(lit, loc)
+      case TypedAst.Pattern.Int32(lit, loc) => SimplifiedAst.Pattern.Int32(lit, loc)
+      case TypedAst.Pattern.Int64(lit, loc) => SimplifiedAst.Pattern.Int64(lit, loc)
+      case TypedAst.Pattern.BigInt(lit, loc) => SimplifiedAst.Pattern.BigInt(lit, loc)
+      case TypedAst.Pattern.Str(lit, loc) => SimplifiedAst.Pattern.Str(lit, loc)
+      case TypedAst.Pattern.Tag(sym, tag, pat, tpe, loc) => SimplifiedAst.Pattern.Tag(sym, tag, translate(pat), tpe, loc)
+      case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
+        val es = elms map translate
+        SimplifiedAst.Pattern.Tuple(es, tpe, loc)
+      case TypedAst.Pattern.FSet(elms, rest, tpe, loc) => ??? // TODO: Unsupported
+      case TypedAst.Pattern.FMap(elms, rest, tpe, loc) => ??? // TODO: Unsupported
     }
 
   }
@@ -407,11 +435,10 @@ object Simplifier {
       def simplify(p: TypedAst.Pattern)(implicit genSym: GenSym): SimplifiedAst.Term.Body = p match {
         case TypedAst.Pattern.Wild(tpe, loc) => SimplifiedAst.Term.Body.Wild(tpe, loc)
         case TypedAst.Pattern.Var(sym, tpe, loc) => SimplifiedAst.Term.Body.Var(sym, tpe, loc)
-        case _ =>
-          if (isLiteral(p))
-            SimplifiedAst.Term.Body.Exp(lit2exp(p), p.tpe, p.loc)
-          else
-            throw InternalCompilerException(s"Unsupported pattern: $p.") // TODO
+        case _ => if (isLiteral(p))
+          SimplifiedAst.Term.Body.Lit(pat2exp(p), p.tpe, p.loc)
+        else
+          SimplifiedAst.Term.Body.Pat(Patterns.translate(p), p.tpe, p.loc)
       }
 
       /**
@@ -420,7 +447,7 @@ object Simplifier {
       def simplify(e: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Term.Body = e match {
         case TypedAst.Expression.Wild(tpe, loc) => SimplifiedAst.Term.Body.Wild(tpe, loc)
         case TypedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Term.Body.Var(sym, tpe, loc)
-        case _ => SimplifiedAst.Term.Body.Exp(Expression.simplify(e), e.tpe, e.loc)
+        case _ => SimplifiedAst.Term.Body.Lit(Expression.simplify(e), e.tpe, e.loc) // TODO: Only certain expressions should be allow here.
       }
     }
 
@@ -439,9 +466,9 @@ object Simplifier {
     SimplifiedAst.Stratum(s.constraints.map(Declarations.Constraints.simplify))
 
   /**
-    * Returns `true` if the given pattern `pat` is a literal.
+    * Returns `true` if the given pattern `pat0` is a literal.
     */
-  def isLiteral(pat: TypedAst.Pattern): Boolean = pat match {
+  def isLiteral(pat0: TypedAst.Pattern): Boolean = pat0 match {
     case TypedAst.Pattern.Unit(loc) => true
     case TypedAst.Pattern.True(loc) => true
     case TypedAst.Pattern.False(loc) => true
@@ -456,14 +483,13 @@ object Simplifier {
     case TypedAst.Pattern.Str(lit, loc) => true
     case TypedAst.Pattern.Tag(_, _, p, _, _) => isLiteral(p)
     case TypedAst.Pattern.Tuple(elms, _, _) => elms forall isLiteral
-    // TODO: Any other patterns that are literals?
     case _ => false
   }
 
   /**
-    * Returns the given pattern as a literal expression.
+    * Returns the given pattern `pat0` as an expression.
     */
-  def lit2exp(pat: TypedAst.Pattern): SimplifiedAst.Expression = pat match {
+  def pat2exp(pat0: TypedAst.Pattern): SimplifiedAst.Expression = pat0 match {
     case TypedAst.Pattern.Unit(loc) => SimplifiedAst.Expression.Unit
     case TypedAst.Pattern.True(loc) => SimplifiedAst.Expression.True
     case TypedAst.Pattern.False(loc) => SimplifiedAst.Expression.False
@@ -476,11 +502,9 @@ object Simplifier {
     case TypedAst.Pattern.Int64(lit, loc) => SimplifiedAst.Expression.Int64(lit)
     case TypedAst.Pattern.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
     case TypedAst.Pattern.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
-    case TypedAst.Pattern.Tag(sym, tag, p, tpe, loc) =>
-      SimplifiedAst.Expression.Tag(sym, tag, lit2exp(p), tpe, loc)
-    case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
-      SimplifiedAst.Expression.Tuple(elms map lit2exp, tpe, loc)
-    case _ => throw InternalCompilerException(s"Unexpected non-literal pattern $pat.")
+    case TypedAst.Pattern.Tag(sym, tag, p, tpe, loc) => SimplifiedAst.Expression.Tag(sym, tag, pat2exp(p), tpe, loc)
+    case TypedAst.Pattern.Tuple(elms, tpe, loc) => SimplifiedAst.Expression.Tuple(elms map pat2exp, tpe, loc)
+    case _ => throw InternalCompilerException(s"Unexpected non-literal pattern $pat0.")
   }
 
 }

@@ -70,10 +70,10 @@ object Interpreter {
       Value.Closure(ref.sym, bindings)
     case Expression.ApplyRef(sym, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
-      Invoker.invoke(sym, args.toArray, root, env0)
+      Linker.link(sym, root).invoke(args.toArray)
     case Expression.ApplyTail(sym, _, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
-      Invoker.invoke(sym, args.toArray, root, env0)
+      Linker.link(sym, root).invoke(args.toArray)
     case Expression.ApplyHook(hook, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
       hook match {
@@ -127,6 +127,34 @@ object Interpreter {
     case Expression.UserError(_, loc) => throw UserException("User exception.", loc)
     case Expression.MatchError(_, loc) => throw MatchException("Non-exhaustive match expression.", loc)
     case Expression.SwitchError(_, loc) => throw SwitchException("Non-exhaustive switch expression.", loc)
+  }
+
+  /**
+    * Evaluates the given expression literal `lit0` to a value.
+    */
+  def lit2value(lit0: Expression): AnyRef = lit0 match {
+    case Expression.Unit => Value.Unit
+    case Expression.True => Value.True
+    case Expression.False => Value.False
+    case Expression.Char(lit) => Value.mkChar(lit)
+    case Expression.Float32(lit) => Value.mkFloat32(lit)
+    case Expression.Float64(lit) => Value.mkFloat64(lit)
+    case Expression.Int8(lit) => Value.mkInt8(lit)
+    case Expression.Int16(lit) => Value.mkInt16(lit)
+    case Expression.Int32(lit) => Value.mkInt32(lit)
+    case Expression.Int64(lit) => Value.mkInt64(lit)
+    case Expression.BigInt(lit) => Value.mkBigInt(lit)
+    case Expression.Str(lit) => Value.mkStr(lit)
+    case Expression.Tag(name, tag, exp, _, _) => Value.mkTag(tag, lit2value(exp))
+    case Expression.Tuple(elms, _, _) =>
+      val array = new Array[AnyRef](elms.length)
+      var i = 0
+      while (i < array.length) {
+        array(i) = lit2value(elms(i))
+        i = i + 1
+      }
+      array
+    case _ => throw InternalRuntimeException(s"Unexpected non-literal expression '$lit0'.")
   }
 
   /**
@@ -348,6 +376,51 @@ object Interpreter {
     */
   private def evalArgs(exps: List[Expression], root: Root, env: Map[String, AnyRef]): List[AnyRef] = {
     exps.map(a => eval(a, root, env))
+  }
+
+  /**
+    * Tries to unify the given pattern `p0` with the given value `v0` under the environment `env0`.
+    *
+    * Returns an extended environment if unification is possible. Otherwise returns `null`.
+    */
+  def unify(p0: Pattern, v0: AnyRef, env0: Map[String, AnyRef]): Map[String, AnyRef] = (p0, v0) match {
+    case (Pattern.Wild(_, _), _) => env0
+    case (Pattern.Var(sym, _, _), _) => env0.get(sym.toString) match {
+      case None => env0 + (sym.toString -> v0)
+      case Some(v2) => if (Value.equal(v0, v2)) env0 else null
+    }
+    case (Pattern.Unit(_), Value.Unit) => env0
+    case (Pattern.True(_), java.lang.Boolean.TRUE) => env0
+    case (Pattern.False(_), java.lang.Boolean.FALSE) => env0
+    case (Pattern.Char(lit, _), o: java.lang.Character) => if (lit == o.charValue()) env0 else null
+    case (Pattern.Float32(lit, _), o: java.lang.Float) => if (lit == o.floatValue()) env0 else null
+    case (Pattern.Float64(lit, _), o: java.lang.Double) => if (lit == o.doubleValue()) env0 else null
+    case (Pattern.Int8(lit, _), o: java.lang.Byte) => if (lit == o.byteValue()) env0 else null
+    case (Pattern.Int16(lit, _), o: java.lang.Short) => if (lit == o.shortValue()) env0 else null
+    case (Pattern.Int32(lit, _), o: java.lang.Integer) => if (lit == o.intValue()) env0 else null
+    case (Pattern.Int64(lit, _), o: java.lang.Long) => if (lit == o.longValue()) env0 else null
+    case (Pattern.BigInt(lit, _), o: java.math.BigInteger) => if (lit.equals(o)) env0 else null
+    case (Pattern.Str(lit, _), o: java.lang.String) => if (lit.equals(o)) env0 else null
+    case (Pattern.Tag(enum, tag, p, _, _), o: Value.Tag) => if (tag.equals(o.tag)) unify(p, o.value, env0) else null
+    case (Pattern.Tuple(elms, _, _), o: Array[AnyRef]) =>
+      if (elms.length != o.length)
+        return null
+      var env = env0
+      var i: Int = 0
+      while (i < o.length) {
+        val pi = elms(i)
+        val vi = o(i)
+        val nextEnv = unify(pi, vi, env)
+        if (nextEnv == null)
+          return null
+        env = nextEnv
+        i = i + 1
+      }
+      env
+    case _ =>
+      // Unification failed. Return `null`.
+      null
+
   }
 
 }

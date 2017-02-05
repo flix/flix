@@ -16,13 +16,13 @@
 
 package ca.uwaterloo.flix.runtime.datastore
 
+import java.util
+
 import ca.uwaterloo.flix.language.ast.ExecutableAst
-import ca.uwaterloo.flix.runtime.{Invoker, Value}
+import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker, Value}
 
 import scala.annotation.switch
 import scala.collection.mutable
-import java.util
-
 import scala.reflect.ClassTag
 
 class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Lattice, indexes: Set[Int], root: ExecutableAst.Root)(implicit m: ClassTag[ValueType]) extends IndexedCollection[ValueType] {
@@ -46,9 +46,22 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   /**
     * The bottom element.
     */
-  private val Bot: ValueType = {
-    Invoker.invoke(latticeOps.bot, Array.empty, root).asInstanceOf[ValueType]
-  }
+  private val Bot: ValueType = Linker.link(latticeOps.bot, root).invoke(Array.empty).asInstanceOf[ValueType]
+
+  /**
+    * The partial order operator.
+    */
+  private val Leq: InvocationTarget = Linker.link(latticeOps.leq, root)
+
+  /**
+    * The least upper bound operator.
+    */
+  private val Lub: InvocationTarget = Linker.link(latticeOps.lub, root)
+
+  /**
+    * The greatest lower bound operator.
+    */
+  private val Glb: InvocationTarget = Linker.link(latticeOps.glb, root)
 
   /**
     * Initialize the store for all indexes.
@@ -136,7 +149,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
         // compute greatest lower bounds.
         if (elmOf(pat) == null)
           (keys, elm)
-         else
+        else
           (keys, evalGlb(elmOf(pat), elm))
     } filter {
       // remove null elements introduced above.
@@ -210,7 +223,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
 
     // evaluate the partial order function passing the arguments `x` and `y`.
     val args = Array(x, y).asInstanceOf[Array[AnyRef]]
-    val result = Invoker.invoke(latticeOps.leq, args, root)
+    val result = Leq.invoke(args)
     Value.cast2bool(result)
   }
 
@@ -223,7 +236,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
 
     // evaluate the least upper bound function passing the arguments `x` and `y`.
     val args = Array(x, y).asInstanceOf[Array[AnyRef]]
-    Invoker.invoke(latticeOps.lub, args, root).asInstanceOf[ValueType]
+    Lub.invoke(args).asInstanceOf[ValueType]
   }
 
   /**
@@ -235,7 +248,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
 
     // evaluate the greatest lower bound function passing the arguments `x` and `y`.
     val args = Array(x, y).asInstanceOf[Array[AnyRef]]
-    Invoker.invoke(latticeOps.glb, args, root).asInstanceOf[ValueType]
+    Glb.invoke(args).asInstanceOf[ValueType]
   }
 
 }

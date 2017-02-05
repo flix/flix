@@ -39,12 +39,12 @@ object ExecutableAst {
     /**
       * Returns `true` if the constraint is a fact.
       */
-    def isFact: Boolean = body.isEmpty
+    val isFact: Boolean = body.isEmpty
 
     /**
       * Returns `true` if the constraint is a rule.
       */
-    def isRule: Boolean = !isFact
+    val isRule: Boolean = body.nonEmpty
 
     /**
       * Returns the tables referenced by the body predicates of the constraint.
@@ -471,6 +471,44 @@ object ExecutableAst {
 
   }
 
+  sealed trait Pattern extends ExecutableAst
+
+  object Pattern {
+
+    case class Wild(tpe: Type, loc: SourceLocation) extends ExecutableAst.Pattern
+
+    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Pattern
+
+    case class Unit(loc: SourceLocation) extends ExecutableAst.Pattern
+
+    case class True(loc: SourceLocation) extends ExecutableAst.Pattern
+
+    case class False(loc: SourceLocation) extends ExecutableAst.Pattern
+
+    case class Char(lit: scala.Char, loc: SourceLocation) extends ExecutableAst.Pattern
+
+    case class Float32(lit: scala.Float, loc: SourceLocation) extends ExecutableAst.Pattern
+
+    case class Float64(lit: scala.Double, loc: SourceLocation) extends ExecutableAst.Pattern
+
+    case class Int8(lit: scala.Byte, loc: SourceLocation) extends ExecutableAst.Pattern
+
+    case class Int16(lit: scala.Short, loc: SourceLocation) extends ExecutableAst.Pattern
+
+    case class Int32(lit: scala.Int, loc: SourceLocation) extends ExecutableAst.Pattern
+
+    case class Int64(lit: scala.Long, loc: SourceLocation) extends ExecutableAst.Pattern
+
+    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends ExecutableAst.Pattern
+
+    case class Str(lit: java.lang.String, loc: SourceLocation) extends ExecutableAst.Pattern
+
+    case class Tag(sym: Symbol.EnumSym, tag: String, pat: ExecutableAst.Pattern, tpe: Type, loc: SourceLocation) extends ExecutableAst.Pattern
+
+    case class Tuple(elms: List[ExecutableAst.Pattern], tpe: Type, loc: SourceLocation) extends ExecutableAst.Pattern
+
+  }
+
   sealed trait Predicate extends ExecutableAst {
     def loc: SourceLocation
   }
@@ -519,11 +557,7 @@ object ExecutableAst {
 
   object Term {
 
-    sealed trait Head extends ExecutableAst {
-      def tpe: Type
-
-      def loc: SourceLocation
-    }
+    sealed trait Head extends ExecutableAst
 
     object Head {
 
@@ -538,11 +572,7 @@ object ExecutableAst {
 
     }
 
-    sealed trait Body extends ExecutableAst {
-      def tpe: Type
-
-      def loc: SourceLocation
-    }
+    sealed trait Body extends ExecutableAst
 
     object Body {
 
@@ -550,7 +580,9 @@ object ExecutableAst {
 
       case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
-      case class Exp(e: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
+      case class Lit(ref: AnyRef, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
+
+      case class Pat(pat: ExecutableAst.Pattern, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
     }
 
