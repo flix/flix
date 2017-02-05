@@ -324,7 +324,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       val writersMiliSeconds = writersTime / 1000000
       val initialFacts = facts.length
       val totalFacts = dataStore.numberOfFacts
-      val throughput = (1000 * totalFacts) / (solverTime + 1)
+      val throughput = ((1000.0 * totalFacts.toDouble) / (solverTime.toDouble + 1.0)).toInt
       Console.println(f"Solved in $solverTime%,d msec. (init: $initMiliSeconds%,d msec, readers: $readersMiliSeconds%,d msec, writers: $writersMiliSeconds%,d msec)")
       Console.println(f"Initial Facts: $initialFacts%,d. Total Facts: $totalFacts%,d.")
       Console.println(f"Throughput: $throughput%,d facts per second.")
@@ -369,9 +369,18 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       var i = 0
       while (i < pat.length) {
         val value = p.terms(i) match {
-          case t: ExecutableAst.Term.Body.Wild => null
-          case t: ExecutableAst.Term.Body.Var => env.getOrElse(t.sym.toString, null)
-          case t: ExecutableAst.Term.Body.Exp => Interpreter.eval(t.e, root, env.toMap)
+          case ExecutableAst.Term.Body.Var(sym, _, _) =>
+            // A variable is replaced by its value from the environment (or null if unbound).
+            env.getOrElse(sym.toString, null)
+          case ExecutableAst.Term.Body.Lit(v, _, _) =>
+            // A literal has already been evaluated to a value.
+            v
+          case ExecutableAst.Term.Body.Wild(_, _) =>
+            // A wildcard places no restrictions on the value.
+            null
+          case ExecutableAst.Term.Body.Pat(_, _, _) =>
+            // A pattern places no restrictions on the value, but is filtered later.
+            null
         }
         pat(i) = value
         i = i + 1
@@ -380,19 +389,42 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       // lookup all matching rows.
       for (matchedRow <- table.lookup(pat)) {
         // copy the environment for every row.
-        val newRow = env.clone()
+        var newRow = env.clone()
+
+        // A matched row may still fail to unify with a pattern term.
+        // We use this boolean variable to track whether that is the case.
+        var skip = false
 
         var i = 0
         while (i < matchedRow.length) {
+
+          // Check if the term is pattern term.
+          // If so, we must checked whether the pattern can be unified with the value.
+          if (p.terms(i).isInstanceOf[ExecutableAst.Term.Body.Pat]) {
+            val term = p.terms(i).asInstanceOf[ExecutableAst.Term.Body.Pat]
+            val value = matchedRow(i)
+            val extendedEnv = Interpreter.unify(term.pat, value, env.toMap)
+            if (extendedEnv == null) {
+              // Value does not unify with the pattern term. We should skip this row.
+              skip = true
+            } else {
+              // The value matched, must bind variables in the pattern by extending the environment.
+              newRow = newRow ++ extendedEnv
+            }
+          }
+
           val varName = p.index2var(i)
           if (varName != null)
             newRow.update(varName, matchedRow(i))
           i = i + 1
         }
 
-        // compute the cross product of the remaining
-        // collections under the new environment.
-        evalCross(rule, xs, newRow, interp)
+        // Check whether to evaluate the rest of the rule.
+        if (!skip) {
+          // compute the cross product of the remaining
+          // collections under the new environment.
+          evalCross(rule, xs, newRow, interp)
+        }
       }
     case (p: Predicate.Body.Negative) :: xs =>
       throw InternalRuntimeException("Negated predicates not yet supported")
@@ -428,15 +460,24 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       while (i < args.length) {
 
         val value = pred.terms(i) match {
-          case Term.Body.Wild(_, _) => ???
-          case Term.Body.Var(x, _, _) => env(x.toString)
-          case Term.Body.Exp(e, _, _) => Interpreter.eval(e, root, env.toMap)
+          case Term.Body.Var(x, _, _) =>
+            // A variable is replaced by its value from the environment.
+            env(x.toString)
+          case Term.Body.Lit(v, _, _) =>
+            // A literal has already been evaluated to a value.
+            v
+          case Term.Body.Wild(_, _) =>
+            // A wildcard should not appear as an argument to a filter function.
+            throw InternalRuntimeException("Wildcard not allowed here!")
+          case Term.Body.Pat(_, _, _) =>
+            // A pattern should not appear here.
+            throw InternalRuntimeException("Pattern not allowed here!")
         }
 
         args(i) = value
         i = i + 1
       }
-      val result = Invoker.invoke(pred.sym, args, root, env.toMap)
+      val result = Linker.link(pred.sym, root).invoke(args)
       if (Value.cast2bool(result))
         evalFilter(rule, xs, env, interp)
   }
@@ -475,7 +516,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         evalArgs(i) = evalHeadTerm(args(i), root, env)
         i = i + 1
       }
-      Invoker.invoke(sym, evalArgs, root, env)
+      Linker.link(sym, root).invoke(evalArgs)
   }
 
   /**
@@ -617,7 +658,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     val definitions = root.definitions.foldLeft(Map.empty[Symbol.DefnSym, () => AnyRef]) {
       case (macc, (sym, defn)) =>
         if (defn.formals.isEmpty)
-          macc + (sym -> (() => Invoker.invoke(sym, Array.empty, root)))
+          macc + (sym -> (() => Linker.link(sym, root).invoke(Array.empty)))
         else
           macc + (sym -> (() => throw InternalRuntimeException("Unable to evalaute non-constant top-level definition.")))
     }

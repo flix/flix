@@ -340,6 +340,11 @@ object Value {
   def mkErr(v: AnyRef): Value.Tag = mkTag("Err", v)
 
   /**
+    * Returns the given Scala list `as` as a Flix set.
+    */
+  def mkFlixSet(as: List[AnyRef]): Value.Tag = mkTag("Set", mkList(as))
+
+  /**
     * Casts the given reference `ref` to a tag.
     */
   @inline

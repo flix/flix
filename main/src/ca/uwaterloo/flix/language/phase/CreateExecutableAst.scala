@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.runtime.Interpreter
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
@@ -70,8 +71,8 @@ object CreateExecutableAst {
         }
       }
 
-      for (outerRule <- constraints) {
-        for (innerRule <- constraints) {
+      for (outerRule <- constraints if outerRule.isRule) {
+        for (innerRule <- constraints if innerRule.isRule) {
           for (body <- innerRule.body) {
             (outerRule.head, body) match {
               case (outer: ExecutableAst.Predicate.Head.Positive, inner: ExecutableAst.Predicate.Body.Positive) =>
@@ -238,6 +239,31 @@ object CreateExecutableAst {
     }
   }
 
+  object Patterns {
+
+    def toExecutable(pat0: SimplifiedAst.Pattern): ExecutableAst.Pattern = pat0 match {
+      case SimplifiedAst.Pattern.Wild(tpe, loc) => ExecutableAst.Pattern.Wild(tpe, loc)
+      case SimplifiedAst.Pattern.Var(sym, tpe, loc) => ExecutableAst.Pattern.Var(sym, tpe, loc)
+      case SimplifiedAst.Pattern.Unit(loc) => ExecutableAst.Pattern.Unit(loc)
+      case SimplifiedAst.Pattern.True(loc) => ExecutableAst.Pattern.True(loc)
+      case SimplifiedAst.Pattern.False(loc) => ExecutableAst.Pattern.False(loc)
+      case SimplifiedAst.Pattern.Char(lit, loc) => ExecutableAst.Pattern.Char(lit, loc)
+      case SimplifiedAst.Pattern.Float32(lit, loc) => ExecutableAst.Pattern.Float32(lit, loc)
+      case SimplifiedAst.Pattern.Float64(lit, loc) => ExecutableAst.Pattern.Float64(lit, loc)
+      case SimplifiedAst.Pattern.Int8(lit, loc) => ExecutableAst.Pattern.Int8(lit, loc)
+      case SimplifiedAst.Pattern.Int16(lit, loc) => ExecutableAst.Pattern.Int16(lit, loc)
+      case SimplifiedAst.Pattern.Int32(lit, loc) => ExecutableAst.Pattern.Int32(lit, loc)
+      case SimplifiedAst.Pattern.Int64(lit, loc) => ExecutableAst.Pattern.Int64(lit, loc)
+      case SimplifiedAst.Pattern.BigInt(lit, loc) => ExecutableAst.Pattern.BigInt(lit, loc)
+      case SimplifiedAst.Pattern.Str(lit, loc) => ExecutableAst.Pattern.Str(lit, loc)
+      case SimplifiedAst.Pattern.Tag(sym, tag, pat, tpe, loc) => ExecutableAst.Pattern.Tag(sym, tag, toExecutable(pat), tpe, loc)
+      case SimplifiedAst.Pattern.Tuple(elms, tpe, loc) =>
+        val es = elms map toExecutable
+        ExecutableAst.Pattern.Tuple(es, tpe, loc)
+    }
+
+  }
+
   object Predicate {
 
     object Head {
@@ -246,11 +272,11 @@ object CreateExecutableAst {
         case SimplifiedAst.Predicate.Head.False(loc) => ExecutableAst.Predicate.Head.False(loc)
 
         case SimplifiedAst.Predicate.Head.Positive(name, terms, loc) =>
-          val ts = terms.map(Term.toExecutable).toArray
+          val ts = terms.map(Terms.toExecutable).toArray
           ExecutableAst.Predicate.Head.Positive(name, ts, loc)
 
         case SimplifiedAst.Predicate.Head.Negative(name, terms, loc) =>
-          val ts = terms.map(Term.toExecutable).toArray
+          val ts = terms.map(Terms.toExecutable).toArray
           ExecutableAst.Predicate.Head.Negative(name, ts, loc)
       }
     }
@@ -262,12 +288,13 @@ object CreateExecutableAst {
       private def freeVars(terms: List[SimplifiedAst.Term.Body]): Set[String] = terms.foldLeft(Set.empty[String]) {
         case (xs, t: SimplifiedAst.Term.Body.Wild) => xs
         case (xs, t: SimplifiedAst.Term.Body.Var) => xs + t.sym.toString
-        case (xs, t: SimplifiedAst.Term.Body.Exp) => xs
+        case (xs, t: SimplifiedAst.Term.Body.Lit) => xs
+        case (xs, t: SimplifiedAst.Term.Body.Pat) => xs // TODO ????
       }
 
       def toExecutable(sast: SimplifiedAst.Predicate.Body): ExecutableAst.Predicate.Body = sast match {
         case SimplifiedAst.Predicate.Body.Positive(sym, terms, loc) =>
-          val termsArray = terms.map(Term.toExecutable).toArray
+          val termsArray = terms.map(Terms.Body.translate).toArray
           val index2var: Array[String] = {
             val r = new Array[String](termsArray.length)
             var i = 0
@@ -284,7 +311,7 @@ object CreateExecutableAst {
           ExecutableAst.Predicate.Body.Positive(sym, termsArray, index2var, freeVars(terms), loc)
 
         case SimplifiedAst.Predicate.Body.Negative(sym, terms, loc) =>
-          val termsArray = terms.map(Term.toExecutable).toArray
+          val termsArray = terms.map(Terms.Body.translate).toArray
           val index2var: Array[String] = {
             val r = new Array[String](termsArray.length)
             var i = 0
@@ -302,31 +329,40 @@ object CreateExecutableAst {
 
 
         case SimplifiedAst.Predicate.Body.Filter(name, terms, loc) =>
-          val termsArray = terms.map(Term.toExecutable).toArray
+          val termsArray = terms.map(Terms.Body.translate).toArray
           ExecutableAst.Predicate.Body.Filter(name, termsArray, freeVars(terms), loc)
         case SimplifiedAst.Predicate.Body.Loop(sym, term, loc) =>
           val freeVars = Set.empty[String] // TODO
-          ExecutableAst.Predicate.Body.Loop(sym, Term.toExecutable(term), freeVars, loc)
+          ExecutableAst.Predicate.Body.Loop(sym, Terms.toExecutable(term), freeVars, loc)
       }
     }
 
   }
 
-  object Term {
+  object Terms {
     def toExecutable(sast: SimplifiedAst.Term.Head): ExecutableAst.Term.Head = sast match {
       case SimplifiedAst.Term.Head.Var(ident, tpe, loc) => ExecutableAst.Term.Head.Var(ident, tpe, loc)
       case SimplifiedAst.Term.Head.Exp(literal, tpe, loc) =>
         ExecutableAst.Term.Head.Exp(Expression.toExecutable(literal), tpe, loc)
       case SimplifiedAst.Term.Head.Apply(name, args, tpe, loc) =>
-        val argsArray = args.map(Term.toExecutable).toArray
+        val argsArray = args.map(Terms.toExecutable).toArray
         ExecutableAst.Term.Head.Apply(name, argsArray, tpe, loc)
     }
 
-    def toExecutable(sast: SimplifiedAst.Term.Body): ExecutableAst.Term.Body = sast match {
-      case SimplifiedAst.Term.Body.Wild(tpe, loc) => ExecutableAst.Term.Body.Wild(tpe, loc)
-      case SimplifiedAst.Term.Body.Var(ident, tpe, loc) => ExecutableAst.Term.Body.Var(ident, tpe, loc)
-      case SimplifiedAst.Term.Body.Exp(e, tpe, loc) => ExecutableAst.Term.Body.Exp(Expression.toExecutable(e), tpe, loc)
+    object Body {
+      /**
+        * Returns the given simplified body term `t0` as an executable body term.
+        */
+      def translate(t0: SimplifiedAst.Term.Body): ExecutableAst.Term.Body = t0 match {
+        case SimplifiedAst.Term.Body.Wild(tpe, loc) => ExecutableAst.Term.Body.Wild(tpe, loc)
+        case SimplifiedAst.Term.Body.Var(sym, tpe, loc) => ExecutableAst.Term.Body.Var(sym, tpe, loc)
+        case SimplifiedAst.Term.Body.Lit(lit, tpe, loc) =>
+          val v = Interpreter.lit2value(Expression.toExecutable(lit))
+          ExecutableAst.Term.Body.Lit(v, tpe, loc)
+        case SimplifiedAst.Term.Body.Pat(pat, tpe, loc) => ExecutableAst.Term.Body.Pat(Patterns.toExecutable(pat), tpe, loc)
+      }
     }
+
   }
 
   def toExecutable(sast: SimplifiedAst.Attribute): ExecutableAst.Attribute =

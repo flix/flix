@@ -492,14 +492,14 @@ namespace List {
     ///
     /// Returns `true` if and only if all elements in `xs` are `true`.
     ///
-    def and[a](xs: List[Bool]): Bool =
+    def and(xs: List[Bool]): Bool =
         let f = x -> x;
             forall(f, xs)
 
     ///
     /// Returns `true` if and only if at least one element in `xs` is `true`.
     ///
-    def or[a](xs: List[Bool]): Bool =
+    def or(xs: List[Bool]): Bool =
         let f = x -> x;
             exists(f, xs)
 

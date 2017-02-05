@@ -429,6 +429,44 @@ object SimplifiedAst {
 
   }
 
+  sealed trait Pattern extends SimplifiedAst
+
+  object Pattern {
+
+    case class Wild(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Pattern
+
+    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Pattern
+
+    case class Unit(loc: SourceLocation) extends SimplifiedAst.Pattern
+
+    case class True(loc: SourceLocation) extends SimplifiedAst.Pattern
+
+    case class False(loc: SourceLocation) extends SimplifiedAst.Pattern
+
+    case class Char(lit: scala.Char, loc: SourceLocation) extends SimplifiedAst.Pattern
+
+    case class Float32(lit: scala.Float, loc: SourceLocation) extends SimplifiedAst.Pattern
+
+    case class Float64(lit: scala.Double, loc: SourceLocation) extends SimplifiedAst.Pattern
+
+    case class Int8(lit: scala.Byte, loc: SourceLocation) extends SimplifiedAst.Pattern
+
+    case class Int16(lit: scala.Short, loc: SourceLocation) extends SimplifiedAst.Pattern
+
+    case class Int32(lit: scala.Int, loc: SourceLocation) extends SimplifiedAst.Pattern
+
+    case class Int64(lit: scala.Long, loc: SourceLocation) extends SimplifiedAst.Pattern
+
+    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends SimplifiedAst.Pattern
+
+    case class Str(lit: java.lang.String, loc: SourceLocation) extends SimplifiedAst.Pattern
+
+    case class Tag(sym: Symbol.EnumSym, tag: String, pat: SimplifiedAst.Pattern, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Pattern
+
+    case class Tuple(elms: List[SimplifiedAst.Pattern], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Pattern
+
+  }
+
   sealed trait Predicate extends SimplifiedAst {
     def loc: SourceLocation
   }
@@ -467,11 +505,7 @@ object SimplifiedAst {
 
   object Term {
 
-    sealed trait Head extends SimplifiedAst {
-      def tpe: Type
-
-      def loc: SourceLocation
-    }
+    sealed trait Head extends SimplifiedAst
 
     object Head {
 
@@ -487,11 +521,7 @@ object SimplifiedAst {
 
     }
 
-    sealed trait Body extends SimplifiedAst {
-      def tpe: Type
-
-      def loc: SourceLocation
-    }
+    sealed trait Body extends SimplifiedAst
 
     object Body {
 
@@ -499,8 +529,9 @@ object SimplifiedAst {
 
       case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
 
-      // TODO: Lambda lift?
-      case class Exp(e: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
+      case class Lit(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
+
+      case class Pat(pat: SimplifiedAst.Pattern, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Body
 
     }
 
