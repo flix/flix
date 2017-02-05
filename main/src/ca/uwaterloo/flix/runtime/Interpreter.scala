@@ -356,25 +356,25 @@ object Interpreter {
     * Returns an extended environment if unification is possible. Otherwise returns `null`.
     */
   def unify(p0: Pattern, v0: AnyRef, env0: Map[String, AnyRef]): Map[String, AnyRef] = (p0, v0) match {
-    case (Pattern.Wild, _) => env0
-    case (Pattern.Var(sym), _) => env0.get(sym.toString) match {
+    case (Pattern.Wild(_, _), _) => env0
+    case (Pattern.Var(sym, _, _), _) => env0.get(sym.toString) match {
       case None => env0 + (sym.toString -> v0)
       case Some(v2) => if (Value.equal(v0, v2)) env0 else null
     }
-    case (Pattern.Unit, Value.Unit) => env0
-    case (Pattern.True, java.lang.Boolean.TRUE) => env0
-    case (Pattern.False, java.lang.Boolean.FALSE) => env0
-    case (Pattern.Char(lit), o: java.lang.Character) => if (lit == o.charValue()) env0 else null
-    case (Pattern.Float32(lit), o: java.lang.Float) => if (lit == o.floatValue()) env0 else null
-    case (Pattern.Float64(lit), o: java.lang.Double) => if (lit == o.doubleValue()) env0 else null
-    case (Pattern.Int8(lit), o: java.lang.Byte) => if (lit == o.byteValue()) env0 else null
-    case (Pattern.Int16(lit), o: java.lang.Short) => if (lit == o.shortValue()) env0 else null
-    case (Pattern.Int32(lit), o: java.lang.Integer) => if (lit == o.intValue()) env0 else null
-    case (Pattern.Int64(lit), o: java.lang.Long) => if (lit == o.longValue()) env0 else null
-    case (Pattern.BigInt(lit), o: java.math.BigInteger) => if (lit.equals(o)) env0 else null
-    case (Pattern.Str(lit), o: java.lang.String) => if (lit.equals(o)) env0 else null
-    case (Pattern.Tag(enum, tag, p), o: Value.Tag) => if (tag.equals(o.tag)) unify(p, o.value, env0) else null
-    case (Pattern.Tuple(elms), o: Array[AnyRef]) =>
+    case (Pattern.Unit(_), Value.Unit) => env0
+    case (Pattern.True(_), java.lang.Boolean.TRUE) => env0
+    case (Pattern.False(_), java.lang.Boolean.FALSE) => env0
+    case (Pattern.Char(lit, _), o: java.lang.Character) => if (lit == o.charValue()) env0 else null
+    case (Pattern.Float32(lit, _), o: java.lang.Float) => if (lit == o.floatValue()) env0 else null
+    case (Pattern.Float64(lit, _), o: java.lang.Double) => if (lit == o.doubleValue()) env0 else null
+    case (Pattern.Int8(lit, _), o: java.lang.Byte) => if (lit == o.byteValue()) env0 else null
+    case (Pattern.Int16(lit, _), o: java.lang.Short) => if (lit == o.shortValue()) env0 else null
+    case (Pattern.Int32(lit, _), o: java.lang.Integer) => if (lit == o.intValue()) env0 else null
+    case (Pattern.Int64(lit, _), o: java.lang.Long) => if (lit == o.longValue()) env0 else null
+    case (Pattern.BigInt(lit, _), o: java.math.BigInteger) => if (lit.equals(o)) env0 else null
+    case (Pattern.Str(lit, _), o: java.lang.String) => if (lit.equals(o)) env0 else null
+    case (Pattern.Tag(enum, tag, p, _, _), o: Value.Tag) => if (tag.equals(o.tag)) unify(p, o.value, env0) else null
+    case (Pattern.Tuple(elms, _, _), o: Array[AnyRef]) =>
       if (elms.length != o.length)
         return null
       var env = env0
@@ -388,7 +388,7 @@ object Interpreter {
         env = nextEnv
         i = i + 1
       }
-      return env
+      env
     case _ =>
       // Unification failed. Return `null`.
       null

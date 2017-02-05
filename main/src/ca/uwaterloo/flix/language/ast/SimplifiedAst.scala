@@ -505,11 +505,7 @@ object SimplifiedAst {
 
   object Term {
 
-    sealed trait Head extends SimplifiedAst {
-      def tpe: Type
-
-      def loc: SourceLocation
-    }
+    sealed trait Head extends SimplifiedAst
 
     object Head {
 
@@ -525,11 +521,7 @@ object SimplifiedAst {
 
     }
 
-    sealed trait Body extends SimplifiedAst {
-      def tpe: Type
-
-      def loc: SourceLocation
-    }
+    sealed trait Body extends SimplifiedAst
 
     object Body {
 

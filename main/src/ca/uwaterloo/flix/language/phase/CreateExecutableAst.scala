@@ -242,24 +242,24 @@ object CreateExecutableAst {
   object Patterns {
 
     def toExecutable(pat0: SimplifiedAst.Pattern): ExecutableAst.Pattern = pat0 match {
-      case SimplifiedAst.Pattern.Wild(tpe, loc) => ExecutableAst.Pattern.Wild
-      case SimplifiedAst.Pattern.Var(sym, tpe, loc) => ExecutableAst.Pattern.Var(sym)
-      case SimplifiedAst.Pattern.Unit(loc) => ExecutableAst.Pattern.Unit
-      case SimplifiedAst.Pattern.True(loc) => ExecutableAst.Pattern.True
-      case SimplifiedAst.Pattern.False(loc) => ExecutableAst.Pattern.False
-      case SimplifiedAst.Pattern.Char(lit, loc) => ExecutableAst.Pattern.Char(lit)
-      case SimplifiedAst.Pattern.Float32(lit, loc) => ExecutableAst.Pattern.Float32(lit)
-      case SimplifiedAst.Pattern.Float64(lit, loc) => ExecutableAst.Pattern.Float64(lit)
-      case SimplifiedAst.Pattern.Int8(lit, loc) => ExecutableAst.Pattern.Int8(lit)
-      case SimplifiedAst.Pattern.Int16(lit, loc) => ExecutableAst.Pattern.Int16(lit)
-      case SimplifiedAst.Pattern.Int32(lit, loc) => ExecutableAst.Pattern.Int32(lit)
-      case SimplifiedAst.Pattern.Int64(lit, loc) => ExecutableAst.Pattern.Int64(lit)
-      case SimplifiedAst.Pattern.BigInt(lit, loc) => ExecutableAst.Pattern.BigInt(lit)
-      case SimplifiedAst.Pattern.Str(lit, loc) => ExecutableAst.Pattern.Str(lit)
-      case SimplifiedAst.Pattern.Tag(sym, tag, pat, tpe, loc) => ExecutableAst.Pattern.Tag(sym, tag, toExecutable(pat))
+      case SimplifiedAst.Pattern.Wild(tpe, loc) => ExecutableAst.Pattern.Wild(tpe, loc)
+      case SimplifiedAst.Pattern.Var(sym, tpe, loc) => ExecutableAst.Pattern.Var(sym, tpe, loc)
+      case SimplifiedAst.Pattern.Unit(loc) => ExecutableAst.Pattern.Unit(loc)
+      case SimplifiedAst.Pattern.True(loc) => ExecutableAst.Pattern.True(loc)
+      case SimplifiedAst.Pattern.False(loc) => ExecutableAst.Pattern.False(loc)
+      case SimplifiedAst.Pattern.Char(lit, loc) => ExecutableAst.Pattern.Char(lit, loc)
+      case SimplifiedAst.Pattern.Float32(lit, loc) => ExecutableAst.Pattern.Float32(lit, loc)
+      case SimplifiedAst.Pattern.Float64(lit, loc) => ExecutableAst.Pattern.Float64(lit, loc)
+      case SimplifiedAst.Pattern.Int8(lit, loc) => ExecutableAst.Pattern.Int8(lit, loc)
+      case SimplifiedAst.Pattern.Int16(lit, loc) => ExecutableAst.Pattern.Int16(lit, loc)
+      case SimplifiedAst.Pattern.Int32(lit, loc) => ExecutableAst.Pattern.Int32(lit, loc)
+      case SimplifiedAst.Pattern.Int64(lit, loc) => ExecutableAst.Pattern.Int64(lit, loc)
+      case SimplifiedAst.Pattern.BigInt(lit, loc) => ExecutableAst.Pattern.BigInt(lit, loc)
+      case SimplifiedAst.Pattern.Str(lit, loc) => ExecutableAst.Pattern.Str(lit, loc)
+      case SimplifiedAst.Pattern.Tag(sym, tag, pat, tpe, loc) => ExecutableAst.Pattern.Tag(sym, tag, toExecutable(pat), tpe, loc)
       case SimplifiedAst.Pattern.Tuple(elms, tpe, loc) =>
         val es = elms map toExecutable
-        ExecutableAst.Pattern.Tuple(es)
+        ExecutableAst.Pattern.Tuple(es, tpe, loc)
     }
 
   }
