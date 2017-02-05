@@ -369,10 +369,18 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       var i = 0
       while (i < pat.length) {
         val value = p.terms(i) match {
-            // TODO: Use proper pattern matching
-          case t: ExecutableAst.Term.Body.Wild => null
-          case t: ExecutableAst.Term.Body.Var => env.getOrElse(t.sym.toString, null)
-          case t: ExecutableAst.Term.Body.Lit => Interpreter.eval(t.exp, root, env.toMap)
+          case ExecutableAst.Term.Body.Var(sym, _, _) =>
+            // A variable is replaced by its value from the environment (or null if unbound).
+            env.getOrElse(sym.toString, null)
+          case ExecutableAst.Term.Body.Lit(v, _, _) =>
+            // A literal has already been evaluated to a value.
+            v
+          case ExecutableAst.Term.Body.Wild(_, _) =>
+            // A wildcard places no restrictions on the value.
+            null
+          case ExecutableAst.Term.Body.Pat(_, _, _) =>
+            // A pattern places no restrictions on the value, but is filtered later.
+            null
         }
         pat(i) = value
         i = i + 1
@@ -385,6 +393,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
 
         var i = 0
         while (i < matchedRow.length) {
+
+          // TODO: Perform unification...
+
           val varName = p.index2var(i)
           if (varName != null)
             newRow.update(varName, matchedRow(i))
@@ -429,10 +440,18 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       while (i < args.length) {
 
         val value = pred.terms(i) match {
-          // TODO: handle all cases.
-          case Term.Body.Wild(_, _) => ???
-          case Term.Body.Var(x, _, _) => env(x.toString)
-          case Term.Body.Lit(e, _, _) => Interpreter.eval(e, root, env.toMap)
+          case Term.Body.Var(x, _, _) =>
+            // A variable is replaced by its value from the environment.
+            env(x.toString)
+          case Term.Body.Lit(v, _, _) =>
+            // A literal has already been evaluated to a value.
+            v
+          case Term.Body.Wild(_, _) =>
+            // A wildcard should not appear as an argument to a filter function.
+            throw InternalRuntimeException("Wildcard not allowed here!")
+          case Term.Body.Pat(_, _, _) =>
+            // A pattern should not appear here.
+            throw InternalRuntimeException("Pattern not allowed here!")
         }
 
         args(i) = value
