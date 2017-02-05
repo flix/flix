@@ -70,8 +70,8 @@ object CreateExecutableAst {
         }
       }
 
-      for (outerRule <- constraints) {
-        for (innerRule <- constraints) {
+      for (outerRule <- constraints if outerRule.isRule) {
+        for (innerRule <- constraints if innerRule.isRule) {
           for (body <- innerRule.body) {
             (outerRule.head, body) match {
               case (outer: ExecutableAst.Predicate.Head.Positive, inner: ExecutableAst.Predicate.Body.Positive) =>

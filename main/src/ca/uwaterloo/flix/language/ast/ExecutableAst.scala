@@ -39,12 +39,12 @@ object ExecutableAst {
     /**
       * Returns `true` if the constraint is a fact.
       */
-    def isFact: Boolean = body.isEmpty
+    val isFact: Boolean = body.isEmpty
 
     /**
       * Returns `true` if the constraint is a rule.
       */
-    def isRule: Boolean = !isFact
+    val isRule: Boolean = body.nonEmpty
 
     /**
       * Returns the tables referenced by the body predicates of the constraint.

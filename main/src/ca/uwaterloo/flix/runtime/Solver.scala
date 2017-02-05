@@ -429,6 +429,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       while (i < args.length) {
 
         val value = pred.terms(i) match {
+          // TODO: handle all cases.
           case Term.Body.Wild(_, _) => ???
           case Term.Body.Var(x, _, _) => env(x.toString)
           case Term.Body.Lit(e, _, _) => Interpreter.eval(e, root, env.toMap)
