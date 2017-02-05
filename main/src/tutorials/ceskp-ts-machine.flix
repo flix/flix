@@ -1,5 +1,5 @@
 //
-// In this tutorial we will implement the Control-Environment-Kontinuation (CEK) machine.
+// In this tutorial we will implement the Control-Environment-Store-Kontinuation-Pointer Time Stamped (CESK*)-TS) machine.
 //
 // Be sure to check out the Lambda calculus tutorial before starting this tutorial.
 //
@@ -10,6 +10,11 @@
 /// A variable name is simply an integer.
 ///
 type Variable = V(Int)
+
+///
+/// An address is simply an integer.
+///
+type Address = A(Int)
 
 ///
 /// The expressions of the lambda calculus are: variables, lambda abstractions, and applications.
@@ -39,9 +44,25 @@ def isValue(e0: Expression): Bool = match e0 with {
 def nonValue(e0: Expression): Bool = !isValue(e0)
 
 ///
-/// An environment is a map from variables to a (value, environment)-pair.
+/// An environment is a map from variables to addresses.
 ///
-type Environment = Environment(Map2[Variable, (Expression, Environment)])
+type Environment = Environment(Map2[Variable, Address])
+
+///
+/// The type of storable values.
+///
+enum Storable {
+    /// Represents a stored continuation.
+    case StoredKont(Kontinuation),
+
+    /// Represents a stored value, i.e. an expression and its closing environment.
+    case StoredValue(Expression, Environment)
+}
+
+///
+/// A store is a map from addresses to storables.
+///
+type Store = Store(Map2[Address, Storable])
 
 ///
 /// The CEK-machine operates based on continuations derived
@@ -54,24 +75,50 @@ enum Kontinuation {
     // Represents the evaluation context ([] e) with continuation κ
     // where the environment ρ closes the expression e.
     // NB: In the paper this constructor is named `ar`.
-    case KApp1(Expression, Environment, Kontinuation),
+    case KApp1(Expression, Environment, Address),
 
     // Represents the evaluation context (v []) with continuation κ
     // where the environment ρ closes the the value v.
     // NB: In the paper this constructor is named `fn`.
-    case KApp2(Expression, Environment, Kontinuation)
+    case KApp2(Expression, Environment, Address)
 }
+
+///
+/// The timestamp of a machine configuration.
+///
+type Time = Time(Int)
 
 ///
 /// A machine state configuration.
 ///
-type State = State(Expression, Environment, Kontinuation)
+/// NB: Note that the last component is a pointer to continuation in the store.
+///
+type State = State(Expression, Environment, Store, Address, Time)
 
 ///
 /// Returns the initial state of the CEK-machine for the given expression `e0`.
 ///
 def inject(e0: Expression): State =
-    State(e0, Environment(Map2.empty()), Kontinuation.KEmpty)
+    // Generate a fresh address where to store the empty continuation.
+    let kont = Kontinuation.KEmpty;
+    let kptr = A(0);
+    let env0 = Map2.empty();
+    let sto0 = Map2.insert(kptr, StoredKont(kont), Map2.empty());
+    let time = Time(1);
+        State(e0, Environment(env0), Store(sto0), kptr, time)
+
+///
+/// Returns the next timestamp.
+///
+def tick(m0: State): Time = match m0 with {
+    case State(_, _, _, _, Time(t)) => Time(t + 1)
+}
+
+/// Returns the next address.
+///
+def alloc(m0: State): Address = match m0 with {
+    case State(_, _, _, _, Time(t)) => A(t)
+}
 
 ///
 /// Represents the outcome of a single reduction step.
@@ -92,41 +139,56 @@ enum Outcome {
 ///
 /// (The transition rules are described in Figure 1 in the paper.)
 ///
-def step(m0: State): Outcome = match m0 with {
+def step(m0: State): Outcome = match withKont(m0) with {
+
     //
     // Variable Expression.
     //
-    case State(Var(x), Environment(env0), kont) =>
+    case (State(Var(x), Environment(env0), Store(sto0), kptr, time), _) =>
         // The expression is a variable. Look it up in the environment.
          match Map2.lookup(x, env0) with {
             case None => Abort("Unbound variable.")
-            case Some((v, env1)) => Next(State(v, env1, kont))
+            case Some(ptr) => match Map2.lookup(ptr, sto0) with {
+                case None => Abort("Unbound address.")
+                case Some(StoredKont(_)) => Abort("Non-value storable.")
+                case Some(StoredValue(v, env1)) => Next(State(v, env1, Store(sto0), kptr, tick(m0)))
+            }
          }
 
     //
     // Application Expression.
     //
-    case State(App(e1, e2), Environment(env0), kont) =>
+    case (State(App(e1, e2), Environment(env0), Store(sto0), kptr, time), _) =>
         // Continue evaluation of `e1` and store `e2` in a kontinuation.
-        let k = KApp1(e2, Environment(env0), kont);
-            Next(State(e1, Environment(env0), k))
+        let k = KApp1(e2, Environment(env0), kptr);
+        // Generate a fresh address where to store the continuation.
+        let a = alloc(m0);
+        // Store the continuation.
+        let sto1 = Map2.insert(a, StoredKont(k), sto0);
+            Next(State(e1, Environment(env0), Store(sto1), a, tick(m0)))
 
     //
     // Application1 Kontinuation.
     //
-    case State(v1, Environment(env0), KApp1(e2, env2, kont)) if isValue(v1) =>
-        // Continue evaluation of `e2` and store `v1` in a kontinuation.
+    case (State(v1, Environment(env0), Store(sto0), kptr, time), Some(KApp1(e2, env2, kont))) if isValue(v1) =>
+        // Continue evaluation of `e2` and store `v1` in a continuation.
         let k = KApp2(v1, Environment(env0), kont);
-            Next(State(e2, env2, k))
+        // Generate a fresh address where to store the continuation.
+        let a = alloc(m0);
+        // Store the continuation.
+        let sto1 = Map2.insert(a, StoredKont(k), sto0);
+            Next(State(e2, env2, Store(sto1), a, tick(m0)))
 
     //
     // Application2 Kontinuation.
     //
-    case State(v2, Environment(env0), KApp2(v1, Environment(env1), kont)) if isValue(v2) =>
+    case (State(v2, Environment(env0), Store(sto0), kptr, time), Some(KApp2(v1, Environment(env1), kont))) if isValue(v2) =>
         // Evaluate the body of the lambda `v1` with argument `v2`.
         let Abs(x, body) = v1;
-        let env2 = Map2.insert(x, (v2, Environment(env0)), env1);
-            Next(State(body, Environment(env2), kont))
+        let a = alloc(m0);
+        let env2 = Map2.insert(x, a, env1);
+        let sto1 = Map2.insert(a, StoredValue(v2, Environment(env0)), sto0);
+            Next(State(body, Environment(env2), Store(sto1), kont, tick(m0)))
 
     //
     // Stuck.
@@ -134,6 +196,16 @@ def step(m0: State): Outcome = match m0 with {
     case _ => Done(m0)
 }
 
+///
+/// Returns the given state `m0` paired with the optional continuation.
+///
+def withKont(m0: State): (State, Option[Kontinuation]) = match m0 with {
+    case State(exp0, env0, Store(sto0), kptr, time) =>
+        match Map2.lookup(kptr, sto0) with {
+            case Some(StoredKont(k)) => (m0, Some(k))
+            case _                   => (m0, None)
+        }
+}
 
 ///
 /// Repeatedly performs single-step transitions in the given machine `m0` until the machine halts with a value.
@@ -151,18 +223,25 @@ def eval(m0: State): Result[State, Str] =
 ///
 def run(e0: Expression): Result[Expression, Str] =
     let result = eval(inject(e0));
-        Result.map(match State(exp, env, kont) -> substitute(exp, env), result)
+        Result.map(match State(exp, env, sto, kont, time) -> substitute(exp, env, sto), result)
 
 ///
 /// Substitutes every free variable in the given expression `e0` for the value in the given environment `env0`.
 ///
-def substitute(e0: Expression, env0: Environment): Expression = match (e0, env0) with {
-    case (Var(x), Environment(env))     => match Map2.lookup(x, env) with {
+def substitute(e0: Expression, env0: Environment, sto0: Store): Expression = match (e0, env0, sto0) with {
+    case (Var(x), Environment(env), Store(sto)) => match Map2.lookup(x, env) with {
         case None               => Var(x)
-        case Some((e, env1))    => substitute(e, env1)
+        case Some(a)            => match Map2.lookup(a, sto) with {
+            case None => Var(x)
+            case Some(StoredValue(e, env1)) => substitute(e, env1, sto0)
+        }
     }
-    case (Abs(x, e), Environment(env))  => Abs(x, substitute(e, Environment(Map2.remove(x, env))))
-    case (App(e1, e2), _)               => App(substitute(e1, env0), substitute(e2, env0))
+
+    case (Abs(x, e), Environment(env), Store(sto)) =>
+        Abs(x, substitute(e, Environment(Map2.remove(x, env)), sto0))
+
+    case (App(e1, e2), _, _) =>
+        App(substitute(e1, env0, sto0), substitute(e2, env0, sto0))
 }
 
 //
@@ -183,15 +262,6 @@ def testOmega: Result[Expression, Str] = run(
         Abs(V(0), App(Var(V(0)), Var(V(0))))))
 
 
-
-
-
-
-
-
-
-
-
 //
 // ----------------------------------------------------------------------------
 // TODO: Replace by functions from the standard library.
@@ -204,9 +274,9 @@ enum Map2[k, v] {
 
 namespace Map2 {
 
-    def empty: Map2[Variable, (Expression, Environment)] = Map2(Nil)
+    def empty[k, v]: Map2[k, v] = Map2(Nil)
 
-    def insert(k: Variable, v: (Expression, Environment), m: Map2[Variable, (Expression, Environment)]): Map2[Variable, (Expression, Environment)] =
+    def insert[k, v](k: k, v: v, m: Map2[k, v]): Map2[k, v] =
         let Map2(xs) = m;
             Map2((k, v) :: xs)
 
@@ -219,7 +289,7 @@ namespace Map2 {
         case (y, v) :: ys => if (k == y) Some(v) else getHelper(k, ys)
     }
 
-    def remove(k: Variable, m: Map2[Variable, (Expression, Environment)]): Map2[Variable, (Expression, Environment)] =
+    def remove[k, v](k: k, m: Map2[k, v]): Map2[k, v] =
         let Map2(xs) = m;
             Map2(removeHelper(k, xs))
 

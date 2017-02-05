@@ -42,9 +42,7 @@ object WeededAst {
 
     case class Property(law: Name.QName, defn: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Fact(head: WeededAst.Predicate.Head, loc: SourceLocation) extends WeededAst.Declaration
-
-    case class Rule(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation) extends WeededAst.Declaration
+    case class Constraint(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation) extends WeededAst.Declaration
 
     case class Index(qname: Name.QName, indexes: List[List[Name.Ident]], loc: SourceLocation) extends WeededAst.Declaration
 
@@ -186,7 +184,9 @@ object WeededAst {
 
       case class False(loc: SourceLocation) extends WeededAst.Predicate.Head
 
-      case class Table(name: Name.QName, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
+      case class Positive(name: Name.QName, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
+
+      case class Negative(name: Name.QName, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
 
     }
 
@@ -194,13 +194,13 @@ object WeededAst {
 
     object Body {
 
-      case class Table(name: Name.QName, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Positive(name: Name.QName, terms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Predicate.Body
+
+      case class Negative(name: Name.QName, terms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Predicate.Body
 
       case class Filter(name: Name.QName, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Body
 
-      case class NotEqual(ident1: Name.Ident, ident2: Name.Ident, loc: SourceLocation) extends WeededAst.Predicate.Body
-
-      case class Loop(ident: Name.Ident, term: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Loop(pat: WeededAst.Pattern, term: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
 
     }
 

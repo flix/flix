@@ -32,13 +32,13 @@ object Indexer {
     val indexes = mutable.Map.empty[Symbol.TableSym, Set[Seq[Int]]]
 
     // iterate through each rule.
-    for (constraint <- root.rules) {
+    for (constraint <- root.constraints) {
       // maintain set of bound variables in each rule.
       val bound = mutable.Set.empty[String]
       // iterate through each table predicate in the body.
       for (body <- constraint.body) {
         body match {
-          case Predicate.Body.Table(name, pterms, _, _, _) =>
+          case Predicate.Body.Positive(name, pterms, _, _, _) =>
             // determine the terms usable for indexing based on whether the predicate refers to a relation or lattice.
             val terms = root.tables(name) match {
               case r: ExecutableAst.Table.Relation => pterms
@@ -47,7 +47,7 @@ object Indexer {
 
             // compute the indices of the determinate (i.e. known) terms.
             val determinate = terms.zipWithIndex.foldLeft(Seq.empty[Int]) {
-              case (xs, (t: Term.Body.Wildcard, i)) => xs
+              case (xs, (t: Term.Body.Wild, i)) => xs
               case (xs, (t: Term.Body.Var, i)) =>
                 if (bound contains t.sym.text) // TODO: Correctness
                   xs :+ i

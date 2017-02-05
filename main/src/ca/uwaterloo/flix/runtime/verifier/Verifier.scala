@@ -134,7 +134,7 @@ object Verifier {
       val unknowns = results.collect {
         case PropertyResult.Unknown(_, _, _, _, error) => error
       }
-      Validation.Failure((errors ++ unknowns).toVector)
+      Validation.Failure((errors ++ unknowns).toStream)
     }
   }
 

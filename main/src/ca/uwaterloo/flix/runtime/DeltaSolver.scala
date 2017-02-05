@@ -60,6 +60,12 @@ object DeltaSolver {
     */
   def solve(root: ExecutableAst.Root, options: Options, path: Path): Unit = {
     /*
+     * Retrieve the facts and rules.
+     */
+    val initialFacts = root.constraints.filter(_.isFact)
+    val initialRules = root.constraints.filter(_.isRule)
+
+    /*
      * Refuse to overwrite existing file.
      */
     if (Files.exists(path)) {
@@ -81,15 +87,15 @@ object DeltaSolver {
      */
     Console.println(Blue(s"Caught `${exception.getClass.getName}' with message:"))
     Console.println(Blue(s"    `${exception.getMessage}'"))
-    Console.println(Blue(s"Delta Debugging Started. Trying to minimize ${root.facts.length} facts."))
+    Console.println(Blue(s"Delta Debugging Started. Trying to minimize ${initialFacts.length} facts."))
     Console.println()
 
     /*
      * Repeatedly minimize and re-run the program.
      */
     var globalIteration = 1
-    var globalFacts = root.facts.toSet
-    var globalBlockSize = root.facts.length / 2
+    var globalFacts = initialFacts.toSet
+    var globalBlockSize = initialFacts.length / 2
     val totalNumberOfFacts = globalFacts.size
 
     while (globalBlockSize >= 1) {
@@ -106,7 +112,7 @@ object DeltaSolver {
         facts = facts - block
 
         // try to solve the program.
-        trySolve(root.copy(facts = facts.flatten.toArray), options, exception) match {
+        trySolve(root.copy(constraints = initialRules ++ facts.flatten), options, exception) match {
           case SolverResult.Success =>
             // the program successfully completed. Must backtrack.
             Console.println(Red(f"    [block $round%3d] ${block.size}%5d fact(s) retained (program ran successfully)."))
@@ -206,10 +212,10 @@ object DeltaSolver {
   /**
     * Writes the given `facts` to the given `path`.
     */
-  private def writeFacts(facts: Traversable[ExecutableAst.Constraint.Fact], path: Path): Unit = {
+  private def writeFacts(constraints: Traversable[ExecutableAst.Constraint], path: Path): Unit = {
     val writer = Files.newBufferedWriter(path, WRITE, CREATE, TRUNCATE_EXISTING)
-    for (fact <- facts) {
-      val formattedFact = PrettyPrinter.fmt(fact, new StringBuilder).toString
+    for (constraint <- constraints; if constraint.isFact) {
+      val formattedFact = PrettyPrinter.fmt(constraint, new StringBuilder).toString
       writer.write(formattedFact)
       writer.newLine()
     }

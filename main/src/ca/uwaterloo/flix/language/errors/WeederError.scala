@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.{SourceInput, SourceLocation}
 import ca.uwaterloo.flix.util.Highlight._
 
 /**
@@ -37,8 +37,8 @@ object WeederError {
     * @param loc2 the location of the second annotation.
     */
   case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    val source = loc1.source
-    val message =
+    val source: SourceInput = loc1.source
+    val message: String =
       hl"""|>> Multiple occurrence of the '${Red("@" + name)}' annotation.
            |
            |${Code(loc1, "the first occurrence was here.")}
@@ -57,8 +57,8 @@ object WeederError {
     * @param loc2 the location of the second attribute.
     */
   case class DuplicateAttribute(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    val source = loc1.source
-    val message =
+    val source: SourceInput = loc1.source
+    val message: String =
       hl"""|>> Multiple declarations of the attribute named '${Red(name)}'.
            |
            |${Code(loc1, "the first declaration was here.")}
@@ -77,7 +77,7 @@ object WeederError {
     * @param loc2 the location of the second parameter.
     */
   case class DuplicateFormalParam(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    val source = loc1.source
+    val source: SourceInput = loc1.source
     val message =
       hl"""|>> Multiple declarations of the formal parameter named '${Red(name)}'.
            |
@@ -98,7 +98,7 @@ object WeederError {
     * @param loc2     the location of the second tag.
     */
   case class DuplicateTag(enumName: String, tagName: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    val source = loc1.source
+    val source: SourceInput = loc1.source
     val message =
       hl"""|>> Multiple declarations of the tag named '${Red(tagName)}' in the enum '${Cyan(enumName)}'.
            |
@@ -117,7 +117,7 @@ object WeederError {
     * @param loc  the location where the declaration occurs.
     */
   case class EmptyIndex(name: String, loc: SourceLocation) extends WeederError {
-    val source = loc.source
+    val source: SourceInput = loc.source
     val message =
       hl"""|>> The index for table '${Red(name)}' does not declare any attribute groups.
            |
@@ -136,8 +136,8 @@ object WeederError {
     * @param loc  the location of the declaration.
     */
   case class EmptyRelation(name: String, loc: SourceLocation) extends WeederError {
-    val source = loc.source
-    val message =
+    val source: SourceInput = loc.source
+    val message: String =
       s"""|>> The relation '${Red(name)}' does not declare any attributes.
           |
           |${Code(loc, "a relation must declare at least one attribute.")}
@@ -154,8 +154,8 @@ object WeederError {
     * @param loc  the location of the declaration.
     */
   case class EmptyLattice(name: String, loc: SourceLocation) extends WeederError {
-    val source = loc.source
-    val message =
+    val source: SourceInput = loc.source
+    val message: String =
       s"""|>> The lattice '${Red(name)}' does not declare any attributes.
           |
           |${Code(loc, "a lattice must declare at least one attribute.")}
@@ -171,8 +171,8 @@ object WeederError {
     * @param loc the location where the illegal expression occurs.
     */
   case class IllegalExistential(loc: SourceLocation) extends WeederError {
-    val source = loc.source
-    val message =
+    val source: SourceInput = loc.source
+    val message: String =
       s"""|>> Existential quantifier does not declare any formal parameters.
           |
           |${Code(loc, "quantifier must declare at least one parameter.")}
@@ -187,8 +187,8 @@ object WeederError {
     * @param loc the location where the illegal expression occurs.
     */
   case class IllegalUniversal(loc: SourceLocation) extends WeederError {
-    val source = loc.source
-    val message =
+    val source: SourceInput = loc.source
+    val message: String =
       s"""|>> Universal quantifier does not declare any formal parameters.
           |
           |${Code(loc, "quantifier must declare at least one parameter.")}
@@ -203,8 +203,8 @@ object WeederError {
     * @param loc the location where the illegal float occurs.
     */
   case class IllegalFloat(loc: SourceLocation) extends WeederError {
-    val source = loc.source
-    val message =
+    val source: SourceInput = loc.source
+    val message: String =
       s"""|>> Illegal float.
           |
           |${Code(loc, "illegal float.")}
@@ -219,8 +219,8 @@ object WeederError {
     * @param loc the location where the illegal int occurs.
     */
   case class IllegalInt(loc: SourceLocation) extends WeederError {
-    val source = loc.source
-    val message =
+    val source: SourceInput = loc.source
+    val message: String =
       s"""|>> Illegal int.
           |
           |${Code(loc, "illegal int.")}
@@ -235,25 +235,11 @@ object WeederError {
     * @param loc the location where the illegal index occurs.
     */
   case class IllegalIndex(loc: SourceLocation) extends WeederError {
-    val source = loc.source
-    val message =
+    val source: SourceInput = loc.source
+    val message: String =
       s"""|>> The attribute group does not declare any attributes.
           |
           |${Code(loc, "an attribute group must contain at least one attribute.")}
-          """.stripMargin
-  }
-
-  /**
-    * An error raised to indicate that a predicate is not allowed in the head of a fact/rule.
-    *
-    * @param loc the location where the illegal predicate occurs.
-    */
-  case class IllegalHeadPredicate(loc: SourceLocation) extends WeederError {
-    val source = loc.source
-    val message =
-      s"""|>> Predicate is not allowed in the head of a rule.
-          |
-          |${Code(loc, "must not occur in the head of a rule.")}
           """.stripMargin
   }
 
@@ -263,8 +249,8 @@ object WeederError {
     * @param loc the location where the illegal definition occurs.
     */
   case class IllegalLattice(loc: SourceLocation) extends WeederError {
-    val source = loc.source
-    val message =
+    val source: SourceInput = loc.source
+    val message: String =
       s"""|>> A lattice definition must have exactly five components: bot, top, leq, lub and glb.
           |
           |${Code(loc, "illegal definition.")}
@@ -283,8 +269,8 @@ object WeederError {
     * @param loc the location where the illegal parameter list occurs.
     */
   case class IllegalParameterList(loc: SourceLocation) extends WeederError {
-    val source = loc.source
-    val message =
+    val source: SourceInput = loc.source
+    val message: String =
       s"""|>> A parameter list must contain at least one parameter or be omitted.
           |
           |${Code(loc, "empty parameter list.")}
@@ -299,8 +285,8 @@ object WeederError {
     * @param loc the location where the illegal wildcard occurs.
     */
   case class IllegalWildcard(loc: SourceLocation) extends WeederError {
-    val source = loc.source
-    val message =
+    val source: SourceInput = loc.source
+    val message: String =
       s"""|>> Wildcard not allowed here.
           |
           |${Code(loc, "illegal wildcard.")}
@@ -315,8 +301,8 @@ object WeederError {
     * @param loc2 the location of the second use of the variable.
     */
   case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    val source = loc1.source
-    val message =
+    val source: SourceInput = loc1.source
+    val message: String =
       hl"""|>> Multiple occurrence of '${Red(name)}' in a pattern match.
            |
            |${Code(loc1, "the first occurrence was here.")}
@@ -328,29 +314,14 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate a syntax error not caught by the parser.
-    *
-    * @param msg the error message.
-    * @param loc the location of the syntax error.
-    */
-  case class IllegalSyntax(msg: String, loc: SourceLocation) extends WeederError {
-    val source = loc.source
-    val message =
-      s"""|>> Illegal syntax.
-          |
-          |${Code(loc, msg)}
-          """.stripMargin
-  }
-
-  /**
     * An error raised to indicate an undefined annotation.
     *
     * @param name the name of the undefined annotation.
     * @param loc  the location of the annotation.
     */
   case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
-    val source = loc.source
-    val message =
+    val source: SourceInput = loc.source
+    val message: String =
       s"""|>> Undefined annotation named '${Red(name)}'.
           |
           |${Code(loc, "undefined annotation.")}

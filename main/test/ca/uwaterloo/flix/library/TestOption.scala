@@ -38,8 +38,10 @@ class TestOption extends FunSuite {
   }
 
   def runAnyTest(input: String, output: AnyRef) {
-    val flix = new Flix().setOptions(options).addStr(input)
-    assertResult(output)(flix.solve().get.getConstant("r"))
+    val flix = new Flix().setOptions(options).addPath("main/src/library/Option.flix").addStr(input)
+    val v1 = output
+    val v2 = flix.solve().get.getConstant("r")
+    assert(Value.equal(v1, v2), s"v1 = $v1, v2 = $v2")
   }
 
   test("null.01") {
@@ -506,16 +508,16 @@ class TestOption extends FunSuite {
 
   test("zip.04") {
     val input = "def r: Option[(Int32, Int32)] = Option.zip(Some(1), Some(2))"
-    runAnyTest(input, Value.mkSome(Value.Tuple(Array(new Integer(1), new Integer(2)))))
+    runAnyTest(input, Value.mkSome(Array(new Integer(1), new Integer(2))))
   }
 
   test("unzip.01") {
     val input = "def r: (Option[Int32], Option[Bool]) = Option.unzip(None)"
-    runAnyTest(input, Value.Tuple(Array(Value.mkNone(), Value.mkNone())))
+    runAnyTest(input, Array(Value.mkNone(), Value.mkNone()))
   }
 
   test("unzip.02") {
     val input = "def r: (Option[Int32], Option[Bool]) = Option.unzip(Some((1, true)))"
-    runAnyTest(input, Value.Tuple(Array(Value.mkSome(new Integer(1)), Value.mkSome(new Boolean(true)))))
+    runAnyTest(input, Array(Value.mkSome(new Integer(1)), Value.mkSome(new Boolean(true))))
   }
 }

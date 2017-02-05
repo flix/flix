@@ -240,7 +240,10 @@ class Flix {
         val monomorphedAst = Monomorph.monomorph(tast)
         val simplifiedAst = Simplifier.simplify(monomorphedAst)
         val lambdaLiftedAst = Tailrec.tailrec(LambdaLift.lift(simplifiedAst))
-        val numberedAst = VarNumbering.number(lambdaLiftedAst)
+        val inlinedAst = Inliner.inline(lambdaLiftedAst)
+        val optimizedAst = Optimizer.optimize(inlinedAst, options)
+        val shakedAst = TreeShaker.shake(optimizedAst)
+        val numberedAst = VarNumbering.number(shakedAst)
         val executableAst = CreateExecutableAst.toExecutable(numberedAst)
         val compiledAst = LoadBytecode.load(this, executableAst, options)
         QuickChecker.quickCheck(compiledAst, options) flatMap {
@@ -586,7 +589,7 @@ class Flix {
     if (tuple == null)
       throw new IllegalArgumentException("Argument 'tuple' must be non-null.")
 
-    new WrappedValue(Value.Tuple(tuple.map(_.getUnsafeRef)))
+    new WrappedValue(tuple.map(_.getUnsafeRef))
   }
 
   /**

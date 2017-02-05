@@ -27,7 +27,7 @@ class TestValidation extends FunSuite {
     val result = "foo".toSuccess[String, Exception].map {
       case x => x.toUpperCase
     }
-    assertResult(Success("FOO", Vector.empty))(result)
+    assertResult(Success("FOO", Stream.empty))(result)
   }
 
   test("map02") {
@@ -36,7 +36,7 @@ class TestValidation extends FunSuite {
     }.map {
       case y => y.reverse
     }
-    assertResult(Success("OOF", Vector.empty))(result)
+    assertResult(Success("OOF", Stream.empty))(result)
   }
 
   test("map03") {
@@ -47,7 +47,7 @@ class TestValidation extends FunSuite {
     }.map {
       case z => z + z
     }
-    assertResult(Success("OOFOOF", Vector.empty))(result)
+    assertResult(Success("OOFOOF", Stream.empty))(result)
   }
 
   test("map04") {
@@ -56,7 +56,7 @@ class TestValidation extends FunSuite {
     }.map {
       case y => y < 5
     }
-    assertResult(Success(true, Vector.empty))(result)
+    assertResult(Success(true, Stream.empty))(result)
   }
 
   test("map05") {
@@ -67,7 +67,7 @@ class TestValidation extends FunSuite {
     }.map {
       case z => z.toChar.toString
     }
-    assertResult(Success("e", Vector.empty))(result)
+    assertResult(Success("e", Stream.empty))(result)
   }
 
   test("map06") {
@@ -75,14 +75,14 @@ class TestValidation extends FunSuite {
     val result = ex.toFailure[String, Exception].map {
       case x => x.toUpperCase
     }
-    assertResult(Failure(Vector(ex)))(result)
+    assertResult(Failure(Stream(ex)))(result)
   }
 
   test("flatMap01") {
     val result = "foo".toSuccess[String, Exception].flatMap {
       case x => x.toUpperCase.toSuccess
     }
-    assertResult(Success("FOO", Vector.empty))(result)
+    assertResult(Success("FOO", Stream.empty))(result)
   }
 
   test("flatMap02") {
@@ -93,7 +93,7 @@ class TestValidation extends FunSuite {
     }.flatMap {
       case z => (z + z).toSuccess
     }
-    assertResult(Success("OOFOOF", Vector.empty))(result)
+    assertResult(Success("OOFOOF", Stream.empty))(result)
   }
 
   test("flatMap03") {
@@ -101,29 +101,29 @@ class TestValidation extends FunSuite {
     val result = "foo".toSuccess[String, Exception].flatMap {
       case x => ex.toFailure
     }
-    assertResult(Failure(Vector(ex)))(result)
+    assertResult(Failure(Stream(ex)))(result)
   }
 
   test("flatMap04") {
     val result = "foo".toSuccess[String, Int].flatMap {
-      case x => Success(x.toUpperCase, Vector(1, 2, 3))
+      case x => Success(x.toUpperCase, Stream(1, 2, 3))
     }.flatMap {
-      case y => Success(y.reverse, Vector(4, 5, 6))
+      case y => Success(y.reverse, Stream(4, 5, 6))
     }.flatMap {
-      case z => Success(z + z, Vector(7, 8, 9))
+      case z => Success(z + z, Stream(7, 8, 9))
     }
-    assertResult(Success("OOFOOF", Vector(1, 2, 3, 4, 5, 6, 7, 8, 9)))(result)
+    assertResult(Success("OOFOOF", Stream(1, 2, 3, 4, 5, 6, 7, 8, 9)))(result)
   }
 
   test("flatMap05") {
     val result = "foo".toSuccess[String, Int].flatMap {
-      case x => Success(x.toUpperCase, Vector(1, 2, 3))
+      case x => Success(x.toUpperCase, Stream(1, 2, 3))
     }.flatMap {
-      case y => Failure(Vector(4, 5, 6))
+      case y => Failure(Stream(4, 5, 6))
     }.flatMap {
-      case z => Failure(Vector(7, 8, 9))
+      case z => Failure(Stream(7, 8, 9))
     }
-    assertResult(Failure(Vector(1, 2, 3, 4, 5, 6)))(result)
+    assertResult(Failure(Stream(1, 2, 3, 4, 5, 6)))(result)
   }
 
   test("@@(List)01") {
@@ -135,7 +135,7 @@ class TestValidation extends FunSuite {
       "e".toSuccess
     ))
 
-    assertResult(Success(List("a", "b", "c", "d", "e"), Vector.empty))(result)
+    assertResult(Success(List("a", "b", "c", "d", "e"), Stream.empty))(result)
   }
 
   test("@@(List)02") {
@@ -147,19 +147,19 @@ class TestValidation extends FunSuite {
       "e".toFailure
     ))
 
-    assertResult(Failure(Vector("c", "e")))(result)
+    assertResult(Failure(Stream("c", "e")))(result)
   }
 
   test("@@(List)03") {
     val result = @@(List(
       "a".toSuccess,
       "b".toSuccess,
-      Success("c", Vector("x", "y")),
+      Success("c", Stream("x", "y")),
       "d".toSuccess,
-      Success("e", Vector("z"))
+      Success("e", Stream("z"))
     ))
 
-    assertResult(Success(List("a", "b", "c", "d", "e"), Vector("x", "y", "z")))(result)
+    assertResult(Success(List("a", "b", "c", "d", "e"), Stream("x", "y", "z")))(result)
   }
 
   test("Collect01") {
@@ -171,7 +171,7 @@ class TestValidation extends FunSuite {
       "e".toFailure
     ))
 
-    assertResult(Success(List("a", "b", "d"), Vector("c", "e")))(result)
+    assertResult(Success(List("a", "b", "d"), Stream("c", "e")))(result)
   }
 
   // TODO: Rest

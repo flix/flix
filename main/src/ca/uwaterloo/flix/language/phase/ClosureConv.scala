@@ -141,14 +141,14 @@ object ClosureConv {
       SimplifiedAst.Expression.IfThenElse(convert(e1), convert(e2), convert(e3), tpe, loc)
     case SimplifiedAst.Expression.Let(sym, e1, e2, tpe, loc) =>
       SimplifiedAst.Expression.Let(sym, convert(e1), convert(e2), tpe, loc)
-    case SimplifiedAst.Expression.CheckTag(tag, e, loc) =>
-      SimplifiedAst.Expression.CheckTag(tag, convert(e), loc)
-    case SimplifiedAst.Expression.GetTagValue(tag, e, tpe, loc) =>
-      SimplifiedAst.Expression.GetTagValue(tag, convert(e), tpe, loc)
+    case SimplifiedAst.Expression.Is(e, tag, loc) =>
+      SimplifiedAst.Expression.Is(convert(e), tag, loc)
     case SimplifiedAst.Expression.Tag(enum, tag, e, tpe, loc) =>
       SimplifiedAst.Expression.Tag(enum, tag, convert(e), tpe, loc)
-    case SimplifiedAst.Expression.GetTupleIndex(e, offset, tpe, loc) =>
-      SimplifiedAst.Expression.GetTupleIndex(convert(e), offset, tpe, loc)
+    case SimplifiedAst.Expression.Untag(tag, e, tpe, loc) =>
+      SimplifiedAst.Expression.Untag(tag, convert(e), tpe, loc)
+    case SimplifiedAst.Expression.Index(e, offset, tpe, loc) =>
+      SimplifiedAst.Expression.Index(convert(e), offset, tpe, loc)
     case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
       SimplifiedAst.Expression.Tuple(elms.map(convert), tpe, loc)
     case SimplifiedAst.Expression.Existential(params, e, loc) =>
@@ -209,10 +209,10 @@ object ClosureConv {
     case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
       val bound = sym
       freeVariables(exp1) ++ freeVariables(exp2).filterNot { v => bound == v._1 }
-    case SimplifiedAst.Expression.CheckTag(tag, exp, loc) => freeVariables(exp)
-    case SimplifiedAst.Expression.GetTagValue(tag, exp, tpe, loc) => freeVariables(exp)
+    case SimplifiedAst.Expression.Is(exp, tag, loc) => freeVariables(exp)
+    case SimplifiedAst.Expression.Untag(tag, exp, tpe, loc) => freeVariables(exp)
     case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) => freeVariables(exp)
-    case SimplifiedAst.Expression.GetTupleIndex(base, offset, tpe, loc) => freeVariables(base)
+    case SimplifiedAst.Expression.Index(base, offset, tpe, loc) => freeVariables(base)
     case SimplifiedAst.Expression.Tuple(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
     case SimplifiedAst.Expression.Existential(fparam, exp, loc) =>
       freeVariables(exp).filterNot { v => v._1 == fparam.sym }
@@ -294,18 +294,18 @@ object ClosureConv {
           case None => Expression.Let(sym, e1, e2, tpe, loc)
           case Some(newSym) => Expression.Let(newSym, e1, e2, tpe, loc)
         }
-      case Expression.CheckTag(tag, exp, loc) =>
+      case Expression.Is(exp, tag, loc) =>
         val e = visit(exp)
-        Expression.CheckTag(tag, e, loc)
-      case Expression.GetTagValue(tag, exp, tpe, loc) =>
+        Expression.Is(e, tag, loc)
+      case Expression.Untag(tag, exp, tpe, loc) =>
         val e = visit(exp)
-        Expression.GetTagValue(tag, e, tpe, loc)
+        Expression.Untag(tag, e, tpe, loc)
       case Expression.Tag(enum, tag, exp, tpe, loc) =>
         val e = visit(exp)
         Expression.Tag(enum, tag, e, tpe, loc)
-      case Expression.GetTupleIndex(exp, offset, tpe, loc) =>
+      case Expression.Index(exp, offset, tpe, loc) =>
         val e = visit(exp)
-        Expression.GetTupleIndex(e, offset, tpe, loc)
+        Expression.Index(e, offset, tpe, loc)
       case Expression.Tuple(elms, tpe, loc) =>
         val es = elms map visit
         Expression.Tuple(es, tpe, loc)

@@ -29,11 +29,12 @@ object NamedAst {
                      lattices: Map[NamedAst.Type, NamedAst.Declaration.BoundedLattice],
                      indexes: Map[Name.NName, Map[String, NamedAst.Declaration.Index]],
                      tables: Map[Name.NName, Map[String, NamedAst.Table]],
-                     facts: Map[Name.NName, List[NamedAst.Declaration.Fact]],
-                     rules: Map[Name.NName, List[NamedAst.Declaration.Rule]],
+                     constraints: Map[Name.NName, List[NamedAst.Constraint]],
                      hooks: Map[Symbol.DefnSym, Ast.Hook],
                      properties: Map[Name.NName, List[NamedAst.Property]],
                      time: Time) extends NamedAst
+
+  case class Constraint(cparams: List[NamedAst.ConstraintParam], head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation) extends NamedAst
 
   sealed trait Declaration extends NamedAst {
     def loc: SourceLocation
@@ -48,10 +49,6 @@ object NamedAst {
     case class External(doc: Option[Ast.Documentation], ident: Name.Ident, params: List[NamedAst.FormalParam], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
     case class Enum(doc: Option[Ast.Documentation], sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
-
-    case class Fact(head: NamedAst.Predicate.Head, loc: SourceLocation) extends NamedAst.Declaration
-
-    case class Rule(head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation) extends NamedAst.Declaration
 
     case class Index(qname: Name.QName, indexes: List[List[Name.Ident]], loc: SourceLocation) extends NamedAst.Declaration
 
@@ -199,7 +196,9 @@ object NamedAst {
 
       case class False(loc: SourceLocation) extends NamedAst.Predicate.Head
 
-      case class Table(name: Name.QName, terms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Predicate.Head
+      case class Positive(name: Name.QName, terms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Predicate.Head
+
+      case class Negative(name: Name.QName, terms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Predicate.Head
 
     }
 
@@ -207,13 +206,13 @@ object NamedAst {
 
     object Body {
 
+      case class Positive(name: Name.QName, terms: List[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Predicate.Body
+
+      case class Negative(name: Name.QName, terms: List[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Predicate.Body
+
       case class Filter(name: Name.QName, terms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Predicate.Body
 
-      case class Table(name: Name.QName, terms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Predicate.Body
-
-      case class NotEqual(sym1: Symbol.VarSym, sym2: Symbol.VarSym, loc: SourceLocation) extends NamedAst.Predicate.Body
-
-      case class Loop(sym: Symbol.VarSym, term: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Loop(pat: NamedAst.Pattern, term: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
     }
 
@@ -244,6 +243,16 @@ object NamedAst {
   case class Attribute(ident: Name.Ident, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: NamedAst.Type) extends NamedAst
+
+  sealed trait ConstraintParam
+
+  object ConstraintParam {
+
+    case class HeadParam(sym: Symbol.VarSym, tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.ConstraintParam
+
+    case class RuleParam(sym: Symbol.VarSym, tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.ConstraintParam
+
+  }
 
   case class FormalParam(sym: Symbol.VarSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
 

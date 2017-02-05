@@ -22,6 +22,7 @@ import org.scalatest.{ParallelTestExecution, Suites}
 
 class LanguageSuite extends Suites(
   new PhaseSuite,
+  new FlixTest("TestEquality", "main/test/ca/uwaterloo/flix/language/feature/TestEquality.flix"),
   new FlixTest("TestPatternMatch", "main/test/ca/uwaterloo/flix/language/feature/TestPatternMatch.flix")
 ) with ParallelTestExecution {
   /* left empty */
