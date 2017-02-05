@@ -752,10 +752,18 @@ namespace List {
         }
     }
 
+    //
+    // ## List Conversions
+    //
+
+    ///
+    /// Returns the list `xs` as a set.
+    ///
     def toSet[a](xs: List[a]): Set[a] = foldRight(Set.insert, Set.empty(), xs)
 
-    ////- **toMap(xs: List[(A, B)]): Map[A, B]**
-    ////    - Returns the association list as a map. If the list contains multiple values for the same key, the value appearing latest in the list is used.
-    ////- **toSet(xs: List[A]): Set[A]**
-    ////    - Returns the list as a set.
+    ///
+    /// Returns the association list `xs` as a map.
+    /// If `xs` contains multiple values for the same key, the value appearing latest in `xs` is used.
+    ///
+    def toMap[a, b](xs: List[(a, b)]): Map[a, b] = foldLeft((m, x) -> Map.insert(fst(x), snd(x), m), Map.empty(), xs)
 }

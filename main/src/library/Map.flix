@@ -44,10 +44,7 @@ namespace Map {
     /// Returns `v` if `k -> v` is in `m`.
     /// Otherwise, returns `d`.
     ///
-    def getWithDefault[k, v](k: k, d: v, m: Map[k, v]): v = match m with {
-        case Map(Nil) => d
-        case Map((a, b) :: rs) => if (a == k) b else getWithDefault(k, d, Map(rs))
-    }
+    def getWithDefault[k, v](k: k, d: v, m: Map[k, v]): v = Option.getWithDefault(get(k, m), d)
 
     ///
     /// Returns `true` if and only if `m` contains the key `k`.
@@ -158,7 +155,7 @@ namespace Map {
     def isSubmapOf[k, v](m1: Map[k, v], m2: Map[k, v]): Bool =
         let Map(xs) = m1;
         let Map(ys) = m2;
-            List.forall(x -> List.memberOf(x, ys), xs)
+            List.forall(kv -> List.memberOf(kv, ys), xs)
 
     ///
     /// Returns `true` if and only if all mappings in `m1` occur in `m2` and `m1 != m2`.

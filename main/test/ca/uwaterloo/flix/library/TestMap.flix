@@ -707,8 +707,8 @@ def foldRightWithKey04: Bool = Map.foldRightWithKey((k, v, s) -> k + s + v, 0, @
 /////////////////////////////////////////////////////////////////////////////
 // union                                                                   //
 /////////////////////////////////////////////////////////////////////////////
-//@test
-//def union01: Bool = assert!(Map.eq(Map.union(@{}, @{}), @{}))
+@test
+def union01: Bool = assert!(Map.eq(Map.union(@{}, @{}), @{}))
 
 @test
 def union02: Bool = assert!(Map.eq(Map.union(@{1 -> 2}, @{}), @{1 -> 2}))
@@ -759,8 +759,8 @@ def union16: Bool = assert!(Map.eq(Map.union(@{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 2
 /////////////////////////////////////////////////////////////////////////////
 // unionWith                                                               //
 /////////////////////////////////////////////////////////////////////////////
-//@test
-//def unionWith01: Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, @{}, @{}), @{}))
+@test
+def unionWith01: Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, @{}, @{}), @{}))
 
 @test
 def unionWith02: Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, @{1 -> 2}, @{}), @{1 -> 2}))
@@ -811,8 +811,8 @@ def unionWith16: Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, @{2 ->
 /////////////////////////////////////////////////////////////////////////////
 // unionWithKey                                                            //
 /////////////////////////////////////////////////////////////////////////////
-//@test
-//def unionWithKey01: Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, @{}, @{}), @{}))
+@test
+def unionWithKey01: Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, @{}, @{}), @{}))
 
 @test
 def unionWithKey02: Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, @{1 -> 2}, @{}), @{1 -> 2}))
@@ -863,8 +863,8 @@ def unionWithKey16: Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1
 /////////////////////////////////////////////////////////////////////////////
 // intersection                                                            //
 /////////////////////////////////////////////////////////////////////////////
-//@test
-//def intersection01: Bool = assert!(Map.eq(Map.intersection(@{}, @{}), @{}))
+@test
+def intersection01: Bool = assert!(Map.eq(Map.intersection(@{}, @{}), @{}))
 
 @test
 def intersection02: Bool = assert!(Map.eq(Map.intersection(@{1 -> 2}, @{}), @{}))
@@ -915,8 +915,8 @@ def intersection16: Bool = assert!(Map.eq(Map.intersection(@{2 -> 7, 11 -> 14, 9
 /////////////////////////////////////////////////////////////////////////////
 // intersectionWith                                                        //
 /////////////////////////////////////////////////////////////////////////////
-//@test
-//def intersectionWith01: Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, @{}, @{}), @{}))
+@test
+def intersectionWith01: Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, @{}, @{}), @{}))
 
 @test
 def intersectionWith02: Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, @{1 -> 2}, @{}), @{}))
@@ -967,8 +967,8 @@ def intersectionWith16: Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v
 /////////////////////////////////////////////////////////////////////////////
 // intersectionWithKey                                                     //
 /////////////////////////////////////////////////////////////////////////////
-//@test
-//def intersectionWithKey01: Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, @{}, @{}), @{}))
+@test
+def intersectionWithKey01: Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, @{}, @{}), @{}))
 
 @test
 def intersectionWithKey02: Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, @{1 -> 2}, @{}), @{}))
@@ -1019,8 +1019,8 @@ def intersectionWithKey16: Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1,
 /////////////////////////////////////////////////////////////////////////////
 // difference                                                              //
 /////////////////////////////////////////////////////////////////////////////
-//@test
-//def difference01: Bool = assert!(Map.eq(Map.difference(@{}, @{}), @{}))
+@test
+def difference01: Bool = assert!(Map.eq(Map.difference(@{}, @{}), @{}))
 
 @test
 def difference02: Bool = assert!(Map.eq(Map.difference(@{1 -> 2}, @{}), @{1 -> 2}))
@@ -1071,8 +1071,8 @@ def difference16: Bool = assert!(Map.eq(Map.difference(@{2 -> 7, 11 -> 14, 9 -> 
 /////////////////////////////////////////////////////////////////////////////
 // differenceWith                                                          //
 /////////////////////////////////////////////////////////////////////////////
-//@test
-//def differenceWith01: Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, @{}, @{}), @{}))
+@test
+def differenceWith01: Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, @{}, @{}), @{}))
 
 @test
 def differenceWith02: Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, @{1 -> 2}, @{}), @{1 -> 2}))
@@ -1138,8 +1138,8 @@ def differenceWith21: Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v
 /////////////////////////////////////////////////////////////////////////////
 // differenceWithKey                                                       //
 /////////////////////////////////////////////////////////////////////////////
-//@test
-//def differenceWithKey01: Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, @{}, @{}), @{}))
+@test
+def differenceWithKey01: Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, @{}, @{}), @{}))
 
 @test
 def differenceWithKey02: Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, @{1 -> 2}, @{}), @{1 -> 2}))

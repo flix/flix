@@ -51,11 +51,13 @@ class Flix {
     */
   private val internals = List(
     "Prelude.flix" -> StreamOps.readAll(LocalResource.Library.Prelude),
+    "Option.flix" -> StreamOps.readAll(LocalResource.Library.Option),
+    "Result.flix" -> StreamOps.readAll(LocalResource.Library.Result),
+    "List.flix" -> StreamOps.readAll(LocalResource.Library.List),
     "Bounded.flix" -> StreamOps.readAll(LocalResource.Library.Bounded),
     "PartialOrder.flix" -> StreamOps.readAll(LocalResource.Library.PartialOrder),
     "JoinLattice.flix" -> StreamOps.readAll(LocalResource.Library.JoinLattice),
     "MeetLattice.flix" -> StreamOps.readAll(LocalResource.Library.MeetLattice),
-    "List.flix" -> StreamOps.readAll(LocalResource.Library.List),
     "Set.flix" -> StreamOps.readAll(LocalResource.Library.Set),
     "Map.flix" -> StreamOps.readAll(LocalResource.Library.Map)
   )

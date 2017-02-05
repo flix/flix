@@ -28,17 +28,17 @@ class TestResult extends FunSuite {
   val options = Options.DefaultTest.copy(core = false)
 
   def runTest(input: String, output: Int) {
-    val flix = new Flix().setOptions(options).addPath("main/src/library/Result.flix").addStr(input)
+    val flix = new Flix().setOptions(options).addStr(input)
     assertResult(output)(flix.solve().get.getConstant("r"))
   }
 
   def runBoolTest(input: String, output: Boolean) {
-    val flix = new Flix().setOptions(options).addPath("main/src/library/Result.flix").addStr(input)
+    val flix = new Flix().setOptions(options).addStr(input)
     assertResult(output)(flix.solve().get.getConstant("r"))
   }
 
   def runAnyTest(input: String, output: AnyRef) {
-    val flix = new Flix().setOptions(options).addPath("main/src/library/Result.flix").addStr(input)
+    val flix = new Flix().setOptions(options).addStr(input)
     val v1 = output
     val v2 = flix.solve().get.getConstant("r")
     assert(Value.equal(v1, v2), s"v1 = $v1, v2 = $v2")

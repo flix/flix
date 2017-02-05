@@ -26,13 +26,10 @@ class FlixTest(name: String, path: String) extends FunSuite {
   /*
    * Include the standard library.
    */
-  val Library: List[String] = List(
-    "main/src/library/Option.flix",
-    "main/src/library/Result.flix"
-  )
+  val Library: List[String] = List()
 
   {
-    val opts = Options.DefaultTest
+    val opts = Options.DefaultTest.copy(evaluation=Evaluation.Interpreted)
     val flix = new Flix().setOptions(opts.copy(core = false))
 
     // Add the given path.
