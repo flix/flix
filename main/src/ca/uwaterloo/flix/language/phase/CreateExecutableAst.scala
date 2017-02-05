@@ -357,13 +357,7 @@ object CreateExecutableAst {
         case SimplifiedAst.Term.Body.Wild(tpe, loc) => ExecutableAst.Term.Body.Wild(tpe, loc)
         case SimplifiedAst.Term.Body.Var(sym, tpe, loc) => ExecutableAst.Term.Body.Var(sym, tpe, loc)
         case SimplifiedAst.Term.Body.Lit(lit, tpe, loc) =>
-          // A literal is evaluated to a value.
-          // TODO: Ugly hack.
-          // HACK: Unfortunately the interpreter requires an ExecutableAst, which we are currently constructing,
-          // HACK: and so is not yet available. Our solution is to pass in an empty AST.
-          // HACK: This is okay, since a literal should not reference anything (otherwise it would not be a literal).
-          val fakeRoot = ExecutableAst.Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, List.empty, Time.Default, Map.empty)
-          val v = Interpreter.eval(Expression.toExecutable(lit), fakeRoot, Map.empty)
+          val v = Interpreter.lit2value(Expression.toExecutable(lit))
           ExecutableAst.Term.Body.Lit(v, tpe, loc)
         case SimplifiedAst.Term.Body.Pat(pat, tpe, loc) => ExecutableAst.Term.Body.Pat(Patterns.toExecutable(pat), tpe, loc)
       }

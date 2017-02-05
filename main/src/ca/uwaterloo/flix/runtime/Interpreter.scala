@@ -130,6 +130,34 @@ object Interpreter {
   }
 
   /**
+    * Evaluates the given expression literal `lit0` to a value.
+    */
+  def lit2value(lit0: Expression): AnyRef = lit0 match {
+    case Expression.Unit => Value.Unit
+    case Expression.True => Value.True
+    case Expression.False => Value.False
+    case Expression.Char(lit) => Value.mkChar(lit)
+    case Expression.Float32(lit) => Value.mkFloat32(lit)
+    case Expression.Float64(lit) => Value.mkFloat64(lit)
+    case Expression.Int8(lit) => Value.mkInt8(lit)
+    case Expression.Int16(lit) => Value.mkInt16(lit)
+    case Expression.Int32(lit) => Value.mkInt32(lit)
+    case Expression.Int64(lit) => Value.mkInt64(lit)
+    case Expression.BigInt(lit) => Value.mkBigInt(lit)
+    case Expression.Str(lit) => Value.mkStr(lit)
+    case Expression.Tag(name, tag, exp, _, _) => Value.mkTag(tag, lit2value(exp))
+    case Expression.Tuple(elms, _, _) =>
+      val array = new Array[AnyRef](elms.length)
+      var i = 0
+      while (i < array.length) {
+        array(i) = lit2value(elms(i))
+        i = i + 1
+      }
+      array
+    case _ => throw InternalRuntimeException(s"Unexpected non-literal expression '$lit0'.")
+  }
+
+  /**
     * Applies the given unary operator `op` to the value of the expression `exp0` under the environment `env0`
     */
   private def evalUnary(op: UnaryOperator, exp0: Expression, root: Root, env0: Map[String, AnyRef]): AnyRef = {
