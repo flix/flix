@@ -97,11 +97,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // NB: RuleDeclaration must be parsed before FactDeclaration.
   def Declaration: Rule1[ParsedAst.Declaration] = rule {
     Declarations.Namespace |
-      Declarations.Rule |
-      Declarations.Fact |
+      Declarations.Constraint |
       Declarations.Definition |
       Declarations.External |
       Declarations.Enum |
+      Declarations.TypeDecl |
       Declarations.LetLattice |
       Declarations.Relation |
       Declarations.Lattice |
@@ -157,6 +157,22 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
     }
 
+    def TypeDecl: Rule1[ParsedAst.Declaration.Type] = {
+      def UnitCase: Rule1[ParsedAst.Case] = rule {
+        SP ~ Names.Tag ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) =>
+          ParsedAst.Case(sp1, ident, ParsedAst.Type.Unit(sp1, sp2), sp2))
+      }
+
+      def NestedCase: Rule1[ParsedAst.Case] = rule {
+        SP ~ Names.Tag ~ Type ~ SP ~> ParsedAst.Case
+      }
+
+      rule {
+        // NB: NestedCase must be parsed before UnitCase.
+        Documentation ~ SP ~ atomic("type") ~ WS ~ Names.Type ~ WS ~ "=" ~ WS ~ (NestedCase | UnitCase) ~ SP ~> ParsedAst.Declaration.Type
+      }
+    }
+
     def Relation: Rule1[ParsedAst.Declaration.Relation] = rule {
       Documentation ~ SP ~ atomic("rel") ~ WS ~ Names.Table ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~> ParsedAst.Declaration.Relation
     }
@@ -175,13 +191,27 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
     }
 
-    // TODO: It would be faster to parse Facts and Rules together.
-    def Fact: Rule1[ParsedAst.Declaration.Fact] = rule {
-      optWS ~ SP ~ Predicate ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Fact
-    }
+    def Constraint: Rule1[ParsedAst.Declaration.Constraint] = {
+      // A conjunction of head predicates: P(..) && P(..) && ...
+      def HeadConj: Rule1[Seq[ParsedAst.Predicate.Head]] = rule {
+        oneOrMore(HeadPredicate).separatedBy(optWS ~ "&&" ~ optWS)
+      }
 
-    def Rule: Rule1[ParsedAst.Declaration.Rule] = rule {
-      optWS ~ SP ~ Predicate ~ optWS ~ ":-" ~ optWS ~ oneOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Rule
+      // A disjunction of body predicates: P(..) || P(..) || ...
+      def BodyConj: Rule1[Seq[ParsedAst.Predicate.Body]] = rule {
+        oneOrMore(BodyPredicate).separatedBy(optWS ~ "||" ~ optWS)
+      }
+
+      def Body: Rule1[Seq[Seq[ParsedAst.Predicate.Body]]] = rule {
+        optional(optWS ~ ":-" ~ optWS ~ oneOrMore(BodyConj).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[Seq[ParsedAst.Predicate.Body]]]) => o match {
+          case None => Seq.empty
+          case Some(xs) => xs
+        })
+      }
+
+      rule {
+        optWS ~ SP ~ HeadConj ~ Body ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Constraint
+      }
     }
 
     def LetLattice: Rule1[ParsedAst.Declaration] = {
@@ -228,7 +258,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    Literals.Bool | Literals.Char | Literals.Float | Literals.Int | Literals.Str
+    Literals.Bool | Literals.Char | Literals.Str | Literals.Float | Literals.Int
   }
 
   object Literals {
@@ -427,12 +457,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def LetMatch: Rule1[ParsedAst.Expression.LetMatch] = rule {
-      SP ~ atomic("let") ~ WS ~ Pattern ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.LetMatch
+      SP ~ atomic("let") ~ WS ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.LetMatch
     }
 
     def Match: Rule1[ParsedAst.Expression.Match] = {
-      def Rule: Rule1[(ParsedAst.Pattern, ParsedAst.Expression)] = rule {
-        atomic("case") ~ WS ~ Pattern ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~> ((p: ParsedAst.Pattern, e: ParsedAst.Expression) => (p, e))
+      def Rule: Rule1[ParsedAst.MatchRule] = rule {
+        atomic("case") ~ WS ~ Pattern ~ optWS ~ optional(atomic("if") ~ WS ~ Expression ~ optWS) ~ atomic("=>") ~ optWS ~ Expression ~> ParsedAst.MatchRule
       }
 
       rule {
@@ -614,33 +644,53 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Predicates                                                              //
   /////////////////////////////////////////////////////////////////////////////
-  def Predicate: Rule1[ParsedAst.Predicate] = rule {
-    Predicates.True | Predicates.False | Predicates.Filter | Predicates.Table | Predicates.NotEqual | Predicates.Loop
+  def HeadPredicate: Rule1[ParsedAst.Predicate.Head] = rule {
+    Predicates.Head.True | Predicates.Head.False | Predicates.Head.Positive | Predicates.Head.Negative
+  }
+
+  def BodyPredicate: Rule1[ParsedAst.Predicate.Body] = rule {
+    Predicates.Body.Positive | Predicates.Body.Negative | Predicates.Body.Filter | Predicates.Body.NotEqual | Predicates.Body.Loop
   }
 
   object Predicates {
-    def True: Rule1[ParsedAst.Predicate.True] = rule {
-      SP ~ atomic("true") ~ SP ~> ParsedAst.Predicate.True
+    object Head {
+      def True: Rule1[ParsedAst.Predicate.Head.True] = rule {
+        SP ~ atomic("true") ~ SP ~> ParsedAst.Predicate.Head.True
+      }
+
+      def False: Rule1[ParsedAst.Predicate.Head.False] = rule {
+        SP ~ atomic("false") ~ SP ~> ParsedAst.Predicate.Head.False
+      }
+
+      def Positive: Rule1[ParsedAst.Predicate.Head.Positive] = rule {
+        SP ~ Names.QualifiedTable ~ optWS ~ NonEmptyArgumentList ~ SP ~> ParsedAst.Predicate.Head.Positive
+      }
+
+      def Negative: Rule1[ParsedAst.Predicate.Head.Negative] = rule {
+        SP ~ "!" ~ optWS ~ Names.QualifiedTable ~ optWS ~ NonEmptyArgumentList ~ SP ~> ParsedAst.Predicate.Head.Negative
+      }
     }
 
-    def False: Rule1[ParsedAst.Predicate.False] = rule {
-      SP ~ atomic("false") ~ SP ~> ParsedAst.Predicate.False
-    }
+    object Body {
+      def Positive: Rule1[ParsedAst.Predicate.Body.Positive] = rule {
+        SP ~ Names.QualifiedTable ~ optWS ~ NonEmptyPatternList ~ SP ~> ParsedAst.Predicate.Body.Positive
+      }
 
-    def Filter: Rule1[ParsedAst.Predicate.Filter] = rule {
-      SP ~ Names.QualifiedDefinition ~ optWS ~ "(" ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Filter
-    }
+      def Negative: Rule1[ParsedAst.Predicate.Body.Negative] = rule {
+        SP ~ "!" ~ optWS ~ Names.QualifiedTable ~ optWS ~ NonEmptyPatternList ~ SP ~> ParsedAst.Predicate.Body.Negative
+      }
 
-    def Table: Rule1[ParsedAst.Predicate.Table] = rule {
-      SP ~ Names.QualifiedTable ~ optWS ~ "(" ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ ")" ~ SP ~> ParsedAst.Predicate.Table
-    }
+      def Filter: Rule1[ParsedAst.Predicate.Body.Filter] = rule {
+        SP ~ Names.QualifiedDefinition ~ optWS ~ NonEmptyArgumentList ~ SP ~> ParsedAst.Predicate.Body.Filter
+      }
 
-    def NotEqual: Rule1[ParsedAst.Predicate.NotEqual] = rule {
-      SP ~ Names.Variable ~ optWS ~ atomic("!=") ~ optWS ~ Names.Variable ~ SP ~> ParsedAst.Predicate.NotEqual
-    }
+      def NotEqual: Rule1[ParsedAst.Predicate.Body.NotEqual] = rule {
+        SP ~ Names.Variable ~ optWS ~ atomic("!=") ~ optWS ~ Names.Variable ~ SP ~> ParsedAst.Predicate.Body.NotEqual
+      }
 
-    def Loop: Rule1[ParsedAst.Predicate.Loop] = rule {
-      SP ~ Names.Variable ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Loop
+      def Loop: Rule1[ParsedAst.Predicate.Body.Loop] = rule {
+        SP ~ Pattern ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Loop
+      }
     }
   }
 
@@ -707,6 +757,14 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Helpers                                                                 //
   /////////////////////////////////////////////////////////////////////////////
+  def NonEmptyArgumentList: Rule1[Seq[ParsedAst.Expression]] = rule {
+    "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+  }
+
+  def NonEmptyPatternList: Rule1[Seq[ParsedAst.Pattern]] = rule {
+    "(" ~ optWS ~ oneOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+  }
+
   def FormalParamList: Rule1[Seq[ParsedAst.FormalParam]] = rule {
     zeroOrMore(FormalParam).separatedBy(optWS ~ "," ~ optWS)
   }
@@ -737,34 +795,34 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     /**
       * A lowercase letter.
       */
-    def LowerLetter: CharPredicate = CharPredicate.LowerAlpha
+    val LowerLetter: CharPredicate = CharPredicate.LowerAlpha
 
     /**
       * An uppercase letter.
       */
-    def UpperLetter: CharPredicate = CharPredicate.UpperAlpha
+    val UpperLetter: CharPredicate = CharPredicate.UpperAlpha
 
     /**
       * A greek letter.
       */
-    def GreekLetter: CharPredicate = CharPredicate('\u0370' to '\u03FF')
+    val GreekLetter: CharPredicate = CharPredicate('\u0370' to '\u03FF')
 
     /**
       * A mathematical operator or arrow.
       */
-    def MathLetter: CharPredicate =
+    val MathLetter: CharPredicate =
       CharPredicate('\u2200' to '\u22FF') ++ // Mathematical Operator
         CharPredicate('\u2190' to '\u21FF') // Mathematical Arrow
 
     /**
       * An operator letter.
       */
-    def OperatorLetter: CharPredicate = CharPredicate("+-*<>=!&|^")
+    val OperatorLetter: CharPredicate = CharPredicate("+-*<>=!&|^")
 
     /**
       * a (upper/lower case) letter, numeral, greek letter, or other legal character.
       */
-    def LegalLetter: CharPredicate = CharPredicate.AlphaNum ++ "_" ++ "'" ++ "!"
+    val LegalLetter: CharPredicate = CharPredicate.AlphaNum ++ "_" ++ "'" ++ "!"
 
     /**
       * A lowercase identifier is a lowercase letter optionally followed by any letter, underscore, or prime.

@@ -62,6 +62,9 @@
             <!-- Include compiled class files. -->
             <fileset dir="${out.dir}/classes" includes="**/*.class"/>
 
+            <!-- Include Flix resources. -->
+            <fileset dir="${out.dir}/classes" includes="**/*.flix"/>
+
             <!-- Bundle libraries. -->
             <zipgroupfileset dir="${lib.dir}" includes="**/*.jar"/>
 

@@ -25,10 +25,11 @@ object TypedAst {
                   lattices: Map[Type, TypedAst.Declaration.BoundedLattice],
                   tables: Map[Symbol.TableSym, TypedAst.Table],
                   indexes: Map[Symbol.TableSym, TypedAst.Declaration.Index],
-                  facts: List[TypedAst.Declaration.Fact],
-                  rules: List[TypedAst.Declaration.Rule],
+                  strata: List[TypedAst.Stratum],
                   properties: List[TypedAst.Property],
                   time: Time) extends TypedAst
+
+  case class Constraint(cparams: List[TypedAst.ConstraintParam], head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body], loc: SourceLocation) extends TypedAst
 
   sealed trait Declaration extends TypedAst {
     def loc: SourceLocation
@@ -41,10 +42,6 @@ object TypedAst {
     case class Enum(doc: Option[Ast.Documentation], sym: Symbol.EnumSym, cases: Map[String, TypedAst.Case], tpe: Type, loc: SourceLocation) extends TypedAst.Declaration
 
     case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends TypedAst.Declaration
-
-    case class Fact(head: TypedAst.Predicate.Head, loc: SourceLocation) extends TypedAst.Declaration
-
-    case class Rule(head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body], loc: SourceLocation) extends TypedAst.Declaration
 
     case class BoundedLattice(tpe: Type,
                               bot: TypedAst.Expression,
@@ -142,7 +139,7 @@ object TypedAst {
 
     case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Match(exp: TypedAst.Expression, rules: List[(TypedAst.Pattern, TypedAst.Expression)], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Switch(rules: List[(TypedAst.Expression, TypedAst.Expression)], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -246,7 +243,9 @@ object TypedAst {
 
       case class False(loc: SourceLocation) extends TypedAst.Predicate.Head
 
-      case class Table(sym: Symbol.TableSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
+      case class Positive(sym: Symbol.TableSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
+
+      case class Negative(sym: Symbol.TableSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
 
     }
 
@@ -254,13 +253,11 @@ object TypedAst {
 
     object Body {
 
-      case class Table(sym: Symbol.TableSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Positive(sym: Symbol.TableSym, terms: List[TypedAst.Pattern], loc: SourceLocation) extends TypedAst.Predicate.Body
 
-      case class ApplyFilter(name: Symbol.DefnSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Negative(sym: Symbol.TableSym, terms: List[TypedAst.Pattern], loc: SourceLocation) extends TypedAst.Predicate.Body
 
-      case class ApplyHookFilter(hook: Ast.Hook, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
-
-      case class NotEqual(sym1: Symbol.VarSym, sym2: Symbol.VarSym, loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Filter(name: Symbol.DefnSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
 
       case class Loop(sym: Symbol.VarSym, term: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Predicate.Body
 
@@ -272,10 +269,24 @@ object TypedAst {
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends TypedAst
 
+  sealed trait ConstraintParam
+
+  object ConstraintParam {
+
+    case class HeadParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst.ConstraintParam
+
+    case class RuleParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst.ConstraintParam
+
+  }
+
   case class FormalParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst
+
+  case class MatchRule(pat: TypedAst.Pattern, guard: TypedAst.Expression, exp: TypedAst.Expression) extends TypedAst
 
   case class TypeParam(name: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst
+
+  case class Stratum(constraints: List[TypedAst.Constraint]) extends TypedAst
 
 }

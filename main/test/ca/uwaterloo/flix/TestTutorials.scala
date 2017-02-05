@@ -26,30 +26,30 @@ class TestTutorials extends FunSuite {
 
   test("introduction.flix") {
     val path = "main/src/tutorials/introduction.flix"
-    new Flix().setOptions(opts).addPath(path).solve().get
+    new Flix().setOptions(opts.copy(core = false)).addPath(path).solve().get
   }
 
   test("interpreter.flix") {
     val path = "main/src/tutorials/interpreter.flix"
-    new Flix().setOptions(opts).addPath(path).solve().get
+    new Flix().setOptions(opts.copy(core = false)).addPath(path).solve().get
   }
 
   // TODO: Requires Option.
   ignore("lambda-calculus.flix") {
     val path = "main/src/tutorials/lambda-calculus.flix"
-    new Flix().setOptions(opts).addPath(path).solve().get
+    new Flix().setOptions(opts.copy(core = false)).addPath(path).solve().get
   }
 
   // TODO: Requires Option.
   ignore("lambda-calculus-promises.flix") {
     val path = "main/src/tutorials/lambda-calculus-promises.flix"
-    new Flix().setOptions(opts).addPath(path).solve().get
+    new Flix().setOptions(opts.copy(core = false)).addPath(path).solve().get
   }
 
   test("delta-debugging.flix") {
     intercept[RuleException] {
       val path = "main/src/tutorials/delta-debugging.flix"
-      new Flix().setOptions(opts).addPath(path).solve().get
+      new Flix().setOptions(opts.copy(core = false)).addPath(path).solve().get
     }
   }
 

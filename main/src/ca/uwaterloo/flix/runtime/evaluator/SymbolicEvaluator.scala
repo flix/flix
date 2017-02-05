@@ -674,25 +674,9 @@ object SymbolicEvaluator {
         }
 
       /**
-        * Tags.
+        * Is Tag.
         */
-      case Expression.Tag(enum, tag, exp, _, _) =>
-        eval(pc0, exp, env0, qua0) flatMap {
-          case (pc, qua, v) => lift(pc, qua, SymVal.Tag(tag, v))
-        }
-
-      /**
-        * Tuples.
-        */
-      case Expression.Tuple(elms, _, _) =>
-        evaln(pc0, elms, env0, qua0) flatMap {
-          case (pc, qua, es) => lift(pc, qua, SymVal.Tuple(es))
-        }
-
-      /**
-        * Check Tag Value.
-        */
-      case Expression.CheckTag(tag, exp, _) =>
+      case Expression.Is(exp, tag, _) =>
         eval(pc0, exp, env0, qua0) flatMap {
           case (pc, qua, SymVal.Tag(tag2, _)) =>
             if (tag == tag2)
@@ -703,18 +687,34 @@ object SymbolicEvaluator {
         }
 
       /**
-        * Get Tag Value.
+        * Tag.
         */
-      case Expression.GetTagValue(tag, exp, _, _) =>
+      case Expression.Tag(enum, tag, exp, _, _) =>
+        eval(pc0, exp, env0, qua0) flatMap {
+          case (pc, qua, v) => lift(pc, qua, SymVal.Tag(tag, v))
+        }
+
+      /**
+        * Untag.
+        */
+      case Expression.Untag(tag, exp, _, _) =>
         eval(pc0, exp, env0, qua0) flatMap {
           case (pc, qua, SymVal.Tag(_, v)) => lift(pc, qua, v)
           case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
         }
 
       /**
-        * Get Tuple Index.
+        * Tuple.
         */
-      case Expression.GetTupleIndex(base, offset, _, _) =>
+      case Expression.Tuple(elms, _, _) =>
+        evaln(pc0, elms, env0, qua0) flatMap {
+          case (pc, qua, es) => lift(pc, qua, SymVal.Tuple(es))
+        }
+
+      /**
+        * Index (into tuple).
+        */
+      case Expression.Index(base, offset, _, _) =>
         eval(pc0, base, env0, qua0) flatMap {
           case (pc, qua, SymVal.Tuple(elms)) => lift(pc, qua, elms(offset))
           case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")

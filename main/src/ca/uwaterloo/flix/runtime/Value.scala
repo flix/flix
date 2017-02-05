@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.runtime
 
-import java.util
-
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
@@ -270,7 +268,7 @@ object Value {
     * Constructs a str from the given string `s`.
     */
   @inline
-  def mkStr(s: String): AnyRef = s.intern()
+  def mkStr(s: String): AnyRef = s
 
   /**
     * Casts the given reference `ref` to a string.
@@ -290,7 +288,7 @@ object Value {
     */
   final class Tag private[Value](val tag: java.lang.String, val value: AnyRef) {
     override def equals(other: Any): scala.Boolean = other match {
-      case that: Value.Tag => this.tag == that.tag && this.value == that.value
+      case that: Value.Tag => this.tag == that.tag && equal(this.value, that.value)
       case _ => false
     }
 
@@ -312,7 +310,7 @@ object Value {
   /**
     * Returns the list `vs` with the element `v` prepended.
     */
-  def mkCons(v: AnyRef, vs: AnyRef): Value.Tag = mkTag("Cons", Tuple(Array(v, vs)))
+  def mkCons(v: AnyRef, vs: AnyRef): Value.Tag = mkTag("Cons", Array(v, vs))
 
   /**
     * Returns the given Scala list `as` as a Flix list.
@@ -348,34 +346,6 @@ object Value {
   def cast2tag(ref: AnyRef): Value.Tag = ref match {
     case v: Value.Tag => v
     case _ => throw new InternalRuntimeException(s"Unexpected non-tag value: '$ref'.")
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Tuples                                                                  //
-  /////////////////////////////////////////////////////////////////////////////
-
-  // TODO: Remove
-  final case class Tuple(elms: Array[AnyRef]) {
-    override def toString: java.lang.String = s"Value.Tuple(Array(${elms.mkString(",")}))"
-
-    override def equals(obj: scala.Any): Boolean = obj match {
-      case that: Value.Tuple =>
-        util.Arrays.equals(this.elms.asInstanceOf[Array[AnyRef]], that.elms)
-      case _ => false
-    }
-
-    override def hashCode: Int = util.Arrays.hashCode(elms.asInstanceOf[Array[AnyRef]])
-  }
-
-  /**
-    * Casts the given reference `ref` to a tuple.
-    */
-  @inline
-  def cast2tuple(ref: AnyRef): Array[AnyRef] = ref match {
-    case o: Array[AnyRef] => o
-    case o: Tuple => o.elms // TODO: remove
-    case o: Product => o.productIterator.toArray.asInstanceOf[Array[AnyRef]] // TODO: See if this works, and think about better solution.
-    case _ => throw new InternalRuntimeException(s"Unexpected non-tuple value: '$ref'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -418,17 +388,47 @@ object Value {
     case _ => throw new InternalRuntimeException(s"Unexpected non-map value: '$ref'.")
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Equality                                                                //
+  /////////////////////////////////////////////////////////////////////////////
   /**
-    * Casts the given `ref` to a Flix value.
+    * Returns `true` if the values of the two given references `ref1` and `ref2` are equal.
+    *
+    * NB: The type system ensures that only values of the same type can be compared.
+    * Hence it is sufficient to only inspect the type of the first argument.
     */
-  // TODO: This is temporary fix until we figure out a proper way to deal with non-flix values.
-  @inline
-  def cast2flix(ref: AnyRef): AnyRef = ref match {
-    case Tuple1(a: AnyRef) => Value.Tuple(Array(a))
-    case Tuple2(a: AnyRef, b: AnyRef) => Value.Tuple(Array(a, b))
-    case Tuple3(a: AnyRef, b: AnyRef, c: AnyRef) => Value.Tuple(Array(a, b, c))
-    case Tuple4(a: AnyRef, b: AnyRef, c: AnyRef, d: AnyRef) => Value.Tuple(Array(a, b, c, d))
-    case _ => ref
+  def equal(ref1: AnyRef, ref2: AnyRef): Boolean = ref1 match {
+    case _: Unit.type => ref1 eq ref2
+    case _: java.lang.Boolean => ref1.equals(ref2)
+    case _: java.lang.Character => ref1.equals(ref2)
+    case _: java.lang.Float => ref1.equals(ref2)
+    case _: java.lang.Double => ref1.equals(ref2)
+    case _: java.lang.Byte => ref1.equals(ref2)
+    case _: java.lang.Short => ref1.equals(ref2)
+    case _: java.lang.Integer => ref1.equals(ref2)
+    case _: java.lang.Long => ref1.equals(ref2)
+    case _: java.math.BigInteger => ref1.equals(ref2)
+    case _: java.lang.String => ref1.equals(ref2)
+    case _: Tag =>
+      val v1 = ref1.asInstanceOf[Tag]
+      val v2 = ref2.asInstanceOf[Tag]
+      v1.tag == v2.tag && equal(v1.value, v2.value)
+    case _: Array[AnyRef] =>
+      val a1 = ref1.asInstanceOf[Array[AnyRef]]
+      val a2 = ref2.asInstanceOf[Array[AnyRef]]
+      assert(a1.length == a2.length)
+      var i = 0
+      while (i < a1.length) {
+        if (!equal(a1(i), a2(i))) {
+          return false
+        }
+        i = i + 1
+      }
+      return true
+    case _ =>
+      val tpe1 = ref1.getClass.getCanonicalName
+      val tpe2 = ref2.getClass.getCanonicalName
+      throw InternalRuntimeException(s"Unable to compare '$tpe1' and '$tpe2'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -449,21 +449,21 @@ object Value {
     case o: java.lang.String => "\"" + o + "\""
     case o: Value.Tag =>
       if (o.tag == "Cons") {
-        val e1 = o.value.asInstanceOf[Value.Tuple].elms(0)
-        val e2 = o.value.asInstanceOf[Value.Tuple].elms(1)
+        val e1 = o.value.asInstanceOf[Array[AnyRef]](0)
+        val e2 = o.value.asInstanceOf[Array[AnyRef]](1)
         s"${pretty(e1)} :: ${pretty(e2)}"
       }
       else {
         if (o.value.isInstanceOf[Value.Unit.type]) {
           s"${o.tag}"
-        } else if (o.value.isInstanceOf[Value.Tuple]) {
-          s"${o.tag}${pretty(o.value)}"
+        } else if (o.value.isInstanceOf[Array[AnyRef]]) {
+          s"${o.tag}(${o.value.asInstanceOf[Array[AnyRef]].map(pretty).mkString(", ")})"
         } else {
           s"${o.tag}(${pretty(o.value)})"
         }
       }
-
-    case Value.Tuple(elms) => "(" + elms.map(pretty).mkString(", ") + ")"
+    case o: Array[AnyRef] =>
+      "(" + o.toList.map(pretty).mkString(", ") + ")"
     case _ => ref.toString
   }
 

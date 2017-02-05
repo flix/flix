@@ -238,7 +238,10 @@ class Flix {
         val monomorphedAst = Monomorph.monomorph(tast)
         val simplifiedAst = Simplifier.simplify(monomorphedAst)
         val lambdaLiftedAst = Tailrec.tailrec(LambdaLift.lift(simplifiedAst))
-        val numberedAst = VarNumbering.number(lambdaLiftedAst)
+        val inlinedAst = Inliner.inline(lambdaLiftedAst)
+        val optimizedAst = Optimizer.optimize(inlinedAst, options)
+        val shakedAst = TreeShaker.shake(optimizedAst)
+        val numberedAst = VarNumbering.number(shakedAst)
         val executableAst = CreateExecutableAst.toExecutable(numberedAst)
         val compiledAst = LoadBytecode.load(this, executableAst, options)
         QuickChecker.quickCheck(compiledAst, options) flatMap {
@@ -275,26 +278,37 @@ class Flix {
   }
 
   /**
-    * Returns a list of source inputs constructed
-    * from the strings and paths in this builder.
+    * Returns a list of source inputs constructed from the strings and paths passed to Flix.
     */
   private def getSourceInputs: List[SourceInput] = {
-    val si1 = strings.foldLeft(List.empty[SourceInput]) {
-      case (xs, s) => SourceInput.Str(s) :: xs
-    }
-
-    val si2 = paths.foldLeft(List.empty[SourceInput]) {
-      case (xs, p) if p.getFileName.toString.endsWith(".flix") => SourceInput.TxtFile(p) :: xs
-      case (xs, p) if p.getFileName.toString.endsWith(".flix.zip") => SourceInput.ZipFile(p) :: xs
-      case (xs, p) if p.getFileName.toString.endsWith(".flix.gzip") => SourceInput.ZipFile(p) :: xs
-      case (_, p) => throw new IllegalStateException(s"Unknown file type '${p.getFileName}'.")
-    }
-
-    val si3 = internals.foldLeft(List.empty[SourceInput]) {
-      case (xs, (name, text)) => SourceInput.Internal(name, text) :: xs
-    }
-
+    val si1 = getStringInputs
+    val si2 = getPathInputs
+    val si3 = if (options.core) Nil else getStandardLibraryInputs
     si1 ::: si2 ::: si3
+  }
+
+  /**
+    * Returns the source inputs corresponding to the strings passed to Flix.
+    */
+  private def getStringInputs: List[SourceInput] = strings.foldLeft(List.empty[SourceInput]) {
+    case (xs, s) => SourceInput.Str(s) :: xs
+  }
+
+  /**
+    * Returns the source inputs corresponding to the paths passed to Flix.
+    */
+  private def getPathInputs: List[SourceInput] = paths.foldLeft(List.empty[SourceInput]) {
+    case (xs, p) if p.getFileName.toString.endsWith(".flix") => SourceInput.TxtFile(p) :: xs
+    case (xs, p) if p.getFileName.toString.endsWith(".flix.zip") => SourceInput.ZipFile(p) :: xs
+    case (xs, p) if p.getFileName.toString.endsWith(".flix.gzip") => SourceInput.ZipFile(p) :: xs
+    case (_, p) => throw new IllegalStateException(s"Unknown file type '${p.getFileName}'.")
+  }
+
+  /**
+    * Returns the source inputs for the standard library.
+    */
+  private def getStandardLibraryInputs: List[SourceInput] = internals.foldLeft(List.empty[SourceInput]) {
+    case (xs, (name, text)) => SourceInput.Internal(name, text) :: xs
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -573,7 +587,7 @@ class Flix {
     if (tuple == null)
       throw new IllegalArgumentException("Argument 'tuple' must be non-null.")
 
-    new WrappedValue(Value.Tuple(tuple.map(_.getUnsafeRef)))
+    new WrappedValue(tuple.map(_.getUnsafeRef))
   }
 
   /**

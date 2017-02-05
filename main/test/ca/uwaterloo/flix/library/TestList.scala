@@ -50,8 +50,8 @@ class TestList extends FunSuite {
   def mkNil: AnyRef = Value.mkNil
   def mkNone: AnyRef = Value.mkNone()
   def mkSome(x: Int): AnyRef = Value.mkSome(new Integer(x))
-  def mkTuple(x: Int, y: Int): AnyRef = Value.Tuple(Array(new Integer(x), new Integer(y)))
-  def mkAnyTuple(x: AnyRef, y: AnyRef): AnyRef = Value.Tuple(Array(x, y))
+  def mkTuple(x: Int, y: Int): AnyRef = Array(new Integer(x), new Integer(y))
+  def mkAnyTuple(x: AnyRef, y: AnyRef): AnyRef = Array(x, y)
 
   test("isEmpty.01") {
     val input = "def r: Bool = List/isEmpty(Nil)"

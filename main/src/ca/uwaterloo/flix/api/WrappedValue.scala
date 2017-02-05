@@ -55,8 +55,6 @@ final class WrappedValue(val ref: AnyRef) extends IValue {
 
   def getStr: String = Value.cast2str(ref)
 
-  def getTuple: Array[IValue] = Value.cast2tuple(ref).map(e => new WrappedValue(e))
-
   def getTagName: String = Value.cast2tag(ref).tag
 
   def getTagValue: IValue = new WrappedValue(Value.cast2tag(ref).value)
@@ -88,24 +86,6 @@ final class WrappedValue(val ref: AnyRef) extends IValue {
       case tag => throw new RuntimeException(s"Unexpected non-result tag: '$tag'.")
     }
     case _ => throw new RuntimeException(s"Unexpected non-result value: '$ref'.")
-  }
-
-  def getJavaList: java.util.List[IValue] = {
-    import scala.collection.JavaConversions._
-    seqAsJavaList(getScalaList)
-  }
-
-  def getScalaList: immutable.List[IValue] = ref match {
-    case o: Value.Tag => o.tag match {
-      case "Nil" => Nil
-      case "Cons" =>
-        val tuple = o.value.asInstanceOf[Value.Tuple]
-        val hd = tuple.elms(0)
-        val tl = tuple.elms(1)
-        new WrappedValue(hd) :: new WrappedValue(tl).getScalaList
-      case tag => throw new RuntimeException(s"Unexpected non-list tag: '$tag'.")
-    }
-    case _ => throw new RuntimeException(s"Unexpected non-list value: '$ref'.")
   }
 
   def getJavaSet: java.util.Set[IValue] = {

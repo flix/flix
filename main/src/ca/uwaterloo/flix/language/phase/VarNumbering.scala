@@ -110,10 +110,10 @@ object VarNumbering {
 
         // Visit the let-body expression.
         visitExp(exp2, i2)
-      case Expression.CheckTag(tag, exp, loc) => visitExp(exp, i0)
-      case Expression.GetTagValue(tag, exp, tpe, loc) => visitExp(exp, i0)
+      case Expression.Is(exp, tag, loc) => visitExp(exp, i0)
       case Expression.Tag(enum, tag, exp, tpe, loc) => visitExp(exp, i0)
-      case Expression.GetTupleIndex(exp, index, tpe, loc) => visitExp(exp, i0)
+      case Expression.Untag(tag, exp, tpe, loc) => visitExp(exp, i0)
+      case Expression.Index(exp, index, tpe, loc) => visitExp(exp, i0)
       case Expression.Tuple(elms, tpe, loc) => visitExps(elms, i0)
       case Expression.Existential(params, exp, loc) => visitExp(exp, i0)
       case Expression.Universal(params, exp, loc) => visitExp(exp, i0)

@@ -17,10 +17,13 @@
 package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.language.phase.PhaseSuite
+import ca.uwaterloo.flix.util.FlixTest
 import org.scalatest.{ParallelTestExecution, Suites}
 
 class LanguageSuite extends Suites(
-  new PhaseSuite
+  new PhaseSuite,
+  new FlixTest("TestEquality", "main/test/ca/uwaterloo/flix/language/feature/TestEquality.flix"),
+  new FlixTest("TestPatternMatch", "main/test/ca/uwaterloo/flix/language/feature/TestPatternMatch.flix")
 ) with ParallelTestExecution {
   /* left empty */
 }

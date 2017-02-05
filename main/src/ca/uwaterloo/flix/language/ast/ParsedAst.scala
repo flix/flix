@@ -154,7 +154,7 @@ object ParsedAst {
     /**
       * Enum Declaration.
       *
-      * @param doc     the optional comment associated with the definition.
+      * @param doc     the optional comment associated with the declaration.
       * @param sp1     the position of the first character in the declaration.
       * @param ident   the name of the enum.
       * @param tparams the type parameters.
@@ -162,6 +162,17 @@ object ParsedAst {
       * @param sp2     the position of the last character in the declaration.
       */
     case class Enum(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], cases: Seq[ParsedAst.Case], sp2: SourcePosition) extends ParsedAst.Declaration
+
+    /**
+      * Type Declaration. A type declaration is syntactic sugar for a singleton enum declaration.
+      *
+      * @param doc   the optional comment associated with the declaration.
+      * @param sp1   the position of the first character in the declaration.
+      * @param ident the name of the type.
+      * @param caze  the singleton case of the type.
+      * @param sp2   the position of the last character in the declaration.
+      */
+    case class Type(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, ident: Name.Ident, caze: ParsedAst.Case, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Relation Declaration.
@@ -196,23 +207,14 @@ object ParsedAst {
     case class Index(sp1: SourcePosition, qname: Name.QName, indexes: Seq[Seq[Name.Ident]], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
-      * Fact Declaration.
+      * Constraint Declaration.
       *
       * @param sp1  the position of the first character in the declaration.
-      * @param head the head predicate.
+      * @param head the head predicates (a conjunction of predicates).
+      * @param body the body predicates (a sequence of disjunctions of predicates).
       * @param sp2  the position of the last character in the declaration.
       */
-    case class Fact(sp1: SourcePosition, head: ParsedAst.Predicate, sp2: SourcePosition) extends ParsedAst.Declaration
-
-    /**
-      * Rule Declaration.
-      *
-      * @param sp1  the position of the first character in the declaration.
-      * @param head the head predicate.
-      * @param body the body predicates.
-      * @param sp2  the position of the last character in the declaration.
-      */
-    case class Rule(sp1: SourcePosition, head: ParsedAst.Predicate, body: Seq[ParsedAst.Predicate], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Constraint(sp1: SourcePosition, head: Seq[ParsedAst.Predicate.Head], body: Seq[Seq[ParsedAst.Predicate.Body]], sp2: SourcePosition) extends ParsedAst.Declaration
 
     case class BoundedLattice(sp1: SourcePosition, tpe: ParsedAst.Type, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration
 
@@ -476,21 +478,22 @@ object ParsedAst {
       *
       * @param sp1  the position of the first character in the expression.
       * @param pat  the match pattern.
+      * @param tpe  the optional type annotation.
       * @param exp1 the value expression.
       * @param exp2 the body expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class LetMatch(sp1: SourcePosition, pat: ParsedAst.Pattern, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class LetMatch(sp1: SourcePosition, pat: ParsedAst.Pattern, tpe: Option[ParsedAst.Type], exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Match Expression (pattern match expression).
       *
       * @param sp1   the position of the first character in the expression.
       * @param exp   the value expression.
-      * @param rules the match rules and their bodies.
+      * @param rules the rules of the pattern match.
       * @param sp2   the position of the last character in the expression.
       */
-    case class Match(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[(ParsedAst.Pattern, ParsedAst.Expression)], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Match(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.MatchRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Switch Expression.
@@ -723,61 +726,103 @@ object ParsedAst {
 
   object Predicate {
 
-    /**
-      * True Predicate.
-      *
-      * @param sp1 the position of the first character in the predicate.
-      * @param sp2 the position of the last character in the predicate.
-      */
-    case class True(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Predicate
+    sealed trait Head extends ParsedAst.Predicate
 
-    /**
-      * False Predicate.
-      *
-      * @param sp1 the position of the first character in the predicate.
-      * @param sp2 the position of the last character in the predicate.
-      */
-    case class False(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Predicate
+    object Head {
 
-    /**
-      * Filter Predicate.
-      *
-      * @param sp1   the position of the first character in the predicate.
-      * @param name  the qualified name of the filter function.
-      * @param terms the terms of the predicate.
-      * @param sp2   the position of the last character in the predicate.
-      */
-    case class Filter(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate
+      /**
+        * True Predicate.
+        *
+        * @param sp1 the position of the first character in the predicate.
+        * @param sp2 the position of the last character in the predicate.
+        */
+      case class True(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Predicate.Head
 
-    /**
-      * Table Predicate.
-      *
-      * @param sp1   the position of the first character in the predicate.
-      * @param name  the qualified name of the table.
-      * @param terms the terms of the predicate.
-      * @param sp2   the position of the last character in the predicate.
-      */
-    case class Table(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate
+      /**
+        * False Predicate.
+        *
+        * @param sp1 the position of the first character in the predicate.
+        * @param sp2 the position of the last character in the predicate.
+        */
+      case class False(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Predicate.Head
 
-    /**
-      * NotEqual Predicate.
-      *
-      * @param sp1    the position of the first character in the predicate.
-      * @param ident1 the name of the first variable.
-      * @param ident2 the name of the second variable.
-      * @param sp2    the position of the last character in the predicate.
-      */
-    case class NotEqual(sp1: SourcePosition, ident1: Name.Ident, ident2: Name.Ident, sp2: SourcePosition) extends ParsedAst.Predicate
+      /**
+        * Positive Predicate.
+        *
+        * @param sp1   the position of the first character in the predicate.
+        * @param name  the qualified name of the table.
+        * @param terms the terms of the predicate.
+        * @param sp2   the position of the last character in the predicate.
+        */
+      case class Positive(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
 
-    /**
-      * Loop Predicate.
-      *
-      * @param sp1   the position of the first character in the predicate.
-      * @param ident the loop variable.
-      * @param term  the set term.
-      * @param sp2   the position of the last character in the predicate.
-      */
-    case class Loop(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate
+      /**
+        * Negative Predicate.
+        *
+        * @param sp1   the position of the first character in the predicate.
+        * @param name  the qualified name of the table.
+        * @param terms the terms of the predicate.
+        * @param sp2   the position of the last character in the predicate.
+        */
+      case class Negative(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
+
+    }
+
+    sealed trait Body extends ParsedAst.Predicate
+
+    object Body {
+
+      /**
+        * Positive Predicate.
+        *
+        * @param sp1   the position of the first character in the predicate.
+        * @param name  the qualified name of the table.
+        * @param terms the terms of the predicate.
+        * @param sp2   the position of the last character in the predicate.
+        */
+      case class Positive(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+
+      /**
+        * Negative Predicate.
+        *
+        * @param sp1   the position of the first character in the predicate.
+        * @param name  the qualified name of the table.
+        * @param terms the terms of the predicate.
+        * @param sp2   the position of the last character in the predicate.
+        */
+      case class Negative(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+
+      /**
+        * Filter Predicate.
+        *
+        * @param sp1   the position of the first character in the predicate.
+        * @param name  the qualified name of the filter function.
+        * @param terms the terms of the predicate.
+        * @param sp2   the position of the last character in the predicate.
+        */
+      case class Filter(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+
+      /**
+        * NotEqual Predicate.
+        *
+        * @param sp1    the position of the first character in the predicate.
+        * @param ident1 the name of the first variable.
+        * @param ident2 the name of the second variable.
+        * @param sp2    the position of the last character in the predicate.
+        */
+      case class NotEqual(sp1: SourcePosition, ident1: Name.Ident, ident2: Name.Ident, sp2: SourcePosition) extends ParsedAst.Predicate.Body
+
+      /**
+        * Loop Predicate.
+        *
+        * @param sp1  the position of the first character in the predicate.
+        * @param pat  the loop pattern.
+        * @param term the set term.
+        * @param sp2  the position of the last character in the predicate.
+        */
+      case class Loop(sp1: SourcePosition, pat: ParsedAst.Pattern, term: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
+
+    }
 
   }
 
@@ -902,7 +947,16 @@ object ParsedAst {
     * @param tpe   the type of the argument.
     * @param sp2   the position of the last character in the formal parameter.
     */
-  case class FormalParam(sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition)
+  case class FormalParam(sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst
+
+  /**
+    * A pattern match rule consists of a pattern, an optional pattern guard, and a body expression.
+    *
+    * @param pat   the pattern of the rule.
+    * @param guard the optional guard of the rule.
+    * @param exp   the body expression of the rule.
+    */
+  case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression) extends ParsedAst
 
   /**
     * A common super-type for annotations or properties.

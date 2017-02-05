@@ -33,7 +33,7 @@ class FlixTest(name: String, path: String) extends FunSuite {
 
   {
     val opts = Options.DefaultTest
-    val flix = new Flix().setOptions(opts)
+    val flix = new Flix().setOptions(opts.copy(core = false))
 
     // Add the given path.
     flix.addPath(path)

@@ -42,8 +42,7 @@ object Namer {
       lattices = Map.empty,
       indexes = Map.empty,
       tables = Map.empty,
-      facts = Map.empty,
-      rules = Map.empty,
+      constraints = Map.empty,
       hooks = program.hooks,
       properties = Map.empty,
       time = program.time
@@ -165,35 +164,47 @@ object Namer {
         }
 
       /*
-       * Fact.
+       * Constraint.
        */
-      case WeededAst.Declaration.Fact(h, loc) =>
-        // Perform naming on the head predicate under the computed environment of free variables.
-        Predicates.namer(h, Map.empty[String, Symbol.VarSym], Map.empty[String, Type.Var]) map {
-          case head =>
-            val fact = NamedAst.Declaration.Fact(head, loc)
-            val facts = fact :: prog0.facts.getOrElse(ns0, Nil)
-            prog0.copy(facts = prog0.facts + (ns0 -> facts))
+      case WeededAst.Declaration.Constraint(h, bs, loc) =>
+        // Find the variables bound in the head and rule scope of the constraint.
+        val headVars = bs.flatMap(Predicates.boundInHeadScope)
+        val ruleVars = bs.flatMap(Predicates.boundInRuleScope)
+
+        // Introduce a symbol for each variable that is bound in the head scope of the constraint (excluding those bound by the rule scope).
+        val headEnv = headVars.foldLeft(Map.empty[String, Symbol.VarSym]) {
+          case (macc, ident) => macc.get(ident.name) match {
+            // Check if the identifier is bound by the rule scope.
+            case None if !ruleVars.exists(_.name == ident.name) =>
+              macc + (ident.name -> Symbol.freshVarSym(ident))
+            case _ => macc
+          }
         }
 
-      /*
-       * Rule.
-       */
-      case WeededAst.Declaration.Rule(h, bs, loc) =>
-        // Introduce a variable symbol for each free variable in the head and body predicates terms.
-        val freeVars = Predicates.freeVars(h) ++ bs.flatMap(Predicates.freeVars)
-        val env0 = freeVars.foldLeft(Map.empty[String, Symbol.VarSym]) {
+        // Introduce a symbol for each variable that is bound in the rule scope of the constraint.
+        val ruleEnv = ruleVars.foldLeft(Map.empty[String, Symbol.VarSym]) {
           case (macc, ident) => macc.get(ident.name) match {
             case None => macc + (ident.name -> Symbol.freshVarSym(ident))
             case Some(sym) => macc
           }
         }
 
-        @@(Predicates.namer(h, env0, Map.empty[String, Type.Var]), @@(bs.map(b => Predicates.namer(b, env0, Map.empty[String, Type.Var])))) map {
+        // Constraints are non-polymorphic so the type environment is always empty.
+        val tenv0 = Map.empty[String, Type.Var]
+
+        // Perform naming on the head and body predicates.
+        @@(Predicates.namer(h, headEnv, ruleEnv, tenv0), @@(bs.map(b => Predicates.namer(b, headEnv, ruleEnv, tenv0)))) map {
           case (head, body) =>
-            val rule = NamedAst.Declaration.Rule(head, body, loc)
-            val rules = rule :: prog0.rules.getOrElse(ns0, Nil)
-            prog0.copy(rules = prog0.rules + (ns0 -> rules))
+            val headParams = headEnv.map {
+              case (_, sym) => NamedAst.ConstraintParam.HeadParam(sym, sym.tvar, sym.loc)
+            }
+            val ruleParam = ruleEnv.map {
+              case (_, sym) => NamedAst.ConstraintParam.RuleParam(sym, sym.tvar, sym.loc)
+            }
+            val cparams = (headParams ++ ruleParam).toList
+            val constraint = NamedAst.Constraint(cparams, head, body, loc)
+            val constraints = constraint :: prog0.constraints.getOrElse(ns0, Nil)
+            prog0.copy(constraints = prog0.constraints + (ns0 -> constraints))
         }
 
       /*
@@ -368,12 +379,13 @@ object Namer {
       case WeededAst.Expression.Match(exp, rules, loc) =>
         val expVal = namer(exp, env0, tenv0)
         val rulesVal = rules map {
-          case (pat, body) =>
+          case WeededAst.MatchRule(pat, guard, body) =>
             // extend the environment with every variable occurring in the pattern
-            // and perform naming on the rule body under the extended environment.
+            // and perform naming on the rule guard and body under the extended environment.
             val (p, env1) = Patterns.namer(pat)
-            namer(body, env0 ++ env1, tenv0) map {
-              case b => p -> b
+            val extendedEnv = env0 ++ env1
+            @@(namer(guard, extendedEnv, tenv0), namer(body, extendedEnv, tenv0)) map {
+              case (g, b) => NamedAst.MatchRule(p, g, b)
             }
         }
         @@(expVal, @@(rulesVal)) map {
@@ -443,7 +455,7 @@ object Namer {
       case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
       case WeededAst.Expression.Let(ident, exp1, exp2, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
       case WeededAst.Expression.Match(exp, rules, loc) => freeVars(exp) ++ rules.flatMap {
-        case (pat, body) => filterBoundVars(freeVars(body), freeVars(pat))
+        case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(freeVars(guard) ++ freeVars(body), Patterns.freeVars(pat))
       }
       case WeededAst.Expression.Switch(rules, loc) => rules flatMap {
         case (cond, body) => freeVars(cond) ++ freeVars(body)
@@ -454,39 +466,6 @@ object Namer {
       case WeededAst.Expression.Universal(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
       case WeededAst.Expression.Ascribe(exp, tpe, loc) => freeVars(exp)
       case WeededAst.Expression.UserError(loc) => Nil
-    }
-
-    /**
-      * Returns all the free variables in the given pattern `pat0`.
-      */
-    def freeVars(pat0: WeededAst.Pattern): List[Name.Ident] = pat0 match {
-      case WeededAst.Pattern.Var(ident, loc) => List(ident)
-      case WeededAst.Pattern.Wild(loc) => Nil
-      case WeededAst.Pattern.Unit(loc) => Nil
-      case WeededAst.Pattern.True(loc) => Nil
-      case WeededAst.Pattern.False(loc) => Nil
-      case WeededAst.Pattern.Char(lit, loc) => Nil
-      case WeededAst.Pattern.Float32(lit, loc) => Nil
-      case WeededAst.Pattern.Float64(lit, loc) => Nil
-      case WeededAst.Pattern.Int8(lit, loc) => Nil
-      case WeededAst.Pattern.Int16(lit, loc) => Nil
-      case WeededAst.Pattern.Int32(lit, loc) => Nil
-      case WeededAst.Pattern.Int64(lit, loc) => Nil
-      case WeededAst.Pattern.BigInt(lit, loc) => Nil
-      case WeededAst.Pattern.Str(lit, loc) => Nil
-      case WeededAst.Pattern.Tag(enumName, tagName, p, loc) => freeVars(p)
-      case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
-      case WeededAst.Pattern.FSet(elms, rest, loc) => elms.flatMap(freeVars) ++ rest.map(freeVars).getOrElse(Nil)
-      case WeededAst.Pattern.FMap(elms, rest, loc) => (elms flatMap {
-        case (k, v) => freeVars(k) ++ freeVars(v)
-      }) ++ rest.map(freeVars).getOrElse(Nil)
-    }
-
-    /**
-      * Returns the given `freeVars` less the `boundVars`.
-      */
-    def filterBoundVars(freeVars: List[Name.Ident], boundVars: List[Name.Ident]): List[Name.Ident] = {
-      freeVars.filter(n1 => !boundVars.exists(n2 => n1.name == n2.name))
     }
 
   }
@@ -531,53 +510,124 @@ object Namer {
       (visit(pat0), m.toMap)
     }
 
+    /**
+      * Names the given pattern `pat0` under the given environment `env0`.
+      *
+      * Every variable in the pattern must be bound by the environment.
+      */
+    def namer(pat0: WeededAst.Pattern, env0: Map[String, Symbol.VarSym])(implicit genSym: GenSym): NamedAst.Pattern = {
+      def visit(p: WeededAst.Pattern): NamedAst.Pattern = p match {
+        case WeededAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(Type.freshTypeVar(), loc)
+        case WeededAst.Pattern.Var(ident, loc) =>
+          val sym = env0(ident.name)
+          NamedAst.Pattern.Var(sym, sym.tvar, loc)
+        case WeededAst.Pattern.Unit(loc) => NamedAst.Pattern.Unit(loc)
+        case WeededAst.Pattern.True(loc) => NamedAst.Pattern.True(loc)
+        case WeededAst.Pattern.False(loc) => NamedAst.Pattern.False(loc)
+        case WeededAst.Pattern.Char(lit, loc) => NamedAst.Pattern.Char(lit, loc)
+        case WeededAst.Pattern.Float32(lit, loc) => NamedAst.Pattern.Float32(lit, loc)
+        case WeededAst.Pattern.Float64(lit, loc) => NamedAst.Pattern.Float64(lit, loc)
+        case WeededAst.Pattern.Int8(lit, loc) => NamedAst.Pattern.Int8(lit, loc)
+        case WeededAst.Pattern.Int16(lit, loc) => NamedAst.Pattern.Int16(lit, loc)
+        case WeededAst.Pattern.Int32(lit, loc) => NamedAst.Pattern.Int32(lit, loc)
+        case WeededAst.Pattern.Int64(lit, loc) => NamedAst.Pattern.Int64(lit, loc)
+        case WeededAst.Pattern.BigInt(lit, loc) => NamedAst.Pattern.BigInt(lit, loc)
+        case WeededAst.Pattern.Str(lit, loc) => NamedAst.Pattern.Str(lit, loc)
+        case WeededAst.Pattern.Tag(enum, tag, pat, loc) => NamedAst.Pattern.Tag(enum, tag, visit(pat), Type.freshTypeVar(), loc)
+        case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
+        case WeededAst.Pattern.FSet(elms, rest, loc) => NamedAst.Pattern.FSet(elms map visit, rest map visit, Type.freshTypeVar(), loc)
+        case WeededAst.Pattern.FMap(elms, rest, loc) =>
+          val kvs = elms map {
+            case (k, v) => visit(k) -> visit(v)
+          }
+          NamedAst.Pattern.FMap(kvs, rest map visit, Type.freshTypeVar(), loc)
+      }
+
+      visit(pat0)
+    }
+
+    /**
+      * Returns all the free variables in the given pattern `pat0`.
+      */
+    def freeVars(pat0: WeededAst.Pattern): List[Name.Ident] = pat0 match {
+      case WeededAst.Pattern.Var(ident, loc) => List(ident)
+      case WeededAst.Pattern.Wild(loc) => Nil
+      case WeededAst.Pattern.Unit(loc) => Nil
+      case WeededAst.Pattern.True(loc) => Nil
+      case WeededAst.Pattern.False(loc) => Nil
+      case WeededAst.Pattern.Char(lit, loc) => Nil
+      case WeededAst.Pattern.Float32(lit, loc) => Nil
+      case WeededAst.Pattern.Float64(lit, loc) => Nil
+      case WeededAst.Pattern.Int8(lit, loc) => Nil
+      case WeededAst.Pattern.Int16(lit, loc) => Nil
+      case WeededAst.Pattern.Int32(lit, loc) => Nil
+      case WeededAst.Pattern.Int64(lit, loc) => Nil
+      case WeededAst.Pattern.BigInt(lit, loc) => Nil
+      case WeededAst.Pattern.Str(lit, loc) => Nil
+      case WeededAst.Pattern.Tag(enumName, tagName, p, loc) => freeVars(p)
+      case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
+      case WeededAst.Pattern.FSet(elms, rest, loc) => elms.flatMap(freeVars) ++ rest.map(freeVars).getOrElse(Nil)
+      case WeededAst.Pattern.FMap(elms, rest, loc) => (elms flatMap {
+        case (k, v) => freeVars(k) ++ freeVars(v)
+      }) ++ rest.map(freeVars).getOrElse(Nil)
+    }
+
+
   }
 
   object Predicates {
 
-    def namer(head: WeededAst.Predicate.Head, env0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Head, NameError] = head match {
+    def namer(head: WeededAst.Predicate.Head, headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Head, NameError] = head match {
       case WeededAst.Predicate.Head.True(loc) => NamedAst.Predicate.Head.True(loc).toSuccess
       case WeededAst.Predicate.Head.False(loc) => NamedAst.Predicate.Head.False(loc).toSuccess
-      case WeededAst.Predicate.Head.Table(qname, terms, loc) =>
-        @@(terms.map(t => Expressions.namer(t, env0, tenv0))) map {
-          case ts => NamedAst.Predicate.Head.Table(qname, ts, loc)
+      case WeededAst.Predicate.Head.Positive(qname, terms, loc) =>
+        @@(terms.map(t => Expressions.namer(t, headEnv0 ++ ruleEnv0, tenv0))) map {
+          case ts => NamedAst.Predicate.Head.Positive(qname, ts, loc)
+        }
+      case WeededAst.Predicate.Head.Negative(qname, terms, loc) =>
+        @@(terms.map(t => Expressions.namer(t, headEnv0 ++ ruleEnv0, tenv0))) map {
+          case ts => NamedAst.Predicate.Head.Negative(qname, ts, loc)
         }
     }
 
-    def namer(body: WeededAst.Predicate.Body, env0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Body, NameError] = body match {
-      case WeededAst.Predicate.Body.Table(qname, terms, loc) =>
-        @@(terms.map(t => Expressions.namer(t, env0, tenv0))) map {
-          case ts => NamedAst.Predicate.Body.Table(qname, ts, loc)
-        }
+    def namer(body: WeededAst.Predicate.Body, headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Body, NameError] = body match {
+      case WeededAst.Predicate.Body.Positive(qname, terms, loc) =>
+        val ts = terms.map(t => Patterns.namer(t, ruleEnv0))
+        NamedAst.Predicate.Body.Positive(qname, ts, loc).toSuccess
+
+      case WeededAst.Predicate.Body.Negative(qname, terms, loc) =>
+        val ts = terms.map(t => Patterns.namer(t, ruleEnv0))
+        NamedAst.Predicate.Body.Negative(qname, ts, loc).toSuccess
+
       case WeededAst.Predicate.Body.Filter(qname, terms, loc) =>
-        @@(terms.map(t => Expressions.namer(t, env0, tenv0))) map {
+        @@(terms.map(t => Expressions.namer(t, headEnv0 ++ ruleEnv0, tenv0))) map {
           case ts => NamedAst.Predicate.Body.Filter(qname, ts, loc)
         }
-      case WeededAst.Predicate.Body.NotEqual(ident1, ident2, loc) =>
-        NamedAst.Predicate.Body.NotEqual(env0(ident1.name), env0(ident2.name), loc).toSuccess
-      case WeededAst.Predicate.Body.Loop(ident, term, loc) =>
-        Expressions.namer(term, env0, tenv0) map {
-          case t => NamedAst.Predicate.Body.Loop(env0(ident.name), t, loc)
+      case WeededAst.Predicate.Body.Loop(pat, term, loc) =>
+        val (p, env) = Patterns.namer(pat)
+        Expressions.namer(term, ruleEnv0, tenv0) map {
+          case t => NamedAst.Predicate.Body.Loop(p, t, loc)
         }
     }
 
     /**
-      * Returns all the free variables in the given head predicate `head0`.
+      * Returns the identifiers that are bound in the head scope by the given body predicate `p0`.
       */
-    def freeVars(head0: WeededAst.Predicate.Head): List[Name.Ident] = head0 match {
-      case WeededAst.Predicate.Head.True(loc) => Nil
-      case WeededAst.Predicate.Head.False(loc) => Nil
-      case WeededAst.Predicate.Head.Table(qname, terms, loc) => terms flatMap Expressions.freeVars
+    def boundInHeadScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
+      case WeededAst.Predicate.Body.Positive(qname, terms, loc) => terms.flatMap(Patterns.freeVars)
+      case WeededAst.Predicate.Body.Negative(qname, terms, loc) => terms.flatMap(Patterns.freeVars)
+      case WeededAst.Predicate.Body.Filter(qname, terms, loc) => Nil
+      case WeededAst.Predicate.Body.Loop(pat, term, loc) => Patterns.freeVars(pat)
     }
 
     /**
-      * Returns all the free variables in the given body predicate `body0`.
+      * Returns the identifiers that are bound in the rule scope by the given body predicate `p0`.
       */
-    def freeVars(body0: WeededAst.Predicate.Body): List[Name.Ident] = body0 match {
-      case WeededAst.Predicate.Body.Table(qname, terms, loc) => terms.flatMap(Expressions.freeVars)
-      case WeededAst.Predicate.Body.Filter(qname, terms, loc) => terms.flatMap(Expressions.freeVars)
-      case WeededAst.Predicate.Body.NotEqual(ident1, ident2, loc) => List(ident1, ident2)
-      case WeededAst.Predicate.Body.Loop(ident, term, loc) => List(ident) ++ Expressions.freeVars(term)
+    def boundInRuleScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
+      case WeededAst.Predicate.Body.Positive(qname, terms, loc) => terms.flatMap(Patterns.freeVars)
+      case WeededAst.Predicate.Body.Negative(qname, terms, loc) => terms.flatMap(Patterns.freeVars)
+      case WeededAst.Predicate.Body.Filter(qname, terms, loc) => Nil
+      case WeededAst.Predicate.Body.Loop(pat, term, loc) => Nil
     }
 
   }
@@ -621,6 +671,13 @@ object Namer {
       case WeededAst.Attribute(ident, tpe, loc) => NamedAst.Attribute(ident, Types.namer(tpe, tenv0), loc)
     }
 
+  }
+
+  /**
+    * Returns the given `freeVars` less the `boundVars`.
+    */
+  def filterBoundVars(freeVars: List[Name.Ident], boundVars: List[Name.Ident]): List[Name.Ident] = {
+    freeVars.filter(n1 => !boundVars.exists(n2 => n1.name == n2.name))
   }
 
 }

@@ -159,9 +159,8 @@ object LoadBytecode {
     case Type.Str => classOf[java.lang.String]
     case Type.Native => classOf[java.lang.Object]
     case Type.Enum(_, _) | Type.Apply(Type.Enum(_, _), _) => classOf[Value.Tag]
-    case Type.Apply(Type.FTuple(l), _) => classOf[Value.Tuple]
+    case Type.Apply(Type.FTuple(l), _) => classOf[Array[Object]]
     case Type.Apply(Type.Arrow(l), _) => interfaces(tpe)
-    case _ if tpe.isTuple => classOf[Value.Tuple]
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }
 
@@ -201,10 +200,10 @@ object LoadBytecode {
       case Expression.Binary(op, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => visit(exp1) ++ visit(exp2) ++ visit(exp3)
       case Expression.Let(sym, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
-      case Expression.CheckTag(tag, exp, loc) => visit(exp)
-      case Expression.GetTagValue(tag, exp, tpe, loc) => visit(exp)
+      case Expression.Is(exp, tag, loc) => visit(exp)
       case Expression.Tag(enum, tag, exp, tpe, loc) => visit(exp)
-      case Expression.GetTupleIndex(base, offset, tpe, loc) => visit(base)
+      case Expression.Untag(tag, exp, tpe, loc) => visit(exp)
+      case Expression.Index(base, offset, tpe, loc) => visit(base)
       case Expression.Tuple(elms, tpe, loc) => elms.flatMap(visit).toSet
       case Expression.Existential(params, exp, loc) =>
         ???

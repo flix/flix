@@ -175,18 +175,6 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalIndex](result)
   }
 
-  test("IllegalHeadPredicate.NotEqual.01") {
-    val input = "x != y."
-    val result = new Flix().addStr(input).compile()
-    expectError[WeederError.IllegalHeadPredicate](result)
-  }
-
-  test("IllegalHeadPredicate.NotEqual.02") {
-    val input = "x != y :- A(x, y)."
-    val result = new Flix().addStr(input).compile()
-    expectError[WeederError.IllegalHeadPredicate](result)
-  }
-
   test("IllegalInt8.01") {
     val input = "def f: Int8 = -1000i8"
     val result = new Flix().addStr(input).compile()

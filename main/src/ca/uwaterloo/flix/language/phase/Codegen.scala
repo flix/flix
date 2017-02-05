@@ -62,7 +62,6 @@ object Codegen {
 
     val unitClass = Value.Unit.getClass
     val tagClass = classOf[Value.Tag]
-    val tupleClass = classOf[Value.Tuple]
 
     val valueObject = "ca/uwaterloo/flix/runtime/Value$"
     val scalaPredef = "scala/Predef$"
@@ -109,9 +108,8 @@ object Codegen {
         case Type.Str => asm.Type.getDescriptor(Constants.stringClass)
         case Type.Native => asm.Type.getDescriptor(Constants.objectClass)
         case Type.Apply(Type.Arrow(l), _) => s"L${decorate(interfaces(tpe))};"
-        case Type.Apply(Type.FTuple(l), _) => asm.Type.getDescriptor(Constants.tupleClass)
+        case Type.Apply(Type.FTuple(l), _) => asm.Type.getDescriptor(Constants.arrayObjectClass)
         case _ if tpe.isEnum => asm.Type.getDescriptor(Constants.tagClass)
-        case _ if tpe.isTuple => asm.Type.getDescriptor(Constants.tupleClass)
         case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
 
@@ -373,7 +371,7 @@ object Codegen {
           case Type.Int64 => globalOffset += 2
           case Type.Float32 => globalOffset += 1
           case Type.Float64 => globalOffset += 2
-          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) => globalOffset += 1
+          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(_, _) => globalOffset += 1
           case tpe => throw InternalCompilerException(s"Unexpected type '$tpe'.")
         }
       }
@@ -396,7 +394,7 @@ object Codegen {
           case Type.Float64 =>
             offset -= 2
             visitor.visitVarInsn(DSTORE, offset)
-          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) =>
+          case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(_, _) =>
             offset -= 1
             visitor.visitVarInsn(ASTORE, offset)
           case _ => throw InternalCompilerException(s"Not yet implemented.") // TODO
@@ -499,7 +497,7 @@ object Codegen {
       }
       compileExpression(ctx, visitor, entryPoint)(exp2)
 
-    case Expression.CheckTag(tag, exp, _) =>
+    case Expression.Is(exp, tag, _) =>
       // Value.Tag.tag() method
       val clazz1 = Constants.tagClass
       val method1 = clazz1.getMethod("tag")
@@ -514,7 +512,14 @@ object Codegen {
       visitor.visitLdcInsn(tag)
       visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz2), method2.getName, asm.Type.getMethodDescriptor(method2), false)
 
-    case Expression.GetTagValue(tag, exp, tpe, _) =>
+    case Expression.Tag(enum, tag, exp, _, _) =>
+      // Load the Value singleton object, then the arguments (tag.name, boxing if necessary), and finally call `Value.mkTag`.
+      Constants.loadValueObject(visitor)
+      visitor.visitLdcInsn(tag)
+      compileBoxedExpr(ctx, visitor, entryPoint)(exp)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkTag", "(Ljava/lang/String;Ljava/lang/Object;)Lca/uwaterloo/flix/runtime/Value$Tag;", false)
+
+    case Expression.Untag(tag, exp, tpe, _) =>
       // Value.Tag.value() method
       val clazz = Constants.tagClass
       val method = clazz.getMethod("value")
@@ -524,54 +529,43 @@ object Codegen {
       visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
       compileUnbox(ctx, visitor)(tpe)
 
-    case Expression.Tag(enum, tag, exp, _, _) =>
-      // Load the Value singleton object, then the arguments (tag.name, boxing if necessary), and finally call `Value.mkTag`.
-      Constants.loadValueObject(visitor)
-      visitor.visitLdcInsn(tag)
-      compileBoxedExpr(ctx, visitor, entryPoint)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkTag", "(Ljava/lang/String;Ljava/lang/Object;)Lca/uwaterloo/flix/runtime/Value$Tag;", false)
-
-    case Expression.GetTupleIndex(base, offset, tpe, _) =>
-      // Load the Value singleton object and base expression, to call `Value.cast2tuple`, to get the elements array.
-      Constants.loadValueObject(visitor)
+    case Expression.Index(base, offset, tpe, _) =>
+      // Emit code for the base (tuple) expression.
       compileExpression(ctx, visitor, entryPoint)(base)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "cast2tuple", "(Ljava/lang/Object;)[Ljava/lang/Object;", false)
 
-      // Now compile the offset and load the array element. Unbox if necessary.
+      // A tuple is represented as an array of objects.
+      visitor.visitTypeInsn(CHECKCAST, asm.Type.getDescriptor(Constants.arrayObjectClass))
+
+      // Emit code for the array index.
       compileInt(visitor)(offset)
+
+      // Load the value at the index on the stack.
       visitor.visitInsn(AALOAD)
+
+      // Unbox the value, if necessary.
       compileUnbox(ctx, visitor)(tpe)
 
     case Expression.Tuple(elms, _, _) =>
-      // Value.Tuple(Object[]) constructor
-      val clazz = Constants.tupleClass
-      val ctor = clazz.getConstructor(Constants.arrayObjectClass)
-      val name = asm.Type.getInternalName(clazz)
-
-      // Create the array to hold the tuple elements.
+      // Push the length of the tuple on the stack.
       compileInt(visitor)(elms.length)
+
+      // Allocate an array of objects to store the elements of the tuple.
       visitor.visitTypeInsn(ANEWARRAY, asm.Type.getInternalName(Constants.objectClass))
 
-      // Iterate over elms, boxing them and slotting each one into the array.
+      // Emit code for each component of the tuple and store it into the array.
       for ((e, i) <- elms.zipWithIndex) {
-        // Duplicate the array reference, otherwise AASTORE will consume it.
+        // Duplicate the array reference, since AASTORE consumes it.
         visitor.visitInsn(DUP)
+
+        // Push the array index.
         compileInt(visitor)(i)
+
+        // Emit code for the component, box if necessary.
         compileBoxedExpr(ctx, visitor, entryPoint)(e)
+
+        // Store the value into the array.
         visitor.visitInsn(AASTORE)
       }
-
-      // Now construct a Value.Tuple: create a reference, load the arguments, and call the constructor.
-      visitor.visitTypeInsn(NEW, name)
-
-      // We use dup_x1 and swap to manipulate the stack so we can avoid using a local variable.
-      // Stack before: array, tuple (top)
-      // Stack after: tuple, tuple, array (top)
-      visitor.visitInsn(DUP_X1)
-      visitor.visitInsn(SWAP)
-
-      // Finally, call the constructor, which pops the reference (tuple) and argument (array).
-      visitor.visitMethodInsn(INVOKESPECIAL, name, "<init>", asm.Type.getConstructorDescriptor(ctor), false)
 
     case Expression.Existential(params, exp, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$expr' at ${loc.source.format}.")
@@ -704,30 +698,7 @@ object Codegen {
     case Type.Native => // Don't need to cast AnyRef to anything
 
     case Type.Apply(Type.FTuple(l), _) =>
-      // This is actually a bit more complicated, since we have multiple representations for a tuple (e.g. Value.Tuple,
-      // Array, scala.TupleN). We have to call `Value.cast2tuple` instead of doing a direct cast.
-
-      // Load the Value singleton object. Do a SWAP to put stack operands in the right order, then call
-      // `Value.cast2tuple`, to get the elements array.
-      Constants.loadValueObject(visitor)
-      visitor.visitInsn(SWAP)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "cast2tuple", "(Ljava/lang/Object;)[Ljava/lang/Object;", false)
-
-      // TODO: Update this when we remove Value.Tuple.
-      // cast2tuple returns an Array, but we expect a Value.Tuple. So we have to construct one.
-      // Create the Value.Tuple reference.
-      visitor.visitTypeInsn(NEW, asm.Type.getInternalName(Constants.tupleClass))
-
-      // We use dup_x1 and swap to manipulate the stack so we can avoid using a local variable.
-      // Stack before: array, tuple (top)
-      // Stack after: tuple, tuple, array (top)
-      visitor.visitInsn(DUP_X1)
-      visitor.visitInsn(SWAP)
-
-      // Finally, call the constructor, which pops the reference (tuple) and argument (array).
-      val clazz = Constants.tupleClass
-      val ctor = clazz.getConstructor(Constants.arrayObjectClass)
-      visitor.visitMethodInsn(INVOKESPECIAL, asm.Type.getInternalName(clazz), "<init>", asm.Type.getConstructorDescriptor(ctor), false)
+      visitor.visitTypeInsn(CHECKCAST, asm.Type.getDescriptor(Constants.arrayObjectClass))
 
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }
@@ -1047,30 +1018,12 @@ object Codegen {
     e1.tpe match {
       case Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Enum(_, _), _) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
         (e1.tpe: @unchecked) match {
-          case Type.Apply(Type.FTuple(_), _) =>
-            // Value.Tuple.elms() method
-            val clazz1 = Constants.tupleClass
-            val method1 = clazz1.getMethod("elms")
-
-            // java.util.Arrays.equals(Object[], Object[]) method
-            val clazz2 = classOf[java.util.Arrays]
-            val method2 = clazz2.getMethod("equals", Constants.arrayObjectClass, Constants.arrayObjectClass)
-
-            // We know it's a tuple, so directly call java.util.Arrays.equals
-            compileExpression(ctx, visitor, entryPoint)(e1)
-            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), method1.getName, asm.Type.getMethodDescriptor(method1), false)
-            compileExpression(ctx, visitor, entryPoint)(e2)
-            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz1), method1.getName, asm.Type.getMethodDescriptor(method1), false)
-            visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(clazz2), method2.getName, asm.Type.getMethodDescriptor(method2), false)
-          case Type.Enum(_, _) | Type.Apply(Type.Enum(_, _), _) =>
-            // java.lang.Object.equals(Object) method
-            val clazz = Constants.objectClass
-            val method = clazz.getMethod("equals", Constants.objectClass)
-
-            // Call the general java.lang.Object.equals
+          case Type.Apply(Type.FTuple(_), _) | Type.Enum(_, _) | Type.Apply(Type.Enum(_, _), _) =>
+            // Emit code to call Value.equal(Object, Object).
+            Constants.loadValueObject(visitor)
             compileExpression(ctx, visitor, entryPoint)(e1)
             compileExpression(ctx, visitor, entryPoint)(e2)
-            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "equal", "(Ljava/lang/Object;Ljava/lang/Object;)Z", false)
         }
         if (o == BinaryOperator.NotEqual) {
           val condElse = new Label()
