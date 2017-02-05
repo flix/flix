@@ -492,14 +492,14 @@ namespace List {
     ///
     /// Returns `true` if and only if all elements in `xs` are `true`.
     ///
-    def and[a](xs: List[Bool]): Bool =
+    def and(xs: List[Bool]): Bool =
         let f = x -> x;
             forall(f, xs)
 
     ///
     /// Returns `true` if and only if at least one element in `xs` is `true`.
     ///
-    def or[a](xs: List[Bool]): Bool =
+    def or(xs: List[Bool]): Bool =
         let f = x -> x;
             exists(f, xs)
 
@@ -752,13 +752,12 @@ namespace List {
         }
     }
 
-    // ## TODO
     //
     // ## List Conversions
     //
+    def toSet[a](xs: List[a]): Set[a] = foldRight(Set.insert, Set.empty(), xs)
 
+    // ## TODO
     ////- **toMap(xs: List[(A, B)]): Map[A, B]**
     ////    - Returns the association list as a map. If the list contains multiple values for the same key, the value appearing latest in the list is used.
-    ////- **toSet(xs: List[A]): Set[A]**
-    ////    - Returns the list as a set.
 }

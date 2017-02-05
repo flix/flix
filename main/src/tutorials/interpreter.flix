@@ -257,15 +257,3 @@ def testCompileAndEval2: Int = evalInst(compileAExp(Plus(Cst(42), Cst(21))), Nil
 def testCompileAndEval3: Int = evalInst(compileAExp(Minus(Cst(42), Cst(21))), Nil)
 def testCompileAndEval4: Int = evalInst(compileAExp(IfThenElse(True, Cst(1), Cst(2))), Nil)
 def testCompileAndEval5: Int = evalInst(compileAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21))), Nil)
-
-//
-// In case the standard library is not included, we need to define list/append:
-//
-namespace List {
-
-    def append(xs: List[Inst], ys: List[Inst]): List[Inst] = match xs with {
-        case Nil => ys
-        case z :: zs => z :: append(zs, ys)
-    }
-
-}

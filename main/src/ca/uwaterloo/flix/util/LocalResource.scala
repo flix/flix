@@ -35,6 +35,14 @@ object LocalResource {
 
     def Prelude: InputStream = getInputStream("/library/Prelude.flix")
 
+    def BigInt: InputStream = getInputStream("/library/BigInt.flix")
+
+    def Option: InputStream = getInputStream("/library/Option.flix")
+
+    def Result: InputStream = getInputStream("/library/Result.flix")
+
+    def List: InputStream = getInputStream("/library/List.flix")
+
     def Bounded: InputStream = getInputStream("/library/Bounded.flix")
 
     def PartialOrder: InputStream = getInputStream("/library/PartialOrder.flix")
