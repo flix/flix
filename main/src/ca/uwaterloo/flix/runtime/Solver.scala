@@ -47,9 +47,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * The type of environments.
     *
-    * An environment is map from identifiers to values.
+    * An environment is map from variables to values.
     */
-  type Env = mutable.Map[Symbol.VarSym, AnyRef]
+  type Env = Array[AnyRef]
 
   /**
     * The type of work lists.
@@ -268,7 +268,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     for (fact <- facts) {
       // evaluate the head of each fact.
       val interp = mkInterpretation()
-      evalHead(fact.head, mutable.Map.empty, interp)
+      evalHead(fact.head, Array.empty, interp)
 
       // iterate through the interpretation.
       for ((sym, fact) <- interp) {
@@ -290,7 +290,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   private def initWorkList(): Unit = {
     // add all rules to the worklist (under empty environments).
     for (rule <- rules) {
-      worklist.push((rule, mutable.Map.empty))
+      worklist.push((rule, new Array[AnyRef](rule.cparams.length))) // TODO: Introduce arity.
     }
   }
 
@@ -371,7 +371,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         val value = p.terms(i) match {
           case ExecutableAst.Term.Body.Var(sym, _, _) =>
             // A variable is replaced by its value from the environment (or null if unbound).
-            env.getOrElse(sym, null)
+            env(sym.getStackOffset)
           case ExecutableAst.Term.Body.Lit(v, _, _) =>
             // A literal has already been evaluated to a value.
             v
@@ -389,7 +389,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       // lookup all matching rows.
       for (matchedRow <- table.lookup(pat)) {
         // copy the environment for every row.
-        var newRow = env.clone()
+        val newRow = copy(env)
 
         // A matched row may still fail to unify with a pattern term.
         // We use this boolean variable to track whether that is the case.
@@ -410,9 +410,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
             case _ => // nop
           }
 
-          val varName = p.index2sym(i)
-          if (varName != null)
-            newRow.update(varName, matchedRow(i))
+          val sym = p.index2sym(i)
+          if (sym != null)
+            newRow.update(sym.getStackOffset, matchedRow(i))
           i = i + 1
         }
 
@@ -437,8 +437,8 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     case Predicate.Body.Loop(sym, term, _, _) :: rest =>
       val value = Value.cast2set(evalHeadTerm(term, root, env))
       for (x <- value) {
-        val newRow = env.clone()
-        newRow.update(sym, x)
+        val newRow = copy(env)
+        newRow(sym.getStackOffset) = x
         evalLoop(rule, rest, newRow, interp)
       }
   }
@@ -457,9 +457,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       while (i < args.length) {
 
         val value = pred.terms(i) match {
-          case Term.Body.Var(x, _, _) =>
+          case Term.Body.Var(sym, _, _) =>
             // A variable is replaced by its value from the environment.
-            env(x)
+            env(sym.getStackOffset)
           case Term.Body.Lit(v, _, _) =>
             // A literal has already been evaluated to a value.
             v
@@ -504,13 +504,13 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Evaluates the given head term `t` under the given environment `env0`
     */
   def evalHeadTerm(t: Term.Head, root: Root, env: Env): AnyRef = t match {
-    case Term.Head.Var(x, _, _) => env(x)
+    case Term.Head.Var(sym, _, _) => env(sym.getStackOffset)
     case Term.Head.Lit(v, _, _) => v
     case Term.Head.App(sym, syms, _, _) =>
       val args = new Array[AnyRef](syms.length)
       var i = 0
       while (i < args.length) {
-        args(i) = env(syms(i))
+        args(i) = env(syms(i).getStackOffset)
         i = i + 1
       }
       Linker.link(sym, root).invoke(args)
@@ -551,13 +551,13 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   private def dependencies(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: WorkList): Unit = {
 
-    def unify(pat: Array[Symbol.VarSym], fact: Array[AnyRef], limit: Int): Env = {
-      val env: Env = mutable.Map.empty
+    def unify(pat: Array[Symbol.VarSym], fact: Array[AnyRef], limit: Int, len: Int): Env = {
+      val env: Env = new Array[AnyRef](len)
       var i = 0
       while (i < limit) {
         val varName = pat(i)
         if (varName != null)
-          env.update(varName, fact(i))
+          env(varName.getStackOffset) = fact(i)
         i = i + 1
       }
       env
@@ -568,14 +568,14 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       table match {
         case r: ExecutableAst.Table.Relation =>
           // unify all terms with their values.
-          val env = unify(p.index2sym, fact, fact.length)
+          val env = unify(p.index2sym, fact, fact.length, rule.cparams.length) // TODO: Arity
           if (env != null) {
             localWorkList.push((rule, env))
           }
         case l: ExecutableAst.Table.Lattice =>
           // unify only key terms with their values.
           val numberOfKeys = l.keys.length
-          val env = unify(p.index2sym, fact, numberOfKeys)
+          val env = unify(p.index2sym, fact, numberOfKeys, rule.cparams.length) // TODO: Arity
           if (env != null) {
             localWorkList.push((rule, env))
           }
@@ -729,6 +729,16 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         throw TimeoutException(options.timeout, Duration(elapsed, NANOSECONDS))
       }
     }
+  }
+
+  /**
+    * Returns a shallow copy of the given array.
+    */
+  @inline
+  def copy(src: Array[AnyRef]): Array[AnyRef] = {
+    val dst = new Array[AnyRef](src.length)
+    System.arraycopy(src, 0, dst, 0, src.length)
+    dst
   }
 
 }

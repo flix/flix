@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.ExecutableAst.Pattern
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
-import scala.collection.{immutable, mutable}
+import scala.collection.immutable
 
 object Value {
 
@@ -446,14 +446,16 @@ object Value {
     *
     * Mutates the given map. Returns `true` if unification was successful.
     */
-  def unify(p0: Pattern, v0: AnyRef, env0: mutable.Map[Symbol.VarSym, AnyRef]): Boolean = (p0, v0) match {
+  def unify(p0: Pattern, v0: AnyRef, env0: Array[AnyRef]): Boolean = (p0, v0) match {
     case (Pattern.Wild(_, _), _) => true
-    case (Pattern.Var(sym, _, _), _) => env0.get(sym) match {
-      case None =>
-        env0.update(sym, v0)
+    case (Pattern.Var(sym, _, _), _) =>
+      val v2 = env0(sym.getStackOffset)
+      if (v2 == null) {
+        env0(sym.getStackOffset) = v0
         true
-      case Some(v2) => Value.equal(v0, v2)
-    }
+      } else {
+        Value.equal(v0, v2)
+      }
     case (Pattern.Unit(_), Value.Unit) => true
     case (Pattern.True(_), java.lang.Boolean.TRUE) => true
     case (Pattern.False(_), java.lang.Boolean.FALSE) => true
