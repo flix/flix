@@ -508,12 +508,12 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   def evalHeadTerm(t: Term.Head, root: Root, env: Map[String, AnyRef]): AnyRef = t match {
     case Term.Head.Var(x, _, _) => env(x.toString)
-    case Term.Head.Exp(e, _, _) => Interpreter.eval(e, root, env)
-    case Term.Head.Apply(sym, args, _, _) =>
+    case Term.Head.Lit(v, _, _) => v
+    case Term.Head.App(sym, args, _, _) =>
       val evalArgs = new Array[AnyRef](args.length)
       var i = 0
       while (i < evalArgs.length) {
-        evalArgs(i) = evalHeadTerm(args(i), root, env)
+        evalArgs(i) = env(args(i).toString)
         i = i + 1
       }
       Linker.link(sym, root).invoke(evalArgs)

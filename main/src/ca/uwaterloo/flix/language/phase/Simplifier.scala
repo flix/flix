@@ -416,14 +416,18 @@ object Simplifier {
         case TypedAst.Expression.Var(sym, tpe, loc) =>
           SimplifiedAst.Term.Head.Var(sym, tpe, loc)
 
+          // TODO: Must lift every non-literal expression to the top-level.
         case TypedAst.Expression.Apply(TypedAst.Expression.Ref(sym, _, _), args, tpe, loc) =>
-          val as = args map simplify
-          SimplifiedAst.Term.Head.Apply(sym, as, tpe, loc)
+          val as = args map {
+            case TypedAst.Expression.Var(s, _, _) => s
+            case _ => throw InternalCompilerException(s"No longer supported: $e") // TODO
+          }
+          SimplifiedAst.Term.Head.App(sym, as, tpe, loc)
 
         case TypedAst.Expression.Apply(TypedAst.Expression.Hook(hook, _, _), args, tpe, loc) =>
           throw InternalCompilerException("No longer supported.") // TODO
 
-        case _ => SimplifiedAst.Term.Head.Exp(Expression.simplify(e), e.tpe, e.loc)
+        case _ => SimplifiedAst.Term.Head.Lit(Expression.simplify(e), e.tpe, e.loc)
       }
     }
 

@@ -115,7 +115,7 @@ SU(l,a,f(b)) :- Clear(l), PtH(a,b).
 // ---------
 def top(e: Int): SULattice = SULattice.Top
 Kill(l,f(b)) :- Store(l,p,q), Pt(p,b).
-Kill(l, top(42)) :- Phi(l,_,_).
+Kill(l, Top) :- Phi(l,_,_).
 
 // uncomment to introduce an error delta debugging
 //def isTop(e: SULattice): Bool = match e with {

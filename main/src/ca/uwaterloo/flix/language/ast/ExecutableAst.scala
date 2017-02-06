@@ -563,12 +563,9 @@ object ExecutableAst {
 
       case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
-      case class Exp(e: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
+      case class Lit(ref: AnyRef, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
-      case class Apply(sym: Symbol.DefnSym,
-                       args: Array[ExecutableAst.Term.Head],
-                       tpe: Type,
-                       loc: SourceLocation) extends ExecutableAst.Term.Head
+      case class App(sym: Symbol.DefnSym, args: Array[Symbol.VarSym], tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
     }
 
