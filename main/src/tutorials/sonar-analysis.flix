@@ -180,17 +180,17 @@ type RejectReactions = RejectReactions(Map2[Address, Set2[(Expression, Address)]
 ///
 /// The promise links map addresses to a set of child promise addresses.
 ///
-type PromiseLinks = PromiseLinks(Map2[Address, Set2[Address]])
+type PromiseLinks = PromiseLinks(Map2[Address, Set2[Address]]) // TODO: Remove
 
 ///
 /// The link queue is a set of (PromiseValue, Address)-pairs where the address points-to the linked promise.
 ///
-type LinkQueue = LinkQueue(Set2[(PromiseValue, Address)])
+type LinkQueue = LinkQueue(Set2[(PromiseValue, Address)]) // TODO: Remove
 
 ///
 /// The reaction queue is a set of (PromiseValue, Lambda, Environment, Address)-tuples where the address points to the child promise.
 ///
-type ReactionQueue = ReactionQueue(Set2[(PromiseValue, Expression, Environment, Address)])
+type ReactionQueue = ReactionQueue(Set2[(PromiseValue, Expression, Environment, Address)]) // TODO: Rename to Queue
 
 ///
 /// A promise is in one of three states: Pending, fulfilled (with a value), or rejected (with a value).
@@ -577,11 +577,14 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //  Link2 Kontinuation.
     //
     case (State(Ptr(a2), _, sto0, s0, f0, r0, l0, w0, q0, _, time), KLink2(a1, kont)) =>
-        let l1 = PromiseLinks.weakUpdate(a1, a2, l0);
-            Set2.singleton(Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s0, f0, r0, l1, w0, q0, kont, tick(m0, k0))))
+        // Add identity fulfill and reject reactions where `a2` is the dependent promise.
+        let lam = Abs(V(0), Var(V(0), L("id")), L("id"));
+        let env = Environment.empty();
+        let f1 = FulfillReactions.weakUpdate(a1, lam, env, a2, f0);
+            Set2.singleton(Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s0, f1, r0, l0, w0, q0, kont, tick(m0, k0))))
 
     //
-    // Reaction-Loop
+    // Loop
     //
     case (State(v, env0, sto0, s0, f0, r0, l0, w0, q0, kptr, time), KEmpty) if isValue(v) =>
         let f: ((PromiseValue, Expression, Environment, Address)) -> Outcome = match (pv, exp, env, childAddr) -> {
