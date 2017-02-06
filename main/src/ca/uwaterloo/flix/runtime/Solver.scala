@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.runtime
 
+import java.util
 import java.util.concurrent._
 
 import ca.uwaterloo.flix.api.{RuleException, TimeoutException}
@@ -290,7 +291,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   private def initWorkList(): Unit = {
     // add all rules to the worklist (under empty environments).
     for (rule <- rules) {
-      worklist.push((rule, new Array[AnyRef](rule.cparams.length))) // TODO: Introduce arity.
+      worklist.push((rule, new Array[AnyRef](rule.arity)))
     }
   }
 
@@ -568,14 +569,14 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       table match {
         case r: ExecutableAst.Table.Relation =>
           // unify all terms with their values.
-          val env = unify(p.index2sym, fact, fact.length, rule.cparams.length) // TODO: Arity
+          val env = unify(p.index2sym, fact, fact.length, rule.arity)
           if (env != null) {
             localWorkList.push((rule, env))
           }
         case l: ExecutableAst.Table.Lattice =>
           // unify only key terms with their values.
           val numberOfKeys = l.keys.length
-          val env = unify(p.index2sym, fact, numberOfKeys, rule.cparams.length) // TODO: Arity
+          val env = unify(p.index2sym, fact, numberOfKeys, rule.arity)
           if (env != null) {
             localWorkList.push((rule, env))
           }
@@ -732,7 +733,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   }
 
   /**
-    * Returns a shallow copy of the given array.
+    * Returns a shallow copy of the given array `src`.
     */
   @inline
   def copy(src: Array[AnyRef]): Array[AnyRef] = {

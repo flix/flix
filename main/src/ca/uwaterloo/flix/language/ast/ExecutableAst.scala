@@ -37,6 +37,14 @@ object ExecutableAst {
   case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body]) extends ExecutableAst {
 
     /**
+      * Returns the arity of the constraint.
+      *
+      * The arity of a constraint is the number of constraint parameters (i.e. variables in the constraint).
+      * Not to be confused with the number of predicates or terms.
+      */
+    val arity: Int = cparams.length
+
+    /**
       * Returns `true` if the constraint is a fact.
       */
     val isFact: Boolean = body.isEmpty
