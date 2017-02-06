@@ -509,14 +509,14 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   def evalHeadTerm(t: Term.Head, root: Root, env: Map[String, AnyRef]): AnyRef = t match {
     case Term.Head.Var(x, _, _) => env(x.toString)
     case Term.Head.Lit(v, _, _) => v
-    case Term.Head.App(sym, args, _, _) =>
-      val evalArgs = new Array[AnyRef](args.length)
+    case Term.Head.App(sym, syms, _, _) =>
+      val args = new Array[AnyRef](syms.length)
       var i = 0
-      while (i < evalArgs.length) {
-        evalArgs(i) = env(args(i).toString)
+      while (i < args.length) {
+        args(i) = env(syms(i).toString)
         i = i + 1
       }
-      Linker.link(sym, root).invoke(evalArgs)
+      Linker.link(sym, root).invoke(args)
   }
 
   /**
