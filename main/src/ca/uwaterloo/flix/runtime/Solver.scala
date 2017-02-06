@@ -564,24 +564,28 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       env
     }
 
-    val table = root.tables(sym)
-    for ((rule, p) <- root.dependenciesOf(sym)) {
-      table match {
-        case r: ExecutableAst.Table.Relation =>
+
+    root.tables(sym) match {
+      case r: ExecutableAst.Table.Relation =>
+        for ((rule, p) <- root.dependenciesOf(sym)) {
           // unify all terms with their values.
           val env = unify(p.index2sym, fact, fact.length, rule.arity)
           if (env != null) {
             localWorkList.push((rule, env))
           }
-        case l: ExecutableAst.Table.Lattice =>
+        }
+
+      case l: ExecutableAst.Table.Lattice =>
+        for ((rule, p) <- root.dependenciesOf(sym)) {
           // unify only key terms with their values.
           val numberOfKeys = l.keys.length
           val env = unify(p.index2sym, fact, numberOfKeys, rule.arity)
           if (env != null) {
             localWorkList.push((rule, env))
           }
-      }
+        }
     }
+
   }
 
   /**
