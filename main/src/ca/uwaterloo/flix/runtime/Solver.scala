@@ -403,13 +403,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
           p.terms(i) match {
             case term: Pat =>
               val value = matchedRow(i)
-              val extendedEnv = Value.unify(term.pat, value, env.toMap)
-              if (extendedEnv == null) {
+              if (!Value.unify(term.pat, value, env)) {
                 // Value does not unify with the pattern term. We should skip this row.
                 skip = true
-              } else {
-                // The value matched, must bind variables in the pattern by extending the environment.
-                newRow = newRow ++ extendedEnv
               }
             case _ => // nop
           }

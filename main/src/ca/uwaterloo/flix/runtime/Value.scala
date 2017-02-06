@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.ExecutableAst.Pattern
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
-import scala.collection.immutable
+import scala.collection.{immutable, mutable}
 
 object Value {
 
@@ -444,46 +444,45 @@ object Value {
   /**
     * Tries to unify the given pattern `p0` with the given value `v0` under the environment `env0`.
     *
-    * Returns an extended environment if unification is possible. Otherwise returns `null`.
+    * Mutates the given map. Returns `true` if unification was successful.
     */
-  def unify(p0: Pattern, v0: AnyRef, env0: Map[String, AnyRef]): Map[String, AnyRef] = (p0, v0) match {
-    case (Pattern.Wild(_, _), _) => env0
+  def unify(p0: Pattern, v0: AnyRef, env0: mutable.Map[String, AnyRef]): Boolean = (p0, v0) match {
+    case (Pattern.Wild(_, _), _) => true
     case (Pattern.Var(sym, _, _), _) => env0.get(sym.toString) match {
-      case None => env0 + (sym.toString -> v0)
-      case Some(v2) => if (Value.equal(v0, v2)) env0 else null
+      case None =>
+        env0.update(sym.toString, v0)
+        true
+      case Some(v2) => Value.equal(v0, v2)
     }
-    case (Pattern.Unit(_), Value.Unit) => env0
-    case (Pattern.True(_), java.lang.Boolean.TRUE) => env0
-    case (Pattern.False(_), java.lang.Boolean.FALSE) => env0
-    case (Pattern.Char(lit, _), o: java.lang.Character) => if (lit == o.charValue()) env0 else null
-    case (Pattern.Float32(lit, _), o: java.lang.Float) => if (lit == o.floatValue()) env0 else null
-    case (Pattern.Float64(lit, _), o: java.lang.Double) => if (lit == o.doubleValue()) env0 else null
-    case (Pattern.Int8(lit, _), o: java.lang.Byte) => if (lit == o.byteValue()) env0 else null
-    case (Pattern.Int16(lit, _), o: java.lang.Short) => if (lit == o.shortValue()) env0 else null
-    case (Pattern.Int32(lit, _), o: java.lang.Integer) => if (lit == o.intValue()) env0 else null
-    case (Pattern.Int64(lit, _), o: java.lang.Long) => if (lit == o.longValue()) env0 else null
-    case (Pattern.BigInt(lit, _), o: java.math.BigInteger) => if (lit.equals(o)) env0 else null
-    case (Pattern.Str(lit, _), o: java.lang.String) => if (lit.equals(o)) env0 else null
-    case (Pattern.Tag(enum, tag, p, _, _), o: Value.Tag) => if (tag.equals(o.tag)) unify(p, o.value, env0) else null
+    case (Pattern.Unit(_), Value.Unit) => true
+    case (Pattern.True(_), java.lang.Boolean.TRUE) => true
+    case (Pattern.False(_), java.lang.Boolean.FALSE) => true
+    case (Pattern.Char(lit, _), o: java.lang.Character) => lit == o.charValue()
+    case (Pattern.Float32(lit, _), o: java.lang.Float) => lit == o.floatValue()
+    case (Pattern.Float64(lit, _), o: java.lang.Double) => lit == o.doubleValue()
+    case (Pattern.Int8(lit, _), o: java.lang.Byte) => lit == o.byteValue()
+    case (Pattern.Int16(lit, _), o: java.lang.Short) => lit == o.shortValue()
+    case (Pattern.Int32(lit, _), o: java.lang.Integer) => lit == o.intValue()
+    case (Pattern.Int64(lit, _), o: java.lang.Long) => lit == o.longValue()
+    case (Pattern.BigInt(lit, _), o: java.math.BigInteger) => lit.equals(o)
+    case (Pattern.Str(lit, _), o: java.lang.String) => lit.equals(o)
+    case (Pattern.Tag(enum, tag, p, _, _), o: Value.Tag) => if (tag.equals(o.tag)) unify(p, o.value, env0) else false
     case (Pattern.Tuple(elms, _, _), o: Array[AnyRef]) =>
       if (elms.length != o.length)
-        return null
-      var env = env0
+        return false
       var i: Int = 0
       while (i < o.length) {
         val pi = elms(i)
         val vi = o(i)
-        val nextEnv = unify(pi, vi, env)
-        if (nextEnv == null)
-          return null
-        env = nextEnv
+        val success = unify(pi, vi, env0)
+        if (!success)
+          return false
         i = i + 1
       }
-      env
+      true
     case _ =>
       // Unification failed. Return `null`.
-      null
-
+      false
   }
 
   /////////////////////////////////////////////////////////////////////////////
