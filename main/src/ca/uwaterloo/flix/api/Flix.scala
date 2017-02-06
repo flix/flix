@@ -51,6 +51,7 @@ class Flix {
     */
   private val internals = List(
     "Prelude.flix" -> StreamOps.readAll(LocalResource.Library.Prelude),
+    "BigInt.flix" -> StreamOps.readAll(LocalResource.Library.BigInt),
     "Option.flix" -> StreamOps.readAll(LocalResource.Library.Option),
     "Result.flix" -> StreamOps.readAll(LocalResource.Library.Result),
     "List.flix" -> StreamOps.readAll(LocalResource.Library.List),
