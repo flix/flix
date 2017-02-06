@@ -446,11 +446,11 @@ object Value {
     *
     * Mutates the given map. Returns `true` if unification was successful.
     */
-  def unify(p0: Pattern, v0: AnyRef, env0: mutable.Map[String, AnyRef]): Boolean = (p0, v0) match {
+  def unify(p0: Pattern, v0: AnyRef, env0: mutable.Map[Symbol.VarSym, AnyRef]): Boolean = (p0, v0) match {
     case (Pattern.Wild(_, _), _) => true
-    case (Pattern.Var(sym, _, _), _) => env0.get(sym.toString) match {
+    case (Pattern.Var(sym, _, _), _) => env0.get(sym) match {
       case None =>
-        env0.update(sym.toString, v0)
+        env0.update(sym, v0)
         true
       case Some(v2) => Value.equal(v0, v2)
     }

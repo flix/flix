@@ -49,7 +49,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     *
     * An environment is map from identifiers to values.
     */
-  type Env = mutable.Map[String, AnyRef]
+  type Env = mutable.Map[Symbol.VarSym, AnyRef]
 
   /**
     * The type of work lists.
@@ -371,7 +371,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         val value = p.terms(i) match {
           case ExecutableAst.Term.Body.Var(sym, _, _) =>
             // A variable is replaced by its value from the environment (or null if unbound).
-            env.getOrElse(sym.toString, null)
+            env.getOrElse(sym, null)
           case ExecutableAst.Term.Body.Lit(v, _, _) =>
             // A literal has already been evaluated to a value.
             v
@@ -412,7 +412,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
 
           val varName = p.index2sym(i)
           if (varName != null)
-            newRow.update(varName.toString, matchedRow(i))
+            newRow.update(varName, matchedRow(i))
           i = i + 1
         }
 
@@ -438,7 +438,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       val value = Value.cast2set(evalHeadTerm(term, root, env))
       for (x <- value) {
         val newRow = env.clone()
-        newRow.update(sym.toString, x)
+        newRow.update(sym, x)
         evalLoop(rule, rest, newRow, interp)
       }
   }
@@ -459,7 +459,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         val value = pred.terms(i) match {
           case Term.Body.Var(x, _, _) =>
             // A variable is replaced by its value from the environment.
-            env(x.toString)
+            env(x)
           case Term.Body.Lit(v, _, _) =>
             // A literal has already been evaluated to a value.
             v
@@ -503,14 +503,14 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Evaluates the given head term `t` under the given environment `env0`
     */
-  def evalHeadTerm(t: Term.Head, root: Root, env: mutable.Map[String, AnyRef]): AnyRef = t match {
-    case Term.Head.Var(x, _, _) => env(x.toString)
+  def evalHeadTerm(t: Term.Head, root: Root, env: Env): AnyRef = t match {
+    case Term.Head.Var(x, _, _) => env(x)
     case Term.Head.Lit(v, _, _) => v
     case Term.Head.App(sym, syms, _, _) =>
       val args = new Array[AnyRef](syms.length)
       var i = 0
       while (i < args.length) {
-        args(i) = env(syms(i).toString)
+        args(i) = env(syms(i))
         i = i + 1
       }
       Linker.link(sym, root).invoke(args)
@@ -552,12 +552,12 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   private def dependencies(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: WorkList): Unit = {
 
     def unify(pat: Array[Symbol.VarSym], fact: Array[AnyRef], limit: Int): Env = {
-      val env = mutable.Map.empty[String, AnyRef]
+      val env: Env = mutable.Map.empty
       var i = 0
       while (i < limit) {
         val varName = pat(i)
         if (varName != null)
-          env.update(varName.toString, fact(i))
+          env.update(varName, fact(i))
         i = i + 1
       }
       env
