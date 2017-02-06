@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Declaration, Expression, Pattern, Root}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 
 import scala.collection.mutable
 
@@ -64,10 +64,33 @@ object Monomorph {
 
     /**
       * Applies `this` substitution to the given type `tpe`.
+      *
+      * NB: Applies the substitution first, then replaces every type variable with the unit type.
       */
-    def apply(tpe: Type): Type = s(tpe) match {
-      case Type.Var(_, _) => Type.Unit
-      case result => result
+    def apply(tpe: Type): Type = {
+      /**
+        * Recursively replaces every type variable with the unit type.
+        */
+      def visit(t: Type): Type = t match {
+        case Type.Var(_, _) => Type.Unit
+        case Type.Unit => Type.Unit
+        case Type.Bool => Type.Bool
+        case Type.Char => Type.Char
+        case Type.Float32 => Type.Float32
+        case Type.Float64 => Type.Float64
+        case Type.Int8 => Type.Int8
+        case Type.Int16 => Type.Int16
+        case Type.Int32 => Type.Int32
+        case Type.Int64 => Type.Int64
+        case Type.BigInt => Type.BigInt
+        case Type.Str => Type.Str
+        case Type.Native => Type.Native
+        case Type.Arrow(l) => Type.Arrow(l)
+        case Type.FTuple(l) => Type.FTuple(l)
+        case Type.Enum(name, kind) => Type.Enum(name, kind)
+        case Type.Apply(t1, t2) => Type.Apply(apply(t1), t2.map(apply))
+      }
+      visit(s(tpe))
     }
   }
 
