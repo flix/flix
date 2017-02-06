@@ -59,6 +59,8 @@
 
   lat SU(location: Str, object: Str, target: SULattice)
 
+  index SU({location}, {location, object})
+
   rel PtH(object: Str, target: Str)
   lat Kill(location: Str, kill: SULattice)
 
