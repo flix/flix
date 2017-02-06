@@ -434,7 +434,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Unfolds the given loop predicates `ps` over the initial `env`.
     */
   private def evalLoop(rule: Constraint, ps: List[Predicate.Body.Loop], env: Env, interp: Interpretation): Unit = ps match {
-    case Nil => evalFilter(rule, rule.filters, env, interp)
+    case Nil => evalFilter(rule, env, interp)
     case Predicate.Body.Loop(sym, term, _, _) :: rest =>
       val value = Value.cast2set(evalHeadTerm(term, root, env))
       for (x <- value) {
@@ -445,22 +445,28 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   }
 
   /**
-    * Filters the given `env` through all filter functions in the body.
+    * Filters the given `env` through all filter functions in the body of the given `rule`.
     */
-  @tailrec
-  private def evalFilter(rule: Constraint, ps: List[Predicate.Body.Filter], env: Env, interp: Interpretation): Unit = ps match {
-    case Nil =>
-      // filter with hook functions
-      evalHead(rule.head, env, interp)
-    case (pred: Predicate.Body.Filter) :: xs =>
-      val args = new Array[AnyRef](pred.terms.length)
-      var i = 0
-      while (i < args.length) {
+  private def evalFilter(rule: Constraint, env: Env, interp: Interpretation): Unit = {
+    // Extract the filters function predicates from the rule.
+    val filters = rule.filters
 
-        val value = pred.terms(i) match {
-          case Term.Body.Var(sym, _, _) =>
+    // Evaluate each filter function predicate one-by-one.
+    var i = 0
+    while (i < filters.length) {
+      // Unpack the current predicate.
+      val pred@Predicate.Body.Filter(sym, terms, _, _) = filters(i)
+
+      // Evaluate the arguments of the filter function predicate.
+      val args = new Array[AnyRef](terms.length)
+      var j = 0
+      // Iterate through each term of the filter function predicate.
+      while (j < args.length) {
+        // Compute the value of the term.
+        val value = terms(j) match {
+          case Term.Body.Var(x, _, _) =>
             // A variable is replaced by its value from the environment.
-            env(sym.getStackOffset)
+            env(x.getStackOffset)
           case Term.Body.Lit(v, _, _) =>
             // A literal has already been evaluated to a value.
             v
@@ -468,16 +474,34 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
             // A wildcard should not appear as an argument to a filter function.
             throw InternalRuntimeException("Wildcard not allowed here!")
           case Term.Body.Pat(_, _, _) =>
-            // A pattern should not appear here.
+            // A pattern should not appear as an argument to a filter function.
             throw InternalRuntimeException("Pattern not allowed here!")
         }
 
-        args(i) = value
-        i = i + 1
+        // Store the value of the term into the argument array.
+        args(j) = value
+        j = j + 1
       }
-      val result = Linker.link(pred.sym, root).invoke(args)
-      if (Value.cast2bool(result))
-        evalFilter(rule, xs, env, interp)
+
+      // Link the filter function invocation target (if not already done).
+      if (pred.target == null) {
+        pred.target = Linker.link(sym, root)
+      }
+
+      // Evaluate the filter function passing the arguments.
+      val result = pred.target.invoke(args)
+
+      // Return immediately if the function returned false.
+      if (!Value.cast2bool(result))
+        return
+
+      // Otherwise evaluate the next filter function predicate.
+      i = i + 1
+    }
+
+    // All filter functions returned `true`.
+    // Continue evaluation of the head of the rule.
+    evalHead(rule.head, env, interp)
   }
 
   /**

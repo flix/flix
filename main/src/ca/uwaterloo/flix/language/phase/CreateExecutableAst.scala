@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.runtime.Interpreter
+import ca.uwaterloo.flix.runtime.{Interpreter, Linker}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
