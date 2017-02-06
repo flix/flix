@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.runtime
 import java.util.concurrent._
 
 import ca.uwaterloo.flix.api.{RuleException, TimeoutException}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Term.Body.Pat
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
 import ca.uwaterloo.flix.runtime.datastore.DataStore
@@ -91,7 +92,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Note: Evaluation of a rule only *reads* from the datastore.
     * Thus it is safe to evaluate multiple rules concurrently.
     */
-  val readersPool = mkThreadPool()
+  val readersPool: ExecutorService = mkThreadPool()
 
   /**
     * The thread pool where writes to the datastore takes places.
@@ -99,12 +100,12 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Note: A writer *must not* concurrently write to the same relation/lattice.
     * However, different relations/lattices can be written to concurrently.
     */
-  val writersPool = mkThreadPool()
+  val writersPool: ExecutorService = mkThreadPool()
 
   /**
     * The global work list.
     */
-  val worklist = mkWorkList()
+  val worklist: WorkList = mkWorkList()
 
   /**
     * The performance monitor.
@@ -121,7 +122,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * The model (if it exists).
     */
   @volatile
-  var model: Model = null
+  var model: Model = _
 
   //
   // Statistics:
@@ -161,12 +162,12 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Returns the number of current read tasks.
     */
-  def getCurrentReadTasks = currentReadTasks
+  def getCurrentReadTasks: Int = currentReadTasks
 
   /**
     * Returns the number of current write tasks.
     */
-  def getCurrentWriteTasks = currentWriteTasks
+  def getCurrentWriteTasks: Int = currentWriteTasks
 
   /**
     * Returns the number of facts in the datastore.
@@ -239,7 +240,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   def getRuleStats: List[(Constraint, Int, Long)] =
     root.constraints.filter(_.isRule).sortBy(_.time.get()).reverse.map {
       case r => (r, r.hits.get(), r.time.get())
-    }.toList
+    }
 
   /**
     * Initialize the solver by starting the monitor, debugger, shell etc.
@@ -399,17 +400,18 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
 
           // Check if the term is pattern term.
           // If so, we must checked whether the pattern can be unified with the value.
-          if (p.terms(i).isInstanceOf[ExecutableAst.Term.Body.Pat]) {
-            val term = p.terms(i).asInstanceOf[ExecutableAst.Term.Body.Pat]
-            val value = matchedRow(i)
-            val extendedEnv = Interpreter.unify(term.pat, value, env.toMap)
-            if (extendedEnv == null) {
-              // Value does not unify with the pattern term. We should skip this row.
-              skip = true
-            } else {
-              // The value matched, must bind variables in the pattern by extending the environment.
-              newRow = newRow ++ extendedEnv
-            }
+          p.terms(i) match {
+            case term: Pat =>
+              val value = matchedRow(i)
+              val extendedEnv = Value.unify(term.pat, value, env.toMap)
+              if (extendedEnv == null) {
+                // Value does not unify with the pattern term. We should skip this row.
+                skip = true
+              } else {
+                // The value matched, must bind variables in the pattern by extending the environment.
+                newRow = newRow ++ extendedEnv
+              }
+            case _ => // nop
           }
 
           val varName = p.index2sym(i)
