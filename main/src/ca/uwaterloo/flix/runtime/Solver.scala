@@ -16,12 +16,11 @@
 
 package ca.uwaterloo.flix.runtime
 
-import java.util.ArrayList
 import java.util.concurrent._
 
-import ca.uwaterloo.flix.api.{IValue, RuleException, TimeoutException, WrappedValue}
+import ca.uwaterloo.flix.api.{RuleException, TimeoutException}
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
-import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
 import ca.uwaterloo.flix.runtime.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.util._
@@ -593,7 +592,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     val t = System.nanoTime()
 
     // --- begin parallel execution ---
-    val readerTasks = new ArrayList[Callable[Interpretation]]()
+    val readerTasks = new java.util.ArrayList[Callable[Interpretation]]()
     for ((rule, env) <- worklist) {
       val task = evalBody(rule, env)
       readerTasks.add(task)
@@ -616,7 +615,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     val t = System.nanoTime()
 
     // --- begin parallel execution ---
-    val tasks = new ArrayList[Callable[WorkList]]()
+    val tasks = new java.util.ArrayList[Callable[WorkList]]()
     for ((sym, facts) <- groupFactsBySymbol(iter)) {
       val task = inferredFacts(sym, facts)
       tasks.add(task)
