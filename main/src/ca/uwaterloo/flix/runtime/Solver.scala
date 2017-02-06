@@ -412,9 +412,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
             }
           }
 
-          val varName = p.index2var(i)
+          val varName = p.index2sym(i)
           if (varName != null)
-            newRow.update(varName, matchedRow(i))
+            newRow.update(varName.toString, matchedRow(i))
           i = i + 1
         }
 
@@ -553,13 +553,13 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   private def dependencies(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: WorkList): Unit = {
 
-    def unify(pat: Array[String], fact: Array[AnyRef], limit: Int): Env = {
+    def unify(pat: Array[Symbol.VarSym], fact: Array[AnyRef], limit: Int): Env = {
       val env = mutable.Map.empty[String, AnyRef]
       var i = 0
       while (i < limit) {
         val varName = pat(i)
         if (varName != null)
-          env.update(varName, fact(i))
+          env.update(varName.toString, fact(i))
         i = i + 1
       }
       env
@@ -570,14 +570,14 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       table match {
         case r: ExecutableAst.Table.Relation =>
           // unify all terms with their values.
-          val env = unify(p.index2var, fact, fact.length)
+          val env = unify(p.index2sym, fact, fact.length)
           if (env != null) {
             localWorkList.push((rule, env))
           }
         case l: ExecutableAst.Table.Lattice =>
           // unify only key terms with their values.
           val numberOfKeys = l.keys.length
-          val env = unify(p.index2var, fact, numberOfKeys)
+          val env = unify(p.index2sym, fact, numberOfKeys)
           if (env != null) {
             localWorkList.push((rule, env))
           }

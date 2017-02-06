@@ -295,13 +295,13 @@ object CreateExecutableAst {
       def toExecutable(sast: SimplifiedAst.Predicate.Body): ExecutableAst.Predicate.Body = sast match {
         case SimplifiedAst.Predicate.Body.Positive(sym, terms, loc) =>
           val termsArray = terms.map(Terms.Body.translate).toArray
-          val index2var: Array[String] = {
-            val r = new Array[String](termsArray.length)
+          val index2var: Array[Symbol.VarSym] = {
+            val r = new Array[Symbol.VarSym](termsArray.length)
             var i = 0
             while (i < r.length) {
               termsArray(i) match {
-                case ExecutableAst.Term.Body.Var(ident, _, _) =>
-                  r(i) = ident.toString
+                case ExecutableAst.Term.Body.Var(sym, _, _) =>
+                  r(i) = sym
                 case _ => // nop
               }
               i = i + 1
@@ -312,13 +312,13 @@ object CreateExecutableAst {
 
         case SimplifiedAst.Predicate.Body.Negative(sym, terms, loc) =>
           val termsArray = terms.map(Terms.Body.translate).toArray
-          val index2var: Array[String] = {
-            val r = new Array[String](termsArray.length)
+          val index2var: Array[Symbol.VarSym] = {
+            val r = new Array[Symbol.VarSym](termsArray.length)
             var i = 0
             while (i < r.length) {
               termsArray(i) match {
-                case ExecutableAst.Term.Body.Var(ident, _, _) =>
-                  r(i) = ident.toString
+                case ExecutableAst.Term.Body.Var(sym, _, _) =>
+                  r(i) = sym
                 case _ => // nop
               }
               i = i + 1

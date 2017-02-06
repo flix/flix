@@ -539,11 +539,11 @@ object ExecutableAst {
 
     object Body {
 
-      case class Positive(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Body], index2var: Array[String], freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
+      case class Positive(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Body], index2sym: Array[Symbol.VarSym], freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
         val arity: Int = terms.length
       }
 
-      case class Negative(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Body], index2var: Array[String], freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
+      case class Negative(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Body], index2sym: Array[Symbol.VarSym], freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
         val arity: Int = terms.length
       }
 
