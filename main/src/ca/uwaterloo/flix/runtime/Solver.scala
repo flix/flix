@@ -437,7 +437,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   private def evalLoop(rule: Constraint, ps: List[Predicate.Body.Loop], env: Env, interp: Interpretation): Unit = ps match {
     case Nil => evalFilter(rule, rule.filters, env, interp)
     case Predicate.Body.Loop(sym, term, _, _) :: rest =>
-      val value = Value.cast2set(evalHeadTerm(term, root, env.toMap))
+      val value = Value.cast2set(evalHeadTerm(term, root, env))
       for (x <- value) {
         val newRow = env.clone()
         newRow.update(sym.toString, x)
@@ -490,7 +490,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       val fact = new Array[AnyRef](p.arity)
       var i = 0
       while (i < fact.length) {
-        fact(i) = evalHeadTerm(terms(i), root, env.toMap)
+        fact(i) = evalHeadTerm(terms(i), root, env)
         i = i + 1
       }
 
@@ -505,7 +505,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Evaluates the given head term `t` under the given environment `env0`
     */
-  def evalHeadTerm(t: Term.Head, root: Root, env: Map[String, AnyRef]): AnyRef = t match {
+  def evalHeadTerm(t: Term.Head, root: Root, env: mutable.Map[String, AnyRef]): AnyRef = t match {
     case Term.Head.Var(x, _, _) => env(x.toString)
     case Term.Head.Lit(v, _, _) => v
     case Term.Head.App(sym, syms, _, _) =>
