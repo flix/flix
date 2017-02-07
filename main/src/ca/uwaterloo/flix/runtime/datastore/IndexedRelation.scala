@@ -153,7 +153,8 @@ final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relatio
     if (idx != 0) {
       // an exact index exists. Use it.
       indexedLookups += 1
-      indexHits.update(idx, indexHits(idx) + 1)
+      // NB: It is too expensive to count indexed lookups.
+      // indexHits.update(idx, indexHits(idx) + 1)
       val key = keyOf(idx, pat)
       getOrEmptyIterator(store(idx).get(key))
     } else {
