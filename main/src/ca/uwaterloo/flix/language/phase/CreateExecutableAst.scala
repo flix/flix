@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.runtime.Interpreter
+import ca.uwaterloo.flix.runtime.{Interpreter, Linker}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
@@ -272,11 +272,11 @@ object CreateExecutableAst {
         case SimplifiedAst.Predicate.Head.False(loc) => ExecutableAst.Predicate.Head.False(loc)
 
         case SimplifiedAst.Predicate.Head.Positive(name, terms, loc) =>
-          val ts = terms.map(Terms.toExecutable).toArray
+          val ts = terms.map(Terms.translate).toArray
           ExecutableAst.Predicate.Head.Positive(name, ts, loc)
 
         case SimplifiedAst.Predicate.Head.Negative(name, terms, loc) =>
-          val ts = terms.map(Terms.toExecutable).toArray
+          val ts = terms.map(Terms.translate).toArray
           ExecutableAst.Predicate.Head.Negative(name, ts, loc)
       }
     }
@@ -295,13 +295,13 @@ object CreateExecutableAst {
       def toExecutable(sast: SimplifiedAst.Predicate.Body): ExecutableAst.Predicate.Body = sast match {
         case SimplifiedAst.Predicate.Body.Positive(sym, terms, loc) =>
           val termsArray = terms.map(Terms.Body.translate).toArray
-          val index2var: Array[String] = {
-            val r = new Array[String](termsArray.length)
+          val index2var: Array[Symbol.VarSym] = {
+            val r = new Array[Symbol.VarSym](termsArray.length)
             var i = 0
             while (i < r.length) {
               termsArray(i) match {
-                case ExecutableAst.Term.Body.Var(ident, _, _) =>
-                  r(i) = ident.toString
+                case ExecutableAst.Term.Body.Var(sym, _, _) =>
+                  r(i) = sym
                 case _ => // nop
               }
               i = i + 1
@@ -312,13 +312,13 @@ object CreateExecutableAst {
 
         case SimplifiedAst.Predicate.Body.Negative(sym, terms, loc) =>
           val termsArray = terms.map(Terms.Body.translate).toArray
-          val index2var: Array[String] = {
-            val r = new Array[String](termsArray.length)
+          val index2var: Array[Symbol.VarSym] = {
+            val r = new Array[Symbol.VarSym](termsArray.length)
             var i = 0
             while (i < r.length) {
               termsArray(i) match {
-                case ExecutableAst.Term.Body.Var(ident, _, _) =>
-                  r(i) = ident.toString
+                case ExecutableAst.Term.Body.Var(sym, _, _) =>
+                  r(i) = sym
                 case _ => // nop
               }
               i = i + 1
@@ -333,20 +333,25 @@ object CreateExecutableAst {
           ExecutableAst.Predicate.Body.Filter(name, termsArray, freeVars(terms), loc)
         case SimplifiedAst.Predicate.Body.Loop(sym, term, loc) =>
           val freeVars = Set.empty[String] // TODO
-          ExecutableAst.Predicate.Body.Loop(sym, Terms.toExecutable(term), freeVars, loc)
+          ExecutableAst.Predicate.Body.Loop(sym, Terms.translate(term), freeVars, loc)
       }
     }
 
   }
 
   object Terms {
-    def toExecutable(sast: SimplifiedAst.Term.Head): ExecutableAst.Term.Head = sast match {
-      case SimplifiedAst.Term.Head.Var(ident, tpe, loc) => ExecutableAst.Term.Head.Var(ident, tpe, loc)
-      case SimplifiedAst.Term.Head.Exp(literal, tpe, loc) =>
-        ExecutableAst.Term.Head.Exp(Expression.toExecutable(literal), tpe, loc)
-      case SimplifiedAst.Term.Head.Apply(name, args, tpe, loc) =>
-        val argsArray = args.map(Terms.toExecutable).toArray
-        ExecutableAst.Term.Head.Apply(name, argsArray, tpe, loc)
+
+    /**
+      * Returns the given simplified head term `t0` as an executable head term.
+      */
+    def translate(t0: SimplifiedAst.Term.Head): ExecutableAst.Term.Head = t0 match {
+      case SimplifiedAst.Term.Head.Var(sym, tpe, loc) => ExecutableAst.Term.Head.Var(sym, tpe, loc)
+      case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) =>
+        // Evaluate the literal to a value.
+        val v = Interpreter.lit2value(Expression.toExecutable(lit))
+        ExecutableAst.Term.Head.Lit(v, tpe, loc)
+      case SimplifiedAst.Term.Head.App(name, args, tpe, loc) =>
+        ExecutableAst.Term.Head.App(name, args.toArray, tpe, loc)
     }
 
     object Body {
@@ -357,6 +362,7 @@ object CreateExecutableAst {
         case SimplifiedAst.Term.Body.Wild(tpe, loc) => ExecutableAst.Term.Body.Wild(tpe, loc)
         case SimplifiedAst.Term.Body.Var(sym, tpe, loc) => ExecutableAst.Term.Body.Var(sym, tpe, loc)
         case SimplifiedAst.Term.Body.Lit(lit, tpe, loc) =>
+          // Evaluate the literal to a value.
           val v = Interpreter.lit2value(Expression.toExecutable(lit))
           ExecutableAst.Term.Body.Lit(v, tpe, loc)
         case SimplifiedAst.Term.Body.Pat(pat, tpe, loc) => ExecutableAst.Term.Body.Pat(Patterns.toExecutable(pat), tpe, loc)

@@ -123,7 +123,7 @@ object TypedAst {
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Ref(name: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Ref(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
