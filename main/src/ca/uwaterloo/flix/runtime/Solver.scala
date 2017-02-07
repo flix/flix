@@ -16,12 +16,13 @@
 
 package ca.uwaterloo.flix.runtime
 
-import java.util.ArrayList
+import java.util
 import java.util.concurrent._
 
-import ca.uwaterloo.flix.api.{IValue, RuleException, TimeoutException, WrappedValue}
+import ca.uwaterloo.flix.api.{RuleException, TimeoutException}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Term.Body.Pat
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
-import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
 import ca.uwaterloo.flix.runtime.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.util._
@@ -47,9 +48,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * The type of environments.
     *
-    * An environment is map from identifiers to values.
+    * An environment is map from variables to values.
     */
-  type Env = mutable.Map[String, AnyRef]
+  type Env = Array[AnyRef]
 
   /**
     * The type of work lists.
@@ -92,7 +93,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Note: Evaluation of a rule only *reads* from the datastore.
     * Thus it is safe to evaluate multiple rules concurrently.
     */
-  val readersPool = mkThreadPool()
+  val readersPool: ExecutorService = mkThreadPool()
 
   /**
     * The thread pool where writes to the datastore takes places.
@@ -100,12 +101,12 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Note: A writer *must not* concurrently write to the same relation/lattice.
     * However, different relations/lattices can be written to concurrently.
     */
-  val writersPool = mkThreadPool()
+  val writersPool: ExecutorService = mkThreadPool()
 
   /**
     * The global work list.
     */
-  val worklist = mkWorkList()
+  val worklist: WorkList = mkWorkList()
 
   /**
     * The performance monitor.
@@ -122,7 +123,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * The model (if it exists).
     */
   @volatile
-  var model: Model = null
+  var model: Model = _
 
   //
   // Statistics:
@@ -162,12 +163,12 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Returns the number of current read tasks.
     */
-  def getCurrentReadTasks = currentReadTasks
+  def getCurrentReadTasks: Int = currentReadTasks
 
   /**
     * Returns the number of current write tasks.
     */
-  def getCurrentWriteTasks = currentWriteTasks
+  def getCurrentWriteTasks: Int = currentWriteTasks
 
   /**
     * Returns the number of facts in the datastore.
@@ -240,7 +241,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   def getRuleStats: List[(Constraint, Int, Long)] =
     root.constraints.filter(_.isRule).sortBy(_.time.get()).reverse.map {
       case r => (r, r.hits.get(), r.time.get())
-    }.toList
+    }
 
   /**
     * Initialize the solver by starting the monitor, debugger, shell etc.
@@ -268,7 +269,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     for (fact <- facts) {
       // evaluate the head of each fact.
       val interp = mkInterpretation()
-      evalHead(fact.head, mutable.Map.empty, interp)
+      evalHead(fact.head, Array.empty, interp)
 
       // iterate through the interpretation.
       for ((sym, fact) <- interp) {
@@ -290,7 +291,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   private def initWorkList(): Unit = {
     // add all rules to the worklist (under empty environments).
     for (rule <- rules) {
-      worklist.push((rule, mutable.Map.empty))
+      worklist.push((rule, new Array[AnyRef](rule.arity)))
     }
   }
 
@@ -371,7 +372,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         val value = p.terms(i) match {
           case ExecutableAst.Term.Body.Var(sym, _, _) =>
             // A variable is replaced by its value from the environment (or null if unbound).
-            env.getOrElse(sym.toString, null)
+            env(sym.getStackOffset)
           case ExecutableAst.Term.Body.Lit(v, _, _) =>
             // A literal has already been evaluated to a value.
             v
@@ -389,7 +390,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       // lookup all matching rows.
       for (matchedRow <- table.lookup(pat)) {
         // copy the environment for every row.
-        var newRow = env.clone()
+        val newRow = copy(env)
 
         // A matched row may still fail to unify with a pattern term.
         // We use this boolean variable to track whether that is the case.
@@ -400,22 +401,19 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
 
           // Check if the term is pattern term.
           // If so, we must checked whether the pattern can be unified with the value.
-          if (p.terms(i).isInstanceOf[ExecutableAst.Term.Body.Pat]) {
-            val term = p.terms(i).asInstanceOf[ExecutableAst.Term.Body.Pat]
-            val value = matchedRow(i)
-            val extendedEnv = Interpreter.unify(term.pat, value, env.toMap)
-            if (extendedEnv == null) {
-              // Value does not unify with the pattern term. We should skip this row.
-              skip = true
-            } else {
-              // The value matched, must bind variables in the pattern by extending the environment.
-              newRow = newRow ++ extendedEnv
-            }
+          p.terms(i) match {
+            case term: Pat =>
+              val value = matchedRow(i)
+              if (!Value.unify(term.pat, value, env)) {
+                // Value does not unify with the pattern term. We should skip this row.
+                skip = true
+              }
+            case _ => // nop
           }
 
-          val varName = p.index2var(i)
-          if (varName != null)
-            newRow.update(varName, matchedRow(i))
+          val sym = p.index2sym(i)
+          if (sym != null)
+            newRow.update(sym.getStackOffset, matchedRow(i))
           i = i + 1
         }
 
@@ -436,33 +434,39 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Unfolds the given loop predicates `ps` over the initial `env`.
     */
   private def evalLoop(rule: Constraint, ps: List[Predicate.Body.Loop], env: Env, interp: Interpretation): Unit = ps match {
-    case Nil => evalFilter(rule, rule.filters, env, interp)
+    case Nil => evalFilter(rule, env, interp)
     case Predicate.Body.Loop(sym, term, _, _) :: rest =>
-      val value = Value.cast2set(evalHeadTerm(term, root, env.toMap))
+      val value = Value.cast2set(evalHeadTerm(term, root, env))
       for (x <- value) {
-        val newRow = env.clone()
-        newRow.update(sym.toString, x)
+        val newRow = copy(env)
+        newRow(sym.getStackOffset) = x
         evalLoop(rule, rest, newRow, interp)
       }
   }
 
   /**
-    * Filters the given `env` through all filter functions in the body.
+    * Filters the given `env` through all filter functions in the body of the given `rule`.
     */
-  @tailrec
-  private def evalFilter(rule: Constraint, ps: List[Predicate.Body.Filter], env: Env, interp: Interpretation): Unit = ps match {
-    case Nil =>
-      // filter with hook functions
-      evalHead(rule.head, env, interp)
-    case (pred: Predicate.Body.Filter) :: xs =>
-      val args = new Array[AnyRef](pred.terms.length)
-      var i = 0
-      while (i < args.length) {
+  private def evalFilter(rule: Constraint, env: Env, interp: Interpretation): Unit = {
+    // Extract the filters function predicates from the rule.
+    val filters = rule.filters
 
-        val value = pred.terms(i) match {
+    // Evaluate each filter function predicate one-by-one.
+    var i = 0
+    while (i < filters.length) {
+      // Unpack the current predicate.
+      val pred@Predicate.Body.Filter(sym, terms, _, _) = filters(i)
+
+      // Evaluate the arguments of the filter function predicate.
+      val args = new Array[AnyRef](terms.length)
+      var j = 0
+      // Iterate through each term of the filter function predicate.
+      while (j < args.length) {
+        // Compute the value of the term.
+        val value = terms(j) match {
           case Term.Body.Var(x, _, _) =>
             // A variable is replaced by its value from the environment.
-            env(x.toString)
+            env(x.getStackOffset)
           case Term.Body.Lit(v, _, _) =>
             // A literal has already been evaluated to a value.
             v
@@ -470,16 +474,34 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
             // A wildcard should not appear as an argument to a filter function.
             throw InternalRuntimeException("Wildcard not allowed here!")
           case Term.Body.Pat(_, _, _) =>
-            // A pattern should not appear here.
+            // A pattern should not appear as an argument to a filter function.
             throw InternalRuntimeException("Pattern not allowed here!")
         }
 
-        args(i) = value
-        i = i + 1
+        // Store the value of the term into the argument array.
+        args(j) = value
+        j = j + 1
       }
-      val result = Linker.link(pred.sym, root).invoke(args)
-      if (Value.cast2bool(result))
-        evalFilter(rule, xs, env, interp)
+
+      // Link the filter function invocation target (if not already done).
+      if (pred.target == null) {
+        pred.target = Linker.link(sym, root)
+      }
+
+      // Evaluate the filter function passing the arguments.
+      val result = pred.target.invoke(args)
+
+      // Return immediately if the function returned false.
+      if (!Value.cast2bool(result))
+        return
+
+      // Otherwise evaluate the next filter function predicate.
+      i = i + 1
+    }
+
+    // All filter functions returned `true`.
+    // Continue evaluation of the head of the rule.
+    evalHead(rule.head, env, interp)
   }
 
   /**
@@ -491,7 +513,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       val fact = new Array[AnyRef](p.arity)
       var i = 0
       while (i < fact.length) {
-        fact(i) = evalHeadTerm(terms(i), root, env.toMap)
+        fact(i) = evalHeadTerm(terms(i), root, env)
         i = i + 1
       }
 
@@ -506,17 +528,17 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Evaluates the given head term `t` under the given environment `env0`
     */
-  def evalHeadTerm(t: Term.Head, root: Root, env: Map[String, AnyRef]): AnyRef = t match {
-    case Term.Head.Var(x, _, _) => env(x.toString)
-    case Term.Head.Exp(e, _, _) => Interpreter.eval(e, root, env)
-    case Term.Head.Apply(sym, args, _, _) =>
-      val evalArgs = new Array[AnyRef](args.length)
+  def evalHeadTerm(t: Term.Head, root: Root, env: Env): AnyRef = t match {
+    case Term.Head.Var(sym, _, _) => env(sym.getStackOffset)
+    case Term.Head.Lit(v, _, _) => v
+    case Term.Head.App(sym, syms, _, _) =>
+      val args = new Array[AnyRef](syms.length)
       var i = 0
-      while (i < evalArgs.length) {
-        evalArgs(i) = evalHeadTerm(args(i), root, env)
+      while (i < args.length) {
+        args(i) = env(syms(i).getStackOffset)
         i = i + 1
       }
-      Linker.link(sym, root).invoke(evalArgs)
+      Linker.link(sym, root).invoke(args)
   }
 
   /**
@@ -554,36 +576,40 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   private def dependencies(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: WorkList): Unit = {
 
-    def unify(pat: Array[String], fact: Array[AnyRef], limit: Int): Env = {
-      val env = mutable.Map.empty[String, AnyRef]
+    def unify(pat: Array[Symbol.VarSym], fact: Array[AnyRef], limit: Int, len: Int): Env = {
+      val env: Env = new Array[AnyRef](len)
       var i = 0
       while (i < limit) {
         val varName = pat(i)
         if (varName != null)
-          env.update(varName, fact(i))
+          env(varName.getStackOffset) = fact(i)
         i = i + 1
       }
       env
     }
 
-    val table = root.tables(sym)
-    for ((rule, p) <- root.dependenciesOf(sym)) {
-      table match {
-        case r: ExecutableAst.Table.Relation =>
+
+    root.tables(sym) match {
+      case r: ExecutableAst.Table.Relation =>
+        for ((rule, p) <- root.dependenciesOf(sym)) {
           // unify all terms with their values.
-          val env = unify(p.index2var, fact, fact.length)
+          val env = unify(p.index2sym, fact, fact.length, rule.arity)
           if (env != null) {
             localWorkList.push((rule, env))
           }
-        case l: ExecutableAst.Table.Lattice =>
+        }
+
+      case l: ExecutableAst.Table.Lattice =>
+        for ((rule, p) <- root.dependenciesOf(sym)) {
           // unify only key terms with their values.
           val numberOfKeys = l.keys.length
-          val env = unify(p.index2var, fact, numberOfKeys)
+          val env = unify(p.index2sym, fact, numberOfKeys, rule.arity)
           if (env != null) {
             localWorkList.push((rule, env))
           }
-      }
+        }
     }
+
   }
 
   /**
@@ -593,7 +619,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     val t = System.nanoTime()
 
     // --- begin parallel execution ---
-    val readerTasks = new ArrayList[Callable[Interpretation]]()
+    val readerTasks = new java.util.ArrayList[Callable[Interpretation]]()
     for ((rule, env) <- worklist) {
       val task = evalBody(rule, env)
       readerTasks.add(task)
@@ -616,7 +642,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     val t = System.nanoTime()
 
     // --- begin parallel execution ---
-    val tasks = new ArrayList[Callable[WorkList]]()
+    val tasks = new java.util.ArrayList[Callable[WorkList]]()
     for ((sym, facts) <- groupFactsBySymbol(iter)) {
       val task = inferredFacts(sym, facts)
       tasks.add(task)
@@ -732,6 +758,16 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         throw TimeoutException(options.timeout, Duration(elapsed, NANOSECONDS))
       }
     }
+  }
+
+  /**
+    * Returns a shallow copy of the given array `src`.
+    */
+  @inline
+  def copy(src: Array[AnyRef]): Array[AnyRef] = {
+    val dst = new Array[AnyRef](src.length)
+    System.arraycopy(src, 0, dst, 0, src.length)
+    dst
   }
 
 }

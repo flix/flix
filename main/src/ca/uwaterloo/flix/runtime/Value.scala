@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.runtime
 
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Pattern
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
@@ -434,6 +435,56 @@ object Value {
       val tpe1 = ref1.getClass.getCanonicalName
       val tpe2 = ref2.getClass.getCanonicalName
       throw InternalRuntimeException(s"Unable to compare '$tpe1' and '$tpe2'.")
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Unification                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+
+  /**
+    * Tries to unify the given pattern `p0` with the given value `v0` under the environment `env0`.
+    *
+    * Mutates the given map. Returns `true` if unification was successful.
+    */
+  def unify(p0: Pattern, v0: AnyRef, env0: Array[AnyRef]): Boolean = (p0, v0) match {
+    case (Pattern.Wild(_, _), _) => true
+    case (Pattern.Var(sym, _, _), _) =>
+      val v2 = env0(sym.getStackOffset)
+      if (v2 == null) {
+        env0(sym.getStackOffset) = v0
+        true
+      } else {
+        Value.equal(v0, v2)
+      }
+    case (Pattern.Unit(_), Value.Unit) => true
+    case (Pattern.True(_), java.lang.Boolean.TRUE) => true
+    case (Pattern.False(_), java.lang.Boolean.FALSE) => true
+    case (Pattern.Char(lit, _), o: java.lang.Character) => lit == o.charValue()
+    case (Pattern.Float32(lit, _), o: java.lang.Float) => lit == o.floatValue()
+    case (Pattern.Float64(lit, _), o: java.lang.Double) => lit == o.doubleValue()
+    case (Pattern.Int8(lit, _), o: java.lang.Byte) => lit == o.byteValue()
+    case (Pattern.Int16(lit, _), o: java.lang.Short) => lit == o.shortValue()
+    case (Pattern.Int32(lit, _), o: java.lang.Integer) => lit == o.intValue()
+    case (Pattern.Int64(lit, _), o: java.lang.Long) => lit == o.longValue()
+    case (Pattern.BigInt(lit, _), o: java.math.BigInteger) => lit.equals(o)
+    case (Pattern.Str(lit, _), o: java.lang.String) => lit.equals(o)
+    case (Pattern.Tag(enum, tag, p, _, _), o: Value.Tag) => if (tag.equals(o.tag)) unify(p, o.value, env0) else false
+    case (Pattern.Tuple(elms, _, _), o: Array[AnyRef]) =>
+      if (elms.length != o.length)
+        return false
+      var i: Int = 0
+      while (i < o.length) {
+        val pi = elms(i)
+        val vi = o(i)
+        val success = unify(pi, vi, env0)
+        if (!success)
+          return false
+        i = i + 1
+      }
+      true
+    case _ =>
+      // Unification failed. Return `null`.
+      false
   }
 
   /////////////////////////////////////////////////////////////////////////////

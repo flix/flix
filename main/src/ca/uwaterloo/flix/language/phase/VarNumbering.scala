@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
-import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Type}
+import ca.uwaterloo.flix.language.ast.SimplifiedAst._
+import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -33,7 +33,7 @@ object VarNumbering {
   /**
     * Assigns a stack offset to each variable symbol in the program.
     */
-  def number(root: SimplifiedAst.Root): SimplifiedAst.Root = {
+  def number(root: Root): Root = {
     val t = System.nanoTime()
 
     // Compute stack offset for each definition.
@@ -41,7 +41,12 @@ object VarNumbering {
       number(defn)
     }
 
-    // TODO: Compute stack offsets for each fact and rule.
+    // Compute offset for each constraint.
+    for (strata <- root.strata) {
+      for (constraint <- strata.constraints) {
+        number(constraint)
+      }
+    }
 
     val e = System.nanoTime() - t
     root.copy(time = root.time.copy(varNumbering = e))
@@ -52,7 +57,7 @@ object VarNumbering {
     *
     * Returns Unit since the variable symbols are mutated to store their stack offsets.
     */
-  def number(defn: SimplifiedAst.Definition.Constant): Unit = {
+  def number(defn: Definition.Constant): Unit = {
     /**
       * Returns the next available stack offset.
       *
@@ -138,7 +143,7 @@ object VarNumbering {
 
     // Compute the stack offset for each formal parameter.
     var offset = 0
-    for (SimplifiedAst.FormalParam(sym, tpe) <- defn.formals) {
+    for (FormalParam(sym, tpe) <- defn.formals) {
       // Set the stack offset for the symbol.
       sym.setStackOffset(offset)
 
@@ -148,6 +153,23 @@ object VarNumbering {
 
     // Compute stack offset for the body.
     visitExp(defn.exp, offset)
+  }
+
+  /**
+    * Assign an offset to each constraint parameter in the given constraint `c`.
+    */
+  def number(c: Constraint): Unit = {
+    var offset = 0
+    for (cparam <- c.cparams) {
+      cparam match {
+        case ConstraintParam.HeadParam(sym, tpe, loc) =>
+          sym.setStackOffset(offset)
+          offset = offset + 1
+        case ConstraintParam.RuleParam(sym, tpe, loc) =>
+          sym.setStackOffset(offset)
+          offset = offset + 1
+      }
+    }
   }
 
   /**
