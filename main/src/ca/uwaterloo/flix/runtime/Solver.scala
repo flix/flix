@@ -610,9 +610,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   }
 
   /**
-    * A batch of (rule, environment)-pairs to evaluate.
+    * A batch of (rule, environment)-pairs pending evaluation.
     *
-    * This specific batch should evaluation the pairs from the begin offset `b` to the end offset `e`.
+    * This batch should evaluate the pairs from the begin offset `b` to the end offset `e`.
     */
   class Batch(array: Array[(Constraint, Env)], b: Int, e: Int) extends Callable[Iterator[Interpretation]] {
     def call(): Iterator[Interpretation] = {
@@ -636,9 +636,10 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
 
     // --- begin parallel execution ---
     val readerTasks = new java.util.ArrayList[Batch]()
-    val worklistAsArray = worklist.toArray
 
+    val worklistAsArray = worklist.toArray
     val chunkSize = (worklist.length / options.threads) + 1
+
     var b = 0
     while (b < worklistAsArray.length) {
       val e = Math.min(b + chunkSize, worklistAsArray.length)
@@ -734,9 +735,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   private def mkThreadPool(name: String): ExecutorService = options.threads match {
     // Case 1: Parallel execution disabled. Use a single thread.
-    case 1 => Executors.newSingleThreadExecutor()
+    case 1 => Executors.newSingleThreadExecutor(mkThreadFactory(name))
     // Case 2: Parallel execution enabled. Use the specified number of processors.
-    case n => Executors.newFixedThreadPool(n)
+    case n => Executors.newFixedThreadPool(n, mkThreadFactory(name))
   }
 
   /**
@@ -745,8 +746,8 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   private def mkThreadFactory(name: String): ThreadFactory = new ThreadFactory {
     val count = new AtomicInteger()
 
-    def newThread(r: Runnable): Thread = {
-      val t = new Thread(s"pool-$name-${count.incrementAndGet()}")
+    def newThread(runnable: Runnable): Thread = {
+      val t = new Thread(runnable, s"pool-$name-${count.incrementAndGet()}")
       t.setDaemon(false)
       t.setPriority(Thread.NORM_PRIORITY)
       t
