@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.runtime
 
-import java.util
 import java.util.concurrent._
+import java.util.concurrent.atomic.AtomicInteger
 
 import ca.uwaterloo.flix.api.{RuleException, TimeoutException}
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Term.Body.Pat
@@ -27,7 +27,6 @@ import ca.uwaterloo.flix.runtime.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.util._
 
-import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.{Duration, _}
@@ -93,7 +92,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Note: Evaluation of a rule only *reads* from the datastore.
     * Thus it is safe to evaluate multiple rules concurrently.
     */
-  val readersPool: ExecutorService = mkThreadPool()
+  val readersPool: ExecutorService = mkThreadPool("readers")
 
   /**
     * The thread pool where writes to the datastore takes places.
@@ -101,7 +100,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Note: A writer *must not* concurrently write to the same relation/lattice.
     * However, different relations/lattices can be written to concurrently.
     */
-  val writersPool: ExecutorService = mkThreadPool()
+  val writersPool: ExecutorService = mkThreadPool("writers")
 
   /**
     * The global work list.
@@ -337,18 +336,16 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     *
     * Updates the given interpretation `interp`.
     */
-  private def evalBody(rule: Constraint, env: Env): Callable[Interpretation] = new Callable[Interpretation] {
-    def call(): Interpretation = {
-      val t = System.nanoTime()
+  private def evalBody(rule: Constraint, env: Env): Interpretation = {
+    val t = System.nanoTime()
 
-      val interp = mkInterpretation()
-      evalCross(rule, rule.tables, env, interp)
+    val interp = mkInterpretation()
+    evalCross(rule, rule.tables, env, interp)
 
-      rule.hits.incrementAndGet()
-      rule.time.addAndGet(System.nanoTime() - t)
+    rule.hits.incrementAndGet()
+    rule.time.addAndGet(System.nanoTime() - t)
 
-      interp
-    }
+    interp
   }
 
   /**
@@ -613,18 +610,45 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   }
 
   /**
+    * A batch of (rule, environment)-pairs to evaluate.
+    *
+    * This specific batch should evaluation the pairs from the begin offset `b` to the end offset `e`.
+    */
+  class Batch(array: Array[(Constraint, Env)], b: Int, e: Int) extends Callable[Iterator[Interpretation]] {
+    def call(): Iterator[Interpretation] = {
+      val result = new Array[Interpretation](e - b)
+      var index = 0
+      while (index < result.length) {
+        val (rule, env) = array(b + index)
+        val interp = evalBody(rule, env)
+        result(index) = interp
+        index = index + 1
+      }
+      result.toIterator
+    }
+  }
+
+  /**
     * Evaluates each of the rules in parallel.
     */
   private def parallelEval(): Iterator[Interpretation] = {
     val t = System.nanoTime()
 
     // --- begin parallel execution ---
-    val readerTasks = new java.util.ArrayList[Callable[Interpretation]]()
-    for ((rule, env) <- worklist) {
-      val task = evalBody(rule, env)
-      readerTasks.add(task)
+    val readerTasks = new java.util.ArrayList[Batch]()
+    val worklistAsArray = worklist.toArray
+
+    val chunkSize = (worklist.length / options.threads) + 1
+    var b = 0
+    while (b < worklistAsArray.length) {
+      val e = Math.min(b + chunkSize, worklistAsArray.length)
+      val batch = new Batch(worklistAsArray, b, e)
+      b = b + chunkSize
+
+      readerTasks.add(batch)
       currentReadTasks += 1
     }
+
     val result = flatten(readersPool.invokeAll(readerTasks))
     // -- end parallel execution ---
 
@@ -632,7 +656,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     readersTime += System.nanoTime() - t
 
     worklist.clear()
-    result
+    result.flatten
   }
 
   /**
@@ -708,11 +732,25 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Returns a new thread pool configured to use the appropriate number of threads.
     */
-  private def mkThreadPool(): ExecutorService = options.threads match {
+  private def mkThreadPool(name: String): ExecutorService = options.threads match {
     // Case 1: Parallel execution disabled. Use a single thread.
     case 1 => Executors.newSingleThreadExecutor()
     // Case 2: Parallel execution enabled. Use the specified number of processors.
     case n => Executors.newFixedThreadPool(n)
+  }
+
+  /**
+    * Returns a new thread factory.
+    */
+  private def mkThreadFactory(name: String): ThreadFactory = new ThreadFactory {
+    val count = new AtomicInteger()
+
+    def newThread(r: Runnable): Thread = {
+      val t = new Thread(s"pool-$name-${count.incrementAndGet()}")
+      t.setDaemon(false)
+      t.setPriority(Thread.NORM_PRIORITY)
+      t
+    }
   }
 
   /**
