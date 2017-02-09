@@ -21,7 +21,7 @@ import java.nio.file.{Files, Path, Paths}
 import ca.uwaterloo.flix.language.ast.Ast.Hook
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
-import ca.uwaterloo.flix.language.{CompilationError, Compiler, GenSym}
+import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.{DeltaSolver, Model, Solver, Value}
@@ -232,7 +232,15 @@ class Flix {
     addPrintHook()
     addPrintlnHook()
 
-    Compiler.compile(getSourceInputs, hooks.toMap).flatMap {
+    val typedAst = for (
+      parsedAst <- Parser.parseAll(getSourceInputs);
+      weededAst <- Weeder.weed(parsedAst, hooks.toMap);
+      namedAst <- Namer.namer(weededAst);
+      typedAst <- Typer.typer(namedAst);
+      stratifiedAst <- Stratifier.stratify(typedAst)
+    ) yield stratifiedAst
+
+    typedAst.flatMap {
       case tast =>
         if (options.documentor) {
           Documentor.document(tast)
@@ -248,9 +256,7 @@ class Flix {
         val compiledAst = LoadBytecode.load(this, executableAst, options)
         QuickChecker.quickCheck(compiledAst, options) flatMap {
           r =>
-            Verifier.verify(r, options) map {
-              case root => root
-            }
+            Verifier.verify(r, options)
         }
     }
   }

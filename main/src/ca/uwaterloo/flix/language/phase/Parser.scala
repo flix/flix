@@ -20,11 +20,48 @@ import java.nio.charset.Charset
 import java.nio.file.Files
 import java.util.zip.ZipFile
 
+import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
-import ca.uwaterloo.flix.util.StreamOps
+import ca.uwaterloo.flix.util.{StreamOps, Timer}
+import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.Validation._
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
+
+object Parser {
+
+  /**
+    * Returns the AST of the given source input `source`.
+    */
+  def parse(source: SourceInput): Validation[ParsedAst.Root, CompilationError] = {
+    val parser = new Parser(source)
+    parser.Root.run() match {
+      case scala.util.Success(ast) =>
+        ast.toSuccess
+      case scala.util.Failure(e: org.parboiled2.ParseError) =>
+        ca.uwaterloo.flix.language.errors.ParseError(parser.formatError(e), source).toFailure
+      case scala.util.Failure(e) =>
+        ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, source).toFailure
+    }
+  }
+
+  /**
+    * Returns the parsed AST of the given source inputs `sources`.
+    */
+  def parseAll(sources: List[SourceInput]): Validation[ParsedAst.Program, CompilationError] = {
+    val timer = new Timer({
+      @@(sources.map(parse)) map {
+        case asts => ParsedAst.Program(asts, Time.Default)
+      }
+    })
+
+    timer.getResult.map {
+      case ast => ast.copy(time = ast.time.copy(parser = timer.getDuration))
+    }
+  }
+
+}
 
 /**
   * A parser for the Flix language.
@@ -653,6 +690,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   object Predicates {
+
     object Head {
       def True: Rule1[ParsedAst.Predicate.Head.True] = rule {
         SP ~ atomic("true") ~ SP ~> ParsedAst.Predicate.Head.True
@@ -692,6 +730,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
         SP ~ Pattern ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Loop
       }
     }
+
   }
 
 
