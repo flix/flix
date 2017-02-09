@@ -127,14 +127,14 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
     val table = if (idx != 0) {
       // use exact index.
       val ikey = keyOf(idx, pat)
-      store(idx).getOrElse(ikey, mutable.Map.empty).iterator
+      getOrEmptyIterator(store(idx).get(ikey))
     } else {
       // check if there is an approximate index.
       idx = getApproximateIndex(indexes, pat)
       if (idx != 0) {
         // use approximate index.
         val ikey = keyOf(idx, pat)
-        store(idx).getOrElse(ikey, mutable.Map.empty).iterator
+        getOrEmptyIterator(store(idx).get(ikey))
       } else {
         // perform full table scan.
         scan
@@ -249,6 +249,17 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
     // evaluate the greatest lower bound function passing the arguments `x` and `y`.
     val args = Array(x, y).asInstanceOf[Array[AnyRef]]
     Glb.invoke(args).asInstanceOf[ValueType]
+  }
+
+  /**
+    * Returns an iterator over the given mutable map.
+    *
+    * Returns the empty iterator if the option is [[None]].
+    */
+  @inline
+  private def getOrEmptyIterator(opt: Option[mutable.Map[Key[ValueType], ValueType]]) = opt match {
+    case None => Iterator.empty
+    case Some(xs) => xs.iterator
   }
 
 }

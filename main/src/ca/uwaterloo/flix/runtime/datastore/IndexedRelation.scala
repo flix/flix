@@ -17,10 +17,10 @@
 package ca.uwaterloo.flix.runtime.datastore
 
 import ca.uwaterloo.flix.language.ast.ExecutableAst
-import ca.uwaterloo.flix.runtime.Solver
 import ca.uwaterloo.flix.util.BitOps
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 /**
   * A class that stores a relation in an indexed database. An index is a subset of the columns encoded in binary.
@@ -29,8 +29,8 @@ import scala.collection.mutable
   * An index on the first and third columns corresponds to 0b0000...0101.
   *
   * @param relation the relation.
-  * @param indexes the indexes.
-  * @param default the default index.
+  * @param indexes  the indexes.
+  * @param default  the default index.
   */
 final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relation, indexes: Set[Int], default: Int) extends IndexedCollection[ValueType] {
 
@@ -153,9 +153,10 @@ final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relatio
     if (idx != 0) {
       // an exact index exists. Use it.
       indexedLookups += 1
-      indexHits.update(idx, indexHits(idx) + 1)
+      // NB: It is too expensive to count indexed lookups.
+      // indexHits.update(idx, indexHits(idx) + 1)
       val key = keyOf(idx, pat)
-      store(idx).getOrElse(key, mutable.ArrayBuffer.empty).iterator
+      getOrEmptyIterator(store(idx).get(key))
     } else {
       // case 2: No exact index available. Check if there is an approximate index.
       val indexMiss = getIndex(pat) // NB: Only used for the next line
@@ -167,7 +168,7 @@ final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relatio
         indexHits.update(idx, indexHits(idx) + 1)
         indexedScans += 1
         val key = keyOf(idx, pat)
-        store(idx).getOrElse(key, mutable.ArrayBuffer.empty).iterator
+        getOrEmptyIterator(store(idx).get(key))
       } else {
         // case 2.2: No usable index. Perform a full table scan.
         fullScans += 1
@@ -203,6 +204,17 @@ final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relatio
       i = i + 1
     }
     return true
+  }
+
+  /**
+    * Returns an iterator over the given array buffer.
+    *
+    * Returns the empty iterator if the option is [[None]].
+    */
+  @inline
+  private def getOrEmptyIterator(opt: Option[ArrayBuffer[Array[ValueType]]]) = opt match {
+    case None => Iterator.empty
+    case Some(xs) => xs.iterator
   }
 
 }
