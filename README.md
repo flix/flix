@@ -60,3 +60,10 @@ Flix can be built from within the IntelliJ IDEA IDE.
 4. Ensure that `main/test` is marked as a *test* directory.
 5. Ensure that every jar in `lib` is added as a library (right-click, "Add as library ...")
 6. Open`main/src/ca/uwaterloo/flix/Main.scala` and right-click on `def main` and select `Run 'Main'`
+
+# Sponsors
+
+We kindly thank EJ Technologies for providing us with 
+[JProfiler](http://www.ej-technologies.com/products/jprofiler/overview.html)
+and JetBrains for providing us with 
+[IntelliJ IDEA](https://www.jetbrains.com/idea/).
