@@ -223,10 +223,6 @@ object TypedAst {
 
     case class Tuple(elms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
-    case class FSet(elms: List[TypedAst.Pattern], rest: Option[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
-
-    case class FMap(elms: List[(TypedAst.Pattern, TypedAst.Pattern)], rest: Option[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
-
   }
 
   sealed trait Predicate extends TypedAst {

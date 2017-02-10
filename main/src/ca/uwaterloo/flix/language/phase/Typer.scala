@@ -982,10 +982,6 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
             elementTypes <- seqM(elms map visit);
             resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
           ) yield resultType
-
-        case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => ??? // TODO: FSet
-
-        case NamedAst.Pattern.FMap(elms, rest, tvar, loc) => ??? // TODO: FMap
       }
 
       visit(pat0)
@@ -1026,12 +1022,6 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
             case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
           }
         case NamedAst.Pattern.Tuple(elms, tvar, loc) => TypedAst.Pattern.Tuple(elms map visit, subst0(tvar), loc)
-        case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => TypedAst.Pattern.FSet(elms map visit, rest.map(visit), subst0(tvar), loc)
-        case NamedAst.Pattern.FMap(elms, rest, tvar, loc) =>
-          val es = elms map {
-            case (k, v) => (visit(k), visit(v))
-          }
-          TypedAst.Pattern.FMap(es, rest.map(visit), subst0(tvar), loc)
       }
 
       visit(pat0)

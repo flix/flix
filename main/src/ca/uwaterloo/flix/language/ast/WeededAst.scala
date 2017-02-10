@@ -166,10 +166,6 @@ object WeededAst {
 
     case class Tuple(elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
 
-    case class FSet(elms: List[WeededAst.Pattern], rest: Option[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
-
-    case class FMap(elms: List[(WeededAst.Pattern, WeededAst.Pattern)], rest: Option[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
-
   }
 
   sealed trait Predicate extends WeededAst

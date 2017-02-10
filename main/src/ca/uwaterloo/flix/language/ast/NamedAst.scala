@@ -178,10 +178,6 @@ object NamedAst {
 
     case class Tuple(elms: scala.List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
-    case class FSet(elms: List[NamedAst.Pattern], rest: Option[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
-
-    case class FMap(elms: List[(NamedAst.Pattern, NamedAst.Pattern)], rest: Option[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
-
   }
 
   sealed trait Predicate extends NamedAst

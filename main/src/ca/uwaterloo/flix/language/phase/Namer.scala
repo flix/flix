@@ -502,12 +502,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         case WeededAst.Pattern.Str(lit, loc) => NamedAst.Pattern.Str(lit, loc)
         case WeededAst.Pattern.Tag(enum, tag, pat, loc) => NamedAst.Pattern.Tag(enum, tag, visit(pat), Type.freshTypeVar(), loc)
         case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
-        case WeededAst.Pattern.FSet(elms, rest, loc) => NamedAst.Pattern.FSet(elms map visit, rest map visit, Type.freshTypeVar(), loc)
-        case WeededAst.Pattern.FMap(elms, rest, loc) =>
-          val kvs = elms map {
-            case (k, v) => visit(k) -> visit(v)
-          }
-          NamedAst.Pattern.FMap(kvs, rest map visit, Type.freshTypeVar(), loc)
       }
 
       (visit(pat0), m.toMap)
@@ -538,12 +532,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         case WeededAst.Pattern.Str(lit, loc) => NamedAst.Pattern.Str(lit, loc)
         case WeededAst.Pattern.Tag(enum, tag, pat, loc) => NamedAst.Pattern.Tag(enum, tag, visit(pat), Type.freshTypeVar(), loc)
         case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
-        case WeededAst.Pattern.FSet(elms, rest, loc) => NamedAst.Pattern.FSet(elms map visit, rest map visit, Type.freshTypeVar(), loc)
-        case WeededAst.Pattern.FMap(elms, rest, loc) =>
-          val kvs = elms map {
-            case (k, v) => visit(k) -> visit(v)
-          }
-          NamedAst.Pattern.FMap(kvs, rest map visit, Type.freshTypeVar(), loc)
       }
 
       visit(pat0)
@@ -569,10 +557,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Pattern.Str(lit, loc) => Nil
       case WeededAst.Pattern.Tag(enumName, tagName, p, loc) => freeVars(p)
       case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
-      case WeededAst.Pattern.FSet(elms, rest, loc) => elms.flatMap(freeVars) ++ rest.map(freeVars).getOrElse(Nil)
-      case WeededAst.Pattern.FMap(elms, rest, loc) => (elms flatMap {
-        case (k, v) => freeVars(k) ++ freeVars(v)
-      }) ++ rest.map(freeVars).getOrElse(Nil)
     }
 
 

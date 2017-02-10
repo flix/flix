@@ -341,10 +341,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             SExp.Let(name, SExp.Index(SExp.Var(v, tpe, loc), idx, pat.tpe, loc), exp, succ.tpe, loc)
         }
 
-      case (FSet(elms, rest, tpe, loc) :: ps, v :: vs) => ???
-
-      case (FMap(elms, rest, tpe, loc) :: ps, v :: vs) => ???
-
       case p => throw InternalCompilerException(s"Unsupported pattern '$p'.")
 
     }
@@ -373,8 +369,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
         val es = elms map translate
         SimplifiedAst.Pattern.Tuple(es, tpe, loc)
-      case TypedAst.Pattern.FSet(elms, rest, tpe, loc) => ??? // TODO: Unsupported
-      case TypedAst.Pattern.FMap(elms, rest, tpe, loc) => ??? // TODO: Unsupported
     }
 
   }

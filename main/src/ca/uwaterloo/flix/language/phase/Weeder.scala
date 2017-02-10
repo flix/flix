@@ -748,23 +748,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               WeededAst.Pattern.Tag(None, tag, pat, mkSL(sp1, sp2))
           }
 
-        case ParsedAst.Pattern.FSet(sp1, elms, rest, sp2) =>
-          val elmsVal = @@(elms.map(visit))
-          val restVal = @@(rest.map(visit))
+        case ParsedAst.Pattern.FSet(sp1, elms, rest, sp2) => ??? // TODO
 
-          @@(elmsVal, restVal) map {
-            case (es, r) => WeededAst.Pattern.FSet(es, r, mkSL(sp1, sp2))
-          }
-
-        case ParsedAst.Pattern.FMap(sp1, elms, rest, sp2) =>
-          val elmsVal = @@(elms.map {
-            case (key, value) => @@(visit(key), visit(value))
-          })
-          val restVal = @@(rest.map(visit))
-
-          @@(elmsVal, restVal) map {
-            case (es, r) => WeededAst.Pattern.FMap(es, r, mkSL(sp1, sp2))
-          }
+        case ParsedAst.Pattern.FMap(sp1, elms, rest, sp2) => ??? // TODO
       }
 
       visit(pattern)
