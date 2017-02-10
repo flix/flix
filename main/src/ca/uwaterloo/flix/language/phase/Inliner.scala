@@ -16,9 +16,12 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.SimplifiedAst
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Definition.Constant
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.Root
+import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.Validation._
 
 /**
   * The inlining phase performs careful inlining of select functions based on heuristics.
@@ -28,7 +31,7 @@ import ca.uwaterloo.flix.language.ast.SimplifiedAst.Root
   * - A function of two boolean arguments is always inlined.
   * - A function with a small "heuristic score" is always inlined.
   */
-object Inliner {
+object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
   /**
     * The maximum score of a function for it to be eligible for inlining.
@@ -38,11 +41,11 @@ object Inliner {
   /**
     * Performs inlining on the given AST `root`.
     */
-  def inline(root: Root)(implicit genSyn: GenSym): Root = {
+  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
 
     // TODO: Implement.
 
-    root
+    root.toSuccess
   }
 
   /**

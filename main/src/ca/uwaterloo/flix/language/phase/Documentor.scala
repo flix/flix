@@ -19,13 +19,16 @@ package ca.uwaterloo.flix.language.phase
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
 
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Type}
-import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource, StreamOps}
+import ca.uwaterloo.flix.language.ast.{Ast, Type, TypedAst}
+import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource, StreamOps, Validation}
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
 
-object Documentor {
+object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
   /**
     * The directory where to write the generated HTML documentation (and its resources).
@@ -35,84 +38,88 @@ object Documentor {
   /**
     * Generates documentation for the given program `p`.
     */
-  def document(p: Root): Unit = {
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = {
+    // Check whether to generate documentation.
+    if (flix.options.documentor) {
+      // Collect the definitions.
+      val defnsByNS = root.definitions.filterNot {
+        case (sym, defn) => defn.ann.isLaw || defn.ann.isTest || defn.ann.isInternal
+      }.groupBy(_._1.namespace)
 
-    // Collect the definitions.
-    val defnsByNS = p.definitions.filterNot {
-      case (sym, defn) => defn.ann.isLaw || defn.ann.isTest || defn.ann.isInternal
-    }.groupBy(_._1.namespace)
+      // Collect the laws.
+      val lawsByNS = root.definitions.filter {
+        case (sym, defn) => defn.ann.isLaw
+      }.groupBy(_._1.namespace)
 
-    // Collect the laws.
-    val lawsByNS = p.definitions.filter {
-      case (sym, defn) => defn.ann.isLaw
-    }.groupBy(_._1.namespace)
+      // Collect the tests.
+      val testsByNS = root.definitions.filter {
+        case (sym, defn) => defn.ann.isTest
+      }.groupBy(_._1.namespace)
 
-    // Collect the tests.
-    val testsByNS = p.definitions.filter {
-      case (sym, defn) => defn.ann.isTest
-    }.groupBy(_._1.namespace)
+      // Collect the enums.
+      val enumsByNS = root.enums.groupBy(_._1.namespace)
 
-    // Collect the enums.
-    val enumsByNS = p.enums.groupBy(_._1.namespace)
+      // Collect the tables.
+      val tablesByNS = root.tables.groupBy(_._1.namespace)
 
-    // Collect the tables.
-    val tablesByNS = p.tables.groupBy(_._1.namespace)
+      // Collect the relations.
+      val relationsByNS = tablesByNS.map {
+        case (ns, m) => ns -> m.collect {
+          case (sym, t: Table.Relation) => t
+        }.toList
+      }
+      // Collect the lattices.
+      val latticesByNS = tablesByNS.map {
+        case (ns, m) => ns -> m.collect {
+          case (sym, t: Table.Lattice) => t
+        }.toList
+      }
 
-    // Collect the relations.
-    val relationsByNS = tablesByNS.map {
-      case (ns, m) => ns -> m.collect {
-        case (sym, t: Table.Relation) => t
-      }.toList
+      // Compute the set of all available namespaces.
+      val namespaces = defnsByNS.keySet ++ lawsByNS.keySet ++ testsByNS.keySet ++ enumsByNS.keySet ++ tablesByNS.keySet
+
+      // Process each namespace.
+      val data = namespaces map {
+        case ns =>
+          val defns = defnsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
+          val laws = lawsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
+          val tests = testsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
+          val enums = enumsByNS.getOrElse(ns, Nil).toList.map(kv => mkEnum(kv._2))
+          val relations = relationsByNS.getOrElse(ns, Nil) map mkRelation
+          val lattices = latticesByNS.getOrElse(ns, Nil) map mkLattice
+
+          ns -> JObject(
+            JField("namespace", JString(ns.mkString("."))),
+            JField("types", JArray(enums)),
+            JField("definitions", JArray(defns)),
+            JField("laws", JArray(laws)),
+            JField("tests", JArray(tests)),
+            JField("relations", JArray(relations)),
+            JField("lattices", JArray(lattices))
+          )
+      }
+
+      // Create the output directory (and its parent directories).
+      Files.createDirectories(OutputDirectory)
+
+      // Copy the JavaScript resource.
+      val javaScriptPath = OutputDirectory.resolve("__app__.js")
+      StreamOps.writeAll(LocalResource.Documentation.JavaScript, javaScriptPath)
+
+      // Copy the StyleSheet resource.
+      val styleSheetPath = OutputDirectory.resolve("__app__.css")
+      StreamOps.writeAll(LocalResource.Documentation.StyleSheet, styleSheetPath)
+
+      // Generate JSON for the menu.
+      val menu = JArray(mkMenu(namespaces.filter(_.nonEmpty)))
+
+      // Generate HTML files for each namespace.
+      for ((ns, page) <- data) {
+        writeString(mkHtmlPage(ns, menu, page), getHtmlPath(ns))
+      }
     }
-    // Collect the lattices.
-    val latticesByNS = tablesByNS.map {
-      case (ns, m) => ns -> m.collect {
-        case (sym, t: Table.Lattice) => t
-      }.toList
-    }
 
-    // Compute the set of all available namespaces.
-    val namespaces = defnsByNS.keySet ++ lawsByNS.keySet ++ testsByNS.keySet ++ enumsByNS.keySet ++ tablesByNS.keySet
-
-    // Process each namespace.
-    val data = namespaces map {
-      case ns =>
-        val defns = defnsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
-        val laws = lawsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
-        val tests = testsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
-        val enums = enumsByNS.getOrElse(ns, Nil).toList.map(kv => mkEnum(kv._2))
-        val relations = relationsByNS.getOrElse(ns, Nil) map mkRelation
-        val lattices = latticesByNS.getOrElse(ns, Nil) map mkLattice
-
-        ns -> JObject(
-          JField("namespace", JString(ns.mkString("."))),
-          JField("types", JArray(enums)),
-          JField("definitions", JArray(defns)),
-          JField("laws", JArray(laws)),
-          JField("tests", JArray(tests)),
-          JField("relations", JArray(relations)),
-          JField("lattices", JArray(lattices))
-        )
-    }
-
-    // Create the output directory (and its parent directories).
-    Files.createDirectories(OutputDirectory)
-
-    // Copy the JavaScript resource.
-    val javaScriptPath = OutputDirectory.resolve("__app__.js")
-    StreamOps.writeAll(LocalResource.Documentation.JavaScript, javaScriptPath)
-
-    // Copy the StyleSheet resource.
-    val styleSheetPath = OutputDirectory.resolve("__app__.css")
-    StreamOps.writeAll(LocalResource.Documentation.StyleSheet, styleSheetPath)
-
-    // Generate JSON for the menu.
-    val menu = JArray(mkMenu(namespaces.filter(_.nonEmpty)))
-
-    // Generate HTML files for each namespace.
-    for ((ns, page) <- data) {
-      writeString(mkHtmlPage(ns, menu, page), getHtmlPath(ns))
-    }
+    root.toSuccess
   }
 
   /**

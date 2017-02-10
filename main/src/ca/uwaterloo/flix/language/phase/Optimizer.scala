@@ -16,10 +16,12 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.Root
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.SimplifiedAst
 import ca.uwaterloo.flix.language.debug.PrettyPrinter
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.Validation._
 
 /**
   * The Optimization phase performs intra-procedural optimizations.
@@ -32,20 +34,20 @@ import ca.uwaterloo.flix.util.Options
   * - Copy propagation (e.g. let z = w; let y = z; let x = y; x -> w)
   * - Redundant branching (e.g. if(c1, if(c2, e2, e3), e3) -> if (c1 && c2, e2, e3))
   */
-object Optimizer {
+object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
   /**
     * Returns an optimized version of the given AST `root`.
     */
-  def optimize(root: Root, options: Options)(implicit genSyn: GenSym): Root = {
+  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
     // Print the ast if debugging is enabled.
-    if (options.debug) {
+    if (flix.options.debug) {
       println(PrettyPrinter.Simplified.fmtRoot(root))
     }
 
     // TODO: Implement.
 
-    root
+    root.toSuccess
   }
 
 }

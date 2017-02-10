@@ -21,7 +21,7 @@ import java.nio.file.{Files, Path, Paths}
 import ca.uwaterloo.flix.language.ast.Ast.Hook
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
-import ca.uwaterloo.flix.language.{CompilationError, Compiler, GenSym}
+import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.{DeltaSolver, Model, Solver, Value}
@@ -70,12 +70,12 @@ class Flix {
   /**
     * The current Flix options.
     */
-  private var options = Options.Default
+  var options = Options.Default
 
   /**
     * The symbol generator associated with this Flix instance.
     */
-  private val genSym = new GenSym()
+  val genSym = new GenSym()
 
   /**
     * Adds the given string `s` to the list of strings to be parsed.
@@ -225,33 +225,37 @@ class Flix {
     if (strings.isEmpty && paths.isEmpty)
       throw new IllegalStateException("No input specified. Please add at least one string or path input.")
 
-    implicit val _ = genSym
-
     // Add built-in hooks.
     addGenSymHook()
     addPrintHook()
     addPrintlnHook()
 
-    Compiler.compile(getSourceInputs, hooks.toMap).flatMap {
-      case tast =>
-        if (options.documentor) {
-          Documentor.document(tast)
-        }
-        val monomorphedAst = Monomorph.monomorph(tast)
-        val simplifiedAst = Simplifier.simplify(monomorphedAst)
-        val lambdaLiftedAst = Tailrec.tailrec(LambdaLift.lift(simplifiedAst))
-        val inlinedAst = Inliner.inline(lambdaLiftedAst)
-        val optimizedAst = Optimizer.optimize(inlinedAst, options)
-        val shakedAst = TreeShaker.shake(optimizedAst)
-        val numberedAst = VarNumbering.number(shakedAst)
-        val executableAst = CreateExecutableAst.toExecutable(numberedAst)
-        val compiledAst = LoadBytecode.load(this, executableAst, options)
-        QuickChecker.quickCheck(compiledAst, options) flatMap {
-          r =>
-            Verifier.verify(r, options) map {
-              case root => root
-            }
-        }
+    // Parse the source inputs.
+    Parser.parseAll(getSourceInputs, hooks.toMap) flatMap {
+      case parsedAst =>
+
+        // Construct the compiler pipeline.
+        val pipeline =
+          Weeder |>
+            Namer |>
+            Typer |>
+            Documentor |>
+            Stratifier |>
+            Monomorph |>
+            Simplifier |>
+            LambdaLift |>
+            Tailrec |>
+            Inliner |>
+            Optimizer |>
+            TreeShaker |>
+            VarNumbering |>
+            CreateExecutableAst |>
+            LoadBytecode |>
+            QuickChecker |>
+            Verifier
+
+        // Apply the pipeline to the parsed AST.
+        pipeline.run(parsedAst)(this)
     }
   }
 
@@ -718,7 +722,7 @@ class Flix {
   /**
     * Adds a hook for the built-in `genSym` function.
     */
-  private def addGenSymHook()(implicit genSym: GenSym): Unit = {
+  private def addGenSymHook(): Unit = {
     // Instantiate a fresh gen sym for the Flix program itself.
     val gen = new GenSym()
 
@@ -740,8 +744,9 @@ class Flix {
   /**
     * Adds a hook for the built-in `print` function.
     */
-  private def addPrintHook()(implicit genSym: GenSym): Unit = {
+  private def addPrintHook(): Unit = {
     // Symbol, type, and hook.
+    implicit val _ = genSym
     val sym = Symbol.mkDefnSym("printHook")
     val tpe = Type.mkArrow(Type.freshTypeVar(), Type.freshTypeVar())
     val inv = new InvokableUnsafe {
@@ -761,8 +766,9 @@ class Flix {
   /**
     * Adds a hook for the built-in `println` function.
     */
-  private def addPrintlnHook()(implicit genSym: GenSym): Unit = {
+  private def addPrintlnHook(): Unit = {
     // Symbol, type, and hook.
+    implicit val _ = genSym
     val sym = Symbol.mkDefnSym("printlnHook")
     val tpe = Type.mkArrow(Type.freshTypeVar(), Type.freshTypeVar())
     val inv = new InvokableUnsafe {

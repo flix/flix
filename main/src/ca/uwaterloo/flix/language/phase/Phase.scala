@@ -18,29 +18,29 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.SimplifiedAst
 import ca.uwaterloo.flix.util.Validation
-import ca.uwaterloo.flix.util.Validation._
 
 /**
-  * The Tree Shaking phase removes all unused function definitions.
+  * An interface for a compiler phase.
   *
-  * A function is considered reachable if it:
-  *
-  * (a) Appears in the global namespaces, takes zero arguments, and is not marked as synthetic.
-  * (b) Appears in a fact or a rule as a filter/transfer function.
-  * (c) Appears in a function which itself is reachable.
+  * @tparam I the input type.
+  * @tparam O the output type.
   */
-object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
+trait Phase[I, O] {
 
   /**
-    * Performs tree shaking on the given AST `root`.
+    * Runs the p
     */
-  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
+  def run(input: I)(implicit flix: Flix): Validation[O, CompilationError]
 
-    // TODO: Implement.
-
-    root.toSuccess
+  /**
+    * Returns a phase that is the result of applying `this` phase followed by `that` phase.
+    */
+  def |>[O2](that: Phase[O, O2]): Phase[I, O2] = new Phase[I, O2] {
+    def run(input: I)(implicit flix: Flix): Validation[O2, CompilationError] =
+      Phase.this.run(input) flatMap {
+        case output => that.run(output)
+      }
   }
 
 }

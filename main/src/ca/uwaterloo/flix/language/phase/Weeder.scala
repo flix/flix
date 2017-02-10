@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import java.math.BigInteger
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -30,17 +31,17 @@ import scala.collection.mutable
 /**
   * The Weeder phase performs simple syntactic checks and rewritings.
   */
-object Weeder {
+object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
   /**
     * Weeds the whole program.
     */
-  def weed(program: ParsedAst.Program, hooks: Map[Symbol.DefnSym, Ast.Hook]): Validation[WeededAst.Program, WeederError] = {
+  def run(program: ParsedAst.Program)(implicit flix: Flix): Validation[WeededAst.Program, WeederError] = {
     val b = System.nanoTime()
     @@(program.roots map weed) map {
       case roots =>
         val e = System.nanoTime() - b
-        WeededAst.Program(roots, hooks, program.time.copy(weeder = e))
+        WeededAst.Program(roots, program.hooks, program.time.copy(weeder = e))
     }
   }
 
