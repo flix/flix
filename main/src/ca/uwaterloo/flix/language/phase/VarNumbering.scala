@@ -16,9 +16,12 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.Type
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Type}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.Validation._
 
 /**
   * Assigns stack offsets to each variable symbol in the program.
@@ -28,12 +31,12 @@ import ca.uwaterloo.flix.util.InternalCompilerException
   * slot, but longs and doubles require two consecutive slots. Thus, the n-th variable may not necessarily be the
   * n-th slot. This phase computes the specific offsets used by each formal parameter and local variable.
   */
-object VarNumbering {
+object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
   /**
     * Assigns a stack offset to each variable symbol in the program.
     */
-  def number(root: Root): Root = {
+  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
     val t = System.nanoTime()
 
     // Compute stack offset for each definition.
@@ -49,7 +52,7 @@ object VarNumbering {
     }
 
     val e = System.nanoTime() - t
-    root.copy(time = root.time.copy(varNumbering = e))
+    root.copy(time = root.time.copy(varNumbering = e)).toSuccess
   }
 
   /**

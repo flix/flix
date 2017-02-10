@@ -20,10 +20,22 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.util.Validation
 
+/**
+  * An interface for a compiler phase.
+  *
+  * @tparam I the input type.
+  * @tparam O the output type.
+  */
 trait Phase[I, O] {
 
+  /**
+    * Runs the p
+    */
   def run(input: I)(implicit flix: Flix): Validation[O, CompilationError]
 
+  /**
+    * Returns a phase that is the result of applying `this` phase followed by `that` phase.
+    */
   def |>[O2](that: Phase[O, O2]): Phase[I, O2] = new Phase[I, O2] {
     def run(input: I)(implicit flix: Flix): Validation[O2, CompilationError] =
       Phase.this.run(input) flatMap {

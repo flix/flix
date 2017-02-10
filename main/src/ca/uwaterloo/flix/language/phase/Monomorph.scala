@@ -16,9 +16,12 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst.{Declaration, Expression, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 
@@ -49,7 +52,7 @@ import scala.collection.mutable
   *    c. We enqueue (or re-used) other functions referenced by the current function which require specialization.
   * 4. We reconstruct the AST from the specialized functions and remove all parametric functions.
   */
-object Monomorph {
+object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
   /**
     * A strict substitution is similar to a regular substitution except that free type variables are replaced by the
@@ -97,7 +100,8 @@ object Monomorph {
   /**
     * Performs monomorphization of the given AST `root`.
     */
-  def monomorph(root: Root)(implicit genSym: GenSym): TypedAst.Root = {
+  def run(root: Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = {
+    implicit val _ = flix.genSym
 
     /**
       * A function-local queue of pending (fresh symbol, function definition, and substitution)-triples.
@@ -411,7 +415,7 @@ object Monomorph {
       definitions = specializedDefns.toMap,
       properties = specializedProperties.toList,
       time = root.time.copy(monomorph = e)
-    )
+    ).toSuccess
   }
 
 }

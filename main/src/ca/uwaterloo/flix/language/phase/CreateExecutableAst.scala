@@ -16,10 +16,13 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.runtime.{Interpreter, Linker}
+import ca.uwaterloo.flix.runtime.Interpreter
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 
@@ -31,14 +34,16 @@ import scala.collection.mutable
   * - Certain nodes no longer exist in SimplifiedAst and thus do not exist in ExecutableAst
   */
 // TODO: Better name
-object CreateExecutableAst {
+object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root] {
 
   /**
     * Mutable map of top level definitions.
     */
   private type TopLevel = mutable.Map[Symbol.DefnSym, ExecutableAst.Definition.Constant]
 
-  def toExecutable(sast: SimplifiedAst.Root)(implicit genSym: GenSym): ExecutableAst.Root = {
+  def run(sast: SimplifiedAst.Root)(implicit flix: Flix): Validation[ExecutableAst.Root, CompilationError] = {
+    implicit val _ = flix.genSym
+
     // A mutable map to hold top-level definitions created by lifting lattice expressions.
     val m: TopLevel = mutable.Map.empty
 
@@ -88,7 +93,7 @@ object CreateExecutableAst {
       result.toMap
     }
 
-    ExecutableAst.Root(constants ++ m, enums, lattices, tables, indexes, constraints, properties, time, dependenciesOf)
+    ExecutableAst.Root(constants ++ m, enums, lattices, tables, indexes, constraints, properties, time, dependenciesOf).toSuccess
   }
 
   object Definition {

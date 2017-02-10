@@ -16,17 +16,19 @@
 
 package ca.uwaterloo.flix.runtime.verifier
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.PropertyError
+import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.runtime.evaluator.{SmtExpr, SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.Highlight.{Blue, Cyan, Red}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
 import com.microsoft.z3._
 
-object Verifier {
+object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
   /**
     * The result of a single symbolic execution.
@@ -101,11 +103,13 @@ object Verifier {
   /**
     * Attempts to verify all properties in the given AST.
     */
-  def verify(root: ExecutableAst.Root, options: Options)(implicit genSym: GenSym): Validation[ExecutableAst.Root, PropertyError] = {
+  def run(root: ExecutableAst.Root)(implicit flix: Flix): Validation[ExecutableAst.Root, PropertyError] = {
+    implicit val _ = flix.genSym
+
     /*
      * Check if verification is enabled. Otherwise return success immediately.
      */
-    if (!options.verifier) {
+    if (!flix.options.verifier) {
       return root.toSuccess
     }
 
@@ -117,7 +121,7 @@ object Verifier {
     /*
      * Print verbose information (if enabled).
      */
-    if (options.verbosity == Verbosity.Verbose) {
+    if (flix.options.verbosity == Verbosity.Verbose) {
       printVerbose(results)
     }
 

@@ -18,10 +18,12 @@ package ca.uwaterloo.flix.runtime.quickchecker
 
 import java.math.BigInteger
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.PropertyError
+import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.runtime.evaluator.SymVal.{Char, Unit}
 import ca.uwaterloo.flix.runtime.evaluator.{SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.Highlight.{Blue, Cyan, Red}
@@ -32,7 +34,7 @@ import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.util.Random
 
-object QuickChecker {
+object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
   /**
     * The result of a single symbolic execution.
@@ -121,7 +123,9 @@ object QuickChecker {
   /**
     * Attempts to quick check all properties in the given AST.
     */
-  def quickCheck(root: Root, options: Options)(implicit genSym: GenSym): Validation[Root, PropertyError] = {
+  def run(root: ExecutableAst.Root)(implicit flix: Flix): Validation[ExecutableAst.Root, PropertyError] = {
+    implicit val _ = flix.genSym
+
     /*
      * Number of times to instantiate a quantified variable.
      */
@@ -130,7 +134,7 @@ object QuickChecker {
     /*
      * Check if the quick checker is enabled. Otherwise return success immediately.
      */
-    if (!options.quickchecker) {
+    if (!flix.options.quickchecker) {
       return root.toSuccess
     }
 
@@ -147,7 +151,7 @@ object QuickChecker {
     /*
      * Print verbose information (if enabled).
      */
-    if (options.verbosity == Verbosity.Verbose) {
+    if (flix.options.verbosity == Verbosity.Verbose) {
       printVerbose(results)
     }
 

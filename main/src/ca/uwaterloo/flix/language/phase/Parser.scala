@@ -49,10 +49,10 @@ object Parser {
   /**
     * Returns the parsed AST of the given source inputs `sources`.
     */
-  def parseAll(sources: List[SourceInput]): Validation[ParsedAst.Program, CompilationError] = {
+  def parseAll(sources: List[SourceInput], hooks: Map[Symbol.DefnSym, Ast.Hook]): Validation[ParsedAst.Program, CompilationError] = {
     val timer = new Timer({
       @@(sources.map(parse)) map {
-        case asts => ParsedAst.Program(asts, Time.Default)
+        case asts => ParsedAst.Program(asts, hooks, Time.Default)
       }
     })
 

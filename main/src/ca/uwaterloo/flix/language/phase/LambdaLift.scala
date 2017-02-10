@@ -16,14 +16,17 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.{Ast, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 
-object LambdaLift {
+object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
   /**
     * Mutable map of top level definitions.
@@ -33,7 +36,9 @@ object LambdaLift {
   /**
     * Performs lambda lifting on all definitions in the AST.
     */
-  def lift(root: SimplifiedAst.Root)(implicit genSym: GenSym): SimplifiedAst.Root = {
+  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
+    implicit val _ = flix.genSym
+
     val t = System.nanoTime()
 
     // A mutable map to hold lambdas that are lifted to the top level.
@@ -46,7 +51,7 @@ object LambdaLift {
 
     // Return the updated AST root.
     val e = System.nanoTime() - t
-    root.copy(definitions = definitions ++ m, properties = properties, time = root.time.copy(lambdaLift = e))
+    root.copy(definitions = definitions ++ m, properties = properties, time = root.time.copy(lambdaLift = e)).toSuccess
   }
 
   /**

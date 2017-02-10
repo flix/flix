@@ -16,9 +16,9 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
-import ca.uwaterloo.flix.language.ast.WeededAst.Pattern
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
 import ca.uwaterloo.flix.language.phase.Disambiguation.RefTarget
@@ -27,12 +27,14 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
-object Typer {
+object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
 
   /**
     * Type checks the given program.
     */
-  def typer(program: NamedAst.Program)(implicit genSym: GenSym): Validation[TypedAst.Root, TypeError] = {
+  def run(program: NamedAst.Program)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = {
+    implicit val _ = flix.genSym
+
     val startTime = System.nanoTime()
 
     val result = for {

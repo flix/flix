@@ -16,10 +16,13 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.language.ast.BinaryOperator.Equal
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 
@@ -30,32 +33,34 @@ import scala.collection.mutable
   * - Eliminates match expressions.
   * - Numbers every variable.
   */
-object Simplifier {
+object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
   type TopLevel = mutable.Map[Symbol.DefnSym, SimplifiedAst.Definition.Constant]
 
-  def simplify(tast: TypedAst.Root)(implicit genSym: GenSym): SimplifiedAst.Root = {
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
+    implicit val _ = flix.genSym
+
     val t = System.nanoTime()
 
     val toplevel: TopLevel = mutable.Map.empty
 
-    val defns = tast.definitions.map { case (k, v) => k -> Definition.simplify(v) }
-    val enums = tast.enums.map {
+    val defns = root.definitions.map { case (k, v) => k -> Definition.simplify(v) }
+    val enums = root.enums.map {
       case (k, TypedAst.Declaration.Enum(doc, sym, cases0, sc, loc)) =>
         val cases = cases0 map {
           case (tag, TypedAst.Case(enum, tagName, tpe)) => tag -> SimplifiedAst.Case(enum, tagName, tpe)
         }
         k -> SimplifiedAst.Definition.Enum(sym, cases, loc)
     }
-    val lattices = tast.lattices.map { case (k, v) => k -> Definition.simplify(v) }
-    val collections = tast.tables.map { case (k, v) => k -> Table.simplify(v) }
-    val indexes = tast.indexes.map { case (k, v) => k -> Definition.simplify(v) }
-    val strata = tast.strata.map(s => simplify(s, toplevel))
-    val properties = tast.properties.map { p => simplify(p) }
-    val time = tast.time
+    val lattices = root.lattices.map { case (k, v) => k -> Definition.simplify(v) }
+    val collections = root.tables.map { case (k, v) => k -> Table.simplify(v) }
+    val indexes = root.indexes.map { case (k, v) => k -> Definition.simplify(v) }
+    val strata = root.strata.map(s => simplify(s, toplevel))
+    val properties = root.properties.map { p => simplify(p) }
+    val time = root.time
 
     val e = System.nanoTime() - t
-    SimplifiedAst.Root(defns ++ toplevel, enums, lattices, collections, indexes, strata, properties, time.copy(simplifier = e))
+    SimplifiedAst.Root(defns ++ toplevel, enums, lattices, collections, indexes, strata, properties, time.copy(simplifier = e)).toSuccess
   }
 
   object Table {

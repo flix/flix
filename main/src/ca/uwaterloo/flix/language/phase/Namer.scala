@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
@@ -27,14 +28,16 @@ import scala.collection.mutable
 /**
   * The Namer phase introduces unique symbols for each syntactic entity in the program.
   */
-object Namer {
+object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
 
   import NameError._
 
   /**
     * Introduces unique names for each syntactic entity in the given `program`.
     **/
-  def namer(program: WeededAst.Program)(implicit genSym: GenSym): Validation[NamedAst.Program, NameError] = {
+  def run(program: WeededAst.Program)(implicit flix: Flix): Validation[NamedAst.Program, NameError] = {
+    implicit val _ = flix.genSym
+
     // make an empty program to fold over.
     val prog0 = NamedAst.Program(
       enums = Map.empty,
