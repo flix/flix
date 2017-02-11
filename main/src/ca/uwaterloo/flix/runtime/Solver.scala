@@ -40,6 +40,16 @@ import scala.concurrent.duration.{Duration, _}
   */
 class Solver(val root: ExecutableAst.Root, options: Options) {
 
+  /**
+    * Controls the number of batches per thread. A value of one means one batch per thread.
+    *
+    * If there is one batch per thread that means when one thread is finished it will have nothing else to do.
+    *
+    * A low number means lower overhead in terms of futures created, but possible more wasted time.
+    * A higher number means less time wasted, but larger overhead in the number of futures created.
+    */
+  val BatchesPerThread: Int = 8
+
   //
   // Types of the solver:
   //
@@ -638,8 +648,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     val readerTasks = new java.util.ArrayList[Batch]()
 
     val worklistAsArray = worklist.toArray
-    val chunkSize = (worklist.length / options.threads) + 1
-
+    val chunkSize = (worklist.length / (BatchesPerThread * options.threads)) + 1
     var b = 0
     while (b < worklistAsArray.length) {
       val e = Math.min(b + chunkSize, worklistAsArray.length)
