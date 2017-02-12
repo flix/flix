@@ -189,40 +189,6 @@ trait IValue {
   def getScalaEither: Either[IValue, IValue]
 
   /////////////////////////////////////////////////////////////////////////////
-  // Sets                                                                    //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * Returns the set represented by `this` value.
-    *
-    * @throws UnsupportedOperationException if `this` value is not of set type.
-    */
-  def getJavaSet: java.util.Set[IValue]
-
-  /**
-    * Returns the set represented by `this` value.
-    *
-    * @throws UnsupportedOperationException if `this` value is not of set type.
-    */
-  def getScalaSet: immutable.Set[IValue]
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Maps                                                                    //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * Returns the set represented by `this` value.
-    *
-    * @throws UnsupportedOperationException if `this` value is not of map type.
-    */
-  def getJavaMap: java.util.Map[IValue, IValue]
-
-  /**
-    * Returns the set represented by `this` value.
-    *
-    * @throws UnsupportedOperationException if `this` value is not of map type.
-    */
-  def getScalaMap: immutable.Map[IValue, IValue]
-
-  /////////////////////////////////////////////////////////////////////////////
   // Unsafe                                                                  //
   /////////////////////////////////////////////////////////////////////////////
   /**

@@ -443,8 +443,8 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   private def evalLoop(rule: Constraint, ps: List[Predicate.Body.Loop], env: Env, interp: Interpretation): Unit = ps match {
     case Nil => evalFilter(rule, env, interp)
     case Predicate.Body.Loop(sym, term, _, _) :: rest =>
-      val value = Value.cast2set(evalHeadTerm(term, root, env))
-      for (x <- value) {
+      val value = evalHeadTerm(term, root, env)
+      for (x <- Value.iteratorOf(value)) {
         val newRow = copy(env)
         newRow(sym.getStackOffset) = x
         evalLoop(rule, rest, newRow, interp)
