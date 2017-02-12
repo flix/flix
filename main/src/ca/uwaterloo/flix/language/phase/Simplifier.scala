@@ -405,7 +405,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           SimplifiedAst.Predicate.Body.Filter(sym, terms map Term.Body.simplify, loc)
 
         case TypedAst.Predicate.Body.Loop(sym, term, loc) =>
-          SimplifiedAst.Predicate.Body.Loop(sym, Term.Head.simplify(term, cparams, toplevel), loc)
+          // TODO: We should allow all constraint params here except sym.
+          val cps = cparams.filter {
+            case TypedAst.ConstraintParam.HeadParam(sym2, _, _) => sym != sym2
+            case TypedAst.ConstraintParam.RuleParam(sym2, _, _) => sym != sym2
+          }
+          SimplifiedAst.Predicate.Body.Loop(sym, Term.Head.simplify(term, Nil, toplevel), loc)
       }
     }
 

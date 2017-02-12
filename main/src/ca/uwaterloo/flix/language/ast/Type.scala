@@ -269,6 +269,11 @@ object Type {
   def mkFTuple(ts: List[Type]): Type = Apply(FTuple(ts.length), ts)
 
   /**
+    * Constructs the set type of A.
+    */
+  def mkFSet(a: Type): Type = Type.Apply(Type.Enum(Symbol.mkEnumSym("Set"), Kind.Arrow(List(Kind.Star), Kind.Star)), List(a))
+
+  /**
     * Replaces every free occurrence of a type variable in `typeVars`
     * with a fresh type variable in the given type `tpe`.
     */

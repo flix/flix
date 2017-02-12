@@ -1083,7 +1083,13 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
             ) yield unifiedTypes
           case Err(e) => failM(e)
         }
-      case NamedAst.Predicate.Body.Loop(sym, term, loc) => Unification.liftM(Nil) // TODO
+      case NamedAst.Predicate.Body.Loop(pat, term, loc) =>
+        // TODO: Assumes that pat is a variable symbol.
+        val sym = pat.asInstanceOf[NamedAst.Pattern.Var].sym
+        for {
+          tpe <- Expressions.infer(term, ns0, program)
+          ___ <- unifyM(Type.mkFSet(sym.tvar), tpe, loc)
+        } yield List(tpe)
     }
 
     /**

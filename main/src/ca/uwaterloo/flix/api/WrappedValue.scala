@@ -20,8 +20,6 @@ import java.util
 
 import ca.uwaterloo.flix.runtime.Value
 
-import scala.collection.immutable
-
 final class WrappedValue(val ref: AnyRef) extends IValue {
 
   def isUnit: Boolean = ref match {
@@ -86,30 +84,6 @@ final class WrappedValue(val ref: AnyRef) extends IValue {
       case tag => throw new RuntimeException(s"Unexpected non-result tag: '$tag'.")
     }
     case _ => throw new RuntimeException(s"Unexpected non-result value: '$ref'.")
-  }
-
-  def getJavaSet: java.util.Set[IValue] = {
-    val xs = Value.cast2set(ref)
-    val r = new util.HashSet[IValue]()
-    for (x <- xs) {
-      r.add(new WrappedValue(x))
-    }
-    r
-  }
-
-  def getScalaSet: immutable.Set[IValue] = Value.cast2set(ref).map(e => new WrappedValue(e)).toSet
-
-  def getJavaMap: java.util.Map[IValue, IValue] = {
-    val xs = Value.cast2map(ref)
-    val r = new java.util.HashMap[IValue, IValue]
-    for ((k, v) <- xs) {
-      r.put(new WrappedValue(k), new WrappedValue(v))
-    }
-    r
-  }
-
-  def getScalaMap: immutable.Map[IValue, IValue] = Value.cast2map(ref).foldLeft(Map.empty[IValue, IValue]) {
-    case (macc, (k, v)) => macc + (new WrappedValue(k) -> new WrappedValue(v))
   }
 
   def getUnsafeRef: AnyRef = ref

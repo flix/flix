@@ -376,24 +376,6 @@ object Value {
     case _ => throw new InternalRuntimeException(s"Unexpected non-map value: '$ref'.")
   }
 
-  /**
-    * Casts the given `ref` to a Flix set value.
-    */
-  @inline
-  def cast2set(ref: AnyRef): immutable.Set[AnyRef] = ref match {
-    case o: immutable.Set[AnyRef]@unchecked => o
-    case _ => throw new InternalRuntimeException(s"Unexpected non-set value: '$ref'.")
-  }
-
-  /**
-    * Casts the given `ref` to a Flix map value.
-    */
-  @inline
-  def cast2map(ref: AnyRef): immutable.Map[AnyRef, AnyRef] = ref match {
-    case o: immutable.Map[AnyRef, AnyRef]@unchecked => o
-    case _ => throw new InternalRuntimeException(s"Unexpected non-map value: '$ref'.")
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // Equality                                                                //
   /////////////////////////////////////////////////////////////////////////////
@@ -435,6 +417,28 @@ object Value {
       val tpe1 = ref1.getClass.getCanonicalName
       val tpe2 = ref2.getClass.getCanonicalName
       throw InternalRuntimeException(s"Unable to compare '$tpe1' and '$tpe2'.")
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Iterators                                                               //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Return an iterator over the given Set.
+    */
+  def iteratorOf(value: AnyRef): Iterator[AnyRef] = {
+    def visit(o: AnyRef): List[AnyRef] = {
+      val taggedValue = o.asInstanceOf[Value.Tag]
+      if (taggedValue.tag == "Nil") {
+        Nil
+      } else {
+        val hd = taggedValue.value.asInstanceOf[Array[AnyRef]](0)
+        val tl = taggedValue.value.asInstanceOf[Array[AnyRef]](1)
+        hd :: visit(tl)
+      }
+    }
+
+    val list = value.asInstanceOf[Value.Tag].value
+    visit(list).iterator
   }
 
   /////////////////////////////////////////////////////////////////////////////

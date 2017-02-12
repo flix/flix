@@ -591,7 +591,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
           case ts => NamedAst.Predicate.Body.Filter(qname, ts, loc)
         }
       case WeededAst.Predicate.Body.Loop(pat, term, loc) =>
-        val (p, env) = Patterns.namer(pat)
+        val p = Patterns.namer(pat, headEnv0)
         Expressions.namer(term, ruleEnv0, tenv0) map {
           case t => NamedAst.Predicate.Body.Loop(p, t, loc)
         }
