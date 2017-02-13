@@ -448,7 +448,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Unfolds the given loop predicates `ps` over the initial `env`.
     */
   private def evalLoop(rule: Constraint, ps: List[Predicate.Body.Loop], env: Env, interp: Interpretation): Unit = ps match {
-    case Nil => evalFilter(rule, env, interp)
+    case Nil => evalAllFilters(rule, env, interp)
     case Predicate.Body.Loop(sym, term, _, _) :: rest =>
       val value = evalHeadTerm(term, root, env)
       for (x <- Value.iteratorOf(value)) {
@@ -459,18 +459,36 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   }
 
   /**
-    * Filters the given `env` through all filter functions in the body of the given `rule`.
+    * Evaluates all filters in the given `rule`.
     */
-  private def evalFilter(rule: Constraint, env: Env, interp: Interpretation): Unit = {
+  private def evalAllFilters(rule: Constraint, env: Env, interp: Interpretation): Unit = {
     // Extract the filters function predicates from the rule.
     val filters = rule.filters
 
     // Evaluate each filter function predicate one-by-one.
     var i = 0
     while (i < filters.length) {
-      // Unpack the current predicate.
-      val pred@Predicate.Body.Filter(sym, terms, _, _) = filters(i)
+      // Evaluate the current filter.
+      val result = evalFilter(filters(i), env)
 
+      // Return immediately if the filter function returned false.
+      if (!result)
+        return
+
+      // Otherwise evaluate the next filter function.
+      i = i + 1
+    }
+
+    // All filter functions returned `true`.
+    // Continue evaluation of the head of the rule.
+    evalHead(rule.head, env, interp)
+  }
+
+  /**
+    * Evaluates the given `filter` and returns its result.
+    */
+  private def evalFilter(filter: Predicate.Body.Filter, env: Env): Boolean = filter match {
+    case Predicate.Body.Filter(sym, terms, _, _) =>
       // Evaluate the arguments of the filter function predicate.
       val args = new Array[AnyRef](terms.length)
       var j = 0
@@ -498,24 +516,15 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       }
 
       // Link the filter function invocation target (if not already done).
-      if (pred.target == null) {
-        pred.target = Linker.link(sym, root)
+      if (filter.target == null) {
+        filter.target = Linker.link(sym, root)
       }
 
       // Evaluate the filter function passing the arguments.
-      val result = pred.target.invoke(args)
+      val result = filter.target.invoke(args)
 
-      // Return immediately if the function returned false.
-      if (!Value.cast2bool(result))
-        return
-
-      // Otherwise evaluate the next filter function predicate.
-      i = i + 1
-    }
-
-    // All filter functions returned `true`.
-    // Continue evaluation of the head of the rule.
-    evalHead(rule.head, env, interp)
+      // Return the result.
+      return Value.cast2bool(result)
   }
 
   /**
