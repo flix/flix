@@ -20,11 +20,11 @@ import ca.uwaterloo.flix.util.FlixTest
 import org.scalatest.{ParallelTestExecution, Suites}
 
 class LibrarySuite extends Suites(
-  new TestBigInt,
-  new TestFloat32,
-  new TestFloat64,
-  new TestInt8,
-  new TestInt16,
+  //new TestBigInt, // TODO: Disabled pending flix test
+  //new TestFloat32,  // TODO: Disabled pending flix test
+  //new TestFloat64,  // TODO: Disabled pending flix test
+  //new TestInt8, // TODO: Disabled pending flix test
+  //new TestInt16,  // TODO: Disabled pending flix test
   new FlixTest("TestPrelude", "main/test/ca/uwaterloo/flix/library/TestPrelude.flix"),
   new FlixTest("TestMap", "main/test/ca/uwaterloo/flix/library/TestMap.flix"),
   new FlixTest("TestSet", "main/test/ca/uwaterloo/flix/library/TestSet.flix")
