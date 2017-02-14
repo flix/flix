@@ -966,7 +966,7 @@ object Codegen {
           val clazz = Constants.bigIntegerClass
           val method = clazz.getMethod(bigIntOp, clazz)
           visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), bigIntOp, asm.Type.getMethodDescriptor(method), false);
-        case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
+        case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe} near ${e1.loc.format}")
       }
     }
   }
@@ -1072,7 +1072,7 @@ object Codegen {
             visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
             visitor.visitInsn(ICONST_0)
             visitor.visitJumpInsn(intOp, condElse)
-          case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
+          case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe} near ${e1.loc.format}")
         }
         visitor.visitInsn(ICONST_1)
         visitor.visitJumpInsn(GOTO, condEnd)

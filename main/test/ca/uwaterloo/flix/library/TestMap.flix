@@ -760,7 +760,7 @@ def union16: Bool = assert!(Map.eq(Map.union(@{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 2
 // unionWith                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def unionWith01: Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, @{}, @{}), @{}))
+def unionWith01: Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, @{}, @{}), @{}: Map[Int, Int]))
 
 @test
 def unionWith02: Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, @{1 -> 2}, @{}), @{1 -> 2}))
@@ -812,7 +812,7 @@ def unionWith16: Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, @{2 ->
 // unionWithKey                                                            //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def unionWithKey01: Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, @{}, @{}), @{}))
+def unionWithKey01: Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, @{}, @{}), @{}: Map[Int, Int]))
 
 @test
 def unionWithKey02: Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, @{1 -> 2}, @{}), @{1 -> 2}))
@@ -916,7 +916,7 @@ def intersection16: Bool = assert!(Map.eq(Map.intersection(@{2 -> 7, 11 -> 14, 9
 // intersectionWith                                                        //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def intersectionWith01: Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, @{}, @{}), @{}))
+def intersectionWith01: Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, @{}, @{}), @{}: Map[Int, Int]))
 
 @test
 def intersectionWith02: Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, @{1 -> 2}, @{}), @{}))
@@ -968,7 +968,7 @@ def intersectionWith16: Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v
 // intersectionWithKey                                                     //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def intersectionWithKey01: Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, @{}, @{}), @{}))
+def intersectionWithKey01: Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, @{}, @{}), @{}: Map[Int, Int]))
 
 @test
 def intersectionWithKey02: Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, @{1 -> 2}, @{}), @{}))
@@ -1072,7 +1072,7 @@ def difference16: Bool = assert!(Map.eq(Map.difference(@{2 -> 7, 11 -> 14, 9 -> 
 // differenceWith                                                          //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def differenceWith01: Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, @{}, @{}), @{}))
+def differenceWith01: Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, @{}, @{}), @{}: Map[Int, Int]))
 
 @test
 def differenceWith02: Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, @{1 -> 2}, @{}), @{1 -> 2}))
@@ -1139,7 +1139,7 @@ def differenceWith21: Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v
 // differenceWithKey                                                       //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def differenceWithKey01: Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, @{}, @{}), @{}))
+def differenceWithKey01: Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, @{}, @{}), @{}: Map[Int, Int]))
 
 @test
 def differenceWithKey02: Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, @{1 -> 2}, @{}), @{1 -> 2}))
