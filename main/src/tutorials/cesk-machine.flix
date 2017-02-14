@@ -46,12 +46,12 @@ def nonValue(e0: Expression): Bool = !isValue(e0)
 ///
 /// An environment is a map from variables to addresses.
 ///
-type Environment = Environment(Map2[Variable, Address])
+type Environment = Environment(Map[Variable, Address])
 
 ///
 /// A store is a map from addresses to (value, environment)-pairs.
 ///
-type Store = Store(Map2[Address, (Expression, Environment)])
+type Store = Store(Map[Address, (Expression, Environment)])
 
 ///
 /// The CEK-machine operates based on continuations derived
@@ -81,7 +81,7 @@ type State = State(Expression, Environment, Store, Kontinuation)
 /// Returns the initial state of the CEK-machine for the given expression `e0`.
 ///
 def inject(e0: Expression): State =
-    State(e0, Environment(Map2.empty()), Store(Map2.empty()), Kontinuation.KEmpty)
+    State(e0, Environment(Map.empty()), Store(Map.empty()), Kontinuation.KEmpty)
 
 ///
 /// Represents the outcome of a single reduction step.
@@ -109,9 +109,9 @@ def step(m0: State): Outcome = match m0 with {
     //
     case State(Var(x), Environment(env0), Store(sto0), kont) =>
         // The expression is a variable. Look it up in the environment.
-         match Map2.lookup(x, env0) with {
+         match Map.get(x, env0) with {
             case None => Abort("Unbound variable.")
-            case Some(ptr) => match Map2.lookup(ptr, sto0) with {
+            case Some(ptr) => match Map.get(ptr, sto0) with {
                 case None => Abort("Unbound address.")
                 case Some((v, env1)) => Next(State(v, env1, Store(sto0), kont))
             }
@@ -140,8 +140,8 @@ def step(m0: State): Outcome = match m0 with {
         // Evaluate the body of the lambda `v1` with argument `v2`.
         let Abs(x, body) = v1;
         let a = freshAddr();
-        let env2 = Map2.insert(x, a, env1);
-        let sto1 = Map2.insert(a, (v2, Environment(env0)), sto0);
+        let env2 = Map.insert(x, a, env1);
+        let sto1 = Map.insert(a, (v2, Environment(env0)), sto0);
             Next(State(body, Environment(env2), Store(sto1), kont))
 
     //
@@ -173,16 +173,16 @@ def run(e0: Expression): Result[Expression, Str] =
 /// Substitutes every free variable in the given expression `e0` for the value in the given environment `env0`.
 ///
 def substitute(e0: Expression, env0: Environment, sto0: Store): Expression = match (e0, env0, sto0) with {
-    case (Var(x), Environment(env), Store(sto)) => match Map2.lookup(x, env) with {
+    case (Var(x), Environment(env), Store(sto)) => match Map.get(x, env) with {
         case None               => Var(x)
-        case Some(a)            => match Map2.lookup(a, sto) with {
+        case Some(a)            => match Map.get(a, sto) with {
             case None => Var(x)
             case Some((e, env1)) => substitute(e, env1, sto0)
         }
     }
 
     case (Abs(x, e), Environment(env), Store(sto)) =>
-        Abs(x, substitute(e, Environment(Map2.remove(x, env)), sto0))
+        Abs(x, substitute(e, Environment(Map.delete(x, env)), sto0))
 
     case (App(e1, e2), _, _) =>
         App(substitute(e1, env0, sto0), substitute(e2, env0, sto0))
@@ -206,48 +206,7 @@ def testOmega: Result[Expression, Str] = run(
         Abs(V(0), App(Var(V(0)), Var(V(0))))))
 
 
-
-
 ///
 /// Returns a fresh address.
 ///
-def freshAddr: Address = A(genSym!())
-
-
-//
-// ----------------------------------------------------------------------------
-// TODO: Replace by functions from the standard library.
-// ----------------------------------------------------------------------------
-//
-
-enum Map2[k, v] {
-    case Map2(List[(k, v)])
-}
-
-namespace Map2 {
-
-    def empty[k, v]: Map2[k, v] = Map2(Nil)
-
-    def insert[k, v](k: k, v: v, m: Map2[k, v]): Map2[k, v] =
-        let Map2(xs) = m;
-            Map2((k, v) :: xs)
-
-    def lookup[k, v](k: k, m: Map2[k, v]): Option[v] =
-        let Map2(xs) = m;
-            getHelper(k, xs)
-
-    def getHelper[k, v](k: k, xs: List[(k, v)]): Option[v] = match xs with {
-        case Nil => None
-        case (y, v) :: ys => if (k == y) Some(v) else getHelper(k, ys)
-    }
-
-    def remove[k, v](k: k, m: Map2[k, v]): Map2[k, v] =
-        let Map2(xs) = m;
-            Map2(removeHelper(k, xs))
-
-    def removeHelper[k, v](k: k, xs: List[(k, v)]): List[(k, v)] = match xs with {
-        case Nil => Nil
-        case (y, v) :: ys => if (k == y) removeHelper(k,  ys) else (y, v) :: removeHelper(k, ys)
-    }
-
-}
+def freshAddr: Address = A(1000 + genSym!())

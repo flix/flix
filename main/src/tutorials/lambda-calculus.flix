@@ -97,7 +97,7 @@ def step(e0: Expression): Expression =
     match rdx with {
         case App(Abs(x, e1), e2) =>
             // Perform beta-reduction: Use alpha-renaming to avoid capture.
-            recompose(substitute(e1, x, alpha(e2, Map2.empty())), ec)
+            recompose(substitute(e1, x, alpha(e2, Map.empty())), ec)
          case _ => recompose(rdx, ec)
 
     }
@@ -114,17 +114,17 @@ def substitute(e0: Expression, x: Int, r0: Expression): Expression = match e0 wi
 ///
 /// Performs alpha conversion by introducing fresh variables for all variables in the given expression `e0`.
 ///
-def alpha(e0: Expression, m: Map2[Int, Int]): Expression = match e0 with {
+def alpha(e0: Expression, m: Map[Int, Int]): Expression = match e0 with {
     case Var(x) =>
         // Check if we need to rename the variable.
-        match Map2.get(x, m) with {
+        match Map.get(x, m) with {
             case None    => Var(x)
             case Some(y) => Var(y)
         }
     case Abs(x, e) =>
         // Generate a fresh variable name for `x`.
         let y = freshVar();
-        Abs(y, alpha(e, Map2.insert(x, y, m)))
+        Abs(y, alpha(e, Map.insert(x, y, m)))
 
     case App(e1, e2) =>
         // Recursively perform alpha conversion on each expression.
@@ -162,33 +162,4 @@ def testOmega: Expression = eval(
 /// Returns a fresh variable name.
 /// (Relies on an unsafe and impure built-in Flix function!).
 ///
-def freshVar: Int = genSym!()
-
-
-
-
-
-
-// ----------------------------------------------------------------------------
-// TODO: Replace by functions from the standard library.
-// ----------------------------------------------------------------------------
-enum Map2[k, v] {
-    case Map2(List[(k, v)])
-}
-namespace Map2 {
-    def empty: Map2[Int, Int] = Map2(Nil)
-
-    def insert(k: Int, v: Int, m: Map2[Int, Int]): Map2[Int, Int] =
-        let Map2(xs) = m;
-            Map2((k, v) :: xs)
-
-    def get[k, v](k: k, m: Map2[k, v]): Option[v] =
-        let Map2(xs) = m;
-            getHelper(k, xs)
-
-    def getHelper[k, v](k: k, xs: List[(k, v)]): Option[v] = match xs with {
-        case Nil => None
-        case (y, v) :: ys => if (k == y) Some(v) else getHelper(k, ys)
-    }
-
-}
+def freshVar: Int = 1000 + genSym!()
