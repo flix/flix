@@ -50,16 +50,25 @@ class Flix {
     * A sequence of internal inputs to be parsed into Flix ASTs.
     */
   private val internals = List(
-    "Prelude.flix" -> StreamOps.readAll(LocalResource.Library.Prelude),
-    "Option.flix" -> StreamOps.readAll(LocalResource.Library.Option),
-    "Result.flix" -> StreamOps.readAll(LocalResource.Library.Result),
-    "List.flix" -> StreamOps.readAll(LocalResource.Library.List),
-    "Bounded.flix" -> StreamOps.readAll(LocalResource.Library.Bounded),
-    "PartialOrder.flix" -> StreamOps.readAll(LocalResource.Library.PartialOrder),
-    "JoinLattice.flix" -> StreamOps.readAll(LocalResource.Library.JoinLattice),
-    "MeetLattice.flix" -> StreamOps.readAll(LocalResource.Library.MeetLattice),
-    "Set.flix" -> StreamOps.readAll(LocalResource.Library.Set),
-    "Map.flix" -> StreamOps.readAll(LocalResource.Library.Map)
+    "BigInt.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/BigInt.flix")),
+    "Bounded.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Bounded.flix")),
+    "Char.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Char.flix")),
+    "Float32.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Float32.flix")),
+    "Float64.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Float64.flix")),
+    "Int8.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Int8.flix")),
+    "Int16.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Int16.flix")),
+    "Int32.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Int32.flix")),
+    "Int64.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Int64.flix")),
+    "JoinLattice.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/JoinLattice.flix")),
+    "List.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/List.flix")),
+    "Map.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Map.flix")),
+    "MeetLattice.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/MeetLattice.flix")),
+    "Option.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Option.flix")),
+    "PartialOrder.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/PartialOrder.flix")),
+    "Prelude.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Prelude.flix")),
+    "Result.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Result.flix")),
+    "Set.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Set.flix")),
+    "TotalOrder.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/TotalOrder.flix"))
   )
 
   /**

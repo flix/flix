@@ -31,32 +31,6 @@ object LocalResource {
 
   }
 
-  object Library {
-
-    def Prelude: InputStream = getInputStream("/library/Prelude.flix")
-
-    def BigInt: InputStream = getInputStream("/library/BigInt.flix")
-
-    def Option: InputStream = getInputStream("/library/Option.flix")
-
-    def Result: InputStream = getInputStream("/library/Result.flix")
-
-    def List: InputStream = getInputStream("/library/List.flix")
-
-    def Bounded: InputStream = getInputStream("/library/Bounded.flix")
-
-    def PartialOrder: InputStream = getInputStream("/library/PartialOrder.flix")
-
-    def JoinLattice: InputStream = getInputStream("/library/JoinLattice.flix")
-
-    def MeetLattice: InputStream = getInputStream("/library/MeetLattice.flix")
-
-    def Set: InputStream = getInputStream("/library/Set.flix")
-
-    def Map: InputStream = getInputStream("/library/Map.flix")
-
-  }
-
   object Tutorials {
 
     def DeltaDebugging: InputStream = getInputStream("/tutorials/delta-debugging.flix")
@@ -72,7 +46,7 @@ object LocalResource {
   /**
     * Returns the an input stream for the given relative path.
     */
-  private def getInputStream(relativePath: String): InputStream = {
+  def getInputStream(relativePath: String): InputStream = {
     val path = Paths.get(RootPath + relativePath)
 
     val inputStream = if (Files.exists(path))
