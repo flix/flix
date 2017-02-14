@@ -19,9 +19,13 @@ package ca.uwaterloo.flix.util
 import java.io.InputStream
 import java.nio.file.{Files, Paths}
 
+import scala.collection.mutable
+
 object LocalResource {
 
   val RootPath = "main/src"
+
+  private val cache = mutable.Map.empty[String, String]
 
   object Documentation {
 
@@ -42,6 +46,16 @@ object LocalResource {
     // TODO: Add lambda calculus.
 
   }
+
+  /**
+    * Returns the given relative path as a string.
+    */
+  def get(relativePath: String): String = cache.getOrElseUpdate(relativePath, {
+    val inputStream = getInputStream(relativePath)
+    val result = StreamOps.readAll(inputStream)
+    inputStream.close()
+    result
+  })
 
   /**
     * Returns the an input stream for the given relative path.

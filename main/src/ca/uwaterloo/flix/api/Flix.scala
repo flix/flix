@@ -49,26 +49,26 @@ class Flix {
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
     */
-  private val internals = List(
-    "BigInt.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/BigInt.flix")),
-    "Bounded.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Bounded.flix")),
-    "Char.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Char.flix")),
-    "Float32.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Float32.flix")),
-    "Float64.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Float64.flix")),
-    "Int8.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Int8.flix")),
-    "Int16.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Int16.flix")),
-    "Int32.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Int32.flix")),
-    "Int64.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Int64.flix")),
-    "JoinLattice.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/JoinLattice.flix")),
-    "List.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/List.flix")),
-    "Map.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Map.flix")),
-    "MeetLattice.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/MeetLattice.flix")),
-    "Option.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Option.flix")),
-    "PartialOrder.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/PartialOrder.flix")),
-    "Prelude.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Prelude.flix")),
-    "Result.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Result.flix")),
-    "Set.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/Set.flix")),
-    "TotalOrder.flix" -> StreamOps.readAll(LocalResource.getInputStream("/library/TotalOrder.flix"))
+  private val library = List(
+    "BigInt.flix" -> LocalResource.get("/library/BigInt.flix"),
+    "Bounded.flix" -> LocalResource.get("/library/Bounded.flix"),
+    "Char.flix" -> LocalResource.get("/library/Char.flix"),
+    "Float32.flix" -> LocalResource.get("/library/Float32.flix"),
+    "Float64.flix" -> LocalResource.get("/library/Float64.flix"),
+    "Int8.flix" -> LocalResource.get("/library/Int8.flix"),
+    "Int16.flix" -> LocalResource.get("/library/Int16.flix"),
+    "Int32.flix" -> LocalResource.get("/library/Int32.flix"),
+    "Int64.flix" -> LocalResource.get("/library/Int64.flix"),
+    "JoinLattice.flix" -> LocalResource.get("/library/JoinLattice.flix"),
+    "List.flix" -> LocalResource.get("/library/List.flix"),
+    "Map.flix" -> LocalResource.get("/library/Map.flix"),
+    "MeetLattice.flix" -> LocalResource.get("/library/MeetLattice.flix"),
+    "Option.flix" -> LocalResource.get("/library/Option.flix"),
+    "PartialOrder.flix" -> LocalResource.get("/library/PartialOrder.flix"),
+    "Prelude.flix" -> LocalResource.get("/library/Prelude.flix"),
+    "Result.flix" -> LocalResource.get("/library/Result.flix"),
+    "Set.flix" -> LocalResource.get("/library/Set.flix"),
+    "TotalOrder.flix" -> LocalResource.get("/library/TotalOrder.flix")
   )
 
   /**
@@ -322,7 +322,7 @@ class Flix {
   /**
     * Returns the source inputs for the standard library.
     */
-  private def getStandardLibraryInputs: List[SourceInput] = internals.foldLeft(List.empty[SourceInput]) {
+  private def getStandardLibraryInputs: List[SourceInput] = library.foldLeft(List.empty[SourceInput]) {
     case (xs, (name, text)) => SourceInput.Internal(name, text) :: xs
   }
 
