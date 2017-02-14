@@ -1,5 +1,9 @@
 // TODO: Add to unit test (along with other machines).
 
+// TODO: Use Set/Map empty.
+// TODO: Use map.GetWithDefault
+
+
 // TODO: Ondrej: Do we want a closure expression or not?
 
 //
@@ -94,7 +98,7 @@ def nonValue(e0: Expression): Bool = !isValue(e0)
 ///
 /// An environment is a map from variables to addresses.
 ///
-type Environment = Environment(Map2[Variable, Address])
+type Environment = Environment(Map[Variable, Address])
 
 ///
 /// The type of storable values.
@@ -110,7 +114,7 @@ enum Storable {
 ///
 /// A store is a map from addresses to a set of storables.
 ///
-type Store = Store(Map2[Address, Set2[Storable]])
+type Store = Store(Map[Address, Set[Storable]])
 
 ///
 /// The CEK-machine operates based on continuations derived from the evaluation contexts of the language.
@@ -165,22 +169,22 @@ enum Kontinuation {
 ///
 /// The promise state maps addresses to a set of promise values.
 ///
-type PromiseState = PromiseState(Map2[Address, Set2[PromiseValue]])
+type PromiseState = PromiseState(Map[Address, Set[PromiseValue]])
 
 ///
 /// The fulfill reactions map addresses to a set of (Lambda, Environment, Address)-triples where the address points-to the child promise.
 ///
-type FulfillReactions = FulfillReactions(Map2[Address, Set2[(Expression, Environment, Address)]])
+type FulfillReactions = FulfillReactions(Map[Address, Set[(Expression, Environment, Address)]])
 
 ///
 /// The reject reactions map addresses to a set of (Lambda, Environment, Address)-triples where the address points-to the child promise.
 ///
-type RejectReactions = RejectReactions(Map2[Address, Set2[(Expression, Address)]])
+type RejectReactions = RejectReactions(Map[Address, Set[(Expression, Address)]])
 
 ///
 /// The reaction queue is a set of (PromiseValue, Lambda, Environment, Address)-tuples where the address points to the child promise.
 ///
-type Queue = Queue(Set2[(PromiseValue, Expression, Environment, Address)])
+type Queue = Queue(Set[(PromiseValue, Expression, Environment, Address)])
 
 ///
 /// A promise is in one of three states: Pending, fulfilled (with a value), or rejected (with a value).
@@ -237,14 +241,14 @@ def inject(e0: Expression): State =
     // Save the empty continuation into the store.
     let kont = Kontinuation.KEmpty;
     let kptr = A(0);
-    let env0 = Map2.empty();
-    let sto0 = Map2.insert(kptr, Set2.singleton(StoredKont(kont)), Map2.empty());
-    let s0 = Map2.empty();
-    let f0 = Map2.empty();
-    let r0 = Map2.empty();
-    let l0 = Map2.empty();
-    let w0 = Set2.empty();
-    let q0 = Set2.empty();
+    let env0 = Map.empty();
+    let sto0 = Map.insert(kptr, Set.singleton(StoredKont(kont)), Map.empty());
+    let s0 = Map.empty();
+    let f0 = Map.empty();
+    let r0 = Map.empty();
+    let l0 = Map.empty();
+    let w0 = Set.empty();
+    let q0 = Set.empty();
     let time = Time(1);
         State(e0, Environment(env0), Store(sto0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), Queue(q0), kptr, time)
 
@@ -279,22 +283,22 @@ enum Outcome {
 ///
 /// Returns all possible transitions (outcomes) from the given state `m0` and continuation `k0`.
 ///
-def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
+def step(m0: State, k0: Kontinuation): Set[Outcome] = match (m0, k0) with {
 
     //
     // Variable Expression.
     //
     case (State(Var(x, loc), Environment(env0), sto0, s0, f0, r0, q0, kptr, time), _) =>
         // The expression is a variable. Look it up in the environment.
-         match Map2.lookup(x, env0) with {
-            case None => Set2(Abort("Unbound variable.") :: Nil)
+         match Map.get(x, env0) with {
+            case None => Set(Abort("Unbound variable.") :: Nil)
             case Some(a) =>
                 let values = Store.lookup(a, sto0);
                 let f = storable -> match storable with {
                     case StoredKont(_) => Abort("Non-value storable.")
                     case StoredValue(v, env1) => Next(State(v, env1, sto0, s0, f0, r0, q0, kptr, tick(m0, k0)))
                 };
-                Set2.map(f, values)
+                Set.map(f, values)
          }
 
     //
@@ -305,7 +309,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let kontAddr = alloc(m0, k0);
         let nextKont = StoredKont(KApp1(e2, env0, kptr));
         let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
-            Set2.singleton(Next(State(e1, env0, sto1, s0, f0, r0, q0, kontAddr, tick(m0, k0))))
+            Set.singleton(Next(State(e1, env0, sto1, s0, f0, r0, q0, kontAddr, tick(m0, k0))))
 
     //
     // Application1 Kontinuation.
@@ -316,7 +320,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let kontAddr = alloc(m0, k0);
         let nextKont = StoredKont(KApp2(v1, env0, kont));
         let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
-            Set2.singleton(Next(State(e2, env0, sto1, s0, f0, r0, q0, kontAddr, tick(m0, k0))))
+            Set.singleton(Next(State(e2, env0, sto1, s0, f0, r0, q0, kontAddr, tick(m0, k0))))
 
     //
     // Application2 Kontinuation.
@@ -327,9 +331,9 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let Abs(x, body, loc) = v1;
         let argValue = StoredValue(v2, Environment(env2));
         let argEnvAddr = alloc(m0, k0);
-        let bodyEnv = Map2.insert(x, argEnvAddr, env1);
+        let bodyEnv = Map.insert(x, argEnvAddr, env1);
         let sto1 = Store.weakUpdate(argEnvAddr, argValue, sto0);
-            Set2.singleton(Next(State(body, Environment(bodyEnv), sto1, s0, f0, r0, q0, kont, tick(m0, k0))))
+            Set.singleton(Next(State(body, Environment(bodyEnv), sto1, s0, f0, r0, q0, kont, tick(m0, k0))))
 
     //
     // Reference Expression.
@@ -339,7 +343,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let kontAddr = alloc(m0, k0);
         let nextKont = StoredKont(KRef(kptr));
         let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
-            Set2.singleton(Next(State(e, env0, sto1, s0, f0, r0, q0, kontAddr, tick(m0, k0))))
+            Set.singleton(Next(State(e, env0, sto1, s0, f0, r0, q0, kontAddr, tick(m0, k0))))
 
     //
     // Reference Kontinuation.
@@ -349,7 +353,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let freshAddr = alloc(m0, k0);
         let value = StoredValue(e, env0);
         let sto1 = Store.weakUpdate(freshAddr, value, sto0);
-            Set2.singleton(Next(State(Ptr(freshAddr), Environment.empty(), sto1, s0, f0, r0, q0, kont, tick(m0, k0))))
+            Set.singleton(Next(State(Ptr(freshAddr), Environment.empty(), sto1, s0, f0, r0, q0, kont, tick(m0, k0))))
 
     //
     // Dereference Expression.
@@ -359,7 +363,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let kontAddr = alloc(m0, k0);
         let nextKont = StoredKont(KDeref(kptr));
         let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
-            Set2.singleton(Next(State(e, env0, sto1, s0, f0, r0, q0, kontAddr, tick(m0, k0))))
+            Set.singleton(Next(State(e, env0, sto1, s0, f0, r0, q0, kontAddr, tick(m0, k0))))
 
     //
     // Dereference Kontinuation.
@@ -371,7 +375,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
             case StoredKont(k)          => Abort("Non-value storable.")
             case StoredValue(e, env1)   => Next(State(e, env1, sto0, s0, f0, r0, q0, a, tick(m0, k0)))
         };
-        Set2.map(f, storables)
+        Set.map(f, storables)
 
     //
     // Sequence Expression.
@@ -381,14 +385,14 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let kontAddr = alloc(m0, k0);
         let nextKont = StoredKont(KSeq(e2, env0, kptr));
         let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
-            Set2.singleton(Next(State(e1, env0, sto1, s0, f0, r0, q0, kontAddr, tick(m0, k0))))
+            Set.singleton(Next(State(e1, env0, sto1, s0, f0, r0, q0, kontAddr, tick(m0, k0))))
 
     //
     // Sequence Kontinuation.
     //
     case (State(e1, env0, sto0, s0, f0, r0, q0, kptr, time), KSeq(e2, env2, kont)) if isValue(e1) =>
         // Discard the value `e1`.
-        Set2.singleton(Next(State(e2, env2, sto0, s0, f0, r0, q0, kont, tick(m0, k0))))
+        Set.singleton(Next(State(e2, env2, sto0, s0, f0, r0, q0, kont, tick(m0, k0))))
 
     //
     // Promisify Expression.
@@ -398,7 +402,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let kontAddr = alloc(m0, k0);
         let nextKont = StoredKont(KPromisify(kptr));
         let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
-            Set2.singleton(Next(State(e, env0, sto1, s0, f0, r0, q0, kontAddr, tick(m0, k0))))
+            Set.singleton(Next(State(e, env0, sto1, s0, f0, r0, q0, kontAddr, tick(m0, k0))))
 
     //
     // Promisify Continuation.
@@ -406,7 +410,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     case (State(Ptr(a), env0, sto0, s0, f0, r0, q0, _, time), KPromisify(kont)) =>
         // Weakly update the state of the promise `a` to pending.
         let s1 = PromiseState.weakUpdate(a, Pending, s0);
-            Set2.singleton(Next(State(Cst("Undef", L("-")), env0, sto0, s1, f0, r0, q0, kont, tick(m0, k0))))
+            Set.singleton(Next(State(Cst("Undef", L("-")), env0, sto0, s1, f0, r0, q0, kont, tick(m0, k0))))
 
     //
     // Resolve Expression.
@@ -416,7 +420,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let kontAddr = alloc(m0, k0);
         let nextKont = StoredKont(KResolve1(e2, env0, kptr));
         let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
-            Set2.singleton(Next(State(e1, env0, sto1, s0, f0, r0, q0, kontAddr, tick(m0, k0))))
+            Set.singleton(Next(State(e1, env0, sto1, s0, f0, r0, q0, kontAddr, tick(m0, k0))))
 
     //
     //  Resolve1 Kontinuation.
@@ -426,13 +430,13 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let kontAddr = alloc(m0, k0);
         let nextKont = StoredKont(KResolve2(a, kont));
         let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
-            Set2.singleton(Next(State(e2, env2, sto1, s0, f0, r0, q0, a, tick(m0, k0))))
+            Set.singleton(Next(State(e2, env2, sto1, s0, f0, r0, q0, a, tick(m0, k0))))
 
     //
     //  Resolve2 Kontinuation.
     //
     case (State(e2, env2, sto0, s0, f0, r0, q0, _, time), KResolve2(a, kont)) if isValue(e2) =>
-        let f: PromiseValue -> Set2[Outcome] = pv -> match pv with {
+        let f: PromiseValue -> Set[Outcome] = pv -> match pv with {
             case Pending =>
                 // The new promise value.
                 let pv = Fulfilled(e2);
@@ -451,20 +455,20 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
 
                // Retrieve the fulfill reactions and append them to the reaction queue.
                let fr = FulfillReactions.lookup(a, f0);
-               let q1 = Queue.weakUpdate(Set2.map(match (lam, env, addr) -> (pv, lam, env, addr), fr), q0);
+               let q1 = Queue.weakUpdate(Set.map(match (lam, env, addr) -> (pv, lam, env, addr), fr), q0);
 
-               Set2.singleton(Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s1, f0, r0, q1, kont, tick(m0, k0))))
+               Set.singleton(Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s1, f0, r0, q1, kont, tick(m0, k0))))
 
             case Fulfilled(v) =>
                 // The promise has already been resolved with the value `v`. The resolve has no effect.
-                Set2.singleton(Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s0, f0, r0, q0, a, tick(m0, k0))))
+                Set.singleton(Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s0, f0, r0, q0, a, tick(m0, k0))))
 
             case Rejected(v) =>
                 // The promise has already been rejected with the value `v`. The resolve has no effect.
-                Set2.singleton(Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s0, f0, r0, q0, a, tick(m0, k0))))
+                Set.singleton(Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s0, f0, r0, q0, a, tick(m0, k0))))
 
         };
-        Set2.flatMap(f, PromiseState.lookup(a, s0))
+        Set.flatMap(f, PromiseState.lookup(a, s0))
 
 
     //
@@ -475,7 +479,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let kontAddr = alloc(m0, k0);
         let nextKont = StoredKont(KOnResolve1(e2, env0, kptr));
         let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
-            Set2.singleton(Next(State(e1, env0, sto1, s0, f0, r0, q0, kontAddr, tick(m0, k0))))
+            Set.singleton(Next(State(e1, env0, sto1, s0, f0, r0, q0, kontAddr, tick(m0, k0))))
 
     //
     //  OnResolve1 Kontinuation.
@@ -485,13 +489,13 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let kontAddr = alloc(m0, k0);
         let nextKont = StoredKont(KOnResolve2(a, kont));
         let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
-            Set2.singleton(Next(State(e2, env2, sto1, s0, f0, r0, q0, a, tick(m0, k0))))
+            Set.singleton(Next(State(e2, env2, sto1, s0, f0, r0, q0, a, tick(m0, k0))))
 
     //
     //  OnResolve2 Kontinuation.
     //
     case (State(e2, env2, sto0, s0, f0, r0, q0, _, time), KOnResolve2(a, kont)) if isValue(e2) =>
-        let f: PromiseValue -> Set2[Outcome] = pv -> match pv with {
+        let f: PromiseValue -> Set[Outcome] = pv -> match pv with {
             case Pending =>
                 // Allocate a child promise.
                 let childAddr = alloc(m0, k0);
@@ -506,19 +510,19 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
                 // Update the fulfill reactions.
                 let f1 = FulfillReactions.weakUpdate(a, e2, env2, childAddr, f0);
 
-                Set2.singleton(Next(State(Ptr(childAddr), Environment.empty(), sto0, s1, f1, r0, q0, kont, tick(m0, k0))))
+                Set.singleton(Next(State(Ptr(childAddr), Environment.empty(), sto0, s1, f1, r0, q0, kont, tick(m0, k0))))
 
             case Fulfilled(v) =>
                 // Allocate a child promise and enqueue the promise reaction `lam` with the resolved value `v`.
                 let childAddr = alloc(m0, k0);
-                let job = Set2.singleton((Fulfilled(v), e2, env2, childAddr));
+                let job = Set.singleton((Fulfilled(v), e2, env2, childAddr));
                 let q1 = Queue.weakUpdate(job, q0);
-                    Set2.singleton(Next(State(Ptr(childAddr), Environment.empty(), sto0, s0, f0, r0, q1, kont, tick(m0, k0))))
+                    Set.singleton(Next(State(Ptr(childAddr), Environment.empty(), sto0, s0, f0, r0, q1, kont, tick(m0, k0))))
             case Rejected(v) =>
                 // NB: Conceptually similar to fulfilled.
                 ???
         };
-        Set2.flatMap(f, PromiseState.lookup(a, s0))
+        Set.flatMap(f, PromiseState.lookup(a, s0))
 
     //
     //  Link Expression.
@@ -528,7 +532,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let kontAddr = alloc(m0, k0);
         let nextKont = StoredKont(KLink1(e2, env0, kptr));
         let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
-            Set2.singleton(Next(State(e1, env0, sto1, s0, f0, r0, q0, kontAddr, tick(m0, k0))))
+            Set.singleton(Next(State(e1, env0, sto1, s0, f0, r0, q0, kontAddr, tick(m0, k0))))
 
     //
     //  Link1 Kontinuation.
@@ -538,7 +542,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let kontAddr = alloc(m0, k0);
         let nextKont = StoredKont(KLink2(a, kont));
         let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
-            Set2.singleton(Next(State(e2, env2, sto1, s0, f0, r0, q0, a, tick(m0, k0))))
+            Set.singleton(Next(State(e2, env2, sto1, s0, f0, r0, q0, a, tick(m0, k0))))
 
     //
     //  Link2 Kontinuation.
@@ -548,7 +552,7 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let lam = Abs(V(0), Var(V(0), L("id")), L("id"));
         let env = Environment.empty();
         let f1 = FulfillReactions.weakUpdate(a1, lam, env, a2, f0);
-            Set2.singleton(Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s0, f1, r0, q0, kont, tick(m0, k0))))
+            Set.singleton(Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s0, f1, r0, q0, kont, tick(m0, k0))))
 
     //
     // Loop
@@ -573,40 +577,40 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
     //
     // Stuck.
     //
-    case _ => let foo = println!(k0); Set2.singleton(Done(m0))
+    case _ => let foo = println!(k0); Set.singleton(Done(m0))
 }
 
 ///
 /// Returns all possible transitions from the given state `m0`.
 ///
-def stepAll(m0: State): Set2[Outcome] = match m0 with {
+def stepAll(m0: State): Set[Outcome] = match m0 with {
     case State(exp0, env0, Store(sto0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), Queue(q0), kptr, time) =>
-        let values = Option.getWithDefault(Map2.lookup(kptr, sto0), Set2.empty());
+        let values = Option.getWithDefault(Map.get(kptr, sto0), Set.empty());
         let f = value -> match value with {
             case StoredKont(k) => step(m0, k)
-            case _             => Set2.empty()
+            case _             => Set.empty()
         };
-        Set2.flatMap(f, values)
+        Set.flatMap(f, values)
 }
 
 ///
 /// Computes the fixed-point of the transition relation defined by `stepAll`
 /// starting from the given machine configuration `m0`.
 ///
-def eval(m0: State): Set2[Outcome] =
+def eval(m0: State): Set[Outcome] =
     let outcomes = println!(stepAll(m0));
     let f = outcome -> match outcome with {
         case Next(m)        => eval(m)
-        case Done(m)        => Set2.singleton(Done(m))
-        case Abort(e)       => Set2.singleton(Abort(e))
+        case Done(m)        => Set.singleton(Done(m))
+        case Abort(e)       => Set.singleton(Abort(e))
     };
-    Set2.union(outcomes, Set2.flatMap(f, outcomes))
+    Set.union(outcomes, Set.flatMap(f, outcomes))
 
 ///
 /// Evaluates the given expression to a value by injecting it into the initial state of the CEK machine
 /// and repeatedly performing a transition until the machine halts with a value (or aborts).
 ///
-def run(e0: Expression): Set2[Outcome] = eval(inject(e0))
+def run(e0: Expression): Set[Outcome] = eval(inject(e0))
 
 
 namespace State {
@@ -634,7 +638,7 @@ namespace Environment {
     ///
     /// Returns the empty environment.
     ///
-    def empty: Environment = Environment(Map2.empty())
+    def empty: Environment = Environment(Map.empty())
 
     ///
     /// Returns `true` if the two given environments `env1` and `env2` are equal.
@@ -653,9 +657,10 @@ namespace Store {
     ///
     /// Returns the set of storable values pointed-to by the (abstract) address `a`.
     ///
-    def lookup(a: Address, sto: Store): Set2[Storable] =
+    // TODO: Naming of this function
+    def lookup(a: Address, sto: Store): Set[Storable] =
         let Store(m) = sto;
-            Option.getWithDefault(Map2.lookup(a, m), Set2.empty())
+            Option.getWithDefault(Map.get(a, m), Set.empty())
 
     ///
     /// Weakly updates the store `sto` with the storable value `v` associated with the (abstract) address `a`.
@@ -663,9 +668,9 @@ namespace Store {
     def weakUpdate(a: Address, v: Storable, sto: Store): Store =
         let Store(sto0) = sto;
         let newValue = v;
-        let oldValue = Option.getWithDefault(Map2.lookup(a, sto0), Set2.empty());
-        let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
-            Store(Map2.insert(a, lubValue, sto0))
+        let oldValue = Option.getWithDefault(Map.get(a, sto0), Set.empty());
+        let lubValue = Set.union(Set.singleton(newValue), oldValue);
+            Store(Map.insert(a, lubValue, sto0))
 
 }
 
@@ -680,9 +685,9 @@ namespace PromiseState {
     ///
     /// Returns the set of promise values for the given (abstract) address `a`.
     ///
-    def lookup(a: Address, s: PromiseState): Set2[PromiseValue] =
+    def lookup(a: Address, s: PromiseState): Set[PromiseValue] =
         let PromiseState(m) = s;
-            Option.getWithDefault(Map2.lookup(a, m), Set2.empty())
+            Option.getWithDefault(Map.get(a, m), Set.empty())
 
     ///
     /// Weakly updates the promise states `s` with the promise value `v` for the (abstract) address `a`.
@@ -690,9 +695,9 @@ namespace PromiseState {
     def weakUpdate(a: Address, v: PromiseValue, s: PromiseState): PromiseState =
         let PromiseState(m) = s;
         let newValue = v;
-        let oldValue = Option.getWithDefault(Map2.lookup(a, m), Set2.empty());
-        let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
-            PromiseState(Map2.insert(a, lubValue, m))
+        let oldValue = Option.getWithDefault(Map.get(a, m), Set.empty());
+        let lubValue = Set.union(Set.singleton(newValue), oldValue);
+            PromiseState(Map.insert(a, lubValue, m))
 
 }
 
@@ -706,9 +711,9 @@ namespace FulfillReactions {
     ///
     /// Returns the (lambda, environment, childAddr)-triples associated with the given (abstract) address `a`.
     ///
-    def lookup(a: Address, f: FulfillReactions): Set2[(Expression, Environment, Address)] =
+    def lookup(a: Address, f: FulfillReactions): Set[(Expression, Environment, Address)] =
         let FulfillReactions(m) = f;
-            Option.getWithDefault(Map2.lookup(a, m), Set2.empty())
+            Option.getWithDefault(Map.get(a, m), Set.empty())
 
     ///
     /// Weaky updates the fulfillreactions `r` with the (lambda, environment, childAddr)-triple for the given (abstract) address `a`.
@@ -716,9 +721,9 @@ namespace FulfillReactions {
     def weakUpdate(a: Address, lam: Expression, env: Environment, childAddr: Address, r: FulfillReactions): FulfillReactions =
         let FulfillReactions(m) = r;
         let newValue = (lam, env, childAddr);
-        let oldValue = Option.getWithDefault(Map2.lookup(a, m), Set2.empty());
-        let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
-            FulfillReactions(Map2.insert(a, lubValue, m))
+        let oldValue = Option.getWithDefault(Map.get(a, m), Set.empty());
+        let lubValue = Set.union(Set.singleton(newValue), oldValue);
+            FulfillReactions(Map.insert(a, lubValue, m))
 
 }
 
@@ -732,21 +737,21 @@ namespace Queue {
     ///
     /// Applies the given function `f` to the set (PromiseValue, Lambda, Environment, childAddress)-tuples in the reaction queue `q`.
     ///
-    def map(f: ((PromiseValue, Expression, Environment, Address)) -> Outcome, q: Queue): Set2[Outcome] =
+    def map(f: ((PromiseValue, Expression, Environment, Address)) -> Outcome, q: Queue): Set[Outcome] =
         let Queue(xs) = q;
-            Set2.map(f, xs)
+            Set.map(f, xs)
 
     ///
     /// Weakly updates the reaction queue `q` with the given (PromiseValue, Lambda, Environment, childAddress)-tuple.
     ///
-    def weakUpdate(rs: Set2[(PromiseValue, Expression, Environment, Address)], q: Queue): Queue =
+    def weakUpdate(rs: Set[(PromiseValue, Expression, Environment, Address)], q: Queue): Queue =
         let Queue(xs) = q;
-            Queue(Set2.union(rs, xs))
+            Queue(Set.union(rs, xs))
 
     // TODO: Unsound, remove.
     def strongDelete(pv: PromiseValue, e: Expression, env: Environment, a: Address, q: Queue): Queue =
-        let Queue(Set2(xs)) = q;
-            Queue(Set2(List.remove((pv, e, env, a), xs)))
+        let Queue(Set(xs)) = q;
+            Queue(Set(List.remove((pv, e, env, a), xs)))
 
 }
 
@@ -759,7 +764,7 @@ namespace Queue {
 // x.onResolve(y => Ref(y))
 // x.resolve("hello")
 //
-def testEval1: Set2[Outcome] = eval(inject(
+def testEval1: Set[Outcome] = eval(inject(
     App(Abs(V(0),
         Seq(Promisify(Var(V(0), L("l2")), L("l2")),
             Seq(OnResolve(Var(V(0), L("l3")), Abs(V(42), Ref(Var(V(42), L("l3")), L("l3")), L("l3")), L("l3")),
@@ -781,7 +786,7 @@ def testEval1: Set2[Outcome] = eval(inject(
 // y.onResolve(z => Ref(z))
 // x.resolve("hello")
 //
-def testEval2: Set2[Outcome] = eval(inject(
+def testEval2: Set[Outcome] = eval(inject(
     App(App(Abs(V(0), Abs(V(1),
         Seq(Promisify(Var(V(0), L("l2")), L("l2")),
             Seq(Promisify(Var(V(1), L("l3")), L("l3")),
@@ -793,89 +798,3 @@ def testEval2: Set2[Outcome] = eval(inject(
             , L("l9"))
         , L("l10")), L("l10")), L("l10")),
         Ref(Cst("Promise1", L("l11")), L("l11")), L("l11")), Ref(Cst("Promise2", L("l11")), L("l11")), L("l11"))))
-
-
-
-
-
-
-
-//
-// ----------------------------------------------------------------------------
-// TODO: Replace by functions from the standard library.
-// ----------------------------------------------------------------------------
-//
-
-enum Set2[a] {
-    case Set2(List[a])
-}
-
-namespace Set2 {
-
-    def empty[a]: Set2[a] = Set2(Nil)
-
-    def singleton[a](a: a): Set2[a] = Set2(a :: Nil)
-
-     def eq[a](xs: Set2[a], ys: Set2[a]): Bool = ???
-
-    ///
-     /// Adds `x` to `xs`.
-     ///
-     def insert[a](x: a, xs: Set2[a]): Set2[a] =
-         let Set2(s) = xs;
-             if (List.memberOf(x, s)) xs else Set2(x :: s)
-
-    def union[a](xs: Set2[a], ys: Set2[a]): Set2[a] =
-         let Set2(s) = xs;
-             List.foldRight(insert, ys, s)
-
-    ///
-     /// Returns the result of applying `f` to every element in `xs`.
-     /// Note: The returned set may be smaller than `xs`.
-     ///
-     def map[a, b](f: a -> b, xs: Set2[a]): Set2[b] = match xs with {
-         case Set2(Nil) => Set2(Nil)
-         case Set2(x :: rs) => insert(f(x), map(f, Set2(rs)))
-     }
-
-    ///
-    /// Returns the result of applying `f` to every element in `xs` and taking the union.
-    ///
-    def flatMap[a,b](f: a -> Set2[b], xs: Set2[a]): Set2[b] = match xs with {
-        case Set2(Nil) => Set2(Nil)
-        case Set2(x :: rs) => union(f(x), flatMap(f, Set2(rs)))
-    }
-
-}
-
-enum Map2[k, v] {
-    case Map2(List[(k, v)])
-}
-
-namespace Map2 {
-
-    def empty[k, v]: Map2[k, v] = Map2(Nil)
-
-    def insert[k, v](k: k, v: v, m: Map2[k, v]): Map2[k, v] =
-        let Map2(xs) = m;
-            Map2((k, v) :: xs)
-
-    def lookup[k, v](k: k, m: Map2[k, v]): Option[v] =
-        let Map2(xs) = m;
-            getHelper(k, xs)
-
-    def getHelper[k, v](k: k, xs: List[(k, v)]): Option[v] = match xs with {
-        case Nil => None
-        case (y, v) :: ys => if (k == y) Some(v) else getHelper(k, ys)
-    }
-
-    def remove[k, v](k: k, m: Map2[k, v]): Map2[k, v] =
-        let Map2(xs) = m;
-            Map2(removeHelper(k, xs))
-
-    def removeHelper[k, v](k: k, xs: List[(k, v)]): List[(k, v)] = match xs with {
-        case Nil => Nil
-        case (y, v) :: ys => if (k == y) removeHelper(k,  ys) else (y, v) :: removeHelper(k, ys)
-    }
-
-}
