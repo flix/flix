@@ -133,28 +133,28 @@ enum EvaluationContext {
 /// The store maps addresses to values.
 ///
 enum Heap {
-    case Heap(Map2[Address, Expression])
+    case Heap(Map[Address, Expression])
 }
 
 ///
 /// The promise state maps addresses to promise values.
 ///
 enum PromiseState {
-    case PromiseState(Map2[Address, PromiseValue])
+    case PromiseState(Map[Address, PromiseValue])
 }
 
 ///
 /// The fulfill reactions map addresses to a list of (Lam, Address)-pairs where the address points-to the dependent promise.
 ///
 enum FulfillReactions {
-    case FulfillReactions(Map2[Address, List[(Expression, Address)]])
+    case FulfillReactions(Map[Address, List[(Expression, Address)]])
 }
 
 ///
 /// The reject reactions map addresses to a list of (Lam, Address)-pairs where the address points-to the dependent promise.
 ///
 enum RejectReactions {
-    case RejectReactions(Map2[Address, List[(Expression, Address)]])
+    case RejectReactions(Map[Address, List[(Expression, Address)]])
 }
 
 ///
@@ -392,7 +392,7 @@ def step(e0: Expression, m0: State): Outcome =
         //
         case (App(Abs(x, e1), e2), State(h0, s0, f0, r0, q0)) =>
             // Apply beta-reduction: Use alpha-renaming to avoid capture.
-            let e = substitute(e1, x, alpha(e2, Map2.empty()));
+            let e = substitute(e1, x, alpha(e2, Map.empty()));
                 Next(recompose(e, ec), State(h0, s0, f0, r0, q0))
 
         //
@@ -408,7 +408,7 @@ def step(e0: Expression, m0: State): Outcome =
         case (Ref(v), State(Heap(h0), s0, f0, r0, q0)) =>
             // Allocate a fresh address in the heap and store the value at that address.
             let a = freshAddr();
-            let h1 = Map2.insert(a, v, h0);
+            let h1 = Map.insert(a, v, h0);
             let e1 = Ptr(a);
                 Next(recompose(e1, ec), State(Heap(h1), s0, f0, r0, q0))
 
@@ -417,7 +417,7 @@ def step(e0: Expression, m0: State): Outcome =
         //
         case (Deref(Ptr(a)), State(Heap(h0), s0, f0, r0, q0)) =>
             // Dereference the address and return its value.
-            match Map2.lookup(a, h0) with {
+            match Map.get(a, h0) with {
                 case None => Abort("Unable to dereference unallocated address!")
                 case Some(v) => Next(recompose(v, ec), State(Heap(h0), s0, f0, r0, q0))
             }
@@ -427,10 +427,10 @@ def step(e0: Expression, m0: State): Outcome =
         //
         case (Promisify(Ptr(a)), State(h0, PromiseState(s0), f0, r0, q0)) =>
             // Sets the state of an uninitialized promise to pending.
-            match Map2.lookup(a, s0) with {
+            match Map.get(a, s0) with {
                 case None =>
                     // Case 1: The address has not yet been promisified. Set the promise state to pending.
-                    let s1 = Map2.insert(a, Pending, s0);
+                    let s1 = Map.insert(a, Pending, s0);
                         Next(recompose(Cst("Undef"), ec), State(h0, PromiseState(s1), f0, r0, q0))
                 case Some(_) =>
                     // Case 2: The address has *already* been promisified. Simply return undef.
@@ -442,7 +442,7 @@ def step(e0: Expression, m0: State): Outcome =
         //
         case (Resolve(Ptr(a), v), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), Queue(q0))) =>
             // Lookup the state of the promise.
-            match Map2.lookup(a, s0) with {
+            match Map.get(a, s0) with {
                 case None =>
                     // Case 1: The address is not a promise. The evaluation is stuck.
                     Abort("Unable to resolve non-promise address!")
@@ -450,16 +450,16 @@ def step(e0: Expression, m0: State): Outcome =
                     // Case 2: The promise is pending.
 
                     // Set the promise state to fulfilled.
-                    let s1 = Map2.insert(a, Fulfilled(v), s0);
+                    let s1 = Map.insert(a, Fulfilled(v), s0);
 
                     // Clear out the fulfill reactions.
-                    let f1 = Map2.remove(a, f0);
+                    let f1 = Map.delete(a, f0);
 
                     // Clear out the rejected reactions.
-                    let r1 = Map2.remove(a, r0);
+                    let r1 = Map.delete(a, r0);
 
                     // Retrieve the fulfill reactions and append them to the reaction queue.
-                    let rs = Map2.getWithDefault(a, Nil, f0);
+                    let rs = Map.getWithDefault(a, Nil, f0);
                     let q1 = q0 ::: List.map(match (lam, addr) -> (Fulfilled(v), lam, addr), rs);
                         Next(recompose(Cst("Undef"), ec), State(Heap(h0), PromiseState(s1), FulfillReactions(f1), RejectReactions(r1), Queue(q1)))
                 case Some(Fulfilled(v)) =>
@@ -481,7 +481,7 @@ def step(e0: Expression, m0: State): Outcome =
         //
         case (OnResolve(Ptr(a), lam), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), Queue(q0))) =>
             // Lookup the state of the promise.
-            match Map2.lookup(a, s0) with {
+            match Map.get(a, s0) with {
                 case None =>
                     // Case 1: The address is not a promise. The evaluation is stuck.
                     Abort("Unable to register reaction on non-promise address!")
@@ -492,14 +492,14 @@ def step(e0: Expression, m0: State): Outcome =
                     let childAddr = freshAddr();
 
                     // Allocate a fresh "object" in the heap. We use a string instead.
-                    let h1 = Map2.insert(childAddr, Cst("child"), h0);
+                    let h1 = Map.insert(childAddr, Cst("child"), h0);
 
                     // Set the child promise state to pending.
-                    let s1 = Map2.insert(childAddr, Pending, s0);
+                    let s1 = Map.insert(childAddr, Pending, s0);
 
                     // Update the fulfill reactions.
-                    let fs = Map2.getWithDefault(a, Nil, f0);
-                    let f1 = Map2.insert(a, fs ::: (lam, childAddr) :: Nil, f0);
+                    let fs = Map.getWithDefault(a, Nil, f0);
+                    let f1 = Map.insert(a, fs ::: (lam, childAddr) :: Nil, f0);
                         Next(recompose(Ptr(childAddr), ec), State(Heap(h1), PromiseState(s1), FulfillReactions(f1), RejectReactions(r0), Queue(q0)))
                 case Some(Fulfilled(v)) =>
                     // Case 3: The promise has been fulfilled.
@@ -524,10 +524,10 @@ def step(e0: Expression, m0: State): Outcome =
         case (Link(Ptr(a1), Ptr(a2)), State(Heap(h0), PromiseState(s0), FulfillReactions(f0), RejectReactions(r0), Queue(q0))) =>
             // Add identity fulfill and reject reactions where `a2` is the dependent promise.
             let lam = Abs(V(0), Var(V(0)));
-            let fs = Map2.getWithDefault(a1, Nil, f0);
-            let f1 = Map2.insert(a1, fs ::: (lam, a2) :: Nil, f0);
-            let rs = Map2.getWithDefault(a1, Nil, f0);
-            let r1 = Map2.insert(a1, rs ::: (lam, a2) :: Nil, r0);
+            let fs = Map.getWithDefault(a1, Nil, f0);
+            let f1 = Map.insert(a1, fs ::: (lam, a2) :: Nil, f0);
+            let rs = Map.getWithDefault(a1, Nil, f0);
+            let r1 = Map.insert(a1, rs ::: (lam, a2) :: Nil, r0);
                 Next(recompose(Cst("Undef"), ec), State(Heap(h0), PromiseState(s0), FulfillReactions(f1), RejectReactions(r1), Queue(q0)))
 
         //
@@ -572,17 +572,17 @@ def substitute(e0: Expression, x: Variable, r0: Expression): Expression = match 
 ///
 /// Performs alpha conversion by introducing fresh variables for all variables in the given expression `e0`.
 ///
-def alpha(e0: Expression, m: Map2[Variable, Variable]): Expression = match e0 with {
+def alpha(e0: Expression, m: Map[Variable, Variable]): Expression = match e0 with {
     case Var(x) =>
         // Check if we need to rename the variable.
-        match Map2.lookup(x, m) with {
+        match Map.get(x, m) with {
             case None    => Var(x)
             case Some(y) => Var(y)
         }
     case Abs(x, e) =>
         // Generate a fresh variable name for `x`.
         let y = freshVar();
-        Abs(y, alpha(e, Map2.insert(x, y, m)))
+        Abs(y, alpha(e, Map.insert(x, y, m)))
     case App(e1, e2) => App(alpha(e1, m), alpha(e2, m))
 
     case Cst(s)             => Cst(s)
@@ -612,10 +612,10 @@ def eval(e0: Expression, m0: State): Result[(Expression, State), Str] = match pr
 /// Injects the given expression `e0` into the initial state.
 ///
 def initialState: State =
-    let h0 = Heap(Map2.empty());
-    let s0 = PromiseState(Map2.empty());
-    let f0 = FulfillReactions(Map2.empty());
-    let r0 = RejectReactions(Map2.empty());
+    let h0 = Heap(Map.empty());
+    let s0 = PromiseState(Map.empty());
+    let f0 = FulfillReactions(Map.empty());
+    let r0 = RejectReactions(Map.empty());
     let q0 = Queue(Nil);
         State(h0, s0, f0, r0, q0)
 
@@ -665,8 +665,6 @@ def testEval2: Result[(Expression, State), Str] = eval(
 )
 
 
-
-
 ///
 /// Returns a fresh address.
 ///
@@ -675,41 +673,5 @@ def freshAddr: Address = A(genSym!())
 ///
 /// Returns a fresh variable.
 ///
-def freshVar: Variable = V(genSym!())
+def freshVar: Variable = V(1000 + genSym!())
 
-
-
-//
-// ----------------------------------------------------------------------------
-// TODO: Replace by functions from the standard library.
-// ----------------------------------------------------------------------------
-
-enum Map2[k, v] {
-    case Map2(List[(k, v)])
-}
-namespace Map2 {
-    def empty[k, v]: Map2[k, v] = Map2(Nil)
-
-    def insert[k, v](k: k, v: v, m: Map2[k, v]): Map2[k, v] =
-        let Map2(xs) = remove(k, m);
-            Map2((k, v) :: xs)
-
-    def remove[k, v](k: k, m: Map2[k, v]): Map2[k, v] =
-        let Map2(xs) = m;
-            Map2(List.filter(match (k1, _) -> k1 != k, xs))
-
-    def lookup[k, v](k: k, m: Map2[k, v]): Option[v] =
-        let Map2(xs) = m;
-            getHelper(k, xs)
-
-    def getWithDefault[k, v](k: k, d: v, m: Map2[k, v]): v = match lookup(k, m) with {
-        case None => d
-        case Some(v) => v
-    }
-
-    def getHelper[k, v](k: k, xs: List[(k, v)]): Option[v] = match xs with {
-        case Nil => None
-        case (y, v) :: ys => if (k == y) Some(v) else getHelper(k, ys)
-    }
-
-}
