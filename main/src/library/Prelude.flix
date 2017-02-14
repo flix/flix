@@ -52,6 +52,25 @@ enum Map[k, v] {
 }
 
 ///
+/// The identity function.
+///
+def identity[a](x: a): a = x
+
+///
+/// Returns the first component of `t`.
+///
+def fst[a, b](t: (a, b)): a =
+    let (x, y) = t;
+        x
+
+///
+/// Returns the second component of `t`.
+///
+def snd[a, b](t: (a, b)): b =
+    let (x, y) = t;
+        y
+
+///
 /// Backwards function composition. Applies the function on the right first.
 ///
 /// Given the functions `f: b -> c` and `g: a -> b` returns a function `a -> c`
