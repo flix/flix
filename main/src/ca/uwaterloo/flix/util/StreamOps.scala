@@ -42,7 +42,10 @@ object StreamOps {
     * Reads the `inputStream` into a string.
     */
   def readAll(inputStream: InputStream): String = {
-    readAll(new BufferedReader(new InputStreamReader(inputStream, "UTF-8")))
+    val reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"))
+    val result = readAll(reader)
+    reader.close()
+    result
   }
 
   /**
@@ -55,6 +58,7 @@ object StreamOps {
       sb.append(line).append(System.lineSeparator())
       line = reader.readLine()
     }
+    reader.close()
     sb.toString()
   }
 
