@@ -101,7 +101,12 @@
     <!-- ======================================================== -->
     <!-- Run scalatest.                                           -->
     <!-- ======================================================== -->
-    <target name="test" depends="build-all">
+    <target name="test" depends="build-all, test-jar" />
+
+    <!-- ======================================================== -->
+    <!-- Run scalatest.                                           -->
+    <!-- ======================================================== -->
+    <target name="test-jar">
         <!-- NB: Must fork tests due to class loader in Flix -->
         <java classname="org.scalatest.tools.Runner" fork="true" failonerror="true">
             <classpath>
