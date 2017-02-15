@@ -14,6 +14,15 @@
  * limitations under the License.
  */
 
+///
+/// The Set type.
+///
+/// A set is currently represented internally as a list.
+///
+enum Set[t] {
+    case Set(List[t])
+}
+
 namespace Set {
 
     ///
