@@ -153,20 +153,17 @@ def eq[a](x: a, y: a): Bool = x == y
 ///
 /// Returns `true` iff `x` is not equal to `y`.
 ///
-// TODO
-//def neq[a](x: a, y: a): Bool = x != y
+def neq[a](x: a, y: a): Bool = x != y
 
 ///
 /// Asserts that the given boolean `b` is `true`.
 ///
-// TODO: Name?
 def assert!(b: Bool): Bool =
     if (b) true else ???
 
 ///
 /// Asserts that the given boolean `b` is `false`.
 ///
-// TODO: Name?
 def assertNot!(b: Bool): Bool =
     if (!b) true else ???
 
