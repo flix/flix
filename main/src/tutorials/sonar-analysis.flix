@@ -600,10 +600,10 @@ def eval(xs: Set[Outcome]): Set[Outcome] =
         case Abort(e)       => #{Abort(e)}
     };
     let ys = Set.flatMap(f, xs);
-    if (ys `Outcome.isSubsetOf` xs)
+    if (ys `Outcome.isSubsetOf` xs) // NB: Uses custom isSubsetOf due to custom equality.
         xs
     else
-        eval(xs `Set.union` ys) // TODO: Can't rely on set semantics here...
+        eval(xs `Set.union` ys)
 
 ///
 /// Evaluates the given expression to a value by injecting it into the initial state of the CEK machine
@@ -617,7 +617,12 @@ namespace Outcome {
     ///
     /// Returns `true` if the two given outcomes `o1` and `o2` are equal.
     ///
-    def eq(o1: Outcome, o2: Outcome): Bool = ???
+    def eq(o1: Outcome, o2: Outcome): Bool = match (o1, o2) with {
+        case (Next(s1), Next(s2))   => State.eq(s1, s2)
+        case (Done(s1), Done(s2))   => State.eq(s1, s2)
+        case (Abort(r1), Abort(r2)) => true
+        case _                      => false
+    }
 
     ///
     /// Returns `true` if `xs` is a subset of the set `ys`.
