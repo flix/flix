@@ -199,18 +199,6 @@ enum PromiseValue {
 }
 
 ///
-/// The timestamp associated with a machine configuration.
-///
-type Time = Time(Int)
-
-///
-/// A machine state configuration.
-///
-/// NB: Note that the Address component is a pointer to continuation in the store.
-///
-type State = State(Expression, Environment, Store, PromiseState, FulfillReactions, RejectReactions, Queue, Address, Time)
-
-///
 /// The edges of the promise graph.
 ///
 enum Edge {
@@ -231,6 +219,23 @@ enum Edge {
     case LinkEdge(Label, Label)
 
 }
+
+///
+/// The Promise Graph.
+///
+type PromiseGraph = PromiseGraph(Set[Edge])
+
+///
+/// The timestamp associated with a machine configuration.
+///
+type Time = Time(Int)
+
+///
+/// A machine state configuration.
+///
+/// NB: Note that the Address component is a pointer to continuation in the store.
+///
+type State = State(Expression, Environment, Store, PromiseState, FulfillReactions, RejectReactions, Queue, Address, Time)
 
 ///
 /// Returns the initial state of the CEK-machine for the given expression `e0`.
@@ -788,6 +793,21 @@ namespace Queue {
 
 }
 
+namespace PromiseGraph {
+
+    ///
+    /// Returns the empty promise graph.
+    ///
+    def empty: PromiseGraph = PromiseGraph(Set.empty())
+
+    ///
+    /// Adds the given edge to the given promise graph.
+    ///
+    def addEdge(e: Edge, pg: PromiseGraph): PromiseGraph =
+        let PromiseGraph(xs) = pg;
+            PromiseGraph(Set.insert(e, xs))
+
+}
 
 //
 // Example 1:
