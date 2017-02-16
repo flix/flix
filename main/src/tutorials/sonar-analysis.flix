@@ -591,24 +591,41 @@ def stepAll(m0: State): Set[Outcome] = match m0 with {
 }
 
 ///
-/// Computes the fixed-point of the transition relation defined by `stepAll`
-/// starting from the given machine configuration `m0`.
+/// Computes the fixed-point of the transition relation defined by `stepAll` starting from the given outcomes `xs`.
 ///
-def eval(m0: State): Set[Outcome] =
-    let outcomes = println!(stepAll(m0));
+def eval(xs: Set[Outcome]): Set[Outcome] =
     let f = outcome -> match outcome with {
-        case Next(m)        => eval(m)
+        case Next(m)        => stepAll(m)
         case Done(m)        => #{Done(m)}
         case Abort(e)       => #{Abort(e)}
     };
-    Set.union(outcomes, Set.flatMap(f, outcomes))
+    let ys = Set.flatMap(f, xs);
+    if (ys `Outcome.isSubsetOf` xs)
+        xs
+    else
+        eval(xs `Set.union` ys) // TODO: Can't rely on set semantics here...
 
 ///
 /// Evaluates the given expression to a value by injecting it into the initial state of the CEK machine
 /// and repeatedly performing a transition until the machine halts with a value (or aborts).
 ///
-def run(e0: Expression): Set[Outcome] = eval(inject(e0))
+def run(e0: Expression): Set[Outcome] = eval(#{Next(inject(e0))})
 
+
+namespace Outcome {
+
+    ///
+    /// Returns `true` if the two given outcomes `o1` and `o2` are equal.
+    ///
+    def eq(o1: Outcome, o2: Outcome): Bool = ???
+
+    ///
+    /// Returns `true` if `xs` is a subset of the set `ys`.
+    ///
+    def isSubsetOf(xs: Set[Outcome], ys: Set[Outcome]): Bool =
+        Set.forall(x -> Set.exists(y -> eq(x, y), ys), xs)
+
+}
 
 namespace State {
 
@@ -775,7 +792,7 @@ namespace Queue {
 // x.onResolve(y => Ref(y))
 // x.resolve("hello")
 //
-def testEval1: Set[Outcome] = eval(inject(
+def testEval1: Set[Outcome] = run(
     App(Abs(V(0),
         Seq(Promisify(Var(V(0), L("l2")), L("l2")),
             Seq(OnResolve(Var(V(0), L("l3")), Abs(V(42), Ref(Var(V(42), L("l3")), L("l3")), L("l3")), L("l3")),
@@ -783,7 +800,6 @@ def testEval1: Set[Outcome] = eval(inject(
             , L("l5")), L("l5"))
         , L("l6")),
         Ref(Cst("Promise1", L("l7")), L("l7")), L("l7")))
-)
 
 
 //
@@ -797,7 +813,7 @@ def testEval1: Set[Outcome] = eval(inject(
 // y.onResolve(z => Ref(z))
 // x.resolve("hello")
 //
-def testEval2: Set[Outcome] = eval(inject(
+def testEval2: Set[Outcome] = run(
     App(App(Abs(V(0), Abs(V(1),
         Seq(Promisify(Var(V(0), L("l2")), L("l2")),
             Seq(Promisify(Var(V(1), L("l3")), L("l3")),
@@ -808,4 +824,4 @@ def testEval2: Set[Outcome] = eval(inject(
                 , L("l8"))
             , L("l9"))
         , L("l10")), L("l10")), L("l10")),
-        Ref(Cst("Promise1", L("l11")), L("l11")), L("l11")), Ref(Cst("Promise2", L("l11")), L("l11")), L("l11"))))
+        Ref(Cst("Promise1", L("l11")), L("l11")), L("l11")), Ref(Cst("Promise2", L("l11")), L("l11")), L("l11")))
