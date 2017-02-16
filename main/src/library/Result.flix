@@ -14,6 +14,18 @@
  * limitations under the License.
  */
 
+///
+/// The Result type.
+///
+/// A result represents a successful value or an error value.
+/// The constructor `Ok(v)` represents the successful value `v`,
+/// whereas the constructor `Err(v)` represents the error value `v`.
+///
+enum Result[t, e] {
+    case Ok(t),
+    case Err(e)
+}
+
 namespace Result {
 
     ///

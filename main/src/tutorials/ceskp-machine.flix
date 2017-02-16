@@ -46,7 +46,7 @@ def nonValue(e0: Expression): Bool = !isValue(e0)
 ///
 /// An environment is a map from variables to addresses.
 ///
-type Environment = Environment(Map2[Variable, Address])
+type Environment = Environment(Map[Variable, Address])
 
 ///
 /// The type of storable values.
@@ -62,7 +62,7 @@ enum Storable {
 ///
 /// A store is a map from addresses to storables.
 ///
-type Store = Store(Map2[Address, Storable])
+type Store = Store(Map[Address, Storable])
 
 ///
 /// The CEK-machine operates based on continuations derived
@@ -97,8 +97,8 @@ def inject(e0: Expression): State =
     // Generate a fresh address where to store the empty continuation.
     let kont = Kontinuation.KEmpty;
     let kptr = freshAddr();
-    let env0 = Map2.empty();
-    let sto0 = Map2.insert(kptr, StoredKont(kont), Map2.empty());
+    let env0 = Map.empty();
+    let sto0 = Map.insert(kptr, StoredKont(kont), Map.empty());
         State(e0, Environment(env0), Store(sto0), kptr)
 
 ///
@@ -127,9 +127,9 @@ def step(m0: State): Outcome = match withKont(m0) with {
     //
     case (State(Var(x), Environment(env0), Store(sto0), kptr), _) =>
         // The expression is a variable. Look it up in the environment.
-         match Map2.lookup(x, env0) with {
+         match Map.get(x, env0) with {
             case None => Abort("Unbound variable.")
-            case Some(ptr) => match Map2.lookup(ptr, sto0) with {
+            case Some(ptr) => match Map.get(ptr, sto0) with {
                 case None => Abort("Unbound address.")
                 case Some(StoredKont(_)) => Abort("Non-value storable.")
                 case Some(StoredValue(v, env1)) => Next(State(v, env1, Store(sto0), kptr))
@@ -145,7 +145,7 @@ def step(m0: State): Outcome = match withKont(m0) with {
         // Generate a fresh address where to store the continuation.
         let a = freshAddr();
         // Store the continuation.
-        let sto1 = Map2.insert(a, StoredKont(k), sto0);
+        let sto1 = Map.insert(a, StoredKont(k), sto0);
             Next(State(e1, Environment(env0), Store(sto1), a))
 
     //
@@ -157,7 +157,7 @@ def step(m0: State): Outcome = match withKont(m0) with {
         // Generate a fresh address where to store the continuation.
         let a = freshAddr();
         // Store the continuation.
-        let sto1 = Map2.insert(a, StoredKont(k), sto0);
+        let sto1 = Map.insert(a, StoredKont(k), sto0);
             Next(State(e2, env2, Store(sto1), a))
 
     //
@@ -167,8 +167,8 @@ def step(m0: State): Outcome = match withKont(m0) with {
         // Evaluate the body of the lambda `v1` with argument `v2`.
         let Abs(x, body) = v1;
         let a = freshAddr();
-        let env2 = Map2.insert(x, a, env1);
-        let sto1 = Map2.insert(a, StoredValue(v2, Environment(env0)), sto0);
+        let env2 = Map.insert(x, a, env1);
+        let sto1 = Map.insert(a, StoredValue(v2, Environment(env0)), sto0);
             Next(State(body, Environment(env2), Store(sto1), kont))
 
     //
@@ -181,7 +181,7 @@ def step(m0: State): Outcome = match withKont(m0) with {
 /// Returns the given state `m0` paired with the optional continuation.
 ///
 def withKont(m0: State): (State, Option[Kontinuation]) = match m0 with {
-    case State(exp0, env0, Store(sto0), kptr) => match Map2.lookup(kptr, sto0) with {
+    case State(exp0, env0, Store(sto0), kptr) => match Map.get(kptr, sto0) with {
         case Some(StoredKont(k)) => (m0, Some(k))
         case _                   => (m0, None)
     }
@@ -209,16 +209,16 @@ def run(e0: Expression): Result[Expression, Str] =
 /// Substitutes every free variable in the given expression `e0` for the value in the given environment `env0`.
 ///
 def substitute(e0: Expression, env0: Environment, sto0: Store): Expression = match (e0, env0, sto0) with {
-    case (Var(x), Environment(env), Store(sto)) => match Map2.lookup(x, env) with {
+    case (Var(x), Environment(env), Store(sto)) => match Map.get(x, env) with {
         case None               => Var(x)
-        case Some(a)            => match Map2.lookup(a, sto) with {
+        case Some(a)            => match Map.get(a, sto) with {
             case None => Var(x)
             case Some(StoredValue(e, env1)) => substitute(e, env1, sto0)
         }
     }
 
     case (Abs(x, e), Environment(env), Store(sto)) =>
-        Abs(x, substitute(e, Environment(Map2.remove(x, env)), sto0))
+        Abs(x, substitute(e, Environment(Map.delete(x, env)), sto0))
 
     case (App(e1, e2), _, _) =>
         App(substitute(e1, env0, sto0), substitute(e2, env0, sto0))
@@ -242,48 +242,7 @@ def testOmega: Result[Expression, Str] = run(
         Abs(V(0), App(Var(V(0)), Var(V(0))))))
 
 
-
-
 ///
 /// Returns a fresh address.
 ///
-def freshAddr: Address = A(genSym!())
-
-
-//
-// ----------------------------------------------------------------------------
-// TODO: Replace by functions from the standard library.
-// ----------------------------------------------------------------------------
-//
-
-enum Map2[k, v] {
-    case Map2(List[(k, v)])
-}
-
-namespace Map2 {
-
-    def empty[k, v]: Map2[k, v] = Map2(Nil)
-
-    def insert[k, v](k: k, v: v, m: Map2[k, v]): Map2[k, v] =
-        let Map2(xs) = m;
-            Map2((k, v) :: xs)
-
-    def lookup[k, v](k: k, m: Map2[k, v]): Option[v] =
-        let Map2(xs) = m;
-            getHelper(k, xs)
-
-    def getHelper[k, v](k: k, xs: List[(k, v)]): Option[v] = match xs with {
-        case Nil => None
-        case (y, v) :: ys => if (k == y) Some(v) else getHelper(k, ys)
-    }
-
-    def remove[k, v](k: k, m: Map2[k, v]): Map2[k, v] =
-        let Map2(xs) = m;
-            Map2(removeHelper(k, xs))
-
-    def removeHelper[k, v](k: k, xs: List[(k, v)]): List[(k, v)] = match xs with {
-        case Nil => Nil
-        case (y, v) :: ys => if (k == y) removeHelper(k,  ys) else (y, v) :: removeHelper(k, ys)
-    }
-
-}
+def freshAddr: Address = A(1000 + genSym!())

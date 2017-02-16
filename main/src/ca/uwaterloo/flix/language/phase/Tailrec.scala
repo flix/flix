@@ -16,7 +16,11 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst
+import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.Validation._
 
 /**
   * The Tailrec phase identifies function calls that are in tail recursive position.
@@ -24,16 +28,16 @@ import ca.uwaterloo.flix.language.ast.SimplifiedAst
   * Specifically, it replaces `ApplyRef` AST nodes with `ApplyTail` AST nodes
   * when the `ApplyRef` node calls the same function and occurs in tail position.
   */
-object Tailrec {
+object Tailrec extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
   /**
     * Identifies tail recursive calls in the given AST `root`.
     */
-  def tailrec(root: SimplifiedAst.Root): SimplifiedAst.Root = {
+  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
     val defns = root.definitions.map {
       case (sym, defn) => sym -> tailrec(defn)
     }
-    root.copy(definitions = defns)
+    root.copy(definitions = defns).toSuccess
   }
 
   /**

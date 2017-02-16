@@ -6,11 +6,15 @@ dependencies:
 machine:
   environment:
     SCALA_HOME: /home/ubuntu/flix/scala-2.11.7
-    ANT_OPTS: -Xss8m -Xmx2048m
+    ANT_OPTS: -Xss8m -Xmx1536m
   java:
     version:
       oraclejdk8
 
+compile:
+  override:
+    - ant build-all
+
 test:
   override:
-    - ant test
+    - ant test-jar

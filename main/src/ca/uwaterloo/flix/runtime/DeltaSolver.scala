@@ -20,7 +20,6 @@ import java.nio.file.StandardOpenOption._
 import java.nio.file.{Files, Path}
 
 import ca.uwaterloo.flix.api._
-import ca.uwaterloo.flix.language.Compiler
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, PrettyPrinter}
 import ca.uwaterloo.flix.util.Highlight.{Blue, Green, Red}
 import ca.uwaterloo.flix.util.{Options, Verbosity}

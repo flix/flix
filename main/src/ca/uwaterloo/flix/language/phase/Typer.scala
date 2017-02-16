@@ -16,9 +16,9 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.language.ast.NamedAst.Program
-import ca.uwaterloo.flix.language.ast.WeededAst.Pattern
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
 import ca.uwaterloo.flix.language.phase.Disambiguation.RefTarget
@@ -27,12 +27,14 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
-object Typer {
+object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
 
   /**
     * Type checks the given program.
     */
-  def typer(program: NamedAst.Program)(implicit genSym: GenSym): Validation[TypedAst.Root, TypeError] = {
+  def run(program: NamedAst.Program)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = {
+    implicit val _ = flix.genSym
+
     val startTime = System.nanoTime()
 
     val result = for {
@@ -980,10 +982,6 @@ object Typer {
             elementTypes <- seqM(elms map visit);
             resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
           ) yield resultType
-
-        case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => ??? // TODO: FSet
-
-        case NamedAst.Pattern.FMap(elms, rest, tvar, loc) => ??? // TODO: FMap
       }
 
       visit(pat0)
@@ -1024,12 +1022,6 @@ object Typer {
             case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
           }
         case NamedAst.Pattern.Tuple(elms, tvar, loc) => TypedAst.Pattern.Tuple(elms map visit, subst0(tvar), loc)
-        case NamedAst.Pattern.FSet(elms, rest, tvar, loc) => TypedAst.Pattern.FSet(elms map visit, rest.map(visit), subst0(tvar), loc)
-        case NamedAst.Pattern.FMap(elms, rest, tvar, loc) =>
-          val es = elms map {
-            case (k, v) => (visit(k), visit(v))
-          }
-          TypedAst.Pattern.FMap(es, rest.map(visit), subst0(tvar), loc)
       }
 
       visit(pat0)
@@ -1091,7 +1083,13 @@ object Typer {
             ) yield unifiedTypes
           case Err(e) => failM(e)
         }
-      case NamedAst.Predicate.Body.Loop(sym, term, loc) => Unification.liftM(Nil) // TODO
+      case NamedAst.Predicate.Body.Loop(pat, term, loc) =>
+        // TODO: Assumes that pat is a variable symbol.
+        val sym = pat.asInstanceOf[NamedAst.Pattern.Var].sym
+        for {
+          tpe <- Expressions.infer(term, ns0, program)
+          ___ <- unifyM(Type.mkFSet(sym.tvar), tpe, loc)
+        } yield List(tpe)
     }
 
     /**

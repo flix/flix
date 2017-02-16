@@ -1,55 +1,21 @@
 ///
-/// The Option type.
+/// The identity function.
 ///
-/// An option represents an optional value.
-/// The constructor `None` represents an absent value,
-/// whereas the constructor `Some(v)` represents the value `v`.
-///
-enum Option[t] {
-    case None,
-    case Some(t)
-}
+def identity[a](x: a): a = x
 
 ///
-/// The Result type.
+/// Returns the first component of `t`.
 ///
-/// A result represents a successful value or an error value.
-/// The constructor `Ok(v)` represents the successful value `v`,
-/// whereas the constructor `Err(v)` represents the error value `v`.
-///
-enum Result[t, e] {
-    case Ok(t),
-    case Err(e)
-}
+def fst[a, b](p: (a, b)): a =
+    let (x, y) = p;
+        x
 
 ///
-/// The List type.
+/// Returns the second component of `t`.
 ///
-/// A list is either the empty list represented by `Nil`, or
-/// an element `v` followed by a list `vs` represented by `v :: vs`.
-///
-enum List[t] {
-    case Nil,
-    case Cons(t, List[t])
-}
-
-///
-/// The Set type.
-///
-/// A set is currently represented internally as a list.
-///
-enum Set[t] {
-    case Set(List[t])
-}
-
-///
-/// The Map type.
-///
-/// A map is currently represented internally as a list.
-///
-enum Map[k, v] {
-    case Map(List[(k, v)])
-}
+def snd[a, b](p: (a, b)): b =
+    let (x, y) = p;
+        y
 
 ///
 /// Backwards function composition. Applies the function on the right first.
@@ -134,20 +100,17 @@ def eq[a](x: a, y: a): Bool = x == y
 ///
 /// Returns `true` iff `x` is not equal to `y`.
 ///
-// TODO
-//def neq[a](x: a, y: a): Bool = x != y
+def neq[a](x: a, y: a): Bool = x != y
 
 ///
 /// Asserts that the given boolean `b` is `true`.
 ///
-// TODO: Name?
 def assert!(b: Bool): Bool =
     if (b) true else ???
 
 ///
 /// Asserts that the given boolean `b` is `false`.
 ///
-// TODO: Name?
 def assertNot!(b: Bool): Bool =
     if (!b) true else ???
 
@@ -157,17 +120,20 @@ def assertNot!(b: Bool): Bool =
 def assertEq![a](x: a, y: a): Bool = if (x == y) true else ???
 
 ///
-/// Returns a freshly generated integer. (NB: Requires the --Ximpure feature flag.)
+/// Returns a freshly generated integer.
+/// Note: Requires the --Ximpure feature flag.
 ///
 def genSym!: Int = genSymHook()
 
 ///
-/// Prints the given value `a`. (NB: Requires the --Ximpure feature flag.)
+/// Prints the given value `a`.
+/// Note: Requires the --Ximpure feature flag.
 ///
 def print![a](a: a): a = printHook(a)
 
 ///
-/// Prints the given value `a` on a new line. (NB: Requires the --Ximpure feature flag.)
+/// Prints the given value `a` on a new line.
+/// Note: Requires the --Ximpure feature flag.
 ///
 def println![a](a: a): a = printlnHook(a)
 

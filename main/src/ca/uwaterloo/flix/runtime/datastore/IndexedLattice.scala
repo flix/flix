@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.runtime.datastore
 import java.util
 
 import ca.uwaterloo.flix.language.ast.ExecutableAst
-import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker, Value}
 
 import scala.annotation.switch
 import scala.collection.mutable
@@ -39,29 +38,9 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   private val numberOfKeys = lattice.keys.length
 
   /**
-    * The lattice operations associated with each lattice.
+    * The lattice operations.
     */
-  private val latticeOps: ExecutableAst.Definition.Lattice = root.lattices(lattice.value.tpe)
-
-  /**
-    * The bottom element.
-    */
-  private val Bot: ValueType = Linker.link(latticeOps.bot, root).invoke(Array.empty).asInstanceOf[ValueType]
-
-  /**
-    * The partial order operator.
-    */
-  private val Leq: InvocationTarget = Linker.link(latticeOps.leq, root)
-
-  /**
-    * The least upper bound operator.
-    */
-  private val Lub: InvocationTarget = Linker.link(latticeOps.lub, root)
-
-  /**
-    * The greatest lower bound operator.
-    */
-  private val Glb: InvocationTarget = Linker.link(latticeOps.glb, root)
+  val latticeOps = new LatticeImpl[ValueType](lattice, root)
 
   /**
     * Initialize the store for all indexes.
@@ -95,11 +74,11 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
 
     // Lookup the old element (create it, if it doesn't exist).
     val newElm = elmOf(fact)
-    val oldElm = map.getOrElseUpdate(key, Bot)
+    val oldElm = map.getOrElseUpdate(key, latticeOps.bot)
 
     // Compute the lub and check if it is subsumed by the old element.
-    val result = evalLub(newElm, oldElm)
-    if (!evalLeq(result, oldElm)) {
+    val result = latticeOps.lub(newElm, oldElm)
+    if (!latticeOps.leq(result, oldElm)) {
       // Update all indexes.
       for (idx <- indexes) {
         val ikey = keyOf(idx, fact)
@@ -127,14 +106,14 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
     val table = if (idx != 0) {
       // use exact index.
       val ikey = keyOf(idx, pat)
-      store(idx).getOrElse(ikey, mutable.Map.empty).iterator
+      getOrEmptyIterator(store(idx).get(ikey))
     } else {
       // check if there is an approximate index.
       idx = getApproximateIndex(indexes, pat)
       if (idx != 0) {
         // use approximate index.
         val ikey = keyOf(idx, pat)
-        store(idx).getOrElse(ikey, mutable.Map.empty).iterator
+        getOrEmptyIterator(store(idx).get(ikey))
       } else {
         // perform full table scan.
         scan
@@ -150,10 +129,10 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
         if (elmOf(pat) == null)
           (keys, elm)
         else
-          (keys, evalGlb(elmOf(pat), elm))
+          (keys, latticeOps.glb(elmOf(pat), elm))
     } filter {
       // remove null elements introduced above.
-      case e => !isBot(e._2)
+      case e => !latticeOps.equal(latticeOps.bot, e._2)
     } map {
       case (keys, elms) =>
         // construct the result.
@@ -210,45 +189,14 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   }
 
   /**
-    * Returns true if `x` is the bottom element.
+    * Returns an iterator over the given mutable map.
+    *
+    * Returns the empty iterator if the option is [[None]].
     */
-  private def isBot(x: ValueType): Boolean = x == Bot
-
-  /**
-    * Returns `true` iff `x` is less than or equal to `y`.
-    */
-  private def evalLeq(x: ValueType, y: ValueType): Boolean = {
-    // if `x` and `y` are the same object then they must be equal.
-    if (x eq y) return true
-
-    // evaluate the partial order function passing the arguments `x` and `y`.
-    val args = Array(x, y).asInstanceOf[Array[AnyRef]]
-    val result = Leq.invoke(args)
-    Value.cast2bool(result)
-  }
-
-  /**
-    * Returns the least upper bound of `x` and `y`.
-    */
-  private def evalLub(x: ValueType, y: ValueType): ValueType = {
-    // if `x` and `y` are the same object then there is no need to compute the lub.
-    if (x eq y) return x
-
-    // evaluate the least upper bound function passing the arguments `x` and `y`.
-    val args = Array(x, y).asInstanceOf[Array[AnyRef]]
-    Lub.invoke(args).asInstanceOf[ValueType]
-  }
-
-  /**
-    * Returns the greatest lower bound of `x` and `y`..
-    */
-  private def evalGlb(x: ValueType, y: ValueType): ValueType = {
-    // if `x` and `y` are the same object then there is no need to compute the glb.
-    if (x eq y) return x
-
-    // evaluate the greatest lower bound function passing the arguments `x` and `y`.
-    val args = Array(x, y).asInstanceOf[Array[AnyRef]]
-    Glb.invoke(args).asInstanceOf[ValueType]
+  @inline
+  private def getOrEmptyIterator(opt: Option[mutable.Map[Key[ValueType], ValueType]]) = opt match {
+    case None => Iterator.empty
+    case Some(xs) => xs.iterator
   }
 
 }

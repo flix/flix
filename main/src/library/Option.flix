@@ -14,6 +14,18 @@
  * limitations under the License.
  */
 
+///
+/// The Option type.
+///
+/// An option represents an optional value.
+/// The constructor `None` represents an absent value,
+/// whereas the constructor `Some(v)` represents the value `v`.
+///
+enum Option[t] {
+    case None,
+    case Some(t)
+}
+
 namespace Option {
 
     ///

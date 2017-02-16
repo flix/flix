@@ -1,7 +1,12 @@
 # Changelog
 
 HEAD:
+    - Added standard library.
+    - Added support for pattern matching in rules.
+    - Added if guards.
     - Improved error messages.
+    - Improved the performance of the solver.
+    - Fixed numerous bugs.
 
 2016-10-25:
     - Added interpreter tutorial.

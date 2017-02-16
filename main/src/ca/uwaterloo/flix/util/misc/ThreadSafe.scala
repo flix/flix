@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Magnus Madsen
+ * Copyright 2017 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language
+package ca.uwaterloo.flix.util.misc
 
-import ca.uwaterloo.flix.language.feature.FeatureSuite
-import ca.uwaterloo.flix.language.phase.PhaseSuite
-import org.scalatest.{ParallelTestExecution, Suites}
+import scala.annotation.StaticAnnotation
 
-class LanguageSuite extends Suites(
-  new FeatureSuite,
-  new PhaseSuite
-) with ParallelTestExecution {
-  /* left empty */
-}
+/**
+  * Mark the given class or method as thread-safe.
+  */
+case class ThreadSafe() extends StaticAnnotation

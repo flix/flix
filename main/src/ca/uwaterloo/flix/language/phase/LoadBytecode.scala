@@ -19,13 +19,15 @@ package ca.uwaterloo.flix.language.phase
 import java.nio.file.{Files, Paths}
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression}
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol, Type}
 import ca.uwaterloo.flix.runtime.Value
-import ca.uwaterloo.flix.util.{Evaluation, InternalCompilerException, Options}
+import ca.uwaterloo.flix.util.{Evaluation, InternalCompilerException}
+import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.Validation._
 
-object LoadBytecode {
+object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
   private class Loader extends ClassLoader {
     def apply(name: String, bytes: Array[Byte]): Class[_] = defineClass(name, bytes, 0, bytes.length)
@@ -74,11 +76,13 @@ object LoadBytecode {
     * variables eliminated) to perform the reflection lookup, so we iterate over constantsMap. However, we want to
     * mutate the original constant from root.constants, not the one in constantsMap (which will get GC'd).
     */
-  def load(flix: Flix, root: ExecutableAst.Root, options: Options)(implicit genSym: GenSym): ExecutableAst.Root = {
+  def run(root: ExecutableAst.Root)(implicit flix: Flix): Validation[ExecutableAst.Root, CompilationError] = {
+    implicit val _ = flix.genSym
+
     val t = System.nanoTime()
 
-    if (options.evaluation == Evaluation.Interpreted) {
-      return root
+    if (flix.options.evaluation == Evaluation.Interpreted) {
+      return root.toSuccess
     }
 
     // Create a new classloader for each root we compile.
@@ -102,7 +106,7 @@ object LoadBytecode {
     val loadedInterfaces: Map[Type, Class[_]] = interfaces.map { case (tpe, prefix) =>
       // Use a temporary context with no functions, because the codegen needs the map of interfaces.
       val bytecode = Codegen.compileFunctionalInterface(Codegen.Context(prefix, List.empty, declarations, interfaces))(tpe)
-      if (options.debug) {
+      if (flix.options.debug) {
         dump(prefix, bytecode)
       }
       tpe -> loader(prefix, bytecode)
@@ -110,8 +114,8 @@ object LoadBytecode {
 
     // 4. Generate and load bytecode.
     val loadedClasses: Map[List[String], Class[_]] = constantsMap.map { case (prefix, consts) =>
-      val bytecode = Codegen.compile(Codegen.Context(prefix, consts, declarations, interfaces), options)
-      if (options.debug) {
+      val bytecode = Codegen.compile(Codegen.Context(prefix, consts, declarations, interfaces), flix.options)
+      if (flix.options.debug) {
         dump(prefix, bytecode)
       }
       val clazz = loader(prefix, bytecode)
@@ -133,7 +137,7 @@ object LoadBytecode {
     }
 
     val e = System.nanoTime() - t
-    root.copy(time = root.time.copy(codeGen = e))
+    root.copy(time = root.time.copy(codeGen = e)).toSuccess
   }
 
   private def dump(path: String, code: Array[Byte]): Unit = Files.write(Paths.get(path), code)

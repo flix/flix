@@ -123,7 +123,7 @@ object TypedAst {
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Ref(name: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Ref(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
@@ -222,10 +222,6 @@ object TypedAst {
     case class Tag(sym: Symbol.EnumSym, tag: String, pat: TypedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
     case class Tuple(elms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
-
-    case class FSet(elms: List[TypedAst.Pattern], rest: Option[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
-
-    case class FMap(elms: List[(TypedAst.Pattern, TypedAst.Pattern)], rest: Option[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
   }
 

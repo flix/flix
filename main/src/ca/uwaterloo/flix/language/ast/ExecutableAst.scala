@@ -19,6 +19,8 @@ package ca.uwaterloo.flix.language.ast
 import java.lang.reflect.Method
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
+import ca.uwaterloo.flix.runtime.InvocationTarget
+
 sealed trait ExecutableAst
 
 object ExecutableAst {
@@ -35,6 +37,14 @@ object ExecutableAst {
 
 
   case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body]) extends ExecutableAst {
+
+    /**
+      * Returns the arity of the constraint.
+      *
+      * The arity of a constraint is the number of constraint parameters (i.e. variables in the constraint).
+      * Not to be confused with the number of predicates or terms.
+      */
+    val arity: Int = cparams.length
 
     /**
       * Returns `true` if the constraint is a fact.
@@ -57,9 +67,9 @@ object ExecutableAst {
     /**
       * Returns the filter predicates in the body of the constraint.
       */
-    val filters: List[ExecutableAst.Predicate.Body.Filter] = body.collect {
+    val filters: Array[ExecutableAst.Predicate.Body.Filter] = body.collect {
       case p: ExecutableAst.Predicate.Body.Filter => p
-    }
+    }.toArray
 
     /**
       * Returns the loop predicates in the body of the constraint.
@@ -539,15 +549,24 @@ object ExecutableAst {
 
     object Body {
 
-      case class Positive(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Body], index2var: Array[String], freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
+      // TODO: Remove freeVars
+
+      case class Positive(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Body], index2sym: Array[Symbol.VarSym], freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
         val arity: Int = terms.length
       }
 
-      case class Negative(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Body], index2var: Array[String], freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
+      case class Negative(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Body], index2sym: Array[Symbol.VarSym], freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
         val arity: Int = terms.length
       }
 
-      case class Filter(sym: Symbol.DefnSym, terms: Array[ExecutableAst.Term.Body], freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body
+      case class Filter(sym: Symbol.DefnSym, terms: Array[ExecutableAst.Term.Body], freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
+
+        /**
+          * A reference to the invocation target of this filter function. Initially `null`.
+          */
+        var target: InvocationTarget = _
+
+      }
 
       case class Loop(sym: Symbol.VarSym, term: ExecutableAst.Term.Head, freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
@@ -563,12 +582,9 @@ object ExecutableAst {
 
       case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
-      case class Exp(e: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
+      case class Lit(ref: AnyRef, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
-      case class Apply(sym: Symbol.DefnSym,
-                       args: Array[ExecutableAst.Term.Head],
-                       tpe: Type,
-                       loc: SourceLocation) extends ExecutableAst.Term.Head
+      case class App(sym: Symbol.DefnSym, args: Array[Symbol.VarSym], tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
     }
 

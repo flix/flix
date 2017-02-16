@@ -41,7 +41,7 @@ def nonValue(e0: Expression): Bool = !isValue(e0)
 ///
 /// An environment is a map from variables to a (value, environment)-pair.
 ///
-type Environment = Environment(Map2[Variable, (Expression, Environment)])
+type Environment = Environment(Map[Variable, (Expression, Environment)])
 
 ///
 /// The CEK-machine operates based on continuations derived
@@ -71,7 +71,7 @@ type State = State(Expression, Environment, Kontinuation)
 /// Returns the initial state of the CEK-machine for the given expression `e0`.
 ///
 def inject(e0: Expression): State =
-    State(e0, Environment(Map2.empty()), Kontinuation.KEmpty)
+    State(e0, Environment(Map.empty()), Kontinuation.KEmpty)
 
 ///
 /// Represents the outcome of a single reduction step.
@@ -98,7 +98,7 @@ def step(m0: State): Outcome = match m0 with {
     //
     case State(Var(x), Environment(env0), kont) =>
         // The expression is a variable. Look it up in the environment.
-         match Map2.lookup(x, env0) with {
+         match Map.get(x, env0) with {
             case None => Abort("Unbound variable.")
             case Some((v, env1)) => Next(State(v, env1, kont))
          }
@@ -125,7 +125,7 @@ def step(m0: State): Outcome = match m0 with {
     case State(v2, Environment(env0), KApp2(v1, Environment(env1), kont)) if isValue(v2) =>
         // Evaluate the body of the lambda `v1` with argument `v2`.
         let Abs(x, body) = v1;
-        let env2 = Map2.insert(x, (v2, Environment(env0)), env1);
+        let env2 = Map.insert(x, (v2, Environment(env0)), env1);
             Next(State(body, Environment(env2), kont))
 
     //
@@ -157,11 +157,11 @@ def run(e0: Expression): Result[Expression, Str] =
 /// Substitutes every free variable in the given expression `e0` for the value in the given environment `env0`.
 ///
 def substitute(e0: Expression, env0: Environment): Expression = match (e0, env0) with {
-    case (Var(x), Environment(env))     => match Map2.lookup(x, env) with {
+    case (Var(x), Environment(env))     => match Map.get(x, env) with {
         case None               => Var(x)
         case Some((e, env1))    => substitute(e, env1)
     }
-    case (Abs(x, e), Environment(env))  => Abs(x, substitute(e, Environment(Map2.remove(x, env))))
+    case (Abs(x, e), Environment(env))  => Abs(x, substitute(e, Environment(Map.delete(x, env))))
     case (App(e1, e2), _)               => App(substitute(e1, env0), substitute(e2, env0))
 }
 
@@ -181,51 +181,3 @@ def testOmega: Result[Expression, Str] = run(
     App(
         Abs(V(0), App(Var(V(0)), Var(V(0)))),
         Abs(V(0), App(Var(V(0)), Var(V(0))))))
-
-
-
-
-
-
-
-
-
-
-
-//
-// ----------------------------------------------------------------------------
-// TODO: Replace by functions from the standard library.
-// ----------------------------------------------------------------------------
-//
-
-enum Map2[k, v] {
-    case Map2(List[(k, v)])
-}
-
-namespace Map2 {
-
-    def empty: Map2[Variable, (Expression, Environment)] = Map2(Nil)
-
-    def insert(k: Variable, v: (Expression, Environment), m: Map2[Variable, (Expression, Environment)]): Map2[Variable, (Expression, Environment)] =
-        let Map2(xs) = m;
-            Map2((k, v) :: xs)
-
-    def lookup[k, v](k: k, m: Map2[k, v]): Option[v] =
-        let Map2(xs) = m;
-            getHelper(k, xs)
-
-    def getHelper[k, v](k: k, xs: List[(k, v)]): Option[v] = match xs with {
-        case Nil => None
-        case (y, v) :: ys => if (k == y) Some(v) else getHelper(k, ys)
-    }
-
-    def remove(k: Variable, m: Map2[Variable, (Expression, Environment)]): Map2[Variable, (Expression, Environment)] =
-        let Map2(xs) = m;
-            Map2(removeHelper(k, xs))
-
-    def removeHelper[k, v](k: k, xs: List[(k, v)]): List[(k, v)] = match xs with {
-        case Nil => Nil
-        case (y, v) :: ys => if (k == y) removeHelper(k,  ys) else (y, v) :: removeHelper(k, ys)
-    }
-
-}

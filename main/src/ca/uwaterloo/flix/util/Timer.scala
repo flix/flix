@@ -39,6 +39,11 @@ class Timer[T](f: => T) {
   def getResult: T = r
 
   /**
+    * Returns the elapsed time.
+    */
+  def getDuration: Long = d
+
+  /**
     * Returns the elapsed time in nanoseconds.
     */
   def nanoseconds: Double = d

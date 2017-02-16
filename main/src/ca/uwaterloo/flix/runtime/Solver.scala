@@ -16,17 +16,17 @@
 
 package ca.uwaterloo.flix.runtime
 
-import java.util.ArrayList
 import java.util.concurrent._
+import java.util.concurrent.atomic.AtomicInteger
 
-import ca.uwaterloo.flix.api.{IValue, RuleException, TimeoutException, WrappedValue}
+import ca.uwaterloo.flix.api.{RuleException, TimeoutException}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Term.Body.Pat
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
-import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Symbol}
-import ca.uwaterloo.flix.runtime.datastore.DataStore
+import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
+import ca.uwaterloo.flix.runtime.datastore.{DataStore, KeyCache}
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.util._
 
-import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.{Duration, _}
@@ -40,6 +40,16 @@ import scala.concurrent.duration.{Duration, _}
   */
 class Solver(val root: ExecutableAst.Root, options: Options) {
 
+  /**
+    * Controls the number of batches per thread. A value of one means one batch per thread.
+    *
+    * If there is one batch per thread that means when one thread is finished it will have nothing else to do.
+    *
+    * A low number means lower overhead in terms of futures created, but possible more wasted time.
+    * A higher number means less time wasted, but larger overhead in the number of futures created.
+    */
+  val BatchesPerThread: Int = 8
+
   //
   // Types of the solver:
   //
@@ -47,9 +57,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * The type of environments.
     *
-    * An environment is map from identifiers to values.
+    * An environment is map from variables to values.
     */
-  type Env = mutable.Map[String, AnyRef]
+  type Env = Array[AnyRef]
 
   /**
     * The type of work lists.
@@ -87,12 +97,19 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   val dataStore = new DataStore[AnyRef](root)
 
   /**
+    * The key cache holds a bi-map from key values to integers.
+    *
+    * Reading and writing to the cache is guaranteed to be thread-safe.
+    */
+  val keyCache = new KeyCache()
+
+  /**
     * The thread pool where rule evaluation takes place.
     *
     * Note: Evaluation of a rule only *reads* from the datastore.
     * Thus it is safe to evaluate multiple rules concurrently.
     */
-  val readersPool = mkThreadPool()
+  val readersPool: ExecutorService = mkThreadPool("readers")
 
   /**
     * The thread pool where writes to the datastore takes places.
@@ -100,12 +117,12 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Note: A writer *must not* concurrently write to the same relation/lattice.
     * However, different relations/lattices can be written to concurrently.
     */
-  val writersPool = mkThreadPool()
+  val writersPool: ExecutorService = mkThreadPool("writers")
 
   /**
     * The global work list.
     */
-  val worklist = mkWorkList()
+  val worklist: WorkList = mkWorkList()
 
   /**
     * The performance monitor.
@@ -122,7 +139,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * The model (if it exists).
     */
   @volatile
-  var model: Model = null
+  var model: Model = _
 
   //
   // Statistics:
@@ -162,12 +179,12 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Returns the number of current read tasks.
     */
-  def getCurrentReadTasks = currentReadTasks
+  def getCurrentReadTasks: Int = currentReadTasks
 
   /**
     * Returns the number of current write tasks.
     */
-  def getCurrentWriteTasks = currentWriteTasks
+  def getCurrentWriteTasks: Int = currentWriteTasks
 
   /**
     * Returns the number of facts in the datastore.
@@ -240,7 +257,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   def getRuleStats: List[(Constraint, Int, Long)] =
     root.constraints.filter(_.isRule).sortBy(_.time.get()).reverse.map {
       case r => (r, r.hits.get(), r.time.get())
-    }.toList
+    }
 
   /**
     * Initialize the solver by starting the monitor, debugger, shell etc.
@@ -268,7 +285,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     for (fact <- facts) {
       // evaluate the head of each fact.
       val interp = mkInterpretation()
-      evalHead(fact.head, mutable.Map.empty, interp)
+      evalHead(fact.head, Array.empty, interp)
 
       // iterate through the interpretation.
       for ((sym, fact) <- interp) {
@@ -290,7 +307,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   private def initWorkList(): Unit = {
     // add all rules to the worklist (under empty environments).
     for (rule <- rules) {
-      worklist.push((rule, mutable.Map.empty))
+      worklist.push((rule, new Array[AnyRef](rule.arity)))
     }
   }
 
@@ -336,18 +353,16 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     *
     * Updates the given interpretation `interp`.
     */
-  private def evalBody(rule: Constraint, env: Env): Callable[Interpretation] = new Callable[Interpretation] {
-    def call(): Interpretation = {
-      val t = System.nanoTime()
+  private def evalBody(rule: Constraint, env: Env): Interpretation = {
+    val t = System.nanoTime()
 
-      val interp = mkInterpretation()
-      evalCross(rule, rule.tables, env, interp)
+    val interp = mkInterpretation()
+    evalCross(rule, rule.tables, env, interp)
 
-      rule.hits.incrementAndGet()
-      rule.time.addAndGet(System.nanoTime() - t)
+    rule.hits.incrementAndGet()
+    rule.time.addAndGet(System.nanoTime() - t)
 
-      interp
-    }
+    interp
   }
 
   /**
@@ -371,7 +386,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         val value = p.terms(i) match {
           case ExecutableAst.Term.Body.Var(sym, _, _) =>
             // A variable is replaced by its value from the environment (or null if unbound).
-            env.getOrElse(sym.toString, null)
+            env(sym.getStackOffset)
           case ExecutableAst.Term.Body.Lit(v, _, _) =>
             // A literal has already been evaluated to a value.
             v
@@ -389,7 +404,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       // lookup all matching rows.
       for (matchedRow <- table.lookup(pat)) {
         // copy the environment for every row.
-        var newRow = env.clone()
+        val newRow = copy(env)
 
         // A matched row may still fail to unify with a pattern term.
         // We use this boolean variable to track whether that is the case.
@@ -400,22 +415,19 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
 
           // Check if the term is pattern term.
           // If so, we must checked whether the pattern can be unified with the value.
-          if (p.terms(i).isInstanceOf[ExecutableAst.Term.Body.Pat]) {
-            val term = p.terms(i).asInstanceOf[ExecutableAst.Term.Body.Pat]
-            val value = matchedRow(i)
-            val extendedEnv = Interpreter.unify(term.pat, value, env.toMap)
-            if (extendedEnv == null) {
-              // Value does not unify with the pattern term. We should skip this row.
-              skip = true
-            } else {
-              // The value matched, must bind variables in the pattern by extending the environment.
-              newRow = newRow ++ extendedEnv
-            }
+          p.terms(i) match {
+            case term: Pat =>
+              val value = matchedRow(i)
+              if (!Value.unify(term.pat, value, env)) {
+                // Value does not unify with the pattern term. We should skip this row.
+                skip = true
+              }
+            case _ => // nop
           }
 
-          val varName = p.index2var(i)
-          if (varName != null)
-            newRow.update(varName, matchedRow(i))
+          val sym = p.index2sym(i)
+          if (sym != null)
+            newRow.update(sym.getStackOffset, matchedRow(i))
           i = i + 1
         }
 
@@ -436,33 +448,57 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Unfolds the given loop predicates `ps` over the initial `env`.
     */
   private def evalLoop(rule: Constraint, ps: List[Predicate.Body.Loop], env: Env, interp: Interpretation): Unit = ps match {
-    case Nil => evalFilter(rule, rule.filters, env, interp)
+    case Nil => evalAllFilters(rule, env, interp)
     case Predicate.Body.Loop(sym, term, _, _) :: rest =>
-      val value = Value.cast2set(evalHeadTerm(term, root, env.toMap))
-      for (x <- value) {
-        val newRow = env.clone()
-        newRow.update(sym.toString, x)
+      val value = evalHeadTerm(term, root, env)
+      for (x <- Value.iteratorOf(value)) {
+        val newRow = copy(env)
+        newRow(sym.getStackOffset) = x
         evalLoop(rule, rest, newRow, interp)
       }
   }
 
   /**
-    * Filters the given `env` through all filter functions in the body.
+    * Evaluates all filters in the given `rule`.
     */
-  @tailrec
-  private def evalFilter(rule: Constraint, ps: List[Predicate.Body.Filter], env: Env, interp: Interpretation): Unit = ps match {
-    case Nil =>
-      // filter with hook functions
-      evalHead(rule.head, env, interp)
-    case (pred: Predicate.Body.Filter) :: xs =>
-      val args = new Array[AnyRef](pred.terms.length)
-      var i = 0
-      while (i < args.length) {
+  private def evalAllFilters(rule: Constraint, env: Env, interp: Interpretation): Unit = {
+    // Extract the filters function predicates from the rule.
+    val filters = rule.filters
 
-        val value = pred.terms(i) match {
+    // Evaluate each filter function predicate one-by-one.
+    var i = 0
+    while (i < filters.length) {
+      // Evaluate the current filter.
+      val result = evalFilter(filters(i), env)
+
+      // Return immediately if the filter function returned false.
+      if (!result)
+        return
+
+      // Otherwise evaluate the next filter function.
+      i = i + 1
+    }
+
+    // All filter functions returned `true`.
+    // Continue evaluation of the head of the rule.
+    evalHead(rule.head, env, interp)
+  }
+
+  /**
+    * Evaluates the given `filter` and returns its result.
+    */
+  private def evalFilter(filter: Predicate.Body.Filter, env: Env): Boolean = filter match {
+    case Predicate.Body.Filter(sym, terms, _, _) =>
+      // Evaluate the arguments of the filter function predicate.
+      val args = new Array[AnyRef](terms.length)
+      var j = 0
+      // Iterate through each term of the filter function predicate.
+      while (j < args.length) {
+        // Compute the value of the term.
+        val value = terms(j) match {
           case Term.Body.Var(x, _, _) =>
             // A variable is replaced by its value from the environment.
-            env(x.toString)
+            env(x.getStackOffset)
           case Term.Body.Lit(v, _, _) =>
             // A literal has already been evaluated to a value.
             v
@@ -470,16 +506,25 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
             // A wildcard should not appear as an argument to a filter function.
             throw InternalRuntimeException("Wildcard not allowed here!")
           case Term.Body.Pat(_, _, _) =>
-            // A pattern should not appear here.
+            // A pattern should not appear as an argument to a filter function.
             throw InternalRuntimeException("Pattern not allowed here!")
         }
 
-        args(i) = value
-        i = i + 1
+        // Store the value of the term into the argument array.
+        args(j) = value
+        j = j + 1
       }
-      val result = Linker.link(pred.sym, root).invoke(args)
-      if (Value.cast2bool(result))
-        evalFilter(rule, xs, env, interp)
+
+      // Link the filter function invocation target (if not already done).
+      if (filter.target == null) {
+        filter.target = Linker.link(sym, root)
+      }
+
+      // Evaluate the filter function passing the arguments.
+      val result = filter.target.invoke(args)
+
+      // Return the result.
+      return Value.cast2bool(result)
   }
 
   /**
@@ -491,8 +536,13 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       val fact = new Array[AnyRef](p.arity)
       var i = 0
       while (i < fact.length) {
-        fact(i) = evalHeadTerm(terms(i), root, env.toMap)
+        val term = evalHeadTerm(terms(i), root, env)
+        fact(i) = term
         i = i + 1
+
+        // TODO: Experiment with keyCache.
+        //if(i != fact.length)
+        //  keyCache.put(term)
       }
 
       interp += ((p.sym, fact))
@@ -506,17 +556,17 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Evaluates the given head term `t` under the given environment `env0`
     */
-  def evalHeadTerm(t: Term.Head, root: Root, env: Map[String, AnyRef]): AnyRef = t match {
-    case Term.Head.Var(x, _, _) => env(x.toString)
-    case Term.Head.Exp(e, _, _) => Interpreter.eval(e, root, env)
-    case Term.Head.Apply(sym, args, _, _) =>
-      val evalArgs = new Array[AnyRef](args.length)
+  def evalHeadTerm(t: Term.Head, root: Root, env: Env): AnyRef = t match {
+    case Term.Head.Var(sym, _, _) => env(sym.getStackOffset)
+    case Term.Head.Lit(v, _, _) => v
+    case Term.Head.App(sym, syms, _, _) =>
+      val args = new Array[AnyRef](syms.length)
       var i = 0
-      while (i < evalArgs.length) {
-        evalArgs(i) = evalHeadTerm(args(i), root, env)
+      while (i < args.length) {
+        args(i) = env(syms(i).getStackOffset)
         i = i + 1
       }
-      Linker.link(sym, root).invoke(evalArgs)
+      Linker.link(sym, root).invoke(args)
   }
 
   /**
@@ -554,35 +604,58 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   private def dependencies(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: WorkList): Unit = {
 
-    def unify(pat: Array[String], fact: Array[AnyRef], limit: Int): Env = {
-      val env = mutable.Map.empty[String, AnyRef]
+    def unify(pat: Array[Symbol.VarSym], fact: Array[AnyRef], limit: Int, len: Int): Env = {
+      val env: Env = new Array[AnyRef](len)
       var i = 0
       while (i < limit) {
         val varName = pat(i)
         if (varName != null)
-          env.update(varName, fact(i))
+          env(varName.getStackOffset) = fact(i)
         i = i + 1
       }
       env
     }
 
-    val table = root.tables(sym)
-    for ((rule, p) <- root.dependenciesOf(sym)) {
-      table match {
-        case r: ExecutableAst.Table.Relation =>
+
+    root.tables(sym) match {
+      case r: ExecutableAst.Table.Relation =>
+        for ((rule, p) <- root.dependenciesOf(sym)) {
           // unify all terms with their values.
-          val env = unify(p.index2var, fact, fact.length)
+          val env = unify(p.index2sym, fact, fact.length, rule.arity)
           if (env != null) {
             localWorkList.push((rule, env))
           }
-        case l: ExecutableAst.Table.Lattice =>
+        }
+
+      case l: ExecutableAst.Table.Lattice =>
+        for ((rule, p) <- root.dependenciesOf(sym)) {
           // unify only key terms with their values.
           val numberOfKeys = l.keys.length
-          val env = unify(p.index2var, fact, numberOfKeys)
+          val env = unify(p.index2sym, fact, numberOfKeys, rule.arity)
           if (env != null) {
             localWorkList.push((rule, env))
           }
+        }
+    }
+
+  }
+
+  /**
+    * A batch of (rule, environment)-pairs pending evaluation.
+    *
+    * This batch should evaluate the pairs from the begin offset `b` to the end offset `e`.
+    */
+  class Batch(array: Array[(Constraint, Env)], b: Int, e: Int) extends Callable[Iterator[Interpretation]] {
+    def call(): Iterator[Interpretation] = {
+      val result = new Array[Interpretation](e - b)
+      var index = 0
+      while (index < result.length) {
+        val (rule, env) = array(b + index)
+        val interp = evalBody(rule, env)
+        result(index) = interp
+        index = index + 1
       }
+      result.toIterator
     }
   }
 
@@ -593,12 +666,20 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     val t = System.nanoTime()
 
     // --- begin parallel execution ---
-    val readerTasks = new ArrayList[Callable[Interpretation]]()
-    for ((rule, env) <- worklist) {
-      val task = evalBody(rule, env)
-      readerTasks.add(task)
+    val readerTasks = new java.util.ArrayList[Batch]()
+
+    val worklistAsArray = worklist.toArray
+    val chunkSize = (worklist.length / (BatchesPerThread * options.threads)) + 1
+    var b = 0
+    while (b < worklistAsArray.length) {
+      val e = Math.min(b + chunkSize, worklistAsArray.length)
+      val batch = new Batch(worklistAsArray, b, e)
+      b = b + chunkSize
+
+      readerTasks.add(batch)
       currentReadTasks += 1
     }
+
     val result = flatten(readersPool.invokeAll(readerTasks))
     // -- end parallel execution ---
 
@@ -606,7 +687,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     readersTime += System.nanoTime() - t
 
     worklist.clear()
-    result
+    result.flatten
   }
 
   /**
@@ -616,7 +697,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     val t = System.nanoTime()
 
     // --- begin parallel execution ---
-    val tasks = new ArrayList[Callable[WorkList]]()
+    val tasks = new java.util.ArrayList[Callable[WorkList]]()
     for ((sym, facts) <- groupFactsBySymbol(iter)) {
       val task = inferredFacts(sym, facts)
       tasks.add(task)
@@ -682,11 +763,25 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Returns a new thread pool configured to use the appropriate number of threads.
     */
-  private def mkThreadPool(): ExecutorService = options.threads match {
+  private def mkThreadPool(name: String): ExecutorService = options.threads match {
     // Case 1: Parallel execution disabled. Use a single thread.
-    case 1 => Executors.newSingleThreadExecutor()
+    case 1 => Executors.newSingleThreadExecutor(mkThreadFactory(name))
     // Case 2: Parallel execution enabled. Use the specified number of processors.
-    case n => Executors.newFixedThreadPool(n)
+    case n => Executors.newFixedThreadPool(n, mkThreadFactory(name))
+  }
+
+  /**
+    * Returns a new thread factory.
+    */
+  private def mkThreadFactory(name: String): ThreadFactory = new ThreadFactory {
+    val count = new AtomicInteger()
+
+    def newThread(runnable: Runnable): Thread = {
+      val t = new Thread(runnable, s"pool-$name-${count.incrementAndGet()}")
+      t.setDaemon(false)
+      t.setPriority(Thread.NORM_PRIORITY)
+      t
+    }
   }
 
   /**
@@ -732,6 +827,16 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         throw TimeoutException(options.timeout, Duration(elapsed, NANOSECONDS))
       }
     }
+  }
+
+  /**
+    * Returns a shallow copy of the given array `src`.
+    */
+  @inline
+  def copy(src: Array[AnyRef]): Array[AnyRef] = {
+    val dst = new Array[AnyRef](src.length)
+    System.arraycopy(src, 0, dst, 0, src.length)
+    dst
   }
 
 }

@@ -94,7 +94,7 @@ object Codegen {
      */
     def descriptor(tpe: Type): String = {
       def inner(tpe: Type): String = tpe match {
-        case Type.Var(id, kind) => asm.Type.getDescriptor(Constants.objectClass) // TODO
+        case Type.Var(id, kind) => throw InternalCompilerException(s"Non-monomorphed type variable '$id in type '$tpe'.")
         case Type.Unit => asm.Type.getDescriptor(Constants.unitClass)
         case Type.Bool => asm.Type.BOOLEAN_TYPE.getDescriptor
         case Type.Char => asm.Type.CHAR_TYPE.getDescriptor
@@ -225,7 +225,7 @@ object Codegen {
     }
 
     tpe match {
-      case Type.Var(id, kind) => mv.visitInsn(ARETURN)  // TODO: Assumes that generics are boxed.
+      case Type.Var(id, kind) =>  throw InternalCompilerException(s"Non-monomorphed type variable '$id in type '$tpe'.")
       case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => mv.visitInsn(IRETURN)
       case Type.Int64 => mv.visitInsn(LRETURN)
       case Type.Float32 => mv.visitInsn(FRETURN)
@@ -278,7 +278,7 @@ object Codegen {
     case store: StoreExpression => compileStoreExpr(ctx, visitor, entryPoint)(store)
 
     case Expression.Var(sym, tpe, _) => tpe match {
-      case Type.Var(id, kind) => visitor.visitVarInsn(ALOAD, sym.getStackOffset)  // TODO: Assumes that generics are boxed.
+      case Type.Var(id, kind) =>  throw InternalCompilerException(s"Non-monomorphed type variable '$id in type '$tpe'.")
       case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ILOAD, sym.getStackOffset)
       case Type.Int64 => visitor.visitVarInsn(LLOAD, sym.getStackOffset)
       case Type.Float32 => visitor.visitVarInsn(FLOAD, sym.getStackOffset)
@@ -486,7 +486,7 @@ object Codegen {
     case Expression.Let(sym, exp1, exp2, _, _) =>
       compileExpression(ctx, visitor, entryPoint)(exp1)
       exp1.tpe match {
-        case Type.Var(id, kind) => visitor.visitVarInsn(ASTORE, sym.getStackOffset) // TODO: Assumes that generics are boxed.
+        case Type.Var(id, kind) =>  throw InternalCompilerException(s"Non-monomorphed type variable '$id.")
         case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ISTORE, sym.getStackOffset)
         case Type.Int64 => visitor.visitVarInsn(LSTORE, sym.getStackOffset)
         case Type.Float32 => visitor.visitVarInsn(FSTORE, sym.getStackOffset)
@@ -966,7 +966,7 @@ object Codegen {
           val clazz = Constants.bigIntegerClass
           val method = clazz.getMethod(bigIntOp, clazz)
           visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), bigIntOp, asm.Type.getMethodDescriptor(method), false);
-        case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
+        case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe} near ${e1.loc.format}")
       }
     }
   }
@@ -1072,7 +1072,7 @@ object Codegen {
             visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
             visitor.visitInsn(ICONST_0)
             visitor.visitJumpInsn(intOp, condElse)
-          case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
+          case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe} near ${e1.loc.format}")
         }
         visitor.visitInsn(ICONST_1)
         visitor.visitJumpInsn(GOTO, condEnd)

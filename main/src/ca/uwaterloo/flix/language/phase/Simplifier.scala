@@ -16,10 +16,15 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.language.ast.BinaryOperator.Equal
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.Validation._
+
+import scala.collection.mutable
 
 /**
   * A phase that simplifies a Typed AST by:
@@ -28,28 +33,34 @@ import ca.uwaterloo.flix.util.InternalCompilerException
   * - Eliminates match expressions.
   * - Numbers every variable.
   */
-object Simplifier {
+object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
-  def simplify(tast: TypedAst.Root)(implicit genSym: GenSym): SimplifiedAst.Root = {
+  type TopLevel = mutable.Map[Symbol.DefnSym, SimplifiedAst.Definition.Constant]
+
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
+    implicit val _ = flix.genSym
+
     val t = System.nanoTime()
 
-    val constants = tast.definitions.map { case (k, v) => k -> Definition.simplify(v) }
-    val enums = tast.enums.map {
+    val toplevel: TopLevel = mutable.Map.empty
+
+    val defns = root.definitions.map { case (k, v) => k -> Definition.simplify(v) }
+    val enums = root.enums.map {
       case (k, TypedAst.Declaration.Enum(doc, sym, cases0, sc, loc)) =>
         val cases = cases0 map {
           case (tag, TypedAst.Case(enum, tagName, tpe)) => tag -> SimplifiedAst.Case(enum, tagName, tpe)
         }
         k -> SimplifiedAst.Definition.Enum(sym, cases, loc)
     }
-    val lattices = tast.lattices.map { case (k, v) => k -> Definition.simplify(v) }
-    val collections = tast.tables.map { case (k, v) => k -> Table.simplify(v) }
-    val indexes = tast.indexes.map { case (k, v) => k -> Definition.simplify(v) }
-    val strata = tast.strata.map(simplify)
-    val properties = tast.properties.map { p => simplify(p) }
-    val time = tast.time
+    val lattices = root.lattices.map { case (k, v) => k -> Definition.simplify(v) }
+    val collections = root.tables.map { case (k, v) => k -> Table.simplify(v) }
+    val indexes = root.indexes.map { case (k, v) => k -> Definition.simplify(v) }
+    val strata = root.strata.map(s => simplify(s, toplevel))
+    val properties = root.properties.map { p => simplify(p) }
+    val time = root.time
 
     val e = System.nanoTime() - t
-    SimplifiedAst.Root(constants, enums, lattices, collections, indexes, strata, properties, time.copy(simplifier = e))
+    SimplifiedAst.Root(defns ++ toplevel, enums, lattices, collections, indexes, strata, properties, time.copy(simplifier = e)).toSuccess
   }
 
   object Table {
@@ -64,10 +75,10 @@ object Simplifier {
   object Declarations {
 
     object Constraints {
-      def simplify(tast: TypedAst.Constraint)(implicit genSym: GenSym): SimplifiedAst.Constraint = {
-        val head = Predicate.Head.simplify(tast.head)
-        val body = tast.body.map(Predicate.Body.simplify)
-        val cparams = tast.cparams.map {
+      def simplify(constraint: TypedAst.Constraint, toplevel: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Constraint = {
+        val head = Predicate.Head.simplify(constraint.head, constraint.cparams, toplevel)
+        val body = constraint.body.map(p => Predicate.Body.simplify(p, constraint.cparams, toplevel))
+        val cparams = constraint.cparams.map {
           case TypedAst.ConstraintParam.HeadParam(sym, tpe, loc) => SimplifiedAst.ConstraintParam.HeadParam(sym, tpe, loc)
           case TypedAst.ConstraintParam.RuleParam(sym, tpe, loc) => SimplifiedAst.ConstraintParam.RuleParam(sym, tpe, loc)
         }
@@ -330,10 +341,6 @@ object Simplifier {
             SExp.Let(name, SExp.Index(SExp.Var(v, tpe, loc), idx, pat.tpe, loc), exp, succ.tpe, loc)
         }
 
-      case (FSet(elms, rest, tpe, loc) :: ps, v :: vs) => ???
-
-      case (FMap(elms, rest, tpe, loc) :: ps, v :: vs) => ???
-
       case p => throw InternalCompilerException(s"Unsupported pattern '$p'.")
 
     }
@@ -362,8 +369,6 @@ object Simplifier {
       case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
         val es = elms map translate
         SimplifiedAst.Pattern.Tuple(es, tpe, loc)
-      case TypedAst.Pattern.FSet(elms, rest, tpe, loc) => ??? // TODO: Unsupported
-      case TypedAst.Pattern.FMap(elms, rest, tpe, loc) => ??? // TODO: Unsupported
     }
 
   }
@@ -371,23 +376,23 @@ object Simplifier {
   object Predicate {
 
     object Head {
-      def simplify(tast: TypedAst.Predicate.Head)(implicit genSym: GenSym): SimplifiedAst.Predicate.Head = tast match {
+      def simplify(tast: TypedAst.Predicate.Head, cparams: List[TypedAst.ConstraintParam], toplevel: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Predicate.Head = tast match {
         case TypedAst.Predicate.Head.True(loc) => SimplifiedAst.Predicate.Head.True(loc)
 
         case TypedAst.Predicate.Head.False(loc) => SimplifiedAst.Predicate.Head.False(loc)
 
         case TypedAst.Predicate.Head.Positive(sym, terms, loc) =>
-          val ts = terms map Term.Head.simplify
+          val ts = terms.map(t => Term.Head.simplify(t, cparams, toplevel))
           SimplifiedAst.Predicate.Head.Positive(sym, ts, loc)
 
         case TypedAst.Predicate.Head.Negative(sym, terms, loc) =>
-          val ts = terms map Term.Head.simplify
+          val ts = terms.map(t => Term.Head.simplify(t, cparams, toplevel))
           SimplifiedAst.Predicate.Head.Negative(sym, ts, loc)
       }
     }
 
     object Body {
-      def simplify(tast: TypedAst.Predicate.Body)(implicit genSym: GenSym): SimplifiedAst.Predicate.Body = tast match {
+      def simplify(tast: TypedAst.Predicate.Body, cparams: List[TypedAst.ConstraintParam], toplevel: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Predicate.Body = tast match {
         case TypedAst.Predicate.Body.Positive(sym, terms, loc) =>
           val ts = terms map Term.Body.simplify
           SimplifiedAst.Predicate.Body.Positive(sym, ts, loc)
@@ -400,7 +405,11 @@ object Simplifier {
           SimplifiedAst.Predicate.Body.Filter(sym, terms map Term.Body.simplify, loc)
 
         case TypedAst.Predicate.Body.Loop(sym, term, loc) =>
-          SimplifiedAst.Predicate.Body.Loop(sym, Term.Head.simplify(term), loc)
+          val cps = cparams.filter {
+            case TypedAst.ConstraintParam.HeadParam(sym2, _, _) => sym != sym2
+            case TypedAst.ConstraintParam.RuleParam(sym2, _, _) => sym != sym2
+          }
+          SimplifiedAst.Predicate.Body.Loop(sym, Term.Head.simplify(term, cps, toplevel), loc)
       }
     }
 
@@ -410,21 +419,64 @@ object Simplifier {
 
     object Head {
       /**
-        * Simplifies the given head term expression `e`.
+        * Simplifies the given head term expression `e0`.
         */
-      def simplify(e: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Term.Head = e match {
+      def simplify(e0: TypedAst.Expression, cparams: List[TypedAst.ConstraintParam], toplevel: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Term.Head = e0 match {
         case TypedAst.Expression.Var(sym, tpe, loc) =>
           SimplifiedAst.Term.Head.Var(sym, tpe, loc)
 
-        case TypedAst.Expression.Apply(TypedAst.Expression.Ref(sym, _, _), args, tpe, loc) =>
-          val as = args map simplify
-          SimplifiedAst.Term.Head.Apply(sym, as, tpe, loc)
+        case TypedAst.Expression.Apply(TypedAst.Expression.Ref(sym, _, _), args, tpe, loc) if isVarExps(args) =>
+          val as = args map {
+            case TypedAst.Expression.Var(x, _, _) => x
+            case e => throw InternalCompilerException(s"Unexpected non-variable expression: $e.")
+          }
+          SimplifiedAst.Term.Head.App(sym, as, tpe, loc)
 
-        case TypedAst.Expression.Apply(TypedAst.Expression.Hook(hook, _, _), args, tpe, loc) =>
-          throw InternalCompilerException("No longer supported.") // TODO
+        case _ =>
+          // Determine if the expression is a literal.
+          if (isLiteral(e0)) {
+            // The expression is a literal.
+            val lit = Expression.simplify(e0)
+            SimplifiedAst.Term.Head.Lit(lit, e0.tpe, e0.loc)
+          } else {
+            // The expression is not a literal.
+            // Must create a new top-level definition for the expression.
 
-        case _ => SimplifiedAst.Term.Head.Exp(Expression.simplify(e), e.tpe, e.loc)
+            // Generate a fresh symbol for the new definition.
+            val freshSym = Symbol.freshDefnSym("head")
+
+            // Generate fresh symbols for the formal parameters of the definition.
+            val freshSymbols = cparams.map {
+              case TypedAst.ConstraintParam.HeadParam(sym, tpe, _) => sym -> (Symbol.freshVarSym(sym), tpe)
+              case TypedAst.ConstraintParam.RuleParam(sym, tpe, _) => sym -> (Symbol.freshVarSym(sym), tpe)
+            }
+
+            // Generate fresh formal parameters for the definition.
+            val formals = freshSymbols.map {
+              case ((oldSym, (newSym, tpe))) => SimplifiedAst.FormalParam(newSym, tpe)
+            }
+
+            // The expression of the fresh definition is simply `e0` with fresh local variables.
+            val exp = copy(Expression.simplify(e0), freshSymbols.map(x => (x._1, x._2._1)).toMap)
+
+            // Construct the definition type.
+            val arrowType = Type.mkArrow(freshSymbols.map(_._2._2), e0.tpe)
+
+            // Assemble the fresh definition.
+            val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), freshSym, formals, exp, isSynthetic = true, arrowType, e0.loc)
+
+            // Add the fresh definition to the top-level.
+            toplevel += freshSym -> defn
+
+            // Return a head term that calls the freshly generated top-level definition.
+            SimplifiedAst.Term.Head.App(freshSym, freshSymbols.map(_._2._1), e0.tpe, e0.loc)
+          }
       }
+
+      /**
+        * Returns `true` if all the given expressions `exps` are variable expressions.
+        */
+      private def isVarExps(args: List[TypedAst.Expression]): Boolean = args.forall(_.isInstanceOf[TypedAst.Expression.Var])
     }
 
 
@@ -462,8 +514,8 @@ object Simplifier {
   def simplify(tast: TypedAst.Property)(implicit genSym: GenSym): SimplifiedAst.Property =
     SimplifiedAst.Property(tast.law, tast.defn, Expression.simplify(tast.exp))
 
-  def simplify(s: TypedAst.Stratum)(implicit genSym: GenSym): SimplifiedAst.Stratum =
-    SimplifiedAst.Stratum(s.constraints.map(Declarations.Constraints.simplify))
+  def simplify(s: TypedAst.Stratum, toplevel: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Stratum =
+    SimplifiedAst.Stratum(s.constraints.map(d => Declarations.Constraints.simplify(d, toplevel)))
 
   /**
     * Returns `true` if the given pattern `pat0` is a literal.
@@ -487,6 +539,27 @@ object Simplifier {
   }
 
   /**
+    * Returns `true` if the given expression `exp0` is a literal.
+    */
+  def isLiteral(exp0: TypedAst.Expression): Boolean = exp0 match {
+    case TypedAst.Expression.Unit(loc) => true
+    case TypedAst.Expression.True(loc) => true
+    case TypedAst.Expression.False(loc) => true
+    case TypedAst.Expression.Char(lit, loc) => true
+    case TypedAst.Expression.Float32(lit, loc) => true
+    case TypedAst.Expression.Float64(lit, loc) => true
+    case TypedAst.Expression.Int8(lit, loc) => true
+    case TypedAst.Expression.Int16(lit, loc) => true
+    case TypedAst.Expression.Int32(lit, loc) => true
+    case TypedAst.Expression.Int64(lit, loc) => true
+    case TypedAst.Expression.BigInt(lit, loc) => true
+    case TypedAst.Expression.Str(lit, loc) => true
+    case TypedAst.Expression.Tag(sym, tag, exp, tpe, loc) => isLiteral(exp)
+    case TypedAst.Expression.Tuple(elms, tpe, loc) => elms forall isLiteral
+    case _ => false
+  }
+
+  /**
     * Returns the given pattern `pat0` as an expression.
     */
   def pat2exp(pat0: TypedAst.Pattern): SimplifiedAst.Expression = pat0 match {
@@ -505,6 +578,79 @@ object Simplifier {
     case TypedAst.Pattern.Tag(sym, tag, p, tpe, loc) => SimplifiedAst.Expression.Tag(sym, tag, pat2exp(p), tpe, loc)
     case TypedAst.Pattern.Tuple(elms, tpe, loc) => SimplifiedAst.Expression.Tuple(elms map pat2exp, tpe, loc)
     case _ => throw InternalCompilerException(s"Unexpected non-literal pattern $pat0.")
+  }
+
+  /**
+    * Returns a copy of the given expression `exp0` where every variable symbol
+    * has been replaced according to the given substitution `m`.
+    */
+  private def copy(exp0: SimplifiedAst.Expression, m: Map[Symbol.VarSym, Symbol.VarSym]): SimplifiedAst.Expression = {
+    def visit(e: SimplifiedAst.Expression): SimplifiedAst.Expression = e match {
+      case SimplifiedAst.Expression.Unit => e
+      case SimplifiedAst.Expression.True => e
+      case SimplifiedAst.Expression.False => e
+      case SimplifiedAst.Expression.Char(lit) => e
+      case SimplifiedAst.Expression.Float32(lit) => e
+      case SimplifiedAst.Expression.Float64(lit) => e
+      case SimplifiedAst.Expression.Int8(lit) => e
+      case SimplifiedAst.Expression.Int16(lit) => e
+      case SimplifiedAst.Expression.Int32(lit) => e
+      case SimplifiedAst.Expression.Int64(lit) => e
+      case SimplifiedAst.Expression.BigInt(lit) => e
+      case SimplifiedAst.Expression.Str(lit) => e
+      case SimplifiedAst.Expression.LoadBool(n, o) => e
+      case SimplifiedAst.Expression.LoadInt8(b, o) => e
+      case SimplifiedAst.Expression.LoadInt16(b, o) => e
+      case SimplifiedAst.Expression.LoadInt32(b, o) => e
+      case SimplifiedAst.Expression.StoreBool(b, o, v) => e
+      case SimplifiedAst.Expression.StoreInt8(b, o, v) => e
+      case SimplifiedAst.Expression.StoreInt16(b, o, v) => e
+      case SimplifiedAst.Expression.StoreInt32(b, o, v) => e
+      case SimplifiedAst.Expression.Var(sym, tpe, loc) => m.get(sym) match {
+        case None => SimplifiedAst.Expression.Var(sym, tpe, loc)
+        case Some(replacement) => SimplifiedAst.Expression.Var(replacement, tpe, loc)
+      }
+      case SimplifiedAst.Expression.Ref(name, tpe, loc) => e
+      case SimplifiedAst.Expression.Lambda(fparams, body, tpe, loc) => ??? // TODO
+      case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
+      case SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) => e
+      case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) => ??? // TODO
+      case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
+        SimplifiedAst.Expression.ApplyRef(name, args.map(visit), tpe, loc)
+      case SimplifiedAst.Expression.ApplyTail(name, formals, args, tpe, loc) =>
+        SimplifiedAst.Expression.ApplyTail(name, formals, args.map(visit), tpe, loc)
+      case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) =>
+        SimplifiedAst.Expression.ApplyHook(hook, args.map(visit), tpe, loc)
+      case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
+        SimplifiedAst.Expression.Apply(visit(exp), args.map(visit), tpe, loc)
+      case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) =>
+        SimplifiedAst.Expression.Unary(op, visit(exp), tpe, loc)
+      case SimplifiedAst.Expression.Binary(op, exp1, exp2, tpe, loc) =>
+        SimplifiedAst.Expression.Binary(op, visit(exp1), visit(exp2), tpe, loc)
+      case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+        SimplifiedAst.Expression.IfThenElse(visit(exp1), visit(exp2), visit(exp3), tpe, loc)
+      case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
+        SimplifiedAst.Expression.Let(sym, visit(exp1), visit(exp2), tpe, loc)
+      case SimplifiedAst.Expression.Is(exp, tag, loc) =>
+        SimplifiedAst.Expression.Is(visit(exp), tag, loc)
+      case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) =>
+        SimplifiedAst.Expression.Tag(enum, tag, visit(exp), tpe, loc)
+      case SimplifiedAst.Expression.Untag(tag, exp, tpe, loc) =>
+        SimplifiedAst.Expression.Untag(tag, visit(exp), tpe, loc)
+      case SimplifiedAst.Expression.Index(exp, offset, tpe, loc) =>
+        SimplifiedAst.Expression.Index(visit(exp), offset, tpe, loc)
+      case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
+        SimplifiedAst.Expression.Tuple(elms.map(visit), tpe, loc)
+      case SimplifiedAst.Expression.Existential(params, exp, loc) =>
+        SimplifiedAst.Expression.Existential(params, visit(exp), loc)
+      case SimplifiedAst.Expression.Universal(params, exp, loc) =>
+        SimplifiedAst.Expression.Universal(params, visit(exp), loc)
+      case SimplifiedAst.Expression.UserError(tpe, loc) => e
+      case SimplifiedAst.Expression.MatchError(tpe, loc) => e
+      case SimplifiedAst.Expression.SwitchError(tpe, loc) => e
+    }
+
+    visit(exp0)
   }
 
 }

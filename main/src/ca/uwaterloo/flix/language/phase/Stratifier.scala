@@ -16,6 +16,9 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.util.Validation
@@ -27,12 +30,12 @@ import ca.uwaterloo.flix.util.Validation._
   *
   * Reports a [[StratificationError]] if the constraint graph contains negative cycles.
   */
-object Stratifier {
+object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
 
   /**
     * Returns a stratified version of the given AST `root`.
     */
-  def stratify(root: Root): Validation[Root, StratificationError] = {
+  def run(root: Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = {
 
     // TODO: Implement
 

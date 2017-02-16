@@ -2,7 +2,7 @@ language: java
 
 env:
   global:
-    - ANT_OPTS="-Xss8m -Xmx2048m"
+    - ANT_OPTS="-Xss8m -Xmx1536m"
 
 jdk:
    - oraclejdk8
@@ -23,3 +23,7 @@ before_install:
   - popd
   - scalac -version
   - which scalac
+
+script:
+    - ant build-all
+    - ant test-jar

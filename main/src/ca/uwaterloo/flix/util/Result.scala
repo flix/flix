@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.util
 
+import scala.annotation.tailrec
+
 /**
   * A result either holds a value ([[Result.Ok]]) or holds an error ([[Result.Err]]).
   *
@@ -82,12 +84,20 @@ object Result {
     *
     * Returns the first error value encountered, if any.
     */
-  def seqM[T, E](xs: List[Result[T, E]]): Result[List[T], E] = xs match {
-    case Nil => Ok(Nil)
-    case y :: ys => y match {
-      case Ok(r) => seqM(ys).map(rs => r :: rs)
-      case Err(e) => Err(e)
+  def seqM[T, E](xs: List[Result[T, E]]): Result[List[T], E] = {
+    /**
+      * Local tail recursive visitor. Uses an accumulator to avoid stack overflow.
+      */
+    @tailrec
+    def visit(l: List[Result[T, E]], acc: List[T]): Result[List[T], E] = l match {
+      case Nil => Ok(acc.reverse)
+      case y :: ys => y match {
+        case Ok(r) => visit(ys, r :: acc)
+        case Err(e) => Err(e)
+      }
     }
+
+    visit(xs, Nil)
   }
 
 }

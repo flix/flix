@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
@@ -27,14 +28,16 @@ import scala.collection.mutable
 /**
   * The Namer phase introduces unique symbols for each syntactic entity in the program.
   */
-object Namer {
+object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
 
   import NameError._
 
   /**
     * Introduces unique names for each syntactic entity in the given `program`.
     **/
-  def namer(program: WeededAst.Program)(implicit genSym: GenSym): Validation[NamedAst.Program, NameError] = {
+  def run(program: WeededAst.Program)(implicit flix: Flix): Validation[NamedAst.Program, NameError] = {
+    implicit val _ = flix.genSym
+
     // make an empty program to fold over.
     val prog0 = NamedAst.Program(
       enums = Map.empty,
@@ -499,12 +502,6 @@ object Namer {
         case WeededAst.Pattern.Str(lit, loc) => NamedAst.Pattern.Str(lit, loc)
         case WeededAst.Pattern.Tag(enum, tag, pat, loc) => NamedAst.Pattern.Tag(enum, tag, visit(pat), Type.freshTypeVar(), loc)
         case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
-        case WeededAst.Pattern.FSet(elms, rest, loc) => NamedAst.Pattern.FSet(elms map visit, rest map visit, Type.freshTypeVar(), loc)
-        case WeededAst.Pattern.FMap(elms, rest, loc) =>
-          val kvs = elms map {
-            case (k, v) => visit(k) -> visit(v)
-          }
-          NamedAst.Pattern.FMap(kvs, rest map visit, Type.freshTypeVar(), loc)
       }
 
       (visit(pat0), m.toMap)
@@ -535,12 +532,6 @@ object Namer {
         case WeededAst.Pattern.Str(lit, loc) => NamedAst.Pattern.Str(lit, loc)
         case WeededAst.Pattern.Tag(enum, tag, pat, loc) => NamedAst.Pattern.Tag(enum, tag, visit(pat), Type.freshTypeVar(), loc)
         case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
-        case WeededAst.Pattern.FSet(elms, rest, loc) => NamedAst.Pattern.FSet(elms map visit, rest map visit, Type.freshTypeVar(), loc)
-        case WeededAst.Pattern.FMap(elms, rest, loc) =>
-          val kvs = elms map {
-            case (k, v) => visit(k) -> visit(v)
-          }
-          NamedAst.Pattern.FMap(kvs, rest map visit, Type.freshTypeVar(), loc)
       }
 
       visit(pat0)
@@ -566,10 +557,6 @@ object Namer {
       case WeededAst.Pattern.Str(lit, loc) => Nil
       case WeededAst.Pattern.Tag(enumName, tagName, p, loc) => freeVars(p)
       case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
-      case WeededAst.Pattern.FSet(elms, rest, loc) => elms.flatMap(freeVars) ++ rest.map(freeVars).getOrElse(Nil)
-      case WeededAst.Pattern.FMap(elms, rest, loc) => (elms flatMap {
-        case (k, v) => freeVars(k) ++ freeVars(v)
-      }) ++ rest.map(freeVars).getOrElse(Nil)
     }
 
 
@@ -604,7 +591,7 @@ object Namer {
           case ts => NamedAst.Predicate.Body.Filter(qname, ts, loc)
         }
       case WeededAst.Predicate.Body.Loop(pat, term, loc) =>
-        val (p, env) = Patterns.namer(pat)
+        val p = Patterns.namer(pat, headEnv0)
         Expressions.namer(term, ruleEnv0, tenv0) map {
           case t => NamedAst.Predicate.Body.Loop(p, t, loc)
         }

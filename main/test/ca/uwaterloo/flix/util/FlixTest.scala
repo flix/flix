@@ -23,20 +23,12 @@ class FlixTest(name: String, path: String) extends FunSuite {
 
   override def suiteName: String = name
 
-  /*
-   * Include the standard library.
-   */
-  val Library: List[String] = List()
-
   {
-    val opts = Options.DefaultTest.copy(evaluation=Evaluation.Interpreted).copy(core = false)
+    val opts = Options.DefaultTest.copy(core = false)
     val flix = new Flix().setOptions(opts)
 
     // Add the given path.
     flix.addPath(path)
-    // ... and the library paths.
-    for (path <- Library)
-      flix.addPath(path)
 
     // Evaluate the program to obtain the model.
     val model = flix.solve().get

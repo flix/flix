@@ -46,7 +46,7 @@ def nonValue(e0: Expression): Bool = !isValue(e0)
 ///
 /// An environment is a map from variables to addresses.
 ///
-type Environment = Environment(Map2[Variable, Address])
+type Environment = Environment(Map[Variable, Address])
 
 ///
 /// The type of storable values.
@@ -62,7 +62,7 @@ enum Storable {
 ///
 /// A store is a map from addresses to a set of storables.
 ///
-type Store = Store(Map2[Address, Set2[Storable]])
+type Store = Store(Map[Address, Set[Storable]])
 
 ///
 /// The CEK-machine operates based on continuations derived
@@ -104,8 +104,8 @@ def inject(e0: Expression): State =
     // Save the empty continuation into the store.
     let kont = Kontinuation.KEmpty;
     let kptr = A(0);
-    let env0 = Map2.empty();
-    let sto0 = Map2.insert(kptr, Set2.singleton(StoredKont(kont)), Map2.empty());
+    let env0 = Map.empty();
+    let sto0 = Map.insert(kptr, Set.singleton(StoredKont(kont)), Map.empty());
     let time = Time(1);
         State(e0, Environment(env0), Store(sto0), kptr, time)
 
@@ -140,22 +140,22 @@ enum Outcome {
 ///
 /// Returns all possible transitions (outcomes) from the given state `m0` and continuation `k0`.
 ///
-def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
+def step(m0: State, k0: Kontinuation): Set[Outcome] = match (m0, k0) with {
 
     //
     // Variable Expression.
     //
     case (State(Var(x), Environment(env0), Store(sto0), kptr, time), _) =>
         // The expression is a variable. Look it up in the environment.
-         match Map2.lookup(x, env0) with {
-            case None => Set2(Abort("Unbound variable.") :: Nil)
+         match Map.get(x, env0) with {
+            case None => Set(Abort("Unbound variable.") :: Nil)
             case Some(ptr) =>
-                let values = Option.getWithDefault(Map2.lookup(ptr, sto0), Set2.empty());
+                let values = Option.getWithDefault(Map.get(ptr, sto0), Set.empty());
                 let f = storable -> match storable with {
                     case StoredKont(_) => Abort("Non-value storable.")
                     case StoredValue(v, env1) => Next(State(v, env1, Store(sto0), kptr, tick(m0, k0)))
                 };
-                Set2.map(f, values)
+                Set.map(f, values)
          }
 
     //
@@ -168,10 +168,10 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let a = alloc(m0, k0);
         // Store the continuation.
         let newValue = StoredKont(k);
-        let oldValue = Option.getWithDefault(Map2.lookup(a, sto0), Set2.empty());
-        let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
-        let sto1 = Map2.insert(a, lubValue, sto0);
-            Set2.singleton(Next(State(e1, Environment(env0), Store(sto1), a, tick(m0, k0))))
+        let oldValue = Option.getWithDefault(Map.get(a, sto0), Set.empty());
+        let lubValue = Set.union(Set.singleton(newValue), oldValue);
+        let sto1 = Map.insert(a, lubValue, sto0);
+            Set.singleton(Next(State(e1, Environment(env0), Store(sto1), a, tick(m0, k0))))
 
     //
     // Application1 Kontinuation.
@@ -183,10 +183,10 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         let a = alloc(m0, k0);
         // Store the continuation.
         let newValue = StoredKont(k);
-        let oldValue = Option.getWithDefault(Map2.lookup(a, sto0), Set2.empty());
-        let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
-        let sto1 = Map2.insert(a, lubValue, sto0);
-            Set2.singleton(Next(State(e2, env2, Store(sto1), a, tick(m0, k0))))
+        let oldValue = Option.getWithDefault(Map.get(a, sto0), Set.empty());
+        let lubValue = Set.union(Set.singleton(newValue), oldValue);
+        let sto1 = Map.insert(a, lubValue, sto0);
+            Set.singleton(Next(State(e2, env2, Store(sto1), a, tick(m0, k0))))
 
     //
     // Application2 Kontinuation.
@@ -195,167 +195,68 @@ def step(m0: State, k0: Kontinuation): Set2[Outcome] = match (m0, k0) with {
         // Evaluate the body of the lambda `v1` with argument `v2`.
         let Abs(x, body) = v1;
         let a = alloc(m0, k0);
-        let env2 = Map2.insert(x, a, env1);
+        let env2 = Map.insert(x, a, env1);
         let newValue = StoredValue(v2, Environment(env0));
-        let oldValue = Option.getWithDefault(Map2.lookup(a, sto0), Set2.empty());
-        let lubValue = Set2.union(Set2.singleton(newValue), oldValue);
-        let sto1 = Map2.insert(a, lubValue, sto0);
-            Set2.singleton(Next(State(body, Environment(env2), Store(sto1), kont, tick(m0, k0))))
+        let oldValue = Option.getWithDefault(Map.get(a, sto0), Set.empty());
+        let lubValue = Set.union(Set.singleton(newValue), oldValue);
+        let sto1 = Map.insert(a, lubValue, sto0);
+            Set.singleton(Next(State(body, Environment(env2), Store(sto1), kont, tick(m0, k0))))
 
     //
     // Stuck.
     //
-    case _ => Set2.singleton(Done(m0))
+    case _ => Set.singleton(Done(m0))
 }
 
 ///
 /// Returns all possible transitions from the given state `m0`.
 ///
-def stepAll(m0: State): Set2[Outcome] = match m0 with {
+def stepAll(m0: State): Set[Outcome] = match m0 with {
     case State(exp0, env0, Store(sto0), kptr, time) =>
-        let values = Option.getWithDefault(Map2.lookup(kptr, sto0), Set2.empty());
+        let values = Option.getWithDefault(Map.get(kptr, sto0), Set.empty());
         let f = value -> match value with {
             case StoredKont(k) => step(m0, k)
-            case _             => Set2.empty()
+            case _             => Set.empty()
         };
-        Set2.flatMap(f, values)
+        Set.flatMap(f, values)
 }
 
 ///
 /// Computes the fixed-point of the transition relation defined by `stepAll`
 /// starting from the given machine configuration `m0`.
 ///
-def eval(states: Set2[State]): Set2[State] =
-    let f: Outcome -> Set2[State] = m -> match println!(m) with {
-        case Next(m0) => Set2.singleton(m0)
-        case Done(m0) => Set2.singleton(m0)
-        case Abort(e) => Set2.empty()
+def eval(states: Set[State]): Set[State] =
+    let f: Outcome -> Set[State] = m -> match println!(m) with {
+        case Next(m0) => Set.singleton(m0)
+        case Done(m0) => Set.singleton(m0)
+        case Abort(e) => Set.empty()
     };
-    let nextStates = Set2.flatMap(m0 -> Set2.flatMap(f, stepAll(m0)), states);
-        if (nextStates `Set2.isSubsetOf` states)
+    let nextStates = Set.flatMap(m0 -> Set.flatMap(f, stepAll(m0)), states);
+        if (nextStates `Set.isSubsetOf` states)
             states
         else
-            Set2.union(states, eval(nextStates))
+            Set.union(states, eval(nextStates))
 
 ///
 /// Evaluates the given expression to a value by injecting it into the initial state of the CEK machine
 /// and repeatedly performing a transition until the machine halts with a value (or aborts).
 ///
-def run(e0: Expression): Set2[State] = eval(Set2.singleton(inject(e0)))
+def run(e0: Expression): Set[State] = eval(Set.singleton(inject(e0)))
 
 //
 // We can now test our CEK machine!
 //
-def testEval1: Set2[State] = run(Var(V(0)))                                                      // x
-def testEval2: Set2[State] = run(Abs(V(0), Var(V(0))))                                           // λx. x
-def testEval3: Set2[State] = run(Abs(V(0), Abs(V(1), Var(V(0)))))                                // λx. λy. x
-def testEval4: Set2[State] = run(App(Abs(V(0), Var(V(0))), Abs(V(1), Var(V(1)))))                // (λx. x) (λy. y)
-def testEval5: Set2[State] = run(App(Abs(V(0), Abs(V(1), Var(V(0)))), Abs(V(2), Var(V(2)))))     // (λx. λy. x) (λz. z)
-def testEval6: Set2[State] = run(App(App(Abs(V(0), Abs(V(1), App(Var(V(0)), Var(V(1))))), Abs(V(2), Var(V(2)))), Abs(V(3), Var(V(3)))))     // ((λx. λy. x y) (λz. z)) (λw. w)
+def testEval1: Set[State] = run(Var(V(0)))                                                      // x
+def testEval2: Set[State] = run(Abs(V(0), Var(V(0))))                                           // λx. x
+def testEval3: Set[State] = run(Abs(V(0), Abs(V(1), Var(V(0)))))                                // λx. λy. x
+def testEval4: Set[State] = run(App(Abs(V(0), Var(V(0))), Abs(V(1), Var(V(1)))))                // (λx. x) (λy. y)
+def testEval5: Set[State] = run(App(Abs(V(0), Abs(V(1), Var(V(0)))), Abs(V(2), Var(V(2)))))     // (λx. λy. x) (λz. z)
+def testEval6: Set[State] = run(App(App(Abs(V(0), Abs(V(1), App(Var(V(0)), Var(V(1))))), Abs(V(2), Var(V(2)))), Abs(V(3), Var(V(3)))))     // ((λx. λy. x y) (λz. z)) (λw. w)
 
 //
 // Here is the omega-combinator: (λx. x x) (λx. x x)
 //
-def testOmega: Set2[State] = run(
+def testOmega: Set[State] = run(
     App(
         Abs(V(0), App(Var(V(0)), Var(V(0)))),
         Abs(V(0), App(Var(V(0)), Var(V(0))))))
-
-
-
-
-
-//
-// ----------------------------------------------------------------------------
-// TODO: Replace by functions from the standard library.
-// ----------------------------------------------------------------------------
-//
-
-enum Set2[a] {
-    case Set2(List[a])
-}
-
-namespace Set2 {
-
-    def empty[a]: Set2[a] = Set2(Nil)
-
-    def singleton[a](a: a): Set2[a] = Set2(a :: Nil)
-
-    ///
-     /// Adds `x` to `xs`.
-     ///
-     def insert[a](x: a, xs: Set2[a]): Set2[a] =
-         let Set2(s) = xs;
-             if (List.memberOf(x, s)) xs else Set2(x :: s)
-
-    def union[a](xs: Set2[a], ys: Set2[a]): Set2[a] =
-         let Set2(s) = xs;
-             List.foldRight(insert, ys, s)
-
-
-    def memberOf[a](x: a, xs: Set2[a]): Bool =
-         let Set2(s) = xs;
-             List.memberOf(x, s)
-
-    ///
-     /// Returns `true` if and only if all elements in `xs` satisfy the predicate `f`.
-     ///
-     def forall[a](f: a -> Bool, xs: Set2[a]): Bool =
-         let Set2(s) = xs;
-             List.forall(f, s)
-
-    ///
-     /// Returns true if and only if every element in `xs` appears in `ys`.
-     ///
-     def isSubsetOf[a](xs: Set2[a], ys: Set2[a]): Bool = forall(x -> memberOf(x, ys), xs)
-
-    ///
-     /// Returns the result of applying `f` to every element in `xs`.
-     /// Note: The returned set may be smaller than `xs`.
-     ///
-     def map[a, b](f: a -> b, xs: Set2[a]): Set2[b] = match xs with {
-         case Set2(Nil) => Set2(Nil)
-         case Set2(x :: rs) => insert(f(x), map(f, Set2(rs)))
-     }
-
-    ///
-    /// Returns the result of applying `f` to every element in `xs` and taking the union.
-    ///
-    def flatMap[a,b](f: a -> Set2[b], xs: Set2[a]): Set2[b] = match xs with {
-        case Set2(Nil) => Set2(Nil)
-        case Set2(x :: rs) => union(f(x), flatMap(f, Set2(rs)))
-    }
-
-}
-
-enum Map2[k, v] {
-    case Map2(List[(k, v)])
-}
-
-namespace Map2 {
-
-    def empty[k, v]: Map2[k, v] = Map2(Nil)
-
-    def insert[k, v](k: k, v: v, m: Map2[k, v]): Map2[k, v] =
-        let Map2(xs) = m;
-            Map2((k, v) :: xs)
-
-    def lookup[k, v](k: k, m: Map2[k, v]): Option[v] =
-        let Map2(xs) = m;
-            getHelper(k, xs)
-
-    def getHelper[k, v](k: k, xs: List[(k, v)]): Option[v] = match xs with {
-        case Nil => None
-        case (y, v) :: ys => if (k == y) Some(v) else getHelper(k, ys)
-    }
-
-    def remove[k, v](k: k, m: Map2[k, v]): Map2[k, v] =
-        let Map2(xs) = m;
-            Map2(removeHelper(k, xs))
-
-    def removeHelper[k, v](k: k, xs: List[(k, v)]): List[(k, v)] = match xs with {
-        case Nil => Nil
-        case (y, v) :: ys => if (k == y) removeHelper(k,  ys) else (y, v) :: removeHelper(k, ys)
-    }
-
-}

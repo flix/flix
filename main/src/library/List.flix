@@ -14,6 +14,17 @@
  * limitations under the License.
  */
 
+///
+/// The List type.
+///
+/// A list is either the empty list represented by `Nil`, or
+/// an element `v` followed by a list `vs` represented by `v :: vs`.
+///
+enum List[t] {
+    case Nil,
+    case Cons(t, List[t])
+}
+
 namespace List {
 
     ///
@@ -755,9 +766,15 @@ namespace List {
     //
     // ## List Conversions
     //
+
+    ///
+    /// Returns the list `xs` as a set.
+    ///
     def toSet[a](xs: List[a]): Set[a] = foldRight(Set.insert, Set.empty(), xs)
 
-    // ## TODO
-    ////- **toMap(xs: List[(A, B)]): Map[A, B]**
-    ////    - Returns the association list as a map. If the list contains multiple values for the same key, the value appearing latest in the list is used.
+    ///
+    /// Returns the association list `xs` as a map.
+    /// If `xs` contains multiple values for the same key, the value appearing latest in `xs` is used.
+    ///
+    def toMap[a, b](xs: List[(a, b)]): Map[a, b] = foldLeft((m, x) -> Map.insert(fst(x), snd(x), m), Map.empty(), xs)
 }
