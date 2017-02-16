@@ -1,8 +1,6 @@
 // TODO: Add to unit test (along with other machines).
 
-// TODO: Use Set/Map empty.
 // TODO: Use map.GetWithDefault
-
 
 // TODO: Ondrej: Do we want a closure expression or not?
 
@@ -519,8 +517,7 @@ def step(m0: State, k0: Kontinuation): Set[Outcome] = match (m0, k0) with {
                 let q1 = Queue.weakUpdate(job, q0);
                     Set.singleton(Next(State(Ptr(childAddr), Environment.empty(), sto0, s0, f0, r0, q1, kont, tick(m0, k0))))
             case Rejected(v) =>
-                // NB: Conceptually similar to fulfilled.
-                ???
+                ??? // NB: Conceptually similar to fulfilled.
         };
         Set.flatMap(f, PromiseState.lookup(a, s0))
 
@@ -643,16 +640,14 @@ namespace Environment {
     ///
     /// Returns `true` if the two given environments `env1` and `env2` are equal.
     ///
-    def eq(env1: Environment, env2: Environment): Bool = ???
+    def eq(env1: Environment, env2: Environment): Bool =
+        let Environment(x) = env1;
+        let Environment(y) = env2;
+            Map.eq(x, y)
 
 }
 
 namespace Store {
-
-    ///
-    /// Returns `true` if the two given stores `sto1` and `sto2` are equal.
-    ///
-    def eq(sto1: Store, sto2: Store): Bool = ???
 
     ///
     /// Returns the set of storable values pointed-to by the (abstract) address `a`.
@@ -672,15 +667,18 @@ namespace Store {
         let lubValue = Set.union(Set.singleton(newValue), oldValue);
             Store(Map.insert(a, lubValue, sto0))
 
+    ///
+    /// Returns `true` if the two given stores `sto1` and `sto2` are equal.
+    ///
+    def eq(sto1: Store, sto2: Store): Bool =
+        let Store(x) = sto1;
+        let Store(y) = sto2;
+            Map.eq(x, y)
+
 }
 
 
 namespace PromiseState {
-
-    ///
-    /// Returns `true` if the two given promise states `s1` and `s2` are equal.
-    ///
-    def eq(s1: PromiseState, s2: PromiseState): Bool = ???
 
     ///
     /// Returns the set of promise values for the given (abstract) address `a`.
@@ -699,14 +697,16 @@ namespace PromiseState {
         let lubValue = Set.union(Set.singleton(newValue), oldValue);
             PromiseState(Map.insert(a, lubValue, m))
 
+    ///
+    /// Returns `true` if the two given promise states `s1` and `s2` are equal.
+    ///
+    def eq(s1: PromiseState, s2: PromiseState): Bool =
+        let PromiseState(x) = s1;
+        let PromiseState(y) = s2;
+            Map.eq(x, y)
 }
 
 namespace FulfillReactions {
-
-    ///
-    /// Returns `true` if the two given fullfill reactions `f1` and `f2` are equal.
-    ///
-    def eq(f1: FulfillReactions, f2: FulfillReactions): Bool = ???
 
     ///
     /// Returns the (lambda, environment, childAddr)-triples associated with the given (abstract) address `a`.
@@ -725,14 +725,17 @@ namespace FulfillReactions {
         let lubValue = Set.union(Set.singleton(newValue), oldValue);
             FulfillReactions(Map.insert(a, lubValue, m))
 
+    ///
+    /// Returns `true` if the two given fullfill reactions `f1` and `f2` are equal.
+    ///
+    def eq(f1: FulfillReactions, f2: FulfillReactions): Bool =
+        let FulfillReactions(x) = f1;
+        let FulfillReactions(y) = f2;
+            Map.eq(x, y)
+
 }
 
 namespace Queue {
-
-    ///
-    /// Returns `true` if the two given reaction queues `q1` and `q2` are equal.
-    ///
-    def eq(q1: Queue, q2: Queue): Bool = ???
 
     ///
     /// Applies the given function `f` to the set (PromiseValue, Lambda, Environment, childAddress)-tuples in the reaction queue `q`.
@@ -752,6 +755,14 @@ namespace Queue {
     def strongDelete(pv: PromiseValue, e: Expression, env: Environment, a: Address, q: Queue): Queue =
         let Queue(Set(xs)) = q;
             Queue(Set(List.remove((pv, e, env, a), xs)))
+
+    ///
+    /// Returns `true` if the two given reaction queues `q1` and `q2` are equal.
+    ///
+    def eq(q1: Queue, q2: Queue): Bool =
+        let Queue(x) = q1;
+        let Queue(y) = q2;
+            Set.eq(x, y)
 
 }
 
