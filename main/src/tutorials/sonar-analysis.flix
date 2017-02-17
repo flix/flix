@@ -615,6 +615,25 @@ def eval(xs: Set[Outcome]): Set[Outcome] =
 ///
 def run(e0: Expression): Set[Outcome] = eval(#{Next(inject(e0))})
 
+///
+/// Returns the edges of the promise graph of the given state `m0`.
+///
+def getPromiseGraphEdges(m0: State): Set[Edge] =
+    let State(_, _, _, _, _, _, _, g0, _, _) = m0;
+    let PromiseGraph(edges) = g0;
+        edges
+
+///
+/// Returns the promise graph of the given set of outcomes `xs`.
+///
+def getPromiseGraph(xs: Set[Outcome]): Set[Edge] =
+    let f = outcome -> match outcome with {
+        case Next(s)  => getPromiseGraphEdges(s)
+        case Done(s)  => getPromiseGraphEdges(s)
+        case Abort(e) => Set.empty()
+    };
+    Set.flatMap(f, xs)
+
 
 namespace Outcome {
 
@@ -642,8 +661,8 @@ namespace State {
     /// Returns `true` if the two given states `s1` and `s2` are equal.
     ///
     def eq(s1: State, s2: State): Bool =
-        let State(e1, env1, sto1, s1, f1, r1, q1, kptr1, t1, g0) = s1;
-        let State(e2, env2, sto2, s2, f2, r2, q2, kptr2, t2, g0) = s2;
+        let State(e1, env1, sto1, s1, f1, r1, q1, g1, kptr1, t1) = s1;
+        let State(e2, env2, sto2, s2, f2, r2, q2, g2, kptr2, t2) = s2;
             e1 == e2 &&
             Environment.eq(env1, env2) &&
             Store.eq(sto1, sto2) &&
