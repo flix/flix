@@ -202,19 +202,19 @@ enum PromiseValue {
 enum Edge {
 
     // A resolve edge from a value allocation site (label) to a promise allocation site (label).
-    case ResolveEdge(Label, Label),
+    case ResolveEdge(Address, Address),
 
     // A reject edge from a value allocation site (label) to a promise allocation site (label).
-    case RejectEdge(Label, Label),
+    case RejectEdge(Address, Address),
 
     // A resolve registration edge from a promise allocation site (label) to lambda (label).
-    case ResolveRegistration(Label, Label),
+    case ResolveRegistration(Address, Address),
 
     // A reject registration edge from a promise allocation site (label) to lambda (label).
-    case RejectRegistration(Label, Label),
+    case RejectRegistration(Address, Address),
 
     // A link edge from a promise allocation site (label) to a promise allocation site (label).
-    case LinkEdge(Label, Label)
+    case LinkEdge(Address, Address)
 
 }
 
@@ -293,7 +293,7 @@ def step(m0: State, k0: Kontinuation): Set[Outcome] = match (m0, k0) with {
     case (State(Var(x, loc), Environment(env0), sto0, s0, f0, r0, q0, g0, kptr, time), _) =>
         // The expression is a variable. Look it up in the environment.
          match Map.get(x, env0) with {
-            case None => Set(Abort("Unbound variable.") :: Nil)
+            case None => #{ Abort("Unbound variable.") }
             case Some(a) =>
                 let values = Store.lookup(a, sto0);
                 let f = storable -> match storable with {
@@ -543,7 +543,7 @@ def step(m0: State, k0: Kontinuation): Set[Outcome] = match (m0, k0) with {
         let kontAddr = alloc(m0, k0);
         let nextKont = StoredKont(KLink2(a, kont));
         let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
-            #{ Next(State(e2, env2, sto1, s0, f0, r0, q0, g0, a, tick(m0, k0))) }
+            #{ Next(State(e2, env2, sto1, s0, f0, r0, q0, g0, kontAddr, tick(m0, k0))) }
 
     //
     //  Link2 Kontinuation.
@@ -553,7 +553,8 @@ def step(m0: State, k0: Kontinuation): Set[Outcome] = match (m0, k0) with {
         let lam = Abs(V(0), Var(V(0), L("id")), L("id"));
         let env = Environment.empty();
         let f1 = FulfillReactions.weakUpdate(a1, lam, env, a2, f0);
-            #{ Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s0, f1, r0, q0, g0, kont, tick(m0, k0))) }
+        let g1 = PromiseGraph.addEdge(LinkEdge(a1, a2), g0);
+            #{ Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s0, f1, r0, q0, g1, kont, tick(m0, k0))) }
 
     //
     // Loop
@@ -856,7 +857,7 @@ def testEval1: Set[Outcome] = run(
 // y.onResolve(z => Ref(z))
 // x.resolve("hello")
 //
-def testEval2: Set[Outcome] = run(
+def testEval2: Set[Edge] = getPromiseGraph(run(
     App(App(Abs(V(0), Abs(V(1),
         Seq(Promisify(Var(V(0), L("l2")), L("l2")),
             Seq(Promisify(Var(V(1), L("l3")), L("l3")),
@@ -867,4 +868,4 @@ def testEval2: Set[Outcome] = run(
                 , L("l8"))
             , L("l9"))
         , L("l10")), L("l10")), L("l10")),
-        Ref(Cst("Promise1", L("l11")), L("l11")), L("l11")), Ref(Cst("Promise2", L("l11")), L("l11")), L("l11")))
+        Ref(Cst("Promise1", L("l11")), L("l11")), L("l11")), Ref(Cst("Promise2", L("l11")), L("l11")), L("l11"))))
