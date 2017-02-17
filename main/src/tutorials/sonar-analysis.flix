@@ -73,6 +73,25 @@ enum Expression {
 }
 
 ///
+/// Returns the label (source location) of the given expression `e`.
+///
+def getLabel(e: Expression): Label = match e with {
+    case Var(_, l)          => l
+    case Abs(_, _, l)       => l
+    case App(_, _, l)       => l
+    case Cst(_, l)          => l
+    case Ref(_, l)          => l
+    case Deref(_, l)        => l
+    case Seq(_, _, l)       => l
+    case Promisify(_, l)    => l
+    case Resolve(_, _, l)   => l
+    case Reject(_, _, l)    => l
+    case OnResolve(_, _, l) => l
+    case OnReject(_, _, l)  => l
+    case Link(_, _, l)      => l
+}
+
+///
 /// Returns `true` if the given expression `e0` is a value.
 ///
 def isValue(e0: Expression): Bool = match e0 with {
