@@ -223,10 +223,10 @@ enum Edge {
     case RejectEdge(/* Value */ Expression, Address), // NB: Currently unused.
 
     // A resolve registration edge from a promise allocation site (label) to lambda (label).
-    case ResolveRegistration(Address, /* Lambda */ Expression),
+    case ResolveRegistration(Address, Label),
 
     // A reject registration edge from a promise allocation site (label) to lambda (label).
-    case RejectRegistration(Address, /* Lambda */ Expression), // NB: Currently unused.
+    case RejectRegistration(Address, Label), // NB: Currently unused.
 
     // A link edge from a promise allocation site (label) to a promise allocation site (label).
     case LinkEdge(Address, Address)
@@ -531,7 +531,7 @@ def step(m0: State, k0: Kontinuation): Set[Outcome] = match (m0, k0) with {
                 let f1 = FulfillReactions.weakUpdate(a, e2, env2, childAddr, f0);
 
                 // Update the promise graph.
-                let g1 = PromiseGraph.addEdge(ResolveRegistration(a, e2), g0);
+                let g1 = PromiseGraph.addEdge(ResolveRegistration(a, getLabel(e2)), g0);
 
                 #{ Next(State(Ptr(childAddr), Environment.empty(), sto0, s1, f1, r0, q0, g1, kont, tick(m0, k0))) }
 
@@ -857,14 +857,14 @@ namespace PromiseGraph {
 // x.onResolve(y => Ref(y))
 // x.resolve("hello")
 //
-def testEval1: Set[Outcome] = run(
+def testEval1: Set[Edge] = getPromiseGraph(run(
     App(Abs(V(0),
         Seq(Promisify(Var(V(0), L("l2")), L("l2")),
             Seq(OnResolve(Var(V(0), L("l3")), Abs(V(42), Ref(Var(V(42), L("l3")), L("l3")), L("l3")), L("l3")),
                 Resolve(Var(V(0), L("l4")), Cst("hello", L("l4")), L("l4"))
             , L("l5")), L("l5"))
         , L("l6")),
-        Ref(Cst("Promise1", L("l7")), L("l7")), L("l7")))
+        Ref(Cst("Promise1", L("l7")), L("l7")), L("l7"))))
 
 
 //
