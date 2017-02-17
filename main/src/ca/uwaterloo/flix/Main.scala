@@ -19,7 +19,7 @@ package ca.uwaterloo.flix
 import java.io.File
 
 import ca.uwaterloo.flix.api._
-import ca.uwaterloo.flix.runtime.{Tester, Value}
+import ca.uwaterloo.flix.runtime.{Benchmarker, Tester, Value}
 import ca.uwaterloo.flix.util.Highlight.Code
 import ca.uwaterloo.flix.util._
 
@@ -108,6 +108,10 @@ object Main {
             Console.println(s"$name returned `${Value.pretty(timer.getResult)}' (elapsed ${timer.fmt})")
           }
 
+          if (cmdOpts.benchmark) {
+            Benchmarker.benchmark(model)
+          }
+
           if (cmdOpts.test) {
             Tester.test(model)
           }
@@ -147,7 +151,8 @@ object Main {
   /**
     * A case class representing the parsed command line options.
     */
-  case class CmdOpts(delta: Option[File] = None,
+  case class CmdOpts(benchmark: Boolean = false,
+                     delta: Option[File] = None,
                      documentor: Boolean = false,
                      main: Option[String] = None,
                      monitor: Boolean = false,
@@ -178,6 +183,10 @@ object Main {
 
       // Head
       head("The Flix Programming Language", Version.CurrentVersion.toString)
+
+      // Benchmark.
+      opt[Unit]("benchmark").action((_, c) => c.copy(benchmark = true)).
+        text("runs benchmarks.")
 
       // Doc.
       opt[Unit]("doc").action((_, c) => c.copy(documentor = true)).

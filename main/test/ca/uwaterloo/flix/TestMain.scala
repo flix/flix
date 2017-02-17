@@ -44,6 +44,12 @@ class TestMain extends FunSuite {
     assert(opts.files.exists(_.getName == "c.flix"))
   }
 
+  test("--benchmark") {
+    val args = Array("--benchmark", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.benchmark)
+  }
+
   test("--doc") {
     val args = Array("--doc", "p.flix")
     val opts = Main.parseCmdOpts(args).get

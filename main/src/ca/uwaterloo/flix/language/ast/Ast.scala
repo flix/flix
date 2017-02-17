@@ -31,6 +31,17 @@ object Ast {
   object Annotation {
 
     /**
+      * An AST node that represents a `@benchmark` annotation.
+      *
+      * A function marked with `benchmark` is evaluated as part of the benchmark framework.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Benchmark(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@benchmark"
+    }
+
+    /**
       * An AST node that represents an `@internal` annotation.
       *
       * An `internal` function is a non-public function hidden from view.
@@ -98,6 +109,11 @@ object Ast {
     * @param annotations the annotations.
     */
   case class Annotations(annotations: List[Annotation]) {
+
+    /**
+      * Returns `true` if `this` sequence contains the `@test` annotation.
+      */
+    def isBenchmark: Boolean = annotations exists (_.isInstanceOf[Annotation.Benchmark])
 
     /**
       * Returns `true` if `this` sequence contains the `@internal` annotation.
