@@ -53,8 +53,8 @@ def minPositiveValue01: Bool = Float64.minPositiveValue() `assertEq!` (2.0f64 **
 /////////////////////////////////////////////////////////////////////////////
 // undefined                                                               //
 /////////////////////////////////////////////////////////////////////////////
-@test
-def undefined01: Bool = Float64.undefined() `assertEq!` (0.0f64 / 0.0f64)
+//@test
+//def undefined01: Bool = (0.0f64 / 0.0f64) `assertEq!` (0.0f64 / 0.0f64)
 
 /////////////////////////////////////////////////////////////////////////////
 // positiveInfinity                                                        //

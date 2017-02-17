@@ -39,6 +39,8 @@ object LocalResource {
 
     def Prelude: InputStream = getInputStream("/library/Prelude.flix")
 
+    def Int8: InputStream = getInputStream("/library/Int8.flix")
+
     def BigInt: InputStream = getInputStream("/library/BigInt.flix")
 
     def Float32: InputStream = getInputStream("/library/Float32.flix")
