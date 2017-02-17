@@ -35,38 +35,6 @@ object LocalResource {
 
   }
 
-  object Library {
-
-    def Prelude: InputStream = getInputStream("/library/Prelude.flix")
-
-    def Int8: InputStream = getInputStream("/library/Int8.flix")
-
-    def BigInt: InputStream = getInputStream("/library/BigInt.flix")
-
-    def Float32: InputStream = getInputStream("/library/Float32.flix")
-
-    def Float64: InputStream = getInputStream("/library/Float64.flix")
-
-    def Option: InputStream = getInputStream("/library/Option.flix")
-
-    def Result: InputStream = getInputStream("/library/Result.flix")
-
-    def List: InputStream = getInputStream("/library/List.flix")
-
-    def Bounded: InputStream = getInputStream("/library/Bounded.flix")
-
-    def PartialOrder: InputStream = getInputStream("/library/PartialOrder.flix")
-
-    def JoinLattice: InputStream = getInputStream("/library/JoinLattice.flix")
-
-    def MeetLattice: InputStream = getInputStream("/library/MeetLattice.flix")
-
-    def Set: InputStream = getInputStream("/library/Set.flix")
-
-    def Map: InputStream = getInputStream("/library/Map.flix")
-
-  }
-
   object Tutorials {
 
     def DeltaDebugging: InputStream = getInputStream("/tutorials/delta-debugging.flix")
