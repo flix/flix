@@ -1,7 +1,5 @@
 // TODO: Add to unit test (along with other machines).
 
-// TODO: Use map.GetWithDefault
-
 // TODO: Ondrej: Do we want a closure expression or not?
 
 //
@@ -588,7 +586,7 @@ def step(m0: State, k0: Kontinuation): Set[Outcome] = match (m0, k0) with {
 ///
 def stepAll(m0: State): Set[Outcome] = match m0 with {
     case State(_, _, Store(sto0), _, _, _, _, _, kptr, time) =>
-        let values = Option.getWithDefault(Map.get(kptr, sto0), Set.empty());
+        let values = Map.getWithDefault(kptr, Set.empty(), sto0);
         let f = value -> match value with {
             case StoredKont(k) => step(m0, k)
             case _             => #{}
@@ -683,7 +681,7 @@ namespace Store {
     // TODO: Naming of this function
     def lookup(a: Address, sto: Store): Set[Storable] =
         let Store(m) = sto;
-            Option.getWithDefault(Map.get(a, m), Set.empty())
+            Map.getWithDefault(a, Set.empty(), m)
 
     ///
     /// Weakly updates the store `sto` with the storable value `v` associated with the (abstract) address `a`.
@@ -691,7 +689,7 @@ namespace Store {
     def weakUpdate(a: Address, v: Storable, sto: Store): Store =
         let Store(sto0) = sto;
         let newValue = v;
-        let oldValue = Option.getWithDefault(Map.get(a, sto0), Set.empty());
+        let oldValue = Map.getWithDefault(a, Set.empty(), sto0);
         let lubValue = Set.union(#{newValue}, oldValue);
             Store(Map.insert(a, lubValue, sto0))
 
@@ -713,7 +711,7 @@ namespace PromiseState {
     ///
     def lookup(a: Address, s: PromiseState): Set[PromiseValue] =
         let PromiseState(m) = s;
-            Option.getWithDefault(Map.get(a, m), Set.empty())
+            Map.getWithDefault(a, Set.empty(), m)
 
     ///
     /// Weakly updates the promise states `s` with the promise value `v` for the (abstract) address `a`.
@@ -721,7 +719,7 @@ namespace PromiseState {
     def weakUpdate(a: Address, v: PromiseValue, s: PromiseState): PromiseState =
         let PromiseState(m) = s;
         let newValue = v;
-        let oldValue = Option.getWithDefault(Map.get(a, m), Set.empty());
+        let oldValue = Map.getWithDefault(a, Set.empty(), m);
         let lubValue = Set.union(#{newValue}, oldValue);
             PromiseState(Map.insert(a, lubValue, m))
 
@@ -741,7 +739,7 @@ namespace FulfillReactions {
     ///
     def lookup(a: Address, f: FulfillReactions): Set[(Expression, Environment, Address)] =
         let FulfillReactions(m) = f;
-            Option.getWithDefault(Map.get(a, m), Set.empty())
+            Map.getWithDefault(a, Set.empty(), m)
 
     ///
     /// Weaky updates the fulfillreactions `r` with the (lambda, environment, childAddr)-triple for the given (abstract) address `a`.
@@ -749,7 +747,7 @@ namespace FulfillReactions {
     def weakUpdate(a: Address, lam: Expression, env: Environment, childAddr: Address, r: FulfillReactions): FulfillReactions =
         let FulfillReactions(m) = r;
         let newValue = (lam, env, childAddr);
-        let oldValue = Option.getWithDefault(Map.get(a, m), Set.empty());
+        let oldValue = Map.getWithDefault(a, Set.empty(), m);
         let lubValue = Set.union(#{newValue}, oldValue);
             FulfillReactions(Map.insert(a, lubValue, m))
 
