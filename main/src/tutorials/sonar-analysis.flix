@@ -198,16 +198,16 @@ enum PromiseValue {
 enum Edge {
 
     // A resolve edge from a value allocation site (label) to a promise allocation site (label).
-    case ResolveEdge(Expression, Address),
+    case ResolveEdge(/* Value */ Expression, Address),
 
     // A reject edge from a value allocation site (label) to a promise allocation site (label).
-    case RejectEdge(Expression, Address), // NB: Currently unused.
+    case RejectEdge(/* Value */ Expression, Address), // NB: Currently unused.
 
     // A resolve registration edge from a promise allocation site (label) to lambda (label).
-    case ResolveRegistration(Address, Label),
+    case ResolveRegistration(Address, /* Lambda */ Expression),
 
     // A reject registration edge from a promise allocation site (label) to lambda (label).
-    case RejectRegistration(Address, Label), // NB: Currently unused.
+    case RejectRegistration(Address, /* Lambda */ Expression), // NB: Currently unused.
 
     // A link edge from a promise allocation site (label) to a promise allocation site (label).
     case LinkEdge(Address, Address)
@@ -511,7 +511,10 @@ def step(m0: State, k0: Kontinuation): Set[Outcome] = match (m0, k0) with {
                 // Update the fulfill reactions.
                 let f1 = FulfillReactions.weakUpdate(a, e2, env2, childAddr, f0);
 
-                #{ Next(State(Ptr(childAddr), Environment.empty(), sto0, s1, f1, r0, q0, g0, kont, tick(m0, k0))) }
+                // Update the promise graph.
+                let g1 = PromiseGraph.addEdge(ResolveRegistration(a, e2), g0);
+
+                #{ Next(State(Ptr(childAddr), Environment.empty(), sto0, s1, f1, r0, q0, g1, kont, tick(m0, k0))) }
 
             case Fulfilled(v) =>
                 // Allocate a child promise and enqueue the promise reaction `lam` with the resolved value `v`.
