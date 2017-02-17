@@ -111,7 +111,7 @@ object Ast {
   case class Annotations(annotations: List[Annotation]) {
 
     /**
-      * Returns `true` if `this` sequence contains the `@test` annotation.
+      * Returns `true` if `this` sequence contains the `@benchmark` annotation.
       */
     def isBenchmark: Boolean = annotations exists (_.isInstanceOf[Annotation.Benchmark])
 

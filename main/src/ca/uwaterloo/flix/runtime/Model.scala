@@ -34,12 +34,18 @@ class Model(root: ExecutableAst.Root,
 
   def getRoot: ExecutableAst.Root = root
 
+  /**
+    * Returns all the benchmark functions in the program.
+    */
   def getBenchmarks: Map[Symbol.DefnSym, () => AnyRef] = {
     definitions filter {
       case (sym, _) => root.definitions(sym).ann.isBenchmark
     }
   }
 
+  /**
+    * Returns all the test functions in the program.
+    */
   def getTests: Map[Symbol.DefnSym, () => AnyRef] = {
     definitions filter {
       case (sym, _) => root.definitions(sym).ann.isTest

@@ -20,9 +20,19 @@ import ca.uwaterloo.flix.util.Highlight.Magenta
 
 object Benchmarker {
 
+  /**
+    * The number of times to evaluate the benchmark before measurements.
+    */
   val WarmupRounds = 25
-  val ActualRounds = 25
 
+  /**
+    * The number of times to evaluate the benchmark to compute the average.
+    */
+  val ActualRounds = 10
+
+  /**
+    * Evaluates all benchmarks in the given `model`.
+    */
   def benchmark(model: Model): Unit = {
     /*
       * Group benchmarks by namespace.
@@ -30,7 +40,7 @@ object Benchmarker {
     val benchmarksByNamespace = model.getBenchmarks.groupBy(_._1.namespace)
 
     /*
-     * Iterate through each namespace and evaluate tests.
+     * Iterate through each namespace and evaluate each benchmark.
      */
     for ((ns, benchmarks) <- benchmarksByNamespace) {
       if (ns.isEmpty) {
@@ -44,7 +54,6 @@ object Benchmarker {
        */
       Console.println(s"    Warmup Rounds: $WarmupRounds")
       for ((sym, defn) <- benchmarks.toList.sortBy(_._1.loc)) {
-        // Evaluate the function.
         Console.print("      ")
         Console.print(sym.name)
         Console.print(": ")
