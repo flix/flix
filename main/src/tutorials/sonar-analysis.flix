@@ -1,7 +1,3 @@
-// TODO: Add to unit test (along with other machines).
-
-// TODO: Ondrej: Do we want a closure expression or not?
-
 //
 // Abstract Interpreter for the lambda calculus extended with references, sequencing, and promises.
 //
@@ -42,7 +38,7 @@ enum Expression {
     case Cst(Str, Label),
 
     // A heap address.
-    case Ptr(Address), // TODO: Ondrej: I don't think it makes sense for Ptr to have an address?
+    case Ptr(Address),
 
     // A heap reference expression: ref e.
     case Ref(Expression, Label),
@@ -202,16 +198,16 @@ enum PromiseValue {
 enum Edge {
 
     // A resolve edge from a value allocation site (label) to a promise allocation site (label).
-    case ResolveEdge(Address, Address),
+    case ResolveEdge(Expression, Address),
 
     // A reject edge from a value allocation site (label) to a promise allocation site (label).
-    case RejectEdge(Address, Address),
+    case RejectEdge(Expression, Address), // NB: Currently unused.
 
     // A resolve registration edge from a promise allocation site (label) to lambda (label).
-    case ResolveRegistration(Address, Address),
+    case ResolveRegistration(Address, Label),
 
     // A reject registration edge from a promise allocation site (label) to lambda (label).
-    case RejectRegistration(Address, Address),
+    case RejectRegistration(Address, Label), // NB: Currently unused.
 
     // A link edge from a promise allocation site (label) to a promise allocation site (label).
     case LinkEdge(Address, Address)
@@ -375,7 +371,7 @@ def step(m0: State, k0: Kontinuation): Set[Outcome] = match (m0, k0) with {
         let storables = Store.lookup(a, sto0);
         let f = s -> match s with {
             case StoredKont(k)          => Abort("Non-value storable.")
-            case StoredValue(e, env1)   => Next(State(e, env1, sto0, s0, f0, r0, q0, g0, a, tick(m0, k0)))
+            case StoredValue(e, env1)   => Next(State(e, env1, sto0, s0, f0, r0, q0, g0, kont, tick(m0, k0)))
         };
         Set.map(f, storables)
 
@@ -432,7 +428,7 @@ def step(m0: State, k0: Kontinuation): Set[Outcome] = match (m0, k0) with {
         let kontAddr = alloc(m0, k0);
         let nextKont = StoredKont(KResolve2(a, kont));
         let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
-            #{ Next(State(e2, env2, sto1, s0, f0, r0, q0, g0, a, tick(m0, k0))) }
+            #{ Next(State(e2, env2, sto1, s0, f0, r0, q0, g0, kontAddr, tick(m0, k0))) }
 
     //
     //  Resolve2 Kontinuation.
@@ -459,15 +455,18 @@ def step(m0: State, k0: Kontinuation): Set[Outcome] = match (m0, k0) with {
                let fr = FulfillReactions.lookup(a, f0);
                let q1 = Queue.weakUpdate(Set.map(match (lam, env, addr) -> (pv, lam, env, addr), fr), q0);
 
-               #{ Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s1, f0, r0, q1, g0, kont, tick(m0, k0))) }
+                // Update the promise graph.
+                let g1 = PromiseGraph.addEdge(ResolveEdge(e2, a), g0);
+
+               #{ Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s1, f0, r0, q1, g1, kont, tick(m0, k0))) }
 
             case Fulfilled(v) =>
                 // The promise has already been resolved with the value `v`. The resolve has no effect.
-                #{ Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s0, f0, r0, q0, g0, a, tick(m0, k0))) }
+                #{ Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s0, f0, r0, q0, g0, kont, tick(m0, k0))) }
 
             case Rejected(v) =>
                 // The promise has already been rejected with the value `v`. The resolve has no effect.
-                #{ Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s0, f0, r0, q0, g0, a, tick(m0, k0))) }
+                #{ Next(State(Cst("Undef", L("-")), Environment.empty(), sto0, s0, f0, r0, q0, g0, kont, tick(m0, k0))) }
 
         };
         Set.flatMap(f, PromiseState.lookup(a, s0))
@@ -491,7 +490,7 @@ def step(m0: State, k0: Kontinuation): Set[Outcome] = match (m0, k0) with {
         let kontAddr = alloc(m0, k0);
         let nextKont = StoredKont(KOnResolve2(a, kont));
         let sto1 = Store.weakUpdate(kontAddr, nextKont, sto0);
-            #{ Next(State(e2, env2, sto1, s0, f0, r0, q0, g0, a, tick(m0, k0))) }
+            #{ Next(State(e2, env2, sto1, s0, f0, r0, q0, g0, kontAddr, tick(m0, k0))) }
 
     //
     //  OnResolve2 Kontinuation.
@@ -854,7 +853,7 @@ def testEval1: Set[Outcome] = run(
 // promisify(x)
 // promisify(y)
 // x.link(y)
-// y.onResolve(z => Ref(z))
+// var z = y.onResolve(z => Ref(z))
 // x.resolve("hello")
 //
 def testEval2: Set[Edge] = getPromiseGraph(run(
