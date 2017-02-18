@@ -730,1312 +730,580 @@ def intersperse04: Bool = List.intersperse(11, 1 :: 2 :: 3 :: Nil) `assertEq!` 1
 @test
 def intersperse05: Bool = List.intersperse(11, 1 :: 2 :: 3 :: 4 :: Nil) `assertEq!` 1 :: 11 :: 2 :: 11 :: 3 :: 11 :: 4 :: Nil
 
+/////////////////////////////////////////////////////////////////////////////
+// transpose                                                               //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def transpose01: Bool = List.transpose(Nil) `assertEq!` Nil
+
+@test
+def transpose02: Bool = List.transpose(Nil :: Nil) `assertEq!` Nil :: Nil
+
+@test
+def transpose03: Bool = List.transpose(Nil :: Nil :: Nil) `assertEq!` Nil :: Nil :: Nil
+
+@test
+def transpose04: Bool = List.transpose(Nil :: Nil :: Nil :: Nil) `assertEq!` Nil :: Nil :: Nil :: Nil
+
+@test
+def transpose05: Bool = List.transpose((1 :: Nil) :: Nil) `assertEq!` (1 :: Nil) :: Nil
+
+@test
+def transpose06: Bool = List.transpose((1 :: 2 :: Nil) :: Nil) `assertEq!` (1 :: Nil) :: (2 :: Nil) :: Nil
+
+@test
+def transpose07: Bool = List.transpose((1 :: 2 :: 3 :: Nil) :: Nil) `assertEq!`
+                        (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: Nil
+
+@test
+def transpose08: Bool = List.transpose((1 :: 2 :: 3 :: 4 :: Nil) :: Nil) `assertEq!`
+                        (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: (4 :: Nil) :: Nil
+
+@test
+def transpose09: Bool = List.transpose((1 :: Nil) :: (2 :: Nil) :: Nil) `assertEq!` (1 :: 2 :: Nil) :: Nil
+
+@test
+def transpose10: Bool = List.transpose((1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: Nil) `assertEq!`
+                        (1 :: 2 :: 3 :: Nil) :: Nil
+
+@test
+def transpose11: Bool = List.transpose((1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: (4 :: Nil) :: Nil) `assertEq!`
+                        (1 :: 2 :: 3 :: 4 :: Nil) :: Nil
+
+@test
+def transpose12: Bool = List.transpose((1 :: 2 :: Nil) :: (3 :: 4 :: Nil) :: Nil) `assertEq!`
+                        (1 :: 3 :: Nil) :: (2 :: 4 :: Nil) :: Nil
+
+@test
+def transpose13: Bool = List.transpose((1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: 6 :: Nil) :: Nil) `assertEq!`
+                        (1 :: 4 :: Nil) :: (2 :: 5 :: Nil) :: (3 :: 6 :: Nil) :: Nil
+
+@test
+def transpose14: Bool = List.transpose((1 :: 2 :: 3 :: 4 :: Nil) :: (5 :: 6 :: 7 :: 8 :: Nil) :: Nil) `assertEq!`
+                        (1 :: 5 :: Nil) :: (2 :: 6 :: Nil) :: (3 :: 7 :: Nil) :: (4 :: 8 :: Nil) :: Nil
+
+@test
+def transpose15: Bool = List.transpose((1 :: 2 :: 3 :: 4 :: 5 :: Nil) :: (6 :: 7 :: 8 :: 9 :: 10 :: Nil) :: Nil) `assertEq!`
+                        (1 :: 6 :: Nil) :: (2 :: 7 :: Nil) :: (3 :: 8 :: Nil) :: (4 :: 9 :: Nil) :: (5 :: 10 :: Nil) :: Nil
+
+@test
+def transpose16: Bool = List.transpose((1 :: 2 :: Nil) :: (3 :: 4 :: Nil) :: (5 :: 6 :: Nil) :: Nil) `assertEq!`
+                        (1 :: 3 :: 5 :: Nil) :: (2 :: 4 :: 6 :: Nil) :: Nil
+
+@test
+def transpose17: Bool = List.transpose((1 :: 2 :: Nil) :: (3 :: 4 :: Nil) :: (5 :: 6 :: Nil) :: (7 :: 8 :: Nil) :: Nil) `assertEq!`
+                        (1 :: 3 :: 5 :: 7 :: Nil) :: (2 :: 4 :: 6 :: 8 :: Nil) :: Nil
+
+@test
+def transpose18: Bool = List.transpose((1 :: 2 :: Nil) :: (3 :: 4 :: Nil) :: (5 :: 6 :: Nil) :: (7 :: 8 :: Nil) :: (9 :: 10 :: Nil) :: Nil) `assertEq!`
+                        (1 :: 3 :: 5 :: 7 :: 9 :: Nil) :: (2 :: 4 :: 6 :: 8 :: 10 :: Nil) :: Nil
+
+@test
+def transpose19: Bool = List.transpose((1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: 6 :: Nil) :: (7 :: 8 :: 9 :: Nil) :: Nil) `assertEq!`
+                        (1 :: 4 :: 7 :: Nil) :: (2 :: 5 :: 8 :: Nil) :: (3 :: 6 :: 9 :: Nil) :: Nil
+
+@test
+def transpose20: Bool = List.transpose((1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: Nil) :: (7 :: 8 :: 9 :: Nil) :: Nil) `assertEq!`
+                        (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: Nil) :: (7 :: 8 :: 9 :: Nil) :: Nil
+
+@test
+def transpose21: Bool = List.transpose((1 :: 2 :: 3 :: Nil) :: Nil :: (7 :: 8 :: 9 :: Nil) :: Nil) `assertEq!`
+                        (1 :: 2 :: 3 :: Nil) :: Nil :: (7 :: 8 :: 9 :: Nil) :: Nil
+
+@test
+def transpose22: Bool = List.transpose((1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: 6 :: Nil) :: (7 :: 8 :: 9 :: 10 :: Nil) :: Nil) `assertEq!`
+                        (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: 6 :: Nil) :: (7 :: 8 :: 9 :: 10 :: Nil) :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
+// isPrefixOf                                                              //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def isPrefixOf01: Bool = assert!(List.isPrefixOf(Nil, Nil))
+
+@test
+def isPrefixOf02: Bool = assertNot!(List.isPrefixOf(1 :: Nil, Nil))
+
+@test
+def isPrefixOf03: Bool = assert!(List.isPrefixOf(Nil, 1 :: Nil))
+
+@test
+def isPrefixOf04: Bool = assert!(List.isPrefixOf(1 :: Nil, 1 :: Nil))
+
+@test
+def isPrefixOf05: Bool = assertNot!(List.isPrefixOf(2 :: Nil, 1 :: Nil))
+
+@test
+def isPrefixOf06: Bool = assertNot!(List.isPrefixOf(1 :: 2 :: Nil, 1 :: Nil))
+
+@test
+def isPrefixOf07: Bool = assert!(List.isPrefixOf(Nil, 1 :: 2 :: Nil))
+
+@test
+def isPrefixOf08: Bool = assert!(List.isPrefixOf(1 :: Nil, 1 :: 2 :: Nil))
+
+@test
+def isPrefixOf09: Bool = assertNot!(List.isPrefixOf(2 :: Nil, 1 :: 2 :: Nil))
+
+@test
+def isPrefixOf10: Bool = assert!(List.isPrefixOf(1 :: 2 :: Nil, 1 :: 2 :: Nil))
+
+@test
+def isPrefixOf11: Bool = assertNot!(List.isPrefixOf(1 :: 3 :: Nil, 1 :: 2 :: Nil))
+
+@test
+def isPrefixOf12: Bool = assertNot!(List.isPrefixOf(1 :: 2 :: 3 :: Nil, 1 :: 2 :: Nil))
+
+@test
+def isPrefixOf13: Bool = assertNot!(List.isPrefixOf(1 :: 2 :: 3 :: Nil, 89 :: 11 :: 1 :: 2 :: 3 :: 4 :: Nil))
+
+/////////////////////////////////////////////////////////////////////////////
+// isInfixOf                                                               //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def isInfixOf01: Bool = assert!(List.isInfixOf(Nil, Nil))
+
+@test
+def isInfixOf02: Bool = assertNot!(List.isInfixOf(1 :: Nil, Nil))
+
+@test
+def isInfixOf03: Bool = assert!(List.isInfixOf(Nil, 1 :: Nil))
+
+@test
+def isInfixOf04: Bool = assert!(List.isInfixOf(1 :: Nil, 1 :: Nil))
+
+@test
+def isInfixOf05: Bool = assertNot!(List.isInfixOf(2 :: Nil, 1 :: Nil))
+
+@test
+def isInfixOf06: Bool = assertNot!(List.isInfixOf(1 :: 2 :: Nil, 1 :: Nil))
+
+@test
+def isInfixOf07: Bool = assert!(List.isInfixOf(Nil, 1 :: 2 :: Nil))
+
+@test
+def isInfixOf08: Bool = assert!(List.isInfixOf(1 :: Nil, 1 :: 2 :: Nil))
+
+@test
+def isInfixOf09: Bool = assert!(List.isInfixOf(2 :: Nil, 1 :: 2 :: Nil))
+
+@test
+def isInfixOf10: Bool = assert!(List.isInfixOf(1 :: 2 :: Nil, 1 :: 2 :: Nil))
+
+@test
+def isInfixOf11: Bool = assertNot!(List.isInfixOf(1 :: 3 :: Nil, 1 :: 2 :: Nil))
+
+@test
+def isInfixOf12: Bool = assertNot!(List.isInfixOf(1 :: 2 :: 3 :: Nil, 1 :: 2 :: Nil))
+
+@test
+def isInfixOf13: Bool = assert!(List.isInfixOf(1 :: 2 :: 3 :: Nil, 89 :: 11 :: 1 :: 2 :: 3 :: 4 :: Nil))
+
+/////////////////////////////////////////////////////////////////////////////
+// isSuffixOf                                                              //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def isSuffixOf01: Bool = assert!(List.isSuffixOf(Nil, Nil))
+
+@test
+def isSuffixOf02: Bool = assertNot!(List.isSuffixOf(1 :: Nil, Nil))
+
+@test
+def isSuffixOf03: Bool = assert!(List.isSuffixOf(Nil, 1 :: Nil))
+
+@test
+def isSuffixOf04: Bool = assert!(List.isSuffixOf(1 :: Nil, 1 :: Nil))
+
+@test
+def isSuffixOf05: Bool = assertNot!(List.isSuffixOf(2 :: Nil, 1 :: Nil))
+
+@test
+def isSuffixOf06: Bool = assertNot!(List.isSuffixOf(1 :: 2 :: Nil, 1 :: Nil))
+
+@test
+def isSuffixOf07: Bool = assert!(List.isSuffixOf(Nil, 1 :: 2 :: Nil))
+
+@test
+def isSuffixOf08: Bool = assertNot!(List.isSuffixOf(1 :: Nil, 1 :: 2 :: Nil))
+
+@test
+def isSuffixOf09: Bool = assert!(List.isSuffixOf(2 :: Nil, 1 :: 2 :: Nil))
+
+@test
+def isSuffixOf10: Bool = assert!(List.isSuffixOf(1 :: 2 :: Nil, 1 :: 2 :: Nil))
+
+@test
+def isSuffixOf11: Bool = assertNot!(List.isSuffixOf(1 :: 3 :: Nil, 1 :: 2 :: Nil))
+
+@test
+def isSuffixOf12: Bool = assertNot!(List.isSuffixOf(1 :: 2 :: 3 :: Nil, 1 :: 2 :: Nil))
+
+@test
+def isSuffixOf13: Bool = assert!(List.isSuffixOf(1 :: 2 :: 3 :: Nil, 89 :: 11 :: 1 :: 2 :: 3 :: Nil))
+
+/////////////////////////////////////////////////////////////////////////////
+// fold                                                                    //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def fold01: Bool = List.fold((i, e) -> (i - e)*(e % 2 + 1), 100, Nil) `assertEq!` 100
+
+@test
+def fold02: Bool = List.fold((i, e) -> (i - e)*(e % 2 + 1), 100, 1 :: Nil) `assertEq!` 198
+
+@test
+def fold03: Bool = List.fold((i, e) -> (i - e)*(e % 2 + 1), 100, 1 :: 2 :: Nil) `assertEq!` 196
+
+@test
+def fold04: Bool = List.fold((i, e) -> (i - e)*(e % 2 + 1), 100, 1 :: 2 :: 3 :: Nil) `assertEq!` 386
+
+/////////////////////////////////////////////////////////////////////////////
+// foldLeft                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def foldLeft01: Bool = List.foldLeft((i, e) -> (i - e)*(e % 2 + 1), 100, Nil) `assertEq!` 100
+
+@test
+def foldLeft02: Bool = List.foldLeft((i, e) -> (i - e)*(e % 2 + 1), 100, 1 :: Nil) `assertEq!` 198
+
+@test
+def foldLeft03: Bool = List.foldLeft((i, e) -> (i - e)*(e % 2 + 1), 100, 1 :: 2 :: Nil) `assertEq!` 196
+
+@test
+def foldLeft04: Bool = List.foldLeft((i, e) -> (i - e)*(e % 2 + 1), 100, 1 :: 2 :: 3 :: Nil) `assertEq!` 386
+
+/////////////////////////////////////////////////////////////////////////////
+// foldRight                                                               //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def foldRight01: Bool = List.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, Nil) `assertEq!` 100
+
+@test
+def foldRight02: Bool = List.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, 1 :: Nil) `assertEq!` 198
+
+@test
+def foldRight03: Bool = List.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, 1 :: 2 :: Nil) `assertEq!` 194
+
+@test
+def foldRight04: Bool = List.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, 1 :: 2 :: 3 :: Nil) `assertEq!` 382
+
+/////////////////////////////////////////////////////////////////////////////
+// reduceOpt                                                               //
+/////////////////////////////////////////////////////////////////////////////
+//@test
+//def reduceOpt01: Bool = List.reduceOpt((a, b) -> a-b, Nil) `assertEq!` None
+
+@test
+def reduceOpt02: Bool = List.reduceOpt((a, b) -> a-b, 1 :: Nil) `assertEq!` Some(1)
+
+@test
+def reduceOpt03: Bool = List.reduceOpt((a, b) -> a-b, 1 :: 2 :: Nil) `assertEq!` Some(-1)
+
+@test
+def reduceOpt04: Bool = List.reduceOpt((a, b) -> a-b, 1 :: 2 :: 3 :: Nil) `assertEq!` Some(-4)
+
+@test
+def reduceOpt05: Bool = List.reduceOpt((a, b) -> a-b, 1 :: 2 :: 3 :: 4 :: Nil) `assertEq!` Some(-8)
+
+/////////////////////////////////////////////////////////////////////////////
+// reduceLeftOpt                                                           //
+/////////////////////////////////////////////////////////////////////////////
+//@test
+//def reduceLeftOpt01: Bool = List.reduceLeftOpt((a, b) -> a-b, Nil) `assertEq!` None
+
+@test
+def reduceLeftOpt02: Bool = List.reduceLeftOpt((a, b) -> a-b, 1 :: Nil) `assertEq!` Some(1)
+
+@test
+def reduceLeftOpt03: Bool = List.reduceLeftOpt((a, b) -> a-b, 1 :: 2 :: Nil) `assertEq!` Some(-1)
+
+@test
+def reduceLeftOpt04: Bool = List.reduceLeftOpt((a, b) -> a-b, 1 :: 2 :: 3 :: Nil) `assertEq!` Some(-4)
+
+@test
+def reduceLeftOpt05: Bool = List.reduceLeftOpt((a, b) -> a-b, 1 :: 2 :: 3 :: 4 :: Nil) `assertEq!` Some(-8)
+
+/////////////////////////////////////////////////////////////////////////////
+// reduceRightOpt                                                          //
+/////////////////////////////////////////////////////////////////////////////
+//@test
+//def reduceRightOpt01: Bool = List.reduceRightOpt((a, b) -> a-b, Nil) `assertEq!` None
+
+@test
+def reduceRightOpt02: Bool = List.reduceRightOpt((a, b) -> a-b, 1 :: Nil) `assertEq!` Some(1)
+
+@test
+def reduceRightOpt03: Bool = List.reduceRightOpt((a, b) -> a-b, 1 :: 2 :: Nil) `assertEq!` Some(-1)
+
+@test
+def reduceRightOpt04: Bool = List.reduceRightOpt((a, b) -> a-b, 1 :: 2 :: 3 :: Nil) `assertEq!` Some(2)
+
+@test
+def reduceRightOpt05: Bool = List.reduceRightOpt((a, b) -> a-b, 1 :: 2 :: 3 :: 4 :: Nil) `assertEq!` Some(-2)
+
+/////////////////////////////////////////////////////////////////////////////
+// count                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def count01: Bool = List.count(i -> i > 3, Nil) `assertEq!` 0
+
+@test
+def count02: Bool = List.count(i -> i > 3, 1 :: Nil) `assertEq!` 0
+
+@test
+def count03: Bool = List.count(i -> i > 3, 4 :: Nil) `assertEq!` 1
+
+@test
+def count04: Bool = List.count(i -> i > 3, 1 :: 2 :: Nil) `assertEq!` 0
+
+@test
+def count05: Bool = List.count(i -> i > 3, 1 :: 8 :: Nil) `assertEq!` 1
+
+@test
+def count06: Bool = List.count(i -> i > 3, 8 :: 1 :: Nil) `assertEq!` 1
+
+@test
+def count07: Bool = List.count(i -> i > 3, 6 :: 7 :: Nil) `assertEq!` 2
+
+/////////////////////////////////////////////////////////////////////////////
+// concat                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def concat01: Bool = List.concat(Nil) `assertEq!` Nil
+
+@test
+def concat02: Bool = List.concat(Nil :: Nil) `assertEq!` Nil
+
+@test
+def concat03: Bool = List.concat((1 :: Nil) :: Nil) `assertEq!` 1 :: Nil
+
+@test
+def concat04: Bool = List.concat((1 :: 2 :: Nil) :: Nil) `assertEq!` 1 :: 2 :: Nil
+
+@test
+def concat05: Bool = List.concat(Nil :: Nil :: Nil) `assertEq!` Nil
+
+@test
+def concat06: Bool = List.concat((1 :: Nil) :: Nil :: Nil) `assertEq!` 1 :: Nil
+
+@test
+def concat07: Bool = List.concat(Nil :: (1 :: Nil) :: Nil) `assertEq!` 1 :: Nil
+
+@test
+def concat08: Bool = List.concat((1 :: Nil) :: (2 :: Nil) :: Nil) `assertEq!` 1 :: 2 :: Nil
+
+@test
+def concat09: Bool = List.concat((1 :: 2 :: Nil) :: (3 :: 4 :: 5 :: Nil) :: Nil) `assertEq!` 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+
+@test
+def concat10: Bool = List.concat((1 :: Nil) :: (2 :: 3 :: Nil) :: (4 :: Nil) :: Nil) `assertEq!` 1 :: 2 :: 3 :: 4 :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
+// exists                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def exists01: Bool = assertNot!(List.exists(i -> i > 3, Nil))
+
+@test
+def exists02: Bool = assertNot!(List.exists(i -> i > 3, 1 :: Nil))
+
+@test
+def exists03: Bool = assert!(List.exists(i -> i > 3, 5 :: Nil))
+
+@test
+def exists04: Bool = assertNot!(List.exists(i -> i > 3, 1 :: 2 :: Nil))
+
+@test
+def exists05: Bool = assert!(List.exists(i -> i > 3, 1 :: 6 :: Nil))
+
+@test
+def exists06: Bool = assert!(List.exists(i -> i > 3, 6 :: 1 :: Nil))
+
+@test
+def exists07: Bool = assert!(List.exists(i -> i > 3, 16 :: 6 :: Nil))
+
+@test
+def exists08: Bool = assertNot!(List.exists(i -> i > 3, 1 :: -9 :: 3 :: Nil))
+
+@test
+def exists09: Bool = assert!(List.exists(i -> i > 3, 1 :: 9 :: 3 :: Nil))
+
+/////////////////////////////////////////////////////////////////////////////
+// forall                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def forall01: Bool = assert!(List.forall(i -> i > 3, Nil))
+
+@test
+def forall02: Bool = assertNot!(List.forall(i -> i > 3, 1 :: Nil))
+
+@test
+def forall03: Bool = assert!(List.forall(i -> i > 3, 5 :: Nil))
+
+@test
+def forall04: Bool = assertNot!(List.forall(i -> i > 3, 1 :: 2 :: Nil))
+
+@test
+def forall05: Bool = assertNot!(List.forall(i -> i > 3, 1 :: 6 :: Nil))
+
+@test
+def forall06: Bool = assertNot!(List.forall(i -> i > 3, 6 :: 1 :: Nil))
+
+@test
+def forall07: Bool = assert!(List.forall(i -> i > 3, 16 :: 6 :: Nil))
+
+@test
+def forall08: Bool = assertNot!(List.forall(i -> i > 3, 1 :: -9 :: 3 :: Nil))
+
+@test
+def forall09: Bool = assertNot!(List.forall(i -> i > 3, 1 :: 9 :: 3 :: Nil))
+
+@test
+def forall10: Bool = assert!(List.forall(i -> i > 3, 11 :: 9 :: 31 :: Nil))
+
+/////////////////////////////////////////////////////////////////////////////
+// and                                                                     //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def and01: Bool = assert!(List.and(Nil))
+
+@test
+def and02: Bool = assert!(List.and(true :: Nil))
+
+@test
+def and03: Bool = assertNot!(List.and(false :: Nil))
+
+@test
+def and04: Bool = assert!(List.and(true :: true :: Nil))
+
+@test
+def and05: Bool = assertNot!(List.and(true :: false :: Nil))
+
+@test
+def and06: Bool = assertNot!(List.and(false :: true :: Nil))
+
+@test
+def and07: Bool = assertNot!(List.and(false :: false :: Nil))
+
+@test
+def and08: Bool = assert!(List.and(true :: true :: true :: Nil))
+
+@test
+def and09: Bool = assertNot!(List.and(false :: true :: true :: Nil))
+
+@test
+def and10: Bool = assertNot!(List.and(true :: false :: true :: Nil))
+
+@test
+def and11: Bool = assertNot!(List.and(true :: true :: false :: Nil))
+
+/////////////////////////////////////////////////////////////////////////////
+// or                                                                      //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def or01: Bool = assertNot!(List.or(Nil))
+
+@test
+def or02: Bool = assert!(List.or(true :: Nil))
+
+@test
+def or03: Bool = assertNot!(List.or(false :: Nil))
+
+@test
+def or04: Bool = assert!(List.or(true :: true :: Nil))
+
+@test
+def or05: Bool = assert!(List.or(true :: false :: Nil))
+
+@test
+def or06: Bool = assert!(List.or(false :: true :: Nil))
+
+@test
+def or07: Bool = assertNot!(List.or(false :: false :: Nil))
+
+@test
+def or08: Bool = assert!(List.or(true :: true :: true :: Nil))
+
+@test
+def or09: Bool = assert!(List.or(false :: true :: true :: Nil))
+
+@test
+def or10: Bool = assert!(List.or(true :: false :: true :: Nil))
+
+@test
+def or11: Bool = assert!(List.or(true :: true :: false :: Nil))
+
+/////////////////////////////////////////////////////////////////////////////
+// filter                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def filter01: Bool = List.filter(i -> i > 3, Nil) `assertEq!` Nil
+
+@test
+def filter02: Bool = List.filter(i -> i > 3, 2 :: Nil) `assertEq!` Nil
+
+@test
+def filter03: Bool = List.filter(i -> i > 3, 4 :: Nil) `assertEq!` 4 :: Nil
+
+@test
+def filter04: Bool = List.filter(i -> i > 3, 1 :: 3 :: Nil) `assertEq!` Nil
+
+@test
+def filter05: Bool = List.filter(i -> i > 3, 1 :: 8 :: Nil) `assertEq!` 8 :: Nil
+
+@test
+def filter06: Bool = List.filter(i -> i > 3, 8 :: 1 :: Nil) `assertEq!` 8 :: Nil
+
+@test
+def filter07: Bool = List.filter(i -> i > 3, 8 :: 9 :: Nil) `assertEq!` 8 :: 9 :: Nil
+
+@test
+def filter08: Bool = List.filter(i -> i > 3, 1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) `assertEq!` 4 :: 11 :: 17 :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
+// slice                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def slice01: Bool = List.slice(0, 0, Nil) `assertEq!` Nil
+
+@test
+def slice02: Bool = List.slice(-1, 1, Nil) `assertEq!` Nil
+
+@test
+def slice03: Bool = List.slice(0, 0, 1 :: Nil) `assertEq!` Nil
+
+@test
+def slice04: Bool = List.slice(0, 1, 1 :: Nil) `assertEq!` 1 :: Nil
+
+@test
+def slice05: Bool = List.slice(0, 2, 1 :: Nil) `assertEq!` 1 :: Nil
+
+@test
+def slice06: Bool = List.slice(2, 5, 1 :: Nil) `assertEq!` Nil
+
+@test
+def slice07: Bool = List.slice(-1, 1, 1 :: Nil) `assertEq!` 1 :: Nil
+
+@test
+def slice08: Bool = List.slice(0, 1, 1 :: 2 :: Nil) `assertEq!` 1 :: Nil
+
+@test
+def slice09: Bool = List.slice(0, 2, 1 :: 2 :: Nil) `assertEq!` 1 :: 2 :: Nil
+
+@test
+def slice10: Bool = List.slice(1, 2, 1 :: 2 :: Nil) `assertEq!` 2 :: Nil
+
+@test
+def slice11: Bool = List.slice(0, 3, 1 :: 2 :: 3 :: Nil) `assertEq!` 1 :: 2 :: 3 :: Nil
+
+@test
+def slice12: Bool = List.slice(0, 2, 1 :: 2 :: 3 :: Nil) `assertEq!` 1 :: 2 :: Nil
+
+@test
+def slice13: Bool = List.slice(1, 3, 1 :: 2 :: 3 :: Nil) `assertEq!` 2 :: 3 :: Nil
+
+@test
+def slice14: Bool = List.slice(1, 2, 1 :: 2 :: 3 :: Nil) `assertEq!` 2 :: Nil
+
 /*
-  test("transpose.01") {
-    val input = "def r: List[List[Int32]] = List.transpose(Nil)"
-    runAnyTest(input, mkNil)
-  }
-
-  test("transpose.02") {
-    val input = "def r: List[List[Int32]] = List.transpose(Nil :: Nil)"
-    runAnyTest(input, mkAnyList(List(mkNil)))
-  }
-
-  test("transpose.03") {
-    val input = "def r: List[List[Int32]] = List.transpose(Nil :: Nil :: Nil)"
-    runAnyTest(input, mkAnyList(List(mkNil, mkNil)))
-  }
-
-  test("transpose.04") {
-    val input = "def r: List[List[Int32]] = List.transpose(Nil :: Nil :: Nil :: Nil)"
-    runAnyTest(input, mkAnyList(List(mkNil, mkNil, mkNil)))
-  }
-
-  test("transpose.05") {
-    val input = "def r: List[List[Int32]] = List.transpose((1 :: Nil) :: Nil)"
-    runAnyTest(input, mkAnyList(List(mkList(List(1)))))
-  }
-
-  test("transpose.06") {
-    val input = "def r: List[List[Int32]] = List.transpose((1 :: 2 :: Nil) :: Nil)"
-    runAnyTest(input, mkAnyList(List(mkList(List(1)), mkList(List(2)))))
-  }
-
-  test("transpose.07") {
-    val input = "def r: List[List[Int32]] = List.transpose((1 :: 2 :: 3 :: Nil) :: Nil)"
-    runAnyTest(input, mkAnyList(List(mkList(List(1)), mkList(List(2)), mkList(List(3)))))
-  }
-
-  test("transpose.08") {
-    val input = "def r: List[List[Int32]] = List.transpose((1 :: 2 :: 3 :: 4 :: Nil) :: Nil)"
-    runAnyTest(input, mkAnyList(List(mkList(List(1)), mkList(List(2)), mkList(List(3)), mkList(List(4)))))
-  }
-
-  test("transpose.09") {
-    val input = "def r: List[List[Int32]] = List.transpose((1 :: Nil) :: (2 :: Nil) :: Nil)"
-    runAnyTest(input, mkAnyList(List(mkList(List(1, 2)))))
-  }
-
-  test("transpose.10") {
-    val input = "def r: List[List[Int32]] = List.transpose((1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: Nil)"
-    runAnyTest(input, mkAnyList(List(mkList(List(1, 2, 3)))))
-  }
-
-  test("transpose.11") {
-    val input = "def r: List[List[Int32]] = List.transpose((1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: (4 :: Nil) :: Nil)"
-    runAnyTest(input, mkAnyList(List(mkList(List(1, 2, 3, 4)))))
-  }
-
-  test("transpose.12") {
-    val input = "def r: List[List[Int32]] = List.transpose((1 :: 2 :: Nil) :: (3 :: 4 :: Nil) :: Nil)"
-    runAnyTest(input, mkAnyList(List(mkList(List(1, 3)), mkList(List(2, 4)))))
-  }
-
-  test("transpose.13") {
-    val input = "def r: List[List[Int32]] = List.transpose((1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: 6 :: Nil) :: Nil)"
-    runAnyTest(input, mkAnyList(List(mkList(List(1, 4)), mkList(List(2, 5)), mkList(List(3, 6)))))
-  }
-
-  test("transpose.14") {
-    val input = "def r: List[List[Int32]] = List.transpose((1 :: 2 :: 3 :: 4 :: Nil) :: (5 :: 6 :: 7 :: 8 :: Nil) :: Nil)"
-    runAnyTest(input, mkAnyList(List(mkList(List(1, 5)), mkList(List(2, 6)), mkList(List(3, 7)), mkList(List(4, 8)))))
-  }
-
-  test("transpose.15") {
-    val input = "def r: List[List[Int32]] = List.transpose((1 :: 2 :: 3 :: 4 :: 5 :: Nil) :: (6 :: 7 :: 8 :: 9 :: 10 :: Nil) :: Nil)"
-    runAnyTest(input, mkAnyList(List(mkList(List(1, 6)), mkList(List(2, 7)), mkList(List(3, 8)), mkList(List(4, 9)),
-                                     mkList(List(5, 10)))))
-  }
-
-  test("transpose.16") {
-    val input = "def r: List[List[Int32]] = List.transpose((1 :: 2 :: Nil) :: (3 :: 4 :: Nil) :: (5 :: 6 :: Nil) :: Nil)"
-    runAnyTest(input, mkAnyList(List(mkList(List(1, 3, 5)), mkList(List(2, 4, 6)))))
-  }
-
-  test("transpose.17") {
-    val input = """def r: List[List[Int32]] = List.transpose((1 :: 2 :: Nil) :: (3 :: 4 :: Nil) :: (5 :: 6 :: Nil) ::
-                  |                                          (7 :: 8 :: Nil) :: Nil)
-                """.stripMargin
-    runAnyTest(input, mkAnyList(List(mkList(List(1, 3, 5, 7)), mkList(List(2, 4, 6, 8)))))
-  }
-
-  test("transpose.18") {
-    val input = """def r: List[List[Int32]] = List.transpose((1 :: 2 :: Nil) :: (3 :: 4 :: Nil) :: (5 :: 6 :: Nil) ::
-                  |                                          (7 :: 8 :: Nil) :: (9 :: 10 :: Nil) :: Nil)
-                """.stripMargin
-    runAnyTest(input, mkAnyList(List(mkList(List(1, 3, 5, 7, 9)), mkList(List(2, 4, 6, 8, 10)))))
-  }
-
-  test("transpose.19") {
-    val input = """def r: List[List[Int32]] = List.transpose((1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: 6 :: Nil) ::
-                  |                                          (7 :: 8 :: 9 :: Nil) :: Nil)
-                """.stripMargin
-    runAnyTest(input, mkAnyList(List(mkList(List(1, 4, 7)), mkList(List(2, 5, 8)), mkList(List(3, 6, 9)))))
-  }
-
-  test("transpose.20") {
-    val input = """def r: List[List[Int32]] = List.transpose((1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: Nil) ::
-                  |                                          (7 :: 8 :: 9 :: Nil) :: Nil)
-                """.stripMargin
-    runAnyTest(input, mkAnyList(List(mkList(List(1, 2, 3)), mkList(List(4, 5)), mkList(List(7, 8, 9)))))
-  }
-
-  test("transpose.21") {
-    val input = """def r: List[List[Int32]] = List.transpose((1 :: 2 :: 3 :: Nil) :: Nil ::
-                  |                                          (7 :: 8 :: 9 :: Nil) :: Nil)
-                """.stripMargin
-    runAnyTest(input, mkAnyList(List(mkList(List(1, 2, 3)), mkNil, mkList(List(7, 8, 9)))))
-  }
-
-  test("transpose.22") {
-    val input = """def r: List[List[Int32]] = List.transpose((1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: 6 :: Nil) ::
-                  |                                          (7 :: 8 :: 9 :: 10 :: Nil) :: Nil)
-                """.stripMargin
-    runAnyTest(input, mkAnyList(List(mkList(List(1, 2, 3)), mkList(List(4, 5, 6)), mkList(List(7, 8, 9, 10)))))
-  }
-
-  test("isPrefixOf.01") {
-    val input = "def r: Bool = List.isPrefixOf(Nil, Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isPrefixOf.02") {
-    val input = "def r: Bool = List.isPrefixOf(Nil, 1 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isPrefixOf.03") {
-    val input = "def r: Bool = List.isPrefixOf(1 :: Nil, 1 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isPrefixOf.04") {
-    val input = "def r: Bool = List.isPrefixOf(2 :: Nil, 1 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isPrefixOf.05") {
-    val input = "def r: Bool = List.isPrefixOf(1 :: 2 :: Nil, 1 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isPrefixOf.06") {
-    val input = "def r: Bool = List.isPrefixOf(1 :: Nil, 1 :: 2 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isPrefixOf.07") {
-    val input = "def r: Bool = List.isPrefixOf(1 :: 2 :: Nil, 1 :: 2 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isPrefixOf.08") {
-    val input = "def r: Bool = List.isPrefixOf(2 :: Nil, 1 :: 2 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isPrefixOf.09") {
-    val input = "def r: Bool = List.isPrefixOf(1 :: 3 :: Nil, 1 :: 2 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isPrefixOf.10") {
-    val input = "def r: Bool = List.isPrefixOf(1 :: 2 :: 3 :: Nil, 1 :: 2 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isPrefixOf.11") {
-    val input = "def r: Bool = List.isPrefixOf(1 :: 2 :: 3 :: Nil, 1 :: 2 :: 3 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isPrefixOf.12") {
-    val input = "def r: Bool = List.isPrefixOf(1 :: 2 :: Nil, 1 :: 2 :: 3 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isPrefixOf.13") {
-    val input = "def r: Bool = List.isPrefixOf(1 :: Nil, 1 :: 2 :: 3 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isPrefixOf.14") {
-    val input = "def r: Bool = List.isPrefixOf(2 :: Nil, 1 :: 2 :: 3 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isPrefixOf.15") {
-    val input = "def r: Bool = List.isPrefixOf(1 :: 3 :: Nil, 1 :: 2 :: 3 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isPrefixOf.16") {
-    val input = "def r: Bool = List.isPrefixOf(1 :: 2 :: 4 :: Nil, 1 :: 2 :: 3 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isInfixOf.01") {
-    val input = "def r: Bool = List.isInfixOf(Nil, Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isInfixOf.02") {
-    val input = "def r: Bool = List.isInfixOf(1 :: Nil, Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isInfixOf.03") {
-    val input = "def r: Bool = List.isInfixOf(Nil, 1 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isInfixOf.04") {
-    val input = "def r: Bool = List.isInfixOf(1 :: Nil, 1 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isInfixOf.05") {
-    val input = "def r: Bool = List.isInfixOf(2 :: Nil, 1 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isInfixOf.06") {
-    val input = "def r: Bool = List.isInfixOf(1 :: 2 :: Nil, 1 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isInfixOf.07") {
-    val input = "def r: Bool = List.isInfixOf(Nil, 1 :: 2 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isInfixOf.08") {
-    val input = "def r: Bool = List.isInfixOf(1 :: Nil, 1 :: 2 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isInfixOf.09") {
-    val input = "def r: Bool = List.isInfixOf(2 :: Nil, 1 :: 2 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isInfixOf.10") {
-    val input = "def r: Bool = List.isInfixOf(1 :: 2 :: Nil, 1 :: 2 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isInfixOf.11") {
-    val input = "def r: Bool = List.isInfixOf(3 :: Nil, 1 :: 2 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isInfixOf.12") {
-    val input = "def r: Bool = List.isInfixOf(1 :: 3 :: Nil, 1 :: 2 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isInfixOf.13") {
-    val input = "def r: Bool = List.isInfixOf(1 :: 2 :: 3 :: Nil, 1 :: 2 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isInfixOf.14") {
-    val input = "def r: Bool = List.isInfixOf(1 :: 2 :: Nil, 1 :: 2 :: 3 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isInfixOf.15") {
-    val input = "def r: Bool = List.isInfixOf(2 :: 3 :: Nil, 1 :: 2 :: 3 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isInfixOf.16") {
-    val input = "def r: Bool = List.isInfixOf(1 :: 2 :: 3 :: Nil, 1 :: 2 :: 3 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isInfixOf.17") {
-    val input = "def r: Bool = List.isInfixOf(1 :: 2 :: 4 :: Nil, 1 :: 2 :: 3 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isInfixOf.18") {
-    val input = "def r: Bool = List.isInfixOf(1 :: 4 :: Nil, 1 :: 2 :: 3 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isInfixOf.19") {
-    val input = "def r: Bool = List.isInfixOf(1 :: 3 :: Nil, 1 :: 2 :: 3 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isInfixOf.20") {
-    val input = "def r: Bool = List.isInfixOf(1 :: 1 :: Nil, 1 :: 2 :: 3 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isSuffixOf.01") {
-    val input = "def r: Bool = List.isSuffixOf(Nil, Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isSuffixOf.02") {
-    val input = "def r: Bool = List.isSuffixOf(Nil, 1 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isSuffixOf.03") {
-    val input = "def r: Bool = List.isSuffixOf(1 :: Nil, 1 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isSuffixOf.04") {
-    val input = "def r: Bool = List.isSuffixOf(2 :: Nil, 1 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isSuffixOf.05") {
-    val input = "def r: Bool = List.isSuffixOf(2 :: 1 :: Nil, 1 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isSuffixOf.06") {
-    val input = "def r: Bool = List.isSuffixOf(1 :: Nil, 2 :: 1 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isSuffixOf.07") {
-    val input = "def r: Bool = List.isSuffixOf(2 :: 1 :: Nil, 2 :: 1 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isSuffixOf.08") {
-    val input = "def r: Bool = List.isSuffixOf(2 :: Nil, 2 :: 1 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isSuffixOf.09") {
-    val input = "def r: Bool = List.isSuffixOf(3 :: 1 :: Nil, 2 :: 1 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isSuffixOf.10") {
-    val input = "def r: Bool = List.isSuffixOf(3 :: 2 :: 1 :: Nil, 2 :: 1 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isSuffixOf.11") {
-    val input = "def r: Bool = List.isSuffixOf(3 :: 2 :: 1 :: Nil, 3 :: 2 :: 1 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isSuffixOf.12") {
-    val input = "def r: Bool = List.isSuffixOf(2 :: 1 :: Nil, 3 :: 2 :: 1 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isSuffixOf.13") {
-    val input = "def r: Bool = List.isSuffixOf(3 :: Nil, 1 :: 2 :: 3 :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("isSuffixOf.14") {
-    val input = "def r: Bool = List.isSuffixOf(2 :: Nil, 1 :: 2 :: 3 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isSuffixOf.15") {
-    val input = "def r: Bool = List.isSuffixOf(1 :: 3 :: Nil, 1 :: 2 :: 3 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("isSuffixOf.16") {
-    val input = "def r: Bool = List.isSuffixOf(2 :: 2 :: 43 :: Nil, 1 :: 2 :: 3 :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("fold.01") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Int32 = List.fold(f, 1, Nil)
-      """.stripMargin
-    runTest(input, 1)
-  }
-
-  test("fold.02") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Int32 = List.fold(f, 1, 2 :: Nil)
-      """.stripMargin
-    runTest(input, 3)
-  }
-
-  test("fold.03") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Int32 = List.fold(f, 1, 2 :: 3 :: Nil)
-      """.stripMargin
-    runTest(input, 6)
-  }
-
-  test("fold.04") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Int32 = List.fold(f, 1, 2 :: 3 :: 4 :: Nil)
-      """.stripMargin
-    runTest(input, 10)
-  }
-
-  test("fold.05") {
-    val input =
-      """def f(i: Int32, b: Bool): Int32 = if (b) i+1 else i*2
-        |def r: Int32 = List.fold(f, 1, Nil)
-      """.stripMargin
-    runTest(input, 1)
-  }
-
-  test("fold.06") {
-    val input =
-      """def f(i: Int32, b: Bool): Int32 = if (b) i+1 else i*2
-        |def r: Int32 = List.fold(f, 1, true :: Nil)
-      """.stripMargin
-    runTest(input, 2)
-  }
-
-  test("fold.07") {
-    val input =
-      """def f(i: Int32, b: Bool): Int32 = if (b) i+1 else i*2
-        |def r: Int32 = List.fold(f, 1, true :: true :: Nil)
-      """.stripMargin
-    runTest(input, 3)
-  }
-
-  test("fold.08") {
-    val input =
-      """def f(i: Int32, b: Bool): Int32 = if (b) i+1 else i*2
-        |def r: Int32 = List.fold(f, 1, true :: true :: false :: Nil)
-      """.stripMargin
-    runTest(input, 6)
-  }
-
-  test("fold.09") {
-    val input =
-      """def f(i: Int32, b: Bool): Int32 = if (b) i+1 else i*2
-        |def r: Int32 = List.fold(f, 1, true :: true :: false :: false :: Nil)
-      """.stripMargin
-    runTest(input, 12)
-  }
-
-  test("foldLeft.01") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Int32 = List.foldLeft(f, 1, Nil)
-      """.stripMargin
-    runTest(input, 1)
-  }
-
-  test("foldLeft.02") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Int32 = List.foldLeft(f, 1, 2 :: Nil)
-      """.stripMargin
-    runTest(input, 3)
-  }
-
-  test("foldLeft.03") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Int32 = List.foldLeft(f, 1, 2 :: 3 :: Nil)
-      """.stripMargin
-    runTest(input, 6)
-  }
-
-  test("foldLeft.04") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Int32 = List.foldLeft(f, 1, 2 :: 3 :: 4 :: Nil)
-      """.stripMargin
-    runTest(input, 10)
-  }
-
-  test("foldLeft.05") {
-    val input =
-      """def f(i: Int32, b: Bool): Int32 = if (b) i+1 else i*2
-        |def r: Int32 = List.foldLeft(f, 1, Nil)
-      """.stripMargin
-    runTest(input, 1)
-  }
-
-  test("foldLeft.06") {
-    val input =
-      """def f(i: Int32, b: Bool): Int32 = if (b) i+1 else i*2
-        |def r: Int32 = List.foldLeft(f, 1, true :: Nil)
-      """.stripMargin
-    runTest(input, 2)
-  }
-
-  test("foldLeft.07") {
-    val input =
-      """def f(i: Int32, b: Bool): Int32 = if (b) i+1 else i*2
-        |def r: Int32 = List.foldLeft(f, 1, true :: true :: Nil)
-      """.stripMargin
-    runTest(input, 3)
-  }
-
-  test("foldLeft.08") {
-    val input =
-      """def f(i: Int32, b: Bool): Int32 = if (b) i+1 else i*2
-        |def r: Int32 = List.foldLeft(f, 1, true :: true :: false :: Nil)
-      """.stripMargin
-    runTest(input, 6)
-  }
-
-  test("foldLeft.09") {
-    val input =
-      """def f(i: Int32, b: Bool): Int32 = if (b) i+1 else i*2
-        |def r: Int32 = List.foldLeft(f, 1, true :: true :: false :: false :: Nil)
-      """.stripMargin
-    runTest(input, 12)
-  }
-
-  test("foldRight.01") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Int32 = List.foldRight(f, 1, Nil)
-      """.stripMargin
-    runTest(input, 1)
-  }
-
-  test("foldRight.02") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Int32 = List.foldRight(f, 1, 2 :: Nil)
-      """.stripMargin
-    runTest(input, 3)
-  }
-
-  test("foldRight.03") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Int32 = List.foldRight(f, 1, 2 :: 3 :: Nil)
-      """.stripMargin
-    runTest(input, 6)
-  }
-
-  test("foldRight.04") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Int32 = List.foldRight(f, 1, 2 :: 3 :: 4 :: Nil)
-      """.stripMargin
-    runTest(input, 10)
-  }
-
-  test("foldRight.05") {
-    val input =
-      """def f(b: Bool, i: Int32): Int32 = if (b) i+1 else i*2
-        |def r: Int32 = List.foldRight(f, 1, Nil)
-      """.stripMargin
-    runTest(input, 1)
-  }
-
-  test("foldRight.06") {
-    val input =
-      """def f(b: Bool, i: Int32): Int32 = if (b) i+1 else i*2
-        |def r: Int32 = List.foldRight(f, 1, true :: Nil)
-      """.stripMargin
-    runTest(input, 2)
-  }
-
-  test("foldRight.07") {
-    val input =
-      """def f(b: Bool, i: Int32): Int32 = if (b) i+1 else i*2
-        |def r: Int32 = List.foldRight(f, 1, true :: true :: Nil)
-      """.stripMargin
-    runTest(input, 3)
-  }
-
-  test("foldRight.08") {
-    val input =
-      """def f(b: Bool, i: Int32): Int32 = if (b) i+1 else i*2
-        |def r: Int32 = List.foldRight(f, 1, true :: true :: false :: Nil)
-      """.stripMargin
-    runTest(input, 4)
-  }
-
-  test("foldRight.09") {
-    val input =
-      """def f(b: Bool, i: Int32): Int32 = if (b) i+1 else i*2
-        |def r: Int32 = List.foldRight(f, 1, true :: true :: false :: false :: Nil)
-      """.stripMargin
-    runTest(input, 6)
-  }
-
-  test("reduceOpt.01") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Option[Int32] = List.reduceOpt(f, Nil)
-      """.stripMargin
-    runAnyTest(input, mkNone)
-  }
-
-  test("reduceOpt.02") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Option[Int32] = List.reduceOpt(f, 1 :: Nil)
-      """.stripMargin
-    runAnyTest(input, mkSome(1))
-  }
-
-  test("reduceOpt.03") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Option[Int32] = List.reduceOpt(f, 1 :: 2 :: Nil)
-      """.stripMargin
-    runAnyTest(input, mkSome(3))
-  }
-
-  test("reduceOpt.04") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Option[Int32] = List.reduceOpt(f, 1 :: 2 :: 3 :: Nil)
-      """.stripMargin
-    runAnyTest(input, mkSome(6))
-  }
-
-  test("reduceOpt.05") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Option[Int32] = List.reduceOpt(f, 1 :: 2 :: 3 :: 4 :: Nil)
-      """.stripMargin
-    runAnyTest(input, mkSome(10))
-  }
-
-  test("reduceLeftOpt.01") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Option[Int32] = List.reduceLeftOpt(f, Nil)
-      """.stripMargin
-    runAnyTest(input, mkNone)
-  }
-
-  test("reduceLeftOpt.02") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Option[Int32] = List.reduceLeftOpt(f, 1 :: Nil)
-      """.stripMargin
-    runAnyTest(input, mkSome(1))
-  }
-
-  test("reduceLeftOpt.03") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Option[Int32] = List.reduceLeftOpt(f, 1 :: 2 :: Nil)
-      """.stripMargin
-    runAnyTest(input, mkSome(3))
-  }
-
-  test("reduceLeftOpt.04") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Option[Int32] = List.reduceLeftOpt(f, 1 :: 2 :: 3 :: Nil)
-      """.stripMargin
-    runAnyTest(input, mkSome(6))
-  }
-
-  test("reduceLeftOpt.05") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Option[Int32] = List.reduceLeftOpt(f, 1 :: 2 :: 3 :: 4 :: Nil)
-      """.stripMargin
-    runAnyTest(input, mkSome(10))
-  }
-
-  test("reduceRightOpt.01") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Option[Int32] = List.reduceRightOpt(f, Nil)
-      """.stripMargin
-    runAnyTest(input, mkNone)
-  }
-
-  test("reduceRightOpt.02") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Option[Int32] = List.reduceRightOpt(f, 1 :: Nil)
-      """.stripMargin
-    runAnyTest(input, mkSome(1))
-  }
-
-  test("reduceRightOpt.03") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Option[Int32] = List.reduceRightOpt(f, 1 :: 2 :: Nil)
-      """.stripMargin
-    runAnyTest(input, mkSome(3))
-  }
-
-  test("reduceRightOpt.04") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Option[Int32] = List.reduceRightOpt(f, 1 :: 2 :: 3 :: Nil)
-      """.stripMargin
-    runAnyTest(input, mkSome(6))
-  }
-
-  test("reduceRightOpt.05") {
-    val input =
-      """def f(i1: Int32, i2: Int32): Int32 = i1 + i2
-        |def r: Option[Int32] = List.reduceRightOpt(f, 1 :: 2 :: 3 :: 4 :: Nil)
-      """.stripMargin
-    runAnyTest(input, mkSome(10))
-  }
-
-  test("count.01") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Int32 = List.count(f, Nil)
-      """.stripMargin
-    runTest(input, 0)
-  }
-
-  test("count.02") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Int32 = List.count(f, 2 :: Nil)
-      """.stripMargin
-    runTest(input, 0)
-  }
-
-  test("count.03") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Int32 = List.count(f, 2 :: 5 :: Nil)
-      """.stripMargin
-    runTest(input, 0)
-  }
-
-  test("count.04") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Int32 = List.count(f, 3 :: Nil)
-      """.stripMargin
-    runTest(input, 1)
-  }
-
-  test("count.05") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Int32 = List.count(f, 3 :: 4 :: 2 :: Nil)
-      """.stripMargin
-    runTest(input, 1)
-  }
-
-  test("count.06") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Int32 = List.count(f, 1 :: 3 :: 4 :: 2 :: Nil)
-      """.stripMargin
-    runTest(input, 1)
-  }
-
-  test("count.07") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Int32 = List.count(f, 3 :: 3 :: Nil)
-      """.stripMargin
-    runTest(input, 2)
-  }
-
-  test("count.08") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Int32 = List.count(f, 1 :: 6 :: 3 :: 3 :: Nil)
-      """.stripMargin
-    runTest(input, 2)
-  }
-
-  test("count.09") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Int32 = List.count(f, 3 :: 3 :: 8 :: 88 :: Nil)
-      """.stripMargin
-    runTest(input, 2)
-  }
-
-  test("count.10") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Int32 = List.count(f, 5 :: 2 :: 3 :: 1 :: 67 :: 3 :: 0 :: -6 :: -3 :: Nil)
-      """.stripMargin
-    runTest(input, 2)
-  }
-
-  test("count.11") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Int32 = List.count(f, 3 :: 2 :: 3 :: 1 :: 67 :: 3 :: 0 :: -6 :: -3 :: 3 :: 3 :: Nil)
-      """.stripMargin
-    runTest(input, 5)
-  }
-
-  test("concat.01") {
-    val input = "def r: List[Int32] = List.concat(Nil)"
-    runAnyTest(input, mkNil)
-  }
-
-  test("concat.02") {
-    val input = "def r: List[Int32] = List.concat(Nil :: Nil)"
-    runAnyTest(input, mkNil)
-  }
-
-  test("concat.03") {
-    val input = "def r: List[Int32] = List.concat((1 :: Nil) :: Nil)"
-    runAnyTest(input, mkList(List(1)))
-  }
-
-  test("concat.04") {
-    val input = "def r: List[Int32] = List.concat((1 :: 2 :: Nil) :: Nil)"
-    runAnyTest(input, mkList(List(1, 2)))
-  }
-
-  test("concat.05") {
-    val input = "def r: List[Int32] = List.concat(Nil :: Nil :: Nil)"
-    runAnyTest(input, mkNil)
-  }
-
-  test("concat.06") {
-    val input = "def r: List[Int32] = List.concat((1 :: Nil) :: Nil :: Nil)"
-    runAnyTest(input, mkList(List(1)))
-  }
-
-  test("concat.07") {
-    val input = "def r: List[Int32] = List.concat(Nil :: (1 :: Nil) :: Nil)"
-    runAnyTest(input, mkList(List(1)))
-  }
-
-  test("concat.08") {
-    val input = "def r: List[Int32] = List.concat((1 :: Nil) :: (2 :: Nil) :: Nil)"
-    runAnyTest(input, mkList(List(1, 2)))
-  }
-
-  test("concat.09") {
-    val input = "def r: List[Int32] = List.concat((1 :: 2 :: Nil) :: (3 :: Nil) :: Nil)"
-    runAnyTest(input, mkList(List(1, 2, 3)))
-  }
-
-  test("concat.10") {
-    val input = "def r: List[Int32] = List.concat((1 :: 2 :: Nil) :: (3 :: 4 :: Nil) :: Nil)"
-    runAnyTest(input, mkList(List(1, 2, 3, 4)))
-  }
-
-  test("concat.11") {
-    val input = "def r: List[Int32] = List.concat((1 :: 2 :: Nil) :: (3 :: 4 :: 5 :: Nil) :: Nil)"
-    runAnyTest(input, mkList(List(1, 2, 3, 4, 5)))
-  }
-
-  test("concat.12") {
-    val input = "def r: List[Int32] = List.concat(Nil :: (1 :: Nil) :: Nil :: (2 :: 3 :: Nil) :: (7 :: 8 :: 11 :: Nil) :: Nil)"
-    runAnyTest(input, mkList(List(1, 2, 3, 7, 8, 11)))
-  }
-
-  test("exists.01") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.exists(f, Nil)
-      """.stripMargin
-    runBoolTest(input, false)
-  }
-
-  test("exists.02") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.exists(f, 1 :: Nil)
-      """.stripMargin
-    runBoolTest(input, false)
-  }
-
-  test("exists.03") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.exists(f, 3 :: Nil)
-      """.stripMargin
-    runBoolTest(input, true)
-  }
-
-  test("exists.04") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.exists(f, 1 :: 33 :: Nil)
-      """.stripMargin
-    runBoolTest(input, false)
-  }
-
-  test("exists.05") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.exists(f, 1 :: 3 :: Nil)
-      """.stripMargin
-    runBoolTest(input, true)
-  }
-
-  test("exists.06") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.exists(f, 3 :: 33 :: Nil)
-      """.stripMargin
-    runBoolTest(input, true)
-  }
-
-  test("exists.07") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.exists(f, 3 :: 3 :: Nil)
-      """.stripMargin
-    runBoolTest(input, true)
-  }
-
-  test("exists.08") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.exists(f, 1 :: 4 :: 8 :: 3 :: 2 :: 99 :: Nil)
-      """.stripMargin
-    runBoolTest(input, true)
-  }
-
-  test("exists.09") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.exists(f, 3 :: 1 :: 2 :: 99 :: 22 :: 11 :: Nil)
-      """.stripMargin
-    runBoolTest(input, true)
-  }
-
-  test("exists.10") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.exists(f, 1 :: 31 :: 99 :: 21 :: 14 :: 89 :: Nil)
-      """.stripMargin
-    runBoolTest(input, false)
-  }
-
-  test("forall.01") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.forall(f, Nil)
-      """.stripMargin
-    runBoolTest(input, true)
-  }
-
-  test("forall.02") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.forall(f, 1 :: Nil)
-      """.stripMargin
-    runBoolTest(input, false)
-  }
-
-  test("forall.03") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.forall(f, 3 :: Nil)
-      """.stripMargin
-    runBoolTest(input, true)
-  }
-
-  test("forall.04") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.forall(f, 1 :: 2 :: Nil)
-      """.stripMargin
-    runBoolTest(input, false)
-  }
-
-  test("forall.05") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.forall(f, 1 :: 3 :: Nil)
-      """.stripMargin
-    runBoolTest(input, false)
-  }
-
-  test("forall.06") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.forall(f, 3 :: 2 :: Nil)
-      """.stripMargin
-    runBoolTest(input, false)
-  }
-
-  test("forall.07") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.forall(f, 3 :: 3 :: Nil)
-      """.stripMargin
-    runBoolTest(input, true)
-  }
-
-  test("forall.08") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.forall(f, 3 :: 3 :: 3 :: Nil)
-      """.stripMargin
-    runBoolTest(input, true)
-  }
-
-  test("forall.09") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.forall(f, 3 :: 3 :: 1 :: Nil)
-      """.stripMargin
-    runBoolTest(input, false)
-  }
-
-  test("forall.10") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.forall(f, 33 :: 3 :: 3 :: Nil)
-      """.stripMargin
-    runBoolTest(input, false)
-  }
-
-  test("forall.11") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.forall(f, 3 :: 3 :: 3 :: 3 :: 3 :: 3 :: 3 :: Nil)
-      """.stripMargin
-    runBoolTest(input, true)
-  }
-
-  test("forall.12") {
-    val input =
-      """def f(i: Int32): Bool = i == 3
-        |def r: Bool = List.forall(f, 3 :: 3 :: 3 :: 3 :: 3 :: 3 :: 0 :: Nil)
-      """.stripMargin
-    runBoolTest(input, false)
-  }
-
-  test("and.01") {
-    val input = "def r: Bool = List.and(Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("and.02") {
-    val input = "def r: Bool = List.and(true :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("and.03") {
-    val input = "def r: Bool = List.and(false :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("and.04") {
-    val input = "def r: Bool = List.and(true :: true :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("and.05") {
-    val input = "def r: Bool = List.and(true :: false :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("and.06") {
-    val input = "def r: Bool = List.and(false :: true :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("and.07") {
-    val input = "def r: Bool = List.and(false :: false :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("and.08") {
-    val input = "def r: Bool = List.and(true :: true :: true :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("and.09") {
-    val input = "def r: Bool = List.and(true :: true :: false :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("and.10") {
-    val input = "def r: Bool = List.and(false :: true :: true :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("and.11") {
-    val input = "def r: Bool = List.and(true :: true :: true :: true :: true :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("and.12") {
-    val input = "def r: Bool = List.and(true :: true :: true :: true :: false :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("or.01") {
-    val input = "def r: Bool = List.or(Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("or.02") {
-    val input = "def r: Bool = List.or(true :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("or.03") {
-    val input = "def r: Bool = List.or(false :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("or.04") {
-    val input = "def r: Bool = List.or(true :: true :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("or.05") {
-    val input = "def r: Bool = List.or(true :: false :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("or.06") {
-    val input = "def r: Bool = List.or(false :: true :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("or.07") {
-    val input = "def r: Bool = List.or(false :: false :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("or.08") {
-    val input = "def r: Bool = List.or(true :: true :: true :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("or.09") {
-    val input = "def r: Bool = List.or(true :: false :: false :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("or.10") {
-    val input = "def r: Bool = List.or(false :: false :: true :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("or.11") {
-    val input = "def r: Bool = List.or(false :: false :: false :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("or.12") {
-    val input = "def r: Bool = List.or(true :: false :: true :: true :: true :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("or.13") {
-    val input = "def r: Bool = List.or(true :: true :: true :: true :: false :: Nil)"
-    runBoolTest(input, true)
-  }
-
-  test("or.14") {
-    val input = "def r: Bool = List.or(false :: false :: false :: false :: false :: false :: Nil)"
-    runBoolTest(input, false)
-  }
-
-  test("filter.01") {
-    val input =
-      """def f(i: Int32): Bool = i > 3
-        |def r: List[Int32] = List.filter(f, Nil)
-      """.stripMargin
-    runAnyTest(input, mkNil)
-  }
-
-  test("filter.02") {
-    val input =
-      """def f(i: Int32): Bool = i > 3
-        |def r: List[Int32] = List.filter(f, 1 :: Nil)
-      """.stripMargin
-    runAnyTest(input, mkNil)
-  }
-
-  test("filter.03") {
-    val input =
-      """def f(i: Int32): Bool = i > 3
-        |def r: List[Int32] = List.filter(f, 4 :: Nil)
-      """.stripMargin
-    runAnyTest(input, mkList(List(4)))
-  }
-
-  test("filter.04") {
-    val input =
-      """def f(i: Int32): Bool = i > 3
-        |def r: List[Int32] = List.filter(f, 1 :: 2 :: Nil)
-      """.stripMargin
-    runAnyTest(input, mkNil)
-  }
-
-  test("filter.05") {
-    val input =
-      """def f(i: Int32): Bool = i > 3
-        |def r: List[Int32] = List.filter(f, 1 :: 6 :: Nil)
-      """.stripMargin
-    runAnyTest(input, mkList(List(6)))
-  }
-
-  test("filter.06") {
-    val input =
-      """def f(i: Int32): Bool = i > 3
-        |def r: List[Int32] = List.filter(f, 9 :: 3 :: Nil)
-      """.stripMargin
-    runAnyTest(input, mkList(List(9)))
-  }
-
-  test("filter.07") {
-    val input =
-      """def f(i: Int32): Bool = i > 3
-        |def r: List[Int32] = List.filter(f, 90 :: 6 :: Nil)
-      """.stripMargin
-    runAnyTest(input, mkList(List(90, 6)))
-  }
-
-  test("filter.08") {
-    val input =
-      """def f(i: Int32): Bool = i > 3
-        |def r: List[Int32] = List.filter(f, 90 :: 1 :: 6 :: 2 :: -8 :: 11 :: 1000 :: Nil)
-      """.stripMargin
-    runAnyTest(input, mkList(List(90, 6, 11, 1000)))
-  }
-
-  test("filter.09") {
-    val input =
-      """def f(i: Int32): Bool = i > 3
-        |def r: List[Int32] = List.filter(f, -10 :: -11 :: 4 :: 4 :: 3 :: 9 :: 3 :: Nil)
-      """.stripMargin
-    runAnyTest(input, mkList(List(4, 4, 9)))
-  }
-
-  test("slice.01") {
-    val input = "def r: List[Int32] = List.slice(0, 0, Nil)"
-    runAnyTest(input, mkNil)
-  }
-
-  test("slice.02") {
-    val input = "def r: List[Int32] = List.slice(1, 2, Nil)"
-    runAnyTest(input, mkNil)
-  }
-
-  test("slice.03") {
-    val input = "def r: List[Int32] = List.slice(0, 1, 1 :: Nil)"
-    runAnyTest(input, mkList(List(1)))
-  }
-
-  test("slice.04") {
-    val input = "def r: List[Int32] = List.slice(-1, 2, 1 :: Nil)"
-    runAnyTest(input, mkList(List(1)))
-  }
-
-  test("slice.05") {
-    val input = "def r: List[Int32] = List.slice(1, 2, 1 :: Nil)"
-    runAnyTest(input, mkNil)
-  }
-
-  test("slice.06") {
-    val input = "def r: List[Int32] = List.slice(0, 1, 1 :: 2 :: Nil)"
-    runAnyTest(input, mkList(List(1)))
-  }
-
-  test("slice.07") {
-    val input = "def r: List[Int32] = List.slice(1, 2, 1 :: 2 :: Nil)"
-    runAnyTest(input, mkList(List(2)))
-  }
-
-  test("slice.08") {
-    val input = "def r: List[Int32] = List.slice(0, 2, 1 :: 2 :: Nil)"
-    runAnyTest(input, mkList(List(1, 2)))
-  }
-
-  test("slice.09") {
-    val input = "def r: List[Int32] = List.slice(0, 2, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil)"
-    runAnyTest(input, mkList(List(1, 2)))
-  }
-
-  test("slice.10") {
-    val input = "def r: List[Int32] = List.slice(2, 4, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil)"
-    runAnyTest(input, mkList(List(3, 4)))
-  }
-
-  test("slice.11") {
-    val input = "def r: List[Int32] = List.slice(7, 11, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil)"
-    runAnyTest(input, mkList(List(8)))
-  }
-
-  test("slice.12") {
-    val input = "def r: List[Int32] = List.slice(1, 7, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil)"
-    runAnyTest(input, mkList(List(2, 3, 4, 5, 6, 7)))
-  }
-
   test("partition.01") {
     val input =
       """def f(i: Int32): Bool = i > 3
