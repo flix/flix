@@ -988,8 +988,8 @@ def foldRight04: Bool = List.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, 1 :: 
 /////////////////////////////////////////////////////////////////////////////
 // reduceOpt                                                               //
 /////////////////////////////////////////////////////////////////////////////
-//@test
-//def reduceOpt01: Bool = List.reduceOpt((a, b) -> a-b, Nil) `assertEq!` None
+@test
+def reduceOpt01: Bool = List.reduceOpt((a, b) -> a-b, Nil: List[Int]) `assertEq!` None
 
 @test
 def reduceOpt02: Bool = List.reduceOpt((a, b) -> a-b, 1 :: Nil) `assertEq!` Some(1)
@@ -1006,8 +1006,8 @@ def reduceOpt05: Bool = List.reduceOpt((a, b) -> a-b, 1 :: 2 :: 3 :: 4 :: Nil) `
 /////////////////////////////////////////////////////////////////////////////
 // reduceLeftOpt                                                           //
 /////////////////////////////////////////////////////////////////////////////
-//@test
-//def reduceLeftOpt01: Bool = List.reduceLeftOpt((a, b) -> a-b, Nil) `assertEq!` None
+@test
+def reduceLeftOpt01: Bool = List.reduceLeftOpt((a, b) -> a-b, Nil: List[Int]) `assertEq!` None
 
 @test
 def reduceLeftOpt02: Bool = List.reduceLeftOpt((a, b) -> a-b, 1 :: Nil) `assertEq!` Some(1)
@@ -1024,8 +1024,8 @@ def reduceLeftOpt05: Bool = List.reduceLeftOpt((a, b) -> a-b, 1 :: 2 :: 3 :: 4 :
 /////////////////////////////////////////////////////////////////////////////
 // reduceRightOpt                                                          //
 /////////////////////////////////////////////////////////////////////////////
-//@test
-//def reduceRightOpt01: Bool = List.reduceRightOpt((a, b) -> a-b, Nil) `assertEq!` None
+@test
+def reduceRightOpt01: Bool = List.reduceRightOpt((a, b) -> a-b, Nil: List[Int]) `assertEq!` None
 
 @test
 def reduceRightOpt02: Bool = List.reduceRightOpt((a, b) -> a-b, 1 :: Nil) `assertEq!` Some(1)
