@@ -34,14 +34,12 @@ class TestTutorials extends FunSuite {
     new Flix().setOptions(opts.copy(core = false)).addPath(path).solve().get
   }
 
-  // TODO: Requires Option.
-  ignore("lambda-calculus.flix") {
+  test("lambda-calculus.flix") {
     val path = "main/src/tutorials/lambda-calculus.flix"
     new Flix().setOptions(opts.copy(core = false)).addPath(path).solve().get
   }
 
-  // TODO: Requires Option.
-  ignore("lambda-calculus-promises.flix") {
+  test("lambda-calculus-promises.flix") {
     val path = "main/src/tutorials/lambda-calculus-promises.flix"
     new Flix().setOptions(opts.copy(core = false)).addPath(path).solve().get
   }
