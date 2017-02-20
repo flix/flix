@@ -199,8 +199,12 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           // Returns `Some(sym)` if there is exactly one such function.
           lookup("eq", eqType) match {
             case None =>
-              // No equality function found. Use a regular equality expression.
-              Expression.Binary(BinaryOperator.Equal, e1, e2, subst0(tpe), loc)
+              // No equality function found. Use a regular equality / inequality expression.
+              if (op == BinaryOperator.Equal) {
+                Expression.Binary(BinaryOperator.Equal, e1, e2, subst0(tpe), loc)
+              } else {
+                Expression.Binary(BinaryOperator.NotEqual, e1, e2, subst0(tpe), loc)
+              }
             case Some(eqSym) =>
               // Equality function found. Specialize and generate a call to it.
               val newSym = specializeSym(eqSym, eqType)
