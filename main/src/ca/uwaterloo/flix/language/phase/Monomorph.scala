@@ -369,23 +369,32 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     /**
-      * TODO: DOC
+      * Optionally returns the symbol of a function with the given `name` whose declared types unifies with the given type `tpe`.
+      *
+      * Returns `None` if no such function exists or more than one such function exist.
       */
     def lookup(name: String, tpe: Type): Option[Symbol.DefnSym] = {
-      println(tpe)
-      val matches = root.definitions.filter {
-        case (sym, defn) => name == sym.name && Unification.unify(defn.tpe, tpe).isOk
+      // A set of matching symbols.
+      val matches = mutable.Set.empty[Symbol.DefnSym]
+
+      // Iterate through each definition and collect the matching symbols.
+      for ((sym, defn) <- root.definitions) {
+        // Check the function name.
+        if (name == sym.name) {
+          // Check whether the type unifies.
+          if (Unification.unify(defn.tpe, tpe).isOk) {
+            // Match found!
+            matches += sym
+          }
+        }
       }
 
-      println(matches.keySet)
-
-      if (matches.isEmpty) {
-        return None
-      } else if (matches.size == 1) {
-        return Some(matches.head._1)
-      } else {
-        throw InternalCompilerException("???")
+      // Returns the result if there is exactly one match.
+      if (matches.size == 1) {
+        return Some(matches.head)
       }
+      // Otherwise return None.
+      return None
     }
 
     /*
