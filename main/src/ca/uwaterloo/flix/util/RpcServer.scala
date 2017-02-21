@@ -60,7 +60,7 @@ class RpcServer(port: Int) {
           case Success(model, _) =>
 
             // Evaluate the main function.
-            val result = model.getConstant("f") // TODO: Check if the function `f` exists.
+            val result = model.getConstant("f")
 
             // Retrieve the relations.
             val relations = model.getRelationNames.toList.sorted.map {
@@ -74,7 +74,7 @@ class RpcServer(port: Int) {
 
             JObject(
               JField("status", JString("success")),
-              JField("result", JString(Value.pretty(result))),
+              JField("result", if (result == null) JNull else JString(Value.pretty(result))),
               JField("relations", JArray(relations)),
               JField("lattices", JArray(lattices))
             )
@@ -102,7 +102,7 @@ class RpcServer(port: Int) {
       val input = StreamOps.readAll(t.getRequestBody)
 
       // Print debugging information about the request.
-      Console.println(s"Received ${input.length} characters of input.")
+      Console.println(s"Received ${input.getBytes.length} bytes of input from ${t.getRemoteAddress.getHostString}.")
 
       // Evaluate the input program.
       val result = solve(input)

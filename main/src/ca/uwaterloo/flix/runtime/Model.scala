@@ -64,7 +64,10 @@ class Model(root: ExecutableAst.Root,
 
   def getTime: Time = time
 
-  def getConstant(sym: Symbol.DefnSym): AnyRef = definitions(sym)()
+  def getConstant(sym: Symbol.DefnSym): AnyRef = definitions.get(sym) match {
+    case None => null
+    case Some(fn) => fn()
+  }
 
   def getConstant(name: String): AnyRef = getConstant(Symbol.mkDefnSym(name))
 
