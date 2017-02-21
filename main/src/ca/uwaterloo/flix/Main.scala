@@ -21,7 +21,7 @@ import java.io.File
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.runtime.{Benchmarker, Tester, Value}
 import ca.uwaterloo.flix.util.Highlight.Code
-import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.{RpcServer, _}
 
 import scala.concurrent.duration.Duration
 
@@ -40,6 +40,15 @@ object Main {
       Console.err.println("Unable to parse command line arguments. Will now exit.")
       System.exit(1)
       null
+    }
+
+    // check if the --listen flag was passed.
+    if (cmdOpts.listen.nonEmpty) {
+      val rpcServer = new RpcServer(cmdOpts.listen.get)
+      rpcServer.start()
+      while (!Thread.currentThread().isInterrupted) {
+        Thread.sleep(1000 * 1000)
+      }
     }
 
     // check if the --tutorial flag was passed.
@@ -154,6 +163,7 @@ object Main {
   case class CmdOpts(benchmark: Boolean = false,
                      delta: Option[File] = None,
                      documentor: Boolean = false,
+                     listen: Option[Int] = None,
                      main: Option[String] = None,
                      monitor: Boolean = false,
                      optimize: Boolean = false,
@@ -199,6 +209,11 @@ object Main {
 
       // Help.
       help("help").text("prints this usage information.")
+
+      // Listen.
+      opt[Int]("listen").action((s, c) => c.copy(listen = Some(s))).
+        valueName("<port>").
+        text("listens on the given port.")
 
       // Main.
       opt[String]("main").action((s, c) => c.copy(main = Some(s))).
