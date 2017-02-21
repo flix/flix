@@ -58,14 +58,25 @@ class RpcServer(port: Int) {
         // Evaluate the Flix program.
         flix.solve() match {
           case Success(model, _) =>
-            // Evaluate the main function.
-            val result = model.getConstant("main")
 
-            // TODO: Relations
+            // Evaluate the main function.
+            val result = model.getConstant("f") // TODO: Check if the function `f` exists.
+
+            // Retrieve the relations.
+            val relations = model.getRelationNames.toList.sorted.map {
+              case fqn => relation2json(fqn, model.getRelation(fqn))
+            }
+
+            // Retrieve the lattices.
+            val lattices = model.getLatticeNames.toList.sorted.map {
+              case fqn => lattice2json(fqn, model.getLattice(fqn))
+            }
 
             JObject(
               JField("status", JString("success")),
-              JField("result", JString(Value.pretty(result)))
+              JField("result", JString(Value.pretty(result))),
+              JField("relations", JArray(relations)),
+              JField("lattices", JArray(lattices))
             )
           case Failure(errors) =>
             JObject(
@@ -106,6 +117,28 @@ class RpcServer(port: Int) {
       outputStream.write(data.getBytes)
       outputStream.close()
       t.close()
+    }
+
+    /**
+      * Returns the relation with the name `fqn` and the rows `rs` as a JSON object.
+      */
+    private def relation2json(fqn: String, rs: Iterable[List[AnyRef]]): JValue = {
+      val rows = rs.map {
+        case row => JArray(row.map(v => JString(Value.pretty(v))))
+      }
+      JObject(JField("name", JString(fqn)), JField("rows", JArray(rows.toList)))
+    }
+
+    /**
+      * Returns the lattice with the name `fqn` and the rows `rs` as a JSON object.
+      */
+    private def lattice2json(fqn: String, rs: Iterable[(List[AnyRef], AnyRef)]): JValue = {
+      val rows = rs.map {
+        case row =>
+          val (keys, elm) = row
+          JArray(keys.map(v => JString(Value.pretty(v))) ::: JString(Value.pretty(elm)) :: Nil)
+      }
+      JObject(JField("name", JString(fqn)), JField("rows", JArray(rows.toList)))
     }
   }
 
