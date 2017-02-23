@@ -42,6 +42,13 @@ object Main {
       null
     }
 
+    // check if the --listen flag was passed.
+    if (cmdOpts.listen.nonEmpty) {
+      val rpcServer = new RpcServer(cmdOpts.listen.get)
+      rpcServer.start()
+      rpcServer.await()
+    }
+
     // check if the --tutorial flag was passed.
     if (cmdOpts.tutorial != null) {
       printTutorial(cmdOpts.tutorial)
@@ -154,6 +161,7 @@ object Main {
   case class CmdOpts(benchmark: Boolean = false,
                      delta: Option[File] = None,
                      documentor: Boolean = false,
+                     listen: Option[Int] = None,
                      main: Option[String] = None,
                      monitor: Boolean = false,
                      optimize: Boolean = false,
@@ -199,6 +207,11 @@ object Main {
 
       // Help.
       help("help").text("prints this usage information.")
+
+      // Listen.
+      opt[Int]("listen").action((s, c) => c.copy(listen = Some(s))).
+        valueName("<port>").
+        text("listens on the given port.")
 
       // Main.
       opt[String]("main").action((s, c) => c.copy(main = Some(s))).

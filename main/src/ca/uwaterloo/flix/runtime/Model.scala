@@ -52,9 +52,22 @@ class Model(root: ExecutableAst.Root,
     }
   }
 
+  /**
+    * Returns the fully-qualified names of all relations in the program.
+    */
+  def getRelationNames: Set[String] = relations.keySet.map(_.toString)
+
+  /**
+    * Returns the fully-qualified names of all lattices in the program.
+    */
+  def getLatticeNames: Set[String] = lattices.keySet.map(_.toString)
+
   def getTime: Time = time
 
-  def getConstant(sym: Symbol.DefnSym): AnyRef = definitions(sym)()
+  def getConstant(sym: Symbol.DefnSym): AnyRef = definitions.get(sym) match {
+    case None => null
+    case Some(fn) => fn()
+  }
 
   def getConstant(name: String): AnyRef = getConstant(Symbol.mkDefnSym(name))
 
