@@ -16,42 +16,50 @@
 
 package ca.uwaterloo.flix.util
 
-import java.net.InetSocketAddress
-import java.util.concurrent.{Executors, TimeUnit}
-
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.Value
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
+
+import java.net.InetSocketAddress
+import java.util.concurrent.{Executors, TimeUnit}
+
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
+
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
 
 import scala.concurrent.duration.Duration
 
 /**
-  * A simple web server that listens on the given `port` and evaluates Flix programs.
+  * A simple web server that listens on the given `port` and evaluates Flix programs in response to requests.
   */
 class RpcServer(port: Int) {
+
+  /**
+    * The HTTP server associated with `this` instance.
+    */
+  private var server: HttpServer = _
 
   class SolverHandler extends HttpHandler {
 
     /**
-      * The default timeout.
+      * The default solver timeout.
       */
-    val DefaultTimeout = Duration(10, TimeUnit.SECONDS)
+    val SolverTimeout = Duration(10, TimeUnit.SECONDS)
 
     /**
-      * The default number of threads.
+      * The default number of threads to use by the solver.
       */
-    val DefaultThreads = 1
+    val SolverThreads = 1
 
     /**
       * Evaluates the given `input` program and returns a JSON object with the result.
       */
     def solve(input: String): JValue = {
       try {
+        // Instantiate fresh Flix instance.
         val flix = new Flix()
-        val opts = Options.Default.copy(threads = DefaultThreads, timeout = DefaultTimeout)
+        val opts = Options.Default.copy(threads = SolverThreads, timeout = SolverTimeout)
         flix.setOptions(opts)
         flix.addStr(input)
 
@@ -62,12 +70,12 @@ class RpcServer(port: Int) {
             // Evaluate the main function.
             val result = model.getConstant("f")
 
-            // Retrieve the relations.
+            // Translate the computed relations to JSON data.
             val relations = model.getRelationNames.toList.sorted.map {
               case fqn => relation2json(fqn, model.getRelation(fqn))
             }
 
-            // Retrieve the lattices.
+            // Translate the computed lattices to JSON data.
             val lattices = model.getLatticeNames.toList.sorted.map {
               case fqn => lattice2json(fqn, model.getLattice(fqn))
             }
@@ -148,10 +156,10 @@ class RpcServer(port: Int) {
     */
   def start(): Unit = {
     // Create the http server.
-    val server = HttpServer.create(new InetSocketAddress(port), 0)
+    server = HttpServer.create(new InetSocketAddress(port), 0)
 
     // Emit some debugging information.
-    Console.println(s"Listening on $port.")
+    Console.println(s"Listening for connections on port $port.")
 
     // Mount the solver context.
     server.createContext("/", new SolverHandler())
@@ -161,6 +169,19 @@ class RpcServer(port: Int) {
 
     // Start server!
     server.start()
+  }
+
+  /**
+    * Waits for the server to shutdown.
+    */
+  def await(): Unit = {
+    while (!Thread.currentThread().isInterrupted) {
+      Thread.sleep(1000 * 1000)
+    }
+
+    if (server != null) {
+      server.stop(0)
+    }
   }
 
 }

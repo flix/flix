@@ -21,7 +21,7 @@ import java.io.File
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.runtime.{Benchmarker, Tester, Value}
 import ca.uwaterloo.flix.util.Highlight.Code
-import ca.uwaterloo.flix.util.{RpcServer, _}
+import ca.uwaterloo.flix.util._
 
 import scala.concurrent.duration.Duration
 
@@ -46,9 +46,7 @@ object Main {
     if (cmdOpts.listen.nonEmpty) {
       val rpcServer = new RpcServer(cmdOpts.listen.get)
       rpcServer.start()
-      while (!Thread.currentThread().isInterrupted) {
-        Thread.sleep(1000 * 1000)
-      }
+      rpcServer.await()
     }
 
     // check if the --tutorial flag was passed.
