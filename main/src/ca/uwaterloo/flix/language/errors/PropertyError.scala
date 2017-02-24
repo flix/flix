@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, SourceInput, Symbol}
+import ca.uwaterloo.flix.language.errors.Token.Red
 import ca.uwaterloo.flix.util.Highlight._
 
 /**
@@ -26,6 +27,13 @@ import ca.uwaterloo.flix.util.Highlight._
 case class PropertyError(property: ExecutableAst.Property, m: Map[Symbol.VarSym, String]) extends CompilationError {
   val kind: String = "Property Error"
   val source: SourceInput = property.defn.loc.source
+  val message: FormattedMessage = new FormattedMessage().
+    header(kind, source).
+    text(">> The function ").quote(Red(property.defn.toString)).newLine().
+    newLine().
+    text(Red(msg)).newLine()
+
+
   val message: String =
     hl"""|>> The function '${Red(property.defn.toString)}' does not satisfy the law '${Cyan(property.law.toString)}'.
          |

@@ -39,7 +39,8 @@ object ResolutionError {
   // TODO: Replace by DuplicateDefinition during naming!
   case class AmbiguousRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
-    val msg: FormattedMessage = new FormattedMessage().
+    val message: FormattedMessage = new FormattedMessage().
+      header(kind, source).
       text(">> Ambiguous reference ").quote(Red(qn.toString)).text(".").newLine().
       newLine().
       highlight(loc, "ambiguous reference.").newLine()
@@ -56,7 +57,8 @@ object ResolutionError {
   // TODO: Improve error message.
   case class AmbiguousTag(tag: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
-    val msg: FormattedMessage = new FormattedMessage().
+    val message: FormattedMessage = new FormattedMessage().
+      header(kind, source).
       text(">> Ambiguous tag ").quote(Red(tag)).text(".").newLine().
       newLine().
       highlight(loc, "ambiguous tag name.").newLine().
@@ -74,7 +76,8 @@ object ResolutionError {
     */
   case class UndefinedAttribute(table: String, attribute: String, loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
-    val msg: FormattedMessage = new FormattedMessage().
+    val message: FormattedMessage = new FormattedMessage().
+      header(kind, source).
       text(">> Undefined attribute ").quote(Red(attribute)).text(" in table ").text(Cyan(table)).newLine().
       newLine().
       highlight(loc, "attribute not found.").newLine().
@@ -92,7 +95,8 @@ object ResolutionError {
   case class UndefinedRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
 
-    val msg: FormattedMessage = new FormattedMessage().
+    val message: FormattedMessage = new FormattedMessage().
+      header(kind, source).
       text(">> Undefined reference ").quote(Red(qn.toString)).text(".").newLine().
       newLine().
       highlight(loc, "name not found").newLine().
@@ -109,7 +113,8 @@ object ResolutionError {
     */
   case class UndefinedTable(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
-    val msg: FormattedMessage = new FormattedMessage().
+    val message: FormattedMessage = new FormattedMessage().
+      header(kind, source).
       text(">> Undefined table ").quote(Red(qn.toString)).text(".").newLine().
       newLine().
       highlight(loc, "table not found.").newLine().
@@ -126,7 +131,8 @@ object ResolutionError {
     */
   case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
-    val msg: FormattedMessage = new FormattedMessage().
+    val message: FormattedMessage = new FormattedMessage().
+      header(kind, source).
       text(">> Undefined tag ").text(Red(tag)).newLine().
       newLine().
       highlight(loc, "tag not found.").newLine().
@@ -143,7 +149,8 @@ object ResolutionError {
     */
   case class UndefinedType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
-    val msg: FormattedMessage = new FormattedMessage().
+    val message: FormattedMessage = new FormattedMessage().
+      header(kind, source).
       text(">> Undefined type ").quote(Red(qn.toString)).text(".").newLine().
       newLine().
       highlight(loc, "type not found.").newLine().

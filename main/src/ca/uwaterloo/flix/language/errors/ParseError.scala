@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SourceInput
-import ca.uwaterloo.flix.util.Highlight.Red
+import ca.uwaterloo.flix.language.errors.Token.Red
 
 /**
   * An error raised to indicate a parse error.
@@ -29,9 +29,9 @@ import ca.uwaterloo.flix.util.Highlight.Red
 case class ParseError(msg: String, src: SourceInput) extends CompilationError {
   val kind = "Parse Error"
   val source: SourceInput = src
-  val message: String =
-    s"""|>> Parse Error:
-        |
-          |${Red(msg)}
-          """.stripMargin
+  val message: FormattedMessage = new FormattedMessage().
+    header(kind, source).
+    text(">> Parse Error: ").newLine().
+    newLine().
+    text(Red(msg)).newLine()
 }

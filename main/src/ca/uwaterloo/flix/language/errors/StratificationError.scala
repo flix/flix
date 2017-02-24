@@ -26,9 +26,9 @@ import ca.uwaterloo.flix.util.Highlight._
 case class StratificationError(constraints: List[TypedAst.Constraint]) extends CompilationError {
   val kind: String = "Stratification Error"
   val source: SourceInput = constraints.head.loc.source
-  val message: String =
-    hl"""|>> The constraint graph contains negative cycles:
-         |
-         |${constraints.map(c => Code(c.loc, "on a negative cycle")).mkString("\n")}
-        """.stripMargin
+  val message: FormattedMessage = new FormattedMessage().
+    header(kind, source).
+    text(">> The constraint graph contains negative cycles:").newLine().
+    newLine().
+    text(constraints.map(c => Code(c.loc, "on a negative cycle")).mkString("\n")).newLine()
 }

@@ -25,6 +25,8 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
   */
 object Highlight {
 
+  // TODO: Deprecated. Slow migrate dependencies to use FormattedMessage.
+
   implicit class Helper(val sc: StringContext) extends AnyVal {
     def hl(args: Any*): String = {
       val strings = sc.parts.iterator
