@@ -18,24 +18,22 @@ package ca.uwaterloo.flix.util.terminal
 
 import ca.uwaterloo.flix.util.terminal.Color.Txt
 
+import scala.collection.mutable
+import scala.language.implicitConversions
 
 object ColorString {
 
   implicit def string2color(s: String): Color = Txt(s)
 
   implicit class Interpolator(val sc: StringContext) extends AnyVal {
-
     def color(args: Color*): ColorString = {
-
-      // TODO:
-
+      val xs = mutable.ListBuffer.empty[Color]
       for (i <- 0 until sc.parts.length - 1) {
-        print(sc.parts(i))
-        print(args(i))
+        xs += sc.parts(i)
+        xs += args(i)
       }
-      println(sc.parts.last)
-
-      new ColorString(args.toList)
+      xs += sc.parts.last
+      new ColorString(xs.toList)
     }
   }
 

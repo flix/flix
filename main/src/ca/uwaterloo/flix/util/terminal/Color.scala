@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.util.terminal
 
+import ca.uwaterloo.flix.language.ast.SourceLocation
+
 sealed trait Color {
   /**
     * Formats `this` text according to the given color context.
@@ -32,6 +34,7 @@ sealed trait Color {
     case Color.White(s) => ctx.fmtWhite(s.fmt)
     case Color.Bold(s) => ctx.fmtBold(s.fmt)
     case Color.Underline(s) => ctx.fmtUnderline(s.fmt)
+    case c: Color.Code => c.fmt
   }
 }
 
@@ -58,5 +61,52 @@ object Color {
   case class Bold(text: Color) extends Color
 
   case class Underline(text: Color) extends Color
+
+  case class Code(loc: SourceLocation, msg: String) extends Color {
+    private val beginLine = loc.beginLine
+    private val beginCol = loc.beginCol
+    private val endLine = loc.endLine
+    private val endCol = loc.endCol
+    private val lineAt = loc.lineAt
+
+    /**
+      * Returns this line of code with the source location underlined.
+      */
+    def fmt: String = if (beginLine == endLine) underline else leftline
+
+    /**
+      * Highlights this source location with red arrows under the text.
+      */
+    private def underline: String = {
+      import ColorString._
+
+      val lineNo = beginLine.toString + " | "
+      val line1 = lineNo + lineAt(beginLine) + "\n"
+      val line2 = " " * (beginCol + lineNo.length - 1) + Red("^" * (endCol - beginCol)) + "\n"
+      val line3 = " " * (beginCol + lineNo.length - 1) + msg
+      line1 + line2 + line3
+    }
+
+    /**
+      * Highlights this source location with red arrows left of the text.
+      */
+    private def leftline: String = {
+      import ColorString._
+
+      val sb = new StringBuilder()
+      for (lineNo <- beginLine to endLine) {
+        val currentLine = lineAt(lineNo)
+        sb.
+          append(lineNo).append(" |").
+          append(Red(">") + " ").
+          append(currentLine).
+          append("\n")
+      }
+      sb.append("\n")
+      sb.append(msg)
+      sb.toString()
+    }
+
+  }
 
 }
