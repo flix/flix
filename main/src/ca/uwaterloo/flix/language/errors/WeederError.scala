@@ -18,13 +18,18 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{SourceInput, SourceLocation}
-import ca.uwaterloo.flix.util.Highlight._
+import ca.uwaterloo.flix.language.errors.Token.{Cyan, Red, Underline}
 
 /**
   * A common super-type for weeding errors.
   */
 sealed trait WeederError extends CompilationError {
   val kind = "Syntax Error"
+
+  // TODO: refactor
+  def msg: FormattedMessage
+
+  def message = msg.fmt(ColorContext.AnsiColor)
 }
 
 object WeederError {
@@ -38,15 +43,14 @@ object WeederError {
     */
   case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val source: SourceInput = loc1.source
-    val message: String =
-      hl"""|>> Multiple occurrence of the '${Red("@" + name)}' annotation.
-           |
-           |${Code(loc1, "the first occurrence was here.")}
-           |
-           |${Code(loc2, "the second occurrence was here.")}
-           |
-           |${Underline("Tip")}: Remove one of the annotations.
-        """.stripMargin
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> Multiple occurrence of the ").quote(Red("@" + name)).text(" annotation.").newLine().
+      newLine().
+      highlight(loc1, "the first occurrence was here.").newLine().
+      newLine().
+      highlight(loc2, "the second occurrence was here.").newLine().
+      newLine().
+      text(Underline("Tip")).text(": Remove one of the annotations.").newLine()
   }
 
   /**
@@ -58,15 +62,14 @@ object WeederError {
     */
   case class DuplicateAttribute(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val source: SourceInput = loc1.source
-    val message: String =
-      hl"""|>> Multiple declarations of the attribute named '${Red(name)}'.
-           |
-           |${Code(loc1, "the first declaration was here.")}
-           |
-           |${Code(loc2, "the second declaration was here.")}
-           |
-           |${Underline("Tip")}: Remove or rename one of the attributes to avoid the name clash.
-        """.stripMargin
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> Multiple declarations of the attribute named ").quote(Red(name)).text(".").newLine().
+      newLine().
+      highlight(loc1, "the first declaration was here.").newLine().
+      newLine().
+      highlight(loc2, "the second declaration was here.").newLine().
+      newLine().
+      text(Underline("Tip")).text(": Remove or rename one of the attributes to avoid the name clash.").newLine()
   }
 
   /**
@@ -78,15 +81,14 @@ object WeederError {
     */
   case class DuplicateFormalParam(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val source: SourceInput = loc1.source
-    val message =
-      hl"""|>> Multiple declarations of the formal parameter named '${Red(name)}'.
-           |
-           |${Code(loc1, "the first declaration was here.")}
-           |
-           |${Code(loc2, "the second declaration was here.")}
-           |
-           |${Underline("Tip")}: Remove or rename one of the formal parameters to avoid the name clash.
-         """.stripMargin
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> Multiple declarations of the formal parameter named ").quote(Red(name)).text(".").newLine().
+      newLine().
+      highlight(loc1, "the first declaration was here.").newLine().
+      newLine().
+      highlight(loc2, "the second declaration was here.").newLine().
+      newLine().
+      text(Underline("Tip")).text(": Remove or rename one of the formal parameters to avoid the name clash.").newLine()
   }
 
   /**
@@ -99,15 +101,14 @@ object WeederError {
     */
   case class DuplicateTag(enumName: String, tagName: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val source: SourceInput = loc1.source
-    val message =
-      hl"""|>> Multiple declarations of the tag named '${Red(tagName)}' in the enum '${Cyan(enumName)}'.
-           |
-           |${Code(loc1, "the first declaration was here.")}
-           |
-           |${Code(loc2, "the second declaration was here.")}
-           |
-           |${Underline("Tip")}: Remove or rename one of the formal parameters to avoid the name clash.
-           """.stripMargin
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> Multiple declarations of the tag named ").quote(Red(tagName)).text(" in the enum ").text(Cyan(enumName)).text(".").newLine().
+      newLine().
+      highlight(loc1, "the first declaration was here.").newLine().
+      newLine().
+      highlight(loc2, "the second declaration was here.").newLine().
+      newLine().
+      text(Underline("Tip")).text(": Remove or rename one of the tags to avoid the name clash.").newLine()
   }
 
   /**
@@ -118,15 +119,12 @@ object WeederError {
     */
   case class EmptyIndex(name: String, loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message =
-      hl"""|>> The index for table '${Red(name)}' does not declare any attribute groups.
-           |
-           |${Code(loc, "an index must declare at least one group of attributes.")}
-           |
-           |${Underline("Tip")}: Add an index on at least one attribute, e.g:
-           |
-           |     index TableName({attributeName})
-           """.stripMargin
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> The index for table ").quote(Red(name)).text(" does not declare any attribute groups.").newLine().
+      newLine().
+      highlight(loc, "an index must declare at least one group of attributes.").newLine().
+      newLine().
+      text(Underline("Tip")).text(": Add an index on at least one attribute.").newLine()
   }
 
   /**
@@ -137,14 +135,10 @@ object WeederError {
     */
   case class EmptyRelation(name: String, loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: String =
-      s"""|>> The relation '${Red(name)}' does not declare any attributes.
-          |
-          |${Code(loc, "a relation must declare at least one attribute.")}
-          |
-          |${Underline("Tip")}: For example, a relation could be declared as:
-          |     rel TableName(attributeOne: Int, attributeTwo: Str)
-          """.stripMargin
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> The relation ").quote(Red(name)).text(" does not declare any attributes.").newLine().
+      newLine().
+      highlight(loc, "a relation must declare at least one attribute.").newLine()
   }
 
   /**
@@ -155,14 +149,10 @@ object WeederError {
     */
   case class EmptyLattice(name: String, loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: String =
-      s"""|>> The lattice '${Red(name)}' does not declare any attributes.
-          |
-          |${Code(loc, "a lattice must declare at least one attribute.")}
-          |
-          |${Underline("Tip")}: For example, a lattice could be declared as:
-          |     lat TableName(attributeOne: Int, attributeTwo: Str)
-          """.stripMargin
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> The lattice ").quote(Red(name)).text(" does not declare any attributes.").newLine().
+      newLine().
+      highlight(loc, "a lattice must declare at least one attribute.").newLine()
   }
 
   /**
@@ -172,13 +162,12 @@ object WeederError {
     */
   case class IllegalExistential(loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: String =
-      s"""|>> Existential quantifier does not declare any formal parameters.
-          |
-          |${Code(loc, "quantifier must declare at least one parameter.")}
-          |
-          |${Underline("Tip")}: Add a formal parameter or remove the quantifier.
-          """.stripMargin
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> Existential quantifier does not declare any formal parameters.").newLine().
+      newLine().
+      highlight(loc, "quantifier must declare at least one parameter.").newLine().
+      newLine().
+      text(Underline("Tip")).text(": Add a formal parameter or remove the quantifier.").newLine()
   }
 
   /**
@@ -188,13 +177,12 @@ object WeederError {
     */
   case class IllegalUniversal(loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: String =
-      s"""|>> Universal quantifier does not declare any formal parameters.
-          |
-          |${Code(loc, "quantifier must declare at least one parameter.")}
-          |
-          |${Underline("Tip")}: Add a formal parameter or remove the quantifier.
-          """.stripMargin
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> Universal quantifier does not declare any formal parameters.").newLine().
+      newLine().
+      highlight(loc, "quantifier must declare at least one parameter.").newLine().
+      newLine().
+      text(Underline("Tip")).text(": Add a formal parameter or remove the quantifier.").newLine()
   }
 
   /**
@@ -204,13 +192,12 @@ object WeederError {
     */
   case class IllegalFloat(loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: String =
-      s"""|>> Illegal float.
-          |
-          |${Code(loc, "illegal float.")}
-          |
-          |${Underline("Tip")}: Ensure that the literal is within bounds.
-         """.stripMargin
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> Illegal float.").newLine().
+      newLine().
+      highlight(loc, "illegal float.").newLine().
+      newLine().
+      text(Underline("Tip")).text(": Ensure that the literal is within bounds.").newLine()
   }
 
   /**
@@ -220,13 +207,12 @@ object WeederError {
     */
   case class IllegalInt(loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: String =
-      s"""|>> Illegal int.
-          |
-          |${Code(loc, "illegal int.")}
-          |
-          |${Underline("Tip")}: Ensure that the literal is within bounds.
-         """.stripMargin
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> Illegal int.").newLine().
+      newLine().
+      highlight(loc, "illegal int.").newLine().
+      newLine().
+      text(Underline("Tip")).text(": Ensure that the literal is within bounds.").newLine()
   }
 
   /**
@@ -236,11 +222,10 @@ object WeederError {
     */
   case class IllegalIndex(loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: String =
-      s"""|>> The attribute group does not declare any attributes.
-          |
-          |${Code(loc, "an attribute group must contain at least one attribute.")}
-          """.stripMargin
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> The attribute group does not declare any attributes.").newLine().
+      newLine().
+      highlight(loc, "an attribute group must contain at least one attribute.").newLine()
   }
 
   /**
@@ -250,17 +235,16 @@ object WeederError {
     */
   case class IllegalLattice(loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: String =
-      s"""|>> A lattice definition must have exactly five components: bot, top, leq, lub and glb.
-          |
-          |${Code(loc, "illegal definition.")}
-          |
-          |the 1st component must be the bottom element,
-          |the 2nd component must be the top element,
-          |the 3rd component must be the partial order function,
-          |the 4th component must be the least upper bound function, and
-          |the 5th component must be the greatest upper bound function.
-          """.stripMargin
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> A lattice definition must have exactly five components: bot, top, leq, lub and glb.").newLine().
+      newLine().
+      highlight(loc, "illegal definition.").newLine().
+      newLine().
+      text("the 1st component must be the bottom element,").newLine().
+      text("the 2nd component must be the top element,").newLine().
+      text("the 3rd component must be the partial order function,").newLine().
+      text("the 4th component must be the least upper bound function, and").newLine().
+      text("the 5th component must be the greatest upper bound function.").newLine()
   }
 
   /**
@@ -270,13 +254,12 @@ object WeederError {
     */
   case class IllegalParameterList(loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: String =
-      s"""|>> A parameter list must contain at least one parameter or be omitted.
-          |
-          |${Code(loc, "empty parameter list.")}
-          |
-          |${Underline("Tip")}: Remove the parenthesis or add a parameter.
-          """.stripMargin
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">>  A parameter list must contain at least one parameter or be omitted.").newLine().
+      newLine().
+      highlight(loc, "empty parameter list.").newLine().
+      newLine().
+      text(Underline("Tip")).text(": Remove the parenthesis or add a parameter.").newLine()
   }
 
   /**
@@ -286,11 +269,10 @@ object WeederError {
     */
   case class IllegalWildcard(loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: String =
-      s"""|>> Wildcard not allowed here.
-          |
-          |${Code(loc, "illegal wildcard.")}
-          """.stripMargin
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">>  Wildcard not allowed here.").newLine().
+      newLine().
+      highlight(loc, "illegal wildcard.").newLine()
   }
 
   /**
@@ -302,15 +284,14 @@ object WeederError {
     */
   case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val source: SourceInput = loc1.source
-    val message: String =
-      hl"""|>> Multiple occurrence of '${Red(name)}' in a pattern match.
-           |
-           |${Code(loc1, "the first occurrence was here.")}
-           |
-           |${Code(loc2, "the second occurrence was here.")}
-           |
-           |${Underline("Tip")}: A variable may only occur *once* in a pattern.
-        """.stripMargin
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> Multiple occurrence of ").quote(Red(name)).text(" in a pattern. ").newLine().
+      newLine().
+      highlight(loc1, "the first occurrence was here.").newLine().
+      newLine().
+      highlight(loc2, "the second occurrence was here.").newLine().
+      newLine().
+      text(Underline("Tip")).text(": A variable may only occur *once* in a pattern.").newLine()
   }
 
   /**
@@ -321,11 +302,10 @@ object WeederError {
     */
   case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: String =
-      s"""|>> Undefined annotation named '${Red(name)}'.
-          |
-          |${Code(loc, "undefined annotation.")}
-          """.stripMargin
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">>  Undefined annotation named ").quote(Red(name)).text(".").newLine().
+      newLine().
+      highlight(loc, "undefined annotation.").newLine()
   }
 
 }
