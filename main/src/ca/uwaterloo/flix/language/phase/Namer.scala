@@ -150,7 +150,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
           case Some(enum) =>
             // Case 2.2: Duplicate definition.
-            DuplicateDefinition(ident.name, enum.loc, ident.loc).toFailure
+            DuplicateDefinition(ident.name, enum.sym.loc, ident.loc).toFailure
         }
 
       /*

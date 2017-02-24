@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.errors.Token.Red
 
 class FormattedMessage() {
 
@@ -29,6 +30,7 @@ class FormattedMessage() {
   object Line {
 
     case class TextLine(x: List[Token]) extends Line
+
   }
 
   val lines = scala.collection.mutable.ListBuffer.empty[Line]
@@ -36,6 +38,11 @@ class FormattedMessage() {
 
   def text(t: Token): FormattedMessage = {
     currentLine = t :: currentLine
+    this
+  }
+
+  def text(s: Int): FormattedMessage = {
+    currentLine = Token.Txt(s.toString) :: currentLine
     this
   }
 
@@ -60,30 +67,24 @@ class FormattedMessage() {
     def underline(): Unit = {
       val lineNo = beginLine.toString + " | "
 
-      this.text(lineNo).text(lineAt(beginLine)).newLine().
+      text(lineNo).text(lineAt(beginLine)).newLine().
         text(" " * (beginCol + lineNo.length - 1)).text(Token.Red("^" * (endCol - beginCol))).newLine().
         text(" " * (beginCol + lineNo.length - 1)).text(msg).newLine()
     }
 
     def leftline(): Unit = {
-      // TODO
-      //      val sb = new StringBuilder()
-      //      for (lineNo <- beginLine to endLine) {
-      //        val currentLine = lineAt(lineNo)
-      //        sb.
-      //          append(lineNo).append(" |").
-      //          append(Red(">") + " ").
-      //          append(currentLine).
-      //          append("\n")
-      //      }
-      //      sb.append("\n")
-      //      sb.append(msg)
-      //      sb.toString()
-      ???
+      for (lineNo <- beginLine to endLine) {
+        val currentLine = lineAt(lineNo)
+        text(lineNo).text(" |").
+          text(Red(">")).text(" ").
+          text(currentLine).
+          newLine()
+      }
+      newLine()
+      text(msg)
     }
 
     if (beginLine == endLine) underline() else leftline
-
 
     this
   }

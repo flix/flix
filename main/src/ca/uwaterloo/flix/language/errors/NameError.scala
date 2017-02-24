@@ -17,14 +17,19 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.util.Highlight._
+import ca.uwaterloo.flix.language.ast.{SourceInput, SourceLocation}
+import ca.uwaterloo.flix.language.errors.Token._
 
 /**
   * A common super-type for naming errors.
   */
 sealed trait NameError extends CompilationError {
   val kind = "Name Error"
+
+  // TODO: refactor
+  def msg: FormattedMessage
+
+  def message = msg.fmt(ColorContext.AnsiColor)
 }
 
 object NameError {
@@ -37,16 +42,15 @@ object NameError {
     * @param loc2 the location of the second definition.
     */
   case class DuplicateDefinition(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    val source = loc1.source
-    val message =
-      hl"""|>> Duplicate definition of '${Red(name)}'.
-           |
-           |${Code(loc1, "the first definition was here.")}
-           |
-           |${Code(loc2, "the second definition was here.")}
-           |
-           |${Underline("Tip")}: Remove or rename one of the definitions.
-        """.stripMargin
+    val source: SourceInput = loc1.source
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> Duplicate definition of ").quote(Red(name)).newLine().
+      newLine().
+      highlight(loc1, "the first definition was here.").newLine().
+      newLine().
+      highlight(loc2, "the second definition was here.").newLine().
+      newLine().
+      text(Underline("Tip")).text(": Remove or rename one of the definitions.")
   }
 
   /**
@@ -57,16 +61,15 @@ object NameError {
     * @param loc2 the location of the second definition.
     */
   case class DuplicateIndex(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    val source = loc1.source
-    val message =
-      hl"""|>> Duplicate index for table '${Red(name)}'.
-           |
-           |${Code(loc1, "the first declaration was here.")}
-           |
-           |${Code(loc2, "the second declaration was here.")}
-           |
-           |${Underline("Tip")}: Remove one of the index declarations.
-        """.stripMargin
+    val source: SourceInput = loc1.source
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> Duplicate index for table ").quote(Red(name)).newLine().
+      newLine().
+      highlight(loc1, "the first declaration was here.").newLine().
+      newLine().
+      highlight(loc2, "the second declaration was here.").newLine().
+      newLine().
+      text(Underline("Tip")).text(": Remove one of the index declarations.")
   }
 
 }
