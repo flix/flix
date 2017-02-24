@@ -25,14 +25,7 @@ import ca.uwaterloo.flix.language.errors.Token.{Cyan, Magenta, Red}
   */
 // TODO: Make sealed
 // TODO: Move kind here.
-trait TypeError extends CompilationError {
-
-  // TODO: refactor
-  def msg: FormattedMessage
-
-  def message = msg.fmt(ColorContext.AnsiColor)
-
-}
+trait TypeError extends CompilationError
 
 object TypeError {
 
@@ -48,7 +41,8 @@ object TypeError {
   case class UnificationError(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
     val kind = "Type Error"
     val source: SourceInput = loc.source
-    val msg: FormattedMessage = new FormattedMessage().
+    val message: FormattedMessage = new FormattedMessage().
+      header(kind, source).
       text(">> Unable to unify ").quote(Red(baseType1.toString)).text(" and .").quote(Red(baseType2.toString)).text(".").newLine().
       newLine().
       highlight(loc, "mismatched types.").newLine().
@@ -69,7 +63,8 @@ object TypeError {
   case class OccursCheckError(baseVar: Type.Var, baseType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
     val kind = "Type Error"
     val source: SourceInput = loc.source
-    val msg: FormattedMessage = new FormattedMessage().
+    val message: FormattedMessage = new FormattedMessage().
+      header(kind, source).
       text(">> Unable to unify the type variable ").quote(Red(baseVar.toString)).text(" with the type .").quote(Red(baseType.toString)).text(".").newLine().
       text(">> due to a recursive occurrence of the type variable in the type.").
       newLine().

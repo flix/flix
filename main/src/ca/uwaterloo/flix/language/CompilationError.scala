@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.language.ast.SourceInput
-import ca.uwaterloo.flix.util.Highlight._
+import ca.uwaterloo.flix.language.errors.FormattedMessage
 
 /**
   * A common super-type for compilation errors.
@@ -35,18 +35,8 @@ trait CompilationError {
   def source: SourceInput
 
   /**
-    * Returns the error message text.
+    * Returns the formatted error message.
     */
-  def message: String
-
-  /**
-    * Returns a pretty-printed version of the error message.
-    */
-  def render: String = {
-    hl"""|${Blue(s"-- $kind -------------------------------------------------- ${source.format}")}
-         |
-         |$message
-      """.stripMargin
-  }
+  def message: FormattedMessage
 
 }

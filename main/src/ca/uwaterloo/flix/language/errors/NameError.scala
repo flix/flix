@@ -25,11 +25,6 @@ import ca.uwaterloo.flix.language.errors.Token._
   */
 sealed trait NameError extends CompilationError {
   val kind = "Name Error"
-
-  // TODO: refactor
-  def msg: FormattedMessage
-
-  def message = msg.fmt(ColorContext.AnsiColor)
 }
 
 object NameError {
@@ -43,7 +38,8 @@ object NameError {
     */
   case class DuplicateDefinition(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     val source: SourceInput = loc1.source
-    val msg: FormattedMessage = new FormattedMessage().
+    val message: FormattedMessage = new FormattedMessage().
+      header(kind, source).
       text(">> Duplicate definition of ").quote(Red(name)).newLine().
       newLine().
       highlight(loc1, "the first definition was here.").newLine().
@@ -62,7 +58,8 @@ object NameError {
     */
   case class DuplicateIndex(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     val source: SourceInput = loc1.source
-    val msg: FormattedMessage = new FormattedMessage().
+    val message: FormattedMessage = new FormattedMessage().
+      header(kind, source).
       text(">> Duplicate index for table ").quote(Red(name)).newLine().
       newLine().
       highlight(loc1, "the first declaration was here.").newLine().

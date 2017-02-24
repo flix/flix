@@ -19,6 +19,7 @@ package ca.uwaterloo.flix
 import java.io.File
 
 import ca.uwaterloo.flix.api._
+import ca.uwaterloo.flix.language.errors.ColorContext
 import ca.uwaterloo.flix.runtime.{Benchmarker, Tester, Value}
 import ca.uwaterloo.flix.util.Highlight.Code
 import ca.uwaterloo.flix.util._
@@ -94,10 +95,10 @@ object Main {
     if (cmdOpts.delta.nonEmpty) {
       flix.deltaSolve(cmdOpts.delta.get.toPath) match {
         case Validation.Success(_, errors) =>
-          errors.foreach(e => println(e.render))
+          errors.foreach(e => println(e.message.fmt(ColorContext.AnsiColor)))
           System.exit(0)
         case Validation.Failure(errors) =>
-          errors.foreach(e => println(e.render))
+          errors.foreach(e => println(e.message.fmt(ColorContext.AnsiColor)))
           System.exit(1)
       }
     }
@@ -106,7 +107,7 @@ object Main {
     try {
       flix.solve() match {
         case Validation.Success(model, errors) =>
-          errors.foreach(e => println(e.render))
+          errors.foreach(e => println(e.message.fmt(ColorContext.AnsiColor)))
 
           val main = cmdOpts.main
           if (main.nonEmpty) {
@@ -128,7 +129,7 @@ object Main {
             PrettyPrint.print(name, model)
           }
         case Validation.Failure(errors) =>
-          errors.foreach(e => println(e.render))
+          errors.foreach(e => println(e.message.fmt(ColorContext.AnsiColor)))
       }
     } catch {
       case UserException(msg, loc) =>

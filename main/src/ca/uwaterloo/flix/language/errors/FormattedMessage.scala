@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.language.errors.Token.Red
+import ca.uwaterloo.flix.language.ast.{SourceInput, SourceLocation}
+import ca.uwaterloo.flix.language.errors.Token.{Blue, Red}
 
 class FormattedMessage() {
 
@@ -53,6 +53,11 @@ class FormattedMessage() {
 
   def quote(t: Token): FormattedMessage = {
     currentLine = Token.Quote(t) :: currentLine
+    this
+  }
+
+  def header(kind: String, source: SourceInput): FormattedMessage = {
+    text(Blue(s"-- $kind -------------------------------------------------- ${source.format}"))
     this
   }
 
