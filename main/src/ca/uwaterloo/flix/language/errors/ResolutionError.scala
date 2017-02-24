@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
-import ca.uwaterloo.flix.util.Highlight._
+import ca.uwaterloo.flix.language.ast.{Name, SourceInput, SourceLocation}
+import ca.uwaterloo.flix.language.errors.Token._
 
 /**
   * A common super-type for resolution errors.
@@ -25,6 +25,11 @@ import ca.uwaterloo.flix.util.Highlight._
 sealed trait ResolutionError extends TypeError {
   // TODO: Should extend CompilationError
   val kind = "Resolution Error"
+
+  // TODO: refactor
+  def msg: FormattedMessage
+
+  def message = msg.fmt(ColorContext.AnsiColor)
 }
 
 object ResolutionError {
@@ -38,13 +43,11 @@ object ResolutionError {
     */
   // TODO: Replace by DuplicateDefinition during naming!
   case class AmbiguousRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val source = loc.source
-    val message =
-      hl"""|>> Ambiguous reference '${Red(qn.toString)}'.
-           |
-           |${Code(loc, "ambiguous reference.")}
-           |
-        """.stripMargin
+    val source: SourceInput = loc.source
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> Ambiguous reference ").quote(Red(qn.toString)).text(".").newLine().
+      newLine().
+      highlight(loc, "ambiguous reference.").newLine()
   }
 
   /**
@@ -57,16 +60,15 @@ object ResolutionError {
     */
   // TODO: Improve error message.
   case class AmbiguousTag(tag: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
-    val source = loc.source
-    val message =
-      hl"""|>> Ambiguous tag '${Red(tag)}'.
-           |
-           |${Code(loc, "ambiguous tag name.")}
-           |
-           |Multiple matches found here:
-           |
-           |${locs.map(_.format).mkString("\n")}
-        """.stripMargin
+    val source: SourceInput = loc.source
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> Ambiguous tag ").quote(Red(tag)).text(".").newLine().
+      newLine().
+      highlight(loc, "ambiguous tag name.").newLine().
+      newLine().
+      text("Multiple matches found here:").newLine().
+      newLine().
+      text(locs.map(_.format).mkString("\n")).newLine() // TODO: Add special thing?
   }
 
   /**
@@ -76,14 +78,13 @@ object ResolutionError {
     * @param loc       the location where the error occurred.
     */
   case class UndefinedAttribute(table: String, attribute: String, loc: SourceLocation) extends ResolutionError {
-    val source = loc.source
-    val message =
-      hl"""|>> Undefined attribute '${Red(attribute)}' in table '${Cyan(table)}'.
-           |
-           |${Code(loc, "attribute not found.")}
-           |
-           |${Underline("Tip")}: Possible typo or non-existent attribute?
-        """.stripMargin
+    val source: SourceInput = loc.source
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> Undefined attribute ").quote(Red(attribute)).text(" in table ").text(Cyan(table)).newLine().
+      newLine().
+      highlight(loc, "attribute not found.").newLine().
+      newLine().
+      text(Underline("Tip")).text(": Possible typo or non-existent attribute?").newLine()
   }
 
   /**
@@ -94,14 +95,14 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val source = loc.source
-    val message =
-      hl"""|>> Undefined reference '${Red(qn.toString)}'.
-           |
-           |${Code(loc, "name not found.")}
-           |
-           |${Underline("Tip")}: Possible typo or non-existent definition?
-        """.stripMargin
+    val source: SourceInput = loc.source
+
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> Undefined reference ").quote(Red(qn.toString)).text(".").newLine().
+      newLine().
+      highlight(loc, "name not found").newLine().
+      text(Underline("Tip")).text(" Possible typo or non-existent definition?").newLine()
+
   }
 
   /**
@@ -112,14 +113,13 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedTable(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val source = loc.source
-    val message =
-      hl"""|>> Undefined table '${Red(qn.toString)}'.
-           |
-           |${Code(loc, "table not found.")}
-           |
-           |${Underline("Tip")}: Possible typo or non-existent table?
-        """.stripMargin
+    val source: SourceInput = loc.source
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> Undefined table ").quote(Red(qn.toString)).text(".").newLine().
+      newLine().
+      highlight(loc, "table not found.").newLine().
+      newLine().
+      text(Underline("Tip")).text(": Possible typo or non-existent table?").newLine()
   }
 
   /**
@@ -130,14 +130,13 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val source = loc.source
-    val message =
-      hl"""|>> Undefined tag '${Red(tag)}'.
-           |
-           |${Code(loc, "tag not found.")}
-           |
-           |${Underline("Tip")}: Possible typo or non-existent tag?
-        """.stripMargin
+    val source: SourceInput = loc.source
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> Undefined tag ").text(Red(tag)).newLine().
+      newLine().
+      highlight(loc, "tag not found.").newLine().
+      newLine().
+      text(Underline("Tip")).text(": Possible typo or non-existent tag?").newLine()
   }
 
   /**
@@ -148,15 +147,13 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val source = loc.source
-    val message =
-      hl"""|>> Undefined type '${Red(qn.toString)}'.
-           |
-           |${Code(loc, "type not found.")}
-           |
-           |${Underline("Tip")}: Possible typo or non-existent type?
-        """.stripMargin
+    val source: SourceInput = loc.source
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> Undefined type ").quote(Red(qn.toString)).text(".").newLine().
+      newLine().
+      highlight(loc, "type not found.").newLine().
+      newLine().
+      text(Underline("Tip")).text(" Possible typo or non-existent type?").newLine()
   }
-
 
 }
