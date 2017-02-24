@@ -95,6 +95,11 @@ class FormattedMessage() {
     this
   }
 
+  def use(f: FormattedMessage => Unit): FormattedMessage = {
+    f(this)
+    this
+  }
+
   def fmt(implicit ctx: ColorContext): String = {
     lines.map(_.fmt).mkString("")
   }

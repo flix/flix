@@ -17,15 +17,22 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
-import ca.uwaterloo.flix.util.Highlight._
+import ca.uwaterloo.flix.language.ast.{SourceInput, SourceLocation, Type}
+import ca.uwaterloo.flix.language.errors.Token.{Cyan, Magenta, Red}
 
 /**
   * A common super-type for type errors.
   */
 // TODO: Make sealed
 // TODO: Move kind here.
-trait TypeError extends CompilationError
+trait TypeError extends CompilationError {
+
+  // TODO: refactor
+  def msg: FormattedMessage
+
+  def message = msg.fmt(ColorContext.AnsiColor)
+
+}
 
 object TypeError {
 
@@ -40,15 +47,14 @@ object TypeError {
     */
   case class UnificationError(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
     val kind = "Type Error"
-    val source = loc.source
-    val message =
-      hl"""|>> Unable to unify '${Red(baseType1.toString)}' and '${Red(baseType2.toString)}'.
-           |
-           |${Code(loc, "mismatched types.")}
-           |
-           |Type One: ${pretty(diff(fullType1, fullType2))(Cyan)}
-           |Type Two: ${pretty(diff(fullType2, fullType1))(Magenta)}
-        """.stripMargin
+    val source: SourceInput = loc.source
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> Unable to unify ").quote(Red(baseType1.toString)).text(" and .").quote(Red(baseType2.toString)).text(".").newLine().
+      newLine().
+      highlight(loc, "mismatched types.").newLine().
+      newLine().
+      text("Type One: ").use(pretty(diff(fullType1, fullType2), Cyan)).newLine().
+      text("Type Two: ").use(pretty(diff(fullType2, fullType1), Magenta)).newLine()
   }
 
   /**
@@ -62,16 +68,15 @@ object TypeError {
     */
   case class OccursCheckError(baseVar: Type.Var, baseType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
     val kind = "Type Error"
-    val source = loc.source
-    val message =
-      hl"""|>> Unable to unify the type variable ${Red(baseVar.toString)} with the type '${Red(baseType.toString)}' due to
-           |>> a recursive occurrence of the type variable in the type.
-           |
-           |${Code(loc, "mismatched types.")}
-           |
-           |Type One: ${pretty(diff(fullType1, fullType2))(Cyan)}
-           |Type Two: ${pretty(diff(fullType2, fullType1))(Magenta)}
-        """.stripMargin
+    val source: SourceInput = loc.source
+    val msg: FormattedMessage = new FormattedMessage().
+      text(">> Unable to unify the type variable ").quote(Red(baseVar.toString)).text(" with the type .").quote(Red(baseType.toString)).text(".").newLine().
+      text(">> due to a recursive occurrence of the type variable in the type.").
+      newLine().
+      highlight(loc, "mismatched types.").newLine().
+      newLine().
+      text("Type One: ").use(pretty(diff(fullType1, fullType2), Cyan)).newLine().
+      text("Type Two: ").use(pretty(diff(fullType2, fullType1), Magenta)).newLine()
   }
 
   /**
@@ -134,12 +139,26 @@ object TypeError {
   /**
     * Returns a human readable representation of the given type difference.
     */
-  private def pretty(td: TypeDiff)(implicit color: String => Highlight): String = td match {
-    case TypeDiff.Star => "..."
-    case TypeDiff.Missing => "???"
-    case TypeDiff.Arrow(xs) => "(" + xs.init.map(pretty).mkString(", ") + ") -> " + pretty(xs.last)
-    case TypeDiff.Tuple(xs) => "(" + xs.map(pretty).mkString(", ") + ")"
-    case TypeDiff.Error(tpe1, tpe2) => color(tpe1.toString).toString
+  private def pretty(td: TypeDiff, color: Token => Token): (FormattedMessage) => Unit = {
+    message => {
+      def visit(d: TypeDiff): Unit = d match {
+        case TypeDiff.Star => message.text("...")
+        case TypeDiff.Missing => message.text("???")
+        case TypeDiff.Arrow(xs) =>
+          message.text("(")
+          xs.init.foreach(visit)
+          message.text(")")
+          message.text(" -> ")
+          visit(xs.last)
+        case TypeDiff.Tuple(xs) =>
+          message.text("(")
+          xs.foreach(visit)
+          message.text(")")
+        case TypeDiff.Error(tpe1, tpe2) => message.text(color(tpe1.toString))
+      }
+
+      visit(td)
+    }
   }
 
 }

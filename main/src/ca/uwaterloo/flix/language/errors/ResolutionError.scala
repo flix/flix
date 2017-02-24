@@ -25,11 +25,6 @@ import ca.uwaterloo.flix.language.errors.Token._
 sealed trait ResolutionError extends TypeError {
   // TODO: Should extend CompilationError
   val kind = "Resolution Error"
-
-  // TODO: refactor
-  def msg: FormattedMessage
-
-  def message = msg.fmt(ColorContext.AnsiColor)
 }
 
 object ResolutionError {
