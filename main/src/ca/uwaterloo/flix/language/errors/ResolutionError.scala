@@ -57,15 +57,22 @@ object ResolutionError {
   // TODO: Improve error message.
   case class AmbiguousTag(tag: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
-    val message: FormattedMessage = new FormattedMessage().
-      header(kind, source).
-      text(">> Ambiguous tag ").quote(Red(tag)).text(".").newLine().
-      newLine().
-      highlight(loc, "ambiguous tag name.").newLine().
-      newLine().
-      text("Multiple matches found here:").newLine().
-      newLine().
-      text(locs.map(_.format).mkString("\n")).newLine() // TODO: Add special thing?
+    val message: FormattedMessage = {
+      val result = new FormattedMessage().
+        header(kind, source).
+        text(">> Ambiguous tag ").quote(Red(tag)).text(".").newLine().
+        newLine().
+        highlight(loc, "ambiguous tag name.").newLine().
+        newLine().
+        text("The tag is defined in multiple enums:").newLine().
+        newLine()
+
+      for (l <- locs) {
+        result.highlight(l, "tag is defined in this enum.").newLine().newLine()
+      }
+
+      result
+    }
   }
 
   /**
@@ -78,7 +85,7 @@ object ResolutionError {
     val source: SourceInput = loc.source
     val message: FormattedMessage = new FormattedMessage().
       header(kind, source).
-      text(">> Undefined attribute ").quote(Red(attribute)).text(" in table ").text(Cyan(table)).newLine().
+      text(">> Undefined attribute ").quote(Red(attribute)).text(" in table ").quote(Cyan(table)).newLine().
       newLine().
       highlight(loc, "attribute not found.").newLine().
       newLine().
@@ -94,14 +101,12 @@ object ResolutionError {
     */
   case class UndefinedRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
-
     val message: FormattedMessage = new FormattedMessage().
       header(kind, source).
       text(">> Undefined reference ").quote(Red(qn.toString)).text(".").newLine().
       newLine().
       highlight(loc, "name not found").newLine().
       text(Underline("Tip")).text(" Possible typo or non-existent definition?").newLine()
-
   }
 
   /**
@@ -133,7 +138,7 @@ object ResolutionError {
     val source: SourceInput = loc.source
     val message: FormattedMessage = new FormattedMessage().
       header(kind, source).
-      text(">> Undefined tag ").text(Red(tag)).newLine().
+      text(">> Undefined tag ").quote(Red(tag)).text(".").newLine().
       newLine().
       highlight(loc, "tag not found.").newLine().
       newLine().

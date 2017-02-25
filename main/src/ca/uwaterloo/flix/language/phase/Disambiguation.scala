@@ -125,7 +125,7 @@ object Disambiguation {
 
     // Case 2.3: Multiple matches found in namespace and no enum name.
     if (qname.isEmpty) {
-      val locs = namespaceMatches.map(_.loc).toList.sorted
+      val locs = namespaceMatches.map(_.sym.loc).toList.sorted
       return Err(ResolutionError.AmbiguousTag(tag.name, ns, locs, tag.loc))
     }
 
