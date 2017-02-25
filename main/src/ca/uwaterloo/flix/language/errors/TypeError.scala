@@ -65,8 +65,8 @@ object TypeError {
     val source: SourceInput = loc.source
     val message: FormattedMessage = new FormattedMessage().
       header(kind, source).
-      text(">> Unable to unify the type variable ").quote(Red(baseVar.toString)).text(" with the type .").quote(Red(baseType.toString)).text(".").newLine().
-      text(">> due to a recursive occurrence of the type variable in the type.").
+      text(">> Unable to unify the type variable ").quote(Red(baseVar.toString)).text(" with the type ").quote(Red(baseType.toString)).text(".").newLine().
+      text(">> due to a recursive occurrence of the type variable in the type.").newLine().
       newLine().
       highlight(loc, "mismatched types.").newLine().
       newLine().
