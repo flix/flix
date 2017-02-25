@@ -40,13 +40,13 @@ object WeederError {
     val source: SourceInput = loc1.source
     val message: FormattedMessage = new FormattedMessage().
       header(kind, source).
-      text(">> Multiple occurrence of the ").quote(Red("@" + name)).text(" annotation.").newLine().
+      text(">> Multiple occurrences of the annotation ").quote(Red("@" + name)).text(".").newLine().
       newLine().
       highlight(loc1, "the first occurrence was here.").newLine().
       newLine().
       highlight(loc2, "the second occurrence was here.").newLine().
       newLine().
-      text(Underline("Tip")).text(": Remove one of the annotations.").newLine()
+      text(Underline("Tip")).text(": Remove one of the two annotations.").newLine()
   }
 
   /**
@@ -60,7 +60,7 @@ object WeederError {
     val source: SourceInput = loc1.source
     val message: FormattedMessage = new FormattedMessage().
       header(kind, source).
-      text(">> Multiple declarations of the attribute named ").quote(Red(name)).text(".").newLine().
+      text(">> Multiple declarations of the attribute ").quote(Red(name)).text(".").newLine().
       newLine().
       highlight(loc1, "the first declaration was here.").newLine().
       newLine().
@@ -80,7 +80,7 @@ object WeederError {
     val source: SourceInput = loc1.source
     val message: FormattedMessage = new FormattedMessage().
       header(kind, source).
-      text(">> Multiple declarations of the formal parameter named ").quote(Red(name)).text(".").newLine().
+      text(">> Multiple declarations of the formal parameter ").quote(Red(name)).text(".").newLine().
       newLine().
       highlight(loc1, "the first declaration was here.").newLine().
       newLine().
@@ -101,7 +101,7 @@ object WeederError {
     val source: SourceInput = loc1.source
     val message: FormattedMessage = new FormattedMessage().
       header(kind, source).
-      text(">> Multiple declarations of the tag named ").quote(Red(tagName)).text(" in the enum ").text(Cyan(enumName)).text(".").newLine().
+      text(">> Multiple declarations of the tag ").quote(Red(tagName)).text(" in the enum ").text(Cyan(enumName)).text(".").newLine().
       newLine().
       highlight(loc1, "the first declaration was here.").newLine().
       newLine().
@@ -166,7 +166,7 @@ object WeederError {
     val source: SourceInput = loc.source
     val message: FormattedMessage = new FormattedMessage().
       header(kind, source).
-      text(">> Existential quantifier does not declare any formal parameters.").newLine().
+      text(">> The existential quantifier does not declare any formal parameters.").newLine().
       newLine().
       highlight(loc, "quantifier must declare at least one parameter.").newLine().
       newLine().
@@ -182,7 +182,7 @@ object WeederError {
     val source: SourceInput = loc.source
     val message: FormattedMessage = new FormattedMessage().
       header(kind, source).
-      text(">> Universal quantifier does not declare any formal parameters.").newLine().
+      text(">> The universal quantifier does not declare any formal parameters.").newLine().
       newLine().
       highlight(loc, "quantifier must declare at least one parameter.").newLine().
       newLine().
@@ -190,7 +190,7 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that an float is out of bounds.
+    * An error raised to indicate that a float is out of bounds.
     *
     * @param loc the location where the illegal float occurs.
     */
@@ -296,13 +296,13 @@ object WeederError {
     val source: SourceInput = loc1.source
     val message: FormattedMessage = new FormattedMessage().
       header(kind, source).
-      text(">> Multiple occurrence of ").quote(Red(name)).text(" in a pattern. ").newLine().
+      text(">> Multiple occurrences of ").quote(Red(name)).text(" in pattern. ").newLine().
       newLine().
       highlight(loc1, "the first occurrence was here.").newLine().
       newLine().
       highlight(loc2, "the second occurrence was here.").newLine().
       newLine().
-      text(Underline("Tip")).text(": A variable may only occur *once* in a pattern.").newLine()
+      text(Underline("Tip")).text(": A variable may only occur once in a pattern.").newLine()
   }
 
   /**
@@ -315,7 +315,7 @@ object WeederError {
     val source: SourceInput = loc.source
     val message: FormattedMessage = new FormattedMessage().
       header(kind, source).
-      text(">>  Undefined annotation named ").quote(Red(name)).text(".").newLine().
+      text(">>  Undefined annotation ").quote(Red(name)).text(".").newLine().
       newLine().
       highlight(loc, "undefined annotation.").newLine()
   }

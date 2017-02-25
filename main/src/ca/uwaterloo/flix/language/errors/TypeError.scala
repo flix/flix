@@ -43,7 +43,7 @@ object TypeError {
     val source: SourceInput = loc.source
     val message: FormattedMessage = new FormattedMessage().
       header(kind, source).
-      text(">> Unable to unify ").quote(Red(baseType1.toString)).text(" and .").quote(Red(baseType2.toString)).text(".").newLine().
+      text(">> Unable to unify ").quote(Red(baseType1.toString)).text(" and ").quote(Red(baseType2.toString)).text(".").newLine().
       newLine().
       highlight(loc, "mismatched types.").newLine().
       newLine().
