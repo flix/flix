@@ -19,9 +19,8 @@ package ca.uwaterloo.flix
 import java.io.File
 
 import ca.uwaterloo.flix.api._
-import ca.uwaterloo.flix.language.errors.ColorContext
+import ca.uwaterloo.flix.language.errors.{ColorContext, FormattedMessage}
 import ca.uwaterloo.flix.runtime.{Benchmarker, Tester, Value}
-import ca.uwaterloo.flix.util.Highlight.Code
 import ca.uwaterloo.flix.util._
 
 import scala.concurrent.duration.Duration
@@ -91,14 +90,17 @@ object Main {
       flix.addStr(s)
     }
 
+    // the default color context.
+    implicit val _ = ColorContext.AnsiColor
+
     // check if we are running in delta debugging mode.
     if (cmdOpts.delta.nonEmpty) {
       flix.deltaSolve(cmdOpts.delta.get.toPath) match {
         case Validation.Success(_, errors) =>
-          errors.foreach(e => println(e.message.fmt(ColorContext.AnsiColor)))
+          errors.foreach(e => println(e.message.fmt))
           System.exit(0)
         case Validation.Failure(errors) =>
-          errors.foreach(e => println(e.message.fmt(ColorContext.AnsiColor)))
+          errors.foreach(e => println(e.message.fmt))
           System.exit(1)
       }
     }
@@ -107,7 +109,7 @@ object Main {
     try {
       flix.solve() match {
         case Validation.Success(model, errors) =>
-          errors.foreach(e => println(e.message.fmt(ColorContext.AnsiColor)))
+          errors.foreach(e => println(e.message.fmt))
 
           val main = cmdOpts.main
           if (main.nonEmpty) {
@@ -129,28 +131,32 @@ object Main {
             PrettyPrint.print(name, model)
           }
         case Validation.Failure(errors) =>
-          errors.foreach(e => println(e.message.fmt(ColorContext.AnsiColor)))
+          errors.foreach(e => println(e.message.fmt))
       }
     } catch {
       case UserException(msg, loc) =>
-        Console.err.println("User error " + loc.format)
-        Console.err.println()
-        Console.err.println(Code(loc, msg))
+        val result = new FormattedMessage().
+          header("User Error", loc.source).
+          highlight(loc, msg).newLine()
+        Console.println(result.fmt)
         System.exit(1)
       case MatchException(msg, loc) =>
-        Console.err.println("Non-exhaustive match " + loc.format)
-        Console.err.println()
-        Console.err.println(Code(loc, msg))
+        val result = new FormattedMessage().
+          header("Non-exhaustive match", loc.source).
+          highlight(loc, msg).newLine()
+        Console.println(result.fmt)
         System.exit(1)
       case SwitchException(msg, loc) =>
-        Console.err.println("Non-exhaustive switch " + loc.format)
-        Console.err.println()
-        Console.err.println(Code(loc, msg))
+        val result = new FormattedMessage().
+          header("Non-exhaustive switch", loc.source).
+          highlight(loc, msg).newLine()
+        Console.println(result.fmt)
         System.exit(1)
       case RuleException(msg, loc) =>
-        Console.err.println("Integrity rule violated " + loc.format)
-        Console.err.println()
-        Console.err.println(Code(loc, msg))
+        val result = new FormattedMessage().
+          header("Integrity rule violated", loc.source).
+          highlight(loc, msg).newLine()
+        Console.println(result.fmt)
         System.exit(1)
     }
 

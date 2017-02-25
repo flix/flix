@@ -46,48 +46,6 @@ object Highlight {
     override def toString: String = color + text + Console.RESET
   }
 
-  case class Code(loc: SourceLocation, msg: String) {
-    private val beginLine = loc.beginLine
-    private val beginCol = loc.beginCol
-    private val endLine = loc.endLine
-    private val endCol = loc.endCol
-    private val lineAt = loc.lineAt
-
-    /**
-      * Returns this line of code with the source location underlined.
-      */
-    override def toString: String = if (beginLine == endLine) underline else leftline
-
-    /**
-      * Highlights this source location with red arrows under the text.
-      */
-    private def underline: String = {
-      val lineNo = beginLine.toString + " | "
-      val line1 = lineNo + lineAt(beginLine) + "\n"
-      val line2 = " " * (beginCol + lineNo.length - 1) + Red("^" * (endCol - beginCol)) + "\n"
-      val line3 = " " * (beginCol + lineNo.length - 1) + msg
-      line1 + line2 + line3
-    }
-
-    /**
-      * Highlights this source location with red arrows left of the text.
-      */
-    private def leftline: String = {
-      val sb = new StringBuilder()
-      for (lineNo <- beginLine to endLine) {
-        val currentLine = lineAt(lineNo)
-        sb.
-          append(lineNo).append(" |").
-          append(Red(">") + " ").
-          append(currentLine).
-          append("\n")
-      }
-      sb.append("\n")
-      sb.append(msg)
-      sb.toString()
-    }
-  }
-
   case class Red(text: String) extends Highlight(Console.RED)
 
   case class Blue(text: String) extends Highlight(Console.BLUE)
