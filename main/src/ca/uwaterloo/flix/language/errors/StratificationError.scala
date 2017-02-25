@@ -28,5 +28,5 @@ case class StratificationError(constraints: List[TypedAst.Constraint]) extends C
   val source: SourceInput = constraints.head.loc.source
   val message: FormattedMessage = new FormattedMessage().
     header(kind, source).
-    text(">> The constraint graph contains negative cycles:").newLine().
+    text(">> The constraint graph contains negative cycles:").newLine()
 }
