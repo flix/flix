@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, SourceInput, Symbol}
-import ca.uwaterloo.flix.language.errors.Token.Red
-import ca.uwaterloo.flix.util.Highlight._
+import ca.uwaterloo.flix.language.errors.Token.{Cyan, Magenta, Quote, Red, Underline}
 
 /**
   * An error raised to indicate that a property is violated.
@@ -27,23 +26,19 @@ import ca.uwaterloo.flix.util.Highlight._
 case class PropertyError(property: ExecutableAst.Property, m: Map[Symbol.VarSym, String]) extends CompilationError {
   val kind: String = "Property Error"
   val source: SourceInput = property.defn.loc.source
-  val message: FormattedMessage = new FormattedMessage().
-    header(kind, source).
-    text(">> The function ").quote(Red(property.defn.toString)).newLine().
-    newLine().
-    text(Red(msg)).newLine()
-
-
-  val message: String =
-    hl"""|>> The function '${Red(property.defn.toString)}' does not satisfy the law '${Cyan(property.law.toString)}'.
-         |
-         |Counter-example: ${m.map(p => p._1.text -> p._2).mkString(", ")}
-         |
-         |${Code(property.defn.loc, s"violates the law '${Cyan(property.law.toString)}'.")}
-         |
-         |
-         |${Underline("Details")}: The universal/existential quantifiers were instantiated as follows:
-         |
-         |${m.map(x => Code(x._1.loc, s"instantiated as '${Magenta(x._2)}'.")).mkString("\n\n")}
-        """.stripMargin
+  val message: FormattedMessage = {
+    val result = new FormattedMessage().
+      header(kind, source).
+      text(">> The function ").quote(Red(property.defn.toString)).text(" does not satisfy the law ").quote(Cyan(property.law.toString)).text(".").newLine().
+      newLine().
+      text("Counter-example: ").text(m.map(p => p._1.text -> p._2).mkString(", ")).newLine().
+      newLine().
+      highlight(property.defn.loc, "violates the law ", Quote(Cyan(property.law.toString)), ".").newLine().
+      text(Underline("Details")).text(": The universal/existential quantifiers were instantiated as follows:").newLine().
+      newLine()
+    for ((sym, value) <- m) {
+      result.highlight(sym.loc, "instantiated as ", Quote(Magenta(value)), ".").newLine()
+    }
+    result.newLine()
+  }
 }

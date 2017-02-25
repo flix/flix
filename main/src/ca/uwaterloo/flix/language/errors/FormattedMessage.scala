@@ -57,11 +57,11 @@ class FormattedMessage() {
   }
 
   def header(kind: String, source: SourceInput): FormattedMessage = {
-    text(Blue(s"-- $kind -------------------------------------------------- ${source.format}"))
+    text(Blue(s"-- $kind -------------------------------------------------- ${source.format}")).newLine().newLine()
     this
   }
 
-  def highlight(loc: SourceLocation, msg: String): FormattedMessage = {
+  def highlight(loc: SourceLocation, msg: Token*): FormattedMessage = {
 
     val beginLine = loc.beginLine
     val beginCol = loc.beginCol
@@ -74,7 +74,11 @@ class FormattedMessage() {
 
       text(lineNo).text(lineAt(beginLine)).newLine().
         text(" " * (beginCol + lineNo.length - 1)).text(Token.Red("^" * (endCol - beginCol))).newLine().
-        text(" " * (beginCol + lineNo.length - 1)).text(msg).newLine()
+        text(" " * (beginCol + lineNo.length - 1))
+      for (t <- msg) {
+        text(t)
+      }
+      newLine()
     }
 
     def leftline(): Unit = {
@@ -86,10 +90,13 @@ class FormattedMessage() {
           newLine()
       }
       newLine()
-      text(msg)
+      for (t <- msg) {
+        text(t)
+      }
+      newLine()
     }
 
-    if (beginLine == endLine) underline() else leftline
+    if (beginLine == endLine) underline() else leftline()
 
     this
   }
