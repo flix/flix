@@ -40,13 +40,13 @@ object NameError {
     val source: SourceInput = loc1.source
     val message: FormattedMessage = new FormattedMessage().
       header(kind, source).
-      text(">> Duplicate definition of ").quote(Red(name)).newLine().
+      text(">> Duplicate definition of ").quote(Red(name)).text(".").newLine().
       newLine().
       highlight(loc1, "the first definition was here.").newLine().
       newLine().
       highlight(loc2, "the second definition was here.").newLine().
       newLine().
-      text(Underline("Tip")).text(": Remove or rename one of the definitions.")
+      text(Underline("Tip")).text(": Remove or rename one of the definitions.").newLine()
   }
 
   /**
@@ -60,13 +60,13 @@ object NameError {
     val source: SourceInput = loc1.source
     val message: FormattedMessage = new FormattedMessage().
       header(kind, source).
-      text(">> Duplicate index for table ").quote(Red(name)).newLine().
+      text(">> Duplicate index declaration for table ").quote(Red(name)).text(".").newLine().
       newLine().
       highlight(loc1, "the first declaration was here.").newLine().
       newLine().
       highlight(loc2, "the second declaration was here.").newLine().
       newLine().
-      text(Underline("Tip")).text(": Remove one of the index declarations.")
+      text(Underline("Tip")).text(": Remove one of the two index declarations.").newLine()
   }
 
 }
