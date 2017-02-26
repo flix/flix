@@ -16,8 +16,10 @@
 
 package ca.uwaterloo.flix.language.errors
 
+import java.math.BigInteger
+
 import ca.uwaterloo.flix.language.ast.{SourceInput, SourceLocation}
-import ca.uwaterloo.flix.language.errors.Token.{Blue, Red}
+import ca.uwaterloo.flix.language.errors.Token._
 
 class FormattedMessage() {
 
@@ -33,6 +35,19 @@ class FormattedMessage() {
 
   }
 
+  var i = 0
+
+  def indent(): FormattedMessage = {
+    i = i + 1
+    this
+  }
+
+  def dedent(): FormattedMessage = {
+    i = i - 1
+    this
+  }
+
+
   val lines = scala.collection.mutable.ListBuffer.empty[Line]
   var currentLine = List.empty[Token]
 
@@ -42,6 +57,21 @@ class FormattedMessage() {
   }
 
   def text(s: Int): FormattedMessage = {
+    currentLine = Token.Txt(s.toString) :: currentLine
+    this
+  }
+
+  def text(s: Double): FormattedMessage = {
+    currentLine = Token.Txt(s.toString) :: currentLine
+    this
+  }
+
+  def text(s: Float): FormattedMessage = {
+    currentLine = Token.Txt(s.toString) :: currentLine
+    this
+  }
+
+  def text(s: BigInteger): FormattedMessage = {
     currentLine = Token.Txt(s.toString) :: currentLine
     this
   }
@@ -104,6 +134,11 @@ class FormattedMessage() {
   def newLine(): FormattedMessage = {
     lines += Line.TextLine(currentLine.reverse)
     currentLine = Nil
+
+    for (i <- 0 until i) {
+      currentLine = Token.Txt("  ") :: currentLine
+    }
+
     this
   }
 
@@ -114,6 +149,39 @@ class FormattedMessage() {
 
   def fmt(implicit ctx: ColorContext): String = {
     lines.map(_.fmt).mkString("")
+  }
+
+
+  // TODO: Order
+
+  def bold(s: AnyRef): FormattedMessage = {
+    text(Bold(s.toString))
+    this
+  }
+
+  def underline(s: AnyRef): FormattedMessage = {
+    text(Underline(s.toString))
+    this
+  }
+
+  def blue(s: AnyRef): FormattedMessage = {
+    text(Blue(s.toString))
+    this
+  }
+
+  def cyan(s: AnyRef): FormattedMessage = {
+    text(Cyan(s.toString))
+    this
+  }
+
+  def magenta(s: AnyRef): FormattedMessage = {
+    text(Magenta(s.toString))
+    this
+  }
+
+  def red(s: AnyRef): FormattedMessage = {
+    text(Red(s.toString))
+    this
   }
 
 }

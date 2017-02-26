@@ -18,33 +18,34 @@ package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.errors.FormattedMessage
 
 object PrettyPrinter {
 
   object Simplified {
 
-    def fmtRoot(root: Root): String = {
-      val o = new Outputter()
+    def fmtRoot(root: Root): FormattedMessage = {
+      val o = new FormattedMessage()
       for ((sym, defn) <- root.definitions.toList.sortBy(_._1.loc)) {
         o.bold("def").text(" ").blue(sym).text("(")
         for (fparam <- defn.formals) {
           fmtParam(fparam, o)
           o.text(", ")
         }
-        o.text(") = ").indent().newline()
+        o.text(") = ").indent().newLine()
         fmtExp(defn, o)
         o.dedent()
-        o.newline()
-        o.newline()
+        o.newLine()
+        o.newLine()
       }
-      o.toString
+      o
     }
 
-    def fmtExp(defn: Definition.Constant, o: Outputter): Unit = {
+    def fmtExp(defn: Definition.Constant, o: FormattedMessage): Unit = {
       fmtExp(defn.exp, o)
     }
 
-    def fmtExp(exp0: Expression, o: Outputter): Unit = {
+    def fmtExp(exp0: Expression, o: FormattedMessage): Unit = {
       def visitExp(e0: Expression): Unit = e0 match {
         case Expression.Unit => o.text("Unit")
         case Expression.True => o.text("true")
@@ -71,14 +72,14 @@ object PrettyPrinter {
         case Expression.Lambda(fparams, body, tpe, loc) =>
           o.text("(")
           for (fparam <- fparams) {
-            o.text(fparam.sym)
+            o.text(fparam.sym.toString)
             o.text(", ")
           }
           o.text(")")
           o.text(" -> ")
           visitExp(body)
 
-        case Expression.Hook(hook, tpe, loc) => o.text(hook.sym)
+        case Expression.Hook(hook, tpe, loc) => o.text(hook.sym.toString)
 
         case Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
           o.text("MkClosureRef(")
@@ -151,14 +152,14 @@ object PrettyPrinter {
           o.bold("if").text(" (")
           visitExp(exp1)
           o.text(") {")
-          o.indent().newline()
+          o.indent().newLine()
           visitExp(exp2)
-          o.dedent().newline()
+          o.dedent().newLine()
           o.text("} ").bold("else").text(" {")
-          o.indent().newline()
+          o.indent().newLine()
           visitExp(exp3)
           o.dedent()
-          o.newline()
+          o.newLine()
           o.text("}")
 
         case Expression.Let(sym, exp1, exp2, tpe, loc) =>
@@ -166,7 +167,7 @@ object PrettyPrinter {
           fmtSym(sym, o)
           o.text(" = ")
           visitExp(exp1)
-          o.text(";").newline()
+          o.text(";").newLine()
           visitExp(exp2)
 
         case Expression.Is(exp, tag, loc) =>
@@ -221,28 +222,28 @@ object PrettyPrinter {
       visitExp(exp0)
     }
 
-    def fmtParam(p: FormalParam, o: Outputter): Unit = {
+    def fmtParam(p: FormalParam, o: FormattedMessage): Unit = {
       fmtSym(p.sym, o)
       o.text(": ")
-      o.text(p.tpe)
+      o.text(p.tpe.toString)
     }
 
-    def fmtSym(sym: Symbol.DefnSym, o: Outputter): Unit = {
+    def fmtSym(sym: Symbol.DefnSym, o: FormattedMessage): Unit = {
       o.blue(sym)
     }
 
-    def fmtSym(sym: Symbol.VarSym, o: Outputter): Unit = {
+    def fmtSym(sym: Symbol.VarSym, o: FormattedMessage): Unit = {
       o.cyan(sym)
     }
 
-    def fmtUnaryOp(op: UnaryOperator, o: Outputter): Unit = op match {
+    def fmtUnaryOp(op: UnaryOperator, o: FormattedMessage): Unit = op match {
       case UnaryOperator.LogicalNot => o.text("!")
       case UnaryOperator.Plus => o.text("+")
       case UnaryOperator.Minus => o.text("-")
       case UnaryOperator.BitwiseNegate => o.text("~~~")
     }
 
-    def fmtUnaryOp(op: BinaryOperator, o: Outputter): Unit = op match {
+    def fmtUnaryOp(op: BinaryOperator, o: FormattedMessage): Unit = op match {
       case BinaryOperator.Plus => o.text("+")
       case BinaryOperator.Minus => o.text("-")
       case BinaryOperator.Times => o.text("*")
