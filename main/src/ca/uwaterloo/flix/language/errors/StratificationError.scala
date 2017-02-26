@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.Highlight._
 
 /**
   * An error raised to indicate that a property is violated.
