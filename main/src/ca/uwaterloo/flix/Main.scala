@@ -123,7 +123,8 @@ object Main {
           }
 
           if (cmdOpts.test) {
-            Tester.test(model)
+            val results = Tester.test(model)
+            Console.println(results.getMessage.fmt)
           }
 
           val print = cmdOpts.print

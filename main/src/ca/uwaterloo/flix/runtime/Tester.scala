@@ -17,81 +17,75 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.FlixException
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.util.Highlight.{Blue, Green, Magenta, Red}
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
-
-import scala.collection.mutable
+import ca.uwaterloo.flix.language.ast.{SourceInput, Symbol}
+import ca.uwaterloo.flix.language.errors.FormattedMessage
+import ca.uwaterloo.flix.language.errors.Token.{Blue, Green, Red}
 
 object Tester {
+
+  /**
+    * Represents the outcome of a single test.
+    */
+  sealed trait TestResult {
+    def sym: Symbol.DefnSym
+  }
+
+  object TestResult {
+
+    case class Success(sym: Symbol.DefnSym, msg: String) extends TestResult
+
+    case class Failure(sym: Symbol.DefnSym, msg: String) extends TestResult
+
+  }
+
+  /**
+    * Represents the results of running all the tests in a given model.
+    */
+  case class TestResults(results: List[TestResult]) {
+    def getMessage: FormattedMessage = {
+      val result = new FormattedMessage()
+      for ((ns, tests) <- results.groupBy(_.sym.namespace)) {
+        if (ns.isEmpty)
+          result.header(s"Tests (root)", SourceInput.Str("")) // TODO: Change signature of header
+        else
+          result.header(s"Tests (${ns.mkString("/")})", SourceInput.Str("")) // TODO: Change signature of header
+        for (test <- tests.sortBy(_.sym.loc)) {
+          test match {
+            case TestResult.Success(sym, msg) =>
+              result.text("  ").text(Green("✓")).text(" ").text(sym.name).newLine()
+            case TestResult.Failure(sym, msg) =>
+              result.text("  ").text(Red("✗")).text(" ").text(sym.name).text(": ").text(msg).text(" (").text(Blue(sym.loc.format)).text(")").newLine()
+          }
+        }
+        result.newLine()
+      }
+      result
+    }
+  }
 
   /**
     * Evaluates all tests in the given model.
     *
     * Returns a pair of (successful, failed)-tests.
     */
-  def test(model: Model): (List[Symbol.DefnSym], List[Symbol.DefnSym]) = {
-
-    /*
-     * Collect successful and failed tests.
-     */
-    val testSuccess = mutable.ListBuffer.empty[Symbol.DefnSym]
-    val testFailure = mutable.ListBuffer.empty[Symbol.DefnSym]
-
-    /*
-      * Group tests by namespace.
-      */
-    val testsByNamespace = model.getTests.groupBy(_._1.namespace)
-
-    /*
-     * Iterate through each namespace and evaluate tests.
-     */
-    for ((ns, tests) <- testsByNamespace) {
-
-      Console.println()
-      if (ns.isEmpty) {
-        Console.println(s"-- Unit Tests for ${Magenta("root")} -- ")
-      } else {
-        Console.println(s"-- Unit Tests for '${Magenta(ns.mkString("."))}' -- ")
-      }
-
-      /*
-       * Sort tests by name.
-       */
-      val testsByName = tests.toList.sortBy(_._1.name)
-
-      /*
-       * Evaluate each test.
-       */
-      for ((sym, defn) <- testsByName) {
-
-        // Evaluate the test function and catch any potential exception.
-        val outcome = try {
-          // NB: IntellijIDEA warns about unrelated types. This is not a problem.
+  def test(model: Model): TestResults = {
+    val results = model.getTests.toList.map {
+      case (sym, defn) =>
+        try {
           val result = defn()
+          // NB: IntellijIDEA warns about unrelated types. This is not a problem.
           if (result == java.lang.Boolean.TRUE)
-            Ok("Returned true.")
+            TestResult.Success(sym, "Returned true.")
           else if (result == java.lang.Boolean.FALSE)
-            Err("Returned false.")
+            TestResult.Failure(sym, "Returned false.")
           else
-            Err(s"Returned non-boolean value: '${Value.pretty(result)}'.")
+            TestResult.Failure(sym, s"Returned non-boolean value: '${Value.pretty(result)}'.")
         } catch {
-          case ex: FlixException => Err(ex.getMessage)
+          case ex: FlixException =>
+            TestResult.Failure(sym, ex.getMessage)
         }
-
-        // Print test information.
-        outcome match {
-          case Ok(_) =>
-            Console.println(s"  ${Green("✓")} ${sym.name}")
-          case Err(msg) =>
-            Console.println(s"  ${Red("✗")} ${Red(sym.name)}: $msg (at ${Blue(sym.loc.format)})")
-        }
-      }
-
     }
-
-    // Returns the successful and failed tests.
-    (testSuccess.toList, testFailure.toList)
+    TestResults(results)
   }
 
 }
