@@ -21,6 +21,9 @@ import java.math.BigInteger
 import ca.uwaterloo.flix.language.ast.{SourceInput, SourceLocation}
 import ca.uwaterloo.flix.language.errors.Token._
 
+// TODO: Cleanup and rename to VirtualTerminal.
+// TODO: Move to other package and implement other methods, including << and so on.
+
 class FormattedMessage() {
 
   sealed trait Line {
