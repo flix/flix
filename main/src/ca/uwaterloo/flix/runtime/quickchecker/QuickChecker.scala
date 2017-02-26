@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol, Type}
-import ca.uwaterloo.flix.language.errors.PropertyError
+import ca.uwaterloo.flix.language.errors.{ColorContext, PropertyError}
 import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.runtime.evaluator.SymVal.{Char, Unit}
 import ca.uwaterloo.flix.runtime.evaluator.{SymVal, SymbolicEvaluator}
@@ -76,6 +76,45 @@ object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       * A failed test.
       */
     case class Failure(property: Property, error: PropertyError) extends TestResult
+
+  }
+
+  /**
+    * Represents the results of checking all the properties in the program.
+    */
+  case class PropertyResults(results: List[PropertyResult]) {
+    /**
+      * Prints verbose results.
+      */
+    def fmt(implicit ctx: ColorContext): Unit = {
+      Console.println(Blue(s"-- QUICK CHECKER RESULTS ---------------------------------------------"))
+
+      for ((source, properties) <- results.groupBy(_.property.loc.source).toList.sortBy(_._1.format)) {
+
+        Console.println()
+        Console.println(s"  -- Quick Check ${source.format} -- ")
+        Console.println()
+
+        for (result <- properties.sortBy(_.property.loc)) {
+          result match {
+            case PropertyResult.Success(property, tests, elapsed) =>
+              Console.println("  " + Cyan("✓ ") + property.defn + " satisfies " + property.law + " (" + property.loc.format + ") (" + tests + " tests, " + TimeOps.toSeconds(elapsed) + " seconds.)")
+
+            case PropertyResult.Failure(property, success, failure, elapsed, error) =>
+              Console.println("  " + Red("✗ ") + property.defn + " satisfies " + property.law + " (" + property.loc.format + ") (" + success + " SUCCESS, " + failure + " FAILED, " + TimeOps.toSeconds(elapsed) + " seconds.)")
+          }
+        }
+
+        val s = properties.count(_.isSuccess)
+        val f = properties.count(_.isFailure)
+        val t = properties.length
+        val e = properties.map(_.elapsed).sum
+
+        Console.println()
+        Console.println(s"  Properties: $s / $t quick checked in ${TimeOps.toSeconds(e)} seconds. (success = $s; failure = $f).")
+        Console.println()
+      }
+    }
 
   }
 
@@ -152,7 +191,7 @@ object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
      * Print verbose information (if enabled).
      */
     if (flix.options.verbosity == Verbosity.Verbose) {
-      printVerbose(results)
+      PropertyResults(results).fmt(ColorContext.AnsiColor)
     }
 
     /*
@@ -224,39 +263,6 @@ object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   private def enumerate(limit: Int, root: Root, genSym: GenSym, random: Random)(sym: Symbol.VarSym, tpe: Type): List[SymVal] = {
     val arb = new ArbSymVal(tpe, root).gen
     (1 to limit).toList.map(_ => arb.mk(random))
-  }
-
-  /**
-    * Prints verbose results.
-    */
-  private def printVerbose(results: List[PropertyResult]): Unit = {
-    Console.println(Blue(s"-- QUICK CHECKER RESULTS ---------------------------------------------"))
-
-    for ((source, properties) <- results.groupBy(_.property.loc.source).toList.sortBy(_._1.format)) {
-
-      Console.println()
-      Console.println(s"  -- Quick Check ${source.format} -- ")
-      Console.println()
-
-      for (result <- properties.sortBy(_.property.loc)) {
-        result match {
-          case PropertyResult.Success(property, tests, elapsed) =>
-            Console.println("  " + Cyan("✓ ") + property.defn + " satisfies " + property.law + " (" + property.loc.format + ") (" + tests + " tests, " + TimeOps.toSeconds(elapsed) + " seconds.)")
-
-          case PropertyResult.Failure(property, success, failure, elapsed, error) =>
-            Console.println("  " + Red("✗ ") + property.defn + " satisfies " + property.law + " (" + property.loc.format + ") (" + success + " SUCCESS, " + failure + " FAILED, " + TimeOps.toSeconds(elapsed) + " seconds.)")
-        }
-      }
-
-      val s = properties.count(_.isSuccess)
-      val f = properties.count(_.isFailure)
-      val t = properties.length
-      val e = properties.map(_.elapsed).sum
-
-      Console.println()
-      Console.println(s"  Properties: $s / $t quick checked in ${TimeOps.toSeconds(e)} seconds. (success = $s; failure = $f).")
-      Console.println()
-    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
