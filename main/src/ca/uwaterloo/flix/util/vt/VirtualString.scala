@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.util.vt
 
+import ca.uwaterloo.flix.language.ast.SourceLocation
+
 import scala.language.implicitConversions
 
 sealed trait VirtualString {
@@ -35,6 +37,7 @@ sealed trait VirtualString {
     case VirtualString.White(s) => ctx.emitWhite(s.fmt)
     case VirtualString.Bold(s) => ctx.emitBold(s.fmt)
     case VirtualString.Underline(s) => ctx.emitUnderline(s.fmt)
+    case VirtualString.Line(l, r) => ctx.emitBlue(s"-- $l -------------------------------------------------------------- $r\n")
     case VirtualString.Quote(t) => "'" + t.fmt + "'"
   }
 
@@ -42,10 +45,16 @@ sealed trait VirtualString {
 
 object VirtualString {
 
+  // TODO: Remove
   implicit def string2rich(s: String): VirtualString = VirtualString.Text(s)
 
   case object NewLine extends VirtualString
 
+  case class Line(left: String, right: String) extends VirtualString
+
+  case class Code(loc: SourceLocation, text: String) extends VirtualString
+
+  // TODO: Remove
   case class Text(t: String) extends VirtualString
 
   case class Black(t: VirtualString) extends VirtualString
@@ -68,6 +77,7 @@ object VirtualString {
 
   case class Underline(t: VirtualString) extends VirtualString
 
+  // TODO: Remove
   case class Quote(t: VirtualString) extends VirtualString
 
 }

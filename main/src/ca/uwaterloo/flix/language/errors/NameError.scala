@@ -39,15 +39,17 @@ object NameError {
     */
   case class DuplicateDefinition(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     val source: SourceInput = loc1.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> Duplicate definition of ").quote(Red(name)).text(".").newLine().
-      newLine().
-      highlight(loc1, "the first definition was here.").newLine().
-      newLine().
-      highlight(loc2, "the second definition was here.").newLine().
-      newLine().
-      text(Underline("Tip")).text(": Remove or rename one of the definitions.").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Duplicate definition of '" << Red(name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc1, "the first definition was here.") << NewLine
+      vt << NewLine
+      vt << Code(loc2, "the second definition was here.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Remove or rename one of the definitions." << NewLine
+    }
   }
 
   /**

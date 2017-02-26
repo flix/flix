@@ -73,11 +73,15 @@ class VirtualTerminal() {
     this
   }
 
-  def <<(s: String): VirtualTerminal = print(s)
+  def <<(i: Int): VirtualTerminal = <<(Text(i.toString))
 
-  def <<(s: VirtualString): VirtualTerminal = {
-    currentLine = s :: currentLine
-    this
+
+  def <<(s: String): VirtualTerminal = <<(Text(s.toString))
+
+  def <<(s: VirtualString): VirtualTerminal = s match {
+    case VirtualString.NewLine => newLine()
+    case VirtualString.Code(loc, msg) => highlight(loc, msg)
+    case _ => text(s)
   }
 
   def text(t: VirtualString): VirtualTerminal = {
@@ -194,6 +198,8 @@ class VirtualTerminal() {
   /////////////////////////////////////////////////////////////////////////////
   /// Color Operations                                                      ///
   /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: Remove these...
 
   /**
     * Appends the result of calling the given object `o`'s `toString` method in black text.

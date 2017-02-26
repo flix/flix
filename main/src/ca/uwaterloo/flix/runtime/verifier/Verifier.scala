@@ -25,7 +25,8 @@ import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.runtime.evaluator.{SmtExpr, SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.vt.{TerminalContext, TerminalContext$, VirtualTerminal}
+import ca.uwaterloo.flix.util.vt.VirtualString._
+import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
 import com.microsoft.z3._
 
 object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
@@ -404,22 +405,23 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   private def printVerbose(results: List[PropertyResult]): Unit = {
     val vt = new VirtualTerminal()
 
-    vt.header("VERIFIER RESULTS", SourceInput.Str(""))
-
     for ((source, properties) <- results.groupBy(_.property.loc.source).toList.sortBy(_._1.format)) {
 
-      vt.text(s"  -- Verification Results for ${source.format} -- ").newLine()
+      vt << Line("Verifier", source.format)
 
       vt.indent().newLine()
       for (result <- properties.sortBy(_.property.defn.loc)) {
+
         result match {
           case PropertyResult.Success(property, paths, queries, elapsed) =>
-            vt.cyan("✓").space().text(property.defn + " satisfies " + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + " seconds.)").newLine()
-
+            val name = property.defn.toString
+            val law = property.law.toString
+            vt << Cyan("✓") << " " << name << " satisfies " << law << " (" << property.loc.format << ") (" << paths << " paths, " << queries << " queries, " << TimeOps.toSeconds(elapsed) << " seconds.)" << NewLine
           case PropertyResult.Failure(property, paths, queries, elapsed, _) =>
+            // TODO
             vt.red("✗").space().text(property.defn + " satisfies " + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + " seconds.)").newLine()
-
           case PropertyResult.Unknown(property, paths, queries, elapsed, _) =>
+            // TODO
             vt.red("?").space().text(property.defn + " satisfies " + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + " seconds.)").newLine()
         }
       }
@@ -434,15 +436,15 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       val mp = avg(properties.map(_.paths))
       val mq = avg(properties.map(_.queries))
 
+      // TODO: Refactor
       vt.newLine()
       vt.text(s"  Properties: $s / $t proven in ${TimeOps.toSeconds(totalElapsed(properties))} seconds. (success = $s; failure = $f; unknown = $u).")
       vt.text(s"  Paths: ${totalPaths(properties)}. Queries: ${totalQueries(properties)} (avg time = $mt sec; avg paths = $mp; avg queries = $mq).")
-      vt.newLine()
+      vt << NewLine << NewLine
 
-
-      println(vt.fmt(TerminalContext.AnsiTerminal))
     }
 
+    println(vt.fmt(TerminalContext.AnsiTerminal))
   }
 
   /**
