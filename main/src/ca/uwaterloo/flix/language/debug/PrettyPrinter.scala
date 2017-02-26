@@ -18,14 +18,14 @@ package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.errors.FormattedMessage
+import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 object PrettyPrinter {
 
   object Simplified {
 
-    def fmtRoot(root: Root): FormattedMessage = {
-      val o = new FormattedMessage()
+    def fmtRoot(root: Root): VirtualTerminal = {
+      val o = new VirtualTerminal()
       for ((sym, defn) <- root.definitions.toList.sortBy(_._1.loc)) {
         o.bold("def").text(" ").blue(sym).text("(")
         for (fparam <- defn.formals) {
@@ -41,11 +41,11 @@ object PrettyPrinter {
       o
     }
 
-    def fmtExp(defn: Definition.Constant, o: FormattedMessage): Unit = {
+    def fmtExp(defn: Definition.Constant, o: VirtualTerminal): Unit = {
       fmtExp(defn.exp, o)
     }
 
-    def fmtExp(exp0: Expression, o: FormattedMessage): Unit = {
+    def fmtExp(exp0: Expression, o: VirtualTerminal): Unit = {
       def visitExp(e0: Expression): Unit = e0 match {
         case Expression.Unit => o.text("Unit")
         case Expression.True => o.text("true")
@@ -222,28 +222,28 @@ object PrettyPrinter {
       visitExp(exp0)
     }
 
-    def fmtParam(p: FormalParam, o: FormattedMessage): Unit = {
+    def fmtParam(p: FormalParam, o: VirtualTerminal): Unit = {
       fmtSym(p.sym, o)
       o.text(": ")
       o.text(p.tpe.toString)
     }
 
-    def fmtSym(sym: Symbol.DefnSym, o: FormattedMessage): Unit = {
+    def fmtSym(sym: Symbol.DefnSym, o: VirtualTerminal): Unit = {
       o.blue(sym)
     }
 
-    def fmtSym(sym: Symbol.VarSym, o: FormattedMessage): Unit = {
+    def fmtSym(sym: Symbol.VarSym, o: VirtualTerminal): Unit = {
       o.cyan(sym)
     }
 
-    def fmtUnaryOp(op: UnaryOperator, o: FormattedMessage): Unit = op match {
+    def fmtUnaryOp(op: UnaryOperator, o: VirtualTerminal): Unit = op match {
       case UnaryOperator.LogicalNot => o.text("!")
       case UnaryOperator.Plus => o.text("+")
       case UnaryOperator.Minus => o.text("-")
       case UnaryOperator.BitwiseNegate => o.text("~~~")
     }
 
-    def fmtUnaryOp(op: BinaryOperator, o: FormattedMessage): Unit = op match {
+    def fmtUnaryOp(op: BinaryOperator, o: VirtualTerminal): Unit = op match {
       case BinaryOperator.Plus => o.text("+")
       case BinaryOperator.Minus => o.text("-")
       case BinaryOperator.Times => o.text("*")

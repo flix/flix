@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{SourceInput, SourceLocation}
-import ca.uwaterloo.flix.language.errors.Token._
+import ca.uwaterloo.flix.util.vt.VirtualString._
+import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
   * A common super-type for naming errors.
@@ -38,7 +39,7 @@ object NameError {
     */
   case class DuplicateDefinition(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     val source: SourceInput = loc1.source
-    val message: FormattedMessage = new FormattedMessage().
+    val message: VirtualTerminal = new VirtualTerminal().
       header(kind, source).
       text(">> Duplicate definition of ").quote(Red(name)).text(".").newLine().
       newLine().
@@ -58,7 +59,7 @@ object NameError {
     */
   case class DuplicateIndex(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     val source: SourceInput = loc1.source
-    val message: FormattedMessage = new FormattedMessage().
+    val message: VirtualTerminal = new VirtualTerminal().
       header(kind, source).
       text(">> Duplicate index declaration for table ").quote(Red(name)).text(".").newLine().
       newLine().

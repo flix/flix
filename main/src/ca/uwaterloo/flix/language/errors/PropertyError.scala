@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, SourceInput, Symbol}
-import ca.uwaterloo.flix.language.errors.Token.{Cyan, Magenta, Quote, Red, Underline}
+import ca.uwaterloo.flix.util.vt.VirtualString.{Cyan, Magenta, Quote, Red, Underline}
+import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
   * An error raised to indicate that a property is violated.
@@ -26,8 +27,8 @@ import ca.uwaterloo.flix.language.errors.Token.{Cyan, Magenta, Quote, Red, Under
 case class PropertyError(property: ExecutableAst.Property, m: Map[Symbol.VarSym, String]) extends CompilationError {
   val kind: String = "Property Error"
   val source: SourceInput = property.defn.loc.source
-  val message: FormattedMessage = {
-    val result = new FormattedMessage().
+  val message: VirtualTerminal = {
+    val result = new VirtualTerminal().
       header(kind, source).
       text(">> The function ").quote(Red(property.defn.toString)).text(" does not satisfy the law ").quote(Cyan(property.law.toString)).text(".").newLine().
       newLine().

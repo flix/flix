@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.language.ast.SourceInput
-import ca.uwaterloo.flix.language.errors.FormattedMessage
+import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
   * A common super-type for compilation errors.
@@ -37,6 +37,6 @@ trait CompilationError {
   /**
     * Returns the formatted error message.
     */
-  def message: FormattedMessage
+  def message: VirtualTerminal
 
 }

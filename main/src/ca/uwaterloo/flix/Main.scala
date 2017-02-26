@@ -19,9 +19,9 @@ package ca.uwaterloo.flix
 import java.io.File
 
 import ca.uwaterloo.flix.api._
-import ca.uwaterloo.flix.language.errors.{ColorContext, FormattedMessage}
 import ca.uwaterloo.flix.runtime.{Benchmarker, Tester, Value}
 import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.vt._
 
 import scala.concurrent.duration.Duration
 
@@ -91,7 +91,7 @@ object Main {
     }
 
     // the default color context.
-    implicit val _ = ColorContext.AnsiColor
+    implicit val _ = TerminalContext.AnsiTerminal
 
     // check if we are running in delta debugging mode.
     if (cmdOpts.delta.nonEmpty) {
@@ -136,25 +136,25 @@ object Main {
       }
     } catch {
       case UserException(msg, loc) =>
-        val result = new FormattedMessage().
+        val result = new VirtualTerminal().
           header("User Error", loc.source).
           highlight(loc, msg).newLine()
         Console.println(result.fmt)
         System.exit(1)
       case MatchException(msg, loc) =>
-        val result = new FormattedMessage().
+        val result = new VirtualTerminal().
           header("Non-exhaustive match", loc.source).
           highlight(loc, msg).newLine()
         Console.println(result.fmt)
         System.exit(1)
       case SwitchException(msg, loc) =>
-        val result = new FormattedMessage().
+        val result = new VirtualTerminal().
           header("Non-exhaustive switch", loc.source).
           highlight(loc, msg).newLine()
         Console.println(result.fmt)
         System.exit(1)
       case RuleException(msg, loc) =>
-        val result = new FormattedMessage().
+        val result = new VirtualTerminal().
           header("Integrity rule violated", loc.source).
           highlight(loc, msg).newLine()
         Console.println(result.fmt)

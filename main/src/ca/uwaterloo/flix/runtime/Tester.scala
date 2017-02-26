@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.FlixException
 import ca.uwaterloo.flix.language.ast.{SourceInput, Symbol}
-import ca.uwaterloo.flix.language.errors.FormattedMessage
-import ca.uwaterloo.flix.language.errors.Token.{Blue, Green, Red}
+import ca.uwaterloo.flix.util.vt.VirtualString.{Blue, Green, Red}
+import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 object Tester {
 
@@ -42,8 +42,8 @@ object Tester {
     * Represents the results of running all the tests in a given model.
     */
   case class TestResults(results: List[TestResult]) {
-    def getMessage: FormattedMessage = {
-      val result = new FormattedMessage()
+    def getMessage: VirtualTerminal = {
+      val result = new VirtualTerminal()
       for ((ns, tests) <- results.groupBy(_.sym.namespace)) {
         if (ns.isEmpty)
           result.header(s"Tests (root)", SourceInput.Str("")) // TODO: Change signature of header

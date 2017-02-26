@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{SourceInput, SourceLocation, Type}
-import ca.uwaterloo.flix.language.errors.Token.{Cyan, Magenta, Red}
+import ca.uwaterloo.flix.util.vt._
+import ca.uwaterloo.flix.util.vt.VirtualString._
 
 /**
   * A common super-type for type errors.
@@ -41,7 +42,7 @@ object TypeError {
   case class UnificationError(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
     val kind = "Type Error"
     val source: SourceInput = loc.source
-    val message: FormattedMessage = new FormattedMessage().
+    val message: VirtualTerminal = new VirtualTerminal().
       header(kind, source).
       text(">> Unable to unify ").quote(Red(baseType1.toString)).text(" and ").quote(Red(baseType2.toString)).text(".").newLine().
       newLine().
@@ -63,7 +64,7 @@ object TypeError {
   case class OccursCheckError(baseVar: Type.Var, baseType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
     val kind = "Type Error"
     val source: SourceInput = loc.source
-    val message: FormattedMessage = new FormattedMessage().
+    val message: VirtualTerminal = new VirtualTerminal().
       header(kind, source).
       text(">> Unable to unify the type variable ").quote(Red(baseVar.toString)).text(" with the type ").quote(Red(baseType.toString)).text(".").newLine().
       text(">> due to a recursive occurrence of the type variable in the type.").newLine().
@@ -134,7 +135,7 @@ object TypeError {
   /**
     * Returns a human readable representation of the given type difference.
     */
-  private def pretty(td: TypeDiff, color: Token => Token): (FormattedMessage) => Unit = {
+  private def pretty(td: TypeDiff, color: VirtualString => VirtualString): (VirtualTerminal) => Unit = {
     message => {
       def visit(d: TypeDiff): Unit = d match {
         case TypeDiff.Star => message.text("...")

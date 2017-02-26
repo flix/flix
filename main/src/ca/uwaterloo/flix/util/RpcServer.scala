@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import java.net.InetSocketAddress
 import java.util.concurrent.{Executors, TimeUnit}
 
-import ca.uwaterloo.flix.language.errors.ColorContext
+import ca.uwaterloo.flix.util.vt.{TerminalContext, TerminalContext$}
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
@@ -88,7 +88,7 @@ class RpcServer(port: Int) {
           case Failure(errors) =>
             JObject(
               JField("status", JString("failure")),
-              JField("message", JString(errors.head.message.fmt(ColorContext.HtmlColor)))
+              JField("message", JString(errors.head.message.fmt(TerminalContext.HtmlTerminal)))
             )
         }
       } catch {

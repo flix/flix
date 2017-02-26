@@ -17,7 +17,8 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.ast.{Name, SourceInput, SourceLocation}
-import ca.uwaterloo.flix.language.errors.Token._
+import ca.uwaterloo.flix.util.vt.VirtualString._
+import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
   * A common super-type for resolution errors.
@@ -39,7 +40,7 @@ object ResolutionError {
   // TODO: Replace by DuplicateDefinition during naming!
   case class AmbiguousRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
-    val message: FormattedMessage = new FormattedMessage().
+    val message: VirtualTerminal = new VirtualTerminal().
       header(kind, source).
       text(">> Ambiguous reference ").quote(Red(qn.toString)).text(".").newLine().
       newLine().
@@ -57,8 +58,8 @@ object ResolutionError {
   // TODO: Improve error message.
   case class AmbiguousTag(tag: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
-    val message: FormattedMessage = {
-      val result = new FormattedMessage().
+    val message: VirtualTerminal = {
+      val result = new VirtualTerminal().
         header(kind, source).
         text(">> Ambiguous tag ").quote(Red(tag)).text(".").newLine().
         newLine().
@@ -83,7 +84,7 @@ object ResolutionError {
     */
   case class UndefinedAttribute(table: String, attribute: String, loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
-    val message: FormattedMessage = new FormattedMessage().
+    val message: VirtualTerminal = new VirtualTerminal().
       header(kind, source).
       text(">> Undefined attribute ").quote(Red(attribute)).text(" in table ").quote(Cyan(table)).newLine().
       newLine().
@@ -101,7 +102,7 @@ object ResolutionError {
     */
   case class UndefinedRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
-    val message: FormattedMessage = new FormattedMessage().
+    val message: VirtualTerminal = new VirtualTerminal().
       header(kind, source).
       text(">> Undefined reference ").quote(Red(qn.toString)).text(".").newLine().
       newLine().
@@ -118,7 +119,7 @@ object ResolutionError {
     */
   case class UndefinedTable(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
-    val message: FormattedMessage = new FormattedMessage().
+    val message: VirtualTerminal = new VirtualTerminal().
       header(kind, source).
       text(">> Undefined table ").quote(Red(qn.toString)).text(".").newLine().
       newLine().
@@ -136,7 +137,7 @@ object ResolutionError {
     */
   case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
-    val message: FormattedMessage = new FormattedMessage().
+    val message: VirtualTerminal = new VirtualTerminal().
       header(kind, source).
       text(">> Undefined tag ").quote(Red(tag)).text(".").newLine().
       newLine().
@@ -154,7 +155,7 @@ object ResolutionError {
     */
   case class UndefinedType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
-    val message: FormattedMessage = new FormattedMessage().
+    val message: VirtualTerminal = new VirtualTerminal().
       header(kind, source).
       text(">> Undefined type ").quote(Red(qn.toString)).text(".").newLine().
       newLine().

@@ -22,12 +22,13 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, SourceInput, Symbol, Type}
-import ca.uwaterloo.flix.language.errors.{ColorContext, FormattedMessage, PropertyError}
+import ca.uwaterloo.flix.language.errors.PropertyError
 import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.runtime.evaluator.SymVal.{Char, Unit}
 import ca.uwaterloo.flix.runtime.evaluator.{SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.vt.{TerminalContext, TerminalContext$, VirtualTerminal}
 
 import scala.collection.mutable
 import scala.language.implicitConversions
@@ -85,8 +86,8 @@ object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     /**
       * Prints verbose results.
       */
-    def fmt: FormattedMessage = {
-      val buffer = new FormattedMessage().
+    def fmt: VirtualTerminal = {
+      val buffer = new VirtualTerminal().
         header("QUICK CHECKER RESULTS", SourceInput.Str(""))
 
       for ((source, properties) <- results.groupBy(_.property.loc.source).toList.sortBy(_._1.format)) {
@@ -193,7 +194,7 @@ object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
      */
     if (flix.options.verbosity == Verbosity.Verbose) {
       Console.println(
-        PropertyResults(results).fmt.fmt(ColorContext.AnsiColor)
+        PropertyResults(results).fmt.fmt(TerminalContext.AnsiTerminal)
       )
     }
 
