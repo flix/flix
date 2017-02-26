@@ -73,6 +73,13 @@ class VirtualTerminal() {
     this
   }
 
+  def <<(s: String): VirtualTerminal = print(s)
+
+  def <<(s: VirtualString): VirtualTerminal = {
+    currentLine = s :: currentLine
+    this
+  }
+
   def text(t: VirtualString): VirtualTerminal = {
     currentLine = t :: currentLine
     this

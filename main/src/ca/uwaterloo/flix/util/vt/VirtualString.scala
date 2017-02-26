@@ -44,6 +44,8 @@ object VirtualString {
 
   implicit def string2rich(s: String): VirtualString = VirtualString.Text(s)
 
+  case object NewLine extends VirtualString
+
   case class Text(t: String) extends VirtualString
 
   case class Black(t: VirtualString) extends VirtualString
