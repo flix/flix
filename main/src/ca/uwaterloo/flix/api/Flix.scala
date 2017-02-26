@@ -25,8 +25,7 @@ import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.{DeltaSolver, Model, Solver, Value}
-import ca.uwaterloo.flix.util.Highlight.Blue
-import ca.uwaterloo.flix.util.{LocalResource, Options, StreamOps, Validation}
+import ca.uwaterloo.flix.util.{LocalResource, Options, Validation}
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
@@ -763,7 +762,7 @@ class Flix {
         if (!options.impure)
           throw new IllegalStateException("Illegal call to impure function. Requires --Ximpure.")
         val value = args(0)
-        Console.print(Blue(Value.pretty(value)))
+        Console.print(Value.pretty(value))
         value
       }
     }
@@ -785,7 +784,7 @@ class Flix {
         if (!options.impure)
           throw new IllegalStateException("Illegal call to impure function. Requires --Ximpure.")
         val value = args(0)
-        Console.println(Blue(Value.pretty(value)))
+        Console.println(Value.pretty(value))
         value
       }
     }

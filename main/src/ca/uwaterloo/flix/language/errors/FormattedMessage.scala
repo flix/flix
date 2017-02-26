@@ -151,6 +151,10 @@ class FormattedMessage() {
     lines.map(_.fmt).mkString("")
   }
 
+  def space(): FormattedMessage = {
+    text(" ")
+    this
+  }
 
   // TODO: Order
 

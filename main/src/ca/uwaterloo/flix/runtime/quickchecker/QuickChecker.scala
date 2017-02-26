@@ -21,12 +21,11 @@ import java.math.BigInteger
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol, Type}
-import ca.uwaterloo.flix.language.errors.{ColorContext, PropertyError}
+import ca.uwaterloo.flix.language.ast.{ExecutableAst, SourceInput, Symbol, Type}
+import ca.uwaterloo.flix.language.errors.{ColorContext, FormattedMessage, PropertyError}
 import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.runtime.evaluator.SymVal.{Char, Unit}
 import ca.uwaterloo.flix.runtime.evaluator.{SymVal, SymbolicEvaluator}
-import ca.uwaterloo.flix.util.Highlight.{Blue, Cyan, Red}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
 
@@ -86,34 +85,36 @@ object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     /**
       * Prints verbose results.
       */
-    def fmt(implicit ctx: ColorContext): Unit = {
-      Console.println(Blue(s"-- QUICK CHECKER RESULTS ---------------------------------------------"))
+    def fmt: FormattedMessage = {
+      val buffer = new FormattedMessage().
+        header("QUICK CHECKER RESULTS", SourceInput.Str(""))
 
       for ((source, properties) <- results.groupBy(_.property.loc.source).toList.sortBy(_._1.format)) {
 
-        Console.println()
-        Console.println(s"  -- Quick Check ${source.format} -- ")
-        Console.println()
+        buffer.text(s"  -- Quick Check ${source.format} -- ").newLine()
+        buffer.indent().indent().newLine()
 
         for (result <- properties.sortBy(_.property.loc)) {
           result match {
             case PropertyResult.Success(property, tests, elapsed) =>
-              Console.println("  " + Cyan("✓ ") + property.defn + " satisfies " + property.law + " (" + property.loc.format + ") (" + tests + " tests, " + TimeOps.toSeconds(elapsed) + " seconds.)")
-
+              buffer.cyan("✓").space().text(property.defn.toString).space().text("satisfies").space().text(property.law.toString).text(" (" + property.loc.format + ") (" + tests + " tests, " + TimeOps.toSeconds(elapsed) + " seconds.)").newLine()
             case PropertyResult.Failure(property, success, failure, elapsed, error) =>
-              Console.println("  " + Red("✗ ") + property.defn + " satisfies " + property.law + " (" + property.loc.format + ") (" + success + " SUCCESS, " + failure + " FAILED, " + TimeOps.toSeconds(elapsed) + " seconds.)")
+              buffer.red("✗").space().text(property.defn.toString).space().text("satisfies").space().text(property.law.toString).text(" (" + property.loc.format + ") (" + success + " SUCCESS, " + failure + " FAILED, " + TimeOps.toSeconds(elapsed) + " seconds.)").newLine()
           }
         }
+        buffer.dedent().dedent()
 
         val s = properties.count(_.isSuccess)
         val f = properties.count(_.isFailure)
         val t = properties.length
         val e = properties.map(_.elapsed).sum
 
-        Console.println()
-        Console.println(s"  Properties: $s / $t quick checked in ${TimeOps.toSeconds(e)} seconds. (success = $s; failure = $f).")
-        Console.println()
+        buffer.newLine()
+        buffer.text(s"  Properties: $s / $t quick checked in ${TimeOps.toSeconds(e)} seconds. (success = $s; failure = $f).")
+        buffer.newLine()
       }
+
+      buffer
     }
 
   }
@@ -191,7 +192,9 @@ object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
      * Print verbose information (if enabled).
      */
     if (flix.options.verbosity == Verbosity.Verbose) {
-      PropertyResults(results).fmt(ColorContext.AnsiColor)
+      Console.println(
+        PropertyResults(results).fmt.fmt(ColorContext.AnsiColor)
+      )
     }
 
     /*
