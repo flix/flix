@@ -20,10 +20,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
-import ca.uwaterloo.flix.language.errors.PropertyError
+import ca.uwaterloo.flix.language.errors.{ColorContext, FormattedMessage, PropertyError}
 import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.runtime.evaluator.{SmtExpr, SymVal, SymbolicEvaluator}
-import ca.uwaterloo.flix.util.Highlight.{Blue, Cyan, Red}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
 import com.microsoft.z3._
@@ -402,26 +401,28 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * Prints verbose results.
     */
   private def printVerbose(results: List[PropertyResult]): Unit = {
-    Console.println(Blue(s"-- VERIFIER RESULTS --------------------------------------------------"))
+    val buffer = new FormattedMessage()
+
+    buffer.header("VERIFIER RESULTS", SourceInput.Str(""))
 
     for ((source, properties) <- results.groupBy(_.property.loc.source).toList.sortBy(_._1.format)) {
 
-      Console.println()
-      Console.println(s"  -- Verification Results for ${source.format} -- ")
-      Console.println()
+      buffer.text(s"  -- Verification Results for ${source.format} -- ").newLine()
 
+      buffer.indent().newLine()
       for (result <- properties.sortBy(_.property.defn.loc)) {
         result match {
           case PropertyResult.Success(property, paths, queries, elapsed) =>
-            Console.println("  " + Cyan("✓ ") + property.defn + " satisfies " + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + " seconds.)")
+            buffer.cyan("✓").space().text(property.defn + " satisfies " + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + " seconds.)").newLine()
 
           case PropertyResult.Failure(property, paths, queries, elapsed, _) =>
-            Console.println("  " + Red("✗ ") + property.defn + " satisfies " + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + ") seconds.")
+            buffer.red("✗").space().text(property.defn + " satisfies " + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + " seconds.)").newLine()
 
           case PropertyResult.Unknown(property, paths, queries, elapsed, _) =>
-            Console.println("  " + Red("? ") + property.defn + " satisfies " + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + ") seconds.")
+            buffer.red("?").space().text(property.defn + " satisfies " + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + " seconds.)").newLine()
         }
       }
+      buffer.dedent()
 
       val s = numberOfSuccesses(properties)
       val f = numberOfFailures(properties)
@@ -432,11 +433,13 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       val mp = avg(properties.map(_.paths))
       val mq = avg(properties.map(_.queries))
 
-      Console.println()
-      Console.println(s"  Properties: $s / $t proven in ${TimeOps.toSeconds(totalElapsed(properties))} seconds. (success = $s; failure = $f; unknown = $u).")
-      Console.println(s"  Paths: ${totalPaths(properties)}. Queries: ${totalQueries(properties)} (avg time = $mt sec; avg paths = $mp; avg queries = $mq).")
-      Console.println()
+      buffer.newLine()
+      buffer.text(s"  Properties: $s / $t proven in ${TimeOps.toSeconds(totalElapsed(properties))} seconds. (success = $s; failure = $f; unknown = $u).")
+      buffer.text(s"  Paths: ${totalPaths(properties)}. Queries: ${totalQueries(properties)} (avg time = $mt sec; avg paths = $mp; avg queries = $mq).")
+      buffer.newLine()
 
+
+      println(buffer.fmt(ColorContext.AnsiColor))
     }
 
   }
