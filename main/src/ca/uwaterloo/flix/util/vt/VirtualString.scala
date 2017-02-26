@@ -26,19 +26,19 @@ sealed trait VirtualString {
     * Formats `this` text according to the given terminal context.
     */
   def fmt(implicit ctx: TerminalContext): String = this match {
+    case VirtualString.NewLine => "\n"
     case VirtualString.Text(s) => s
-    case VirtualString.Black(s) => ctx.emitBlack(s.fmt)
-    case VirtualString.Blue(s) => ctx.emitBlue(s.fmt)
-    case VirtualString.Cyan(s) => ctx.emitCyan(s.fmt)
-    case VirtualString.Green(s) => ctx.emitGreen(s.fmt)
-    case VirtualString.Magenta(s) => ctx.emitMagenta(s.fmt)
-    case VirtualString.Red(s) => ctx.emitRed(s.fmt)
-    case VirtualString.Yellow(s) => ctx.emitYellow(s.fmt)
-    case VirtualString.White(s) => ctx.emitWhite(s.fmt)
-    case VirtualString.Bold(s) => ctx.emitBold(s.fmt)
-    case VirtualString.Underline(s) => ctx.emitUnderline(s.fmt)
-    case VirtualString.Line(l, r) => ctx.emitBlue(s"-- $l -------------------------------------------------------------- $r\n")
-    case VirtualString.Quote(t) => "'" + t.fmt + "'"
+    case VirtualString.Black(s) => ctx.emitBlack(s)
+    case VirtualString.Blue(s) => ctx.emitBlue(s)
+    case VirtualString.Cyan(s) => ctx.emitCyan(s)
+    case VirtualString.Green(s) => ctx.emitGreen(s)
+    case VirtualString.Magenta(s) => ctx.emitMagenta(s)
+    case VirtualString.Red(s) => ctx.emitRed(s)
+    case VirtualString.Yellow(s) => ctx.emitYellow(s)
+    case VirtualString.White(s) => ctx.emitWhite(s)
+    case VirtualString.Bold(s) => ctx.emitBold(s)
+    case VirtualString.Underline(s) => ctx.emitUnderline(s)
+    case VirtualString.Line(l, r) => ctx.emitBlue(s"-- $l -------------------------------------------------- $r\n")
   }
 
 }
@@ -50,34 +50,34 @@ object VirtualString {
 
   case object NewLine extends VirtualString
 
+  case object Indent extends VirtualString
+
+  case object Dedent extends VirtualString
+
   case class Line(left: String, right: String) extends VirtualString
 
   case class Code(loc: SourceLocation, text: String) extends VirtualString
 
-  // TODO: Remove
-  case class Text(t: String) extends VirtualString
+  case class Text(s: String) extends VirtualString
 
-  case class Black(t: VirtualString) extends VirtualString
+  case class Black(s: String) extends VirtualString
 
-  case class Blue(t: VirtualString) extends VirtualString
+  case class Blue(s: String) extends VirtualString
 
-  case class Cyan(t: VirtualString) extends VirtualString
+  case class Cyan(s: String) extends VirtualString
 
-  case class Green(t: VirtualString) extends VirtualString
+  case class Green(s: String) extends VirtualString
 
-  case class Magenta(t: VirtualString) extends VirtualString
+  case class Magenta(s: String) extends VirtualString
 
-  case class Red(t: VirtualString) extends VirtualString
+  case class Red(s: String) extends VirtualString
 
-  case class Yellow(t: VirtualString) extends VirtualString
+  case class Yellow(s: String) extends VirtualString
 
-  case class White(t: VirtualString) extends VirtualString
+  case class White(s: String) extends VirtualString
 
-  case class Bold(t: VirtualString) extends VirtualString
+  case class Bold(s: String) extends VirtualString
 
-  case class Underline(t: VirtualString) extends VirtualString
-
-  // TODO: Remove
-  case class Quote(t: VirtualString) extends VirtualString
+  case class Underline(s: String) extends VirtualString
 
 }

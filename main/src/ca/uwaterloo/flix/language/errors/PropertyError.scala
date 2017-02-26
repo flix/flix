@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, SourceInput, Symbol}
-import ca.uwaterloo.flix.util.vt.VirtualString.{Cyan, Magenta, Quote, Red, Underline}
+import ca.uwaterloo.flix.util.vt.VirtualString.{Cyan, Magenta, Red, Underline}
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
@@ -34,11 +34,11 @@ case class PropertyError(property: ExecutableAst.Property, m: Map[Symbol.VarSym,
       newLine().
       text("Counter-example: ").text(m.map(p => p._1.text -> p._2).mkString(", ")).newLine().
       newLine().
-      highlight(property.defn.loc, "violates the law ", Quote(Cyan(property.law.toString)), ".").newLine().
+      highlight(property.defn.loc, "violates the law '", Cyan(property.law.toString), "'.").newLine().
       text(Underline("Details")).text(": The universal/existential quantifiers were instantiated as follows:").newLine().
       newLine()
     for ((sym, value) <- m) {
-      result.highlight(sym.loc, "instantiated as ", Quote(Magenta(value)), ".").newLine()
+      result.highlight(sym.loc, "instantiated as '", Magenta(value), "'.").newLine()
     }
     result.newLine()
   }

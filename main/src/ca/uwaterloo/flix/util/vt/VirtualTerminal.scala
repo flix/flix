@@ -21,30 +21,23 @@ import java.math.BigInteger
 import ca.uwaterloo.flix.language.ast.{SourceInput, SourceLocation}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 
-import scala.collection.mutable.ListBuffer
-
 class VirtualTerminal() {
 
   /**
     * The current lines.
     */
-  private val lines: ListBuffer[List[VirtualString]] = ListBuffer.empty
-
-  /**
-    * The tokens in the current line (in reverse order).
-    */
-  private var currentLine: List[VirtualString] = List.empty
+  private var buffer: List[VirtualString] = Nil
 
   /**
     * The current indentation level.
     */
-  private var currentIndent: Int = 0
+  private var indentation: Int = 0
 
   /**
     * Increases indentation by one level.
     */
   def indent(): VirtualTerminal = {
-    currentIndent = currentIndent + 1
+    indentation = indentation + 1
     this
   }
 
@@ -52,7 +45,7 @@ class VirtualTerminal() {
     * Decreases indentation by one level.
     */
   def dedent(): VirtualTerminal = {
-    currentIndent = currentIndent - 1
+    indentation = indentation - 1
     this
   }
 
@@ -75,7 +68,6 @@ class VirtualTerminal() {
 
   def <<(i: Int): VirtualTerminal = <<(Text(i.toString))
 
-
   def <<(s: String): VirtualTerminal = <<(Text(s.toString))
 
   def <<(s: VirtualString): VirtualTerminal = s match {
@@ -84,43 +76,34 @@ class VirtualTerminal() {
     case _ => text(s)
   }
 
+  def <<(vt: VirtualTerminal): VirtualTerminal = {
+    // TODO: check order
+    buffer = vt.buffer ::: this.buffer
+    this
+  }
+
+
   def text(t: VirtualString): VirtualTerminal = {
-    currentLine = t :: currentLine
+    buffer = t :: buffer
     this
   }
 
-  def text(s: Int): VirtualTerminal = {
-    currentLine = VirtualString.Text(s.toString) :: currentLine
-    this
-  }
+  // TODO: Remove
+  def text(d: Double): VirtualTerminal = text(d.toString)
 
-  def text(s: Double): VirtualTerminal = {
-    currentLine = VirtualString.Text(s.toString) :: currentLine
-    this
-  }
+  // TODO: Remove
+  def text(f: Float): VirtualTerminal = text(f.toString)
 
-  def text(s: Float): VirtualTerminal = {
-    currentLine = VirtualString.Text(s.toString) :: currentLine
-    this
-  }
+  // TODO: Remove
+  def text(b: BigInteger): VirtualTerminal = text(b.toString)
 
-  def text(s: BigInteger): VirtualTerminal = {
-    currentLine = VirtualString.Text(s.toString) :: currentLine
-    this
-  }
-
-  def text(s: String): VirtualTerminal = {
-    currentLine = VirtualString.Text(s) :: currentLine
-    this
-  }
+  def text(s: String): VirtualTerminal = text(VirtualString.Text(s))
 
   def quote(t: VirtualString): VirtualTerminal = {
-    currentLine = VirtualString.Quote(t) :: currentLine
-    this
+    ??? // TODO: Remove
   }
 
   // TODO: Move to other package and implement other methods, including << and so on.
-
 
   def header(kind: String, source: SourceInput): VirtualTerminal = {
     text(Blue(s"-- $kind -------------------------------------------------- ${source.format}")).newLine().newLine()
@@ -129,25 +112,22 @@ class VirtualTerminal() {
 
 
   def newLine(): VirtualTerminal = {
-    lines += currentLine.reverse
-    currentLine = Nil
-
-    for (i <- 0 until currentIndent) {
-      currentLine = VirtualString.Text("  ") :: currentLine
-    }
-
+    buffer = NewLine :: buffer
     this
   }
 
+  // TODO: Remove
   def use(f: VirtualTerminal => Unit): VirtualTerminal = {
     f(this)
     this
   }
 
+
   def fmt(implicit ctx: TerminalContext): String = {
-    lines.map(line => line.map(_.fmt).mkString("")).mkString("\n")
+    buffer.reverse.map(_.fmt).mkString("")
   }
 
+  // TODO: Remove
   def space(): VirtualTerminal = {
     text(" ")
     this
@@ -192,92 +172,6 @@ class VirtualTerminal() {
 
     if (beginLine == endLine) underline() else leftline()
 
-    this
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  /// Color Operations                                                      ///
-  /////////////////////////////////////////////////////////////////////////////
-
-  // TODO: Remove these...
-
-  /**
-    * Appends the result of calling the given object `o`'s `toString` method in black text.
-    */
-  def black(o: AnyRef): VirtualTerminal = {
-    text(Black(o.toString))
-    this
-  }
-
-  /**
-    * Appends the result of calling the given object `o`'s `toString` method in blue text.
-    */
-  def blue(o: AnyRef): VirtualTerminal = {
-    text(Blue(o.toString))
-    this
-  }
-
-  /**
-    * Appends the result of calling the given object `o`'s `toString` method in cyan text.
-    */
-  def cyan(o: AnyRef): VirtualTerminal = {
-    text(Cyan(o.toString))
-    this
-  }
-
-  /**
-    * Appends the result of calling the given object `o`'s `toString` method in green text.
-    */
-  def green(o: AnyRef): VirtualTerminal = {
-    text(Green(o.toString))
-    this
-  }
-
-  /**
-    * Appends the result of calling the given object `o`'s `toString` method in magenta text.
-    */
-  def magenta(o: AnyRef): VirtualTerminal = {
-    text(Magenta(o.toString))
-    this
-  }
-
-  /**
-    * Appends the result of calling the given object `o`'s `toString` method in red text.
-    */
-  def red(o: AnyRef): VirtualTerminal = {
-    text(Red(o.toString))
-    this
-  }
-
-  /**
-    * Appends the result of calling the given object `o`'s `toString` method in yellow text.
-    */
-  def yellow(o: AnyRef): VirtualTerminal = {
-    text(Yellow(o.toString))
-    this
-  }
-
-  /**
-    * Appends the result of calling the given object `o`'s `toString` method in white text.
-    */
-  def white(o: AnyRef): VirtualTerminal = {
-    text(Yellow(o.toString))
-    this
-  }
-
-  /**
-    * Appends the result of calling the given object `o`'s `toString` method in bold text.
-    */
-  def bold(o: AnyRef): VirtualTerminal = {
-    text(Bold(o.toString))
-    this
-  }
-
-  /**
-    * Appends the result of calling the given object `o`'s `toString` method in underlined text.
-    */
-  def underline(s: AnyRef): VirtualTerminal = {
-    text(Underline(s.toString))
     this
   }
 

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{SourceInput, SourceLocation}
-import ca.uwaterloo.flix.util.vt.VirtualString.{Cyan, Red, Underline}
+import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
@@ -39,15 +39,17 @@ object WeederError {
     */
   case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val source: SourceInput = loc1.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> Multiple occurrences of the annotation ").quote(Red("@" + name)).text(".").newLine().
-      newLine().
-      highlight(loc1, "the first occurrence was here.").newLine().
-      newLine().
-      highlight(loc2, "the second occurrence was here.").newLine().
-      newLine().
-      text(Underline("Tip")).text(": Remove one of the two annotations.").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Multiple occurrences of the annotation '" << Red("@" + name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc1, "the first occurrence was here.") << NewLine
+      vt << NewLine
+      vt << Code(loc2, "the second occurrence was here.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Remove one of the two annotations." << NewLine
+    }
   }
 
   /**
@@ -59,15 +61,17 @@ object WeederError {
     */
   case class DuplicateAttribute(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val source: SourceInput = loc1.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> Multiple declarations of the attribute ").quote(Red(name)).text(".").newLine().
-      newLine().
-      highlight(loc1, "the first declaration was here.").newLine().
-      newLine().
-      highlight(loc2, "the second declaration was here.").newLine().
-      newLine().
-      text(Underline("Tip")).text(": Remove or rename one of the attributes to avoid the name clash.").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Multiple declarations of the attribute '" << Red(name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc1, "the first declaration was here.") << NewLine
+      vt << NewLine
+      vt << Code(loc2, "the second declaration was here.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Remove or rename one of the attributes to avoid the name clash." << NewLine
+    }
   }
 
   /**

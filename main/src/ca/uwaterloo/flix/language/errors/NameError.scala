@@ -61,15 +61,16 @@ object NameError {
     */
   case class DuplicateIndex(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     val source: SourceInput = loc1.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> Duplicate index declaration for table ").quote(Red(name)).text(".").newLine().
-      newLine().
-      highlight(loc1, "the first declaration was here.").newLine().
-      newLine().
-      highlight(loc2, "the second declaration was here.").newLine().
-      newLine().
-      text(Underline("Tip")).text(": Remove one of the two index declarations.").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Duplicate index declaration for table '" << Red(name) << "'." << NewLine
+      vt << Code(loc1, "the first declaration was here.") << NewLine
+      vt << NewLine
+      vt << Code(loc2, "the second declaration was here.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Remove one of the two index declarations." << NewLine
+    }
   }
 
 }

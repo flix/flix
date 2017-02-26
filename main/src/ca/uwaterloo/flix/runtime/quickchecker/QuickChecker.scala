@@ -98,9 +98,11 @@ object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
         for (result <- properties.sortBy(_.property.loc)) {
           result match {
             case PropertyResult.Success(property, tests, elapsed) =>
-              buffer.cyan("✓").space().text(property.defn.toString).space().text("satisfies").space().text(property.law.toString).text(" (" + property.loc.format + ") (" + tests + " tests, " + TimeOps.toSeconds(elapsed) + " seconds.)").newLine()
+              // TODO: Cyan
+              buffer.text("✓").space().text(property.defn.toString).space().text("satisfies").space().text(property.law.toString).text(" (" + property.loc.format + ") (" + tests + " tests, " + TimeOps.toSeconds(elapsed) + " seconds.)").newLine()
             case PropertyResult.Failure(property, success, failure, elapsed, error) =>
-              buffer.red("✗").space().text(property.defn.toString).space().text("satisfies").space().text(property.law.toString).text(" (" + property.loc.format + ") (" + success + " SUCCESS, " + failure + " FAILED, " + TimeOps.toSeconds(elapsed) + " seconds.)").newLine()
+              // TODO: Red
+              buffer.text("✗").space().text(property.defn.toString).space().text("satisfies").space().text(property.law.toString).text(" (" + property.loc.format + ") (" + success + " SUCCESS, " + failure + " FAILED, " + TimeOps.toSeconds(elapsed) + " seconds.)").newLine()
           }
         }
         buffer.dedent().dedent()

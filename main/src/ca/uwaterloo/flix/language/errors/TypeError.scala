@@ -135,7 +135,7 @@ object TypeError {
   /**
     * Returns a human readable representation of the given type difference.
     */
-  private def pretty(td: TypeDiff, color: VirtualString => VirtualString): (VirtualTerminal) => Unit = {
+  private def pretty(td: TypeDiff, color: String => VirtualString): (VirtualTerminal) => Unit = {
     message => {
       def visit(d: TypeDiff): Unit = d match {
         case TypeDiff.Star => message.text("...")

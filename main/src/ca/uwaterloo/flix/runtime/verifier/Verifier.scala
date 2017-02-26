@@ -418,11 +418,11 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
             val law = property.law.toString
             vt << Cyan("✓") << " " << name << " satisfies " << law << " (" << property.loc.format << ") (" << paths << " paths, " << queries << " queries, " << TimeOps.toSeconds(elapsed) << " seconds.)" << NewLine
           case PropertyResult.Failure(property, paths, queries, elapsed, _) =>
-            // TODO
-            vt.red("✗").space().text(property.defn + " satisfies " + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + " seconds.)").newLine()
+            // TODO: Red
+            vt.text("✗").space().text(property.defn + " satisfies " + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + " seconds.)").newLine()
           case PropertyResult.Unknown(property, paths, queries, elapsed, _) =>
-            // TODO
-            vt.red("?").space().text(property.defn + " satisfies " + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + " seconds.)").newLine()
+            // TODO: Red
+            vt.text("?").space().text(property.defn + " satisfies " + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + " seconds.)").newLine()
         }
       }
       vt.dedent()
@@ -438,7 +438,7 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
       // TODO: Refactor
       vt.newLine()
-      vt.text(s"  Properties: $s / $t proven in ${TimeOps.toSeconds(totalElapsed(properties))} seconds. (success = $s; failure = $f; unknown = $u).")
+      vt.text(s"  Properties: $s / $t proven in ${TimeOps.toSeconds(totalElapsed(properties))} seconds. (success = $s; failure = $f; unknown = $u).").newLine()
       vt.text(s"  Paths: ${totalPaths(properties)}. Queries: ${totalQueries(properties)} (avg time = $mt sec; avg paths = $mp; avg queries = $mq).")
       vt << NewLine << NewLine
 
