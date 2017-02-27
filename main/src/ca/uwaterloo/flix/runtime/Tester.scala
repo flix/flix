@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.FlixException
 import ca.uwaterloo.flix.language.ast.{SourceInput, Symbol}
-import ca.uwaterloo.flix.util.vt.VirtualString.{Blue, Green, Red}
+import ca.uwaterloo.flix.util.vt.VirtualString.{Blue, Dedent, Green, Indent, Line, NewLine, Red}
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 object Tester {
@@ -43,23 +43,22 @@ object Tester {
     */
   case class TestResults(results: List[TestResult]) {
     def getMessage: VirtualTerminal = {
-      val result = new VirtualTerminal()
+      val vt = new VirtualTerminal()
       for ((ns, tests) <- results.groupBy(_.sym.namespace)) {
-        if (ns.isEmpty)
-          result.header(s"Tests (root)", SourceInput.Str("")) // TODO: Change signature of header
-        else
-          result.header(s"Tests (${ns.mkString("/")})", SourceInput.Str("")) // TODO: Change signature of header
+        val namespace = if (ns.isEmpty) "root" else ns.mkString("/")
+        vt << Line("Tests", namespace)
+        vt << Indent << NewLine
         for (test <- tests.sortBy(_.sym.loc)) {
           test match {
             case TestResult.Success(sym, msg) =>
-              result.text("  ").text(Green("✓")).text(" ").text(sym.name).newLine()
+              vt << Green("✓") << " " << sym.name << NewLine
             case TestResult.Failure(sym, msg) =>
-              result.text("  ").text(Red("✗")).text(" ").text(sym.name).text(": ").text(msg).text(" (").text(Blue(sym.loc.format)).text(")").newLine()
+              vt << Red("✗") << " " << sym.name << ": " << msg << " (" << Blue(sym.loc.format) << ")" << NewLine
           }
         }
-        result.newLine()
+        vt << Dedent << NewLine
       }
-      result
+      vt
     }
   }
 
