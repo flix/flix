@@ -21,6 +21,7 @@ import java.io.File
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.runtime.{Benchmarker, Tester, Value}
 import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
 import ca.uwaterloo.flix.util.vt._
 
 import scala.concurrent.duration.Duration
@@ -136,28 +137,28 @@ object Main {
       }
     } catch {
       case UserException(msg, loc) =>
-        val result = new VirtualTerminal().
-          header("User Error", loc.source).
-          highlight(loc, msg).newLine()
-        Console.println(result.fmt)
+        val vt = new VirtualTerminal()
+        vt << Line("User Error", loc.source.format) << NewLine
+        vt << Code(loc, msg) << NewLine
+        Console.println(vt.fmt)
         System.exit(1)
       case MatchException(msg, loc) =>
-        val result = new VirtualTerminal().
-          header("Non-exhaustive match", loc.source).
-          highlight(loc, msg).newLine()
-        Console.println(result.fmt)
+        val vt = new VirtualTerminal()
+        vt << Line("Non-exhaustive match", loc.source.format) << NewLine
+        vt << Code(loc, msg) << NewLine
+        Console.println(vt.fmt)
         System.exit(1)
       case SwitchException(msg, loc) =>
-        val result = new VirtualTerminal().
-          header("Non-exhaustive switch", loc.source).
-          highlight(loc, msg).newLine()
-        Console.println(result.fmt)
+        val vt = new VirtualTerminal()
+        vt << Line("Non-exhaustive switch", loc.source.format) << NewLine
+        vt << Code(loc, msg) << NewLine
+        Console.println(vt.fmt)
         System.exit(1)
       case RuleException(msg, loc) =>
-        val result = new VirtualTerminal().
-          header("Integrity rule violated", loc.source).
-          highlight(loc, msg).newLine()
-        Console.println(result.fmt)
+        val vt = new VirtualTerminal()
+        vt << Line("Integrity rule violated", loc.source.format) << NewLine
+        vt << Code(loc, msg) << NewLine
+        Console.println(vt.fmt)
         System.exit(1)
     }
 

@@ -57,6 +57,8 @@ class VirtualTerminal() {
   def <<(s: VirtualString): VirtualTerminal = s match {
     case VirtualString.NewLine => newLine()
     case VirtualString.Code(loc, msg) => highlight(loc, msg)
+    case VirtualString.RichCode(loc, msg) =>
+      highlight(loc, msg)
     case _ => text(s)
   }
 
@@ -115,6 +117,7 @@ class VirtualTerminal() {
       case Indent => indent(); ""
       case Dedent => dedent(); ""
       case NewLine => "\n" + "  " * indentation
+      case RichCode(_, _) => ""
       case x => x.fmt
     }.mkString("")
   }
@@ -136,7 +139,7 @@ class VirtualTerminal() {
         text(" " * (beginCol + lineNo.length - 1)).text(VirtualString.Red("^" * (endCol - beginCol))).newLine().
         text(" " * (beginCol + lineNo.length - 1))
       for (t <- msg) {
-        text(t)
+        <<(t)
       }
       newLine()
     }
@@ -151,7 +154,7 @@ class VirtualTerminal() {
       }
       newLine()
       for (t <- msg) {
-        text(t)
+        <<(t)
       }
       newLine()
     }

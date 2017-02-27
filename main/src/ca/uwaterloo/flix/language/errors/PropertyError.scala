@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, SourceInput, Symbol}
-import ca.uwaterloo.flix.util.vt.VirtualString.{Cyan, Magenta, Red, Underline}
+import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
@@ -28,18 +28,22 @@ case class PropertyError(property: ExecutableAst.Property, m: Map[Symbol.VarSym,
   val kind: String = "Property Error"
   val source: SourceInput = property.defn.loc.source
   val message: VirtualTerminal = {
-    val result = new VirtualTerminal().
-      header(kind, source).
-      text(">> The function ").quote(Red(property.defn.toString)).text(" does not satisfy the law ").quote(Cyan(property.law.toString)).text(".").newLine().
-      newLine().
-      text("Counter-example: ").text(m.map(p => p._1.text -> p._2).mkString(", ")).newLine().
-      newLine().
-      highlight(property.defn.loc, "violates the law '", Cyan(property.law.toString), "'.").newLine().
-      text(Underline("Details")).text(": The universal/existential quantifiers were instantiated as follows:").newLine().
-      newLine()
+    val name = property.defn.toString
+    val law = property.law.toString
+
+    val vt = new VirtualTerminal()
+    vt << Line(kind, source.format) << NewLine
+    vt << ">> The function '" << Red(name) << "' does not satisfy the law '" << Cyan(law) << "'." << NewLine
+    vt << NewLine
+    vt << "Counter-example: " << m.map(p => p._1.text -> p._2).mkString(", ") << NewLine
+    vt << NewLine
+    vt << Code(property.defn.loc, s"violates the law '$law'.") << NewLine // TODO: Cyan
+    vt << NewLine
+    vt << Underline("Details") << " The universal/existential quantifiers were instantiated as follows:" << NewLine
+    vt << NewLine
     for ((sym, value) <- m) {
-      result.highlight(sym.loc, "instantiated as '", Magenta(value), "'.").newLine()
+      vt << Code(sym.loc, s"instantiated as '$value'.") << NewLine // TODO: Magenta
     }
-    result.newLine()
+    vt << NewLine
   }
 }

@@ -39,6 +39,7 @@ sealed trait VirtualString {
     case VirtualString.Bold(s) => ctx.emitBold(s)
     case VirtualString.Underline(s) => ctx.emitUnderline(s)
     case VirtualString.Line(l, r) => ctx.emitBlue(s"-- $l -------------------------------------------------- $r\n")
+    case _ => ""
   }
 
 }
@@ -57,6 +58,8 @@ object VirtualString {
   case class Line(left: String, right: String) extends VirtualString
 
   case class Code(loc: SourceLocation, text: String) extends VirtualString
+
+  case class RichCode(loc: SourceLocation, text: VirtualString*) extends VirtualString
 
   case class Text(s: String) extends VirtualString
 
