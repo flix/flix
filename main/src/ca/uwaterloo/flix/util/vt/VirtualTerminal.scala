@@ -38,11 +38,7 @@ class VirtualTerminal() {
   def <<(s: VirtualString): VirtualTerminal = s match {
     case VirtualString.NewLine => newLine()
     case VirtualString.Code(loc, msg) => {
-      highlight(loc, msg)
-      this
-    }
-    case VirtualString.RichCode(loc, msg) => {
-      highlight(loc, msg)
+      highlight(loc, Text(msg))
       this
     }
     case _ => text(s)
@@ -78,9 +74,28 @@ class VirtualTerminal() {
       case Indent => indent(); ""
       case Dedent => dedent(); ""
       case NewLine => "\n" + "  " * indentation
-      case RichCode(_, _) => ""
-      case x => x.fmt
+      case x => fmt(x)
     }.mkString("")
+  }
+
+  /**
+    * Formats `this` text according to the given terminal context.
+    */
+  private def fmt(c: VirtualString)(implicit ctx: TerminalContext): String = c match {
+    case VirtualString.NewLine => "\n"
+    case VirtualString.Text(s) => s
+    case VirtualString.Black(s) => ctx.emitBlack(s)
+    case VirtualString.Blue(s) => ctx.emitBlue(s)
+    case VirtualString.Cyan(s) => ctx.emitCyan(s)
+    case VirtualString.Green(s) => ctx.emitGreen(s)
+    case VirtualString.Magenta(s) => ctx.emitMagenta(s)
+    case VirtualString.Red(s) => ctx.emitRed(s)
+    case VirtualString.Yellow(s) => ctx.emitYellow(s)
+    case VirtualString.White(s) => ctx.emitWhite(s)
+    case VirtualString.Bold(s) => ctx.emitBold(s)
+    case VirtualString.Underline(s) => ctx.emitUnderline(s)
+    case VirtualString.Line(l, r) => ctx.emitBlue(s"-- $l -------------------------------------------------- $r\n")
+    case _ => ""
   }
 
   /////////////////////////////////////////////////////////////////////////////
