@@ -406,26 +406,23 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     val vt = new VirtualTerminal()
 
     for ((source, properties) <- results.groupBy(_.property.loc.source).toList.sortBy(_._1.format)) {
-
       vt << Line("Verifier", source.format)
-
-      vt.indent().newLine()
+      vt << Indent << NewLine
       for (result <- properties.sortBy(_.property.defn.loc)) {
+        val name = result.property.defn.toString
+        val law = result.property.law.toString
+        val loc = result.property.loc.format
 
         result match {
           case PropertyResult.Success(property, paths, queries, elapsed) =>
-            val name = property.defn.toString
-            val law = property.law.toString
-            vt << Cyan("✓") << " " << name << " satisfies " << law << " (" << property.loc.format << ") (" << paths << " paths, " << queries << " queries, " << TimeOps.toSeconds(elapsed) << " seconds.)" << NewLine
+            vt << Cyan("✓") << " " << name << " satisfies " << law << " (" << loc << ") (" << paths << " paths, " << queries << " queries, " << TimeOps.toSeconds(elapsed) << " seconds.)" << NewLine
           case PropertyResult.Failure(property, paths, queries, elapsed, _) =>
-            // TODO: Red
-            vt.text("✗").space().text(property.defn + " satisfies " + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + " seconds.)").newLine()
+            vt << Red("✗") << " " << name << " satisfies " << law << " (" << loc << ") (" << paths << " paths, " << queries << " queries, " << TimeOps.toSeconds(elapsed) << " seconds.)" << NewLine
           case PropertyResult.Unknown(property, paths, queries, elapsed, _) =>
-            // TODO: Red
-            vt.text("?").space().text(property.defn + " satisfies " + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + " seconds.)").newLine()
+            vt << Red("?") << " " << name << " satisfies " << law << " (" << loc << ") (" << paths << " paths, " << queries << " queries, " << TimeOps.toSeconds(elapsed) << " seconds.)" << NewLine
         }
       }
-      vt.dedent()
+      vt << NewLine
 
       val s = numberOfSuccesses(properties)
       val f = numberOfFailures(properties)
@@ -436,11 +433,9 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       val mp = avg(properties.map(_.paths))
       val mq = avg(properties.map(_.queries))
 
-      // TODO: Refactor
-      vt.newLine()
-      vt.text(s"  Properties: $s / $t proven in ${TimeOps.toSeconds(totalElapsed(properties))} seconds. (success = $s; failure = $f; unknown = $u).").newLine()
-      vt.text(s"  Paths: ${totalPaths(properties)}. Queries: ${totalQueries(properties)} (avg time = $mt sec; avg paths = $mp; avg queries = $mq).")
-      vt << NewLine << NewLine
+      vt << s"Properties: $s / $t proven in ${TimeOps.toSeconds(totalElapsed(properties))} seconds. (success = $s; failure = $f; unknown = $u)." << NewLine
+      vt << s"Paths: ${totalPaths(properties)}. Queries: ${totalQueries(properties)} (avg time = $mt sec; avg paths = $mp; avg queries = $mq)." << NewLine
+      vt << Dedent << NewLine
 
     }
 

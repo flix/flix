@@ -21,14 +21,15 @@ import java.math.BigInteger
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, SourceInput, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.PropertyError
 import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.runtime.evaluator.SymVal.{Char, Unit}
 import ca.uwaterloo.flix.runtime.evaluator.{SymVal, SymbolicEvaluator}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.vt.{TerminalContext, TerminalContext$, VirtualTerminal}
+import ca.uwaterloo.flix.util.vt.VirtualString.{Cyan, Dedent, Indent, Line, NewLine, Red}
+import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
 
 import scala.collection.mutable
 import scala.language.implicitConversions
@@ -87,37 +88,34 @@ object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       * Prints verbose results.
       */
     def fmt: VirtualTerminal = {
-      val buffer = new VirtualTerminal().
-        header("QUICK CHECKER RESULTS", SourceInput.Str(""))
-
+      val vt = new VirtualTerminal
       for ((source, properties) <- results.groupBy(_.property.loc.source).toList.sortBy(_._1.format)) {
-
-        buffer.text(s"  -- Quick Check ${source.format} -- ").newLine()
-        buffer.indent().indent().newLine()
+        vt << Line("Quick Checker", source.format)
+        vt << Indent << NewLine
 
         for (result <- properties.sortBy(_.property.loc)) {
+          val name = result.property.defn.toString
+          val law = result.property.law.toString
+          val loc = result.property.loc.format
+
           result match {
             case PropertyResult.Success(property, tests, elapsed) =>
-              // TODO: Cyan
-              buffer.text("✓").space().text(property.defn.toString).space().text("satisfies").space().text(property.law.toString).text(" (" + property.loc.format + ") (" + tests + " tests, " + TimeOps.toSeconds(elapsed) + " seconds.)").newLine()
+              vt << Cyan("✓") << " " << name << " satisfies " << law << " (" << loc << ") (" << tests << " tests, " << TimeOps.toSeconds(elapsed) << " seconds.)" << NewLine
             case PropertyResult.Failure(property, success, failure, elapsed, error) =>
-              // TODO: Red
-              buffer.text("✗").space().text(property.defn.toString).space().text("satisfies").space().text(property.law.toString).text(" (" + property.loc.format + ") (" + success + " SUCCESS, " + failure + " FAILED, " + TimeOps.toSeconds(elapsed) + " seconds.)").newLine()
+              vt << Red("✗") << " " << name << " satisfies " << law << " (" << loc << ") (" << success << " SUCCESS, " << failure << " FAILED, " << TimeOps.toSeconds(elapsed) << " seconds.)" << NewLine
           }
         }
-        buffer.dedent().dedent()
+        vt << NewLine
 
         val s = properties.count(_.isSuccess)
         val f = properties.count(_.isFailure)
         val t = properties.length
         val e = properties.map(_.elapsed).sum
 
-        buffer.newLine()
-        buffer.text(s"  Properties: $s / $t quick checked in ${TimeOps.toSeconds(e)} seconds. (success = $s; failure = $f).")
-        buffer.newLine()
+        vt << s"Properties: $s / $t quick checked in ${TimeOps.toSeconds(e)} seconds. (success = $s; failure = $f)."
+        vt << Dedent << NewLine
       }
-
-      buffer
+      vt
     }
 
   }

@@ -100,7 +100,8 @@ class VirtualTerminal() {
   def text(s: String): VirtualTerminal = text(VirtualString.Text(s))
 
   def quote(t: VirtualString): VirtualTerminal = {
-    ??? // TODO: Remove
+    // TODO
+    text(t)
   }
 
   // TODO: Move to other package and implement other methods, including << and so on.
@@ -111,8 +112,10 @@ class VirtualTerminal() {
   }
 
 
+  // TODO: Cleanup
   def newLine(): VirtualTerminal = {
-    buffer = NewLine :: buffer
+    val id: List[VirtualString] = (0 until indentation).map(x => Text(" ")).toList
+    buffer = id ::: NewLine :: buffer
     this
   }
 
@@ -124,13 +127,12 @@ class VirtualTerminal() {
 
 
   def fmt(implicit ctx: TerminalContext): String = {
-    buffer.reverse.map(_.fmt).mkString("")
-  }
-
-  // TODO: Remove
-  def space(): VirtualTerminal = {
-    text(" ")
-    this
+    buffer.reverse.map {
+      case Indent => indent(); ""
+      case Dedent => dedent(); ""
+      case NewLine => "\n" + "  " * indentation
+      case x => x.fmt
+    }.mkString("")
   }
 
   /////////////////////////////////////////////////////////////////////////////
