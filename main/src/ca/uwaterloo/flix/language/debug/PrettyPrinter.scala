@@ -52,13 +52,13 @@ object PrettyPrinter {
         case Expression.Unit => vt.text("Unit")
         case Expression.True => vt.text("true")
         case Expression.False => vt.text("false")
-        case Expression.Char(lit) => vt.text("'").text(lit).text("'")
-        case Expression.Float32(lit) => vt.text(lit).text("f32")
-        case Expression.Float64(lit) => vt.text(lit).text("f32")
-        case Expression.Int8(lit) => vt.text(lit).text("i8")
-        case Expression.Int16(lit) => vt.text(lit).text("i16")
-        case Expression.Int32(lit) => vt.text(lit).text("i32")
-        case Expression.Int64(lit) => vt.text(lit).text("i64")
+        case Expression.Char(lit) => vt.text("'").text(lit.toString).text("'")
+        case Expression.Float32(lit) => vt.text(lit.toString).text("f32")
+        case Expression.Float64(lit) => vt.text(lit.toString).text("f32")
+        case Expression.Int8(lit) => vt.text(lit.toString).text("i8")
+        case Expression.Int16(lit) => vt.text(lit.toString).text("i16")
+        case Expression.Int32(lit) => vt.text(lit.toString).text("i32")
+        case Expression.Int64(lit) => vt.text(lit.toString).text("i64")
         case Expression.BigInt(lit) => vt.text(lit).text("ii")
         case Expression.Str(lit) => vt.text("\"").text(lit).text("\"")
         case Expression.LoadBool(base, offset) => ???
@@ -194,7 +194,7 @@ object PrettyPrinter {
         case Expression.Index(exp, offset, tpe, loc) =>
           visitExp(exp)
           vt.text("[")
-          vt.text(offset)
+          vt.text(offset.toString)
           vt.text("]")
 
         case Expression.Tuple(elms, tpe, loc) =>

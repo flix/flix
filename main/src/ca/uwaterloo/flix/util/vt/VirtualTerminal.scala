@@ -56,9 +56,14 @@ class VirtualTerminal() {
 
   def <<(s: VirtualString): VirtualTerminal = s match {
     case VirtualString.NewLine => newLine()
-    case VirtualString.Code(loc, msg) => highlight(loc, msg)
-    case VirtualString.RichCode(loc, msg) =>
+    case VirtualString.Code(loc, msg) => {
       highlight(loc, msg)
+      this
+    }
+    case VirtualString.RichCode(loc, msg) => {
+      highlight(loc, msg)
+      this
+    }
     case _ => text(s)
   }
 
@@ -68,17 +73,10 @@ class VirtualTerminal() {
     this
   }
 
-
   def text(t: VirtualString): VirtualTerminal = {
     buffer = t :: buffer
     this
   }
-
-  // TODO: Remove
-  def text(d: Double): VirtualTerminal = text(d.toString)
-
-  // TODO: Remove
-  def text(f: Float): VirtualTerminal = text(f.toString)
 
   // TODO: Remove
   def text(b: BigInteger): VirtualTerminal = text(b.toString)
@@ -93,13 +91,9 @@ class VirtualTerminal() {
     this
   }
 
-  // TODO: Remove
-  def use(f: VirtualTerminal => Unit): VirtualTerminal = {
-    f(this)
-    this
-  }
-
-
+  /**
+    * Returns the buffer of the virtual terminal as a string.
+    */
   def fmt(implicit ctx: TerminalContext): String = {
     buffer.reverse.map {
       case Indent => indent(); ""
@@ -113,7 +107,7 @@ class VirtualTerminal() {
   /////////////////////////////////////////////////////////////////////////////
   /// Highlights Source Code                                                ///
   /////////////////////////////////////////////////////////////////////////////
-  def highlight(loc: SourceLocation, msg: VirtualString*): VirtualTerminal = {
+  private def highlight(loc: SourceLocation, msg: VirtualString*): Unit = {
     val beginLine = loc.beginLine
     val beginCol = loc.beginCol
     val endLine = loc.endLine
@@ -135,7 +129,7 @@ class VirtualTerminal() {
     def leftline(): Unit = {
       for (lineNo <- beginLine to endLine) {
         val currentLine = lineAt(lineNo)
-        text(lineNo).text(" |").
+        text(lineNo.toString).text(" |").
           text(Red(">")).text(" ").
           text(currentLine).
           newLine()
@@ -147,9 +141,10 @@ class VirtualTerminal() {
       newLine()
     }
 
-    if (beginLine == endLine) underline() else leftline()
-
-    this
+    if (beginLine == endLine)
+      underline()
+    else
+      leftline()
   }
 
 }
