@@ -382,6 +382,13 @@ class TestExamples extends FunSuite {
     t.checkSuccess()
   }
 
+  test("SUOpt.flix") {
+    val t = new Tester()
+      .addPath("./examples/analysis/SUOpt.flix")
+      .run()
+    t.checkSuccess()
+  }
+
   test("FloydWarshall.flix") {
     val t = new Tester()
       .addPath("./examples/misc/FloydWarshall.flix")
