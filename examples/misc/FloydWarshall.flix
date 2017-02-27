@@ -57,7 +57,10 @@ ShortestDist(a, c, sum(d1, d2)) :- ShortestDist(a, b, d1), ShortestDist(b, c, d2
 // If you can get from a->a with negative distance, then it is part of a negative cycle
 ShortestDist(a, a, Top) :- ShortestDist(a, a, d), negativeDist(d).
 
-// Transfer function that gets the sum of two distances
+///
+/// Transfer function.
+/// Returns the sum of two given distances.
+///
 def sum(e1: Dist, e2: Dist): Dist = match (e1, e2) with {
   case (Top, _) => Top
   case (_, Top) => Top
