@@ -31,9 +31,13 @@ class VirtualTerminal() {
     */
   private var indentation: Int = 0
 
+  // TODO: Rename VirtualString to VirtualToken?
+
+  // TODO: Add more primitive types
   def <<(i: Int): VirtualTerminal = <<(Text(i.toString))
 
   def <<(s: String): VirtualTerminal = <<(Text(s.toString))
+
 
   def <<(s: VirtualString): VirtualTerminal = s match {
     case VirtualString.NewLine => newLine()
@@ -41,23 +45,25 @@ class VirtualTerminal() {
       highlight(loc, Text(msg))
       this
     }
-    case _ => text(s)
+    case _ => {
+      buffer = s :: buffer
+      this
+    }
   }
 
+  /**
+    * Appends the content of the given virtual terminal `vt` to this terminal.
+    */
   def <<(vt: VirtualTerminal): VirtualTerminal = {
-    // TODO: check order
     buffer = vt.buffer ::: this.buffer
     this
   }
 
   // TODO: Remove
-  def text(t: VirtualString): VirtualTerminal = {
-    buffer = t :: buffer
+  def text(s: String): VirtualTerminal = {
+    buffer = Text(s) :: buffer
     this
   }
-
-  // TODO: Remove
-  def text(s: String): VirtualTerminal = text(VirtualString.Text(s))
 
   // TODO: Remove
   private def newLine(): VirtualTerminal = {
@@ -70,32 +76,37 @@ class VirtualTerminal() {
     * Returns the buffer of the virtual terminal as a string.
     */
   def fmt(implicit ctx: TerminalContext): String = {
-    buffer.reverse.map {
-      case Indent => indent(); ""
-      case Dedent => dedent(); ""
-      case NewLine => "\n" + "  " * indentation
-      case x => fmt(x)
-    }.mkString("")
-  }
+    val sb = new StringBuilder
 
-  /**
-    * Formats `this` text according to the given terminal context.
-    */
-  private def fmt(c: VirtualString)(implicit ctx: TerminalContext): String = c match {
-    case VirtualString.NewLine => "\n"
-    case VirtualString.Text(s) => s
-    case VirtualString.Black(s) => ctx.emitBlack(s)
-    case VirtualString.Blue(s) => ctx.emitBlue(s)
-    case VirtualString.Cyan(s) => ctx.emitCyan(s)
-    case VirtualString.Green(s) => ctx.emitGreen(s)
-    case VirtualString.Magenta(s) => ctx.emitMagenta(s)
-    case VirtualString.Red(s) => ctx.emitRed(s)
-    case VirtualString.Yellow(s) => ctx.emitYellow(s)
-    case VirtualString.White(s) => ctx.emitWhite(s)
-    case VirtualString.Bold(s) => ctx.emitBold(s)
-    case VirtualString.Underline(s) => ctx.emitUnderline(s)
-    case VirtualString.Line(l, r) => ctx.emitBlue(s"-- $l -------------------------------------------------- $r\n")
-    case _ => ""
+    // TODO: SORT
+    for (t <- buffer.reverse) {
+      t match {
+        // Control Characters
+        case NewLine => sb.append("\n" + "  " * indentation)
+        case Indent => indent()
+        case Dedent => dedent()
+
+        // Colors
+        case Text(s) => sb.append(s)
+        case Black(s) => sb.append(ctx.emitBlack(s))
+        case Blue(s) => sb.append(ctx.emitBlue(s))
+        case Cyan(s) => sb.append(ctx.emitCyan(s))
+        case Green(s) => sb.append(ctx.emitGreen(s))
+        case Magenta(s) => sb.append(ctx.emitMagenta(s))
+        case Red(s) => sb.append(ctx.emitRed(s))
+        case Yellow(s) => sb.append(ctx.emitYellow(s))
+        case White(s) => sb.append(ctx.emitWhite(s))
+
+        // Formatting
+        case Bold(s) => sb.append(ctx.emitBold(s))
+        case Underline(s) => sb.append(ctx.emitUnderline(s))
+
+        // Macros
+        case Line(l, r) => sb.append(ctx.emitBlue(s"-- $l -------------------------------------------------- $r\n"))
+      }
+    }
+
+    sb.toString()
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -124,7 +135,7 @@ class VirtualTerminal() {
   /**
     * Highlights the given source location `loc` with the given message `msg`.
     */
-  private def highlight(loc: SourceLocation, msg: VirtualString*): Unit = {
+  private def highlight(loc: SourceLocation, msg: VirtualString): Unit = {
     val beginLine = loc.beginLine
     val beginCol = loc.beginCol
     val endLine = loc.endLine
@@ -137,9 +148,7 @@ class VirtualTerminal() {
       this << lineNo << lineAt(beginLine) << NewLine
       this << " " * (beginCol + lineNo.length - 1) << Red("^" * (endCol - beginCol)) << NewLine
       this << " " * (beginCol + lineNo.length - 1)
-      for (m <- msg) {
-        this << m
-      }
+      this << msg
       this << NewLine
     }
 
@@ -149,9 +158,7 @@ class VirtualTerminal() {
         this << lineNo << " |" << Red(">") << " " << currentLine << NewLine
       }
       this << NewLine
-      for (m <- msg) {
-        this << m
-      }
+      this << msg
       this << NewLine
     }
 
