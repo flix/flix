@@ -49,22 +49,6 @@ class VirtualTerminal() {
     this
   }
 
-  /**
-    * Appends the given string `s` without creating a new line break.
-    */
-  def print(s: String): VirtualTerminal = {
-    text(s)
-    this
-  }
-
-  /**
-    * Appends the given string `s` followed by a line break.
-    */
-  def println(s: String): VirtualTerminal = {
-    text(s)
-    newLine()
-    this
-  }
 
   def <<(i: Int): VirtualTerminal = <<(Text(i.toString))
 

@@ -40,11 +40,13 @@ object ResolutionError {
   // TODO: Replace by DuplicateDefinition during naming!
   case class AmbiguousRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> Ambiguous reference ").quote(Red(qn.toString)).text(".").newLine().
-      newLine().
-      highlight(loc, "ambiguous reference.").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Ambiguous reference '" << Red(qn.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "ambiguous reference.") << NewLine
+    }
   }
 
   /**
@@ -59,20 +61,18 @@ object ResolutionError {
   case class AmbiguousTag(tag: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
     val message: VirtualTerminal = {
-      val result = new VirtualTerminal().
-        header(kind, source).
-        text(">> Ambiguous tag ").quote(Red(tag)).text(".").newLine().
-        newLine().
-        highlight(loc, "ambiguous tag name.").newLine().
-        newLine().
-        text("The tag is defined in multiple enums:").newLine().
-        newLine()
-
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Ambiguous tag '" << Red(tag) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "ambiguous tag name.") << NewLine
+      vt << NewLine
+      vt << "The tag is defined in multiple enums:" << NewLine
+      vt << NewLine
       for (l <- locs) {
-        result.highlight(l, "tag is defined in this enum.").newLine().newLine()
+        vt << Code(l, "tag is defined in this enum.") << NewLine
       }
-
-      result
+      vt << Underline("Tip:") << " Prefix the tag with the enum name." << NewLine
     }
   }
 
@@ -84,13 +84,15 @@ object ResolutionError {
     */
   case class UndefinedAttribute(table: String, attribute: String, loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> Undefined attribute ").quote(Red(attribute)).text(" in table ").quote(Cyan(table)).newLine().
-      newLine().
-      highlight(loc, "attribute not found.").newLine().
-      newLine().
-      text(Underline("Tip")).text(": Possible typo or non-existent attribute?").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined attribute '" << Red(attribute) << "' in table '" << Cyan(table) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "attribute not found.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Possible typo or non-existent attribute?" << NewLine
+    }
   }
 
   /**
@@ -102,12 +104,15 @@ object ResolutionError {
     */
   case class UndefinedRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> Undefined reference ").quote(Red(qn.toString)).text(".").newLine().
-      newLine().
-      highlight(loc, "name not found").newLine().
-      text(Underline("Tip")).text(" Possible typo or non-existent definition?").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined reference '" << Red(qn.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "name not found") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Possible typo or non-existent definition?" << NewLine
+    }
   }
 
   /**
@@ -119,13 +124,15 @@ object ResolutionError {
     */
   case class UndefinedTable(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> Undefined table ").quote(Red(qn.toString)).text(".").newLine().
-      newLine().
-      highlight(loc, "table not found.").newLine().
-      newLine().
-      text(Underline("Tip")).text(": Possible typo or non-existent table?").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined table '" << Red(qn.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "table not found.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Possible typo or non-existent table?" << NewLine
+    }
   }
 
   /**
@@ -137,13 +144,15 @@ object ResolutionError {
     */
   case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> Undefined tag ").quote(Red(tag)).text(".").newLine().
-      newLine().
-      highlight(loc, "tag not found.").newLine().
-      newLine().
-      text(Underline("Tip")).text(": Possible typo or non-existent tag?").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined tag '" << Red(tag) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "tag not found.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Possible typo or non-existent tag?" << NewLine
+    }
   }
 
   /**
@@ -155,13 +164,15 @@ object ResolutionError {
     */
   case class UndefinedType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     val source: SourceInput = loc.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> Undefined type ").quote(Red(qn.toString)).text(".").newLine().
-      newLine().
-      highlight(loc, "type not found.").newLine().
-      newLine().
-      text(Underline("Tip")).text(" Possible typo or non-existent type?").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined type '" << Red(qn.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "type not found.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Possible typo or non-existent type?" << NewLine
+    }
   }
 
 }
