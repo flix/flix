@@ -85,18 +85,6 @@ class VirtualTerminal() {
 
   def text(s: String): VirtualTerminal = text(VirtualString.Text(s))
 
-  def quote(t: VirtualString): VirtualTerminal = {
-    // TODO
-    text(t)
-  }
-
-  // TODO: Move to other package and implement other methods, including << and so on.
-
-  def header(kind: String, source: SourceInput): VirtualTerminal = {
-    text(Blue(s"-- $kind -------------------------------------------------- ${source.format}")).newLine().newLine()
-    this
-  }
-
 
   // TODO: Cleanup
   def newLine(): VirtualTerminal = {

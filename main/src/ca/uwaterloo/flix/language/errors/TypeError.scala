@@ -42,14 +42,16 @@ object TypeError {
   case class UnificationError(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
     val kind = "Type Error"
     val source: SourceInput = loc.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> Unable to unify ").quote(Red(baseType1.toString)).text(" and ").quote(Red(baseType2.toString)).text(".").newLine().
-      newLine().
-      highlight(loc, "mismatched types.").newLine().
-      newLine().
-      text("Type One: ").use(pretty(diff(fullType1, fullType2), Cyan)).newLine().
-      text("Type Two: ").use(pretty(diff(fullType2, fullType1), Magenta)).newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unable to unify '" << Red(baseType1.toString) << "' and '" << Red(baseType2.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "mismatched types.") << NewLine
+      vt << NewLine
+      vt << "Type One: " << pretty(diff(fullType1, fullType2), Cyan) << NewLine
+      vt << "Type Two: " << pretty(diff(fullType2, fullType1), Magenta) << NewLine
+    }
   }
 
   /**
@@ -64,15 +66,17 @@ object TypeError {
   case class OccursCheckError(baseVar: Type.Var, baseType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
     val kind = "Type Error"
     val source: SourceInput = loc.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> Unable to unify the type variable ").quote(Red(baseVar.toString)).text(" with the type ").quote(Red(baseType.toString)).text(".").newLine().
-      text(">> due to a recursive occurrence of the type variable in the type.").newLine().
-      newLine().
-      highlight(loc, "mismatched types.").newLine().
-      newLine().
-      text("Type One: ").use(pretty(diff(fullType1, fullType2), Cyan)).newLine().
-      text("Type Two: ").use(pretty(diff(fullType2, fullType1), Magenta)).newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unable to unify the type variable '" << Red(baseVar.toString) << "' with the type '" << Red(baseType.toString) << "'." << NewLine
+      vt << ">> The type variable occurs recursively within the type." << NewLine
+      vt << NewLine
+      vt << Code(loc, "mismatched types.") << NewLine
+      vt << NewLine
+      vt << "Type One: " << pretty(diff(fullType1, fullType2), Cyan) << NewLine
+      vt << "Type Two: " << pretty(diff(fullType2, fullType1), Magenta) << NewLine
+    }
   }
 
   /**
@@ -135,26 +139,27 @@ object TypeError {
   /**
     * Returns a human readable representation of the given type difference.
     */
-  private def pretty(td: TypeDiff, color: String => VirtualString): (VirtualTerminal) => Unit = {
-    message => {
-      def visit(d: TypeDiff): Unit = d match {
-        case TypeDiff.Star => message.text("...")
-        case TypeDiff.Missing => message.text("???")
-        case TypeDiff.Arrow(xs) =>
-          message.text("(")
-          xs.init.foreach(visit)
-          message.text(")")
-          message.text(" -> ")
-          visit(xs.last)
-        case TypeDiff.Tuple(xs) =>
-          message.text("(")
-          xs.foreach(visit)
-          message.text(")")
-        case TypeDiff.Error(tpe1, tpe2) => message.text(color(tpe1.toString))
-      }
+  private def pretty(td: TypeDiff, color: String => VirtualString): VirtualTerminal = {
+    val vt = new VirtualTerminal()
 
-      visit(td)
+    def visit(d: TypeDiff): Unit = d match {
+      case TypeDiff.Star => vt << "..."
+      case TypeDiff.Missing => vt << "???"
+      case TypeDiff.Arrow(xs) =>
+        vt << "("
+        xs.init.foreach(visit)
+        vt << ")" << " -> "
+        visit(xs.last)
+      case TypeDiff.Tuple(xs) =>
+        vt << "("
+        xs.foreach(visit)
+        vt << ")"
+      case TypeDiff.Error(tpe1, tpe2) => vt << color(tpe1.toString)
     }
+
+    visit(td)
+
+    vt
   }
 
 }
