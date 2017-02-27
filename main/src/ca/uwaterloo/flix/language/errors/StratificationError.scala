@@ -26,7 +26,5 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 case class StratificationError(constraints: List[TypedAst.Constraint]) extends CompilationError {
   val kind: String = "Stratification Error"
   val source: SourceInput = constraints.head.loc.source
-  val message: VirtualTerminal = new VirtualTerminal().
-    header(kind, source).
-    text(">> The constraint graph contains negative cycles:").newLine()
+  val message: VirtualTerminal = ??? // TODO
 }

@@ -83,15 +83,17 @@ object WeederError {
     */
   case class DuplicateFormalParam(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val source: SourceInput = loc1.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> Multiple declarations of the formal parameter ").quote(Red(name)).text(".").newLine().
-      newLine().
-      highlight(loc1, "the first declaration was here.").newLine().
-      newLine().
-      highlight(loc2, "the second declaration was here.").newLine().
-      newLine().
-      text(Underline("Tip")).text(": Remove or rename one of the formal parameters to avoid the name clash.").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Multiple declarations of the formal parameter '" << Red(name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc1, "the first declaration was here.") << NewLine
+      vt << NewLine
+      vt << Code(loc2, "the second declaration was here.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Remove or rename one of the formal parameters to avoid the name clash." << NewLine
+    }
   }
 
   /**
@@ -104,15 +106,17 @@ object WeederError {
     */
   case class DuplicateTag(enumName: String, tagName: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val source: SourceInput = loc1.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> Multiple declarations of the tag ").quote(Red(tagName)).text(" in the enum ").text(Cyan(enumName)).text(".").newLine().
-      newLine().
-      highlight(loc1, "the first declaration was here.").newLine().
-      newLine().
-      highlight(loc2, "the second declaration was here.").newLine().
-      newLine().
-      text(Underline("Tip")).text(": Remove or rename one of the tags to avoid the name clash.").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Multiple declarations of the tag '" << Red(tagName) << "' in the enum '" << Cyan(enumName) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc1, "the first declaration was here.") << NewLine
+      vt << NewLine
+      vt << Code(loc2, "the second declaration was here.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Remove or rename one of the tags to avoid the name clash." << NewLine
+    }
   }
 
   /**
@@ -123,13 +127,15 @@ object WeederError {
     */
   case class EmptyIndex(name: String, loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> The index for table ").quote(Red(name)).text(" does not declare any attribute groups.").newLine().
-      newLine().
-      highlight(loc, "an index must declare at least one group of attributes.").newLine().
-      newLine().
-      text(Underline("Tip")).text(": Add an index on at least one attribute.").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> The index for table '" << Red(name) << "' does not declare any attribute groups." << NewLine
+      vt << NewLine
+      vt << Code(loc, "an index must declare at least one group of attributes.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Add an index on at least one attribute." << NewLine
+    }
   }
 
   /**
@@ -140,11 +146,13 @@ object WeederError {
     */
   case class EmptyRelation(name: String, loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> The relation ").quote(Red(name)).text(" does not declare any attributes.").newLine().
-      newLine().
-      highlight(loc, "a relation must declare at least one attribute.").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> The relation '" << Red(name) << "' does not declare any attributes." << NewLine
+      vt << NewLine
+      vt << Code(loc, "a relation must declare at least one attribute.") << NewLine
+    }
   }
 
   /**
@@ -155,11 +163,13 @@ object WeederError {
     */
   case class EmptyLattice(name: String, loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> The lattice ").quote(Red(name)).text(" does not declare any attributes.").newLine().
-      newLine().
-      highlight(loc, "a lattice must declare at least one attribute.").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> The lattice '" << Red(name) << "' does not declare any attributes." << NewLine
+      vt << NewLine
+      vt << Code(loc, "a lattice must declare at least one attribute.") << NewLine
+    }
   }
 
   /**
@@ -169,13 +179,15 @@ object WeederError {
     */
   case class IllegalExistential(loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> The existential quantifier does not declare any formal parameters.").newLine().
-      newLine().
-      highlight(loc, "quantifier must declare at least one parameter.").newLine().
-      newLine().
-      text(Underline("Tip")).text(": Add a formal parameter or remove the quantifier.").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> The existential quantifier does not declare any formal parameters." << NewLine
+      vt << NewLine
+      vt << Code(loc, "quantifier must declare at least one parameter.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Add a formal parameter or remove the quantifier." << NewLine
+    }
   }
 
   /**
@@ -185,13 +197,15 @@ object WeederError {
     */
   case class IllegalUniversal(loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> The universal quantifier does not declare any formal parameters.").newLine().
-      newLine().
-      highlight(loc, "quantifier must declare at least one parameter.").newLine().
-      newLine().
-      text(Underline("Tip")).text(": Add a formal parameter or remove the quantifier.").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> The universal quantifier does not declare any formal parameters." << NewLine
+      vt << NewLine
+      vt << Code(loc, "quantifier must declare at least one parameter.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Add a formal parameter or remove the quantifier." << NewLine
+    }
   }
 
   /**
@@ -201,13 +215,15 @@ object WeederError {
     */
   case class IllegalFloat(loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> Illegal float.").newLine().
-      newLine().
-      highlight(loc, "illegal float.").newLine().
-      newLine().
-      text(Underline("Tip")).text(": Ensure that the literal is within bounds.").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal float." << NewLine
+      vt << NewLine
+      vt << Code(loc, "illegal float.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Ensure that the literal is within bounds." << NewLine
+    }
   }
 
   /**
@@ -217,13 +233,15 @@ object WeederError {
     */
   case class IllegalInt(loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> Illegal int.").newLine().
-      newLine().
-      highlight(loc, "illegal int.").newLine().
-      newLine().
-      text(Underline("Tip")).text(": Ensure that the literal is within bounds.").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal int." << NewLine
+      vt << NewLine
+      vt << Code(loc, "illegal int.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Ensure that the literal is within bounds." << NewLine
+    }
   }
 
   /**
@@ -233,11 +251,13 @@ object WeederError {
     */
   case class IllegalIndex(loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> The attribute group does not declare any attributes.").newLine().
-      newLine().
-      highlight(loc, "an attribute group must contain at least one attribute.").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> The attribute group does not declare any attributes." << NewLine
+      vt << NewLine
+      vt << Code(loc, "an attribute group must contain at least one attribute.") << NewLine
+    }
   }
 
   /**
@@ -247,17 +267,19 @@ object WeederError {
     */
   case class IllegalLattice(loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> A lattice definition must have exactly five components: bot, top, leq, lub and glb.").newLine().
-      newLine().
-      highlight(loc, "illegal definition.").newLine().
-      newLine().
-      text("the 1st component must be the bottom element,").newLine().
-      text("the 2nd component must be the top element,").newLine().
-      text("the 3rd component must be the partial order function,").newLine().
-      text("the 4th component must be the least upper bound function, and").newLine().
-      text("the 5th component must be the greatest upper bound function.").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> A lattice definition must have exactly five components: bot, top, leq, lub and glb." << NewLine
+      vt << NewLine
+      vt << Code(loc, "illegal definition.") << NewLine
+      vt << NewLine
+      vt << "the 1st component must be the bottom element," << NewLine
+      vt << "the 2nd component must be the top element," << NewLine
+      vt << "the 3rd component must be the partial order function," << NewLine
+      vt << "the 4th component must be the least upper bound function, and" << NewLine
+      vt << "the 5th component must be the greatest upper bound function." << NewLine
+    }
   }
 
   /**
@@ -267,13 +289,15 @@ object WeederError {
     */
   case class IllegalParameterList(loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">>  A parameter list must contain at least one parameter or be omitted.").newLine().
-      newLine().
-      highlight(loc, "empty parameter list.").newLine().
-      newLine().
-      text(Underline("Tip")).text(": Remove the parenthesis or add a parameter.").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> A parameter list must contain at least one parameter or be omitted." << NewLine
+      vt << NewLine
+      vt << Code(loc, "empty parameter list.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Remove the parenthesis or add a parameter." << NewLine
+    }
   }
 
   /**
@@ -283,11 +307,13 @@ object WeederError {
     */
   case class IllegalWildcard(loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">>  Wildcard not allowed here.").newLine().
-      newLine().
-      highlight(loc, "illegal wildcard.").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Wildcard not allowed here." << NewLine
+      vt << NewLine
+      vt << Code(loc, "illegal wildcard.") << NewLine
+    }
   }
 
   /**
@@ -299,15 +325,17 @@ object WeederError {
     */
   case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
     val source: SourceInput = loc1.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">> Multiple occurrences of ").quote(Red(name)).text(" in pattern. ").newLine().
-      newLine().
-      highlight(loc1, "the first occurrence was here.").newLine().
-      newLine().
-      highlight(loc2, "the second occurrence was here.").newLine().
-      newLine().
-      text(Underline("Tip")).text(": A variable may only occur once in a pattern.").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Multiple occurrences of '" << Red(name) << "'  in pattern." << NewLine
+      vt << NewLine
+      vt << Code(loc1, "the first occurrence was here.") << NewLine
+      vt << NewLine
+      vt << Code(loc2, "the second occurrence was here.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " A variable may only occur once in a pattern." << NewLine
+    }
   }
 
   /**
@@ -318,11 +346,13 @@ object WeederError {
     */
   case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
     val source: SourceInput = loc.source
-    val message: VirtualTerminal = new VirtualTerminal().
-      header(kind, source).
-      text(">>  Undefined annotation ").quote(Red(name)).text(".").newLine().
-      newLine().
-      highlight(loc, "undefined annotation.").newLine()
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined annotation '" << Red(name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "undefined annotation.") << NewLine
+    }
   }
 
 }
