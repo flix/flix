@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst.{Declaration, Expression, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypedAst, UnaryOperator}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
@@ -93,6 +93,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Enum(name, kind) => Type.Enum(name, kind)
         case Type.Apply(t1, t2) => Type.Apply(apply(t1), t2.map(apply))
       }
+
       visit(s(tpe))
     }
   }
@@ -162,43 +163,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           /*
            * !! This is where all the magic happens !!
            */
-
-          // Apply the current substitution to the type of the reference.
-          // NB: This is to concretize any type variables already captured by the substitution.
-          val actualType = subst0(tpe)
-
-          // Lookup the definition and its declared type.
-          val defn = root.definitions(sym)
-          val declaredType = defn.tpe
-
-          // Unify the declared and actual type to obtain the substitution map.
-          val subst = StrictSubstitution(Unification.unify(declaredType, actualType).get)
-
-          // Check if the substitution is empty, if so there is no need for specialization.
-          if (subst.isEmpty) {
-            return Expression.Ref(sym, subst0(tpe), loc)
-          }
-
-          // Check whether the function definition has already been specialized.
-          symbol2symbol.get((sym, actualType)) match {
-            case None =>
-              // Case 1: The function has not been specialized.
-              // Generate a fresh specialized definition symbol.
-              val freshSym = Symbol.freshDefnSym(sym)
-
-              // Register the fresh symbol (and actual type) in the symbol2symbol map.
-              symbol2symbol.put((sym, actualType), freshSym)
-
-              // Enqueue the fresh symbol with the definition and substitution.
-              queue.enqueue((freshSym, defn, subst))
-
-              // Now simply refer to the freshly generated symbol.
-              Expression.Ref(freshSym, subst0(actualType), loc)
-            case Some(specializedSym) =>
-              // Case 2: The function has already been specialized.
-              // Simply refer to the already existing specialized symbol.
-              Expression.Ref(specializedSym, subst0(actualType), loc)
-          }
+          val newSym = specializeSym(sym, subst0(tpe))
+          Expression.Ref(newSym, subst0(tpe), loc)
 
         case Expression.Hook(hook, tpe, loc) => Expression.Hook(hook, subst0(tpe), loc)
 
@@ -215,6 +181,47 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e1 = visitExp(exp, env0)
           Expression.Unary(op, e1, subst0(tpe), loc)
 
+        /*
+         * Equality / Inequality Check.
+         */
+        case Expression.Binary(op@(BinaryOperator.Equal | BinaryOperator.NotEqual), exp1, exp2, tpe, loc) =>
+          // Perform specialization on the left and right sub-expressions.
+          val e1 = visitExp(exp1, env0)
+          val e2 = visitExp(exp2, env0)
+
+          // The type of the values of exp1 and exp2. NB: The typer guarantees that exp1 and exp2 have the same type.
+          val valueType = subst0(exp1.tpe)
+
+          // The expected type of an equality function: a -> a -> bool.
+          val eqType = Type.mkArrow(List(valueType, valueType), Type.Bool)
+
+          // Look for any function named `eq` with the expected type.
+          // Returns `Some(sym)` if there is exactly one such function.
+          lookup("eq", eqType) match {
+            case None =>
+              // No equality function found. Use a regular equality / inequality expression.
+              if (op == BinaryOperator.Equal) {
+                Expression.Binary(BinaryOperator.Equal, e1, e2, subst0(tpe), loc)
+              } else {
+                Expression.Binary(BinaryOperator.NotEqual, e1, e2, subst0(tpe), loc)
+              }
+            case Some(eqSym) =>
+              // Equality function found. Specialize and generate a call to it.
+              val newSym = specializeSym(eqSym, eqType)
+              val ref = Expression.Ref(newSym, eqType, loc)
+              // Check whether the whether the operator is equality or inequality.
+              if (op == BinaryOperator.Equal) {
+                // Call the equality function.
+                Expression.Apply(ref, List(e1, e2), tpe, loc)
+              } else {
+                // Call the equality function and negate the result.
+                Expression.Unary(UnaryOperator.LogicalNot, Expression.Apply(ref, List(e1, e2), tpe, loc), Type.Bool, loc)
+              }
+          }
+
+        /*
+         * Other Binary Expression.
+         */
         case Expression.Binary(op, exp1, exp2, tpe, loc) =>
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
@@ -302,6 +309,44 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     /**
+      * Returns the symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
+      */
+    def specializeSym(sym: Symbol.DefnSym, tpe: Type): Symbol.DefnSym = {
+      // Lookup the definition and its declared type.
+      val defn = root.definitions(sym)
+      val declaredType = defn.tpe
+
+      // Unify the declared and actual type to obtain the substitution map.
+      val subst = StrictSubstitution(Unification.unify(declaredType, tpe).get)
+
+      // Check if the substitution is empty, if so there is no need for specialization.
+      if (subst.isEmpty) {
+        return sym
+      }
+
+      // Check whether the function definition has already been specialized.
+      symbol2symbol.get((sym, tpe)) match {
+        case None =>
+          // Case 1: The function has not been specialized.
+          // Generate a fresh specialized definition symbol.
+          val freshSym = Symbol.freshDefnSym(sym)
+
+          // Register the fresh symbol (and actual type) in the symbol2symbol map.
+          symbol2symbol.put((sym, tpe), freshSym)
+
+          // Enqueue the fresh symbol with the definition and substitution.
+          queue.enqueue((freshSym, defn, subst))
+
+          // Now simply refer to the freshly generated symbol.
+          freshSym
+        case Some(specializedSym) =>
+          // Case 2: The function has already been specialized.
+          // Simply refer to the already existing specialized symbol.
+          specializedSym
+      }
+    }
+
+    /**
       * Specializes the given formal parameters `fparams0` w.r.t. the given substitution `subst0`.
       *
       * Returns the new formal parameters and an environment mapping the variable symbol for each parameter to a fresh symbol.
@@ -325,6 +370,35 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       val TypedAst.FormalParam(sym, tpe, loc) = fparam0
       val freshSym = Symbol.freshVarSym(sym)
       (TypedAst.FormalParam(freshSym, subst0(tpe), loc), Map(sym -> freshSym))
+    }
+
+    /**
+      * Optionally returns the symbol of a function with the given `name` whose declared types unifies with the given type `tpe`.
+      *
+      * Returns `None` if no such function exists or more than one such function exist.
+      */
+    def lookup(name: String, tpe: Type): Option[Symbol.DefnSym] = {
+      // A set of matching symbols.
+      val matches = mutable.Set.empty[Symbol.DefnSym]
+
+      // Iterate through each definition and collect the matching symbols.
+      for ((sym, defn) <- root.definitions) {
+        // Check the function name.
+        if (name == sym.name) {
+          // Check whether the type unifies.
+          if (Unification.unify(defn.tpe, tpe).isOk) {
+            // Match found!
+            matches += sym
+          }
+        }
+      }
+
+      // Returns the result if there is exactly one match.
+      if (matches.size == 1) {
+        return Some(matches.head)
+      }
+      // Otherwise return None.
+      return None
     }
 
     /*
