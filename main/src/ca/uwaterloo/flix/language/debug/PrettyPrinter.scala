@@ -34,11 +34,9 @@ object PrettyPrinter {
           vt << ", "
         }
         vt << ") = "
-        vt.indent().newLine()
+        vt << Indent << NewLine
         fmtExp(defn, vt)
-        vt.dedent()
-        vt.newLine()
-        vt.newLine()
+        vt << Dedent << NewLine << NewLine
       }
       vt
     }
@@ -59,7 +57,7 @@ object PrettyPrinter {
         case Expression.Int16(lit) => vt.text(lit.toString).text("i16")
         case Expression.Int32(lit) => vt.text(lit.toString).text("i32")
         case Expression.Int64(lit) => vt.text(lit.toString).text("i64")
-        case Expression.BigInt(lit) => vt.text(lit).text("ii")
+        case Expression.BigInt(lit) => vt.text(lit.toString()).text("ii")
         case Expression.Str(lit) => vt.text("\"").text(lit).text("\"")
         case Expression.LoadBool(base, offset) => ???
         case Expression.LoadInt8(base, offset) => ???
@@ -154,15 +152,14 @@ object PrettyPrinter {
           vt << Bold("if") << " ("
           visitExp(exp1)
           vt.text(") {")
-          vt.indent().newLine()
+          vt << Indent << NewLine
           visitExp(exp2)
-          vt.dedent().newLine()
+          vt << Dedent << NewLine
           vt.text("} ")
           vt << Bold("else") << " {"
-          vt.indent().newLine()
+          vt << Indent << NewLine
           visitExp(exp3)
-          vt.dedent()
-          vt.newLine()
+          vt << Dedent << NewLine
           vt.text("}")
 
         case Expression.Let(sym, exp1, exp2, tpe, loc) =>
@@ -170,7 +167,7 @@ object PrettyPrinter {
           fmtSym(sym, vt)
           vt.text(" = ")
           visitExp(exp1)
-          vt.text(";").newLine()
+          vt << ";" << NewLine
           visitExp(exp2)
 
         case Expression.Is(exp, tag, loc) =>

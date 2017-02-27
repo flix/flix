@@ -16,9 +16,7 @@
 
 package ca.uwaterloo.flix.util.vt
 
-import java.math.BigInteger
-
-import ca.uwaterloo.flix.language.ast.{SourceInput, SourceLocation}
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.vt.VirtualString._
 
 class VirtualTerminal() {
@@ -32,23 +30,6 @@ class VirtualTerminal() {
     * The current indentation level.
     */
   private var indentation: Int = 0
-
-  /**
-    * Increases indentation by one level.
-    */
-  def indent(): VirtualTerminal = {
-    indentation = indentation + 1
-    this
-  }
-
-  /**
-    * Decreases indentation by one level.
-    */
-  def dedent(): VirtualTerminal = {
-    indentation = indentation - 1
-    this
-  }
-
 
   def <<(i: Int): VirtualTerminal = <<(Text(i.toString))
 
@@ -73,19 +54,17 @@ class VirtualTerminal() {
     this
   }
 
+  // TODO: Remove
   def text(t: VirtualString): VirtualTerminal = {
     buffer = t :: buffer
     this
   }
 
   // TODO: Remove
-  def text(b: BigInteger): VirtualTerminal = text(b.toString)
-
   def text(s: String): VirtualTerminal = text(VirtualString.Text(s))
 
-
-  // TODO: Cleanup
-  def newLine(): VirtualTerminal = {
+  // TODO: Remove
+  private def newLine(): VirtualTerminal = {
     val id: List[VirtualString] = (0 until indentation).map(x => Text(" ")).toList
     buffer = id ::: NewLine :: buffer
     this
@@ -105,8 +84,31 @@ class VirtualTerminal() {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  /// Indentation                                                           ///
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Increases indentation by one level.
+    */
+  private def indent(): VirtualTerminal = {
+    indentation = indentation + 1
+    this
+  }
+
+  /**
+    * Decreases indentation by one level.
+    */
+  private def dedent(): VirtualTerminal = {
+    indentation = indentation - 1
+    this
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   /// Highlights Source Code                                                ///
   /////////////////////////////////////////////////////////////////////////////
+  // TODO: Need array of msg?
+  /**
+    * Highlights the given source location `loc` with the given message `msg`.
+    */
   private def highlight(loc: SourceLocation, msg: VirtualString*): Unit = {
     val beginLine = loc.beginLine
     val beginCol = loc.beginCol
@@ -117,28 +119,25 @@ class VirtualTerminal() {
     def underline(): Unit = {
       val lineNo = beginLine.toString + " | "
 
-      text(lineNo).text(lineAt(beginLine)).newLine().
-        text(" " * (beginCol + lineNo.length - 1)).text(VirtualString.Red("^" * (endCol - beginCol))).newLine().
-        text(" " * (beginCol + lineNo.length - 1))
-      for (t <- msg) {
-        <<(t)
+      this << lineNo << lineAt(beginLine) << NewLine
+      this << " " * (beginCol + lineNo.length - 1) << Red("^" * (endCol - beginCol)) << NewLine
+      this << " " * (beginCol + lineNo.length - 1)
+      for (m <- msg) {
+        this << m
       }
-      newLine()
+      this << NewLine
     }
 
     def leftline(): Unit = {
       for (lineNo <- beginLine to endLine) {
         val currentLine = lineAt(lineNo)
-        text(lineNo.toString).text(" |").
-          text(Red(">")).text(" ").
-          text(currentLine).
-          newLine()
+        this << lineNo << " |" << Red(">") << " " << currentLine << NewLine
       }
-      newLine()
-      for (t <- msg) {
-        <<(t)
+      this << NewLine
+      for (m <- msg) {
+        this << m
       }
-      newLine()
+      this << NewLine
     }
 
     if (beginLine == endLine)

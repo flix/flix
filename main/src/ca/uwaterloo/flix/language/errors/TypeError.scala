@@ -152,7 +152,10 @@ object TypeError {
         visit(xs.last)
       case TypeDiff.Tuple(xs) =>
         vt << "("
-        xs.foreach(visit)
+        for (x <- xs) {
+          visit(x)
+          vt << " ,"
+        }
         vt << ")"
       case TypeDiff.Error(tpe1, tpe2) => vt << color(tpe1.toString)
     }
