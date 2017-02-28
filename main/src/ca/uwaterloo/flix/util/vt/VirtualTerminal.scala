@@ -27,28 +27,31 @@ class VirtualTerminal() {
   private var buffer: List[VirtualString] = Nil
 
   /**
-    * The current indentation level.
+    * Appends the given int to this terminal.
     */
-  private var indentation: Int = 0
-
-  // TODO: Rename VirtualString to VirtualToken?
-
-  // TODO: Add more primitive types
   def <<(i: Int): VirtualTerminal = <<(Text(i.toString))
 
+  // TODO: Support booleans, chars, floats, doubles, etc.
+
+  /**
+    * Appends the given string to this terminal.
+    */
   def <<(s: String): VirtualTerminal = <<(Text(s.toString))
 
+  /**
+    * Appends the given string to this terminal.
+    */
+  def text(s: String): VirtualTerminal = {
+    buffer = Text(s) :: buffer
+    this
+  }
 
+  /**
+    * Appends the given virtual string to this terminal.
+    */
   def <<(s: VirtualString): VirtualTerminal = s match {
-    case VirtualString.NewLine => newLine()
-    case VirtualString.Code(loc, msg) => {
-      highlight(loc, Text(msg))
-      this
-    }
-    case _ => {
-      buffer = s :: buffer
-      this
-    }
+    case VirtualString.Code(loc, msg) => highlight(loc, Text(msg)); this
+    case _ => buffer = s :: buffer; this
   }
 
   /**
@@ -59,32 +62,18 @@ class VirtualTerminal() {
     this
   }
 
-  // TODO: Remove
-  def text(s: String): VirtualTerminal = {
-    buffer = Text(s) :: buffer
-    this
-  }
-
-  // TODO: Remove
-  private def newLine(): VirtualTerminal = {
-    val id: List[VirtualString] = (0 until indentation).map(x => Text(" ")).toList
-    buffer = id ::: NewLine :: buffer
-    this
-  }
-
   /**
     * Returns the buffer of the virtual terminal as a string.
     */
   def fmt(implicit ctx: TerminalContext): String = {
     val sb = new StringBuilder
-
-    // TODO: SORT
+    var indentation: Int = 0
     for (t <- buffer.reverse) {
       t match {
         // Control Characters
         case NewLine => sb.append("\n" + "  " * indentation)
-        case Indent => indent()
-        case Dedent => dedent()
+        case Indent => indentation = indentation + 1
+        case Dedent => indentation = indentation - 1
 
         // Colors
         case Text(s) => sb.append(s)
@@ -103,35 +92,15 @@ class VirtualTerminal() {
 
         // Macros
         case Line(l, r) => sb.append(ctx.emitBlue(s"-- $l -------------------------------------------------- $r\n"))
+        case Code(l, m) => // NB: Already de-sugared.
       }
     }
-
     sb.toString()
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  /// Indentation                                                           ///
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * Increases indentation by one level.
-    */
-  private def indent(): VirtualTerminal = {
-    indentation = indentation + 1
-    this
-  }
-
-  /**
-    * Decreases indentation by one level.
-    */
-  private def dedent(): VirtualTerminal = {
-    indentation = indentation - 1
-    this
   }
 
   /////////////////////////////////////////////////////////////////////////////
   /// Highlights Source Code                                                ///
   /////////////////////////////////////////////////////////////////////////////
-  // TODO: Need array of msg?
   /**
     * Highlights the given source location `loc` with the given message `msg`.
     */
