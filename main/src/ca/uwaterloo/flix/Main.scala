@@ -20,8 +20,9 @@ import java.io.File
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.runtime.{Benchmarker, Tester, Value}
-import ca.uwaterloo.flix.util.Highlight.Code
 import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
+import ca.uwaterloo.flix.util.vt._
 
 import scala.concurrent.duration.Duration
 
@@ -90,14 +91,17 @@ object Main {
       flix.addStr(s)
     }
 
+    // the default color context.
+    implicit val _ = TerminalContext.AnsiTerminal
+
     // check if we are running in delta debugging mode.
     if (cmdOpts.delta.nonEmpty) {
       flix.deltaSolve(cmdOpts.delta.get.toPath) match {
         case Validation.Success(_, errors) =>
-          errors.foreach(e => println(e.render))
+          errors.foreach(e => println(e.message.fmt))
           System.exit(0)
         case Validation.Failure(errors) =>
-          errors.foreach(e => println(e.render))
+          errors.foreach(e => println(e.message.fmt))
           System.exit(1)
       }
     }
@@ -106,7 +110,7 @@ object Main {
     try {
       flix.solve() match {
         case Validation.Success(model, errors) =>
-          errors.foreach(e => println(e.render))
+          errors.foreach(e => println(e.message.fmt))
 
           val main = cmdOpts.main
           if (main.nonEmpty) {
@@ -120,7 +124,8 @@ object Main {
           }
 
           if (cmdOpts.test) {
-            Tester.test(model)
+            val results = Tester.test(model)
+            Console.println(results.getMessage.fmt)
           }
 
           val print = cmdOpts.print
@@ -128,28 +133,32 @@ object Main {
             PrettyPrint.print(name, model)
           }
         case Validation.Failure(errors) =>
-          errors.foreach(e => println(e.render))
+          errors.foreach(e => println(e.message.fmt))
       }
     } catch {
       case UserException(msg, loc) =>
-        Console.err.println("User error " + loc.format)
-        Console.err.println()
-        Console.err.println(Code(loc, msg))
+        val vt = new VirtualTerminal()
+        vt << Line("User Error", loc.source.format) << NewLine
+        vt << Code(loc, msg) << NewLine
+        Console.println(vt.fmt)
         System.exit(1)
       case MatchException(msg, loc) =>
-        Console.err.println("Non-exhaustive match " + loc.format)
-        Console.err.println()
-        Console.err.println(Code(loc, msg))
+        val vt = new VirtualTerminal()
+        vt << Line("Non-exhaustive match", loc.source.format) << NewLine
+        vt << Code(loc, msg) << NewLine
+        Console.println(vt.fmt)
         System.exit(1)
       case SwitchException(msg, loc) =>
-        Console.err.println("Non-exhaustive switch " + loc.format)
-        Console.err.println()
-        Console.err.println(Code(loc, msg))
+        val vt = new VirtualTerminal()
+        vt << Line("Non-exhaustive switch", loc.source.format) << NewLine
+        vt << Code(loc, msg) << NewLine
+        Console.println(vt.fmt)
         System.exit(1)
       case RuleException(msg, loc) =>
-        Console.err.println("Integrity rule violated " + loc.format)
-        Console.err.println()
-        Console.err.println(Code(loc, msg))
+        val vt = new VirtualTerminal()
+        vt << Line("Integrity rule violated", loc.source.format) << NewLine
+        vt << Code(loc, msg) << NewLine
+        Console.println(vt.fmt)
         System.exit(1)
     }
 

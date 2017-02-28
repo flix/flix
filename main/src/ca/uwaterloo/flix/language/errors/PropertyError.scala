@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, SourceInput, Symbol}
-import ca.uwaterloo.flix.util.Highlight._
+import ca.uwaterloo.flix.util.vt.VirtualString._
+import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
   * An error raised to indicate that a property is violated.
@@ -26,16 +27,23 @@ import ca.uwaterloo.flix.util.Highlight._
 case class PropertyError(property: ExecutableAst.Property, m: Map[Symbol.VarSym, String]) extends CompilationError {
   val kind: String = "Property Error"
   val source: SourceInput = property.defn.loc.source
-  val message: String =
-    hl"""|>> The function '${Red(property.defn.toString)}' does not satisfy the law '${Cyan(property.law.toString)}'.
-         |
-         |Counter-example: ${m.map(p => p._1.text -> p._2).mkString(", ")}
-         |
-         |${Code(property.defn.loc, s"violates the law '${Cyan(property.law.toString)}'.")}
-         |
-         |
-         |${Underline("Details")}: The universal/existential quantifiers were instantiated as follows:
-         |
-         |${m.map(x => Code(x._1.loc, s"instantiated as '${Magenta(x._2)}'.")).mkString("\n\n")}
-        """.stripMargin
+  val message: VirtualTerminal = {
+    val name = property.defn.toString
+    val law = property.law.toString
+
+    val vt = new VirtualTerminal()
+    vt << Line(kind, source.format) << NewLine
+    vt << ">> The function '" << Red(name) << "' does not satisfy the law '" << Cyan(law) << "'." << NewLine
+    vt << NewLine
+    vt << "Counter-example: " << m.map(p => p._1.text -> p._2).mkString(", ") << NewLine
+    vt << NewLine
+    vt << Code(property.defn.loc, s"violates the law '$law'.") << NewLine // TODO: Cyan
+    vt << NewLine
+    vt << Underline("Details") << " The universal/existential quantifiers were instantiated as follows:" << NewLine
+    vt << NewLine
+    for ((sym, value) <- m) {
+      vt << Code(sym.loc, s"instantiated as '$value'.") << NewLine // TODO: Magenta
+    }
+    vt << NewLine
+  }
 }

@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.SimplifiedAst
 import ca.uwaterloo.flix.language.debug.PrettyPrinter
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.vt._
 
 /**
   * The Optimization phase performs intra-procedural optimizations.
@@ -42,7 +43,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
     // Print the ast if debugging is enabled.
     if (flix.options.debug) {
-      println(PrettyPrinter.Simplified.fmtRoot(root))
+      println(PrettyPrinter.Simplified.fmtRoot(root).fmt(TerminalContext.AnsiTerminal))
     }
 
     // TODO: Implement.

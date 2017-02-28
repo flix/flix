@@ -23,9 +23,10 @@ import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.PropertyError
 import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.runtime.evaluator.{SmtExpr, SymVal, SymbolicEvaluator}
-import ca.uwaterloo.flix.util.Highlight.{Blue, Cyan, Red}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.vt.VirtualString._
+import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
 import com.microsoft.z3._
 
 object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
@@ -402,26 +403,26 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * Prints verbose results.
     */
   private def printVerbose(results: List[PropertyResult]): Unit = {
-    Console.println(Blue(s"-- VERIFIER RESULTS --------------------------------------------------"))
+    val vt = new VirtualTerminal()
 
     for ((source, properties) <- results.groupBy(_.property.loc.source).toList.sortBy(_._1.format)) {
-
-      Console.println()
-      Console.println(s"  -- Verification Results for ${source.format} -- ")
-      Console.println()
-
+      vt << Line("Verifier", source.format)
+      vt << Indent << NewLine
       for (result <- properties.sortBy(_.property.defn.loc)) {
+        val name = result.property.defn.toString
+        val law = result.property.law.toString
+        val loc = result.property.loc.format
+
         result match {
           case PropertyResult.Success(property, paths, queries, elapsed) =>
-            Console.println("  " + Cyan("✓ ") + property.defn + " satisfies " + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + " seconds.)")
-
+            vt << Cyan("✓") << " " << name << " satisfies " << law << " (" << loc << ") (" << paths << " paths, " << queries << " queries, " << TimeOps.toSeconds(elapsed) << " seconds.)" << NewLine
           case PropertyResult.Failure(property, paths, queries, elapsed, _) =>
-            Console.println("  " + Red("✗ ") + property.defn + " satisfies " + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + ") seconds.")
-
+            vt << Red("✗") << " " << name << " satisfies " << law << " (" << loc << ") (" << paths << " paths, " << queries << " queries, " << TimeOps.toSeconds(elapsed) << " seconds.)" << NewLine
           case PropertyResult.Unknown(property, paths, queries, elapsed, _) =>
-            Console.println("  " + Red("? ") + property.defn + " satisfies " + property.law + " (" + property.loc.format + ")" + " (" + paths + " paths, " + queries + " queries, " + TimeOps.toSeconds(elapsed) + ") seconds.")
+            vt << Red("?") << " " << name << " satisfies " << law << " (" << loc << ") (" << paths << " paths, " << queries << " queries, " << TimeOps.toSeconds(elapsed) << " seconds.)" << NewLine
         }
       }
+      vt << NewLine
 
       val s = numberOfSuccesses(properties)
       val f = numberOfFailures(properties)
@@ -432,13 +433,13 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       val mp = avg(properties.map(_.paths))
       val mq = avg(properties.map(_.queries))
 
-      Console.println()
-      Console.println(s"  Properties: $s / $t proven in ${TimeOps.toSeconds(totalElapsed(properties))} seconds. (success = $s; failure = $f; unknown = $u).")
-      Console.println(s"  Paths: ${totalPaths(properties)}. Queries: ${totalQueries(properties)} (avg time = $mt sec; avg paths = $mp; avg queries = $mq).")
-      Console.println()
+      vt << s"Properties: $s / $t proven in ${TimeOps.toSeconds(totalElapsed(properties))} seconds. (success = $s; failure = $f; unknown = $u)." << NewLine
+      vt << s"Paths: ${totalPaths(properties)}. Queries: ${totalQueries(properties)} (avg time = $mt sec; avg paths = $mp; avg queries = $mq)." << NewLine
+      vt << Dedent << NewLine
 
     }
 
+    println(vt.fmt(TerminalContext.AnsiTerminal))
   }
 
   /**

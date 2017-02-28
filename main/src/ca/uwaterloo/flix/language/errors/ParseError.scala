@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SourceInput
-import ca.uwaterloo.flix.util.Highlight.Red
+import ca.uwaterloo.flix.util.vt.VirtualString._
+import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
   * An error raised to indicate a parse error.
@@ -29,9 +30,11 @@ import ca.uwaterloo.flix.util.Highlight.Red
 case class ParseError(msg: String, src: SourceInput) extends CompilationError {
   val kind = "Parse Error"
   val source: SourceInput = src
-  val message: String =
-    s"""|>> Parse Error:
-        |
-          |${Red(msg)}
-          """.stripMargin
+  val message: VirtualTerminal = {
+    val vt = new VirtualTerminal
+    vt << Line(kind, source.format) << NewLine
+    vt << ">> Parse Error:" << NewLine
+    vt << NewLine
+    vt << Red(msg) << NewLine
+  }
 }

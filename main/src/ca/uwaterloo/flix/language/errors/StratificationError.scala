@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.Highlight._
+import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
   * An error raised to indicate that a property is violated.
@@ -26,9 +26,5 @@ import ca.uwaterloo.flix.util.Highlight._
 case class StratificationError(constraints: List[TypedAst.Constraint]) extends CompilationError {
   val kind: String = "Stratification Error"
   val source: SourceInput = constraints.head.loc.source
-  val message: String =
-    hl"""|>> The constraint graph contains negative cycles:
-         |
-         |${constraints.map(c => Code(c.loc, "on a negative cycle")).mkString("\n")}
-        """.stripMargin
+  val message: VirtualTerminal = ??? // TODO
 }

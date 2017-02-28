@@ -18,46 +18,47 @@ package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.util.vt.VirtualString._
+import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 object PrettyPrinter {
 
   object Simplified {
 
-    def fmtRoot(root: Root): String = {
-      val o = new Outputter()
+    def fmtRoot(root: Root): VirtualTerminal = {
+      val vt = new VirtualTerminal()
       for ((sym, defn) <- root.definitions.toList.sortBy(_._1.loc)) {
-        o.bold("def").text(" ").blue(sym).text("(")
+        vt << Bold("def") << " " << Blue(sym.toString) << "("
         for (fparam <- defn.formals) {
-          fmtParam(fparam, o)
-          o.text(", ")
+          fmtParam(fparam, vt)
+          vt << ", "
         }
-        o.text(") = ").indent().newline()
-        fmtExp(defn, o)
-        o.dedent()
-        o.newline()
-        o.newline()
+        vt << ") = "
+        vt << Indent << NewLine
+        fmtExp(defn, vt)
+        vt << Dedent << NewLine << NewLine
       }
-      o.toString
+      vt
     }
 
-    def fmtExp(defn: Definition.Constant, o: Outputter): Unit = {
-      fmtExp(defn.exp, o)
+    def fmtExp(defn: Definition.Constant, vt: VirtualTerminal): Unit = {
+      fmtExp(defn.exp, vt)
     }
 
-    def fmtExp(exp0: Expression, o: Outputter): Unit = {
+    def fmtExp(exp0: Expression, vt: VirtualTerminal): Unit = {
       def visitExp(e0: Expression): Unit = e0 match {
-        case Expression.Unit => o.text("Unit")
-        case Expression.True => o.text("true")
-        case Expression.False => o.text("false")
-        case Expression.Char(lit) => o.text("'").text(lit).text("'")
-        case Expression.Float32(lit) => o.text(lit).text("f32")
-        case Expression.Float64(lit) => o.text(lit).text("f32")
-        case Expression.Int8(lit) => o.text(lit).text("i8")
-        case Expression.Int16(lit) => o.text(lit).text("i16")
-        case Expression.Int32(lit) => o.text(lit).text("i32")
-        case Expression.Int64(lit) => o.text(lit).text("i64")
-        case Expression.BigInt(lit) => o.text(lit).text("ii")
-        case Expression.Str(lit) => o.text("\"").text(lit).text("\"")
+        case Expression.Unit => vt.text("Unit")
+        case Expression.True => vt.text("true")
+        case Expression.False => vt.text("false")
+        case Expression.Char(lit) => vt.text("'").text(lit.toString).text("'")
+        case Expression.Float32(lit) => vt.text(lit.toString).text("f32")
+        case Expression.Float64(lit) => vt.text(lit.toString).text("f32")
+        case Expression.Int8(lit) => vt.text(lit.toString).text("i8")
+        case Expression.Int16(lit) => vt.text(lit.toString).text("i16")
+        case Expression.Int32(lit) => vt.text(lit.toString).text("i32")
+        case Expression.Int64(lit) => vt.text(lit.toString).text("i64")
+        case Expression.BigInt(lit) => vt.text(lit.toString()).text("ii")
+        case Expression.Str(lit) => vt.text("\"").text(lit).text("\"")
         case Expression.LoadBool(base, offset) => ???
         case Expression.LoadInt8(base, offset) => ???
         case Expression.LoadInt16(base, offset) => ???
@@ -66,202 +67,202 @@ object PrettyPrinter {
         case Expression.StoreInt8(base, offset, value) => ???
         case Expression.StoreInt16(base, offset, value) => ???
         case Expression.StoreInt32(base, offset, value) => ???
-        case Expression.Var(sym, tpe, loc) => fmtSym(sym, o)
-        case Expression.Ref(sym, tpe, loc) => fmtSym(sym, o)
+        case Expression.Var(sym, tpe, loc) => fmtSym(sym, vt)
+        case Expression.Ref(sym, tpe, loc) => fmtSym(sym, vt)
         case Expression.Lambda(fparams, body, tpe, loc) =>
-          o.text("(")
+          vt.text("(")
           for (fparam <- fparams) {
-            o.text(fparam.sym)
-            o.text(", ")
+            vt.text(fparam.sym.toString)
+            vt.text(", ")
           }
-          o.text(")")
-          o.text(" -> ")
+          vt.text(")")
+          vt.text(" -> ")
           visitExp(body)
 
-        case Expression.Hook(hook, tpe, loc) => o.text(hook.sym)
+        case Expression.Hook(hook, tpe, loc) => vt.text(hook.sym.toString)
 
         case Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
-          o.text("MkClosureRef(")
+          vt.text("MkClosureRef(")
           visitExp(ref)
-          o.text(", [")
+          vt.text(", [")
           for (freeVar <- freeVars) {
-            fmtSym(freeVar.sym, o)
-            o.text(", ")
+            fmtSym(freeVar.sym, vt)
+            vt.text(", ")
           }
-          o.text("])")
+          vt.text("])")
 
         case Expression.MkClosure(lambda, freeVars, tpe, loc) =>
-          o.text("MkClosure(")
+          vt.text("MkClosure(")
           visitExp(lambda)
-          o.text(", [")
+          vt.text(", [")
           for (freeVar <- freeVars) {
-            fmtSym(freeVar.sym, o)
-            o.text(", ")
+            fmtSym(freeVar.sym, vt)
+            vt.text(", ")
           }
-          o.text("])")
+          vt.text("])")
 
         case Expression.ApplyRef(sym, args, tpe, loc) =>
-          fmtSym(sym, o)
-          o.text("(")
+          fmtSym(sym, vt)
+          vt.text("(")
           for (arg <- args) {
             visitExp(arg)
-            o.text(", ")
+            vt.text(", ")
           }
-          o.text(")")
+          vt.text(")")
 
         case Expression.ApplyTail(name, formals, args, tpe, loc) =>
-          o.text("ApplyTail")
-          o.text("(")
+          vt.text("ApplyTail")
+          vt.text("(")
           for (arg <- args) {
             visitExp(arg)
-            o.text(", ")
+            vt.text(", ")
           }
-          o.text(")")
+          vt.text(")")
 
         case Expression.ApplyHook(hook, args, tpe, loc) =>
-          fmtSym(hook.sym, o)
-          o.text("(")
+          fmtSym(hook.sym, vt)
+          vt.text("(")
           for (arg <- args) {
             visitExp(arg)
-            o.text(", ")
+            vt.text(", ")
           }
-          o.text(")")
+          vt.text(")")
 
         case Expression.Apply(exp, args, tpe, loc) =>
           visitExp(exp)
-          o.text("(")
+          vt.text("(")
           for (arg <- args) {
             visitExp(arg)
-            o.text(", ")
+            vt.text(", ")
           }
-          o.text(")")
+          vt.text(")")
 
         case Expression.Unary(op, exp, tpe, loc) =>
-          fmtUnaryOp(op, o)
+          fmtUnaryOp(op, vt)
           visitExp(exp)
 
         case Expression.Binary(op, exp1, exp2, tpe, loc) =>
           visitExp(exp1)
-          o.text(" ")
-          fmtUnaryOp(op, o)
-          o.text(" ")
+          vt.text(" ")
+          fmtBinaryOp(op, vt)
+          vt.text(" ")
           visitExp(exp2)
 
         case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-          o.bold("if").text(" (")
+          vt << Bold("if") << " ("
           visitExp(exp1)
-          o.text(") {")
-          o.indent().newline()
+          vt.text(") {")
+          vt << Indent << NewLine
           visitExp(exp2)
-          o.dedent().newline()
-          o.text("} ").bold("else").text(" {")
-          o.indent().newline()
+          vt << Dedent << NewLine
+          vt.text("} ")
+          vt << Bold("else") << " {"
+          vt << Indent << NewLine
           visitExp(exp3)
-          o.dedent()
-          o.newline()
-          o.text("}")
+          vt << Dedent << NewLine
+          vt.text("}")
 
         case Expression.Let(sym, exp1, exp2, tpe, loc) =>
-          o.bold("let").text(" ")
-          fmtSym(sym, o)
-          o.text(" = ")
+          vt << Bold("let") << " "
+          fmtSym(sym, vt)
+          vt.text(" = ")
           visitExp(exp1)
-          o.text(";").newline()
+          vt << ";" << NewLine
           visitExp(exp2)
 
         case Expression.Is(exp, tag, loc) =>
           visitExp(exp)
-          o.text(" is ")
-          o.text(tag)
+          vt.text(" is ")
+          vt.text(tag)
 
         case Expression.Tag(enum, tag, exp, tpe, loc) => exp match {
-          case Expression.Unit => o.text(tag)
+          case Expression.Unit => vt.text(tag)
           case _ =>
-            o.text(tag).text("(")
+            vt.text(tag).text("(")
             visitExp(exp)
-            o.text(")")
+            vt.text(")")
         }
 
         case Expression.Untag(tag, exp, tpe, loc) =>
-          o.text("Untag(")
+          vt.text("Untag(")
           visitExp(exp)
-          o.text(")")
+          vt.text(")")
 
         case Expression.Index(exp, offset, tpe, loc) =>
           visitExp(exp)
-          o.text("[")
-          o.text(offset)
-          o.text("]")
+          vt.text("[")
+          vt.text(offset.toString)
+          vt.text("]")
 
         case Expression.Tuple(elms, tpe, loc) =>
-          o.text("(")
+          vt.text("(")
           for (elm <- elms) {
             visitExp(elm)
-            o.text(", ")
+            vt.text(", ")
           }
-          o.text(")")
+          vt.text(")")
 
         case Expression.Existential(fparam, exp, loc) =>
-          o.text("∃(")
-          fmtParam(fparam, o)
-          o.text("). ")
+          vt.text("∃(")
+          fmtParam(fparam, vt)
+          vt.text("). ")
           visitExp(exp)
 
         case Expression.Universal(fparam, exp, loc) =>
-          o.text("∀(")
-          fmtParam(fparam, o)
-          o.text("). ")
+          vt.text("∀(")
+          fmtParam(fparam, vt)
+          vt.text("). ")
           visitExp(exp)
 
-        case Expression.UserError(tpe, loc) => o.red("UserError")
-        case Expression.MatchError(tpe, loc) => o.red("MatchError")
-        case Expression.SwitchError(tpe, loc) => o.red("SwitchError")
+        case Expression.UserError(tpe, loc) => vt << Red("UserError")
+        case Expression.MatchError(tpe, loc) => vt << Red("MatchError")
+        case Expression.SwitchError(tpe, loc) => vt << Red("SwitchError")
       }
 
       visitExp(exp0)
     }
 
-    def fmtParam(p: FormalParam, o: Outputter): Unit = {
-      fmtSym(p.sym, o)
-      o.text(": ")
-      o.text(p.tpe)
+    def fmtParam(p: FormalParam, vt: VirtualTerminal): Unit = {
+      fmtSym(p.sym, vt)
+      vt.text(": ")
+      vt.text(p.tpe.toString)
     }
 
-    def fmtSym(sym: Symbol.DefnSym, o: Outputter): Unit = {
-      o.blue(sym)
+    def fmtSym(sym: Symbol.DefnSym, vt: VirtualTerminal): Unit = {
+      vt << Blue(sym.toString)
     }
 
-    def fmtSym(sym: Symbol.VarSym, o: Outputter): Unit = {
-      o.cyan(sym)
+    def fmtSym(sym: Symbol.VarSym, vt: VirtualTerminal): Unit = {
+      vt << Cyan(sym.toString)
     }
 
-    def fmtUnaryOp(op: UnaryOperator, o: Outputter): Unit = op match {
-      case UnaryOperator.LogicalNot => o.text("!")
-      case UnaryOperator.Plus => o.text("+")
-      case UnaryOperator.Minus => o.text("-")
-      case UnaryOperator.BitwiseNegate => o.text("~~~")
+    def fmtUnaryOp(op: UnaryOperator, vt: VirtualTerminal): Unit = op match {
+      case UnaryOperator.LogicalNot => vt.text("!")
+      case UnaryOperator.Plus => vt.text("+")
+      case UnaryOperator.Minus => vt.text("-")
+      case UnaryOperator.BitwiseNegate => vt.text("~~~")
     }
 
-    def fmtUnaryOp(op: BinaryOperator, o: Outputter): Unit = op match {
-      case BinaryOperator.Plus => o.text("+")
-      case BinaryOperator.Minus => o.text("-")
-      case BinaryOperator.Times => o.text("*")
-      case BinaryOperator.Divide => o.text("/")
-      case BinaryOperator.Modulo => o.text("%")
-      case BinaryOperator.Exponentiate => o.text("**")
-      case BinaryOperator.Less => o.text("<")
-      case BinaryOperator.LessEqual => o.text("<=")
-      case BinaryOperator.Greater => o.text(">")
-      case BinaryOperator.GreaterEqual => o.text(">=")
-      case BinaryOperator.Equal => o.text("==")
-      case BinaryOperator.NotEqual => o.text("!=")
-      case BinaryOperator.LogicalAnd => o.text("&&")
-      case BinaryOperator.LogicalOr => o.text("||")
-      case BinaryOperator.BitwiseAnd => o.text("&&&")
-      case BinaryOperator.BitwiseOr => o.text("|||")
-      case BinaryOperator.BitwiseXor => o.text("^^^")
-      case BinaryOperator.BitwiseLeftShift => o.text("<<<")
-      case BinaryOperator.BitwiseRightShift => o.text(">>>")
+    def fmtBinaryOp(op: BinaryOperator, vt: VirtualTerminal): VirtualTerminal = op match {
+      case BinaryOperator.Plus => vt.text("+")
+      case BinaryOperator.Minus => vt.text("-")
+      case BinaryOperator.Times => vt.text("*")
+      case BinaryOperator.Divide => vt.text("/")
+      case BinaryOperator.Modulo => vt.text("%")
+      case BinaryOperator.Exponentiate => vt.text("**")
+      case BinaryOperator.Less => vt.text("<")
+      case BinaryOperator.LessEqual => vt.text("<=")
+      case BinaryOperator.Greater => vt.text(">")
+      case BinaryOperator.GreaterEqual => vt.text(">=")
+      case BinaryOperator.Equal => vt.text("==")
+      case BinaryOperator.NotEqual => vt.text("!=")
+      case BinaryOperator.LogicalAnd => vt.text("&&")
+      case BinaryOperator.LogicalOr => vt.text("||")
+      case BinaryOperator.BitwiseAnd => vt.text("&&&")
+      case BinaryOperator.BitwiseOr => vt.text("|||")
+      case BinaryOperator.BitwiseXor => vt.text("^^^")
+      case BinaryOperator.BitwiseLeftShift => vt.text("<<<")
+      case BinaryOperator.BitwiseRightShift => vt.text(">>>")
     }
 
   }

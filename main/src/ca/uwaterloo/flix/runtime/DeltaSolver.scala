@@ -21,7 +21,6 @@ import java.nio.file.{Files, Path}
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, PrettyPrinter}
-import ca.uwaterloo.flix.util.Highlight.{Blue, Green, Red}
 import ca.uwaterloo.flix.util.{Options, Verbosity}
 
 object DeltaSolver {
@@ -84,9 +83,9 @@ object DeltaSolver {
     /*
      * Print information about the caught exception.
      */
-    Console.println(Blue(s"Caught `${exception.getClass.getName}' with message:"))
-    Console.println(Blue(s"    `${exception.getMessage}'"))
-    Console.println(Blue(s"Delta Debugging Started. Trying to minimize ${initialFacts.length} facts."))
+    Console.println(s"Caught `${exception.getClass.getName}' with message:") // TODO: Blue
+    Console.println(s"    `${exception.getMessage}'") // TODO: Blue
+    Console.println(s"Delta Debugging Started. Trying to minimize ${initialFacts.length} facts.") // TODO: Blue
     Console.println()
 
     /*
@@ -114,15 +113,15 @@ object DeltaSolver {
         trySolve(root.copy(constraints = initialRules ++ facts.flatten), options, exception) match {
           case SolverResult.Success =>
             // the program successfully completed. Must backtrack.
-            Console.println(Red(f"    [block $round%3d] ${block.size}%5d fact(s) retained (program ran successfully)."))
+            Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) retained (program ran successfully).") // TODO: Red
             facts = facts + block // put the block back
           case SolverResult.FailDiffException =>
             // the program failed with a different exception. Must backtrack.
-            Console.println(Red(f"    [block $round%3d] ${block.size}%5d fact(s) retained (different exception)."))
+            Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) retained (different exception).")  // TODO: Red
             facts = facts + block // put the block back
           case SolverResult.FailSameException =>
             // the program failed with the same exception. Continue minimization.
-            Console.println(Red(f"    [block $round%3d] ${block.size}%5d fact(s) discarded."))
+            Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) discarded.")  // TODO: Red
         }
 
         round += 1
@@ -143,8 +142,8 @@ object DeltaSolver {
       writeFacts(globalFacts, path)
     }
 
-    Console.println(Green(s"    >>> Delta Debugging Complete! <<<"))
-    Console.println(Green(s"    >>> Output written to `$path'. <<<"))
+    Console.println(s"    >>> Delta Debugging Complete! <<<") // TODO: Green
+    Console.println(s"    >>> Output written to `$path'. <<<")// TODO: Green
 
     Console.println()
   }

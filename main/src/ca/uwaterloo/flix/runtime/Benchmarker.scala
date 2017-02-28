@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.util.Highlight.Magenta
-
 object Benchmarker {
 
   /**
@@ -44,9 +42,9 @@ object Benchmarker {
      */
     for ((ns, benchmarks) <- benchmarksByNamespace) {
       if (ns.isEmpty) {
-        Console.println(s"-- Benchmarks for ${Magenta("root")} -- ")
+        Console.println(s"-- Benchmarks for root -- ")
       } else {
-        Console.println(s"-- Benchmarks for '${Magenta(ns.mkString("."))}' -- ")
+        Console.println(s"-- Benchmarks for '${ns.mkString(".")}' -- ")
       }
 
       /*
