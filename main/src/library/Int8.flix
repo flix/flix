@@ -80,6 +80,68 @@ namespace Int8 {
     def signum(x: Int8): Int32 = compare(x, 0i8)
 
     ///
+    /// Returns the logical right shift of `x` by `distance`.
+    /// Only the rightmost 5 bits of `distance` are considered (ie. `distance % 32`).
+    /// A zero is shifted into the leftmost position regardless of sign extension.
+    ///
+    def logicalRightShift(x: Int8, distance: Int32): Int8 =
+        if (x < 0i8 && distance % 32 != 0)
+            ((x >>> 1) &&& maxValue()) >>> (distance - 1)
+        else
+            x >>> distance
+
+    ///
+    /// Returns the number of one-bits in the two's complement binary
+    /// representation of `x`.
+    ///
+    def bitCount(x: Int8): Int32 = switch {
+        case x == 0i8       => 0
+        case x % 2i8 != 0i8 => bitCount(logicalRightShift(x, 1)) + 1
+        case x % 2i8 == 0i8 => bitCount(logicalRightShift(x, 1))
+    }
+
+    ///
+    /// Returns the the value obtained by rotating the two's complement
+    /// binary representation of `x` right by `distance` bits.
+    ///
+    def rotateRight(x: Int8, distance: Int32): Int8 =
+        let rem = distance % size();
+        let rot = if (rem >= 0) rem else rem + size();
+        (logicalRightShift(x, rot)) ||| (x <<< (size() - rot))
+
+    ///
+    /// Returns the the value obtained by rotating the two's complement
+    /// binary representation of `x` left by `distance` bits.
+    ///
+    def rotateLeft(x: Int8, distance: Int32): Int8 =
+        let rem = distance % size();
+        let rot = if (rem >= 0) rem else rem + size();
+        (logicalRightShift(x, size() - rot)) ||| (x <<< rot)
+
+    ///
+    /// Returns the value obtained by reversing the bits in the
+    /// two's complement binary representation of `x`.
+    ///
+    def reverse(x: Int8): Int8 = reverseHelper(x, 0, size()-1)
+
+    ///
+    /// Helper function for `reverse`.
+    ///
+    @internal
+    def reverseHelper(x: Int8, l: Int32, r: Int32): Int8 =
+        if (l >= r) x else reverseHelper(swap(x, l, r), l+1, r-1)
+
+    ///
+    /// Helper function for `reverse`.
+    ///
+    @internal
+    def swap(x: Int8, l: Int32, r: Int32): Int8 = match (getBit(x, l), getBit(x, r)) with {
+        case (1, 0) => clearBit(setBit(x, r), l)
+        case (0, 1) => clearBit(setBit(x, l), r)
+        case _ => x
+    }
+
+    ///
     /// Returns the position of the highest-order/leftmost one-bit in `x`.
     /// Possible return values: 0 (rightmost bit) - 7 (leftmost bit)
     ///                         -1 if x = 0
@@ -104,11 +166,11 @@ namespace Int8 {
     ///
     @internal
     def oneBitPositionHelper(x: Int8, position: Int32, delta: Int32): Int32 = switch {
-        case position < 0                   => -1
-        case position > (size() - 1)        => -1
-        case bit(x, position) == 1          => position
-        case delta == 0                     => -1
-        case bit(x, position) == 0          => oneBitPositionHelper(x, position + delta, delta)
+        case position < 0               => -1
+        case position > (size() - 1)    => -1
+        case getBit(x, position) == 1   => position
+        case delta == 0                 => -1
+        case getBit(x, position) == 0   => oneBitPositionHelper(x, position + delta, delta)
     }
 
     ///
@@ -132,11 +194,9 @@ namespace Int8 {
     /// Returns a value with a single one-bit at bit number `position`.
     /// Returns 0 if `position` is outside the range 0-7 inclusive.
     ///
-    def bitPositionToInt(position: Int32): Int8 = switch {
-        case position < 0 || position > size() - 1  => 0i8
-        case position == size() - 1                 => minValue()
-        case position != size() - 1                 => 1i8 <<< position
-    }
+    @internal
+    def bitPositionToInt(position: Int32): Int8 =
+        if (position < 0 || position > size() - 1) 0i8 else 1i8 <<< position
 
     ///
     /// Returns the number of zero bits preceding the
@@ -159,6 +219,27 @@ namespace Int8 {
     /// Considers the 5 rightmost bits of `position` (`position` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
-    def bit(x: Int8, position: Int32): Int32 =
+    def getBit(x: Int8, position: Int32): Int32 =
         if ((x >>> position) % 2i8 == 0i8) 0 else 1
+
+    ///
+    /// Returns `x` with the bit at position `position` set (to 1).
+    /// Considers the 5 rightmost bits of `position` (`position` mod 32).
+    /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
+    ///
+    def setBit(x: Int8, position: Int32): Int8 = x ||| (1i8 <<< position)
+
+    ///
+    /// Returns `x` with the bit at position `position` cleared (to 0).
+    /// Considers the 5 rightmost bits of `position` (`position` mod 32).
+    /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
+    ///
+    def clearBit(x: Int8, position: Int32): Int8 = x &&& ~~~(1i8 <<< position)
+
+    ///
+    /// Returns `x` with the bit at position `position` flipped.
+    /// Considers the 5 rightmost bits of `position` (`position` mod 32).
+    /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
+    ///
+    def flipBit(x: Int8, position: Int32): Int8 = x ^^^ (1i8 <<< position)
 }

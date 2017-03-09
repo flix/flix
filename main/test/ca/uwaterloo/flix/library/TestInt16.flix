@@ -126,6 +126,204 @@ def signum02: Bool = Int16.signum(22i16) `assertEq!` 1
 def signum03: Bool = Int16.signum(0i16) `assertEq!` 0
 
 /////////////////////////////////////////////////////////////////////////////
+// logicalRightShift                                                       //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def logicalRightShift01: Bool = Int16.logicalRightShift(2233i16, 4) `assertEq!` (2233i16 >>> 4)
+
+@test
+def logicalRightShift02: Bool = Int16.logicalRightShift(32767i16, 33) `assertEq!` (32767i16 >>> 33)
+
+@test
+def logicalRightShift03: Bool = Int16.logicalRightShift(2233i16, -8) `assertEq!` (2233i16 >>> -8)
+
+@test
+def logicalRightShift04: Bool = Int16.logicalRightShift(2233i16, 4) `assertEq!` (2233i16 >>> 4)
+
+@test
+def logicalRightShift05: Bool = Int16.logicalRightShift(-1i16, 1) `assertEq!` 32767i16
+
+@test
+def logicalRightShift06: Bool = Int16.logicalRightShift(-35i16, 4) `assertEq!` 4093i16
+
+@test
+def logicalRightShift07: Bool = Int16.logicalRightShift(-2777i16, -2777) `assertEq!` 490i16
+
+@test
+def logicalRightShift08: Bool = Int16.logicalRightShift(-233i16, 64) `assertEq!` -233i16
+
+@test
+def logicalRightShift09: Bool = Int16.logicalRightShift(-233i16, 63) `assertEq!` 0i16
+
+@test
+def logicalRightShift10: Bool = Int16.logicalRightShift(-27i16, 0) `assertEq!` -27i16
+
+@test
+def logicalRightShift11: Bool = Int16.logicalRightShift(32767i16, 1) `assertEq!` 16383i16
+
+@test
+def logicalRightShift12: Bool = Int16.logicalRightShift(32767i16, 17) `assertEq!` 0i16
+
+@test
+def logicalRightShift13: Bool = Int16.logicalRightShift(32767i16, 16) `assertEq!` 0i16
+
+@test
+def logicalRightShift14: Bool = Int16.logicalRightShift(-32768i16, 17) `assertEq!` 0i16
+
+@test
+def logicalRightShift15: Bool = Int16.logicalRightShift(-32768i16, 16) `assertEq!` 0i16
+
+/////////////////////////////////////////////////////////////////////////////
+// bitCount                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def bitCount01: Bool = Int16.bitCount(19909i16) `assertEq!` 8
+
+@test
+def bitCount02: Bool = Int16.bitCount(-1i16) `assertEq!` 16
+
+@test
+def bitCount03: Bool = Int16.bitCount(-451i16) `assertEq!` 12
+
+@test
+def bitCount04: Bool = Int16.bitCount(0i16) `assertEq!` 0
+
+@test
+def bitCount05: Bool = Int16.bitCount(32767i16) `assertEq!` 15
+
+@test
+def bitCount06: Bool = Int16.bitCount(-32768i16) `assertEq!` 1
+
+/////////////////////////////////////////////////////////////////////////////
+// rotateRight                                                             //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def rotateRight01: Bool = Int16.rotateRight(0i16, 3) `assertEq!` 0i16
+
+@test
+def rotateRight02: Bool = Int16.rotateRight(0i16, 19) `assertEq!` 0i16
+
+@test
+def rotateRight03: Bool = Int16.rotateRight(0i16, -3) `assertEq!` 0i16
+
+@test
+def rotateRight04: Bool = Int16.rotateRight(-1i16, 3) `assertEq!` -1i16
+
+@test
+def rotateRight05: Bool = Int16.rotateRight(-1i16, 19) `assertEq!` -1i16
+
+@test
+def rotateRight06: Bool = Int16.rotateRight(-1i16, -3) `assertEq!` -1i16
+
+@test
+def rotateRight07: Bool = Int16.rotateRight(8410i16, 3) `assertEq!` 17435i16
+
+@test
+def rotateRight08: Bool = Int16.rotateRight(8410i16, 19) `assertEq!` 17435i16
+
+@test
+def rotateRight09: Bool = Int16.rotateRight(8410i16, -13) `assertEq!` 17435i16
+
+@test
+def rotateRight10: Bool = Int16.rotateRight(-14949i16, 10) `assertEq!` 26353i16
+
+@test
+def rotateRight11: Bool = Int16.rotateRight(-14949i16, 26) `assertEq!` 26353i16
+
+@test
+def rotateRight12: Bool = Int16.rotateRight(-14949i16, -6) `assertEq!` 26353i16
+
+@test
+def rotateRight13: Bool = Int16.rotateRight(-6415i16, 6) `assertEq!` -14437i16
+
+@test
+def rotateRight14: Bool = Int16.rotateRight(-6415i16, 22) `assertEq!` -14437i16
+
+@test
+def rotateRight15: Bool = Int16.rotateRight(-6415i16, -10) `assertEq!` -14437i16
+
+/////////////////////////////////////////////////////////////////////////////
+// rotateLeft                                                              //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def rotateLeft01: Bool = Int16.rotateLeft(0i16, 3) `assertEq!` 0i16
+
+@test
+def rotateLeft02: Bool = Int16.rotateLeft(0i16, 19) `assertEq!` 0i16
+
+@test
+def rotateLeft03: Bool = Int16.rotateLeft(0i16, -3) `assertEq!` 0i16
+
+@test
+def rotateLeft04: Bool = Int16.rotateLeft(-1i16, 3) `assertEq!` -1i16
+
+@test
+def rotateLeft05: Bool = Int16.rotateLeft(-1i16, 19) `assertEq!` -1i16
+
+@test
+def rotateLeft06: Bool = Int16.rotateLeft(-1i16, -3) `assertEq!` -1i16
+
+@test
+def rotateLeft07: Bool = Int16.rotateLeft(8410i16, 13) `assertEq!` 17435i16
+
+@test
+def rotateLeft08: Bool = Int16.rotateLeft(8410i16, 29) `assertEq!` 17435i16
+
+@test
+def rotateLeft09: Bool = Int16.rotateLeft(8410i16, -3) `assertEq!` 17435i16
+
+@test
+def rotateLeft10: Bool = Int16.rotateLeft(-14949i16, 6) `assertEq!` 26353i16
+
+@test
+def rotateLeft11: Bool = Int16.rotateLeft(-14949i16, 22) `assertEq!` 26353i16
+
+@test
+def rotateLeft12: Bool = Int16.rotateLeft(-14949i16, -10) `assertEq!` 26353i16
+
+@test
+def rotateLeft13: Bool = Int16.rotateLeft(-6415i16, 10) `assertEq!` -14437i16
+
+@test
+def rotateLeft14: Bool = Int16.rotateLeft(-6415i16, 26) `assertEq!` -14437i16
+
+@test
+def rotateLeft15: Bool = Int16.rotateLeft(-6415i16, -6) `assertEq!` -14437i16
+
+/////////////////////////////////////////////////////////////////////////////
+// reverse                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def reverse01: Bool = Int16.reverse(18140i16) `assertEq!` 15202i16
+
+@test
+def reverse02: Bool = Int16.reverse(15202i16) `assertEq!` 18140i16
+
+@test
+def reverse03: Bool = Int16.reverse(-17565i16) `assertEq!` -14627i16
+
+@test
+def reverse04: Bool = Int16.reverse(-14627i16) `assertEq!` -17565i16
+
+@test
+def reverse05: Bool = Int16.reverse(-26552i16) `assertEq!` 4633i16
+
+@test
+def reverse06: Bool = Int16.reverse(4633i16) `assertEq!` -26552i16
+
+@test
+def reverse07: Bool = Int16.reverse(4i16) `assertEq!` 8192i16
+
+@test
+def reverse08: Bool = Int16.reverse(8192i16) `assertEq!` 4i16
+
+@test
+def reverse09: Bool = Int16.reverse(-1i16) `assertEq!` -1i16
+
+@test
+def reverse10: Bool = Int16.reverse(0i16) `assertEq!` 0i16
+
+/////////////////////////////////////////////////////////////////////////////
 // highestOneBitPosition                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -324,28 +522,139 @@ def numberOfTrailingZeros06: Bool = Int16.numberOfTrailingZeros(-1i16) `assertEq
 def numberOfTrailingZeros07: Bool = Int16.numberOfTrailingZeros(-32768i16) `assertEq!` 15
 
 /////////////////////////////////////////////////////////////////////////////
-// bit                                                                     //
+// getBit                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def bit01: Bool = Int16.bit(-1i16, 5) `assertEq!` 1
+def getBit01: Bool = Int16.getBit(-1i16, 5) `assertEq!` 1
 
 @test
-def bit02: Bool = Int16.bit(-10000i16, 15) `assertEq!` 1
+def getBit02: Bool = Int16.getBit(-10000i16, 15) `assertEq!` 1
 
 @test
-def bit03: Bool = Int16.bit(2i16 ** 12i16, 12) `assertEq!` 1
+def getBit03: Bool = Int16.getBit(2i16 ** 12i16, 12) `assertEq!` 1
 
 @test
-def bit04: Bool = Int16.bit(2i16 ** 12i16, 13) `assertEq!` 0
+def getBit04: Bool = Int16.getBit(2i16 ** 12i16, 13) `assertEq!` 0
 
 @test
-def bit05: Bool = Int16.bit(2i16 ** 12i16, 11) `assertEq!` 0
+def getBit05: Bool = Int16.getBit(2i16 ** 12i16, 11) `assertEq!` 0
 
 @test
-def bit06: Bool = Int16.bit(-1i16 - 2i16 ** 9i16, 9) `assertEq!` 0
+def getBit06: Bool = Int16.getBit(-1i16 - 2i16 ** 9i16, 9) `assertEq!` 0
 
 @test
-def bit07: Bool = Int16.bit(-1i16 - 2i16 ** 9i16, 10) `assertEq!` 1
+def getBit07: Bool = Int16.getBit(-1i16 - 2i16 ** 9i16, 10) `assertEq!` 1
 
 @test
-def bit08: Bool = Int16.bit(0i16, 15) `assertEq!` 0
+def getBit08: Bool = Int16.getBit(0i16, 15) `assertEq!` 0
+
+/////////////////////////////////////////////////////////////////////////////
+// setBit                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def setBit01: Bool = Int16.setBit(0i16, 0) `assertEq!` 1i16
+
+@test
+def setBit02: Bool = Int16.setBit(0i16, 1) `assertEq!` 2i16
+
+@test
+def setBit03: Bool = Int16.setBit(0i16, 15) `assertEq!` -32768i16
+
+@test
+def setBit04: Bool = Int16.setBit(0i16, 16) `assertEq!` 0i16
+
+@test
+def setBit05: Bool = Int16.setBit(-1418i16, 31) `assertEq!` -1418i16
+
+@test
+def setBit07: Bool = Int16.setBit(-17i16, 4) `assertEq!` -1i16
+
+@test
+def setBit08: Bool = Int16.setBit(-1025i16, 10) `assertEq!` -1i16
+
+@test
+def setBit09: Bool = Int16.setBit(-17i16, 63) `assertEq!` -17i16
+
+@test
+def setBit10: Bool = Int16.setBit(-17i16, 30) `assertEq!` -17i16
+
+/////////////////////////////////////////////////////////////////////////////
+// clearBit                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def clearBit01: Bool = Int16.clearBit(1i16, 0) `assertEq!` 0i16
+
+@test
+def clearBit02: Bool = Int16.clearBit(1i16, 1) `assertEq!` 1i16
+
+@test
+def clearBit03: Bool = Int16.clearBit(2i16, 1) `assertEq!` 0i16
+
+@test
+def clearBit04: Bool = Int16.clearBit(2i16, 2) `assertEq!` 2i16
+
+@test
+def clearBit05: Bool = Int16.clearBit(0i16, 31) `assertEq!` 0i16
+
+@test
+def clearBit06: Bool = Int16.clearBit(0i16, 30) `assertEq!` 0i16
+
+@test
+def clearBit07: Bool = Int16.clearBit(1i16 <<< 15, 15) `assertEq!` 0i16
+
+@test
+def clearBit08: Bool = Int16.clearBit(27957i16, 11) `assertEq!` 25909i16
+
+@test
+def clearBit09: Bool = Int16.clearBit(-1i16, 0) `assertEq!` -2i16
+
+@test
+def clearBit10: Bool = Int16.clearBit(-1i16, 1) `assertEq!` -3i16
+
+@test
+def clearBit11: Bool = Int16.clearBit(-1i16, 5) `assertEq!` -33i16
+
+@test
+def clearBit12: Bool = Int16.clearBit(-1i16, 15) `assertEq!` ~~~(1i16 <<< 15)
+
+@test
+def clearBit13: Bool = Int16.clearBit(-1i16, 32) `assertEq!` -2i16
+
+/////////////////////////////////////////////////////////////////////////////
+// flipBit                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def flipBit01: Bool = Int16.flipBit(1i16, 0) `assertEq!` 0i16
+
+@test
+def flipBit02: Bool = Int16.flipBit(1i16, 1) `assertEq!` 3i16
+
+@test
+def flipBit03: Bool = Int16.flipBit(2i16, 1) `assertEq!` 0i16
+
+@test
+def flipBit04: Bool = Int16.flipBit(2i16, 2) `assertEq!` 6i16
+
+@test
+def flipBit05: Bool = Int16.flipBit(0i16, 15) `assertEq!` -32768i16
+
+@test
+def flipBit06: Bool = Int16.flipBit(0i16, 16) `assertEq!` 0i16
+
+@test
+def flipBit07: Bool = Int16.flipBit(1i16 <<< 15, 15) `assertEq!` 0i16
+
+@test
+def flipBit08: Bool = Int16.flipBit(-1i16, 0) `assertEq!` -2i16
+
+@test
+def flipBit9: Bool = Int16.flipBit(-1i16, 1) `assertEq!` -3i16
+
+@test
+def flipBit10: Bool = Int16.flipBit(-1i16, 5) `assertEq!` -33i16
+
+@test
+def flipBit11: Bool = Int16.flipBit(-1i16, 13) `assertEq!` (-1i16-(1i16 <<< 13))
+
+@test
+def flipBit12: Bool = Int16.flipBit(-1i16, 32) `assertEq!` -2i16

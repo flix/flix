@@ -258,6 +258,39 @@ def rotateRight09: Bool = Int64.rotateRight(-9223372036854775808i64, 3) `assertE
 def rotateRight10: Bool = Int64.rotateRight(9223372036854775807i64, 2) `assertEq!` -2305843009213693953i64
 
 /////////////////////////////////////////////////////////////////////////////
+// reverse                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def reverse01: Bool = Int64.reverse(5093163785157044906i64) `assertEq!` 6149336169419208034i64
+
+@test
+def reverse02: Bool = Int64.reverse(6149336169419208034i64) `assertEq!` 5093163785157044906i64
+
+@test
+def reverse03: Bool = Int64.reverse(8455181377513485674i64) `assertEq!` 6245943384048626350i64
+
+@test
+def reverse04: Bool = Int64.reverse(6245943384048626350i64) `assertEq!` 8455181377513485674i64
+
+@test
+def reverse05: Bool = Int64.reverse(-9223372036854775808i64) `assertEq!` 1i64
+
+@test
+def reverse06: Bool = Int64.reverse(1i64) `assertEq!` -9223372036854775808i64
+
+@test
+def reverse07: Bool = Int64.reverse(4i64) `assertEq!` 2305843009213693952i64
+
+@test
+def reverse08: Bool = Int64.reverse(2305843009213693952i64) `assertEq!` 4i64
+
+@test
+def reverse09: Bool = Int64.reverse(-1i64) `assertEq!` -1i64
+
+@test
+def reverse10: Bool = Int64.reverse(0i64) `assertEq!` 0i64
+
+/////////////////////////////////////////////////////////////////////////////
 // highestOneBitPosition                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -456,28 +489,145 @@ def numberOfTrailingZeros06: Bool = Int64.numberOfTrailingZeros(-1i64) `assertEq
 def numberOfTrailingZeros07: Bool = Int64.numberOfTrailingZeros(-9223372036854775808i64) `assertEq!` 63
 
 /////////////////////////////////////////////////////////////////////////////
-// bit                                                                     //
+// getBit                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def bit01: Bool = Int64.bit(-1i64, 5) `assertEq!` 1
+def getBit01: Bool = Int64.getBit(-1i64, 5) `assertEq!` 1
 
 @test
-def bit02: Bool = Int64.bit(-1000000i64, 63) `assertEq!` 1
+def getBit02: Bool = Int64.getBit(-1000000i64, 63) `assertEq!` 1
 
 @test
-def bit03: Bool = Int64.bit(2i64 ** 59i64, 59) `assertEq!` 1
+def getBit03: Bool = Int64.getBit(2i64 ** 59i64, 59) `assertEq!` 1
 
 @test
-def bit04: Bool = Int64.bit(2i64 ** 59i64, 60) `assertEq!` 0
+def getBit04: Bool = Int64.getBit(2i64 ** 59i64, 60) `assertEq!` 0
 
 @test
-def bit05: Bool = Int64.bit(2i64 ** 59i64, 58) `assertEq!` 0
+def getBit05: Bool = Int64.getBit(2i64 ** 59i64, 58) `assertEq!` 0
 
 @test
-def bit06: Bool = Int64.bit(-1i64 - 2i64 ** 61i64, 61) `assertEq!` 0
+def getBit06: Bool = Int64.getBit(-1i64 - 2i64 ** 61i64, 61) `assertEq!` 0
 
 @test
-def bit07: Bool = Int64.bit(-1i64 - 2i64 ** 61i64, 60) `assertEq!` 1
+def getBit07: Bool = Int64.getBit(-1i64 - 2i64 ** 61i64, 60) `assertEq!` 1
 
 @test
-def bit08: Bool = Int64.bit(0i64, 55) `assertEq!` 0
+def getBit08: Bool = Int64.getBit(0i64, 55) `assertEq!` 0
+
+/////////////////////////////////////////////////////////////////////////////
+// setBit                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def setBit01: Bool = Int64.setBit(0i64, 0) `assertEq!` 1i64
+
+@test
+def setBit02: Bool = Int64.setBit(0i64, 1) `assertEq!` 2i64
+
+@test
+def setBit03: Bool = Int64.setBit(0i64, 31) `assertEq!` 2147483648i64
+
+@test
+def setBit04: Bool = Int64.setBit(0i64, 32) `assertEq!` 4294967296i64
+
+@test
+def setBit05: Bool = Int64.setBit(-1418638422666i64, 31) `assertEq!` -1418638422666i64
+
+@test
+def setBit07: Bool = Int64.setBit(-17i64, 4) `assertEq!` -1i64
+
+@test
+def setBit08: Bool = Int64.setBit(-1025i64, 10) `assertEq!` -1i64
+
+@test
+def setBit09: Bool = Int64.setBit(-17i64, 63) `assertEq!` -17i64
+
+@test
+def setBit10: Bool = Int64.setBit(-17i64, 30) `assertEq!` -17i64
+
+@test
+def setBit11: Bool = Int64.setBit(0i64, 63) `assertEq!` (1i64 <<< 63)
+
+@test
+def setBit12: Bool = Int64.setBit(0i64, 64) `assertEq!` 1i64
+
+/////////////////////////////////////////////////////////////////////////////
+// clearBit                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def clearBit01: Bool = Int64.clearBit(1i64, 0) `assertEq!` 0i64
+
+@test
+def clearBit02: Bool = Int64.clearBit(1i64, 1) `assertEq!` 1i64
+
+@test
+def clearBit03: Bool = Int64.clearBit(2i64, 1) `assertEq!` 0i64
+
+@test
+def clearBit04: Bool = Int64.clearBit(2i64, 2) `assertEq!` 2i64
+
+@test
+def clearBit05: Bool = Int64.clearBit(0i64, 31) `assertEq!` 0i64
+
+@test
+def clearBit06: Bool = Int64.clearBit(0i64, 30) `assertEq!` 0i64
+
+@test
+def clearBit07: Bool = Int64.clearBit(1i64 <<< 63, 63) `assertEq!` 0i64
+
+@test
+def clearBit08: Bool = Int64.clearBit(442931848i64, 27) `assertEq!` 308714120i64
+
+@test
+def clearBit09: Bool = Int64.clearBit(-1i64, 0) `assertEq!` -2i64
+
+@test
+def clearBit10: Bool = Int64.clearBit(-1i64, 1) `assertEq!` -3i64
+
+@test
+def clearBit11: Bool = Int64.clearBit(-1i64, 5) `assertEq!` -33i64
+
+@test
+def clearBit12: Bool = Int64.clearBit(-1i64, 63) `assertEq!` ~~~(1i64 <<< 63)
+
+@test
+def clearBit13: Bool = Int64.clearBit(-1i64, 64) `assertEq!` -2i64
+
+/////////////////////////////////////////////////////////////////////////////
+// flipBit                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def flipBit01: Bool = Int64.flipBit(1i64, 0) `assertEq!` 0i64
+
+@test
+def flipBit02: Bool = Int64.flipBit(1i64, 1) `assertEq!` 3i64
+
+@test
+def flipBit03: Bool = Int64.flipBit(2i64, 1) `assertEq!` 0i64
+
+@test
+def flipBit04: Bool = Int64.flipBit(2i64, 2) `assertEq!` 6i64
+
+@test
+def flipBit05: Bool = Int64.flipBit(0i64, 31) `assertEq!` 2147483648i64
+
+@test
+def flipBit06: Bool = Int64.flipBit(0i64, 30) `assertEq!` 1073741824i64
+
+@test
+def flipBit07: Bool = Int64.flipBit(1i64 <<< 63, 63) `assertEq!` 0i64
+
+@test
+def flipBit08: Bool = Int64.flipBit(-1i64, 0) `assertEq!` -2i64
+
+@test
+def flipBit9: Bool = Int64.flipBit(-1i64, 1) `assertEq!` -3i64
+
+@test
+def flipBit10: Bool = Int64.flipBit(-1i64, 5) `assertEq!` -33i64
+
+@test
+def flipBit11: Bool = Int64.flipBit(-1i64, 31) `assertEq!` (-1i64-(1i64 <<< 31))
+
+@test
+def flipBit12: Bool = Int64.flipBit(-1i64, 64) `assertEq!` -2i64

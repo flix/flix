@@ -162,85 +162,85 @@ def gcd015: Bool = BigInt.gcd(-32462531054272512000001ii, 5788379825723984572345
 def gcd016: Bool = BigInt.gcd(32462531054272512000001ii, -92371823432134ii) `assertEq!` 1ii
 
 /////////////////////////////////////////////////////////////////////////////
-// bit                                                                     //
+// getBit                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def bit01: Bool = BigInt.bit(1ii, 0) `assertEq!` 1
+def getBit01: Bool = BigInt.getBit(1ii, 0) `assertEq!` 1
 
 @test
-def bit02: Bool = BigInt.bit(1ii, 1) `assertEq!` 0
+def getBit02: Bool = BigInt.getBit(1ii, 1) `assertEq!` 0
 
 @test
-def bit03: Bool = BigInt.bit(8388608ii, 23) `assertEq!` 1
+def getBit03: Bool = BigInt.getBit(8388608ii, 23) `assertEq!` 1
 
 @test
-def bit04: Bool = BigInt.bit(8388608ii, 22) `assertEq!` 0
+def getBit04: Bool = BigInt.getBit(8388608ii, 22) `assertEq!` 0
 
 @test
-def bit05: Bool = BigInt.bit(8388608ii, 24) `assertEq!` 0
+def getBit05: Bool = BigInt.getBit(8388608ii, 24) `assertEq!` 0
 
 @test
-def bit06: Bool = BigInt.bit(9223372036854775808ii, 63) `assertEq!` 1
+def getBit06: Bool = BigInt.getBit(9223372036854775808ii, 63) `assertEq!` 1
 
 @test
-def bit07: Bool = BigInt.bit(9223372036854775808ii, 62) `assertEq!` 0
+def getBit07: Bool = BigInt.getBit(9223372036854775808ii, 62) `assertEq!` 0
 
 @test
-def bit08: Bool = BigInt.bit(9223372036854775808ii, 64) `assertEq!` 0
+def getBit08: Bool = BigInt.getBit(9223372036854775808ii, 64) `assertEq!` 0
 
 @test
-def bit09: Bool = BigInt.bit(154742504910672534362390528ii, 87) `assertEq!` 1
+def getBit09: Bool = BigInt.getBit(154742504910672534362390528ii, 87) `assertEq!` 1
 
 @test
-def bit10: Bool = BigInt.bit(154742504910672534362390528ii, 86) `assertEq!` 0
+def getBit10: Bool = BigInt.getBit(154742504910672534362390528ii, 86) `assertEq!` 0
 
 @test
-def bit11: Bool = BigInt.bit(154742504910672534362390528ii, 88) `assertEq!` 0
+def getBit11: Bool = BigInt.getBit(154742504910672534362390528ii, 88) `assertEq!` 0
 
 @test
-def bit12: Bool = BigInt.bit(0ii, 7) `assertEq!` 0
+def getBit12: Bool = BigInt.getBit(0ii, 7) `assertEq!` 0
 
 @test
-def bit13: Bool = BigInt.bit(-1ii, 17) `assertEq!` 1
+def getBit13: Bool = BigInt.getBit(-1ii, 17) `assertEq!` 1
 
 @test
-def bit14: Bool = BigInt.bit(-17ii, 4) `assertEq!` 0
+def getBit14: Bool = BigInt.getBit(-17ii, 4) `assertEq!` 0
 
 @test
-def bit15: Bool = BigInt.bit(-17ii, 3) `assertEq!` 1
+def getBit15: Bool = BigInt.getBit(-17ii, 3) `assertEq!` 1
 
 @test
-def bit16: Bool = BigInt.bit(-17ii, 5) `assertEq!` 1
+def getBit16: Bool = BigInt.getBit(-17ii, 5) `assertEq!` 1
 
 @test
-def bit17: Bool = BigInt.bit(-898274123413412341ii, 4) `assertEq!` 0
+def getBit17: Bool = BigInt.getBit(-898274123413412341ii, 4) `assertEq!` 0
 
 @test
-def bit18: Bool = BigInt.bit(-898274123413412341ii, 3) `assertEq!` 1
+def getBit18: Bool = BigInt.getBit(-898274123413412341ii, 3) `assertEq!` 1
 
 @test
-def bit19: Bool = BigInt.bit(-898274123413412341ii, 35) `assertEq!` 0
+def getBit19: Bool = BigInt.getBit(-898274123413412341ii, 35) `assertEq!` 0
 
 @test
-def bit20: Bool = BigInt.bit(-898274123413412341ii, 36) `assertEq!` 1
+def getBit20: Bool = BigInt.getBit(-898274123413412341ii, 36) `assertEq!` 1
 
 @test
-def bit21: Bool = BigInt.bit(-898274123413412341ii, 37) `assertEq!` 1
+def getBit21: Bool = BigInt.getBit(-898274123413412341ii, 37) `assertEq!` 1
 
 @test
-def bit22: Bool = BigInt.bit(-8982741234134123419879712341ii, 92) `assertEq!` 0
+def getBit22: Bool = BigInt.getBit(-8982741234134123419879712341ii, 92) `assertEq!` 0
 
 @test
-def bit23: Bool = BigInt.bit(-8982741234134123419879712341ii, 93) `assertEq!` 1
+def getBit23: Bool = BigInt.getBit(-8982741234134123419879712341ii, 93) `assertEq!` 1
 
 @test
-def bit24: Bool = BigInt.bit(-8982741234134123419879712341ii, 94) `assertEq!` 1
+def getBit24: Bool = BigInt.getBit(-8982741234134123419879712341ii, 94) `assertEq!` 1
 
 @test
-def bit25: Bool = BigInt.bit(-8982741234134123419879712341ii, 95) `assertEq!` 1
+def getBit25: Bool = BigInt.getBit(-8982741234134123419879712341ii, 95) `assertEq!` 1
 
 @test
-def bit26: Bool = BigInt.bit(-8982741234134123419879712341ii, 96) `assertEq!` 1
+def getBit26: Bool = BigInt.getBit(-8982741234134123419879712341ii, 96) `assertEq!` 1
 
 /////////////////////////////////////////////////////////////////////////////
 // setBit                                                                  //
