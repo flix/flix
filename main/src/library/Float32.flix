@@ -49,7 +49,7 @@ namespace Float32 {
     ///
     /// Returns the NaN (not a number) value of type `Float32`.
     ///
-    def undefined: Float32 = 0.0f32 / 0.0f32
+    def nan: Float32 = 0.0f32 / 0.0f32
 
     ///
     /// Returns the positive infinity value of type `Float32`.
@@ -60,6 +60,21 @@ namespace Float32 {
     /// Returns the negative infinity value of type `Float32`.
     ///
     def negativeInfinity: Float32 = -1.0f32 / 0.0f32
+
+    ///
+    /// Returns true if and only if `x` is a non-infinite and non-Nan `Float32` value.
+    ///
+    def isFinite(x: Float32): Bool = x >= minValue() && x <= maxValue()
+
+    ///
+    /// Returns true if and only if `x` is an infinite and non-Nan `Float32` value.
+    ///
+    def isInfinite(x: Float32): Bool = x == positiveInfinity() || x == negativeInfinity()
+
+    ///
+    /// Returns true if and only if `x` is the NaN value of type `Float32`.
+    ///
+    def isNan(x: Float32): Bool = x != x
 
     ///
     /// Returns the smaller of `x` and `y`.

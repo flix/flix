@@ -49,7 +49,7 @@ namespace Float64 {
     ///
     /// Returns the NaN (not a number) value of type `Float64`.
     ///
-    def undefined: Float64 = 0.0f64 / 0.0f64
+    def nan: Float64 = 0.0f64 / 0.0f64
 
     ///
     /// Returns the positive infinity value of type `Float64`.
@@ -60,6 +60,21 @@ namespace Float64 {
     /// Returns the negative infinity value of type `Float64`.
     ///
     def negativeInfinity: Float64 = -1.0f64 / 0.0f64
+
+    ///
+    /// Returns true if and only if `x` is a non-infinite and non-Nan `Float64` value.
+    ///
+    def isFinite(x: Float64): Bool = x >= minValue() && x <= maxValue()
+
+    ///
+    /// Returns true if and only if `x` is an infinite and non-Nan `Float64` value.
+    ///
+    def isInfinite(x: Float64): Bool = x == positiveInfinity() || x == negativeInfinity()
+
+    ///
+    /// Returns true if and only if `x` is the NaN value of type `Float64`.
+    ///
+    def isNan(x: Float64): Bool = x != x
 
     ///
     /// Returns the smaller of `x` and `y`.

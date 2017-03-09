@@ -51,10 +51,10 @@ def minValue01: Bool = Float64.minValue() `assertEq!` (-(2.0f64 - 2.0f64 ** -52.
 def minPositiveValue01: Bool = Float64.minPositiveValue() `assertEq!` (2.0f64 ** -1074.0f64)
 
 /////////////////////////////////////////////////////////////////////////////
-// undefined                                                               //
+// nan                                                                     //
 /////////////////////////////////////////////////////////////////////////////
-//@test
-//def undefined01: Bool = (0.0f64 / 0.0f64) `assertEq!` (0.0f64 / 0.0f64)
+@test
+def nan01: Bool = assert!(Float64.isNan(Float64.nan()))
 
 /////////////////////////////////////////////////////////////////////////////
 // positiveInfinity                                                        //
@@ -67,6 +67,81 @@ def positiveInfinity01: Bool = Float64.positiveInfinity() `assertEq!` (1.0f64 / 
 /////////////////////////////////////////////////////////////////////////////
 @test
 def negativeInfinity01: Bool = Float64.negativeInfinity() `assertEq!` (-1.0f64 / 0.0f64)
+
+/////////////////////////////////////////////////////////////////////////////
+// isFinite                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def isFinite01: Bool = assert!(Float64.isFinite(1.0f64))
+
+@test
+def isFinite02: Bool = assert!(Float64.isFinite(-1.0f64))
+
+@test
+def isFinite03: Bool = assert!(Float64.isFinite(Float64.minValue()))
+
+@test
+def isFinite04: Bool = assert!(Float64.isFinite(Float64.maxValue()))
+
+@test
+def isFinite05: Bool = assertNot!(Float64.isFinite(Float64.negativeInfinity()))
+
+@test
+def isFinite06: Bool = assertNot!(Float64.isFinite(Float64.positiveInfinity()))
+
+@test
+def isFinite07: Bool = assertNot!(Float64.isFinite(Float64.nan()))
+
+/////////////////////////////////////////////////////////////////////////////
+// isInfinite                                                              //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def isInfinite01: Bool = assertNot!(Float64.isInfinite(1.0f64))
+
+@test
+def isInfinite02: Bool = assertNot!(Float64.isInfinite(-1.0f64))
+
+@test
+def isInfinite03: Bool = assertNot!(Float64.isInfinite(Float64.minValue()))
+
+@test
+def isInfinite04: Bool = assertNot!(Float64.isInfinite(Float64.maxValue()))
+
+@test
+def isInfinite05: Bool = assert!(Float64.isInfinite(Float64.negativeInfinity()))
+
+@test
+def isInfinite06: Bool = assert!(Float64.isInfinite(Float64.positiveInfinity()))
+
+@test
+def isInfinite07: Bool = assertNot!(Float64.isInfinite(Float64.nan()))
+
+/////////////////////////////////////////////////////////////////////////////
+// isNan                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def isNan01: Bool = assert!(Float64.isNan(Float64.nan()))
+
+@test
+def isNan02: Bool = assert!(Float64.isNan(0.0f64 / 0.0f64))
+
+@test
+def isNan03: Bool = assertNot!(Float64.isNan(Float64.positiveInfinity()))
+
+@test
+def isNan04: Bool = assertNot!(Float64.isNan(Float64.negativeInfinity()))
+
+@test
+def isNan05: Bool = assertNot!(Float64.isNan(1.0f64))
+
+@test
+def isNan06: Bool = assertNot!(Float64.isNan(-1.0f64))
+
+@test
+def isNan07: Bool = assertNot!(Float64.isNan(Float64.minValue()))
+
+@test
+def isNan08: Bool = assertNot!(Float64.isNan(Float64.maxValue()))
 
 /////////////////////////////////////////////////////////////////////////////
 // min                                                                     //
