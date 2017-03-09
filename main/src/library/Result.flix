@@ -45,13 +45,6 @@ namespace Result {
     }
 
     ///
-    /// Returns `v` if `r` is `Ok(v)`. Undefined semantics if `r` is `Err(w)`.
-    ///
-    def get[t, e](r: Result[t, e]): t = match r with {
-        case Ok(v) => v
-    }
-
-    ///
     /// Returns `v` if `r` is `Ok(v)`. Otherwise returns `d`.
     ///
     def getWithDefault[t, e](r: Result[t, e], d: t): t = match r with {
@@ -92,22 +85,6 @@ namespace Result {
     def flatMap[t1, t2, e](f: t1 -> Result[t2, e], r: Result[t1, e]): Result[t2, e] = match r with {
         case Ok(v) => f(v)
         case Err(w) => Err(w)
-    }
-
-    ///
-    /// Returns `r2` if `r1` is `Ok(v)`. Otherwise returns `r1`.
-    ///
-    def and[t, e](r1: Result[t, e], r2: Result[t, e]): Result[t, e] = match r1 with {
-        case Ok(v) => r2
-        case Err(w) => r1
-    }
-
-    ///
-    /// Returns `r1` if `r1` is `Ok(v)`. Otherwise returns `r2`.
-    ///
-    def or[t, e](r1: Result[t, e], r2: Result[t, e]): Result[t, e] = match r1 with {
-        case Ok(v) => r1
-        case Err(w) => r2
     }
 
     ///
@@ -156,6 +133,14 @@ namespace Result {
     def toSet[t, e](r: Result[t, e]): Set[t] = match r with {
         case Ok(v) => #{v}
         case Err(w) => #{}
+    }
+
+    ///
+    /// Returns a singleton map with the mapping `k -> v` if `o` is `Ok((k, v))`. Otherwise returns the empty map.
+    ///
+    def toMap[k, v, e](r: Result[(k, v), e]): Map[k, v] = match r with {
+        case Ok((k, v)) => Map.singleton(k, v)
+        case Err(w) => @{}
     }
 
     ///

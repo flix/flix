@@ -31,7 +31,7 @@ namespace Option {
     ///
     /// Returns `true` iff `o` is `None`.
     ///
-    def null[a](o: Option[a]): Bool = match o with {
+    def isEmpty[a](o: Option[a]): Bool = match o with {
         case None => true
         case Some(v) => false
     }
@@ -50,13 +50,6 @@ namespace Option {
     def isSome[a](o: Option[a]): Bool = match o with {
         case None => false
         case Some(v) => true
-    }
-
-    ///
-    /// Returns `v` if `o` is `Some(v)`. Undefined semantics if `o` is `None`.
-    ///
-    def get[a](o: Option[a]): a = match o with {
-        case Some(v) => v
     }
 
     ///
@@ -185,19 +178,11 @@ namespace Option {
     }
 
     ///
-    /// Returns `Ok(v)` if `o` is `Some(v)`. Otherwise returns `Err(z)`.
+    /// Returns a singleton map with the mapping `k -> v` if `o` is `Some((k, v))`. Otherwise returns the empty map.
     ///
-    def toOk[t, e](o: Option[t], z: e): Result[t, e] = match o with {
-        case None => Err(z)
-        case Some(v) => Ok(v)
-    }
-
-    ///
-    /// Returns `Err(v)` if `o` is `Some(v)`. Otherwise returns `Ok(z)`.
-    ///
-    def toErr[t,e](o: Option[e], z: t): Result[t,e] = match o with {
-        case None => Ok(z)
-        case Some(v) => Err(v)
+    def toMap[k,v](o: Option[(k, v)]): Map[k, v] = match o with {
+        case None => @{}
+        case Some((k, v)) => Map.singleton(k, v)
     }
 
     ///
