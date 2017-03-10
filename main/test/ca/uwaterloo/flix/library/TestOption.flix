@@ -15,16 +15,16 @@
  */
 
 /////////////////////////////////////////////////////////////////////////////
-// null                                                                    //
+// isEmpty                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def null01: Bool = assert!(Option.null(None))
+def isEmpty01: Bool = assert!(Option.isEmpty(None))
 
 @test
-def null02: Bool = assertNot!(Option.null(Some(0)))
+def isEmpty02: Bool = assertNot!(Option.isEmpty(Some(0)))
 
 @test
-def null03: Bool = assertNot!(Option.null(Some(22ii)))
+def isEmpty03: Bool = assertNot!(Option.isEmpty(Some(22ii)))
 
 /////////////////////////////////////////////////////////////////////////////
 // getWithDefault                                                          //
@@ -156,6 +156,15 @@ def toSet01: Bool = Option.toSet(None) `assertEq!` #{}
 def toSet02: Bool = Option.toSet(Some(1)) `assertEq!` #{1}
 
 /////////////////////////////////////////////////////////////////////////////
+// toMap                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toMap01: Bool = Option.toMap(None) `assertEq!` @{}
+
+@test
+def toMap02: Bool = Option.toMap(Some((1, true))) `assertEq!` @{1 -> true}
+
+/////////////////////////////////////////////////////////////////////////////
 // withDefault                                                             //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -169,24 +178,6 @@ def withDefault03: Bool = Option.withDefault(Some(1), None) `assertEq!` Some(1)
 
 @test
 def withDefault04: Bool = Option.withDefault(Some(1), Some(2)) `assertEq!` Some(1)
-
-/////////////////////////////////////////////////////////////////////////////
-// toOk                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def toOk01: Bool = Option.toOk(None, false) `assertEq!` Err(false)
-
-@test
-def toOk02: Bool = Option.toOk(Some(1), false) `assertEq!` Ok(1)
-
-/////////////////////////////////////////////////////////////////////////////
-// toErr                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def toError01: Bool = Option.toErr(None, false) `assertEq!` Ok(false)
-
-@test
-def toError02: Bool = Option.toErr(Some(1), false) `assertEq!` Err(1)
 
 /////////////////////////////////////////////////////////////////////////////
 // count                                                                   //

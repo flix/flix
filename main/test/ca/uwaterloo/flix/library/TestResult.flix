@@ -33,12 +33,6 @@ def isErr01: Bool = assertNot!(Result.isErr(Ok(1)))
 def isErr02: Bool = assert!(Result.isErr(Err(1)))
 
 /////////////////////////////////////////////////////////////////////////////
-// get                                                                     //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def get01: Bool = Result.get(Ok(1)) `assertEq!` 1
-
-/////////////////////////////////////////////////////////////////////////////
 // getWithDefault                                                          //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -109,36 +103,6 @@ def flatMap02: Bool = Result.flatMap(i -> if (i == 2) Ok(i) else Err(false), Ok(
 
 @test
 def flatMap03: Bool = Result.flatMap(i -> if (i == 2) Ok(2*i) else Err(false), Ok(2)) `assertEq!` Ok(4)
-
-/////////////////////////////////////////////////////////////////////////////
-// and                                                                     //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def and01: Bool = Result.and(Ok(true), Err(1)) `assertEq!` Err(1)
-
-@test
-def and02: Bool = Result.and(Ok(false), Ok(true)) `assertEq!` Ok(true)
-
-@test
-def and03: Bool = Result.and(Err(-1), Err(1)) `assertEq!` Err(-1)
-
-@test
-def and04: Bool = Result.and(Err(-1), Ok(true)) `assertEq!` Err(-1)
-
-/////////////////////////////////////////////////////////////////////////////
-// or                                                                      //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def or01: Bool = Result.or(Ok(true), Err(1)) `assertEq!` Ok(true)
-
-@test
-def or02: Bool = Result.or(Ok(false), Ok(true)) `assertEq!` Ok(false)
-
-@test
-def or03: Bool = Result.or(Err(-1), Err(1)) `assertEq!` Err(1)
-
-@test
-def or04: Bool = Result.or(Err(-1), Ok(true)) `assertEq!` Ok(true)
 
 /////////////////////////////////////////////////////////////////////////////
 // count                                                                   //
@@ -217,6 +181,15 @@ def toSet01: Bool = Result.toSet(Err(-1ii)) `assertEq!` #{}
 
 @test
 def toSet02: Bool = Result.toSet(Ok(1)) `assertEq!` #{1}
+
+/////////////////////////////////////////////////////////////////////////////
+// toMap                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toMap01: Bool = Result.toMap(Err(-1ii)) `assertEq!` @{}
+
+@test
+def toMap02: Bool = Result.toMap(Ok((1, true))) `assertEq!` @{1 -> true}
 
 /////////////////////////////////////////////////////////////////////////////
 // toOption                                                                //
