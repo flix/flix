@@ -99,81 +99,6 @@ def append07: Bool = List.append(1 :: 2 :: Nil, 3 :: Nil) `assertEq!` 1 :: 2 :: 
 def append08: Bool = List.append(1 :: Nil, 2 :: 3 :: Nil) `assertEq!` 1 :: 2 :: 3 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
-// at                                                                      //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def at01: Bool = List.at(0, 1 :: Nil) `assertEq!` 1
-
-@test
-def at02: Bool = List.at(0, 1 :: 2 :: 3 :: Nil) `assertEq!` 1
-
-@test
-def at03: Bool = List.at(1, 1 :: 2 :: 3 :: Nil) `assertEq!` 2
-
-@test
-def at04: Bool = List.at(2, 1 :: 2 :: 3 :: Nil) `assertEq!` 3
-
-/////////////////////////////////////////////////////////////////////////////
-// remove                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def remove01: Bool = List.remove(1, Nil) `assertEq!` Nil
-
-@test
-def remove02: Bool = List.remove(1, 1 :: Nil) `assertEq!` Nil
-
-@test
-def remove03: Bool = List.remove(1, 2 :: Nil) `assertEq!` 2 :: Nil
-
-@test
-def remove04: Bool = List.remove(1, 1 :: 2 :: Nil) `assertEq!` 2 :: Nil
-
-@test
-def remove05: Bool = List.remove(2, 1 :: 2 :: Nil) `assertEq!` 1 :: Nil
-
-@test
-def remove06: Bool = List.remove(3, 1 :: 2 :: Nil) `assertEq!` 1 :: 2 :: Nil
-
-@test
-def remove07: Bool = List.remove(1, 1 :: 2 :: 3 :: Nil) `assertEq!` 2 :: 3 :: Nil
-
-@test
-def remove08: Bool = List.remove(1, 1 :: 2 :: 1 :: Nil) `assertEq!` 2 :: 1 :: Nil
-
-@test
-def remove09: Bool = List.remove(1, 1 :: 1 :: 2 :: Nil) `assertEq!` 1 :: 2 :: Nil
-
-/////////////////////////////////////////////////////////////////////////////
-// removeIndex                                                             //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def removeIndex01: Bool = List.removeIndex(0, Nil) `assertEq!` Nil
-
-@test
-def removeIndex02: Bool = List.removeIndex(1, Nil) `assertEq!` Nil
-
-@test
-def removeIndex03: Bool = List.removeIndex(-1, 1 :: Nil) `assertEq!` 1 :: Nil
-
-@test
-def removeIndex04: Bool = List.removeIndex(0, 1 :: Nil) `assertEq!` Nil
-
-@test
-def removeIndex05: Bool = List.removeIndex(1, 1 :: Nil) `assertEq!` 1 :: Nil
-
-@test
-def removeIndex06: Bool = List.removeIndex(-1, 1 :: 2 :: Nil) `assertEq!` 1 :: 2 :: Nil
-
-@test
-def removeIndex07: Bool = List.removeIndex(0, 1 :: 2 :: Nil) `assertEq!` 2 :: Nil
-
-@test
-def removeIndex08: Bool = List.removeIndex(1, 1 :: 2 :: Nil) `assertEq!` 1 :: Nil
-
-@test
-def removeIndex09: Bool = List.removeIndex(2, 1 :: 2 :: Nil) `assertEq!` 1 :: 2 :: Nil
-
-/////////////////////////////////////////////////////////////////////////////
 // memberOf                                                                //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -561,28 +486,28 @@ def rotateRight10: Bool = List.rotateRight(1, 1 :: 2 :: 3 :: Nil) `assertEq!` 3 
 def rotateRight11: Bool = List.rotateRight(2, 1 :: 2 :: 3 :: Nil) `assertEq!` 2 :: 3 :: 1 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
-// replace                                                                 //
+// update                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def replace01: Bool = List.replace(0, 2, Nil) `assertEq!` Nil
+def update01: Bool = List.update(0, 2, Nil) `assertEq!` Nil
 
 @test
-def replace02: Bool = List.replace(-1, 2, 1 :: Nil) `assertEq!` 1 :: Nil
+def update02: Bool = List.update(-1, 2, 1 :: Nil) `assertEq!` 1 :: Nil
 
 @test
-def replace03: Bool = List.replace(0, 2, 1 :: Nil) `assertEq!` 2 :: Nil
+def update03: Bool = List.update(0, 2, 1 :: Nil) `assertEq!` 2 :: Nil
 
 @test
-def replace04: Bool = List.replace(1, 2, 1 :: Nil) `assertEq!` 1 :: Nil
+def update04: Bool = List.update(1, 2, 1 :: Nil) `assertEq!` 1 :: Nil
 
 @test
-def replace05: Bool = List.replace(0, 5, 1 :: 2 :: Nil) `assertEq!` 5 :: 2 :: Nil
+def update05: Bool = List.update(0, 5, 1 :: 2 :: Nil) `assertEq!` 5 :: 2 :: Nil
 
 @test
-def replace06: Bool = List.replace(1, 5, 1 :: 2 :: Nil) `assertEq!` 1 :: 5 :: Nil
+def update06: Bool = List.update(1, 5, 1 :: 2 :: Nil) `assertEq!` 1 :: 5 :: Nil
 
 @test
-def replace07: Bool = List.replace(2, 5, 1 :: 2 :: Nil) `assertEq!` 1 :: 2 :: Nil
+def update07: Bool = List.update(2, 5, 1 :: 2 :: Nil) `assertEq!` 1 :: 2 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // patch                                                                   //
@@ -1064,37 +989,37 @@ def count06: Bool = List.count(i -> i > 3, 8 :: 1 :: Nil) `assertEq!` 1
 def count07: Bool = List.count(i -> i > 3, 6 :: 7 :: Nil) `assertEq!` 2
 
 /////////////////////////////////////////////////////////////////////////////
-// concat                                                                  //
+// flatten                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def concat01: Bool = List.concat(Nil) `assertEq!` Nil
+def flatten01: Bool = List.flatten(Nil) `assertEq!` Nil
 
 @test
-def concat02: Bool = List.concat(Nil :: Nil) `assertEq!` Nil
+def flatten02: Bool = List.flatten(Nil :: Nil) `assertEq!` Nil
 
 @test
-def concat03: Bool = List.concat((1 :: Nil) :: Nil) `assertEq!` 1 :: Nil
+def flatten03: Bool = List.flatten((1 :: Nil) :: Nil) `assertEq!` 1 :: Nil
 
 @test
-def concat04: Bool = List.concat((1 :: 2 :: Nil) :: Nil) `assertEq!` 1 :: 2 :: Nil
+def flatten04: Bool = List.flatten((1 :: 2 :: Nil) :: Nil) `assertEq!` 1 :: 2 :: Nil
 
 @test
-def concat05: Bool = List.concat(Nil :: Nil :: Nil) `assertEq!` Nil
+def flatten05: Bool = List.flatten(Nil :: Nil :: Nil) `assertEq!` Nil
 
 @test
-def concat06: Bool = List.concat((1 :: Nil) :: Nil :: Nil) `assertEq!` 1 :: Nil
+def flatten06: Bool = List.flatten((1 :: Nil) :: Nil :: Nil) `assertEq!` 1 :: Nil
 
 @test
-def concat07: Bool = List.concat(Nil :: (1 :: Nil) :: Nil) `assertEq!` 1 :: Nil
+def flatten07: Bool = List.flatten(Nil :: (1 :: Nil) :: Nil) `assertEq!` 1 :: Nil
 
 @test
-def concat08: Bool = List.concat((1 :: Nil) :: (2 :: Nil) :: Nil) `assertEq!` 1 :: 2 :: Nil
+def flatten08: Bool = List.flatten((1 :: Nil) :: (2 :: Nil) :: Nil) `assertEq!` 1 :: 2 :: Nil
 
 @test
-def concat09: Bool = List.concat((1 :: 2 :: Nil) :: (3 :: 4 :: 5 :: Nil) :: Nil) `assertEq!` 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+def flatten09: Bool = List.flatten((1 :: 2 :: Nil) :: (3 :: 4 :: 5 :: Nil) :: Nil) `assertEq!` 1 :: 2 :: 3 :: 4 :: 5 :: Nil
 
 @test
-def concat10: Bool = List.concat((1 :: Nil) :: (2 :: 3 :: Nil) :: (4 :: Nil) :: Nil) `assertEq!` 1 :: 2 :: 3 :: 4 :: Nil
+def flatten10: Bool = List.flatten((1 :: Nil) :: (2 :: 3 :: Nil) :: (4 :: Nil) :: Nil) `assertEq!` 1 :: 2 :: 3 :: 4 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // exists                                                                  //
@@ -1158,78 +1083,6 @@ def forall09: Bool = assertNot!(List.forall(i -> i > 3, 1 :: 9 :: 3 :: Nil))
 
 @test
 def forall10: Bool = assert!(List.forall(i -> i > 3, 11 :: 9 :: 31 :: Nil))
-
-/////////////////////////////////////////////////////////////////////////////
-// and                                                                     //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def and01: Bool = assert!(List.and(Nil))
-
-@test
-def and02: Bool = assert!(List.and(true :: Nil))
-
-@test
-def and03: Bool = assertNot!(List.and(false :: Nil))
-
-@test
-def and04: Bool = assert!(List.and(true :: true :: Nil))
-
-@test
-def and05: Bool = assertNot!(List.and(true :: false :: Nil))
-
-@test
-def and06: Bool = assertNot!(List.and(false :: true :: Nil))
-
-@test
-def and07: Bool = assertNot!(List.and(false :: false :: Nil))
-
-@test
-def and08: Bool = assert!(List.and(true :: true :: true :: Nil))
-
-@test
-def and09: Bool = assertNot!(List.and(false :: true :: true :: Nil))
-
-@test
-def and10: Bool = assertNot!(List.and(true :: false :: true :: Nil))
-
-@test
-def and11: Bool = assertNot!(List.and(true :: true :: false :: Nil))
-
-/////////////////////////////////////////////////////////////////////////////
-// or                                                                      //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def or01: Bool = assertNot!(List.or(Nil))
-
-@test
-def or02: Bool = assert!(List.or(true :: Nil))
-
-@test
-def or03: Bool = assertNot!(List.or(false :: Nil))
-
-@test
-def or04: Bool = assert!(List.or(true :: true :: Nil))
-
-@test
-def or05: Bool = assert!(List.or(true :: false :: Nil))
-
-@test
-def or06: Bool = assert!(List.or(false :: true :: Nil))
-
-@test
-def or07: Bool = assertNot!(List.or(false :: false :: Nil))
-
-@test
-def or08: Bool = assert!(List.or(true :: true :: true :: Nil))
-
-@test
-def or09: Bool = assert!(List.or(false :: true :: true :: Nil))
-
-@test
-def or10: Bool = assert!(List.or(true :: false :: true :: Nil))
-
-@test
-def or11: Bool = assert!(List.or(true :: true :: false :: Nil))
 
 /////////////////////////////////////////////////////////////////////////////
 // filter                                                                  //
@@ -1730,27 +1583,6 @@ def foldRight209: Bool = List.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, 3 
 @test
 def foldRight210: Bool = List.foldRight2((a, b, c) -> if (b) a+c else a*c, 4, 6 :: -4 :: 3 :: 2 :: Nil,
                          true :: false :: false :: true :: Nil) `assertEq!` -66
-
-/////////////////////////////////////////////////////////////////////////////
-// concatMap                                                               //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def concatMap01: Bool = List.concatMap(i -> List.repeat(i, i), Nil) `assertEq!` Nil
-
-@test
-def concatMap02: Bool = List.concatMap(i -> List.repeat(i, i), 0 :: Nil) `assertEq!` Nil
-
-@test
-def concatMap03: Bool = List.concatMap(i -> List.repeat(i, i), 1 :: Nil) `assertEq!` 1 :: Nil
-
-@test
-def concatMap04: Bool = List.concatMap(i -> List.repeat(i, i), 2 :: Nil) `assertEq!` 2 :: 2 :: Nil
-
-@test
-def concatMap05: Bool = List.concatMap(i -> List.repeat(i, i), 1 :: 2 :: Nil) `assertEq!` 1 :: 2 :: 2 :: Nil
-
-@test
-def concatMap06: Bool = List.concatMap(i -> List.repeat(i, i), 2 :: 3 :: Nil) `assertEq!` 2 :: 2 :: 3 :: 3 :: 3 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // filterMap                                                               //

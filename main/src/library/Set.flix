@@ -58,7 +58,7 @@ namespace Set {
     ///
     def delete[a](x: a, xs: Set[a]): Set[a] =
         let Set(s) = xs;
-            Set(List.remove(x, s))
+            Set(List.filter(e -> e != x, s))
 
     //
     // ## Set Predicates

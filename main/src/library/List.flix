@@ -64,38 +64,11 @@ namespace List {
 
     ///
     /// Returns `ys` appended to `xs`.
+    /// The infix operator `:::` is an alias for `append` (`xs ::: ys = append(xs, ys)`).
     ///
     def append[a](xs: List[a], ys: List[a]): List[a] = match xs with {
         case Nil => ys
         case x :: rs => x :: append(rs, ys)
-    }
-
-    ///
-    /// Returns the element at index `i` in `xs`.
-    /// If `i < 0` or `i > length(xs)-1` the semantics are undefined.
-    ///
-    def at[a](i: Int32, xs: List[a]): a = match (i, xs) with {
-        case (0, x :: _) => x
-        case (p, x :: rs) => at(p - 1, rs)
-    }
-
-    ///
-    /// Returns `xs` with the first occurrence of `a` removed.
-    /// Returns `xs` if `a` does not exist in `xs`.
-    ///
-    def remove[a](a: a, xs: List[a]): List[a] = match xs with {
-        case Nil => Nil
-        case x :: rs => if (x == a) rs else x :: remove(a, rs)
-    }
-
-    ///
-    /// Returns `xs` with the element at index `i` removed.
-    /// Returns `xs` if `i < 0` or `i > length(xs)-1`.
-    ///
-    def removeIndex[a](i: Int32, xs: List[a]): List[a] = match (i, xs) with {
-        case (_, Nil) => xs
-        case (0, x :: rs) => rs
-        case (p, x :: rs) => x :: removeIndex(p - 1, rs)
     }
 
     ///
@@ -262,10 +235,10 @@ namespace List {
     /// Returns `xs` with the element at index `i` replaced by `a`.
     /// Returns `xs` if `i < 0` or `i > length(xs)-1`.
     ///
-    def replace[a](i: Int32, a: a, xs: List[a]): List[a] = match (i, xs) with {
+    def update[a](i: Int32, a: a, xs: List[a]): List[a] = match (i, xs) with {
         case (_, Nil) => xs
         case (0, x :: rs) => a :: rs
-        case (p, x :: rs) => x :: replace(p-1, a, rs)
+        case (p, x :: rs) => x :: update(p-1, a, rs)
     }
 
     ///
@@ -304,6 +277,25 @@ namespace List {
         else applyHelper(at(i, xs), permutations(removeIndex(i, xs))) ::: permutationHelper(i+1, xs)
 
     ///
+    /// Helper function for `permutations`.
+    ///
+    @internal
+    def at[a](i: Int32, xs: List[a]): a = match (i, xs) with {
+        case (0, x :: _) => x
+        case (p, x :: rs) => at(p - 1, rs)
+    }
+
+    ///
+    /// Helper function for `permutations`.
+    ///
+    @internal
+    def removeIndex[a](i: Int32, xs: List[a]): List[a] = match (i, xs) with {
+        case (_, Nil) => xs
+        case (0, x :: rs) => rs
+        case (p, x :: rs) => x :: removeIndex(p - 1, rs)
+    }
+
+    ///
     /// Returns all subsequences of `xs` in lexicographical order by element indices in `xs`.
     /// That is, `xs` is the first subsequence and `Nil` is the last subsequence.
     ///
@@ -334,7 +326,7 @@ namespace List {
 
     ///
     /// Returns the concatenation of the elements in `ys` with the elements of `xs` inserted between every two adjacent elements.
-    /// That is, returns y1 + x + y2 + x + ... + x + yn.
+    /// That is, returns y1 :: x1 ... xn :: y2 :: ... yn-1 :: x1 :: ... :: xn :: yn :: Nil.
     ///
     def intercalate[a](xs: List[a], ys: List[List[a]]): List[a] = match ys with {
         case Nil => Nil
@@ -479,13 +471,14 @@ namespace List {
     ///
     /// Returns the concatenation of the elements in `xs`.
     ///
-    def concat[a](xs: List[List[a]]): List[a] = match xs with {
+    def flatten[a](xs: List[List[a]]): List[a] = match xs with {
         case Nil => Nil
-        case x :: rs => x ::: concat(rs)
+        case x :: rs => x ::: flatten(rs)
     }
 
     ///
     /// Returns `true` if and only if at least one element in `xs` satisfies the predicate `f`.
+    /// Returns `false` if `xs` is empty.
     ///
     def exists[a](f: a -> Bool, xs: List[a]): Bool = match xs with {
         case Nil => false
@@ -494,25 +487,12 @@ namespace List {
 
     ///
     /// Returns `true` if and only if all elements in `xs` satisfy the predicate `f`.
+    /// Returns `true` if `xs` is empty.
     ///
     def forall[a](f: a -> Bool, xs: List[a]): Bool = match xs with {
         case Nil => true
         case x :: rs => if (!f(x)) false else forall(f, rs)
     }
-
-    ///
-    /// Returns `true` if and only if all elements in `xs` are `true`.
-    ///
-    def and(xs: List[Bool]): Bool =
-        let f = x -> x;
-            forall(f, xs)
-
-    ///
-    /// Returns `true` if and only if at least one element in `xs` is `true`.
-    ///
-    def or(xs: List[Bool]): Bool =
-        let f = x -> x;
-            exists(f, xs)
 
     //
     // ## Sub Lists
@@ -530,6 +510,8 @@ namespace List {
 
     ///
     /// Returns the sublist of `xs` from index `b` (inclusive) to index `e` (exclusive).
+    /// That is, an element at index `i` in `xs` is part of the returned sublist if and only if `i >= b` and `i < e`.
+    /// Note: Indices that are out of bounds in `xs` are not considered (i.e. slice(b, e, xs) = slice(max(0,b), min(length(xs),e), xs)).
     ///
     def slice[a](b: Int32, e: Int32, xs: List[a]): List[a] = sliceHelper(b, e, xs, 0)
 
@@ -571,7 +553,7 @@ namespace List {
     }
 
     ///
-    /// Returns `xs` with the first `n` elements removed.
+    /// Returns `xs` without the first `n` elements.
     /// Returns `Nil` if `n > length(xs)`.
     /// Returns `xs` if `n < 0`.
     ///
@@ -582,7 +564,7 @@ namespace List {
     }
 
     ///
-    /// Returns `xs` with the longest prefix that satisfies the predicate `f` removed.
+    /// Returns `xs` without the longest prefix that satisfies the predicate `f`.
     //
     def dropWhile[a](f: a -> Bool, xs: List[a]): List[a] = match xs with {
         case Nil => Nil
@@ -698,8 +680,6 @@ namespace List {
     }
 
     ///
-    /// Accumulates the result of applying `f` pairwise to the elements of `xs` and `ys`
-    /// starting with the initial value `c` and going from left to right.
     /// Alias for foldLeft2.
     ///
     def fold2[a,b,c](f: (c, a, b) -> c, c: c, xs: List[a], ys: List[b]): c = foldLeft2(f, c, xs, ys)
@@ -725,6 +705,7 @@ namespace List {
     ///
     /// Helper function for `foldRight2`.
     ///
+    @internal
     def foldRight2Helper[a,b,c](f: (a, b, c) -> c, c: c, xs: List[a], ys: List[b]): c = match (xs, ys) with {
         case (x :: rs, y :: qs) => f(x, y, foldRight2(f, c, rs, qs))
         case _ => c
@@ -733,12 +714,6 @@ namespace List {
     //
     // ## Combined Operations
     //
-
-    ///
-    /// Returns the result of applying `f` to every element in `xs` and concatenating the results.
-    /// Alias for flatMap.
-    ///
-    def concatMap[a,b](f: a -> List[b], xs: List[a]): List[b] = flatMap(f, xs)
 
     ///
     /// Collects the results of applying the partial function `f` to every element in `xs`.
