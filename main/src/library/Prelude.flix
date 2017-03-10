@@ -4,6 +4,30 @@
 def identity[a](x: a): a = x
 
 ///
+/// Returns the constant function with return value `y`.
+/// That is, returns `f` such that `f(x) = y` for all inputs `x`.
+///
+def constant[a, b](y: a): b -> a = x -> y
+
+///
+/// Returns the function `f` with input arguments swapped.
+/// That is, given the function `f: (a, b) -> c`, returns a function `(b, a) -> c`
+///
+def flip[a, b, c](f: (a, b) -> c): (b, a) -> c = (x, y) -> f(y, x)
+
+///
+/// Returns the result of currying the function `f`.
+/// That is, given the function `f: (a, b) -> c`, returns a function `a -> b -> c`
+///
+def curry[a, b, c](f: (a, b) -> c): a -> b -> c = x -> y -> f(x, y)
+
+///
+/// Returns the result of uncurrying the function `f`.
+/// That is, given the function `f: a -> b -> c`, returns a function `(a, b) -> c`
+///
+def uncurry[a, b, c](f: a -> b -> c): (a, b) -> c = (x, y) -> (y |> f(x))
+
+///
 /// Returns the first component of `t`.
 ///
 def fst[a, b](p: (a, b)): a =
@@ -16,6 +40,14 @@ def fst[a, b](p: (a, b)): a =
 def snd[a, b](p: (a, b)): b =
     let (x, y) = p;
         y
+
+///
+/// Returns the pair `p` with the components swapped.
+/// That is, returns `(y, x)` if `p = (x, y)`.
+///
+def swap[a, b](p: (a, b)): (b, a) =
+    let (x, y) = p;
+        (y, x)
 
 ///
 /// Backwards function composition. Applies the function on the right first.
@@ -82,13 +114,11 @@ def ↔(x: Bool, y: Bool): Bool = (x → y) ∧ (y → x)
 ///
 /// Alias for exclusive disjunction.
 ///
-// TODO: Add test cases
 def ⊕(x: Bool, y: Bool): Bool = (x ∨ y) ∧ !(x ∧ y)
 
 ///
 /// Alias for the Sheffer stroke.
 ///
-// TODO: Add test cases
 def ↑(x: Bool, y: Bool): Bool = !(x ∧ y)
 
 ///
