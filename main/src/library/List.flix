@@ -404,7 +404,7 @@ namespace List {
     //
 
     ///
-    /// Alias for foldLeft.
+    /// Alias for `foldLeft`.
     ///
     def fold[a,b](f: (b, a) -> b, s: b, xs: List[a]): b = foldLeft(f, s, xs)
 
@@ -427,14 +427,14 @@ namespace List {
     }
 
     ///
-    /// Alias for reduceLeftOpt.
+    /// Alias for `reduceLeftOpt`.
     ///
     def reduceOpt[a](f: (a, a) -> a, xs: List[a]): Option[a] = reduceLeftOpt(f, xs)
 
     ///
     /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
-    /// Returns `None` is `xs` is empty.
+    /// Returns `None` if `xs` is empty.
     ///
     def reduceLeftOpt[a](f: (a, a) -> a, xs: List[a]): Option[a] = match xs with {
         case Nil => None
@@ -444,7 +444,7 @@ namespace List {
     ///
     /// Applies `f` to all elements in `xs` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
-    /// Returns `None` is `xs` is empty.
+    /// Returns `None` if `xs` is empty.
     ///
     def reduceRightOpt[a](f: (a, a) -> a, xs: List[a]): Option[a] = match xs with {
         case Nil => None
@@ -680,7 +680,7 @@ namespace List {
     }
 
     ///
-    /// Alias for foldLeft2.
+    /// Alias for `foldLeft2`.
     ///
     def fold2[a,b,c](f: (c, a, b) -> c, c: c, xs: List[a], ys: List[b]): c = foldLeft2(f, c, xs, ys)
 
