@@ -120,22 +120,22 @@ def delete11: Bool = assert!(Set.eq(Set.delete(7, #{1, 2, 3, 4, 5, 6, 7}), #{1, 
 def delete12: Bool = assert!(Set.eq(Set.delete(8, #{1, 2, 3, 4, 5, 6, 7}), #{1, 2, 3, 4, 5, 6, 7}))
 
 /////////////////////////////////////////////////////////////////////////////
-// null                                                                    //
+// isEmpty                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def null01: Bool = assert!(Set.null(#{}))
+def isEmpty01: Bool = assert!(Set.isEmpty(#{}))
 
 @test
-def null02: Bool = assertNot!(Set.null(#{1}))
+def isEmpty02: Bool = assertNot!(Set.isEmpty(#{1}))
 
 @test
-def null03: Bool = assertNot!(Set.null(#{1, 2}))
+def isEmpty03: Bool = assertNot!(Set.isEmpty(#{1, 2}))
 
 @test
-def null04: Bool = assertNot!(Set.null(#{1, 2, 3}))
+def isEmpty04: Bool = assertNot!(Set.isEmpty(#{1, 2, 3}))
 
 @test
-def null05: Bool = assertNot!(Set.null(#{1, 2, 3, 4, 5, 6, 7, 8}))
+def isEmpty05: Bool = assertNot!(Set.isEmpty(#{1, 2, 3, 4, 5, 6, 7, 8}))
 
 /////////////////////////////////////////////////////////////////////////////
 // memberOf                                                                //
@@ -175,6 +175,78 @@ def memberOf11: Bool = assert!(Set.memberOf(10, #{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 
 @test
 def memberOf12: Bool = assertNot!(Set.memberOf(12, #{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}))
+
+/////////////////////////////////////////////////////////////////////////////
+// find                                                                    //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def find01: Bool = Set.find(i -> i > 2, #{}) `assertEq!` None
+
+@test
+def find02: Bool = Set.find(i -> i > 2, #{1}) `assertEq!` None
+
+@test
+def find03: Bool = Set.find(i -> i > 2, #{3}) `assertEq!` Some(3)
+
+@test
+def find04: Bool = Set.find(i -> i > 2, #{2, 1}) `assertEq!` None
+
+@test
+def find05: Bool = Set.find(i -> i > 2, #{-6, 6}) `assertEq!` Some(6)
+
+@test
+def find06: Bool = Set.find(i -> i > 2, #{6, -6}) `assertEq!` Some(6)
+
+@test
+def find07: Bool = Set.find(i -> i > 2, #{7, 6}) `assertEq!` Some(6)
+
+/////////////////////////////////////////////////////////////////////////////
+// findLeft                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def findLeft01: Bool = Set.findLeft(i -> i > 2, #{}) `assertEq!` None
+
+@test
+def findLeft02: Bool = Set.findLeft(i -> i > 2, #{1}) `assertEq!` None
+
+@test
+def findLeft03: Bool = Set.findLeft(i -> i > 2, #{3}) `assertEq!` Some(3)
+
+@test
+def findLeft04: Bool = Set.findLeft(i -> i > 2, #{2, 1}) `assertEq!` None
+
+@test
+def findLeft05: Bool = Set.findLeft(i -> i > 2, #{-6, 6}) `assertEq!` Some(6)
+
+@test
+def findLeft06: Bool = Set.findLeft(i -> i > 2, #{6, -6}) `assertEq!` Some(6)
+
+@test
+def findLeft07: Bool = Set.findLeft(i -> i > 2, #{7, 6}) `assertEq!` Some(6)
+
+/////////////////////////////////////////////////////////////////////////////
+// findRight                                                               //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def findRight01: Bool = Set.findRight(i -> i > 2, #{}) `assertEq!` None
+
+@test
+def findRight02: Bool = Set.findRight(i -> i > 2, #{1}) `assertEq!` None
+
+@test
+def findRight03: Bool = Set.findRight(i -> i > 2, #{3}) `assertEq!` Some(3)
+
+@test
+def findRight04: Bool = Set.findRight(i -> i > 2, #{2, 1}) `assertEq!` None
+
+@test
+def findRight05: Bool = Set.findRight(i -> i > 2, #{-6, 6}) `assertEq!` Some(6)
+
+@test
+def findRight06: Bool = Set.findRight(i -> i > 2, #{6, -6}) `assertEq!` Some(6)
+
+@test
+def findRight07: Bool = Set.findRight(i -> i > 2, #{7, 6}) `assertEq!` Some(7)
 
 /////////////////////////////////////////////////////////////////////////////
 // isSubsetOf                                                              //
@@ -280,6 +352,174 @@ def isProperSubsetOf16: Bool = assertNot!(Set.isProperSubsetOf(#{10, 2, 3, 6, -1
 
 @test
 def isProperSubsetOf17: Bool = assertNot!(Set.isProperSubsetOf(#{10, 2, 3, 6, 1, 4, 5, 9, 8, 7}, #{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}))
+
+/////////////////////////////////////////////////////////////////////////////
+// fold                                                                    //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def fold01: Bool = Set.fold((i, e) -> (i - e)*(e % 2 + 1), 100, #{}) `assertEq!` 100
+
+@test
+def fold02: Bool = Set.fold((i, e) -> (i - e)*(e % 2 + 1), 100, #{1}) `assertEq!` 198
+
+@test
+def fold03: Bool = Set.fold((i, e) -> (i - e)*(e % 2 + 1), 100, #{2, 1}) `assertEq!` 196
+
+@test
+def fold04: Bool = Set.fold((i, e) -> (i - e)*(e % 2 + 1), 100, #{3, 2, 1}) `assertEq!` 386
+
+/////////////////////////////////////////////////////////////////////////////
+// foldLeft                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def foldLeft01: Bool = Set.foldLeft((i, e) -> (i - e)*(e % 2 + 1), 100, #{}) `assertEq!` 100
+
+@test
+def foldLeft02: Bool = Set.foldLeft((i, e) -> (i - e)*(e % 2 + 1), 100, #{1}) `assertEq!` 198
+
+@test
+def foldLeft03: Bool = Set.foldLeft((i, e) -> (i - e)*(e % 2 + 1), 100, #{2, 1}) `assertEq!` 196
+
+@test
+def foldLeft04: Bool = Set.foldLeft((i, e) -> (i - e)*(e % 2 + 1), 100, #{3, 2, 1}) `assertEq!` 386
+
+/////////////////////////////////////////////////////////////////////////////
+// foldRight                                                               //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def foldRight01: Bool = Set.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, #{}) `assertEq!` 100
+
+@test
+def foldRight02: Bool = Set.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, #{1}) `assertEq!` 198
+
+@test
+def foldRight03: Bool = Set.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, #{2, 1}) `assertEq!` 194
+
+@test
+def foldRight04: Bool = Set.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, #{3, 2, 1}) `assertEq!` 382
+
+/////////////////////////////////////////////////////////////////////////////
+// reduceOpt                                                               //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def reduceOpt01: Bool = Set.reduceOpt((a, b) -> a-b, #{}: Set[Int]) `assertEq!` None
+
+@test
+def reduceOpt02: Bool = Set.reduceOpt((a, b) -> a-b, #{1}) `assertEq!` Some(1)
+
+@test
+def reduceOpt03: Bool = Set.reduceOpt((a, b) -> a-b, #{2, 1}) `assertEq!` Some(-1)
+
+@test
+def reduceOpt04: Bool = Set.reduceOpt((a, b) -> a-b, #{3, 2, 1}) `assertEq!` Some(-4)
+
+@test
+def reduceOpt05: Bool = Set.reduceOpt((a, b) -> a-b, #{4, 3, 2, 1}) `assertEq!` Some(-8)
+
+/////////////////////////////////////////////////////////////////////////////
+// reduceLeftOpt                                                           //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def reduceLeftOpt01: Bool = Set.reduceLeftOpt((a, b) -> a-b, #{}: Set[Int]) `assertEq!` None
+
+@test
+def reduceLeftOpt02: Bool = Set.reduceLeftOpt((a, b) -> a-b, #{1}) `assertEq!` Some(1)
+
+@test
+def reduceLeftOpt03: Bool = Set.reduceLeftOpt((a, b) -> a-b, #{2, 1}) `assertEq!` Some(-1)
+
+@test
+def reduceLeftOpt04: Bool = Set.reduceLeftOpt((a, b) -> a-b, #{3, 2, 1}) `assertEq!` Some(-4)
+
+@test
+def reduceLeftOpt05: Bool = Set.reduceLeftOpt((a, b) -> a-b, #{4, 3, 2, 1}) `assertEq!` Some(-8)
+
+/////////////////////////////////////////////////////////////////////////////
+// reduceRightOpt                                                          //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def reduceRightOpt01: Bool = Set.reduceRightOpt((a, b) -> a-b, #{}: Set[Int]) `assertEq!` None
+
+@test
+def reduceRightOpt02: Bool = Set.reduceRightOpt((a, b) -> a-b, #{1}) `assertEq!` Some(1)
+
+@test
+def reduceRightOpt03: Bool = Set.reduceRightOpt((a, b) -> a-b, #{2, 1}) `assertEq!` Some(-1)
+
+@test
+def reduceRightOpt04: Bool = Set.reduceRightOpt((a, b) -> a-b, #{3, 2, 1}) `assertEq!` Some(2)
+
+@test
+def reduceRightOpt05: Bool = Set.reduceRightOpt((a, b) -> a-b, #{4, 3, 2, 1}) `assertEq!` Some(-2)
+
+/////////////////////////////////////////////////////////////////////////////
+// count                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def count01: Bool = Set.count(i -> i > 3, #{}) `assertEq!` 0
+
+@test
+def count02: Bool = Set.count(i -> i > 3, #{1}) `assertEq!` 0
+
+@test
+def count03: Bool = Set.count(i -> i > 3, #{4}) `assertEq!` 1
+
+@test
+def count04: Bool = Set.count(i -> i > 3, #{2, 1}) `assertEq!` 0
+
+@test
+def count05: Bool = Set.count(i -> i > 3, #{8, 1}) `assertEq!` 1
+
+@test
+def count06: Bool = Set.count(i -> i > 3, #{1, 8}) `assertEq!` 1
+
+@test
+def count07: Bool = Set.count(i -> i > 3, #{7, 6}) `assertEq!` 2
+
+/////////////////////////////////////////////////////////////////////////////
+// flatten                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def flatten01: Bool = assert!(Set.eq(Set.flatten(#{}), #{}))
+
+@test
+def flatten02: Bool = assert!(Set.eq(Set.flatten(#{#{}}), #{}))
+
+@test
+def flatten03: Bool = assert!(Set.eq(Set.flatten(#{#{1}}), #{1}))
+
+@test
+def flatten04: Bool = assert!(Set.eq(Set.flatten(#{#{1, 2}}), #{1, 2}))
+
+@test
+def flatten05: Bool = assert!(Set.eq(Set.flatten(#{#{}, #{}}), #{}))
+
+@test
+def flatten06: Bool = assert!(Set.eq(Set.flatten(#{#{1}, #{}}), #{1}))
+
+@test
+def flatten07: Bool = assert!(Set.eq(Set.flatten(#{#{}, #{1}}), #{1}))
+
+@test
+def flatten08: Bool = assert!(Set.eq(Set.flatten(#{#{1}, #{2}}), #{1, 2}))
+
+@test
+def flatten09: Bool = assert!(Set.eq(Set.flatten(#{#{1}, #{1}}), #{1}))
+
+@test
+def flatten10: Bool = assert!(Set.eq(Set.flatten(#{#{1, 2}, #{3, 4, 5}}), #{1, 2, 3, 4, 5}))
+
+@test
+def flatten11: Bool = assert!(Set.eq(Set.flatten(#{#{1, 2}, #{3, 4, 3}}), #{1, 2, 3, 4}))
+
+@test
+def flatten12: Bool = assert!(Set.eq(Set.flatten(#{#{1, 2}, #{3, 4, 1}}), #{1, 2, 3, 4}))
+
+@test
+def flatten13: Bool = assert!(Set.eq(Set.flatten(#{#{1}, #{2, 3}, #{4}}), #{1, 2, 3, 4}))
+
+@test
+def flatten14: Bool = assert!(Set.eq(Set.flatten(#{#{1}, #{2, 3}, #{1}}), #{1, 2, 3}))
 
 /////////////////////////////////////////////////////////////////////////////
 // exists                                                                  //
@@ -646,3 +886,96 @@ def partition09: Bool = Set.partition(x -> x % 2 == 0, #{84, -6, 11, -4, 89, -11
 
 @test
 def partition10: Bool = Set.partition(x -> x % 2 == 0, #{1, 2, 3, 4, 5, 6, 7, 8}) `assertEq!` (#{2, 4, 6, 8}, #{1, 3, 5, 7})
+
+/////////////////////////////////////////////////////////////////////////////
+// toList                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toList01: Bool = Set.toList(#{}) `assertEq!` Nil
+
+@test
+def toList02: Bool = Set.toList(#{1}) `assertEq!` 1 :: Nil
+
+@test
+def toList03: Bool = Set.toList(#{1, 2}) `assertEq!` 2 :: 1 :: Nil
+
+@test
+def toList04: Bool = Set.toList(#{1, 2, 3}) `assertEq!` 3 :: 2 :: 1 :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
+// toMap                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toMap01: Bool = assert!(Map.eq(Set.toMap(#{}), @{}))
+
+@test
+def toMap02: Bool = assert!(Map.eq(Set.toMap(#{(1, true)}), @{1 -> true}))
+
+@test
+def toMap03: Bool = assert!(Map.eq(Set.toMap(#{(1, true), (2, false)}), @{1 -> true, 2 -> false}))
+
+@test
+def toMap04: Bool = assert!(Map.eq(Set.toMap(#{(1, true), (1, false)}), @{1 -> true}))
+
+@test
+def toMap05: Bool = assert!(Map.eq(Set.toMap(#{(1, true), (2, false), (3, true)}), @{1 -> true, 2 -> false, 3 -> true}))
+
+/////////////////////////////////////////////////////////////////////////////
+// eq                                                                      //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def eq01: Bool = assert!(Set.eq(#{}, #{}))
+
+@test
+def eq02: Bool = assertNot!(Set.eq(#{1}, #{}))
+
+@test
+def eq03: Bool = assertNot!(Set.eq(#{}, #{1}))
+
+@test
+def eq04: Bool = assertNot!(Set.eq(#{1, 2}, #{}))
+
+@test
+def eq05: Bool = assertNot!(Set.eq(#{}, #{1, 2}))
+
+@test
+def eq06: Bool = assertNot!(Set.eq(#{1}, #{2}))
+
+@test
+def eq07: Bool = assert!(Set.eq(#{1}, #{1}))
+
+@test
+def eq08: Bool = assertNot!(Set.eq(#{1, 2, 3}, #{}))
+
+@test
+def eq09: Bool = assertNot!(Set.eq(#{1, 2}, #{1}))
+
+@test
+def eq10: Bool = assertNot!(Set.eq(#{1}, #{1, 2}))
+
+@test
+def eq11: Bool = assertNot!(Set.eq(#{}, #{1, 2, 3}))
+
+@test
+def eq12: Bool = assertNot!(Set.eq(#{1, 2}, #{1, 3}))
+
+@test
+def eq13: Bool = assert!(Set.eq(#{1, 2}, #{2, 1}))
+
+@test
+def eq14: Bool = assert!(Set.eq(#{1, 2}, #{1, 2}))
+
+@test
+def eq15: Bool = assertNot!(Set.eq(#{1, 2, 3}, #{1, 2, 4}))
+
+@test
+def eq16: Bool = assert!(Set.eq(#{1, 2, 3}, #{1, 2, 3}))
+
+@test
+def eq17: Bool = assert!(Set.eq(#{1, 2, 3}, #{2, 3, 1}))
+
+@test
+def eq18: Bool = assert!(Set.eq(#{1, 2, 3}, #{3, 1, 2}))
+
+@test
+def eq19: Bool = assert!(Set.eq(#{1, 2, 3}, #{2, 1, 3}))

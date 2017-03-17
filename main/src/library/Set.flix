@@ -38,11 +38,13 @@ namespace Set {
 
     ///
     /// Returns the empty set.
+    /// `#{}` is syntactic sugar for `empty` (`#{} = empty()`).
     ///
     def empty[a]: Set[a] = Set(Nil)
 
     ///
     /// Returns the singleton set containing `x`.
+    /// `#{x}` is syntactic sugar for `singleton` (`#{x} = singleton(x)`).
     ///
     def singleton[a](x: a): Set[a] = Set(x :: Nil)
 
@@ -67,7 +69,7 @@ namespace Set {
     ///
     /// Returns true if and only if `xs` is the empty set, i.e. `Set(Nil)`.
     ///
-    def null[a](xs: Set[a]): Bool =
+    def isEmpty[a](xs: Set[a]): Bool =
         let Set(s) = xs;
             List.isEmpty(s)
 
@@ -89,7 +91,100 @@ namespace Set {
     def isProperSubsetOf[a](xs: Set[a], ys: Set[a]): Bool = if (isSubsetOf(xs, ys)) size(xs) != size(ys) else false
 
     ///
+    /// Alias for `findLeft`.
+    ///
+    def find[a](f: a -> Bool, xs: Set[a]): Option[a] =
+        let Set(s) = xs;
+            List.find(f, s)
+
+    ///
+    /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from left to right.
+    ///
+    def findLeft[a](f: a -> Bool, xs: Set[a]): Option[a] =
+        let Set(s) = xs;
+            List.findLeft(f, s)
+
+    ///
+    /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from right to left.
+    ///
+    def findRight[a](f: a -> Bool, xs: Set[a]): Option[a] =
+        let Set(s) = xs;
+            List.findRight(f, s)
+
+    //
+    // ## Fold And Reduce
+    //
+
+    ///
+    /// Alias for `foldLeft`.
+    ///
+    def fold[a,b](f: (b, a) -> b, s: b, xs: Set[a]): b =
+        let Set(es) = xs;
+            List.fold(f, s, es)
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
+    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
+    ///
+    def foldLeft[a,b](f: (b, a) -> b, s: b, xs: Set[a]): b =
+        let Set(es) = xs;
+            List.foldLeft(f, s, es)
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `xs` going from right to left.
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    def foldRight[a,b](f: (a, b) -> b, s: b, xs: Set[a]): b =
+        let Set(es) = xs;
+            List.foldRight(f, s, es)
+
+    ///
+    /// Alias for `reduceLeftOpt`.
+    ///
+    def reduceOpt[a](f: (a, a) -> a, xs: Set[a]): Option[a] =
+        let Set(s) = xs;
+            List.reduceOpt(f, s)
+
+    ///
+    /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
+    /// Returns `None` if `xs` is the empty set.
+    ///
+    def reduceLeftOpt[a](f: (a, a) -> a, xs: Set[a]): Option[a] =
+        let Set(s) = xs;
+            List.reduceLeftOpt(f, s)
+
+    ///
+    /// Applies `f` to all elements in `xs` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
+    /// Returns `None` if `xs` is the empty set.
+    ///
+    def reduceRightOpt[a](f: (a, a) -> a, xs: Set[a]): Option[a] =
+        let Set(s) = xs;
+            List.reduceRightOpt(f, s)
+
+    //
+    // ## Special Folds
+    //
+
+    ///
+    /// Returns the number of elements in `xs` that satisfy the predicate `f`.
+    ///
+    def count[a](f: a -> Bool, xs: Set[a]): Int32 =
+        let Set(s) = xs;
+            List.count(f, s)
+
+    ///
+    /// Returns the union of the elements in `xs`.
+    ///
+    def flatten[a](xs: Set[Set[a]]): Set[a] = match xs with {
+        case Set(Nil) => empty()
+        case Set(x :: rs) => union(x, flatten(Set(rs)))
+    }
+
+    ///
     /// Returns `true` if and only if at least one element in `xs` satisfies the predicate `f`.
+    /// Returns `false` if `xs` is the empty set.
     ///
     def exists[a](f: a -> Bool, xs: Set[a]): Bool =
         let Set(s) = xs;
@@ -97,6 +192,7 @@ namespace Set {
 
     ///
     /// Returns `true` if and only if all elements in `xs` satisfy the predicate `f`.
+    /// Returns `true` if `xs` is the empty set.
     ///
     def forall[a](f: a -> Bool, xs: Set[a]): Bool =
         let Set(s) = xs;
@@ -173,9 +269,33 @@ namespace Set {
             (Set(ys), Set(zs))
 
     //
+    // ## Set Conversions
+    //
+
+    ///
+    /// Returns the set `xs` as a list.
+    ///
+    def toList[a](xs: Set[a]): List[a] =
+        let Set(s) = xs;
+            s
+
+    ///
+    /// Returns the association set `xs` as a map.
+    /// If `xs` contains multiple values for the same key, the value appearing latest in `xs` is used.
+    ///
+    def toMap[a, b](xs: Set[(a, b)]): Map[a, b] =
+        let Set(s) = xs;
+            List.toMap(s)
+
+    //
     // ## Set Equality
     //
+
+    ///
+    /// Returns `true` if and only if `xs` and `ys` and equal, i.e. they have the same elements.
+    ///
     def eq[a](xs: Set[a], ys: Set[a]): Bool = isSubsetOf(xs, ys) && size(xs) == size(ys)
+
 
 // TODO
 //## Set Conversions
