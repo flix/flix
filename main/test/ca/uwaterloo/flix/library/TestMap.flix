@@ -54,22 +54,22 @@ def singleton02: Bool = assert!(Map.eq(Map.singleton(3, -1), @{3 -> -1}))
 def singleton03: Bool = assert!(Map.eq(Map.singleton(-99, -11), @{-99 -> -11}))
 
 /////////////////////////////////////////////////////////////////////////////
-// null                                                                    //
+// isEmpty                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def null01: Bool = assert!(Map.null(@{}))
+def isEmpty01: Bool = assert!(Map.isEmpty(@{}))
 
 @test
-def null02: Bool = assertNot!(Map.null(@{1 -> 2}))
+def isEmpty02: Bool = assertNot!(Map.isEmpty(@{1 -> 2}))
 
 @test
-def null03: Bool = assertNot!(Map.null(@{1 -> 2, 2 -> 4}))
+def isEmpty03: Bool = assertNot!(Map.isEmpty(@{1 -> 2, 2 -> 4}))
 
 @test
-def null04: Bool = assertNot!(Map.null(@{1 -> 2, 2 -> 4, 3 -> 6}))
+def isEmpty04: Bool = assertNot!(Map.isEmpty(@{1 -> 2, 2 -> 4, 3 -> 6}))
 
 @test
-def null05: Bool = assertNot!(Map.null(@{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8}))
+def isEmpty05: Bool = assertNot!(Map.isEmpty(@{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8}))
 
 /////////////////////////////////////////////////////////////////////////////
 // get                                                                     //
