@@ -173,7 +173,6 @@ def memberOf10: Bool = assert!(Map.memberOf(-2, @{2 -> 1, 3 -> 17, -2 -> -2}))
 /////////////////////////////////////////////////////////////////////////////
 // keysOf                                                                  //
 /////////////////////////////////////////////////////////////////////////////
-/*
 @test
 def keysOf01: Bool = assert!(Set.eq(Map.keysOf(@{}), #{}))
 
@@ -191,7 +190,6 @@ def keysOf05: Bool = assert!(Set.eq(Map.keysOf(@{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8}
 
 @test
 def keysOf06: Bool = assert!(Set.eq(Map.keysOf(@{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8, 5 -> 10}), #{1, 2, 3, 4, 5}))
-*/
 
 /////////////////////////////////////////////////////////////////////////////
 // valuesOf                                                                //
@@ -203,19 +201,19 @@ def valuesOf01: Bool = Map.valuesOf(@{}) `assertEq!` Nil
 def valuesOf02: Bool = Map.valuesOf(@{1 -> 2}) `assertEq!` 2 :: Nil
 
 @test
-def valuesOf03: Bool = Map.valuesOf(@{1 -> 2, 2 -> 4}) `assertEq!` 2 :: 4 :: Nil
+def valuesOf03: Bool = Map.valuesOf(@{1 -> 2, 2 -> 4}) `assertEq!` 4 :: 2 :: Nil
 
 @test
-def valuesOf04: Bool = Map.valuesOf(@{1 -> 2, 2 -> 4, 3 -> 6}) `assertEq!` 2 :: 4 :: 6 :: Nil
+def valuesOf04: Bool = Map.valuesOf(@{1 -> 2, 2 -> 4, 3 -> 6}) `assertEq!` 6 :: 4 :: 2 :: Nil
 
 @test
-def valuesOf05: Bool = Map.valuesOf(@{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8}) `assertEq!` 2 :: 4 :: 6 :: 8 :: Nil
+def valuesOf05: Bool = Map.valuesOf(@{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8}) `assertEq!` 8 :: 6 :: 4 :: 2 :: Nil
 
 @test
-def valuesOf06: Bool = Map.valuesOf(@{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8, 5 -> 10}) `assertEq!` 2 :: 4 :: 6 :: 8 :: 10 :: Nil
+def valuesOf06: Bool = Map.valuesOf(@{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8, 5 -> 10}) `assertEq!` 10 :: 8 :: 6 :: 4 :: 2 :: Nil
 
 @test
-def valuesOf07: Bool = Map.valuesOf(@{1 -> -11, 2 -> 4, 3 -> -5, 4 -> 7, 5 -> -5}) `assertEq!` -11 :: 4 :: -5 :: 7 :: -5 :: Nil
+def valuesOf07: Bool = Map.valuesOf(@{1 -> -11, 2 -> 4, 3 -> -5, 4 -> 7, 5 -> -5}) `assertEq!` -5 :: 7 :: -5 :: 4 :: -11 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // insert                                                                  //
@@ -530,6 +528,78 @@ def isProperSubmapOf17: Bool = assertNot!(Map.isProperSubmapOf(@{2 -> 4, 3 -> 3}
 def isProperSubmapOf18: Bool = assertNot!(Map.isProperSubmapOf(@{2 -> 4, 1 -> 3, 8 -> 9}, @{1 -> 3, 2 -> 4}))
 
 /////////////////////////////////////////////////////////////////////////////
+// find                                                                    //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def find01: Bool = Map.find((k, v) -> k == v, @{}) `assertEq!` None
+
+@test
+def find02: Bool = Map.find((k, v) -> k == v, @{1 -> 2}) `assertEq!` None
+
+@test
+def find03: Bool = Map.find((k, v) -> k == v, @{1 -> 1}) `assertEq!` Some((1, 1))
+
+@test
+def find04: Bool = Map.find((k, v) -> k == v, @{1 -> 2, 2 -> 3}) `assertEq!` None
+
+@test
+def find05: Bool = Map.find((k, v) -> k == v, @{1 -> 1, 2 -> 3}) `assertEq!` Some((1, 1))
+
+@test
+def find06: Bool = Map.find((k, v) -> k == v, @{1 -> 2, 2 -> 2}) `assertEq!` Some((2, 2))
+
+@test
+def find07: Bool = Map.find((k, v) -> k == v, @{1 -> 1, 2 -> 2}) `assertEq!` Some((2, 2))
+
+/////////////////////////////////////////////////////////////////////////////
+// findLeft                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def findLeft01: Bool = Map.findLeft((k, v) -> k == v, @{}) `assertEq!` None
+
+@test
+def findLeft02: Bool = Map.findLeft((k, v) -> k == v, @{1 -> 2}) `assertEq!` None
+
+@test
+def findLeft03: Bool = Map.findLeft((k, v) -> k == v, @{1 -> 1}) `assertEq!` Some((1, 1))
+
+@test
+def findLeft04: Bool = Map.findLeft((k, v) -> k == v, @{1 -> 2, 2 -> 3}) `assertEq!` None
+
+@test
+def findLeft05: Bool = Map.findLeft((k, v) -> k == v, @{1 -> 1, 2 -> 3}) `assertEq!` Some((1, 1))
+
+@test
+def findLeft06: Bool = Map.findLeft((k, v) -> k == v, @{1 -> 2, 2 -> 2}) `assertEq!` Some((2, 2))
+
+@test
+def findLeft07: Bool = Map.findLeft((k, v) -> k == v, @{1 -> 1, 2 -> 2}) `assertEq!` Some((2, 2))
+
+/////////////////////////////////////////////////////////////////////////////
+// findRight                                                               //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def findRight01: Bool = Map.findRight((k, v) -> k == v, @{}) `assertEq!` None
+
+@test
+def findRight02: Bool = Map.findRight((k, v) -> k == v, @{1 -> 2}) `assertEq!` None
+
+@test
+def findRight03: Bool = Map.findRight((k, v) -> k == v, @{1 -> 1}) `assertEq!` Some((1, 1))
+
+@test
+def findRight04: Bool = Map.findRight((k, v) -> k == v, @{1 -> 2, 2 -> 3}) `assertEq!` None
+
+@test
+def findRight05: Bool = Map.findRight((k, v) -> k == v, @{1 -> 1, 2 -> 3}) `assertEq!` Some((1, 1))
+
+@test
+def findRight06: Bool = Map.findRight((k, v) -> k == v, @{1 -> 2, 2 -> 2}) `assertEq!` Some((2, 2))
+
+@test
+def findRight07: Bool = Map.findRight((k, v) -> k == v, @{1 -> 1, 2 -> 2}) `assertEq!` Some((1, 1))
+
+/////////////////////////////////////////////////////////////////////////////
 // filter                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -703,6 +773,168 @@ def foldRightWithKey03: Bool = Map.foldRightWithKey((k, v, s) -> k + s + v, 0, @
 
 @test
 def foldRightWithKey04: Bool = Map.foldRightWithKey((k, v, s) -> k + s + v, 0, @{1 -> 2, 3 -> 4, 5 -> 6}) `assertEq!` 21
+
+/////////////////////////////////////////////////////////////////////////////
+// reduce                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def reduce01: Bool = Map.reduce((v1, v2) -> v1 - v2, @{}: Map[Int32, Int32]) `assertEq!` None
+
+@test
+def reduce02: Bool = Map.reduce((v1, v2) -> v1 - v2, @{1 -> 2}) `assertEq!` Some(2)
+
+@test
+def reduce03: Bool = Map.reduce((v1, v2) -> v1 - v2, @{1 -> 2, 2 -> 3}) `assertEq!` Some(1)
+
+@test
+def reduce04: Bool = Map.reduce((v1, v2) -> v1 - v2, @{1 -> 2, 2 -> 3, 3 -> 4}) `assertEq!` Some(-1)
+
+/////////////////////////////////////////////////////////////////////////////
+// reduceWithKey                                                           //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def reduceWithKey01: Bool = Map.reduceWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), @{}: Map[Int32, Int32]) `assertEq!` None
+
+@test
+def reduceWithKey02: Bool = Map.reduceWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), @{1 -> 2}) `assertEq!` Some((1, 2))
+
+@test
+def reduceWithKey03: Bool = Map.reduceWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), @{1 -> 2, 2 -> 3}) `assertEq!` Some((1, 1))
+
+@test
+def reduceWithKey04: Bool = Map.reduceWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), @{1 -> 2, 2 -> 3, 3 -> 4}) `assertEq!` Some((0, -1))
+
+/////////////////////////////////////////////////////////////////////////////
+// reduceLeft                                                              //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def reduceLeft01: Bool = Map.reduceLeft((v1, v2) -> v1 - v2, @{}: Map[Int32, Int32]) `assertEq!` None
+
+@test
+def reduceLeft02: Bool = Map.reduceLeft((v1, v2) -> v1 - v2, @{1 -> 2}) `assertEq!` Some(2)
+
+@test
+def reduceLeft03: Bool = Map.reduceLeft((v1, v2) -> v1 - v2, @{1 -> 2, 2 -> 3}) `assertEq!` Some(1)
+
+@test
+def reduceLeft04: Bool = Map.reduceLeft((v1, v2) -> v1 - v2, @{1 -> 2, 2 -> 3, 3 -> 4}) `assertEq!` Some(-1)
+
+/////////////////////////////////////////////////////////////////////////////
+// reduceLeftWithKey                                                       //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def reduceLeftWithKey01: Bool = Map.reduceLeftWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), @{}: Map[Int32, Int32]) `assertEq!` None
+
+@test
+def reduceLeftWithKey02: Bool = Map.reduceLeftWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), @{1 -> 2}) `assertEq!` Some((1, 2))
+
+@test
+def reduceLeftWithKey03: Bool = Map.reduceLeftWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), @{1 -> 2, 2 -> 3}) `assertEq!` Some((1, 1))
+
+@test
+def reduceLeftWithKey04: Bool = Map.reduceLeftWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), @{1 -> 2, 2 -> 3, 3 -> 4}) `assertEq!` Some((0, -1))
+
+/////////////////////////////////////////////////////////////////////////////
+// reduceRight                                                             //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def reduceRight01: Bool = Map.reduceRight((v1, v2) -> v1 - v2, @{}: Map[Int32, Int32]) `assertEq!` None
+
+@test
+def reduceRight02: Bool = Map.reduceRight((v1, v2) -> v1 - v2, @{1 -> 2}) `assertEq!` Some(2)
+
+@test
+def reduceRight03: Bool = Map.reduceRight((v1, v2) -> v1 - v2, @{1 -> 2, 2 -> 3}) `assertEq!` Some(1)
+
+@test
+def reduceRight04: Bool = Map.reduceRight((v1, v2) -> v1 - v2, @{1 -> 2, 2 -> 3, 3 -> 4}) `assertEq!` Some(3)
+
+/////////////////////////////////////////////////////////////////////////////
+// reduceRightWithKey                                                      //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def reduceRightWithKey01: Bool = Map.reduceRightWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), @{}: Map[Int32, Int32]) `assertEq!` None
+
+@test
+def reduceRightWithKey02: Bool = Map.reduceRightWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), @{1 -> 2}) `assertEq!` Some((1, 2))
+
+@test
+def reduceRightWithKey03: Bool = Map.reduceRightWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), @{1 -> 2, 2 -> 3}) `assertEq!` Some((1, 1))
+
+@test
+def reduceRightWithKey04: Bool = Map.reduceRightWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), @{1 -> 2, 2 -> 3, 3 -> 4}) `assertEq!` Some((2 , 3))
+
+/////////////////////////////////////////////////////////////////////////////
+// count                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def count01: Bool = Map.count((k, v) -> k == v, @{}) `assertEq!` 0
+
+@test
+def count02: Bool = Map.count((k, v) -> k == v, @{1 -> 2}) `assertEq!` 0
+
+@test
+def count03: Bool = Map.count((k, v) -> k == v, @{1 -> 1}) `assertEq!` 1
+
+@test
+def count04: Bool = Map.count((k, v) -> k == v, @{1 -> 2, 2 -> 3}) `assertEq!` 0
+
+@test
+def count05: Bool = Map.count((k, v) -> k == v, @{1 -> 1, 2 -> 3}) `assertEq!` 1
+
+@test
+def count06: Bool = Map.count((k, v) -> k == v, @{1 -> 2, 2 -> 2}) `assertEq!` 1
+
+@test
+def count07: Bool = Map.count((k, v) -> k == v, @{1 -> 1, 2 -> 2}) `assertEq!` 2
+
+/////////////////////////////////////////////////////////////////////////////
+// exists                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def exists01: Bool = assertNot!(Map.exists((k, v) -> k == v, @{}))
+
+@test
+def exists02: Bool = assertNot!(Map.exists((k, v) -> k == v, @{1 -> 2}))
+
+@test
+def exists03: Bool = assert!(Map.exists((k, v) -> k == v, @{1 -> 1}))
+
+@test
+def exists04: Bool = assertNot!(Map.exists((k, v) -> k == v, @{1 -> 2, 2 -> 3}))
+
+@test
+def exists05: Bool = assert!(Map.exists((k, v) -> k == v, @{1 -> 1, 2 -> 3}))
+
+@test
+def exists06: Bool = assert!(Map.exists((k, v) -> k == v, @{1 -> 2, 2 -> 2}))
+
+@test
+def exists07: Bool = assert!(Map.exists((k, v) -> k == v, @{1 -> 1, 2 -> 2}))
+
+/////////////////////////////////////////////////////////////////////////////
+// forall                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def forall01: Bool = assert!(Map.forall((k, v) -> k == v, @{}))
+
+@test
+def forall02: Bool = assertNot!(Map.forall((k, v) -> k == v, @{1 -> 2}))
+
+@test
+def forall03: Bool = assert!(Map.forall((k, v) -> k == v, @{1 -> 1}))
+
+@test
+def forall04: Bool = assertNot!(Map.forall((k, v) -> k == v, @{1 -> 2, 2 -> 3}))
+
+@test
+def forall05: Bool = assertNot!(Map.forall((k, v) -> k == v, @{1 -> 1, 2 -> 3}))
+
+@test
+def forall06: Bool = assertNot!(Map.forall((k, v) -> k == v, @{1 -> 2, 2 -> 2}))
+
+@test
+def forall07: Bool = assert!(Map.forall((k, v) -> k == v, @{1 -> 1, 2 -> 2}))
 
 /////////////////////////////////////////////////////////////////////////////
 // union                                                                   //
@@ -1205,10 +1437,32 @@ def differenceWithKey21: Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2)
 /////////////////////////////////////////////////////////////////////////////
 // toSet                                                                   //
 /////////////////////////////////////////////////////////////////////////////
-/*
 @test
 def toSet01: Bool = assert!(Set.eq(Map.toSet(@{}), #{}))
-*/
+
+@test
+def toSet02: Bool = assert!(Set.eq(Map.toSet(@{1 -> 2}), #{(1, 2)}))
+
+@test
+def toSet03: Bool = assert!(Set.eq(Map.toSet(@{1 -> 2, 3 -> 4}), #{(1, 2), (3, 4)}))
+
+@test
+def toSet04: Bool = assert!(Set.eq(Map.toSet(@{1 -> 2, 2 -> 2, 3 -> 4}), #{(1, 2), (2, 2), (3, 4)}))
+
+/////////////////////////////////////////////////////////////////////////////
+// toList                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toList01: Bool = Map.toList(@{}) `assertEq!` Nil
+
+@test
+def toList02: Bool = Map.toList(@{1 -> 2}) `assertEq!` (1, 2) :: Nil
+
+@test
+def toList03: Bool = Map.toList(@{1 -> 2, 3 -> 4}) `assertEq!` (3, 4) :: (1, 2) :: Nil
+
+@test
+def toList04: Bool = Map.toList(@{1 -> 2, 2 -> 2, 3 -> 4}) `assertEq!` (3, 4) :: (2, 2) :: (1, 2) :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // eq                                                                      //

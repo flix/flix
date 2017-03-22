@@ -281,7 +281,7 @@ namespace Set {
 
     ///
     /// Returns the association set `xs` as a map.
-    /// If `xs` contains multiple values for the same key, the value appearing latest in `xs` is used.
+    /// If `xs` contains multiple values for the same key, the value appearing earliest in `xs` is used.
     ///
     def toMap[a, b](xs: Set[(a, b)]): Map[a, b] =
         let Set(s) = xs;

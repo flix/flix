@@ -117,17 +117,10 @@ namespace Map {
     /// Otherwise, updates `m` with `k -> v`.
     ///
     def insertWithKey[k, v](f: (k, v, v) -> v, k: k, v: v, m: Map[k, v]): Map[k, v] =
-        let Map(xs) = m;
-            Map(insertWithKeyHelper(f, k, v, xs))
-
-    ///
-    /// Helper function for `insertWithKey`.
-    ///
-    @internal
-    def insertWithKeyHelper[k, v](f: (k, v, v) -> v, k: k, v: v, xs: List[(k, v)]): List[(k, v)] = match xs with {
-        case Nil => (k, v) :: Nil
-        case (a, b) :: rs => if (k == a) (k, f(k, v, b)) :: rs else (a, b) :: insertWithKeyHelper(f, k, v, rs)
-    }
+        if (memberOf(k, m)) adjustWithKey((a, b) -> f(a, v, b), k, m)
+        else
+            let Map(xs) = m;
+                Map((k, v) :: xs)
 
     //
     // ## Update
@@ -283,34 +276,46 @@ namespace Map {
     ///
     /// Alias for `reduceLeft`.
     ///
-    def reduce[k, v](f: (v, v) -> v, m: Map[k, v]): Option[v] =
-        let Map(xs) = m;
-            List.reduceOpt(f, List.map(kv -> snd(kv), xs))
+    def reduce[k, v](f: (v, v) -> v, m: Map[k, v]): Option[v] = reduceLeft(f, m)
 
     ///
     /// Alias for `reduceLeftWithKey`.
     ///
-    def reduceWithKey[a](f: (a, a) -> a, xs: Set[a]): Option[a] =
-        let Set(s) = xs;
-            List.reduceOpt(f, s)
+    def reduceWithKey[k, v](f: (k, v, k, v) -> (k, v), m: Map[k, v]): Option[(k, v)] = reduceLeftWithKey(f, m)
 
     ///
-    /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
-    /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
-    /// Returns `None` if `xs` is the empty set.
+    /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// That is, the result is of the form: `Some(f(...f(f(v1, v2), v3)..., vn))`
+    /// Returns `None` if `m` is the empty map.
     ///
-    def reduceLeftOpt[a](f: (a, a) -> a, xs: Set[a]): Option[a] =
-        let Set(s) = xs;
-            List.reduceLeftOpt(f, s)
+    def reduceLeft[k, v](f: (v, v) -> v, m: Map[k, v]): Option[v] = List.reduceLeftOpt(f, m.valuesOf())
 
     ///
-    /// Applies `f` to all elements in `xs` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
-    /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
-    /// Returns `None` if `xs` is the empty set.
+    /// Applies `f` to all mappings in `m` going from left to right until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
+    /// That is, the result is of the form: `Some(f(...f(f(k1, v1, k2, v2), k3, v3)..., kn, vn))`
+    /// Returns `None` if `m` is the empty map.
     ///
-    def reduceRightOpt[a](f: (a, a) -> a, xs: Set[a]): Option[a] =
-        let Set(s) = xs;
-            List.reduceRightOpt(f, s)
+    def reduceLeftWithKey[k, v](f: (k, v, k, v) -> (k, v), m: Map[k, v]): Option[(k, v)] =
+        let Map(xs) = m;
+            List.reduceLeftOpt((kv1, kv2) -> f(fst(kv1), snd(kv1), fst(kv2), snd(kv2)), xs)
+
+    ///
+    /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// That is, the result is of the form: `Some(f(v1, ...f(vn-2, f(vn-1, vn))...))`
+    /// Returns `None` if `m` is the empty map.
+    ///
+    def reduceRight[k, v](f: (v, v) -> v, m: Map[k, v]): Option[v] =
+        let Map(xs) = m;
+            List.reduceRightOpt(f, List.map(kv -> snd(kv), xs))
+
+    ///
+    /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
+    /// That is, the result is of the form: `Some(f(k1, v1, ...f(kn-2, vn-2, f(kn-1, vn-1, kn, vn))...))`
+    /// Returns `None` if `m` is the empty map.
+    ///
+    def reduceRightWithKey[k, v](f: (k, v, k, v) -> (k, v), m: Map[k, v]): Option[(k, v)] =
+        let Map(xs) = m;
+            List.reduceRightOpt((kv1, kv2) -> f(fst(kv1), snd(kv1), fst(kv2), snd(kv2)), xs)
 
     //
     // ## Special Folds
@@ -412,6 +417,13 @@ namespace Map {
     //
     // ## Map Conversions
     //
+
+    ///
+    /// Returns the map `m` as a list of key-value pairs.
+    ///
+    def toList[k, v](m: Map[k, v]): List[(k, v)] =
+        let Map(xs) = m;
+            xs
 
     ///
     /// Returns the map `m` as a set of key-value pairs.

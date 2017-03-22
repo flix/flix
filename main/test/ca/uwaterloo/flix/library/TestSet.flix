@@ -915,7 +915,7 @@ def toMap02: Bool = assert!(Map.eq(Set.toMap(#{(1, true)}), @{1 -> true}))
 def toMap03: Bool = assert!(Map.eq(Set.toMap(#{(1, true), (2, false)}), @{1 -> true, 2 -> false}))
 
 @test
-def toMap04: Bool = assert!(Map.eq(Set.toMap(#{(1, true), (1, false)}), @{1 -> true}))
+def toMap04: Bool = assert!(Map.eq(Set.toMap(#{(1, true), (1, false)}), @{1 -> false}))
 
 @test
 def toMap05: Bool = assert!(Map.eq(Set.toMap(#{(1, true), (2, false), (3, true)}), @{1 -> true, 2 -> false, 3 -> true}))
