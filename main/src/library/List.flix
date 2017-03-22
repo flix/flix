@@ -39,7 +39,7 @@ namespace List {
     /// Returns `Some(x)` if `x` is the first element of `xs`.
     /// Returns `None` if `xs` is empty.
     ///
-    def headOpt[a](xs: List[a]): Option[a] = match xs with {
+    def head[a](xs: List[a]): Option[a] = match xs with {
         case Nil => None
         case x :: _ => Some(x)
     }
@@ -48,10 +48,10 @@ namespace List {
     /// Returns `Some(x)` if `x` is the last element of `xs`.
     /// Returns `None` if `xs` is empty.
     ///
-    def lastOpt[a](xs: List[a]): Option[a] = match xs with {
+    def last[a](xs: List[a]): Option[a] = match xs with {
         case Nil => None
         case x :: Nil => Some(x)
-        case x :: rs => lastOpt(rs)
+        case x :: rs => last(rs)
     }
 
     ///
@@ -429,14 +429,14 @@ namespace List {
     ///
     /// Alias for `reduceLeftOpt`.
     ///
-    def reduceOpt[a](f: (a, a) -> a, xs: List[a]): Option[a] = reduceLeftOpt(f, xs)
+    def reduce[a](f: (a, a) -> a, xs: List[a]): Option[a] = reduceLeft(f, xs)
 
     ///
     /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
     /// Returns `None` if `xs` is empty.
     ///
-    def reduceLeftOpt[a](f: (a, a) -> a, xs: List[a]): Option[a] = match xs with {
+    def reduceLeft[a](f: (a, a) -> a, xs: List[a]): Option[a] = match xs with {
         case Nil => None
         case x :: rs => Some(foldLeft(f, x, rs))
     }
@@ -446,9 +446,9 @@ namespace List {
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     /// Returns `None` if `xs` is empty.
     ///
-    def reduceRightOpt[a](f: (a, a) -> a, xs: List[a]): Option[a] = match xs with {
+    def reduceRight[a](f: (a, a) -> a, xs: List[a]): Option[a] = match xs with {
         case Nil => None
-        case x :: rs => match reduceRightOpt(f, rs) with {
+        case x :: rs => match reduceRight(f, rs) with {
             case None => Some(x)
             case Some(v) => Some(f(x, v))
         }
