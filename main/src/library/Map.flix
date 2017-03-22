@@ -185,9 +185,7 @@ namespace Map {
     ///
     /// Alias for `findLeft`.
     ///
-    def find[k, v](f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] =
-        let Map(xs) = m;
-            List.find(x -> f(fst(x), snd(x)), xs)
+    def find[k, v](f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] = findLeft(f, m)
 
     ///
     /// Optionally returns the first mapping of `m` that satisfies the predicate `f` when searching from left to right.
@@ -288,7 +286,7 @@ namespace Map {
     /// That is, the result is of the form: `Some(f(...f(f(v1, v2), v3)..., vn))`
     /// Returns `None` if `m` is the empty map.
     ///
-    def reduceLeft[k, v](f: (v, v) -> v, m: Map[k, v]): Option[v] = List.reduceLeftOpt(f, m.valuesOf())
+    def reduceLeft[k, v](f: (v, v) -> v, m: Map[k, v]): Option[v] = List.reduceLeft(f, m.valuesOf())
 
     ///
     /// Applies `f` to all mappings in `m` going from left to right until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
@@ -297,7 +295,7 @@ namespace Map {
     ///
     def reduceLeftWithKey[k, v](f: (k, v, k, v) -> (k, v), m: Map[k, v]): Option[(k, v)] =
         let Map(xs) = m;
-            List.reduceLeftOpt((kv1, kv2) -> f(fst(kv1), snd(kv1), fst(kv2), snd(kv2)), xs)
+            List.reduceLeft((kv1, kv2) -> f(fst(kv1), snd(kv1), fst(kv2), snd(kv2)), xs)
 
     ///
     /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
@@ -306,7 +304,7 @@ namespace Map {
     ///
     def reduceRight[k, v](f: (v, v) -> v, m: Map[k, v]): Option[v] =
         let Map(xs) = m;
-            List.reduceRightOpt(f, List.map(kv -> snd(kv), xs))
+            List.reduceRight(f, List.map(kv -> snd(kv), xs))
 
     ///
     /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
@@ -315,7 +313,7 @@ namespace Map {
     ///
     def reduceRightWithKey[k, v](f: (k, v, k, v) -> (k, v), m: Map[k, v]): Option[(k, v)] =
         let Map(xs) = m;
-            List.reduceRightOpt((kv1, kv2) -> f(fst(kv1), snd(kv1), fst(kv2), snd(kv2)), xs)
+            List.reduceRight((kv1, kv2) -> f(fst(kv1), snd(kv1), fst(kv2), snd(kv2)), xs)
 
     //
     // ## Special Folds
