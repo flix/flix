@@ -430,14 +430,6 @@ namespace Map {
         let Map(xs) = m;
             List.toSet(xs)
 
-    // TODO:
-    //- **toList(m: Map[K, V]): List[(K, V)]**
-    //    - Alias for toListAsc.
-    //- **toAscList(m: Map[K, V]): List[(K, V)]**
-    //    - Returns the map as an association list of pairs ordered by the natural order on the keys in ascending order.
-    //- **toDescList(m: Map[K, V]): List[(K, V)]**
-    //    - Similar to toAscList, but the keys are ordered in descending order.
-
     //
     // ## Map Equality
     //
