@@ -81,8 +81,8 @@ namespace Int64 {
 
     ///
     /// Returns the logical right shift of `x` by `distance`.
-    /// A zero is shifted into the leftmost position regardless
-    /// of sign extension.
+    /// Only the rightmost 6 bits of `distance` are considered (ie. `distance % 64`).
+    /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     def logicalRightShift(x: Int64, distance: Int32): Int64 =
         if (x < 0i64 && distance % size() != 0)
@@ -115,6 +115,29 @@ namespace Int64 {
         (logicalRightShift(x, -distance)) ||| (x <<< distance)
 
     ///
+    /// Returns the value obtained by reversing the bits in the
+    /// two's complement binary representation of `x`.
+    ///
+    def reverse(x: Int64): Int64 = reverseHelper(x, 0, size()-1)
+
+    ///
+    /// Helper function for `reverse`.
+    ///
+    @internal
+    def reverseHelper(x: Int64, l: Int32, r: Int32): Int64 =
+        if (l >= r) x else reverseHelper(swap(x, l, r), l+1, r-1)
+
+    ///
+    /// Helper function for `reverse`.
+    ///
+    @internal
+    def swap(x: Int64, l: Int32, r: Int32): Int64 = match (getBit(x, l), getBit(x, r)) with {
+        case (1, 0) => clearBit(setBit(x, r), l)
+        case (0, 1) => clearBit(setBit(x, l), r)
+        case _ => x
+    }
+
+    ///
     /// Returns the position of the highest-order/leftmost one-bit in `x`.
     /// Possible return values: 0 (rightmost bit) - 63 (leftmost bit)
     ///                         -1 if x = 0
@@ -137,12 +160,13 @@ namespace Int64 {
     /// If `x` has a one-bit at `position`, return that position.
     /// Otherwise recursively check the next bit in the same way.
     ///
+    @internal
     def oneBitPositionHelper(x: Int64, position: Int32, delta: Int32): Int32 = switch {
         case position < 0                   => -1
         case position > (size() - 1)        => -1
-        case bit(x, position) == 1          => position
+        case getBit(x, position) == 1          => position
         case delta == 0                     => -1
-        case bit(x, position) == 0          => oneBitPositionHelper(x, position + delta, delta)
+        case getBit(x, position) == 0          => oneBitPositionHelper(x, position + delta, delta)
     }
 
     ///
@@ -166,11 +190,9 @@ namespace Int64 {
     /// Returns a value with a single one-bit at bit number `position`.
     /// Returns 0 if `position` is outside the range 0-63 inclusive.
     ///
-    def bitPositionToInt(position: Int32): Int64 = switch {
-        case position < 0 || position > size() - 1  => 0i64
-        case position == size() - 1                 => minValue()
-        case position != size() - 1                 => 1i64 <<< position
-    }
+    @internal
+    def bitPositionToInt(position: Int32): Int64 =
+        if (position < 0 || position > size() - 1) 0i64 else 1i64 <<< position
 
     ///
     /// Returns the number of zero bits preceding the
@@ -193,6 +215,27 @@ namespace Int64 {
     /// Considers the 6 rightmost bits of `position` (`position` mod 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit).
     ///
-    def bit(x: Int64, position: Int32): Int32 =
+    def getBit(x: Int64, position: Int32): Int32 =
         if ((x >>> position) % 2i64 == 0i64) 0 else 1
+
+    ///
+    /// Returns `x` with the bit at position `position` set (to 1).
+    /// Considers the 6 rightmost bits of `position` (`position` mod 64).
+    /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
+    ///
+    def setBit(x: Int64, position: Int32): Int64 = x ||| (1i64 <<< position)
+
+    ///
+    /// Returns `x` with the bit at position `position` cleared (to 0).
+    /// Considers the 6 rightmost bits of `position` (`position` mod 64).
+    /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
+    ///
+    def clearBit(x: Int64, position: Int32): Int64 = x &&& ~~~(1i64 <<< position)
+
+    ///
+    /// Returns `x` with the bit at position `position` flipped.
+    /// Considers the 6 rightmost bits of `position` (`position` mod 64).
+    /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
+    ///
+    def flipBit(x: Int64, position: Int32): Int64 = x ^^^ (1i64 <<< position)
 }

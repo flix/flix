@@ -141,27 +141,27 @@ namespace Set {
     ///
     /// Alias for `reduceLeftOpt`.
     ///
-    def reduceOpt[a](f: (a, a) -> a, xs: Set[a]): Option[a] =
+    def reduce[a](f: (a, a) -> a, xs: Set[a]): Option[a] =
         let Set(s) = xs;
-            List.reduceOpt(f, s)
+            List.reduce(f, s)
 
     ///
     /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
     /// Returns `None` if `xs` is the empty set.
     ///
-    def reduceLeftOpt[a](f: (a, a) -> a, xs: Set[a]): Option[a] =
+    def reduceLeft[a](f: (a, a) -> a, xs: Set[a]): Option[a] =
         let Set(s) = xs;
-            List.reduceLeftOpt(f, s)
+            List.reduceLeft(f, s)
 
     ///
     /// Applies `f` to all elements in `xs` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     /// Returns `None` if `xs` is the empty set.
     ///
-    def reduceRightOpt[a](f: (a, a) -> a, xs: Set[a]): Option[a] =
+    def reduceRight[a](f: (a, a) -> a, xs: Set[a]): Option[a] =
         let Set(s) = xs;
-            List.reduceRightOpt(f, s)
+            List.reduceRight(f, s)
 
     //
     // ## Special Folds

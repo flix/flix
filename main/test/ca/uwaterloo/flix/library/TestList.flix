@@ -27,34 +27,34 @@ def isEmpty02: Bool = assertNot!(List.isEmpty(1 :: Nil))
 def isEmpty03: Bool = assertNot!(List.isEmpty(1 :: 2 :: Nil))
 
 /////////////////////////////////////////////////////////////////////////////
-// headOpt                                                                 //
+// head                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def headOpt01: Bool = List.headOpt(Nil) `assertEq!` None
+def head01: Bool = List.head(Nil) `assertEq!` None
 
 @test
-def headOpt02: Bool = List.headOpt(1 :: Nil) `assertEq!` Some(1)
+def head02: Bool = List.head(1 :: Nil) `assertEq!` Some(1)
 
 @test
-def headOpt03: Bool = List.headOpt(2 :: 1 :: Nil) `assertEq!` Some(2)
+def head03: Bool = List.head(2 :: 1 :: Nil) `assertEq!` Some(2)
 
 @test
-def headOpt04: Bool = List.headOpt(3 :: 2 :: 1 :: Nil) `assertEq!` Some(3)
+def head04: Bool = List.head(3 :: 2 :: 1 :: Nil) `assertEq!` Some(3)
 
 /////////////////////////////////////////////////////////////////////////////
-// lastOpt                                                                 //
+// last                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def lastOpt01: Bool = List.lastOpt(Nil) `assertEq!` None
+def last01: Bool = List.last(Nil) `assertEq!` None
 
 @test
-def lastOpt02: Bool = List.lastOpt(1 :: Nil) `assertEq!` Some(1)
+def last02: Bool = List.last(1 :: Nil) `assertEq!` Some(1)
 
 @test
-def lastOpt03: Bool = List.lastOpt(1 :: 2 :: Nil) `assertEq!` Some(2)
+def last03: Bool = List.last(1 :: 2 :: Nil) `assertEq!` Some(2)
 
 @test
-def lastOpt04: Bool = List.lastOpt(1 :: 2 :: 3 :: Nil) `assertEq!` Some(3)
+def last04: Bool = List.last(1 :: 2 :: 3 :: Nil) `assertEq!` Some(3)
 
 /////////////////////////////////////////////////////////////////////////////
 // length                                                                  //
@@ -911,58 +911,58 @@ def foldRight03: Bool = List.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, 1 :: 
 def foldRight04: Bool = List.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, 1 :: 2 :: 3 :: Nil) `assertEq!` 382
 
 /////////////////////////////////////////////////////////////////////////////
-// reduceOpt                                                               //
+// reduce                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def reduceOpt01: Bool = List.reduceOpt((a, b) -> a-b, Nil: List[Int]) `assertEq!` None
+def reduce01: Bool = List.reduce((a, b) -> a-b, Nil: List[Int]) `assertEq!` None
 
 @test
-def reduceOpt02: Bool = List.reduceOpt((a, b) -> a-b, 1 :: Nil) `assertEq!` Some(1)
+def reduce02: Bool = List.reduce((a, b) -> a-b, 1 :: Nil) `assertEq!` Some(1)
 
 @test
-def reduceOpt03: Bool = List.reduceOpt((a, b) -> a-b, 1 :: 2 :: Nil) `assertEq!` Some(-1)
+def reduce03: Bool = List.reduce((a, b) -> a-b, 1 :: 2 :: Nil) `assertEq!` Some(-1)
 
 @test
-def reduceOpt04: Bool = List.reduceOpt((a, b) -> a-b, 1 :: 2 :: 3 :: Nil) `assertEq!` Some(-4)
+def reduce04: Bool = List.reduce((a, b) -> a-b, 1 :: 2 :: 3 :: Nil) `assertEq!` Some(-4)
 
 @test
-def reduceOpt05: Bool = List.reduceOpt((a, b) -> a-b, 1 :: 2 :: 3 :: 4 :: Nil) `assertEq!` Some(-8)
-
-/////////////////////////////////////////////////////////////////////////////
-// reduceLeftOpt                                                           //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def reduceLeftOpt01: Bool = List.reduceLeftOpt((a, b) -> a-b, Nil: List[Int]) `assertEq!` None
-
-@test
-def reduceLeftOpt02: Bool = List.reduceLeftOpt((a, b) -> a-b, 1 :: Nil) `assertEq!` Some(1)
-
-@test
-def reduceLeftOpt03: Bool = List.reduceLeftOpt((a, b) -> a-b, 1 :: 2 :: Nil) `assertEq!` Some(-1)
-
-@test
-def reduceLeftOpt04: Bool = List.reduceLeftOpt((a, b) -> a-b, 1 :: 2 :: 3 :: Nil) `assertEq!` Some(-4)
-
-@test
-def reduceLeftOpt05: Bool = List.reduceLeftOpt((a, b) -> a-b, 1 :: 2 :: 3 :: 4 :: Nil) `assertEq!` Some(-8)
+def reduce05: Bool = List.reduce((a, b) -> a-b, 1 :: 2 :: 3 :: 4 :: Nil) `assertEq!` Some(-8)
 
 /////////////////////////////////////////////////////////////////////////////
-// reduceRightOpt                                                          //
+// reduceLeft                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def reduceRightOpt01: Bool = List.reduceRightOpt((a, b) -> a-b, Nil: List[Int]) `assertEq!` None
+def reduceLeft01: Bool = List.reduceLeft((a, b) -> a-b, Nil: List[Int]) `assertEq!` None
 
 @test
-def reduceRightOpt02: Bool = List.reduceRightOpt((a, b) -> a-b, 1 :: Nil) `assertEq!` Some(1)
+def reduceLeft02: Bool = List.reduceLeft((a, b) -> a-b, 1 :: Nil) `assertEq!` Some(1)
 
 @test
-def reduceRightOpt03: Bool = List.reduceRightOpt((a, b) -> a-b, 1 :: 2 :: Nil) `assertEq!` Some(-1)
+def reduceLeft03: Bool = List.reduceLeft((a, b) -> a-b, 1 :: 2 :: Nil) `assertEq!` Some(-1)
 
 @test
-def reduceRightOpt04: Bool = List.reduceRightOpt((a, b) -> a-b, 1 :: 2 :: 3 :: Nil) `assertEq!` Some(2)
+def reduceLeft04: Bool = List.reduceLeft((a, b) -> a-b, 1 :: 2 :: 3 :: Nil) `assertEq!` Some(-4)
 
 @test
-def reduceRightOpt05: Bool = List.reduceRightOpt((a, b) -> a-b, 1 :: 2 :: 3 :: 4 :: Nil) `assertEq!` Some(-2)
+def reduceLeft05: Bool = List.reduceLeft((a, b) -> a-b, 1 :: 2 :: 3 :: 4 :: Nil) `assertEq!` Some(-8)
+
+/////////////////////////////////////////////////////////////////////////////
+// reduceRight                                                             //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def reduceRight01: Bool = List.reduceRight((a, b) -> a-b, Nil: List[Int]) `assertEq!` None
+
+@test
+def reduceRight02: Bool = List.reduceRight((a, b) -> a-b, 1 :: Nil) `assertEq!` Some(1)
+
+@test
+def reduceRight03: Bool = List.reduceRight((a, b) -> a-b, 1 :: 2 :: Nil) `assertEq!` Some(-1)
+
+@test
+def reduceRight04: Bool = List.reduceRight((a, b) -> a-b, 1 :: 2 :: 3 :: Nil) `assertEq!` Some(2)
+
+@test
+def reduceRight05: Bool = List.reduceRight((a, b) -> a-b, 1 :: 2 :: 3 :: 4 :: Nil) `assertEq!` Some(-2)
 
 /////////////////////////////////////////////////////////////////////////////
 // count                                                                   //

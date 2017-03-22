@@ -399,58 +399,58 @@ def foldRight03: Bool = Set.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, #{2, 1
 def foldRight04: Bool = Set.foldRight((e, i) -> (i - e)*(e % 2 + 1), 100, #{3, 2, 1}) `assertEq!` 382
 
 /////////////////////////////////////////////////////////////////////////////
-// reduceOpt                                                               //
+// reduce                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def reduceOpt01: Bool = Set.reduceOpt((a, b) -> a-b, #{}: Set[Int]) `assertEq!` None
+def reduce01: Bool = Set.reduce((a, b) -> a-b, #{}: Set[Int]) `assertEq!` None
 
 @test
-def reduceOpt02: Bool = Set.reduceOpt((a, b) -> a-b, #{1}) `assertEq!` Some(1)
+def reduce02: Bool = Set.reduce((a, b) -> a-b, #{1}) `assertEq!` Some(1)
 
 @test
-def reduceOpt03: Bool = Set.reduceOpt((a, b) -> a-b, #{2, 1}) `assertEq!` Some(-1)
+def reduce03: Bool = Set.reduce((a, b) -> a-b, #{2, 1}) `assertEq!` Some(-1)
 
 @test
-def reduceOpt04: Bool = Set.reduceOpt((a, b) -> a-b, #{3, 2, 1}) `assertEq!` Some(-4)
+def reduce04: Bool = Set.reduce((a, b) -> a-b, #{3, 2, 1}) `assertEq!` Some(-4)
 
 @test
-def reduceOpt05: Bool = Set.reduceOpt((a, b) -> a-b, #{4, 3, 2, 1}) `assertEq!` Some(-8)
-
-/////////////////////////////////////////////////////////////////////////////
-// reduceLeftOpt                                                           //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def reduceLeftOpt01: Bool = Set.reduceLeftOpt((a, b) -> a-b, #{}: Set[Int]) `assertEq!` None
-
-@test
-def reduceLeftOpt02: Bool = Set.reduceLeftOpt((a, b) -> a-b, #{1}) `assertEq!` Some(1)
-
-@test
-def reduceLeftOpt03: Bool = Set.reduceLeftOpt((a, b) -> a-b, #{2, 1}) `assertEq!` Some(-1)
-
-@test
-def reduceLeftOpt04: Bool = Set.reduceLeftOpt((a, b) -> a-b, #{3, 2, 1}) `assertEq!` Some(-4)
-
-@test
-def reduceLeftOpt05: Bool = Set.reduceLeftOpt((a, b) -> a-b, #{4, 3, 2, 1}) `assertEq!` Some(-8)
+def reduce05: Bool = Set.reduce((a, b) -> a-b, #{4, 3, 2, 1}) `assertEq!` Some(-8)
 
 /////////////////////////////////////////////////////////////////////////////
-// reduceRightOpt                                                          //
+// reduceLeft                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def reduceRightOpt01: Bool = Set.reduceRightOpt((a, b) -> a-b, #{}: Set[Int]) `assertEq!` None
+def reduceLeft01: Bool = Set.reduceLeft((a, b) -> a-b, #{}: Set[Int]) `assertEq!` None
 
 @test
-def reduceRightOpt02: Bool = Set.reduceRightOpt((a, b) -> a-b, #{1}) `assertEq!` Some(1)
+def reduceLeft02: Bool = Set.reduceLeft((a, b) -> a-b, #{1}) `assertEq!` Some(1)
 
 @test
-def reduceRightOpt03: Bool = Set.reduceRightOpt((a, b) -> a-b, #{2, 1}) `assertEq!` Some(-1)
+def reduceLeft03: Bool = Set.reduceLeft((a, b) -> a-b, #{2, 1}) `assertEq!` Some(-1)
 
 @test
-def reduceRightOpt04: Bool = Set.reduceRightOpt((a, b) -> a-b, #{3, 2, 1}) `assertEq!` Some(2)
+def reduceLeft04: Bool = Set.reduceLeft((a, b) -> a-b, #{3, 2, 1}) `assertEq!` Some(-4)
 
 @test
-def reduceRightOpt05: Bool = Set.reduceRightOpt((a, b) -> a-b, #{4, 3, 2, 1}) `assertEq!` Some(-2)
+def reduceLeft05: Bool = Set.reduceLeft((a, b) -> a-b, #{4, 3, 2, 1}) `assertEq!` Some(-8)
+
+/////////////////////////////////////////////////////////////////////////////
+// reduceRight                                                             //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def reduceRight01: Bool = Set.reduceRight((a, b) -> a-b, #{}: Set[Int]) `assertEq!` None
+
+@test
+def reduceRight02: Bool = Set.reduceRight((a, b) -> a-b, #{1}) `assertEq!` Some(1)
+
+@test
+def reduceRight03: Bool = Set.reduceRight((a, b) -> a-b, #{2, 1}) `assertEq!` Some(-1)
+
+@test
+def reduceRight04: Bool = Set.reduceRight((a, b) -> a-b, #{3, 2, 1}) `assertEq!` Some(2)
+
+@test
+def reduceRight05: Bool = Set.reduceRight((a, b) -> a-b, #{4, 3, 2, 1}) `assertEq!` Some(-2)
 
 /////////////////////////////////////////////////////////////////////////////
 // count                                                                   //

@@ -56,7 +56,7 @@ namespace BigInt {
     /// Returns the bit of `x` at `position` (either 0 or 1).
     /// The bits of x have positions: 0 (rightmost bit), 1, 2, ...
     ///
-    def bit(x: BigInt, position: Int32): Int32 =
+    def getBit(x: BigInt, position: Int32): Int32 =
         if ((x >>> position) % 2ii == 0ii) 0 else 1
 
     ///
