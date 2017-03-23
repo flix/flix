@@ -48,6 +48,9 @@ enum Expression {
     // A sequence expression: e1; e2.
     case Seq(Expression, Expression),
 
+    // A print expression.
+    case Print(Expression),
+
     //
     // Promises Extensions:
     //
@@ -94,6 +97,9 @@ enum EvaluationContext {
 
     // Represents the context: E ; e
     case ESeq(EvaluationContext, Expression),
+
+    // Represents the context: print E.
+    case EPrint(EvaluationContext),
 
     // Represents the context: promisify(E).
     case EPromisify(EvaluationContext),
@@ -261,6 +267,15 @@ def redex(e0: Expression): (Expression, EvaluationContext) = match e0 with {
             let (rdx, ec) = redex(e1);
                 (rdx, ESeq(ec, e2))
 
+    case Print(e) =>
+        if (isValue(e))
+            // The expression is a redex.
+            (e0, Hole)
+        else
+            // The redex is in the expression e.
+            let (rdx, ec) = redex(e);
+                (rdx, EPrint(ec))
+
     case Promisify(e) =>
         if (isValue(e))
             // The expression is a redex.
@@ -353,6 +368,7 @@ def recompose(e0: Expression, ec0: EvaluationContext): Expression = match ec0 wi
     case ERef(ec)           => Ref(recompose(e0, ec))
     case EDeref(ec)         => Deref(recompose(e0, ec))
     case ESeq(ec, e)        => Seq(recompose(e0, ec), e)
+    case EPrint(ec)         => Print(recompose(e0, ec))
     case EPromisify(ec)     => Promisify(recompose(e0, ec))
     case EResolve1(ec, e)   => Resolve(recompose(e0, ec), e)
     case EResolve2(e, ec)   => Resolve(e, recompose(e0, ec))
@@ -396,13 +412,6 @@ def step(e0: Expression, m0: State): Outcome =
                 Next(recompose(e, ec), State(h0, s0, f0, r0, q0))
 
         //
-        // E-Seq
-        //
-        case (Seq(v, e), State(h0, s0, f0, r0, q0)) =>
-            // Discard the value in the sequence.
-            Next(recompose(e, ec), State(h0, s0, f0, r0, q0))
-
-        //
         //  E-Ref
         //
         case (Ref(v), State(Heap(h0), s0, f0, r0, q0)) =>
@@ -421,6 +430,20 @@ def step(e0: Expression, m0: State): Outcome =
                 case None => Abort("Unable to dereference unallocated address!")
                 case Some(v) => Next(recompose(v, ec), State(Heap(h0), s0, f0, r0, q0))
             }
+
+        //
+        // E-Seq
+        //
+        case (Seq(v, e), State(h0, s0, f0, r0, q0)) =>
+            // Discard the value in the sequence.
+            Next(recompose(e, ec), State(h0, s0, f0, r0, q0))
+
+        //
+        // E-Print
+        //
+        case (Print(v), State(h0, s0, f0, r0, q0)) =>
+            // Discard the value in the sequence.
+            Next(println!(v), State(h0, s0, f0, r0, q0))
 
         //
         //  E-Promisify
@@ -663,6 +686,8 @@ def testEval2: Result[(Expression, State), Str] = eval(
         Ref(Cst("Promise1"))), Ref(Cst("Promise2"))),
     initialState()
 )
+
+def testEval3: Result[(Expression, State), Str] = eval(Print(Cst("Hello")), initialState())
 
 
 ///
