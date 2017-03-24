@@ -116,50 +116,53 @@ namespace Domain/Mod3 {
     def minus(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
        case (_, Bot)   => Bot
        case (Bot, _)   => Bot
-       case (Zer, x)   => x
-       case (x, Zer)   => x
+       case (Zer, Zer) => Zer
+       case (Zer, One) => Two
+       case (Zer, Two) => One
+       case (One, Zer) => One
        case (One, One) => Zer
-       case (One, Two) => One
+       case (One, Two) => Two
+       case (Two, Zer) => Two
        case (Two, One) => One
        case (Two, Two) => Zer
        case _          => Top
     }
 
-    ///
-    /// Over-approximates integer `multiplication`.
-    ///
-    #safe2((x, y) -> x * y)
-    #strict2 #monotone2 #commutative #associative
-    def times(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
-        case (_, Bot) => Bot
-        case (Bot, _) => Bot
-        // TODO: rest
-        case _        => Top
-    }
-
-    ///
-    /// Over-approximates integer `division`.
-    ///
-    /// NB: We cannot prove safety directly because division is not a total function.
-    #strict2 #monotone2
-    def divide(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
-        case (_, Bot) => Bot
-        case (Bot, _) => Bot
-        // TODO: rest
-        case _        => Top
-    }
-
-    ///
-    /// Over-approximates integer `modulus`.
-    ///
-    /// NB: We cannot prove safety directly because division is not a total function.
-    #strict2 #monotone2
-    def modulo(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
-        case (_, Bot) => Bot
-        case (Bot, _) => Bot
-        // TODO: rest
-        case _        => Top
-    }
+//    ///
+//    /// Over-approximates integer `multiplication`.
+//    ///
+//    #safe2((x, y) -> x * y)
+//    #strict2 #monotone2 #commutative #associative
+//    def times(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
+//        case (_, Bot) => Bot
+//        case (Bot, _) => Bot
+//        // TODO: rest
+//        case _        => Top
+//    }
+//
+//    ///
+//    /// Over-approximates integer `division`.
+//    ///
+//    /// NB: We cannot prove safety directly because division is not a total function.
+//    #strict2 #monotone2
+//    def divide(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
+//        case (_, Bot) => Bot
+//        case (Bot, _) => Bot
+//        // TODO: rest
+//        case _        => Top
+//    }
+//
+//    ///
+//    /// Over-approximates integer `modulus`.
+//    ///
+//    /// NB: We cannot prove safety directly because division is not a total function.
+//    #strict2 #monotone2
+//    def modulo(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
+//        case (_, Bot) => Bot
+//        case (Bot, _) => Bot
+//        // TODO: rest
+//        case _        => Top
+//    }
 
     ///
     /// Over-approximates `equal`.
