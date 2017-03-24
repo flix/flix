@@ -233,9 +233,14 @@ namespace Domain/Interval {
         let ⊑ = leq;
             ∀(x: Interval, y: Interval). (x ⊑ y) → (f(x) ⊑ f(y))
 
-    law monotone2(f: (Interval, Interval) -> Interval): Bool =  // TODO: Should call prelude
+    law monotone2(f: (Interval, Interval) -> Interval): Bool =
         let ⊑ = leq;
-            ∀(x1: Interval, x2: Interval, y1: Interval, y2: Interval). ((x1 ⊑ y1) ∧ (x2 ⊑ y2) ) → (f(x1, x2) ⊑ f(y1, y2))
+            ∀(xx1: Interval, xx2: Interval, yy1: Interval, yy2: Interval).
+                let x1 = norm(xx1);
+                let x2 = norm(xx2);
+                let y1 = norm(yy1);
+                let y2 = norm(yy2);
+                    ((x1 ⊑ y1) ∧ (x2 ⊑ y2) ) → (f(x1, x2) ⊑ f(y1, y2))
 
     // TODO: Names
     law approximates1(fa: Interval -> Interval, fc: BigInt -> BigInt): Bool =
