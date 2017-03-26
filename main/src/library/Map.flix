@@ -38,11 +38,13 @@ namespace Map {
 
     ///
     /// Returns the empty map.
+    /// `@{}` is syntactic sugar for `empty` (`@{} = empty()`).
     ///
     def empty[k, v]: Map[k, v] = Map(Nil)
 
     ///
     /// Returns the singleton map where key `k` is mapped to value `v`.
+    /// `@{k -> v}` is syntactic sugar for `singleton` (`@{k -> v} = singleton(k, v)`).
     ///
     def singleton[k, v](k: k, v: v): Map[k, v] = Map((k, v) :: Nil)
 
@@ -53,7 +55,7 @@ namespace Map {
     ///
     /// Returns `true` if and only if `m` is the empty map, i.e. `Map(Nil)`.
     ///
-    def null[k, v](m: Map[k, v]): Bool =
+    def isEmpty[k, v](m: Map[k, v]): Bool =
         let Map(xs) = m;
             List.isEmpty(xs)
 
@@ -115,17 +117,10 @@ namespace Map {
     /// Otherwise, updates `m` with `k -> v`.
     ///
     def insertWithKey[k, v](f: (k, v, v) -> v, k: k, v: v, m: Map[k, v]): Map[k, v] =
-        let Map(xs) = m;
-            Map(insertWithKeyHelper(f, k, v, xs))
-
-    ///
-    /// Helper function for `insertWithKey`.
-    ///
-    @internal
-    def insertWithKeyHelper[k, v](f: (k, v, v) -> v, k: k, v: v, xs: List[(k, v)]): List[(k, v)] = match xs with {
-        case Nil => (k, v) :: Nil
-        case (a, b) :: rs => if (k == a) (k, f(k, v, b)) :: rs else (a, b) :: insertWithKeyHelper(f, k, v, rs)
-    }
+        if (memberOf(k, m)) adjustWithKey((a, b) -> f(a, v, b), k, m)
+        else
+            let Map(xs) = m;
+                Map((k, v) :: xs)
 
     //
     // ## Update
@@ -187,6 +182,25 @@ namespace Map {
     ///
     def isProperSubmapOf[k, v](m1: Map[k, v], m2: Map[k, v]): Bool = isSubmapOf(m1, m2) && size(m1) != size(m2)
 
+    ///
+    /// Alias for `findLeft`.
+    ///
+    def find[k, v](f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] = findLeft(f, m)
+
+    ///
+    /// Optionally returns the first mapping of `m` that satisfies the predicate `f` when searching from left to right.
+    ///
+    def findLeft[k, v](f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] =
+        let Map(xs) = m;
+            List.findLeft(x -> f(fst(x), snd(x)), xs)
+
+    ///
+    /// Optionally returns the first mapping of `m` that satisfies the predicate `f` when searching from right to left.
+    ///
+    def findRight[k, v](f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] =
+        let Map(xs) = m;
+            List.findRight(x -> f(fst(x), snd(x)), xs)
+
     //
     // ## Map Transformation
     //
@@ -216,7 +230,7 @@ namespace Map {
             Map(List.map(match (k, v) -> (k, f(k, v)), xs))
 
     //
-    // ## Fold
+    // ## Fold and Reduce
     //
 
     ///
@@ -250,12 +264,83 @@ namespace Map {
     def foldRight[k, v, b](f: (v, b) -> b, s: b, m: Map[k, v]): b = foldRightWithKey((k, v, b) -> f(v, b), s, m)
 
     ///
-    /// Applies `f` to a start value `s` and all values in `m` going from right to left.
-    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
+    /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
+    /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
     def foldRightWithKey[k, v, b](f: (k, v, b) -> b, s: b, m: Map[k, v]): b =
         let Map(xs) = m;
             List.foldRight((kv, y) -> f(fst(kv), snd(kv), y), s, xs)
+
+    ///
+    /// Alias for `reduceLeft`.
+    ///
+    def reduce[k, v](f: (v, v) -> v, m: Map[k, v]): Option[v] = reduceLeft(f, m)
+
+    ///
+    /// Alias for `reduceLeftWithKey`.
+    ///
+    def reduceWithKey[k, v](f: (k, v, k, v) -> (k, v), m: Map[k, v]): Option[(k, v)] = reduceLeftWithKey(f, m)
+
+    ///
+    /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// That is, the result is of the form: `Some(f(...f(f(v1, v2), v3)..., vn))`
+    /// Returns `None` if `m` is the empty map.
+    ///
+    def reduceLeft[k, v](f: (v, v) -> v, m: Map[k, v]): Option[v] = List.reduceLeft(f, m.valuesOf())
+
+    ///
+    /// Applies `f` to all mappings in `m` going from left to right until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
+    /// That is, the result is of the form: `Some(f(...f(f(k1, v1, k2, v2), k3, v3)..., kn, vn))`
+    /// Returns `None` if `m` is the empty map.
+    ///
+    def reduceLeftWithKey[k, v](f: (k, v, k, v) -> (k, v), m: Map[k, v]): Option[(k, v)] =
+        let Map(xs) = m;
+            List.reduceLeft((kv1, kv2) -> f(fst(kv1), snd(kv1), fst(kv2), snd(kv2)), xs)
+
+    ///
+    /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// That is, the result is of the form: `Some(f(v1, ...f(vn-2, f(vn-1, vn))...))`
+    /// Returns `None` if `m` is the empty map.
+    ///
+    def reduceRight[k, v](f: (v, v) -> v, m: Map[k, v]): Option[v] =
+        let Map(xs) = m;
+            List.reduceRight(f, List.map(kv -> snd(kv), xs))
+
+    ///
+    /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
+    /// That is, the result is of the form: `Some(f(k1, v1, ...f(kn-2, vn-2, f(kn-1, vn-1, kn, vn))...))`
+    /// Returns `None` if `m` is the empty map.
+    ///
+    def reduceRightWithKey[k, v](f: (k, v, k, v) -> (k, v), m: Map[k, v]): Option[(k, v)] =
+        let Map(xs) = m;
+            List.reduceRight((kv1, kv2) -> f(fst(kv1), snd(kv1), fst(kv2), snd(kv2)), xs)
+
+    //
+    // ## Special Folds
+    //
+
+    ///
+    /// Returns the number of mappings in `m` that satisfy the predicate `f`.
+    ///
+    def count[k, v](f: (k, v) -> Bool, m: Map[k, v]): Int32 =
+        let Map(xs) = m;
+            List.count(x -> f(fst(x), snd(x)), xs)
+
+    ///
+    /// Returns `true` if and only if at least one mapping in `m` satisfies the predicate `f`.
+    /// Returns `false` if `m` is the empty map.
+    ///
+    def exists[k, v](f: (k, v) -> Bool, m: Map[k, v]): Bool =
+        let Map(xs) = m;
+            List.exists(x -> f(fst(x), snd(x)), xs)
+
+    ///
+    /// Returns `true` if and only if all mappings in `m` satisfy the predicate `f`.
+    /// Returns `true` if `m` is the empty map.
+    ///
+    def forall[k, v](f: (k, v) -> Bool, m: Map[k, v]): Bool =
+        let Map(xs) = m;
+            List.forall(x -> f(fst(x), snd(x)), xs)
 
     //
     // ## Combine Two Maps
@@ -332,19 +417,18 @@ namespace Map {
     //
 
     ///
+    /// Returns the map `m` as a list of key-value pairs.
+    ///
+    def toList[k, v](m: Map[k, v]): List[(k, v)] =
+        let Map(xs) = m;
+            xs
+
+    ///
     /// Returns the map `m` as a set of key-value pairs.
     ///
     def toSet[k, v](m: Map[k, v]): Set[(k, v)] =
         let Map(xs) = m;
             List.toSet(xs)
-
-    // TODO:
-    //- **toList(m: Map[K, V]): List[(K, V)]**
-    //    - Alias for toListAsc.
-    //- **toAscList(m: Map[K, V]): List[(K, V)]**
-    //    - Returns the map as an association list of pairs ordered by the natural order on the keys in ascending order.
-    //- **toDescList(m: Map[K, V]): List[(K, V)]**
-    //    - Similar to toAscList, but the keys are ordered in descending order.
 
     //
     // ## Map Equality

@@ -281,7 +281,8 @@ namespace Set {
 
     ///
     /// Returns the association set `xs` as a map.
-    /// If `xs` contains multiple values for the same key, the value appearing latest in `xs` is used.
+    /// If `xs` contains multiple mappings with the same key, `toMap` does not
+    /// make any guarantees about which mapping will be in the resulting map.
     ///
     def toMap[a, b](xs: Set[(a, b)]): Map[a, b] =
         let Set(s) = xs;
@@ -295,18 +296,4 @@ namespace Set {
     /// Returns `true` if and only if `xs` and `ys` and equal, i.e. they have the same elements.
     ///
     def eq[a](xs: Set[a], ys: Set[a]): Bool = isSubsetOf(xs, ys) && size(xs) == size(ys)
-
-
-// TODO
-//## Set Conversions
-//- **toList(xs: Set[A]): List[A]**
-//    - Alias for toAscList.
-//- **toAscList(xs: Set[A]): List[A]**
-//    - Returns the set as a list in ascending order (w.r.t. its natural order).
-//- **toDescList(xs: Set[A]): List[A]**
-//    - Returns the set as a list in descending order (w.r.t. its natural order).
-//- **toMap(xs: Set[(A, B)]): Map[A, B]**
-//    - Returns the set of pairs as a map. If the set contains the same mapping multiple times the one with the greatest key (w.r.t. the natural order) takes precedence. Functionally equivalent to List.toMap(Set.toList(xs)).
-//
-//## Order and Lattice Operations
 }

@@ -749,7 +749,8 @@ namespace List {
 
     ///
     /// Returns the association list `xs` as a map.
-    /// If `xs` contains multiple values for the same key, the value appearing latest in `xs` is used.
+    /// If `xs` contains multiple mappings with the same key, `toMap` does not
+    /// make any guarantees about which mapping will be in the resulting map.
     ///
-    def toMap[a, b](xs: List[(a, b)]): Map[a, b] = foldLeft((m, x) -> Map.insert(fst(x), snd(x), m), Map.empty(), xs)
+    def toMap[a, b](xs: List[(a, b)]): Map[a, b] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), xs)
 }
