@@ -7,8 +7,6 @@
 ///
 namespace Domain/Interval {
 
-    // TODO: Add to TestExamples.
-
     ///
     /// The elements of the interval lattice.
     ///
@@ -93,7 +91,7 @@ namespace Domain/Interval {
     /// Over-approximates integer `addition`.
     ///
     #approximates2((x, y) -> x + y)
-    #strict2 #monotone2 #commutative #associative
+    #strict2 #monotone2 #commutative
     def plus(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
@@ -117,7 +115,7 @@ namespace Domain/Interval {
     /// Over-approximates integer `multiplication`.
     ///
     #approximates2((x, y) -> x * y)
-    #strict2 #monotone2 #commutative #associative
+    #strict2 #monotone2 #commutative
     def times(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
@@ -125,42 +123,14 @@ namespace Domain/Interval {
         case _                              => Top
     }
 
-    // TODO: Remaining operations.
-
-    /**
-     * Over-approximates integer `division`.
-     */
-    //@strict @monotone // TODO
-    def divide(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
-        case (Bot, _)                                  => Bot
-        case (_, Bot)                                  => Bot
-        case (_, Range(0ii, 0ii))                      => Bot
-        case (Range(b1, e1), Range(b2, e2))   =>
-            if (b2 <= 0ii && 0ii <= e2)
-                Top
-            else
-                Range(b1 / e2, e1 / b2)
-        case _                                                  => Top
-    }
-
-//    /**
-//     * Over-approximates `bitwise negation`.
-//     */
-//    @strict @monotone
-//    fn negate(e: Interval): Interval = match e with {
-//        case Bot           => Bot
-//        case Range(b, e)   =>
-//            ???: Interval // TODO
-//        case Top           => Top
-//    }
-
     /**
       * Over-approximates `equal`.
       */
     //@strict @monotone @commutative // TODO
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     def eq(e1: Interval, e2: Interval): Belnap.Belnap = match (e1, e2) with {
-        case (Bot, _)                                  => Belnap/Belnap.Bot
-        case (_, Bot)                                  => Belnap/Belnap.Bot
+        case (Bot, _)                                           => Belnap/Belnap.Bot
+        case (_, Bot)                                           => Belnap/Belnap.Bot
         case (Range(b1, e1), Range(b2, e2))   => switch {
             case (b1 == e1) && ((e1 == b2) && (b2 == e2))       => Belnap/Belnap.True
             case (e1 < b2) || (e2 < b1)                         => Belnap/Belnap.False
@@ -202,12 +172,8 @@ namespace Domain/Interval {
 
     let Interval<> = (Bot, Top, leq, lub, glb)
 
-
-
-
-
     // ------------------------------------------------------------------------
-    // TODO: Refactor
+    // Laws
     // ------------------------------------------------------------------------
 
     law reflexive(⊑: (Interval, Interval) -> Bool): Bool = ∀(x: Interval). x ⊑ x // TODO: Use Prelude
@@ -267,9 +233,14 @@ namespace Domain/Interval {
         let ⊑ = leq;
             ∀(x: Interval, y: Interval). (x ⊑ y) → (f(x) ⊑ f(y))
 
-    law monotone2(f: (Interval, Interval) -> Interval): Bool =  // TODO: Should call prelude
+    law monotone2(f: (Interval, Interval) -> Interval): Bool =
         let ⊑ = leq;
-            ∀(x1: Interval, x2: Interval, y1: Interval, y2: Interval). ((x1 ⊑ y1) ∧ (x2 ⊑ y2) ) → (f(x1, x2) ⊑ f(y1, y2))
+            ∀(xx1: Interval, xx2: Interval, yy1: Interval, yy2: Interval).
+                let x1 = norm(xx1);
+                let x2 = norm(xx2);
+                let y1 = norm(yy1);
+                let y2 = norm(yy2);
+                    ((x1 ⊑ y1) ∧ (x2 ⊑ y2) ) → (f(x1, x2) ⊑ f(y1, y2))
 
     // TODO: Names
     law approximates1(fa: Interval -> Interval, fc: BigInt -> BigInt): Bool =

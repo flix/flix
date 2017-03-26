@@ -33,6 +33,12 @@ enum Expression {
     // General Extensions:
     //
 
+    // A true value.
+    case True,
+
+    // A false value.
+    case False,
+
     // A string value.
     case Cst(Str),
 
@@ -47,6 +53,12 @@ enum Expression {
 
     // A sequence expression: e1; e2.
     case Seq(Expression, Expression),
+
+    // An if-then-else expression: if (e1) e2 else e3.
+    case IfThenElse(Expression, Expression, Expression),
+
+    // A print expression: print e.
+    case Print(Expression),
 
     //
     // Promises Extensions:
@@ -94,6 +106,12 @@ enum EvaluationContext {
 
     // Represents the context: E ; e
     case ESeq(EvaluationContext, Expression),
+
+    // Represents the context: if (E) e e
+    case EIfThenElse(EvaluationContext, Expression, Expression),
+
+    // Represents the context: print E.
+    case EPrint(EvaluationContext),
 
     // Represents the context: promisify(E).
     case EPromisify(EvaluationContext),
@@ -185,6 +203,8 @@ enum State {
 ///
 def isValue(e0: Expression): Bool = match e0 with {
     case Abs(x, e)  => true
+    case True       => true
+    case False      => true
     case Cst(s)     => true
     case Ptr(a)     => true
     case _          => false
@@ -260,6 +280,24 @@ def redex(e0: Expression): (Expression, EvaluationContext) = match e0 with {
             // Continue reduction in e1.
             let (rdx, ec) = redex(e1);
                 (rdx, ESeq(ec, e2))
+
+    case IfThenElse(e1, e2, e3) =>
+        if (isValue(e1))
+            // The expression is a redex.
+            (e0, Hole)
+        else
+            // Continue reduction in e1.
+            let (rdx, ec) = redex(e1);
+                (rdx, EIfThenElse(ec, e2, e3))
+
+    case Print(e) =>
+        if (isValue(e))
+            // The expression is a redex.
+            (e0, Hole)
+        else
+            // The redex is in the expression e.
+            let (rdx, ec) = redex(e);
+                (rdx, EPrint(ec))
 
     case Promisify(e) =>
         if (isValue(e))
@@ -347,23 +385,25 @@ def redex(e0: Expression): (Expression, EvaluationContext) = match e0 with {
 /// with the given expression `e0` replacing the hole in the context.
 ///
 def recompose(e0: Expression, ec0: EvaluationContext): Expression = match ec0 with {
-    case Hole               => e0
-    case EApp1(ec, e)       => App(recompose(e0, ec), e)
-    case EApp2(v, ec)       => App(v, recompose(e0, ec))
-    case ERef(ec)           => Ref(recompose(e0, ec))
-    case EDeref(ec)         => Deref(recompose(e0, ec))
-    case ESeq(ec, e)        => Seq(recompose(e0, ec), e)
-    case EPromisify(ec)     => Promisify(recompose(e0, ec))
-    case EResolve1(ec, e)   => Resolve(recompose(e0, ec), e)
-    case EResolve2(e, ec)   => Resolve(e, recompose(e0, ec))
-    case EReject1(ec, e)    => Reject(recompose(e0, ec), e)
-    case EReject2(e, ec)    => Reject(e, recompose(e0, ec))
-    case EOnResolve1(ec, e) => OnResolve(recompose(e0, ec), e)
-    case EOnResolve2(e, ec) => OnResolve(e, recompose(e0, ec))
-    case EOnReject1(ec, e)  => OnReject(recompose(e0, ec), e)
-    case EOnReject2(e, ec)  => OnReject(e, recompose(e0, ec))
-    case ELink1(ec, e)      => Link(recompose(e0, ec), e)
-    case ELink2(e, ec)      => Link(e, recompose(e0, ec))
+    case Hole                    => e0
+    case EApp1(ec, e)            => App(recompose(e0, ec), e)
+    case EApp2(v, ec)            => App(v, recompose(e0, ec))
+    case ERef(ec)                => Ref(recompose(e0, ec))
+    case EDeref(ec)              => Deref(recompose(e0, ec))
+    case ESeq(ec, e)             => Seq(recompose(e0, ec), e)
+    case EIfThenElse(ec, e2, e3) => IfThenElse(recompose(e0, ec), e2, e3)
+    case EPrint(ec)              => Print(recompose(e0, ec))
+    case EPromisify(ec)          => Promisify(recompose(e0, ec))
+    case EResolve1(ec, e)        => Resolve(recompose(e0, ec), e)
+    case EResolve2(e, ec)        => Resolve(e, recompose(e0, ec))
+    case EReject1(ec, e)         => Reject(recompose(e0, ec), e)
+    case EReject2(e, ec)         => Reject(e, recompose(e0, ec))
+    case EOnResolve1(ec, e)      => OnResolve(recompose(e0, ec), e)
+    case EOnResolve2(e, ec)      => OnResolve(e, recompose(e0, ec))
+    case EOnReject1(ec, e)       => OnReject(recompose(e0, ec), e)
+    case EOnReject2(e, ec)       => OnReject(e, recompose(e0, ec))
+    case ELink1(ec, e)           => Link(recompose(e0, ec), e)
+    case ELink2(e, ec)           => Link(e, recompose(e0, ec))
 }
 
 ///
@@ -396,13 +436,6 @@ def step(e0: Expression, m0: State): Outcome =
                 Next(recompose(e, ec), State(h0, s0, f0, r0, q0))
 
         //
-        // E-Seq
-        //
-        case (Seq(v, e), State(h0, s0, f0, r0, q0)) =>
-            // Discard the value in the sequence.
-            Next(recompose(e, ec), State(h0, s0, f0, r0, q0))
-
-        //
         //  E-Ref
         //
         case (Ref(v), State(Heap(h0), s0, f0, r0, q0)) =>
@@ -421,6 +454,32 @@ def step(e0: Expression, m0: State): Outcome =
                 case None => Abort("Unable to dereference unallocated address!")
                 case Some(v) => Next(recompose(v, ec), State(Heap(h0), s0, f0, r0, q0))
             }
+
+        //
+        // E-Seq
+        //
+        case (Seq(v, e), State(h0, s0, f0, r0, q0)) =>
+            // Discard the value in the sequence.
+            Next(recompose(e, ec), State(h0, s0, f0, r0, q0))
+
+        //
+        // E-If-Then-Else: True.
+        //
+        case (IfThenElse(True, e2, e3), State(h0, s0, f0, r0, q0)) =>
+            Next(recompose(e2, ec), State(h0, s0, f0, r0, q0))
+
+        //
+        // E-If-Then-Else: False.
+        //
+        case (IfThenElse(False, e2, e3), State(h0, s0, f0, r0, q0)) =>
+            Next(recompose(e3, ec), State(h0, s0, f0, r0, q0))
+
+        //
+        // E-Print
+        //
+        case (Print(v), State(h0, s0, f0, r0, q0)) =>
+            // Discard the value in the sequence.
+            Next(recompose(println!(v), ec), State(h0, s0, f0, r0, q0))
 
         //
         //  E-Promisify
@@ -551,22 +610,24 @@ def step(e0: Expression, m0: State): Outcome =
 /// Replaces every occurrence of the variable `x` in the expression `e0` with the expression `r0`.
 ///
 def substitute(e0: Expression, x: Variable, r0: Expression): Expression = match e0 with {
-    case Var(y)             => if (x == y) r0 else Var(y)
-    case Abs(y, e)          => if (x == y) Abs(y, e) else Abs(y, substitute(e, x, r0))
-    case App(e1, e2)        => App(substitute(e1, x, r0), substitute(e2, x, r0))
+    case Var(y)                 => if (x == y) r0 else Var(y)
+    case Abs(y, e)              => if (x == y) Abs(y, e) else Abs(y, substitute(e, x, r0))
+    case App(e1, e2)            => App(substitute(e1, x, r0), substitute(e2, x, r0))
 
-    case Cst(s)             => Cst(s)
-    case Ptr(a)             => Ptr(a)
-    case Ref(e)             => Ref(substitute(e, x, r0))
-    case Deref(e)           => Deref(substitute(e, x, r0))
-    case Seq(e1, e2)        => Seq(substitute(e1, x, r0), substitute(e2, x, r0))
+    case Cst(s)                 => Cst(s)
+    case Ptr(a)                 => Ptr(a)
+    case Ref(e)                 => Ref(substitute(e, x, r0))
+    case Deref(e)               => Deref(substitute(e, x, r0))
+    case Seq(e1, e2)            => Seq(substitute(e1, x, r0), substitute(e2, x, r0))
+    case IfThenElse(e1, e2, e3) => IfThenElse(substitute(e1, x, r0), substitute(e2, x, r0), substitute(e3, x, r0))
+    case Print(e)               => Print(substitute(e, x, r0))
 
-    case Promisify(e)       => Promisify(substitute(e, x, r0))
-    case Resolve(e1, e2)    => Resolve(substitute(e1, x, r0), substitute(e2, x, r0))
-    case Reject(e1, e2)     => Reject(substitute(e1, x, r0), substitute(e2, x, r0))
-    case OnResolve(e1, e2)  => OnResolve(substitute(e1, x, r0), substitute(e2, x, r0))
-    case OnReject(e1, e2)   => OnReject(substitute(e1, x, r0), substitute(e2, x, r0))
-    case Link(e1, e2)       => Link(substitute(e1, x, r0), substitute(e2, x, r0))
+    case Promisify(e)           => Promisify(substitute(e, x, r0))
+    case Resolve(e1, e2)        => Resolve(substitute(e1, x, r0), substitute(e2, x, r0))
+    case Reject(e1, e2)         => Reject(substitute(e1, x, r0), substitute(e2, x, r0))
+    case OnResolve(e1, e2)      => OnResolve(substitute(e1, x, r0), substitute(e2, x, r0))
+    case OnReject(e1, e2)       => OnReject(substitute(e1, x, r0), substitute(e2, x, r0))
+    case Link(e1, e2)           => Link(substitute(e1, x, r0), substitute(e2, x, r0))
 }
 
 ///
@@ -585,18 +646,20 @@ def alpha(e0: Expression, m: Map[Variable, Variable]): Expression = match e0 wit
         Abs(y, alpha(e, Map.insert(x, y, m)))
     case App(e1, e2) => App(alpha(e1, m), alpha(e2, m))
 
-    case Cst(s)             => Cst(s)
-    case Ptr(a)             => Ptr(a)
-    case Ref(e)             => Ref(alpha(e, m))
-    case Deref(e)           => Deref(alpha(e, m))
-    case Seq(e1, e2)        => Seq(alpha(e1, m), alpha(e2, m))
+    case Cst(s)                 => Cst(s)
+    case Ptr(a)                 => Ptr(a)
+    case Ref(e)                 => Ref(alpha(e, m))
+    case Deref(e)               => Deref(alpha(e, m))
+    case Seq(e1, e2)            => Seq(alpha(e1, m), alpha(e2, m))
+    case IfThenElse(e1, e2, e3) => IfThenElse(alpha(e1, m), alpha(e2, m), alpha(e3, m))
+    case Print(e)               => Print(alpha(e, m))
 
-    case Promisify(e)       => Promisify(alpha(e, m))
-    case Resolve(e1, e2)    => Resolve(alpha(e1, m), alpha(e2, m))
-    case Reject(e1, e2)     => Reject(alpha(e1, m), alpha(e2, m))
-    case OnResolve(e1, e2)  => OnResolve(alpha(e1, m), alpha(e2, m))
-    case OnReject(e1, e2)   => OnReject(alpha(e1, m), alpha(e2, m))
-    case Link(e1, e2)       => Link(alpha(e1, m), alpha(e2, m))
+    case Promisify(e)           => Promisify(alpha(e, m))
+    case Resolve(e1, e2)        => Resolve(alpha(e1, m), alpha(e2, m))
+    case Reject(e1, e2)         => Reject(alpha(e1, m), alpha(e2, m))
+    case OnResolve(e1, e2)      => OnResolve(alpha(e1, m), alpha(e2, m))
+    case OnReject(e1, e2)       => OnReject(alpha(e1, m), alpha(e2, m))
+    case Link(e1, e2)           => Link(alpha(e1, m), alpha(e2, m))
 }
 
 ///
@@ -663,6 +726,11 @@ def testEval2: Result[(Expression, State), Str] = eval(
         Ref(Cst("Promise1"))), Ref(Cst("Promise2"))),
     initialState()
 )
+
+def testEval3: Result[(Expression, State), Str] = eval(
+        IfThenElse(False, Print(Cst("A")), Print(Cst("B"))),
+        initialState()
+    )
 
 
 ///
