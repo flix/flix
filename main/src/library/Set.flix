@@ -32,9 +32,10 @@ namespace Set {
         let Set(s) = xs;
             List.length(s)
 
-    //
-    // ## Set Construction
-    //
+
+
+
+
 
     ///
     /// Returns the empty set.
@@ -62,9 +63,10 @@ namespace Set {
         let Set(s) = xs;
             Set(List.filter(e -> e != x, s))
 
-    //
-    // ## Set Predicates
-    //
+
+
+
+
 
     ///
     /// Returns true if and only if `xs` is the empty set, i.e. `Set(Nil)`.
@@ -111,9 +113,10 @@ namespace Set {
         let Set(s) = xs;
             List.findRight(f, s)
 
-    //
-    // ## Fold And Reduce
-    //
+
+
+
+
 
     ///
     /// Alias for `foldLeft`.
@@ -163,9 +166,10 @@ namespace Set {
         let Set(s) = xs;
             List.reduceRight(f, s)
 
-    //
-    // ## Special Folds
-    //
+
+
+
+
 
     ///
     /// Returns the number of elements in `xs` that satisfy the predicate `f`.
@@ -198,9 +202,10 @@ namespace Set {
         let Set(s) = xs;
             List.forall(f, s)
 
-    //
-    // ## Elementary Set Operations
-    //
+
+
+
+
 
     ///
     /// Returns the union of `xs` and `ys`.
@@ -230,9 +235,10 @@ namespace Set {
         let Set(s) = xs;
             Set(List.map(x -> Set(x), List.subsequences(s)))
 
-    //
-    // ## Set Transformations
-    //
+
+
+
+
 
     ///
     /// Returns the set of all elements of `xs` that satisfy the predicate `f`.
@@ -268,9 +274,10 @@ namespace Set {
         let (ys, zs) = List.partition(f, s);
             (Set(ys), Set(zs))
 
-    //
-    // ## Set Conversions
-    //
+
+
+
+
 
     ///
     /// Returns the set `xs` as a list.
@@ -288,9 +295,10 @@ namespace Set {
         let Set(s) = xs;
             List.toMap(s)
 
-    //
-    // ## Set Equality
-    //
+
+
+
+
 
     ///
     /// Returns `true` if and only if `xs` and `ys` and equal, i.e. they have the same elements.

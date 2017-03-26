@@ -32,9 +32,10 @@ namespace Map {
         let Map(xs) = m;
             List.length(xs)
 
-    //
-    // ## Map Construction
-    //
+
+
+
+
 
     ///
     /// Returns the empty map.
@@ -48,9 +49,10 @@ namespace Map {
     ///
     def singleton[k, v](k: k, v: v): Map[k, v] = Map((k, v) :: Nil)
 
-    //
-    // ## Basic Operations
-    //
+
+
+
+
 
     ///
     /// Returns `true` if and only if `m` is the empty map, i.e. `Map(Nil)`.
@@ -95,9 +97,10 @@ namespace Map {
         let Map(xs) = m;
             snd(List.unzip(xs))
 
-    //
-    // ## Insert
-    //
+
+
+
+
 
     ///
     /// Updates `m` with `k -> v`.
@@ -122,9 +125,10 @@ namespace Map {
             let Map(xs) = m;
                 Map((k, v) :: xs)
 
-    //
-    // ## Update
-    //
+
+
+
+
 
     ///
     /// Updates `m` with `k -> f(v)` if `k -> v` is in `m`.
@@ -154,9 +158,10 @@ namespace Map {
         let Map(xs) = m;
             Map(List.map(match (key, v) -> if (key == k) (k, Option.getWithDefault(f(k, v), v)) else (key, v), xs))
 
-    //
-    // ## Delete
-    //
+
+
+
+
 
     ///
     ///
@@ -165,9 +170,10 @@ namespace Map {
         let Map(xs) = m;
             Map(List.filter(match (key, v) -> key != k, xs))
 
-    //
-    // ## Map Predicates
-    //
+
+
+
+
 
     ///
     /// Returns `true` if and only if all mappings in `m1` occur in `m2`.
@@ -201,9 +207,10 @@ namespace Map {
         let Map(xs) = m;
             List.findRight(x -> f(fst(x), snd(x)), xs)
 
-    //
-    // ## Map Transformation
-    //
+
+
+
+
 
     ///
     /// Returns a map of all mappings `k -> v` in `m` where `v` satisfies the predicate `f`.
@@ -229,9 +236,10 @@ namespace Map {
         let Map(xs) = m;
             Map(List.map(match (k, v) -> (k, f(k, v)), xs))
 
-    //
-    // ## Fold and Reduce
-    //
+
+
+
+
 
     ///
     /// Alias for `foldLeft`.
@@ -315,9 +323,10 @@ namespace Map {
         let Map(xs) = m;
             List.reduceRight((kv1, kv2) -> f(fst(kv1), snd(kv1), fst(kv2), snd(kv2)), xs)
 
-    //
-    // ## Special Folds
-    //
+
+
+
+
 
     ///
     /// Returns the number of mappings in `m` that satisfy the predicate `f`.
@@ -342,9 +351,10 @@ namespace Map {
         let Map(xs) = m;
             List.forall(x -> f(fst(x), snd(x)), xs)
 
-    //
-    // ## Combine Two Maps
-    //
+
+
+
+
 
     ///
     /// Returns the left-biased union of `m1` and `m2`.
@@ -412,9 +422,10 @@ namespace Map {
                              else m;
         foldRightWithKey(g, diff, m2)
 
-    //
-    // ## Map Conversions
-    //
+
+
+
+
 
     ///
     /// Returns the map `m` as a list of key-value pairs.
@@ -430,9 +441,10 @@ namespace Map {
         let Map(xs) = m;
             List.toSet(xs)
 
-    //
-    // ## Map Equality
-    //
+
+
+
+
 
     ///
     /// Returns `true` if and only if `m1` and `m2` and equal, i.e. they have the same mappings.

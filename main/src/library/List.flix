@@ -115,9 +115,10 @@ namespace List {
         case x :: rs => Option.withDefault(findRight(f, rs), if (f(x)) Some(x) else None)
     }
 
-    //
-    // ## List Building
-    //
+
+
+
+
 
     ///
     /// Returns a list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -162,9 +163,10 @@ namespace List {
         }
     }
 
-    //
-    // ## List Transformation
-    //
+
+
+
+
 
     ///
     /// Returns the result of applying `f` to every element in `xs`.
@@ -372,9 +374,10 @@ namespace List {
         case (x :: rs, y :: qs) => (x :: y) :: applyListHelper(rs, qs)
     }
 
-    //
-    // ## List Predicates
-    //
+
+
+
+
 
     ///
     /// Returns `true` if and only if `xs` is a prefix of `ys`.
@@ -399,9 +402,9 @@ namespace List {
     ///
     def isSuffixOf[a](xs: List[a], ys: List[a]): Bool = isPrefixOf(reverse(xs), reverse(ys))
 
-    //
-    // ## Fold And Reduce
-    //
+
+
+
 
     ///
     /// Alias for `foldLeft`.
@@ -454,9 +457,10 @@ namespace List {
         }
     }
 
-    //
-    // ## Special Folds
-    //
+
+
+
+
 
     ///
     /// Returns the number of elements in `xs` that satisfy the predicate `f`.
@@ -494,9 +498,10 @@ namespace List {
         case x :: rs => if (!f(x)) false else forall(f, rs)
     }
 
-    //
-    // ## Sub Lists
-    //
+
+
+
+
 
     ///
     /// Returns a list of every element in `xs` that satisfies the predicate `f`.
@@ -590,9 +595,10 @@ namespace List {
         case x :: rs => if (f(x)) x :: takeWhile(f, rs) else Nil
     }
 
-    //
-    // ## Aggregation and Sorting
-    //
+
+
+
+
 
     ///
     /// Partitions `xs` into sublists such that for any two elements `x` and `y` in a sublist, `f(x, y)` is true.
@@ -624,9 +630,10 @@ namespace List {
         case x :: rs => if (f(x, a) && f(a, x)) agreeHelper(f, a, rs) else false
     }
 
-    //
-    // ## Zipping and Unzipping
-    //
+
+
+
+
 
     ///
     /// Returns a list where the element at index `i` is `(a, b)` where
@@ -659,9 +666,10 @@ namespace List {
                 (x1 :: r1, x2 :: r2)
     }
 
-    //
-    // ## Two List Operations
-    //
+
+
+
+
 
     ///
     /// Returns a list where the element at index `i` is `f(a, b)` where
@@ -711,9 +719,10 @@ namespace List {
         case _ => c
     }
 
-    //
-    // ## Combined Operations
-    //
+
+
+
+
 
     ///
     /// Collects the results of applying the partial function `f` to every element in `xs`.
@@ -738,9 +747,10 @@ namespace List {
         }
     }
 
-    //
-    // ## List Conversions
-    //
+
+
+
+
 
     ///
     /// Returns the list `xs` as a set.
