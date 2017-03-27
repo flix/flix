@@ -430,7 +430,7 @@ namespace List {
     }
 
     ///
-    /// Alias for `reduceLeftOpt`.
+    /// Alias for `reduceLeft`.
     ///
     def reduce[a](f: (a, a) -> a, xs: List[a]): Option[a] = reduceLeft(f, xs)
 
