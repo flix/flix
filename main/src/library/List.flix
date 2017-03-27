@@ -244,6 +244,11 @@ namespace List {
     }
 
     ///
+    /// Returns `xs` with every occurrence of `x` replaced by `y`.
+    ///
+    def replace[a](x: a, y: a, xs: List[a]): List[a] = map(e -> if (e == x) y else e, xs)
+
+    ///
     /// Returns `ys` with the `n` elements starting at index `i` replaced with the elements of `xs`.
     /// If any of the indices `i, i+1, i+2, ... , i+n-1` are out of range in `ys` then no patching is done at these indices.
     /// If `xs` becomes depleted then no further patching is done.

@@ -61,6 +61,14 @@ namespace Result {
     }
 
     ///
+    /// Returns `Ok(y)` if `r` is `Ok(x)`. Otherwise returns `r`.
+    ///
+    def replace[t, e](x: t, y: t, r: Result[t, e]): Result[t, e] = match r with {
+        case Ok(v) => Ok(if (v == x) y else v)
+        case Err(w) => r
+    }
+
+    ///
     /// Returns `true` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `false`.
     ///
     def exists[t, e](f: t -> Bool, r: Result[t, e]): Bool = getWithDefault(map(f, r), false)

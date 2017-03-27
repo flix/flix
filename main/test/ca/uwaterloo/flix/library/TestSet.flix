@@ -855,6 +855,33 @@ def flatMap09: Bool = assert!(Set.eq(Set.flatMap(x -> #{x, 3*x}, #{1, 8, 3, 2, 9
 def flatMap10: Bool = assert!(Set.eq(Set.flatMap(x -> #{x, 2*x, 3*x}, #{1, 4, 3, 2}), #{1, 8, 12, 3, 9, 2, 4, 6}))
 
 /////////////////////////////////////////////////////////////////////////////
+// replace                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def replace01: Bool = assert!(Set.eq(Set.replace(3, 4, #{}), #{}))
+
+@test
+def replace02: Bool = assert!(Set.eq(Set.replace(3, 4, #{1}), #{1}))
+
+@test
+def replace03: Bool = assert!(Set.eq(Set.replace(3, 4, #{3}), #{4}))
+
+@test
+def replace04: Bool = assert!(Set.eq(Set.replace(3, 4, #{4}), #{4}))
+
+@test
+def replace05: Bool = assert!(Set.eq(Set.replace(3, 4, #{1, 2}), #{1, 2}))
+
+@test
+def replace06: Bool = assert!(Set.eq(Set.replace(3, 4, #{1, 3}), #{1, 4}))
+
+@test
+def replace07: Bool = assert!(Set.eq(Set.replace(3, 4, #{3, 2}), #{4, 2}))
+
+@test
+def replace08: Bool = assert!(Set.eq(Set.replace(3, 4, #{3, 4}), #{4}))
+
+/////////////////////////////////////////////////////////////////////////////
 // partition                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
