@@ -244,7 +244,7 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     case SmtExpr.Minus(e1, e2) => ctx.mkSub(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
     case SmtExpr.Times(e1, e2) => ctx.mkMul(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
     case SmtExpr.Divide(e1, e2) => ctx.mkDiv(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
-    case SmtExpr.Modulo(e1, e2) => ctx.mkMod(visitIntExpr(e1, ctx), visitIntExpr(e2, ctx))
+    case SmtExpr.Modulo(e1, e2) => ctx.mkRem(visitIntExpr(e1, ctx), visitIntExpr(e2, ctx))
     case SmtExpr.BitwiseNegate(e) => throw InternalCompilerException(s"BitwiseNegate not supported for BigInt.")
     case SmtExpr.BitwiseAnd(e1, e2) => throw InternalCompilerException(s"BitwiseAnd not supported for BigInt.")
     case SmtExpr.BitwiseOr(e1, e2) => throw InternalCompilerException(s"BitwiseOr not supported for BigInt.")

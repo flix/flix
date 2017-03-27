@@ -58,12 +58,13 @@ namespace Domain/Mod3 {
     ///
     /// Abstracts a concrete integer into the Parity domain.
     ///
-    def alpha(i: BigInt): Mod3 = switch {
-        case i % 3ii == 0ii => Zer
-        case i % 3ii == 1ii => One
-        case i % 3ii == 2ii => Two
-        case true => Bot // TODO: Why is this required? Related to negative numbers???
-    }
+    def alpha(i: BigInt): Mod3 =
+    // TODO: The verifier must handle errors so it never enters a Switch/MatchError.
+        switch {
+            case (i % 3ii == 1ii) || (i % 3ii == -1ii)  => One
+            case (i % 3ii == 2ii) || (i % 3ii == -2ii)  => Two
+            case true                                   => Zer
+        }
 
     ///
     /// Over-approximates integer `increment`.
