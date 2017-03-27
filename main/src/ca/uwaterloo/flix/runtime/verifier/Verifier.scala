@@ -29,6 +29,8 @@ import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
 import com.microsoft.z3._
 
+import scala.collection.mutable.ListBuffer
+
 object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
   /**
@@ -149,36 +151,58 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   def verifyProperty(p: Property, root: ExecutableAst.Root)(implicit genSym: GenSym): PropertyResult = {
     // start the clock.
     val t = System.nanoTime()
+
     // the number of queries issued to the SMT solver.
     var queries = 0
 
     // the initial empty environment.
     val env0 = Map.empty: SymbolicEvaluator.Environment
 
-    // evaluate the expression under the empty environment.
-    val results = SymbolicEvaluator.eval(p.exp, env0, enumerate(root, genSym), root) map {
-      case (Nil, qua, SymVal.True) =>
-        // Case 1: The symbolic evaluator proved the property.
-        PathResult.Success
-      case (Nil, qua, SymVal.False) =>
-        // Case 2: The symbolic evaluator disproved the property.
-        PathResult.Failure(SymVal.mkModel(qua, None))
-      case (pc, qua, v) => v match {
-        case SymVal.True =>
-          // Case 3.1: The property holds under some path condition.
-          // The property holds regardless of whether the path condition is satisfiable.
+    // perform symbolic execution to obtain all possible paths.
+    val contexts = SymbolicEvaluator.eval(p.exp, env0, enumerate(root, genSym), root)
+
+    // a boolean to indicate whether to continue checking path satisfiability.
+    var continue: Boolean = true
+
+    // retrieve an iterator over the contexts.
+    val iterator = contexts.iterator
+
+    // a buffer to hold the result of processing each path.
+    val results = ListBuffer.empty[PathResult]
+
+    // check path satisfiability for each path or until we find an error.
+    while (iterator.hasNext && continue) {
+      val result: PathResult = iterator.next() match {
+        case (Nil, qua, SymVal.True) =>
+          // Case 1: The symbolic evaluator proved the property.
           PathResult.Success
-        case SymVal.False =>
-          // Case 3.2: The property *does not* hold under some path condition.
-          // If the path condition is satisfiable then the property *does not* hold.
-          queries += 1
-          assertUnsatisfiable(p, and(pc), qua)
-        case SymVal.AtomicVar(id, _) =>
-          // Case 3.3: The property holds iff the atomic variable is never `false`.
-          queries += 1
-          assertUnsatisfiable(p, SmtExpr.Not(and(pc)), qua)
-        case _ => throw InternalCompilerException(s"Unexpected value: '$v'.")
+        case (Nil, qua, SymVal.False) =>
+          // Case 2: The symbolic evaluator disproved the property.
+          PathResult.Failure(SymVal.mkModel(qua, None))
+        case (pc, qua, v) => v match {
+          case SymVal.True =>
+            // Case 3.1: The property holds under some path condition.
+            // The property holds regardless of whether the path condition is satisfiable.
+            PathResult.Success
+          case SymVal.False =>
+            // Case 3.2: The property *does not* hold under some path condition.
+            // If the path condition is satisfiable then the property *does not* hold.
+            queries += 1
+            assertUnsatisfiable(p, and(pc), qua)
+          case SymVal.AtomicVar(id, _) =>
+            // Case 3.3: The property holds iff the atomic variable is never `false`.
+            queries += 1
+            assertUnsatisfiable(p, SmtExpr.Not(and(pc)), qua)
+          case _ => throw InternalCompilerException(s"Unexpected value: '$v'.")
+        }
       }
+
+      if (result.isInstanceOf[PathResult.Failure]) {
+        // bail out if we have found a single counter example.
+        continue = false
+      }
+
+      results += result
     }
 
     // stop the clock.
