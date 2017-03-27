@@ -114,12 +114,15 @@ namespace Domain/Interval {
     ///
     /// Over-approximates integer `multiplication`.
     ///
-    #approximates2((x, y) -> x * y)
-    #strict2 #monotone2 #commutative
+    //#approximates2((x, y) -> x * y)
+    #strict2 /*#monotone2*/ #commutative
     def times(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
-        case (Range(b1, e1), Range(b2, e2)) => norm(Range(b1 * b2, e1 * e2))
+        case (Range(b1, e1), Range(b2, e2)) =>
+            let b = BigInt.min(BigInt.min(b1 * e1, b1 * e2), BigInt.min(b2 * e1, b2 * e2));
+            let e = BigInt.max(BigInt.min(b1 * e1, b1 * e2), BigInt.max(b2 * e1, b2 * e2));
+                Range(b, e)
         case _                              => Top
     }
 
@@ -127,7 +130,7 @@ namespace Domain/Interval {
       * Over-approximates `equal`.
       */
     //@strict @monotone @commutative // TODO
-    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) //#commutative
     def eq(e1: Interval, e2: Interval): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)                                           => Belnap/Belnap.Bot
         case (_, Bot)                                           => Belnap/Belnap.Bot
@@ -221,7 +224,7 @@ namespace Domain/Interval {
                 f(x, f(y, z)) == f(f(x, y), z)
 
     law commutative(f: (Interval, Interval) -> Interval): Bool = // TODO: Use Prelude
-        ∀(x: Interval, y: Interval). f(x, y) == f(y, x)
+        ∀(x: Interval, y: Interval). f(norm(x), norm(y)) == f(norm(y), norm(x))
 
     law strict1(f: Interval -> Interval): Bool =  // TODO: Should call prelude
         f(Bot) == Bot
@@ -254,6 +257,3 @@ namespace Domain/Interval {
 
 
 }
-
-
-    // TODO: Consider reduced product with Parity and Sign.
