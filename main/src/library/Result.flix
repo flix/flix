@@ -150,4 +150,18 @@ namespace Result {
         case Ok(v) => Some(v)
         case Err(w) => None
     }
+
+
+
+
+
+
+    ///
+    /// Returns `true` if and only if `r1` and `r2` and equal.
+    ///
+    def eq[t, e](r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) with {
+        case (Ok(v1), Ok(v2)) => v1 == v2
+        case (Err(w1), Err(w2)) => w1 == w2
+        case _ => false
+    }
 }
