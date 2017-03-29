@@ -67,7 +67,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       *
       *   (b) Appears in a fact or a rule as a filter/transfer function.
       */
-    def firstReachable(defn: Definition.Constant): Boolean = {
+    def isReachableRoot(defn: Definition.Constant): Boolean = {
       val global = defn.sym.namespace.isEmpty
       val noArguments = defn.formals.isEmpty
       val notSynthetic = !defn.isSynthetic
@@ -76,18 +76,19 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     }
 
     /**
-      * Searches the given expression `expression` for reachable functions.
+      * Searches the given expression `e0` for reachable functions.
       */
-    def visitExp(expression: Expression): Unit =  expression match {
-      case Expression.Ref(sym, tpe, loc) => newRef(sym)
+    def visitExp(e0: Expression): Unit =  e0 match {
+      case Expression.Ref(sym, tpe, loc) => newDefinitionSymbol(sym)
       case Expression.Lambda(args, body, tpe, loc) => visitExp(body)
+      case Expression.Hook(hook, tpe, loc) => newDefinitionSymbol(hook.sym)
       case Expression.MkClosure(lambda, freeVars, tpe, loc) => visitExp(lambda)
       case Expression.MkClosureRef(ref, freeVars, tpe, loc) => visitExp(ref)
       case Expression.ApplyRef(sym, args, tpe, loc) =>
-        newRef(sym)
+        newDefinitionSymbol(sym)
         args.foreach(e => visitExp(e))
       case Expression.ApplyTail(sym, formals, actuals, tpe, loc) =>
-        newRef(sym)
+        newDefinitionSymbol(sym)
         actuals.foreach(e => visitExp(e))
       case Expression.Apply(exp, args, tpe, loc) =>
         visitExp(exp)
@@ -116,19 +117,16 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /**
       * Adds the function `sym` to the map of reachable functions.
       */
-    def newRef(sym: Symbol.DefnSym): Unit = {
-      reachableFunctions.get(sym) match {
-        // If `sym` has not already been determined reachable, look up its definition in `root`.
-        case None =>
-          root.definitions.get(sym) match {
-            case Some(defn) =>
-              reachableFunctions.put(sym, defn)
-              queue.enqueue(defn)
-            // If `sym` is not defined in `root`, leave this for error checking later.
-            case _ =>
-          }
-        // If `sym` has already been determined reachable, do nothing.
-        case _ =>
+    def newDefinitionSymbol(sym: Symbol.DefnSym): Unit = {
+      // If `sym` has not already been determined reachable, look up its definition in `root`.
+      if (!reachableFunctions.contains(sym)) {
+        root.definitions.get(sym) match {
+          case Some(defn) =>
+            reachableFunctions.put(sym, defn)
+            queue.enqueue(defn)
+          // If `sym` is not defined in `root`, leave this for error checking later.
+          case _ =>
+        }
       }
     }
 
@@ -140,17 +138,44 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     val t = System.nanoTime()
 
     /*
-     * Find all initially reachable function definitions.
+     * Find reachable function definitions that:
+     *
+     * (a) Appear in the global namespaces, take zero arguments, and are not marked as synthetic.
      */
     for ((sym, defn) <- root.definitions) {
-      if (firstReachable(defn)) {
+      if (isReachableRoot(defn)) {
         queue.enqueue(defn)
         reachableFunctions.put(sym, defn)
       }
     }
 
     /*
-     * Search for nested reachable functions.
+     * Find reachable function definitions that:
+     *
+     * (b) Appear in a fact or a rule as a filter/transfer function.
+     */
+    for (stratum <- root.strata) {
+      for (constraint <- stratum.constraints) {
+        constraint.head match {
+          case SimplifiedAst.Predicate.Head.Positive(_, terms, _) =>
+            terms.foreach {
+              case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => newDefinitionSymbol(sym)
+              case _ =>
+            }
+          case SimplifiedAst.Predicate.Head.Negative(_, terms, _) =>
+            terms.foreach {
+              case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => newDefinitionSymbol(sym)
+              case _ =>
+            }
+          case _ =>
+        }
+      }
+    }
+
+    /*
+     * Find reachable function definitions that:
+     *
+     * (c) Appear in a function which itself is reachable.
      */
     while (queue.nonEmpty) {
       // Extract a function from the queue and search for other functions.
