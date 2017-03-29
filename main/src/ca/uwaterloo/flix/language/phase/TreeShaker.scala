@@ -32,7 +32,8 @@ import scala.collection.mutable
   *
   * (a) Appears in the global namespaces, takes zero arguments, and is not marked as synthetic.
   * (b) Appears in a fact or a rule as a filter/transfer function.
-  * (c) Appears in a function which itself is reachable.
+  * (c) Appears in a lattice declaration.
+  * (d) Appears in a function which itself is reachable.
   */
 
 object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
@@ -159,15 +160,37 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         constraint.head match {
           case SimplifiedAst.Predicate.Head.Positive(_, terms, _) =>
             terms.foreach {
+              case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => visitExp(lit)
               case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => newDefinitionSymbol(sym)
               case _ =>
             }
           case SimplifiedAst.Predicate.Head.Negative(_, terms, _) =>
             terms.foreach {
+              case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => visitExp(lit)
               case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => newDefinitionSymbol(sym)
               case _ =>
             }
           case _ =>
+        }
+
+        constraint.body.foreach {
+          case SimplifiedAst.Predicate.Body.Positive(_, terms, _) =>
+            terms.foreach {
+              case SimplifiedAst.Term.Body.Lit(exp, tpe, loc) => visitExp(exp)
+              case _ =>
+            }
+          case SimplifiedAst.Predicate.Body.Negative(_, terms, _) =>
+            terms.foreach {
+              case SimplifiedAst.Term.Body.Lit(exp, tpe, loc) => visitExp(exp)
+              case _ =>
+            }
+          case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) => newDefinitionSymbol(sym)
+          case SimplifiedAst.Predicate.Body.Loop(_, term, _) =>
+            term match {
+              case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => visitExp(lit)
+              case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => newDefinitionSymbol(sym)
+              case _ =>
+            }
         }
       }
     }
@@ -175,7 +198,21 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /*
      * Find reachable function definitions that:
      *
-     * (c) Appear in a function which itself is reachable.
+     * (c) Appear in a lattice declaration.
+     */
+    root.lattices.values.foreach({
+      case SimplifiedAst.Definition.Lattice(tpe, bot, top, leq, lub, glb, loc) =>
+        visitExp(bot)
+        visitExp(top)
+        visitExp(leq)
+        visitExp(lub)
+        visitExp(glb)
+    })
+
+    /*
+     * Find reachable function definitions that:
+     *
+     * (d) Appear in a function which itself is reachable.
      */
     while (queue.nonEmpty) {
       // Extract a function from the queue and search for other functions.
