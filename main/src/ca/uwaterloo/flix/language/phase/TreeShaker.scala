@@ -60,24 +60,39 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     val reachableFunctions: mutable.Map[Symbol.DefnSym, Definition.Constant] = mutable.Map.empty
 
     /**
-      * Returns true iff the function definition `defn` is initially reachable.
+      * Returns true iff the function definition `defn` is initially reachable by (a).
       *
-      * That is, returns true iff `defn` satisfies one of the following:
+      * That is, returns true iff `defn` satisfies:
       *
       *   (a) Appears in the global namespaces, takes zero arguments, and is not marked as synthetic.
-      *
-      *   (b) Appears in a fact or a rule as a filter/transfer function.
       */
     def isReachableRoot(defn: Definition.Constant): Boolean = {
-      val global = defn.sym.namespace.isEmpty
-      val noArguments = defn.formals.isEmpty
-      val notSynthetic = !defn.isSynthetic
-
-      global && noArguments && notSynthetic
+      defn.sym.namespace.isEmpty && defn.formals.isEmpty && !defn.isSynthetic
     }
 
     /**
-      * Searches the given expression `e0` for reachable functions.
+      * Searches the given SimplifiedAst.Term.Head `head` for reachable functions.
+      */
+    def visitTermHead(head: SimplifiedAst.Term.Head): Unit = {
+      head match {
+        case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => visitExp(lit)
+        case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => newDefinitionSymbol(sym)
+        case _ =>
+      }
+    }
+
+    /**
+      * Searches the given SimplifiedAst.Term.Body `body` for reachable functions.
+      */
+    def visitTermBody(body: SimplifiedAst.Term.Body): Unit = {
+      body match {
+        case SimplifiedAst.Term.Body.Lit(exp, tpe, loc) => visitExp(exp)
+        case _ =>
+      }
+    }
+
+    /**
+      * Searches the given Expression `e0` for reachable functions.
       */
     def visitExp(e0: Expression): Unit =  e0 match {
       case Expression.Ref(sym, tpe, loc) => newDefinitionSymbol(sym)
@@ -87,13 +102,13 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.MkClosureRef(ref, freeVars, tpe, loc) => visitExp(ref)
       case Expression.ApplyRef(sym, args, tpe, loc) =>
         newDefinitionSymbol(sym)
-        args.foreach(e => visitExp(e))
+        args.foreach(visitExp)
       case Expression.ApplyTail(sym, formals, actuals, tpe, loc) =>
         newDefinitionSymbol(sym)
-        actuals.foreach(e => visitExp(e))
+        actuals.foreach(visitExp)
       case Expression.Apply(exp, args, tpe, loc) =>
         visitExp(exp)
-        args.foreach(e => visitExp(e))
+        args.foreach(visitExp)
       case Expression.Unary(op, exp, tpe, loc) => visitExp(exp)
       case Expression.Binary(op, exp1, exp2, tpe, loc) =>
         visitExp(exp1)
@@ -109,7 +124,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Tag(sym, tag, exp, tpe, loc) => visitExp(exp)
       case Expression.Untag(tag, exp, tpe, loc) => visitExp(exp)
       case Expression.Index(base, offset, tpe, loc) => visitExp(base)
-      case Expression.Tuple(elms, tpe, loc) => elms.foreach(e => visitExp(e))
+      case Expression.Tuple(elms, tpe, loc) => elms.foreach(visitExp)
       case Expression.Existential(fparam, exp, loc) => visitExp(exp)
       case Expression.Universal(fparam, exp, loc) => visitExp(exp)
       case _ =>
@@ -139,7 +154,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     val t = System.nanoTime()
 
     /*
-     * Find reachable function definitions that:
+     * Find reachable functions that:
      *
      * (a) Appear in the global namespaces, take zero arguments, and are not marked as synthetic.
      */
@@ -151,52 +166,29 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     }
 
     /*
-     * Find reachable function definitions that:
+     * Find reachable functions that:
      *
      * (b) Appear in a fact or a rule as a filter/transfer function.
      */
     for (stratum <- root.strata) {
       for (constraint <- stratum.constraints) {
         constraint.head match {
-          case SimplifiedAst.Predicate.Head.Positive(_, terms, _) =>
-            terms.foreach {
-              case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => visitExp(lit)
-              case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => newDefinitionSymbol(sym)
-              case _ =>
-            }
-          case SimplifiedAst.Predicate.Head.Negative(_, terms, _) =>
-            terms.foreach {
-              case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => visitExp(lit)
-              case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => newDefinitionSymbol(sym)
-              case _ =>
-            }
+          case SimplifiedAst.Predicate.Head.Positive(sym, terms, loc) => terms.foreach(visitTermHead)
+          case SimplifiedAst.Predicate.Head.Negative(sym, terms, loc) => terms.foreach(visitTermHead)
           case _ =>
         }
 
         constraint.body.foreach {
-          case SimplifiedAst.Predicate.Body.Positive(_, terms, _) =>
-            terms.foreach {
-              case SimplifiedAst.Term.Body.Lit(exp, tpe, loc) => visitExp(exp)
-              case _ =>
-            }
-          case SimplifiedAst.Predicate.Body.Negative(_, terms, _) =>
-            terms.foreach {
-              case SimplifiedAst.Term.Body.Lit(exp, tpe, loc) => visitExp(exp)
-              case _ =>
-            }
+          case SimplifiedAst.Predicate.Body.Positive(sym, terms, loc) => terms.foreach(visitTermBody)
+          case SimplifiedAst.Predicate.Body.Negative(sym, terms, loc) => terms.foreach(visitTermBody)
           case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) => newDefinitionSymbol(sym)
-          case SimplifiedAst.Predicate.Body.Loop(_, term, _) =>
-            term match {
-              case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => visitExp(lit)
-              case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => newDefinitionSymbol(sym)
-              case _ =>
-            }
+          case SimplifiedAst.Predicate.Body.Loop(sym, term, loc) => visitTermHead(term)
         }
       }
     }
 
     /*
-     * Find reachable function definitions that:
+     * Find reachable functions that:
      *
      * (c) Appear in a lattice declaration.
      */
@@ -210,12 +202,12 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     })
 
     /*
-     * Find reachable function definitions that:
+     * Find reachable functions that:
      *
      * (d) Appear in a function which itself is reachable.
      */
     while (queue.nonEmpty) {
-      // Extract a function from the queue and search for other functions.
+      // Extract a function body from the queue and search for other reachable functions.
       visitExp(queue.dequeue().exp)
     }
 
