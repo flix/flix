@@ -599,6 +599,34 @@ object ParsedAst {
     case class Ascribe(exp: ParsedAst.Expression, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Unsafe Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the unsafe expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Unsafe(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Native Field Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param fqn the fully-qualified name of the native field.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class NativeField(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Native Method Expression.
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param fqn  the fully-qualified name of the native method.
+      * @param args the arguments to the method.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class NativeMethod(sp1: SourcePosition, fqn: Seq[String], args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * User Error Expression (an expression that immediately aborts execution).
       *
       * @param sp1 the position of the first character in the expression.

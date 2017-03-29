@@ -481,7 +481,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetMatch | IfThenElse | Match | LambdaMatch | Switch | Lambda | Tuple | FNil | FSet | FMap | Literal |
+      LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple | FNil | FSet | FMap | Literal |
         Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | UserError
     }
 
@@ -517,12 +517,38 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
     }
 
+    def Unsafe: Rule1[ParsedAst.Expression] = rule {
+      SP ~ atomic("unsafe") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Unsafe
+    }
+
+    def Native: Rule1[ParsedAst.Expression] = {
+      def JavaIdentifier: Rule1[String] = rule {
+        capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum))
+      }
+
+      def JavaName: Rule1[Seq[String]] = rule {
+        oneOrMore(JavaIdentifier).separatedBy(".")
+      }
+
+      def NativeField: Rule1[ParsedAst.Expression.NativeField] = rule {
+        SP ~ atomic("field") ~ WS ~ JavaName ~ SP ~> ParsedAst.Expression.NativeField
+      }
+
+      def NativeMethod: Rule1[ParsedAst.Expression.NativeMethod] = rule {
+        SP ~ atomic("method") ~ WS ~ JavaName ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Expression.NativeMethod
+      }
+
+      rule {
+        atomic("native") ~ WS ~ (NativeField | NativeMethod)
+      }
+    }
+
     def Apply: Rule1[ParsedAst.Expression] = rule {
-      Postfix ~ optional(optWS ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Apply)
+      Postfix ~ optional(ArgumentList ~ SP ~> ParsedAst.Expression.Apply)
     }
 
     def Postfix: Rule1[ParsedAst.Expression] = rule {
-      Primary ~ zeroOrMore(optWS ~ "." ~ Names.Definition ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Postfix)
+      Primary ~ zeroOrMore(optWS ~ "." ~ Names.Definition ~ ArgumentList ~ SP ~> ParsedAst.Expression.Postfix)
     }
 
     def Tag: Rule1[ParsedAst.Expression.Tag] = rule {
@@ -796,6 +822,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Helpers                                                                 //
   /////////////////////////////////////////////////////////////////////////////
+  def ArgumentList: Rule1[Seq[ParsedAst.Expression]] = rule {
+    "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+  }
+
   def NonEmptyArgumentList: Rule1[Seq[ParsedAst.Expression]] = rule {
     "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
   }
