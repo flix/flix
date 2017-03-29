@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.runtime.evaluator
 
+import java.math.BigInteger
+
 import ca.uwaterloo.flix.api.{MatchException, SwitchException, UserException}
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
@@ -280,8 +282,17 @@ object SymbolicEvaluator {
 
               // Symbolic semantics
               case SymVal.AtomicVar(id, tpe) =>
+                // NB: Must subtract one from the result of SmtExpr.BitwiseNegate since Z3 performs two's complement and adds one.
+                val one = tpe match {
+                  case Type.Int8 => SmtExpr.Int8(1)
+                  case Type.Int16 => SmtExpr.Int16(1)
+                  case Type.Int32 => SmtExpr.Int32(1)
+                  case Type.Int64 => SmtExpr.Int64(1)
+                  case Type.BigInt => SmtExpr.BigInt(BigInteger.ONE)
+                  case _ => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
+                }
                 val newVar = Symbol.freshVarSym()
-                val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.BitwiseNegate(SmtExpr.Var(id, exp.tpe))) :: pc
+                val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Minus(SmtExpr.BitwiseNegate(SmtExpr.Var(id, exp.tpe)), one)) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, tpe))
 
               case _ => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
