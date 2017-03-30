@@ -115,7 +115,7 @@ namespace Domain/Interval {
     /// Over-approximates integer `multiplication`.
     ///
     #safe2((x, y) -> x * y)
-    #strict2 /* #monotone2 */ /* #commutative */
+    #strict2 /* slow? #monotone2 */ /* slow? #commutative */
     def times(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
@@ -129,8 +129,8 @@ namespace Domain/Interval {
     /**
       * Over-approximates `equal`.
       */
-    //@strict @monotone @commutative // TODO
-    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) //#commutative
+    #safeBelnap2((x, y) -> x == y)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2 #commutativeBelnap
     def eq(e1: Interval, e2: Interval): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)                                           => Belnap/Belnap.Bot
         case (_, Bot)                                           => Belnap/Belnap.Bot
@@ -145,13 +145,15 @@ namespace Domain/Interval {
     /**
       * Over-approximates `not equal`.
       */
-    //@strict @monotone @commutative // TODO
+    #safeBelnap2((x, y) -> x != y)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2 #commutativeBelnap
     def neq(e1: Interval, e2: Interval): Belnap.Belnap = Belnap.not(eq(e1, e2))
 
     /**
       * Over-approximates `less than`.
       */
-    //@strict @monotone // TODO
+   #safeBelnap2((x, y) -> x < y)
+   #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2
     def less(e1: Interval, e2: Interval): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)                                  => Belnap/Belnap.Bot
         case (_, Bot)                                  => Belnap/Belnap.Bot
@@ -170,7 +172,8 @@ namespace Domain/Interval {
     /**
       * Over-approximates `less than or equal`.
       */
-    //@strict @monotone // TODO
+   #safeBelnap2((x, y) -> x <= y)
+   #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2
     def lessEqual(e1: Interval, e2: Interval): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
     let Interval<> = (Bot, Top, leq, lub, glb)
@@ -243,5 +246,21 @@ namespace Domain/Interval {
 
     law safe2(fa: (Interval, Interval) -> Interval, fc: (BigInt, BigInt) -> BigInt): Bool =
         ∀(x: BigInt, y: BigInt). alpha(fc(x, y)) `leq` fa(alpha(x), alpha(y))
+
+    // ------------------------------------------------------------------------
+    // Specialized Laws for Interval/Belnap.
+    // ------------------------------------------------------------------------
+
+    law commutativeBelnap(f: (Interval, Interval) -> Belnap.Belnap): Bool =
+        ∀(x: Interval, y: Interval).
+            f(norm(x), norm(y)) == f(norm(y), norm(x))
+
+    law monotoneBelnap2(f: (Interval, Interval) -> Belnap.Belnap): Bool =
+        let ⊑ = leq;
+            ∀(x1: Interval, x2: Interval, y1: Interval, y2: Interval).
+                    ((norm(x1) ⊑ norm(y1)) ∧ (norm(x2) ⊑ norm(y2))) → (f(norm(x1), norm(x2)) `Belnap.leq` f(norm(y1), norm(y2)))
+
+    law safeBelnap2(fa: (Interval, Interval) -> Belnap.Belnap, fc: (BigInt, BigInt) -> Bool): Bool =
+        ∀(x: BigInt, y: BigInt). Belnap.alpha(fc(x, y)) `Belnap.leq` fa(alpha(x), alpha(y))
 
 }
