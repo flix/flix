@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import java.lang.reflect.{Field, Method}
+import java.lang.reflect.{Field, Method, Modifier}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
@@ -694,7 +694,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
 
     // retrieve the fields.
     val fields = clazz.getDeclaredFields.toList.filter {
-      case field => field.getName == fieldName
+      case field => field.getName == fieldName && Modifier.isStatic(field.getModifiers)
     }
 
     // number of matched fields.

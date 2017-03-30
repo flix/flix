@@ -155,6 +155,7 @@ object ClosureConv {
       SimplifiedAst.Expression.Existential(params, convert(e), loc)
     case SimplifiedAst.Expression.Universal(params, e, loc) =>
       SimplifiedAst.Expression.Universal(params, convert(e), loc)
+    case SimplifiedAst.Expression.NativeField(field, tpe, loc) => exp
     case SimplifiedAst.Expression.UserError(tpe, loc) => exp
     case SimplifiedAst.Expression.MatchError(tpe, loc) => exp
     case SimplifiedAst.Expression.SwitchError(tpe, loc) => exp
@@ -218,6 +219,7 @@ object ClosureConv {
       freeVariables(exp).filterNot { v => v._1 == fparam.sym }
     case SimplifiedAst.Expression.Universal(fparam, exp, loc) =>
       freeVariables(exp).filterNot { v => v._1 == fparam.sym }
+    case SimplifiedAst.Expression.NativeField(field, tpe, loc) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.UserError(tpe, loc) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.SwitchError(tpe, loc) => mutable.LinkedHashSet.empty

@@ -738,6 +738,13 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
           }
 
         /*
+         * Native Field expression.
+         */
+        case NamedAst.Expression.NativeField(field, tvar, loc) =>
+          // TODO
+          liftM(tvar)
+
+        /*
          * User Error expression.
          */
         case NamedAst.Expression.UserError(tvar, loc) => liftM(tvar)
@@ -902,6 +909,12 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
         case NamedAst.Expression.Ascribe(exp, tpe, loc) =>
           // simply reassemble the nested expression.
           visitExp(exp, subst0)
+
+        /*
+         * Native Field expression.
+         */
+        case NamedAst.Expression.NativeField(field, tpe, loc) =>
+          TypedAst.Expression.NativeField(field, subst0(tpe), loc)
 
         /*
          * User Error expression.

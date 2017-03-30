@@ -170,6 +170,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.Existential(params, visit(exp), loc)
       case Expression.Universal(params, exp, loc) =>
         Expression.Universal(params, visit(exp), loc)
+      case Expression.NativeField(field, tpe, loc) => e
       case Expression.UserError(tpe, loc) => e
       case Expression.MatchError(tpe, loc) => e
       case Expression.SwitchError(tpe, loc) => e

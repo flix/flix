@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import java.lang.reflect.Field
+
 sealed trait SimplifiedAst
 
 object SimplifiedAst {
@@ -420,6 +422,8 @@ object SimplifiedAst {
     case class Universal(fparam: SimplifiedAst.FormalParam, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Bool
     }
+
+    case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class UserError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 

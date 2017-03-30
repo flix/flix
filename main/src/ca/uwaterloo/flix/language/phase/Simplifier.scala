@@ -246,6 +246,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val p = SimplifiedAst.FormalParam(fparam.sym, fparam.tpe)
         val e = simplify(exp)
         SimplifiedAst.Expression.Universal(p, e, loc)
+      case TypedAst.Expression.NativeField(field, tpe, loc) =>
+        SimplifiedAst.Expression.NativeField(field, tpe, loc)
       case TypedAst.Expression.UserError(tpe, loc) =>
         SimplifiedAst.Expression.UserError(tpe, loc)
     }
