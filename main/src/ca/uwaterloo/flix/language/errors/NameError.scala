@@ -74,6 +74,25 @@ object NameError {
   }
 
   /**
+    * An error raised to indicate that an ambiguous method name was not found.
+    *
+    * @param className the class name.
+    * @param fieldName the method name.
+    * @param arity     the expected arity.
+    * @param loc       the location of the class name.
+    */
+  case class AmbiguousNativeMethod(className: String, fieldName: String, arity: Int, loc: SourceLocation) extends NameError {
+    val source: SourceInput = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Ambiguous method '" << Red(fieldName) << "' in class '" << Cyan(className) << "' with expected arity " << arity << "." << NewLine
+      vt << NewLine
+      vt << Code(loc, "ambiguous method.") << NewLine
+    }
+  }
+
+  /**
     * An error raised to indicate that the class name was not found.
     *
     * @param name the class name.
@@ -105,25 +124,6 @@ object NameError {
       vt << ">> Undefined field '" << Red(fieldName) << "' in class '" << Cyan(className) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "undefined field.") << NewLine
-    }
-  }
-
-  /**
-    * An error raised to indicate that an ambiguous method name was not found.
-    *
-    * @param className the class name.
-    * @param fieldName the method name.
-    * @param arity     the expected arity.
-    * @param loc       the location of the class name.
-    */
-  case class AmbiguousNativeMethod(className: String, fieldName: String, arity: Int, loc: SourceLocation) extends NameError {
-    val source: SourceInput = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Ambiguous method '" << Red(fieldName) << "' in class '" << Cyan(className) << "' with expected arity " << arity << "." << NewLine
-      vt << NewLine
-      vt << Code(loc, "ambiguous method.") << NewLine
     }
   }
 
