@@ -475,6 +475,8 @@ object ExecutableAst {
 
     case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
+    case class NativeMethod(method: Method, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
     case class UserError(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class MatchError(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression

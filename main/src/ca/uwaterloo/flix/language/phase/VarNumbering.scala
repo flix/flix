@@ -126,6 +126,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Existential(params, exp, loc) => visitExp(exp, i0)
       case Expression.Universal(params, exp, loc) => visitExp(exp, i0)
       case Expression.NativeField(field, tpe, loc) => i0
+      case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args, i0)
       case Expression.UserError(tpe, loc) => i0
       case Expression.MatchError(tpe, loc) => i0
       case Expression.SwitchError(tpe, loc) => i0

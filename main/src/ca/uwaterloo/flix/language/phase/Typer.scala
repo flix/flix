@@ -741,8 +741,17 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
          * Native Field expression.
          */
         case NamedAst.Expression.NativeField(field, tvar, loc) =>
-          // TODO
+          // TODO: Check types.
           liftM(tvar)
+
+        /*
+         * Native Method expression.
+         */
+        case NamedAst.Expression.NativeMethod(method, actuals, tvar, loc) =>
+          // TODO: Check types.
+          for (
+            inferredArgumentTypes <- seqM(actuals.map(visitExp))
+          ) yield tvar
 
         /*
          * User Error expression.
@@ -915,6 +924,13 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
          */
         case NamedAst.Expression.NativeField(field, tpe, loc) =>
           TypedAst.Expression.NativeField(field, subst0(tpe), loc)
+
+        /*
+         * Native Method expression.
+         */
+        case NamedAst.Expression.NativeMethod(method, actuals, tpe, loc) =>
+          val es = actuals.map(e => reassemble(e, ns0, program, subst0))
+          TypedAst.Expression.NativeMethod(method, es, subst0(tpe), loc)
 
         /*
          * User Error expression.

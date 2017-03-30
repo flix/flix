@@ -273,6 +273,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Expression.NativeField(field, tpe, loc) => Expression.NativeField(field, subst0(tpe), loc)
 
+        case Expression.NativeMethod(method, args, tpe, loc) =>
+          val es = args.map(e => visitExp(e, env0))
+          Expression.NativeMethod(method, es, subst0(tpe), loc)
+
         case Expression.UserError(tpe, loc) => Expression.UserError(subst0(tpe), loc)
       }
 

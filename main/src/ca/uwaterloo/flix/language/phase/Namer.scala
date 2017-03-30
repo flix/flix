@@ -716,7 +716,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
 
     // retrieve the fields.
     val methods = clazz.getDeclaredMethods.toList.filter {
-      case method => method.getName == methodName && method.getParameterCount == arity
+      case method => method.getName == methodName && method.getParameterCount == arity // TODO: Needs to work correctly with static methods.
     }
 
     // number of matched fields.
