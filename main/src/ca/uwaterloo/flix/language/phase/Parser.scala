@@ -531,11 +531,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       def NativeField: Rule1[ParsedAst.Expression.NativeField] = rule {
-        SP ~ atomic("field") ~ WS ~ JavaName ~ SP ~> ParsedAst.Expression.NativeField
+        atomic("field") ~ WS ~ SP ~ JavaName ~ SP ~> ParsedAst.Expression.NativeField
       }
 
       def NativeMethod: Rule1[ParsedAst.Expression.NativeMethod] = rule {
-        SP ~ atomic("method") ~ WS ~ JavaName ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Expression.NativeMethod
+        atomic("method") ~ WS ~ SP ~ JavaName ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Expression.NativeMethod
       }
 
       rule {
