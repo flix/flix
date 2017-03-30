@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{Result, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 import scala.collection.mutable
 
@@ -701,7 +701,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     fields.size match {
       case 0 => Err(UndefinedNativeField(className, fieldName, loc))
       case 1 => Ok(fields.head)
-      case _ => Err(AmbiguousNativeField(className, fieldName, loc))
+      case _ => throw InternalCompilerException("Ambiguous native field?")
     }
   } catch {
     case ex: ClassNotFoundException => Err(UndefinedNativeClass(className, loc))
@@ -728,6 +728,5 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
   } catch {
     case ex: ClassNotFoundException => Err(UndefinedNativeClass(className, loc))
   }
-
 
 }

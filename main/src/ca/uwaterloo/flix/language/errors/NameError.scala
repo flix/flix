@@ -90,11 +90,6 @@ object NameError {
     }
   }
 
-  case class AmbiguousNativeField(className: String, fieldName: String, loc: SourceLocation) extends NameError {
-    val source: SourceInput = loc.source
-    val message: VirtualTerminal = ???
-  }
-
   /**
     * An error raised to indicate that the field name was not found.
     *
