@@ -25,4 +25,19 @@ namespace String {
     ///
     def endsWith(s1: Str, s2: Str): Bool = unsafe native method java.lang.String.endsWith(s1, s2)
 
+    ///
+    /// Returns `true` if the string `s` is the empty string.
+    ///
+    def isEmpty(s: Str): Bool = unsafe native method java.lang.String.isEmpty(s)
+
+    ///
+    /// Returns the length of the string `s`.
+    ///
+    def length(s: Str): Int = unsafe native method java.lang.String.length(s)
+
+    ///
+    /// Returns `true` if the string `s1` starts with the string `s2`.
+    ///
+    def startsWith(s1: Str, s2: Str): Bool = unsafe native method java.lang.String.startsWith(s1, s2)
+
 }
