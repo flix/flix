@@ -114,14 +114,14 @@ namespace Domain/Interval {
     ///
     /// Over-approximates integer `multiplication`.
     ///
-    //#approximates2((x, y) -> x * y)
-    #strict2 /*#monotone2*/ #commutative
+    #approximates2((x, y) -> x * y)
+    #strict2 #monotone2 /* #commutative */
     def times(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
         case (Range(b1, e1), Range(b2, e2)) =>
-            let b = BigInt.min(BigInt.min(b1 * e1, b1 * e2), BigInt.min(b2 * e1, b2 * e2));
-            let e = BigInt.max(BigInt.min(b1 * e1, b1 * e2), BigInt.max(b2 * e1, b2 * e2));
+            let b = BigInt.min(BigInt.min(b1 * b2, b1 * e2), BigInt.min(e1 * b2, e1 * e2));
+            let e = BigInt.max(BigInt.max(b1 * b2, b1 * e2), BigInt.max(e1 * b2, e1 * e2));
                 Range(b, e)
         case _                              => Top
     }
@@ -216,15 +216,15 @@ namespace Domain/Interval {
 
     law greatestElement(⊑: (Interval, Interval) -> Bool, ⊤: Interval): Bool = ∀(x: Interval). x ⊑ ⊤  // TODO: Should call prelude
 
-    law associative(f: (Interval, Interval) -> Interval): Bool = // TODO: Use Prelude
-        ∀(xx: Interval, yy: Interval, zz: Interval).
-            let x = norm(xx);
-            let y = norm(yy);
-            let z = norm(zz);
-                f(x, f(y, z)) == f(f(x, y), z)
+    // NB: Specialized to norm.
+    law associative(f: (Interval, Interval) -> Interval): Bool =
+        ∀(x: Interval, y: Interval, z: Interval).
+                f(norm(x), f(norm(y), norm(z))) == f(f(norm(x), norm(y)), norm(z))
 
-    law commutative(f: (Interval, Interval) -> Interval): Bool = // TODO: Use Prelude
-        ∀(x: Interval, y: Interval). f(norm(x), norm(y)) == f(norm(y), norm(x))
+    // NB: Specialized to norm.
+    law commutative(f: (Interval, Interval) -> Interval): Bool =
+        ∀(x: Interval, y: Interval).
+            f(norm(x), norm(y)) == f(norm(y), norm(x))
 
     law strict1(f: Interval -> Interval): Bool =  // TODO: Should call prelude
         f(Bot) == Bot
