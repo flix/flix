@@ -18,7 +18,7 @@ namespace String {
     ///
     /// Returns the character at position `i` in the string `s`.
     ///
-    def charAt(s: Str, i: Int): Char = unsafe native method java.lang.String.charAt(s, i)
+    def charAt(i: Int, s: Str): Char = unsafe native method java.lang.String.charAt(s, i)
 
     ///
     /// Returns `true` if the string `s1` ends with the string `s2`.
@@ -39,5 +39,10 @@ namespace String {
     /// Returns `true` if the string `s1` starts with the string `s2`.
     ///
     def startsWith(s1: Str, s2: Str): Bool = unsafe native method java.lang.String.startsWith(s1, s2)
+
+    ///
+    /// Returns the given string `s` as a list of characters.
+    ///
+    def toList(s: Str): List[Char] = List.map(i -> charAt(i, s), List.range(0, length(s)))
 
 }
