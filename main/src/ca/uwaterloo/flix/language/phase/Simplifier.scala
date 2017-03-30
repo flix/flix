@@ -650,6 +650,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Existential(params, visit(exp), loc)
       case SimplifiedAst.Expression.Universal(params, exp, loc) =>
         SimplifiedAst.Expression.Universal(params, visit(exp), loc)
+      case SimplifiedAst.Expression.NativeField(field, tpe, loc) =>
+        SimplifiedAst.Expression.NativeField(field, tpe, loc)
+      case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) =>
+        val es = args map visit
+        SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
       case SimplifiedAst.Expression.UserError(tpe, loc) => e
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => e

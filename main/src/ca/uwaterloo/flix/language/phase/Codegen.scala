@@ -575,6 +575,8 @@ object Codegen {
 
     case Expression.NativeField(field, tpe, loc) => ??? // TODO
 
+    case Expression.NativeMethod(method, args, tpe, loc) => ??? // TODO
+
     case Expression.UserError(_, loc) =>
       val name = asm.Type.getInternalName(classOf[UserException])
       val msg = s"User exception: ${loc.format}."

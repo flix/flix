@@ -486,6 +486,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.Existential(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
       case WeededAst.Expression.Universal(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
       case WeededAst.Expression.Ascribe(exp, tpe, loc) => freeVars(exp)
+      case WeededAst.Expression.NativeField(className, fieldName, loc) => Nil
+      case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
       case WeededAst.Expression.UserError(loc) => Nil
     }
 
