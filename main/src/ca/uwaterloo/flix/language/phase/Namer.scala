@@ -16,12 +16,15 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import java.lang.reflect.{Field, Method}
+
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{Result, Validation}
 
 import scala.collection.mutable
 
@@ -430,6 +433,20 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         case e => NamedAst.Expression.Ascribe(e, Types.namer(tpe, tenv0), loc)
       }
 
+      case WeededAst.Expression.NativeField(className, fieldName, loc) =>
+        lookupNativeField(className, fieldName, loc) match {
+          case Ok(field) => NamedAst.Expression.NativeField(field, Type.freshTypeVar(), loc).toSuccess
+          case Err(e) => e.toFailure
+        }
+
+      case WeededAst.Expression.NativeMethod(className, methodName, args, loc) =>
+        lookupNativeMethod(className, methodName, loc) match {
+          case Ok(method) => @@(args.map(e => namer(e, env0, tenv0))) map {
+            case es => NamedAst.Expression.NativeMethod(method, es, Type.freshTypeVar(), loc)
+          }
+          case Err(e) => e.toFailure
+        }
+
       case WeededAst.Expression.UserError(loc) => NamedAst.Expression.UserError(Type.freshTypeVar(), loc).toSuccess
     }
 
@@ -666,5 +683,51 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
   def filterBoundVars(freeVars: List[Name.Ident], boundVars: List[Name.Ident]): List[Name.Ident] = {
     freeVars.filter(n1 => !boundVars.exists(n2 => n1.name == n2.name))
   }
+
+  /**
+    * Returns the result of looking up the given `fieldName` on the given `className`.
+    */
+  def lookupNativeField(className: String, fieldName: String, loc: SourceLocation): Result[Field, NameError] = try {
+    // retrieve class object.
+    val clazz = Class.forName(className)
+
+    // retrieve the fields.
+    val fields = clazz.getDeclaredFields.toList.filter {
+      case field => field.getName == fieldName
+    }
+
+    // number of matched fields.
+    fields.size match {
+      case 0 => Err(UndefinedNativeField(className, fieldName, loc))
+      case 1 => Ok(fields.head)
+      case _ => Err(AmbiguousNativeField(className, fieldName, loc))
+    }
+  } catch {
+    case ex: ClassNotFoundException => Err(UndefinedNativeClass(className, loc))
+  }
+
+
+  /**
+    * Returns the result of looking up the given `methodName` on the given `className`.
+    */
+  def lookupNativeMethod(className: String, methodName: String, loc: SourceLocation): Result[Method, NameError] = try {
+    // retrieve class object.
+    val clazz = Class.forName(className)
+
+    // retrieve the fields.
+    val methods = clazz.getDeclaredMethods.toList.filter {
+      case field => field.getName == methodName
+    }
+
+    // number of matched fields.
+    methods.size match {
+      case 0 => Err(UndefinedNativeField(className, methodName, loc))
+      case 1 => Ok(methods.head)
+      case _ => Err(AmbiguousNativeField(className, methodName, loc))
+    }
+  } catch {
+    case ex: ClassNotFoundException => Err(UndefinedNativeClass(className, loc))
+  }
+
 
 }

@@ -629,6 +629,42 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case e => WeededAst.Expression.Ascribe(e, Types.weed(tpe), mkSL(leftMostSourcePosition(exp), sp2))
           }
 
+        case ParsedAst.Expression.Unsafe(sp1, exp, sp2) =>
+          visit(exp) map {
+            // TODO: Make call with "in safe block"
+            case e => e
+          }
+
+        case ParsedAst.Expression.NativeField(sp1, fqn, sp2) =>
+          /*
+           * Checks for `IllegalNativeFieldOrMethod`.
+           */
+          if (fqn.size == 1) {
+            //return WeederError.IllegalNativeFieldOrMethod(fqn.head, mkSL(sp1, sp2)).toFailure
+          }
+
+          // TODO: Check that we are in unsafe.
+
+          val className = fqn.dropRight(1).mkString(".")
+          val fieldName = fqn.last
+          WeededAst.Expression.NativeField(className, fieldName, mkSL(sp1, sp2)).toSuccess
+
+        case ParsedAst.Expression.NativeMethod(sp1, fqn, args, sp2) =>
+          /*
+           * Checks for `IllegalNativeFieldOrMethod`.
+           */
+          if (fqn.size == 1) {
+            //return WeederError.IllegalNativeFieldOrMethod(fqn.head, mkSL(sp1, sp2)).toFailure
+          }
+
+          // TODO: Check that we are in unsafe.
+
+          val className = fqn.dropRight(1).mkString(".")
+          val methodName = fqn.last
+          @@(args.map(e => weed(e))) flatMap {
+            case es => WeededAst.Expression.NativeMethod(className, methodName, es, mkSL(sp1, sp2)).toSuccess
+          }
+
         case ParsedAst.Expression.UserError(sp1, sp2) =>
           WeededAst.Expression.UserError(mkSL(sp1, sp2)).toSuccess
       }
@@ -1039,6 +1075,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Existential(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Universal(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Ascribe(e1, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.Unsafe(sp1, _, _) => sp1
+    case ParsedAst.Expression.NativeField(sp1, _, _) => sp1
+    case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1
     case ParsedAst.Expression.UserError(sp1, _) => sp1
   }
 

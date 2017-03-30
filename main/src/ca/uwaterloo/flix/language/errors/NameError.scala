@@ -73,4 +73,35 @@ object NameError {
     }
   }
 
+
+  case class UndefinedNativeClass(className: String, loc: SourceLocation) extends NameError {
+    def source: SourceInput = ???
+
+    def message: VirtualTerminal = ???
+  }
+
+  case class AmbiguousNativeField(className: String, fieldName: String, loc: SourceLocation) extends NameError {
+    def source: SourceInput = ???
+
+    def message: VirtualTerminal = ???
+  }
+
+  case class UndefinedNativeField(className: String, fieldName: String, loc: SourceLocation) extends NameError {
+    def source: SourceInput = ???
+
+    def message: VirtualTerminal = ???
+  }
+
+  case class AmbiguousNativeMethod(className: String, fieldName: String, loc: SourceLocation) extends NameError {
+    def source: SourceInput = ???
+
+    def message: VirtualTerminal = ???
+  }
+
+  case class UndefinedNativeMethod(className: String, fieldName: String, loc: SourceLocation) extends NameError {
+    def source: SourceInput = ???
+
+    def message: VirtualTerminal = ???
+  }
+
 }
