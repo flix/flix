@@ -721,9 +721,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
 
     // number of matched fields.
     methods.size match {
-      case 0 => Err(UndefinedNativeField(className, methodName, loc))
+      case 0 => Err(UndefinedNativeMethod(className, methodName, loc))
       case 1 => Ok(methods.head)
-      case _ => Err(AmbiguousNativeField(className, methodName, loc))
+      case _ => Err(AmbiguousNativeMethod(className, methodName, loc))
     }
   } catch {
     case ex: ClassNotFoundException => Err(UndefinedNativeClass(className, loc))
