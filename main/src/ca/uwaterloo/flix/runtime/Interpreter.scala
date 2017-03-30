@@ -138,7 +138,7 @@ object Interpreter {
       } else {
         val thisObj = values.head
         val arguments = values.tail.toArray
-        method.invoke(thisObj, arguments)
+        method.invoke(thisObj, arguments: _*)
       }
 
     case Expression.UserError(_, loc) => throw UserException("User exception.", loc)

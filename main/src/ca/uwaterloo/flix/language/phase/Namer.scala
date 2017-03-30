@@ -692,7 +692,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     // retrieve class object.
     val clazz = Class.forName(className)
 
-    // retrieve the fields.
+    // retrieve the matching static fields.
     val fields = clazz.getDeclaredFields.toList.filter {
       case field => field.getName == fieldName && Modifier.isStatic(field.getModifiers)
     }
@@ -714,12 +714,25 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     // retrieve class object.
     val clazz = Class.forName(className)
 
-    // retrieve the fields.
-    val methods = clazz.getDeclaredMethods.toList.filter {
-      case method => method.getName == methodName && method.getParameterCount == arity // TODO: Needs to work correctly with static methods.
+    // retrieve the matching methods.
+    val matchedMethods = clazz.getDeclaredMethods.toList.filter {
+      case method => method.getName == methodName
     }
 
-    // number of matched fields.
+    // retrieve the static methods.
+    val staticMethods = matchedMethods.filter {
+      case method => Modifier.isStatic(method.getModifiers) && method.getParameterCount == arity
+    }
+
+    // retrieve the object methods.
+    val objectMethods = matchedMethods.filter {
+      case method => !Modifier.isStatic(method.getModifiers) && method.getParameterCount == (arity - 1)
+    }
+
+    // static and object methods.
+    val methods = staticMethods ::: objectMethods
+
+    // number of matched methods.
     methods.size match {
       case 0 => Err(UndefinedNativeMethod(className, methodName, arity, loc))
       case 1 => Ok(methods.head)
