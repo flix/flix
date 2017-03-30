@@ -440,7 +440,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         }
 
       case WeededAst.Expression.NativeMethod(className, methodName, args, loc) =>
-        lookupNativeMethod(className, methodName, loc) match {
+        val arity = args.length
+        lookupNativeMethod(className, methodName, arity, loc) match {
           case Ok(method) => @@(args.map(e => namer(e, env0, tenv0))) map {
             case es => NamedAst.Expression.NativeMethod(method, es, Type.freshTypeVar(), loc)
           }
@@ -706,24 +707,23 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     case ex: ClassNotFoundException => Err(UndefinedNativeClass(className, loc))
   }
 
-
   /**
     * Returns the result of looking up the given `methodName` on the given `className`.
     */
-  def lookupNativeMethod(className: String, methodName: String, loc: SourceLocation): Result[Method, NameError] = try {
+  def lookupNativeMethod(className: String, methodName: String, arity: Int, loc: SourceLocation): Result[Method, NameError] = try {
     // retrieve class object.
     val clazz = Class.forName(className)
 
     // retrieve the fields.
     val methods = clazz.getDeclaredMethods.toList.filter {
-      case field => field.getName == methodName
+      case method => method.getName == methodName && method.getParameterCount == arity
     }
 
     // number of matched fields.
     methods.size match {
-      case 0 => Err(UndefinedNativeMethod(className, methodName, loc))
+      case 0 => Err(UndefinedNativeMethod(className, methodName, arity, loc))
       case 1 => Ok(methods.head)
-      case _ => Err(AmbiguousNativeMethod(className, methodName, loc))
+      case _ => Err(AmbiguousNativeMethod(className, methodName, arity, loc))
     }
   } catch {
     case ex: ClassNotFoundException => Err(UndefinedNativeClass(className, loc))
