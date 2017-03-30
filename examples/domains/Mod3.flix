@@ -112,7 +112,7 @@ namespace Domain/Mod3 {
     ///
     /// Over-approximates integer `subtraction`.
     ///
-    #safe2((x, y) -> x - y) // TODO: Check if there is a bug here..
+    #safe2((x, y) -> x - y)
     #strict2 #monotone2
     def minus(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
        case (_, Bot)   => Bot
@@ -129,41 +129,18 @@ namespace Domain/Mod3 {
        case _          => Top
     }
 
-//    ///
-//    /// Over-approximates integer `multiplication`.
-//    ///
-//    #safe2((x, y) -> x * y)
-//    #strict2 #monotone2 #commutative #associative
-//    def times(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
-//        case (_, Bot) => Bot
-//        case (Bot, _) => Bot
-//        // TODO: rest
-//        case _        => Top
-//    }
-//
-//    ///
-//    /// Over-approximates integer `division`.
-//    ///
-//    /// NB: We cannot prove safety directly because division is not a total function.
-//    #strict2 #monotone2
-//    def divide(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
-//        case (_, Bot) => Bot
-//        case (Bot, _) => Bot
-//        // TODO: rest
-//        case _        => Top
-//    }
-//
-//    ///
-//    /// Over-approximates integer `modulus`.
-//    ///
-//    /// NB: We cannot prove safety directly because division is not a total function.
-//    #strict2 #monotone2
-//    def modulo(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
-//        case (_, Bot) => Bot
-//        case (Bot, _) => Bot
-//        // TODO: rest
-//        case _        => Top
-//    }
+    ///
+    /// Over-approximates integer `multiplication`.
+    ///
+    /* unknown #safe2((x, y) -> x * y) */
+    #strict2 #monotone2 #commutative #associative
+    def times(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
+        case (_, Bot)   => Bot
+        case (Bot, _)   => Bot
+        case (Zer, _)   => Zer
+        case (_, Zer)   => Zer
+        case _          => Top
+    }
 
     ///
     /// Over-approximates `equal`.
