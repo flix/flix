@@ -61,6 +61,14 @@ namespace Result {
     }
 
     ///
+    /// Returns `Ok(y)` if `r` is `Ok(x)`. Otherwise returns `r`.
+    ///
+    def replace[t, e](x: t, y: t, r: Result[t, e]): Result[t, e] = match r with {
+        case Ok(v) => Ok(if (v == x) y else v)
+        case Err(w) => r
+    }
+
+    ///
     /// Returns `true` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `false`.
     ///
     def exists[t, e](f: t -> Bool, r: Result[t, e]): Bool = getWithDefault(map(f, r), false)
@@ -149,5 +157,19 @@ namespace Result {
     def toOption[t, e](r: Result[t, e]): Option[t] = match r with {
         case Ok(v) => Some(v)
         case Err(w) => None
+    }
+
+
+
+
+
+
+    ///
+    /// Returns `true` if and only if `r1` and `r2` and equal.
+    ///
+    def eq[t, e](r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) with {
+        case (Ok(v1), Ok(v2)) => v1 == v2
+        case (Err(w1), Err(w2)) => w1 == w2
+        case _ => false
     }
 }

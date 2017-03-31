@@ -67,7 +67,9 @@ class Flix {
     "Prelude.flix" -> LocalResource.get("/library/Prelude.flix"),
     "Result.flix" -> LocalResource.get("/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/library/Set.flix"),
-    "TotalOrder.flix" -> LocalResource.get("/library/TotalOrder.flix")
+    //"String.flix" -> LocalResource.get("/library/String.flix"),
+    "TotalOrder.flix" -> LocalResource.get("/library/TotalOrder.flix"),
+    "Tuple.flix" -> LocalResource.get("/library/Tuple.flix")
   )
 
   /**

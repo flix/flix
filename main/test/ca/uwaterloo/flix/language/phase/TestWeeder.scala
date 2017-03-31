@@ -241,6 +241,36 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalParameterList](result)
   }
 
+  test("IllegalNativeFieldOrMethodName.01") {
+    val input = "def f: Int = unsafe native field java"
+    val result = new Flix().addStr(input).compile()
+    expectError[WeederError.IllegalNativeFieldOrMethodName](result)
+  }
+
+  test("IllegalNativeFieldOrMethodName.02") {
+    val input = "def f: Int = unsafe native field com"
+    val result = new Flix().addStr(input).compile()
+    expectError[WeederError.IllegalNativeFieldOrMethodName](result)
+  }
+
+  test("IllegalNativeFieldOrMethodName.03") {
+    val input = "def f: Int = unsafe native method java()"
+    val result = new Flix().addStr(input).compile()
+    expectError[WeederError.IllegalNativeFieldOrMethodName](result)
+  }
+
+  test("IllegalNativeFieldOrMethodName.04") {
+    val input = "def f: Int = unsafe native method com()"
+    val result = new Flix().addStr(input).compile()
+    expectError[WeederError.IllegalNativeFieldOrMethodName](result)
+  }
+
+  test("IllegalUnsafeExpression.01") {
+    val input = "def f: Int = native field java.lang.Math.PI"
+    val result = new Flix().addStr(input).compile()
+    expectError[WeederError.IllegalUnsafeExpression](result)
+  }
+
   test("IllegalUniversal.01") {
     val input = "def f: Prop = ∀. true"
     val result = new Flix().addStr(input).compile()

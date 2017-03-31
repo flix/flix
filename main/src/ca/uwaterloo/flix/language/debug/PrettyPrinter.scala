@@ -214,6 +214,16 @@ object PrettyPrinter {
           vt.text("). ")
           visitExp(exp)
 
+        case Expression.NativeField(field, tpe, loc) => vt << field.toString
+        case Expression.NativeMethod(method, args, tpe, loc) =>
+          vt.text(method.toString)
+          vt.text("(")
+          for (e <- args) {
+            visitExp(e)
+            vt.text(", ")
+          }
+          vt.text(")")
+
         case Expression.UserError(tpe, loc) => vt << Red("UserError")
         case Expression.MatchError(tpe, loc) => vt << Red("MatchError")
         case Expression.SwitchError(tpe, loc) => vt << Red("SwitchError")

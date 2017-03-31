@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.runtime
 
+import java.lang.reflect.Modifier
+
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast._
@@ -124,6 +126,21 @@ object Interpreter {
       array
     case Expression.Existential(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
     case Expression.Universal(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
+    case Expression.NativeField(field, tpe, loc) =>
+      val clazz = field.getDeclaringClass
+      field.get(clazz)
+
+    case Expression.NativeMethod(method, args, tpe, loc) =>
+      val values = evalArgs(args, root, env0)
+      if (Modifier.isStatic(method.getModifiers)) {
+        val arguments = values.toArray
+        method.invoke(null, arguments: _*)
+      } else {
+        val thisObj = values.head
+        val arguments = values.tail.toArray
+        method.invoke(thisObj, arguments: _*)
+      }
+
     case Expression.UserError(_, loc) => throw UserException("User exception.", loc)
     case Expression.MatchError(_, loc) => throw MatchException("Non-exhaustive match expression.", loc)
     case Expression.SwitchError(_, loc) => throw SwitchException("Non-exhaustive switch expression.", loc)

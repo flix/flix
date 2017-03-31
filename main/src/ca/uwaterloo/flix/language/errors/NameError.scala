@@ -73,4 +73,77 @@ object NameError {
     }
   }
 
+  /**
+    * An error raised to indicate that an ambiguous method name was not found.
+    *
+    * @param className the class name.
+    * @param fieldName the method name.
+    * @param arity     the expected arity.
+    * @param loc       the location of the class name.
+    */
+  case class AmbiguousNativeMethod(className: String, fieldName: String, arity: Int, loc: SourceLocation) extends NameError {
+    val source: SourceInput = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Ambiguous method '" << Red(fieldName) << "' in class '" << Cyan(className) << "' with expected arity " << arity << "." << NewLine
+      vt << NewLine
+      vt << Code(loc, "ambiguous method.") << NewLine
+    }
+  }
+
+  /**
+    * An error raised to indicate that the class name was not found.
+    *
+    * @param name the class name.
+    * @param loc  the location of the class name.
+    */
+  case class UndefinedNativeClass(name: String, loc: SourceLocation) extends NameError {
+    val source: SourceInput = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined class '" << Red(name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "undefined class.") << NewLine
+    }
+  }
+
+  /**
+    * An error raised to indicate that the field name was not found.
+    *
+    * @param className the class name.
+    * @param fieldName the field name.
+    * @param loc       the location of the field name.
+    */
+  case class UndefinedNativeField(className: String, fieldName: String, loc: SourceLocation) extends NameError {
+    val source: SourceInput = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined field '" << Red(fieldName) << "' in class '" << Cyan(className) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "undefined field.") << NewLine
+    }
+  }
+
+  /**
+    * An error raised to indicate that the method name was not found.
+    *
+    * @param className the class name.
+    * @param fieldName the method name.
+    * @param arity     the expected arity.
+    * @param loc       the location of the method name.
+    */
+  case class UndefinedNativeMethod(className: String, fieldName: String, arity: Int, loc: SourceLocation) extends NameError {
+    val source: SourceInput = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined method '" << Red(fieldName) << "' in class '" << Cyan(className) << "' with expected arity " << arity << "." << NewLine
+      vt << NewLine
+      vt << Code(loc, "undefined method.") << NewLine
+    }
+  }
+
 }
