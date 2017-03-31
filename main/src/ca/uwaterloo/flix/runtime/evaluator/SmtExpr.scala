@@ -107,6 +107,7 @@ object SmtExpr {
   /**
     * Modulus.
     */
+    // TODO: Rename to remainder?
   case class Modulo(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
     assertNum(assertEq(e1.tpe, e2.tpe))
 

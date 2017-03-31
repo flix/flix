@@ -57,6 +57,21 @@ def withDefault03: Bool = Result.withDefault(Err(false), Ok(2)) `assertEq!` Ok(2
 def withDefault04: Bool = Result.withDefault(Err(false), Err(true)) `assertEq!` Err(true)
 
 /////////////////////////////////////////////////////////////////////////////
+// replace                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def replace01: Bool = Result.replace(3, 4, Err(false)) `assertEq!` Err(false)
+
+@test
+def replace02: Bool = Result.replace(3, 4, Ok(2)) `assertEq!` Ok(2)
+
+@test
+def replace03: Bool = Result.replace(3, 4, Ok(3)) `assertEq!` Ok(4)
+
+@test
+def replace04: Bool = Result.replace(3, 4, Ok(4)) `assertEq!` Ok(4)
+
+/////////////////////////////////////////////////////////////////////////////
 // exists                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test

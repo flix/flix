@@ -510,6 +510,33 @@ def update06: Bool = List.update(1, 5, 1 :: 2 :: Nil) `assertEq!` 1 :: 5 :: Nil
 def update07: Bool = List.update(2, 5, 1 :: 2 :: Nil) `assertEq!` 1 :: 2 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
+// replace                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def replace01: Bool = List.replace(3, 4, Nil) `assertEq!` Nil
+
+@test
+def replace02: Bool = List.replace(3, 4, 1 :: Nil) `assertEq!` 1 :: Nil
+
+@test
+def replace03: Bool = List.replace(3, 4, 3 :: Nil) `assertEq!` 4 :: Nil
+
+@test
+def replace04: Bool = List.replace(3, 4, 4 :: Nil) `assertEq!` 4 :: Nil
+
+@test
+def replace05: Bool = List.replace(3, 4, 1 :: 2 :: Nil) `assertEq!` 1 :: 2 :: Nil
+
+@test
+def replace06: Bool = List.replace(3, 4, 1 :: 3 :: Nil) `assertEq!` 1 :: 4 :: Nil
+
+@test
+def replace07: Bool = List.replace(3, 4, 3 :: 4 :: Nil) `assertEq!` 4 :: 4 :: Nil
+
+@test
+def replace08: Bool = List.replace(3, 4, 3 :: 3 :: Nil) `assertEq!` 4 :: 4 :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
 // patch                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test

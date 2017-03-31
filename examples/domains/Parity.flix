@@ -155,7 +155,6 @@ namespace Domain/Parity {
     ///
     #safe1(x -> ~~~x)
     #strict1 #monotone1
-    // TODO: Bug Found!
     def negate(e: Parity): Parity = match e with {
         case Bot    => Bot
         case Odd    => Even

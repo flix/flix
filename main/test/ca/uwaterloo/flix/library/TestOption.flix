@@ -180,6 +180,21 @@ def withDefault03: Bool = Option.withDefault(Some(1), None) `assertEq!` Some(1)
 def withDefault04: Bool = Option.withDefault(Some(1), Some(2)) `assertEq!` Some(1)
 
 /////////////////////////////////////////////////////////////////////////////
+// replace                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def replace01: Bool = Option.replace(3, 4, None) `assertEq!` None
+
+@test
+def replace02: Bool = Option.replace(3, 4, Some(2)) `assertEq!` Some(2)
+
+@test
+def replace03: Bool = Option.replace(3, 4, Some(3)) `assertEq!` Some(4)
+
+@test
+def replace04: Bool = Option.replace(3, 4, Some(4)) `assertEq!` Some(4)
+
+/////////////////////////////////////////////////////////////////////////////
 // count                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test

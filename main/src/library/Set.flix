@@ -265,6 +265,13 @@ namespace Set {
     }
 
     ///
+    /// Replaces the element `x` with `y` if `x` is in `xs`.
+    /// Otherwise, returns `xs`.
+    /// Note: The returned set may be smaller than `xs`.
+    ///
+    def replace[a](x: a, y: a, xs: Set[a]): Set[a] = map(e -> if (e == x) y else e, xs)
+
+    ///
     /// Returns a pair of sets `(ys, zs)`.
     /// `ys` contains all elements of `xs` that satisfy the predicate `f`.
     /// `zs` contains all elements of `xs` that do not satisfy the predicate `f`.
