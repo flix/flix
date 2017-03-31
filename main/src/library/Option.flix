@@ -209,4 +209,18 @@ namespace Option {
         case None => (None, None)
         case Some((v1, v2)) => (Some(v1), Some(v2))
     }
+
+
+
+
+
+
+    ///
+    /// Returns `true` if and only if `o1` and `o2` and equal.
+    ///
+    def eq[a](o1: Option[a], o2: Option[a]): Bool = match (o1, o2) with {
+        case (None, None) => true
+        case (Some(v1), Some(v2)) => v1 == v2
+        case _ => false
+    }
 }

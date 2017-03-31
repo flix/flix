@@ -768,4 +768,18 @@ namespace List {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     def toMap[a, b](xs: List[(a, b)]): Map[a, b] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), xs)
+
+
+
+
+
+
+    ///
+    /// Returns `true` if and only if `xs` and `ys` and equal.
+    ///
+    def eq[a](xs: List[a], ys: List[a]): Bool = match (xs, ys) with {
+        case (Nil, Nil) => true
+        case (x :: rs, y :: qs) => x == y && eq(rs, qs)
+        case _ => false
+    }
 }
