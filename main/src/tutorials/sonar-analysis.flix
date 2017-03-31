@@ -821,7 +821,7 @@ namespace Queue {
     // TODO: Unsound, remove.
     def strongDelete(pv: PromiseValue, e: Expression, env: Environment, a: Address, q: Queue): Queue =
         let Queue(Set(xs)) = q;
-            Queue(Set(List.remove((pv, e, env, a), xs)))
+            Queue(Set(List.filter(x -> x != (pv, e, env, a), xs)))
 
     ///
     /// Returns `true` if the two given reaction queues `q1` and `q2` are equal.
