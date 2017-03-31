@@ -114,7 +114,7 @@ object NameError {
     *
     * @param className the class name.
     * @param fieldName the field name.
-    * @param loc       the location of the class name.
+    * @param loc       the location of the field name.
     */
   case class UndefinedNativeField(className: String, fieldName: String, loc: SourceLocation) extends NameError {
     val source: SourceInput = loc.source
@@ -133,7 +133,7 @@ object NameError {
     * @param className the class name.
     * @param fieldName the method name.
     * @param arity     the expected arity.
-    * @param loc       the location of the class name.
+    * @param loc       the location of the method name.
     */
   case class UndefinedNativeMethod(className: String, fieldName: String, arity: Int, loc: SourceLocation) extends NameError {
     val source: SourceInput = loc.source

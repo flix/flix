@@ -633,9 +633,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
 
         case ParsedAst.Expression.Unsafe(sp1, exp, sp2) =>
-          visit(exp, unsafe = true) map {
-            case e => e
-          }
+          visit(exp, unsafe = true)
 
         case ParsedAst.Expression.NativeField(sp1, fqn, sp2) =>
           /*

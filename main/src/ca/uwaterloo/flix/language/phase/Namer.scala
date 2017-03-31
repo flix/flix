@@ -699,7 +699,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case field => field.getName == fieldName && Modifier.isStatic(field.getModifiers)
     }
 
-    // number of matched fields.
+    // match on the number of fields.
     fields.size match {
       case 0 => Err(UndefinedNativeField(className, fieldName, loc))
       case 1 => Ok(fields.head)
@@ -734,7 +734,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     // static and object methods.
     val methods = staticMethods ::: objectMethods
 
-    // number of matched methods.
+    // match on the number of methods.
     methods.size match {
       case 0 => Err(UndefinedNativeMethod(className, methodName, arity, loc))
       case 1 => Ok(methods.head)
