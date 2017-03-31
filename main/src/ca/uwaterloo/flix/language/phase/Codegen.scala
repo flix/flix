@@ -569,8 +569,13 @@ object Codegen {
 
     case Expression.Existential(params, exp, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$expr' at ${loc.source.format}.")
+
     case Expression.Universal(params, exp, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$expr' at ${loc.source.format}.")
+
+    case Expression.NativeField(field, tpe, loc) => ??? // TODO
+
+    case Expression.NativeMethod(method, args, tpe, loc) => ??? // TODO
 
     case Expression.UserError(_, loc) =>
       val name = asm.Type.getInternalName(classOf[UserException])
