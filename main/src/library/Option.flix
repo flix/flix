@@ -69,6 +69,14 @@ namespace Option {
     }
 
     ///
+    /// Returns `Some(y)` if `o` is `Some(x)`. Otherwise returns `o`.
+    ///
+    def replace[a](x: a, y: a, o: Option[a]): Option[a] = match o with {
+        case None => o
+        case Some(v) => Some(if (v == x) y else v)
+    }
+
+    ///
     /// Returns `true` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `false`.
     ///
     def exists[a](f: a -> Bool, o: Option[a]): Bool = getWithDefault(map(f, o), false)

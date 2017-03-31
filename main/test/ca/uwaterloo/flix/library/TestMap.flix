@@ -381,6 +381,33 @@ def updateWithKey08: Bool = assert!(Map.eq(Map.updateWithKey((k, v) -> if (v % 2
 def updateWithKey09: Bool = assert!(Map.eq(Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 4, @{1 -> 4, 5 -> -2}), @{1 -> 4, 5 -> -2}))
 
 /////////////////////////////////////////////////////////////////////////////
+// replace                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def replace01: Bool = assert!(Map.eq(Map.replace((1, true), (2, false), @{}), @{}))
+
+@test
+def replace02: Bool = assert!(Map.eq(Map.replace((1, true), (2, false), @{1 -> false}), @{1 -> false}))
+
+@test
+def replace03: Bool = assert!(Map.eq(Map.replace((1, true), (2, false), @{1 -> true}), @{2 -> false}))
+
+@test
+def replace04: Bool = assert!(Map.eq(Map.replace((1, true), (1, false), @{1 -> true}), @{1 -> false}))
+
+@test
+def replace05: Bool = assert!(Map.eq(Map.replace((1, true), (2, false), @{1 -> false, 3 -> true}), @{1 -> false, 3 -> true}))
+
+@test
+def replace06: Bool = assert!(Map.eq(Map.replace((1, true), (2, false), @{1 -> true, 3 -> true}), @{2 -> false, 3 -> true}))
+
+@test
+def replace07: Bool = assert!(Map.eq(Map.replace((1, true), (2, false), @{3 -> false, 1 -> true}), @{3 -> false, 2 -> false}))
+
+@test
+def replace08: Bool = assert!(Map.eq(Map.replace((1, true), (2, false), @{1 -> true, 2 -> true}), @{2 -> false}))
+
+/////////////////////////////////////////////////////////////////////////////
 // delete                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
