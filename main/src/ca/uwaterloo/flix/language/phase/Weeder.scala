@@ -41,7 +41,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     @@(program.roots map weed) map {
       case roots =>
         val e = System.nanoTime() - b
-        WeededAst.Program(roots, program.hooks, program.time.copy(weeder = e))
+        WeededAst.Program(roots, program.hooks, flix.getReachableRoots, program.time.copy(weeder = e))
     }
   }
 

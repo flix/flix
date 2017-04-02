@@ -29,6 +29,7 @@ object TypedAst {
                   indexes: Map[Symbol.TableSym, TypedAst.Declaration.Index],
                   strata: List[TypedAst.Stratum],
                   properties: List[TypedAst.Property],
+                  reachable: Set[Symbol.DefnSym],
                   time: Time) extends TypedAst
 
   case class Constraint(cparams: List[TypedAst.ConstraintParam], head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body], loc: SourceLocation) extends TypedAst

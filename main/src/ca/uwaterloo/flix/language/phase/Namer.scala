@@ -51,6 +51,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       constraints = Map.empty,
       hooks = program.hooks,
       properties = Map.empty,
+      reachable = program.reachable,
       time = program.time
     )
 

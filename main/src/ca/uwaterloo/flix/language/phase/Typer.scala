@@ -49,7 +49,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
       val strata = List(TypedAst.Stratum(constraints))
       val currentTime = System.nanoTime()
       val time = program.time.copy(typer = currentTime - startTime)
-      TypedAst.Root(definitions, enums, lattices, tables, indexes, strata, properties, time)
+      TypedAst.Root(definitions, enums, lattices, tables, indexes, strata, properties, program.reachable, time)
     }
 
     result match {

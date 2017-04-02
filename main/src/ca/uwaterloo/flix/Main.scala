@@ -91,6 +91,13 @@ object Main {
       flix.addStr(s)
     }
 
+    // check if a main function was given.
+    val main = cmdOpts.main
+    if (main.nonEmpty) {
+      val name = main.get
+      flix.addReachableRoot(name)
+    }
+
     // the default color context.
     implicit val _ = TerminalContext.AnsiTerminal
 

@@ -32,6 +32,7 @@ object ExecutableAst {
                   indexes: Map[Symbol.TableSym, ExecutableAst.Definition.Index],
                   constraints: List[ExecutableAst.Constraint],
                   properties: List[ExecutableAst.Property],
+                  reachable: Set[Symbol.DefnSym],
                   time: Time,
                   dependenciesOf: Map[Symbol.TableSym, Set[(Constraint, ExecutableAst.Predicate.Body.Positive)]]) extends ExecutableAst
 

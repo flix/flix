@@ -29,6 +29,7 @@ object SimplifiedAst {
                   indexes: Map[Symbol.TableSym, SimplifiedAst.Definition.Index],
                   strata: List[SimplifiedAst.Stratum],
                   properties: List[SimplifiedAst.Property],
+                  reachable: Set[Symbol.DefnSym],
                   time: Time) extends SimplifiedAst
 
   case class Constraint(cparams: List[SimplifiedAst.ConstraintParam], head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body]) extends SimplifiedAst

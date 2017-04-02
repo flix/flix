@@ -34,6 +34,7 @@ object NamedAst {
                      constraints: Map[Name.NName, List[NamedAst.Constraint]],
                      hooks: Map[Symbol.DefnSym, Ast.Hook],
                      properties: Map[Name.NName, List[NamedAst.Property]],
+                     reachable: Set[Symbol.DefnSym],
                      time: Time) extends NamedAst
 
   case class Constraint(cparams: List[NamedAst.ConstraintParam], head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation) extends NamedAst
