@@ -326,7 +326,23 @@ object WeederError {
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unsafe expression must occur in unsafe scope." << NewLine
+      vt << ">> Unsafe operation must occur in unsafe scope." << NewLine
+      vt << NewLine
+      vt << Code(loc, "unsafe expression.") << NewLine
+    }
+  }
+
+  /**
+    * An error raised to indicate that an unsafe operations have been disabled.
+    *
+    * @param loc the location of the expression.
+    */
+  case class IllegalUnsafeExpressionInSafeMode(loc: SourceLocation) extends WeederError {
+    val source: SourceInput = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unsafe operations are disabled in safe mode." << NewLine
       vt << NewLine
       vt << Code(loc, "unsafe expression.") << NewLine
     }

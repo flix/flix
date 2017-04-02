@@ -48,7 +48,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Weeds the given abstract syntax tree.
     */
-  def weed(root: ParsedAst.Root): Validation[WeededAst.Root, WeederError] = {
+  def weed(root: ParsedAst.Root)(implicit flix: Flix): Validation[WeededAst.Root, WeederError] = {
     @@(@@(root.decls map Declarations.weed), Properties.weed(root)) map {
       case (decls1, decls2) => WeededAst.Root(decls1.flatten ++ decls2)
     }
@@ -59,7 +59,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     /**
       * Compiles the given parsed declaration `past` to a list of weeded declarations.
       */
-    def weed(decl: ParsedAst.Declaration): Validation[List[WeededAst.Declaration], WeederError] = decl match {
+    def weed(decl: ParsedAst.Declaration)(implicit flix: Flix): Validation[List[WeededAst.Declaration], WeederError] = decl match {
       case ParsedAst.Declaration.Namespace(sp1, name, decls, sp2) =>
         @@(decls.map(weed)) map {
           case ds => List(WeededAst.Declaration.Namespace(name, ds.flatten, mkSL(sp1, sp2)))
@@ -323,7 +323,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     /**
       * Weeds the given expression.
       */
-    def weed(exp0: ParsedAst.Expression): Validation[WeededAst.Expression, WeederError] = {
+    def weed(exp0: ParsedAst.Expression)(implicit flix: Flix): Validation[WeededAst.Expression, WeederError] = {
       /**
         * Inner visitor.
         *
@@ -633,6 +633,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
 
         case ParsedAst.Expression.Unsafe(sp1, exp, sp2) =>
+          /*
+           * Check if unsafe operations have been disabled.
+           */
+          if (flix.options.safe) {
+            return WeederError.IllegalUnsafeExpressionInSafeMode(mkSL(sp1, sp2)).toFailure
+          }
           visit(exp, unsafe = true)
 
         case ParsedAst.Expression.NativeField(sp1, fqn, sp2) =>
@@ -812,7 +818,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       /**
         * Weeds the given head predicate.
         */
-      def weed(past: ParsedAst.Predicate.Head): Validation[WeededAst.Predicate.Head, WeederError] = past match {
+      def weed(past: ParsedAst.Predicate.Head)(implicit flix: Flix): Validation[WeededAst.Predicate.Head, WeederError] = past match {
         case ParsedAst.Predicate.Head.True(sp1, sp2) => WeededAst.Predicate.Head.True(mkSL(sp1, sp2)).toSuccess
 
         case ParsedAst.Predicate.Head.False(sp1, sp2) => WeededAst.Predicate.Head.False(mkSL(sp1, sp2)).toSuccess
@@ -835,7 +841,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       /**
         * Weeds the given body predicate.
         */
-      def weed(past: ParsedAst.Predicate.Body): Validation[WeededAst.Predicate.Body, WeederError] = past match {
+      def weed(past: ParsedAst.Predicate.Body)(implicit flix: Flix): Validation[WeededAst.Predicate.Body, WeederError] = past match {
         case ParsedAst.Predicate.Body.Positive(sp1, qname, terms, sp2) =>
           @@(terms.map(t => Patterns.weed(t))) map {
             case ts => WeededAst.Predicate.Body.Positive(qname, ts, mkSL(sp1, sp2))
@@ -913,7 +919,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     /**
       * Weeds all properties in the given AST `root`.
       */
-    def weed(root: ParsedAst.Root): Validation[List[WeededAst.Declaration], WeederError] = {
+    def weed(root: ParsedAst.Root)(implicit flix: Flix): Validation[List[WeededAst.Declaration], WeederError] = {
 
       /**
         * Processes a single declaration.
