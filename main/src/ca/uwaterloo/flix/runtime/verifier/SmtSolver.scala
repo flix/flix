@@ -21,6 +21,11 @@ import com.microsoft.z3.{BoolExpr, Context, Solver, Status}
 object SmtSolver {
 
   /**
+    * The solver timeout in miliseconds.
+    */
+  val Timeout = 1000
+
+  /**
     * A reference to the shared, non-thread safe Z3 context.
     *
     * Initialized by the first call to `withContext`.
@@ -31,10 +36,13 @@ object SmtSolver {
     * Checks the satisfiability of the given boolean formula `f`.
     */
   def checkSat(f: BoolExpr, ctx: Context): SmtResult = {
-    // use try-finally block to manage resources.
+    // Use try-finally block to manage resources.
     var solver: Solver = null
     try {
+      val p = ctx.mkParams()
+      p.add("timeout", Timeout)
       solver = ctx.mkSolver()
+      solver.setParameters(p)
       solver.add(f)
       solver.check() match {
         case Status.SATISFIABLE => SmtResult.Satisfiable(solver.getModel)
@@ -42,7 +50,7 @@ object SmtSolver {
         case Status.UNKNOWN => SmtResult.Unknown
       }
     } finally {
-      // release resources.
+      // Release resources.
       if (solver != null) solver.dispose()
     }
   }

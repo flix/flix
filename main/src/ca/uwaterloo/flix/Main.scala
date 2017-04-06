@@ -72,6 +72,7 @@ object Main {
       optimize = cmdOpts.optimize,
       monitor = cmdOpts.monitor,
       quickchecker = cmdOpts.quickchecker,
+      safe = cmdOpts.xsafe,
       timeout = cmdOpts.timeout,
       threads = if (cmdOpts.threads == -1) Options.Default.threads else cmdOpts.threads,
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
@@ -89,6 +90,13 @@ object Main {
     if (cmdOpts.pipe) {
       val s = StreamOps.readAll(Console.in)
       flix.addStr(s)
+    }
+
+    // check if a main function was given.
+    val main = cmdOpts.main
+    if (main.nonEmpty) {
+      val name = main.get
+      flix.addReachableRoot(name)
     }
 
     // the default color context.
@@ -188,6 +196,7 @@ object Main {
                      ximpure: Boolean = false,
                      xinterpreter: Boolean = false,
                      xinvariants: Boolean = false,
+                     xsafe: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -302,6 +311,10 @@ object Main {
       // Xinvariants.
       opt[Unit]("Xinvariants").action((_, c) => c.copy(xinvariants = true)).
         text("[experimental] enables compiler invariants.")
+
+      // Xsafe.
+      opt[Unit]("Xsafe").action((_, c) => c.copy(xsafe = true)).
+        text("[experimental] disables unsafe operations.")
 
       note("")
 

@@ -16,12 +16,15 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import java.lang.reflect.{Field, Method, Modifier}
+
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 import scala.collection.mutable
 
@@ -48,6 +51,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       constraints = Map.empty,
       hooks = program.hooks,
       properties = Map.empty,
+      reachable = program.reachable,
       time = program.time
     )
 
@@ -430,6 +434,21 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         case e => NamedAst.Expression.Ascribe(e, Types.namer(tpe, tenv0), loc)
       }
 
+      case WeededAst.Expression.NativeField(className, fieldName, loc) =>
+        lookupNativeField(className, fieldName, loc) match {
+          case Ok(field) => NamedAst.Expression.NativeField(field, Type.freshTypeVar(), loc).toSuccess
+          case Err(e) => e.toFailure
+        }
+
+      case WeededAst.Expression.NativeMethod(className, methodName, args, loc) =>
+        val arity = args.length
+        lookupNativeMethod(className, methodName, arity, loc) match {
+          case Ok(method) => @@(args.map(e => namer(e, env0, tenv0))) map {
+            case es => NamedAst.Expression.NativeMethod(method, es, Type.freshTypeVar(), loc)
+          }
+          case Err(e) => e.toFailure
+        }
+
       case WeededAst.Expression.UserError(loc) => NamedAst.Expression.UserError(Type.freshTypeVar(), loc).toSuccess
     }
 
@@ -468,6 +487,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.Existential(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
       case WeededAst.Expression.Universal(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
       case WeededAst.Expression.Ascribe(exp, tpe, loc) => freeVars(exp)
+      case WeededAst.Expression.NativeField(className, fieldName, loc) => Nil
+      case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
       case WeededAst.Expression.UserError(loc) => Nil
     }
 
@@ -665,6 +686,63 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     */
   def filterBoundVars(freeVars: List[Name.Ident], boundVars: List[Name.Ident]): List[Name.Ident] = {
     freeVars.filter(n1 => !boundVars.exists(n2 => n1.name == n2.name))
+  }
+
+  /**
+    * Returns the result of looking up the given `fieldName` on the given `className`.
+    */
+  def lookupNativeField(className: String, fieldName: String, loc: SourceLocation): Result[Field, NameError] = try {
+    // retrieve class object.
+    val clazz = Class.forName(className)
+
+    // retrieve the matching static fields.
+    val fields = clazz.getDeclaredFields.toList.filter {
+      case field => field.getName == fieldName && Modifier.isStatic(field.getModifiers)
+    }
+
+    // match on the number of fields.
+    fields.size match {
+      case 0 => Err(UndefinedNativeField(className, fieldName, loc))
+      case 1 => Ok(fields.head)
+      case _ => throw InternalCompilerException("Ambiguous native field?")
+    }
+  } catch {
+    case ex: ClassNotFoundException => Err(UndefinedNativeClass(className, loc))
+  }
+
+  /**
+    * Returns the result of looking up the given `methodName` on the given `className`.
+    */
+  def lookupNativeMethod(className: String, methodName: String, arity: Int, loc: SourceLocation): Result[Method, NameError] = try {
+    // retrieve class object.
+    val clazz = Class.forName(className)
+
+    // retrieve the matching methods.
+    val matchedMethods = clazz.getDeclaredMethods.toList.filter {
+      case method => method.getName == methodName
+    }
+
+    // retrieve the static methods.
+    val staticMethods = matchedMethods.filter {
+      case method => Modifier.isStatic(method.getModifiers) && method.getParameterCount == arity
+    }
+
+    // retrieve the object methods.
+    val objectMethods = matchedMethods.filter {
+      case method => !Modifier.isStatic(method.getModifiers) && method.getParameterCount == (arity - 1)
+    }
+
+    // static and object methods.
+    val methods = staticMethods ::: objectMethods
+
+    // match on the number of methods.
+    methods.size match {
+      case 0 => Err(UndefinedNativeMethod(className, methodName, arity, loc))
+      case 1 => Ok(methods.head)
+      case _ => Err(AmbiguousNativeMethod(className, methodName, arity, loc))
+    }
+  } catch {
+    case ex: ClassNotFoundException => Err(UndefinedNativeClass(className, loc))
   }
 
 }

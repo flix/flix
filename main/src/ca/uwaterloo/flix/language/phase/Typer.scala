@@ -49,7 +49,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
       val strata = List(TypedAst.Stratum(constraints))
       val currentTime = System.nanoTime()
       val time = program.time.copy(typer = currentTime - startTime)
-      TypedAst.Root(definitions, enums, lattices, tables, indexes, strata, properties, time)
+      TypedAst.Root(definitions, enums, lattices, tables, indexes, strata, properties, program.reachable, time)
     }
 
     result match {
@@ -738,6 +738,22 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
           }
 
         /*
+         * Native Field expression.
+         */
+        case NamedAst.Expression.NativeField(field, tvar, loc) =>
+          // TODO: Check types.
+          liftM(tvar)
+
+        /*
+         * Native Method expression.
+         */
+        case NamedAst.Expression.NativeMethod(method, actuals, tvar, loc) =>
+          // TODO: Check types.
+          for (
+            inferredArgumentTypes <- seqM(actuals.map(visitExp))
+          ) yield tvar
+
+        /*
          * User Error expression.
          */
         case NamedAst.Expression.UserError(tvar, loc) => liftM(tvar)
@@ -902,6 +918,19 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
         case NamedAst.Expression.Ascribe(exp, tpe, loc) =>
           // simply reassemble the nested expression.
           visitExp(exp, subst0)
+
+        /*
+         * Native Field expression.
+         */
+        case NamedAst.Expression.NativeField(field, tpe, loc) =>
+          TypedAst.Expression.NativeField(field, subst0(tpe), loc)
+
+        /*
+         * Native Method expression.
+         */
+        case NamedAst.Expression.NativeMethod(method, actuals, tpe, loc) =>
+          val es = actuals.map(e => reassemble(e, ns0, program, subst0))
+          TypedAst.Expression.NativeMethod(method, es, subst0(tpe), loc)
 
         /*
          * User Error expression.

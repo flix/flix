@@ -329,8 +329,8 @@ class TestNamer extends FunSuite with TestUtils {
   test("UnresolvedType.02") {
     val input =
       s"""namespace A {
-          |  def foo(bar: Baz, baz: Baz): Qux = bar
-          |}
+         |  def foo(bar: Baz, baz: Baz): Qux = bar
+         |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     expectError[ResolutionError.UndefinedType](result)
@@ -339,8 +339,8 @@ class TestNamer extends FunSuite with TestUtils {
   test("Expression.Hook.01") {
     val input =
       s"""namespace A {
-          |  def f(x: Int): Bool = g(x)
-          |}
+         |  def f(x: Int): Bool = g(x)
+         |}
        """.stripMargin
     val flix = new Flix()
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType)
@@ -355,8 +355,8 @@ class TestNamer extends FunSuite with TestUtils {
   test("Expression.Hook.02") {
     val input =
       s"""namespace A {
-          |  def f(x: Bool, y: Int, z: Str): Bool = g(x, y, z)
-          |}
+         |  def f(x: Bool, y: Int, z: Str): Bool = g(x, y, z)
+         |}
        """.stripMargin
     val flix = new Flix()
     val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkInt32Type, flix.mkStrType), flix.mkBoolType)
@@ -366,6 +366,54 @@ class TestNamer extends FunSuite with TestUtils {
         def apply(args: Array[IValue]) = flix.mkTrue
       })
     flix.compile().get
+  }
+
+  test("UndefinedNativeClass.01") {
+    val input = "def f: Int = unsafe native field java.lang.Foo"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.UndefinedNativeClass](result)
+  }
+
+  test("UndefinedNativeClass.02") {
+    val input = "def f: Int = unsafe native method java.lang.Bar.Baz()"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.UndefinedNativeClass](result)
+  }
+
+  test("UndefinedNativeField.01") {
+    val input = "def f: Int = unsafe native field java.lang.Math.PIE"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.UndefinedNativeField](result)
+  }
+
+  test("UndefinedNativeField.02") {
+    val input = "def f: Int = unsafe native field java.lang.Math.EEE"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.UndefinedNativeField](result)
+  }
+
+  test("UndefinedNativeMethod.01") {
+    val input = "def f: Int = unsafe native method java.lang.Math.aaa()"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.UndefinedNativeMethod](result)
+  }
+
+  test("UndefinedNativeMethod.02") {
+    val input = "def f: Int = unsafe native method java.lang.Math.bbb(1, 2, 3)"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.UndefinedNativeMethod](result)
+  }
+
+  test("AmbiguousNativeMethod.01") {
+    val input = "def f: Int = unsafe native method java.lang.Math.abs(1)"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.AmbiguousNativeMethod](result)
+  }
+
+  test("AmbiguousNativeMethod.02") {
+    val input = "def f: Int = unsafe native method java.lang.Math.max(1, 2)"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.AmbiguousNativeMethod](result)
   }
 
 }

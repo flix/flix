@@ -41,15 +41,15 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     */
   private type TopLevel = mutable.Map[Symbol.DefnSym, ExecutableAst.Definition.Constant]
 
-  def run(sast: SimplifiedAst.Root)(implicit flix: Flix): Validation[ExecutableAst.Root, CompilationError] = {
+  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[ExecutableAst.Root, CompilationError] = {
     implicit val _ = flix.genSym
 
     // A mutable map to hold top-level definitions created by lifting lattice expressions.
     val m: TopLevel = mutable.Map.empty
 
-    val constants = sast.definitions.map { case (k, v) => k -> Definition.toExecutable(v) }
+    val constants = root.definitions.map { case (k, v) => k -> Definition.toExecutable(v) }
 
-    val enums = sast.enums.map {
+    val enums = root.enums.map {
       case (sym, SimplifiedAst.Definition.Enum(_, cases0, loc)) =>
         val cases = cases0.map {
           case (tag, SimplifiedAst.Case(enumName, tagName, tpe)) => tag -> ExecutableAst.Case(enumName, tagName, tpe)
@@ -58,13 +58,14 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     }
 
     // Converting lattices to ExecutableAst will create new top-level definitions in the map `m`.
-    val lattices = sast.lattices.map { case (k, v) => k -> Definition.toExecutable(v, m) }
-    val tables = sast.tables.map { case (k, v) => k -> Table.toExecutable(v) }
-    val indexes = sast.indexes.map { case (k, v) => k -> Definition.toExecutable(v) }
+    val lattices = root.lattices.map { case (k, v) => k -> Definition.toExecutable(v, m) }
+    val tables = root.tables.map { case (k, v) => k -> Table.toExecutable(v) }
+    val indexes = root.indexes.map { case (k, v) => k -> Definition.toExecutable(v) }
     // TODO: Assumes one stratum
-    val constraints = sast.strata.head.constraints.map(Constraint.toConstraint)
-    val properties = sast.properties.map(p => toExecutable(p))
-    val time = sast.time
+    val constraints = root.strata.head.constraints.map(Constraint.toConstraint)
+    val properties = root.properties.map(p => toExecutable(p))
+    val reachable = root.reachable
+    val time = root.time
 
     val dependenciesOf: Map[Symbol.TableSym, Set[(ExecutableAst.Constraint, ExecutableAst.Predicate.Body.Positive)]] = {
       val result = mutable.Map.empty[Symbol.TableSym, Set[(ExecutableAst.Constraint, ExecutableAst.Predicate.Body.Positive)]]
@@ -93,7 +94,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       result.toMap
     }
 
-    ExecutableAst.Root(constants ++ m, enums, lattices, tables, indexes, constraints, properties, time, dependenciesOf).toSuccess
+    ExecutableAst.Root(constants ++ m, enums, lattices, tables, indexes, constraints, properties, reachable, time, dependenciesOf).toSuccess
   }
 
   object Definition {
@@ -238,6 +239,10 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.Expression.Universal(fparam, exp, loc) =>
         val p = ExecutableAst.FormalParam(fparam.sym, fparam.tpe)
         ExecutableAst.Expression.Universal(p, toExecutable(exp), loc)
+      case SimplifiedAst.Expression.NativeField(field, tpe, loc) => ExecutableAst.Expression.NativeField(field, tpe, loc)
+      case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) =>
+        val es = args.map(e => toExecutable(e))
+        ExecutableAst.Expression.NativeMethod(method, es, tpe, loc)
       case SimplifiedAst.Expression.UserError(tpe, loc) => ExecutableAst.Expression.UserError(tpe, loc)
       case SimplifiedAst.Expression.MatchError(tpe, loc) => ExecutableAst.Expression.MatchError(tpe, loc)
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => ExecutableAst.Expression.SwitchError(tpe, loc)

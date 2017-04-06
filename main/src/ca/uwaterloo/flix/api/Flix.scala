@@ -46,6 +46,11 @@ class Flix {
   private val paths = ListBuffer.empty[Path]
 
   /**
+    * A set of reachable root definitions.
+    */
+  private val reachableRoots = mutable.Set.empty[Symbol.DefnSym]
+
+  /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
     */
   private val library = List(
@@ -67,7 +72,9 @@ class Flix {
     "Prelude.flix" -> LocalResource.get("/library/Prelude.flix"),
     "Result.flix" -> LocalResource.get("/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/library/Set.flix"),
-    "TotalOrder.flix" -> LocalResource.get("/library/TotalOrder.flix")
+    //"String.flix" -> LocalResource.get("/library/String.flix"),
+    "TotalOrder.flix" -> LocalResource.get("/library/TotalOrder.flix"),
+    "Tuple.flix" -> LocalResource.get("/library/Tuple.flix")
   )
 
   /**
@@ -121,6 +128,18 @@ class Flix {
     paths += p
     this
   }
+
+  /**
+    * Adds the given fully-qualified name as a reachable root.
+    */
+  def addReachableRoot(fqn: String): Unit = {
+    reachableRoots += Symbol.mkDefnSym(fqn)
+  }
+
+  /**
+    * Returns the reachable root definitions.
+    */
+  def getReachableRoots: Set[Symbol.DefnSym] = reachableRoots.toSet
 
   /**
     * Adds the given invokable `inv` with the given `name.`

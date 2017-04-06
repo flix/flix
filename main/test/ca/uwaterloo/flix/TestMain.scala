@@ -195,4 +195,10 @@ class TestMain extends FunSuite {
     assert(opts.xinvariants)
   }
 
+  test("--Xsafe") {
+    val args = Array("--Xsafe", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xsafe)
+  }
+
 }

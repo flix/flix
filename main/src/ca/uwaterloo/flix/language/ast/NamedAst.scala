@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import java.lang.reflect.{Field, Method}
+
 import ca.uwaterloo.flix.language.ast
 
 import scala.collection.immutable.List
@@ -32,6 +34,7 @@ object NamedAst {
                      constraints: Map[Name.NName, List[NamedAst.Constraint]],
                      hooks: Map[Symbol.DefnSym, Ast.Hook],
                      properties: Map[Name.NName, List[NamedAst.Property]],
+                     reachable: Set[Symbol.DefnSym],
                      time: Time) extends NamedAst
 
   case class Constraint(cparams: List[NamedAst.ConstraintParam], head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation) extends NamedAst
@@ -135,6 +138,10 @@ object NamedAst {
     case class Universal(fparam: NamedAst.FormalParam, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Ascribe(exp: NamedAst.Expression, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
+
+    case class NativeField(field: Field, tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class NativeMethod(method: Method, args: List[NamedAst.Expression], tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class UserError(tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 

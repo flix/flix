@@ -69,6 +69,14 @@ namespace Option {
     }
 
     ///
+    /// Returns `Some(y)` if `o` is `Some(x)`. Otherwise returns `o`.
+    ///
+    def replace[a](x: a, y: a, o: Option[a]): Option[a] = match o with {
+        case None => o
+        case Some(v) => Some(if (v == x) y else v)
+    }
+
+    ///
     /// Returns `true` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `false`.
     ///
     def exists[a](f: a -> Bool, o: Option[a]): Bool = getWithDefault(map(f, o), false)
@@ -200,5 +208,19 @@ namespace Option {
     def unzip[a, b](o: Option[(a, b)]): (Option[a], Option[b]) = match o with {
         case None => (None, None)
         case Some((v1, v2)) => (Some(v1), Some(v2))
+    }
+
+
+
+
+
+
+    ///
+    /// Returns `true` if and only if `o1` and `o2` and equal.
+    ///
+    def eq[a](o1: Option[a], o2: Option[a]): Bool = match (o1, o2) with {
+        case (None, None) => true
+        case (Some(v1), Some(v2)) => v1 == v2
+        case _ => false
     }
 }

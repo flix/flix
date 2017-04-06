@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import java.lang.reflect.{Field, Method}
+
 sealed trait SimplifiedAst
 
 object SimplifiedAst {
@@ -27,6 +29,7 @@ object SimplifiedAst {
                   indexes: Map[Symbol.TableSym, SimplifiedAst.Definition.Index],
                   strata: List[SimplifiedAst.Stratum],
                   properties: List[SimplifiedAst.Property],
+                  reachable: Set[Symbol.DefnSym],
                   time: Time) extends SimplifiedAst
 
   case class Constraint(cparams: List[SimplifiedAst.ConstraintParam], head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body]) extends SimplifiedAst
@@ -420,6 +423,10 @@ object SimplifiedAst {
     case class Universal(fparam: SimplifiedAst.FormalParam, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Bool
     }
+
+    case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class NativeMethod(method: Method, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class UserError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 

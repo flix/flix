@@ -20,7 +20,7 @@ trait WeededAst
 
 object WeededAst {
 
-  case class Program(roots: List[WeededAst.Root], hooks: Map[Symbol.DefnSym, Ast.Hook], time: Time) extends WeededAst
+  case class Program(roots: List[WeededAst.Root], hooks: Map[Symbol.DefnSym, Ast.Hook], reachable: Set[Symbol.DefnSym], time: Time) extends WeededAst
 
   case class Root(decls: List[WeededAst.Declaration]) extends WeededAst
 
@@ -123,6 +123,10 @@ object WeededAst {
     case class Universal(fparam: WeededAst.FormalParam, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Ascribe(exp: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+
+    case class NativeField(className: String, fieldName: String, loc: SourceLocation) extends WeededAst.Expression
+
+    case class NativeMethod(className: String, methodName: String, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class UserError(loc: SourceLocation) extends WeededAst.Expression
 

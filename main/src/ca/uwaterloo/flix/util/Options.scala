@@ -32,6 +32,7 @@ object Options {
     monitor = false,
     optimize = false,
     quickchecker = false,
+    safe = false,
     timeout = Duration.Inf,
     threads = Runtime.getRuntime.availableProcessors(),
     verbosity = Verbosity.Normal,
@@ -56,12 +57,13 @@ object Options {
   * @param optimize     enables compiler optimizations.
   * @param monitor      enables the debugger and profiler.
   * @param quickchecker enables the quickchecker.
+  * @param safe         disables unsafe operations.
   * @param timeout      selects the solver timeout.
   * @param threads      selects the number of threads to use.
   * @param verbosity    selects the level of verbosity.
   * @param verifier     enables the verifier.
   */
-case class Options(core: Boolean, debug: Boolean, documentor: Boolean, evaluation: Evaluation, impure: Boolean, invariants: Boolean, optimize: Boolean, monitor: Boolean, quickchecker: Boolean, timeout: Duration, threads: Int, verbosity: Verbosity, verifier: Boolean)
+case class Options(core: Boolean, debug: Boolean, documentor: Boolean, evaluation: Evaluation, impure: Boolean, invariants: Boolean, optimize: Boolean, monitor: Boolean, quickchecker: Boolean, safe: Boolean, timeout: Duration, threads: Int, verbosity: Verbosity, verifier: Boolean)
 
 /**
   * An option to control the level of verbosity.

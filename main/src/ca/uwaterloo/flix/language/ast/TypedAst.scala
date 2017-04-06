@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import java.lang.reflect.{Field, Method}
+
 sealed trait TypedAst
 
 object TypedAst {
@@ -27,6 +29,7 @@ object TypedAst {
                   indexes: Map[Symbol.TableSym, TypedAst.Declaration.Index],
                   strata: List[TypedAst.Stratum],
                   properties: List[TypedAst.Property],
+                  reachable: Set[Symbol.DefnSym],
                   time: Time) extends TypedAst
 
   case class Constraint(cparams: List[TypedAst.ConstraintParam], head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body], loc: SourceLocation) extends TypedAst
@@ -154,6 +157,10 @@ object TypedAst {
     case class Universal(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = Type.Bool
     }
+
+    case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
+
+    case class NativeMethod(method: Method, args: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class UserError(tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 

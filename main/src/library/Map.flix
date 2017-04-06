@@ -158,6 +158,18 @@ namespace Map {
         let Map(xs) = m;
             Map(List.map(match (key, v) -> if (key == k) (k, Option.getWithDefault(f(k, v), v)) else (key, v), xs))
 
+    ///
+    /// Replaces the mapping `fst(x) -> snd(x)` with `fst(y) -> snd(y)` if `fst(x) -> snd(x)` is in `m`.
+    /// Otherwise, returns `m`.
+    /// Note: The returned map may be smaller than `m`.
+    ///
+    def replace[k, v](x: (k, v), y: (k, v), m: Map[k, v]): Map[k, v] =
+        let (k, v) = x;
+            match get(k, m) with {
+                case None => m
+                case Some(w) => if (v == w) insert(fst(y), snd(y), delete(k, m)) else m
+            }
+
 
 
 

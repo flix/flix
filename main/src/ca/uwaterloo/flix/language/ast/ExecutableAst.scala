@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import java.lang.reflect.Method
+import java.lang.reflect.{Field, Method}
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import ca.uwaterloo.flix.runtime.InvocationTarget
@@ -32,6 +32,7 @@ object ExecutableAst {
                   indexes: Map[Symbol.TableSym, ExecutableAst.Definition.Index],
                   constraints: List[ExecutableAst.Constraint],
                   properties: List[ExecutableAst.Property],
+                  reachable: Set[Symbol.DefnSym],
                   time: Time,
                   dependenciesOf: Map[Symbol.TableSym, Set[(Constraint, ExecutableAst.Predicate.Body.Positive)]]) extends ExecutableAst
 
@@ -472,6 +473,10 @@ object ExecutableAst {
     case class Universal(fparam: ExecutableAst.FormalParam, exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
       def tpe: Type = Type.Bool
     }
+
+    case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class NativeMethod(method: Method, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class UserError(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 

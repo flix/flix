@@ -57,10 +57,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     val indexes = root.indexes.map { case (k, v) => k -> Definition.simplify(v) }
     val strata = root.strata.map(s => simplify(s, toplevel))
     val properties = root.properties.map { p => simplify(p) }
+    val reachable = root.reachable
     val time = root.time
 
     val e = System.nanoTime() - t
-    SimplifiedAst.Root(defns ++ toplevel, enums, lattices, collections, indexes, strata, properties, time.copy(simplifier = e)).toSuccess
+    SimplifiedAst.Root(defns ++ toplevel, enums, lattices, collections, indexes, strata, properties, reachable, time.copy(simplifier = e)).toSuccess
   }
 
   object Table {
@@ -246,6 +247,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val p = SimplifiedAst.FormalParam(fparam.sym, fparam.tpe)
         val e = simplify(exp)
         SimplifiedAst.Expression.Universal(p, e, loc)
+      case TypedAst.Expression.NativeField(field, tpe, loc) =>
+        SimplifiedAst.Expression.NativeField(field, tpe, loc)
+      case TypedAst.Expression.NativeMethod(method, args, tpe, loc) =>
+        val es = args.map(e => simplify(e))
+        SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
       case TypedAst.Expression.UserError(tpe, loc) =>
         SimplifiedAst.Expression.UserError(tpe, loc)
     }
@@ -645,6 +651,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Existential(params, visit(exp), loc)
       case SimplifiedAst.Expression.Universal(params, exp, loc) =>
         SimplifiedAst.Expression.Universal(params, visit(exp), loc)
+      case SimplifiedAst.Expression.NativeField(field, tpe, loc) =>
+        SimplifiedAst.Expression.NativeField(field, tpe, loc)
+      case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) =>
+        val es = args map visit
+        SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
       case SimplifiedAst.Expression.UserError(tpe, loc) => e
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => e
