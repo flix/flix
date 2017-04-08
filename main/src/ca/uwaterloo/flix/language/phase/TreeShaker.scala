@@ -44,6 +44,11 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
 
     /**
+      * A set used to collect the definition symbols of reachable functions.
+      */
+    val reachableFunctions: mutable.Set[Symbol.DefnSym] = mutable.Set.empty ++ root.reachable
+
+    /**
       * A queue of function definitions to be processed recursively.
       *
       * For example, if the queue contains the entry:
@@ -53,11 +58,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * it means that the function definition f should be considered to determine new reachable functions.
       */
     val queue: mutable.Queue[Definition.Constant] = mutable.Queue.empty
-
-    /**
-      * A map used to collect reachable functions (symbols and the corresponding definitions).
-      */
-    val reachableFunctions: mutable.Map[Symbol.DefnSym, Definition.Constant] = mutable.Map.empty
 
     /**
       * Returns true iff the function definition `defn` is initially reachable by (a).
@@ -71,74 +71,76 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     }
 
     /**
-      * Searches the given SimplifiedAst.Term.Head `head` for reachable functions.
+      * Returns the function symbols reachable from `hs`.
       */
-    def visitTermHead(head: SimplifiedAst.Term.Head): Unit = {
-      head match {
+    def visitHeadTerms(hs: List[SimplifiedAst.Term.Head]): Set[Symbol.DefnSym] = hs.map(visitHeadTerm).fold(Set())(_++_)
+
+    /**
+      * Returns the function symbols reachable from the given SimplifiedAst.Term.Head `head`.
+      */
+    def visitHeadTerm(h0: SimplifiedAst.Term.Head): Set[Symbol.DefnSym] = {
+      h0 match {
         case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => visitExp(lit)
-        case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => newDefinitionSymbol(sym)
-        case _ =>
+        case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => Set(sym)
+        case _ => Set.empty
       }
     }
 
     /**
-      * Searches the given SimplifiedAst.Term.Body `body` for reachable functions.
+      * Returns the function symbols reachable from `bs`.
       */
-    def visitTermBody(body: SimplifiedAst.Term.Body): Unit = {
-      body match {
+    def visitBodyTerms(bs: List[SimplifiedAst.Term.Body]): Set[Symbol.DefnSym] = bs.map(visitBodyTerm).fold(Set())(_++_)
+
+    /**
+      * Returns the function symbols reachable from the given SimplifiedAst.Term.Body `body`.
+      */
+    def visitBodyTerm(b0: SimplifiedAst.Term.Body): Set[Symbol.DefnSym] = {
+      b0 match {
         case SimplifiedAst.Term.Body.Lit(exp, tpe, loc) => visitExp(exp)
-        case _ =>
+        case _ => Set.empty
       }
     }
 
     /**
-      * Searches the given Expression `e0` for reachable functions.
+      * Returns the function symbols reachable from `es`.
       */
-    def visitExp(e0: Expression): Unit =  e0 match {
-      case Expression.Ref(sym, tpe, loc) => newDefinitionSymbol(sym)
+    def visitExps(es: List[Expression]): Set[Symbol.DefnSym] =  es.map(visitExp).fold(Set())(_++_)
+
+    /**
+      * Returns the function symbols reachable from the given Expression `e0`.
+      */
+    def visitExp(e0: Expression): Set[Symbol.DefnSym] =  e0 match {
+      case Expression.Ref(sym, tpe, loc) => Set(sym)
       case Expression.Lambda(args, body, tpe, loc) => visitExp(body)
-      case Expression.Hook(hook, tpe, loc) => newDefinitionSymbol(hook.sym)
+      case Expression.Hook(hook, tpe, loc) => Set(hook.sym)
       case Expression.MkClosure(lambda, freeVars, tpe, loc) => visitExp(lambda)
       case Expression.MkClosureRef(ref, freeVars, tpe, loc) => visitExp(ref)
-      case Expression.ApplyRef(sym, args, tpe, loc) =>
-        newDefinitionSymbol(sym)
-        args.foreach(visitExp)
-      case Expression.ApplyTail(sym, formals, actuals, tpe, loc) =>
-        newDefinitionSymbol(sym)
-        actuals.foreach(visitExp)
-      case Expression.Apply(exp, args, tpe, loc) =>
-        visitExp(exp)
-        args.foreach(visitExp)
+      case Expression.ApplyRef(sym, args, tpe, loc) => visitExps(args) + sym
+      case Expression.ApplyTail(sym, formals, actuals, tpe, loc) => visitExps(actuals) + sym
+      case Expression.Apply(exp, args, tpe, loc) => visitExps(args) ++ visitExp(exp)
       case Expression.Unary(op, exp, tpe, loc) => visitExp(exp)
-      case Expression.Binary(op, exp1, exp2, tpe, loc) =>
-        visitExp(exp1)
-        visitExp(exp2)
-      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-        visitExp(exp1)
-        visitExp(exp2)
-        visitExp(exp3)
-      case Expression.Let(sym, exp1, exp2, tpe, loc) =>
-        visitExp(exp1)
-        visitExp(exp2)
+      case Expression.Binary(op, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+      case Expression.Let(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Is(exp, tag, loc) => visitExp(exp)
       case Expression.Tag(sym, tag, exp, tpe, loc) => visitExp(exp)
       case Expression.Untag(tag, exp, tpe, loc) => visitExp(exp)
       case Expression.Index(base, offset, tpe, loc) => visitExp(base)
-      case Expression.Tuple(elms, tpe, loc) => elms.foreach(visitExp)
+      case Expression.Tuple(elms, tpe, loc) => visitExps(elms)
       case Expression.Existential(fparam, exp, loc) => visitExp(exp)
       case Expression.Universal(fparam, exp, loc) => visitExp(exp)
-      case _ =>
+      case _ => Set.empty
     }
 
     /**
-      * Adds the function `sym` to the map of reachable functions.
+      * Adds the function `sym` to the set of reachable functions.
       */
-    def newDefinitionSymbol(sym: Symbol.DefnSym): Unit = {
+    def newReachableDefinitionSymbol(sym: Symbol.DefnSym): Unit = {
       // If `sym` has not already been determined reachable, look up its definition in `root`.
       if (!reachableFunctions.contains(sym)) {
         root.definitions.get(sym) match {
           case Some(defn) =>
-            reachableFunctions.put(sym, defn)
+            reachableFunctions.add(sym)
             queue.enqueue(defn)
           // If `sym` is not defined in `root`, leave this for error checking later.
           case _ =>
@@ -160,8 +162,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
      */
     for ((sym, defn) <- root.definitions) {
       if (isReachableRoot(defn)) {
-        queue.enqueue(defn)
-        reachableFunctions.put(sym, defn)
+        reachableFunctions.add(sym)
       }
     }
 
@@ -172,18 +173,18 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
      */
     for (stratum <- root.strata) {
       for (constraint <- stratum.constraints) {
-        constraint.head match {
-          case SimplifiedAst.Predicate.Head.Positive(sym, terms, loc) => terms.foreach(visitTermHead)
-          case SimplifiedAst.Predicate.Head.Negative(sym, terms, loc) => terms.foreach(visitTermHead)
-          case _ =>
-        }
+        reachableFunctions ++= (constraint.head match {
+          case SimplifiedAst.Predicate.Head.Positive(sym, terms, loc) => visitHeadTerms(terms)
+          case SimplifiedAst.Predicate.Head.Negative(sym, terms, loc) => visitHeadTerms(terms)
+          case _ => Set.empty
+        })
 
-        constraint.body.foreach {
-          case SimplifiedAst.Predicate.Body.Positive(sym, terms, loc) => terms.foreach(visitTermBody)
-          case SimplifiedAst.Predicate.Body.Negative(sym, terms, loc) => terms.foreach(visitTermBody)
-          case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) => newDefinitionSymbol(sym)
-          case SimplifiedAst.Predicate.Body.Loop(sym, term, loc) => visitTermHead(term)
-        }
+        reachableFunctions ++= constraint.body.map {
+          case SimplifiedAst.Predicate.Body.Positive(sym, terms, loc) => visitBodyTerms(terms)
+          case SimplifiedAst.Predicate.Body.Negative(sym, terms, loc) => visitBodyTerms(terms)
+          case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) => Set(sym)
+          case SimplifiedAst.Predicate.Body.Loop(sym, term, loc) => visitHeadTerm(term)
+        }.fold(Set())(_++_)
       }
     }
 
@@ -192,23 +193,26 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
      *
      * (c) Appear in a lattice declaration.
      */
-    root.lattices.values.foreach({
+    reachableFunctions ++= root.lattices.values.map {
       case SimplifiedAst.Definition.Lattice(tpe, bot, top, leq, lub, glb, loc) =>
-        visitExp(bot)
-        visitExp(top)
-        visitExp(leq)
-        visitExp(lub)
-        visitExp(glb)
-    })
+        visitExp(bot) ++ visitExp(top) ++ visitExp(leq) ++ visitExp(lub) ++ visitExp(glb)
+    }.fold(Set())(_++_)
 
     /*
      * Find reachable functions that:
      *
      * (d) Appear in a function which itself is reachable.
      */
+    reachableFunctions.foreach {
+      root.definitions.get(_) match {
+        case Some(defn) => queue.enqueue(defn)
+        case _ =>
+      }
+    }
+
     while (queue.nonEmpty) {
       // Extract a function body from the queue and search for other reachable functions.
-      visitExp(queue.dequeue().exp)
+      visitExp(queue.dequeue().exp).foreach(newReachableDefinitionSymbol)
     }
 
     // Calculate the elapsed time.
@@ -216,9 +220,8 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
     // Reassemble the AST.
     root.copy(
-      definitions = reachableFunctions.toMap,
+      definitions = root.definitions.filterKeys(reachableFunctions.contains),
       time = root.time.copy(treeshaker = e)
     ).toSuccess
   }
-
 }
