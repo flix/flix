@@ -6717,5 +6717,5 @@ class TestBackend extends FunSuite {
     val t = new Tester(input)
     t.checkModel(Set(("b", "b"), ("p", "c"), ("d", "b")).map { case (x,y) => List(Value.mkStr(x), Value.mkStr(y)) }, "Pt")
   }
-  
+
 }
