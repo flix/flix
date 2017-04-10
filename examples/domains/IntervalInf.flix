@@ -22,7 +22,6 @@ namespace Domain/IntervalInf {
                         case Bot
     }
 
-    // TODO: Insert norm everywhere?
     ///
     /// Returns the canonical representation of the given IntervalInf `e`.
     ///
@@ -56,13 +55,13 @@ namespace Domain/IntervalInf {
     def lub(e1: IntervalInf, e2: IntervalInf): IntervalInf = match (e1, e2) with {
         case (Bot, x)                       => x
         case (x, Bot)                       => x
-        case (Range(b1, e1), Range(b2, e2)) => Range(BigInt.min(b1, b2), BigInt.max(e1, e2))
-        case (Range(b1, e1), Upper(e2))     => Upper(BigInt.max(e1, e2))
-        case (Upper(e1), Range(b2, e2))     => Upper(BigInt.max(e1, e2))
-        case (Range(b1, e1), Lower(b2))     => Lower(BigInt.min(b1, b2))
-        case (Lower(b1), Range(b2, e2))     => Lower(BigInt.min(b1, b2))
-        case (Upper(e1), Upper(e2))         => Upper(BigInt.max(e1, e2))
-        case (Lower(e1), Lower(e2))         => Lower(BigInt.min(e1, e2))
+        case (Range(b1, e1), Range(b2, e2)) => norm(Range(BigInt.min(b1, b2), BigInt.max(e1, e2)))
+        case (Range(b1, e1), Upper(e2))     => norm(Upper(BigInt.max(e1, e2)))
+        case (Upper(e1), Range(b2, e2))     => norm(Upper(BigInt.max(e1, e2)))
+        case (Range(b1, e1), Lower(b2))     => norm(Lower(BigInt.min(b1, b2)))
+        case (Lower(b1), Range(b2, e2))     => norm(Lower(BigInt.min(b1, b2)))
+        case (Upper(e1), Upper(e2))         => norm(Upper(BigInt.max(e1, e2)))
+        case (Lower(e1), Lower(e2))         => norm(Lower(BigInt.min(e1, e2)))
         case _                              => Top
     }
 
@@ -73,15 +72,15 @@ namespace Domain/IntervalInf {
     def glb(e1: IntervalInf, e2: IntervalInf): IntervalInf = match (e1, e2) with {
         case (Top, x)                       => x
         case (x, Top)                       => x
-        case (Range(b1, e1), Range(b2, e2)) => Range(BigInt.max(b1, b2), BigInt.min(e1, e2))
-        case (Upper(e1), Range(b2, e2))     => Range(b2, BigInt.min(e1, e2))
-        case (Range(b1, e1), Upper(e2))     => Range(b1, BigInt.min(e1, e2))
-        case (Lower(b1), Range(b2, e2))     => Range(BigInt.max(b1, b2), e2)
-        case (Range(b1, e1), Lower(b2))     => Range(BigInt.max(b1, b2), e1)
-        case (Upper(e1), Upper(e2))         => Upper(BigInt.min(e1, e2))
-        case (Lower(b1), Lower(b2))         => Lower(BigInt.max(b1, b2))
-        case (Lower(b), Upper(e))           => if (b <= e) Range(b, e) else Bot
-        case (Upper(e), Lower(b))           => if (b <= e) Range(b, e) else Bot
+        case (Range(b1, e1), Range(b2, e2)) => norm(Range(BigInt.max(b1, b2), BigInt.min(e1, e2)))
+        case (Upper(e1), Range(b2, e2))     => norm(Range(b2, BigInt.min(e1, e2)))
+        case (Range(b1, e1), Upper(e2))     => norm(Range(b1, BigInt.min(e1, e2)))
+        case (Lower(b1), Range(b2, e2))     => norm(Range(BigInt.max(b1, b2), e2))
+        case (Range(b1, e1), Lower(b2))     => norm(Range(BigInt.max(b1, b2), e1))
+        case (Upper(e1), Upper(e2))         => norm(Upper(BigInt.min(e1, e2)))
+        case (Lower(b1), Lower(b2))         => norm(Lower(BigInt.max(b1, b2)))
+        case (Lower(b), Upper(e))           => if (b <= e) norm(Range(b, e)) else Bot
+        case (Upper(e), Lower(b))           => if (b <= e) norm(Range(b, e)) else Bot
         case _                              => Bot
     }
 
@@ -98,8 +97,8 @@ namespace Domain/IntervalInf {
     def inc(e: IntervalInf): IntervalInf = match e with {
         case Bot            => Bot
         case Range(b, e)    => norm(Range(b + 1ii, e + 1ii))
-        case Upper(e)       => Upper(e + 1ii)
-        case Lower(b)       => Lower(b + 1ii)
+        case Upper(e)       => norm(Upper(e + 1ii))
+        case Lower(b)       => norm(Lower(b + 1ii))
         case Top            => Top
     }
 
@@ -111,8 +110,8 @@ namespace Domain/IntervalInf {
     def dec(e: IntervalInf): IntervalInf = match e with {
         case Bot            => Bot
         case Range(b, e)    => norm(Range(b - 1ii, e - 1ii))
-        case Upper(e)       => Upper(e - 1ii)
-        case Lower(b)       => Lower(b - 1ii)
+        case Upper(e)       => norm(Upper(e - 1ii))
+        case Lower(b)       => norm(Lower(b - 1ii))
         case Top            => Top
     }
 
@@ -125,12 +124,12 @@ namespace Domain/IntervalInf {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
         case (Range(b1, e1), Range(b2, e2)) => norm(Range(b1 + b2, e1 + e2))
-        case (Range(b1, e1), Upper(e2))     => Upper(e1 + e2)
-        case (Upper(e2), Range(b1, e1))     => Upper(e1 + e2)
-        case (Range(b1, e2), Lower(b2))     => Lower(b1 + b2)
-        case (Lower(b2), Range(b1, e2))     => Lower(b1 + b2)
-        case (Upper(e1), Upper(e2))         => Upper(e1 + e2)
-        case (Lower(b1), Lower(b2))         => Lower(b1 + b2)
+        case (Range(b1, e1), Upper(e2))     => norm(Upper(e1 + e2))
+        case (Upper(e2), Range(b1, e1))     => norm(Upper(e1 + e2))
+        case (Range(b1, e2), Lower(b2))     => norm(Lower(b1 + b2))
+        case (Lower(b2), Range(b1, e2))     => norm(Lower(b1 + b2))
+        case (Upper(e1), Upper(e2))         => norm(Upper(e1 + e2))
+        case (Lower(b1), Lower(b2))         => norm(Lower(b1 + b2))
         case _                              => Top
     }
 
