@@ -80,9 +80,9 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       */
     def visitHeadTerm(h0: SimplifiedAst.Term.Head): Set[Symbol.DefnSym] = {
       h0 match {
+        case SimplifiedAst.Term.Head.Var(sym, tpe, loc) => Set.empty
         case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => visitExp(lit)
         case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => Set(sym)
-        case _ => Set.empty
       }
     }
 
@@ -96,8 +96,10 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       */
     def visitBodyTerm(b0: SimplifiedAst.Term.Body): Set[Symbol.DefnSym] = {
       b0 match {
+        case SimplifiedAst.Term.Body.Wild(tpe, loc) => Set.empty
+        case SimplifiedAst.Term.Body.Var(sym, tpe, loc) => Set.empty
         case SimplifiedAst.Term.Body.Lit(exp, tpe, loc) => visitExp(exp)
-        case _ => Set.empty
+        case SimplifiedAst.Term.Body.Pat(pat, tpe, loc) => Set.empty
       }
     }
 
@@ -110,6 +112,27 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * Returns the function symbols reachable from the given Expression `e0`.
       */
     def visitExp(e0: Expression): Set[Symbol.DefnSym] =  e0 match {
+      case Expression.Unit => Set.empty
+      case Expression.True => Set.empty
+      case Expression.False => Set.empty
+      case Expression.Char(lit) => Set.empty
+      case Expression.Float32(lit) => Set.empty
+      case Expression.Float64(lit) => Set.empty
+      case Expression.Int8(lit) => Set.empty
+      case Expression.Int16(lit) => Set.empty
+      case Expression.Int32(lit) => Set.empty
+      case Expression.Int64(lit) => Set.empty
+      case Expression.BigInt(lit) => Set.empty
+      case Expression.Str(lit) => Set.empty
+      case Expression.LoadBool(exp, offset) => visitExp(exp)
+      case Expression.LoadInt8(exp, offset) => visitExp(exp)
+      case Expression.LoadInt16(exp, offset) => visitExp(exp)
+      case Expression.LoadInt32(exp, offset) => visitExp(exp)
+      case Expression.StoreBool(exp, offset, v) => visitExp(exp) ++ visitExp(v)
+      case Expression.StoreInt8(exp, offset, v) => visitExp(exp) ++ visitExp(v)
+      case Expression.StoreInt16(exp, offset, v) => visitExp(exp) ++ visitExp(v)
+      case Expression.StoreInt32(exp, offset, v) => visitExp(exp) ++ visitExp(v)
+      case Expression.Var(sym, tpe, loc) => Set.empty
       case Expression.Ref(sym, tpe, loc) => Set(sym)
       case Expression.Lambda(args, body, tpe, loc) => visitExp(body)
       case Expression.Hook(hook, tpe, loc) => Set(hook.sym)
@@ -117,6 +140,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.MkClosureRef(ref, freeVars, tpe, loc) => visitExp(ref)
       case Expression.ApplyRef(sym, args, tpe, loc) => visitExps(args) + sym
       case Expression.ApplyTail(sym, formals, actuals, tpe, loc) => visitExps(actuals) + sym
+      case Expression.ApplyHook(hook, args, tpe, loc) => visitExps(args)
       case Expression.Apply(exp, args, tpe, loc) => visitExps(args) ++ visitExp(exp)
       case Expression.Unary(op, exp, tpe, loc) => visitExp(exp)
       case Expression.Binary(op, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
@@ -129,7 +153,11 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Tuple(elms, tpe, loc) => visitExps(elms)
       case Expression.Existential(fparam, exp, loc) => visitExp(exp)
       case Expression.Universal(fparam, exp, loc) => visitExp(exp)
-      case _ => Set.empty
+      case Expression.NativeField(field, tpe, loc) => Set.empty
+      case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args)
+      case Expression.UserError(tpe, loc) => Set.empty
+      case Expression.MatchError(tpe, loc) => Set.empty
+      case Expression.SwitchError(tpe, loc) => Set.empty
     }
 
     /**
@@ -143,7 +171,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
             reachableFunctions.add(sym)
             queue.enqueue(defn)
           // If `sym` is not defined in `root`, leave this for error checking later.
-          case _ =>
+          case None =>
         }
       }
     }
@@ -174,9 +202,10 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     for (stratum <- root.strata) {
       for (constraint <- stratum.constraints) {
         reachableFunctions ++= (constraint.head match {
+          case SimplifiedAst.Predicate.Head.True(loc) => Set.empty
+          case SimplifiedAst.Predicate.Head.False(loc) => Set.empty
           case SimplifiedAst.Predicate.Head.Positive(sym, terms, loc) => visitHeadTerms(terms)
           case SimplifiedAst.Predicate.Head.Negative(sym, terms, loc) => visitHeadTerms(terms)
-          case _ => Set.empty
         })
 
         reachableFunctions ++= constraint.body.map {
@@ -206,7 +235,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     reachableFunctions.foreach {
       root.definitions.get(_) match {
         case Some(defn) => queue.enqueue(defn)
-        case _ =>
+        case None =>
       }
     }
 
