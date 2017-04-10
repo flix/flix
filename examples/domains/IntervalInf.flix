@@ -22,6 +22,7 @@ namespace Domain/IntervalInf {
                         case Bot
     }
 
+    // TODO: Insert norm everywhere?
     ///
     /// Returns the canonical representation of the given IntervalInf `e`.
     ///
@@ -102,29 +103,37 @@ namespace Domain/IntervalInf {
         case Top            => Top
     }
 
-//    ///
-//    /// Over-approximates integer `decrement`.
-//    ///
-//    #safe1(x -> x - 1ii)
-//    #strict1 #monotone1
-//    def dec(e: IntervalInf): IntervalInf = match e with {
-//        case Bot            => Bot
-//        case Range(b, e)    => norm(Range(b - 1ii, e - 1ii))
-//        case Top            => Top
-//    }
-//
-//    ///
-//    /// Over-approximates integer `addition`.
-//    ///
-//    #safe2((x, y) -> x + y)
-//    #strict2 #monotone2 #commutative
-//    def plus(e1: IntervalInf, e2: IntervalInf): IntervalInf = match (e1, e2) with {
-//        case (Bot, _)                       => Bot
-//        case (_, Bot)                       => Bot
-//        case (Range(b1, e1), Range(b2, e2)) => norm(Range(b1 + b2, e1 + e2))
-//        case _                              => Top
-//    }
-//
+    ///
+    /// Over-approximates integer `decrement`.
+    ///
+    #safe1(x -> x - 1ii)
+    #strict1 #monotone1
+    def dec(e: IntervalInf): IntervalInf = match e with {
+        case Bot            => Bot
+        case Range(b, e)    => norm(Range(b - 1ii, e - 1ii))
+        case Upper(e)       => Upper(e - 1ii)
+        case Lower(b)       => Lower(b - 1ii)
+        case Top            => Top
+    }
+
+    ///
+    /// Over-approximates integer `addition`.
+    ///
+    #safe2((x, y) -> x + y)
+    #strict2 #monotone2 #commutative
+    def plus(e1: IntervalInf, e2: IntervalInf): IntervalInf = match (e1, e2) with {
+        case (Bot, _)                       => Bot
+        case (_, Bot)                       => Bot
+        case (Range(b1, e1), Range(b2, e2)) => norm(Range(b1 + b2, e1 + e2))
+        case (Range(b1, e1), Upper(e2))     => Upper(e1 + e2)
+        case (Upper(e2), Range(b1, e1))     => Upper(e1 + e2)
+        case (Range(b1, e2), Lower(b2))     => Lower(b1 + b2)
+        case (Lower(b2), Range(b1, e2))     => Lower(b1 + b2)
+        case (Upper(e1), Upper(e2))         => Upper(e1 + e2)
+        case (Lower(b1), Lower(b2))         => Lower(b1 + b2)
+        case _                              => Top
+    }
+
 //    ///
 //    /// Over-approximates integer `subtraction`.
 //    ///
