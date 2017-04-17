@@ -148,8 +148,8 @@ namespace Domain/IntervalInf {
     ///
     /// Over-approximates integer `multiplication`.
     ///
-    //#safe2((x, y) -> x * y)
-    #strict2 /* #monotone2 */ /* slow? #commutative */
+    #safe2((x, y) -> x * y)
+    #strict2  #monotone2 /**/ /* slow? #commutative */
     def times(e1: IntervalInf, e2: IntervalInf): IntervalInf = match (e1, e2) with {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
@@ -221,7 +221,7 @@ namespace Domain/IntervalInf {
       * Over-approximates `less than or equal`.
       */
     #safeBelnap2((x, y) -> x <= y)
-    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2
+    //#Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2 // TODO
     def lessEqual(e1: IntervalInf, e2: IntervalInf): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
 
