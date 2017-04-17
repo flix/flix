@@ -144,22 +144,26 @@ namespace Domain/IntervalInf {
 //        case (Range(b1, e1), Range(b2, e2)) => norm(Range(b1 - e2, e1 - b2))
 //        case _                              => Top
 //    }
-//
-//    ///
-//    /// Over-approximates integer `multiplication`.
-//    ///
-//    #safe2((x, y) -> x * y)
-//    #strict2 /* slow? #monotone2 */ /* slow? #commutative */
-//    def times(e1: IntervalInf, e2: IntervalInf): IntervalInf = match (e1, e2) with {
-//        case (Bot, _)                       => Bot
-//        case (_, Bot)                       => Bot
-//        case (Range(b1, e1), Range(b2, e2)) =>
-//            let b = BigInt.min(BigInt.min(b1 * b2, b1 * e2), BigInt.min(e1 * b2, e1 * e2));
-//            let e = BigInt.max(BigInt.max(b1 * b2, b1 * e2), BigInt.max(e1 * b2, e1 * e2));
-//                norm(Range(b, e))
-//        case _                              => Top
-//    }
-//
+
+    ///
+    /// Over-approximates integer `multiplication`.
+    ///
+    //#safe2((x, y) -> x * y)
+    #strict2 /* #monotone2 */ /* slow? #commutative */
+    def times(e1: IntervalInf, e2: IntervalInf): IntervalInf = match (e1, e2) with {
+        case (Bot, _)                       => Bot
+        case (_, Bot)                       => Bot
+        case (Range(b1, e1), Range(b2, e2)) =>
+            let b = BigInt.min(BigInt.min(b1 * b2, b1 * e2), BigInt.min(e1 * b2, e1 * e2));
+            let e = BigInt.max(BigInt.max(b1 * b2, b1 * e2), BigInt.max(e1 * b2, e1 * e2));
+                norm(Range(b, e))
+        case (Range(b1, e1), Upper(e2))     => norm(Upper(BigInt.max(b1 * e2, e1 * e2)))
+        case (Upper(e1), Range(b2, e2))     => norm(Upper(BigInt.max(e1 * b2, e1 * e2)))
+        case (Range(b1, e1), Lower(b2))     => norm(Lower(BigInt.min(b1 * b2, e1 * b2)))
+        case (Lower(b1), Range(b2, e2))     => norm(Lower(BigInt.min(b1 * b2, b1 * e2)))
+        case _                              => Top
+    }
+
     /**
       * Over-approximates `equal`.
       */
