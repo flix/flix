@@ -19,11 +19,16 @@ namespace Domain/IntervalAlt {
     }
 
     ///
+    /// Returns the maximum width of an interval before we go to top.
+    ///
+    def maxWidth: BigInt = 10ii
+
+    ///
     /// Returns the canonical representation of the given IntervalAlt `e`.
     ///
     def norm(e: IntervalAlt): IntervalAlt = match e with {
         case Bot            => Bot
-        case Range(b, e)    => if (b <= e) (if (e - b <= 10ii) Range(b, e) else Top) else Bot
+        case Range(b, e)    => if (b <= e) (if (e - b <= maxWidth()) Range(b, e) else Top) else Bot
         case Top            => Top
     }
 
@@ -41,7 +46,7 @@ namespace Domain/IntervalAlt {
     ///
     /// Returns the least upper bound of `e1` and `e2`.
     ///
-    #upperBound #leastUpperBound #commutative #associative
+    #upperBound #leastUpperBound
     def lub(e1: IntervalAlt, e2: IntervalAlt): IntervalAlt = match (e1, e2) with {
         case (Bot, x)                       => x
         case (x, Bot)                       => x
@@ -52,7 +57,7 @@ namespace Domain/IntervalAlt {
     ///
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
-    #lowerBound #greatestLowerBound #commutative #associative
+    #lowerBound #greatestLowerBound
     def glb(e1: IntervalAlt, e2: IntervalAlt): IntervalAlt = match (e1, e2) with {
         case (Top, x)                       => x
         case (x, Top)                       => x
@@ -91,7 +96,7 @@ namespace Domain/IntervalAlt {
     /// Over-approximates integer `addition`.
     ///
     #safe2((x, y) -> x + y)
-    #strict2 #monotone2 #commutative
+    #strict2 #monotone2
     def plus(e1: IntervalAlt, e2: IntervalAlt): IntervalAlt = match (e1, e2) with {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
@@ -115,7 +120,7 @@ namespace Domain/IntervalAlt {
     /// Over-approximates integer `multiplication`.
     ///
     #safe2((x, y) -> x * y)
-    #strict2 /* slow? #monotone2 */ /* slow? #commutative */
+    #strict2 /* slow? #monotone2 */
     def times(e1: IntervalAlt, e2: IntervalAlt): IntervalAlt = match (e1, e2) with {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
@@ -146,14 +151,14 @@ namespace Domain/IntervalAlt {
       * Over-approximates `not equal`.
       */
     #safeBelnap2((x, y) -> x != y)
-    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2 #commutativeBelnap
+    // NB: Strictness and monotonicity follows from the properties of `not` and `eq`.
     def neq(e1: IntervalAlt, e2: IntervalAlt): Belnap.Belnap = Belnap.not(eq(e1, e2))
 
     /**
       * Over-approximates `less than`.
       */
-   #safeBelnap2((x, y) -> x < y)
-   #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2
+    #safeBelnap2((x, y) -> x < y)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2
     def less(e1: IntervalAlt, e2: IntervalAlt): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)                                  => Belnap/Belnap.Bot
         case (_, Bot)                                  => Belnap/Belnap.Bot
@@ -172,8 +177,8 @@ namespace Domain/IntervalAlt {
     /**
       * Over-approximates `less than or equal`.
       */
-   #safeBelnap2((x, y) -> x <= y)
-   #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2
+    #safeBelnap2((x, y) -> x <= y)
+    // NB: Strictness and monotonicity follows from the properties of `or` and `less`.
     def lessEqual(e1: IntervalAlt, e2: IntervalAlt): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
     let IntervalAlt<> = (Bot, Top, leq, lub, glb)
