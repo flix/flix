@@ -43,6 +43,8 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     */
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
 
+    return root.toSuccess
+
     /**
       * A set used to collect the definition symbols of reachable functions.
       */

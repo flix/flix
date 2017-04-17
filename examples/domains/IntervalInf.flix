@@ -160,28 +160,34 @@ namespace Domain/IntervalInf {
 //        case _                              => Top
 //    }
 //
-//    /**
-//      * Over-approximates `equal`.
-//      */
-//    #safeBelnap2((x, y) -> x == y)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2 #commutativeBelnap
-//    def eq(e1: IntervalInf, e2: IntervalInf): Belnap.Belnap = match (e1, e2) with {
-//        case (Bot, _)                                           => Belnap/Belnap.Bot
-//        case (_, Bot)                                           => Belnap/Belnap.Bot
-//        case (Range(b1, e1), Range(b2, e2))   => switch {
-//            case (b1 == e1) && ((e1 == b2) && (b2 == e2))       => Belnap/Belnap.True
-//            case (e1 < b2) || (e2 < b1)                         => Belnap/Belnap.False
-//            case true                                           => Belnap/Belnap.Top
-//        }
-//        case _                                                  => Belnap/Belnap.Top
-//    }
-//
-//    /**
-//      * Over-approximates `not equal`.
-//      */
-//    #safeBelnap2((x, y) -> x != y)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2 #commutativeBelnap
-//    def neq(e1: IntervalInf, e2: IntervalInf): Belnap.Belnap = Belnap.not(eq(e1, e2))
+    /**
+      * Over-approximates `equal`.
+      */
+    #safeBelnap2((x, y) -> x == y)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2 #commutativeBelnap
+    def eq(e1: IntervalInf, e2: IntervalInf): Belnap.Belnap = match (e1, e2) with {
+        case (Bot, _)                                           => Belnap/Belnap.Bot
+        case (_, Bot)                                           => Belnap/Belnap.Bot
+        case (Range(b1, e1), Range(b2, e2))   => switch {
+            case (b1 == e1) && ((e1 == b2) && (b2 == e2))       => Belnap/Belnap.True
+            case (e1 < b2) || (e2 < b1)                         => Belnap/Belnap.False
+            case true                                           => Belnap/Belnap.Top
+        }
+        case (Range(b1, e1), Upper(e2))                         => if (b1 > e2) Belnap/Belnap.False else Belnap/Belnap.Top
+        case (Upper(e1), Range(b2, e2))                         => if (b2 > e1) Belnap/Belnap.False else Belnap/Belnap.Top
+        case (Range(b1, e1), Lower(b2))                         => if (e1 < b2) Belnap/Belnap.False else Belnap/Belnap.Top
+        case (Lower(b1), Range(b2, e2))                         => if (e2 < b1) Belnap/Belnap.False else Belnap/Belnap.Top
+        case (Upper(e1), Lower(b2))                             => if (e1 < b2) Belnap/Belnap.False else Belnap/Belnap.Top
+        case (Lower(b1), Upper(e2))                             => if (e2 < b1) Belnap/Belnap.False else Belnap/Belnap.Top
+        case _                                                  => Belnap/Belnap.Top
+    }
+
+    /**
+      * Over-approximates `not equal`.
+      */
+    #safeBelnap2((x, y) -> x != y)
+    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2 #commutativeBelnap
+    def neq(e1: IntervalInf, e2: IntervalInf): Belnap.Belnap = Belnap.not(eq(e1, e2))
 //
 //    /**
 //      * Over-approximates `less than`.
