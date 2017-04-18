@@ -158,11 +158,11 @@ object TypedAst {
       def tpe: Type = Type.Bool
     }
 
+    case class NativeConstructor(constructor: Constructor[_], args: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
+
     case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class NativeMethod(method: Method, args: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
-
-    case class NativeNew(constructor: Constructor[_], args: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class UserError(tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 

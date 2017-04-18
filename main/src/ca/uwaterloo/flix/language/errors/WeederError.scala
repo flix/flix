@@ -301,7 +301,7 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal native field, method, or constructor name.
+    * An error raised to indicate an illegal native field or method name.
     *
     * @param loc the location of the name.
     */

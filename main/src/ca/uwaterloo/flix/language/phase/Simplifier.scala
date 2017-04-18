@@ -247,14 +247,14 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val p = SimplifiedAst.FormalParam(fparam.sym, fparam.tpe)
         val e = simplify(exp)
         SimplifiedAst.Expression.Universal(p, e, loc)
+      case TypedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
+        val es = args.map(e => simplify(e))
+        SimplifiedAst.Expression.NativeConstructor(constructor, es, tpe, loc)
       case TypedAst.Expression.NativeField(field, tpe, loc) =>
         SimplifiedAst.Expression.NativeField(field, tpe, loc)
       case TypedAst.Expression.NativeMethod(method, args, tpe, loc) =>
         val es = args.map(e => simplify(e))
         SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
-      case TypedAst.Expression.NativeNew(constructor, args, tpe, loc) =>
-        val es = args.map(e => simplify(e))
-        SimplifiedAst.Expression.NativeNew(constructor, es, tpe, loc)
       case TypedAst.Expression.UserError(tpe, loc) =>
         SimplifiedAst.Expression.UserError(tpe, loc)
     }
@@ -654,6 +654,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Existential(params, visit(exp), loc)
       case SimplifiedAst.Expression.Universal(params, exp, loc) =>
         SimplifiedAst.Expression.Universal(params, visit(exp), loc)
+      case SimplifiedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
+        val es = args map visit
+        SimplifiedAst.Expression.NativeConstructor(constructor, es, tpe, loc)
       case SimplifiedAst.Expression.NativeField(field, tpe, loc) =>
         SimplifiedAst.Expression.NativeField(field, tpe, loc)
       case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) =>

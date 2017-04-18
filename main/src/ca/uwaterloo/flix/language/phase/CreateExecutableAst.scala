@@ -239,13 +239,13 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.Expression.Universal(fparam, exp, loc) =>
         val p = ExecutableAst.FormalParam(fparam.sym, fparam.tpe)
         ExecutableAst.Expression.Universal(p, toExecutable(exp), loc)
+      case SimplifiedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
+        val es = args.map(e => toExecutable(e))
+        ExecutableAst.Expression.NativeConstructor(constructor, es, tpe, loc)
       case SimplifiedAst.Expression.NativeField(field, tpe, loc) => ExecutableAst.Expression.NativeField(field, tpe, loc)
       case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) =>
         val es = args.map(e => toExecutable(e))
         ExecutableAst.Expression.NativeMethod(method, es, tpe, loc)
-      case SimplifiedAst.Expression.NativeNew(constructor, args, tpe, loc) =>
-        val es = args.map(e => toExecutable(e))
-        ExecutableAst.Expression.NativeNew(constructor, es, tpe, loc)
       case SimplifiedAst.Expression.UserError(tpe, loc) => ExecutableAst.Expression.UserError(tpe, loc)
       case SimplifiedAst.Expression.MatchError(tpe, loc) => ExecutableAst.Expression.MatchError(tpe, loc)
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => ExecutableAst.Expression.SwitchError(tpe, loc)

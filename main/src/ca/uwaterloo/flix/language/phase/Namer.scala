@@ -444,6 +444,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         case e => NamedAst.Expression.Ascribe(e, Types.namer(tpe, tenv0), loc)
       }
 
+      case WeededAst.Expression.NativeConstructor(className, args, loc) =>
+        val arity = args.length
+        lookupNativeConstructor(className, arity, loc) match {
+          case Ok(constructor) => @@(args.map(e => namer(e, env0, tenv0))) map {
+            case es => NamedAst.Expression.NativeConstructor(constructor, es, Type.freshTypeVar(), loc)
+          }
+          case Err(e) => e.toFailure
+        }
+
       case WeededAst.Expression.NativeField(className, fieldName, loc) =>
         lookupNativeField(className, fieldName, loc) match {
           case Ok(field) => NamedAst.Expression.NativeField(field, Type.freshTypeVar(), loc).toSuccess
@@ -455,15 +464,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         lookupNativeMethod(className, methodName, arity, loc) match {
           case Ok(method) => @@(args.map(e => namer(e, env0, tenv0))) map {
             case es => NamedAst.Expression.NativeMethod(method, es, Type.freshTypeVar(), loc)
-          }
-          case Err(e) => e.toFailure
-        }
-
-      case WeededAst.Expression.NativeNew(className, args, loc) =>
-        val arity = args.length
-        lookupNativeConstructor(className, arity, loc) match {
-          case Ok(constructor) => @@(args.map(e => namer(e, env0, tenv0))) map {
-            case es => NamedAst.Expression.NativeNew(constructor, es, Type.freshTypeVar(), loc)
           }
           case Err(e) => e.toFailure
         }
@@ -508,7 +508,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.Ascribe(exp, tpe, loc) => freeVars(exp)
       case WeededAst.Expression.NativeField(className, fieldName, loc) => Nil
       case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
-      case WeededAst.Expression.NativeNew(className, args, loc) => args.flatMap(freeVars)
+      case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
       case WeededAst.Expression.UserError(loc) => Nil
     }
 
@@ -779,9 +779,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
 
     // match on the number of methods.
     constructors.size match {
-      case 0 => Err(???) // TODO
+      case 0 => Err(UndefinedNativeConstructor(className, arity, loc))
       case 1 => Ok(constructors.head)
-      case _ => Err(???) // TODO
+      case _ => Err(AmbiguousNativeConstructor(className, arity, loc))
     }
   } catch {
     case ex: ClassNotFoundException => Err(UndefinedNativeClass(className, loc))

@@ -214,7 +214,17 @@ object PrettyPrinter {
           vt.text("). ")
           visitExp(exp)
 
+        case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+          vt.text(constructor.toString)
+          vt.text("(")
+          for (e <- args) {
+            visitExp(e)
+            vt.text(", ")
+          }
+          vt.text(")")
+
         case Expression.NativeField(field, tpe, loc) => vt << field.toString
+
         case Expression.NativeMethod(method, args, tpe, loc) =>
           vt.text(method.toString)
           vt.text("(")

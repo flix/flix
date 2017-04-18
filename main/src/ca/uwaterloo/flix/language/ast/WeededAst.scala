@@ -124,11 +124,11 @@ object WeededAst {
 
     case class Ascribe(exp: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 
+    case class NativeConstructor(className: String, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+
     case class NativeField(className: String, fieldName: String, loc: SourceLocation) extends WeededAst.Expression
 
     case class NativeMethod(className: String, methodName: String, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
-
-    case class NativeNew(className: String, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class UserError(loc: SourceLocation) extends WeededAst.Expression
 

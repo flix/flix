@@ -474,11 +474,11 @@ object ExecutableAst {
       def tpe: Type = Type.Bool
     }
 
+    case class NativeConstructor(constructor: Constructor[_], args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
     case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class NativeMethod(method: Method, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
-
-    case class NativeNew(constructor: Constructor[_], args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class UserError(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 

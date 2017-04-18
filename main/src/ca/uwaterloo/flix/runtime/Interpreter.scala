@@ -126,6 +126,12 @@ object Interpreter {
       array
     case Expression.Existential(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
     case Expression.Universal(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
+
+    case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+      val values = evalArgs(args, root, env0)
+      val arguments = values.toArray
+      constructor.newInstance(arguments: _*).asInstanceOf[AnyRef]
+
     case Expression.NativeField(field, tpe, loc) =>
       val clazz = field.getDeclaringClass
       field.get(clazz)
@@ -141,13 +147,10 @@ object Interpreter {
         method.invoke(thisObj, arguments: _*)
       }
 
-    case Expression.NativeNew(constructor, args, tpe, loc) =>
-      val values = evalArgs(args, root, env0)
-      val arguments = values.toArray
-      constructor.newInstance(arguments: _*).asInstanceOf[AnyRef]
-
     case Expression.UserError(_, loc) => throw UserException("User exception.", loc)
+
     case Expression.MatchError(_, loc) => throw MatchException("Non-exhaustive match expression.", loc)
+
     case Expression.SwitchError(_, loc) => throw SwitchException("Non-exhaustive switch expression.", loc)
   }
 

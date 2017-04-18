@@ -573,6 +573,8 @@ object Codegen {
     case Expression.Universal(params, exp, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$expr' at ${loc.source.format}.")
 
+    case Expression.NativeConstructor(constructor, args, tpe, loc) => ??? // TODO
+
     case Expression.NativeField(field, tpe, loc) => ??? // TODO
 
     case Expression.NativeMethod(method, args, tpe, loc) => ??? // TODO

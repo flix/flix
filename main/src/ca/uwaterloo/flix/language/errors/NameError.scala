@@ -74,6 +74,24 @@ object NameError {
   }
 
   /**
+    * An error raised to indicate that an ambiguous constructor was not found.
+    *
+    * @param className the class name.
+    * @param arity     the expected arity.
+    * @param loc       the location of the class name.
+    */
+  case class AmbiguousNativeConstructor(className: String, arity: Int, loc: SourceLocation) extends NameError {
+    val source: SourceInput = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Ambiguous constructor for class '" << Cyan(className) << "' with expected arity " << arity << "." << NewLine
+      vt << NewLine
+      vt << Code(loc, "ambiguous constructor.") << NewLine
+    }
+  }
+
+  /**
     * An error raised to indicate that an ambiguous method name was not found.
     *
     * @param className the class name.
@@ -106,6 +124,24 @@ object NameError {
       vt << ">> Undefined class '" << Red(name) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "undefined class.") << NewLine
+    }
+  }
+
+  /**
+    * An error raised to indicate that the constructor was not found.
+    *
+    * @param className the class name.
+    * @param arity     the expected arity.
+    * @param loc       the location of the method name.
+    */
+  case class UndefinedNativeConstructor(className: String, arity: Int, loc: SourceLocation) extends NameError {
+    val source: SourceInput = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined constructor for class '" << Cyan(className) << "' with expected arity " << arity << "." << NewLine
+      vt << NewLine
+      vt << Code(loc, "undefined constructor.") << NewLine
     }
   }
 
