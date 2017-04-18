@@ -34,10 +34,15 @@ object Tailrec extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * Identifies tail recursive calls in the given AST `root`.
     */
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
+    val b = System.nanoTime()
+
     val defns = root.definitions.map {
       case (sym, defn) => sym -> tailrec(defn)
     }
-    root.copy(definitions = defns).toSuccess
+
+    val e = System.nanoTime() - b
+
+    root.copy(definitions = defns, time = root.time.copy(tailrec = e)).toSuccess
   }
 
   /**

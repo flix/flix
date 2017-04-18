@@ -41,6 +41,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
   def run(program: WeededAst.Program)(implicit flix: Flix): Validation[NamedAst.Program, NameError] = {
     implicit val _ = flix.genSym
 
+    val b = System.nanoTime()
+
     // make an empty program to fold over.
     val prog0 = NamedAst.Program(
       enums = Map.empty,
@@ -59,8 +61,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     val declarations = program.roots.flatMap(_.decls)
 
     // fold over the top-level declarations.
-    Validation.fold(declarations, prog0) {
+    val result = Validation.fold(declarations, prog0) {
       case (pacc, decl) => Declarations.namer(decl, Name.RootNS, pacc)
+    }
+
+    // compute elapsed time.
+    val e = System.nanoTime() - b
+
+    result map {
+      // update elapsed time.
+      case p => p.copy(time = p.time.copy(namer = e))
     }
   }
 

@@ -39,6 +39,8 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Generates documentation for the given program `p`.
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = {
+    val b = System.nanoTime()
+
     // Check whether to generate documentation.
     if (flix.options.documentor) {
       // Collect the definitions.
@@ -119,7 +121,9 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       }
     }
 
-    root.toSuccess
+    val e = System.nanoTime() - b
+
+    root.copy(time = root.time.copy(documentor = e)).toSuccess
   }
 
   /**
