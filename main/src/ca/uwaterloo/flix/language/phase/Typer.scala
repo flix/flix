@@ -1174,6 +1174,8 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
         * Infers the type of the given `terms` and checks them against the types `ts`.
         */
       def typecheck(terms: List[NamedAst.Expression], ts: List[Type], loc: SourceLocation, ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
+        assert(terms.length == ts.length, "Mismatched predicate arity.")
+
         for (
           actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns0, program)));
           unifiedTypes <- Unification.unifyM(ts, actualTypes, loc)
@@ -1186,6 +1188,8 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
         * Infers the type of the given `terms` and checks them against the types `ts`.
         */
       def typecheck(terms: List[NamedAst.Pattern], ts: List[Type], loc: SourceLocation, ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
+        assert(terms.length == ts.length, "Mismatched predicate arity.")
+
         for (
           actualTypes <- seqM(terms.map(t => Patterns.infer(t, ns0, program)));
           unifiedTypes <- Unification.unifyM(ts, actualTypes, loc)
