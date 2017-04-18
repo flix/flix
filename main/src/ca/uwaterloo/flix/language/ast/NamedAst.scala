@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import java.lang.reflect.{Field, Method}
+import java.lang.reflect.{Constructor, Field, Method}
 
 import ca.uwaterloo.flix.language.ast
 
@@ -142,6 +142,8 @@ object NamedAst {
     case class NativeField(field: Field, tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class NativeMethod(method: Method, args: List[NamedAst.Expression], tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class NativeNew(method: Constructor[_], args: List[NamedAst.Expression], tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class UserError(tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 

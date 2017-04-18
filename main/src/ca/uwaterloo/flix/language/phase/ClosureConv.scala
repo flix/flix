@@ -157,6 +157,7 @@ object ClosureConv {
       SimplifiedAst.Expression.Universal(params, convert(e), loc)
     case SimplifiedAst.Expression.NativeField(field, tpe, loc) => exp
     case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) => exp
+    case SimplifiedAst.Expression.NativeNew(constructor, args, tpe, loc) => exp
     case SimplifiedAst.Expression.UserError(tpe, loc) => exp
     case SimplifiedAst.Expression.MatchError(tpe, loc) => exp
     case SimplifiedAst.Expression.SwitchError(tpe, loc) => exp

@@ -683,6 +683,19 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case es => WeededAst.Expression.NativeMethod(className, methodName, es, mkSL(sp1, sp2)).toSuccess
           }
 
+        case ParsedAst.Expression.NativeNew(sp1, fqn, args, sp2) =>
+          /*
+           * Check for `IllegalUnsafeExpression`.
+           */
+          if (!unsafe) {
+            return WeederError.IllegalUnsafeExpression(mkSL(sp1, sp2)).toFailure
+          }
+
+          val className = fqn.mkString(".")
+          @@(args.map(e => weed(e))) flatMap {
+            case es => WeededAst.Expression.NativeNew(className, es, mkSL(sp1, sp2)).toSuccess
+          }
+
         case ParsedAst.Expression.UserError(sp1, sp2) =>
           WeededAst.Expression.UserError(mkSL(sp1, sp2)).toSuccess
       }
@@ -1096,6 +1109,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Unsafe(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeField(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.NativeNew(sp1, _, _, _) => sp1
     case ParsedAst.Expression.UserError(sp1, _) => sp1
   }
 

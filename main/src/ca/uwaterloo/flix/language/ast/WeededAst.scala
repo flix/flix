@@ -128,6 +128,8 @@ object WeededAst {
 
     case class NativeMethod(className: String, methodName: String, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
+    case class NativeNew(className: String, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+
     case class UserError(loc: SourceLocation) extends WeededAst.Expression
 
   }

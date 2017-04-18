@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import java.lang.reflect.{Field, Method}
+import java.lang.reflect.{Constructor, Field, Method}
 
 sealed trait SimplifiedAst
 
@@ -427,6 +427,8 @@ object SimplifiedAst {
     case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class NativeMethod(method: Method, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class NativeNew(constructor: Constructor[_], args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class UserError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 

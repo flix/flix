@@ -627,6 +627,16 @@ object ParsedAst {
     case class NativeMethod(sp1: SourcePosition, fqn: Seq[String], args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Native New Expression.
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param fqn  the fully-qualified name of the native constructor.
+      * @param args the arguments to the constructor.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class NativeNew(sp1: SourcePosition, fqn: Seq[String], args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * User Error Expression (an expression that immediately aborts execution).
       *
       * @param sp1 the position of the first character in the expression.

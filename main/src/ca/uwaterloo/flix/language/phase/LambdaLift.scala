@@ -174,6 +174,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeMethod(method, args, tpe, loc) =>
         val es = args.map(e => visit(e))
         Expression.NativeMethod(method, es, tpe, loc)
+      case Expression.NativeNew(constructor, args, tpe, loc) =>
+        val es = args.map(e => visit(e))
+        Expression.NativeNew(constructor, es, tpe, loc)
       case Expression.UserError(tpe, loc) => e
       case Expression.MatchError(tpe, loc) => e
       case Expression.SwitchError(tpe, loc) => e

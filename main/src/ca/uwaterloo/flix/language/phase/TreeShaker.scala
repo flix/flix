@@ -156,6 +156,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Universal(fparam, exp, loc) => visitExp(exp)
       case Expression.NativeField(field, tpe, loc) => Set.empty
       case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args)
+      case Expression.NativeNew(constructor, args, tpe, loc) => visitExps(args)
       case Expression.UserError(tpe, loc) => Set.empty
       case Expression.MatchError(tpe, loc) => Set.empty
       case Expression.SwitchError(tpe, loc) => Set.empty
