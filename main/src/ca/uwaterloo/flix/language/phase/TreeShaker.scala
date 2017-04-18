@@ -33,7 +33,8 @@ import scala.collection.mutable
   * (a) Appears in the global namespaces, takes zero arguments, and is not marked as synthetic.
   * (b) Appears in a fact or a rule as a filter/transfer function.
   * (c) Appears in a lattice declaration.
-  * (d) Appears in a function which itself is reachable.
+  * (d) Appears in a property declaration.
+  * (e) Appears in a function which itself is reachable.
   */
 
 object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
@@ -42,8 +43,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * Performs tree shaking on the given AST `root`.
     */
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
-
-    return root.toSuccess
 
     /**
       * A set used to collect the definition symbols of reachable functions.
@@ -232,7 +231,16 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /*
      * Find reachable functions that:
      *
-     * (d) Appear in a function which itself is reachable.
+     * (d) Appear in a property declaration.
+     */
+    reachableFunctions ++= root.properties.map {
+      case SimplifiedAst.Property(law, defn, exp) => visitExp(exp) + law + defn
+    }.fold(Set())(_++_)
+
+    /*
+     * Find reachable functions that:
+     *
+     * (e) Appear in a function which itself is reachable.
      */
     reachableFunctions.foreach {
       root.definitions.get(_) match {
