@@ -155,6 +155,7 @@ object ClosureConv {
       SimplifiedAst.Expression.Existential(params, convert(e), loc)
     case SimplifiedAst.Expression.Universal(params, e, loc) =>
       SimplifiedAst.Expression.Universal(params, convert(e), loc)
+    case SimplifiedAst.Expression.NativeConstructor(constructor, args, tpe, loc) => exp
     case SimplifiedAst.Expression.NativeField(field, tpe, loc) => exp
     case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) => exp
     case SimplifiedAst.Expression.UserError(tpe, loc) => exp
@@ -220,6 +221,7 @@ object ClosureConv {
       freeVariables(exp).filterNot { v => v._1 == fparam.sym }
     case SimplifiedAst.Expression.Universal(fparam, exp, loc) =>
       freeVariables(exp).filterNot { v => v._1 == fparam.sym }
+    case SimplifiedAst.Expression.NativeConstructor(constructor, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
     case SimplifiedAst.Expression.NativeField(field, tpe, loc) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
     case SimplifiedAst.Expression.UserError(tpe, loc) => mutable.LinkedHashSet.empty
@@ -321,6 +323,9 @@ object ClosureConv {
         val fs = replace(fparam, subst)
         val e = visit(exp)
         Expression.Universal(fs, e, loc)
+      case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+        val es = args map visit
+        Expression.NativeConstructor(constructor, es, tpe, loc)
       case Expression.NativeField(field, tpe, loc) => e
       case Expression.NativeMethod(method, args, tpe, loc) =>
         val es = args map visit

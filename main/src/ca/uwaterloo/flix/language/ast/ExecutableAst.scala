@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import java.lang.reflect.{Field, Method}
+import java.lang.reflect.{Constructor, Field, Method}
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import ca.uwaterloo.flix.runtime.InvocationTarget
@@ -473,6 +473,8 @@ object ExecutableAst {
     case class Universal(fparam: ExecutableAst.FormalParam, exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
       def tpe: Type = Type.Bool
     }
+
+    case class NativeConstructor(constructor: Constructor[_], args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 

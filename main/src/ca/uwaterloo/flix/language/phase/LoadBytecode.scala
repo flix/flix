@@ -213,6 +213,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
         ???
       case Expression.Universal(params, exp, loc) =>
         ???
+      case Expression.NativeConstructor(constructor, args, tpe, loc) => args.flatMap(visit).toSet
       case Expression.NativeField(field, tpe, loc) => Set.empty
       case Expression.NativeMethod(method, args, tpe, loc) => args.flatMap(visit).toSet
       case Expression.UserError(tpe, loc) => Set.empty

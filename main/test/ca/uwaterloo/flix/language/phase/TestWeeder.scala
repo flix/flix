@@ -266,7 +266,19 @@ class TestWeeder extends FunSuite with TestUtils {
   }
 
   test("IllegalUnsafeExpression.01") {
-    val input = "def f: Int = native field java.lang.Math.PI"
+    val input = "def f: Int = native new java.lang.x.y.z(1, 2, 3)"
+    val result = new Flix().addStr(input).compile()
+    expectError[WeederError.IllegalUnsafeExpression](result)
+  }
+
+  test("IllegalUnsafeExpression.02") {
+    val input = "def f: Int = native field java.lang.x.y.z"
+    val result = new Flix().addStr(input).compile()
+    expectError[WeederError.IllegalUnsafeExpression](result)
+  }
+
+  test("IllegalUnsafeExpression.03") {
+    val input = "def f: Int = native method java.lang.x.y.z(1, 2, 3)"
     val result = new Flix().addStr(input).compile()
     expectError[WeederError.IllegalUnsafeExpression](result)
   }

@@ -608,6 +608,16 @@ object ParsedAst {
     case class Unsafe(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Native Constructor Expression.
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param fqn  the fully-qualified name of the native class.
+      * @param args the arguments to the constructor.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class NativeConstructor(sp1: SourcePosition, fqn: Seq[String], args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Native Field Expression.
       *
       * @param sp1 the position of the first character in the expression.

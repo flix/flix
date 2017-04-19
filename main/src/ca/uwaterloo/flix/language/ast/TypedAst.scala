@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import java.lang.reflect.{Field, Method}
+import java.lang.reflect.{Constructor, Field, Method}
 
 sealed trait TypedAst
 
@@ -157,6 +157,8 @@ object TypedAst {
     case class Universal(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = Type.Bool
     }
+
+    case class NativeConstructor(constructor: Constructor[_], args: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends TypedAst.Expression
 

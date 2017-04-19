@@ -738,6 +738,15 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
           }
 
         /*
+         * Native Constructor expression.
+         */
+        case NamedAst.Expression.NativeConstructor(constructor, actuals, tvar, loc) =>
+          // TODO: Check types.
+          for (
+            inferredArgumentTypes <- seqM(actuals.map(visitExp))
+          ) yield tvar
+
+        /*
          * Native Field expression.
          */
         case NamedAst.Expression.NativeField(field, tvar, loc) =>
@@ -918,6 +927,13 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
         case NamedAst.Expression.Ascribe(exp, tpe, loc) =>
           // simply reassemble the nested expression.
           visitExp(exp, subst0)
+
+        /*
+         * Native Constructor expression.
+         */
+        case NamedAst.Expression.NativeConstructor(constructor, actuals, tpe, loc) =>
+          val es = actuals.map(e => reassemble(e, ns0, program, subst0))
+          TypedAst.Expression.NativeConstructor(constructor, es, subst0(tpe), loc)
 
         /*
          * Native Field expression.

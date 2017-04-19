@@ -380,6 +380,18 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.UndefinedNativeClass](result)
   }
 
+  test("UndefinedNativeConstructor.01") {
+    val input = "def f: Int = unsafe native new java.lang.String(1, 2, 3, 4, 5)"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.UndefinedNativeConstructor](result)
+  }
+
+  test("UndefinedNativeConstructor.02") {
+    val input = "def f: Int = unsafe native new java.lang.String(1, 2, 3, 4, 5, 6, 7, 8, 9)"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.UndefinedNativeConstructor](result)
+  }
+
   test("UndefinedNativeField.01") {
     val input = "def f: Int = unsafe native field java.lang.Math.PIE"
     val result = new Flix().addStr(input).compile()
@@ -402,6 +414,18 @@ class TestNamer extends FunSuite with TestUtils {
     val input = "def f: Int = unsafe native method java.lang.Math.bbb(1, 2, 3)"
     val result = new Flix().addStr(input).compile()
     expectError[NameError.UndefinedNativeMethod](result)
+  }
+
+  test("AmbiguousNativeConstructor.01") {
+    val input = "def f: Int = unsafe native new java.lang.String(42)"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.AmbiguousNativeConstructor](result)
+  }
+
+  test("AmbiguousNativeConstructor.02") {
+    val input = "def f: Int = unsafe native new java.lang.String(42, 84)"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.AmbiguousNativeConstructor](result)
   }
 
   test("AmbiguousNativeMethod.01") {
