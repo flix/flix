@@ -124,7 +124,7 @@ package object ast {
   }
 
   object Time {
-    val Default: Time = Time(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    val Default: Time = Time(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
   }
 
   /**
@@ -132,13 +132,17 @@ package object ast {
     */
   case class Time(parser: Long,
                   weeder: Long,
-                  resolver: Long,
+                  namer: Long,
                   typer: Long,
+                  documentor: Long,
+                  stratifier: Long,
                   monomorph: Long,
+                  simplifier: Long,
                   propertyGen: Long,
                   verifier: Long,
                   lambdaLift: Long,
-                  simplifier: Long,
+                  tailrec: Long,
+                  treeshaker: Long,
                   varNumbering: Long,
                   codeGen: Long,
                   solver: Long)

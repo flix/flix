@@ -190,9 +190,9 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
             queries += 1
             assertUnsatisfiable(p, and(pc), qua)
           case SymVal.AtomicVar(id, _) =>
-            // Case 3.3: The property holds iff the atomic variable is never `false`.
+            // Case 3.3: The property *does not* hold iff the atomic variable `id` is false and the path condition is satisfiable.
             queries += 1
-            assertUnsatisfiable(p, SmtExpr.Not(and(pc)), qua)
+            assertUnsatisfiable(p, SmtExpr.LogicalAnd(SmtExpr.Not(SmtExpr.Var(id, Type.Bool)), and(pc)), qua)
           case _ => throw InternalCompilerException(s"Unexpected value: '$v'.")
         }
       }

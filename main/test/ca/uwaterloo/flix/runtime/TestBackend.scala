@@ -143,6 +143,13 @@ class TestBackend extends FunSuite {
       this
     }
 
+    def addReachableRoot(fqn: String): Tester = {
+      interpretedFlix.addReachableRoot(fqn)
+      compiledFlix.addReachableRoot(fqn)
+      flix.addReachableRoot(fqn)
+      this
+    }
+
     def run(): Tester = {
       interpreted = interpretedFlix.solve().get
       compiled = compiledFlix.solve().get
@@ -165,7 +172,7 @@ class TestBackend extends FunSuite {
     }
 
     // By default, solve the Flix program immediately.
-    // But in some cases we want to defer solving, so we can add hooks to native functions.
+    // But in some cases we want to defer solving, so we can add initially reachable function symbols or hooks to native functions.
     if (solve) run()
   }
 
@@ -701,7 +708,7 @@ class TestBackend extends FunSuite {
         |  def f: Str = "foo"
         |}
       """.stripMargin
-    val t = new Tester(input)
+    val t = new Tester(input, solve = false).addReachableRoot("Foo/Bar.f").run()
     t.runTest(Value.mkStr("foo"), "Foo/Bar.f")
   }
 
@@ -712,7 +719,7 @@ class TestBackend extends FunSuite {
         |  def g: Int = f()
         |}
       """.stripMargin
-    val t = new Tester(input)
+    val t = new Tester(input, solve = false).addReachableRoot("Foo.g").run()
     t.runTest(Value.mkInt32(5), "Foo.g")
   }
 
@@ -724,7 +731,7 @@ class TestBackend extends FunSuite {
         |  def f: Bool = y()
         |}
       """.stripMargin
-    val t = new Tester(input)
+    val t = new Tester(input, solve = false).addReachableRoot("Foo.f").run()
     t.runTest(Value.False, "Foo.f")
   }
 
@@ -737,7 +744,7 @@ class TestBackend extends FunSuite {
         |  def x: Str = Foo.x()
         |}
       """.stripMargin
-    val t = new Tester(input)
+    val t = new Tester(input, solve = false).addReachableRoot("Bar.x").run()
     t.runTest(Value.mkStr("hello"), "Bar.x")
   }
 
@@ -766,7 +773,11 @@ class TestBackend extends FunSuite {
         |}
         |def e: Int = -1
       """.stripMargin
-    val t = new Tester(input)
+    val t = new Tester(input, solve = false)
+      .addReachableRoot("A/B.a")
+      .addReachableRoot("A.b")
+      .addReachableRoot("A/B.c")
+      .addReachableRoot("A/B/C.d").run()
     t.runTest(Value.False, "A/B.a")
     t.runTest(Value.True, "A.b")
     t.runTest(Value.mkInt32(0), "A/B.c")
@@ -794,7 +805,7 @@ class TestBackend extends FunSuite {
         |  def g: Bool = A/B.f()
         |}
       """.stripMargin
-    val t = new Tester(input)
+    val t = new Tester(input, solve = false).addReachableRoot("A.g").run()
     t.runTest(Value.False, "A.g")
   }
 
@@ -812,7 +823,7 @@ class TestBackend extends FunSuite {
       """namespace A { def f(x: Int): Int = x }
         |namespace A { def g: Int = f(3) }
       """.stripMargin
-    val t = new Tester(input)
+    val t = new Tester(input, solve = false).addReachableRoot("A.g").run()
     t.runTest(Value.mkInt32(3), "A.g")
   }
 
@@ -831,7 +842,7 @@ class TestBackend extends FunSuite {
         |namespace B { def g(x: Int32): Int32 = x - 4i32 }
         |namespace C { def h: Int32 = A.f(5i32) + B.g(0i32) }
       """.stripMargin
-    val t = new Tester(input)
+    val t = new Tester(input, solve = false).addReachableRoot("C.h").run()
     t.runTest(Value.mkInt32(0), "C.h")
   }
 
@@ -992,7 +1003,7 @@ class TestBackend extends FunSuite {
   test("Expression.Hook - Hook.Safe.01") {
     import HookSafeHelpers._
     val input = "namespace A { def g: Bool = A/B.f(0) }"
-    val t = new Tester(input, solve = false)
+    val t = new Tester(input, solve = false).addReachableRoot("A.g")
 
     val flix = t.flix
     val x = flix.mkFalse
@@ -1018,7 +1029,7 @@ class TestBackend extends FunSuite {
   test("Expression.Hook - Hook.Safe.03") {
     import HookSafeHelpers._
     val input = "namespace A { def g: Int = f(3) }"
-    val t = new Tester(input, solve = false)
+    val t = new Tester(input, solve = false).addReachableRoot("A.g")
 
     val flix = t.flix
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
@@ -1044,7 +1055,7 @@ class TestBackend extends FunSuite {
   test("Expression.Hook - Hook.Safe.05") {
     import HookSafeHelpers._
     val input = "namespace C { def h: Int32 = A.f(5i32) + B.g(0i32) }"
-    val t = new Tester(input, solve = false)
+    val t = new Tester(input, solve = false).addReachableRoot("C.h")
 
     val flix = t.flix
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
@@ -1293,7 +1304,7 @@ class TestBackend extends FunSuite {
   test("Expression.Hook - Hook.Unsafe.01") {
     import HookUnsafeHelpers._
     val input = "namespace A { def g: Bool = A/B.f(0) }"
-    val t = new Tester(input, solve = false)
+    val t = new Tester(input, solve = false).addReachableRoot("A.g")
 
     val flix = t.flix
     val x = false
@@ -1319,7 +1330,7 @@ class TestBackend extends FunSuite {
   test("Expression.Hook - Hook.Unsafe.03") {
     import HookUnsafeHelpers._
     val input = "namespace A { def g: Int = f(3) }"
-    val t = new Tester(input, solve = false)
+    val t = new Tester(input, solve = false).addReachableRoot("A.g")
 
     val flix = t.flix
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
@@ -1345,7 +1356,7 @@ class TestBackend extends FunSuite {
   test("Expression.Hook - Hook.Unsafe.05") {
     import HookUnsafeHelpers._
     val input = "namespace C { def h: Int32 = A.f(5i32) + B.g(0i32) }"
-    val t = new Tester(input, solve = false)
+    val t = new Tester(input, solve = false).addReachableRoot("C.h")
 
     val flix = t.flix
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkInt32Type)
