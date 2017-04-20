@@ -23,30 +23,47 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
-// TODO: Ensure that Program is called prog0.
-
 // TODO: DOC
-object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] { // TODO: Change types
+object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
-  // TODO: DOC
+  /**
+    * Performs name resolution on the given program `prog0`.
+    */
   def run(prog0: NamedAst.Program)(implicit flix: Flix): Validation[ResolvedAst.Program, ResolutionError] = {
 
+    val b = System.nanoTime()
 
-    val definitionsVal = prog0.definitions.flatMap {
-      case (ns, defs) => defs.map {
-        case (name, defn) => Declarations.resolve(defn, ns, prog0) // TODO: Need ns, name?
+    val definitionsVal = prog0.definitions.map {
+      case (ns, defs) => Declarations.resolveAll(defs, ns, prog0) map {
+        case ds => ns -> ds
+      }
+    }
+
+    val enumsVal = prog0.enums.map {
+      case (ns, enums) => Declarations.resolveAllEnum(enums, ns, prog0) map {
+        case es => ns -> es
+      }
+    }
+
+    val latticesVal = prog0.lattices.map {
+      case (tpe0, lattice0) =>
+        for {
+          tpe <- Types.resolve(tpe0, lattice0.ns, prog0)
+          lattice <- Declarations.resolve(lattice0, lattice0.ns, prog0)
+        } yield (tpe, lattice)
+    }
+
+    val indexesVal = prog0.indexes.map {
+      case (ns, indexes) => Declarations.resolveAllIndexes(indexes, ns, prog0) map {
+        case idxs => ns -> idxs
       }
     }
 
     val tablesVal = prog0.tables.map {
-      case (ns, tables) => seqM(tables map {
-        case (name, table) => Tables.resolve(table, ns, prog0) map {
-          case t => name -> t
-        }
-      })
+      case (ns, tables) => Declarations.resolveAllTables(tables, ns, prog0) map {
+        case tbs => ns -> tbs
+      }
     }
-
-    // TODO: Fix types...
 
     val constraintsVal = prog0.constraints.map {
       case (ns, constraints) => Constraints.resolve(constraints, ns, prog0) map {
@@ -60,16 +77,20 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] { // TODO: 
       }
     }
 
-    val time = prog0.time // TODO
+    // TODO: Add time
+    val e = System.nanoTime() - b
 
     for {
+      definitions <- seqM(definitionsVal)
+      enums <- seqM(enumsVal)
+      lattices <- seqM(latticesVal)
+      indexes <- seqM(indexesVal)
+      tables <- seqM(tablesVal)
       constraints <- seqM(constraintsVal)
       properties <- seqM(propertiesVal)
     } yield {
-      ResolvedAst.Program(???, ???, ???, ???, ???, constraints.toMap, prog0.hooks, properties.toMap, prog0.reachable, time)
+      ResolvedAst.Program(definitions.toMap, enums.toMap, lattices.toMap, indexes.toMap, tables.toMap, constraints.toMap, prog0.hooks, properties.toMap, prog0.reachable, prog0.time)
     }
-
-    ???
   }
 
   object Constraints {
@@ -95,6 +116,48 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] { // TODO: 
   }
 
   object Declarations {
+
+    // TODO: Refactor
+    def resolveAll(m0: Map[String, NamedAst.Declaration.Definition], ns0: Name.NName, prog0: NamedAst.Program): Validation[Map[String, ResolvedAst.Declaration.Definition], ResolutionError] = {
+      val results = m0.map {
+        case (name, defn) => resolve(defn, ns0, prog0) map {
+          case d => name -> d
+        }
+      }
+      seqM(results).map(_.toMap)
+    }
+
+
+    // TODO: Refactor
+    def resolveAllEnum(m0: Map[String, NamedAst.Declaration.Enum], ns0: Name.NName, prog0: NamedAst.Program): Validation[Map[String, ResolvedAst.Declaration.Enum], ResolutionError] = {
+      val results = m0.map {
+        case (name, defn) => resolve(defn, ns0, prog0) map {
+          case d => name -> d
+        }
+      }
+      seqM(results).map(_.toMap)
+    }
+
+
+    // TODO: Refactor
+    def resolveAllIndexes(m0: Map[String, NamedAst.Declaration.Index], ns0: Name.NName, prog0: NamedAst.Program): Validation[Map[String, ResolvedAst.Declaration.Index], ResolutionError] = {
+      val results = m0.map {
+        case (name, index) => resolve(index, ns0, prog0) map {
+          case d => name -> d
+        }
+      }
+      seqM(results).map(_.toMap)
+    }
+
+    // TODO: Refactor
+    def resolveAllTables(m0: Map[String, NamedAst.Table], ns0: Name.NName, prog0: NamedAst.Program): Validation[Map[String, ResolvedAst.Table], ResolutionError] = {
+      val results = m0.map {
+        case (name, table) => Tables.resolve(table, ns0, prog0) map {
+          case d => name -> d
+        }
+      }
+      seqM(results).map(_.toMap)
+    }
 
     /**
       * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
@@ -367,15 +430,10 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] { // TODO: 
 
         case NamedAst.Pattern.Str(lit, loc) => ResolvedAst.Pattern.Str(lit, loc).toSuccess
 
-        case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) => ???
-//          Disambiguation.lookupEnumByTag(enum, tag, ns0, p) match {
-//            case Ok(decl) =>
-//              // TODO: Use decl
-//              for {
-//                p <- visit(pat)
-//              } yield ResolvedAst.Pattern.Tag(enum, tag, p, tvar, loc)
-//            case Err(e) => ???
-//          }
+        case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
+          for {
+            p <- visit(pat)
+          } yield ResolvedAst.Pattern.Tag(enum, tag, p, tvar, loc)
 
         case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
           for {
