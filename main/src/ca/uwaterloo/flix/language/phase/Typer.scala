@@ -1081,13 +1081,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     def infer(head: ResolvedAst.Predicate.Head, ns0: Name.NName, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = head match {
       case ResolvedAst.Predicate.Head.True(loc) => Unification.liftM(Nil)
       case ResolvedAst.Predicate.Head.False(loc) => Unification.liftM(Nil)
-      case ResolvedAst.Predicate.Head.Positive(qname, terms, loc) =>
-        getTableSignature(qname, ns0, program) match {
+      case ResolvedAst.Predicate.Head.Positive(sym, terms, loc) =>
+        getTableSignature(sym, ns0, program) match {
           case Ok(declaredTypes) => Terms.Head.typecheck(terms, declaredTypes, loc, ns0, program)
           case Err(e) => failM(e)
         }
-      case ResolvedAst.Predicate.Head.Negative(qname, terms, loc) =>
-        getTableSignature(qname, ns0, program) match {
+      case ResolvedAst.Predicate.Head.Negative(sym, terms, loc) =>
+        getTableSignature(sym, ns0, program) match {
           case Ok(declaredTypes) => Terms.Head.typecheck(terms, declaredTypes, loc, ns0, program)
           case Err(e) => failM(e)
         }
@@ -1097,13 +1097,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       * Infers the type of the given body predicate.
       */
     def infer(body0: ResolvedAst.Predicate.Body, ns0: Name.NName, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = body0 match {
-      case ResolvedAst.Predicate.Body.Positive(qname, terms, loc) =>
-        getTableSignature(qname, ns0, program) match {
+      case ResolvedAst.Predicate.Body.Positive(sym, terms, loc) =>
+        getTableSignature(sym, ns0, program) match {
           case Ok(declaredTypes) => Terms.Body.typecheck(terms, declaredTypes, loc, ns0, program)
           case Err(e) => failM(e)
         }
-      case ResolvedAst.Predicate.Body.Negative(qname, terms, loc) =>
-        getTableSignature(qname, ns0, program) match {
+      case ResolvedAst.Predicate.Body.Negative(sym, terms, loc) =>
+        getTableSignature(sym, ns0, program) match {
           case Ok(declaredTypes) => Terms.Body.typecheck(terms, declaredTypes, loc, ns0, program)
           case Err(e) => failM(e)
         }
@@ -1142,12 +1142,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     def reassemble(head0: ResolvedAst.Predicate.Head, ns0: Name.NName, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
       case ResolvedAst.Predicate.Head.True(loc) => TypedAst.Predicate.Head.True(loc)
       case ResolvedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
-      case ResolvedAst.Predicate.Head.Positive(qname, terms, loc) =>
-        val sym = Symbols.getTableSym(qname, ns0, program)
+      case ResolvedAst.Predicate.Head.Positive(sym, terms, loc) =>
         val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
         TypedAst.Predicate.Head.Positive(sym, ts, loc)
-      case ResolvedAst.Predicate.Head.Negative(qname, terms, loc) =>
-        val sym = Symbols.getTableSym(qname, ns0, program)
+      case ResolvedAst.Predicate.Head.Negative(sym, terms, loc) =>
         val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
         TypedAst.Predicate.Head.Negative(sym, ts, loc)
     }
@@ -1156,12 +1154,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       * Applies the given substitution `subst0` to the given body predicate `body0` in the given namespace `ns0`.
       */
     def reassemble(body0: ResolvedAst.Predicate.Body, ns0: Name.NName, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
-      case ResolvedAst.Predicate.Body.Positive(qname, terms, loc) =>
-        val sym = Symbols.getTableSym(qname, ns0, program)
+      case ResolvedAst.Predicate.Body.Positive(sym, terms, loc) =>
         val ts = terms.map(t => Patterns.reassemble(t, ns0, program, subst0))
         TypedAst.Predicate.Body.Positive(sym, ts, loc)
-      case ResolvedAst.Predicate.Body.Negative(qname, terms, loc) =>
-        val sym = Symbols.getTableSym(qname, ns0, program)
+      case ResolvedAst.Predicate.Body.Negative(sym, terms, loc) =>
         val ts = terms.map(t => Patterns.reassemble(t, ns0, program, subst0))
         TypedAst.Predicate.Body.Negative(sym, ts, loc)
       case ResolvedAst.Predicate.Body.Filter(qname, terms, loc) =>
@@ -1211,35 +1207,26 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         ) yield unifiedTypes
       }
     }
-
-
-  }
-
-  object Symbols {
-
-    /**
-      * Returns the table symbol of the given fully-qualified name.
-      */
-    def getTableSym(qname: Name.QName, ns0: Name.NName, program: ResolvedAst.Program): Symbol.TableSym = Disambiguation.lookupTable(qname, ns0, program) match {
-      case Ok(ResolvedAst.Table.Relation(_, sym, _, _)) => sym
-      case Ok(ResolvedAst.Table.Lattice(_, sym, _, _, _)) => sym
-      case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
-    }
-
   }
 
   /**
     * Returns the declared types of the terms of the given fully-qualified table name `qname` in the namespace `ns0`.
     */
-  def getTableSignature(qname: Name.QName, ns0: Name.NName, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
-    val declaredTypes = Disambiguation.lookupTable(qname, ns0, program) map {
-      case ResolvedAst.Table.Relation(doc, sym, attr, _) => attr.map(_.tpe)
-      case ResolvedAst.Table.Lattice(doc, sym, keys, value, _) => keys.map(_.tpe) ::: value.tpe :: Nil
+  def getTableSignature(sym: Symbol.TableSym, ns0: Name.NName, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
+    val declaredTypes = program.tables(getNamespaceHack(sym))(sym.name) match {
+      case ResolvedAst.Table.Relation(_, _, attr, _) => attr.map(_.tpe)
+      case ResolvedAst.Table.Lattice(_, _, keys, value, _) => keys.map(_.tpe) ::: value.tpe :: Nil
     }
 
-    declaredTypes flatMap {
-      case tpes => Disambiguation.resolve(tpes, ns0, program)
+    Disambiguation.resolve(declaredTypes, ns0, program)
+  }
+
+  // TODO: Remove
+  private def getNamespaceHack(sym: Symbol.TableSym): Name.NName = {
+    val idents = sym.namespace.map {
+      case s => Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
     }
+    Name.NName(SourcePosition.Unknown, idents, SourcePosition.Unknown)
   }
 
   /**

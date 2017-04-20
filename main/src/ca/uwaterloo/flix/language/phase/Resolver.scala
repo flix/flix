@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Name, NamedAst, ResolvedAst}
+import ca.uwaterloo.flix.language.ast.{Name, NamedAst, ResolvedAst, Symbol}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation
@@ -457,15 +457,17 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
         case NamedAst.Predicate.Head.False(loc) => ResolvedAst.Predicate.Head.False(loc).toSuccess
 
-        case NamedAst.Predicate.Head.Positive(name, terms, loc) =>
+        case NamedAst.Predicate.Head.Positive(qname, terms, loc) =>
           for {
+            sym <- getTableSym(qname, ns0, prog0)
             ts <- seqM(terms.map(t => Expressions.resolve(t, ns0, prog0)))
-          } yield ResolvedAst.Predicate.Head.Positive(name, ts, loc)
+          } yield ResolvedAst.Predicate.Head.Positive(sym, ts, loc)
 
-        case NamedAst.Predicate.Head.Negative(name, terms, loc) =>
+        case NamedAst.Predicate.Head.Negative(qname, terms, loc) =>
           for {
+            sym <- getTableSym(qname, ns0, prog0)
             ts <- seqM(terms.map(t => Expressions.resolve(t, ns0, prog0)))
-          } yield ResolvedAst.Predicate.Head.Negative(name, ts, loc)
+          } yield ResolvedAst.Predicate.Head.Negative(sym, ts, loc)
       }
     }
 
@@ -474,15 +476,17 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
       def resolve(b0: NamedAst.Predicate.Body, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
-        case NamedAst.Predicate.Body.Positive(name, terms, loc) =>
+        case NamedAst.Predicate.Body.Positive(qname, terms, loc) =>
           for {
+            sym <- getTableSym(qname, ns0, prog0)
             ts <- seqM(terms.map(t => Patterns.resolve(t, ns0, prog0)))
-          } yield ResolvedAst.Predicate.Body.Positive(name, ts, loc)
+          } yield ResolvedAst.Predicate.Body.Positive(sym, ts, loc)
 
-        case NamedAst.Predicate.Body.Negative(name, terms, loc) =>
+        case NamedAst.Predicate.Body.Negative(qname, terms, loc) =>
           for {
+            sym <- getTableSym(qname, ns0, prog0)
             ts <- seqM(terms.map(t => Patterns.resolve(t, ns0, prog0)))
-          } yield ResolvedAst.Predicate.Body.Negative(name, ts, loc)
+          } yield ResolvedAst.Predicate.Body.Negative(sym, ts, loc)
 
         case NamedAst.Predicate.Body.Filter(name, terms, loc) =>
           for {
@@ -588,5 +592,14 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     }
 
   }
+
+  /**
+    * Returns the symbol of the table with the given qualified name `qname` in the given namespace `ns0`.
+    */
+  private def getTableSym(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Validation[Symbol.TableSym, ResolutionError] =
+    Disambiguation2.lookupTable(qname, ns0, prog0) match {
+      case Ok(table) => table.sym.toSuccess
+      case Err(e) => ??? // TODO
+    }
 
 }

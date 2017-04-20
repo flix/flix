@@ -26,6 +26,7 @@ trait ResolvedAst
 
 object ResolvedAst {
 
+  // TODO: These should be direct maps
   case class Program(definitions: Map[Name.NName, Map[String, ResolvedAst.Declaration.Definition]],
                      enums: Map[Name.NName, Map[String, ResolvedAst.Declaration.Enum]],
                      lattices: Map[ResolvedAst.Type, ResolvedAst.Declaration.BoundedLattice],
@@ -201,9 +202,9 @@ object ResolvedAst {
 
       case class False(loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
-      case class Positive(name: Name.QName, terms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Predicate.Head
+      case class Positive(sym: Symbol.TableSym, terms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
-      case class Negative(name: Name.QName, terms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Predicate.Head
+      case class Negative(sym: Symbol.TableSym, terms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
     }
 
@@ -211,9 +212,9 @@ object ResolvedAst {
 
     object Body {
 
-      case class Positive(name: Name.QName, terms: List[ResolvedAst.Pattern], loc: SourceLocation) extends ResolvedAst.Predicate.Body
+      case class Positive(sym: Symbol.TableSym, terms: List[ResolvedAst.Pattern], loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
-      case class Negative(name: Name.QName, terms: List[ResolvedAst.Pattern], loc: SourceLocation) extends ResolvedAst.Predicate.Body
+      case class Negative(sym: Symbol.TableSym, terms: List[ResolvedAst.Pattern], loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
       case class Filter(name: Name.QName, terms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
