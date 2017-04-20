@@ -45,7 +45,7 @@ object ResolvedAst {
 
   object Declaration {
 
-    case class Definition(doc: Option[Ast.Documentation], ann: Ast.Annotations, sym: Symbol.DefnSym, tparams: List[ResolvedAst.TypeParam], params: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: ResolvedAst.Scheme, loc: SourceLocation) extends ResolvedAst.Declaration
+    case class Definition(doc: Option[Ast.Documentation], ann: Ast.Annotations, sym: Symbol.DefnSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: ResolvedAst.Scheme, loc: SourceLocation) extends ResolvedAst.Declaration
 
     case class Signature(doc: Option[Ast.Documentation], ident: Name.Ident, params: List[ResolvedAst.FormalParam], tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Declaration
 

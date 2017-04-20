@@ -26,10 +26,10 @@ import ca.uwaterloo.flix.util.Validation._
 // TODO: Ensure that Program is called prog0.
 
 // TODO: DOC
-object Resolver extends Phase[NamedAst.Program, NamedAst.Program] { // TODO: Change types
+object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] { // TODO: Change types
 
   // TODO: DOC
-  def run(prog0: NamedAst.Program)(implicit flix: Flix): Validation[NamedAst.Program, ResolutionError] = {
+  def run(prog0: NamedAst.Program)(implicit flix: Flix): Validation[ResolvedAst.Program, ResolutionError] = {
 
 
     val definitionsVal = prog0.definitions.flatMap {
@@ -367,15 +367,15 @@ object Resolver extends Phase[NamedAst.Program, NamedAst.Program] { // TODO: Cha
 
         case NamedAst.Pattern.Str(lit, loc) => ResolvedAst.Pattern.Str(lit, loc).toSuccess
 
-        case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
-          Disambiguation.lookupEnumByTag(enum, tag, ns0, p) match {
-            case Ok(decl) =>
-              // TODO: Use decl
-              for {
-                p <- visit(pat)
-              } yield ResolvedAst.Pattern.Tag(enum, tag, p, tvar, loc)
-            case Err(e) => ???
-          }
+        case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) => ???
+//          Disambiguation.lookupEnumByTag(enum, tag, ns0, p) match {
+//            case Ok(decl) =>
+//              // TODO: Use decl
+//              for {
+//                p <- visit(pat)
+//              } yield ResolvedAst.Pattern.Tag(enum, tag, p, tvar, loc)
+//            case Err(e) => ???
+//          }
 
         case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
           for {
