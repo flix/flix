@@ -152,7 +152,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
         }
 
         // TODO: Some duplication
-        val argumentTypes = Disambiguation.resolve(defn0.params.map(_.tpe), ns0, program) match {
+        val argumentTypes = Disambiguation.resolve(defn0.fparams.map(_.tpe), ns0, program) match {
           case Ok(tpes) => tpes
           case Err(e) => return Err(e)
         }
@@ -165,7 +165,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
         // TODO: See if this can be rewritten nicer
         result match {
           case InferMonad(run) =>
-            val subst = getSubstFromParams(defn0.params, ns0, program).get
+            val subst = getSubstFromParams(defn0.fparams, ns0, program).get
             run(subst) match {
               case Ok((subst0, resultType)) =>
                 val exp = Expressions.reassemble(defn0.exp, ns0, program, subst0)
@@ -176,7 +176,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
                 }
 
                 // Translate the named formals into typed formals.
-                val formals = defn0.params.map {
+                val formals = defn0.fparams.map {
                   case NamedAst.FormalParam(sym, tpe, loc) =>
                     TypedAst.FormalParam(sym, subst0(sym.tvar), sym.loc)
                 }
@@ -1110,7 +1110,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
       case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
         Disambiguation.lookupRef(qname, ns0, program) match {
           case Ok(RefTarget.Defn(ns, defn)) =>
-            val expectedTypes = Disambiguation.resolve(defn.params.map(_.tpe), ns, program) match {
+            val expectedTypes = Disambiguation.resolve(defn.fparams.map(_.tpe), ns, program) match {
               case Ok(tpes) => tpes
               case Err(e) => return failM(e)
             }

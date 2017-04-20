@@ -23,32 +23,50 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
+// TODO: Ensure that Program is called prog0.
+
 // TODO: DOC
 object Resolver extends Phase[NamedAst.Program, NamedAst.Program] { // TODO: Change types
 
   // TODO: DOC
-  def run(p: NamedAst.Program)(implicit flix: Flix): Validation[NamedAst.Program, ResolutionError] = {
+  def run(prog0: NamedAst.Program)(implicit flix: Flix): Validation[NamedAst.Program, ResolutionError] = {
 
 
-    val definitionsVal = p.definitions.flatMap {
+    val definitionsVal = prog0.definitions.flatMap {
       case (ns, defs) => defs.map {
-        case (name, defn) => Declarations.resolve(defn, ns, p) // TODO: Need ns, name?
+        case (name, defn) => Declarations.resolve(defn, ns, prog0) // TODO: Need ns, name?
       }
     }
 
-    val propertiesVal = p.properties.map {
-      case (ns, properties) => Properties.resolve(properties, ns, p) map {
+    val tablesVal = prog0.tables.map {
+      case (ns, tables) => seqM(tables map {
+        case (name, table) => Tables.resolve(table, ns, prog0) map {
+          case t => name -> t
+        }
+      })
+    }
+
+    // TODO: Fix types...
+
+    val constraintsVal = prog0.constraints.map {
+      case (ns, constraints) => Constraints.resolve(constraints, ns, prog0) map {
+        case cs => ns -> cs
+      }
+    }
+
+    val propertiesVal = prog0.properties.map {
+      case (ns, properties) => Properties.resolve(properties, ns, prog0) map {
         case ps => ns -> ps
       }
     }
 
-    val time = p.time // TODO
+    val time = prog0.time // TODO
 
     for {
-      definitions <- seqM(definitionsVal)
+      constraints <- seqM(constraintsVal)
       properties <- seqM(propertiesVal)
     } yield {
-      ResolvedAst.Program(???, ???, ???, ???, ???, ???, p.hooks, properties.toMap, p.reachable, time)
+      ResolvedAst.Program(???, ???, ???, ???, ???, constraints.toMap, prog0.hooks, properties.toMap, prog0.reachable, time)
     }
 
     ???
@@ -68,20 +86,100 @@ object Resolver extends Phase[NamedAst.Program, NamedAst.Program] { // TODO: Cha
       */
     def resolve(c0: NamedAst.Constraint, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Constraint, ResolutionError] = {
       for {
+        ps <- seqM(c0.cparams.map(p => Params.resolve(p, ns0, prog0)))
         h <- Predicates.Head.resolve(c0.head, ns0, prog0)
         bs <- seqM(c0.body.map(b => Predicates.Body.resolve(b, ns0, prog0)))
-      } yield ResolvedAst.Constraint(???, h, bs, c0.loc)
+      } yield ResolvedAst.Constraint(ps, h, bs, c0.loc)
     }
 
   }
 
   object Declarations {
 
-    def resolve(decl: NamedAst.Declaration.Definition, ns0: Name.NName, p: NamedAst.Program): Validation[ResolvedAst.Declaration.Definition, ResolutionError] = {
-      Expressions.resolve(decl.exp, ns0, p)
-      ???
+    /**
+      * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
+      */
+    def resolve(d0: NamedAst.Declaration.Definition, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Declaration.Definition, ResolutionError] = {
+      val schemeVal = for {
+        base <- Types.resolve(d0.sc.base, ns0, prog0)
+      } yield ResolvedAst.Scheme(d0.sc.quantifiers, base)
+
+      for {
+        tparams <- seqM(d0.tparams.map(tparam => Params.resolve(tparam, ns0, prog0)))
+        fparams <- seqM(d0.fparams.map(fparam => Params.resolve(fparam, ns0, prog0)))
+        e <- Expressions.resolve(d0.exp, ns0, prog0)
+        sc <- schemeVal
+      } yield ResolvedAst.Declaration.Definition(d0.doc, d0.ann, d0.sym, tparams, fparams, e, sc, d0.loc)
+
     }
 
+    /**
+      * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
+      */
+    def resolve(e0: NamedAst.Declaration.Enum, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Declaration.Enum, ResolutionError] = {
+      val casesVal = e0.cases.map {
+        case (name, NamedAst.Case(enum, tag, tpe)) =>
+          for {
+            t <- Types.resolve(tpe, ns0, prog0)
+          } yield name -> ResolvedAst.Case(enum, tag, t)
+      }
+
+      for {
+        tparams <- seqM(e0.tparams.map(p => Params.resolve(p, ns0, prog0)))
+        cases <- seqM(casesVal)
+        tpe <- Types.resolve(e0.tpe, ns0, prog0)
+      } yield ResolvedAst.Declaration.Enum(e0.doc, e0.sym, tparams, cases.toMap, tpe, e0.loc)
+    }
+
+    /**
+      * Performs name resolution on the given index `i0` in the given namespace `ns0`.
+      */
+    def resolve(i0: NamedAst.Declaration.Index, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Declaration.Index, ResolutionError] = {
+      ResolvedAst.Declaration.Index(i0.qname, i0.indexes, i0.loc).toSuccess
+    }
+
+    /**
+      * Performs name resolution on the given lattice `l0` in the given namespace `ns0`.
+      */
+    def resolve(l0: NamedAst.Declaration.BoundedLattice, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Declaration.BoundedLattice, ResolutionError] = {
+      for {
+        tpe <- Types.resolve(l0.tpe, ns0, prog0)
+        bot <- Expressions.resolve(l0.bot, ns0, prog0)
+        top <- Expressions.resolve(l0.top, ns0, prog0)
+        leq <- Expressions.resolve(l0.leq, ns0, prog0)
+        lub <- Expressions.resolve(l0.lub, ns0, prog0)
+        glb <- Expressions.resolve(l0.glb, ns0, prog0)
+      } yield ResolvedAst.Declaration.BoundedLattice(tpe, bot, top, leq, lub, glb, ns0, l0.loc)
+    }
+
+  }
+
+  object Tables {
+
+    /**
+      * Performs name resolution on the given table `t0` in the given namespace `ns0`.
+      */
+    def resolve(t0: NamedAst.Table, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Table, ResolutionError] = t0 match {
+      case NamedAst.Table.Relation(doc, sym, attr, loc) =>
+        for {
+          as <- seqM(attr.map(a => resolve(a, ns0, prog0)))
+        } yield ResolvedAst.Table.Relation(doc, sym, as, loc)
+
+      case NamedAst.Table.Lattice(doc, sym, keys, value, loc) =>
+        for {
+          ks <- seqM(keys.map(k => resolve(k, ns0, prog0)))
+          v <- resolve(value, ns0, prog0)
+        } yield ResolvedAst.Table.Lattice(doc, sym, ks, v, loc)
+    }
+
+    /**
+      * Performs name resolution on the given attribute `a0` in the given namespace `ns0`.
+      */
+    private def resolve(a0: NamedAst.Attribute, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Attribute, ResolutionError] = {
+      for {
+        tpe <- Types.resolve(a0.tpe, ns0, prog0)
+      } yield ResolvedAst.Attribute(a0.ident, tpe, a0.loc)
+    }
 
   }
 
@@ -406,6 +504,15 @@ object Resolver extends Phase[NamedAst.Program, NamedAst.Program] { // TODO: Cha
   object Params {
 
     /**
+      * Performs name resolution on the given constraint parameter `cparam0` in the given namespace `ns0`.
+      */
+    def resolve(cparam0: NamedAst.ConstraintParam, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.ConstraintParam, ResolutionError] = cparam0 match {
+      // TODO: Resolve type.
+      case NamedAst.ConstraintParam.HeadParam(sym, tpe, loc) => ResolvedAst.ConstraintParam.HeadParam(sym, tpe, loc).toSuccess
+      case NamedAst.ConstraintParam.RuleParam(sym, tpe, loc) => ResolvedAst.ConstraintParam.RuleParam(sym, tpe, loc).toSuccess
+    }
+
+    /**
       * Performs name resolution on the given formal parameter `fparam0` in the given namespace `ns0`.
       */
     def resolve(fparam0: NamedAst.FormalParam, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.FormalParam, ResolutionError] = {
@@ -414,6 +521,13 @@ object Resolver extends Phase[NamedAst.Program, NamedAst.Program] { // TODO: Cha
       } yield ResolvedAst.FormalParam(fparam0.sym, t, fparam0.loc)
     }
 
+    /**
+      * Performs name resolution on the given type parameter `tparam0` in the given namespace `ns0`.
+      */
+    def resolve(tparam0: NamedAst.TypeParam, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.TypeParam, ResolutionError] = {
+      // TODO: Resolve type.
+      ResolvedAst.TypeParam(tparam0.name, tparam0.tpe, tparam0.loc).toSuccess
+    }
 
   }
 
