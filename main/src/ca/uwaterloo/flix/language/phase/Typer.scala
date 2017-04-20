@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
-import ca.uwaterloo.flix.language.ast.NamedAst.Program
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
 import ca.uwaterloo.flix.language.phase.Disambiguation.RefTarget
@@ -65,7 +64,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
       *
       * Returns [[Err]] if a constraint fails to type check.
       */
-    def typecheck(program: Program)(implicit genSym: GenSym): Result[List[TypedAst.Constraint], TypeError] = {
+    def typecheck(program: NamedAst.Program)(implicit genSym: GenSym): Result[List[TypedAst.Constraint], TypeError] = {
 
       /**
         * Performs type inference on the given constraint `c` in the give namespace `ns`.
@@ -119,7 +118,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
         *
         * Returns [[Err]] if a definition fails to type check.
         */
-      def typecheck(program: Program)(implicit genSym: GenSym): Result[Map[Symbol.DefnSym, TypedAst.Declaration.Definition], TypeError] = {
+      def typecheck(program: NamedAst.Program)(implicit genSym: GenSym): Result[Map[Symbol.DefnSym, TypedAst.Declaration.Definition], TypeError] = {
         /**
           * Performs type inference and reassembly on the given definition `defn` in the given namespace `ns`.
           */
@@ -195,7 +194,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
       /**
         * Performs type inference and reassembly on all enums in the given program.
         */
-      def typecheck(program: Program)(implicit genSym: GenSym): Result[Map[Symbol.EnumSym, TypedAst.Declaration.Enum], TypeError] = {
+      def typecheck(program: NamedAst.Program)(implicit genSym: GenSym): Result[Map[Symbol.EnumSym, TypedAst.Declaration.Enum], TypeError] = {
         /**
           * Performs type resolution on the given enum and its cases.
           */
@@ -233,7 +232,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
         *
         * Returns [[Err]] if an index refers to a non-existent table or a non-existent attribute in a table.
         */
-      def typecheck(program: Program): Result[Map[Symbol.TableSym, TypedAst.Declaration.Index], TypeError] = {
+      def typecheck(program: NamedAst.Program): Result[Map[Symbol.TableSym, TypedAst.Declaration.Index], TypeError] = {
 
         /**
           * Checks that the referenced table exists and that every attribute used by the index exists.
@@ -277,7 +276,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
         *
         * Returns [[Err]] if a type error occurs.
         */
-      def typecheck(program: Program)(implicit genSym: GenSym): Result[Map[Type, TypedAst.Declaration.BoundedLattice], TypeError] = {
+      def typecheck(program: NamedAst.Program)(implicit genSym: GenSym): Result[Map[Type, TypedAst.Declaration.BoundedLattice], TypeError] = {
 
         /**
           * Performs type inference and reassembly on the given `lattice`.
@@ -336,7 +335,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
         *
         * Returns [[Err]] if type resolution fails.
         */
-      def typecheck(program: Program): Result[Map[Symbol.TableSym, TypedAst.Table], TypeError] = {
+      def typecheck(program: NamedAst.Program): Result[Map[Symbol.TableSym, TypedAst.Table], TypeError] = {
 
         /**
           * Performs type resolution on the given `table` declared in the namespace `ns`.
@@ -383,7 +382,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
       /**
         * Infers the types of all the properties in the given `program`.
         */
-      def typecheck(program: Program)(implicit genSym: GenSym): Result[List[TypedAst.Property], TypeError] = {
+      def typecheck(program: NamedAst.Program)(implicit genSym: GenSym): Result[List[TypedAst.Property], TypeError] = {
 
         /**
           * Infers the type of the given property `p0` in the namespace `ns0`.
@@ -775,7 +774,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
     /**
       * Applies the given substitution `subst0` to the given expression `exp0` in the given namespace `ns0`.
       */
-    def reassemble(exp0: NamedAst.Expression, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Expression = {
+    def reassemble(exp0: NamedAst.Expression, ns0: Name.NName, program: NamedAst.Program, subst0: Substitution): TypedAst.Expression = {
       /**
         * Applies the given substitution `subst0` to the given expression `exp0`.
         */
@@ -974,7 +973,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
     /**
       * Infers the type of the given pattern `pat0` in the namespace `ns0`.
       */
-    def infer(pat0: NamedAst.Pattern, ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[Type] = {
+    def infer(pat0: NamedAst.Pattern, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = {
       /**
         * Local pattern visitor.
         */
@@ -1035,14 +1034,14 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
     /**
       * Infers the type of the given patterns `pats0` in the namespace `ns0`.
       */
-    def inferAll(pats0: List[NamedAst.Pattern], ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
+    def inferAll(pats0: List[NamedAst.Pattern], ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
       seqM(pats0.map(p => infer(p, ns0, program)))
     }
 
     /**
       * Applies the substitution `subst0` to the given pattern `pat0` in the namespace `ns0`.
       */
-    def reassemble(pat0: NamedAst.Pattern, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Pattern = {
+    def reassemble(pat0: NamedAst.Pattern, ns0: Name.NName, program: NamedAst.Program, subst0: Substitution): TypedAst.Pattern = {
       /**
         * Local pattern visitor.
         */
@@ -1079,7 +1078,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
     /**
       * Infers the type of the given head predicate.
       */
-    def infer(head: NamedAst.Predicate.Head, ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = head match {
+    def infer(head: NamedAst.Predicate.Head, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = head match {
       case NamedAst.Predicate.Head.True(loc) => Unification.liftM(Nil)
       case NamedAst.Predicate.Head.False(loc) => Unification.liftM(Nil)
       case NamedAst.Predicate.Head.Positive(qname, terms, loc) =>
@@ -1097,7 +1096,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
     /**
       * Infers the type of the given body predicate.
       */
-    def infer(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = body0 match {
+    def infer(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = body0 match {
       case NamedAst.Predicate.Body.Positive(qname, terms, loc) =>
         getTableSignature(qname, ns0, program) match {
           case Ok(declaredTypes) => Terms.Body.typecheck(terms, declaredTypes, loc, ns0, program)
@@ -1140,7 +1139,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
     /**
       * Applies the given substitution `subst0` to the given head predicate `head0` in the given namespace `ns0`.
       */
-    def reassemble(head0: NamedAst.Predicate.Head, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
+    def reassemble(head0: NamedAst.Predicate.Head, ns0: Name.NName, program: NamedAst.Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
       case NamedAst.Predicate.Head.True(loc) => TypedAst.Predicate.Head.True(loc)
       case NamedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
       case NamedAst.Predicate.Head.Positive(qname, terms, loc) =>
@@ -1156,7 +1155,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
     /**
       * Applies the given substitution `subst0` to the given body predicate `body0` in the given namespace `ns0`.
       */
-    def reassemble(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
+    def reassemble(body0: NamedAst.Predicate.Body, ns0: Name.NName, program: NamedAst.Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
       case NamedAst.Predicate.Body.Positive(qname, terms, loc) =>
         val sym = Symbols.getTableSym(qname, ns0, program)
         val ts = terms.map(t => Patterns.reassemble(t, ns0, program, subst0))
@@ -1189,7 +1188,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
       /**
         * Infers the type of the given `terms` and checks them against the types `ts`.
         */
-      def typecheck(terms: List[NamedAst.Expression], ts: List[Type], loc: SourceLocation, ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
+      def typecheck(terms: List[NamedAst.Expression], ts: List[Type], loc: SourceLocation, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
         assert(terms.length == ts.length, "Mismatched predicate arity.")
 
         for (
@@ -1203,7 +1202,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
       /**
         * Infers the type of the given `terms` and checks them against the types `ts`.
         */
-      def typecheck(terms: List[NamedAst.Pattern], ts: List[Type], loc: SourceLocation, ns0: Name.NName, program: Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
+      def typecheck(terms: List[NamedAst.Pattern], ts: List[Type], loc: SourceLocation, ns0: Name.NName, program: NamedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
         assert(terms.length == ts.length, "Mismatched predicate arity.")
 
         for (
@@ -1221,7 +1220,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
     /**
       * Returns the table symbol of the given fully-qualified name.
       */
-    def getTableSym(qname: Name.QName, ns0: Name.NName, program: Program): Symbol.TableSym = Disambiguation.lookupTable(qname, ns0, program) match {
+    def getTableSym(qname: Name.QName, ns0: Name.NName, program: NamedAst.Program): Symbol.TableSym = Disambiguation.lookupTable(qname, ns0, program) match {
       case Ok(NamedAst.Table.Relation(_, sym, _, _)) => sym
       case Ok(NamedAst.Table.Lattice(_, sym, _, _, _)) => sym
       case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
@@ -1232,7 +1231,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
   /**
     * Returns the declared types of the terms of the given fully-qualified table name `qname` in the namespace `ns0`.
     */
-  def getTableSignature(qname: Name.QName, ns0: Name.NName, program: Program): Result[List[Type], TypeError] = {
+  def getTableSignature(qname: Name.QName, ns0: Name.NName, program: NamedAst.Program): Result[List[Type], TypeError] = {
     val declaredTypes = Disambiguation.lookupTable(qname, ns0, program) map {
       case NamedAst.Table.Relation(doc, sym, attr, _) => attr.map(_.tpe)
       case NamedAst.Table.Lattice(doc, sym, keys, value, _) => keys.map(_.tpe) ::: value.tpe :: Nil
@@ -1252,7 +1251,7 @@ object Typer extends Phase[NamedAst.Program, TypedAst.Root] {
     * @param ns0     the current namespace.
     * @param program the program.
     */
-  def getSubstFromParams(params: List[NamedAst.FormalParam], ns0: Name.NName, program: Program): Result[Unification.Substitution, TypeError] = {
+  def getSubstFromParams(params: List[NamedAst.FormalParam], ns0: Name.NName, program: NamedAst.Program): Result[Unification.Substitution, TypeError] = {
     // Perform type resolution on each parameter.
     Disambiguation.resolve(params.map(_.tpe), ns0, program) map {
       case declaredTypes =>

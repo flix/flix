@@ -344,11 +344,12 @@ object Resolver extends Phase[NamedAst.Program, NamedAst.Program] { // TODO: Cha
   object Params {
 
     /**
-      *
+      * Performs name resolution on the given formal parameter `fparam0` in the given namespace `ns0`.
       */
     def resolve(fparam0: NamedAst.FormalParam, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.FormalParam, ResolutionError] = {
-
-      ???
+      for {
+        t <- Types.resolve(fparam0.tpe, ns0, prog0)
+      } yield ResolvedAst.FormalParam(fparam0.sym, t, fparam0.loc)
     }
 
 
