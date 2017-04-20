@@ -56,6 +56,21 @@ object Resolver extends Phase[NamedAst.Program, NamedAst.Program] { // TODO: Cha
 
   object Constraints {
 
+    /**
+      * Performs name resolution on the given `constraints` in the given namespace `ns0`.
+      */
+    def resolve(constraints: List[NamedAst.Constraint], ns0: Name.NName, prog0: NamedAst.Program): Validation[List[ResolvedAst.Constraint], ResolutionError] = {
+      seqM(constraints.map(c => resolve(c, ns0, prog0)))
+    }
+
+    /**
+      * Performs name resolution on the given constraint `c0` in the given namespace `ns0`.
+      */
+    def resolve(c0: NamedAst.Constraint, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Constraint, ResolutionError] = {
+      // TODO
+      ???
+    }
+
   }
 
   object Declarations {
