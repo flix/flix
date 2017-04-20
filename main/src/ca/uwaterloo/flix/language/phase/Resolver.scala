@@ -67,8 +67,10 @@ object Resolver extends Phase[NamedAst.Program, NamedAst.Program] { // TODO: Cha
       * Performs name resolution on the given constraint `c0` in the given namespace `ns0`.
       */
     def resolve(c0: NamedAst.Constraint, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Constraint, ResolutionError] = {
-      // TODO
-      ???
+      for {
+        h <- Predicates.Head.resolve(c0.head, ns0, prog0)
+        bs <- seqM(c0.body.map(b => Predicates.Body.resolve(b, ns0, prog0)))
+      } yield ResolvedAst.Constraint(???, h, bs, c0.loc)
     }
 
   }
@@ -290,6 +292,55 @@ object Resolver extends Phase[NamedAst.Program, NamedAst.Program] { // TODO: Cha
 
   object Predicates {
 
+    object Head {
+      /**
+        * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
+        */
+      def resolve(h0: NamedAst.Predicate.Head, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
+        case NamedAst.Predicate.Head.True(loc) => ResolvedAst.Predicate.Head.True(loc).toSuccess
+
+        case NamedAst.Predicate.Head.False(loc) => ResolvedAst.Predicate.Head.False(loc).toSuccess
+
+        case NamedAst.Predicate.Head.Positive(name, terms, loc) =>
+          for {
+            ts <- seqM(terms.map(t => Expressions.resolve(t, ns0, prog0)))
+          } yield ResolvedAst.Predicate.Head.Positive(name, ts, loc)
+
+        case NamedAst.Predicate.Head.Negative(name, terms, loc) =>
+          for {
+            ts <- seqM(terms.map(t => Expressions.resolve(t, ns0, prog0)))
+          } yield ResolvedAst.Predicate.Head.Negative(name, ts, loc)
+      }
+    }
+
+    object Body {
+      /**
+        * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
+        */
+      def resolve(b0: NamedAst.Predicate.Body, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
+        case NamedAst.Predicate.Body.Positive(name, terms, loc) =>
+          for {
+            ts <- seqM(terms.map(t => Patterns.resolve(t, ns0, prog0)))
+          } yield ResolvedAst.Predicate.Body.Positive(name, ts, loc)
+
+        case NamedAst.Predicate.Body.Negative(name, terms, loc) =>
+          for {
+            ts <- seqM(terms.map(t => Patterns.resolve(t, ns0, prog0)))
+          } yield ResolvedAst.Predicate.Body.Negative(name, ts, loc)
+
+        case NamedAst.Predicate.Body.Filter(name, terms, loc) =>
+          for {
+            ts <- seqM(terms.map(t => Expressions.resolve(t, ns0, prog0)))
+          } yield ResolvedAst.Predicate.Body.Filter(name, ts, loc)
+
+        case NamedAst.Predicate.Body.Loop(pat, term, loc) =>
+          for {
+            p <- Patterns.resolve(pat, ns0, prog0)
+            t <- Expressions.resolve(term, ns0, prog0)
+          } yield ResolvedAst.Predicate.Body.Loop(p, t, loc)
+      }
+    }
+
   }
 
   object Properties {
@@ -309,10 +360,6 @@ object Resolver extends Phase[NamedAst.Program, NamedAst.Program] { // TODO: Cha
         e <- Expressions.resolve(p0.exp, ns0, prog0)
       } yield ResolvedAst.Property(p0.law, p0.defn, e, p0.loc)
     }
-
-  }
-
-  object Terms {
 
   }
 
