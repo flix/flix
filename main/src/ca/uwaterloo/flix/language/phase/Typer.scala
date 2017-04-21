@@ -238,7 +238,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
               // Iterate through every attribute name in the current index.
               for (referencedAttribute <- index) {
                 if (!(declaredAttributes contains referencedAttribute.name)) {
-                  return Err(ResolutionError.UndefinedAttribute(table.sym.name, referencedAttribute.name, referencedAttribute.loc))
+                  return Err(TypeError.UndefinedAttribute(table.sym.name, referencedAttribute.name, referencedAttribute.loc))
                 }
               }
             }

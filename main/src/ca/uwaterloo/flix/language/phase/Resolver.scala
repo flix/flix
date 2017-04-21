@@ -17,16 +17,14 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, NamedAst, ResolvedAst, Scheme, Symbol, Type}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.Result.Err
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 
 // TODO: Ensure that program is named prog0
-// TODO: Ensure that NameError, ResolutionError and TypeError are used correctly.
 
 // TODO: DOC
 object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
@@ -566,19 +564,12 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
   }
 
-  object Types {
-
-    // TODO: Move stuff in here.
-
-  }
-
   object Params {
 
     /**
       * Performs name resolution on the given constraint parameter `cparam0` in the given namespace `ns0`.
       */
     def resolve(cparam0: NamedAst.ConstraintParam, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.ConstraintParam, ResolutionError] = cparam0 match {
-      // TODO: Resolve type.
       case NamedAst.ConstraintParam.HeadParam(sym, tpe, loc) => ResolvedAst.ConstraintParam.HeadParam(sym, tpe, loc).toSuccess
       case NamedAst.ConstraintParam.RuleParam(sym, tpe, loc) => ResolvedAst.ConstraintParam.RuleParam(sym, tpe, loc).toSuccess
     }
@@ -596,7 +587,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       * Performs name resolution on the given type parameter `tparam0` in the given namespace `ns0`.
       */
     def resolve(tparam0: NamedAst.TypeParam, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.TypeParam, ResolutionError] = {
-      // TODO: Resolve type.
       ResolvedAst.TypeParam(tparam0.name, tparam0.tpe, tparam0.loc).toSuccess
     }
 
@@ -717,8 +707,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
   /**
     * Finds the table of the given `qname` in the namespace `ns`.
-    *
-    * Returns [[Err]] of [[ResolutionError.UndefinedTable]] if the table does not exist.
     */
   def lookupTable(qname: Name.QName, ns: Name.NName, program: NamedAst.Program): Validation[NamedAst.Table, ResolutionError] = {
     if (qname.isUnqualified) {
