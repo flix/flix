@@ -131,10 +131,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         }
 
         // Visit every definition in the program.
-        val result = program.definitions.toList.flatMap {
-          case (ns, defns) => defns.map {
-            case (name, defn) => visitDefn(defn, ns)
-          }
+        val result = program.definitions.toList.map {
+          case (_, defn) => visitDefn(defn, /*TODO: Remove*/ Name.RootNS)
         }
 
         // Sequence the results and convert them back to a map.
@@ -414,7 +412,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * Reference expression.
          */
         case ResolvedAst.Expression.Ref(sym, tvar, loc) =>
-          val defn = program.definitions2(sym)
+          val defn = program.definitions(sym)
           unifyM(tvar, Scheme.instantiate(defn.sc), loc)
 
         /*
@@ -1063,7 +1061,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           case Err(e) => failM(e)
         }
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
-        val defn = program.definitions2(sym)
+        val defn = program.definitions(sym)
         val expectedTypes = defn.fparams.map(_.tpe)
         for (
           actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns0, program)));
@@ -1104,7 +1102,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val ts = terms.map(t => Patterns.reassemble(t, ns0, program, subst0))
         TypedAst.Predicate.Body.Negative(sym, ts, loc)
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
-        val defn = program.definitions2(sym)
+        val defn = program.definitions(sym)
         val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
         TypedAst.Predicate.Body.Filter(defn.sym, ts, loc)
       case ResolvedAst.Predicate.Body.Loop(pat, term, loc) =>

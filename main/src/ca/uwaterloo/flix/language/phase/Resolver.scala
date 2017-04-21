@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -36,15 +36,17 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
     val b = System.nanoTime()
 
-    val definitionsVal = prog0.definitions.map {
-      case (ns, defs) => Declarations.resolveAll(defs, ns, prog0) map {
-        case ds => ns -> ds
+    val definitionsVal = prog0.definitions.flatMap {
+      case (ns0, defs) => defs.map {
+        case (_, defn) => Declarations.resolve(defn, ns0, prog0) map {
+          case d => d.sym -> d
+        }
       }
     }
 
     val enumsVal = prog0.enums.flatMap {
-      case (ns, enums) => enums.map {
-        case (name, enum) => Declarations.resolve(enum, ns, prog0) map {
+      case (ns0, enums) => enums.map {
+        case (_, enum) => Declarations.resolve(enum, ns0, prog0) map {
           case d => d.sym -> d
         }
       }
@@ -59,27 +61,27 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     }
 
     val indexesVal = prog0.indexes.flatMap {
-      case (ns, indexes) => indexes.map {
-        case (name, index) => Declarations.resolve(index, ns, prog0) map {
+      case (ns0, indexes) => indexes.map {
+        case (_, index) => Declarations.resolve(index, ns0, prog0) map {
           case i => i.sym -> i
         }
       }
     }
 
     val tablesVal = prog0.tables.flatMap {
-      case (ns, tables) => tables.map {
-        case (name, table) => Tables.resolve(table, ns, prog0) map {
+      case (ns0, tables) => tables.map {
+        case (_, table) => Tables.resolve(table, ns0, prog0) map {
           case t => t.sym -> t
         }
       }
     }
 
     val constraintsVal = prog0.constraints.map {
-      case (ns, constraints) => Constraints.resolve(constraints, ns, prog0)
+      case (ns0, constraints) => Constraints.resolve(constraints, ns0, prog0)
     }
 
     val propertiesVal = prog0.properties.map {
-      case (ns, properties) => Properties.resolve(properties, ns, prog0)
+      case (ns0, properties) => Properties.resolve(properties, ns0, prog0)
     }
 
     val e = System.nanoTime() - b
@@ -92,19 +94,8 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       tables <- seqM(tablesVal)
       constraints <- seqM(constraintsVal)
       properties <- seqM(propertiesVal)
-    } yield {
+    } yield ResolvedAst.Program(definitions.toMap, enums.toMap, lattices.toMap, indexes.toMap, tables.toMap, constraints.flatten, prog0.hooks, properties.flatten, prog0.reachable, prog0.time.copy(resolver = e))
 
-      // TODO: temporary hack
-      val definitions2 = definitions.flatMap {
-        case (ns, m) => m.map {
-          case (_, defn) => defn.sym -> defn
-        }
-      }.toMap
-
-      ResolvedAst.Program(
-        definitions2,
-        definitions.toMap, enums.toMap, lattices.toMap, indexes.toMap, tables.toMap, constraints.flatten, prog0.hooks, properties.flatten, prog0.reachable, prog0.time.copy(resolver = e))
-    }
   }
 
   object Constraints {
@@ -130,16 +121,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   }
 
   object Declarations {
-
-    // TODO: Refactor
-    def resolveAll(m0: Map[String, NamedAst.Declaration.Definition], ns0: Name.NName, prog0: NamedAst.Program): Validation[Map[String, ResolvedAst.Declaration.Definition], ResolutionError] = {
-      val results = m0.map {
-        case (name, defn) => resolve(defn, ns0, prog0) map {
-          case d => name -> d
-        }
-      }
-      seqM(results).map(_.toMap)
-    }
 
     /**
       * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
@@ -484,7 +465,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
               for {
                 ts <- seqM(terms.map(t => Expressions.resolve(t, ns0, prog0)))
               } yield ResolvedAst.Predicate.Body.Filter(defn.sym, ts, loc)
-            case RefTarget.Hook(hook) => ??? // TODO: Not allowed here.
+            case RefTarget.Hook(hook) => throw InternalCompilerException(s"Hook not allowed here: ${loc.format}")
           }
 
         case NamedAst.Predicate.Body.Loop(pat, term, loc) =>
@@ -657,7 +638,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     ResolutionError.UndefinedTag(tag.name, ns, tag.loc).toFailure
   }
 
-
   /**
     * Finds the table of the given `qname` in the namespace `ns`.
     */
@@ -682,6 +662,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Resolves the given type `tpe0` in the given namespace `ns0`.
     */
+  // TODO: Add support for Higher-Kinded types.
   def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, prog0: NamedAst.Program): Validation[Type, ResolutionError] = tpe0 match {
     case NamedAst.Type.Var(tvar, loc) => tvar.toSuccess
     case NamedAst.Type.Unit(loc) => Type.Unit.toSuccess
@@ -713,9 +694,9 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             val rootDecls = prog0.enums.getOrElse(Name.RootNS, Map.empty)
             rootDecls.get(typeName) match {
               case None => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
-              case Some(enum) => Type.Enum(enum.sym, Kind.Star /* TODO: Kind */).toSuccess
+              case Some(enum) => Type.Enum(enum.sym, Kind.Star).toSuccess
             }
-          case Some(enum) => Type.Enum(enum.sym, Kind.Star /* TODO: Kind */).toSuccess
+          case Some(enum) => Type.Enum(enum.sym, Kind.Star).toSuccess
         }
     }
     case NamedAst.Type.Ref(qname, loc) if qname.isQualified =>
@@ -723,10 +704,10 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       val decls = prog0.enums.getOrElse(qname.namespace, Map.empty)
       decls.get(qname.ident.name) match {
         case None => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
-        case Some(enum) => Type.Enum(enum.sym, Kind.Star /* TODO: Kind */).toSuccess
+        case Some(enum) => Type.Enum(enum.sym, Kind.Star).toSuccess
       }
     case NamedAst.Type.Enum(sym) =>
-      Type.Enum(sym, Kind.Star /* TODO: Kind */).toSuccess
+      Type.Enum(sym, Kind.Star).toSuccess
     case NamedAst.Type.Tuple(elms0, loc) =>
       for (
         elms <- seqM(elms0.map(tpe => lookupType(tpe, ns0, prog0)))
@@ -742,22 +723,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         argTypes <- seqM(tparams0.map(tpe => lookupType(tpe, ns0, prog0)))
       ) yield Type.Apply(baseType, argTypes)
 
-  }
-
-  /**
-    * Resolves the given type `tpe0` in the given namespace `ns0`.
-    */
-  def lookupTypes(tpes0: List[NamedAst.Type], ns0: Name.NName, prog0: NamedAst.Program): Validation[List[Type], ResolutionError] = {
-    seqM(tpes0.map(tpe => lookupType(tpe, ns0, prog0)))
-  }
-
-  /**
-    * Resolves the given scheme `sc0` in the given namespace `ns0`.
-    */
-  def lookupScheme(sc0: NamedAst.Scheme, ns0: Name.NName, prog0: NamedAst.Program): Validation[Scheme, ResolutionError] = {
-    lookupType(sc0.base, ns0, prog0) map {
-      case base => Scheme(sc0.quantifiers, base)
-    }
   }
 
 }

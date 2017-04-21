@@ -26,21 +26,16 @@ trait ResolvedAst
 
 object ResolvedAst {
 
-  // TODO: These should be direct maps
-  case class Program(
-                      definitions2: Map[Symbol.DefnSym, ResolvedAst.Declaration.Definition],
-
-                      // TODO: Refactor these:
-                      definitions: Map[Name.NName, Map[String, ResolvedAst.Declaration.Definition]],
-                      enums: Map[Symbol.EnumSym, ResolvedAst.Declaration.Enum],
-                      lattices: Map[Type, ResolvedAst.Declaration.BoundedLattice],
-                      indexes: Map[Symbol.TableSym, ResolvedAst.Declaration.Index],
-                      tables: Map[Symbol.TableSym, ResolvedAst.Table],
-                      constraints: List[ResolvedAst.Constraint],
-                      hooks: Map[Symbol.DefnSym, Ast.Hook],
-                      properties: List[ResolvedAst.Property],
-                      reachable: Set[Symbol.DefnSym],
-                      time: Time) extends ResolvedAst
+  case class Program(definitions: Map[Symbol.DefnSym, ResolvedAst.Declaration.Definition],
+                     enums: Map[Symbol.EnumSym, ResolvedAst.Declaration.Enum],
+                     lattices: Map[Type, ResolvedAst.Declaration.BoundedLattice],
+                     indexes: Map[Symbol.TableSym, ResolvedAst.Declaration.Index],
+                     tables: Map[Symbol.TableSym, ResolvedAst.Table],
+                     constraints: List[ResolvedAst.Constraint],
+                     hooks: Map[Symbol.DefnSym, Ast.Hook],
+                     properties: List[ResolvedAst.Property],
+                     reachable: Set[Symbol.DefnSym],
+                     time: Time) extends ResolvedAst
 
   case class Constraint(cparams: List[ResolvedAst.ConstraintParam], head: ResolvedAst.Predicate.Head, body: List[ResolvedAst.Predicate.Body], loc: SourceLocation) extends ResolvedAst
 
