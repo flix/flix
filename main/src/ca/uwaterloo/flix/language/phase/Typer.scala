@@ -424,6 +424,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           unifyM(tvar, Scheme.instantiate(defn.sc), loc)
 
         /*
+         * Hook expression.
+         */
+        case ResolvedAst.Expression.Hook(hook, tpe, loc) =>
+          liftM(tpe)
+
+        /*
          * Literal expression.
          */
         case ResolvedAst.Expression.Unit(loc) => liftM(Type.Unit)
@@ -761,6 +767,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.Ref(sym, tvar, loc) =>
           TypedAst.Expression.Ref(sym, subst0(tvar), loc)
+
+        /*
+         * Hook expression.
+         */
+        case ResolvedAst.Expression.Hook(hook, tpe, loc) =>
+          TypedAst.Expression.Hook(hook, subst0(tpe), loc)
 
         /*
          * Literal expression.

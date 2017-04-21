@@ -281,8 +281,13 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
   object Expressions {
 
+    /**
+      * Performs name resolution on the given expression `exp0` in the namespace `ns0`.
+      */
     def resolve(exp0: NamedAst.Expression, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Expression, ResolutionError] = {
-
+      /**
+        * Local visitor.
+        */
       def visit(e0: NamedAst.Expression): Validation[ResolvedAst.Expression, ResolutionError] = e0 match {
         case NamedAst.Expression.Wild(tpe, loc) => ResolvedAst.Expression.Wild(tpe, loc).toSuccess
 
@@ -292,7 +297,8 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
           lookupRef(ref, ns0, prog0) match {
             case Ok(RefTarget.Defn(ns, defn)) =>
               ResolvedAst.Expression.Ref(defn.sym, tvar, loc).toSuccess
-            case Ok(RefTarget.Hook(hook)) => ??? // TODO
+            case Ok(RefTarget.Hook(hook)) =>
+              ResolvedAst.Expression.Hook(hook, hook.tpe, loc).toSuccess
             case Err(e) => ??? // TODO
           }
 
