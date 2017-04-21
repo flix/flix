@@ -119,7 +119,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         definitions2,
         enums2,
         tables2,
-        definitions.toMap, enums.toMap, lattices.toMap, indexes.toMap, tables.toMap, constraints.toMap, prog0.hooks, properties.toMap, prog0.reachable, prog0.time)
+        definitions.toMap, enums.toMap, lattices.toMap, indexes.toMap, tables.toMap, constraints.toMap, prog0.hooks, properties.toMap, prog0.reachable, prog0.time.copy(resolver = e))
     }
   }
 
@@ -385,13 +385,10 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
           }
 
         case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
-          lookupEnumByTag(enum, tag, ns0, prog0) match {
-            case Ok(decl) =>
-              for {
-                e <- visit(exp)
-              } yield ResolvedAst.Expression.Tag(decl.sym, tag.name, e, tvar, loc)
-            case Err(e) => ???
-          }
+          for {
+            d <- lookupEnumByTag(enum, tag, ns0, prog0)
+            e <- visit(exp)
+          } yield ResolvedAst.Expression.Tag(d.sym, tag.name, e, tvar, loc)
 
         case NamedAst.Expression.Tuple(elms, tvar, loc) =>
           for {
@@ -473,13 +470,10 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         case NamedAst.Pattern.Str(lit, loc) => ResolvedAst.Pattern.Str(lit, loc).toSuccess
 
         case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
-          lookupEnumByTag(enum, tag, ns0, prog0) match {
-            case Ok(decl) =>
-              for {
-                p <- visit(pat)
-              } yield ResolvedAst.Pattern.Tag(decl.sym, tag.name, p, tvar, loc)
-            case Err(e) => ???
-          }
+          for {
+            d <- lookupEnumByTag(enum, tag, ns0, prog0)
+            p <- visit(pat)
+          } yield ResolvedAst.Pattern.Tag(d.sym, tag.name, p, tvar, loc)
 
         case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
           for {
@@ -671,7 +665,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Finds the enum definition matching the given qualified name and tag.
     */
-  def lookupEnumByTag(qname: Option[Name.QName], tag: Name.Ident, ns: Name.NName, prog0: NamedAst.Program): Result[NamedAst.Declaration.Enum, TypeError] = {
+  def lookupEnumByTag(qname: Option[Name.QName], tag: Name.Ident, ns: Name.NName, prog0: NamedAst.Program): Validation[NamedAst.Declaration.Enum, ResolutionError] = {
     /*
      * Lookup the tag name in all enums across all namespaces.
      */
@@ -688,7 +682,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
     // Case 1: Exact match found. Simply return it.
     if (globalMatches.size == 1) {
-      return Ok(globalMatches.head)
+      return globalMatches.head.toSuccess
     }
 
     // Case 2: No or multiple matches found.
@@ -709,27 +703,27 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
     // Case 2.1: Exact match found in namespace. Simply return it.
     if (namespaceMatches.size == 1) {
-      return Ok(namespaceMatches.head)
+      return namespaceMatches.head.toSuccess
     }
 
     // Case 2.2: No matches found in namespace.
     if (namespaceMatches.isEmpty) {
-      return Err(ResolutionError.UndefinedTag(tag.name, ns, tag.loc))
+      return ResolutionError.UndefinedTag(tag.name, ns, tag.loc).toFailure
     }
 
     // Case 2.3: Multiple matches found in namespace and no enum name.
     if (qname.isEmpty) {
       val locs = namespaceMatches.map(_.sym.loc).toList.sorted
-      return Err(ResolutionError.AmbiguousTag(tag.name, ns, locs, tag.loc))
+      return ResolutionError.AmbiguousTag(tag.name, ns, locs, tag.loc).toFailure
     }
 
     // Case 2.4: Multiple matches found in namespace and an enum name is available.
     val filteredMatches = namespaceMatches.filter(_.sym.name == qname.get.ident.name)
     if (filteredMatches.size == 1) {
-      return Ok(filteredMatches.head)
+      return filteredMatches.head.toSuccess
     }
 
-    Err(ResolutionError.UndefinedTag(tag.name, ns, tag.loc))
+    ResolutionError.UndefinedTag(tag.name, ns, tag.loc).toFailure
   }
 
 

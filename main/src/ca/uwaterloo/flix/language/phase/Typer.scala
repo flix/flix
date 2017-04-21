@@ -1129,7 +1129,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         * Infers the type of the given `terms` and checks them against the types `ts`.
         */
       def typecheck(terms: List[ResolvedAst.Expression], ts: List[Type], loc: SourceLocation, ns0: Name.NName, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
-        assert(terms.length == ts.length, "Mismatched predicate arity.")
+        // assert(terms.length == ts.length, "Mismatched predicate arity.") // TODO
 
         for (
           actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns0, program)));
@@ -1143,7 +1143,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         * Infers the type of the given `terms` and checks them against the types `ts`.
         */
       def typecheck(terms: List[ResolvedAst.Pattern], ts: List[Type], loc: SourceLocation, ns0: Name.NName, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
-        assert(terms.length == ts.length, "Mismatched predicate arity.")
+        // assert(terms.length == ts.length, "Mismatched predicate arity.") // TODO
 
         for (
           actualTypes <- seqM(terms.map(t => Patterns.infer(t, ns0, program)));

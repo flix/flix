@@ -334,6 +334,7 @@ class RestServer(solver: Solver) {
       JObject(List(JField("name", JString("Parser")), JField("time", JInt(solver.root.time.parser / 1000000)))),
       JObject(List(JField("name", JString("Weeder")), JField("time", JInt(solver.root.time.weeder / 1000000)))),
       JObject(List(JField("name", JString("Namer")), JField("time", JInt(solver.root.time.namer / 1000000)))),
+      JObject(List(JField("name", JString("Resolver")), JField("time", JInt(solver.root.time.resolver / 1000000)))),
       JObject(List(JField("name", JString("Typer")), JField("time", JInt(solver.root.time.typer / 1000000)))),
       JObject(List(JField("name", JString("Documentor")), JField("time", JInt(solver.root.time.documentor / 1000000)))),
       JObject(List(JField("name", JString("Stratifier")), JField("time", JInt(solver.root.time.stratifier / 1000000)))),
