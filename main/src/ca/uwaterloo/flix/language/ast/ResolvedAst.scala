@@ -256,7 +256,7 @@ object ResolvedAst {
 
   case class Scheme(quantifiers: List[ast.Type.Var], base: ResolvedAst.Type) extends ResolvedAst
 
-  case class Attribute(ident: Name.Ident, tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst
+  case class Attribute(ident: Name.Ident, tpe: ast.Type, loc: SourceLocation) extends ResolvedAst
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: ResolvedAst.Type) extends ResolvedAst
 

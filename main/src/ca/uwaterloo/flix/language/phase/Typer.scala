@@ -352,11 +352,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           * Performs type resolution on the given attribute `attr` declared in the namespace `ns`.
           */
         def visitAttribute(attr: ResolvedAst.Attribute, ns: Name.NName): Result[TypedAst.Attribute, TypeError] = attr match {
-          case ResolvedAst.Attribute(ident, tpe, loc) =>
-            // Resolve the declared type.
-            Disambiguation.resolve(tpe, ns, program) map {
-              case resolvedType => TypedAst.Attribute(ident.name, resolvedType, loc)
-            }
+          case ResolvedAst.Attribute(ident, tpe, loc) => Ok(TypedAst.Attribute(ident.name, tpe, loc))
         }
 
         // Visit every table in the program.
@@ -1169,12 +1165,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Returns the declared types of the terms of the given fully-qualified table name `qname` in the namespace `ns0`.
     */
   def getTableSignature(sym: Symbol.TableSym, ns0: Name.NName, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
-    val declaredTypes = program.tables2(sym) match {
-      case ResolvedAst.Table.Relation(_, _, attr, _) => attr.map(_.tpe)
-      case ResolvedAst.Table.Lattice(_, _, keys, value, _) => keys.map(_.tpe) ::: value.tpe :: Nil
+    program.tables2(sym) match {
+      case ResolvedAst.Table.Relation(_, _, attr, _) => Ok(attr.map(_.tpe))
+      case ResolvedAst.Table.Lattice(_, _, keys, value, _) => Ok(keys.map(_.tpe) ::: value.tpe :: Nil)
     }
-
-    Disambiguation.resolve(declaredTypes, ns0, program)
   }
 
   /**

@@ -273,7 +273,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       */
     private def resolve(a0: NamedAst.Attribute, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Attribute, ResolutionError] = {
       for {
-        tpe <- Types.resolve(a0.tpe, ns0, prog0)
+        tpe <- lookupType(a0.tpe, ns0, prog0)
       } yield ResolvedAst.Attribute(a0.ident, tpe, a0.loc)
     }
 
