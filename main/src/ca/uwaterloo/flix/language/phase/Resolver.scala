@@ -71,9 +71,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     }
 
     val constraintsVal = prog0.constraints.map {
-      case (ns, constraints) => Constraints.resolve(constraints, ns, prog0) map {
-        case cs => ns -> cs
-      }
+      case (ns, constraints) => Constraints.resolve(constraints, ns, prog0)
     }
 
     val propertiesVal = prog0.properties.map {
@@ -110,7 +108,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       ResolvedAst.Program(
         definitions2,
         enums2,
-        definitions.toMap, enums.toMap, lattices.toMap, indexes.toMap, tables.toMap, constraints.toMap, prog0.hooks, properties.flatten, prog0.reachable, prog0.time.copy(resolver = e))
+        definitions.toMap, enums.toMap, lattices.toMap, indexes.toMap, tables.toMap, constraints.flatten, prog0.hooks, properties.flatten, prog0.reachable, prog0.time.copy(resolver = e))
     }
   }
 

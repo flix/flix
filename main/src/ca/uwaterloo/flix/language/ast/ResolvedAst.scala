@@ -22,6 +22,8 @@ import scala.collection.immutable.List
 
 trait ResolvedAst
 
+// TODO: Get rid of external
+
 object ResolvedAst {
 
   // TODO: These should be direct maps
@@ -35,7 +37,7 @@ object ResolvedAst {
                       lattices: Map[Type, ResolvedAst.Declaration.BoundedLattice],
                       indexes: Map[Name.NName, Map[String, ResolvedAst.Declaration.Index]],
                       tables: Map[Symbol.TableSym, ResolvedAst.Table],
-                      constraints: Map[Name.NName, List[ResolvedAst.Constraint]],
+                      constraints: List[ResolvedAst.Constraint],
                       hooks: Map[Symbol.DefnSym, Ast.Hook],
                       properties: List[ResolvedAst.Property],
                       reachable: Set[Symbol.DefnSym],

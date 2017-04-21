@@ -100,8 +100,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       }
 
       // Perform type inference on every constraint in the program.
-      val result = program.constraints.toList.flatMap {
-        case (ns, cs) => cs.map(c => visitConstraint(c, ns))
+      val result = program.constraints.map {
+        case constraint => visitConstraint(constraint, /* TODO */ Name.RootNS)
       }
 
       // Sequence the results.
