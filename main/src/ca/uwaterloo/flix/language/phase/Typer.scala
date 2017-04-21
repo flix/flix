@@ -25,8 +25,6 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{Result, Validation}
 
-// TODO: Remove namespace from arguments.
-
 object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
   /**
@@ -68,23 +66,23 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     def typecheck(program: ResolvedAst.Program)(implicit genSym: GenSym): Result[List[TypedAst.Constraint], TypeError] = {
 
       /**
-        * Performs type inference on the given constraint `c` in the give namespace `ns`.
+        * Performs type inference on the given constraint `c`.
         */
-      def visitConstraint(c: ResolvedAst.Constraint, ns: Name.NName): Result[TypedAst.Constraint, TypeError] = c match {
+      def visitConstraint(c: ResolvedAst.Constraint): Result[TypedAst.Constraint, TypeError] = c match {
         case ResolvedAst.Constraint(cparams0, head0, body0, loc) =>
 
           // Infer the types of head and body predicates.
           val result = for {
-            headType <- Predicates.infer(head0, ns, program)
-            bodyTypes <- seqM(body0.map(b => Predicates.infer(b, ns, program)))
+            headType <- Predicates.infer(head0, program)
+            bodyTypes <- seqM(body0.map(b => Predicates.infer(b, program)))
           } yield ()
 
           // Evaluate the monad under the empty substitution.
           result.run(Substitution.empty) map {
             case (subst, _) =>
               // Unification was successful. Reassemble the head and body predicates.
-              val head = Predicates.reassemble(head0, ns, program, subst)
-              val body = body0.map(b => Predicates.reassemble(b, ns, program, subst))
+              val head = Predicates.reassemble(head0, program, subst)
+              val body = body0.map(b => Predicates.reassemble(b, program, subst))
 
               // Reassemble the constraint parameters.
               val cparams = cparams0.map {
@@ -101,7 +99,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
       // Perform type inference on every constraint in the program.
       val result = program.constraints.map {
-        case constraint => visitConstraint(constraint, /* TODO */ Name.RootNS)
+        case constraint => visitConstraint(constraint)
       }
 
       // Sequence the results.
@@ -121,18 +119,18 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         */
       def typecheck(program: ResolvedAst.Program)(implicit genSym: GenSym): Result[Map[Symbol.DefnSym, TypedAst.Declaration.Definition], TypeError] = {
         /**
-          * Performs type inference and reassembly on the given definition `defn` in the given namespace `ns`.
+          * Performs type inference and reassembly on the given definition `defn`.
           */
-        def visitDefn(defn: ResolvedAst.Declaration.Definition, ns: Name.NName): Result[(Symbol.DefnSym, TypedAst.Declaration.Definition), TypeError] = defn match {
+        def visitDefn(defn: ResolvedAst.Declaration.Definition): Result[(Symbol.DefnSym, TypedAst.Declaration.Definition), TypeError] = defn match {
           case ResolvedAst.Declaration.Definition(doc, ann, sym, tparams, params, exp, tpe, loc) =>
-            infer(defn, ns, program) map {
+            infer(defn, program) map {
               case d => sym -> d
             }
         }
 
         // Visit every definition in the program.
         val result = program.definitions.toList.map {
-          case (_, defn) => visitDefn(defn, /*TODO: Remove*/ Name.RootNS)
+          case (_, defn) => visitDefn(defn)
         }
 
         // Sequence the results and convert them back to a map.
@@ -140,10 +138,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       }
 
       /**
-        * Infers the type of the given definition `defn0` in the given namespace `ns0`.
+        * Infers the type of the given definition `defn0`.
         */
       // TODO: Cleanup
-      def infer(defn0: ResolvedAst.Declaration.Definition, ns0: Name.NName, program: ResolvedAst.Program)(implicit genSym: GenSym): Result[TypedAst.Declaration.Definition, TypeError] = {
+      def infer(defn0: ResolvedAst.Declaration.Definition, program: ResolvedAst.Program)(implicit genSym: GenSym): Result[TypedAst.Declaration.Definition, TypeError] = {
         // Resolve the declared scheme.
         val declaredScheme = defn0.sc
 
@@ -151,17 +149,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val argumentTypes = defn0.fparams.map(_.tpe)
 
         val result = for (
-          resultType <- Expressions.infer(defn0.exp, ns0, program);
+          resultType <- Expressions.infer(defn0.exp, program);
           unifiedType <- unifyM(Scheme.instantiate(declaredScheme), Type.mkArrow(argumentTypes, resultType), defn0.loc)
         ) yield unifiedType
 
         // TODO: See if this can be rewritten nicer
         result match {
           case InferMonad(run) =>
-            val subst = getSubstFromParams(defn0.fparams, ns0, program)
+            val subst = getSubstFromParams(defn0.fparams, program)
             run(subst) match {
               case Ok((subst0, resultType)) =>
-                val exp = Expressions.reassemble(defn0.exp, ns0, program, subst0)
+                val exp = Expressions.reassemble(defn0.exp, program, subst0)
 
                 val tparams = defn0.tparams.map {
                   case ResolvedAst.TypeParam(name, tpe, loc) =>
@@ -191,7 +189,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /**
           * Performs type resolution on the given enum and its cases.
           */
-        def visitEnum(enum: ResolvedAst.Declaration.Enum, ns: Name.NName): Result[(Symbol.EnumSym, TypedAst.Declaration.Enum), TypeError] = enum match {
+        def visitEnum(enum: ResolvedAst.Declaration.Enum): Result[(Symbol.EnumSym, TypedAst.Declaration.Enum), TypeError] = enum match {
           case ResolvedAst.Declaration.Enum(doc, sym, tparams, cases0, tpe, loc) =>
             val cases = cases0 map {
               case (name, ResolvedAst.Case(enumName, tagName, caseType)) =>
@@ -203,7 +201,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
         // Visit every enum in the program.
         val result = program.enums.toList.map {
-          case (_, enum) => visitEnum(enum, /*TODO: Remove*/ Name.RootNS)
+          case (_, enum) => visitEnum(enum)
         }
 
         // Sequence the results and convert them back to a map.
@@ -223,7 +221,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /**
           * Checks that the referenced table exists and that every attribute used by the index exists.
           */
-        def visitIndex(index: ResolvedAst.Declaration.Index, ns: Name.NName): Result[(Symbol.TableSym, TypedAst.Declaration.Index), TypeError] = index match {
+        def visitIndex(index: ResolvedAst.Declaration.Index): Result[(Symbol.TableSym, TypedAst.Declaration.Index), TypeError] = index match {
           case ResolvedAst.Declaration.Index(sym, indexes, loc) =>
             // Lookup the table using the table symbol.
             val table = program.tables(index.sym)
@@ -243,7 +241,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
         // Visit every index in the program.
         val result = program.indexes.toList.map {
-          case (_, index) => visitIndex(index, /*TODO: Remove*/ Name.RootNS)
+          case (_, index) => visitIndex(index)
         }
 
         // Sequence the results and convert them back to a map.
@@ -271,11 +269,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
             // Perform type inference on each of the lattice components.
             val m = for {
-              botType <- Expressions.infer(e1, ns, program)
-              topType <- Expressions.infer(e2, ns, program)
-              leqType <- Expressions.infer(e3, ns, program)
-              lubType <- Expressions.infer(e4, ns, program)
-              glbType <- Expressions.infer(e5, ns, program)
+              botType <- Expressions.infer(e1, program)
+              topType <- Expressions.infer(e2, program)
+              leqType <- Expressions.infer(e3, program)
+              lubType <- Expressions.infer(e4, program)
+              glbType <- Expressions.infer(e5, program)
               _______ <- unifyM(botType, declaredType, loc)
               _______ <- unifyM(topType, declaredType, loc)
               _______ <- unifyM(leqType, Type.mkArrow(List(declaredType, declaredType), Type.Bool), loc)
@@ -287,11 +285,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             m.run(Substitution.empty) map {
               case (subst, _) =>
                 // Reassemble the lattice components.
-                val bot = Expressions.reassemble(e1, ns, program, subst)
-                val top = Expressions.reassemble(e2, ns, program, subst)
-                val leq = Expressions.reassemble(e3, ns, program, subst)
-                val lub = Expressions.reassemble(e4, ns, program, subst)
-                val glb = Expressions.reassemble(e5, ns, program, subst)
+                val bot = Expressions.reassemble(e1, program, subst)
+                val top = Expressions.reassemble(e2, program, subst)
+                val leq = Expressions.reassemble(e3, program, subst)
+                val lub = Expressions.reassemble(e4, program, subst)
+                val glb = Expressions.reassemble(e5, program, subst)
 
                 declaredType -> TypedAst.Declaration.BoundedLattice(declaredType, bot, top, leq, lub, glb, loc)
             }
@@ -320,31 +318,31 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       def typecheck(program: ResolvedAst.Program): Result[Map[Symbol.TableSym, TypedAst.Table], TypeError] = {
 
         /**
-          * Performs type resolution on the given `table` declared in the namespace `ns`.
+          * Performs type resolution on the given `table`.
           *
           * Returns [[Err]] if a type is unresolved.
           */
-        def visitTable(table: ResolvedAst.Table, ns: Name.NName): Result[(Symbol.TableSym, TypedAst.Table), TypeError] = table match {
+        def visitTable(table: ResolvedAst.Table): Result[(Symbol.TableSym, TypedAst.Table), TypeError] = table match {
           case ResolvedAst.Table.Relation(doc, sym, attr, loc) =>
-            for (typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a, ns))))
+            for (typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a))))
               yield sym -> TypedAst.Table.Relation(doc, sym, typedAttributes, loc)
           case ResolvedAst.Table.Lattice(doc, sym, keys, value, loc) =>
             for {
-              typedKeys <- Result.seqM(keys.map(a => visitAttribute(a, ns)))
-              typedVal <- visitAttribute(value, ns)
+              typedKeys <- Result.seqM(keys.map(a => visitAttribute(a)))
+              typedVal <- visitAttribute(value)
             } yield sym -> TypedAst.Table.Lattice(doc, sym, typedKeys, typedVal, loc)
         }
 
         /**
-          * Performs type resolution on the given attribute `attr` declared in the namespace `ns`.
+          * Performs type resolution on the given attribute `attr`.
           */
-        def visitAttribute(attr: ResolvedAst.Attribute, ns: Name.NName): Result[TypedAst.Attribute, TypeError] = attr match {
+        def visitAttribute(attr: ResolvedAst.Attribute): Result[TypedAst.Attribute, TypeError] = attr match {
           case ResolvedAst.Attribute(ident, tpe, loc) => Ok(TypedAst.Attribute(ident.name, tpe, loc))
         }
 
         // Visit every table in the program.
         val result = program.tables.toList.map {
-          case (_, table) => visitTable(table, /*TODO: Remove*/ Name.RootNS)
+          case (_, table) => visitTable(table)
         }
 
         // Sequence the results and convert them back to a map.
@@ -361,21 +359,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       def typecheck(prog0: ResolvedAst.Program)(implicit genSym: GenSym): Result[List[TypedAst.Property], TypeError] = {
 
         /**
-          * Infers the type of the given property `p0` in the namespace `ns0`.
+          * Infers the type of the given property `p0`.
           */
-        def visitProperty(p0: ResolvedAst.Property, ns0: Name.NName): Result[TypedAst.Property, TypeError] = p0 match {
+        def visitProperty(p0: ResolvedAst.Property): Result[TypedAst.Property, TypeError] = p0 match {
           case ResolvedAst.Property(law, defn, exp0, loc) =>
-            val result = Expressions.infer(exp0, ns0, prog0)
+            val result = Expressions.infer(exp0, prog0)
             result.run(Substitution.empty) map {
               case (subst, tpe) =>
-                val exp = Expressions.reassemble(exp0, ns0, prog0, subst)
+                val exp = Expressions.reassemble(exp0, prog0, subst)
                 TypedAst.Property(law, defn, exp, loc)
             }
         }
 
         // Visit every property in the program.
         val results = prog0.properties.map {
-          case property => visitProperty(property, /*TODO: Remove*/ Name.RootNS)
+          case property => visitProperty(property)
         }
 
         // Sequence the results and sort the properties by their source location.
@@ -389,9 +387,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   object Expressions {
 
     /**
-      * Infers the type of the given expression `exp0` in the namespace `ns0` and `program`.
+      * Infers the type of the given expression `exp0`.
       */
-    def infer(exp0: ResolvedAst.Expression, ns0: Name.NName, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = {
+    def infer(exp0: ResolvedAst.Expression, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = {
 
       /**
         * Infers the type of the given expression `exp0` inside the inference monad.
@@ -608,7 +606,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
           for {
             matchType <- visitExp(exp1)
-            patternTypes <- Patterns.inferAll(patterns, ns0, program)
+            patternTypes <- Patterns.inferAll(patterns, program)
             patternType <- unifyM(patternTypes, loc)
             ___________ <- unifyM(matchType, patternType, loc)
             guardTypes <- seqM(guards map visitExp)
@@ -737,9 +735,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     }
 
     /**
-      * Applies the given substitution `subst0` to the given expression `exp0` in the given namespace `ns0`.
+      * Applies the given substitution `subst0` to the given expression `exp0`.
       */
-    def reassemble(exp0: ResolvedAst.Expression, ns0: Name.NName, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Expression = {
+    def reassemble(exp0: ResolvedAst.Expression, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Expression = {
       /**
         * Applies the given substitution `subst0` to the given expression `exp0`.
         */
@@ -840,7 +838,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val e1 = visitExp(exp1, subst0)
           val rs = rules map {
             case ResolvedAst.MatchRule(pat, guard, exp) =>
-              val p = Patterns.reassemble(pat, ns0, program, subst0)
+              val p = Patterns.reassemble(pat, program, subst0)
               val g = visitExp(guard, subst0)
               val b = visitExp(exp, subst0)
               TypedAst.MatchRule(p, g, b)
@@ -895,7 +893,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * Native Constructor expression.
          */
         case ResolvedAst.Expression.NativeConstructor(constructor, actuals, tpe, loc) =>
-          val es = actuals.map(e => reassemble(e, ns0, program, subst0))
+          val es = actuals.map(e => reassemble(e, program, subst0))
           TypedAst.Expression.NativeConstructor(constructor, es, subst0(tpe), loc)
 
         /*
@@ -908,7 +906,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * Native Method expression.
          */
         case ResolvedAst.Expression.NativeMethod(method, actuals, tpe, loc) =>
-          val es = actuals.map(e => reassemble(e, ns0, program, subst0))
+          val es = actuals.map(e => reassemble(e, program, subst0))
           TypedAst.Expression.NativeMethod(method, es, subst0(tpe), loc)
 
         /*
@@ -931,9 +929,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   object Patterns {
 
     /**
-      * Infers the type of the given pattern `pat0` in the namespace `ns0`.
+      * Infers the type of the given pattern `pat0`.
       */
-    def infer(pat0: ResolvedAst.Pattern, ns0: Name.NName, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = {
+    def infer(pat0: ResolvedAst.Pattern, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = {
       /**
         * Local pattern visitor.
         */
@@ -989,16 +987,16 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     }
 
     /**
-      * Infers the type of the given patterns `pats0` in the namespace `ns0`.
+      * Infers the type of the given patterns `pats0`.
       */
-    def inferAll(pats0: List[ResolvedAst.Pattern], ns0: Name.NName, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
-      seqM(pats0.map(p => infer(p, ns0, program)))
+    def inferAll(pats0: List[ResolvedAst.Pattern], program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
+      seqM(pats0.map(p => infer(p, program)))
     }
 
     /**
-      * Applies the substitution `subst0` to the given pattern `pat0` in the namespace `ns0`.
+      * Applies the substitution `subst0` to the given pattern `pat0`.
       */
-    def reassemble(pat0: ResolvedAst.Pattern, ns0: Name.NName, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Pattern = {
+    def reassemble(pat0: ResolvedAst.Pattern, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Pattern = {
       /**
         * Local pattern visitor.
         */
@@ -1031,17 +1029,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     /**
       * Infers the type of the given head predicate.
       */
-    def infer(head: ResolvedAst.Predicate.Head, ns0: Name.NName, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = head match {
+    def infer(head: ResolvedAst.Predicate.Head, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = head match {
       case ResolvedAst.Predicate.Head.True(loc) => Unification.liftM(Nil)
       case ResolvedAst.Predicate.Head.False(loc) => Unification.liftM(Nil)
       case ResolvedAst.Predicate.Head.Positive(sym, terms, loc) =>
-        getTableSignature(sym, ns0, program) match {
-          case Ok(declaredTypes) => Terms.Head.typecheck(terms, declaredTypes, loc, ns0, program)
+        getTableSignature(sym, program) match {
+          case Ok(declaredTypes) => Terms.Head.typecheck(terms, declaredTypes, loc, program)
           case Err(e) => failM(e)
         }
       case ResolvedAst.Predicate.Head.Negative(sym, terms, loc) =>
-        getTableSignature(sym, ns0, program) match {
-          case Ok(declaredTypes) => Terms.Head.typecheck(terms, declaredTypes, loc, ns0, program)
+        getTableSignature(sym, program) match {
+          case Ok(declaredTypes) => Terms.Head.typecheck(terms, declaredTypes, loc, program)
           case Err(e) => failM(e)
         }
     }
@@ -1049,22 +1047,22 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     /**
       * Infers the type of the given body predicate.
       */
-    def infer(body0: ResolvedAst.Predicate.Body, ns0: Name.NName, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = body0 match {
+    def infer(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = body0 match {
       case ResolvedAst.Predicate.Body.Positive(sym, terms, loc) =>
-        getTableSignature(sym, ns0, program) match {
-          case Ok(declaredTypes) => Terms.Body.typecheck(terms, declaredTypes, loc, ns0, program)
+        getTableSignature(sym, program) match {
+          case Ok(declaredTypes) => Terms.Body.typecheck(terms, declaredTypes, loc, program)
           case Err(e) => failM(e)
         }
       case ResolvedAst.Predicate.Body.Negative(sym, terms, loc) =>
-        getTableSignature(sym, ns0, program) match {
-          case Ok(declaredTypes) => Terms.Body.typecheck(terms, declaredTypes, loc, ns0, program)
+        getTableSignature(sym, program) match {
+          case Ok(declaredTypes) => Terms.Body.typecheck(terms, declaredTypes, loc, program)
           case Err(e) => failM(e)
         }
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
         val defn = program.definitions(sym)
         val expectedTypes = defn.fparams.map(_.tpe)
         for (
-          actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns0, program)));
+          actualTypes <- seqM(terms.map(t => Expressions.infer(t, program)));
           unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes, loc)
         ) yield unifiedTypes
 
@@ -1072,43 +1070,43 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // TODO: Assumes that pat is a variable symbol.
         val sym = pat.asInstanceOf[ResolvedAst.Pattern.Var].sym
         for {
-          tpe <- Expressions.infer(term, ns0, program)
+          tpe <- Expressions.infer(term, program)
           ___ <- unifyM(Type.mkFSet(sym.tvar), tpe, loc)
         } yield List(tpe)
     }
 
     /**
-      * Applies the given substitution `subst0` to the given head predicate `head0` in the given namespace `ns0`.
+      * Applies the given substitution `subst0` to the given head predicate `head0`.
       */
-    def reassemble(head0: ResolvedAst.Predicate.Head, ns0: Name.NName, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
+    def reassemble(head0: ResolvedAst.Predicate.Head, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
       case ResolvedAst.Predicate.Head.True(loc) => TypedAst.Predicate.Head.True(loc)
       case ResolvedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
       case ResolvedAst.Predicate.Head.Positive(sym, terms, loc) =>
-        val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
+        val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
         TypedAst.Predicate.Head.Positive(sym, ts, loc)
       case ResolvedAst.Predicate.Head.Negative(sym, terms, loc) =>
-        val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
+        val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
         TypedAst.Predicate.Head.Negative(sym, ts, loc)
     }
 
     /**
-      * Applies the given substitution `subst0` to the given body predicate `body0` in the given namespace `ns0`.
+      * Applies the given substitution `subst0` to the given body predicate `body0`.
       */
-    def reassemble(body0: ResolvedAst.Predicate.Body, ns0: Name.NName, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
+    def reassemble(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
       case ResolvedAst.Predicate.Body.Positive(sym, terms, loc) =>
-        val ts = terms.map(t => Patterns.reassemble(t, ns0, program, subst0))
+        val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
         TypedAst.Predicate.Body.Positive(sym, ts, loc)
       case ResolvedAst.Predicate.Body.Negative(sym, terms, loc) =>
-        val ts = terms.map(t => Patterns.reassemble(t, ns0, program, subst0))
+        val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
         TypedAst.Predicate.Body.Negative(sym, ts, loc)
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
         val defn = program.definitions(sym)
-        val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
+        val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
         TypedAst.Predicate.Body.Filter(defn.sym, ts, loc)
       case ResolvedAst.Predicate.Body.Loop(pat, term, loc) =>
         // TODO: Assumes that the pattern is a single variable.
         val p = pat.asInstanceOf[ResolvedAst.Pattern.Var]
-        val t = Expressions.reassemble(term, ns0, program, subst0)
+        val t = Expressions.reassemble(term, program, subst0)
         TypedAst.Predicate.Body.Loop(p.sym, t, loc)
     }
 
@@ -1120,9 +1118,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       /**
         * Infers the type of the given `terms` and checks them against the types `ts`.
         */
-      def typecheck(terms: List[ResolvedAst.Expression], ts: List[Type], loc: SourceLocation, ns0: Name.NName, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
+      def typecheck(terms: List[ResolvedAst.Expression], ts: List[Type], loc: SourceLocation, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
         for (
-          actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns0, program)));
+          actualTypes <- seqM(terms.map(t => Expressions.infer(t, program)));
           unifiedTypes <- Unification.unifyM(ts, actualTypes, loc)
         ) yield unifiedTypes
       }
@@ -1132,9 +1130,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       /**
         * Infers the type of the given `terms` and checks them against the types `ts`.
         */
-      def typecheck(terms: List[ResolvedAst.Pattern], ts: List[Type], loc: SourceLocation, ns0: Name.NName, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
+      def typecheck(terms: List[ResolvedAst.Pattern], ts: List[Type], loc: SourceLocation, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
         for (
-          actualTypes <- seqM(terms.map(t => Patterns.infer(t, ns0, program)));
+          actualTypes <- seqM(terms.map(t => Patterns.infer(t, program)));
           unifiedTypes <- Unification.unifyM(ts, actualTypes, loc)
         ) yield unifiedTypes
       }
@@ -1143,9 +1141,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   }
 
   /**
-    * Returns the declared types of the terms of the given fully-qualified table name `qname` in the namespace `ns0`.
+    * Returns the declared types of the terms of the given fully-qualified table name `qname`.
     */
-  def getTableSignature(sym: Symbol.TableSym, ns0: Name.NName, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
+  def getTableSignature(sym: Symbol.TableSym, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
     program.tables(sym) match {
       case ResolvedAst.Table.Relation(_, _, attr, _) => Ok(attr.map(_.tpe))
       case ResolvedAst.Table.Lattice(_, _, keys, value, _) => Ok(keys.map(_.tpe) ::: value.tpe :: Nil)
@@ -1158,10 +1156,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Performs type resolution of the declared type of each formal parameters.
     *
     * @param params  the formal parameters.
-    * @param ns0     the current namespace.
     * @param program the program.
     */
-  def getSubstFromParams(params: List[ResolvedAst.FormalParam], ns0: Name.NName, program: ResolvedAst.Program): Unification.Substitution = {
+  def getSubstFromParams(params: List[ResolvedAst.FormalParam], program: ResolvedAst.Program): Unification.Substitution = {
     // Compute the substitution by mapping the symbol of each parameter to its declared type.
     val declaredTypes = params.map(_.tpe)
     (params zip declaredTypes).foldLeft(Substitution.empty) {
