@@ -22,8 +22,6 @@ import scala.collection.immutable.List
 
 trait ResolvedAst
 
-// TODO: Get rid of external
-
 object ResolvedAst {
 
   case class Program(definitions: Map[Symbol.DefnSym, ResolvedAst.Declaration.Definition],
@@ -51,7 +49,6 @@ object ResolvedAst {
 
     case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends ResolvedAst.Declaration
 
-    // TODO: Rename BoundedLattice.
     case class BoundedLattice(tpe: Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, ns: Name.NName, loc: SourceLocation) extends ResolvedAst.Declaration
 
   }
@@ -86,7 +83,6 @@ object ResolvedAst {
 
     case class Ref(sym: Symbol.DefnSym, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    // TODO: Hook
     case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Unit(loc: SourceLocation) extends ResolvedAst.Expression

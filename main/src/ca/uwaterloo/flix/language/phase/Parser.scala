@@ -136,7 +136,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     Declarations.Namespace |
       Declarations.Constraint |
       Declarations.Definition |
-      Declarations.External |
       Declarations.Enum |
       Declarations.TypeDecl |
       Declarations.LetLattice |
@@ -160,14 +159,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       rule {
         Documentation ~ Annotations ~ optWS ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Definition
       }
-    }
-
-    def Signature: Rule1[ParsedAst.Declaration.Signature] = rule {
-      Documentation ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.Signature
-    }
-
-    def External: Rule1[ParsedAst.Declaration.External] = rule {
-      Documentation ~ SP ~ atomic("external") ~ optWS ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.External
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {

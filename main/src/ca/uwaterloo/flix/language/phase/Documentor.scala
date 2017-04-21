@@ -157,7 +157,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Process formal parameters.
-    val fparams = d.formals.map {
+    val fparams = d.fparams.map {
       case FormalParam(psym, tpe, loc) => JObject(
         JField("name", JString(psym.text)),
         JField("tpe", JString(prettify(tpe)))
