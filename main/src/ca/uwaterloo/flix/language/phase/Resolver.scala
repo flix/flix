@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.util.{Result, Validation}
 import scala.collection.mutable
 
 // TODO: Ensure that program is named prog0
+// TODO: Ensure that NameError, ResolutionError and TypeError are used correctly.
 
 // TODO: DOC
 object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
@@ -228,10 +229,9 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       * Performs name resolution on the given index `i0` in the given namespace `ns0`.
       */
     def resolve(i0: NamedAst.Declaration.Index, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Declaration.Index, ResolutionError] = {
-      lookupTable(i0.qname, ns0, prog0) match {
-        case Ok(table) => ResolvedAst.Declaration.Index(table.sym, i0.indexes, i0.loc).toSuccess
-        case Err(e) => ??? // TODO
-      }
+      for {
+        d <- lookupTable(i0.qname, ns0, prog0)
+      } yield ResolvedAst.Declaration.Index(d.sym, i0.indexes, i0.loc)
     }
 
     /**
@@ -499,15 +499,15 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
         case NamedAst.Predicate.Head.Positive(qname, terms, loc) =>
           for {
-            sym <- getTableSym(qname, ns0, prog0)
+            t <- lookupTable(qname, ns0, prog0)
             ts <- seqM(terms.map(t => Expressions.resolve(t, ns0, prog0)))
-          } yield ResolvedAst.Predicate.Head.Positive(sym, ts, loc)
+          } yield ResolvedAst.Predicate.Head.Positive(t.sym, ts, loc)
 
         case NamedAst.Predicate.Head.Negative(qname, terms, loc) =>
           for {
-            sym <- getTableSym(qname, ns0, prog0)
+            d <- lookupTable(qname, ns0, prog0)
             ts <- seqM(terms.map(t => Expressions.resolve(t, ns0, prog0)))
-          } yield ResolvedAst.Predicate.Head.Negative(sym, ts, loc)
+          } yield ResolvedAst.Predicate.Head.Negative(d.sym, ts, loc)
       }
     }
 
@@ -518,15 +518,15 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       def resolve(b0: NamedAst.Predicate.Body, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
         case NamedAst.Predicate.Body.Positive(qname, terms, loc) =>
           for {
-            sym <- getTableSym(qname, ns0, prog0)
+            d <- lookupTable(qname, ns0, prog0)
             ts <- seqM(terms.map(t => Patterns.resolve(t, ns0, prog0)))
-          } yield ResolvedAst.Predicate.Body.Positive(sym, ts, loc)
+          } yield ResolvedAst.Predicate.Body.Positive(d.sym, ts, loc)
 
         case NamedAst.Predicate.Body.Negative(qname, terms, loc) =>
           for {
-            sym <- getTableSym(qname, ns0, prog0)
+            d <- lookupTable(qname, ns0, prog0)
             ts <- seqM(terms.map(t => Patterns.resolve(t, ns0, prog0)))
-          } yield ResolvedAst.Predicate.Body.Negative(sym, ts, loc)
+          } yield ResolvedAst.Predicate.Body.Negative(d.sym, ts, loc)
 
         case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
           lookupRef(qname, ns0, prog0) match {
@@ -603,16 +603,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     }
 
   }
-
-  /**
-    * Returns the symbol of the table with the given qualified name `qname` in the given namespace `ns0`.
-    */
-  def getTableSym(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Validation[Symbol.TableSym, ResolutionError] =
-    lookupTable(qname, ns0, prog0) match {
-      case Ok(table) => table.sym.toSuccess
-      case Err(e) => ??? // TODO
-    }
-
 
   /**
     * The result of a reference lookup.
@@ -732,20 +722,20 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     *
     * Returns [[Err]] of [[ResolutionError.UndefinedTable]] if the table does not exist.
     */
-  def lookupTable(qname: Name.QName, ns: Name.NName, program: NamedAst.Program): Result[NamedAst.Table, TypeError] = {
+  def lookupTable(qname: Name.QName, ns: Name.NName, program: NamedAst.Program): Validation[NamedAst.Table, ResolutionError] = {
     if (qname.isUnqualified) {
       // Lookup in the current namespace.
       val tables = program.tables.getOrElse(ns, Map.empty)
       tables.get(qname.ident.name) match {
-        case None => Err(ResolutionError.UndefinedTable(qname, ns, qname.loc))
-        case Some(table) => Ok(table)
+        case None => ResolutionError.UndefinedTable(qname, ns, qname.loc).toFailure
+        case Some(table) => table.toSuccess
       }
     } else {
       // Lookup in the qualified namespace.
       val tables = program.tables.getOrElse(qname.namespace, Map.empty)
       tables.get(qname.ident.name) match {
-        case None => Err(ResolutionError.UndefinedTable(qname, qname.namespace, qname.loc))
-        case Some(table) => Ok(table)
+        case None => ResolutionError.UndefinedTable(qname, qname.namespace, qname.loc).toFailure
+        case Some(table) => table.toSuccess
       }
     }
   }
