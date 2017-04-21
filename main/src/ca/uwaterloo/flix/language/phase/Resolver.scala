@@ -213,7 +213,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       val casesVal = e0.cases.map {
         case (name, NamedAst.Case(enum, tag, tpe)) =>
           for {
-            t <- Types.resolve(tpe, ns0, prog0)
+            t <- lookupType(tpe, ns0, prog0)
           } yield name -> ResolvedAst.Case(enum, tag, t)
       }
 

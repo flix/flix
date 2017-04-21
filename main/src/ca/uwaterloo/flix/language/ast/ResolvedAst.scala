@@ -253,7 +253,7 @@ object ResolvedAst {
 
   case class Attribute(ident: Name.Ident, tpe: ast.Type, loc: SourceLocation) extends ResolvedAst
 
-  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: ResolvedAst.Type) extends ResolvedAst
+  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: ast.Type) extends ResolvedAst
 
   sealed trait ConstraintParam
 
