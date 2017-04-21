@@ -518,10 +518,15 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             ts <- seqM(terms.map(t => Patterns.resolve(t, ns0, prog0)))
           } yield ResolvedAst.Predicate.Body.Negative(sym, ts, loc)
 
-        case NamedAst.Predicate.Body.Filter(name, terms, loc) =>
-          for {
-            ts <- seqM(terms.map(t => Expressions.resolve(t, ns0, prog0)))
-          } yield ResolvedAst.Predicate.Body.Filter(name, ts, loc)
+        case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
+          Disambiguation2.lookupRef(qname, ns0, prog0) match {
+            case Ok(RefTarget.Defn(ns, defn)) =>
+              for {
+                ts <- seqM(terms.map(t => Expressions.resolve(t, ns0, prog0)))
+              } yield ResolvedAst.Predicate.Body.Filter(defn.sym, ts, loc)
+            case Ok(RefTarget.Hook(hook)) => ???
+            case Err(e) => ???
+          }
 
         case NamedAst.Predicate.Body.Loop(pat, term, loc) =>
           for {

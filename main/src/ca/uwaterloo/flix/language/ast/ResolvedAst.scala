@@ -225,7 +225,7 @@ object ResolvedAst {
 
       case class Negative(sym: Symbol.TableSym, terms: List[ResolvedAst.Pattern], loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
-      case class Filter(name: Name.QName, terms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Predicate.Body
+      case class Filter(sym: Symbol.DefnSym, terms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
       case class Loop(pat: ResolvedAst.Pattern, term: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Predicate.Body
 

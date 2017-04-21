@@ -17,11 +17,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
 import ca.uwaterloo.flix.language.phase.Disambiguation.RefTarget
 import ca.uwaterloo.flix.language.phase.Unification._
+import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
@@ -1100,26 +1100,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           case Ok(declaredTypes) => Terms.Body.typecheck(terms, declaredTypes, loc, ns0, program)
           case Err(e) => failM(e)
         }
-      case ResolvedAst.Predicate.Body.Filter(qname, terms, loc) =>
-        Disambiguation.lookupRef(qname, ns0, program) match {
-          case Ok(RefTarget.Defn(ns, defn)) =>
-            val expectedTypes = Disambiguation.resolve(defn.fparams.map(_.tpe), ns, program) match {
-              case Ok(tpes) => tpes
-              case Err(e) => return failM(e)
-            }
-            for (
-              actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns0, program)));
-              unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes, loc)
-            ) yield unifiedTypes
-          case Ok(RefTarget.Hook(hook)) =>
-            val Type.Apply(Type.Arrow(l), ts) = hook.tpe
-            val declaredTypes = ts.take(l - 1)
-            for (
-              actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns0, program)));
-              unifiedTypes <- Unification.unifyM(declaredTypes, actualTypes, loc)
-            ) yield unifiedTypes
-          case Err(e) => failM(e)
+      case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
+        val defn = program.definitions2(sym)
+        val expectedTypes = Disambiguation.resolve(defn.fparams.map(_.tpe), /* TODO: Incorrect namespace */ ns0, program) match {
+          case Ok(tpes) => tpes
+          case Err(e) => return failM(e)
         }
+        for (
+          actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns0, program)));
+          unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes, loc)
+        ) yield unifiedTypes
+
       case ResolvedAst.Predicate.Body.Loop(pat, term, loc) =>
         // TODO: Assumes that pat is a variable symbol.
         val sym = pat.asInstanceOf[ResolvedAst.Pattern.Var].sym
@@ -1153,15 +1144,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Predicate.Body.Negative(sym, terms, loc) =>
         val ts = terms.map(t => Patterns.reassemble(t, ns0, program, subst0))
         TypedAst.Predicate.Body.Negative(sym, ts, loc)
-      case ResolvedAst.Predicate.Body.Filter(qname, terms, loc) =>
-        Disambiguation.lookupRef(qname, ns0, program) match {
-          case Ok(RefTarget.Defn(ns, defn)) =>
-            val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
-            TypedAst.Predicate.Body.Filter(defn.sym, ts, loc)
-          case Ok(RefTarget.Hook(hook)) =>
-            throw InternalCompilerException("No longer supported.") // TODO
-          case Err(e) => throw InternalCompilerException("Lookup should have failed during type inference.")
-        }
+      case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
+        val defn = program.definitions2(sym)
+        val ts = terms.map(t => Expressions.reassemble(t, ns0, program, subst0))
+        TypedAst.Predicate.Body.Filter(defn.sym, ts, loc)
       case ResolvedAst.Predicate.Body.Loop(pat, term, loc) =>
         // TODO: Assumes that the pattern is a single variable.
         val p = pat.asInstanceOf[ResolvedAst.Pattern.Var]

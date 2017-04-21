@@ -26,54 +26,6 @@ import scala.collection.mutable
 object Disambiguation {
 
   /**
-    * The result of a reference lookup.
-    */
-  sealed trait RefTarget
-
-  object RefTarget {
-
-    case class Defn(ns: Name.NName, defn: ResolvedAst.Declaration.Definition) extends RefTarget
-
-    case class Hook(hook: Ast.Hook) extends RefTarget
-
-  }
-
-  /**
-    * Finds the definition with the qualified name `qname` in the namespace `ns0`.
-    */
-  def lookupRef(qname: Name.QName, ns0: Name.NName, program: ResolvedAst.Program): Result[RefTarget, TypeError] = {
-    // check whether the reference is fully-qualified.
-    if (qname.isUnqualified) {
-      // Case 1: Unqualified reference. Lookup both the definition and the hook.
-      val defnOpt = program.definitions.getOrElse(ns0, Map.empty).get(qname.ident.name)
-      val hookOpt = program.hooks.get(Symbol.mkDefnSym(ns0, qname.ident))
-
-      (defnOpt, hookOpt) match {
-        case (Some(defn), None) => Ok(RefTarget.Defn(ns0, defn))
-        case (None, Some(hook)) => Ok(RefTarget.Hook(hook))
-        case (None, None) =>
-          // Try the global namespace.
-          program.definitions.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name) match {
-            case None => Err(ResolutionError.UndefinedRef(qname, ns0, qname.loc))
-            case Some(defn) => Ok(RefTarget.Defn(Name.RootNS, defn))
-          }
-        case (Some(defn), Some(hook)) => Err(ResolutionError.AmbiguousRef(qname, ns0, qname.loc))
-      }
-    } else {
-      // Case 2: Qualified. Lookup both the definition and the hook.
-      val defnOpt = program.definitions.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
-      val hookOpt = program.hooks.get(Symbol.mkDefnSym(qname.namespace, qname.ident))
-
-      (defnOpt, hookOpt) match {
-        case (Some(defn), None) => Ok(RefTarget.Defn(qname.namespace, defn))
-        case (None, Some(hook)) => Ok(RefTarget.Hook(hook))
-        case (None, None) => Err(ResolutionError.UndefinedRef(qname, ns0, qname.loc))
-        case (Some(defn), Some(hook)) => Err(ResolutionError.AmbiguousRef(qname, ns0, qname.loc))
-      }
-    }
-  }
-
-  /**
     * Finds the enum definition matching the given qualified name and tag.
     */
   def lookupEnumByTag(qname: Option[Name.QName], tag: Name.Ident, ns: Name.NName, program: ResolvedAst.Program): Result[ResolvedAst.Declaration.Enum, TypeError] = {
