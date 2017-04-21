@@ -436,14 +436,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Reference expression.
          */
-        case ResolvedAst.Expression.Ref(ref, tvar, loc) =>
-          Disambiguation.lookupRef(ref, ns0, program) match {
-            case Ok(RefTarget.Defn(ns, defn)) =>
-              Disambiguation.resolve(defn.sc, ns, program) match {
-                case Ok(scheme) => unifyM(tvar, Scheme.instantiate(scheme), loc)
-                case Err(e) => failM(e)
-              }
-            case Ok(RefTarget.Hook(hook)) => liftM(hook.tpe)
+        case ResolvedAst.Expression.Ref(sym, tvar, loc) =>
+          val defn = program.definitions2(sym)
+          // TODO: sc should not be resolved in this namespace.
+          Disambiguation.resolve(defn.sc, ns0, program) match {
+            case Ok(scheme) => unifyM(tvar, Scheme.instantiate(scheme), loc)
             case Err(e) => failM(e)
           }
 
@@ -791,11 +788,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Reference expression.
          */
-        case ResolvedAst.Expression.Ref(qname, tvar, loc) =>
-          Disambiguation.lookupRef(qname, ns0, program).get match {
-            case RefTarget.Defn(ns, defn) => TypedAst.Expression.Ref(defn.sym, subst0(tvar), loc)
-            case RefTarget.Hook(hook) => TypedAst.Expression.Hook(hook, hook.tpe, loc)
-          }
+        case ResolvedAst.Expression.Ref(sym, tvar, loc) =>
+          TypedAst.Expression.Ref(sym, subst0(tvar), loc)
 
         /*
          * Literal expression.

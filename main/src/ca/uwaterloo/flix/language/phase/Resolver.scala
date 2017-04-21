@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Name, NamedAst, ResolvedAst, Symbol}
 import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.phase.Disambiguation2.RefTarget
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -285,12 +286,12 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         case NamedAst.Expression.Var(sym, loc) => ResolvedAst.Expression.Var(sym, loc).toSuccess
 
         case NamedAst.Expression.Ref(ref, tvar, loc) =>
-          ResolvedAst.Expression.Ref(ref, tvar, loc).toSuccess
-        //          Disambiguation.lookupRef(ref, ns0, prog0) match {
-        //            case Ok(RefTarget.Defn(ns, defn)) => ??? // TODO
-        //            case Ok(RefTarget.Hook(hook)) => ??? // TODO
-        //            case Err(e) => ??? // TODO
-        //          }
+          Disambiguation2.lookupRef(ref, ns0, prog0) match {
+            case Ok(RefTarget.Defn(ns, defn)) =>
+              ResolvedAst.Expression.Ref(defn.sym, tvar, loc).toSuccess
+            case Ok(RefTarget.Hook(hook)) => ??? // TODO
+            case Err(e) => ??? // TODO
+          }
 
         case NamedAst.Expression.Unit(loc) => ResolvedAst.Expression.Unit(loc).toSuccess
 

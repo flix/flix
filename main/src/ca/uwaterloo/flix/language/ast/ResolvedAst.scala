@@ -94,7 +94,10 @@ object ResolvedAst {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Ref(ref: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Ref(sym: Symbol.DefnSym, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    // TODO: Hook
+    case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Unit(loc: SourceLocation) extends ResolvedAst.Expression
 
