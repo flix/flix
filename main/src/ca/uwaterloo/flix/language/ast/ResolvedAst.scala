@@ -35,7 +35,7 @@ object ResolvedAst {
                       // TODO: Refactor these:
                       definitions: Map[Name.NName, Map[String, ResolvedAst.Declaration.Definition]],
                       enums: Map[Name.NName, Map[String, ResolvedAst.Declaration.Enum]],
-                      lattices: Map[ResolvedAst.Type, ResolvedAst.Declaration.BoundedLattice],
+                      lattices: Map[ast.Type, ResolvedAst.Declaration.BoundedLattice],
                       indexes: Map[Name.NName, Map[String, ResolvedAst.Declaration.Index]],
                       tables: Map[Name.NName, Map[String, ResolvedAst.Table]],
                       constraints: Map[Name.NName, List[ResolvedAst.Constraint]],
@@ -58,7 +58,8 @@ object ResolvedAst {
 
     case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends ResolvedAst.Declaration
 
-    case class BoundedLattice(tpe: ResolvedAst.Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, ns: Name.NName, loc: SourceLocation) extends ResolvedAst.Declaration
+    // TODO: Rename BoundedLattice.
+    case class BoundedLattice(tpe: ast.Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, ns: Name.NName, loc: SourceLocation) extends ResolvedAst.Declaration
 
   }
 

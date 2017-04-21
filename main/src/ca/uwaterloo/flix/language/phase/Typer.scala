@@ -276,36 +276,35 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         def visitLattice(lattice: ResolvedAst.Declaration.BoundedLattice): Result[(Type, TypedAst.Declaration.BoundedLattice), TypeError] = lattice match {
           case ResolvedAst.Declaration.BoundedLattice(tpe, e1, e2, e3, e4, e5, ns, loc) =>
             // Perform type resolution on the declared type.
-            Disambiguation.resolve(tpe, ns, program) flatMap {
-              case declaredType =>
+            val declaredType = lattice.tpe
 
-                // Perform type inference on each of the lattice components.
-                val m = for {
-                  botType <- Expressions.infer(e1, ns, program)
-                  topType <- Expressions.infer(e2, ns, program)
-                  leqType <- Expressions.infer(e3, ns, program)
-                  lubType <- Expressions.infer(e4, ns, program)
-                  glbType <- Expressions.infer(e5, ns, program)
-                  _______ <- unifyM(botType, declaredType, loc)
-                  _______ <- unifyM(topType, declaredType, loc)
-                  _______ <- unifyM(leqType, Type.mkArrow(List(declaredType, declaredType), Type.Bool), loc)
-                  _______ <- unifyM(lubType, Type.mkArrow(List(declaredType, declaredType), declaredType), loc)
-                  _______ <- unifyM(glbType, Type.mkArrow(List(declaredType, declaredType), declaredType), loc)
-                } yield declaredType
+            // Perform type inference on each of the lattice components.
+            val m = for {
+              botType <- Expressions.infer(e1, ns, program)
+              topType <- Expressions.infer(e2, ns, program)
+              leqType <- Expressions.infer(e3, ns, program)
+              lubType <- Expressions.infer(e4, ns, program)
+              glbType <- Expressions.infer(e5, ns, program)
+              _______ <- unifyM(botType, declaredType, loc)
+              _______ <- unifyM(topType, declaredType, loc)
+              _______ <- unifyM(leqType, Type.mkArrow(List(declaredType, declaredType), Type.Bool), loc)
+              _______ <- unifyM(lubType, Type.mkArrow(List(declaredType, declaredType), declaredType), loc)
+              _______ <- unifyM(glbType, Type.mkArrow(List(declaredType, declaredType), declaredType), loc)
+            } yield declaredType
 
-                // Evaluate the type inference monad with the empty substitution
-                m.run(Substitution.empty) map {
-                  case (subst, _) =>
-                    // Reassemble the lattice components.
-                    val bot = Expressions.reassemble(e1, ns, program, subst)
-                    val top = Expressions.reassemble(e2, ns, program, subst)
-                    val leq = Expressions.reassemble(e3, ns, program, subst)
-                    val lub = Expressions.reassemble(e4, ns, program, subst)
-                    val glb = Expressions.reassemble(e5, ns, program, subst)
+            // Evaluate the type inference monad with the empty substitution
+            m.run(Substitution.empty) map {
+              case (subst, _) =>
+                // Reassemble the lattice components.
+                val bot = Expressions.reassemble(e1, ns, program, subst)
+                val top = Expressions.reassemble(e2, ns, program, subst)
+                val leq = Expressions.reassemble(e3, ns, program, subst)
+                val lub = Expressions.reassemble(e4, ns, program, subst)
+                val glb = Expressions.reassemble(e5, ns, program, subst)
 
-                    declaredType -> TypedAst.Declaration.BoundedLattice(declaredType, bot, top, leq, lub, glb, loc)
-                }
+                declaredType -> TypedAst.Declaration.BoundedLattice(declaredType, bot, top, leq, lub, glb, loc)
             }
+
         }
 
 

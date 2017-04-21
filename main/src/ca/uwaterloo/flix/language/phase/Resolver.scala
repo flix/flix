@@ -52,7 +52,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     val latticesVal = prog0.lattices.map {
       case (tpe0, lattice0) =>
         for {
-          tpe <- Types.resolve(tpe0, lattice0.ns, prog0)
+          tpe <- lookupType(tpe0, lattice0.ns, prog0)
           lattice <- Declarations.resolve(lattice0, lattice0.ns, prog0)
         } yield (tpe, lattice)
     }
@@ -239,7 +239,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       */
     def resolve(l0: NamedAst.Declaration.BoundedLattice, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Declaration.BoundedLattice, ResolutionError] = {
       for {
-        tpe <- Types.resolve(l0.tpe, ns0, prog0)
+        tpe <- lookupType(l0.tpe, ns0, prog0)
         bot <- Expressions.resolve(l0.bot, ns0, prog0)
         top <- Expressions.resolve(l0.top, ns0, prog0)
         leq <- Expressions.resolve(l0.leq, ns0, prog0)
