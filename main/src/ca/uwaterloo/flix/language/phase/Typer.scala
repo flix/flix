@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
+import ca.uwaterloo.flix.util.{Result, Validation}
 
 object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
@@ -151,10 +151,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         }
 
         // TODO: Some duplication
-        val argumentTypes = Disambiguation.resolve(defn0.fparams.map(_.tpe), ns0, program) match {
-          case Ok(tpes) => tpes
-          case Err(e) => return Err(e)
-        }
+        val argumentTypes = defn0.fparams.map(_.tpe)
 
         val result = for (
           resultType <- Expressions.infer(defn0.exp, ns0, program);
@@ -940,12 +937,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       /**
         * Applies the substitution to the given list of formal parameters.
         */
-      def visitParam(param: ResolvedAst.FormalParam): TypedAst.FormalParam = {
-        Disambiguation.resolve(param.tpe, ns0, program) match {
-          case Ok(resolvedType) => TypedAst.FormalParam(param.sym, subst0(resolvedType), param.loc)
-          case Err(_) => throw InternalCompilerException("Never happens. Resolution should have failed during type inference.")
-        }
-      }
+      def visitParam(param: ResolvedAst.FormalParam): TypedAst.FormalParam =
+        TypedAst.FormalParam(param.sym, subst0(param.tpe), param.loc)
 
       visitExp(exp0, subst0)
     }
@@ -1088,10 +1081,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         }
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
         val defn = program.definitions2(sym)
-        val expectedTypes = Disambiguation.resolve(defn.fparams.map(_.tpe), /* TODO: Incorrect namespace */ ns0, program) match {
-          case Ok(tpes) => tpes
-          case Err(e) => return failM(e)
-        }
+        val expectedTypes = defn.fparams.map(_.tpe)
         for (
           actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns0, program)));
           unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes, loc)
@@ -1197,15 +1187,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * @param program the program.
     */
   def getSubstFromParams(params: List[ResolvedAst.FormalParam], ns0: Name.NName, program: ResolvedAst.Program): Result[Unification.Substitution, TypeError] = {
-    // Perform type resolution on each parameter.
-    Disambiguation.resolve(params.map(_.tpe), ns0, program) map {
-      case declaredTypes =>
-        // Compute the substitution by mapping the symbol of each parameter to its declared type.
-        (params zip declaredTypes).foldLeft(Substitution.empty) {
-          case (macc, (ResolvedAst.FormalParam(sym, _, _), declaredType)) =>
-            macc ++ Substitution.singleton(sym.tvar, declaredType)
-        }
+    // Compute the substitution by mapping the symbol of each parameter to its declared type.
+    val declaredTypes = params.map(_.tpe)
+    val result = (params zip declaredTypes).foldLeft(Substitution.empty) {
+      case (macc, (ResolvedAst.FormalParam(sym, _, _), declaredType)) =>
+        macc ++ Substitution.singleton(sym.tvar, declaredType)
     }
+    Ok(result) // TODO: Remove Result
   }
 
 }
