@@ -38,7 +38,7 @@ object ResolvedAst {
                       tables: Map[Name.NName, Map[String, ResolvedAst.Table]],
                       constraints: Map[Name.NName, List[ResolvedAst.Constraint]],
                       hooks: Map[Symbol.DefnSym, Ast.Hook],
-                      properties: Map[Name.NName, List[ResolvedAst.Property]],
+                      properties: List[ResolvedAst.Property],
                       reachable: Set[Symbol.DefnSym],
                       time: Time) extends ResolvedAst
 

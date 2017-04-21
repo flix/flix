@@ -75,9 +75,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     }
 
     val propertiesVal = prog0.properties.map {
-      case (ns, properties) => Properties.resolve(properties, ns, prog0) map {
-        case ps => ns -> ps
-      }
+      case (ns, properties) => Properties.resolve(properties, ns, prog0)
     }
 
     // TODO: Add time
@@ -118,7 +116,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         definitions2,
         enums2,
         tables2,
-        definitions.toMap, enums.toMap, lattices.toMap, indexes.toMap, tables.toMap, constraints.toMap, prog0.hooks, properties.toMap, prog0.reachable, prog0.time.copy(resolver = e))
+        definitions.toMap, enums.toMap, lattices.toMap, indexes.toMap, tables.toMap, constraints.toMap, prog0.hooks, properties.flatten, prog0.reachable, prog0.time.copy(resolver = e))
     }
   }
 

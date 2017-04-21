@@ -364,28 +364,26 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     object Properties {
 
       /**
-        * Infers the types of all the properties in the given `program`.
+        * Infers the types of all the properties in the given program `prog0`.
         */
-      def typecheck(program: ResolvedAst.Program)(implicit genSym: GenSym): Result[List[TypedAst.Property], TypeError] = {
+      def typecheck(prog0: ResolvedAst.Program)(implicit genSym: GenSym): Result[List[TypedAst.Property], TypeError] = {
 
         /**
           * Infers the type of the given property `p0` in the namespace `ns0`.
           */
         def visitProperty(p0: ResolvedAst.Property, ns0: Name.NName): Result[TypedAst.Property, TypeError] = p0 match {
           case ResolvedAst.Property(law, defn, exp0, loc) =>
-            val result = Expressions.infer(exp0, ns0, program)
+            val result = Expressions.infer(exp0, ns0, prog0)
             result.run(Substitution.empty) map {
               case (subst, tpe) =>
-                val exp = Expressions.reassemble(exp0, ns0, program, subst)
+                val exp = Expressions.reassemble(exp0, ns0, prog0, subst)
                 TypedAst.Property(law, defn, exp, loc)
             }
         }
 
         // Visit every property in the program.
-        val results = program.properties.toList.flatMap {
-          case (ns, properties) => properties.map {
-            property => visitProperty(property, ns)
-          }
+        val results = prog0.properties.map {
+          case property => visitProperty(property, /*TODO: Remove*/ Name.RootNS)
         }
 
         // Sequence the results and sort the properties by their source location.
