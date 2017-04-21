@@ -147,7 +147,7 @@ object ResolvedAst {
 
     case class Universal(fparam: ResolvedAst.FormalParam, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Ascribe(exp: ResolvedAst.Expression, tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Ascribe(exp: ResolvedAst.Expression, tpe: ast.Type, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class NativeConstructor(method: Constructor[_], args: List[ResolvedAst.Expression], tpe: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -233,6 +233,7 @@ object ResolvedAst {
 
   }
 
+  // TODO: Remove and replace every occurence of ast.Type with just Type.
   sealed trait Type extends ResolvedAst
 
   object Type {

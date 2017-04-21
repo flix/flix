@@ -407,7 +407,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         case NamedAst.Expression.Ascribe(exp, tpe, loc) =>
           for {
             e <- visit(exp)
-            t <- Types.resolve(tpe, ns0, prog0)
+            t <- lookupType(tpe, ns0, prog0)
           } yield ResolvedAst.Expression.Ascribe(e, t, loc)
 
         case NamedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
@@ -573,6 +573,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     /**
       * Performs name resolution on the given type `tpe0` in the given namespace `ns0`.
       */
+    // TODO: Get rid of this
     def resolve(tpe0: NamedAst.Type, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Type, ResolutionError] = {
       /**
         * Local visitor.
@@ -787,25 +788,25 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Resolves the given type `tpe0` in the given namespace `ns0`.
     */
-  def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, program: NamedAst.Program): Result[Type, TypeError] = tpe0 match {
-    case NamedAst.Type.Var(tvar, loc) => Ok(tvar)
-    case NamedAst.Type.Unit(loc) => Ok(Type.Unit)
+  def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, program: NamedAst.Program): Validation[Type, ResolutionError] = tpe0 match {
+    case NamedAst.Type.Var(tvar, loc) => tvar.toSuccess
+    case NamedAst.Type.Unit(loc) => Type.Unit.toSuccess
     case NamedAst.Type.Ref(qname, loc) if qname.isUnqualified => qname.ident.name match {
       // Basic Types
-      case "Unit" => Ok(Type.Unit)
-      case "Bool" => Ok(Type.Bool)
-      case "Char" => Ok(Type.Char)
-      case "Float" => Ok(Type.Float64)
-      case "Float32" => Ok(Type.Float32)
-      case "Float64" => Ok(Type.Float64)
-      case "Int" => Ok(Type.Int32)
-      case "Int8" => Ok(Type.Int8)
-      case "Int16" => Ok(Type.Int16)
-      case "Int32" => Ok(Type.Int32)
-      case "Int64" => Ok(Type.Int64)
-      case "BigInt" => Ok(Type.BigInt)
-      case "Str" => Ok(Type.Str)
-      case "Native" => Ok(Type.Native)
+      case "Unit" => Type.Unit.toSuccess
+      case "Bool" => Type.Bool.toSuccess
+      case "Char" => Type.Char.toSuccess
+      case "Float" => Type.Float64.toSuccess
+      case "Float32" => Type.Float32.toSuccess
+      case "Float64" => Type.Float64.toSuccess
+      case "Int" => Type.Int32.toSuccess
+      case "Int8" => Type.Int8.toSuccess
+      case "Int16" => Type.Int16.toSuccess
+      case "Int32" => Type.Int32.toSuccess
+      case "Int64" => Type.Int64.toSuccess
+      case "BigInt" => Type.BigInt.toSuccess
+      case "Str" => Type.Str.toSuccess
+      case "Native" => Type.Native.toSuccess
 
       // Enum Types.
       case typeName =>
@@ -817,34 +818,34 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             // The enum was not found in the current namespace. Try the root namespace.
             val rootDecls = program.enums.getOrElse(Name.RootNS, Map.empty)
             rootDecls.get(typeName) match {
-              case None => Err(ResolutionError.UndefinedType(qname, ns0, loc))
-              case Some(enum) => Ok(Type.Enum(enum.sym, Kind.Star /* TODO: Kind */))
+              case None => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
+              case Some(enum) => Type.Enum(enum.sym, Kind.Star /* TODO: Kind */).toSuccess
             }
-          case Some(enum) => Ok(Type.Enum(enum.sym, Kind.Star /* TODO: Kind */))
+          case Some(enum) => Type.Enum(enum.sym, Kind.Star /* TODO: Kind */).toSuccess
         }
     }
     case NamedAst.Type.Ref(qname, loc) if qname.isQualified =>
       // Lookup the enum using the namespace.
       val decls = program.enums.getOrElse(qname.namespace, Map.empty)
       decls.get(qname.ident.name) match {
-        case None => Err(ResolutionError.UndefinedType(qname, ns0, loc))
-        case Some(enum) => Ok(Type.Enum(enum.sym, Kind.Star /* TODO: Kind */))
+        case None => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
+        case Some(enum) => Type.Enum(enum.sym, Kind.Star /* TODO: Kind */).toSuccess
       }
     case NamedAst.Type.Enum(sym) =>
-      Ok(Type.Enum(sym, Kind.Star /* TODO: Kind */))
+      Type.Enum(sym, Kind.Star /* TODO: Kind */).toSuccess
     case NamedAst.Type.Tuple(elms0, loc) =>
       for (
-        elms <- Result.seqM(elms0.map(tpe => lookupType(tpe, ns0, program)))
+        elms <- seqM(elms0.map(tpe => lookupType(tpe, ns0, program)))
       ) yield Type.mkFTuple(elms)
     case NamedAst.Type.Arrow(tparams0, tresult0, loc) =>
       for (
-        tparams <- Result.seqM(tparams0.map(tpe => lookupType(tpe, ns0, program)));
+        tparams <- seqM(tparams0.map(tpe => lookupType(tpe, ns0, program)));
         tresult <- lookupType(tresult0, ns0, program)
       ) yield Type.mkArrow(tparams, tresult)
     case NamedAst.Type.Apply(base0, tparams0, loc) =>
       for (
         baseType <- lookupType(base0, ns0, program);
-        argTypes <- Result.seqM(tparams0.map(tpe => lookupType(tpe, ns0, program)))
+        argTypes <- seqM(tparams0.map(tpe => lookupType(tpe, ns0, program)))
       ) yield Type.Apply(baseType, argTypes)
 
   }
@@ -852,14 +853,14 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Resolves the given type `tpe0` in the given namespace `ns0`.
     */
-  def lookupTypes(tpes0: List[NamedAst.Type], ns0: Name.NName, program: NamedAst.Program): Result[List[Type], TypeError] = {
-    Result.seqM(tpes0.map(tpe => lookupType(tpe, ns0, program)))
+  def lookupTypes(tpes0: List[NamedAst.Type], ns0: Name.NName, program: NamedAst.Program): Validation[List[Type], ResolutionError] = {
+    seqM(tpes0.map(tpe => lookupType(tpe, ns0, program)))
   }
 
   /**
     * Resolves the given scheme `sc0` in the given namespace `ns0`.
     */
-  def lookupScheme(sc0: NamedAst.Scheme, ns0: Name.NName, program: NamedAst.Program): Result[Scheme, TypeError] = {
+  def lookupScheme(sc0: NamedAst.Scheme, ns0: Name.NName, program: NamedAst.Program): Validation[Scheme, ResolutionError] = {
     lookupType(sc0.base, ns0, program) map {
       case base => Scheme(sc0.quantifiers, base)
     }

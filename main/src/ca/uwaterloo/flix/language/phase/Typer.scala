@@ -721,14 +721,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * Ascribe expression.
          */
         case ResolvedAst.Expression.Ascribe(exp, expectedType, loc) =>
-          Disambiguation.resolve(expectedType, ns0, program) match {
-            case Ok(resolvedType) =>
-              for (
-                actualType <- visitExp(exp);
-                resultType <- unifyM(actualType, resolvedType, loc)
-              ) yield resultType
-            case Err(e) => failM(e)
-          }
+          for {
+            actualType <- visitExp(exp)
+            resultType <- unifyM(actualType, expectedType, loc)
+          } yield resultType
 
         /*
          * Native Constructor expression.
