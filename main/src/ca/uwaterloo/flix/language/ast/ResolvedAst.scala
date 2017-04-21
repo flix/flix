@@ -52,11 +52,7 @@ object ResolvedAst {
 
   object Declaration {
 
-    case class Definition(doc: Option[Ast.Documentation], ann: Ast.Annotations, sym: Symbol.DefnSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: ResolvedAst.Scheme, loc: SourceLocation) extends ResolvedAst.Declaration
-
-    case class Signature(doc: Option[Ast.Documentation], ident: Name.Ident, params: List[ResolvedAst.FormalParam], tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Declaration
-
-    case class External(doc: Option[Ast.Documentation], ident: Name.Ident, params: List[ResolvedAst.FormalParam], tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Declaration
+    case class Definition(doc: Option[Ast.Documentation], ann: Ast.Annotations, sym: Symbol.DefnSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: Scheme, loc: SourceLocation) extends ResolvedAst.Declaration
 
     case class Enum(doc: Option[Ast.Documentation], sym: Symbol.EnumSym, tparams: List[ResolvedAst.TypeParam], cases: Map[String, ResolvedAst.Case], tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Declaration
 
@@ -253,8 +249,6 @@ object ResolvedAst {
     case class Apply(base: ResolvedAst.Type, tparams: List[ResolvedAst.Type], loc: SourceLocation) extends ResolvedAst.Type
 
   }
-
-  case class Scheme(quantifiers: List[ast.Type.Var], base: ResolvedAst.Type) extends ResolvedAst
 
   case class Attribute(ident: Name.Ident, tpe: ast.Type, loc: SourceLocation) extends ResolvedAst
 

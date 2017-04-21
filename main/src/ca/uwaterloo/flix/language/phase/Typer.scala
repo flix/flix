@@ -145,10 +145,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       // TODO: Cleanup
       def infer(defn0: ResolvedAst.Declaration.Definition, ns0: Name.NName, program: ResolvedAst.Program)(implicit genSym: GenSym): Result[TypedAst.Declaration.Definition, TypeError] = {
         // Resolve the declared scheme.
-        val declaredScheme = Disambiguation.resolve(defn0.sc, ns0, program) match {
-          case Ok(scheme) => scheme
-          case Err(e) => return Err(e)
-        }
+        val declaredScheme = defn0.sc
 
         // TODO: Some duplication
         val argumentTypes = defn0.fparams.map(_.tpe)
@@ -430,11 +427,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.Ref(sym, tvar, loc) =>
           val defn = program.definitions2(sym)
-          // TODO: sc should not be resolved in this namespace.
-          Disambiguation.resolve(defn.sc, ns0, program) match {
-            case Ok(scheme) => unifyM(tvar, Scheme.instantiate(scheme), loc)
-            case Err(e) => failM(e)
-          }
+          unifyM(tvar, Scheme.instantiate(defn.sc), loc)
 
         /*
          * Literal expression.

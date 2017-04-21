@@ -194,8 +194,8 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       */
     def resolve(d0: NamedAst.Declaration.Definition, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Declaration.Definition, ResolutionError] = {
       val schemeVal = for {
-        base <- Types.resolve(d0.sc.base, ns0, prog0)
-      } yield ResolvedAst.Scheme(d0.sc.quantifiers, base)
+        base <- lookupType(d0.sc.base, ns0, prog0)
+      } yield Scheme(d0.sc.quantifiers, base)
 
       for {
         tparams <- seqM(d0.tparams.map(tparam => Params.resolve(tparam, ns0, prog0)))

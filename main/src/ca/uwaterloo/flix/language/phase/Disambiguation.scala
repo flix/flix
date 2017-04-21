@@ -91,15 +91,6 @@ object Disambiguation {
   }
 
   /**
-    * Resolves the given scheme `sc0` in the given namespace `ns0`.
-    */
-  def resolve(sc0: ResolvedAst.Scheme, ns0: Name.NName, program: ResolvedAst.Program): Result[Scheme, TypeError] = {
-    resolve(sc0.base, ns0, program) map {
-      case base => Scheme(sc0.quantifiers, base)
-    }
-  }
-
-  /**
     * Resolves the given type `tpe0` in the given namespace `ns0`.
     */
   def resolve(tpes0: List[ResolvedAst.Type], ns0: Name.NName, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
