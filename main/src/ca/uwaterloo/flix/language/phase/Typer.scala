@@ -238,22 +238,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           * Checks that the referenced table exists and that every attribute used by the index exists.
           */
         def visitIndex(index: ResolvedAst.Declaration.Index, ns: Name.NName): Result[(Symbol.TableSym, TypedAst.Declaration.Index), TypeError] = index match {
-          case ResolvedAst.Declaration.Index(qname, indexes, loc) =>
-            // Lookup the referenced table.
-            Disambiguation.lookupTable(qname, ns, program) flatMap {
-              case table =>
-                val declaredAttributes = table.attr.map(_.ident.name)
-                // Iterate through every index in the declaration.
-                for (index <- indexes) {
-                  // Iterate through every attribute name in the current index.
-                  for (referencedAttribute <- index) {
-                    if (!(declaredAttributes contains referencedAttribute.name)) {
-                      return Err(ResolutionError.UndefinedAttribute(table.sym.name, referencedAttribute.name, referencedAttribute.loc))
-                    }
-                  }
+          case ResolvedAst.Declaration.Index(sym, indexes, loc) =>
+            // Lookup the table using the table symbol.
+            val table = program.tables2(index.sym)
+
+            val declaredAttributes = table.attr.map(_.ident.name)
+            // Iterate through every index in the declaration.
+            for (index <- indexes) {
+              // Iterate through every attribute name in the current index.
+              for (referencedAttribute <- index) {
+                if (!(declaredAttributes contains referencedAttribute.name)) {
+                  return Err(ResolutionError.UndefinedAttribute(table.sym.name, referencedAttribute.name, referencedAttribute.loc))
                 }
-                Ok(table.sym -> TypedAst.Declaration.Index(table.sym, indexes, loc))
+              }
             }
+            Ok(table.sym -> TypedAst.Declaration.Index(table.sym, indexes, loc))
         }
 
         // Visit every index in the program.
@@ -1207,26 +1206,19 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         ) yield unifiedTypes
       }
     }
+
   }
 
   /**
     * Returns the declared types of the terms of the given fully-qualified table name `qname` in the namespace `ns0`.
     */
   def getTableSignature(sym: Symbol.TableSym, ns0: Name.NName, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
-    val declaredTypes = program.tables(getNamespaceHack(sym))(sym.name) match {
+    val declaredTypes = program.tables2(sym) match {
       case ResolvedAst.Table.Relation(_, _, attr, _) => attr.map(_.tpe)
       case ResolvedAst.Table.Lattice(_, _, keys, value, _) => keys.map(_.tpe) ::: value.tpe :: Nil
     }
 
     Disambiguation.resolve(declaredTypes, ns0, program)
-  }
-
-  // TODO: Remove
-  private def getNamespaceHack(sym: Symbol.TableSym): Name.NName = {
-    val idents = sym.namespace.map {
-      case s => Name.Ident(SourcePosition.Unknown, s, SourcePosition.Unknown)
-    }
-    Name.NName(SourcePosition.Unknown, idents, SourcePosition.Unknown)
   }
 
   /**

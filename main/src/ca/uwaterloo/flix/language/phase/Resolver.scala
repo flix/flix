@@ -89,7 +89,33 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       constraints <- seqM(constraintsVal)
       properties <- seqM(propertiesVal)
     } yield {
-      ResolvedAst.Program(definitions.toMap, enums.toMap, lattices.toMap, indexes.toMap, tables.toMap, constraints.toMap, prog0.hooks, properties.toMap, prog0.reachable, prog0.time)
+
+      // TODO: temporary hack
+      val definitions2 = definitions.flatMap {
+        case (ns, m) => m.map {
+          case (_, defn) => defn.sym -> defn
+        }
+      }.toMap
+
+      // TODO: temporary hack
+      val enums2 = enums.flatMap {
+        case (ns, m) => m.map {
+          case (_, enum) => enum.sym -> enum
+        }
+      }.toMap
+
+      // TODO: temporary hack
+      val tables2 = tables.flatMap {
+        case (ns, m) => m.map {
+          case (_, table) => table.sym -> table
+        }
+      }.toMap
+
+      ResolvedAst.Program(
+        definitions2,
+        enums2,
+        tables2,
+        definitions.toMap, enums.toMap, lattices.toMap, indexes.toMap, tables.toMap, constraints.toMap, prog0.hooks, properties.toMap, prog0.reachable, prog0.time)
     }
   }
 
@@ -198,7 +224,10 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       * Performs name resolution on the given index `i0` in the given namespace `ns0`.
       */
     def resolve(i0: NamedAst.Declaration.Index, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Declaration.Index, ResolutionError] = {
-      ResolvedAst.Declaration.Index(i0.qname, i0.indexes, i0.loc).toSuccess
+      Disambiguation2.lookupTable(i0.qname, ns0, prog0) match {
+        case Ok(table) => ResolvedAst.Declaration.Index(table.sym, i0.indexes, i0.loc).toSuccess
+        case Err(e) => ??? // TODO
+      }
     }
 
     /**

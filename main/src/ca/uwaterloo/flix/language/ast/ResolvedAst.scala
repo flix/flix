@@ -27,16 +27,22 @@ trait ResolvedAst
 object ResolvedAst {
 
   // TODO: These should be direct maps
-  case class Program(definitions: Map[Name.NName, Map[String, ResolvedAst.Declaration.Definition]],
-                     enums: Map[Name.NName, Map[String, ResolvedAst.Declaration.Enum]],
-                     lattices: Map[ResolvedAst.Type, ResolvedAst.Declaration.BoundedLattice],
-                     indexes: Map[Name.NName, Map[String, ResolvedAst.Declaration.Index]],
-                     tables: Map[Name.NName, Map[String, ResolvedAst.Table]],
-                     constraints: Map[Name.NName, List[ResolvedAst.Constraint]],
-                     hooks: Map[Symbol.DefnSym, Ast.Hook],
-                     properties: Map[Name.NName, List[ResolvedAst.Property]],
-                     reachable: Set[Symbol.DefnSym],
-                     time: Time) extends ResolvedAst
+  case class Program(
+                      definitions2: Map[Symbol.DefnSym, ResolvedAst.Declaration.Definition],
+                      enums2: Map[Symbol.EnumSym, ResolvedAst.Declaration.Enum],
+                      tables2: Map[Symbol.TableSym, ResolvedAst.Table],
+
+                      // TODO: Refactor these:
+                      definitions: Map[Name.NName, Map[String, ResolvedAst.Declaration.Definition]],
+                      enums: Map[Name.NName, Map[String, ResolvedAst.Declaration.Enum]],
+                      lattices: Map[ResolvedAst.Type, ResolvedAst.Declaration.BoundedLattice],
+                      indexes: Map[Name.NName, Map[String, ResolvedAst.Declaration.Index]],
+                      tables: Map[Name.NName, Map[String, ResolvedAst.Table]],
+                      constraints: Map[Name.NName, List[ResolvedAst.Constraint]],
+                      hooks: Map[Symbol.DefnSym, Ast.Hook],
+                      properties: Map[Name.NName, List[ResolvedAst.Property]],
+                      reachable: Set[Symbol.DefnSym],
+                      time: Time) extends ResolvedAst
 
   case class Constraint(cparams: List[ResolvedAst.ConstraintParam], head: ResolvedAst.Predicate.Head, body: List[ResolvedAst.Predicate.Body], loc: SourceLocation) extends ResolvedAst
 
@@ -54,7 +60,7 @@ object ResolvedAst {
 
     case class Enum(doc: Option[Ast.Documentation], sym: Symbol.EnumSym, tparams: List[ResolvedAst.TypeParam], cases: Map[String, ResolvedAst.Case], tpe: ResolvedAst.Type, loc: SourceLocation) extends ResolvedAst.Declaration
 
-    case class Index(qname: Name.QName, indexes: List[List[Name.Ident]], loc: SourceLocation) extends ResolvedAst.Declaration
+    case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends ResolvedAst.Declaration
 
     case class BoundedLattice(tpe: ResolvedAst.Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, ns: Name.NName, loc: SourceLocation) extends ResolvedAst.Declaration
 
