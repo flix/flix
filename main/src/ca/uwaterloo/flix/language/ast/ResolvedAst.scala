@@ -35,7 +35,7 @@ object ResolvedAst {
                       definitions: Map[Name.NName, Map[String, ResolvedAst.Declaration.Definition]],
                       enums: Map[Name.NName, Map[String, ResolvedAst.Declaration.Enum]],
                       lattices: Map[Type, ResolvedAst.Declaration.BoundedLattice],
-                      indexes: Map[Name.NName, Map[String, ResolvedAst.Declaration.Index]],
+                      indexes: Map[Symbol.TableSym, ResolvedAst.Declaration.Index],
                       tables: Map[Symbol.TableSym, ResolvedAst.Table],
                       constraints: List[ResolvedAst.Constraint],
                       hooks: Map[Symbol.DefnSym, Ast.Hook],

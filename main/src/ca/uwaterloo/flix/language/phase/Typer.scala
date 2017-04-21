@@ -246,10 +246,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         }
 
         // Visit every index in the program.
-        val result = program.indexes.toList.flatMap {
-          case (ns, indexes) => indexes.map {
-            case (name, index) => visitIndex(index, ns)
-          }
+        val result = program.indexes.toList.map {
+          case (_, index) => visitIndex(index, /*TODO: Remove*/ Name.RootNS)
         }
 
         // Sequence the results and convert them back to a map.

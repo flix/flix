@@ -24,9 +24,9 @@ import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 
-// TODO: Ensure that program is named prog0
-
-// TODO: DOC
+/**
+  * The Resolver phase performs name resolution on the program.
+  */
 object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
   /**
@@ -56,9 +56,11 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         } yield (tpe, lattice)
     }
 
-    val indexesVal = prog0.indexes.map {
-      case (ns, indexes) => Declarations.resolveAllIndexes(indexes, ns, prog0) map {
-        case idxs => ns -> idxs
+    val indexesVal = prog0.indexes.flatMap {
+      case (ns, indexes) => indexes.map {
+        case (name, index) => Declarations.resolve(index, ns, prog0) map {
+          case i => i.sym -> i
+        }
       }
     }
 
@@ -157,26 +159,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       seqM(results).map(_.toMap)
     }
 
-
-    // TODO: Refactor
-    def resolveAllIndexes(m0: Map[String, NamedAst.Declaration.Index], ns0: Name.NName, prog0: NamedAst.Program): Validation[Map[String, ResolvedAst.Declaration.Index], ResolutionError] = {
-      val results = m0.map {
-        case (name, index) => resolve(index, ns0, prog0) map {
-          case d => name -> d
-        }
-      }
-      seqM(results).map(_.toMap)
-    }
-
-    // TODO: Refactor
-    def resolveAllTables(m0: Map[String, NamedAst.Table], ns0: Name.NName, prog0: NamedAst.Program): Validation[Map[String, ResolvedAst.Table], ResolutionError] = {
-      val results = m0.map {
-        case (name, table) => Tables.resolve(table, ns0, prog0) map {
-          case d => name -> d
-        }
-      }
-      seqM(results).map(_.toMap)
-    }
 
     /**
       * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
@@ -598,19 +580,19 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Finds the definition with the qualified name `qname` in the namespace `ns0`.
     */
-  def lookupRef(qname: Name.QName, ns0: Name.NName, program: NamedAst.Program): Validation[RefTarget, ResolutionError] = {
+  def lookupRef(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Validation[RefTarget, ResolutionError] = {
     // check whether the reference is fully-qualified.
     if (qname.isUnqualified) {
       // Case 1: Unqualified reference. Lookup both the definition and the hook.
-      val defnOpt = program.definitions.getOrElse(ns0, Map.empty).get(qname.ident.name)
-      val hookOpt = program.hooks.get(Symbol.mkDefnSym(ns0, qname.ident))
+      val defnOpt = prog0.definitions.getOrElse(ns0, Map.empty).get(qname.ident.name)
+      val hookOpt = prog0.hooks.get(Symbol.mkDefnSym(ns0, qname.ident))
 
       (defnOpt, hookOpt) match {
         case (Some(defn), None) => RefTarget.Defn(ns0, defn).toSuccess
         case (None, Some(hook)) => RefTarget.Hook(hook).toSuccess
         case (None, None) =>
           // Try the global namespace.
-          program.definitions.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name) match {
+          prog0.definitions.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name) match {
             case None => ResolutionError.UndefinedRef(qname, ns0, qname.loc).toFailure
             case Some(defn) => RefTarget.Defn(Name.RootNS, defn).toSuccess
           }
@@ -618,8 +600,8 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       }
     } else {
       // Case 2: Qualified. Lookup both the definition and the hook.
-      val defnOpt = program.definitions.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
-      val hookOpt = program.hooks.get(Symbol.mkDefnSym(qname.namespace, qname.ident))
+      val defnOpt = prog0.definitions.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+      val hookOpt = prog0.hooks.get(Symbol.mkDefnSym(qname.namespace, qname.ident))
 
       (defnOpt, hookOpt) match {
         case (Some(defn), None) => RefTarget.Defn(qname.namespace, defn).toSuccess
@@ -698,17 +680,17 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Finds the table of the given `qname` in the namespace `ns`.
     */
-  def lookupTable(qname: Name.QName, ns: Name.NName, program: NamedAst.Program): Validation[NamedAst.Table, ResolutionError] = {
+  def lookupTable(qname: Name.QName, ns: Name.NName, prog0: NamedAst.Program): Validation[NamedAst.Table, ResolutionError] = {
     if (qname.isUnqualified) {
       // Lookup in the current namespace.
-      val tables = program.tables.getOrElse(ns, Map.empty)
+      val tables = prog0.tables.getOrElse(ns, Map.empty)
       tables.get(qname.ident.name) match {
         case None => ResolutionError.UndefinedTable(qname, ns, qname.loc).toFailure
         case Some(table) => table.toSuccess
       }
     } else {
       // Lookup in the qualified namespace.
-      val tables = program.tables.getOrElse(qname.namespace, Map.empty)
+      val tables = prog0.tables.getOrElse(qname.namespace, Map.empty)
       tables.get(qname.ident.name) match {
         case None => ResolutionError.UndefinedTable(qname, qname.namespace, qname.loc).toFailure
         case Some(table) => table.toSuccess
@@ -719,7 +701,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Resolves the given type `tpe0` in the given namespace `ns0`.
     */
-  def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, program: NamedAst.Program): Validation[Type, ResolutionError] = tpe0 match {
+  def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, prog0: NamedAst.Program): Validation[Type, ResolutionError] = tpe0 match {
     case NamedAst.Type.Var(tvar, loc) => tvar.toSuccess
     case NamedAst.Type.Unit(loc) => Type.Unit.toSuccess
     case NamedAst.Type.Ref(qname, loc) if qname.isUnqualified => qname.ident.name match {
@@ -743,11 +725,11 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       case typeName =>
         // Lookup the enum in the current namespace.
         // If the namespace doesn't even exist, just use an empty map.
-        val namespaceDecls = program.enums.getOrElse(ns0, Map.empty)
+        val namespaceDecls = prog0.enums.getOrElse(ns0, Map.empty)
         namespaceDecls.get(typeName) match {
           case None =>
             // The enum was not found in the current namespace. Try the root namespace.
-            val rootDecls = program.enums.getOrElse(Name.RootNS, Map.empty)
+            val rootDecls = prog0.enums.getOrElse(Name.RootNS, Map.empty)
             rootDecls.get(typeName) match {
               case None => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
               case Some(enum) => Type.Enum(enum.sym, Kind.Star /* TODO: Kind */).toSuccess
@@ -757,7 +739,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     }
     case NamedAst.Type.Ref(qname, loc) if qname.isQualified =>
       // Lookup the enum using the namespace.
-      val decls = program.enums.getOrElse(qname.namespace, Map.empty)
+      val decls = prog0.enums.getOrElse(qname.namespace, Map.empty)
       decls.get(qname.ident.name) match {
         case None => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
         case Some(enum) => Type.Enum(enum.sym, Kind.Star /* TODO: Kind */).toSuccess
@@ -766,17 +748,17 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       Type.Enum(sym, Kind.Star /* TODO: Kind */).toSuccess
     case NamedAst.Type.Tuple(elms0, loc) =>
       for (
-        elms <- seqM(elms0.map(tpe => lookupType(tpe, ns0, program)))
+        elms <- seqM(elms0.map(tpe => lookupType(tpe, ns0, prog0)))
       ) yield Type.mkFTuple(elms)
     case NamedAst.Type.Arrow(tparams0, tresult0, loc) =>
       for (
-        tparams <- seqM(tparams0.map(tpe => lookupType(tpe, ns0, program)));
-        tresult <- lookupType(tresult0, ns0, program)
+        tparams <- seqM(tparams0.map(tpe => lookupType(tpe, ns0, prog0)));
+        tresult <- lookupType(tresult0, ns0, prog0)
       ) yield Type.mkArrow(tparams, tresult)
     case NamedAst.Type.Apply(base0, tparams0, loc) =>
       for (
-        baseType <- lookupType(base0, ns0, program);
-        argTypes <- seqM(tparams0.map(tpe => lookupType(tpe, ns0, program)))
+        baseType <- lookupType(base0, ns0, prog0);
+        argTypes <- seqM(tparams0.map(tpe => lookupType(tpe, ns0, prog0)))
       ) yield Type.Apply(baseType, argTypes)
 
   }
@@ -784,15 +766,15 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Resolves the given type `tpe0` in the given namespace `ns0`.
     */
-  def lookupTypes(tpes0: List[NamedAst.Type], ns0: Name.NName, program: NamedAst.Program): Validation[List[Type], ResolutionError] = {
-    seqM(tpes0.map(tpe => lookupType(tpe, ns0, program)))
+  def lookupTypes(tpes0: List[NamedAst.Type], ns0: Name.NName, prog0: NamedAst.Program): Validation[List[Type], ResolutionError] = {
+    seqM(tpes0.map(tpe => lookupType(tpe, ns0, prog0)))
   }
 
   /**
     * Resolves the given scheme `sc0` in the given namespace `ns0`.
     */
-  def lookupScheme(sc0: NamedAst.Scheme, ns0: Name.NName, program: NamedAst.Program): Validation[Scheme, ResolutionError] = {
-    lookupType(sc0.base, ns0, program) map {
+  def lookupScheme(sc0: NamedAst.Scheme, ns0: Name.NName, prog0: NamedAst.Program): Validation[Scheme, ResolutionError] = {
+    lookupType(sc0.base, ns0, prog0) map {
       case base => Scheme(sc0.quantifiers, base)
     }
   }
