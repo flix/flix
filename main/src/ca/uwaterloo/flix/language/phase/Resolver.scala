@@ -18,10 +18,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, NamedAst, ResolvedAst, Scheme, Symbol, Type}
-import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.util.Result.Err
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{Result, Validation}
 
 import scala.collection.mutable
 
@@ -294,12 +294,11 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         case NamedAst.Expression.Var(sym, loc) => ResolvedAst.Expression.Var(sym, loc).toSuccess
 
         case NamedAst.Expression.Ref(ref, tvar, loc) =>
-          lookupRef(ref, ns0, prog0) match {
-            case Ok(RefTarget.Defn(ns, defn)) =>
-              ResolvedAst.Expression.Ref(defn.sym, tvar, loc).toSuccess
-            case Ok(RefTarget.Hook(hook)) =>
-              ResolvedAst.Expression.Hook(hook, hook.tpe, loc).toSuccess
-            case Err(e) => ??? // TODO
+          lookupRef(ref, ns0, prog0) map {
+            case RefTarget.Defn(ns, defn) =>
+              ResolvedAst.Expression.Ref(defn.sym, tvar, loc)
+            case RefTarget.Hook(hook) =>
+              ResolvedAst.Expression.Hook(hook, hook.tpe, loc)
           }
 
         case NamedAst.Expression.Unit(loc) => ResolvedAst.Expression.Unit(loc).toSuccess
@@ -529,13 +528,12 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
           } yield ResolvedAst.Predicate.Body.Negative(d.sym, ts, loc)
 
         case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
-          lookupRef(qname, ns0, prog0) match {
-            case Ok(RefTarget.Defn(ns, defn)) =>
+          lookupRef(qname, ns0, prog0) flatMap {
+            case RefTarget.Defn(ns, defn) =>
               for {
                 ts <- seqM(terms.map(t => Expressions.resolve(t, ns0, prog0)))
               } yield ResolvedAst.Predicate.Body.Filter(defn.sym, ts, loc)
-            case Ok(RefTarget.Hook(hook)) => ???
-            case Err(e) => ???
+            case RefTarget.Hook(hook) => ??? // TODO: Not allowed here.
           }
 
         case NamedAst.Predicate.Body.Loop(pat, term, loc) =>
@@ -620,7 +618,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Finds the definition with the qualified name `qname` in the namespace `ns0`.
     */
-  def lookupRef(qname: Name.QName, ns0: Name.NName, program: NamedAst.Program): Result[RefTarget, TypeError] = {
+  def lookupRef(qname: Name.QName, ns0: Name.NName, program: NamedAst.Program): Validation[RefTarget, ResolutionError] = {
     // check whether the reference is fully-qualified.
     if (qname.isUnqualified) {
       // Case 1: Unqualified reference. Lookup both the definition and the hook.
@@ -628,15 +626,15 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       val hookOpt = program.hooks.get(Symbol.mkDefnSym(ns0, qname.ident))
 
       (defnOpt, hookOpt) match {
-        case (Some(defn), None) => Ok(RefTarget.Defn(ns0, defn))
-        case (None, Some(hook)) => Ok(RefTarget.Hook(hook))
+        case (Some(defn), None) => RefTarget.Defn(ns0, defn).toSuccess
+        case (None, Some(hook)) => RefTarget.Hook(hook).toSuccess
         case (None, None) =>
           // Try the global namespace.
           program.definitions.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name) match {
-            case None => Err(ResolutionError.UndefinedRef(qname, ns0, qname.loc))
-            case Some(defn) => Ok(RefTarget.Defn(Name.RootNS, defn))
+            case None => ResolutionError.UndefinedRef(qname, ns0, qname.loc).toFailure
+            case Some(defn) => RefTarget.Defn(Name.RootNS, defn).toSuccess
           }
-        case (Some(defn), Some(hook)) => Err(ResolutionError.AmbiguousRef(qname, ns0, qname.loc))
+        case (Some(defn), Some(hook)) => ResolutionError.AmbiguousRef(qname, ns0, qname.loc).toFailure
       }
     } else {
       // Case 2: Qualified. Lookup both the definition and the hook.
@@ -644,10 +642,10 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       val hookOpt = program.hooks.get(Symbol.mkDefnSym(qname.namespace, qname.ident))
 
       (defnOpt, hookOpt) match {
-        case (Some(defn), None) => Ok(RefTarget.Defn(qname.namespace, defn))
-        case (None, Some(hook)) => Ok(RefTarget.Hook(hook))
-        case (None, None) => Err(ResolutionError.UndefinedRef(qname, ns0, qname.loc))
-        case (Some(defn), Some(hook)) => Err(ResolutionError.AmbiguousRef(qname, ns0, qname.loc))
+        case (Some(defn), None) => RefTarget.Defn(qname.namespace, defn).toSuccess
+        case (None, Some(hook)) => RefTarget.Hook(hook).toSuccess
+        case (None, None) => ResolutionError.UndefinedRef(qname, ns0, qname.loc).toFailure
+        case (Some(defn), Some(hook)) => ResolutionError.AmbiguousRef(qname, ns0, qname.loc).toFailure
       }
     }
   }
