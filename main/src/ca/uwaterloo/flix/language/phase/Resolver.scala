@@ -62,9 +62,11 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       }
     }
 
-    val tablesVal = prog0.tables.map {
-      case (ns, tables) => Declarations.resolveAllTables(tables, ns, prog0) map {
-        case tbs => ns -> tbs
+    val tablesVal = prog0.tables.flatMap {
+      case (ns, tables) => tables.map {
+        case (name, table) => Tables.resolve(table, ns, prog0) map {
+          case t => t.sym -> t
+        }
       }
     }
 
@@ -105,17 +107,9 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         }
       }.toMap
 
-      // TODO: temporary hack
-      val tables2 = tables.flatMap {
-        case (ns, m) => m.map {
-          case (_, table) => table.sym -> table
-        }
-      }.toMap
-
       ResolvedAst.Program(
         definitions2,
         enums2,
-        tables2,
         definitions.toMap, enums.toMap, lattices.toMap, indexes.toMap, tables.toMap, constraints.toMap, prog0.hooks, properties.flatten, prog0.reachable, prog0.time.copy(resolver = e))
     }
   }

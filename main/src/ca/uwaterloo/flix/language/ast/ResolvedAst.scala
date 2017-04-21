@@ -28,14 +28,13 @@ object ResolvedAst {
   case class Program(
                       definitions2: Map[Symbol.DefnSym, ResolvedAst.Declaration.Definition],
                       enums2: Map[Symbol.EnumSym, ResolvedAst.Declaration.Enum],
-                      tables2: Map[Symbol.TableSym, ResolvedAst.Table],
 
                       // TODO: Refactor these:
                       definitions: Map[Name.NName, Map[String, ResolvedAst.Declaration.Definition]],
                       enums: Map[Name.NName, Map[String, ResolvedAst.Declaration.Enum]],
                       lattices: Map[Type, ResolvedAst.Declaration.BoundedLattice],
                       indexes: Map[Name.NName, Map[String, ResolvedAst.Declaration.Index]],
-                      tables: Map[Name.NName, Map[String, ResolvedAst.Table]],
+                      tables: Map[Symbol.TableSym, ResolvedAst.Table],
                       constraints: Map[Name.NName, List[ResolvedAst.Constraint]],
                       hooks: Map[Symbol.DefnSym, Ast.Hook],
                       properties: List[ResolvedAst.Property],

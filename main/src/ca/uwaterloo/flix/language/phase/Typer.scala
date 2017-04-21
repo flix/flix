@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
+import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -230,7 +230,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         def visitIndex(index: ResolvedAst.Declaration.Index, ns: Name.NName): Result[(Symbol.TableSym, TypedAst.Declaration.Index), TypeError] = index match {
           case ResolvedAst.Declaration.Index(sym, indexes, loc) =>
             // Lookup the table using the table symbol.
-            val table = program.tables2(index.sym)
+            val table = program.tables(index.sym)
 
             val declaredAttributes = table.attr.map(_.ident.name)
             // Iterate through every index in the declaration.
@@ -349,10 +349,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         }
 
         // Visit every table in the program.
-        val result = program.tables.toList.flatMap {
-          case (ns, tables) => tables.map {
-            case (name, table) => visitTable(table, ns)
-          }
+        val result = program.tables.toList.map {
+          case (_, table) => visitTable(table, /*TODO: Remove*/ Name.RootNS)
         }
 
         // Sequence the results and convert them back to a map.
@@ -1154,7 +1152,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Returns the declared types of the terms of the given fully-qualified table name `qname` in the namespace `ns0`.
     */
   def getTableSignature(sym: Symbol.TableSym, ns0: Name.NName, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
-    program.tables2(sym) match {
+    program.tables(sym) match {
       case ResolvedAst.Table.Relation(_, _, attr, _) => Ok(attr.map(_.tpe))
       case ResolvedAst.Table.Lattice(_, _, keys, value, _) => Ok(keys.map(_.tpe) ::: value.tpe :: Nil)
     }
