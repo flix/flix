@@ -204,10 +204,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         }
 
         // Visit every enum in the program.
-        val result = program.enums.toList.flatMap {
-          case (ns, enums) => enums.map {
-            case (name, enum) => visitEnum(enum, ns)
-          }
+        val result = program.enums.toList.map {
+          case (_, enum) => visitEnum(enum, /*TODO: Remove*/ Name.RootNS)
         }
 
         // Sequence the results and convert them back to a map.
@@ -641,7 +639,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
           // Lookup the enum declaration.
-          val decl = program.enums2(sym)
+          val decl = program.enums(sym)
 
           // Generate a fresh type variable for each type parameters.
           val subst = Substitution(decl.tparams.map {
@@ -958,7 +956,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Pattern.Str(s, loc) => liftM(Type.Str)
         case ResolvedAst.Pattern.Tag(sym, tag, pat, tvar, loc) =>
           // Lookup the enum declaration.
-          val decl = program.enums2(sym)
+          val decl = program.enums(sym)
 
           // Generate a fresh type variable for each type parameters.
           val subst = Substitution(decl.tparams.map {

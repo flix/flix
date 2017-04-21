@@ -42,9 +42,11 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       }
     }
 
-    val enumsVal = prog0.enums.map {
-      case (ns, enums) => Declarations.resolveAllEnum(enums, ns, prog0) map {
-        case es => ns -> es
+    val enumsVal = prog0.enums.flatMap {
+      case (ns, enums) => enums.map {
+        case (name, enum) => Declarations.resolve(enum, ns, prog0) map {
+          case d => d.sym -> d
+        }
       }
     }
 
@@ -80,7 +82,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       case (ns, properties) => Properties.resolve(properties, ns, prog0)
     }
 
-    // TODO: Add time
     val e = System.nanoTime() - b
 
     for {
@@ -100,16 +101,8 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         }
       }.toMap
 
-      // TODO: temporary hack
-      val enums2 = enums.flatMap {
-        case (ns, m) => m.map {
-          case (_, enum) => enum.sym -> enum
-        }
-      }.toMap
-
       ResolvedAst.Program(
         definitions2,
-        enums2,
         definitions.toMap, enums.toMap, lattices.toMap, indexes.toMap, tables.toMap, constraints.flatten, prog0.hooks, properties.flatten, prog0.reachable, prog0.time.copy(resolver = e))
     }
   }
@@ -147,18 +140,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       }
       seqM(results).map(_.toMap)
     }
-
-
-    // TODO: Refactor
-    def resolveAllEnum(m0: Map[String, NamedAst.Declaration.Enum], ns0: Name.NName, prog0: NamedAst.Program): Validation[Map[String, ResolvedAst.Declaration.Enum], ResolutionError] = {
-      val results = m0.map {
-        case (name, defn) => resolve(defn, ns0, prog0) map {
-          case d => name -> d
-        }
-      }
-      seqM(results).map(_.toMap)
-    }
-
 
     /**
       * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
