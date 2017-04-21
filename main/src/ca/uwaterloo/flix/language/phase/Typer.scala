@@ -25,6 +25,8 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{Result, Validation}
 
+// TODO: Remove namespace from arguments.
+
 object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
   /**
@@ -158,7 +160,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // TODO: See if this can be rewritten nicer
         result match {
           case InferMonad(run) =>
-            val subst = getSubstFromParams(defn0.fparams, ns0, program).get
+            val subst = getSubstFromParams(defn0.fparams, ns0, program)
             run(subst) match {
               case Ok((subst0, resultType)) =>
                 val exp = Expressions.reassemble(defn0.exp, ns0, program, subst0)
@@ -1129,8 +1131,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         * Infers the type of the given `terms` and checks them against the types `ts`.
         */
       def typecheck(terms: List[ResolvedAst.Expression], ts: List[Type], loc: SourceLocation, ns0: Name.NName, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
-        // assert(terms.length == ts.length, "Mismatched predicate arity.") // TODO
-
         for (
           actualTypes <- seqM(terms.map(t => Expressions.infer(t, ns0, program)));
           unifiedTypes <- Unification.unifyM(ts, actualTypes, loc)
@@ -1143,8 +1143,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         * Infers the type of the given `terms` and checks them against the types `ts`.
         */
       def typecheck(terms: List[ResolvedAst.Pattern], ts: List[Type], loc: SourceLocation, ns0: Name.NName, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
-        // assert(terms.length == ts.length, "Mismatched predicate arity.") // TODO
-
         for (
           actualTypes <- seqM(terms.map(t => Patterns.infer(t, ns0, program)));
           unifiedTypes <- Unification.unifyM(ts, actualTypes, loc)
@@ -1173,14 +1171,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * @param ns0     the current namespace.
     * @param program the program.
     */
-  def getSubstFromParams(params: List[ResolvedAst.FormalParam], ns0: Name.NName, program: ResolvedAst.Program): Result[Unification.Substitution, TypeError] = {
+  def getSubstFromParams(params: List[ResolvedAst.FormalParam], ns0: Name.NName, program: ResolvedAst.Program): Unification.Substitution = {
     // Compute the substitution by mapping the symbol of each parameter to its declared type.
     val declaredTypes = params.map(_.tpe)
-    val result = (params zip declaredTypes).foldLeft(Substitution.empty) {
+    (params zip declaredTypes).foldLeft(Substitution.empty) {
       case (macc, (ResolvedAst.FormalParam(sym, _, _), declaredType)) =>
         macc ++ Substitution.singleton(sym.tvar, declaredType)
     }
-    Ok(result) // TODO: Remove Result
   }
 
 }
