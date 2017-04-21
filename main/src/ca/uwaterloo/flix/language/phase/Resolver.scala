@@ -220,7 +220,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       for {
         tparams <- seqM(e0.tparams.map(p => Params.resolve(p, ns0, prog0)))
         cases <- seqM(casesVal)
-        tpe <- Types.resolve(e0.tpe, ns0, prog0)
+        tpe <- lookupType(e0.tpe, ns0, prog0)
       } yield ResolvedAst.Declaration.Enum(e0.doc, e0.sym, tparams, cases.toMap, tpe, e0.loc)
     }
 
@@ -570,43 +570,8 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
   object Types {
 
-    /**
-      * Performs name resolution on the given type `tpe0` in the given namespace `ns0`.
-      */
-    // TODO: Get rid of this
-    def resolve(tpe0: NamedAst.Type, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Type, ResolutionError] = {
-      /**
-        * Local visitor.
-        */
-      def visit(tpe: NamedAst.Type): Validation[ResolvedAst.Type, ResolutionError] = tpe match {
-        case NamedAst.Type.Var(tvar, loc) => ResolvedAst.Type.Var(tvar, loc).toSuccess
+    // TODO: Move stuff in here.
 
-        case NamedAst.Type.Unit(loc) => ResolvedAst.Type.Unit(loc).toSuccess
-
-        case NamedAst.Type.Ref(name, loc) => ResolvedAst.Type.Ref(name, loc).toSuccess
-
-        case NamedAst.Type.Enum(name) => ResolvedAst.Type.Enum(name).toSuccess
-
-        case NamedAst.Type.Tuple(elms, loc) =>
-          for {
-            es <- seqM(elms map visit)
-          } yield ResolvedAst.Type.Tuple(es, loc)
-
-        case NamedAst.Type.Arrow(params, ret, loc) =>
-          for {
-            ps <- seqM(params map visit)
-            r <- visit(ret)
-          } yield ResolvedAst.Type.Arrow(ps, r, loc)
-
-        case NamedAst.Type.Apply(base, tparams, loc) =>
-          for {
-            b <- visit(base)
-            ps <- seqM(tparams map visit)
-          } yield ResolvedAst.Type.Apply(b, ps, loc)
-      }
-
-      visit(tpe0)
-    }
   }
 
   object Params {
