@@ -20,10 +20,12 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Name, NamedAst, ResolvedAst, Scheme, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.{Result, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{Result, Validation}
 
 import scala.collection.mutable
+
+// TODO: Ensure that program is named prog0
 
 // TODO: DOC
 object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
@@ -377,10 +379,13 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
           }
 
         case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
-          // TODO: Perform lookup
-          for {
-            e <- visit(exp)
-          } yield ResolvedAst.Expression.Tag(enum, tag, e, tvar, loc)
+          lookupEnumByTag(enum, tag, ns0, prog0) match {
+            case Ok(decl) =>
+              for {
+                e <- visit(exp)
+              } yield ResolvedAst.Expression.Tag(decl.sym, tag.name, e, tvar, loc)
+            case Err(e) => ???
+          }
 
         case NamedAst.Expression.Tuple(elms, tvar, loc) =>
           for {
@@ -430,7 +435,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     /**
       * Performs name resolution on the given pattern `pat0` in the namespace `ns0`.
       */
-    def resolve(pat0: NamedAst.Pattern, ns0: Name.NName, p: NamedAst.Program): Validation[ResolvedAst.Pattern, ResolutionError] = {
+    def resolve(pat0: NamedAst.Pattern, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Pattern, ResolutionError] = {
 
       def visit(p0: NamedAst.Pattern): Validation[ResolvedAst.Pattern, ResolutionError] = p0 match {
         case NamedAst.Pattern.Wild(tvar, loc) => ResolvedAst.Pattern.Wild(tvar, loc).toSuccess
@@ -462,9 +467,13 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         case NamedAst.Pattern.Str(lit, loc) => ResolvedAst.Pattern.Str(lit, loc).toSuccess
 
         case NamedAst.Pattern.Tag(enum, tag, pat, tvar, loc) =>
-          for {
-            p <- visit(pat)
-          } yield ResolvedAst.Pattern.Tag(enum, tag, p, tvar, loc)
+          lookupEnumByTag(enum, tag, ns0, prog0) match {
+            case Ok(decl) =>
+              for {
+                p <- visit(pat)
+              } yield ResolvedAst.Pattern.Tag(decl.sym, tag.name, p, tvar, loc)
+            case Err(e) => ???
+          }
 
         case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
           for {
@@ -690,12 +699,12 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Finds the enum definition matching the given qualified name and tag.
     */
-  def lookupEnumByTag(qname: Option[Name.QName], tag: Name.Ident, ns: Name.NName, program: NamedAst.Program): Result[NamedAst.Declaration.Enum, TypeError] = {
+  def lookupEnumByTag(qname: Option[Name.QName], tag: Name.Ident, ns: Name.NName, prog0: NamedAst.Program): Result[NamedAst.Declaration.Enum, TypeError] = {
     /*
      * Lookup the tag name in all enums across all namespaces.
      */
     val globalMatches = mutable.Set.empty[NamedAst.Declaration.Enum]
-    for ((_, decls) <- program.enums) {
+    for ((_, decls) <- prog0.enums) {
       for ((enumName, decl) <- decls) {
         for ((tagName, caze) <- decl.cases) {
           if (tag.name == tagName) {
@@ -718,7 +727,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
      * Lookup the tag name in all enums in the current namespace.
      */
     val namespaceMatches = mutable.Set.empty[NamedAst.Declaration.Enum]
-    for ((enumName, decl) <- program.enums.getOrElse(namespace, Map.empty[String, NamedAst.Declaration.Enum])) {
+    for ((enumName, decl) <- prog0.enums.getOrElse(namespace, Map.empty[String, NamedAst.Declaration.Enum])) {
       for ((tagName, caze) <- decl.cases) {
         if (tag.name == tagName) {
           namespaceMatches += decl
