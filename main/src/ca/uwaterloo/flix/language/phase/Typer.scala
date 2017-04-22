@@ -196,7 +196,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
                 name -> TypedAst.Case(enumName, tagName, caseType)
             }
 
-            Ok(sym -> TypedAst.Declaration.Enum(doc, sym, cases, enum.tpe, loc)) // TODO: Get rid of Ok
+            Ok(sym -> TypedAst.Declaration.Enum(doc, sym, cases, enum.tpe, loc))
         }
 
         // Visit every enum in the program.
