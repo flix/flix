@@ -76,7 +76,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     def visitHeadTerms(hs: List[SimplifiedAst.Term.Head]): Set[Symbol.DefnSym] = hs.map(visitHeadTerm).fold(Set())(_++_)
 
     /**
-      * Returns the function symbols reachable from the given SimplifiedAst.Term.Head `head`.
+      * Returns the function symbols reachable from the given SimplifiedAst.Term.Head `h0`.
       */
     def visitHeadTerm(h0: SimplifiedAst.Term.Head): Set[Symbol.DefnSym] = {
       h0 match {
@@ -92,7 +92,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     def visitBodyTerms(bs: List[SimplifiedAst.Term.Body]): Set[Symbol.DefnSym] = bs.map(visitBodyTerm).fold(Set())(_++_)
 
     /**
-      * Returns the function symbols reachable from the given SimplifiedAst.Term.Body `body`.
+      * Returns the function symbols reachable from the given SimplifiedAst.Term.Body `b0`.
       */
     def visitBodyTerm(b0: SimplifiedAst.Term.Body): Set[Symbol.DefnSym] = {
       b0 match {
@@ -211,7 +211,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         reachableFunctions ++= constraint.body.map {
           case SimplifiedAst.Predicate.Body.Positive(sym, terms, loc) => visitBodyTerms(terms)
           case SimplifiedAst.Predicate.Body.Negative(sym, terms, loc) => visitBodyTerms(terms)
-          case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) => Set(sym)
+          case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) => visitBodyTerms(terms) + sym
           case SimplifiedAst.Predicate.Body.Loop(sym, term, loc) => visitHeadTerm(term)
         }.fold(Set())(_++_)
       }

@@ -19,9 +19,12 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, SimplifiedAst, Symbol}
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Expression, Predicate}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
+
+import ca.uwaterloo.flix.language.debug.PrettyPrinter
+import ca.uwaterloo.flix.util.vt.TerminalContext
 
 /**
   * The Optimization phase performs intra-procedural optimizations.
@@ -46,26 +49,19 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       */
     val singleCaseEnums: Set[Symbol.EnumSym] = root.enums.filter{case (sym, defn) => defn.cases.size <= 1}.keySet
 
-
     /**
-      * Optimizes the given Expression.Binary `e0` by recursively optimizing its subexpressions.
-      */
-    def optimizeBinaryExp(e0: Expression.Binary): (Expression, Boolean) = e0 match {
-      case Expression.Binary(op, exp1, exp2, tpe, loc) =>
-        val (e1, b1) = optimizeExp(exp1)
-        val (e2, b2) = optimizeExp(exp2)
-        (Expression.Binary(op, e1, e2, tpe, loc), b1 || b2)
-    }
-
-    /**
-      * Applies `optimizeExp` to each element in `es` and returns the results in a List.
+      * Performs a single pass optimization on each element in `es`.
+      *
+      * That is, applies `optimizeExp` to each element in `es` and returns the results in a List.
       */
     def optimizeExps(es: List[Expression]): List[(Expression, Boolean)] = es.map(optimizeExp)
 
     /**
+      * Performs a single pass optimization on the given Expression `e0`.
+      *
       * Returns a pair `(exp, bool)` where:
       *
-      * - `exp` is the optimized version of the given Expression `e0`
+      * - `exp` is the single pass optimized version of the given Expression `e0`
       *
       * - `bool` is true iff some optimization was performed.
       */
@@ -140,22 +136,24 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         (Expression.Unary(op, e, tpe, loc), b)
       case Expression.Binary(op, exp1, exp2, tpe, loc) =>
         // Elimination of run-time tag checks of singleton-valued enums.
-        (op, exp1, exp2) match {
+        val (e1, b1) = optimizeExp(exp1)
+        val (e2, b2) = optimizeExp(exp2)
+        (op, e1, e2) match {
           case (BinaryOperator.Equal, Expression.Tag(sym, tag, exp, tp, lc), _) =>
             if (singleCaseEnums.contains(sym) && exp == Expression.Unit) (Expression.True, true)
-            else optimizeBinaryExp(e0.asInstanceOf[Expression.Binary])
+            else (Expression.Binary(op, e1, e2, tpe, loc), b1 || b2)
           case (BinaryOperator.Equal, _, Expression.Tag(sym, tag, exp, tp, lc)) =>
             if (singleCaseEnums.contains(sym) && exp == Expression.Unit) (Expression.True, true)
-            else optimizeBinaryExp(e0.asInstanceOf[Expression.Binary])
-          case _ => optimizeBinaryExp(e0.asInstanceOf[Expression.Binary])
+            else (Expression.Binary(op, e1, e2, tpe, loc), b1 || b2)
+          case _ => (Expression.Binary(op, e1, e2, tpe, loc), b1 || b2)
         }
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         // Elimination of dead branches (e.g. if (true) e1 else e2).
+        val (e1, b1) = optimizeExp(exp1)
         exp1 match {
           case Expression.True => (optimizeExp(exp2)._1, true)
           case Expression.False => (optimizeExp(exp3)._1, true)
           case _ =>
-            val (e1, b1) = optimizeExp(exp1)
             val (e2, b2) = optimizeExp(exp2)
             val (e3, b3) = optimizeExp(exp3)
             (Expression.IfThenElse(e1, e2, e3, tpe, loc), b1 || b2 || b3)
@@ -194,36 +192,96 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.SwitchError(tpe, loc) => (Expression.SwitchError(tpe, loc), false)
     }
 
-    def optimizeDefns(ds: Map[Symbol.DefnSym, SimplifiedAst.Definition.Constant]):
-      Map[Symbol.DefnSym, SimplifiedAst.Definition.Constant] = {
-
-      var defns = ds
+    /**
+      * Fully optimizes the given Expression `e0`.
+      *
+      * That is, iteratively applies `optimizeExp` to `e0` until no further optimizations are made.
+      */
+    def fullyOptimizeExp(e0: Expression): Expression = {
+      var exp = e0
       var changing = true
 
       while (changing) {
-        val (optDefns, bs) = defns.map {
-          case (sym, defn) =>
-            val (e, b) = optimizeExp(defn.exp)
-            ((sym, defn.copy(exp = e)), b)
-        }.unzip
-        changing = bs.exists(identity)
-        defns = optDefns.toMap
+        val (optExp, change) = optimizeExp(exp)
+        exp = optExp
+        changing = change
       }
 
-      defns
+      exp
+    }
+
+    /**
+      * Fully optimizes each SimplifiedAst.Term.Head in `hs`.
+      */
+    def fullyOptimizeHeadTerms(hs: List[SimplifiedAst.Term.Head]): List[SimplifiedAst.Term.Head] = hs.map(fullyOptimizeHeadTerm)
+
+    /**
+      * Fully optimizes the given SimplifiedAst.Term.Head `h0`.
+      */
+    def fullyOptimizeHeadTerm(h0: SimplifiedAst.Term.Head): SimplifiedAst.Term.Head = {
+      h0 match {
+        case SimplifiedAst.Term.Head.Var(sym, tpe, loc) => SimplifiedAst.Term.Head.Var(sym, tpe, loc)
+        case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => SimplifiedAst.Term.Head.Lit(fullyOptimizeExp(lit), tpe, loc)
+        case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => SimplifiedAst.Term.Head.App(sym, args, tpe, loc)
+      }
+    }
+
+    /**
+      * Fully optimizes each SimplifiedAst.Term.Body in `bs`.
+      */
+    def fullyOptimizeBodyTerms(bs: List[SimplifiedAst.Term.Body]): List[SimplifiedAst.Term.Body] = bs.map(fullyOptimizeBodyTerm)
+
+    /**
+      * Fully optimizes the given SimplifiedAst.Term.Body `b0`.
+      */
+    def fullyOptimizeBodyTerm(b0: SimplifiedAst.Term.Body): SimplifiedAst.Term.Body = {
+      b0 match {
+        case SimplifiedAst.Term.Body.Wild(tpe, loc) => SimplifiedAst.Term.Body.Wild(tpe, loc)
+        case SimplifiedAst.Term.Body.Var(sym, tpe, loc) => SimplifiedAst.Term.Body.Var(sym, tpe, loc)
+        case SimplifiedAst.Term.Body.Lit(exp, tpe, loc) => SimplifiedAst.Term.Body.Lit(fullyOptimizeExp(exp), tpe, loc)
+        case SimplifiedAst.Term.Body.Pat(pat, tpe, loc) => SimplifiedAst.Term.Body.Pat(pat, tpe, loc)
+      }
     }
 
     // Start the timer.
     val t = System.nanoTime()
 
-    val definitions = optimizeDefns(root.definitions)
+    // Optimize expressions in the definitions.
+    val optDefinitions = root.definitions.mapValues(defn => defn.copy(exp = fullyOptimizeExp(defn.exp)))
+
+    // Optimize expressions in the strata.
+    val optStrata = root.strata.map(stratum => {
+      val optConstraints = stratum.constraints.map(constraint => {
+        val optHead = constraint.head match {
+          case SimplifiedAst.Predicate.Head.True(loc) => SimplifiedAst.Predicate.Head.True(loc)
+          case SimplifiedAst.Predicate.Head.False(loc) => SimplifiedAst.Predicate.Head.False(loc)
+          case SimplifiedAst.Predicate.Head.Positive(sym, terms, loc) =>
+            SimplifiedAst.Predicate.Head.Positive(sym, fullyOptimizeHeadTerms(terms), loc)
+          case SimplifiedAst.Predicate.Head.Negative(sym, terms, loc) =>
+            SimplifiedAst.Predicate.Head.Negative(sym, fullyOptimizeHeadTerms(terms), loc)
+        }
+        val optBody = constraint.body.map {
+          case SimplifiedAst.Predicate.Body.Positive(sym, terms, loc) =>
+            SimplifiedAst.Predicate.Body.Positive(sym, fullyOptimizeBodyTerms(terms), loc)
+          case SimplifiedAst.Predicate.Body.Negative(sym, terms, loc) =>
+            SimplifiedAst.Predicate.Body.Negative(sym, fullyOptimizeBodyTerms(terms), loc)
+          case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) =>
+            SimplifiedAst.Predicate.Body.Filter(sym, fullyOptimizeBodyTerms(terms), loc)
+          case SimplifiedAst.Predicate.Body.Loop(sym, term, loc) =>
+            SimplifiedAst.Predicate.Body.Loop(sym, fullyOptimizeHeadTerm(term), loc)
+        }
+        constraint.copy(head = optHead, body = optBody)
+      })
+      stratum.copy(constraints = optConstraints)
+    })
 
     // Calculate the elapsed time.
     val e = System.nanoTime() - t
 
     // Reassemble the AST.
     root.copy(
-      definitions = definitions,
+      definitions = optDefinitions,
+      strata = optStrata,
       time = root.time.copy(optimizer = e)
     ).toSuccess
   }
