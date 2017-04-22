@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
+
+
 /**
   * The Optimization phase performs intra-procedural optimizations.
   *
@@ -147,7 +149,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         // Elimination of dead branches (e.g. if (true) e1 else e2).
         val (e1, b1) = optimizeExp(exp1)
-        exp1 match {
+        e1 match {
           case Expression.True => (optimizeExp(exp2)._1, true)
           case Expression.False => (optimizeExp(exp3)._1, true)
           case _ =>
