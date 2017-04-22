@@ -275,6 +275,13 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       stratum.copy(constraints = optConstraints)
     })
 
+    // Optimize expressions in the lattices.
+    val optLattices = root.lattices.mapValues {
+      case SimplifiedAst.Definition.Lattice(tpe, bot, top, leq, lub, glb, loc) =>
+        SimplifiedAst.Definition.Lattice(tpe, fullyOptimizeExp(bot), fullyOptimizeExp(top),
+          fullyOptimizeExp(leq), fullyOptimizeExp(lub), fullyOptimizeExp(glb), loc)
+    }
+
     // Calculate the elapsed time.
     val e = System.nanoTime() - t
 
@@ -282,6 +289,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     root.copy(
       definitions = optDefinitions,
       strata = optStrata,
+      lattices = optLattices,
       time = root.time.copy(optimizer = e)
     ).toSuccess
   }
