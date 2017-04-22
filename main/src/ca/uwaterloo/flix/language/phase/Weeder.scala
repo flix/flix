@@ -94,42 +94,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             }
         }
 
-      case ParsedAst.Declaration.Signature(docOpt, sp1, ident, paramsOpt, tpe, sp2) =>
-        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
-
-        /*
-         * Check for `IllegalParameterList`.
-         */
-        paramsOpt match {
-          case None => List(WeededAst.Declaration.Signature(doc, ident, Nil, Types.weed(tpe), mkSL(sp1, sp2))).toSuccess
-          case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
-          case Some(params) =>
-            /*
-             * Check for `DuplicateFormal`.
-             */
-            checkDuplicateFormal(params) map {
-              case ps => List(WeededAst.Declaration.Signature(doc, ident, ps, Types.weed(tpe), mkSL(sp1, sp2)))
-            }
-        }
-
-      case ParsedAst.Declaration.External(docOpt, sp1, ident, paramsOpt, tpe, sp2) =>
-        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
-
-        /*
-         * Check for `IllegalParameterList`.
-         */
-        paramsOpt match {
-          case None => List(WeededAst.Declaration.External(doc, ident, Nil, Types.weed(tpe), mkSL(sp1, sp2))).toSuccess
-          case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
-          case Some(params) =>
-            /*
-             * Check for `DuplicateFormal`.
-             */
-            checkDuplicateFormal(params) map {
-              case ps => List(WeededAst.Declaration.External(doc, ident, ps, Types.weed(tpe), mkSL(sp1, sp2)))
-            }
-        }
-
       case ParsedAst.Declaration.Law(docOpt, sp1, ident, tparams, paramsOpt, tpe, exp, sp2) =>
         val loc = mkSL(sp1, sp2)
         val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), loc))

@@ -265,6 +265,7 @@ class Flix {
         val pipeline =
           Weeder |>
             Namer |>
+            Resolver |>
             Typer |>
             Documentor |>
             Stratifier |>

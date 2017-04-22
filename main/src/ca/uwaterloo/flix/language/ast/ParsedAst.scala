@@ -117,28 +117,6 @@ object ParsedAst {
     case class Definition(doc: Option[ParsedAst.Documentation], ann: Seq[ParsedAst.AnnotationOrProperty], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Option[Seq[ParsedAst.FormalParam]], tpe: ParsedAst.Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
-      * Signature Declaration (top-level function or expression signature).
-      *
-      * @param sp1        the position of the first character in the declaration.
-      * @param ident      the name of the signature.
-      * @param fparamsOpt the formal parameters.
-      * @param tpe        the declared type.
-      * @param sp2        the position of the last character in the declaration.
-      */
-    case class Signature(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, ident: Name.Ident, fparamsOpt: Option[Seq[ParsedAst.FormalParam]], tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Declaration
-
-    /**
-      * External Declaration (external top-level function or expression)
-      *
-      * @param sp1        the position of the first character in the declaration.
-      * @param ident      the name of the external.
-      * @param fparamsOpt the formal parameters.
-      * @param tpe        the declared type.
-      * @param sp2        the position of the last character in the declaration.
-      */
-    case class External(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, ident: Name.Ident, fparamsOpt: Option[Seq[ParsedAst.FormalParam]], tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Declaration
-
-    /**
       * Law Declaration.
       *
       * @param sp1        the position of the first character in the declaration.

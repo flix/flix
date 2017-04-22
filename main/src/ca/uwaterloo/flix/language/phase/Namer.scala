@@ -132,16 +132,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         }
 
       /*
-       * Signature.
-       */
-      case WeededAst.Declaration.Signature(doc, ident, params, tpe, loc) => ??? // TODO: Add support for signature in Namer.
-
-      /*
-       * External.
-       */
-      case WeededAst.Declaration.External(doc, ident, params, tpe, loc) => ??? // TODO: Add support for external in Namer.
-
-      /*
        * Enum.
        */
       case WeededAst.Declaration.Enum(doc, ident, tparams0, cases, loc) =>

@@ -131,6 +131,11 @@ object Validation {
   }
 
   /**
+    * TODO: DOC
+    */
+  def seqM[Value, Error](xs: Traversable[Validation[Value, Error]]): Validation[List[Value], Error] = @@(xs)
+
+  /**
     * Returns a sequence of values wrapped in a [[Success]] for every [[Success]] in `xs`. Errors are concatenated.
     */
   def collect[Value, Error](xs: Seq[Validation[Value, Error]]): Validation[Seq[Value], Error] = {

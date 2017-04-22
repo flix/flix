@@ -24,11 +24,31 @@ import ca.uwaterloo.flix.util.vt.VirtualString._
 /**
   * A common super-type for type errors.
   */
-// TODO: Make sealed
-// TODO: Move kind here.
-trait TypeError extends CompilationError
+sealed trait TypeError extends CompilationError {
+  final val kind: String = "Type Error"
+}
 
 object TypeError {
+
+  /**
+    * Undefined Attribute Error.
+    *
+    * @param attribute the attribute name.
+    * @param loc       the location where the error occurred.
+    */
+  // TODO: Move?
+  case class UndefinedAttribute(table: String, attribute: String, loc: SourceLocation) extends TypeError {
+    val source: SourceInput = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined attribute '" << Red(attribute) << "' in table '" << Cyan(table) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "attribute not found.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Possible typo or non-existent attribute?" << NewLine
+    }
+  }
 
   /**
     * Unification Error.
@@ -40,7 +60,6 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class UnificationError(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
-    val kind = "Type Error"
     val source: SourceInput = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
@@ -64,7 +83,6 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class OccursCheckError(baseVar: Type.Var, baseType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
-    val kind = "Type Error"
     val source: SourceInput = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
