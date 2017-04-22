@@ -732,6 +732,11 @@ object SymbolicEvaluator {
         }
 
       /**
+        * Native Constructor.
+        */
+      case Expression.NativeConstructor(constructor, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
+      /**
         * Native Field.
         */
       case Expression.NativeField(field, tpe, loc) => throw InternalCompilerException("Not yet supported.")

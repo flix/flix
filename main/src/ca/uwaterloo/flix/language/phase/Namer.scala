@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import java.lang.reflect.{Field, Method, Modifier}
+import java.lang.reflect.{Constructor, Field, Method, Modifier}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
@@ -41,6 +41,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
   def run(program: WeededAst.Program)(implicit flix: Flix): Validation[NamedAst.Program, NameError] = {
     implicit val _ = flix.genSym
 
+    val b = System.nanoTime()
+
     // make an empty program to fold over.
     val prog0 = NamedAst.Program(
       enums = Map.empty,
@@ -59,8 +61,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     val declarations = program.roots.flatMap(_.decls)
 
     // fold over the top-level declarations.
-    Validation.fold(declarations, prog0) {
+    val result = Validation.fold(declarations, prog0) {
       case (pacc, decl) => Declarations.namer(decl, Name.RootNS, pacc)
+    }
+
+    // compute elapsed time.
+    val e = System.nanoTime() - b
+
+    result map {
+      // update elapsed time.
+      case p => p.copy(time = p.time.copy(namer = e))
     }
   }
 
@@ -120,16 +130,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             // Case 2: Duplicate definition.
             DuplicateDefinition(ident.name, defn.loc, ident.loc).toFailure
         }
-
-      /*
-       * Signature.
-       */
-      case WeededAst.Declaration.Signature(doc, ident, params, tpe, loc) => ??? // TODO: Add support for signature in Namer.
-
-      /*
-       * External.
-       */
-      case WeededAst.Declaration.External(doc, ident, params, tpe, loc) => ??? // TODO: Add support for external in Namer.
 
       /*
        * Enum.
@@ -434,6 +434,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         case e => NamedAst.Expression.Ascribe(e, Types.namer(tpe, tenv0), loc)
       }
 
+      case WeededAst.Expression.NativeConstructor(className, args, loc) =>
+        val arity = args.length
+        lookupNativeConstructor(className, arity, loc) match {
+          case Ok(constructor) => @@(args.map(e => namer(e, env0, tenv0))) map {
+            case es => NamedAst.Expression.NativeConstructor(constructor, es, Type.freshTypeVar(), loc)
+          }
+          case Err(e) => e.toFailure
+        }
+
       case WeededAst.Expression.NativeField(className, fieldName, loc) =>
         lookupNativeField(className, fieldName, loc) match {
           case Ok(field) => NamedAst.Expression.NativeField(field, Type.freshTypeVar(), loc).toSuccess
@@ -489,6 +498,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.Ascribe(exp, tpe, loc) => freeVars(exp)
       case WeededAst.Expression.NativeField(className, fieldName, loc) => Nil
       case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
+      case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
       case WeededAst.Expression.UserError(loc) => Nil
     }
 
@@ -711,7 +721,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
   }
 
   /**
-    * Returns the result of looking up the given `methodName` on the given `className`.
+    * Returns the result of looking up the given `methodName` on the given `className` with the given `arity`.
     */
   def lookupNativeMethod(className: String, methodName: String, arity: Int, loc: SourceLocation): Result[Method, NameError] = try {
     // retrieve class object.
@@ -740,6 +750,28 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case 0 => Err(UndefinedNativeMethod(className, methodName, arity, loc))
       case 1 => Ok(methods.head)
       case _ => Err(AmbiguousNativeMethod(className, methodName, arity, loc))
+    }
+  } catch {
+    case ex: ClassNotFoundException => Err(UndefinedNativeClass(className, loc))
+  }
+
+  /**
+    * Returns the result of looking up the constructor on the given `className` with the given `arity`.
+    */
+  def lookupNativeConstructor(className: String, arity: Int, loc: SourceLocation): Result[Constructor[_], NameError] = try {
+    // retrieve class object.
+    val clazz = Class.forName(className)
+
+    // retrieve the constructors of the appropriate arity.
+    val constructors = clazz.getDeclaredConstructors.toList.filter {
+      case constructor => constructor.getParameterCount == arity
+    }
+
+    // match on the number of methods.
+    constructors.size match {
+      case 0 => Err(UndefinedNativeConstructor(className, arity, loc))
+      case 1 => Ok(constructors.head)
+      case _ => Err(AmbiguousNativeConstructor(className, arity, loc))
     }
   } catch {
     case ex: ClassNotFoundException => Err(UndefinedNativeClass(className, loc))

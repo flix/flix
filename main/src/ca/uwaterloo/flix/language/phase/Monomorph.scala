@@ -271,6 +271,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val (param, env1) = specializeFormalParam(fparam, subst0)
           Expression.Universal(param, visitExp(exp, env0 ++ env1), loc)
 
+        case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+          val es = args.map(e => visitExp(e, env0))
+          Expression.NativeConstructor(constructor, es, subst0(tpe), loc)
+
         case Expression.NativeField(field, tpe, loc) => Expression.NativeField(field, subst0(tpe), loc)
 
         case Expression.NativeMethod(method, args, tpe, loc) =>
@@ -436,13 +440,13 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       val subst0 = StrictSubstitution(Unification.Substitution.empty)
 
       // Specialize the formal parameters to obtain fresh local variable symbols for them.
-      val (fparams, env0) = specializeFormalParams(defn.formals, subst0)
+      val (fparams, env0) = specializeFormalParams(defn.fparams, subst0)
 
       // Specialize the body expression.
       val body = specialize(defn.exp, env0, subst0)
 
       // Reassemble the definition.
-      specializedDefns.put(sym, defn.copy(formals = fparams, exp = body))
+      specializedDefns.put(sym, defn.copy(fparams = fparams, exp = body))
     }
 
     /*
@@ -470,14 +474,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       val (freshSym, defn, subst) = queue.dequeue()
 
       // Specialize the formal parameters and introduce fresh local variable symbols.
-      val (fparams, env0) = specializeFormalParams(defn.formals, subst)
+      val (fparams, env0) = specializeFormalParams(defn.fparams, subst)
 
       // Specialize the body expression.
       val specializedExp = specialize(defn.exp, env0, subst)
 
       // Reassemble the definition.
       // NB: Removes the type parameters as the function is now monomorphic.
-      val specializedDefn = defn.copy(sym = freshSym, formals = fparams, exp = specializedExp, tpe = subst(defn.tpe), tparams = Nil)
+      val specializedDefn = defn.copy(sym = freshSym, fparams = fparams, exp = specializedExp, tpe = subst(defn.tpe), tparams = Nil)
 
       // Save the specialized function.
       specializedDefns.put(freshSym, specializedDefn)

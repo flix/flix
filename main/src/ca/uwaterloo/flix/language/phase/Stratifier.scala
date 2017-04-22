@@ -37,9 +37,13 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   def run(root: Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = {
 
+    val b = System.nanoTime()
+
     // TODO: Implement
 
-    root.toSuccess
+    val e = System.nanoTime() - b
+
+    root.copy(time = root.time.copy(stratifier = e)).toSuccess
   }
 
 }

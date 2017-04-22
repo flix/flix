@@ -94,42 +94,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             }
         }
 
-      case ParsedAst.Declaration.Signature(docOpt, sp1, ident, paramsOpt, tpe, sp2) =>
-        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
-
-        /*
-         * Check for `IllegalParameterList`.
-         */
-        paramsOpt match {
-          case None => List(WeededAst.Declaration.Signature(doc, ident, Nil, Types.weed(tpe), mkSL(sp1, sp2))).toSuccess
-          case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
-          case Some(params) =>
-            /*
-             * Check for `DuplicateFormal`.
-             */
-            checkDuplicateFormal(params) map {
-              case ps => List(WeededAst.Declaration.Signature(doc, ident, ps, Types.weed(tpe), mkSL(sp1, sp2)))
-            }
-        }
-
-      case ParsedAst.Declaration.External(docOpt, sp1, ident, paramsOpt, tpe, sp2) =>
-        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
-
-        /*
-         * Check for `IllegalParameterList`.
-         */
-        paramsOpt match {
-          case None => List(WeededAst.Declaration.External(doc, ident, Nil, Types.weed(tpe), mkSL(sp1, sp2))).toSuccess
-          case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
-          case Some(params) =>
-            /*
-             * Check for `DuplicateFormal`.
-             */
-            checkDuplicateFormal(params) map {
-              case ps => List(WeededAst.Declaration.External(doc, ident, ps, Types.weed(tpe), mkSL(sp1, sp2)))
-            }
-        }
-
       case ParsedAst.Declaration.Law(docOpt, sp1, ident, tparams, paramsOpt, tpe, exp, sp2) =>
         val loc = mkSL(sp1, sp2)
         val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), loc))
@@ -641,6 +605,19 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
           visit(exp, unsafe = true)
 
+        case ParsedAst.Expression.NativeConstructor(sp1, fqn, args, sp2) =>
+          /*
+           * Check for `IllegalUnsafeExpression`.
+           */
+          if (!unsafe) {
+            return WeederError.IllegalUnsafeExpression(mkSL(sp1, sp2)).toFailure
+          }
+
+          val className = fqn.mkString(".")
+          @@(args.map(e => weed(e))) flatMap {
+            case es => WeededAst.Expression.NativeConstructor(className, es, mkSL(sp1, sp2)).toSuccess
+          }
+
         case ParsedAst.Expression.NativeField(sp1, fqn, sp2) =>
           /*
            * Check for `IllegalUnsafeExpression`.
@@ -1096,6 +1073,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Unsafe(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeField(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.NativeConstructor(sp1, _, _, _) => sp1
     case ParsedAst.Expression.UserError(sp1, _) => sp1
   }
 

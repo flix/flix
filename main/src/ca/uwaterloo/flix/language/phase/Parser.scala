@@ -136,7 +136,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     Declarations.Namespace |
       Declarations.Constraint |
       Declarations.Definition |
-      Declarations.External |
       Declarations.Enum |
       Declarations.TypeDecl |
       Declarations.LetLattice |
@@ -160,14 +159,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       rule {
         Documentation ~ Annotations ~ optWS ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Definition
       }
-    }
-
-    def Signature: Rule1[ParsedAst.Declaration.Signature] = rule {
-      Documentation ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.Signature
-    }
-
-    def External: Rule1[ParsedAst.Declaration.External] = rule {
-      Documentation ~ SP ~ atomic("external") ~ optWS ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.External
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
@@ -530,6 +521,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
         oneOrMore(JavaIdentifier).separatedBy(".")
       }
 
+      def NativeConstructor: Rule1[ParsedAst.Expression.NativeConstructor] = rule {
+        atomic("new") ~ WS ~ SP ~ JavaName ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Expression.NativeConstructor
+      }
+
       def NativeField: Rule1[ParsedAst.Expression.NativeField] = rule {
         atomic("field") ~ WS ~ SP ~ JavaName ~ SP ~> ParsedAst.Expression.NativeField
       }
@@ -539,7 +534,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
 
       rule {
-        atomic("native") ~ WS ~ (NativeField | NativeMethod)
+        atomic("native") ~ WS ~ (NativeField | NativeMethod | NativeConstructor)
       }
     }
 

@@ -1,6 +1,8 @@
 # Changelog
 
 HEAD:
+
+Version 0.1
     - Added standard library.
     - Added support for pattern matching in rules.
     - Added if guards.

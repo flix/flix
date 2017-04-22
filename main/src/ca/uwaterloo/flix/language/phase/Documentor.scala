@@ -39,6 +39,8 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Generates documentation for the given program `p`.
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = {
+    val b = System.nanoTime()
+
     // Check whether to generate documentation.
     if (flix.options.documentor) {
       // Collect the definitions.
@@ -119,7 +121,9 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       }
     }
 
-    root.toSuccess
+    val e = System.nanoTime() - b
+
+    root.copy(time = root.time.copy(documentor = e)).toSuccess
   }
 
   /**
@@ -153,7 +157,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Process formal parameters.
-    val fparams = d.formals.map {
+    val fparams = d.fparams.map {
       case FormalParam(psym, tpe, loc) => JObject(
         JField("name", JString(psym.text)),
         JField("tpe", JString(prettify(tpe)))

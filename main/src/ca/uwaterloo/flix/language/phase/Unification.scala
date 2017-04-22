@@ -92,8 +92,8 @@ object Unification {
       * Returns the composition of `this` substitution with `that` substitution.
       */
     def @@(that: Substitution): Substitution = {
-      val m = that.m.map {
-        case (x, t) => x -> this.apply(t)
+      val m = that.m.foldLeft(Map.empty[Type.Var, Type]) {
+        case (macc, (x, t)) => macc.updated(x, this.apply(t))
       }
       Substitution(m) ++ this
     }

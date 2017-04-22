@@ -98,7 +98,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     }
 
     def simplify(tast: TypedAst.Declaration.Definition)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant = {
-      val formals = tast.formals.map {
+      val formals = tast.fparams.map {
         case TypedAst.FormalParam(sym, tpe, loc) => SimplifiedAst.FormalParam(sym, tpe)
       }
       SimplifiedAst.Definition.Constant(tast.ann, tast.sym, formals, Expression.simplify(tast.exp), isSynthetic = false, tast.tpe, tast.loc)
@@ -247,6 +247,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val p = SimplifiedAst.FormalParam(fparam.sym, fparam.tpe)
         val e = simplify(exp)
         SimplifiedAst.Expression.Universal(p, e, loc)
+      case TypedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
+        val es = args.map(e => simplify(e))
+        SimplifiedAst.Expression.NativeConstructor(constructor, es, tpe, loc)
       case TypedAst.Expression.NativeField(field, tpe, loc) =>
         SimplifiedAst.Expression.NativeField(field, tpe, loc)
       case TypedAst.Expression.NativeMethod(method, args, tpe, loc) =>
@@ -651,6 +654,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Existential(params, visit(exp), loc)
       case SimplifiedAst.Expression.Universal(params, exp, loc) =>
         SimplifiedAst.Expression.Universal(params, visit(exp), loc)
+      case SimplifiedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
+        val es = args map visit
+        SimplifiedAst.Expression.NativeConstructor(constructor, es, tpe, loc)
       case SimplifiedAst.Expression.NativeField(field, tpe, loc) =>
         SimplifiedAst.Expression.NativeField(field, tpe, loc)
       case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) =>

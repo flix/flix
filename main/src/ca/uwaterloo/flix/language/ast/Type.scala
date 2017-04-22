@@ -121,6 +121,19 @@ object Type {
     def setText(s: String): Unit = {
       text = Some(s)
     }
+
+    /**
+      * Returns `true` if `this` type variable is equal to `o`.
+      */
+    override def equals(o: scala.Any): Boolean = o match {
+      case that: Var => this.id == that.id
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of `this` type variable.
+      */
+    override def hashCode(): Int = id
   }
 
   /**
