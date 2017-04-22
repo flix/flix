@@ -19,12 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, SimplifiedAst, Symbol}
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Expression, Predicate}
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
-
-import ca.uwaterloo.flix.language.debug.PrettyPrinter
-import ca.uwaterloo.flix.util.vt.TerminalContext
 
 /**
   * The Optimization phase performs intra-procedural optimizations.
@@ -183,6 +180,9 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Universal(fparam, exp, loc) =>
         val (e, b) = optimizeExp(exp)
         (Expression.Universal(fparam, e, loc), b)
+      case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+        val (es, bs) = optimizeExps(args).unzip
+        (Expression.NativeConstructor(constructor, es, tpe, loc), bs.exists(identity))
       case Expression.NativeField(field, tpe, loc) => (Expression.NativeField(field, tpe, loc), false)
       case Expression.NativeMethod(method, args, tpe, loc) =>
         val (es, bs) = optimizeExps(args).unzip
@@ -282,6 +282,11 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           fullyOptimizeExp(leq), fullyOptimizeExp(lub), fullyOptimizeExp(glb), loc)
     }
 
+    // Optimize expressions in the properties.
+    val optProperties = root.properties.map {
+      case SimplifiedAst.Property(law, defn, exp) => SimplifiedAst.Property(law, defn, fullyOptimizeExp(exp))
+    }
+
     // Calculate the elapsed time.
     val e = System.nanoTime() - t
 
@@ -290,6 +295,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       definitions = optDefinitions,
       strata = optStrata,
       lattices = optLattices,
+      properties = optProperties,
       time = root.time.copy(optimizer = e)
     ).toSuccess
   }
