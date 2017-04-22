@@ -23,8 +23,6 @@ import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
-
-
 /**
   * The Optimization phase performs intra-procedural optimizations.
   *
