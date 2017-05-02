@@ -973,6 +973,13 @@ object Codegen {
           val clazz = Constants.bigIntegerClass
           val method = clazz.getMethod(bigIntOp, clazz)
           visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), bigIntOp, asm.Type.getMethodDescriptor(method), false);
+        case Type.Str => (e2.tpe, o) match {
+          case (Type.Str, BinaryOperator.Plus) =>
+            val clazz = Constants.stringClass
+            val method = clazz.getMethod("concat", Constants.stringClass)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
+          case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe} near ${e1.loc.format}")
+        }
         case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe} near ${e1.loc.format}")
       }
     }
