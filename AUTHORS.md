@@ -9,3 +9,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Paul Phillips](https://github.com/paulp)
 - [Liam Palmer](https://github.com/liampalmer43)
 - [Jim Zhang](https://github.com/neynt)
+- [Ramin Zarifi](https://github.com/FlaminGuy)

@@ -973,6 +973,13 @@ object Codegen {
           val clazz = Constants.bigIntegerClass
           val method = clazz.getMethod(bigIntOp, clazz)
           visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), bigIntOp, asm.Type.getMethodDescriptor(method), false);
+        case Type.Str => (e2.tpe, o) match {
+          case (Type.Str, BinaryOperator.Plus) =>
+            val clazz = Constants.stringClass
+            val method = clazz.getMethod("concat", Constants.stringClass)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
+          case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe} near ${e1.loc.format}")
+        }
         case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe} near ${e1.loc.format}")
       }
     }
@@ -1047,18 +1054,22 @@ object Codegen {
         compileExpression(ctx, visitor, entryPoint)(e2)
         val condElse = new Label()
         val condEnd = new Label()
-        val (intOp, floatOp, doubleOp, refOp, cmp) = o match {
-          case BinaryOperator.Less => (IF_ICMPGE, FCMPG, DCMPG, NOP, IFGE)
-          case BinaryOperator.LessEqual => (IF_ICMPGT, FCMPG, DCMPG, NOP, IFGT)
-          case BinaryOperator.Greater => (IF_ICMPLE, FCMPL, DCMPL, NOP, IFLE)
-          case BinaryOperator.GreaterEqual => (IF_ICMPLT, FCMPL, DCMPL, NOP, IFLT)
-          case BinaryOperator.Equal => (IF_ICMPNE, FCMPG, DCMPG, IF_ACMPNE, IFNE)
-          case BinaryOperator.NotEqual => (IF_ICMPEQ, FCMPG, DCMPG, IF_ACMPEQ, IFEQ)
+        val (intOp, floatOp, doubleOp, cmp) = o match {
+          case BinaryOperator.Less => (IF_ICMPGE, FCMPG, DCMPG, IFGE)
+          case BinaryOperator.LessEqual => (IF_ICMPGT, FCMPG, DCMPG, IFGT)
+          case BinaryOperator.Greater => (IF_ICMPLE, FCMPL, DCMPL, IFLE)
+          case BinaryOperator.GreaterEqual => (IF_ICMPLT, FCMPL, DCMPL, IFLT)
+          case BinaryOperator.Equal => (IF_ICMPNE, FCMPG, DCMPG, IFNE)
+          case BinaryOperator.NotEqual => (IF_ICMPEQ, FCMPG, DCMPG, IFEQ)
         }
         e1.tpe match {
           case Type.Unit | Type.Str if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
-            // Unit and String can be reference compared for equality.
-            visitor.visitJumpInsn(refOp, condElse)
+            // Unit and String can be compared using Object's `equal` method
+            val clazz = Constants.objectClass
+            val method = clazz.getMethod("equals", clazz)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(intOp, condElse)
           case Type.Bool if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
             // Bool can be (value) compared for equality.
             visitor.visitJumpInsn(intOp, condElse)
