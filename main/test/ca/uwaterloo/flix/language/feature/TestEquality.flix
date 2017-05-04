@@ -3,7 +3,10 @@
 //
 
 @test
-def eqUnit: Bool = assert!(() == ())
+def eqUnit01: Bool = assert!(() == ())
+
+@test
+def eqUnit02: Bool = assertNot!(() != ())
 
 //
 // # Bool
