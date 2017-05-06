@@ -1,0 +1,96 @@
+/////////////////////////////////////////////////////////////////////////////
+// Native Constructor                                                      //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def nativeCall01: Bool = assertEq!(unsafe native new java.lang.String(), "")
+
+@test
+def nativeCall02: Bool =
+    let x = unsafe native new java.lang.Character('c');
+    let y = unsafe native new java.lang.Character('c');
+    unsafe native method java.lang.Character.equals(x, y)
+
+@test
+def nativeCall03: Bool =
+    let x = unsafe native new java.util.BitSet();
+    assertEq!(unsafe native method java.util.BitSet.toString(x), "{}")
+
+@test
+def nativeCall04: Bool =
+    let x = unsafe native new java.util.Date(96, 6, 12);
+    assertEq!(unsafe native method java.util.Date.toString(x), "Fri Jul 12 00:00:00 EDT 1996")
+
+/////////////////////////////////////////////////////////////////////////////
+// Native Static Field                                                     //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def nativeCall05: Bool = assertEq!(unsafe native field java.lang.Character.BYTES, 2)
+
+@test
+def nativeCall06: Bool = assertEq!(unsafe native field java.lang.Character.SIZE, 16)
+
+@test
+def nativeCall07: Bool = assertEq!(unsafe native field java.lang.Long.SIZE, 64)
+
+@test
+def nativeCall08: Bool = assertEq!(unsafe native field java.lang.Float.SIZE, 32)
+
+/////////////////////////////////////////////////////////////////////////////
+// Native Static Methods                                                   //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def nativeCall09: Bool = assertEq!(unsafe native method java.lang.Integer.bitCount(2), 1)
+
+@test
+def nativeCall10: Bool = assertEq!(unsafe native method java.lang.Integer.bitCount(7), 3)
+
+@test
+def nativeCall11: Bool = !(unsafe native method java.lang.Boolean.logicalAnd(true, false))
+
+@test
+def nativeCall12: Bool = unsafe native method java.lang.Boolean.logicalOr(true, false)
+
+@test
+def nativeCall13: Bool = !(unsafe native method java.lang.Boolean.logicalOr(false, false))
+
+@test
+def nativeCall14: Bool =
+    let x = unsafe native method java.lang.Byte.decode("8");
+    assertEq!(unsafe native method java.lang.Byte.intValue(x), 8)
+
+/////////////////////////////////////////////////////////////////////////////
+// Native Static Methods                                                   //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def nativeCall15: Bool =
+    let x = unsafe native new java.lang.String();
+    unsafe native method java.lang.String.isEmpty(x)
+
+@test
+def nativeCall16: Bool =
+    let x = unsafe native new java.lang.String();
+    assertEq!(unsafe native method java.lang.String.length(x), 0)
+
+@test
+def nativeCall17: Bool =
+    let x = unsafe native new java.util.Date(96, 6, 12);
+    let y = unsafe native new java.util.Date(100, 0, 0);
+    unsafe native method java.util.Date.before(x, y)
+
+@test
+def nativeCall18: Bool =
+    let x = unsafe native new java.util.Date(100, 0, 0);
+    let y = unsafe native new java.util.Date(96, 6, 12);
+    !(unsafe native method java.util.Date.before(x, y))
+
+@test
+def nativeCall19: Bool =
+    let x = unsafe native new java.util.Date(96, 6, 12);
+    let y = unsafe native new java.util.Date(96, 6, 12);
+    unsafe native method java.util.Date.equals(x, y)
+
+@test
+def nativeCall20: Bool =
+    let x = unsafe native new java.util.Date(96, 6, 12);
+    let y = unsafe native new java.util.Date(100, 0, 0);
+    !(unsafe native method java.util.Date.equals(x, y))
