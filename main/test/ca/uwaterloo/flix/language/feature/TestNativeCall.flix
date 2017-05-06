@@ -18,7 +18,7 @@ def nativeCall03: Bool =
 @test
 def nativeCall04: Bool =
     let x = unsafe native new java.util.Date(96, 6, 12);
-    assertEq!(unsafe native method java.util.Date.toString(x), "Fri Jul 12 00:00:00 EDT 1996")
+     assertEq!(unsafe native method java.util.Date.getTime(x), 837144000000i64)
 
 /////////////////////////////////////////////////////////////////////////////
 // Native Static Field                                                     //
