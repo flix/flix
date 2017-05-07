@@ -591,8 +591,8 @@ object Codegen {
       val declaration = asm.Type.getInternalName(field.getDeclaringClass)
       val name = field.getName
       // Use GETSTATIC if the field is static and GETFIELD if the field is on an object
-      val getCode = if(Modifier.isStatic(field.getModifiers)) GETSTATIC else GETFIELD
-      visitor.visitFieldInsn(getCode, declaration, name, ctx.descriptor(tpe))
+      val getInsn = if(Modifier.isStatic(field.getModifiers)) GETSTATIC else GETFIELD
+      visitor.visitFieldInsn(getInsn, declaration, name, ctx.descriptor(tpe))
 
     case Expression.NativeMethod(method, args, tpe, loc) =>
       // Evaluate arguments left-to-right and push them onto the stack.
@@ -601,8 +601,8 @@ object Codegen {
       val name = method.getName
       val descriptor = asm.Type.getMethodDescriptor(method)
       // If the method is static, use INVOKESTATIC otherwise use INVOKEVIRTUAL
-      val invokeCode = if (Modifier.isStatic(method.getModifiers)) INVOKESTATIC else INVOKEVIRTUAL
-      visitor.visitMethodInsn(invokeCode, declaration, name, descriptor, false)
+      val invokeInsn = if (Modifier.isStatic(method.getModifiers)) INVOKESTATIC else INVOKEVIRTUAL
+      visitor.visitMethodInsn(invokeInsn, declaration, name, descriptor, false)
 
     case Expression.UserError(_, loc) =>
       val name = asm.Type.getInternalName(classOf[UserException])
