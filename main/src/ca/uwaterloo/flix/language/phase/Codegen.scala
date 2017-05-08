@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import java.lang.reflect.Modifier
+
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.Ast.Hook
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression, LoadExpression, StoreExpression}
@@ -32,7 +34,6 @@ import scala.language.existentials
 // TODO: Debugging information
 
 object Codegen {
-
   /*
    * Constants passed to the asm library to generate bytecode.
    *
@@ -573,11 +574,40 @@ object Codegen {
     case Expression.Universal(params, exp, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$expr' at ${loc.source.format}.")
 
-    case Expression.NativeConstructor(constructor, args, tpe, loc) => ??? // TODO
+    case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+      val descriptor = asm.Type.getConstructorDescriptor(constructor)
+      val declaration = asm.Type.getInternalName(constructor.getDeclaringClass)
+      // Create a new object of the declaration type
+      visitor.visitTypeInsn(NEW, declaration)
+      // Duplicate the reference since the first argument for a constructor call is the reference to the object
+      visitor.visitInsn(DUP)
+      // Evaluate arguments left-to-right and push them onto the stack.
+      args.foreach(compileExpression(ctx, visitor, entryPoint))
+      // Call the constructor
+      visitor.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
 
-    case Expression.NativeField(field, tpe, loc) => ??? // TODO
+    case Expression.NativeField(field, tpe, loc) =>
+      // Fetch a field from an object
+      val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+      val name = field.getName
+      // Use GETSTATIC if the field is static and GETFIELD if the field is on an object
+      val getInsn = if(Modifier.isStatic(field.getModifiers)) GETSTATIC else GETFIELD
+      visitor.visitFieldInsn(getInsn, declaration, name, ctx.descriptor(tpe))
 
-    case Expression.NativeMethod(method, args, tpe, loc) => ??? // TODO
+    case Expression.NativeMethod(method, args, tpe, loc) =>
+      // Evaluate arguments left-to-right and push them onto the stack.
+      args.foreach(compileExpression(ctx, visitor, entryPoint))
+      val declaration = asm.Type.getInternalName(method.getDeclaringClass)
+      val name = method.getName
+      val descriptor = asm.Type.getMethodDescriptor(method)
+      // If the method is static, use INVOKESTATIC otherwise use INVOKEVIRTUAL
+      val invokeInsn = if (Modifier.isStatic(method.getModifiers)) INVOKESTATIC else INVOKEVIRTUAL
+      visitor.visitMethodInsn(invokeInsn, declaration, name, descriptor, false)
+      // If the method is void, put a unit on top of the stack
+      if(asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
+        val clazz = Constants.unitClass
+        visitor.visitFieldInsn(GETSTATIC, asm.Type.getInternalName(clazz), "MODULE$", asm.Type.getDescriptor(clazz))
+      }
 
     case Expression.UserError(_, loc) =>
       val name = asm.Type.getInternalName(classOf[UserException])
