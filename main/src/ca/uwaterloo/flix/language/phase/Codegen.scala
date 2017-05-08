@@ -1093,8 +1093,18 @@ object Codegen {
           case BinaryOperator.NotEqual => (IF_ICMPEQ, FCMPG, DCMPG, IFEQ)
         }
         e1.tpe match {
-          case Type.Unit | Type.Str if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
-            // Unit and String can be compared using Object's `equal` method
+          case Type.Unit if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
+            // Unit can only be equal to unit, so the objects are poped from the top of the stack
+            visitor.visitInsn(POP)
+            visitor.visitInsn(POP)
+            (e2.tpe, o) match {
+              case (Type.Unit, BinaryOperator.NotEqual) => visitor.visitJumpInsn(GOTO, condElse)
+              case (Type.Unit, BinaryOperator.Equal) =>
+              case (_, BinaryOperator.Equal) => visitor.visitJumpInsn(GOTO, condElse)
+              case (_, BinaryOperator.NotEqual) =>
+            }
+          case Type.Str if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
+            // String can be compared using Object's `equal` method
             val clazz = Constants.objectClass
             val method = clazz.getMethod("equals", clazz)
             visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
