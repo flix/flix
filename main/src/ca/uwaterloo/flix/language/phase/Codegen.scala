@@ -603,6 +603,11 @@ object Codegen {
       // If the method is static, use INVOKESTATIC otherwise use INVOKEVIRTUAL
       val invokeInsn = if (Modifier.isStatic(method.getModifiers)) INVOKESTATIC else INVOKEVIRTUAL
       visitor.visitMethodInsn(invokeInsn, declaration, name, descriptor, false)
+      // If the method is void, put a unit on top of the stack
+      if(asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
+        val clazz = Constants.unitClass
+        visitor.visitFieldInsn(GETSTATIC, asm.Type.getInternalName(clazz), "MODULE$", asm.Type.getDescriptor(clazz))
+      }
 
     case Expression.UserError(_, loc) =>
       val name = asm.Type.getInternalName(classOf[UserException])

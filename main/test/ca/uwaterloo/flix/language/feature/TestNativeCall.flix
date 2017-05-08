@@ -89,3 +89,10 @@ def nativeMethod12: Bool =
     let x = unsafe native new java.util.Date(96, 6, 12);
     let y = unsafe native new java.util.Date(100, 0, 0);
     !(unsafe native method java.util.Date.equals(x, y))
+
+@test
+def nativeMethod13: Bool =
+    let x = unsafe native new java.util.BitSet();
+    let y = unsafe native method java.util.BitSet.set(x, 10);
+    let z = unsafe native method java.util.BitSet.set(x, 3);
+    assertEq!(unsafe native method java.util.BitSet.toString(x), "{3, 10}")
